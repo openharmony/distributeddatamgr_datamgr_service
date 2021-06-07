@@ -15,6 +15,7 @@
 
 #ifndef DISTRIBUTEDDATAFWK_SRC_SOFTBUS_ADAPTER_H
 #define DISTRIBUTEDDATAFWK_SRC_SOFTBUS_ADAPTER_H
+#include <condition_variable>
 #include <map>
 #include <mutex>
 #include <set>
@@ -24,7 +25,8 @@
 #include "app_device_status_change_listener.h"
 #include "app_types.h"
 #include "platform_specific.h"
-
+#include "session.h"
+#include "softbus_bus_center.h"
 namespace OHOS {
 namespace AppDistributedKv {
 enum IdType {
@@ -32,13 +34,44 @@ enum IdType {
     UUID,
     UDID,
 };
+class Semaphore {
+public:
+    explicit Semaphore(unsigned int resCount) : count(resCount), data(-1) {}
+    ~Semaphore() {}
+
+public:
+    int Wait()
+    {
+        std::unique_lock<std::mutex> uniqueLock(mutex);
+        --count;
+        while (count < 0) {
+            cv.wait(uniqueLock);
+        }
+        return data;
+    }
+    void Signal(const int &sendData)
+    {
+        std::lock_guard<std::mutex> lg(mutex);
+        data = sendData;
+        if (++count < 1) {
+            cv.notify_one();
+        }
+    }
+
+private:
+    int count;
+    int data;
+    std::mutex mutex;
+    std::condition_variable cv;
+};
+
 class SoftBusAdapter {
 public:
     SoftBusAdapter();
     ~SoftBusAdapter();
     static std::shared_ptr<SoftBusAdapter> GetInstance();
 
-    void Init() const;
+    void Init();
     // add DeviceChangeListener to watch device change;
     Status StartWatchDeviceChange(const AppDeviceStatusChangeListener *observer, const PipeInfo &pipeInfo);
     // stop DeviceChangeListener to watch device change;
@@ -78,18 +111,26 @@ public:
 
     void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag);
 
-    int CreateSessionServerAdapter(const std::string &sessionName) const;
+    int CreateSessionServerAdapter(const std::string &sessionName);
 
     int RemoveSessionServerAdapter(const std::string &sessionName) const;
 
     void UpdateRelationship(const std::string &networkid, const DeviceChangeType &type);
 
-    void InsertSession(const std::string sessionName);
+    void InsertSession(const std::string &sessionName);
 
-    void DeleteSession(const std::string sessionName);
+    void DeleteSession(const std::string &sessionName);
 
-    void NotifyDataListeners(const std::string &ptr, const int size, const std::string &deviceId,
+    void NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
         const PipeInfo &pipeInfo);
+    
+    int WaitSessionOpen();
+
+    void NotifySessionOpen(const int &state);
+
+    int GetOpenSessionId();
+
+    void SetOpenSessionId(const int &sessionId);
 private:
     std::map<std::string, std::tuple<std::string, std::string>> networkId2UuidUdid_ {};
     DeviceInfo localInfo_ {};
@@ -101,6 +142,13 @@ private:
     std::mutex busSessionMutex_ {};
     std::map<std::string, bool> busSessionMap_ {};
     bool flag_ = true; // only for br flag
+    INodeStateCb nodeStateCb_ {};
+    ISessionListener sessionListener_ {};
+    std::unique_ptr<Semaphore> semaphore_ {};
+    std::mutex notifyFlagMutex_ {};
+    bool notifyFlag_ = false;
+    std::mutex openSessionIdMutex_ {};
+    int openSessionId_ = -1;
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS
