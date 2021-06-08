@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "task_pool_impl.h"
-#include <malloc.h>
 #include "db_errno.h"
 #include "log_print.h"
 
@@ -145,8 +144,6 @@ bool TaskPoolImpl::IdleExit(std::unique_lock<std::mutex> &lock)
             return true;
         }
     } else {
-        // No task exist, force release memory cache for this thread
-        (void)mallopt(M_PURGE, 0);
         if (isGenericWorker) {
             hasTasks_.notify_all();
         }
