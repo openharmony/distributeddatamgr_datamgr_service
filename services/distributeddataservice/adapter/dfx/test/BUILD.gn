@@ -43,7 +43,7 @@ ohos_unittest("DistributeddataDfxMSTTest") {
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
   ]
-
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "../../autils:distributeddata_autils_static",
     "//third_party/openssl:libcrypto_static",
@@ -99,7 +99,7 @@ ohos_unittest("DistributeddataDfxUTTest") {
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
   ]
-
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "../../autils:distributeddata_autils_static",
     "//third_party/openssl:libcrypto_static",

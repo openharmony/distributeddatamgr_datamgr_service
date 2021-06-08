@@ -220,7 +220,7 @@ ohos_source_set("src_file") {
   ]
 
   configs += [ "//third_party/jsoncpp:jsoncpp_config" ]
-
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps += [
     "//third_party/jsoncpp:jsoncpp",
     "//third_party/openssl:libcrypto_static",
@@ -247,6 +247,7 @@ template("distributeddb_unittest") {
       "//utils/native/base:utils",
     ]
     configs += [ "//third_party/jsoncpp:jsoncpp_config" ]
+    ldflags = [ "-Wl,--exclude-libs,ALL" ]
     deps += [
       "//third_party/jsoncpp:jsoncpp",
       "//third_party/openssl:libcrypto_static",
@@ -436,7 +437,7 @@ ohos_unittest("DistributedDBStorageEncryptTest") {
     "SQLITE_HAS_CODEC",
     "SQLITE_CODEC_ATTACH_CHANGED",
   ]
-
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "//third_party/openssl:libcrypto_static",
     "//third_party/googletest:gtest_main",

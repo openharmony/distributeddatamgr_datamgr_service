@@ -38,7 +38,7 @@ ohos_static_library("distributeddata_utils_static") {
     "../include/dfx",
     "//third_party/openssl/include/",
   ]
-
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//utils/native/base:utils",

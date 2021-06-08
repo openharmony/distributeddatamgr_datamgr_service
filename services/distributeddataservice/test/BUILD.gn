@@ -48,6 +48,7 @@ config("module_private_config") {
     "OMIT_JSON",
     "LOW_LEVEL_MEM_DEV",
   ]
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
 }
 
 ##############################moduletest##########################################
