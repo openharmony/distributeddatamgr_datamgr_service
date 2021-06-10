@@ -21,6 +21,8 @@
 #include <unistd.h>
 #include <nlohmann/json.hpp>
 #include "account_delegate.h"
+#include "battery_info.h"
+#include "battery_srv_client.h"
 #include "constant.h"
 #include "crypto_utils.h"
 #include "kv_store_delegate_manager.h"
@@ -28,6 +30,8 @@
 #include "kvstore_data_service.h"
 #include "log_print.h"
 #include "kvstore_meta_manager.h"
+#include "power_mgr_client.h"
+#include "time_utils.h"
 
 namespace OHOS::DistributedKv {
 using json = nlohmann::json;
@@ -71,6 +75,7 @@ void BackupHandler::BackSchedule()
                 SingleKvStoreBackup(entry.second);
             }
         }
+        backupSuccessTime_ = TimeUtils::CurrentTimeMicros();
     });
 }
 
@@ -353,7 +358,32 @@ bool BackupHandler::FileExists(const std::string &path)
 
 bool BackupHandler::CheckNeedBackup()
 {
-    return false;
+    auto &batterySrvClient = PowerMgr::BatterySrvClient::GetInstance();
+    auto chargingStatus = batterySrvClient.GetChargingStatus();
+    if (chargingStatus != PowerMgr::BatteryChargeState::CHARGE_STATE_ENABLE) {
+        if (chargingStatus != PowerMgr::BatteryChargeState::CHARGE_STATE_FULL) {
+            ZLOGE("the device is not in charge state, chargingStatus=%{public}d.", chargingStatus);
+            return false;
+        }
+        auto batteryPluggedType = batterySrvClient.GetPluggedType();
+        if (batteryPluggedType != PowerMgr::BatteryPluggedType::PLUGGED_TYPE_AC &&
+            batteryPluggedType != PowerMgr::BatteryPluggedType::PLUGGED_TYPE_USB &&
+            batteryPluggedType != PowerMgr::BatteryPluggedType::PLUGGED_TYPE_WIRELESS) {
+            ZLOGE("the device is not in charge full statue, the batteryPluggedType is %{public}d.", batteryPluggedType);
+            return false;
+        }
+    }
+    auto &powerMgrClient = PowerMgr::PowerMgrClient::GetInstance();
+    if (powerMgrClient.IsScreenOn()) {
+        ZLOGE("the device screen is on.");
+        return false;
+    }
+    int64_t currentTime = TimeUtils::CurrentTimeMicros();
+    if (currentTime - backupSuccessTime_ < 36000000 && backupSuccessTime_ > 0) { // 36000000 is 10 hours
+        ZLOGE("no more than 10 hours since the last backup success.");
+        return false;
+    }
+    return true;
 }
 
 std::string BackupHandler::GetHashedBackupName(const std::string &bundleName)

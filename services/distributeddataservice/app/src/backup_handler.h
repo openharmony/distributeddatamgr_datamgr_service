@@ -41,10 +41,13 @@ public:
     static bool FileExists(const std::string &path);
     static std::string GetHashedBackupName(const std::string &bundleName);
 private:
-    KvScheduler scheduler_ {};
+    bool CheckNeedBackup();
+
     static std::string backupDirCe_;
     static std::string backupDirDe_;
-    bool CheckNeedBackup();
+
+    KvScheduler scheduler_ {};
+    int64_t backupSuccessTime_ = 0;
 };
 } // namespace OHOS::DistributedKv
 #endif // DISTRIBUTEDDATAMGR_BACKUP_HANDLER_H

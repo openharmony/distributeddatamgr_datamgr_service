@@ -34,6 +34,7 @@ config("module_private_config") {
     "../src/flowctrl_manager",
     "../../../../interfaces/innerkits/distributeddata",
     "//third_party/json/single_include",
+    "//base/powermgr/power_manager/interfaces/innerkits/native/include",
   ]
 }
 
@@ -65,6 +66,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
 
   external_deps = [
     "battery_manager_native:batterysrv_client",
+    "power_manager_native:powermgr_client",
     "hiviewdfx_hilog_native:libhilog",
     "huks_standard:libhukssdk",
     "ipc:ipc_core",
@@ -116,6 +118,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
 
   external_deps = [
     "battery_manager_native:batterysrv_client",
+    "power_manager_native:powermgr_client",
     "hiviewdfx_hilog_native:libhilog",
     "huks_standard:libhukssdk",
     "ipc:ipc_core",
@@ -167,6 +170,7 @@ ohos_unittest("KvStoreDataServiceTest") {
 
   external_deps = [
     "battery_manager_native:batterysrv_client",
+    "power_manager_native:powermgr_client",
     "hiviewdfx_hilog_native:libhilog",
     "huks_standard:libhukssdk",
     "ipc:ipc_core",
@@ -218,6 +222,7 @@ ohos_unittest("KvStoreBackupTest") {
 
   external_deps = [
     "battery_manager_native:batterysrv_client",
+    "power_manager_native:powermgr_client",
     "hiviewdfx_hilog_native:libhilog",
     "huks_standard:libhukssdk",
     "ipc:ipc_core",
@@ -251,6 +256,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
 
   external_deps = [
     "battery_manager_native:batterysrv_client",
+    "power_manager_native:powermgr_client",
     "hiviewdfx_hilog_native:libhilog",
     "huks_standard:libhukssdk",
     "ipc:ipc_core",
@@ -295,6 +301,7 @@ ohos_unittest("KvStoreSyncManagerTest") {
 
   external_deps = [
     "battery_manager_native:batterysrv_client",
+    "power_manager_native:powermgr_client",
     "hiviewdfx_hilog_native:libhilog",
     "huks_standard:libhukssdk",
     "ipc:ipc_core",
@@ -362,6 +369,7 @@ ohos_unittest("KvStoreUninstallerTest") {
     "aafwk_standard:base",
     "aafwk_standard:intent",
     "battery_manager_native:batterysrv_client",
+    "power_manager_native:powermgr_client",
     "hiviewdfx_hilog_native:libhilog",
     "huks_standard:libhukssdk",
     "ipc:ipc_core",
