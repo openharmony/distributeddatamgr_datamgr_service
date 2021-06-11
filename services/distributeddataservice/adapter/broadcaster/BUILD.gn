@@ -20,6 +20,7 @@ ohos_static_library("distributeddata_broadcaster_static") {
 
   include_dirs = [
     "../include/broadcaster",
+    "../include/log",
     "./src",
     "//utils/native/base/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
@@ -31,10 +32,10 @@ ohos_static_library("distributeddata_broadcaster_static") {
 
   external_deps = [
     # "ces:libcommonevent",
-    "aafwk_standard:base",
-    "aafwk_standard:intent",
+    "aafwk_standard:want",
     "appexecfwk_standard:appexecfwk_base",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
+    "ces_standard:cesfwk_kits",
   ]
 }

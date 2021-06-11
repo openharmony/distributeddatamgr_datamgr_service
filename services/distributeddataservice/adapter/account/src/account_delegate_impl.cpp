@@ -25,6 +25,41 @@
 
 namespace OHOS {
 namespace DistributedKv {
+using namespace OHOS::EventFwk;
+using namespace OHOS::AAFwk;
+EventSubscriber::EventSubscriber(const CommonEventSubscribeInfo &info) : CommonEventSubscriber(info) {}
+
+void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
+{
+    const auto want = event.GetWant();
+    AccountEventInfo accountEventInfo {};
+    std::string action = want.GetAction();
+    ZLOGI("Want Action is %s", action.c_str());
+
+    if (action == CommonEventSupport::COMMON_EVENT_HWID_LOGIN) {
+        accountEventInfo.status = AccountStatus::HARMONY_ACCOUNT_LOGIN;
+    } else if (action == CommonEventSupport::COMMON_EVENT_HWID_LOGOUT) {
+        accountEventInfo.status = AccountStatus::HARMONY_ACCOUNT_LOGOUT;
+    } else if (action == CommonEventSupport::COMMON_EVENT_HWID_TOKEN_INVALID) {
+        accountEventInfo.status = AccountStatus::HARMONY_ACCOUNT_DELETE;
+    } else if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
+        accountEventInfo.status = AccountStatus::DEVICE_ACCOUNT_DELETE;
+        accountEventInfo.deviceAccountId =
+            std::to_string(want.GetIntParam(CommonEventSupport::COMMON_EVENT_USER_REMOVED, -1));
+        if (accountEventInfo.deviceAccountId == "-1") {
+            return;
+        }
+    } else {
+        return;
+    }
+    eventCallback_(accountEventInfo);
+}
+
+void EventSubscriber::SetEventCallback(EventCallback callback)
+{
+    eventCallback_ = callback;
+}
+
 AccountDelegate::BaseInstance AccountDelegate::getInstance_ = AccountDelegateImpl::GetBaseInstance;
 
 AccountDelegateImpl *AccountDelegateImpl::GetInstance()
@@ -42,11 +77,49 @@ AccountDelegateImpl::~AccountDelegateImpl()
 {
     ZLOGE("destruct");
     observerMap_.Clear();
+    const auto result = CommonEventManager::UnSubscribeCommonEvent(eventSubscriber_);
+    if (!result) {
+        ZLOGE("Fail to unregister account event listener!");
+    }
 }
 
 void AccountDelegateImpl::SubscribeAccountEvent()
 {
+    ZLOGI("Subscribe account event listener start.");
+    MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_HWID_LOGIN);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_HWID_LOGOUT);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_HWID_TOKEN_INVALID);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
+    CommonEventSubscribeInfo info(matchingSkills);
+    eventSubscriber_ = std::make_shared<EventSubscriber>(info);
+    eventSubscriber_->SetEventCallback([&](AccountEventInfo &account) {
+        account.harmonyAccountId = GetCurrentHarmonyAccountId();
+        NotifyAccountChanged(account);
+    });
 
+    std::thread th = std::thread([&]() {
+        int tryTimes = 0;
+        constexpr int MAX_RETRY_TIME = 300;
+        constexpr int RETRY_WAIT_TIME_S = 1;
+
+        // we use this method to make sure register success
+        while (tryTimes < MAX_RETRY_TIME) {
+            auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber_);
+            if (result) {
+                break;
+            }
+
+            ZLOGE("EventManager: Fail to register subscriber, error:%d", result);
+            sleep(RETRY_WAIT_TIME_S);
+            tryTimes++;
+        }
+        if (tryTimes == MAX_RETRY_TIME) {
+            ZLOGE("EventManager: Fail to register subscriber!");
+        }
+        ZLOGI("EventManager: Success to register subscriber.");
+    });
+    th.detach();
 }
 
 std::string AccountDelegateImpl::GetCurrentHarmonyAccountId(const std::string &bundleName) const

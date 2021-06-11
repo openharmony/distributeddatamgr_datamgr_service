@@ -16,13 +16,48 @@
 #define LOG_TAG "BroadcastSenderImpl"
 
 #include "broadcast_sender_impl.h"
+#include "common_event_manager.h"
+#include "common_event_support.h"
+#include "log_print.h"
 #include "ohos/aafwk/base/array_wrapper.h"
 #include "ohos/aafwk/base/string_wrapper.h"
-#include "ohos/aafwk/content/intent.h"
 
 namespace OHOS::DistributedKv {
+using namespace OHOS::EventFwk;
+using namespace OHOS::AAFwk;
+class CommonEventSubscriberListener : public CommonEventSubscriber {
+public:
+    explicit CommonEventSubscriberListener(const CommonEventSubscribeInfo &subscriberInfo);
+    virtual ~CommonEventSubscriberListener(){};
+    virtual void OnReceiveEvent(const CommonEventData &data);
+};
+
+CommonEventSubscriberListener::CommonEventSubscriberListener(const CommonEventSubscribeInfo &subscriberInfo)
+    : CommonEventSubscriber(subscriberInfo)
+{}
+
+void CommonEventSubscriberListener::OnReceiveEvent(const CommonEventData &data)
+{
+    ZLOGI("receive event.");
+}
+
 void BroadcastSenderImpl::SendEvent(const EventParams &params)
 {
-
+    ZLOGI("SendEvent code.");
+    bool result = false;
+    WantParams parameters;
+    parameters.SetParam(PKG_NAME, String::Box(params.appId));
+    Want want;
+    want.SetAction(ACTION_NAME).SetParams(parameters);
+    CommonEventData commonEventData(want);
+    MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(ACTION_NAME);
+    CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    auto subscriberPtr = std::make_shared<CommonEventSubscriberListener>(subscribeInfo);
+    if (CommonEventManager::SubscribeCommonEvent(subscriberPtr)) {
+        result = CommonEventManager::PublishCommonEvent(commonEventData);
+    }
+    CommonEventManager::UnSubscribeCommonEvent(subscriberPtr);
+    ZLOGI("SendEvent result:%{public}d.", result);
 }
 }

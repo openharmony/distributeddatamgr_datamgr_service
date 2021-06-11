@@ -16,16 +16,31 @@
 #ifndef DISTRIBUTEDDATAMGR_UNINSTALLER_IMPL_H
 #define DISTRIBUTEDDATAMGR_UNINSTALLER_IMPL_H
 
+#include "common_event_subscriber.h"
 #include "uninstaller.h"
 
 namespace OHOS::DistributedKv {
+using namespace OHOS::EventFwk;
+using UninstallEventCallback = std::function<void(const std::string &bundleName, int userId)>;
+
+class UninstallEventSubscriber : public CommonEventSubscriber {
+public:
+    UninstallEventSubscriber(const CommonEventSubscribeInfo &info,
+        UninstallEventCallback callback);
+
+    ~UninstallEventSubscriber() {};
+    void OnReceiveEvent(const CommonEventData &event) override;
+private:
+    static const std::string USER_ID;
+    UninstallEventCallback callback_;
+};
 class UninstallerImpl : public Uninstaller {
 public:
-    UninstallerImpl() {};
-
     ~UninstallerImpl();
 
-    Status Init(IKvStoreDataService *kvStoreDataService) override;
+    Status Init(KvStoreDataService *kvStoreDataService) override;
+private:
+    std::shared_ptr<UninstallEventSubscriber> subscriber_ {};
 };
 }
 #endif // DISTRIBUTEDDATAMGR_UNINSTALLER_IMPL_H

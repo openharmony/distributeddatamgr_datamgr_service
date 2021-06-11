@@ -19,12 +19,27 @@
 #include "account_delegate.h"
 #include <mutex>
 #include <memory.h>
+#include "common_event_manager.h"
+#include "common_event_subscriber.h"
+#include "common_event_support.h"
 #include "concurrent_map.h"
-#include "ohos/aafwk/content/intent.h"
 #include "log_print.h"
 
 namespace OHOS {
 namespace DistributedKv {
+using namespace OHOS::EventFwk;
+using EventCallback = std::function<void(AccountEventInfo &account)>;
+
+class EventSubscriber final : public CommonEventSubscriber {
+public:
+    ~EventSubscriber() {}
+    explicit EventSubscriber(const CommonEventSubscribeInfo &info);
+    void SetEventCallback(EventCallback callback);
+    void OnReceiveEvent(const CommonEventData &event) override;
+private:
+    EventCallback eventCallback_ {};
+};
+
 class AccountDelegateImpl final : public AccountDelegate {
 public:
     static AccountDelegateImpl *GetInstance();
@@ -39,6 +54,7 @@ private:
     void NotifyAccountChanged(const AccountEventInfo &accountEventInfo);
 
     ConcurrentMap<std::string, std::shared_ptr<Observer>> observerMap_ {};
+    std::shared_ptr<EventSubscriber> eventSubscriber_ {};
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

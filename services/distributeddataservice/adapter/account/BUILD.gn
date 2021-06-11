@@ -39,10 +39,10 @@ ohos_static_library("distributeddata_account_static") {
     "appexecfwk_standard:appexecfwk_base",
 
     # "ces:libcommonevent",
-    "aafwk_standard:base",
-    "aafwk_standard:intent",
+    "aafwk_standard:want",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "os_account_standard:libaccountkits",
+    "ces_standard:cesfwk_kits",
   ]
 }
