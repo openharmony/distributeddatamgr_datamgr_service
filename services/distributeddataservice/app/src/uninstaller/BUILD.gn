@@ -47,6 +47,6 @@ ohos_static_library("distributeddata_uninstaller_static") {
     "safwk:system_ability_fwk",
     "samgr_L2:samgr_proxy",
     "ces_standard:cesfwk_kits",
-    "dmsfwk_L2:zuri"
+    "dmsfwk_standard:zuri"
   ]
 }
