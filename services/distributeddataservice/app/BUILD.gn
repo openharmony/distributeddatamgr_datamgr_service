@@ -54,6 +54,7 @@ config("module_private_config") {
     "include",
     "src",
     "//third_party/json/single_include",
+    "//base/security/permission/interfaces/innerkits/permission_standard/permissionsdk/main/cpp/include",
   ]
 
   cflags = [ "-Wno-multichar" ]
@@ -111,6 +112,7 @@ ohos_shared_library("distributeddataservice") {
     "safwk:system_ability_fwk",
     "samgr_L2:samgr_proxy",
     "startup_l2:syspara",
+    "permission_standard:libpermissionsdk_standard",
   ]
 
   subsystem_name = "distributeddatamgr"

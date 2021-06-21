@@ -72,6 +72,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_L2:samgr_proxy",
+    "permission_standard:libpermissionsdk_standard",
   ]
 
   deps = [
@@ -124,6 +125,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_L2:samgr_proxy",
+    "permission_standard:libpermissionsdk_standard",
   ]
 
   deps = [
@@ -176,6 +178,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_L2:samgr_proxy",
+    "permission_standard:libpermissionsdk_standard",
   ]
 
   deps = [
@@ -228,6 +231,7 @@ ohos_unittest("KvStoreBackupTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_L2:samgr_proxy",
+    "permission_standard:libpermissionsdk_standard",
   ]
 
   deps = [
@@ -262,6 +266,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_L2:samgr_proxy",
+    "permission_standard:libpermissionsdk_standard",
   ]
 
   deps = [
@@ -307,6 +312,7 @@ ohos_unittest("KvStoreSyncManagerTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_L2:samgr_proxy",
+    "permission_standard:libpermissionsdk_standard",
   ]
 
   deps = [
@@ -375,6 +381,7 @@ ohos_unittest("KvStoreUninstallerTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_L2:samgr_proxy",
+    "permission_standard:libpermissionsdk_standard",
   ]
 }
 

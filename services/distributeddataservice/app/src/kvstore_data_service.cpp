@@ -32,16 +32,18 @@
 #include "dds_trace.h"
 #include "device_change_listener_impl.h"
 #include "device_kvstore_impl.h"
+#include "if_system_ability_manager.h"
+#include "iservice_registry.h"
 #include "kvstore_account_observer.h"
 #include "kvstore_app_accessor.h"
 #include "kvstore_meta_manager.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
+#include "permission/permission.h"
+#include "permission/permission_kit.h"
 #include "permission_validator.h"
 #include "process_communicator_impl.h"
 #include "reporter.h"
-#include "if_system_ability_manager.h"
-#include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "uninstaller/uninstaller.h"
 
@@ -49,6 +51,7 @@ namespace OHOS {
 namespace DistributedKv {
 using json = nlohmann::json;
 using namespace std::chrono;
+using namespace OHOS::Security::Permission;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
@@ -918,6 +921,34 @@ int KvStoreDataService::Dump(int fd, const std::vector<std::u16string> &args)
     return 0;
 }
 
+const std::string PKGNAME = "ohos.distributeddata";
+const std::string APP_DATASYNC_PERMISSION = "ohos.permission.DISTRIBUTED_DATASYNC";
+const std::string LABEL = "distributeddata";
+const std::string DESCRIPTION = "distributeddata service";
+const int LABEL_ID = 9527;
+const int DESCRIPTION_ID = 9528;
+
+void KvStoreDataService::AddPermission() const
+{
+    std::vector<PermissionDef> permissionDefs {
+        {
+            .permissionName = APP_DATASYNC_PERMISSION,
+            .bundleName = PKGNAME,
+            .grantMode = GrantMode::SYSTEM_GRANT,
+            .availableScope = AVAILABLE_SCOPE_ALL,
+            .label = LABEL,
+            .labelId = LABEL_ID,
+            .description = DESCRIPTION,
+            .descriptionId = DESCRIPTION_ID
+        }
+    };
+    PermissionKit::AddDefPermissions(permissionDefs);
+    std::vector<std::string> permissions;
+    permissions.push_back(APP_DATASYNC_PERMISSION);
+    PermissionKit::AddSystemGrantedReqPermissions(PKGNAME, permissions);
+    PermissionKit::GrantSystemGrantedPermission(PKGNAME, APP_DATASYNC_PERMISSION);
+}
+
 void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
@@ -939,6 +970,9 @@ void KvStoreDataService::OnStart()
         Reporter::GetInstance()->ServiceFault()->Report(msg);
     }
     Uninstaller::GetInstance().Init(this);
+
+    // add softbus permission.
+    AddPermission();
 
     // Initialize meta db delegate manager.
     KvStoreMetaManager::GetInstance().InitMetaListener([this](const KvStoreMetaData &metaData) {

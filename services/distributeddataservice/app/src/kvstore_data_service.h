@@ -120,6 +120,8 @@ private:
         sptr<KvStoreDeathRecipient> deathRecipient_;
     };
 
+    void AddPermission() const;
+
     void Initialize();
 
     Status AppExit(const AppId &appId);

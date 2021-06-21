@@ -149,7 +149,7 @@ void SoftBusAdapter::Init()
         int i = 0;
         constexpr int RETRY_TIMES = 300;
         while (i++ < RETRY_TIMES) {
-            int32_t errNo = RegNodeDeviceStateCb("com.huawei.hwddmp", &nodeStateCb_);
+            int32_t errNo = RegNodeDeviceStateCb("ohos.distributeddata", &nodeStateCb_);
             if (errNo != SOFTBUS_OK) {
                 ZLOGE("RegNodeDeviceStateCb fail %{public}d, time:%{public}d", errNo, i);
                 std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -248,7 +248,7 @@ std::vector<DeviceInfo> SoftBusAdapter::GetDeviceList() const
     int32_t infoNum = 0;
     dis.clear();
 
-    int32_t ret = GetAllNodeDeviceInfo("com.huawei.hwddmp", &info, &infoNum);
+    int32_t ret = GetAllNodeDeviceInfo("ohos.distributeddata", &info, &infoNum);
     if (ret != SOFTBUS_OK) {
         ZLOGE("GetAllNodeDeviceInfo error");
         return dis;
@@ -273,7 +273,7 @@ DeviceInfo SoftBusAdapter::GetLocalDevice()
     }
 
     NodeBasicInfo info;
-    int32_t ret = GetLocalNodeDeviceInfo("com.huawei.hwddmp", &info);
+    int32_t ret = GetLocalNodeDeviceInfo("ohos.distributeddata", &info);
     if (ret != SOFTBUS_OK) {
         ZLOGE("GetLocalNodeDeviceInfo error");
         return DeviceInfo();
@@ -288,7 +288,7 @@ DeviceInfo SoftBusAdapter::GetLocalDevice()
 std::string SoftBusAdapter::GetUuidByNodeId(const std::string &nodeId) const
 {
     char uuid[ID_BUF_LEN] = {0};
-    int32_t ret = GetNodeKeyInfo("com.huawei.hwddmp", nodeId.c_str(),
+    int32_t ret = GetNodeKeyInfo("ohos.distributeddata", nodeId.c_str(),
         NodeDeivceInfoKey::NODE_KEY_UUID, reinterpret_cast<uint8_t *>(uuid), ID_BUF_LEN);
     if (ret != SOFTBUS_OK) {
         ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", ToBeAnonymous(nodeId).c_str());
@@ -300,7 +300,7 @@ std::string SoftBusAdapter::GetUuidByNodeId(const std::string &nodeId) const
 std::string SoftBusAdapter::GetUdidByNodeId(const std::string &nodeId) const
 {
     char udid[ID_BUF_LEN] = {0};
-    int32_t ret = GetNodeKeyInfo("com.huawei.hwddmp", nodeId.c_str(),
+    int32_t ret = GetNodeKeyInfo("ohos.distributeddata", nodeId.c_str(),
         NodeDeivceInfoKey::NODE_KEY_UDID, reinterpret_cast<uint8_t *>(udid), ID_BUF_LEN);
     if (ret != SOFTBUS_OK) {
         ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", ToBeAnonymous(nodeId).c_str());
@@ -313,7 +313,7 @@ DeviceInfo SoftBusAdapter::GetLocalBasicInfo() const
 {
     ZLOGD("begin");
     NodeBasicInfo info;
-    int32_t ret = GetLocalNodeDeviceInfo("com.huawei.hwddmp", &info);
+    int32_t ret = GetLocalNodeDeviceInfo("ohos.distributeddata", &info);
     if (ret != SOFTBUS_OK) {
         ZLOGE("GetLocalNodeDeviceInfo error");
         return DeviceInfo();
@@ -333,7 +333,7 @@ std::vector<DeviceInfo> SoftBusAdapter::GetRemoteNodesBasicInfo() const
     int32_t infoNum = 0;
     dis.clear();
 
-    int32_t ret = GetAllNodeDeviceInfo("com.huawei.hwddmp", &info, &infoNum);
+    int32_t ret = GetAllNodeDeviceInfo("ohos.distributeddata", &info, &infoNum);
     if (ret != SOFTBUS_OK) {
         ZLOGE("GetAllNodeDeviceInfo error");
         return dis;
@@ -530,13 +530,13 @@ void SoftBusAdapter::SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag)
 int SoftBusAdapter::CreateSessionServerAdapter(const std::string &sessionName)
 {
     ZLOGD("begin");
-    return CreateSessionServer("com.huawei.hwddmp", sessionName.c_str(), &sessionListener_);
+    return CreateSessionServer("ohos.distributeddata", sessionName.c_str(), &sessionListener_);
 }
 
 int SoftBusAdapter::RemoveSessionServerAdapter(const std::string &sessionName) const
 {
     ZLOGD("begin");
-    return RemoveSessionServer("com.huawei.hwddmp", sessionName.c_str());
+    return RemoveSessionServer("ohos.distributeddata", sessionName.c_str());
 }
 
 void SoftBusAdapter::InsertSession(const std::string &sessionName)
