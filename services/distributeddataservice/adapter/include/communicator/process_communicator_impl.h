@@ -56,7 +56,7 @@ private:
     mutable std::mutex onDeviceChangeMutex_;
     mutable std::mutex onDataReceiveMutex_;
 
-    static constexpr uint32_t MTU_SIZE = 5242800; // the max transmission unit size(5MB - 80B)
+    static constexpr uint32_t MTU_SIZE = 4096; // the max transmission unit size(4K - 80B)
     static constexpr uint32_t MTU_SIZE_WATCH = 81920; // the max transmission unit size(80K)
     static constexpr const char *SMART_WATCH_TYPE = "SMART_WATCH";
     static constexpr const char *CHILDREN_WATCH_TYPE = "CHILDREN_WATCH";
