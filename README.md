@@ -46,6 +46,7 @@ You call APIs of DDS to create, access, and subscribe to distributed databases. 
 /foundation/distributeddatamgr/distributeddatamgr
 ├── interfaces                    # APIs
 │   └── innerkits                 # Native APIs
+│   └── jskits                    # JavaScript APIs
 ├── services                      # Service code
 │   └── distributeddataservice    # DDS implementation
 └── test                          # Test case resources

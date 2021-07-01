@@ -88,7 +88,7 @@ ohos_shared_library("distributeddataservice") {
   configs = [ ":module_private_config" ]
   ldflags = [ "-Wl,--exclude-libs,libcrypto_static.a" ]
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/account:distributeddata_account_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
