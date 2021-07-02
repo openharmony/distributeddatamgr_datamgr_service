@@ -10,12 +10,13 @@
       "module_list": [
         "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata:app_distributeddata",
         "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:build_module",
+        "//foundation/distributeddatamgr/distributeddatamgr/interfaces/jskits/distributeddata:build_module",
         "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app:build_module",
         "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:build_module"
       ],
       "inner_kits": [
         {
-          "name": "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata",
+          "name": "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
           "header": {
             "header_files": [
               "blob.h",
@@ -59,6 +60,9 @@
       "system_kits": [],
       "test_list": [
         "//foundation/distributeddatamgr/distributeddatamgr:build_native_test"
+      ],
+      "system_capabilities":[
+        "SystemCapability.Data.DATA_DISTRIBUTEDDATAMGR"
       ]
     }
   }

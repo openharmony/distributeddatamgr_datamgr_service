@@ -46,6 +46,7 @@
 /foundation/distributeddatamgr/distributeddatamgr
 ├── interfaces                    # 接口层代码
 │   └── innerkits                 # Native接口
+│   └── jskits                    # JavaScript接口
 ├── services                      # 服务层代码
 │   └── distributeddataservice    # 分布式数据服务实现
 └── test                          # 测试用例资源

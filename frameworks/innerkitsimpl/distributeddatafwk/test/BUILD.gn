@@ -45,7 +45,7 @@ ohos_unittest("DistributedKvDataManagerTest") {
   ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
@@ -66,7 +66,7 @@ ohos_unittest("DistributedKvDataManagerEncryptTest") {
   ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
@@ -91,7 +91,7 @@ ohos_unittest("KvStoreClientTest") {
   ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/:distributeddata",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
@@ -112,7 +112,7 @@ ohos_unittest("KvStoreSnapshotClientTest") {
   ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/:distributeddata",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
@@ -133,7 +133,7 @@ ohos_unittest("LocalSubscribeStoreTest") {
   ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/:distributeddata",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
@@ -148,7 +148,7 @@ ohos_unittest("BlobTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/:distributeddata",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",

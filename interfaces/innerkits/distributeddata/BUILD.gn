@@ -13,7 +13,7 @@
 import("//build/ohos.gni")
 
 group("build_module") {
-  deps = [ ":distributeddata" ]
+  deps = [ ":distributeddata_inner" ]
 }
 
 config("distributeddatafwk_config") {
@@ -40,7 +40,7 @@ config("distributeddatafwk_public_config") {
   ]
 }
 
-ohos_shared_library("distributeddata") {
+ohos_shared_library("distributeddata_inner") {
   part_name = "distributeddatamgr"
   sources = [
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/blob.cpp",
