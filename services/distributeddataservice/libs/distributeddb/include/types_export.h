@@ -150,12 +150,6 @@ struct SecurityOption {
     {
         return securityLabel == rhs.securityLabel && securityFlag == rhs.securityFlag;
     }
-
-    void operator=(const SecurityOption &rhs)
-    {
-        securityLabel = rhs.securityLabel;
-        securityFlag = rhs.securityFlag;
-    }
 };
 } // namespace DistributedDB
 

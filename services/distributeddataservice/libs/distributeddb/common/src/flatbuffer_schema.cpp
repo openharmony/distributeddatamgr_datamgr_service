@@ -14,9 +14,6 @@
  */
 
 #include "schema_object.h"
-#ifndef OMIT_FLATBUFFER
-#include <resolv.h>
-#endif // OMIT_FLATBUFFER
 #include <cmath>
 #include <algorithm>
 #include "schema_utils.h"
@@ -67,28 +64,7 @@ bool SchemaObject::FlatBufferSchema::IsFlatBufferSchema(const std::string &inOri
         outDecoded = inOriginal; // The original one is the decoded one
         return true;
     }
-    // Try base64 decode. base64 decoded length less then original length.
-    outDecoded.resize(inOriginal.size());
-    if (outDecoded.size() != inOriginal.size()) { // Unlikely in normal situation
-        // Do such check since we will directly access the memory inside outDecoded following
-        LOGE("[FBSchema][Is] Resize=%zu fail, OOM.", inOriginal.size());
-        return false;
-    }
-    auto decodeBuf = reinterpret_cast<uint8_t *>(outDecoded.data()); // changeable buffer
-    int decodeLen = b64_pton(inOriginal.c_str(), decodeBuf, outDecoded.size());
-    LOGD("[FBSchema][Is] Base64 decodeLen=%d, oriLen=%zu.", decodeLen, inOriginal.size());
-    if (decodeLen <= 0 || decodeLen >= static_cast<int>(inOriginal.size())) {
-        outDecoded.clear();
-        return false;
-    }
-    // Base64 decode success! It should be an encode form of flatBuffer-Schema.
-    outDecoded.erase(outDecoded.begin() + decodeLen, outDecoded.end()); // Erase surplus space
-    auto decodeSchemaBuf = reinterpret_cast<const uint8_t *>(outDecoded.c_str()); // Reget the memory after erase.
-    flatbuffers::Verifier decodeVerifier(decodeSchemaBuf, outDecoded.size());
-    if (reflection::VerifySizePrefixedSchemaBuffer(decodeVerifier)) {
-        return true;
-    }
-    LOGE("[FBSchema][Is] Base64 decode success but verify fail.");
+
     outDecoded.clear();
     return false;
 }
