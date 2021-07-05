@@ -17,7 +17,7 @@
 
 #include "kvstore_flowctrl_manager.h"
 #include <cinttypes>
-#include <ctime>
+#include <sys/time.h>
 
 namespace OHOS {
 namespace DistributedKv {
