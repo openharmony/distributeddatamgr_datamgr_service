@@ -474,17 +474,6 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
             pipeInfo.pipeId.c_str(), info.msgType, sessionId);
         return Status::CREATE_SESSION_ERROR;
     }
-    SetOpenSessionId(sessionId);
-    int state = WaitSessionOpen();
-    {
-        lock_guard<mutex> lock(notifyFlagMutex_);
-        notifyFlag_ = false;
-    }
-    ZLOGD("Waited for notification, state:%{public}d", state);
-    if (state != SOFTBUS_OK) {
-        ZLOGE("OpenSession callback result error");
-        return Status::CREATE_SESSION_ERROR;
-    }
     ZLOGD("[SendBytes] start,sessionId is %{public}d, size is %{public}d, session type is %{public}d.",
         sessionId, size, attr.dataType);
     int32_t ret = SendBytes(sessionId, (void*)ptr, size);
@@ -509,7 +498,7 @@ bool SoftBusAdapter::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
     }
     SessionAttribute attr;
     attr.dataType = TYPE_BYTES;
-    int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(), peer.deviceId.c_str(),
+    int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(), ToNodeID("", peer.deviceId).c_str(),
         "GROUP_ID", &attr);
     ZLOGI("[IsSameStartedOnPeer] sessionId=%{public}d", sessionId);
     if (sessionId == INVALID_SESSION_ID) {
@@ -612,10 +601,6 @@ int AppDataListenerWrap::OnSessionOpened(int sessionId, int result)
     char mySessionName[SESSION_NAME_SIZE_MAX] = "";
     char peerSessionName[SESSION_NAME_SIZE_MAX] = "";
     char peerDevId[DEVICE_ID_SIZE_MAX] = "";
-
-    if (sessionId == softBusAdapter_->GetOpenSessionId()) {
-        softBusAdapter_->NotifySessionOpen(result);
-    }
     if (result != SOFTBUS_OK) {
         ZLOGW("session %{public}d open failed, result:%{public}d.", sessionId, result);
         return result;
