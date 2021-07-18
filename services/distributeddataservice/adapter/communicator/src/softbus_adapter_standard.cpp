@@ -354,6 +354,7 @@ void SoftBusAdapter::UpdateRelationship(const std::string &networkid, const Devi
 {
     auto uuid = GetUuidByNodeId(networkid);
     auto udid = GetUdidByNodeId(networkid);
+    lock_guard<mutex> lock(networkMutex_);
     switch (type) {
         case DeviceChangeType::DEVICE_OFFLINE: {
             auto size = this->networkId2UuidUdid_.erase(networkid);
@@ -379,6 +380,7 @@ void SoftBusAdapter::UpdateRelationship(const std::string &networkid, const Devi
 
 std::string SoftBusAdapter::ToUUID(const std::string& id) const
 {
+    lock_guard<mutex> lock(networkMutex_);
     auto res = networkId2UuidUdid_.find(id);
     if (res != networkId2UuidUdid_.end()) { // id is networkid
         return std::get<0>(res->second);
@@ -399,16 +401,43 @@ std::string SoftBusAdapter::ToUUID(const std::string& id) const
 
 std::string SoftBusAdapter::ToNodeID(const std::string& id, const std::string &nodeId) const
 {
-    for (auto const &e : networkId2UuidUdid_) {
-        auto tup = e.second;
-        if (nodeId == (std::get<0>(tup))) { // id is uuid
-            return e.first;
-        }
-        if (id == (std::get<1>(tup))) { // id is udid
-            return e.first;
+    {
+        lock_guard<mutex> lock(networkMutex_);
+        for (auto const &e : networkId2UuidUdid_) {
+            auto tup = e.second;
+            if (nodeId == (std::get<0>(tup))) { // id is uuid
+                return e.first;
+            }
+            if (id == (std::get<1>(tup))) { // id is udid
+                return e.first;
+            }
         }
     }
-    return "";
+
+    ZLOGW("get the network id from devices.");
+    std::vector<DeviceInfo> devices;
+    NodeBasicInfo *info = nullptr;
+    int32_t infoNum = 0;
+    std::string networkId;
+    int32_t ret = GetAllNodeDeviceInfo("ohos.distributeddata", &info, &infoNum);
+    if (ret == SOFTBUS_OK) {
+        lock_guard<mutex> lock(networkMutex_);
+        for (int i = 0; i < infoNum; i++) {
+            if (networkId2UuidUdid_.find(info[i].networkId) != networkId2UuidUdid_.end()) {
+                continue;
+            }
+            auto uuid = GetUuidByNodeId(std::string(info[i].networkId));
+            auto udid = GetUdidByNodeId(std::string(info[i].networkId));
+            networkId2UuidUdid_.insert({info[i].networkId, {uuid, udid}});
+            if (uuid == nodeId || udid == nodeId) {
+                networkId = info[i].networkId;
+            }
+        }
+    }
+    if (info != NULL) {
+        FreeNodeInfo(info);
+    }
+    return networkId;
 }
 
 std::string SoftBusAdapter::ToBeAnonymous(const std::string &name)

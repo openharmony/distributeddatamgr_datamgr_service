@@ -123,7 +123,7 @@ public:
 
     void NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
         const PipeInfo &pipeInfo);
-    
+
     int WaitSessionOpen();
 
     void NotifySessionOpen(const int &state);
@@ -132,7 +132,8 @@ public:
 
     void SetOpenSessionId(const int &sessionId);
 private:
-    std::map<std::string, std::tuple<std::string, std::string>> networkId2UuidUdid_ {};
+    mutable std::mutex networkMutex_ {};
+    mutable std::map<std::string, std::tuple<std::string, std::string>> networkId2UuidUdid_ {};
     DeviceInfo localInfo_ {};
     static std::shared_ptr<SoftBusAdapter> instance_;
     std::mutex deviceChangeMutex_;
