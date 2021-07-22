@@ -201,12 +201,18 @@ Status SoftBusAdapter::StopWatchDeviceChange(const AppDeviceStatusChangeListener
 void SoftBusAdapter::NotifyAll(const DeviceInfo &deviceInfo, const DeviceChangeType &type)
 {
     std::thread th = std::thread([this, deviceInfo, type]() {
-        std::lock_guard<std::mutex> lock(deviceChangeMutex_);
+        std::vector<const AppDeviceStatusChangeListener *> listeners;
+        {
+            std::lock_guard<std::mutex> lock(deviceChangeMutex_);
+            for (const auto &listener : listeners_) {
+                listeners.push_back(listener);
+            }
+        }
         ZLOGD("high");
         std::string uuid = GetUuidByNodeId(deviceInfo.deviceId);
         ZLOGD("[Notify] to DB from: %{public}s, type:%{public}d", ToBeAnonymous(uuid).c_str(), type);
         UpdateRelationship(deviceInfo.deviceId, type);
-        for (const auto &device : listeners_) {
+        for (const auto &device : listeners) {
             if (device == nullptr) {
                 continue;
             }
@@ -217,7 +223,7 @@ void SoftBusAdapter::NotifyAll(const DeviceInfo &deviceInfo, const DeviceChangeT
             }
         }
         ZLOGD("low");
-        for (const auto &device : listeners_) {
+        for (const auto &device : listeners) {
             if (device == nullptr) {
                 continue;
             }
@@ -228,7 +234,7 @@ void SoftBusAdapter::NotifyAll(const DeviceInfo &deviceInfo, const DeviceChangeT
             }
         }
         ZLOGD("min");
-        for (const auto &device : listeners_) {
+        for (const auto &device : listeners) {
             if (device == nullptr) {
                 continue;
             }
