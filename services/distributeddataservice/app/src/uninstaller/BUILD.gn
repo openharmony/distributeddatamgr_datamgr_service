@@ -43,11 +43,11 @@ ohos_static_library("distributeddata_uninstaller_static") {
 
     # "ces:libcommonevent",
     "aafwk_standard:want",
+    "ces_standard:cesfwk_innerkits",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_L2:samgr_proxy",
-    "ces_standard:cesfwk_kits",
     "dmsfwk_standard:zuri"
   ]
 }
