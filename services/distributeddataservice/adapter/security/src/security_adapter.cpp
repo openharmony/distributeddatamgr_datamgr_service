@@ -42,8 +42,6 @@ InstallDevsl::InstallDevsl()
 
     auto status = DistributedDB::KvStoreDelegateManager::SetProcessSystemAPIAdapter(security_);
     ZLOGD("set distributed db system api adapter: %d.", static_cast<int>(status));
-
-    security_->InitKvStore();
 }
 
 InstallDevsl::~InstallDevsl()
@@ -53,12 +51,7 @@ InstallDevsl::~InstallDevsl()
 
 void InstallDevsl::Initialize()
 {
-    if (security_ == nullptr) {
-        ZLOGD("Security is nullptr.");
-        return;
-    }
-
-    security_->InitLocalCertData();
+    return;
 }
 __attribute__((used)) InstallDevsl g_installDevsl;
 }

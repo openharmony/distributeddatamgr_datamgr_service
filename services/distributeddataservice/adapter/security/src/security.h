@@ -34,8 +34,6 @@ public:
     using SecurityOption = DistributedDB::SecurityOption;
     Security(const std::string &appId, const std::string &userId, const std::string &dir);
     ~Security() override;
-    void InitLocalCertData() const;
-    void InitKvStore();
 
     static bool IsFirstInit();
     static bool IsSupportSecurity();
@@ -66,7 +64,6 @@ private:
     };
 
     // the key is security_chain/{deviceId}
-    static constexpr const char *SECURITY_LABEL = "SecurityLabel";
     static const char * const LABEL_VALUES[DistributedDB::S4 + 1];
     static const char * const DATA_DE[]; // = "/data/misc_de/", "/data/user_de/";
     static const char * const DATA_CE[];
@@ -75,11 +72,8 @@ private:
     int32_t GetCurrentUserId() const;
     int32_t GetCurrentUserStatus() const;
     bool SubscribeUserStatus(std::function<int32_t(int32_t, int32_t)> &observer) const;
-    static DistributedDB::KvStoreNbDelegate *GetMetaKvStore(DistributedDB::KvStoreDelegateManager &delegateMgr);
     bool IsExits(const std::string &file) const;
     bool InPathsBox(const std::string &file, const char * const pathsBox[]) const;
-    std::vector<uint8_t> GenerateSecurityKey(const std::string &deviceId) const;
-    void SyncMeta() const;
     static Sensitive GetDeviceNodeByUuid(const std::string &uuid,
                                          const std::function<std::vector<uint8_t>(void)> &getValue);
     DBStatus GetDirSecurityOption(const std::string &filePath, SecurityOption &option) const;
@@ -88,8 +82,6 @@ private:
     DBStatus SetFileSecurityOption(const std::string &filePath, const SecurityOption &option);
 
     std::map<int32_t, OnAccessControlledEvent> observers_ { };
-    DistributedDB::KvStoreDelegateManager delegateMgr_;
-    DistributedDB::KvStoreNbDelegate *kvStore_ = nullptr;
     static std::atomic_bool isInitialized_;
 };
 }

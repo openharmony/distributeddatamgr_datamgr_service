@@ -48,60 +48,13 @@ const char * const Security::DATA_CE[] = {
 };
 
 Security::Security(const std::string &appId, const std::string &userId, const std::string &dir)
-    : delegateMgr_(appId, userId)
 {
-    delegateMgr_.SetKvStoreConfig({dir});
     ZLOGD("constructor kvStore_ is %s", dir.c_str());
 }
 
 Security::~Security()
 {
-    ZLOGD("destructor kvStore_ is null.%d", kvStore_ == nullptr);
-    delegateMgr_.CloseKvStore(kvStore_);
-    kvStore_ = nullptr;
-}
-
-void Security::InitLocalCertData() const
-{
-    std::thread th = std::thread([keep = shared_from_this()] {
-        ZLOGI("Save sensitive to meta db");
-        DBStatus status = DB_ERROR;
-        // retry after 10 second, 10 * 1000 * 1000 mains 1 second
-        BlockInteger retry(10 * 1000 * 1000);
-        auto &network = AppDistributedKv::CommunicationProvider::GetInstance();
-        for (; retry < RETRY_MAX_TIMES; ++retry) {
-            auto info = network.GetLocalBasicInfo();
-
-            Sensitive sensitive(network.GetUdidByNodeId(info.deviceId), 0);
-            if (!sensitive.LoadData()) {
-                continue;
-            }
-
-            if (keep->kvStore_ == nullptr) {
-                ZLOGE("The kvStore_ is null");
-                break;
-            }
-
-            std::string uuid = network.GetUuidByNodeId(info.deviceId);
-            status = keep->kvStore_->Put(keep->GenerateSecurityKey(uuid), sensitive.Marshal());
-            if (status != OK) {
-                continue;
-            }
-
-            keep->SyncMeta();
-            break;
-        }
-        ZLOGI("Save sensitive finished! retry:%d, status: %d", static_cast<int>(retry), status);
-        // sleep 1 second to avoid
-        ++retry;
-    });
-    th.detach();
-}
-
-void Security::InitKvStore()
-{
-    kvStore_ = GetMetaKvStore(delegateMgr_);
-    ZLOGD("Init KvStore ,kvStore_ is null.%d", kvStore_ == nullptr);
+    ZLOGD("destructor kvStore_");
 }
 
 DBStatus Security::RegOnAccessControlledEvent(const OnAccessControlledEvent &callback)
@@ -293,24 +246,8 @@ DBStatus Security::SetFileSecurityOption(const std::string &filePath, const Secu
 
 bool Security::CheckDeviceSecurityAbility(const std::string &devId, const SecurityOption &option) const
 {
-    if (kvStore_ == nullptr) {
-        ZLOGD("The kv store is null, label:%d", option.securityLabel);
-        return GetDeviceNodeByUuid(devId, nullptr) >= option;
-    }
-
-    auto getValue = [this, &devId, &option]() -> std::vector<uint8_t> {
-        Value value;
-        DBStatus status = kvStore_->Get(GenerateSecurityKey(devId), value);
-        if (status != OK) {
-            ZLOGE("Can't get the peer(%.10s)'s cert key! label:%d", devId.c_str(), option.securityLabel);
-            return {};
-        }
-        return value;
-    };
-    Sensitive sensitive = GetDeviceNodeByUuid(devId, getValue);
-
-    ZLOGD("Got the chain deviceId:%.10s, label:%d", devId.c_str(), option.securityLabel);
-    return sensitive >= option;
+    ZLOGD("The kv store is null, label:%d", option.securityLabel);
+    return GetDeviceNodeByUuid(devId, nullptr) >= option;
 }
 
 int32_t Security::GetCurrentUserId() const
@@ -362,54 +299,6 @@ int Security::Convert2Security(const std::string &name)
         }
     }
     return NOT_SET;
-}
-
-KvStoreNbDelegate *Security::GetMetaKvStore(KvStoreDelegateManager &delegateMgr)
-{
-    KvStoreNbDelegate::Option option;
-    option.createIfNecessary = true;
-    option.isMemoryDb = false;
-    option.createDirByStoreIdOnly = true;
-    option.isEncryptedDb = false;
-    KvStoreNbDelegate *delegate = nullptr;
-    delegateMgr.GetKvStore(
-        Constant::SERVICE_META_DB_NAME, option,
-        [&delegate](DBStatus status, KvStoreNbDelegate *kvStore) {
-            if (kvStore != nullptr) {
-                delegate = kvStore;
-            }
-            (void)status;
-        });
-    return delegate;
-}
-
-std::vector<uint8_t> Security::GenerateSecurityKey(const std::string &deviceId) const
-{
-    std::string key = SECURITY_LABEL + Constant::KEY_SEPARATOR + deviceId + Constant::KEY_SEPARATOR + "default";
-    return std::vector<uint8_t>(key.begin(), key.end());
-}
-
-void Security::SyncMeta() const
-{
-    auto &network = AppDistributedKv::CommunicationProvider::GetInstance();
-    auto nodeInfos = network.GetRemoteNodesBasicInfo();
-    std::vector<std::string> devices;
-    for (auto &node : nodeInfos) {
-        devices.push_back(network.GetUuidByNodeId(node.deviceId));
-    }
-
-    kvStore_->Sync(devices, SYNC_MODE_PUSH_ONLY,
-        [](const std::map<std::string, DBStatus> &result) {
-            int count = 0;
-            for (const auto &[deviceId, status] : result) {
-                if (status != OK) {
-                    count++;
-                }
-            }
-            if (count > 0) {
-                ZLOGE("Sync failed(%d), total(%d)!", count, int32_t(result.size()));
-            }
-        });
 }
 
 bool Security::IsSupportSecurity()
