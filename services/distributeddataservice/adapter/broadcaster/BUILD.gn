@@ -33,9 +33,9 @@ ohos_static_library("distributeddata_broadcaster_static") {
   external_deps = [
     # "ces:libcommonevent",
     "aafwk_standard:want",
+    "ces_standard:cesfwk_innerkits",
     "appexecfwk_standard:appexecfwk_base",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
-    "ces_standard:cesfwk_kits",
   ]
 }

@@ -40,9 +40,9 @@ ohos_static_library("distributeddata_account_static") {
 
     # "ces:libcommonevent",
     "aafwk_standard:want",
+    "ces_standard:cesfwk_innerkits",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "os_account_standard:libaccountkits",
-    "ces_standard:cesfwk_kits",
   ]
 }
