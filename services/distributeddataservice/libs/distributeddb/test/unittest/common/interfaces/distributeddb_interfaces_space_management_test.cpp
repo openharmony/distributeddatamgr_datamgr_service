@@ -380,7 +380,7 @@ HWTEST_F(DistributedDBInterfacesSpaceManagementTest, GetKvStoreDiskSize003, Test
   * @tc.require: AR000CQDTD
   * @tc.author: sunpeng
   */
-HWTEST_F(DistributedDBInterfacesSpaceManagementTest, GetKvStoreDiskSize004, TestSize.Level0)
+HWTEST_F(DistributedDBInterfacesSpaceManagementTest, GetKvStoreDiskSize004, TestSize.Level1)
 {
     g_storeId = "distributed_GetKvStoreDiskSize_004";
     GetRealFileUrl();
@@ -508,7 +508,7 @@ HWTEST_F(DistributedDBInterfacesSpaceManagementTest, DeleteDbByStoreId001, TestS
   * @tc.require: AR000CQDTD
   * @tc.author: sunpeng
   */
-HWTEST_F(DistributedDBInterfacesSpaceManagementTest, DeleteDbByStoreId002, TestSize.Level0)
+HWTEST_F(DistributedDBInterfacesSpaceManagementTest, DeleteDbByStoreId002, TestSize.Level1)
 {
     std::string storeId1 = "distributed_DeleteDbByStoreId001";
 
