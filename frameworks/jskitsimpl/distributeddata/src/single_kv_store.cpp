@@ -173,7 +173,7 @@ napi_value SingleKVStore::Sync(napi_env env, napi_callback_info info)
     if (argc >= 3) {
         napi_get_value_uint32(env, argv[2], &delay);
     }
-    ZLOGD("sync data %{public}d, mode:%{public}d, devices:%{public}d", argc, mode, devices.size());
+    ZLOGD("sync data %{public}zu, mode:%{public}d, devices:%{public}zu", argc, mode, devices.size());
 
     Status status = proxy->kvStore_->Sync(devices, static_cast<SyncMode>(mode), delay);
     NAPI_ASSERT_BASE(env, status == Status::SUCCESS, "call sync failed", nullptr);
@@ -279,14 +279,14 @@ DataObserver::~DataObserver()
 
 void DataObserver::OnChange(const ChangeNotification &notification, std::unique_ptr<KvStoreSnapshot> snapshot)
 {
-    ZLOGD("data change insert:%{public}d, update:%{public}d, delete:%{public}d",
+    ZLOGD("data change insert:%{public}zu, update:%{public}zu, delete:%{public}zu",
           notification.GetInsertEntries().size(), notification.GetUpdateEntries().size(),
           notification.GetDeleteEntries().size());
 }
 
 void DataObserver::OnChange(const ChangeNotification &notification)
 {
-    ZLOGD("data change insert:%{public}d, update:%{public}d, delete:%{public}d",
+    ZLOGD("data change insert:%{public}zu, update:%{public}zu, delete:%{public}zu",
           notification.GetInsertEntries().size(), notification.GetUpdateEntries().size(),
           notification.GetDeleteEntries().size());
     KvStoreObserver::OnChange(notification);

@@ -42,7 +42,7 @@ napi_value KVManager::CreateKVManager(napi_env env, napi_callback_info info)
     };
     auto ctxInfo = std::make_shared<ContextInfo>();
     auto input = [ctxInfo](napi_env env, size_t argc, napi_value *argv, napi_value self) -> napi_status {
-        ZLOGD("CreateKVManager parser to native params %{public}d!", argc);
+        ZLOGD("CreateKVManager parser to native params %{public}zu!", argc);
         NAPI_ASSERT_BASE(env, 0 < argc && argc <= 2, " should 1 or 2 parameters!", napi_invalid_arg);
         napi_value kvManger = nullptr;
         napi_status status = napi_new_instance(env, GetCtor(env), argc, argv, &kvManger);
@@ -78,7 +78,7 @@ napi_value KVManager::GetKVStore(napi_env env, napi_callback_info info)
     };
     auto ctxInfo = std::make_shared<ContextInfo>();
     auto input = [ctxInfo](napi_env env, size_t argc, napi_value *argv, napi_value self) -> napi_status {
-        ZLOGD("GetKVStore parser to native params %{public}d!", argc);
+        ZLOGD("GetKVStore parser to native params %{public}zu!", argc);
         NAPI_ASSERT_BASE(env, self != nullptr, "self is nullptr", napi_invalid_arg);
         NAPI_CALL_BASE(env, napi_unwrap(env, self, reinterpret_cast<void **>(&ctxInfo->proxy)), napi_invalid_arg);
         NAPI_ASSERT_BASE(env, ctxInfo->proxy != nullptr, "there is no native kv store", napi_invalid_arg);
