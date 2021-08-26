@@ -25,11 +25,11 @@ AsyncCall::AsyncCall(napi_env env, napi_callback_info info, std::shared_ptr<Cont
     context_ = new AsyncContext();
     size_t argc = JSUtil::MAX_ARGC;
     napi_value self = nullptr;
-    napi_value argv[JSUtil::MAX_ARGC];
+    napi_value argv[JSUtil::MAX_ARGC] = {nullptr};
     NAPI_CALL_RETURN_VOID(env, napi_get_cb_info(env, info, &argc, argv, &self, nullptr));
     NAPI_ASSERT_BASE(env, pos <= argc, " Invalid Args!", NAPI_RETVAL_NOTHING);
-    pos = (pos == ASYNC_DEFAULT_POS) ? argc - 1 : pos;
-    if (0 <= pos && pos < argc) {
+    pos = ((pos == ASYNC_DEFAULT_POS) ? (argc - 1) : pos);
+    if (pos >= 0 && pos < argc) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[pos], &valueType);
         if (valueType == napi_function) {
@@ -37,8 +37,8 @@ AsyncCall::AsyncCall(napi_env env, napi_callback_info info, std::shared_ptr<Cont
             argc = pos;
         }
     }
+    NAPI_CALL_RETURN_VOID(env, (*context)(env, argc, argv, self));
     context_->ctx = std::move(context);
-    NAPI_CALL_RETURN_VOID(env, (*context_->ctx)(env, argc, argv, self));
     napi_create_reference(env, self, 1, &context_->self);
 }
 
@@ -53,11 +53,8 @@ AsyncCall::~AsyncCall()
 
 napi_value AsyncCall::Call(napi_env env, Context::ExecAction exec)
 {
-    if (context_ == nullptr) {
-        return nullptr;
-    }
-    if (context_->ctx == nullptr) {
-        ZLOGD("context_ ctx is null");
+    if ((context_ == nullptr) || (context_->ctx == nullptr)) {
+        ZLOGD("context_ or context_->ctx is null");
         return nullptr;
     }
     ZLOGD("async call exec");
@@ -81,10 +78,10 @@ napi_value AsyncCall::Call(napi_env env, Context::ExecAction exec)
 
 napi_value AsyncCall::SyncCall(napi_env env, AsyncCall::Context::ExecAction exec)
 {
-    if (context_ == nullptr) {
+    if ((context_ == nullptr) || (context_->ctx == nullptr)) {
+        ZLOGD("context_ or context_->ctx is null");
         return nullptr;
     }
-
     context_->ctx->exec_ = std::move(exec);
     napi_value promise = nullptr;
     if (context_->callback == nullptr) {

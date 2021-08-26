@@ -138,7 +138,7 @@ napi_value SingleKVStore::OnEvent(napi_env env, napi_callback_info info)
 {
     napi_value self = nullptr;
     size_t argc = JSUtil::MAX_ARGC;
-    napi_value argv[JSUtil::MAX_ARGC] = {0};
+    napi_value argv[JSUtil::MAX_ARGC] = {nullptr};
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, &self, nullptr));
     NAPI_ASSERT(env, argc > 0, "there is no args");
     napi_valuetype type;
@@ -158,7 +158,7 @@ napi_value SingleKVStore::Sync(napi_env env, napi_callback_info info)
 {
     napi_value self = nullptr;
     size_t argc = JSUtil::MAX_ARGC;
-    napi_value argv[JSUtil::MAX_ARGC];
+    napi_value argv[JSUtil::MAX_ARGC] = {nullptr};
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, &self, nullptr));
     NAPI_ASSERT_BASE(env, argc >= 2, "args is out of range", nullptr);
     NAPI_ASSERT_BASE(env, self != nullptr, "self is nullptr", nullptr);
@@ -173,7 +173,7 @@ napi_value SingleKVStore::Sync(napi_env env, napi_callback_info info)
     if (argc >= 3) {
         napi_get_value_uint32(env, argv[2], &delay);
     }
-    ZLOGD("sync data %{public}zu, mode:%{public}d, devices:%{public}zu", argc, mode, devices.size());
+    ZLOGD("sync data %{public}d, mode:%{public}d, devices:%{public}zu", static_cast<int>(argc), mode, devices.size());
 
     Status status = proxy->kvStore_->Sync(devices, static_cast<SyncMode>(mode), delay);
     NAPI_ASSERT_BASE(env, status == Status::SUCCESS, "call sync failed", nullptr);

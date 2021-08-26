@@ -61,9 +61,21 @@ DistributedKv::Options JSUtil::Convert2Options(napi_env env, napi_value jsOption
 
 std::string JSUtil::Convert2String(napi_env env, napi_value jsString)
 {
-    char *buf = new char[JSUtil::MAX_LEN + 1];
+    size_t maxLen = JSUtil::MAX_LEN;
+    napi_status status = napi_get_value_string_utf8(env, jsString, NULL, 0, &maxLen);
+    if (status != napi_ok) {
+        GET_AND_THROW_LAST_ERROR((env));
+        maxLen = JSUtil::MAX_LEN;
+    }
+    if (maxLen <= 0) {
+        return std::string();
+    }
+    char *buf = new char[maxLen + 1];
+    if (buf == nullptr) {
+        return std::string();
+    }
     size_t len = 0;
-    auto status = napi_get_value_string_utf8(env, jsString, buf, JSUtil::MAX_LEN, &len);
+    status = napi_get_value_string_utf8(env, jsString, buf, maxLen, &len);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
     }
@@ -191,20 +203,18 @@ std::vector<uint8_t> JSUtil::ConvertUint8Array2Vector(napi_env env, napi_value j
     }
 
     napi_typedarray_type type;
-    size_t length;
-    napi_value buffer;
-    size_t offset;
-    NAPI_CALL_BASE(env, napi_get_typedarray_info(env, jsValue, &type, &length, nullptr, &buffer, &offset), { INVALID });
-    if (type != napi_uint8_array) {
+    size_t length = 0;
+    napi_value buffer = nullptr;
+    size_t offset = 0;
+    uint8_t *data = nullptr;
+    NAPI_CALL_BASE(env, napi_get_typedarray_info(env, jsValue, &type,
+        &length, reinterpret_cast<void **>(&data), &buffer, &offset), { INVALID });
+    if (type != napi_uint8_array || length == 0 || data == nullptr) {
         return {INVALID};
     }
-    uint8_t *data;
-    size_t total;
-    NAPI_CALL_BASE(env, napi_get_arraybuffer_info(env, buffer, reinterpret_cast<void **>(&data), &total), { INVALID });
-    length = std::min<size_t>(length, total - offset);
     std::vector<uint8_t> result(sizeof(uint8_t) + length);
     result[TYPE_POS] = BYTE_ARRAY;
-    memcpy_s(result.data() + DATA_POS, result.size() - DATA_POS, &data[offset], length);
+    memcpy_s(result.data() + DATA_POS, result.size() - DATA_POS, data, length);
     return result;
 }
 
@@ -228,8 +238,14 @@ std::vector<uint8_t> JSUtil::ConvertNumber2Vector(napi_env env, napi_value jsVal
         std::vector<uint8_t> result(sizeof(uint8_t) + sizeof(double));
         result[TYPE_POS] = DOUBLE;
         uint8_t byteValue[MAX_NUMBER_BYTES];
-        memcpy_s(byteValue, MAX_NUMBER_BYTES, &value, sizeof(double));
-        memcpy_s(result.data() + DATA_POS, sizeof(double), byteValue, sizeof(byteValue));
+        errno_t err = memcpy_s(byteValue, MAX_NUMBER_BYTES, &value, sizeof(double));
+        if (err != EOK) {
+            return {INVALID};
+        }
+        err = memcpy_s(result.data() + DATA_POS, sizeof(double), byteValue, sizeof(byteValue));
+        if (err != EOK) {
+            return {INVALID};
+        }
         return result;
     }
 
