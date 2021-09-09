@@ -88,8 +88,17 @@ public:
                   std::unique_ptr<DistributedKv::KvStoreSnapshot> snapshot) override;
     void OnChange(const DistributedKv::ChangeNotification &notification) override;
 private:
+    struct EventDataWorker {
+        const DataObserver *observer = nullptr;
+        const DistributedKv::ChangeNotification data;
+        EventDataWorker(const DataObserver * const & observerIn, const DistributedKv::ChangeNotification &dataIn)
+            : observer(observerIn),
+              data(dataIn.GetInsertEntries(), dataIn.GetUpdateEntries(),
+                   dataIn.GetDeleteEntries(), dataIn.GetDeviceId(), false) {}
+    };
     napi_ref callback_ = nullptr;
     napi_env env_;
+    uv_loop_s *loop_ = nullptr;
 };
 
 class SyncObserver : public DistributedKv::KvStoreSyncCallback {
@@ -98,8 +107,13 @@ public:
     virtual ~SyncObserver();
     void SyncCompleted(const std::map<std::string, DistributedKv::Status> &results) override;
 private:
+    struct EventDataWorker {
+        const SyncObserver *observer = nullptr;
+        std::map<std::string, DistributedKv::Status> data;
+    };
     napi_ref callback_ = nullptr;
     napi_env env_;
+    uv_loop_s *loop_ = nullptr;
 };
 }
 #endif // OHOS_SINGLE_KV_STORE_H

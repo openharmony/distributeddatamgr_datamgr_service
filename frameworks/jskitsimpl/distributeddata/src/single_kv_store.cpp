@@ -15,10 +15,13 @@
 #define LOG_TAG "SingleKVStore"
 
 #include "single_kv_store.h"
-#include "js_util.h"
-#include "single_kvstore.h"
+
+#include <uv.h>
+
 #include "async_call.h"
+#include "js_util.h"
 #include "log_print.h"
+#include "single_kvstore.h"
 
 using namespace OHOS::DistributedKv;
 namespace OHOS::DistributedData {
@@ -72,6 +75,7 @@ napi_value SingleKVStore::Put(napi_env env, napi_callback_info info)
 {
     auto context = std::make_shared<ContextInfo>();
     auto input = [context](napi_env env, size_t argc, napi_value *argv, napi_value self) -> napi_status {
+        // 2 is the max number of parameters
         NAPI_ASSERT_BASE(env, argc >= 2, " should 2 or more parameters!", napi_invalid_arg);
         context->key = JSUtil::Convert2String(env, argv[0]);
         context->value = JSUtil::Convert2Vector(env, argv[1]);
@@ -84,6 +88,7 @@ napi_value SingleKVStore::Put(napi_env env, napi_callback_info info)
         context->status = (status != Status::SUCCESS) ? napi_generic_failure : napi_ok;
     };
     context->SetAction(std::move(input));
+    // 2 is the callback position
     AsyncCall asyncCall(env, info, std::dynamic_pointer_cast<AsyncCall::Context>(context), 2);
     return asyncCall.Call(env, exec);
 }
@@ -160,6 +165,7 @@ napi_value SingleKVStore::Sync(napi_env env, napi_callback_info info)
     size_t argc = JSUtil::MAX_ARGC;
     napi_value argv[JSUtil::MAX_ARGC] = {nullptr};
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, &self, nullptr));
+    // the number of parameters is greater than 2 is error
     NAPI_ASSERT_BASE(env, argc >= 2, "args is out of range", nullptr);
     NAPI_ASSERT_BASE(env, self != nullptr, "self is nullptr", nullptr);
     SingleKVStore *proxy = nullptr;
@@ -170,8 +176,9 @@ napi_value SingleKVStore::Sync(napi_env env, napi_callback_info info)
     int32_t mode = int32_t(SyncMode::PUSH_PULL);
     napi_get_value_int32(env, argv[1], &mode);
     uint32_t delay = 0;
+    // 3 is the max number of parameters
     if (argc >= 3) {
-        napi_get_value_uint32(env, argv[2], &delay);
+        napi_get_value_uint32(env, argv[2], &delay); // argv[2] is the third parameter
     }
     ZLOGD("sync data %{public}d, mode:%{public}d, devices:%{public}zu", static_cast<int>(argc), mode, devices.size());
 
@@ -270,6 +277,7 @@ DataObserver::DataObserver(napi_env env, napi_value callback)
     : env_(env)
 {
     napi_create_reference(env, callback, 1, &callback_);
+    napi_get_uv_event_loop(env, &loop_);
 }
 
 DataObserver::~DataObserver()
@@ -290,23 +298,38 @@ void DataObserver::OnChange(const ChangeNotification &notification)
           notification.GetInsertEntries().size(), notification.GetUpdateEntries().size(),
           notification.GetDeleteEntries().size());
     KvStoreObserver::OnChange(notification);
-    napi_value jsNotification = JSUtil::Convert2JSNotification(env_, notification);
-    napi_value callback = nullptr;
-    napi_value args[1] = {jsNotification};
-    napi_get_reference_value(env_, callback_, &callback);
-    napi_value global = nullptr;
-    napi_get_global(env_, &global);
-    napi_value result;
-    napi_status status = napi_call_function(env_, global, callback, 1, args, &result);
-    if (status != napi_ok) {
-        ZLOGE("notify data change failed status:%{public}d callback:%{public}p", status, callback);
-    }
+    EventDataWorker *eventDataWorker = new EventDataWorker(this, notification);
+    uv_work_t *work = new uv_work_t;
+    work->data = eventDataWorker;
+    uv_queue_work(loop_, work,
+        [](uv_work_t *work) {},
+        [](uv_work_t *work, int status) {
+            EventDataWorker *eventDataInner = reinterpret_cast<EventDataWorker *>(work->data);
+            napi_value jsNotification = JSUtil::Convert2JSNotification(eventDataInner->observer->env_,
+                eventDataInner->data);
+            napi_value callback = nullptr;
+            napi_value args[1] = {jsNotification};
+            napi_get_reference_value(eventDataInner->observer->env_, eventDataInner->observer->callback_, &callback);
+            napi_value global = nullptr;
+            napi_get_global(eventDataInner->observer->env_, &global);
+            napi_value result;
+            napi_status callStatus = napi_call_function(eventDataInner->observer->env_, global, callback,
+                1, args, &result);
+            if (callStatus != napi_ok) {
+                ZLOGE("notify data change failed callStatus:%{public}d callback:%{public}p", callStatus, callback);
+            }
+            delete eventDataInner;
+            eventDataInner = nullptr;
+            delete work;
+            work = nullptr;
+        });
 }
 
 SyncObserver::SyncObserver(napi_env env, napi_value callback)
     : env_(env)
 {
     napi_create_reference(env, callback, 1, &callback_);
+    napi_get_uv_event_loop(env, &loop_);
 }
 
 SyncObserver::~SyncObserver()
@@ -316,17 +339,31 @@ SyncObserver::~SyncObserver()
 
 void SyncObserver::SyncCompleted(const std::map<std::string, DistributedKv::Status> &results)
 {
-    std::map<std::string, int32_t> dataMap;
-    for (const auto &[key, value] : results) {
-        dataMap.emplace(key, int32_t(value));
-    }
-    napi_value notification = JSUtil::Convert2JSTupleArray(env_, dataMap);
-    napi_value callback = nullptr;
-    napi_value args[1] = {notification};
-    napi_get_reference_value(env_, callback_, &callback);
-    napi_value global = nullptr;
-    napi_value result = nullptr;
-    napi_get_global(env_, &global);
-    napi_call_function(env_, global, callback, 1, args, &result);
+    EventDataWorker *eventDataWorker = new EventDataWorker();
+    eventDataWorker->observer = this;
+    eventDataWorker->data = results;
+    uv_work_t *work = new uv_work_t;
+    work->data = eventDataWorker;
+    uv_queue_work(loop_, work,
+        [](uv_work_t *work) {},
+        [](uv_work_t *work, int status) {
+            EventDataWorker *eventDataInner = reinterpret_cast<EventDataWorker *>(work->data);
+            std::map<std::string, int32_t> dataMap;
+            for (const auto &[key, value] : eventDataInner->data) {
+                dataMap.emplace(key, int32_t(value));
+            }
+            napi_value notification = JSUtil::Convert2JSTupleArray(eventDataInner->observer->env_, dataMap);
+            napi_value callback = nullptr;
+            napi_value args[1] = {notification};
+            napi_get_reference_value(eventDataInner->observer->env_, eventDataInner->observer->callback_, &callback);
+            napi_value global = nullptr;
+            napi_value result = nullptr;
+            napi_get_global(eventDataInner->observer->env_, &global);
+            napi_call_function(eventDataInner->observer->env_, global, callback, 1, args, &result);
+            delete eventDataInner;
+            eventDataInner = nullptr;
+            delete work;
+            work = nullptr;
+        });
 }
 }

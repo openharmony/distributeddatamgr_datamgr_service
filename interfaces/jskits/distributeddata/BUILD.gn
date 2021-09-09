@@ -21,8 +21,8 @@ group("build_module") {
 js_declaration("distributeddatamgr_js") {
   part_name = "distributeddatamgr"
   sources = [
-    "./api/@ohos.data.distributeddata.d.ts",
     "./api/@ohos.data",
+    "./api/@ohos.data.distributeddata.d.ts",
     "./api/data/distributeddata/kvmanager_config.d.ts",
     "./api/data/distributeddata/kvstore.d.ts",
     "./api/data/distributeddata/plain_ordinary_js_objects.d.ts",
@@ -31,9 +31,7 @@ js_declaration("distributeddatamgr_js") {
 }
 
 ohos_copy("distributeddatamgr_declaration") {
-  sources = [
-    "./api"
-  ]
+  sources = [ "./api" ]
   outputs = [ target_out_dir + "/$target_name/" ]
   module_source_dir = target_out_dir + "/$target_name"
   module_install_name = ""
@@ -42,6 +40,7 @@ ohos_copy("distributeddatamgr_declaration") {
 ohos_shared_library("distributeddata") {
   include_dirs = [
     "//third_party/node/src",
+    "//third_party/libuv/include",
     "//utils/native/base/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/jskitsimpl/distributeddata/include",
@@ -60,12 +59,11 @@ ohos_shared_library("distributeddata") {
   deps = [
     "//foundation/ace/napi:ace_napi",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//utils/native/base:utils"
+    "//third_party/libuv:uv_static",
+    "//utils/native/base:utils",
   ]
 
-  external_deps = [
-    "hiviewdfx_hilog_native:libhilog"
-  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   subsystem_name = "distributeddatamgr"
   relative_install_dir = "module/data"
