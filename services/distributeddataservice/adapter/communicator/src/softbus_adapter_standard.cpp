@@ -500,7 +500,6 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
 {
     SessionAttribute attr;
     attr.dataType = TYPE_BYTES;
-    attr.unique = true;
     ZLOGD("[SendData] to %{public}s ,session:%{public}s, size:%{public}d", ToBeAnonymous(deviceId.deviceId).c_str(),
         pipeInfo.pipeId.c_str(), size);
     int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(),
@@ -545,7 +544,6 @@ bool SoftBusAdapter::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
     }
     SessionAttribute attr;
     attr.dataType = TYPE_BYTES;
-    attr.unique = true;
     int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(), ToNodeID("", peer.deviceId).c_str(),
         "GROUP_ID", &attr);
     ZLOGI("[IsSameStartedOnPeer] sessionId=%{public}d", sessionId);
@@ -765,7 +763,7 @@ void AppDataListenerWrap::OnBytesReceived(int sessionId, const void *data, unsig
     NotifyDataListeners(reinterpret_cast<const uint8_t *>(data), dataLen, peerUuid, {std::string(peerSessionName), ""});
 }
 
-void AppDataListenerWrap::NotifyDataListeners(const uint8_t *ptr, const int size, const string &deviceId,
+void AppDataListenerWrap::NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
     const PipeInfo &pipeInfo)
 {
     return softBusAdapter_->NotifyDataListeners(ptr, size, deviceId, pipeInfo);
