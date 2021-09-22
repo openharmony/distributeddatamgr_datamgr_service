@@ -18,18 +18,6 @@ group("build_module") {
   deps = [ ":distributeddata" ]
 }
 
-js_declaration("distributeddatamgr_js") {
-  part_name = "distributeddatamgr"
-  sources = [
-    "./api/@ohos.data",
-    "./api/@ohos.data.distributeddata.d.ts",
-    "./api/data/distributeddata/kvmanager_config.d.ts",
-    "./api/data/distributeddata/kvstore.d.ts",
-    "./api/data/distributeddata/plain_ordinary_js_objects.d.ts",
-    "./api/data/distributeddata/single_kvstore.d.ts",
-  ]
-}
-
 ohos_copy("distributeddatamgr_declaration") {
   sources = [ "./api" ]
   outputs = [ target_out_dir + "/$target_name/" ]
