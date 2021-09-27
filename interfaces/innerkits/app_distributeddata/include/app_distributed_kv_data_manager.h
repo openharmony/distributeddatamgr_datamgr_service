@@ -33,7 +33,7 @@ public:
     //     bundleName: bundleName of your app
     //     dataDir: the directory to save your db file. Please choose a directory you can visit before phone unlock.
     //              this parameter will not be checked or used after first successful call.
-    //     userId: name of your user. this stands for multiuser, not for huawei account or linux user.
+    //     userId: name of your user. this stands for multiuser, not for account or linux user.
     // Return:
     //     singleton of AppDistributedKvDataManager, or nullptr on error.
     KVSTORE_API static std::shared_ptr<AppDistributedKvDataManager> GetInstance(const std::string &bundleName,
