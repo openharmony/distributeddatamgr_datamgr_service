@@ -25,7 +25,7 @@
 
 namespace DistributedDB {
 namespace {
-    const int STR_TO_LL_BY_DEX = 10;
+    const int STR_TO_LL_BY_DEC = 10;
     // store local timeoffset;this is a special key;
     const std::string LOCALTIMEOFFSET_KEY = "localTimeOffset";
     const std::string DEVICEID_PREFIX_KEY = "deviceId";
@@ -240,7 +240,7 @@ void Metadata::GetMetadataFromMap(const DeviceID &deviceId, MetaDataValue &outVa
 int64_t Metadata::StringToLong(const std::vector<uint8_t> &value)
 {
     std::string valueString(value.begin(), value.end());
-    int64_t longData = std::strtoll(valueString.c_str(), nullptr, STR_TO_LL_BY_DEX);
+    int64_t longData = std::strtoll(valueString.c_str(), nullptr, STR_TO_LL_BY_DEC);
     LOGD("Metadata::StringToLong longData = %lld\n", longData);
     return longData;
 }
