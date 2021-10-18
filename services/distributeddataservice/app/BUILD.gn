@@ -16,17 +16,11 @@ import("//build/ohos_var.gni")
 group("build_module") {
   deps = [ ":distributeddataservice" ]
   if (build_public_version) {
-    deps += [
-      ":distributeddata_profile",
-    ]
-        if (use_musl) {
-        deps += [
-          ":distributed_data.cfg",
-        ]
+    deps += [ ":distributeddata_profile" ]
+    if (use_musl) {
+      deps += [ ":distributed_data.cfg" ]
     } else {
-        deps += [
-          ":distributed_data.rc",
-        ]
+      deps += [ ":distributed_data.rc" ]
     }
   }
 }
@@ -103,32 +97,31 @@ ohos_shared_library("distributeddataservice") {
   ldflags = [ "-Wl,--exclude-libs,libcrypto_static.a" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/account:distributeddata_account_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//utils/native/base:utils",
   ]
 
   external_deps = [
-    "appexecfwk_standard:appexecfwk_base",
-    "appexecfwk_standard:appexecfwk_core",
-
-    "battery_manager_native:batterysrv_client",
     "aafwk_standard:base",
     "aafwk_standard:intent",
+    "appexecfwk_standard:appexecfwk_base",
+    "appexecfwk_standard:appexecfwk_core",
+    "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
+    "huks_standard:libhukssdk",
     "ipc:ipc_core",
+    "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
     "safwk:system_ability_fwk",
-    "samgr_L2:samgr_proxy",
+    "samgr_standard:samgr_proxy",
     "startup_l2:syspara",
-    "permission_standard:libpermissionsdk_standard",
-    "huks_standard:libhukssdk",
   ]
 
   subsystem_name = "distributeddatamgr"

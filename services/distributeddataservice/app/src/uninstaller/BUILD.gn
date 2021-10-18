@@ -36,7 +36,7 @@ ohos_static_library("distributeddata_uninstaller_static") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//utils/native/base:utils",
- ]
+  ]
 
   external_deps = [
     "appexecfwk_standard:appexecfwk_base",
@@ -44,10 +44,10 @@ ohos_static_library("distributeddata_uninstaller_static") {
     # "ces:libcommonevent",
     "aafwk_standard:want",
     "ces_standard:cesfwk_innerkits",
+    "dmsfwk_standard:zuri",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_L2:samgr_proxy",
-    "dmsfwk_standard:zuri"
+    "samgr_standard:samgr_proxy",
   ]
 }
