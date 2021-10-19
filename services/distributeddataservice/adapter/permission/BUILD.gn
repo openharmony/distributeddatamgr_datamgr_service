@@ -34,10 +34,10 @@ ohos_static_library("distributeddata_permission_static") {
   }
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "../utils:distributeddata_utils_static",
-    "//utils/native/base:utils",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//third_party/openssl:libcrypto_static",
+    "//utils/native/base:utils",
   ]
 
   external_deps = [
@@ -47,6 +47,6 @@ ohos_static_library("distributeddata_permission_static") {
     "appexecfwk_standard:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
-    "samgr_L2:samgr_proxy",
+    "samgr_standard:samgr_proxy",
   ]
 }

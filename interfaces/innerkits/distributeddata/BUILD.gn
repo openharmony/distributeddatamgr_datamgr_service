@@ -72,13 +72,13 @@ ohos_shared_library("distributeddata_inner") {
   configs = [ ":distributeddatafwk_config" ]
 
   deps = [
-    "//utils/native/base:utils",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//utils/native/base:utils",
   ]
   external_deps = [
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
-    "samgr_L2:samgr_proxy",
+    "samgr_standard:samgr_proxy",
   ]
 
   public_configs = [ ":distributeddatafwk_public_config" ]
