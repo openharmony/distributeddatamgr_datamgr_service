@@ -153,7 +153,6 @@ Status KvStoreDataService::GetKvStore(const Options &options, const AppId &appId
     }
 
     GetKvStorePara getKvStorePara;
-    getKvStorePara.funType = KvStoreType::MULTI_VERSION;
     Status checkParaStatus = CheckParameters(options, appId, storeId, KvStoreType::MULTI_VERSION, getKvStorePara);
     if (checkParaStatus != Status::SUCCESS) {
         callback(nullptr);
@@ -555,7 +554,8 @@ bool KvStoreDataService::CheckBackupFileExist(const std::string &deviceAccountId
                                               const std::string &storeId, int securityLevel)
 {
     auto pathType = KvStoreAppManager::ConvertPathType(bundleName, securityLevel);
-    auto backupFileName = Constant::Concatenate({ Constant::DEFAULT_GROUP_ID, "_", bundleName, "_", storeId });
+    std::initializer_list backupFileNameList = {Constant::DEFAULT_GROUP_ID, "_", bundleName, "_", storeId};
+    auto backupFileName = Constant::Concatenate(backupFileNameList);
     std::initializer_list<std::string> backFileList = {BackupHandler::GetBackupPath(deviceAccountId, pathType),
         "/", BackupHandler::GetHashedBackupName(backupFileName)};
     auto backFilePath = Constant::Concatenate(backFileList);
@@ -650,73 +650,6 @@ Status KvStoreDataService::RecoverMultiKvStore(const Options &options,
     return Status::RECOVER_SUCCESS;
 }
 
-void KvStoreDataService::GetAllKvStoreId(
-    const AppId &appId, std::function<void(Status, std::vector<StoreId> &)> callback)
-{
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    ZLOGI("GetAllKvStoreId begin.");
-    std::string bundleName = Constant::TrimCopy<std::string>(appId.appId);
-    std::vector<StoreId> storeIdList;
-    if (bundleName.empty() || bundleName.size() > MAX_APP_ID_LENGTH) {
-        ZLOGE("invalid appId.");
-        callback(Status::INVALID_ARGUMENT, storeIdList);
-        return;
-    }
-
-    std::string trueAppId = KvStoreUtils::GetAppIdByBundleName(bundleName);
-    if (trueAppId.empty()) {
-        ZLOGE("get appId failed.");
-        callback(Status::PERMISSION_DENIED, storeIdList);
-        return;
-    }
-
-    auto &metaKvStoreDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
-    if (metaKvStoreDelegate == nullptr) {
-        ZLOGE("metaKvStoreDelegate is null");
-        callback(Status::DB_ERROR, storeIdList);
-        return;
-    }
-
-    const int32_t uid = IPCSkeleton::GetCallingUid();
-    const std::string deviceAccountId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
-    if (deviceAccountId != AccountDelegate::MAIN_DEVICE_ACCOUNT_ID) {
-        ZLOGE("not support sub account");
-        return;
-    }
-    std::vector<DistributedDB::Entry> dbEntries;
-    DistributedDB::DBStatus dbStatus;
-    DistributedDB::Key dbKey = KvStoreMetaRow::GetKeyFor(
-        DeviceKvStoreImpl::GetLocalDeviceId() + Constant::KEY_SEPARATOR +
-        deviceAccountId + Constant::KEY_SEPARATOR +
-        "default" + Constant::KEY_SEPARATOR +
-        bundleName + Constant::KEY_SEPARATOR);
-    {
-        DdsTrace trace(std::string(LOG_TAG "Delegate::") + std::string(__FUNCTION__));
-        dbStatus = metaKvStoreDelegate->GetEntries(dbKey, dbEntries);
-    }
-    if (dbStatus != DistributedDB::DBStatus::OK) {
-        ZLOGE("GetEntries delegate return error: %d.", static_cast<int>(dbStatus));
-        if (dbEntries.empty()) {
-            callback(Status::SUCCESS, storeIdList);
-        } else {
-            callback(Status::DB_ERROR, storeIdList);
-        }
-        return;
-    }
-
-    for (const auto &entry : dbEntries) {
-        std::string keyStr = std::string(entry.key.begin(), entry.key.end());
-        size_t pos = keyStr.find_last_of(Constant::KEY_SEPARATOR);
-        if (pos == std::string::npos) {
-            continue;
-        }
-        StoreId storeId;
-        storeId.storeId = keyStr.substr(pos + 1);
-        storeIdList.push_back(storeId);
-    }
-    callback(Status::SUCCESS, storeIdList);
-}
-
 Status KvStoreDataService::CloseKvStore(const AppId &appId, const StoreId &storeId)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
@@ -756,6 +689,69 @@ Status KvStoreDataService::CloseKvStore(const AppId &appId, const StoreId &store
     Reporter::GetInstance()->ServiceFault()->Report(msg);
     ZLOGE("return STORE_NOT_OPEN.");
     return Status::STORE_NOT_OPEN;
+}
+
+void KvStoreDataService::GetAllKvStoreId(
+    const AppId &appId, std::function<void(Status, std::vector<StoreId> &)> callback)
+{
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
+    ZLOGI("GetAllKvStoreId begin.");
+    std::string bundleName = Constant::TrimCopy<std::string>(appId.appId);
+    std::vector<StoreId> storeIdList;
+    if (bundleName.empty() || bundleName.size() > MAX_APP_ID_LENGTH) {
+        ZLOGE("invalid appId.");
+        callback(Status::INVALID_ARGUMENT, storeIdList);
+        return;
+    }
+
+    std::string trueAppId = KvStoreUtils::GetAppIdByBundleName(bundleName);
+    if (trueAppId.empty()) {
+        ZLOGE("get appId failed.");
+        callback(Status::PERMISSION_DENIED, storeIdList);
+        return;
+    }
+
+    auto &metaKvStoreDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
+    if (metaKvStoreDelegate == nullptr) {
+        ZLOGE("metaKvStoreDelegate is null");
+        callback(Status::DB_ERROR, storeIdList);
+        return;
+    }
+
+    const int32_t uid = IPCSkeleton::GetCallingUid();
+    const std::string deviceAccountId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
+    if (deviceAccountId != AccountDelegate::MAIN_DEVICE_ACCOUNT_ID) {
+        ZLOGE("not support sub account");
+        return;
+    }
+    std::vector<DistributedDB::Entry> dbEntries;
+    DistributedDB::DBStatus dbStatus;
+    DistributedDB::Key dbKey = KvStoreMetaRow::GetKeyFor(DeviceKvStoreImpl::GetLocalDeviceId() +
+        Constant::KEY_SEPARATOR + deviceAccountId + Constant::KEY_SEPARATOR +
+        "default" + Constant::KEY_SEPARATOR + bundleName + Constant::KEY_SEPARATOR);
+    DdsTrace trace(std::string(LOG_TAG "Delegate::") + std::string(__FUNCTION__));
+    dbStatus = metaKvStoreDelegate->GetEntries(dbKey, dbEntries);
+    if (dbStatus != DistributedDB::DBStatus::OK) {
+        ZLOGE("GetEntries delegate return error: %d.", static_cast<int>(dbStatus));
+        if (dbEntries.empty()) {
+            callback(Status::SUCCESS, storeIdList);
+        } else {
+            callback(Status::DB_ERROR, storeIdList);
+        }
+        return;
+    }
+
+    for (const auto &entry : dbEntries) {
+        std::string keyStr = std::string(entry.key.begin(), entry.key.end());
+        size_t pos = keyStr.find_last_of(Constant::KEY_SEPARATOR);
+        if (pos == std::string::npos) {
+            continue;
+        }
+        StoreId storeId;
+        storeId.storeId = keyStr.substr(pos + 1);
+        storeIdList.push_back(storeId);
+    }
+    callback(Status::SUCCESS, storeIdList);
 }
 
 /* close all opened kvstore */
@@ -1310,7 +1306,8 @@ Status KvStoreDataService::StartWatchDeviceChange(sptr<IDeviceStatusChangeListen
         KvStoreUtils::GetProviderInstance().StartWatchDeviceChange(deviceListener_.get(), {"serviceWatcher"});
     }
     IRemoteObject *objectPtr = observer->AsObject().GetRefPtr();
-    deviceListeners_.insert({ objectPtr, observer });
+    auto listenerPair = std::make_pair(objectPtr, observer);
+    deviceListeners_.insert(listenerPair);
     ZLOGD("strategy is %d.", strategy);
     return Status::SUCCESS;
 }

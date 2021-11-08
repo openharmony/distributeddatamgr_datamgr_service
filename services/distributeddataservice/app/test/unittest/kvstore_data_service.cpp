@@ -148,7 +148,6 @@ Status KvStoreDataService::GetKvStore(const Options &options, const AppId &appId
     }
 
     GetKvStorePara getKvStorePara;
-    getKvStorePara.funType = KvStoreType::MULTI_VERSION;
     Status checkParaStatus = CheckParameters(options, appId, storeId, KvStoreType::MULTI_VERSION, getKvStorePara);
     if (checkParaStatus != Status::SUCCESS) {
         callback(nullptr);

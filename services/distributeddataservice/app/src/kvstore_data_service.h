@@ -100,7 +100,7 @@ public:
         std::string trueAppId;
         std::string deviceAccountId;
         Status getKvStoreStatus = Status::SUCCESS;
-        KvStoreType funType = KvStoreType::DEVICE_COLLABORATION;
+        KvStoreType funType = KvStoreType::MULTI_VERSION;
     };
     struct SecretKeyPara {
         std::vector<uint8_t> metaKey;
