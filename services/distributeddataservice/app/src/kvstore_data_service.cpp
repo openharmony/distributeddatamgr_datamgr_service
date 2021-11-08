@@ -170,7 +170,6 @@ Status KvStoreDataService::GetKvStore(const Options &options, const AppId &appId
     auto deviceAccountId = getKvStorePara.deviceAccountId;
     auto bundleName = getKvStorePara.bundleName;
     auto storeIdTmp = getKvStorePara.storeId;
-
     auto secretKey = secretKeyParas.secretKey;
     bool outdated = secretKeyParas.outdated;
 
@@ -330,7 +329,8 @@ Status KvStoreDataService::GetSecretKey(const Options &options, const GetKvStore
     if (kvParas.funType == KvStoreType::MULTI_VERSION) {
         metaSecretKey = KvStoreMetaManager::GetMetaKey(deviceAccountId, "default", bundleName, storeIdTmp, "KEY");
     } else {
-        metaSecretKey = KvStoreMetaManager::GetMetaKey(deviceAccountId, "default", bundleName, storeIdTmp, "SINGLE_KEY");
+        metaSecretKey = KvStoreMetaManager::GetMetaKey(deviceAccountId, "default", bundleName,
+                                                       storeIdTmp, "SINGLE_KEY");
     }
 
     auto secretKeyFile = KvStoreMetaManager::GetSecretKeyFile(
@@ -430,7 +430,8 @@ Status KvStoreDataService::GetKvStoreFailDo(const Options &options, const GetKvS
     if (getKvStoreStatus == Status::CRYPT_ERROR && options.encrypt) {
         if (secKeyParas.alreadyCreated != Status::SUCCESS) {
             // create encrypted store failed, remove secret key
-            KvStoreMetaManager::GetInstance().RemoveSecretKey(kvParas.deviceAccountId, kvParas.bundleName, kvParas.storeId);
+            KvStoreMetaManager::GetInstance().RemoveSecretKey(kvParas.deviceAccountId, kvParas.bundleName,
+                                                              kvParas.storeId);
             return Status::ERROR;
         }
         // get existing encrypted store failed, retry with key stored in file
@@ -454,7 +455,8 @@ Status KvStoreDataService::GetKvStoreFailDo(const Options &options, const GetKvS
     // if kvstore damaged and no backup file, then return DB_ERROR
     if (statusTmp != Status::SUCCESS && getKvStoreStatus == Status::CRYPT_ERROR) {
         // if backup file not exist, dont need recover
-        if (!CheckBackupFileExist(kvParas.deviceAccountId, kvParas.bundleName, kvParas.storeId, options.securityLevel)) {
+        if (!CheckBackupFileExist(kvParas.deviceAccountId, kvParas.bundleName, kvParas.storeId,
+                                  options.securityLevel)) {
             return Status::CRYPT_ERROR;
         }
         // remove damaged database
@@ -468,8 +470,9 @@ Status KvStoreDataService::GetKvStoreFailDo(const Options &options, const GetKvS
     return statusTmp;
 }
 
-Status KvStoreDataService::GetSingleKvStoreFailDo(const Options &options, const GetKvStorePara &kvParas, SecretKeyPara &secKeyParas,
-    KvStoreUserManager &kvUserManager, std::function<void(sptr<ISingleKvStore>)> callback)
+Status KvStoreDataService::GetSingleKvStoreFailDo(const Options &options, const GetKvStorePara &kvParas,
+                                                  SecretKeyPara &secKeyParas, KvStoreUserManager &kvUserManager,
+                                                  std::function<void(sptr<ISingleKvStore>)> callback)
 {
     Status statusTmp = kvParas.getKvStoreStatus;
     Status getKvStoreStatus = statusTmp;
@@ -477,7 +480,8 @@ Status KvStoreDataService::GetSingleKvStoreFailDo(const Options &options, const 
     if (getKvStoreStatus == Status::CRYPT_ERROR && options.encrypt) {
         if (secKeyParas.alreadyCreated != Status::SUCCESS) {
             // create encrypted store failed, remove secret key
-            KvStoreMetaManager::GetInstance().RemoveSecretKey(kvParas.deviceAccountId, kvParas.bundleName, kvParas.storeId);
+            KvStoreMetaManager::GetInstance().RemoveSecretKey(kvParas.deviceAccountId, kvParas.bundleName,
+                                                              kvParas.storeId);
             return Status::ERROR;
         }
         // get existing encrypted store failed, retry with key stored in file
@@ -501,7 +505,8 @@ Status KvStoreDataService::GetSingleKvStoreFailDo(const Options &options, const 
     // if kvstore damaged and no backup file, then return DB_ERROR
     if (statusTmp != Status::SUCCESS && getKvStoreStatus == Status::CRYPT_ERROR) {
         // if backup file not exist, dont need recover
-        if (!CheckBackupFileExist(kvParas.deviceAccountId, kvParas.bundleName, kvParas.storeId, options.securityLevel)) {
+        if (!CheckBackupFileExist(kvParas.deviceAccountId, kvParas.bundleName, kvParas.storeId,
+                                  options.securityLevel)) {
             return Status::CRYPT_ERROR;
         }
         // remove damaged database
@@ -1284,7 +1289,7 @@ Status KvStoreDataService::GetDeviceList(std::vector<DeviceInfo> &deviceInfoList
 {
     auto devices = KvStoreUtils::GetProviderInstance().GetRemoteNodesBasicInfo();
     for (auto const &device : devices) {
-        deviceInfoList.push_back({ device.deviceId, device.deviceName, device.deviceType });
+        deviceInfoList.push_back({device.deviceId, device.deviceName, device.deviceType});
     }
     ZLOGD("strategy is %d.", strategy);
     return Status::SUCCESS;
@@ -1303,7 +1308,7 @@ Status KvStoreDataService::StartWatchDeviceChange(sptr<IDeviceStatusChangeListen
         KvStoreUtils::GetProviderInstance().StartWatchDeviceChange(deviceListener_.get(), {"serviceWatcher"});
     }
     IRemoteObject *objectPtr = observer->AsObject().GetRefPtr();
-    deviceListeners_.insert({ objectPtr, observer });
+    deviceListeners_.insert({objectPtr, observer});
     ZLOGD("strategy is %d.", strategy);
     return Status::SUCCESS;
 }

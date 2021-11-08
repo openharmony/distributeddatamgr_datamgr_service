@@ -118,7 +118,6 @@ void BackupHandler::SingleKvStoreBackup(const MetaData &metaData)
                     ZLOGE("pragmaStatus: %d", static_cast<int>(pragmaStatus));
                 }
             }
-
             ZLOGW("SingleKvStoreBackup export");
             if (status == DistributedDB::DBStatus::OK) {
                 auto backupFullName = backupPara.backupFullName;
