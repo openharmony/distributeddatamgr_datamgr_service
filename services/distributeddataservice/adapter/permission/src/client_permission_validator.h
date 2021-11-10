@@ -16,15 +16,35 @@
 #ifndef CLIENT_PERMISSION_VALIDATOR_H
 #define CLIENT_PERMISSION_VALIDATOR_H
 
-#include "permission_validator.h"
 #include <cstdint>
 #include <map>
 #include <mutex>
+#include "bundlemgr/on_permission_changed_callback_host.h"
+#include "permission_validator.h"
 
 namespace OHOS {
 namespace DistributedKv {
 
 const std::string DISTRIBUTED_DATASYNC = "ohos.permission.DISTRIBUTED_DATASYNC";
+
+// Callback registered with BMS to listen App permission changes.
+class ClientPermissionChangedCallback : public AppExecFwk::OnPermissionChangedCallbackHost {
+public:
+    ClientPermissionChangedCallback(std::int32_t pid, std::int32_t uid);
+
+    ~ClientPermissionChangedCallback() override = default;
+
+    std::int32_t GetPid();
+
+    void OnChanged(const int32_t uid) override;
+private:
+    std::int32_t pid_;
+    std::int32_t uid_;
+};
+
+struct AppPermissionInfo : AppThreadInfo {
+    sptr<ClientPermissionChangedCallback> callback;
+};
 
 class ClientPermissionValidator {
 public:

@@ -22,6 +22,22 @@
 namespace OHOS {
 namespace DistributedKv {
 
+ClientPermissionChangedCallback::ClientPermissionChangedCallback(std::int32_t pid, std::int32_t uid)
+{
+    this->pid_ = pid;
+    this->uid_ = uid;
+}
+
+std::int32_t ClientPermissionChangedCallback::GetPid()
+{
+    return this->pid_;
+}
+
+void ClientPermissionChangedCallback::OnChanged(const int32_t uid)
+{
+
+}
+
 void ClientPermissionValidator::UpdatePermissionStatus(
     int32_t uid, const std::string &permissionType, bool permissionStatus)
 {

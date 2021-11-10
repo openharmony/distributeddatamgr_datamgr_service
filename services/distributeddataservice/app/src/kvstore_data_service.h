@@ -87,15 +87,29 @@ public:
     bool CheckBackupFileExist(const std::string &deviceAccountId, const std::string &bundleName,
                               const std::string &storeId, int securityLevel);
 
-    Status RecoverSingleKvStore(const Options &options, const std::string &deviceAccountId,
-                                const std::string &bundleName, const StoreId &storeId,
-                                const std::vector<uint8_t> &secretKey,
+    Status RecoverSingleKvStore(const Options &options, const std::string &bundleName,
+                                const std::string &storeId, const std::vector<uint8_t> &secretKey,
                                 std::function<void(sptr<ISingleKvStore>)> callback);
 
-    Status RecoverMultiKvStore(const Options &options, const std::string &deviceAccountId,
-                               const std::string &bundleName, const StoreId &storeId,
-                               const std::vector<uint8_t> &secretKey,
+    Status RecoverMultiKvStore(const Options &options, const std::string &bundleName,
+                               const std::string &storeId, const std::vector<uint8_t> &secretKey,
                                std::function<void(sptr<IKvStoreImpl>)> callback);
+    struct GetKvStorePara {
+        std::string bundleName;
+        std::string storeId;
+        std::string trueAppId;
+        std::string deviceAccountId;
+        Status getKvStoreStatus = Status::SUCCESS;
+        KvStoreType funType = KvStoreType::MULTI_VERSION;
+    };
+    struct SecretKeyPara {
+        std::vector<uint8_t> metaKey;
+        std::vector<uint8_t> secretKey;
+        std::vector<uint8_t> metaSecretKey;
+        std::string secretKeyFile;
+        Status alreadyCreated = Status::SUCCESS;
+        bool outdated = false;
+    };
 private:
     class KvStoreClientDeathObserverImpl {
     public:
@@ -123,6 +137,25 @@ private:
     void AddPermission() const;
 
     void Initialize();
+
+    void StartService();
+
+    Status CheckParameters(const Options &options, const AppId &appId, const StoreId &storeId,
+        const KvStoreType &kvStoreType, GetKvStorePara &getKvStorePara);
+
+    Status GetSecretKey(const Options &options, const GetKvStorePara &KvParas, SecretKeyPara &secretKeyParas);
+
+    Status RecoverSecretKey(const Status &alreadyCreated, bool &outdated, const std::vector<uint8_t> &metaSecretKey,
+        std::vector<uint8_t> &secretKey, const std::string &secretKeyFile);
+
+    Status UpdateMetaData(const Options &options, const GetKvStorePara &kvParas,
+        const std::vector<uint8_t> &metaKey, KvStoreUserManager &kvStoreUserManager);
+
+    Status GetKvStoreFailDo(const Options &options, const GetKvStorePara &kvParas, SecretKeyPara &secKeyParas,
+        KvStoreUserManager &kvUserManager, std::function<void(sptr<IKvStoreImpl>)> callback);
+
+    Status GetSingleKvStoreFailDo(const Options &options, const GetKvStorePara &kvParas, SecretKeyPara &secKeyParas,
+        KvStoreUserManager &kvUserManager, std::function<void(sptr<ISingleKvStore>)> callback);
 
     Status AppExit(const AppId &appId);
 

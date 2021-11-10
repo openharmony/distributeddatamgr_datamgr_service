@@ -1391,6 +1391,7 @@ bool SingleKvStoreImpl::Import(const std::string &bundleName) const
     metaData.kvStoreMetaData.bundleName = bundleName;
     metaData.kvStoreMetaData.appId = trueAppId;
     metaData.kvStoreMetaData.storeId = storeId_;
+    metaData.kvStoreMetaData.securityLevel = options_.securityLevel;
     metaData.secretKeyMetaData.secretKey = secretKey;
     std::shared_lock<std::shared_mutex> lock(storeNbDelegateMutex_);
     return std::make_unique<BackupHandler>()->SingleKvStoreRecover(metaData, kvStoreNbDelegate_);
@@ -1481,7 +1482,6 @@ Status SingleKvStoreImpl::GetSecurityLevel(SecurityLevel &securityLevel)
     }
     return Status::SUCCESS;
 }
-
 void SingleKvStoreImpl::OnDump(int fd) const
 {
     const std::string prefix(12, ' ');

@@ -22,6 +22,7 @@
 #include "kv_scheduler.h"
 #include "kvstore_meta_manager.h"
 #include "ikvstore_data_service.h"
+#include "kvstore_app_manager.h"
 
 namespace OHOS::DistributedKv {
 class BackupHandler {
@@ -40,8 +41,16 @@ public:
     static bool RemoveFile(const std::string &path);
     static bool FileExists(const std::string &path);
     static std::string GetHashedBackupName(const std::string &bundleName);
+
+    struct BackupPara {
+        KvStoreAppManager::PathType pathType;
+        DistributedDB::CipherPassword password;
+        std::string backupFullName;
+        std::string backupBackFullName;
+    };
 private:
     bool CheckNeedBackup();
+    bool InitBackupPara(const MetaData &metaData, BackupPara &backupPara);
 
     static std::string backupDirCe_;
     static std::string backupDirDe_;

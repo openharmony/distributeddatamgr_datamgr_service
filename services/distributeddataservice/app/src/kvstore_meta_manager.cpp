@@ -32,6 +32,7 @@
 #include "log_print.h"
 #include "reporter.h"
 #include "directory_utils.h"
+#include "kvstore_app_manager.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -202,7 +203,7 @@ std::vector<uint8_t> KvStoreMetaManager::GetMetaKey(const std::string &deviceAcc
 }
 
 std::string KvStoreMetaManager::GetSecretKeyFile(const std::string &deviceAccountId, const std::string &appId,
-                                                 const std::string &storeId)
+                                                 const std::string &storeId, int securityLevel)
 {
     std::string hashedStoreId;
     DistributedDB::DBStatus result = DistributedDB::KvStoreDelegateManager::GetDatabaseDir(storeId, hashedStoreId);
@@ -210,13 +211,15 @@ std::string KvStoreMetaManager::GetSecretKeyFile(const std::string &deviceAccoun
         ZLOGE("get data base directory by kvstore store id failed, result = %d.", result);
         return "";
     }
-    return Constant::ROOT_PATH_DE + "/" + Constant::SERVICE_NAME + "/" +
+    auto pathType = KvStoreAppManager::ConvertPathType(appId, securityLevel);
+    std::string miscPath = (pathType == KvStoreAppManager::PATH_DE) ? Constant::ROOT_PATH_DE : Constant::ROOT_PATH_CE;
+    return miscPath + "/" + Constant::SERVICE_NAME + "/" +
            deviceAccountId + "/" + Constant::GetDefaultHarmonyAccountName() + "/" +
            appId + "/" + hashedStoreId + ".mul.key";
 }
 
 std::string KvStoreMetaManager::GetSecretSingleKeyFile(const std::string &deviceAccountId, const std::string &appId,
-                                                       const std::string &storeId)
+                                                       const std::string &storeId, int securityLevel)
 {
     std::string hashedStoreId;
     DistributedDB::DBStatus result = DistributedDB::KvStoreDelegateManager::GetDatabaseDir(storeId, hashedStoreId);
@@ -224,7 +227,9 @@ std::string KvStoreMetaManager::GetSecretSingleKeyFile(const std::string &device
         ZLOGE("get data base directory by kvstore store id failed, result = %d.", result);
         return "";
     }
-    return Constant::ROOT_PATH_DE + "/" + Constant::SERVICE_NAME + "/" +
+    auto pathType = KvStoreAppManager::ConvertPathType(appId, securityLevel);
+    std::string miscPath = (pathType == KvStoreAppManager::PATH_DE) ? Constant::ROOT_PATH_DE : Constant::ROOT_PATH_CE;
+    return miscPath + "/" + Constant::SERVICE_NAME + "/" +
            deviceAccountId + "/" + Constant::GetDefaultHarmonyAccountName() + "/" +
            appId + "/" + hashedStoreId + ".sig.key";
 }
@@ -239,7 +244,7 @@ Status KvStoreMetaManager::CheckUpdateServiceMeta(const std::vector<uint8_t> &me
         return Status::DB_ERROR;
     }
 
-    KvStoreAppManager::PathType pathType = KvStoreAppManager::PATH_CE;
+    KvStoreAppManager::PathType pathType = KvStoreAppManager::PATH_DE;
     DistributedDB::Key dbKey = metaKey;
     DistributedDB::Value dbValue = val;
     DistributedDB::DBStatus dbStatus;
@@ -533,13 +538,15 @@ Status KvStoreMetaManager::RemoveSecretKey(const std::string &deviceAccountId, c
         status = Status::DB_ERROR;
     }
 
-    std::string secretKeyFile = GetSecretKeyFile(deviceAccountId, bundleName, storeId);
+    int securityLevel;
+    GetSecurityLevelByBundleName(bundleName, securityLevel);
+    std::string secretKeyFile = GetSecretKeyFile(deviceAccountId, bundleName, storeId, securityLevel);
     bool rmFile = RemoveFile(secretKeyFile);
     if (!rmFile) {
         ZLOGW("remove secretKeyFile fail.");
         status = Status::DB_ERROR;
     }
-    secretKeyFile = GetSecretSingleKeyFile(deviceAccountId, bundleName, storeId);
+    secretKeyFile = GetSecretSingleKeyFile(deviceAccountId, bundleName, storeId, securityLevel);
     rmFile = RemoveFile(secretKeyFile);
     if (!rmFile) {
         ZLOGW("remove secretKeyFile Single fail.");
@@ -632,7 +639,9 @@ void KvStoreMetaManager::ReKey(const std::string &deviceAccountId, const std::st
     WriteSecretKeyToMeta(GetMetaKey(deviceAccountId, "default", bundleName, storeId, "KEY"), key);
     Status status = kvStoreimpl->ReKey(key);
     if (status == Status::SUCCESS) {
-        WriteSecretKeyToFile(GetSecretKeyFile(deviceAccountId, bundleName, storeId), key);
+        int securityLevel;
+        GetSecurityLevelByBundleName(bundleName, securityLevel);
+        WriteSecretKeyToFile(GetSecretKeyFile(deviceAccountId, bundleName, storeId, securityLevel), key);
     }
     key.assign(key.size(), 0);
 }
@@ -649,7 +658,9 @@ void KvStoreMetaManager::ReKey(const std::string &deviceAccountId, const std::st
     WriteSecretKeyToMeta(GetMetaKey(deviceAccountId, "default", bundleName, storeId, "SINGLE_KEY"), key);
     Status status = kvStoreImpl->ReKey(key);
     if (status == Status::SUCCESS) {
-        WriteSecretKeyToFile(GetSecretSingleKeyFile(deviceAccountId, bundleName, storeId), key);
+        int securityLevel;
+        GetSecurityLevelByBundleName(bundleName, securityLevel);
+        WriteSecretKeyToFile(GetSecretSingleKeyFile(deviceAccountId, bundleName, storeId, securityLevel), key);
     }
     key.assign(key.size(), 0);
 }
@@ -1219,6 +1230,18 @@ bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entrie
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
     }
 
+    return true;
+}
+
+bool KvStoreMetaManager::GetSecurityLevelByBundleName(const std::string &bundleName, int &securityLevel)
+{
+    KvStoreMetaData kvStoreMetaData;
+    auto getKvStoreMetaBMeta = GetKvStoreMetaByType(KvStoreMetaData::BUNDLE_NAME, bundleName, kvStoreMetaData);
+    if (!getKvStoreMetaBMeta) {
+        ZLOGE("getkvstore meta by type failed");
+        return false;
+    }
+    securityLevel = kvStoreMetaData.securityLevel;
     return true;
 }
 

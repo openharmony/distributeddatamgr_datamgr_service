@@ -780,7 +780,7 @@ bool KvStoreImpl::Import(const std::string &bundleName) const
     ZLOGI("KvStoreImpl Import start");
     const std::string harmonyAccountId = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId();
     auto metaSecretKey = KvStoreMetaManager::GetMetaKey(deviceAccountId_, harmonyAccountId, bundleName, storeId_,
-                                                        "SINGLE_KEY");
+                                                        "KEY");
     std::vector<uint8_t> secretKey;
     bool outdated = false;
     auto trueAppId = KvStoreUtils::GetAppIdByBundleName(bundleName);
@@ -792,6 +792,7 @@ bool KvStoreImpl::Import(const std::string &bundleName) const
     metaData.kvStoreMetaData.bundleName = bundleName;
     metaData.kvStoreMetaData.appId = trueAppId;
     metaData.kvStoreMetaData.storeId = storeId_;
+    metaData.kvStoreMetaData.securityLevel = options_.securityLevel;
     metaData.secretKeyMetaData.secretKey = secretKey;
     std::shared_lock<std::shared_mutex> lock(storeDelegateMutex_);
     return std::make_unique<BackupHandler>()->MultiKvStoreRecover(metaData, kvStoreDelegate_);

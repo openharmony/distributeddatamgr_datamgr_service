@@ -20,16 +20,15 @@
 #include "uninstaller.h"
 
 namespace OHOS::DistributedKv {
-using namespace OHOS::EventFwk;
 using UninstallEventCallback = std::function<void(const std::string &bundleName, int userId)>;
 
-class UninstallEventSubscriber : public CommonEventSubscriber {
+class UninstallEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
-    UninstallEventSubscriber(const CommonEventSubscribeInfo &info,
+    UninstallEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info,
         UninstallEventCallback callback);
 
     ~UninstallEventSubscriber() {};
-    void OnReceiveEvent(const CommonEventData &event) override;
+    void OnReceiveEvent(const EventFwk::CommonEventData &event) override;
 private:
     static const std::string USER_ID;
     UninstallEventCallback callback_;

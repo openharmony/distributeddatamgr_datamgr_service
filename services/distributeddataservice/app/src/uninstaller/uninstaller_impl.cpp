@@ -91,16 +91,15 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     CommonEventSubscribeInfo info(matchingSkills);
     auto callback = [kvStoreDataService](const std::string &bundleName, int userId) {
-        ZLOGI("uninstalled bundleName:%s, userId:%d", bundleName.c_str(), userId);
         KvStoreMetaData kvStoreMetaData;
         if (!KvStoreMetaManager::GetInstance().GetKvStoreMetaDataByBundleName(bundleName, kvStoreMetaData)) {
             return;
         }
         if (!kvStoreMetaData.appId.empty() && !kvStoreMetaData.storeId.empty()) {
             ZLOGI("Has been uninstalled bundleName:%s", bundleName.c_str());
-            AppId appid = {kvStoreMetaData.bundleName};
+            AppId appId = {kvStoreMetaData.bundleName};
             StoreId storeId = {kvStoreMetaData.storeId};
-            kvStoreDataService->DeleteKvStore(appid, storeId, kvStoreMetaData.appId);
+            kvStoreDataService->DeleteKvStore(appId, storeId);
         }
     };
     subscriber_ = std::make_shared<UninstallEventSubscriber>(info, callback);
