@@ -61,6 +61,9 @@ struct SecretKeyMetaData {
     std::vector<uint8_t> secretKey {};
     KvStoreType kvStoreType = KvStoreType::INVALID_TYPE;
     SecretKeyMetaData() {}
+    ~SecretKeyMetaData() {
+        secretKey.assign(secretKey.size(), 0);
+    }
     explicit SecretKeyMetaData(const nlohmann::json &jObject)
     {
         Unmarshal(jObject);
