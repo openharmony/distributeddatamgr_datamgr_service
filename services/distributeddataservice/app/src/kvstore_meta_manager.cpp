@@ -1261,7 +1261,7 @@ bool KvStoreMetaManager::GetKvStoreMetaByType(const std::string &name, const std
         return false;
     }
 
-    DistributedDB::Key metaKeyPrefix = KvStoreMetaRow::GetKeyFor(KvStoreMetaRow::KEY_PREFIX);
+    DistributedDB::Key metaKeyPrefix = KvStoreMetaRow::GetKeyFor("");
     std::vector<DistributedDB::Entry> metaEntries;
     DistributedDB::DBStatus dbStatus = metaDelegate->GetEntries(metaKeyPrefix, metaEntries);
     if (dbStatus != DistributedDB::DBStatus::OK) {
