@@ -326,15 +326,18 @@ Status KvStoreDataService::GetSecretKey(const Options &options, const GetKvStore
         &secretKey, [](std::vector<uint8_t> *ptr) { ptr->assign(ptr->size(), 0); });
 
     std::vector<uint8_t> metaSecretKey;
+    std::string secretKeyFile;
     if (kvParas.funType == KvStoreType::MULTI_VERSION) {
         metaSecretKey = KvStoreMetaManager::GetMetaKey(deviceAccountId, "default", bundleName, storeIdTmp, "KEY");
+        secretKeyFile = KvStoreMetaManager::GetSecretKeyFile(
+        deviceAccountId, bundleName, storeIdTmp, options.securityLevel);
     } else {
         metaSecretKey = KvStoreMetaManager::GetMetaKey(deviceAccountId, "default", bundleName,
                                                        storeIdTmp, "SINGLE_KEY");
+        secretKeyFile = KvStoreMetaManager::GetSecretSingleKeyFile(
+        deviceAccountId, bundleName, storeIdTmp, options.securityLevel);
     }
 
-    auto secretKeyFile = KvStoreMetaManager::GetSecretKeyFile(
-        deviceAccountId, bundleName, storeIdTmp, options.securityLevel);
     bool outdated = false;
     Status alreadyCreated = KvStoreMetaManager::GetInstance().CheckUpdateServiceMeta(metaSecretKey, CHECK_EXIST_LOCAL);
     if (options.encrypt) {

@@ -28,6 +28,7 @@
 namespace OHOS::DistributedKv {
 using namespace OHOS::EventFwk;
 using namespace OHOS::AAFwk;
+using namespace OHOS::AppExecFwk;
 const std::string UninstallEventSubscriber::USER_ID = "userId";
 const std::string PACKAGE_SCHEME = "package";
 const std::string SCHEME_SPLIT = ":";
@@ -60,12 +61,8 @@ void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
         }
     }
 
-    auto uri = want.GetUri().ToString();
-    if (uri.size() < (PACKAGE_SCHEME.size() + SCHEME_SPLIT.size())) {
-        ZLOGW("invalid intent Uri!");
-        return;
-    }
-    std::string bundleName = uri.substr(PACKAGE_SCHEME.size() + SCHEME_SPLIT.size());
+    ElementName elementName = want.GetElement();
+    std::string bundleName = elementName.GetBundleName();
     ZLOGI("bundleName is %s", bundleName.c_str());
 
     int userId = want.GetIntParam(USER_ID, -1);
@@ -87,7 +84,6 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
         return Status::INVALID_ARGUMENT;
     }
     MatchingSkills matchingSkills;
-    matchingSkills.AddScheme(PACKAGE_SCHEME);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     CommonEventSubscribeInfo info(matchingSkills);
     auto callback = [kvStoreDataService](const std::string &bundleName, int userId) {
