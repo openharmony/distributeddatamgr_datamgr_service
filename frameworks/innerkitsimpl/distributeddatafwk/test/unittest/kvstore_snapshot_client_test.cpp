@@ -60,7 +60,7 @@ void KvStoreSnapshotClientTest::SetUpTestCase(void)
     manager.CloseAllKvStore(appId);
     manager.DeleteAllKvStore(appId);
     // [create and] open and initialize kvstore instance.
-    Status status = manager.GetKvStore(options, appId, storeId, kvStorePtr);
+    statusGetKvStore = manager.GetKvStore(options, appId, storeId, kvStorePtr);
 }
 
 void KvStoreSnapshotClientTest::TearDownTestCase(void)

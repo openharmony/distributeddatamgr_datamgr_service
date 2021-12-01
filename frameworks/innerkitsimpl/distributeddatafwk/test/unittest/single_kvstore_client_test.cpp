@@ -363,7 +363,7 @@ HWTEST_F(SingleKvStoreClientTest, TestSchemaStoreC001 ,TestSize.Level1)
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
     AppId appId = { "schema_app_id" };
     StoreId storeId = { "schema_store_id" };
-    Status status = manager.GetSingleKvStore(options, appId, storeId, schemaSingleKvStorePtr);
+    (void)manager.GetSingleKvStore(options, appId, storeId, schemaSingleKvStorePtr);
     ASSERT_NE(schemaSingleKvStorePtr, nullptr) << "kvStorePtr is null.";
     auto result = schemaSingleKvStorePtr->GetStoreId();
     EXPECT_EQ(result.storeId, "schema_store_id");
