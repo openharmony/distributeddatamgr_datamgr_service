@@ -431,11 +431,9 @@ HWTEST_F(SingleKvStoreClientQueryTest, TestQueryC016, TestSize.Level1)
 HWTEST_F(SingleKvStoreClientQueryTest, TestSingleKvStoreQueryC001, TestSize.Level1)
 {
     ZLOGD("TestSingleKvStoreQueryC001 start");
-
     DistributedKvDataManager manager;
     Options options = { .createIfMissing = true, .encrypt = true, .autoSync = true,
-                        .kvStoreType = KvStoreType::SINGLE_VERSION };
-    options.schema = VALID_SCHEMA_STRICT_DEFINE;
+                       .kvStoreType = KvStoreType::SINGLE_VERSION, .schema =  VALID_SCHEMA_STRICT_DEFINE };
     AppId appId = { "SingleKvStoreClientQueryTestAppId1" };
     StoreId storeId = { "SingleKvStoreClientQueryTestStoreId1" };
     statusGetKvStore = manager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
@@ -446,14 +444,14 @@ HWTEST_F(SingleKvStoreClientQueryTest, TestSingleKvStoreQueryC001, TestSize.Leve
 
     DataQuery query;
     query.NotEqualTo("$.name", 3);
-    std::vector<Entry> results1;
-    Status status1 = singleKvStorePtr->GetEntriesWithQuery(query.ToString(), results1);
+    std::vector<Entry> results;
+    Status status1 = singleKvStorePtr->GetEntriesWithQuery(query.ToString(), results);
     ASSERT_EQ(status1, Status::SUCCESS);
-    EXPECT_TRUE(results1.size() == 2);
-    std::vector<Entry> results2;
-    Status status2 = singleKvStorePtr->GetEntriesWithQuery(query, results2);
+    EXPECT_TRUE(results.size() == 2);
+    results.clear();
+    Status status2 = singleKvStorePtr->GetEntriesWithQuery(query, results);
     ASSERT_EQ(status2, Status::SUCCESS);
-    EXPECT_TRUE(results2.size() == 2);
+    EXPECT_TRUE(results.size() == 2);
 
     std::shared_ptr<KvStoreResultSet> resultSet;
     Status status3 = singleKvStorePtr->GetResultSetWithQuery(query.ToString(), resultSet);
@@ -484,7 +482,6 @@ HWTEST_F(SingleKvStoreClientQueryTest, TestSingleKvStoreQueryC001, TestSize.Leve
     EXPECT_EQ(status, Status::SUCCESS);
     status = manager.DeleteAllKvStore(appId);
     EXPECT_EQ(status, Status::SUCCESS);
-
     ZLOGD("TestSingleKvStoreQueryC001 end");
 }
 

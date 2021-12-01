@@ -445,15 +445,18 @@ Status SingleKvStoreClient::GetSecurityLevel(SecurityLevel &securityLevel) const
     ZLOGE("singleKvstore proxy is nullptr.");
     return Status::SERVER_UNAVAILABLE;
 }
+
 Status SingleKvStoreClient::GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
                                                std::shared_ptr<KvStoreSnapshot> &snapshot) const
 {
     return Status::NOT_SUPPORT;
 }
+
 Status SingleKvStoreClient::ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot)
 {
     return Status::NOT_SUPPORT;
 }
+
 Status SingleKvStoreClient::Clear()
 {
     return Status::NOT_SUPPORT;

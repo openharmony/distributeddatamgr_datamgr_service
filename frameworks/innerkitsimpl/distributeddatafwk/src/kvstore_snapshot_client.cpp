@@ -52,11 +52,12 @@ Status KvStoreSnapshotClient::GetEntries(const Key &prefixKey, Key &nextKey, std
     }
     Status status = Status::SERVER_UNAVAILABLE;
     if (kvStoreSnapshotProxy_ != nullptr) {
-        kvStoreSnapshotProxy_->GetEntries(prefixKey, nextKey, [&](Status stat, auto &result, const auto &next) {
-            status = stat;
-            entries = result;
-            nextKey = next;
-        });
+        kvStoreSnapshotProxy_->GetEntries(prefixKey, nextKey,
+            [&status, &entries, &nextKey](Status stat, auto &result, const auto &next) {
+                status = stat;
+                entries = std::move(result);
+                nextKey = next;
+            });
     } else {
         ZLOGE("snapshot proxy is nullptr.");
     }
@@ -77,23 +78,23 @@ Status KvStoreSnapshotClient::GetEntries(const Key &prefixKey, std::vector<Entry
         return Status::SERVER_UNAVAILABLE;
     }
     Key startKey = "";
-    Status allStatus = Status::ERROR;
+    Status status = Status::ERROR;
     do {
         kvStoreSnapshotProxy_->GetEntries(prefixKey, startKey,
-            [&allStatus, &entries, &startKey](Status stat, auto &result, Key next) {
-                allStatus = stat;
+            [&status, &entries, &startKey](Status stat, auto &result, Key next) {
+                status = stat;
                 if (stat != Status::SUCCESS) {
                     return;
                 }
-                entries = std::move(result);
-                startKey = entries.empty() ? "" : next;
+                startKey = result.empty() ? "" : next;
+                entries.insert(entries.end(), result.begin(), result.end());
             });
-    } while (allStatus == Status::SUCCESS && startKey.ToString() != "");
-    if (allStatus != Status::SUCCESS) {
+    } while (status == Status::SUCCESS && startKey.ToString() != "");
+    if (status != Status::SUCCESS) {
         ZLOGW("Error occurs during GetEntries.");
         entries.clear();
     }
-    return allStatus;
+    return status;
 }
 
 Status KvStoreSnapshotClient::GetKeys(const Key &prefixKey, Key &nextKey, std::vector<Key> &keys)
@@ -111,11 +112,12 @@ Status KvStoreSnapshotClient::GetKeys(const Key &prefixKey, Key &nextKey, std::v
     }
     Status status = Status::SERVER_UNAVAILABLE;
     if (kvStoreSnapshotProxy_ != nullptr) {
-        kvStoreSnapshotProxy_->GetKeys(prefixKey, nextKey, [&](Status stat, auto &result, const auto &next) {
-            status = stat;
-            keys = std::move(result);
-            nextKey = next;
-        });
+        kvStoreSnapshotProxy_->GetKeys(prefixKey, nextKey,
+            [&status, &keys, &nextKey](Status stat, auto &result, const auto &next) {
+                status = stat;
+                keys = std::move(result);
+                nextKey = next;
+            });
     } else {
         ZLOGE("snapshot proxy is nullptr.");
     }
@@ -136,27 +138,23 @@ Status KvStoreSnapshotClient::GetKeys(const Key &prefixKey, std::vector<Key> &en
         return Status::SERVER_UNAVAILABLE;
     }
     Key startKey = "";
-    Status allStatus = Status::ERROR;
+    Status status = Status::ERROR;
     do {
-        kvStoreSnapshotProxy_->GetKeys(prefixKey, startKey, [&](Status stat, std::vector<Key> &keys, Key next) {
-            allStatus = stat;
-            if (stat != Status::SUCCESS) {
-                return;
-            }
-            for (const auto &key : keys) {
-                entries.push_back(key);
-            }
-            startKey = next;
-            if (keys.empty()) {
-                startKey = "";
-            }
-        });
-    } while (allStatus == Status::SUCCESS && startKey.ToString() != "");
-    if (allStatus != Status::SUCCESS) {
+        kvStoreSnapshotProxy_->GetKeys(prefixKey, startKey,
+            [&status, &entries, &startKey](Status stat, auto &result, Key next) {
+                status = stat;
+                if (stat != Status::SUCCESS) {
+                    return;
+                }
+                startKey = result.empty() ? "" : next;
+                entries.insert(entries.end(), result.begin(), result.end());
+            });
+    } while (status == Status::SUCCESS && startKey.ToString() != "");
+    if (status != Status::SUCCESS) {
         ZLOGW("Error occurs during GetKeys.");
         entries.clear();
     }
-    return allStatus;
+    return status;
 }
 
 Status KvStoreSnapshotClient::Get(const Key &key, Value &value)

@@ -83,8 +83,7 @@ public:
     // Parameters:
     // appId: the name of the application.
     // storeId: the name of the kvstore.
-    KVSTORE_API
-    Status CloseKvStore(const AppId &appId, const StoreId &storeId, std::shared_ptr<KvStore> kvStorePtr = nullptr);
+    KVSTORE_API Status CloseKvStore(const AppId &appId, const StoreId &storeId);
 
     // WARNING: try to close a KvStore while other thread(s) still using it may cause process crash.
     //
@@ -97,8 +96,7 @@ public:
     // Parameters:
     // appId: the name of the application.
     // kvStorePtr: the pointer of the kvstore.
-    KVSTORE_API
-    Status CloseKvStore(const AppId &appId, std::shared_ptr<SingleKvStore> kvStorePtr);
+    KVSTORE_API Status CloseKvStore(const AppId &appId, std::shared_ptr<SingleKvStore> &kvStorePtr);
 
     // WARNING: try to close a KvStore while other thread(s) still using it may cause process crash.
     // close all opened kvstores for this appId.
