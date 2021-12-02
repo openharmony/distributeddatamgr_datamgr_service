@@ -32,7 +32,7 @@ enum {
 KvStoreObserverProxy::KvStoreObserverProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<IKvStoreObserver>(impl)
 {}
 
-int64_t GetBufferSize(const std::list<Entry> &entries)
+int64_t GetBufferSize(const std::vector<Entry> &entries)
 {
     int64_t bufferSize = 0;
     for (const auto &item : entries) {
@@ -41,7 +41,7 @@ int64_t GetBufferSize(const std::list<Entry> &entries)
     return bufferSize;
 }
 
-bool WriteEntryToParcelByBuf(MessageParcel &data, const int64_t &bufferSize, const std::list<Entry> &list)
+bool WriteEntryToParcelByBuf(MessageParcel &data, const int64_t &bufferSize, const std::vector<Entry> &list)
 {
     std::unique_ptr<uint8_t, void(*)(uint8_t *)> buffer(new uint8_t[bufferSize], [](uint8_t *ptr) { delete[] ptr; });
     if (buffer == nullptr) {
@@ -64,7 +64,7 @@ bool WriteEntryToParcelByBuf(MessageParcel &data, const int64_t &bufferSize, con
     return true;
 }
 
-bool WriteListToParcelByBuf(MessageParcel &data, const int64_t &bufferSize, const std::list<Entry> &list)
+bool WriteListToParcelByBuf(MessageParcel &data, const int64_t &bufferSize, const std::vector<Entry> &list)
 {
     if (!data.WriteInt32(list.size()) ||
         !data.WriteInt32(bufferSize)) {
@@ -129,7 +129,7 @@ void KvStoreObserverProxy::OnChange(const ChangeNotification &changeNotification
     }
 }
 
-bool ReadFromBuff(MessageParcel &data, const int &len, const int &bufferSize, std::list<Entry> &entries)
+bool ReadFromBuff(MessageParcel &data, const int &len, const int &bufferSize, std::vector<Entry> &entries)
 {
     const uint8_t *buffer = reinterpret_cast<const uint8_t *>(data.ReadRawData(bufferSize));
     if (buffer == nullptr) {
@@ -150,7 +150,7 @@ bool ReadFromBuff(MessageParcel &data, const int &len, const int &bufferSize, st
     return true;
 }
 
-bool ReadListFromBuf(MessageParcel &data, std::list<Entry> &entries)
+bool ReadListFromBuf(MessageParcel &data, std::vector<Entry> &entries)
 {
     int len = data.ReadInt32();
     if (len < 0) {
@@ -196,21 +196,21 @@ int32_t KvStoreObserverStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                     OnChange(*changeNotification, nullptr);
                 }
             } else {
-                std::list<Entry> insertEntries;
+                std::vector<Entry> insertEntries;
                 bool result = ReadListFromBuf(data, insertEntries);
                 if (!result) {
                     ZLOGE("read insertList from buff filed");
                     return errorResult;
                 }
 
-                std::list<Entry> updateEntries;
+                std::vector<Entry> updateEntries;
                 result = ReadListFromBuf(data, updateEntries);
                 if (!result) {
                     ZLOGE("read updateList from buff filed");
                     return errorResult;
                 }
 
-                std::list<Entry> deleteEntries;
+                std::vector<Entry> deleteEntries;
                 result = ReadListFromBuf(data, deleteEntries);
                 if (!result) {
                     ZLOGE("read deleteList from buff filed");
@@ -219,14 +219,15 @@ int32_t KvStoreObserverStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
 
                 std::string deviceId = data.ReadString();
                 bool isClear = data.ReadBool();
-                ChangeNotification changeNotification(insertEntries, updateEntries, deleteEntries, deviceId, isClear);
+                ChangeNotification change(std::move(insertEntries), std::move(updateEntries), std::move(deleteEntries),
+                    deviceId, isClear);
                 sptr<IRemoteObject> remote = data.ReadRemoteObject();
                 if (remote != nullptr) {
                     sptr<IKvStoreSnapshotImpl> kvStoreSnapshotProxy = iface_cast<IKvStoreSnapshotImpl>(remote);
-                    OnChange(changeNotification, std::move(kvStoreSnapshotProxy));
+                    OnChange(change, std::move(kvStoreSnapshotProxy));
                 } else {
                     ZLOGD("read kvstoreSnapshot is nullptr.");
-                    OnChange(changeNotification, nullptr);
+                    OnChange(change, nullptr);
                 }
             }
             return 0;

@@ -21,39 +21,38 @@
 
 namespace OHOS {
 namespace DistributedKv {
-ChangeNotification::ChangeNotification(const std::list<Entry> &insertEntries, const std::list<Entry> &updateEntries,
-                                       const std::list<Entry> &deleteEntries, const std::string &deviceId,
-                                       const bool isClear)
-    : insertEntries_(insertEntries), updateEntries_(updateEntries), deleteEntries_(deleteEntries),
-      deviceId_(deviceId), isClear_(isClear)
+ChangeNotification::ChangeNotification(std::vector<Entry> &&insertEntries, std::vector<Entry> &&updateEntries,
+                                       std::vector<Entry> &&deleteEntries, const std::string &deviceId, bool isClear)
+    : insertEntries_(std::move(insertEntries)), updateEntries_(std::move(updateEntries)),
+    deleteEntries_(std::move(deleteEntries)), deviceId_(deviceId), isClear_(isClear)
 {}
 
 ChangeNotification::~ChangeNotification()
 {}
 
-const std::list<Entry> &ChangeNotification::GetInsertEntries() const
+const std::vector<Entry> &ChangeNotification::GetInsertEntries() const
 {
-    return this->insertEntries_;
+    return insertEntries_;
 }
 
-const std::list<Entry> &ChangeNotification::GetUpdateEntries() const
+const std::vector<Entry> &ChangeNotification::GetUpdateEntries() const
 {
-    return this->updateEntries_;
+    return updateEntries_;
 }
 
-const std::list<Entry> &ChangeNotification::GetDeleteEntries() const
+const std::vector<Entry> &ChangeNotification::GetDeleteEntries() const
 {
-    return this->deleteEntries_;
+    return deleteEntries_;
 }
 
 const std::string &ChangeNotification::GetDeviceId() const
 {
-    return this->deviceId_;
+    return deviceId_;
 }
 
 bool ChangeNotification::IsClear() const
 {
-    return this->isClear_;
+    return isClear_;
 }
 
 bool ChangeNotification::Marshalling(Parcel &parcel) const
@@ -101,9 +100,9 @@ bool ChangeNotification::Marshalling(Parcel &parcel) const
 
 ChangeNotification *ChangeNotification::Unmarshalling(Parcel &parcel)
 {
-    std::list<Entry> insertEntries;
-    std::list<Entry> updateEntries;
-    std::list<Entry> deleteEntries;
+    std::vector<Entry> insertEntries;
+    std::vector<Entry> updateEntries;
+    std::vector<Entry> deleteEntries;
 
     int lenInsert = parcel.ReadInt32();
     if (lenInsert < 0) {
@@ -151,9 +150,9 @@ ChangeNotification *ChangeNotification::Unmarshalling(Parcel &parcel)
     }
     std::string deviceId = parcel.ReadString();
     bool isClear = parcel.ReadBool();
-    ChangeNotification *changeNotification =
-        new ChangeNotification(insertEntries, updateEntries, deleteEntries, deviceId, isClear);
-    return changeNotification;
+
+    return new ChangeNotification(std::move(insertEntries), std::move(updateEntries), std::move(deleteEntries),
+        deviceId, isClear);
 }
 }  // namespace DistributedKv
 }  // namespace OHOS

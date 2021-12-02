@@ -37,13 +37,13 @@ public:
     void TearDown();
 
     static DistributedKvDataManager manager;
-    static std::unique_ptr<KvStore> kvStorePtr;  // declare kvstore instance.
+    static std::shared_ptr<KvStore> kvStorePtr;  // declare kvstore instance.
     static Status statusGetKvStore;
     static AppId appId;
     static StoreId storeId;
     static int usleepTime;
 };
-std::unique_ptr<KvStore> LocalSubscribeStoreTest::kvStorePtr = nullptr;
+std::shared_ptr<KvStore> LocalSubscribeStoreTest::kvStorePtr = nullptr;
 Status LocalSubscribeStoreTest::statusGetKvStore = Status::ERROR;
 DistributedKvDataManager LocalSubscribeStoreTest::manager;
 AppId LocalSubscribeStoreTest::appId;
@@ -61,10 +61,7 @@ void LocalSubscribeStoreTest::SetUpTestCase(void)
     storeId.storeId = "student";  // define kvstore(database) name
     manager.DeleteKvStore(appId, storeId);
     // [create and] open and initialize kvstore instance.
-    manager.GetKvStore(options, appId, storeId, [&](Status status, std::unique_ptr<KvStore> kvStore) {
-        statusGetKvStore = status;
-        kvStorePtr = std::move(kvStore);
-    });
+    statusGetKvStore = manager.GetKvStore(options, appId, storeId, kvStorePtr);
 }
 
 void LocalSubscribeStoreTest::TearDownTestCase(void)
@@ -92,7 +89,7 @@ public:
     KvStoreObserverUnitTest &operator=(KvStoreObserverUnitTest &&) = delete;
 
     // callback function will be called when the db data is changed.
-    void OnChange(const ChangeNotification &changeNotification, std::unique_ptr<KvStoreSnapshot> snapshot);
+    void OnChange(const ChangeNotification &changeNotification, std::shared_ptr<KvStoreSnapshot> snapshot);
 
     void OnChange(const ChangeNotification &changeNotification);
 
@@ -115,23 +112,23 @@ KvStoreObserverUnitTest::KvStoreObserverUnitTest()
 }
 
 void KvStoreObserverUnitTest::OnChange(const ChangeNotification &changeNotification,
-                                       std::unique_ptr<KvStoreSnapshot> snapshot)
+                                       std::shared_ptr<KvStoreSnapshot> snapshot)
 {
     ZLOGD("begin.");
     callCount_++;
-    const std::list<Entry> insert = changeNotification.GetInsertEntries();
+    const auto &insert = changeNotification.GetInsertEntries();
     insertEntries_.clear();
     for (const auto &entry : insert) {
         insertEntries_.push_back(entry);
     }
 
-    const std::list<Entry> update = changeNotification.GetUpdateEntries();
+    const auto &update = changeNotification.GetUpdateEntries();
     updateEntries_.clear();
     for (const auto &entry : update) {
         updateEntries_.push_back(entry);
     }
 
-    const std::list<Entry> del = changeNotification.GetDeleteEntries();
+    const auto &del = changeNotification.GetDeleteEntries();
     deleteEntries_.clear();
     for (const auto &entry : del) {
         deleteEntries_.push_back(entry);
@@ -2321,12 +2318,12 @@ HWTEST_F(LocalSubscribeStoreTest, ChangeNotificationMarshalling001, TestSize.Lev
     insert.value = "insert_value";
     update.value = "update_value";
     del.value = "delete_value";
-    std::list<Entry> insertEntries, updateEntries, deleteEntries;
-    insertEntries.push_back(insert);
-    updateEntries.push_back(update);
-    deleteEntries.push_back(del);
+    std::vector<Entry> inserts, updates, deleteds;
+    inserts.push_back(insert);
+    updates.push_back(update);
+    deleteds.push_back(del);
 
-    ChangeNotification changeIn(insertEntries, updateEntries, deleteEntries, std::string(), false);
+    ChangeNotification changeIn(std::move(inserts), std::move(updates), std::move(deleteds), std::string(), false);
     OHOS::Parcel parcel;
     changeIn.Marshalling(parcel);
     ChangeNotification *changeOut = ChangeNotification::Unmarshalling(parcel);

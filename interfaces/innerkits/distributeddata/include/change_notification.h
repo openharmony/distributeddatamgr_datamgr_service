@@ -25,22 +25,22 @@ namespace DistributedKv {
 class ChangeNotification final : public virtual Parcelable {
 public:
     // Constructor of ChangeNotification.
-    ChangeNotification(const std::list<Entry> &insertEntries,
-                       const std::list<Entry> &updateEntries,
-                       const std::list<Entry> &deleteEntries,
+    ChangeNotification(std::vector<Entry> &&insertEntries,
+                       std::vector<Entry> &&updateEntries,
+                       std::vector<Entry> &&deleteEntries,
                        const std::string &deviceId,
-                       const bool isClear);
+                       bool isClear);
 
     KVSTORE_API ~ChangeNotification();
 
     // Get all inserted entries in this change.
-    KVSTORE_API const std::list<Entry> &GetInsertEntries() const;
+    KVSTORE_API const std::vector<Entry> &GetInsertEntries() const;
 
     // Get all updated entries in this changing.
-    KVSTORE_API const std::list<Entry> &GetUpdateEntries() const;
+    KVSTORE_API const std::vector<Entry> &GetUpdateEntries() const;
 
     // Get all deleted entries in this changing.
-    KVSTORE_API const std::list<Entry> &GetDeleteEntries() const;
+    KVSTORE_API const std::vector<Entry> &GetDeleteEntries() const;
 
     // Get the device ID.
     KVSTORE_API const std::string &GetDeviceId() const;
@@ -57,11 +57,11 @@ public:
     // Unmarshall the given parcel from this parcelable object.
     KVSTORE_API static ChangeNotification *Unmarshalling(Parcel &parcel);
 private:
-    std::list<Entry> insertEntries_;
+    std::vector<Entry> insertEntries_;
 
-    std::list<Entry> updateEntries_;
+    std::vector<Entry> updateEntries_;
 
-    std::list<Entry> deleteEntries_;
+    std::vector<Entry> deleteEntries_;
 
     std::string deviceId_;
 

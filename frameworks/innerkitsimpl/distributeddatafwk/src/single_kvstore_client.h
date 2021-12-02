@@ -36,16 +36,13 @@ public:
 
     Status GetEntriesWithQuery(const DataQuery &query, std::vector<Entry> &entries) const override;
 
-    void GetResultSet(const Key &prefixKey,
-                      std::function<void(Status, std::unique_ptr<KvStoreResultSet>)> callback) const override;
+    Status GetResultSet(const Key &prefixKey, std::shared_ptr<KvStoreResultSet> &resultSet) const override;
 
-    void GetResultSetWithQuery(const std::string &query,
-                               std::function<void(Status, std::unique_ptr<KvStoreResultSet>)> callback) const override;
+    Status GetResultSetWithQuery(const std::string &query, std::shared_ptr<KvStoreResultSet> &resultSet) const override;
 
-    void GetResultSetWithQuery(const DataQuery &query,
-                               std::function<void(Status, std::unique_ptr<KvStoreResultSet>)> callback) const override;
+    Status GetResultSetWithQuery(const DataQuery &query, std::shared_ptr<KvStoreResultSet> &resultSet) const override;
 
-    Status CloseResultSet(std::unique_ptr<KvStoreResultSet> resultSet) override;
+    Status CloseResultSet(std::shared_ptr<KvStoreResultSet> &resultSet) override;
 
     Status GetCountWithQuery(const std::string &query, int &result) const override;
 
@@ -87,8 +84,12 @@ public:
                               const std::vector<std::string> &remoteSupportLabels) const override;
 
     Status GetSecurityLevel(SecurityLevel &securityLevel) const override;
+    Status GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
+                              std::shared_ptr<KvStoreSnapshot> &snapshot) const override;
+    Status ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot) override;
+    Status Clear() override;
 protected:
-    Status Control(KvControlCmd cmd, const KvParam &inputParam, sptr<KvParam> &outputParam) override;
+    Status Control(KvControlCmd cmd, const KvParam &inputParam, KvParam &outputParam) override;
 
 private:
     sptr<ISingleKvStore> kvStoreProxy_;

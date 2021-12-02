@@ -16,7 +16,6 @@
 #ifndef KVSTORE_ACCOUNT_OBSERVER_H
 #define KVSTORE_ACCOUNT_OBSERVER_H
 
-#include "kvstore_data_service.h"
 #include "account_delegate.h"
 #include <atomic>
 
@@ -30,7 +29,7 @@ do { \
         ZLOGW("system is busy with processing account event."); \
     } \
 } while (0)
-
+class KvStoreDataService;
 class KvStoreAccountObserver : public AccountDelegate::Observer {
 public:
     explicit KvStoreAccountObserver(KvStoreDataService &kvStoreDataService)

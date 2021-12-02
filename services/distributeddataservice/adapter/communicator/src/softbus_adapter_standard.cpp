@@ -25,6 +25,7 @@
 #include "reporter.h"
 #include "session.h"
 #include "softbus_bus_center.h"
+#include "securec.h"
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif

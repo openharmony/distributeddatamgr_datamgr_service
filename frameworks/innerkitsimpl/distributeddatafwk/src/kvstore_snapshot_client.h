@@ -31,15 +31,13 @@ public:
 
     ~KvStoreSnapshotClient();
 
-    void GetEntries(const Key &prefixKey, const Key &nextKey,
-                    std::function<void(Status, std::vector<Entry> &, const Key &)> callback) override;
+    Status GetEntries(const Key &prefixKey, Key &nextKey, std::vector<Entry> &entries) override;
 
-    void GetEntries(const Key &prefixKey, std::function<void(Status, std::vector<Entry> &)> callback) override;
+    Status GetEntries(const Key &prefixKey, std::vector<Entry> &entries) override;
 
-    void GetKeys(const Key &prefixKey, const Key &nextKey,
-                 std::function<void(Status, std::vector<Key> &, const Key &)> callback) override;
+    Status GetKeys(const Key &prefixKey, Key &nextKey, std::vector<Key> &keys) override;
 
-    void GetKeys(const Key &prefixKey, std::function<void(Status, std::vector<Key> &)> callback) override;
+    Status GetKeys(const Key &prefixKey, std::vector<Key> &entries) override;
 
     Status Get(const Key &key, Value &value) override;
 

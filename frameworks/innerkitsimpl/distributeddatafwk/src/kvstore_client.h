@@ -34,10 +34,10 @@ public:
 
     StoreId GetStoreId() const override;
 
-    void GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
-                            std::function<void(Status, std::unique_ptr<KvStoreSnapshot>)> callback) const override;
+    Status GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
+                            std::shared_ptr<KvStoreSnapshot> &snapshot) const override;
 
-    Status ReleaseKvStoreSnapshot(std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr) override;
+    Status ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot) override;
 
     Status Put(const Key &key, const Value &value) override;
 

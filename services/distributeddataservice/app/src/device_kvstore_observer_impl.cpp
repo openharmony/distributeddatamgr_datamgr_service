@@ -35,19 +35,19 @@ void DeviceKvStoreObserverImpl::OnChange(const DistributedDB::KvStoreChangedData
         std::list<DistributedDB::Entry> updateList = data.GetEntriesUpdated();
         std::list<DistributedDB::Entry> deletedList = data.GetEntriesDeleted();
 
-        std::list<Entry> insertListTmp;
-        std::list<Entry> updateListTmp;
-        std::list<Entry> deletedListTmp;
+        std::vector<Entry> inserts;
+        std::vector<Entry> updates;
+        std::vector<Entry> deleteds;
         std::string deviceId;
-        Transfer(insertList, insertListTmp, deviceId);
-        Transfer(updateList, updateListTmp, deviceId);
-        Transfer(deletedList, deletedListTmp, deviceId);
+        Transfer(insertList, inserts, deviceId);
+        Transfer(updateList, updates, deviceId);
+        Transfer(deletedList, deleteds, deviceId);
         if (deviceId.empty()) {
             ZLOGE("Did NOT find any valid deviceId");
         }
-        ChangeNotification changeNotification(insertListTmp, updateListTmp, deletedListTmp, deviceId, false);
+        ChangeNotification change(std::move(inserts), std::move(updates), std::move(deleteds), deviceId, false);
         if (observerProxy_ != nullptr) {
-            observerProxy_->OnChange(changeNotification, nullptr);
+            observerProxy_->OnChange(change, nullptr);
         }
         return;
     } else {
@@ -55,7 +55,7 @@ void DeviceKvStoreObserverImpl::OnChange(const DistributedDB::KvStoreChangedData
     }
 }
 
-void DeviceKvStoreObserverImpl::Transfer(const std::list<DistributedDB::Entry> &input, std::list<Entry> &output,
+void DeviceKvStoreObserverImpl::Transfer(const std::list<DistributedDB::Entry> &input, std::vector<Entry> &output,
                                          std::string &deviceId)
 {
     if (localDeviceId_.empty()) {

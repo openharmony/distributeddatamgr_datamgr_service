@@ -256,7 +256,7 @@ napi_status SingleKVStore::OnSyncComplete(napi_env env, size_t argc, napi_value 
     return napi_ok;
 }
 
-SingleKVStore &SingleKVStore::operator=(std::unique_ptr<DistributedKv::SingleKvStore> &&singleKvStore)
+SingleKVStore &SingleKVStore::operator=(std::shared_ptr<DistributedKv::SingleKvStore> &&singleKvStore)
 {
     if (kvStore_ == singleKvStore) {
         return *this;
@@ -265,7 +265,7 @@ SingleKVStore &SingleKVStore::operator=(std::unique_ptr<DistributedKv::SingleKvS
     return *this;
 }
 
-bool SingleKVStore::operator==(const std::unique_ptr<DistributedKv::SingleKvStore> &singleKvStore)
+bool SingleKVStore::operator==(const std::shared_ptr<DistributedKv::SingleKvStore> &singleKvStore)
 {
     return kvStore_ == singleKvStore;
 }
@@ -282,7 +282,7 @@ DataObserver::~DataObserver()
     napi_delete_reference(env_, callback_);
 }
 
-void DataObserver::OnChange(const ChangeNotification &notification, std::unique_ptr<KvStoreSnapshot> snapshot)
+void DataObserver::OnChange(const ChangeNotification &notification, std::shared_ptr<KvStoreSnapshot> snapshot)
 {
     ZLOGD("data change insert:%{public}zu, update:%{public}zu, delete:%{public}zu",
           notification.GetInsertEntries().size(), notification.GetUpdateEntries().size(),

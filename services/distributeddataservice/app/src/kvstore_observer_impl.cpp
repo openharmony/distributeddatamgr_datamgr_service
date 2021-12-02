@@ -47,9 +47,9 @@ void KvStoreObserverImpl::OnChange(const DistributedDB::KvStoreChangedData &data
     std::list<DistributedDB::Entry> updateList = data.GetEntriesUpdated();
     std::list<DistributedDB::Entry> deletedList = data.GetEntriesDeleted();
 
-    std::list<Entry> insertListTmp;
-    std::list<Entry> updateListTmp;
-    std::list<Entry> deletedListTmp;
+    std::vector<Entry> inserts;
+    std::vector<Entry> updates;
+    std::vector<Entry> deleteds;
 
     for (const auto &entry : insertList) {
         Key key(entry.key);
@@ -57,7 +57,7 @@ void KvStoreObserverImpl::OnChange(const DistributedDB::KvStoreChangedData &data
         Entry tmpEntry;
         tmpEntry.key = key;
         tmpEntry.value = value;
-        insertListTmp.push_back(tmpEntry);
+        inserts.push_back(tmpEntry);
     }
 
     for (const auto &entry : updateList) {
@@ -66,7 +66,7 @@ void KvStoreObserverImpl::OnChange(const DistributedDB::KvStoreChangedData &data
         Entry tmpEntry;
         tmpEntry.key = key;
         tmpEntry.value = value;
-        updateListTmp.push_back(tmpEntry);
+        updates.push_back(tmpEntry);
     }
 
     for (const auto &entry : deletedList) {
@@ -75,12 +75,12 @@ void KvStoreObserverImpl::OnChange(const DistributedDB::KvStoreChangedData &data
         Entry tmpEntry;
         tmpEntry.key = key;
         tmpEntry.value = value;
-        deletedListTmp.push_back(tmpEntry);
+        deleteds.push_back(tmpEntry);
     }
 
-    ChangeNotification changeNotification(insertListTmp, updateListTmp, deletedListTmp, std::string(), false);
+    ChangeNotification change(std::move(inserts), std::move(updates), std::move(deleteds), std::string(), false);
     ZLOGI("call proxy OnChange");
-    observerProxy_->OnChange(changeNotification, nullptr);
+    observerProxy_->OnChange(change, nullptr);
 }
 
 SubscribeType KvStoreObserverImpl::GetSubscribeType() const

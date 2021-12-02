@@ -35,16 +35,16 @@ DistributedKvDataManager::DistributedKvDataManager()
 DistributedKvDataManager::~DistributedKvDataManager()
 {}
 
-void DistributedKvDataManager::GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
-                                          std::function<void(Status, std::unique_ptr<KvStore>)> callback)
+Status DistributedKvDataManager::GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
+                                            std::shared_ptr<KvStore> &kvStore)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
 
+    kvStore = nullptr;
     std::string storeIdTmp = Constant::TrimCopy<std::string>(storeId.storeId);
     if (storeIdTmp.size() == 0 || storeIdTmp.size() > Constant::MAX_STORE_ID_LENGTH) {
-        callback(Status::INVALID_ARGUMENT, nullptr);
         ZLOGE("invalid storeId.");
-        return;
+        return Status::INVALID_ARGUMENT;
     }
 
     KvStoreServiceDeathNotifier::SetAppId(appId);
@@ -52,8 +52,7 @@ void DistributedKvDataManager::GetKvStore(const Options &options, const AppId &a
     Status status = Status::SERVER_UNAVAILABLE;
     if (kvDataServiceProxy == nullptr) {
         ZLOGE("proxy is nullptr.");
-        callback(status, nullptr);
-        return;
+        return status;
     }
 
     ZLOGD("call proxy.");
@@ -62,35 +61,33 @@ void DistributedKvDataManager::GetKvStore(const Options &options, const AppId &a
         [&](sptr<IKvStoreImpl> proxy) { proxyTmp = std::move(proxy); });
     if (status == Status::RECOVER_SUCCESS) {
         ZLOGE("proxy recover success: %d", static_cast<int>(status));
-        callback(status, std::make_unique<KvStoreClient>(std::move(proxyTmp), storeIdTmp));
-        return;
+        kvStore = std::make_shared<KvStoreClient>(std::move(proxyTmp), storeIdTmp);
+        return status;
     }
 
     if (status != Status::SUCCESS) {
         ZLOGE("proxy return error: %d", static_cast<int>(status));
-        callback(status, nullptr);
-        return;
+        return status;
     }
 
     if (proxyTmp == nullptr) {
         ZLOGE("proxy return nullptr.");
-        callback(status, nullptr);
-        return;
+        return status;
     }
-
-    callback(status, std::make_unique<KvStoreClient>(std::move(proxyTmp), storeIdTmp));
+    kvStore = std::make_shared<KvStoreClient>(std::move(proxyTmp), storeIdTmp);
+    return status;
 }
 
-void DistributedKvDataManager::GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
-    std::function<void(Status, std::unique_ptr<SingleKvStore>)> callback)
+Status DistributedKvDataManager::GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
+                                                  std::shared_ptr<SingleKvStore> &singleKvStore)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
 
+    singleKvStore = nullptr;
     std::string storeIdTmp = Constant::TrimCopy<std::string>(storeId.storeId);
     if (storeIdTmp.size() == 0 || storeIdTmp.size() > Constant::MAX_STORE_ID_LENGTH) {
-        callback(Status::INVALID_ARGUMENT, nullptr);
         ZLOGE("invalid storeId.");
-        return;
+        return Status::INVALID_ARGUMENT;
     }
 
     KvStoreServiceDeathNotifier::SetAppId(appId);
@@ -98,8 +95,7 @@ void DistributedKvDataManager::GetSingleKvStore(const Options &options, const Ap
     Status status = Status::SERVER_UNAVAILABLE;
     if (kvDataServiceProxy == nullptr) {
         ZLOGE("proxy is nullptr.");
-        callback(status, nullptr);
-        return;
+        return status;
     }
 
     ZLOGD("call proxy.");
@@ -108,27 +104,24 @@ void DistributedKvDataManager::GetSingleKvStore(const Options &options, const Ap
         [&](sptr<ISingleKvStore> proxy) { proxyTmp = std::move(proxy); });
     if (status == Status::RECOVER_SUCCESS) {
         ZLOGE("proxy recover success: %d", static_cast<int>(status));
-        callback(status, std::make_unique<SingleKvStoreClient>(std::move(proxyTmp), storeIdTmp));
-        return;
+        singleKvStore = std::make_shared<SingleKvStoreClient>(std::move(proxyTmp), storeIdTmp);
+        return status;
     }
 
     if (status != Status::SUCCESS) {
         ZLOGE("proxy return error: %d", static_cast<int>(status));
-        callback(status, nullptr);
-        return;
+        return status;
     }
 
     if (proxyTmp == nullptr) {
         ZLOGE("proxy return nullptr.");
-        callback(status, nullptr);
-        return;
+        return status;
     }
 
-    callback(status, std::make_unique<SingleKvStoreClient>(std::move(proxyTmp), storeIdTmp));
+    singleKvStore = std::make_shared<SingleKvStoreClient>(std::move(proxyTmp), storeIdTmp);
+    return status;
 }
-
-void DistributedKvDataManager::GetAllKvStoreId(const AppId &appId,
-                                               std::function<void(Status, std::vector<StoreId> &)> callback)
+Status DistributedKvDataManager::GetAllKvStoreId(const AppId &appId, std::vector<StoreId> &storeIds)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
 
@@ -136,16 +129,18 @@ void DistributedKvDataManager::GetAllKvStoreId(const AppId &appId,
     sptr<IKvStoreDataService> kvDataServiceProxy = KvStoreServiceDeathNotifier::GetDistributedKvDataService();
     if (kvDataServiceProxy == nullptr) {
         ZLOGE("proxy is nullptr.");
-        std::vector<StoreId> storeIds;
-        callback(Status::SERVER_UNAVAILABLE, storeIds);
-        return;
+        return Status::SERVER_UNAVAILABLE;
     }
 
-    kvDataServiceProxy->GetAllKvStoreId(appId, callback);
+    Status status;
+    kvDataServiceProxy->GetAllKvStoreId(appId, [&status, &storeIds](auto statusTmp, auto &ids) {
+        status = statusTmp;
+        storeIds = std::move(ids);
+    });
+    return status;
 }
 
-Status DistributedKvDataManager::CloseKvStore(const AppId &appId, const StoreId &storeId,
-                                              std::unique_ptr<KvStore> kvStorePtr)
+Status DistributedKvDataManager::CloseKvStore(const AppId &appId, const StoreId &storeId)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
 
@@ -164,7 +159,7 @@ Status DistributedKvDataManager::CloseKvStore(const AppId &appId, const StoreId 
     return Status::SERVER_UNAVAILABLE;
 }
 
-Status DistributedKvDataManager::CloseKvStore(const AppId &appId, std::unique_ptr<SingleKvStore> kvStorePtr)
+Status DistributedKvDataManager::CloseKvStore(const AppId &appId, std::shared_ptr<SingleKvStore> &kvStorePtr)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
 
@@ -175,7 +170,9 @@ Status DistributedKvDataManager::CloseKvStore(const AppId &appId, std::unique_pt
     KvStoreServiceDeathNotifier::SetAppId(appId);
     sptr<IKvStoreDataService> kvDataServiceProxy = KvStoreServiceDeathNotifier::GetDistributedKvDataService();
     if (kvDataServiceProxy != nullptr) {
-        return kvDataServiceProxy->CloseKvStore(appId, kvStorePtr->GetStoreId());
+        StoreId storeId = kvStorePtr->GetStoreId();
+        kvStorePtr = nullptr;
+        return kvDataServiceProxy->CloseKvStore(appId, storeId);
     }
     ZLOGE("proxy is nullptr.");
     return Status::SERVER_UNAVAILABLE;

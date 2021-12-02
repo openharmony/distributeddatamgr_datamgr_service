@@ -27,8 +27,8 @@ class SingleKVStore final {
 public:
     SingleKVStore() = default;
     ~SingleKVStore();
-    SingleKVStore &operator=(std::unique_ptr<DistributedKv::SingleKvStore> &&singleKvStore);
-    bool operator==(const std::unique_ptr<DistributedKv::SingleKvStore> &singleKvStore);
+    SingleKVStore &operator=(std::shared_ptr<DistributedKv::SingleKvStore> &&singleKvStore);
+    bool operator==(const std::shared_ptr<DistributedKv::SingleKvStore> &singleKvStore);
     static napi_value GetCtor(napi_env env);
     static napi_value OnEvent(napi_env env, napi_callback_info info);
     static napi_value Sync(napi_env env, napi_callback_info info);
@@ -74,7 +74,7 @@ private:
     static napi_status OnSyncComplete(napi_env env, size_t argc, napi_value *argv, napi_value self, napi_value *result);
     static std::map<std::string, Exec> eventHandlers_;
 
-    std::unique_ptr<DistributedKv::SingleKvStore> kvStore_ = nullptr;
+    std::shared_ptr<DistributedKv::SingleKvStore> kvStore_ = nullptr;
     std::shared_ptr<DistributedKv::KvStoreSyncCallback> syncObserver_ = nullptr;
     std::shared_ptr<DistributedKv::KvStoreObserver> dataObserver_[SUBSCRIBE_ALL + 1];
 };
@@ -84,7 +84,7 @@ public:
     DataObserver(napi_env env, napi_value callback);
     virtual ~DataObserver();
     void OnChange(const DistributedKv::ChangeNotification &notification,
-                  std::unique_ptr<DistributedKv::KvStoreSnapshot> snapshot) override;
+                  std::shared_ptr<DistributedKv::KvStoreSnapshot> snapshot) override;
     void OnChange(const DistributedKv::ChangeNotification &notification) override;
 private:
     struct EventDataWorker {
@@ -92,8 +92,7 @@ private:
         const DistributedKv::ChangeNotification data;
         EventDataWorker(const DataObserver * const & observerIn, const DistributedKv::ChangeNotification &dataIn)
             : observer(observerIn),
-              data(dataIn.GetInsertEntries(), dataIn.GetUpdateEntries(),
-                   dataIn.GetDeleteEntries(), dataIn.GetDeviceId(), false) {}
+              data(dataIn) {}
     };
     napi_ref callback_ = nullptr;
     napi_env env_;

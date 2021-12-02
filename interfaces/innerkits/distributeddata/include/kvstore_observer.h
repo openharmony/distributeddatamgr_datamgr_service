@@ -32,7 +32,7 @@ public:
 
     // client override this function to receive change notification.
     KVSTORE_API
-    virtual void OnChange(const ChangeNotification &changeNotification, std::unique_ptr<KvStoreSnapshot> snapshot) = 0;
+    virtual void OnChange(const ChangeNotification &changeNotification, std::shared_ptr<KvStoreSnapshot> snapshot) = 0;
 
     // client override this function to receive change notification.
     KVSTORE_API

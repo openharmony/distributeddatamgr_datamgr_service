@@ -278,6 +278,21 @@ napi_value JSUtil::GetJSEntries(napi_env env, const std::list<DistributedKv::Ent
     return jsValue;
 }
 
+napi_value JSUtil::GetJSEntries(napi_env env, const std::vector<DistributedKv::Entry> &entries)
+{
+    napi_value jsValue = nullptr;
+    napi_create_array_with_length(env, entries.size(), &jsValue);
+    int index = 0;
+    for (const auto &data : entries) {
+        napi_value entry = nullptr;
+        napi_create_object(env, &entry);
+        napi_set_named_property(env, entry, "key", Convert2JSString(env, data.key.Data()));
+        napi_set_named_property(env, entry, "value", Convert2JSValue(env, data.value.Data()));
+        napi_set_element(env, jsValue, index++, entry);
+    }
+    return jsValue;
+}
+
 napi_value JSUtil::Convert2JSString(napi_env env, const std::string &cString)
 {
     napi_value jsValue = nullptr;

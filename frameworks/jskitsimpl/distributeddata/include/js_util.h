@@ -47,6 +47,7 @@ public:
     static std::vector<std::string> Convert2StringArray(napi_env env, napi_value jsValue);
 private:
     static napi_value GetJSEntries(napi_env env, const std::list<DistributedKv::Entry> &entries);
+    static napi_value GetJSEntries(napi_env env, const std::vector<DistributedKv::Entry> &entries);
     enum ValueType : uint8_t {
         /** Indicates that the value type is string. */
         STRING = 0,

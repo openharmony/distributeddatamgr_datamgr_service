@@ -34,13 +34,13 @@ public:
     void SetUp();
     void TearDown();
 
-    static std::unique_ptr<KvStore> kvStorePtr;                  // declare kv store instance.
+    static std::shared_ptr<KvStore> kvStorePtr;                  // declare kv store instance.
     static Status statusGetKvStore;
     static DistributedKvDataManager manager;
 };
 
 DistributedKvDataManager KvStoreSnapshotClientTest::manager;
-std::unique_ptr<KvStore> KvStoreSnapshotClientTest::kvStorePtr = nullptr;
+std::shared_ptr<KvStore> KvStoreSnapshotClientTest::kvStorePtr = nullptr;
 Status KvStoreSnapshotClientTest::statusGetKvStore = Status::ERROR;
 
 void KvStoreSnapshotClientTest::SetUpTestCase(void)
@@ -60,10 +60,7 @@ void KvStoreSnapshotClientTest::SetUpTestCase(void)
     manager.CloseAllKvStore(appId);
     manager.DeleteAllKvStore(appId);
     // [create and] open and initialize kvstore instance.
-    manager.GetKvStore(options, appId, storeId, [&](Status status, std::unique_ptr<KvStore> kvStore) {
-        statusGetKvStore = status;
-        kvStorePtr = std::move(kvStore);
-    });
+    statusGetKvStore = manager.GetKvStore(options, appId, storeId, kvStorePtr);
 }
 
 void KvStoreSnapshotClientTest::TearDownTestCase(void)
@@ -102,21 +99,18 @@ HWTEST_F(KvStoreSnapshotClientTest, KvStoreSnapshotDdmGet001, TestSize.Level1)
     Status status = kvStorePtr->Put(key, value);  // insert or update key-value
     EXPECT_EQ(Status::SUCCESS, status) << "KvStore put data return wrong status";
 
-    std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
+    std::shared_ptr<KvStoreSnapshot> snapshot;
     // [create and] open and initialize kvstore snapshot instance.
-    kvStorePtr->GetKvStoreSnapshot(nullptr, /* (KvStoreObserver ) */
-                                   [&](Status status, std::unique_ptr<KvStoreSnapshot> kvStoreSnapshot) {
-                                       kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-                                   });
-
-    EXPECT_NE(nullptr, kvStoreSnapshotPtr) << "kvStoreSnapshotPtr is nullptr";
+    status = kvStorePtr->GetKvStoreSnapshot(nullptr, snapshot);
+    EXPECT_EQ(Status::SUCCESS, status) << "KvStore GetKvStoreSnapshot return wrong status";
+    EXPECT_NE(nullptr, snapshot) << "kvStoreSnapshotPtr is nullptr";
     // get value from kvstore.
     Value valueRet;
-    Status statusRet = kvStoreSnapshotPtr->Get(key, valueRet);
+    Status statusRet = snapshot->Get(key, valueRet);
     EXPECT_EQ(Status::SUCCESS, statusRet) << "KvStoreSnapshot get data return wrong status";
 
     EXPECT_EQ(value, valueRet) << "value and valueRet are not equal";
-    kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
+    kvStorePtr->ReleaseKvStoreSnapshot(snapshot);
 }
 
 /**
@@ -140,21 +134,19 @@ HWTEST_F(KvStoreSnapshotClientTest, KvStoreSnapshotDdmGet002, TestSize.Level1)
     Status status2 = kvStorePtr->Delete(key);  // delete data
     EXPECT_EQ(Status::SUCCESS, status2) << "KvStore delete data return wrong status";
 
-    std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
+    std::shared_ptr<KvStoreSnapshot> snapshot;
     // [create and] open and initialize kvstore snapshot instance.
-    kvStorePtr->GetKvStoreSnapshot(nullptr, /* (KvStoreObserver ) */
-                                   [&](Status status, std::unique_ptr<KvStoreSnapshot> kvStoreSnapshot) {
-                                       kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-                                   });
+    status1 = kvStorePtr->GetKvStoreSnapshot(nullptr, snapshot);
+    EXPECT_EQ(Status::SUCCESS, status1) << "KvStore GetKvStoreSnapshot return wrong status";
+    EXPECT_NE(nullptr, snapshot) << "kvStoreSnapshotPtr is nullptr";
 
-    EXPECT_NE(nullptr, kvStoreSnapshotPtr) << "kvStoreSnapshotPtr is nullptr";
     // get value from kvstore.
     Value valueRet;
-    Status statusRet = kvStoreSnapshotPtr->Get(key, valueRet);
+    Status statusRet = snapshot->Get(key, valueRet);
     EXPECT_EQ(Status::KEY_NOT_FOUND, statusRet);
     EXPECT_EQ(Status::KEY_NOT_FOUND, statusRet) << "KvStoreSnapshot get data return wrong status";
     EXPECT_EQ("", valueRet.ToString()) << "value and valueRet are not equal";
-    kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
+    kvStorePtr->ReleaseKvStoreSnapshot(snapshot);
 }
 
 /**
@@ -169,23 +161,20 @@ HWTEST_F(KvStoreSnapshotClientTest, KvStoreSnapshotDdmGet003, TestSize.Level1)
     ZLOGI("KvStoreSnapshotDdmGet003 begin.");
     EXPECT_EQ(Status::SUCCESS, statusGetKvStore) << "statusGetKvStore return wrong status";
     EXPECT_NE(nullptr, kvStorePtr) << "kvStorePtr is nullptr";
-    std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
+    std::shared_ptr<KvStoreSnapshot> snapshot;
     // [create and] open and initialize kvstore snapshot instance.
-    kvStorePtr->GetKvStoreSnapshot(nullptr, /* (KvStoreObserver ) */
-                                   [&](Status status, std::unique_ptr<KvStoreSnapshot> kvStoreSnapshot) {
-                                       kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-                                   });
-
-    EXPECT_NE(nullptr, kvStoreSnapshotPtr) << "kvStoreSnapshotPtr is nullptr";
+    Status status = kvStorePtr->GetKvStoreSnapshot(nullptr, snapshot);
+    EXPECT_EQ(Status::SUCCESS, status) << "GetKvStoreSnapshot return wrong status";
+    EXPECT_NE(nullptr, snapshot) << "kvStoreSnapshotPtr is nullptr";
 
     // get value from kvstore.
     Key key;
     Value valueRet;
-    Status statusRet = kvStoreSnapshotPtr->Get(key, valueRet);
+    Status statusRet = snapshot->Get(key, valueRet);
     EXPECT_EQ(Status::INVALID_ARGUMENT, statusRet);
     EXPECT_EQ(Status::INVALID_ARGUMENT, statusRet) << "KvStoreSnapshot get data return wrong status";
     EXPECT_EQ("", valueRet.ToString()) << "value and valueRet are not equal";
-    kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
+    kvStorePtr->ReleaseKvStoreSnapshot(snapshot);
 }
 
 /**
@@ -223,22 +212,15 @@ HWTEST_F(KvStoreSnapshotClientTest, KvStoreSnapshotDdmGetEntries001, TestSize.Le
     std::vector<Entry> students;
     Key token;
     Status statusTmp = Status::ERROR;
-    std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
+    std::shared_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
     // [create and] open and initialize kvstore snapshot instance.
-    kvStorePtr->GetKvStoreSnapshot(nullptr, /* (KvStoreObserver ) */
-        [&](Status status, std::unique_ptr<KvStoreSnapshot> kvStoreSnapshot) {
-            kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-        });
+    kvStorePtr->GetKvStoreSnapshot(nullptr, kvStoreSnapshotPtr);
 
     EXPECT_NE(nullptr, kvStoreSnapshotPtr) << "kvStoreSnapshotPtr is nullptr";
-    kvStoreSnapshotPtr->GetEntries(keyPrefixStudent,
-        [&](Status status, std::vector<Entry> &entries) {
-            statusTmp = std::move(status);
-            students = std::move(entries);
-        });
+    statusTmp = kvStoreSnapshotPtr->GetEntries(keyPrefixStudent, students);
     EXPECT_EQ(3, static_cast<int>(students.size())) << "GetEntries failed";
     EXPECT_EQ(Status::SUCCESS, statusTmp) << "KvStore GetEntries data return wrong status";
-    kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
+    kvStorePtr->ReleaseKvStoreSnapshot(kvStoreSnapshotPtr);
 }
 
 /**
@@ -276,22 +258,15 @@ HWTEST_F(KvStoreSnapshotClientTest, KvStoreSnapshotDdmGetEntries002, TestSize.Le
     std::vector<Entry> students;
     Key token;
     Status statusTmp = Status::ERROR;
-    std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
+    std::shared_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
     // [create and] open and initialize kvstore snapshot instance.
-    kvStorePtr->GetKvStoreSnapshot(nullptr, /* (KvStoreObserver ) */
-        [&](Status status, std::unique_ptr<KvStoreSnapshot> kvStoreSnapshot) {
-            kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-        });
+    kvStorePtr->GetKvStoreSnapshot(nullptr, kvStoreSnapshotPtr);
 
     EXPECT_NE(nullptr, kvStoreSnapshotPtr) << "kvStoreSnapshotPtr is nullptr";
-    kvStoreSnapshotPtr->GetEntries(keyPrefixStudent,
-        [&](Status status, std::vector<Entry> &entries) {
-            statusTmp = std::move(status);
-            students = std::move(entries);
-        });
+    statusTmp = kvStoreSnapshotPtr->GetEntries(keyPrefixStudent, students);
     EXPECT_EQ(0, static_cast<int>(students.size())) << "GetEntries fail";
     EXPECT_EQ(Status::KEY_NOT_FOUND, statusTmp) << "KvStore GetEntries data return wrong status";
-    kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
+    kvStorePtr->ReleaseKvStoreSnapshot(kvStoreSnapshotPtr);
 }
 
 /**
@@ -329,22 +304,15 @@ HWTEST_F(KvStoreSnapshotClientTest, KvStoreSnapshotDdmGetEntries003, TestSize.Le
     std::vector<Entry> students;
     Key token;
     Status statusTmp = Status::ERROR;
-    std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
+    std::shared_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
     // [create and] open and initialize kvstore snapshot instance.
-    kvStorePtr->GetKvStoreSnapshot(nullptr, /* (KvStoreObserver ) */
-        [&](Status status, std::unique_ptr<KvStoreSnapshot> kvStoreSnapshot) {
-            kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-        });
+    kvStorePtr->GetKvStoreSnapshot(nullptr, kvStoreSnapshotPtr);
 
     EXPECT_NE(nullptr, kvStoreSnapshotPtr) << "kvStoreSnapshotPtr is nullptr";
-    kvStoreSnapshotPtr->GetEntries(keyPrefixStudent,
-        [&](Status status, std::vector<Entry> &entries) {
-            statusTmp = std::move(status);
-            students = std::move(entries);
-        });
+    statusTmp = kvStoreSnapshotPtr->GetEntries(keyPrefixStudent, students);
     EXPECT_EQ(3, static_cast<int>(students.size())) << "GetEntries fail";
     EXPECT_EQ(Status::SUCCESS, statusTmp) << "KvStore GetEntries data return wrong status";
-    kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
+    kvStorePtr->ReleaseKvStoreSnapshot(kvStoreSnapshotPtr);
 }
 
 /**
@@ -382,25 +350,18 @@ HWTEST_F(KvStoreSnapshotClientTest, KvStoreSnapshotDdmGetEntries004, TestSize.Le
     std::vector<Entry> students;
     Key token;
     Status statusTmp = Status::ERROR;
-    std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
+    std::shared_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
     // [create and] open and initialize kvstore snapshot instance.
-    kvStorePtr->GetKvStoreSnapshot(nullptr, /* (KvStoreObserver ) */
-        [&](Status status, std::unique_ptr<KvStoreSnapshot> kvStoreSnapshot) {
-            kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-        });
+    kvStorePtr->GetKvStoreSnapshot(nullptr, kvStoreSnapshotPtr);
 
     EXPECT_NE(nullptr, kvStoreSnapshotPtr) << "kvStoreSnapshotPtr is nullptr";
-    kvStoreSnapshotPtr->GetEntries(keyPrefixStudent,
-        [&](Status status, std::vector<Entry> &entries) {
-            statusTmp = std::move(status);
-            students = std::move(entries);
-        });
+    statusTmp = kvStoreSnapshotPtr->GetEntries(keyPrefixStudent, students);
     EXPECT_EQ(3, static_cast<int>(students.size())) << "GetEntries fail";
     EXPECT_EQ(Status::SUCCESS, statusTmp) << "KvStore GetEntries data return wrong status";
-    kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
+    kvStorePtr->ReleaseKvStoreSnapshot(kvStoreSnapshotPtr);
 }
 
-std::string Generate1025KeyLen()
+static std::string Generate1025KeyLen()
 {
     // Generate key and the length is more than 1024;
     std::string str("prefix");
@@ -445,22 +406,15 @@ HWTEST_F(KvStoreSnapshotClientTest, KvStoreSnapshotDdmGetEntries005, TestSize.Le
     std::vector<Entry> students;
     Key token;
     Status statusTmp = Status::ERROR;
-    std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
+    std::shared_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
     // [create and] open and initialize kvstore snapshot instance.
-    kvStorePtr->GetKvStoreSnapshot(nullptr, /* (KvStoreObserver ) */
-        [&](Status status, std::unique_ptr<KvStoreSnapshot> kvStoreSnapshot) {
-            kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-        });
+    kvStorePtr->GetKvStoreSnapshot(nullptr, kvStoreSnapshotPtr);
 
     EXPECT_NE(nullptr, kvStoreSnapshotPtr) << "kvStoreSnapshotPtr is nullptr";
-    kvStoreSnapshotPtr->GetEntries(keyPrefixStudent,
-        [&](Status status, std::vector<Entry> &entries) {
-            statusTmp = std::move(status);
-            students = std::move(entries);
-        });
+    statusTmp = kvStoreSnapshotPtr->GetEntries(keyPrefixStudent, students);
     EXPECT_EQ(0, static_cast<int>(students.size())) << "invalid argument, GetEntries fail";
     EXPECT_EQ(Status::INVALID_ARGUMENT, statusTmp) << "KvStore GetEntries data return wrong status";
-    kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
+    kvStorePtr->ReleaseKvStoreSnapshot(kvStoreSnapshotPtr);
 }
 
 /**

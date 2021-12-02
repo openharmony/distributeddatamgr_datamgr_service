@@ -41,23 +41,22 @@ StoreId KvStoreClient::GetStoreId() const
     storeId.storeId = storeId_;
     return storeId;
 }
-
-void KvStoreClient::GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
-                                       std::function<void(Status, std::unique_ptr<KvStoreSnapshot>)> callback) const
+Status KvStoreClient::GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
+                                         std::shared_ptr<KvStoreSnapshot> &snapshot) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
 
-    Status statusTmp = Status::SERVER_UNAVAILABLE;
+    snapshot = nullptr;
     if (kvStoreProxy_ == nullptr) {
         ZLOGE("kvstore proxy is nullptr.");
-        callback(statusTmp, nullptr);
-        return;
+        return Status::SERVER_UNAVAILABLE;
     }
 
     sptr<KvStoreObserverClient> kvStoreObserverClient = new KvStoreObserverClient(GetStoreId(),
         SubscribeType::SUBSCRIBE_TYPE_ALL, observer, KvStoreType::MULTI_VERSION);
 
     sptr<IKvStoreSnapshotImpl> snapshotProxyTmp;
+    Status statusTmp = Status::SERVER_UNAVAILABLE;
     auto snapshotCallbackFunction = [&](Status status, sptr<IKvStoreSnapshotImpl> snapshotProxy) {
         statusTmp = status;
         snapshotProxyTmp = snapshotProxy;
@@ -65,21 +64,20 @@ void KvStoreClient::GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer
     kvStoreProxy_->GetKvStoreSnapshot(kvStoreObserverClient, snapshotCallbackFunction);
     if (statusTmp != Status::SUCCESS) {
         ZLOGE("return error: %d.", static_cast<int>(statusTmp));
-        callback(statusTmp, nullptr);
-        return;
+        return statusTmp;
     }
 
     if (snapshotProxyTmp == nullptr) {
         ZLOGE("snapshotProxyTmp is nullptr.");
-        callback(statusTmp, nullptr);
-        return;
+        return statusTmp;
     }
 
     ZLOGD("success.");
-    callback(statusTmp, std::make_unique<KvStoreSnapshotClient>(std::move(snapshotProxyTmp)));
+    snapshot = std::make_shared<KvStoreSnapshotClient>(std::move(snapshotProxyTmp));
+    return statusTmp;
 }
 
-Status KvStoreClient::ReleaseKvStoreSnapshot(std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr)
+Status KvStoreClient::ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
 
@@ -87,17 +85,16 @@ Status KvStoreClient::ReleaseKvStoreSnapshot(std::unique_ptr<KvStoreSnapshot> kv
         ZLOGE("kvstore proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;
     }
-    if (kvStoreSnapshotPtr == nullptr) {
+    if (snapshot == nullptr) {
         ZLOGE("kvstoresnapshot is nullptr.");
         return Status::INVALID_ARGUMENT;
     }
 
     KvStoreSnapshotClient *kvStoreSnapshotClient =
-        reinterpret_cast<KvStoreSnapshotClient *>(kvStoreSnapshotPtr.release());
+        reinterpret_cast<KvStoreSnapshotClient *>(snapshot.get());
     sptr<IKvStoreSnapshotImpl> snapshotProxyTmp = kvStoreSnapshotClient->GetkvStoreSnapshotProxy();
     Status status = kvStoreProxy_->ReleaseKvStoreSnapshot(std::move(snapshotProxyTmp));
-    delete kvStoreSnapshotClient;
-    kvStoreSnapshotClient = nullptr;
+    snapshot = nullptr;
     ZLOGI("return: %d.", static_cast<int>(status));
     return status;
 }

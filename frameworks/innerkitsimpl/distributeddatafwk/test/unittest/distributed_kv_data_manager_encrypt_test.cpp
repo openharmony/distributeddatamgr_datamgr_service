@@ -106,31 +106,26 @@ void DistributedKvDataManagerEncryptTest::TearDown(void)
 HWTEST_F(DistributedKvDataManagerEncryptTest, kvstore_ddm_createEncryptedStore_001, TestSize.Level1)
 {
     ZLOGI("kvstore_ddm_createEncryptedStore_001 begin.");
-    std::unique_ptr<KvStore> kvStorePtr;
-    manager.GetKvStore(createEnc, appId, storeId, [&](Status status, std::unique_ptr<KvStore> kvStore) {
-        kvStorePtr = std::move(kvStore);
-        ASSERT_EQ(status, Status::SUCCESS);
-    });
+    std::shared_ptr<KvStore> kvStorePtr;
+    Status status = manager.GetKvStore(createEnc, appId, storeId, kvStorePtr);
+    ASSERT_EQ(status, Status::SUCCESS);
     ASSERT_NE(kvStorePtr, nullptr);
 
     Key key = "age";
     Value value = "18";
-    Status status = kvStorePtr->Put(key, value);
+    status = kvStorePtr->Put(key, value);
     EXPECT_EQ(Status::SUCCESS, status) << "KvStore put data return wrong status";
 
-    std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
+    std::shared_ptr<KvStoreSnapshot> snapshot;
     // [create and] open and initialize kvstore snapshot instance.
-    kvStorePtr->GetKvStoreSnapshot(nullptr,
-                                   [&](Status status, std::unique_ptr<KvStoreSnapshot> kvStoreSnapshot) {
-                                       kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-                                   });
-
-    ASSERT_NE(nullptr, kvStoreSnapshotPtr) << "kvStoreSnapshotPtr is nullptr";
+    status = kvStorePtr->GetKvStoreSnapshot(nullptr, snapshot);
+    EXPECT_EQ(Status::SUCCESS, status) << "KvStore GetKvStoreSnapshot data return wrong status";
+    ASSERT_NE(nullptr, snapshot) << "snapshot is nullptr";
     // get value from kvstore.
     Value valueRet;
-    Status statusRet = kvStoreSnapshotPtr->Get(key, valueRet);
+    Status statusRet = snapshot->Get(key, valueRet);
     EXPECT_EQ(Status::SUCCESS, statusRet) << "KvStoreSnapshot get data return wrong status";
 
     EXPECT_EQ(value, valueRet) << "value and valueRet are not equal";
-    kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
+    kvStorePtr->ReleaseKvStoreSnapshot(snapshot);
 }

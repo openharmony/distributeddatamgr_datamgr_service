@@ -40,8 +40,7 @@ public:
     // nextKey: The first key to start in this search.
     // callback: all entries satisfied perfixKey, status of this call and the first key of the next part of data.
     [[deprecated]]
-    KVSTORE_API virtual void GetEntries(const Key &prefixKey, const Key &nextKey,
-                                        std::function<void(Status, std::vector<Entry> &, const Key &)> callback) = 0;
+    KVSTORE_API virtual Status GetEntries(const Key &prefixKey, Key &nextKey, std::vector<Entry> &entries) = 0;
 
     // Get a list of entries from kvstore by keyPrefix,
     // key length must be less than 1024,
@@ -52,8 +51,7 @@ public:
     // parameters:
     // prefixKey: perfix key to search
     // callback: all entries satisfies perfixKey, and Stauts for this call.
-    KVSTORE_API
-    virtual void GetEntries(const Key &prefixKey, std::function<void(Status, std::vector<Entry> &)> callback) = 0;
+    KVSTORE_API virtual Status GetEntries(const Key &prefixKey, std::vector<Entry> &entries) = 0;
 
     // Deprecated. use the GetKeys interface without nextKey as parameter instead.
     // Get a list of keys from kvstore by keyPrefix,
@@ -68,8 +66,7 @@ public:
     // nextKey: The first key to start in this search.
     // callback: all keys satisfies perfixKey, status of this call and the first key of the next part of data.
     [[deprecated]]
-    KVSTORE_API virtual void GetKeys(const Key &prefixKey, const Key &nextKey,
-                                     std::function<void(Status, std::vector<Key> &, const Key &)> callback) = 0;
+    KVSTORE_API virtual Status GetKeys(const Key &prefixKey, Key &nextKey, std::vector<Key> &entries) = 0;
 
     // Get a list of keys from kvstore by keyPrefix,
     // key length must be less than 1024,
@@ -79,7 +76,7 @@ public:
     // prefixKey: perfix key to search
     // callback: all keys satisfies perfixKey, and Stauts for this call.
     KVSTORE_API
-    virtual void GetKeys(const Key &prefixKey, std::function<void(Status, std::vector<Key> &)> callback) = 0;
+    virtual Status GetKeys(const Key &prefixKey, std::vector<Key> &entries) = 0;
 
     // Get value by key from kvstore, key length must be less than 256 and can not be empty.
     // if key not found in kvstore, KEY_NOT_FOUND will be returned.

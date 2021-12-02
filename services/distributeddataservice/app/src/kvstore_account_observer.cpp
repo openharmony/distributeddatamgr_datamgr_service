@@ -16,8 +16,10 @@
 #define LOG_TAG "KvStoreAccountObserver"
 
 #include "kvstore_account_observer.h"
-#include "log_print.h"
 #include <atomic>
+#include "kvstore_data_service.h"
+#include "log_print.h"
+
 namespace OHOS {
 namespace DistributedKv {
 std::atomic<int> g_kvStoreAccountEventStatus {0};

@@ -292,7 +292,7 @@ Status KvStoreMetaManager::CheckUpdateServiceMeta(const std::vector<uint8_t> &me
 Status KvStoreMetaManager::GenerateRootKey()
 {
     ZLOGI("GenerateRootKey.");
-    struct HksBlob rootKeyName = { vecRootKeyAlias_.size(), &(vecRootKeyAlias_[0]) };
+    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), &(vecRootKeyAlias_[0]) };
     struct HksParamSet *paramSet = nullptr;
     int32_t ret = HksInitParamSet(&paramSet);
     if (ret != HKS_SUCCESS) {
@@ -368,10 +368,10 @@ Status KvStoreMetaManager::CheckRootKeyExist()
 
 std::vector<uint8_t> KvStoreMetaManager::EncryptWorkKey(const std::vector<uint8_t> &key)
 {
-    struct HksBlob blobAad = { vecAad_.size(), &(vecAad_[0]) };
-    struct HksBlob blobNonce = { vecNonce_.size(), &(vecNonce_[0]) };
-    struct HksBlob rootKeyName = { vecRootKeyAlias_.size(), &(vecRootKeyAlias_[0]) };
-    struct HksBlob plainKey = { key.size(), const_cast<uint8_t *>(&(key[0])) };
+    struct HksBlob blobAad = { uint32_t(vecAad_.size()), &(vecAad_[0]) };
+    struct HksBlob blobNonce = { uint32_t(vecNonce_.size()), &(vecNonce_[0]) };
+    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), &(vecRootKeyAlias_[0]) };
+    struct HksBlob plainKey = { uint32_t(key.size()), const_cast<uint8_t *>(&(key[0])) };
     uint8_t cipherBuf[256] = { 0 };
     struct HksBlob encryptedKey = { sizeof(cipherBuf), cipherBuf };
     std::vector<uint8_t> encryptedKeyVec;
@@ -420,10 +420,10 @@ std::vector<uint8_t> KvStoreMetaManager::EncryptWorkKey(const std::vector<uint8_
 
 bool KvStoreMetaManager::DecryptWorkKey(const std::vector<uint8_t> &encryptedKey, std::vector<uint8_t> &key)
 {
-    struct HksBlob blobAad = { vecAad_.size(), &(vecAad_[0]) };
-    struct HksBlob blobNonce = { vecNonce_.size(), &(vecNonce_[0]) };
-    struct HksBlob rootKeyName = { vecRootKeyAlias_.size(), &(vecRootKeyAlias_[0]) };
-    struct HksBlob encryptedKeyBlob = { encryptedKey.size(), const_cast<uint8_t *>(&(encryptedKey[0])) };
+    struct HksBlob blobAad = { uint32_t(vecAad_.size()), &(vecAad_[0]) };
+    struct HksBlob blobNonce = { uint32_t(vecNonce_.size()), &(vecNonce_[0]) };
+    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), &(vecRootKeyAlias_[0]) };
+    struct HksBlob encryptedKeyBlob = { uint32_t(encryptedKey.size()), const_cast<uint8_t *>(&(encryptedKey[0])) };
     uint8_t plainBuf[256] = { 0 };
     struct HksBlob plainKeyBlob = { sizeof(plainBuf), plainBuf };
     struct HksParamSet *decryptParamSet = nullptr;

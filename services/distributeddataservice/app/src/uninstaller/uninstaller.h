@@ -19,10 +19,11 @@
 #include <memory.h>
 #include <mutex>
 
-#include "kvstore_data_service.h"
 #include "visibility.h"
 
 namespace OHOS::DistributedKv {
+class KvStoreDataService;
+enum class Status;
 class Uninstaller {
 public:
     KVSTORE_API virtual Status Init(KvStoreDataService *kvStoreDataService) = 0;

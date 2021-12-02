@@ -26,6 +26,7 @@ using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS;
 
+namespace {
 sptr<KvStoreDataService> g_kvStoreDataService;
 Options g_defaultOptions;
 AppId g_appId;
@@ -34,6 +35,7 @@ AppId g_appId1;
 StoreId g_storeId1;
 AppId g_appId2;
 StoreId g_storeId2;
+}
 
 class KvStoreImplPhysicalIsolationTest : public testing::Test {
 public:

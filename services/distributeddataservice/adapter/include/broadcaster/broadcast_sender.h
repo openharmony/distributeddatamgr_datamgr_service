@@ -18,6 +18,7 @@
 
 #include <string>
 #include <mutex>
+#include <memory>
 #include "visibility.h"
 
 namespace OHOS::DistributedKv {

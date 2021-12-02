@@ -64,16 +64,14 @@ Status SingleKvStoreClient::GetEntriesWithQuery(const DataQuery &query, std::vec
     return GetEntriesWithQuery(query.ToString(), entries);
 }
 
-void SingleKvStoreClient::GetResultSet(const Key &prefixKey,
-    std::function<void(Status, std::unique_ptr<KvStoreResultSet>)> callback) const
+Status SingleKvStoreClient::GetResultSet(const Key &prefixKey, std::shared_ptr<KvStoreResultSet> &resultSet) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
-
+    resultSet = nullptr;
     Status statusTmp = Status::SERVER_UNAVAILABLE;
     if (kvStoreProxy_ == nullptr) {
         ZLOGE("kvstore proxy is nullptr.");
-        callback(statusTmp, nullptr);
-        return;
+        return statusTmp;
     }
     sptr<IKvStoreResultSet> resultSetTmp;
     auto callFun = [&](Status status, sptr<IKvStoreResultSet> proxy) {
@@ -83,28 +81,27 @@ void SingleKvStoreClient::GetResultSet(const Key &prefixKey,
     kvStoreProxy_->GetResultSet(prefixKey, callFun);
     if (statusTmp != Status::SUCCESS) {
         ZLOGE("return error: %d.", static_cast<int>(statusTmp));
-        callback(statusTmp, nullptr);
-        return;
+        return statusTmp;
     }
 
     if (resultSetTmp == nullptr) {
         ZLOGE("resultSetTmp is nullptr.");
-        callback(statusTmp, nullptr);
-        return;
+        return statusTmp;
     }
-    callback(statusTmp, std::make_unique<KvStoreResultSetClient>(std::move(resultSetTmp)));
+    resultSet = std::make_shared<KvStoreResultSetClient>(std::move(resultSetTmp));
+    return statusTmp;
 }
 
-void SingleKvStoreClient::GetResultSetWithQuery(const std::string &query,
-    std::function<void(Status, std::unique_ptr<KvStoreResultSet>)> callback) const
+Status SingleKvStoreClient::GetResultSetWithQuery(const std::string &query,
+                                                  std::shared_ptr<KvStoreResultSet> &resultSet) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
 
+    resultSet = nullptr;
     Status statusTmp = Status::SERVER_UNAVAILABLE;
     if (kvStoreProxy_ == nullptr) {
         ZLOGE("kvstore proxy is nullptr.");
-        callback(statusTmp, nullptr);
-        return;
+        return statusTmp;
     }
 
     ZLOGD("Cpp client GetResultSetWithQuery");
@@ -116,30 +113,29 @@ void SingleKvStoreClient::GetResultSetWithQuery(const std::string &query,
     kvStoreProxy_->GetResultSetWithQuery(query, callFun);
     if (statusTmp != Status::SUCCESS) {
         ZLOGE("return error: %d.", static_cast<int>(statusTmp));
-        callback(statusTmp, nullptr);
-        return;
+        return statusTmp;
     }
 
     if (resultSetTmp == nullptr) {
         ZLOGE("resultSetTmp is nullptr.");
-        callback(statusTmp, nullptr);
-        return;
+        return statusTmp;
     }
-    callback(statusTmp, std::make_unique<KvStoreResultSetClient>(std::move(resultSetTmp)));
     ZLOGE("GetResultSetWithQuery");
+    resultSet = std::make_shared<KvStoreResultSetClient>(std::move(resultSetTmp));
+    return statusTmp;
 }
 
-void SingleKvStoreClient::GetResultSetWithQuery(const DataQuery &query,
-    std::function<void(Status, std::unique_ptr<KvStoreResultSet>)> callback) const
+Status SingleKvStoreClient::GetResultSetWithQuery(const DataQuery &query,
+                                                  std::shared_ptr<KvStoreResultSet> &resultSet) const
 {
-    GetResultSetWithQuery(query.ToString(), callback);
+    return GetResultSetWithQuery(query.ToString(), resultSet);
 }
 
-Status SingleKvStoreClient::CloseResultSet(std::unique_ptr<KvStoreResultSet> resultSet)
+Status SingleKvStoreClient::CloseResultSet(std::shared_ptr<KvStoreResultSet> &resultSet)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-
-    if (resultSet == nullptr) {
+    auto resultSetTmp = std::move(resultSet);
+    if (resultSetTmp == nullptr) {
         ZLOGE("resultSet is nullptr.");
         return Status::INVALID_ARGUMENT;
     }
@@ -147,7 +143,7 @@ Status SingleKvStoreClient::CloseResultSet(std::unique_ptr<KvStoreResultSet> res
         ZLOGE("kvstore proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;
     }
-    auto resultSetClient = reinterpret_cast<KvStoreResultSetClient *>(resultSet.release());
+    auto resultSetClient = reinterpret_cast<KvStoreResultSetClient *>(resultSetTmp.get());
     return kvStoreProxy_->CloseResultSet(resultSetClient->GetKvStoreResultSetProxy());
 }
 
@@ -393,30 +389,31 @@ Status SingleKvStoreClient::Rollback()
 Status SingleKvStoreClient::SetSyncParam(const KvSyncParam &syncParam)
 {
     KvParam input(TransferTypeToByteArray<KvSyncParam>(syncParam));
-    sptr<KvParam> output = nullptr;
+    KvParam output;
     return Control(KvControlCmd::SET_SYNC_PARAM, input, output);
 }
 
 Status SingleKvStoreClient::GetSyncParam(KvSyncParam &syncParam)
 {
     KvParam inputEmpty;
-    sptr<KvParam> output = nullptr;
+    KvParam output;
     Status ret = Control(KvControlCmd::GET_SYNC_PARAM, inputEmpty, output);
     if (ret != Status::SUCCESS) {
         return ret;
     }
-    if ((output != nullptr) && (output->Size() == sizeof(syncParam))) {
-        syncParam = TransferByteArrayToType<KvSyncParam>(output->Data());
+    if (output.Size() == sizeof(syncParam)) {
+        syncParam = TransferByteArrayToType<KvSyncParam>(output.Data());
         return Status::SUCCESS;
     }
     return Status::ERROR;
 }
 
-Status SingleKvStoreClient::Control(KvControlCmd cmd, const KvParam &inputParam, sptr<KvParam> &output)
+Status SingleKvStoreClient::Control(KvControlCmd cmd, const KvParam &inputParam, KvParam &output)
 {
     ZLOGI("begin.");
     if (kvStoreProxy_ != nullptr) {
-        return kvStoreProxy_->Control(cmd, inputParam, output);
+        sptr<KvParam> kvParam;
+        return kvStoreProxy_->Control(cmd, inputParam, kvParam);
     }
     ZLOGE("singleKvstore proxy is nullptr.");
     return Status::SERVER_UNAVAILABLE;
@@ -447,5 +444,21 @@ Status SingleKvStoreClient::GetSecurityLevel(SecurityLevel &securityLevel) const
     }
     ZLOGE("singleKvstore proxy is nullptr.");
     return Status::SERVER_UNAVAILABLE;
+}
+
+Status SingleKvStoreClient::GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
+                                               std::shared_ptr<KvStoreSnapshot> &snapshot) const
+{
+    return Status::NOT_SUPPORT;
+}
+
+Status SingleKvStoreClient::ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot)
+{
+    return Status::NOT_SUPPORT;
+}
+
+Status SingleKvStoreClient::Clear()
+{
+    return Status::NOT_SUPPORT;
 }
 } // namespace OHOS::DistributedKv

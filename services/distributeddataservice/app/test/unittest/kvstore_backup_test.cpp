@@ -70,8 +70,8 @@ void KvStoreBackupTest::TearDown(void)
 */
 HWTEST_F(KvStoreBackupTest, KvStoreBackupTest001, TestSize.Level1)
 {
-    Options options = { .createIfMissing = true, .encrypt = false, .autoSync = true, .backup = true,
-                        .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
+    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
+        .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
     AppId appId = { "backup1" };
     StoreId storeId = { "store1" };
     KvStoreDataService kvDataService;
@@ -92,8 +92,8 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest001, TestSize.Level1)
 */
 HWTEST_F(KvStoreBackupTest, KvStoreBackupTest002, TestSize.Level1)
 {
-    Options options = { .createIfMissing = true, .encrypt = false, .autoSync = true, .backup = true,
-                       .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
+    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
+        .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
     AppId appId = { "backup2" };
     StoreId storeId = { "store2" };
 
@@ -144,8 +144,8 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest002, TestSize.Level1)
 */
 HWTEST_F(KvStoreBackupTest, KvStoreBackupTest003, TestSize.Level1)
 {
-    Options options = { .createIfMissing = true, .encrypt = false, .autoSync = true, .backup = true,
-            .kvStoreType = KvStoreType::MULTI_VERSION, .dataOwnership = true };
+    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
+        .kvStoreType = KvStoreType::MULTI_VERSION, .dataOwnership = true };
     AppId appId = { "backup3" };
     StoreId storeId = { "store3" };
 
@@ -207,7 +207,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest003, TestSize.Level1)
 */
 HWTEST_F(KvStoreBackupTest, KvStoreBackupTest004, TestSize.Level1)
 {
-    Options options = { .createIfMissing = true, .encrypt = false, .autoSync = true, .backup = true,
+    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
             .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
     AppId appId = { "backup4" };
     StoreId storeId = { "store4" };

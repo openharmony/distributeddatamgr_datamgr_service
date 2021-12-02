@@ -40,6 +40,24 @@ struct UserId {
 // app identifier from Bms
 struct AppId {
     std::string appId;
+    inline bool IsValid() const
+    {
+        if (appId.empty() || appId.size() > MAX_APP_ID_LEN) {
+            return false;
+        }
+        int count = 0;
+        auto iter = std::find_if_not(appId.begin(), appId.end(),
+            [&count](char c) {
+            count = (c == SEPARATOR_CHAR) ? (count + 1) : (count >= SEPARATOR_COUNT ? count : 0);
+            return (std::isprint(c) && c != '/');
+        });
+
+        return (iter == appId.end()) && (count < SEPARATOR_COUNT);
+    }
+private:
+    static constexpr int MAX_APP_ID_LEN = 256;
+    static constexpr int SEPARATOR_COUNT = 3;
+    static constexpr char SEPARATOR_CHAR = '#';
 };
 
 // kvstore name set by client by calling GetKvStore,
@@ -47,6 +65,17 @@ struct AppId {
 // and can not be empty and all space.
 struct StoreId {
     std::string storeId;
+    inline bool IsValid() const
+    {
+        if (storeId.empty() || storeId.size() > MAX_STORE_ID_LEN) {
+            return false;
+        }
+        auto iter = std::find_if_not(storeId.begin(), storeId.end(),
+            [](char c) { return (std::isdigit(c) || std::isalpha(c) || c == '_'); });
+        return (iter == storeId.end());
+    }
+private:
+    static constexpr int MAX_STORE_ID_LEN = 128;
 };
 
 struct KvStoreTuple {
@@ -244,6 +273,12 @@ struct Options {
     bool syncable = true; // let bms delete first
     std::string schema = "";
     bool dataOwnership = true; // true indicates the ownership of distributed data is DEVICE, otherwise, ACCOUNT
+
+    inline bool IsValidType() const
+    {
+        return kvStoreType == KvStoreType::DEVICE_COLLABORATION || kvStoreType == KvStoreType::SINGLE_VERSION ||
+            kvStoreType == KvStoreType::DEVICE_COLLABORATION;
+    }
 };
 
 template<typename T>

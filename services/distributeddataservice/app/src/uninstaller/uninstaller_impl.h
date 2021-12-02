@@ -17,6 +17,7 @@
 #define DISTRIBUTEDDATAMGR_UNINSTALLER_IMPL_H
 
 #include "common_event_subscriber.h"
+#include "kvstore_data_service.h"
 #include "uninstaller.h"
 
 namespace OHOS::DistributedKv {

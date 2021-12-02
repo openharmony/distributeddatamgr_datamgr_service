@@ -38,18 +38,15 @@ public:
 
     // Creates a snapshot of the kvstore, allowing the client app to read a
     // consistent data of the content of the kvstore.
-    //
     // If observer is provided, it will receive notifications for changes of the
     // kvstore newer than the resulting snapshot.
-    // Parameters:
     // observer: observer for subscribe.
-    // callback: including status and KvStoreSnapshot instance returned by this call.
-    KVSTORE_API
-    virtual void GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
-                                    std::function<void(Status, std::unique_ptr<KvStoreSnapshot>)> callback) const = 0;
+    // snapshot: [output] the KvStoreSnapshot instance.
+    KVSTORE_API virtual Status GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
+        std::shared_ptr<KvStoreSnapshot> &snapshot) const = 0;
 
     // Release snapshot created by calling GetKvStoreSnapshot.
-    KVSTORE_API virtual Status ReleaseKvStoreSnapshot(std::unique_ptr<KvStoreSnapshot> kvStoreSnapshotPtr) = 0;
+    KVSTORE_API virtual Status ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot) = 0;
 
     // Mutation operations.
     // Key level operations.

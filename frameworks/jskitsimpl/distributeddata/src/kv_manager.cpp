@@ -100,11 +100,11 @@ napi_value KVManager::GetKVStore(napi_env env, napi_callback_info info)
         return status;
     };
     auto exec = [ctxInfo](AsyncCall::Context *ctx) {
+        std::shared_ptr<DistributedKv::SingleKvStore> kvStore;
         ctxInfo->proxy->kvDataManager_.GetSingleKvStore(
             ctxInfo->options, {ctxInfo->proxy->bundleName_}, {ctxInfo->storeId},
-            [ctxInfo](Status, std::unique_ptr<SingleKvStore> kvStore) {
-                *(ctxInfo->kvStore) = std::move(kvStore);
-            });
+            kvStore);
+        *(ctxInfo->kvStore) = std::move(kvStore);
     };
     auto context = std::make_shared<AsyncCall::Context>(input, output);
     // getKVStore<T extends KVStore>(storeId: string, options: Options, callback: AsyncCallback<T>): void;

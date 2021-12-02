@@ -28,7 +28,7 @@ namespace OHOS {
 namespace DistributedKv {
 // This is a public interface. Implementation of this class is in AppKvStoreImpl.
 // This class provides put, delete, search, sync and subscribe functions of a key-value store.
-class SingleKvStore {
+class SingleKvStore : public virtual KvStore {
 public:
     KVSTORE_API SingleKvStore() = default;
 
@@ -49,7 +49,7 @@ public:
     //     entries: entries will be returned in this parameter.
     // Return:
     //     Status of this GetEntries operation.
-    virtual Status GetEntriesWithQuery(const std::string &query, std::vector<Entry> &entries) const = 0;
+    KVSTORE_API virtual Status GetEntriesWithQuery(const std::string &query, std::vector<Entry> &entries) const = 0;
 
     // Get all entries in this store by query.
     // Parameters:
@@ -65,8 +65,8 @@ public:
     //     resultSet: resultSet will be returned in this parameter.
     // Return:
     //     Status of this GetResultSet operation.
-    KVSTORE_API virtual void GetResultSet(const Key &prefixKey,
-            std::function<void(Status, std::unique_ptr<KvStoreResultSet>)> callback) const = 0;
+    KVSTORE_API virtual Status GetResultSet(const Key &prefixKey,
+                                            std::shared_ptr<KvStoreResultSet> &resultSet) const = 0;
 
     // Get ResultSet in this store by Query.
     // Parameters:
@@ -74,8 +74,8 @@ public:
     //     resultSet: resultSet will be returned in this parameter.
     // Return:
     //     Status of this GetResultSet operation.
-    virtual void GetResultSetWithQuery(const std::string &query,
-                 std::function<void(Status, std::unique_ptr<KvStoreResultSet>)> callback) const = 0;
+    KVSTORE_API virtual Status GetResultSetWithQuery(const std::string &query,
+                                                     std::shared_ptr<KvStoreResultSet> &resultSet) const = 0;
 
     // Get ResultSet in this store by Query.
     // Parameters:
@@ -83,15 +83,15 @@ public:
     //     resultSet: resultSet will be returned in this parameter.
     // Return:
     //     Status of this GetResultSet operation.
-    KVSTORE_API virtual void GetResultSetWithQuery(const DataQuery &query,
-                std::function<void(Status, std::unique_ptr<KvStoreResultSet>)> callback) const = 0;
+    KVSTORE_API virtual Status GetResultSetWithQuery(const DataQuery &query,
+                                                     std::shared_ptr<KvStoreResultSet> &resultSet) const = 0;
 
     // Close the ResultSet returned by GetResultSet.
     // Parameters:
     //     resultSet: resultSet will be returned in this parameter.
     // Return:
     //     Status of this CloseResultSet operation.
-    KVSTORE_API virtual Status CloseResultSet(std::unique_ptr<KvStoreResultSet> resultSet) = 0;
+    KVSTORE_API virtual Status CloseResultSet(std::shared_ptr<KvStoreResultSet> &resultSet) = 0;
 
     // Get the number of result by query.
     // Parameters:
@@ -128,24 +128,6 @@ public:
     //     Status of this remove operation.
     KVSTORE_API virtual Status RemoveDeviceData(const std::string &device) = 0;
 
-    // Get id of this SingleKvStore.
-    KVSTORE_API virtual StoreId GetStoreId() const = 0;
-
-    // Delete an entry by its key.
-    // Parameters:
-    //     key: key of the entry to be deleted.
-    // Return:
-    //     Status of this delete operation.
-    KVSTORE_API virtual Status Delete(const Key &key) = 0;
-
-    // Write a pair of key and value to this store.
-    // Parameters:
-    //     key: key of this entry. Should be less than 1024 bytes. key will be trimmed before store.
-    //     value: value of this entry. Should be less than (4 * 1024 * 1024) bytes.
-    // Return:
-    //     Status of this put operation.
-    KVSTORE_API virtual Status Put(const Key &key, const Value &value) = 0;
-
     // Get value from AppKvStore by its key.
     // Parameters:
     //     key: key of this entry.
@@ -153,29 +135,6 @@ public:
     // Return:
     //     Status of this get operation.
     KVSTORE_API virtual Status Get(const Key &key, Value &value) = 0;
-
-    // subscribe change of this kvstore to a client-defined observer. observer->OnChange method will be called when store
-    // changes.
-    // Parameters:
-    //     subscribeType: SUBSCRIBE_TYPE_LOCAL means local changes of syncable kv store,
-    //                  : SUBSCRIBE_TYPE_REMOTE means synced data changes from remote devices,
-    //                  : SUBSCRIBE_TYPE_ALL means both local changes and synced data changes.
-    //     observer: observer to subscribe changes.
-    // Return:
-    //     Status of this subscribe operation.
-    KVSTORE_API
-    virtual Status SubscribeKvStore(SubscribeType subscribeType, std::shared_ptr<KvStoreObserver> observer) = 0;
-
-    // un-subscribe change of this kvstore to a client-defined observer.
-    // Parameters:
-    //     subscribeType: SUBSCRIBE_TYPE_LOCAL means local changes of syncable kv store,
-    //                  : SUBSCRIBE_TYPE_REMOTE means synced data changes from remote devices,
-    //                  : SUBSCRIBE_TYPE_ALL means both local changes and synced data changes.
-    //     observer: observer to subscribe changes.
-    // Return:
-    //     Status of this subscribe operation.
-    KVSTORE_API
-    virtual Status UnSubscribeKvStore(SubscribeType subscribeType, std::shared_ptr<KvStoreObserver> observer) = 0;
 
     // register message for sync operation.
     // Parameters:
@@ -192,34 +151,6 @@ public:
     //     Status of this register operation.
     KVSTORE_API
     virtual Status UnRegisterSyncCallback() = 0;
-
-    // see Put, PutBatch put a list of entries to kvstore,
-    // all entries will be put in a transaction,
-    // if entries contains invalid entry, PutBatch will all fail.
-    // entries's size should be less than 128 and memory size must be less than IPC transport limit.
-    KVSTORE_API virtual Status PutBatch(const std::vector<Entry> &entries) = 0;
-
-    // delete a list of entries in the kvstore,
-    // delete key not exist still return success,
-    // key length should not be greater than 256, and can not be empty.
-    // if keys contains invalid key, all delete will fail.
-    // keys memory size should not be greater than IPC transport limit, and can not be empty.
-    KVSTORE_API virtual Status DeleteBatch(const std::vector<Key> &keys) = 0;
-
-    // start transaction.
-    // all changes to this kvstore will be in a same transaction and will not change the store until Commit() or
-    // Rollback() is called.
-    // before this transaction is committed or rollbacked, all attemption to close this store will fail.
-    KVSTORE_API virtual Status StartTransaction() = 0;
-
-    // commit current transaction. all changes to this store will be done after calling this method.
-    // any calling of this method outside a transaction will fail.
-    KVSTORE_API virtual Status Commit() = 0;
-
-    // rollback current transaction.
-    // all changes to this store during this transaction will be rollback after calling this method.
-    // any calling of this method outside a transaction will fail.
-    KVSTORE_API virtual Status Rollback() = 0;
 
     // set synchronization parameters of this store.
     // Parameters:
@@ -248,7 +179,7 @@ protected:
     //     output: output data, nullptr if no data is returned.
     // Return:
     //     Status of this control operation.
-    KVSTORE_API virtual Status Control(KvControlCmd cmd, const KvParam &inputParam, sptr<KvParam> &output) = 0;
+    KVSTORE_API virtual Status Control(KvControlCmd cmd, const KvParam &inputParam, KvParam &output) = 0;
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS

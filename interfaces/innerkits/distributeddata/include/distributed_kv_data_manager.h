@@ -16,6 +16,7 @@
 #ifndef DISTRIBUTED_KV_DATA_MANAGER_H
 #define DISTRIBUTED_KV_DATA_MANAGER_H
 
+#include <functional>
 #include "kvstore.h"
 #include "kvstore_death_recipient.h"
 #include "kvstore_observer.h"
@@ -48,8 +49,8 @@ public:
     // if storeId is not valid, INVALID_ARGUMENT and nullptr,
     // if appId has no permission, PERMISSION_DENIED and nullptr,
     // otherwise, SUCCESS and the unipue_ptr of kvstore, which client can use to operate kvstore, will be returned.
-    KVSTORE_API void GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
-                                std::function<void(Status, std::unique_ptr<KvStore>)> callback);
+    KVSTORE_API Status GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
+        std::shared_ptr<KvStore> &kvStore);
 
     // Open kvstore instance with the given storeId, creating it if needed.
     // It is allowed to open the same kvstore concurrently
@@ -66,11 +67,11 @@ public:
     // if storeId is not valid, INVALID_ARGUMENT and nullptr,
     // if appId has no permission, PERMISSION_DENIED and nullptr,
     // otherwise, SUCCESS and the unipue_ptr of kvstore, which client can use to operate kvstore, will be returned.
-    KVSTORE_API void GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
-                                std::function<void(Status, std::unique_ptr<SingleKvStore>)> callback);
+    KVSTORE_API Status GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
+        std::shared_ptr<SingleKvStore> &singleKvStore);
 
     // get all existed kvstore names.
-    KVSTORE_API void GetAllKvStoreId(const AppId &appId, std::function<void(Status, std::vector<StoreId> &)> callback);
+    KVSTORE_API Status GetAllKvStoreId(const AppId &appId, std::vector<StoreId> &storeIds);
 
     // WARNING: try to close a KvStore while other thread(s) still using it may cause process crash.
     // Disconnect kvstore instance from kvstoreimpl with the given storeId,
@@ -82,8 +83,7 @@ public:
     // Parameters:
     // appId: the name of the application.
     // storeId: the name of the kvstore.
-    KVSTORE_API
-    Status CloseKvStore(const AppId &appId, const StoreId &storeId, std::unique_ptr<KvStore> kvStorePtr = nullptr);
+    KVSTORE_API Status CloseKvStore(const AppId &appId, const StoreId &storeId);
 
     // WARNING: try to close a KvStore while other thread(s) still using it may cause process crash.
     //
@@ -96,8 +96,7 @@ public:
     // Parameters:
     // appId: the name of the application.
     // kvStorePtr: the pointer of the kvstore.
-    KVSTORE_API
-    Status CloseKvStore(const AppId &appId, std::unique_ptr<SingleKvStore> kvStorePtr);
+    KVSTORE_API Status CloseKvStore(const AppId &appId, std::shared_ptr<SingleKvStore> &kvStorePtr);
 
     // WARNING: try to close a KvStore while other thread(s) still using it may cause process crash.
     // close all opened kvstores for this appId.

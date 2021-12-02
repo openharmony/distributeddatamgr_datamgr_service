@@ -34,7 +34,7 @@ public:
 
     void TearDown();
 
-    static std::unique_ptr<SingleKvStore> singleKvStorePtr; // declare kvstore instance.
+    static std::shared_ptr<SingleKvStore> singleKvStorePtr; // declare kvstore instance.
     static Status statusGetKvStore;
     static int MAX_VALUE_SIZE;
 };
@@ -47,7 +47,7 @@ const std::string VALID_SCHEMA_STRICT_DEFINE = "{\"SCHEMA_VERSION\":\"1.0\","
         "},"
         "\"SCHEMA_INDEXES\":[\"$.age\"]}";
 
-std::unique_ptr<SingleKvStore> SingleKvStoreClientTest::singleKvStorePtr = nullptr;
+std::shared_ptr<SingleKvStore> SingleKvStoreClientTest::singleKvStorePtr = nullptr;
 Status SingleKvStoreClientTest::statusGetKvStore = Status::ERROR;
 int SingleKvStoreClientTest::MAX_VALUE_SIZE = 4 * 1024 * 1024; // max value size is 4M.
 
@@ -61,10 +61,7 @@ void SingleKvStoreClientTest::SetUpTestCase(void)
     StoreId storeId = { "student_single" }; // define kvstore(database) name.
 
     // [create and] open and initialize kvstore instance.
-    manager.GetSingleKvStore(options, appId, storeId, [&](Status status, std::unique_ptr<SingleKvStore> kvStore) {
-        statusGetKvStore = status;
-        singleKvStorePtr = std::move(kvStore);
-    });
+    statusGetKvStore = manager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
 }
 
 void SingleKvStoreClientTest::TearDownTestCase(void)
@@ -92,7 +89,7 @@ public:
     KvStoreObserverTestImpl &operator=(KvStoreObserverTestImpl &&) = delete;
 
     // callback function will be called when the db data is changed.
-    void OnChange(const ChangeNotification &changeNotification, std::unique_ptr<KvStoreSnapshot> snapshot);
+    void OnChange(const ChangeNotification &changeNotification, std::shared_ptr<KvStoreSnapshot> snapshot);
 
     void OnChange(const ChangeNotification &changeNotification);
 
@@ -108,19 +105,19 @@ private:
 void KvStoreObserverTestImpl::OnChange(const ChangeNotification &changeNotification)
 {
     callCount_++;
-    const std::list<Entry> insert = changeNotification.GetInsertEntries();
+    const auto &insert = changeNotification.GetInsertEntries();
     insertEntries_.clear();
     for (const auto &entry : insert) {
         insertEntries_.push_back(entry);
     }
 
-    const std::list<Entry> update = changeNotification.GetUpdateEntries();
+    const auto &update = changeNotification.GetUpdateEntries();
     updateEntries_.clear();
     for (const auto &entry : update) {
         updateEntries_.push_back(entry);
     }
 
-    const std::list<Entry> del = changeNotification.GetDeleteEntries();
+    const auto &del = changeNotification.GetDeleteEntries();
     deleteEntries_.clear();
     for (const auto &entry : del) {
         deleteEntries_.push_back(entry);
@@ -130,7 +127,7 @@ void KvStoreObserverTestImpl::OnChange(const ChangeNotification &changeNotificat
 }
 
 void KvStoreObserverTestImpl::OnChange(const ChangeNotification &changeNotification,
-                                       std::unique_ptr<KvStoreSnapshot> snapshot)
+                                       std::shared_ptr<KvStoreSnapshot> snapshot)
 {}
 
 
@@ -236,30 +233,28 @@ HWTEST_F(SingleKvStoreClientTest, GetEntriesAndResultSet001 ,TestSize.Level1)
     singleKvStorePtr->GetEntries({prefix}, results);
     EXPECT_EQ(results.size(), sum) << "entries size is not equal 10.";
 
-    std::unique_ptr<KvStoreResultSet> callback;
-    singleKvStorePtr->GetResultSet({prefix}, [&](Status status, std::unique_ptr<KvStoreResultSet> call) {
-        EXPECT_EQ(status, Status::SUCCESS);
-        callback = std::move(call);
-    });
-    EXPECT_EQ(callback->GetCount(), sum_1) << "resultSet size is not equal 10.";
-    callback->IsFirst();
-    callback->IsAfterLast();
-    callback->IsBeforeFirst();
-    callback->MoveToPosition(1);
-    callback->IsLast();
-    callback->MoveToPrevious();
-    callback->MoveToNext();
-    callback->MoveToLast();
-    callback->MoveToFirst();
-    callback->GetPosition();
+    std::shared_ptr<KvStoreResultSet> resultSet;
+    Status status = singleKvStorePtr->GetResultSet({prefix}, resultSet);
+    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(resultSet->GetCount(), sum_1) << "resultSet size is not equal 10.";
+    resultSet->IsFirst();
+    resultSet->IsAfterLast();
+    resultSet->IsBeforeFirst();
+    resultSet->MoveToPosition(1);
+    resultSet->IsLast();
+    resultSet->MoveToPrevious();
+    resultSet->MoveToNext();
+    resultSet->MoveToLast();
+    resultSet->MoveToFirst();
+    resultSet->GetPosition();
     Entry entry;
-    callback->GetEntry(entry);
+    resultSet->GetEntry(entry);
 
     for (unsigned long i = 0; i < sum; i++) {
         singleKvStorePtr->Delete({prefix + std::to_string(i)});
     }
 
-    auto closeResultSetStatus = singleKvStorePtr->CloseResultSet(std::move(callback));
+    auto closeResultSetStatus = singleKvStorePtr->CloseResultSet(resultSet);
     EXPECT_EQ(closeResultSetStatus, Status::SUCCESS) << "close resultSet failed.";
 }
 
@@ -361,16 +356,14 @@ HWTEST_F(SingleKvStoreClientTest, SyncData001 ,TestSize.Level1)
 */
 HWTEST_F(SingleKvStoreClientTest, TestSchemaStoreC001 ,TestSize.Level1)
 {
-    std::unique_ptr<SingleKvStore> schemaSingleKvStorePtr;
+    std::shared_ptr<SingleKvStore> schemaSingleKvStorePtr;
     DistributedKvDataManager manager;
     Options options = { .createIfMissing = true, .encrypt = true, .autoSync = true,
                         .kvStoreType = KvStoreType::SINGLE_VERSION };
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
     AppId appId = { "schema_app_id" };
     StoreId storeId = { "schema_store_id" };
-    manager.GetSingleKvStore(options, appId, storeId, [&](Status status, std::unique_ptr<SingleKvStore> kvStore) {
-        schemaSingleKvStorePtr = std::move(kvStore);
-    });
+    (void)manager.GetSingleKvStore(options, appId, storeId, schemaSingleKvStorePtr);
     ASSERT_NE(schemaSingleKvStorePtr, nullptr) << "kvStorePtr is null.";
     auto result = schemaSingleKvStorePtr->GetStoreId();
     EXPECT_EQ(result.storeId, "schema_store_id");
@@ -1020,15 +1013,13 @@ HWTEST_F(SingleKvStoreClientTest, SingleKvStoreTransaction002, TestSize.Level2)
 */
 HWTEST_F(SingleKvStoreClientTest, SingleKvStoreDeviceSync001 ,TestSize.Level1)
 {
-    std::unique_ptr<SingleKvStore> schemaSingleKvStorePtr;
+    std::shared_ptr<SingleKvStore> schemaSingleKvStorePtr;
     DistributedKvDataManager manager;
     Options options = { .createIfMissing = true, .encrypt = true, .autoSync = true,
             .kvStoreType = KvStoreType::SINGLE_VERSION};
     AppId appId = { "schema_app_id001" };
     StoreId storeId = { "schema_store_id001" };
-    manager.GetSingleKvStore(options, appId, storeId, [&](Status status, std::unique_ptr<SingleKvStore> kvStore) {
-        schemaSingleKvStorePtr = std::move(kvStore);
-    });
+    manager.GetSingleKvStore(options, appId, storeId, schemaSingleKvStorePtr);
     ASSERT_NE(schemaSingleKvStorePtr, nullptr) << "kvStorePtr is null.";
     auto result = schemaSingleKvStorePtr->GetStoreId();
     EXPECT_EQ(result.storeId, "schema_store_id001");
@@ -1046,15 +1037,13 @@ HWTEST_F(SingleKvStoreClientTest, SingleKvStoreDeviceSync001 ,TestSize.Level1)
 */
 HWTEST_F(SingleKvStoreClientTest, SingleKvStoreDeviceSync002 ,TestSize.Level1)
 {
-    std::unique_ptr<SingleKvStore> schemaSingleKvStorePtr;
+    std::shared_ptr<SingleKvStore> schemaSingleKvStorePtr;
     DistributedKvDataManager manager;
     Options options = { .createIfMissing = true, .encrypt = true, .autoSync = true,
             .kvStoreType = KvStoreType::SINGLE_VERSION};
     AppId appId = { "schema_app_id002" };
     StoreId storeId = { "schema_store_id002" };
-    manager.GetSingleKvStore(options, appId, storeId, [&](Status status, std::unique_ptr<SingleKvStore> kvStore) {
-        schemaSingleKvStorePtr = std::move(kvStore);
-    });
+    manager.GetSingleKvStore(options, appId, storeId, schemaSingleKvStorePtr);
     ASSERT_NE(schemaSingleKvStorePtr, nullptr) << "kvStorePtr is null.";
     auto result = schemaSingleKvStorePtr->GetStoreId();
     EXPECT_EQ(result.storeId, "schema_store_id002");
