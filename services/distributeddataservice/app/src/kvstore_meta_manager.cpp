@@ -546,7 +546,7 @@ Status KvStoreMetaManager::RemoveSecretKey(const std::string &deviceAccountId, c
         status = Status::DB_ERROR;
     }
 
-    int securityLevel;
+    int securityLevel = SecurityLevel::NO_LABEL;
     GetSecurityLevelByBundleName(bundleName, securityLevel);
     std::string secretKeyFile = GetSecretKeyFile(deviceAccountId, bundleName, storeId, securityLevel);
     bool rmFile = RemoveFile(secretKeyFile);
@@ -666,7 +666,7 @@ void KvStoreMetaManager::ReKey(const std::string &deviceAccountId, const std::st
     WriteSecretKeyToMeta(GetMetaKey(deviceAccountId, "default", bundleName, storeId, "SINGLE_KEY"), key);
     Status status = kvStoreImpl->ReKey(key);
     if (status == Status::SUCCESS) {
-        int securityLevel;
+        int securityLevel = SecurityLevel::NO_LABEL;
         GetSecurityLevelByBundleName(bundleName, securityLevel);
         WriteSecretKeyToFile(GetSecretSingleKeyFile(deviceAccountId, bundleName, storeId, securityLevel), key);
     }
