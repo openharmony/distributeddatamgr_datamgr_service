@@ -647,7 +647,7 @@ void KvStoreMetaManager::ReKey(const std::string &deviceAccountId, const std::st
     WriteSecretKeyToMeta(GetMetaKey(deviceAccountId, "default", bundleName, storeId, "KEY"), key);
     Status status = kvStoreimpl->ReKey(key);
     if (status == Status::SUCCESS) {
-        int securityLevel;
+        int securityLevel = SecurityLevel::NO_LABEL;
         GetSecurityLevelByBundleName(bundleName, securityLevel);
         WriteSecretKeyToFile(GetSecretKeyFile(deviceAccountId, bundleName, storeId, securityLevel), key);
     }
@@ -666,7 +666,7 @@ void KvStoreMetaManager::ReKey(const std::string &deviceAccountId, const std::st
     WriteSecretKeyToMeta(GetMetaKey(deviceAccountId, "default", bundleName, storeId, "SINGLE_KEY"), key);
     Status status = kvStoreImpl->ReKey(key);
     if (status == Status::SUCCESS) {
-        int securityLevel = SecurityLevel::NO_LABEL;
+        int securityLevel;
         GetSecurityLevelByBundleName(bundleName, securityLevel);
         WriteSecretKeyToFile(GetSecretSingleKeyFile(deviceAccountId, bundleName, storeId, securityLevel), key);
     }
