@@ -273,7 +273,7 @@ private:
 
     Status GetStategyMeta(const std::string &key, std::map<std::string, std::vector<std::string>> &strategies);
 
-    bool GetSecurityLevelByBundleName(const std::string &bundleName, int &securityLevel);
+    int GetSecurityLevelByBundleName(const std::string &bundleName);
 
     bool GetKvStoreMetaByType(const std::string &name, const std::string &val, KvStoreMetaData &metaData);
 
