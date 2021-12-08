@@ -2429,7 +2429,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, TransactionObserver003, TestSize.Level1)
     }
 
     /**
-     * @tc.steps: step2. start the transaction and putBatch (k3, v3), (k4, v4), ..., (k8, v8) to db.
+     * @tc.steps: step2. start the transaction and putBatch (k3, v3), (k4, v4), ..., (k8, value8) to db.
      * @tc.expected: step2. start transaction and putBatch successfully.
      */
     EXPECT_EQ(g_nbBatchCrudDelegate->StartTransaction(), OK);
@@ -2448,7 +2448,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, TransactionObserver003, TestSize.Level1)
     /**
      * @tc.steps: step3. commit the transaction and check the observers.
      * @tc.expected: step3. commit succeed and all of the observers received one insert notify, callbacklist of which
-     *    contains (k4, v4), ..., (k8, v8), all observer received one update notify, callbacklist of which contains
+     *    contains (k4, v4), ..., (k8, value8), all observer received one update notify, callbacklist of which contains
      *    (k2, v3), all observers received one insert notify, callback of which contains (k1, v1), (k3, v3), (k9, v9).
      */
     EXPECT_EQ(g_nbBatchCrudDelegate->Commit(), OK);
