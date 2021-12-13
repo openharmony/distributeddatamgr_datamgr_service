@@ -33,9 +33,6 @@ std::set<std::string> PermissionValidator::systemServiceList_ = {
 
 // initialize auto launch enabled applications white list.
 std::set<std::string> PermissionValidator::autoLaunchEnableList_ = {
-    "providers.calendar",
-    "contacts.sync",
-    "ohos.totemweather"
 };
 
 // check whether the client process have enough privilege to share data with the other devices.
