@@ -546,8 +546,7 @@ Status KvStoreMetaManager::RemoveSecretKey(const std::string &deviceAccountId, c
         status = Status::DB_ERROR;
     }
 
-    int securityLevel = SecurityLevel::NO_LABEL;
-    GetSecurityLevelByBundleName(bundleName, securityLevel);
+    int securityLevel = GetSecurityLevelByBundleName(bundleName);
     std::string secretKeyFile = GetSecretKeyFile(deviceAccountId, bundleName, storeId, securityLevel);
     bool rmFile = RemoveFile(secretKeyFile);
     if (!rmFile) {
@@ -647,8 +646,7 @@ void KvStoreMetaManager::ReKey(const std::string &deviceAccountId, const std::st
     WriteSecretKeyToMeta(GetMetaKey(deviceAccountId, "default", bundleName, storeId, "KEY"), key);
     Status status = kvStoreimpl->ReKey(key);
     if (status == Status::SUCCESS) {
-        int securityLevel;
-        GetSecurityLevelByBundleName(bundleName, securityLevel);
+        int securityLevel = GetSecurityLevelByBundleName(bundleName);
         WriteSecretKeyToFile(GetSecretKeyFile(deviceAccountId, bundleName, storeId, securityLevel), key);
     }
     key.assign(key.size(), 0);
@@ -666,8 +664,7 @@ void KvStoreMetaManager::ReKey(const std::string &deviceAccountId, const std::st
     WriteSecretKeyToMeta(GetMetaKey(deviceAccountId, "default", bundleName, storeId, "SINGLE_KEY"), key);
     Status status = kvStoreImpl->ReKey(key);
     if (status == Status::SUCCESS) {
-        int securityLevel = SecurityLevel::NO_LABEL;
-        GetSecurityLevelByBundleName(bundleName, securityLevel);
+        int securityLevel = GetSecurityLevelByBundleName(bundleName);
         WriteSecretKeyToFile(GetSecretSingleKeyFile(deviceAccountId, bundleName, storeId, securityLevel), key);
     }
     key.assign(key.size(), 0);
@@ -1241,16 +1238,15 @@ bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entrie
     return true;
 }
 
-bool KvStoreMetaManager::GetSecurityLevelByBundleName(const std::string &bundleName, int &securityLevel)
+int KvStoreMetaManager::GetSecurityLevelByBundleName(const std::string &bundleName)
 {
     KvStoreMetaData kvStoreMetaData;
     auto getKvStoreMetaBMeta = GetKvStoreMetaByType(KvStoreMetaData::BUNDLE_NAME, bundleName, kvStoreMetaData);
     if (!getKvStoreMetaBMeta) {
         ZLOGE("getkvstore meta by type failed");
-        return false;
+        return SecurityLevel::NO_LABEL;
     }
-    securityLevel = kvStoreMetaData.securityLevel;
-    return true;
+    return kvStoreMetaData.securityLevel;
 }
 
 bool KvStoreMetaManager::GetKvStoreMetaByType(const std::string &name, const std::string &val,
