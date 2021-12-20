@@ -51,6 +51,7 @@ config("module_private_config") {
     "USE_SQLITE_SYMBOLS",
     "USING_DB_JSON_EXTRACT_AUTOMATICALLY",
     "LOW_LEVEL_MEM_DEV",
+    "OMIT_FLATBUFFER",
   ]
 }
 
@@ -213,7 +214,6 @@ ohos_source_set("src_file") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//third_party/flatbuffers:flatbuffers_mini",
     "//third_party/googletest:gtest_main",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
@@ -241,7 +241,6 @@ template("distributeddb_unittest") {
     configs = [ ":module_private_config" ]
     deps += [
       ":src_file",
-      "//third_party/flatbuffers:flatbuffers_mini",
       "//third_party/googletest:gtest_main",
       "//third_party/sqlite:sqlite",
       "//utils/native/base:utils",
@@ -439,8 +438,8 @@ ohos_unittest("DistributedDBStorageEncryptTest") {
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
-    "//third_party/openssl:libcrypto_static",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//utils/native/base:utils",
   ]
 }
