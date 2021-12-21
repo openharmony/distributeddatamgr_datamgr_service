@@ -26,7 +26,6 @@ SQLiteRelationalStore::~SQLiteRelationalStore()
     delete sqliteStorageEngine_;
 }
 
-
 // Called when a new connection created.
 void SQLiteRelationalStore::IncreaseConnectionCounter()
 {
@@ -50,13 +49,13 @@ RelationalStoreConnection *SQLiteRelationalStore::GetDBConnection(int &errCode)
     return connection;
 }
 
-static void InitDataBaseOption(const DBProperties &kvDBProp, OpenDbProperties &option)
+static void InitDataBaseOption(const RelationalDBProperties &kvDBProp, OpenDbProperties &option)
 {
     option.uri = kvDBProp.GetStringProp(KvDBProperties::DATA_DIR, "");
     option.createIfNecessary = kvDBProp.GetBoolProp(KvDBProperties::CREATE_IF_NECESSARY, false);
 }
 
-int SQLiteRelationalStore::InitStorageEngine(const DBProperties &kvDBProp)
+int SQLiteRelationalStore::InitStorageEngine(const RelationalDBProperties &kvDBProp)
 {
     OpenDbProperties option;
     InitDataBaseOption(kvDBProp, option);
@@ -69,7 +68,7 @@ int SQLiteRelationalStore::InitStorageEngine(const DBProperties &kvDBProp)
     return errCode;
 }
 
-int SQLiteRelationalStore::Open(const DBProperties &properties)
+int SQLiteRelationalStore::Open(const RelationalDBProperties &properties)
 {
     sqliteStorageEngine_ = new (std::nothrow) SQLiteSingleRelationalStorageEngine();
     if (sqliteStorageEngine_ == nullptr) {

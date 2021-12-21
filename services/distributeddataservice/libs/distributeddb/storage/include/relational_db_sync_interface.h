@@ -38,6 +38,8 @@ public:
     virtual int LocalDataChanged(int notifyEvent, std::vector<QuerySyncObject> &queryObj) = 0;
 
     virtual int SchemaChanged(int notifyEvent) = 0;
+
+    // TODO: create device table for each distributed table.
 };
 }
 #endif // RELATIONAL_STORE

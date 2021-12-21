@@ -54,10 +54,10 @@ int RelationalStoreInstance::CheckDatabaseFileStatus(const std::string &id)
     return E_OK;
 }
 
-static IRelationalStore *GetFromCache(const DBProperties &properties, int &errCode)
+static IRelationalStore *GetFromCache(const RelationalDBProperties &properties, int &errCode)
 {
     errCode = E_OK;
-    std::string identifier = properties.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
+    std::string identifier = properties.GetStringProp(RelationalDBProperties::IDENTIFIER_DATA, "");
     auto iter = dbs_.find(identifier);
     if (iter == dbs_.end()) {
         errCode = -E_NOT_FOUND;
@@ -76,21 +76,21 @@ static IRelationalStore *GetFromCache(const DBProperties &properties, int &errCo
 }
 
 // Save to IKvDB to the global map
-void RelationalStoreInstance::RemoveKvDBFromCache(const DBProperties &properties)
+void RelationalStoreInstance::RemoveKvDBFromCache(const RelationalDBProperties &properties)
 {
     std::lock_guard<std::mutex> lockGuard(storeLock_);
-    std::string identifier = properties.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
+    std::string identifier = properties.GetStringProp(RelationalDBProperties::IDENTIFIER_DATA, "");
     dbs_.erase(identifier);
 }
 
-void RelationalStoreInstance::SaveKvDBToCache(IRelationalStore *store, const DBProperties &properties)
+void RelationalStoreInstance::SaveKvDBToCache(IRelationalStore *store, const RelationalDBProperties &properties)
 {
     if (store == nullptr) {
         return;
     }
 
     {
-        std::string identifier = properties.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
+        std::string identifier = properties.GetStringProp(RelationalDBProperties::IDENTIFIER_DATA, "");
         store->WakeUpSyncer();
         if (dbs_.count(identifier) == 0) {
             dbs_.insert(std::pair<std::string, IRelationalStore *>(identifier, store));
@@ -98,7 +98,7 @@ void RelationalStoreInstance::SaveKvDBToCache(IRelationalStore *store, const DBP
     }
 }
 
-IRelationalStore *RelationalStoreInstance::OpenDatabase(const DBProperties &properties, int &errCode)
+IRelationalStore *RelationalStoreInstance::OpenDatabase(const RelationalDBProperties &properties, int &errCode)
 {
     auto db = new (std::nothrow) SQLiteRelationalStore();
     if (db == nullptr) {
@@ -122,7 +122,7 @@ IRelationalStore *RelationalStoreInstance::OpenDatabase(const DBProperties &prop
     return db;
 }
 
-IRelationalStore *RelationalStoreInstance::GetDataBase(const DBProperties &properties, int &errCode)
+IRelationalStore *RelationalStoreInstance::GetDataBase(const RelationalDBProperties &properties, int &errCode)
 {
     std::lock_guard<std::mutex> lockGuard(storeLock_);
     auto *db = GetFromCache(properties, errCode);
@@ -145,7 +145,7 @@ IRelationalStore *RelationalStoreInstance::GetDataBase(const DBProperties &prope
     return db;
 }
 
-RelationalStoreConnection *RelationalStoreInstance::GetDatabaseConnection(const DBProperties &properties, int &errCode)
+RelationalStoreConnection *RelationalStoreInstance::GetDatabaseConnection(const RelationalDBProperties &properties, int &errCode)
 {
     IRelationalStore *db = GetDataBase(properties, errCode);
     if (db == nullptr) {

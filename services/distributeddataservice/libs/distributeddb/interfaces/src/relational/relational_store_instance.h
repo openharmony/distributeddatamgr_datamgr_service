@@ -28,19 +28,19 @@ public:
     RelationalStoreInstance();
     ~RelationalStoreInstance() = default;
 
-    static RelationalStoreConnection *GetDatabaseConnection(const DBProperties &properties, int &errCode);
+    static RelationalStoreConnection *GetDatabaseConnection(const RelationalDBProperties &properties, int &errCode);
     static RelationalStoreInstance *GetInstance();
 
     int CheckDatabaseFileStatus(const std::string &id);
 
     // public for test mock
-    static IRelationalStore *GetDataBase(const DBProperties &properties, int &errCode);
+    static IRelationalStore *GetDataBase(const RelationalDBProperties &properties, int &errCode);
 private:
 
-    IRelationalStore *OpenDatabase(const DBProperties &properties, int &errCode);
+    IRelationalStore *OpenDatabase(const RelationalDBProperties &properties, int &errCode);
 
-    void RemoveKvDBFromCache(const DBProperties &properties);
-    void SaveKvDBToCache(IRelationalStore *store, const DBProperties &properties);
+    void RemoveKvDBFromCache(const RelationalDBProperties &properties);
+    void SaveKvDBToCache(IRelationalStore *store, const RelationalDBProperties &properties);
 
     static RelationalStoreInstance *instance_;
     static std::mutex instanceLock_;

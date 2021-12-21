@@ -21,12 +21,13 @@
 #include <vector>
 
 #include "schema_object.h"
+#include "relational_schema_object.h"
 
 namespace DistributedDB {
 class DBProperties {
 public:
     DBProperties() = default;
-    ~DBProperties() = default;
+    virtual ~DBProperties() = default;
 
     // Get the string property according the name
     std::string GetStringProp(const std::string &name, const std::string &defaultValue) const;
@@ -45,6 +46,16 @@ public:
 
     // Set the integer property for the name
     void SetIntProp(const std::string &name, int value);
+
+    static const std::string CREATE_IF_NECESSARY;
+    static const std::string DATABASE_TYPE;
+    static const std::string DATA_DIR;
+    static const std::string USER_ID;
+    static const std::string APP_ID;
+    static const std::string STORE_ID;
+    static const std::string IDENTIFIER_DATA;
+    static const std::string IDENTIFIER_DIR;
+
 protected:
     std::map<std::string, std::string> stringProperties_;
     std::map<std::string, bool> boolProperties_;
@@ -54,7 +65,7 @@ protected:
 class KvDBProperties final : public DBProperties {
 public:
     KvDBProperties();
-    ~KvDBProperties();
+    ~KvDBProperties() override;
 
     // Get the sub directory for different type database.
     static std::string GetStoreSubDirectory(int type);
@@ -83,18 +94,10 @@ public:
     // The upper code will not change the schema if it is already set
     const SchemaObject &GetSchemaConstRef() const;
 
-    static const std::string CREATE_IF_NECESSARY;
-    static const std::string DATABASE_TYPE;
-    static const std::string DATA_DIR;
-    static const std::string USER_ID;
-    static const std::string APP_ID;
-    static const std::string STORE_ID;
     static const std::string FILE_NAME;
     static const std::string SYNC_MODE;
     static const std::string MEMORY_MODE;
     static const std::string ENCRYPTED_MODE;
-    static const std::string IDENTIFIER_DATA;
-    static const std::string IDENTIFIER_DIR;
     static const std::string FIRST_OPEN_IS_READ_ONLY;
     static const std::string CREATE_DIR_BY_STORE_ID_ONLY;
     static const std::string SECURITY_LABEL;
@@ -113,6 +116,25 @@ private:
     CipherType cipherType_;
     CipherPassword password_;
     SchemaObject schema_;
+};
+
+// TODO: move to its own file, or rename this file
+class RelationalDBProperties final : public DBProperties {
+public:
+    RelationalDBProperties();
+    ~RelationalDBProperties() override;
+
+    // is schema exist
+    bool IsSchemaExist() const;
+
+    // set schema
+    void SetSchema(const RelationalSchemaObject &schema);
+
+    // get schema
+    RelationalSchemaObject GetSchema() const;
+
+private:
+    RelationalSchemaObject schema_;
 };
 } // namespace DistributedDB
 

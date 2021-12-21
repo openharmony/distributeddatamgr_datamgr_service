@@ -33,7 +33,7 @@ public:
     ~SQLiteRelationalStore() override;
 
     RelationalStoreConnection *GetDBConnection(int &errCode) override;
-    int Open(const DBProperties &properties) override;
+    int Open(const RelationalDBProperties &properties) override;
     void OnClose(const std::function<void(void)> &notifier);
 
     SQLiteSingleVerRelationalStorageExecutor *GetHandle(bool isWrite, int &errCode) const;
@@ -43,7 +43,7 @@ public:
 
     void ReleaseDBConnection(RelationalStoreConnection *connection);
 
-    void WakeUpSyncer();
+    void WakeUpSyncer() override;
 
     // for test mock
     const RelationalSyncAbleStorage *GetStorageEngine()
@@ -61,7 +61,7 @@ private:
     SQLiteSingleRelationalStorageEngine *sqliteStorageEngine_ = nullptr;
 
     void IncreaseConnectionCounter();
-    int InitStorageEngine(const DBProperties &kvDBProp);
+    int InitStorageEngine(const RelationalDBProperties &kvDBProp);
     std::mutex connectMutex_;
     std::atomic<int> connectionCount_ = 0;
     std::vector<std::function<void(void)>> closeNotifiers_;

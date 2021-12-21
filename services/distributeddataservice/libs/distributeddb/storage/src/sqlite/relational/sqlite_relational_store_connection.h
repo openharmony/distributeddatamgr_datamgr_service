@@ -42,7 +42,7 @@ public:
 
 protected:
 
-    int Pragma(int cmd, void *parameter);
+    int Pragma(int cmd, void *parameter) override;
 private:
 
     SQLiteSingleVerRelationalStorageExecutor *GetExecutor(bool isWrite, int &errCode) const;

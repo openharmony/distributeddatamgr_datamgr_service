@@ -36,6 +36,16 @@ int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::
         return errCode;
     }
 
+    // TODO: check if compatible upgrade or not
+
+    // TODO: add not permit sync flag if not compatible upgrade
+
+    // TODO: add analysed table to schema.
+
+    // TODO: reset permit sync flag
+
+    // TODO: upgrade device table
+
     // create log table
     errCode = SQLiteUtils::CreateRelationalLogTable(dbHandle_, tableName);
     if (errCode != E_OK) {

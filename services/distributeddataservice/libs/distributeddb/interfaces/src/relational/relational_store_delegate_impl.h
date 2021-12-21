@@ -33,12 +33,14 @@ public:
 
     DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
         SyncStatusCallback &onComplete, bool wait) override;
+
     DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
         SyncStatusCallback &onComplete, const Query &query, bool wait) override;
 
     DBStatus RemoveDeviceData(const std::string &device) override;
 
     DBStatus CreateDistributedTable(const std::string &tableName, const TableOption &option) override;
+
     DBStatus RemoveDevicesData(const std::string &tableName, const std::string &device) override;
 
     // For connection

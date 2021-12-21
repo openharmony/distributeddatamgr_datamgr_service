@@ -18,17 +18,18 @@
 #include "db_constant.h"
 
 namespace DistributedDB {
-const std::string KvDBProperties::CREATE_IF_NECESSARY = "createIfNecessary";
-const std::string KvDBProperties::DATABASE_TYPE = "databaseType";
-const std::string KvDBProperties::DATA_DIR = "dataDir";
-const std::string KvDBProperties::USER_ID = "userId";
-const std::string KvDBProperties::APP_ID = "appId";
-const std::string KvDBProperties::STORE_ID = "storeId";
+const std::string DBProperties::CREATE_IF_NECESSARY = "createIfNecessary";
+const std::string DBProperties::DATABASE_TYPE = "databaseType";
+const std::string DBProperties::DATA_DIR = "dataDir";
+const std::string DBProperties::USER_ID = "userId";
+const std::string DBProperties::APP_ID = "appId";
+const std::string DBProperties::STORE_ID = "storeId";
+const std::string DBProperties::IDENTIFIER_DATA = "identifier";
+const std::string DBProperties::IDENTIFIER_DIR = "identifierDir";
+
 const std::string KvDBProperties::FILE_NAME = "fileName";
 const std::string KvDBProperties::MEMORY_MODE = "memoryMode";
 const std::string KvDBProperties::ENCRYPTED_MODE = "isEncryptedDb";
-const std::string KvDBProperties::IDENTIFIER_DATA = "identifier";
-const std::string KvDBProperties::IDENTIFIER_DIR = "identifierDir";
 const std::string KvDBProperties::FIRST_OPEN_IS_READ_ONLY = "firstOpenIsReadOnly";
 const std::string KvDBProperties::CREATE_DIR_BY_STORE_ID_ONLY = "createDirByStoreIdOnly";
 const std::string KvDBProperties::SECURITY_LABEL = "securityLabel";
@@ -142,6 +143,27 @@ int KvDBProperties::GetSecFlag() const
 }
 
 const SchemaObject &KvDBProperties::GetSchemaConstRef() const
+{
+    return schema_;
+}
+
+RelationalDBProperties::RelationalDBProperties()
+{}
+
+RelationalDBProperties::~RelationalDBProperties()
+{}
+
+bool RelationalDBProperties::IsSchemaExist() const
+{
+    return schema_.IsSchemaValid();
+}
+
+void RelationalDBProperties::SetSchema(const RelationalSchemaObject &schema)
+{
+    schema_ = schema;
+}
+
+RelationalSchemaObject RelationalDBProperties::GetSchema() const
 {
     return schema_;
 }

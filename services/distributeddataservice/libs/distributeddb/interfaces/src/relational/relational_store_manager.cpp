@@ -33,22 +33,22 @@ RelationalStoreManager::RelationalStoreManager(const std::string &appId, const s
 {}
 
 static void InitStoreProp(const RelationalStoreDelegate::Option &option, const std::string &storePath,
-    const std::string &appId, const std::string &userId, DBProperties &properties)
+    const std::string &appId, const std::string &userId, RelationalDBProperties &properties)
 {
-    properties.SetBoolProp(KvDBProperties::CREATE_IF_NECESSARY, option.createIfNecessary);
-    properties.SetStringProp(KvDBProperties::DATA_DIR, storePath);
-    properties.SetStringProp(KvDBProperties::APP_ID, appId);
-    properties.SetStringProp(KvDBProperties::USER_ID, userId);
-    properties.SetStringProp(KvDBProperties::STORE_ID, storePath); // same as dir
+    properties.SetBoolProp(RelationalDBProperties::CREATE_IF_NECESSARY, option.createIfNecessary);
+    properties.SetStringProp(RelationalDBProperties::DATA_DIR, storePath);
+    properties.SetStringProp(RelationalDBProperties::APP_ID, appId);
+    properties.SetStringProp(RelationalDBProperties::USER_ID, userId);
+    properties.SetStringProp(RelationalDBProperties::STORE_ID, storePath); // same as dir
     std::string identifier = userId + "-" + appId + "-" + storePath;
     std::string hashIdentifier = DBCommon::TransferHashString(identifier);
-    properties.SetStringProp(KvDBProperties::IDENTIFIER_DATA, hashIdentifier);
+    properties.SetStringProp(RelationalDBProperties::IDENTIFIER_DATA, hashIdentifier);
 }
 
 static const int GET_CONNECT_RETRY = 3;
 static const int RETRY_GET_CONN_INTER = 30;
 
-static RelationalStoreConnection *GetOneConnectionWithRetry(const DBProperties &properties, int &errCode)
+static RelationalStoreConnection *GetOneConnectionWithRetry(const RelationalDBProperties &properties, int &errCode)
 {
     for (int i = 0; i < GET_CONNECT_RETRY; i++) {
         auto conn = RelationalStoreInstance::GetDatabaseConnection(properties, errCode);
@@ -77,7 +77,7 @@ void RelationalStoreManager::OpenStore(const std::string &path, const Relational
         return;
     }
 
-    DBProperties properties;
+    RelationalDBProperties properties;
     InitStoreProp(option, path, appId_, userId_, properties);
 
     int errCode = E_OK;
