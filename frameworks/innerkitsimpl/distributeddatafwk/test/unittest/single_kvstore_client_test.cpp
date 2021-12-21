@@ -1053,3 +1053,55 @@ HWTEST_F(SingleKvStoreClientTest, SingleKvStoreDeviceSync002 ,TestSize.Level1)
     auto testStatus = schemaSingleKvStorePtr->SetCapabilityRange(local, remote);
     EXPECT_EQ(testStatus, Status::SUCCESS) << "set range fail";
 }
+
+/**
+* @tc.name: SyncWithCondition001
+* @tc.desc: sync device data with condition;
+* @tc.type: FUNC
+* @tc.require: AR000GH097
+* @tc.author: liuwenhui
+*/
+HWTEST_F(SingleKvStoreClientTest, SyncWithCondition001, TestSize.Level1)
+{
+    EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
+    std::vector<std::string> deviceIds = {"invalid_device_id1", "invalid_device_id2"};
+    DataQuery dataQuery;
+    dataQuery.KeyPrefix("name");
+    auto syncStatus = singleKvStorePtr->SyncWithCondition(deviceIds, SyncMode::PUSH, dataQuery);
+    EXPECT_NE(syncStatus, Status::SUCCESS) << "sync device should not return success";
+}
+
+/**
+ * @tc.name: SubscribeWithQuery001
+ * desc: subscribe and sync device data with query;
+ * type: FUNC
+ * require: AR000GH096
+ * author:taoyuxin
+ */
+HWTEST_F(SingleKvStoreClientTest, SubscribeWithQuery001, TestSize.Level1)
+{
+    EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
+    std::vector<std::string> deviceIds = {"invalid_device_id1", "invalid_device_id2"};
+    DataQuery dataQuery;
+    dataQuery.KeyPrefix("name");
+    auto syncStatus = singleKvStorePtr->SubscribeWithQuery(deviceIds, dataQuery);
+    EXPECT_NE(syncStatus, Status::SUCCESS) << "sync device should not return success";
+}
+
+/**
+ * @tc.name: UnSubscribeWithQuery001
+ * desc: subscribe and sync device data with query;
+ * type: FUNC
+ * require: SR000GH095
+ * author:taoyuxin
+ */
+HWTEST_F(SingleKvStoreClientTest, UnSubscribeWithQuery001, TestSize.Level1)
+{
+    EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
+    std::vector<std::string> deviceIds = {"invalid_device_id1", "invalid_device_id2"};
+    DataQuery dataQuery;
+    dataQuery.KeyPrefix("name");
+    auto unSubscribeStatus = singleKvStorePtr->UnSubscribeWithQuery(deviceIds, dataQuery);
+    EXPECT_NE(unSubscribeStatus, Status::SUCCESS) << "sync device should not return success";
+}
+

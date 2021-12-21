@@ -227,13 +227,13 @@ Status AppKvStoreImpl::Close(DistributedDB::KvStoreDelegateManager *kvStoreDeleg
 // Sync store with other devices. This is an asynchronous method,
 // sync will fail if there is a syncing operation in progress.
 // Parameters:
-//     deviceIdList: device list to sync.
+//     deviceIds: device list to sync.
 //     mode: mode can be set to SyncMode::PUSH, SyncMode::PULL and SyncMode::PUTH_PULL. PUSH_PULL will firstly
 //           push all not-local store to listed devices, then pull these stores back.
 //     callback: return <device-id, sync-result> map to caller.
 // Return:
 //     Status of this Sync operation.
-Status AppKvStoreImpl::Sync(const std::vector<std::string> &deviceIdList, const SyncMode &mode,
+Status AppKvStoreImpl::Sync(const std::vector<std::string> &deviceIds, SyncMode mode,
                             const std::function<void(const std::map<std::string, Status> &)> &callback)
 {
     ZLOGD("start.");
@@ -251,7 +251,7 @@ Status AppKvStoreImpl::Sync(const std::vector<std::string> &deviceIdList, const 
     if (!syncStatus) {
         ZLOGW("Another sync operation still in progress, still call sync right now.");
     }
-    status = kvStoreNbDelegate_->Sync(deviceIdList, dbMode,
+    status = kvStoreNbDelegate_->Sync(deviceIds, dbMode,
         [&, callback](const std::map<std::string, DistributedDB::DBStatus> &devices) {
             syncStatus_.unlock();
             std::map<std::string, Status> resultMap;

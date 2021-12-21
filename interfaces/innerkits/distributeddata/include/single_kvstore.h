@@ -112,13 +112,13 @@ public:
     // Sync store with other devices. This is an asynchronous method,
     // sync will fail if there is a syncing operation in progress.
     // Parameters:
-    //     deviceIdList: device list to sync.
+    //     deviceIds: device list to sync.
     //     mode: mode can be set to SyncMode::PUSH, SyncMode::PULL and SyncMode::PUTH_PULL. PUSH_PULL will firstly
     //           push all not-local store to listed devices, then pull these stores back.
     //     allowedDelayMs: allowed delay milli-second to sync. default value is 0 for compatibility.
     // Return:
     //     Status of this Sync operation.
-    KVSTORE_API virtual Status Sync(const std::vector<std::string> &deviceIdList, const SyncMode &mode,
+    KVSTORE_API virtual Status Sync(const std::vector<std::string> &deviceIds, SyncMode mode,
                                     uint32_t allowedDelayMs = 0) = 0;
 
     // Remove the device data synced from remote.
@@ -172,6 +172,43 @@ public:
                                                   const std::vector<std::string> &remoteSupportLabels) const = 0;
 
     KVSTORE_API virtual Status GetSecurityLevel(SecurityLevel &securityLevel) const = 0;
+
+    /*
+     * Sync store with other devices only syncing the data which is satisfied with the condition.
+     * This is an asynchronous method, sync will fail if there is a syncing operation in progress.
+     * Parameters:
+     *     deviceIds: device list to sync, this is network id from soft bus.
+     *     query: the query condition.
+     *     mode: mode can be set to SyncMode::PUSH, SyncMode::PULL and SyncMode::PUSH_PULL. PUSH_PULL will firstly
+     *           push all not-local store to listed devices, then pull these stores back.
+     * Return:
+     *     Status of this Sync operation.
+     */
+    KVSTORE_API virtual Status SyncWithCondition(const std::vector<std::string> &deviceIds, SyncMode mode,
+                                                 const DataQuery &query) = 0;
+
+    /*
+     * Subscribe store with other devices consistently Synchronize the data which is satisfied with the condition.
+     * Parameters:
+     *     deviceIds: device list to sync, this is network id from soft bus.
+     *     query: the query condition.
+     * Return:
+     *     Status of this Subscribe operation.
+     */
+    KVSTORE_API virtual Status SubscribeWithQuery(const std::vector<std::string> &deviceIds,
+                                                 const DataQuery &query) = 0;
+
+    /*
+     * UnSubscribe store with other devices which is satisfied with the condition.
+     * Parameters:
+     *     deviceIds: device list to sync, this is network id from soft bus.
+     *     query: the query condition.
+     * Return:
+     *     Status of this UnSubscribe operation.
+     */
+    KVSTORE_API virtual Status UnSubscribeWithQuery(const std::vector<std::string> &deviceIds,
+                                                  const DataQuery &query) = 0;
+
 protected:
     // control this store.
     // Parameters:

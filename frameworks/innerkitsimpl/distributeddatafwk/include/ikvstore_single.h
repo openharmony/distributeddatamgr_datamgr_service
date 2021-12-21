@@ -56,6 +56,9 @@ public:
         SETCAPABILITYENABLED,
         SETCAPABILITYRANGE,
         SETSECURITLEVEL,
+        SYNC_WITH_CONDITION,
+        SUBSCRIBE_WITH_QUERY,
+        UNSUBSCRIBE_WITH_QUERY,
         SINGLE_CMD_LAST,
     };
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedKv.ISingleKvStore")
@@ -72,8 +75,7 @@ public:
                                        std::function<void(Status, sptr<IKvStoreResultSet>)> callback) = 0;
     virtual Status CloseResultSet(sptr<IKvStoreResultSet> resultSet) = 0;
     virtual Status GetCountWithQuery(const std::string &query, int &result) = 0;
-    virtual Status Sync(const std::vector<std::string> &deviceIdList, const SyncMode &mode,
-                        uint32_t allowedDelayMs) = 0;
+    virtual Status Sync(const std::vector<std::string> &deviceIds, SyncMode mode, uint32_t allowedDelayMs) = 0;
     virtual Status RemoveDeviceData(const std::string &device) = 0;
     virtual Status RegisterSyncCallback(sptr<IKvStoreSyncCallback> callback) = 0;
     virtual Status UnRegisterSyncCallback() = 0;
@@ -87,6 +89,9 @@ public:
     virtual Status SetCapabilityRange(const std::vector<std::string> &localLabels,
                                       const std::vector<std::string> &remoteSupportLabels) = 0;
     virtual Status GetSecurityLevel(SecurityLevel &securityLevel) = 0;
+    virtual Status Sync(const std::vector<std::string> &deviceIds, SyncMode mode, const std::string &query) = 0;
+    virtual Status SubscribeWithQuery(const std::vector<std::string> &deviceIds, const std::string &query) = 0;
+    virtual Status UnSubscribeWithQuery(const std::vector<std::string> &deviceIds, const std::string &query) = 0;
 };
 
 class SingleKvStoreStub : public IRemoteStub<ISingleKvStore> {
@@ -94,32 +99,35 @@ public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
 private:
-    int PutOnRemote(MessageParcel& data, MessageParcel& reply);
-    int DeleteOnRemote(MessageParcel& data, MessageParcel& reply);
-    int GetOnRemote(MessageParcel& data, MessageParcel& reply);
-    int SubscribeKvStoreOnRemote(MessageParcel& data, MessageParcel& reply);
-    int UnSubscribeKvStoreOnRemote(MessageParcel& data, MessageParcel& reply);
-    int GetEntriesOnRemote(MessageParcel& data, MessageParcel& reply);
-    int GetEntriesWithQueryOnRemote(MessageParcel& data, MessageParcel& reply);
-    int SyncOnRemote(MessageParcel& data, MessageParcel& reply);
-    int GetResultSetOnRemote(MessageParcel& data, MessageParcel& reply);
-    int GetResultSetWithQueryOnRemote(MessageParcel& data, MessageParcel& reply);
-    int GetCountWithQueryOnRemote(MessageParcel& data, MessageParcel& reply);
-    int CloseResultSetOnRemote(MessageParcel& data, MessageParcel& reply);
-    int RemoveDeviceDataOnRemote(MessageParcel& data, MessageParcel& reply);
-    int RegisterSyncCallbackOnRemote(MessageParcel& data, MessageParcel& reply);
-    int UnRegisterSyncCallbackOnRemote(MessageParcel& data, MessageParcel& reply);
-    int PutBatchOnRemote(MessageParcel& data, MessageParcel& reply);
-    int DeleteBatchOnRemote(MessageParcel& data, MessageParcel& reply);
-    int StartTransactionOnRemote(MessageParcel& data, MessageParcel& reply);
-    int CommitOnRemote(MessageParcel& data, MessageParcel& reply);
-    int RollbackOnRemote(MessageParcel& data, MessageParcel& reply);
-    int ControlOnRemote(MessageParcel& data, MessageParcel& reply);
-    int OnCapabilityEnableRequest(MessageParcel& data, MessageParcel& reply);
-    int OnCapabilityRangeRequest(MessageParcel& data, MessageParcel& reply);
-    int OnSecurityLevelRequest(MessageParcel& data, MessageParcel& reply);
+    int PutOnRemote(MessageParcel &data, MessageParcel &reply);
+    int DeleteOnRemote(MessageParcel &data, MessageParcel &reply);
+    int GetOnRemote(MessageParcel &data, MessageParcel &reply);
+    int SubscribeKvStoreOnRemote(MessageParcel &data, MessageParcel &reply);
+    int UnSubscribeKvStoreOnRemote(MessageParcel &data, MessageParcel &reply);
+    int GetEntriesOnRemote(MessageParcel &data, MessageParcel &reply);
+    int GetEntriesWithQueryOnRemote(MessageParcel &data, MessageParcel &reply);
+    int SyncOnRemote(MessageParcel &data, MessageParcel &reply);
+    int GetResultSetOnRemote(MessageParcel &data, MessageParcel &reply);
+    int GetResultSetWithQueryOnRemote(MessageParcel &data, MessageParcel &reply);
+    int GetCountWithQueryOnRemote(MessageParcel &data, MessageParcel &reply);
+    int CloseResultSetOnRemote(MessageParcel &data, MessageParcel &reply);
+    int RemoveDeviceDataOnRemote(MessageParcel &data, MessageParcel &reply);
+    int RegisterSyncCallbackOnRemote(MessageParcel &data, MessageParcel &reply);
+    int UnRegisterSyncCallbackOnRemote(MessageParcel &data, MessageParcel &reply);
+    int PutBatchOnRemote(MessageParcel &data, MessageParcel &reply);
+    int DeleteBatchOnRemote(MessageParcel &data, MessageParcel &reply);
+    int StartTransactionOnRemote(MessageParcel &data, MessageParcel &reply);
+    int CommitOnRemote(MessageParcel &data, MessageParcel &reply);
+    int RollbackOnRemote(MessageParcel &data, MessageParcel &reply);
+    int ControlOnRemote(MessageParcel &data, MessageParcel &reply);
+    int OnCapabilityEnableRequest(MessageParcel &data, MessageParcel &reply);
+    int OnCapabilityRangeRequest(MessageParcel &data, MessageParcel &reply);
+    int OnSecurityLevelRequest(MessageParcel &data, MessageParcel &reply);
+    int OnSyncRequest(MessageParcel &data, MessageParcel &reply);
 
-    int WriteEntriesParcelable(MessageParcel& reply, Status status, std::vector<Entry> entries, int bufferSize);
+    int OnSubscribeWithQueryRequest(MessageParcel &data, MessageParcel &reply);
+    int OnUnSubscribeWithQueryRequest(MessageParcel &data, MessageParcel &reply);
+    int WriteEntriesParcelable(MessageParcel &reply, Status status, std::vector<Entry> entries, int bufferSize);
     int GetTotalEntriesSize(std::vector<Entry> entries);
 
     using RequestHandler = int(SingleKvStoreStub::*)(MessageParcel&, MessageParcel&);
@@ -148,6 +156,9 @@ private:
         [SETCAPABILITYENABLED] = &SingleKvStoreStub::OnCapabilityEnableRequest,
         [SETCAPABILITYRANGE] = &SingleKvStoreStub::OnCapabilityRangeRequest,
         [SETSECURITLEVEL] = &SingleKvStoreStub::OnSecurityLevelRequest,
+        [SYNC_WITH_CONDITION] = &SingleKvStoreStub::OnSyncRequest,
+        [SUBSCRIBE_WITH_QUERY] = &SingleKvStoreStub::OnSubscribeWithQueryRequest,
+        [UNSUBSCRIBE_WITH_QUERY] = &SingleKvStoreStub::OnUnSubscribeWithQueryRequest,
     };
 };
 
@@ -167,7 +178,8 @@ public:
                                        std::function<void(Status, sptr<IKvStoreResultSet>)> callback);
     virtual Status CloseResultSet(sptr<IKvStoreResultSet> resultSet);
     virtual Status GetCountWithQuery(const std::string &query, int &result);
-    virtual Status Sync(const std::vector<std::string> &deviceIdList, const SyncMode &mode, uint32_t allowedDelayMs);
+    virtual Status Sync(const std::vector<std::string> &deviceIds, SyncMode mode, uint32_t allowedDelayMs);
+    virtual Status Sync(const std::vector<std::string> &deviceIds, SyncMode mode, const std::string &query);
     virtual Status RemoveDeviceData(const std::string &device);
     virtual Status RegisterSyncCallback(sptr<IKvStoreSyncCallback> callback);
     virtual Status UnRegisterSyncCallback();
@@ -181,6 +193,8 @@ public:
     virtual Status SetCapabilityRange(const std::vector<std::string> &localLabels,
                                       const std::vector<std::string> &remoteSupportLabels);
     virtual Status GetSecurityLevel(SecurityLevel &securityLevel);
+    virtual Status SubscribeWithQuery(const std::vector<std::string> &deviceIds, const std::string &query);
+    virtual Status UnSubscribeWithQuery(const std::vector<std::string> &deviceIds, const std::string &query);
 private:
     static inline BrokerDelegator<SingleKvStoreProxy> delegator_;
 };

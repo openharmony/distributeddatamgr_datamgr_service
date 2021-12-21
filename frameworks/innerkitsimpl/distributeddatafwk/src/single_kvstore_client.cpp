@@ -164,8 +164,7 @@ Status SingleKvStoreClient::GetCountWithQuery(const DataQuery &query, int &resul
     return GetCountWithQuery(query.ToString(), result);
 }
 
-Status SingleKvStoreClient::Sync(const std::vector<std::string> &deviceIdList, const SyncMode &mode,
-    uint32_t allowedDelayMs)
+Status SingleKvStoreClient::Sync(const std::vector<std::string> &deviceIds, SyncMode mode, uint32_t allowedDelayMs)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
 
@@ -173,11 +172,11 @@ Status SingleKvStoreClient::Sync(const std::vector<std::string> &deviceIdList, c
         ZLOGE("kvstore proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;
     }
-    if (deviceIdList.empty()) {
-        ZLOGW("deviceIdList is empty.");
+    if (deviceIds.empty()) {
+        ZLOGW("deviceIds is empty.");
         return Status::INVALID_ARGUMENT;
     }
-    return kvStoreProxy_->Sync(deviceIdList, mode, allowedDelayMs);
+    return kvStoreProxy_->Sync(deviceIds, mode, allowedDelayMs);
 }
 
 Status SingleKvStoreClient::RemoveDeviceData(const std::string &device)
@@ -446,6 +445,46 @@ Status SingleKvStoreClient::GetSecurityLevel(SecurityLevel &securityLevel) const
     }
     ZLOGE("singleKvstore proxy is nullptr.");
     return Status::SERVER_UNAVAILABLE;
+}
+
+Status SingleKvStoreClient::SyncWithCondition(const std::vector<std::string> &deviceIds, SyncMode mode,
+                                              const DataQuery &query)
+{
+    if (kvStoreProxy_ == nullptr) {
+        ZLOGE("singleKvstore proxy is nullptr.");
+        return Status::SERVER_UNAVAILABLE;
+    }
+    if (deviceIds.empty()) {
+        ZLOGW("deviceIds is empty.");
+        return Status::INVALID_ARGUMENT;
+    }
+    return kvStoreProxy_->Sync(deviceIds, mode, query.ToString());
+}
+
+Status SingleKvStoreClient::SubscribeWithQuery(const std::vector<std::string>& deviceIds, const DataQuery& query)
+{
+    if (kvStoreProxy_ == nullptr) {
+        ZLOGE("singleKvstore proxy is nullptr.");
+        return Status::SERVER_UNAVAILABLE;
+    }
+    if (deviceIds.empty()) {
+        ZLOGW("deviceIds is empty.");
+        return Status::INVALID_ARGUMENT;
+    }
+    return kvStoreProxy_->SubscribeWithQuery(deviceIds, query.ToString());
+}
+
+Status SingleKvStoreClient::UnSubscribeWithQuery(const std::vector<std::string>& deviceIds, const DataQuery& query)
+{
+    if (kvStoreProxy_ == nullptr) {
+        ZLOGE("singleKvstore proxy is nullptr.");
+        return Status::SERVER_UNAVAILABLE;
+    }
+    if (deviceIds.empty()) {
+        ZLOGW("deviceIds is empty.");
+        return Status::INVALID_ARGUMENT;
+    }
+    return kvStoreProxy_->UnSubscribeWithQuery(deviceIds, query.ToString());
 }
 
 Status SingleKvStoreClient::GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
