@@ -36,17 +36,17 @@ public:
     RelationalStoreManager &operator=(const RelationalStoreManager &) = delete;
     RelationalStoreManager &operator=(RelationalStoreManager &&) = delete;
 
-    // PRAGMA journal_mode=WAL
-    // PRAGMA synchronous=FULL
-    // PRAGMA synchronous=NORMAL
-    DB_API void OpenStore(const std::string &path, const RelationalStoreDelegate::Option &option,
-        const std::function<void(DBStatus, RelationalStoreDelegate *)> &callback);
+    DB_API DBStatus OpenStore(const std::string &path, const std::string &storeId,
+        const RelationalStoreDelegate::Option &option, RelationalStoreDelegate *&delegate);
 
-    DB_API DBStatus CloseStore(RelationalStoreDelegate *store);
+    DB_API DBStatus CloseStore(RelationalStoreDelegate *store); // TODO: move interface to delegate
 
-    DB_API DBStatus DeleteStore(const std::string &path);
+    DB_API DBStatus DeleteStore(const std::string &path); // TODO: remove interface
 
 private:
+    void InitStoreProp(const RelationalStoreDelegate::Option &option, const std::string &storePath,
+        const std::string &storeId, RelationalDBProperties &properties);
+
     std::string appId_;
     std::string userId_;
 };

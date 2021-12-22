@@ -32,15 +32,15 @@ RelationalStoreManager::RelationalStoreManager(const std::string &appId, const s
       userId_(userId)
 {}
 
-static void InitStoreProp(const RelationalStoreDelegate::Option &option, const std::string &storePath,
-    const std::string &appId, const std::string &userId, RelationalDBProperties &properties)
+void RelationalStoreManager::InitStoreProp(const RelationalStoreDelegate::Option &option, const std::string &storePath,
+    const std::string &storeId, RelationalDBProperties &properties)
 {
     properties.SetBoolProp(RelationalDBProperties::CREATE_IF_NECESSARY, option.createIfNecessary);
     properties.SetStringProp(RelationalDBProperties::DATA_DIR, storePath);
-    properties.SetStringProp(RelationalDBProperties::APP_ID, appId);
-    properties.SetStringProp(RelationalDBProperties::USER_ID, userId);
-    properties.SetStringProp(RelationalDBProperties::STORE_ID, storePath); // same as dir
-    std::string identifier = userId + "-" + appId + "-" + storePath;
+    properties.SetStringProp(RelationalDBProperties::APP_ID, appId_);
+    properties.SetStringProp(RelationalDBProperties::USER_ID, userId_);
+    properties.SetStringProp(RelationalDBProperties::STORE_ID, storeId); // same as dir
+    std::string identifier = userId_ + "-" + appId_ + "-" + storeId;
     std::string hashIdentifier = DBCommon::TransferHashString(identifier);
     properties.SetStringProp(RelationalDBProperties::IDENTIFIER_DATA, hashIdentifier);
 }
@@ -64,39 +64,41 @@ static RelationalStoreConnection *GetOneConnectionWithRetry(const RelationalDBPr
     return nullptr;
 }
 
-void RelationalStoreManager::OpenStore(const std::string &path, const RelationalStoreDelegate::Option &option,
-    const std::function<void(DBStatus, RelationalStoreDelegate *)> &callback)
+DB_API DBStatus RelationalStoreManager::OpenStore(const std::string &path, const std::string &storeId,
+    const RelationalStoreDelegate::Option &option, RelationalStoreDelegate *&delegate)
 {
-    if (!callback) {
-        LOGE("[KvStoreMgr] Invalid callback for kv store!");
-        return;
+    if (delegate != nullptr) {
+        LOGE("[RelationalStoreMgr] Invalid delegate!");
+        return INVALID_ARGS;
     }
 
-    if (!ParamCheckUtils::CheckStoreParameter("Relational_default_id", appId_, userId_) || path.empty()) {
-        callback(INVALID_ARGS, nullptr);
-        return;
+    std::string canonicalDir;
+    if (!ParamCheckUtils::CheckDataDir(path, canonicalDir)) {
+        return INVALID_ARGS;
+    }
+
+    if (!ParamCheckUtils::CheckStoreParameter(storeId, appId_, userId_) || path.empty()) {
+        return INVALID_ARGS;
     }
 
     RelationalDBProperties properties;
-    InitStoreProp(option, path, appId_, userId_, properties);
+    InitStoreProp(option, canonicalDir, storeId, properties);
 
     int errCode = E_OK;
     auto *conn = GetOneConnectionWithRetry(properties, errCode);
     DBStatus status = TransferDBErrno(errCode);
     if (conn == nullptr) {
-        callback(status, nullptr);
-        return;
+        return status;
     }
 
-    auto store = new (std::nothrow) RelationalStoreDelegateImpl(conn, path);
-    if (store == nullptr) {
+    delegate = new (std::nothrow) RelationalStoreDelegateImpl(conn, path);
+    if (delegate == nullptr) {
         conn->Close();
-        callback(DB_ERROR, nullptr);
-        return;
+        return DB_ERROR;
     }
 
-    (void)conn->TriggerAutoSync();
-    callback(OK, store);
+    (void)conn->TriggerAutoSync(); // TODO: no auto sync
+    return OK;
 }
 
 DBStatus RelationalStoreManager::CloseStore(RelationalStoreDelegate *store)
