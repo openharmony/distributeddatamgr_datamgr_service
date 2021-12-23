@@ -51,10 +51,16 @@ public:
         return storageEngine_;
     }
 private:
+    void ReleaseResources();
+
     // 1 store 1 connection
     void DecreaseConnectionCounter();
 
     int GetSchemaFromMeta();
+
+    int SaveLogTableVersionToMeta();
+
+    int CleanDistributedDeviceTable();
 
     // use for sync Interactive
     std::shared_ptr<SyncAbleEngine> syncEngine_ = nullptr; // For storage operate sync function

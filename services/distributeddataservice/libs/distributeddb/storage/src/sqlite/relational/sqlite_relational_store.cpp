@@ -20,10 +20,13 @@
 #include "log_print.h"
 #include "db_types.h"
 #include "sqlite_relational_store_connection.h"
+#include "storage_engine_manager.h"
 
 namespace DistributedDB {
 namespace {
     constexpr const char *RELATIONAL_SCHEMA_KEY = "relational_schema";
+    constexpr const char *LOG_TABLE_VERSION_KEY = "log_table_versoin";
+    constexpr const char *LOG_TABLE_VERSION_1 = "1.0";
 }
 
 SQLiteRelationalStore::~SQLiteRelationalStore()
@@ -72,6 +75,15 @@ int SQLiteRelationalStore::InitStorageEngine(const RelationalDBProperties &kvDBP
     return errCode;
 }
 
+void SQLiteRelationalStore::ReleaseResources()
+{
+    // TODO: Lock
+    if (sqliteStorageEngine_ != nullptr) {
+        sqliteStorageEngine_->ClearEnginePasswd();
+        (void)StorageEngineManager::ReleaseStorageEngine(sqliteStorageEngine_);
+    }
+}
+
 int SQLiteRelationalStore::GetSchemaFromMeta()
 {
     const Key schemaKey(RELATIONAL_SCHEMA_KEY, RELATIONAL_SCHEMA_KEY + strlen(RELATIONAL_SCHEMA_KEY));
@@ -95,6 +107,32 @@ int SQLiteRelationalStore::GetSchemaFromMeta()
     }
 
     properties_.SetSchema(schema);
+    return E_OK;
+}
+
+int SQLiteRelationalStore::SaveLogTableVersionToMeta()
+{
+    // TODO: save log table version into meta data
+    LOGD("save log table version to meta table, key: %s, val: %s", LOG_TABLE_VERSION_KEY, LOG_TABLE_VERSION_1);
+    return E_OK;
+}
+
+int SQLiteRelationalStore::CleanDistributedDeviceTable()
+{
+    // TODO: clean the device table which is no longer in schema
+    RelationalSchemaObject schema = properties_.GetSchema();
+    for (const auto &table : schema.GetTables()) {
+        std::string tableName = table.first;
+        LOGD("Get schema %s.", tableName.c_str());
+    }
+
+    int errCode = E_OK;
+    auto *handle = GetHandle(true, errCode);
+    if (handle == nullptr) {
+        return errCode;
+    }
+    // TODO: Get device table names, and clean
+    ReleaseHandle(handle);
     return E_OK;
 }
 
@@ -127,15 +165,22 @@ int SQLiteRelationalStore::Open(const RelationalDBProperties &properties)
             break;
         }
 
-        // TODO: save log table version into meta data
+        errCode = SaveLogTableVersionToMeta();
+        if (errCode != E_OK) {
+            break;
+        }
 
-        // TODO: clean the device table
+        errCode = CleanDistributedDeviceTable();
+        if (errCode != E_OK) {
+            break;
+        }
 
         syncEngine_ = std::make_shared<SyncAbleEngine>(storageEngine_);
         return E_OK;
     } while (false);
 
     // TODO: release resources.
+    ReleaseResources();
     return errCode;
 }
 
