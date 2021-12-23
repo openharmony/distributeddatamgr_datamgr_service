@@ -187,4 +187,9 @@ uint8_t ParamCheckUtils::GetValidCompressionRate(uint8_t compressionRate)
     }
     return compressionRate;
 }
+
+bool ParamCheckUtils::CheckRelationalTableName(const std::string &tableName)
+{
+    return tableName.compare(0, DBConstant::SYSTEM_TABLE_PREFIX.size(), DBConstant::SYSTEM_TABLE_PREFIX) != 0;
+}
 } // namespace DistributedDB

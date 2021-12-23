@@ -32,7 +32,7 @@ public:
     // Delete the copy and assign constructors
     DISABLE_COPY_ASSIGN_MOVE(SQLiteSingleVerRelationalStorageExecutor);
 
-    int CreateDistributedTable(const std::string &tableName, const RelationalStoreDelegate::TableOption &option);
+    int CreateDistributedTable(const std::string &tableName, TableInfo &table);
 
     int StartTransaction(TransactType type);
     int Commit();
@@ -56,6 +56,8 @@ public:
     // For Put sync data
     int SaveSyncItems(const QueryObject &object, std::vector<DataItem> &dataItems,
         const std::string &deviceName, TimeStamp &timeStamp);
+
+    int AnalysisRelationalSchema(const std::string &tableName, TableInfo &tableInfo);
 
 private:
     int PrepareForSyncDataByTime(TimeStamp begin, TimeStamp end,

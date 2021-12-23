@@ -49,6 +49,8 @@ public:
         SchemaObject &schemaObject, std::string &canonicalDir);
 
     static uint8_t GetValidCompressionRate(uint8_t compressionRate);
+
+    static bool CheckRelationalTableName(const std::string &tableName);
 };
 } // namespace DistributedDB
 

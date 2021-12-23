@@ -39,7 +39,7 @@ public:
 
     DBStatus RemoveDeviceData(const std::string &device) override;
 
-    DBStatus CreateDistributedTable(const std::string &tableName, const TableOption &option) override;
+    DBStatus CreateDistributedTable(const std::string &tableName) override;
 
     DBStatus RemoveDevicesData(const std::string &tableName, const std::string &device) override;
 

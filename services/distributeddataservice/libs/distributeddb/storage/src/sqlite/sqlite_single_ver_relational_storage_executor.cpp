@@ -19,17 +19,16 @@
 
 namespace DistributedDB {
 SQLiteSingleVerRelationalStorageExecutor::SQLiteSingleVerRelationalStorageExecutor(sqlite3 *dbHandle, bool writable)
-    : SQLiteStorageExecutor(dbHandle, writable, false) {};
+    : SQLiteStorageExecutor(dbHandle, writable, false)
+{}
 
-int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::string &tableName,
-    const RelationalStoreDelegate::TableOption &option)
+int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::string &tableName, TableInfo &table)
 {
     if (dbHandle_ == nullptr) {
         LOGE("Begin transaction failed, dbHandle is null.");
         return -E_INVALID_DB;
     }
 
-    TableInfo table;
     int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, tableName, table);
     if (errCode != E_OK) {
         LOGE("[CreateDistributedTable] analysis table schema failed");
@@ -98,6 +97,7 @@ int SQLiteSingleVerRelationalStorageExecutor::Rollback()
 
 int SQLiteSingleVerRelationalStorageExecutor::SetTableInfo(QueryObject query)
 {
+    // TODO: Get table info from schema
     int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, query.GetTableName(), table_);
     if (errCode != E_OK) {
         LOGE("[CreateDistributedTable] analysis table schema failed");

@@ -58,7 +58,7 @@ SQLiteSingleVerRelationalStorageExecutor *SQLiteRelationalStoreConnection::GetEx
     auto *store = GetDB<SQLiteRelationalStore>();
     if (store == nullptr) {
         errCode = -E_NOT_INIT;
-        LOGE("[SingleVerConnection] store is null, get executor failed! errCode = [%d]", errCode);
+        LOGE("[RelationalConnection] store is null, get executor failed! errCode = [%d]", errCode);
         return nullptr;
     }
 
@@ -93,7 +93,7 @@ int SQLiteRelationalStoreConnection::StartTransaction()
         return errCode;
     }
 
-    LOGD("[SingleVerConnection] Start transaction finish.");
+    LOGD("[RelationalConnection] Start transaction finish.");
     writeHandle_ = handle;
     transactingFlag_.store(true);
     return E_OK;
@@ -135,20 +135,17 @@ int SQLiteRelationalStoreConnection::RollBack()
     return errCode;
 }
 
-int SQLiteRelationalStoreConnection::CreateDistributedTable(const std::string &tableName,
-    const RelationalStoreDelegate::TableOption &option)
+int SQLiteRelationalStoreConnection::CreateDistributedTable(const std::string &tableName)
 {
-    int errCode = StartTransaction();
-    if (errCode != E_OK && errCode != E_TRANSACT_STATE) {
-        return errCode;
+    auto *store = GetDB<SQLiteRelationalStore>();
+    if (store == nullptr) {
+        LOGE("[RelationalConnection] store is null, get DB failed!");
+        return -E_INVALID_CONNECTION;
     }
 
-    errCode = writeHandle_->CreateDistributedTable(tableName, option);
-    if (errCode == E_OK) {
-        errCode = Commit();
-    } else {
-        int innerCode = RollBack();
-        errCode = (innerCode != E_OK) ? innerCode : errCode;
+    int errCode = store->CreateDistributedTable(tableName);
+    if (errCode != E_OK) {
+        LOGE("[RelationalConnection] crete distributed table failed. %d", errCode);
     }
     return errCode;
 }
@@ -167,7 +164,7 @@ int SQLiteRelationalStoreConnection::SyncToDevice(SyncInfo &info)
 {
     auto *store = GetDB<SQLiteRelationalStore>();
     if (store == nullptr) {
-        LOGE("[SingleVerConnection] store is null, get executor failed!");
+        LOGE("[RelationalConnection] store is null, get executor failed!");
         return -E_INVALID_CONNECTION;
     }
 

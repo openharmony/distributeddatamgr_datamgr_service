@@ -63,4 +63,6 @@ const std::string DBConstant::TRIGGER_REFERENCES_NEW = "NEW.";
 const std::string DBConstant::TRIGGER_REFERENCES_OLD = "OLD.";
 
 const std::string DBConstant::UPDATE_META_FUNC = "update_meta_within_trigger";
+
+const std::string DBConstant::SYSTEM_TABLE_PREFIX = "naturalbase_rdb_";
 }

@@ -16,8 +16,9 @@
 #include "relational_store_delegate_impl.h"
 
 #include "db_errno.h"
-#include "log_print.h"
 #include "kv_store_errno.h"
+#include "log_print.h"
+#include "param_check_utils.h"
 #include "sync_operation.h"
 
 namespace DistributedDB {
@@ -52,15 +53,19 @@ DBStatus RelationalStoreDelegateImpl::RemoveDeviceData(const std::string &device
     return NOT_SUPPORT;
 }
 
-DBStatus RelationalStoreDelegateImpl::CreateDistributedTable(const std::string &tableName, const TableOption &option)
+DBStatus RelationalStoreDelegateImpl::CreateDistributedTable(const std::string &tableName)
 {
-    // check table Name and option
+    if (!ParamCheckUtils::CheckRelationalTableName(tableName)) {
+        LOGE("invalid table name.");
+        return INVALID_ARGS;
+    }
+
     if (conn_ == nullptr) {
         LOGE("[RelationalStore Delegate] Invalid connection for operation!");
         return DB_ERROR;
     }
 
-    int errCode = conn_->CreateDistributedTable(tableName, option);
+    int errCode = conn_->CreateDistributedTable(tableName);
     if (errCode != E_OK) {
         LOGW("[RelationalStore Delegate] Create Distributed table failed:%d", errCode);
         return TransferDBErrno(errCode);

@@ -92,6 +92,8 @@ public:
 
     static const std::string UPDATE_META_FUNC;
 
+    static const std::string SYSTEM_TABLE_PREFIX;
+
     static constexpr uint32_t AUTO_SYNC_TIMEOUT = 5000; // 5s
     static constexpr uint32_t MANUAL_SYNC_TIMEOUT = 5000; // 5s
 

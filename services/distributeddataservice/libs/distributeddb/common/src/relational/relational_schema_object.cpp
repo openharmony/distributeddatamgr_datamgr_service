@@ -425,7 +425,11 @@ const std::map<std::string, TableInfo> &RelationalSchemaObject::GetTables() cons
 
 const TableInfo &RelationalSchemaObject::GetTable(const std::string& tableName) const
 {
-    return tables_.at(tableName);
+    auto it = tables_.find(tableName);
+    if (it != tables_.end()) {
+        return it->second;
+    }
+    return {};
 }
 
 int RelationalSchemaObject::CompareAgainstSchemaObject(const std::string &inSchemaString,

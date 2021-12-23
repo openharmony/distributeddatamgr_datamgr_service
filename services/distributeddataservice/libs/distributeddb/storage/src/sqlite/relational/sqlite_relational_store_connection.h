@@ -37,8 +37,7 @@ public:
     int TriggerAutoSync() override;
     int SyncToDevice(SyncInfo &info) override;
     std::string GetIdentifier() override;
-    int CreateDistributedTable(const std::string &tableName,
-        const RelationalStoreDelegate::TableOption &option) override;
+    int CreateDistributedTable(const std::string &tableName) override;
 
 protected:
 

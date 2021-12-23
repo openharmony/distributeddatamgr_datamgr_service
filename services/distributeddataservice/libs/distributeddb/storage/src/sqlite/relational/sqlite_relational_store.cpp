@@ -276,5 +276,33 @@ void SQLiteRelationalStore::WakeUpSyncer()
 {
     syncEngine_->WakeUpSyncer();
 }
+
+
+int SQLiteRelationalStore::CreateDistributedTable(const std::string &tableName)
+{
+    int errCode = E_OK;
+    auto schema = properties_.GetSchema();
+    if (schema.GetTable(tableName).GetTableName() == tableName) {
+        LOGW("distributed table %s was already created.", tableName.c_str());
+        return E_OK;
+    }
+
+    auto *handle = GetHandle(true, errCode);
+    if (handle != nullptr) {
+        return errCode;
+    }
+
+    TableInfo table;
+    errCode = handle->CreateDistributedTable(tableName, table);
+    if (errCode != E_OK) {
+        LOGE("create distributed table failed. %d", errCode);
+    } else {
+        schema.AddRelationalTable(table);
+        properties_.SetSchema(schema);
+    }
+
+    ReleaseHandle(handle);
+    return E_OK;
+}
 }
 #endif

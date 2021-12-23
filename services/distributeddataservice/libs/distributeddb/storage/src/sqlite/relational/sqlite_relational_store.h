@@ -50,6 +50,8 @@ public:
     {
         return storageEngine_;
     }
+
+    int CreateDistributedTable(const std::string &tableName);
 private:
     void ReleaseResources();
 
