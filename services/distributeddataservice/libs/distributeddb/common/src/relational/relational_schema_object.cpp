@@ -447,7 +447,7 @@ int GetMemberFromJsonObject(const JsonObject &inJsonObject, const std::string &f
     bool isNecessary, FieldValue &fieldValue)
 {
     if (!inJsonObject.IsFieldPathExist(FieldPath {fieldName})) {
-        LOGW("[RelationalSchema][Parse] Get schema %s not exist. isNeccessary: %d", fieldName.c_str(), isNecessary);
+        LOGW("[RelationalSchema][Parse] Get schema %s not exist. isNecessary: %d", fieldName.c_str(), isNecessary);
         return isNecessary ? -E_SCHEMA_PARSE_FAIL : -E_NOT_FOUND;
     }
 

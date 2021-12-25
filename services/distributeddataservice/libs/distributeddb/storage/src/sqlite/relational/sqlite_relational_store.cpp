@@ -304,8 +304,9 @@ int SQLiteRelationalStore::CreateDistributedTable(const std::string &tableName)
         return -E_MAX_LIMITS;
     }
 
+    LOGD("Create distributed table for %s.", tableName.c_str());
     auto *handle = GetHandle(true, errCode);
-    if (handle != nullptr) {
+    if (handle == nullptr) {
         return errCode;
     }
 
@@ -319,7 +320,7 @@ int SQLiteRelationalStore::CreateDistributedTable(const std::string &tableName)
     }
 
     ReleaseHandle(handle);
-    return E_OK;
+    return errCode;
 }
 }
 #endif

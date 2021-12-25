@@ -185,7 +185,7 @@ namespace {
         EXPECT_EQ(GetDB(db), SQLITE_OK);
         EXPECT_EQ(CreateTable(db), SQLITE_OK);
 
-        EXPECT_EQ(g_kvDelegatePtr->CreateDistributedTable(g_tableName, {}), OK);
+        EXPECT_EQ(g_kvDelegatePtr->CreateDistributedTable(g_tableName), OK);
 
         sqlite3_close(db);
 
@@ -254,7 +254,7 @@ void DistributedDBRelationalVerP2PSyncTest::SetUp(void)
     /**
     * @tc.setup: create virtual device B, and get a KvStoreNbDelegate as deviceA
     */
-    g_mgr.OpenStore(g_dbDir, {true}, g_kvDelegateCallback);
+    g_kvDelegateStatus = g_mgr.OpenStore(g_dbDir, "Relational_default_id", {}, g_kvDelegatePtr);
     ASSERT_TRUE(g_kvDelegateStatus == OK);
     ASSERT_TRUE(g_kvDelegatePtr != nullptr);
     g_deviceB = new (std::nothrow) RelationalVirtualDevice(DEVICE_B);

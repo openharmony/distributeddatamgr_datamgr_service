@@ -60,7 +60,7 @@ private:
     std::string remoteDeviceId_;
     SyncTaskContext *context_;
     std::function<void(const std::string &)> onRemoteDataChanged_;
-    std::shared_ptr<SingleVerSubscribeManager> subManager_;
+    std::shared_ptr<SubscribeManager> subManager_;
 };
 } // namespace DistributedDB
 

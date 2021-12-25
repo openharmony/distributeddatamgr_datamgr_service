@@ -20,7 +20,7 @@
 #include "device_manager.h"
 #include "log_print.h"
 #include "multi_ver_sync_state_machine.h"
-#include "single_ver_subscribe_manager.h"
+#include "subscribe_manager.h"
 #include "single_ver_sync_state_machine.h"
 #include "sync_types.h"
 #include "virtual_communicator.h"
@@ -99,7 +99,7 @@ int VirtualDevice::Initialize(VirtualCommunicatorAggregator *communicatorAggrega
     }
     if (storage_->GetInterfaceType() == IKvDBSyncInterface::SYNC_SVD) {
         context_ = new (std::nothrow) SingleVerSyncTaskContext;
-        subManager_ = std::make_shared<SingleVerSubscribeManager>();
+        subManager_ = std::make_shared<SubscribeManager>();
         static_cast<SingleVerSyncTaskContext *>(context_)->SetSubscribeManager(subManager_);
     } else {
         context_ = new (std::nothrow) MultiVerSyncTaskContext;
