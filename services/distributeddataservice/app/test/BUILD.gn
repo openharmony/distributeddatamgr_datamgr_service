@@ -67,7 +67,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -120,7 +120,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -226,7 +226,7 @@ ohos_unittest("KvStoreBackupTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -261,7 +261,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -307,7 +307,7 @@ ohos_unittest("KvStoreSyncManagerTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -376,7 +376,7 @@ ohos_unittest("KvStoreUninstallerTest") {
     "aafwk_standard:intent",
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",

@@ -115,7 +115,7 @@ ohos_shared_library("distributeddataservice") {
     "appexecfwk_standard:appexecfwk_core",
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
