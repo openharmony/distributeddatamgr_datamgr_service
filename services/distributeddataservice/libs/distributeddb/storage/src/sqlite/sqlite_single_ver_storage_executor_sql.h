@@ -30,6 +30,12 @@ namespace DistributedDB {
     const std::string INSERT_CACHE_LOCAL_SQL =
         "INSERT OR REPLACE INTO local_data VALUES(?,?,?,?,?);";
 
+    const std::string UPDATE_LOCAL_SQL_FROM_CACHEHANDLE =
+        "UPDATE maindb.local_data SET key=?,value=?,timestamp=? where hash_key=?";
+
+    const std::string UPDATE_CACHE_LOCAL_SQL =
+        "UPDATE local_data SET key=?,value=?,timestamp=? where hash_key=?";
+
     const std::string INSERT_META_SQL =
         "INSERT OR REPLACE INTO meta_data VALUES(?,?);";
 
@@ -37,12 +43,22 @@ namespace DistributedDB {
         "INSERT OR REPLACE INTO meta.meta_data VALUES(?,?);";
 
     const std::string INSERT_SYNC_SQL =
-        "INSERT OR REPLACE INTO sync_data VALUES(?,?,?,?,?,?,?,?);";
+        "INSERT INTO sync_data VALUES(?,?,?,?,?,?,?,?);";
+
+    const std::string UPDATE_SYNC_SQL =
+        "UPDATE sync_data SET key=?,value=?,timestamp=?,flag=?,device=?,ori_device=?,w_timestamp=? WHERE hash_key=?;";
 
     const std::string INSERT_CACHE_SYNC_SQL =
         "INSERT OR REPLACE INTO sync_data VALUES(?,?,?,?,?,?,?,?,?);";
     const std::string INSERT_CACHE_SYNC_SQL_FROM_MAINHANDLE =
         "INSERT OR REPLACE INTO cache.sync_data VALUES(?,?,?,?,?,?,?,?,?);";
+
+    const std::string UPDATE_CACHE_SYNC_SQL =
+        "UPDATE sync_data SET key=?,value=?,timestamp=?,flag=?,device=?,ori_device=?,w_timestamp=? WHERE hash_key=?;";
+
+    const std::string UPDATE_CACHE_SYNC_SQL_FROM_MAINHANDLE =
+        "UPDATE cache.sync_data SET key=?,value=?,timestamp=?,flag=?,device=?,ori_device=?,w_timestamp=? "
+        "WHERE hash_key=?;";
 
     const std::string DELETE_LOCAL_SQL =
         "DELETE FROM local_data WHERE key=?;";
@@ -103,6 +119,12 @@ namespace DistributedDB {
     const std::string SELECT_SYNC_ENTRIES_SQL =
         "SELECT * FROM sync_data WHERE timestamp >= ? AND timestamp < ? AND (flag&0x02=0x02) ORDER BY timestamp ASC;";
 
+    const std::string SELECT_SYNC_DELETED_ENTRIES_SQL =
+        "SELECT * FROM sync_data WHERE timestamp >= ? AND timestamp < ? AND (flag&0x03=0x03) ORDER BY timestamp ASC;";
+
+    const std::string SELECT_SYNC_MODIFY_SQL =
+        "SELECT * FROM sync_data WHERE timestamp >= ? AND timestamp < ? AND (flag&0x03=0x02) ORDER BY timestamp ASC;";
+
     const std::string SELECT_SYNC_PREFIX_SQL =
         "SELECT key, value FROM sync_data WHERE key>=? AND key<=? AND (flag&0x01=0) ORDER BY key ASC;";
 
@@ -148,10 +170,16 @@ namespace DistributedDB {
     const std::string GET_MAX_VER_CACHEDATA_FROM_MAINHANDLE =
         "select version from cache.sync_data order by version DESC limit 1;";
 
-    const std::string MIGRATE_PUT_DATA_TO_MAINDB_FROM_CACHEHANDLE =
-        "INSERT OR REPLACE INTO maindb.sync_data VALUES(?,?,?,?,?,?,?,?);";
-    const std::string MIGRATE_PUT_DATA_TO_MAINDB_FROM_MAINHANDLE =
-        "INSERT OR REPLACE INTO sync_data VALUES(?,?,?,?,?,?,?,?);";
+    const std::string MIGRATE_INSERT_DATA_TO_MAINDB_FROM_CACHEHANDLE =
+        "INSERT INTO maindb.sync_data VALUES(?,?,?,?,?,?,?,?);";
+    const std::string MIGRATE_UPDATE_DATA_TO_MAINDB_FROM_CACHEHANDLE =
+        "UPDATE maindb.sync_data SET key=?,value=?,timestamp=?,flag=?,device=?,ori_device=?,w_timestamp=? "
+        "WHERE hash_key=?;";
+
+    const std::string MIGRATE_INSERT_DATA_TO_MAINDB_FROM_MAINHANDLE =
+        "INSERT INTO sync_data VALUES(?,?,?,?,?,?,?,?);";
+    const std::string MIGRATE_UPDATE_DATA_TO_MAINDB_FROM_MAINHANDLE =
+        "UPDATE sync_data SET key=?,value=?,timestamp=?,flag=?,device=?,ori_device=?,w_timestamp=? WHERE hash_key=?;";
 
     const std::string MIGRATE_DEL_DATA_BY_VERSION_FROM_CACHEHANDLE =
         "DELETE FROM sync_data WHERE version=?;";
@@ -159,6 +187,26 @@ namespace DistributedDB {
         "DELETE FROM cache.sync_data WHERE version=?;";
 
     const std::string SELECT_MAIN_SYNC_HASH_SQL_FROM_CACHEHANDLE = "SELECT * FROM maindb.sync_data WHERE hash_key=?;";
+
+    const std::string REMOVE_META_VALUE_SQL =
+        "DELETE FROM meta_data WHERE key=?;";
+    const std::string REMOVE_ATTACH_META_VALUE_SQL =
+        "DELETE FROM meta.meta_data WHERE key=?;";
+
+    const std::string CHECK_DB_INTEGRITY_SQL = "PRAGMA integrity_check;";
+
+    const std::string REMOVE_META_VALUE_BY_KEY_PREFIX_SQL =
+        "DELETE FROM meta_data WHERE key>=? AND key<=?;";
+    const std::string REMOVE_ATTACH_META_VALUE_BY_KEY_PREFIX_SQL =
+        "DELETE FROM meta.meta_data WHERE key>=? AND key<=?;";
+
+    const std::string DELETE_SYNC_DATA_WITH_HASHKEY = "DELETE FROM sync_data where hash_key = ?;";
+
+    const std::string DELETE_SYNC_DATA_WITH_HASHKEY_FROM_CACHEHANDLE =
+        "DELETE FROM maindb.sync_data where hash_key = ?;";
+
+    const std::string GET_SYNC_DATA_TIRGGER_SQL =
+        "SELECT name FROM SQLITE_MASTER WHERE TYPE = 'trigger' AND TBL_NAME = 'sync_data' AND name like ?;";
 
     const int BIND_KV_KEY_INDEX = 1;
     const int BIND_KV_VAL_INDEX = 2;
@@ -178,6 +226,9 @@ namespace DistributedDB {
     const int BIND_SYNC_ORI_DEV_INDEX = 6;
     const int BIND_SYNC_HASH_KEY_INDEX = 7;
     const int BIND_SYNC_W_TIME_INDEX = 8;
+
+    const int BIND_SYNC_UPDATE_W_TIME_INDEX = 7;
+    const int BIND_SYNC_UPDATE_HASH_KEY_INDEX = 8;
 
     // cacheDB
     const int BIND_CACHE_LOCAL_KEY_INDEX = 1;

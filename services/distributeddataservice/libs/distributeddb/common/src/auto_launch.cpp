@@ -18,16 +18,16 @@
 #include <map>
 
 #include "db_errno.h"
-#include "log_print.h"
-#include "runtime_context.h"
-#include "kvdb_pragma.h"
-#include "kvdb_manager.h"
-#include "kv_store_changed_data_impl.h"
-#include "sync_able_kvdb_connection.h"
-#include "semaphore_utils.h"
-#include "kv_store_nb_conflict_data_impl.h"
 #include "db_common.h"
+#include "kv_store_changed_data_impl.h"
+#include "kv_store_nb_conflict_data_impl.h"
+#include "kvdb_manager.h"
+#include "kvdb_pragma.h"
+#include "log_print.h"
 #include "param_check_utils.h"
+#include "runtime_context.h"
+#include "semaphore_utils.h"
+#include "sync_able_kvdb_connection.h"
 
 namespace DistributedDB {
 namespace {
@@ -132,11 +132,12 @@ int AutoLaunch::EnableKvStoreAutoLaunchParmCheck(AutoLaunchItem &autoLaunchItem,
 }
 
 int AutoLaunch::EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
-    KvStoreObserver *observer, int conflictType, KvStoreNbConflictNotifier conflictNotifier)
+    const AutoLaunchOption &option)
 {
     LOGI("[AutoLaunch] EnableKvStoreAutoLaunch");
     std::string identifier = properties.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
-    AutoLaunchItem autoLaunchItem{properties, notifier, observer, conflictType, conflictNotifier};
+    AutoLaunchItem autoLaunchItem { properties, notifier, option.observer, option.conflictType, option.notifier };
+    autoLaunchItem.isAutoSync = option.isAutoSync;
     int errCode = EnableKvStoreAutoLaunchParmCheck(autoLaunchItem, identifier);
     if (errCode != E_OK) {
         LOGE("[AutoLaunch] EnableKvStoreAutoLaunch failed errCode:%d", errCode);
@@ -168,7 +169,12 @@ int AutoLaunch::GetConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std:
         autoLaunchItemMap_.erase(identifier);
         return errCode;
     }
-    if (onlineDevices_.empty()) {
+    bool isEmpty = false;
+    {
+        std::lock_guard<std::mutex> onlineDevicesLock(dataLock_);
+        isEmpty = onlineDevices_.empty();
+    }
+    if (isEmpty) {
         LOGI("[AutoLaunch] GetConnectionInEnable no online device, ReleaseDatabaseConnection");
         errCode = KvDBManager::ReleaseDatabaseConnection(autoLaunchItem.conn);
         if (errCode != E_OK) {
@@ -277,14 +283,14 @@ int AutoLaunch::RegisterObserverAndLifeCycleCallback(AutoLaunchItem &autoLaunchI
         return errCode;
     }
 
-    bool enAutoSync = true;
+    bool enAutoSync = autoLaunchItem.isAutoSync;
     errCode = static_cast<SyncAbleKvDBConnection *>(autoLaunchItem.conn)->Pragma(PRAGMA_AUTO_SYNC,
         static_cast<void *>(&enAutoSync));
     if (errCode != E_OK) {
         LOGE("[AutoLaunch]  PRAGMA_AUTO_SYNC failed, errCode:%d", errCode);
         return errCode;
     }
-    LOGI("[AutoLaunch] PRAGMA_AUTO_SYNC ok");
+    LOGI("[AutoLaunch] set PRAGMA_AUTO_SYNC ok, enAutoSync=%d", enAutoSync);
     return errCode;
 }
 
@@ -564,16 +570,16 @@ void AutoLaunch::GetConnInDoOpenMap(std::map<std::string, AutoLaunchItem> &doOpe
     SemaphoreUtils sema(1 - doOpenMap.size());
     for (auto &iter : doOpenMap) {
         int errCode = RuntimeContext::GetInstance()->ScheduleTask([&sema, &iter, this] {
-            int errCode;
-            iter.second.conn = GetOneConnection(iter.second.properties, errCode);
-            LOGI("[AutoLaunch] GetConnInDoOpenMap GetOneConnection errCode:%d\n", errCode);
+            int ret;
+            iter.second.conn = GetOneConnection(iter.second.properties, ret);
+            LOGI("[AutoLaunch] GetConnInDoOpenMap GetOneConnection errCode:%d\n", ret);
             if (iter.second.conn == nullptr) {
                 sema.SendSemaphore();
                 LOGI("[AutoLaunch] GetConnInDoOpenMap in open thread finish SendSemaphore");
                 return;
             }
-            errCode = RegisterObserverAndLifeCycleCallback(iter.second, iter.first, false);
-            if (errCode != E_OK) {
+            ret = RegisterObserverAndLifeCycleCallback(iter.second, iter.first, false);
+            if (ret != E_OK) {
                 LOGE("[AutoLaunch] GetConnInDoOpenMap  failed, we do CloseConnection");
                 TryCloseConnection(iter.second); // if here failed, do nothing
                 iter.second.conn = nullptr;
@@ -724,6 +730,7 @@ int AutoLaunch::AutoLaunchExt(const std::string &identifier)
     }
     AutoLaunchItem autoLaunchItem{properties, param.notifier, param.option.observer, param.option.conflictType,
         param.option.notifier};
+    autoLaunchItem.isAutoSync = param.option.isAutoSync;
     errCode = RuntimeContext::GetInstance()->ScheduleTask(std::bind(&AutoLaunch::AutoLaunchExtTask, this,
         identifier, autoLaunchItem));
     if (errCode != E_OK) {
@@ -903,6 +910,11 @@ int AutoLaunch::GetAutoLaunchProperties(const AutoLaunchParam &param, KvDBProper
     if (RuntimeContext::GetInstance()->IsProcessSystemApiAdapterValid()) {
         properties.SetIntProp(KvDBProperties::SECURITY_LABEL, param.option.secOption.securityLabel);
         properties.SetIntProp(KvDBProperties::SECURITY_FLAG, param.option.secOption.securityFlag);
+    }
+    properties.SetBoolProp(KvDBProperties::COMPRESS_ON_SYNC, param.option.isNeedCompressOnSync);
+    if (param.option.isNeedCompressOnSync) {
+        properties.SetIntProp(KvDBProperties::COMPRESSION_RATE,
+            ParamCheckUtils::GetValidCompressionRate(param.option.compressionRate));
     }
     DBCommon::SetDatabaseIds(properties, param.appId, param.userId, param.storeId);
     return E_OK;

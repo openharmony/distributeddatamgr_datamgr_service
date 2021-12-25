@@ -70,7 +70,7 @@ public:
         const std::string &deviceId, uint8_t flag) const override;
 
     int EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
-        KvStoreObserver *observer, int conflictType, KvStoreNbConflictNotifier conflictNotifier) override;
+        const AutoLaunchOption &option) override;
 
     int DisableKvStoreAutoLaunch(const std::string &identifier) override;
 
@@ -78,7 +78,7 @@ public:
 
     void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback) override;
 
-    NotificationChain::Listener *RegisterLockStatusLister(const LockStatusNotifier &action, int &errorCode) override;
+    NotificationChain::Listener *RegisterLockStatusLister(const LockStatusNotifier &action, int &errCode) override;
 
     bool IsAccessControlled() const override;
 
@@ -93,6 +93,7 @@ public:
     bool IsProcessSystemApiAdapterValid() const override;
 
     bool IsCommunicatorAggregatorValid() const override;
+
     // Notify TIME_CHANGE_EVENT.
     void NotifyTimeStampChanged(TimeOffset offset) const override;
 
@@ -137,7 +138,7 @@ private:
     AutoLaunch autoLaunch_;
 
     // System api
-    mutable std::mutex systemApiAdapterLock_;
+    mutable std::recursive_mutex systemApiAdapterLock_;
     std::shared_ptr<IProcessSystemApiAdapter> systemApiAdapter_;
     mutable std::mutex lockStatusLock_; // Mutex for lockStatusObserver_.
     LockStatusObserver *lockStatusObserver_;

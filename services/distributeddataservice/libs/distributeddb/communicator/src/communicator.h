@@ -43,6 +43,10 @@ public:
 
     uint32_t GetCommunicatorMtuSize() const override;
     uint32_t GetCommunicatorMtuSize(const std::string &target) const override;
+
+    uint32_t GetTimeout() const override;
+    uint32_t GetTimeout(const std::string &target) const override;
+    bool IsDeviceOnline(const std::string &device) const override;
     int GetLocalIdentity(std::string &outTarget) const override;
     // Get the protocol version of remote target. Return -E_NOT_FOUND if no record.
     int GetRemoteCommunicatorVersion(const std::string &target, uint16_t &outVersion) const override;

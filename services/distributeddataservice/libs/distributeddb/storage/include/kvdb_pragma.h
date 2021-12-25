@@ -21,6 +21,7 @@
 #include <functional>
 
 #include "types.h"
+#include "query_sync_object.h"
 
 namespace DistributedDB {
 enum : int {
@@ -44,24 +45,58 @@ enum : int {
     PRAGMA_RESULT_SET_CACHE_MAX_SIZE,
     PRAGMA_TRIGGER_TO_MIGRATE_DATA,
     PRAGMA_REMOTE_PUSH_FINISHED_NOTIFY,
+    PRAGMA_SET_SYNC_RETRY,
+    PRAGMA_ADD_EQUAL_IDENTIFIER,
+    PRAGMA_INTERCEPT_SYNC_DATA,
+    PRAGMA_SUBSCRIBE_QUERY,
 };
 
 struct PragmaSync {
+    PragmaSync(const std::vector<std::string> &devices, int mode, const QuerySyncObject &query,
+        const std::function<void(const std::map<std::string, int> &devicesMap)> &onComplete,
+        bool wait = false)
+        : devices_(devices),
+          mode_(mode),
+          onComplete_(onComplete),
+          wait_(wait),
+          isQuerySync_(true),
+          query_(query)
+    {
+    }
+
     PragmaSync(const std::vector<std::string> &devices, int mode,
         const std::function<void(const std::map<std::string, int> &devicesMap)> &onComplete,
         bool wait = false)
-        : devices_(devices), mode_(mode), onComplete_(onComplete), wait_(wait) {}
+        : devices_(devices),
+          mode_(mode),
+          onComplete_(onComplete),
+          wait_(wait),
+          isQuerySync_(false),
+          query_(Query::Select())
+    {
+    }
 
     std::vector<std::string> devices_;
     int mode_;
     std::function<void(const std::map<std::string, int> &devicesMap)> onComplete_;
     bool wait_;
+    bool isQuerySync_;
+    QuerySyncObject query_;
 };
 
 struct PragmaRemotePushNotify {
     PragmaRemotePushNotify(RemotePushFinishedNotifier notifier) : notifier_(notifier) {}
 
     RemotePushFinishedNotifier notifier_;
+};
+
+struct PragmaSetEqualIdentifier {
+    PragmaSetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets)
+        : identifier_(identifier),
+          targets_(targets) {}
+
+    std::string identifier_;
+    std::vector<std::string> targets_;
 };
 } // namespace DistributedDB
 

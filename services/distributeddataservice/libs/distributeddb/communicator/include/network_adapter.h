@@ -39,6 +39,9 @@ public:
 
     uint32_t GetMtuSize() override;
     uint32_t GetMtuSize(const std::string &target) override;
+
+    uint32_t GetTimeout() override;
+    uint32_t GetTimeout(const std::string &target) override;
     int GetLocalIdentity(std::string &outTarget) override;
 
     int SendBytes(const std::string &dstTarget, const uint8_t *bytes, uint32_t length) override;
@@ -46,6 +49,9 @@ public:
     int RegBytesReceiveCallback(const BytesReceiveCallback &onReceive, const Finalizer &inOper) override;
     int RegTargetChangeCallback(const TargetChangeCallback &onChange, const Finalizer &inOper) override;
     int RegSendableCallback(const SendableCallback &onSendable, const Finalizer &inOper) override;
+
+    bool IsDeviceOnline(const std::string &device) override;
+
 private:
     void OnDataReceiveHandler(const DeviceInfos &srcDevInfo, const uint8_t *data, uint32_t length);
     void OnDeviceChangeHandler(const DeviceInfos &devInfo, bool isOnline);
@@ -59,7 +65,7 @@ private:
 
     // For protecting "LocalIdentity" and "MtuSize", these info only need to get from peripheral interface once
     mutable std::mutex identityMutex_;
-    bool isLocalIdentityValid_ = false;
+
     std::string localIdentity_;
     mutable std::mutex mtuSizeMutex_;
     bool isMtuSizeValid_ = false;

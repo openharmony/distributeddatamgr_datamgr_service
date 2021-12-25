@@ -14,24 +14,26 @@
  */
 
 #include "sync_able_kvdb.h"
+
 #include "db_errno.h"
 #include "log_print.h"
 #include "parcel.h"
+#include "runtime_context.h"
 
 namespace DistributedDB {
 const EventType SyncAbleKvDB::REMOTE_PUSH_FINISHED = 1;
 
 SyncAbleKvDB::SyncAbleKvDB()
     : started_(false),
-      remotePushNotifyChain_(nullptr)
+      notifyChain_(nullptr)
 {}
 
 SyncAbleKvDB::~SyncAbleKvDB()
 {
-    if (remotePushNotifyChain_ != nullptr) {
-        (void)remotePushNotifyChain_->UnRegisterEventType(REMOTE_PUSH_FINISHED);
-        KillAndDecObjRef(remotePushNotifyChain_);
-        remotePushNotifyChain_ = nullptr;
+    if (notifyChain_ != nullptr) {
+        (void)notifyChain_->UnRegisterEventType(REMOTE_PUSH_FINISHED);
+        KillAndDecObjRef(notifyChain_);
+        notifyChain_ = nullptr;
     }
 }
 
@@ -67,9 +69,7 @@ void SyncAbleKvDB::Close()
 }
 
 // Start a sync action.
-int SyncAbleKvDB::Sync(const std::vector<std::string> &devices, int mode,
-    const std::function<void(const std::map<std::string, int> &)> &onComplete,
-    const std::function<void(void)> &onFinalize, bool wait = false)
+int SyncAbleKvDB::Sync(const ISyncer::SyncParma &parma)
 {
     if (!started_) {
         StartSyncer();
@@ -77,7 +77,7 @@ int SyncAbleKvDB::Sync(const std::vector<std::string> &devices, int mode,
             return -E_NOT_INIT;
         }
     }
-    return syncer_.Sync(devices, mode, onComplete, onFinalize, wait);
+    return syncer_.Sync(parma);
 }
 
 void SyncAbleKvDB::EnableAutoSync(bool enable)
@@ -94,10 +94,10 @@ void SyncAbleKvDB::WakeUpSyncer()
 }
 
 // Stop a sync action in progress.
-void SyncAbleKvDB::StopSync(int syncId)
+void SyncAbleKvDB::StopSync()
 {
     if (started_) {
-        syncer_.RemoveSyncOperation(syncId);
+        syncer_.StopSync();
     }
 }
 
@@ -191,33 +191,44 @@ int SyncAbleKvDB::SetStaleDataWipePolicy(WipePolicy policy)
     return syncer_.SetStaleDataWipePolicy(policy);
 }
 
-NotificationChain::Listener *SyncAbleKvDB::AddRemotePushFinishedNotify(const RemotePushFinishedNotifier &notifier,
-    int errCode)
+int SyncAbleKvDB::RegisterEventType(EventType type)
 {
-    {
-        std::lock_guard<std::mutex> lock(remotePushNotifyChainLock_);
-        if (remotePushNotifyChain_ == nullptr) {
-            remotePushNotifyChain_ = new (std::nothrow) NotificationChain;
-            if (remotePushNotifyChain_ == nullptr) {
-                errCode = -E_OUT_OF_MEMORY;
-                return nullptr;
-            }
-
-            errCode = remotePushNotifyChain_->RegisterEventType(REMOTE_PUSH_FINISHED);
-            if (errCode != E_OK) {
-                LOGE("[SyncAbleKvDB] Register remote push finished event type failed! err %d", errCode);
-                KillAndDecObjRef(remotePushNotifyChain_);
-                remotePushNotifyChain_ = nullptr;
-                return nullptr;
-            }
+    if (notifyChain_ == nullptr) {
+        notifyChain_ = new (std::nothrow) NotificationChain;
+        if (notifyChain_ == nullptr) {
+            return -E_OUT_OF_MEMORY;
         }
     }
 
-    NotificationChain::Listener *listener =
-        remotePushNotifyChain_->RegisterListener(REMOTE_PUSH_FINISHED,
-            [notifier](void *arg) {
-                notifier(*static_cast<RemotePushNotifyInfo *>(arg));
-            }, nullptr, errCode);
+    int errCode = notifyChain_->RegisterEventType(type);
+    if (errCode == -E_ALREADY_REGISTER) {
+        return E_OK;
+    }
+    if (errCode != E_OK) {
+        LOGE("[SyncAbleKvDB] Register event type %u failed! err %d", type, errCode);
+        KillAndDecObjRef(notifyChain_);
+        notifyChain_ = nullptr;
+    }
+    return errCode;
+}
+
+NotificationChain::Listener *SyncAbleKvDB::AddRemotePushFinishedNotify(const RemotePushFinishedNotifier &notifier,
+    int &errCode)
+{
+    std::unique_lock<std::shared_mutex> lock(notifyChainLock_);
+    errCode = RegisterEventType(REMOTE_PUSH_FINISHED);
+    if (errCode != E_OK) {
+        return nullptr;
+    }
+
+    auto listener = notifyChain_->RegisterListener(REMOTE_PUSH_FINISHED,
+        [notifier](void *arg) {
+            if (arg == nullptr) {
+                LOGE("PragmaRemotePushNotify is null.");
+                return;
+            }
+            notifier(*static_cast<RemotePushNotifyInfo *>(arg));
+        }, nullptr, errCode);
     if (errCode != E_OK) {
         LOGE("[SyncAbleKvDB] Add remote push finished notifier failed! err %d", errCode);
     }
@@ -226,10 +237,24 @@ NotificationChain::Listener *SyncAbleKvDB::AddRemotePushFinishedNotify(const Rem
 
 void SyncAbleKvDB::NotifyRemotePushFinishedInner(const std::string &targetId) const
 {
-    if (remotePushNotifyChain_ != nullptr) {
-        RemotePushNotifyInfo info;
-        info.deviceId = targetId;
-        remotePushNotifyChain_->NotifyEvent(REMOTE_PUSH_FINISHED, static_cast<void *>(&info));
+    {
+        std::shared_lock<std::shared_mutex> lock(notifyChainLock_);
+        if (notifyChain_ == nullptr) {
+            return;
+        }
     }
+    RemotePushNotifyInfo info;
+    info.deviceId = targetId;
+    notifyChain_->NotifyEvent(REMOTE_PUSH_FINISHED, static_cast<void *>(&info));
+}
+
+int SyncAbleKvDB::SetSyncRetry(bool isRetry)
+{
+    return syncer_.SetSyncRetry(isRetry);
+}
+
+int SyncAbleKvDB::SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets)
+{
+    return syncer_.SetEqualIdentifier(identifier, targets);
 }
 }

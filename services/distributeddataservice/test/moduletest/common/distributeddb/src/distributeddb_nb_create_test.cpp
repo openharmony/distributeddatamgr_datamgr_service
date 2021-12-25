@@ -72,10 +72,6 @@ void DistributeddbNbCreateTest::TearDown(void)
 {
 }
 
-const KvStoreConfig CONFIG = {
-    .dataDir = NB_DIRECTOR
-};
-
 void WaitingDeletingDB()
 {
     KvStoreDelegateManager *manager = nullptr;
@@ -177,6 +173,7 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb003, TestSize.Level0)
 
 void DefinePath(string &pathOk, string &pathError)
 {
+#if defined(RUNNING_ON_LINUX)
     pathOk =
         "/data/test/getstub/dddddddddddddddddddddddddddddddddddssssssssssssssfffffDddddddddssssssssssssssssssfffffd/"
         "dddddddddddddddddddddddddssssssssssssssssssfffffDdddddddddddddddddddddddddssssssssssssssssssfffffd/dddddddd"
@@ -191,6 +188,18 @@ void DefinePath(string &pathOk, string &pathError)
         "ddddddddddssssssssssssssssssfffffDdddddddddddddddddddddddddssssssssssssssssssfffffd/qddddddddddddddddddddd"
         "dddssssssssssssssssssfffffDdddddddddddddddddddddddddssssssssssssssssssfffffd/qserweiaaaww";
     MST_LOG("pathError.length() = %zd", pathError.length());
+#elif defined RUNNING_ON_WIN
+    pathOk =
+        "/data/test/getstub/dddddddddddddddddddddddddddddddddddssssssssssssssfffffDddddddddssssssssssssssssssfffffd/"
+        "dddddddddddddddddddddddddssssssssssssssssssfffffDdddddddddddddddddddddddddssssssssssssssssssfffffd/dddddddd"
+        "dssssssssssssssssssfffffDdddddd";
+    MST_LOG("pathOk.length() = %zd", pathOk.length());
+    pathError =
+        "/data/test/getstub/ddddddddddddddddddddsssssssssssssfffffDdddddddddddddddddddddddssssssssssssssssssfffffd/"
+        "qdddddddddddddddddddddddssssssssssssssssssfffffDdddddddddddddddddddddddddssssssssssssssssssfffffd/qddddddd"
+        "dddssssssssssssssssssfffffDddddddd";
+    MST_LOG("pathError.length() = %zd", pathError.length());
+#endif
     return;
 }
 /*
@@ -269,8 +278,8 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb006, TestSize.Level0)
 {
     KvStoreDelegateManager *manager = new (std::nothrow) KvStoreDelegateManager(APP_ID_1, USER_ID_1);
     ASSERT_NE(manager, nullptr);
-    SetDir(NB_DIRECTOR);
-    ASSERT_EQ(manager->SetKvStoreConfig(CONFIG), DBStatus::OK);
+    SetDir(DistributedDBConstant::NB_DIRECTOR);
+    ASSERT_EQ(manager->SetKvStoreConfig(DistributedDBConstant::CONFIG), DBStatus::OK);
     ASSERT_EQ(manager->DeleteKvStore(STORE_ID_1), DBStatus::NOT_FOUND);
     delete manager;
     manager = nullptr;
@@ -327,13 +336,13 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb008, TestSize.Level1)
     DelegateMgrNbCallback delegateMgrCallback;
     function<void(DBStatus, KvStoreNbDelegate*)> Nbfunction
         = bind(&DelegateMgrNbCallback::Callback, &delegateMgrCallback, _1, _2);
-    SetDir(CONFIG.dataDir);
+    SetDir(DistributedDBConstant::CONFIG.dataDir);
     DBStatus status;
     KvStoreNbDelegate::Option option = DistributedDBNbTestTools::TransferNbOptionType(g_option);
     for (unsigned int index = 0; index < ID_MEDIUM_CNT; index++) {
         KvStoreDelegateManager *manager = new (std::nothrow) KvStoreDelegateManager(appId[index], userId[index]);
         ASSERT_NE(manager, nullptr);
-        status = manager->SetKvStoreConfig(CONFIG);
+        status = manager->SetKvStoreConfig(DistributedDBConstant::CONFIG);
         EXPECT_EQ(status, OK);
         manager->GetKvStore(storeId[index], option, Nbfunction);
         EXPECT_EQ(delegateMgrCallback.GetStatus(), OK);
@@ -397,14 +406,14 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb010, TestSize.Level1)
         bind(&DelegateMgrNbCallback::Callback, &delegateMgrCallback[INDEX_SECOND], _1, _2),
         bind(&DelegateMgrNbCallback::Callback, &delegateMgrCallback[INDEX_THIRD], _1, _2)
     };
-    SetDir(NB_DIRECTOR);
+    SetDir(DistributedDBConstant::NB_DIRECTOR);
     /**
      * @tc.steps: step1. create NBdelegate(APP_ID_1, USER_ID_1) and set dataDir.
      * @tc.expected: step1. Create success.
      */
     manager[INDEX_ZEROTH] = new (std::nothrow) KvStoreDelegateManager(APP_ID_1, USER_ID_1);
     ASSERT_NE(manager[INDEX_ZEROTH], nullptr);
-    manager[INDEX_ZEROTH]->SetKvStoreConfig({ .dataDir = NB_DIRECTOR });
+    manager[INDEX_ZEROTH]->SetKvStoreConfig({ .dataDir = DistributedDBConstant::NB_DIRECTOR });
 
     /**
      * @tc.steps: step2. create NBdelegate(APP_ID_1, USER_ID_2) and set dataDir.
@@ -412,7 +421,7 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb010, TestSize.Level1)
      */
     manager[INDEX_FIRST] = new (std::nothrow) KvStoreDelegateManager(APP_ID_1, USER_ID_2);
     ASSERT_NE(manager[INDEX_FIRST], nullptr);
-    manager[INDEX_FIRST]->SetKvStoreConfig({ .dataDir = NB_DIRECTOR });
+    manager[INDEX_FIRST]->SetKvStoreConfig({ .dataDir = DistributedDBConstant::NB_DIRECTOR });
 
     /**
      * @tc.steps: step3. create NBdelegate(APP_ID_2, USER_ID_1) and set dataDir.
@@ -420,14 +429,14 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb010, TestSize.Level1)
      */
     manager[INDEX_SECOND] = new (std::nothrow) KvStoreDelegateManager(APP_ID_2, USER_ID_1);
     ASSERT_NE(manager[INDEX_SECOND], nullptr);
-    manager[INDEX_SECOND]->SetKvStoreConfig({ .dataDir = NB_DIRECTOR });
+    manager[INDEX_SECOND]->SetKvStoreConfig({ .dataDir = DistributedDBConstant::NB_DIRECTOR });
     /**
      * @tc.steps: step4. create NBdelegate(APP_ID_2, USER_ID_2) and set dataDir.
      * @tc.expected: step4. Create success.
      */
     manager[INDEX_THIRD] = new (std::nothrow) KvStoreDelegateManager(APP_ID_2, USER_ID_2);
     ASSERT_NE(manager[INDEX_THIRD], nullptr);
-    manager[INDEX_THIRD]->SetKvStoreConfig({ .dataDir = NB_DIRECTOR });
+    manager[INDEX_THIRD]->SetKvStoreConfig({ .dataDir = DistributedDBConstant::NB_DIRECTOR });
     /**
      * @tc.steps: step5. use STORE_ID_1 create db.
      * @tc.expected: step5. Create success.
@@ -486,10 +495,10 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb011, TestSize.Level1)
      */
     KvStoreDelegateManager *manager = nullptr;
     const std::string STORE_OK =
-        "STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE"\
+        "STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE"
         "_OK1_STORE_OK1_STORE_OK";
     const std::string STORE_ERROR =
-        "STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_"\
+        "STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_"
         "ERR_STORE_ERR_STORE_ERR";
     const std::string STORE_ID[ID_MAX_CNT] = { "", "STORE_ID_1\0", STORE_OK, STORE_ERROR, "Store_ID_2",
         "STORE_ID_1\\", "STORE_ID_1//", "STORE_I&D_1", "STORE_ID_1^", "STORE_ID%_1",
@@ -498,7 +507,7 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb011, TestSize.Level1)
         INVALID_ARGS, OK, OK, INVALID_ARGS, OK,
         INVALID_ARGS, INVALID_ARGS, INVALID_ARGS, INVALID_ARGS, INVALID_ARGS,
         INVALID_ARGS, INVALID_ARGS, INVALID_ARGS, INVALID_ARGS, INVALID_ARGS, INVALID_ARGS };
-    SetDir(CONFIG.dataDir);
+    SetDir(DistributedDBConstant::CONFIG.dataDir);
 
     /**
      * @tc.steps: step2. Use different storeid create db.
@@ -509,7 +518,7 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb011, TestSize.Level1)
         = bind(&DelegateMgrNbCallback::Callback, &delegateMgrNbCallback, _1, _2);
     manager = new (std::nothrow) KvStoreDelegateManager(APP_ID_1, USER_ID_1);
     ASSERT_NE(manager, nullptr);
-    manager->SetKvStoreConfig(CONFIG);
+    manager->SetKvStoreConfig(DistributedDBConstant::CONFIG);
     KvStoreNbDelegate::Option option = DistributedDBNbTestTools::TransferNbOptionType(g_option);
     for (unsigned int index = 0; index < ID_MAX_CNT; index++) {
         MST_LOG("index: %d", index);
@@ -579,8 +588,8 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb014, TestSize.Level1)
         = bind(&DelegateMgrNbCallback::Callback, &delegateMgrCallback, _1, _2);
     manager = new (std::nothrow) KvStoreDelegateManager(APP_ID_1, USER_ID_1);
     ASSERT_NE(manager, nullptr);
-    SetDir(CONFIG.dataDir);
-    EXPECT_EQ(manager->SetKvStoreConfig(CONFIG), OK);
+    SetDir(DistributedDBConstant::CONFIG.dataDir);
+    EXPECT_EQ(manager->SetKvStoreConfig(DistributedDBConstant::CONFIG), OK);
 
     KvStoreNbDelegate::Option option;
     for (int cnt = 0; cnt < MANYTINES; cnt++) {
@@ -620,10 +629,10 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb015, TestSize.Level1)
      * @tc.expected: step1. Construct success.
      */
     const std::string STORE_OK =
-        "STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1"\
+        "STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1_STORE_OK1"
         "_STORE_OK1_STORE_OK1_STORE_OK";
     const std::string STORE_ERROR =
-        "STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR"\
+        "STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR_STORE_ERR"
         "_STORE_ERR_STORE_ERR_STORE_ERR";
     const std::string STORE_ID[ID_MAX_CNT] = { "", "STORE_ID_1\0", STORE_OK, STORE_ERROR, "Store_ID_2",
         "STORE_ID_1\\", "STORE_ID_1//", "STORE_ID_1&", "STORE_ID_1^", "STORE_%ID_1",
@@ -651,9 +660,9 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb015, TestSize.Level1)
         MST_LOG("ManagerDb015 open %d db.", index);
         manager->GetKvStore(STORE_ID[index], option, Nbfunction);
         EXPECT_EQ(delegateMgrCallback.GetStatus(), resultStatus[index]);
-        KvStoreNbDelegate *delegate = const_cast<KvStoreNbDelegate*>(delegateMgrCallback.GetKvStore());
-        EXPECT_EQ(manager->CloseKvStore(delegate), resultStatus[index]);
-        delegate = nullptr;
+        KvStoreNbDelegate *delegateRes = const_cast<KvStoreNbDelegate*>(delegateMgrCallback.GetKvStore());
+        EXPECT_EQ(manager->CloseKvStore(delegateRes), resultStatus[index]);
+        delegateRes = nullptr;
         EXPECT_EQ(manager->DeleteKvStore(STORE_ID[index]), resultStatus[index]);
     }
     delete manager;
@@ -726,8 +735,8 @@ HWTEST_F(DistributeddbNbCreateTest, ManagerDb020, TestSize.Level0)
         = bind(&DelegateMgrNbCallback::Callback, &delegateMgrCallback, _1, _2);
     manager = new (std::nothrow) KvStoreDelegateManager(APP_ID_1, USER_ID_1);
     ASSERT_NE(manager, nullptr);
-    SetDir(NB_DIRECTOR);
-    manager->SetKvStoreConfig(CONFIG);
+    SetDir(DistributedDBConstant::NB_DIRECTOR);
+    manager->SetKvStoreConfig(DistributedDBConstant::CONFIG);
     KvStoreNbDelegate::Option option = DistributedDBNbTestTools::TransferNbOptionType(g_option);
     manager->GetKvStore(STORE_ID_1, option, Nbfunction);
     KvStoreNbDelegate *delegate = const_cast<KvStoreNbDelegate*>(delegateMgrCallback.GetKvStore());
@@ -1018,7 +1027,7 @@ HWTEST_F(DistributeddbNbCreateTest, MemoryDb001, TestSize.Level0)
     result = DistributedDBNbTestTools::GetNbDelegateSuccess(manager, g_dbParameter1, option);
     ASSERT_TRUE(manager != nullptr && result != nullptr);
     fstream dbFile;
-    dbFile.open((NB_DIRECTOR + "single_ver/main/gen_natural_store.*"), ios::in);
+    dbFile.open((DistributedDBConstant::NB_DIRECTOR + "single_ver/main/gen_natural_store.*"), ios::in);
     if (!dbFile) {
         MST_LOG("The db file is not exist!");
     } else {
@@ -1796,6 +1805,7 @@ HWTEST_F(DistributeddbNbCreateTest, RekeyDb005, TestSize.Level1)
  * @tc.require: SR000CQDT4
  * @tc.author: fengxiaoyun
  */
+#ifdef NB_CREATE
 HWTEST_F(DistributeddbNbCreateTest, SpaceManger001, TestSize.Level0)
 {
     /**
@@ -1910,4 +1920,5 @@ HWTEST_F(DistributeddbNbCreateTest, SpaceManger002, TestSize.Level2)
     result1 = nullptr;
     ReleaseManager(manager);
 }
+#endif
 }

@@ -19,10 +19,14 @@
 #include <cstdint>
 #include <string>
 
+#include "db_ability.h"
 #include "icommunicator.h"
 #include "ikvdb_sync_interface.h"
 #include "isync_task_context.h"
 #include "parcel.h"
+#ifdef RELATIONAL_STORE
+#include "schema.h"
+#endif
 
 namespace DistributedDB {
 class AbilitySyncRequestPacket {
@@ -40,7 +44,7 @@ public:
     uint32_t GetSoftwareVersion() const;
 
     void SetSchema(const std::string &schema);
-    void GetSchema(std::string &schema) const;
+    std::string GetSchema() const;
 
     void SetSchemaType(uint32_t schemaType);
     uint32_t GetSchemaType() const;
@@ -51,7 +55,14 @@ public:
     void SetSecFlag(int32_t secFlag);
     int32_t GetSecFlag() const;
 
+    void SetDbCreateTime(uint64_t dbCreateTime);
+    uint64_t GetDbCreateTime() const;
+
     uint32_t CalculateLen() const;
+
+    DbAbility GetDbAbility() const;
+
+    void SetDbAbility(const DbAbility &dbAbility);
 
 private:
     uint32_t protocolVersion_;
@@ -61,6 +72,8 @@ private:
     int32_t secLabel_;
     int32_t secFlag_;
     uint32_t schemaType_;
+    uint64_t dbCreateTime_;
+    DbAbility dbAbility_;
 };
 
 class AbilitySyncAckPacket {
@@ -78,7 +91,7 @@ public:
     int32_t GetAckCode() const;
 
     void SetSchema(const std::string &schema);
-    void GetSchema(std::string &schema) const;
+    std::string GetSchema() const;
 
     void SetSchemaType(uint32_t schemaType);
     uint32_t GetSchemaType() const;
@@ -95,7 +108,14 @@ public:
     void SetRequirePeerConvert(uint32_t requirePeerConvert);
     uint32_t GetRequirePeerConvert() const;
 
+    void SetDbCreateTime(uint64_t dbCreateTime);
+    uint64_t GetDbCreateTime() const;
+
     uint32_t CalculateLen() const;
+
+    DbAbility GetDbAbility() const;
+
+    void SetDbAbility(const DbAbility &dbAbility);
 
 private:
     uint32_t protocolVersion_;
@@ -107,6 +127,8 @@ private:
     uint32_t schemaType_;
     uint32_t permitSync_;
     uint32_t requirePeerConvert_;
+    uint64_t dbCreateTime_;
+    DbAbility dbAbility_;
 };
 
 class AbilitySync {
@@ -120,7 +142,8 @@ public:
     int SyncStart(uint32_t sessionId, uint32_t sequenceId, uint16_t remoteCommunicatorVersion,
         const CommErrHandler &handler = nullptr);
 
-    int Initialize(ICommunicator *inCommunicator, IKvDBSyncInterface *inStorage, const std::string &deviceId);
+    int Initialize(ICommunicator *inCommunicator, ISyncInterface *inStorage, std::shared_ptr<Metadata> &inMetadata,
+        const std::string &deviceId);
 
     int AckRecv(const Message *message, ISyncTaskContext *context);
 
@@ -141,8 +164,13 @@ public:
     static int DeSerialization(const uint8_t *buffer, uint32_t length, Message *inMsg); // register to communicator
 
 private:
-    int SendAck(const Message *inMsg, const SchemaObject &schemaObj, int ackCode, SyncOpinion localOpinion,
+#ifdef RELATIONAL_STORE
+    int SendAck(const Message *inMsg, const ISchema &schemaObj, int ackCode, SyncOpinion localOpinion,
         bool isAckNotify = false);
+#else
+    int SendAck(const Message *inMsg, const SchemaObject &schemaObj, int ackCode, SyncOpinion localOpinion,
+                bool isAckNotify = false);
+#endif
 
     static int RequestPacketSerialization(uint8_t *buffer, uint32_t length, const Message *inMsg);
 
@@ -156,9 +184,10 @@ private:
 
     static int AckPacketCalculateLen(const Message *inMsg, uint32_t &len);
 
-    static void RequestPacketDeSerializationTailPart(Parcel &parcel, AbilitySyncRequestPacket *packet);
+    static int RequestPacketDeSerializationTailPart(Parcel &parcel, AbilitySyncRequestPacket *packet,
+        uint32_t version);
 
-    static void AckPacketDeSerializationTailPart(Parcel &parcel, AbilitySyncAckPacket *packet);
+    static int AckPacketDeSerializationTailPart(Parcel &parcel, AbilitySyncAckPacket *packet, uint32_t version);
 
     bool SecLabelCheck(const AbilitySyncRequestPacket *packet) const;
 
@@ -171,12 +200,31 @@ private:
     SyncOpinion HandleVersionV3AckSchemaParam(const AbilitySyncAckPacket *packet, const std::string &remoteSchema,
         ISyncTaskContext *context) const;
 
-    void GetPacketSecOption(SecurityOption &option);
+    void GetPacketSecOption(SecurityOption &option) const;
 
-    int CheckAckCode(const Message *message, ISyncTaskContext *context, int errCode);
+    int SetAbilityRequestBodyInfo(AbilitySyncRequestPacket &packet, uint16_t remoteCommunicatorVersion) const;
+
+#ifdef RELATIONAL_STORE
+    int SetAbilityAckBodyInfo(AbilitySyncAckPacket &ackPacket, const ISchema &schemaObj, int ackCode,
+        SyncOpinion localOpinion, bool isAckNotify);
+#else
+    int SetAbilityAckBodyInfo(AbilitySyncAckPacket &ackPacket, const SchemaObject &schemaObj, int ackCode,
+        SyncOpinion localOpinion, bool isAckNotify);
+#endif
+
+    int GetDbAbilityInfo(DbAbility &dbAbility) const;
+
+    int AckMsgCheck(const Message *message, ISyncTaskContext *context) const;
+
+    bool IsSingleKvVer() const;
+#ifdef RELATIONAL_STORE
+    bool IsSingleRelationalVer() const;
+#endif
+    int SendAck(const Message *message, SyncOpinion &localSyncOpinion, int ackCode, bool isAckNotify);
 
     ICommunicator *communicator_;
-    IKvDBSyncInterface *storageInterface_;
+    ISyncInterface *storageInterface_;
+    std::shared_ptr<Metadata> metadata_;
     std::string deviceId_;
     bool syncFinished_;
     static const int FAILED_GET_SEC_CLASSIFICATION = 0x55;

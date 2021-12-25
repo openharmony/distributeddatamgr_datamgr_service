@@ -14,24 +14,27 @@
  */
 #include "distributed_test_tools.h"
 
-#include <dirent.h>
-#include <string>
-#include <sys/stat.h>
-#include <random>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
-#include <unistd.h>
 #include <cstring>
+#include <dirent.h>
 #include <fcntl.h>
+#include <functional>
 #include <openssl/sha.h>
+#include <random>
+#include <string>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #ifndef USE_SQLITE_SYMBOLS
 #include "sqlite3.h"
 #else
 #include "sqlite3sym.h"
 #endif
+#include "delegate_callback.h"
+#include "delegate_kv_mgr_callback.h"
 #include "distributeddb_data_generator.h"
 #include "distributed_test_sysinfo.h"
 #include "kv_store_delegate.h"
@@ -46,8 +49,15 @@ using namespace DistributedDB;
 using namespace DistributedDBDataGenerator;
 
 namespace {
+#ifndef USE_SQLITE_CODEC_CIPHER
+    const std::string CIPHER_CONFIG_SQL = "PRAGMA cipher='aes-256-gcm';";
+    const std::string KDF_ITER_CONFIG_SQL = "PRAGMA kdf_iter=5000;";
+#else
     const std::string CIPHER_CONFIG_SQL = "PRAGMA codec_cipher='aes-256-gcm';";
     const std::string KDF_ITER_CONFIG_SQL = "PRAGMA codec_kdf_iter=5000;";
+#endif
+    const int RAND_BOOL_MIN = 0;
+    const int RAND_BOOL_MAX = 1;
 }
 
 bool CompareVector(const std::vector<uint8_t>& first, const std::vector<uint8_t>& second)
@@ -59,31 +69,6 @@ bool CompareVector(const std::vector<uint8_t>& first, const std::vector<uint8_t>
     return first == second;
 }
 
-// although the Keys in Entries can be the same in theory,
-// but they are different here.
-bool CompareList(const std::list<DistributedDB::Entry>& retLst, const std::list<DistributedDB::Entry>& lst)
-{
-    if (retLst.size() != lst.size()) {
-        MST_LOG("retLst.size[%zd] != lst.size[%zd]", retLst.size(), lst.size());
-        return false;
-    }
-
-    vector<Entry> retVector(retLst.begin(), retLst.end());
-    vector<Entry> expectVec(lst.begin(), lst.end());
-    sort(retVector.begin(), retVector.end(), DistributedTestTools::CompareKey);
-    sort(expectVec.begin(), expectVec.end(), DistributedTestTools::CompareKey);
-    bool result = true;
-    for (uint64_t at = 0; at < retVector.size(); at++) {
-        result = ((retVector[at].key == expectVec[at].key) && (retVector[at].value == expectVec[at].value));
-        if (!result) {
-            return result;
-        }
-    }
-    return true;
-}
-
-// although the Keys in Entries can be the same in theory,
-// but they are different here.
 bool CompareEntriesVector(std::vector<DistributedDB::Entry>& retVec,
     std::vector<DistributedDB::Entry>& expectVec)
 {
@@ -92,13 +77,36 @@ bool CompareEntriesVector(std::vector<DistributedDB::Entry>& retVec,
         return false;
     }
 
-    for (const auto &retEntry : retVec) {
-        auto it = std::find_if(expectVec.begin(), expectVec.end(), [retEntry](DistributedDB::Entry entry_) {
-            return (retEntry.key == entry_.key) && (retEntry.value == entry_.value);
-        });
-        if (it == expectVec.end()) {
-            MST_LOG("Can't find expect Entry in expectVec!");
-            return false;
+    // for retVec and expectVec are reference, don't want to change the value of them
+    vector<std::reference_wrapper<Entry>> retVector(retVec.begin(), retVec.end());
+    vector<std::reference_wrapper<Entry>> expVec(expectVec.begin(), expectVec.end());
+    sort(retVector.begin(), retVector.end(), DistributedTestTools::CompareKey);
+    sort(expVec.begin(), expVec.end(), DistributedTestTools::CompareKey);
+    bool result = true;
+    for (uint64_t at = 0; at < retVector.size(); at++) {
+        result = ((retVector[at].get().key == expVec[at].get().key) &&
+            (retVector[at].get().value == expVec[at].get().value));
+        if (!result) {
+            MST_LOG("[CompareEntriesVector] compare list failed at the position: %llu", ULL(at));
+            string retKey(retVector[at].get().key.begin(), retVector[at].get().key.end());
+            string retValue(retVector[at].get().value.begin(), retVector[at].get().value.end());
+            string expKey(expVec[at].get().key.begin(), expVec[at].get().key.end());
+            string expValue(expVec[at].get().value.begin(), expVec[at].get().value.end());
+            MST_LOG("[CompareEntriesVector] the actual Key: %s\n", retKey.c_str());
+            MST_LOG("[CompareEntriesVector] the expect key: %s\n", expKey.c_str());
+            // retValue num lessThan 10, expValue num lessThan 10,
+            if (retValue.size() > 10 && expValue.size() > 10) {
+                MST_LOG("[CompareEntriesVector] the actual value: %s...%s\n",
+                    // retValue substr num as 10, the index of retKey.size() - 10
+                    retValue.substr(0, 10).c_str(), retValue.substr((retValue.size() - 10), 10).c_str());
+                MST_LOG("[CompareEntriesVector] the expect value: %s...%s\n",
+                    // expValue substr num as 10, the index of retKey.size() - 10
+                    expValue.substr(0, 10).c_str(), expValue.substr((expValue.size() - 10), 10).c_str());
+            } else {
+                MST_LOG("[CompareEntriesVector] the actual value: %s\n", retValue.c_str());
+                MST_LOG("[CompareEntriesVector] the expect value: %s\n", expValue.c_str());
+            }
+            return result;
         }
     }
     return true;
@@ -181,7 +189,7 @@ vector<Key> GetKeysFromEntries(std::vector < DistributedDB::Entry > entries, boo
     old.assign(entries.begin(), entries.end());
     if (random) {
         for (int i = entries.size(); i > 0; i--) {
-            int index = GetRandInt(0, ONE_HUNDRED_SECONDS * MILLSECONDES_PER_SECOND) % i;
+            int index = GetRandInt(0, ONE_HUNDRED_SECONDS * MILLSECONDS_PER_SECOND) % i;
             result.push_back(old[index].key);
             old.erase(old.begin() + index);
         }
@@ -242,16 +250,6 @@ vector< vector<Entry> > GetGroupEntries(vector<Entry> entries, int pageSize, int
     return result;
 }
 
-void DelegateCallback::Callback(DBStatus status, KvStoreSnapshotDelegate *kvStoreSnapshotDelegate)
-{
-    this->status_ = status;
-    this->kvStoreSnapshotDelegate_ = kvStoreSnapshotDelegate;
-}
-DBStatus DelegateCallback::GetStatus()
-{
-    return status_;
-}
-
 // KvCallback conclude the Callback of function <void(DBStatus, Value)> and <void(DBStatus, vector<Entry>)>
 class KvCallback {
 public:
@@ -305,7 +303,7 @@ int RemoveDir(const std::string &dirSrc)
     char upDir[] = "..";
     char dirName[MAX_DIR_LENGTH] = { 0 };
     DIR *dirp = nullptr;
-    struct dirent *dirPointer = nullptr;
+    struct dirent *dp = nullptr;
     struct stat dirStat;
 
     while (directory.at(directory.length() - 1) == '/') {
@@ -332,12 +330,12 @@ int RemoveDir(const std::string &dirSrc)
             perror("open directory error");
             return -1;
         }
-        while ((dirPointer = readdir(dirp)) != nullptr) {
+        while ((dp = readdir(dirp)) != nullptr) {
             // ignore . and ..
-            if ((strcmp(curDir, dirPointer->d_name) == 0) || (strcmp(upDir, dirPointer->d_name) == 0)) {
+            if ((strcmp(curDir, dp->d_name) == 0) || (strcmp(upDir, dp->d_name)) == 0) {
                 continue;
             }
-            int result = sprintf_s(dirName, sizeof(dirName) - 1, "%s/%s", dir, dirPointer->d_name);
+            int result = sprintf_s(dirName, sizeof(dirName) - 1, "%s/%s", dir, dp->d_name);
             if (result < 0) {
                 closedir(dirp);
                 return -1;
@@ -346,6 +344,7 @@ int RemoveDir(const std::string &dirSrc)
             RemoveDir(std::string(dirName));
         }
         closedir(dirp);
+        remove(directory.c_str());
     } else {
         perror("unknown file type!");
     }
@@ -355,6 +354,7 @@ int RemoveDir(const std::string &dirSrc)
 // If the test cases' related dir in system is not exist, create it.
 int SetDir(const std::string &directory, const int authRight)
 {
+    MST_LOG("create directory: %s", directory.c_str());
     char dir[MAX_DIR_LENGTH] = { 0 };
     int i, len;
 
@@ -380,7 +380,12 @@ int SetDir(const std::string &directory, const int authRight)
         dir[i] = '\0';
         if (access(dir, F_OK) != E_OK) {
             mode_t mode = umask(0);
+#if defined(RUNNING_ON_LINUX)
             if (mkdir(dir, authRight) == E_ERROR) {
+#else
+            std::string stringDir = dir;
+            if (OS::MakeDBDirectory(stringDir) == E_ERROR) {
+#endif
                 MST_LOG("mkdir(%s) failed(%d)!", dir, errno);
                 return -1;
             }
@@ -395,6 +400,76 @@ int SetDir(const std::string &directory, const int authRight)
     return 0;
 }
 
+void CopyFile(const string &srcFile, const string &destFile)
+{
+    int len = 0;
+    char buff[BUF_LEN] = { 0 };
+
+    FILE *pIn = fopen(srcFile.c_str(), "r");
+    if (pIn == nullptr) {
+        perror("pIn");
+        return;
+    }
+
+    FILE *pOut = fopen(destFile.c_str(), "w");
+    if (pOut == nullptr) {
+        perror("pOut");
+        return;
+    }
+
+    while ((len = fread(buff, sizeof(char), sizeof(buff), pIn)) > 0) {
+        fwrite(buff, sizeof(char), len, pOut);
+    }
+    fclose(pOut);
+    fclose(pIn);
+}
+
+void CopyDir(const string &srcDir, const string &destDir, const int authRight)
+{
+    string srcFullDir = srcDir;
+    string destFullDir = destDir;
+    struct dirent *filename = nullptr;
+    DIR *dpDest = opendir(destFullDir.c_str());
+    if (dpDest == nullptr) {
+        if (SetDir(destFullDir.c_str(), authRight)) {
+            MST_LOG("[CopyDir] SetDir(%s) failed(%d)!", destFullDir.c_str(), errno);
+            return;
+        }
+    }
+    string path = srcFullDir;
+    if (srcFullDir.back() != '/') {
+        srcFullDir += "/";
+    }
+    if (destFullDir.back() != '/') {
+        destFullDir += "/";
+    }
+
+    DIR *dpSrc = opendir(path.c_str());
+    if (dpSrc == nullptr) {
+        closedir(dpDest);
+        MST_LOG("[CopyDir] please make sure srcDir(%s) is valid.", srcDir.c_str());
+        return;
+    }
+    while ((filename = readdir(dpSrc)) != nullptr) {
+        string fileSourceDir = srcFullDir;
+        string fileDestDir = destFullDir;
+
+        fileSourceDir += filename->d_name;
+        fileDestDir += filename->d_name;
+        if (filename->d_type == DT_DIR) {
+            if ((string(filename->d_name).compare(0, strlen("."), ".") != 0) &&
+                (string(filename->d_name).compare(0, strlen(".."), "..") != 0)) {
+                CopyDir(fileSourceDir, fileDestDir);
+            }
+        } else {
+            CopyFile(fileSourceDir, fileDestDir);
+        }
+    }
+    closedir(dpSrc);
+    closedir(dpDest);
+    MST_LOG("[CopyDir] copy file from %s to %s successfully.", srcDir.c_str(), destDir.c_str());
+}
+
 void CheckFileNumber(const string &filePath, int &fileCount)
 {
     std::string cmd = "cd " + filePath + ";ls -l |grep " + "^-" + "|wc -l";
@@ -404,10 +479,10 @@ void CheckFileNumber(const string &filePath, int &fileCount)
         return;
     }
 
-    char buffer[PIPE_BUFFER];
+    char buffer[128]; // set pipe buffer length as 128B
     std::string result = "";
     while (!feof(pipe)) {
-        if (fgets(buffer, PIPE_BUFFER, pipe) != NULL) {
+        if (fgets(buffer, 128, pipe) != nullptr) { // set pipe buffer length as 128B
             result += buffer;
         }
     }
@@ -440,7 +515,7 @@ KvStoreDelegate* DistributedTestTools::GetDelegateSuccess(KvStoreDelegateManager
 
     // define a Callback to hold the kvStoreDelegate and status.
     DelegateKvMgrCallback delegateKvMgrCallback;
-    function<void(DBStatus, KvStoreDelegate*)> function
+    function<void(DBStatus, KvStoreDelegate*)> callFunction
         = bind(&DelegateKvMgrCallback::Callback, &delegateKvMgrCallback, _1, _2);
 
     // use appid and userid to initialize a kvStoreDelegateManager, and set the default cfg.
@@ -463,7 +538,7 @@ KvStoreDelegate* DistributedTestTools::GetDelegateSuccess(KvStoreDelegateManager
 
     KvStoreDelegate::Option option = TransferKvOptionType(optionParam);
     // get kv store, then the Callback will save the status and delegate.
-    manager->GetKvStore(param.storeId, option, function);
+    manager->GetKvStore(param.storeId, option, callFunction);
     status = delegateKvMgrCallback.GetStatus();
     if (status != DBStatus::OK) {
         MST_LOG("%s GetKvStore failed! Status= %d", TAG.c_str(), status);
@@ -549,7 +624,7 @@ DBStatus DistributedTestTools::GetDelegateNotGood(KvStoreDelegateManager *&manag
 
     // define a Callback to hold the kvStoreDelegate and status.
     DelegateKvMgrCallback delegateKvMgrCallback;
-    function<void(DBStatus, KvStoreDelegate*)> function
+    function<void(DBStatus, KvStoreDelegate*)> callFunction
         = bind(&DelegateKvMgrCallback::Callback, &delegateKvMgrCallback, _1, _2);
 
     // use appid and userid to initialize a kvStoreDelegateManager, and set the default cfg.
@@ -569,7 +644,7 @@ DBStatus DistributedTestTools::GetDelegateNotGood(KvStoreDelegateManager *&manag
 
     KvStoreDelegate::Option option = TransferKvOptionType(optionParam);
     // get kv store, then the Callback will save the status and delegate.
-    manager->GetKvStore(storeId, option, function);
+    manager->GetKvStore(storeId, option, callFunction);
     status = delegateKvMgrCallback.GetStatus();
     outDelegate = const_cast<KvStoreDelegate*>(delegateKvMgrCallback.GetKvStore());
     if (outDelegate != nullptr) {
@@ -657,11 +732,11 @@ DBStatus DistributedTestTools::Clear(KvStoreDelegate &kvStoreDelegate)
 KvStoreSnapshotDelegate *DistributedTestTools::GetKvStoreSnapshot(KvStoreDelegate &kvStoreDelegate)
 {
     DelegateCallback delegateCallback;
-    function<void(DBStatus, KvStoreSnapshotDelegate *)> function
+    function<void(DBStatus, KvStoreSnapshotDelegate *)> callFunction
         = bind(&DelegateCallback::Callback, &delegateCallback, _1, _2);
 
     // no need to use obsever, so param1 is nullptr;
-    kvStoreDelegate.GetKvStoreSnapshot(nullptr, function);
+    kvStoreDelegate.GetKvStoreSnapshot(nullptr, callFunction);
     DBStatus status = delegateCallback.GetStatus();
     if (status != DBStatus::OK) {
         MST_LOG("%s Get Callback failed! Status= %d", TAG.c_str(), status);
@@ -682,9 +757,9 @@ Value DistributedTestTools::Get(KvStoreDelegate &kvStoreDelegate, const Key &key
     // initialize the result value.
     Value result = { };
     DelegateCallback delegateCallback;
-    function<void(DBStatus, KvStoreSnapshotDelegate *)> function1
+    function<void(DBStatus, KvStoreSnapshotDelegate *)> callFunction
         = bind(&DelegateCallback::Callback, &delegateCallback, _1, _2);
-    kvStoreDelegate.GetKvStoreSnapshot(nullptr, function1);
+    kvStoreDelegate.GetKvStoreSnapshot(nullptr, callFunction);
     DBStatus status = delegateCallback.GetStatus();
     if (status != DBStatus::OK) {
         MST_LOG("%s Get failed! Status= %d", TAG.c_str(), status);
@@ -701,7 +776,7 @@ Value DistributedTestTools::Get(KvStoreDelegate &kvStoreDelegate, const Key &key
 
     // the second Callback is used in Snapshot.
     KvCallback kvCallback;
-    function<void(DBStatus, Value)> function2
+    function < void(DBStatus, Value) > function2
         = bind(&KvCallback::Callback, &kvCallback, _1, _2);
     snapshot->Get(key, function2);
     status = kvCallback.GetStatus();
@@ -720,7 +795,7 @@ Value DistributedTestTools::Get(KvStoreDelegate &kvStoreDelegate, const Key &key
 Value DistributedTestTools::Get(KvStoreSnapshotDelegate &kvStoreSnapshotDelegate, const Key &key)
 {
     KvCallback kvCallback;
-    function<void(DBStatus, Value)> function2
+    function < void(DBStatus, Value) > function2
         = bind(&KvCallback::Callback, &kvCallback, _1, _2);
     kvStoreSnapshotDelegate.Get(key, function2);
     return kvCallback.GetValue();
@@ -739,9 +814,9 @@ vector<Entry> DistributedTestTools::GetEntries(KvStoreSnapshotDelegate &kvStoreS
 vector<Entry> DistributedTestTools::GetEntries(KvStoreDelegate &kvStoreDelegate, const Key &keyPrefix)
 {
     DelegateCallback delegateCallback;
-    function<void(DBStatus, KvStoreSnapshotDelegate *)> function1
+    function<void(DBStatus, KvStoreSnapshotDelegate *)> callFunction
         = bind(&DelegateCallback::Callback, &delegateCallback, _1, _2);
-    kvStoreDelegate.GetKvStoreSnapshot(nullptr, function1);
+    kvStoreDelegate.GetKvStoreSnapshot(nullptr, callFunction);
     DBStatus status = delegateCallback.GetStatus();
     if (status != DBStatus::OK) {
         MST_LOG("%s Get failed! Status= %d", TAG.c_str(), status);
@@ -1216,6 +1291,24 @@ bool DistributedTestTools::CalculateUseClearPerformance(PerformanceData &perform
 bool DistributedTestTools::CloseAndRelease(KvStoreDelegateManager *&manager, KvStoreDelegate *&delegate)
 {
     bool result = true;
+    DBStatus status;
+    if (delegate != nullptr && manager != nullptr) {
+        status = manager->CloseKvStore(delegate);
+        MST_LOG("[CloseAndRelease] status = %d", status);
+        result = (status == OK);
+        delegate = nullptr;
+        delete manager;
+        manager = nullptr;
+    } else {
+        MST_LOG("Close Failed");
+        return false;
+    }
+    return result;
+}
+
+bool DistributedTestTools::CloseAndRelease(KvStoreDelegateManager *&manager, KvStoreNbDelegate *&delegate)
+{
+    bool result = true;
     if (delegate != nullptr && manager != nullptr) {
         result = (manager->CloseKvStore(delegate) == OK);
         delegate = nullptr;
@@ -1226,6 +1319,49 @@ bool DistributedTestTools::CloseAndRelease(KvStoreDelegateManager *&manager, KvS
         return false;
     }
     return result;
+}
+
+bool DistributedTestTools::VerifyDbRecordCnt(KvStoreNbDelegate *&delegate, unsigned int recordCnt, bool isLocal)
+{
+    if (delegate == nullptr) {
+        MST_LOG("The delegate is nullptr!");
+        return false;
+    }
+    DBStatus status = OK;
+    vector<Entry> entries;
+    if (isLocal) {
+#ifdef RELEASE_MODE_V2
+        status = delegate->GetLocalEntries(KEY_EMPTY, entries);
+#endif // end of RELEASE_MODE_V2
+    } else {
+        status = delegate->GetEntries(KEY_EMPTY, entries);
+    }
+
+    if (status == OK && entries.size() == recordCnt) {
+        return true;
+    } else {
+        MST_LOG("The real status is %d, real recordCnt is %zu", status, entries.size());
+        return false;
+    }
+}
+
+bool DistributedTestTools::VerifyRecordsInDb(DistributedDB::KvStoreNbDelegate *&delegate,
+    std::vector<DistributedDB::Entry> &entriesExpected, const std::vector<uint8_t> &keyPrefix, bool isLocal)
+{
+    DBStatus status = OK;
+    vector<Entry> entries;
+    if (isLocal) {
+#ifdef RELEASE_MODE_V2
+        status = delegate->GetLocalEntries(keyPrefix, entries);
+#endif // end of RELEASE_MODE_V2
+    } else {
+        status = delegate->GetEntries(keyPrefix, entries);
+    }
+    if (status == OK && CompareEntriesVector(entries, entriesExpected)) {
+        return true;
+    }
+    MST_LOG("[VerifyRecordsInDb] status = %d, entries.size() = %zu\n", status, entries.size());
+    return false;
 }
 
 void ReleaseSqliteResource(sqlite3_stmt *&statement, sqlite3 *&db)
@@ -1394,21 +1530,28 @@ bool DistributedTestTools::CompareKey(const Entry &entry1, const Entry &entry2)
 {
     return entry1.key < entry2.key;
 }
-
-void DelegateKvMgrCallback::Callback(DistributedDB::DBStatus status, DistributedDB::KvStoreDelegate *kvStoreDelegate)
+void DistributedTestTools::CopyFile(const string &srcFile, const string &destFile)
 {
-    this->status_ = status;
-    this->kvStoreDelegate_ = kvStoreDelegate;
-}
+    int len = 0;
+    char buff[BUF_LEN] = { 0 };
 
-DistributedDB::DBStatus DelegateKvMgrCallback::GetStatus()
-{
-    return status_;
-}
+    FILE *pIn = fopen(srcFile.c_str(), "r");
+    if (pIn == nullptr) {
+        MST_LOG("Open srcFile failed!");
+        return;
+    }
+    FILE *pOut = fopen(destFile.c_str(), "w");
+    if (pOut == nullptr) {
+        MST_LOG("Open destFile failed!");
+        fclose(pIn);
+        return;
+    }
 
-const DistributedDB::KvStoreDelegate *DelegateKvMgrCallback::GetKvStore()
-{
-    return kvStoreDelegate_;
+    while ((len = fread(buff, sizeof(char), sizeof(buff), pIn)) > 0) {
+        fwrite(buff, sizeof(char), len, pOut);
+    }
+    fclose(pOut);
+    fclose(pIn);
 }
 
 void TransactionBeforOpenDB(bool getSysInfo, steady_clock::time_point &tick,
@@ -1673,10 +1816,10 @@ KvStoreSnapshotDelegate *DistributedTestTools::RegisterSnapObserver(KvStoreDeleg
     KvStoreObserver *observer)
 {
     DelegateCallback delegateCallback;
-    function<void(DBStatus, KvStoreSnapshotDelegate *)> function
+    function<void(DBStatus, KvStoreSnapshotDelegate *)> callFunction
         = bind(&DelegateCallback::Callback, &delegateCallback, _1, _2);
 
-    delegate->GetKvStoreSnapshot(observer, function);
+    delegate->GetKvStoreSnapshot(observer, callFunction);
     DBStatus status = delegateCallback.GetStatus();
     if (status != DBStatus::OK) {
         MST_LOG("%s Get failed! Status= %d", TAG.c_str(), status);
@@ -1715,11 +1858,11 @@ KvStoreDelegate::Option DistributedTestTools::TransferKvOptionType(const KvOptio
 
 std::string TransferStringToHashHexString(const std::string &origStr)
 {
-    SHA256_CTX contex;
-    SHA256_Init(&contex);
-    SHA256_Update(&contex, origStr.data(), origStr.size());
+    SHA256_CTX context;
+    SHA256_Init(&context);
+    SHA256_Update(&context, origStr.data(), origStr.size());
     std::vector<uint8_t> hashVect(SHA256_DIGEST_LENGTH, 0);
-    SHA256_Final(hashVect.data(), &contex);
+    SHA256_Final(hashVect.data(), &context);
 
     const char *hex = "0123456789abcdef";
     std::string tmp;
@@ -1730,224 +1873,28 @@ std::string TransferStringToHashHexString(const std::string &origStr)
     return tmp;
 }
 
+#if defined(RUNNING_ON_LINUX)
 int RemoveDatabaseDirectory(const std::string &directory)
 {
     return remove(directory.c_str());
 }
-
-void KvStoreObserverImpl::OnChange(const DistributedDB::KvStoreChangedData &data)
+#else
+int RemoveDatabaseDirectory(const std::string &directory)
 {
-    onChangeTime_ = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now());
-    insertedEntries_ = data.GetEntriesInserted();
-    updatedEntries_ = data.GetEntriesUpdated();
-    deleteEntries_ = data.GetEntriesDeleted();
-    MST_LOG("insertedEntries_.size():%zu, updatedEntries_.size():%zu, deleteEntries_.size():%zu",
-        insertedEntries_.size(), updatedEntries_.size(), deleteEntries_.size());
-    if (isSaveCumulatedData_) {
-        if (insertedEntries_.size() != 0) {
-            for (const auto &entry : insertedEntries_) {
-                cumulatedInsertList_.push_back(entry);
-            }
-        }
-        if (updatedEntries_.size() != 0) {
-            for (const auto &entry : updatedEntries_) {
-                cumulatedUpdateList_.push_back(entry);
-            }
-        }
-        if (deleteEntries_.size() != 0) {
-            for (const auto &entry : deleteEntries_) {
-                cumulatedDeleteList_.push_back(entry);
-            }
-        }
-    }
-    {
-        std::unique_lock<std::mutex> waitChangeLock(waitChangeMutex_);
-        changed_++;
-        MST_LOG("comes a change,changed[%d]!!!", changed_);
-    }
-    waitChangeCv_.notify_all();
+    return rmdir(directory.c_str());
 }
+#endif
 
-KvStoreObserverImpl::KvStoreObserverImpl()
+bool VerifyObserverResult(const KvStoreObserverImpl &pObserver,
+    int changedTimes, ListType type, const list<Entry> &lst, uint32_t timeout)
 {
-    onChangeTime_ = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now());
-    isSaveCumulatedData_ = false;
-    Clear();
-}
-
-KvStoreObserverImpl::~KvStoreObserverImpl()
-{
-}
-
-KvStoreObserverImpl::KvStoreObserverImpl(const KvStoreObserverImpl &other)
-{
-    insertedEntries_ = other.insertedEntries_;
-    updatedEntries_ = other.updatedEntries_;
-    deleteEntries_ = other.deleteEntries_;
-    changed_ = other.changed_;
-    onChangeTime_ = other.onChangeTime_;
-    isSaveCumulatedData_ = other.isSaveCumulatedData_;
-    cumulatedInsertList_ = other.cumulatedInsertList_;
-    cumulatedUpdateList_ = other.cumulatedUpdateList_;
-    cumulatedDeleteList_ = other.cumulatedDeleteList_;
-}
-
-KvStoreObserverImpl& KvStoreObserverImpl::operator=(const KvStoreObserverImpl &other)
-{
-    if (&other != this) {
-        insertedEntries_ = other.insertedEntries_;
-        updatedEntries_ = other.updatedEntries_;
-        deleteEntries_ = other.deleteEntries_;
-        changed_ = other.changed_;
-        onChangeTime_ = other.onChangeTime_;
-        isSaveCumulatedData_ = other.isSaveCumulatedData_;
-        cumulatedInsertList_ = other.cumulatedInsertList_;
-        cumulatedUpdateList_ = other.cumulatedUpdateList_;
-        cumulatedDeleteList_ = other.cumulatedDeleteList_;
-    }
-    return *this;
-}
-
-const std::list<DistributedDB::Entry> KvStoreObserverImpl::GetInsertList() const
-{
-    return insertedEntries_;
-}
-
-const std::list<DistributedDB::Entry> KvStoreObserverImpl::GetUpdateList() const
-{
-    return updatedEntries_;
-}
-
-const std::list<DistributedDB::Entry> KvStoreObserverImpl::GetDeleteList() const
-{
-    return deleteEntries_;
-}
-
-int KvStoreObserverImpl::GetChanged() const
-{
-    return changed_;
-}
-
-void KvStoreObserverImpl::WaitUntilReachChangeCount(unsigned int countGoal, uint32_t timeout) const // timeout in second
-{
-    if (countGoal == 0 || changed_ >= countGoal) {
-        return;
-    }
-    // Change count has not reach countGoal
-    auto waitChangeFunc = [this, countGoal]()->bool {
-        MST_LOG("############################ realChanged=%d, countGoal=%d", this->changed_, countGoal);
-        return this->changed_ >= countGoal;
-    };
-    MST_LOG("############################ BEGIN ############################");
-    std::unique_lock<std::mutex> waitChangeLock(waitChangeMutex_);
-    if (timeout == 0) {
-        waitChangeCv_.wait(waitChangeLock, waitChangeFunc);
-    } else {
-        waitChangeCv_.wait_for(waitChangeLock, std::chrono::seconds(timeout), waitChangeFunc);
-    }
-    MST_LOG("############################ E N D ############################");
-}
-
-void KvStoreObserverImpl::WaitUntilReachRecordCount(unsigned int countExpect, ListType waitWhat, uint32_t timeout) const
-{
-    std::function<bool(void)> waitRecordsFunc;
-    switch (waitWhat) {
-        case INSERT_LIST:
-            if (countExpect == 0 || cumulatedInsertList_.size() >= countExpect) {
-                return;
-            }
-            // Change count has not reach countExpect
-            waitRecordsFunc = [this, countExpect]()->bool {
-                MST_LOG("[NbObserver][Wait] #### this->cumulatedInsertList_.size()=%zu, countExpect=%d ####",
-                    this->cumulatedInsertList_.size(), countExpect);
-                return this->cumulatedInsertList_.size() >= countExpect;
-            };
-            break;
-        case UPDATE_LIST:
-            if (countExpect == 0 || cumulatedUpdateList_.size() >= countExpect) {
-                return;
-            }
-            // Change count has not reach countExpect
-            waitRecordsFunc = [this, countExpect]()->bool {
-                MST_LOG("[NbObserver][Wait] #### this->cumulatedUpdateList_.size()=%zu, countExpect=%d ####",
-                    this->cumulatedUpdateList_.size(), countExpect);
-                return this->cumulatedUpdateList_.size() >= countExpect;
-            };
-            break;
-        case DELETE_LIST:
-            if (countExpect == 0 || cumulatedDeleteList_.size() >= countExpect) {
-                return;
-            }
-            // Change count has not reach countExpect
-            waitRecordsFunc = [this, countExpect]()->bool {
-                MST_LOG("[NbObserver][Wait] #### this->cumulatedDeleteList_.size()=%zu, countExpect=%d ####",
-                    this->cumulatedDeleteList_.size(), countExpect);
-                return this->cumulatedDeleteList_.size() >= countExpect;
-            };
-            break;
-        default:
-            break;
-    }
-
-    MST_LOG("###########################- BEGIN -###########################");
-    std::unique_lock<std::mutex> waitRecordsLock(waitChangeMutex_);
-    if (timeout == 0) {
-        waitChangeCv_.wait(waitRecordsLock, waitRecordsFunc);
-    } else {
-        waitChangeCv_.wait_for(waitRecordsLock, std::chrono::seconds(timeout), waitRecordsFunc);
-    }
-
-    MST_LOG("############################ E-N-D ############################");
-}
-
-microClock_type KvStoreObserverImpl::GetOnChangeTime()
-{
-    return onChangeTime_;
-}
-
-void KvStoreObserverImpl::Clear()
-{
-    insertedEntries_.clear();
-    updatedEntries_.clear();
-    deleteEntries_.clear();
-    changed_ = 0;
-    cumulatedInsertList_.clear();
-    cumulatedUpdateList_.clear();
-    cumulatedDeleteList_.clear();
-}
-
-void KvStoreObserverImpl::SetCumulatedFlag(bool isSaveCumulatedData)
-{
-    isSaveCumulatedData_ = isSaveCumulatedData;
-}
-
-bool KvStoreObserverImpl::GetCumulatedFlag() const
-{
-    return isSaveCumulatedData_;
-}
-
-const std::list<DistributedDB::Entry> KvStoreObserverImpl::GetCumulatedInsertList() const
-{
-    return cumulatedInsertList_;
-}
-
-const std::list<DistributedDB::Entry> KvStoreObserverImpl::GetCumulatedUpdateList() const
-{
-    return cumulatedUpdateList_;
-}
-
-const std::list<DistributedDB::Entry> KvStoreObserverImpl::GetCumulatedDeleteList() const
-{
-    return cumulatedDeleteList_;
-}
-
-bool VerifyObserverResult(const KvStoreObserverImpl &pObserver, int changedTimes, ListType type, const list<Entry> &lst)
-{
+    MST_LOG("[VerifyObserverResult] pObserver.GetCumulatedFlag() = %d, pObserver.GetChanged() = %d, type = %d",
+        pObserver.GetCumulatedFlag(), pObserver.GetChanged(), type);
     if (pObserver.GetCumulatedFlag()) {
         int expectListSize = lst.size();
-        pObserver.WaitUntilReachRecordCount(expectListSize, type);
+        pObserver.WaitUntilReachRecordCount(expectListSize, type, timeout);
     } else {
-        pObserver.WaitUntilReachChangeCount(changedTimes);
+        pObserver.WaitUntilReachChangeCount(changedTimes, timeout);
     }
 
     list<Entry> retLst;
@@ -1976,81 +1923,70 @@ bool VerifyObserverResult(const KvStoreObserverImpl &pObserver, int changedTimes
     }
 
     bool result = true;
-    result = CompareList(retLst, lst);
-    MST_LOG("VerifyObserverResult CompareList result is %d", result);
+    vector<Entry> retVec(retLst.begin(), retLst.end());
+    vector<Entry> expectVec(lst.begin(), lst.end());
+    result = CompareEntriesVector(retVec, expectVec);
+    MST_LOG("VerifyObserverResult CompareEntriesVector result is %d", result);
     return result;
 }
 
 bool VerifyObserverResult(const KvStoreObserverImpl &pObserver, int changedTimes, ListType type,
-    const vector<Entry> &vec)
+    const vector<Entry> &vec, uint32_t timeout)
 {
-    list<Entry> entriesList;
-    for (const auto &entry : vec) {
-        entriesList.push_back(entry);
+    list<Entry> entriesList(vec.begin(), vec.end());
+    return VerifyObserverResult(pObserver, changedTimes, type, entriesList, timeout);
+}
+
+bool VerifyObserverForSchema(const KvStoreObserverImpl &pObserver,
+    int changedTimes, ListType type, const vector<Entry> &expectEntry, uint32_t timeout)
+{
+    MST_LOG("[VerifyObserverForSchema] pObserver.GetCumulatedFlag() = %d, pObserver.GetChanged() = %d, type = %d",
+        pObserver.GetCumulatedFlag(), pObserver.GetChanged(), type);
+    if (pObserver.GetCumulatedFlag()) {
+        int expectListSize = expectEntry.size();
+        pObserver.WaitUntilReachRecordCount(expectListSize, type, timeout);
+    } else {
+        pObserver.WaitUntilReachChangeCount(changedTimes, timeout);
     }
-    return VerifyObserverResult(pObserver, changedTimes, type, entriesList);
-}
 
-void KvStoreSnapshotCallback::Callback(DBStatus status, const std::vector<Entry> &entriesVec)
-{
-    this->status_ = status;
-    this->entriesVec_ = entriesVec;
-    MST_LOG("KvStoreSnapshotCallback status: %d, entriesVec.size(): %zu", status, entriesVec.size());
-}
-
-DBStatus KvStoreSnapshotCallback::GetStatus()
-{
-    return status_;
-}
-
-std::vector<Entry> KvStoreSnapshotCallback::GetEntries()
-{
-    return entriesVec_;
-}
-
-void AutoLaunchCallback::AutoLaunchNotifier(const std::string &userId, const std::string &appId,
-    const std::string &storeId, AutoLaunchStatus status)
-{
-    MST_LOG("The db: %s,%s,%s is set to sync by closed status and comes some data changes now.", userId.c_str(),
-        appId.c_str(), storeId.c_str());
-    this->realStatus_ = status;
-}
-
-bool AutoLaunchCallback::AutoLaunchRequestNotifier(const std::string &identifier, AutoLaunchParam &param)
-{
-    auto iter = find(hashIdentities_.begin(), hashIdentities_.end(), identifier);
-    if (iter != hashIdentities_.end()) {
-        param.userId = autoLaunchParam_.userId;
-        param.appId = autoLaunchParam_.appId;
-        param.storeId = autoLaunchParam_.storeId;
-        param.option = autoLaunchParam_.option;
-        param.notifier = autoLaunchParam_.notifier;
-        return true;
+    list<Entry> retLst;
+    if (pObserver.GetCumulatedFlag()) {
+        if (type == INSERT_LIST) {
+            MST_LOG("type == INSERT_LIST");
+            retLst = pObserver.GetCumulatedInsertList();
+        } else if (type == UPDATE_LIST) {
+            MST_LOG("type == UPDATE_LIST");
+            retLst = pObserver.GetCumulatedUpdateList();
+        } else {
+            MST_LOG("type == DELETE_LIST");
+            retLst = pObserver.GetCumulatedDeleteList();
+        }
+    } else {
+        if (type == INSERT_LIST) {
+            MST_LOG("type == INSERT_LIST");
+            retLst = pObserver.GetInsertList();
+        } else if (type == UPDATE_LIST) {
+            MST_LOG("type == UPDATE_LIST");
+            retLst = pObserver.GetUpdateList();
+        } else {
+            MST_LOG("type == DELETE_LIST");
+            retLst = pObserver.GetDeleteList();
+        }
     }
-    return false;
-}
 
-int AutoLaunchCallback::GetStatus()
-{
-    return realStatus_;
-}
+    vector<Entry> retVec(retLst.begin(), retLst.end());
+    if (retVec.size() != expectEntry.size()) {
+        MST_LOG("[VerifyObserverForSchema] the expect value size is not equal to the retVec size and return");
+        return false;
+    }
 
-void AutoLaunchCallback::Clear()
-{
-    this->realStatus_ = 0;
-}
-
-void AutoLaunchCallback::AddHashIdentity(const string &hashIdentity)
-{
-    hashIdentities_.push_back(hashIdentity);
-}
-
-void AutoLaunchCallback::ClearHashIdentities()
-{
-    hashIdentities_.clear();
-}
-
-void AutoLaunchCallback::SetAutoLaunchParam(AutoLaunchParam &autoLaunchParam)
-{
-    autoLaunchParam_ = autoLaunchParam;
+    for (uint64_t index = 0; index < expectEntry.size(); index++) {
+        bool result = ((retVec[index].key == expectEntry[index].key) &&
+            (retVec[index].value == expectEntry[index].value));
+        if (!result) {
+            MST_LOG("[VerifyObserverForSchema] compare list failed at the position: %llu", ULL(index));
+            return false;
+        }
+    }
+    return true;
 }

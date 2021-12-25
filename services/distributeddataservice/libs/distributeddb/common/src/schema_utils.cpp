@@ -276,7 +276,8 @@ int SchemaUtils::TransformDefaultValue(std::string &defaultContent, SchemaAttrib
     return errCode;
 }
 
-int SchemaUtils::ParseAndCheckSchemaAttribute(const std::string &inAttrString, SchemaAttribute &outAttr)
+int SchemaUtils::ParseAndCheckSchemaAttribute(const std::string &inAttrString, SchemaAttribute &outAttr,
+    bool useAffinity)
 {
     if (inAttrString.empty()) {
         return -E_SCHEMA_PARSE_FAIL;
@@ -290,7 +291,7 @@ int SchemaUtils::ParseAndCheckSchemaAttribute(const std::string &inAttrString, S
         LOGD("Syntax error, please check!");
         return errCode;
     }
-    errCode = ParseSchemaAttribute(attrContext, outAttr);
+    errCode = ParseSchemaAttribute(attrContext, outAttr, useAffinity);
     if (errCode != E_OK) {
         LOGD("Grammatical error, please check!");
         return errCode;
@@ -299,7 +300,7 @@ int SchemaUtils::ParseAndCheckSchemaAttribute(const std::string &inAttrString, S
     return E_OK;
 }
 
-int SchemaUtils::ParseSchemaAttribute(std::vector<std::string> &attrContext, SchemaAttribute &outAttr)
+int SchemaUtils::ParseSchemaAttribute(std::vector<std::string> &attrContext, SchemaAttribute &outAttr, bool useAffinity)
 {
     // After split attribute? attrContext include 3 type field
     if (attrContext.size() < 3) {
@@ -307,11 +308,16 @@ int SchemaUtils::ParseSchemaAttribute(std::vector<std::string> &attrContext, Sch
         return -E_SCHEMA_PARSE_FAIL;
     }
     TrimFiled(attrContext[0]);
-    if (FIELD_TYPE_DIC.find(attrContext[0]) == FIELD_TYPE_DIC.end()) {
-        LOGE("Errno schema field type [%s]!!", attrContext[0].c_str());
-        return -E_SCHEMA_PARSE_FAIL;
+    if (!useAffinity) {
+        if (FIELD_TYPE_DIC.find(attrContext[0]) == FIELD_TYPE_DIC.end()) {
+            LOGE("Errno schema field type [%s]!!", attrContext[0].c_str());
+            return -E_SCHEMA_PARSE_FAIL;
+        } else {
+            outAttr.type = FIELD_TYPE_DIC.at(attrContext[0]);
+        }
     } else {
-        outAttr.type = FIELD_TYPE_DIC.at(attrContext[0]);
+        outAttr.type = FieldType::LEAF_FIELD_NULL;
+        outAttr.customFieldType = attrContext[0];
     }
 
     outAttr.hasNotNullConstraint = !attrContext[1].empty();

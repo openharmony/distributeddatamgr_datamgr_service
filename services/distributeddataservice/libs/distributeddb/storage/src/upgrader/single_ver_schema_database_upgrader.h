@@ -27,11 +27,13 @@ public:
     ~SingleVerSchemaDatabaseUpgrader() override {};
 protected:
     int ExecuteUpgrade() override;
+
     // Database content related upgrade
     int ExecuteUpgradeSchema();
 
     // Get an empty string with return_code E_OK indicate no schema but everything normally
     virtual int GetDatabaseSchema(std::string &dbSchema) const = 0;
+
     // Set or update schema into database file
     virtual int SetDatabaseSchema(const std::string &dbSchema) = 0;
 

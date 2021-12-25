@@ -22,7 +22,7 @@
 namespace DistributedDB {
 bool StorageEngineManager::isRegLockStatusListener_ = false;
 std::mutex StorageEngineManager::instanceLock_;
-StorageEngineManager *StorageEngineManager::instance_ = nullptr;
+std::atomic<StorageEngineManager *> StorageEngineManager::instance_{nullptr};
 std::mutex StorageEngineManager::storageEnginesLock_;
 
 namespace {
@@ -67,7 +67,7 @@ StorageEngine *StorageEngineManager::GetStorageEngine(const KvDBProperties &prop
         errCode = storageEngine->CheckEngineOption(property);
         if (errCode != E_OK) {
             LOGE("kvdb property mismatch engine option! errCode = [%d]", errCode);
-            return nullptr;
+            storageEngine = nullptr;
         }
     }
 
@@ -130,17 +130,20 @@ int StorageEngineManager::ExecuteMigration(StorageEngine *storageEngine)
 
 StorageEngineManager *StorageEngineManager::GetInstance()
 {
-    std::lock_guard<std::mutex> lockGuard(instanceLock_);
+    // For Double-Checked Locking, we need check instance_ twice
     if (instance_ == nullptr) {
-        instance_ = new (std::nothrow) StorageEngineManager();
+        std::lock_guard<std::mutex> lockGuard(instanceLock_);
         if (instance_ == nullptr) {
-            LOGE("[StorageEngineManager] Failed to alloc the engine manager!");
-            return nullptr;
+            instance_ = new (std::nothrow) StorageEngineManager();
+            if (instance_ == nullptr) {
+                LOGE("[StorageEngineManager] Failed to alloc the engine manager!");
+                return nullptr;
+            }
         }
     }
 
     if (!isRegLockStatusListener_) {
-        int errCode = instance_->RegisterLockStatusListener();
+        int errCode = (instance_.load())->RegisterLockStatusListener();
         if (errCode != E_OK) {
             LOGW("[StorageEngineManager] Failed to regitster lock status listener:%d", errCode);
         } else {

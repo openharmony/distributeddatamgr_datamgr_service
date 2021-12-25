@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "single_ver_kvdb_sync_interface.h"
+#include "query_object.h"
 #include "types.h"
 
 namespace DistributedDB {
@@ -47,6 +48,10 @@ public:
 
     int PutMetaData(const Key& key, const Value& value) override;
 
+    int DeleteMetaData(const std::vector<Key> &keys) override;
+    // Delete multiple meta data records with key prefix in a transaction.
+    int DeleteMetaDataByPrefixKey(const Key &keyPrefix) const override;
+
     int GetAllMetaKeys(std::vector<Key>& keys) const override;
 
     int GetSyncData(TimeStamp begin, TimeStamp end, std::vector<DataItem> &dataItems,
@@ -57,15 +62,11 @@ public:
 
     void ReleaseContinueToken(ContinueToken& continueStmtToken) const override;
 
-    int PutSyncData(std::vector<DataItem>& dataItems, const std::string &deviceName) override;
-
-    void ReleaseKvEntry(const SingleVerKvEntry *entry) override;
-
     void GetMaxTimeStamp(TimeStamp& stamp) const override;
 
     int RemoveDeviceData(const std::string &deviceName, bool isNeedNotify) override;
 
-    int GetSyncData(const Key& key, VirtualDataItem& item);
+    int GetSyncData(const Key& key, VirtualDataItem& dataItem);
 
     int PutSyncData(const DataItem& item);
 
@@ -74,10 +75,14 @@ public:
     int GetSyncData(TimeStamp begin, TimeStamp end, std::vector<SingleVerKvEntry *> &entries,
         ContinueToken &continueStmtToken, const DataSizeSpecInfo &dataSizeInfo) const override;
 
+    int GetSyncData(QueryObject &query, const SyncTimeRange &timeRange, const DataSizeSpecInfo &dataSizeInfo,
+        ContinueToken &continueStmtToken, std::vector<SingleVerKvEntry *> &entries) const override;
+
     int GetSyncDataNext(std::vector<SingleVerKvEntry *> &entries, ContinueToken &continueStmtToken,
         const DataSizeSpecInfo &dataSizeInfo) const override;
 
-    int PutSyncData(const std::vector<SingleVerKvEntry *> &entries, const std::string &deviceName) override;
+    int PutSyncDataWithQuery(const QueryObject &query, const std::vector<SingleVerKvEntry *> &entries,
+        const std::string &deviceName) override;
 
     SchemaObject GetSchemaInfo() const override;
 
@@ -97,6 +102,22 @@ public:
 
     void NotifyRemotePushFinished(const std::string &targetId) const override;
 
+    int GetDatabaseCreateTimeStamp(TimeStamp &outTime) const override;
+
+    int GetCompressionOption(bool &needCompressOnSync, uint8_t &compressionRate) const override;
+    int GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const override;
+
+    // return E_OK if subscribe is legal, ERROR on exception.
+    int CheckAndInitQueryCondition(QueryObject &query) const override;
+
+    int InterceptData(std::vector<SingleVerKvEntry *> &entries, const std::string &sourceID,
+        const std::string &targetID) const override;
+
+    int AddSubscribe(const std::string &subscribeId, const QueryObject &query, bool needCacheSubscribe) override;
+
+    int RemoveSubscribe(const std::string &subscribeId) override;
+
+    int RemoveSubscribe(const std::vector<std::string> &subscribeIds) override;
 private:
     int GetSyncData(TimeStamp begin, TimeStamp end, uint32_t blockSize, std::vector<VirtualDataItem>& dataItems,
         ContinueToken& continueStmtToken) const;
@@ -106,12 +127,12 @@ private:
 
     int PutSyncData(std::vector<VirtualDataItem>& dataItems, const std::string &deviceName);
 
-    std::map<std::vector<uint8_t>, std::vector<uint8_t>> metadata_;
+    mutable std::map<std::vector<uint8_t>, std::vector<uint8_t>> metadata_;
     std::vector<VirtualDataItem> dbData_;
     std::string schema_;
     SchemaObject schemaObj_;
     KvDBProperties properties_;
-    uint64_t saveDataDelayTime_;
+    uint64_t saveDataDelayTime_ = 0;
     SecurityOption secOption_;
 };
 }  // namespace DistributedDB

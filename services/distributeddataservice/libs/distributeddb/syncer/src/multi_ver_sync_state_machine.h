@@ -19,14 +19,14 @@
 #ifndef OMIT_MULTI_VER
 #include <memory>
 
-#include "sync_state_machine.h"
-#include "multi_ver_sync_task_context.h"
-#include "meta_data.h"
-#include "time_sync.h"
 #include "commit_history_sync.h"
-#include "multi_ver_data_sync.h"
-#include "value_slice_sync.h"
 #include "db_types.h"
+#include "meta_data.h"
+#include "multi_ver_data_sync.h"
+#include "multi_ver_sync_task_context.h"
+#include "sync_state_machine.h"
+#include "time_sync.h"
+#include "value_slice_sync.h"
 
 namespace DistributedDB {
 class MultiVerSyncStateMachine final : public SyncStateMachine {
@@ -40,7 +40,7 @@ public:
     ~MultiVerSyncStateMachine() override;
 
     // Init the MultiVerSyncStateMachine
-    int Initialize(ISyncTaskContext *context, IKvDBSyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
+    int Initialize(ISyncTaskContext *context, ISyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
         ICommunicator *communicator) override;
 
     // send Message to the StateMachine
@@ -72,7 +72,9 @@ protected:
     int PrepareNextSyncTask() override;
 
     // Called by StartSaveDataNotifyTimer, used to send a save data notify packet
-    void SendSaveDataNotifyPacket(uint32_t sessionId, uint32_t sequenceId) override;
+    void SendSaveDataNotifyPacket(uint32_t sessionId, uint32_t sequenceId, uint32_t inMsgId) override;
+
+    bool IsNeedTriggerQueryAutoSync(Message *inMsg, QuerySyncObject &query) override;
 
 private:
     enum State {

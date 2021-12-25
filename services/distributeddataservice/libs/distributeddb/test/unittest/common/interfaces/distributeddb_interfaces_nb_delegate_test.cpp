@@ -16,18 +16,16 @@
 #include <gtest/gtest.h>
 #include <thread>
 
-#include "distributeddb_data_generate_unit_test.h"
-#include "distributeddb_tools_unit_test.h"
-#include "sqlite_utils.h"
-#include "sqlite_single_ver_natural_store.h"
-#include "db_errno.h"
-#include "log_print.h"
 #include "db_common.h"
 #include "db_constant.h"
-#include "kv_store_nb_conflict_data.h"
-#include "runtime_context.h"
-#include "process_system_api_adapter_impl.h"
+#include "db_errno.h"
+#include "distributeddb_data_generate_unit_test.h"
+#include "distributeddb_tools_unit_test.h"
+#include "log_print.h"
 #include "platform_specific.h"
+#include "process_system_api_adapter_impl.h"
+#include "runtime_context.h"
+#include "sqlite_single_ver_natural_store.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -208,6 +206,7 @@ void DistributedDBInterfacesNBDelegateTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesNBDelegateTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_kvDelegateStatus = INVALID_ARGS;
     g_kvNbDelegatePtr = nullptr;
     g_kvDelegatePtr = nullptr;
@@ -220,10 +219,6 @@ void DistributedDBInterfacesNBDelegateTest::TearDown(void)
         g_kvNbDelegatePtr = nullptr;
     }
     RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(nullptr);
-#ifdef HW_USING_LABEL_FUNC_STUB
-    sqlite3_release_label_info();
-    sqlite3_set_lock_status(UNLOCKED);
-#endif
 }
 
 /**
@@ -1785,161 +1780,3 @@ HWTEST_F(DistributedDBInterfacesNBDelegateTest, SingleVerGetSecurityOption002, T
     g_kvNbDelegatePtr = nullptr;
     EXPECT_TRUE(g_mgr.DeleteKvStore("SingleVerGetSecurityOption002") == OK);
 }
-
-#ifdef HW_USING_LABEL_FUNC_STUB
-namespace {
-void SetSqliteLabel(const std::string &storeId, const SecurityOption &secOption)
-{
-    std::string identifier = DBCommon::TransferHashString(USER_ID + "-" + APP_ID + "-" + storeId);
-    std::string identifierDir = DBCommon::TransferStringToHex(identifier);
-
-    std::string s3SeceDir = g_testDir + "/" + identifierDir + "/single_ver/";
-    sqlite3_set_label_info((s3SeceDir + "main").c_str(), secOption.securityLabel, secOption.securityFlag);
-    sqlite3_set_label_info((s3SeceDir + "cache").c_str(), secOption.securityLabel, secOption.securityFlag);
-    sqlite3_set_label_info((s3SeceDir + "meta").c_str(), SecurityLabel::S2, SecurityFlag::ECE);
-}
-
-void ResetSqliteLabel(std::shared_ptr<IProcessSystemApiAdapter> &adapter)
-{
-    sqlite3_release_label_info();
-    sqlite3_init_label_info();
-    if (adapter != nullptr) {
-        adapter.reset();
-    }
-
-    adapter = std::make_shared<ProcessSystemApiAdapterImpl>();
-    RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(adapter);
-}
-
-void CreateDiffSecOptDb(const std::string &storeId, LockState lockState = UNLOCKED)
-{
-    if (lockState == LOCKED) {
-        LOGD("Is locked state!");
-    }
-
-    sqlite3_set_lock_status(lockState);
-    std::shared_ptr<IProcessSystemApiAdapter> adapter = std::make_shared<ProcessSystemApiAdapterImpl>();
-    RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(adapter);
-
-    KvStoreNbDelegate::Option option;
-    SecurityOption secOption{SecurityLabel::S2, SecurityFlag::ECE};
-    SetSqliteLabel(storeId, secOption);
-    option.secOption = secOption;
-    g_mgr.GetKvStore(storeId, option, g_kvNbDelegateCallback);
-    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
-    EXPECT_EQ(g_kvDelegateStatus, OK);
-    g_mgr.CloseKvStore(g_kvNbDelegatePtr);
-    g_mgr.DeleteKvStore(storeId);
-    ResetSqliteLabel(adapter);
-
-    secOption = {SecurityLabel::S3, SecurityFlag::SECE};
-    SetSqliteLabel(storeId, secOption);
-    option.secOption = secOption;
-    g_mgr.GetKvStore(storeId, option, g_kvNbDelegateCallback);
-    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
-    EXPECT_EQ(g_kvDelegateStatus, OK);
-    g_mgr.CloseKvStore(g_kvNbDelegatePtr);
-    std::string identifier = DBCommon::TransferHashString(USER_ID + "-" + APP_ID + "-" + storeId);
-    std::string hashIdentifier = DBCommon::TransferStringToHex(identifier);
-    std::string mainDbPath = g_testDir + "/" + hashIdentifier + "/" + DBConstant::SINGLE_SUB_DIR + "/" +
-    DBConstant::MAINDB_DIR +"/" + DBConstant::SINGLE_VER_DATA_STORE + DBConstant::SQLITE_DB_EXTENSION;
-    std::string cacheDbPath = g_testDir + "/" + hashIdentifier + "/" + DBConstant::SINGLE_SUB_DIR + "/" +
-    DBConstant::CACHEDB_DIR +"/" + DBConstant::SINGLE_VER_CACHE_STORE + DBConstant::SQLITE_DB_EXTENSION;
-    EXPECT_TRUE(OS::CheckPathExistence(mainDbPath));
-    EXPECT_FALSE(OS::CheckPathExistence(cacheDbPath));
-    g_mgr.DeleteKvStore(storeId);
-    ResetSqliteLabel(adapter);
-
-    secOption = {SecurityLabel::S4, SecurityFlag::ECE};
-    SetSqliteLabel(storeId, secOption);
-    option.secOption = secOption;
-    g_mgr.GetKvStore(storeId, option, g_kvNbDelegateCallback);
-    if (lockState == LOCKED) {
-        EXPECT_NE(g_kvDelegateStatus, OK);
-        return;
-    }
-    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
-    EXPECT_EQ(g_kvDelegateStatus, OK);
-    g_mgr.CloseKvStore(g_kvNbDelegatePtr);
-    g_mgr.DeleteKvStore(storeId);
-    ResetSqliteLabel(adapter);
-}
-}
-
-/**
-  * @tc.name: GetKvStoreDbInLockState
-  * @tc.desc: Test GetKvstore in different security option.
-  * @tc.type: FUNC
-  * @tc.require: AR000EV1G2
-  * @tc.author: sunpeng
-  */
-HWTEST_F(DistributedDBInterfacesNBDelegateTest, GetKvStoreInDiffOption, TestSize.Level1)
-{
-    sqlite3_init_label_info();
-    CreateDiffSecOptDb("distributed_nb_Diff_SecOpt_test");
-}
-
-/**
-  * @tc.name: GetKvStoreDbInLockState
-  * @tc.desc: Test GetKvstore in lock state.
-  * @tc.type: FUNC
-  * @tc.require: AR000EV1G2
-  * @tc.author: sunpeng
-  */
-HWTEST_F(DistributedDBInterfacesNBDelegateTest, GetKvStoreDbInLockState, TestSize.Level1)
-{
-    std::shared_ptr<IProcessSystemApiAdapter> adapter = std::make_shared<ProcessSystemApiAdapterImpl>();
-    ResetSqliteLabel(adapter);
-    CreateDiffSecOptDb("GetKvStoreDbInLockState", LOCKED);
-}
-
-/**
-  * @tc.name: GetKvStoreDbInLockState
-  * @tc.desc: Test GetKvstore in lock state.
-  * @tc.type: FUNC
-  * @tc.require: AR000EV1G2
-  * @tc.author: sunpeng
-  */
-HWTEST_F(DistributedDBInterfacesNBDelegateTest, GetKvStoreCreateCacheDb, TestSize.Level1)
-{
-    std::shared_ptr<IProcessSystemApiAdapter> adapter = std::make_shared<ProcessSystemApiAdapterImpl>();
-    ResetSqliteLabel(adapter);
-    sqlite3_set_lock_status(UNLOCKED);
-
-    std::string identifier = DBCommon::TransferHashString(USER_ID + "-" + APP_ID + "-" + "storeId");
-    std::string hashIdentifier = DBCommon::TransferStringToHex(identifier);
-    std::string mainDbPath = g_testDir + "/" + hashIdentifier + "/" + DBConstant::SINGLE_SUB_DIR + "/" +
-        DBConstant::MAINDB_DIR +"/" + DBConstant::SINGLE_VER_DATA_STORE + DBConstant::SQLITE_DB_EXTENSION;
-    std::string cacheDbPath = g_testDir + "/" + hashIdentifier + "/" + DBConstant::SINGLE_SUB_DIR + "/" +
-        DBConstant::CACHEDB_DIR +"/" + DBConstant::SINGLE_VER_CACHE_STORE + DBConstant::SQLITE_DB_EXTENSION;
-    LOGE("Db path is [%s]", mainDbPath.c_str());
-
-    KvStoreNbDelegate::Option option;
-    SecurityOption secOption{SecurityLabel::S3, SecurityFlag::SECE};
-    SetSqliteLabel("storeId", secOption);
-    option.secOption = secOption;
-    g_mgr.GetKvStore("storeId", option, g_kvNbDelegateCallback);
-    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
-    EXPECT_EQ(g_kvDelegateStatus, OK);
-    g_mgr.CloseKvStore(g_kvNbDelegatePtr);
-
-    EXPECT_TRUE(OS::CheckPathExistence(mainDbPath));
-    EXPECT_FALSE(OS::CheckPathExistence(cacheDbPath));
-
-    sqlite3_set_lock_status(LOCKED);
-
-    g_mgr.GetKvStore("storeId", option, g_kvNbDelegateCallback);
-    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
-    EXPECT_TRUE(g_kvDelegateStatus == OK);
-
-    EXPECT_TRUE(OS::CheckPathExistence(mainDbPath));
-    EXPECT_TRUE(OS::CheckPathExistence(cacheDbPath));
-
-    EXPECT_EQ(g_mgr.DeleteKvStore("storeId"), BUSY);
-    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
-    EXPECT_EQ(g_mgr.DeleteKvStore("storeId"), OK);
-
-    EXPECT_FALSE(OS::CheckPathExistence(mainDbPath));
-    EXPECT_FALSE(OS::CheckPathExistence(cacheDbPath));
-}
-#endif

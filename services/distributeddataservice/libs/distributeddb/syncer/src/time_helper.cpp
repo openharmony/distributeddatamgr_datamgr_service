@@ -58,7 +58,7 @@ TimeHelper::~TimeHelper()
     storage_ = nullptr;
 }
 
-int TimeHelper::Initialize(const IKvDBSyncInterface *inStorage, std::shared_ptr<Metadata> &inMetadata)
+int TimeHelper::Initialize(const ISyncInterface *inStorage, std::shared_ptr<Metadata> &inMetadata)
 {
     if ((inStorage == nullptr) || (inMetadata == nullptr)) {
         return -E_INVALID_ARGS;

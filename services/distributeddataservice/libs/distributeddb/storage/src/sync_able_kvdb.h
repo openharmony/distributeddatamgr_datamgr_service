@@ -16,9 +16,12 @@
 #ifndef SYNC_ABLE_KVDB_H
 #define SYNC_ABLE_KVDB_H
 
+#include <shared_mutex>
+
 #include "generic_kvdb.h"
-#include "sync_able_kvdb_connection.h"
 #include "ikvdb_sync_interface.h"
+#include "intercepted_data.h"
+#include "sync_able_kvdb_connection.h"
 #include "syncer_proxy.h"
 
 namespace DistributedDB {
@@ -38,15 +41,13 @@ public:
     void Close() override;
 
     // Start a sync action.
-    int Sync(const std::vector<std::string> &devices, int mode,
-        const std::function<void(const std::map<std::string, int> &)> &onComplete,
-        const std::function<void(void)> &onFinalize, bool wait);
+    int Sync(const ISyncer::SyncParma &parma);
 
     // Enable auto sync
     void EnableAutoSync(bool enable);
 
     // Stop a sync action in progress.
-    void StopSync(int syncId);
+    void StopSync();
 
     // Get The current virtual timestamp
     uint64_t GetTimeStamp();
@@ -70,11 +71,17 @@ public:
 
     int SetStaleDataWipePolicy(WipePolicy policy);
 
-    int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash = true);
+    int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash);
 
-    NotificationChain::Listener *AddRemotePushFinishedNotify(const RemotePushFinishedNotifier &notifier, int errCode);
+    NotificationChain::Listener *AddRemotePushFinishedNotify(const RemotePushFinishedNotifier &notifier, int &errCode);
 
     void NotifyRemotePushFinishedInner(const std::string &targetId) const;
+
+    int SetSyncRetry(bool isRetry);
+    // Set an equal identifier for this database, After this called, send msg to the target will use this identifier
+    int SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets);
+
+    virtual void SetDataInterceptor(const PushDataInterceptor &interceptor) = 0;
 
 protected:
     virtual IKvDBSyncInterface *GetSyncInterface() = 0;
@@ -93,10 +100,13 @@ protected:
     void TriggerSync(int notifyEvent);
 
 private:
+    int RegisterEventType(EventType type);
+
     SyncerProxy syncer_;
     std::atomic<bool> started_;
-    mutable std::mutex remotePushNotifyChainLock_;
-    NotificationChain *remotePushNotifyChain_;
+    mutable std::shared_mutex notifyChainLock_;
+    NotificationChain *notifyChain_;
+
     static const EventType REMOTE_PUSH_FINISHED;
 };
 }

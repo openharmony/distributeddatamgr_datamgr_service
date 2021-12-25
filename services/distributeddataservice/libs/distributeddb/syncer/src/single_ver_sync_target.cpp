@@ -23,12 +23,22 @@
 
 namespace DistributedDB {
 SingleVerSyncTarget::SingleVerSyncTarget()
-    : endWaterMark_(0)
+    : endWaterMark_(0),
+      query_(QuerySyncObject())
 {
 }
 
 SingleVerSyncTarget::~SingleVerSyncTarget()
 {
+}
+
+void SingleVerSyncTarget::SetSyncOperation(SyncOperation *operation)
+{
+    SyncTarget::SetSyncOperation(operation);
+    if ((operation != nullptr) && !operation->IsKilled()) {
+        query_ = operation->GetQuery();
+        isQuerySync_ = operation->IsQuerySync();
+    }
 }
 
 void SingleVerSyncTarget::SetEndWaterMark(WaterMark waterMark)
@@ -49,5 +59,25 @@ void SingleVerSyncTarget::SetResponseSessionId(uint32_t responseSessionId)
 uint32_t SingleVerSyncTarget::GetResponseSessionId() const
 {
     return responseSessionId_;
+}
+
+void SingleVerSyncTarget::SetQuery(const QuerySyncObject &query)
+{
+    query_ = query;
+}
+
+QuerySyncObject SingleVerSyncTarget::GetQuery() const
+{
+    return query_;
+}
+
+void SingleVerSyncTarget::SetQuerySync(bool isQuerySync)
+{
+    isQuerySync_ = isQuerySync;
+}
+
+bool SingleVerSyncTarget::IsQuerySync() const
+{
+    return isQuerySync_;
 }
 } // namespace DistributedDB

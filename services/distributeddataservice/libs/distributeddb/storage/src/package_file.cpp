@@ -60,7 +60,7 @@ static void Clear(ofstream &target, string targetFile)
     if (target.is_open()) {
         target.close();
     }
-    if (remove(targetFile.c_str()) != EOK) {
+    if (OS::RemoveFile(targetFile.c_str()) != E_OK) {
         LOGE("Remove file failed.");
     }
     return;

@@ -64,6 +64,11 @@ int VirtualMultiVerSyncDBInterface::PutMetaData(const Key &key, const Value &val
     return kvStore_->PutMetaData(key, value);
 }
 
+int VirtualMultiVerSyncDBInterface::DeleteMetaData(const std::vector<Key> &keys)
+{
+    return kvStore_->DeleteMetaData(keys);
+}
+
 int VirtualMultiVerSyncDBInterface::GetAllMetaKeys(std::vector<Key> &keys) const
 {
     return kvStore_->GetAllMetaKeys(keys);
@@ -223,6 +228,11 @@ int VirtualMultiVerSyncDBInterface::DeleteDatabase()
 const KvDBProperties &VirtualMultiVerSyncDBInterface::GetDbProperties() const
 {
     return properties_;
+}
+
+int VirtualMultiVerSyncDBInterface::DeleteMetaDataByPrefixKey(const Key &keyPrefix) const
+{
+    return -E_NOT_SUPPORT;
 }
 }  // namespace DistributedDB
 

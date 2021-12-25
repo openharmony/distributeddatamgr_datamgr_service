@@ -14,6 +14,22 @@
  */
 #include "query.h"
 namespace DistributedDB {
+Query::Query(const std::string &tableName)
+{
+    queryExpression_.SetTableName(tableName);
+}
+Query Query::Select()
+{
+    Query query;
+    return query;
+}
+
+Query Query::Select(const std::string &tableName)
+{
+    Query query(tableName);
+    return query;
+}
+
 Query &Query::BeginGroup()
 {
     queryExpression_.BeginGroup();
@@ -44,43 +60,46 @@ Query &Query::SuggestIndex(const std::string &indexName)
     return *this;
 }
 
-void Query::ExecuteLogicOperation(QueryObjType operType)
-{
-    switch (operType) {
-        case QueryObjType::OR:
-            queryExpression_.Or();
-            break;
-        case QueryObjType::AND:
-            queryExpression_.And();
-            break;
-        default:
-            return;
-    }
-}
-
-void Query::ExecuteOrderBy(const std::string &field, bool isAsc)
+Query &Query::OrderBy(const std::string &field, bool isAsc)
 {
     queryExpression_.OrderBy(field, isAsc);
+    return *this;
 }
 
-void Query::ExecuteLimit(int number, int offset)
+Query &Query::Limit(int number, int offset)
 {
     queryExpression_.Limit(number, offset);
+    return *this;
 }
 
-void Query::ExecuteLike(const std::string &field, const std::string &value)
+Query &Query::Like(const std::string &field, const std::string &value)
 {
     queryExpression_.Like(field, value);
+    return *this;
 }
 
-void Query::ExecuteNotLike(const std::string &field, const std::string &value)
+Query &Query::NotLike(const std::string &field, const std::string &value)
 {
     queryExpression_.NotLike(field, value);
+    return *this;
 }
 
-void Query::ExecuteIsNull(const std::string &field)
+Query &Query::IsNull(const std::string &field)
 {
     queryExpression_.IsNull(field);
+    return *this;
+}
+
+Query &Query::And()
+{
+    queryExpression_.And();
+    return *this;
+}
+
+Query &Query::Or()
+{
+    queryExpression_.Or();
+    return *this;
 }
 
 void Query::ExecuteCompareOperation(QueryObjType operType, const std::string &field, const QueryValueType type,

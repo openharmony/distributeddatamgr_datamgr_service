@@ -20,16 +20,37 @@
 #include <vector>
 #include "sqlite_import.h"
 
-#include "types.h"
 #include "db_types.h"
-#include "schema_object.h"
 #include "iprocess_system_api_adapter.h"
+#include "schema_object.h"
+#include "types.h"
+#ifdef RELATIONAL_STORE
+#include "relational_schema_object.h"
+#endif
 
 namespace DistributedDB {
 enum class TransactType {
     DEFERRED,
     IMMEDIATE,
 };
+
+struct TransactFunc {
+    void (*xFunc)(sqlite3_context*, int, sqlite3_value**) = nullptr;
+    void (*xStep)(sqlite3_context*, int, sqlite3_value**) = nullptr;
+    void (*xFinal)(sqlite3_context*) = nullptr;
+    void(*xDestroy)(void*) = nullptr;
+};
+
+namespace TriggerMode {
+enum class TriggerModeEnum {
+    NONE,
+    INSERT,
+    UPDATE,
+    DELETE
+};
+
+std::string GetTriggerModeString(TriggerModeEnum mode);
+}
 
 struct OpenDbProperties {
     std::string uri{};
@@ -38,8 +59,8 @@ struct OpenDbProperties {
     std::vector<std::string> sqls{};
     CipherType cipherType = CipherType::AES_256_GCM;
     CipherPassword passwd{};
-    std::string schema = "";
-    std::string subdir = "";
+    std::string schema{};
+    std::string subdir{};
     SecurityOption securityOpt{};
     int conflictReslovePolicy = DEFAULT_LAST_WIN;
     bool createDirByStoreIdOnly = false;
@@ -79,9 +100,11 @@ public:
 
     static int ExecuteRawSQL(sqlite3 *db, const std::string &sql);
 
-    static int SetKey(sqlite3 *db, CipherType type, const CipherPassword &passwd);
+    static int SetKey(sqlite3 *db, CipherType type, const CipherPassword &passwd, const bool &isMemDb);
 
     static int GetColumnBlobValue(sqlite3_stmt *statement, int index, std::vector<uint8_t> &value);
+
+    static int GetColumnTextValue(sqlite3_stmt *statement, int index, std::string &value);
 
     static int ExportDatabase(sqlite3 *db, CipherType type, const CipherPassword &passwd, const std::string &newDbName);
 
@@ -120,14 +143,37 @@ public:
     // Register the flatBufferExtract function if the schema is of flatBuffer-type(To be refactor)
     static int RegisterFlatBufferFunction(sqlite3 *db, const std::string &inSchema);
 
+    static int RegisterMetaDataUpdateFunction(sqlite3 *db);
+
     static int GetDbSize(const std::string &dir, const std::string &dbName, uint64_t &size);
 
     static int ExplainPlan(sqlite3 *db, const std::string &execSql, bool isQueryPlan);
 
-    static int AttachNewDatabase(sqlite3 *db, CipherType type, const CipherPassword &passwd,
+    static int AttachNewDatabase(sqlite3 *db, CipherType type, const CipherPassword &password,
         const std::string &attachDbAbsPath, const std::string &attachAsName = "backup");
 
     static int CreateMetaDatabase(const std::string &metaDbPath);
+
+    static int CheckIntegrity(sqlite3 *db, const std::string &sql);
+#ifdef RELATIONAL_STORE
+    static int RegisterCalcHash(sqlite3 *db);
+
+    static int RegisterGetSysTime(sqlite3 *db);
+
+    static int CreateRelationalLogTable(sqlite3 *db, const std::string &oriTableName);
+    static int CreateRelationalMetaTable(sqlite3 *db);
+
+    static int AddRelationalLogTableTrigger(sqlite3 *db, const TableInfo &table);
+    static int AnalysisSchema(sqlite3 *db, const std::string &tableName, TableInfo &table);
+
+    static int CreateSameStuTable(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName,
+        bool isCopyData);
+#endif
+
+    static int DropTriggerByName(sqlite3 *db, const std::string &name);
+
+    static int ExpandedSql(sqlite3_stmt *stmt, std::string &basicString);
+
 private:
 
     static int CreateDataBase(const OpenDbProperties &properties, sqlite3 *&dbTemp);
@@ -147,17 +193,21 @@ private:
 
     static void CalcHashKey(sqlite3_context *ctx, int argc, sqlite3_value **argv);
 
-    static void GetSysCurrentTime(sqlite3_context *ctx, int argc, sqlite3_value **argv);
+    static void GetSysTime(sqlite3_context *ctx, int argc, sqlite3_value **argv);
 
     static int SetDataBaseProperty(sqlite3 *db, const OpenDbProperties &properties,
         const std::vector<std::string> &sqls);
+
+    static int RegisterFunction(sqlite3 *db, const std::string &funcName, int nArg, void *uData, TransactFunc &func);
 
 #ifndef OMIT_ENCRYPT
     static int SetCipherSettings(sqlite3 *db, CipherType type);
 
     static std::string GetCipherName(CipherType type);
 #endif
+
+    static void UpdateMetaDataWithinTrigger(sqlite3_context *ctx, int argc, sqlite3_value **argv);
 };
-};  // namespace DistributedDB
+} // namespace DistributedDB
 
 #endif // SQLITE_UTILS_H

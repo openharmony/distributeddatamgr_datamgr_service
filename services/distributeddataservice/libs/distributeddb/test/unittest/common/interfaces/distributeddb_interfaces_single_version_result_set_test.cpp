@@ -16,19 +16,18 @@
 #include <gtest/gtest.h>
 #include <thread>
 
-#include "distributeddb_data_generate_unit_test.h"
-#include "kv_store_nb_delegate_impl.h"
-#include "sqlite_single_ver_natural_store.h"
-#include "sqlite_single_ver_natural_store_connection.h"
 #include "db_common.h"
 #include "db_constant.h"
 #include "db_types.h"
-#include "result_entries_window.h"
+#include "distributeddb_data_generate_unit_test.h"
 #include "ikvdb_raw_cursor.h"
+#include "kv_store_nb_delegate_impl.h"
 #include "kvdb_manager.h"
-#include "sqlite_local_kvdb_connection.h"
-#include "sqlite_single_ver_forward_cursor.h"
 #include "platform_specific.h"
+#include "result_entries_window.h"
+#include "sqlite_single_ver_forward_cursor.h"
+#include "sqlite_single_ver_natural_store.h"
+#include "sqlite_single_ver_natural_store_connection.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -95,6 +94,7 @@ void DistributedDBSingleVersionResultSetTest::TearDownTestCase(void)
 
 void DistributedDBSingleVersionResultSetTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     KvStoreNbDelegate::Option delegateOption = {true};
     g_mgr.GetKvStore(STORE_ID, delegateOption, g_kvNbDelegateCallback);
     EXPECT_TRUE(g_kvDelegateStatus == OK);

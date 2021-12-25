@@ -14,7 +14,6 @@
  */
 
 #include "sync_operation.h"
-
 #include "db_errno.h"
 #include "log_print.h"
 #include "performance_analysis.h"
@@ -29,7 +28,10 @@ SyncOperation::SyncOperation(uint32_t syncId, const std::vector<std::string> &de
       isBlockSync_(isBlockSync),
       isAutoSync_(false),
       isFinished_(false),
-      semaphore_(nullptr)
+      semaphore_(nullptr),
+      query_(QuerySyncObject()),
+      isQuerySync_(false),
+      isAutoSubscribe_(false)
 {
 }
 
@@ -44,16 +46,19 @@ int SyncOperation::Initialize()
     LOGD("[SyncOperation] Init SyncOperation id:%d.", syncId_);
     AutoLock lockGuard(this);
     for (const std::string &deviceId : devices_) {
-        statuses_.insert(std::pair<std::string, int>(deviceId, WAITING));
+        statuses_.insert(std::pair<std::string, int>(deviceId, OP_WAITING));
     }
+
     if (mode_ == AUTO_PUSH) {
         mode_ = PUSH;
         isAutoSync_ = true;
     } else if (mode_ == AUTO_PULL) {
         mode_ = PULL;
         isAutoSync_ = true;
+    } else if (mode_ == AUTO_SUBSCRIBE_QUERY) {
+        mode_ = SUBSCRIBE_QUERY;
+        isAutoSubscribe_ = true;
     }
-
     if (isBlockSync_) {
         semaphore_ = std::make_unique<SemaphoreUtils>(0);
     }
@@ -86,7 +91,7 @@ void SyncOperation::SetStatus(const std::string &deviceId, int status)
 
     auto iter = statuses_.find(deviceId);
     if (iter != statuses_.end()) {
-        if (iter->second >= FINISHED_ALL) {
+        if (iter->second >= OP_FINISHED_ALL) {
             return;
         }
         iter->second = status;
@@ -116,12 +121,14 @@ int SyncOperation::GetMode() const
 
 void SyncOperation::Finished()
 {
+    std::map<std::string, int> tmpStatus;
     {
         AutoLock lockGuard(this);
         if (IsKilled() || isFinished_) {
             return;
         }
         isFinished_ = true;
+        tmpStatus = statuses_;
     }
     PerformanceAnalysis *performance = PerformanceAnalysis::GetInstance();
     if (performance != nullptr) {
@@ -129,7 +136,19 @@ void SyncOperation::Finished()
     }
     if (userCallback_) {
         LOGI("[SyncOperation] Sync %d finished call onComplete.", syncId_);
-        userCallback_(statuses_);
+        if (IsBlockSync()) {
+            userCallback_(tmpStatus);
+        } else {
+            RefObject::IncObjRef(this);
+            int errCode = RuntimeContext::GetInstance()->ScheduleQueuedTask(identifier_, [this, tmpStatus] {
+                userCallback_(tmpStatus);
+                RefObject::DecObjRef(this);
+            });
+            if (errCode != E_OK) {
+                LOGE("[Finished] SyncOperation Finished userCallback_ retCode:%d", errCode);
+                RefObject::DecObjRef(this);
+            }
+        }
     }
     if (onFinished_) {
         LOGD("[SyncOperation] Sync %d finished call onFinished.", syncId_);
@@ -168,11 +187,16 @@ bool SyncOperation::IsBlockSync() const
     return isBlockSync_;
 }
 
+bool SyncOperation::IsAutoControlCmd() const
+{
+    return isAutoSubscribe_;
+}
+
 bool SyncOperation::CheckIsAllFinished() const
 {
     AutoLock lockGuard(this);
     for (const auto &iter : statuses_) {
-        if (iter.second < FINISHED_ALL) {
+        if (iter.second < OP_FINISHED_ALL) {
             return false;
         }
     }
@@ -187,5 +211,63 @@ void SyncOperation::Finalize()
     }
 }
 
+void SyncOperation::SetQuery(const QuerySyncObject &query)
+{
+    query_ = query;
+    isQuerySync_ = true;
+    if (mode_ != SyncModeType::SUBSCRIBE_QUERY && mode_ != SyncModeType::UNSUBSCRIBE_QUERY) {
+        mode_ += QUERY_SYNC_MODE_BASE;
+    }
+}
+
+QuerySyncObject SyncOperation::GetQuery() const
+{
+    return query_;
+}
+
+bool SyncOperation::IsQuerySync() const
+{
+    return isQuerySync_;
+}
+
+void SyncOperation::SetIdentifier(const std::vector<uint8_t> &identifier)
+{
+    identifier_.assign(identifier.begin(), identifier.end());
+}
+
+SyncType SyncOperation::GetSyncType(int mode)
+{
+    static const std::map<int, SyncType> syncTypeMap = {
+        {SyncModeType::PUSH, SyncType::MANUAL_FULL_SYNC_TYPE},
+        {SyncModeType::PULL, SyncType::MANUAL_FULL_SYNC_TYPE},
+        {SyncModeType::PUSH_AND_PULL, SyncType::MANUAL_FULL_SYNC_TYPE},
+        {SyncModeType::RESPONSE_PULL, SyncType::MANUAL_FULL_SYNC_TYPE},
+        {SyncModeType::AUTO_PULL, SyncType::AUTO_SYNC_TYPE},
+        {SyncModeType::AUTO_PUSH, SyncType::AUTO_SYNC_TYPE},
+        {SyncModeType::QUERY_PUSH, SyncType::QUERY_SYNC_TYPE},
+        {SyncModeType::QUERY_PULL, SyncType::QUERY_SYNC_TYPE},
+        {SyncModeType::QUERY_PUSH_PULL, SyncType::QUERY_SYNC_TYPE},
+    };
+    auto iter = syncTypeMap.find(mode);
+    if (iter != syncTypeMap.end()) {
+        return iter->second;
+    }
+    return SyncType::INVALID_SYNC_TYPE;
+}
+
+int SyncOperation::TransferSyncMode(int mode)
+{
+    // AUTO_PUSH and AUTO_PULL mode is used before sync, RESPONSE_PULL is regarded as push or query push mode.
+    // so for the three mode, it is no need to transfered.
+    if (mode >= SyncModeType::QUERY_PUSH && mode <= SyncModeType::QUERY_PUSH_PULL) {
+        return (mode - QUERY_SYNC_MODE_BASE);
+    }
+    return mode;
+}
+
+std::string SyncOperation::GetQueryId() const
+{
+    return query_.GetIdentify();
+}
 DEFINE_OBJECT_TAG_FACILITIES(SyncOperation)
 } // namespace DistributedDB

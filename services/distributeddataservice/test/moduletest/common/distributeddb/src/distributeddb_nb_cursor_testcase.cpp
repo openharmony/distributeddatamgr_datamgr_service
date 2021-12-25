@@ -103,15 +103,14 @@ struct PositionStatus01 {
 
 void SetResultSetCacheMode(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
+    int cacheMode = 0;
     if (isRowIdMode) {
-        int cacheMode = static_cast<int>(ResultSetCacheMode::CACHE_ENTRY_ID_ONLY);
-        PragmaData data = static_cast<PragmaData>(&cacheMode);
-        EXPECT_EQ(delegate->Pragma(RESULT_SET_CACHE_MODE, data), OK);
+        cacheMode = static_cast<int>(ResultSetCacheMode::CACHE_ENTRY_ID_ONLY);
     } else {
-        int cacheMode = static_cast<int>(ResultSetCacheMode::CACHE_FULL_ENTRY);
-        PragmaData data = static_cast<PragmaData>(&cacheMode);
-        EXPECT_EQ(delegate->Pragma(RESULT_SET_CACHE_MODE, data), OK);
+        cacheMode = static_cast<int>(ResultSetCacheMode::CACHE_FULL_ENTRY);
     }
+    PragmaData data = static_cast<PragmaData>(&cacheMode);
+    EXPECT_EQ(delegate->Pragma(RESULT_SET_CACHE_MODE, data), OK);
 }
 
 bool JudgePosition(KvStoreResultSet *&resultSet, const PositionStatus01 &currentStatus)
@@ -134,7 +133,7 @@ bool JudgePosition(KvStoreResultSet *&resultSet, const PositionStatus01 &current
 }
 }
 
-void DistributedNbCursorTestcase::ResultSetDb001(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb001(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -221,7 +220,7 @@ void DistributedNbCursorTestcase::ResultSetDb001(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb002(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb002(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -279,7 +278,7 @@ struct MoveStatus {
     DBStatus status = OK;
 };
 
-bool MoveAndCheck(KvStoreResultSet *&resultSet, const MoveStatus status)
+bool MoveAndCheck(KvStoreResultSet *&resultSet, const MoveStatus &status)
 {
     bool result = true;
     Entry entry;
@@ -293,7 +292,7 @@ bool MoveAndCheck(KvStoreResultSet *&resultSet, const MoveStatus status)
 }
 }
 
-void DistributedNbCursorTestcase::ResultSetDb003(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb003(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -356,7 +355,7 @@ struct PositionStatus02 {
     DBStatus status = OK;
 };
 
-bool MoveToPositionAndCheck(KvStoreResultSet *&resultSet, const PositionStatus02 status)
+bool MoveToPositionAndCheck(KvStoreResultSet *&resultSet, const PositionStatus02 &status)
 {
     bool result = true;
     Entry entry;
@@ -369,7 +368,7 @@ bool MoveToPositionAndCheck(KvStoreResultSet *&resultSet, const PositionStatus02
     return result;
 }
 }
-void DistributedNbCursorTestcase::ResultSetDb004(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb004(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -443,7 +442,7 @@ void DistributedNbCursorTestcase::ResultSetDb004(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb005(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb005(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -524,7 +523,7 @@ void DistributedNbCursorTestcase::ResultSetDb005(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb006(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb006(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -587,7 +586,7 @@ void DistributedNbCursorTestcase::ResultSetDb006(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb007(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb007(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -641,7 +640,7 @@ void DistributedNbCursorTestcase::ResultSetDb007(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb008(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb008(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -707,7 +706,7 @@ void DistributedNbCursorTestcase::ResultSetDb008(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb009(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb009(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -790,7 +789,7 @@ void DistributedNbCursorTestcase::ResultSetDb009(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb010(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb010(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -840,7 +839,7 @@ void DistributedNbCursorTestcase::ResultSetDb010(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb011(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb011(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -898,7 +897,7 @@ void DistributedNbCursorTestcase::ResultSetDb011(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb012(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb012(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -966,7 +965,7 @@ void DistributedNbCursorTestcase::ResultSetDb012(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb013(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb013(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -1033,7 +1032,7 @@ void DistributedNbCursorTestcase::ResultSetDb013(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb014(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb014(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -1104,7 +1103,7 @@ void DistributedNbCursorTestcase::ResultSetDb014(KvStoreNbDelegate *delegate, bo
     EXPECT_TRUE(delegate->CloseResultSet(resultSet) == OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb015(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb015(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -1167,7 +1166,7 @@ void DistributedNbCursorTestcase::ResultSetDb015(KvStoreNbDelegate *delegate, bo
     EXPECT_EQ(delegate->CloseResultSet(resultSet), OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb016(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb016(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -1230,7 +1229,7 @@ void DistributedNbCursorTestcase::ResultSetDb016(KvStoreNbDelegate *delegate, bo
     EXPECT_EQ(delegate->CloseResultSet(resultSet), OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb017(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb017(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -1259,7 +1258,7 @@ void DistributedNbCursorTestcase::ResultSetDb017(KvStoreNbDelegate *delegate, bo
     EXPECT_EQ(delegate->CloseResultSet(resultSetAll), OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb018(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb018(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -1316,7 +1315,7 @@ void DistributedNbCursorTestcase::ResultSetDb018(KvStoreNbDelegate *delegate, bo
     EXPECT_EQ(delegate->CloseResultSet(resultSetKB), OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb019(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb019(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -1370,7 +1369,7 @@ void DistributedNbCursorTestcase::ResultSetDb019(KvStoreNbDelegate *delegate, bo
     EXPECT_EQ(delegate->CloseResultSet(resultSetAll2), OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb020(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb020(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -1423,7 +1422,7 @@ void DistributedNbCursorTestcase::ResultSetDb020(KvStoreNbDelegate *delegate, bo
     EXPECT_EQ(delegate->CloseResultSet(resultSetKC), OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb021(KvStoreNbDelegate *delegate,
+void DistributeddbNbCursorTestcase::ResultSetDb021(KvStoreNbDelegate *delegate,
     KvStoreDelegateManager *manager, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr && manager != nullptr);
@@ -1454,7 +1453,7 @@ void DistributedNbCursorTestcase::ResultSetDb021(KvStoreNbDelegate *delegate,
     EXPECT_EQ(delegate->CloseResultSet(resultSetAll), OK);
 }
 
-void DistributedNbCursorTestcase::ResultSetDb022(bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb022(bool isRowIdMode)
 {
     KvStoreDelegateManager *manager = nullptr;
     KvStoreNbDelegate *delegate = nullptr;
@@ -1496,7 +1495,7 @@ void DistributedNbCursorTestcase::ResultSetDb022(bool isRowIdMode)
     manager = nullptr;
 }
 
-void DistributedNbCursorTestcase::ResultSetDb023(bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb023(bool isRowIdMode)
 {
     KvStoreDelegateManager *manager = nullptr;
     KvStoreNbDelegate *delegate = nullptr;
@@ -1555,7 +1554,7 @@ void DistributedNbCursorTestcase::ResultSetDb023(bool isRowIdMode)
     manager2 = nullptr;
 }
 
-void DistributedNbCursorTestcase::ResultSetDb024(bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb024(bool isRowIdMode)
 {
     KvStoreDelegateManager *manager = nullptr;
     KvStoreNbDelegate *delegate = nullptr;
@@ -1671,7 +1670,7 @@ void CursorOperThread(KvStoreNbDelegate *&nbCursorDelegate)
     EXPECT_EQ(nbCursorDelegate->CloseResultSet(resultSetAll), OK);
 }
 }
-void DistributedNbCursorTestcase::ResultSetDb025(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb025(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -1897,7 +1896,7 @@ void CursorRandOperThread4(KvStoreResultSet *&resultSet)
 }
 }
 
-void DistributedNbCursorTestcase::ResultSetDb026(KvStoreNbDelegate *delegate, bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb026(KvStoreNbDelegate *delegate, bool isRowIdMode)
 {
     ASSERT_TRUE(delegate != nullptr);
     SetResultSetCacheMode(delegate, isRowIdMode);
@@ -1980,7 +1979,7 @@ void VerifyResultSetInterfaces(KvStoreNbDelegate **delegates, unsigned long dele
 }
 }
 
-void DistributedNbCursorTestcase::ResultSetDb027(bool isRowIdMode)
+void DistributeddbNbCursorTestcase::ResultSetDb027(bool isRowIdMode)
 {
     KvStoreDelegateManager *managers[OPEN_DB_TIMES] = {nullptr};
     KvStoreNbDelegate *delegates[OPEN_DB_TIMES] = {nullptr};

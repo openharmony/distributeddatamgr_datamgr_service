@@ -23,13 +23,10 @@
 #include "schema_object.h"
 
 namespace DistributedDB {
-class KvDBProperties final {
+class DBProperties {
 public:
-    KvDBProperties();
-    ~KvDBProperties();
-
-    // Get the sub directory for different type database.
-    static std::string GetStoreSubDirectory(int type);
+    DBProperties() = default;
+    ~DBProperties() = default;
 
     // Get the string property according the name
     std::string GetStringProp(const std::string &name, const std::string &defaultValue) const;
@@ -48,6 +45,19 @@ public:
 
     // Set the integer property for the name
     void SetIntProp(const std::string &name, int value);
+protected:
+    std::map<std::string, std::string> stringProperties_;
+    std::map<std::string, bool> boolProperties_;
+    std::map<std::string, int> intProperties_;
+};
+
+class KvDBProperties final : public DBProperties {
+public:
+    KvDBProperties();
+    ~KvDBProperties();
+
+    // Get the sub directory for different type database.
+    static std::string GetStoreSubDirectory(int type);
 
     // Get the password
     void GetPassword(CipherType &type, CipherPassword &password) const;
@@ -68,6 +78,7 @@ public:
     int GetSecLabel() const;
 
     int GetSecFlag() const;
+
     // Get schema const reference if you can guarantee the lifecycle of this KvDBProperties
     // The upper code will not change the schema if it is already set
     const SchemaObject &GetSchemaConstRef() const;
@@ -89,15 +100,16 @@ public:
     static const std::string SECURITY_LABEL;
     static const std::string SECURITY_FLAG;
     static const std::string CONFLICT_RESOLVE_POLICY;
+    static const std::string CHECK_INTEGRITY;
+    static const std::string RM_CORRUPTED_DB;
+    static const std::string COMPRESS_ON_SYNC;
+    static const std::string COMPRESSION_RATE;
 
     static const int LOCAL_TYPE = 1;
     static const int MULTI_VER_TYPE = 2;
     static const int SINGLE_VER_TYPE = 3;
 
 private:
-    std::map<std::string, std::string> stringProperties_;
-    std::map<std::string, bool> boolProperties_;
-    std::map<std::string, int> intProperties_;
     CipherType cipherType_;
     CipherPassword password_;
     SchemaObject schema_;

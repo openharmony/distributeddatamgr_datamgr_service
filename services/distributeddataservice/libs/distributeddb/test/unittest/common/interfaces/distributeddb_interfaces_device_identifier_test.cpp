@@ -21,9 +21,9 @@
 #include "db_errno.h"
 #include "distributeddb_data_generate_unit_test.h"
 #include "kv_store_nb_delegate_impl.h"
+#include "platform_specific.h"
 #include "sqlite_single_ver_natural_store.h"
 #include "sqlite_single_ver_natural_store_connection.h"
-#include "platform_specific.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -78,6 +78,7 @@ void DistributedDBDeviceIdentifierTest::TearDownTestCase(void)
 
 void DistributedDBDeviceIdentifierTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     KvStoreNbDelegate::Option option = {true, false, false};
     g_mgr.GetKvStore(STORE_ID, option, g_kvNbDelegateCallback);
     EXPECT_TRUE(g_kvDelegateStatus == OK);

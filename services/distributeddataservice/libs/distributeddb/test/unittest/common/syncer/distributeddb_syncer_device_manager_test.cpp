@@ -16,14 +16,15 @@
 #include <gtest/gtest.h>
 #include <thread>
 
-#include "vitural_communicator_aggregator.h"
-#include "vitural_communicator.h"
-#include "vitural_device.h"
 #include "device_manager.h"
-#include "virtual_single_ver_sync_db_Interface.h"
+#include "distributeddb_tools_unit_test.h"
+#include "kv_virtual_device.h"
 #include "log_print.h"
 #include "parcel.h"
 #include "sync_types.h"
+#include "virtual_communicator.h"
+#include "virtual_communicator_aggregator.h"
+#include "virtual_single_ver_sync_db_Interface.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -34,8 +35,8 @@ namespace {
     const std::string DEVICE_C = "deviceC";
     VirtualCommunicatorAggregator* g_communicatorAggregator = nullptr;
     VirtualCommunicator* g_virtualCommunicator = nullptr;
-    VituralDevice* g_deviceB = nullptr;
-    VituralDevice* g_deviceC = nullptr;
+    KvVirtualDevice *g_deviceB = nullptr;
+    KvVirtualDevice *g_deviceC = nullptr;
     DeviceManager *g_deviceManager = nullptr;
     const int WAIT_TIME = 1000;
 }
@@ -57,7 +58,7 @@ void DistributedDBSyncerDeviceManagerTest::SetUpTestCase(void)
     ASSERT_TRUE(g_communicatorAggregator != nullptr);
     RuntimeContext::GetInstance()->SetCommunicatorAggregator(g_communicatorAggregator);
     int errCode;
-    g_virtualCommunicator = static_cast<VirtualCommunicator*>(g_communicatorAggregator->AllocCommunicator(0, errCode));
+    g_virtualCommunicator = static_cast<VirtualCommunicator *>(g_communicatorAggregator->AllocCommunicator(0, errCode));
     ASSERT_TRUE(g_virtualCommunicator != nullptr);
 }
 
@@ -72,23 +73,24 @@ void DistributedDBSyncerDeviceManagerTest::TearDownTestCase(void)
 
 void DistributedDBSyncerDeviceManagerTest::SetUp(void)
 {
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: Init a DeviceManager and DeviceB, C
      */
     g_deviceManager = new (std::nothrow) DeviceManager;
     ASSERT_TRUE(g_deviceManager != nullptr);
-    g_deviceManager->Initialize(g_virtualCommunicator, nullptr);
+    g_deviceManager->Initialize(g_virtualCommunicator, nullptr, nullptr);
     g_virtualCommunicator->RegOnConnectCallback(
         std::bind(&DeviceManager::OnDeviceConnectCallback, g_deviceManager,
             std::placeholders::_1, std::placeholders::_2), nullptr);
 
-    g_deviceB = new (std::nothrow) VituralDevice(DEVICE_B);
+    g_deviceB = new (std::nothrow) KvVirtualDevice(DEVICE_B);
     ASSERT_TRUE(g_deviceB != nullptr);
     VirtualSingleVerSyncDBInterface *syncInterfaceB = new (std::nothrow) VirtualSingleVerSyncDBInterface();
     ASSERT_TRUE(syncInterfaceB != nullptr);
     ASSERT_EQ(g_deviceB->Initialize(g_communicatorAggregator, syncInterfaceB), E_OK);
 
-    g_deviceC = new (std::nothrow) VituralDevice(DEVICE_C);
+    g_deviceC = new (std::nothrow) KvVirtualDevice(DEVICE_C);
     ASSERT_TRUE(g_deviceC != nullptr);
     VirtualSingleVerSyncDBInterface *syncInterfaceC = new (std::nothrow) VirtualSingleVerSyncDBInterface();
     ASSERT_TRUE(syncInterfaceC != nullptr);
@@ -216,7 +218,7 @@ HWTEST_F(DistributedDBSyncerDeviceManagerTest, GetDevices001, TestSize.Level0)
 HWTEST_F(DistributedDBSyncerDeviceManagerTest, SendBroadCast001, TestSize.Level1)
 {
     bool deviceBReviced = false;
-bool deviceCReviced = false;
+    bool deviceCReviced = false;
 
     /**
      * @tc.steps: step1. deviceB, C set OnRemoteDataChanged callback

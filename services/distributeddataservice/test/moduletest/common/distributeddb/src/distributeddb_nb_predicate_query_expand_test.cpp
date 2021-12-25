@@ -63,7 +63,7 @@ void DistributeddbNbPredicateQueryExpandTest::TearDownTestCase(void)
 
 void DistributeddbNbPredicateQueryExpandTest::SetUp(void)
 {
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 
     UnitTest *test = UnitTest::GetInstance();
     ASSERT_NE(test, nullptr);
@@ -87,27 +87,6 @@ void DistributeddbNbPredicateQueryExpandTest::TearDown(void)
     EXPECT_TRUE(EndCaseDeleteDB(g_manager, g_nbQueryDelegate, STORE_ID_1, false));
 }
 
-vector<string> GenerateCombinationSchemaValue(const vector<vector<string>> &fieldValue)
-{
-    vector<string> schemasValue;
-    int valueNum = fieldValue.size();
-    for (int index = 0; index < valueNum; index++) {
-        string valueStr;
-        string field1Val = fieldValue[index][INDEX_ZEROTH];
-        if (field1Val != "null") {
-            valueStr = valueStr + "{\"field1\":\"" + field1Val + "\"";
-        } else {
-            valueStr = valueStr + "{\"field1\":" + field1Val;
-        }
-        // 1,2,3,4 is the index of fieldValue
-        valueStr = valueStr + ",\"field2\":{\"field3\":" + fieldValue[index][INDEX_FIRST] + ",\"field4\":{\"field5\":" +
-        fieldValue[index][INDEX_SECOND] + ",\"field6\":{\"field7\":" + fieldValue[index][INDEX_THIRD] + ",\"field8\":" +
-        fieldValue[index][INDEX_FORTH] + "}}}}";
-        schemasValue.push_back(valueStr);
-    }
-    return schemasValue;
-}
-
 void PresetDatasToDB(KvStoreNbDelegate *&delegate, std::vector<uint8_t> keyPrefix, vector<string> &schemasValue,
     vector<Entry> &entries)
 {
@@ -124,50 +103,6 @@ void PresetDatasToDB(KvStoreNbDelegate *&delegate, std::vector<uint8_t> keyPrefi
         EXPECT_EQ(DistributedDBNbTestTools::Put(*delegate, entry.key, entry.value), OK);
         entries.push_back(entry);
     }
-}
-
-bool CheckQueryResult(KvStoreNbDelegate &delegate, const Query &query, vector<Entry> &expectEntry,
-    const DBStatus status, bool canGetCount)
-{
-    vector<Entry> entries;
-    EXPECT_EQ(delegate.GetEntries(query, entries), status);
-    if (!expectEntry.empty()) {
-        if (entries.size() != expectEntry.size()) {
-            MST_LOG("The entries from query is %zd, The expectEntry is %zd, they are not equal",
-                entries.size(), expectEntry.size());
-            return false;
-        }
-        for (vector<Entry>::size_type index = 0; index < entries.size(); index++) {
-            if (entries[index].key != expectEntry[index].key || entries[index].value != expectEntry[index].value) {
-                string keyGot(entries[index].key.begin(), entries[index].key.end());
-                string keyExpect(expectEntry[index].key.begin(), expectEntry[index].key.end());
-                MST_LOG("entry key compare failed, expectKey:%s, gotKey:%s, line:%d", keyExpect.c_str(), keyGot.c_str(),
-                    __LINE__);
-                return false;
-            }
-        }
-    }
-    KvStoreResultSet *resultSet = nullptr;
-    if (status != NOT_FOUND) {
-        EXPECT_EQ(delegate.GetEntries(query, resultSet), status);
-    } else {
-        EXPECT_EQ(delegate.GetEntries(query, resultSet), OK);
-        if (resultSet != nullptr) {
-            Entry entry;
-            EXPECT_EQ(resultSet->GetEntry(entry), status);
-        }
-    }
-    int expectCnt = expectEntry.size();
-    if (resultSet != nullptr) {
-        EXPECT_EQ(resultSet->GetCount(), expectCnt);
-        EXPECT_EQ(delegate.CloseResultSet(resultSet), DBStatus::OK);
-    }
-    if (canGetCount) {
-        int cnt = 0;
-        EXPECT_EQ(delegate.GetCount(query, cnt), status);
-        EXPECT_EQ(cnt, expectCnt);
-    }
-    return true;
 }
 
 /**
@@ -189,7 +124,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest001, TestSize.Leve
         {"abfxy", "true", "10", "0", "38"},   {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}, {"abxxx", "true", "12", "120", "-79"},
         {"ab", "true", "20", "82", "150.999"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entries;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entries);
 
@@ -198,29 +133,31 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest001, TestSize.Leve
      * @tc.expected: step2. GetEntries return right result.
      */
     Query query1 = Query::Select().EqualTo("$.field2.field3", true).And().LessThanOrEqualTo("$.field2.field4.field5",
-        33).Or().LessThanOrEqualTo("$.field2.field4.field6.field7", 1000).And().NotLike("$.field1", "%c"). \
+        33).Or().LessThanOrEqualTo("$.field2.field4.field6.field7", 1000).And().NotLike("$.field1", "%c").
         OrderBy("$.field2.field4.field6.field8", true);
     vector<Entry> expectEntry1 = {entries[INDEX_FIRST], entries[INDEX_FIFTH], entries[INDEX_ZEROTH],
         entries[INDEX_THIRD], entries[INDEX_SECOND], entries[INDEX_FORTH], entries[INDEX_SIXTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query1, expectEntry1, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, expectEntry1,
+        DBStatus::OK, false));
 
     /**
      * @tc.steps: step3. test the Query with brackets appear in pairs and check the result with GetEntries.
      * @tc.expected: step3. GetEntries return right result.
      */
-    Query query2 = Query::Select().BeginGroup().EqualTo("$.field2.field3", true).And(). \
-        LessThanOrEqualTo("$.field2.field4.field5", 33).Or().LessThanOrEqualTo("$.field2.field4.field6.field7", 1000). \
+    Query query2 = Query::Select().BeginGroup().EqualTo("$.field2.field3", true).And().
+        LessThanOrEqualTo("$.field2.field4.field5", 33).Or().LessThanOrEqualTo("$.field2.field4.field6.field7", 1000).
         EndGroup().And().NotLike("$.field1", "%c").OrderBy("$.field2.field4.field6.field8", true);
     vector<Entry> expectEntry2 = {entries[INDEX_FIRST], entries[INDEX_FIFTH], entries[INDEX_THIRD],
         entries[INDEX_SECOND], entries[INDEX_FORTH], entries[INDEX_SIXTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query2, expectEntry2, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, expectEntry2,
+        DBStatus::OK, false));
 
     /**
      * @tc.steps: step4. test the Query with brackets appear in pairs and check the result with GetCount.
      * @tc.expected: step4. GetCount return 7.
      */
-    Query query3 = Query::Select().BeginGroup().EqualTo("$.field2.field3", true).And(). \
-        LessThanOrEqualTo("$.field2.field4.field5", 33).Or().LessThanOrEqualTo("$.field2.field4.field6.field7", 1000). \
+    Query query3 = Query::Select().BeginGroup().EqualTo("$.field2.field3", true).And().
+        LessThanOrEqualTo("$.field2.field4.field5", 33).Or().LessThanOrEqualTo("$.field2.field4.field6.field7", 1000).
         EndGroup().And().NotLike("$.field1", "%c");
     int cnt = 0;
     int expectCnt = expectEntry2.size();
@@ -247,7 +184,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest002, TestSize.Leve
         {"abfxy", "true", "10", "0", "38"},   {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}, {"abxxx", "true", "12", "120", "-79"},
         {"ab", "true", "20", "82", "150.999"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entries;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entries);
 
@@ -256,85 +193,39 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest002, TestSize.Leve
      * @tc.expected: step2. GetEntries return right result.
      */
     Query query1 = Query::Select().EqualTo("$.field2.field3", true).And().LessThanOrEqualTo("$.field2.field4.field5",
-        33).Or().LessThanOrEqualTo("$.field2.field4.field6.field7", 1000).And().NotLike("$.field1", "%c"). \
+        33).Or().LessThanOrEqualTo("$.field2.field4.field6.field7", 1000).And().NotLike("$.field1", "%c").
         OrderBy("$.field2.field4.field6.field8", true);
     vector<Entry> expectEntry1 = {entries[INDEX_FIRST], entries[INDEX_FIFTH], entries[INDEX_ZEROTH],
         entries[INDEX_THIRD], entries[INDEX_SECOND], entries[INDEX_FORTH], entries[INDEX_SIXTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query1, expectEntry1, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, expectEntry1,
+        DBStatus::OK, false));
 
     /**
      * @tc.steps: step3. test the Query with brackets nested appeared and check the result with GetEntries.
      * @tc.expected: step3. GetEntries return right result.
      */
-    Query query2 = Query::Select().EqualTo("$.field2.field3", true).And().BeginGroup(). \
-        LessThanOrEqualTo("$.field2.field4.field5", 33).Or().BeginGroup(). \
-        LessThanOrEqualTo("$.field2.field4.field6.field7", 1000).And().NotLike("$.field1", "%c"). \
+    Query query2 = Query::Select().EqualTo("$.field2.field3", true).And().BeginGroup().
+        LessThanOrEqualTo("$.field2.field4.field5", 33).Or().BeginGroup().
+        LessThanOrEqualTo("$.field2.field4.field6.field7", 1000).And().NotLike("$.field1", "%c").
         EndGroup().EndGroup().OrderBy("$.field2.field4.field6.field8", true);
     vector<Entry> expectEntry2 = {entries[INDEX_FIRST], entries[INDEX_FIFTH], entries[INDEX_ZEROTH],
         entries[INDEX_SECOND], entries[INDEX_FORTH], entries[INDEX_SIXTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query2, expectEntry2, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, expectEntry2,
+        DBStatus::OK, false));
 
     /**
      * @tc.steps: step4. test the Query with brackets nested appeared and check the result with GetCount.
      * @tc.expected: step4. GetCount return 6.
      */
-    Query query3 = Query::Select().EqualTo("$.field2.field3", true).And().BeginGroup(). \
-        LessThanOrEqualTo("$.field2.field4.field5", 33).Or().BeginGroup(). \
+    Query query3 = Query::Select().EqualTo("$.field2.field3", true).And().BeginGroup().
+        LessThanOrEqualTo("$.field2.field4.field5", 33).Or().BeginGroup().
         LessThanOrEqualTo("$.field2.field4.field6.field7", 1000).And().NotLike("$.field1", "%c").EndGroup().EndGroup();
     int cnt = 0;
     int expectCnt = expectEntry2.size();
     EXPECT_EQ(g_nbQueryDelegate->GetCount(query3, cnt), OK);
     EXPECT_EQ(cnt, expectCnt);
 }
-// insert query condition between brackets.
-void SpliceQueryMethod(int flag, Query &query)
-{
-    switch (flag) {
-        case 0: // query condition 0
-            query.LessThan("$.field2.field4.field5", "100").And().NotEqualTo("$.field2.field4.field6.field7", "-100");
-            break;
-        case 1: // query condition 1
-            query.EqualTo("$.field2.field3", "true").Or().NotLike("$.field1", "%c");
-            break;
-        case 2: // query condition 2
-            query.Like("$.field1", "ab%");
-            break;
-        case 3: // query condition 3
-            query.GreaterThanOrEqualTo("$.field2.field4.field6.field8", "0");
-            break;
-        default: // other query condition
-            break;
-    }
-}
-// Generate rand query by the number of brackets.
-void GenerateRandQuery(Query &query, int beginNum, int endNum)
-{
-    int left = 0;
-    int right = 0;
-    for (int cnt = 0; cnt < beginNum + endNum; cnt++) {
-        int brachetTest = GetRandInt(0, 1);
-        if (brachetTest == 0 && left < beginNum) {
-            left++;
-            if (cnt != 0) {
-                query.Or();
-            }
-            query.BeginGroup();
-        } else if (brachetTest == 1 && right < endNum) {
-            right++;
-            query.EndGroup();
-        } else {
-            cnt--;
-            continue;
-        }
-        int flag = GetRandInt(0, 4); // add query condition 0-4 to brackets.
-        if ((brachetTest == 0 && cnt < beginNum + endNum - 1) || (brachetTest == 1 && cnt == 0)) {
-            SpliceQueryMethod(flag, query);
-        } else if (brachetTest == 1 && cnt < beginNum + endNum - 1) {
-            query.And();
-            SpliceQueryMethod(flag, query);
-        }
-    }
-}
+
 /**
  * @tc.name: BracketsTest 003
  * @tc.desc: Verify the Brackets appear abnormally then call predicate query interface will return INVALID_QUERY_FORMAT.
@@ -354,7 +245,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest003, TestSize.Leve
         {"abfxy", "true", "10", "0", "38"},   {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}, {"abxxx", "true", "12", "120", "-79"},
         {"ab", "true", "20", "82", "150.999"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entries;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entries);
 
@@ -365,9 +256,10 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest003, TestSize.Leve
      */
     Query query1 = Query::Select();
     int bracketNum1 = GetRandInt(0, 5); // generate the number of bracket from 0 to 5 randomly.
-    GenerateRandQuery(query1, bracketNum1, bracketNum1 + 1);
+    DistributedDBSchemaTestTools::GenerateRandQuery(query1, bracketNum1, bracketNum1 + 1);
     vector<Entry> expectEntry;
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query1, expectEntry, DBStatus::INVALID_QUERY_FORMAT, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, expectEntry,
+        DBStatus::INVALID_QUERY_FORMAT, true));
 
     /**
      * @tc.steps: step3. generate query that the right bracket is less than left bracket,then call GetEntries()/
@@ -376,8 +268,9 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest003, TestSize.Leve
      */
     Query query2 = Query::Select();
     int bracketNum2 = GetRandInt(1, 5); // generate the number of bracket from 1 to 5 randomly.
-    GenerateRandQuery(query2, bracketNum2, bracketNum2 - 1);
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query2, expectEntry, DBStatus::INVALID_QUERY_FORMAT, true));
+    DistributedDBSchemaTestTools::GenerateRandQuery(query2, bracketNum2, bracketNum2 - 1);
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, expectEntry,
+        DBStatus::INVALID_QUERY_FORMAT, true));
 }
 
 /**
@@ -400,7 +293,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest004, TestSize.Leve
         {"abfxy", "true", "10", "0", "38"},   {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}, {"abxxx", "true", "12", "120", "-79"},
         {"ab", "true", "20", "82", "150.999"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entries;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entries);
 
@@ -409,27 +302,30 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest004, TestSize.Leve
      *     with GetEntries/GetCount.
      * @tc.expected: step2. GetEntries and GetCount return INVALID_QUERY_FORMAT.
      */
-    Query query1 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().BeginGroup().And(). \
+    Query query1 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().BeginGroup().And().
         EqualTo("$.field2.field3", true).Or().Like("$.field1", "ab%").EndGroup();
     vector<Entry> expectEntry;
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query1, expectEntry, DBStatus::INVALID_QUERY_FORMAT, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, expectEntry,
+        DBStatus::INVALID_QUERY_FORMAT, true));
 
     /**
      * @tc.steps: step3. test the Query with brackets that having or having Or() before EndGroup() and check the result
      *     with GetEntries/GetCount.
      * @tc.expected: step3. GetEntries and GetCount return INVALID_QUERY_FORMAT.
      */
-    Query query2 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().BeginGroup(). \
+    Query query2 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().BeginGroup().
         EqualTo("$.field2.field3", true).Or().Like("$.field1", "ab%").Or().EndGroup();
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query2, expectEntry, DBStatus::INVALID_QUERY_FORMAT, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, expectEntry,
+        DBStatus::INVALID_QUERY_FORMAT, true));
 
     /**
      * @tc.steps: step4. test the Query with brackets that right bracket before left bracket.
      * @tc.expected: step4. GetEntries and GetCount return INVALID_QUERY_FORMAT.
      */
-    Query query3 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().EndGroup(). \
+    Query query3 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().EndGroup().
         EqualTo("$.field2.field3", true).Or().Like("$.field1", "ab%").Or().BeginGroup();
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query3, expectEntry, DBStatus::INVALID_QUERY_FORMAT, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query3, expectEntry,
+        DBStatus::INVALID_QUERY_FORMAT, true));
 }
 
 /**
@@ -451,7 +347,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest005, TestSize.Leve
         {"abfxy", "true", "10", "0", "38"},   {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}, {"abxxx", "true", "12", "120", "-79"},
         {"ab", "true", "20", "82", "150.999"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entries;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entries);
 
@@ -460,19 +356,21 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, BracketsTest005, TestSize.Leve
      *     with GetEntries/GetCount.
      * @tc.expected: step2. GetEntries and GetCount return INVALID_QUERY_FORMAT.
      */
-    Query query1 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().BeginGroup(). \
-        EqualTo("$.field2.field3", true).Or().Like("$.field1", "ab%").OrderBy("$.field2.field4.field6.field8", true). \
+    Query query1 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().BeginGroup().
+        EqualTo("$.field2.field3", true).Or().Like("$.field1", "ab%").OrderBy("$.field2.field4.field6.field8", true).
         EndGroup();
     vector<Entry> expectEntry;
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query1, expectEntry, DBStatus::INVALID_QUERY_FORMAT, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, expectEntry,
+        DBStatus::INVALID_QUERY_FORMAT, true));
 
     /**
      * @tc.steps: step3. test the Query with Limit in the brackets and check the result
      * @tc.expected: step3. GetEntries and GetCount return INVALID_QUERY_FORMAT.
      */
-    Query query2 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().BeginGroup(). \
+    Query query2 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().BeginGroup().
         EqualTo("$.field2.field3", true).Or().Like("$.field1", "ab%").Limit(5, 0).EndGroup();
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query2, expectEntry, DBStatus::INVALID_QUERY_FORMAT, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, expectEntry,
+        DBStatus::INVALID_QUERY_FORMAT, false));
 }
 
 /**
@@ -493,7 +391,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, NotNullTest001, TestSize.Level
         {"null", "true", "9", "1000", "12"},  {"abc123", "null", "88", "-100", "-99"},
         {"abfxy", "true", "null", "0", "38"}, {"ab789", "false", "999", "null", "15.8"},
         {"ab000", "true", "33", "30", "null"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entries;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entries);
     vector<vector<Entry>> expectEntries = {entries, entries, entries, entries, entries};
@@ -519,7 +417,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, NotNullTest001, TestSize.Level
      * @tc.expected: step3. GetEntries success and each query can return right result.
      */
     for (vector<Entry>::size_type index = 0; index < queries.size(); index++) {
-        EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, queries[index], expectEntries[index], DBStatus::OK, true));
+        EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, queries[index],
+            expectEntries[index], DBStatus::OK, true));
     }
 }
 
@@ -541,7 +440,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, NotNullTest002, TestSize.Level
         {"abc", "true", "9", "1000", "12"}, {"abc123", "true", "88", "-100", "-99"},
         {"abfxy", "true", "10", "0", "38"}, {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entries, entries2;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entries);
 
@@ -561,7 +460,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, NotNullTest002, TestSize.Level
      * @tc.expected: step3. GetEntries success and each query can return right result.
      */
     for (vector<Entry>::size_type index = 0; index < queries.size(); index++) {
-        EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, queries[index], entries, DBStatus::OK, true));
+        EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, queries[index],
+            entries, DBStatus::OK, true));
     }
 
     /**
@@ -578,7 +478,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, NotNullTest002, TestSize.Level
         {"null", "null", "null", "null", "null"}, {"null", "null", "null", "null", "null"},
         {"null", "null", "null", "null", "null"}, {"null", "null", "null", "null", "null"},
         {"null", "null", "null", "null", "null"}};
-    vector<string> schemasValue2 = GenerateCombinationSchemaValue(fieldValue2);
+    vector<string> schemasValue2 = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue2);
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue2, entries2);
 
     /**
@@ -598,9 +498,80 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, NotNullTest002, TestSize.Level
      */
     vector<vector<Entry>> expectEntries = {{}, {}, {}, {}, {}};
     for (vector<Entry>::size_type index = 0; index < queries.size(); index++) {
-        EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, queries[index], expectEntries[index],
-            DBStatus::NOT_FOUND, true));
+        EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, queries[index],
+            expectEntries[index], DBStatus::NOT_FOUND, true));
     }
+}
+
+/**
+ * @tc.name: NotNullTest 003
+ * @tc.desc: Verify that the field put to IsNotNull is illegal, the query got will return INVALID_QUERY_FIELD when use
+ *    GetEntries(query, Entries), GetEntries(query, resultSet), GetCount() to check.
+ * @tc.type: FUNC
+ * @tc.require: SR000EPA23
+ * @tc.author: fengxiaoyun
+ */
+HWTEST_F(DistributeddbNbPredicateQueryExpandTest, NotNullTest003, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. create schema db and put 5 entries each schema of which has one null value constructor
+     *    and has the value given to db.
+     * @tc.expected: step1. create and put successfully.
+     */
+    vector<vector<string>> fieldValue = {
+        {"null", "true", "9", "1000", "12"},  {"abc123", "null", "88", "-100", "-99"},
+        {"abfxy", "true", "null", "0", "38"}, {"ab789", "false", "999", "null", "15.8"},
+        {"ab000", "true", "33", "30", "null"}};
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
+    vector<Entry> entries, entriesExpect;
+    PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entries);
+    vector<vector<Entry>> expectEntries = {entries, entries, entries, entries, entries};
+    expectEntries[0].erase(expectEntries[0].begin());
+    expectEntries[INDEX_FIRST].erase(expectEntries[INDEX_FIRST].begin() + INDEX_FIRST);
+    expectEntries[INDEX_SECOND].erase(expectEntries[INDEX_SECOND].begin() + INDEX_SECOND);
+    expectEntries[INDEX_THIRD].erase(expectEntries[INDEX_THIRD].begin() + INDEX_THIRD);
+    expectEntries[INDEX_FORTH].pop_back();
+
+    /**
+     * @tc.steps: step2. test the Query with IsNotNull interface on $.field9 which is not exist and check the query use
+     *    GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
+     * @tc.expected: step2. query success but the GetEntries will return INVALID_QUERY_FIELD.
+     */
+    Query query1 = Query::Select().IsNotNull("$.field9");
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, entriesExpect,
+        DBStatus::INVALID_QUERY_FIELD, true));
+    /**
+     * @tc.steps: step3. test the Query with IsNotNull interface on $.field2 which is illegal and check the query use
+     *    GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
+     * @tc.expected: step3. query success but the GetEntries will return INVALID_QUERY_FIELD.
+     */
+    Query query2 = Query::Select().IsNotNull("$.field2");
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, entriesExpect,
+        DBStatus::INVALID_QUERY_FIELD, true));
+    /**
+     * @tc.steps: step4. test the Query with IsNotNull interface on $.field2.field3.field4.field5 which is illegal
+     *    and check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
+     * @tc.expected: step4. query success but the GetEntries will return INVALID_QUERY_FIELD.
+     */
+    Query query3 = Query::Select().IsNotNull("$.field2.field3.field4.field5");
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query3, entriesExpect,
+        DBStatus::INVALID_QUERY_FIELD, true));
+    /**
+     * @tc.steps: step5. test the Query with IsNotNull interface on $..field2.field3 the format of which is illegal
+     *    and check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
+     * @tc.expected: step5. query success but the GetEntries will return INVALID_QUERY_FORMAT.
+     */
+    Query query4 = Query::Select().IsNotNull("$..field2.field3");
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query4, entriesExpect,
+        DBStatus::INVALID_QUERY_FORMAT, true));
+    /**
+     * @tc.steps: step6. test the Query with IsNotNull interface on field2.field3 the format of which is illegal
+     *    and check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
+     * @tc.expected: step6. query success but the GetEntries will return INVALID_QUERY_FORMAT.
+     */
+    Query query5= Query::Select().IsNotNull(".field2.field3");
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query5, entriesExpect,
+        DBStatus::INVALID_QUERY_FORMAT, true));
 }
 
 /**
@@ -621,7 +592,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest001, TestSize.Lev
         {"abc", "true", "9", "1000", "12"}, {"abc123", "true", "88", "-100", "-99"},
         {"abfxy", "true", "10", "0", "38"}, {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entriesK, entriesA, entriesExpect, entriesGot;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entriesK);
     PresetDatasToDB(g_nbQueryDelegate, KEY_A, schemasValue, entriesA);
@@ -638,7 +609,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest001, TestSize.Lev
         entriesExpect.push_back(entriesK[index]);
     }
     Query query1 = Query::Select().PrefixKey({});
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query1, entriesExpect, DBStatus::OK, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, entriesExpect,
+        DBStatus::OK, true));
 
     /**
      * @tc.steps: step3. test the Query with PrefixKey({'k'}) interface and then check the query use
@@ -646,7 +618,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest001, TestSize.Lev
      * @tc.expected: step3. query success and all of the 3 interface can find 5 records.
      */
     Query query2 = Query::Select().PrefixKey({'k'});
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query2, entriesK, DBStatus::OK, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, entriesK,
+        DBStatus::OK, true));
     /**
      * @tc.steps: step4. test the Query with PrefixKey({'a'}) interface and then check the query use
      *    GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
@@ -654,7 +627,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest001, TestSize.Lev
      */
     Query query3 = Query::Select().PrefixKey({'b'});
     entriesExpect.clear();
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query3, entriesExpect, DBStatus::NOT_FOUND, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query3, entriesExpect,
+        DBStatus::NOT_FOUND, true));
 }
 
 /**
@@ -679,7 +653,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest002, TestSize.Lev
         {"abc", "true", "9", "1000", "12"}, {"abc123", "true", "88", "-100", "-99"},
         {"abfxy", "true", "10", "0", "38"}, {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entriesK, entriesA, entriesExpect, entriesGot;
     PresetDatasToDB(delegate, KEY_K, schemasValue, entriesK);
     PresetDatasToDB(delegate, KEY_A, schemasValue, entriesA);
@@ -696,7 +670,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest002, TestSize.Lev
         entriesExpect.push_back(entriesK[index]);
     }
     Query query1 = Query::Select().PrefixKey({});
-    EXPECT_TRUE(CheckQueryResult(*delegate, query1, entriesExpect, DBStatus::OK, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*delegate, query1, entriesExpect,
+        DBStatus::OK, true));
 
     /**
      * @tc.steps: step3. test the Query with PrefixKey({'k'}) interface and then check the query use
@@ -704,7 +679,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest002, TestSize.Lev
      * @tc.expected: step3. query success and all of the 3 interface can find 5 records.
      */
     Query query2 = Query::Select().PrefixKey({'k'});
-    EXPECT_TRUE(CheckQueryResult(*delegate, query2, entriesK, DBStatus::OK, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*delegate, query2, entriesK,
+        DBStatus::OK, true));
     /**
      * @tc.steps: step4. test the Query with PrefixKey({'b'}) interface and then check the query use
      *    GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
@@ -712,7 +688,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest002, TestSize.Lev
      */
     entriesA.clear();
     Query query3 = Query::Select().PrefixKey({'b'});
-    EXPECT_TRUE(CheckQueryResult(*delegate, query3, entriesA, DBStatus::NOT_FOUND, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*delegate, query3, entriesA,
+        DBStatus::NOT_FOUND, true));
 
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, option.isMemoryDb));
 }
@@ -735,7 +712,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest003, TestSize.Lev
         {"abc", "true", "9", "1000", "12"}, {"abc123", "true", "88", "-100", "-99"},
         {"abfxy", "true", "10", "0", "38"}, {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entriesK, entriesA, entriesGot;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entriesK);
     PresetDatasToDB(g_nbQueryDelegate, KEY_A, schemasValue, entriesA);
@@ -748,7 +725,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest003, TestSize.Lev
     Query query1 = Query::Select().PrefixKey({}).Limit(5, 0);
     vector<Entry> entriesCheck = {entriesA[0], entriesA[INDEX_FIRST], entriesA[INDEX_SECOND],
         entriesA[INDEX_THIRD], entriesA[INDEX_FORTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query1, entriesCheck, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, entriesCheck,
+        DBStatus::OK, false));
 
     /**
      * @tc.steps: step3. test the Query with PrefixKey({}).And().GreaterThan("$.field2.field4.field5", 10).Limit(5, 0)
@@ -758,7 +736,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest003, TestSize.Lev
     Query query2 = Query::Select().PrefixKey({}).GreaterThan("$.field2.field4.field5", "10").Limit(5, 0);
     entriesCheck = {entriesA[INDEX_FIRST], entriesA[INDEX_THIRD], entriesA[INDEX_FORTH],
         entriesK[INDEX_FIRST], entriesK[INDEX_THIRD]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query2, entriesCheck, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, entriesCheck,
+        DBStatus::OK, false));
     /**
      * @tc.steps: step4. test the Query with PrefixKey({}).And().PrefixKey({'k'}).And().PrefixKey({'b'})
      *    interface and then check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
@@ -766,7 +745,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest003, TestSize.Lev
      */
     Query query3 = Query::Select().PrefixKey({}).PrefixKey({'k'}).And().PrefixKey({'b'});
     entriesCheck.clear();
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query3, entriesCheck, DBStatus::INVALID_QUERY_FORMAT, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query3, entriesCheck,
+        DBStatus::INVALID_QUERY_FORMAT, false));
 }
 
 /**
@@ -791,7 +771,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest004, TestSize.Lev
         {"abc", "true", "9", "1000", "12"}, {"abc123", "true", "88", "-100", "-99"},
         {"abfxy", "true", "10", "0", "38"}, {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entriesK, entriesA, entriesExpect, entriesGot;
     PresetDatasToDB(delegate, KEY_K, schemasValue, entriesK);
     PresetDatasToDB(delegate, KEY_A, schemasValue, entriesA);
@@ -804,7 +784,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest004, TestSize.Lev
     Query query1 = Query::Select().PrefixKey({ }).Limit(5, 0);
     vector<Entry> entriesCheck = {entriesA[0], entriesA[INDEX_FIRST], entriesA[INDEX_SECOND],
         entriesA[INDEX_THIRD], entriesA[INDEX_FORTH]};
-    EXPECT_TRUE(CheckQueryResult(*delegate, query1, entriesCheck, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*delegate, query1, entriesCheck,
+        DBStatus::OK, false));
 
     /**
      * @tc.steps: step3. test the Query with PrefixKey({}).And().GreaterThan("$.field2.field4.field5", 10).Limit(5, 0)
@@ -813,14 +794,16 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest004, TestSize.Lev
      */
     Query query2 = Query::Select().PrefixKey({}).GreaterThan("$.field2.field4.field5", 10).Limit(5, 0);
     entriesCheck.clear();
-    EXPECT_TRUE(CheckQueryResult(*delegate, query2, entriesCheck, DBStatus::NOT_SUPPORT, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*delegate, query2, entriesCheck,
+        DBStatus::NOT_SUPPORT, false));
     /**
      * @tc.steps: step4. test the Query with PrefixKey({}).And().PrefixKey({'k'}).And().PrefixKey({'b'})
      *    interface and then check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
      * @tc.expected: step4. query failed and returned INVALID_QUERY_FORMAT.
      */
     Query query3 = Query::Select().PrefixKey({}).PrefixKey({'k'}).PrefixKey({'b'});
-    EXPECT_TRUE(CheckQueryResult(*delegate, query3, entriesCheck, DBStatus::INVALID_QUERY_FORMAT, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*delegate, query3, entriesCheck,
+        DBStatus::INVALID_QUERY_FORMAT, false));
 
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, option.isMemoryDb));
 }
@@ -843,7 +826,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest005, TestSize.Lev
         {"abc", "true", "9", "1000", "12"}, {"abc123", "true", "88", "-100", "-99"},
         {"abfxy", "true", "10", "0", "38"}, {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entriesK, entriesA, entriesGot;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entriesK);
     PresetDatasToDB(g_nbQueryDelegate, KEY_A, schemasValue, entriesA);
@@ -857,16 +840,18 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest005, TestSize.Lev
         true).OrderBy("$.field2.field4.field6.field8");
     vector<Entry> entriesExpect = {entriesA[INDEX_FIRST], entriesK[INDEX_FIRST], entriesA[0], entriesK[0],
         entriesA[INDEX_SECOND], entriesK[INDEX_SECOND], entriesA[INDEX_FORTH], entriesK[INDEX_FORTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query1, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, entriesExpect,
+        DBStatus::OK, false));
 
     /**
-     * @tc.steps: step3. test the Query with NotEqualTo("$.field2.field3",false).And().PrefixKey({}).OrderBy("field8")
+     * @tc.steps: step3. test the Query with NotEqualTo("$.field2.field3",false).PrefixKey({}).OrderBy("field8")
      *    interface and then check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
      * @tc.expected: step3. query success and all of the 3 interface can find 8 records.
      */
-    Query query2 = Query::Select().NotEqualTo("$.field2.field3", false).PrefixKey({}). \
+    Query query2 = Query::Select().NotEqualTo("$.field2.field3", false).PrefixKey({}).
         OrderBy("$.field2.field4.field6.field8");
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query2, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, entriesExpect,
+        DBStatus::OK, false));
 
     /**
      * @tc.steps: step4. test the Query with LessThan("$.field2.field4.field6.field8",
@@ -876,28 +861,31 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest005, TestSize.Lev
      */
     Query query3 = Query::Select().LessThan("$.field2.field4.field6.field8", 149).PrefixKey({}).Limit(3, 0);
     entriesExpect = {entriesA[0], entriesA[INDEX_FIRST], entriesA[INDEX_SECOND]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query3, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query3, entriesExpect,
+        DBStatus::OK, false));
     /**
      * @tc.steps: step5. test the Query with GreaterThanOrEqualTo("$.field2.field4.field5", 9).And().PrefixKey({'a'}).
      *    LessThanOrEqualTo("field7", 50).OrderBy("$.field2.field4.field6.field8").Limit(4, 0) interface and then
      *    check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
      * @tc.expected: step5. query failed and can't find any records.
      */
-    Query query4 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 9).PrefixKey({'a'}).And(). \
+    Query query4 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 9).PrefixKey({'a'}).And().
         LessThanOrEqualTo("$.field2.field4.field6.field7", 50).OrderBy("$.field2.field4.field6.field8").Limit(4, 0);
     entriesExpect = {entriesA[INDEX_FIRST], entriesA[INDEX_THIRD], entriesA[INDEX_SECOND], entriesA[INDEX_FORTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query4, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query4, entriesExpect,
+        DBStatus::OK, false));
     /**
      * @tc.steps: step6. test the Query with GreaterThanOrEqualTo("$.field2.field4.field5", 9).And().PrefixKey({'b'}).
      *    LessThanOrEqualTo("field7", 50).OrderBy("$.field2.field4.field6.field8").Limit(4, 0) interface and then
      *    check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
      * @tc.expected: step6. query failed and can't find any records.
      */
-    Query query5 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 9).PrefixKey({'b'}).And(). \
-        LessThanOrEqualTo("$.field2.field4.field6.field7", 50).OrderBy("$.field2.field4.field6.field8"). \
+    Query query5 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 9).PrefixKey({'b'}).And().
+        LessThanOrEqualTo("$.field2.field4.field6.field7", 50).OrderBy("$.field2.field4.field6.field8").
         OrderBy("$.field1");
     entriesExpect = {};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query5, entriesExpect, DBStatus::NOT_FOUND, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query5, entriesExpect,
+        DBStatus::NOT_FOUND, false));
 }
 
 /**
@@ -918,7 +906,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest006, TestSize.Lev
         {"null", "true", "9", "1000", "12"},  {"abc123", "null", "88", "-100", "-99"},
         {"abfxy", "true", "null", "0", "38"}, {"ab789", "false", "999", "null", "15.8"},
         {"ab000", "true", "33", "30", "null"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entriesK, entriesA, entriesGot;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entriesK);
     PresetDatasToDB(g_nbQueryDelegate, KEY_A, schemasValue, entriesA);
@@ -928,19 +916,21 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest006, TestSize.Lev
      *    interface and then check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
      * @tc.expected: step2. query success and all of the 3 interface can find 8 records.
      */
-    Query query1 = Query::Select().PrefixKey({'b'}).Like("$.field1", "ab%"). \
+    Query query1 = Query::Select().PrefixKey({'b'}).Like("$.field1", "ab%").
         OrderBy("$.field2.field4.field6.field8");
     vector<Entry> entriesExpect;
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query1, entriesExpect, DBStatus::NOT_FOUND, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, entriesExpect,
+        DBStatus::NOT_FOUND, false));
 
     /**
      * @tc.steps: step3. test the Query with NotLike("$.field1", ab%).And().PrefixKey({}).OrderBy("field8")
      *    interface and then check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
      * @tc.expected: step3. query success and all of the 3 interface can find 8 records.
      */
-    Query query2 = Query::Select().NotLike("$.field1", "ab%").PrefixKey({}). \
+    Query query2 = Query::Select().NotLike("$.field1", "ab%").PrefixKey({}).
         OrderBy("$.field2.field4.field6.field8");
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query2, entriesExpect, DBStatus::NOT_FOUND, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, entriesExpect,
+        DBStatus::NOT_FOUND, false));
     /**
      * @tc.steps: step4. test the Query with In("$.field2.field4.field6.field7",
      *    [0, 30, 50, 1000]).Limit(3, 3) interface and then check the query use GetEntries(query, Entries),
@@ -950,7 +940,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest006, TestSize.Lev
     vector<string> scope = {"0", "30", "50", "1000"};
     Query query3 = Query::Select().PrefixKey({}).In("$.field2.field4.field6.field7", scope).Limit(3, 3);
     entriesExpect = {entriesK[0], entriesK[INDEX_SECOND], entriesK[INDEX_FORTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query3, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query3, entriesExpect,
+        DBStatus::OK, false));
     /**
      * @tc.steps: step5. test the Query with NotIn("$.field2.field4.field6.field7", [-100]).And().PrefixKey({}).
      *    Limit(3, 3) interface and then check the query use
@@ -959,17 +950,19 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest006, TestSize.Lev
      */
     scope = {"-100"};
     Query query4 = Query::Select().NotIn("$.field2.field4.field6.field7", scope).PrefixKey({}).Limit(3, 3);
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query4, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query4, entriesExpect,
+        DBStatus::OK, false));
     /**
      * @tc.steps: step6. test the Query with IsNull("$.field2.field4.field5").And().PrefixKey({}).
         IsNotNull("$.field2.field3").OrderBy("$.field2.field4.field6.field8") interface
      *    and then check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
      * @tc.expected: step6. query failed and can't find any records.
      */
-    Query query5 = Query::Select().IsNull("$.field2.field4.field5").And().PrefixKey({}). \
+    Query query5 = Query::Select().IsNull("$.field2.field4.field5").And().PrefixKey({}).
         IsNotNull("$.field2.field3").OrderBy("$.field2.field4.field6.field8");
     entriesExpect = {entriesA[INDEX_SECOND], entriesK[INDEX_SECOND]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query5, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query5, entriesExpect,
+        DBStatus::OK, false));
 }
 
 /**
@@ -996,7 +989,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest007, TestSize.Lev
         {"ab000", "true", "33", "30", "149"},    {"abc", "true", "9", "1000", "12"},
         {"abc123", "true", "88", "-100", "-99"}, {"abfxy", "true", "10", "0", "38"},
         {"ab789", "false", "999", "50", "15.8"}, {"ab000", "true", "33", "30", "149"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entriesSchema, entriesGot;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entriesSchema);
     EXPECT_EQ(DistributedDBNbTestTools::PutBatch(*delegate, entriesSchema), OK);
@@ -1007,14 +1000,16 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest007, TestSize.Lev
      * @tc.expected: step2. query success and all of the 3 interface can find 10 records.
      */
     Query query = Query::Select();
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query, entriesSchema, DBStatus::OK, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*delegate, query, entriesSchema,
+        DBStatus::OK, true));
 
     /**
      * @tc.steps: step3. test the Query Select() from the non-schema DB and then check the query
      *    use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
      * @tc.expected: step3. query success and all of the 3 interface can find 10 records.
      */
-    EXPECT_TRUE(CheckQueryResult(*delegate, query, entriesSchema, DBStatus::OK, true));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*delegate, query, entriesSchema,
+        DBStatus::OK, true));
 
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, option.isMemoryDb));
 }
@@ -1037,7 +1032,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest008, TestSize.Lev
         {"abc", "true", "9", "1000", "12"}, {"abc123", "true", "88", "-100", "-99"},
         {"abfxy", "true", "10", "0", "38"}, {"ab789", "false", "999", "50", "15.8"},
         {"ab000", "true", "33", "30", "149"}};
-    vector<string> schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    vector<string> schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     vector<Entry> entriesK, entriesA, entriesGot;
     PresetDatasToDB(g_nbQueryDelegate, KEY_K, schemasValue, entriesK);
     PresetDatasToDB(g_nbQueryDelegate, KEY_A, schemasValue, entriesA);
@@ -1052,7 +1047,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest008, TestSize.Lev
         PrefixKey({'a'}).Limit(5, 1);
     vector<Entry> entriesExpect = {entriesA[INDEX_ZEROTH], entriesA[INDEX_THIRD], entriesA[INDEX_SECOND],
         entriesA[INDEX_FORTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query1, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query1, entriesExpect,
+        DBStatus::OK, false));
 
     /**
      * @tc.steps: step3. test the Query with NotLike("$.field1", ab%).And().PrefixKey({}).OrderBy("field8")
@@ -1063,7 +1059,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest008, TestSize.Lev
         LessThanOrEqualTo("$.field2.field4.field6.field7", 50).OrderBy("$.field2.field4.field6.field8").
         PrefixKey({'a'}).Limit(4, 0);
     entriesExpect = {entriesA[INDEX_FIRST], entriesA[INDEX_THIRD], entriesA[INDEX_SECOND], entriesA[INDEX_FORTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query2, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query2, entriesExpect,
+        DBStatus::OK, false));
     /**
      * @tc.steps: step4. test the Query with GreaterThanOrEqualTo("$.field2.field4.field5", 9).And().
      *    LessThanOrEqualTo("$.field2.field4.field6.field7", 50).OrderBy("$.field1").PrefixKey({'a'}).
@@ -1075,7 +1072,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest008, TestSize.Lev
         LessThanOrEqualTo("$.field2.field4.field6.field7", 50).OrderBy("$.field1").PrefixKey({'a'}).
         OrderBy("$.field2.field4.field6.field8");
     entriesExpect = {entriesA[INDEX_FORTH], entriesA[INDEX_THIRD], entriesA[INDEX_FIRST], entriesA[INDEX_SECOND]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query3, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query3, entriesExpect,
+        DBStatus::OK, false));
     /**
      * @tc.steps: step5. test the Query with NotIn("$.field2.field4.field6.field7", [-100]).And().PrefixKey({}).
      *    Limit(3, 3) interface and then check the query use
@@ -1086,7 +1084,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest008, TestSize.Lev
         {"abc", "true", "33", "1000", "12"}, {"abc", "true", "9", "-100", "-99"},
         {"ab789", "true", "100", "0", "38"}, {"ab789", "false", "99", "50", "15.8"},
         {"abc", "true", "9", "30", "149"}};
-    schemasValue = GenerateCombinationSchemaValue(fieldValue);
+    schemasValue = DistributedDBSchemaTestTools::GenerateCombinationSchemaValue(fieldValue);
     entriesA.clear();
     entriesK.clear();
     PresetDatasToDB(g_nbQueryDelegate, KEY_A, schemasValue, entriesA);
@@ -1095,7 +1093,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest008, TestSize.Lev
     Query query4 = Query::Select().OrderBy("$.field1").OrderBy("$.field2.field4.field5").
         OrderBy("$.field2.field4.field6.field8").PrefixKey({'a'}).Limit(3, 3);
     entriesExpect = {entriesA[INDEX_FORTH], entriesA[INDEX_ZEROTH]};
-    EXPECT_TRUE(CheckQueryResult(*g_nbQueryDelegate, query4, entriesExpect, DBStatus::OK, false));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query4, entriesExpect,
+        DBStatus::OK, false));
 }
 
 void MoveCursor(KvStoreResultSet &resultSet, const vector<Entry> &entriesBatch)
@@ -1142,6 +1141,7 @@ void MoveCursor(KvStoreResultSet &resultSet, const vector<Entry> &entriesBatch)
         }
     }
 }
+
 /*
  * @tc.name: PrefixKeyTest 009
  * @tc.desc: test MoveToNext, MoveToPrevious interface with 10 2M data by query= prefixkey.
@@ -1164,7 +1164,8 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, PrefixKeyTest009, TestSize.Lev
     vector<Entry> entriesBatch;
     vector<Key> allKeys;
     EntrySize entrySize = {KEY_EIGHT_BYTE, TWO_M_LONG_STRING};
-    entriesBatch = DistributedDBSchemaTestTools::GenerateFixedSchemaRecords(allKeys, TEN_RECORDS, entrySize, 'k', '0');
+    entriesBatch = DistributedDBSchemaTestTools::GenerateFixedJsonSchemaRecords(
+        TEN_RECORDS, entrySize, 'k', '0', allKeys);
     EXPECT_EQ(DistributedDBNbTestTools::PutBatch(*delegate, entriesBatch), OK);
 
     /**

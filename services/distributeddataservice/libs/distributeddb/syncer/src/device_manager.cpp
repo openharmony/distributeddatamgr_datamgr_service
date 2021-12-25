@@ -54,15 +54,16 @@ int DeviceManager::RegisterTransformFunc()
 }
 
 // Initialize the DeviceManager
-int DeviceManager::Initialize(ICommunicator *communicator, const std::function<void(std::string)> &callback)
+int DeviceManager::Initialize(ICommunicator *communicator, const std::function<void(std::string)> &onlineCallback,
+    const std::function<void(std::string)> &offlineCallback)
 {
     if (communicator == nullptr) {
         return -E_INVALID_ARGS;
     }
     RefObject::IncObjRef(communicator);
     communicator_ = communicator;
-    RegDeviceOnLineCallBack(callback);
-
+    RegDeviceOnLineCallBack(onlineCallback);
+    RegDeviceOffLineCallBack(offlineCallback);
     return E_OK;
 }
 
@@ -151,7 +152,7 @@ int DeviceManager::SendLocalDataChanged()
 bool DeviceManager::IsDeviceOnline(const std::string &deviceId) const
 {
     std::lock_guard<std::mutex> lock(devicesLock_);
-    auto iter = std::find(devices_.begin(), devices_.end(), deviceId);
+    auto iter  = std::find(devices_.begin(), devices_.end(), deviceId);
     return (iter != devices_.end());
 }
 } // namespace DistributedDB

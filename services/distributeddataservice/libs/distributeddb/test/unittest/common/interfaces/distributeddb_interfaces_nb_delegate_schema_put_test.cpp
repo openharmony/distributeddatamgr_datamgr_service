@@ -14,10 +14,9 @@
  */
 
 #ifndef OMIT_JSON
-#include <gtest/gtest.h>
-
-#include <string>
 #include <functional>
+#include <gtest/gtest.h>
+#include <string>
 
 #include "distributeddb_tools_unit_test.h"
 #include "kv_store_delegate_manager.h"
@@ -190,7 +189,9 @@ void DistributedDBInterfacesNBDelegateSchemaPutTest::TearDownTestCase(void)
 }
 
 void DistributedDBInterfacesNBDelegateSchemaPutTest::SetUp(void)
-{}
+{
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
+}
 
 void DistributedDBInterfacesNBDelegateSchemaPutTest::TearDown(void)
 {

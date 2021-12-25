@@ -50,6 +50,7 @@ public:
     int GetEntries(const IOption &option, const Query &query, std::vector<Entry> &entries) const override;
 
     int GetCount(const IOption &option, const Query &query, int &count) const override;
+
     // Put the batch values to the database.
     int PutBatch(const IOption &option, const std::vector<Entry> &entries) override;
 
@@ -101,6 +102,8 @@ public:
 
     // Called when Close and delete the connection.
     int PreClose() override;
+
+    int CheckIntegrity() const override;
 
 private:
     int CheckMonoStatus(OperatePerm perm);

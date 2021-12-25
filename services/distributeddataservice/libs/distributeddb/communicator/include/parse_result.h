@@ -154,13 +154,16 @@ private:
     uint8_t paddingLen_ = 0;
     bool isFragment_ = false;
     FrameType frameType_ = FrameType::INVALID_MAX_FRAME_TYPE;
+
     // For CommPhyOptHeader
     uint32_t frameLen_ = 0;
     uint16_t fragCount_ = 0;
     uint16_t fragNo_ = 0;
+
     // For Application Layer Frame
     uint32_t payloadLen_ = 0;
     LabelType commLabel_;
+
     // For Communication Layer Frame
     uint64_t labelExchangeDistinctValue_ = 0; // For Both LabelExchange And LabelExchangeAck Frame
     uint64_t labelExchangeSequenceId_ = 0; // For Both LabelExchange And LabelExchangeAck Frame

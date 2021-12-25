@@ -16,14 +16,16 @@
 #include <gtest/gtest.h>
 
 #include "db_errno.h"
-#include "log_print.h"
-#include "runtime_context.h"
+#include "distributeddb_data_generate_unit_test.h"
+#include "distributeddb_tools_unit_test.h"
 #include "iprocess_system_api_adapter.h"
+#include "log_print.h"
 #include "process_system_api_adapter_impl.h"
-#include "lock_status_observer.h"
+#include "runtime_context.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
+using namespace DistributedDBUnitTest;
 using namespace std;
 
 namespace {
@@ -31,6 +33,15 @@ namespace {
     SecurityOption g_option = {0, 0};
     const std::string DEV_ID = "devId";
     std::shared_ptr<ProcessSystemApiAdapterImpl> g_adapter;
+    KvStoreDelegateManager g_mgr(APP_ID, USER_ID);
+    string g_testDir;
+    KvStoreConfig g_config;
+
+    // define the g_kvDelegateCallback, used to get some information when open a kv store.
+    DBStatus g_kvDelegateStatus = INVALID_ARGS;
+    KvStoreNbDelegate *g_kvNbDelegatePtr = nullptr;
+    auto g_kvNbDelegateCallback = bind(&DistributedDBToolsUnitTest::KvStoreNbDelegateCallback,
+        placeholders::_1, placeholders::_2, std::ref(g_kvDelegateStatus), std::ref(g_kvNbDelegatePtr));
 }
 
 class RuntimeContextProcessSystemApiAdapterImplTest : public testing::Test {
@@ -47,15 +58,18 @@ void RuntimeContextProcessSystemApiAdapterImplTest::SetUpTestCase(void)
      */
     g_adapter = std::make_shared<ProcessSystemApiAdapterImpl>();
     EXPECT_TRUE(g_adapter != nullptr);
+    DistributedDBToolsUnitTest::TestDirInit(g_testDir);
 }
 
 void RuntimeContextProcessSystemApiAdapterImplTest::TearDownTestCase(void)
 {
     RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(nullptr);
+    DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir);
 }
 
 void RuntimeContextProcessSystemApiAdapterImplTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_adapter->ResetAdapter();
 }
 
@@ -65,7 +79,7 @@ void RuntimeContextProcessSystemApiAdapterImplTest::SetUp(void)
  * @tc.type: FUNC
  * @tc.require: AR000EV1G2
  */
-HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, SetSecurityOption001, TestSize.Level0)
+HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, SetSecurityOption001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. call SetSecurityOption to set SecurityOption before set g_adapter
@@ -91,7 +105,7 @@ HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, SetSecurityOption001, Te
  * @tc.type: FUNC
  * @tc.require: AR000EV1G2
  */
-HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, GetSecurityOption001, TestSize.Level0)
+HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, GetSecurityOption001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. call GetSecurityOption to get SecurityOption before set g_adapter
@@ -117,7 +131,7 @@ HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, GetSecurityOption001, Te
  * @tc.type: FUNC
  * @tc.require: AR000EV1G2
  */
-HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, RegisterLockStatusLister001, TestSize.Level0)
+HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, RegisterLockStatusLister001, TestSize.Level1)
 {
     int errCode = E_OK;
     bool lockStatus = false;
@@ -175,7 +189,7 @@ HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, RegisterLockStatusLister
  * @tc.type: FUNC
  * @tc.require: AR000EV1G2
  */
-HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, IsAccessControlled001, TestSize.Level0)
+HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, IsAccessControlled001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. call IsAccessControlled to get Access lock status before set g_adapter
@@ -201,7 +215,7 @@ HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, IsAccessControlled001, T
  * @tc.type: FUNC
  * @tc.require: AR000EV1G2
  */
-HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, CheckDeviceSecurityAbility001, TestSize.Level0)
+HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, CheckDeviceSecurityAbility001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. call CheckDeviceSecurityAbility to check device security ability before set g_adapter
@@ -219,4 +233,43 @@ HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, CheckDeviceSecurityAbili
     RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(g_adapter);
     isSupported = RuntimeContext::GetInstance()->CheckDeviceSecurityAbility(DEV_ID, g_option);
     EXPECT_TRUE(isSupported);
+}
+
+namespace {
+void FuncCheckDeviceSecurityAbility()
+{
+    RuntimeContext::GetInstance()->CheckDeviceSecurityAbility("", SecurityOption());
+    return;
+}
+}
+
+/**
+ * @tc.name: CheckDeviceSecurityAbility002
+ * @tc.desc: Check device security ability with getkvstore frequency.
+ * @tc.type: FUNC
+ * @tc.require: AR000EV1G2
+ */
+HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, CheckDeviceSecurityAbility002, TestSize.Level1)
+{
+    g_config.dataDir = g_testDir;
+    g_mgr.SetKvStoreConfig(g_config);
+
+    RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(g_adapter);
+    g_adapter->SetNeedCreateDb(true);
+
+    const std::string storeId = "CheckDeviceSecurityAbility002";
+    std::thread t1(FuncCheckDeviceSecurityAbility);
+    std::thread t2([&]() {
+        for (int i = 0; i < 100; i++) { // open close 100 times
+            LOGI("open store!!");
+            KvStoreNbDelegate::Option option1 = {true, false, false};
+            g_mgr.GetKvStore(storeId, option1, g_kvNbDelegateCallback);
+            g_mgr.CloseKvStore(g_kvNbDelegatePtr);
+        }
+    });
+    std::thread t3(FuncCheckDeviceSecurityAbility);
+
+    t1.join();
+    t2.join();
+    t3.join();
 }

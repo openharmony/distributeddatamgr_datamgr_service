@@ -23,7 +23,7 @@
 #include "types_export.h"
 
 namespace DistributedDB {
-enum class QueryValueType {
+enum class QueryValueType: int32_t {
     VALUE_TYPE_INVALID = -1,
     VALUE_TYPE_NULL,
     VALUE_TYPE_BOOL,
@@ -33,34 +33,35 @@ enum class QueryValueType {
     VALUE_TYPE_STRING,
 };
 
-enum class QueryObjType {
-    OPER_ILLEGAL = -1,
-    QUERY_VALUE,
-    EQUALTO,
+// value will const, it will influence query object id
+// use high pos bit to distinguish operator type
+enum class QueryObjType : uint32_t {
+    OPER_ILLEGAL = 0x0000,
+    EQUALTO = 0x0101,
     NOT_EQUALTO,
     GREATER_THAN,
     LESS_THAN,
     GREATER_THAN_OR_EQUALTO,
     LESS_THAN_OR_EQUALTO,
-    LIKE,
+    LIKE = 0x0201,
     NOT_LIKE,
     IS_NULL,
     IS_NOT_NULL,
-    IN,
+    IN = 0x0301,
     NOT_IN,
-    QUERY_BY_KEY_PREFIX,
-    BEGIN_GROUP,
+    QUERY_BY_KEY_PREFIX = 0x0401,
+    BEGIN_GROUP = 0x0501,
     END_GROUP,
-    AND,
+    AND = 0x0601,
     OR,
-    LIMIT,
+    LIMIT = 0x0701,
     ORDERBY,
-    SUGGEST_INDEX,
+    SUGGEST_INDEX = 0x0801,
 };
 
 struct QueryObjNode {
     QueryObjType operFlag = QueryObjType::OPER_ILLEGAL;
-    std::string fieldName = "";
+    std::string fieldName {};
     QueryValueType type = QueryValueType::VALUE_TYPE_INVALID;
     std::vector<FieldValue> fieldValue = {};
 };
@@ -109,9 +110,13 @@ public:
 
     void QueryBySuggestIndex(const std::string &indexName);
 
-    std::vector<uint8_t> GetPreFixKey();
+    std::vector<uint8_t> GetPreFixKey() const;
 
-    std::string GetSuggestIndex();
+    void SetTableName(const std::string &tableName);
+    const std::string &GetTableName();
+    bool IsTableNameSpacified() const;
+
+    std::string GetSuggestIndex() const;
 
     const std::list<QueryObjNode> &GetQueryExpression();
 
@@ -119,13 +124,15 @@ public:
     bool GetErrFlag();
 
 private:
-    void AssemblyQueryInfo(const QueryObjType querrOperType, const std::string &field,
+    void AssemblyQueryInfo(const QueryObjType queryOperType, const std::string &field,
         const QueryValueType type, const std::vector<FieldValue> &value, bool isNeedFieldPath);
 
     std::list<QueryObjNode> queryInfo_;
     bool errFlag_ = true;
     std::vector<uint8_t> prefixKey_;
     std::string suggestIndex_;
+    std::string tableName_;
+    bool isTableNameSpecified_;
 };
 
 // specialize for double

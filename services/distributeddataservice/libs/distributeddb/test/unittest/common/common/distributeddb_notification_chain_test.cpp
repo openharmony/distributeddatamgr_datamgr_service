@@ -16,12 +16,14 @@
 #include <gtest/gtest.h>
 
 #include "db_errno.h"
+#include "distributeddb_tools_unit_test.h"
 #include "log_print.h"
 #include "notification_chain.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
 using namespace std;
+using namespace DistributedDBUnitTest;
 
 namespace {
     const EventType COMMIT_EVENT = 1;
@@ -31,8 +33,8 @@ namespace {
     int g_onEventTestNum = 0;
     bool g_onFinalizeCalled = false;
 
-    auto g_onEventFunction = [](const void *arg) {
-        g_onEventTestNum = *(reinterpret_cast<const int *>(arg));
+    auto g_onEventFunction = [](void *arg) {
+        g_onEventTestNum = *(reinterpret_cast<int *>(arg));
         LOGI("g_onEventFunction called.");
     };
 
@@ -71,6 +73,7 @@ void DistributedDBNotificationChainTest::TearDownTestCase(void)
 
 void DistributedDBNotificationChainTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: Register a listener to the NotificationChain
      */

@@ -28,6 +28,7 @@ const int StorageEngine::MAX_READ_SIZE = 16;
 
 StorageEngine::StorageEngine()
     : isUpdated_(false),
+      isMigrating_(false),
       engineState_(EngineState::INVALID),
       commitNotifyFunc_(nullptr),
       isInitialized_(false),
@@ -360,6 +361,7 @@ void StorageEngine::AddStorageExecutor(StorageExecutor *handle)
     } else {
         readIdleList_.push_back(handle);
     }
+    LOGD("add [%d] storage executor to handle pool.", handle->GetWritable());
 }
 
 void StorageEngine::CloseExecutor()
@@ -409,9 +411,8 @@ StorageExecutor *StorageEngine::FetchStorageExecutor(bool isWrite, std::list<Sto
     auto item = idleList.front();
     usingList.push_back(item);
     idleList.remove(item);
-    std::string id = DBCommon::TransferStringToHex(identifier_);
     LOGD("Get executor from [%.6s], write[%d], using[%d], idle[%d]",
-        id.c_str(), isWrite, usingList.size(), idleList.size());
+        DBCommon::TransferStringToHex(identifier_).c_str(), isWrite, usingList.size(), idleList.size());
     errCode = E_OK;
     return item;
 }
@@ -422,5 +423,10 @@ bool StorageEngine::CheckEngineAttr(const StorageEngineAttr &poolSize)
             poolSize.maxWriteNum > MAX_WRITE_SIZE ||
             poolSize.minReadNum > poolSize.maxReadNum ||
             poolSize.minWriteNum > poolSize.maxWriteNum);
+}
+
+bool StorageEngine::IsMigrating() const
+{
+    return isMigrating_.load();
 }
 }

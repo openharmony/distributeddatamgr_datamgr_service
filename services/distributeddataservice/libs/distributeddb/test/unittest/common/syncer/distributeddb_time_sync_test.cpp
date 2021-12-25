@@ -15,13 +15,13 @@
 
 #include <gtest/gtest.h>
 
-#include "distributeddb_tools_unit_test.h"
 #include "distributeddb_data_generate_unit_test.h"
-#include "virtual_time_sync_communicator.h"
+#include "distributeddb_tools_unit_test.h"
 #include "isyncer.h"
-#include "virtual_single_ver_sync_db_Interface.h"
-#include "sync_types.h"
 #include "single_ver_sync_state_machine.h"
+#include "sync_types.h"
+#include "virtual_single_ver_sync_db_Interface.h"
+#include "virtual_time_sync_communicator.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -65,6 +65,7 @@ void DistributedDBTimeSyncTest::TearDownTestCase(void)
 
 void DistributedDBTimeSyncTest::SetUp(void)
 {
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: create the instance for virtual communicator, virtual storage component and time syncer
      */
@@ -170,7 +171,7 @@ HWTEST_F(DistributedDBTimeSyncTest, NormalSync001, TestSize.Level0)
      * @tc.expected: step4. (offsetB - offsetA ) - timeOffset < 100ms.
      */
     TimeOffset timeOffset = 0;
-    g_timeSyncA->GetTimeOffset(timeOffset);
+    g_timeSyncA->GetTimeOffset(timeOffset, TIME_SYNC_WAIT_TIME);
     offsetB = g_metadataB->GetLocalTimeOffset();
     offsetA = g_metadataA->GetLocalTimeOffset();
     EXPECT_TRUE(abs(offsetB - offsetA - timeOffset) < NETWORK_DELAY);
@@ -211,7 +212,7 @@ HWTEST_F(DistributedDBTimeSyncTest, NormalSync002, TestSize.Level0)
      * @tc.expected: step3. (offsetB - offsetA ) - timeOffset < 100ms.
      */
     TimeOffset timeOffset;
-    g_timeSyncA->GetTimeOffset(timeOffset);
+    g_timeSyncA->GetTimeOffset(timeOffset, TIME_SYNC_WAIT_TIME);
     TimeOffset offsetB = g_metadataB->GetLocalTimeOffset();
     TimeOffset offsetA = g_metadataA->GetLocalTimeOffset();
     EXPECT_TRUE(abs(offsetB - offsetA - timeOffset) < NETWORK_DELAY);
@@ -263,7 +264,7 @@ HWTEST_F(DistributedDBTimeSyncTest, NormalSync003, TestSize.Level0)
      * @tc.expected: step4. (offsetB - offsetA ) - timeOffset < 100ms.
      */
     TimeOffset timeOffset = 0;
-    g_timeSyncA->GetTimeOffset(timeOffset);
+    g_timeSyncA->GetTimeOffset(timeOffset, TIME_SYNC_WAIT_TIME);
 
     TimeOffset absTimeOffset = abs(timeOffset);
     EXPECT_TRUE(abs(offsetB - offsetA - absTimeOffset) < NETWORK_DELAY);
@@ -475,6 +476,6 @@ HWTEST_F(DistributedDBTimeSyncTest, SyncTimeout001, TestSize.Level2)
      * @tc.expected: step2. Start the time sync task return E_TIMEOUT
      */
     TimeOffset offset;
-    errCode = g_timeSyncA->GetTimeOffset(offset);
+    errCode = g_timeSyncA->GetTimeOffset(offset, TIME_SYNC_WAIT_TIME);
     EXPECT_TRUE(errCode == -E_TIMEOUT);
 }

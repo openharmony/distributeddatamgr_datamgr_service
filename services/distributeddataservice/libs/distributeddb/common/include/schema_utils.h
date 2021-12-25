@@ -26,6 +26,8 @@ const std::string KEYWORD_SCHEMA_MODE = "SCHEMA_MODE";
 const std::string KEYWORD_SCHEMA_DEFINE = "SCHEMA_DEFINE";
 const std::string KEYWORD_SCHEMA_INDEXES = "SCHEMA_INDEXES";
 const std::string KEYWORD_SCHEMA_SKIPSIZE = "SCHEMA_SKIPSIZE";
+const std::string KEYWORD_SCHEMA_TYPE = "SCHEMA_TYPE";
+const std::string KEYWORD_SCHEMA_TABLE = "TABLES";
 const std::string KEYWORD_INDEX = "INDEX"; // For FlatBuffer-Schema
 
 const std::string KEYWORD_MODE_STRICT = "STRICT";
@@ -43,6 +45,8 @@ const std::string KEYWORD_ATTR_VALUE_NULL = "null";
 const std::string KEYWORD_ATTR_VALUE_TRUE = "true";
 const std::string KEYWORD_ATTR_VALUE_FALSE = "false";
 
+const std::string KEYWORD_TYPE_RELATIVE = "RELATIVE";
+
 const uint32_t SCHEMA_META_FEILD_COUNT_MAX = 5;
 const uint32_t SCHEMA_META_FEILD_COUNT_MIN = 3;
 const uint32_t SCHEMA_FEILD_NAME_LENGTH_MAX = 64;
@@ -55,6 +59,7 @@ const uint32_t SCHEMA_STRING_SIZE_LIMIT = 524288; // 512K
 const uint32_t SCHEMA_DEFAULT_STRING_SIZE_LIMIT = 4096; // 4K
 const uint32_t SCHEMA_SKIPSIZE_MAX = 4194302; // 4M - 2 Bytes
 const std::string SCHEMA_SUPPORT_VERSION = "1.0";
+const std::string SCHEMA_SUPPORT_VERSION_V2 = "2.0";
 
 const uint32_t SECURE_BYTE_ALIGN = 8; // 8 bytes align
 
@@ -63,7 +68,9 @@ public:
     // Check if any invalid exist, parse it into SchemaAttribute if totally valid and return E_OK
     // Number don't support format of scientific notation. SchemaAttribute.isIndexable always set true.
     // Prefix and postfix spaces or tabs is allowed.
-    static int ParseAndCheckSchemaAttribute(const std::string &inAttrString, SchemaAttribute &outAttr);
+    // Customer FieldType will be accepted if useAffinity is true.
+    static int ParseAndCheckSchemaAttribute(const std::string &inAttrString, SchemaAttribute &outAttr,
+        bool useAffinity = false);
 
     // Check if any invalid exist, parse it into FieldPath if totally valid and return E_OK
     // Each fieldName of the fieldPath will be check valid as well. Path depth will be check.
@@ -75,11 +82,13 @@ public:
 
     // Remove prefix and postfix spaces or tabs
     static std::string Strip(const std::string &inString);
+
     // Strip the namespace from the full-name, this method mainly for flatbuffer-type schema
     static std::string StripNameSpace(const std::string &inFullName);
 
     static std::string FieldTypeString(FieldType inType);
     static std::string SchemaTypeString(SchemaType inType);
+
     // Restore to string representation of fieldPath with $. prefix
     static std::string FieldPathString(const FieldPath &inPath);
 
@@ -91,7 +100,7 @@ private:
     static int SplitSchemaAttribute(const std::string &inAttrString, std::vector<std::string> &outAttrString);
     static int MakeTrans(const std::string &oriContent, size_t &pos);
 
-    static int ParseSchemaAttribute(std::vector<std::string> &attrContext, SchemaAttribute &outAttr);
+    static int ParseSchemaAttribute(std::vector<std::string> &attrContext, SchemaAttribute &outAttr, bool useAffinity);
 
     static int TransformDefaultValue(std::string &defaultContent, SchemaAttribute &outAttr);
 

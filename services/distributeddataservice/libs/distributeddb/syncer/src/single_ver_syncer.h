@@ -12,29 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef SYNCER_H
 #define SYNCER_H
 
 #include "generic_syncer.h"
 
 namespace DistributedDB {
-class SingleVerSyncer final : public GenericSyncer {
+class SingleVerSyncer : public GenericSyncer {
 public:
-    SingleVerSyncer();
-    ~SingleVerSyncer() override;
-
-    // Enable auto sync function
-    void EnableAutoSync(bool enable) override;
-
-    // delete specified device's watermark
-    int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash) override;
-
-    // Local data changed callback
-    void LocalDataChanged(int notifyEvent) override;
-
-    // Remote data changed callback
-    void RemoteDataChanged(const std::string &device) override;
+    void RemoteDeviceOffline(const std::string &device) override;
 
     // Set stale data wipe policy
     int SetStaleDataWipePolicy(WipePolicy policy) override;
@@ -42,10 +28,6 @@ public:
 protected:
     // Create a sync engine, if has memory error, will return nullptr.
     ISyncEngine *CreateSyncEngine() override;
-
-private:
-    bool autoSyncEnable_;
 };
-} // namespace DistributedDB
-
-#endif  // SYNCER_H
+}
+#endif // SYNCER_H

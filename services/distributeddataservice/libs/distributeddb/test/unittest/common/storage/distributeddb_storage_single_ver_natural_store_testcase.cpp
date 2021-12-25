@@ -15,8 +15,8 @@
 
 #include "distributeddb_storage_single_ver_natural_store_testcase.h"
 
-#include "time_helper.h"
 #include "generic_single_ver_kv_entry.h"
+#include "time_helper.h"
 
 using namespace DistributedDB;
 using namespace DistributedDBUnitTest;
@@ -581,6 +581,24 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::GetMetaData001(SQLiteSin
      * @tc.expected: step1. Return OK, and the value is the same as the value of value1.
      */
     TestMetaDataPutAndGet(store, connection);
+}
+
+/**
+  * @tc.name: DeleteMetaData001
+  * @tc.desc: To test the function of deleting the metadata with prefix key in the database.
+  * @tc.type: FUNC
+  * @tc.require: AR000CCPOM
+  * @tc.author: wangbingquan
+  */
+void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteMetaData001(SQLiteSingleVerNaturalStore *&store,
+    SQLiteSingleVerNaturalStoreConnection *&connection)
+{
+    /**
+     * @tc.steps:step1. Put 2 mete data with prefix key 'a', 2 meta data with prefix key 'b'.
+                        And delete meta data with prefix key 'b'.
+     * @tc.expected: step1. Get all meta data and will get 2 data with prefix key 'a'.
+     */
+    TestMetaDataDeleteByPrefixKey(store, connection);
 }
 
 /**
@@ -1650,6 +1668,14 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::TestMetaDataPutAndGet(SQ
     sizeKey.pop_back();
     sizeValue.push_back(174); // random
     EXPECT_EQ(store->PutMetaData(sizeKey, sizeValue), -E_INVALID_ARGS);
+
+    /**
+     * @tc.steps:step11. Delete key1 and key2 successfully.
+     * @tc.expected: step11. Cannot find key1 and key2 in DB anymore.
+     */
+    EXPECT_EQ(store->DeleteMetaData(std::vector<Key> {key1, key2}), E_OK);
+    EXPECT_EQ(store->GetMetaData(key1, valueRead), -E_NOT_FOUND);
+    EXPECT_EQ(store->GetMetaData(key2, valueRead), -E_NOT_FOUND);
 }
 
 void DistributedDBStorageSingleVerNaturalStoreTestCase::DataBaseCommonPutOperate(SQLiteSingleVerNaturalStore *&store,
@@ -1845,3 +1871,32 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DataBaseCommonGetOperate
     EXPECT_EQ(DistributedDBToolsUnitTest::IsValueEqual(valueRead, value2), true);
 }
 
+void DistributedDBStorageSingleVerNaturalStoreTestCase::TestMetaDataDeleteByPrefixKey(
+    SQLiteSingleVerNaturalStore *&store, SQLiteSingleVerNaturalStoreConnection *&connection)
+{
+    /**
+     * @tc.steps:step1. Put a1, b1, a2, b2.
+     * @tc.expected: step1. Return OK.
+     */
+    ASSERT_EQ(store->PutMetaData(Key {'a', '1'}, Value {'a', '1'}), E_OK);
+    ASSERT_EQ(store->PutMetaData(Key {'b', '1'}, Value {'b', '1'}), E_OK);
+    ASSERT_EQ(store->PutMetaData(Key {'a', '2'}, Value {'a', '2'}), E_OK);
+    ASSERT_EQ(store->PutMetaData(Key {'b', '2'}, Value {'b', '2'}), E_OK);
+
+    /**
+     * @tc.steps:step2. Delete meta data with prefix key 'b'.
+     * @tc.expected: step2. Return OK.
+     */
+    ASSERT_EQ(store->DeleteMetaDataByPrefixKey(Key {'b'}), E_OK);
+    ASSERT_EQ(store->DeleteMetaDataByPrefixKey(Key {'c'}), E_OK);
+
+    /**
+     * @tc.steps:step3. Get a1, b1, a2, b2.
+     * @tc.expected: step3. Get a1, a2 successfully, and get b1, b2 failed.
+     */
+    Value value;
+    EXPECT_EQ(store->GetMetaData(Key {'a', '1'}, value), E_OK);
+    EXPECT_EQ(store->GetMetaData(Key {'a', '2'}, value), E_OK);
+    EXPECT_EQ(store->GetMetaData(Key {'b', '1'}, value), -E_NOT_FOUND);
+    EXPECT_EQ(store->GetMetaData(Key {'b', '2'}, value), -E_NOT_FOUND);
+}

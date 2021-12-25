@@ -83,7 +83,7 @@ void DistributeddbNbObserverTest::TearDownTestCase(void)
 void DistributeddbNbObserverTest::SetUp(void)
 {
     MST_LOG("SetUpTest before case local.");
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 
     UnitTest *test = UnitTest::GetInstance();
     ASSERT_NE(test, nullptr);
@@ -100,7 +100,7 @@ void DistributeddbNbObserverTest::SetUp(void)
 void DistributeddbNbObserverTest::TearDown(void)
 {
     EXPECT_TRUE(EndCaseDeleteDB(g_nbObserverManager, g_nbObserverDelegate, STORE_ID_1, g_option.isMemoryDb));
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 }
 
 void RegisterAndUnRegisterObserver(ConcurParam* paramsPtr)
@@ -165,7 +165,7 @@ void ConcurOperThread(ConcurParam* args)
  * @tc.require: SR000CQDVH
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbObserverTest, RegisterData001, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, RegisterData001, TestSize.Level1)
 {
     KvStoreObserverImpl observerLocal;
     KvStoreObserverImpl observerSync;
@@ -272,7 +272,7 @@ void CheckObserverAllLocalValue(KvStoreObserverImpl &observerLocal)
  * @tc.require: SR000CQDVH
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbObserverTest, RegisterData002, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, RegisterData002, TestSize.Level1)
 {
     KvStoreObserverImpl observerLocal;
     KvStoreObserverImpl observerSync;
@@ -377,7 +377,7 @@ void CheckObserverAllNativeValue(KvStoreObserverImpl &observerLocal, KvStoreObse
  * @tc.require: SR000CQDVH
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbObserverTest, RegisterData003, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, RegisterData003, TestSize.Level1)
 {
     KvStoreObserverImpl observerLocal;
     KvStoreObserverImpl observerSync;
@@ -424,7 +424,7 @@ HWTEST_F(DistributeddbNbObserverTest, RegisterData003, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbObserverTest, UnRegister001, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, UnRegister001, TestSize.Level1)
 {
     KvStoreObserverImpl observerLocal;
     KvStoreObserverImpl observerSync;
@@ -495,7 +495,7 @@ HWTEST_F(DistributeddbNbObserverTest, UnRegister001, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbObserverTest, UnRegister002, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, UnRegister002, TestSize.Level1)
 {
     KvStoreObserverImpl observerLocal;
     KvStoreObserverImpl observerSync;
@@ -544,7 +544,7 @@ HWTEST_F(DistributeddbNbObserverTest, UnRegister002, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbObserverTest, UnRegister003, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, UnRegister003, TestSize.Level1)
 {
     KvStoreObserverImpl observerLocal;
     KvStoreObserverImpl observerSync;
@@ -594,7 +594,7 @@ HWTEST_F(DistributeddbNbObserverTest, UnRegister003, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbObserverTest, UnRegister004, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, UnRegister004, TestSize.Level1)
 {
     KvStoreObserverImpl observerLocal;
     KvStoreObserverImpl observerSync;
@@ -644,7 +644,7 @@ HWTEST_F(DistributeddbNbObserverTest, UnRegister004, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbObserverTest, UnRegister005, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, UnRegister005, TestSize.Level1)
 {
     KvStoreObserverImpl observerLocal;
     KvStoreObserverImpl observerSync;
@@ -693,7 +693,7 @@ HWTEST_F(DistributeddbNbObserverTest, UnRegister005, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbObserverTest, ParamCheck001, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, ParamCheck001, TestSize.Level1)
 {
     KvStoreObserverImpl observer1, observer2, observer3, observer4, observer;
 
@@ -736,7 +736,7 @@ HWTEST_F(DistributeddbNbObserverTest, ParamCheck001, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbObserverTest, ParamCheck002, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, ParamCheck002, TestSize.Level1)
 {
     DistributedDB::Key eKey1, eKey2, eKey3;
     eKey1.assign(ONE_K_LONG_STRING, (uint8_t)'a');
@@ -1100,7 +1100,7 @@ void CheckPressureActionAfterUnregister(KvStoreObserverImpl &observerLocal, KvSt
 
 /*
  * @tc.name: Pressure 005
- * @tc.desc: Verify that can't unregister observer repeately.
+ * @tc.desc: Verify that can't unregister observer repeatedly.
  * @tc.type: FUNC
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
@@ -1157,7 +1157,7 @@ HWTEST_F(DistributeddbNbObserverTest, Pressure005, TestSize.Level1)
 
 /*
  * @tc.name: Pressure 006
- * @tc.desc: Verify that can register and unregister observer repeately.
+ * @tc.desc: Verify that can register and unregister observer repeatedly.
  * @tc.type: FUNC
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
@@ -1172,7 +1172,7 @@ HWTEST_F(DistributeddbNbObserverTest, Pressure006, TestSize.Level1)
     EXPECT_EQ(status, OK);
 
     /**
-     * @tc.steps: step1. Register and UnRegister the observer repeately.
+     * @tc.steps: step1. Register and UnRegister the observer repeatedly.
      * @tc.expected: step1. Register and unregister observerLocal and observerSync success each time.
      */
     for (unsigned int opCnt = NB_OPERATION_CNT_START; opCnt < NB_OPERATION_CNT_END; ++opCnt) {
@@ -1239,7 +1239,7 @@ void CheckPressureForRepeatAction(KvStoreObserverImpl &observerLocal, KvStoreObs
 
 /*
  * @tc.name: Pressure 007
- * @tc.desc: Verify that can't register an observer of the same key repeately without unrigister.
+ * @tc.desc: Verify that can't register an observer of the same key repeatedly without unrigister.
  * @tc.type: FUNC
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
@@ -1327,7 +1327,7 @@ void CheckPressureForLocalRepeat(KvStoreObserverImpl &observerLocal, KvStoreObse
 
 /*
  * @tc.name: Pressure 008
- * @tc.desc: Verify that can't register a local observer of all key repeately.
+ * @tc.desc: Verify that can't register a local observer of all key repeatedly.
  * @tc.type: FUNC
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
@@ -1339,7 +1339,7 @@ HWTEST_F(DistributeddbNbObserverTest, Pressure008, TestSize.Level1)
     KvStoreObserverImpl observerSync;
 
     /**
-     * @tc.steps: step1. Register a local observer of key KEY_EMPTY 5 times repeately.
+     * @tc.steps: step1. Register a local observer of key KEY_EMPTY 5 times repeatedly.
      * @tc.expected: step1. Register observerLocal success first time and failed later.
      */
     for (unsigned int opCnt = NB_OPERATION_CNT_START; opCnt < NB_OPERATION_CNT_END; ++opCnt) {
@@ -1415,7 +1415,7 @@ void CheckPressureForNativeRepeat(KvStoreObserverImpl &observerLocal, KvStoreObs
 
 /*
  * @tc.name: Pressure 009
- * @tc.desc: Verify that register a sync observer of the same key repeately.
+ * @tc.desc: Verify that register a sync observer of the same key repeatedly.
  * @tc.type: FUNC
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
@@ -1427,7 +1427,7 @@ HWTEST_F(DistributeddbNbObserverTest, Pressure009, TestSize.Level1)
     KvStoreObserverImpl observerSync;
 
     /**
-     * @tc.steps: step1. Register a sync observer of key KEY_EMPTY 5 times repeately.
+     * @tc.steps: step1. Register a sync observer of key KEY_EMPTY 5 times repeatedly.
      * @tc.expected: step1. Register observerSync success first time and failed later.
      */
     for (unsigned int opCnt = NB_OPERATION_CNT_START; opCnt < NB_OPERATION_CNT_END; ++opCnt) {
@@ -2202,7 +2202,7 @@ HWTEST_F(DistributeddbNbObserverTest, RekeyNbDb001, TestSize.Level2)
  * @tc.require: SR000CQDT4
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbObserverTest, RekeyNbDb002, TestSize.Level0)
+HWTEST_F(DistributeddbNbObserverTest, RekeyNbDb002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. register conflict notifier.

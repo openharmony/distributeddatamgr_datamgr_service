@@ -19,6 +19,7 @@
 
 namespace DistributedDB {
 using std::unique_lock;
+using std::lock_guard;
 using std::mutex;
 using std::condition_variable;
 
@@ -49,7 +50,7 @@ void SemaphoreUtils::WaitSemaphore()
 
 void SemaphoreUtils::SendSemaphore()
 {
-    unique_lock<mutex> lock(lockMutex_);
+    lock_guard<std::mutex> lock(lockMutex_);
     count_++;
     cv_.notify_one();
 }

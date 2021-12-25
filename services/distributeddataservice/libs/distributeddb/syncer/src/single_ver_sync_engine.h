@@ -23,8 +23,18 @@ class SingleVerSyncEngine final : public SyncEngine {
 public:
     SingleVerSyncEngine() : needClearRemoteStaleData_(false) {};
 
-    // If set true, remote stale data will be clear when remote db rebuiled.
+    // If set true, remote stale data will be clear when remote db rebuilt.
     void EnableClearRemoteStaleData(bool enable);
+
+    // used by SingleVerKVSyncer when db online
+    int StartAutoSubscribeTimer() override;
+
+    // used by SingleVerKVSyncer when remote/local db closed
+    void StopAutoSubscribeTimer() override;
+
+    int SubscribeTimeOut(TimerId id);
+
+    void SetIsNeedResetAbilitySync(const std::string &deviceId, bool isNeedReset);
 
     DISABLE_COPY_ASSIGN_MOVE(SingleVerSyncEngine);
 protected:
@@ -35,8 +45,17 @@ protected:
 
 private:
     DECLARE_OBJECT_TAG(SingleVerSyncEngine);
+#ifndef RUNNING_ON_TESTCASE
+    static constexpr int SUBSCRIBE_TRIGGER_TIME_OUT = 30 * 60 * 1000; // 30min
+#else
+    static constexpr int SUBSCRIBE_TRIGGER_TIME_OUT = 5 * 60 * 1000; // 5min for test
+#endif
 
     bool needClearRemoteStaleData_;
+
+    // for subscribe timeout callback
+    std::mutex timerLock_;
+    TimerId subscribeTimerId_ = 0;
 };
 } // namespace DistributedDB
 

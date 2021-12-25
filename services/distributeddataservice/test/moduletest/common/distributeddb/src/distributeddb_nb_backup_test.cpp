@@ -13,14 +13,16 @@
  * limitations under the License.
  */
 #include <gtest/gtest.h>
+
+#include <atomic>
 #include <ctime>
 #include <cmath>
 #include <random>
 #include <chrono>
+#include <string>
 #include <thread>
 #include <mutex>
 #include <fstream>
-#include <string>
 
 #include "types.h"
 #include "kv_store_nb_delegate.h"
@@ -43,6 +45,7 @@ namespace DistributeddbNbBackup {
 KvStoreNbDelegate *g_nbBackupDelegate = nullptr;
 KvStoreDelegateManager *g_manager = nullptr;
 static std::condition_variable g_backupVar;
+std::atomic<bool> g_readyFlag(false);
 
 DistributedDB::CipherPassword g_passwd1;
 DistributedDB::CipherPassword g_passwd2;
@@ -78,8 +81,9 @@ void DistributeddbNbBackupTest::TearDownTestCase(void)
 
 void DistributeddbNbBackupTest::SetUp(void)
 {
-    const std::string exportPath = NB_DIRECTOR + "export";
-    RemoveDatabaseDirectory(exportPath);
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
+    RemoveDir(exportPath);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 
     UnitTest *test = UnitTest::GetInstance();
     ASSERT_NE(test, nullptr);
@@ -113,7 +117,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest001, TestSize.Level1)
      * @tc.expected: step1. call failed and return INVALID_ARGS.
      */
     int fileCount = 0;
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     const std::string filePath = exportPath + "/bkpDB.bin";
     EXPECT_EQ(g_nbBackupDelegate->Export(filePath, NULL_PASSWD), INVALID_ARGS);
 
@@ -168,7 +172,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest002, TestSize.Level1)
      * @tc.expected: step1. call successfully and the file number of filepath is 1.
      */
     int fileCount = 0;
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath = exportPath + "/bkpDB.bin";
     EXPECT_TRUE(g_nbBackupDelegate->Export(filePath, NULL_PASSWD) == OK);
@@ -229,7 +233,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest003, TestSize.Level2)
         EXPECT_TRUE(g_nbBackupDelegate->Put(iter->key, iter->value) == OK);
     }
     int fileCount = 0;
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath = exportPath + "/bkpDB.bin";
     EXPECT_TRUE(g_nbBackupDelegate->Export(filePath, NULL_PASSWD) == OK);
@@ -240,8 +244,10 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest003, TestSize.Level2)
      * @tc.steps: step1. call import interface to import the file that prepared in advance.
      * @tc.expected: step1. call successfully.
      */
+    g_readyFlag.store(false);
     thread subThread([&]() {
         EXPECT_EQ(g_nbBackupDelegate->Import(filePath, NULL_PASSWD), OK);
+        g_readyFlag.store(true);
         g_backupVar.notify_all();
     });
     subThread.detach();
@@ -263,7 +269,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest003, TestSize.Level2)
 
     std::mutex count;
     std::unique_lock<std::mutex> lck(count);
-    g_backupVar.wait(lck);
+    g_backupVar.wait(lck, [&]{ return g_readyFlag.load(); });
     RemoveDir(exportPath);
 }
 
@@ -287,10 +293,12 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest004, TestSize.Level3)
      * @tc.steps: step1. call import interface to import the file that prepared in advance.
      * @tc.expected: step1. call successfully if step1 running before step2, else return busy.
      */
+    g_readyFlag.store(false);
     thread subThread([&]() {
         DBStatus rekeyStatus = g_nbBackupDelegate->Rekey(g_passwd1);
         EXPECT_TRUE(rekeyStatus == OK || rekeyStatus == BUSY);
         MST_LOG("The rekeyStatus is %d", rekeyStatus);
+        g_readyFlag.store(true);
         g_backupVar.notify_all();
     });
     subThread.detach();
@@ -300,18 +308,22 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest004, TestSize.Level3)
      * @tc.expected: step2. return busy if step1 is running, else return OK.
      */
     int fileCount = 0;
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     const std::string filePath = exportPath + "/bkpDB.bin";
     std::this_thread::sleep_for(std::chrono::microseconds(WAIT_FOR_LONG_TIME));
     DBStatus status = g_nbBackupDelegate->Export(filePath, NULL_PASSWD);
     EXPECT_TRUE(status == BUSY || status == OK);
     CheckFileNumber(exportPath, fileCount);
-    EXPECT_TRUE(fileCount == 0 || fileCount == 1);
+    if (status == BUSY) {
+        EXPECT_EQ(fileCount, 0);
+    } else {
+        EXPECT_EQ(fileCount, 1);
+    }
 
     std::mutex count;
     std::unique_lock<std::mutex> lck(count);
-    g_backupVar.wait(lck);
+    g_backupVar.wait(lck, [&]{ return g_readyFlag.load(); });
     RemoveDir(exportPath);
 }
 #endif
@@ -326,7 +338,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest004, TestSize.Level3)
 HWTEST_F(DistributeddbNbBackupTest, ExportTest005, TestSize.Level2)
 {
     int fileCount = 0;
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath = exportPath + "/bkpDB.bin";
     std::vector<DistributedDB::Entry> entriesBatch;
@@ -339,12 +351,12 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest005, TestSize.Level2)
      * @tc.steps: step1. call import interface to import the file that prepared in advance.
      * @tc.expected: step1. call successfully.
      */
-    bool exportFlag = false;
+    g_readyFlag.store(false);
     thread subThread([&]() {
         std::this_thread::sleep_for(std::chrono::microseconds(WAIT_FOR_LONG_TIME));
         DBStatus exportStatus = g_nbBackupDelegate->Export(filePath, NULL_PASSWD);
         EXPECT_EQ(exportStatus, OK);
-        exportFlag = true;
+        g_readyFlag.store(true);
         g_backupVar.notify_one();
     });
     subThread.detach();
@@ -358,7 +370,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest005, TestSize.Level2)
 
     std::mutex count;
     std::unique_lock<std::mutex> lck(count);
-    g_backupVar.wait(lck, [&]{return exportFlag;});
+    g_backupVar.wait(lck, [&]{ return g_readyFlag.load(); });
     CheckFileNumber(exportPath, fileCount);
     EXPECT_EQ(fileCount, 2); // the export file number is 2.
     RemoveDir(exportPath);
@@ -374,7 +386,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest005, TestSize.Level2)
 HWTEST_F(DistributeddbNbBackupTest, ExportTest006, TestSize.Level3)
 {
     int fileCount = 0;
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath = exportPath + "/bkpDB.bin";
     std::vector<DistributedDB::Entry> entriesBatch;
@@ -388,11 +400,11 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest006, TestSize.Level3)
      * @tc.steps: step1. call export interface in subthread.
      * @tc.expected: step1. call successfully.
      */
-    bool exportFlag = false;
+    g_readyFlag.store(false);
     thread subThread([&]() {
         DBStatus exportStatus = g_nbBackupDelegate->Export(filePath, NULL_PASSWD);
         EXPECT_EQ(exportStatus, OK);
-        exportFlag = true;
+        g_readyFlag.store(true);
         g_backupVar.notify_all();
     });
     subThread.detach();
@@ -422,7 +434,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest006, TestSize.Level3)
 
     std::mutex count;
     std::unique_lock<std::mutex> lck(count);
-    g_backupVar.wait(lck, [&]{return exportFlag;});
+    g_backupVar.wait(lck, [&]{ return g_readyFlag.load(); });
     CheckFileNumber(exportPath, fileCount);
     EXPECT_EQ(fileCount, 1);
     RemoveDir(exportPath);
@@ -438,7 +450,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest006, TestSize.Level3)
 HWTEST_F(DistributeddbNbBackupTest, ExportTest007, TestSize.Level1)
 {
     int fileCount = 0;
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath = exportPath + "/bkpDB1.bin";
 
@@ -499,7 +511,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest001, TestSize.Level1)
      * @tc.expected: step1. put successfully.
      */
     EXPECT_EQ(g_nbBackupDelegate->Put(KEY_1, VALUE_1), OK);
-    const std::string importPath = NB_DIRECTOR + "export";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath);
     std::string filePath1 = importPath + "/bkpDB1.bin";
     EXPECT_EQ(g_nbBackupDelegate->Export(filePath1, NULL_PASSWD), OK);
@@ -561,9 +573,9 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest001, TestSize.Level1)
  * @tc.require: SR000D4878
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBackupTest, ImportTest002, TestSize.Level0)
+HWTEST_F(DistributeddbNbBackupTest, ImportTest002, TestSize.Level1)
 {
-    std::string importPath1 = NB_DIRECTOR + "export";
+    std::string importPath1 = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath1);
     std::string filePath = importPath1 + "/bkpDB.bin";
     EXPECT_EQ(g_nbBackupDelegate->Export(filePath, NULL_PASSWD), OK);
@@ -583,7 +595,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest002, TestSize.Level0)
      * @tc.steps: step2. the disk DB import backup file bkpDB1.bin from noexsit path with empty passwd.
      * @tc.expected: step2. import failed and returned INVALID_FILE.
      */
-    std::string importPath2 = NB_DIRECTOR + "/noexsit";
+    std::string importPath2 = DistributedDBConstant::NB_DIRECTOR + "/noexsit";
     std::string filePath2 = importPath2 + "/bkpDB.bin";
     EXPECT_EQ(g_nbBackupDelegate->Import(filePath2, NULL_PASSWD), INVALID_ARGS);
 
@@ -608,9 +620,9 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest002, TestSize.Level0)
  * @tc.require: SR000D4878
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBackupTest, ImportTest003, TestSize.Level0)
+HWTEST_F(DistributeddbNbBackupTest, ImportTest003, TestSize.Level1)
 {
-    const std::string importPath = NB_DIRECTOR + "export";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath);
     std::string filePath = importPath + "/bkpDB.bin";
     EXPECT_EQ(g_nbBackupDelegate->Export(filePath, NULL_PASSWD), OK);
@@ -673,7 +685,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest004, TestSize.Level1)
     std::string multiFilePath2 = multiImportPath + "/bkpDB2.bin";
     localDelegate->Export(multiFilePath2, g_filePasswd1);
 
-    const std::string nbImportPath = NB_DIRECTOR + "export";
+    const std::string nbImportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(nbImportPath);
     std::string nbFilePath = nbImportPath + "/bkpDB1.bin";
     g_nbBackupDelegate->Export(nbFilePath, g_filePasswd1);
@@ -729,9 +741,9 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest004, TestSize.Level1)
  * @tc.require: SR000D4878
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBackupTest, ImportTest006, TestSize.Level0)
+HWTEST_F(DistributeddbNbBackupTest, ImportTest006, TestSize.Level1)
 {
-    const std::string importPath = NB_DIRECTOR + "export";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath);
     std::string filePath = importPath + "/bkpDB.bin";
     EXPECT_EQ(g_nbBackupDelegate->Export(filePath, g_filePasswd1), OK);
@@ -776,9 +788,9 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest006, TestSize.Level0)
  * @tc.require: SR000D4878
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBackupTest, ImportTest007, TestSize.Level0)
+HWTEST_F(DistributeddbNbBackupTest, ImportTest007, TestSize.Level1)
 {
-    const std::string importPath = NB_DIRECTOR + "export";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath);
     std::string filePath = importPath + "/bkpDB.bin";
     EXPECT_EQ(g_nbBackupDelegate->Export(filePath, g_filePasswd1), OK);
@@ -831,7 +843,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest008, TestSize.Level3)
         EXPECT_TRUE(g_nbBackupDelegate->Put(iter->key, iter->value) == OK);
     }
 
-    const std::string importPath = NB_DIRECTOR + "export";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath);
     std::string filePath = importPath + "/bkpDB.bin";
     EXPECT_EQ(g_nbBackupDelegate->Export(filePath, NULL_PASSWD), OK);
@@ -840,9 +852,11 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest008, TestSize.Level3)
      * @tc.steps: step1. start subthread to import the backup file with empty password.
      * @tc.expected: step1. start successfully if step1 running before step2, else return BUSY.
      */
+    g_readyFlag.store(false);
     thread subThread([&]() {
         DBStatus importStatus = g_nbBackupDelegate->Import(filePath, NULL_PASSWD);
         EXPECT_TRUE(importStatus == OK || importStatus == BUSY);
+        g_readyFlag.store(true);
         g_backupVar.notify_one();
     });
     subThread.detach();
@@ -864,7 +878,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest008, TestSize.Level3)
     EXPECT_TRUE(statusReturn == BUSY || statusReturn == OK);
     std::mutex rekeyMtx;
     std::unique_lock<std::mutex> lck(rekeyMtx);
-    g_backupVar.wait(lck);
+    g_backupVar.wait(lck, [&]{ return g_readyFlag.load(); });
     RemoveDir(importPath);
 }
 
@@ -885,7 +899,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest009, TestSize.Level3)
         EXPECT_TRUE(g_nbBackupDelegate->Put(iter->key, iter->value) == OK);
     }
 
-    const std::string importPath = NB_DIRECTOR + "export";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath);
     std::string filePath = importPath + "/bkpDB.bin";
     EXPECT_EQ(g_nbBackupDelegate->Export(filePath, NULL_PASSWD), OK);
@@ -894,9 +908,11 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest009, TestSize.Level3)
      * @tc.steps: step1. start subthread to import the backup file with empty password.
      * @tc.expected: step1. start successfully if step1 running before step2, else return BUSY.
      */
+    g_readyFlag.store(false);
     thread subThread([&]() {
         DBStatus importStatus = g_nbBackupDelegate->Import(filePath, NULL_PASSWD);
         EXPECT_TRUE(importStatus == OK || importStatus == BUSY);
+        g_readyFlag.store(true);
         g_backupVar.notify_one();
     });
     subThread.detach();
@@ -910,7 +926,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest009, TestSize.Level3)
 
     std::mutex rekeyMtx;
     std::unique_lock<std::mutex> lck(rekeyMtx);
-    g_backupVar.wait(lck);
+    g_backupVar.wait(lck, [&]{ return g_readyFlag.load(); });
     RemoveDir(importPath);
 }
 #endif
@@ -931,7 +947,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest010, TestSize.Level3)
         EXPECT_TRUE(g_nbBackupDelegate->Put(iter->key, iter->value) == OK);
     }
 
-    const std::string importPath = NB_DIRECTOR + "export";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath);
     std::string filePath = importPath + "/bkpDB.bin";
     EXPECT_EQ(g_nbBackupDelegate->Export(filePath, NULL_PASSWD), OK);
@@ -940,10 +956,10 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest010, TestSize.Level3)
      * @tc.steps: step1. start subthread to rekey DB with password 1.
      * @tc.expected: step1. start successfully.
      */
-    bool rekeyFlag = false;
+    g_readyFlag.store(false);
     thread subThread([&]() {
         EXPECT_EQ(g_nbBackupDelegate->Rekey(g_passwd1), OK);
-        rekeyFlag = true;
+        g_readyFlag.store(true);
         g_backupVar.notify_one();
     });
     subThread.detach();
@@ -956,7 +972,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest010, TestSize.Level3)
 
     std::mutex rekeyMtx;
     std::unique_lock<std::mutex> lck(rekeyMtx);
-    g_backupVar.wait(lck, [&]{return rekeyFlag;});
+    g_backupVar.wait(lck, [&]{ return g_readyFlag.load(); });
     RemoveDir(importPath);
 }
 #endif
@@ -977,19 +993,19 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest011, TestSize.Level3)
         EXPECT_TRUE(g_nbBackupDelegate->Put(iter->key, iter->value) == OK);
     }
 
-    const std::string importPath = NB_DIRECTOR + "export";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath);
     std::string filePath = importPath + "/bkpDB.bin";
-    g_nbBackupDelegate->Export(filePath, NULL_PASSWD);
+    EXPECT_EQ(g_nbBackupDelegate->Export(filePath, NULL_PASSWD), OK);
 
     /**
      * @tc.steps: step1. start subthread to import the backup file.
      * @tc.expected: step1. start successfully.
      */
-    bool importFlag = false;
+    g_readyFlag.store(false);
     thread subThread([&]() {
         EXPECT_EQ(g_nbBackupDelegate->Import(filePath, NULL_PASSWD), OK);
-        importFlag = true;
+        g_readyFlag.store(true);
         g_backupVar.notify_one();
     });
     subThread.detach();
@@ -1001,7 +1017,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest011, TestSize.Level3)
 
     std::mutex rekeyMtx;
     std::unique_lock<std::mutex> lck(rekeyMtx);
-    g_backupVar.wait(lck, [&]{return importFlag;});
+    g_backupVar.wait(lck, [&]{ return g_readyFlag.load(); });
 
     RemoveDir(importPath);
 }
@@ -1062,7 +1078,7 @@ void NbSubImportThread(int index, std::string importPath)
 HWTEST_F(DistributeddbNbBackupTest, ImportTest012, TestSize.Level3)
 {
     std::vector<std::thread> threads;
-    const std::string importPath = NB_DIRECTOR + "export";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath);
     for (int index = 0; index < FIVE_TIMES; ++index) {
         threads.push_back(std::thread(NbSubImportThread, index, std::ref(importPath)));
@@ -1083,7 +1099,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest012, TestSize.Level3)
  */
 HWTEST_F(DistributeddbNbBackupTest, Exchange001, TestSize.Level1)
 {
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath1 = exportPath + "/bkpDB1.bin";
     std::string filePath2 = exportPath + "/bkpDB2.bin";
@@ -1136,7 +1152,7 @@ HWTEST_F(DistributeddbNbBackupTest, Exchange001, TestSize.Level1)
  */
 HWTEST_F(DistributeddbNbBackupTest, Exchange002, TestSize.Level1)
 {
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath1 = exportPath + "/bkpDB1.bin";
     std::string filePath2 = exportPath + "/bkpDB2.bin";
@@ -1192,7 +1208,7 @@ HWTEST_F(DistributeddbNbBackupTest, Exchange002, TestSize.Level1)
  */
 HWTEST_F(DistributeddbNbBackupTest, Exchange003, TestSize.Level1)
 {
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath1 = exportPath + "/bkpDB1.bin";
     std::string filePath2 = exportPath + "/bkpDB2.bin";
@@ -1268,7 +1284,7 @@ HWTEST_F(DistributeddbNbBackupTest, Exchange003, TestSize.Level1)
 HWTEST_F(DistributeddbNbBackupTest, CorruptionHandler001, TestSize.Level1)
 {
     EXPECT_TRUE(g_nbBackupDelegate->Put(KEY_1, VALUE_1) == OK);
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath = exportPath + "/bkpDB.bin";
     EXPECT_TRUE(g_nbBackupDelegate->Export(filePath, NULL_PASSWD) == OK);
@@ -1280,8 +1296,9 @@ HWTEST_F(DistributeddbNbBackupTest, CorruptionHandler001, TestSize.Level1)
      */
     KvStoreNbCorruptInfo corruptInfo;
     KvStoreNbCorruptInfo corruptInfoNew;
+    bool isCalled = false;
     auto notifier = bind(&KvStoreNbCorruptInfo::CorruptCallBack, &corruptInfo,
-        placeholders::_1, placeholders::_2, placeholders::_3);
+        placeholders::_1, placeholders::_2, placeholders::_3, std::ref(isCalled));
     g_manager->SetKvStoreCorruptionHandler(notifier);
     /**
      * @tc.steps: step2. device A call SetKvStoreCorruptionHandler the second time.
@@ -1319,7 +1336,7 @@ HWTEST_F(DistributeddbNbBackupTest, CorruptionHandler001, TestSize.Level1)
 
 /*
  * @tc.name: CorruptionHandler 002
- * @tc.desc: Verify that can import db files and can't export in the Corruption Handler callback when db flies
+ * @tc.desc: Verify that can import db files and can't export in the Corruption Handler callback when db files
  * are corrupted in using.
  * @tc.type: FUNC
  * @tc.require: SR000D4878
@@ -1328,7 +1345,7 @@ HWTEST_F(DistributeddbNbBackupTest, CorruptionHandler001, TestSize.Level1)
 HWTEST_F(DistributeddbNbBackupTest, CorruptionHandler002, TestSize.Level2)
 {
     EXPECT_TRUE(g_nbBackupDelegate->Put(KEY_1, VALUE_1) == OK);
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath = exportPath + "/bkpDB.bin";
     EXPECT_TRUE(g_nbBackupDelegate->Export(filePath, g_filePasswd1) == OK);
@@ -1387,7 +1404,7 @@ HWTEST_F(DistributeddbNbBackupTest, CorruptionHandler002, TestSize.Level2)
 HWTEST_F(DistributeddbNbBackupTest, CorruptionHandler003, TestSize.Level2)
 {
     EXPECT_TRUE(g_nbBackupDelegate->Put(KEY_1, VALUE_1) == OK);
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath = exportPath + "/bkpDB.bin";
     EXPECT_TRUE(g_nbBackupDelegate->Export(filePath, g_filePasswd1) == OK);
@@ -1397,8 +1414,9 @@ HWTEST_F(DistributeddbNbBackupTest, CorruptionHandler003, TestSize.Level2)
      * @tc.expected: step1. call successfully.
      */
     KvStoreNbCorruptInfo corruptInfo;
+    bool isCalled = false;
     auto notifier = bind(&KvStoreNbCorruptInfo::CorruptCallBack, &corruptInfo,
-        placeholders::_1, placeholders::_2, placeholders::_3);
+        placeholders::_1, placeholders::_2, placeholders::_3, std::ref(isCalled));
     g_manager->SetKvStoreCorruptionHandler(notifier);
 
     /**
@@ -1454,4 +1472,47 @@ HWTEST_F(DistributeddbNbBackupTest, CorruptionHandler003, TestSize.Level2)
     manager = nullptr;
     RemoveDir(exportPath);
 }
+#ifndef RUNNING_ON_SIMULATED_ENV
+/*
+ * @tc.name: CompatibilityTest 001
+ * @tc.desc: test that use RELEASE_VERSION11.0.0 can import the export file by RELEASE_VERSION10.1.0.
+ * @tc.type: Compatibility
+ * @tc.require: SR000EPA24
+ * @tc.author: fengxiaoyun
+ */
+#ifdef NB_BACKUP
+HWTEST_F(DistributeddbNbBackupTest, CompatibilityTest001, TestSize.Level3)
+{
+    const std::string exportPath = "/data/";
+    std::string filePath = exportPath + "/RELEASE_VERSION1010.bin";
+#define COMPATIBILITYTEST_001
+#ifndef COMPATIBILITYTEST_001
+    /**
+     * @tc.steps: step1. create the db and put some data then export in RELEASE_VERSION10.1.0.
+     * @tc.expected: step1. operate successfully.
+     */
+    EXPECT_TRUE(g_nbBackupDelegate->PutLocal(KEY_1, VALUE_1) == OK);
+    EXPECT_TRUE(g_nbBackupDelegate->Put(KEY_1, VALUE_1) == OK);
+    EXPECT_TRUE(g_nbBackupDelegate->PutLocal(KEY_2, VALUE_1) == OK);
+    EXPECT_TRUE(g_nbBackupDelegate->Put(KEY_2, VALUE_2) == OK);
+    EXPECT_TRUE(g_nbBackupDelegate->Delete(KEY_2) == OK);
+    EXPECT_TRUE(g_nbBackupDelegate->Export(filePath, NULL_PASSWD) == OK);
+#else
+    /**
+     * @tc.steps: step2. import the export file by step1 and check data.
+     * @tc.expected: step2. import successfully.
+     */
+    EXPECT_TRUE(g_nbBackupDelegate->Import(filePath, NULL_PASSWD) == OK);
+    Value resultValue;
+    EXPECT_TRUE(g_nbBackupDelegate->GetLocal(KEY_1, resultValue) == OK);
+    EXPECT_TRUE(resultValue == VALUE_1);
+    EXPECT_TRUE(g_nbBackupDelegate->GetLocal(KEY_2, resultValue) == OK);
+    EXPECT_TRUE(resultValue == VALUE_1);
+    EXPECT_TRUE(g_nbBackupDelegate->Get(KEY_1, resultValue) == OK);
+    EXPECT_TRUE(resultValue == VALUE_1);
+    EXPECT_TRUE(g_nbBackupDelegate->Get(KEY_2, resultValue) == NOT_FOUND);
+#endif
+}
+#endif
+#endif
 }

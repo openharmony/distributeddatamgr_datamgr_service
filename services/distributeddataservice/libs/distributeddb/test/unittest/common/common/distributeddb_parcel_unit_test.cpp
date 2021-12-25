@@ -42,6 +42,7 @@ void DistributedDBParcelTest::TearDownTestCase(void)
 
 void DistributedDBParcelTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
 void DistributedDBParcelTest::TearDown(void)
@@ -55,7 +56,7 @@ void DistributedDBParcelTest::TearDown(void)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteInt001, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteInt001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a vector, and write it into a buffer;
@@ -112,7 +113,7 @@ HWTEST_F(DistributedDBParcelTest, WriteInt001, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteVector001, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteVector001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a vector, and write it into a buffer;
@@ -147,7 +148,7 @@ HWTEST_F(DistributedDBParcelTest, WriteVector001, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteVector002, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteVector002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create an empty vector, and write it into a buffer;
@@ -182,7 +183,7 @@ HWTEST_F(DistributedDBParcelTest, WriteVector002, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteVector003, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteVector003, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a vector, and write it into a buffer;
@@ -217,7 +218,7 @@ HWTEST_F(DistributedDBParcelTest, WriteVector003, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteVector004, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteVector004, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create an empty vector, and write it into a buffer;
@@ -252,7 +253,7 @@ HWTEST_F(DistributedDBParcelTest, WriteVector004, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteVector005, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteVector005, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a vector, and write it into a buffer;
@@ -288,7 +289,7 @@ HWTEST_F(DistributedDBParcelTest, WriteVector005, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteVector006, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteVector006, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create an empty vector, and write it into a buffer;
@@ -323,7 +324,7 @@ HWTEST_F(DistributedDBParcelTest, WriteVector006, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteVector007, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteVector007, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a vector, and write it into a buffer;
@@ -363,7 +364,7 @@ HWTEST_F(DistributedDBParcelTest, WriteVector007, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteVector008, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteVector008, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a vector, and write it into a buffer;
@@ -403,7 +404,7 @@ HWTEST_F(DistributedDBParcelTest, WriteVector008, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteVector009, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteVector009, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a vector, and write it into a buffer;
@@ -471,7 +472,7 @@ HWTEST_F(DistributedDBParcelTest, WriteVector010, TestSize.Level2)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteString001, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteString001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a string, and write it into a buffer;
@@ -505,7 +506,7 @@ HWTEST_F(DistributedDBParcelTest, WriteString001, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteString002, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteString002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a string, and write it into a buffer;
@@ -545,7 +546,7 @@ HWTEST_F(DistributedDBParcelTest, WriteString002, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteString003, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteString003, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a string, and write it into a buffer;
@@ -585,7 +586,7 @@ HWTEST_F(DistributedDBParcelTest, WriteString003, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteString004, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteString004, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a string, and write it into a buffer;
@@ -619,7 +620,7 @@ HWTEST_F(DistributedDBParcelTest, WriteString004, TestSize.Level0)
  * @tc.require: AR000CQE0U
  * @tc.author: weifeng
  */
-HWTEST_F(DistributedDBParcelTest, WriteString005, TestSize.Level0)
+HWTEST_F(DistributedDBParcelTest, WriteString005, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create a string, and write it into a buffer;

@@ -24,6 +24,12 @@ namespace DistributedDB {
 #ifndef OMIT_JSON
 namespace {
     const uint32_t MAX_NEST_DEPTH = 100;
+#ifdef JSONCPP_USE_BUILDER
+    const int JSON_VALUE_PRECISION = 16;
+    const std::string JSON_CONFIG_INDENTATION = "indentation";
+    const std::string JSON_CONFIG_COLLECT_COMMENTS = "collectComments";
+    const std::string JSON_CONFIG_PRECISION = "precision";
+#endif
 }
 uint32_t JsonObject::maxNestDepth_ = MAX_NEST_DEPTH;
 
@@ -94,6 +100,10 @@ JsonObject& JsonObject::operator=(const JsonObject &other)
     return *this;
 }
 
+JsonObject::JsonObject(const Json::Value &value) : isValid_(true), value_(value)
+{
+}
+
 int JsonObject::Parse(const std::string &inString)
 {
     // The jsoncpp lib parser in strict mode will still regard root type jsonarray as valid, but we require jsonobject
@@ -106,12 +116,28 @@ int JsonObject::Parse(const std::string &inString)
         LOGE("[Json][Parse] Json nest depth=%u exceed max allowed=%u.", nestDepth, maxNestDepth_);
         return -E_JSON_PARSE_FAIL;
     }
+#ifdef JSONCPP_USE_BUILDER
+    JSONCPP_STRING errs;
+    Json::CharReaderBuilder builder;
+    Json::CharReaderBuilder::strictMode(&builder.settings_);
+    builder[JSON_CONFIG_COLLECT_COMMENTS] = false;
+    std::unique_ptr<Json::CharReader> const jsonReader(builder.newCharReader());
+
+    auto begin = reinterpret_cast<const std::string::value_type *>(inString.c_str());
+    auto end = reinterpret_cast<const std::string::value_type *>(inString.c_str() + inString.length());
+    if (!jsonReader->parse(begin, end, &value_, &errs)) {
+        value_ = Json::Value();
+        LOGE("[Json][Parse] Parse string to JsonValue fail, reason=%s.", errs.c_str());
+        return -E_JSON_PARSE_FAIL;
+    }
+#else
     Json::Reader reader(Json::Features::strictMode());
     if (!reader.parse(inString, value_, false)) {
         value_ = Json::Value();
         LOGE("[Json][Parse] Parse string to JsonValue fail, reason=%s.", reader.getFormattedErrorMessages().c_str());
         return -E_JSON_PARSE_FAIL;
     }
+#endif
     // The jsoncpp lib parser in strict mode will still regard root type jsonarray as valid, but we require jsonobject
     if (value_.type() != Json::ValueType::objectValue) {
         value_ = Json::Value();
@@ -144,6 +170,22 @@ int JsonObject::Parse(const uint8_t *dataBegin, const uint8_t *dataEnd)
         LOGE("[Json][Parse] Json nest depth=%u exceed max allowed=%u.", nestDepth, maxNestDepth_);
         return -E_JSON_PARSE_FAIL;
     }
+#ifdef JSONCPP_USE_BUILDER
+    auto begin = reinterpret_cast<const std::string::value_type *>(dataBegin);
+    auto end = reinterpret_cast<const std::string::value_type *>(dataEnd);
+
+    JSONCPP_STRING errs;
+    Json::CharReaderBuilder builder;
+    Json::CharReaderBuilder::strictMode(&builder.settings_);
+    builder[JSON_CONFIG_COLLECT_COMMENTS] = false;
+    std::unique_ptr<Json::CharReader> const jsonReader(builder.newCharReader());
+    // The endDoc parameter of reader::parse refer to the byte after the string itself
+    if (!jsonReader->parse(begin, end, &value_, &errs)) {
+        value_ = Json::Value();
+        LOGE("[Json][Parse] Parse dataRange to JsonValue fail, reason=%s.", errs.c_str());
+        return -E_JSON_PARSE_FAIL;
+    }
+#else
     Json::Reader reader(Json::Features::strictMode());
     auto begin = reinterpret_cast<const std::string::value_type *>(dataBegin);
     auto end = reinterpret_cast<const std::string::value_type *>(dataEnd);
@@ -153,6 +195,7 @@ int JsonObject::Parse(const uint8_t *dataBegin, const uint8_t *dataEnd)
         LOGE("[Json][Parse] Parse dataRange to JsonValue fail, reason=%s.", reader.getFormattedErrorMessages().c_str());
         return -E_JSON_PARSE_FAIL;
     }
+#endif
     // The jsoncpp lib parser in strict mode will still regard root type jsonarray as valid, but we require jsonobject
     if (value_.type() != Json::ValueType::objectValue) {
         value_ = Json::Value();
@@ -174,12 +217,23 @@ std::string JsonObject::ToString() const
         LOGE("[Json][ToString] Not Valid Yet.");
         return std::string();
     }
+#ifdef JSONCPP_USE_BUILDER
+    Json::StreamWriterBuilder writerBuilder;
+    writerBuilder[JSON_CONFIG_INDENTATION] = "";
+    writerBuilder[JSON_CONFIG_PRECISION] = JSON_VALUE_PRECISION;
+    std::unique_ptr<Json::StreamWriter> const jsonWriter(writerBuilder.newStreamWriter());
+    std::stringstream ss;
+    jsonWriter->write(value_, &ss);
+    // The endingLineFeedSymbol is left empty by default.
+    return ss.str();
+#else
     Json::FastWriter fastWriter;
     // Call omitEndingLineFeed to let JsonCpp not append an \n at the end of string. If not doing so, when passing a
     // minified jsonString, the result of this function will be one byte longer then the original, which may cause the
     // result checked as length invalid by upper logic when the original length is just at the limitation boundary.
     fastWriter.omitEndingLineFeed();
     return fastWriter.write(value_);
+#endif
 }
 
 bool JsonObject::IsFieldPathExist(const FieldPath &inPath) const
@@ -395,6 +449,18 @@ bool InsertFieldCheckParameter(const FieldPath &inPath, FieldType inType, const 
     return true;
 }
 
+void LeafJsonNodeAppendValue(Json::Value &leafNode, FieldType inType, const FieldValue &inValue)
+{
+    switch (inType) {
+        case FieldType::LEAF_FIELD_STRING:
+            leafNode.append(Json::Value(inValue.stringValue));
+            break;
+        default:
+            // Do nothing.
+            break;
+    }
+}
+
 // Function design for InsertField call on an null-type Json::Value
 void LeafJsonNodeAssignValue(Json::Value &leafNode, FieldType inType, const FieldValue &inValue)
 {
@@ -427,21 +493,12 @@ void LeafJsonNodeAssignValue(Json::Value &leafNode, FieldType inType, const Fiel
 }
 }
 
-int JsonObject::InsertField(const FieldPath &inPath, FieldType inType, const FieldValue &inValue)
+// move the nearest to the leaf of inPath, if not exist, will create it, else it should be an array object.
+int JsonObject::MoveToPath(const FieldPath &inPath, Json::Value *&exact, Json::Value *&nearest)
 {
-    if (!InsertFieldCheckParameter(inPath, inType, inValue, maxNestDepth_)) {
-        return -E_INVALID_ARGS;
-    }
-    if (!isValid_) {
-        // Insert on invalid object never fail after parameter check ok, so here no need concern rollback.
-        value_ = Json::Value(Json::ValueType::objectValue);
-        isValid_ = true;
-    }
-    Json::Value *exact = nullptr;
-    Json::Value *nearest = nullptr;
     uint32_t nearDepth = 0;
     int errCode = LocateJsonValueByFieldPath(inPath, exact, nearest, nearDepth);
-    if (errCode != -E_NOT_FOUND) { // Path already exist
+    if (errCode != -E_NOT_FOUND) { // Path already exist and it's not an array object
         return -E_JSON_INSERT_PATH_EXIST;
     }
     // nearDepth 0 represent for root value. nearDepth equal to inPath.size indicate an exact path match
@@ -457,8 +514,55 @@ int JsonObject::InsertField(const FieldPath &inPath, FieldType inType, const Fie
         // object-type after member adding. Then move "nearest" to point to the new JsonValue.
         nearest = &((*nearest)[inPath[lackFieldIndex]]);
     }
+    return E_OK;
+}
+
+int JsonObject::InsertField(const FieldPath &inPath, const JsonObject &inValue, bool isAppend)
+{
+    if (inPath.empty() || inPath.size() > maxNestDepth_|| !inValue.IsValid()) {
+        return -E_INVALID_ARGS;
+    }
+    if (!isValid_) {
+        value_ = Json::Value(Json::ValueType::objectValue);
+        isValid_ = true;
+    }
+    Json::Value *exact = nullptr;
+    Json::Value *nearest = nullptr;
+    int errCode = MoveToPath(inPath, exact, nearest);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    LOGD("nearest type is %d", nearest->type());
+    if (isAppend || nearest->type() == Json::ValueType::arrayValue) {
+        nearest->append(inValue.value_);
+    } else {
+        *nearest = inValue.value_;
+    }
+    return E_OK;
+}
+
+int JsonObject::InsertField(const FieldPath &inPath, FieldType inType, const FieldValue &inValue, bool isAppend)
+{
+    if (!InsertFieldCheckParameter(inPath, inType, inValue, maxNestDepth_)) {
+        return -E_INVALID_ARGS;
+    }
+    if (!isValid_) {
+        // Insert on invalid object never fail after parameter check ok, so here no need concern rollback.
+        value_ = Json::Value(Json::ValueType::objectValue);
+        isValid_ = true;
+    }
+    Json::Value *exact = nullptr;
+    Json::Value *nearest = nullptr;
+    int errCode = MoveToPath(inPath, exact, nearest);
+    if (errCode != E_OK) {
+        return errCode;
+    }
     // Here "nearest" points to the JsonValue(null-type now) corresponding to the last field
-    LeafJsonNodeAssignValue(*nearest, inType, inValue);
+    if (isAppend || nearest->type() == Json::ValueType::arrayValue) {
+        LeafJsonNodeAppendValue(*nearest, inType, inValue);
+    } else {
+        LeafJsonNodeAssignValue(*nearest, inType, inValue);
+    }
     return E_OK;
 }
 
@@ -607,9 +711,51 @@ int JsonObject::LocateJsonValueByFieldPath(const FieldPath &inPath, Json::Value 
         }
         exact = &((*exact)[eachPathSegment]); // "exact" go deeper
     }
+    if (exact->type() == Json::ValueType::arrayValue) {
+        return -E_NOT_FOUND; // could append value if path is an array field.
+    }
     // Here, JsonValue exist at exact path, "nearest" is "exact" parent.
     return E_OK;
 }
+
+int JsonObject::GetObjectArrayByFieldPath(const FieldPath &inPath, std::vector<JsonObject> &outArray) const
+{
+    if (!isValid_) {
+        LOGE("[Json][GetValue] Not Valid Yet.");
+        return -E_NOT_PERMIT;
+    }
+    int errCode = E_OK;
+    const Json::Value &valueNode = GetJsonValueByFieldPath(inPath, errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    if (!valueNode.isArray()) {
+        LOGE("[Json][GetValue] Not Array type.");
+        return -E_NOT_PERMIT;
+    }
+    outArray.resize(valueNode.size());
+    for (Json::ArrayIndex i = 0; i < valueNode.size(); ++i) {
+        outArray.emplace_back(JsonObject(valueNode[i]));
+    }
+    return E_OK;
+}
+
+int JsonObject::GetStringArrayByFieldPath(const FieldPath &inPath, std::vector<std::string> &outArray) const
+{
+    if (!isValid_) {
+        LOGE("[Json][GetValue] Not Valid Yet.");
+        return -E_NOT_PERMIT;
+    }
+    int errCode = E_OK;
+    const Json::Value &valueNode = GetJsonValueByFieldPath(inPath, errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    return GetStringArrayContentByJsonValue(valueNode, outArray);
+}
+
 #else // OMIT_JSON
 uint32_t JsonObject::SetMaxNestDepth(uint32_t nestDepth)
 {
@@ -710,7 +856,17 @@ int JsonObject::InsertField(const FieldPath &inPath, FieldType inType, const Fie
     return -E_NOT_PERMIT;
 }
 
+int JsonObject::InsertField(const FieldPath &inPath, const JsonObject &inValue, bool isAppend = false)
+{
+    return -E_NOT_PERMIT;
+}
+
 int JsonObject::DeleteField(const FieldPath &inPath)
+{
+    return -E_NOT_PERMIT;
+}
+
+int JsonObject::GetArrayValueByFieldPath(const FieldPath &inPath, JsonObject &outArray) const
 {
     return -E_NOT_PERMIT;
 }

@@ -16,12 +16,13 @@
 #include "single_ver_sync_task_context.h"
 
 #include <algorithm>
-
+#include "db_common.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "isyncer.h"
 #include "single_ver_sync_state_machine.h"
 #include "single_ver_sync_target.h"
+#include "sync_types.h"
 
 namespace DistributedDB {
 SingleVerSyncTaskContext::SingleVerSyncTaskContext()
@@ -34,10 +35,11 @@ SingleVerSyncTaskContext::SingleVerSyncTaskContext()
 SingleVerSyncTaskContext::~SingleVerSyncTaskContext()
 {
     token_ = nullptr;
+    subManager_ = nullptr;
 }
 
 int SingleVerSyncTaskContext::Initialize(const std::string &deviceId,
-    IKvDBSyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata, ICommunicator *communicator)
+    ISyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata, ICommunicator *communicator)
 {
     if (deviceId.empty() || syncInterface == nullptr || metadata == nullptr ||
         communicator == nullptr) {
@@ -91,15 +93,23 @@ int SingleVerSyncTaskContext::AddSyncOperation(SyncOperation *operation)
     // If auto sync, just update the end watermark
     if (operation->IsAutoSync()) {
         std::lock_guard<std::mutex> lock(targetQueueLock_);
-        auto iter = std::find_if(requestTargetQueue_.begin(), requestTargetQueue_.end(), [](const ISyncTarget *target) {
+        bool isQuerySync = operation->IsQuerySync();
+        std::string queryId = operation->GetQueryId();
+        auto iter = std::find_if(requestTargetQueue_.begin(), requestTargetQueue_.end(),
+            [isQuerySync, queryId](const ISyncTarget *target) {
             if (target == nullptr) {
                 return false;
+            }
+            if (isQuerySync) {
+                SyncOperation *tmpOperation = nullptr;
+                target->GetSyncOperation(tmpOperation);
+                return (tmpOperation != nullptr && tmpOperation->GetQueryId() == queryId) && target->IsAutoSync();
             }
             return target->IsAutoSync();
         });
         if (iter != requestTargetQueue_.end()) {
             static_cast<SingleVerSyncTarget *>(*iter)->SetEndWaterMark(timeHelper_->GetTime());
-            operation->SetStatus(deviceId_, SyncOperation::FINISHED_ALL);
+            operation->SetStatus(deviceId_, SyncOperation::OP_FINISHED_ALL);
             return E_OK;
         }
     }
@@ -176,15 +186,17 @@ uint32_t SingleVerSyncTaskContext::GetResponseSessionId() const
     return responseSessionId_;
 }
 
-void SingleVerSyncTaskContext::CopyTargetData(const ISyncTarget *target)
+void SingleVerSyncTaskContext::CopyTargetData(const ISyncTarget *target, const TaskParam &taskParam)
 {
     const SingleVerSyncTarget *targetTmp = static_cast<const SingleVerSyncTarget *>(target);
-    SyncTaskContext::CopyTargetData(target);
+    SyncTaskContext::CopyTargetData(target, taskParam);
     mode_ = targetTmp->GetMode();
     endMark_ = targetTmp->GetEndWaterMark();
-    if (mode_ == SyncOperation::RESPONSE_PULL) {
+    if (mode_ == SyncModeType::RESPONSE_PULL) {
         responseSessionId_ = targetTmp->GetResponseSessionId();
     }
+    query_ = targetTmp->GetQuery();
+    isQuerySync_ = targetTmp->IsQuerySync();
 }
 
 void SingleVerSyncTaskContext::Clear()
@@ -192,12 +204,14 @@ void SingleVerSyncTaskContext::Clear()
     retryTime_ = 0;
     ClearSyncOperation();
     SyncTaskContext::Clear();
-    SetMode(SyncOperation::INVALID);
+    SetMode(SyncModeType::INVALID_MODE);
     syncId_ = 0;
     isAutoSync_ = false;
-    SetOperationStatus(SyncOperation::WAITING);
+    SetOperationStatus(SyncOperation::OP_WAITING);
     SetEndMark(0);
     SetResponseSessionId(0);
+    query_ = QuerySyncObject();
+    isQuerySync_ = false;
 }
 
 void SingleVerSyncTaskContext::Abort(int status)
@@ -206,7 +220,7 @@ void SingleVerSyncTaskContext::Abort(int status)
         std::lock_guard<std::mutex> lock(operationLock_);
         if (syncOperation_ != nullptr) {
             syncOperation_->SetStatus(deviceId_, status);
-            if ((status >= SyncOperation::FINISHED_ALL)) {
+            if ((status >= SyncOperation::OP_FINISHED_ALL)) {
                 UnlockObj();
                 if (syncOperation_->CheckIsAllFinished()) {
                     syncOperation_->Finished();
@@ -218,6 +232,59 @@ void SingleVerSyncTaskContext::Abort(int status)
     StopFeedDogForSync(SyncDirectionFlag::SEND);
     StopFeedDogForSync(SyncDirectionFlag::RECEIVE);
     Clear();
+}
+
+void SingleVerSyncTaskContext::ClearAllSyncTask()
+{
+    // clear request queue sync task and responsequeue first.
+    std::list<ISyncTarget *> targetQueue;
+    {
+        std::lock_guard<std::mutex> lock(targetQueueLock_);
+        LOGI("[SingleVerSyncTaskContext] request taskcount=%d，responsecount=%d", requestTargetQueue_.size(),
+            responseTargetQueue_.size());
+        while (!requestTargetQueue_.empty()) {
+            ISyncTarget *tmpTarget = nullptr;
+            tmpTarget = requestTargetQueue_.front();
+            requestTargetQueue_.pop_front();
+            targetQueue.push_back(tmpTarget);
+        }
+        while (!responseTargetQueue_.empty()) {
+            ISyncTarget *tmpTarget = nullptr;
+            tmpTarget = responseTargetQueue_.front();
+            responseTargetQueue_.pop_front();
+            delete tmpTarget;
+            tmpTarget = nullptr;
+        }
+    }
+    while (!targetQueue.empty()) {
+        ISyncTarget *target = nullptr;
+        target = targetQueue.front();
+        targetQueue.pop_front();
+        SyncOperation *tmpOperation = nullptr;
+        target->GetSyncOperation(tmpOperation);
+        if (tmpOperation == nullptr) {
+            LOGE("[ClearAllSyncTask] tmpOperation is nullptr");
+            continue; // not exit this scene
+        }
+        LOGI("[SingleVerSyncTaskContext] killing syncId=%d,dev=%s", tmpOperation->GetSyncId(), STR_MASK(deviceId_));
+        if (target->IsAutoSync()) {
+            tmpOperation->SetStatus(deviceId_, SyncOperation::OP_FINISHED_ALL);
+        } else {
+            tmpOperation->SetStatus(deviceId_, SyncOperation::OP_COMM_ABNORMAL);
+        }
+        if (tmpOperation->CheckIsAllFinished()) {
+            tmpOperation->Finished();
+        }
+        delete target;
+        target = nullptr;
+    }
+    if (GetTaskExecStatus() == SyncTaskContext::RUNNING) {
+        // clear syncing task.
+        isCommNormal_ = false;
+        stateMachine_->CommErrAbort();
+    }
+    // reset last push status for sync merge
+    ResetLastPushTaskStatus();
 }
 
 void SingleVerSyncTaskContext::EnableClearRemoteStaleData(bool enable)
@@ -240,21 +307,16 @@ void SingleVerSyncTaskContext::StopFeedDogForSync(SyncDirectionFlag flag)
     stateMachine_->StopFeedDogForSync(flag);
 }
 
-void SingleVerSyncTaskContext::SetSequenceStartAndEndTimeStamp(TimeStamp start, TimeStamp end)
+void SingleVerSyncTaskContext::SetSequenceStartAndEndTimeStamp(SyncTimeRange dataTimeRange)
 {
-    sequenceStartTimeStamp_ = start;
-    sequenceEndTimeStamp_ = end;
+    dataTimeRange_ = dataTimeRange;
 }
 
-TimeStamp SingleVerSyncTaskContext::GetSequenceStartTimeStamp() const
+SyncTimeRange SingleVerSyncTaskContext::GetDataTimeRange() const
 {
-    return sequenceStartTimeStamp_;
+    return dataTimeRange_;
 }
 
-TimeStamp SingleVerSyncTaskContext::GetSequenceEndTimeStamp() const
-{
-    return sequenceEndTimeStamp_;
-}
 
 void SingleVerSyncTaskContext::SetSessionEndTimeStamp(TimeStamp end)
 {
@@ -341,12 +403,190 @@ bool SingleVerSyncTaskContext::GetIsSchemaSync() const
 
 bool SingleVerSyncTaskContext::IsSkipTimeoutError(int errCode) const
 {
-    if (errCode == -E_TIMEOUT && IsAutoSync() && (GetRetryTime() < ISyncStateMachine::RETRY_TIME)) {
+    if (errCode == -E_TIMEOUT && IsSyncTaskNeedRetry() && (GetRetryTime() < GetSyncRetryTimes())) {
         LOGE("[SingleVerSyncTaskContext] send message timeout error occurred");
         return true;
     } else {
         return false;
     }
 }
+
+bool SingleVerSyncTaskContext::FindResponseSyncTarget(uint32_t responseSessionId) const
+{
+    std::lock_guard<std::mutex> lock(targetQueueLock_);
+    auto iter = std::find_if(responseTargetQueue_.begin(), responseTargetQueue_.end(),
+        [responseSessionId](const ISyncTarget *target) {
+            return target->GetResponseSessionId() == responseSessionId;
+        });
+    if (iter == responseTargetQueue_.end()) {
+        return false;
+    }
+    return true;
+}
+
+void SingleVerSyncTaskContext::SetQuery(const QuerySyncObject &query)
+{
+    query_ = query;
+}
+
+const QuerySyncObject &SingleVerSyncTaskContext::GetQuery() const
+{
+    return query_;
+}
+
+void SingleVerSyncTaskContext::SetQuerySync(bool isQuerySync)
+{
+    isQuerySync_ = isQuerySync;
+}
+
+bool SingleVerSyncTaskContext::IsQuerySync() const
+{
+    return isQuerySync_;
+}
+
+std::set<CompressAlgorithm> SingleVerSyncTaskContext::GetRemoteCompressAlgo() const
+{
+    std::set<CompressAlgorithm> compressAlgoSet;
+    for (const auto &algo : COMPRESSALGOMAP) {
+        if (remoteDbAbility_.GetAbilityItem(algo.second) == SUPPORT_MARK) {
+            compressAlgoSet.insert(static_cast<CompressAlgorithm>(algo.first));
+        }
+    }
+    return compressAlgoSet;
+}
+
+std::string SingleVerSyncTaskContext::GetRemoteCompressAlgoStr() const
+{
+    static std::map<CompressAlgorithm, std::string> algoMap = {{CompressAlgorithm::ZLIB, "zlib"}};
+    std::set<CompressAlgorithm> remoteCompressAlgoSet = GetRemoteCompressAlgo();
+    if (remoteCompressAlgoSet.size() == 0) {
+        return "none";
+    }
+    std::string currentAlgoStr;
+    for (const auto &algo : remoteCompressAlgoSet) {
+        auto iter = algoMap.find(algo);
+        if (iter != algoMap.end()) {
+            currentAlgoStr += algoMap[algo] + ",";
+        }
+    }
+    return currentAlgoStr.substr(0, currentAlgoStr.length() - 1);
+}
+
+void SingleVerSyncTaskContext::SetDbAbility(DbAbility &remoteDbAbility)
+{
+    remoteDbAbility_ = remoteDbAbility;
+    LOGI("[SingleVerSyncTaskContext] set dev=%s compressAlgo=%s, IsSupAllPredicateQuery=%u, IsSupSubscribeQuery=%u",
+        STR_MASK(GetDeviceId()), GetRemoteCompressAlgoStr().c_str(), remoteDbAbility.GetAbilityItem(ALLPREDICATEQUERY),
+        remoteDbAbility.GetAbilityItem(SUBSCRIBEQUERY));
+}
+
+CompressAlgorithm SingleVerSyncTaskContext::ChooseCompressAlgo() const
+{
+    std::set<CompressAlgorithm> remoteAlgo = GetRemoteCompressAlgo();
+    if (remoteAlgo.size() == 0) {
+        return CompressAlgorithm::NONE;
+    }
+    std::set<CompressAlgorithm> localAlgorithmSet;
+    (void)(static_cast<SingleVerKvDBSyncInterface *>(syncInterface_))->GetCompressionAlgo(localAlgorithmSet);
+    std::set<CompressAlgorithm> algoIntersection;
+    set_intersection(remoteAlgo.begin(), remoteAlgo.end(), localAlgorithmSet.begin(), localAlgorithmSet.end(),
+        inserter(algoIntersection, algoIntersection.begin()));
+    if (algoIntersection.size() == 0) {
+        return CompressAlgorithm::NONE;
+    }
+    return *(algoIntersection.begin());
+}
+
+const DbAbility& SingleVerSyncTaskContext::GetRemoteDbAbility() const
+{
+    return remoteDbAbility_;
+}
+
+void SingleVerSyncTaskContext::SetSubscribeManager(std::shared_ptr<SubscribeManager> &subManager)
+{
+    subManager_ = subManager;
+}
+
+std::shared_ptr<SubscribeManager> SingleVerSyncTaskContext::GetSubscribeManager() const
+{
+    return subManager_;
+}
 DEFINE_OBJECT_TAG_FACILITIES(SingleVerSyncTaskContext)
+
+bool SingleVerSyncTaskContext::IsCurrentSyncTaskCanBeSkipped() const
+{
+    if (mode_ == SyncModeType::PUSH) {
+        if (lastFullSyncTaskStatus_ != SyncOperation::OP_FINISHED_ALL) {
+            return false;
+        }
+    } else if (mode_ == SyncModeType::QUERY_PUSH) {
+        auto it = lastQuerySyncTaskStatusMap_.find(syncOperation_->GetQueryId());
+        if (it == lastQuerySyncTaskStatusMap_.end()) {
+            // no last query_push and push
+            if (lastFullSyncTaskStatus_ != SyncOperation::OP_FINISHED_ALL) {
+                LOGD("no prev query push or successful prev push");
+                return false;
+            }
+        } else {
+            if (it->second != SyncOperation::OP_FINISHED_ALL) {
+                LOGD("last query push status = %d.", it->second);
+                return false;
+            }
+        }
+    } else {
+        return false;
+    }
+
+    TimeStamp maxTimeStampInDb;
+    syncInterface_->GetMaxTimeStamp(maxTimeStampInDb);
+    uint64_t localWaterMark = 0;
+    int errCode = GetCorrectedSendWaterMarkForCurrentTask(localWaterMark);
+    if (errCode != E_OK) {
+        LOGE("GetLocalWaterMark in state machine failed: %d", errCode);
+        return false;
+    }
+    if (localWaterMark > maxTimeStampInDb) {
+        LOGD("skip current push task, deviceId_ = %s, localWaterMark = %llu, maxTimeStampInDb = %llu",
+            STR_MASK(deviceId_), localWaterMark, maxTimeStampInDb);
+        return true;
+    }
+    return false;
+}
+
+void SingleVerSyncTaskContext::SaveLastPushTaskExecStatus(int finalStatus)
+{
+    if (IsTargetQueueEmpty()) {
+        LOGD("sync que is empty, reset last push status");
+        ResetLastPushTaskStatus();
+        return;
+    }
+    if (mode_ == SyncModeType::PUSH || mode_ == SyncModeType::PUSH_AND_PULL || mode_ == SyncModeType::RESPONSE_PULL) {
+        lastFullSyncTaskStatus_ = finalStatus;
+    } else if (mode_ == SyncModeType::QUERY_PUSH || mode_ == SyncModeType::QUERY_PUSH_PULL) {
+        lastQuerySyncTaskStatusMap_[syncOperation_->GetQueryId()] = finalStatus;
+    }
+}
+
+int SingleVerSyncTaskContext::GetCorrectedSendWaterMarkForCurrentTask(uint64_t &waterMark) const
+{
+    if (syncOperation_->IsQuerySync()) {
+        LOGD("Is QuerySync");
+        int errCode = static_cast<SingleVerSyncStateMachine *>(stateMachine_)->GetSendQueryWaterMark(
+            syncOperation_->GetQueryId(), deviceId_,
+            lastFullSyncTaskStatus_ == SyncOperation::OP_FINISHED_ALL, waterMark);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+    } else {
+        LOGD("Not QuerySync");
+        static_cast<SingleVerSyncStateMachine *>(stateMachine_)->GetLocalWaterMark(deviceId_, waterMark);
+    }
+    return E_OK;
+}
+
+void SingleVerSyncTaskContext::ResetLastPushTaskStatus()
+{
+    lastFullSyncTaskStatus_ = SyncOperation::OP_WAITING;
+    lastQuerySyncTaskStatusMap_.clear();
+}
 } // namespace DistributedDB

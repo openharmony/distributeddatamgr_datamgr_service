@@ -37,7 +37,7 @@ public:
     int Get(const Key &key, Value &value) const override;
 
     // Get the entries of the key set
-    int GetEntries(const Key &keyPrefix, std::vector<Entry> &entry) const override;
+    int GetEntries(const Key &keyPrefix, std::vector<Entry> &entries) const override;
 
     void Close();
 

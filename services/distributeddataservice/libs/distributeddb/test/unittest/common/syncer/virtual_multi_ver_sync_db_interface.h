@@ -16,10 +16,9 @@
 #ifndef VIRTUAL_MULTI_VER_SYNC_INTERFACE_H
 #define VIRTUAL_MULTI_VER_SYNC_INTERFACE_H
 
-#include "multi_ver_natural_store.h"
-
-#include "multi_ver_natural_store_connection.h"
 #include "distributeddb_tools_unit_test.h"
+#include "multi_ver_natural_store.h"
+#include "multi_ver_natural_store_connection.h"
 
 namespace DistributedDB {
 class VirtualMultiVerSyncDBInterface final : public MultiVerKvDBSyncInterface {
@@ -40,6 +39,12 @@ public:
     int GetMetaData(const Key &key, Value &value) const override;
 
     int PutMetaData(const Key &key, const Value &value) override;
+
+    // Delete multiple meta data records in a transaction.
+    int DeleteMetaData(const std::vector<Key> &keys) override;
+
+    // Delete multiple meta data records with key prefix in a transaction.
+    int DeleteMetaDataByPrefixKey(const Key &keyPrefix) const override;
 
     int GetAllMetaKeys(std::vector<Key> &keys) const override;
 

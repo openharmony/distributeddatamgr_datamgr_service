@@ -15,11 +15,10 @@
 
 #include <gtest/gtest.h>
 
+#include "db_common.h"
 #include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_unit_test.h"
-#include "db_errno.h"
 #include "log_print.h"
-#include "db_common.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -147,6 +146,7 @@ void DistributedDBInterfacesNBTransactionTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesNBTransactionTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_kvDelegateStatus = INVALID_ARGS;
     g_kvNbDelegatePtr = nullptr;
 }

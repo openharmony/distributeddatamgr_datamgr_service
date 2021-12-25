@@ -35,7 +35,6 @@ public:
         if (msg.empty()) {
             return;
         }
-
         const std::string format = "%{public}s";
         OHOS::HiviewDFX::HiLogLabel label = { LOG_CORE, 0xD001630, tag.c_str() }; // log module id.
         switch (level) {

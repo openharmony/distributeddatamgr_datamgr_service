@@ -61,7 +61,10 @@ namespace {
     const std::string BACK_KDF_ITER_CONFIG_SQL = "PRAGMA backup.codec_kdf_iter=5000;";
     const std::string META_CIPHER_CONFIG_SQL = "PRAGMA meta.codec_cipher=";
     const std::string META_KDF_ITER_CONFIG_SQL = "PRAGMA meta.codec_kdf_iter=5000;";
+
     const std::string DETACH_BACKUP_SQL = "DETACH 'backup'";
+    const std::string UPDATE_META_SQL = "INSERT OR REPLACE INTO meta_data VALUES (?, ?);";
+
     bool g_configLog = false;
     std::mutex g_logMutex;
 
@@ -82,6 +85,21 @@ namespace {
             LOGE("[SQLite] Error[%d], sys[%d]", err, errno);
         }
     }
+}
+
+namespace TriggerMode {
+const std::map<TriggerModeEnum, std::string> TRIGGER_MODE_MAP = {
+    {TriggerModeEnum::NONE,   ""},
+    {TriggerModeEnum::INSERT, "INSERT"},
+    {TriggerModeEnum::UPDATE, "UPDATE"},
+    {TriggerModeEnum::DELETE, "DELETE"},
+};
+
+std::string GetTriggerModeString(TriggerModeEnum mode)
+{
+    auto it = TRIGGER_MODE_MAP.find(mode);
+    return (it == TRIGGER_MODE_MAP.end()) ? "" : it->second;
+}
 }
 
 int SQLiteUtils::CreateDataBase(const OpenDbProperties &properties, sqlite3 *&dbTemp)
@@ -193,8 +211,8 @@ int SQLiteUtils::BindTextToStatement(sqlite3_stmt *statement, int index, const s
 
     // Check empty value.
     if (str.empty()) {
-        LOGI("[SQLiteUtil][Bind Text] Invalid value");
-        return -E_INVALID_ARGS;
+        sqlite3_bind_null(statement, index);
+        return E_OK;
     }
 
     int errCode = sqlite3_bind_text(statement, index, str.c_str(), str.length(), SQLITE_TRANSIENT);
@@ -344,7 +362,6 @@ int SQLiteUtils::BindPrefixKey(sqlite3_stmt *statement, int index, const Key &ke
         LOGE("Bind the prefix second error:%d", errCode);
         return SQLiteUtils::MapSQLiteErrno(errCode);
     }
-
     return E_OK;
 }
 
@@ -385,10 +402,15 @@ int SQLiteUtils::ExecuteRawSQL(sqlite3 *db, const std::string &sql)
     return SQLiteUtils::MapSQLiteErrno(errCode);
 }
 
-int SQLiteUtils::SetKey(sqlite3 *db, CipherType type, const CipherPassword &passwd)
+int SQLiteUtils::SetKey(sqlite3 *db, CipherType type, const CipherPassword &passwd, const bool &isMemDb)
 {
     if (db == nullptr) {
         return -E_INVALID_DB;
+    }
+
+    // in memory mode no need cipher
+    if (isMemDb) {
+        return E_OK;
     }
 
     if (passwd.GetSize() != 0) {
@@ -415,6 +437,9 @@ int SQLiteUtils::SetKey(sqlite3 *db, CipherType type, const CipherPassword &pass
         LOGE("[SQLiteUtils][Setkey] verify version failed:%d", errCode);
         if (errno == EKEYREVOKED) {
             return -E_EKEYREVOKED;
+        }
+        if (errCode == -E_BUSY) {
+            return errCode;
         }
         return -E_INVALID_PASSWD_OR_CORRUPTED_DB;
     }
@@ -443,7 +468,17 @@ int SQLiteUtils::GetColumnBlobValue(sqlite3_stmt *statement, int index, std::vec
     return E_OK;
 }
 
-int SQLiteUtils::AttachNewDatabase(sqlite3 *db, CipherType type, const CipherPassword &passwd,
+int SQLiteUtils::GetColumnTextValue(sqlite3_stmt *statement, int index, std::string &value)
+{
+    if (statement == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    const unsigned char *val = sqlite3_column_text(statement, index);
+    value = (val != nullptr) ? std::string(reinterpret_cast<const char *>(val)) : std::string();
+    return E_OK;
+}
+
+int SQLiteUtils::AttachNewDatabase(sqlite3 *db, CipherType type, const CipherPassword &password,
     const std::string &attachDbAbsPath, const std::string &attachAsName)
 {
     // example: "ATTACH '../new.db' AS backup KEY XXXX;"
@@ -462,8 +497,8 @@ int SQLiteUtils::AttachNewDatabase(sqlite3 *db, CipherType type, const CipherPas
         goto END;
     }
     // Passwords do not allow vector operations, so we can not use function BindBlobToStatement here.
-    errCode = sqlite3_bind_blob(statement, 2, static_cast<const void *>(passwd.GetData()),
-        passwd.GetSize(), SQLITE_TRANSIENT); // 2nd para is password.
+    errCode = sqlite3_bind_blob(statement, 2, static_cast<const void *>(password.GetData()),
+        password.GetSize(), SQLITE_TRANSIENT); // 2nd para is password.
     if (errCode != SQLITE_OK) {
         LOGE("Bind the attached key failed:%d", errCode);
         errCode = SQLiteUtils::MapSQLiteErrno(errCode);
@@ -500,6 +535,258 @@ int SQLiteUtils::CreateMetaDatabase(const std::string &metaDbPath)
     return errCode;
 }
 
+int SQLiteUtils::CheckIntegrity(sqlite3 *db, const std::string &sql)
+{
+    sqlite3_stmt *statement = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, statement);
+    if (errCode != E_OK) {
+        LOGE("Prepare the integrity check statement error:%d", errCode);
+        return errCode;
+    }
+    int resultCnt = 0;
+    bool checkResultOK = false;
+    do {
+        errCode = SQLiteUtils::StepWithRetry(statement);
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            break;
+        } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+            auto result = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
+            if (result == nullptr) {
+                continue;
+            }
+            resultCnt = (resultCnt > 1) ? resultCnt : (resultCnt + 1);
+            if (strcmp(result, "ok") == 0) {
+                checkResultOK = true;
+            }
+        } else {
+            checkResultOK = false;
+            LOGW("Step for the integrity check failed:%d", errCode);
+            break;
+        }
+    } while (true);
+    if (resultCnt == 1 && checkResultOK) {
+        errCode = E_OK;
+    } else {
+        errCode = -E_INVALID_PASSWD_OR_CORRUPTED_DB;
+    }
+    SQLiteUtils::ResetStatement(statement, true, errCode);
+    return errCode;
+}
+#ifdef RELATIONAL_STORE
+namespace { // anonymous namespace for schema analysis
+int AnalysisSchemaSqlAndTrigger(sqlite3 *db, const std::string &tableName, TableInfo &table)
+{
+    std::string sql = "select type, name, tbl_name, rootpage, sql from sqlite_master where tbl_name = ?";
+    sqlite3_stmt *statement = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, statement);
+    if (errCode != E_OK) {
+        LOGE("[AnalysisSchema] Prepare the analysis schema sql and trigger statement error:%d", errCode);
+        return errCode;
+    }
+    errCode = SQLiteUtils::BindTextToStatement(statement, 1, tableName);
+    if (errCode != E_OK) {
+        LOGE("[AnalysisSchema] Bind table name failed:%d", errCode);
+        SQLiteUtils::ResetStatement(statement, true, errCode);
+        return errCode;
+    }
+
+    errCode = -E_NOT_FOUND;
+    std::vector<std::string> triggerList;
+    do {
+        int err = SQLiteUtils::StepWithRetry(statement);
+        if (err == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            break;
+        } else if (err == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+            errCode = E_OK;
+            std::string type;
+            (void) SQLiteUtils::GetColumnTextValue(statement, 0, type);
+            if (type == "table") {
+                std::string createTableSql;
+                (void) SQLiteUtils::GetColumnTextValue(statement, 4, createTableSql);
+                table.SetCreateTableSql(createTableSql);
+            } else if (type == "trigger") {
+                std::string triggerName;
+                (void) SQLiteUtils::GetColumnTextValue(statement, 1, triggerName);
+                table.AddTrigger(triggerName);
+            }
+        } else {
+            LOGW("[AnalysisSchema] Step for the analysis create table sql and trigger failed:%d", err);
+            break;
+        }
+    } while (true);
+    SQLiteUtils::ResetStatement(statement, true, errCode);
+    return errCode;
+}
+
+int GetSchemaIndexList(sqlite3 *db, const std::string &tableName, std::vector<std::string> &indexList,
+    std::vector<std::string> &uniqueList)
+{
+    std::string sql = "pragma index_list(" + tableName + ")";
+    sqlite3_stmt *statement = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, statement);
+    if (errCode != E_OK) {
+        LOGE("[AnalysisSchema] Prepare the get schema index list staement error:%d", errCode);
+        return errCode;
+    }
+
+    do {
+        errCode = SQLiteUtils::StepWithRetry(statement);
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            errCode = E_OK;
+            break;
+        } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+            std::string indexName;
+            (void) SQLiteUtils::GetColumnTextValue(statement, 1, indexName);
+            std::string origin;
+            (void) SQLiteUtils::GetColumnTextValue(statement, 3, origin);
+            if (origin == "u") {
+                uniqueList.push_back(indexName);
+            } else if (origin == "c") {
+                indexList.push_back(indexName);
+            }
+        } else {
+            LOGW("[AnalysisSchema] Step for the get schema index list failed:%d", errCode);
+            break;
+        }
+    } while (true);
+    SQLiteUtils::ResetStatement(statement, true, errCode);
+    return errCode;
+}
+
+int AnalysisSchemaIndexDefine(sqlite3 *db, const std::string &indexName, CompositeFields &indexDefine)
+{
+    auto sql = "pragma index_info(" + indexName + ")";
+    sqlite3_stmt *statement = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, statement);
+    if (errCode != E_OK) {
+        LOGE("[AnalysisSchema] Prepare the analysis schema index statement error:%d", errCode);
+        return errCode;
+    }
+
+    do {
+        errCode = SQLiteUtils::StepWithRetry(statement);
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            errCode = E_OK;
+            break;
+        } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+            std::string indexField;
+            (void) SQLiteUtils::GetColumnTextValue(statement, 2, indexField);
+            indexDefine.push_back(indexField);
+        } else {
+            LOGW("[AnalysisSchema] Step for the analysis schema index failed:%d", errCode);
+            break;
+        }
+    } while (true);
+
+    SQLiteUtils::ResetStatement(statement, true, errCode);
+    return errCode;
+}
+
+int AnalysisSchemaIndexAndUnique(sqlite3 *db, const std::string &tableName, TableInfo &table)
+{
+    std::vector<std::string> indexList;
+    std::vector<std::string> uniqueList;
+    int errCode = GetSchemaIndexList(db, tableName, indexList, uniqueList);
+    if (errCode != E_OK) {
+        LOGE("[AnalysisSchema] get schema index list failed.");
+        return errCode;
+    }
+
+    for (const auto &indexName : indexList) {
+        CompositeFields indexDefine;
+        errCode = AnalysisSchemaIndexDefine(db, indexName, indexDefine);
+        if (errCode != E_OK) {
+            LOGE("[AnalysisSchema] analysis schema index columns failed.");
+            return errCode;
+        }
+        table.AddIndexDefine(indexName, indexDefine);
+    }
+
+    for (const auto &uniqueName : uniqueList) {
+        CompositeFields uniqueDefine;
+        errCode = AnalysisSchemaIndexDefine(db, uniqueName, uniqueDefine);
+        if (errCode != E_OK) {
+            LOGE("[AnalysisSchema] analysis schema unique columns failed.");
+            return errCode;
+        }
+        table.AddUniqueDefine(uniqueDefine);
+    }
+
+    return E_OK;
+}
+
+int AnalysisSchemaFieldDefine(sqlite3 *db, const std::string &tableName, TableInfo &table)
+{
+    std::string sql = "pragma table_info(" + tableName + ")";
+    sqlite3_stmt *statement = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, statement);
+    if (errCode != E_OK) {
+        LOGE("[AnalysisSchema] Prepare the analysis schema field statement error:%d", errCode);
+        return errCode;
+    }
+    do {
+        errCode = SQLiteUtils::StepWithRetry(statement);
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            errCode = E_OK;
+            break;
+        } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+            FieldInfo field;
+            std::string tmpString;
+
+            field.SetColumnId(sqlite3_column_int(statement, 0));
+
+            (void) SQLiteUtils::GetColumnTextValue(statement, 1, tmpString);
+            field.SetFieldName(tmpString);
+
+            (void) SQLiteUtils::GetColumnTextValue(statement, 2, tmpString);
+            field.SetDataType(tmpString);
+
+            field.SetNotNull(static_cast<bool>(sqlite3_column_int64(statement, 3)));
+
+            (void) SQLiteUtils::GetColumnTextValue(statement, 4, tmpString);
+            if (!tmpString.empty()) {
+                field.SetDefaultValue(tmpString);
+            }
+
+            if (sqlite3_column_int64(statement, 5)) {
+                table.SetPrimaryKey(field.GetFieldName());
+            }
+            table.AddField(field);
+        } else {
+            LOGW("[AnalysisSchema] Step for the analysis schema field failed:%d", errCode);
+            break;
+        }
+    } while (true);
+
+    SQLiteUtils::ResetStatement(statement, true, errCode);
+    return errCode;
+}
+} // end of anonymous namespace for schema analysis
+
+int SQLiteUtils::AnalysisSchema(sqlite3 *db, const std::string &tableName, TableInfo &table)
+{
+    int errCode = AnalysisSchemaSqlAndTrigger(db, tableName, table);
+    if (errCode != E_OK) {
+        LOGE("[AnalysisSchema] Analysis sql and trigger failed. errCode = [%d]", errCode);
+        return errCode;
+    }
+
+    errCode = AnalysisSchemaIndexAndUnique(db, tableName, table);
+    if (errCode != E_OK) {
+        LOGE("[AnalysisSchema] Analysis index failed.");
+        return errCode;
+    }
+
+    errCode = AnalysisSchemaFieldDefine(db, tableName, table);
+    if (errCode != E_OK) {
+        LOGE("[AnalysisSchema] Analysis field failed.");
+        return errCode;
+    }
+
+    table.SetTableName(tableName);
+    return E_OK;
+}
+#endif
 #ifndef OMIT_ENCRYPT
 int SQLiteUtils::ExportDatabase(sqlite3 *db, CipherType type, const CipherPassword &passwd,
     const std::string &newDbName)
@@ -570,7 +857,8 @@ int SQLiteUtils::GetVersion(const OpenDbProperties &properties, int &version)
         LOGE("Open database failed: %d, sys:%d", errCode, errno);
         goto END;
     }
-    errCode = SQLiteUtils::SetKey(dbTemp, properties.cipherType, properties.passwd);
+
+    errCode = SQLiteUtils::SetKey(dbTemp, properties.cipherType, properties.passwd, properties.isMemDb);
     if (errCode != E_OK) {
         LOGE("Set key failed: %d", errCode);
         goto END;
@@ -936,10 +1224,157 @@ void SchemaObjectDestructor(SchemaObject *inObject)
     inObject = nullptr;
 }
 }
+#ifdef RELATIONAL_STORE
+int SQLiteUtils::RegisterCalcHash(sqlite3 *db)
+{
+    TransactFunc func;
+    func.xFunc = &CalcHashKey;
+    return SQLiteUtils::RegisterFunction(db, "calc_hash", 1, nullptr, func);
+}
 
+void SQLiteUtils::GetSysTime(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+{
+    if (ctx == nullptr || argc != 0) {
+        LOGE("Parameter does not meet restrictions.");
+        return;
+    }
+
+    sqlite3_result_int64(ctx, (sqlite3_int64)TimeHelper::GetSysCurrentTime());
+}
+
+int SQLiteUtils::RegisterGetSysTime(sqlite3 *db)
+{
+    TransactFunc func;
+    func.xFunc = &GetSysTime;
+    return SQLiteUtils::RegisterFunction(db, "get_sys_time", 0, nullptr, func);
+}
+
+int SQLiteUtils::CreateRelationalMetaTable(sqlite3 *db)
+{
+    std::string sql =
+        "CREATE TABLE IF NOT EXISTS distributeddatamgr_aux_metadata(" \
+        "key    BLOB PRIMARY KEY NOT NULL," \
+        "value  BLOB);";
+
+    int errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
+    if (errCode != E_OK) {
+        LOGE("[SQLite] execute create table sql failed");
+        return errCode;
+    }
+    return E_OK;
+}
+
+int SQLiteUtils::CreateRelationalLogTable(sqlite3 *db, const std::string &oriTableName)
+{
+    std::string sql =
+        "CREATE TABLE IF NOT EXISTS distributeddatamgr_aux_" + oriTableName + "_log(" \
+        "data_key    INT NOT NULL," \
+        "device      BLOB," \
+        "ori_device  BLOB," \
+        "timestamp   INT  NOT NULL," \
+        "wtimestamp  INT  NOT NULL," \
+        "flag        INT  NOT NULL," \
+        "hash_key    BLOB PRIMARY KEY NOT NULL);";
+
+    int errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
+    if (errCode != E_OK) {
+        LOGE("[SQLite] execute create table sql failed");
+        return errCode;
+    }
+    return E_OK;
+}
+
+template<typename ... Args>
+static std::string string_format(const std::string& format, Args ... args)
+{
+    auto size = static_cast<size_t>(1024); // trigger string total len need < 1024
+    auto buf = std::make_unique<char[]>(size);
+    (void)sprintf_s(buf.get(), size, format.c_str(), args ...);
+    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
+}
+
+int SQLiteUtils::AddRelationalLogTableTrigger(sqlite3 *db, const TableInfo &table)
+{
+    std::string insertTrigger =
+        "CREATE TRIGGER IF NOT EXISTS distributeddatamgr_%s_ON_INSERT AFTER INSERT \n" \
+        "ON %s\n" \
+        "BEGIN\n"  \
+            "\t INSERT OR REPLACE INTO distributeddatamgr_aux_%s_log \
+            (data_key, device, ori_device, timestamp, wtimestamp, flag, hash_key)" \
+            "VALUES (new.rowid, '%s', '%s', get_sys_time(), get_sys_time(), 0x02, calc_hash(new.%s));\n" \
+        "END;";
+    insertTrigger = string_format(insertTrigger, table.GetTableName().c_str(), table.GetTableName().c_str(),
+        table.GetTableName().c_str(), table.GetDevId().c_str(),
+        table.GetDevId().c_str(), table.GetPrimaryKey().c_str());
+    std::string updateTrigger =
+        "CREATE TRIGGER IF NOT EXISTS distributeddatamgr_%s_ON_UPDATE AFTER UPDATE \n" \
+        "ON %s\n" \
+        "BEGIN\n"  \
+            "\t UPDATE distributeddatamgr_aux_%s_log SET timestamp=get_sys_time(), device='%s' \
+            where hash_key=calc_hash(old.%s) and flag&0x10=0;\n" \
+        "END;";
+    updateTrigger = string_format(updateTrigger, table.GetTableName().c_str(), table.GetTableName().c_str(),
+        table.GetTableName().c_str(), table.GetDevId().c_str(), table.GetPrimaryKey().c_str());
+    std::string deleteTrigger =
+        "CREATE TRIGGER IF NOT EXISTS distributeddatamgr_%s_ON_DELETE BEFORE DELETE \n" \
+        "ON %s\n" \
+        "BEGIN\n"  \
+            "\t UPDATE distributeddatamgr_aux_%s_log set flag=0x03,timestamp=get_sys_time() \
+            WHERE hash_key=calc_hash(old.%s);\n" \
+        "END;";
+    deleteTrigger = string_format(deleteTrigger, table.GetTableName().c_str(),
+        table.GetTableName().c_str(), table.GetTableName().c_str(), table.GetPrimaryKey().c_str());
+
+    std::vector<std::string> sqls = {insertTrigger, updateTrigger, deleteTrigger};
+    // add insert trigger
+    // add update trigger
+    // add delete trigger
+    for (const auto &sql : sqls) {
+        int errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
+        if (errCode != E_OK) {
+            LOGE("[SQLite] execute create log trigger sql failed");
+            return errCode;
+        }
+    }
+    return E_OK;
+}
+
+int SQLiteUtils::CreateSameStuTable(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName,
+    bool isCopyData)
+{
+    std::string sql = "create table IF NOT EXISTS " + newTableName + " as select * from " + oriTableName;
+    if (!isCopyData) {
+        sql += " where 1=0 ";
+    }
+    sql += ";";
+    int errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
+    if (errCode != E_OK) {
+        LOGE("[SQLite] execute create table sql failed");
+        return errCode;
+    }
+    return E_OK;
+}
+
+int SQLiteUtils::RegisterFunction(sqlite3 *db, const std::string &funcName, int nArg, void *uData, TransactFunc &func)
+{
+    if (db == nullptr) {
+        LOGE("Sqlite DB not exists.");
+        return -E_INVALID_DB;
+    }
+
+    int errCode = sqlite3_create_function_v2(db, funcName.c_str(), nArg, SQLITE_UTF8 | SQLITE_DETERMINISTIC, uData,
+        func.xFunc, func.xStep, func.xFinal, func.xDestroy);
+    if (errCode != SQLITE_OK) {
+        LOGE("sqlite3_create_function_v2 about [%s] returned %d", funcName.c_str(), errCode);
+        return MapSQLiteErrno(errCode);
+    }
+    return E_OK;
+}
+#endif
 int SQLiteUtils::RegisterFlatBufferFunction(sqlite3 *db, const std::string &inSchema)
 {
     if (db == nullptr) {
+        LOGE("Sqlite DB not exists.");
         return -E_INVALID_DB;
     }
     auto heapSchemaObj = new (std::nothrow) SchemaObject;
@@ -970,6 +1405,70 @@ int SQLiteUtils::RegisterFlatBufferFunction(sqlite3 *db, const std::string &inSc
         return MapSQLiteErrno(errCode);
     }
     return E_OK;
+}
+
+void SQLiteUtils::UpdateMetaDataWithinTrigger(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+{
+    if (ctx == nullptr || argc != 2 || argv == nullptr) { // 2 : Number of parameters for sqlite register function
+        LOGE("[UpdateMetaDataWithinTrigger] Invalid parameter, argc=%d.", argc);
+        return;
+    }
+    auto *handle = static_cast<sqlite3 *>(sqlite3_user_data(ctx));
+    if (handle == nullptr) {
+        sqlite3_result_error(ctx, "Sqlite context is invalid.", USING_STR_LEN);
+        LOGE("Sqlite context is invalid.");
+        return;
+    }
+    auto *keyPtr = static_cast<const uint8_t *>(sqlite3_value_blob(argv[0])); // 0 : first argv for key
+    int keyLen = sqlite3_value_bytes(argv[0]); // 0 : first argv for key
+    if (keyPtr == nullptr || keyLen <= 0 || keyLen > static_cast<int>(DBConstant::MAX_KEY_SIZE)) {
+        sqlite3_result_error(ctx, "key is invalid.", USING_STR_LEN);
+        LOGE("key is invalid.");
+        return;
+    }
+    auto val = sqlite3_value_int64(argv[1]); // 1 : second argv for value
+
+    sqlite3_stmt *stmt = nullptr;
+    int errCode = SQLiteUtils::GetStatement(handle, UPDATE_META_SQL, stmt);
+    if (errCode != E_OK) {
+        sqlite3_result_error(ctx, "Get update meta_data statement failed.", USING_STR_LEN);
+        LOGE("Get update meta_data statement failed. %d", errCode);
+        return;
+    }
+
+    Key key(keyPtr, keyPtr + keyLen);
+    errCode = SQLiteUtils::BindBlobToStatement(stmt, BIND_KEY_INDEX, key, false);
+    if (errCode != E_OK) {
+        sqlite3_result_error(ctx, "Bind key to statement failed.", USING_STR_LEN);
+        LOGE("Bind key to statement failed. %d", errCode);
+        goto END;
+    }
+
+    errCode = SQLiteUtils::BindInt64ToStatement(stmt, BIND_VAL_INDEX, val);
+    if (errCode != E_OK) {
+        sqlite3_result_error(ctx, "Bind value to statement failed.", USING_STR_LEN);
+        LOGE("Bind value to statement failed. %d", errCode);
+        goto END;
+    }
+
+    errCode = SQLiteUtils::StepWithRetry(stmt, false);
+    if (errCode != SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+        sqlite3_result_error(ctx, "Execute the update meta_data attach failed.", USING_STR_LEN);
+        LOGE("Execute the update meta_data attach failed. %d", errCode);
+    }
+END:
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+}
+
+int SQLiteUtils::RegisterMetaDataUpdateFunction(sqlite3 *db)
+{
+    int errCode = sqlite3_create_function_v2(db, DBConstant::UPDATE_META_FUNC.c_str(),
+        2, // 2: argc for register function
+        SQLITE_UTF8 | SQLITE_DETERMINISTIC, db, &SQLiteUtils::UpdateMetaDataWithinTrigger, nullptr, nullptr, nullptr);
+    if (errCode != SQLITE_OK) {
+        LOGE("sqlite3_create_function_v2 about %s returned %d", DBConstant::UPDATE_META_FUNC.c_str(), errCode);
+    }
+    return SQLiteUtils::MapSQLiteErrno(errCode);
 }
 
 struct ValueParseCache {
@@ -1253,25 +1752,22 @@ int SQLiteUtils::GetDbSize(const std::string &dir, const std::string &dbName, ui
     std::string dataDir = dir + "/" + dbName + DBConstant::SQLITE_DB_EXTENSION;
     uint64_t localDbSize = 0;
     int errCode = OS::CalFileSize(dataDir, localDbSize);
-    if (errCode < 0) {
-        LOGE("Failed to get the db file size, errno:%d", errno);
-        if (errno == ENOENT) {
-            return -E_NOT_FOUND;
-        }
-        return -E_INVALID_DB;
+    if (errCode != E_OK) {
+        LOGD("Failed to get the db file size, errCode:%d", errCode);
+        return errCode;
     }
 
     std::string shmFileName = dataDir + "-shm";
     uint64_t localshmFileSize = 0;
     errCode = OS::CalFileSize(shmFileName, localshmFileSize);
-    if (errCode < 0) {
+    if (errCode != E_OK) {
         localshmFileSize = 0;
     }
 
     std::string walFileName = dataDir + "-wal";
     uint64_t localWalFileSize = 0;
     errCode = OS::CalFileSize(walFileName, localWalFileSize);
-    if (errCode < 0) {
+    if (errCode != E_OK) {
         localWalFileSize = 0;
     }
 
@@ -1341,7 +1837,8 @@ int SQLiteUtils::SetDataBaseProperty(sqlite3 *db, const OpenDbProperties &proper
     if (errCode != E_OK) {
         return errCode;
     }
-    errCode = SQLiteUtils::SetKey(db, properties.cipherType, properties.passwd);
+
+    errCode = SQLiteUtils::SetKey(db, properties.cipherType, properties.passwd, properties.isMemDb);
     if (errCode != E_OK) {
         LOGD("SQLiteUtils::SetKey fail!!![%d]", errCode);
         return errCode;
@@ -1399,4 +1896,29 @@ std::string SQLiteUtils::GetCipherName(CipherType type)
     return "";
 }
 #endif
+
+int SQLiteUtils::DropTriggerByName(sqlite3 *db, const std::string &name)
+{
+    const std::string dropTriggerSql = "DROP TRIGGER " + name + ";";
+    int errCode = SQLiteUtils::ExecuteRawSQL(db, dropTriggerSql);
+    if (errCode != E_OK) {
+        LOGE("Remove trigger failed. %d", errCode);
+    }
+    return errCode;
+}
+
+int SQLiteUtils::ExpandedSql(sqlite3_stmt *stmt, std::string &basicString)
+{
+    if (stmt == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    char *eSql = sqlite3_expanded_sql(stmt);
+    if (eSql == nullptr) {
+        LOGE("expand statement to sql failed.");
+        return -E_INVALID_DATA;
+    }
+    basicString = std::string(eSql);
+    sqlite3_free(eSql);
+    return E_OK;
+}
 } // namespace DistributedDB

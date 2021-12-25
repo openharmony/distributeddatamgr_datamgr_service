@@ -46,94 +46,105 @@ bool Parcel::IsError() const
     return isError_;
 }
 
-int Parcel::WriteInt(int32_t data)
+int Parcel::WriteBool(bool data)
 {
-    int32_t inData = HostToNet(data);
-    if (isError_ || parcelLen_ + sizeof(int32_t) > totalLen_) {
+    const uint32_t boolLen = GetBoolLen();
+    if (isError_ || parcelLen_ + boolLen > totalLen_) {
         isError_ = true;
         return -E_PARSE_FAIL;
     }
-    errno_t errCode = memcpy_s(bufPtr_, totalLen_ - parcelLen_, &inData, sizeof(int32_t));
+    errno_t errCode = memcpy_s(bufPtr_, totalLen_ - parcelLen_, &data, sizeof(bool));
     if (errCode != EOK) {
         isError_ = true;
         return -E_SECUREC_ERROR;
     }
-    bufPtr_ += sizeof(int32_t);
-    parcelLen_ += sizeof(int32_t);
-    return errCode;
+    bufPtr_ += boolLen;
+    parcelLen_ += boolLen;
+    return E_OK;
+}
+
+uint32_t Parcel::ReadBool(bool &val)
+{
+    const uint32_t boolLen = GetBoolLen();
+    if (isError_ || parcelLen_ + boolLen > totalLen_) {
+        isError_ = true;
+        return -E_PARSE_FAIL;
+    }
+    val = *(reinterpret_cast<bool *>(bufPtr_));
+    bufPtr_ += boolLen;
+    parcelLen_ += boolLen;
+    return boolLen;
+}
+
+int Parcel::WriteInt(int32_t data)
+{
+    return WriteInteger(data);
 }
 
 uint32_t Parcel::ReadInt(int32_t &val)
 {
-    if (isError_ || bufPtr_ == nullptr || parcelLen_ + sizeof(int32_t) > totalLen_) {
+    return ReadInteger(val);
+}
+
+
+int Parcel::WriteDouble(double data)
+{
+    double inData = HostToNet(data);
+    if (isError_ || parcelLen_ + sizeof(double) > totalLen_) {
+        isError_ = true;
+        return -E_PARSE_FAIL;
+    }
+    errno_t errCode = memcpy_s(bufPtr_, totalLen_ - parcelLen_, &inData, sizeof(double));
+    if (errCode != EOK) {
+        isError_ = true;
+        return -E_SECUREC_ERROR;
+    }
+    bufPtr_ += sizeof(double);
+    parcelLen_ += sizeof(double);
+    return E_OK;
+}
+
+uint32_t Parcel::ReadDouble(double &val)
+{
+    if (isError_ || bufPtr_ == nullptr || parcelLen_ + sizeof(double) > totalLen_) {
         isError_ = true;
         return 0;
     }
-    val = *(reinterpret_cast<int32_t *>(bufPtr_));
-    bufPtr_ += sizeof(int32_t);
-    parcelLen_ += sizeof(int32_t);
+    val = *(reinterpret_cast<double *>(bufPtr_));
+    bufPtr_ += sizeof(double);
+    parcelLen_ += sizeof(double);
     val = NetToHost(val);
-    return sizeof(int32_t);
+    return sizeof(double);
+}
+
+int Parcel::WriteInt64(int64_t data)
+{
+    return WriteInteger(data);
+}
+
+uint32_t Parcel::ReadInt64(int64_t &val)
+{
+    return ReadInteger(val);
 }
 
 int Parcel::WriteUInt32(uint32_t data)
 {
-    uint32_t inData = HostToNet(data);
-    if (isError_ || parcelLen_ + sizeof(uint32_t) > totalLen_) {
-        isError_ = true;
-        return -E_PARSE_FAIL;
-    }
-    errno_t errCode = memcpy_s(bufPtr_, totalLen_ - parcelLen_, &inData, sizeof(uint32_t));
-    if (errCode != EOK) {
-        isError_ = true;
-        return -E_SECUREC_ERROR;
-    }
-    bufPtr_ += sizeof(uint32_t);
-    parcelLen_ += sizeof(uint32_t);
-    return errCode;
+    return WriteInteger(data);
 }
 
 uint32_t Parcel::ReadUInt32(uint32_t &val)
 {
-    if (isError_ || bufPtr_ == nullptr || parcelLen_ + sizeof(uint32_t) > totalLen_) {
-        isError_ = true;
-        return 0;
-    }
-    val = *(reinterpret_cast<uint32_t *>(bufPtr_));
-    bufPtr_ += sizeof(uint32_t);
-    parcelLen_ += sizeof(uint32_t);
-    val = NetToHost(val);
-    return sizeof(uint32_t);
+    return ReadInteger(val);
 }
 
 int Parcel::WriteUInt64(uint64_t data)
 {
-    uint64_t inData = HostToNet(data);
-    if (isError_ || parcelLen_ + sizeof(uint64_t) > totalLen_) {
-        isError_ = true;
-        return -E_PARSE_FAIL;
-    }
-    errno_t errCode = memcpy_s(bufPtr_, totalLen_ - parcelLen_, &inData, sizeof(uint64_t));
-    if (errCode != EOK) {
-        isError_ = true;
-        return -E_SECUREC_ERROR;
-    }
-    bufPtr_ += sizeof(uint64_t);
-    parcelLen_ += sizeof(uint64_t);
-    return errCode;
+    return WriteInteger(data);
 }
 
 uint32_t Parcel::ReadUInt64(uint64_t &val)
 {
-    if (isError_ || bufPtr_ == nullptr || parcelLen_ + sizeof(uint64_t) > totalLen_) {
-        isError_ = true;
-        return 0;
-    }
-    val = *(reinterpret_cast<uint64_t *>(bufPtr_));
-    bufPtr_ += sizeof(uint64_t);
-    parcelLen_ += sizeof(uint64_t);
-    val = NetToHost(val);
-    return sizeof(uint64_t);
+    return ReadInteger(val);
 }
 
 int Parcel::WriteVectorChar(const std::vector<uint8_t>& data)
@@ -149,18 +160,24 @@ uint32_t Parcel::ReadVectorChar(std::vector<uint8_t>& val)
 int Parcel::WriteString(const std::string &inVal)
 {
     if (inVal.size() > INT32_MAX) {
+        LOGE("[WriteString] Invalid string, size:%zu.", inVal.size());
         isError_ = true;
+        return -E_PARSE_FAIL;
+    }
+    if (IsError()) {
         return -E_PARSE_FAIL;
     }
     uint32_t len = inVal.size();
     uint64_t stepLen = sizeof(uint32_t) + static_cast<uint64_t>(inVal.size());
     len = HostToNet(len);
-    if (isError_ || stepLen > INT32_MAX || parcelLen_ + BYTE_8_ALIGN(stepLen) > totalLen_) {
+    if (stepLen > INT32_MAX || parcelLen_ + BYTE_8_ALIGN(stepLen) > totalLen_) {
+        LOGE("[WriteString] stepLen:%llu, totalLen:%llu, parcelLen:%llu", stepLen, totalLen_, parcelLen_);
         isError_ = true;
         return -E_PARSE_FAIL;
     }
     errno_t errCode = memcpy_s(bufPtr_, totalLen_ - parcelLen_, &len, sizeof(uint32_t));
     if (errCode != EOK) {
+        LOGE("[WriteString] bufPtr:%d, totalLen:%llu, parcelLen:%llu", bufPtr_ != nullptr, totalLen_, parcelLen_);
         isError_ = true;
         return -E_SECUREC_ERROR;
     }
@@ -172,18 +189,24 @@ int Parcel::WriteString(const std::string &inVal)
     }
     errCode = memcpy_s(bufPtr_, totalLen_ - parcelLen_ - sizeof(uint32_t), inVal.c_str(), inVal.size());
     if (errCode != EOK) {
+        LOGE("[WriteString] totalLen:%llu, parcelLen:%llu, inVal.size:%zu.",
+            totalLen_, parcelLen_, inVal.size());
         isError_ = true;
         return -E_SECUREC_ERROR;
     }
     bufPtr_ += inVal.size();
     bufPtr_ += BYTE_8_ALIGN(stepLen) - stepLen;
     parcelLen_ += BYTE_8_ALIGN(stepLen);
-    return errCode;
+    return E_OK;
 }
 
 uint32_t Parcel::ReadString(std::string &outVal)
 {
-    if (isError_ || bufPtr_ == nullptr || parcelLen_ + sizeof(uint32_t) > totalLen_) {
+    if (IsError()) {
+        return 0;
+    }
+    if (bufPtr_ == nullptr || parcelLen_ + sizeof(uint32_t) > totalLen_) {
+        LOGE("[ReadString] bufPtr:%d, totalLen:%llu, parcelLen:%llu", bufPtr_ != nullptr, totalLen_, parcelLen_);
         isError_ = true;
         return 0;
     }
@@ -191,6 +214,7 @@ uint32_t Parcel::ReadString(std::string &outVal)
     len = NetToHost(len);
     uint64_t stepLen = static_cast<uint64_t>(len) + sizeof(uint32_t);
     if (stepLen > INT32_MAX || parcelLen_ + BYTE_8_ALIGN(stepLen) > totalLen_) {
+        LOGE("[ReadString] stepLen:%llu, totalLen:%llu, parcelLen:%llu", stepLen, totalLen_, parcelLen_);
         isError_ = true;
         return 0;
     }
@@ -200,6 +224,11 @@ uint32_t Parcel::ReadString(std::string &outVal)
     parcelLen_ += BYTE_8_ALIGN(stepLen);
     stepLen = BYTE_8_ALIGN(stepLen);
     return static_cast<uint32_t>(stepLen);
+}
+
+bool Parcel::IsContinueRead()
+{
+    return (parcelLen_ < totalLen_);
 }
 
 #ifndef OMIT_MULTI_VER
@@ -271,8 +300,39 @@ int Parcel::WriteMultiVerCommits(const std::vector<MultiVerCommitNode> &commits)
         return errCode;
     }
     for (auto &iter : commits) {
-        errCode = WriteMultiVerCommit(iter);
+        errCode = WriteVectorChar(iter.commitId);
         if (errCode != E_OK) {
+            LOGE("Parcel::WriteMultiVerCommit write commitId err!");
+            return errCode;
+        }
+        errCode = WriteVectorChar(iter.leftParent);
+        if (errCode != E_OK) {
+            LOGE("Parcel::WriteMultiVerCommit write leftParent err!");
+            return errCode;
+        }
+        errCode = WriteVectorChar(iter.rightParent);
+        if (errCode != E_OK) {
+            LOGE("Parcel::WriteMultiVerCommit write rightParent err!");
+            return errCode;
+        }
+        errCode = WriteUInt64(iter.timestamp);
+        if (errCode != E_OK) {
+            LOGE("Parcel::WriteMultiVerCommit write timestamp err!");
+            return errCode;
+        }
+        errCode = WriteUInt64(iter.version);
+        if (errCode != E_OK) {
+            LOGE("Parcel::WriteMultiVerCommit write version err!");
+            return errCode;
+        }
+        errCode = WriteUInt64(iter.isLocal);
+        if (errCode != E_OK) {
+            LOGE("Parcel::WriteMultiVerCommit write isLocal err!");
+            return errCode;
+        }
+        errCode = WriteString(iter.deviceInfo);
+        if (errCode != E_OK) {
+            LOGE("Parcel::WriteMultiVerCommit write deviceInfo err!");
             return errCode;
         }
         EightByteAlign();
@@ -296,7 +356,13 @@ uint32_t Parcel::ReadMultiVerCommits(std::vector<MultiVerCommitNode> &commits)
     }
     for (uint64_t i = 0; i < size; i++) {
         MultiVerCommitNode commit;
-        len += ReadMultiVerCommit(commit);
+        len += ReadVectorChar(commit.commitId);
+        len += ReadVectorChar(commit.leftParent);
+        len += ReadVectorChar(commit.rightParent);
+        len += ReadUInt64(commit.timestamp);
+        len += ReadUInt64(commit.version);
+        len += ReadUInt64(commit.isLocal);
+        len += ReadString(commit.deviceInfo);
         commits.push_back(commit);
         EightByteAlign();
         len = BYTE_8_ALIGN(len);
@@ -314,37 +380,49 @@ uint32_t Parcel::ReadMultiVerCommits(std::vector<MultiVerCommitNode> &commits)
 int Parcel::WriteBlob(const char *buffer, uint32_t bufLen)
 {
     if (buffer == nullptr) {
+        LOGE("[WriteBlob] Invalid buffer.");
         isError_ = true;
         return -E_INVALID_ARGS;
     }
-    if (isError_ || parcelLen_ + bufLen > totalLen_) {
+    if (IsError()) {
+        return -E_PARSE_FAIL;
+    }
+    if (parcelLen_ + bufLen > totalLen_) {
+        LOGE("[WriteBlob] bufLen:%u, totalLen:%llu, parcelLen:%llu", bufLen, totalLen_, parcelLen_);
         isError_ = true;
         return -E_PARSE_FAIL;
     }
     uint32_t leftLen = static_cast<uint32_t>(totalLen_ - parcelLen_);
     int errCode = memcpy_s(bufPtr_, leftLen, buffer, bufLen);
     if (errCode != EOK) {
+        LOGE("[WriteBlob] bufPtr:%d, leftLen:%u, buffer:%p, bufLen:%u", bufPtr_ != nullptr, leftLen, buffer, bufLen);
         isError_ = true;
         return -E_SECUREC_ERROR;
     }
     uint32_t length = (BYTE_8_ALIGN(bufLen) < leftLen) ? BYTE_8_ALIGN(bufLen) : leftLen;
     bufPtr_ += length;
     parcelLen_ += length;
-    return errCode;
+    return E_OK;
 }
 uint32_t Parcel::ReadBlob(char *buffer, uint32_t bufLen)
 {
     if (buffer == nullptr) {
+        LOGE("[ReadBlob] Invalid buffer.");
         isError_ = true;
         return 0;
     }
+    if (IsError()) {
+        return 0;
+    }
     uint32_t leftLen = static_cast<uint32_t>(totalLen_ - parcelLen_);
-    if (isError_ || parcelLen_ + bufLen > totalLen_) {
+    if (parcelLen_ + bufLen > totalLen_) {
+        LOGE("[ReadBlob] bufLen:%u, totalLen:%llu, parcelLen:%llu", bufLen, totalLen_, parcelLen_);
         isError_ = true;
         return 0;
     }
     int errCode = memcpy_s(buffer, bufLen, bufPtr_, bufLen);
     if (errCode != EOK) {
+        LOGE("[ReadBlob] bufPtr:%d, buffer:%p, bufLen:%u", bufPtr_ != nullptr, buffer, bufLen);
         isError_ = true;
         return 0;
     }
@@ -352,6 +430,11 @@ uint32_t Parcel::ReadBlob(char *buffer, uint32_t bufLen)
     bufPtr_ += length;
     parcelLen_ += length;
     return length;
+}
+
+uint32_t Parcel::GetBoolLen()
+{
+    return GetEightByteAlign(sizeof(bool));
 }
 
 uint32_t Parcel::GetIntLen()
@@ -367,6 +450,16 @@ uint32_t Parcel::GetUInt32Len()
 uint32_t Parcel::GetUInt64Len()
 {
     return sizeof(uint64_t);
+}
+
+uint32_t Parcel::GetInt64Len()
+{
+    return sizeof(int64_t);
+}
+
+uint32_t Parcel::GetDoubleLen()
+{
+    return sizeof(double);
 }
 
 uint32_t Parcel::GetVectorCharLen(const std::vector<uint8_t> &data)

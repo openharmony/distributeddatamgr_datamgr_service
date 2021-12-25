@@ -20,16 +20,32 @@
 #include <mutex>
 #include <map>
 
-#include "ikvdb_sync_interface.h"
-#include  "types_export.h"
+#include "isync_interface.h"
+#include "types_export.h"
+#include "query_sync_object.h"
+#include "types.h"
 
 namespace DistributedDB {
 class ISyncer {
 public:
+    struct SyncParma {
+        std::vector<std::string> devices;
+        std::function<void(const std::map<std::string, int> &devicesMap)> onComplete;
+        SyncStatusCallback relationOnComplete;
+        std::function<void(void)> onFinalize;
+        int mode = 0;
+        bool wait = false;
+        bool isQuerySync = false;
+        QuerySyncObject syncQuery;
+    };
+
     virtual ~ISyncer() {};
 
     // Init the Syncer modules
-    virtual int Initialize(IKvDBSyncInterface *syncInterface) = 0;
+    virtual int Initialize(ISyncInterface *syncInterface)
+    {
+        return -E_NOT_SUPPORT;
+    }
 
     // Close
     virtual int Close() = 0;
@@ -44,10 +60,15 @@ public:
         const std::function<void(const std::map<std::string, int> &)> &onComplete,
         const std::function<void(void)> &onFinalize, bool wait) = 0;
 
+    // Sync function. use SyncParma to reduce paramter.
+    virtual int Sync(const SyncParma &param) = 0;
+
     // Remove the operation, with the given syncId, used to clean resource if sync finished or failed.
     virtual int RemoveSyncOperation(int syncId) = 0;
 
-    // Get The current vitural timestamp
+    virtual int StopSync() = 0;
+
+    // Get The current virtual timestamp
     virtual uint64_t GetTimeStamp() = 0;
 
     // Enable auto sync function
@@ -79,6 +100,12 @@ public:
 
     // Set stale data wipe policy
     virtual int SetStaleDataWipePolicy(WipePolicy policy) = 0;
+
+    // Set Manual Sync retry config
+    virtual int SetSyncRetry(bool isRetry) = 0;
+
+    // Set an equal identifier for this database, After this called, send msg to the target will use this identifier
+    virtual int SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets) = 0;
 };
 } // namespace DistributedDB
 

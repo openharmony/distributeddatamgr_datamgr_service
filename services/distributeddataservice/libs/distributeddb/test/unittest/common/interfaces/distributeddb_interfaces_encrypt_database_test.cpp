@@ -60,6 +60,7 @@ void DistributedDBInterfacesEncryptDatabaseTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesEncryptDatabaseTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
 void DistributedDBInterfacesEncryptDatabaseTest::TearDown(void)

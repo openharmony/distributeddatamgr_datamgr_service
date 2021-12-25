@@ -32,13 +32,18 @@ int SQLiteSingleVerStorageExecutor::PrepareForSavingCacheData(SingleVerDataType 
     if (type == SingleVerDataType::LOCAL_TYPE) {
         std::string insertLocalSql = ((executorState_ == ExecutorState::CACHE_ATTACH_MAIN) ?
             INSERT_LOCAL_SQL_FROM_CACHEHANDLE : INSERT_CACHE_LOCAL_SQL);
-        errCode = PrepareForSavingData(SELECT_CACHE_LOCAL_HASH_SQL, insertLocalSql, saveLocalStatements_);
+        std::string updateLocalSql = ((executorState_ == ExecutorState::CACHE_ATTACH_MAIN) ?
+            UPDATE_LOCAL_SQL_FROM_CACHEHANDLE : UPDATE_CACHE_LOCAL_SQL);
+        errCode = PrepareForSavingData(SELECT_CACHE_LOCAL_HASH_SQL, insertLocalSql, updateLocalSql,
+            saveLocalStatements_);
     } else if (type == SingleVerDataType::SYNC_TYPE) {
         std::string insertSyncSql = ((executorState_ == ExecutorState::MAIN_ATTACH_CACHE) ?
             INSERT_CACHE_SYNC_SQL_FROM_MAINHANDLE : INSERT_CACHE_SYNC_SQL);
+        std::string updateSyncSql = ((executorState_ == ExecutorState::MAIN_ATTACH_CACHE) ?
+            UPDATE_CACHE_SYNC_SQL_FROM_MAINHANDLE : UPDATE_CACHE_SYNC_SQL);
         std::string selectSyncHashSql = ((executorState_ == ExecutorState::MAIN_ATTACH_CACHE) ?
             SELECT_CACHE_SYNC_HASH_SQL_FROM_MAINHANDLE : SELECT_CACHE_SYNC_HASH_SQL);
-        errCode = PrepareForSavingData(selectSyncHashSql, insertSyncSql, saveSyncStatements_);
+        errCode = PrepareForSavingData(selectSyncHashSql, insertSyncSql, updateSyncSql, saveSyncStatements_);
     }
     if (errCode != E_OK) {
         LOGE("Prepare to save sync cache data failed:%d", errCode);
@@ -50,10 +55,12 @@ int SQLiteSingleVerStorageExecutor::ResetForSavingCacheData(SingleVerDataType ty
 {
     int errCode = E_OK;
     if (type == SingleVerDataType::LOCAL_TYPE) {
-        SQLiteUtils::ResetStatement(saveLocalStatements_.putStatement, false, errCode);
+        SQLiteUtils::ResetStatement(saveLocalStatements_.insertStatement, false, errCode);
+        SQLiteUtils::ResetStatement(saveLocalStatements_.updateStatement, false, errCode);
         SQLiteUtils::ResetStatement(saveLocalStatements_.queryStatement, false, errCode);
     } else if (type == SingleVerDataType::SYNC_TYPE) {
-        SQLiteUtils::ResetStatement(saveSyncStatements_.putStatement, false, errCode);
+        SQLiteUtils::ResetStatement(saveSyncStatements_.insertStatement, false, errCode);
+        SQLiteUtils::ResetStatement(saveSyncStatements_.updateStatement, false, errCode);
         SQLiteUtils::ResetStatement(saveSyncStatements_.queryStatement, false, errCode);
     }
 
@@ -63,7 +70,8 @@ int SQLiteSingleVerStorageExecutor::ResetForSavingCacheData(SingleVerDataType ty
 int SQLiteSingleVerStorageExecutor::ResetForMigrateCacheData()
 {
     int errCode = E_OK;
-    SQLiteUtils::ResetStatement(migrateSyncStatements_.putStatement, false, errCode);
+    SQLiteUtils::ResetStatement(migrateSyncStatements_.insertStatement, false, errCode);
+    SQLiteUtils::ResetStatement(migrateSyncStatements_.updateStatement, false, errCode);
     SQLiteUtils::ResetStatement(migrateSyncStatements_.queryStatement, false, errCode);
 
     return CheckCorruptedStatus(errCode);
@@ -170,61 +178,13 @@ int SQLiteSingleVerStorageExecutor::MigrateRmDevData(const DataItem &dataItem) c
 
     errCode = SQLiteUtils::BindBlobToStatement(statement, 1, dataItem.value, true);
     if (errCode != E_OK) {
-        LOGE("[sinverExecutor][MiRmData] Bind dev for sync data failed:%d", errCode);
+        LOGE("[singerVerExecutor][MiRmData] Bind dev for sync data failed:%d", errCode);
         goto END;
     }
 
     errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
     if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
         errCode = E_OK;
-    }
-END:
-    SQLiteUtils::ResetStatement(statement, true, errCode);
-    return CheckCorruptedStatus(errCode);
-}
-
-int SQLiteSingleVerStorageExecutor::PutMigratingDataToMain(const std::vector<DataItem> &dataItems) const
-{
-    std::string sql;
-    if (executorState_ == ExecutorState::MAIN_ATTACH_CACHE) {
-        sql = MIGRATE_PUT_DATA_TO_MAINDB_FROM_MAINHANDLE;
-    } else if (executorState_ == ExecutorState::CACHE_ATTACH_MAIN)  {
-        sql = MIGRATE_PUT_DATA_TO_MAINDB_FROM_CACHEHANDLE;
-    } else {
-        return -E_INVALID_ARGS;
-    }
-
-    sqlite3_stmt *statement = nullptr;
-    int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, statement);
-    if (errCode != E_OK) {
-        LOGE("GetStatement fail when put migrating-data to main! errCode = [%d]", errCode);
-        return CheckCorruptedStatus(errCode);
-    }
-
-    for (const auto &dataItem : dataItems) {
-        if ((dataItem.flag & DataItem::REMOVE_DEVICE_DATA_FLAG) == DataItem::REMOVE_DEVICE_DATA_FLAG ||
-            (dataItem.flag & DataItem::REMOVE_DEVICE_DATA_NOTIFY_FLAG) == DataItem::REMOVE_DEVICE_DATA_NOTIFY_FLAG) {
-            errCode = MigrateRmDevData(dataItem);
-            LOGI("[PutMigratingDataToMain]Execute remove devices data! errCode = [%d]", errCode);
-            if (errCode != E_OK) {
-                break;
-            }
-            continue;
-        }
-        SyncDataDevices devices{ dataItem.origDev, dataItem.dev };
-        errCode = BindSavedSyncData(statement, dataItem, dataItem.hashKey, devices);
-        if (errCode != E_OK) {
-            goto END;
-        }
-
-        errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
-        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
-            errCode = E_OK;
-        } else {
-            LOGD("StepWithRetry fail when put migrating-data to main!");
-            break;
-        }
-        SQLiteUtils::ResetStatement(statement, false, errCode);
     }
 END:
     SQLiteUtils::ResetStatement(statement, true, errCode);
@@ -300,6 +260,129 @@ END:
     return CheckCorruptedStatus(errCode);
 }
 
+int SQLiteSingleVerStorageExecutor::MigrateDataItem(DataItem &dataItem, NotifyMigrateSyncData &syncData)
+{
+    // Put or delete. Prepare notify data here.
+    NotifyConflictAndObserverData notify;
+    notify.committedData = syncData.committedData;
+    int errCode = PutIntoConflictAndCommitForMigrateCache(dataItem, {dataItem.dev.empty(), dataItem.dev}, notify);
+    if (errCode != E_OK) {
+        ResetForMigrateCacheData();
+        LOGE("PutIntoConflictAndCommitForMigrateCache failed, errCode = %d", errCode);
+        return errCode;
+    }
+    // after solving conflict, the item should not be saved into mainDB
+    if (notify.dataStatus.isDefeated) {
+        LOGD("Data status is defeated:%d", errCode);
+        return errCode;
+    }
+    bool isUpdate = notify.dataStatus.preStatus != DataStatus::NOEXISTED;
+    sqlite3_stmt *statement = migrateSyncStatements_.GetDataSaveStatement(isUpdate);
+    if (statement == nullptr) {
+        LOGE("GetStatement fail when put migrating-data to main! ");
+        return -E_INVALID_ARGS;
+    }
+
+    if ((dataItem.flag & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) != 0) {
+        errCode = EraseSyncData(dataItem.key);
+        goto END;
+    }
+
+    errCode = BindSavedSyncData(statement, dataItem, dataItem.hashKey, { dataItem.origDev, dataItem.dev }, isUpdate);
+    if (errCode != E_OK) {
+        goto END;
+    }
+
+    errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+        errCode = E_OK;
+    } else {
+        LOGD("StepWithRetry fail when put migrating-data to main!");
+    }
+END:
+    ResetForMigrateCacheData();
+    return errCode;
+}
+
+int SQLiteSingleVerStorageExecutor::CheckDataWithQuery(std::vector<DataItem> &dataItems)
+{
+    int errCode = E_OK;
+    sqlite3_stmt *stmt = nullptr;
+    for (auto &item : dataItems) {
+        if ((item.flag & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) == 0) {
+            continue;
+        }
+        std::string sql;
+        DBCommon::VectorToString(item.value, sql);
+        if (executorState_ == ExecutorState::CACHE_ATTACH_MAIN) {
+            static const std::string SYNC_DATA_TABLE = "sync_data";
+            static const std::string SYNC_DATA_TABLE_MAIN = "maindb.sync_data";
+            std::string::size_type startPos = sql.find(SYNC_DATA_TABLE);
+            if (startPos != std::string::npos) {
+                sql.replace(startPos, SYNC_DATA_TABLE.length(), SYNC_DATA_TABLE_MAIN);
+            }
+        }
+        errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
+        if (errCode != E_OK) {
+            LOGE("Get Check miss query data statement failed. %d", errCode);
+            return errCode;
+        }
+
+        errCode = CheckMissQueryDataItem(stmt, item.dev, item);
+        if (errCode != E_OK) {
+            LOGE("Check miss query data item failed. %d", errCode);
+            break;
+        }
+        SQLiteUtils::ResetStatement(stmt, true, errCode);
+    }
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return CheckCorruptedStatus(errCode);
+}
+
+int SQLiteSingleVerStorageExecutor::MigrateDataItems(std::vector<DataItem> &dataItems, NotifyMigrateSyncData &syncData)
+{
+    syncData.isRemote = ((dataItems[0].flag & DataItem::LOCAL_FLAG) == 0);
+    syncData.isRemoveDeviceData = (dataItems[0].flag & DataItem::REMOVE_DEVICE_DATA_FLAG) != 0 ||
+        (dataItems[0].flag & DataItem::REMOVE_DEVICE_DATA_NOTIFY_FLAG) != 0;
+
+    int errCode = CheckDataWithQuery(dataItems);
+    if (errCode != E_OK) {
+        LOGE("Check migrate data with query failed! errCode = [%d]", errCode);
+        goto END;
+    }
+
+    for (auto &item : dataItems) {
+        // Remove device data owns one version itself.
+        // Get entry here. Prepare notify data in storageEngine.
+        if (syncData.isRemoveDeviceData) {
+            errCode = GetEntriesForNotifyRemoveDevData(item, syncData.entries);
+            if (errCode != E_OK) {
+                LOGE("Failed to get remove devices data");
+                return errCode;
+            }
+            errCode = MigrateRmDevData(item);
+            LOGI("[PutMigratingDataToMain]Execute remove devices data! errCode = [%d]", errCode);
+            if (errCode != E_OK) {
+                break;
+            }
+            continue;
+        }
+
+        if (item.neglect) { // Do not save this record if it is neglected
+            continue;
+        }
+
+        errCode = MigrateDataItem(item, syncData);
+        if (errCode != E_OK) {
+            LOGE("Migrate data item to main db failed! errCode = [%d]", errCode);
+            break;
+        }
+    }
+END:
+    ResetForMigrateCacheData();
+    return CheckCorruptedStatus(errCode);
+}
+
 int SQLiteSingleVerStorageExecutor::MigrateSyncDataByVersion(uint64_t recordVer, NotifyMigrateSyncData &syncData,
     std::vector<DataItem> &dataItems)
 {
@@ -315,24 +398,15 @@ int SQLiteSingleVerStorageExecutor::MigrateSyncDataByVersion(uint64_t recordVer,
         goto END;
     }
 
-    // fix dataItem timestap for mingrate
+    // fix dataItem timestamp for migrate
     errCode = ProcessTimeStampForSyncDataInCacheDB(dataItems);
     if (errCode != E_OK) {
         LOGE("Chang the time stamp for migrate failed! errCode = [%d]", errCode);
         goto END;
     }
 
-    // observer and conflictdata
-    errCode = NotifyForMigrateCacheDB(dataItems, syncData);
+    errCode = MigrateDataItems(dataItems, syncData);
     if (errCode != E_OK) {
-        LOGE("Notify cacheDb to mainDb failed! errCode = [%d]", errCode);
-        goto END;
-    }
-
-    // Put this version into main db
-    errCode = PutMigratingDataToMain(dataItems);
-    if (errCode != E_OK) {
-        LOGE("Put migrating data to main db failed! errCode = [%d]", errCode);
         goto END;
     }
 
@@ -523,15 +597,58 @@ int SQLiteSingleVerStorageExecutor::BindDevSyncDataInCacheMode(sqlite3_stmt *sta
     return errCode;
 }
 
-int SQLiteSingleVerStorageExecutor::SaveSyncDataItemInCacheMode(DataItem &dataItem,
-    const DeviceInfo &deviceInfo, TimeStamp &maxStamp, uint64_t recordVersion)
+int SQLiteSingleVerStorageExecutor::GetExpandedCheckSql(QueryObject query, DataItem &dataItem)
+{
+    int errCode = E_OK;
+    SqliteQueryHelper helper = query.GetQueryHelper(errCode);
+
+    std::string sql;
+    std::string expandedSql;
+    errCode = helper.GetSyncDataCheckSql(sql);
+    if (errCode != E_OK) {
+        LOGE("Get sync data check sql failed");
+        return errCode;
+    }
+    sqlite3_stmt *stmt = nullptr;
+    errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
+    if (errCode != E_OK) {
+        LOGE("Get statement fail. %d", errCode);
+        return -E_INVALID_QUERY_FORMAT;
+    }
+
+    errCode = helper.BindSyncDataCheckStmt(stmt, dataItem.key);
+    if (errCode != E_OK) {
+        goto END;
+    }
+
+    errCode = SQLiteUtils::ExpandedSql(stmt, expandedSql);
+    if (errCode != E_OK) {
+        LOGE("Get expand sql fail. %d", errCode);
+    }
+    DBCommon::StringToVector(expandedSql, dataItem.value);
+END:
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return errCode;
+}
+
+int SQLiteSingleVerStorageExecutor::SaveSyncDataItemInCacheMode(DataItem &dataItem, const DeviceInfo &deviceInfo,
+    TimeStamp &maxStamp, uint64_t recordVersion, const QueryObject &query)
 {
     Key hashKey;
+    int errCode = E_OK;
     if ((dataItem.flag & DataItem::DELETE_FLAG) == DataItem::DELETE_FLAG) {
         hashKey = dataItem.key;
     } else {
-        int errCode = DBCommon::CalcValueHash(dataItem.key, hashKey);
+        errCode = DBCommon::CalcValueHash(dataItem.key, hashKey);
         if (errCode != E_OK) {
+            return errCode;
+        }
+    }
+
+    if ((dataItem.flag & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) != 0) {
+        errCode = GetExpandedCheckSql(query, dataItem); // record check sql in value for miss query data
+        if (errCode != E_OK) {
+            LOGE("Get sync data check sql failed. %d", errCode);
             return errCode;
         }
     }
@@ -542,7 +659,7 @@ int SQLiteSingleVerStorageExecutor::SaveSyncDataItemInCacheMode(DataItem &dataIt
     }
     dataItem.dev = deviceInfo.deviceName;
     dataItem.origDev = origDev;
-    int errCode = SaveSyncDataToCacheDatabase(dataItem, hashKey, recordVersion);
+    errCode = SaveSyncDataToCacheDatabase(dataItem, hashKey, recordVersion);
     if (errCode == E_OK) {
         maxStamp = std::max(dataItem.timeStamp, maxStamp);
     } else {
@@ -554,7 +671,7 @@ int SQLiteSingleVerStorageExecutor::SaveSyncDataItemInCacheMode(DataItem &dataIt
 int SQLiteSingleVerStorageExecutor::SaveSyncDataToCacheDatabase(const DataItem &dataItem,
     const Key &hashKey, uint64_t recordVersion) const
 {
-    auto statement = saveSyncStatements_.putStatement;
+    auto statement = saveSyncStatements_.GetDataSaveStatement(false);
     if (statement == nullptr) {
         return -E_INVALID_ARGS;
     }
@@ -656,7 +773,7 @@ int SQLiteSingleVerStorageExecutor::PutIntoConflictAndCommitForMigrateCache(Data
     }
 
     PutConflictData(dataItem, notify.getData, deviceInfo, notify.dataStatus, notify.committedData);
-    if (notify.dataStatus.isDefeated == true) {
+    if (notify.dataStatus.isDefeated) {
         LOGD("Data status is defeated:%d", errCode);
         return ResetForMigrateCacheData();
     }
@@ -729,7 +846,7 @@ int SQLiteSingleVerStorageExecutor::InitMigrateTimeStampOffset()
 
 int SQLiteSingleVerStorageExecutor::ProcessTimeStampForSyncDataInCacheDB(std::vector<DataItem> &dataItems)
 {
-    if (dataItems.size() == 0) {
+    if (dataItems.empty()) {
         LOGE("[SQLiteSingleVerStorageExecutor::ProcessTimeStampForCacheDB] Invalid parameter : dataItems.");
         return -E_INVALID_ARGS;
     }
@@ -770,50 +887,6 @@ int SQLiteSingleVerStorageExecutor::GetEntriesForNotifyRemoveDevData(const DataI
     return GetAllSyncedEntries(dev, entries);
 }
 
-int SQLiteSingleVerStorageExecutor::NotifyForMigrateCacheDB(std::vector<DataItem> &dataItems,
-    NotifyMigrateSyncData &syncData)
-{
-    auto &isRemote = syncData.isRemote;
-    auto &isRemoveDeviceData = syncData.isRemoveDeviceData;
-    auto &committedData = syncData.committedData;
-
-    isRemote = ((dataItems[0].flag & DataItem::LOCAL_FLAG) == 0);
-    isRemoveDeviceData = (dataItems[0].flag & DataItem::REMOVE_DEVICE_DATA_FLAG) != 0 ||
-                         (dataItems[0].flag & DataItem::REMOVE_DEVICE_DATA_NOTIFY_FLAG) != 0;
-
-    for (auto iter = dataItems.begin(); iter != dataItems.end();) {
-        auto &item = *iter;
-        // Remove device data owns one version itself.
-        // Get entry here. Prepare notify data in storageEngine.
-        if (isRemoveDeviceData) {
-            return GetEntriesForNotifyRemoveDevData(item, syncData.entries);
-        }
-
-        // Put or delete. Prepare notify data here.
-        DeviceInfo deviceInfo = {item.dev.empty(), item.dev};
-        NotifyConflictAndObserverData notify;
-        notify.committedData = committedData;
-        int errCode = PutIntoConflictAndCommitForMigrateCache(item, deviceInfo, notify);
-        if (errCode != E_OK) {
-            ResetForMigrateCacheData();
-            LOGE("PutIntoConflictAndCommitForMigrateCache failed, errCode = %d", errCode);
-            return errCode;
-        }
-        errCode = ResetForMigrateCacheData();
-        if (errCode != E_OK) {
-            LOGE("ResetForMigrateCacheData failed, errCode = %d", errCode);
-            return errCode;
-        }
-        // after solving conflict, the item should not be saved into mainDB
-        if (notify.dataStatus.isDefeated == true) {
-            iter = dataItems.erase(iter);
-            continue;
-        }
-        iter++;
-    }
-    return E_OK;
-}
-
 int SQLiteSingleVerStorageExecutor::InitMigrateData()
 {
     // Sync_data already in migrating. Need not to init data.
@@ -822,18 +895,21 @@ int SQLiteSingleVerStorageExecutor::InitMigrateData()
     }
     ClearMigrateData();
     std::string querySQL;
-    std::string putSQL;
+    std::string insertSQL;
+    std::string updateSQL;
     if (executorState_ == ExecutorState::MAIN_ATTACH_CACHE) {
         querySQL = SELECT_SYNC_HASH_SQL;
-        putSQL = MIGRATE_PUT_DATA_TO_MAINDB_FROM_MAINHANDLE;
+        insertSQL = MIGRATE_INSERT_DATA_TO_MAINDB_FROM_MAINHANDLE;
+        updateSQL = MIGRATE_UPDATE_DATA_TO_MAINDB_FROM_MAINHANDLE;
     } else if (executorState_ == ExecutorState::CACHE_ATTACH_MAIN) {
         querySQL = SELECT_MAIN_SYNC_HASH_SQL_FROM_CACHEHANDLE;
-        putSQL = MIGRATE_PUT_DATA_TO_MAINDB_FROM_CACHEHANDLE;
+        insertSQL = MIGRATE_INSERT_DATA_TO_MAINDB_FROM_CACHEHANDLE;
+        updateSQL = MIGRATE_UPDATE_DATA_TO_MAINDB_FROM_CACHEHANDLE;
     } else {
         LOGE("[InitMigrateData] executor in an error state[%d]!", executorState_);
         return -E_INVALID_DB;
     }
-    int errCode = PrepareForSavingData(querySQL, putSQL, migrateSyncStatements_);
+    int errCode = PrepareForSavingData(querySQL, insertSQL, updateSQL, migrateSyncStatements_);
     if (errCode != E_OK) {
         LOGE("Prepare migrateSyncStatements_ fail, errCode = %d", errCode);
         return errCode;
@@ -849,15 +925,9 @@ void SQLiteSingleVerStorageExecutor::ClearMigrateData()
     maxTimeStampInMainDB_ = 0;
 
     // Reset statement.
-    int errCode = E_OK;
-    SQLiteUtils::ResetStatement(migrateSyncStatements_.putStatement, true, errCode);
+    int errCode = migrateSyncStatements_.ResetStatement();
     if (errCode != E_OK) {
-        LOGE("Reset migrateSyncStatements_.putStatement fail, errCode = %d", errCode);
-    }
-    errCode = E_OK;
-    SQLiteUtils::ResetStatement(migrateSyncStatements_.queryStatement, true, errCode);
-    if (errCode != E_OK) {
-        LOGE("Reset migrateSyncStatements_.queryStatement fail, errCode = %d", errCode);
+        LOGE("Reset migrateSync Statements failed, errCode = %d", errCode);
     }
 
     isSyncMigrating_ = false;
@@ -870,5 +940,55 @@ int SQLiteSingleVerStorageExecutor::GetMaxTimeStampDuringMigrating(TimeStamp &ma
     }
     maxTimeStamp = maxTimeStampInMainDB_;
     return E_OK;
+}
+
+int SQLiteSingleVerStorageExecutor::DeleteMetaData(const std::vector<Key> &keys)
+{
+    sqlite3_stmt *statement = nullptr;
+    const std::string sql = attachMetaMode_ ? REMOVE_ATTACH_META_VALUE_SQL : REMOVE_META_VALUE_SQL;
+    int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, statement);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    for (const auto &key : keys) {
+        errCode = SQLiteUtils::BindBlobToStatement(statement, 1, key, false); // first arg.
+        if (errCode != E_OK) {
+            break;
+        }
+
+        errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
+        if (errCode != SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            break;
+        }
+        errCode = E_OK;
+        SQLiteUtils::ResetStatement(statement, false, errCode);
+    }
+
+    SQLiteUtils::ResetStatement(statement, true, errCode);
+    return CheckCorruptedStatus(errCode);
+}
+
+int SQLiteSingleVerStorageExecutor::DeleteMetaDataByPrefixKey(const Key &keyPrefix)
+{
+    sqlite3_stmt *statement = nullptr;
+    const std::string sql = attachMetaMode_ ?
+        REMOVE_ATTACH_META_VALUE_BY_KEY_PREFIX_SQL : REMOVE_META_VALUE_BY_KEY_PREFIX_SQL;
+
+    int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, statement);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    errCode = SQLiteUtils::BindPrefixKey(statement, 1, keyPrefix); // 1 is first arg.
+    if (errCode == E_OK) {
+        errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            errCode = E_OK;
+        }
+    }
+
+    SQLiteUtils::ResetStatement(statement, true, errCode);
+    return CheckCorruptedStatus(errCode);
 }
 } // namespace DistributedDB

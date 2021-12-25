@@ -319,11 +319,11 @@ int CommunicatorLinker::TriggerLabelExchangeEvent(const std::string &toTarget)
 int CommunicatorLinker::TriggerLabelExchangeAckEvent(const std::string &toTarget, uint64_t inSequenceId)
 {
     // Build LabelExchangeAck Frame
-    int error = E_OK;
-    SerialBuffer *buffer = ProtocolProto::BuildLabelExchangeAck(localDistinctValue_, inSequenceId, errno);
-    if (error != E_OK) {
-        LOGE("[Linker][TriggerAck] BuildAck fail, error=%d", error);
-        return error;
+    int errCode = E_OK;
+    SerialBuffer *buffer = ProtocolProto::BuildLabelExchangeAck(localDistinctValue_, inSequenceId, errCode);
+    if (errCode != E_OK) {
+        LOGE("[Linker][TriggerAck] BuildAck fail, error=%d", errCode);
+        return errCode;
     }
     // Apply for a latest ackId and update ackTriggerId_
     uint64_t ackId;

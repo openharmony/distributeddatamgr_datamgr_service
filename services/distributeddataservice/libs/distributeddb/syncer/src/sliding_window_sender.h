@@ -18,13 +18,15 @@
 #include <memory>
 
 #include "message.h"
-#include "single_ver_sync_task_context.h"
 #include "single_ver_data_sync.h"
+#include "single_ver_sync_task_context.h"
 
 namespace DistributedDB {
 struct ReSendInfo {
     TimeStamp start = 0;
     TimeStamp end = 0;
+    TimeStamp deleteBeginTime = 0;
+    TimeStamp deleteEndTime = 0;
     // packetId is used for matched ackpacket packetId which saved in ackPacket.reserve
     // if equaled, means need to handle the ack, or drop. it is always increased
     uint64_t packetId = 0;
@@ -46,14 +48,14 @@ public:
 private:
     int ParamCheck(int32_t mode, const SingleVerSyncTaskContext *context,
         std::shared_ptr<SingleVerDataSync> &dataSync);
-    void Init(int32_t mode, SingleVerSyncTaskContext *context, std::shared_ptr<SingleVerDataSync> &dataSync);
+    void Init(int32_t inMode, SingleVerSyncTaskContext *context, std::shared_ptr<SingleVerDataSync> &dataSync);
     int UpdateInfo();
     int InnerSend();
     void InnerClear();
     int ReSend() const; // when timeout, used for reSend data
 
     // initial max window size
-    static const int MAX_WINDOW_SIZE = 5;
+    static const int MAX_WINDOW_SIZE = 3;
     std::mutex lock_;
     // 0 is default invalid sessionId.
     uint32_t sessionId_ = 0;

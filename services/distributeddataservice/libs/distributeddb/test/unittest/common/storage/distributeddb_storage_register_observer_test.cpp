@@ -15,15 +15,15 @@
 
 #include <gtest/gtest.h>
 #include <thread>
-#include "distributeddb_tools_unit_test.h"
-#include "distributeddb_data_generate_unit_test.h"
-#include "ikvdb_factory.h"
-#include "default_factory.h"
+#include "db_common.h"
 #include "db_constant.h"
 #include "db_errno.h"
-#include "sqlite_single_ver_natural_store.h"
-#include "db_common.h"
+#include "default_factory.h"
+#include "distributeddb_data_generate_unit_test.h"
+#include "distributeddb_tools_unit_test.h"
+#include "ikvdb_factory.h"
 #include "log_print.h"
+#include "sqlite_single_ver_natural_store.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -283,6 +283,7 @@ void DistributedDBStorageRegisterObserverTest::TearDownTestCase(void)
 
 void DistributedDBStorageRegisterObserverTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     IKvDBFactory *factory = IKvDBFactory::GetCurrent();
     ASSERT_NE(factory, nullptr);
     if (factory == nullptr) {

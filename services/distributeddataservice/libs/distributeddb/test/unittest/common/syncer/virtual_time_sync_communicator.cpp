@@ -61,6 +61,21 @@ uint32_t VirtualTimeSyncCommunicator::GetCommunicatorMtuSize(const std::string &
     return GetCommunicatorMtuSize();
 }
 
+uint32_t VirtualTimeSyncCommunicator::GetTimeout() const
+{
+    return 0;
+}
+
+uint32_t VirtualTimeSyncCommunicator::GetTimeout(const std::string &target) const
+{
+    return 0;
+}
+
+bool VirtualTimeSyncCommunicator::IsDeviceOnline(const std::string &device) const
+{
+    return true;
+}
+
 // Get local target name for identify self
 int VirtualTimeSyncCommunicator::GetLocalIdentity(std::string &outTarget) const
 {

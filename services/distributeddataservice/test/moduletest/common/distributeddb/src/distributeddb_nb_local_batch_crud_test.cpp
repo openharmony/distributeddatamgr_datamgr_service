@@ -54,7 +54,7 @@ void DistributeddbNbLocalBatchCrudTest::TearDownTestCase(void)
 
 void DistributeddbNbLocalBatchCrudTest::SetUp(void)
 {
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 
     UnitTest *test = UnitTest::GetInstance();
     ASSERT_NE(test, nullptr);
@@ -73,7 +73,7 @@ void DistributeddbNbLocalBatchCrudTest::TearDown(void)
     MST_LOG("TearDownTestCase after case.");
     ASSERT_NE(g_manager, nullptr);
     EXPECT_TRUE(EndCaseDeleteDB(g_manager, g_nbLocalBatchDelegate, STORE_ID_1, g_option.isMemoryDb));
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 }
 
 /**
@@ -84,7 +84,7 @@ void DistributeddbNbLocalBatchCrudTest::TearDown(void)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData001, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData001, TestSize.Level1)
 {
     vector<Entry> entries1, entries2, gotValues;
     entries1.push_back(ENTRY_1);
@@ -136,7 +136,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData001, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData002, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData002, TestSize.Level1)
 {
     vector<Entry> entries1, entries2, gotValues;
     entries1.push_back(ENTRY_1);
@@ -174,7 +174,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData002, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData003, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData003, TestSize.Level1)
 {
     vector<Entry> entries1, entries2, gotValues;
     entries1.push_back(ENTRY_1);
@@ -209,7 +209,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData003, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData004, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData004, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. call PutLocalBatch interface to Put (k1, v1), (k2, v2), (k3, v3), (k4, v4) to DB, and check
@@ -257,7 +257,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData004, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData005, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData005, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. call PutLocalBatch interface to Put (k1, v1), (k2, v2) to DB, and check the data in db.
@@ -297,7 +297,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData005, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData006, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData006, TestSize.Level1)
 {
     EXPECT_EQ(DistributedDBNbTestTools::PutLocal(*g_nbLocalBatchDelegate, KEY_1, VALUE_1), OK);
     /**
@@ -387,7 +387,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, SimpleData008, TestSize.Level3)
 {
     EXPECT_EQ(g_nbLocalBatchDelegate->Put(KEY_1, VALUE_1), OK);
 
-    std::string exportPath = NB_DIRECTOR + "export";
+    std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(exportPath);
     std::string filePath = exportPath + "/bkpDB.bin";
     EXPECT_TRUE(g_nbLocalBatchDelegate->Export(filePath, NULL_PASSWD) == OK);
@@ -536,7 +536,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, ComplexData001, TestSize.Level1)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, ComplexData002, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, ComplexData002, TestSize.Level1)
 {
     vector<Entry> entries1, entries2, gotValues;
     entries1.push_back(ENTRY_1);
@@ -644,7 +644,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, Exception001, TestSize.Level1)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer001, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer001, TestSize.Level1)
 {
     KvStoreObserverImpl observer1, observer2, observer3;
     /**
@@ -698,7 +698,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer001, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer002, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer002, TestSize.Level1)
 {
     KvStoreObserverImpl observer1, observer2, observer3;
     vector<Entry> entries, gotEntries;
@@ -749,7 +749,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer002, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer003, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer003, TestSize.Level1)
 {
     KvStoreObserverImpl observer1, observer2, observer3;
     /**
@@ -810,7 +810,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer003, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer004, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer004, TestSize.Level1)
 {
     KvStoreObserverImpl observer1, observer2, observer3;
     vector<Entry> entries1, entries2;
@@ -853,7 +853,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer004, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer005, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer005, TestSize.Level1)
 {
     vector<KvStoreObserverImpl> observer(OBSERVER_CNT_END);
     /**
@@ -918,7 +918,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer005, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer006, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer006, TestSize.Level1)
 {
     EXPECT_EQ(g_nbLocalBatchDelegate->Put(KEY_1, VALUE_1), OK);
     EXPECT_EQ(g_nbLocalBatchDelegate->Put(KEY_2, VALUE_2), OK);
@@ -993,7 +993,7 @@ HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer006, TestSize.Level0)
  * @tc.require: SR000EPA24
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer007, TestSize.Level0)
+HWTEST_F(DistributeddbNbLocalBatchCrudTest, Observer007, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. register a local observer.

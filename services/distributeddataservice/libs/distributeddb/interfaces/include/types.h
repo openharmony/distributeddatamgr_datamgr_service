@@ -18,7 +18,7 @@
 
 #include <functional>
 #include <string>
-#include <vector>
+#include <map>
 
 #include "types_export.h"
 
@@ -43,10 +43,10 @@ enum DBStatus {
     INVALID_FIELD_TYPE, // invalid put value field type for json schema.
     CONSTRAIN_VIOLATION, // invalid put value constrain for json schema.
     INVALID_FORMAT, // invalid put value format for json schema.
-    STALE, // new record is staler compared to the same key exist in db
+    STALE, // new record is staler compared to the same key existed in db.
     LOCAL_DELETED, // local data is deleted by the unpublish.
     LOCAL_DEFEAT, // local data defeat the sync data while unpublish.
-    LOCAL_COVERED, // local data is coverd by the sync data while unpublish.
+    LOCAL_COVERED, // local data is covered by the sync data while unpublish.
     INVALID_QUERY_FORMAT,
     INVALID_QUERY_FIELD,
     PERMISSION_CHECK_FORBID_SYNC, // permission check result , forbid sync.
@@ -55,6 +55,7 @@ enum DBStatus {
     EKEYREVOKED_ERROR, // EKEYREVOKED error when operating db file
     SECURITY_OPTION_CHECK_ERROR, // such as remote device's SecurityOption not equal to local
     SCHEMA_VIOLATE_VALUE, // Values already exist in dbFile do not match new schema
+    INTERCEPT_DATA_FAIL, // Interceptor push data failed.
 };
 
 struct KvStoreConfig {
@@ -77,6 +78,7 @@ enum PragmaCmd {
     SET_WIPE_POLICY,  // set the policy of wipe remote stale data
     RESULT_SET_CACHE_MODE, // Accept ResultSetCacheMode Type As PragmaData
     RESULT_SET_CACHE_MAX_SIZE, // Allowed Int Type Range [1,16], Unit MB
+    SET_SYNC_RETRY,
 };
 
 enum ResolutionPolicyType {
@@ -84,8 +86,31 @@ enum ResolutionPolicyType {
     CUSTOMER_RESOLUTION = 1 // resolve conflicts by user
 };
 
-using KvStoreCorruptionHandler = std::function<void (const std::string &appId, const std::string &userId,
-                                                     const std::string &storeId)>;
-} // namespace DistributedDB
+enum ObserverMode {
+    OBSERVER_CHANGES_NATIVE = 1,
+    OBSERVER_CHANGES_FOREIGN = 2,
+    OBSERVER_CHANGES_LOCAL_ONLY = 4,
+};
 
+enum SyncMode {
+    SYNC_MODE_PUSH_ONLY,
+    SYNC_MODE_PULL_ONLY,
+    SYNC_MODE_PUSH_PULL,
+};
+
+enum ConflictResolvePolicy {
+    LAST_WIN = 0,
+    DEVICE_COLLABORATION,
+};
+
+struct TableStatus {
+    std::string tableName;
+    DBStatus status;
+};
+using KvStoreCorruptionHandler = std::function<void (const std::string &appId, const std::string &userId,
+    const std::string &storeId)>;
+using StoreCorruptionHandler = std::function<void (const std::string &appId, const std::string &userId,
+    const std::string &storeId)>;
+using SyncStatusCallback = std::function<void(const std::map<std::string, std::vector<TableStatus>> &devicesMap)>;
+} // namespace DistributedDB
 #endif // KV_STORE_TYPE_H

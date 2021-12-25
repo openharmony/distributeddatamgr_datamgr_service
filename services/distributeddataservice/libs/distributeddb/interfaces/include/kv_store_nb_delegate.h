@@ -26,25 +26,9 @@
 #include "kv_store_result_set.h"
 #include "query.h"
 #include "iprocess_system_api_adapter.h"
+#include "intercepted_data.h"
 
 namespace DistributedDB {
-enum ObserverMode {
-    OBSERVER_CHANGES_NATIVE = 1,
-    OBSERVER_CHANGES_FOREIGN = 2,
-    OBSERVER_CHANGES_LOCAL_ONLY = 4,
-};
-
-enum SyncMode {
-    SYNC_MODE_PUSH_ONLY,
-    SYNC_MODE_PULL_ONLY,
-    SYNC_MODE_PUSH_PULL,
-};
-
-enum ConflictResolvePolicy {
-    LAST_WIN = 0,
-    DEVICE_COLLABORATION,
-};
-
 using KvStoreNbPublishOnConflict = std::function<void (const Entry &local, const Entry *sync, bool isLocalLastest)>;
 using KvStoreNbConflictNotifier = std::function<void (const KvStoreNbConflictData &data)>;
 
@@ -60,11 +44,15 @@ public:
         bool createDirByStoreIdOnly = false;
         SecurityOption secOption; // Add data security level parameter
         KvStoreObserver *observer = nullptr;
-        Key key; // The key that needs to be subscribed on obsever, emptye means full subscription
+        Key key; // The key that needs to be subscribed on obsever, empty means full subscription
         unsigned int mode = 0; // obsever mode
         int conflictType = 0;
         KvStoreNbConflictNotifier notifier = nullptr;
         int conflictResolvePolicy = LAST_WIN;
+        bool isNeedIntegrityCheck = false;
+        bool isNeedRmCorruptedDb = false;
+        bool isNeedCompressOnSync = false;
+        uint8_t compressionRate = 100; // Valid in [1, 100].
     };
 
     DB_API virtual ~KvStoreNbDelegate() {}
@@ -195,6 +183,37 @@ public:
     // If Repeat set, subject to the last time.
     // If set nullptr, means unregister the notify.
     DB_API virtual DBStatus SetRemotePushFinishedNotify(const RemotePushFinishedNotifier &notifier) = 0;
+
+    // Sync function interface, if wait set true, this function will be blocked until sync finished.
+    // Param query used to filter the records to be synchronized.
+    // Now just support push mode and query by prefixKey.
+    // If Query.limit is used, its query cache will not be recorded, In the same way below,
+    // the synchronization will still take the full amount.
+    DB_API virtual DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
+        const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete,
+        const Query &query, bool wait) = 0;
+
+    // Check the integrity of this kvStore.
+    DB_API virtual DBStatus CheckIntegrity() const = 0;
+
+    // Set an equal identifier for this database, After this called, send msg to the target will use this identifier
+    DB_API virtual DBStatus SetEqualIdentifier(const std::string &identifier,
+        const std::vector<std::string> &targets) = 0;
+
+    // This API is not recommended. Before using this API, you need to understand the API usage rules.
+    // Set pushdatainterceptor. The interceptor works when send data.
+    DB_API virtual DBStatus SetPushDataInterceptor(const PushDataInterceptor &interceptor) = 0;
+
+    // Register a subscriber query on peer devices. The data in the peer device meets the subscriber query condition
+    // will automatically push to the local device when it's changed.
+    DB_API virtual DBStatus SubscribeRemoteQuery(const std::vector<std::string> &devices,
+        const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete,
+        const Query &query, bool wait) = 0;
+
+    // Unregister a subscriber query on peer devices.
+    DB_API virtual DBStatus UnSubscribeRemoteQuery(const std::vector<std::string> &devices,
+        const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete,
+        const Query &query, bool wait) = 0;
 };
 } // namespace DistributedDB
 

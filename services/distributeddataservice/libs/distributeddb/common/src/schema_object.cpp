@@ -51,7 +51,7 @@ std::string SchemaObject::GetExtractFuncName(SchemaType inSchemaType)
 }
 
 std::string SchemaObject::GenerateExtractSQL(SchemaType inSchemaType, const FieldPath &inFieldpath,
-    FieldType inFieldType, uint32_t skipSize)
+    FieldType inFieldType, uint32_t skipSize, const std::string &accessStr)
 {
     static std::map<FieldType, std::string> fieldTypeMapSQLiteType {
         {FieldType::LEAF_FIELD_BOOL, "INT"},
@@ -70,7 +70,7 @@ std::string SchemaObject::GenerateExtractSQL(SchemaType inSchemaType, const Fiel
     }
     std::string resultSql = " CAST("; // Reserve blank at begin for convenience.
     resultSql += GetExtractFuncName(inSchemaType);
-    resultSql += "(value, '";
+    resultSql += "(" + accessStr + "value, '";
     resultSql += SchemaUtils::FieldPathString(inFieldpath);
     resultSql += "', ";
     resultSql += std::to_string(skipSize);

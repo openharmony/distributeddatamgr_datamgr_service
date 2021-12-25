@@ -15,15 +15,15 @@
 
 #include <gtest/gtest.h>
 #include "auto_launch.h"
-#include "db_errno.h"
-#include "log_print.h"
 #include "db_common.h"
-#include "kvdb_manager.h"
+#include "db_errno.h"
 #include "distributeddb_tools_unit_test.h"
-#include "vitural_communicator_aggregator.h"
-#include "platform_specific.h"
 #include "kv_store_nb_conflict_data.h"
+#include "kvdb_manager.h"
 #include "kvdb_pragma.h"
+#include "log_print.h"
+#include "platform_specific.h"
+#include "virtual_communicator_aggregator.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -135,6 +135,7 @@ static void GetProperty(KvDBProperties &prop, std::string &identifier, std::stri
 
 void DistributedDBAutoLaunchUnitTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     if (DistributedDBToolsUnitTest::RemoveTestDbFiles(
         g_testDir + "/" + DBCommon::TransferStringToHex(g_identifierA) + "/single_ver") != 0) {
         LOGE("rm test db files error!");
@@ -198,7 +199,9 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch001, TestSize.Level3)
      * @tc.steps: step1. right param A enable
      * @tc.expected: step1. success.
      */
-    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, nullptr, nullptr, 0, nullptr);
+    AutoLaunchOption option;
+    option.notifier = nullptr;
+    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
 
     /**
@@ -206,14 +209,14 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch001, TestSize.Level3)
      * @tc.expected: step2. failed.
      */
     g_propB.SetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, nullptr, option);
     EXPECT_TRUE(errCode != E_OK);
 
     /**
      * @tc.steps: step3. right param C enable
      * @tc.expected: step3. success.
      */
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propC, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propC, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
 
     /**
@@ -270,10 +273,11 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch002, TestSize.Level3)
      * @tc.steps: step1. right param A B enable
      * @tc.expected: step1. success.
      */
-    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, notifier, observer, 0, nullptr);
-    EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, notifier, observer, 0, nullptr);
-    EXPECT_TRUE(errCode == E_OK);
+    AutoLaunchOption option;
+    option.notifier = nullptr;
+    option.observer = observer;
+    EXPECT_TRUE(RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, notifier, option) == E_OK);
+    EXPECT_TRUE(RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, notifier, option) == E_OK);
 
     /**
      * @tc.steps: step2. RunOnConnectCallback
@@ -302,10 +306,8 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch002, TestSize.Level3)
      * @tc.steps: step4. param A B disable
      * @tc.expected: step4. notifier WRITE_CLOSED
      */
-    errCode = RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierA);
-    EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierB);
-    EXPECT_TRUE(errCode == E_OK);
+    EXPECT_TRUE(RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierA) == E_OK);
+    EXPECT_TRUE(RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierB) == E_OK);
 
     std::unique_lock<std::mutex> lock(cvMutex);
     cv.wait(lock, [&finished] {return finished;});
@@ -345,9 +347,12 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch003, TestSize.Level3)
      * @tc.steps: step1. right param A B enable
      * @tc.expected: step1. success.
      */
-    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, notifier, observer, 0, nullptr);
+    AutoLaunchOption option;
+    option.notifier = nullptr;
+    option.observer = observer;
+    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, notifier, option);
     EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, notifier, observer, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, notifier, option);
     EXPECT_TRUE(errCode == E_OK);
 
     /**
@@ -401,28 +406,30 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch004, TestSize.Level3)
      * @tc.steps: step1. right param A~H enable
      * @tc.expected: step1. success.
      */
-    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, nullptr, nullptr, 0, nullptr);
+    AutoLaunchOption option;
+    option.notifier = nullptr;
+    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propC, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propC, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propD, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propD, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propE, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propE, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propF, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propF, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propG, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propG, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propH, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propH, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
 
     /**
      * @tc.steps: step2. right param I enable
      * @tc.expected: step2. -E_MAX_LIMITS.
      */
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propI, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propI, nullptr, option);
     EXPECT_TRUE(errCode == -E_MAX_LIMITS);
 
     /**
@@ -436,7 +443,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch004, TestSize.Level3)
      * @tc.steps: step4. right param I enable
      * @tc.expected: step4. E_OK.
      */
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propI, nullptr, nullptr, 0, nullptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propI, nullptr, option);
     EXPECT_TRUE(errCode == E_OK);
 
     /**
@@ -498,7 +505,10 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch005, TestSize.Level3)
      * @tc.steps: step2. right param A enable
      * @tc.expected: step2. success.
      */
-    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, notifier, observer, 0, nullptr);
+    AutoLaunchOption option;
+    option.notifier = nullptr;
+    option.observer = observer;
+    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, notifier, option);
     EXPECT_TRUE(errCode == E_OK);
 
     /**
@@ -562,11 +572,13 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch006, TestSize.Level3)
         cv.notify_one();
     });
     thread.detach();
-
+    AutoLaunchOption option;
+    option.notifier = nullptr;
+    option.observer = observer;
     for (int i = 0; i < TEST_ENABLE_CNT; i++) {
-        int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, notifier, observer, 0, nullptr);
+        int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, notifier, option);
         EXPECT_TRUE(errCode == E_OK);
-        errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, notifier, observer, 0, nullptr);
+        errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, notifier, option);
         EXPECT_TRUE(errCode == E_OK);
 
         errCode = RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierA);
@@ -847,10 +859,14 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch012, TestSize.Level3)
      * @tc.steps: step1. right param A B enable
      * @tc.expected: step1. success.
      */
-    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, TestAutoLaunchNotifier, nullptr,
-        CONFLICT_FOREIGN_KEY_ONLY, ConflictNotifierCallback);
+    AutoLaunchOption option;
+    option.notifier = ConflictNotifierCallback;
+    option.conflictType = CONFLICT_FOREIGN_KEY_ONLY;
+    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propA, TestAutoLaunchNotifier, option);
     EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, nullptr, nullptr, 0, nullptr);
+    AutoLaunchOption option1;
+    option1.notifier = nullptr;
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, nullptr, option1);
     EXPECT_TRUE(errCode == E_OK);
 
     /**
@@ -917,10 +933,10 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch013, TestSize.Level3)
      * @tc.steps: step1. right param b c enable, a SetAutoLaunchRequestCallback
      * @tc.expected: step1. success.
      */
-    int errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, notifier, nullptr, 0, nullptr);
-    EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propC, notifier, nullptr, 0, nullptr);
-    EXPECT_TRUE(errCode == E_OK);
+    AutoLaunchOption option;
+    option.notifier = nullptr;
+    EXPECT_TRUE(RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propB, notifier, option) == E_OK);
+    EXPECT_TRUE(RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(g_propC, notifier, option) == E_OK);
 
     KvStoreObserverUnitTest *observer = new (std::nothrow) KvStoreObserverUnitTest;
     ASSERT_TRUE(observer != nullptr);
@@ -978,9 +994,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch013, TestSize.Level3)
      * @tc.steps: step4. param A B disable
      * @tc.expected: step4. notifier WRITE_CLOSED
      */
-    errCode = RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierB);
-    EXPECT_TRUE(errCode == E_OK);
-    errCode = RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierC);
-    EXPECT_TRUE(errCode == E_OK);
+    EXPECT_TRUE(RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierB) == E_OK);
+    EXPECT_TRUE(RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierC) == E_OK);
     g_communicatorAggregator->RunOnConnectCallback(REMOTE_DEVICE_ID, false);
 }

@@ -16,12 +16,12 @@
 #include <gtest/gtest.h>
 
 #include "ability_sync.h"
-#include "version.h"
-#include "sync_types.h"
-#include "vitural_communicator_aggregator.h"
-#include "vitural_communicator.h"
-#include "virtual_single_ver_sync_db_Interface.h"
+#include "distributeddb_tools_unit_test.h"
 #include "single_ver_sync_task_context.h"
+#include "sync_types.h"
+#include "version.h"
+#include "virtual_communicator_aggregator.h"
+#include "virtual_single_ver_sync_db_Interface.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -35,8 +35,10 @@ namespace {
 
     VirtualSingleVerSyncDBInterface *g_syncInterface = nullptr;
     VirtualCommunicatorAggregator *g_communicatorAggregator = nullptr;
+
     ICommunicator *g_communicatorA = nullptr;
     ICommunicator *g_communicatorB = nullptr;
+    std::shared_ptr<Metadata> g_meta = nullptr;
 }
 
 class DistributedDBAbilitySyncTest : public testing::Test {
@@ -63,6 +65,7 @@ void DistributedDBAbilitySyncTest::TearDownTestCase(void)
 
 void DistributedDBAbilitySyncTest::SetUp(void)
 {
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: create the instance for virtual communicator, virtual storage
      */
@@ -76,6 +79,8 @@ void DistributedDBAbilitySyncTest::SetUp(void)
     ASSERT_TRUE(g_communicatorA != nullptr);
     g_communicatorB = g_communicatorAggregator->AllocCommunicator(DEVICE_B, errCode);
     ASSERT_TRUE(g_communicatorB != nullptr);
+    g_meta = std::make_shared<Metadata>();
+    g_meta->Initialize(g_syncInterface);
 }
 
 void DistributedDBAbilitySyncTest::TearDown(void)
@@ -115,10 +120,15 @@ HWTEST_F(DistributedDBAbilitySyncTest, RequestPacketTest001, TestSize.Level0)
      * @tc.steps: step2. set version = ABILITY_SYNC_VERSION_V1. schema = TEST_SCHEMA.
      */
     AbilitySyncRequestPacket packet1;
+    DbAbility ability1;
+#ifndef OMIT_ZLIB
+    ability1.SetAbilityItem(DATABASE_COMPRESSION_ZLIB, SUPPORT_MARK);
+#endif
     packet1.SetProtocolVersion(ABILITY_SYNC_VERSION_V1);
-    packet1.SetSoftwareVersion(SOFTWARE_VERSION_BASE);
+    packet1.SetSoftwareVersion(SOFTWARE_VERSION_CURRENT);
     packet1.SetSchema(TEST_SCHEMA);
     packet1.SetSendCode(E_OK);
+    packet1.SetDbAbility(ability1);
     Message msg1(ABILITY_SYNC_MESSAGE);
     msg1.SetMessageType(TYPE_REQUEST);
     msg1.SetCopiedObject(packet1);
@@ -146,10 +156,10 @@ HWTEST_F(DistributedDBAbilitySyncTest, RequestPacketTest001, TestSize.Level0)
      * @tc.expected: step5. packet1 == packet2
      */
     EXPECT_TRUE(packet2->GetProtocolVersion() == ABILITY_SYNC_VERSION_V1);
-    EXPECT_TRUE(packet2->GetSoftwareVersion() == SOFTWARE_VERSION_BASE);
+    EXPECT_TRUE(packet2->GetSoftwareVersion() == SOFTWARE_VERSION_CURRENT);
     EXPECT_TRUE(packet2->GetSendCode() == E_OK);
-    std::string schema;
-    packet2->GetSchema(schema);
+    EXPECT_TRUE(packet2->GetDbAbility() == ability1);
+    std::string schema = packet2->GetSchema();
     EXPECT_EQ(schema, TEST_SCHEMA);
 }
 
@@ -214,7 +224,7 @@ HWTEST_F(DistributedDBAbilitySyncTest, RequestPacketTest003, TestSize.Level0)
      */
     AbilitySyncRequestPacket packet1;
     packet1.SetProtocolVersion(ABILITY_SYNC_VERSION_V1);
-    packet1.SetSoftwareVersion(SOFTWARE_VERSION_RELEASE_3_0);
+    packet1.SetSoftwareVersion(SOFTWARE_VERSION_CURRENT);
     packet1.SetSchema(TEST_SCHEMA);
     packet1.SetSendCode(E_OK);
     int secLabel = 3; // label 3
@@ -248,10 +258,9 @@ HWTEST_F(DistributedDBAbilitySyncTest, RequestPacketTest003, TestSize.Level0)
      * @tc.expected: step5. packet1 == packet2
      */
     EXPECT_TRUE(packet2->GetProtocolVersion() == ABILITY_SYNC_VERSION_V1);
-    EXPECT_TRUE(packet2->GetSoftwareVersion() == SOFTWARE_VERSION_RELEASE_3_0);
+    EXPECT_TRUE(packet2->GetSoftwareVersion() == SOFTWARE_VERSION_CURRENT);
     EXPECT_TRUE(packet2->GetSendCode() == E_OK);
-    std::string schema;
-    packet2->GetSchema(schema);
+    std::string schema = packet2->GetSchema();
     EXPECT_EQ(schema, TEST_SCHEMA);
     EXPECT_TRUE(packet2->GetSecFlag() == secFlag);
     EXPECT_TRUE(packet2->GetSecLabel() == secLabel);
@@ -308,8 +317,7 @@ HWTEST_F(DistributedDBAbilitySyncTest, RequestPacketTest004, TestSize.Level0)
     EXPECT_TRUE(packet2->GetProtocolVersion() == ABILITY_SYNC_VERSION_V1);
     EXPECT_TRUE(packet2->GetSoftwareVersion() == SOFTWARE_VERSION_RELEASE_2_0);
     EXPECT_TRUE(packet2->GetSendCode() == E_OK);
-    std::string schema;
-    packet2->GetSchema(schema);
+    std::string schema = packet2->GetSchema();
     EXPECT_EQ(schema, TEST_SCHEMA);
     EXPECT_TRUE(packet2->GetSecFlag() == 0);
     EXPECT_TRUE(packet2->GetSecLabel() == 0);
@@ -329,10 +337,15 @@ HWTEST_F(DistributedDBAbilitySyncTest, AckPacketTest001, TestSize.Level0)
      * @tc.steps: step2. set version = ABILITY_SYNC_VERSION_V1. schema = TEST_SCHEMA.
      */
     AbilitySyncAckPacket packet1;
+    DbAbility ability1;
+#ifndef OMIT_ZLIB
+    ability1.SetAbilityItem(DATABASE_COMPRESSION_ZLIB, SUPPORT_MARK);
+#endif
     packet1.SetProtocolVersion(ABILITY_SYNC_VERSION_V1);
     packet1.SetSoftwareVersion(SOFTWARE_VERSION_CURRENT);
     packet1.SetSchema(TEST_SCHEMA);
     packet1.SetAckCode(E_VERSION_NOT_SUPPORT);
+    packet1.SetDbAbility(ability1);
     Message msg1(ABILITY_SYNC_MESSAGE);
     msg1.SetMessageType(TYPE_RESPONSE);
     msg1.SetCopiedObject(packet1);
@@ -362,8 +375,8 @@ HWTEST_F(DistributedDBAbilitySyncTest, AckPacketTest001, TestSize.Level0)
     EXPECT_TRUE(packet2->GetProtocolVersion() == ABILITY_SYNC_VERSION_V1);
     EXPECT_TRUE(packet2->GetSoftwareVersion() == SOFTWARE_VERSION_CURRENT);
     EXPECT_TRUE(packet2->GetAckCode() == E_VERSION_NOT_SUPPORT);
-    std::string schema;
-    packet2->GetSchema(schema);
+    EXPECT_TRUE(packet2->GetDbAbility() == ability1);
+    std::string schema = packet2->GetSchema();
     ASSERT_TRUE(schema == TEST_SCHEMA);
 }
 
@@ -380,7 +393,7 @@ HWTEST_F(DistributedDBAbilitySyncTest, SyncStart001, TestSize.Level0)
      * @tc.steps: step1. create a AbilitySync
      */
     AbilitySync async;
-    async.Initialize(g_communicatorB, g_syncInterface, DEVICE_A);
+    async.Initialize(g_communicatorB, g_syncInterface, g_meta, DEVICE_A);
 
     /**
      * @tc.steps: step2. call SyncStart
@@ -413,7 +426,7 @@ HWTEST_F(DistributedDBAbilitySyncTest, RequestReceiveTest001, TestSize.Level0)
      * @tc.steps: step1. create a AbilitySync
      */
     AbilitySync async;
-    async.Initialize(g_communicatorB, g_syncInterface, DEVICE_A);
+    async.Initialize(g_communicatorB, g_syncInterface, g_meta, DEVICE_A);
 
     /**
      * @tc.steps: step2. call RequestRecv, set inMsg nullptr  or set context nullptr
@@ -484,7 +497,7 @@ HWTEST_F(DistributedDBAbilitySyncTest, AckReceiveTest001, TestSize.Level0)
      * @tc.steps: step1. create a AbilitySync
      */
     AbilitySync async;
-    async.Initialize(g_communicatorB, g_syncInterface, DEVICE_A);
+    async.Initialize(g_communicatorB, g_syncInterface, g_meta, DEVICE_A);
 
     /**
      * @tc.steps: step2. call AckRecv, set inMsg nullptr or set context nullptr

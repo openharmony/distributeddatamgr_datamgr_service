@@ -15,20 +15,28 @@
 
 #include "syncer_factory.h"
 
-#include "single_ver_syncer.h"
-#include "multi_ver_syncer.h"
 #include "ikvdb_sync_interface.h"
+#include "multi_ver_syncer.h"
+#include "single_ver_kv_syncer.h"
+#ifdef RELATIONAL_STORE
+#include "single_ver_relational_syncer.h"
+#endif
 
 namespace DistributedDB {
 std::shared_ptr<ISyncer> SyncerFactory::GetSyncer(int type)
 {
-    if (type == IKvDBSyncInterface::SYNC_SVD) {
-        std::shared_ptr<ISyncer> singleVerSyncer(std::make_shared<SingleVerSyncer>());
+    if (type == ISyncInterface::SYNC_SVD) {
+        std::shared_ptr<ISyncer> singleVerSyncer(std::make_shared<SingleVerKVSyncer>());
         return singleVerSyncer;
 #ifndef OMIT_MULTI_VER
-    } else if (type == IKvDBSyncInterface::SYNC_MVD) {
+    } else if (type == ISyncInterface::SYNC_MVD) {
         std::shared_ptr<ISyncer> multiVerSyncer(std::make_shared<MultiVerSyncer>());
         return multiVerSyncer;
+#endif
+#ifdef RELATIONAL_STORE
+    } else if (type == ISyncInterface::SYNC_RELATION) {
+        std::shared_ptr<ISyncer> relationalSyncer(std::make_shared<SingleVerRelationalSyncer>());
+        return relationalSyncer;
 #endif
     } else {
         return nullptr;

@@ -17,12 +17,11 @@
 
 #include "db_common.h"
 #include "db_constant.h"
+#include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_unit_test.h"
 #include "kvdb_manager.h"
-#include "sqlite_local_kvdb_connection.h"
-#include "distributeddb_data_generate_unit_test.h"
 #include "multi_ver_natural_store_transfer_data.h"
-#include "multi_ver_natural_store_connection.h"
+#include "sqlite_local_kvdb_connection.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -56,6 +55,7 @@ void DistributedDBStorageDataOperationTest::TearDownTestCase(void)
 
 void DistributedDBStorageDataOperationTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     KvDBProperties properties;
     properties.SetBoolProp(KvDBProperties::CREATE_IF_NECESSARY, true);
     properties.SetIntProp(KvDBProperties::DATABASE_TYPE, KvDBProperties::LOCAL_TYPE);

@@ -47,6 +47,7 @@ public:
 
     // Start the timer to clear up overtime frames
     void Initialize();
+
     // Stop the timer and clear the RetainWorkPool
     void Finalize();
 

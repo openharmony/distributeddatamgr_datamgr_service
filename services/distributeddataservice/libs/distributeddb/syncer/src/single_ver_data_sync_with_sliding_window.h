@@ -16,8 +16,8 @@
 #ifndef SINGLE_VER_DATA_SYNC_WITH_SLIDING_WINDOW_H
 #define SINGLE_VER_DATA_SYNC_WITH_SLIDING_WINDOW_H
 
-#include "sliding_window_sender.h"
 #include "sliding_window_receiver.h"
+#include "sliding_window_sender.h"
 
 namespace DistributedDB {
 class SingleVerDataSyncWithSlidingWindow {

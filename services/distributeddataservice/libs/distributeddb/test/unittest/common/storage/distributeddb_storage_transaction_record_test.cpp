@@ -15,11 +15,11 @@
 
 #include <gtest/gtest.h>
 
+#include "db_constant.h"
 #include "distributeddb_tools_unit_test.h"
 #include "sqlite_local_kvdb_connection.h"
 #include "sqlite_multi_ver_data_storage.h"
 #include "sqlite_utils.h"
-#include "db_constant.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -58,6 +58,7 @@ void DistributedDBStorageTransactionRecordTest::TearDownTestCase(void)
 
 void DistributedDBStorageTransactionRecordTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_transaction = new (std::nothrow) SQLiteMultiVerTransaction();
     ASSERT_NE(g_transaction, nullptr);
     CipherPassword passwd;

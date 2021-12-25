@@ -47,6 +47,7 @@ struct AutoLaunchItem {
     AutoLaunchItemState state = AutoLaunchItemState::UN_INITIAL;
     bool isDisable = false;
     bool inObserver = false;
+    bool isAutoSync = true;
 };
 
 class AutoLaunch {
@@ -60,7 +61,7 @@ public:
     void SetCommunicatorAggregator(ICommunicatorAggregator *aggregator);
 
     int EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
-        KvStoreObserver *observer, int conflictType, KvStoreNbConflictNotifier conflictNotifier);
+        const AutoLaunchOption &option);
 
     int DisableKvStoreAutoLaunch(const std::string &identifier);
 

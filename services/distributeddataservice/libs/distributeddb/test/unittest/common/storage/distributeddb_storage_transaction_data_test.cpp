@@ -13,26 +13,25 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include <cstdlib>
 #include <ctime>
-#include <string>
+#include <gtest/gtest.h>
 #include <openssl/rand.h>
+#include <string>
 #include <thread>
 
 #include "db_common.h"
+#include "db_constant.h"
 #include "db_errno.h"
+#include "default_factory.h"
 #include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_unit_test.h"
 #include "log_print.h"
 #include "multi_ver_natural_store.h"
 #include "multi_ver_natural_store_commit_storage.h"
 #include "multi_ver_natural_store_connection.h"
-#include "default_factory.h"
-#include "sqlite_multi_ver_data_storage.h"
-#include "sqlite_utils.h"
-#include "db_constant.h"
 #include "process_communicator_test_stub.h"
+#include "sqlite_multi_ver_data_storage.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -249,6 +248,7 @@ void DistributedDBStorageTransactionDataTest::TearDownTestCase(void)
 
 void DistributedDBStorageTransactionDataTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     DistributedDBToolsUnitTest::TestDirInit(g_testDir);
 
     // KvDBProperties prop;

@@ -238,9 +238,9 @@ void SQLiteSingleVerDatabaseUpgrader::SetMetaUpgrade(const SecurityOption &curre
     }
 }
 
-void SQLiteSingleVerDatabaseUpgrader::SetSubdir(const std::string &parentDir)
+void SQLiteSingleVerDatabaseUpgrader::SetSubdir(const std::string &subDir)
 {
-    subDir_ = parentDir;
+    subDir_ = subDir;
 }
 
 int SQLiteSingleVerDatabaseUpgrader::SetPathSecOptWithCheck(const std::string &path, const SecurityOption &secOption,

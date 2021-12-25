@@ -362,6 +362,7 @@ void DistributedDBInterfacesDataOperationTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesDataOperationTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     // init values.
     g_valueStatus = INVALID_ARGS;
     g_value.clear();

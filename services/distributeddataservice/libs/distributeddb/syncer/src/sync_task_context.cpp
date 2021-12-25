@@ -16,17 +16,22 @@
 #include "sync_task_context.h"
 
 #include <algorithm>
+#include <cmath>
 
-#include "db_errno.h"
-#include "log_print.h"
-#include "isync_state_machine.h"
-#include "hash.h"
-#include "time_helper.h"
 #include "db_constant.h"
+#include "db_errno.h"
+#include "hash.h"
+#include "isync_state_machine.h"
+#include "log_print.h"
+#include "time_helper.h"
 
 namespace DistributedDB {
 std::mutex SyncTaskContext::synTaskContextSetLock_;
 std::set<ISyncTaskContext *> SyncTaskContext::synTaskContextSet_;
+
+namespace {
+    const int NEGOTIATION_LIMIT = 2;
+}
 
 SyncTaskContext::SyncTaskContext()
     : syncOperation_(nullptr),
@@ -43,7 +48,12 @@ SyncTaskContext::SyncTaskContext()
       remoteSoftwareVersion_(0),
       remoteSoftwareVersionId_(0),
       isCommNormal_(true),
-      taskErrCode_(E_OK)
+      taskErrCode_(E_OK),
+      syncTaskRetryStatus_(false),
+      isSyncRetry_(false),
+      negotiationCount_(0),
+      isAutoSubscribe_(false),
+      isNeedResetAbilitySync_(false)
 {
 }
 
@@ -102,23 +112,30 @@ void SyncTaskContext::SetOperationStatus(int status)
 
     int finalStatus = status;
     int operationStatus = syncOperation_->GetStatus(deviceId_);
-    if (status == SyncOperation::SEND_FINISHED && operationStatus == SyncOperation::RECV_FINISHED) {
+    if (status == SyncOperation::OP_SEND_FINISHED && operationStatus == SyncOperation::OP_RECV_FINISHED) {
         if (GetTaskErrCode() == -E_EKEYREVOKED) {
-            finalStatus = SyncOperation::EKEYREVOKED_FAILURE;
+            finalStatus = SyncOperation::OP_EKEYREVOKED_FAILURE;
         } else {
-            finalStatus = SyncOperation::FINISHED_ALL;
+            finalStatus = SyncOperation::OP_FINISHED_ALL;
         }
-    } else if (status == SyncOperation::RECV_FINISHED && operationStatus == SyncOperation::SEND_FINISHED) {
+    } else if (status == SyncOperation::OP_RECV_FINISHED && operationStatus == SyncOperation::OP_SEND_FINISHED) {
         if (GetTaskErrCode() == -E_EKEYREVOKED) {
-            finalStatus = SyncOperation::EKEYREVOKED_FAILURE;
+            finalStatus = SyncOperation::OP_EKEYREVOKED_FAILURE;
         } else {
-            finalStatus = SyncOperation::FINISHED_ALL;
+            finalStatus = SyncOperation::OP_FINISHED_ALL;
         }
     }
     syncOperation_->SetStatus(deviceId_, finalStatus);
+    if (finalStatus >= SyncOperation::OP_FINISHED_ALL) {
+        SaveLastPushTaskExecStatus(finalStatus);
+    }
     if (syncOperation_->CheckIsAllFinished()) {
         syncOperation_->Finished();
     }
+}
+
+void SyncTaskContext::SaveLastPushTaskExecStatus(int finalStatus)
+{
 }
 
 void SyncTaskContext::Clear()
@@ -130,10 +147,11 @@ void SyncTaskContext::Clear()
     isAutoSync_ = false;
     requestSessionId_ = 0;
     isNeedRetry_ = NO_NEED_RETRY;
-    mode_ = SyncOperation::INVALID;
-    status_ = SyncOperation::WAITING;
+    mode_ = SyncModeType::INVALID_MODE;
+    status_ = SyncOperation::OP_WAITING;
     taskErrCode_ = E_OK;
     packetId_ = 0;
+    isAutoSubscribe_ = false;
 }
 
 int SyncTaskContext::RemoveSyncOperation(int syncId)
@@ -187,10 +205,11 @@ int SyncTaskContext::GetOperationStatus() const
 {
     std::lock_guard<std::mutex> lock(operationLock_);
     if (syncOperation_ == nullptr) {
-        return SyncOperation::FINISHED_ALL;
+        return SyncOperation::OP_FINISHED_ALL;
     }
     return syncOperation_->GetStatus(deviceId_);
 }
+
 void SyncTaskContext::SetMode(int mode)
 {
     mode_ = mode;
@@ -200,9 +219,13 @@ int SyncTaskContext::GetMode() const
 {
     return mode_;
 }
+
 void SyncTaskContext::MoveToNextTarget()
 {
     ClearSyncOperation();
+    TaskParam param;
+    // call other system api without lock
+    param.timeout = communicator_->GetTimeout(deviceId_);
     std::lock_guard<std::mutex> lock(targetQueueLock_);
     while (!requestTargetQueue_.empty() || !responseTargetQueue_.empty()) {
         ISyncTarget *tmpTarget = nullptr;
@@ -225,7 +248,7 @@ void SyncTaskContext::MoveToNextTarget()
             tmpTarget = nullptr;
             continue;
         }
-        CopyTargetData(tmpTarget);
+        CopyTargetData(tmpTarget, param);
         delete tmpTarget;
         tmpTarget = nullptr;
         break;
@@ -260,11 +283,6 @@ bool SyncTaskContext::IsAutoSync() const
 
 int SyncTaskContext::StartTimer()
 {
-    if (!isAutoSync_) {
-        timeout_ = DBConstant::MANUAL_SYNC_TIMEOUT;
-    } else {
-        timeout_ = DBConstant::AUTO_SYNC_TIMEOUT;
-    }
     std::lock_guard<std::mutex> lockGuard(timerLock_);
     if (timerId_ > 0) {
         return -E_UNEXPECTED_DATA;
@@ -274,9 +292,9 @@ int SyncTaskContext::StartTimer()
     TimerAction timeOutCallback = std::bind(&SyncTaskContext::TimeOut, this, std::placeholders::_1);
     int errCode = RuntimeContext::GetInstance()->SetTimer(timeout_, timeOutCallback,
         [this]() {
-            int errCode = RuntimeContext::GetInstance()->ScheduleTask([this](){ RefObject::DecObjRef(this); });
-            if (errCode != E_OK) {
-                LOGE("[SyncTaskContext] timer finalizer ScheduleTask, errCode %d", errCode);
+            int ret = RuntimeContext::GetInstance()->ScheduleTask([this](){ RefObject::DecObjRef(this); });
+            if (ret != E_OK) {
+                LOGE("[SyncTaskContext] timer finalizer ScheduleTask, errCode %d", ret);
             }
         }, timerId);
     if (errCode != E_OK) {
@@ -488,7 +506,8 @@ void SyncTaskContext::CommErrHandlerFuncInner(int errCode, uint32_t sessionId)
         }
 
         if (errCode == E_OK) {
-            isCommNormal_ = true;
+            // when communicator sent message failed, the state machine will get the error and exit this sync task
+            // it seems unnecessary to change isCommNormal_ value, so just return here
             return;
         }
 
@@ -511,13 +530,17 @@ int SyncTaskContext::TimeOut(TimerId id)
     return errCode;
 }
 
-void SyncTaskContext::CopyTargetData(const ISyncTarget *target)
+void SyncTaskContext::CopyTargetData(const ISyncTarget *target, const TaskParam &taskParam)
 {
     mode_ = target->GetMode();
-    status_ = SyncOperation::SYNCING;
+    status_ = SyncOperation::OP_SYNCING;
     isNeedRetry_ = SyncTaskContext::NO_NEED_RETRY;
     taskErrCode_ = E_OK;
     packetId_ = 0;
+    isCommNormal_ = true; // reset comm status here
+    syncTaskRetryStatus_ = isSyncRetry_;
+    timeout_ = static_cast<int>(taskParam.timeout);
+    negotiationCount_ = 0;
     target->GetSyncOperation(syncOperation_);
     ReSetSequenceId();
 
@@ -526,13 +549,18 @@ void SyncTaskContext::CopyTargetData(const ISyncTarget *target)
         RefObject::IncObjRef(syncOperation_);
         syncId_ = syncOperation_->GetSyncId();
         isAutoSync_ = syncOperation_->IsAutoSync();
+        isAutoSubscribe_ = syncOperation_->IsAutoControlCmd();
+        if (isAutoSync_ || mode_ == SUBSCRIBE_QUERY || mode_ == UNSUBSCRIBE_QUERY) {
+            syncTaskRetryStatus_ = true;
+        }
         requestSessionId_ = Hash::Hash32Func(deviceId_ + std::to_string(syncId_) +
             std::to_string(TimeHelper::GetSysCurrentTime()));
-        LOGI("[SyncTaskContext][copyTarget] mode_ = %d, syncId_ = %d, isAutoSync_ = %d, dev = %s{private}",
-            mode_, syncId_, isAutoSync_, deviceId_.c_str());
+        LOGI("[SyncTaskContext][copyTarget] mode=%d,syncId=%d,isAutoSync=%d,isRetry=%d,dev=%s{private}",
+            mode_, syncId_, isAutoSync_, syncTaskRetryStatus_, deviceId_.c_str());
     } else {
         isAutoSync_ = false;
-        LOGI("[SyncTaskContext][copyTarget] for response data dev %s{private} ", deviceId_.c_str());
+        LOGI("[SyncTaskContext][copyTarget] for response data dev %s{private},isRetry=%d", deviceId_.c_str(),
+            syncTaskRetryStatus_);
     }
 }
 
@@ -574,9 +602,10 @@ void SyncTaskContext::CancelCurrentSyncRetryIfNeed(int newTargetMode)
     if (!isAutoSync_) {
         return;
     }
-    if (newTargetMode == mode_ || newTargetMode == SyncOperation::PUSH_AND_PULL) {
-        SetRetryTime(ISyncStateMachine::RETRY_TIME);
-        ModifyTimer(DBConstant::AUTO_SYNC_TIMEOUT);
+    int mode = SyncOperation::TransferSyncMode(newTargetMode);
+    if (newTargetMode == mode_ || mode == SyncModeType::PUSH_AND_PULL) {
+        SetRetryTime(AUTO_RETRY_TIMES);
+        ModifyTimer(timeout_);
     }
 }
 
@@ -588,5 +617,76 @@ int SyncTaskContext::GetTaskErrCode() const
 void SyncTaskContext::SetTaskErrCode(int errCode)
 {
     taskErrCode_ = errCode;
+}
+
+bool SyncTaskContext::IsSyncTaskNeedRetry() const
+{
+    return syncTaskRetryStatus_;
+}
+
+void SyncTaskContext::SetSyncRetry(bool isRetry)
+{
+    isSyncRetry_ = isRetry;
+}
+
+int SyncTaskContext::GetSyncRetryTimes() const
+{
+    if (IsAutoSync() || mode_ == SUBSCRIBE_QUERY || mode_ == UNSUBSCRIBE_QUERY) {
+        return AUTO_RETRY_TIMES;
+    }
+    return MANUAL_RETRY_TIMES;
+}
+
+int SyncTaskContext::GetSyncRetryTimeout(int retryTime) const
+{
+    int timeoutTime = GetTimeoutTime();
+    if (IsAutoSync()) {
+        // set the new timeout value with 2 raised to the power of retryTime.
+        return timeoutTime * static_cast<int>(pow(2, retryTime));
+    }
+    return timeoutTime;
+}
+
+void SyncTaskContext::ClearAllSyncTask()
+{
+}
+
+bool SyncTaskContext::IsAutoLiftWaterMark() const
+{
+    return negotiationCount_ < NEGOTIATION_LIMIT;
+}
+
+void SyncTaskContext::IncNegotiationCount()
+{
+    negotiationCount_++;
+}
+
+bool SyncTaskContext::IsNeedTriggerQueryAutoSync(Message *inMsg, QuerySyncObject &query)
+{
+    return stateMachine_->IsNeedTriggerQueryAutoSync(inMsg, query);
+}
+
+bool SyncTaskContext::IsAutoSubscribe() const
+{
+    return isAutoSubscribe_;
+}
+
+bool SyncTaskContext::GetIsNeedResetAbilitySync() const
+{
+    return isNeedResetAbilitySync_;
+}
+
+void SyncTaskContext::SetIsNeedResetAbilitySync(bool isNeedReset)
+{
+    isNeedResetAbilitySync_ = isNeedReset;
+}
+
+bool SyncTaskContext::IsCurrentSyncTaskCanBeSkipped() const
+{
+    return false;
+}
+
+void SyncTaskContext::ResetLastPushTaskStatus()
+{
 }
 } // namespace DistributedDB

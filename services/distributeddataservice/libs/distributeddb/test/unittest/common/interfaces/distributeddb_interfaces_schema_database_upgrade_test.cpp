@@ -15,10 +15,10 @@
 
 #ifndef OMIT_JSON
 #include <gtest/gtest.h>
-#include "kv_store_delegate_manager.h"
 #include "distributeddb_tools_unit_test.h"
-#include "schema_utils.h"
+#include "kv_store_delegate_manager.h"
 #include "schema_object.h"
+#include "schema_utils.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -164,6 +164,7 @@ void DistributedDBInterfacesSchemaDatabaseUpgradeTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesSchemaDatabaseUpgradeTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_kvDelegateStatus = INVALID_ARGS;
     g_kvDelegatePtr = nullptr;
 }

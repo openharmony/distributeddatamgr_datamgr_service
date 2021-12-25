@@ -15,17 +15,30 @@
 
 #include "process_system_api_adapter_impl.h"
 
-#include <sys/types.h>
 #include <dirent.h>
+#include <sys/types.h>
 
+#include "distributeddb_tools_unit_test.h"
+#include "distributeddb_data_generate_unit_test.h"
 #include "log_print.h"
 #include "platform_specific.h"
-#include "distributeddb_tools_unit_test.h"
+
+using namespace DistributedDBUnitTest;
 
 namespace DistributedDB {
+namespace {
+    KvStoreDelegateManager g_mgr(APP_ID, USER_ID);
+    // define the g_kvDelegateCallback, used to get some information when open a kv store.
+    DBStatus g_kvDelegateStatus = INVALID_ARGS;
+    KvStoreNbDelegate *g_kvNbDelegatePtr = nullptr;
+    auto g_kvNbDelegateCallback = bind(&DistributedDBToolsUnitTest::KvStoreNbDelegateCallback,
+        std::placeholders::_1, std::placeholders::_2, std::ref(g_kvDelegateStatus), std::ref(g_kvNbDelegatePtr));
+}
+
 ProcessSystemApiAdapterImpl::ProcessSystemApiAdapterImpl()
     : callback_(nullptr),
-      isLocked_(false)
+      isLocked_(false),
+      createDb_(false)
 {
 }
 
@@ -59,6 +72,7 @@ DBStatus ProcessSystemApiAdapterImpl::SetSecurityOption(const std::string &fileP
     if (dirPtr == nullptr) {
         LOGD("set path secOpt![%s] [%d] [%d]", filePath.c_str(), option.securityFlag, option.securityLabel);
         pathSecOptDic_[filePath] = option;
+        closedir(dirPtr);
         return OK;
     }
 
@@ -109,6 +123,17 @@ DBStatus ProcessSystemApiAdapterImpl::GetSecurityOption(const std::string &fileP
 bool ProcessSystemApiAdapterImpl::CheckDeviceSecurityAbility(const std::string &devId,
     const SecurityOption &option) const
 {
+    LOGI("CheckDeviceSecurityAbility!!");
+    if (createDb_) { // for close kvstore will close virtual communicator
+        KvStoreConfig config;
+        DistributedDBToolsUnitTest::TestDirInit(config.dataDir);
+
+        g_mgr.SetKvStoreConfig(config);
+
+        KvStoreNbDelegate::Option dbOption = {true, false, false};
+        g_mgr.GetKvStore("CheckDeviceSecurityAbilityMeta", dbOption, g_kvNbDelegateCallback);
+        g_mgr.CloseKvStore(g_kvNbDelegatePtr);
+    }
     return true;
 }
 
@@ -121,6 +146,12 @@ void ProcessSystemApiAdapterImpl::SetLockStatus(bool isLock)
     isLocked_ = isLock;
 }
 
+void ProcessSystemApiAdapterImpl::SetNeedCreateDb(bool isCreate)
+{
+    std::lock_guard<std::mutex> lock(adapterlock_);
+    createDb_ = isCreate;
+}
+
 void ProcessSystemApiAdapterImpl::ResetSecOptDic()
 {
     pathSecOptDic_.clear();
@@ -130,5 +161,6 @@ void ProcessSystemApiAdapterImpl::ResetAdapter()
 {
     ResetSecOptDic();
     SetLockStatus(false);
+    g_mgr.DeleteKvStore("CheckDeviceSecurityAbilityMeta");
 }
 };

@@ -15,17 +15,48 @@
 
 #include "virtual_single_ver_sync_db_Interface.h"
 
-#include <sys/time.h>
 #include <algorithm>
 #include <thread>
 
 #include "db_errno.h"
+#include "generic_single_ver_kv_entry.h"
+#include "intercepted_data_impl.h"
 #include "log_print.h"
 #include "meta_data.h"
+#include "query_object.h"
 #include "securec.h"
-#include "generic_single_ver_kv_entry.h"
 
 namespace DistributedDB {
+namespace {
+    int GetEntriesFromItems(std::vector<SingleVerKvEntry *> &entries, const std::vector<VirtualDataItem> &dataItems)
+    {
+        int errCode = E_OK;
+        for (auto &item : dataItems) {
+            auto entry = new (std::nothrow) GenericSingleVerKvEntry();
+            if (entry == nullptr) {
+                LOGE("Create entry failed.");
+                errCode = -E_OUT_OF_MEMORY;
+                break;
+            }
+            DataItem storageItem;
+            storageItem.key = item.key;
+            storageItem.value = item.value;
+            storageItem.flag = item.flag;
+            storageItem.timeStamp = item.timeStamp;
+            storageItem.writeTimeStamp = item.writeTimeStamp;
+            entry->SetEntryData(std::move(storageItem));
+            entries.push_back(entry);
+        }
+        if (errCode != E_OK) {
+            for (auto &kvEntry : entries) {
+                delete kvEntry;
+                kvEntry = nullptr;
+            }
+            entries.clear();
+        }
+        return errCode;
+    }
+}
 int VirtualSingleVerSyncDBInterface::GetInterfaceType() const
 {
     return SYNC_SVD;
@@ -61,6 +92,14 @@ int VirtualSingleVerSyncDBInterface::PutMetaData(const Key &key, const Value &va
     return E_OK;
 }
 
+int VirtualSingleVerSyncDBInterface::DeleteMetaData(const std::vector<Key> &keys)
+{
+    for (const auto &key : keys) {
+        (void)metadata_.erase(key);
+    }
+    return E_OK;
+}
+
 int VirtualSingleVerSyncDBInterface::GetAllMetaKeys(std::vector<Key> &keys) const
 {
     for (auto iter = metadata_.begin(); iter != metadata_.end(); ++iter) {
@@ -87,12 +126,6 @@ void VirtualSingleVerSyncDBInterface::ReleaseContinueToken(ContinueToken& contin
     return;
 }
 
-int VirtualSingleVerSyncDBInterface::PutSyncData(std::vector<DataItem>& dataItems,
-    const std::string &deviceName)
-{
-    return -E_NOT_SUPPORT;
-}
-
 SchemaObject VirtualSingleVerSyncDBInterface::GetSchemaInfo() const
 {
     return schemaObj_;
@@ -104,12 +137,6 @@ bool VirtualSingleVerSyncDBInterface::CheckCompatible(const std::string& schema)
         return true;
     }
     return (schemaObj_.CompareAgainstSchemaString(schema) == -E_SCHEMA_EQUAL_EXACTLY);
-}
-
-void VirtualSingleVerSyncDBInterface::ReleaseKvEntry(const SingleVerKvEntry *entry)
-{
-    delete entry;
-    entry = nullptr;
 }
 
 int VirtualSingleVerSyncDBInterface::PutData(const Key &key, const Value &value, const TimeStamp &time, int flag)
@@ -140,17 +167,17 @@ int VirtualSingleVerSyncDBInterface::RemoveDeviceData(const std::string &deviceN
     return E_OK;
 }
 
-int VirtualSingleVerSyncDBInterface::GetSyncData(const Key &key, VirtualDataItem &item)
+int VirtualSingleVerSyncDBInterface::GetSyncData(const Key &key, VirtualDataItem &dataItem)
 {
     auto iter = std::find_if(dbData_.begin(), dbData_.end(),
-        [key](VirtualDataItem item) { return item.key == key; });
+        [key](const VirtualDataItem& item) { return item.key == key; });
     if (iter != dbData_.end()) {
-        item.key = iter->key;
-        item.value = iter->value;
-        item.timeStamp = iter->timeStamp;
-        item.writeTimeStamp = iter->writeTimeStamp;
-        item.flag = iter->flag;
-        item.isLocal = iter->isLocal;
+        dataItem.key = iter->key;
+        dataItem.value = iter->value;
+        dataItem.timeStamp = iter->timeStamp;
+        dataItem.writeTimeStamp = iter->writeTimeStamp;
+        dataItem.flag = iter->flag;
+        dataItem.isLocal = iter->isLocal;
         return E_OK;
     }
     return -E_NOT_FOUND;
@@ -166,30 +193,7 @@ int VirtualSingleVerSyncDBInterface::GetSyncData(TimeStamp begin, TimeStamp end,
         LOGE("[VirtualSingleVerSyncDBInterface][GetSyncData] GetSyncData failed err %d", errCode);
         return errCode;
     }
-    for (auto item : dataItems) {
-        GenericSingleVerKvEntry *entry = new (std::nothrow) GenericSingleVerKvEntry();
-        if (entry == nullptr) {
-            LOGE("Create entry failed.");
-            errCode = -E_OUT_OF_MEMORY;
-            break;
-        }
-        DataItem storageItem;
-        storageItem.key = item.key;
-        storageItem.value = item.value;
-        storageItem.flag = item.flag;
-        storageItem.timeStamp = item.timeStamp;
-        storageItem.writeTimeStamp = item.writeTimeStamp;
-        entry->SetEntryData(std::move(storageItem));
-        entries.push_back(entry);
-    }
-    if (errCode != E_OK) {
-        for (auto kvEntry : entries) {
-            delete kvEntry;
-            kvEntry = nullptr;
-        }
-        entries.clear();
-    }
-    return errCode;
+    return GetEntriesFromItems(entries, dataItems);
 }
 
 int VirtualSingleVerSyncDBInterface::GetSyncDataNext(std::vector<SingleVerKvEntry *> &entries,
@@ -199,25 +203,6 @@ int VirtualSingleVerSyncDBInterface::GetSyncDataNext(std::vector<SingleVerKvEntr
         return -E_NOT_SUPPORT;
     }
     return 0;
-}
-
-int VirtualSingleVerSyncDBInterface::PutSyncData(const std::vector<SingleVerKvEntry *> &entries,
-    const std::string &deviceName)
-{
-    std::this_thread::sleep_for(std::chrono::milliseconds(saveDataDelayTime_));
-    std::vector<VirtualDataItem> dataItems;
-    for (auto kvEntry : entries) {
-        auto genricKvEntry = static_cast<GenericSingleVerKvEntry *>(kvEntry);
-        VirtualDataItem item;
-        genricKvEntry->GetKey(item.key);
-        genricKvEntry->GetValue(item.value);
-        item.timeStamp = genricKvEntry->GetTimestamp();
-        item.writeTimeStamp = genricKvEntry->GetWriteTimestamp();
-        item.flag = genricKvEntry->GetFlag();
-        item.isLocal = false;
-        dataItems.push_back(item);
-    }
-    return PutSyncData(dataItems, deviceName);
 }
 
 int VirtualSingleVerSyncDBInterface::GetSyncData(TimeStamp begin, TimeStamp end, uint32_t blockSize,
@@ -311,5 +296,116 @@ void VirtualSingleVerSyncDBInterface::SetSecurityOption(SecurityOption &option)
 
 void VirtualSingleVerSyncDBInterface::NotifyRemotePushFinished(const std::string &targetId) const
 {
+}
+
+int VirtualSingleVerSyncDBInterface::GetDatabaseCreateTimeStamp(TimeStamp &outTime) const
+{
+    return E_OK;
+}
+
+int VirtualSingleVerSyncDBInterface::GetSyncData(QueryObject &query, const SyncTimeRange &timeRange,
+    const DataSizeSpecInfo &dataSizeInfo, ContinueToken &continueStmtToken,
+    std::vector<SingleVerKvEntry *> &entries) const
+{
+    const auto &startKey = query.GetPrefixKey();
+    Key endKey = startKey;
+    endKey.resize(DBConstant::MAX_KEY_SIZE, UCHAR_MAX);
+
+    std::vector<VirtualDataItem> dataItems;
+    for (const auto &data : dbData_) {
+        // Only get local data.
+        if (!data.isLocal) {
+            continue;
+        }
+
+        if ((data.flag & VirtualDataItem::DELETE_FLAG) != 0) {
+            if (data.timeStamp >= timeRange.deleteBeginTime && data.timeStamp < timeRange.deleteEndTime) {
+                dataItems.push_back(data);
+            }
+        } else {
+            if (data.timeStamp >= timeRange.beginTime && data.timeStamp < timeRange.endTime &&
+                data.key >= startKey && data.key <= endKey) {
+                dataItems.push_back(data);
+            }
+        }
+    }
+
+    LOGD("dataItems size %d", dataItems.size());
+    return GetEntriesFromItems(entries, dataItems);
+}
+
+int VirtualSingleVerSyncDBInterface::DeleteMetaDataByPrefixKey(const Key &keyPrefix) const
+{
+    size_t prefixKeySize = keyPrefix.size();
+    for (auto iter = metadata_.begin(); iter != metadata_.end();) {
+        if (prefixKeySize <= iter->first.size() &&
+            keyPrefix == Key(iter->first.begin(), std::next(iter->first.begin(), prefixKeySize))) {
+            iter = metadata_.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+    return E_OK;
+}
+
+int VirtualSingleVerSyncDBInterface::GetCompressionOption(bool &needCompressOnSync, uint8_t &compressionRate) const
+{
+    return E_OK;
+}
+
+int VirtualSingleVerSyncDBInterface::GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const
+{
+    return E_OK;
+}
+
+int VirtualSingleVerSyncDBInterface::PutSyncData(const DataItem &item)
+{
+    return E_OK;
+}
+
+int VirtualSingleVerSyncDBInterface::CheckAndInitQueryCondition(QueryObject &query) const
+{
+    return E_OK;
+}
+
+int VirtualSingleVerSyncDBInterface::InterceptData(std::vector<SingleVerKvEntry *> &entries,
+    const std::string &sourceID, const std::string &targetID) const
+{
+    return E_OK;
+}
+
+int VirtualSingleVerSyncDBInterface::PutSyncDataWithQuery(const QueryObject &query,
+    const std::vector<SingleVerKvEntry *> &entries, const std::string &deviceName)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(saveDataDelayTime_));
+    std::vector<VirtualDataItem> dataItems;
+    for (auto kvEntry : entries) {
+        auto genericKvEntry = static_cast<GenericSingleVerKvEntry *>(kvEntry);
+        VirtualDataItem item;
+        genericKvEntry->GetKey(item.key);
+        genericKvEntry->GetValue(item.value);
+        item.timeStamp = genericKvEntry->GetTimestamp();
+        item.writeTimeStamp = genericKvEntry->GetWriteTimestamp();
+        item.flag = genericKvEntry->GetFlag();
+        item.isLocal = false;
+        dataItems.push_back(item);
+    }
+    return PutSyncData(dataItems, deviceName);
+}
+
+int VirtualSingleVerSyncDBInterface::AddSubscribe(const std::string &subscribeId, const QueryObject &query,
+    bool needCacheSubscribe)
+{
+    return E_OK;
+}
+
+int VirtualSingleVerSyncDBInterface::RemoveSubscribe(const std::string &subscribeId)
+{
+    return E_OK;
+}
+
+int VirtualSingleVerSyncDBInterface::RemoveSubscribe(const std::vector<std::string> &subscribeIds)
+{
+    return E_OK;
 }
 }  // namespace DistributedDB

@@ -24,25 +24,9 @@
 #include "db_types.h"
 #include "macro_utils.h"
 #include "value_object.h"
+#include "schema.h"
 
 namespace DistributedDB {
-// SchemaType::NONE represent for KV database which do not have schema. Only invalid SchemaObject is NONE type.
-// Enum value must not be changed except SchemaType::UNRECOGNIZED.
-enum class SchemaType : uint8_t {
-    NONE = 0,
-    JSON = 1,
-    FLATBUFFER = 2,
-    UNRECOGNIZED = 3,
-};
-
-struct SchemaAttribute {
-    FieldType type = FieldType::LEAF_FIELD_NULL;
-    bool isIndexable = false;
-    bool hasNotNullConstraint = false;
-    bool hasDefaultValue = false;
-    FieldValue defaultValue; // Has default value in union part and default construction in string part
-};
-
 using IndexName = FieldPath;
 using IndexFieldInfo = std::pair<FieldPath, FieldType>;
 using IndexInfo = std::vector<IndexFieldInfo>;
@@ -54,28 +38,16 @@ struct IndexDifference {
     std::set<IndexName> decrease;
 };
 
-struct SyncOpinion {
-    bool permitSync = false;
-    bool requirePeerConvert = false;
-    bool checkOnReceive = false;
-};
-
-struct SyncStrategy {
-    bool permitSync = false;
-    bool convertOnSend = false;
-    bool convertOnReceive = false;
-    bool checkOnReceive = false;
-};
-
-class SchemaObject {
+class SchemaObject : public ISchema {
 public:
     static std::string GetExtractFuncName(SchemaType inSchemaType);
     static std::string GenerateExtractSQL(SchemaType inSchemaType, const FieldPath &inFieldpath, FieldType inFieldType,
-        uint32_t skipSize);
+        uint32_t skipSize, const std::string &accessStr = "");
 
     // The remoteSchemaType may beyond local SchemaType definition
     static SyncOpinion MakeLocalSyncOpinion(const SchemaObject &localSchema, const std::string &remoteSchema,
         uint8_t remoteSchemaType);
+
     // The remoteOpinion.checkOnReceive is ignored
     static SyncStrategy ConcludeSyncStrategy(const SyncOpinion &localOpinion, const SyncOpinion &remoteOpinion);
 
@@ -84,22 +56,25 @@ public:
     ~SchemaObject() = default;
     SchemaObject(const SchemaObject &);
     SchemaObject& operator=(const SchemaObject &);
+
     // Move constructor and move assignment is not need currently
     SchemaObject(SchemaObject &&) = delete;
     SchemaObject& operator=(SchemaObject &&) = delete;
 
     // Should be called on an invalid SchemaObject, create new SchemaObject if need to reparse
-    int ParseFromSchemaString(const std::string &inSchemaString);
+    int ParseFromSchemaString(const std::string &inSchemaString) override;
 
-    bool IsSchemaValid() const;
-    SchemaType GetSchemaType() const;
+    bool IsSchemaValid() const override;
+    SchemaType GetSchemaType() const override;
+
     // For Json-Schema : Unnecessary spacing will be removed and fieldname resorted by lexicographical order
     // For FlatBuffer-Schema : Original binary schema(Base64 decoded if need)
-    std::string ToSchemaString() const;
+    std::string ToSchemaString() const override;
 
     uint32_t GetSkipSize() const;
     std::map<IndexName, IndexInfo> GetIndexInfo() const;
     bool IsIndexExist(const IndexName &indexName) const;
+
     // Return E_OK if queryale. outType will be set if path exist no matter binary or not
     int CheckQueryableAndGetFieldType(const FieldPath &inPath, FieldType &outType) const;
 
@@ -128,6 +103,7 @@ public:
     // Accept the original entry-value, return E_OK or E_FLATBUFFER_VERIFY_FAIL.
     int VerifyValue(ValueSource sourceType, const Value &inValue) const;
     int VerifyValue(ValueSource sourceType, const RawValue &inValue) const;
+
     // Accept the original value from database. The cache will not be expanded. Return E_OK if nothing error.
     // The ExtractValue is with nice performance by carefully not use std-class to avoid memory allocation.
     // But currently it can only deal with path with $. prefix and only one depth. However, meet current demand.
@@ -189,8 +165,10 @@ private:
         // Compare based on self.
         // return E_SCHEMA_EQUAL_EXACTLY or E_SCHEMA_UNEQUAL_COMPATIBLE_UPGRADE or E_SCHEMA_UNEQUAL_INCOMPATIBLE
         int CompareFlatBufferDefine(const FlatBufferSchema &other) const;
+
         // Accept a no-skipsize(so byte-aligned) value, return E_OK or E_FLATBUFFER_VERIFY_FAIL.
         int VerifyFlatBufferValue(const RawValue &inValue, bool tryNoSizePrefix) const;
+
         // Accept a no-skipsize(so byte-aligned) value.
         int ExtractFlatBufferValue(RawString inPath, const RawValue &inValue, TypeValue &outExtract,
             bool tryNoSizePrefix) const;

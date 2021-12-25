@@ -461,7 +461,7 @@ Status SingleKvStoreProxy::CloseResultSet(sptr<IKvStoreResultSet> resultSetPtr)
     return static_cast<Status>(reply.ReadInt32());
 }
 
-Status SingleKvStoreProxy::Sync(const std::vector<std::string> &deviceIdList, const SyncMode &mode,
+Status SingleKvStoreProxy::Sync(const std::vector<std::string> &deviceIds, SyncMode mode,
                                 uint32_t allowedDelayMs)
 {
     MessageParcel data;
@@ -471,7 +471,7 @@ Status SingleKvStoreProxy::Sync(const std::vector<std::string> &deviceIdList, co
         return Status::IPC_ERROR;
     }
     MessageOption mo { MessageOption::TF_SYNC };
-    if (!data.WriteStringVector(deviceIdList) ||
+    if (!data.WriteStringVector(deviceIds) ||
         !data.WriteInt32(static_cast<int>(mode))) {
         ZLOGW("SendRequest write parcel failed.");
         return Status::IPC_ERROR;
@@ -483,6 +483,31 @@ Status SingleKvStoreProxy::Sync(const std::vector<std::string> &deviceIdList, co
     int32_t error = Remote()->SendRequest(SYNC, data, reply, mo);
     if (error != 0) {
         ZLOGW("SendRequest returned %d", error);
+        return Status::IPC_ERROR;
+    }
+    return static_cast<Status>(reply.ReadInt32());
+}
+Status SingleKvStoreProxy::Sync(const std::vector<std::string> &deviceIds, SyncMode mode, const std::string &query)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(SingleKvStoreProxy::GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return Status::IPC_ERROR;
+    }
+    MessageOption mo { MessageOption::TF_SYNC };
+    if (!data.WriteStringVector(deviceIds) ||
+        !data.WriteInt32(static_cast<int>(mode))) {
+        ZLOGE("SendRequest write parcel failed.");
+        return Status::IPC_ERROR;
+    }
+    if (!data.WriteString(query)) {
+        ZLOGE("write query fail");
+        return Status::IPC_ERROR;
+    }
+    MessageParcel reply;
+    int32_t error = Remote()->SendRequest(SYNC_WITH_CONDITION, data, reply, mo);
+    if (error != 0) {
+        ZLOGE("SendRequest returned %d", error);
         return Status::IPC_ERROR;
     }
     return static_cast<Status>(reply.ReadInt32());
@@ -821,6 +846,56 @@ Status SingleKvStoreProxy::GetSecurityLevel(SecurityLevel &securityLevel)
         securityLevel = static_cast<SecurityLevel>(reply.ReadInt32());
     }
     return status;
+}
+
+Status SingleKvStoreProxy::SubscribeWithQuery(const std::vector<std::string> &deviceIds, const std::string &query)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(SingleKvStoreProxy::GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return Status::IPC_ERROR;
+    }
+    if (!data.WriteStringVector(deviceIds)) {
+        ZLOGE("SendRequest write parcel failed.");
+        return Status::IPC_ERROR;
+    }
+    if (!data.WriteString(query)) {
+        ZLOGE("write query fail");
+        return Status::IPC_ERROR;
+    }
+    MessageParcel reply;
+    MessageOption mo { MessageOption::TF_SYNC };
+    int32_t error = Remote()->SendRequest(SUBSCRIBE_WITH_QUERY, data, reply, mo);
+    if (error != 0) {
+        ZLOGE("SendRequest returned %d", error);
+        return Status::IPC_ERROR;
+    }
+    return static_cast<Status>(reply.ReadInt32());
+}
+
+Status SingleKvStoreProxy::UnSubscribeWithQuery(const std::vector<std::string> &deviceIds, const std::string &query)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(SingleKvStoreProxy::GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return Status::IPC_ERROR;
+    }
+    if (!data.WriteStringVector(deviceIds)) {
+        ZLOGE("SendRequest write parcel failed.");
+        return Status::IPC_ERROR;
+    }
+    if (!data.WriteString(query)) {
+        ZLOGE("write query fail");
+        return Status::IPC_ERROR;
+    }
+    MessageParcel reply;
+    MessageOption mo { MessageOption::TF_SYNC };
+    int32_t error = Remote()->SendRequest(UNSUBSCRIBE_WITH_QUERY, data, reply, mo);
+    if (error != 0) {
+        ZLOGE("SendRequest returned %d", error);
+        return Status::IPC_ERROR;
+    }
+    return static_cast<Status>(reply.ReadInt32());
 }
 
 int SingleKvStoreStub::PutOnRemote(MessageParcel &data, MessageParcel &reply)
@@ -1346,7 +1421,7 @@ int SingleKvStoreStub::ControlOnRemote(MessageParcel &data, MessageParcel &reply
     return 0;
 }
 
-int SingleKvStoreStub::OnSecurityLevelRequest(MessageParcel& data, MessageParcel &reply)
+int SingleKvStoreStub::OnSecurityLevelRequest(MessageParcel &data, MessageParcel &reply)
 {
     SecurityLevel securityLevel = SecurityLevel::NO_LABEL;
     auto status = GetSecurityLevel(securityLevel);
@@ -1505,6 +1580,27 @@ int SingleKvStoreStub::OnCapabilityEnableRequest(MessageParcel &data, MessagePar
     return 0;
 }
 
+int SingleKvStoreStub::OnSyncRequest(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<std::string> devices;
+    if (!data.ReadStringVector(&devices) || devices.empty()) {
+        ZLOGI("SYNC list:%zu", devices.size());
+        if (!reply.WriteInt32(static_cast<int>(Status::INVALID_ARGUMENT))) {
+            ZLOGE("write sync status fail");
+            return -1;
+        }
+        return 0;
+    }
+    auto mode = static_cast<SyncMode>(data.ReadInt32());
+    auto query = data.ReadString();
+    Status status = Sync(devices, mode, query);
+    if (!reply.WriteInt32(static_cast<int>(status))) {
+        ZLOGE("write sync status fail");
+        return -1;
+    }
+    return 0;
+}
+
 int SingleKvStoreStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
                                        MessageOption &option)
 {
@@ -1521,5 +1617,45 @@ int SingleKvStoreStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messa
         MessageOption mo { MessageOption::TF_SYNC };
         return IPCObjectStub::OnRemoteRequest(code, data, reply, mo);
     }
+}
+
+int SingleKvStoreStub::OnSubscribeWithQueryRequest(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<std::string> devices;
+    if (!data.ReadStringVector(&devices) || devices.empty()) {
+        ZLOGE("SYNC list:%zu", devices.size());
+        if (!reply.WriteInt32(static_cast<uint32_t>(Status::INVALID_ARGUMENT))) {
+            ZLOGE("write sync status fail");
+            return -1;
+        }
+        return 0;
+    }
+    auto query = data.ReadString();
+    Status status = SubscribeWithQuery(devices, query);
+    if (!reply.WriteInt32(static_cast<uint32_t>(status))) {
+        ZLOGE("write sync status fail");
+        return -1;
+    }
+    return 0;
+}
+
+int SingleKvStoreStub::OnUnSubscribeWithQueryRequest(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<std::string> devices;
+    if (!data.ReadStringVector(&devices) || devices.empty()) {
+        ZLOGE("SYNC list:%zu", devices.size());
+        if (!reply.WriteInt32(static_cast<uint32_t>(Status::INVALID_ARGUMENT))) {
+            ZLOGE("write sync status fail");
+            return -1;
+        }
+        return 0;
+    }
+    auto query = data.ReadString();
+    Status status = UnSubscribeWithQuery(devices, query);
+    if (!reply.WriteInt32(static_cast<uint32_t>(status))) {
+        ZLOGE("write sync status fail");
+        return -1;
+    }
+    return 0;
 }
 } // namespace OHOS::DistributedKv

@@ -89,6 +89,8 @@ namespace {
         properties.SetStringProp(KvDBProperties::DATA_DIR, storePath);
         properties.SetBoolProp(KvDBProperties::CREATE_DIR_BY_STORE_ID_ONLY, option.createDirByStoreIdOnly);
         properties.SetSchema(schema);
+        properties.SetBoolProp(KvDBProperties::CHECK_INTEGRITY, option.isNeedIntegrityCheck);
+        properties.SetBoolProp(KvDBProperties::RM_CORRUPTED_DB, option.isNeedRmCorruptedDb);
         if (RuntimeContext::GetInstance()->IsProcessSystemApiAdapterValid()) {
             properties.SetIntProp(KvDBProperties::SECURITY_LABEL, option.secOption.securityLabel);
             properties.SetIntProp(KvDBProperties::SECURITY_FLAG, option.secOption.securityFlag);
@@ -97,6 +99,11 @@ namespace {
 
         if (option.isEncryptedDb) {
             properties.SetPassword(option.cipher, option.passwd);
+        }
+        properties.SetBoolProp(KvDBProperties::COMPRESS_ON_SYNC, option.isNeedCompressOnSync);
+        if (option.isNeedCompressOnSync) {
+            properties.SetIntProp(KvDBProperties::COMPRESSION_RATE,
+                ParamCheckUtils::GetValidCompressionRate(option.compressionRate));
         }
     }
 
@@ -524,8 +531,7 @@ DBStatus KvStoreDelegateManager::EnableKvStoreAutoLaunch(const std::string &user
         return TransferDBErrno(errCode);
     }
 
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(properties, notifier, option.observer,
-        option.conflictType, option.notifier);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(properties, notifier, option);
     if (errCode != E_OK) {
         LOGE("[KvStoreManager] Enable auto launch failed:%d", errCode);
         return TransferDBErrno(errCode);

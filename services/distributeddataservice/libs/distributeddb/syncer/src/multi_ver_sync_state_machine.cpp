@@ -44,7 +44,7 @@ MultiVerSyncStateMachine::~MultiVerSyncStateMachine()
     Clear();
 }
 
-int MultiVerSyncStateMachine::Initialize(ISyncTaskContext *context, IKvDBSyncInterface *syncInterface,
+int MultiVerSyncStateMachine::Initialize(ISyncTaskContext *context, ISyncInterface *syncInterface,
     std::shared_ptr<Metadata> &metadata, ICommunicator *communicator)
 {
     if (context == nullptr || syncInterface == nullptr || metadata == nullptr || communicator == nullptr) {
@@ -102,7 +102,7 @@ void MultiVerSyncStateMachine::StepToIdle()
     StopWatchDog();
     context_->Clear();
     PerformanceAnalysis::GetInstance()->TimeRecordEnd();
-    LOGD("[MultiVerSyncStateMachine][%s{private}] step to idle", context_->GetDeviceId().c_str());
+    LOGD("[MultiVerSyncStateMachine][%s] step to idle", STR_MASK(context_->GetDeviceId()));
 }
 
 int MultiVerSyncStateMachine::MessageCallbackCheck(const Message *inMsg)
@@ -126,7 +126,14 @@ int MultiVerSyncStateMachine::MessageCallbackCheck(const Message *inMsg)
 
 int MultiVerSyncStateMachine::ReceiveMessageCallback(Message *inMsg)
 {
-    if (inMsg != nullptr && inMsg->GetMessageId() == TIME_SYNC_MESSAGE) {
+    if (inMsg == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    if (inMsg->IsFeedbackError()) {
+        LOGE("[MultiVerSyncStateMachine] Feedback Message with errorNo=%u.", inMsg->GetErrorNo());
+        return -(inMsg->GetErrorNo());
+    }
+    if (inMsg->GetMessageId() == TIME_SYNC_MESSAGE) {
         return TimeSyncPacketRecvCallback(context_, inMsg);
     }
     std::lock_guard<std::mutex> lock(stateMachineLock_);
@@ -195,8 +202,7 @@ void MultiVerSyncStateMachine::SyncStepInnerLocked()
         goto SYNC_STEP_OUT;
     }
 
-    LOGD("[MultiVerSyncStateMachine] SyncStep dst=%s{private}, state = %d",
-        context_->GetDeviceId().c_str(), currentState_);
+    LOGD("[MultiVerSyncStateMachine] SyncStep dst=%s, state = %d", STR_MASK(context_->GetDeviceId()), currentState_);
     int errCode;
     {
         std::lock_guard<std::mutex> lock(stateMachineLock_);
@@ -279,7 +285,7 @@ int MultiVerSyncStateMachine::PrepareNextSyncTask()
     return StartSyncInner();
 }
 
-void MultiVerSyncStateMachine::SendSaveDataNotifyPacket(uint32_t sessionId, uint32_t sequenceId)
+void MultiVerSyncStateMachine::SendSaveDataNotifyPacket(uint32_t sessionId, uint32_t sequenceId, uint32_t inMsgId)
 {
 }
 
@@ -402,20 +408,20 @@ void MultiVerSyncStateMachine::Finish()
     if (commitsSize > 0) {
         context_->GetCommit(commitsSize - 1, commit);
         context_->GetCommits(commits);
-        LOGD("MultiVerSyncStateMachine::Finish merge src=%s{private}", context_->GetDeviceId().c_str());
+        LOGD("MultiVerSyncStateMachine::Finish merge src=%s", STR_MASK(context_->GetDeviceId()));
         PerformanceAnalysis *performance = PerformanceAnalysis::GetInstance();
         if (performance != nullptr) {
             performance->StepTimeRecordStart(MV_TEST_RECORDS::RECORD_MERGE);
         }
         int errCode = multiVerDataSync_->MergeSyncCommit(commit, commits);
-        LOGD("MultiVerSyncStateMachine::Finish merge src=%s{private}, MergeSyncCommit errCode:%d",
-            context_->GetDeviceId().c_str(), errCode);
+        LOGD("MultiVerSyncStateMachine::Finish merge src=%s, MergeSyncCommit errCode:%d",
+            STR_MASK(context_->GetDeviceId()), errCode);
         if (performance != nullptr) {
             performance->StepTimeRecordEnd(MV_TEST_RECORDS::RECORD_MERGE);
         }
     }
     RefObject::AutoLock lock(context_);
-    context_->SetOperationStatus(SyncOperation::FINISHED_ALL);
+    context_->SetOperationStatus(SyncOperation::OP_FINISHED_ALL);
     StepToIdle();
     ExecNextTask();
 }
@@ -429,15 +435,15 @@ int MultiVerSyncStateMachine::OneCommitSyncFinish()
     int errCode = E_OK;
     int commitIndex = context_->GetCommitIndex();
 
-    LOGD("MultiVerSyncStateMachine::OneCommitSyncFinish  src=%s{private}, commitIndex = %d,",
-        context_->GetDeviceId().c_str(), commitIndex);
+    LOGD("MultiVerSyncStateMachine::OneCommitSyncFinish  src=%s, commitIndex = %d,", STR_MASK(context_->GetDeviceId()),
+        commitIndex);
     if (commitIndex > 0) {
         context_->GetCommit(commitIndex - 1, commit);
         deviceName = context_->GetDeviceId();
         context_->GetEntries(entries);
-        LOGD("MultiVerSyncStateMachine::OneCommitSyncFinish src=%s{private}, entries size = %lu",
-            context_->GetDeviceId().c_str(), entries.size());
-        errCode = timeSync_->GetTimeOffset(outOffset);
+        LOGD("MultiVerSyncStateMachine::OneCommitSyncFinish src=%s, entries size = %lu",
+            STR_MASK(context_->GetDeviceId()), entries.size());
+        errCode = timeSync_->GetTimeOffset(outOffset, TIME_SYNC_WAIT_TIME);
         if (errCode != E_OK) {
             LOGI("MultiVerSyncStateMachine::OneCommitSyncFinish GetTimeOffset fail errCode:%d", errCode);
             return errCode;
@@ -447,8 +453,8 @@ int MultiVerSyncStateMachine::OneCommitSyncFinish()
 
         // Due to time sync error, commit timestamp may bigger than currentLocalTime, we need to fix the timestamp
         TimeOffset timefixOffset = (commit.timestamp < currentLocalTime) ? 0 : (commit.timestamp - currentLocalTime);
-        LOGD("MultiVerSyncStateMachine::OneCommitSyncFinish src=%s{private}, timefixOffset = %lld",
-            context_->GetDeviceId().c_str(), timefixOffset);
+        LOGD("MultiVerSyncStateMachine::OneCommitSyncFinish src=%s, timefixOffset = %lld",
+            STR_MASK(context_->GetDeviceId()), timefixOffset);
         commit.timestamp -= timefixOffset;
         for (MultiVerKvEntry *entry : entries) {
             TimeStamp timeStamp;
@@ -461,8 +467,8 @@ int MultiVerSyncStateMachine::OneCommitSyncFinish()
             performance->StepTimeRecordStart(MV_TEST_RECORDS::RECORD_PUT_COMMIT_DATA);
         }
         errCode = multiVerDataSync_->PutCommitData(commit, entries, deviceName);
-        LOGD("MultiVerSyncStateMachine::OneCommitSyncFinish PutCommitData src=%s{private}, errCode = %d",
-            context_->GetDeviceId().c_str(), errCode);
+        LOGD("MultiVerSyncStateMachine::OneCommitSyncFinish PutCommitData src=%s, errCode = %d",
+            STR_MASK(context_->GetDeviceId()), errCode);
         if (performance != nullptr) {
             performance->StepTimeRecordEnd(MV_TEST_RECORDS::RECORD_PUT_COMMIT_DATA);
         }
@@ -529,10 +535,9 @@ void MultiVerSyncStateMachine::SyncResponseBegin(uint32_t sessionId)
         int errCode = RuntimeContext::GetInstance()->SetTimer(
             RESPONSE_TIME_OUT, timeOutCallback,
             [this]() {
-                int errCode = RuntimeContext::GetInstance()->ScheduleTask([this](){ RefObject::DecObjRef(context_); });
-                if (errCode != E_OK) {
-                    LOGE("[MultiVerSyncStateMachine][SyncResponseEnd] timer finalizer ScheduleTask, errCode %d",
-                        errCode);
+                int ret = RuntimeContext::GetInstance()->ScheduleTask([this](){ RefObject::DecObjRef(context_); });
+                if (ret != E_OK) {
+                    LOGE("[MultiVerSyncStateMachine][SyncResponseEnd] timer finalizer ScheduleTask, errCode %d", ret);
                 }
             },
             timerId);
@@ -582,6 +587,11 @@ int MultiVerSyncStateMachine::SyncResponseTimeout(TimerId timerId)
     }
     SyncResponseEnd(sessionId);
     return E_OK;
+}
+
+bool MultiVerSyncStateMachine::IsNeedTriggerQueryAutoSync(Message *inMsg, QuerySyncObject &query)
+{
+    return false;
 }
 }
 #endif

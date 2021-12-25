@@ -29,7 +29,6 @@ namespace {
     constexpr uint64_t TIME_SYNC_INTERVAL = 24 * 60 * 60 * 1000; // 24h
     constexpr int TRIP_DIV_HALF = 2;
     constexpr int64_t MAX_TIME_OFFSET_NOISE = 1 * 1000 * 10000; // 1s for 100ns
-    constexpr int TIME_SYNC_WAIT_TIME = 5; // 5s
 }
 
 // Class TimeSyncPacket
@@ -151,7 +150,7 @@ int TimeSync::RegisterTransformFunc()
 }
 
 int TimeSync::Initialize(ICommunicator *communicator, std::shared_ptr<Metadata> &metadata,
-    const IKvDBSyncInterface *storage, const DeviceID &deviceId)
+    const ISyncInterface *storage, const DeviceID &deviceId)
 {
     if ((communicator == nullptr) || (storage == nullptr) || (metadata == nullptr)) {
         return -E_INVALID_ARGS;
@@ -191,7 +190,7 @@ void TimeSync::Finalize()
     LOGD("[TimeSync] Finalized!");
 }
 
-int TimeSync::SyncStart(const CommErrHandler &handler)
+int TimeSync::SyncStart(const CommErrHandler &handler,  uint32_t sessionId)
 {
     isOnline_ = true;
     TimeSyncPacket packet;
@@ -204,7 +203,7 @@ int TimeSync::SyncStart(const CommErrHandler &handler)
     if (message == nullptr) {
         return -E_OUT_OF_MEMORY;
     }
-
+    message->SetSessionId(sessionId);
     message->SetMessageType(TYPE_REQUEST);
     message->SetPriority(Priority::NORMAL);
     int errCode = message->SetCopiedObject<>(packet);
@@ -313,12 +312,17 @@ int TimeSync::DeSerialization(const uint8_t *buffer, uint32_t length, Message *i
     return inMsg->SetCopiedObject<>(packet);
 }
 
-int TimeSync::AckRecv(const Message *message)
+int TimeSync::AckRecv(const Message *message, uint32_t targetSessionId)
 {
+    // only check when sessionId is not 0, because old version timesync sessionId is 0.
+    if (message != nullptr && message->GetSessionId() != 0 &&
+        message->GetErrorNo() == E_FEEDBACK_COMMUNICATOR_NOT_FOUND && message->GetSessionId() == targetSessionId) {
+        LOGE("[AbilitySync][AckMsgCheck] Remote db is closed");
+        return -E_FEEDBACK_COMMUNICATOR_NOT_FOUND;
+    }
     if (!IsPacketValid(message, TYPE_RESPONSE)) {
         return -E_INVALID_ARGS;
     }
-
     const TimeSyncPacket *packet = message->GetObject<TimeSyncPacket>();
     if (packet == nullptr) {
         LOGE("[TimeSync] AckRecv packet is null");
@@ -397,6 +401,7 @@ int TimeSync::RequestRecv(const Message *message)
     if (ackMessage == nullptr) {
         return -E_OUT_OF_MEMORY;
     }
+    ackMessage->SetSessionId(message->GetSessionId());
     ackMessage->SetPriority(Priority::NORMAL);
     ackMessage->SetMessageType(TYPE_RESPONSE);
     ackMessage->SetTarget(deviceId_);
@@ -483,7 +488,7 @@ int TimeSync::TimeSyncDriver(TimerId timerId)
     return E_OK;
 }
 
-int TimeSync::GetTimeOffset(TimeOffset &outOffset)
+int TimeSync::GetTimeOffset(TimeOffset &outOffset, uint32_t timeout, uint32_t sessionId)
 {
     if (!isSynced_) {
         {
@@ -491,16 +496,18 @@ int TimeSync::GetTimeOffset(TimeOffset &outOffset)
             isAckReceived_ = false;
         }
         CommErrHandler handler = std::bind(&TimeSync::CommErrHandlerFunc, std::placeholders::_1, this);
-        int errCode = SyncStart(handler);
-        LOGD("TimeSync::GetTimeOffset start, current = %llu, errCode:%d", TimeHelper::GetSysCurrentTime(), errCode);
+        int errCode = SyncStart(handler, sessionId);
+        LOGD("TimeSync::GetTimeOffset start, current time = %llu, errCode = %d，timeout = %u ms",
+            TimeHelper::GetSysCurrentTime(), errCode, timeout);
         std::unique_lock<std::mutex> lock(cvLock_);
-        if (errCode != E_OK || !conditionVar_.wait_for(lock, std::chrono::seconds(TIME_SYNC_WAIT_TIME),
+        if (errCode != E_OK || !conditionVar_.wait_for(lock, std::chrono::milliseconds(timeout),
             [this](){ return this->isAckReceived_ == true; })) {
             LOGD("TimeSync::GetTimeOffset, retryTime_ = %d", retryTime_);
             retryTime_++;
             if (retryTime_ < MAX_RETRY_TIME) {
                 lock.unlock();
-                return GetTimeOffset(outOffset);
+                LOGI("TimeSync::GetTimeOffset timeout, try again");
+                return GetTimeOffset(outOffset, timeout);
             }
             retryTime_ = 0;
             return -E_TIMEOUT;
@@ -542,7 +549,7 @@ void TimeSync::CommErrHandlerFunc(int errCode, TimeSync *timeSync)
 
 void TimeSync::ResetTimer()
 {
-    std::unique_lock<std::mutex> lock(timeDriverLock_);
+    std::lock_guard<std::mutex> lock(timeDriverLock_);
     RuntimeContext::GetInstance()->RemoveTimer(driverTimerId_, true);
     int errCode = RuntimeContext::GetInstance()->SetTimer(
         TIME_SYNC_INTERVAL, driverCallback_, nullptr, driverTimerId_);

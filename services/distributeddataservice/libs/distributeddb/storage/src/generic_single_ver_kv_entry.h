@@ -24,6 +24,11 @@
 #include "single_ver_kv_entry.h"
 
 namespace DistributedDB {
+struct CompressInfo {
+    CompressAlgorithm compressAlgo;
+    uint32_t targetVersion;
+};
+
 class GenericSingleVerKvEntry : public SingleVerKvEntry {
 public:
     GenericSingleVerKvEntry();
@@ -43,12 +48,16 @@ public:
     void SetWriteTimestamp(TimeStamp time) override;
 
     void GetKey(Key &key) const;
+    const Key &GetKey() const override;
+
+    void GetHashKey(Key &key) const;
 
     void GetValue(Value &value) const;
+    const Value &GetValue() const override;
 
     uint64_t GetFlag() const override;
 
-    void SetEntryData(DataItem &&dateItem);
+    void SetEntryData(DataItem &&dataItem);
 
     int SerializeData(Parcel &parcel, uint32_t targetVersion) override;
 
@@ -60,7 +69,19 @@ public:
 
     static int DeSerializeDatas(std::vector<SingleVerKvEntry *> &kvEntries, Parcel &parcel);
 
+    void SetKey(const Key &key) override;
+    void SetValue(const Value &value) override;
+    void SetHashKey(const Key &hashKey) override;
+
     static uint32_t CalculateLens(const std::vector<SingleVerKvEntry *> &kvEntries, uint32_t targetVersion);
+    static uint32_t CalculateCompressedLens(const std::vector<uint8_t> &compressedData);
+    static int Compress(const std::vector<SingleVerKvEntry *> &kvEntries, std::vector<uint8_t> &destData,
+        const CompressInfo &compressInfo);
+    static int Uncompress(const std::vector<uint8_t> &srcData, std::vector<SingleVerKvEntry *> &kvEntries,
+        unsigned long destLen, CompressAlgorithm algo);
+    static int SerializeCompressedDatas(const std::vector<SingleVerKvEntry *> &kvEntries,
+        const std::vector<uint8_t> &compressedEntries, Parcel &parcel, uint32_t targetVersion, CompressAlgorithm algo);
+    static int DeSerializeCompressedDatas(std::vector<SingleVerKvEntry *> &kvEntries, Parcel &parcel);
 
 private:
     int AdaptToVersion(int operType, uint32_t targetVersion, Parcel &parcel, uint64_t &datalen);
@@ -68,15 +89,15 @@ private:
 
     int SerializeDataByVersion(uint32_t targetVersion, Parcel &parcel) const;
     int SerializeDataByFirstVersion(Parcel &parcel) const;
-    int SerializeDataByLaterVersion(Parcel &parcel) const;
+    int SerializeDataByLaterVersion(Parcel &parcel, uint32_t targetVersion) const;
 
     int CalLenByVersion(uint32_t targetVersion, uint64_t &len) const;
     void CalLenByFirstVersion(uint64_t &len) const;
-    void CalLenByLaterVersion(uint64_t &len) const;
+    void CalLenByLaterVersion(uint64_t &len, uint32_t targetVersion) const;
 
     int DeSerializeByVersion(uint32_t targetVersion, Parcel &parcel, uint64_t &len);
     void DeSerializeByFirstVersion(uint64_t &len, Parcel &parcel);
-    void DeSerializeByLaterVersion(uint64_t &len, Parcel &parcel);
+    void DeSerializeByLaterVersion(uint64_t &len, Parcel &parcel, uint32_t targetVersion);
 
     DataItem dataItem_;
 };

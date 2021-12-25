@@ -78,5 +78,10 @@ bool SyncTarget::IsAutoSync() const
     }
     return operation_->IsAutoSync();
 }
+
+uint32_t SyncTarget::GetResponseSessionId() const
+{
+    return 0;
+}
 } // namespace DistributedDB
 

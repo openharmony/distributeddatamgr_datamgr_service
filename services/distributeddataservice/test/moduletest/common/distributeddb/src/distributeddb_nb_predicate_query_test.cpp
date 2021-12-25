@@ -46,16 +46,6 @@ const int IN_AND_NOTIN_MAX_LENGTH = 128;
 const int LIKE_AND_NOTLIKE_MAX_LENGTH = 50000;
 
 DistributedDB::CipherPassword g_passwd1;
-const std::string VALID_DEFINE_STRING = "{\"field1\":\"STRING ,DEFAULT null\",\"field2\":"
-    "{\"field3\":\"STRING ,DEFAULT null\",\"field4\":[]}}";
-const std::string VALID_DEFINE_BOOL = "{\"field1\": \"BOOL ,DEFAULT null\",\"field2\":"
-    "{\"field3\": \"BOOL ,DEFAULT null\",\"field4\":[]}}";
-const std::string VALID_DEFINE_INT = "{\"field1\": \"INTEGER ,DEFAULT null\",\"field2\":"
-    "{\"field3\": \"INTEGER ,DEFAULT null\",\"field4\":[]}}";
-const std::string VALID_DEFINE_LONG = "{\"field1\": \"LONG ,DEFAULT null\",\"field2\":"
-    "{\"field3\": \"LONG ,DEFAULT null\",\"field4\":[]}}";
-const std::string VALID_DEFINE_DOUBLE = "{\"field1\": \"DOUBLE ,DEFAULT null\",\"field2\":"
-    "{\"field3\": \"DOUBLE ,DEFAULT null\",\"field4\": []}}";
 
 const int SCHEMA_GOT_COUNT_1 = 1;
 const int SCHEMA_GOT_COUNT_2 = 2;
@@ -88,7 +78,7 @@ void DistributeddbNbPredicateQueryTest::TearDownTestCase(void)
 
 void DistributeddbNbPredicateQueryTest::SetUp(void)
 {
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 
     UnitTest *test = UnitTest::GetInstance();
     ASSERT_NE(test, nullptr);
@@ -100,11 +90,11 @@ void DistributeddbNbPredicateQueryTest::SetUp(void)
 
 void DistributeddbNbPredicateQueryTest::TearDown(void)
 {
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 }
 
 void PrepareSchemaDBAndData(KvStoreNbDelegate *&delegate, KvStoreDelegateManager *&manager,
-    vector<string> &schemasValue, vector<Entry> &entries, const std::string schemaDefine)
+    const vector<string> &schemasValue, vector<Entry> &entries, const std::string schemaDefine)
 {
     string validSchema = SpliceToSchema(VALID_VERSION_1, VALID_MODE_1, schemaDefine, VALID_INDEX_1);
 
@@ -282,19 +272,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query001, TestSize.Level0)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-
-    schemasValue.push_back("{\"field1\":\"bxz\",\"field2\":{\"field3\":\"fxy\",\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":\"abc\",\"field2\":{\"field3\":\"fxz\",\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\": null ,\"field2\":{\"field3\":\"fxw\",\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":\"bxz\",\"field2\":{\"field3\": null ,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":\"TRUE\",\"field2\":{\"field3\": null ,\"field4\":[]}}");
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_STRING);
+    PrepareSchemaDBAndData(delegate, manager, STRING_SCHEMA_VALUE, entries, VALID_DEFINE_STRING);
 
     /**
      * @tc.steps: step2. test the Query interface of EqualTo/NotEqualTo/In/NotIn/GreaterThan/LessThan/
@@ -409,19 +392,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query002, TestSize.Level0)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-
-    schemasValue.push_back("{\"field1\":\"bxz\",\"field2\":{\"field3\":\"fxy\",\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":\"abc\",\"field2\":{\"field3\":\"fxz\",\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\": null ,\"field2\":{\"field3\":\"fxw\",\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":\"bxz\",\"field2\":{\"field3\": null ,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":\"TRUE\",\"field2\":{\"field3\": null ,\"field4\":[]}}");
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_STRING);
+    PrepareSchemaDBAndData(delegate, manager, STRING_SCHEMA_VALUE, entries, VALID_DEFINE_STRING);
 
     /**
      * @tc.steps: step2. use notexist field5 to test EqualTo/NotEqualTo/In/NotIn/GreaterThan/LessThan/
@@ -548,19 +524,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query003, TestSize.Level0)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-
-    schemasValue.push_back("{\"field1\":true,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":false,\"field2\":{\"field3\":false,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":null ,\"field2\":{\"field3\":false,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":true,\"field2\":{\"field3\":null ,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":true,\"field2\":{\"field3\":null ,\"field4\":[]}}");
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_BOOL);
+    PrepareSchemaDBAndData(delegate, manager, BOOL_SCHEMA_VALUE, entries, VALID_DEFINE_BOOL);
 
     /**
      * @tc.steps: step2. test the Query interface of EqualTo/NotEqualTo/In/NotIn/GreaterThan/LessThan/
@@ -638,19 +607,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query004, TestSize.Level0)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-
-    schemasValue.push_back("{\"field1\":true,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":false,\"field2\":{\"field3\":false,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":null ,\"field2\":{\"field3\":false,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":true,\"field2\":{\"field3\":null ,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":true,\"field2\":{\"field3\":null ,\"field4\":[]}}");
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_BOOL);
+    PrepareSchemaDBAndData(delegate, manager, BOOL_SCHEMA_VALUE, entries, VALID_DEFINE_BOOL);
 
     /**
      * @tc.steps: step2. use notexist field5 to test EqualTo/NotEqualTo/In/NotIn and call GetEntries with Query.
@@ -823,19 +785,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query005, TestSize.Level0)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-
-    schemasValue.push_back("{\"field1\":10,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":null,\"field2\":{\"field3\":10,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":15,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":10,\"field2\":{\"field3\":10,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":20,\"field2\":{\"field3\":null,\"field4\":[]}}");
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_INT);
+    PrepareSchemaDBAndData(delegate, manager, INTEGER_SCHEMA_VALUE, entries, VALID_DEFINE_INT);
 
     /**
      * @tc.steps: step2. test the Query interface of EqualTo/NotEqualTo/In/NotIn/GreaterThan/LessThan/
@@ -948,19 +903,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query006, TestSize.Level0)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-
-    schemasValue.push_back("{\"field1\":10,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":null,\"field2\":{\"field3\":10,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":15 ,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":10,\"field2\":{\"field3\":10 ,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":20,\"field2\":{\"field3\":null ,\"field4\":[]}}");
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_INT);
+    PrepareSchemaDBAndData(delegate, manager, INTEGER_SCHEMA_VALUE, entries, VALID_DEFINE_INT);
 
     /**
      * @tc.steps: step2. use notexist field5 to test EqualTo/NotEqualTo/In/NotIn/GreaterThan/LessThan/
@@ -1001,19 +949,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query007, TestSize.Level0)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-
-    schemasValue.push_back("{\"field1\":10,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":null,\"field2\":{\"field3\":10,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":18 ,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":10,\"field2\":{\"field3\":-25 ,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":20,\"field2\":{\"field3\":null ,\"field4\":[]}}");
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_LONG);
+    PrepareSchemaDBAndData(delegate, manager, LONG_SCHEMA_VALUE, entries, VALID_DEFINE_LONG);
 
     /**
      * @tc.steps: step2. test the Query interface of EqualTo/NotEqualTo/In/NotIn/GreaterThan/LessThan/
@@ -1082,19 +1023,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query008, TestSize.Level0)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-
-    schemasValue.push_back("{\"field1\":10,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":null,\"field2\":{\"field3\":10,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":18 ,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":10,\"field2\":{\"field3\":-25 ,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":20,\"field2\":{\"field3\":null ,\"field4\":[]}}");
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_LONG);
+    PrepareSchemaDBAndData(delegate, manager, LONG_SCHEMA_VALUE, entries, VALID_DEFINE_LONG);
 
     /**
      * @tc.steps: step2. use notexist field5 to test EqualTo/NotEqualTo/In/NotIn/GreaterThan/LessThan/
@@ -1233,19 +1167,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query009, TestSize.Level0)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-
-    schemasValue.push_back("{\"field1\":null,\"field2\":{\"field3\":10.0,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":10.0,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":-10.0 ,\"field2\":{\"field3\":30,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":10.5,\"field2\":{\"field3\":null ,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":-0.0,\"field2\":{\"field3\":12.5 ,\"field4\":[]}}");
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_DOUBLE);
+    PrepareSchemaDBAndData(delegate, manager, DOUBLE_SCHEMA_VALUE, entries, VALID_DEFINE_DOUBLE);
 
     /**
      * @tc.steps: step2. test the Query interface of EqualTo/NotEqualTo/In/NotIn/GreaterThan/LessThan/
@@ -1315,19 +1242,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query010, TestSize.Level0)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-
-    schemasValue.push_back("{\"field1\":null,\"field2\":{\"field3\":10.0,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":10.0,\"field2\":{\"field3\":null,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":-10.0 ,\"field2\":{\"field3\":30,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":10.5,\"field2\":{\"field3\":null ,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":-0.0,\"field2\":{\"field3\":12.5 ,\"field4\":[]}}");
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_DOUBLE);
+    PrepareSchemaDBAndData(delegate, manager, DOUBLE_SCHEMA_VALUE, entries, VALID_DEFINE_DOUBLE);
 
     /**
      * @tc.steps: step2. use notexist field5 to test EqualTo/NotEqualTo/In/NotIn/GreaterThan/LessThan/
@@ -1355,33 +1275,6 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query010, TestSize.Level0)
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, g_predicateOption.isMemoryDb));
 }
 
-vector<string> GenerateCombinationSchemaValue()
-{
-    vector<string> schemasValue;
-    schemasValue.push_back("{\"field1\":\"abc\",\"field2\":{\"field3\":true,\"field4\":{\"field5\":9,"
-        "\"field6\":{\"field7\":1000,\"field8\":12}}}}"); // value1
-
-    schemasValue.push_back("{\"field1\":\"ab123\",\"field2\":{\"field3\":true,\"field4\":{\"field5\":88,"
-        "\"field6\":{\"field7\":-100,\"field8\":-99}}}}"); // value2
-
-    schemasValue.push_back("{\"field1\":\"abfxy\",\"field2\":{\"field3\":true,\"field4\":{\"field5\":10,"
-        "\"field6\":{\"field7\":0,\"field8\":38}}}}"); // value3
-
-    schemasValue.push_back("{\"field1\":\"ab789\",\"field2\":{\"field3\":false,\"field4\":{\"field5\":999,"
-        "\"field6\":{\"field7\":50,\"field8\":15.8}}}}"); // value4
-
-    schemasValue.push_back("{\"field1\":\"ab000\",\"field2\":{\"field3\":true,\"field4\":{\"field5\":33,"
-        "\"field6\":{\"field7\":30,\"field8\":149}}}}"); // value5
-
-    schemasValue.push_back("{\"field1\":\"abxxx\",\"field2\":{\"field3\":true,\"field4\":{\"field5\":12,"
-        "\"field6\":{\"field7\":120,\"field8\":-79}}}}"); // value6
-
-    schemasValue.push_back("{\"field1\":\"ab\",\"field2\":{\"field3\":true,\"field4\":{\"field5\":20,"
-        "\"field6\":{\"field7\":82,\"field8\":150.999}}}}"); // value7
-
-    return schemasValue;
-}
-
 /**
  * @tc.name: Query 011
  * @tc.desc: verify that GetCount interface can return right value of the valid query object.
@@ -1406,8 +1299,7 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query011, TestSize.Level0)
     delegate = nullptr;
 
     vector<Entry> entries;
-    vector<string> schemasValue = GenerateCombinationSchemaValue();
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_COMBINATION_DEFINE);
+    PrepareSchemaDBAndData(delegate, manager, COMBINE_SCHEMA_VALUE, entries, VALID_COMBINATION_DEFINE);
 
     /**
      * @tc.steps: step2. construct query object that test combination interface of LessThan on field5 = 100,
@@ -1460,8 +1352,7 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query012, TestSize.Level0)
      * @tc.expected: step1. create and put successfully.
      */
     vector<Entry> entries;
-    vector<string> schemasValue = GenerateCombinationSchemaValue();
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_COMBINATION_DEFINE);
+    PrepareSchemaDBAndData(delegate, manager, COMBINE_SCHEMA_VALUE, entries, VALID_COMBINATION_DEFINE);
 
     /**
      * @tc.steps: step2. construct query object that test combination interface of GreaterThanOrEqualTo on
@@ -1525,8 +1416,7 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query013, TestSize.Level0)
      * @tc.expected: step1. create and put successfully.
      */
     vector<Entry> entries;
-    vector<string> schemasValue = GenerateCombinationSchemaValue();
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_COMBINATION_DEFINE);
+    PrepareSchemaDBAndData(delegate, manager, COMBINE_SCHEMA_VALUE, entries, VALID_COMBINATION_DEFINE);
 
     /**
      * @tc.steps: step2. construct query object that test combination interface of GreaterThanOrEqualTo on
@@ -1592,8 +1482,7 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query014, TestSize.Level0)
      * @tc.expected: step1. create and put successfully.
      */
     vector<Entry> entries;
-    vector<string> schemasValue = GenerateCombinationSchemaValue();
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_COMBINATION_DEFINE);
+    PrepareSchemaDBAndData(delegate, manager, COMBINE_SCHEMA_VALUE, entries, VALID_COMBINATION_DEFINE);
 
     /**
      * @tc.steps: step2. construct query object that test combination interface of LessThanOrEqualTo on field7 = 1000,
@@ -1671,8 +1560,7 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query015, TestSize.Level0)
      * @tc.expected: step1. create and put successfully.
      */
     vector<Entry> entries;
-    vector<string> schemasValue = GenerateCombinationSchemaValue();
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_COMBINATION_DEFINE);
+    PrepareSchemaDBAndData(delegate, manager, COMBINE_SCHEMA_VALUE, entries, VALID_COMBINATION_DEFINE);
 
     /**
      * @tc.steps: step2. construct query object that test combination interface of GreaterThanOrEqualTo on
@@ -1724,8 +1612,7 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query016, TestSize.Level0)
      * @tc.expected: step1. create and put successfully.
      */
     vector<Entry> entries;
-    vector<string> schemasValue = GenerateCombinationSchemaValue();
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_COMBINATION_DEFINE);
+    PrepareSchemaDBAndData(delegate, manager, COMBINE_SCHEMA_VALUE, entries, VALID_COMBINATION_DEFINE);
 
     /**
      * @tc.steps: step2. construct query object that test combination interface of Like on field1 = ab*,
@@ -1794,19 +1681,18 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query017, TestSize.Level0)
      * @tc.expected: step1. create and put successfully.
      */
     vector<Entry> entries;
-    vector<string> schemasValue = GenerateCombinationSchemaValue();
     Option option = g_option;
     option.isMemoryDb = false;
     delegate = DistributedDBNbTestTools::GetNbDelegateSuccess(manager, g_dbParameter2, option);
     ASSERT_TRUE(manager != nullptr && delegate != nullptr);
 
     vector<Key> keys = {KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7};
-    for (unsigned long index = 0; index < schemasValue.size(); index++) {
-        Value value(schemasValue[index].begin(), schemasValue[index].end());
+    for (unsigned long index = 0; index < COMBINE_SCHEMA_VALUE.size(); index++) {
+        Value value(COMBINE_SCHEMA_VALUE[index].begin(), COMBINE_SCHEMA_VALUE[index].end());
         entries.push_back({keys[index], value});
     }
 
-    for (unsigned long index = 0; index < schemasValue.size(); index++) {
+    for (unsigned long index = 0; index < COMBINE_SCHEMA_VALUE.size(); index++) {
         EXPECT_EQ(DistributedDBNbTestTools::Put(*delegate, entries[index].key, entries[index].value), OK);
     }
 
@@ -1859,8 +1745,7 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query018, TestSize.Level0)
      * @tc.expected: step1. create and put successfully.
      */
     vector<Entry> entries;
-    vector<string> schemasValue = GenerateCombinationSchemaValue();
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_COMBINATION_DEFINE);
+    PrepareSchemaDBAndData(delegate, manager, COMBINE_SCHEMA_VALUE, entries, VALID_COMBINATION_DEFINE);
 
     /**
      * @tc.steps: step2. construct illegal query object such as:
@@ -1877,7 +1762,7 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query018, TestSize.Level0)
     vector<double> doubleRange = {150.999};
     // field5 = 10, get 10 records begin from 6th.
     Query query3 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field5", 10).And().EqualTo("$.field2.field3",
-         true).Limit(10, 6).And().NotIn("$.field2.field4.field6.field8", doubleRange);
+        true).Limit(10, 6).And().NotIn("$.field2.field4.field6.field8", doubleRange);
     // field7 = 0, get 3 records begin from 1
     Query query4 = Query::Select().GreaterThanOrEqualTo("$.field2.field4.field6.field7", 0).And().
         EqualTo("$.field2.field3", true).Limit(3, 1).OrderBy("$.field2.field4.field5", true);
@@ -1921,8 +1806,7 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query019, TestSize.Level0)
      * @tc.expected: step1. create and put successfully.
      */
     vector<Entry> entries;
-    vector<string> schemasValue = GenerateCombinationSchemaValue();
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_COMBINATION_DEFINE);
+    PrepareSchemaDBAndData(delegate, manager, COMBINE_SCHEMA_VALUE, entries, VALID_COMBINATION_DEFINE);
 
     /**
      * @tc.steps: step2. construct valid query object such as:
@@ -1943,17 +1827,9 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query019, TestSize.Level0)
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, g_predicateOption.isMemoryDb));
 }
 
-void MakeSchemaValues(vector<string> &schemasValue)
-{
-    schemasValue.push_back("{\"field1\":\"bxz\",\"field2\":{\"field3\":\"fxy\",\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":\"abc\",\"field2\":{\"field3\":\"fxz\",\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\": null ,\"field2\":{\"field3\":\"fxw\",\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":\"bxz\",\"field2\":{\"field3\": null ,\"field4\":[]}}");
-    schemasValue.push_back("{\"field1\":\"TRUE\",\"field2\":{\"field3\": null ,\"field4\":[]}}");
-}
 /**
  * @tc.name: Query 020
- * @tc.desc: veriry query executed normal after delete records.
+ * @tc.desc: verify query executed normal after delete records.
  * @tc.type: FUNC
  * @tc.require: SR000DR9JP
  * @tc.author: fengxiaoyun
@@ -1963,14 +1839,12 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query020, TestSize.Level1)
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
     vector<Entry> entries;
-    vector<string> schemasValue;
-    MakeSchemaValues(schemasValue);
     /**
      * @tc.steps: step1. create schema db and put 5 entries which has valid schema constructor
      *    and has the value given to db.
      * @tc.expected: step1. create and put successfully.
      */
-    PrepareSchemaDBAndData(delegate, manager, schemasValue, entries, VALID_DEFINE_STRING);
+    PrepareSchemaDBAndData(delegate, manager, STRING_SCHEMA_VALUE, entries, VALID_DEFINE_STRING);
 
     /**
      * @tc.steps: step2. call GetEntries with query=Select().NotIn(field1,{}) or query=Select().In(field1,{}) or
@@ -2004,10 +1878,10 @@ HWTEST_F(DistributeddbNbPredicateQueryTest, Query020, TestSize.Level1)
     string queryInvalidStr2(FOUR_M_LONG_STRING, 'c');
     queryOvermaxStr.push_back(queryInvalidStr2);
     for (auto const &it : queryOvermaxStr) {
-        Query queryLike = Query::Select().Like("$.field2.field3", it);
-        EXPECT_EQ(delegate->GetEntries(queryLike, entriesResult), OVER_MAX_LIMITS);
-        Query queryNotLike = Query::Select().NotLike("$.field2.field3", it);
-        EXPECT_EQ(delegate->GetEntries(queryNotLike, entriesResult), OVER_MAX_LIMITS);
+        Query queryLikeOverMax = Query::Select().Like("$.field2.field3", it);
+        EXPECT_EQ(delegate->GetEntries(queryLikeOverMax, entriesResult), OVER_MAX_LIMITS);
+        Query queryNotLikeOverMax = Query::Select().NotLike("$.field2.field3", it);
+        EXPECT_EQ(delegate->GetEntries(queryNotLikeOverMax, entriesResult), OVER_MAX_LIMITS);
     }
 
     /**

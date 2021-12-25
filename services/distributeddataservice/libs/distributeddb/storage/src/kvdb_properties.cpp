@@ -34,6 +34,10 @@ const std::string KvDBProperties::CREATE_DIR_BY_STORE_ID_ONLY = "createDirByStor
 const std::string KvDBProperties::SECURITY_LABEL = "securityLabel";
 const std::string KvDBProperties::SECURITY_FLAG = "securityFlag";
 const std::string KvDBProperties::CONFLICT_RESOLVE_POLICY = "conflictResolvePolicy";
+const std::string KvDBProperties::CHECK_INTEGRITY = "checkIntegrity";
+const std::string KvDBProperties::RM_CORRUPTED_DB = "rmCorruptedDb";
+const std::string KvDBProperties::COMPRESS_ON_SYNC = "needCompressOnSync";
+const std::string KvDBProperties::COMPRESSION_RATE = "compressionRate";
 
 KvDBProperties::KvDBProperties()
     : cipherType_(CipherType::AES_256_GCM)
@@ -55,7 +59,7 @@ std::string KvDBProperties::GetStoreSubDirectory(int type)
     }
 }
 
-std::string KvDBProperties::GetStringProp(const std::string &name, const std::string &defaultValue) const
+std::string DBProperties::GetStringProp(const std::string &name, const std::string &defaultValue) const
 {
     auto iter = stringProperties_.find(name);
     if (iter != stringProperties_.end()) {
@@ -65,12 +69,12 @@ std::string KvDBProperties::GetStringProp(const std::string &name, const std::st
     }
 }
 
-void KvDBProperties::SetStringProp(const std::string &name, const std::string &value)
+void DBProperties::SetStringProp(const std::string &name, const std::string &value)
 {
     stringProperties_[name] = value;
 }
 
-bool KvDBProperties::GetBoolProp(const std::string &name, bool defaultValue) const
+bool DBProperties::GetBoolProp(const std::string &name, bool defaultValue) const
 {
     auto iter = boolProperties_.find(name);
     if (iter != boolProperties_.end()) {
@@ -80,12 +84,12 @@ bool KvDBProperties::GetBoolProp(const std::string &name, bool defaultValue) con
     }
 }
 
-void KvDBProperties::SetBoolProp(const std::string &name, bool value)
+void DBProperties::SetBoolProp(const std::string &name, bool value)
 {
     boolProperties_[name] = value;
 }
 
-int KvDBProperties::GetIntProp(const std::string &name, int defaultValue) const
+int DBProperties::GetIntProp(const std::string &name, int defaultValue) const
 {
     auto iter = intProperties_.find(name);
     if (iter != intProperties_.end()) {
@@ -95,7 +99,7 @@ int KvDBProperties::GetIntProp(const std::string &name, int defaultValue) const
     }
 }
 
-void KvDBProperties::SetIntProp(const std::string &name, int value)
+void DBProperties::SetIntProp(const std::string &name, int value)
 {
     intProperties_[name] = value;
 }

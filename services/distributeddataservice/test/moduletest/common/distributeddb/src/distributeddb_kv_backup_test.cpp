@@ -20,6 +20,7 @@
 #include <fstream>
 #include <string>
 
+#include "delegate_kv_mgr_callback.h"
 #include "distributeddb_data_generator.h"
 #include "distributed_test_tools.h"
 #include "distributeddb_nb_test_tools.h"
@@ -397,7 +398,7 @@ HWTEST_F(DistributeddbKvBackupTest, ExportTest006, TestSize.Level2)
      * @tc.expected: step2. return OK.
      */
     std::string filePath2 = exportPath + "/bkpDB1.bin";
-    std::this_thread::sleep_for(std::chrono::microseconds(MILLSECONDES_PER_SECOND));
+    std::this_thread::sleep_for(std::chrono::microseconds(MILLSECONDS_PER_SECOND));
     EXPECT_EQ(g_kvBackupDelegate->Export(filePath2, NULL_PASSWD), OK);
 
     std::mutex count;
@@ -963,7 +964,7 @@ HWTEST_F(DistributeddbKvBackupTest, ImportTest010, TestSize.Level2)
      * @tc.steps: step2. import the backup file again during the sub thread is importing.
      * @tc.expected: step2. call import interface failed and return BUSY.
      */
-    std::this_thread::sleep_for(std::chrono::microseconds(MILLSECONDES_PER_SECOND));
+    std::this_thread::sleep_for(std::chrono::microseconds(MILLSECONDS_PER_SECOND));
     EXPECT_EQ(g_kvBackupDelegate->Import(filePath, NULL_PASSWD), OK);
 
     std::mutex reImportMtx;

@@ -94,19 +94,26 @@ private:
     CommunicatorAggregator *aggregator_ = nullptr;
 
     mutable std::mutex entireInfoMutex_;
+
     // Point out the distinctValue for each target in order to detect malfunctioning "target offline"
     std::map<std::string, uint64_t> targetDistinctValue_;
+
     // Point out the largest sequenceId of LabelExchange that ever received for each target
     std::map<std::string, uint64_t> topRecvLabelSeq_;
+
     // Point out currently which sequenceId of ack is being waited for each target
     std::map<std::string, uint64_t> waitAckSeq_;
+
     // Point out the largest sequenceId of LabelExchangeAck that ever received for each target
     std::map<std::string, uint64_t> recvAckSeq_;
+
     // Point out the latest ackTriggerId for each target in order to abort outdated triggered event
     std::map<std::string, uint64_t> ackTriggerId_;
+
     // Core Info : Online Labels
     std::set<LabelType> localOnlineLabels_;
     std::set<std::string> remoteOnlineTarget_;
+
     // remember the opened labels no matter target now online or offline
     std::map<std::string, std::set<LabelType>> targetMapOnlineLabels_;
 };

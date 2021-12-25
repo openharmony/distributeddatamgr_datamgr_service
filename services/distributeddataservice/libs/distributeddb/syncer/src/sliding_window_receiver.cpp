@@ -15,6 +15,7 @@
 
 #include "sliding_window_receiver.h"
 #include "sync_task_context.h"
+#include "db_common.h"
 
 namespace DistributedDB {
 SlidingWindowReceiver::~SlidingWindowReceiver()
@@ -69,11 +70,10 @@ int SlidingWindowReceiver::PutMsg(Message *inMsg)
     uint32_t sessionId = inMsg->GetSessionId();
     uint32_t sequenceId = inMsg->GetSequenceId();
     bool isLastSequence = packet->IsLastSequence();
-    uint64_t packetId = packet->GetPacketId(); // above 102 version data request reserve[0] store packetId value
     std::unique_lock<std::mutex> lock(lock_);
     if (workingId_ != 0 && sessionId_ != 0) {
         LOGI("[PutMsg] task is running, wait for workdingId=%u end,seId=%u", workingId_, sequenceId);
-        workingTaskcv_.wait(lock);
+        workingTaskcv_.wait(lock, [this] { return workingId_ == 0; });
     }
     if (sessionId_ != sessionId) {
         ResetInfo();
@@ -86,15 +86,23 @@ int SlidingWindowReceiver::PutMsg(Message *inMsg)
     if (sequenceId <= hasFinishedMaxId_) {
         LOGI("[slwr] seId=%u,FinishedMId_=%u,label=%s", sequenceId, hasFinishedMaxId_, dataSync_->GetLabel().c_str());
         lock.unlock();
-        dataSync_->SendAck(context_, sessionId_, sequenceId, packetId);
+        dataSync_->SendDataAck(context_, inMsg, E_OK, 0);
         return -E_SLIDING_WINDOW_RECEIVER_INVALID_MSG;
     }
-    int errCode = ErrHandle(sequenceId);
+    int errCode = ErrHandle(sequenceId, packet->GetPacketId());
     if (errCode != E_OK) {
         return errCode;
     }
     if (messageMap_.count(sequenceId) > 0) {
-        LOGI("[slwr] PutMsg sequenceId already in map");
+        LOGI("[slwr] PutMsg sequenceId already in map label=%s,deviceId=%s",
+            dataSync_->GetLabel().c_str(), STR_MASK(context_->GetDeviceId()));
+        // it cannot be null here
+        const auto *cachePacket = messageMap_[sequenceId]->GetObject<DataRequestPacket>();
+        if (cachePacket->GetPacketId() > packet->GetPacketId()) {
+            LOGI("[slwr] PutMsg receive old packet %u, new packet is %u",
+                 packet->GetPacketId(), cachePacket->GetPacketId());
+            return -E_SLIDING_WINDOW_RECEIVER_INVALID_MSG;
+        }
         delete messageMap_[sequenceId];
         messageMap_[sequenceId] = nullptr;
     }
@@ -107,18 +115,29 @@ void SlidingWindowReceiver::DealMsg()
 {
     while (true) {
         Message *msg = nullptr;
+        uint64_t curPacketId = 0;
         {
             std::lock_guard<std::mutex> lock(lock_);
             if (workingId_ != 0 || messageMap_.count(hasFinishedMaxId_ + 1) == 0) {
-                LOGI("[slwr] DealMsg do nothing workingId_=%u,hasFinishedMaxId_=%u,label=%s,deviceId=%s{private}",
-                    workingId_, hasFinishedMaxId_, dataSync_->GetLabel().c_str(), context_->GetDeviceId().c_str());
+                LOGI("[slwr] DealMsg do nothing workingId_=%u,hasFinishedMaxId_=%u,label=%s,deviceId=%s",
+                    workingId_, hasFinishedMaxId_, dataSync_->GetLabel().c_str(), STR_MASK(context_->GetDeviceId()));
                 return;
             }
-            workingId_ = hasFinishedMaxId_ + 1;
-            msg = messageMap_[workingId_];
-            messageMap_.erase(workingId_);
-            LOGI("[slwr] DealMsg workingId_=%u,label=%s,deviceId=%s{private}", workingId_,
-                dataSync_->GetLabel().c_str(), context_->GetDeviceId().c_str());
+            uint32_t curWorkingId = hasFinishedMaxId_ + 1;
+            msg = messageMap_[curWorkingId];
+            messageMap_.erase(curWorkingId);
+            const auto *packet = msg->GetObject<DataRequestPacket>();
+            curPacketId = packet->GetPacketId();
+            if (curPacketId != 0 && curPacketId < hasFinishedPacketId_) {
+                delete msg;
+                msg = nullptr;
+                LOGI("[slwr] DealMsg ignore msg, packetId:%u,label=%s,deviceId=%s",
+                    curPacketId, dataSync_->GetLabel().c_str(), STR_MASK(context_->GetDeviceId()));
+                continue;
+            }
+            workingId_ = curWorkingId;
+            LOGI("[slwr] DealMsg workingId_=%u,label=%s,deviceId=%s", workingId_,
+                dataSync_->GetLabel().c_str(), STR_MASK(context_->GetDeviceId()));
         }
         int errCode = context_->HandleDataRequestRecv(msg);
         delete msg;
@@ -134,8 +153,9 @@ void SlidingWindowReceiver::DealMsg()
                 isWaterMarkErrHappened_ = true;
             } else {
                 hasFinishedMaxId_++;
-                LOGI("[slwr] DealMsg ok hasFinishedMaxId_=%u,label=%s,deviceId=%s{private}", hasFinishedMaxId_,
-                    dataSync_->GetLabel().c_str(), context_->GetDeviceId().c_str());
+                hasFinishedPacketId_ = curPacketId;
+                LOGI("[slwr] DealMsg ok hasFinishedMaxId_=%u,label=%s,deviceId=%s", hasFinishedMaxId_,
+                    dataSync_->GetLabel().c_str(), STR_MASK(context_->GetDeviceId()));
             }
             context_->SetReceiveWaterMarkErr(false);
             workingTaskcv_.notify_all();
@@ -159,18 +179,17 @@ int SlidingWindowReceiver::TimeOut(TimerId timerId)
 
 void SlidingWindowReceiver::StartTimer()
 {
-    LOGD("[slwr] StartTimer");
     std::lock_guard<std::mutex> lock(lock_);
     TimerId timerId = 0;
     RefObject::IncObjRef(context_);
     TimerAction timeOutCallback = std::bind(&SlidingWindowReceiver::TimeOut, this, std::placeholders::_1);
     int errCode = RuntimeContext::GetInstance()->SetTimer(IDLE_TIME_OUT, timeOutCallback,
         [this]() {
-            int errCode = RuntimeContext::GetInstance()->ScheduleTask([this]() {
+            int ret = RuntimeContext::GetInstance()->ScheduleTask([this]() {
                 RefObject::DecObjRef(context_);
             });
-            if (errCode != E_OK) {
-                LOGE("[slwr] timer finalizer ScheduleTask, errCode=%d", errCode);
+            if (ret != E_OK) {
+                LOGE("[slwr] timer finalizer ScheduleTask, errCode=%d", ret);
             }
         }, timerId);
     if (errCode != E_OK) {
@@ -178,7 +197,9 @@ void SlidingWindowReceiver::StartTimer()
         LOGE("[slwr] timer ScheduleTask, errCode=%d", errCode);
         return;
     }
+    StopTimer(timerId_);
     timerId_ = timerId;
+    LOGD("[slwr] StartTimer timerId[%llu] success", timerId_);
 }
 
 void SlidingWindowReceiver::StopTimer()
@@ -186,13 +207,19 @@ void SlidingWindowReceiver::StopTimer()
     TimerId timerId;
     {
         std::lock_guard<std::mutex> lock(lock_);
-        LOGD("[slwr] StopTimer,remove Timer id[%llu]", timerId_);
         timerId = timerId_;
         if (timerId_ == 0) {
             return;
         }
         timerId_ = 0;
     }
+    StopTimer(timerId);
+}
+
+void SlidingWindowReceiver::StopTimer(TimerId timerId)
+{
+    if (timerId == 0) return;
+    LOGD("[slwr] StopTimer,remove Timer id[%llu]", timerId);
     RuntimeContext::GetInstance()->RemoveTimer(timerId);
 }
 
@@ -210,14 +237,18 @@ void SlidingWindowReceiver::ResetInfo()
 {
     ClearMap();
     hasFinishedMaxId_ = 0;
+    hasFinishedPacketId_ = 0;
     workingId_ = 0;
     endId_ = 0;
+    isWaterMarkErrHappened_ = false;
 }
 
-int SlidingWindowReceiver::ErrHandle(uint32_t sequenceId)
+int SlidingWindowReceiver::ErrHandle(uint32_t sequenceId, uint64_t packetId)
 {
-    if (sequenceId == workingId_ || (endId_ != 0 && sequenceId > endId_)) {
-        LOGI("[slwr] PutMsg sequenceId:%u, endId_:%u, workingId_:%u!", sequenceId, endId_, workingId_);
+    if (sequenceId == workingId_ || (endId_ != 0 && sequenceId > endId_)
+        || (packetId > 0 && packetId < hasFinishedPacketId_)) {
+        LOGI("[slwr] PutMsg sequenceId:%u, endId_:%u, workingId_:%u, packetId:%u!",
+            sequenceId, endId_, workingId_, packetId);
         return -E_SLIDING_WINDOW_RECEIVER_INVALID_MSG;
     }
     // if waterMark err when DealMsg(), the waterMark of msg in messageMap_ is also err, so we clear messageMap_
@@ -230,6 +261,8 @@ int SlidingWindowReceiver::ErrHandle(uint32_t sequenceId)
         if (sequenceId == 1) {
             isWaterMarkErrHappened_ = false;
         } else {
+            LOGI("[slwr] PutMsg With waterMark Error sequenceId:%u, endId_:%u, workingId_:%u, packetId:%u!",
+                sequenceId, endId_, workingId_, packetId);
             return -E_SLIDING_WINDOW_RECEIVER_INVALID_MSG; // drop invalid packet
         }
     }

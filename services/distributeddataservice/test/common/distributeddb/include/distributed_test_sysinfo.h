@@ -16,14 +16,18 @@
 #define DISTRIBUTED_TEST_SYSINFO_H
 
 #include <string.h>
-#include "platform_specific.h"
+#include "distributeddb_log_print.h"
+#if defined(RUNNING_ON_LINUX)
 #include <linux/limits.h>
+#elif defined RUNNING_ON_WIN
+#endif
 
 const uint64_t SYSTEM_INFO_BUFFER_SIZE = 20;
 const uint64_t PROC_BUFFER_LENGTH = 4096;
 const uint64_t DEFAULT_INTEVAL = 250000;
 const uint64_t DEFAULT_COUNT = 5;
 
+#if defined(RUNNING_ON_LINUX)
 const std::string SYS_MEM_FILE = "/proc/meminfo";
 const std::string SYS_CPU_FILE = "/proc/stat";
 const std::string POWER_FOLLOW_FILE = "/sys/class/power_supply/Battery/current_now";
@@ -55,6 +59,8 @@ struct CpuOccupy {
     uint64_t irq_;
     uint64_t softirq_;
 };
+#elif defined RUNNING_ON_WIN
+#endif
 
 enum SeqNo {
     FIRST = 1,
@@ -95,8 +101,11 @@ public:
     void SaveSecondToFirst();
 
 private:
+#if defined(RUNNING_ON_LINUX)
     MemOccupy memStatFirst_, memStatSecond_;
     CpuOccupy cpuStatFirst_, cpuStatSecond_;
+#elif defined RUNNING_ON_WIN
+#endif
     float cpuStatFirstUsage_, cpuStatSecondUsage_;
     float powerStatFirst_, powerStatSecond_;
     float val_;

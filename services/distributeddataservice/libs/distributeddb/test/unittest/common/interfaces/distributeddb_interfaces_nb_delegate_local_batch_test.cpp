@@ -16,11 +16,11 @@
 #include <gtest/gtest.h>
 #include <thread>
 
-#include "db_errno.h"
 #include "db_constant.h"
-#include "log_print.h"
+#include "db_errno.h"
 #include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_unit_test.h"
+#include "log_print.h"
 #include "sqlite_single_ver_natural_store.h"
 
 using namespace testing::ext;
@@ -111,6 +111,7 @@ void DistributedDBInterfacesNBDelegateLocalBatchTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesNBDelegateLocalBatchTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_kvDelegateStatus = INVALID_ARGS;
     g_kvNbDelegatePtr = nullptr;
 }

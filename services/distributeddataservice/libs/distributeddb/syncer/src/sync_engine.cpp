@@ -15,25 +15,27 @@
 
 #include "sync_engine.h"
 
-#include <functional>
-#include <deque>
 #include <algorithm>
+#include <deque>
+#include <functional>
 
-#include "isync_state_machine.h"
+#include "ability_sync.h"
+#include "db_common.h"
 #include "db_errno.h"
-#include "log_print.h"
+#include "device_manager.h"
 #include "hash.h"
+#include "isync_state_machine.h"
+#include "log_print.h"
 #include "runtime_context.h"
+#include "single_ver_serialize_manager.h"
+#include "subscribe_manager.h"
 #include "time_sync.h"
+
 #ifndef OMIT_MULTI_VER
 #include "commit_history_sync.h"
 #include "multi_ver_data_sync.h"
 #include "value_slice_sync.h"
 #endif
-#include "single_ver_data_sync.h"
-#include "ability_sync.h"
-#include "device_manager.h"
-#include "db_common.h"
 
 namespace DistributedDB {
 int SyncEngine::queueCacheSize_ = 0;
@@ -47,74 +49,63 @@ SyncEngine::SyncEngine()
       deviceManager_(nullptr),
       metadata_(nullptr),
       timeChangedListener_(nullptr),
-      execTaskCount_(0)
+      execTaskCount_(0),
+      isSyncRetry_(false),
+      communicatorProxy_(nullptr),
+      isActive_(false)
 {
 }
 
 SyncEngine::~SyncEngine()
 {
     LOGD("[SyncEngine] ~SyncEngine!");
-    if (syncInterface_ != nullptr) {
-        syncInterface_->DecRefCount();
-        syncInterface_ = nullptr;
-    }
-    if (deviceManager_ != nullptr) {
-        delete deviceManager_;
-        deviceManager_ = nullptr;
-    }
-    if (timeChangedListener_ != nullptr) {
-        timeChangedListener_->Drop(true);
-        timeChangedListener_ = nullptr;
-    }
-    communicator_ = nullptr;
-    metadata_ = nullptr;
+    ClearInnerResource();
+    subManager_ = nullptr;
     LOGD("[SyncEngine] ~SyncEngine ok!");
 }
 
-int SyncEngine::Initialize(IKvDBSyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
-    const std::function<void(std::string)> &onRemoteDataChanged)
+int SyncEngine::Initialize(ISyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
+    const std::function<void(std::string)> &onRemoteDataChanged, const std::function<void(std::string)> &offlineChanged,
+    const std::function<void(const InternalSyncParma &param)> &queryAutoSyncCallback)
 {
     if ((syncInterface == nullptr) || (metadata == nullptr)) {
         return -E_INVALID_ARGS;
     }
+    int errCode = StartAutoSubscribeTimer();
+    if (errCode != OK) {
+        return errCode;
+    }
     syncInterface_ = syncInterface;
-    int errCode = InitComunicator(syncInterface);
+    errCode = InitComunicator(syncInterface);
     if (errCode != E_OK) {
         LOGE("[SyncEngine] Init Communicator failed");
         // There need to set nullptr. other wise, syncInterface will be
         // DecRef in th destroy-method.
+        StopAutoSubscribeTimer();
         syncInterface_ = nullptr;
         return errCode;
     }
     onRemoteDataChanged_ = onRemoteDataChanged;
-    errCode = InitDeviceManager(onRemoteDataChanged);
+    offlineChanged_ = offlineChanged;
+    queryAutoSyncCallback_ = queryAutoSyncCallback;
+    errCode = InitDeviceManager(onRemoteDataChanged, offlineChanged);
     if (errCode != E_OK) {
         // reset ptr if initialize device manager failed
         syncInterface_ = nullptr;
+        StopAutoSubscribeTimer();
         return errCode;
     }
-
+    if (subManager_ == nullptr) {
+        subManager_ = std::make_shared<SubscribeManager>();
+    }
     metadata_ = metadata;
-    timeChangedListener_ = RuntimeContext::GetInstance()->RegisterTimeChangedLister(
-        [this](void *changedOffset) {
-            if (changedOffset == nullptr) {
-                return;
-            }
-            TimeOffset changedTimeOffset = *(reinterpret_cast<TimeOffset *>(changedOffset)) *
-                static_cast<TimeOffset>(TimeHelper::TO_100_NS);
-            TimeOffset orgOffset = this->metadata_->GetLocalTimeOffset() - changedTimeOffset;
-            TimeStamp currentSysTime = TimeHelper::GetSysCurrentTime();
-            TimeStamp maxItemTime = 0;
-            this->syncInterface_->GetMaxTimeStamp(maxItemTime);
-            if ((currentSysTime + orgOffset) <= maxItemTime) {
-                orgOffset = maxItemTime - currentSysTime + TimeHelper::MS_TO_100_NS; // 1ms
-            }
-            this->metadata_->SaveLocalTimeOffset(orgOffset);
-        }, errCode);
-    if (timeChangedListener_ == nullptr) {
-        LOGE("[SyncEngine] Init RegisterTimeChangedLister failed");
+    errCode = InitTimeChangedListener();
+    if (errCode != E_OK) {
+        syncInterface_ = nullptr;
+        StopAutoSubscribeTimer();
         return errCode;
     }
+    isActive_ = true;
     LOGI("[SyncEngine] Engine init ok");
     return E_OK;
 }
@@ -122,38 +113,25 @@ int SyncEngine::Initialize(IKvDBSyncInterface *syncInterface, std::shared_ptr<Me
 int SyncEngine::Close()
 {
     LOGI("[SyncEngine] SyncEngine close enter!");
-    if (timeChangedListener_ != nullptr) {
-        timeChangedListener_->Drop(true);
-        timeChangedListener_ = nullptr;
-    }
-    if (communicator_ != nullptr) {
-        communicator_->RegOnMessageCallback(nullptr, nullptr);
-        communicator_->RegOnConnectCallback(nullptr, nullptr);
-        communicator_->RegOnSendableCallback(nullptr, nullptr);
-    }
+    isActive_ = false;
+    UnRegCommunicatorsCallback();
+    StopAutoSubscribeTimer();
+
     // Clear SyncContexts
     {
         std::unique_lock<std::mutex> lock(contextMapLock_);
         for (auto &iter : syncTaskContextMap_) {
             ISyncTaskContext *tempContext = iter.second;
-            iter.second = nullptr;
             lock.unlock();
             RefObject::KillAndDecObjRef(tempContext);
             tempContext = nullptr;
             lock.lock();
+            iter.second = nullptr;
         }
-    }
-    if (communicator_ != nullptr) {
-        ICommunicatorAggregator *communicatorAggregator = nullptr;
-        int errCode = RuntimeContext::GetInstance()->GetCommunicatorAggregator(communicatorAggregator);
-        if (communicatorAggregator == nullptr) {
-            LOGF("[SyncEngine] ICommunicatorAggregator get failed when fialize SyncEngine err %d", errCode);
-            return errCode;
-        }
-        communicatorAggregator->ReleaseCommunicator(communicator_);
-        communicator_ = nullptr;
+        syncTaskContextMap_.clear();
     }
 
+    ReleaseCommunicators();
     std::lock_guard<std::mutex> msgLock(queueLock_);
     while (!msgQueue_.empty()) {
         Message *inMsg = msgQueue_.front();
@@ -163,7 +141,10 @@ int SyncEngine::Close()
             delete inMsg;
         }
     }
-
+    // close db, rekey or import scene, need clear all remote query info
+    // local query info will destroy with syncEngine destruct
+    subManager_->ClearAllRemoteQuery();
+    ClearInnerResource();
     LOGI("[SyncEngine] SyncEngine closed!");
     return E_OK;
 }
@@ -171,20 +152,20 @@ int SyncEngine::Close()
 int SyncEngine::AddSyncOperation(SyncOperation *operation)
 {
     if (operation == nullptr) {
+        LOGE("[SyncEngine] operation is nullptr");
         return -E_INVALID_ARGS;
     }
 
     std::vector<std::string> devices = operation->GetDevices();
     for (const auto &deviceId : devices) {
-        int checkErrCode = RunPermissionCheck(deviceId, operation->GetMode());
-        if (checkErrCode == E_OK) {
-            operation->SetStatus(deviceId, SyncOperation::WAITING);
-            int errCode = AddSyncOperForContext(deviceId, operation);
-            if (errCode != E_OK) {
-                operation->SetStatus(deviceId, SyncOperation::FAILED);
-            }
-        } else {
-            operation->SetStatus(deviceId, SyncOperation::PERMISSION_CHECK_FAILED);
+        if (deviceId.size() == 0) {
+            operation->SetStatus(deviceId, SyncOperation::OP_INVALID_ARGS);
+            continue;
+        }
+        operation->SetStatus(deviceId, SyncOperation::OP_WAITING);
+        int errCode = AddSyncOperForContext(deviceId, operation);
+        if (errCode != E_OK) {
+            operation->SetStatus(deviceId, SyncOperation::OP_FAILED);
         }
     }
     return E_OK;
@@ -233,7 +214,8 @@ void SyncEngine::GetOnlineDevices(std::vector<std::string> &devices) const
     }
 }
 
-int SyncEngine::InitDeviceManager(const std::function<void(std::string)> &onRemoteDataChanged)
+int SyncEngine::InitDeviceManager(const std::function<void(std::string)> &onRemoteDataChanged,
+    const std::function<void(std::string)> &offlineChanged)
 {
     deviceManager_ = new (std::nothrow) DeviceManager();
     if (deviceManager_ == nullptr) {
@@ -241,7 +223,7 @@ int SyncEngine::InitDeviceManager(const std::function<void(std::string)> &onRemo
         return -E_OUT_OF_MEMORY;
     }
 
-    int errCode = deviceManager_->Initialize(communicator_, onRemoteDataChanged);
+    int errCode = deviceManager_->Initialize(communicatorProxy_, onRemoteDataChanged, offlineChanged);
     if (errCode != E_OK) {
         LOGE("[SyncEngine] deviceManager init failed! err %d", errCode);
         delete deviceManager_;
@@ -251,7 +233,7 @@ int SyncEngine::InitDeviceManager(const std::function<void(std::string)> &onRemo
     return E_OK;
 }
 
-int SyncEngine::InitComunicator(const IKvDBSyncInterface *syncInterface)
+int SyncEngine::InitComunicator(const ISyncInterface *syncInterface)
 {
     ICommunicatorAggregator *communicatorAggregator = nullptr;
     int errCode = RuntimeContext::GetInstance()->GetCommunicatorAggregator(communicatorAggregator);
@@ -259,6 +241,7 @@ int SyncEngine::InitComunicator(const IKvDBSyncInterface *syncInterface)
         LOGE("[SyncEngine] Get ICommunicatorAggregator error when init the sync engine err = %d", errCode);
         return errCode;
     }
+
     std::vector<uint8_t> label = syncInterface->GetIdentifier();
     communicator_ = communicatorAggregator->AllocCommunicator(label, errCode);
     if (communicator_ == nullptr) {
@@ -267,7 +250,7 @@ int SyncEngine::InitComunicator(const IKvDBSyncInterface *syncInterface)
     }
 
     errCode = communicator_->RegOnMessageCallback(
-        std::bind(&SyncEngine::MessageReceiveCallback, this, std::placeholders::_1, std::placeholders::_2),
+        std::bind(&SyncEngine::MessageReciveCallback, this, std::placeholders::_1, std::placeholders::_2),
         []() {});
     if (errCode != E_OK) {
         LOGE("[SyncEngine] SyncRequestCallback register failed! err = %d", errCode);
@@ -275,6 +258,15 @@ int SyncEngine::InitComunicator(const IKvDBSyncInterface *syncInterface)
         communicator_ = nullptr;
         return errCode;
     }
+
+    communicatorProxy_ = new (std::nothrow) CommunicatorProxy();
+    if (communicatorProxy_ == nullptr) {
+        communicatorAggregator->ReleaseCommunicator(communicator_);
+        communicator_ = nullptr;
+        return -E_OUT_OF_MEMORY;
+    }
+
+    communicatorProxy_->SetMainCommunicator(communicator_);
     label.resize(3); // only show 3 Bytes enough
     label_ = DBCommon::VectorToHexString(label);
     LOGD("[SyncEngine] RegOnConnectCallback");
@@ -308,33 +300,47 @@ int SyncEngine::AddSyncOperForContext(const std::string &deviceId, SyncOperation
     return errCode;
 }
 
-void SyncEngine::MessageReceiveCallbackTask(ISyncTaskContext *context, const ICommunicator *communicator,
+void SyncEngine::MessageReciveCallbackTask(ISyncTaskContext *context, const ICommunicator *communicator,
     Message *inMsg)
 {
     std::string deviceId = context->GetDeviceId();
-    if (inMsg == nullptr) {
-        LOGE("[SyncEngine] MessageReceiveCallback inMsg is null!");
-        goto MSG_CALLBACK_OUT;
+
+    if (inMsg->GetMessageId() != LOCAL_DATA_CHANGED) {
+        int errCode = context->ReceiveMessageCallback(inMsg);
+        if (errCode == -E_NOT_NEED_DELETE_MSG) {
+            goto MSG_CALLBACK_OUT_NOT_DEL;
+        }
+        // add auto sync here while recv subscribe request
+        QuerySyncObject syncObject;
+        if (errCode == E_OK && context->IsNeedTriggerQueryAutoSync(inMsg, syncObject)) {
+            InternalSyncParma param;
+            GetQueryAutoSyncParam(deviceId, syncObject, param);
+            queryAutoSyncCallback_(param);
+        }
     }
 
-    // deal remote local data changed message
-    if (inMsg->GetMessageId() == LOCAL_DATA_CHANGED) {
+    delete inMsg;
+    inMsg = nullptr;
+MSG_CALLBACK_OUT_NOT_DEL:
+    ScheduleTaskOut(context, communicator);
+}
+
+void SyncEngine::RemoteDataChangedTask(ISyncTaskContext *context, const ICommunicator *communicator, Message *inMsg)
+{
+    do {
+        std::string deviceId = context->GetDeviceId();
         if (onRemoteDataChanged_ && deviceManager_->IsDeviceOnline(deviceId)) {
             onRemoteDataChanged_(deviceId);
         } else {
             LOGE("[SyncEngine] onRemoteDataChanged is null!");
         }
-    } else { // others message, it should be dealt by context
-        int errCode = context->ReceiveMessageCallback(inMsg);
-        if (errCode == -E_NOT_NEED_DELETE_MSG) {
-            goto MSG_CALLBACK_OUT_NOT_DEL;
-        }
-    }
-
-MSG_CALLBACK_OUT:
+    } while (false);
     delete inMsg;
-    inMsg = nullptr;
-MSG_CALLBACK_OUT_NOT_DEL:
+    ScheduleTaskOut(context, communicator);
+}
+
+void SyncEngine::ScheduleTaskOut(ISyncTaskContext *context, const ICommunicator *communicator)
+{
     (void)DealMsgUtilQueueEmpty();
     {
         std::lock_guard<std::mutex> lock(queueLock_);
@@ -342,8 +348,6 @@ MSG_CALLBACK_OUT_NOT_DEL:
     }
     RefObject::DecObjRef(communicator);
     RefObject::DecObjRef(context);
-    communicator = nullptr;
-    context = nullptr;
 }
 
 int SyncEngine::DealMsgUtilQueueEmpty()
@@ -406,16 +410,27 @@ ISyncTaskContext *SyncEngine::GetConextForMsg(const std::string &targetDev, int 
 
 int SyncEngine::ScheduleDealMsg(ISyncTaskContext *context, Message *inMsg)
 {
-    RefObject::IncObjRef(communicator_);
+    if (inMsg == nullptr) {
+        LOGE("[SyncEngine] MessageReciveCallback inMsg is null!");
+        return E_OK;
+    }
+    RefObject::IncObjRef(communicatorProxy_);
     {
         std::lock_guard<std::mutex> incLock(queueLock_);
         execTaskCount_++;
     }
-    int errCode = RuntimeContext::GetInstance()->ScheduleTask(std::bind(&SyncEngine::MessageReceiveCallbackTask,
-        this, context, communicator_, inMsg));
+    int errCode = E_OK;
+    // deal remote local data changed message
+    if (inMsg->GetMessageId() == LOCAL_DATA_CHANGED) {
+        RemoteDataChangedTask(context, communicatorProxy_, inMsg);
+    } else {
+        errCode = RuntimeContext::GetInstance()->ScheduleTask(std::bind(&SyncEngine::MessageReciveCallbackTask,
+            this, context, communicatorProxy_, inMsg));
+    }
+
     if (errCode != E_OK) {
-        LOGE("[SyncEngine] MessageReceiveCallbackTask Schedule failed err %d", errCode);
-        RefObject::DecObjRef(communicator_);
+        LOGE("[SyncEngine] MessageReciveCallbackTask Schedule failed err %d", errCode);
+        RefObject::DecObjRef(communicatorProxy_);
         {
             std::lock_guard<std::mutex> decLock(queueLock_);
             execTaskCount_--;
@@ -424,27 +439,33 @@ int SyncEngine::ScheduleDealMsg(ISyncTaskContext *context, Message *inMsg)
     return errCode;
 }
 
-void SyncEngine::MessageReceiveCallback(const std::string &targetDev, Message *inMsg)
+void SyncEngine::MessageReciveCallback(const std::string &targetDev, Message *inMsg)
 {
-    int errCode = MessageReceiveCallbackInner(targetDev, inMsg);
+    int errCode = MessageReciveCallbackInner(targetDev, inMsg);
     if (errCode != E_OK) {
         delete inMsg;
         inMsg = nullptr;
-        LOGE("[SyncEngine] MessageReceiveCallback failed!");
+        LOGE("[SyncEngine] MessageReciveCallback failed!");
     }
 }
 
-int SyncEngine::MessageReceiveCallbackInner(const std::string &targetDev, Message *inMsg)
+int SyncEngine::MessageReciveCallbackInner(const std::string &targetDev, Message *inMsg)
 {
     if (targetDev.empty() || inMsg == nullptr) {
-        LOGE("[SyncEngine][MessageReceiveCallback] from a invalid device or inMsg is null ");
+        LOGE("[SyncEngine][MessageReciveCallback] from a invalid device or inMsg is null ");
         return -E_INVALID_ARGS;
     }
-
-    int msgSize = GetMsgSize(inMsg);
-    if (msgSize <= 0) {
-        LOGE("[SyncEngine] GetMsgSize makes a mistake");
-        return -E_NOT_SUPPORT;
+    if (!isActive_) {
+        LOGE("[SyncEngine] engine is closing, ignore msg");
+        return -E_BUSY;
+    }
+    int msgSize = 0;
+    if (!IsSkipCalculateLen(inMsg)) {
+        msgSize = GetMsgSize(inMsg);
+        if (msgSize <= 0) {
+            LOGE("[SyncEngine] GetMsgSize makes a mistake");
+            return -E_NOT_SUPPORT;
+        }
     }
 
     {
@@ -467,7 +488,7 @@ int SyncEngine::MessageReceiveCallbackInner(const std::string &targetDev, Messag
         return errCode;
     }
 
-    LOGD("[SyncEngine] MessageReceiveCallback MSG ID = %d", inMsg->GetMessageId());
+    LOGD("[SyncEngine] MessageReciveCallback MSG ID = %d", inMsg->GetMessageId());
     return ScheduleDealMsg(nextContext, inMsg);
 }
 
@@ -497,7 +518,9 @@ int SyncEngine::GetMsgSize(const Message *inMsg) const
         case ABILITY_SYNC_MESSAGE:
             return AbilitySync::CalculateLen(inMsg);
         case DATA_SYNC_MESSAGE:
-            return SingleVerDataSync::CalculateLen(inMsg);
+        case QUERY_SYNC_MESSAGE:
+        case CONTROL_SYNC_MESSAGE:
+            return SingleVerSerializeManager::CalculateLen(inMsg);
 #ifndef OMIT_MULTI_VER
         case COMMIT_HISTORY_SYNC_MESSAGE:
             return CommitHistorySync::CalculateLen(inMsg);
@@ -524,6 +547,23 @@ ISyncTaskContext *SyncEngine::FindSyncTaskContext(const std::string &deviceId)
     return nullptr;
 }
 
+ISyncTaskContext *SyncEngine::GetSyncTaskContextAndInc(const std::string &deviceId)
+{
+    ISyncTaskContext *context = nullptr;
+    std::lock_guard<std::mutex> lock(contextMapLock_);
+    context = FindSyncTaskContext(deviceId);
+    if (context == nullptr) {
+        LOGI("[SyncEngine] dev=%s, context is null, no need to clear sync operation", STR_MASK(deviceId));
+        return nullptr;
+    }
+    if (context->IsKilled()) {
+        LOGI("[SyncEngine] context is killing");
+        return nullptr;
+    }
+    RefObject::IncObjRef(context);
+    return context;
+}
+
 ISyncTaskContext *SyncEngine::GetSyncTaskContext(const std::string &deviceId, int &errCode)
 {
     ISyncTaskContext *context = CreateSyncTaskContext();
@@ -532,9 +572,9 @@ ISyncTaskContext *SyncEngine::GetSyncTaskContext(const std::string &deviceId, in
         LOGE("[SyncEngine] SyncTaskContext alloc failed, may be no memory avliad!");
         return nullptr;
     }
-    errCode = context->Initialize(deviceId, syncInterface_, metadata_, communicator_);
+    errCode = context->Initialize(deviceId, syncInterface_, metadata_, communicatorProxy_);
     if (errCode != E_OK) {
-        LOGE("[SyncEngine] context init failed err %d, dev %s{private}", errCode, deviceId.c_str());
+        LOGE("[SyncEngine] context init failed err %d, dev %s", errCode, STR_MASK(deviceId));
         RefObject::DecObjRef(context);
         context = nullptr;
         return nullptr;
@@ -543,7 +583,7 @@ ISyncTaskContext *SyncEngine::GetSyncTaskContext(const std::string &deviceId, in
     // IncRef for SyncEngine to make sure SyncEngine is valid when context access
     RefObject::IncObjRef(this);
     context->OnLastRef([this, deviceId]() {
-        LOGD("[SyncEngine] SyncTaskContext for id %s{private} finalized", deviceId.c_str());
+        LOGD("[SyncEngine] SyncTaskContext for id %s finalized", STR_MASK(deviceId));
         RefObject::DecObjRef(this);
     });
     context->RegOnSyncTask(std::bind(&SyncEngine::ExecSyncTask, this, context));
@@ -564,12 +604,19 @@ int SyncEngine::ExecSyncTask(ISyncTaskContext *context)
     context->SetTaskExecStatus(ISyncTaskContext::RUNNING);
     if (!context->IsTargetQueueEmpty()) {
         context->MoveToNextTarget();
+        int checkErrCode = RunPermissionCheck(context->GetDeviceId(),
+            GetPermissionCheckFlag(context->IsAutoSync(), context->GetMode()));
+        if (checkErrCode != E_OK) {
+            context->SetOperationStatus(SyncOperation::OP_PERMISSION_CHECK_FAILED);
+            context->SetTaskExecStatus(ISyncTaskContext::FINISHED);
+            return checkErrCode;
+        }
         context->UnlockObj();
         int errCode = context->StartStateMachine();
         context->LockObj();
         if (errCode != E_OK) {
             LOGE("[SyncEngine] machine StartSync failed");
-            context->SetOperationStatus(SyncOperation::FAILED);
+            context->SetOperationStatus(SyncOperation::OP_FAILED);
             return errCode;
         }
     } else {
@@ -601,38 +648,50 @@ void SyncEngine::SetMaxQueueCacheSize(int value)
 
 int SyncEngine::GetLocalIdentity(std::string &outTarget) const
 {
-    if (communicator_ == nullptr) {
-        LOGE("[SyncEngine]  communicator_ is nullptr, return!");
+    if (communicatorProxy_ == nullptr) {
+        LOGE("[SyncEngine]  communicatorProxy_ is nullptr, return!");
         return -E_NOT_INIT;
     }
     std::string deviceId;
-    int errCode = communicator_->GetLocalIdentity(deviceId);
+    int errCode = communicatorProxy_->GetLocalIdentity(deviceId);
     if (errCode != E_OK) {
-        LOGE("[SyncEngine]  communicator_ GetLocalIdentity fail errCode:%d", errCode);
+        LOGE("[SyncEngine]  communicatorProxy_ GetLocalIdentity fail errCode:%d", errCode);
         return errCode;
     }
     outTarget = DBCommon::TransferHashString(deviceId);
     return E_OK;
 }
 
-int SyncEngine::RunPermissionCheck(const std::string &deviceId, int mode) const
+uint8_t SyncEngine::GetPermissionCheckFlag(bool isAutoSync, int syncMode)
 {
     uint8_t flag = 0;
-    if (mode == SyncOperation::PUSH) {
+    int mode = SyncOperation::TransferSyncMode(syncMode);
+    if (mode == SyncModeType::PUSH || mode == SyncModeType::RESPONSE_PULL) {
         flag = CHECK_FLAG_SEND;
-    } else if (mode == SyncOperation::PULL) {
+    } else if (mode == SyncModeType::PULL) {
         flag = CHECK_FLAG_RECEIVE;
-    } else if (mode == SyncOperation::PUSH_AND_PULL) {
+    } else if (mode == SyncModeType::PUSH_AND_PULL) {
         flag = CHECK_FLAG_SEND | CHECK_FLAG_RECEIVE;
     }
+    if (isAutoSync) {
+        flag = flag | CHECK_FLAG_AUTOSYNC;
+    }
+    if (mode != SyncModeType::RESPONSE_PULL) {
+        // it means this sync is started by local
+        flag = flag | CHECK_FLAG_SPONSOR;
+    }
+    return flag;
+}
 
+int SyncEngine::RunPermissionCheck(const std::string &deviceId, uint8_t flag) const
+{
     std::string appId = syncInterface_->GetDbProperties().GetStringProp(KvDBProperties::APP_ID, "");
     std::string userId = syncInterface_->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
     std::string storeId = syncInterface_->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
     int errCode = RuntimeContext::GetInstance()->RunPermissionCheck(userId, appId, storeId, deviceId, flag);
     if (errCode != E_OK) {
-        LOGE("[SyncEngine] RunPermissionCheck not pass errCode:%d, flag:%d, %s{private} Label=%s",
-            errCode, flag, deviceId.c_str(), label_.c_str());
+        LOGE("[SyncEngine] RunPermissionCheck not pass errCode:%d, flag:%d, %s Label=%s",
+            errCode, flag, STR_MASK(deviceId), label_.c_str());
     }
     return errCode;
 }
@@ -640,5 +699,274 @@ int SyncEngine::RunPermissionCheck(const std::string &deviceId, int mode) const
 std::string SyncEngine::GetLabel() const
 {
     return label_;
+}
+
+bool SyncEngine::GetSyncRetry() const
+{
+    return isSyncRetry_;
+}
+
+void SyncEngine::SetSyncRetry(bool isRetry)
+{
+    if (isSyncRetry_ == isRetry) {
+        LOGI("sync retry is equal, syncTry=%d, no need to set.", isRetry);
+        return;
+    }
+    isSyncRetry_ = isRetry;
+    std::lock_guard<std::mutex> lock(contextMapLock_);
+    for (auto &iter : syncTaskContextMap_) {
+        ISyncTaskContext *context = iter.second;
+        if (context != nullptr) {
+            context->SetSyncRetry(isRetry);
+        }
+    }
+}
+
+int SyncEngine::SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets)
+{
+    ICommunicator *communicator = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(equalCommunicatorsLock_);
+        if (equalCommunicators_.count(identifier) != 0) {
+            communicator = equalCommunicators_[identifier];
+        } else {
+            int errCode = E_OK;
+            communicator = AllocCommunicator(identifier, errCode);
+            if (communicator == nullptr) {
+                return errCode;
+            }
+            equalCommunicators_[identifier] = communicator;
+        }
+    }
+    LOGI("[SyncEngine] set equal identifier %s, original %s",
+        DBCommon::TransferStringToHex(identifier).c_str(), label_.c_str());
+    communicatorProxy_->SetEqualCommunicator(communicator, targets);
+    communicator->Activate();
+    return E_OK;
+}
+
+void SyncEngine::OfflineHandleByDevice(const std::string &deviceId)
+{
+    if (communicatorProxy_ == nullptr) {
+        return;
+    }
+    // db closed or device is offline
+    // clear remote subscribe and trigger
+    std::vector<std::string> remoteQueryId;
+    subManager_->GetRemoteSubscribeQueryIds(deviceId, remoteQueryId);
+    subManager_->ClearRemoteSubscribeQuery(deviceId);
+    static_cast<SingleVerKvDBSyncInterface *>(syncInterface_)->RemoveSubscribe(remoteQueryId);
+    // get context and Inc context if context is not nullprt
+    ISyncTaskContext *context = GetSyncTaskContextAndInc(deviceId);
+    if (context != nullptr) {
+        context->SetIsNeedResetAbilitySync(true);
+    }
+    if (communicatorProxy_->IsDeviceOnline(deviceId)) {
+        LOGI("[SyncEngine] target dev=%s is online, no need to clear task.", STR_MASK(deviceId));
+        RefObject::DecObjRef(context);
+        return;
+    }
+    // means device is offline, clear local subscribe
+    subManager_->ClearLocalSubscribeQuery(deviceId);
+    // clear sync task
+    if (context != nullptr) {
+        context->ClearAllSyncTask();
+        RefObject::DecObjRef(context);
+    }
+}
+
+void SyncEngine::GetLocalSubscribeQueries(const std::string &device, std::vector<QuerySyncObject> &subscribeQueries)
+{
+    subManager_->GetLocalSubscribeQueries(device, subscribeQueries);
+}
+
+void SyncEngine::GetRemoteSubscribeQueryIds(const std::string &device, std::vector<std::string> &subscribeQueryIds)
+{
+    subManager_->GetRemoteSubscribeQueryIds(device, subscribeQueryIds);
+}
+
+void SyncEngine::GetRemoteSubscribeQueries(const std::string &device, std::vector<QuerySyncObject> &subscribeQueries)
+{
+    subManager_->GetRemoteSubscribeQueries(device, subscribeQueries);
+}
+
+void SyncEngine::PutUnfiniedSubQueries(const std::string &device, std::vector<QuerySyncObject> &subscribeQueries)
+{
+    subManager_->PutLocalUnFiniedSubQueries(device, subscribeQueries);
+}
+
+void SyncEngine::GetAllUnFinishSubQueries(std::map<std::string, std::vector<QuerySyncObject>> &allSyncQueries)
+{
+    subManager_->GetAllUnFinishSubQueries(allSyncQueries);
+}
+
+ICommunicator *SyncEngine::AllocCommunicator(const std::string &identifier, int &errCode)
+{
+    ICommunicatorAggregator *communicatorAggregator = nullptr;
+    errCode = RuntimeContext::GetInstance()->GetCommunicatorAggregator(communicatorAggregator);
+    if (communicatorAggregator == nullptr) {
+        LOGE("[SyncEngine] Get ICommunicatorAggregator error when SetEqualIdentifier err = %d", errCode);
+        return nullptr;
+    }
+    std::vector<uint8_t> identifierVect(identifier.begin(), identifier.end());
+    auto communicator = communicatorAggregator->AllocCommunicator(identifierVect, errCode);
+    if (communicator == nullptr) {
+        LOGE("[SyncEngine] AllocCommunicator error when SetEqualIdentifier! err = %d", errCode);
+        return communicator;
+    }
+
+    errCode = communicator->RegOnMessageCallback(
+        std::bind(&SyncEngine::MessageReciveCallback, this, std::placeholders::_1, std::placeholders::_2),
+        []() {});
+    if (errCode != E_OK) {
+        LOGE("[SyncEngine] SyncRequestCallback register failed in SetEqualIdentifier! err = %d", errCode);
+        communicatorAggregator->ReleaseCommunicator(communicator);
+        return nullptr;
+    }
+
+    errCode = communicator->RegOnConnectCallback(
+        std::bind(&DeviceManager::OnDeviceConnectCallback, deviceManager_,
+            std::placeholders::_1, std::placeholders::_2), nullptr);
+    if (errCode != E_OK) {
+        LOGE("[SyncEngine][RegConnCB] register failed in SetEqualIdentifier! err %d", errCode);
+        communicator->RegOnMessageCallback(nullptr, nullptr);
+        communicatorAggregator->ReleaseCommunicator(communicator);
+        return nullptr;
+    }
+
+    return communicator;
+}
+
+void SyncEngine::UnRegCommunicatorsCallback()
+{
+    if (communicator_ != nullptr) {
+        communicator_->RegOnMessageCallback(nullptr, nullptr);
+        communicator_->RegOnConnectCallback(nullptr, nullptr);
+        communicator_->RegOnSendableCallback(nullptr, nullptr);
+    }
+
+    std::lock_guard<std::mutex> lock(equalCommunicatorsLock_);
+    for (const auto &iter : equalCommunicators_) {
+        iter.second->RegOnMessageCallback(nullptr, nullptr);
+        iter.second->RegOnConnectCallback(nullptr, nullptr);
+        iter.second->RegOnSendableCallback(nullptr, nullptr);
+    }
+}
+
+void SyncEngine::ReleaseCommunicators()
+{
+    RefObject::KillAndDecObjRef(communicatorProxy_);
+    communicatorProxy_ = nullptr;
+    ICommunicatorAggregator *communicatorAggregator = nullptr;
+    int errCode = RuntimeContext::GetInstance()->GetCommunicatorAggregator(communicatorAggregator);
+    if (communicatorAggregator == nullptr) {
+        LOGF("[SyncEngine] ICommunicatorAggregator get failed when fialize SyncEngine err %d", errCode);
+        return;
+    }
+
+    if (communicator_ != nullptr) {
+        communicatorAggregator->ReleaseCommunicator(communicator_);
+        communicator_ = nullptr;
+    }
+
+    std::lock_guard<std::mutex> lock(equalCommunicatorsLock_);
+    for (auto &iter : equalCommunicators_) {
+        communicatorAggregator->ReleaseCommunicator(iter.second);
+    }
+    equalCommunicators_.clear();
+}
+
+bool SyncEngine::IsSkipCalculateLen(const Message *inMsg)
+{
+    if (inMsg->IsFeedbackError()) {
+        LOGE("[SyncEngine] Feedback Message with errorNo=%u.", inMsg->GetErrorNo());
+        return true;
+    }
+    return false;
+}
+
+void SyncEngine::GetSubscribeSyncParam(const std::string &device, const QuerySyncObject &query,
+    InternalSyncParma &outParam)
+{
+    outParam.devices = { device };
+    outParam.mode = SyncModeType::AUTO_SUBSCRIBE_QUERY;
+    outParam.isQuerySync = true;
+    outParam.syncQuery = query;
+}
+
+void SyncEngine::GetQueryAutoSyncParam(const std::string &device, const QuerySyncObject &query,
+    InternalSyncParma &outParam)
+{
+    outParam.devices = { device };
+    outParam.mode = SyncModeType::AUTO_PUSH;
+    outParam.isQuerySync = true;
+    outParam.syncQuery = query;
+}
+
+int SyncEngine::StartAutoSubscribeTimer()
+{
+    return E_OK;
+}
+
+void SyncEngine::StopAutoSubscribeTimer()
+{
+}
+
+int SyncEngine::InitTimeChangedListener()
+{
+    int errCode = E_OK;
+    timeChangedListener_ = RuntimeContext::GetInstance()->RegisterTimeChangedLister(
+        [this](void *changedOffset) {
+            if (changedOffset == nullptr) {
+                return;
+            }
+            TimeOffset changedTimeOffset = *(reinterpret_cast<TimeOffset *>(changedOffset)) *
+                static_cast<TimeOffset>(TimeHelper::TO_100_NS);
+            TimeOffset orgOffset = this->metadata_->GetLocalTimeOffset() - changedTimeOffset;
+            TimeStamp currentSysTime = TimeHelper::GetSysCurrentTime();
+            TimeStamp maxItemTime = 0;
+            this->syncInterface_->GetMaxTimeStamp(maxItemTime);
+            if ((currentSysTime + orgOffset) <= maxItemTime) {
+                orgOffset = maxItemTime - currentSysTime + TimeHelper::MS_TO_100_NS; // 1ms
+            }
+            this->metadata_->SaveLocalTimeOffset(orgOffset);
+        }, errCode);
+    if (timeChangedListener_ == nullptr) {
+        LOGE("[SyncEngine] Init RegisterTimeChangedLister failed");
+        return errCode;
+    }
+    return E_OK;
+}
+
+int SyncEngine::SubscribeLimitCheck(const std::vector<std::string> &devices, QuerySyncObject &query) const
+{
+    return subManager_->LocalSubscribeLimitCheck(devices, query);
+}
+
+
+void SyncEngine::ClearInnerResource()
+{
+    if (timeChangedListener_ != nullptr) {
+        timeChangedListener_->Drop(true);
+        timeChangedListener_ = nullptr;
+    }
+    if (syncInterface_ != nullptr) {
+        syncInterface_->DecRefCount();
+        syncInterface_ = nullptr;
+    }
+    if (deviceManager_ != nullptr) {
+        delete deviceManager_;
+        deviceManager_ = nullptr;
+    }
+    communicator_ = nullptr;
+    metadata_ = nullptr;
+    onRemoteDataChanged_ = nullptr;
+    offlineChanged_ = nullptr;
+    queryAutoSyncCallback_ = nullptr;
+}
+
+bool SyncEngine::IsEngineActive() const
+{
+    return isActive_;
 }
 } // namespace DistributedDB

@@ -47,6 +47,8 @@ public:
 
     static int CheckAndTransferAutoLaunchParam(const AutoLaunchParam &param,
         SchemaObject &schemaObject, std::string &canonicalDir);
+
+    static uint8_t GetValidCompressionRate(uint8_t compressionRate);
 };
 } // namespace DistributedDB
 

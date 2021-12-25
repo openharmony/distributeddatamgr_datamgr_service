@@ -28,18 +28,14 @@ SyncAbleKvDBConnection::SyncAbleKvDBConnection(SyncAbleKvDB *kvDB)
       remotePushFinishedListener_(nullptr)
 {
     OnKill([this]() {
-        for (const auto &syncId : syncIdList_) {
-            SyncAbleKvDB *db = GetDB<SyncAbleKvDB>();
-            if (syncId <= 0 || db == nullptr) {
-                continue;
-            }
-
-            // Drop the lock before we call RemoveSyncOperation().
-            UnlockObj();
-            db->StopSync(syncId);
-            LockObj();
+        auto *db = GetDB<SyncAbleKvDB>();
+        if (db == nullptr) {
+            return;
         }
-        syncIdList_.clear();
+        // Drop the lock before we call RemoveSyncOperation().
+        UnlockObj();
+        db->StopSync();
+        LockObj();
     });
 }
 
@@ -51,52 +47,61 @@ SyncAbleKvDBConnection::~SyncAbleKvDBConnection()
     remotePushFinishedListener_ = nullptr;
 }
 
+void SyncAbleKvDBConnection::InitPragmaFunc()
+{
+    if (!pragmaFunc_.empty()) {
+        return;
+    }
+    pragmaFunc_ = {
+        {PRAGMA_SYNC_DEVICES, [this](void *parameter, int &errCode) {
+            errCode = PragmaSyncAction(static_cast<PragmaSync *>(parameter)); }},
+        {PRAGMA_AUTO_SYNC, [this](void *parameter, int &errCode) {
+            errCode = EnableAutoSync(*(static_cast<bool *>(parameter))); }},
+        {PRAGMA_PERFORMANCE_ANALYSIS_GET_REPORT, [](void *parameter, int &errCode) {
+            *(static_cast<std::string *>(parameter)) = PerformanceAnalysis::GetInstance()->GetStatistics(); }},
+        {PRAGMA_PERFORMANCE_ANALYSIS_OPEN, [](void *parameter, int &errCode) {
+            PerformanceAnalysis::GetInstance()->OpenPerformanceAnalysis(); }},
+        {PRAGMA_PERFORMANCE_ANALYSIS_CLOSE, [](void *parameter, int &errCode) {
+            PerformanceAnalysis::GetInstance()->ClosePerformanceAnalysis(); }},
+        {PRAGMA_PERFORMANCE_ANALYSIS_SET_REPORTFILENAME,  [](void *parameter, int &errCode) {
+            PerformanceAnalysis::GetInstance()->SetFileNumber(*(static_cast<std::string *>(parameter))); }},
+        {PRAGMA_GET_QUEUED_SYNC_SIZE, [this](void *parameter, int &errCode) {
+            errCode = GetQueuedSyncSize(static_cast<int *>(parameter)); }},
+        {PRAGMA_SET_QUEUED_SYNC_LIMIT, [this](void *parameter, int &errCode) {
+            errCode = SetQueuedSyncLimit(static_cast<int *>(parameter)); }},
+        {PRAGMA_GET_QUEUED_SYNC_LIMIT, [this](void *parameter, int &errCode) {
+            errCode = GetQueuedSyncLimit(static_cast<int *>(parameter)); }},
+        {PRAGMA_SET_WIPE_POLICY, [this](void *parameter, int &errCode) {
+            errCode = SetStaleDataWipePolicy(static_cast<WipePolicy *>(parameter)); }},
+        {PRAGMA_REMOTE_PUSH_FINISHED_NOTIFY, [this](void *parameter, int &errCode) {
+            errCode = SetRemotePushFinishedNotify(static_cast<PragmaRemotePushNotify *>(parameter)); }},
+        {PRAGMA_SET_SYNC_RETRY, [this](void *parameter, int &errCode) {
+            errCode = SetSyncRetry(*(static_cast<bool *>(parameter))); }},
+        {PRAGMA_ADD_EQUAL_IDENTIFIER, [this](void *parameter, int &errCode) {
+            errCode = SetEqualIdentifier(static_cast<PragmaSetEqualIdentifier *>(parameter)); }},
+        {PRAGMA_INTERCEPT_SYNC_DATA, [this](void *parameter, int &errCode) {
+            errCode = SetPushDataInterceptor(*static_cast<PushDataInterceptor *>(parameter)); }},
+        {PRAGMA_SUBSCRIBE_QUERY, [this](void *parameter, int &errCode) {
+            errCode = PragmaSyncAction(static_cast<PragmaSync *>(parameter)); }},
+    };
+}
+
 int SyncAbleKvDBConnection::Pragma(int cmd, void *parameter)
 {
     int errCode = PragmaParamCheck(cmd, parameter);
     if (errCode != E_OK) {
         return -E_INVALID_ARGS;
     }
-    switch (cmd) {
-        case PRAGMA_SYNC_DEVICES:
-            errCode = PragmaSyncAction(static_cast<PragmaSync *>(parameter));
-            break;
-        case PRAGMA_AUTO_SYNC:
-            errCode = EnableAutoSync(*(static_cast<bool *>(parameter)));
-            break;
-        case PRAGMA_PERFORMANCE_ANALYSIS_GET_REPORT:
-            *(static_cast<std::string *>(parameter)) = PerformanceAnalysis::GetInstance()->GetStatistics();
-            break;
-        case PRAGMA_PERFORMANCE_ANALYSIS_OPEN:
-            PerformanceAnalysis::GetInstance()->OpenPerformanceAnalysis();
-            break;
-        case PRAGMA_PERFORMANCE_ANALYSIS_CLOSE:
-            PerformanceAnalysis::GetInstance()->ClosePerformanceAnalysis();
-            break;
-        case PRAGMA_PERFORMANCE_ANALYSIS_SET_REPORTFILENAME:
-            PerformanceAnalysis::GetInstance()->SetFileNumber(*(static_cast<std::string *>(parameter)));
-            break;
-        case PRAGMA_GET_QUEUED_SYNC_SIZE:
-            errCode = GetQueuedSyncSize(static_cast<int *>(parameter));
-            break;
-        case PRAGMA_SET_QUEUED_SYNC_LIMIT:
-            errCode = SetQueuedSyncLimit(static_cast<int *>(parameter));
-            break;
-        case PRAGMA_GET_QUEUED_SYNC_LIMIT:
-            errCode = GetQueuedSyncLimit(static_cast<int *>(parameter));
-            break;
-        case PRAGMA_SET_WIPE_POLICY:
-            errCode = SetStaleDataWipePolicy(static_cast<WipePolicy *>(parameter));
-            break;
-        case PRAGMA_REMOTE_PUSH_FINISHED_NOTIFY:
-            errCode = SetRemotePushFinishedNotify(static_cast<PragmaRemotePushNotify *>(parameter));
-            break;
-        default:
-            // Call Pragma() of super class.
-            errCode = GenericKvDBConnection::Pragma(cmd, parameter);
-            break;
+
+    InitPragmaFunc();
+    auto iter = pragmaFunc_.find(cmd);
+    if (iter != pragmaFunc_.end()) {
+        iter->second(parameter, errCode);
+        return errCode;
     }
-    return errCode;
+
+    // Call Pragma() of super class.
+    return GenericKvDBConnection::Pragma(cmd, parameter);
 }
 
 int SyncAbleKvDBConnection::PragmaParamCheck(int cmd, const void *parameter)
@@ -136,18 +141,19 @@ int SyncAbleKvDBConnection::PragmaSyncAction(const PragmaSync *syncParameter)
         }
         IncObjRef(this);
     }
-    int errCode = kvDB->Sync(syncParameter->devices_, syncParameter->mode_,
-        std::bind(&SyncAbleKvDBConnection::OnSyncComplete, this, std::placeholders::_1, syncParameter->onComplete_,
-            syncParameter->wait_), [this]() {
-                DecObjRef(this);
-            }, syncParameter->wait_);
-    if (errCode <= 0) {
+
+    ISyncer::SyncParma syncParam;
+    syncParam.devices = syncParameter->devices_;
+    syncParam.mode = syncParameter->mode_;
+    syncParam.wait = syncParameter->wait_;
+    syncParam.isQuerySync = syncParameter->isQuerySync_;
+    syncParam.syncQuery = syncParameter->query_;
+    syncParam.onFinalize =  [this]() { DecObjRef(this); };
+    syncParam.onComplete = std::bind(&SyncAbleKvDBConnection::OnSyncComplete, this, std::placeholders::_1,
+        syncParameter->onComplete_, syncParameter->wait_);
+    int errCode = kvDB->Sync(syncParam);
+    if (errCode != E_OK) {
         DecObjRef(this);
-    } else if (!syncParameter->wait_) {
-        AutoLock lockGuard(this);
-        if (!IsKilled()) {
-            syncIdList_.push_back(errCode);
-        }
     }
     return errCode;
 }
@@ -166,11 +172,6 @@ void SyncAbleKvDBConnection::OnSyncComplete(const std::map<std::string, int> &st
     const std::function<void(const std::map<std::string, int> &devicesMap)> &onComplete, bool wait)
 {
     AutoLock lockGuard(this);
-    if (!wait && !IsKilled()) {
-        if (!syncIdList_.empty()) {
-            syncIdList_.pop_front();
-        }
-    }
     if (!IsKilled() && onComplete) {
         // Drop the lock before invoking the callback.
         // Do pragma-sync again in the prev sync callback is supported.
@@ -288,5 +289,37 @@ int SyncAbleKvDBConnection::SetRemotePushFinishedNotify(PragmaRemotePushNotify *
     }
     remotePushFinishedListener_ = tmpListener;
     return errCode;
+}
+
+int SyncAbleKvDBConnection::SetSyncRetry(bool isRetry)
+{
+    SyncAbleKvDB *kvDB = GetDB<SyncAbleKvDB>();
+    if (kvDB == nullptr) {
+        return -E_INVALID_CONNECTION;
+    }
+    return kvDB->SetSyncRetry(isRetry);
+}
+
+int SyncAbleKvDBConnection::SetEqualIdentifier(const PragmaSetEqualIdentifier *param)
+{
+    if (param == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+
+    SyncAbleKvDB *kvDB = GetDB<SyncAbleKvDB>();
+    if (kvDB == nullptr) {
+        return -E_INVALID_CONNECTION;
+    }
+    return kvDB->SetEqualIdentifier(param->identifier_, param->targets_);
+}
+
+int SyncAbleKvDBConnection::SetPushDataInterceptor(const PushDataInterceptor &interceptor)
+{
+    SyncAbleKvDB *kvDB = GetDB<SyncAbleKvDB>();
+    if (kvDB == nullptr) {
+        return -E_INVALID_CONNECTION;
+    }
+    kvDB->SetDataInterceptor(interceptor);
+    return E_OK;
 }
 }

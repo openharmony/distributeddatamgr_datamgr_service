@@ -16,14 +16,14 @@
 #ifndef OMIT_JSON
 #include <gtest/gtest.h>
 
-#include "sqlite_import.h"
-#include "platform_specific.h"
-#include "types.h"
 #include "db_common.h"
 #include "db_constant.h"
-#include "distributeddb_tools_unit_test.h"
 #include "distributeddb_data_generate_unit_test.h"
+#include "distributeddb_tools_unit_test.h"
 #include "log_print.h"
+#include "platform_specific.h"
+#include "sqlite_import.h"
+#include "types.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -129,6 +129,7 @@ void DistributedDBStorageIndexOptimizeTest::TearDownTestCase(void)
 
 void DistributedDBStorageIndexOptimizeTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
 void DistributedDBStorageIndexOptimizeTest::TearDown(void)
@@ -259,8 +260,8 @@ HWTEST_F(DistributedDBStorageIndexOptimizeTest, SuggestIndexTest001, TestSize.Le
     Query query1 = Query::Select().GreaterThan("id", 1).SuggestIndex("id");
     QueryObject queryObject1(query1);
     queryObject1.SetSchema(schemaObject1);
-    int errCode;
-    EXPECT_TRUE(queryObject1.IsValid(errCode));
+    queryObject1.Init();
+    EXPECT_TRUE(queryObject1.IsValid());
 
     /**
      * @tc.steps: step2. Create a Query and call SuggestIndex().SuggestIndex(), then check the query2
@@ -271,7 +272,8 @@ HWTEST_F(DistributedDBStorageIndexOptimizeTest, SuggestIndexTest001, TestSize.Le
     Query query2 = Query::Select().SuggestIndex("id").SuggestIndex("id");
     QueryObject queryObject2(query2);
     queryObject2.SetSchema(schemaObject2);
-    EXPECT_FALSE(queryObject2.IsValid(errCode));
+    queryObject2.Init();
+    EXPECT_FALSE(queryObject2.IsValid());
 
     /**
      * @tc.steps: step3. Create a Query and call SuggestIndex().GreaterThan(), then check the query3
@@ -282,7 +284,8 @@ HWTEST_F(DistributedDBStorageIndexOptimizeTest, SuggestIndexTest001, TestSize.Le
     Query query3 = Query::Select().SuggestIndex("id").GreaterThan("id", 1);
     QueryObject queryObject3(query3);
     queryObject3.SetSchema(schemaObject3);
-    EXPECT_FALSE(queryObject3.IsValid(errCode));
+    queryObject3.Init();
+    EXPECT_FALSE(queryObject3.IsValid());
 }
 
 /**
@@ -313,11 +316,16 @@ HWTEST_F(DistributedDBStorageIndexOptimizeTest, SuggestIndexTest002, TestSize.Le
      */
     QueryObject queryObject1(query1);
     queryObject1.SetSchema(schemaObject1);
+    int errCode = E_OK;
+    SqliteQueryHelper helper = queryObject1.GetQueryHelper(errCode);
+    ASSERT_EQ(errCode, E_OK);
     std::string sql1;
-    ASSERT_EQ(queryObject1.GetQuerySql(sql1, false), E_OK);
+    ASSERT_EQ(helper.GetQuerySql(sql1, false), E_OK);
     size_t pos = sql1.find("INDEXED BY '$.id'", 0);
     ASSERT_TRUE(pos != std::string::npos);
 
+    SqliteQueryHelper helper1 = queryObject1.GetQueryHelper(errCode);
+    ASSERT_EQ(errCode, E_OK);
     /**
      * @tc.steps: step4. Create a kvStore with the schema string.
      */
@@ -337,11 +345,14 @@ HWTEST_F(DistributedDBStorageIndexOptimizeTest, SuggestIndexTest002, TestSize.Le
      * @tc.steps: step6.  GetEntries with the query1
      * @tc.expected: step6. GetEntries return OK, and the out value is the given value.
      */
+    ASSERT_EQ(errCode, E_OK);
     ASSERT_EQ(g_kvNbDelegatePtr->GetEntries(query1, entries), OK);
     EXPECT_TRUE(value == entries[0].value);
+    ASSERT_EQ(errCode, E_OK);
     EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
     g_kvNbDelegatePtr = nullptr;
-
+    SqliteQueryHelper helper2 = queryObject1.GetQueryHelper(errCode);
+    ASSERT_EQ(errCode, E_OK);
     /**
      * @tc.steps: step7. Create Query,call GreaterThan("id").SuggestIndex("car")
      */
@@ -355,8 +366,10 @@ HWTEST_F(DistributedDBStorageIndexOptimizeTest, SuggestIndexTest002, TestSize.Le
      */
     QueryObject queryObject3(query3);
     queryObject3.SetSchema(schemaObject3);
+    SqliteQueryHelper helper3 = queryObject1.GetQueryHelper(errCode);
+    ASSERT_EQ(errCode, E_OK);
     std::string sql3;
-    ASSERT_EQ(queryObject3.GetQuerySql(sql3, false), E_OK);
+    ASSERT_EQ(helper3.GetQuerySql(sql3, false), E_OK);
     pos = sql3.find("INDEXED BY '$.car'", 0);
     ASSERT_TRUE(pos == std::string::npos);
 }

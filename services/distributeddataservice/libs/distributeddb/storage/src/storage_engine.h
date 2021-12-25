@@ -78,6 +78,8 @@ public:
 
     virtual int CheckEngineOption(const KvDBProperties &kvdbOption) const;
 
+    virtual bool IsMigrating() const;
+
 protected:
     virtual int CreateNewExecutor(bool isWrite, StorageExecutor *&handle) = 0;
 
@@ -89,10 +91,13 @@ protected:
 
     StorageEngineAttr engineAttr_;
     bool isUpdated_;
+    std::atomic<bool> isMigrating_;
     std::string identifier_;
     EngineState engineState_;
+
     // Mutex for commitNotifyFunc_.
     mutable std::shared_mutex notifyMutex_;
+
     // Callback function for commit notify.
     std::function<void(int, KvDBCommitNotifyFilterAbleData *)> commitNotifyFunc_;
 

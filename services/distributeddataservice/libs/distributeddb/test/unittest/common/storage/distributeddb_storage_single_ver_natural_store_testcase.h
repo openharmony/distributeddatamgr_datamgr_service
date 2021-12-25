@@ -14,14 +14,14 @@
  */
 
 #include <gtest/gtest.h>
+#include "db_errno.h"
 #include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_unit_test.h"
-#include "sqlite_utils.h"
+#include "multi_ver_natural_store.h"
+#include "sqlite_local_kvdb.h"
 #include "sqlite_single_ver_natural_store.h"
 #include "sqlite_single_ver_natural_store_connection.h"
-#include "sqlite_local_kvdb.h"
-#include "multi_ver_natural_store.h"
-#include "db_errno.h"
+#include "sqlite_utils.h"
 
 #ifndef DISTRIBUTEDDB_STORAGE_SINGLE_VER_NATURAL_STORE_TESTCASE_H
 #define DISTRIBUTEDDB_STORAGE_SINGLE_VER_NATURAL_STORE_TESTCASE_H
@@ -70,6 +70,9 @@ public:
         DistributedDB::SQLiteSingleVerNaturalStoreConnection *&connection);
 
     static void GetMetaData001(DistributedDB::SQLiteSingleVerNaturalStore *&store,
+        DistributedDB::SQLiteSingleVerNaturalStoreConnection *&connection);
+
+    static void DeleteMetaData001(DistributedDB::SQLiteSingleVerNaturalStore *&store,
         DistributedDB::SQLiteSingleVerNaturalStoreConnection *&connection);
 
     static void GetCurrentMaxTimeStamp001(DistributedDB::SQLiteSingleVerNaturalStore *&store,
@@ -142,6 +145,9 @@ private:
 
     static void TestMetaDataPutAndGet(DistributedDB::SQLiteSingleVerNaturalStore *&store,
     DistributedDB::SQLiteSingleVerNaturalStoreConnection *&connection);
+
+    static void TestMetaDataDeleteByPrefixKey(DistributedDB::SQLiteSingleVerNaturalStore *&store,
+        DistributedDB::SQLiteSingleVerNaturalStoreConnection *&connection);
 
     static void DataBaseCommonPutOperate(DistributedDB::SQLiteSingleVerNaturalStore *&store,
      DistributedDB::SQLiteSingleVerNaturalStoreConnection *&connection, DistributedDB::IOption option);

@@ -40,6 +40,7 @@ public:
 
     // Create a SerialBuffer that has a independent bytes_ and point to the same externalBytes_
     SerialBuffer *Clone(int &outErrorNo);
+
     // After return E_OK, this SerialBuffer can cross thread. Do nothing indeed if it already able to cross thread.
     int ConvertForCrossThread();
 

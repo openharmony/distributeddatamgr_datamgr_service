@@ -52,10 +52,13 @@ public:
 
     static void SetDatabaseIds(KvDBProperties &properties, const std::string &appId, const std::string &userId,
         const std::string &storeId);
+
+    static std::string StringMasking(const std::string &oriStr, size_t remain = 3); // remain 3 unmask
 };
 
 // Define short macro substitute for original long expression for convenience of using
 #define VEC_TO_STR(x) DBCommon::VectorToHexString(x).c_str()
+#define STR_MASK(x) DBCommon::StringMasking(x).c_str()
 } // namespace DistributedDB
 
 #endif // DISTRIBUTEDDB_COMMON_H

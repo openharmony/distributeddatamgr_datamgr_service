@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include "distributeddb_tools_unit_test.h"
 #include "get_query_info.h"
 #include "log_print.h"
 
@@ -49,7 +50,7 @@ namespace {
     }
 
     template<typename T>
-    std::list<QueryObjNode> CraetCheckList(QueryObjType operFlag, const std::string &fieldName, const T &queryValue)
+    std::list<QueryObjNode> CreateCheckList(QueryObjType operFlag, const std::string &fieldName, const T &queryValue)
     {
         FieldValue fieldValue;
         QueryValueType type = GetQueryValueType::GetFieldTypeAndValue(queryValue, fieldValue);
@@ -78,32 +79,32 @@ namespace {
     void CheckQueryCompareOper()
     {
         Query query1 = Query::Select().NotEqualTo(TEST_FIELD_NAME, 123); // random test data
-        std::list<QueryObjNode> result = CraetCheckList(QueryObjType::NOT_EQUALTO, TEST_FIELD_NAME, 123);
+        std::list<QueryObjNode> result = CreateCheckList(QueryObjType::NOT_EQUALTO, TEST_FIELD_NAME, 123); // random num
         EXPECT_TRUE(CheckQueryContainer(query1, result));
 
         Query query2 = Query::Select().EqualTo(TEST_FIELD_NAME, true);
         result.clear();
-        result = CraetCheckList(QueryObjType::EQUALTO, TEST_FIELD_NAME, true);
+        result = CreateCheckList(QueryObjType::EQUALTO, TEST_FIELD_NAME, true);
         EXPECT_TRUE(CheckQueryContainer(query2, result));
 
         Query query3 = Query::Select().GreaterThan(TEST_FIELD_NAME, 0);
         result.clear();
-        result = CraetCheckList(QueryObjType::GREATER_THAN, TEST_FIELD_NAME, 0);
+        result = CreateCheckList(QueryObjType::GREATER_THAN, TEST_FIELD_NAME, 0);
         EXPECT_TRUE(CheckQueryContainer(query3, result));
 
         Query query4 = Query::Select().LessThan(TEST_FIELD_NAME, INT_MAX);
         result.clear();
-        result = CraetCheckList(QueryObjType::LESS_THAN, TEST_FIELD_NAME, INT_MAX);
+        result = CreateCheckList(QueryObjType::LESS_THAN, TEST_FIELD_NAME, INT_MAX);
         EXPECT_TRUE(CheckQueryContainer(query4, result));
 
         Query query5 = Query::Select().GreaterThanOrEqualTo(TEST_FIELD_NAME, 1.56); // random test data
         result.clear();
-        result = CraetCheckList(QueryObjType::GREATER_THAN_OR_EQUALTO, TEST_FIELD_NAME, 1.56);
+        result = CreateCheckList(QueryObjType::GREATER_THAN_OR_EQUALTO, TEST_FIELD_NAME, 1.56); // random test data
         EXPECT_TRUE(CheckQueryContainer(query5, result));
 
         Query query6 = Query::Select().LessThanOrEqualTo(TEST_FIELD_NAME, 100); // random test data
         result.clear();
-        result = CraetCheckList(QueryObjType::LESS_THAN_OR_EQUALTO, TEST_FIELD_NAME, 100);
+        result = CreateCheckList(QueryObjType::LESS_THAN_OR_EQUALTO, TEST_FIELD_NAME, 100); // random test data
         EXPECT_TRUE(CheckQueryContainer(query6, result));
     }
 }
@@ -126,6 +127,7 @@ void DistributedDBInterfacesQueryDBTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesQueryDBTest::SetUp(void)
 {
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
 void DistributedDBInterfacesQueryDBTest::TearDown(void)
@@ -139,7 +141,7 @@ void DistributedDBInterfacesQueryDBTest::TearDown(void)
   * @tc.require: AR000DR9K6
   * @tc.author: sunpeng
   */
-HWTEST_F(DistributedDBInterfacesQueryDBTest, Query001, TestSize.Level0)
+HWTEST_F(DistributedDBInterfacesQueryDBTest, Query001, TestSize.Level1)
 {
     Query query = Query::Select();
     Query queryCopy = query;
@@ -149,12 +151,12 @@ HWTEST_F(DistributedDBInterfacesQueryDBTest, Query001, TestSize.Level0)
 
     std::string testValue = "testValue";
     Query query7 = Query::Select().Like(TEST_FIELD_NAME, testValue);
-    std::list<QueryObjNode> result = CraetCheckList(QueryObjType::LIKE, TEST_FIELD_NAME, testValue);
+    std::list<QueryObjNode> result = CreateCheckList(QueryObjType::LIKE, TEST_FIELD_NAME, testValue);
     EXPECT_TRUE(CheckQueryContainer(query7, result));
 
     Query query8 = Query::Select().NotLike(TEST_FIELD_NAME, "testValue");
     result.clear();
-    result = CraetCheckList(QueryObjType::NOT_LIKE, TEST_FIELD_NAME, testValue);
+    result = CreateCheckList(QueryObjType::NOT_LIKE, TEST_FIELD_NAME, testValue);
     EXPECT_TRUE(CheckQueryContainer(query8, result));
 
     vector<int> fieldValues{1, 1, 1};
@@ -172,7 +174,7 @@ HWTEST_F(DistributedDBInterfacesQueryDBTest, Query001, TestSize.Level0)
 
     Query query11 = Query::Select().OrderBy(TEST_FIELD_NAME, false);
     result.clear();
-    result = CraetCheckList(QueryObjType::ORDERBY, TEST_FIELD_NAME, false);
+    result = CreateCheckList(QueryObjType::ORDERBY, TEST_FIELD_NAME, false);
     EXPECT_TRUE(CheckQueryContainer(query11, result));
 
     Query query12 = Query::Select().Limit(1, 2);
@@ -194,7 +196,7 @@ HWTEST_F(DistributedDBInterfacesQueryDBTest, Query001, TestSize.Level0)
   * @tc.require: AR000DR9K6
   * @tc.author: sunpeng
   */
-HWTEST_F(DistributedDBInterfacesQueryDBTest, Query002, TestSize.Level0)
+HWTEST_F(DistributedDBInterfacesQueryDBTest, Query002, TestSize.Level1)
 {
     float testValue = 1.1;
     Query query = Query::Select().NotEqualTo(".test", testValue);
@@ -212,7 +214,7 @@ HWTEST_F(DistributedDBInterfacesQueryDBTest, Query002, TestSize.Level0)
   * @tc.require: AR000DR9K6
   * @tc.author: sunpeng
   */
-HWTEST_F(DistributedDBInterfacesQueryDBTest, Query003, TestSize.Level0)
+HWTEST_F(DistributedDBInterfacesQueryDBTest, Query003, TestSize.Level1)
 {
     Query query = Query::Select().EqualTo(TEST_FIELD_NAME, true).And().GreaterThan(TEST_FIELD_NAME, 1);
     QueryExpression queryExpression = GetQueryInfo::GetQueryExpression(query);

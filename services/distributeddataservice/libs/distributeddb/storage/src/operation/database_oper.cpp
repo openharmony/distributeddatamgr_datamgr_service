@@ -34,7 +34,7 @@ int DatabaseOper::ExecuteRekey(const CipherPassword &passwd, const KvDBPropertie
 {
     int errCode = E_OK;
     if (!RekeyPreHandle(passwd, errCode)) {
-        LOGE("Rekey fail when RekeyPre Handle, errCode = [%d]", errCode);
+        LOGI("Finish rekey when RekeyPre Handle, errCode = [%d]", errCode);
         return errCode;
     }
 
@@ -366,7 +366,7 @@ int DatabaseOper::RemoveFile(const std::string &fileName)
         return E_OK;
     }
 
-    if (remove(fileName.c_str()) != 0) {
+    if (OS::RemoveFile(fileName.c_str()) != E_OK) {
         LOGE("Remove file failed:%d", errno);
         return -E_REMOVE_FILE;
     }

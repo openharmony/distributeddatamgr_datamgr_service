@@ -83,15 +83,15 @@ public:
     std::string GetStoreId() const override;
 
     // Sync function interface, if wait set true, this function will be blocked until sync finished
-    DB_API DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
+    DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
         const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete,
         bool wait) override;
 
     // Special pragma interface, see PragmaCmd and PragmaData,
-    DB_API DBStatus Pragma(PragmaCmd cmd, PragmaData &paramData) override;
+    DBStatus Pragma(PragmaCmd cmd, PragmaData &paramData) override;
 
     // Set the conflict notifier for getting the specified type conflict data.
-    DB_API DBStatus SetConflictNotifier(int conflictType, const KvStoreNbConflictNotifier &notifier) override;
+    DBStatus SetConflictNotifier(int conflictType, const KvStoreNbConflictNotifier &notifier) override;
 
     // Rekey the database.
     DBStatus Rekey(const CipherPassword &password) override;
@@ -124,6 +124,31 @@ public:
     void SetReleaseFlag(bool flag);
 
     DBStatus Close();
+
+    // Sync function interface, if wait set true, this function will be blocked until sync finished.
+    // Param query used to filter the records to be synchronized.
+    // Now just support push mode and query by prefixKey.
+    DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
+        const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete,
+        const Query &query, bool wait) override;
+
+    DBStatus CheckIntegrity() const override;
+
+    // Set an equal identifier for this database, After this called, send msg to the target will use this identifier
+    DBStatus SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets) override;
+
+    DBStatus SetPushDataInterceptor(const PushDataInterceptor &interceptor) override;
+
+    // Register a subscriber query on peer devices. The data in the peer device meets the subscriber query condition
+    // will automatically push to the local device when it's changed.
+    DBStatus SubscribeRemoteQuery(const std::vector<std::string> &devices,
+        const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete,
+        const Query &query, bool wait) override;
+
+    // Unregister a subscriber query on peer devices.
+    DBStatus UnSubscribeRemoteQuery(const std::vector<std::string> &devices,
+        const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete,
+        const Query &query, bool wait) override;
 
 private:
     DBStatus GetInner(const IOption &option, const Key &key, Value &value) const;

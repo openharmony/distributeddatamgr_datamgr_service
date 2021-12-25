@@ -36,6 +36,7 @@ public:
     // For application layer frame
     static uint32_t GetAppLayerFrameHeaderLength();
     static uint32_t GetLengthBeforeSerializedData();
+
     // For communication layer frame
     static uint32_t GetCommLayerFrameHeaderLength();
 
@@ -54,6 +55,7 @@ public:
     static int SplitFrameIntoPacketsIfNeed(const SerialBuffer *inBuff, uint32_t inMtuSize,
         std::vector<std::vector<uint8_t>> &outPieces);
     static int AnalyzeSplitStructure(const ParseResult &inResult, uint32_t &outFragLen, uint32_t &outLastFragLen);
+
     // inFrame is the destination, pktBytes and pktLength are the source, fragOffset and fragLength give the boundary
     static int CombinePacketIntoFrame(SerialBuffer *inFrame, const uint8_t *pktBytes, uint32_t pktLength,
         uint32_t fragOffset, uint32_t fragLength);
@@ -65,12 +67,14 @@ public:
 
     // For application layer frame. In send case. Focus on frame.
     static int SetDivergeHeader(SerialBuffer *inBuff, const LabelType &inCommLabel);
+
     // For both application and communication layer frame. In send case. Focus on frame.
     static int SetPhyHeader(SerialBuffer *inBuff, const PhyHeaderInfo &inInfo);
 
     // In receive case, return error if parse fail.
     static int CheckAndParsePacket(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
         ParseResult &outResult);
+
     // The CommPhyHeader had already been parsed into outResult
     static int CheckAndParseFrame(const SerialBuffer *inBuff, ParseResult &outResult);
 

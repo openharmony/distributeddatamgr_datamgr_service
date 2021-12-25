@@ -14,12 +14,12 @@
  */
 
 #include <gtest/gtest.h>
-#include <set>
 #include <thread>
-#include "log_print.h"
 #include "db_errno.h"
-#include "endian_convert.h"
 #include "distributeddb_communicator_common.h"
+#include "distributeddb_tools_unit_test.h"
+#include "endian_convert.h"
+#include "log_print.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -80,9 +80,7 @@ void DistributedDBCommunicatorTest::TearDownTestCase(void)
 
 void DistributedDBCommunicatorTest::SetUp()
 {
-    /**
-     * @tc.setup: Do nothing
-     */
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
 void DistributedDBCommunicatorTest::TearDown()

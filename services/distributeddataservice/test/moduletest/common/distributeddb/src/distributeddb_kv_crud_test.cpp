@@ -267,7 +267,7 @@ HWTEST_F(DistributeddbKvCrudTest, SimpleDataTest006, TestSize.Level1)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvCrudTest, SimpleDataTest007, TestSize.Level0)
+HWTEST_F(DistributeddbKvCrudTest, SimpleDataTest007, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. delete k1 from db.
@@ -358,7 +358,7 @@ HWTEST_F(DistributeddbKvCrudTest, SimpleDataTest009, TestSize.Level1)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvCrudTest, ComplexDataTest001, TestSize.Level0)
+HWTEST_F(DistributeddbKvCrudTest, ComplexDataTest001, TestSize.Level1)
 {
     DistributedDB::Key longKey1, longKey2;
     longKey1.assign(ONE_K_LONG_STRING, (uint8_t)'a');

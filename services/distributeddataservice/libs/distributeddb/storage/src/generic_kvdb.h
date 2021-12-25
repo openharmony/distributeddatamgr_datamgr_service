@@ -126,6 +126,8 @@ public:
 
     virtual void SetConnectionFlag(bool isExisted) const;
 
+    int CheckIntegrity() const override;
+
 protected:
     // Create a connection object, no DB ref increased.
     virtual GenericKvDBConnection *NewConnection(int &errCode) = 0;

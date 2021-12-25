@@ -23,8 +23,8 @@
 #include "isyncer.h"
 #include "isync_engine.h"
 #include "meta_data.h"
-#include "time_helper.h"
 #include "sync_operation.h"
+#include "time_helper.h"
 
 namespace DistributedDB {
 class GenericSyncer : public virtual ISyncer {
@@ -32,10 +32,10 @@ using DataChangedFunc = std::function<void(const std::string &device)>;
 
 public:
     GenericSyncer();
-    virtual ~GenericSyncer();
+    ~GenericSyncer() override;
 
     // Init the Syncer modules
-    int Initialize(IKvDBSyncInterface *syncInterface) override;
+    int Initialize(ISyncInterface *syncInterface) override;
 
     // Close
     int Close() override;
@@ -50,8 +50,13 @@ public:
         const std::function<void(const std::map<std::string, int> &)> &onComplete,
         const std::function<void(void)> &onFinalize, bool wait) override;
 
+    // Sync function. use SyncParma to reduce paramter.
+    int Sync(const SyncParma &param) override;
+
     // Remove the operation, with the given syncId, used to clean resource if sync finished or failed.
     int RemoveSyncOperation(int syncId) override;
+
+    int StopSync() override;
 
     // Get The current virtual timestamp
     uint64_t GetTimeStamp() override;
@@ -74,15 +79,33 @@ public:
     // Get local deviceId, is hashed
     int GetLocalIdentity(std::string &outTarget) const override;
 
+    // Set Manual Sync retry config
+    int SetSyncRetry(bool isRetry) override;
+
+    // Set an equal identifier for this database, After this called, send msg to the target will use this identifier
+    int SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets) override;
+
+    // Inner function, Used for subscribe sync
+    int Sync(const InternalSyncParma &param);
+
 protected:
     // Remote data changed callback
     virtual void RemoteDataChanged(const std::string &device) = 0;
 
+    virtual void RemoteDeviceOffline(const std::string &device) = 0;
+
+    // trigger query auto sync or auto subscribe
+    // trigger auto subscribe only when subscribe task is failed triggered by remote db opened
+    // it won't be triggered again when subscribe task success
+    virtual void QueryAutoSync(const InternalSyncParma &param);
+
     // Create a sync engine, if has memory error, will return nullptr.
     virtual ISyncEngine *CreateSyncEngine() = 0;
 
+    virtual int PrepareSync(const SyncParma &param, uint32_t syncId);
+
     // Add a Sync Operation, after call this function, the operation will be start
-    virtual int AddSyncOperation(SyncOperation *operation);
+    virtual void AddSyncOperation(SyncOperation *operation);
 
     // Used to set to the SyncOperation Onkill
     virtual void SyncOperationKillCallbackInner(int syncId);
@@ -91,13 +114,13 @@ protected:
     void SyncOperationKillCallback(int syncId);
 
     // Init the metadata
-    int InitMetaData(IKvDBSyncInterface *syncInterface);
+    int InitMetaData(ISyncInterface *syncInterface);
 
     // Init the TimeHelper
-    int InitTimeHelper(IKvDBSyncInterface *syncInterface);
+    int InitTimeHelper(ISyncInterface *syncInterface);
 
     // Init the Sync engine
-    int InitSyncEngine(IKvDBSyncInterface *syncInterface);
+    int InitSyncEngine(ISyncInterface *syncInterface);
 
     // Used to general a sync id, maybe it is currentSyncId++;
     // The return value is sync id.
@@ -105,6 +128,9 @@ protected:
 
     // Check if the mode arg is valid
     bool IsValidMode(int mode) const;
+
+    virtual int SyncConditionCheck(QuerySyncObject &query, int mode, bool isQuerySync,
+        const std::vector<std::string> &devices) const;
 
     // Check if the devices arg is valid
     bool IsValidDevices(const std::vector<std::string> &devices) const;
@@ -115,13 +141,23 @@ protected:
     // Callback when the special sync finished.
     void OnSyncFinished(int syncId);
 
-    void AddQueuedManualSyncSize(int mode, bool wait);
+    inline bool IsManualSync(int inMode) const;
+
+    int AddQueuedManualSyncSize(int mode, bool wait);
 
     bool IsQueuedManualSyncFull(int mode, bool wait) const;
 
     void SubQueuedSyncSize(void);
 
     void GetOnlineDevices(std::vector<std::string> &devices) const;
+
+    std::string GetSyncDevicesStr(const std::vector<std::string> &devices) const;
+
+    void InitSyncOperation(SyncOperation *operation, const SyncParma &param);
+
+    int StatusCheck() const;
+
+    int SyncParamCheck(const SyncParma &param) const;
 
     static int SyncModuleInit();
 
@@ -133,9 +169,11 @@ protected:
     // Used to general the next sync id.
     static int currentSyncId_;
     static std::mutex syncIdLock_;
+    // For sync in progress.
+    std::list<int> syncIdList_;
 
     ISyncEngine *syncEngine_;
-    IKvDBSyncInterface *syncInterface_;
+    ISyncInterface *syncInterface_;
     std::shared_ptr<TimeHelper> timeHelper_;
     std::shared_ptr<Metadata> metadata_;
     bool initialized_;

@@ -197,7 +197,7 @@ int SingleVerNaturalStoreCommitNotifyData::GetConflictedNotifiedFlag() const
 }
 
 bool SingleVerNaturalStoreCommitNotifyData::IsConflictedNotifyMatched(const DataItem &itemPut,
-    const DataItem &itemOri) const
+    const DataItem &itemGet) const
 {
     int dataConflictedType = 0;
     // Local put
@@ -205,7 +205,7 @@ bool SingleVerNaturalStoreCommitNotifyData::IsConflictedNotifyMatched(const Data
         dataConflictedType = SINGLE_VER_CONFLICT_NATIVE_ALL;
     } else {
         // Compare the origin device of the get and put item.
-        if (itemPut.origDev != itemOri.origDev) {
+        if (itemPut.origDev != itemGet.origDev) {
             dataConflictedType = SINGLE_VER_CONFLICT_FOREIGN_KEY_ORIG;
         } else {
             dataConflictedType = SINGLE_VER_CONFLICT_FOREIGN_KEY_ONLY;

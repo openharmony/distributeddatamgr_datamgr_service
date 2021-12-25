@@ -22,7 +22,6 @@
 #include <memory>
 
 #include "isyncer.h"
-#include "ikvdb_sync_interface.h"
 
 namespace DistributedDB {
 class SyncerProxy : public ISyncer {
@@ -31,7 +30,7 @@ public:
     ~SyncerProxy() {};
 
     // Init the Syncer modules
-    int Initialize(IKvDBSyncInterface *syncInterface) override;
+    int Initialize(ISyncInterface *syncInterface) override;
 
     // Close the syncer
     int Close() override;
@@ -46,8 +45,13 @@ public:
         const std::function<void(const std::map<std::string, int> &)> &onComplete,
         const std::function<void(void)> &onFinalize, bool wait) override;
 
+    // Sync function. use SyncParma to reduce paramter.
+    int Sync(const SyncParma &param) override;
+
     // Remove the operation, with the given syncId, used to clean resource if sync finished or failed.
     int RemoveSyncOperation(int syncId) override;
+
+    int StopSync() override;
 
     // Get The current virtual timestamp
     uint64_t GetTimeStamp() override;
@@ -81,6 +85,12 @@ public:
 
     // Set stale data wipe policy
     int SetStaleDataWipePolicy(WipePolicy policy) override;
+
+    // Set Manual Sync retry config
+    int SetSyncRetry(bool isRetry) override;
+
+    // Set an equal identifier for this database, After this called, send msg to the target will use this identifier
+    int SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets) override;
 
 private:
     std::mutex syncerLock_;

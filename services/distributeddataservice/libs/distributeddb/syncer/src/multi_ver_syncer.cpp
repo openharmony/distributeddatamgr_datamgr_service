@@ -52,9 +52,9 @@ void MultiVerSyncer::EnableAutoSync(bool enable)
         return;
     }
 
-    int syncId = Sync(devices, SyncOperation::AUTO_PULL, nullptr, nullptr, false);
-    if (syncId < MIN_VALID_SYNC_ID) {
-        LOGE("[Syncer] sync start by EnableAutoSync failed err %d", syncId);
+    int errCode = Sync(devices, SyncModeType::AUTO_PULL, nullptr, nullptr, false);
+    if (errCode != E_OK) {
+        LOGE("[Syncer] sync start by EnableAutoSync failed err %d", errCode);
     }
 }
 
@@ -83,11 +83,15 @@ void MultiVerSyncer::RemoteDataChanged(const std::string &device)
     if (autoSyncEnable_) {
         std::vector<std::string> devices;
         devices.push_back(device);
-        int syncId = Sync(devices, SyncOperation::AUTO_PULL, nullptr, nullptr, false);
-        if (syncId < MIN_VALID_SYNC_ID) {
-            LOGE("[MultiVerSyncer] sync start by RemoteDataChanged failed err %d", syncId);
+        int errCode = Sync(devices, SyncModeType::AUTO_PULL, nullptr, nullptr, false);
+        if (errCode != E_OK) {
+            LOGE("[MultiVerSyncer] sync start by RemoteDataChanged failed err %d", errCode);
         }
     }
+}
+
+void MultiVerSyncer::RemoteDeviceOffline(const std::string &device)
+{
 }
 
 ISyncEngine *MultiVerSyncer::CreateSyncEngine()
@@ -95,14 +99,11 @@ ISyncEngine *MultiVerSyncer::CreateSyncEngine()
     return new (std::nothrow) MultiVerSyncEngine();
 }
 
-int MultiVerSyncer::AddSyncOperation(SyncOperation *operation)
+void MultiVerSyncer::AddSyncOperation(SyncOperation *operation)
 {
-    if (operation == nullptr) {
-        return -E_INVALID_ARGS;
-    }
     MultiVerKvDBSyncInterface *syncInterface = static_cast<MultiVerKvDBSyncInterface *>(syncInterface_);
     syncInterface->NotifyStartSyncOperation();
-    return GenericSyncer::AddSyncOperation(operation);
+    GenericSyncer::AddSyncOperation(operation);
 }
 
 void MultiVerSyncer::SyncOperationKillCallbackInner(int syncId)

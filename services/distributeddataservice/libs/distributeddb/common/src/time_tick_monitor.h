@@ -39,7 +39,7 @@ public:
     NotificationChain::Listener *RegisterTimeChangedLister(const TimeChangedAction &action, int &errCode);
 
     // Notify TIME_CHANGE_EVENT.
-    void NotifyTimeChange(TimeOffset timeChangeOffset) const;
+    void NotifyTimeChange(TimeOffset offset) const;
 private:
     static constexpr  uint64_t MONITOR_INTERVAL = 1 * 1000; // 1s
     static constexpr int64_t MAX_NOISE = 9 * 100 * 1000; // 900ms

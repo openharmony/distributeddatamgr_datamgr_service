@@ -74,6 +74,11 @@ public:
     // Put meta data as a key-value entry.
     int PutMetaData(const Key &key, const Value &value) override;
 
+    // Delete multiple meta data records in a transaction.
+    int DeleteMetaData(const std::vector<Key> &keys) override;
+    // Delete multiple meta data records with key prefix in a transaction.
+    int DeleteMetaDataByPrefixKey(const Key &keyPrefix) const override;
+
     // Get all meta data keys.
     int GetAllMetaKeys(std::vector<Key> &keys) const override;
 
@@ -150,6 +155,8 @@ public:
     KvDBProperties &GetDbPropertyForUpdate();
 
     int InitStorages(const KvDBProperties &kvDBProp, bool isChangeTag = false);
+
+    void SetDataInterceptor(const PushDataInterceptor &interceptor) override;
 
 private:
 

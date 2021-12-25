@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
 #include <cstdlib>
 #include <ctime>
+#include <gtest/gtest.h>
 #include <thread>
 
 #include "db_common.h"
@@ -109,6 +108,7 @@ void DistributedDBInterfacesDataOperationSyncDBTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesDataOperationSyncDBTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     // init values.
     g_valueStatus = INVALID_ARGS;
     g_value.clear();

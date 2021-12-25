@@ -50,6 +50,7 @@ void DistributedDBStorageMemorySingleVerNaturalStoreTest::TearDownTestCase(void)
 
 void DistributedDBStorageMemorySingleVerNaturalStoreTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     KvDBProperties property;
     property.SetStringProp(KvDBProperties::DATA_DIR, g_testDir);
     property.SetStringProp(KvDBProperties::STORE_ID, "TestGeneralNB");

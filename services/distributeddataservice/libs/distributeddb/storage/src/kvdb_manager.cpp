@@ -14,7 +14,6 @@
  */
 
 #include "kvdb_manager.h"
-#include "platform_specific.h"
 #include "log_print.h"
 #include "db_common.h"
 #include "runtime_context.h"
@@ -22,17 +21,19 @@
 #include "default_factory.h"
 #include "generic_kvdb.h"
 #include "db_constant.h"
+#include "res_finalizer.h"
 
 namespace DistributedDB {
 const std::string KvDBManager::PROCESS_LABEL_CONNECTOR = "-";
-KvDBManager *KvDBManager::instance_ = nullptr;
+std::atomic<KvDBManager *> KvDBManager::instance_{nullptr};
 std::mutex KvDBManager::kvDBLock_;
 std::mutex KvDBManager::instanceLock_;
+std::map<std::string, OS::FileHandle> KvDBManager::locks_;
 
 namespace {
     DefaultFactory g_defaultFactory;
 
-    int CreateDataBase(const KvDBProperties &property, IKvDB *&kvDB)
+    int CreateDataBaseInstance(const KvDBProperties &property, IKvDB *&kvDB)
     {
         IKvDBFactory *factory = IKvDBFactory::GetCurrent();
         if (factory == nullptr) {
@@ -66,38 +67,41 @@ namespace {
         int errCode = OS::CreateFileByFileName(storeDir);
         if (errCode != E_OK) {
             LOGE("Create remove state flag file failed:%d.", errCode);
-            return errCode;
         }
         return errCode;
     }
+}
 
-    int CheckRemoveStateAndRetry(const KvDBProperties &property)
-    {
-        std::string dataDir = property.GetStringProp(KvDBProperties::DATA_DIR, "");
-        std::string identifier = property.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
-        std::string identifierName = DBCommon::TransferStringToHex(identifier);
-        std::string storeDir = dataDir + "/" + identifierName + DBConstant::DELETE_KVSTORE_REMOVING;
+int KvDBManager::CheckRemoveStateAndRetry(const KvDBProperties &property)
+{
+    std::string dataDir = property.GetStringProp(KvDBProperties::DATA_DIR, "");
+    std::string identifier = property.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
+    std::string identifierName = DBCommon::TransferStringToHex(identifier);
+    std::string storeDir = dataDir + "/" + identifierName + DBConstant::DELETE_KVSTORE_REMOVING;
 
-        if (OS::CheckPathExistence(storeDir)) {
-            KvDBManager::RemoveDatabase(property);
-        }
-        // Re-detection deleted had been finish
-        if (OS::CheckPathExistence(storeDir)) {
-            LOGD("Deletekvstore unfinished, can not create new same identifier kvstore!");
-            return -E_REMOVE_FILE;
-        }
-        return E_OK;
+    if (OS::CheckPathExistence(storeDir)) {
+        KvDBManager::ExecuteRemoveDatabase(property);
     }
+    // Re-detection deleted had been finish
+    if (OS::CheckPathExistence(storeDir)) {
+        LOGD("Deletekvstore unfinished, can not create new same identifier kvstore!");
+        return -E_REMOVE_FILE;
+    }
+    return E_OK;
 }
 
 int KvDBManager::ExecuteRemoveDatabase(const KvDBProperties &properties)
 {
+    int errCode = CheckDatabaseFileStatus(properties);
+    if (errCode != E_OK) {
+        return errCode;
+    }
     IKvDBFactory *factory = IKvDBFactory::GetCurrent();
     if (factory == nullptr) {
         return -E_INVALID_DB;
     }
 
-    int errCode = CreateRemoveStateFlagFile(properties);
+    errCode = CreateRemoveStateFlagFile(properties);
     if (errCode != E_OK) {
         LOGE("create ctrl file failed:%d.", errCode);
         return errCode;
@@ -173,6 +177,75 @@ void KvDBManager::ExitDBOpenCloseProcess(const std::string &identifier)
     kvDBOpenCondition_.notify_all();
 }
 
+// one time 100ms
+// In order to prevent long-term blocking of the process, a retry method is used
+// The dimensions of the lock by appid-userid-storeid
+int KvDBManager::TryLockDB(const KvDBProperties &kvDBProp, int retryTimes)
+{
+    std::string dataDir = kvDBProp.GetStringProp(KvDBProperties::DATA_DIR, "");
+    bool isMemoryDb = kvDBProp.GetBoolProp(KvDBProperties::MEMORY_MODE, false);
+    std::string id = KvDBManager::GenerateKvDBIdentifier(kvDBProp);
+    if (dataDir.back() != '/') {
+        dataDir += "/";
+    }
+
+    if (isMemoryDb) {
+        LOGI("MemoryDb not need lock!");
+        return E_OK;
+    }
+
+    if (locks_.count(id) != 0) {
+        LOGI("db has been locked!");
+        return E_OK;
+    }
+
+    std::string hexHashId = DBCommon::TransferStringToHex((id));
+    OS::FileHandle handle;
+    int errCode = OS::OpenFile(dataDir + hexHashId + DBConstant::DB_LOCK_POSTFIX, handle);
+    if (errCode != E_OK) {
+        LOGE("Open lock file fail errCode = [%d], errno:%d", errCode, errno);
+        return errCode;
+    }
+
+    while (retryTimes-- > 0) {
+        errCode = OS::FileLock(handle, false); // not block process
+        if (errCode == E_OK) {
+            LOGI("[%s]locked!", STR_MASK(DBCommon::TransferStringToHex(KvDBManager::GenerateKvDBIdentifier(kvDBProp))));
+            locks_[id] = handle;
+            return errCode;
+        } else if (errCode == -E_BUSY) {
+            LOGD("DB already held by process lock!");
+            std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait for 100ms
+            continue;
+        } else {
+            LOGE("Try lock db failed, errCode = [%d] errno:%d", errCode, errno);
+            OS::CloseFile(handle);
+            return errCode;
+        }
+    }
+    OS::CloseFile(handle);
+    return -E_BUSY;
+}
+
+int KvDBManager::UnlockDB(const KvDBProperties &kvDBProp)
+{
+    bool isMemoryDb = kvDBProp.GetBoolProp(KvDBProperties::MEMORY_MODE, false);
+    if (isMemoryDb) {
+        return E_OK;
+    }
+    std::string identifierDir = KvDBManager::GenerateKvDBIdentifier(kvDBProp);
+    if (locks_.count(identifierDir) == 0) {
+        return E_OK;
+    }
+    int errCode = OS::FileUnlock(locks_[identifierDir]);
+    LOGI("DB unlocked! errCode = [%d]", errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    locks_.erase(identifierDir);
+    return E_OK;
+}
+
 // Used to open a kvdb with the given property
 IKvDBConnection *KvDBManager::GetDatabaseConnection(const KvDBProperties &properties, int &errCode,
     bool isNeedIfOpened)
@@ -184,7 +257,9 @@ IKvDBConnection *KvDBManager::GetDatabaseConnection(const KvDBProperties &proper
     }
     IKvDBConnection *connection = nullptr;
     std::string identifier = properties.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
+    LOGD("Begin to get [%s] database connection.", STR_MASK(DBCommon::TransferStringToHex(identifier)));
     manager->EnterDBOpenCloseProcess(identifier);
+
     IKvDB *kvDB = manager->GetDataBase(properties, errCode, isNeedIfOpened);
     if (kvDB == nullptr) {
         if (isNeedIfOpened) {
@@ -192,19 +267,20 @@ IKvDBConnection *KvDBManager::GetDatabaseConnection(const KvDBProperties &proper
         }
     } else {
         connection = kvDB->GetDBConnection(errCode);
-        if (connection == nullptr) {
+        if (connection == nullptr) { // not kill kvdb, Other operations like import may be used concurrently
             LOGE("Failed to get the db connect for delegate:%d", errCode);
         }
         RefObject::DecObjRef(kvDB); // restore the reference increased by the cache.
         kvDB = nullptr;
     }
+
     manager->ExitDBOpenCloseProcess(identifier);
     if (errCode == -E_INVALID_PASSWD_OR_CORRUPTED_DB) {
         std::string appId = properties.GetStringProp(KvDBProperties::APP_ID, "");
         std::string userId = properties.GetStringProp(KvDBProperties::USER_ID, "");
         std::string storeId = properties.GetStringProp(KvDBProperties::STORE_ID, "");
         manager->DataBaseCorruptNotify(appId, userId, storeId);
-        LOGE("Database is corrupted:%d", errCode);
+        LOGE("Database [%s] is corrupted:%d", STR_MASK(DBCommon::TransferStringToHex(identifier)), errCode);
     }
 
     return connection;
@@ -228,7 +304,39 @@ int KvDBManager::ReleaseDatabaseConnection(IKvDBConnection *connection)
     if (errCode != E_OK) {
         LOGE("[KvDBManager] Release db connection:%d", errCode);
     }
+    LOGI("[Connection] db[%s] conn Close", STR_MASK(DBCommon::TransferStringToHex(identifier)));
     return errCode;
+}
+
+IKvDB *KvDBManager::CreateDataBase(const KvDBProperties &property, int &errCode)
+{
+    IKvDB *kvDB = OpenNewDatabase(property, errCode);
+    if (kvDB == nullptr) {
+        LOGE("Failed to open the new database.");
+        if (errCode == -E_INVALID_PASSWD_OR_CORRUPTED_DB &&
+            property.GetBoolProp(KvDBProperties::RM_CORRUPTED_DB, false)) {
+            LOGI("Remove the corrupted database while open");
+            ExecuteRemoveDatabase(property);
+            kvDB = OpenNewDatabase(property, errCode);
+        }
+        return kvDB;
+    }
+
+    if (property.GetBoolProp(KvDBProperties::CHECK_INTEGRITY, false)) {
+        int integrityStatus = kvDB->CheckIntegrity();
+        if (integrityStatus == -E_INVALID_PASSWD_OR_CORRUPTED_DB) {
+            RemoveKvDBFromCache(kvDB);
+            RefObject::KillAndDecObjRef(kvDB);
+            kvDB = nullptr;
+            errCode = -E_INVALID_PASSWD_OR_CORRUPTED_DB;
+            if (property.GetBoolProp(KvDBProperties::RM_CORRUPTED_DB, false)) {
+                LOGI("Remove the corrupted database for the integrity check");
+                ExecuteRemoveDatabase(property);
+                kvDB = OpenNewDatabase(property, errCode);
+            }
+        }
+    }
+    return kvDB;
 }
 
 IKvDB *KvDBManager::GetDataBase(const KvDBProperties &property, int &errCode, bool isNeedIfOpened)
@@ -243,15 +351,40 @@ IKvDB *KvDBManager::GetDataBase(const KvDBProperties &property, int &errCode, bo
             errCode = -E_ALREADY_OPENED;
             kvDB = nullptr;
         }
-    } else {
-        if (isMemoryDb && !isCreateNecessary) {
-            LOGI("IsCreateNecessary is false, Not need create database");
-        } else if (errCode == -E_NOT_FOUND) {
-            kvDB = OpenNewDatabase(property, errCode);
-            if (kvDB == nullptr) {
-                LOGE("Failed to open the new database.");
-            }
+        return kvDB;
+    }
+    if (isMemoryDb && !isCreateNecessary) {
+        LOGI("IsCreateNecessary is false, Not need create database");
+        return nullptr;
+    }
+    if (errCode != -E_NOT_FOUND) {
+        return nullptr;
+    }
+
+    // Taking into account the compatibility of version delivery,
+    // temporarily use isNeedIntegrityCheck this field to avoid multi-process concurrency
+    bool isNeedIntegrityCheck = property.GetBoolProp(KvDBProperties::CHECK_INTEGRITY, false);
+    if (isNeedIntegrityCheck) {
+        LOGI("db need lock, need check integrity is [%d]", isNeedIntegrityCheck);
+        errCode = KvDBManager::TryLockDB(property, 10);  // default 10 times retry
+        if (errCode != E_OK) {
+            return nullptr;
         }
+    }
+
+    ResFinalizer unlock([&errCode, &property, &kvDB]() {
+        int err = KvDBManager::UnlockDB(property);
+        if (err != E_OK) {
+            LOGE("GetDataBase unlock failed! err [%d] errCode [%d]", err, errCode);
+            errCode = err;
+            RefObject::KillAndDecObjRef(kvDB);
+            kvDB = nullptr;
+        }
+    });
+
+    kvDB = CreateDataBase(property, errCode);
+    if (errCode != E_OK) {
+        LOGE("Create data base failed, errCode = [%d]", errCode);
     }
     return kvDB;
 }
@@ -367,7 +500,7 @@ IKvDB *KvDBManager::OpenNewDatabase(const KvDBProperties &property, int &errCode
     }
 
     IKvDB *kvDB = nullptr;
-    errCode = CreateDataBase(property, kvDB);
+    errCode = CreateDataBaseInstance(property, kvDB);
     if (errCode != E_OK) {
         LOGE("Failed to get IKvDB! err:%d", errCode);
         return nullptr;
@@ -385,6 +518,7 @@ IKvDB *KvDBManager::OpenNewDatabase(const KvDBProperties &property, int &errCode
     LOGI("Database identifier:%.6s, dir:%.6s", identifier.c_str(), dbDir.c_str());
     // Register the callback function when the database is closed, triggered when kvdb free
     kvDB->OnClose([kvDB, this]() {
+        LOGI("Remove from the cache");
         this->RemoveKvDBFromCache(kvDB);
     });
 
@@ -401,15 +535,37 @@ IKvDB *KvDBManager::OpenNewDatabase(const KvDBProperties &property, int &errCode
 // return BUSY if in use
 int KvDBManager::RemoveDatabase(const KvDBProperties &properties)
 {
-    int errCode = CheckDatabaseFileStatus(properties);
-    if (errCode != E_OK) {
-        return errCode;
+    KvDBManager *manager = GetInstance();
+    if (manager == nullptr) {
+        LOGE("Failed to get kvdb manager while removing the db!");
+        return -E_OUT_OF_MEMORY;
+    }
+    std::string identifier = GenerateKvDBIdentifier(properties);
+    manager->EnterDBOpenCloseProcess(identifier);
+
+    LOGI("KvDBManager::RemoveDatabase begin try lock the database!");
+    std::string lockFile = properties.GetStringProp(KvDBProperties::DATA_DIR, "") + "/" +
+        DBCommon::TransferStringToHex(identifier) + DBConstant::DB_LOCK_POSTFIX;
+    int errCode = E_OK;
+    if (OS::CheckPathExistence(lockFile)) {
+        errCode = KvDBManager::TryLockDB(properties, 10); // default 10 times retry
+        if (errCode != E_OK) {
+            manager->ExitDBOpenCloseProcess(identifier);
+            return errCode;
+        }
     }
 
     errCode = ExecuteRemoveDatabase(properties);
     if (errCode != E_OK) {
         LOGE("[KvDBManager] Remove database failed:%d", errCode);
     }
+    int err = KvDBManager::UnlockDB(properties); // unlock and delete lock file befor delete dir
+    if (err != E_OK) {
+        LOGE("[KvDBManager][RemoveDatabase] UnlockDB failed:%d, errno:%d", err, errno);
+        errCode = err;
+    }
+
+    manager->ExitDBOpenCloseProcess(identifier);
     return errCode;
 }
 
@@ -420,12 +576,15 @@ std::string KvDBManager::GenerateKvDBIdentifier(const KvDBProperties &property)
 
 KvDBManager *KvDBManager::GetInstance()
 {
-    std::lock_guard<std::mutex> lockGuard(instanceLock_);
+    // For Double-Checked Locking, we need check instance_ twice
     if (instance_ == nullptr) {
-        instance_ = new (std::nothrow) KvDBManager();
+        std::lock_guard<std::mutex> lockGuard(instanceLock_);
         if (instance_ == nullptr) {
-            LOGE("failed to new KvDBManager!");
-            return nullptr;
+            instance_ = new (std::nothrow) KvDBManager();
+            if (instance_ == nullptr) {
+                LOGE("failed to new KvDBManager!");
+                return nullptr;
+            }
         }
     }
     if (IKvDBFactory::GetCurrent() == nullptr) {
@@ -551,7 +710,8 @@ IKvDB *KvDBManager::FindKvDBFromCache(const KvDBProperties &properties, const st
             return kvDB;
         } else {
             errCode = -E_INVALID_ARGS;
-            LOGE("Database type not matched!");
+            LOGE("Database [%s] type not matched, type [%d] vs [%d]",
+                STR_MASK(DBCommon::TransferStringToHex(identifier)), newType, oldType);
             return nullptr;
         }
     }

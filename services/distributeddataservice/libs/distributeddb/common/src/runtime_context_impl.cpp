@@ -382,9 +382,9 @@ int RuntimeContextImpl::RunPermissionCheck(const std::string &userId, const std:
 }
 
 int RuntimeContextImpl::EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
-    KvStoreObserver *observer, int conflictType, KvStoreNbConflictNotifier conflictNotifier)
+    const AutoLaunchOption &option)
 {
-    return autoLaunch_.EnableKvStoreAutoLaunch(properties, notifier, observer, conflictType, conflictNotifier);
+    return autoLaunch_.EnableKvStoreAutoLaunch(properties, notifier, option);
 }
 
 int RuntimeContextImpl::DisableKvStoreAutoLaunch(const std::string &identifier)
@@ -408,7 +408,7 @@ NotificationChain::Listener *RuntimeContextImpl::RegisterLockStatusLister(const 
 {
     std::lock(lockStatusLock_, systemApiAdapterLock_);
     std::lock_guard<std::mutex> lockStatusLock(lockStatusLock_, std::adopt_lock);
-    std::lock_guard<std::mutex> systemApiAdapterLock(systemApiAdapterLock_, std::adopt_lock);
+    std::lock_guard<std::recursive_mutex> systemApiAdapterLock(systemApiAdapterLock_, std::adopt_lock);
     if (lockStatusObserver_ == nullptr) {
         lockStatusObserver_ = new (std::nothrow) LockStatusObserver();
         if (lockStatusObserver_ == nullptr) {
@@ -452,7 +452,7 @@ NotificationChain::Listener *RuntimeContextImpl::RegisterLockStatusLister(const 
 
 bool RuntimeContextImpl::IsAccessControlled() const
 {
-    std::lock_guard<std::mutex> autoLock(systemApiAdapterLock_);
+    std::lock_guard<std::recursive_mutex> autoLock(systemApiAdapterLock_);
     if (systemApiAdapter_ == nullptr) {
         return false;
     }
@@ -461,7 +461,7 @@ bool RuntimeContextImpl::IsAccessControlled() const
 
 int RuntimeContextImpl::SetSecurityOption(const std::string &filePath, const SecurityOption &option) const
 {
-    std::lock_guard<std::mutex> autoLock(systemApiAdapterLock_);
+    std::lock_guard<std::recursive_mutex> autoLock(systemApiAdapterLock_);
     if (systemApiAdapter_ == nullptr || !OS::CheckPathExistence(filePath)) {
         LOGI("Adapter is not set, or path not existed, not support set security option!");
         return -E_NOT_SUPPORT;
@@ -492,7 +492,7 @@ int RuntimeContextImpl::SetSecurityOption(const std::string &filePath, const Sec
 
 int RuntimeContextImpl::GetSecurityOption(const std::string &filePath, SecurityOption &option) const
 {
-    std::lock_guard<std::mutex> autoLock(systemApiAdapterLock_);
+    std::lock_guard<std::recursive_mutex> autoLock(systemApiAdapterLock_);
     if (systemApiAdapter_ == nullptr) {
         LOGI("Get Security option, but not set system api adapter!");
         return -E_NOT_SUPPORT;
@@ -521,7 +521,7 @@ int RuntimeContextImpl::GetSecurityOption(const std::string &filePath, SecurityO
 
 bool RuntimeContextImpl::CheckDeviceSecurityAbility(const std::string &devId, const SecurityOption &option) const
 {
-    std::lock_guard<std::mutex> autoLock(systemApiAdapterLock_);
+    std::lock_guard<std::recursive_mutex> autoLock(systemApiAdapterLock_);
     if (systemApiAdapter_ == nullptr) {
         return true;
     }
@@ -532,7 +532,7 @@ int RuntimeContextImpl::SetProcessSystemApiAdapter(const std::shared_ptr<IProces
 {
     std::lock(lockStatusLock_, systemApiAdapterLock_);
     std::lock_guard<std::mutex> lockStatusLock(lockStatusLock_, std::adopt_lock);
-    std::lock_guard<std::mutex> systemApiAdapterLock(systemApiAdapterLock_, std::adopt_lock);
+    std::lock_guard<std::recursive_mutex> systemApiAdapterLock(systemApiAdapterLock_, std::adopt_lock);
     systemApiAdapter_ = adapter;
     if (systemApiAdapter_ != nullptr && lockStatusObserver_ != nullptr && lockStatusObserver_->IsStarted()) {
         auto callback = std::bind(&LockStatusObserver::OnStatusChange,
@@ -550,7 +550,7 @@ int RuntimeContextImpl::SetProcessSystemApiAdapter(const std::shared_ptr<IProces
 
 bool RuntimeContextImpl::IsProcessSystemApiAdapterValid() const
 {
-    std::lock_guard<std::mutex> autoLock(systemApiAdapterLock_);
+    std::lock_guard<std::recursive_mutex> autoLock(systemApiAdapterLock_);
     if (systemApiAdapter_ == nullptr) {
         return false;
     }

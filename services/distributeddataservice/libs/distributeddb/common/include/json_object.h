@@ -32,6 +32,7 @@ class JsonObject {
 public:
     // Set max allowed nest depth and return the value before set.
     static uint32_t SetMaxNestDepth(uint32_t nestDepth);
+
     // Calculate nest depth when json string is legal or estimate depth by legal part from illegal json.
     static uint32_t CalculateNestDepth(const std::string &inString);
     static uint32_t CalculateNestDepth(const uint8_t *dataBegin, const uint8_t *dataEnd);
@@ -41,32 +42,39 @@ public:
     ~JsonObject() = default;
     JsonObject(const JsonObject &);
     JsonObject& operator=(const JsonObject &);
-    // Move constructor and move assignment is not need currently
-    JsonObject(JsonObject &&) = delete;
-    JsonObject& operator=(JsonObject &&) = delete;
+
+    explicit JsonObject(const Json::Value &value);
 
     // Should be called on an invalid JsonObject, create new JsonObject if need to reparse
     // Require the type of the root to be JsonObject, otherwise parse fail
     int Parse(const std::string &inString);
     int Parse(const std::vector<uint8_t> &inData); // Whether ends with '\0' in vector is OK
+
     // The end refer to the byte after the last valid byte
     int Parse(const uint8_t *dataBegin, const uint8_t *dataEnd);
 
     bool IsValid() const;
-    // Unnecessary spacing will be removed and fieldname resorted by lexicographical order
+
+    // Unnecessary spacing will be removed and fieldName resorted by lexicographical order
     std::string ToString() const;
 
     bool IsFieldPathExist(const FieldPath &inPath) const;
     int GetFieldTypeByFieldPath(const FieldPath &inPath, FieldType &outType) const;
     int GetFieldValueByFieldPath(const FieldPath &inPath, FieldValue &outValue) const;
-    // An empty fieldpath indicate the root, the outSubPath should be empty before call, we will not empty it at first.
+
+    int GetObjectArrayByFieldPath(const FieldPath &inPath, std::vector<JsonObject> &outArray) const;
+    int GetStringArrayByFieldPath(const FieldPath &inPath, std::vector<std::string> &outArray) const;
+
+    // An empty fieldPath indicate the root, the outSubPath should be empty before call, we will not empty it at first.
     // If inPath is of multiple path, then outSubPath is combination of result of each inPath.
     int GetSubFieldPath(const FieldPath &inPath, std::set<FieldPath> &outSubPath) const;
     int GetSubFieldPath(const std::set<FieldPath> &inPath, std::set<FieldPath> &outSubPath) const;
     int GetSubFieldPathAndType(const FieldPath &inPath, std::map<FieldPath, FieldType> &outSubPathType) const;
     int GetSubFieldPathAndType(const std::set<FieldPath> &inPath, std::map<FieldPath, FieldType> &outSubPathType) const;
+
     // If inPath not refer to an array, return error.
     int GetArraySize(const FieldPath &inPath, uint32_t &outSize) const;
+
     // If inPath not refer to an array, return error. If not all members are string or array type, return error.
     // If array-type member is empty, ignore. If not all members of the array-type member are string, return error.
     int GetArrayContentOfStringOrStringArray(const FieldPath &inPath,
@@ -74,21 +82,31 @@ public:
 
     // Can be called no matter JsonObject valid or not. Invalid turn into valid after call(insert on invalid never fail
     // if parameter is valid). An empty inPath is not allowed. LEAF_FIELD_ARRAY and INTERNAL_FIELD_OBJECT is not
-    // supported. infinite double is not support. inValue is ignored for LEAF_FIELD_NULL. If inPath already exist,
-    // returns -E_JSON_INSERT_PATH_EXIST, if nearest path ends with type not object, rets -E_JSON_INSERT_PATH_CONFLICT.
-    // Otherwise insert field as well as filling up intermediate field, then returns E_OK;
-    int InsertField(const FieldPath &inPath, FieldType inType, const FieldValue &inValue);
+    // supported. infinite double is not support. inValue is ignored for LEAF_FIELD_NULL.
+    // When inPath already exist, append value if it's an arrayObject, otherwise returns -E_JSON_INSERT_PATH_EXIST
+    // if nearest path ends with type not object, rets -E_JSON_INSERT_PATH_CONFLICT.
+    // Otherwise, insert field as well as filling up intermediate field, then returns E_OK;
+    // isAppend: when it's true, append inValue as path is an arrayObject if path not exist.
+    int InsertField(const FieldPath &inPath, FieldType inType, const FieldValue &inValue, bool isAppend = false);
+
+    // Add json object to an array field. should be called on an valid JsonObject. Never turn into invalid after call.
+    // If inPath not refer to an array, return error.
+    int InsertField(const FieldPath &inPath, const JsonObject &inValue, bool isAppend = false);
+
     // Should be called on an valid JsonObject. Never turn into invalid after call. An empty inPath is not allowed.
-    // If inPath not exist, returns -E_JSON_DELETE_PATH_NOT_FOUND. Otherwise delete field from its parent returns E_OK;
+    // If inPath not exist, returns -E_JSON_DELETE_PATH_NOT_FOUND. Otherwise, delete field from its parent returns E_OK;
     int DeleteField(const FieldPath &inPath);
 private:
 #ifndef OMIT_JSON
     // Auxiliary Method: If inPath not refer to an array, return error. If not all members are string, return error.
     int GetStringArrayContentByJsonValue(const Json::Value &value, std::vector<std::string> &outStringArray) const;
+
     // Common Type Judgement Logic
     int GetFieldTypeByJsonValue(const Json::Value &value, FieldType &outType) const;
+
     // Return E_OK if JsonValueNode found at exact the path, otherwise not E_OK
     const Json::Value &GetJsonValueByFieldPath(const FieldPath &inPath, int &errCode) const;
+
     // REQUIRE: JsonObject is valid(Root value is object type).
     // If inPath empty(means root), set exact and nearest to root value and nearDepth to 0, then ret E_OK;
     // If JsonValue exist at exact path, set exact to this JsonValue, set nearest to its parent JsonValue, set nearDepth
@@ -97,6 +115,9 @@ private:
     // to the depth of this nearest JsonValue, then ret -E_NOT_FOUND;
     int LocateJsonValueByFieldPath(const FieldPath &inPath, Json::Value *&exact,
         Json::Value *&nearest, uint32_t &nearDepth);
+
+    // create if path not exist
+    int MoveToPath(const FieldPath &inPath, Json::Value *&exact, Json::Value *&nearest);
 
     static uint32_t maxNestDepth_;
 

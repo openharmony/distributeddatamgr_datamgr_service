@@ -18,61 +18,77 @@
 #include <string>
 #include "schema_object.h"
 #include "query.h"
-#include "sqlite_import.h"
+#include "sqlite_query_helper.h"
 
 namespace DistributedDB {
 class QueryObject {
 public:
     QueryObject();
     explicit QueryObject(const Query &query);
-    ~QueryObject() = default;
-    int GetQuerySql(std::string &sql, bool onlyRowid = false);
-    int GetCountQuerySql(std::string &sql);
-    bool IsValid(int &errCode);
-    bool IsCountValid() const;
+    // for query sync
+    QueryObject(const std::list<QueryObjNode> &queryObjNodes, const std::vector<uint8_t> &prefixKey);
+    virtual ~QueryObject();
+    int Init();
+    SqliteQueryHelper GetQueryHelper(int &errCode);
+
+    // suggest: get those attributes after init or GetQueryHelper to parsed query
+    bool IsValid();
     bool HasLimit() const;
     void GetLimitVal(int &limit, int &offset) const;
+    bool IsCountValid() const;
+
+    const std::vector<uint8_t> &GetPrefixKey() const;
     void SetSchema(const SchemaObject &schema);
-    int GetQuerySqlStatement(sqlite3 *dbHandle, const std::string &sql, sqlite3_stmt *&statement);
-    int GetCountSqlStatement(sqlite3 *dbHandle, const std::string &countSql, sqlite3_stmt *&countStmt);
-private:
-    int ToQuerySql();
-    int ToGetCountSql();
-    int CheckEqualFormat(std::list<QueryObjNode>::iterator &iter) const;
-    int CheckLinkerFormat(std::list<QueryObjNode>::iterator &iter) const;
-    int CheckOrderByFormat(std::list<QueryObjNode>::iterator &iter);
-    int CheckExpressionFormat(std::list<QueryObjNode>::iterator &iter);
-    int CheckLimitFormat(std::list<QueryObjNode>::iterator &iter) const;
-    int CheckSuggestIndexFormat(std::list<QueryObjNode>::iterator &iter) const;
-    int CheckQueryLegality();
-    int ParseQueryExpression(const QueryObjNode &queryNode, std::string &querySql);
-    static std::string MapRelationalSymbolToSql(const QueryObjNode &queryNode);
-    std::string MapKeywordSymbolToSql(const QueryObjNode &queryNode);
-    std::string MapLogicSymbolToSql(const QueryObjNode &queryNode) const;
-    static std::string MapValueToSql(const QueryObjNode &queryNode);
-    std::string MapCastFuncSql(const QueryObjNode &queryNode);
-    static std::string MapCastTypeSql(const FieldType &type);
-    int BindFieldValue(sqlite3_stmt *statement, const QueryObjNode &queryNode, int &index) const;
-    void FilterSymbolToAddBracketLink(bool &isNeedEndBracket, std::string &querySql) const;
-    std::string AssembleSqlForSuggestIndex(const std::string &baseSql) const;
-    std::string CheckAndFormatSuggestIndex() const;
-    SchemaObject schema_;
+
+    bool IsQueryOnlyByKey() const;
+
+    void SetTableName(const std::string &tableName)
+    {
+        tableName_ = tableName;
+        isTableNameSpecified_ = true;
+    }
+
+    const std::string &GetTableName() const
+    {
+        return tableName_;
+    }
+
+    bool HasOrderBy() const;
+
+    int ParseQueryObjNodes();
+
+    bool Empty() const;
+
+protected:
     std::list<QueryObjNode> queryObjNodes_;
     std::vector<uint8_t> prefixKey_;
-    std::string querySql_;
-    std::string countSql_;
+    std::string tableName_ = "sync_data";
     std::string suggestIndex_;
 
+    bool isValid_ = true;
+
+    bool initialized_ = false; // use function need after init
+    bool isTableNameSpecified_ = false;
+
+private:
+    int Parse();
+    int ParseNode(const std::list<QueryObjNode>::iterator &iter);
+    int CheckEqualFormat(const std::list<QueryObjNode>::iterator &iter) const;
+    int CheckLinkerFormat(const std::list<QueryObjNode>::iterator &iter) const;
+    int CheckSuggestIndexFormat(const std::list<QueryObjNode>::iterator &iter) const;
+    int CheckOrderByFormat(const std::list<QueryObjNode>::iterator &iter);
+    int CheckLimitFormat(const std::list<QueryObjNode>::iterator &iter) const;
+    int CheckLinkerBefore(const std::list<QueryObjNode>::iterator &iter) const;
+    void ClearNodesFlag();
+    void GetAttrFromQueryObjNodes();
+
+    SchemaObject schema_; // used to check and parse schema filed
     int limit_;
     int offset_;
-    int orderByCounts_; // Record processing to which orderBy node
-    bool isValid_;
-    bool transformed_;
     bool hasOrderBy_;
     bool hasLimit_;
-    bool isOrderByAppeared_;
     bool hasPrefixKey_;
-    bool isNeedOrderbyKey_;  // The tag field is used for prefix query filtering key sorting
+    int orderByCounts_;
 };
 }
 #endif

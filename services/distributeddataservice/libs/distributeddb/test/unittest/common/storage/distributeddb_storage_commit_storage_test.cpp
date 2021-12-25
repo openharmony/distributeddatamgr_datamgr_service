@@ -15,11 +15,10 @@
 
 #include <gtest/gtest.h>
 
-#include "distributeddb_tools_unit_test.h"
-#include "securec.h"
-#include "ikvdb_factory.h"
-#include "default_factory.h"
 #include "db_errno.h"
+#include "default_factory.h"
+#include "distributeddb_tools_unit_test.h"
+#include "ikvdb_factory.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -294,6 +293,7 @@ void DistributedDBStorageCommitStorageTest::TearDownTestCase(void)
 
 void DistributedDBStorageCommitStorageTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     IKvDBFactory *factory = IKvDBFactory::GetCurrent();
     ASSERT_NE(factory, nullptr);
     if (factory == nullptr) {

@@ -17,9 +17,9 @@
 
 #include <gtest/gtest.h>
 
-#include "schema_utils.h"
 #include "db_errno.h"
 #include "log_print.h"
+#include "schema_utils.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -44,6 +44,7 @@ void DistributedDBSchemalTest::TearDownTestCase(void)
 
 void DistributedDBSchemalTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
 void DistributedDBSchemalTest::TearDown(void)
@@ -182,7 +183,7 @@ void PreBoolDataForParseAndCheckSchemaAttribute003()
  * @tc.require: AR000DR9K3
  * @tc.author: sunpeng
  */
-HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Preset shcema attribute strings that are correctly written according to the definition.
@@ -234,7 +235,7 @@ HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute001, TestSize.Lev
  * @tc.require: AR000DR9K3
  * @tc.author: sunpeng
  */
-HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute002, TestSize.Level0)
+HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Preset shcema attributes based on definition error.
@@ -288,7 +289,7 @@ HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute002, TestSize.Lev
  * @tc.require: AR000DR9K3
  * @tc.author: sunpeng
  */
-HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute003, TestSize.Level0)
+HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute003, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Preset shcema attributes based on defining correct format and content.
@@ -317,7 +318,7 @@ HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute003, TestSize.Lev
  * @tc.require: AR000DR9K3
  * @tc.author: sunpeng
  */
-HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute004, TestSize.Level0)
+HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute004, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Preset shcema attributes based on defining incorrect format and content.
@@ -366,7 +367,7 @@ HWTEST_F(DistributedDBSchemalTest, ParseAndCheckSchemaAttribute004, TestSize.Lev
  * @tc.require: AR000DR9K3
  * @tc.author: sunpeng
  */
-HWTEST_F(DistributedDBSchemalTest, CheckFieldName001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemalTest, CheckFieldName001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Enter the preset correct string array into CheckFieldName and check.
@@ -391,7 +392,7 @@ HWTEST_F(DistributedDBSchemalTest, CheckFieldName001, TestSize.Level0)
  * @tc.require: AR000DR9K3
  * @tc.author: sunpeng
  */
-HWTEST_F(DistributedDBSchemalTest, CheckFieldName002, TestSize.Level0)
+HWTEST_F(DistributedDBSchemalTest, CheckFieldName002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Enter the preset incorrect string array into CheckFieldName and check.
@@ -419,7 +420,7 @@ HWTEST_F(DistributedDBSchemalTest, CheckFieldName002, TestSize.Level0)
  * @tc.require: AR000DR9K3
  * @tc.author: sunpeng
  */
-HWTEST_F(DistributedDBSchemalTest, ParseAndCheckFieldPath001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemalTest, ParseAndCheckFieldPath001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Enter the array of preset correct strings into ParseAndCheckFieldPath and check result.
@@ -476,7 +477,7 @@ HWTEST_F(DistributedDBSchemalTest, ParseAndCheckFieldPath001, TestSize.Level0)
  * @tc.require: AR000DR9K3
  * @tc.author: sunpeng
  */
-HWTEST_F(DistributedDBSchemalTest, ParseAndCheckFieldPath002, TestSize.Level0)
+HWTEST_F(DistributedDBSchemalTest, ParseAndCheckFieldPath002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Enter the array of preset illegal strings into ParseAndCheckFieldPath and check result.

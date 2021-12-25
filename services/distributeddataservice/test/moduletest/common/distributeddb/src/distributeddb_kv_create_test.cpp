@@ -20,6 +20,7 @@
 #include <mutex>
 #include <string>
 
+#include "delegate_kv_mgr_callback.h"
 #include "distributeddb_data_generator.h"
 #include "distributed_test_tools.h"
 #include "kv_store_delegate.h"
@@ -140,7 +141,7 @@ HWTEST_F(DistributeddbKvCreateTest, Open001, TestSize.Level1)
  * @tc.require: SR000CQS3O
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvCreateTest, Open002, TestSize.Level0)
+HWTEST_F(DistributeddbKvCreateTest, Open002, TestSize.Level1)
 {
     KvStoreDelegate *result = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -177,7 +178,7 @@ HWTEST_F(DistributeddbKvCreateTest, Open002, TestSize.Level0)
  * @tc.require: SR000CQS3O
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvCreateTest, Open003, TestSize.Level0)
+HWTEST_F(DistributeddbKvCreateTest, Open003, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. delete kv db if exist.
@@ -460,7 +461,7 @@ HWTEST_F(DistributeddbKvCreateTest, Delete002, TestSize.Level1)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvCreateTest, Config001, TestSize.Level0)
+HWTEST_F(DistributeddbKvCreateTest, Config001, TestSize.Level1)
 {
     KvStoreDelegateManager *manager = new (std::nothrow) KvStoreDelegateManager(APP_ID_1, USER_ID_1);
     ASSERT_NE(manager, nullptr);
@@ -1681,7 +1682,7 @@ HWTEST_F(DistributeddbKvCreateTest, RekeyDb003, TestSize.Level3)
  * @tc.require: SR000CQDT4
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbKvCreateTest, RekeyDb004, TestSize.Level0)
+HWTEST_F(DistributeddbKvCreateTest, RekeyDb004, TestSize.Level1)
 {
     KvStoreDelegateManager *manager = nullptr;
     KvStoreDelegate *result1 = nullptr;
@@ -1856,6 +1857,7 @@ HWTEST_F(DistributeddbKvCreateTest, RekeyDb005, TestSize.Level1)
  * @tc.require: SR000CQDT4
  * @tc.author: fengxiaoyun
  */
+#ifdef KV_CREATE
 HWTEST_F(DistributeddbKvCreateTest, SpaceManger001, TestSize.Level1)
 {
     KvStoreDelegateManager *manager = nullptr;
@@ -1974,4 +1976,5 @@ HWTEST_F(DistributeddbKvCreateTest, MergeRepeat001, TestSize.Level2)
     delete manager;
     manager = nullptr;
 }
+#endif
 }

@@ -18,6 +18,7 @@
 #include <iterator>
 #include "hash.h"
 #include "securec.h"
+#include "version.h"
 #include "db_common.h"
 #include "log_print.h"
 #include "macro_utils.h"
@@ -28,7 +29,8 @@ namespace DistributedDB {
 namespace {
 const uint16_t MAGIC_CODE = 0xAAAA;
 const uint16_t PROTOCOL_VERSION = 0;
-const uint16_t DB_GLOBAL_VERSION = 2; // Compatibility Final Method. 2 Correspond To Version 1.1.3(103)
+// Compatibility Final Method. 3 Correspond To Version 1.1.4(104)
+const uint16_t DB_GLOBAL_VERSION = SOFTWARE_VERSION_CURRENT - SOFTWARE_VERSION_EARLIEST;
 const uint8_t PACKET_TYPE_FRAGMENTED = BITX(0); // Use bit 0
 const uint8_t PACKET_TYPE_NOT_FRAGMENTED = 0;
 const uint8_t MAX_PADDING_LEN = 7;
@@ -622,7 +624,6 @@ int ProtocolProto::DeSerializeMessage(const SerialBuffer *inBuff, Message *inMsg
         LOGE("[Proto][DeSerialize] dataLen=%u, msgDataLen=%u.", dataLen, messageHdr.dataLen);
         return -E_LENGTH_ERROR;
     }
-
     // It is better to check FeedbackMessage first and check onlyMsgHeader flag later
     if (IsFeedbackErrorMessage(messageHdr.errorNo)) {
         LOGI("[Proto][DeSerialize] Feedback Message with errorNo=%u.", messageHdr.errorNo);
@@ -900,6 +901,9 @@ int ProtocolProto::FrameFragmentation(const uint8_t *splitStartBytes, uint32_t s
     const CommPhyHeader &framePhyHeader, std::vector<std::vector<uint8_t>> &outPieces)
 {
     // It can be guaranteed that fragCount >= 2 and also won't be too large
+    if (fragCount < 2) {
+        return -E_INVALID_ARGS;
+    }
     outPieces.resize(fragCount); // Note: should use resize other than reserve
     uint32_t quotient = splitLength / fragCount;
     uint16_t remainder = splitLength % fragCount;

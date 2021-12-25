@@ -211,6 +211,21 @@ uint32_t CommunicatorAggregator::GetCommunicatorAggregatorMtuSize(const std::str
     return adapterHandle_->GetMtuSize(target) - ProtocolProto::GetLengthBeforeSerializedData();
 }
 
+uint32_t CommunicatorAggregator::GetCommunicatorAggregatorTimeout() const
+{
+    return adapterHandle_->GetTimeout();
+}
+
+uint32_t CommunicatorAggregator::GetCommunicatorAggregatorTimeout(const std::string &target) const
+{
+    return adapterHandle_->GetTimeout(target);
+}
+
+bool CommunicatorAggregator::IsDeviceOnline(const std::string &device) const
+{
+    return adapterHandle_->IsDeviceOnline(device);
+}
+
 int CommunicatorAggregator::GetLocalIdentity(std::string &outTarget) const
 {
     return adapterHandle_->GetLocalIdentity(outTarget);
@@ -506,8 +521,8 @@ void CommunicatorAggregator::OnTargetChange(const std::string &target, bool isCo
             LOGI("[CommAggr][OnTarget] ConnectHandle invalid currently.");
         }
     }
-    // For communicator level target change
     std::set<LabelType> relatedLabels;
+    // For communicator level target change
     if (isConnect) {
         int errCode = commLinker_->TargetOnline(target, relatedLabels);
         if (errCode != E_OK) {
@@ -523,7 +538,7 @@ void CommunicatorAggregator::OnTargetChange(const std::string &target, bool isCo
     std::lock_guard<std::mutex> commMapLockGuard(commMapMutex_);
     for (auto &entry : commMap_) {
         // Ignore nonactivated communicator
-        if (relatedLabels.count(entry.first) != 0 && entry.second.second) {
+        if (entry.second.second && (!isConnect || (relatedLabels.count(entry.first) != 0))) {
             entry.second.first->OnConnectChange(target, isConnect);
         }
     }
@@ -759,19 +774,20 @@ void CommunicatorAggregator::GenerateLocalSourceId()
     // When GetLocalIdentity fail, the identity be an empty string, the localSourceId be zero, need regenerate
     // The localSourceId is std::atomic<uint64_t>, so there is no concurrency risk
     uint64_t identityHash = Hash::HashFunc(identity);
+    if (identityHash != localSourceId_) {
+        LOGI("[CommAggr][GenSrcId] identity=%s{private}, localSourceId=%llu.", identity.c_str(), ULL(identityHash));
+    }
     localSourceId_ = identityHash;
-    LOGI("[CommAggr][GenSrcId] identity=%s{private}, localSourceId=%llu.", identity.c_str(), ULL(identityHash));
 }
 
 bool CommunicatorAggregator::ReGenerateLocalSourceIdIfNeed()
 {
-    // If localSourceId is zero, pre-generate must have used an empty identity, re-fetch the identity and generate.
+    // The deviceId will change when switch user from A to B
+    // We can't listen to the user change, because it's hard to ensure the timing is correct.
+    // So we regenerate to make sure the deviceId and localSourceId is correct when we create send task.
     // The localSourceId is std::atomic<uint64_t>, so there is no concurrency risk, no need lockguard here.
-    if (localSourceId_ == 0) {
-        GenerateLocalSourceId();
-        return (localSourceId_ != 0);
-    }
-    return true;
+    GenerateLocalSourceId();
+    return (localSourceId_ != 0);
 }
 
 void CommunicatorAggregator::TriggerVersionNegotiation(const std::string &dstTarget)

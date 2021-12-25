@@ -16,17 +16,17 @@
 #include <gtest/gtest.h>
 #include <thread>
 
+#include "db_common.h"
+#include "db_constant.h"
+#include "db_errno.h"
 #include "distributeddb_data_generate_unit_test.h"
 #include "kv_store_nb_conflict_data.h"
 #include "kv_store_nb_delegate_impl.h"
+#include "kvdb_conflict_entry.h"
+#include "platform_specific.h"
 #include "sqlite_single_ver_natural_store.h"
 #include "sqlite_single_ver_natural_store_connection.h"
 #include "time_helper.h"
-#include "kvdb_conflict_entry.h"
-#include "db_errno.h"
-#include "db_common.h"
-#include "db_constant.h"
-#include "platform_specific.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -168,6 +168,7 @@ void DistributedDBStorageRegisterConflictTest::TearDownTestCase(void)
 
 void DistributedDBStorageRegisterConflictTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /*
      * Here, we create STORE_ID before test,
      * and it will be closed in TearDown().

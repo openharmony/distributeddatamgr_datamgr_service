@@ -19,11 +19,11 @@
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
 #include "kv_store_observer.h"
+#ifdef RELEASE_MODE_V2
 #include "query.h"
+#endif
 #include "distributeddb_data_generator.h"
 #include "distributed_test_tools.h"
-
-const std::string NB_DIRECTOR = "/data/test/nbstub/"; // default work dir.
 
 struct DBParameters {
     std::string storeId;
@@ -41,14 +41,38 @@ struct Option {
     bool isEncryptedDb = false; // whether need encrypt
     DistributedDB::CipherType cipher = DistributedDB::CipherType::DEFAULT; // cipher type
     std::vector<uint8_t> passwd; // cipher password
+#ifdef RELEASE_MODE_V2
     std::string schema;
     bool createDirByStoreIdOnly = false;
-    Option(bool createIfNecessary1, bool isMemoryDb1, bool isEncryptedDb1, DistributedDB::CipherType cipher1,
-        std::vector<uint8_t> passwd1)
-        : createIfNecessary(createIfNecessary1), isMemoryDb(isMemoryDb1), isEncryptedDb(isEncryptedDb1),
-          cipher(cipher1), passwd(passwd1)
+#endif // endif of RELEASE_MODE_V2
+#ifdef RELEASE_MODE_V3
+    DistributedDB::SecurityOption secOption;
+    DistributedDB::KvStoreObserver *observer = nullptr;
+    DistributedDB::Key key;
+    unsigned int mode = 0;
+    int conflictType = 0;
+    DistributedDB::KvStoreNbConflictNotifier notifier = nullptr;
+    int conflictResolvePolicy = DistributedDB::LAST_WIN;
+    bool isNeedIntegrityCheck = false;
+    bool isNeedRmCorruptedDb = false;
+    bool isNeedCompressOnSync = false;
+    uint8_t compressionRate = 100; // default compression rate 100%, that means not compressing
+#endif // end of RELEASE_MODE_V3
+    Option(bool createIfNecessary, bool isMemoryDb, bool isEncryptedDb, DistributedDB::CipherType cipher,
+        std::vector<uint8_t> passwd)
+        : createIfNecessary(createIfNecessary), isMemoryDb(isMemoryDb), isEncryptedDb(isEncryptedDb),
+          cipher(cipher), passwd(passwd)
     {
     }
+#ifdef RELEASE_MODE_V3
+    Option(bool createIfNecessary, bool isMemoryDb, bool isEncryptedDb, const DistributedDB::CipherType &cipher,
+        const std::vector<uint8_t> &passwd, const DistributedDB::SecurityOption &secOption,
+        DistributedDB::KvStoreObserver *observer, const DistributedDB::KvStoreNbConflictNotifier &notifier)
+        : createIfNecessary(createIfNecessary), isMemoryDb(isMemoryDb), isEncryptedDb(isEncryptedDb),
+          cipher(cipher), passwd(passwd), secOption(secOption), observer(observer), notifier(notifier)
+    {
+    }
+#endif // endif of RELEASE_MODE_V3
     Option()
     {}
 };
@@ -78,11 +102,6 @@ enum class ReadOrWriteTag {
     WRITE = 1,
     DELETE = 2,
     REGISTER = 3
-};
-
-// default kvStoreDelegateManager's config.
-const static DistributedDB::KvStoreConfig CONFIG = {
-    .dataDir = NB_DIRECTOR
 };
 
 const static DBParameters g_dbParameter1(DistributedDBDataGenerator::STORE_ID_1,
@@ -119,7 +138,8 @@ const static Option g_ncreateDiskEncrypted(false, false, true, DistributedDB::Ci
     DistributedDBDataGenerator::PASSWD_VECTOR_1);
 const static Option g_createMemUnencrypted(true, true, false, DistributedDB::CipherType::DEFAULT,
     DistributedDBDataGenerator::NULL_PASSWD_VECTOR);
-static Option g_option = g_createDiskEncrypted;
+static Option g_option = g_createDiskUnencrypted;
+const std::vector<Option> g_nbOptions = {g_createDiskUnencrypted, g_createDiskEncrypted, g_createMemUnencrypted};
 // DelegateMgrNbCallback conclude the Callback implements of function< void(DBStatus, KvStoreDelegate*)>
 class DelegateMgrNbCallback {
 public:
@@ -157,7 +177,6 @@ public:
 
 class DistributedDBNbTestTools final {
 public:
-
     DistributedDBNbTestTools() {}
     ~DistributedDBNbTestTools() {}
 
@@ -169,7 +188,8 @@ public:
     static DistributedDB::KvStoreNbDelegate* GetNbDelegateStatus(DistributedDB::KvStoreDelegateManager *&outManager,
         DistributedDB::DBStatus &statusReturn, const DBParameters &param, const Option &optionParam);
     static DistributedDB::KvStoreNbDelegate* GetNbDelegateSuccess(DistributedDB::KvStoreDelegateManager *&outManager,
-        const DBParameters &param, const Option &optionParam);
+        const DBParameters &param, const Option &optionParam,
+        const std::string &dbPath = DistributedDBDataGenerator::DistributedDBConstant::NB_DIRECTOR);
     static DistributedDB::DBStatus GetNbDelegateStoresSuccess(DistributedDB::KvStoreDelegateManager *&outManager,
         std::vector<DistributedDB::KvStoreNbDelegate *> &outDelegateVec, const std::vector<std::string> &storeIds,
         const std::string &appId, const std::string &userId, const Option &optionParam);
@@ -184,22 +204,22 @@ public:
         const DistributedDB::Key &keyPrefix, std::vector<DistributedDB::Entry> &entries);
 
     static DistributedDB::DBStatus Put(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
-        const DistributedDB::Key &key, const DistributedDB::Value &value);
+        const DistributedDB::Key &key, const DistributedDB::Value &value, bool isNeedRetry = false, int waitTime = 100);
 
     static DistributedDB::DBStatus PutBatch(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
-        const std::vector<DistributedDB::Entry> &entries);
+        const std::vector<DistributedDB::Entry> &entries, bool isNeedRetry = false);
 
     static DistributedDB::DBStatus Delete(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
         const DistributedDB::Key &key);
 
     static DistributedDB::DBStatus DeleteBatch(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
-        const std::vector<DistributedDB::Key> &keys);
+        const std::vector<DistributedDB::Key> &keys, bool isNeedRetry = false);
 
     static DistributedDB::DBStatus GetLocal(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
         const DistributedDB::Key &key, DistributedDB::Value &value);
 
     static DistributedDB::DBStatus PutLocal(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
-        const DistributedDB::Key &key, const DistributedDB::Value &value);
+        const DistributedDB::Key &key, const DistributedDB::Value &value, bool isNeedRetry = false, int waitTime = 100);
 
     static DistributedDB::DBStatus PutLocalBatch(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
         const std::vector<DistributedDB::Entry> &entries);
@@ -218,9 +238,18 @@ public:
     static bool CloseNbAndRelease(DistributedDB::KvStoreDelegateManager *&manager,
         DistributedDB::KvStoreNbDelegate *&delegate);
     static bool ModifyDatabaseFile(const std::string &fileDir);
-    static std::string GetKvNbStoreDirectory(const DBParameters &param);
+    static std::string GetKvNbStoreDirectory(const DBParameters &param,
+        const std::string &dbFilePath = DistributedDBDataGenerator::DistributedDBConstant::NB_DATABASE_NAME,
+        const std::string &dbDir = DistributedDBDataGenerator::DistributedDBConstant::NB_DIRECTOR);
     static bool MoveToNextFromBegin(DistributedDB::KvStoreResultSet &resultSet,
         const std::vector<DistributedDB::Entry> &entries, int recordCnt);
+    static std::string FbfFileToSchemaString(const std::string &fbFileDir, const std::string &fileName);
+    static bool GetCurrentDir(std::string &dir);
+    static std::string GetResourceDir();
+    static bool CheckNbNoRecord(DistributedDB::KvStoreNbDelegate *&delegate, const DistributedDB::Key &key,
+        bool bIsLocalQuery = false);
+    static bool CheckNbRecord(DistributedDB::KvStoreNbDelegate *&delegate,
+        const DistributedDB::Key &key, const DistributedDB::Value &value, bool bIsLocalQuery = false);
 };
 
 struct CallBackParam {
@@ -239,8 +268,10 @@ public:
     KvStoreNbCorruptInfo& operator=(KvStoreNbCorruptInfo&&) = delete;
 
     // callback function will be called when the db data is changed.
-    void CorruptCallBack(const std::string &appId, const std::string &userId, const std::string &storeId)
+    void CorruptCallBack(const std::string &appId, const std::string &userId, const std::string &storeId,
+        bool &isCalled)
     {
+        isCalled = true;
         MST_LOG("The corrupt Db is %s, %s, %s", appId.c_str(), userId.c_str(), storeId.c_str());
     }
     void CorruptNewCallBack(const std::string &appId, const std::string &userId, const std::string &storeId,
@@ -250,7 +281,7 @@ public:
     void CorruptCallBackOfExport(const std::string &appId, const std::string &userId, const std::string &storeId,
         DistributedDB::KvStoreNbDelegate *&delegate, CallBackParam &param);
 };
-
+#ifdef RELEASE_MODE_V2
 template <typename ParaType>
 class QueryGenerate {
 public:
@@ -318,6 +349,7 @@ private:
         &DistributedDB::Query::NotIn,
     };
 };
+#endif // endif of RELEASE_MODE_V2
 
 bool EndCaseDeleteDB(DistributedDB::KvStoreDelegateManager *&manager, DistributedDB::KvStoreNbDelegate *&nbDelegate,
     const std::string base, bool isMemoryDb);

@@ -73,7 +73,7 @@ void DistributeddbNbCrudTest::TearDownTestCase(void)
 
 void DistributeddbNbCrudTest::SetUp(void)
 {
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 
     UnitTest *test = UnitTest::GetInstance();
     ASSERT_NE(test, nullptr);
@@ -91,7 +91,7 @@ void DistributeddbNbCrudTest::TearDown(void)
     MST_LOG("TearDownTestCase after case.");
     ASSERT_NE(g_manager, nullptr);
     EXPECT_TRUE(EndCaseDeleteDB(g_manager, g_kvStoreNbDelegate, STORE_ID_1, g_option.isMemoryDb));
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 }
 
 enum ReadOrWriteTag {
@@ -172,7 +172,7 @@ double NbCalculateTime(ConcurParam *&nbThreadParam, const Entry entryCurrent, co
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, GetStoreid001, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, GetStoreid001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create db and get storeId normally.
@@ -188,7 +188,7 @@ HWTEST_F(DistributeddbNbCrudTest, GetStoreid001, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, SimpleAction001, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, SimpleAction001, TestSize.Level1)
 {
     DBStatus status = g_kvStoreNbDelegate->PutLocal(KEY_1, VALUE_1);
     EXPECT_TRUE(status == OK);
@@ -257,7 +257,7 @@ HWTEST_F(DistributeddbNbCrudTest, SimpleAction001, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, SimpleAction002, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, SimpleAction002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. put (KEY_1, VALUE_1) to local db.
@@ -327,7 +327,7 @@ HWTEST_F(DistributeddbNbCrudTest, SimpleAction002, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, SimpleAction003, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, SimpleAction003, TestSize.Level1)
 {
     DBStatus status = g_kvStoreNbDelegate->PutLocal(KEY_1, VALUE_1);
     EXPECT_TRUE(status == OK);
@@ -405,7 +405,7 @@ HWTEST_F(DistributeddbNbCrudTest, SimpleAction003, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, SimpleAction004, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, SimpleAction004, TestSize.Level1)
 {
     DBStatus status = g_kvStoreNbDelegate->PutLocal(KEY_1, VALUE_1);
     EXPECT_TRUE(status == OK);
@@ -466,7 +466,7 @@ HWTEST_F(DistributeddbNbCrudTest, SimpleAction004, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, SimpleAction005, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, SimpleAction005, TestSize.Level1)
 {
     DBStatus status = g_kvStoreNbDelegate->PutLocal(KEY_1, VALUE_1);
     EXPECT_TRUE(status == OK);
@@ -497,7 +497,7 @@ HWTEST_F(DistributeddbNbCrudTest, SimpleAction005, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, RepeatAction001, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, RepeatAction001, TestSize.Level1)
 {
     DBStatus status = g_kvStoreNbDelegate->PutLocal(KEY_1, VALUE_1);
     EXPECT_TRUE(status == OK);
@@ -544,7 +544,7 @@ HWTEST_F(DistributeddbNbCrudTest, RepeatAction001, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, RepeatAction002, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, RepeatAction002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. put (KEY_1, VALUE_1) to local db.
@@ -598,7 +598,7 @@ HWTEST_F(DistributeddbNbCrudTest, RepeatAction002, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, RepeatAction003, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, RepeatAction003, TestSize.Level1)
 {
     DBStatus status = g_kvStoreNbDelegate->PutLocal(KEY_1, VALUE_1);
     EXPECT_TRUE(status == OK);
@@ -656,7 +656,7 @@ HWTEST_F(DistributeddbNbCrudTest, RepeatAction003, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, RepeatAction004, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, RepeatAction004, TestSize.Level1)
 {
     DBStatus status = g_kvStoreNbDelegate->PutLocal(KEY_1, VALUE_1);
     EXPECT_TRUE(status == OK);
@@ -730,7 +730,7 @@ HWTEST_F(DistributeddbNbCrudTest, RepeatAction004, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, RepeatAction005, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, RepeatAction005, TestSize.Level1)
 {
     DBStatus status = g_kvStoreNbDelegate->PutLocal(KEY_1, VALUE_1);
     EXPECT_TRUE(status == OK);
@@ -787,7 +787,7 @@ HWTEST_F(DistributeddbNbCrudTest, RepeatAction005, TestSize.Level0)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, RepeatAction006, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, RepeatAction006, TestSize.Level1)
 {
     DBStatus status = g_kvStoreNbDelegate->PutLocal(KEY_1, VALUE_1);
     EXPECT_TRUE(status == OK);
@@ -1464,7 +1464,7 @@ void PutData(vector<Key> &KeyCrud, vector<Value> &ValueCrud)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbNbCrudTest, Pressure007, TestSize.Level0)
+HWTEST_F(DistributeddbNbCrudTest, Pressure007, TestSize.Level1)
 {
     vector<Key> KeyCrud;
     vector<Value> ValueCrud = GenerateDataForBatch(KeyCrud);
@@ -1554,91 +1554,6 @@ HWTEST_F(DistributeddbNbCrudTest, Pressure008, TestSize.Level1)
     EXPECT_TRUE(entries.size() == 1);
     g_kvStoreNbDelegate->DeleteLocal(longKey1);
     g_kvStoreNbDelegate->Delete(longKey3);
-}
-
-/*
- * @tc.name: Pressure 010
- * @tc.desc: verify can't crud after db is closed.
- * @tc.type: Fault injection
- * @tc.require: SR000CCPOI
- * @tc.author: luqianfu
- */
-HWTEST_F(DistributeddbNbCrudTest, Pressure010, TestSize.Level2)
-{
-#ifdef RUNNING_ON_SIMULATED_ENV
-    KvStoreNbDelegate *kvStoreNbDelegate = nullptr;
-    KvStoreDelegateManager *manager = nullptr;
-    kvStoreNbDelegate = DistributedDBNbTestTools::GetNbDelegateSuccess(manager, g_dbParameter2, g_option);
-    ASSERT_TRUE(manager != nullptr && kvStoreNbDelegate != nullptr);
-    ASSERT_EQ(manager->CloseKvStore(kvStoreNbDelegate), OK);
-    /**
-     * @tc.steps: step1. put (KEY_1, VALUE_1) to local db.
-     * @tc.expected: step1. put failed and return ERROR.
-     */
-    Value valueResult;
-    DBStatus status = kvStoreNbDelegate->PutLocal(KEY_1, VALUE_1);
-    EXPECT_TRUE(status == DB_ERROR);
-    /**
-     * @tc.steps: step2. put (KEY_1, VALUE_1) to sync db.
-     * @tc.expected: step2. put failed and return ERROR.
-     */
-    status = kvStoreNbDelegate->Put(KEY_2, VALUE_2);
-    EXPECT_TRUE(status == DB_ERROR);
-    /**
-     * @tc.steps: step3. delete data from local db where key = KEY_1.
-     * @tc.expected: step3. delete failed and return ERROR.
-     */
-    status = kvStoreNbDelegate->DeleteLocal(KEY_1);
-    EXPECT_TRUE(status == DB_ERROR);
-    /**
-     * @tc.steps: step4. delete data from sync db where key = KEY_2.
-     * @tc.expected: step4. delete failed and return ERROR.
-     */
-    status = kvStoreNbDelegate->Delete(KEY_2);
-    EXPECT_TRUE(status == DB_ERROR);
-    /**
-     * @tc.steps: step5. update (KEY_1, VALUE_2) to local db.
-     * @tc.expected: step5. update failed and return ERROR.
-     */
-    status = kvStoreNbDelegate->PutLocal(KEY_1, VALUE_2);
-    EXPECT_TRUE(status == DB_ERROR);
-    /**
-     * @tc.steps: step6. update (KEY_2, VALUE_1) to sync db.
-     * @tc.expected: step6. update failed and return ERROR.
-     */
-    status = kvStoreNbDelegate->Put(KEY_2, VALUE_1);
-    EXPECT_TRUE(status == DB_ERROR);
-    /**
-     * @tc.steps: step7. get data from local db where key = KEY_1.
-     * @tc.expected: step7. get failed and return ERROR.
-     */
-    status = kvStoreNbDelegate->GetLocal(KEY_1, valueResult);
-    EXPECT_EQ(status, DB_ERROR);
-    /**
-     * @tc.steps: step8. get data from sync db where key = KEY_2.
-     * @tc.expected: step8. get failed and return ERROR.
-     */
-    status = kvStoreNbDelegate->Get(KEY_2, valueResult);
-    EXPECT_EQ(status, DB_ERROR);
-    DistributedDB::Key key9;
-    key9 = { 'a', 'b' };
-    std::vector<Entry> entries;
-    /**
-     * @tc.steps: step9. get batch data from db with keyPrefix = 'ab'.
-     * @tc.expected: step9. get failed and return ERROR.
-     */
-    status = kvStoreNbDelegate->GetEntries(key9, entries);
-    EXPECT_EQ(status, DB_ERROR);
-
-    kvStoreNbDelegate->DeleteLocal(KEY_1);
-    kvStoreNbDelegate->Delete(KEY_2);
-    if (!g_option.isMemoryDb) {
-        EXPECT_EQ(manager->DeleteKvStore(STORE_ID_2), OK);
-    }
-    kvStoreNbDelegate = nullptr;
-    delete manager;
-    manager = nullptr;
-#endif
 }
 
 /*
@@ -1931,6 +1846,7 @@ void StartThreadForLongWriteWrite(vector<Entry> &entriesBatch)
  * @tc.require: SR000CCPOI
  * @tc.author: luqianfu
  */
+#ifdef DB_RUNNIG
 HWTEST_F(DistributeddbNbCrudTest, Concurrency006, TestSize.Level3)
 {
     KvStoreNbDelegate *delegate = nullptr;
@@ -1958,4 +1874,5 @@ HWTEST_F(DistributeddbNbCrudTest, Concurrency006, TestSize.Level3)
     MST_LOG("entryBatches.size() = %zu", entryBatches.size());
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, g_option.isMemoryDb));
 }
+#endif
 }

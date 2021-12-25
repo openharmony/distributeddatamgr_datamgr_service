@@ -44,6 +44,7 @@ public:
     // Global setting interfaces.
     virtual void SetProcessLabel(const std::string &label) = 0;
     virtual std::string GetProcessLabel() const = 0;
+
     // If the pre adapter is not nullptr, set new adapter will release the pre adapter,
     // must be called after SetCommunicatorAggregator
     virtual int SetCommunicatorAdapter(IAdapter *adapter) = 0;
@@ -78,7 +79,7 @@ public:
         const std::string &deviceId, uint8_t flag) const = 0;
 
     virtual int EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
-        KvStoreObserver *observer, int conflictType, KvStoreNbConflictNotifier conflictNotifier) = 0;
+        const AutoLaunchOption &option) = 0;
 
     virtual int DisableKvStoreAutoLaunch(const std::string &identifier) = 0;
 
@@ -86,7 +87,7 @@ public:
 
     virtual void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback) = 0;
 
-    virtual NotificationChain::Listener *RegisterLockStatusLister(const LockStatusNotifier &action, int &errorCode) = 0;
+    virtual NotificationChain::Listener *RegisterLockStatusLister(const LockStatusNotifier &action, int &errCode) = 0;
 
     virtual bool IsAccessControlled() const = 0;
 

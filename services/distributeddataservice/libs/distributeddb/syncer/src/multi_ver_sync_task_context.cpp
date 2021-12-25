@@ -26,7 +26,7 @@ MultiVerSyncTaskContext::~MultiVerSyncTaskContext()
 {
 }
 
-int MultiVerSyncTaskContext::Initialize(const std::string &deviceId, IKvDBSyncInterface *syncInterface,
+int MultiVerSyncTaskContext::Initialize(const std::string &deviceId, ISyncInterface *syncInterface,
     std::shared_ptr<Metadata> &metadata, ICommunicator *communicator)
 {
     if (deviceId.empty() || (syncInterface == nullptr) || (communicator == nullptr)) {
@@ -70,7 +70,7 @@ int MultiVerSyncTaskContext::AddSyncOperation(SyncOperation *operation)
 
     if (operation->IsAutoSync() && !IsTargetQueueEmpty()) {
         LOGI("[MultiVerSyncTaskContext] Exist operation in queue, skip it!");
-        operation->SetStatus(deviceId_, SyncOperation::FINISHED_ALL);
+        operation->SetStatus(deviceId_, SyncOperation::OP_FINISHED_ALL);
         return E_OK;
     }
 
@@ -226,9 +226,9 @@ void MultiVerSyncTaskContext::Clear()
     syncId_ = 0;
 }
 
-void MultiVerSyncTaskContext::CopyTargetData(const ISyncTarget *target)
+void MultiVerSyncTaskContext::CopyTargetData(const ISyncTarget *target, const TaskParam &taskParam)
 {
-    SyncTaskContext::CopyTargetData(target);
+    SyncTaskContext::CopyTargetData(target, taskParam);
 }
 }
 #endif

@@ -31,8 +31,8 @@ namespace {
             if (item.fileType != type) {
                 continue;
             }
-            int errCode = remove(item.fileName.c_str());
-            if (errCode != 0) {
+            int errCode = OS::RemoveFile(item.fileName.c_str());
+            if (errCode != E_OK) {
                 LOGE("Remove file failed:%d", errno);
             }
         }
@@ -40,11 +40,11 @@ namespace {
 
     void RemoveDirectories(const std::list<OS::FileAttr> &fileList, OS::FileType type)
     {
-        for (const auto &item : fileList) {
-            if (item.fileType != type) {
+        for (auto item = fileList.rbegin(); item != fileList.rend(); ++item) {
+            if (item->fileType != type) {
                 continue;
             }
-            int errCode = OS::RemoveDBDirectory(item.fileName);
+            int errCode = OS::RemoveDBDirectory(item->fileName);
             if (errCode != 0) {
                 LOGE("Remove directory failed:%d", errno);
             }
@@ -164,7 +164,7 @@ int DBCommon::CalcValueHash(const std::vector<uint8_t> &value, std::vector<uint8
         return -E_INTERNAL_ERROR;
     }
 
-    hashCalc.GetResult(hashValue);
+    errCode = hashCalc.GetResult(hashValue);
     if (errCode != E_OK) {
         return -E_INTERNAL_ERROR;
     }
@@ -175,19 +175,24 @@ int DBCommon::CalcValueHash(const std::vector<uint8_t> &value, std::vector<uint8
 int DBCommon::CreateStoreDirectory(const std::string &directory, const std::string &identifierName,
     const std::string &subDir, bool isCreate)
 {
-    if (!isCreate) {
-        return E_OK;
-    }
-    if (directory.empty()) {
-        return -E_INVALID_ARGS;
-    }
-
     std::string newDir = directory;
     if (newDir.back() != '/') {
         newDir += "/";
     }
 
     newDir += identifierName;
+    if (!isCreate) {
+        if (!OS::CheckPathExistence(newDir)) {
+            LOGE("Required path does not exist and won't create.");
+            return -E_INVALID_ARGS;
+        }
+        return E_OK;
+    }
+
+    if (directory.empty()) {
+        return -E_INVALID_ARGS;
+    }
+
     int errCode = DBCommon::CreateDirectory(newDir);
     if (errCode != E_OK) {
         return errCode;
@@ -300,5 +305,13 @@ void DBCommon::SetDatabaseIds(KvDBProperties &properties, const std::string &app
     std::string hashDir = TransferHashString(oriStoreDir);
     std::string hexHashDir = TransferStringToHex(hashDir);
     properties.SetStringProp(KvDBProperties::IDENTIFIER_DIR, hexHashDir);
+}
+
+std::string DBCommon::StringMasking(const std::string &oriStr, size_t remain)
+{
+    if (oriStr.size() > remain) {
+        return oriStr.substr(0, remain);
+    }
+    return oriStr;
 }
 } // namespace DistributedDB

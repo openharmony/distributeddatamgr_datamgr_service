@@ -41,7 +41,7 @@ public:
     KvStoreDelegateManager &operator=(const KvStoreDelegateManager &) = delete;
     KvStoreDelegateManager &operator=(KvStoreDelegateManager &&) = delete;
 
-    // Used to set global config of the KvStores, such dataDir, return OK if set config susccess.
+    // Used to set global config of the KvStores, such dataDir, return OK if set config success.
     DB_API DBStatus SetKvStoreConfig(const KvStoreConfig &kvStoreConfig);
 
 #ifndef OMIT_MULTI_VER
@@ -58,19 +58,19 @@ public:
         const std::function<void(DBStatus, KvStoreNbDelegate *)> &callback);
 
 #ifndef OMIT_MULTI_VER
-    // Close a KvStore, return OK if close susccess.
+    // Close a KvStore, return OK if close success.
     DB_API DBStatus CloseKvStore(KvStoreDelegate *kvStore);
 #endif
 
     DB_API DBStatus CloseKvStore(KvStoreNbDelegate *kvStore);
 
-    // Used to delete a KvStore, return OK if delete susccess.
+    // Used to delete a KvStore, return OK if delete success.
     DB_API DBStatus DeleteKvStore(const std::string &storeId);
 
     // Get the database size.
     DB_API DBStatus GetKvStoreDiskSize(const std::string &storeId, uint64_t &size);
 
-    // Used to set the process userid and appid
+    // Used to set the process userid and appId
     DB_API static DBStatus SetProcessLabel(const std::string &appId, const std::string &userId);
 
     // Set process communicator.

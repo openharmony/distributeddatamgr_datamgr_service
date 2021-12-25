@@ -17,6 +17,7 @@
 #define SINGLE_VER_SYNC_TARGET_H
 
 #include "db_types.h"
+#include "query_sync_object.h"
 #include "sync_target.h"
 
 namespace DistributedDB {
@@ -25,19 +26,29 @@ public:
     SingleVerSyncTarget();
     ~SingleVerSyncTarget() override;
 
+    // Set a syncOperation
+    void SetSyncOperation(SyncOperation *operation) override;
+
     // Set the end water mark of this task
     void SetEndWaterMark(WaterMark waterMark);
 
     // Get the end water mark of this task
     WaterMark GetEndWaterMark() const;
 
+    // For pull response sync
     void SetResponseSessionId(uint32_t responseSessionId);
+    uint32_t GetResponseSessionId() const override;
 
-    uint32_t GetResponseSessionId() const;
-
+    // For query sync
+    void SetQuery(const QuerySyncObject &query);
+    QuerySyncObject GetQuery() const;
+    void SetQuerySync(bool isQuerySync);
+    bool IsQuerySync() const;
 private:
     WaterMark endWaterMark_;
     uint32_t responseSessionId_ = 0;
+    QuerySyncObject query_;
+    bool isQuerySync_ = false;
 };
 } // namespace DistributedDB
 

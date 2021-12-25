@@ -17,7 +17,6 @@
 
 #include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_unit_test.h"
-#include "db_errno.h"
 #include "log_print.h"
 
 using namespace testing::ext;
@@ -110,6 +109,7 @@ void DistributedDBInterfacesNBPublishTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesNBPublishTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_kvDelegateStatus = INVALID_ARGS;
     g_kvNbDelegatePtr = nullptr;
 }

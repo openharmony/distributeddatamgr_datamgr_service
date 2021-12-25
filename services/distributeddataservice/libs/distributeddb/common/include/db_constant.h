@@ -84,12 +84,31 @@ public:
     static const std::string ID_CONNECTOR;
 
     static const std::string DELETE_KVSTORE_REMOVING;
+    static const std::string DB_LOCK_POSTFIX;
+
+    static const std::string SUBSCRIBE_QUERY_PREFIX;
+    static const std::string TRIGGER_REFERENCES_NEW;
+    static const std::string TRIGGER_REFERENCES_OLD;
+
+    static const std::string UPDATE_META_FUNC;
 
     static constexpr uint32_t AUTO_SYNC_TIMEOUT = 5000; // 5s
     static constexpr uint32_t MANUAL_SYNC_TIMEOUT = 5000; // 5s
 
     static const size_t MAX_NORMAL_PACK_ITEM_SIZE = 4000;
     static const size_t MAX_HPMODE_PACK_ITEM_SIZE = 2000; // slide window mode to reduce last ack transfer time
+
+    static constexpr uint32_t MIN_MTU_SIZE = 1024; // 1KB
+    static constexpr uint32_t MAX_MTU_SIZE = 5242880; // 5MB
+
+    static constexpr uint32_t MIN_TIMEOUT = 5000; // 5s
+    static constexpr uint32_t MAX_TIMEOUT = 60000; // 60s
+
+    static constexpr uint8_t DEFAULT_COMPTRESS_RATE = 100;
+
+    static constexpr size_t MAX_SYNC_BLOCK_SIZE = 31457280; // 30MB
+
+    static constexpr int DOUBLE_PRECISION = 15;
 };
 } // namespace DistributedDB
 

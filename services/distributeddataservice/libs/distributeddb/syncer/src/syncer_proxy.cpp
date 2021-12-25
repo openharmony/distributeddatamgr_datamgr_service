@@ -25,7 +25,7 @@ SyncerProxy::SyncerProxy()
 {
 }
 
-int SyncerProxy::Initialize(IKvDBSyncInterface *syncInterface)
+int SyncerProxy::Initialize(ISyncInterface *syncInterface)
 {
     if (syncInterface == nullptr) {
         return -E_INVALID_ARGS;
@@ -56,12 +56,20 @@ int SyncerProxy::Close()
 
 int SyncerProxy::Sync(const std::vector<std::string> &devices, int mode,
     const std::function<void(const std::map<std::string, int> &)> &onComplete,
-    const std::function<void(void)> &onFinalize, bool wait = false)
+    const std::function<void(void)> &onFinalize, bool wait)
 {
     if (syncer_ == nullptr) {
         return -E_NOT_INIT;
     }
     return syncer_->Sync(devices, mode, onComplete, onFinalize, wait);
+}
+
+int SyncerProxy::Sync(const SyncParma &parma)
+{
+    if (syncer_ == nullptr) {
+        return -E_NOT_INIT;
+    }
+    return syncer_->Sync(parma);
 }
 
 int SyncerProxy::RemoveSyncOperation(int syncId)
@@ -72,10 +80,18 @@ int SyncerProxy::RemoveSyncOperation(int syncId)
     return syncer_->RemoveSyncOperation(syncId);
 }
 
+int SyncerProxy::StopSync()
+{
+    if (syncer_ == nullptr) {
+        return -E_NOT_INIT;
+    }
+    return syncer_->StopSync();
+}
+
 uint64_t SyncerProxy::GetTimeStamp()
 {
     if (syncer_ == nullptr) {
-        return SyncerFactory::GetSyncer(IKvDBSyncInterface::SYNC_SVD)->GetTimeStamp();
+        return SyncerFactory::GetSyncer(ISyncInterface::SYNC_SVD)->GetTimeStamp();
     }
     return syncer_->GetTimeStamp();
 }
@@ -91,7 +107,7 @@ void SyncerProxy::EnableAutoSync(bool enable)
 int SyncerProxy::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash)
 {
     if (syncer_ == nullptr) {
-        return SyncerFactory::GetSyncer(IKvDBSyncInterface::SYNC_SVD)->EraseDeviceWaterMark(deviceId, isNeedHash);
+        return SyncerFactory::GetSyncer(ISyncInterface::SYNC_SVD)->EraseDeviceWaterMark(deviceId, isNeedHash);
     }
     return syncer_->EraseDeviceWaterMark(deviceId, isNeedHash);
 }
@@ -158,5 +174,21 @@ int SyncerProxy::SetStaleDataWipePolicy(WipePolicy policy)
         return -E_NOT_INIT;
     }
     return syncer_->SetStaleDataWipePolicy(policy);
+}
+
+int SyncerProxy::SetSyncRetry(bool isRetry)
+{
+    if (syncer_ == nullptr) {
+        return -E_NOT_INIT;
+    }
+    return syncer_->SetSyncRetry(isRetry);
+}
+
+int SyncerProxy::SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets)
+{
+    if (syncer_ == nullptr) {
+        return -E_NOT_INIT;
+    }
+    return syncer_->SetEqualIdentifier(identifier, targets);
 }
 } // namespace DistributedDB

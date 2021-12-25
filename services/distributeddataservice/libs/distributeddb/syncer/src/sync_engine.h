@@ -20,10 +20,12 @@
 #include <mutex>
 #include <queue>
 
+#include "communicator_proxy.h"
+#include "device_manager.h"
 #include "isync_engine.h"
 #include "isync_task_context.h"
+#include "subscribe_manager.h"
 #include "task_pool.h"
-#include "device_manager.h"
 
 namespace DistributedDB {
 constexpr uint16_t NEW_SEND_TASK = 1;
@@ -31,11 +33,13 @@ constexpr uint16_t NEW_SEND_TASK = 1;
 class SyncEngine : public ISyncEngine {
 public:
     SyncEngine();
-    virtual ~SyncEngine();
+    ~SyncEngine() override;
 
     // Do some init things
-    int Initialize(IKvDBSyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
-        const std::function<void(std::string)> &onRemoteDataChanged) override;
+    int Initialize(ISyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
+        const std::function<void(std::string)> &onRemoteDataChanged,
+        const std::function<void(std::string)> &offlineChanged,
+        const std::function<void(const InternalSyncParma &param)> &queryAutoSyncCallback) override;
 
     // Do some things, when db close.
     int Close() override;
@@ -73,38 +77,79 @@ public:
 
     std::string GetLabel() const override;
 
+    bool GetSyncRetry() const;
+    void SetSyncRetry(bool isRetry) override;
+
+    // Set an equal identifier for this database, After this called, send msg to the target will use this identifier
+    int SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets) override;
+
+    void OfflineHandleByDevice(const std::string &deviceId);
+
+    void GetLocalSubscribeQueries(const std::string &device, std::vector<QuerySyncObject> &subscribeQueries);
+
+    // subscribeQueries item is queryId
+    void GetRemoteSubscribeQueryIds(const std::string &device, std::vector<std::string> &subscribeQueryIds);
+
+    void GetRemoteSubscribeQueries(const std::string &device, std::vector<QuerySyncObject> &subscribeQueries);
+
+    void PutUnfiniedSubQueries(const std::string &device, std::vector<QuerySyncObject> &subscribeQueries);
+
+    void GetAllUnFinishSubQueries(std::map<std::string, std::vector<QuerySyncObject>> &allSyncQueries);
+
+    // used by SingleVerSyncer when db online
+    int StartAutoSubscribeTimer() override;
+
+    // used by SingleVerSyncer when remote/local db closed
+    void StopAutoSubscribeTimer() override;
+
+    int SubscribeLimitCheck(const std::vector<std::string> &devices, QuerySyncObject &query) const override;
+
+    bool IsEngineActive() const override;
+
 protected:
     // Create a context
     virtual ISyncTaskContext *CreateSyncTaskContext() = 0;
 
     // Find SyncTaskContext from the map
     ISyncTaskContext *FindSyncTaskContext(const std::string &deviceId);
+    ISyncTaskContext *GetSyncTaskContextAndInc(const std::string &deviceId);
+    void GetQueryAutoSyncParam(const std::string &device, const QuerySyncObject &query, InternalSyncParma &outParam);
+    void GetSubscribeSyncParam(const std::string &device, const QuerySyncObject &query, InternalSyncParma &outParam);
 
     // Used to store all send sync task infos (such as pull sync response, and push sync request)
     std::map<std::string, ISyncTaskContext *> syncTaskContextMap_;
     std::mutex contextMapLock_;
+    std::shared_ptr<SubscribeManager> subManager_;
+    std::function<void(const InternalSyncParma &param)> queryAutoSyncCallback_;
 
 private:
 
     // Init DeviceManager set callback
-    int InitDeviceManager(const std::function<void(std::string)> &onRemoteDataChanged);
+    int InitDeviceManager(const std::function<void(std::string)> &onRemoteDataChanged,
+        const std::function<void(std::string)> &offlineChanged);
+
+    int InitTimeChangedListener();
 
     ISyncTaskContext *GetSyncTaskContext(const std::string &deviceId, int &errCode);
 
     // Init Comunicator, register callbacks
-    int InitComunicator(const IKvDBSyncInterface *syncInterface);
+    int InitComunicator(const ISyncInterface *syncInterface);
 
     // Add the sync task info to the map.
     int AddSyncOperForContext(const std::string &deviceId, SyncOperation *operation);
 
     // Sync Request CallbackTask run at a sub thread.
-    void MessageReceiveCallbackTask(ISyncTaskContext *context, const ICommunicator *communicator, Message *inMsg);
+    void MessageReciveCallbackTask(ISyncTaskContext *context, const ICommunicator *communicator, Message *inMsg);
 
-    // wrapper of MessageReceiveCallbackTask
-    void MessageReceiveCallback(const std::string &targetDev, Message *inMsg);
+    void RemoteDataChangedTask(ISyncTaskContext *context, const ICommunicator *communicator, Message *inMsg);
+
+    void ScheduleTaskOut(ISyncTaskContext *context, const ICommunicator *communicator);
+
+    // wrapper of MessageReciveCallbackTask
+    void MessageReciveCallback(const std::string &targetDev, Message *inMsg);
 
     // Sync Request Callback
-    int MessageReceiveCallbackInner(const std::string &targetDev, Message *inMsg);
+    int MessageReciveCallbackInner(const std::string &targetDev, Message *inMsg);
 
     // Exec the given SyncTarget. and callback onComplete.
     int ExecSyncTask(ISyncTaskContext *context);
@@ -126,17 +171,34 @@ private:
 
     ISyncTaskContext *GetConextForMsg(const std::string &targetDev, int &errCode);
 
-    int RunPermissionCheck(const std::string &deviceId, int mode) const;
+    int RunPermissionCheck(const std::string &deviceId, uint8_t flag) const;
 
-    IKvDBSyncInterface *syncInterface_;
+    ICommunicator *AllocCommunicator(const std::string &identifier, int &errCode);
+
+    void UnRegCommunicatorsCallback();
+
+    void ReleaseCommunicators();
+
+    bool IsSkipCalculateLen(const Message *inMsg);
+
+    void ClearInnerResource();
+
+    static uint8_t GetPermissionCheckFlag(bool isAutoSync, int syncMode);
+
+    ISyncInterface *syncInterface_;
     ICommunicator *communicator_;
     DeviceManager *deviceManager_;
     std::function<void(const std::string &)> onRemoteDataChanged_;
+    std::function<void(const std::string &)> offlineChanged_;
     std::shared_ptr<Metadata> metadata_;
     std::deque<Message *> msgQueue_;
     NotificationChain::Listener *timeChangedListener_;
-    unsigned int execTaskCount_;
+    uint32_t execTaskCount_;
     std::string label_;
+    bool isSyncRetry_;
+    CommunicatorProxy *communicatorProxy_;
+    std::mutex equalCommunicatorsLock_;
+    std::map<std::string, ICommunicator *> equalCommunicators_;
 
     static int queueCacheSize_;
     static int maxQueueCacheSize_;
@@ -144,6 +206,7 @@ private:
     static const unsigned int MAX_EXEC_NUM = 7; // Set the maximum of threads as 6 < 7
     static constexpr int DEFAULT_CACHE_SIZE = 160 * 1024 * 1024; // Initial the default cache size of queue as 160MB
     static std::mutex queueLock_;
+    std::atomic<bool> isActive_;
 };
 } // namespace DistributedDB
 

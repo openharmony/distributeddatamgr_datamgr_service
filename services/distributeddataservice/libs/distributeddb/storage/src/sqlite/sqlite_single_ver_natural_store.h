@@ -24,44 +24,9 @@
 #include "single_ver_kvdb_sync_interface.h"
 #include "kv_store_nb_conflict_data_impl.h"
 #include "runtime_context.h"
+#include "sqlite_single_ver_continue_token.h"
 
 namespace DistributedDB {
-struct ContinueTokenStruct {
-    /*
-     * function: Check the magic number at the beginning and end of the ContinueTokenStruct.
-     * returnValue: Return true if the begin and end magic number is OK.
-     *              Return false if the begin or end magic number is error.
-     */
-    bool CheckValid() const
-    {
-        return ((magicBegin_ == MAGIC_BEGIN) && (magicEnd_ == MAGIC_END));
-    }
-    TimeStamp GetBeginTimeStamp() const
-    {
-        return begin_;
-    }
-    void SetBeginTimeStamp(TimeStamp begin)
-    {
-        begin_ = begin;
-    }
-    TimeStamp GetEndTimeStamp() const
-    {
-        return end_;
-    }
-    void SetEndTimeStamp(TimeStamp end)
-    {
-        end_ = end;
-    }
-
-private:
-    static const unsigned int MAGIC_BEGIN = 0x600D0AC7; // for token guard
-    static const unsigned int MAGIC_END = 0x0AC7600D; // for token guard
-    unsigned int magicBegin_ = MAGIC_BEGIN;
-    TimeStamp begin_ = 0;
-    TimeStamp end_ = 0;
-    unsigned int magicEnd_ = MAGIC_END;
-};
-
 class SQLiteSingleVerNaturalStore : public SyncAbleKvDB, public SingleVerKvDBSyncInterface {
 public:
     SQLiteSingleVerNaturalStore();
@@ -98,6 +63,11 @@ public:
 
     int PutMetaData(const Key &key, const Value &value) override;
 
+    // Delete multiple meta data records in a transaction.
+    int DeleteMetaData(const std::vector<Key> &keys) override;
+    // Delete multiple meta data records with key prefix in a transaction.
+    int DeleteMetaDataByPrefixKey(const Key &keyPrefix) const override;
+
     int GetAllMetaKeys(std::vector<Key> &keys) const override;
 
     int GetSyncData(TimeStamp begin, TimeStamp end, std::vector<DataItem> &dataItems, ContinueToken &continueStmtToken,
@@ -105,6 +75,9 @@ public:
 
     int GetSyncData(TimeStamp begin, TimeStamp end, std::vector<SingleVerKvEntry *> &entries,
         ContinueToken &continueStmtToken, const DataSizeSpecInfo &dataSizeInfo) const override;
+
+    int GetSyncData(QueryObject &query, const SyncTimeRange &timeRange, const DataSizeSpecInfo &dataSizeInfo,
+        ContinueToken &continueStmtToken, std::vector<SingleVerKvEntry *> &entries) const override;
 
     int GetSyncDataNext(std::vector<DataItem> &dataItems, ContinueToken &continueStmtToken,
         const DataSizeSpecInfo &dataSizeInfo) const override;
@@ -114,11 +87,8 @@ public:
 
     void ReleaseContinueToken(ContinueToken &continueStmtToken) const override;
 
-    int PutSyncData(std::vector<DataItem> &dataItems, const std::string &deviceName) override;
-
-    int PutSyncData(const std::vector<SingleVerKvEntry *> &entries, const std::string &deviceName) override;
-
-    void ReleaseKvEntry(const SingleVerKvEntry *entry) override;
+    int PutSyncDataWithQuery(const QueryObject &query, const std::vector<SingleVerKvEntry *> &entries,
+        const std::string &deviceName) override;
 
     void GetMaxTimeStamp(TimeStamp &stamp) const override;
 
@@ -172,8 +142,6 @@ public:
 
     int GetSecurityOption(SecurityOption &option) const override;
 
-    bool IsReadable() const override;
-
     bool IsDataMigrating() const override;
 
     void SetConnectionFlag(bool isExisted) const override;
@@ -193,6 +161,28 @@ public:
 
     void NotifyRemotePushFinished(const std::string &targetId) const override;
 
+    int GetDatabaseCreateTimeStamp(TimeStamp &outTime) const override;
+
+    int CheckIntegrity() const override;
+
+    int GetCompressionOption(bool &needCompressOnSync, uint8_t &compressionRate) const override;
+    int GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const override;
+
+    // Check and init query object for query sync and subscribe, flatbuffer schema will always return E_NOT_SUPPORT.
+    // return E_OK if subscribe is legal, ERROR on exception.
+    int CheckAndInitQueryCondition(QueryObject &query) const override;
+
+    int InterceptData(std::vector<SingleVerKvEntry *> &entries, const std::string &sourceID,
+        const std::string &targetID) const override;
+
+    void SetDataInterceptor(const PushDataInterceptor &interceptor) override;
+
+    int AddSubscribe(const std::string &subscribeId, const QueryObject &query, bool needCacheSubscribe) override;
+
+    int RemoveSubscribe(const std::string &subscribeId) override;
+
+    int RemoveSubscribe(const std::vector<std::string> &subscribeIds) override;
+
 private:
     int CheckDatabaseRecovery(const KvDBProperties &kvDBProp);
 
@@ -205,9 +195,8 @@ private:
 
     void InitCurrentMaxStamp();
 
-    int SaveSyncDataItems(std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo, bool checkValueContent);
-
-    int GetData(const SQLiteStorageExecutor* handle, const std::string &sql, const Key &key, Value &value) const;
+    int SaveSyncDataItems(const QueryObject &query, std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo,
+        bool checkValueContent);
 
     int InitStorageEngine(const KvDBProperties &kvDBProp, bool isNeedUpdateSecOpt);
 
@@ -237,6 +226,7 @@ private:
     void InitConflictNotifiedFlag(SingleVerNaturalStoreCommitNotifyData *committedData);
 
     void AsyncDataMigration() const;
+
     // Change value that should be amended, and neglect value that is incompatible
     void CheckAmendValueContentForSyncProcedure(std::vector<DataItem> &dataItems) const;
 
@@ -244,14 +234,30 @@ private:
 
     int RemoveDeviceDataNormally(const std::string &deviceName, bool isNeedNotify);
 
-    int SaveSyncDataToMain(std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo);
+    int SaveSyncDataToMain(const QueryObject &query, std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo);
 
-    int SaveSyncDataToCacheDB(std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo);
+    // Currently, this function only suitable to be call from sync in insert_record_from_sync procedure
+    // Take attention if future coder attempt to call it in other situation procedure
+    int SaveSyncItems(const QueryObject& query, std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo,
+        TimeStamp &maxTimestamp, SingleVerNaturalStoreCommitNotifyData *commitData) const;
 
-    int SaveSyncItemsInCacheMode(SQLiteSingleVerStorageExecutor *handle,
+    int SaveSyncDataToCacheDB(const QueryObject &query, std::vector<DataItem> &dataItems,
+        const DeviceInfo &deviceInfo);
+
+    int SaveSyncItemsInCacheMode(SQLiteSingleVerStorageExecutor *handle, const QueryObject &query,
         std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo, TimeStamp &maxTimestamp) const;
 
     int ClearIncompleteDatabase(const KvDBProperties &kvDBPro) const;
+
+    int GetSyncDataForQuerySync(std::vector<DataItem> &dataItems, SQLiteSingleVerContinueToken *&continueStmtToken,
+        const DataSizeSpecInfo &dataSizeInfo) const;
+
+    int SaveCreateDBTime();
+    int SaveCreateDBTimeIfNotExisted();
+
+    int GetAndInitStorageEngine(const KvDBProperties &kvDBProp);
+
+    int RemoveAllSubscribe();
 
     DECLARE_OBJECT_TAG(SQLiteSingleVerNaturalStore);
 
@@ -268,6 +274,11 @@ private:
     mutable DatabaseLifeCycleNotifier lifeCycleNotifier_;
     mutable TimerId lifeTimerId_;
     uint32_t autoLifeTime_;
+    mutable TimeStamp createDBTime_;
+    mutable std::mutex createDBTimeMutex_;
+
+    mutable std::shared_mutex dataInterceptorMutex_;
+    PushDataInterceptor dataInterceptor_;
 };
 }
 #endif

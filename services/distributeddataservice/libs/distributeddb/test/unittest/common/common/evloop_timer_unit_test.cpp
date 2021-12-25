@@ -13,15 +13,16 @@
  * limitations under the License.
  */
 
+#include <atomic>
 #include <gtest/gtest.h>
 #include <thread>
-#include <atomic>
 
 #include "db_errno.h"
-#include "log_print.h"
-#include "platform_specific.h"
+#include "distributeddb_tools_unit_test.h"
 #include "evloop/include/ievent.h"
 #include "evloop/include/ievent_loop.h"
+#include "log_print.h"
+#include "platform_specific.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -69,6 +70,7 @@ void DistributedDBEventLoopTimerTest::TearDownTestCase(void) {}
 
 void DistributedDBEventLoopTimerTest::SetUp(void)
 {
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: Create a loop object.
      */
@@ -401,8 +403,8 @@ HWTEST_F(DistributedDBEventLoopTimerTest, EventLoopTimerTest007, TestSize.Level2
                 return -E_STALE;
             }
             lastTime = TimerTester::GetCurrentTime();
-            int errCode = timer->SetTimeout(counter * TIME_PIECE_1000);
-            EXPECT_EQ(errCode, E_OK);
+            int ret = timer->SetTimeout(counter * TIME_PIECE_1000);
+            EXPECT_EQ(ret, E_OK);
             return E_OK;
         }, nullptr);
     EXPECT_EQ(errCode, E_OK);

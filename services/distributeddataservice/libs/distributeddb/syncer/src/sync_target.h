@@ -22,7 +22,7 @@ namespace DistributedDB {
 class SyncTarget : public ISyncTarget {
 public:
     SyncTarget() : operation_(nullptr), taskType_(0), mode_(0) {};
-    virtual ~SyncTarget();
+    ~SyncTarget() override;
 
     // Get the Sync Id of this task
     int GetSyncId() const override;
@@ -39,7 +39,7 @@ public:
     // Get the mode of this task request or response
     int GetMode() const override;
 
-    // Set a Sync Status, it will increase the ref of operation
+    // Set a SyncOperation
     void SetSyncOperation(SyncOperation *operation) override;
 
     // Get a SyncOperation
@@ -47,6 +47,8 @@ public:
 
     // Is this target is a auto sync
     bool IsAutoSync() const override;
+
+    uint32_t GetResponseSessionId() const override;
 
 protected:
     SyncOperation *operation_;

@@ -16,10 +16,12 @@
 #include <ctime>
 #include <string>
 
+#include "delegate_callback.h"
 #include "distributeddb_data_generator.h"
 #include "distributed_test_tools.h"
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
+#include "kv_store_snapshot_callback.h"
 #include "types.h"
 
 using namespace std;
@@ -159,7 +161,7 @@ private:
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData001, TestSize.Level0)
+HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData001, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_kvStoreBatchDelegate);
 
@@ -201,7 +203,7 @@ HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData001, TestSize.Level0)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData002, TestSize.Level0)
+HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData002, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_kvStoreBatchDelegate);
 
@@ -252,7 +254,7 @@ HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData002, TestSize.Level0)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData003, TestSize.Level0)
+HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData003, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_kvStoreBatchDelegate);
     vector<Entry> entries1;
@@ -295,7 +297,7 @@ HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData003, TestSize.Level0)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData004, TestSize.Level0)
+HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData004, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_kvStoreBatchDelegate);
 
@@ -327,7 +329,7 @@ HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData004, TestSize.Level0)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData005, TestSize.Level0)
+HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData005, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_kvStoreBatchDelegate);
 
@@ -359,7 +361,7 @@ HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData005, TestSize.Level0)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData006, TestSize.Level0)
+HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData006, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. clear kv db.
@@ -382,7 +384,7 @@ HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData006, TestSize.Level0)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData007, TestSize.Level0)
+HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData007, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. clear kv db.
@@ -409,7 +411,7 @@ HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData007, TestSize.Level0)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData008, TestSize.Level0)
+HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData008, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_kvStoreBatchDelegate);
     vector<Entry> entries1;
@@ -441,7 +443,7 @@ HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData008, TestSize.Level0)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData009, TestSize.Level0)
+HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData009, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_kvStoreBatchDelegate);
     vector<Entry> entries1;
@@ -470,7 +472,7 @@ HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData009, TestSize.Level0)
  * @tc.require: SR000CQDTF
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData010, TestSize.Level0)
+HWTEST_F(DistributeddbKvBatchCrudTest, SimpleData010, TestSize.Level1)
 {
     DelegateCallback delegateCallback;
     function<void(DBStatus, KvStoreSnapshotDelegate *)> function

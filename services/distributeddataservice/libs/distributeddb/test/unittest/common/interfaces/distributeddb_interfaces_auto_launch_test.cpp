@@ -13,19 +13,18 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
-#include <thread>
 #include <chrono>
+#include <gtest/gtest.h>
+#include <thread>
 
-#include "db_errno.h"
-#include "runtime_context.h"
 #include "db_common.h"
 #include "db_constant.h"
+#include "db_errno.h"
+#include "distributeddb_tools_unit_test.h"
+#include "kv_store_delegate_manager.h"
 #include "kvdb_manager.h"
 #include "kvdb_pragma.h"
-#include "kv_store_delegate_manager.h"
-#include "distributeddb_tools_unit_test.h"
+#include "runtime_context.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -169,6 +168,7 @@ void DistributedDBInterfacesAutoLaunchTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesAutoLaunchTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_kvStoreStatus = INVALID_ARGS;
     g_kvStore = nullptr;
 }
@@ -324,10 +324,7 @@ void GetSyncData(const std::string &storeId)
     ContinueToken token = nullptr;
     DataSizeSpecInfo syncDataSizeInfo = {DBConstant::MAX_VALUE_SIZE, DBConstant::MAX_HPMODE_PACK_ITEM_SIZE};
     kvStore->GetSyncData(0, UINT64_MAX / 2, entries, token, syncDataSizeInfo); // half of the max timestamp.
-    for (auto &item : entries) {
-        kvStore->ReleaseKvEntry(item);
-        item = nullptr;
-    }
+    SingleVerKvEntry::Release(entries);
     if (token != nullptr) {
         kvStore->ReleaseContinueToken(token);
     }

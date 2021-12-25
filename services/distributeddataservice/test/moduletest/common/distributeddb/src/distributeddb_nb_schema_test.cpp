@@ -14,31 +14,14 @@
  */
 #ifndef OMIT_JSON
 #include <gtest/gtest.h>
-#include <ctime>
-#include <cmath>
-#include <random>
-#include <chrono>
-#include <thread>
-#include <mutex>
-#include <string>
-#include <condition_variable>
 
-#include "types.h"
-#include "kv_store_delegate.h"
-#include "kv_store_nb_delegate.h"
-#include "kv_store_delegate_manager.h"
-#include "distributed_test_tools.h"
-#include "distributeddb_nb_test_tools.h"
-#include "distributeddb_data_generator.h"
 #include "distributeddb_schema_test_tools.h"
 
 using namespace std;
-using namespace chrono;
 using namespace testing;
 #if defined TESTCASES_USING_GTEST_EXT
 using namespace testing::ext;
 #endif
-using namespace std::placeholders;
 using namespace DistributedDB;
 using namespace DistributedDBDataGenerator;
 
@@ -127,26 +110,16 @@ vector<string> GetInvalidDefine(SchemaDefine &validDefine, SchemaDefine &invalid
     return defineResult;
 }
 
-class DistributeddbNbSchemaDbTest : public testing::Test {
+class DistributeddbNbSchemaTest : public testing::Test {
 public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
 private:
 };
 
-void DistributeddbNbSchemaDbTest::SetUpTestCase(void)
+void DistributeddbNbSchemaTest::SetUp(void)
 {
-}
-
-void DistributeddbNbSchemaDbTest::TearDownTestCase(void)
-{
-}
-
-void DistributeddbNbSchemaDbTest::SetUp(void)
-{
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 
     UnitTest *test = UnitTest::GetInstance();
     ASSERT_NE(test, nullptr);
@@ -156,10 +129,10 @@ void DistributeddbNbSchemaDbTest::SetUp(void)
     MST_LOG("[SetUp] test case %s is start to run", testCaseName.c_str());
 }
 
-void DistributeddbNbSchemaDbTest::TearDown(void)
+void DistributeddbNbSchemaTest::TearDown(void)
 {
     MST_LOG("TearDownTestCase after case.");
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 }
 
 /**
@@ -169,7 +142,7 @@ void DistributeddbNbSchemaDbTest::TearDown(void)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, BuildSchemaDb001, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, BuildSchemaDb001, TestSize.Level1)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -203,7 +176,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, BuildSchemaDb001, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, BuildSchemaDb002, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, BuildSchemaDb002, TestSize.Level1)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -270,7 +243,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, BuildSchemaDb002, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, BuildSchemaDb003, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, BuildSchemaDb003, TestSize.Level0)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -302,7 +275,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, BuildSchemaDb003, TestSize.Level0)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb001, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, OpenSchemaDb001, TestSize.Level1)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -362,7 +335,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb001, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb002, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, OpenSchemaDb002, TestSize.Level1)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -431,7 +404,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb002, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb003, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, OpenSchemaDb003, TestSize.Level1)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -477,7 +450,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb003, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb004, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, OpenSchemaDb004, TestSize.Level1)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -529,7 +502,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb004, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb005, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, OpenSchemaDb005, TestSize.Level1)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -615,7 +588,7 @@ void ReopenDBWithDiffSchema(string &schemaDefine, Option &option,
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb006, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, OpenSchemaDb006, TestSize.Level1)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -659,7 +632,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb006, TestSize.Level1)
     ReopenDBWithDiffSchema(schemaDefine6, option, manager, delegate);
     KvStoreDelegateManager *manager1 = new (std::nothrow) KvStoreDelegateManager(APP_ID_2, USER_ID_2);
     ASSERT_NE(manager1, nullptr);
-    EXPECT_EQ(manager1->SetKvStoreConfig({ .dataDir = NB_DIRECTOR }), OK);
+    EXPECT_EQ(manager1->SetKvStoreConfig({ .dataDir = DistributedDBConstant::NB_DIRECTOR }), OK);
     EXPECT_EQ(manager1->DeleteKvStore(STORE_ID_2), OK);
     delete manager1;
     manager1 = nullptr;
@@ -672,7 +645,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb006, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb007, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, OpenSchemaDb007, TestSize.Level1)
 {
     map<string, KvStoreNbDelegate *> delegate;
     KvStoreDelegateManager *manager = nullptr;
@@ -734,7 +707,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb007, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb008, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, OpenSchemaDb008, TestSize.Level1)
 {
     map<string, KvStoreNbDelegate *> delegate;
     KvStoreDelegateManager *manager = nullptr;
@@ -800,7 +773,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb008, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb009, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, OpenSchemaDb009, TestSize.Level1)
 {
     map<string, KvStoreNbDelegate *> delegate;
     KvStoreDelegateManager *manager = nullptr;
@@ -877,7 +850,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb009, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb010, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, OpenSchemaDb010, TestSize.Level1)
 {
     std::map<std::string, KvStoreNbDelegate *> delegateGroup;
     KvStoreDelegateManager *manager = nullptr;
@@ -958,7 +931,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, OpenSchemaDb010, TestSize.Level1)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut001, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaPut001, TestSize.Level0)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -1019,7 +992,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut001, TestSize.Level0)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut002, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaPut002, TestSize.Level0)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -1117,7 +1090,6 @@ bool PutAfterReplace(string &operateStr, const string findStr, const vector<stri
     }
     return true;
 }
-#ifdef USING_NEW_VER_JSONCPP
 /**
  * @tc.name: SchemaPut 003
  * @tc.desc: Verify that PUT value will return error if the field attributes are different with define of schema
@@ -1126,7 +1098,7 @@ bool PutAfterReplace(string &operateStr, const string findStr, const vector<stri
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut003, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaPut003, TestSize.Level0)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -1188,7 +1160,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut003, TestSize.Level0)
     EXPECT_TRUE(PutAfterReplace(VALUE_MATCH_2, findStr7, replaceStr6, delegate));
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, option.isMemoryDb));
 }
-#endif
+
 /**
  * @tc.name: SchemaPut 004
  * @tc.desc: Verify that PUT value will return OK if the format is the same as define of schema with
@@ -1197,7 +1169,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut003, TestSize.Level0)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut004, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaPut004, TestSize.Level0)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -1269,7 +1241,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut004, TestSize.Level0)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut005, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaPut005, TestSize.Level0)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -1292,7 +1264,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut005, TestSize.Level0)
 
     /**
      * @tc.steps: step2. put(k2,value2) that value2's field is more than define of schema.
-     * @tc.expected: step2. put failed.
+     * @tc.expected: step2. put success.
      */
     string valueRes2;
     valueRes2 = valueRes2 + "{" + VALUE_MATCH_1 + "," + VALUE_MATCH_2 + "," + "\"19field\": 20" + "}";
@@ -1330,7 +1302,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut005, TestSize.Level0)
     PutAfterReplace(VALUE_MATCH_2, findStr1, replaceStr, delegate);
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, option.isMemoryDb));
 }
-#ifdef USING_NEW_VER_JSONCPP
+
 /**
  * @tc.name: SchemaPut 006
  * @tc.desc: Verify that PUT value will return error if the field attributes are different with define of schema
@@ -1339,7 +1311,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut005, TestSize.Level0)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut006, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaPut006, TestSize.Level0)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -1382,7 +1354,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut006, TestSize.Level0)
     PutAfterReplace(VALUE_MATCH_2, findStr5, replaceStr5, delegate);
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, option.isMemoryDb));
 }
-#endif
+
 /**
  * @tc.name: SchemaPut 007
  * @tc.desc: Verify that if there are duplicate fields in schema, the latter will prevail when put.
@@ -1390,7 +1362,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut006, TestSize.Level0)
  * @tc.require: SR000DR9JO
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut007, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaPut007, TestSize.Level0)
 {
     KvStoreNbDelegate *delegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;
@@ -1466,21 +1438,6 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaPut007, TestSize.Level0)
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, option.isMemoryDb));
 }
 
-bool SchemaIndexQuery(const DBParameters parameters, const std::string dbPath, const std::string schemaIndex)
-{
-    int count = 0;
-    std::string identifier = parameters.userId + "-" + parameters.appId + "-" + parameters.storeId;
-    std::string hashIdentifierRes = TransferStringToHashHexString(identifier);
-    const std::string mainDbName = dbPath + hashIdentifierRes + DATABASE_INFOR_FILE;
-    EncrypteAttribute attribute = {g_option.isEncryptedDb, g_option.passwd};
-
-    const std::string SCHEMA_INDEX_QUERY_SQL = "select count(*) from sqlite_master where name= \'"
-        + schemaIndex + "\' and type = \'index\'";
-
-    DistributedTestTools::QuerySpecifiedData(mainDbName, SCHEMA_INDEX_QUERY_SQL, attribute, count);
-
-    return (count == 1);
-}
 /**
  * @tc.name: SchemaIndex 001
  * @tc.desc: Verify that the schema db created with non-index mode can be upgrade to index mode when open it again with
@@ -1489,7 +1446,7 @@ bool SchemaIndexQuery(const DBParameters parameters, const std::string dbPath, c
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex001, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaIndex001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create schema db that without schema_index and close but don't delete it.
@@ -1517,12 +1474,16 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex001, TestSize.Level1)
 
     /**
      * @tc.steps: step3. check is the schema_index exist.
-     * @tc.expected: step3. can find 4 schema_indexes in schema table.
+     * @tc.expected: step3. can find 4 schema_indexs in sqlite_master table.
      */
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field9"));
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field10.field10"));
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$._field1.field3.field4"));
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$._field1.field3.field5.field6"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field9"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field10.field10"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$._field1.field3.field4"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(
+        g_dbParameter2, DistributedDBConstant::NB_DIRECTOR, "$._field1.field3.field5.field6"));
 
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, option.isMemoryDb));
 }
@@ -1535,7 +1496,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex001, TestSize.Level1)
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex002, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaIndex002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create schema db that with schema_index.
@@ -1550,12 +1511,16 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex002, TestSize.Level1)
     ASSERT_TRUE(manager != nullptr && delegate != nullptr);
     /**
      * @tc.steps: step2. check is the schema_index exist.
-     * @tc.expected: step2. can find 4 schema_indexes in schema table.
+     * @tc.expected: step2. can find 4 schema_indexs in sqlite_master table.
      */
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field9"));
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field10.field10"));
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$._field1.field3.field4"));
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$._field1.field3.field5.field6"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field9"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field10.field10"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$._field1.field3.field4"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(
+        g_dbParameter2, DistributedDBConstant::NB_DIRECTOR, "$._field1.field3.field5.field6"));
     EXPECT_EQ(manager->CloseKvStore(delegate), OK);
     delegate = nullptr;
 
@@ -1569,12 +1534,16 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex002, TestSize.Level1)
     ASSERT_TRUE(manager != nullptr && delegate != nullptr);
     /**
      * @tc.steps: step4. check is the schema_index exist.
-     * @tc.expected: step4. can't find the schema_index in schema table.
+     * @tc.expected: step4. can't find the schema_index in sqlite_master table.
      */
-    EXPECT_FALSE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field9"));
-    EXPECT_FALSE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field10.field10"));
-    EXPECT_FALSE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$._field1.field3.field4"));
-    EXPECT_FALSE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$._field1.field3.field5.field6"));
+    EXPECT_FALSE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field9"));
+    EXPECT_FALSE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field10.field10"));
+    EXPECT_FALSE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$._field1.field3.field4"));
+    EXPECT_FALSE(DistributedDBSchemaTestTools::SchemaIndexQuery(
+        g_dbParameter2, DistributedDBConstant::NB_DIRECTOR, "$._field1.field3.field5.field6"));
 
     EXPECT_TRUE(EndCaseDeleteDB(manager, delegate, STORE_ID_2, option.isMemoryDb));
 }
@@ -1593,7 +1562,7 @@ void CloseKvStoreTemp(KvStoreDelegateManager *&manager, KvStoreNbDelegate *&dele
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex003, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaIndex003, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create schema db that without schema_index and close it but do not delete it.
@@ -1671,7 +1640,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex003, TestSize.Level1)
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex004, TestSize.Level2)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaIndex004, TestSize.Level2)
 {
     /**
      * @tc.steps: step1. create schema db that with schema_index and close it but do not delete it.
@@ -1689,12 +1658,16 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex004, TestSize.Level2)
 
     /**
      * @tc.steps: step2. check is the schema_index exist.
-     * @tc.expected: step2. can find 4 schema_indexes in schema table.
+     * @tc.expected: step2. can find 4 schema_indexs in sqlite_master table.
      */
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field9"));
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field10.field10"));
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$._field1.field3.field4"));
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$._field1.field3.field5.field6"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field9"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field10.field10"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$._field1.field3.field4"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(
+        g_dbParameter2, DistributedDBConstant::NB_DIRECTOR, "$._field1.field3.field5.field6"));
 
     /**
      * @tc.steps: step3. open the db with the different index and non-index circularly.
@@ -1718,12 +1691,16 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex004, TestSize.Level2)
 
     /**
      * @tc.steps: step4. check is the schema_index exist.
-     * @tc.expected: step4. can't find the schema_index in schema table.
+     * @tc.expected: step4. can't find the schema_index in sqlite_master table.
      */
-    EXPECT_FALSE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field9"));
-    EXPECT_FALSE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field10.field10"));
-    EXPECT_FALSE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$._field1.field3.field4"));
-    EXPECT_FALSE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$._field1.field3.field5.field6"));
+    EXPECT_FALSE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field9"));
+    EXPECT_FALSE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field10.field10"));
+    EXPECT_FALSE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$._field1.field3.field4"));
+    EXPECT_FALSE(DistributedDBSchemaTestTools::SchemaIndexQuery(
+        g_dbParameter2, DistributedDBConstant::NB_DIRECTOR, "$._field1.field3.field5.field6"));
 
     EXPECT_EQ(manager->DeleteKvStore(STORE_ID_2), OK);
     delete manager;
@@ -1763,7 +1740,7 @@ void RandIndex(bool isFirst)
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex005, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, SchemaIndex005, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create schema db that with index $.field9 and close it but do not delete it.
@@ -1782,9 +1759,10 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex005, TestSize.Level1)
 
     /**
      * @tc.steps: step2. check is the schema_index exist.
-     * @tc.expected: step2. can find 1 schema_index in schema table.
+     * @tc.expected: step2. can find 1 schema_index in sqlite_master table.
      */
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field9"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field9"));
 
     /**
      * @tc.steps: step3. start 5 threads to increase or decrease index field, 3 of which randly increase or decrease
@@ -1804,9 +1782,10 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex005, TestSize.Level1)
 
     /**
      * @tc.steps: step4. check is the schema_index exist.
-     * @tc.expected: step4. can find the index $.field9 in schema table.
+     * @tc.expected: step4. can find the index $.field9 in sqlite_master table.
      */
-    EXPECT_TRUE(SchemaIndexQuery(g_dbParameter2, NB_DIRECTOR, "$.field9"));
+    EXPECT_TRUE(DistributedDBSchemaTestTools::SchemaIndexQuery(g_dbParameter2,
+        DistributedDBConstant::NB_DIRECTOR, "$.field9"));
 
     EXPECT_EQ(manager->DeleteKvStore(STORE_ID_2), OK);
     delete manager;
@@ -1820,7 +1799,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SchemaIndex005, TestSize.Level1)
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SkipTest001, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, SkipTest001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create schema db that with invalid skip size "10.5", "true", "*&", "汉字", "-10", "4194305".
@@ -1865,7 +1844,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SkipTest001, TestSize.Level1)
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SkipTest002, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, SkipTest002, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. create schema db that with valid skip size "16".
@@ -1942,7 +1921,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SkipTest002, TestSize.Level0)
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SkipTest003, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, SkipTest003, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. create schema db that with valid skip size "16".
@@ -2000,7 +1979,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SkipTest003, TestSize.Level0)
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SkipTest004, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, SkipTest004, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create schema db that with valid skip size "16".
@@ -2075,7 +2054,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SkipTest004, TestSize.Level1)
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, SkipTest005, TestSize.Level1)
+HWTEST_F(DistributeddbNbSchemaTest, SkipTest005, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create schema db that without schema.
@@ -2143,7 +2122,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, SkipTest005, TestSize.Level1)
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, DataTypeVerify001, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, DataTypeVerify001, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. create schema db that with schema include the field of INTEGER LONG and DOUBLE type.
@@ -2205,7 +2184,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, DataTypeVerify001, TestSize.Level0)
  * @tc.require: SR000DR9JQ
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, DataTypeVerify002, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, DataTypeVerify002, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. create schema db that with schema include the field of INTEGER LONG and DOUBLE type.
@@ -2300,7 +2279,7 @@ const int JSON_LEN = 99;
  * @tc.require: SR000F3L0Q
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, JsonTest001, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, JsonTest001, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. create schema db that with schema_define = {"field":{}, "field1":"STRING"}.
@@ -2361,7 +2340,7 @@ HWTEST_F(DistributeddbNbSchemaDbTest, JsonTest001, TestSize.Level0)
  * @tc.require: SR000F3L0Q
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbSchemaDbTest, JsonTest002, TestSize.Level0)
+HWTEST_F(DistributeddbNbSchemaTest, JsonTest002, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. create schema db that with schema_define = {"field":{}, "field1":"STRING"}.

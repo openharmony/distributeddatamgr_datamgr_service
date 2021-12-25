@@ -17,11 +17,10 @@
 
 #include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_unit_test.h"
-#include "sqlite_utils.h"
-#include "sqlite_single_ver_natural_store.h"
-#include "db_errno.h"
-#include "log_print.h"
 #include "kv_store_nb_conflict_data.h"
+#include "log_print.h"
+#include "sqlite_single_ver_natural_store.h"
+#include "sqlite_utils.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -131,6 +130,7 @@ void DistributedDBInterfacesEncryptDelegateTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesEncryptDelegateTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_errCode = INVALID_ARGS;
     g_kvNbDelegatePtr = nullptr;
     g_kvDelegatePtr = nullptr;

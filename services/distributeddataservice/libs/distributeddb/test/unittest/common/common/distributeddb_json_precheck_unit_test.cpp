@@ -14,9 +14,10 @@
  */
 
 #ifndef OMIT_JSON
-#include <gtest/gtest.h>
 #include <algorithm>
+#include <gtest/gtest.h>
 #include "db_errno.h"
+#include "distributeddb_tools_unit_test.h"
 #include "json_object.h"
 
 using namespace std;
@@ -62,7 +63,7 @@ class DistributedDBJsonPrecheckUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
-    void SetUp() {};
+    void SetUp();
     void TearDown() {};
 };
 
@@ -82,6 +83,11 @@ void DistributedDBJsonPrecheckUnitTest::TearDownTestCase(void)
     JsonObject::SetMaxNestDepth(g_oriMaxNestDepth);
 }
 
+void DistributedDBJsonPrecheckUnitTest::SetUp()
+{
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
+}
+
 /**
  * @tc.name: Precheck Valid String 001
  * @tc.desc: json string is legal
@@ -89,7 +95,7 @@ void DistributedDBJsonPrecheckUnitTest::TearDownTestCase(void)
  * @tc.require: AR000DR9K3
  * @tc.author: yiguang
  */
-HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseValidString001, TestSize.Level0)
+HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseValidString001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Check legal json string with nesting depth of 12.
@@ -114,7 +120,7 @@ HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseValidString001, TestSize.Level0
  * @tc.require: AR000DR9K3
  * @tc.author: yiguang
  */
-HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseValidString002, TestSize.Level0)
+HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseValidString002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Check legal json string with nesting depth of 6.
@@ -139,7 +145,7 @@ HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseValidString002, TestSize.Level0
  * @tc.require: AR000DR9K3
  * @tc.author: yiguang
  */
-HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseInvalidString001, TestSize.Level0)
+HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseInvalidString001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Parsing of illegal json string with nesting depth greater than 10 success.
@@ -157,7 +163,7 @@ HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseInvalidString001, TestSize.Leve
  * @tc.require: AR000DR9K3
  * @tc.author: yiguang
  */
-HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseInvalidString002, TestSize.Level0)
+HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseInvalidString002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Parsing of illegal json string with nesting depth less than 10 success.
@@ -175,7 +181,7 @@ HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseInvalidString002, TestSize.Leve
  * @tc.require: AR000DR9K3
  * @tc.author: yiguang
  */
-HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseInvalidString003, TestSize.Level0)
+HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseInvalidString003, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Detect illegal json string with nesting depth greater than 10.

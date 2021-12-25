@@ -374,6 +374,11 @@ void GenericKvDB::SetConnectionFlag(bool isExisted) const
     return;
 }
 
+int GenericKvDB::CheckIntegrity() const
+{
+    return E_OK;
+}
+
 void GenericKvDB::GetStoreDirectory(const KvDBProperties &properties, int dbType,
     std::string &storeDir, std::string &storeOnlyDir) const
 {

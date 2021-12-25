@@ -55,6 +55,7 @@ public:
 
     // See ICommunicatorAggregator for detail
     int Initialize(IAdapter *inAdapter) override;
+
     // Must not call any other functions if Finalize had been called. In fact, Finalize has no chance to be called.
     void Finalize() override;
 
@@ -69,7 +70,13 @@ public:
     // return optimal allowed data size(Some header is taken into account and subtract)
     uint32_t GetCommunicatorAggregatorMtuSize() const;
     uint32_t GetCommunicatorAggregatorMtuSize(const std::string &target) const;
+
+    // return timeout in range [5s, 60s]
+    uint32_t GetCommunicatorAggregatorTimeout() const;
+    uint32_t GetCommunicatorAggregatorTimeout(const std::string &target) const;
+    bool IsDeviceOnline(const std::string &device) const;
     int GetLocalIdentity(std::string &outTarget) const;
+
     // Get the protocol version of remote target. Return -E_NOT_FOUND if no record.
     int GetRemoteCommunicatorVersion(const std::string &target, uint16_t &outVersion) const;
 
@@ -104,6 +111,7 @@ private:
     int OnAppLayerFrameReceive(const std::string &srcTarget, const uint8_t *bytes,
         uint32_t length, const ParseResult &inResult);
     int OnAppLayerFrameReceive(const std::string &srcTarget, SerialBuffer *&inFrameBuffer, const ParseResult &inResult);
+
     // Function with suffix NoMutex should be called with mutex in the caller
     int TryDeliverAppLayerFrameToCommunicatorNoMutex(const std::string &srcTarget, SerialBuffer *&inFrameBuffer,
         const LabelType &toLabel);
@@ -130,6 +138,7 @@ private:
     std::atomic<bool> shutdown_;
     std::atomic<uint32_t> incFrameId_;
     std::atomic<uint64_t> localSourceId_;
+
     // Handle related
     mutable std::mutex commMapMutex_;
     std::map<LabelType, std::pair<Communicator *, bool>> commMap_; // bool true indicate communicator activated
@@ -138,21 +147,26 @@ private:
     SendTaskScheduler scheduler_;
     IAdapter *adapterHandle_ = nullptr;
     CommunicatorLinker *commLinker_ = nullptr;
+
     // Thread related
     std::thread exclusiveThread_;
     bool wakingSignal_ = false;
     mutable std::mutex wakingMutex_;
     std::condition_variable wakingCv_;
+
     // RetryCreateTask related
     mutable std::mutex retryMutex_;
     std::condition_variable retryCv_;
+
     // Remote target version related
     mutable std::mutex versionMapMutex_;
     std::map<std::string, uint16_t> versionMap_;
+
     // CommLack Callback related
     CommunicatorLackCallback onCommLackHandle_;
     Finalizer onCommLackFinalizer_;
     mutable std::mutex onCommLackMutex_;
+
     // Connect Callback related
     OnConnectCallback onConnectHandle_;
     Finalizer onConnectFinalizer_;

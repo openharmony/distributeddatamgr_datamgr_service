@@ -97,6 +97,22 @@ public:
         }
         return GetMtuSize();
     }
+
+    // The valid timeout range from 5s to 60s, value beyond this range will be set to the upper or lower limit.
+    virtual uint32_t GetTimeout()
+    {
+        return 5 * 1000; // 5 * 1000ms
+    };
+
+    // The valid timeout range from 5s to 60s, value beyond this range will be set to the upper or lower limit.
+    virtual uint32_t GetTimeout(const DeviceInfos &devInfo)
+    {
+        if (devInfo.identifier.empty()) {
+            // Error case(would never happen actually) to avoid "unused-parameter" warning.
+            return 5 * 1000; // 5 * 1000ms
+        }
+        return GetTimeout();
+    }
 };
 } // namespace DistributedDB
 

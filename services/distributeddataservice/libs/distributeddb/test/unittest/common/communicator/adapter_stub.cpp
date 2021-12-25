@@ -14,15 +14,16 @@
  */
 
 #include "adapter_stub.h"
-#include "log_print.h"
 #include "db_errno.h"
 #include "endian_convert.h"
 #include "frame_header.h"
+#include "log_print.h"
 
 using namespace DistributedDB;
 
 namespace {
     const uint32_t MTU_SIZE = 5 * 1024 * 1024; // 5 M, 1024 is scale
+    const uint32_t TIME_OUT = 5 * 1000; // 5 S, 1000 is scale
 }
 
 /*
@@ -51,6 +52,16 @@ uint32_t AdapterStub::GetMtuSize()
 uint32_t AdapterStub::GetMtuSize(const std::string &target)
 {
     return GetMtuSize();
+}
+
+uint32_t AdapterStub::GetTimeout()
+{
+    return TIME_OUT;
+}
+
+uint32_t AdapterStub::GetTimeout(const std::string &target)
+{
+    return GetTimeout();
 }
 
 int AdapterStub::GetLocalIdentity(std::string &outTarget)
@@ -111,6 +122,11 @@ int AdapterStub::RegSendableCallback(const SendableCallback &onSendable, const F
     return RegCallBack(onSendable, onSendableHandle_, inOper, onSendableFinalizer_);
 }
 
+
+bool AdapterStub::IsDeviceOnline(const std::string &device)
+{
+    return true;
+}
 /*
  * Extended Part
  */

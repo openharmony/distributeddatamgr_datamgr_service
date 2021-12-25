@@ -16,6 +16,7 @@
 #include "generic_single_ver_kv_entry.h"
 
 #include <algorithm>
+#include "data_compression.h"
 #include "db_errno.h"
 #include "parcel.h"
 #include "version.h"
@@ -77,14 +78,44 @@ void GenericSingleVerKvEntry::GetKey(Key &key) const
     key = dataItem_.key;
 }
 
+void GenericSingleVerKvEntry::GetHashKey(Key &key) const
+{
+    key = dataItem_.hashKey;
+}
+
+const Key &GenericSingleVerKvEntry::GetKey() const
+{
+    return dataItem_.key;
+}
+
 void GenericSingleVerKvEntry::GetValue(Value &value) const
 {
     value = dataItem_.value;
 }
 
+const Value &GenericSingleVerKvEntry::GetValue() const
+{
+    return dataItem_.value;
+}
+
 uint64_t GenericSingleVerKvEntry::GetFlag() const
 {
     return dataItem_.flag;
+}
+
+void GenericSingleVerKvEntry::SetKey(const Key &key)
+{
+    dataItem_.key = key;
+}
+
+void GenericSingleVerKvEntry::SetValue(const Value &value)
+{
+    dataItem_.value = value;
+}
+
+void GenericSingleVerKvEntry::SetHashKey(const Key &hashKey)
+{
+    dataItem_.hashKey = hashKey;
 }
 
 // this func should do compatible
@@ -105,10 +136,10 @@ int GenericSingleVerKvEntry::SerializeData(Parcel &parcel, uint32_t targetVersio
 int GenericSingleVerKvEntry::SerializeDatas(const std::vector<SingleVerKvEntry *> &kvEntries, Parcel &parcel,
     uint32_t targetVersion)
 {
-    LOGD("GenericSingleVerKvEntry::SerialDatas targetVersion:%d", targetVersion);
     uint32_t size = kvEntries.size();
     int errCode = parcel.WriteUInt32(size);
     if (errCode != E_OK) {
+        LOGE("[SerializeDatas] write entries size failed, errCode=%d.", errCode);
         return errCode;
     }
     parcel.EightByteAlign();
@@ -118,6 +149,7 @@ int GenericSingleVerKvEntry::SerializeDatas(const std::vector<SingleVerKvEntry *
         }
         errCode = kvEntry->SerializeData(parcel, targetVersion);
         if (errCode != E_OK) {
+            LOGE("[SerializeDatas] write kvEntry failed, errCode=%d.", errCode);
             return errCode;
         }
     }
@@ -138,7 +170,6 @@ uint32_t GenericSingleVerKvEntry::CalculateLen(uint32_t targetVersion)
 uint32_t GenericSingleVerKvEntry::CalculateLens(const std::vector<SingleVerKvEntry *> &kvEntries,
     uint32_t targetVersion)
 {
-    LOGD("GenericSingleVerKvEntry::CalculateLen targetVersion:%d", targetVersion);
     uint64_t len = 0;
     len += Parcel::GetUInt32Len();
     len = BYTE_8_ALIGN(len);
@@ -256,14 +287,20 @@ int GenericSingleVerKvEntry::SerializeDataByFirstVersion(Parcel &parcel) const
     return parcel.WriteString(dataItem_.origDev);
 }
 
-int GenericSingleVerKvEntry::SerializeDataByLaterVersion(Parcel &parcel) const
+int GenericSingleVerKvEntry::SerializeDataByLaterVersion(Parcel &parcel, uint32_t targetVersion) const
 {
     TimeStamp writeTimeStamp = dataItem_.writeTimeStamp;
     if (writeTimeStamp == 0) {
         writeTimeStamp = dataItem_.timeStamp;
     }
-
-    return parcel.WriteUInt64(writeTimeStamp);
+    int errCode = parcel.WriteUInt64(writeTimeStamp);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (targetVersion >= SOFTWARE_VERSION_RELEASE_6_0) {
+        errCode = parcel.WriteVector(dataItem_.hashKey);
+    }
+    return errCode;
 }
 
 int GenericSingleVerKvEntry::SerializeDataByVersion(uint32_t targetVersion, Parcel &parcel) const
@@ -272,7 +309,7 @@ int GenericSingleVerKvEntry::SerializeDataByVersion(uint32_t targetVersion, Parc
     if (targetVersion == SOFTWARE_VERSION_EARLIEST || errCode != E_OK) {
         return errCode;
     }
-    return SerializeDataByLaterVersion(parcel);
+    return SerializeDataByLaterVersion(parcel, targetVersion);
 }
 
 void GenericSingleVerKvEntry::CalLenByFirstVersion(uint64_t &len) const
@@ -285,9 +322,12 @@ void GenericSingleVerKvEntry::CalLenByFirstVersion(uint64_t &len) const
     len += Parcel::GetStringLen(dataItem_.origDev);
 }
 
-void GenericSingleVerKvEntry::CalLenByLaterVersion(uint64_t &len) const
+void GenericSingleVerKvEntry::CalLenByLaterVersion(uint64_t &len, uint32_t targetVersion) const
 {
     len += Parcel::GetUInt64Len();
+    if (targetVersion >= SOFTWARE_VERSION_RELEASE_6_0) {
+        len += Parcel::GetVectorLen(dataItem_.hashKey);
+    }
 }
 
 int GenericSingleVerKvEntry::CalLenByVersion(uint32_t targetVersion, uint64_t &len) const
@@ -296,7 +336,7 @@ int GenericSingleVerKvEntry::CalLenByVersion(uint32_t targetVersion, uint64_t &l
     if (targetVersion == SOFTWARE_VERSION_EARLIEST) {
         return E_OK;
     }
-    CalLenByLaterVersion(len);
+    CalLenByLaterVersion(len, targetVersion);
     return E_OK;
 }
 
@@ -310,9 +350,12 @@ void GenericSingleVerKvEntry::DeSerializeByFirstVersion(uint64_t &len, Parcel &p
     dataItem_.writeTimeStamp = dataItem_.timeStamp;
 }
 
-void GenericSingleVerKvEntry::DeSerializeByLaterVersion(uint64_t &len, Parcel &parcel)
+void GenericSingleVerKvEntry::DeSerializeByLaterVersion(uint64_t &len, Parcel &parcel, uint32_t targetVersion)
 {
     len += parcel.ReadUInt64(dataItem_.writeTimeStamp);
+    if (targetVersion >= SOFTWARE_VERSION_RELEASE_6_0) {
+        len += parcel.ReadVector(dataItem_.hashKey);
+    }
 }
 
 int GenericSingleVerKvEntry::DeSerializeByVersion(uint32_t targetVersion, Parcel &parcel, uint64_t &len)
@@ -321,7 +364,106 @@ int GenericSingleVerKvEntry::DeSerializeByVersion(uint32_t targetVersion, Parcel
     if (targetVersion == SOFTWARE_VERSION_EARLIEST) {
         return E_OK;
     }
-    DeSerializeByLaterVersion(len, parcel);
+    DeSerializeByLaterVersion(len, parcel, targetVersion);
     return E_OK;
+}
+
+uint32_t GenericSingleVerKvEntry::CalculateCompressedLens(const std::vector<uint8_t> &compressedData)
+{
+    // No compressed data in sync.
+    if (compressedData.empty()) {
+        return 0;
+    }
+
+    // Calculate compressed data length.
+    uint64_t len = 0;
+    len += Parcel::GetUInt32Len(); // srcLen.
+    len += Parcel::GetUInt32Len(); // compression algorithm type.
+    len += Parcel::GetVectorLen(compressedData); // compressed data.
+    return (len > INT32_MAX) ? 0 : len;
+}
+
+int GenericSingleVerKvEntry::Compress(const std::vector<SingleVerKvEntry *> &kvEntries, std::vector<uint8_t> &destData,
+    const CompressInfo &compressInfo)
+{
+    // Calculate length.
+    auto srcLen = CalculateLens(kvEntries, compressInfo.targetVersion);
+    if (srcLen == 0) {
+        LOGE("Over limit size, cannot compress.");
+        return -E_INVALID_ARGS;
+    }
+
+    // Serialize data.
+    std::vector<uint8_t> srcData(srcLen, 0);
+    Parcel parcel(srcData.data(), srcData.size());
+    int errCode = SerializeDatas(kvEntries, parcel, compressInfo.targetVersion);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    // Compress data.
+    auto inst = DataCompression::GetInstance(compressInfo.compressAlgo);
+    if (inst == nullptr) {
+        return -E_INVALID_COMPRESS_ALGO;
+    }
+    return inst->Compress(srcData, destData);
+}
+
+int GenericSingleVerKvEntry::Uncompress(const std::vector<uint8_t> &srcData, std::vector<SingleVerKvEntry *> &kvEntries,
+    unsigned long destLen, CompressAlgorithm algo)
+{
+    // Uncompress data.
+    std::vector<uint8_t> destData(destLen, 0);
+    auto inst = DataCompression::GetInstance(algo);
+    if (inst == nullptr) {
+        return -E_INVALID_COMPRESS_ALGO;
+    }
+    int errCode = inst->Uncompress(srcData, destData, destLen);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    // Deserialize data.
+    Parcel parcel(destData.data(), destData.size());
+    if (DeSerializeDatas(kvEntries, parcel) == 0) {
+        return -E_PARSE_FAIL;
+    }
+    return E_OK;
+}
+
+int GenericSingleVerKvEntry::SerializeCompressedDatas(const std::vector<SingleVerKvEntry *> &kvEntries,
+    const std::vector<uint8_t> &compressedEntries, Parcel &parcel, uint32_t targetVersion, CompressAlgorithm algo)
+{
+    uint32_t srcLen = CalculateLens(kvEntries, targetVersion);
+    (void)parcel.WriteUInt32(static_cast<uint32_t>(algo));
+    (void)parcel.WriteUInt32(srcLen);
+    (void)parcel.WriteVector(compressedEntries);
+    return parcel.IsError() ? -E_PARSE_FAIL : E_OK;
+}
+
+int GenericSingleVerKvEntry::DeSerializeCompressedDatas(std::vector<SingleVerKvEntry *> &kvEntries, Parcel &parcel)
+{
+    // Get compression algo type.
+    uint32_t algoType = 0;
+    (void)parcel.ReadUInt32(algoType);
+    CompressAlgorithm compressAlgo = CompressAlgorithm::NONE;
+    int errCode = DataCompression::TransferCompressionAlgo(algoType, compressAlgo);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    // Get buffer length.
+    uint32_t destLen = 0;
+    (void)parcel.ReadUInt32(destLen);
+
+    // Get compressed data.
+    std::vector<uint8_t> srcData;
+    (void)parcel.ReadVector(srcData);
+    if (parcel.IsError()) {
+        return -E_PARSE_FAIL;
+    }
+
+    // Uncompress data.
+    return GenericSingleVerKvEntry::Uncompress(srcData, kvEntries, destLen, compressAlgo);
 }
 } // namespace DistributedDB

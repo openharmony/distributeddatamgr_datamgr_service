@@ -16,18 +16,20 @@
 #include "meta_data.h"
 
 #include <openssl/rand.h>
-#include "securec.h"
-#include "db_errno.h"
 #include "db_common.h"
-#include "log_print.h"
-#include "time_helper.h"
+#include "db_constant.h"
+#include "db_errno.h"
 #include "hash.h"
+#include "log_print.h"
+#include "securec.h"
+#include "sync_types.h"
+#include "time_helper.h"
 
 namespace DistributedDB {
 namespace {
-    const int STR_TO_LL_BY_DEC = 10;
+    const int STR_TO_LL_BY_DEVALUE = 10;
     // store local timeoffset;this is a special key;
-    const std::string LOCALTIMEOFFSET_KEY = "localTimeOffset";
+    const std::string LOCALTIME_OFFSET_KEY = "localTimeOffset";
     const std::string DEVICEID_PREFIX_KEY = "deviceId";
 }
 
@@ -43,12 +45,12 @@ Metadata::~Metadata()
     metadataMap_.clear();
 }
 
-int Metadata::Initialize(IKvDBSyncInterface* storage)
+int Metadata::Initialize(ISyncInterface* storage)
 {
     naturalStoragePtr_ = storage;
     std::vector<uint8_t> key;
     std::vector<uint8_t> timeOffset;
-    DBCommon::StringToVector(LOCALTIMEOFFSET_KEY, key);
+    DBCommon::StringToVector(LOCALTIME_OFFSET_KEY, key);
 
     int errCode = GetMetadataFromDb(key, timeOffset);
     if (errCode == -E_NOT_FOUND) {
@@ -61,6 +63,7 @@ int Metadata::Initialize(IKvDBSyncInterface* storage)
         std::lock_guard<std::mutex> lockGuard(metadataLock_);
         metadataMap_.clear();
     }
+    (void)querySyncWaterMarkHelper_.Initialize(storage);
     return LoadAllMetadata();
 }
 
@@ -68,10 +71,10 @@ int Metadata::SaveTimeOffset(const DeviceID &deviceId, TimeOffset inValue)
 {
     MetaDataValue metadata;
     std::lock_guard<std::mutex> lockGuard(metadataLock_);
-    GetMetaDataValue(deviceId, metadata);
+    GetMetaDataValue(deviceId, metadata, true);
     metadata.timeOffset = inValue;
     metadata.lastUpdateTime = TimeHelper::GetSysCurrentTime();
-    LOGD("Metadata::SaveTimeOffset = %lld dev %s{private}", inValue, deviceId.c_str());
+    LOGD("Metadata::SaveTimeOffset = %lld dev %s", inValue, STR_MASK(deviceId));
     return SaveMetaDataValue(deviceId, metadata);
 }
 
@@ -79,7 +82,7 @@ void Metadata::GetTimeOffset(const DeviceID &deviceId, TimeOffset &outValue)
 {
     MetaDataValue metadata;
     std::lock_guard<std::mutex> lockGuard(metadataLock_);
-    GetMetaDataValue(deviceId, metadata);
+    GetMetaDataValue(deviceId, metadata, true);
     outValue = metadata.timeOffset;
 }
 
@@ -87,7 +90,7 @@ void Metadata::GetLocalWaterMark(const DeviceID &deviceId, uint64_t &outValue)
 {
     MetaDataValue metadata;
     std::lock_guard<std::mutex> lockGuard(metadataLock_);
-    GetMetaDataValue(deviceId, metadata);
+    GetMetaDataValue(deviceId, metadata, true);
     outValue = metadata.localWaterMark;
 }
 
@@ -95,9 +98,9 @@ int Metadata::SaveLocalWaterMark(const DeviceID &deviceId, uint64_t inValue)
 {
     MetaDataValue metadata;
     std::lock_guard<std::mutex> lockGuard(metadataLock_);
-    GetMetaDataValue(deviceId, metadata);
+    GetMetaDataValue(deviceId, metadata, true);
     metadata.localWaterMark = inValue;
-    LOGD("Metadata::SaveLocalWaterMark = %llu\n", inValue);
+    LOGD("Metadata::SaveLocalWaterMark = %llu", inValue);
     return SaveMetaDataValue(deviceId, metadata);
 }
 
@@ -105,7 +108,7 @@ void Metadata::GetPeerWaterMark(const DeviceID &deviceId, uint64_t &outValue)
 {
     MetaDataValue metadata;
     std::lock_guard<std::mutex> lockGuard(metadataLock_);
-    GetMetaDataValue(deviceId, metadata);
+    GetMetaDataValue(deviceId, metadata, true);
     outValue = metadata.peerWaterMark;
 }
 
@@ -124,11 +127,11 @@ int Metadata::SaveLocalTimeOffset(TimeOffset timeOffset)
     std::string timeOffsetString = std::to_string(timeOffset);
     std::vector<uint8_t> timeOffsetValue(timeOffsetString.begin(), timeOffsetString.end());
     std::vector<uint8_t> localTimeOffsetValue(
-        LOCALTIMEOFFSET_KEY.begin(), LOCALTIMEOFFSET_KEY.end());
+        LOCALTIME_OFFSET_KEY.begin(), LOCALTIME_OFFSET_KEY.end());
 
     std::lock_guard<std::mutex> lockGuard(localTimeOffsetLock_);
     localTimeOffset_ = timeOffset;
-    LOGD("Metadata::SaveLocalTimeOffset offset = %lld\n", timeOffset);
+    LOGD("Metadata::SaveLocalTimeOffset offset = %lld", timeOffset);
     int errCode = SetMetadataToDb(localTimeOffsetValue, timeOffsetValue);
     if (errCode != E_OK) {
         LOGE("Metadata::SaveLocalTimeOffset SetMetadataToDb failed errCode:%d", errCode);
@@ -138,12 +141,33 @@ int Metadata::SaveLocalTimeOffset(TimeOffset timeOffset)
 
 TimeOffset Metadata::GetLocalTimeOffset() const
 {
-    return localTimeOffset_.load(std::memory_order_seq_cst);
+    TimeOffset localTimeOffset = localTimeOffset_.load(std::memory_order_seq_cst);
+    return localTimeOffset;
 }
 
 int Metadata::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash)
 {
-    return SavePeerWaterMark(deviceId, 0, isNeedHash);
+    // try to erase all the waterMark
+    // erase deleteSync recv waterMark
+    WaterMark waterMark = 0;
+    int errCodeDeleteSync = SetRecvDeleteSyncWaterMark(deviceId, waterMark);
+    // erase querySync recv waterMark
+    int errCodeQuerySync = ResetRecvQueryWaterMark(deviceId);
+    // peerWaterMark must be erased at last
+    int errCode = SavePeerWaterMark(deviceId, 0, isNeedHash);
+    if (errCode != E_OK) {
+        LOGE("[Metadata] erase peerWaterMark failed errCode:%d", errCode);
+        return errCode;
+    }
+    if (errCodeQuerySync != E_OK) {
+        LOGE("[Metadata] erase queryWaterMark failed errCode:%d", errCodeQuerySync);
+        return errCodeQuerySync;
+    }
+    if (errCodeDeleteSync != E_OK) {
+        LOGE("[Metadata] erase deleteWaterMark failed errCode:%d", errCodeDeleteSync);
+        return errCodeDeleteSync;
+    }
+    return E_OK;
 }
 
 void Metadata::SetLastLocalTime(TimeStamp lastLocalTime)
@@ -169,12 +193,12 @@ int Metadata::SaveMetaDataValue(const DeviceID &deviceId, const MetaDataValue &i
     }
 
     DeviceID hashDeviceId;
-    GetHashDeviceId(deviceId, hashDeviceId);
+    GetHashDeviceId(deviceId, hashDeviceId, true);
     std::vector<uint8_t> key;
     DBCommon::StringToVector(hashDeviceId, key);
     errCode = SetMetadataToDb(key, value);
     if (errCode != E_OK) {
-        LOGE("Metadata::SetMetadataToDb failed errCode:%d\n", errCode);
+        LOGE("Metadata::SetMetadataToDb failed errCode:%d", errCode);
         return errCode;
     }
     PutMetadataToMap(hashDeviceId, inValue);
@@ -211,7 +235,7 @@ int Metadata::DeSerializeMetaData(const std::vector<uint8_t> &inValue, MetaDataV
     return E_OK;
 }
 
-int Metadata::GetMetadataFromDb(const std::vector<uint8_t> &key, std::vector<uint8_t> &outValue)
+int Metadata::GetMetadataFromDb(const std::vector<uint8_t> &key, std::vector<uint8_t> &outValue) const
 {
     if (naturalStoragePtr_ == nullptr) {
         return -E_INVALID_DB;
@@ -227,6 +251,14 @@ int Metadata::SetMetadataToDb(const std::vector<uint8_t> &key, const std::vector
     return naturalStoragePtr_->PutMetaData(key, inValue);
 }
 
+int Metadata::DeleteMetaDataFromDB(const std::vector<Key> &keys) const
+{
+    if (naturalStoragePtr_ == nullptr) {
+        return -E_INVALID_DB;
+    }
+    return naturalStoragePtr_->DeleteMetaData(keys);
+}
+
 void Metadata::PutMetadataToMap(const DeviceID &deviceId, const MetaDataValue &value)
 {
     metadataMap_[deviceId] = value;
@@ -237,11 +269,11 @@ void Metadata::GetMetadataFromMap(const DeviceID &deviceId, MetaDataValue &outVa
     outValue = metadataMap_[deviceId];
 }
 
-int64_t Metadata::StringToLong(const std::vector<uint8_t> &value)
+int64_t Metadata::StringToLong(const std::vector<uint8_t> &value) const
 {
     std::string valueString(value.begin(), value.end());
-    int64_t longData = std::strtoll(valueString.c_str(), nullptr, STR_TO_LL_BY_DEC);
-    LOGD("Metadata::StringToLong longData = %lld\n", longData);
+    int64_t longData = std::strtoll(valueString.c_str(), nullptr, STR_TO_LL_BY_DEVALUE);
+    LOGD("Metadata::StringToLong longData = %lld", longData);
     return longData;
 }
 
@@ -253,33 +285,59 @@ int Metadata::GetAllMetadataKey(std::vector<std::vector<uint8_t>> &keys)
     return naturalStoragePtr_->GetAllMetaKeys(keys);
 }
 
+namespace {
+bool IsMetaDataKey(const Key &inKey, const std::string &expectPrefix)
+{
+    if (inKey.size() < expectPrefix.size()) {
+        return false;
+    }
+    std::string prefixInKey(inKey.begin(), inKey.begin() + expectPrefix.size());
+    if (prefixInKey != expectPrefix) {
+        return false;
+    }
+    return true;
+}
+}
+
 int Metadata::LoadAllMetadata()
 {
-    std::vector<std::vector<uint8_t>> deviceIds;
-    std::vector<uint8_t> value;
-    int errCode = E_OK;
-    GetAllMetadataKey(deviceIds);
+    std::vector<std::vector<uint8_t>> metaDataKeys;
+    GetAllMetadataKey(metaDataKeys);
 
-    for (auto it = deviceIds.begin(); it != deviceIds.end(); ++it) {
-        if (it->size() < DEVICEID_PREFIX_KEY.size()) {
-            continue;
-        }
-        std::string prefixKey(it->begin(), it->begin() + DEVICEID_PREFIX_KEY.size());
-        if (prefixKey != DEVICEID_PREFIX_KEY) {
-            continue;
-        }
-        errCode = GetMetadataFromDb(*it, value);
-        if (errCode != E_OK) {
-            return errCode;
-        }
-        MetaDataValue metadata;
-        std::string deviceId(it->begin(), it->end());
-        errCode = DeSerializeMetaData(value, metadata);
-        {
-            std::lock_guard<std::mutex> lockGuard(metadataLock_);
-            PutMetadataToMap(deviceId, metadata);
+    std::vector<std::vector<uint8_t>> querySyncIds;
+    for (const auto &deviceId : metaDataKeys) {
+        if (IsMetaDataKey(deviceId, DEVICEID_PREFIX_KEY)) {
+            int errCode = LoadDeviceIdDataToMap(deviceId);
+            if (errCode != E_OK) {
+                return errCode;
+            }
+        } else if (IsMetaDataKey(deviceId, QuerySyncWaterMarkHelper::GetQuerySyncPrefixKey())) {
+            querySyncIds.push_back(deviceId);
+        } else if (IsMetaDataKey(deviceId, QuerySyncWaterMarkHelper::GetDeleteSyncPrefixKey())) {
+            int errCode = querySyncWaterMarkHelper_.LoadDeleteSyncDataToCache(deviceId);
+            if (errCode != E_OK) {
+                return errCode;
+            }
         }
     }
+    return querySyncWaterMarkHelper_.RemoveLeastUsedQuerySyncItems(querySyncIds);
+}
+
+int Metadata::LoadDeviceIdDataToMap(const Key &key)
+{
+    std::vector<uint8_t> value;
+    int errCode = GetMetadataFromDb(key, value);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    MetaDataValue metaValue;
+    std::string metaKey(key.begin(), key.end());
+    errCode = DeSerializeMetaData(value, metaValue);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    std::lock_guard<std::mutex> lockGuard(metadataLock_);
+    PutMetadataToMap(metaKey, metaValue);
     return errCode;
 }
 
@@ -307,6 +365,209 @@ void Metadata::GetHashDeviceId(const DeviceID &deviceId, DeviceID &hashDeviceId,
         deviceIdToHashDeviceIdMap_.insert(std::pair<DeviceID, DeviceID>(deviceId, hashDeviceId));
     } else {
         hashDeviceId = deviceIdToHashDeviceIdMap_[deviceId];
+    }
+}
+
+int Metadata::GetRecvQueryWaterMark(const std::string &queryIdentify,
+    const std::string &deviceId, WaterMark &waterMark)
+{
+    QueryWaterMark queryWaterMark;
+    int errCode = querySyncWaterMarkHelper_.GetQueryWaterMark(queryIdentify, deviceId, queryWaterMark);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    WaterMark peerWaterMark;
+    GetPeerWaterMark(deviceId, peerWaterMark);
+    waterMark = std::max(queryWaterMark.recvWaterMark, peerWaterMark);
+    return E_OK;
+}
+
+int Metadata::SetRecvQueryWaterMark(const std::string &queryIdentify,
+    const std::string &deviceId, const WaterMark &waterMark)
+{
+    return querySyncWaterMarkHelper_.SetRecvQueryWaterMark(queryIdentify, deviceId, waterMark);
+}
+
+int Metadata::GetSendQueryWaterMark(const std::string &queryIdentify,
+    const std::string &deviceId, WaterMark &waterMark, bool isAutoLift)
+{
+    QueryWaterMark queryWaterMark;
+    int errCode = querySyncWaterMarkHelper_.GetQueryWaterMark(queryIdentify, deviceId, queryWaterMark);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (isAutoLift) {
+        WaterMark localWaterMark;
+        GetLocalWaterMark(deviceId, localWaterMark);
+        waterMark = std::max(queryWaterMark.sendWaterMark, localWaterMark);
+    } else {
+        waterMark = queryWaterMark.sendWaterMark;
+    }
+    return E_OK;
+}
+
+int Metadata::SetSendQueryWaterMark(const std::string &queryIdentify,
+    const std::string &deviceId, const WaterMark &waterMark)
+{
+    return querySyncWaterMarkHelper_.SetSendQueryWaterMark(queryIdentify, deviceId, waterMark);
+}
+
+int Metadata::GetSendDeleteSyncWaterMark(const DeviceID &deviceId, WaterMark &waterMark, bool isAutoLift)
+{
+    DeleteWaterMark deleteWaterMark;
+    int errCode = querySyncWaterMarkHelper_.GetDeleteSyncWaterMark(deviceId, deleteWaterMark);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (isAutoLift) {
+        WaterMark localWaterMark;
+        GetLocalWaterMark(deviceId, localWaterMark);
+        waterMark = std::max(deleteWaterMark.sendWaterMark, localWaterMark);
+    } else {
+        waterMark = deleteWaterMark.sendWaterMark;
+    }
+    return E_OK;
+}
+
+int Metadata::SetSendDeleteSyncWaterMark(const DeviceID &deviceId, const WaterMark &waterMark)
+{
+    return querySyncWaterMarkHelper_.SetSendDeleteSyncWaterMark(deviceId, waterMark);
+}
+
+int Metadata::GetRecvDeleteSyncWaterMark(const DeviceID &deviceId, WaterMark &waterMark)
+{
+    DeleteWaterMark deleteWaterMark;
+    int errCode = querySyncWaterMarkHelper_.GetDeleteSyncWaterMark(deviceId, deleteWaterMark);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    WaterMark peerWaterMark;
+    GetPeerWaterMark(deviceId, peerWaterMark);
+    waterMark = std::max(deleteWaterMark.recvWaterMark, peerWaterMark);
+    return E_OK;
+}
+
+int Metadata::SetRecvDeleteSyncWaterMark(const DeviceID &deviceId, const WaterMark &waterMark)
+{
+    return querySyncWaterMarkHelper_.SetRecvDeleteSyncWaterMark(deviceId, waterMark);
+}
+
+int Metadata::ResetRecvQueryWaterMark(const DeviceID &deviceId)
+{
+    return querySyncWaterMarkHelper_.ResetRecvQueryWaterMark(deviceId);
+}
+
+void Metadata::GetDbCreateTime(const DeviceID &deviceId, uint64_t &outValue)
+{
+    MetaDataValue metadata;
+    std::lock_guard<std::mutex> lockGuard(metadataLock_);
+    DeviceID hashDeviceId;
+    GetHashDeviceId(deviceId, hashDeviceId, true);
+    if (metadataMap_.find(hashDeviceId) != metadataMap_.end()) {
+        metadata = metadataMap_[hashDeviceId];
+        outValue = metadata.dbCreateTime;
+        return;
+    }
+    outValue = 0;
+    LOGI("Metadata::GetDbCreateTime, not found dev = %s dbCreateTime", STR_MASK(deviceId));
+}
+
+int Metadata::SetDbCreateTime(const DeviceID &deviceId, uint64_t inValue, bool isNeedHash)
+{
+    MetaDataValue metadata;
+    std::lock_guard<std::mutex> lockGuard(metadataLock_);
+    DeviceID hashDeviceId;
+    GetHashDeviceId(deviceId, hashDeviceId, true);
+    if (metadataMap_.find(hashDeviceId) != metadataMap_.end()) {
+        metadata = metadataMap_[hashDeviceId];
+        if (metadata.dbCreateTime != 0 && metadata.dbCreateTime != inValue) {
+            metadata.clearDeviceDataMark = REMOVE_DEVICE_DATA_MARK;
+            LOGI("Metadata::SetDbCreateTime,set cleardata mark,dev=%s,dbCreateTime=%llu", STR_MASK(deviceId), inValue);
+        }
+        if (metadata.dbCreateTime == 0) {
+            LOGI("Metadata::SetDbCreateTime,update dev=%s,dbCreateTime=%llu", STR_MASK(deviceId), inValue);
+        }
+    }
+    metadata.dbCreateTime = inValue;
+    return SaveMetaDataValue(deviceId, metadata);
+}
+
+int Metadata::ResetMetaDataAfterRemoveData(const DeviceID &deviceId)
+{
+    MetaDataValue metadata;
+    std::lock_guard<std::mutex> lockGuard(metadataLock_);
+    DeviceID hashDeviceId;
+    GetHashDeviceId(deviceId, hashDeviceId, true);
+    if (metadataMap_.find(hashDeviceId) != metadataMap_.end()) {
+        metadata = metadataMap_[hashDeviceId];
+        metadata.clearDeviceDataMark = 0;
+        // when finished remove data, should reset send watermark between high version sync
+        // recv watermark has already reset in removedata func.
+        metadata.localWaterMark = 0;
+        return SaveMetaDataValue(deviceId, metadata);
+    }
+    return -E_NOT_FOUND;
+}
+
+void Metadata::GetRemoveDataMark(const DeviceID &deviceId, uint64_t &outValue)
+{
+    MetaDataValue metadata;
+    std::lock_guard<std::mutex> lockGuard(metadataLock_);
+    DeviceID hashDeviceId;
+    GetHashDeviceId(deviceId, hashDeviceId, true);
+    if (metadataMap_.find(hashDeviceId) != metadataMap_.end()) {
+        metadata = metadataMap_[hashDeviceId];
+        outValue = metadata.clearDeviceDataMark;
+        return;
+    }
+    outValue = 0;
+}
+
+int Metadata::DeleteMetaDataByPrefixKey(const Key &keyPrefix) const
+{
+    if (naturalStoragePtr_ == nullptr) {
+        return -E_INVALID_DB;
+    }
+    return naturalStoragePtr_->DeleteMetaDataByPrefixKey(keyPrefix);
+}
+
+uint64_t Metadata::GetQueryLastTimestamp(const DeviceID &deviceId, const std::string &queryId) const
+{
+    std::vector<uint8_t> key;
+    std::vector<uint8_t> value;
+    std::string hashqueryId = DBConstant::SUBSCRIBE_QUERY_PREFIX + DBCommon::TransferHashString(queryId);
+    DBCommon::StringToVector(hashqueryId, key);
+    int errCode = GetMetadataFromDb(key, value);
+    std::lock_guard<std::mutex> lockGuard(metadataLock_);
+    if (errCode == -E_NOT_FOUND) {
+        auto iter = queryIdMap_.find(deviceId);
+        if (iter != queryIdMap_.end()) {
+            if (iter->second.find(hashqueryId) == iter->second.end()) {
+                iter->second.insert(hashqueryId);
+                return INT64_MAX;
+            }
+            return 0;
+        } else {
+            queryIdMap_[deviceId] = { hashqueryId };
+            return INT64_MAX;
+        }
+    }
+    auto iter = queryIdMap_.find(deviceId);
+    // while value is found in db, it can be found in db later when db is not closed
+    // so no need to record the hashqueryId in map
+    if (errCode == E_OK && iter != queryIdMap_.end()) {
+        iter->second.erase(hashqueryId);
+    }
+    return StringToLong(value);
+}
+
+void Metadata::RemoveQueryFromRecordSet(const DeviceID &deviceId, const std::string &queryId)
+{
+    std::lock_guard<std::mutex> lockGuard(metadataLock_);
+    std::string hashqueryId = DBConstant::SUBSCRIBE_QUERY_PREFIX + DBCommon::TransferHashString(queryId);
+    auto iter = queryIdMap_.find(deviceId);
+    if (iter != queryIdMap_.end() && iter->second.find(hashqueryId) != iter->second.end()) {
+        iter->second.erase(hashqueryId);
     }
 }
 }  // namespace DistributedDB

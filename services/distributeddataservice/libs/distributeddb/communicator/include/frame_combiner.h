@@ -42,6 +42,7 @@ public:
 
     // Start the timer to supervise the progress
     void Initialize();
+
     // Clear the CombineWorkPool and stop the timer
     void Finalize();
 
@@ -68,7 +69,7 @@ private:
 
     TimerId timerId_ = 0; // 0 is invalid timerId
     bool isTimerWork_ = false;
-    SemaphoreUtils timerRemovedIndicator_{0};
+    SemaphoreUtils timerRemovedIndicator_ {0};
     uint64_t incProgressId_ = 0;
     uint64_t totalSizeByByte_ = 0;
     std::map<uint64_t, std::map<uint32_t, CombineWork>> combineWorkPool_;

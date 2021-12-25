@@ -17,18 +17,17 @@
 #define VIRTUAL_TIME_SYNC_COMMUNICATOR_H
 
 #include <string>
+#include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <functional>
 #include <mutex>
-#include <condition_variable>
-#include <chrono>
 
 #include "db_types.h"
+#include "communicator_aggregator.h"
+#include "icommunicator.h"
 #include "ref_object.h"
 #include "serial_buffer.h"
-#include "icommunicator.h"
-#include "communicator_aggregator.h"
-#include "vitural_device.h"
 #include "time_sync.h"
 
 namespace DistributedDB {
@@ -48,6 +47,13 @@ public:
     // return maximum allowed data size
     uint32_t GetCommunicatorMtuSize() const override;
     uint32_t GetCommunicatorMtuSize(const std::string &target) const override;
+
+    // return timeout
+    uint32_t GetTimeout() const override;
+    uint32_t GetTimeout(const std::string &target) const override;
+
+    bool IsDeviceOnline(const std::string &device) const override;
+
     // Get local target name for identify self
     int GetLocalIdentity(std::string &outTarget) const override;
 

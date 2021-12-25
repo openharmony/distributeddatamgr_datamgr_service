@@ -13,22 +13,16 @@
  * limitations under the License.
  */
 
+#include <condition_variable>
 #include <gtest/gtest.h>
 #include <thread>
-#include <condition_variable>
 
-#include "distributeddb_tools_unit_test.h"
-#include "distributeddb_data_generate_unit_test.h"
-#include "kv_store_observer.h"
-#include "kv_store_nb_delegate.h"
-#include "vitural_communicator_aggregator.h"
-#include "vitural_communicator.h"
-#include "vitural_device.h"
-#include "isyncer.h"
-#include "virtual_single_ver_sync_db_Interface.h"
-#include "time_sync.h"
-#include "platform_specific.h"
 #include "db_constant.h"
+#include "distributeddb_data_generate_unit_test.h"
+#include "distributeddb_tools_unit_test.h"
+#include "kv_store_nb_delegate.h"
+#include "kv_virtual_device.h"
+#include "platform_specific.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -52,8 +46,8 @@ namespace {
     DBStatus g_kvDelegateStatus = INVALID_ARGS;
     KvStoreNbDelegate* g_kvDelegatePtr = nullptr;
     VirtualCommunicatorAggregator* g_communicatorAggregator = nullptr;
-    VituralDevice* g_deviceB = nullptr;
-    VituralDevice* g_deviceC = nullptr;
+    KvVirtualDevice *g_deviceB = nullptr;
+    KvVirtualDevice *g_deviceC = nullptr;
 
     // the type of g_kvDelegateCallback is function<void(DBStatus, KvStoreDelegate*)>
     auto g_kvDelegateCallback = bind(&DistributedDBToolsUnitTest::KvStoreNbDelegateCallback,
@@ -103,6 +97,7 @@ void DistributedDBSingleVerP2PSyncTest::TearDownTestCase(void)
 
 void DistributedDBSingleVerP2PSyncTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: create virtual device B and C, and get a KvStoreNbDelegate as deviceA
      */
@@ -110,13 +105,13 @@ void DistributedDBSingleVerP2PSyncTest::SetUp(void)
     g_mgr.GetKvStore(STORE_ID, option, g_kvDelegateCallback);
     ASSERT_TRUE(g_kvDelegateStatus == OK);
     ASSERT_TRUE(g_kvDelegatePtr != nullptr);
-    g_deviceB = new (std::nothrow) VituralDevice(DEVICE_B);
+    g_deviceB = new (std::nothrow) KvVirtualDevice(DEVICE_B);
     ASSERT_TRUE(g_deviceB != nullptr);
     VirtualSingleVerSyncDBInterface *syncInterfaceB = new (std::nothrow) VirtualSingleVerSyncDBInterface();
     ASSERT_TRUE(syncInterfaceB != nullptr);
     ASSERT_EQ(g_deviceB->Initialize(g_communicatorAggregator, syncInterfaceB), E_OK);
 
-    g_deviceC = new (std::nothrow) VituralDevice(DEVICE_C);
+    g_deviceC = new (std::nothrow) KvVirtualDevice(DEVICE_C);
     ASSERT_TRUE(g_deviceC != nullptr);
     VirtualSingleVerSyncDBInterface *syncInterfaceC = new (std::nothrow) VirtualSingleVerSyncDBInterface();
     ASSERT_TRUE(syncInterfaceC != nullptr);
@@ -1967,6 +1962,141 @@ HWTEST_F(DistributedDBSingleVerP2PSyncTest, PermissionCheck006, TestSize.Level3)
 }
 
 /**
+  * @tc.name: PermissionCheck007
+  * @tc.desc: deviceA PermissionCheck, deviceB not pass, deviceC pass in SYNC_MODE_AUTO_PUSH
+  * @tc.type: FUNC
+  * @tc.require: AR000G3RLS
+  * @tc.author: zhuwentao
+  */
+HWTEST_F(DistributedDBSingleVerP2PSyncTest, PermissionCheck007, TestSize.Level3)
+{
+    /**
+     * @tc.steps: step1. SetPermissionCheckCallback
+     * @tc.expected: step1. return OK.
+     */
+    auto permissionCheckCallback = [] (const std::string &userId, const std::string &appId, const std::string &storeId,
+                                        const std::string &deviceId, uint8_t flag) -> bool {
+                                        if (deviceId == g_deviceC->GetDeviceId() &&
+                                            (flag & (CHECK_FLAG_RECEIVE | CHECK_FLAG_AUTOSYNC))) {
+                                            LOGD("in RunPermissionCheck callback func, check not pass, flag:%d", flag);
+                                            return false;
+                                        } else {
+                                            LOGD("in RunPermissionCheck callback func, check pass, flag:%d", flag);
+                                            return true;
+                                        }
+                                        };
+    EXPECT_EQ(g_mgr.SetPermissionCheckCallback(permissionCheckCallback), OK);
+    DBStatus status = OK;
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+    devices.push_back(g_deviceC->GetDeviceId());
+    /**
+     * @tc.steps: step2. deviceA set auto sync
+     */
+    bool autoSync = true;
+    PragmaData data = static_cast<PragmaData>(&autoSync);
+    status = g_kvDelegatePtr->Pragma(AUTO_SYNC, data);
+    ASSERT_EQ(status, OK);
+
+    /**
+     * @tc.steps: step3. deviceA put {k1, v1}, and sleep 1s
+     */
+    Key key = {'1'};
+    Value value = {'1'};
+    status = g_kvDelegatePtr->Put(key, value);
+    ASSERT_TRUE(status == OK);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
+
+    /**
+     * @tc.steps: step3. check value in device B and not in device C.
+     */
+    VirtualDataItem item;
+    g_deviceC->GetData(key, item);
+    EXPECT_TRUE(item.value.empty());
+    g_deviceB->GetData(key, item);
+    EXPECT_TRUE(item.value == value);
+    PermissionCheckCallbackV2 nullCallback;
+    EXPECT_EQ(g_mgr.SetPermissionCheckCallback(nullCallback), OK);
+}
+
+/**
++  * @tc.name: PermissionCheck008
++  * @tc.desc: deviceA PermissionCheck, deviceB not pass, deviceC pass in SYNC_MODE_AUTO_PULL
++  * @tc.type: FUNC
++  * @tc.require: AR000G3RLS
++  * @tc.author: zhangqiquan
++  */
+HWTEST_F(DistributedDBSingleVerP2PSyncTest, PermissionCheck008, TestSize.Level3)
+{
+    /**
+     * @tc.steps: step1. SetPermissionCheckCallback
+     * @tc.expected: step1. return OK.
+     */
+    auto permissionCheckCallback = [] (const std::string &userId, const std::string &appId, const std::string &storeId,
+                                        const std::string &deviceId, uint8_t flag) -> bool {
+                                        if (deviceId == g_deviceC->GetDeviceId() &&
+                                            (flag & CHECK_FLAG_SPONSOR)) {
+                                            LOGD("in RunPermissionCheck callback func, check not pass, flag:%d", flag);
+                                            return false;
+                                        } else {
+                                            LOGD("in RunPermissionCheck callback func, check pass, flag:%d", flag);
+                                            return true;
+                                        }
+                                        };
+    EXPECT_EQ(g_mgr.SetPermissionCheckCallback(permissionCheckCallback), OK);
+    DBStatus status = OK;
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+    devices.push_back(g_deviceC->GetDeviceId());
+
+    /**
+     * @tc.steps: step2. deviceB put {k1, v1}
+     */
+    Key key = {'1'};
+    Value value = {'1'};
+    g_deviceB->PutData(key, value, 0, 0);
+
+    /**
+     * @tc.steps: step2. device put {k2, v2}
+     */
+    Key key2 = {'2'};
+    Value value2 = {'2'};
+    g_deviceC->PutData(key2, value2, 0, 0);
+    ASSERT_TRUE(status == OK);
+
+    /**
+     * @tc.steps: step3. deviceA call push sync
+     * @tc.expected: step3. sync should return OK.
+     */
+    std::map<std::string, DBStatus> result;
+    status = g_tool.SyncTest(g_kvDelegatePtr, devices, SYNC_MODE_PULL_ONLY, result);
+    ASSERT_TRUE(status == OK);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
+
+    /**
+     * @tc.expected: step4. onComplete should be called,
+     * status == PERMISSION_CHECK_FORBID_SYNC, deviceB and deviceC do not have {k1, v1}
+     */
+    ASSERT_TRUE(result.size() == devices.size());
+    for (const auto &pair : result) {
+        LOGD("dev %s, status %d", pair.first.c_str(), pair.second);
+        if (g_deviceC->GetDeviceId() == pair.first) {
+                EXPECT_TRUE(pair.second == PERMISSION_CHECK_FORBID_SYNC);
+            } else {
+                EXPECT_TRUE(pair.second == OK);
+        }
+    }
+    /**
+     * @tc.steps: step5. check value in device A
+     */
+    Value value4;
+    EXPECT_TRUE(g_kvDelegatePtr->Get(key, value4) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr->Get(key2, value4) == NOT_FOUND);
+    PermissionCheckCallbackV2 nullCallback;
+    EXPECT_EQ(g_mgr.SetPermissionCheckCallback(nullCallback), OK);
+}
+
+/**
   * @tc.name: SaveDataNotify001
   * @tc.desc: Test SaveDataNotify function, delay < 30s should sync ok, > 36 should timeout
   * @tc.type: FUNC
@@ -2031,4 +2161,64 @@ HWTEST_F(DistributedDBSingleVerP2PSyncTest, SaveDataNotify001, TestSize.Level3)
     ASSERT_TRUE(status == OK);
     ASSERT_TRUE(result.size() == devices.size());
     ASSERT_TRUE(result[DEVICE_B] == TIME_OUT);
+}
+
+/**
+  * @tc.name: SametimeSync001
+  * @tc.desc: Test 2 device sync with each other
+  * @tc.type: FUNC
+  * @tc.require: AR000CCPOM
+  * @tc.author: zhangqiquan
+  */
+HWTEST_F(DistributedDBSingleVerP2PSyncTest, SametimeSync001, TestSize.Level3)
+{
+    DBStatus status = OK;
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+
+    int responseCount = 0;
+    int requestCount = 0;
+    Key key = {'1'};
+    Value value = {'1'};
+    /**
+     * @tc.steps: step1. make sure deviceB send pull firstly and response_pull secondly
+     * @tc.expected: step1. deviceA put data when finish push task. put data should return OK.
+     */
+    g_communicatorAggregator->RegOnDispatch([&responseCount, &requestCount, &key, &value](
+        const std::string &target, DistributedDB::Message *msg) {
+        if (target == "real_device" && msg->GetMessageId() == DATA_SYNC_MESSAGE) {
+            if (msg->GetMessageType() == TYPE_RESPONSE) {
+                responseCount++;
+                if (responseCount == 1) { // 1 is the ack which B response A's push task
+                    EXPECT_EQ(g_kvDelegatePtr->Put(key, value), DBStatus::OK);
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                } else if (responseCount == 2) { // 2 is the ack which B response A's response_pull task
+                    msg->SetErrorNo(E_FEEDBACK_COMMUNICATOR_NOT_FOUND);
+                }
+            } if (msg->GetMessageType() == TYPE_REQUEST) {
+                requestCount++;
+                if (requestCount == 1) { // 1 is A push task
+                    std::this_thread::sleep_for(std::chrono::seconds(2)); // sleep 2 sec
+                }
+            }
+        }
+    });
+    /**
+     * @tc.steps: step2. deviceA,deviceB sync to each other at same time
+     * @tc.expected: step2. sync should return OK.
+     */
+    std::map<std::string, DBStatus> result;
+    std::thread subThread([]{
+        g_deviceB->Sync(DistributedDB::SYNC_MODE_PULL_ONLY, true);
+    });
+    status = g_tool.SyncTest(g_kvDelegatePtr, devices, DistributedDB::SYNC_MODE_PUSH_PULL, result);
+    subThread.join();
+    g_communicatorAggregator->RegOnDispatch(nullptr);
+
+    EXPECT_TRUE(status == OK);
+    ASSERT_TRUE(result.size() == devices.size());
+    EXPECT_TRUE(result[DEVICE_B] == OK);
+    Value actualValue;
+    g_kvDelegatePtr->Get(key, actualValue);
+    EXPECT_EQ(actualValue, value);
 }

@@ -109,7 +109,7 @@ void DistributeddbKvObserverTest::TearDown(void)
  * @tc.require: SR000BUH3K
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverTest, ObserverRegister001, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverTest, ObserverRegister001, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerDelegate);
 
@@ -133,7 +133,7 @@ HWTEST_F(DistributeddbKvObserverTest, ObserverRegister001, TestSize.Level0)
  * @tc.require: SR000BUH3K
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverTest, ObserverRegister002, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverTest, ObserverRegister002, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerDelegate);
 
@@ -323,7 +323,7 @@ HWTEST_F(DistributeddbKvObserverTest, ObserverRegister005, TestSize.Level1)
  * @tc.require: SR000BUH3K
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverTest, ObserverRegister006, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverTest, ObserverRegister006, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerDelegate);
 
@@ -508,7 +508,7 @@ HWTEST_F(DistributeddbKvObserverTest, ObserverRegister009, TestSize.Level1)
  * @tc.require: SR000BUH3K
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverTest, DataChange001, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverTest, DataChange001, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerDelegate);
 
@@ -543,7 +543,7 @@ HWTEST_F(DistributeddbKvObserverTest, DataChange001, TestSize.Level0)
  * @tc.require: SR000BUH3K
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverTest, DataChange002, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverTest, DataChange002, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerDelegate);
     vector<Entry> entries1;
@@ -585,7 +585,7 @@ HWTEST_F(DistributeddbKvObserverTest, DataChange002, TestSize.Level0)
  * @tc.require: SR000BUH3K
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverTest, DataChange003, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverTest, DataChange003, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerDelegate);
     vector<Entry> entries1;
@@ -784,7 +784,7 @@ HWTEST_F(DistributeddbKvObserverTest, DataChange007, TestSize.Level1)
  * @tc.require: SR000BUH3K
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverTest, DataChange008, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverTest, DataChange008, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerDelegate);
 

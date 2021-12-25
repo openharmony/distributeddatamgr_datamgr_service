@@ -54,14 +54,17 @@ public:
     DISABLE_COPY_ASSIGN_MOVE(SendTaskScheduler);
 
     void Initialize();
+
     // This method for consumer
     void Finalize();
 
     // This method for producer, support multiple thread
     int AddSendTaskIntoSchedule(const SendTask &inTask, Priority inPrio);
+
     // This method for consumer, not recommend for multiple thread
     int ScheduleOutSendTask(SendTask &outTask);
     int ScheduleOutSendTask(SendTask &outTask, SendTaskInfo &outTaskInfo);
+
     // This method for consumer, call ScheduleOutSendTask at least one time before each calling this
     int FinalizeLastScheduleTask();
 

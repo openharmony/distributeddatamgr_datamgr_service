@@ -16,13 +16,15 @@
 #ifndef SYNC_ABLE_KVDB_CONNECTION_H
 #define SYNC_ABLE_KVDB_CONNECTION_H
 
-#include "ref_object.h"
 #include "generic_kvdb_connection.h"
+#include "intercepted_data.h"
+#include "ref_object.h"
 
 namespace DistributedDB {
 class SyncAbleKvDB;
 struct PragmaSync;
 struct PragmaRemotePushNotify;
+struct PragmaSetEqualIdentifier;
 
 class SyncAbleKvDBConnection : public GenericKvDBConnection, public virtual RefObject {
 public:
@@ -42,6 +44,7 @@ private:
     // Do pragma-sync action.
     int PragmaParamCheck(int cmd, const void *parameter);
     int PragmaSyncAction(const PragmaSync *syncParameter);
+    void InitPragmaFunc();
 
     // If enable is true, it will enable auto sync
     int EnableAutoSync(bool enable);
@@ -59,12 +62,15 @@ private:
 
     int SetRemotePushFinishedNotify(PragmaRemotePushNotify *notifyParma);
 
-    // For sync in progress.
-    std::list<int> syncIdList_;
+    int SetSyncRetry(bool isRetry);
+    // Set an equal identifier for this database, After this called, send msg to the target will use this identifier
+    int SetEqualIdentifier(const PragmaSetEqualIdentifier *param);
+
+    int SetPushDataInterceptor(const PushDataInterceptor &interceptor);
 
     std::mutex remotePushFinishedListenerLock_;
     NotificationChain::Listener *remotePushFinishedListener_;
+    std::map<int, std::function<void(void *, int &errCode)>> pragmaFunc_{};
 };
 }
-
 #endif // SYNC_ABLE_KVDB_CONNECTION_H

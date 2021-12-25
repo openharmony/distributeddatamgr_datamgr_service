@@ -14,9 +14,19 @@
  */
 #include "distributeddb_nb_test_tools.h"
 #include <fstream>
+
+#if defined(RUNNING_ON_LINUX)
+#include <unistd.h>
+#elif defined RUNNING_ON_WIN
+#include <windows.h>
+#endif
+
+#ifndef USING_SQLITE_SYMBOLS
 #include "sqlite3.h"
+#else
+#include "sqlite3sym.h"
+#endif
 using namespace std;
-using namespace chrono;
 using namespace std::placeholders;
 using namespace DistributedDB;
 using namespace DistributedDBDataGenerator;
@@ -39,11 +49,11 @@ KvStoreNbDelegate *DelegateMgrNbCallback::GetKvStore()
 }
 
 KvStoreNbDelegate* DistributedDBNbTestTools::GetNbDelegateSuccess(KvStoreDelegateManager *&outManager,
-    const DBParameters &param, const Option &optionParam)
+    const DBParameters &param, const Option &optionParam, const string &dbPath)
 {
     MST_LOG("GetNbDelegate isMemoryDb= %d, isEncryptedDb= %d", optionParam.isMemoryDb,
         optionParam.isEncryptedDb);
-    SetDir(NB_DIRECTOR);
+    SetDir(dbPath);
     if (param.storeId.empty() || param.appId.empty() || param.userId.empty()) {
         return nullptr;
     }
@@ -62,7 +72,7 @@ KvStoreNbDelegate* DistributedDBNbTestTools::GetNbDelegateSuccess(KvStoreDelegat
     if (manager == nullptr) {
         return nullptr;
     }
-    DBStatus status = manager->SetKvStoreConfig({ .dataDir = NB_DIRECTOR });
+    DBStatus status = manager->SetKvStoreConfig({ .dataDir = dbPath});
     if (status != DBStatus::OK) {
         MST_LOG("%s SetConfig failed! Status= %d", TAG.c_str(), status);
         delete manager;
@@ -99,7 +109,7 @@ KvStoreNbDelegate* DistributedDBNbTestTools::GetNbDelegateStatus(KvStoreDelegate
 {
     MST_LOG("GetNbDelegate isMemoryDb= %d, isEncryptedDb= %d", optionParam.isMemoryDb,
         optionParam.isEncryptedDb);
-    SetDir(NB_DIRECTOR);
+    SetDir(DistributedDBConstant::NB_DIRECTOR);
     if (param.storeId.empty() || param.appId.empty() || param.userId.empty()) {
         return nullptr;
     }
@@ -118,9 +128,9 @@ KvStoreNbDelegate* DistributedDBNbTestTools::GetNbDelegateStatus(KvStoreDelegate
     if (manager1 == nullptr) {
         return nullptr;
     }
-    DBStatus status = manager1->SetKvStoreConfig({ .dataDir = NB_DIRECTOR });
-    if (status != DBStatus::OK) {
-        MST_LOG("%s SetConfig failed! Status= %d", TAG.c_str(), status);
+    statusReturn = manager1->SetKvStoreConfig({ .dataDir = DistributedDBConstant::NB_DIRECTOR });
+    if (statusReturn != DBStatus::OK) {
+        MST_LOG("%s SetConfig failed! Status= %d", TAG.c_str(), statusReturn);
         delete manager1;
         manager1 = nullptr;
         return nullptr;
@@ -129,10 +139,9 @@ KvStoreNbDelegate* DistributedDBNbTestTools::GetNbDelegateStatus(KvStoreDelegate
     KvStoreNbDelegate::Option option = TransferNbOptionType(optionParam);
     // get kv store, then the Callback will save the status and delegate.
     manager1->GetKvStore(param.storeId, option, function);
-    status = delegateMgrCallback.GetStatus();
-    statusReturn = status;
-    if (status != DBStatus::OK) {
-        MST_LOG("%s GetKvStore failed! Status= %d", TAG.c_str(), status);
+    statusReturn = delegateMgrCallback.GetStatus();
+    if (statusReturn != DBStatus::OK) {
+        MST_LOG("%s GetKvStore failed! Status= %d", TAG.c_str(), statusReturn);
         delete manager1;
         manager1 = nullptr;
         return nullptr;
@@ -155,7 +164,7 @@ DBStatus DistributedDBNbTestTools::GetNbDelegateStoresSuccess(KvStoreDelegateMan
     vector<KvStoreNbDelegate *> &outDelegateVec,
     const vector<string> &storeIds, const string &appId, const string &userId, const Option &optionParam)
 {
-    SetDir(NB_DIRECTOR);
+    SetDir(DistributedDBConstant::NB_DIRECTOR);
     unsigned long opCnt;
     DBStatus status = DBStatus::OK;
     for (opCnt = 0; opCnt < storeIds.size(); ++opCnt) {
@@ -177,7 +186,7 @@ DBStatus DistributedDBNbTestTools::GetNbDelegateStoresSuccess(KvStoreDelegateMan
         function<void(DBStatus, KvStoreNbDelegate*)> function
             = bind(&DelegateMgrNbCallback::Callback, &delegateMgrCallback, _1, _2);
 
-        status = manager->SetKvStoreConfig(CONFIG);
+        status = manager->SetKvStoreConfig(DistributedDBConstant::CONFIG);
         if (status != DBStatus::OK) {
             MST_LOG("%s SetConfig failed! Status= %d", TAG.c_str(), status);
             goto END;
@@ -212,8 +221,24 @@ KvStoreNbDelegate::Option DistributedDBNbTestTools::TransferNbOptionType(const O
     option.isMemoryDb = optionParam.isMemoryDb;
     option.isEncryptedDb = optionParam.isEncryptedDb;
     option.cipher = optionParam.cipher;
+#ifdef RELEASE_MODE_V2
     option.schema = optionParam.schema;
+#endif // endif of RELEASE_MODE_V2
     (void)option.passwd.SetValue(optionParam.passwd.data(), optionParam.passwd.size());
+#ifdef RELEASE_MODE_V3
+    option.secOption.securityLabel = optionParam.secOption.securityLabel;
+    option.secOption.securityFlag = optionParam.secOption.securityFlag;
+    option.observer = optionParam.observer;
+    option.key = optionParam.key;
+    option.mode = optionParam.mode;
+    option.conflictType = optionParam.conflictType;
+    option.notifier = optionParam.notifier;
+    option.conflictResolvePolicy = optionParam.conflictResolvePolicy;
+    option.isNeedIntegrityCheck = optionParam.isNeedIntegrityCheck;
+    option.isNeedRmCorruptedDb = optionParam.isNeedRmCorruptedDb;
+    option.isNeedCompressOnSync = optionParam.isNeedCompressOnSync;
+    option.compressionRate = optionParam.compressionRate;
+#endif // end of RELEASE_MODE_V3
     return option;
 }
 
@@ -242,32 +267,51 @@ DistributedDB::DBStatus DistributedDBNbTestTools::GetEntries(DistributedDB::KvSt
 }
 
 DistributedDB::DBStatus DistributedDBNbTestTools::Put(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
-    const DistributedDB::Key &key, const DistributedDB::Value &value)
+    const DistributedDB::Key &key, const DistributedDB::Value &value, bool isNeedRetry, int waitTime)
 {
+    if (isNeedRetry) {
+        DBStatus status = kvStoreNbDelegate.Put(key, value);
+        if (status != OK && waitTime-- > 0) {
+            MST_LOG("put records status: %d, and retry!", status);
+            return DistributedDBNbTestTools::Put(kvStoreNbDelegate, key, value, isNeedRetry, waitTime);
+        } else {
+            return status;
+        }
+    }
     return kvStoreNbDelegate.Put(key, value);
 }
 
 DistributedDB::DBStatus DistributedDBNbTestTools::PutBatch(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
-    const std::vector<DistributedDB::Entry> &entries)
+    const std::vector<DistributedDB::Entry> &entries, bool isNeedRetry)
 {
+#ifdef RELEASE_MODE_V2
     DistributedDB::DBStatus status;
-    unsigned int cnt = entries.size();
-    int index = 0;
-    while (cnt > BATCH_RECORDS) {
-        cnt -= BATCH_RECORDS;
-        std::vector<DistributedDB::Entry> entriesBatch(entries.begin() + index * BATCH_RECORDS,
-            entries.begin() + (index + 1) * BATCH_RECORDS);
-        status = kvStoreNbDelegate.PutBatch(entriesBatch);
-        index++;
-        if (status != DBStatus::OK) {
+    for (int cnt = 0; cnt < static_cast<int>(entries.size()); cnt += 128) { // 128 is the max records of deleteBatch.
+        auto last = std::min(static_cast<int>(entries.size()), cnt + 128); // 128 is the max records of deleteBatch.
+        std::vector<DistributedDB::Entry> entriesBatch(entries.begin() + cnt, entries.begin() + last);
+
+        int retryTimes = 1000;
+        do {
+            status = kvStoreNbDelegate.PutBatch(entriesBatch);
+            if (status == OK) {
+                break;
+            } else if (status != BUSY && status != OK) {
+                return status;
+            }
+        } while (isNeedRetry && retryTimes-- > 0);
+    }
+    return status;
+#else
+    MST_LOG("[DistributedDBNbTestTools::PutBatch] is NeedRetry is %d", isNeedRetry);
+    DBStatus status;
+    for (const auto &iter : entries) {
+        status = kvStoreNbDelegate.Put(iter.key, iter.value);
+        if (status != OK) {
             return status;
         }
     }
-    std::vector<DistributedDB::Entry> entriesBatch(entries.begin() + index * BATCH_RECORDS,
-        entries.end());
-    status = kvStoreNbDelegate.PutBatch(entriesBatch);
-
-    return status;
+    return DBStatus::OK;
+#endif // endif of RELEASE_MODE_V2
 }
 
 DistributedDB::DBStatus DistributedDBNbTestTools::Delete(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
@@ -277,23 +321,36 @@ DistributedDB::DBStatus DistributedDBNbTestTools::Delete(DistributedDB::KvStoreN
 }
 
 DistributedDB::DBStatus DistributedDBNbTestTools::DeleteBatch(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
-    const std::vector<DistributedDB::Key> &keys)
+    const std::vector<DistributedDB::Key> &keys, bool isNeedRetry)
 {
-    int cnt = 0;
-    std::vector<DistributedDB::Key> keysBatch;
+#ifdef RELEASE_MODE_V2
     DistributedDB::DBStatus status;
-    for (const auto &iter : keys) {
-        keysBatch.push_back(iter);
-        cnt++;
-        if (cnt % BATCH_RECORDS == 0 || cnt == static_cast<int>(keys.size())) {
+    for (int cnt = 0; cnt < static_cast<int>(keys.size()); cnt = cnt + 128) { // 128 is the max records of deleteBatch.
+        auto last = std::min(static_cast<int>(keys.size()), cnt + 128); // 128 is the max records of deleteBatch.
+        std::vector<DistributedDB::Key> keysBatch(keys.begin() + cnt, keys.begin() + last);
+
+        int retryTimes = 1000;
+        do {
             status = kvStoreNbDelegate.DeleteBatch(keysBatch);
-            if (status != DBStatus::OK) {
+            if (status == OK) {
+                break;
+            } else if (status != BUSY && status != OK) {
                 return status;
             }
-            keysBatch.clear();
+        } while (isNeedRetry && retryTimes-- > 0);
+    }
+    return status;
+#else
+    MST_LOG("[DistributedDBNbTestTools::DeleteBatch] is NeedRetry is %d", isNeedRetry);
+    DBStatus status;
+    for (const auto &iter : keys) {
+        status = kvStoreNbDelegate.Delete(iter);
+        if (status != OK) {
+            return status;
         }
     }
     return DBStatus::OK;
+#endif // endif of RELEASE_MODE_V2
 }
 
 DistributedDB::DBStatus DistributedDBNbTestTools::GetLocal(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
@@ -303,14 +360,24 @@ DistributedDB::DBStatus DistributedDBNbTestTools::GetLocal(DistributedDB::KvStor
 }
 
 DistributedDB::DBStatus DistributedDBNbTestTools::PutLocal(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
-    const DistributedDB::Key &key, const DistributedDB::Value &value)
+    const DistributedDB::Key &key, const DistributedDB::Value &value, bool isNeedRetry, int waitTime)
 {
+    if (isNeedRetry) {
+        DBStatus status = kvStoreNbDelegate.PutLocal(key, value);
+        if (status != OK && waitTime-- > 0) {
+            MST_LOG("PutLocal records status: %d, and retry!", status);
+            return DistributedDBNbTestTools::PutLocal(kvStoreNbDelegate, key, value, isNeedRetry, waitTime);
+        } else {
+            return status;
+        }
+    }
     return kvStoreNbDelegate.PutLocal(key, value);
 }
 
 DistributedDB::DBStatus DistributedDBNbTestTools::PutLocalBatch(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
     const std::vector<DistributedDB::Entry> &entries)
 {
+#ifdef RELEASE_MODE_V3
     int cnt = 0;
     std::vector<DistributedDB::Entry> entriesBatch;
     DistributedDB::DBStatus status;
@@ -326,6 +393,16 @@ DistributedDB::DBStatus DistributedDBNbTestTools::PutLocalBatch(DistributedDB::K
         }
     }
     return DBStatus::OK;
+#else
+    DistributedDB::DBStatus status;
+    for (auto entry : entries) {
+        status = kvStoreNbDelegate.PutLocal(entry.key, entry.value);
+        if (status != DBStatus::OK) {
+            return status;
+        }
+    }
+    return DBStatus::OK;
+#endif
 }
 
 DistributedDB::DBStatus DistributedDBNbTestTools::DeleteLocal(
@@ -337,6 +414,7 @@ DistributedDB::DBStatus DistributedDBNbTestTools::DeleteLocal(
 DistributedDB::DBStatus DistributedDBNbTestTools::DeleteLocalBatch(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
     const std::vector<DistributedDB::Key> &keys)
 {
+#ifdef RELEASE_MODE_V3
     int cnt = 0;
     std::vector<DistributedDB::Key> keysBatch;
     DistributedDB::DBStatus status;
@@ -352,6 +430,16 @@ DistributedDB::DBStatus DistributedDBNbTestTools::DeleteLocalBatch(DistributedDB
         }
     }
     return DBStatus::OK;
+#else
+    DistributedDB::DBStatus status;
+    for (auto key : keys) {
+        status = kvStoreNbDelegate.DeleteLocal(key);
+        if (status != DBStatus::OK) {
+            return status;
+        }
+    }
+    return DBStatus::OK;
+#endif
 }
 
 DistributedDB::DBStatus DistributedDBNbTestTools::RegisterObserver(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
@@ -444,7 +532,7 @@ bool DistributedDBNbTestTools::ModifyDatabaseFile(const std::string &fileDir)
     if (!dataFile.seekp(0)) {
         return false;
     }
-    for (int i = 0; i < 256; i++) { // 256 is 1024 / 4.
+    for (uint32_t i = 0; i < pos / sizeof(uint32_t); i++) {
         if (!dataFile.write(reinterpret_cast<char *>(&currentCount), sizeof(uint32_t))) {
             return false;
         }
@@ -453,11 +541,12 @@ bool DistributedDBNbTestTools::ModifyDatabaseFile(const std::string &fileDir)
     dataFile.close();
     return true;
 }
-std::string DistributedDBNbTestTools::GetKvNbStoreDirectory(const DBParameters &param)
+std::string DistributedDBNbTestTools::GetKvNbStoreDirectory(const DBParameters &param, const std::string &dbFilePath,
+    const std::string &dbDir)
 {
     std::string identifier = param.userId + "-" + param.appId + "-" + param.storeId;
     std::string identifierName = TransferStringToHashHexString(identifier);
-    std::string filePath = NB_DIRECTOR + "/" + identifierName + "/single_ver/main/gen_natural_store.db";
+    std::string filePath = dbDir + identifierName + "/" + dbFilePath;
     return filePath;
 }
 bool DistributedDBNbTestTools::MoveToNextFromBegin(KvStoreResultSet &resultSet,
@@ -505,6 +594,98 @@ bool DistributedDBNbTestTools::MoveToNextFromBegin(KvStoreResultSet &resultSet,
     return result;
 }
 
+std::string DistributedDBNbTestTools::GetResourceDir()
+{
+    std::string dir;
+    bool result = GetCurrentDir(dir);
+    if (!result) {
+        MST_LOG("[GetResourceDir] FAILED!");
+        return "";
+    }
+#ifdef RUNNING_ON_SIMULATED_ENV
+    dir = dir + "resource/";
+#endif
+    return dir;
+}
+
+bool DistributedDBNbTestTools::GetCurrentDir(std::string &dir)
+{
+    static const int maxFileLength = 1024;
+    dir = "";
+    char buffer[maxFileLength] = {0};
+#if defined(RUNNING_ON_LINUX)
+    int length = readlink("/proc/self/exe", buffer, maxFileLength);
+#elif defined RUNNING_ON_WIN
+    int length = -1;
+    if (_getcwd(buffer, maxFileLength) != nullptr) {
+        length = strlen(buffer);
+    }
+#endif
+    if (length < 0 || length >= maxFileLength) {
+        MST_LOG("read directory err length:%d", length);
+        return false;
+    }
+    MST_LOG("DIR = %s", buffer);
+    dir = buffer;
+    if (dir.rfind("/") != std::string::npos) {
+        dir.erase(dir.rfind("/") + 1);
+    }
+    if ((access(dir.c_str(), F_OK)) != E_OK) {
+        return false;
+    }
+    return true;
+}
+bool DistributedDBNbTestTools::CheckNbNoRecord(KvStoreNbDelegate *&delegate, const Key &key, bool bIsLocalQuery)
+{
+    Value realValue;
+    bool result = true;
+    DBStatus status;
+    if (!bIsLocalQuery) {
+        status = delegate->Get(key, realValue);
+    } else {
+        status = delegate->GetLocal(key, realValue);
+    }
+    result = result && (status == NOT_FOUND);
+    if (!result) {
+        MST_LOG("[DistributedDBNbTestTools] bIsLocalQuery:%d, status: %d, realValue.size() is: %zd",
+            bIsLocalQuery, status, realValue.size());
+        return result;
+    }
+    return (realValue.size() == 0);
+}
+
+bool DistributedDBNbTestTools::CheckNbRecord(KvStoreNbDelegate *&delegate,
+    const Key &key, const Value &value, bool bIsLocalQuery)
+{
+    Value realValue;
+    bool result = true;
+    if (!bIsLocalQuery) {
+        if (value.empty()) {
+            return (delegate->Get(key, realValue) == NOT_FOUND);
+        } else {
+            result = result && (delegate->Get(key, realValue) == OK);
+        }
+    } else {
+        if (value.empty()) {
+            return (delegate->GetLocal(key, realValue) == NOT_FOUND);
+        } else {
+            result = result && (delegate->GetLocal(key, realValue) == OK);
+        }
+    }
+
+    if (!result) {
+        MST_LOG("[DistributedDBNbTestTools] Get Record failed");
+        return result;
+    }
+    result = result && (realValue == value);
+    if (!result) {
+        string realString(realValue.begin(), realValue.end());
+        MST_LOG("[DistributedDBNbTestTools] check the value(LocalQuery:%d) failed, and the realGetValue is %s",
+            bIsLocalQuery, realString.c_str());
+        return result;
+    }
+    return result;
+}
 void KvStoreNbCorruptInfo::CorruptNewCallBack(const std::string &appId, const std::string &userId,
     const std::string &storeId, DistributedDB::KvStoreDelegateManager *&manager, CallBackParam &pathResult)
 {
@@ -517,6 +698,7 @@ void KvStoreNbCorruptInfo::CorruptNewCallBack(const std::string &appId, const st
     if (manager == nullptr || delegate == nullptr) {
         MST_LOG("[KvStoreNbCorruptInfo::CorruptNewCallBack] Get delegate or manager failed!");
         pathResult.result = false;
+        return;
     } else {
         if (delegate->Import(pathResult.path, NULL_PASSWD) != OK) {
             MST_LOG("[KvStoreNbCorruptInfo::CorruptNewCallBack] Import failed!");
@@ -548,6 +730,7 @@ void KvStoreNbCorruptInfo::CorruptCallBackOfImport(const std::string &appId, con
 void KvStoreNbCorruptInfo::CorruptCallBackOfExport(const std::string &appId, const std::string &userId,
     const std::string &storeId, DistributedDB::KvStoreNbDelegate *&delegate, CallBackParam &pathResult)
 {
+    MST_LOG("The corrupt Db is %s, %s, %s", appId.c_str(), userId.c_str(), storeId.c_str());
     MST_LOG("Begin to Export the DB data.");
     if (delegate->Export(pathResult.path, NULL_PASSWD) != INVALID_PASSWD_OR_CORRUPTED_DB) {
         MST_LOG("[KvStoreNbCorruptInfo::CorruptCallBackOfExport] Export failed!");

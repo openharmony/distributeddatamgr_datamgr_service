@@ -39,8 +39,16 @@ public:
     // return optimal allowed data size(Some header is taken into account and subtract)
     virtual uint32_t GetCommunicatorMtuSize() const = 0;
     virtual uint32_t GetCommunicatorMtuSize(const std::string &target) const = 0;
+
+    // return timeout in range [5s, 60s]
+    virtual uint32_t GetTimeout() const = 0;
+    virtual uint32_t GetTimeout(const std::string &target) const = 0;
+
+    virtual bool IsDeviceOnline(const std::string &device) const = 0;
+
     // Get local target name for identify self
     virtual int GetLocalIdentity(std::string &outTarget) const = 0;
+
     // Get the protocol version of remote target. Return -E_NOT_FOUND if no record.
     virtual int GetRemoteCommunicatorVersion(const std::string &target, uint16_t &outVersion) const = 0;
 

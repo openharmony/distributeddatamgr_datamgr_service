@@ -545,6 +545,11 @@ int MultiVerNaturalStore::PutMetaData(const Key &key, const Value &value)
     return errCode;
 }
 
+int MultiVerNaturalStore::DeleteMetaData(const std::vector<Key> &keys)
+{
+    return -E_NOT_SUPPORT;
+}
+
 // Get all meta data keys.
 int MultiVerNaturalStore::GetAllMetaKeys(std::vector<Key> &keys) const
 {
@@ -1175,6 +1180,16 @@ int MultiVerNaturalStore::GetVersionFilePath(const KvDBProperties &kvDBProp, std
     }
     outPath = verFiledir + "/" + DBConstant::MULTI_SUB_DIR + "/version";
     return E_OK;
+}
+
+int MultiVerNaturalStore::DeleteMetaDataByPrefixKey(const Key &keyPrefix) const
+{
+    return -E_NOT_SUPPORT;
+}
+
+void MultiVerNaturalStore::SetDataInterceptor(const PushDataInterceptor &interceptor)
+{
+    return;
 }
 
 DEFINE_OBJECT_TAG_FACILITIES(MultiVerNaturalStore)

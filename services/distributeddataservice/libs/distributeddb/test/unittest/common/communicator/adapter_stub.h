@@ -36,6 +36,8 @@ public:
     void StopAdapter() override;
     uint32_t GetMtuSize() override;
     uint32_t GetMtuSize(const std::string &target) override;
+    uint32_t GetTimeout() override;
+    uint32_t GetTimeout(const std::string &target) override;
     int GetLocalIdentity(std::string &outTarget) override;
 
     int SendBytes(const std::string &dstTarget, const uint8_t *bytes, uint32_t length) override;
@@ -43,6 +45,8 @@ public:
     int RegBytesReceiveCallback(const BytesReceiveCallback &onReceive, const Finalizer &inOper) override;
     int RegTargetChangeCallback(const TargetChangeCallback &onChange, const Finalizer &inOper) override;
     int RegSendableCallback(const SendableCallback &onSendable, const Finalizer &inOper) override;
+
+    bool IsDeviceOnline(const std::string &device) override;
 
     /*
      * Extended Part

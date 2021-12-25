@@ -16,12 +16,12 @@
 #ifndef OMIT_JSON
 #include <cstdint>
 #include <gtest/gtest.h>
-#include "sqlite_import.h"
-#include "distributeddb_tools_unit_test.h"
-#include "query.h"
 #include "db_common.h"
 #include "db_constant.h"
+#include "distributeddb_tools_unit_test.h"
+#include "query.h"
 #include "schema_utils.h"
+#include "sqlite_import.h"
 #include "sqlite_local_kvdb_connection.h"
 
 using namespace testing::ext;
@@ -67,7 +67,7 @@ namespace {
         return filePath;
     }
 
-    // Query database schema related info
+    // Query sqlite_master related
     const string SQL_QUERY_INDEX = "SELECT COUNT(*) FROM sqlite_master where type = 'index' and name = ";
     int CallbackReturnCount(void *data, int argc, char **argv, char **azColName)
     {
@@ -245,7 +245,7 @@ class DistributedDBInterfacesIndexUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
-    void SetUp() {};
+    void SetUp();
     void TearDown() {};
 };
 
@@ -261,6 +261,11 @@ void DistributedDBInterfacesIndexUnitTest::TearDownTestCase(void)
     if (DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir) != 0) {
         LOGE("[TestSuiteTearDown] rm test db files error!");
     }
+}
+
+void DistributedDBInterfacesIndexUnitTest::SetUp()
+{
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
 namespace {
@@ -513,7 +518,7 @@ HWTEST_F(DistributedDBInterfacesIndexUnitTest, CreateIndex001, TestSize.Level1)
     ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
     EXPECT_EQ(g_kvDelegateStatus, OK);
     /**
-     * @tc.steps:step2. Use the sql statement to get each index count count from the schema table;
+     * @tc.steps:step2. Use the sql statement to get each index count count from the sqlite_master table;
      * @tc.expected: step2. count == 1.
      */
     EXPECT_EQ(sqlite3_open_v2(filePath.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr), SQLITE_OK);
@@ -583,7 +588,7 @@ HWTEST_F(DistributedDBInterfacesIndexUnitTest, CreateIndex002, TestSize.Level1)
     ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
     EXPECT_EQ(g_kvDelegateStatus, OK);
     /**
-     * @tc.steps:step2. Use the sql statement to get each index count count from the schema table;
+     * @tc.steps:step2. Use the sql statement to get each index count count from the sqlite_master table;
      * @tc.expected: step2. count == 1.
      */
     EXPECT_EQ(sqlite3_open_v2(filePath.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr), SQLITE_OK);

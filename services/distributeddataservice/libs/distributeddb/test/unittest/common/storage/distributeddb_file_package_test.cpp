@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include <fstream>
+#include <gtest/gtest.h>
 
-#include "distributeddb_tools_unit_test.h"
-#include "securec.h"
-#include "package_file.h"
 #include "db_errno.h"
+#include "distributeddb_tools_unit_test.h"
+#include "package_file.h"
 #include "platform_specific.h"
+#include "securec.h"
 #include "value_hash_calc.h"
 
 using namespace testing::ext;
@@ -163,6 +163,7 @@ void DistributedDBFilePackageTest::TearDownTestCase(void)
 
 void DistributedDBFilePackageTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     (void)OS::MakeDBDirectory(g_packageResultPath);
     (void)OS::MakeDBDirectory(g_unpackResultPath);
 }
@@ -180,7 +181,7 @@ void DistributedDBFilePackageTest::TearDown(void)
   * @tc.require: AR000D4879
   * @tc.author: liujialei
   */
-HWTEST_F(DistributedDBFilePackageTest, PackageFileTest001, TestSize.Level0)
+HWTEST_F(DistributedDBFilePackageTest, PackageFileTest001, TestSize.Level1)
 {
     int errCode = PackageFile::PackageFiles(g_sourcePath, g_packageResultPath + PACKAGE_RESULT_FILE_NAME, g_fileInfo);
     ASSERT_EQ(errCode, E_OK);
@@ -200,7 +201,7 @@ HWTEST_F(DistributedDBFilePackageTest, PackageFileTest001, TestSize.Level0)
   * @tc.require: AR000D4879
   * @tc.author: liujialei
   */
-HWTEST_F(DistributedDBFilePackageTest, PackageFileTest002, TestSize.Level0)
+HWTEST_F(DistributedDBFilePackageTest, PackageFileTest002, TestSize.Level1)
 {
     int errCode = PackageFile::PackageFiles(g_sourcePath + NON_EXIST_PATH,
         g_packageResultPath + PACKAGE_RESULT_FILE_NAME, g_fileInfo);
@@ -215,7 +216,7 @@ HWTEST_F(DistributedDBFilePackageTest, PackageFileTest002, TestSize.Level0)
   * @tc.require: AR000D4879
   * @tc.author: liujialei
   */
-HWTEST_F(DistributedDBFilePackageTest, PackageFileTest003, TestSize.Level0)
+HWTEST_F(DistributedDBFilePackageTest, PackageFileTest003, TestSize.Level1)
 {
     int errCode = PackageFile::PackageFiles(g_sourcePath,
         g_packageResultPath + NON_EXIST_PATH + PACKAGE_RESULT_FILE_NAME, g_fileInfo);
@@ -230,7 +231,7 @@ HWTEST_F(DistributedDBFilePackageTest, PackageFileTest003, TestSize.Level0)
   * @tc.require: AR000D4879
   * @tc.author: liujialei
   */
-HWTEST_F(DistributedDBFilePackageTest, PackageFileTest004, TestSize.Level0)
+HWTEST_F(DistributedDBFilePackageTest, PackageFileTest004, TestSize.Level1)
 {
     // Clear source files.
     RemovePath(g_sourcePath);
@@ -257,7 +258,7 @@ HWTEST_F(DistributedDBFilePackageTest, PackageFileTest004, TestSize.Level0)
   * @tc.require: AR000D4879
   * @tc.author: liujialei
   */
-HWTEST_F(DistributedDBFilePackageTest, PackageFileTest005, TestSize.Level0)
+HWTEST_F(DistributedDBFilePackageTest, PackageFileTest005, TestSize.Level1)
 {
     FileInfo fileInfo;
     int errCode = PackageFile::UnpackFile(g_packageResultPath + PACKAGE_RESULT_FILE_NAME, g_unpackResultPath, fileInfo);
@@ -272,7 +273,7 @@ HWTEST_F(DistributedDBFilePackageTest, PackageFileTest005, TestSize.Level0)
   * @tc.require: AR000D4879
   * @tc.author: liujialei
   */
-HWTEST_F(DistributedDBFilePackageTest, PackageFileTest006, TestSize.Level0)
+HWTEST_F(DistributedDBFilePackageTest, PackageFileTest006, TestSize.Level1)
 {
     int errCode = PackageFile::PackageFiles(g_sourcePath, g_packageResultPath + PACKAGE_RESULT_FILE_NAME, g_fileInfo);
     ASSERT_EQ(errCode, E_OK);
@@ -290,7 +291,7 @@ HWTEST_F(DistributedDBFilePackageTest, PackageFileTest006, TestSize.Level0)
   * @tc.require: AR000D4879
   * @tc.author: liujialei
   */
-HWTEST_F(DistributedDBFilePackageTest, PackageFileTest007, TestSize.Level0)
+HWTEST_F(DistributedDBFilePackageTest, PackageFileTest007, TestSize.Level1)
 {
     int errCode = PackageFile::PackageFiles(g_sourcePath, g_packageResultPath + PACKAGE_RESULT_FILE_NAME, g_fileInfo);
     ASSERT_EQ(errCode, E_OK);
@@ -315,7 +316,7 @@ HWTEST_F(DistributedDBFilePackageTest, PackageFileTest007, TestSize.Level0)
   * @tc.require: AR000D4879
   * @tc.author: liujialei
   */
-HWTEST_F(DistributedDBFilePackageTest, PackageFileTest008, TestSize.Level0)
+HWTEST_F(DistributedDBFilePackageTest, PackageFileTest008, TestSize.Level1)
 {
     int errCode = PackageFile::PackageFiles(g_sourcePath, g_packageResultPath + PACKAGE_RESULT_FILE_NAME, g_fileInfo);
     ASSERT_EQ(errCode, E_OK);

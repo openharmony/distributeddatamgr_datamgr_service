@@ -49,7 +49,9 @@ void QueryExpression::AssemblyQueryInfo(const QueryObjType queryOperType, const 
 }
 
 QueryExpression::QueryExpression()
-    : errFlag_(true)
+    : errFlag_(true),
+      tableName_("sync_data"), // default kv type store table name
+      isTableNameSpecified_(false)
 {}
 
 void QueryExpression::EqualTo(const std::string& field, const QueryValueType type, const FieldValue &value)
@@ -191,16 +193,31 @@ const std::list<QueryObjNode> &QueryExpression::GetQueryExpression()
         queryInfo_.emplace_back(QueryObjNode{QueryObjType::OPER_ILLEGAL});
         LOGE("Query operate illegal!");
     }
-
     return queryInfo_;
 }
 
-std::vector<uint8_t> QueryExpression::GetPreFixKey()
+std::vector<uint8_t> QueryExpression::GetPreFixKey() const
 {
     return prefixKey_;
 }
 
-std::string QueryExpression::GetSuggestIndex()
+void QueryExpression::SetTableName(const std::string &tableName)
+{
+    tableName_ = tableName;
+    isTableNameSpecified_ = true;
+}
+
+const std::string &QueryExpression::GetTableName()
+{
+    return tableName_;
+}
+
+bool QueryExpression::IsTableNameSpacified() const
+{
+    return isTableNameSpecified_;
+}
+
+std::string QueryExpression::GetSuggestIndex() const
 {
     return suggestIndex_;
 }
@@ -215,6 +232,15 @@ void QueryExpression::EndGroup()
 {
     queryInfo_.emplace_back(QueryObjNode{QueryObjType::END_GROUP, std::string(),
         QueryValueType::VALUE_TYPE_NULL, std::vector<FieldValue>()});
+}
+
+void QueryExpression::Reset()
+{
+    errFlag_ = true;
+    queryInfo_.clear();
+    prefixKey_.clear();
+    prefixKey_.shrink_to_fit();
+    suggestIndex_.clear();
 }
 
 void QueryExpression::SetErrFlag(bool flag)

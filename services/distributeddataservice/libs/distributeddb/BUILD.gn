@@ -36,9 +36,11 @@ config("distrdb_config") {
     "_FILE_OFFSET_BITS=64",
     "SQLITE_HAS_CODEC",
     "SQLITE_ENABLE_JSON1",
-    "USE_SQLITE_SYMBOLS",
     "USING_HILOG_LOGGER",
+    "USE_SQLITE_SYMBOLS",
     "USING_DB_JSON_EXTRACT_AUTOMATICALLY",
+    "JSONCPP_USE_BUILDER",
+    "OMIT_FLATBUFFER",
   ]
 }
 
@@ -57,6 +59,8 @@ group("build_module") {
 ohos_shared_library("distributeddb") {
   sources = [
     "common/src/auto_launch.cpp",
+    "common/src/data_compression.cpp",
+    "common/src/db_ability.cpp",
     "common/src/db_common.cpp",
     "common/src/db_constant.cpp",
     "common/src/evloop/src/event_impl.cpp",
@@ -89,6 +93,7 @@ ohos_shared_library("distributeddb") {
     "common/src/time_tick_monitor.cpp",
     "common/src/types_export.cpp",
     "common/src/value_object.cpp",
+    "common/src/zlib_compression.cpp",
     "communicator/src/combine_status.cpp",
     "communicator/src/communicator.cpp",
     "communicator/src/communicator_aggregator.cpp",
@@ -101,6 +106,7 @@ ohos_shared_library("distributeddb") {
     "communicator/src/protocol_proto.cpp",
     "communicator/src/send_task_scheduler.cpp",
     "communicator/src/serial_buffer.cpp",
+    "interfaces/src/intercepted_data_impl.cpp",
     "interfaces/src/kv_store_changed_data_impl.cpp",
     "interfaces/src/kv_store_delegate_impl.cpp",
     "interfaces/src/kv_store_delegate_manager.cpp",
@@ -142,6 +148,7 @@ ohos_shared_library("distributeddb") {
     "storage/src/result_entries_window.cpp",
     "storage/src/single_ver_natural_store_commit_notify_data.cpp",
     "storage/src/sqlite/query_object.cpp",
+    "storage/src/sqlite/query_sync_object.cpp",
     "storage/src/sqlite/sqlite_local_kvdb.cpp",
     "storage/src/sqlite/sqlite_local_kvdb_connection.cpp",
     "storage/src/sqlite/sqlite_local_kvdb_snapshot.cpp",
@@ -149,6 +156,8 @@ ohos_shared_library("distributeddb") {
     "storage/src/sqlite/sqlite_local_storage_executor.cpp",
     "storage/src/sqlite/sqlite_multi_ver_data_storage.cpp",
     "storage/src/sqlite/sqlite_multi_ver_transaction.cpp",
+    "storage/src/sqlite/sqlite_query_helper.cpp",
+    "storage/src/sqlite/sqlite_single_ver_continue_token.cpp",
     "storage/src/sqlite/sqlite_single_ver_database_upgrader.cpp",
     "storage/src/sqlite/sqlite_single_ver_forward_cursor.cpp",
     "storage/src/sqlite/sqlite_single_ver_natural_store.cpp",
@@ -158,6 +167,7 @@ ohos_shared_library("distributeddb") {
     "storage/src/sqlite/sqlite_single_ver_storage_engine.cpp",
     "storage/src/sqlite/sqlite_single_ver_storage_executor.cpp",
     "storage/src/sqlite/sqlite_single_ver_storage_executor_cache.cpp",
+    "storage/src/sqlite/sqlite_single_ver_storage_executor_subscribe.cpp",
     "storage/src/sqlite/sqlite_storage_engine.cpp",
     "storage/src/sqlite/sqlite_storage_executor.cpp",
     "storage/src/sqlite/sqlite_utils.cpp",
@@ -170,6 +180,7 @@ ohos_shared_library("distributeddb") {
     "storage/src/upgrader/single_ver_schema_database_upgrader.cpp",
     "syncer/src/ability_sync.cpp",
     "syncer/src/commit_history_sync.cpp",
+    "syncer/src/communicator_proxy.cpp",
     "syncer/src/device_manager.cpp",
     "syncer/src/generic_syncer.cpp",
     "syncer/src/meta_data.cpp",
@@ -178,8 +189,12 @@ ohos_shared_library("distributeddb") {
     "syncer/src/multi_ver_sync_state_machine.cpp",
     "syncer/src/multi_ver_sync_task_context.cpp",
     "syncer/src/multi_ver_syncer.cpp",
+    "syncer/src/query_sync_water_mark_helper.cpp",
+    "syncer/src/single_ver_data_packet.cpp",
     "syncer/src/single_ver_data_sync.cpp",
     "syncer/src/single_ver_data_sync_with_sliding_window.cpp",
+    "syncer/src/single_ver_kv_syncer.cpp",
+    "syncer/src/single_ver_serialize_manager.cpp",
     "syncer/src/single_ver_sync_engine.cpp",
     "syncer/src/single_ver_sync_state_machine.cpp",
     "syncer/src/single_ver_sync_target.cpp",
@@ -187,6 +202,7 @@ ohos_shared_library("distributeddb") {
     "syncer/src/single_ver_syncer.cpp",
     "syncer/src/sliding_window_receiver.cpp",
     "syncer/src/sliding_window_sender.cpp",
+    "syncer/src/subscribe_manager.cpp",
     "syncer/src/sync_engine.cpp",
     "syncer/src/sync_operation.cpp",
     "syncer/src/sync_state_machine.cpp",
@@ -203,8 +219,8 @@ ohos_shared_library("distributeddb") {
   public_configs = [ ":distrdb_public_config" ]
 
   deps = [
-    "//third_party/flatbuffers:flatbuffers_mini",
     "//third_party/sqlite:sqlite",
+    "//third_party/zlib:libz",
     "//utils/native/base:utils",
   ]
 

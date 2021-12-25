@@ -25,6 +25,7 @@
 #include "db_errno.h"
 #include "ikvdb.h"
 #include "ikvdb_factory.h"
+#include "platform_specific.h"
 
 namespace DistributedDB {
 class KvDBManager final {
@@ -89,6 +90,8 @@ private:
 
     void SetAllDatabaseCorruptionHander(const KvStoreCorruptionHandler &handler);
 
+    IKvDB *CreateDataBase(const KvDBProperties &property, int &errCode);
+
     IKvDB *GetDataBase(const KvDBProperties &property, int &errCode, bool isNeedIfOpened);
 
     void DataBaseCorruptNotify(const std::string &appId, const std::string &userId, const std::string &storeId);
@@ -117,9 +120,15 @@ private:
 
     IKvDB *GetKvDBFromCacheByIdentify(const std::string &identifier, const std::map<std::string, IKvDB *> &cache) const;
 
-    static KvDBManager *instance_;
+    static int CheckRemoveStateAndRetry(const KvDBProperties &property);
+
+    static int TryLockDB(const KvDBProperties &kvDBProp, int retryTimes);
+    static int UnlockDB(const KvDBProperties &kvDBProp);
+
+    static std::atomic<KvDBManager *> instance_;
     static std::mutex kvDBLock_;
     static std::mutex instanceLock_;
+    static std::map<std::string, OS::FileHandle> locks_;
 
     std::map<std::string, IKvDB *> localKvDBs_;
     std::map<std::string, IKvDB *> multiVerNaturalStores_;

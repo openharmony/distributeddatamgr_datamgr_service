@@ -33,6 +33,11 @@ struct AutoLaunchOption {
     int conflictType = 0;
     KvStoreNbConflictNotifier notifier;
     SecurityOption secOption;
+    bool isNeedIntegrityCheck = false;
+    bool isNeedRmCorruptedDb = false;
+    bool isNeedCompressOnSync = false;
+    uint8_t compressionRate = 100; // valid in [1, 100].
+    bool isAutoSync = true;
 };
 
 struct AutoLaunchParam {

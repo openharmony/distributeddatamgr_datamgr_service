@@ -17,8 +17,8 @@
 #define MULTI_VER_SYNCER_H
 
 #ifndef OMIT_MULTI_VER
-#include "macro_utils.h"
 #include "generic_syncer.h"
+#include "macro_utils.h"
 
 namespace DistributedDB {
 class MultiVerSyncer final : public GenericSyncer {
@@ -38,6 +38,8 @@ public:
     // Remote data changed callback
     void RemoteDataChanged(const std::string &device) override;
 
+    void RemoteDeviceOffline(const std::string &device) override;
+
     // Set stale data wipe policy
     int SetStaleDataWipePolicy(WipePolicy policy) override;
 
@@ -46,7 +48,7 @@ protected:
     ISyncEngine *CreateSyncEngine() override;
 
     // Add a Sync Operation, after call this function, the operation will be start
-    int AddSyncOperation(SyncOperation *operation) override;
+    void AddSyncOperation(SyncOperation *operation) override;
 
     // Used to set to the SyncOperation Onkill
     void SyncOperationKillCallbackInner(int syncId) override;

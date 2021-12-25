@@ -194,6 +194,12 @@ public:
     {
         return version_;
     }
+
+    bool IsFeedbackError() const
+    {
+        return (errorNo_ == E_FEEDBACK_UNKNOWN_MESSAGE || errorNo_ == E_FEEDBACK_COMMUNICATOR_NOT_FOUND);
+    }
+
 private:
     // Field or content that will be serialized for bytes transfer
     uint16_t version_ = MSG_VERSION_BASE;
@@ -203,6 +209,7 @@ private:
     uint32_t sequenceId_ = 0;   // Distinguish different message even in same session with same content in retry case
     uint32_t errorNo_ = NO_ERROR;
     ObjectHolder *holderPtr_ = nullptr;
+
     // Field carry supplemental info
     std::string target_;
     Priority prio_ = Priority::LOW;

@@ -15,10 +15,9 @@
 
 #include <gtest/gtest.h>
 
-#include "sqlite_import.h"
-#include "platform_specific.h"
 #include "distributeddb_tools_unit_test.h"
-#include "sqlite_local_kvdb_connection.h"
+#include "platform_specific.h"
+#include "sqlite_import.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -30,21 +29,21 @@ namespace {
     char *g_errMsg = nullptr;
     sqlite3 *g_sqliteDb = nullptr;
 
-    const char *DB_NAME = "test.db";
-    const char *SQL_HASH = "SELECT CALC_HASH_KEY(KEY) FROM ADDRESS_TEST";
+    const char * const DB_NAME = "test.db";
+    const char * const SQL_HASH = "SELECT CALC_HASH_KEY(KEY) FROM ADDRESS_TEST";
 #ifndef OMIT_JSON
-    const char *SQL_JSON_RIGHT = "SELECT * FROM ADDRESS_TEST \
+    const char * const SQL_JSON_RIGHT = "SELECT * FROM ADDRESS_TEST \
         WHERE JSON_EXTRACT_BY_PATH(VALUE, '$.population', 0) > 800000";
-    const char *SQL_JSON_WRONG_PATH = "SELECT * FROM ADDRESS_TEST \
+    const char * const SQL_JSON_WRONG_PATH = "SELECT * FROM ADDRESS_TEST \
         WHERE JSON_EXTRACT_BY_PATH(VALUE, '.populationWrong', 0) > 800000";
-    const char *SQL_JSON_WRONG_ARGS = "SELECT * FROM ADDRESS_TEST \
+    const char * const SQL_JSON_WRONG_ARGS = "SELECT * FROM ADDRESS_TEST \
         WHERE JSON_EXTRACT_BY_PATH(VALUE, '$.population') > 800000";
 #endif
-    const char *SQL_CREATE_TABLE = "CREATE TABLE IF NOT EXISTS ADDRESS_TEST("  \
+    const char * const SQL_CREATE_TABLE = "CREATE TABLE IF NOT EXISTS ADDRESS_TEST("  \
         "KEY    BLOB    NOT NULL    PRIMARY KEY,"  \
         "VALUE  BLOB    NOT NULL);";
 
-    const char *SQL_INSERT = "INSERT INTO ADDRESS_TEST (KEY, VALUE)"  \
+    const char * const SQL_INSERT = "INSERT INTO ADDRESS_TEST (KEY, VALUE)"  \
         "VALUES ('1', '{\"province\":\"hunan\", \"city\":\"shaoyang\", \"population\":1000000}');" \
         "INSERT INTO ADDRESS_TEST (KEY, VALUE)"  \
         "VALUES ('12', '{\"province\":\"jiangsu\", \"city\":\"nanjing\", \"population\":3500000}');" \
@@ -112,6 +111,7 @@ void DistributedDBSqliteRegisterTest::TearDownTestCase(void)
 
 void DistributedDBSqliteRegisterTest::SetUp()
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
 void DistributedDBSqliteRegisterTest::TearDown()

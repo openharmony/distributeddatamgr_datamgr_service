@@ -17,12 +17,15 @@
 #define SINGLE_VER_DATA_SYNC_NEW_H
 
 #include "icommunicator.h"
+#include "isync_interface.h"
 #include "meta_data.h"
+#include "parcel.h"
+#include "single_ver_data_packet.h"
 #include "single_ver_kvdb_sync_interface.h"
 #include "single_ver_sync_task_context.h"
+#include "sync_generic_interface.h"
 #include "sync_types.h"
 #include "version.h"
-#include "parcel.h"
 
 namespace DistributedDB {
 using SendDataItem = SingleVerKvEntry *;
@@ -30,134 +33,26 @@ using SendDataItem = SingleVerKvEntry *;
 struct DataSyncReSendInfo {
     uint32_t sessionId = 0;
     uint32_t sequenceId = 0;
-    TimeStamp start = 0; // means localwatermark
+    TimeStamp start = 0; // means normal or sync data localwatermark
     TimeStamp end = 0;
+    TimeStamp deleteDataStart = 0; // means delete data localwatermark
+    TimeStamp deleteDataEnd = 0;
     uint64_t packetId = 0;
 };
 
-class DataRequestPacket {
-public:
-    DataRequestPacket() {};
-    ~DataRequestPacket();
-
-    void SetData(std::vector<SendDataItem> &data);
-
-    const std::vector<SendDataItem> &GetData() const;
-
-    void SetEndWaterMark(WaterMark waterMark);
-
-    WaterMark GetEndWaterMark() const;
-
-    void SetLocalWaterMark(WaterMark waterMark);
-
-    WaterMark GetLocalWaterMark() const;
-
-    void SetPeerWaterMark(WaterMark waterMark);
-
-    WaterMark GetPeerWaterMark() const;
-
-    void SetSendCode(int32_t errCode);
-
-    int32_t GetSendCode() const;
-
-    void SetMode(int32_t mode);
-
-    int32_t GetMode() const;
-
-    void SetSessionId(uint32_t sessionId);
-
-    uint32_t GetSessionId() const;
-
-    void SetVersion(uint32_t version);
-
-    uint32_t GetVersion() const;
-
-    uint32_t CalculateLen() const;
-
-    void SetReserved(std::vector<uint64_t> &reserved);
-
-    std::vector<uint64_t> GetReserved() const;
-
-    uint64_t GetPacketId() const;
-
-    void SetFlag(uint32_t flag);
-
-    uint32_t GetFlag() const;
-
-    bool IsLastSequence() const;
-
-    void SetLastSequence();
-
-    void SetBasicInfo(int sendCode, uint32_t version, WaterMark localMark, WaterMark peerMark, int32_t mode);
-
-private:
-    std::vector<SendDataItem> data_;
-    WaterMark endWaterMark_ = 0;
-    WaterMark localWaterMark_ = 0;
-    WaterMark peerWaterMark_ = 0;
-    int32_t sendCode_ = 0;
-    int32_t mode_ = SyncOperation::INVALID;
-    uint32_t sessionId_ = 0;
-    uint32_t version_ = SOFTWARE_VERSION_CURRENT;
-    std::vector<uint64_t> reserved_;
-    uint32_t flag_ = 0; // bit 0 used for isLastSequence
-    static const uint32_t IS_LAST_SEQUENCE = 0x1; // bit 0 used for isLastSequence, 1: is last, 0: not last
-};
-
-class DataAckPacket {
-public:
-    DataAckPacket() {};
-    ~DataAckPacket() {};
-
-    void SetData(uint64_t data);
-
-    uint64_t GetData() const;
-
-    void SetRecvCode(int32_t errorCode);
-
-    int32_t GetRecvCode() const;
-
-    void SetVersion(uint32_t version);
-
-    uint32_t GetVersion() const;
-
-    void SetReserved(std::vector<uint64_t> &reserved);
-
-    std::vector<uint64_t> GetReserved() const;
-
-    uint64_t GetPacketId() const;
-
-    static bool IsPacketIdValid(uint64_t packetId);
-
-    uint32_t CalculateLen() const;
-
-private:
-    /*
-     * data_ is waterMark when revCode_ == LOCAL_WATER_MARK_NOT_INIT || revCode_ == E_OK;
-     * data_ is timer in milliSeconds when revCode_ == -E_SAVE_DATA_NOTIFY && data_ != 0.
-     */
-    uint64_t data_ = 0;
-    int32_t recvCode_ = 0;
-    uint32_t version_ = SOFTWARE_VERSION_CURRENT;
-    std::vector<uint64_t> reserved_;
+struct SyncEntry {
+    std::vector<SendDataItem> entries;
+    std::vector<uint8_t> compressedEntries;
 };
 
 class SingleVerDataSync {
 public:
     SingleVerDataSync();
-    ~SingleVerDataSync();
+    virtual ~SingleVerDataSync();
 
     DISABLE_COPY_ASSIGN_MOVE(SingleVerDataSync);
 
-    static int Serialization(uint8_t *buffer, uint32_t length, const Message *inMsg);
-
-    static int DeSerialization(const uint8_t *buffer, uint32_t length, Message *inMsg);
-
-    static uint32_t CalculateLen(const Message *inMsg);
-
-    static int RegisterTransformFunc();
-
-    int Initialize(IKvDBSyncInterface *inStorage, ICommunicator *inCommunicateHandle,
+    int Initialize(ISyncInterface *inStorage, ICommunicator *inCommunicateHandle,
         std::shared_ptr<Metadata> &inMetadata, const std::string &deviceId);
 
     int PushStart(SingleVerSyncTaskContext *context);
@@ -168,52 +63,68 @@ public:
 
     int PullResponseStart(SingleVerSyncTaskContext *context);
 
-    int RequestRecv(SingleVerSyncTaskContext *context, const Message *message, WaterMark &pullEndWatermark);
+    int DataRequestRecv(SingleVerSyncTaskContext *context, const Message *message, WaterMark &pullEndWatermark);
 
     int AckRecv(SingleVerSyncTaskContext *context, const Message *message);
 
     void SendSaveDataNotifyPacket(SingleVerSyncTaskContext *context, uint32_t pktVersion, uint32_t sessionId,
-        uint32_t sequenceId);
+        uint32_t sequenceId, uint32_t inMsgId);
 
-    void SendAck(SingleVerSyncTaskContext *context, uint32_t sessionId, uint32_t sequenceId, uint64_t packetId);
+    virtual int SendDataAck(SingleVerSyncTaskContext *context, const Message *message, int32_t recvCode,
+        WaterMark maxSendDataTime);
 
     int32_t ReSend(SingleVerSyncTaskContext *context, DataSyncReSendInfo reSendInfo);
 
-    int CheckPermitSendData(int mode, SingleVerSyncTaskContext *context);
+    int CheckPermitSendData(int inMode, SingleVerSyncTaskContext *context);
 
     std::string GetLabel() const;
 
     std::string GetDeviceId() const;
 
-private:
+    bool WaterMarkErrHandle(SyncType syncType, SingleVerSyncTaskContext *context, const Message *message);
+
+    int ControlCmdStart(SingleVerSyncTaskContext *context);
+
+    int ControlCmdRequestRecv(SingleVerSyncTaskContext *context, const Message *message);
+
+    int ControlCmdAckRecv(SingleVerSyncTaskContext *context, const Message *message);
+
+    bool IsNeedTriggerQueryAutoSync(Message *inMsg, QuerySyncObject &query);
+
+    void ControlAckErrorHandle(const SingleVerSyncTaskContext *context,
+        const std::shared_ptr<SubscribeManager> &subManager) const;
+
+protected:
     static const int SEND_FINISHED = 0xff;
     static const int LOCAL_WATER_MARK_NOT_INIT = 0xaa;
     static const int PEER_WATER_MARK_NOT_INIT = 0x55;
     static const int WATER_MARK_INVALID = 0xbb;
     static const int MTU_SIZE = 28311552; // 27MB
 
-    static int AckPacketCalculateLen(const Message *inMsg, uint32_t &len);
+    TimeStamp GetMaxSendDataTime(const std::vector<SendDataItem> &inData);
 
-    static int DataPacketCalculateLen(const Message *inMsg, uint32_t &len);
+    TimeStamp GetMinSendDataTime(const std::vector<SendDataItem> &inData, WaterMark localMark);
 
-    static int DataPacketSerialization(uint8_t *buffer, uint32_t length, const Message *inMsg);
+    void FillDataRequestPacket(DataRequestPacket *packet, SingleVerSyncTaskContext *context,
+        SyncEntry &syncData, int sendCode, int mode);
 
-    static int DataPacketDeSerialization(const uint8_t *buffer, uint32_t length, Message *inMsg);
+    int RequestStart(SingleVerSyncTaskContext *context, int mode);
 
-    static int AckPacketSerialization(uint8_t *buffer, uint32_t length, const Message *inMsg);
+    SyncTimeRange GetSyncDataTimeRange(SyncType syncType, SingleVerSyncTaskContext *context,
+        const std::vector<SendDataItem> &inData, UpdateWaterMark &isUpdate);
 
-    static int AckPacketDeSerialization(const uint8_t *buffer, uint32_t length, Message *inMsg);
+    SyncTimeRange GetRecvDataTimeRange(SyncType syncType, SingleVerSyncTaskContext *context,
+    const std::vector<SendDataItem> &data, UpdateWaterMark &isUpdate);
 
-    static bool IsPacketValid(const Message *inMsg);
+    SyncTimeRange GetFullSyncDataTimeRange(const std::vector<SendDataItem> &inData, WaterMark localMark,
+        UpdateWaterMark &isUpdate);
 
-    static TimeStamp GetMaxSendDataTime(const std::vector<SendDataItem> &inData, bool isNeedInit,
-        WaterMark localMark = 0);
-
-    static TimeStamp GetMinSendDataTime(const std::vector<SendDataItem> &inData, WaterMark localMark);
+    SyncTimeRange GetQuerySyncDataTimeRange(const std::vector<SendDataItem> &inData, WaterMark localMark,
+        WaterMark deletelocalMark, UpdateWaterMark &isUpdate);
 
     int GetData(SingleVerSyncTaskContext *context, std::vector<SendDataItem> &outData, size_t packetSize);
 
-    int GetDataWithRerformanceRecord(SingleVerSyncTaskContext *context, std::vector<SendDataItem> &outData);
+    int GetDataWithPerformanceRecord(SingleVerSyncTaskContext *context, SyncEntry &syncOutData);
 
     int Send(SingleVerSyncTaskContext *context, const Message *message, const CommErrHandler &handler,
         uint32_t packetLen);
@@ -222,13 +133,30 @@ private:
 
     int GetNextUnsyncData(SingleVerSyncTaskContext *context, std::vector<SendDataItem> &outData, size_t packetSize);
 
-    int SaveData(const SingleVerSyncTaskContext *context, const std::vector<SendDataItem> &inData);
+    int GetMessageId(SyncType syncType) const;
 
-    int SaveLocalWaterMark(const DeviceID &deviceId, WaterMark waterMark);
+    int SaveData(const SingleVerSyncTaskContext *context, const std::vector<SendDataItem> &inData, SyncType curType,
+        const QuerySyncObject &query);
 
-    int SavePeerWaterMark(const DeviceID &deviceId, WaterMark waterMark);
+    SyncTimeRange ReviseLocalMark(SyncType syncType, SyncTimeRange &dataTimeRange, UpdateWaterMark updateMark);
 
-    int RemoveDeviceData(SingleVerSyncTaskContext *context, const Message *message, WaterMark maxSendDataTime);
+    int SaveLocalWaterMark(SyncType syncType, const SingleVerSyncTaskContext *context,
+        SyncTimeRange dataTimeRange, bool isCheckBeforUpdate = false) const;
+
+    void GetLocalWaterMark(SyncType syncType, const std::string &queryIdentify, const SingleVerSyncTaskContext *context,
+        WaterMark &watermark) const;
+
+    void GetPeerWaterMark(SyncType syncType, const std::string &queryIdentify, const DeviceID &deviceId,
+        WaterMark &watermark) const;
+
+    void GetPeerDeleteSyncWaterMark(const DeviceID &deviceId, WaterMark &waterMark);
+
+    void GetLocalDeleteSyncWaterMark(const SingleVerSyncTaskContext *context, WaterMark &waterMark) const;
+
+    int RemoveDeviceDataHandle(SingleVerSyncTaskContext *context, const Message *message, WaterMark maxSendDataTime);
+
+    int DealRemoveDeviceDataByAck(SingleVerSyncTaskContext *context, WaterMark ackWaterMark,
+        const std::vector<uint64_t> &reserved);
 
     void TransSendDataItemToLocal(const SingleVerSyncTaskContext *context,
         const std::vector<SendDataItem> &data);
@@ -236,40 +164,27 @@ private:
     void TransDbDataItemToSendDataItem(const SingleVerSyncTaskContext *context,
         std::vector<SendDataItem> &outData);
 
-    int SendDataPacket(const DataRequestPacket *packet, SingleVerSyncTaskContext *context);
+    int SendDataPacket(SyncType syncType, const DataRequestPacket *packet, SingleVerSyncTaskContext *context);
 
-    void SetAckData(DataAckPacket &ackPacket,  SingleVerSyncTaskContext *context, int32_t recvCode,
-        WaterMark maxSendDataTime) const;
+    void UpdateQueryPeerWaterMark(SyncType syncType, const std::string &queryId, SyncTimeRange &dataTime,
+        const SingleVerSyncTaskContext *context, UpdateWaterMark isUpdateWaterMark);
 
-    int SendAck(SingleVerSyncTaskContext *context, const Message *message, int32_t recvCode,
-        WaterMark maxSendDataTime);
-
-    int SendLocalWaterMarkAck(SingleVerSyncTaskContext *context, const Message *message);
-
-    void UpdatePeerWaterMark(const SingleVerSyncTaskContext *context, WaterMark peerWatermark);
+    void UpdatePeerWaterMark(SyncType syncType, const std::string &queryId, const SingleVerSyncTaskContext *context,
+        WaterMark peerWatermark, WaterMark peerDeletedWatermark);
 
     std::string GetLocalDeviceName();
 
-    std::string TransferForeignOrigDevName(const std::string &deviceName);
+    std::string TransferForeignOrigDevName(const std::string &deviceName, const std::string &localHashName);
 
-    std::string TransferLocalOrigDevName(const std::string &origName);
+    int DoAbilitySyncIfNeed(SingleVerSyncTaskContext *context, const Message *message, bool isControlMsg = false);
 
-    int RequestRecvPre(SingleVerSyncTaskContext *context, const Message *message);
+    int DataRequestRecvPre(SingleVerSyncTaskContext *context, const Message *message);
 
     void GetPullEndWatermark(const SingleVerSyncTaskContext *context, const DataRequestPacket *packet,
         WaterMark &pullEndWatermark) const;
 
     int DealWaterMarkException(SingleVerSyncTaskContext *context, WaterMark ackWaterMark,
         const std::vector<uint64_t> &reserved);
-
-    static int DataPacketSyncerPartSerialization(Parcel &parcel, const DataRequestPacket *packet);
-
-    static int DataPacketSyncerPartDeSerialization(Parcel &parcel, DataRequestPacket *packet, uint32_t packLen,
-        uint32_t length, uint32_t version);
-
-    static int AckPacketSyncerPartSerializationV1(Parcel &parcel, const DataAckPacket *packet);
-
-    static int AckPacketSyncerPartDeSerializationV1(Parcel &parcel, DataAckPacket &packet);
 
     int RunPermissionCheck(SingleVerSyncTaskContext *context, const Message *message,
         const DataRequestPacket *packet);
@@ -279,8 +194,7 @@ private:
     int SendReSendPacket(const DataRequestPacket *packet, SingleVerSyncTaskContext *context,
         uint32_t sessionId, uint32_t sequenceId);
 
-    int SendPullResponseDataPkt(int ackCode, std::vector<SendDataItem> &inData,
-        SingleVerSyncTaskContext *context);
+    int SendPullResponseDataPkt(int ackCode, SyncEntry &syncOutData, SingleVerSyncTaskContext *context);
 
     void SetPacketId(DataRequestPacket *packet, SingleVerSyncTaskContext *context, uint32_t version);
 
@@ -292,10 +206,56 @@ private:
 
     int CheckSchemaStrategy(SingleVerSyncTaskContext *context, const Message *message);
 
-    void RemotePushFinished(int sendCode, int mode, uint32_t msgSessionId, uint32_t contetSessionId);
+    void RemotePushFinished(int sendCode, int inMode, uint32_t msgSessionId, uint32_t contextSessionId);
+
+    void PushAndPUllKeyRevokHandle(SingleVerSyncTaskContext *context);
+
+    void SetAckPacket(DataAckPacket &ackPacket, SingleVerSyncTaskContext *context, const DataRequestPacket *packet,
+        int32_t recvCode, WaterMark maxSendDataTime);
+
+    int GetReSendData(SyncEntry &syncData, SingleVerSyncTaskContext *context,
+        DataSyncReSendInfo reSendInfo);
+
+    int RemoveDeviceDataIfNeed(SingleVerSyncTaskContext *context);
+
+    int GetReSendMode(int mode, uint32_t sequenceId, SyncType syncType);
+
+    void FillRequestReSendPacket(const SingleVerSyncTaskContext *context, DataRequestPacket *packet,
+        DataSyncReSendInfo reSendInfo, SyncEntry &syncData, int sendCode);
+
+    void UpdateMtuSize();
+
+    DataSizeSpecInfo GetDataSizeSpecInfo(size_t packetSize);
+
+    int AckMsgErrnoCheck(const SingleVerSyncTaskContext *context, const Message *message) const;
+
+    bool QuerySyncCheck(const SingleVerSyncTaskContext *context) const;
+
+    int InterceptData(SyncEntry &syncEntry);
+
+    int RequestQueryCheck(const DataRequestPacket *packet) const;
+    int ControlCmdStartCheck(SingleVerSyncTaskContext *context);
+
+    void FillControlRequestPacket(ControlRequestPacket *packet, SingleVerSyncTaskContext *context);
+
+    int SendControlPacket(const ControlRequestPacket *packet, SingleVerSyncTaskContext *context);
+
+    ControlCmdType GetControlCmdType(int mode);
+    int GetModeByControlCmdType(ControlCmdType controlCmd);
+
+    int ControlCmdRequestRecvPre(SingleVerSyncTaskContext *context, const Message *message);
+    int SubscribeRequestRecvPre(SingleVerSyncTaskContext *context, const SubscribeRequest *packet,
+        const Message *message);
+    int SubscribeRequestRecv(SingleVerSyncTaskContext *context, const Message *message);
+    int UnsubscribeRequestRecv(SingleVerSyncTaskContext *context, const Message *message);
+    int SendControlAck(SingleVerSyncTaskContext *context, const Message *message, int32_t recvCode,
+        uint32_t controlCmdType, const CommErrHandler &handler = nullptr);
+
+    std::string GetQuerySyncId(const SingleVerSyncTaskContext *context, const std::string &queryId) const;
+    std::string GetDeleteSyncId(const SingleVerSyncTaskContext *context) const;
 
     uint32_t mtuSize_;
-    SingleVerKvDBSyncInterface* storage_;
+    SyncGenericInterface* storage_;
     ICommunicator* communicateHandle_;
     std::shared_ptr<Metadata> metadata_;
     std::string label_;

@@ -14,7 +14,7 @@
  */
 
 #include "sliding_window_sender.h"
-
+#include "db_common.h"
 namespace DistributedDB {
 SlidingWindowSender::~SlidingWindowSender()
 {
@@ -37,16 +37,17 @@ int SlidingWindowSender::ParamCheck(int32_t mode, const SingleVerSyncTaskContext
     return E_OK;
 }
 
-void SlidingWindowSender::Init(int32_t mode, SingleVerSyncTaskContext *context,
+void SlidingWindowSender::Init(int32_t inMode, SingleVerSyncTaskContext *context,
     std::shared_ptr<SingleVerDataSync> &dataSync)
 {
     isErr_ = false;
-    mode_ = mode;
+    mode_ = inMode;
     context_->SetSessionEndTimeStamp(0);
     context_->ReSetSequenceId();
     maxSequenceIdhasSent_ = 0;
     windowSize_ = MAX_WINDOW_SIZE;
-    if (mode == SyncOperation::PUSH || mode == SyncOperation::PUSH_AND_PULL || mode == SyncOperation::PULL) {
+    int mode = SyncOperation::TransferSyncMode(inMode);
+    if (mode == SyncModeType::PUSH || mode == SyncModeType::PUSH_AND_PULL || mode == SyncModeType::PULL) {
         sessionId_ = context->GetRequestSessionId();
     } else {
         sessionId_ = context->GetResponseSessionId();
@@ -71,8 +72,6 @@ int SlidingWindowSender::SendStart(int32_t mode, SingleVerSyncTaskContext *conte
     if (errCode != E_OK) {
         return errCode;
     }
-    LOGI("[slws] SendStart,mode=%d,label=%s,device=%s{private}", mode_, dataSync->GetLabel().c_str(),
-        context->GetDeviceId().c_str());
     errCode = dataSync->CheckPermitSendData(mode, context);
     if (errCode != E_OK) {
         return errCode;
@@ -82,11 +81,14 @@ int SlidingWindowSender::SendStart(int32_t mode, SingleVerSyncTaskContext *conte
         return ReSend();
     }
     Init(mode, context, dataSync);
-    if (mode == SyncOperation::PUSH) {
+    LOGI("[slws] SendStart,mode=%d,label=%s,device=%s", mode_, dataSync->GetLabel().c_str(),
+        STR_MASK(context->GetDeviceId()));
+    int tmpMode = SyncOperation::TransferSyncMode(mode);
+    if (tmpMode == SyncModeType::PUSH) {
         errCode = dataSync->PushStart(context);
-    } else if (mode == SyncOperation::PUSH_AND_PULL) {
+    } else if (tmpMode == SyncModeType::PUSH_AND_PULL) {
         errCode = dataSync->PushPullStart(context);
-    } else if (mode == SyncOperation::PULL) {
+    } else if (tmpMode == SyncModeType::PULL) {
         errCode = dataSync->PullRequestStart(context);
     } else {
         errCode = dataSync->PullResponseStart(context);
@@ -102,7 +104,7 @@ int SlidingWindowSender::SendStart(int32_t mode, SingleVerSyncTaskContext *conte
         return errCode;
     }
     errCode = UpdateInfo();
-    if (mode == SyncOperation::PUSH_AND_PULL && context_->GetTaskErrCode() == -E_EKEYREVOKED) {
+    if (tmpMode == SyncModeType::PUSH_AND_PULL && context_->GetTaskErrCode() == -E_EKEYREVOKED) {
         LOGE("wait for recv finished for push and pull mode");
         return -E_EKEYREVOKED;
     }
@@ -115,15 +117,19 @@ int SlidingWindowSender::SendStart(int32_t mode, SingleVerSyncTaskContext *conte
 int SlidingWindowSender::UpdateInfo()
 {
     ReSendInfo reSendInfo;
-    reSendInfo.start = context_->GetSequenceStartTimeStamp();
-    reSendInfo.end = context_->GetSequenceEndTimeStamp();
+    SyncTimeRange reSendDataTimeRange = context_->GetDataTimeRange();
+    reSendInfo.start = reSendDataTimeRange.beginTime;
+    reSendInfo.end = reSendDataTimeRange.endTime;
+    reSendInfo.deleteBeginTime = reSendDataTimeRange.deleteBeginTime;
+    reSendInfo.deleteEndTime = reSendDataTimeRange.deleteEndTime;
     reSendInfo.packetId = context_->GetPacketId();
     maxSequenceIdhasSent_++;
     reSendMap_[maxSequenceIdhasSent_] = reSendInfo;
     windowSize_--;
-    LOGI("[slws] mode=%d,start=%llu,end=%llu,seqId=%d,packetId=%llu,window_size=%d,label=%s,device=%s{private}", mode_,
-        reSendInfo.start, reSendInfo.end, maxSequenceIdhasSent_, reSendInfo.packetId, windowSize_,
-        dataSync_->GetLabel().c_str(), context_->GetDeviceId().c_str());
+    LOGI("[slws] mode=%d,start=%llu,end=%llu,deleteStart=%llu,deleteEnd=%llu,seqId=%d,packetId=%llu,window_size=%d,"
+        "label=%s,device=%s", mode_, reSendInfo.start, reSendInfo.end, reSendInfo.deleteBeginTime,
+        reSendInfo.deleteEndTime, maxSequenceIdhasSent_, reSendInfo.packetId, windowSize_,
+        dataSync_->GetLabel().c_str(), STR_MASK(context_->GetDeviceId()));
     ContinueToken token;
     context_->GetContinueToken(token);
     if (token == nullptr) {
@@ -147,12 +153,13 @@ int SlidingWindowSender::InnerSend()
         }
         int errCode;
         context_->IncSequenceId();
-        if (mode_ == SyncOperation::PUSH || mode_ == SyncOperation::PUSH_AND_PULL) {
+        int mode = SyncOperation::TransferSyncMode(mode_);
+        if (mode == SyncModeType::PUSH || mode == SyncModeType::PUSH_AND_PULL) {
             errCode = dataSync_->PushStart(context_);
         } else {
             errCode = dataSync_->PullResponseStart(context_);
         }
-        if (mode_ == SyncOperation::PUSH_AND_PULL && errCode == -E_EKEYREVOKED) {
+        if ((mode == SyncModeType::PUSH_AND_PULL) && errCode == -E_EKEYREVOKED) {
             LOGE("errCode = %d, wait for recv finished for push and pull mode", errCode);
             isAllDataHasSent_ = true;
             return -E_EKEYREVOKED;
@@ -181,7 +188,7 @@ int SlidingWindowSender::PreHandleAckRecv(const Message *message)
         LOGE("[slws] AckRecv message nullptr");
         return -E_INVALID_ARGS;
     }
-    if (message->GetMessageType() == TYPE_NOTIFY) {
+    if (message->GetMessageType() == TYPE_NOTIFY || message->IsFeedbackError()) {
         return E_OK;
     }
     const DataAckPacket *packet = message->GetObject<DataAckPacket>();
@@ -214,8 +221,8 @@ int SlidingWindowSender::AckRecv(const Message *message)
     uint64_t packetId = packet->GetPacketId(); // above 102 version data request reserve[0] store packetId value
     uint32_t sessionId = message->GetSessionId();
     uint32_t sequenceId = message->GetSequenceId();
-    LOGI("[slws] AckRecv sequecneId=%d,packetId=%llu,label=%s,dev=%s{private}", sequenceId, packetId,
-        dataSync_->GetLabel().c_str(), context_->GetDeviceId().c_str());
+    LOGI("[slws] AckRecv sequecneId=%d,packetId=%llu,label=%s,dev=%s", sequenceId, packetId,
+        dataSync_->GetLabel().c_str(), STR_MASK(context_->GetDeviceId()));
 
     std::lock_guard<std::mutex> lock(lock_);
     if (sessionId != sessionId_) {
@@ -233,9 +240,9 @@ int SlidingWindowSender::AckRecv(const Message *message)
     if (!isAllDataHasSent_) {
         return InnerSend();
     } else if (reSendMap_.size() == 0) {
-        context_->SetOperationStatus(SyncOperation::SEND_FINISHED);
-        LOGI("[slws] AckRecv all finished,label=%s,dev=%s{private}", dataSync_->GetLabel().c_str(),
-            context_->GetDeviceId().c_str());
+        context_->SetOperationStatus(SyncOperation::OP_SEND_FINISHED);
+        LOGI("[slws] AckRecv all finished,label=%s,dev=%s", dataSync_->GetLabel().c_str(),
+            STR_MASK(context_->GetDeviceId()));
         InnerClear();
         return -E_FINISHED;
     }
@@ -254,10 +261,12 @@ int SlidingWindowSender::ReSend() const
     }
     uint32_t sequenceId = reSendMap_.begin()->first;
     ReSendInfo reSendInfo = reSendMap_.begin()->second;
-    LOGI("[slws] ReSend mode=%d,start=%llu,end=%llu,seqId=%d,packetId=%llu,windowsize=%d,label=%s,deviceId=%s{private}",
-        mode_, reSendInfo.start, reSendInfo.end, sequenceId, reSendInfo.packetId, windowSize_,
-        dataSync_->GetLabel().c_str(), context_->GetDeviceId().c_str());
-    DataSyncReSendInfo dataReSendInfo = {sessionId_, sequenceId, reSendInfo.start, reSendInfo.end, reSendInfo.packetId};
+    LOGI("[slws] ReSend mode=%d,start=%llu,end=%llu,delStart=%llu,delEnd=%llu,seqId=%d,packetId=%llu,windowsize=%d,"
+        "label=%s,deviceId=%s", mode_, reSendInfo.start, reSendInfo.end, reSendInfo.deleteBeginTime,
+        reSendInfo.deleteEndTime, sequenceId, reSendInfo.packetId, windowSize_, dataSync_->GetLabel().c_str(),
+        STR_MASK(context_->GetDeviceId()));
+    DataSyncReSendInfo dataReSendInfo = {sessionId_, sequenceId, reSendInfo.start, reSendInfo.end,
+        reSendInfo.deleteBeginTime, reSendInfo.deleteEndTime, reSendInfo.packetId};
     return dataSync_->ReSend(context_, dataReSendInfo);
 }
 

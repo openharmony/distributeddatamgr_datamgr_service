@@ -16,12 +16,11 @@
 #include <gtest/gtest.h>
 #include <thread>
 
-#include "distributeddb_tools_unit_test.h"
-#include "distributeddb_data_generate_unit_test.h"
-#include "kv_store_observer.h"
-#include "securec.h"
-#include "platform_specific.h"
 #include "db_common.h"
+#include "distributeddb_data_generate_unit_test.h"
+#include "distributeddb_tools_unit_test.h"
+#include "platform_specific.h"
+#include "securec.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -144,6 +143,7 @@ void DistributedDBInterfacesRegisterSyncDBTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesRegisterSyncDBTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /*
      * Here, we create STORE_ID before test,
      * and it will be closed in TearDown().

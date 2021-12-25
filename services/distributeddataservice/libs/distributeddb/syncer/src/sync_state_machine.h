@@ -18,6 +18,7 @@
 
 #include <mutex>
 
+#include "isync_interface.h"
 #include "isync_state_machine.h"
 
 namespace DistributedDB {
@@ -30,13 +31,22 @@ struct StateSwitchTable {
     std::map<uint8_t, EventToState> switchTable; // the 1st uint8_t is current state
 };
 
+struct WatchDogController {
+    TimerId feedDogTimerId = 0;
+    uint8_t feedDogCnt = 0;
+    uint8_t feedDogUpperLimit = 0;
+    /* this variable will +1 when call StartFeedDogForSync, -1 when recv one ack,
+    when it become <= 0, we stop the watch dog. */
+    int refCount = 0;
+};
+
 class SyncStateMachine : public ISyncStateMachine {
 public:
     SyncStateMachine();
-    virtual ~SyncStateMachine();
+    ~SyncStateMachine() override;
 
     // Init the SingleVerSyncStateMachine
-    int Initialize(ISyncTaskContext *context, IKvDBSyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
+    int Initialize(ISyncTaskContext *context, ISyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
         ICommunicator *communicator) override;
 
     // start a sync step
@@ -50,6 +60,8 @@ public:
 
     // start a timer to ResetWatchDog when sync data one (key,value) size bigger than mtu
     bool StartFeedDogForSync(uint32_t time, SyncDirectionFlag flag) override;
+
+    uint8_t GetFeedDogTimeout(int timeoutCount) const;
 
     // stop timer to ResetWatchDog when sync data one (key,value) size bigger than mtu
     void StopFeedDogForSync(SyncDirectionFlag flag) override;
@@ -83,7 +95,7 @@ protected:
     virtual int PrepareNextSyncTask() = 0;
 
     // Called by StartSaveDataNotifyTimer, Sub class should realize this function to send a heartbeet packet
-    virtual void SendSaveDataNotifyPacket(uint32_t sessionId, uint32_t sequenceId) = 0;
+    virtual void SendSaveDataNotifyPacket(uint32_t sessionId, uint32_t sequenceId, uint32_t inMsgId) = 0;
 
     // Used to parse state table to switch machine state, this function must be called in stateMachineLock
     int SwitchMachineState(uint8_t event);
@@ -104,7 +116,7 @@ protected:
     void StopWatchDog();
 
     // Start a timer to send data notify packet to keep remote device not timeout
-    bool StartSaveDataNotify(uint32_t sessionId, uint32_t sequenceId);
+    bool StartSaveDataNotify(uint32_t sessionId, uint32_t sequenceId, uint32_t inMsgId);
 
     // Stop send save data notify
     void StopSaveDataNotify();
@@ -115,10 +127,12 @@ protected:
     // stop a timer to ResetWatchDog when sync data bigger than mtu  without lock
     void StopFeedDogForSyncNoLock(SyncDirectionFlag flag);
 
+    void DecRefCountOfFeedDogTimer(SyncDirectionFlag flag);
+
     DISABLE_COPY_ASSIGN_MOVE(SyncStateMachine);
 
     ISyncTaskContext *syncContext_;
-    IKvDBSyncInterface *storageInterface_;
+    ISyncInterface *storageInterface_;
     ICommunicator *communicator_;
     std::shared_ptr<Metadata> metadata_;
     std::mutex stateMachineLock_;
@@ -136,8 +150,7 @@ protected:
 
     // used for one (key,value) bigger than mtu size, in this case, send packet need more longger time
     std::mutex feedDogLock_[SYNC_DIRECTION_NUM];
-    TimerId feedDogTimerId_[SYNC_DIRECTION_NUM] = {0, 0};
-    uint8_t feedDogCount_[SYNC_DIRECTION_NUM] = {0, 0};
+    WatchDogController watchDogController_[SYNC_DIRECTION_NUM] = {{0}, {0}};
 };
 } // namespace DistributedDB
 #endif // SYNC_STATE_MACHINE_H

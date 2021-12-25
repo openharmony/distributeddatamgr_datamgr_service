@@ -321,5 +321,9 @@ int GenericKvDBConnection::GetEventType(unsigned mode, std::list<int> &eventType
 
     return TranslateObserverModeToEventTypes(mode, eventTypes);
 }
-}
 
+int GenericKvDBConnection::CheckIntegrity() const
+{
+    return E_OK;
+}
+}

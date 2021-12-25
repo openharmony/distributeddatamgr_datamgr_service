@@ -1072,6 +1072,7 @@ void KvStoreDataService::ResolveAutoLaunchParamByIdentifier(const std::string &i
                 option.createDirByStoreIdOnly = true;
                 option.dataDir = entry.second.kvStoreMetaData.dataDir;
                 option.secOption = KvStoreAppManager::ConvertSecurity(entry.second.kvStoreMetaData.securityLevel);
+                option.isAutoSync = entry.second.kvStoreMetaData.isAutoSync;
                 param.userId = userId;
                 param.appId = entry.second.kvStoreMetaData.appId;
                 param.storeId = entry.second.kvStoreMetaData.storeId;
@@ -1084,6 +1085,8 @@ void KvStoreDataService::ResolveAutoLaunchParamByIdentifier(const std::string &i
 bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::string &appId,
                                           const std::string &storeId, const std::string &deviceId, uint8_t flag) const
 {
+    ZLOGI("userId=%.6s appId=%s storeId=%s flag=%d deviceId=%.4s", userId.c_str(), appId.c_str(), storeId.c_str(), flag,
+          deviceId.c_str()); // only print 4 chars of device id
     auto &instance = KvStoreMetaManager::GetInstance();
     KvStoreMetaData metaData;
     auto localDevId = DeviceKvStoreImpl::GetLocalDeviceId();

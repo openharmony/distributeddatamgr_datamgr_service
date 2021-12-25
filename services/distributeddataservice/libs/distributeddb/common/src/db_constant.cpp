@@ -55,4 +55,12 @@ const std::string DBConstant::PATH_BACKUP_POSTFIX = "_bak";
 const std::string DBConstant::ID_CONNECTOR = "-";
 
 const std::string DBConstant::DELETE_KVSTORE_REMOVING = "_removing";
+const std::string DBConstant::DB_LOCK_POSTFIX = ".lock";
+
+const std::string DBConstant::SUBSCRIBE_QUERY_PREFIX = "subscribe_query_";
+
+const std::string DBConstant::TRIGGER_REFERENCES_NEW = "NEW.";
+const std::string DBConstant::TRIGGER_REFERENCES_OLD = "OLD.";
+
+const std::string DBConstant::UPDATE_META_FUNC = "update_meta_within_trigger";
 }

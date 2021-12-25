@@ -18,6 +18,7 @@
 #include <cmath>
 
 #include "db_errno.h"
+#include "distributeddb_tools_unit_test.h"
 #include "log_print.h"
 #include "schema_object.h"
 #include "schema_utils.h"
@@ -402,9 +403,14 @@ class DistributedDBSchemaObjectTest : public testing::Test {
 public:
     static void SetUpTestCase(void) {};
     static void TearDownTestCase(void) {};
-    void SetUp() {};
-    void TearDown() {};
+    void SetUp() override;
+    void TearDown() override {};
 };
+
+void DistributedDBSchemaObjectTest::SetUp()
+{
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
+}
 
 /**
  * @tc.name: Parse Valid Schema 001
@@ -413,7 +419,7 @@ public:
  * @tc.require: AR000DR9K3
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, ParseValidSchema001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, ParseValidSchema001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Parse valid schema with full define
@@ -455,7 +461,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, ParseValidSchema001, TestSize.Level0)
  * @tc.require: AR000DR9K3
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, ParseInvalidSchema001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, ParseInvalidSchema001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Parse invalid schema which is not valid json
@@ -505,7 +511,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, ParseInvalidSchema001, TestSize.Level0)
  * @tc.require: AR000DR9K3
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, ParseInvalidSchema002, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, ParseInvalidSchema002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Parse invalid schema which is empty define
@@ -555,7 +561,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, ParseInvalidSchema002, TestSize.Level0)
  * @tc.require: AR000DR9K3
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, ParseInvalidSchema003, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, ParseInvalidSchema003, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Parse invalid schema with invalid array content
@@ -605,7 +611,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, ParseInvalidSchema003, TestSize.Level0)
  * @tc.require: AR000DR9K4
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, CompareEqualExactly001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, CompareEqualExactly001, TestSize.Level1)
 {
     SchemaObject schemaOri;
     int errCode = schemaOri.ParseFromSchemaString(VALID_SCHEMA_FULL_DEFINE);
@@ -626,7 +632,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, CompareEqualExactly001, TestSize.Level0)
  * @tc.require: AR000DR9K4
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, CompareUnequalCompatible001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, CompareUnequalCompatible001, TestSize.Level1)
 {
     SchemaObject compatibleSchema;
     int errCode = compatibleSchema.ParseFromSchemaString(SCHEMA_COMPARE_BASELINE);
@@ -661,7 +667,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, CompareUnequalCompatible001, TestSize.Le
  * @tc.require: AR000DR9K4
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, CompareUnequalCompatibleUpgrade001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, CompareUnequalCompatibleUpgrade001, TestSize.Level1)
 {
     SchemaObject compatibleSchema;
     int errCode = compatibleSchema.ParseFromSchemaString(SCHEMA_COMPARE_BASELINE);
@@ -696,7 +702,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, CompareUnequalCompatibleUpgrade001, Test
  * @tc.require: AR000DR9K4
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, CompareUnequalIncompatible001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, CompareUnequalIncompatible001, TestSize.Level1)
 {
     SchemaObject strictSchema;
     int errCode = strictSchema.ParseFromSchemaString(SchemaSwitchMode(SCHEMA_COMPARE_BASELINE));
@@ -771,7 +777,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, CompareUnequalIncompatible001, TestSize.
  * @tc.require: AR000DR9K5
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, CheckValue001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, CheckValue001, TestSize.Level1)
 {
     SchemaObject schemaStrict;
     int errCode = schemaStrict.ParseFromSchemaString(VALID_SCHEMA_FULL_DEFINE);
@@ -851,7 +857,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, CheckValue001, TestSize.Level0)
  * @tc.require: AR000DR9K5
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, CheckValue002, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, CheckValue002, TestSize.Level1)
 {
     SchemaObject schemaStrict;
     int errCode = schemaStrict.ParseFromSchemaString(VALID_SCHEMA_FULL_DEFINE);
@@ -873,8 +879,9 @@ HWTEST_F(DistributedDBSchemaObjectTest, CheckValue002, TestSize.Level0)
     EXPECT_TRUE(stepOne == -E_VALUE_MATCH);
 
     std::string valueToString = value1.ToString();
+    EXPECT_EQ(strValue.size(), valueToString.size());
     std::string valueBeforeOffset = valueToString.substr(0, beforeOffset.size());
-    EXPECT_TRUE(valueBeforeOffset == beforeOffset);
+    EXPECT_EQ(valueBeforeOffset, beforeOffset);
 }
 
 /**
@@ -884,7 +891,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, CheckValue002, TestSize.Level0)
  * @tc.require: AR000DR9K5
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, ValueEdit001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, ValueEdit001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Insert value to ValueObject in different depth
@@ -932,7 +939,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, ValueEdit001, TestSize.Level0)
  * @tc.require: AR000DR9K5
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, ValueEdit002, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, ValueEdit002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Insert value to ValueObject in different depth
@@ -987,7 +994,7 @@ void CheckValueLackField(const SchemaObject &schema, const std::string &oriValue
  * @tc.require: AR000DR9K5
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, ValueLackField001, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, ValueLackField001, TestSize.Level1)
 {
     SchemaObject schema;
     int errCode = schema.ParseFromSchemaString(SCHEMA_FOR_TEST_NOTNULL_AND_DEFAULT);
@@ -1046,7 +1053,7 @@ HWTEST_F(DistributedDBSchemaObjectTest, ValueLackField001, TestSize.Level0)
  * @tc.require: AR000DR9K5
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBSchemaObjectTest, ValueLackField002, TestSize.Level0)
+HWTEST_F(DistributedDBSchemaObjectTest, ValueLackField002, TestSize.Level1)
 {
     SchemaObject schema;
     int errCode = schema.ParseFromSchemaString(SCHEMA_FOR_TEST_NOTNULL_AND_DEFAULT);

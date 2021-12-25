@@ -100,17 +100,21 @@ private:
 
     // Reducing duplicated code by merging similar code procedure of "DealLeftCommit" and "DealRightCommit"
     int DoDealCommitOfLeftOrRight(VacuumTaskContext &inTask, std::list<MultiVerCommitInfo> &commitList, bool isLeft);
+
     // Reducing duplicated code by merging similar code procedure of "DealLeftShadow" and "DealRightVacuumNeed"
     int DoDeleteRecordOfLeftShadowOrRightVacuumNeed(VacuumTaskContext &inTask,
         std::list<MultiVerRecordInfo> &recordList);
+
     // Only for reducing duplicated code
     void DoRollBackAndFinish(VacuumTaskContext &inTask);
     int DoCommitAndQuitIfWaitStatusObserved(VacuumTaskContext &inTask); // Return E_OK continue otherwise quit
 
     // Call this immediately before changing the database
     int StartTransactionIfNotYet(VacuumTaskContext &inTask);
+
     // Call this immediately before normally quit
     int CommitTransactionIfNeed(VacuumTaskContext &inTask);
+
     // Call this immediately before abnormally quit, return void since already in abnormal.
     void RollBackTransactionIfNeed(VacuumTaskContext &inTask);
 
@@ -131,6 +135,7 @@ private:
     std::condition_variable vacuumTaskCv_;
     uint64_t incRunWaitOrder_ = 0;
     std::map<std::string, VacuumTaskContext> dbMapVacuumTask_;
+
     // the search of available vacuumtask, the change of isBackgroundVacuumTaskInExecution_, and the activation of
     // background execution, should all be protected by vacuumTaskMutex_, In order to avoid malfunction caused by
     // concurrency situation which is described below:

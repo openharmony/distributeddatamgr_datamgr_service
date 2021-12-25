@@ -54,6 +54,7 @@ int RenameFilePath(const std::string &oldFilePath, const std::string &newFilePat
         LOGE("[Rename] Rename file fail. err = %d", errno);
         return -E_SYSTEM_API_FAIL;
     }
+    LOGI("Rename file path successfully!");
     return E_OK;
 }
 
@@ -64,6 +65,7 @@ int RemoveFile(const std::string &filePath)
         LOGE("[RemoveFile] Remove file fail. err = %d", errno);
         return -E_SYSTEM_API_FAIL;
     }
+    LOGI("Remove file successfully!");
     return E_OK;
 }
 
@@ -71,8 +73,9 @@ int CalFileSize(const std::string &fileUrl, uint64_t &size)
 {
     struct stat fileStat;
     if (fileUrl.empty() || stat(fileUrl.c_str(), &fileStat) < 0 || fileStat.st_size < 0) {
-        LOGE("Get file[%zu] size failed, errno [%d].", fileUrl.size(), errno);
-        return -E_INVALID_ARGS;
+        int errCode = (errno == ENOENT) ? -E_NOT_FOUND : -E_INVALID_DB;
+        LOGD("Get file[%zu] size failed, errno [%d].", fileUrl.size(), errno);
+        return errCode;
     }
 
     size = fileStat.st_size;
@@ -257,6 +260,68 @@ int SetFilePermissions(const std::string &fileName, uint32_t permissions)
         return -E_SYSTEM_API_FAIL;
     }
     return E_OK;
+}
+
+int OpenFile(const std::string &fileName, FileHandle &handle)
+{
+    handle.handle = open(fileName.c_str(), (O_WRONLY | O_CREAT), (S_IRUSR | S_IWUSR | S_IRGRP));
+    if (handle.handle < 0) {
+        LOGE("[FileLock] can not open file when lock it:[%d]", errno);
+        return -E_SYSTEM_API_FAIL;
+    }
+    return E_OK;
+}
+
+int CloseFile(FileHandle &handle)
+{
+    if (close(handle.handle) != 0) {
+        LOGE("close file failed, errno:%d", errno);
+        return -E_SYSTEM_API_FAIL;
+    }
+    handle.handle = -1;
+    return E_OK;
+}
+
+int FileLock(const FileHandle &handle, bool isBlock)
+{
+    if (handle.handle < 0) {
+        LOGE("[FileLock] can not open file when lock it:[%d]", errno);
+        return -E_SYSTEM_API_FAIL;
+    }
+
+    struct flock fileLockInfo;
+    (void)memset_s(&fileLockInfo, sizeof(fileLockInfo), 0, sizeof(fileLockInfo));
+    fileLockInfo.l_type = F_WRLCK;
+    fileLockInfo.l_whence = SEEK_SET;
+    fileLockInfo.l_start = 0;
+    fileLockInfo.l_len = 0;
+    LOGD("Lock file isBlock[%d]", isBlock);
+    if (fcntl(handle.handle, isBlock ? F_SETLKW : F_SETLK, &fileLockInfo) == -1 && !isBlock) {
+        LOGD("Lock file is Blocked, please retry!");
+        return -E_BUSY;
+    }
+    LOGI("file locked! errno:%d", errno);
+    return E_OK;
+}
+
+int FileUnlock(FileHandle &handle)
+{
+    if (handle.handle == -1) {
+        LOGI("[FileUnlock] file handle is invalid!");
+        return E_OK;
+    }
+
+    struct flock fileLockInfo;
+    (void)memset_s(&fileLockInfo, sizeof(fileLockInfo), 0, sizeof(fileLockInfo));
+    fileLockInfo.l_type = F_UNLCK;
+    fileLockInfo.l_whence = SEEK_SET;
+    fileLockInfo.l_start = 0;
+    fileLockInfo.l_len = 0;
+    if (fcntl(handle.handle, F_SETLK, &fileLockInfo) == -1) {
+        LOGE("Unlock file failed. errno:%d", errno);
+        return -E_SYSTEM_API_FAIL;
+    }
+    return CloseFile(handle);
 }
 } // namespace OS
 } // namespace DistributedDB

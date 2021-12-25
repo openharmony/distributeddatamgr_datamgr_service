@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
+#include <functional>
 #include <gtest/gtest.h>
 #include <thread>
-#include <functional>
 #include "db_errno.h"
+#include "distributeddb_tools_unit_test.h"
 #include "log_print.h"
 #include "multi_ver_vacuum.h"
 #include "multi_ver_vacuum_executor_stub.h"
@@ -77,6 +78,7 @@ void DistributedDBMultiVerVacuumTest::TearDownTestCase(void)
 
 void DistributedDBMultiVerVacuumTest::SetUp()
 {
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
 void DistributedDBMultiVerVacuumTest::TearDown()
@@ -692,9 +694,9 @@ HWTEST_F(DistributedDBMultiVerVacuumTest, MultipleTaskNormalStatusSwitch002, Tes
     EXPECT_EQ(errCode, E_OK);
     errCode = vacuum.Launch(DB_IDENTITY_C, &databaseC);
     EXPECT_EQ(errCode, E_OK);
-    bool stepOne = CheckVacuumTaskStatus(vacuum, DB_IDENTITY_A, VacuumTaskStatus::FINISH, 10, 100); // 10 time, 100 ms
+    bool stepOne = CheckVacuumTaskStatus(vacuum, DB_IDENTITY_A, VacuumTaskStatus::FINISH);
     EXPECT_EQ(stepOne, true);
-    stepOne = CheckVacuumTaskStatus(vacuum, DB_IDENTITY_B, VacuumTaskStatus::FINISH, 10, 500); // 10 time, 500 ms
+    stepOne = CheckVacuumTaskStatus(vacuum, DB_IDENTITY_B, VacuumTaskStatus::FINISH, 3, 1000); // 3 time, 1000 ms
     EXPECT_EQ(stepOne, true);
     stepOne = CheckVacuumTaskStatus(vacuum, DB_IDENTITY_C, VacuumTaskStatus::RUN_NING);
     EXPECT_EQ(stepOne, true);

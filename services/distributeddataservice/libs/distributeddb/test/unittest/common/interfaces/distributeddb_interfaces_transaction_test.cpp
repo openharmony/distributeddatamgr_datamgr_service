@@ -15,8 +15,8 @@
 
 #include <gtest/gtest.h>
 
-#include "distributeddb_interfaces_transaction_testcase.h"
 #include "distributeddb_data_generate_unit_test.h"
+#include "distributeddb_interfaces_transaction_testcase.h"
 #include "distributeddb_tools_unit_test.h"
 
 using namespace testing::ext;
@@ -71,6 +71,7 @@ void DistributedDBInterfacesTransactionTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesTransactionTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /*
      * Here, we create STORE_ID before test,
      * and it will be closed in TearDown().

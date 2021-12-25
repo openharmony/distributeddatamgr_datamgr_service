@@ -14,6 +14,15 @@ import("//build/test.gni")
 
 module_output_path = "distributeddatamgr/distributeddb"
 
+mul_sources = [
+  "common/distributeddb/src/auto_launch_callback.cpp",
+  "common/distributeddb/src/delegate_callback.cpp",
+  "common/distributeddb/src/delegate_kv_mgr_callback.cpp",
+  "common/distributeddb/src/distributed_test_tools.cpp",
+  "common/distributeddb/src/kv_store_observer_impl.cpp",
+  "common/distributeddb/src/kv_store_snapshot_callback.cpp",
+]
+
 ###############################################################################
 config("module_private_config") {
   visibility = [ ":*" ]
@@ -47,6 +56,8 @@ config("module_private_config") {
     "TESTCASES_USING_GTEST_EXT",
     "OMIT_JSON",
     "LOW_LEVEL_MEM_DEV",
+    "RELEASE_MODE_V2",
+    "RELEASE_MODE_V3",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
 }
@@ -57,19 +68,19 @@ ohos_moduletest("DistributeddbKvTransactionTest") {
 
   sources = [
     "common/distributeddb/src/distributed_test_sysinfo.cpp",
-    "common/distributeddb/src/distributed_test_tools.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "moduletest/common/distributeddb/src/distributed_crud_transaction_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_kv_transaction_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -79,19 +90,19 @@ ohos_moduletest("DistributeddbKvTransactionPerfTest") {
 
   sources = [
     "common/distributeddb/src/distributed_test_sysinfo.cpp",
-    "common/distributeddb/src/distributed_test_tools.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "moduletest/common/distributeddb/src/distributed_crud_transaction_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_kv_transaction_perf_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -100,18 +111,18 @@ ohos_moduletest("DistributeddbKvConcurrencyCrudTest") {
 
   sources = [
     "common/distributeddb/src/distributed_test_sysinfo.cpp",
-    "common/distributeddb/src/distributed_test_tools.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "moduletest/common/distributeddb/src/distributeddb_kv_concurrency_crud_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -120,18 +131,18 @@ ohos_moduletest("DistributeddbKvBatchCrudTest") {
 
   sources = [
     "common/distributeddb/src/distributed_test_sysinfo.cpp",
-    "common/distributeddb/src/distributed_test_tools.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "moduletest/common/distributeddb/src/distributeddb_kv_batch_crud_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -140,18 +151,18 @@ ohos_moduletest("DistributeddbKvCreateTest") {
 
   sources = [
     "common/distributeddb/src/distributed_test_sysinfo.cpp",
-    "common/distributeddb/src/distributed_test_tools.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "moduletest/common/distributeddb/src/distributeddb_kv_create_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -160,18 +171,18 @@ ohos_moduletest("DistributeddbKvCrudTest") {
 
   sources = [
     "common/distributeddb/src/distributed_test_sysinfo.cpp",
-    "common/distributeddb/src/distributed_test_tools.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "moduletest/common/distributeddb/src/distributeddb_kv_crud_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -180,18 +191,18 @@ ohos_moduletest("DistributeddbKvObserverTest") {
 
   sources = [
     "common/distributeddb/src/distributed_test_sysinfo.cpp",
-    "common/distributeddb/src/distributed_test_tools.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "moduletest/common/distributeddb/src/distributeddb_kv_observer_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -200,18 +211,18 @@ ohos_moduletest("DistributeddbKvObserverSnapTest") {
 
   sources = [
     "common/distributeddb/src/distributed_test_sysinfo.cpp",
-    "common/distributeddb/src/distributed_test_tools.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "moduletest/common/distributeddb/src/distributeddb_kv_observer_snap_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -219,17 +230,18 @@ ohos_moduletest("DistributeddbKvObserverSnapTest") {
 ohos_moduletest("DistributeddbKvBackupTest") {
   module_out_path = module_output_path
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "moduletest/common/distributeddb/src/distributeddb_kv_backup_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -237,18 +249,19 @@ ohos_moduletest("DistributeddbKvBackupTest") {
 ohos_moduletest("DistributeddbKvRealdelTest") {
   module_out_path = module_output_path
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "moduletest/common/distributeddb/src/distributeddb_kv_realdel_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -257,19 +270,20 @@ ohos_moduletest("DistributeddbNbCreateTest") {
   module_out_path = module_output_path
 
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_create_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -277,19 +291,20 @@ ohos_moduletest("DistributeddbNbCrudTest") {
   module_out_path = module_output_path
 
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_crud_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -297,19 +312,20 @@ ohos_moduletest("DistributeddbNbObserverTest") {
   module_out_path = module_output_path
 
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_observer_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -318,20 +334,21 @@ ohos_moduletest("DistributeddbNbCursorTest") {
   module_out_path = module_output_path
 
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_cursor_test.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_cursor_testcase.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -340,19 +357,20 @@ ohos_moduletest("DistributeddbNbBackupTest") {
   module_out_path = module_output_path
 
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_backup_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -362,19 +380,20 @@ ohos_moduletest("DistributeddbNbBatchCrudTest") {
   module_out_path = module_output_path
 
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_batch_crud_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -383,19 +402,20 @@ ohos_moduletest("DistributeddbNbLocalBatchCrudTest") {
   module_out_path = module_output_path
 
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_local_batch_crud_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -404,18 +424,19 @@ ohos_moduletest("DistributeddbNbSchemaDbTest") {
   module_out_path = module_output_path
 
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_schema_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -424,38 +445,20 @@ ohos_moduletest("DistributeddbNbPredicateQueryTest") {
   module_out_path = module_output_path
 
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_predicate_query_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
-  ]
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-}
-
-ohos_moduletest("DistributeddbNbEnableSyncByClosedDbTest") {
-  module_out_path = module_output_path
-  sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
-    "common/distributeddb/src/distributeddb_data_generator.cpp",
-    "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
-    "moduletest/common/distributeddb/src/distributeddb_nb_enable_sync_by_closed_db_test.cpp",
-  ]
-  configs = [ ":module_private_config" ]
-  deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
-    "//third_party/googletest:gtest_main",
-    "//third_party/sqlite:sqlite",
-    "//utils/native/base:utils",
-    "//third_party/openssl:libcrypto_static",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -463,20 +466,131 @@ ohos_moduletest("DistributeddbNbEnableSyncByClosedDbTest") {
 ohos_moduletest("DistributeddbNbPredicateQueryExpandTest") {
   module_out_path = module_output_path
   sources = [
-    "common/distributeddb/src/distributed_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_constant.cpp",
     "common/distributeddb/src/distributeddb_data_generator.cpp",
     "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
     "common/distributeddb/src/distributeddb_schema_test_tools.cpp",
     "moduletest/common/distributeddb/src/distributeddb_nb_predicate_query_expand_test.cpp",
   ]
+  sources += mul_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
+  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+}
+
+ohos_moduletest("DistributeddbNbAutolaunchTest") {
+  module_out_path = module_output_path
+  sources = [
+    "common/distributeddb/src/distributeddb_constant.cpp",
+    "common/distributeddb/src/distributeddb_data_generator.cpp",
+    "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_schema_test_tools.cpp",
+    "moduletest/common/distributeddb/src/distributeddb_nb_autolaunch_test.cpp",
+  ]
+  sources += mul_sources
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_static",
+    "//third_party/sqlite:sqlite",
+    "//utils/native/base:utils",
+  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+}
+
+ohos_moduletest("DistributedbNbDbDamageTest") {
+  module_out_path = module_output_path
+  sources = [
+    "common/distributeddb/src/distributeddb_constant.cpp",
+    "common/distributeddb/src/distributeddb_data_generator.cpp",
+    "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_schema_test_tools.cpp",
+    "moduletest/common/distributeddb/src/distributeddb_nb_db_damage_test.cpp",
+  ]
+  sources += mul_sources
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
+    "//third_party/sqlite:sqlite",
+    "//utils/native/base:utils",
+  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+}
+
+ohos_moduletest("DistributeddbNbCrudPowerTest") {
+  module_out_path = module_output_path
+  sources = [
+    "common/distributeddb/src/distributeddb_constant.cpp",
+    "common/distributeddb/src/distributeddb_data_generator.cpp",
+    "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_schema_test_tools.cpp",
+    "moduletest/common/distributeddb/src/distributeddb_nb_crud_power_test.cpp",
+  ]
+  sources += mul_sources
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
+    "//third_party/sqlite:sqlite",
+    "//utils/native/base:utils",
+  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+}
+
+ohos_moduletest("DistributeddbNbSchemaTest") {
+  module_out_path = module_output_path
+  sources = [
+    "common/distributeddb/src/distributeddb_constant.cpp",
+    "common/distributeddb/src/distributeddb_data_generator.cpp",
+    "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_schema_test_tools.cpp",
+    "moduletest/common/distributeddb/src/distributeddb_nb_schema_test.cpp",
+  ]
+  sources += mul_sources
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
+    "//third_party/sqlite:sqlite",
+    "//utils/native/base:utils",
+  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+}
+
+ohos_moduletest("DistributeddbNbSchemaUpgradeTest") {
+  module_out_path = module_output_path
+  sources = [
+    "common/distributeddb/src/distributeddb_constant.cpp",
+    "common/distributeddb/src/distributeddb_data_generator.cpp",
+    "common/distributeddb/src/distributeddb_nb_test_tools.cpp",
+    "common/distributeddb/src/distributeddb_schema_test_tools.cpp",
+    "moduletest/common/distributeddb/src/distributeddb_nb_schema_upgrade_test.cpp",
+  ]
+  sources += mul_sources
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_static",
+    "//third_party/sqlite:sqlite",
+    "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
@@ -492,6 +606,7 @@ group("moduletest") {
   ]
 
   deps += [
+    ":DistributedbNbDbDamageTest",
     ":DistributeddbKvBackupTest",
     ":DistributeddbKvBatchCrudTest",
     ":DistributeddbKvConcurrencyCrudTest",
@@ -502,16 +617,19 @@ group("moduletest") {
     ":DistributeddbKvRealdelTest",
     ":DistributeddbKvTransactionPerfTest",
     ":DistributeddbKvTransactionTest",
+    ":DistributeddbNbAutolaunchTest",
     ":DistributeddbNbBackupTest",
     ":DistributeddbNbBatchCrudTest",
     ":DistributeddbNbCreateTest",
+    ":DistributeddbNbCrudPowerTest",
     ":DistributeddbNbCrudTest",
     ":DistributeddbNbCursorTest",
-    ":DistributeddbNbEnableSyncByClosedDbTest",
     ":DistributeddbNbLocalBatchCrudTest",
     ":DistributeddbNbObserverTest",
     ":DistributeddbNbPredicateQueryExpandTest",
     ":DistributeddbNbPredicateQueryTest",
+    ":DistributeddbNbSchemaTest",
+    ":DistributeddbNbSchemaUpgradeTest",
   ]
 }
 ###############################################################################

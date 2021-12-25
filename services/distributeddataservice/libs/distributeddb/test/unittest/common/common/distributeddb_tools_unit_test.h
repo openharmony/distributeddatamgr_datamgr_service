@@ -16,47 +16,64 @@
 #ifndef DISTRIBUTEDDB_TOOLS_UNIT_TEST_H
 #define DISTRIBUTEDDB_TOOLS_UNIT_TEST_H
 
+#include <algorithm>
+#include <condition_variable>
 #include <dirent.h>
+#include <mutex>
+#include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <string>
-#include <mutex>
 #include <vector>
-#include <condition_variable>
-#include <algorithm>
 
+#include "db_types.h"
 #include "kv_store_changed_data.h"
 #include "kv_store_delegate_impl.h"
 #include "kv_store_delegate_manager.h"
-#include "kv_store_observer.h"
 #include "kv_store_nb_delegate.h"
+#include "kv_store_observer.h"
 #include "kv_store_snapshot_delegate_impl.h"
 #include "log_print.h"
-#include "types.h"
-#include "db_types.h"
-#include "sqlite_utils.h"
+#include "message.h"
+#include "query.h"
 #include "single_ver_kv_entry.h"
 #include "sqlite_single_ver_natural_store.h"
+#include "sqlite_utils.h"
+#include "sync_types.h"
+#include "types.h"
 
 namespace DistributedDBUnitTest {
 static const int DIR_PERMISSION = 0750;
 
 struct DatabaseInfo {
-    std::string appId;
-    std::string userId;
-    std::string storeId;
-    std::string dir;
+    std::string appId{};
+    std::string userId{};
+    std::string storeId{};
+    std::string dir{};
     int dbUserVersion = 0;
 };
 
 struct SyncInputArg {
-    uint64_t begin_;
-    uint64_t end_;
-    uint32_t blockSize_;
+    uint64_t begin_{};
+    uint64_t end_{};
+    uint32_t blockSize_{};
     SyncInputArg(uint64_t begin, uint64_t end, uint32_t blockSize)
         : begin_(begin), end_(end), blockSize_(blockSize)
     {}
+};
+
+struct DataSyncMessageInfo {
+    int messageId_ = DistributedDB::INVALID_MESSAGE_ID;
+    uint16_t messageType_ = DistributedDB::TYPE_INVALID;
+    uint32_t sequenceId_ = 0;
+    uint32_t sessionId_ = 0;
+    int sendCode_ = DistributedDB::E_OK;
+    uint32_t version_ = 0;
+    int32_t mode_ = DistributedDB::PUSH;
+    DistributedDB::WaterMark localMark_ = 0;
+    DistributedDB::WaterMark peerMark_ = 0;
+    DistributedDB::WaterMark deleteMark_ = 0;
+    uint64_t packetId_ = 0;
 };
 
 class DistributedDBToolsUnitTest final {
@@ -129,6 +146,11 @@ public:
         const std::vector<std::string>& devices, DistributedDB::SyncMode mode,
         std::map<std::string, DistributedDB::DBStatus>& statuses, bool wait = false);
 
+    // sync test helper
+    DistributedDB::DBStatus SyncTest(DistributedDB::KvStoreNbDelegate* delegate,
+        const std::vector<std::string>& devices, DistributedDB::SyncMode mode,
+        std::map<std::string, DistributedDB::DBStatus>& statuses, const DistributedDB::Query &query);
+
     static void GetRandomKeyValue(std::vector<uint8_t> &value, uint32_t defaultSize = 0);
 
     static bool IsValueEqual(const DistributedDB::Value &read, const DistributedDB::Value &origin);
@@ -156,7 +178,8 @@ public:
 
     static int CreateMockMultiDb(DatabaseInfo &dbInfo, DistributedDB::OpenDbProperties &properties);
 
-    static int ModifyDatabaseFile(const std::string &fileDir);
+    static int ModifyDatabaseFile(const std::string &fileDir, uint64_t modifyPos = 0,
+        uint32_t modifyCnt = 256, uint32_t value = 0x1F1F1F1F);
 
     static int GetSyncDataTest(const SyncInputArg &syncInputArg, DistributedDB::SQLiteSingleVerNaturalStore *store,
         std::vector<DistributedDB::DataItem> &dataItems, DistributedDB::ContinueToken &continueStmtToken);
@@ -166,6 +189,10 @@ public:
 
     static int PutSyncDataTest(DistributedDB::SQLiteSingleVerNaturalStore *store,
         const std::vector<DistributedDB::DataItem> &dataItems, const std::string &deviceName);
+
+    static int PutSyncDataTest(DistributedDB::SQLiteSingleVerNaturalStore *store,
+        const std::vector<DistributedDB::DataItem> &dataItems, const std::string &deviceName,
+        const DistributedDB::QueryObject &query);
 
     static int ConvertItemsToSingleVerEntry(const std::vector<DistributedDB::DataItem> &dataItems,
         std::vector<DistributedDB::SingleVerKvEntry *> &entries);
@@ -181,11 +208,18 @@ public:
 
     static int GetResourceDir(std::string& dir);
 
+    static int GetRandInt(const int randMin, const int randMax);
+    static int64_t GetRandInt64(const int64_t randMin, const int64_t randMax);
+
+    static void PrintTestCaseInfo();
+
+    static int BuildMessage(const DataSyncMessageInfo &messageInfo, DistributedDB::Message *&message);
+
 private:
     static int OpenMockMultiDb(DatabaseInfo &dbInfo, DistributedDB::OpenDbProperties &properties);
 
-    std::mutex syncLock_;
-    std::condition_variable syncCondVar_;
+    std::mutex syncLock_{};
+    std::condition_variable syncCondVar_{};
 };
 
 class KvStoreObserverUnitTest : public DistributedDB::KvStoreObserver {

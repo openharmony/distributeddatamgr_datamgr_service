@@ -80,6 +80,21 @@ int Communicator::GetLocalIdentity(std::string &outTarget) const
     return commAggrHandle_->GetLocalIdentity(outTarget);
 }
 
+uint32_t Communicator::GetTimeout() const
+{
+    return commAggrHandle_->GetCommunicatorAggregatorTimeout();
+}
+
+uint32_t Communicator::GetTimeout(const std::string &target) const
+{
+    return commAggrHandle_->GetCommunicatorAggregatorTimeout(target);
+}
+
+bool Communicator::IsDeviceOnline(const std::string &device) const
+{
+    return commAggrHandle_->IsDeviceOnline(device);
+}
+
 int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg, bool nonBlock, uint32_t timeout)
 {
     return SendMessage(dstTarget, inMsg, nonBlock, timeout, nullptr);

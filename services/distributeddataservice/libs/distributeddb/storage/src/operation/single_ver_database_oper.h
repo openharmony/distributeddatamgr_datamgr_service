@@ -68,7 +68,7 @@ private:
 
     int ImportUnpackedMetaDatabase(const ImportFileInfo &info) const;
 
-    int SetSecOpt(const std::string &dir, bool isDir = true) const;
+    int SetSecOpt(const std::string &path, bool isDir = true) const;
 
     int BackupDatabase(const ImportFileInfo &info) const;
 

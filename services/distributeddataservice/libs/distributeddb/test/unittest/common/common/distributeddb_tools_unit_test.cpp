@@ -14,20 +14,23 @@
  */
 
 #include "distributeddb_tools_unit_test.h"
-#include "platform_specific.h"
 
-#include <fstream>
-#include <set>
 #include <cstring>
-
-#include <openssl/rand.h>
-#include <sys/types.h>
 #include <dirent.h>
+#include <fstream>
+#include <gtest/gtest.h>
+#include <openssl/rand.h>
+#include <random>
+#include <set>
+#include <sys/types.h>
+
 
 #include "db_common.h"
-#include "value_hash_calc.h"
 #include "db_constant.h"
 #include "generic_single_ver_kv_entry.h"
+#include "platform_specific.h"
+#include "single_ver_data_packet.h"
+#include "value_hash_calc.h"
 
 using namespace DistributedDB;
 
@@ -513,7 +516,8 @@ bool DistributedDBToolsUnitTest::IsKvEntryExist(const DistributedDB::Entry &entr
     return isFound;
 }
 
-int DistributedDBToolsUnitTest::ModifyDatabaseFile(const std::string &fileDir)
+int DistributedDBToolsUnitTest::ModifyDatabaseFile(const std::string &fileDir, uint64_t modifyPos,
+    uint32_t modifyCnt, uint32_t value)
 {
     LOGI("Modify database file:%s", fileDir.c_str());
     std::fstream dataFile(fileDir, std::fstream::binary | std::fstream::out | std::fstream::in);
@@ -538,13 +542,15 @@ int DistributedDBToolsUnitTest::ModifyDatabaseFile(const std::string &fileDir)
         }
     }
 
-    const int sqliteCountPos = 0;
-    if (!dataFile.seekp(sqliteCountPos)) {
+    if (fileSize <= modifyPos) {
+        return E_OK;
+    }
+
+    if (!dataFile.seekp(modifyPos)) {
         return -E_UNEXPECTED_DATA;
     }
-    uint32_t currentCount = 0x1F1F1F1F; // add the random value to corrupt the head.
-    for (int i = 0; i < 256; i++) { // 256 is 1024 / 4 times.
-        if (!dataFile.write(reinterpret_cast<char *>(&currentCount), sizeof(uint32_t))) {
+    for (uint32_t i = 0; i < modifyCnt; i++) {
+        if (!dataFile.write(reinterpret_cast<char *>(&value), sizeof(uint32_t))) {
             return -E_UNEXPECTED_DATA;
         }
     }
@@ -579,10 +585,17 @@ int DistributedDBToolsUnitTest::GetSyncDataNextTest(SQLiteSingleVerNaturalStore 
 int DistributedDBToolsUnitTest::PutSyncDataTest(SQLiteSingleVerNaturalStore *store,
     const std::vector<DataItem> &dataItems, const std::string &deviceName)
 {
+    QueryObject query(Query::Select());
+    return PutSyncDataTest(store, dataItems, deviceName, query);
+}
+
+int DistributedDBToolsUnitTest::PutSyncDataTest(SQLiteSingleVerNaturalStore *store,
+    const std::vector<DataItem> &dataItems, const std::string &deviceName, const QueryObject &query)
+{
     std::vector<SingleVerKvEntry *> entries;
     std::vector<DistributedDB::DataItem> items = dataItems;
     for (auto &item : items) {
-        GenericSingleVerKvEntry *entry = new (std::nothrow) GenericSingleVerKvEntry();
+        auto *entry = new (std::nothrow) GenericSingleVerKvEntry();
         if (entry == nullptr) {
             ReleaseSingleVerEntry(entries);
             return -E_OUT_OF_MEMORY;
@@ -592,7 +605,7 @@ int DistributedDBToolsUnitTest::PutSyncDataTest(SQLiteSingleVerNaturalStore *sto
         entries.push_back(entry);
     }
 
-    int errCode = store->PutSyncData(entries, deviceName);
+    int errCode = store->PutSyncDataWithQuery(query, entries, deviceName);
     ReleaseSingleVerEntry(entries);
     return errCode;
 }
@@ -701,6 +714,28 @@ bool KvStoreObserverUnitTest::IsCleared() const
 
 DBStatus DistributedDBToolsUnitTest::SyncTest(KvStoreNbDelegate* delegate,
     const std::vector<std::string>& devices, SyncMode mode,
+    std::map<std::string, DBStatus>& statuses, const Query &query)
+{
+    statuses.clear();
+    DBStatus callStatus = delegate->Sync(devices, mode,
+        [&statuses, this](const std::map<std::string, DBStatus>& statusMap) {
+            statuses = statusMap;
+            std::unique_lock<std::mutex> innerlock(this->syncLock_);
+            this->syncCondVar_.notify_one();
+        }, query, false);
+
+    std::unique_lock<std::mutex> lock(syncLock_);
+    syncCondVar_.wait(lock, [callStatus, &statuses](){
+        if (callStatus != OK) {
+            return true;
+        }
+        return !statuses.empty();
+    });
+    return callStatus;
+}
+
+DBStatus DistributedDBToolsUnitTest::SyncTest(KvStoreNbDelegate* delegate,
+    const std::vector<std::string>& devices, SyncMode mode,
     std::map<std::string, DBStatus>& statuses, bool wait)
 {
     statuses.clear();
@@ -757,5 +792,54 @@ bool KvStoreCorruptInfo::IsDataBaseCorrupted(const std::string &appId, const std
 void KvStoreCorruptInfo::Reset()
 {
     databaseInfoVect_.clear();
+}
+
+int DistributedDBToolsUnitTest::GetRandInt(const int randMin, const int randMax)
+{
+    std::random_device randDev;
+    std::mt19937 genRand(randDev());
+    std::uniform_int_distribution<int> disRand(randMin, randMax);
+    return disRand(genRand);
+}
+
+int64_t DistributedDBToolsUnitTest::GetRandInt64(const int64_t randMin, const int64_t randMax)
+{
+    std::random_device randDev;
+    std::mt19937_64 genRand(randDev());
+    std::uniform_int_distribution<int64_t> disRand(randMin, randMax);
+    return disRand(genRand);
+}
+
+void DistributedDBToolsUnitTest::PrintTestCaseInfo()
+{
+    testing::UnitTest *test = testing::UnitTest::GetInstance();
+    ASSERT_NE(test, nullptr);
+    const testing::TestInfo *testInfo = test->current_test_info();
+    ASSERT_NE(testInfo, nullptr);
+    LOGI("Start unit test: %s.%s", testInfo->test_case_name(), testInfo->name());
+}
+
+int DistributedDBToolsUnitTest::BuildMessage(const DataSyncMessageInfo &messageInfo,
+    DistributedDB::Message *&message)
+{
+    auto packet = new (std::nothrow) DataRequestPacket;
+    if (packet == nullptr) {
+        return -E_OUT_OF_MEMORY;
+    }
+    message = new (std::nothrow) Message(messageInfo.messageId_);
+    if (message == nullptr) {
+        delete packet;
+        packet = nullptr;
+        return -E_OUT_OF_MEMORY;
+    }
+    packet->SetBasicInfo(messageInfo.sendCode_, messageInfo.version_, messageInfo.mode_);
+    packet->SetWaterMark(messageInfo.localMark_, messageInfo.peerMark_, messageInfo.deleteMark_);
+    std::vector<uint64_t> reserved {messageInfo.packetId_};
+    packet->SetReserved(reserved);
+    message->SetMessageType(messageInfo.messageType_);
+    message->SetSessionId(messageInfo.sessionId_);
+    message->SetSequenceId(messageInfo.sequenceId_);
+    message->SetExternalObject(packet);
+    return E_OK;
 }
 } // namespace DistributedDBUnitTest

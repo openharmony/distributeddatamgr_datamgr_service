@@ -19,10 +19,10 @@
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_result_set.h"
-class DistributedNbCursorTestcase final {
+class DistributeddbNbCursorTestcase final {
 public:
-    DistributedNbCursorTestcase() {};
-    ~DistributedNbCursorTestcase() {}
+    DistributeddbNbCursorTestcase() {};
+    ~DistributeddbNbCursorTestcase() {}
     static void ResultSetDb001(DistributedDB::KvStoreNbDelegate *delegate, bool isRowIdMode);
     static void ResultSetDb002(DistributedDB::KvStoreNbDelegate *delegate, bool isRowIdMode);
     static void ResultSetDb003(DistributedDB::KvStoreNbDelegate *delegate, bool isRowIdMode);

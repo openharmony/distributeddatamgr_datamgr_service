@@ -50,6 +50,7 @@ void DistributedDBStorageSQLiteSingleVerNaturalStoreTest::TearDownTestCase(void)
 
 void DistributedDBStorageSQLiteSingleVerNaturalStoreTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     DistributedDBToolsUnitTest::TestDirInit(g_testDir);
     LOGD("DistributedDBStorageSQLiteSingleVerNaturalStoreTest dir is %s", g_testDir.c_str());
     std::string oriIdentifier = APP_ID + "-" + USER_ID + "-" + "TestGeneralNB";
@@ -423,6 +424,31 @@ HWTEST_F(DistributedDBStorageSQLiteSingleVerNaturalStoreTest, GetMetaData001, Te
      */
     DistributedDBStorageSingleVerNaturalStoreTestCase::GetMetaData001(g_store, g_connection);
 }
+
+/**
+  * @tc.name: DeleteMetaData001
+  * @tc.desc:   * @tc.name: To test the function of deleting the metadata with prefix key in the database.
+  * @tc.type: FUNC
+  * @tc.require: AR000CCPOM
+  * @tc.author: wangbingquan
+  */
+HWTEST_F(DistributedDBStorageSQLiteSingleVerNaturalStoreTest, DeleteMetaData001, TestSize.Level1)
+{
+    /**
+     * @tc.steps:step1. Put a1, b1, a2, b2.
+     * @tc.expected: step1. Return OK.
+     */
+    /**
+     * @tc.steps:step2. Delete meta data with prefix key 'b'.
+     * @tc.expected: step2. Return OK.
+     */
+    /**
+     * @tc.steps:step3. Get a1, b1, a2, b2.
+     * @tc.expected: step3. Get a1, a2 successfully, and get b1, b2 failed.
+     */
+    DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteMetaData001(g_store, g_connection);
+}
+
 
 /**
   * @tc.name: GetCurrentMaxTimeStamp001

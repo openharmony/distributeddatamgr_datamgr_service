@@ -127,6 +127,7 @@ void DistributedDBInterfacesSpaceManagementTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesSpaceManagementTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_kvDelegateStatus = INVALID_ARGS;
     g_kvNbDelegatePtr = nullptr;
     g_kvDelegatePtr = nullptr;

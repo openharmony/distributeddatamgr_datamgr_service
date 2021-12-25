@@ -33,7 +33,7 @@ inline bool IsDoubleNearlyEqual(double left, double right)
     double relativeDiff = ((absBigger == 0.0) ? 0.0 : (std::fabs(left - right) / absBigger)); // 0.0 for double 0
     return relativeDiff < EPSILON;
 }
-#endif
+#endif // OMIT_FLATBUFFER
 }
 
 void SchemaObject::FlatBufferSchema::CopyFrom(const FlatBufferSchema &other)
@@ -64,7 +64,6 @@ bool SchemaObject::FlatBufferSchema::IsFlatBufferSchema(const std::string &inOri
         outDecoded = inOriginal; // The original one is the decoded one
         return true;
     }
-
     outDecoded.clear();
     return false;
 }

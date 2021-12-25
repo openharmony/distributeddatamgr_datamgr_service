@@ -434,7 +434,6 @@ DBStatus KvStoreDelegateImpl::Pragma(PragmaCmd cmd, PragmaData &paramData)
         LOGE("%s", INVALID_CONNECTION.c_str());
         return DB_ERROR;
     }
-
     int errCode;
     switch (cmd) {
         case PERFORMANCE_ANALYSIS_GET_REPORT:

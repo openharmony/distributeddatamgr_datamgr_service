@@ -15,13 +15,30 @@
 #ifndef DISTRIBUTED_DB_LOG_PRINT_H
 #define DISTRIBUTED_DB_LOG_PRINT_H
 
-#if defined USING_PRINTF_LOGGER
+#if defined _WIN32
+    #ifndef RUNNING_ON_WIN
+        #define RUNNING_ON_WIN
+    #endif
+#else
+    #ifndef RUNNING_ON_LINUX
+        #define RUNNING_ON_LINUX
+    #endif
+#endif
+
+#if defined USING_LOGCAT_LOGGER
+    #include <android/log.h>
+#elif defined _WIN32
+    #define USING_PRINTF_LOGGER
     #include <cstdio>
 #elif defined USING_HILOG_LOGGER
     #include "hilog/log.h"
 #endif
 
-#if defined USING_PRINTF_LOGGER
+#if defined USING_LOGCAT_LOGGER
+    #define MST_LOG(fmt, ...) \
+        (void)(__android_log_print(static_cast<int>(ANDROID_LOG_INFO), "DistributedDB[TEST]", \
+        "%s: " fmt, __FUNCTION__, ##__VA_ARGS__))
+#elif defined USING_PRINTF_LOGGER
     #define MST_LOG(fmt, ...) \
         (void)(std::printf(fmt"\n", ##__VA_ARGS__))
 #elif defined USING_HILOG_LOGGER

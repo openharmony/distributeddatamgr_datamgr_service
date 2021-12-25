@@ -14,7 +14,6 @@
  */
 #ifndef OMIT_ENCRYPT
 #include <gtest/gtest.h>
-#include <fstream>
 
 #include "distributeddb_data_generate_unit_test.h"
 #include "platform_specific.h"
@@ -121,6 +120,7 @@ void DistributedDBInterfacesImportAndExportTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesImportAndExportTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_junkFilesList.clear();
     g_kvDelegateStatus = INVALID_ARGS;
     g_kvNbDelegatePtr = nullptr;
@@ -344,7 +344,7 @@ HWTEST_F(DistributedDBInterfacesImportAndExportTest, ExportParameterCheck001, Te
      * @tc.steps: step1. The filePath path does not exist.
      * @tc.expected: step1. Return INVALID_ARGS.
      */
-    std::string invalidFileName = g_exportFileDir + "/jadaksdjadkjsa/" + "/ExportParameterCheck001.$$";
+    std::string invalidFileName = g_exportFileDir + "/tempNotCreated/" + "/ExportParameterCheck001.$$";
     CipherPassword passwd;
     EXPECT_EQ(g_kvNbDelegatePtr->Export(invalidFileName, passwd), INVALID_ARGS);
 
@@ -411,7 +411,7 @@ HWTEST_F(DistributedDBInterfacesImportAndExportTest, ExportParameterCheck002, Te
      * @tc.steps: step1. The filePath path does not exist.
      * @tc.expected: step1. Return INVALID_ARGS.
      */
-    std::string invalidExportFileName = g_exportFileDir + "/jadaksdjadkjsa/" + "/ExportParameterCheck002.$$";
+    std::string invalidExportFileName = g_exportFileDir + "/tempNotCreated/" + "/ExportParameterCheck002.$$";
     CipherPassword passwd;
     EXPECT_EQ(g_kvDelegatePtr->Export(invalidExportFileName, passwd), INVALID_ARGS);
 

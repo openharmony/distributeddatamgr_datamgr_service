@@ -102,7 +102,7 @@ int SQLiteStorageEngine::ReInit()
 bool SQLiteStorageEngine::IsNeedTobeReleased() const
 {
     EngineState engineState = GetEngineState();
-    return ((engineState == MAINDB) || (engineState == INVALID));
+    return ((engineState == EngineState::MAINDB) || (engineState == EngineState::INVALID));
 }
 
 const std::string &SQLiteStorageEngine::GetIdentifier() const
@@ -168,7 +168,7 @@ int SQLiteStorageEngine::CheckEngineOption(const KvDBProperties &kvDBProp) const
         securityOpt.securityLabel = kvDBProp.GetSecLabel();
         securityOpt.securityFlag = kvDBProp.GetSecFlag();
     }
-    std::string schemaStr = kvDBProp.GetSchema().ToSchemaString();
+
     int conflictReslovePolicy = kvDBProp.GetIntProp(KvDBProperties::CONFLICT_RESOLVE_POLICY, DEFAULT_LAST_WIN);
     bool createDirByStoreIdOnly = kvDBProp.GetBoolProp(KvDBProperties::CREATE_DIR_BY_STORE_ID_ONLY, false);
 

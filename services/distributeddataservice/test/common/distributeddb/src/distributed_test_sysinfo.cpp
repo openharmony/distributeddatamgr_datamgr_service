@@ -22,13 +22,15 @@ const float FLOAT_RET_ERROR = -1.0f;
 
 DistributedTestSysInfo::DistributedTestSysInfo()
 {
+#if defined(RUNNING_ON_LINUX)
     if ((memset_s(&memStatFirst_, sizeof(memStatFirst_), 0, sizeof(memStatFirst_)) != EOK) &&
         (memset_s(&memStatSecond_, sizeof(memStatSecond_), 0, sizeof(memStatSecond_)) != EOK) &&
         (memset_s(&cpuStatFirst_, sizeof(cpuStatFirst_), 0, sizeof(cpuStatFirst_)) != EOK) &&
         (memset_s(&cpuStatSecond_, sizeof(cpuStatSecond_), 0, sizeof(cpuStatSecond_)) != EOK)) {
         MST_LOG("distribute info set 0 failed!");
     }
-
+#elif defined RUNNING_ON_WIN
+#endif
     cpuStatFirstUsage_ = 0.0f;
     cpuStatSecondUsage_ = 0.0f;
     powerStatFirst_ = 0.0f;
@@ -36,6 +38,7 @@ DistributedTestSysInfo::DistributedTestSysInfo()
     val_ = 0.0f;
 }
 
+#if defined(RUNNING_ON_LINUX)
 void DistributedTestSysInfo::GetSysMemOccpy(SeqNo seqNo)
 {
     MemOccupy* memOccupy = nullptr;
@@ -75,6 +78,9 @@ void DistributedTestSysInfo::GetSysMemOccpy(SeqNo seqNo)
     if (result3 != 2 || result4 != 2 || result5 != 2) { // there are 2 incoming param.
         MST_LOG("get mem2 info failed.");
     }
+    MST_LOG(" [MemTotal] = %llu \n [MemFree] = %llu \n [Buffers] = %llu \n [Cached] = %llu \n [SwapCached] = %llu ",
+        memOccupy->memTotal_, memOccupy->memFree_, memOccupy->buffers_,
+        memOccupy->cached_, memOccupy->swapCached_);
     fclose(fp);
     fp = nullptr;
 }
@@ -99,8 +105,8 @@ void GetSysCpuInfo(CpuOccupy &cpuStatFirst_, CpuOccupy &cpuStatSecond_, uint64_t
         fclose(fp);
         return;
     }
-    allFirst = cpuStatFirst_.user_ + cpuStatFirst_.nice_ + cpuStatFirst_.system_ + cpuStatFirst_.idle_ \
-        + cpuStatFirst_.iowait_ + cpuStatFirst_.irq_ + cpuStatFirst_.softirq_;
+    allFirst = cpuStatFirst_.user_ + cpuStatFirst_.nice_ + cpuStatFirst_.system_ + cpuStatFirst_.idle_ +
+        cpuStatFirst_.iowait_ + cpuStatFirst_.irq_ + cpuStatFirst_.softirq_;
     idleFirst = cpuStatFirst_.idle_;
     rewind(fp);
     std::this_thread::sleep_for(std::chrono::microseconds(microSeconds));
@@ -120,8 +126,8 @@ void GetSysCpuInfo(CpuOccupy &cpuStatFirst_, CpuOccupy &cpuStatSecond_, uint64_t
         return;
     }
 
-    allSecond = cpuStatSecond_.user_ + cpuStatSecond_.nice_ + cpuStatSecond_.system_ + cpuStatSecond_.idle_ \
-        + cpuStatSecond_.iowait_ + cpuStatSecond_.irq_ + cpuStatSecond_.softirq_;
+    allSecond = cpuStatSecond_.user_ + cpuStatSecond_.nice_ + cpuStatSecond_.system_ + cpuStatSecond_.idle_ +
+        cpuStatSecond_.iowait_ + cpuStatSecond_.irq_ + cpuStatSecond_.softirq_;
     idleSecond = cpuStatSecond_.idle_;
     *cpuStatUsage = (static_cast<float>(allSecond - allFirst - (idleSecond - idleFirst)))
         / (allSecond - allFirst) * PERCENTAGE_FACTOR;
@@ -214,6 +220,40 @@ uint64_t DistributedTestSysInfo::GetSecondMemFree() const
     return memStatSecond_.memFree_;
 }
 
+#elif defined RUNNING_ON_WIN
+void DistributedTestSysInfo::GetSysMemOccpy(SeqNo seqNo)
+{
+}
+
+void DistributedTestSysInfo::GetSysCpuUsage(SeqNo seqNo, uint64_t microSeconds)
+{
+}
+
+float DistributedTestSysInfo::ReadSysValFromFile(const std::string &filePath)
+{
+    return 0.0f;
+}
+
+float DistributedTestSysInfo::GetSysMeanCurrentVal(
+    const std::string &filePath, int totalCount, uint64_t microSeconds)
+{
+    return 0.0f;
+}
+void DistributedTestSysInfo::GetSysCurrentPower(SeqNo seqNo, int totalCount, uint64_t microSeconds)
+{
+}
+
+uint64_t DistributedTestSysInfo::GetFirstMemFree() const
+{
+    return 0;
+}
+
+uint64_t DistributedTestSysInfo::GetSecondMemFree() const
+{
+    return 0;
+}
+#endif
+
 float DistributedTestSysInfo::GetFirstCpuUsage() const
 {
     return cpuStatFirstUsage_;
@@ -234,6 +274,7 @@ float DistributedTestSysInfo::GetSecondPower() const
     return powerStatSecond_;
 }
 
+#if defined(RUNNING_ON_LINUX)
 void DistributedTestSysInfo::SaveSecondToFirst()
 {
     if ((memcpy_s(&memStatFirst_, sizeof(memStatFirst_), &memStatSecond_, sizeof(struct MemOccupy)) != EOK) &&
@@ -243,3 +284,8 @@ void DistributedTestSysInfo::SaveSecondToFirst()
     cpuStatFirstUsage_ = cpuStatSecondUsage_;
     powerStatFirst_ = powerStatSecond_;
 }
+#elif defined RUNNING_ON_WIN
+void DistributedTestSysInfo::SaveSecondToFirst()
+{
+}
+#endif

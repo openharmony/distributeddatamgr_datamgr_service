@@ -689,14 +689,16 @@ int SQLiteSingleVerNaturalStoreConnection::PreClose()
     }
 
     // check if transaction closed
-    std::lock_guard<std::mutex> transactionLock(transactionMutex_);
-    if (writeHandle_ != nullptr) {
-        LOGW("Transaction started, need to rollback before close.");
-        int errCode = RollbackInner();
-        if (errCode != E_OK) {
-            LOGE("Rollback transaction failed, %d.", errCode);
+    {
+        std::lock_guard<std::mutex> transactionLock(transactionMutex_);
+        if (writeHandle_ != nullptr) {
+            LOGW("Transaction started, need to rollback before close.");
+            int errCode = RollbackInner();
+            if (errCode != E_OK) {
+                LOGE("Rollback transaction failed, %d.", errCode);
+            }
+            ReleaseExecutor(writeHandle_);
         }
-        ReleaseExecutor(writeHandle_);
     }
 
     // Clear the conflict type function.
@@ -706,6 +708,20 @@ int SQLiteSingleVerNaturalStoreConnection::PreClose()
         conflictType_ = 0;
     }
     return E_OK;
+}
+
+int SQLiteSingleVerNaturalStoreConnection::CheckIntegrity() const
+{
+    int errCode = E_OK;
+    SQLiteSingleVerStorageExecutor *handle = GetExecutor(true, errCode);
+    if (handle == nullptr) {
+        LOGW("Failed to get the executor for the integrity check.");
+        return errCode;
+    }
+
+    errCode = handle->CheckIntegrity();
+    ReleaseExecutor(handle);
+    return errCode;
 }
 
 int SQLiteSingleVerNaturalStoreConnection::CheckMonoStatus(OperatePerm perm)
@@ -1038,7 +1054,8 @@ int SQLiteSingleVerNaturalStoreConnection::SaveEntryInCacheMode(DataItem &dataIt
 
     TimeStamp maxTimestamp = 0;
     DeviceInfo deviceInfo = {true, ""};
-    errCode = writeHandle_->SaveSyncDataItemInCacheMode(dataItem, deviceInfo, maxTimestamp, recordVersion);
+    QueryObject query(Query::Select());
+    errCode = writeHandle_->SaveSyncDataItemInCacheMode(dataItem, deviceInfo, maxTimestamp, recordVersion, query);
     if (errCode == E_OK) {
         if (maxTimestamp > currentMaxTimeStamp_) {
             currentMaxTimeStamp_ = maxTimestamp;

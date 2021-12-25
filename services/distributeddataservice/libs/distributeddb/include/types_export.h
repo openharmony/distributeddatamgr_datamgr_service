@@ -109,6 +109,8 @@ struct FieldValue {
 enum PermissionCheckFlag {
     CHECK_FLAG_SEND = 1, // send
     CHECK_FLAG_RECEIVE = 2, // receive
+    CHECK_FLAG_AUTOSYNC = 4, // autosync flag
+    CHECK_FLAG_SPONSOR = 8, // sync sponsor
 };
 
 using PermissionCheckCallback = std::function<bool (const std::string &userId, const std::string &appId,
@@ -151,7 +153,6 @@ struct SecurityOption {
         return securityLabel == rhs.securityLabel && securityFlag == rhs.securityFlag;
     }
 };
-} // namespace DistributedDB
 
 enum class ResultSetCacheMode : int {
     CACHE_FULL_ENTRY = 0,       // Ordinary mode efficient when sequential access, the default mode
@@ -161,7 +162,12 @@ enum class ResultSetCacheMode : int {
 struct RemotePushNotifyInfo {
     std::string deviceId;
 };
-
 using RemotePushFinishedNotifier = std::function<void (const RemotePushNotifyInfo &info)>;
 using RemotePushFinisheNotifier = RemotePushFinishedNotifier; // To correct spelling errors in the previous version
+
+enum class CompressAlgorithm : uint8_t {
+    NONE = 0,
+    ZLIB = 1
+};
+} // namespace DistributedDB
 #endif // DISTRIBUTEDDB_TYPES_EXPORT_H

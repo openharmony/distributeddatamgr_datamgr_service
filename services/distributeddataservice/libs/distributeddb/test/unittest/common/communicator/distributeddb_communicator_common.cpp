@@ -15,10 +15,10 @@
 
 #include "distributeddb_communicator_common.h"
 #include <gtest/gtest.h>
-#include "securec.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "message_transform.h"
+#include "securec.h"
 
 using namespace std;
 using namespace DistributedDB;

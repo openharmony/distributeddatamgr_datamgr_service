@@ -34,6 +34,7 @@ public:
     DBStatus GetSecurityOption(const std::string &filePath, SecurityOption &option) const override;
     bool CheckDeviceSecurityAbility(const std::string &devId, const SecurityOption &option) const override;
     void SetLockStatus(bool isLock);
+    void SetNeedCreateDb(bool isCreate);
     void ResetSecOptDic();
     void ResetAdapter();
 
@@ -42,6 +43,7 @@ private:
     OnAccessControlledEvent callback_;
     std::map<const std::string, SecurityOption> pathSecOptDic_;
     bool isLocked_;
+    bool createDb_;
 };
 } // namespace DistributedDB
 

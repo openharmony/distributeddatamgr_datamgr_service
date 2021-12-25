@@ -196,6 +196,37 @@ int SQLiteSingleVerStorageEngine::ReleaseHandleTransiently(SQLiteSingleVerStorag
     return errCode;
 }
 
+int SQLiteSingleVerStorageEngine::AddSubscribeToMainDBInMigrate()
+{
+    LOGD("Add subscribe to mainDB from cache. %d", engineState_);
+    std::lock_guard<std::mutex> lock(subscribeMutex_);
+    if (subscribeQuery_.empty()) {
+        return E_OK;
+    }
+    int errCode = E_OK;
+    auto handle = static_cast<SQLiteSingleVerStorageExecutor *>(FindExecutor(true, OperatePerm::NORMAL_PERM, errCode));
+    if (errCode != E_OK || handle == nullptr) {
+        LOGE("Get available executor for add subscribe failed. %s", errCode);
+        return errCode;
+    }
+    errCode = handle->StartTransaction(TransactType::IMMEDIATE);
+    if (errCode != E_OK) {
+        goto END;
+    }
+    for (auto item : subscribeQuery_) {
+        errCode = handle->AddSubscribeTrigger(item.second, item.first);
+        if (errCode != E_OK) {
+            LOGE("Add subscribe trigger failed: %d id: %s", errCode, item.first.c_str());
+        }
+    }
+    subscribeQuery_.clear();
+    // Not rollback even if some triggers add failed. Users don’t perceive errors, add triggers as much as possible
+    (void)handle->Commit();
+END:
+    ReleaseExecutor(handle);
+    return errCode;
+}
+
 int SQLiteSingleVerStorageEngine::MigrateSyncData(SQLiteSingleVerStorageExecutor *&handle, bool &isNeedTriggerSync)
 {
     int errCode = E_OK;
@@ -311,7 +342,7 @@ int SQLiteSingleVerStorageEngine::ReleaseExecutor(SQLiteSingleVerStorageExecutor
 int SQLiteSingleVerStorageEngine::FinishMigrateData(SQLiteSingleVerStorageExecutor *&handle,
     EngineState stateBeforeMigrate)
 {
-    LOGD("Begin to finish migrate and reinit db state!");
+    LOGI("Begin to finish migrate and reinit db state!");
     int errCode;
     if (handle == nullptr) {
         return -E_INVALID_ARGS;
@@ -416,6 +447,8 @@ int SQLiteSingleVerStorageEngine::ExecuteMigrate()
         return errCode;
     }
 
+    isMigrating_.store(true);
+    LOGD("Migrate start.");
     bool isNeedTriggerSync = false;
     errCode = InitExecuteMigrate(handle, preState);
     if (errCode != E_OK) {
@@ -423,9 +456,9 @@ int SQLiteSingleVerStorageEngine::ExecuteMigrate()
         goto END;
     }
 
-    LOGD("[SqlSingleVerEngine] Current enginState [%d] executorState [%d], begin to executing singleVer db migrate!",
+    LOGD("[SqlSingleVerEngine] Current engineState [%d] executorState [%d], begin to executing singleVer db migrate!",
         preState, executorState_);
-    // has been attach, Mark start of migration and it can migrating data
+    // has been attached, Mark start of migration and it can migrate data
     errCode = MigrateLocalData(handle);
     if (errCode != E_OK) {
         LOGE("Migrate local data fail, errCode = [%d]", errCode);
@@ -450,6 +483,8 @@ int SQLiteSingleVerStorageEngine::ExecuteMigrate()
 END: // after FinishMigrateData, it will reset engine state
     // there is no need cover the errCode
     EndMigrate(handle, preState, errCode, isNeedTriggerSync);
+    isMigrating_.store(false);
+    LOGD("Migrate stop.");
     return errCode;
 }
 
@@ -467,6 +502,11 @@ void SQLiteSingleVerStorageEngine::EndMigrate(SQLiteSingleVerStorageExecutor *&h
     if (errCode != E_OK) {
         LOGE("release executor after migrating! errCode = [%d]", errCode);
     }
+
+    errCode = AddSubscribeToMainDBInMigrate();
+    if (errCode != E_OK) {
+        LOGE("Add subscribe trigger after migrate sync data failed: %d", errCode);
+    }
     // Notify max timestamp offset for SyncEngine.
     // When time change offset equals 0, SyncEngine can adjust local time offset according to max timestamp.
     RuntimeContext::GetInstance()->NotifyTimeStampChanged(0);
@@ -483,7 +523,7 @@ bool SQLiteSingleVerStorageEngine::IsEngineCorrupted() const
 
 StorageExecutor *SQLiteSingleVerStorageEngine::NewSQLiteStorageExecutor(sqlite3 *dbHandle, bool isWrite, bool isMemDb)
 {
-    auto executor = new (std::nothrow) SQLiteSingleVerStorageExecutor(dbHandle, isWrite, isMemDb);
+    auto executor = new (std::nothrow) SQLiteSingleVerStorageExecutor(dbHandle, isWrite, isMemDb, executorState_);
     if (executor == nullptr) {
         return executor;
     }
@@ -491,7 +531,7 @@ StorageExecutor *SQLiteSingleVerStorageEngine::NewSQLiteStorageExecutor(sqlite3 
     return executor;
 }
 
-int SQLiteSingleVerStorageEngine::TryToOpenMainDatabase(sqlite3 *&db)
+int SQLiteSingleVerStorageEngine::TryToOpenMainDatabase(bool isWrite, sqlite3 *&db)
 {
     // Only could get the main database handle in the uninitialized and the main status.
     if (GetEngineState() != EngineState::INVALID && GetEngineState() != EngineState::MAINDB) {
@@ -504,7 +544,12 @@ int SQLiteSingleVerStorageEngine::TryToOpenMainDatabase(sqlite3 *&db)
             DBConstant::SQLITE_DB_EXTENSION;
     }
 
-    int errCode = SQLiteUtils::OpenDatabase(option_, db);
+    OpenDbProperties optionTemp = option_;
+    if (!isWrite) {
+        optionTemp.createIfNecessary = false;
+    }
+
+    int errCode = SQLiteUtils::OpenDatabase(optionTemp, db);
     if (errCode != E_OK) {
         if (errno == EKEYREVOKED) {
             LOGI("Failed to open the main database for key revoked[%d]", errCode);
@@ -513,6 +558,7 @@ int SQLiteSingleVerStorageEngine::TryToOpenMainDatabase(sqlite3 *&db)
         return errCode;
     }
 
+    executorState_ = ExecutorState::MAINDB;
     // Set the engine state to main status for that the main database is valid.
     SetEngineState(EngineState::MAINDB);
 
@@ -522,7 +568,6 @@ int SQLiteSingleVerStorageEngine::TryToOpenMainDatabase(sqlite3 *&db)
         errCode = AttachMainDbAndCacheDb(db, EngineState::MAINDB);
         if (errCode != E_OK) {
             LOGE("[SingleVerEngine][GetMain] Attach main db and cache db failed!, errCode = [%d]", errCode);
-            executorState_ = ExecutorState::MAINDB;
             return E_OK; // not care err to return, only use for print log
         }
         executorState_ = ExecutorState::MAIN_ATTACH_CACHE;
@@ -535,9 +580,9 @@ int SQLiteSingleVerStorageEngine::TryToOpenMainDatabase(sqlite3 *&db)
 
 int SQLiteSingleVerStorageEngine::GetDbHandle(bool isWrite, const SecurityOption &secOpt, sqlite3 *&dbHandle)
 {
-    int errCode = TryToOpenMainDatabase(dbHandle);
-    LOGD("Finish to open the main database, write[%d], label[%d], flag[%d], errCode[%d]",
-        isWrite, secOpt.securityLabel, secOpt.securityFlag, errCode);
+    int errCode = TryToOpenMainDatabase(isWrite, dbHandle);
+    LOGD("Finish to open the main database, write[%d], label[%d], flag[%d], id[%.6s], errCode[%d]",  isWrite,
+        secOpt.securityLabel, secOpt.securityFlag, DBCommon::TransferStringToHex(identifier_).c_str(), errCode);
     if (!(ParamCheckUtils::IsS3SECEOpt(secOpt) && errCode == -E_EKEYREVOKED)) {
         return errCode;
     }
@@ -546,7 +591,7 @@ int SQLiteSingleVerStorageEngine::GetDbHandle(bool isWrite, const SecurityOption
         DBConstant::SQLITE_DB_EXTENSION;
     if (!isWrite || GetEngineState() != EngineState::INVALID ||
         OS::CheckPathExistence(cacheDbPath)) {
-        LOGI("[SQLiteSingleStorageEng][GetDbHandle]Only use for first create cache db! [%d] [%d]",
+        LOGI("[SQLiteSingleStorageEng][GetDbHandle] Only use for first create cache db! [%d] [%d]",
             isWrite, GetEngineState());
         return -E_EKEYREVOKED;
     }
@@ -914,6 +959,12 @@ void SQLiteSingleVerStorageEngine::RegisterFunctionIfNeed(sqlite3 *dbHandle) con
             LOGW("[SqlSinEngine] RegisterFlatBufferExtractFunction fail, errCode = %d", errCode);
         }
     }
+
+    // This function is used to update meta_data in triggers when it's attached to mainDB
+    int errCode = SQLiteUtils::RegisterMetaDataUpdateFunction(dbHandle);
+    if (errCode != E_OK) {
+        LOGW("[SqlSinEngine] RegisterMetaDataUpdateFunction fail, errCode = %d", errCode);
+    }
 }
 
 int SQLiteSingleVerStorageEngine::AttachMetaDatabase(sqlite3 *dbHandle, const OpenDbProperties &option) const
@@ -1020,8 +1071,8 @@ void SQLiteSingleVerStorageEngine::SetMaxTimeStamp(TimeStamp maxTimeStamp) const
 
 void SQLiteSingleVerStorageEngine::CommitNotifyForMigrateCache(NotifyMigrateSyncData &syncData) const
 {
-    auto &isRemote = syncData.isRemote;
-    auto &isRemoveDeviceData = syncData.isRemoveDeviceData;
+    const auto &isRemote = syncData.isRemote;
+    const auto &isRemoveDeviceData = syncData.isRemoveDeviceData;
     auto &committedData = syncData.committedData;
     auto &entries = syncData.entries;
 
@@ -1065,5 +1116,12 @@ void SQLiteSingleVerStorageEngine::CommitNotifyForMigrateCache(NotifyMigrateSync
         CommitAndReleaseNotifyData(committedData, SQLITE_GENERAL_NS_SYNC_EVENT);
     }
     return;
+}
+
+// Cache subscribe when engine state is CACHE mode, and its will be applied at the beginning of migrate.
+void SQLiteSingleVerStorageEngine::CacheSubscribe(const std::string &subscribeId, const QueryObject &query)
+{
+    std::lock_guard<std::mutex> lock(subscribeMutex_);
+    subscribeQuery_[subscribeId] = query;
 }
 }

@@ -19,17 +19,18 @@
 #include <condition_variable>
 #include <memory>
 
+#include "ability_sync.h"
+#include "message.h"
+#include "meta_data.h"
+#include "semaphore_utils.h"
+#include "single_ver_data_sync.h"
+#include "single_ver_data_sync_with_sliding_window.h"
+#include "single_ver_sync_task_context.h"
 #include "sync_state_machine.h"
 #include "sync_target.h"
-#include "semaphore_utils.h"
-#include "message.h"
-#include "single_ver_sync_task_context.h"
+
 #include "time_sync.h"
 #include "time_helper.h"
-#include "single_ver_data_sync.h"
-#include "meta_data.h"
-#include "ability_sync.h"
-#include "single_ver_data_sync_with_sliding_window.h"
 
 namespace DistributedDB {
 namespace {
@@ -37,23 +38,24 @@ namespace {
         IDLE = 0,
         TIME_SYNC,
         ABILITY_SYNC,
-        START_INITIACTIVE_DATA_SYNC, // used for do sync started by local device
-        START_PASSIVE_DATA_SYNC,  // used for do sync response remote device
+        START_INITIACTIVE_DATA_SYNC, // used to do sync started by local device
+        START_PASSIVE_DATA_SYNC,  // used to do sync response remote device
         INACTIVE_PUSH_REMAINDER_DATA, // push remainded data if initactive sync data more than on frame
         PASSIVE_PUSH_REMAINDER_DATA, // push remainded data if passive sync data more than on frame
         WAIT_FOR_RECEIVE_DATA_FINISH, // all data send finished, wait for data revice if has pull request
-        SYNC_TASK_FINISHED, // current sync task finished, try to schedule next sync task
+        SYNC_TASK_FINISHED, // current sync task finihsed, try to schedule next sync task
         SYNC_TIME_OUT,
         INNER_ERR,
-        START_INITIACTIVE_SLIDING_DATA_SYNC, // used for do sync started by local device, use sliding window
-        START_PASSIVE_SLIDING_DATA_SYNC // used for do pull response, use sliding window
+        START_INITIACTIVE_SLIDING_DATA_SYNC, // used to do sync started by local device, use sliding window
+        START_PASSIVE_SLIDING_DATA_SYNC, // used to do pull response, use sliding window
+        SYNC_CONTROL_CMD // used to send control cmd.
     };
 
     enum Event {
         START_SYNC_EVENT = 1,
         TIME_SYNC_FINISHED_EVENT,
         ABILITY_SYNC_FINISHED_EVENT,
-        VERSION_NOT_SUPPORT_EVENT,
+        VERSION_NOT_SUPPOR_EVENT,
         SWITCH_TO_PROCTOL_V1_EVENT,
         SEND_DATA_EVENT,
         SEND_FINISHED_EVENT,
@@ -68,6 +70,7 @@ namespace {
         INNER_ERR_EVENT,
         WAIT_TIME_OUT_EVENT,
         RE_SEND_DATA_EVENT,
+        CONTROL_CMD_EVENT,
         ANY_EVENT
     };
 }
@@ -80,7 +83,7 @@ public:
     ~SingleVerSyncStateMachine() override;
 
     // Init the SingleVerSyncStateMachine
-    int Initialize(ISyncTaskContext *context, IKvDBSyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
+    int Initialize(ISyncTaskContext *context, ISyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
         ICommunicator *communicator) override;
 
     // send Message to the StateMachine
@@ -95,7 +98,16 @@ public:
 
     bool IsNeedErrCodeHandle(uint32_t sessionId) const;
 
-    void PushPullDataRequestEvokeErrHandle(SingleVerSyncTaskContext *context);
+    void PushPullDataRequestEvokeErrHandle();
+
+    void DataRecvErrCodeHandle(uint32_t sessionId, int errCode);
+
+    bool IsNeedTriggerQueryAutoSync(Message *inMsg, QuerySyncObject &query) override;
+
+    void GetLocalWaterMark(const DeviceID &deviceId, uint64_t &outValue);
+
+    int GetSendQueryWaterMark(const std::string &queryId, const DeviceID &deviceId, bool isAutoLift,
+        uint64_t &outValue);
 
 protected:
     // Step the SingleVerSyncStateMachine
@@ -122,7 +134,7 @@ protected:
     int PrepareNextSyncTask() override;
 
     // Called by StartSaveDataNotifyTimer, used to send a save data notify packet
-    void SendSaveDataNotifyPacket(uint32_t sessionId, uint32_t sequenceId) override;
+    void SendSaveDataNotifyPacket(uint32_t sessionId, uint32_t sequenceId, uint32_t inMsgId) override;
 
 private:
     // Used to init sync state machine switchbables
@@ -154,7 +166,7 @@ private:
     // Waiting for pull data revice finish, if coming a pull request, should goto START_PASSIVE_DATA_SYNC state
     Event DoWaitForDataRecv() const;
 
-    // Sync task finished, should do some data clear and exec next task.
+    // Sync task finihsed, should do some data clear and exec next task.
     Event DoSyncTaskFinished();
 
     // Do something when sync timeout.
@@ -167,11 +179,21 @@ private:
 
     Event DoPassiveDataSyncWithSlidingWindow();
 
+    Event DoInitiactiveControlSync();
+
+    Event GetEventAfterTimeSync(int mode, bool isEarliestVersion);
+
+    int HandleControlAckRecv(const Message *inMsg);
+
+    int GetSyncOperationStatus(int errCode) const;
+
     int TimeMarkSyncRecv(const Message *inMsg);
 
     int AbilitySyncRecv(const Message *inMsg);
 
     int DataPktRecv(Message *inMsg);
+
+    int ControlPktRecv(Message *inMsg);
 
     void NeedAbilitySyncHandle();
 
@@ -179,7 +201,9 @@ private:
 
     int PreHandleAckRecv(const Message *inMsg);
 
-    void HandleDataAckRecvWithSlidingWindow(int errCode, const Message *inMsg);
+    void HandleDataAckRecvWithSlidingWindow(int errCode, const Message *inMsg, bool ignoreInnerErr);
+
+    void ResponsePullError(int errCode, bool ignoreInnerErr);
 
     void Clear();
 
@@ -193,13 +217,23 @@ private:
 
     int MessageCallbackPre(const Message *inMsg);
 
-    void AddPullResponseTarget(WaterMark pullEndWatermark, uint32_t sessionId);
+    void AddPullResponseTarget(const Message *inMsg, WaterMark pullEndWatermark);
 
     Event TransformErrCodeToEvent(int errCode);
 
     bool IsNeedResetWatchdog(const Message *inMsg) const;
 
     Event TransforTimeOutErrCodeToEvent();
+
+    bool AbilityMsgSessionIdCheck(const Message *inMsg);
+
+    SyncType GetSyncType(uint32_t messageId) const;
+
+    void DataAckRecvErrCodeHandle(int errCode, bool handleError);
+
+    void JumpStatusAfterAbilitySync(int mode);
+
+    void ControlAckRecvErrCodeHandle(int errCode);
 
     DISABLE_COPY_ASSIGN_MOVE(SingleVerSyncStateMachine);
 

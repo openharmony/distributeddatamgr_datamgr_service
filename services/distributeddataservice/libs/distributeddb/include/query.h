@@ -29,11 +29,8 @@ class Query {
 public:
 
     // Do not support concurrent use of query objects
-    DB_API static Query Select()
-    {
-        Query query;
-        return query;
-    }
+    DB_API static Query Select();
+    DB_API static Query Select(const std::string &tableName);
 
     template<typename T>
     DB_API Query &EqualTo(const std::string &field, const T &value)
@@ -89,29 +86,13 @@ public:
         return *this;
     }
 
-    DB_API Query &OrderBy(const std::string &field, bool isAsc = true)
-    {
-        ExecuteOrderBy(field, isAsc);
-        return *this;
-    }
+    DB_API Query &OrderBy(const std::string &field, bool isAsc = true);
 
-    DB_API Query &Limit(int number, int offset = 0)
-    {
-        ExecuteLimit(number, offset);
-        return *this;
-    }
+    DB_API Query &Limit(int number, int offset = 0);
 
-    DB_API Query &Like(const std::string &field, const std::string &value)
-    {
-        ExecuteLike(field, value);
-        return *this;
-    }
+    DB_API Query &Like(const std::string &field, const std::string &value);
 
-    DB_API Query &NotLike(const std::string &field, const std::string &value)
-    {
-        ExecuteNotLike(field, value);
-        return *this;
-    }
+    DB_API Query &NotLike(const std::string &field, const std::string &value);
 
     template<typename T>
     DB_API Query &In(const std::string &field, const std::vector<T> &values)
@@ -143,23 +124,11 @@ public:
         return *this;
     }
 
-    DB_API Query &IsNull(const std::string &field)
-    {
-        ExecuteIsNull(field);
-        return *this;
-    }
+    DB_API Query &IsNull(const std::string &field);
 
-    DB_API Query &And()
-    {
-        ExecuteLogicOperation(QueryObjType::AND);
-        return *this;
-    }
+    DB_API Query &And();
 
-    DB_API Query &Or()
-    {
-        ExecuteLogicOperation(QueryObjType::OR);
-        return *this;
-    }
+    DB_API Query &Or();
 
     DB_API Query &IsNotNull(const std::string &field);
 
@@ -172,22 +141,16 @@ public:
     DB_API Query &SuggestIndex(const std::string &indexName);
 
     friend class GetQueryInfo;
-    ~Query() {}
+    ~Query() = default;
 
 private:
-    Query() {}
+    Query() = default;
+    Query(const std::string &tableName);
 
     DB_SYMBOL void ExecuteCompareOperation(QueryObjType operType, const std::string &field,
         const QueryValueType type, const FieldValue &fieldValue);
     DB_SYMBOL void ExecuteCompareOperation(QueryObjType operType, const std::string &field,
         const QueryValueType type, const std::vector<FieldValue> &fieldValue);
-
-    DB_SYMBOL void ExecuteLogicOperation(QueryObjType operType);
-    DB_SYMBOL void ExecuteOrderBy(const std::string &field, bool isAsc);
-    DB_SYMBOL void ExecuteLimit(int number, int offset);
-    DB_SYMBOL void ExecuteLike(const std::string &field, const std::string &value);
-    DB_SYMBOL void ExecuteNotLike(const std::string &field, const std::string &value);
-    DB_SYMBOL void ExecuteIsNull(const std::string &field);
 
     template<typename T>
     QueryValueType GetFieldTypeAndValue(const T &queryValue, FieldValue &fieldValue)

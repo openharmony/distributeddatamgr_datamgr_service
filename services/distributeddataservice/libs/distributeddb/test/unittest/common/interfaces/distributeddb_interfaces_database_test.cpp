@@ -13,17 +13,17 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include <fstream>
-
+#include <gtest/gtest.h>
 #include <unistd.h>
+
 #include "db_common.h"
-#include "platform_specific.h"
-#include "kvdb_manager.h"
 #include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_unit_test.h"
-#include "runtime_context.h"
+#include "kvdb_manager.h"
+#include "platform_specific.h"
 #include "process_system_api_adapter_impl.h"
+#include "runtime_context.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -328,19 +328,22 @@ void DistributedDBInterfacesDatabaseTest::SetUpTestCase(void)
 
 void DistributedDBInterfacesDatabaseTest::TearDownTestCase(void)
 {
-    if (DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir) != 0) {
-        LOGE("rm test db files error!");
-    }
     RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(nullptr);
 }
 
 void DistributedDBInterfacesDatabaseTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_kvDelegateStatus = INVALID_ARGS;
     g_kvDelegatePtr = nullptr;
 }
 
-void DistributedDBInterfacesDatabaseTest::TearDown(void) {}
+void DistributedDBInterfacesDatabaseTest::TearDown(void)
+{
+    if (DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir) != 0) {
+        LOGE("rm test db files error!");
+    }
+}
 
 /**
   * @tc.name: GetKvStore001
@@ -385,7 +388,7 @@ HWTEST_F(DistributedDBInterfacesDatabaseTest, GetKvStore001, TestSize.Level1)
     option = {false, true, false};
     g_mgr.GetKvStore("distributed_db_test3", option, g_kvDelegateCallback);
     ASSERT_TRUE(g_kvDelegatePtr == nullptr);
-    EXPECT_TRUE(g_kvDelegateStatus == DB_ERROR);
+    EXPECT_NE(g_kvDelegateStatus, OK);
 
     /**
      * @tc.steps: step6. Obtain the kvStore through the GetKvStore interface of the delegate manager
@@ -395,7 +398,7 @@ HWTEST_F(DistributedDBInterfacesDatabaseTest, GetKvStore001, TestSize.Level1)
     option = {false, false, false};
     g_mgr.GetKvStore("distributed_db_test4", option, g_kvDelegateCallback);
     ASSERT_TRUE(g_kvDelegatePtr == nullptr);
-    EXPECT_TRUE(g_kvDelegateStatus == DB_ERROR);
+    EXPECT_NE(g_kvDelegateStatus, OK);
 
     /**
      * @tc.steps: step7. Obtain the kvStore through the GetKvStore interface of the delegate manager
@@ -1295,6 +1298,26 @@ namespace {
 }
 
 /**
+  * @tc.name: FreqOpenCloseDel001
+  * @tc.desc: Open/close/delete the kv store concurrently.
+  * @tc.type: FUNC
+  * @tc.require: AR000DR9K2
+  * @tc.author: wangbingquan
+  */
+HWTEST_F(DistributedDBInterfacesDatabaseTest, FreqOpenCloseDel001, TestSize.Level2)
+{
+    std::string storeId = "FrqOpenCloseDelete001";
+    std::thread t1(OpenCloseDatabase, storeId);
+    std::thread t2([&]() {
+        for (int i = 0; i < 10000; i++) {
+            g_mgr.DeleteKvStore(storeId);
+        }
+    });
+    t1.join();
+    t2.join();
+}
+
+/**
   * @tc.name: FreqOpenClose001
   * @tc.desc: Open and close the kv store concurrently.
   * @tc.type: FUNC
@@ -1346,6 +1369,68 @@ HWTEST_F(DistributedDBInterfacesDatabaseTest, CheckKvStoreDir001, TestSize.Level
     g_mgr.CloseKvStore(g_kvNbDelegatePtr);
     g_kvNbDelegatePtr = nullptr;
     EXPECT_EQ(g_mgr.DeleteKvStore(storeId), OK);
-    LOGE("[%s]", dataBaseDir.c_str());
+    LOGI("[%s]", dataBaseDir.c_str());
     ASSERT_EQ(OS::CheckPathExistence(dataBaseDir), false);
+}
+
+/**
+ * @tc.name: CompressionRate1
+ * @tc.desc: Open the kv store with invalid compressionRate and open successfully.
+ * @tc.type: FUNC
+ * @tc.require: AR000G3QTT
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBInterfacesDatabaseTest, CompressionRate1, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. Open the kv store with the option that comressionRate is invalid.
+     * @tc.expected: step1. Open kv store successfully. Returns OK.
+     */
+    KvStoreNbDelegate::Option option;
+    option.isNeedCompressOnSync = true;
+    option.compressionRate = 0; // 0 is invalid.
+    const std::string storeId("CompressionRate1");
+    g_mgr.GetKvStore(storeId, option, g_kvNbDelegateCallback);
+    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+    EXPECT_TRUE(g_kvDelegateStatus == OK);
+
+    g_mgr.CloseKvStore(g_kvNbDelegatePtr);
+    g_kvNbDelegatePtr = nullptr;
+    EXPECT_EQ(g_mgr.DeleteKvStore(storeId), OK);
+}
+
+HWTEST_F(DistributedDBInterfacesDatabaseTest, DataInterceptor1, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. Open the kv store with the option that comressionRate is invalid.
+     * @tc.expected: step1. Open kv store successfully. Returns OK.
+     */
+    KvStoreNbDelegate::Option option;
+    const std::string storeId("DataInterceptor1");
+    g_mgr.GetKvStore(storeId, option, g_kvNbDelegateCallback);
+    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+    EXPECT_TRUE(g_kvDelegateStatus == OK);
+
+    g_kvNbDelegatePtr->SetPushDataInterceptor(
+        [](InterceptedData &data, const std::string &sourceID, const std::string &targetID) {
+            int errCode = OK;
+            auto entries = data.GetEntries();
+            for (size_t i = 0; i < entries.size(); i++) {
+                if (entries[i].key.empty() || entries[i].key.at(0) != 'A') {
+                    continue;
+                }
+                auto newKey = entries[i].key;
+                newKey[0] = 'B';
+                errCode = data.ModifyKey(i, newKey);
+                if (errCode != OK) {
+                    break;
+                }
+            }
+            return errCode;
+        }
+    );
+
+    g_mgr.CloseKvStore(g_kvNbDelegatePtr);
+    g_kvNbDelegatePtr = nullptr;
+    EXPECT_EQ(g_mgr.DeleteKvStore(storeId), OK);
 }

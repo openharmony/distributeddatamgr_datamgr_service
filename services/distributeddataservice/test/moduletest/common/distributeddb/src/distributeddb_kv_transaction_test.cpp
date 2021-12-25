@@ -99,7 +99,7 @@ void DistributeddbKvTransactionTest::TearDown(void)
  * @tc.require: SR000CQDTL
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvTransactionTest, BasicAction001, TestSize.Level0)
+HWTEST_F(DistributeddbKvTransactionTest, BasicAction001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. start transaction .
@@ -134,7 +134,7 @@ HWTEST_F(DistributeddbKvTransactionTest, BasicAction001, TestSize.Level0)
  * @tc.require: SR000CQDTL
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvTransactionTest, BasicAction002, TestSize.Level0)
+HWTEST_F(DistributeddbKvTransactionTest, BasicAction002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. start transaction and Put (k1, v1) and check the record.
@@ -448,7 +448,7 @@ HWTEST_F(DistributeddbKvTransactionTest, Crud002, TestSize.Level1)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvTransactionTest, Crud003, TestSize.Level0)
+HWTEST_F(DistributeddbKvTransactionTest, Crud003, TestSize.Level1)
 {
     /**
      * @tc.steps: step1.put(k1,v1) to db and get.
@@ -1400,7 +1400,7 @@ HWTEST_F(DistributeddbKvTransactionTest, Acid004, TestSize.Level2)
     g_batchThreadComplete = true;
     ASSERT_TRUE(g_batchThreadSuccess);
 
-    std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(MILLSECONDES_PER_SECOND));
+    std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(MILLSECONDS_PER_SECOND));
 }
 
 vector<Key> g_holdingKeys;

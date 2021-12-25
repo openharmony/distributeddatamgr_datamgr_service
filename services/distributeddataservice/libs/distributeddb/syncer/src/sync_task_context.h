@@ -19,14 +19,14 @@
 #include <list>
 #include <mutex>
 
-#include "isync_task_context.h"
-#include "sync_target.h"
-#include "semaphore_utils.h"
-#include "sync_operation.h"
 #include "icommunicator.h"
 #include "ikvdb_sync_interface.h"
+#include "isync_task_context.h"
 #include "meta_data.h"
 #include "runtime_context.h"
+#include "semaphore_utils.h"
+#include "sync_operation.h"
+#include "sync_target.h"
 #include "time_helper.h"
 
 namespace DistributedDB {
@@ -34,7 +34,9 @@ enum SyncDirectionFlag {
     SEND = 0,
     RECEIVE = 1,
 };
-
+struct TaskParam {
+    uint32_t timeout = 0;
+};
 class ISyncStateMachine;
 
 class SyncTaskContext : public ISyncTaskContext {
@@ -174,6 +176,32 @@ public:
 
     void SetTaskErrCode(int errCode) override;
 
+    bool IsSyncTaskNeedRetry() const override;
+
+    void SetSyncRetry(bool isRetry) override;
+
+    int GetSyncRetryTimes() const override;
+
+    int GetSyncRetryTimeout(int retryTime) const override;
+
+    void ClearAllSyncTask() override;
+
+    bool IsAutoLiftWaterMark() const override;
+
+    void IncNegotiationCount() override;
+
+    // check if need trigger query auto sync and get query from inMsg
+    bool IsNeedTriggerQueryAutoSync(Message *inMsg, QuerySyncObject &query) override;
+
+    bool IsAutoSubscribe() const override;
+
+    bool IsCurrentSyncTaskCanBeSkipped() const override;
+
+    virtual void ResetLastPushTaskStatus();
+
+    bool GetIsNeedResetAbilitySync() const;
+    void SetIsNeedResetAbilitySync(bool isNeedReset) override;
+
 protected:
     const static int KILL_WAIT_SECONDS = INT32_MAX;
 
@@ -181,7 +209,7 @@ protected:
 
     virtual int TimeOut(TimerId id);
 
-    virtual void CopyTargetData(const ISyncTarget *target);
+    virtual void CopyTargetData(const ISyncTarget *target, const TaskParam &taskParam);
 
     void CommErrHandlerFuncInner(int errCode, uint32_t sessionId);
 
@@ -192,6 +220,8 @@ protected:
     void ClearSyncTarget();
 
     void CancelCurrentSyncRetryIfNeed(int newTargetMode);
+
+    virtual void SaveLastPushTaskExecStatus(int finalStatus);
 
     mutable std::mutex targetQueueLock_;
     std::list<ISyncTarget *> requestTargetQueue_;
@@ -204,7 +234,7 @@ protected:
     int status_;
     int taskExecStatus_;
     std::string deviceId_;
-    IKvDBSyncInterface *syncInterface_;
+    ISyncInterface *syncInterface_;
     ICommunicator *communicator_;
     ISyncStateMachine *stateMachine_;
     TimeOffset timeOffset_ = 0;
@@ -233,8 +263,14 @@ protected:
     bool isCommNormal_;
     int taskErrCode_;
     uint64_t packetId_ = 0; // used for assignment to reSendMap_.ReSendInfo.packetId in 103 version or above
+    bool syncTaskRetryStatus_;
+    bool isSyncRetry_;
+    uint32_t negotiationCount_;
+    bool isAutoSubscribe_;
+    // syncFinished_ need to set false if isNeedResetSyncFinished_ is true when start do abilitySync interface
+    std::atomic<bool> isNeedResetAbilitySync_;
 
-    // For gloable ISyncTaskContext Set, used by CommErrCallback.
+    // For global ISyncTaskContext Set, used by CommErrCallback.
     static std::mutex synTaskContextSetLock_;
     static std::set<ISyncTaskContext *> synTaskContextSet_;
 };

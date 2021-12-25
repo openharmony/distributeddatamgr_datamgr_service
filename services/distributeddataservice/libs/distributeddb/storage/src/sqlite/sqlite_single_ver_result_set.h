@@ -80,20 +80,24 @@ private:
     void CloseForCacheEntryIdMode();
 
     const Option option_;
+
     // Common Part Of Two ResultSet Mode.
     bool isOpen_ = false;
     int count_ = 0;
     mutable int position_ = INIT_POSTION; // The position in the overall result
     mutable std::mutex mutex_;
+
     // For KeyPrefix Type Or Query Type.
     const ResultSetType type_ = ResultSetType::KEYPREFIX;
     Key keyPrefix_;
     mutable QueryObject queryObj_; // Some QueryObject member function need to call is not a const function(BAD...)
     // Common Pointer For Use, Not Own it, Not Responsible To Release It.
     SQLiteSingleVerNaturalStore *kvDB_ = nullptr;
+
     // Cache Full Entry Mode Using ResultEntriesWindow and IKvDBRawCursor, Own It, Responsible To Release It.
     ResultEntriesWindow *window_ = nullptr;
     IKvDBRawCursor *rawCursor_ = nullptr;
+
     // Cache EntryId Mode Using StorageExecutor, Own It, Responsible To Release It.
     SQLiteSingleVerStorageExecutor *handle_ = nullptr;
     mutable std::vector<int64_t> cachedRowIds_;

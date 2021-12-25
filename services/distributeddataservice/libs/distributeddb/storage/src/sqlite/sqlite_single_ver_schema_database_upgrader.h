@@ -30,6 +30,7 @@ public:
 protected:
     // Get an empty string with return_code E_OK indicate no schema but everything normally
     int GetDatabaseSchema(std::string &dbSchema) const override;
+
     // Set or update schema into database file
     int SetDatabaseSchema(const std::string &dbSchema) override;
 

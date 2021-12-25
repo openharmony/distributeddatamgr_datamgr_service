@@ -19,25 +19,23 @@
 
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
+#include "kv_store_observer_impl.h"
 #include "types.h"
 #include "distributed_test_sysinfo.h"
 #include "distributeddb_data_generator.h"
 #include "log_print.h"
-#ifdef TESTCASES_USING_GTEST
+#ifdef RUN_MST_ON_TRUNCK // only need it in WAGNER env if run MST
 #define HWTEST_F(test_case_name, test_name, level) TEST_F(test_case_name, test_name)
 #endif
+#define ULL(x) (static_cast<unsigned long long>(x))
 const int MAX_DIR_LENGTH = 4096; // the max length of directory
+const int BUF_LEN = 8192;
 const static std::string TAG = "DistributedTestTools"; // for log
 const int AUTHORITY = 0755;
 const int E_OK = 0;
 const int E_ERROR = -1;
 const std::string DIRECTOR = "/data/test/getstub/"; // default work dir.
 static std::condition_variable g_conditionKvVar;
-enum ListType {
-    INSERT_LIST = 0,
-    UPDATE_LIST = 1,
-    DELETE_LIST = 2
-};
 
 struct KvDBParameters {
     std::string storeId;
@@ -106,8 +104,6 @@ const static KvOption g_createLocalDiskEncrypted(true, true, true, DistributedDB
     DistributedDBDataGenerator::PASSWD_VECTOR_1);
 static KvOption g_kvOption = g_createKvDiskEncrypted;
 bool CompareVector(const std::vector<uint8_t>& first, const std::vector<uint8_t>& second);
-bool CompareList(const std::list<DistributedDB::Entry>& retLst,
-    const std::list<DistributedDB::Entry>& lst);
 bool CompareEntriesVector(std::vector<DistributedDB::Entry>& retVec,
     std::vector<DistributedDB::Entry>& expectVec);
 void PutUniqueKey(std::vector<DistributedDB::Entry>& entryVec,
@@ -116,6 +112,8 @@ int Uint8VecToString(std::vector<uint8_t>& vec, std::string& str);
 int GetIntValue(DistributedDB::Value &value);
 int RemoveDir(const std::string &directory);
 int SetDir(const std::string &directory, const int authRight = AUTHORITY);
+void CopyFile(const std::string &srcFile, const std::string &destFile);
+void CopyDir(const std::string &srcDir, const std::string &destDir, const int authRight = AUTHORITY);
 void CheckFileNumber(const std::string &filePath, int &fileCount);
 DistributedDB::Value GetValueWithInt(int val);
 std::vector<DistributedDB::Entry> GenRanKeyVal(int putGetTimes, int keyLength, int valueLength, char val);
@@ -406,6 +404,13 @@ public:
     static bool CalculateTransactionPerformance(PerformanceData &performanceData);
     static bool CloseAndRelease(DistributedDB::KvStoreDelegateManager *&manager,
         DistributedDB::KvStoreDelegate *&delegate);
+    static bool CloseAndRelease(DistributedDB::KvStoreDelegateManager *&manager,
+        DistributedDB::KvStoreNbDelegate *&delegate);
+    static bool VerifyDbRecordCnt(DistributedDB::KvStoreNbDelegate *&delegate, unsigned int recordCnt,
+        bool isLocal = false);
+    static bool VerifyRecordsInDb(DistributedDB::KvStoreNbDelegate *&delegate,
+        std::vector<DistributedDB::Entry> &entriesExpected,
+        const std::vector<uint8_t> &keyPrefix = DistributedDBDataGenerator::KEY_EMPTY, bool isLocal = false);
     static bool GetRecordCntByKey(const std::string &dbName,
         const std::string &strSql, std::vector<DistributedDB::Key> &sqlParam, KvOption &option, int &count);
     static bool QuerySpecifiedData(const std::string &dbName, const std::string &strSql,
@@ -413,164 +418,20 @@ public:
     static bool RepeatCheckAsyncResult(const std::function<bool(void)> &inPred, int repeatLimit,
         uint32_t repeatInterval);
     static bool CompareKey(const DistributedDB::Entry &entry1, const DistributedDB::Entry &entry2);
-};
-
-// DelegateCallback conclude the Callback implements of function< void(DBStatus, KvStoreSnapshotDelegate*)>
-class DelegateCallback {
-public:
-    DelegateCallback() {}
-    ~DelegateCallback() {}
-
-    // Delete the copy and assign constructors
-    DelegateCallback(const DelegateCallback &callback) = delete;
-    DelegateCallback& operator=(const DelegateCallback &callback) = delete;
-    DelegateCallback(DelegateCallback &&callback) = delete;
-    DelegateCallback& operator=(DelegateCallback &&callback) = delete;
-
-    void Callback(DistributedDB::DBStatus status, DistributedDB::KvStoreSnapshotDelegate *kvStoreSnapshotDelegate);
-
-    DistributedDB::DBStatus GetStatus();
-
-    const DistributedDB::KvStoreSnapshotDelegate *GetKvStoreSnapshot()
-    {
-        return kvStoreSnapshotDelegate_;
-    }
-
-private:
-    DistributedDB::DBStatus status_ = DistributedDB::DBStatus::INVALID_ARGS;
-    DistributedDB::KvStoreSnapshotDelegate *kvStoreSnapshotDelegate_ = nullptr;
-};
-
-// DelegateKvMgrCallback conclude the Callback implements of function< void(DBStatus, KvStoreDelegate*)>
-class DelegateKvMgrCallback {
-public:
-    DelegateKvMgrCallback() {}
-    ~DelegateKvMgrCallback() {}
-
-    // Delete the copy and assign constructors
-    DelegateKvMgrCallback(const DelegateKvMgrCallback &callback) = delete;
-    DelegateKvMgrCallback& operator=(const DelegateKvMgrCallback &callback) = delete;
-    DelegateKvMgrCallback(DelegateKvMgrCallback &&callback) = delete;
-    DelegateKvMgrCallback& operator=(DelegateKvMgrCallback &&callback) = delete;
-
-    void Callback(DistributedDB::DBStatus status, DistributedDB::KvStoreDelegate *kvStoreDelegate);
-
-    DistributedDB::DBStatus GetStatus();
-
-    const DistributedDB::KvStoreDelegate *GetKvStore();
-
-private:
-    DistributedDB::DBStatus status_ = DistributedDB::DBStatus::INVALID_ARGS;
-    DistributedDB::KvStoreDelegate *kvStoreDelegate_ = nullptr;
+    static void CopyFile(const std::string &srcFile, const std::string &destFile);
 };
 
 std::string TransferStringToHashHexString(const std::string &origStr);
 
 int RemoveDatabaseDirectory(const std::string &directory);
 
-class KvStoreObserverImpl final : public DistributedDB::KvStoreObserver {
-public:
-    void OnChange(const DistributedDB::KvStoreChangedData &data);
-
-    KvStoreObserverImpl();
-
-    ~KvStoreObserverImpl();
-
-    KvStoreObserverImpl(const KvStoreObserverImpl &);
-    KvStoreObserverImpl& operator=(const KvStoreObserverImpl &);
-
-    const std::list<DistributedDB::Entry> GetInsertList() const;
-
-    const std::list<DistributedDB::Entry> GetUpdateList() const;
-
-    const std::list<DistributedDB::Entry> GetDeleteList() const;
-
-    int GetChanged() const;
-
-    void WaitUntilReachChangeCount(unsigned int countGoal, uint32_t timeout = 0) const; // timeout in second
-    // timeout in second
-    void WaitUntilReachRecordCount(unsigned int countExpect, ListType waitWhat, uint32_t timeout = 0) const;
-
-    microClock_type GetOnChangeTime();
-
-    void Clear();
-
-    void SetCumulatedFlag(bool isSaveCumulatedData);
-
-    bool GetCumulatedFlag() const;
-
-    const std::list<DistributedDB::Entry> GetCumulatedInsertList() const;
-
-    const std::list<DistributedDB::Entry> GetCumulatedUpdateList() const;
-
-    const std::list<DistributedDB::Entry> GetCumulatedDeleteList() const;
-
-private:
-    std::list<DistributedDB::Entry> insertedEntries_ = {};
-    std::list<DistributedDB::Entry> updatedEntries_ = {};
-    std::list<DistributedDB::Entry> deleteEntries_ = {};
-    unsigned int changed_ = 0;
-    microClock_type onChangeTime_
-        = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now());
-    bool isSaveCumulatedData_ = false;
-    std::list<DistributedDB::Entry> cumulatedInsertList_ = {};
-    std::list<DistributedDB::Entry> cumulatedUpdateList_ = {};
-    std::list<DistributedDB::Entry> cumulatedDeleteList_ = {};
-    // For waiting method
-    mutable std::mutex waitChangeMutex_;
-    mutable std::condition_variable waitChangeCv_;
-};
-
 bool VerifyObserverResult(const KvStoreObserverImpl &pObserver,
-    int changedTimes, ListType type, const std::list<DistributedDB::Entry> &lst);
+    int changedTimes, ListType type, const std::list<DistributedDB::Entry> &lst,
+    uint32_t timeout = DistributedDBDataGenerator::DistributedDBConstant::THIRTY_MINUTES);
 bool VerifyObserverResult(const KvStoreObserverImpl &pObserver,
-    int changedTimes, ListType type, const std::vector<DistributedDB::Entry> &vec);
-
-class KvStoreSnapshotCallback {
-public:
-    KvStoreSnapshotCallback() {}
-    ~KvStoreSnapshotCallback() {}
-    /**
-     * @tc.steps: step1. Delete the copy and assign constructors.
-     * @tc.expected: step1. operate successfully.
-     */
-    KvStoreSnapshotCallback(const KvStoreSnapshotCallback &callback) = delete;
-    KvStoreSnapshotCallback& operator=(const KvStoreSnapshotCallback &callback) = delete;
-    KvStoreSnapshotCallback(KvStoreSnapshotCallback &&callback) = delete;
-    KvStoreSnapshotCallback& operator=(KvStoreSnapshotCallback &&callback) = delete;
-
-    void Callback(DistributedDB::DBStatus status, const std::vector<DistributedDB::Entry> &entriesVec);
-    DistributedDB::DBStatus GetStatus();
-    std::vector<DistributedDB::Entry> GetEntries();
-
-private:
-    DistributedDB::DBStatus status_ = DistributedDB::DBStatus::INVALID_ARGS;
-    std::vector<DistributedDB::Entry> entriesVec_ = {};
-};
-
-class AutoLaunchCallback {
-public:
-    AutoLaunchCallback() {}
-    ~AutoLaunchCallback() {}
-
-    // Delete the copy and assign constructors
-    AutoLaunchCallback(const AutoLaunchCallback &callback) = delete;
-    AutoLaunchCallback &operator=(const AutoLaunchCallback &callback) = delete;
-    AutoLaunchCallback(AutoLaunchCallback &&callback) = delete;
-    AutoLaunchCallback &operator=(AutoLaunchCallback &&callback) = delete;
-
-    void AutoLaunchNotifier(const std::string &userId, const std::string &appId, const std::string &storeId,
-        DistributedDB::AutoLaunchStatus status);
-    bool AutoLaunchRequestNotifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
-    int GetStatus();
-    void Clear();
-    void AddHashIdentity(const std::string &hashIdentity);
-    void ClearHashIdentities();
-    void SetAutoLaunchParam(DistributedDB::AutoLaunchParam &autoLaunchParam);
-
-private:
-    int realStatus_ = 0;
-    std::vector<std::string> hashIdentities_;
-    DistributedDB::AutoLaunchParam autoLaunchParam_;
-};
+    int changedTimes, ListType type, const std::vector<DistributedDB::Entry> &vec,
+    uint32_t timeout = DistributedDBDataGenerator::DistributedDBConstant::THIRTY_MINUTES);
+bool VerifyObserverForSchema(const KvStoreObserverImpl &pObserver,
+    int changedTimes, ListType type, const std::vector<DistributedDB::Entry> &expectEntry,
+    uint32_t timeout = DistributedDBDataGenerator::DistributedDBConstant::THIRTY_MINUTES);
 #endif // DISTRIBUTED_DB_MODULE_TEST_TOOLS_H

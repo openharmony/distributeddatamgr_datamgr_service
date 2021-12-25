@@ -12,21 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#ifndef OMIT_JSON
 #include <gtest/gtest.h>
 
-#include "types.h"
-#include "sqlite_utils.h"
-#include "distributeddb_tools_unit_test.h"
-#include "log_print.h"
-#include "sqlite_single_ver_natural_store_connection.h"
-#include "distributeddb_data_generate_unit_test.h"
-#include "res_finalizer.h"
 #include "db_common.h"
 #include "db_constant.h"
-#include "platform_specific.h"
-#include "sqlite_single_ver_result_set.h"
+#include "distributeddb_data_generate_unit_test.h"
+#include "distributeddb_tools_unit_test.h"
 #include "kvdb_manager.h"
+#include "log_print.h"
+#include "platform_specific.h"
+#include "res_finalizer.h"
+#include "sqlite_single_ver_natural_store_connection.h"
+#include "sqlite_single_ver_result_set.h"
+#include "sqlite_utils.h"
+#include "types.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -80,6 +80,7 @@ void DistributedDBStorageResultAndJsonOptimizeTest::TearDownTestCase(void)
 
 void DistributedDBStorageResultAndJsonOptimizeTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: 1. Create a SQLiteSingleVerNaturalStore.
      *            2. Set the ResultSet cache mode to CACHE_ENTRY_ID_ONLY.
@@ -311,3 +312,4 @@ HWTEST_F(DistributedDBStorageResultAndJsonOptimizeTest, ResultSetGetEntry001, Te
      */
     resultSet->Close();
 }
+#endif

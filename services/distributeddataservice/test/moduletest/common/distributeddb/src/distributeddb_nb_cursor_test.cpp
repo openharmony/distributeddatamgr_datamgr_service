@@ -49,7 +49,7 @@ void DistributeddbNbCursorTest::TearDownTestCase(void)
 
 void DistributeddbNbCursorTest::SetUp(void)
 {
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 
     UnitTest *test = UnitTest::GetInstance();
     ASSERT_NE(test, nullptr);
@@ -67,7 +67,7 @@ void DistributeddbNbCursorTest::TearDown(void)
     MST_LOG("TearDownTestCase after case.");
     ASSERT_NE(g_manager, nullptr);
     EXPECT_TRUE(EndCaseDeleteDB(g_manager, g_nbCursorDelegate, STORE_ID_1, g_option.isMemoryDb));
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 }
 
 /*
@@ -81,7 +81,7 @@ void DistributeddbNbCursorTest::TearDown(void)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb001, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb001(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb001(g_nbCursorDelegate, false);
 }
 
 /*
@@ -94,7 +94,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb001, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb002, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb002(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb002(g_nbCursorDelegate, false);
 }
 
 /*
@@ -107,7 +107,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb002, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb003, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb003(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb003(g_nbCursorDelegate, false);
 }
 
 /*
@@ -120,7 +120,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb003, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb004, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb004(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb004(g_nbCursorDelegate, false);
 }
 
 /*
@@ -134,7 +134,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb004, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb005, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb005(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb005(g_nbCursorDelegate, false);
 }
 
 /*
@@ -147,7 +147,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb005, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb006, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb006(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb006(g_nbCursorDelegate, false);
 }
 
 /*
@@ -160,7 +160,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb006, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb007, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb007(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb007(g_nbCursorDelegate, false);
 }
 
 /*
@@ -173,7 +173,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb007, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb008, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb008(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb008(g_nbCursorDelegate, false);
 }
 
 /*
@@ -187,7 +187,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb008, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb009, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb009(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb009(g_nbCursorDelegate, false);
 }
 
 /*
@@ -200,7 +200,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb009, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb010, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb010(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb010(g_nbCursorDelegate, false);
 }
 
 /*
@@ -213,7 +213,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb010, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb011, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb011(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb011(g_nbCursorDelegate, false);
 }
 
 /*
@@ -226,7 +226,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb011, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb012, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb012(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb012(g_nbCursorDelegate, false);
 }
 
 /*
@@ -239,7 +239,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb012, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb013, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb013(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb013(g_nbCursorDelegate, false);
 }
 
 /*
@@ -253,7 +253,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb013, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb014, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb014(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb014(g_nbCursorDelegate, false);
 }
 
 /*
@@ -266,7 +266,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb014, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb015, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb015(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb015(g_nbCursorDelegate, false);
 }
 
 /*
@@ -279,7 +279,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb015, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb016, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb016(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb016(g_nbCursorDelegate, false);
 }
 
 /*
@@ -292,7 +292,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb016, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb017, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb017(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb017(g_nbCursorDelegate, false);
 }
 
 /*
@@ -305,7 +305,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb017, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb018, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb018(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb018(g_nbCursorDelegate, false);
 }
 
 /*
@@ -318,7 +318,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb018, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb019, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb019(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb019(g_nbCursorDelegate, false);
 }
 
 /*
@@ -331,7 +331,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb019, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb020, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb020(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb020(g_nbCursorDelegate, false);
 }
 
 /*
@@ -344,7 +344,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb020, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb021, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb021(g_nbCursorDelegate, g_manager, false);
+    DistributeddbNbCursorTestcase::ResultSetDb021(g_nbCursorDelegate, g_manager, false);
 }
 
 #ifndef LOW_LEVEL_MEM_DEV
@@ -358,7 +358,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb021, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb022, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb022(false);
+    DistributeddbNbCursorTestcase::ResultSetDb022(false);
 }
 #endif
 
@@ -372,7 +372,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb022, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb023, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb023(false);
+    DistributeddbNbCursorTestcase::ResultSetDb023(false);
 }
 
 #ifndef LOW_LEVEL_MEM_DEV
@@ -386,7 +386,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb023, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb024, TestSize.Level3)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb024(false);
+    DistributeddbNbCursorTestcase::ResultSetDb024(false);
 }
 #endif
 
@@ -400,7 +400,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb024, TestSize.Level3)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb025, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb025(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb025(g_nbCursorDelegate, false);
 }
 
 /*
@@ -413,7 +413,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb025, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb026, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb026(g_nbCursorDelegate, false);
+    DistributeddbNbCursorTestcase::ResultSetDb026(g_nbCursorDelegate, false);
 }
 
 /*
@@ -426,7 +426,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb026, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, ResultSetDb027, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_FULL_ENTRY.
-    DistributedNbCursorTestcase::ResultSetDb027(false);
+    DistributeddbNbCursorTestcase::ResultSetDb027(false);
 }
 
 /*
@@ -440,7 +440,7 @@ HWTEST_F(DistributeddbNbCursorTest, ResultSetDb027, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest001, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb001(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb001(g_nbCursorDelegate, true);
 }
 
 /*
@@ -453,7 +453,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest001, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest002, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb002(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb002(g_nbCursorDelegate, true);
 }
 
 /*
@@ -466,7 +466,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest002, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest003, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb003(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb003(g_nbCursorDelegate, true);
 }
 
 /*
@@ -479,7 +479,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest003, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest004, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb004(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb004(g_nbCursorDelegate, true);
 }
 
 /*
@@ -493,7 +493,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest004, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest005, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb005(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb005(g_nbCursorDelegate, true);
 }
 
 /*
@@ -506,7 +506,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest005, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest006, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb006(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb006(g_nbCursorDelegate, true);
 }
 
 /*
@@ -519,7 +519,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest006, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest007, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb007(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb007(g_nbCursorDelegate, true);
 }
 
 /*
@@ -532,7 +532,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest007, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest008, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb008(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb008(g_nbCursorDelegate, true);
 }
 
 /*
@@ -546,7 +546,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest008, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest009, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb009(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb009(g_nbCursorDelegate, true);
 }
 
 /*
@@ -559,7 +559,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest009, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest010, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb010(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb010(g_nbCursorDelegate, true);
 }
 
 /*
@@ -572,7 +572,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest010, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest011, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb011(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb011(g_nbCursorDelegate, true);
 }
 
 /*
@@ -585,7 +585,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest011, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest012, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb012(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb012(g_nbCursorDelegate, true);
 }
 
 /*
@@ -598,7 +598,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest012, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest013, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb013(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb013(g_nbCursorDelegate, true);
 }
 
 /*
@@ -612,7 +612,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest013, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest014, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb014(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb014(g_nbCursorDelegate, true);
 }
 
 /*
@@ -625,7 +625,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest014, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest015, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb015(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb015(g_nbCursorDelegate, true);
 }
 
 /*
@@ -638,7 +638,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest015, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest016, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb016(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb016(g_nbCursorDelegate, true);
 }
 
 /*
@@ -651,7 +651,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest016, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest017, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb017(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb017(g_nbCursorDelegate, true);
 }
 
 /*
@@ -664,7 +664,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest017, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest018, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb018(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb018(g_nbCursorDelegate, true);
 }
 
 /*
@@ -677,7 +677,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest018, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest019, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb019(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb019(g_nbCursorDelegate, true);
 }
 
 /*
@@ -690,7 +690,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest019, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest020, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb020(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb020(g_nbCursorDelegate, true);
 }
 
 /*
@@ -703,7 +703,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest020, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest021, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb021(g_nbCursorDelegate, g_manager, true);
+    DistributeddbNbCursorTestcase::ResultSetDb021(g_nbCursorDelegate, g_manager, true);
 }
 
 #ifndef LOW_LEVEL_MEM_DEV
@@ -717,7 +717,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest021, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest022, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb022(true);
+    DistributeddbNbCursorTestcase::ResultSetDb022(true);
 }
 #endif
 
@@ -731,7 +731,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest022, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest023, TestSize.Level1)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb023(true);
+    DistributeddbNbCursorTestcase::ResultSetDb023(true);
 }
 
 #ifndef LOW_LEVEL_MEM_DEV
@@ -745,7 +745,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest023, TestSize.Level1)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest024, TestSize.Level3)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb024(true);
+    DistributeddbNbCursorTestcase::ResultSetDb024(true);
 }
 #endif
 
@@ -759,7 +759,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest024, TestSize.Level3)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest025, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb025(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb025(g_nbCursorDelegate, true);
 }
 
 /*
@@ -772,7 +772,7 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest025, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest026, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb026(g_nbCursorDelegate, true);
+    DistributeddbNbCursorTestcase::ResultSetDb026(g_nbCursorDelegate, true);
 }
 
 /*
@@ -785,6 +785,6 @@ HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest026, TestSize.Level2)
 HWTEST_F(DistributeddbNbCursorTest, CacheRowIdTest027, TestSize.Level2)
 {
     // test with RESULT_SET_CACHE_MODE = CACHE_ENTRY_ID_ONLY.
-    DistributedNbCursorTestcase::ResultSetDb027(true);
+    DistributeddbNbCursorTestcase::ResultSetDb027(true);
 }
 }

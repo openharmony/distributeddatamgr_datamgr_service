@@ -58,6 +58,8 @@ public:
         isNeedUpdateSecOpt_ = flag;
     }
 
+    void CacheSubscribe(const std::string &subscribeId, const QueryObject &query);
+
 protected:
     StorageExecutor *NewSQLiteStorageExecutor(sqlite3 *dbHandle, bool isWrite, bool isMemDb) override;
 
@@ -87,7 +89,7 @@ private:
     int EraseDeviceWaterMark(SQLiteSingleVerStorageExecutor *&handle, const std::vector<DataItem> &dataItems);
 
     // For db.
-    int TryToOpenMainDatabase(sqlite3 *&db);
+    int TryToOpenMainDatabase(bool isWrite, sqlite3 *&db);
     int GetCacheDbHandle(sqlite3 *&db);
     int GetDbHandle(bool isWrite, const SecurityOption &secOpt, sqlite3 *&dbHandle);
     int AttachMetaDatabase(sqlite3 *dbHandle, const OpenDbProperties &option) const;
@@ -108,11 +110,17 @@ private:
     void InitConflictNotifiedFlag(SingleVerNaturalStoreCommitNotifyData *&committedData) const;
     void CommitNotifyForMigrateCache(NotifyMigrateSyncData &syncData) const;
 
+    // For subscribe
+    int AddSubscribeToMainDBInMigrate();
+
     mutable std::mutex migrateLock_;
     std::atomic<uint64_t> cacheRecordVersion_;
     ExecutorState executorState_;
     bool isCorrupted_;
     bool isNeedUpdateSecOpt_; // update the option_
+
+    std::mutex subscribeMutex_;
+    std::map<std::string, QueryObject> subscribeQuery_;
 };
 } // namespace DistributedDB
 

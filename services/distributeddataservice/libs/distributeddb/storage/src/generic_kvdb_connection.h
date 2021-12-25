@@ -72,6 +72,8 @@ public:
     int RegisterLifeCycleCallback(const DatabaseLifeCycleNotifier &notifier) override;
 
     int GetSecurityOption(int &securityLabel, int &securityFlag) const override;
+
+    int CheckIntegrity() const override;
 protected:
     // Get the stashed 'KvDB_ pointer' without ref.
     template<typename DerivedDBType>

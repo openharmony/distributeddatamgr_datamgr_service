@@ -15,13 +15,13 @@
 
 #include <gtest/gtest.h>
 #include <new>
-#include <set>
 #include <thread>
-#include "message.h"
 #include "db_errno.h"
-#include "log_print.h"
-#include "serial_buffer.h"
 #include "distributeddb_communicator_common.h"
+#include "distributeddb_tools_unit_test.h"
+#include "log_print.h"
+#include "message.h"
+#include "serial_buffer.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -113,6 +113,7 @@ void ReleaseAllCommunicator()
 
 void DistributedDBCommunicatorDeepTest::SetUp()
 {
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: Alloc communicator AA, AB, BB, BC, CC, CA
      */

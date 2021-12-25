@@ -50,6 +50,9 @@ struct DataItem {
     static constexpr uint64_t LOCAL_FLAG = 0x02;
     static constexpr uint64_t REMOVE_DEVICE_DATA_FLAG = 0x04; // only use for cachedb
     static constexpr uint64_t REMOVE_DEVICE_DATA_NOTIFY_FLAG = 0x08; // only use for cachedb
+    // Only use for query sync and subscribe. ATTENTION!!! this flag should not write into mainDB.
+    // Mark the changed row data does not match with query sync(or subscribe) condition.
+    static constexpr uint64_t REMOTE_DEVICE_DATA_MISS_QUERY = 0x10;
 };
 
 struct PragmaPublishInfo {
@@ -121,5 +124,4 @@ enum SingleVerConflictResolvePolicy {
     DENY_OTHER_DEV_AMEND_CUR_DEV_DATA = 1,
 };
 } // namespace DistributedDB
-
 #endif // DISTRIBUTEDDB_TYPES_H

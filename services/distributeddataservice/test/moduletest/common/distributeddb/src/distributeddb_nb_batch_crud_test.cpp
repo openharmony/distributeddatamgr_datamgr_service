@@ -67,7 +67,7 @@ void DistributeddbNbBatchCrudTest::TearDownTestCase(void)
 
 void DistributeddbNbBatchCrudTest::SetUp(void)
 {
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 
     UnitTest *test = UnitTest::GetInstance();
     ASSERT_NE(test, nullptr);
@@ -85,7 +85,7 @@ void DistributeddbNbBatchCrudTest::TearDown(void)
     MST_LOG("TearDownTestCase after case.");
     ASSERT_NE(g_manager, nullptr);
     EXPECT_TRUE(EndCaseDeleteDB(g_manager, g_nbBatchCrudDelegate, STORE_ID_1, g_option.isMemoryDb));
-    RemoveDir(NB_DIRECTOR);
+    RemoveDir(DistributedDBConstant::NB_DIRECTOR);
 }
 
 /**
@@ -95,7 +95,7 @@ void DistributeddbNbBatchCrudTest::TearDown(void)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData001, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData001, TestSize.Level1)
 {
     vector<Entry> entries1, entries2;
     entries1.push_back(ENTRY_1);
@@ -132,7 +132,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData001, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData002, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData002, TestSize.Level1)
 {
     vector<Entry> entries1, entries2, entriesGot;
     entries1.push_back(ENTRY_1);
@@ -169,7 +169,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData002, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData003, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData003, TestSize.Level1)
 {
     vector<Entry> entries, entryResults;
     entries.push_back(ENTRY_1);
@@ -207,7 +207,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData003, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData004, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData004, TestSize.Level1)
 {
     vector<Entry> entries1, entries2, entryResults;
     entries1.push_back(ENTRY_1);
@@ -246,7 +246,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData004, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData005, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData005, TestSize.Level1)
 {
     vector<Entry> entries1, entries2, entryResults;
     DistributedDB::Entry entry1, entry2;
@@ -281,7 +281,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData005, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData006, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData006, TestSize.Level1)
 {
     vector<Entry> entries, entryResults;
     entries.push_back(ENTRY_1);
@@ -329,7 +329,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData006, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData007, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData007, TestSize.Level1)
 {
     vector<Entry> entries, entryResults;
     entries.push_back(ENTRY_1);
@@ -372,7 +372,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData007, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData008, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData008, TestSize.Level1)
 {
     vector<Entry> entriesBatch, entryResults;
     vector<Key> allKeys;
@@ -448,7 +448,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData009, TestSize.Level2)
  */
 HWTEST_F(DistributeddbNbBatchCrudTest, SimpleData010, TestSize.Level2)
 {
-    const std::string importPath = NB_DIRECTOR + "export";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "export";
     SetDir(importPath);
     std::string filePath = importPath + "/bkpDB.bin";
     EXPECT_EQ(g_nbBatchCrudDelegate->Export(filePath, NULL_PASSWD), OK);
@@ -521,7 +521,7 @@ void TestBatchComplexAction(vector<Entry> &entries1, vector<Entry> &entries12)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, ComplexData001, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, ComplexData001, TestSize.Level1)
 {
     vector<Entry> entries1;
     entries1.push_back(ENTRY_1);
@@ -650,7 +650,7 @@ void CheckBatchCrud(vector<Entry> entries, vector<Key> keys)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, ComplexData003, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, ComplexData003, TestSize.Level1)
 {
     vector<Entry> entries1;
     entries1.push_back(ENTRY_1);
@@ -735,7 +735,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, ComplexData005, TestSize.Level2)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Observer001, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Observer001, TestSize.Level1)
 {
     KvStoreObserverImpl observer1, observer2, observer3;
     vector<Entry> entries1, entries2;
@@ -791,7 +791,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Observer001, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Observer002, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Observer002, TestSize.Level1)
 {
     KvStoreObserverImpl observer1, observer2, observer3;
     vector<Entry> entries1, entryResults;
@@ -845,7 +845,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Observer002, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Observer003, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Observer003, TestSize.Level1)
 {
     KvStoreObserverImpl observer1, observer2, observer3;
     vector<Entry> entries1, entries2;
@@ -906,7 +906,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Observer003, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Observer004, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Observer004, TestSize.Level1)
 {
     KvStoreObserverImpl observer1, observer2;
     vector<Entry> entries1, entryResults;
@@ -954,7 +954,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Observer004, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Observer005, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Observer005, TestSize.Level1)
 {
     vector<Entry> entriesBatch;
     vector<Key> allKeys;
@@ -1014,7 +1014,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Observer005, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Transaction001, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Transaction001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. start transaction.
@@ -1056,7 +1056,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction001, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Transaction002, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Transaction002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. start transaction.
@@ -1101,7 +1101,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction002, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Transaction003, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Transaction003, TestSize.Level1)
 {
     EXPECT_EQ(DistributedDBNbTestTools::Put(*g_nbBatchCrudDelegate, KEY_1, VALUE_1), OK);
     /**
@@ -1136,7 +1136,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction003, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Transaction004, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Transaction004, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. commit the transaction without start it.
@@ -1172,7 +1172,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction004, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Transaction005, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Transaction005, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Rollback the transaction without start it and PutBatch 10 records to DB.
@@ -1212,7 +1212,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction005, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Transaction006, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Transaction006, TestSize.Level1)
 {
     std::vector<DistributedDB::Entry> entries1, entries2, entriesGot;
     EntrySize entrySize = {KEY_SIX_BYTE, VALUE_ONE_HUNDRED_BYTE};
@@ -1262,7 +1262,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction006, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Transaction007, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Transaction007, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. PutLocal (k1, v1) to Local DB and start transaction
@@ -1308,7 +1308,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction007, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Transaction008, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Transaction008, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Put (k1, v1) to DB and start transaction
@@ -1344,7 +1344,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction008, TestSize.Level0)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Transaction009, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Transaction009, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. repeat 5 times
@@ -1943,7 +1943,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction016, TestSize.Level2)
     ConsistencyCheckTransaction(entries1, entries2);
     g_batchThreadComplete = true;
 
-    std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(MILLSECONDES_PER_SECOND));
+    std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(MILLSECONDS_PER_SECOND));
     ASSERT_TRUE(g_batchThreadSuccess);
 }
 
@@ -1959,7 +1959,7 @@ void TransactionSubThread1()
 }
 void TransactionSubThread2()
 {
-    std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(MILLSECONDES_PER_SECOND));
+    std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(MILLSECONDS_PER_SECOND));
 
     /**
      * @tc.steps: step3. update v2 of k2 to v3, and delete k1, and Get (k3, v3) from DB
@@ -1973,7 +1973,7 @@ void TransactionSubThread2()
 }
 void TransactionSubThread3()
 {
-    std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(MILLSECONDES_PER_SECOND));
+    std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(MILLSECONDS_PER_SECOND));
 
     /**
      * @tc.steps: step4. rollback
@@ -2189,7 +2189,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction020, TestSize.Level1)
  * @tc.require: SR000DORPP
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbNbBatchCrudTest, Transaction021, TestSize.Level0)
+HWTEST_F(DistributeddbNbBatchCrudTest, Transaction021, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. start transaction.
@@ -2245,7 +2245,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction022, TestSize.Level3)
     DBStatus status = g_nbBatchCrudDelegate->RegisterObserver(KEY_K, OBSERVER_CHANGES_NATIVE, &observer1);
     EXPECT_EQ(status, OK);
 
-    const std::string importPath = NB_DIRECTOR + "import";
+    const std::string importPath = DistributedDBConstant::NB_DIRECTOR + "import";
     const std::string importFilePath = importPath + "/importbkpDB.bin";
     SetDir(importPath);
     EXPECT_EQ(g_nbBatchCrudDelegate->Export(importFilePath, NULL_PASSWD), OK);
@@ -2273,7 +2273,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, Transaction022, TestSize.Level3)
      */
     EXPECT_EQ(g_nbBatchCrudDelegate->Rekey(g_passwd1), BUSY);
 
-    const std::string exportPath = NB_DIRECTOR + "export";
+    const std::string exportPath = DistributedDBConstant::NB_DIRECTOR + "export";
     const std::string filePath = exportPath + "/bkpDB.bin";
     SetDir(exportPath);
     EXPECT_EQ(g_nbBatchCrudDelegate->Export(filePath, NULL_PASSWD), BUSY);
@@ -2429,7 +2429,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, TransactionObserver003, TestSize.Level1)
     }
 
     /**
-     * @tc.steps: step2. start the transaction and putBatch (k3, v3), (k4, v4), ..., (k8, value8) to db.
+     * @tc.steps: step2. start the transaction and putBatch (k3, v3), (k4, v4), ..., (k8, v8) to db.
      * @tc.expected: step2. start transaction and putBatch successfully.
      */
     EXPECT_EQ(g_nbBatchCrudDelegate->StartTransaction(), OK);
@@ -2448,7 +2448,7 @@ HWTEST_F(DistributeddbNbBatchCrudTest, TransactionObserver003, TestSize.Level1)
     /**
      * @tc.steps: step3. commit the transaction and check the observers.
      * @tc.expected: step3. commit succeed and all of the observers received one insert notify, callbacklist of which
-     *    contains (k4, v4), ..., (k8, value8), all observer received one update notify, callbacklist of which contains
+     *    contains (k4, v4), ..., (k8, v8), all observer received one update notify, callbacklist of which contains
      *    (k2, v3), all observers received one insert notify, callback of which contains (k1, v1), (k3, v3), (k9, v9).
      */
     EXPECT_EQ(g_nbBatchCrudDelegate->Commit(), OK);

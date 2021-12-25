@@ -14,6 +14,7 @@
  */
 
 #include "network_adapter.h"
+#include "db_constant.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "runtime_context.h"
@@ -22,8 +23,6 @@ namespace DistributedDB {
 namespace {
 const std::string DEFAULT_PROCESS_LABEL = "Distributeddb_Anonymous_Process";
 const std::string SCHEDULE_QUEUE_TAG = "NetworkAdapter";
-constexpr uint32_t MIN_MTU_SIZE = 1024; // 1KB
-constexpr uint32_t MAX_MTU_SIZE = 5242880; // 5MB
 }
 
 NetworkAdapter::NetworkAdapter()
@@ -121,12 +120,23 @@ void NetworkAdapter::StopAdapter()
 namespace {
 uint32_t CheckAndAdjustMtuSize(uint32_t inMtuSize)
 {
-    if (inMtuSize < MIN_MTU_SIZE) {
-        return MIN_MTU_SIZE;
-    } else if (inMtuSize > MAX_MTU_SIZE) {
-        return MAX_MTU_SIZE;
+    if (inMtuSize < DBConstant::MIN_MTU_SIZE) {
+        return DBConstant::MIN_MTU_SIZE;
+    } else if (inMtuSize > DBConstant::MAX_MTU_SIZE) {
+        return DBConstant::MAX_MTU_SIZE;
     } else {
         return (inMtuSize - (inMtuSize % sizeof(uint64_t))); // Octet alignment
+    }
+}
+
+uint32_t CheckAndAdjustTimeout(uint32_t inTimeout)
+{
+    if (inTimeout < DBConstant::MIN_TIMEOUT) {
+        return DBConstant::MIN_TIMEOUT;
+    } else if (inTimeout > DBConstant::MAX_TIMEOUT) {
+        return DBConstant::MAX_TIMEOUT;
+    } else {
+        return inTimeout;
     }
 }
 }
@@ -145,6 +155,12 @@ uint32_t NetworkAdapter::GetMtuSize()
 
 uint32_t NetworkAdapter::GetMtuSize(const std::string &target)
 {
+#ifndef OMIT_MTU_CACHE
+    DeviceInfos devInfo;
+    devInfo.identifier = target;
+    uint32_t oriMtuSize = processCommunicator_->GetMtuSize(devInfo);
+    return CheckAndAdjustMtuSize(oriMtuSize);
+#else
     std::lock_guard<std::mutex> mtuSizeLockGuard(mtuSizeMutex_);
     if (devMapMtuSize_.count(target) == 0) {
         DeviceInfos devInfo;
@@ -154,20 +170,36 @@ uint32_t NetworkAdapter::GetMtuSize(const std::string &target)
         devMapMtuSize_[target] = CheckAndAdjustMtuSize(oriMtuSize);
     }
     return devMapMtuSize_[target];
+#endif
+}
+
+uint32_t NetworkAdapter::GetTimeout()
+{
+    uint32_t timeout = processCommunicator_->GetTimeout();
+    LOGI("[NAdapt][GetTimeout] timeout_=%u ms.", timeout);
+    return CheckAndAdjustTimeout(timeout);
+}
+
+uint32_t NetworkAdapter::GetTimeout(const std::string &target)
+{
+    DeviceInfos devInfos;
+    devInfos.identifier = target;
+    uint32_t timeout = processCommunicator_->GetTimeout(devInfos);
+    LOGI("[NAdapt][GetTimeout] timeout=%u ms of target=%s{private}.", timeout, target.c_str());
+    return CheckAndAdjustTimeout(timeout);
 }
 
 int NetworkAdapter::GetLocalIdentity(std::string &outTarget)
 {
     std::lock_guard<std::mutex> identityLockGuard(identityMutex_);
-    if (!isLocalIdentityValid_) {
-        DeviceInfos devInfo = processCommunicator_->GetLocalDeviceInfos();
-        LOGI("[NAdapt][GetLocal] localIdentity=%s{private}.", devInfo.identifier.c_str());
-        if (devInfo.identifier.empty()) {
-            return -E_PERIPHERAL_INTERFACE_FAIL;
-        }
-        localIdentity_ = devInfo.identifier;
-        isLocalIdentityValid_ = true;
+    DeviceInfos devInfo = processCommunicator_->GetLocalDeviceInfos();
+    if (devInfo.identifier.empty()) {
+        return -E_PERIPHERAL_INTERFACE_FAIL;
     }
+    if (devInfo.identifier != localIdentity_) {
+        LOGI("[NAdapt][GetLocal] localIdentity=%s{private}.", devInfo.identifier.c_str());
+    }
+    localIdentity_ = devInfo.identifier;
     outTarget = localIdentity_;
     return E_OK;
 }
@@ -347,5 +379,14 @@ void NetworkAdapter::CheckDeviceOfflineAfterSendFail(const DeviceInfos &devInfo)
             }
         }
     }
+}
+
+bool NetworkAdapter::IsDeviceOnline(const std::string &device)
+{
+    std::lock_guard<std::mutex> onlineRemoteDevLockGuard(onlineRemoteDevMutex_);
+    if (onlineRemoteDev_.find(device) != onlineRemoteDev_.end()) {
+        return true;
+    }
+    return false;
 }
 }

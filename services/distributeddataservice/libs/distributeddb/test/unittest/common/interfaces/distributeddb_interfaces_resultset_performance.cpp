@@ -15,11 +15,11 @@
 
 #include <gtest/gtest.h>
 #include <thread>
-#include "types.h"
+#include "distributeddb_tools_unit_test.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
-#include "distributeddb_tools_unit_test.h"
 #include "log_print.h"
+#include "types.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -34,7 +34,7 @@ namespace {
     Key g_keyPrefix = {'A', 'B', 'C'};
 
     const int BASE_NUMBER = 100000;
-    const int INSERT_NUMBER = 10000;
+    const int INSERT_NUMBER = 100;
     const int ENTRY_VALUE_SIZE = 3000;
     const int BATCH_ENTRY_NUMBER = 100;
 
@@ -98,6 +98,7 @@ void DistributedDBInterfacesNBResultsetPerfTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesNBResultsetPerfTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_kvDelegateStatus = INVALID_ARGS;
     g_kvNbDelegatePtr = nullptr;
     g_kvDelegatePtr = nullptr;
@@ -139,14 +140,14 @@ HWTEST_F(DistributedDBInterfacesNBResultsetPerfTest, ResultSetPerfTest001, TestS
     Key keyGet = g_keyPrefix;
     keyGet.push_back('1');
 
-    int offset = 5000; // offset 5000
+    int offset = 40; // offset 40
     LOGI("######## Query resultSet");
-    Query query = Query::Select().PrefixKey(keyGet).Limit(128, offset); // limit 128
+    Query query = Query::Select().PrefixKey(keyGet).Limit(50, offset); // limit 50
     EXPECT_EQ(g_kvNbDelegatePtr->GetEntries(query, readResultSet), OK);
     ASSERT_TRUE(readResultSet != nullptr);
     LOGI("######## After get resultset");
     int totalCount = readResultSet->GetCount();
-    EXPECT_EQ(totalCount, 128); // limit 128
+    EXPECT_EQ(totalCount, 50); // limit 50
     LOGI("######## After get count:%d", totalCount);
 
     readResultSet->MoveToPosition(0);

@@ -19,8 +19,8 @@
 #include <memory>
 
 #include "message.h"
-#include "single_ver_sync_task_context.h"
 #include "single_ver_data_sync.h"
+#include "single_ver_sync_task_context.h"
 
 namespace DistributedDB {
 class SlidingWindowReceiver {
@@ -38,9 +38,10 @@ private:
     int TimeOut(TimerId timerId);
     void StartTimer();
     void StopTimer();
+    static void StopTimer(TimerId timerId);
     void ClearMap();
     void ResetInfo();
-    int ErrHandle(uint32_t sequenceId);
+    int ErrHandle(uint32_t sequenceId, uint64_t packetId);
     void SetEndField(bool isLastSequence, uint32_t sequenceId);
 
     std::mutex lock_;
@@ -51,9 +52,10 @@ private:
     std::map<uint32_t, Message *> messageMap_;
     // 0 is has finished nothing; e.g. 3 is sequenceId 1 2 3 has finished, sequenceId 4 has not finished.
     uint32_t hasFinishedMaxId_ = 0;
+    uint64_t hasFinishedPacketId_ = 0;
     // 0 is idle
     uint32_t workingId_ = 0;
-    // 0 is has not received the end pakcet now.
+    // 0 is has not received the end packet now.
     uint32_t endId_ = 0;
     bool isWaterMarkErrHappened_ = false;
     // timeout for idle wait packet

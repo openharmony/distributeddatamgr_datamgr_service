@@ -37,11 +37,13 @@ using namespace DistributedDBDataGenerator;
 
 namespace DistributeddbKvConcurrencyCrud {
 const bool IS_LOCAL = false;
+#ifdef KV_CON_CRUD
 const unsigned int READ_RECORDS_NUM_START = 1;
 const unsigned int READ_RECORDS_NUM_END = 128;
 const unsigned int WRITE_RECORDS_NUM_START = 1;
 const unsigned int WRITE_RECORDS_NUM_END = 9999;
 const unsigned long LONG_TIME_TEST_SECONDS = 10;
+#endif
 const unsigned long LONG_TIME_INTERVAL_MILLSECONDS = 5;
 
 KvStoreDelegate *g_kvStoreConcurDelegate = nullptr; // the delegate used in this suit.
@@ -172,6 +174,7 @@ void DistributeddbKvConcurrencyCrudTest::TearDown(void)
  * @tc.require: SR000BUH3J
  * @tc.author: luqianfu
  */
+#ifdef KV_CON_CRUD
 HWTEST_F(DistributeddbKvConcurrencyCrudTest, Read002, TestSize.Level3)
 {
     DistributedTestTools::Clear(*g_kvStoreConcurDelegate);
@@ -317,4 +320,5 @@ HWTEST_F(DistributeddbKvConcurrencyCrudTest, ReadWrite004, TestSize.Level3)
 
     DistributedTestTools::Clear(*g_kvStoreConcurDelegate);
 }
+#endif
 }

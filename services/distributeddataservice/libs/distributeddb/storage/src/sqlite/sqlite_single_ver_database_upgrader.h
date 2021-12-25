@@ -32,7 +32,7 @@ public:
     static int CreateDbDir();
 
     void SetMetaUpgrade(const SecurityOption &currentOpt, const SecurityOption &expectOpt, const std::string &subDir);
-    void SetSubdir(const std::string &subdir);
+    void SetSubdir(const std::string &subDir);
     static int SetPathSecOptWithCheck(const std::string &path, const SecurityOption &secOption,
         const std::string &dbStore, bool isWithChecked = false);
     static int SetSecOption(const std::string &path, const SecurityOption &secOption, bool isWithChecked);

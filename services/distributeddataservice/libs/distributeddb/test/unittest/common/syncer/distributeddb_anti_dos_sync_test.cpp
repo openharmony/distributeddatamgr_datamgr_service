@@ -17,15 +17,15 @@
 #include <thread>
 
 #include "distributeddb_data_generate_unit_test.h"
+#include "generic_single_ver_kv_entry.h"
 #include "message.h"
 #include "meta_data.h"
 #include "ref_object.h"
-#include "single_ver_sync_engine.h"
 #include "single_ver_data_sync.h"
-#include "vitural_communicator_aggregator.h"
-#include "virtual_single_ver_sync_db_Interface.h"
+#include "single_ver_sync_engine.h"
 #include "version.h"
-#include "generic_single_ver_kv_entry.h"
+#include "virtual_communicator_aggregator.h"
+#include "virtual_single_ver_sync_db_Interface.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -35,7 +35,11 @@ using namespace std;
 namespace {
     string g_testDir;
     const string ANTI_DOS_STORE_ID = "anti_dos_sync_test";
+#ifndef RELATIONAL_STORE
     const int NUM = 108;
+#else
+    const int NUM = 120;
+#endif
     const int WAIT_LONG_TIME = 26000;
     const int WAIT_SHORT_TIME = 18000;
     const int TEST_ONE = 2;
@@ -94,6 +98,7 @@ void DistributeddbAntiDosSyncTest::TearDownTestCase(void)
 
 void DistributeddbAntiDosSyncTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: create VirtualCommunicator, VirtualSingleVerSyncDBInterface, SyncEngine,
      * and set maximum cache of queue.
@@ -110,7 +115,7 @@ void DistributeddbAntiDosSyncTest::SetUp(void)
     ASSERT_TRUE(errCodeMetaData == E_OK);
     g_syncEngine = new (std::nothrow) SingleVerSyncEngine();
     ASSERT_TRUE(g_syncEngine != nullptr);
-    int errCodeSyncEngine = g_syncEngine->Initialize(g_syncInterface, g_metaData, nullptr);
+    int errCodeSyncEngine = g_syncEngine->Initialize(g_syncInterface, g_metaData, nullptr, nullptr, nullptr);
     ASSERT_TRUE(errCodeSyncEngine == E_OK);
     g_communicator = static_cast<VirtualCommunicator *>(g_communicatorAggregator->GetCommunicator(remoteDeviceId));
     ASSERT_TRUE(g_communicator != nullptr);

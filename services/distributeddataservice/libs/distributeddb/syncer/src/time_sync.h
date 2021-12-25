@@ -20,7 +20,6 @@
 #include "meta_data.h"
 #include "sync_task_context.h"
 #include "time_helper.h"
-#include "ref_object.h"
 
 namespace DistributedDB {
 class TimeSyncPacket {
@@ -73,16 +72,16 @@ public:
     static int DeSerialization(const uint8_t *buffer, uint32_t length, Message *inMsg); // register to communicator
 
     int Initialize(ICommunicator *communicator, std::shared_ptr<Metadata> &metadata,
-        const IKvDBSyncInterface *storage, const DeviceID &deviceId);
+        const ISyncInterface *storage, const DeviceID &deviceId);
 
-    int SyncStart(const CommErrHandler &handler = nullptr); // send timesync request
+    int SyncStart(const CommErrHandler &handler = nullptr, uint32_t sessionId = 0); // send timesync request
 
-    int AckRecv(const Message *message);
+    int AckRecv(const Message *message, uint32_t targetSessionId = 0);
 
     int RequestRecv(const Message *message);
 
     // Get timeoffset from metadata
-    int GetTimeOffset(TimeOffset &outOffset);
+    int GetTimeOffset(TimeOffset &outOffset, uint32_t timeout, uint32_t sessionId = 0);
 
     bool IsNeedSync() const;
 

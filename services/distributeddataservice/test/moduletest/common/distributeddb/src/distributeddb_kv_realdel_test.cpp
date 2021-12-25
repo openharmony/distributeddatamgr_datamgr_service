@@ -89,6 +89,7 @@ void DistributeddbKvRealdelTest::TearDown(void)
  * @tc.require: SR000D4878
  * @tc.author: fengxiaoyun
  */
+#ifdef KV_REALDEL
 HWTEST_F(DistributeddbKvRealdelTest, KvDeleteAll001, TestSize.Level1)
 {
     /**
@@ -370,4 +371,5 @@ HWTEST_F(DistributeddbKvRealdelTest, KvDeleteAll007, TestSize.Level2)
     delete manager2;
     manager2 = nullptr;
 }
+#endif
 }

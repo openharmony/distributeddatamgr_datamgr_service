@@ -15,20 +15,19 @@
 
 #include <gtest/gtest.h>
 
-#include "kv_store_delegate_manager.h"
-#include "kv_store_nb_delegate.h"
-#include "distributeddb_tools_unit_test.h"
-#include "sqlite_utils.h"
-#include "sqlite_single_ver_natural_store.h"
-#include "db_errno.h"
-#include "log_print.h"
 #include "db_common.h"
 #include "db_constant.h"
-#include "time_helper.h"
-#include "platform_specific.h"
+#include "db_errno.h"
+#include "distributeddb_tools_unit_test.h"
 #include "iprocess_system_api_adapter.h"
+#include "kv_store_delegate_manager.h"
+#include "kv_store_nb_delegate.h"
+#include "log_print.h"
+#include "platform_specific.h"
 #include "process_system_api_adapter_impl.h"
 #include "runtime_context.h"
+#include "sqlite_single_ver_natural_store.h"
+#include "sqlite_utils.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -305,6 +304,7 @@ void DistributedDBStorageSingleVerUpgradeTest::TearDownTestCase(void)
 
 void DistributedDBStorageSingleVerUpgradeTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     std::string identifier = DBCommon::TransferStringToHex(g_identifier);
     DBCommon::CreateDirectory(g_testDir + "/" + identifier);
     DBCommon::CreateDirectory(g_testDir + "/" + identifier + "/" + DBConstant::SINGLE_SUB_DIR);

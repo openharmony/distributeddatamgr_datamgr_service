@@ -149,7 +149,7 @@ void GenerateMaxBigRecord(unsigned int keyNo, DistributedDB::Entry &entry,
 bool GenerateMaxBigRecords(unsigned int recordNum, unsigned int start,
     std::vector<DistributedDB::Key> &allKeys, std::vector<DistributedDB::Entry> &entriesBatch)
 {
-    if (recordNum > (ACSIIEND - 'k')) {
+    if (recordNum > (255 - 'k')) { // acs ii code has 255 element
         MST_LOG("Record generate failed, character is over ASCII, please use other method !");
         return false;
     } else {
@@ -196,7 +196,7 @@ void GenerateFullAsciiRecords(DistributedDB::Entry &entry)
 {
     entry.key.clear();
     entry.value.clear();
-    for (uint8_t lowc = ACSIIEND; lowc > 0; --lowc) {
+    for (uint8_t lowc = 255; lowc > 0; --lowc) { // acs ii code has 255 element
         entry.key.push_back(lowc);
         entry.value.push_back(lowc);
     }
@@ -212,8 +212,7 @@ void GenerateBiggistKeyRecords(DistributedDB::Entry &entry)
     entry.value.push_back('v');
 }
 
-DistributedDB::Entry GenerateFixedLenKVRecord(unsigned int serialNo,
-    unsigned int keyLen, uint8_t keyFilledChr,
+DistributedDB::Entry GenerateFixedLenKVRecord(unsigned int serialNo, unsigned int keyLen, uint8_t keyFilledChr,
     unsigned int valueLen, uint8_t valueFilledChr)
 {
     DistributedDB::Entry entry;
@@ -228,8 +227,7 @@ DistributedDB::Entry GenerateFixedLenKVRecord(unsigned int serialNo,
 }
 
 void GenerateFixedRecords(std::vector<DistributedDB::Entry> &entries,
-    std::vector<DistributedDB::Key> &allKeys,
-    int recordNum, unsigned int keySize, unsigned int valSize)
+    std::vector<DistributedDB::Key> &allKeys, int recordNum, unsigned int keySize, unsigned int valSize)
 {
     DistributedDB::Entry entry;
     for (int cnt = DEFAULT_START; cnt <= recordNum; ++cnt) {
@@ -269,10 +267,8 @@ void GenerateOneRecordForImage(int entryNo, const EntrySize &entrySize,
     for (unsigned int it = 0; it < (entrySize.valSize - len - IMAGE_VALUE_PRE.size()); it++) {
         entry.value.push_back(val[0]);
     }
-    for (auto ch = ind.begin(); ch != ind.end(); ch++) {
-        entry.key.push_back(*ch);
-        entry.value.push_back(*ch);
-    }
+    entry.key.insert(entry.key.end(), ind.begin(), ind.end());
+    entry.value.insert(entry.value.end(), ind.begin(), ind.end());
 }
 
 void GenerateRecordsForImage(std::vector<DistributedDB::Entry> &entries, EntrySize &entrySize,
@@ -298,10 +294,9 @@ void GenerateAppointPrefixAndSizeRecord(int recordNo, const EntrySize &entrySize
     entry.value = valPrefix;
     entry.key.insert(entry.key.end(), entrySize.keySize - keyPrefix.size() - len, '0');
     entry.value.insert(entry.value.end(), entrySize.valSize - valPrefix.size() - len, '0');
-    for (auto ch = recNo.begin(); ch != recNo.end(); ch++) {
-        entry.key.push_back(*ch);
-        entry.value.push_back(*ch);
-    }
+
+    entry.key.insert(entry.key.end(), recNo.begin(), recNo.end());
+    entry.value.insert(entry.value.end(), recNo.begin(), recNo.end());
 }
 
 void GenerateAppointPrefixAndSizeRecords(std::vector<DistributedDB::Entry> &entries, const EntrySize &entrySize,
@@ -315,6 +310,17 @@ void GenerateAppointPrefixAndSizeRecords(std::vector<DistributedDB::Entry> &entr
     }
 }
 
+void GenerateAppointPrefixAndSizeRecords(std::vector<DistributedDB::Entry> &entries, int startpoint,
+    const NumberSize param, const std::vector<uint8_t> &keyPrefix, const std::vector<uint8_t> &valPrefix)
+{
+    entries.clear();
+    DistributedDB::Entry entry;
+    for (int index = startpoint; index < startpoint + param.recordsNumber; index++) {
+        GenerateAppointPrefixAndSizeRecord(index, param.entrySize, keyPrefix, valPrefix, entry);
+        entries.push_back(entry);
+    }
+}
+
 int GetRandInt(const int randMin, const int randMax)
 {
     std::random_device randDev;
@@ -324,8 +330,7 @@ int GetRandInt(const int randMin, const int randMax)
 }
 
 void GenerateFixedLenRandRecords(std::vector<DistributedDB::Entry> &entries,
-    std::vector<DistributedDB::Key> &allKeys,
-    int recordNum, unsigned int keySize, unsigned int valSize)
+    std::vector<DistributedDB::Key> &allKeys, int recordNum, unsigned int keySize, unsigned int valSize)
 {
     entries.clear();
     allKeys.clear();
@@ -346,15 +351,48 @@ void GenerateFixedLenRandRecords(std::vector<DistributedDB::Entry> &entries,
             idx = GetRandInt(0, 61); // the seed range is from 0 to 61 which is the elements quantity of charSet
             entry.value.push_back(charSet[idx]);
         }
-        for (auto cntIt = cntStr.begin(); cntIt != cntStr.end(); ++cntIt) {
-            entry.key.push_back(*cntIt);
-            entry.value.push_back(*cntIt);
-        }
+        entry.key.insert(entry.key.end(), cntStr.begin(), cntStr.end());
+        entry.value.insert(entry.value.end(), cntStr.begin(), cntStr.end());
+
         allKeys.push_back(entry.key);
         entries.push_back(entry);
         entry.key.clear();
         entry.value.clear();
     }
+}
+
+std::vector<DistributedDB::Entry> GenerateFixedLenRandRecords(std::vector<DistributedDB::Key> &allKeys,
+    int recordNum, const EntrySize &entrySize, const std::vector<uint8_t> &keyPrefix,
+    const std::vector<uint8_t> &valPrefix)
+{
+    std::vector<DistributedDB::Entry> entries;
+    allKeys.clear();
+    int idx = 0;
+    DistributedDB::Entry entry;
+    std::vector<uint8_t> charSet;
+    GenerateCharSet(charSet);
+    for (int cnt = DEFAULT_START; cnt <= recordNum; ++cnt) {
+        std::string cntStr = std::to_string(cnt);
+        int len = cntStr.length();
+        entry.key = keyPrefix;
+        entry.value = valPrefix;
+
+        entry.key.insert(entry.key.end(), entrySize.keySize - keyPrefix.size() - len, '0');
+
+        for (unsigned int operCnt = 0; operCnt < entrySize.valSize - valPrefix.size() - len; ++operCnt) {
+            idx = GetRandInt(0, 61); // the seed range is from 0 to 61 which is the elements quantity of charSet
+            entry.value.push_back(charSet[idx]);
+        }
+
+        entry.key.insert(entry.key.end(), cntStr.begin(), cntStr.end());
+        entry.value.insert(entry.value.end(), cntStr.begin(), cntStr.end());
+
+        allKeys.push_back(entry.key);
+        entries.push_back(entry);
+        entry.key.clear();
+        entry.value.clear();
+    }
+    return entries;
 }
 
 const std::string GetDbType(const int type)

@@ -13,19 +13,17 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
-#include <functional>
-#include <thread>
 #include <chrono>
-#include <thread>
-
+#include <functional>
+#include <gtest/gtest.h>
 #include <openssl/rand.h>
+#include <thread>
+#include <thread>
 
 #include "db_types.h"
 #include "log_print.h"
-#include "sqlite3.h"
 #include "securec.h"
+#include "sqlite_import.h"
 
 #ifndef OMIT_ENCRYPT
 using namespace testing::ext;
@@ -53,10 +51,15 @@ namespace {
     const std::vector<uint8_t> KEY_1 = {'A'};
     const std::vector<uint8_t> VALUE_1 = {'1'};
     const std::vector<uint8_t> VALUE_2 = {'2'};
-
+#ifndef USE_SQLITE_CODEC_CIPHER
+    const std::string PRAGMA_CIPHER = "PRAGMA cipher=";
+    const std::string PRAGMA_KDF_ITER = "PRAGMA kdf_iter=";
+    const std::string EXPORT_STRING = "sqlcipher_export";
+#else
     const std::string PRAGMA_CIPHER = "PRAGMA codec_cipher=";
     const std::string PRAGMA_KDF_ITER = "PRAGMA codec_kdf_iter=";
     const std::string EXPORT_STRING = "export_database";
+#endif
 
     int Callback(void *data, int argc, char **argv, char **azColName)
     {
@@ -85,11 +88,11 @@ namespace {
 
     int CreateTable()
     {
-        char *errMsg = nullptr;
-        int errCode = sqlite3_exec(g_db, CREATE_SQL.c_str(), nullptr, nullptr, &errMsg);
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+        char *zErrMsg = nullptr;
+        int errCode = sqlite3_exec(g_db, CREATE_SQL.c_str(), nullptr, nullptr, &zErrMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
 
@@ -98,27 +101,27 @@ namespace {
 
     int SetEncryptParam(const char *passwd, int iterNumber, const string &algName)
     {
-        char *errMsg = nullptr;
+        char *zErrMsg = nullptr;
         int errCode = sqlite3_key(g_db, static_cast<const void *>(passwd), strlen(passwd));
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
 
         errCode = sqlite3_exec(g_db, (PRAGMA_KDF_ITER + to_string(iterNumber)).c_str(), nullptr, nullptr,
-                               &errMsg);
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+                               &zErrMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
 
         errCode = sqlite3_exec(g_db, (PRAGMA_CIPHER + algName + ";").c_str(), nullptr, nullptr,
-                               &errMsg);
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+                               &zErrMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
 
@@ -185,14 +188,14 @@ namespace {
 
     int PutValue(const Key &key, const Value &value)
     {
-        char *errMsg = nullptr;
+        char *zErrMsg = nullptr;
         string keyStr(key.begin(), key.end());
         string valueStr(value.begin(), value.end());
         int errCode = sqlite3_exec(g_db, ("INSERT OR REPLACE INTO data VALUES('" + keyStr + "','" + valueStr +
-            "');").c_str(), nullptr, nullptr, &errMsg);
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+            "');").c_str(), nullptr, nullptr, &zErrMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
         return errCode;
@@ -200,13 +203,13 @@ namespace {
 
     int DeleteValue(const Key &key)
     {
-        char *errMsg = nullptr;
+        char *zErrMsg = nullptr;
         string keyStr(key.begin(), key.end());
         int errCode = sqlite3_exec(g_db, ("DELETE FROM data WHERE key='" + keyStr + "';").c_str(), nullptr,
-            nullptr, &errMsg);
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+            nullptr, &zErrMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
         return errCode;
@@ -214,14 +217,14 @@ namespace {
 
     int UpdateValue(const Key &key, const Value &value)
     {
-        char *errMsg = nullptr;
+        char *zErrMsg = nullptr;
         string keyStr(key.begin(), key.end());
         string valueStr(value.begin(), value.end());
         int errCode = sqlite3_exec(g_db, ("INSERT OR REPLACE INTO data VALUES('" + keyStr + "','" + valueStr +
-            "');").c_str(), nullptr, nullptr, &errMsg);
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+            "');").c_str(), nullptr, nullptr, &zErrMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
         return errCode;
@@ -229,13 +232,13 @@ namespace {
 
     int GetValue(const Key &key, Value &value)
     {
-        char *errMsg = nullptr;
+        char *zErrMsg = nullptr;
         string keyStr(key.begin(), key.end());
         int errCode = sqlite3_exec(g_db, ("SELECT value from data WHERE key='" + keyStr + "';").c_str(),
-            Callback, static_cast<void *>(&value), &errMsg);
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+            Callback, static_cast<void *>(&value), &zErrMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
         return errCode;
@@ -243,12 +246,12 @@ namespace {
 
     int Export(const string &dbName)
     {
-        char *errMsg = nullptr;
+        char *zErrMsg = nullptr;
         int errCode = sqlite3_exec(g_db, ("SELECT " + EXPORT_STRING + "('" + dbName + "');").c_str(), nullptr, nullptr,
-            &errMsg);
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+            &zErrMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
         return errCode;
@@ -256,12 +259,12 @@ namespace {
 
     int Attach(const string &dbName)
     {
-        char *errMsg = nullptr;
+        char *zErrMsg = nullptr;
         int errCode = sqlite3_exec(g_db, ("attach '" + dbName + ".db' as " + dbName + " key '';").c_str(),
-            nullptr, nullptr, &errMsg);
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+            nullptr, nullptr, &zErrMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
         return errCode;
@@ -269,12 +272,12 @@ namespace {
 
     int AttachWithKey(const string &dbName, const char *passwd)
     {
-        char *errMsg = nullptr;
+        char *zErrMsg = nullptr;
         int errCode = sqlite3_exec(g_db, ("attach '" + dbName + ".db' as " + dbName + " key '" + passwd + "';").c_str(),
-            nullptr, nullptr, &errMsg);
-        if (errCode != SQLITE_OK && errMsg != nullptr) {
-            LOGE(" [SQLITE]: %s", errMsg);
-            sqlite3_free(errMsg);
+            nullptr, nullptr, &zErrMsg);
+        if (errCode != SQLITE_OK && zErrMsg != nullptr) {
+            LOGE(" [SQLITE]: %s", zErrMsg);
+            sqlite3_free(zErrMsg);
             return errCode;
         }
         return errCode;
@@ -325,6 +328,11 @@ void DistributedDBStorageEncryptTest::TearDownTestCase(void)
 
 void DistributedDBStorageEncryptTest::SetUp(void)
 {
+    testing::UnitTest *test = testing::UnitTest::GetInstance();
+    ASSERT_NE(test, nullptr);
+    const testing::TestInfo *testInfo = test->current_test_info();
+    ASSERT_NE(testInfo, nullptr);
+    LOGI("Start unit test: %s.%s", testInfo->test_case_name(), testInfo->name());
     /**
       * @tc.Clean DB files created from every test case.
       */
@@ -492,7 +500,7 @@ HWTEST_F(DistributedDBStorageEncryptTest, EncryptTest004, TestSize.Level1)
      */
     EXPECT_EQ(sqlite3_close(g_db), SQLITE_OK);
 }
-
+#ifdef USE_SQLITE_CODEC_CIPHER
 /**
   * @tc.name: EncryptTest005
   * @tc.desc: Check if rekeying possible with wrong password.
@@ -526,7 +534,7 @@ HWTEST_F(DistributedDBStorageEncryptTest, EncryptTest005, TestSize.Level1)
      */
     EXPECT_EQ(sqlite3_close(g_db), SQLITE_OK);
 }
-
+#endif
 /**
   * @tc.name: EncryptTest006
   * @tc.desc: Check if rekeying possible with correct password.
@@ -1290,8 +1298,14 @@ HWTEST_F(DistributedDBStorageEncryptTest, EncryptTest025, TestSize.Level1)
       * @tc.steps:step1. Open a database without password.
       * @tc.expected: step1. Return SQLITE_OK.
       */
-    EXPECT_EQ(OpenWithKey(g_oldPasswd, ITERATION, ALG1, false), SQLITE_OK);
+    EXPECT_EQ(Open(g_db, STORE_ID), SQLITE_OK);
 
+    sqlite3_exec(g_db, ("PRAGMA cipher_default_attach_kdf_iter=5000;"), nullptr, nullptr, nullptr);
+    sqlite3_exec(g_db, ("PRAGMA cipher_default_attach_cipher='aes-256-gcm';"), nullptr, nullptr, nullptr);
+
+    EXPECT_EQ(CreateTable(), SQLITE_OK);
+    EXPECT_EQ(sqlite3_close(g_db), SQLITE_OK);
+    EXPECT_EQ(Open(g_db, STORE_ID), SQLITE_OK);
     EXPECT_EQ(PutValue(KEY_1, VALUE_1), SQLITE_OK);
 
     /**
@@ -1318,6 +1332,9 @@ HWTEST_F(DistributedDBStorageEncryptTest, EncryptTest025, TestSize.Level1)
       * @tc.expected: step5. Return SQLITE_OK.
       */
     EXPECT_EQ(sqlite3_key(g_db, static_cast<const void *>(g_oldPasswd), strlen(g_oldPasswd)), SQLITE_OK);
+
+    EXPECT_EQ(sqlite3_exec(g_db, (PRAGMA_CIPHER + "'aes-256-gcm';").c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    EXPECT_EQ(sqlite3_exec(g_db, (PRAGMA_KDF_ITER + "5000;").c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
 
     /**
       * @tc.steps:step6. Get Value from exported DB and the value shall be the same as the original one.

@@ -16,26 +16,22 @@
 #include <gtest/gtest.h>
 #include <thread>
 
-#include "distributeddb_tools_unit_test.h"
+#include "commit_history_sync.h"
+#include "db_common.h"
 #include "distributeddb_data_generate_unit_test.h"
-#include "kv_store_observer.h"
+#include "distributeddb_tools_unit_test.h"
+#include "ikvdb_connection.h"
 #include "kv_store_delegate.h"
-#include "vitural_communicator_aggregator.h"
-#include "vitural_communicator.h"
-#include "vitural_device.h"
-#include "isyncer.h"
-#include "virtual_multi_ver_sync_db_interface.h"
-#include "time_sync.h"
-#include "meta_data.h"
+#include "kv_virtual_device.h"
 #include "kvdb_manager.h"
 #include "kvdb_pragma.h"
-#include "ikvdb_connection.h"
-#include "sync_types.h"
-#include "commit_history_sync.h"
 #include "log_print.h"
+#include "meta_data.h"
 #include "multi_ver_data_sync.h"
 #include "platform_specific.h"
-#include "db_common.h"
+#include "sync_types.h"
+#include "time_sync.h"
+#include "virtual_multi_ver_sync_db_interface.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -45,9 +41,9 @@ using namespace std;
 #ifndef LOW_LEVEL_MEM_DEV
 namespace {
     string g_testDir;
-    const string STORE_ID = "kv_stroe_sync_test";
-    const string STORE_ID_A = "kv_stroe_sync_test_a";
-    const string STORE_ID_B = "kv_stroe_sync_test_b";
+    const string STORE_ID = "kv_store_sync_test";
+    const string STORE_ID_A = "kv_store_sync_test_a";
+    const string STORE_ID_B = "kv_store_sync_test_b";
     const int WAIT_TIME_1 = 1000;
     const int WAIT_TIME_2 = 2000;
     const int WAIT_LONG_TIME = 10000;
@@ -67,8 +63,8 @@ namespace {
     MultiVerNaturalStoreConnection *g_connectionA;
     MultiVerNaturalStoreConnection *g_connectionB;
     VirtualCommunicatorAggregator* g_communicatorAggregator = nullptr;
-    VituralDevice* g_deviceB = nullptr;
-    VituralDevice* g_deviceC = nullptr;
+    KvVirtualDevice *g_deviceB = nullptr;
+    KvVirtualDevice *g_deviceC = nullptr;
 
     // the type of g_kvDelegateCallback is function<void(DBStatus, KvStoreDelegate*)>
     auto g_kvDelegateCallback = bind(&DistributedDBToolsUnitTest::KvStoreDelegateCallback,
@@ -153,18 +149,19 @@ void DistributedDBMultiVerP2PSyncTest::TearDownTestCase(void)
 
 void DistributedDBMultiVerP2PSyncTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: create virtual device B and C
      */
     g_communicatorAggregator->Disable();
-    g_deviceB = new (std::nothrow) VituralDevice(DEVICE_B);
+    g_deviceB = new (std::nothrow) KvVirtualDevice(DEVICE_B);
     ASSERT_TRUE(g_deviceB != nullptr);
     VirtualMultiVerSyncDBInterface *syncInterfaceB = new (std::nothrow) VirtualMultiVerSyncDBInterface;
     ASSERT_TRUE(syncInterfaceB != nullptr);
     ASSERT_EQ(syncInterfaceB->Initialize(DEVICE_B), E_OK);
     ASSERT_EQ(g_deviceB->Initialize(g_communicatorAggregator, syncInterfaceB), E_OK);
 
-    g_deviceC = new (std::nothrow) VituralDevice(DEVICE_C);
+    g_deviceC = new (std::nothrow) KvVirtualDevice(DEVICE_C);
     ASSERT_TRUE(g_deviceC != nullptr);
     VirtualMultiVerSyncDBInterface *syncInterfaceC = new (std::nothrow) VirtualMultiVerSyncDBInterface;
     ASSERT_TRUE(syncInterfaceC != nullptr);
@@ -506,7 +503,7 @@ HWTEST_F(DistributedDBMultiVerP2PSyncTest, IsolationSync001, TestSize.Level2)
      * @tc.expected: step3. Pragma OK, connectionA have {k1, v1} , connectionB don't have k1.
      */
     PragmaSync pragmaData(devices, SYNC_MODE_PULL_ONLY, nullptr);
-    ASSERT_TRUE(g_connectionA->Pragma(PRAGMA_SYNC_DEVICES, &pragmaData) > 0);
+    ASSERT_TRUE(g_connectionA->Pragma(PRAGMA_SYNC_DEVICES, &pragmaData) == E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME_2));
     Value value;
     ASSERT_EQ(GetDataFromConnection(g_connectionA, DistributedDBUnitTest::KEY_1, value), E_OK);
@@ -550,7 +547,7 @@ HWTEST_F(DistributedDBMultiVerP2PSyncTest, IsolationSync002, TestSize.Level2)
      * @tc.expected: step3. Pragma OK, connectionA have {k1, v2} , connectionB don't have k1.
      */
     PragmaSync pragmaData(devices, SYNC_MODE_PULL_ONLY, nullptr);
-    ASSERT_TRUE(g_connectionA->Pragma(PRAGMA_SYNC_DEVICES, &pragmaData) > 0);
+    ASSERT_TRUE(g_connectionA->Pragma(PRAGMA_SYNC_DEVICES, &pragmaData) == E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME_2));
 
     Value value;
@@ -598,7 +595,7 @@ HWTEST_F(DistributedDBMultiVerP2PSyncTest, IsolationSync003, TestSize.Level2)
      */
     LOGD("[DistributeddbMultiVerP2PSyncTes] start sync");
     PragmaSync pragmaData(devices, SYNC_MODE_PULL_ONLY, nullptr);
-    ASSERT_TRUE(g_connectionA->Pragma(PRAGMA_SYNC_DEVICES, &pragmaData) > 0);
+    ASSERT_TRUE(g_connectionA->Pragma(PRAGMA_SYNC_DEVICES, &pragmaData) == E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME_2));
 
     Value value;
@@ -633,7 +630,7 @@ static bool IsTimeSyncPacketEqual(const TimeSyncPacket &inPacketA, const TimeSyn
  * @tc.require: AR000BVRNU AR000CQE0J
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBMultiVerP2PSyncTest, TimesyncPacket001, TestSize.Level0)
+HWTEST_F(DistributedDBMultiVerP2PSyncTest, TimesyncPacket001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create TimeSyncPacket packetA aand packetB
@@ -799,7 +796,7 @@ static bool IsCommitHistorySyncRequestPacketEqual(const CommitHistorySyncRequest
  * @tc.require: AR000BVRNU AR000CQE0J
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBMultiVerP2PSyncTest, CommitHistorySyncRequestPacket001, TestSize.Level0)
+HWTEST_F(DistributedDBMultiVerP2PSyncTest, CommitHistorySyncRequestPacket001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create CommitHistorySyncRequestPacket packetA aand packetB
@@ -915,7 +912,7 @@ static bool IsCommitHistorySyncAckPacketEqual(const CommitHistorySyncAckPacket &
  * @tc.require: AR000BVRNU AR000CQE0J
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBMultiVerP2PSyncTest, CommitHistorySyncAckPacket001, TestSize.Level0)
+HWTEST_F(DistributedDBMultiVerP2PSyncTest, CommitHistorySyncAckPacket001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create CommitHistorySyncAckPacket packetA aand packetB
@@ -996,7 +993,7 @@ static bool IsMultiVerRequestPacketEqual(const MultiVerRequestPacket &inPacketA,
  * @tc.require: AR000BVRNU AR000CQE0J
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBMultiVerP2PSyncTest, MultiVerRequestPacket001, TestSize.Level0)
+HWTEST_F(DistributedDBMultiVerP2PSyncTest, MultiVerRequestPacket001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create CommitHistorySyncAckPacket packetA aand packetB
@@ -1106,7 +1103,7 @@ static bool IsMultiVerAckPacketEqual(const MultiVerAckPacket &inPacketA, const M
  * @tc.require: AR000BVRNU AR000CQE0J
  * @tc.author: xiaozhenjian
  */
-HWTEST_F(DistributedDBMultiVerP2PSyncTest, MultiVerAckPacket001, TestSize.Level0)
+HWTEST_F(DistributedDBMultiVerP2PSyncTest, MultiVerAckPacket001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. create MultiVerAckPacket packetA aand packetB

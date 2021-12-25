@@ -124,6 +124,8 @@ public:
 
     // Get the securityLabel and securityFlag
     virtual int GetSecurityOption(int &securityLabel, int &securityFlag) const = 0;
+
+    virtual int CheckIntegrity() const = 0;
 };
 } // namespace DistributedDB
 

@@ -98,6 +98,7 @@ void DistributedDBInterfacesNBUnpublishTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesNBUnpublishTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     KvStoreNbDelegate::Option option = {true, false, false};
     g_mgr.GetKvStore("unpublish_test", option, g_kvNbDelegateCallback);
     ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);

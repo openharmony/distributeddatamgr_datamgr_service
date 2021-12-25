@@ -14,12 +14,12 @@
  */
 
 #include <gtest/gtest.h>
-#include <set>
 #include <thread>
-#include "message.h"
-#include "log_print.h"
 #include "db_errno.h"
 #include "distributeddb_communicator_common.h"
+#include "distributeddb_tools_unit_test.h"
+#include "log_print.h"
+#include "message.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -71,6 +71,7 @@ void DistributedDBCommunicatorSendReceiveTest::TearDownTestCase(void)
 
 void DistributedDBCommunicatorSendReceiveTest::SetUp()
 {
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
     /**
      * @tc.setup: Alloc communicator AA, BA, BB
      */

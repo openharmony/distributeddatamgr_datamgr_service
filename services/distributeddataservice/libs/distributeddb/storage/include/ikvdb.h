@@ -55,6 +55,8 @@ public:
     virtual int GetKvDBSize(const KvDBProperties &properties, uint64_t &size) const = 0;
 
     virtual void EnableAutonomicUpgrade() = 0;
+
+    virtual int CheckIntegrity() const = 0;
 };
 } // namespace DistributedDB
 

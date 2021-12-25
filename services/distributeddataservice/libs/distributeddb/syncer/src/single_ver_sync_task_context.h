@@ -19,26 +19,34 @@
 #include <list>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 
+#include "db_ability.h"
+#include "query_sync_object.h"
+#include "single_ver_kvdb_sync_interface.h"
+#include "single_ver_sync_target.h"
+#include "subscribe_manager.h"
 #include "sync_target.h"
 #include "sync_task_context.h"
 #include "time_helper.h"
-#include "single_ver_sync_target.h"
+
 
 namespace DistributedDB {
-class SingleVerSyncTaskContext final : public SyncTaskContext {
+class SingleVerSyncTaskContext : public SyncTaskContext {
 public:
 
-    SingleVerSyncTaskContext();
+    explicit SingleVerSyncTaskContext();
 
     DISABLE_COPY_ASSIGN_MOVE(SingleVerSyncTaskContext);
 
     // Init SingleVerSyncTaskContext
-    int Initialize(const std::string &deviceId, IKvDBSyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
+    int Initialize(const std::string &deviceId, ISyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
         ICommunicator *communicator) override;
 
     // Add a sync task target with the operation to the queue
     int AddSyncOperation(SyncOperation *operation) override;
+
+    bool IsCurrentSyncTaskCanBeSkipped() const override;
 
     // Set the end water mark of this task
     void SetEndMark(WaterMark endMark);
@@ -66,6 +74,8 @@ public:
 
     void Abort(int status) override;
 
+    void ClearAllSyncTask() override;
+
     // If set true, remote stale data will be clear when remote db rebuiled.
     void EnableClearRemoteStaleData(bool enable);
 
@@ -78,16 +88,12 @@ public:
     // stop timer to ResetWatchDog when sync data one (key,value) size bigger than mtu
     void StopFeedDogForSync(SyncDirectionFlag flag);
 
-    // if sended by sliding window, get the start timeStamp of data in a sequence
-    TimeStamp GetSequenceStartTimeStamp() const;
+    SyncTimeRange GetDataTimeRange() const;
 
-    // if sended by sliding window, get the end timeStamp of data in a sequence
-    TimeStamp GetSequenceEndTimeStamp() const;
-
-    int HandleDataRequestRecv(const Message *msg);
+    virtual int HandleDataRequestRecv(const Message *msg);
 
     // if sended by sliding window, set the start and and timeStamp of data in a sequence
-    void SetSequenceStartAndEndTimeStamp(TimeStamp start, TimeStamp end);
+    void SetSequenceStartAndEndTimeStamp(SyncTimeRange dataTimeRange);
 
     // if sended by sliding window, set the last data timeStamp in a sync session
     void SetSessionEndTimeStamp(TimeStamp end);
@@ -125,9 +131,31 @@ public:
     bool GetIsSchemaSync() const;
 
     bool IsSkipTimeoutError(int errCode) const;
+
+    bool FindResponseSyncTarget(uint32_t responseSessionId) const;
+
+    // For query sync
+    void SetQuery(const QuerySyncObject &query);
+    const QuerySyncObject &GetQuery() const;
+    void SetQuerySync(bool isQuerySync);
+    bool IsQuerySync() const;
+    std::set<CompressAlgorithm> GetRemoteCompressAlgo() const;
+    std::string GetRemoteCompressAlgoStr() const;
+    void SetDbAbility(DbAbility &remoteDbAbility);
+    CompressAlgorithm ChooseCompressAlgo() const;
+    const DbAbility& GetRemoteDbAbility() const;
+
+    void SetSubscribeManager(std::shared_ptr<SubscribeManager> &subManager);
+    std::shared_ptr<SubscribeManager> GetSubscribeManager() const;
+
+    void SaveLastPushTaskExecStatus(int finalStatus) override;
+    void ResetLastPushTaskStatus() override;
 protected:
     ~SingleVerSyncTaskContext() override;
-    void CopyTargetData(const ISyncTarget *target) override;
+    void CopyTargetData(const ISyncTarget *target, const TaskParam &taskParam) override;
+
+private:
+    int GetCorrectedSendWaterMarkForCurrentTask(uint64_t &waterMark) const;
 
 private:
     constexpr static int64_t REDUNDACE_WATER_MARK = 1 * 1000LL * 1000LL * 10LL; // 1s
@@ -145,14 +173,28 @@ private:
     SyncStrategy syncStrategy_;
     bool isSchemaSync_ = false;
 
-    // in a sync session, if sended by sliding window, the min timeStamp of data in a sequence
-    TimeStamp sequenceStartTimeStamp_ = 0;
-    // in a sync session, if sended by sliding window, the max timeStamp of data in a sequence
-    TimeStamp sequenceEndTimeStamp_ = 0;
+    // normal data or delete data start timestamp and end timestamp,recorded for slws resend.
+    SyncTimeRange dataTimeRange_;
     // in a sync session, the last data timeStamp
     TimeStamp sessionEndTimeStamp_ = 0;
+
     // is receive waterMark err, peerWaterMark bigger than remote localWaterMark
     bool isReceiveWaterMarkErr_ = false;
+
+    // For querySync
+    QuerySyncObject query_;
+    bool isQuerySync_ = false;
+
+    // For db ability
+    DbAbility remoteDbAbility_;
+
+    // For subscribe manager
+    std::shared_ptr<SubscribeManager> subManager_;
+
+    // for merge sync task
+    int lastFullSyncTaskStatus_ = SyncOperation::Status::OP_WAITING;
+    // <queryId, lastExcuStatus>
+    std::unordered_map<std::string, int> lastQuerySyncTaskStatusMap_;
 };
 } // namespace DistributedDB
 

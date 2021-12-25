@@ -30,13 +30,20 @@ namespace DistributedDB {
 // if now version of B is 105, and C is 101, thus version of A is 105; if now release version is 106 and we upgrade
 // submodule C, if we simply change version of C to 102 then version of A is still 105, but if we change version of C
 // to 106 then version of A is now 106, so we can know that something had changed for module A.
-const std::string SOFTWARE_VERSION_STRING = "1.1.3"; // DistributedDB current version string.
+const std::string SOFTWARE_VERSION_STRING = "1.1.5"; // DistributedDB current version string.
 constexpr uint32_t SOFTWARE_VERSION_BASE = 100; // Software version base value, do not change it
 constexpr uint32_t SOFTWARE_VERSION_RELEASE_1_0 = SOFTWARE_VERSION_BASE + 1; // 1 for first released version
 constexpr uint32_t SOFTWARE_VERSION_RELEASE_2_0 = SOFTWARE_VERSION_BASE + 2; // 2 for second released version
-constexpr uint32_t SOFTWARE_VERSION_RELEASE_3_0 = SOFTWARE_VERSION_BASE + 3; // 3 for second released version
+constexpr uint32_t SOFTWARE_VERSION_RELEASE_3_0 = SOFTWARE_VERSION_BASE + 3; // 3 for third released version
+constexpr uint32_t SOFTWARE_VERSION_RELEASE_4_0 = SOFTWARE_VERSION_BASE + 4; // 4 for fourth released version
+constexpr uint32_t SOFTWARE_VERSION_RELEASE_5_0 = SOFTWARE_VERSION_BASE + 5; // 5 for fifth released version
+constexpr uint32_t SOFTWARE_VERSION_RELEASE_6_0 = SOFTWARE_VERSION_BASE + 6; // 6 for sixth released version
 constexpr uint32_t SOFTWARE_VERSION_EARLIEST = SOFTWARE_VERSION_RELEASE_1_0;
-constexpr uint32_t SOFTWARE_VERSION_CURRENT = SOFTWARE_VERSION_RELEASE_3_0;
+#ifdef RELATIONAL_STORE
+constexpr uint32_t SOFTWARE_VERSION_CURRENT = SOFTWARE_VERSION_RELEASE_6_0;
+#else
+constexpr uint32_t SOFTWARE_VERSION_CURRENT = SOFTWARE_VERSION_RELEASE_5_0;
+#endif
 constexpr int VERSION_INVALID = INT32_MAX;
 
 // Storage Related Version

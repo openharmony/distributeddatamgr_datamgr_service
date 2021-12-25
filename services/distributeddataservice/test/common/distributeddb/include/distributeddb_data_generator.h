@@ -23,6 +23,7 @@
 #include "kv_store_delegate_manager.h"
 #include "distributed_test_sysinfo.h"
 #include "distributeddb_log_print.h"
+#include "distributeddb_constant.h"
 
 struct EntrySize {
     unsigned int keySize = 0;
@@ -77,6 +78,15 @@ struct LongDefine {
     char prefix;
 };
 
+struct NumberSize {
+    EntrySize entrySize;
+    int recordsNumber;
+    bool isRoundBack = false;
+    NumberSize() : recordsNumber(0)
+    {
+    }
+};
+
 enum class RandType {
     ALPHA_NUM,
     ALPHA_NUM_UNDERLINE,
@@ -95,17 +105,22 @@ const unsigned int THREE_RECORDS = 3;
 const unsigned int THREE_PERF_DATA = 3;
 const unsigned int BATCH_RECORDS = 128;
 const static int ONE_RECORD = 1;
+const static int TWO_RECORDS = 2;
 const static int FOUR_RECORDS = 4;
 const static int FIVE_RECORDS = 5;
+const static int SIX_RECORDS = 6;
+const static int EIGHT_RECORDS = 8;
+const static int NINE_RECORDS = 9;
 const static int TEN_RECORDS = 10;
+const static int SIXTEEN_RECORDS = 16;
 const static int TWENTY_RECORDS = 20;
+const static int THIRTY_RECORDS = 30;
 const static int THIRTYTWO_RECORDS = 32;
 const static int FORTY_RECORDS = 40;
 const static int FIFTY_RECORDS = 50;
 const static int SIXTY_RECORDS = 60;
 const static int EIGHTY_RECORDS = 80;
 const static int ONE_HUNDRED_RECORDS = 100;
-const static int ONE_HUNDRED_AND_TWENTY_RECORDS = 120;
 const static int TWO_HUNDREDS_RECORDS = 200;
 const static int FIVE_HUNDREDS_RECORDS = 500;
 const static int SIX_HUNDREDS_RECORDS = 600;
@@ -115,20 +130,20 @@ const static int TWO_FIVE_ZERO_ZERO_RECORDS = 2500;
 const static int TWO_FIVE_SIX_ZERO_RECORDS = 2560;
 const static int FIVE_THOUSANDS_RECORDS = 5000;
 const static int TEN_THOUSAND_RECORDS = 10000;
+const static int FIFTEEN_THOUSAND_RECORDS = 15000;
 const static int TWENTY_THOUSAND_RECORDS = 20000;
+const static int THIRTY_THOUSAND_RECORDS = 30000;
+const static int FIFTY_THOUSAND_RECORDS = 50000;
 const static int HUNDRED_THOUSAND_RECORDS = 100000;
 const static int FOUR_HUNDRED_THOUSAND_RECORDS = 400000;
 const static int FIVE_HUNDRED_THOUSAND_RECORDS = 500000;
 const static int TWO_FIVE_SIX_RECORDS = 256;
 const static int FIRST_RECORD = 1;
 const static int SECOND_RECORD = 2;
-const static int FOURTH_RECORD = 4;
-const static int FORTIETH_RECORD = 40;
-const static int EIGHTIETH_RECORD = 80;
-const static int THE_HUNDRED_AND_TWENTY_RECORD = 120;
 const static int DATAS_ACCOUNT = 300;
 const static int DATA_LEN = 13;
 const static int NINE_CNT = 9;
+const static int TEN_CNT = 10;
 const static unsigned int TWO_DEVICES = 2;
 const static unsigned int FOUR_DEVICES = 4;
 const static int THIRD_FUNC = 3;
@@ -138,10 +153,12 @@ const static int THREE_DBS = 3;
 const static int EIGHT_DBS = 8;
 const static int TEN_DBS = 10;
 const static int ELEVEN_DBS = 11;
+const static int TWELVE_DBS = 12;
 const static int FIRST_DB = 1;
 const static int FIFTH_DB = 5;
 const static int TENTH_DB = 10;
 const static int ELEVENTH_DB = 11;
+const static int TWELFTH_DB = 12;
 
 // ************************  loop times class      **************************
 const unsigned int MOD_NUM = 2;
@@ -158,6 +175,7 @@ const static int MANYTINES = 3;
 const static int ONE_TIME = 1;
 const static int TWO_TIMES = 2;
 const static int FIVE_TIMES = 5;
+const static int TEN_TIMES = 10;
 const static int FIFTY_TIMES = 50;
 const static int HUNDRED_TIMES = 100;
 
@@ -167,6 +185,7 @@ const unsigned int TWO_SECONDS = 2;
 const unsigned int THREE_SECONDS = 3;
 const unsigned int FOUR_SECONDS = 4;
 const unsigned int FIVE_SECONDS = 5;
+const unsigned int SIX_SECONDS = 6;
 const unsigned int TEN_SECONDS = 10;
 const unsigned int FIFTEEN_SECONDS = 15;
 const unsigned int TWENTY_SECONDS = 20;
@@ -196,7 +215,7 @@ const unsigned int WAIT_FOR_LAST_SYNC = 500000;
 const unsigned int WAIT_FOR_TWO_HUNDREDS_MS = 200000;
 const int FIFTY_MILI_SECONDS = 50;
 const int HUNDRED_MILLI_SECONDS = 100;
-const static int MILLSECONDES_PER_SECOND = 1000;
+const static int MILLSECONDS_PER_SECOND = 1000;
 
 // ************************  length of key class   **************************
 const static int KEY_SIX_BYTE = 6;
@@ -218,6 +237,7 @@ const unsigned int ONE_M_LONG_STRING = 1048576; // 1M
 const unsigned int TWO_M_LONG_STRING = 2097152; // 2M
 const unsigned int FOUR_M_LONG_STRING = 4194304; // 4M
 const unsigned int TEN_M_LONG_STRING = 10485760; // 10M
+const static int VALUE_SIX_BYTE = 6;
 const static int VALUE_ONE_HUNDRED_BYTE = 100;
 const static int VALUE_FIVE_HUNDRED_BYTE = 500;
 const static int VALUE_ONE_K_BYTE = 1024;
@@ -252,8 +272,7 @@ const unsigned int NB_OBSERVER_CNT_START = 0;
 const unsigned int NB_OBSERVER_CNT_END = 4;
 const unsigned int NB_OPERATION_CNT_START = 0;
 const unsigned int NB_OPERATION_CNT_END = 5;
-const int RAND_BOOL_MIN = 0;
-const int RAND_BOOL_MAX = 1;
+
 const int LOCAL_OPER_CNT = 2;
 const int NATIVE_OPER_CNT = 6;
 const static int OPER_CNT_START = 0;
@@ -277,17 +296,14 @@ const int INDEX_SIXTH = 6;
 const int INDEX_SEVENTH = 7;
 const int INDEX_EIGHTTH = 8;
 const int INDEX_NINTH = 9;
+const int INDEX_TENTH = 10;
 const int INDEX_NINE_NINE_NINTH = 999;
+const int INDEX_FIVE_THOUSANDS = 5000;
+const int INDEX_TEN_THOUSANDS = 10000;
+const int INDEX_FIFTEEN_THOUSANDS = 15000;
 
 // ************************  OTHER CLASS ************************************
-const static int ROUND_BACK = 2;
-const static int TRUNC_EIGHT = 100000000;
-
-const unsigned int PIPE_BUFFER = 128;
-
-const uint8_t ACSIIEND = 255;
-
-const int TABLE_MAX = 256;
+const int TABLE_MAX = 60;
 
 const static int ENCRYPT_COUNT = 100;
 
@@ -323,7 +339,7 @@ const std::string STORE_ID_7 = "STORE_ID_7";
 const std::string STORE_ID_8 = "STORE_ID_8";
 const std::string STORE_ID_9 = "STORE_ID_9";
 const std::string STORE_ID_10 = "STORE_ID_10";
-const std::string SCHEMA_STORE_ID_11 = "SCHEMA_STORE_ID_11";
+const std::string JSON_SCHEMA_STORE_ID_11 = "JSON_SCHEMA_STORE_ID_11";
 const std::string STORE_ID_PERFORM = "STORE_ID_PERFORM";
 const static std::string STORE_ID_SYNC_1 = "SYNC1";
 const static std::string STORE_ID_SYNC_2 = "SYNC2";
@@ -386,6 +402,7 @@ const std::vector<uint8_t> NULL_K1 = {};
 const DistributedDB::Key KEY_EMPTY = { };
 const DistributedDB::Key KEY_K = { 'k' };
 const DistributedDB::Key KEY_A = { 'a' };
+const DistributedDB::Key KEY_E = {  'k', 'e' };
 const DistributedDB::Key OK_KEY_1 = { 'o', 'k' };
 
 const DistributedDB::Value VALUE_1 = { 'v', '1' };
@@ -514,11 +531,9 @@ void GenerateFullAsciiRecords(DistributedDB::Entry &entry);
 void GenerateBiggistKeyRecords(DistributedDB::Entry &entry);
 
 DistributedDB::Entry GenerateFixedLenKVRecord(unsigned int serialNo,
-    unsigned int keyLen, uint8_t keyFilledChr,
-    unsigned int valueLen, uint8_t valueFilledChr);
+    unsigned int keyLen, uint8_t keyFilledChr, unsigned int valueLen, uint8_t valueFilledChr);
 
-void GenerateFixedRecords(std::vector<DistributedDB::Entry> &entries,
-    std::vector<DistributedDB::Key> &allKeys,
+void GenerateFixedRecords(std::vector<DistributedDB::Entry> &entries, std::vector<DistributedDB::Key> &allKeys,
     int recordNum, unsigned int keySize, unsigned int valSize);
 
 void GenerateOneRecordForImage(int entryNo, const EntrySize &entrySize,
@@ -530,15 +545,20 @@ void GenerateAppointPrefixAndSizeRecord(int recordNo, const EntrySize &entrySize
     const std::vector<uint8_t> &keyPrefix, const std::vector<uint8_t> &valPrefix, DistributedDB::Entry &entry);
 void GenerateAppointPrefixAndSizeRecords(std::vector<DistributedDB::Entry> &entries, const EntrySize &entrySize,
     int num, const std::vector<uint8_t> &keyPrefix = {'k'}, const std::vector<uint8_t> &valPrefix = {'v'});
+void GenerateAppointPrefixAndSizeRecords(std::vector<DistributedDB::Entry> &entries, int startpoint,
+    const NumberSize param, const std::vector<uint8_t> &keyPrefix = {'k'},
+    const std::vector<uint8_t> &valPrefix = {'v'});
 
 int GetRandInt(const int randMin, const int randMax);
 
-void GenerateFixedLenRandRecords(std::vector<DistributedDB::Entry> &entries,
-    std::vector<DistributedDB::Key> &allKeys,
+void GenerateFixedLenRandRecords(std::vector<DistributedDB::Entry> &entries, std::vector<DistributedDB::Key> &allKeys,
     int recordNum, unsigned int keySize, unsigned int valSize);
+std::vector<DistributedDB::Entry> GenerateFixedLenRandRecords(std::vector<DistributedDB::Key> &allKeys,
+    int recordNum, const EntrySize &entrySize, const std::vector<uint8_t> &keyPrefix = {'k'},
+    const std::vector<uint8_t> &valPrefix = {'v'});
 
 const std::string GetDbType(const int type);
-void GenerateRandomRecords(std::vector<DistributedDB::Entry> &entries, EntrySize entrySize, int num);
+void GenerateRandomRecords(std::vector<DistributedDB::Entry> &entries, EntrySize &entrySize, int num);
 void GetLongSchemaDefine(LongDefine &param, std::string &longDefine);
 const std::string SpliceToSchema(const std::string &version, const std::string &mode,
     const std::string &define, const std::string &index = "", const std::string &skipSize = "");

@@ -67,7 +67,7 @@ private:
     void ExitGetEngineProcess(const std::string &identifier);
 
     static std::mutex instanceLock_;
-    static StorageEngineManager *instance_;
+    static std::atomic<StorageEngineManager *> instance_;
     static bool isRegLockStatusListener_;
 
     static std::mutex storageEnginesLock_;

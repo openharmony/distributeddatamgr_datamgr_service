@@ -108,7 +108,7 @@ void DistributeddbKvObserverSnapTest::TearDown(void)
  * @tc.require: SR000BUH3K,SR000BVRNE
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, Register001, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, Register001, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerSnapDelegate);
 
@@ -133,7 +133,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Register001, TestSize.Level0)
  * @tc.require: SR000BUH3K
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, Register002, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, Register002, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerSnapDelegate);
 
@@ -156,7 +156,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Register002, TestSize.Level0)
  * @tc.require: SR000BUH3K,SR000BVRNE
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, Register003, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, Register003, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerSnapDelegate);
 
@@ -274,7 +274,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Register004, TestSize.Level1)
  * @tc.require: SR000BUH3K,SR000BVRNE
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, Register005, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, Register005, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerSnapDelegate);
 
@@ -324,7 +324,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Register005, TestSize.Level0)
  * @tc.require: SR000BUH3K,SR000BVRNE
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, Register006, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, Register006, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerSnapDelegate);
 
@@ -522,7 +522,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Register009, TestSize.Level1)
  * @tc.require: SR000BUH3K,SR000BVRNE
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, DataChange001, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, DataChange001, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerSnapDelegate);
 
@@ -557,7 +557,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, DataChange001, TestSize.Level0)
  * @tc.require: SR000BUH3K,SR000BVRNE
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, DataChange002, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, DataChange002, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerSnapDelegate);
     vector<Entry> entries1;
@@ -597,7 +597,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, DataChange002, TestSize.Level0)
  * @tc.require: SR000BUH3K,SR000BVRNE
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, DataChange003, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, DataChange003, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerSnapDelegate);
     vector<Entry> entries1;
@@ -795,7 +795,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, DataChange007, TestSize.Level1)
  * @tc.require: SR000BUH3K,SR000BVRNE
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, DataChange008, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, DataChange008, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerSnapDelegate);
 
@@ -830,7 +830,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, DataChange008, TestSize.Level0)
  * @tc.require: SR000BUH3K,SR000BVRNE
  * @tc.author: luqianfu
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, DataChange009, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, DataChange009, TestSize.Level1)
 {
     DistributedTestTools::Clear(*g_observerSnapDelegate);
 
@@ -1543,7 +1543,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Performance006, TestSize.Level3)
  * @tc.require: SR000CQDT4
  * @tc.author: fengxiaoyun
  */
-HWTEST_F(DistributeddbKvObserverSnapTest, RekeyDb001, TestSize.Level0)
+HWTEST_F(DistributeddbKvObserverSnapTest, RekeyDb001, TestSize.Level1)
 {
     KvStoreDelegate *kvObserverSnapDelegate = nullptr;
     KvStoreDelegateManager *manager = nullptr;

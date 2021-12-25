@@ -17,8 +17,8 @@
 #define MULTI_VER_SYNC_TASK_CONTEXT_H
 
 #ifndef OMIT_MULTI_VER
-#include "sync_task_context.h"
 #include "multi_ver_kvdb_sync_interface.h"
+#include "sync_task_context.h"
 
 namespace DistributedDB {
 class MultiVerSyncTaskContext final : public SyncTaskContext {
@@ -28,7 +28,7 @@ public:
     DISABLE_COPY_ASSIGN_MOVE(MultiVerSyncTaskContext);
 
     // Init the MultiVerSyncTaskContext
-    int Initialize(const std::string &deviceId, IKvDBSyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
+    int Initialize(const std::string &deviceId, ISyncInterface *syncInterface, std::shared_ptr<Metadata> &metadata,
         ICommunicator *communicator) override;
 
     // Add a sync task target with the operation to the queue
@@ -85,7 +85,7 @@ public:
 protected:
     ~MultiVerSyncTaskContext() override;
 
-    void CopyTargetData(const ISyncTarget *target) override;
+    void CopyTargetData(const ISyncTarget *target, const TaskParam &taskParam) override;
 
 private:
     DECLARE_OBJECT_TAG(MultiVerSyncTaskContext);

@@ -15,7 +15,6 @@
 
 #include "sync_state_machine.h"
 
-#include <cmath>
 #include <algorithm>
 
 #include "log_print.h"
@@ -47,7 +46,7 @@ SyncStateMachine::~SyncStateMachine()
     }
 }
 
-int SyncStateMachine::Initialize(ISyncTaskContext *context, IKvDBSyncInterface *syncInterface,
+int SyncStateMachine::Initialize(ISyncTaskContext *context, ISyncInterface *syncInterface,
     std::shared_ptr<Metadata> &metadata, ICommunicator *communicator)
 {
     if ((context == nullptr) || (syncInterface == nullptr) || (metadata == nullptr) || (communicator == nullptr)) {
@@ -85,7 +84,7 @@ int SyncStateMachine::TimeoutCallback(TimerId timerId)
     }
 
     int retryTime = syncContext_->GetRetryTime();
-    if (retryTime >= RETRY_TIME || !syncContext_->IsAutoSync()) {
+    if (retryTime >= syncContext_->GetSyncRetryTimes() || !syncContext_->IsSyncTaskNeedRetry()) {
         LOGI("[SyncStateMachine][Timeout] TimeoutCallback retryTime:%d", retryTime);
         syncContext_->UnlockObj();
         StepToTimeout();
@@ -99,9 +98,7 @@ int SyncStateMachine::TimeoutCallback(TimerId timerId)
         syncContext_->IncSequenceId();
     }
     syncContext_->SetRetryStatus(SyncTaskContext::NEED_RETRY);
-    int timeoutTime = syncContext_->GetTimeoutTime();
-    // set the new timeout value with 2 raised to the power of retryTime.
-    timeoutTime = timeoutTime * static_cast<int>(pow(2, retryTime));
+    int timeoutTime = syncContext_->GetSyncRetryTimeout(retryTime);
     syncContext_->ModifyTimer(timeoutTime);
     LOGI("[SyncStateMachine][Timeout] Schedule task, timeoutTime = %d, retryTime = %d", timeoutTime, retryTime);
     SyncStep();
@@ -148,7 +145,7 @@ int SyncStateMachine::SwitchMachineState(uint8_t event)
     const std::map<uint8_t, EventToState> &table = (*tableIter).switchTable;
     auto eventToStateIter = table.find(currentState_);
     if (eventToStateIter == table.end()) {
-        LOGE("[SyncStateMachine][SwitchState] ver:%d, Can't find EventToState with currentSate %u",
+        LOGE("[SyncStateMachine][SwitchState] tableVer:%d, Can't find EventToState with currentSate %u",
             (*tableIter).version, currentState_);
         SetCurStateErrStatus();
         return E_OK;
@@ -157,13 +154,13 @@ int SyncStateMachine::SwitchMachineState(uint8_t event)
     const EventToState &eventToState = eventToStateIter->second;
     auto stateIter = eventToState.find(event);
     if (stateIter == eventToState.end()) {
-        LOGD("[SyncStateMachine][SwitchState] ver:%d, Can't find event %u int currentSate %u ignore",
+        LOGD("[SyncStateMachine][SwitchState] tableVer:%d, Can't find event %u int currentSate %u ignore",
             (*tableIter).version, event, currentState_);
         return -E_NOT_FOUND;
     }
 
     currentState_ = stateIter->second;
-    LOGD("[SyncStateMachine][SwitchState] ver:%d, from state %u move to state %u with event %u dev %s{private}",
+    LOGD("[SyncStateMachine][SwitchState] tableVer:%d, from state %u move to state %u with event %u dev %s{private}",
         (*tableIter).version, eventToStateIter->first, currentState_, event, syncContext_->GetDeviceId().c_str());
     return E_OK;
 }
@@ -177,19 +174,25 @@ void SyncStateMachine::SwitchStateAndStep(uint8_t event)
 
 int SyncStateMachine::ExecNextTask()
 {
-    if (syncContext_->IsTargetQueueEmpty()) {
-        syncContext_->SetTaskExecStatus(ISyncTaskContext::FINISHED);
-        syncContext_->Clear();
-        LOGD("[SyncStateMachine] All sync task finished!");
-        return -E_NO_SYNC_TASK;
+    while (!syncContext_->IsTargetQueueEmpty()) {
+        syncContext_->MoveToNextTarget();
+        if (syncContext_->IsCurrentSyncTaskCanBeSkipped()) {
+            syncContext_->SetOperationStatus(SyncOperation::OP_FINISHED_ALL);
+            syncContext_->SetTaskExecStatus(ISyncTaskContext::FINISHED);
+            continue;
+        }
+        int errCode = PrepareNextSyncTask();
+        if (errCode != E_OK) {
+            LOGE("[SyncStateMachine] PrepareSync failed");
+            syncContext_->SetOperationStatus(SyncOperation::OP_FAILED);
+        }
+        return errCode;
     }
-    syncContext_->MoveToNextTarget();
-    int errCode = PrepareNextSyncTask();
-    if (errCode != E_OK) {
-        LOGE("[SyncStateMachine] PrepareSync failed");
-        syncContext_->SetOperationStatus(SyncOperation::FAILED);
-    }
-    return errCode;
+    // no task left
+    syncContext_->SetTaskExecStatus(ISyncTaskContext::FINISHED);
+    syncContext_->Clear();
+    LOGD("[SyncStateMachine] All sync task finished!");
+    return -E_NO_SYNC_TASK;
 }
 
 int SyncStateMachine::StartWatchDog()
@@ -219,7 +222,7 @@ void SyncStateMachine::StopWatchDog()
     syncContext_->StopTimer();
 }
 
-bool SyncStateMachine::StartSaveDataNotify(uint32_t sessionId, uint32_t sequenceId)
+bool SyncStateMachine::StartSaveDataNotify(uint32_t sessionId, uint32_t sequenceId, uint32_t inMsgId)
 {
     std::lock_guard<std::mutex> lockGuard(saveDataNotifyLock_);
     if (saveDataNotifyTimerId_ > 0) {
@@ -232,7 +235,7 @@ bool SyncStateMachine::StartSaveDataNotify(uint32_t sessionId, uint32_t sequence
     RefObject::IncObjRef(syncContext_);
     int errCode = RuntimeContext::GetInstance()->SetTimer(
         SAVE_DATA_NOTIFY_INTERVAL,
-        [this, sessionId, sequenceId](TimerId timerId) {
+        [this, sessionId, sequenceId, inMsgId](TimerId timerId) {
             {
                 std::lock_guard<std::mutex> lock(stateMachineLock_);
                 (void)ResetWatchDog();
@@ -242,14 +245,14 @@ bool SyncStateMachine::StartSaveDataNotify(uint32_t sessionId, uint32_t sequence
                 StopSaveDataNotifyNoLock();
                 return E_OK;
             }
-            SendSaveDataNotifyPacket(sessionId, sequenceId);
+            SendSaveDataNotifyPacket(sessionId, sequenceId, inMsgId);
             saveDataNotifyCount_++;
             return E_OK;
         },
         [this]() {
-            int errCode = RuntimeContext::GetInstance()->ScheduleTask([this](){ RefObject::DecObjRef(syncContext_); });
-            if (errCode != E_OK) {
-                LOGE("[SyncStateMachine] [SaveDataNotify] timer finalizer ScheduleTask, errCode %d", errCode);
+            int ret = RuntimeContext::GetInstance()->ScheduleTask([this](){ RefObject::DecObjRef(syncContext_); });
+            if (ret != E_OK) {
+                LOGE("[SyncStateMachine] [SaveDataNotify] timer finalizer ScheduleTask, errCode %d", ret);
             }
         },
         saveDataNotifyTimerId_);
@@ -283,44 +286,63 @@ bool SyncStateMachine::StartFeedDogForSync(uint32_t time, SyncDirectionFlag flag
         LOGE("[SyncStateMachine][feedDog] start wrong flag:%d", flag);
         return false;
     }
+
+    int cnt = GetFeedDogTimeout(time / SAVE_DATA_NOTIFY_INTERVAL);
+    LOGI("[SyncStateMachine][feedDog] start cnt:%d, flag:%d", cnt, flag);
+
     std::lock_guard<std::mutex> lockGuard(feedDogLock_[flag]);
-    if (feedDogTimerId_[flag] > 0) {
-        feedDogCount_[flag] = 0;
+    watchDogController_[flag].refCount++;
+    LOGD("af incr refCount = %d", watchDogController_[flag].refCount);
+
+    if (watchDogController_[flag].feedDogTimerId > 0) {
+        // update the upperLimit, if the new cnt is bigger then last upperLimit
+        if (cnt > watchDogController_[flag].feedDogUpperLimit) {
+            LOGD("update feedDogUpperLimit = %d", cnt);
+            watchDogController_[flag].feedDogUpperLimit = cnt;
+        }
+        watchDogController_[flag].feedDogCnt = 0;
         LOGW("[SyncStateMachine][feedDog] timer has been started!, flag:%d", flag);
         return false;
     }
-    int cnt = time / SAVE_DATA_NOTIFY_INTERVAL;
-    LOGI("[SyncStateMachine][feedDog] start cnt:%d, flag:%d", cnt, flag);
 
     // Incref to make sure context still alive before timer stopped.
     RefObject::IncObjRef(syncContext_);
+    watchDogController_[flag].feedDogUpperLimit = cnt;
     int errCode = RuntimeContext::GetInstance()->SetTimer(
         SAVE_DATA_NOTIFY_INTERVAL,
-        [this, flag, cnt](TimerId timerId) {
+        [this, flag](TimerId timerId) {
             {
                 std::lock_guard<std::mutex> lock(stateMachineLock_);
                 (void)ResetWatchDog();
             }
             std::lock_guard<std::mutex> innerLock(feedDogLock_[flag]);
-            if (feedDogCount_[flag] >= cnt) {
+            if (watchDogController_[flag].feedDogCnt >= watchDogController_[flag].feedDogUpperLimit) {
                 StopFeedDogForSyncNoLock(flag);
                 return E_OK;
             }
-            feedDogCount_[flag]++;
+            watchDogController_[flag].feedDogCnt++;
             return E_OK;
         },
         [this]() {
-            int errCode = RuntimeContext::GetInstance()->ScheduleTask([this](){ RefObject::DecObjRef(syncContext_); });
-            if (errCode != E_OK) {
-                LOGE("[SyncStateMachine] [feedDog] timer finalizer ScheduleTask, errCode %d", errCode);
+            int ret = RuntimeContext::GetInstance()->ScheduleTask([this](){ RefObject::DecObjRef(syncContext_); });
+            if (ret != E_OK) {
+                LOGE("[SyncStateMachine] [feedDog] timer finalizer ScheduleTask, errCode %d", ret);
             }
         },
-        feedDogTimerId_[flag]);
+        watchDogController_[flag].feedDogTimerId);
     if (errCode != E_OK) {
         LOGW("[SyncStateMachine][feedDog] start timer failed err %d !", errCode);
         return false;
     }
     return true;
+}
+
+uint8_t SyncStateMachine::GetFeedDogTimeout(int timeoutCount) const
+{
+    if (timeoutCount > UINT8_MAX) {
+        return UINT8_MAX;
+    }
+    return timeoutCount;
 }
 
 void SyncStateMachine::StopFeedDogForSync(SyncDirectionFlag flag)
@@ -339,16 +361,30 @@ void SyncStateMachine::StopFeedDogForSyncNoLock(SyncDirectionFlag flag)
         LOGE("[SyncStateMachine][feedDog] stop wrong flag:%d", flag);
         return;
     }
-    if (feedDogTimerId_[flag] == 0) {
+    if (watchDogController_[flag].feedDogTimerId == 0) {
         return;
     }
     LOGI("[SyncStateMachine][feedDog] stop flag:%d", flag);
-    RuntimeContext::GetInstance()->RemoveTimer(feedDogTimerId_[flag]);
-    feedDogTimerId_[flag] = 0;
-    feedDogCount_[flag] = 0;
+    RuntimeContext::GetInstance()->RemoveTimer(watchDogController_[flag].feedDogTimerId);
+    watchDogController_[flag].feedDogTimerId = 0;
+    watchDogController_[flag].feedDogCnt = 0;
+    watchDogController_[flag].refCount = 0;
 }
 
 void SyncStateMachine::SetCurStateErrStatus()
 {
+}
+
+void SyncStateMachine::DecRefCountOfFeedDogTimer(SyncDirectionFlag flag)
+{
+    std::lock_guard<std::mutex> lockGuard(feedDogLock_[flag]);
+    if (watchDogController_[flag].feedDogTimerId == 0) {
+        return;
+    }
+    if (--watchDogController_[flag].refCount <= 0) {
+        LOGD("stop feed dog timer, refcount = %d", watchDogController_[flag].refCount);
+        StopFeedDogForSyncNoLock(flag);
+    }
+    LOGD("af dec refcount = %d", watchDogController_[flag].refCount);
 }
 } // namespace DistributedDB

@@ -24,6 +24,7 @@
 namespace DistributedDBUnitTest {
 // define some variables to init a KvStoreDelegateManager object.
 const std::string APP_ID = "app0";
+const std::string SCHEMA_APP_ID = "app1";
 const std::string USER_ID = "user0";
 
 const std::string STORE_ID_LOCAL = "distributed_local_db_test";

@@ -15,9 +15,8 @@
 
 #include <chrono>
 #include <functional>
-#include <thread>
-
 #include <gtest/gtest.h>
+#include <thread>
 
 #include "db_common.h"
 #include "db_constant.h"
@@ -78,13 +77,13 @@ namespace {
         DistributedDBToolsUnitTest::GetRandomKeyValue(value);
         DBStatus status = OK;
         if (kvDelegate != nullptr) {
-            DBStatus status = kvDelegate->Put(key, value);
+            status = kvDelegate->Put(key, value);
             if (status != OK) {
                 return status;
             }
         }
         if (kvNbDelegate != nullptr) {
-            DBStatus status = kvNbDelegate->Put(key, value);
+            status = kvNbDelegate->Put(key, value);
             if (status != OK) {
                 return status;
             }
@@ -117,6 +116,7 @@ void DistributedDBInterfacesDatabaseCorruptTest::TearDownTestCase(void)
 
 void DistributedDBInterfacesDatabaseCorruptTest::SetUp(void)
 {
+    DistributedDBToolsUnitTest::PrintTestCaseInfo();
     g_kvDelegateStatus = INVALID_ARGS;
     g_kvDelegatePtr = nullptr;
 }
@@ -351,4 +351,155 @@ HWTEST_F(DistributedDBInterfacesDatabaseCorruptTest, DatabaseCorruptionHandleTes
     g_kvNbDelegatePtr = nullptr;
     EXPECT_EQ(g_mgr.DeleteKvStore("corrupt6"), OK);
     EXPECT_EQ(g_mgr.DeleteKvStore("corrupt7"), OK);
+}
+
+namespace {
+const uint32_t MODIFY_SIZE = 12; // Modify size is 12 * sizeof(uint32_t);
+const uint32_t MODIFY_VALUE = 0xF3F3F3F3; // random value, make sure to destroy the page header.
+void TestDatabaseIntegrityCheckOption(const std::string &storeId, bool isEncrypted)
+{
+    KvStoreNbDelegate::Option nbOption = {true, false, isEncrypted};
+    nbOption.isNeedIntegrityCheck = false;
+    nbOption.isNeedRmCorruptedDb = false;
+    if (isEncrypted) {
+        Key randPassword;
+        DistributedDBToolsUnitTest::GetRandomKeyValue(randPassword, PASSWD_SIZE);
+        ASSERT_EQ(nbOption.passwd.SetValue(randPassword.data(), randPassword.size()), CipherPassword::ErrorCode::OK);
+    }
+    auto filePath = GetKvStoreDirectory(storeId, DBConstant::DB_TYPE_SINGLE_VER);
+    g_mgr.GetKvStore(storeId, nbOption, g_kvNbDelegateCallback);
+    ASSERT_EQ(g_kvNbDelegateStatus, OK);
+    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+    ASSERT_EQ(PutDataIntoDatabase(nullptr, g_kvNbDelegatePtr), OK);
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+
+    /**
+     * @tc.steps: step1. Modify the database file header to destroy the header and call the GetKvStore.
+     * @tc.expected: step1. Returns null kv store and the errCode is INVALID_PASSWD_OR_CORRUPTED_DB.
+     */
+    DistributedDBToolsUnitTest::ModifyDatabaseFile(filePath, 0, MODIFY_SIZE, MODIFY_VALUE);
+    g_mgr.GetKvStore(storeId, nbOption, g_kvNbDelegateCallback);
+    ASSERT_EQ(g_kvNbDelegateStatus, INVALID_PASSWD_OR_CORRUPTED_DB);
+    ASSERT_TRUE(g_kvNbDelegatePtr == nullptr);
+
+    /**
+     * @tc.steps: step2. call the GetKvStore with integrity check option is true.
+     * @tc.expected: step2. Returns null kv store and the errCode is INVALID_PASSWD_OR_CORRUPTED_DB.
+     */
+    nbOption.isNeedIntegrityCheck = true;
+    g_mgr.GetKvStore(storeId, nbOption, g_kvNbDelegateCallback);
+    ASSERT_EQ(g_kvNbDelegateStatus, INVALID_PASSWD_OR_CORRUPTED_DB);
+    ASSERT_TRUE(g_kvNbDelegatePtr == nullptr);
+
+    /**
+     * @tc.steps: step3. call the GetKvStore with remove corrupted database option is true.
+     * @tc.expected: step3. Returns non-null kv store and the errCode is OK.
+     */
+    nbOption.isNeedIntegrityCheck = false;
+    nbOption.isNeedRmCorruptedDb = true;
+    g_mgr.GetKvStore(storeId, nbOption, g_kvNbDelegateCallback);
+    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+
+    ASSERT_EQ(PutDataIntoDatabase(nullptr, g_kvNbDelegatePtr), OK);
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+
+    /**
+     * @tc.steps: step4. Modify the second page of the database file and Get the kv store.
+     * @tc.expected: step4. Returns non-null kv store and the errCode is OK(GetKvStore skip the check of the page 2).
+     */
+    size_t filePos = isEncrypted ? 1024 : 4096; // 1024 and 4096 is the page size.
+    DistributedDBToolsUnitTest::ModifyDatabaseFile(filePath, filePos, MODIFY_SIZE, MODIFY_VALUE);
+    nbOption.isNeedRmCorruptedDb = false;
+    g_mgr.GetKvStore(storeId, nbOption, g_kvNbDelegateCallback);
+    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+
+    /**
+     * @tc.steps: step5. Get the kv store with check the integrity.
+     * @tc.expected: step5. Returns null kv store and the errCode is INVALID_PASSWD_OR_CORRUPTED_DB.
+     */
+    nbOption.isNeedIntegrityCheck = true;
+    g_mgr.GetKvStore(storeId, nbOption, g_kvNbDelegateCallback);
+    ASSERT_EQ(g_kvNbDelegateStatus, INVALID_PASSWD_OR_CORRUPTED_DB);
+    ASSERT_TRUE(g_kvNbDelegatePtr == nullptr);
+
+    /**
+     * @tc.steps: step5. Get the kv store with check the integrity and the rm corrupted database option.
+     * @tc.expected: step5. Returns non-null kv store and the errCode is OK.
+     */
+    nbOption.isNeedRmCorruptedDb = true;
+    g_mgr.GetKvStore(storeId, nbOption, g_kvNbDelegateCallback);
+    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+    EXPECT_EQ(g_mgr.DeleteKvStore(storeId), OK);
+}
+}
+
+/**
+  * @tc.name: DatabaseIntegrityCheck001
+  * @tc.desc: Test the integrity check option.
+  * @tc.type: FUNC
+  * @tc.require: AR000D487C SR000D4878
+  * @tc.author: wangbingquan
+  */
+HWTEST_F(DistributedDBInterfacesDatabaseCorruptTest, DatabaseIntegrityCheck001, TestSize.Level2)
+{
+    LOGI("Begin to check the unencrypted database");
+    TestDatabaseIntegrityCheckOption("integrity_check001", false);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    LOGI("Begin to check the encrypted database");
+    TestDatabaseIntegrityCheckOption("integrity_check002", true);
+}
+
+/**
+  * @tc.name: DatabaseIntegrityCheck002
+  * @tc.desc: Test the integrity check interface.
+  * @tc.type: FUNC
+  * @tc.require: AR000D487C SR000D4878
+  * @tc.author: wangbingquan
+  */
+HWTEST_F(DistributedDBInterfacesDatabaseCorruptTest, DatabaseIntegrityCheck002, TestSize.Level1)
+{
+    CipherPassword passwd;
+    KvStoreNbDelegate::Option nbOption = {true, false, false, CipherType::DEFAULT, passwd};
+    nbOption.isNeedIntegrityCheck = true;
+    nbOption.isNeedRmCorruptedDb = true;
+    auto filePath = GetKvStoreDirectory("integrity021", DBConstant::DB_TYPE_SINGLE_VER);
+    for (uint32_t i = 1; i < 4; i++) {
+        LOGI("%u th test!", i);
+        g_mgr.GetKvStore("integrity021", nbOption, g_kvNbDelegateCallback);
+        ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+        ASSERT_EQ(g_kvNbDelegatePtr->CheckIntegrity(), OK);
+        ASSERT_EQ(PutDataIntoDatabase(nullptr, g_kvNbDelegatePtr), OK);
+        EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+        DistributedDBToolsUnitTest::ModifyDatabaseFile(filePath, i * 4096, MODIFY_SIZE, MODIFY_VALUE); // page size 4096
+        g_mgr.GetKvStore("integrity021", nbOption, g_kvNbDelegateCallback);
+        ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+        EXPECT_EQ(g_kvNbDelegatePtr->CheckIntegrity(), OK);
+        EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+        EXPECT_EQ(g_mgr.DeleteKvStore("integrity021"), OK);
+    }
+    LOGI("Begin the encrypted check");
+    Key randomPassword;
+    DistributedDBToolsUnitTest::GetRandomKeyValue(randomPassword, PASSWD_SIZE);
+    int errCode = passwd.SetValue(randomPassword.data(), randomPassword.size());
+    ASSERT_EQ(errCode, CipherPassword::ErrorCode::OK);
+    nbOption = {true, false, true, CipherType::DEFAULT, passwd};
+    nbOption.isNeedIntegrityCheck = true;
+    nbOption.isNeedRmCorruptedDb = true;
+    filePath = GetKvStoreDirectory("integrity022", DBConstant::DB_TYPE_SINGLE_VER);
+    for (uint32_t i = 1; i < 4; i++) {
+        LOGI("%u th test the encrypted database!", i);
+        g_mgr.GetKvStore("integrity022", nbOption, g_kvNbDelegateCallback);
+        ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+        ASSERT_EQ(g_kvNbDelegatePtr->CheckIntegrity(), OK);
+        ASSERT_EQ(PutDataIntoDatabase(nullptr, g_kvNbDelegatePtr), OK);
+        EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+        DistributedDBToolsUnitTest::ModifyDatabaseFile(filePath, i * 1024, MODIFY_SIZE, MODIFY_VALUE); // page size 1024
+        g_mgr.GetKvStore("integrity022", nbOption, g_kvNbDelegateCallback);
+        ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+        EXPECT_EQ(g_kvNbDelegatePtr->CheckIntegrity(), OK);
+        EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+        EXPECT_EQ(g_mgr.DeleteKvStore("integrity022"), OK);
+    }
 }

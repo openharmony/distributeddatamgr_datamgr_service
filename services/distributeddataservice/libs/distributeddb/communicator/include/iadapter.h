@@ -42,6 +42,10 @@ public:
     virtual uint32_t GetMtuSize() = 0;
     virtual uint32_t GetMtuSize(const std::string &target) = 0;
 
+    // Should returns timeout in range [5s, 60s]
+    virtual uint32_t GetTimeout() = 0;
+    virtual uint32_t GetTimeout(const std::string &target) = 0;
+
     // Get local target name for identify self
     virtual int GetLocalIdentity(std::string &outTarget) = 0;
 
@@ -60,6 +64,8 @@ public:
     // Pass nullptr as inHandle to do unReg if need (inDecRef also nullptr)
     // Return 0 as success. Return negative as error
     virtual int RegSendableCallback(const SendableCallback &onSendable, const Finalizer &inOper) = 0;
+
+    virtual bool IsDeviceOnline(const std::string &device) = 0;
 
     virtual ~IAdapter() {};
 };
