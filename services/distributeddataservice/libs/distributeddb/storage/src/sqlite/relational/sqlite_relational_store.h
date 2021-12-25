@@ -57,7 +57,7 @@ private:
 
     // 1 store 1 connection
     void DecreaseConnectionCounter();
-
+    int CheckDBMode();
     int GetSchemaFromMeta();
     int SaveSchemaToMeta();
 

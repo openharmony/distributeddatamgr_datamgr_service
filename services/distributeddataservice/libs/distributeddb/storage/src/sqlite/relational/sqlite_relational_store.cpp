@@ -87,6 +87,22 @@ void SQLiteRelationalStore::ReleaseResources()
     }
 }
 
+int SQLiteRelationalStore::CheckDBMode()
+{
+    int errCode = E_OK;
+    auto *handle = GetHandle(false, errCode);
+    if (handle == nullptr) {
+        return errCode;
+    }
+    errCode = handle->CheckDBModeForRelational();
+    if (errCode != E_OK) {
+        LOGE("check relational DB mode failed. %d", errCode);
+    }
+
+    ReleaseHandle(handle);
+    return errCode;
+}
+
 int SQLiteRelationalStore::GetSchemaFromMeta()
 {
     const Key schemaKey(RELATIONAL_SCHEMA_KEY, RELATIONAL_SCHEMA_KEY + strlen(RELATIONAL_SCHEMA_KEY));
@@ -179,6 +195,11 @@ int SQLiteRelationalStore::Open(const RelationalDBProperties &properties)
         if (storageEngine_ == nullptr) {
             LOGE("[RelationalStore][Open] Create syncable storage failed"); // TODO:
             errCode = -E_OUT_OF_MEMORY;
+            break;
+        }
+
+        errCode = CheckDBMode();
+        if (errCode != E_OK) {
             break;
         }
 

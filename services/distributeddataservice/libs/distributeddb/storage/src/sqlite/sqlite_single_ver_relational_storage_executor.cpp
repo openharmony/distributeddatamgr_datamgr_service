@@ -827,5 +827,24 @@ int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<Dat
     SQLiteUtils::ResetStatement(logStatement, true, errCode);
     return errCode;
 }
+
+int SQLiteSingleVerRelationalStorageExecutor::CheckDBModeForRelational()
+{
+    std::string journalMode;
+    int errCode = SQLiteUtils::GetJournalMode(dbHandle_, journalMode);
+    if (errCode != E_OK || journalMode != "wal") {
+        LOGE("Not support journal mode %s for relational db, expect wal mode, %d", journalMode, errCode);
+        return -E_NOT_SUPPORT;
+    }
+
+    int synchronousMode;
+    errCode = SQLiteUtils::GetSynchronousMode(dbHandle_, synchronousMode);
+    if (errCode != E_OK || synchronousMode != 2) { // 2: FULL mode
+        LOGE("Not support synchronous mode %d for relational db, expect FULL mode, %d", synchronousMode, errCode);
+        return -E_NOT_SUPPORT;
+    }
+
+    return E_OK;
+}
 } // namespace DistributedDB
 #endif

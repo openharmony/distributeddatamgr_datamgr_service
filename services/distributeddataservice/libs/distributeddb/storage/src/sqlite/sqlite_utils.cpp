@@ -902,6 +902,56 @@ int SQLiteUtils::GetVersion(sqlite3 *db, int &version)
     return errCode;
 }
 
+int SQLiteUtils::GetJournalMode(sqlite3 *db, std::string &mode)
+{
+    if (db == nullptr) {
+        return -E_INVALID_DB;
+    }
+
+    std::string sql = "PRAGMA journal_mode;";
+    sqlite3_stmt *statement = nullptr;
+    int errCode = sqlite3_prepare(db, sql.c_str(), -1, &statement, nullptr);
+    if (errCode != SQLITE_OK || statement == nullptr) {
+        errCode = SQLiteUtils::MapSQLiteErrno(errCode);
+        return errCode;
+    }
+
+    if (sqlite3_step(statement) == SQLITE_ROW) {
+        errCode = SQLiteUtils::GetColumnTextValue(statement, 0, mode);
+    } else {
+        LOGE("[SqlUtil][GetJournal] Get db journal_mode failed.");
+        errCode = SQLiteUtils::MapSQLiteErrno(SQLITE_ERROR);
+    }
+
+    SQLiteUtils::ResetStatement(statement, true, errCode);
+    return E_OK;
+}
+
+int SQLiteUtils::GetSynchronousMode(sqlite3 *db, int &mode)
+{
+    if (db == nullptr) {
+        return -E_INVALID_DB;
+    }
+
+    std::string sql = "PRAGMA synchronous;";
+    sqlite3_stmt *statement = nullptr;
+    int errCode = sqlite3_prepare(db, sql.c_str(), -1, &statement, nullptr);
+    if (errCode != SQLITE_OK || statement == nullptr) {
+        errCode = SQLiteUtils::MapSQLiteErrno(errCode);
+        return errCode;
+    }
+
+    if (sqlite3_step(statement) == SQLITE_ROW) {
+        mode = sqlite3_column_int(statement, 0);
+    } else {
+        LOGE("[SqlUtil][GetSynchronous] Get db synchronous failed.");
+        errCode = SQLiteUtils::MapSQLiteErrno(SQLITE_ERROR);
+    }
+
+    SQLiteUtils::ResetStatement(statement, true, errCode);
+    return E_OK;
+}
+
 int SQLiteUtils::SetUserVer(const OpenDbProperties &properties, int version)
 {
     if (properties.uri.empty()) {

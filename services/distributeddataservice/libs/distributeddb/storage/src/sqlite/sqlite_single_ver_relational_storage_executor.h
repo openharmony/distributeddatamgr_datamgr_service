@@ -59,6 +59,8 @@ public:
 
     int AnalysisRelationalSchema(const std::string &tableName, TableInfo &tableInfo);
 
+    int CheckDBModeForRelational();
+
 private:
     int PrepareForSyncDataByTime(TimeStamp begin, TimeStamp end,
         sqlite3_stmt *&statement, bool getDeletedData) const;

@@ -117,6 +117,10 @@ public:
 
     static int GetVersion(sqlite3 *db, int &version);
 
+    static int GetJournalMode(sqlite3 *db, std::string &mode);
+
+    static int GetSynchronousMode(sqlite3 *db, int &mode);
+
     static int SetUserVer(const OpenDbProperties &properties, int version);
 
     static int SetUserVer(sqlite3 *db, int version);
