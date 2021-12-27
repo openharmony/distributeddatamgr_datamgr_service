@@ -509,6 +509,21 @@ DataQuery& DataQuery::KeyPrefix(const std::string &prefix)
     return *this;
 }
 
+DataQuery& DataQuery::DeviceId(const std::string &deviceId)
+{
+    std::string device = deviceId;
+    if (ValidateField(device)) {
+        std::string start;
+        start.append(SPACE);
+        start.append(DEVICE_ID);
+        start.append(SPACE);
+        EscapeSpace(device);
+        start.append(device);
+        str_ = start + str_; // start with diveceId
+    }
+    return *this;
+}
+
 DataQuery& DataQuery::SetSuggestIndex(const std::string &index)
 {
     std::string suggestIndex = index;

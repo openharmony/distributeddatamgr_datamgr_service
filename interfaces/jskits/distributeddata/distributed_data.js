@@ -2,6 +2,9 @@ const distributedDataSo = requireInternal('data.distributedData');
 
 export default {
     createKVManager: distributedDataSo.createKVManager,
+    Query: distributedDataSo.Query,
+    FieldNode: distributedDataSo.FieldNode,
+    Schema: distributedDataSo.Schema,
     UserType: {
         SAME_USER_ID: 0,
     },
