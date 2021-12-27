@@ -46,17 +46,6 @@ int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::
         LOGE("[CreateDistributedTable] analysis table schema failed");
         return errCode;
     }
-
-    // TODO: check if compatible upgrade or not
-
-    // TODO: add not permit sync flag if not compatible upgrade
-
-    // TODO: add analysed table to schema.
-
-    // TODO: reset permit sync flag
-
-    // TODO: upgrade device table
-
     // create log table
     errCode = SQLiteUtils::CreateRelationalLogTable(dbHandle_, tableName);
     if (errCode != E_OK) {
@@ -109,7 +98,7 @@ int SQLiteSingleVerRelationalStorageExecutor::Rollback()
 
 int SQLiteSingleVerRelationalStorageExecutor::SetTableInfo(QueryObject query)
 {
-    // TODO: Get table info from schema
+
     int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, query.GetTableName(), table_);
     if (errCode != E_OK) {
         LOGE("[CreateDistributedTable] analysis table schema failed");

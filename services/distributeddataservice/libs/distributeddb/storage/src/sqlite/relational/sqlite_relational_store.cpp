@@ -80,7 +80,6 @@ int SQLiteRelationalStore::InitStorageEngine(const RelationalDBProperties &kvDBP
 
 void SQLiteRelationalStore::ReleaseResources()
 {
-    // TODO: Lock
     if (sqliteStorageEngine_ != nullptr) {
         sqliteStorageEngine_->ClearEnginePasswd();
         (void)StorageEngineManager::ReleaseStorageEngine(sqliteStorageEngine_);
@@ -144,28 +143,12 @@ int SQLiteRelationalStore::SaveSchemaToMeta()
 
 int SQLiteRelationalStore::SaveLogTableVersionToMeta()
 {
-    // TODO: save log table version into meta data
     LOGD("save log table version to meta table, key: %s, val: %s", LOG_TABLE_VERSION_KEY, LOG_TABLE_VERSION_1);
     return E_OK;
 }
 
 int SQLiteRelationalStore::CleanDistributedDeviceTable()
 {
-    // TODO: clean the device table which is no longer in schema
-    std::lock_guard<std::mutex> lock(schemaMutex_);
-    RelationalSchemaObject schema = properties_.GetSchema();
-    for (const auto &table : schema.GetTables()) {
-        std::string tableName = table.first;
-        LOGD("Get schema %s.", tableName.c_str());
-    }
-
-    int errCode = E_OK;
-    auto *handle = GetHandle(true, errCode);
-    if (handle == nullptr) {
-        return errCode;
-    }
-    // TODO: Get device table names, and clean
-    ReleaseHandle(handle);
     return E_OK;
 }
 
@@ -193,7 +176,7 @@ int SQLiteRelationalStore::Open(const RelationalDBProperties &properties)
 
         storageEngine_ = new(std::nothrow) RelationalSyncAbleStorage(sqliteStorageEngine_);
         if (storageEngine_ == nullptr) {
-            LOGE("[RelationalStore][Open] Create syncable storage failed"); // TODO:
+            LOGE("[RelationalStore][Open] Create syncable storage failed");
             errCode = -E_OUT_OF_MEMORY;
             break;
         }

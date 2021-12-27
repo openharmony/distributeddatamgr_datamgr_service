@@ -179,7 +179,6 @@ int SQLiteRelationalStoreConnection::SyncToDevice(SyncInfo &info)
         syncParam.relationOnComplete = info.onComplete;
         syncParam.syncQuery = QuerySyncObject(info.query);
         syncParam.onFinalize =  [this]() { DecObjRef(this); };
-        // TODO: check if table permit sync or not
 
         int errCode = store->Sync(syncParam);
         if (errCode != E_OK) {

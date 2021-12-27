@@ -296,7 +296,6 @@ JsonObject TableInfo::ToJsonObject() const
     }
     for (const auto& it : uniqueDefines_) {
         jsonField.stringValue = VectorJoin(it, ',');
-        // TODO: add unique to tableJson
     }
     return tableJson;
 }
@@ -646,7 +645,7 @@ int RelationalSchemaObject::ParseCheckTableFieldInfo(const JsonObject &inJsonObj
     } else if (errCode != -E_NOT_FOUND) {
         return errCode;
     }
-    // TODO: need cid or not?
+
     return E_OK;
 }
 

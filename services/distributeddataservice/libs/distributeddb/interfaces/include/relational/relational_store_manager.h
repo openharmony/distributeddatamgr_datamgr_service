@@ -39,9 +39,9 @@ public:
     DB_API DBStatus OpenStore(const std::string &path, const std::string &storeId,
         const RelationalStoreDelegate::Option &option, RelationalStoreDelegate *&delegate);
 
-    DB_API DBStatus CloseStore(RelationalStoreDelegate *store); // TODO: move interface to delegate
+    DB_API DBStatus CloseStore(RelationalStoreDelegate *store);
 
-    DB_API DBStatus DeleteStore(const std::string &path); // TODO: remove interface
+    DB_API DBStatus DeleteStore(const std::string &path);
 
 private:
     void InitStoreProp(const RelationalStoreDelegate::Option &option, const std::string &storePath,
