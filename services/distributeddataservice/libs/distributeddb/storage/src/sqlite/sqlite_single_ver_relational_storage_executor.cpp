@@ -30,7 +30,7 @@ int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::
     }
 
     int historyDataCnt = 0;
-    int errCode = SQLiteUtils::GetTableCount(dbHandle_, tableName, historyDataCnt);
+    int errCode = SQLiteUtils::GetTableRecordCount(dbHandle_, tableName, historyDataCnt);
     if (errCode != E_OK) {
         LOGE("[CreateDistributedTable] Get the number of table [%s] rows failed. %d", tableName.c_str(), errCode);
         return errCode;

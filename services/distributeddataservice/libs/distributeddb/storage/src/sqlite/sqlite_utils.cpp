@@ -1975,7 +1975,7 @@ int SQLiteUtils::ExpandedSql(sqlite3_stmt *stmt, std::string &basicString)
     return E_OK;
 }
 
-int SQLiteUtils::GetTableCount(sqlite3 *db, const std::string &tableName, int &count)
+int SQLiteUtils::GetTableRecordCount(sqlite3 *db, const std::string &tableName, int &count)
 {
     if (db == nullptr) {
         return -E_INVALID_ARGS;
