@@ -93,10 +93,7 @@ int SyncStateMachine::TimeoutCallback(TimerId timerId)
     }
     retryTime++;
     syncContext_->SetRetryTime(retryTime);
-    // when version is high than 102, the sequenceid will be managed by slide windows sender.
-    if (syncContext_->GetRemoteSoftwareVersion() < SOFTWARE_VERSION_RELEASE_3_0) {
-        syncContext_->IncSequenceId();
-    }
+    // the sequenceid will be managed by dataSync slide windows.
     syncContext_->SetRetryStatus(SyncTaskContext::NEED_RETRY);
     int timeoutTime = syncContext_->GetSyncRetryTimeout(retryTime);
     syncContext_->ModifyTimer(timeoutTime);
@@ -125,12 +122,6 @@ void SyncStateMachine::Abort()
 
 int SyncStateMachine::SwitchMachineState(uint8_t event)
 {
-    if (syncContext_->GetRemoteSoftwareVersion() == SOFTWARE_VERSION_EARLIEST) {
-        currentSyncProctolVersion_ = SINGLE_VER_SYNC_PROCTOL_V2; // ver 101 102 use same table
-    } else if (syncContext_->GetRemoteSoftwareVersion() > SOFTWARE_VERSION_EARLIEST) {
-        currentSyncProctolVersion_ = syncContext_->GetRemoteSoftwareVersion();
-    }
-
     const std::vector<StateSwitchTable> &tables = GetStateSwitchTables();
     auto tableIter = std::find_if(tables.begin(), tables.end(),
         [this](const StateSwitchTable &table) {

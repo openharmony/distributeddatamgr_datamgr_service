@@ -109,8 +109,8 @@ void SyncTaskContext::SetOperationStatus(int status)
         LOGD("[SyncTaskContext][SetStatus] syncOperation is null");
         return;
     }
-
     int finalStatus = status;
+
     int operationStatus = syncOperation_->GetStatus(deviceId_);
     if (status == SyncOperation::OP_SEND_FINISHED && operationStatus == SyncOperation::OP_RECV_FINISHED) {
         if (GetTaskErrCode() == -E_EKEYREVOKED) {

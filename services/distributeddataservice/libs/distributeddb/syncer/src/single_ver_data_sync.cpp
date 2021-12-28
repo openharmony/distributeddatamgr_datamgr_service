@@ -74,7 +74,150 @@ int SingleVerDataSync::Initialize(ISyncInterface *inStorage, ICommunicator *inCo
     label.resize(3); // only show 3 Bytes enough
     label_ = DBCommon::VectorToHexString(label);
     deviceId_ = deviceId;
+    msgSchedule_.Initialize(label_, deviceId_);
     return E_OK;
+}
+
+int SingleVerDataSync::SyncStart(int mode, SingleVerSyncTaskContext *context)
+{
+    std::lock_guard<std::mutex> lock(lock_);
+    if (sessionId_ != 0) { // auto sync timeout resend
+        return ReSendData(context);
+    }
+    ResetSyncStatus(mode, context);
+    LOGI("[DataSync] SendStart,mode=%d,label=%s,device=%s", mode_, label_.c_str(), STR_MASK(deviceId_));
+    int tmpMode = SyncOperation::TransferSyncMode(mode);
+    int errCode = E_OK;
+    if (tmpMode == SyncModeType::PUSH) {
+        errCode = PushStart(context);
+    } else if (tmpMode == SyncModeType::PUSH_AND_PULL) {
+        errCode = PushPullStart(context);
+    } else if (tmpMode == SyncModeType::PULL) {
+        errCode = PullRequestStart(context);
+    } else {
+        errCode = PullResponseStart(context);
+    }
+    if (context->IsSkipTimeoutError(errCode)) {
+        // if E_TIMEOUT occurred, means send message pressure is high, put into resend map and wait for resend.
+        // just return to avoid higher pressure for send.
+        return E_OK;
+    }
+    if (errCode != E_OK) {
+        LOGE("[DataSync] SendStart errCode=%d", errCode);
+        return errCode;
+    }
+    if (tmpMode == SyncModeType::PUSH_AND_PULL && context->GetTaskErrCode() == -E_EKEYREVOKED) {
+        LOGE("wait for recv finished for push and pull mode");
+        return -E_EKEYREVOKED;
+    }
+    return InnerSyncStart(context);
+}
+
+int SingleVerDataSync::InnerSyncStart(SingleVerSyncTaskContext *context)
+{
+    while (true) {
+        if (windowSize_ <= 0 || isAllDataHasSent_) {
+            LOGD("[DataSync] InnerDataSync winSize=%d,isAllSent=%d,label=%s,device=%s", windowSize_, isAllDataHasSent_,
+                label_.c_str(), STR_MASK(deviceId_));
+            return E_OK;
+        }
+        int mode = SyncOperation::TransferSyncMode(mode_);
+        if (mode == SyncModeType::PULL) {
+            LOGE("[DataSync] unexpected error");
+            return -E_INVALID_ARGS;
+        }
+        int errCode;
+        context->IncSequenceId();
+        if (mode == SyncModeType::PUSH || mode == SyncModeType::PUSH_AND_PULL) {
+            errCode = PushStart(context);
+        } else {
+            errCode = PullResponseStart(context);
+        }
+        if ((mode == SyncModeType::PUSH_AND_PULL) && errCode == -E_EKEYREVOKED) {
+            LOGE("[DataSync] wait for recv finished,label=%s,device=%s", label_.c_str(), STR_MASK(deviceId_));
+            isAllDataHasSent_ = true;
+            return -E_EKEYREVOKED;
+        }
+        if (context->IsSkipTimeoutError(errCode)) {
+            // if E_TIMEOUT occurred, means send message pressure is high, put into resend map and wait for resend.
+            // just return to avoid higher pressure for send.
+            return E_OK;
+        }
+        if (errCode != E_OK) {
+            LOGE("[DataSync] InnerSend errCode=%d", errCode);
+            return errCode;
+        }
+    }
+    return E_OK;
+}
+
+void SingleVerDataSync::InnerClearSyncStatus()
+{
+    sessionId_ = 0;
+    reSendMap_.clear();
+    windowSize_ = 0;
+    maxSequenceIdHasSent_ = 0;
+    isAllDataHasSent_ = false;
+}
+
+int SingleVerDataSync::TryContinueSync(SingleVerSyncTaskContext *context, const Message *message)
+{
+    if (message == nullptr) {
+        LOGE("[DataSync] AckRecv message nullptr");
+        return -E_INVALID_ARGS;
+    }
+    const DataAckPacket *packet = message->GetObject<DataAckPacket>();
+    if (packet == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    uint64_t packetId = packet->GetPacketId(); // above 102 version data request reserve[0] store packetId value
+    uint32_t sessionId = message->GetSessionId();
+    uint32_t sequenceId = message->GetSequenceId();
+
+    std::lock_guard<std::mutex> lock(lock_);
+    LOGI("[DataSync] recv ack seqId=%d,packetId=%llu,winSize=%d,label=%s,dev=%s", sequenceId, packetId, windowSize_,
+        label_.c_str(), STR_MASK(deviceId_));
+    if (sessionId != sessionId_) {
+        LOGI("[DataSync] ignore ack,sessionId is different");
+        return E_OK;
+    }
+    if (reSendMap_.count(sequenceId) != 0) {
+        reSendMap_.erase(sequenceId);
+        windowSize_++;
+    } else {
+        LOGI("[DataSync] ack seqId not in map");
+        return E_OK;
+    }
+    if (!isAllDataHasSent_) {
+        return InnerSyncStart(context);
+    } else if (reSendMap_.size() == 0) {
+        context->SetOperationStatus(SyncOperation::OP_SEND_FINISHED);
+        InnerClearSyncStatus();
+        return -E_FINISHED;
+    }
+    return E_OK;
+}
+
+void SingleVerDataSync::ClearSyncStatus()
+{
+    std::lock_guard<std::mutex> lock(lock_);
+    InnerClearSyncStatus();
+}
+
+int SingleVerDataSync::ReSendData(SingleVerSyncTaskContext *context)
+{
+    if (reSendMap_.empty()) {
+        LOGI("[DataSync] ReSend map empty");
+        return -E_INTERNAL_ERROR;
+    }
+    uint32_t sequenceId = reSendMap_.begin()->first;
+    ReSendInfo reSendInfo = reSendMap_.begin()->second;
+    LOGI("[DataSync] ReSend mode=%d,start=%llu,end=%llu,delStart=%llu,delEnd=%llu,seqId=%d,packetId=%llu,windowsize=%d,"
+        "label=%s,deviceId=%s", mode_, reSendInfo.start, reSendInfo.end, reSendInfo.deleteBeginTime,
+        reSendInfo.deleteEndTime, sequenceId, reSendInfo.packetId, windowSize_, label_.c_str(), STR_MASK(deviceId_));
+    DataSyncReSendInfo dataReSendInfo = {sessionId_, sequenceId, reSendInfo.start, reSendInfo.end,
+        reSendInfo.deleteBeginTime, reSendInfo.deleteEndTime, reSendInfo.packetId};
+    return ReSend(context, dataReSendInfo);
 }
 
 std::string SingleVerDataSync::GetLocalDeviceName()
@@ -250,6 +393,26 @@ int SingleVerDataSync::SaveData(const SingleVerSyncTaskContext *context, const s
         LOGE("[DataSync][SaveData] save sync data failed,errCode=%d", errCode);
     }
     return errCode;
+}
+
+void SingleVerDataSync::ResetSyncStatus(int inMode, SingleVerSyncTaskContext *context)
+{
+    mode_ = inMode;
+    maxSequenceIdHasSent_ = 0;
+    isAllDataHasSent_ = false;
+    context->ReSetSequenceId();
+    reSendMap_.clear();
+    if (context->GetRemoteSoftwareVersion() < SOFTWARE_VERSION_RELEASE_3_0) {
+        windowSize_ = LOW_VERSION_WINDOW_SIZE;
+    } else {
+        windowSize_ = HIGH_VERSION_WINDOW_SIZE;
+    }
+    int mode = SyncOperation::TransferSyncMode(inMode);
+    if (mode == SyncModeType::PUSH || mode == SyncModeType::PUSH_AND_PULL || mode == SyncModeType::PULL) {
+        sessionId_ = context->GetRequestSessionId();
+    } else {
+        sessionId_ = context->GetResponseSessionId();
+    }
 }
 
 TimeStamp SingleVerDataSync::GetMaxSendDataTime(const std::vector<SendDataItem> &inData)
@@ -574,6 +737,38 @@ void SingleVerDataSync::TransSendDataItemToLocal(const SingleVerSyncTaskContext 
     }
 }
 
+void SingleVerDataSync::SetSessionEndTimeStamp(TimeStamp end)
+{
+    sessionEndTimeStamp_ = end;
+}
+
+TimeStamp SingleVerDataSync::GetSessionEndTimeStamp() const
+{
+    return sessionEndTimeStamp_;
+}
+
+void SingleVerDataSync::UpdateSendInfo(SyncTimeRange dataTimeRange, SingleVerSyncTaskContext *context)
+{
+    ReSendInfo reSendInfo;
+    reSendInfo.start = dataTimeRange.beginTime;
+    reSendInfo.end = dataTimeRange.endTime;
+    reSendInfo.deleteBeginTime = dataTimeRange.deleteBeginTime;
+    reSendInfo.deleteEndTime = dataTimeRange.deleteEndTime;
+    reSendInfo.packetId = context->GetPacketId();
+    maxSequenceIdHasSent_++;
+    reSendMap_[maxSequenceIdHasSent_] = reSendInfo;
+    windowSize_--;
+    ContinueToken token;
+    context->GetContinueToken(token);
+    if (token == nullptr) {
+        isAllDataHasSent_ = true;
+    }
+    LOGI("[DataSync] mode=%d,start=%llu,end=%llu,deleteStart=%llu,deleteEnd=%llu,seqId=%d,packetId=%llu,window_size=%d,"
+        "isAllSend=%d,label=%s,device=%s", mode_, reSendInfo.start, reSendInfo.end, reSendInfo.deleteBeginTime,
+        reSendInfo.deleteEndTime, maxSequenceIdHasSent_, reSendInfo.packetId, windowSize_,isAllDataHasSent_,
+        label_.c_str(), STR_MASK(deviceId_));
+}
+
 void SingleVerDataSync::FillDataRequestPacket(DataRequestPacket *packet, SingleVerSyncTaskContext *context,
     SyncEntry &syncData, int sendCode, int mode)
 {
@@ -654,15 +849,17 @@ int SingleVerDataSync::RequestStart(SingleVerSyncTaskContext *context, int mode)
     SyncType curType = (context->IsQuerySync()) ? SyncType::QUERY_SYNC_TYPE : SyncType::MANUAL_FULL_SYNC_TYPE;
     UpdateWaterMark isUpdateWaterMark;
     SyncTimeRange dataTime = GetSyncDataTimeRange(curType, context, syncData.entries, isUpdateWaterMark);
-    context->SetSequenceStartAndEndTimeStamp(dataTime);
     if (errCode == E_OK) {
-        context->SetSessionEndTimeStamp(std::max(dataTime.endTime, dataTime.deleteEndTime));
+        SetSessionEndTimeStamp(std::max(dataTime.endTime, dataTime.deleteEndTime));
     }
     FillDataRequestPacket(packet, context, syncData, errCode, mode);
     errCode = SendDataPacket(curType, packet, context);
     PerformanceAnalysis *performance = PerformanceAnalysis::GetInstance();
     if (performance != nullptr) {
         performance->StepTimeRecordEnd(PT_TEST_RECORDS::RECORD_MACHINE_START_TO_PUSH_SEND);
+    }
+    if (errCode == E_OK || errCode == -E_TIMEOUT) {
+        UpdateSendInfo(dataTime, context);
     }
     if (errCode == E_OK) {
         if (curType == SyncType::QUERY_SYNC_TYPE && (context->GetQuery().HasLimit() ||
@@ -723,7 +920,6 @@ int SingleVerDataSync::PullRequestStart(SingleVerSyncTaskContext *context)
     uint32_t version = std::min(context->GetRemoteSoftwareVersion(), SOFTWARE_VERSION_CURRENT);
     WaterMark endMark = context->GetEndMark();
     SyncTimeRange dataTime = {localMark, deleteMark, localMark, deleteMark};
-    context->SetSequenceStartAndEndTimeStamp(dataTime);
 
     packet->SetBasicInfo(E_OK, version, context->GetMode());
     packet->SetWaterMark(localMark, peerMark, deleteMark);
@@ -736,6 +932,7 @@ int SingleVerDataSync::PullRequestStart(SingleVerSyncTaskContext *context)
 
     LOGD("[DataSync][Pull] curType=%d,local=%llu,del=%llu,end=%llu,peer=%llu,label=%s,dev=%s", syncType, localMark,
         deleteMark, peerMark, endMark, label_.c_str(), STR_MASK(GetDeviceId()));
+    UpdateSendInfo(dataTime, context);
     return SendDataPacket(syncType, packet, context);
 }
 
@@ -763,13 +960,14 @@ int SingleVerDataSync::PullResponseStart(SingleVerSyncTaskContext *context)
     }
     SyncType curType = (context->IsQuerySync()) ? SyncType::QUERY_SYNC_TYPE : SyncType::MANUAL_FULL_SYNC_TYPE;
     UpdateWaterMark isUpdateWaterMark;
-    SyncTimeRange dataTime =
-        GetSyncDataTimeRange(curType, context, syncData.entries, isUpdateWaterMark);
-    context->SetSequenceStartAndEndTimeStamp(dataTime);
+    SyncTimeRange dataTime = GetSyncDataTimeRange(curType, context, syncData.entries, isUpdateWaterMark);
     if (errCode == E_OK) {
-        context->SetSessionEndTimeStamp(std::max(dataTime.endTime, dataTime.deleteEndTime));
+        SetSessionEndTimeStamp(std::max(dataTime.endTime, dataTime.deleteEndTime));
     }
     errCode = SendPullResponseDataPkt(ackCode, syncData, context);
+    if (errCode == E_OK || errCode == -E_TIMEOUT) {
+        UpdateSendInfo(dataTime, context);
+    }
     if (errCode == E_OK) {
         if (curType == SyncType::QUERY_SYNC_TYPE && (context->GetQuery().HasLimit() ||
             context->GetQuery().HasOrderBy())) {
@@ -1016,6 +1214,11 @@ int SingleVerDataSync::SendPullResponseDataPkt(int ackCode, SyncEntry &syncOutDa
     return errCode;
 }
 
+void SingleVerDataSync::SendFinishedDataAck(SingleVerSyncTaskContext *context, const Message *message)
+{
+    SendDataAck(context, message, E_OK, 0);
+}
+
 int SingleVerDataSync::SendDataAck(SingleVerSyncTaskContext *context, const Message *message, int32_t recvCode,
     WaterMark maxSendDataTime)
 {
@@ -1048,6 +1251,32 @@ int SingleVerDataSync::SendDataAck(SingleVerSyncTaskContext *context, const Mess
     return errCode;
 }
 
+bool SingleVerDataSync::AckPacketIdCheck(const Message *message)
+{
+    if (message == nullptr) {
+        LOGE("[DataSync] AckRecv message nullptr");
+        return false;
+    }
+    if (message->GetMessageType() == TYPE_NOTIFY || message->IsFeedbackError()) {
+        return false;
+    }
+    const DataAckPacket *packet = message->GetObject<DataAckPacket>();
+    if (packet == nullptr) {
+        return false;
+    }
+    uint64_t packetId = packet->GetPacketId(); // above 102 version data request reserve[0] store packetId value
+    std::lock_guard<std::mutex> lock(lock_);
+    uint32_t sequenceId = message->GetSequenceId();
+    if (reSendMap_.count(sequenceId) != 0) {
+        uint64_t originalPacketId = reSendMap_[sequenceId].packetId;
+        if (DataAckPacket::IsPacketIdValid(packetId) && packetId != originalPacketId) {
+            LOGE("[DataSync] packetId[%llu] is not match with original[%llu]", packetId, originalPacketId);
+            return false;
+        }
+    }
+    return true;
+}
+
 int SingleVerDataSync::AckRecv(SingleVerSyncTaskContext *context, const Message *message)
 {
     int errCode = AckMsgErrnoCheck(context, message);
@@ -1067,8 +1296,7 @@ int SingleVerDataSync::AckRecv(SingleVerSyncTaskContext *context, const Message 
     }
 
     if (recvCode == -E_NEED_ABILITY_SYNC || recvCode == -E_NOT_PERMIT) {
-        // after set sliding window sender err, we can ReleaseContinueToken, avoid crash
-        context->SetSlidingWindowSenderErr(true);
+        // we should ReleaseContinueToken, avoid crash
         LOGI("[DataSync][AckRecv] Data sync abort,recvCode =%d,label =%s,dev=%s", recvCode, label_.c_str(),
             STR_MASK(GetDeviceId()));
         context->ReleaseContinueToken();
@@ -1158,9 +1386,6 @@ void SingleVerDataSync::GetPullEndWatermark(const SingleVerSyncTaskContext *cont
 int SingleVerDataSync::DealWaterMarkException(SingleVerSyncTaskContext *context, WaterMark ackWaterMark,
     const std::vector<uint64_t> &reserved)
 {
-    // after set sliding window sender err, we can SaveLocalWaterMark, avoid sliding window sender re save a wrong
-    // waterMark again.
-    context->SetSlidingWindowSenderErr(true);
     WaterMark deletedWaterMark = 0;
     SyncType curType = (context->IsQuerySync()) ? SyncType::QUERY_SYNC_TYPE : SyncType::MANUAL_FULL_SYNC_TYPE;
     if (curType == SyncType::QUERY_SYNC_TYPE) {
@@ -1660,12 +1885,12 @@ void SingleVerDataSync::FillRequestReSendPacket(const SingleVerSyncTaskContext *
     // transer reSend mode, RESPONSE_PULL transfer to push or query push
     // PUSH_AND_PULL mode which sequenceId lager than first transfer to push or query push
     int reSendMode = GetReSendMode(context->GetMode(), reSendInfo.sequenceId, curType);
-    if (context->GetSessionEndTimeStamp() == std::max(reSendInfo.end, reSendInfo.deleteDataEnd) ||
+    if (GetSessionEndTimeStamp() == std::max(reSendInfo.end, reSendInfo.deleteDataEnd) ||
         SyncOperation::TransferSyncMode(context->GetMode()) == SyncModeType::PULL) {
         LOGI("[DataSync][ReSend] set lastid,label=%s,dev=%s", label_.c_str(), STR_MASK(GetDeviceId()));
         packet->SetLastSequence();
     }
-    if (sendCode == E_OK && context->GetSessionEndTimeStamp() == std::max(reSendInfo.end, reSendInfo.deleteDataEnd) &&
+    if (sendCode == E_OK && GetSessionEndTimeStamp() == std::max(reSendInfo.end, reSendInfo.deleteDataEnd) &&
         context->GetMode() == SyncModeType::RESPONSE_PULL) {
         sendCode = SEND_FINISHED;
     }
@@ -2147,5 +2372,31 @@ std::string SingleVerDataSync::GetDeleteSyncId(const SingleVerSyncTaskContext *c
     }
 #endif
     return id;
+}
+
+void SingleVerDataSync::PutDataMsg(Message *message)
+{
+    return msgSchedule_.PutMsg(message);
+}
+
+Message *SingleVerDataSync::MoveNextDataMsg(SingleVerSyncTaskContext *context, bool &isNeedHandle,
+    bool &isNeedContinue)
+{
+    return msgSchedule_.MoveNextMsg(context, isNeedHandle, isNeedContinue);
+}
+
+bool SingleVerDataSync::IsNeedReloadQueue()
+{
+    return msgSchedule_.IsNeedReloadQueue();
+}
+
+void SingleVerDataSync::ScheduleInfoHandle(bool isNeedHandleStatus, bool isNeedClearMap, const Message *message)
+{
+    msgSchedule_.ScheduleInfoHandle(isNeedHandleStatus, isNeedClearMap, message);
+}
+
+void SingleVerDataSync::ClearDataMsg()
+{
+    msgSchedule_.ClearMsg();
 }
 } // namespace DistributedDB

@@ -20,6 +20,7 @@
 #include "isync_interface.h"
 #include "meta_data.h"
 #include "parcel.h"
+#include "single_ver_data_message_schedule.h"
 #include "single_ver_data_packet.h"
 #include "single_ver_kvdb_sync_interface.h"
 #include "single_ver_sync_task_context.h"
@@ -29,6 +30,15 @@
 
 namespace DistributedDB {
 using SendDataItem = SingleVerKvEntry *;
+struct ReSendInfo {
+    TimeStamp start = 0;
+    TimeStamp end = 0;
+    TimeStamp deleteBeginTime = 0;
+    TimeStamp deleteEndTime = 0;
+    // packetId is used for matched ackpacket packetId which saved in ackPacket.reserve
+    // if equaled, means need to handle the ack, or drop. it is always increased
+    uint64_t packetId = 0;
+};
 
 struct DataSyncReSendInfo {
     uint32_t sessionId = 0;
@@ -54,6 +64,12 @@ public:
 
     int Initialize(ISyncInterface *inStorage, ICommunicator *inCommunicateHandle,
         std::shared_ptr<Metadata> &inMetadata, const std::string &deviceId);
+    
+    int SyncStart(int mode, SingleVerSyncTaskContext *context);
+
+    int TryContinueSync(SingleVerSyncTaskContext *context, const Message *message);
+
+    void ClearSyncStatus();
 
     int PushStart(SingleVerSyncTaskContext *context);
 
@@ -65,6 +81,8 @@ public:
 
     int DataRequestRecv(SingleVerSyncTaskContext *context, const Message *message, WaterMark &pullEndWatermark);
 
+    bool AckPacketIdCheck(const Message *message);
+
     int AckRecv(SingleVerSyncTaskContext *context, const Message *message);
 
     void SendSaveDataNotifyPacket(SingleVerSyncTaskContext *context, uint32_t pktVersion, uint32_t sessionId,
@@ -72,8 +90,6 @@ public:
 
     virtual int SendDataAck(SingleVerSyncTaskContext *context, const Message *message, int32_t recvCode,
         WaterMark maxSendDataTime);
-
-    int32_t ReSend(SingleVerSyncTaskContext *context, DataSyncReSendInfo reSendInfo);
 
     int CheckPermitSendData(int inMode, SingleVerSyncTaskContext *context);
 
@@ -94,6 +110,18 @@ public:
     void ControlAckErrorHandle(const SingleVerSyncTaskContext *context,
         const std::shared_ptr<SubscribeManager> &subManager) const;
 
+    void PutDataMsg(Message *message);
+
+    Message *MoveNextDataMsg(SingleVerSyncTaskContext *context, bool &isNeedHandle, bool &isNeedContinue);
+
+    bool IsNeedReloadQueue();
+
+    void SendFinishedDataAck(SingleVerSyncTaskContext *context, const Message *message);
+
+    void ScheduleInfoHandle(bool isNeedHandleStatus, bool isNeedClearMap, const Message *message);
+
+    void ClearDataMsg();
+
 protected:
     static const int SEND_FINISHED = 0xff;
     static const int LOCAL_WATER_MARK_NOT_INIT = 0xaa;
@@ -101,9 +129,23 @@ protected:
     static const int WATER_MARK_INVALID = 0xbb;
     static const int MTU_SIZE = 28311552; // 27MB
 
+    void ResetSyncStatus(int inMode, SingleVerSyncTaskContext *context);
+
+    int InnerSyncStart(SingleVerSyncTaskContext *context);
+
+    void InnerClearSyncStatus();
+
+    int ReSendData(SingleVerSyncTaskContext *context);
+
+    int32_t ReSend(SingleVerSyncTaskContext *context, DataSyncReSendInfo reSendInfo);
+
     TimeStamp GetMaxSendDataTime(const std::vector<SendDataItem> &inData);
 
     TimeStamp GetMinSendDataTime(const std::vector<SendDataItem> &inData, WaterMark localMark);
+
+    void SetSessionEndTimeStamp(TimeStamp end);
+
+    TimeStamp GetSessionEndTimeStamp() const;
 
     void FillDataRequestPacket(DataRequestPacket *packet, SingleVerSyncTaskContext *context,
         SyncEntry &syncData, int sendCode, int mode);
@@ -220,6 +262,8 @@ protected:
 
     int GetReSendMode(int mode, uint32_t sequenceId, SyncType syncType);
 
+    void UpdateSendInfo(SyncTimeRange dataTimeRange, SingleVerSyncTaskContext *context);
+
     void FillRequestReSendPacket(const SingleVerSyncTaskContext *context, DataRequestPacket *packet,
         DataSyncReSendInfo reSendInfo, SyncEntry &syncData, int sendCode);
 
@@ -260,8 +304,25 @@ protected:
     std::shared_ptr<Metadata> metadata_;
     std::string label_;
     std::string deviceId_;
+
+    SingleVerDataMessageSchedule msgSchedule_;
+
+    static const int HIGH_VERSION_WINDOW_SIZE = 3;
+    static const int LOW_VERSION_WINDOW_SIZE = 1;
+    // below param is about sliding sync info, is different from every sync task
+    std::mutex lock_;
+    int mode_ = 0; // sync mode, may diff from context mode if trigger pull_response while push finish
+    uint32_t sessionId_ = 0;
+    // sequenceId as key
+    std::map<uint32_t, ReSendInfo> reSendMap_;
+    // remaining sending window
+    int32_t windowSize_ = 0;
+    // max sequenceId has been sent
+    uint32_t maxSequenceIdHasSent_ = 0;
+    bool isAllDataHasSent_ = false;
+    // in a sync session, the last data timeStamp
+    TimeStamp sessionEndTimeStamp_ = 0;
 };
 }  // namespace DistributedDB
 
 #endif // SINGLE_VER_DATA_SYNC_NEW_H
-

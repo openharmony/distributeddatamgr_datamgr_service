@@ -307,27 +307,6 @@ void SingleVerSyncTaskContext::StopFeedDogForSync(SyncDirectionFlag flag)
     stateMachine_->StopFeedDogForSync(flag);
 }
 
-void SingleVerSyncTaskContext::SetSequenceStartAndEndTimeStamp(SyncTimeRange dataTimeRange)
-{
-    dataTimeRange_ = dataTimeRange;
-}
-
-SyncTimeRange SingleVerSyncTaskContext::GetDataTimeRange() const
-{
-    return dataTimeRange_;
-}
-
-
-void SingleVerSyncTaskContext::SetSessionEndTimeStamp(TimeStamp end)
-{
-    sessionEndTimeStamp_ = end;
-}
-
-TimeStamp SingleVerSyncTaskContext::GetSessionEndTimeStamp() const
-{
-    return sessionEndTimeStamp_;
-}
-
 int SingleVerSyncTaskContext::HandleDataRequestRecv(const Message *msg)
 {
     return static_cast<SingleVerSyncStateMachine *>(stateMachine_)->HandleDataRequestRecv(msg);
@@ -341,11 +320,6 @@ bool SingleVerSyncTaskContext::IsReceiveWaterMarkErr() const
 void SingleVerSyncTaskContext::SetReceiveWaterMarkErr(bool isErr)
 {
     isReceiveWaterMarkErr_ = isErr;
-}
-
-void SingleVerSyncTaskContext::SetSlidingWindowSenderErr(bool isErr)
-{
-    static_cast<SingleVerSyncStateMachine *>(stateMachine_)->SetSlidingWindowSenderErr(isErr);
 }
 
 void SingleVerSyncTaskContext::SetRemoteSeccurityOption(SecurityOption secOption)
@@ -546,7 +520,7 @@ bool SingleVerSyncTaskContext::IsCurrentSyncTaskCanBeSkipped() const
         return false;
     }
     if (localWaterMark > maxTimeStampInDb) {
-        LOGD("skip current push task, deviceId_ = %s, localWaterMark = %llu, maxTimeStampInDb = %llu",
+        LOGI("skip current push task, deviceId_ = %s, localWaterMark = %llu, maxTimeStampInDb = %llu",
             STR_MASK(deviceId_), localWaterMark, maxTimeStampInDb);
         return true;
     }

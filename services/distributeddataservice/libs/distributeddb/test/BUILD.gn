@@ -216,9 +216,9 @@ ohos_source_set("src_file") {
     "../syncer/src/multi_ver_sync_task_context.cpp",
     "../syncer/src/multi_ver_syncer.cpp",
     "../syncer/src/query_sync_water_mark_helper.cpp",
+    "../syncer/src/single_ver_data_message_schedule.cpp"
     "../syncer/src/single_ver_data_packet.cpp",
     "../syncer/src/single_ver_data_sync.cpp",
-    "../syncer/src/single_ver_data_sync_with_sliding_window.cpp",
     "../syncer/src/single_ver_kv_syncer.cpp",
     "../syncer/src/single_ver_relational_syncer.cpp",
     "../syncer/src/single_ver_serialize_manager.cpp",
@@ -227,8 +227,6 @@ ohos_source_set("src_file") {
     "../syncer/src/single_ver_sync_target.cpp",
     "../syncer/src/single_ver_sync_task_context.cpp",
     "../syncer/src/single_ver_syncer.cpp",
-    "../syncer/src/sliding_window_receiver.cpp",
-    "../syncer/src/sliding_window_sender.cpp",
     "../syncer/src/subscribe_manager.cpp",
     "../syncer/src/sync_engine.cpp",
     "../syncer/src/sync_operation.cpp",
@@ -386,8 +384,8 @@ distributeddb_unittest("DistributedDBSingleVerP2PSyncTest") {
       [ "unittest/common/syncer/distributeddb_single_ver_p2p_sync_test.cpp" ]
 }
 
-distributeddb_unittest("DistributedDBSyncModuleTest") {
-  sources = [ "unittest/common/syncer/distributeddb_sync_module_test.cpp" ]
+distributeddb_unittest("DistributedDBSingleVerMsgScheduleTest") {
+  sources = [ "unittest/common/syncer/distributeddb_single_ver_msg_schedule_test.cpp" ]
 }
 
 distributeddb_unittest("DistributedDBInterfacesNBDelegateTest") {
@@ -671,6 +669,7 @@ group("unittest") {
     ":DistributedDBSingleVerP2PSubscribeSyncTest",
     ":DistributedDBSingleVerP2PSyncCheckTest",
     ":DistributedDBSingleVerP2PSyncTest",
+    ":DistributedDBSingleVerMsgScheduleTest",
     ":DistributedDBSingleVersionResultSetTest",
     ":DistributedDBSqliteRegisterTest",
     ":DistributedDBStorageCommitStorageTest",
@@ -685,7 +684,6 @@ group("unittest") {
     ":DistributedDBStorageSingleVerUpgradeTest",
     ":DistributedDBStorageTransactionDataTest",
     ":DistributedDBStorageTransactionRecordTest",
-    ":DistributedDBSyncModuleTest",
     ":DistributedDBSyncerDeviceManagerTest",
     ":DistributedDBTimeSyncTest",
     ":RuntimeContextProcessSystemApiAdapterImplTest",

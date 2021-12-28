@@ -88,27 +88,13 @@ public:
     // stop timer to ResetWatchDog when sync data one (key,value) size bigger than mtu
     void StopFeedDogForSync(SyncDirectionFlag flag);
 
-    SyncTimeRange GetDataTimeRange() const;
-
     virtual int HandleDataRequestRecv(const Message *msg);
-
-    // if sended by sliding window, set the start and and timeStamp of data in a sequence
-    void SetSequenceStartAndEndTimeStamp(SyncTimeRange dataTimeRange);
-
-    // if sended by sliding window, set the last data timeStamp in a sync session
-    void SetSessionEndTimeStamp(TimeStamp end);
-
-    // if sended by sliding window, get the last data timeStamp in a sync session
-    TimeStamp GetSessionEndTimeStamp() const;
 
     // is receive warterMark err
     bool IsReceiveWaterMarkErr() const;
 
     // set receive warterMark err
     void SetReceiveWaterMarkErr(bool isErr);
-
-    // set sliding window sender err
-    void SetSlidingWindowSenderErr(bool isErr);
 
     void SetRemoteSeccurityOption(SecurityOption secOption);
 
@@ -172,11 +158,6 @@ private:
     bool isSendPermitChecked_ = false;
     SyncStrategy syncStrategy_;
     bool isSchemaSync_ = false;
-
-    // normal data or delete data start timestamp and end timestamp,recorded for slws resend.
-    SyncTimeRange dataTimeRange_;
-    // in a sync session, the last data timeStamp
-    TimeStamp sessionEndTimeStamp_ = 0;
 
     // is receive waterMark err, peerWaterMark bigger than remote localWaterMark
     bool isReceiveWaterMarkErr_ = false;

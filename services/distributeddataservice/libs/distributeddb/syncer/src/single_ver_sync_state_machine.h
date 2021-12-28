@@ -24,7 +24,6 @@
 #include "meta_data.h"
 #include "semaphore_utils.h"
 #include "single_ver_data_sync.h"
-#include "single_ver_data_sync_with_sliding_window.h"
 #include "single_ver_sync_task_context.h"
 #include "sync_state_machine.h"
 #include "sync_target.h"
@@ -38,16 +37,12 @@ namespace {
         IDLE = 0,
         TIME_SYNC,
         ABILITY_SYNC,
-        START_INITIACTIVE_DATA_SYNC, // used to do sync started by local device
-        START_PASSIVE_DATA_SYNC,  // used to do sync response remote device
-        INACTIVE_PUSH_REMAINDER_DATA, // push remainded data if initactive sync data more than on frame
-        PASSIVE_PUSH_REMAINDER_DATA, // push remainded data if passive sync data more than on frame
         WAIT_FOR_RECEIVE_DATA_FINISH, // all data send finished, wait for data revice if has pull request
         SYNC_TASK_FINISHED, // current sync task finihsed, try to schedule next sync task
         SYNC_TIME_OUT,
         INNER_ERR,
-        START_INITIACTIVE_SLIDING_DATA_SYNC, // used to do sync started by local device, use sliding window
-        START_PASSIVE_SLIDING_DATA_SYNC, // used to do pull response, use sliding window
+        START_INITIACTIVE_DATA_SYNC, // used to do sync started by local device, use sliding window
+        START_PASSIVE_DATA_SYNC, // used to do pull response, use sliding window
         SYNC_CONTROL_CMD // used to send control cmd.
     };
 
@@ -56,12 +51,10 @@ namespace {
         TIME_SYNC_FINISHED_EVENT,
         ABILITY_SYNC_FINISHED_EVENT,
         VERSION_NOT_SUPPOR_EVENT,
-        SWITCH_TO_PROCTOL_V1_EVENT,
         SEND_DATA_EVENT,
         SEND_FINISHED_EVENT,
         RECV_FINISHED_EVENT,
         NEED_ABILITY_SYNC_EVENT,
-        RESPONSE_PUSH_REMAINDER_EVENT,
         RESPONSE_TASK_FINISHED_EVENT,
         START_PULL_RESPONSE_EVENT,
         WAIT_ACK_EVENT,
@@ -93,8 +86,6 @@ public:
     void CommErrAbort() override;
 
     int HandleDataRequestRecv(const Message *inMsg);
-
-    void SetSlidingWindowSenderErr(bool isErr);
 
     bool IsNeedErrCodeHandle(uint32_t sessionId) const;
 
@@ -151,18 +142,6 @@ private:
     // Do AbilitySync, for first sync
     Event DoAbilitySync();
 
-    // Do data packet sync for initiactive sync operation, if need pull, there need send a pull request.
-    Event DoInitiactiveDataSync();
-
-    // Do data packet sync for response pull request.
-    Event DoPassiveDataSync();
-
-    // Push remainder data to remote
-    Event DoInitiactivePushRemainderData();
-
-    // Push remainder data to remote for response pull request
-    Event DoPassivePushRemainderData();
-
     // Waiting for pull data revice finish, if coming a pull request, should goto START_PASSIVE_DATA_SYNC state
     Event DoWaitForDataRecv() const;
 
@@ -193,13 +172,13 @@ private:
 
     int DataPktRecv(Message *inMsg);
 
+    void ScheduleMsgAndHandle(Message *inMsg);
+
     int ControlPktRecv(Message *inMsg);
 
     void NeedAbilitySyncHandle();
 
     int HandleDataAckRecv(const Message *inMsg);
-
-    int PreHandleAckRecv(const Message *inMsg);
 
     void HandleDataAckRecvWithSlidingWindow(int errCode, const Message *inMsg, bool ignoreInnerErr);
 
@@ -210,8 +189,6 @@ private:
     bool IsPacketValid(const Message *inMsg) const;
 
     void PreStartPullResponse();
-
-    bool IsRightDataResponsePkt(const Message *inMsg) const;
 
     bool CheckIsStartPullResponse() const;
 
@@ -245,7 +222,6 @@ private:
     std::unique_ptr<TimeSync> timeSync_;
     std::unique_ptr<AbilitySync> abilitySync_;
     std::shared_ptr<SingleVerDataSync> dataSync_;
-    std::unique_ptr<SingleVerDataSyncWithSlidingWindow> dataSyncWithSlidingWindow_;
     uint64_t currentRemoteVersionId_;
     std::map<uint8_t, stateMappingHandler> stateMapping_;
 };

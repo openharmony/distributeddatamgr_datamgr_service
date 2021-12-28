@@ -37,78 +37,7 @@ namespace {
     const int EVENT_INDEX = 1;
     const int OUTPUT_STATE_INDEX = 2;
 
-    // State switch table v1 and v2, has three columns, CurrentState, Event, and OutSate
-    const std::vector<std::vector<uint8_t>> STATE_SWITCH_TABLE_V2 = {
-        {IDLE, START_SYNC_EVENT, TIME_SYNC},
-
-        // In TIME_SYNC state
-        {TIME_SYNC, TIME_SYNC_FINISHED_EVENT, ABILITY_SYNC},
-        {TIME_SYNC, TIME_OUT_EVENT, SYNC_TIME_OUT},
-        {TIME_SYNC, INNER_ERR_EVENT, INNER_ERR},
-
-        // In ABILITY_SYNC state, compare version num and schema
-        {ABILITY_SYNC, VERSION_NOT_SUPPOR_EVENT, INNER_ERR},
-        {ABILITY_SYNC, SWITCH_TO_PROCTOL_V1_EVENT, START_INITIACTIVE_DATA_SYNC},
-        {ABILITY_SYNC, ABILITY_SYNC_FINISHED_EVENT, START_INITIACTIVE_DATA_SYNC},
-        {ABILITY_SYNC, TIME_OUT_EVENT, SYNC_TIME_OUT},
-        {ABILITY_SYNC, INNER_ERR_EVENT, INNER_ERR},
-        {ABILITY_SYNC, CONTROL_CMD_EVENT, SYNC_CONTROL_CMD},
-
-        // In START_INITIACTIVE_DATA_SYNC state, send a sync request, and send first packt of data sync
-        {START_INITIACTIVE_DATA_SYNC, SEND_DATA_EVENT, INACTIVE_PUSH_REMAINDER_DATA},
-        {START_INITIACTIVE_DATA_SYNC, RESPONSE_PUSH_REMAINDER_EVENT, PASSIVE_PUSH_REMAINDER_DATA},
-        {START_INITIACTIVE_DATA_SYNC, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
-        {START_INITIACTIVE_DATA_SYNC, TIME_OUT_EVENT, SYNC_TIME_OUT},
-        {START_INITIACTIVE_DATA_SYNC, INNER_ERR_EVENT, INNER_ERR},
-        {START_INITIACTIVE_DATA_SYNC, RE_SEND_DATA_EVENT, START_INITIACTIVE_DATA_SYNC},
-        {START_INITIACTIVE_DATA_SYNC, SEND_FINISHED_EVENT, START_PASSIVE_DATA_SYNC},
-
-        // In INACTIVE_PUSH_REMAINDER_DATA state, do initiactive sync, send remainder pcket of data sync
-        {INACTIVE_PUSH_REMAINDER_DATA, SEND_DATA_EVENT, INACTIVE_PUSH_REMAINDER_DATA},
-        {INACTIVE_PUSH_REMAINDER_DATA, SEND_FINISHED_EVENT, START_PASSIVE_DATA_SYNC},
-        {INACTIVE_PUSH_REMAINDER_DATA, TIME_OUT_EVENT, SYNC_TIME_OUT},
-        {INACTIVE_PUSH_REMAINDER_DATA, INNER_ERR_EVENT, INNER_ERR},
-        {INACTIVE_PUSH_REMAINDER_DATA, RE_SEND_DATA_EVENT, INACTIVE_PUSH_REMAINDER_DATA},
-        {INACTIVE_PUSH_REMAINDER_DATA, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
-
-        // In START_PASSIVE_DATA_SYNC state, do response pull request, and send first packt of data sync
-        {START_PASSIVE_DATA_SYNC, SEND_DATA_EVENT, PASSIVE_PUSH_REMAINDER_DATA},
-        {START_PASSIVE_DATA_SYNC, SEND_FINISHED_EVENT, START_PASSIVE_DATA_SYNC},
-        {START_PASSIVE_DATA_SYNC, RESPONSE_TASK_FINISHED_EVENT, WAIT_FOR_RECEIVE_DATA_FINISH},
-        {START_PASSIVE_DATA_SYNC, TIME_OUT_EVENT, SYNC_TIME_OUT},
-        {START_PASSIVE_DATA_SYNC, INNER_ERR_EVENT, INNER_ERR},
-        {START_PASSIVE_DATA_SYNC, RE_SEND_DATA_EVENT, PASSIVE_PUSH_REMAINDER_DATA},
-        {START_PASSIVE_DATA_SYNC, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
-
-        // In PASSIVE_PUSH_REMAINDER_DATA state, do passive sync, send remainder pcket of data sync
-        {PASSIVE_PUSH_REMAINDER_DATA, SEND_DATA_EVENT, PASSIVE_PUSH_REMAINDER_DATA},
-        {PASSIVE_PUSH_REMAINDER_DATA, SEND_FINISHED_EVENT, START_PASSIVE_DATA_SYNC},
-        {PASSIVE_PUSH_REMAINDER_DATA, TIME_OUT_EVENT, SYNC_TIME_OUT},
-        {PASSIVE_PUSH_REMAINDER_DATA, INNER_ERR_EVENT, INNER_ERR},
-        {PASSIVE_PUSH_REMAINDER_DATA, RE_SEND_DATA_EVENT, PASSIVE_PUSH_REMAINDER_DATA},
-        {PASSIVE_PUSH_REMAINDER_DATA, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
-
-        // In WAIT_FOR_RECEIVE_DATA_FINISH,
-        {WAIT_FOR_RECEIVE_DATA_FINISH, RECV_FINISHED_EVENT, SYNC_TASK_FINISHED},
-        {WAIT_FOR_RECEIVE_DATA_FINISH, START_PULL_RESPONSE_EVENT, START_PASSIVE_DATA_SYNC},
-        {WAIT_FOR_RECEIVE_DATA_FINISH, TIME_OUT_EVENT, SYNC_TIME_OUT},
-        {WAIT_FOR_RECEIVE_DATA_FINISH, INNER_ERR_EVENT, INNER_ERR},
-        {WAIT_FOR_RECEIVE_DATA_FINISH, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
-
-        {SYNC_CONTROL_CMD, SEND_FINISHED_EVENT, SYNC_TASK_FINISHED},
-        {SYNC_CONTROL_CMD, TIME_OUT_EVENT, SYNC_TIME_OUT},
-        {SYNC_CONTROL_CMD, INNER_ERR_EVENT, INNER_ERR},
-        {SYNC_CONTROL_CMD, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
-
-        // In SYNC_TASK_FINISHED,
-        {SYNC_TASK_FINISHED, ALL_TASK_FINISHED_EVENT, IDLE},
-        {SYNC_TASK_FINISHED, START_SYNC_EVENT, TIME_SYNC},
-
-        // SYNC_TIME_OUT and INNE_ERR state, just do some exception resolve
-        {SYNC_TIME_OUT, ANY_EVENT, SYNC_TASK_FINISHED},
-        {INNER_ERR, ANY_EVENT, SYNC_TASK_FINISHED},
-    };
-
+    // drop v1 and v2 table by one optimize, dataSend mode in all version go with slide window mode.
     // State switch table v3, has three columns, CurrentState, Event, and OutSate
     const std::vector<std::vector<uint8_t>> STATE_SWITCH_TABLE_V3 = {
         {IDLE, START_SYNC_EVENT, TIME_SYNC},
@@ -120,29 +49,29 @@ namespace {
 
         // In ABILITY_SYNC state, compare version num and schema
         {ABILITY_SYNC, VERSION_NOT_SUPPOR_EVENT, INNER_ERR},
-        {ABILITY_SYNC, ABILITY_SYNC_FINISHED_EVENT, START_INITIACTIVE_SLIDING_DATA_SYNC},
+        {ABILITY_SYNC, ABILITY_SYNC_FINISHED_EVENT, START_INITIACTIVE_DATA_SYNC},
         {ABILITY_SYNC, TIME_OUT_EVENT, SYNC_TIME_OUT},
         {ABILITY_SYNC, INNER_ERR_EVENT, INNER_ERR},
         {ABILITY_SYNC, CONTROL_CMD_EVENT, SYNC_CONTROL_CMD},
 
-        // In START_INITIACTIVE_SLIDING_DATA_SYNC state, send a sync request, and send first packt of data sync
-        {START_INITIACTIVE_SLIDING_DATA_SYNC, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
-        {START_INITIACTIVE_SLIDING_DATA_SYNC, TIME_OUT_EVENT, SYNC_TIME_OUT},
-        {START_INITIACTIVE_SLIDING_DATA_SYNC, INNER_ERR_EVENT, INNER_ERR},
-        {START_INITIACTIVE_SLIDING_DATA_SYNC, SEND_FINISHED_EVENT, START_PASSIVE_SLIDING_DATA_SYNC},
-        {START_INITIACTIVE_SLIDING_DATA_SYNC, RE_SEND_DATA_EVENT, START_INITIACTIVE_SLIDING_DATA_SYNC},
+        // In START_INITIACTIVE_DATA_SYNC state, send a sync request, and send first packt of data sync
+        {START_INITIACTIVE_DATA_SYNC, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
+        {START_INITIACTIVE_DATA_SYNC, TIME_OUT_EVENT, SYNC_TIME_OUT},
+        {START_INITIACTIVE_DATA_SYNC, INNER_ERR_EVENT, INNER_ERR},
+        {START_INITIACTIVE_DATA_SYNC, SEND_FINISHED_EVENT, START_PASSIVE_DATA_SYNC},
+        {START_INITIACTIVE_DATA_SYNC, RE_SEND_DATA_EVENT, START_INITIACTIVE_DATA_SYNC},
 
-        // In START_PASSIVE_SLIDING_DATA_SYNC state, do response pull request, and send first packt of data sync
-        {START_PASSIVE_SLIDING_DATA_SYNC, SEND_FINISHED_EVENT, START_PASSIVE_SLIDING_DATA_SYNC},
-        {START_PASSIVE_SLIDING_DATA_SYNC, RESPONSE_TASK_FINISHED_EVENT, WAIT_FOR_RECEIVE_DATA_FINISH},
-        {START_PASSIVE_SLIDING_DATA_SYNC, TIME_OUT_EVENT, SYNC_TIME_OUT},
-        {START_PASSIVE_SLIDING_DATA_SYNC, INNER_ERR_EVENT, INNER_ERR},
-        {START_PASSIVE_SLIDING_DATA_SYNC, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
-        {START_PASSIVE_SLIDING_DATA_SYNC, RE_SEND_DATA_EVENT, START_PASSIVE_SLIDING_DATA_SYNC},
+        // In START_PASSIVE_DATA_SYNC state, do response pull request, and send first packt of data sync
+        {START_PASSIVE_DATA_SYNC, SEND_FINISHED_EVENT, START_PASSIVE_DATA_SYNC},
+        {START_PASSIVE_DATA_SYNC, RESPONSE_TASK_FINISHED_EVENT, WAIT_FOR_RECEIVE_DATA_FINISH},
+        {START_PASSIVE_DATA_SYNC, TIME_OUT_EVENT, SYNC_TIME_OUT},
+        {START_PASSIVE_DATA_SYNC, INNER_ERR_EVENT, INNER_ERR},
+        {START_PASSIVE_DATA_SYNC, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
+        {START_PASSIVE_DATA_SYNC, RE_SEND_DATA_EVENT, START_PASSIVE_DATA_SYNC},
 
         // In WAIT_FOR_RECEIVE_DATA_FINISH,
         {WAIT_FOR_RECEIVE_DATA_FINISH, RECV_FINISHED_EVENT, SYNC_TASK_FINISHED},
-        {WAIT_FOR_RECEIVE_DATA_FINISH, START_PULL_RESPONSE_EVENT, START_PASSIVE_SLIDING_DATA_SYNC},
+        {WAIT_FOR_RECEIVE_DATA_FINISH, START_PULL_RESPONSE_EVENT, START_PASSIVE_DATA_SYNC},
         {WAIT_FOR_RECEIVE_DATA_FINISH, TIME_OUT_EVENT, SYNC_TIME_OUT},
         {WAIT_FOR_RECEIVE_DATA_FINISH, INNER_ERR_EVENT, INNER_ERR},
         {WAIT_FOR_RECEIVE_DATA_FINISH, NEED_ABILITY_SYNC_EVENT, ABILITY_SYNC},
@@ -197,7 +126,6 @@ int SingleVerSyncStateMachine::Initialize(ISyncTaskContext *context, ISyncInterf
     timeSync_ = std::make_unique<TimeSync>();
     dataSync_ = std::make_shared<SingleVerDataSync>();
     abilitySync_ = std::make_unique<AbilitySync>();
-    dataSyncWithSlidingWindow_ = std::make_unique<SingleVerDataSyncWithSlidingWindow>();
 
     errCode = timeSync_->Initialize(communicator, metaData, syncInterface, context->GetDeviceId());
     if (errCode != E_OK) {
@@ -215,14 +143,7 @@ int SingleVerSyncStateMachine::Initialize(ISyncTaskContext *context, ISyncInterf
     currentState_ = IDLE;
     context_ = static_cast<SingleVerSyncTaskContext *>(context);
     syncInterface_ = static_cast<SingleVerKvDBSyncInterface *>(syncInterface);
-    errCode = dataSyncWithSlidingWindow_->ReceiverInit(context_, dataSync_);
-    if (errCode != E_OK) {
-        goto ERROR_OUT;
-    }
-    errCode = dataSyncWithSlidingWindow_->SenderInit(context_, dataSync_);
-    if (errCode != E_OK) {
-        goto ERROR_OUT;
-    }
+
     InitStateSwitchTables();
     InitStateMapping();
     return E_OK;
@@ -324,11 +245,10 @@ void SingleVerSyncStateMachine::AbortInner()
 {
     LOGE("[StateMachine][AbortInner] error occurred,abort,label=%s,dev=%s", dataSync_->GetLabel().c_str(),
         STR_MASK(context_->GetDeviceId()));
-    int mode = SyncOperation::TransferSyncMode(context_->GetMode());
-    if (mode == SyncModeType::PUSH_AND_PULL || mode == SyncModeType::PULL || context_->IsKilled()) {
-        dataSyncWithSlidingWindow_->ReceiverClear();
+    if (context_->IsKilled()) {
+        dataSync_->ClearDataMsg();
     }
-    dataSyncWithSlidingWindow_->SenderClear();
+    dataSync_->ClearSyncStatus();
     ContinueToken token;
     context_->GetContinueToken(token);
     if (token != nullptr) {
@@ -384,7 +304,6 @@ void SingleVerSyncStateMachine::InitStateSwitchTables()
         return;
     }
 
-    InitStateSwitchTable(SINGLE_VER_SYNC_PROCTOL_V2, STATE_SWITCH_TABLE_V2);
     InitStateSwitchTable(SINGLE_VER_SYNC_PROCTOL_V3, STATE_SWITCH_TABLE_V3);
     std::sort(stateSwitchTables_.begin(), stateSwitchTables_.end(),
         [](const auto &tableA, const auto &tableB) {
@@ -419,52 +338,15 @@ void SingleVerSyncStateMachine::InitStateMapping()
 {
     stateMapping_[TIME_SYNC] = std::bind(&SingleVerSyncStateMachine::DoTimeSync, this);
     stateMapping_[ABILITY_SYNC] = std::bind(&SingleVerSyncStateMachine::DoAbilitySync, this);
-    stateMapping_[START_INITIACTIVE_DATA_SYNC] = std::bind(&SingleVerSyncStateMachine::DoInitiactiveDataSync,
-        this);
-    stateMapping_[START_PASSIVE_DATA_SYNC] = std::bind(&SingleVerSyncStateMachine::DoPassiveDataSync, this);
-    stateMapping_[INACTIVE_PUSH_REMAINDER_DATA] = std::bind(&SingleVerSyncStateMachine::DoInitiactivePushRemainderData,
-        this);
-    stateMapping_[PASSIVE_PUSH_REMAINDER_DATA] = std::bind(&SingleVerSyncStateMachine::DoPassivePushRemainderData,
-        this);
     stateMapping_[WAIT_FOR_RECEIVE_DATA_FINISH] = std::bind(&SingleVerSyncStateMachine::DoWaitForDataRecv, this);
     stateMapping_[SYNC_TASK_FINISHED] = std::bind(&SingleVerSyncStateMachine::DoSyncTaskFinished, this);
     stateMapping_[SYNC_TIME_OUT] = std::bind(&SingleVerSyncStateMachine::DoTimeout, this);
     stateMapping_[INNER_ERR] = std::bind(&SingleVerSyncStateMachine::DoInnerErr, this);
-    stateMapping_[START_INITIACTIVE_SLIDING_DATA_SYNC] =
+    stateMapping_[START_INITIACTIVE_DATA_SYNC] =
         std::bind(&SingleVerSyncStateMachine::DoInitiactiveDataSyncWithSlidingWindow, this);
-    stateMapping_[START_PASSIVE_SLIDING_DATA_SYNC] =
+    stateMapping_[START_PASSIVE_DATA_SYNC] =
         std::bind(&SingleVerSyncStateMachine::DoPassiveDataSyncWithSlidingWindow, this);
     stateMapping_[SYNC_CONTROL_CMD] = std::bind(&SingleVerSyncStateMachine::DoInitiactiveControlSync, this);
-}
-
-Event SingleVerSyncStateMachine::DoInitiactiveDataSync()
-{
-    int errCode = E_OK;
-    int mode = SyncOperation::TransferSyncMode(context_->GetMode());
-    switch (mode) {
-        case SyncModeType::PUSH:
-            context_->SetOperationStatus(SyncOperation::OP_RECV_FINISHED);
-            errCode = dataSync_->PushStart(context_);
-            break;
-        case SyncModeType::PULL:
-            context_->SetOperationStatus(SyncOperation::OP_SEND_FINISHED);
-            errCode = dataSync_->PullRequestStart(context_);
-            break;
-        case SyncModeType::PUSH_AND_PULL:
-            errCode = dataSync_->PushPullStart(context_);
-            break;
-        case SyncModeType::RESPONSE_PULL:
-            // In response pull mode, reminader data should send in
-            // PASSIVE_PUSH_REMAINDER_DATA
-            return Event::RESPONSE_PUSH_REMAINDER_EVENT;
-        default:
-            errCode = -E_NOT_SUPPORT;
-            break;
-    }
-    if (errCode == E_OK) {
-        return Event::WAIT_ACK_EVENT;
-    }
-    return TransformErrCodeToEvent(errCode);
 }
 
 Event SingleVerSyncStateMachine::DoInitiactiveDataSyncWithSlidingWindow()
@@ -476,19 +358,19 @@ Event SingleVerSyncStateMachine::DoInitiactiveDataSyncWithSlidingWindow()
         case SyncModeType::PUSH:
         case SyncModeType::QUERY_PUSH:
             context_->SetOperationStatus(SyncOperation::OP_RECV_FINISHED);
-            errCode = dataSyncWithSlidingWindow_->SenderStart(context_->GetMode(), context_, dataSync_);
+            errCode = dataSync_->SyncStart(context_->GetMode(), context_);
             break;
         case SyncModeType::PULL:
         case SyncModeType::QUERY_PULL:
             context_->SetOperationStatus(SyncOperation::OP_SEND_FINISHED);
-            errCode = dataSyncWithSlidingWindow_->SenderStart(context_->GetMode(), context_, dataSync_);
+            errCode = dataSync_->SyncStart(context_->GetMode(), context_);
             break;
         case SyncModeType::PUSH_AND_PULL:
         case SyncModeType::QUERY_PUSH_PULL:
-            errCode = dataSyncWithSlidingWindow_->SenderStart(context_->GetMode(), context_, dataSync_);
+            errCode = dataSync_->SyncStart(context_->GetMode(), context_);
             break;
         case SyncModeType::RESPONSE_PULL:
-            errCode = dataSyncWithSlidingWindow_->SenderStart(context_->GetMode(), context_, dataSync_);
+            errCode = dataSync_->SyncStart(context_->GetMode(), context_);
             break;
         default:
             errCode = -E_NOT_SUPPORT;
@@ -509,23 +391,6 @@ Event SingleVerSyncStateMachine::DoInitiactiveDataSyncWithSlidingWindow()
     return (ignoreInnerErr && event == INNER_ERR_EVENT) ? SEND_FINISHED_EVENT : event;
 }
 
-Event SingleVerSyncStateMachine::DoPassiveDataSync()
-{
-    {
-        RefObject::AutoLock lock(context_);
-        if (context_->GetRspTargetQueueSize() != 0) {
-            PreStartPullResponse();
-        } else {
-            return RESPONSE_TASK_FINISHED_EVENT;
-        }
-    }
-    int errCode = dataSync_->PullResponseStart(context_);
-    if (errCode == E_OK) {
-        return Event::WAIT_ACK_EVENT;
-    }
-    return TransformErrCodeToEvent(errCode);
-}
-
 Event SingleVerSyncStateMachine::DoPassiveDataSyncWithSlidingWindow()
 {
     {
@@ -536,7 +401,7 @@ Event SingleVerSyncStateMachine::DoPassiveDataSyncWithSlidingWindow()
             return RESPONSE_TASK_FINISHED_EVENT;
         }
     }
-    int errCode = dataSyncWithSlidingWindow_->SenderStart(SyncModeType::RESPONSE_PULL, context_, dataSync_);
+    int errCode = dataSync_->SyncStart(SyncModeType::RESPONSE_PULL, context_);
     if (errCode != E_OK) {
         LOGW("[SingleVerSyncStateMachine][DoPassiveDataSyncWithSlidingWindow] response pull send failed[%d]", errCode);
         return RESPONSE_TASK_FINISHED_EVENT;
@@ -567,39 +432,6 @@ int SingleVerSyncStateMachine::HandleControlAckRecv(const Message *inMsg)
     ControlAckRecvErrCodeHandle(errCode);
     SwitchStateAndStep(TransformErrCodeToEvent(errCode));
     return E_OK;
-}
-
-Event SingleVerSyncStateMachine::DoInitiactivePushRemainderData()
-{
-    int errCode;
-    int mode = SyncOperation::TransferSyncMode(context_->GetMode());
-    switch (mode) {
-        case SyncModeType::PULL:
-        case SyncModeType::RESPONSE_PULL:
-            // In pull or response pul mode, don't need to do INACTIVE_PUSH
-            return Event::SEND_FINISHED_EVENT;
-        case SyncModeType::PUSH:
-        case SyncModeType::PUSH_AND_PULL:
-            errCode = dataSync_->PushStart(context_);
-            break;
-        default:
-            errCode = -E_INTERNAL_ERROR;
-            break;
-    }
-
-    if (errCode == E_OK) {
-        return Event::WAIT_ACK_EVENT;
-    }
-    return TransformErrCodeToEvent(errCode);
-}
-
-Event SingleVerSyncStateMachine::DoPassivePushRemainderData()
-{
-    int errCode = dataSync_->PullResponseStart(context_);
-    if (errCode == E_OK) {
-        return Event::WAIT_ACK_EVENT;
-    }
-    return TransformErrCodeToEvent(errCode);
 }
 
 Event SingleVerSyncStateMachine::DoWaitForDataRecv() const
@@ -676,17 +508,13 @@ Event SingleVerSyncStateMachine::GetEventAfterTimeSync(int mode, bool isEarliest
     if (mode == SyncModeType::SUBSCRIBE_QUERY || mode == SyncModeType::UNSUBSCRIBE_QUERY) {
         return Event::CONTROL_CMD_EVENT;
     }
-    if (isEarliestVersion) {
-        LOGI("remote version is 0, switch to v1 proctol");
-        return Event::SWITCH_TO_PROCTOL_V1_EVENT;
-    }
     return Event::ABILITY_SYNC_FINISHED_EVENT;
 }
 
 Event SingleVerSyncStateMachine::DoSyncTaskFinished()
 {
     StopWatchDog();
-    dataSyncWithSlidingWindow_->SenderClear();
+    dataSync_->ClearSyncStatus();
     RefObject::AutoLock lock(syncContext_);
     int errCode = ExecNextTask();
     if (errCode == E_OK) {
@@ -786,6 +614,16 @@ int SingleVerSyncStateMachine::AbilitySyncRecv(const Message *inMsg)
 
 int SingleVerSyncStateMachine::HandleDataRequestRecv(const Message *inMsg)
 {
+    TimeOffset offset = 0;
+    uint32_t timeout = TIME_SYNC_WAIT_TIME;
+    timeout = communicator_->GetTimeout(context_->GetDeviceId());
+    // If message is data sync request, we should check timeoffset.
+    int errCode = timeSync_->GetTimeOffset(offset, timeout);
+    if (errCode != E_OK) {
+        LOGE("[StateMachine][HandleDataRequestRecv] GetTimeOffset err! errCode=%d", errCode);
+        return errCode;
+    }
+    context_->SetTimeOffset(offset);
     PerformanceAnalysis *performance = PerformanceAnalysis::GetInstance();
     if (performance != nullptr) {
         performance->StepTimeRecordStart(PT_TEST_RECORDS::RECORD_DATA_REQUEST_RECV_TO_SEND_ACK);
@@ -802,7 +640,7 @@ int SingleVerSyncStateMachine::HandleDataRequestRecv(const Message *inMsg)
     // So we need to send save data notify to keep remote alive.
     bool isNeedStop = StartSaveDataNotify(inMsg->GetSessionId(), inMsg->GetSequenceId(), inMsg->GetMessageId());
     WaterMark pullEndWaterkark = 0;
-    int errCode = dataSync_->DataRequestRecv(context_, inMsg, pullEndWaterkark);
+    errCode = dataSync_->DataRequestRecv(context_, inMsg, pullEndWaterkark);
     if (performance != nullptr) {
         performance->StepTimeRecordEnd(PT_TEST_RECORDS::RECORD_DATA_REQUEST_RECV_TO_SEND_ACK);
     }
@@ -823,22 +661,14 @@ int SingleVerSyncStateMachine::HandleDataRequestRecv(const Message *inMsg)
     return E_OK;
 }
 
-int SingleVerSyncStateMachine::PreHandleAckRecv(const Message *inMsg)
-{
-    if (context_->GetRemoteSoftwareVersion() > SOFTWARE_VERSION_RELEASE_2_0) {
-        return dataSyncWithSlidingWindow_->PreHandleSenderAckRecv(inMsg);
-    }
-    return E_OK;
-}
-
 void SingleVerSyncStateMachine::HandleDataAckRecvWithSlidingWindow(int errCode, const Message *inMsg,
     bool ignoreInnerErr)
 {
     if (errCode == -E_RE_SEND_DATA) { // LOCAL_WATER_MARK_NOT_INIT
-        dataSyncWithSlidingWindow_->SenderClear();
+        dataSync_->ClearSyncStatus();
     }
     if (errCode == -E_NO_DATA_SEND || errCode == -E_SEND_DATA) {
-        int ret = dataSyncWithSlidingWindow_->SenderAckRecv(inMsg);
+        int ret = dataSync_->TryContinueSync(context_, inMsg);
         if (ret == -E_FINISHED) {
             SwitchStateAndStep(Event::SEND_FINISHED_EVENT);
             return;
@@ -862,7 +692,7 @@ void SingleVerSyncStateMachine::NeedAbilitySyncHandle()
         currentRemoteVersionId_ = context_->GetRemoteSoftwareVersionId();
     }
     abilitySync_->SetAbilitySyncFinishedStatus(false);
-    dataSyncWithSlidingWindow_->SenderClear();
+    dataSync_->ClearSyncStatus();
 }
 
 int SingleVerSyncStateMachine::HandleDataAckRecv(const Message *inMsg)
@@ -881,22 +711,16 @@ int SingleVerSyncStateMachine::HandleDataAckRecv(const Message *inMsg)
     if (IsNeedResetWatchdog(inMsg)) {
         (void)ResetWatchDog();
     }
-    int errCode = PreHandleAckRecv(inMsg);
-    if (errCode != E_OK) {
+    if (context_->GetRemoteSoftwareVersion() > SOFTWARE_VERSION_RELEASE_2_0 && !dataSync_->AckPacketIdCheck(inMsg)) {
         // packetId not match but sequence id matched scene, means resend map has be rebuilt
         // this is old ack, shoulb be dropped and wait for the same packetId sequence.
-        if (errCode == -E_SLIDING_WINDOW_RECEIVER_INVALID_MSG) {
-            return E_OK;
-        }
-        // this means error happened,should stop the sync task.
-        SwitchStateAndStep(TransformErrCodeToEvent(errCode));
-        return errCode;
+        return E_OK;
     }
     // AckRecv will save meta data, it may cost a long time. if another thread is saving data
     // So we need to send save data notify to keep remote alive.
     // eg. remote do pull sync
     bool isNeedStop = StartSaveDataNotify(inMsg->GetSessionId(), inMsg->GetSequenceId(), inMsg->GetMessageId());
-    errCode = dataSync_->AckRecv(context_, inMsg);
+    int errCode = dataSync_->AckRecv(context_, inMsg);
     if (isNeedStop) {
         StopSaveDataNotify();
     }
@@ -909,10 +733,6 @@ int SingleVerSyncStateMachine::HandleDataAckRecv(const Message *inMsg)
     bool ignoreInnerErr = inMsg->GetSessionId() == context_->GetResponseSessionId()
         && context_->GetRequestSessionId() != 0;
     DataAckRecvErrCodeHandle(errCode, !ignoreInnerErr);
-    if (context_->GetRemoteSoftwareVersion() < SOFTWARE_VERSION_RELEASE_3_0) {
-        ResponsePullError(errCode, ignoreInnerErr);
-        return errCode;
-    }
     HandleDataAckRecvWithSlidingWindow(errCode, inMsg, ignoreInnerErr);
     return errCode;
 }
@@ -920,26 +740,11 @@ int SingleVerSyncStateMachine::HandleDataAckRecv(const Message *inMsg)
 int SingleVerSyncStateMachine::DataPktRecv(Message *inMsg)
 {
     PerformanceAnalysis *performance = PerformanceAnalysis::GetInstance();
-    int errCode;
-    TimeOffset offset = 0;
-    uint32_t timeout = TIME_SYNC_WAIT_TIME;
-
+    int errCode = E_OK;
     switch (inMsg->GetMessageType()) {
         case TYPE_REQUEST:
-            timeout = communicator_->GetTimeout(context_->GetDeviceId());
-            // If message is data sync request, we should check timeoffset.
-            errCode = timeSync_->GetTimeOffset(offset, timeout);
-            if (errCode != E_OK) {
-                LOGE("[StateMachine][DataPktRecv] GetTimeOffset err! errCode=%d", errCode);
-                return errCode;
-            }
-            context_->SetTimeOffset(offset);
-            if (context_->GetRemoteSoftwareVersion() < SOFTWARE_VERSION_RELEASE_3_0) {
-                // higher than 102 version may go to here, but it is ok not use slwr,after abilitysync would go slwr.
-                errCode = HandleDataRequestRecv(inMsg);
-            } else {
-                errCode = dataSyncWithSlidingWindow_->Receive(inMsg);
-            }
+            ScheduleMsgAndHandle(inMsg);
+            errCode = -E_NOT_NEED_DELETE_MSG;
             break;
         case TYPE_RESPONSE:
         case TYPE_NOTIFY:
@@ -954,6 +759,43 @@ int SingleVerSyncStateMachine::DataPktRecv(Message *inMsg)
             break;
     }
     return errCode;
+}
+
+void SingleVerSyncStateMachine::ScheduleMsgAndHandle(Message *inMsg)
+{
+    dataSync_->PutDataMsg(inMsg);
+    while (true) {
+        bool isNeedHandle = true;
+        bool isNeedContinue = true;
+        Message *msg = dataSync_->MoveNextDataMsg(context_, isNeedHandle, isNeedContinue);
+        if (!isNeedContinue) {
+            break;
+        }
+        if (msg == nullptr) {
+            if (dataSync_->IsNeedReloadQueue()) {
+                continue;
+            }
+            break;
+        }
+        bool isNeedClearMap = false;
+        if (isNeedHandle) {
+            int errCode = HandleDataRequestRecv(msg);
+            if (context_->IsReceiveWaterMarkErr() || errCode == -E_NEED_ABILITY_SYNC) {
+                isNeedClearMap = true;
+            }
+            if (errCode == -E_TIMEOUT) {
+                isNeedHandle = false;
+            }
+        } else {
+            dataSync_->SendFinishedDataAck(context_, msg);
+        }
+        if (context_->GetRemoteSoftwareVersion() < SOFTWARE_VERSION_RELEASE_3_0) {
+            // for lower version, no need to handle map schedule info, just reset schedule working status
+            isNeedHandle = false;
+        }
+        dataSync_->ScheduleInfoHandle(isNeedHandle, isNeedClearMap, msg);
+        delete msg;
+    }
 }
 
 int SingleVerSyncStateMachine::ControlPktRecv(Message *inMsg)
@@ -1034,7 +876,6 @@ int SingleVerSyncStateMachine::TimeMarkSyncRecv(const Message *inMsg)
 
 void SingleVerSyncStateMachine::Clear()
 {
-    dataSyncWithSlidingWindow_ = nullptr;
     dataSync_ = nullptr;
     timeSync_ = nullptr;
     abilitySync_ = nullptr;
@@ -1073,18 +914,7 @@ bool SingleVerSyncStateMachine::IsPacketValid(const Message *inMsg) const
         inMsg->GetMessageId() == CONTROL_SYNC_MESSAGE) {
         return true;
     }
-
-    // sliding window don't need to check sequenceId here, just return
-    if (context_->GetRemoteSoftwareVersion() > SOFTWARE_VERSION_RELEASE_2_0) {
-        return true;
-    }
-
-    if (isResponseType && (inMsg->GetSequenceId() != context_->GetSequenceId())) {
-        LOGE("[StateMachine][IsPacketValid] Message is invalid,inMsg SequenceId=%d,seqId=%d,syncId=%d",
-            inMsg->GetSequenceId(), context_->GetSequenceId(), context_->GetSyncId());
-        return false;
-    }
-
+    // sequenceId will be checked in dataSync
     return true;
 }
 
@@ -1098,23 +928,6 @@ void SingleVerSyncStateMachine::PreStartPullResponse()
     context_->ReSetSequenceId();
     context_->SetQuerySync(target.IsQuerySync());
     context_->SetQuery(target.GetQuery());
-}
-
-bool SingleVerSyncStateMachine::IsRightDataResponsePkt(const Message *inMsg) const
-{
-    if (inMsg->GetMessageId() != DATA_SYNC_MESSAGE || inMsg->GetMessageId() != QUERY_SYNC_MESSAGE) {
-        return false;
-    }
-
-    if (context_->GetRemoteSoftwareVersion() > SOFTWARE_VERSION_RELEASE_2_0) {
-        return false;
-    }
-
-    if ((context_->GetMode() != SyncModeType::INVALID_MODE) && (inMsg->GetMessageType() == TYPE_RESPONSE)) {
-        return true;
-    }
-
-    return false;
 }
 
 bool SingleVerSyncStateMachine::CheckIsStartPullResponse() const
@@ -1135,10 +948,6 @@ int SingleVerSyncStateMachine::MessageCallbackPre(const Message *inMsg)
 
     if (!IsPacketValid(inMsg)) {
         return -E_INVALID_ARGS;
-    }
-
-    if (IsRightDataResponsePkt(inMsg)) {
-        context_->IncSequenceId();
     }
     return E_OK;
 }
@@ -1238,11 +1047,6 @@ Event SingleVerSyncStateMachine::TransforTimeOutErrCodeToEvent()
     }
 }
 
-void SingleVerSyncStateMachine::SetSlidingWindowSenderErr(bool isErr)
-{
-    dataSyncWithSlidingWindow_->SetSenderErr(isErr);
-}
-
 bool SingleVerSyncStateMachine::IsNeedErrCodeHandle(uint32_t sessionId) const
 {
     // omit to set sessionId so version_3 should skip to compare sessionid.
@@ -1319,12 +1123,6 @@ void SingleVerSyncStateMachine::DataAckRecvErrCodeHandle(int errCode, bool handl
     switch (errCode) {
         case -E_NEED_ABILITY_SYNC:
             NeedAbilitySyncHandle();
-            break;
-        case -E_NO_DATA_SEND:
-            // when version is higher than 102, this step will be handle in slide windows function.
-            if (context_->GetRemoteSoftwareVersion() < SOFTWARE_VERSION_RELEASE_3_0 && handleError) {
-                context_->SetOperationStatus(SyncOperation::OP_SEND_FINISHED);
-            }
             break;
         case -E_NOT_PERMIT:
             if (handleError) {
