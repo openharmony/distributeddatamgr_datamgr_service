@@ -21,8 +21,6 @@
 
 #include "auto_launch_export.h"
 #include "relational_store_delegate.h"
-#include "irelational_store.h"
-#include "relationaldb_properties.h"
 #include "types.h"
 
 namespace DistributedDB {
@@ -44,9 +42,6 @@ public:
     DB_API DBStatus DeleteStore(const std::string &path);
 
 private:
-    void InitStoreProp(const RelationalStoreDelegate::Option &option, const std::string &storePath,
-        const std::string &storeId, RelationalDBProperties &properties);
-
     std::string appId_;
     std::string userId_;
 };

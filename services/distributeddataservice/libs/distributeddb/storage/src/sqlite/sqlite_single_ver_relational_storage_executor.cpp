@@ -707,14 +707,6 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckDBModeForRelational()
         LOGE("Not support journal mode %s for relational db, expect wal mode, %d", journalMode.c_str(), errCode);
         return -E_NOT_SUPPORT;
     }
-
-    int synchronousMode;
-    errCode = SQLiteUtils::GetSynchronousMode(dbHandle_, synchronousMode);
-    if (errCode != E_OK || synchronousMode != 2) { // 2: FULL mode
-        LOGE("Not support synchronous mode %d for relational db, expect FULL mode, %d", synchronousMode, errCode);
-        return -E_NOT_SUPPORT;
-    }
-
     return E_OK;
 }
 } // namespace DistributedDB

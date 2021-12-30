@@ -206,7 +206,7 @@ int SQLiteSingleVerStorageEngine::AddSubscribeToMainDBInMigrate()
     int errCode = E_OK;
     auto handle = static_cast<SQLiteSingleVerStorageExecutor *>(FindExecutor(true, OperatePerm::NORMAL_PERM, errCode));
     if (errCode != E_OK || handle == nullptr) {
-        LOGE("Get available executor for add subscribe failed. %s", errCode);
+        LOGE("Get available executor for add subscribe failed. %d", errCode);
         return errCode;
     }
     errCode = handle->StartTransaction(TransactType::IMMEDIATE);

@@ -290,9 +290,7 @@ std::string DBCommon::GenerateIdentifierId(const std::string &storeId,
 void DBCommon::SetDatabaseIds(KvDBProperties &properties, const std::string &appId, const std::string &userId,
     const std::string &storeId)
 {
-    properties.SetStringProp(KvDBProperties::APP_ID, appId);
-    properties.SetStringProp(KvDBProperties::USER_ID, userId);
-    properties.SetStringProp(KvDBProperties::STORE_ID, storeId);
+    properties.SetIdentifier(userId, appId, storeId);
     std::string oriStoreDir;
     std::string identifier = GenerateIdentifierId(storeId, appId, userId);
     if (properties.GetBoolProp(KvDBProperties::CREATE_DIR_BY_STORE_ID_ONLY, false)) {
@@ -301,7 +299,6 @@ void DBCommon::SetDatabaseIds(KvDBProperties &properties, const std::string &app
         oriStoreDir = identifier;
     }
     std::string hashIdentifier = TransferHashString(identifier);
-    properties.SetStringProp(KvDBProperties::IDENTIFIER_DATA, hashIdentifier);
     std::string hashDir = TransferHashString(oriStoreDir);
     std::string hexHashDir = TransferStringToHex(hashDir);
     properties.SetStringProp(KvDBProperties::IDENTIFIER_DIR, hexHashDir);

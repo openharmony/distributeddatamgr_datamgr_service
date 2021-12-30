@@ -740,7 +740,7 @@ int JsonObject::GetObjectArrayByFieldPath(const FieldPath &inPath, std::vector<J
     return E_OK;
 }
 
-int JsonObject::GetObjectByFieldPath(const FieldPath &inPath, JsonObject &outArray) const
+int JsonObject::GetObjectByFieldPath(const FieldPath &inPath, JsonObject &outObj) const
 {
     if (!isValid_) {
         LOGE("[Json][GetValue] Not Valid Yet.");
@@ -756,7 +756,7 @@ int JsonObject::GetObjectByFieldPath(const FieldPath &inPath, JsonObject &outArr
         LOGE("[Json][GetValue] Not Object type.");
         return -E_NOT_PERMIT;
     }
-    outArray = JsonObject(valueNode);
+    outObj = JsonObject(valueNode);
     return E_OK;
 }
 

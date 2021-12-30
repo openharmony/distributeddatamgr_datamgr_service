@@ -40,6 +40,9 @@ public:
     // Set the integer property for the name
     void SetIntProp(const std::string &name, int value);
 
+    // Set all indentifers
+    void SetIdentifier(const std::string &userId, const std::string &appId, const std::string &storeId);
+
     static const std::string CREATE_IF_NECESSARY;
     static const std::string DATABASE_TYPE;
     static const std::string DATA_DIR;

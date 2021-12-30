@@ -64,7 +64,7 @@ namespace {
 
     std::string GetKvStoreDirectory(const std::string &userId, const std::string &appId, const std::string &storeId)
     {
-        string identifier = userId + "-" + appId + "-" + storeId;
+        string identifier = DBCommon::GenerateIdentifierId(storeId, appId, userId);
         string hashIdentifierName = DBCommon::TransferHashString(identifier);
         string identifierName = DBCommon::TransferStringToHex(hashIdentifierName);
         string filePath = g_testDir + "/" + identifierName + "/" + DBConstant::SINGLE_SUB_DIR + "/main/";

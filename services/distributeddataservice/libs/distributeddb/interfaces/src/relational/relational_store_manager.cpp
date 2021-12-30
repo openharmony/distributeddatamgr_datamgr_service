@@ -32,17 +32,11 @@ RelationalStoreManager::RelationalStoreManager(const std::string &appId, const s
       userId_(userId)
 {}
 
-void RelationalStoreManager::InitStoreProp(const RelationalStoreDelegate::Option &option, const std::string &storePath,
+void InitStoreProp(const std::string &storePath, const std::string &appId, const std::string &userId,
     const std::string &storeId, RelationalDBProperties &properties)
 {
-    // properties.SetBoolProp(RelationalDBProperties::CREATE_IF_NECESSARY, option.createIfNecessary);
     properties.SetStringProp(RelationalDBProperties::DATA_DIR, storePath);
-    properties.SetStringProp(RelationalDBProperties::APP_ID, appId_);
-    properties.SetStringProp(RelationalDBProperties::USER_ID, userId_);
-    properties.SetStringProp(RelationalDBProperties::STORE_ID, storeId); // same as dir
-    std::string identifier = userId_ + "-" + appId_ + "-" + storeId;
-    std::string hashIdentifier = DBCommon::TransferHashString(identifier);
-    properties.SetStringProp(RelationalDBProperties::IDENTIFIER_DATA, hashIdentifier);
+    properties.SetIdentifier(userId, appId, storeId);
 }
 
 static const int GET_CONNECT_RETRY = 3;
@@ -82,7 +76,7 @@ DB_API DBStatus RelationalStoreManager::OpenStore(const std::string &path, const
     }
 
     RelationalDBProperties properties;
-    InitStoreProp(option, canonicalDir, storeId, properties);
+    InitStoreProp(canonicalDir, appId_, userId_, storeId, properties);
 
     int errCode = E_OK;
     auto *conn = GetOneConnectionWithRetry(properties, errCode);

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "db_common.h"
 #include "db_properties.h"
 
 namespace DistributedDB {
@@ -30,9 +31,8 @@ std::string DBProperties::GetStringProp(const std::string &name, const std::stri
     auto iter = stringProperties_.find(name);
     if (iter != stringProperties_.end()) {
         return iter->second;
-    } else {
-        return defaultValue;
     }
+    return defaultValue;
 }
 
 void DBProperties::SetStringProp(const std::string &name, const std::string &value)
@@ -45,9 +45,8 @@ bool DBProperties::GetBoolProp(const std::string &name, bool defaultValue) const
     auto iter = boolProperties_.find(name);
     if (iter != boolProperties_.end()) {
         return iter->second;
-    } else {
-        return defaultValue;
     }
+    return defaultValue;
 }
 
 void DBProperties::SetBoolProp(const std::string &name, bool value)
@@ -60,13 +59,21 @@ int DBProperties::GetIntProp(const std::string &name, int defaultValue) const
     auto iter = intProperties_.find(name);
     if (iter != intProperties_.end()) {
         return iter->second;
-    } else {
-        return defaultValue;
     }
+    return defaultValue;
 }
 
 void DBProperties::SetIntProp(const std::string &name, int value)
 {
     intProperties_[name] = value;
+}
+
+void DBProperties::SetIdentifier(const std::string &userId, const std::string &appId, const std::string &storeId)
+{
+    SetStringProp(DBProperties::APP_ID, appId);
+    SetStringProp(DBProperties::USER_ID, userId);
+    SetStringProp(DBProperties::STORE_ID, storeId);
+    std::string hashIdentifier = DBCommon::TransferHashString(DBCommon::GenerateIdentifierId(storeId, appId, userId));
+    SetStringProp(DBProperties::IDENTIFIER_DATA, hashIdentifier);
 }
 }

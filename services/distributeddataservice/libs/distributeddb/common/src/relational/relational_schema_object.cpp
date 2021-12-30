@@ -268,7 +268,7 @@ void TableInfo::SetDevId(const std::string &devId)
 }
 
 namespace {
-    std::string VectorJoin(const CompositeFields& fields, char con)
+    std::string VectorJoin(const CompositeFields &fields, char con)
     {
         std::string res;
         auto it = fields.begin();
@@ -290,11 +290,11 @@ JsonObject TableInfo::ToJsonObject() const
     tableJson.InsertField(FieldPath { "AUTOINCREMENT" }, FieldType::LEAF_FIELD_BOOL, jsonField);
     jsonField.stringValue = primaryKey_;
     tableJson.InsertField(FieldPath { "PRIMARY_KEY" }, FieldType::LEAF_FIELD_STRING, jsonField);
-    for (const auto& it : fields_) {
+    for (const auto &it : fields_) {
         jsonField.stringValue = it.second.ToAttributeString();
         tableJson.InsertField(FieldPath { "DEFINE", it.first }, FieldType::LEAF_FIELD_STRING, jsonField);
     }
-    for (const auto& it : uniqueDefines_) {
+    for (const auto &it : uniqueDefines_) {
         jsonField.stringValue = VectorJoin(it, ',');
     }
     return tableJson;
@@ -334,7 +334,7 @@ int RelationalSyncOpinion::Deserialization(const Parcel &parcel)
     return E_OK;
 }
 
-const SyncOpinion &RelationalSyncOpinion::GetTableOpinion(const std::string& tableName) const
+const SyncOpinion &RelationalSyncOpinion::GetTableOpinion(const std::string &tableName) const
 {
     return opinions_.at(tableName);
 }
@@ -410,7 +410,7 @@ int RelationalSchemaObject::ParseFromSchemaString(const std::string &inSchemaStr
     return E_OK;
 }
 
-void RelationalSchemaObject::AddRelationalTable(const TableInfo& tb)
+void RelationalSchemaObject::AddRelationalTable(const TableInfo &tb)
 {
     tables_[tb.GetTableName()] = tb;
 }
@@ -420,7 +420,7 @@ const std::map<std::string, TableInfo> &RelationalSchemaObject::GetTables() cons
     return tables_;
 }
 
-TableInfo RelationalSchemaObject::GetTable(const std::string& tableName) const
+TableInfo RelationalSchemaObject::GetTable(const std::string &tableName) const
 {
     auto it = tables_.find(tableName);
     if (it != tables_.end()) {
@@ -481,11 +481,7 @@ int RelationalSchemaObject::ParseRelationalSchema(const JsonObject &inJsonObject
     if (errCode != E_OK) {
         return errCode;
     }
-    errCode = ParseCheckSchemaTableDefine(inJsonObject);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    return E_OK;
+    return ParseCheckSchemaTableDefine(inJsonObject);
 }
 
 int RelationalSchemaObject::ParseCheckSchemaVersionMode(const JsonObject &inJsonObject)
@@ -607,7 +603,7 @@ int RelationalSchemaObject::ParseCheckTableDefine(const JsonObject &inJsonObject
         JsonObject fieldObj;
         errCode = inJsonObject.GetObjectByFieldPath(field.first, fieldObj);
         if (errCode != E_OK) {
-            LOGE("[RelationalSchema][Parse] Get table field object failed. %s", errCode);
+            LOGE("[RelationalSchema][Parse] Get table field object failed. %d", errCode);
             return errCode;
         }
 

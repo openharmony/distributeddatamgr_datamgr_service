@@ -21,7 +21,6 @@
 #include "sqlite_import.h"
 
 #include "db_types.h"
-#include "iprocess_system_api_adapter.h"
 #include "schema_object.h"
 #include "types.h"
 #ifdef RELATIONAL_STORE

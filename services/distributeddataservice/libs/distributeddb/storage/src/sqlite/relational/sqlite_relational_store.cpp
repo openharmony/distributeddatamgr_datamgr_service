@@ -59,16 +59,16 @@ RelationalStoreConnection *SQLiteRelationalStore::GetDBConnection(int &errCode)
     return connection;
 }
 
-static void InitDataBaseOption(const RelationalDBProperties &kvDBProp, OpenDbProperties &option)
+static void InitDataBaseOption(const RelationalDBProperties &properties, OpenDbProperties &option)
 {
-    option.uri = kvDBProp.GetStringProp(KvDBProperties::DATA_DIR, "");
-    option.createIfNecessary = kvDBProp.GetBoolProp(KvDBProperties::CREATE_IF_NECESSARY, false);
+    option.uri = properties.GetStringProp(DBProperties::DATA_DIR, "");
+    option.createIfNecessary = properties.GetBoolProp(DBProperties::CREATE_IF_NECESSARY, false);
 }
 
-int SQLiteRelationalStore::InitStorageEngine(const RelationalDBProperties &kvDBProp)
+int SQLiteRelationalStore::InitStorageEngine(const RelationalDBProperties &properties)
 {
     OpenDbProperties option;
-    InitDataBaseOption(kvDBProp, option);
+    InitDataBaseOption(properties, option);
 
     StorageEngineAttr poolSize = {1, 1, 0, 16}; // at most 1 write 16 read.
     int errCode = sqliteStorageEngine_->InitSQLiteStorageEngine(poolSize, option);
