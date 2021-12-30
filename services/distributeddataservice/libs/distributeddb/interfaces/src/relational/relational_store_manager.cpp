@@ -17,6 +17,7 @@
 
 #include <thread>
 
+#include "auto_launch.h"
 #include "relational_store_instance.h"
 #include "db_common.h"
 #include "param_check_utils.h"
@@ -24,6 +25,7 @@
 #include "db_errno.h"
 #include "kv_store_errno.h"
 #include "relational_store_delegate_impl.h"
+#include "runtime_context.h"
 #include "platform_specific.h"
 
 namespace DistributedDB {
@@ -169,6 +171,19 @@ DBStatus RelationalStoreManager::DeleteStore(const std::string &path)
     }
     LOGE("Delete the kv store error:%d", errCode);
     return TransferDBErrno(errCode);
+}
+
+void RelationalStoreManager::SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback)
+{
+}
+
+std::string RelationalStoreManager::GetRelationalStoreIdentifier(const std::string &userId, const std::string &appId,
+    const std::string &storeId)
+{
+    if (!ParamCheckUtils::CheckStoreParameter(storeId, appId, userId)) {
+        return "";
+    }
+    return DBCommon::TransferHashString(userId + "-" + appId + "-" + storeId);
 }
 } // namespace DistributedDB
 #endif

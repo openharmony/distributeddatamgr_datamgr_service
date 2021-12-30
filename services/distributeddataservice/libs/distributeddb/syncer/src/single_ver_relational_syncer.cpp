@@ -19,6 +19,17 @@
 #include "single_ver_sync_engine.h"
 
 namespace DistributedDB {
+int SingleVerRelationalSyncer::Sync(const SyncParma &param)
+{
+    if (param.mode == SYNC_MODE_PUSH_PULL) {
+        return -E_NOT_SUPPORT;
+    }
+    if (param.syncQuery.GetRelationTableName().empty()) {
+        return -E_NOT_SUPPORT;
+    }
+    return GenericSyncer::Sync(param);
+}
+
 int SingleVerRelationalSyncer::PrepareSync(const SyncParma &param, uint32_t syncId)
 {
     const auto &syncInterface = static_cast<RelationalDBSyncInterface*>(syncInterface_);
@@ -33,6 +44,9 @@ int SingleVerRelationalSyncer::PrepareSync(const SyncParma &param, uint32_t sync
     if (errCode != E_OK) {
         DoRollBack(subSyncIdSet);
         return errCode;
+    }
+    if (param.wait) {
+        DoOnComplete(param, syncId);
     }
     return E_OK;
 }
@@ -69,33 +83,17 @@ int SingleVerRelationalSyncer::GenerateEachSyncTask(const SyncParma &param, uint
 void SingleVerRelationalSyncer::DoOnSubSyncComplete(const uint32_t subSyncId, const uint32_t syncId,
     const SyncParma &param, const std::map<std::string, int> &devicesMap)
 {
-    static std::map<int, DBStatus> statusMap = {
-        { static_cast<int>(SyncOperation::OP_FINISHED_ALL),                  OK },
-        { static_cast<int>(SyncOperation::OP_TIMEOUT),                       TIME_OUT },
-        { static_cast<int>(SyncOperation::OP_PERMISSION_CHECK_FAILED),       PERMISSION_CHECK_FORBID_SYNC },
-        { static_cast<int>(SyncOperation::OP_COMM_ABNORMAL),                 COMM_FAILURE },
-        { static_cast<int>(SyncOperation::OP_SECURITY_OPTION_CHECK_FAILURE), SECURITY_OPTION_CHECK_ERROR },
-        { static_cast<int>(SyncOperation::OP_EKEYREVOKED_FAILURE),           EKEYREVOKED_ERROR },
-        { static_cast<int>(SyncOperation::OP_SCHEMA_INCOMPATIBLE),           SCHEMA_MISMATCH },
-        { static_cast<int>(SyncOperation::OP_BUSY_FAILURE),                  BUSY },
-        { static_cast<int>(SyncOperation::OP_QUERY_FORMAT_FAILURE),          INVALID_QUERY_FORMAT },
-        { static_cast<int>(SyncOperation::OP_QUERY_FIELD_FAILURE),           INVALID_QUERY_FIELD },
-        { static_cast<int>(SyncOperation::OP_NOT_SUPPORT),                   NOT_SUPPORT },
-    };
     bool allFinish = true;
     {
         std::lock_guard<std::mutex> lockGuard(syncMapLock_);
         fullSyncIdMap_[syncId].erase(subSyncId);
         allFinish = fullSyncIdMap_[syncId].empty();
         for (const auto &item : devicesMap) {
-            DBStatus status = DB_ERROR;
-            if (statusMap.find(item.second) != statusMap.end()) {
-                status = statusMap[item.second];
-            }
-            resMap_[syncId][item.first][param.syncQuery.GetRelationTableName()] = status;
+            resMap_[syncId][item.first][param.syncQuery.GetRelationTableName()] = static_cast<int>(item.second);
         }
     }
-    if (allFinish) {
+    // block sync do callback in sync function
+    if (allFinish && !param.wait) {
         DoOnComplete(param, syncId);
     }
 }
@@ -131,6 +129,7 @@ void SingleVerRelationalSyncer::DoOnComplete(const SyncParma &param, uint32_t sy
     {
         std::lock_guard<std::mutex> lockGuard(syncMapLock_);
         resMap_.erase(syncId);
+        fullSyncIdMap_.erase(syncId);
     }
 }
 

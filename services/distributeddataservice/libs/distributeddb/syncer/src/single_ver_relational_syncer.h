@@ -22,6 +22,9 @@ public:
     SingleVerRelationalSyncer() = default;
     ~SingleVerRelationalSyncer() override = default;
 
+    // Sync function. use SyncParma to reduce paramter.
+    int Sync(const SyncParma &param) override;
+
     void EnableAutoSync(bool enable) override;
 
     int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash) override;
@@ -50,6 +53,5 @@ private:
     std::map<uint32_t, std::map<std::string, std::map<std::string, int>>> resMap_;
 };
 }
-
 #endif
 #endif // RELATIONAL_SYNCER_H

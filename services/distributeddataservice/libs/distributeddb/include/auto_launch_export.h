@@ -46,6 +46,7 @@ struct AutoLaunchParam {
     std::string storeId;
     AutoLaunchOption option;
     AutoLaunchNotifier notifier;
+    std::string path;
 };
 
 using AutoLaunchRequestCallback = std::function<bool (const std::string &identifier, AutoLaunchParam &param)>;

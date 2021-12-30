@@ -41,6 +41,11 @@ public:
 
     DB_API DBStatus DeleteStore(const std::string &path);
 
+    DB_API static void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback);
+    
+    DB_API static std::string GetRelationalStoreIdentifier(const std::string &userId, const std::string &appId,
+        const std::string &storeId);
+
 private:
     std::string appId_;
     std::string userId_;
