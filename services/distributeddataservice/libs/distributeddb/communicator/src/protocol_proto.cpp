@@ -292,7 +292,7 @@ int ProtocolProto::AnalyzeSplitStructure(const ParseResult &inResult, uint32_t &
 
     // Secondly: Check fragCount and fragNo
     uint32_t lengthBeSplit = frameLen - sizeof(CommPhyHeader);
-    if (fragCount < MIN_FRAGMENT_COUNT || fragCount > lengthBeSplit || fragNo >= fragCount) {
+    if (fragCount == 0 || fragCount < MIN_FRAGMENT_COUNT || fragCount > lengthBeSplit || fragNo >= fragCount) {
         LOGE("[Proto][ParsePhyOpt] FragCount=%u or fragNo=%u illegal.", fragCount, fragNo);
         return -E_PARSE_FAIL;
     }
