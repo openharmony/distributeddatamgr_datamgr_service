@@ -61,6 +61,7 @@ namespace {
         }
         EXPECT_EQ(SQLiteUtils::RegisterCalcHash(db), E_OK);
         EXPECT_EQ(SQLiteUtils::RegisterGetSysTime(db), E_OK);
+        EXPECT_EQ(sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr), SQLITE_OK);
         return rc;
     }
 
@@ -217,6 +218,9 @@ void DistributedDBRelationalVerP2PSyncTest::SetUpTestCase()
     */
     DistributedDBToolsUnitTest::TestDirInit(g_testDir);
     g_dbDir = g_testDir + "/test.db";
+    sqlite3 *db = nullptr;
+    ASSERT_EQ(GetDB(db), SQLITE_OK);
+    sqlite3_close(db);
 
     g_communicatorAggregator = new (std::nothrow) VirtualCommunicatorAggregator();
     ASSERT_TRUE(g_communicatorAggregator != nullptr);
