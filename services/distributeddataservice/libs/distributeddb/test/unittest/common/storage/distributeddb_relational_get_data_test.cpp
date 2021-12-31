@@ -55,7 +55,8 @@ void CreateDBAndTable()
         return;
     }
 
-    const string sql { "CREATE TABLE " + g_tableName + "(key BLOB PRIMARY KEY NOT NULL, value BLOB);" };
+    const string sql =
+        "CREATE TABLE " + g_tableName + "(key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, value INTEGER);";
     char *zErrMsg = nullptr;
     errCode = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &zErrMsg);
     if (errCode != SQLITE_OK) {
@@ -82,40 +83,20 @@ int InitRelationalStore()
     return dbStatus;
 }
 
-int AddOrUpdateRecord(const Key &key, const Value &value) {
-    static const string SQL = "INSERT OR REPLACE INTO " + g_tableName + " VALUES(?,?);";
+int AddOrUpdateRecord(int64_t key, int64_t value) {
     sqlite3 *db = nullptr;
-    sqlite3_stmt *statement = nullptr;
     int errCode = sqlite3_open(g_storePath.c_str(), &db);
-    if (errCode != SQLITE_OK) {
-        LOGE("open db failed:%d", errCode);
-        errCode = SQLiteUtils::MapSQLiteErrno(errCode);
-        goto END;
+    if (errCode == SQLITE_OK) {
+        const string sql =
+            "INSERT OR REPLACE INTO " + g_tableName + " VALUES(" + to_string(key) + "," + to_string(value) + ");";
+        errCode = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr);
     }
-    errCode = SQLiteUtils::GetStatement(db, SQL, statement);
-    if (errCode != E_OK) {
-        goto END;
-    }
-    errCode = SQLiteUtils::BindBlobToStatement(statement, 1, key, false); // 1 means key's index
-    if (errCode != E_OK) {
-        goto END;
-    }
-    errCode = SQLiteUtils::BindBlobToStatement(statement, 2, value, true); // 2 means value's index
-    if (errCode != E_OK) {
-        goto END;
-    }
-    errCode = SQLiteUtils::StepWithRetry(statement, false);
-    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
-        errCode = E_OK;
-    }
-
-END:
-    SQLiteUtils::ResetStatement(statement, true, errCode);
+    errCode = SQLiteUtils::MapSQLiteErrno(errCode);
     sqlite3_close(db);
     return errCode;
 }
 
-int GetLogData(const Key &key, uint64_t &flag, TimeStamp &timestamp, const DeviceID &device = "")
+int GetLogData(int key, uint64_t &flag, TimeStamp &timestamp, const DeviceID &device = "")
 {
     string tableName = g_tableName;
     if (!device.empty()) {
@@ -136,11 +117,7 @@ int GetLogData(const Key &key, uint64_t &flag, TimeStamp &timestamp, const Devic
     if (errCode != E_OK) {
         goto END;
     }
-    errCode = SQLiteUtils::BindBlobToStatement(statement, 1, key, false); // 1 means key's index
-    if (errCode != E_OK) {
-        goto END;
-    }
-    errCode = SQLiteUtils::GetStatement(db, sql, statement);
+    errCode = SQLiteUtils::BindInt64ToStatement(statement, 1, key); // 1 means key's index
     if (errCode != E_OK) {
         goto END;
     }
@@ -183,6 +160,22 @@ const RelationalSyncAbleStorage *GetRelationalStore()
         return nullptr;
     }
     return static_cast<SQLiteRelationalStore *>(store)->GetStorageEngine();
+}
+
+int GetCount(sqlite3 *db, const string &sql, size_t &count)
+{
+    sqlite3_stmt *stmt = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    errCode = SQLiteUtils::StepWithRetry(stmt, false);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+        count = static_cast<size_t>(sqlite3_column_int64(stmt, 0));
+        errCode = E_OK;
+    }
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return errCode;
 }
 }
 
@@ -238,15 +231,14 @@ HWTEST_F(DistributedDBRelationalGetDataTest, LogTbl1, TestSize.Level1)
      * @tc.steps: step1. Put data.
      * @tc.expected: Succeed, return OK.
      */
-    Key insertKey = KEY_1;
-    Value insertValue = VALUE_1;
+    int insertKey = 1;
+    int insertValue = 1;
     EXPECT_EQ(AddOrUpdateRecord(insertKey, insertValue), E_OK);
 
     /**
      * @tc.steps: step2. Check log record.
      * @tc.expected: Record exists.
      */
-    Value value;
     uint64_t flag = 0;
     TimeStamp timestamp1 = 0;
     EXPECT_EQ(GetLogData(insertKey, flag, timestamp1), E_OK);
@@ -271,10 +263,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData1, TestSize.Level1)
      */
     const int RECORD_COUNT = 500;
     for (int i = 0; i < RECORD_COUNT; ++i) {
-        string key = "key_" + to_string(i);
-        string value = "value_" + to_string(i);
-        EXPECT_EQ(AddOrUpdateRecord(Key(key.data(), key.data() + key.size()),
-                                    Value(value.data(), value.data() + value.size())), E_OK);
+        EXPECT_EQ(AddOrUpdateRecord(i, i), E_OK);
     }
 
     /**
@@ -317,10 +306,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetQuerySyncData1, TestSize.Level1)
      */
     const int RECORD_COUNT = 100; // 100 records.
     for (int i = 0; i < RECORD_COUNT; ++i) {
-        string key = "k" + to_string(i);
-        string value = "v" + to_string(i);
-        EXPECT_EQ(AddOrUpdateRecord(Key(key.data(), key.data() + key.size()),
-                                    Value(value.data(), value.data() + value.size())), E_OK);
+        EXPECT_EQ(AddOrUpdateRecord(i, i), E_OK);
     }
 
     /**
@@ -340,5 +326,77 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetQuerySyncData1, TestSize.Level1)
     EXPECT_EQ(errCode, E_OK);
     EXPECT_EQ(token, nullptr);
     SingleVerKvEntry::Release(entries);
+}
+
+/**
+ * @tc.name: GetIncorrectTypeData1
+ * @tc.desc: GetSyncData and PutSyncDataWithQuery interface.
+ * @tc.type: FUNC
+ * @tc.require: AR000GK58H
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBRelationalGetDataTest, GetIncorrectTypeData1, TestSize.Level1)
+{
+    EXPECT_EQ(InitRelationalStore(), DBStatus::OK);
+
+    /**
+     * @tc.steps: step1. Create distributed table "dataPlus".
+     * @tc.expected: Succeed, return OK.
+     */
+    sqlite3 *db = nullptr;
+    EXPECT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+    const string tableName = g_tableName + "Plus";
+    string sql = "CREATE TABLE " + tableName + "(key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, value INTEGER);";
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(tableName, RelationalStoreDelegate::TableOption()), DBStatus::OK);
+
+    /**
+     * @tc.steps: step2. Put 5 records with different type into "dataPlus" table.
+     * @tc.expected: Succeed, return OK.
+     */
+    vector<string> sqls = {
+        "INSERT INTO " + tableName + " VALUES(NULL, 1);",
+        "INSERT INTO " + tableName + " VALUES(NULL, 0.01);",
+        "INSERT INTO " + tableName + " VALUES(NULL, NULL);",
+        "INSERT INTO " + tableName + " VALUES(NULL, 'This is a text.');",
+        "INSERT INTO " + tableName + " VALUES(NULL, x'0123456789');",
+    };
+    const size_t RECORD_COUNT = sqls.size();
+    for (const auto &sql : sqls) {
+        ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    }
+
+    /**
+     * @tc.steps: step3. Get all data from "dataPlus" table.
+     * @tc.expected: Succeed and the count is right.
+     */
+    auto store = GetRelationalStore();
+    ContinueToken token = nullptr;
+    QueryObject query(Query::Select(tableName));
+    std::vector<SingleVerKvEntry *> entries;
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    EXPECT_EQ(entries.size(), RECORD_COUNT);
+
+    /**
+     * @tc.steps: step4. Put data into "data" table from deviceA.
+     * @tc.expected: Succeed, return OK.
+     */
+    QueryObject queryPlus(Query::Select(g_tableName));
+    const DeviceID deviceID = "deviceA";
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(queryPlus, entries, deviceID), E_OK);
+    SingleVerKvEntry::Release(entries);
+
+    /**
+     * @tc.steps: step5. Check data.
+     * @tc.expected: All data in the two tables are same.
+     */
+    sql = "SELECT count(*) "
+        "FROM " + tableName + " as a, " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_" +
+            DBCommon::TransferStringToHex(DBCommon::TransferHashString(deviceID)) + " as b "
+        "WHERE a.key=b.key AND (a.value=b.value OR (a.value is NULL AND b.value is NULL));";
+    size_t count = 0;
+    EXPECT_EQ(GetCount(db, sql, count), E_OK);
+    EXPECT_EQ(count, RECORD_COUNT);
+    sqlite3_close(db);
 }
 #endif

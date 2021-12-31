@@ -303,13 +303,10 @@ int DataTransformer::SerializeValue(Value &value, const RowData &rowData, const 
     for (uint32_t i = 0; i < rowData.size(); ++i) {
         const auto &dataValue = rowData[i];
         const auto &fieldInfo = fieldInfoList[i];
-        if (dataValue.GetType() != StorageType::STORAGE_TYPE_NULL &&
-            dataValue.GetType() != fieldInfo.GetStorageType()) {
-            return -E_INVALID_DATA;
-        }
         if (typeFuncMap.find(dataValue.GetType()) == typeFuncMap.end()) {
             return -E_NOT_SUPPORT;
         }
+        totalLength += Parcel::GetUInt32Len(); // For save the dataValue's type.
         uint32_t dataLength = CalDataValueLength(dataValue);
         totalLength += dataLength;
     }
@@ -320,9 +317,7 @@ int DataTransformer::SerializeValue(Value &value, const RowData &rowData, const 
     for (const auto &dataValue : rowData) {
         const auto &fieldInfo = fieldInfoList[index++];
         StorageType type = dataValue.GetType();
-        if (dataValue.GetType() == StorageType::STORAGE_TYPE_NULL) {
-            type = fieldInfo.GetStorageType();
-        }
+        parcel.WriteUInt32(static_cast<uint32_t>(type));
         int errCode = typeFuncMap[type].serializeFunc(dataValue, parcel);
         if (errCode != E_OK) {
             value.clear();
@@ -347,7 +342,13 @@ int DataTransformer::DeSerializeValue(const Value &value, OptRowData &optionalDa
         DataValue dataValue;
         LOGD("[DataTransformer][DeSerializeValue] start deSerialize %s type %d",
             fieldInfo.GetFieldName().c_str(), fieldInfo.GetStorageType());
-        int errCode = typeFuncMap[fieldInfo.GetStorageType()].deSerializeFunc(dataValue, parcel);
+        uint32_t type = 0;
+        parcel.ReadUInt32(type);
+        auto iter = typeFuncMap.find(static_cast<StorageType>(type));
+        if (iter == typeFuncMap.end()) {
+            return -E_PARSE_FAIL;
+        }
+        int errCode = iter->second.deSerializeFunc(dataValue, parcel);
         if (errCode != E_OK) {
             LOGD("[DataTransformer][DeSerializeValue] deSerialize %s failed", fieldInfo.GetFieldName().c_str());
             return errCode;

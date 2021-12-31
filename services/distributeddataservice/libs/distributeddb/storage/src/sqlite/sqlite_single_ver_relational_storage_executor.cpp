@@ -114,34 +114,17 @@ int SQLiteSingleVerRelationalStorageExecutor::SetTableInfo(const QueryObject &qu
 
 static void GetDataValueByType(sqlite3_stmt *statement, DataValue &value, StorageType type, int cid)
 {
-    switch (type) {
-        case StorageType::STORAGE_TYPE_BOOL: {
-            value = static_cast<bool>(sqlite3_column_int64(statement, cid));
+    int storageType = sqlite3_column_type(statement, cid);
+    switch (storageType) {
+        case SQLITE_INTEGER: {
+            value = static_cast<int64_t>(sqlite3_column_int64(statement, cid));
             break;
         }
-
-        case StorageType::STORAGE_TYPE_INTEGER: {
-            int64_t v = static_cast<int64_t>(sqlite3_column_int64(statement, cid));
-            value = v;
-            break;
-        }
-
-        case StorageType::STORAGE_TYPE_REAL: {
+        case SQLITE_FLOAT: {
             value = sqlite3_column_double(statement, cid);
             break;
         }
-
-        case StorageType::STORAGE_TYPE_TEXT: {
-            const char *colValue = reinterpret_cast<const char*>(sqlite3_column_text(statement, cid));
-            if (colValue == nullptr) {
-                value = std::string();
-            } else {
-                value = std::string(colValue);
-            }
-            break;
-        }
-
-        case StorageType::STORAGE_TYPE_BLOB: {
+        case SQLITE_BLOB: {
             std::vector<uint8_t> blobValue;
             (void)SQLiteUtils::GetColumnBlobValue(statement, cid, blobValue);
             Blob blob;
@@ -149,16 +132,29 @@ static void GetDataValueByType(sqlite3_stmt *statement, DataValue &value, Storag
             value = blob;
             break;
         }
-
-        default:
-            return;
+        case SQLITE_NULL: {
+            break;
+        }
+        case SQLITE3_TEXT: {
+            const char *colValue = reinterpret_cast<const char*>(sqlite3_column_text(statement, cid));
+            if (colValue == nullptr) {
+                value.ResetValue();
+            } else {
+                value = std::string(colValue);
+            }
+            break;
+        }
+        default: {
+            break;
+        }
     }
+    return;
 }
 
 static void BindDataValueByType(sqlite3_stmt *statement,
     const std::optional<DataValue> &value, StorageType type, int cid)
 {
-    if (value == std::nullopt) {
+    if (value == std::nullopt || type == StorageType::STORAGE_TYPE_NULL) {
         sqlite3_bind_null(statement, cid);
         return;
     }
