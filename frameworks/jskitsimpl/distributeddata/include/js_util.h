@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +27,31 @@
 namespace OHOS::DistributedData {
 class JSUtil {
 public:
+    enum ValueType : uint8_t {
+        /** Indicates that the value type is string. */
+        STRING = 0,
+        /** Indicates that the value type is int. */
+        INTEGER = 1,
+        /** Indicates that the value type is float. */
+        FLOAT = 2,
+        /** Indicates that the value type is byte array. */
+        BYTE_ARRAY = 3,
+        /** Indicates that the value type is boolean. */
+        BOOLEAN = 4,
+        /** Indicates that the value type is double. */
+        DOUBLE = 5,
+
+        INVALID = 255,
+    };
+    
+    enum {
+        /* exported js SubscribeType  is (DistributedKv::SubscribeType-1) */
+        SUBSCRIBE_LOCAL = 0,        /* i.e. SubscribeType::SUBSCRIBE_TYPE_LOCAL-1  */
+        SUBSCRIBE_REMOTE = 1,       /* i.e. SubscribeType::SUBSCRIBE_TYPE_REMOTE-1 */
+        SUBSCRIBE_LOCAL_REMOTE = 2, /* i.e. SubscribeType::SUBSCRIBE_TYPE_ALL--1   */
+        SUBSCRIBE_COUNT = 3
+    };
+
     static constexpr int32_t MAX_ARGC = 6;
     static constexpr int32_t MAX_NUMBER_BYTES = 8;
     static constexpr int32_t MAX_LEN = 4096;
@@ -48,22 +73,7 @@ public:
 private:
     static napi_value GetJSEntries(napi_env env, const std::list<DistributedKv::Entry> &entries);
     static napi_value GetJSEntries(napi_env env, const std::vector<DistributedKv::Entry> &entries);
-    enum ValueType : uint8_t {
-        /** Indicates that the value type is string. */
-        STRING = 0,
-        /** Indicates that the value type is int. */
-        INTEGER = 1,
-        /** Indicates that the value type is float. */
-        FLOAT = 2,
-        /** Indicates that the value type is byte array. */
-        BYTE_ARRAY = 3,
-        /** Indicates that the value type is boolean. */
-        BOOLEAN = 4,
-        /** Indicates that the value type is double. */
-        DOUBLE = 5,
 
-        INVALID = 255,
-    };
     static constexpr int32_t TYPE_POS = 0;
     static constexpr int32_t DATA_POS = TYPE_POS + 1;
     static constexpr int32_t TUPLE_SIZE = 2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -308,15 +308,15 @@ napi_value JSUtil::Convert2JSNumber(napi_env env, const std::vector<uint8_t> &da
     switch (data[0]) {
         case INTEGER:
             memcpy_s(byteValue, sizeof(byteValue), data.data() + DATA_POS, sizeof(int32_t));
-            value = *(reinterpret_cast<const int32_t *>(byteValue));
+            value = *(reinterpret_cast<const int32_t *>((void*)byteValue));
             break;
         case FLOAT:
             memcpy_s(byteValue, sizeof(byteValue), data.data() + DATA_POS, sizeof(float));
-            value = *(reinterpret_cast<const float *>(byteValue));
+            value = *(reinterpret_cast<const float *>((void*)byteValue));
             break;
         case DOUBLE:
             memcpy_s(byteValue, sizeof(byteValue), data.data() + DATA_POS, sizeof(double));
-            value = *(reinterpret_cast<const double *>(byteValue));
+            value = *(reinterpret_cast<const double *>((void*)byteValue));
             break;
         default:
             napi_get_undefined(env, &jsValue);
