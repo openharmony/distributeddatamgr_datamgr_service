@@ -80,9 +80,8 @@ DB_API DBStatus RelationalStoreManager::OpenStore(const std::string &path, const
 
     int errCode = E_OK;
     auto *conn = GetOneConnectionWithRetry(properties, errCode);
-    DBStatus status = TransferDBErrno(errCode);
     if (conn == nullptr) {
-        return status;
+        return TransferDBErrno(errCode);
     }
 
     delegate = new (std::nothrow) RelationalStoreDelegateImpl(conn, path);

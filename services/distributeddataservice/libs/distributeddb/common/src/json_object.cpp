@@ -727,6 +727,7 @@ int JsonObject::GetObjectArrayByFieldPath(const FieldPath &inPath, std::vector<J
     int errCode = E_OK;
     const Json::Value &valueNode = GetJsonValueByFieldPath(inPath, errCode);
     if (errCode != E_OK) {
+        LOGE("[Json][GetValue] Get json value failed. %d", errCode);
         return errCode;
     }
 
@@ -749,6 +750,7 @@ int JsonObject::GetObjectByFieldPath(const FieldPath &inPath, JsonObject &outObj
     int errCode = E_OK;
     const Json::Value &valueNode = GetJsonValueByFieldPath(inPath, errCode);
     if (errCode != E_OK) {
+        LOGE("[Json][GetValue] Get json value failed. %d", errCode);
         return errCode;
     }
 
@@ -769,6 +771,7 @@ int JsonObject::GetStringArrayByFieldPath(const FieldPath &inPath, std::vector<s
     int errCode = E_OK;
     const Json::Value &valueNode = GetJsonValueByFieldPath(inPath, errCode);
     if (errCode != E_OK) {
+        LOGE("[Json][GetValue] Get json value failed. %d", errCode);
         return errCode;
     }
 

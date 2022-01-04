@@ -46,7 +46,7 @@ uint32_t Blob::GetSize() const
 int Blob::WriteBlob(const uint8_t *ptrArray, const uint32_t &size)
 {
     if (size == 0) return E_OK;
-    ptr_ = new(std::nothrow) uint8_t[size];
+    ptr_ = new (std::nothrow) uint8_t[size];
     if (ptr_ == nullptr) {
         return -E_OUT_OF_MEMORY;
     }
@@ -159,7 +159,7 @@ DataValue &DataValue::operator=(const Blob &blob)
     if (blob.GetSize() <= 0) {
         return *this;
     }
-    value_.blobPtr = new(std::nothrow) Blob();
+    value_.blobPtr = new (std::nothrow) Blob();
     if (value_.blobPtr == nullptr) {
         return *this;
     }
@@ -173,7 +173,7 @@ DataValue &DataValue::operator=(const Blob &blob)
 DataValue &DataValue::operator=(const std::string &string)
 {
     ResetValue();
-    value_.blobPtr = new(std::nothrow) Blob();
+    value_.blobPtr = new (std::nothrow) Blob();
     if (value_.blobPtr == nullptr) {
         return *this;
     }
@@ -247,7 +247,7 @@ int DataValue::GetBlob(Blob *&outVal) const
     if (type_ != StorageType::STORAGE_TYPE_BLOB && type_ != StorageType::STORAGE_TYPE_TEXT) {
         return -E_NOT_SUPPORT;
     }
-    outVal = new(std::nothrow) Blob();
+    outVal = new (std::nothrow) Blob();
     if (outVal == nullptr) {
         return -E_OUT_OF_MEMORY;
     }

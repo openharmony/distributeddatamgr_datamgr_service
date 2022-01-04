@@ -174,7 +174,7 @@ int SQLiteRelationalStore::Open(const RelationalDBProperties &properties)
             break;
         }
 
-        storageEngine_ = new(std::nothrow) RelationalSyncAbleStorage(sqliteStorageEngine_);
+        storageEngine_ = new (std::nothrow) RelationalSyncAbleStorage(sqliteStorageEngine_);
         if (storageEngine_ == nullptr) {
             LOGE("[RelationalStore][Open] Create syncable storage failed");
             errCode = -E_OUT_OF_MEMORY;
@@ -311,7 +311,7 @@ int SQLiteRelationalStore::CreateDistributedTable(const std::string &tableName)
     std::lock_guard<std::mutex> lock(schemaMutex_);
     auto schema = properties_.GetSchema();
     if (schema.GetTable(tableName).GetTableName() == tableName) {
-        LOGW("distributed table %s was already created.", tableName.c_str());
+        LOGW("distributed table was already created.");
         return E_OK;
     }
 
@@ -320,7 +320,7 @@ int SQLiteRelationalStore::CreateDistributedTable(const std::string &tableName)
         return -E_MAX_LIMITS;
     }
 
-    LOGD("Create distributed table for %s.", tableName.c_str());
+    LOGD("Create distributed table.");
     auto *handle = GetHandle(true, errCode);
     if (handle == nullptr) {
         return errCode;

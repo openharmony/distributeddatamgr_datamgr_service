@@ -14,10 +14,10 @@
  */
 #ifdef RELATIONAL_STORE
 #include <algorithm>
-#include <schema_utils.h>
 
 #include "json_object.h"
 #include "relational_schema_object.h"
+#include "schema_utils.h"
 
 namespace DistributedDB {
 const std::string &FieldInfo::GetFieldName() const
