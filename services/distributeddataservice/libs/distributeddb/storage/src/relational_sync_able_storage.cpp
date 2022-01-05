@@ -14,6 +14,8 @@
  */
 #ifdef RELATIONAL_STORE
 #include "relational_sync_able_storage.h"
+
+#include "data_compression.h"
 #include "platform_specific.h"
 #include "generic_single_ver_kv_entry.h"
 
@@ -480,6 +482,12 @@ void RelationalSyncAbleStorage::NotifySchemaChanged()
         LOGD("Notify relational schema was changed");
         onSchemaChanged_();
     }
+}
+int RelationalSyncAbleStorage::GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const
+{
+    algorithmSet.clear();
+    DataCompression::GetCompressionAlgo(algorithmSet);
+    return E_OK;
 }
 }
 #endif

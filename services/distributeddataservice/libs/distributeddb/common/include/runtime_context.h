@@ -20,14 +20,15 @@
 #include <string>
 #include <functional>
 
-#include "macro_utils.h"
-#include "notification_chain.h"
+#include "auto_launch.h"
+#include "auto_launch_export.h"
 #include "icommunicator_aggregator.h"
 #include "iprocess_system_api_adapter.h"
-#include "types_export.h"
 #include "kv_store_observer.h"
 #include "kvdb_properties.h"
-#include "auto_launch_export.h"
+#include "macro_utils.h"
+#include "notification_chain.h"
+#include "types_export.h"
 
 namespace DistributedDB {
 using TimerId = uint64_t;
@@ -85,7 +86,7 @@ public:
 
     virtual void GetAutoLaunchSyncDevices(const std::string &identifier, std::vector<std::string> &devices) const = 0;
 
-    virtual void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback) = 0;
+    virtual void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback, DBType type) = 0;
 
     virtual NotificationChain::Listener *RegisterLockStatusLister(const LockStatusNotifier &action, int &errCode) = 0;
 

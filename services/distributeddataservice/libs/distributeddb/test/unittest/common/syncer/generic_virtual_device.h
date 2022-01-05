@@ -42,6 +42,7 @@ public:
     TimeOffset GetLocalTimeOffset() const;
     virtual int Sync(SyncMode mode, bool wait);
     virtual int Sync(SyncMode mode, const Query &query, bool wait);
+    virtual int Sync(SyncMode mode, const Query &query, const SyncOperation::UserCallback &callBack, bool wait);
 
 protected:
     ICommunicator *communicateHandle_;

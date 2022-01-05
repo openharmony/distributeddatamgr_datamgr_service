@@ -666,7 +666,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch007, TestSize.Level3)
      * @tc.expected: step1. success.
      */
     RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(
-        std::bind(AutoLaunchCallBack, std::placeholders::_1, std::placeholders::_2, observer, true));
+        std::bind(AutoLaunchCallBack, std::placeholders::_1, std::placeholders::_2, observer, true), DBType::DB_KV);
     /**
      * @tc.steps: step2. RunCommunicatorLackCallback
      * @tc.expected: step2. success.
@@ -709,7 +709,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch007, TestSize.Level3)
         g_statusMap.clear();
         g_finished = false;
     }
-    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr);
+    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr, DBType::DB_KV);
     delete observer;
 }
 
@@ -729,7 +729,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch008, TestSize.Level3)
      * @tc.expected: step1. success.
      */
     RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(
-        std::bind(AutoLaunchCallBack, std::placeholders::_1, std::placeholders::_2, observer, false));
+        std::bind(AutoLaunchCallBack, std::placeholders::_1, std::placeholders::_2, observer, false), DBType::DB_KV);
     /**
      * @tc.steps: step2. RunCommunicatorLackCallback
      * @tc.expected: step2. success.
@@ -747,7 +747,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch008, TestSize.Level3)
     std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
     EXPECT_TRUE(observer->GetCallCount() == 0);
     EXPECT_TRUE(g_finished == false);
-    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr);
+    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr, DBType::DB_KV);
     delete observer;
 }
 
@@ -766,7 +766,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch009, TestSize.Level3)
      * @tc.steps: step1. SetAutoLaunchRequestCallback
      * @tc.expected: step1. success.
      */
-    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(AutoLaunchCallBackBadParam);
+    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(AutoLaunchCallBackBadParam, DBType::DB_KV);
     /**
      * @tc.steps: step2. RunCommunicatorLackCallback
      * @tc.expected: step2. success.
@@ -789,7 +789,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch009, TestSize.Level3)
         g_statusMap.clear();
         g_finished = false;
     }
-    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr);
+    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr, DBType::DB_KV);
     delete observer;
 }
 
@@ -809,9 +809,9 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch010, TestSize.Level3)
      * @tc.expected: step1. success.
      */
     RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(
-        std::bind(AutoLaunchCallBack, std::placeholders::_1, std::placeholders::_2, observer, false));
+        std::bind(AutoLaunchCallBack, std::placeholders::_1, std::placeholders::_2, observer, false), DBType::DB_KV);
 
-    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr);
+    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr, DBType::DB_KV);
     /**
      * @tc.steps: step2. RunCommunicatorLackCallback
      * @tc.expected: step2. success.
@@ -828,7 +828,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch010, TestSize.Level3)
     std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
     EXPECT_TRUE(observer->GetCallCount() == 0);
     EXPECT_TRUE(g_finished == false);
-    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr);
+    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr, DBType::DB_KV);
     delete observer;
 }
 
@@ -941,7 +941,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch013, TestSize.Level3)
     KvStoreObserverUnitTest *observer = new (std::nothrow) KvStoreObserverUnitTest;
     ASSERT_TRUE(observer != nullptr);
     RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(
-        std::bind(AutoLaunchCallBack, std::placeholders::_1, std::placeholders::_2, observer, true));
+        std::bind(AutoLaunchCallBack, std::placeholders::_1, std::placeholders::_2, observer, true), DBType::DB_KV);
 
     /**
      * @tc.steps: step2. RunOnConnectCallback RunCommunicatorLackCallback
@@ -988,7 +988,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch013, TestSize.Level3)
         g_statusMap.clear();
         g_finished = false;
     }
-    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr);
+    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(nullptr, DBType::DB_KV);
     delete observer;
     /**
      * @tc.steps: step4. param A B disable

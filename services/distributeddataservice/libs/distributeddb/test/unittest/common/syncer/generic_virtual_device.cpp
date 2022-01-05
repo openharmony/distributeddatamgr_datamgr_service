@@ -212,7 +212,13 @@ int GenericVirtualDevice::Sync(SyncMode mode, bool wait)
 
 int GenericVirtualDevice::Sync(SyncMode mode, const Query &query, bool wait)
 {
-    auto operation = new (std::nothrow) SyncOperation(1, {remoteDeviceId_}, mode, nullptr, wait);
+    return Sync(mode, query, nullptr, wait);
+}
+
+int GenericVirtualDevice::Sync(SyncMode mode, const Query &query,
+    const SyncOperation::UserCallback &callBack, bool wait)
+{
+    auto operation = new (std::nothrow) SyncOperation(1, {remoteDeviceId_}, mode, callBack, wait);
     if (operation == nullptr) {
         return -E_OUT_OF_MEMORY;
     }

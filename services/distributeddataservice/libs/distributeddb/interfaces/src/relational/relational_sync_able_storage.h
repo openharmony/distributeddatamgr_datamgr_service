@@ -108,6 +108,7 @@ public:
     int RegisterSchemaChangedCallback(const std::function<void()> &callback) override;
 
     void NotifySchemaChanged();
+    int GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const override;
 
 private:
     SQLiteSingleVerRelationalStorageExecutor *GetHandle(bool isWrite, int &errCode, OperatePerm perm) const;

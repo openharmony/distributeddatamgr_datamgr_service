@@ -35,15 +35,25 @@ using namespace DistributedDBUnitTest;
 namespace {
     const std::string DEVICE_B = "deviceB";
     const std::string g_tableName = "TEST_TABLE";
+    const std::string g_syncTableName = "naturalbase_rdb_aux_" + 
+        g_tableName + "_" + DBCommon::TransferStringToHex(DBCommon::TransferHashString(DEVICE_B));
 
     RelationalStoreManager g_mgr(APP_ID, USER_ID);
     std::string g_testDir;
     std::string g_dbDir;
+    std::string g_id;
     DistributedDBToolsUnitTest g_tool;
-    DBStatus g_kvDelegateStatus = INVALID_ARGS;
     RelationalStoreDelegate* g_kvDelegatePtr = nullptr;
     VirtualCommunicatorAggregator* g_communicatorAggregator = nullptr;
     RelationalVirtualDevice *g_deviceB = nullptr;
+    std::vector<FieldInfo> g_fieldInfoList;
+
+    void OpenStore()
+    {
+        RelationalStoreDelegate::Option option;
+        g_mgr.OpenStore(g_dbDir, STORE_ID_1, option, g_kvDelegatePtr);
+        ASSERT_TRUE(g_kvDelegatePtr != nullptr);
+    }
 
     int GetDB(sqlite3 *&db)
     {
@@ -116,7 +126,7 @@ namespace {
         dataMap["ID"] = id;
         rowData.push_back(dataMap["ID"]);
         std::string val = "test";
-        dataMap["NAME"] = val;
+        dataMap["NAME"].SetText(val);
         rowData.push_back(dataMap["NAME"]);
         dataMap["AGE"] = INT64_MAX;
         rowData.push_back(dataMap["AGE"]);
@@ -124,7 +134,7 @@ namespace {
 
     void InsertFieldInfo()
     {
-        std::vector<FieldInfo> localFieldInfo;
+        g_fieldInfoList.clear();
         FieldInfo columnFirst;
         columnFirst.SetFieldName("ID");
         columnFirst.SetStorageType(StorageType::STORAGE_TYPE_INTEGER);
@@ -134,10 +144,10 @@ namespace {
         FieldInfo columnThird;
         columnThird.SetFieldName("AGE");
         columnThird.SetStorageType(StorageType::STORAGE_TYPE_INTEGER);
-        localFieldInfo.push_back(columnFirst);
-        localFieldInfo.push_back(columnSecond);
-        localFieldInfo.push_back(columnThird);
-        g_deviceB->SetLocalFieldInfo(localFieldInfo);
+        g_fieldInfoList.push_back(columnFirst);
+        g_fieldInfoList.push_back(columnSecond);
+        g_fieldInfoList.push_back(columnThird);
+        g_deviceB->SetLocalFieldInfo(g_fieldInfoList);
     }
 
     void BlockSync(SyncMode syncMode, DBStatus exceptStatus)
@@ -158,6 +168,69 @@ namespace {
         }
     }
 
+    int PrepareSelect(sqlite3 *db, sqlite3_stmt *&statement, const std::string &table)
+    {
+        const std::string sql = "SELECT * FROM " + table;
+        return sqlite3_prepare_v2(db, sql.c_str(), -1, &statement, nullptr);
+    }
+
+    void GetDataValue(sqlite3_stmt *statement, int row, int col, DataValue &dataValue)
+    {
+        int type = sqlite3_column_type(statement, col);
+        switch (type) {
+            case SQLITE_INTEGER: {
+                dataValue = static_cast<int64_t>(sqlite3_column_int64(statement, col));
+                break;    
+            }
+            case SQLITE_FLOAT: {
+                dataValue = sqlite3_column_double(statement, col);
+                break;
+            }
+            case SQLITE_TEXT: {
+                dataValue.SetText(std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement, col))));
+                break;
+            }
+            case SQLITE_BLOB: {
+                std::vector<uint8_t> blobValue;
+                (void)SQLiteUtils::GetColumnBlobValue(statement, col, blobValue);
+                Blob blob;
+                blob.WriteBlob(blobValue.data(), static_cast<uint32_t>(blobValue.size()));
+                dataValue.SetBlob(blob);
+                break;
+            }
+            case SQLITE_NULL:
+                break;
+            default:
+                LOGW("unknown type[%d] row[%llu] column[%d] ignore", type, row, col);
+        }
+    }
+
+    void GetSyncDataStep(std::vector<RowData> &dataList, sqlite3_stmt *statement)
+    {
+        int columnCount = sqlite3_column_count(statement);
+        RowData rowData;
+        for (int col = 0; col < columnCount; ++col) {
+            DataValue dataValue;
+            GetDataValue(statement, static_cast<int>(dataList.size() + 1), col, dataValue);
+            rowData.push_back(std::move(dataValue));
+        }
+        dataList.push_back(rowData);
+    }
+
+    void GetSyncData(sqlite3 *db, std::vector<RowData> &dataList)
+    {
+        sqlite3_stmt *statement = nullptr;
+        EXPECT_EQ(PrepareSelect(db, statement, g_syncTableName), SQLITE_OK);
+        while (true) {
+            int rc = sqlite3_step(statement);
+            if (rc != SQLITE_ROW) {
+                LOGD("GetSyncData Exist by code[%d]", rc);
+                break;
+            }
+            GetSyncDataStep(dataList, statement);
+        }
+    }
+
     void InsertValueToDB(RowData &rowData)
     {
         sqlite3 *db = nullptr;
@@ -166,7 +239,7 @@ namespace {
         sqlite3_close(db);
     }
 
-    void PrepareEnvironment(RowData &rowData)
+    void PrepareEnvironment(std::map<std::string, DataValue> dataMap)
     {
         sqlite3 *db = nullptr;
         EXPECT_EQ(GetDB(db), SQLITE_OK);
@@ -177,27 +250,57 @@ namespace {
         sqlite3_close(db);
 
         InsertFieldInfo();
-        std::map<std::string, DataValue> dataMap;
+        RowData rowData;
         GenerateValue(rowData, dataMap);
         InsertValueToDB(rowData);
+    }
 
-        rowData.clear();
+    void PrepareVirtualEnvironment(RowData &rowData)
+    {
+        sqlite3 *db = nullptr;
+        EXPECT_EQ(GetDB(db), SQLITE_OK);
+        EXPECT_EQ(CreateTable(db), SQLITE_OK);
+        EXPECT_EQ(g_kvDelegatePtr->CreateDistributedTable(g_tableName), OK);
+
+        sqlite3_close(db);
+
+        std::map<std::string, DataValue> dataMap;
+        GenerateValue(rowData, dataMap);
+        VirtualRowData virtualRowData;
         for (const auto &item : dataMap) {
-            rowData.push_back(item.second);
+            virtualRowData.objectData.PutDataValue(item.first, item.second);
+        }
+        virtualRowData.logInfo.timestamp = 1;
+        g_deviceB->PutData(g_tableName, {virtualRowData});
+        InsertFieldInfo();
+    }
+
+    void CheckData(RowData &rowData)
+    {
+        std::vector<RowData> dataList;
+        sqlite3 *db = nullptr;
+        EXPECT_EQ(GetDB(db), SQLITE_OK);
+        GetSyncData(db, dataList);
+        sqlite3_close(db);
+
+        ASSERT_EQ(dataList.size(), static_cast<size_t>(1));
+        for (size_t j = 0; j < dataList[0].size(); ++j) {
+            EXPECT_TRUE(dataList[0][j] == rowData[j]);
         }
     }
 
-    void CheckVirtualData(RowData &rowData)
+    void CheckVirtualData(std::map<std::string, DataValue> data)
     {
-        std::vector<RowDataWithLog> targetData;
+        std::vector<VirtualRowData> targetData;
         g_deviceB->GetAllSyncData(g_tableName, targetData);
 
-        for (auto &item : targetData) {
-            for (int j = 0; j < static_cast<int>(item.rowData.size()); ++j) {
-                LOGD("index %d actual_val[%s] except_val[%s]",
-                    j, item.rowData[j].ToString().c_str(), rowData[j].ToString().c_str());
-                EXPECT_TRUE(item.rowData[j] == rowData[j]);
-            }
+        ASSERT_EQ(targetData.size(), 1u);
+        for (auto &[field, value] : data) {
+            DataValue target;
+            EXPECT_EQ(targetData[0].objectData.GetDataValue(field, target), E_OK);
+            LOGD("field %s actual_val[%s] except_val[%s]",
+                    field.c_str(), target.ToString().c_str(), value.ToString().c_str());
+            EXPECT_TRUE(target == value);
         }
     }
 }
@@ -217,13 +320,12 @@ void DistributedDBRelationalVerP2PSyncTest::SetUpTestCase()
     */
     DistributedDBToolsUnitTest::TestDirInit(g_testDir);
     g_dbDir = g_testDir + "/test.db";
-    sqlite3 *db = nullptr;
-    ASSERT_EQ(GetDB(db), SQLITE_OK);
-    sqlite3_close(db);
 
     g_communicatorAggregator = new (std::nothrow) VirtualCommunicatorAggregator();
     ASSERT_TRUE(g_communicatorAggregator != nullptr);
     RuntimeContext::GetInstance()->SetCommunicatorAggregator(g_communicatorAggregator);
+
+    g_id = g_mgr.GetRelationalStoreIdentifier(APP_ID, USER_ID, STORE_ID_1);
 }
 
 void DistributedDBRelationalVerP2PSyncTest::TearDownTestCase()
@@ -244,9 +346,10 @@ void DistributedDBRelationalVerP2PSyncTest::SetUp(void)
     /**
     * @tc.setup: create virtual device B, and get a KvStoreNbDelegate as deviceA
     */
-    g_kvDelegateStatus = g_mgr.OpenStore(g_dbDir, "Relational_default_id", {}, g_kvDelegatePtr);
-    ASSERT_TRUE(g_kvDelegateStatus == OK);
-    ASSERT_TRUE(g_kvDelegatePtr != nullptr);
+    sqlite3 *db = nullptr;
+    ASSERT_EQ(GetDB(db), SQLITE_OK);
+    sqlite3_close(db);
+    OpenStore();
     g_deviceB = new (std::nothrow) RelationalVirtualDevice(DEVICE_B);
     ASSERT_TRUE(g_deviceB != nullptr);
     auto *syncInterfaceB = new (std::nothrow) VirtualRelationalVerSyncDBInterface();
@@ -283,86 +386,80 @@ void DistributedDBRelationalVerP2PSyncTest::TearDown(void)
 * @tc.name: Normal Sync 001
 * @tc.desc: Test normal push sync for add data.
 * @tc.type: FUNC
-* @tc.require:
+* @tc.require: AR000GK58N
 * @tc.author: zhangqiquan
 */
 HWTEST_F(DistributedDBRelationalVerP2PSyncTest, NormalSync001, TestSize.Level1)
 {
-    RowData rowData;
-    PrepareEnvironment(rowData);
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap);
     BlockSync(SyncMode::SYNC_MODE_PUSH_ONLY, OK);
 
-    CheckVirtualData(rowData);
+    CheckVirtualData(dataMap);
 }
 
 /**
 * @tc.name: Normal Sync 002
 * @tc.desc: Test normal pull sync for add data.
 * @tc.type: FUNC
-* @tc.require:
+* @tc.require: AR000GK58N
 * @tc.author: zhangqiquan
 */
 HWTEST_F(DistributedDBRelationalVerP2PSyncTest, NormalSync002, TestSize.Level1)
 {
-    RowData rowData;
-    PrepareEnvironment(rowData);
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap);
 
-    std::vector<std::string> devices = {DEVICE_B};
     Query query = Query::Select(g_tableName);
     g_deviceB->GenericVirtualDevice::Sync(DistributedDB::SYNC_MODE_PULL_ONLY, query, true);
 
-    CheckVirtualData(rowData);
+    CheckVirtualData(dataMap);
 }
 
 /**
 * @tc.name: Normal Sync 003
 * @tc.desc: Test normal push sync for update data.
 * @tc.type: FUNC
-* @tc.require:
+* @tc.require: AR000GK58N
 * @tc.author: zhangqiquan
 */
 HWTEST_F(DistributedDBRelationalVerP2PSyncTest, NormalSync003, TestSize.Level1)
 {
-    RowData rowData;
-    PrepareEnvironment(rowData);
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap);
 
     BlockSync(SyncMode::SYNC_MODE_PUSH_ONLY, OK);
 
-    CheckVirtualData(rowData);
+    CheckVirtualData(dataMap);
 
     int64_t val = 0;
 
-    std::map<std::string, DataValue> dataMap;
-    rowData.clear();
+    RowData rowData;
     GenerateValue(rowData, dataMap);
     EXPECT_EQ(rowData[rowData.size() - 1].GetInt64(val), E_OK);
     rowData[rowData.size() - 1] = static_cast<int64_t>(1);
     InsertValueToDB(rowData);
     BlockSync(SyncMode::SYNC_MODE_PUSH_ONLY, OK);
 
-    rowData.clear();
     dataMap["AGE"] = static_cast<int64_t>(1);
-    for (const auto &item : dataMap) {
-        rowData.push_back(item.second);
-    }
-    CheckVirtualData(rowData);
+    CheckVirtualData(dataMap);
 }
 
 /**
 * @tc.name: Normal Sync 004
 * @tc.desc: Test normal push sync for delete data.
 * @tc.type: FUNC
-* @tc.require:
+* @tc.require: AR000GK58N
 * @tc.author: zhangqiquan
 */
 HWTEST_F(DistributedDBRelationalVerP2PSyncTest, NormalSync004, TestSize.Level1)
 {
-    RowData rowData;
-    PrepareEnvironment(rowData);
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap);
 
     BlockSync(SyncMode::SYNC_MODE_PUSH_ONLY, OK);
 
-    CheckVirtualData(rowData);
+    CheckVirtualData(dataMap);
 
     sqlite3 *db = nullptr;
     EXPECT_EQ(GetDB(db), SQLITE_OK);
@@ -372,11 +469,194 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, NormalSync004, TestSize.Level1)
 
     BlockSync(SyncMode::SYNC_MODE_PUSH_ONLY, OK);
 
-    std::vector<RowDataWithLog> dataList;
+    std::vector<VirtualRowData> dataList;
     EXPECT_EQ(g_deviceB->GetAllSyncData(g_tableName, dataList), E_OK);
     EXPECT_EQ(static_cast<int>(dataList.size()), 1);
     for (const auto &item : dataList) {
         EXPECT_EQ(item.logInfo.flag, DataItem::DELETE_FLAG);
     }
+}
+
+/**
+* @tc.name: Normal Sync 005
+* @tc.desc: Test normal push sync for add data.
+* @tc.type: FUNC
+* @tc.require: AR000GK58N
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, NormalSync005, TestSize.Level1)
+{
+    RowData rowData;
+    PrepareVirtualEnvironment(rowData);
+
+    Query query = Query::Select(g_tableName);
+    g_deviceB->GenericVirtualDevice::Sync(SYNC_MODE_PUSH_ONLY, query, true);
+
+    CheckData(rowData);
+}
+
+/**
+* @tc.name: Normal Sync 006
+* @tc.desc: Test normal pull sync for add data.
+* @tc.type: FUNC
+* @tc.require: AR000GK58N
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, NormalSync006, TestSize.Level1)
+{
+    RowData rowData;
+    PrepareVirtualEnvironment(rowData);
+
+    BlockSync(SYNC_MODE_PULL_ONLY, OK);
+
+    CheckData(rowData);
+}
+
+/**
+* @tc.name: AutoLaunchSync 001
+* @tc.desc: Test rdb autoLaunch success when callback return true.
+* @tc.type: FUNC
+* @tc.require: AR000GK58N
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync001, TestSize.Level3)
+{
+    /**
+     * @tc.steps: step1. open rdb store, create distribute table and insert data
+     */
+    RowData rowData;
+    PrepareVirtualEnvironment(rowData);
+
+    /**
+     * @tc.steps: step2. set auto launch callBack
+     */
+    const AutoLaunchRequestCallback callback = [](const std::string &identifier, AutoLaunchParam &param){
+        if (g_id != identifier) {
+            return false;
+        }
+        param.path    = g_dbDir;
+        param.appId   = APP_ID;
+        param.userId  = USER_ID;
+        param.storeId = STORE_ID_1;
+        return true;
+    };
+    g_mgr.SetAutoLaunchRequestCallback(callback);
+    /**
+     * @tc.steps: step3. close store ensure communicator has closed
+     */
+    g_mgr.CloseStore(g_kvDelegatePtr);
+    g_kvDelegatePtr = nullptr;
+    /**
+     * @tc.steps: step4. RunCommunicatorLackCallback to autolaunch store
+     */
+    LabelType labelType(g_id.begin(), g_id.end());
+    g_communicatorAggregator->RunCommunicatorLackCallback(labelType);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    /**
+     * @tc.steps: step5. Call sync expect sync successful
+     */
+    Query query = Query::Select(g_tableName);
+    EXPECT_EQ(g_deviceB->GenericVirtualDevice::Sync(SYNC_MODE_PUSH_ONLY, query, true), E_OK);
+    /**
+     * @tc.steps: step6. check sync data ensure sync successful
+     */
+    CheckData(rowData);
+
+    RelationalStoreDelegate::Option option;
+    g_mgr.OpenStore(g_dbDir, STORE_ID_1, option, g_kvDelegatePtr);
+    ASSERT_TRUE(g_kvDelegatePtr != nullptr);
+
+    OpenStore();
+    std::this_thread::sleep_for(std::chrono::minutes(1));
+}
+
+/**
+* @tc.name: AutoLaunchSync 002
+* @tc.desc: Test rdb autoLaunch failed when callback return false.
+* @tc.type: FUNC
+* @tc.require: AR000GK58N
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync002, TestSize.Level3)
+{
+    /**
+     * @tc.steps: step1. open rdb store, create distribute table and insert data
+     */
+    RowData rowData;
+    PrepareVirtualEnvironment(rowData);
+
+    /**
+     * @tc.steps: step2. set auto launch callBack
+     */
+    const AutoLaunchRequestCallback callback = [](const std::string &identifier, AutoLaunchParam &param){
+        return false;
+    };
+    g_mgr.SetAutoLaunchRequestCallback(callback);
+    /**
+     * @tc.steps: step2. close store ensure communicator has closed
+     */
+    g_mgr.CloseStore(g_kvDelegatePtr);
+    g_kvDelegatePtr = nullptr;
+    /**
+     * @tc.steps: step3. store cann't autoLaunch because callback return false
+     */
+    LabelType labelType(g_id.begin(), g_id.end());
+    g_communicatorAggregator->RunCommunicatorLackCallback(labelType);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    /**
+     * @tc.steps: step4. Call sync expect sync fail
+     */
+    Query query = Query::Select(g_tableName);
+    SyncOperation::UserCallback callBack = [](const std::map<std::string, int> &statusMap) {
+        for (const auto &entry : statusMap) {
+            EXPECT_EQ(entry.second, static_cast<int>(SyncOperation::OP_COMM_ABNORMAL));
+        }
+    };
+    EXPECT_EQ(g_deviceB->GenericVirtualDevice::Sync(SYNC_MODE_PUSH_ONLY, query, callBack, true), E_OK);
+
+    OpenStore();
+    std::this_thread::sleep_for(std::chrono::minutes(1));
+}
+
+/**
+* @tc.name: AutoLaunchSync 003
+* @tc.desc: Test rdb autoLaunch failed when callback is nullptr.
+* @tc.type: FUNC
+* @tc.require: AR000GK58N
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync003, TestSize.Level3)
+{
+    /**
+     * @tc.steps: step1. open rdb store, create distribute table and insert data
+     */
+    RowData rowData;
+    PrepareVirtualEnvironment(rowData);
+
+    g_mgr.SetAutoLaunchRequestCallback(nullptr);
+    /**
+     * @tc.steps: step2. close store ensure communicator has closed
+     */
+    g_mgr.CloseStore(g_kvDelegatePtr);
+    g_kvDelegatePtr = nullptr;
+    /**
+     * @tc.steps: step3. store cann't autoLaunch because callback is nullptr
+     */
+    LabelType labelType(g_id.begin(), g_id.end());
+    g_communicatorAggregator->RunCommunicatorLackCallback(labelType);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    /**
+     * @tc.steps: step4. Call sync expect sync fail
+     */
+    Query query = Query::Select(g_tableName);
+    SyncOperation::UserCallback callBack = [](const std::map<std::string, int> &statusMap) {
+        for (const auto &entry : statusMap) {
+            EXPECT_EQ(entry.second, static_cast<int>(SyncOperation::OP_COMM_ABNORMAL));
+        }
+    };
+    EXPECT_EQ(g_deviceB->GenericVirtualDevice::Sync(SYNC_MODE_PUSH_ONLY, query, callBack, true), E_OK);
+
+    OpenStore();
+    std::this_thread::sleep_for(std::chrono::minutes(1));
 }
 #endif

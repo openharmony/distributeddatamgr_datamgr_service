@@ -398,9 +398,9 @@ void RuntimeContextImpl::GetAutoLaunchSyncDevices(const std::string &identifier,
     return autoLaunch_.GetAutoLaunchSyncDevices(identifier, devices);
 }
 
-void RuntimeContextImpl::SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback)
+void RuntimeContextImpl::SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback, DBType type)
 {
-    autoLaunch_.SetAutoLaunchRequestCallback(callback);
+    autoLaunch_.SetAutoLaunchRequestCallback(callback, type);
 }
 
 NotificationChain::Listener *RuntimeContextImpl::RegisterLockStatusLister(const LockStatusNotifier &action,

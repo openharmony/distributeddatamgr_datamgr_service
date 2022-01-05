@@ -150,7 +150,7 @@ void SingleVerSyncTaskContext::SetContinueToken(ContinueToken token)
 void SingleVerSyncTaskContext::ReleaseContinueToken()
 {
     if (token_ != nullptr) {
-        static_cast<SingleVerKvDBSyncInterface *>(syncInterface_)->ReleaseContinueToken(token_);
+        static_cast<SyncGenericInterface *>(syncInterface_)->ReleaseContinueToken(token_);
         token_ = nullptr;
     }
 }
@@ -461,7 +461,7 @@ CompressAlgorithm SingleVerSyncTaskContext::ChooseCompressAlgo() const
         return CompressAlgorithm::NONE;
     }
     std::set<CompressAlgorithm> localAlgorithmSet;
-    (void)(static_cast<SingleVerKvDBSyncInterface *>(syncInterface_))->GetCompressionAlgo(localAlgorithmSet);
+    (void)(static_cast<SyncGenericInterface *>(syncInterface_))->GetCompressionAlgo(localAlgorithmSet);
     std::set<CompressAlgorithm> algoIntersection;
     set_intersection(remoteAlgo.begin(), remoteAlgo.end(), localAlgorithmSet.begin(), localAlgorithmSet.end(),
         inserter(algoIntersection, algoIntersection.begin()));

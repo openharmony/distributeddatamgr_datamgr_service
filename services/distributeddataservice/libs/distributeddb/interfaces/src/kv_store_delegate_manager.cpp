@@ -526,14 +526,15 @@ DBStatus KvStoreDelegateManager::EnableKvStoreAutoLaunch(const std::string &user
         return DB_ERROR;
     }
     AutoLaunchParam param{ userId, appId, storeId, option, notifier };
-    KvDBProperties properties;
-    int errCode = AutoLaunch::GetAutoLaunchProperties(param, properties);
+    std::shared_ptr<DBProperties> ptr = std::make_shared<KvDBProperties>();
+    int errCode = AutoLaunch::GetAutoLaunchProperties(param, DBType::DB_KV, ptr);
     if (errCode != E_OK) {
         LOGE("[KvStoreManager] Enable auto launch failed:%d", errCode);
         return TransferDBErrno(errCode);
     }
 
-    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(properties, notifier, option);
+    std::shared_ptr<KvDBProperties> kvPtr = std::static_pointer_cast<KvDBProperties>(ptr);
+    errCode = RuntimeContext::GetInstance()->EnableKvStoreAutoLaunch(*kvPtr, notifier, option);
     if (errCode != E_OK) {
         LOGE("[KvStoreManager] Enable auto launch failed:%d", errCode);
         return TransferDBErrno(errCode);
@@ -562,7 +563,7 @@ DBStatus KvStoreDelegateManager::DisableKvStoreAutoLaunch(const std::string &use
 
 void KvStoreDelegateManager::SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback)
 {
-    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(callback);
+    RuntimeContext::GetInstance()->SetAutoLaunchRequestCallback(callback, DBType::DB_KV);
 }
 
 std::string KvStoreDelegateManager::GetKvStoreIdentifier(const std::string &userId, const std::string &appId,

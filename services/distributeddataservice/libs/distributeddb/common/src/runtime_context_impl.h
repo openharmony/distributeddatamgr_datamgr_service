@@ -76,7 +76,7 @@ public:
 
     void GetAutoLaunchSyncDevices(const std::string &identifier, std::vector<std::string> &devices) const override;
 
-    void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback) override;
+    void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback, DBType type) override;
 
     NotificationChain::Listener *RegisterLockStatusLister(const LockStatusNotifier &action, int &errCode) override;
 
