@@ -150,7 +150,11 @@ namespace {
         std::vector<std::string> devices = {DEVICE_B};
         Query query = Query::Select(g_tableName);
         std::map<std::string, std::vector<TableStatus>> statusMap;
-        DBStatus callStatus = g_kvDelegatePtr->Sync(devices, syncMode, query, statusMap);
+        SyncStatusCallback callBack = [&statusMap](
+            const std::map<std::string, std::vector<TableStatus>> &devicesMap) {
+            statusMap = devicesMap;
+        };
+        DBStatus callStatus = g_kvDelegatePtr->Sync(devices, syncMode, query, callBack, true);
         EXPECT_EQ(callStatus, OK);
         for (const auto &tablesRes : statusMap) {
             for (const auto &tableStatus : tablesRes.second) {
