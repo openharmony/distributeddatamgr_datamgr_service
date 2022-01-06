@@ -1156,6 +1156,52 @@ HWTEST_F(DistributeddbNbCreateTest, MemoryDb002, TestSize.Level0)
 }
 
 /*
+ * @tc.name: MemoryDb 003
+ * @tc.desc: verify that the memory db do not need path and can create db successfully.
+ * @tc.type: FUNC
+ * @tc.require: SR000CRAD8
+ * @tc.author: wangyulong
+ */
+HWTEST_F(DistributeddbNbCreateTest, MemoryDb003, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. create memory db without path.
+     * @tc.expected: step1. create successfully.
+     */
+    DelegateMgrNbCallback delegateMgrCallback;
+    function<void(DBStatus, KvStoreNbDelegate*)> function = bind(&DelegateMgrNbCallback::Callback,
+        &delegateMgrCallback, _1, _2);
+    KvStoreDelegateManager *manager = new (std::nothrow) KvStoreDelegateManager(
+        DistributedDBDataGenerator::APP_ID_1, DistributedDBDataGenerator::USER_ID_1);
+    ASSERT_TRUE(manager != nullptr);
+    EXPECT_TRUE(manager->SetKvStoreConfig({.dataDir = ""}));
+    Option optionParam;
+    optionParam.isMemoryDb = true;
+    KvStoreNbDelegate::Option option = DistributedDBNbTestTools::TransferNbOptionType(optionParam);
+    manager->GetKvStore(DistributedDBDataGenerator::STORE_ID_1, option, function);
+    KvStoreNbDelegate* delegate = const_cast<KvStoreNbDelegate *>(delegateMgrCallback.GetKvStore());
+    ASSERT_TRUE(delegate != nullptr);
+
+    /**
+     * @tc.steps: step2. put (k1, v1) to the memory db.
+     * @tc.expected: step2. the memory db can be insert data successfully.
+     */
+    EXPECT_EQ(delegate->PutLocal(KEY_1, VALUE_1), OK);
+    EXPECT_EQ(delegate->Put(KEY_1, VALUE_2), OK);
+    Value localValue, syncValue;
+    EXPECT_EQ(delegate->GetLocal(KEY_1, localValue), OK);
+    EXPECT_EQ(delegate->Get(KEY_1, syncValue), OK);
+    EXPECT_EQ(localValue, VALUE_1);
+    EXPECT_EQ(syncValue, VALUE_2);
+
+    EXPECT_EQ(manager->CloseKvStore(delegate), OK);
+    delegate = nullptr;
+    EXPECT_EQ(manager->DeleteKvStore(STORE_ID_1), NOT_FOUND);
+
+    ReleaseManager(manager);
+}
+
+/*
  * @tc.name: OptionParam 001
  * @tc.desc: verify that will check the option parameter when create encrypted DB.
  * @tc.type: FUNC
