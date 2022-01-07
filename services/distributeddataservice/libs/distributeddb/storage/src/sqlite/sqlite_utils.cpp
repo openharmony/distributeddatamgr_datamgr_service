@@ -1407,6 +1407,50 @@ int SQLiteUtils::CreateSameStuTable(sqlite3 *db, const std::string &oriTableName
     return errCode;
 }
 
+int SQLiteUtils::CloneIndexes(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName)
+{
+    std::string sql =
+        "SELECT 'CREATE ' || CASE WHEN il.'unique' THEN 'UNIQUE ' ELSE '' END || 'INDEX ' || '" +
+            DBConstant::RELATIONAL_PREFIX + "' || il.name || ' ON ' || '" + newTableName +
+            "' || '(' || GROUP_CONCAT(ii.name) || ');' "
+        "FROM sqlite_master AS m,"
+            "pragma_index_list(m.name) AS il,"
+            "pragma_index_info(il.name) AS ii "
+        "WHERE m.type='table' AND m.name='" + oriTableName + "' AND il.origin='c' "
+        "GROUP BY il.name;";
+    sqlite3_stmt *stmt = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
+    if (errCode != E_OK) {
+        LOGE("[AnalysisSchema] Prepare the clone sql failed:%d", errCode);
+        return errCode;
+    }
+
+    sql.clear();
+    while (true) {
+        errCode = SQLiteUtils::StepWithRetry(stmt, false);
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+            const unsigned char *indexSql = sqlite3_column_text(stmt, 0);
+            sql += std::string(reinterpret_cast<const char *>(indexSql));
+            continue;
+        }
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            errCode = E_OK;
+        }
+        (void)ResetStatement(stmt, true, errCode);
+        break;
+    }
+
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
+    if (errCode != E_OK) {
+        LOGE("[SQLite] execute create table sql failed");
+    }
+    return errCode;
+}
+
 int SQLiteUtils::RegisterFunction(sqlite3 *db, const std::string &funcName, int nArg, void *uData, TransactFunc &func)
 {
     if (db == nullptr) {

@@ -436,6 +436,9 @@ int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingData(const QueryOb
     int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, tableName, table);
     if (errCode == -E_NOT_FOUND) {
         errCode = SQLiteUtils::CreateSameStuTable(dbHandle_, object.GetTableName(), tableName, false);
+        if (errCode == E_OK) {
+            errCode = SQLiteUtils::CloneIndexes(dbHandle_, object.GetTableName(), tableName);
+        }
     }
 
     if (errCode != E_OK) {

@@ -333,18 +333,26 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetIncorrectTypeData1, TestSize.Lev
     ASSERT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
 
     /**
-     * @tc.steps: step1. Create distributed table "dataPlus".
+     * @tc.steps: step1. Create 2 index for table "data".
      * @tc.expected: Succeed, return OK.
      */
     sqlite3 *db = nullptr;
-    EXPECT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+    ASSERT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+    string sql = "CREATE INDEX index1 ON " + g_tableName + "(value);"
+                 "CREATE UNIQUE INDEX index2 ON " + g_tableName + "(value,key);";
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+
+    /**
+     * @tc.steps: step2. Create distributed table "dataPlus".
+     * @tc.expected: Succeed, return OK.
+     */
     const string tableName = g_tableName + "Plus";
-    string sql = "CREATE TABLE " + tableName + "(key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, value INTEGER);";
+    sql = "CREATE TABLE " + tableName + "(key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, value INTEGER);";
     ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
     ASSERT_EQ(g_delegate->CreateDistributedTable(tableName), DBStatus::OK);
 
     /**
-     * @tc.steps: step2. Put 5 records with different type into "dataPlus" table.
+     * @tc.steps: step3. Put 5 records with different type into "dataPlus" table.
      * @tc.expected: Succeed, return OK.
      */
     vector<string> sqls = {
@@ -360,7 +368,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetIncorrectTypeData1, TestSize.Lev
     }
 
     /**
-     * @tc.steps: step3. Get all data from "dataPlus" table.
+     * @tc.steps: step4. Get all data from "dataPlus" table.
      * @tc.expected: Succeed and the count is right.
      */
     auto store = GetRelationalStore();
@@ -371,7 +379,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetIncorrectTypeData1, TestSize.Lev
     EXPECT_EQ(entries.size(), RECORD_COUNT);
 
     /**
-     * @tc.steps: step4. Put data into "data" table from deviceA.
+     * @tc.steps: step5. Put data into "data" table from deviceA.
      * @tc.expected: Succeed, return OK.
      */
     QueryObject queryPlus(Query::Select(g_tableName));
@@ -380,7 +388,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetIncorrectTypeData1, TestSize.Lev
     SingleVerKvEntry::Release(entries);
 
     /**
-     * @tc.steps: step5. Check data.
+     * @tc.steps: step6. Check data.
      * @tc.expected: All data in the two tables are same.
      */
     sql = "SELECT count(*) "
@@ -390,6 +398,15 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetIncorrectTypeData1, TestSize.Lev
     size_t count = 0;
     EXPECT_EQ(GetCount(db, sql, count), E_OK);
     EXPECT_EQ(count, RECORD_COUNT);
+
+    /**
+     * @tc.steps: step7. Check index.
+     * @tc.expected: 2 index for deviceA's data table exists.
+     */
+    sql = "SELECT count(*) FROM sqlite_master WHERE type='index' AND tbl_name='" + DBConstant::RELATIONAL_PREFIX +
+        g_tableName + "_" + DBCommon::TransferStringToHex(DBCommon::TransferHashString(deviceID)) + "'";
+    EXPECT_EQ(GetCount(db, sql, count), E_OK);
+    EXPECT_EQ(count, 2UL); // The index count is 2.
     sqlite3_close(db);
 }
 #endif

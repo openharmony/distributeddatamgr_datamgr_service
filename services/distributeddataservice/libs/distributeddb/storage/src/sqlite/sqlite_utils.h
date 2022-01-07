@@ -171,6 +171,7 @@ public:
 
     static int CreateSameStuTable(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName,
         bool isCopyData);
+    static int CloneIndexes(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName);
 #endif
 
     static int DropTriggerByName(sqlite3 *db, const std::string &name);
