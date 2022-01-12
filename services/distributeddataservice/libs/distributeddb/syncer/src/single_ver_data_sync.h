@@ -64,7 +64,7 @@ public:
 
     int Initialize(ISyncInterface *inStorage, ICommunicator *inCommunicateHandle,
         std::shared_ptr<Metadata> &inMetadata, const std::string &deviceId);
-    
+
     int SyncStart(int mode, SingleVerSyncTaskContext *context);
 
     int TryContinueSync(SingleVerSyncTaskContext *context, const Message *message);

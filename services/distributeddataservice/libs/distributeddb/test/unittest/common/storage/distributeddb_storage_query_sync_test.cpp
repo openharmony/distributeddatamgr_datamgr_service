@@ -1127,8 +1127,8 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, RelationalQuerySyncTest001, TestSize
      * @tc.steps:step1. Create a query object with table name is specified
      * @tc.expected: ok
      */
-    Query qeury1 = Query::Select("Relatonal_table").EqualTo("field1", "abc");
-    QuerySyncObject obj1(qeury1);
+    Query query1 = Query::Select("Relatonal_table").EqualTo("field1", "abc");
+    QuerySyncObject obj1(query1);
 
     /**
      * @tc.steps:step2. Serialize the object
@@ -1158,11 +1158,11 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, RelationalQuerySyncTest001, TestSize
   */
 HWTEST_F(DistributedDBStorageQuerySyncTest, RelationalQuerySyncTest002, TestSize.Level1)
 {
-    Query qeury1 = Query::Select("Relatonal_table1").EqualTo("field1", "abc");
-    QuerySyncObject obj1(qeury1);
+    Query query1 = Query::Select("Relatonal_table1").EqualTo("field1", "abc");
+    QuerySyncObject obj1(query1);
 
-    Query qeury2 = Query::Select("Relatonal_table2").EqualTo("field1", "abc");
-    QuerySyncObject obj2(qeury2);
+    Query query2 = Query::Select("Relatonal_table2").EqualTo("field1", "abc");
+    QuerySyncObject obj2(query2);
 
     /**
      * @tc.steps:step1. check object identity

@@ -16,13 +16,13 @@
 #define RELATIONAL_STORE_CONNECTION_H
 #ifdef RELATIONAL_STORE
 
-#include "relational_store_delegate.h"
 #include <atomic>
 #include <string>
 
 #include "db_types.h"
 #include "macro_utils.h"
 #include "ref_object.h"
+#include "relational_store_delegate.h"
 
 namespace DistributedDB {
 class IRelationalStore;

@@ -183,7 +183,7 @@ std::string RelationalStoreManager::GetRelationalStoreIdentifier(const std::stri
     if (!ParamCheckUtils::CheckStoreParameter(storeId, appId, userId)) {
         return "";
     }
-    return DBCommon::TransferHashString(userId + "-" + appId + "-" + storeId);
+    return DBCommon::TransferHashString(DBCommon::GenerateIdentifierId(storeId, appId, userId));
 }
 } // namespace DistributedDB
 #endif

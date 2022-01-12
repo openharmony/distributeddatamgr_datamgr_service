@@ -22,7 +22,6 @@
 #include "generic_single_ver_kv_entry.h"
 #include "intercepted_data_impl.h"
 #include "log_print.h"
-#include "meta_data.h"
 #include "query_object.h"
 #include "securec.h"
 

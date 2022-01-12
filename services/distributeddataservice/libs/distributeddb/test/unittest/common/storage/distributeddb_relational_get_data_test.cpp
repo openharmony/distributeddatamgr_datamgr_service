@@ -260,6 +260,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData1, TestSize.Level1)
      * @tc.expected: Succeed and the count is right.
      */
     auto store = GetRelationalStore();
+    ASSERT_EQ(store, nullptr);
     ContinueToken token = nullptr;
     QueryObject query(Query::Select(g_tableName));
     std::vector<SingleVerKvEntry *> entries;
@@ -305,6 +306,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetQuerySyncData1, TestSize.Level1)
      * @tc.expected: Get 70 records.
      */
     auto store = GetRelationalStore();
+    ASSERT_EQ(store, nullptr);
     ContinueToken token = nullptr;
     const unsigned int LIMIT = 80; // limit as 80.
     const unsigned int OFFSET = 30; // offset as 30.
@@ -372,6 +374,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetIncorrectTypeData1, TestSize.Lev
      * @tc.expected: Succeed and the count is right.
      */
     auto store = GetRelationalStore();
+    ASSERT_EQ(store, nullptr);
     ContinueToken token = nullptr;
     QueryObject query(Query::Select(tableName));
     std::vector<SingleVerKvEntry *> entries;

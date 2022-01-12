@@ -45,12 +45,6 @@ namespace {
     VirtualCommunicatorAggregator* g_communicatorAggregator = nullptr;
     RelationalVirtualDevice *g_deviceB = nullptr;
 
-    // the type of g_kvDelegateCallback is function<void(DBStatus, KvStoreDelegate*)>
-    auto g_kvDelegateCallback = [](DBStatus status, RelationalStoreDelegate *delegatePtr) {
-        g_kvDelegateStatus = status;
-        g_kvDelegatePtr = delegatePtr;
-    };
-
     int GetDB(sqlite3 *&db)
     {
         int flag = SQLITE_OPEN_URI | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;

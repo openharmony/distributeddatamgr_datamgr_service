@@ -108,9 +108,9 @@ int SQLiteRelationalStore::GetSchemaFromMeta()
     Value schemaVal;
     int errCode = storageEngine_->GetMetaData(schemaKey, schemaVal);
     if (errCode != E_OK && errCode != -E_NOT_FOUND) {
-        LOGE("Get relationale schema from meta table failed. %d", errCode);
+        LOGE("Get relational schema from meta table failed. %d", errCode);
         return errCode;
-    } else if (errCode == -E_NOT_FOUND) {
+    } else if (errCode == -E_NOT_FOUND || schemaVal.empty()) {
         LOGW("No relational schema info was found.");
         return E_OK;
     }

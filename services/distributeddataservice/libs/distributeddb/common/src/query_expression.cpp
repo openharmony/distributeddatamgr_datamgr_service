@@ -51,7 +51,7 @@ void QueryExpression::AssemblyQueryInfo(const QueryObjType queryOperType, const 
 QueryExpression::QueryExpression()
     : errFlag_(true),
       tableName_("sync_data"), // default kv type store table name
-      isTableNameSpecified_(false)
+      isTableNameSpecified_(false) // default no specify for kv type store table name
 {}
 
 void QueryExpression::EqualTo(const std::string& field, const QueryValueType type, const FieldValue &value)
