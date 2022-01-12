@@ -120,6 +120,8 @@ public:
     static SyncType GetSyncType(int mode);
     static int TransferSyncMode(int mode);
 
+    static const std::map<int, DBStatus> &DBStatusTransMap();
+
 protected:
     virtual ~SyncOperation();
 
