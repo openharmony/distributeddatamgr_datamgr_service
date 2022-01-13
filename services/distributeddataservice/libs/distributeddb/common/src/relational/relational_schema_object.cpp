@@ -252,7 +252,7 @@ void TableInfo::AddIndexDefineString(std::string &attrStr) const
     if (indexDefines_.empty()) {
         return;
     }
-    attrStr += R"("INDEX": {)";
+    attrStr += R"(,"INDEX": {)";
     for (auto itIndexDefine = indexDefines_.begin(); itIndexDefine != indexDefines_.end(); ++itIndexDefine) {
         attrStr += "\"" + (*itIndexDefine).first + "\": [\"";
         for (auto itField = itIndexDefine->second.begin(); itField != itIndexDefine->second.end(); ++itField) {
@@ -392,7 +392,7 @@ std::string TableInfo::ToTableInfoString() const
     }
     AddUniqueDefineString(attrStr);
     if (!primaryKey_.empty()) {
-        attrStr += R"("PRIMARY_KEY": ")" + primaryKey_ + "\",";
+        attrStr += R"("PRIMARY_KEY": ")" + primaryKey_ + "\"";
     }
     AddIndexDefineString(attrStr);
     attrStr += "}";
@@ -829,7 +829,12 @@ int RelationalSchemaObject::ParseCheckTableInfo(const JsonObject &inJsonObject)
     if (errCode != E_OK) {
         return errCode;
     }
-    return ParseCheckTableIndex(inJsonObject, resultTable);
+    errCode = ParseCheckTableIndex(inJsonObject, resultTable);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    tables_[resultTable.GetTableName()] = resultTable;
+    return E_OK;
 }
 
 int RelationalSchemaObject::ParseCheckTableName(const JsonObject &inJsonObject, TableInfo &resultTable)
@@ -867,7 +872,7 @@ int RelationalSchemaObject::ParseCheckTableDefine(const JsonObject &inJsonObject
         }
 
         FieldInfo fieldInfo;
-        fieldInfo.SetFieldName(field.first[0]); // 0 : first element in path
+        fieldInfo.SetFieldName(field.first[1]); // 1 : table name element in path
         errCode = ParseCheckTableFieldInfo(fieldObj, field.first, fieldInfo);
         if (errCode != E_OK) {
             LOGE("[RelationalSchema][Parse] Parse table field info failed. %d", errCode);
@@ -967,7 +972,6 @@ int RelationalSchemaObject::ParseCheckTableIndex(const JsonObject &inJsonObject,
         }
         resultTable.AddIndexDefine(field.first[1], indexDefine); // 1 : second element in path
     }
-    tables_[resultTable.GetTableName()] = resultTable;
     return E_OK;
 }
 }

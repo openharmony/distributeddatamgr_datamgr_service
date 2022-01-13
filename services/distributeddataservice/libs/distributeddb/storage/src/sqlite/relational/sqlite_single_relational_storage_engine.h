@@ -29,13 +29,28 @@ public:
     // Delete the copy and assign constructors
     DISABLE_COPY_ASSIGN_MOVE(SQLiteSingleRelationalStorageEngine);
 
+    void SetSchema(const RelationalSchemaObject &schema);
+
+    const RelationalSchemaObject &GetSchemaRef() const;
+
+    int CreateDistributedTable(const std::string &tableName);
+
+    int CleanDistributedDeviceTable(std::vector<std::string> &missingTables);
+
 protected:
     StorageExecutor *NewSQLiteStorageExecutor(sqlite3 *db, bool isWrite, bool isMemDb) override;
     int Upgrade(sqlite3 *db) override;
     int CreateNewExecutor(bool isWrite, StorageExecutor *&handle) override;
 
 private:
+    // For executor.
+    int ReleaseExecutor(SQLiteSingleVerRelationalStorageExecutor *&handle);
+
+    // For db.
     int RegisterFunction(sqlite3 *db) const;
+
+    RelationalSchemaObject schema_;
+    mutable std::mutex schemaMutex_;
 };
 } // namespace DistributedDB
 #endif

@@ -425,7 +425,7 @@ int RelationalSyncAbleStorage::RemoveDeviceData(const std::string &deviceName, b
 
 RelationalSchemaObject RelationalSyncAbleStorage::GetSchemaInfo() const
 {
-    return RelationalSchemaObject();
+    return storageEngine_->GetSchemaRef();
 }
 
 int RelationalSyncAbleStorage::GetSecurityOption(SecurityOption &option) const

@@ -122,8 +122,7 @@ int SQLiteRelationalStore::GetSchemaFromMeta()
         return errCode;
     }
 
-    std::lock_guard<std::mutex> lock(schemaMutex_);
-    properties_.SetSchema(schema);
+    sqliteStorageEngine_->SetSchema(schema);
     return E_OK;
 }
 
@@ -131,7 +130,7 @@ int SQLiteRelationalStore::SaveSchemaToMeta()
 {
     const Key schemaKey(RELATIONAL_SCHEMA_KEY, RELATIONAL_SCHEMA_KEY + strlen(RELATIONAL_SCHEMA_KEY));
     Value schemaVal;
-    DBCommon::StringToVector(properties_.GetSchema().ToSchemaString(), schemaVal);
+    DBCommon::StringToVector(sqliteStorageEngine_->GetSchemaRef().ToSchemaString(), schemaVal);
     int errCode = storageEngine_->PutMetaData(schemaKey, schemaVal);
     if (errCode != E_OK) {
         LOGE("Save relational schema to meta table failed. %d", errCode);
@@ -153,38 +152,14 @@ int SQLiteRelationalStore::SaveLogTableVersionToMeta()
 
 int SQLiteRelationalStore::CleanDistributedDeviceTable()
 {
-    int errCode = E_OK;
-    auto handle = GetHandle(true, errCode);
-    if (handle == nullptr) {
-        return errCode;
-    }
-
-    errCode = handle->StartTransaction(TransactType::IMMEDIATE);
-    if (errCode != E_OK) {
-        ReleaseHandle(handle);
-        return errCode;
-    }
-
-    std::lock_guard lock(schemaMutex_);
-    RelationalSchemaObject schema = properties_.GetSchema();
     std::vector<std::string> missingTables;
-    errCode = handle->CkeckAndCleanDistributedTable(schema.GetTableNames(), missingTables);
-    if (errCode == E_OK) {
-        errCode = handle->Commit();
-        if (errCode == E_OK) {
-            // Remove non-existent tables from the schema
-            for (const auto &tableName : missingTables) {
-                schema.RemoveRelationalTable(tableName);
-            }
-            properties_.SetSchema(schema);
-        }
-    } else {
-        LOGE("Check distributed table failed. %d", errCode);
-        (void)handle->Rollback();
+    int errCode = sqliteStorageEngine_->CleanDistributedDeviceTable(missingTables);
+    if (errCode != E_OK) {
+        LOGE("Clean distributed device table failed. %d", errCode);
     }
-
-    ReleaseHandle(handle);
-    return SaveSchemaToMeta();
+    // TODO: remove water mark
+    // syncEngine_->EraseDeviceWaterMark();
+    return errCode;
 }
 
 int SQLiteRelationalStore::Open(const RelationalDBProperties &properties)
@@ -232,7 +207,7 @@ int SQLiteRelationalStore::Open(const RelationalDBProperties &properties)
             break;
         }
 
-        errCode = CleanDistributedDeviceTable(); // TODO: remove water mark
+        errCode = CleanDistributedDeviceTable();
         if (errCode != E_OK) {
             break;
         }
@@ -342,59 +317,19 @@ void SQLiteRelationalStore::WakeUpSyncer()
 
 int SQLiteRelationalStore::CreateDistributedTable(const std::string &tableName)
 {
-    int errCode = E_OK;
-    std::lock_guard<std::mutex> lock(schemaMutex_);
-    auto schema = properties_.GetSchema();
-    if (schema.GetTable(tableName).GetTableName() == tableName) {
-        LOGW("distributed table was already created.");
-        return E_OK;
-    }
-
-    if (schema.GetTables().size() >= DBConstant::MAX_DISTRIBUTED_TABLE_COUNT) {
-        LOGW("The number of distributed tables is exceeds limit.");
-        return -E_MAX_LIMITS;
-    }
-
-    LOGD("Create distributed table.");
-    auto *handle = GetHandle(true, errCode);
-    if (handle == nullptr) {
-        return errCode;
-    }
-
-    errCode = handle->StartTransaction(TransactType::IMMEDIATE);
+    int errCode = sqliteStorageEngine_->CreateDistributedTable(tableName);
     if (errCode != E_OK) {
-        ReleaseHandle(handle);
-        return errCode;
+        LOGE("Create distributed table failed. %d", errCode);
     }
-
-    TableInfo table;
-    errCode = handle->CreateDistributedTable(tableName, table);
-    if (errCode != E_OK) {
-        LOGE("create distributed table failed. %d", errCode);
-        (void)handle->Rollback();
-        ReleaseHandle(handle);
-        return errCode;
-    }
-    errCode = handle->Commit();
-    if (errCode == E_OK) {
-        schema.AddRelationalTable(table);
-        properties_.SetSchema(schema);
-        storageEngine_->NotifySchemaChanged();
-    }
-
-    ReleaseHandle(handle);
-    return SaveSchemaToMeta();
+    return errCode;
 }
 
 int SQLiteRelationalStore::RemoveDeviceData(const std::string &device, const std::string &tableName)
 {
-    {
-        std::lock_guard<std::mutex> lock(schemaMutex_);
-        std::map<std::string, TableInfo> tables = properties_.GetSchema().GetTables();
-        if (!tableName.empty() && tables.find(tableName) == tables.end()) {
-            LOGW("Remove device data with table name which is not a distributed table or not exist.");
-            return E_OK;
-        }
+    std::map<std::string, TableInfo> tables = sqliteStorageEngine_->GetSchemaRef().GetTables();
+    if (!tableName.empty() && tables.find(tableName) == tables.end()) {
+        LOGW("Remove device data with table name which is not a distributed table or not exist.");
+        return E_OK;
     }
 
     int errCode = E_OK;

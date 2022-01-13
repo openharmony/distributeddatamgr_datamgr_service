@@ -15,10 +15,16 @@
 #ifdef RELATIONAL_STORE
 #include "sqlite_single_relational_storage_engine.h"
 
-#include "sqlite_single_ver_relational_storage_executor.h"
+#include "db_common.h"
 #include "db_errno.h"
+#include "sqlite_single_ver_relational_storage_executor.h"
+
 
 namespace DistributedDB {
+namespace {
+    constexpr const char *RELATIONAL_SCHEMA_KEY = "relational_schema";
+}
+
 SQLiteSingleRelationalStorageEngine::SQLiteSingleRelationalStorageEngine() {};
 
 SQLiteSingleRelationalStorageEngine::~SQLiteSingleRelationalStorageEngine() {};
@@ -78,6 +84,112 @@ int SQLiteSingleRelationalStorageEngine::CreateNewExecutor(bool isWrite, Storage
 
     (void)sqlite3_close_v2(db);
     db = nullptr;
+    return errCode;
+}
+
+int SQLiteSingleRelationalStorageEngine::ReleaseExecutor(SQLiteSingleVerRelationalStorageExecutor *&handle)
+{
+    if (handle == nullptr) { // TODO: check corrupted
+        return E_OK;
+    }
+    StorageExecutor *databaseHandle = handle;
+    Recycle(databaseHandle);
+    handle = nullptr;
+    return E_OK;
+}
+
+void SQLiteSingleRelationalStorageEngine::SetSchema(const RelationalSchemaObject &schema)
+{
+    std::lock_guard lock(schemaMutex_);
+    schema_ = schema;
+}
+
+const RelationalSchemaObject &SQLiteSingleRelationalStorageEngine::GetSchemaRef() const
+{
+    std::lock_guard lock(schemaMutex_);
+    return schema_;
+}
+
+int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::string &tableName)
+{
+    std::lock_guard lock(schemaMutex_);
+    if (schema_.GetTable(tableName).GetTableName() == tableName) {
+        LOGW("distributed table was already created.");
+        // TODO: compare new schema
+        return E_OK;
+    }
+
+    if (schema_.GetTables().size() >= DBConstant::MAX_DISTRIBUTED_TABLE_COUNT) {
+        LOGE("The number of distributed tables is exceeds limit.");
+        return -E_MAX_LIMITS;
+    }
+
+    LOGD("Create distributed table.");
+    int errCode = E_OK;
+    auto *handle = static_cast<SQLiteSingleVerRelationalStorageExecutor *>(FindExecutor(true, OperatePerm::NORMAL_PERM,
+        errCode));
+    if (handle == nullptr) {
+        return errCode;
+    }
+
+    errCode = handle->StartTransaction(TransactType::IMMEDIATE);
+    if (errCode != E_OK) {
+        ReleaseExecutor(handle);
+        return errCode;
+    }
+
+    TableInfo table;
+    errCode = handle->CreateDistributedTable(tableName, table);
+    if (errCode != E_OK) {
+        LOGE("create distributed table failed. %d", errCode);
+        (void)handle->Rollback();
+        ReleaseExecutor(handle);
+        return errCode;
+    }
+
+    errCode = handle->Commit();
+    if (errCode == E_OK) {
+        schema_.AddRelationalTable(table);
+        const Key schemaKey(RELATIONAL_SCHEMA_KEY, RELATIONAL_SCHEMA_KEY + strlen(RELATIONAL_SCHEMA_KEY));
+        Value schemaVal;
+        DBCommon::StringToVector(schema_.ToSchemaString(), schemaVal);
+        errCode = handle->PutKvData(schemaKey, schemaVal); // save schema to meta_data
+    }
+    ReleaseExecutor(handle);
+    return errCode;
+}
+
+int SQLiteSingleRelationalStorageEngine::CleanDistributedDeviceTable(std::vector<std::string> &missingTables)
+{
+    int errCode = E_OK;
+    auto handle = static_cast<SQLiteSingleVerRelationalStorageExecutor *>(FindExecutor(true, OperatePerm::NORMAL_PERM,
+        errCode));
+    if (handle == nullptr) {
+        return errCode;
+    }
+
+    std::lock_guard lock(schemaMutex_);
+    errCode = handle->StartTransaction(TransactType::IMMEDIATE);
+    if (errCode != E_OK) {
+        ReleaseExecutor(handle);
+        return errCode;
+    }
+
+    errCode = handle->CkeckAndCleanDistributedTable(schema_.GetTableNames(), missingTables);
+    if (errCode == E_OK) {
+        errCode = handle->Commit();
+        if (errCode == E_OK) {
+            // Remove non-existent tables from the schema
+            for (const auto &tableName : missingTables) {
+                schema_.RemoveRelationalTable(tableName);
+            }
+        }
+    } else {
+        LOGE("Check distributed table failed. %d", errCode);
+        (void)handle->Rollback();
+    }
+
+    ReleaseExecutor(handle);
     return errCode;
 }
 }

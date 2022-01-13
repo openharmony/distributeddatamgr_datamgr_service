@@ -732,8 +732,8 @@ int SQLiteSingleVerRelationalStorageExecutor::DeleteDistributedDeviceTable(const
     std::string tablePattern = tableName.empty() ? "%" : tableName;
     std::string deviceTableName = DBConstant::RELATIONAL_PREFIX + tablePattern + "_" + decicePattern;
 
-    const std::string checkSql = "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE " +
-        deviceTableName + ";";
+    const std::string checkSql = "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '" +
+        deviceTableName + "';";
     sqlite3_stmt *stmt = nullptr;
     int errCode = SQLiteUtils::GetStatement(dbHandle_, checkSql, stmt);
     if (errCode != E_OK) {
@@ -751,7 +751,10 @@ int SQLiteSingleVerRelationalStorageExecutor::DeleteDistributedDeviceTable(const
             break;
         }
         std::string realTableName;
-        SQLiteUtils::GetColumnTextValue(stmt, 1, realTableName); // 1: table name result column index
+        (void)SQLiteUtils::GetColumnTextValue(stmt, 1, realTableName); // 1: table name result column index
+        if (realTableName.empty()) { // sqlite might return a row with NULL
+            continue;
+        }
         std::string deleteSql = "DROP TABLE IF EXISTS " + realTableName + ";"; // drop the found table
         int errCode = SQLiteUtils::ExecuteRawSQL(dbHandle_, deleteSql);
         if (errCode != E_OK) {
@@ -784,7 +787,7 @@ int SQLiteSingleVerRelationalStorageExecutor::CkeckAndCleanDistributedTable(cons
     if (tableNames.empty()) {
         return E_OK;
     }
-    const std::string checkSql = "SELECT name FROM sqlite_master WHERE type='table' AND name='?';";
+    const std::string checkSql = "SELECT name FROM sqlite_master WHERE type='table' AND name=?;";
     sqlite3_stmt *stmt = nullptr;
     int errCode = SQLiteUtils::GetStatement(dbHandle_, checkSql, stmt);
     if (errCode != E_OK) {
