@@ -41,6 +41,11 @@ public:
     static constexpr int MAX_COMMIT_SIZE = 1000000;
     static constexpr int MAX_ENTRIES_SIZE = 1000000;
 
+    // In querySync, when getting query data finished,
+    // if the block size reach the half of max block size, will get deleted data next;
+    // if the block size not reach the half of max block size, will not get deleted data.
+    static constexpr float QUERY_SYNC_THRESHOLD = 0.50;
+
     static constexpr uint64_t MAX_USER_ID_LENGTH = 128;
     static constexpr uint64_t MAX_APP_ID_LENGTH = 128;
     static constexpr uint64_t MAX_STORE_ID_LENGTH = 128;

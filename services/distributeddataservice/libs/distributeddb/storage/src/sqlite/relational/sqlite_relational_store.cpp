@@ -200,7 +200,7 @@ int SQLiteRelationalStore::Open(const RelationalDBProperties &properties)
             break;
         }
 
-        syncEngine_ = std::make_shared<SyncAbleEngine>(storageEngine_);
+        syncEngine_ = std::make_unique<SyncAbleEngine>(storageEngine_);
         isInitialized_ = true;
         return E_OK;
     } while (false);

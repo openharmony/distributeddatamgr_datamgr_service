@@ -605,11 +605,11 @@ int AnalysisSchemaSqlAndTrigger(sqlite3 *db, const std::string &tableName, Table
             (void) SQLiteUtils::GetColumnTextValue(statement, 0, type);
             if (type == "table") {
                 std::string createTableSql;
-                (void) SQLiteUtils::GetColumnTextValue(statement, 4, createTableSql);
+                (void) SQLiteUtils::GetColumnTextValue(statement, 4, createTableSql);  // 4 means create table sql
                 table.SetCreateTableSql(createTableSql);
             } else if (type == "trigger") {
                 std::string triggerName;
-                (void) SQLiteUtils::GetColumnTextValue(statement, 1, triggerName);
+                (void) SQLiteUtils::GetColumnTextValue(statement, 1, triggerName);  // 1 means trigger name
                 table.AddTrigger(triggerName);
             }
         } else {
@@ -639,9 +639,9 @@ int GetSchemaIndexList(sqlite3 *db, const std::string &tableName, std::vector<st
             break;
         } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
             std::string indexName;
-            (void) SQLiteUtils::GetColumnTextValue(statement, 1, indexName);
+            (void) SQLiteUtils::GetColumnTextValue(statement, 1, indexName);  // 1 means index name
             std::string origin;
-            (void) SQLiteUtils::GetColumnTextValue(statement, 3, origin);
+            (void) SQLiteUtils::GetColumnTextValue(statement, 3, origin);  // 3 means index type, whether unique
             if (origin == "u") {
                 uniqueList.push_back(indexName);
             } else if (origin == "c") {
@@ -673,7 +673,7 @@ int AnalysisSchemaIndexDefine(sqlite3 *db, const std::string &indexName, Composi
             break;
         } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
             std::string indexField;
-            (void) SQLiteUtils::GetColumnTextValue(statement, 2, indexField);
+            (void) SQLiteUtils::GetColumnTextValue(statement, 2, indexField);  // 2 means index's column name.
             indexDefine.push_back(indexField);
         } else {
             LOGW("[AnalysisSchema] Step for the analysis schema index failed:%d", errCode);
@@ -736,22 +736,22 @@ int AnalysisSchemaFieldDefine(sqlite3 *db, const std::string &tableName, TableIn
             FieldInfo field;
             std::string tmpString;
 
-            field.SetColumnId(sqlite3_column_int(statement, 0));
+            field.SetColumnId(sqlite3_column_int(statement, 0));  // 0 means column id index
 
-            (void) SQLiteUtils::GetColumnTextValue(statement, 1, tmpString);
+            (void) SQLiteUtils::GetColumnTextValue(statement, 1, tmpString);  // 1 means column name index
             field.SetFieldName(tmpString);
 
-            (void) SQLiteUtils::GetColumnTextValue(statement, 2, tmpString);
+            (void) SQLiteUtils::GetColumnTextValue(statement, 2, tmpString);  // 2 means datatype index
             field.SetDataType(tmpString);
 
-            field.SetNotNull(static_cast<bool>(sqlite3_column_int64(statement, 3)));
+            field.SetNotNull(static_cast<bool>(sqlite3_column_int64(statement, 3)));  // 3 means whether null index
 
-            (void) SQLiteUtils::GetColumnTextValue(statement, 4, tmpString);
+            (void) SQLiteUtils::GetColumnTextValue(statement, 4, tmpString);  // 4 means default value index
             if (!tmpString.empty()) {
                 field.SetDefaultValue(tmpString);
             }
 
-            if (sqlite3_column_int64(statement, 5)) {
+            if (sqlite3_column_int64(statement, 5)) {  // 5 means primary key index
                 table.SetPrimaryKey(field.GetFieldName());
             }
             table.AddField(field);

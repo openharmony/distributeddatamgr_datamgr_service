@@ -35,14 +35,8 @@ protected:
     int CreateNewExecutor(bool isWrite, StorageExecutor *&handle) override;
 
 private:
-    // For executor.
-
-    // For engine.
-
-    // For db.
     int RegisterFunction(sqlite3 *db) const;
 };
 } // namespace DistributedDB
-
 #endif
 #endif // SQLITE_RELATIONAL_ENGINE_H

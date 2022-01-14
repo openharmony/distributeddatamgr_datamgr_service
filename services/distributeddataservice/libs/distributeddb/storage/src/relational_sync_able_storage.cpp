@@ -24,10 +24,6 @@ namespace DistributedDB {
     } \
 } while (0)
 
-namespace {
-constexpr float QUERY_SYNC_THRESHOLD = 0.50;
-}
-
 RelationalSyncAbleStorage::RelationalSyncAbleStorage(StorageEngine *engine)
     : storageEngine_(static_cast<SQLiteSingleRelationalStorageEngine *>(engine))
 {}
@@ -234,7 +230,7 @@ static bool CanHoldDeletedData(const std::vector<DataItem> &dataItems, const Dat
     bool reachThreshold = (dataItems.size() >= dataSizeInfo.packetSize);
     for (size_t i = 0, blockSize = 0; !reachThreshold && i < dataItems.size(); i++) {
         blockSize += GetDataItemSerialSize(dataItems[i], appendLen);
-        reachThreshold = (blockSize >= dataSizeInfo.blockSize * QUERY_SYNC_THRESHOLD);
+        reachThreshold = (blockSize >= dataSizeInfo.blockSize * DBConstant::QUERY_SYNC_THRESHOLD);
     }
     return !reachThreshold;
 }

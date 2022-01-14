@@ -142,7 +142,7 @@ static int GetDataValueByType(sqlite3_stmt *statement, DataValue &value, Storage
             break;
         }
         case SQLITE3_TEXT: {
-            const char *colValue = reinterpret_cast<const char*>(sqlite3_column_text(statement, cid));
+            const char *colValue = reinterpret_cast<const char *>(sqlite3_column_text(statement, cid));
             if (colValue == nullptr) {
                 value.ResetValue();
             } else {
@@ -218,28 +218,28 @@ static int BindDataValueByType(sqlite3_stmt *statement, const std::optional<Data
 
 static int GetLogData(sqlite3_stmt *logStatement, LogInfo &logInfo)
 {
-    logInfo.dataKey = sqlite3_column_int(logStatement, 0);
+    logInfo.dataKey = sqlite3_column_int(logStatement, 0);  // 0 means dataKey index
 
     std::vector<uint8_t> dev;
-    int errCode = SQLiteUtils::GetColumnBlobValue(logStatement, 1, dev);
+    int errCode = SQLiteUtils::GetColumnBlobValue(logStatement, 1, dev);  // 1 means dev index
     if (errCode != E_OK) {
         return errCode;
     }
     logInfo.device = std::string(dev.begin(), dev.end());
 
     std::vector<uint8_t> oriDev;
-    errCode = SQLiteUtils::GetColumnBlobValue(logStatement, 2, oriDev);
+    errCode = SQLiteUtils::GetColumnBlobValue(logStatement, 2, oriDev);  // 2 means ori_dev index
     if (errCode != E_OK) {
         return errCode;
     }
     logInfo.originDev = std::string(oriDev.begin(), oriDev.end());
-    logInfo.timestamp = static_cast<uint64_t>(sqlite3_column_int64(logStatement, 3));
-    logInfo.wTimeStamp = static_cast<uint64_t>(sqlite3_column_int64(logStatement, 4));
-    logInfo.flag = static_cast<uint64_t>(sqlite3_column_int64(logStatement, 5));
+    logInfo.timestamp = static_cast<uint64_t>(sqlite3_column_int64(logStatement, 3));  // 3 means timestamp index
+    logInfo.wTimeStamp = static_cast<uint64_t>(sqlite3_column_int64(logStatement, 4));  // 4 means w_timestamp index
+    logInfo.flag = static_cast<uint64_t>(sqlite3_column_int64(logStatement, 5));  // 5 means flag index
     logInfo.flag &= (~DataItem::LOCAL_FLAG);
 
     std::vector<uint8_t> hashKey;
-    errCode = SQLiteUtils::GetColumnBlobValue(logStatement, 6, hashKey);
+    errCode = SQLiteUtils::GetColumnBlobValue(logStatement, 6, hashKey);  // 6 means hashKey index
     if (errCode != E_OK) {
         return errCode;
     }
@@ -298,13 +298,13 @@ int SQLiteSingleVerRelationalStorageExecutor::PutKvData(const Key &key, const Va
         goto ERROR;
     }
 
-    errCode = SQLiteUtils::BindBlobToStatement(statement, 1, key, false); // BIND_KV_KEY_INDEX
+    errCode = SQLiteUtils::BindBlobToStatement(statement, 1, key, false);  // 1 means key index
     if (errCode != E_OK) {
         LOGE("[SingleVerExe][BindPutKv]Bind key error:%d", errCode);
         goto ERROR;
     }
 
-    errCode = SQLiteUtils::BindBlobToStatement(statement, 2, value, true); // BIND_KV_VAL_INDEX
+    errCode = SQLiteUtils::BindBlobToStatement(statement, 2, value, true);  // 2 means value index
     if (errCode != E_OK) {
         LOGE("[SingleVerExe][BindPutKv]Bind value error:%d", errCode);
         goto ERROR;
@@ -509,17 +509,13 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statemen
     }
 
     // bind
-    SQLiteUtils::BindInt64ToStatement(statement, 1, dataKeyBind);
-
+    SQLiteUtils::BindInt64ToStatement(statement, 1, dataKeyBind);  // 1 means dataKey index
     std::vector<uint8_t> originDev(logInfoBind.originDev.begin(), logInfoBind.originDev.end());
-    SQLiteUtils::BindBlobToStatement(statement, 2, originDev);
-
-    SQLiteUtils::BindInt64ToStatement(statement, 3, logInfoBind.timestamp);
-    SQLiteUtils::BindInt64ToStatement(statement, 4, logInfoBind.wTimeStamp);
-    SQLiteUtils::BindInt64ToStatement(statement, 5, logInfoBind.flag);
-
-    SQLiteUtils::BindTextToStatement(statement, 6, logInfoBind.hashKey);
-
+    SQLiteUtils::BindBlobToStatement(statement, 2, originDev);  // 2 means ori_dev index
+    SQLiteUtils::BindInt64ToStatement(statement, 3, logInfoBind.timestamp);  // 3 means timestamp index
+    SQLiteUtils::BindInt64ToStatement(statement, 4, logInfoBind.wTimeStamp);  // 4 means w_timestamp index
+    SQLiteUtils::BindInt64ToStatement(statement, 5, logInfoBind.flag);  // 5 means flag index
+    SQLiteUtils::BindTextToStatement(statement, 6, logInfoBind.hashKey);  // 6 means hashKey index
     errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
     if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
         return E_OK;
@@ -661,10 +657,11 @@ int SQLiteSingleVerRelationalStorageExecutor::GetDataItemForSync(sqlite3_stmt *s
     std::vector<FieldInfo> fieldInfos;
     if (!isGettingDeletedData) {
         for (const auto &col: table_.GetFields()) {
-            LOGD("[GetDataItemForSync] field:%s type:%d cid:%d", col.second.GetFieldName().c_str(),
-                col.second.GetStorageType(), col.second.GetColumnId() + 7);
+            auto colType = col.second.GetStorageType();
+            auto colId = col.second.GetColumnId() + 7;  // 7 means the count of log table's column.
+            LOGD("[GetDataItemForSync] field:%s type:%d cid:%d", col.second.GetFieldName().c_str(), colType, colId);
             DataValue value;
-            errCode = GetDataValueByType(stmt, value, col.second.GetStorageType(), col.second.GetColumnId() + 7);
+            errCode = GetDataValueByType(stmt, value, colType, colId);
             if (errCode != E_OK) {
                 return errCode;
             }

@@ -21,7 +21,8 @@
 
 namespace DistributedDB {
 SyncAbleEngine::SyncAbleEngine(ISyncInterface *store)
-    : started_(false),
+    : syncer_(),
+      started_(false),
       store_(store)
 {}
 

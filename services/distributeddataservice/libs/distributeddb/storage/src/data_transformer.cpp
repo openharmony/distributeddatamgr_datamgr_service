@@ -140,7 +140,7 @@ void DataTransformer::ReduceMapping(const std::vector<FieldInfo> &remoteFieldInf
     const std::vector<FieldInfo> &localFieldInfo, std::vector<int> &indexMapping)
 {
     std::map<std::string, int> fieldMap;
-    for (int i = 0; i < (int)remoteFieldInfo.size(); ++i) {
+    for (int i = 0; i < static_cast<int>(remoteFieldInfo.size()); ++i) {
         const auto &fieldInfo = remoteFieldInfo[i];
         fieldMap[fieldInfo.GetFieldName()] = i;
     }
@@ -254,7 +254,7 @@ int SerializeBlobValue(const DataValue &dataValue, Parcel &parcel)
     if (errCode != E_OK) {
         return errCode;
     }
-    return parcel.WriteBlob(reinterpret_cast<const char*>(val.GetData()), size);
+    return parcel.WriteBlob(reinterpret_cast<const char *>(val.GetData()), size);
 }
 
 int DeSerializeBlobValue(DataValue &dataValue, Parcel &parcel)
@@ -270,7 +270,7 @@ int DeSerializeBlobValue(DataValue &dataValue, Parcel &parcel)
     if (parcel.IsError()) {
         return -E_PARSE_FAIL;
     }
-    int errCode = val.WriteBlob(reinterpret_cast<const uint8_t*>(array), blobLength);
+    int errCode = val.WriteBlob(reinterpret_cast<const uint8_t *>(array), blobLength);
     if (errCode == E_OK) {
         dataValue = val;
     }
@@ -360,7 +360,7 @@ int DataTransformer::DeSerializeValue(const Value &value, OptRowData &optionalDa
             optionalData.push_back(std::nullopt);
             continue;
         }
-        if ((uint32_t)index >= valueList.size()) {
+        if (static_cast<uint32_t>(index) >= valueList.size()) {
             return -E_INTERNAL_ERROR; // should not happen
         }
         optionalData.push_back(valueList[index]);

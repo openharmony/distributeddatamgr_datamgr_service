@@ -44,10 +44,6 @@ namespace DistributedDB {
 namespace {
     constexpr int DEF_LIFE_CYCLE_TIME = 60000; // 60s
     constexpr int WAIT_DELEGATE_CALLBACK_TIME = 100;
-    // In querySync, when getting query data finished,
-    // if the block size reach the half of max block size, will get deleted data next;
-    // if the block size not reach the half of max block size, will not get deleted data.
-    constexpr float QUERY_SYNC_THRESHOLD = 0.50;
 
     const std::string CREATE_DB_TIME = "createDBTime";
 
@@ -161,7 +157,7 @@ namespace {
         bool reachThreshold = false;
         for (size_t i = 0, blockSize = 0; !reachThreshold && i < dataItems.size(); i++) {
             blockSize += SQLiteSingleVerStorageExecutor::GetDataItemSerialSize(dataItems[i], appendLen);
-            reachThreshold = (blockSize >= dataSizeInfo.blockSize * QUERY_SYNC_THRESHOLD);
+            reachThreshold = (blockSize >= dataSizeInfo.blockSize * DBConstant::QUERY_SYNC_THRESHOLD);
         }
         return !reachThreshold;
     }

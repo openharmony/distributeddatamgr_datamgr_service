@@ -17,7 +17,7 @@
 #ifdef RELATIONAL_STORE
 
 #include <functional>
-#include <memory.h>
+#include <memory>
 #include <vector>
 
 #include "irelational_store.h"
@@ -66,7 +66,7 @@ private:
     int CleanDistributedDeviceTable();
 
     // use for sync Interactive
-    std::shared_ptr<SyncAbleEngine> syncEngine_ = nullptr; // For storage operate sync function
+    std::unique_ptr<SyncAbleEngine> syncEngine_ = nullptr; // For storage operate sync function
     // use ref obj same as kv
     RelationalSyncAbleStorage *storageEngine_ = nullptr; // For storage operate data
     SQLiteSingleRelationalStorageEngine *sqliteStorageEngine_ = nullptr;
