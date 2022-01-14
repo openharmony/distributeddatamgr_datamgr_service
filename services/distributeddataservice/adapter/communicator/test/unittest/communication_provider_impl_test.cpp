@@ -33,22 +33,24 @@ class CommunicationProviderImplTest : public testing::Test {
 };
 
 class AppDataChangeListenerImpl : public AppDataChangeListener {
-    void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size,
+    void OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info, const uint8_t *ptr, const int size,
                    const struct PipeInfo &id) const override;
 };
-void AppDataChangeListenerImpl::OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size,
-                                          const struct PipeInfo &id) const
+void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info,
+    const uint8_t *ptr, const int size, const struct PipeInfo &id) const
 {
     ZLOGI("data  %{public}s  %s", info.deviceName.c_str(), ptr);
 }
 
 class AppDeviceStatusChangeListenerImpl : public AppDeviceStatusChangeListener {
 public:
-    void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override;
+    void OnDeviceChanged(const OHOS::AppDistributedKv::DeviceInfo &info,
+                         const DeviceChangeType &type) const override;
     ~AppDeviceStatusChangeListenerImpl();
 };
 
-void AppDeviceStatusChangeListenerImpl::OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const
+void AppDeviceStatusChangeListenerImpl::OnDeviceChanged(const OHOS::AppDistributedKv::DeviceInfo &info,
+                                                        const DeviceChangeType &type) const
 {
     ZLOGI("%{public}s  %{public}d", info.deviceName.c_str(), static_cast<int>(type));
 }
