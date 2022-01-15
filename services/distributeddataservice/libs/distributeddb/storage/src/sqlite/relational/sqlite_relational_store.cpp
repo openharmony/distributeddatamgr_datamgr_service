@@ -348,16 +348,12 @@ int SQLiteRelationalStore::RemoveDeviceData(const std::string &device, const std
     if (errCode != E_OK) {
         LOGE("delete device data failed. %d", errCode);
         (void)handle->Rollback();
-    } else {
-        (void)handle->Commit();
-        errCode = syncEngine_->EraseDeviceWaterMark(device, true); // TODO: need table name
-        if (errCode != E_OK) {
-            LOGE("Erase device water mark failed. %d", errCode);
-        }
+        ReleaseHandle(handle);
+        return errCode;
     }
-
+    errCode = handle->Commit();
     ReleaseHandle(handle);
-    return errCode;
+    return (errCode != E_OK) ? errCode : syncEngine_->EraseDeviceWaterMark(device, true);
 }
 
 int SQLiteRelationalStore::StopLifeCycleTimer() const
