@@ -17,22 +17,12 @@ group("build_module") {
   deps = [ ":distributeddataservice" ]
   if (build_public_version) {
     deps += [ ":distributeddata_profile" ]
-    if (use_musl) {
-      deps += [ ":distributed_data.cfg" ]
-    } else {
-      deps += [ ":distributed_data.rc" ]
-    }
+    deps += [ ":distributed_data.cfg" ]
   }
 }
 
 ohos_prebuilt_etc("distributed_data.cfg") {
   source = "distributed_data.cfg"
-  relative_install_dir = "init"
-  subsystem_name = "distributeddatamgr"
-}
-
-ohos_prebuilt_etc("distributed_data.rc") {
-  source = "distributed_data.rc"
   relative_install_dir = "init"
   subsystem_name = "distributeddatamgr"
 }
