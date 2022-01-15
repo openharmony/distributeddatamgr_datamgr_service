@@ -107,6 +107,7 @@ namespace {
             EXPECT_EQ(errCode, E_OK);
         }
         EXPECT_EQ(SimulateCommitData(db, stmt), SQLITE_DONE);
+        sqlite3_finalize(stmt);
     }
 
     void GenerateValue(RowData &rowData, std::map<std::string, DataValue> &dataMap)
