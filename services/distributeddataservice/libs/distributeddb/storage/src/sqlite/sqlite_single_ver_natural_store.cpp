@@ -179,7 +179,7 @@ SQLiteSingleVerNaturalStore::SQLiteSingleVerNaturalStore()
       autoLifeTime_(DEF_LIFE_CYCLE_TIME),
       createDBTime_(0),
       dataInterceptor_(nullptr),
-      maxLogLimit_(DBConstant::MAX_LOG_LIMIT_DEFAULT)
+      maxLogSize_(DBConstant::MAX_LOG_SIZE_DEFAULT)
 {}
 
 SQLiteSingleVerNaturalStore::~SQLiteSingleVerNaturalStore()
@@ -954,7 +954,7 @@ int SQLiteSingleVerNaturalStore::RemoveDeviceData(const std::string &deviceName,
     }
     uint64_t logFileSize = handle->GetLogFileSize();
     ReleaseHandle(handle);
-    if (logFileSize > GetMaxLogLimit()) {
+    if (logFileSize > GetMaxLogSize()) {
         LOGW("[SingleVerNStore] RmDevData log size[%llu] over the limit", logFileSize);
         return -E_LOG_OVER_LIMITS;
     }
@@ -2235,15 +2235,15 @@ int SQLiteSingleVerNaturalStore::RemoveSubscribe(const std::string &subscribeId)
     return RemoveSubscribe(std::vector<std::string> {subscribeId});
 }
 
-int SQLiteSingleVerNaturalStore::SetMaxLogLimit(uint64_t limit)
+int SQLiteSingleVerNaturalStore::SetMaxLogSize(uint64_t limit)
 {
     LOGI("Set the max log size to %llu", limit);
-    maxLogLimit_.store(limit);
+    maxLogSize_.store(limit);
     return E_OK;
 }
-uint64_t SQLiteSingleVerNaturalStore::GetMaxLogLimit() const
+uint64_t SQLiteSingleVerNaturalStore::GetMaxLogSize() const
 {
-    return maxLogLimit_.load();
+    return maxLogSize_.load();
 }
 
 int SQLiteSingleVerNaturalStore::RemoveAllSubscribe()

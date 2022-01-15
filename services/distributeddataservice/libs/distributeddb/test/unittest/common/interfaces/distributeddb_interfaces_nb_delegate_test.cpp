@@ -1782,20 +1782,20 @@ HWTEST_F(DistributedDBInterfacesNBDelegateTest, SingleVerGetSecurityOption002, T
 }
 
 /**
- * @tc.name: MaxLogLimit001
+ * @tc.name: MaxLogSize001
  * @tc.desc: Test the pragma cmd of the max log size limit.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: wangbingquan
  */
-HWTEST_F(DistributedDBInterfacesNBDelegateTest, MaxLogLimit001, TestSize.Level2)
+HWTEST_F(DistributedDBInterfacesNBDelegateTest, MaxLogSize001, TestSize.Level2)
 {
     /**
      * @tc.steps:step1. Create database.
      * @tc.expected: step1. Returns a non-null kvstore.
      */
     KvStoreNbDelegate::Option option;
-    g_mgr.GetKvStore("MaxLogLimit001", option, g_kvNbDelegateCallback);
+    g_mgr.GetKvStore("MaxLogSize001", option, g_kvNbDelegateCallback);
     ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
     EXPECT_TRUE(g_kvDelegateStatus == OK);
 
@@ -1803,32 +1803,32 @@ HWTEST_F(DistributedDBInterfacesNBDelegateTest, MaxLogLimit001, TestSize.Level2)
      * @tc.steps:step2. Setting the max log limit for the valid value.
      * @tc.expected: step2. Returns OK.
      */
-    uint64_t logSize = DBConstant::MAX_LOG_LIMIT_HIGH;
+    uint64_t logSize = DBConstant::MAX_LOG_SIZE_HIGH;
     PragmaData pragLimit = static_cast<PragmaData>(&logSize);
-    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_LIMIT, pragLimit), OK);
+    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_SIZE, pragLimit), OK);
 
-    logSize = DBConstant::MAX_LOG_LIMIT_LOW;
+    logSize = DBConstant::MAX_LOG_SIZE_LOW;
     pragLimit = static_cast<PragmaData>(&logSize);
-    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_LIMIT, pragLimit), OK);
+    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_SIZE, pragLimit), OK);
 
     logSize = 10 * 1024 * 1024; // 10M
     pragLimit = static_cast<PragmaData>(&logSize);
-    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_LIMIT, pragLimit), OK);
+    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_SIZE, pragLimit), OK);
 
     /**
      * @tc.steps:step3. Setting the max log limit for the invalid value.
      * @tc.expected: step3. Returns INLIVAD_ARGS.
      */
-    logSize = DBConstant::MAX_LOG_LIMIT_HIGH + 1;
+    logSize = DBConstant::MAX_LOG_SIZE_HIGH + 1;
     pragLimit = static_cast<PragmaData>(&logSize);
-    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_LIMIT, pragLimit), INVALID_ARGS);
+    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_SIZE, pragLimit), INVALID_ARGS);
 
-    logSize = DBConstant::MAX_LOG_LIMIT_LOW - 1;
+    logSize = DBConstant::MAX_LOG_SIZE_LOW - 1;
     pragLimit = static_cast<PragmaData>(&logSize);
-    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_LIMIT, pragLimit), INVALID_ARGS);
+    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_SIZE, pragLimit), INVALID_ARGS);
     EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
     g_kvNbDelegatePtr = nullptr;
-    EXPECT_TRUE(g_mgr.DeleteKvStore("MaxLogLimit001") == OK);
+    EXPECT_TRUE(g_mgr.DeleteKvStore("MaxLogSize001") == OK);
 }
 
 /**
@@ -1838,14 +1838,14 @@ HWTEST_F(DistributedDBInterfacesNBDelegateTest, MaxLogLimit001, TestSize.Level2)
  * @tc.require:
  * @tc.author: wangbingquan
  */
-HWTEST_F(DistributedDBInterfacesNBDelegateTest, MaxLogLimit002, TestSize.Level2)
+HWTEST_F(DistributedDBInterfacesNBDelegateTest, MaxLogSize002, TestSize.Level2)
 {
     /**
      * @tc.steps:step1. Create database.
      * @tc.expected: step1. Returns a non-null kvstore.
      */
     KvStoreNbDelegate::Option option;
-    g_mgr.GetKvStore("MaxLogLimit002", option, g_kvNbDelegateCallback);
+    g_mgr.GetKvStore("MaxLogSize002", option, g_kvNbDelegateCallback);
     ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
     EXPECT_TRUE(g_kvDelegateStatus == OK);
 
@@ -1879,7 +1879,7 @@ HWTEST_F(DistributedDBInterfacesNBDelegateTest, MaxLogLimit002, TestSize.Level2)
      */
     uint64_t logSize = 6 * 1024 * 1024; // 6M for initial test.
     PragmaData pragLimit = static_cast<PragmaData>(&logSize);
-    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_LIMIT, pragLimit), OK);
+    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_SIZE, pragLimit), OK);
     DistributedDBToolsUnitTest::GetRandomKeyValue(key, 10); // for 10B random key(different size)
     DistributedDBToolsUnitTest::GetRandomKeyValue(value, 3 * 1024 * 1024); // 3MB
     EXPECT_EQ(g_kvNbDelegatePtr->Put(key, value), OK);
@@ -1902,12 +1902,12 @@ HWTEST_F(DistributedDBInterfacesNBDelegateTest, MaxLogLimit002, TestSize.Level2)
      */
     logSize *= 10; // 10 multiple size
     pragLimit = static_cast<PragmaData>(&logSize);
-    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_LIMIT, pragLimit), OK);
+    EXPECT_EQ(g_kvNbDelegatePtr->Pragma(SET_MAX_LOG_SIZE, pragLimit), OK);
     EXPECT_EQ(g_kvNbDelegatePtr->Put(key, value), OK);
     g_kvNbDelegatePtr->CloseResultSet(resultSet);
 
     EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
-    EXPECT_EQ(g_mgr.DeleteKvStore("MaxLogLimit002"), OK);
+    EXPECT_EQ(g_mgr.DeleteKvStore("MaxLogSize002"), OK);
 }
 
 /**

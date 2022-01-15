@@ -397,8 +397,8 @@ int SQLiteSingleVerNaturalStoreConnection::Pragma(int cmd, void *parameter)
             return PragmaResultSetCacheMaxSize(parameter);
         case PRAGMA_TRIGGER_TO_MIGRATE_DATA:
             return PragmaTriggerToMigrateData(*static_cast<SecurityOption *>(parameter));
-        case PRAGMA_SET_MAX_LOG_LIMIT:
-            return PragmaSetMaxLogLimit(static_cast<uint64_t *>(parameter));
+        case PRAGMA_SET_MAX_LOG_SIZE:
+            return PragmaSetMaxLogSize(static_cast<uint64_t *>(parameter));
         case PRAGMA_EXEC_CHECKPOINT:
             return ForceCheckPoint();
         default:
@@ -728,7 +728,7 @@ int SQLiteSingleVerNaturalStoreConnection::CheckIntegrity() const
     return errCode;
 }
 
-int SQLiteSingleVerNaturalStoreConnection::PragmaSetMaxLogLimit(uint64_t *limit)
+int SQLiteSingleVerNaturalStoreConnection::PragmaSetMaxLogSize(uint64_t *limit)
 {
     if (limit == nullptr) {
         return -E_INVALID_ARGS;
@@ -738,10 +738,10 @@ int SQLiteSingleVerNaturalStoreConnection::PragmaSetMaxLogLimit(uint64_t *limit)
         LOGE("[SingleVerConnection] db is nullptr for max log limit set.");
         return -E_INVALID_DB;
     }
-    if (*limit > DBConstant::MAX_LOG_LIMIT_HIGH || *limit < DBConstant::MAX_LOG_LIMIT_LOW) {
+    if (*limit > DBConstant::MAX_LOG_SIZE_HIGH || *limit < DBConstant::MAX_LOG_SIZE_LOW) {
         return -E_INVALID_ARGS;
     }
-    return naturalStore->SetMaxLogLimit(*limit);
+    return naturalStore->SetMaxLogSize(*limit);
 }
 
 int SQLiteSingleVerNaturalStoreConnection::ForceCheckPoint() const
@@ -1757,7 +1757,7 @@ bool SQLiteSingleVerNaturalStoreConnection::CheckLogOverLimit(SQLiteSingleVerSto
         return false;
     }
     uint64_t logFileSize = executor->GetLogFileSize();
-    bool result = logFileSize > naturalStore->GetMaxLogLimit();
+    bool result = logFileSize > naturalStore->GetMaxLogSize();
     if (result) {
         LOGW("Log size[%llu] over the limit", logFileSize);
     }

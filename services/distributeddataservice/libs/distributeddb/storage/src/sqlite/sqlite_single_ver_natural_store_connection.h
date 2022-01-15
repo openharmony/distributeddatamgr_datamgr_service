@@ -196,7 +196,7 @@ private:
     int CheckReadDataControlled() const;
     bool IsFileAccessControlled() const;
 
-    int PragmaSetMaxLogLimit(uint64_t *limit);
+    int PragmaSetMaxLogSize(uint64_t *limit);
     int ForceCheckPoint() const;
 
     bool CheckLogOverLimit(SQLiteSingleVerStorageExecutor *executor) const;

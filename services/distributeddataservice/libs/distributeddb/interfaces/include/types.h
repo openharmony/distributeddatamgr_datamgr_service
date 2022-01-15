@@ -82,7 +82,7 @@ enum PragmaCmd {
     RESULT_SET_CACHE_MODE, // Accept ResultSetCacheMode Type As PragmaData
     RESULT_SET_CACHE_MAX_SIZE, // Allowed Int Type Range [1,16], Unit MB
     SET_SYNC_RETRY,
-    SET_MAX_LOG_LIMIT,
+    SET_MAX_LOG_SIZE,
     EXEC_CHECKPOINT,
 };
 
