@@ -31,10 +31,29 @@ struct sqlite3_api_routines_relational {
 };
 
 extern const struct sqlite3_api_routines_relational *sqlite3_export_relational_symbols;
+#ifdef sqlite3_close
+#undef sqlite3_close
+#endif
 #define sqlite3_close           sqlite3_export_relational_symbols->close
+
+#ifdef sqlite3_close_v2
+#undef sqlite3_close_v2
+#endif
 #define sqlite3_close_v2        sqlite3_export_relational_symbols->close_v2
+
+#ifdef sqlite3_open
+#undef sqlite3_open
+#endif
 #define sqlite3_open            sqlite3_export_relational_symbols->open
+
+#ifdef sqlite3_open16
+#undef sqlite3_open16
+#endif
 #define sqlite3_open16          sqlite3_export_relational_symbols->open16
+
+#ifdef sqlite3_open_v2
+#undef sqlite3_open_v2
+#endif
 #define sqlite3_open_v2         sqlite3_export_relational_symbols->open_v2
 
 #endif
