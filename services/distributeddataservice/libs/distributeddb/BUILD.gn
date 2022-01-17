@@ -45,6 +45,7 @@ config("distrdb_config") {
     "JSONCPP_USE_BUILDER",
     "OMIT_FLATBUFFER",
     "RELATIONAL_STORE",
+    "SQLITE_DISTRIBUTE_RELATIONAL",
   ]
 }
 
