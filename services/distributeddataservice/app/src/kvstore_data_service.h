@@ -31,9 +31,8 @@
 #include "backup_handler.h"
 #include "device_change_listener_impl.h"
 
-namespace OHOS {
-namespace DistributedKv {
-
+namespace OHOS::DistributedKv {
+class IRdbService;
 class KvStoreAccountObserver;
 class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
@@ -68,7 +67,8 @@ public:
     Status GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy) override;
     Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy) override;
     Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) override;
-
+    sptr<IRdbService> GetRdbService() override;
+    
     void OnDump() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;
@@ -94,6 +94,7 @@ public:
     Status RecoverMultiKvStore(const Options &options, const std::string &bundleName,
                                const std::string &storeId, const std::vector<uint8_t> &secretKey,
                                std::function<void(sptr<IKvStoreImpl>)> callback);
+    
     struct GetKvStorePara {
         std::string bundleName;
         std::string storeId;
@@ -168,6 +169,8 @@ private:
     void ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
 
     bool CheckOptions(const Options &options, const std::vector<uint8_t> &metaKey) const;
+    
+    void CreateRdbService();
 
     static constexpr int TEN_SEC = 10;
 
@@ -180,6 +183,8 @@ private:
     std::map<IRemoteObject *, sptr<IDeviceStatusChangeListener>> deviceListeners_;
     std::mutex deviceListenerMutex_;
     std::shared_ptr<DeviceChangeListenerImpl> deviceListener_;
+    
+    sptr<IRdbService> rdbService_;
 };
 
 class DbMetaCallbackDelegateMgr : public DbMetaCallbackDelegate {
@@ -216,6 +221,5 @@ private:
     static const inline int STORE_ID = 2;
     static const inline int VECTOR_SIZE = 2;
 };
-}  // namespace DistributedKv
-}  // namespace OHOS
+}
 #endif  // KVSTORE_DATASERVICE_H

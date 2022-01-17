@@ -18,6 +18,6 @@ service distributeddata /system/bin/sa_main /system/profile/distributeddata.xml
     class z_core
     capabilities DAC_READ_SEARCH
     user system
-    group system shell readproc
+    group system shell readproc ddms
     seclabel u:r:distributeddata:s0
     writepid /dev/cpuset/foreground/tasks /dev/stune/foreground/tasks /dev/blkio/foreground/tasks

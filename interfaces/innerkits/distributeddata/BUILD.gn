@@ -24,6 +24,7 @@ config("distributeddatafwk_config") {
   include_dirs = [
     "include",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/include",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/include/rdb",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src",
     "//utils/system/safwk/native/include",
     "//utils/native/base/include",
@@ -36,6 +37,7 @@ config("distributeddatafwk_public_config") {
 
   include_dirs = [
     "include",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/include/rdb",
     "//utils/native/base/include",
   ]
 }
@@ -68,6 +70,17 @@ ohos_shared_library("distributeddata_inner") {
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/single_kvstore_client.cpp",
     "include/types.h",
   ]
+
+  rdb_sources = [
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_client_death_recipient.cpp",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_parcel.cpp",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_service_proxy.cpp",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_service_stub.cpp",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_store_proxy.cpp",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_store_stub.cpp",
+  ]
+
+  sources += rdb_sources
 
   configs = [ ":distributeddatafwk_config" ]
 

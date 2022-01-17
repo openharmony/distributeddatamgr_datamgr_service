@@ -14,7 +14,7 @@
  */
 #ifndef RELATIONAL_STORE_MANAGER_H
 #define RELATIONAL_STORE_MANAGER_H
-#ifdef RELATIONAL_STORE
+
 #include <string>
 #include <functional>
 #include <mutex>
@@ -51,5 +51,4 @@ private:
     std::string userId_;
 };
 } // namespace DistributedDB
-#endif // RELATIONAL_STORE
 #endif // RELATIONAL_STORE_MANAGER_H
