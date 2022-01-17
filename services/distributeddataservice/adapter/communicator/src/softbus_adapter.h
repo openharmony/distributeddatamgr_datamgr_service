@@ -34,35 +34,42 @@ enum IdType {
     UUID,
     UDID,
 };
-class Semaphore {
-public:
-    explicit Semaphore(unsigned int resCount) : count(resCount), data(-1) {}
-    ~Semaphore() {}
 
+template <typename T>
+class BlockData {
 public:
-    int Wait()
+    explicit BlockData() {}
+    ~BlockData() {}
+public:
+    void SetValue(T &data)
     {
-        std::unique_lock<std::mutex> uniqueLock(mutex);
-        --count;
-        while (count < 0) {
-            cv.wait(uniqueLock);
-        }
+        std::lock_guard<std::mutex> lock(mutex_);
+        data_ = data;
+        isSet_ = true;
+        cv_.notify_one();
+    }
+
+    T GetValue()
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        cv_.wait(lock, [this]() { return isSet_; });
+        T data = data_;
+        cv_.notify_one();
         return data;
     }
-    void Signal(const int &sendData)
+
+    void Clear()
     {
-        std::lock_guard<std::mutex> lg(mutex);
-        data = sendData;
-        if (++count < 1) {
-            cv.notify_one();
-        }
+        std::lock_guard<std::mutex> lock(mutex_);
+        isSet_ = false;
+        cv_.notify_one();
     }
 
 private:
-    int count;
-    int data;
-    std::mutex mutex;
-    std::condition_variable cv;
+    bool isSet_ = false;
+    T data_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
 };
 
 class SoftBusAdapter {
@@ -124,14 +131,13 @@ public:
     void NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
         const PipeInfo &pipeInfo);
 
-    int WaitSessionOpen();
+    int32_t GetSessionStatus(int32_t sessionId);
 
-    void NotifySessionOpen(const int &state);
+    void OnSessionOpen(int32_t sessionId, int32_t status);
 
-    int GetOpenSessionId();
-
-    void SetOpenSessionId(const int &sessionId);
+    void OnSessionClose(int32_t sessionId);
 private:
+    std::shared_ptr<BlockData<int32_t>> GetSemaphore (int32_t sessinId);
     mutable std::mutex networkMutex_ {};
     mutable std::map<std::string, std::tuple<std::string, std::string>> networkId2UuidUdid_ {};
     DeviceInfo localInfo_ {};
@@ -145,11 +151,8 @@ private:
     bool flag_ = true; // only for br flag
     INodeStateCb nodeStateCb_ {};
     ISessionListener sessionListener_ {};
-    std::unique_ptr<Semaphore> semaphore_ {};
-    std::mutex notifyFlagMutex_ {};
-    bool notifyFlag_ = false;
-    std::mutex openSessionIdMutex_ {};
-    int openSessionId_ = -1;
+    std::mutex statusMutex_ {};
+    std::map<int32_t, std::shared_ptr<BlockData<int32_t>>> sessionsStatus_;
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS

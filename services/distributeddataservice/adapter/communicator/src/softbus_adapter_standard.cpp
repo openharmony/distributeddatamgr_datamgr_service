@@ -127,8 +127,6 @@ SoftBusAdapter::SoftBusAdapter()
     sessionListener_.OnSessionClosed = AppDataListenerWrap::OnSessionClosed;
     sessionListener_.OnBytesReceived = AppDataListenerWrap::OnBytesReceived;
     sessionListener_.OnMessageReceived = AppDataListenerWrap::OnMessageReceived;
-
-    semaphore_ = std::make_unique<Semaphore>(0);
 }
 
 SoftBusAdapter::~SoftBusAdapter()
@@ -510,13 +508,8 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
             pipeInfo.pipeId.c_str(), info.msgType, sessionId);
         return Status::CREATE_SESSION_ERROR;
     }
-    SetOpenSessionId(sessionId);
-    int state = WaitSessionOpen();
-    {
-        lock_guard<mutex> lock(notifyFlagMutex_);
-        notifyFlag_ = false;
-    }
-    ZLOGD("Waited for notification, state:%{public}d", state);
+    int state = GetSessionStatus(sessionId);
+    ZLOGD("waited for notification, state:%{public}d", state);
     if (state != SOFTBUS_OK) {
         ZLOGE("OpenSession callback result error");
         return Status::CREATE_SESSION_ERROR;
@@ -529,6 +522,37 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         return Status::ERROR;
     }
     return Status::SUCCESS;
+}
+
+int32_t SoftBusAdapter::GetSessionStatus(int32_t sessionId)
+{
+    auto semaphore = GetSemaphore(sessionId);
+    return semaphore->GetValue();
+}
+
+void SoftBusAdapter::OnSessionOpen(int32_t sessionId, int32_t status)
+{
+    auto semaphore = GetSemaphore(sessionId);
+    semaphore->SetValue(status);
+}
+
+void SoftBusAdapter::OnSessionClose(int32_t sessionId)
+{
+    lock_guard<mutex> lock(statusMutex_);
+    auto it = sessionsStatus_.find(sessionId);
+    if (it != sessionsStatus_.end()) {
+        it->second->Clear();
+        sessionsStatus_.erase(it);
+    }
+}
+
+std::shared_ptr<BlockData<int32_t>> SoftBusAdapter::GetSemaphore(int32_t sessionId)
+{
+    lock_guard<mutex> lock(statusMutex_);
+    if (sessionsStatus_.find(sessionId) == sessionsStatus_.end()) {
+        sessionsStatus_.emplace(sessionId, std::make_shared<BlockData<int32_t>>());
+    }
+    return sessionsStatus_[sessionId];
 }
 
 bool SoftBusAdapter::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
@@ -605,37 +629,6 @@ void SoftBusAdapter::NotifyDataListeners(const uint8_t *ptr, const int size, con
     ZLOGW("no listener %{public}s.", pipeInfo.pipeId.c_str());
 }
 
-int SoftBusAdapter::WaitSessionOpen()
-{
-    {
-        lock_guard<mutex> lock(notifyFlagMutex_);
-        if (notifyFlag_) {
-            ZLOGD("already notified return");
-            return 0;
-        }
-    }
-    return semaphore_->Wait();
-}
-
-void SoftBusAdapter::NotifySessionOpen(const int &state)
-{
-    semaphore_->Signal(state);
-    lock_guard<mutex> lock(notifyFlagMutex_);
-    notifyFlag_ = true;
-}
-
-int SoftBusAdapter::GetOpenSessionId()
-{
-    lock_guard lock(openSessionIdMutex_);
-    return openSessionId_;
-}
-
-void SoftBusAdapter::SetOpenSessionId(const int &sessionId)
-{
-    lock_guard<mutex> lock(openSessionIdMutex_);
-    openSessionId_ = sessionId;
-}
-
 void AppDataListenerWrap::SetDataHandler(SoftBusAdapter *handler)
 {
     ZLOGI("begin");
@@ -649,9 +642,7 @@ int AppDataListenerWrap::OnSessionOpened(int sessionId, int result)
     char peerSessionName[SESSION_NAME_SIZE_MAX] = "";
     char peerDevId[DEVICE_ID_SIZE_MAX] = "";
 
-    if (sessionId == softBusAdapter_->GetOpenSessionId()) {
-        softBusAdapter_->NotifySessionOpen(result);
-    }
+    softBusAdapter_->OnSessionOpen(sessionId, result);
     if (result != SOFTBUS_OK) {
         ZLOGW("session %{public}d open failed, result:%{public}d.", sessionId, result);
         return result;
@@ -690,6 +681,7 @@ void AppDataListenerWrap::OnSessionClosed(int sessionId)
     char peerSessionName[SESSION_NAME_SIZE_MAX] = "";
     char peerDevId[DEVICE_ID_SIZE_MAX] = "";
 
+    softBusAdapter_->OnSessionClose(sessionId);
     int ret = GetMySessionName(sessionId, mySessionName, sizeof(mySessionName));
     if (ret != SOFTBUS_OK) {
         ZLOGW("get my session name failed, session id is %{public}d.", sessionId);
