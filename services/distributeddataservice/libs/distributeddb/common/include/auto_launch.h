@@ -86,7 +86,7 @@ private:
 
     int EnableKvStoreAutoLaunchParmCheck(AutoLaunchItem &autoLaunchItem, const std::string &identifier);
 
-    int GetConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std::string &identifier);
+    int GetKVConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std::string &identifier);
 
     static int OpenOneConnection(AutoLaunchItem &autoLaunchItem);
 

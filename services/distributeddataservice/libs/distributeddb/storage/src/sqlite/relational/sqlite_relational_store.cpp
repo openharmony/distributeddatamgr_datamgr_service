@@ -27,7 +27,6 @@ namespace {
     constexpr const char *RELATIONAL_SCHEMA_KEY = "relational_schema";
     constexpr const char *LOG_TABLE_VERSION_KEY = "log_table_versoin";
     constexpr const char *LOG_TABLE_VERSION_1 = "1.0";
-    constexpr int DEF_LIFE_CYCLE_TIME = 60000; // 60S
 }
 
 SQLiteRelationalStore::~SQLiteRelationalStore()
@@ -448,7 +447,7 @@ int SQLiteRelationalStore::StartLifeCycleTimer(const DatabaseLifeCycleNotifier &
     }
     RefObject::IncObjRef(this);
     TimerId timerId = 0;
-    int errCode = runtimeCxt->SetTimer(DEF_LIFE_CYCLE_TIME,
+    int errCode = runtimeCxt->SetTimer(DBConstant::DEF_LIFE_CYCLE_TIME,
         [this](TimerId id) -> int {
             std::lock_guard<std::mutex> lock(lifeCycleMutex_);
             if (lifeCycleNotifier_) {

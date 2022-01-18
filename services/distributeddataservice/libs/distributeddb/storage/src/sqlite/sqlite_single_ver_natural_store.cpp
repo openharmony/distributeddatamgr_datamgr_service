@@ -42,7 +42,6 @@ namespace DistributedDB {
 } while (0)
 
 namespace {
-    constexpr int DEF_LIFE_CYCLE_TIME = 60000; // 60s
     constexpr int WAIT_DELEGATE_CALLBACK_TIME = 100;
 
     const std::string CREATE_DB_TIME = "createDBTime";
@@ -172,7 +171,7 @@ SQLiteSingleVerNaturalStore::SQLiteSingleVerNaturalStore()
       isReadOnly_(false),
       lifeCycleNotifier_(nullptr),
       lifeTimerId_(0),
-      autoLifeTime_(DEF_LIFE_CYCLE_TIME),
+      autoLifeTime_(DBConstant::DEF_LIFE_CYCLE_TIME),
       createDBTime_(0),
       dataInterceptor_(nullptr),
       maxLogSize_(DBConstant::MAX_LOG_SIZE_DEFAULT)

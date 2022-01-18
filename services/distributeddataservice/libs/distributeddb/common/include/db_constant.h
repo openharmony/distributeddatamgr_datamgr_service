@@ -122,6 +122,8 @@ public:
     static constexpr uint64_t MAX_LOG_SIZE_LOW = 0x400000ULL; // 4MB
     static constexpr uint64_t MAX_LOG_SIZE_DEFAULT = 0x40000000ULL; // 1GB
 
+    static constexpr int DEF_LIFE_CYCLE_TIME = 60000; // 60S
+
     // For relational
     static const std::string RELATIONAL_PREFIX;
     static const std::string TIMESTAMP_ALIAS;

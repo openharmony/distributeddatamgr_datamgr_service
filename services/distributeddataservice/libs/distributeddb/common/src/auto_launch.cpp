@@ -146,7 +146,7 @@ int AutoLaunch::EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLa
         LOGE("[AutoLaunch] EnableKvStoreAutoLaunch failed errCode:%d", errCode);
         return errCode;
     }
-    errCode = GetConnectionInEnable(autoLaunchItem, identifier);
+    errCode = GetKVConnectionInEnable(autoLaunchItem, identifier);
     if (errCode == E_OK) {
         LOGI("[AutoLaunch] EnableKvStoreAutoLaunch ok");
     } else {
@@ -155,21 +155,21 @@ int AutoLaunch::EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLa
     return errCode;
 }
 
-int AutoLaunch::GetConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std::string &identifier)
+int AutoLaunch::GetKVConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std::string &identifier)
 {
-    LOGI("[AutoLaunch] GetConnectionInEnable");
+    LOGI("[AutoLaunch] GetKVConnectionInEnable");
     int errCode;
     std::shared_ptr<KvDBProperties> properties =
         std::static_pointer_cast<KvDBProperties>(autoLaunchItem.propertiesPtr);
     autoLaunchItem.conn = KvDBManager::GetDatabaseConnection(*properties, errCode, false);
     if (errCode == -E_ALREADY_OPENED) {
-        LOGI("[AutoLaunch] GetConnectionInEnable user already getkvstore by self");
+        LOGI("[AutoLaunch] GetKVConnectionInEnable user already getkvstore by self");
         std::lock_guard<std::mutex> autoLock(dataLock_);
         autoLaunchItemMap_[identifier].state = AutoLaunchItemState::IDLE;
         return E_OK;
     }
     if (autoLaunchItem.conn == nullptr) {
-        LOGE("[AutoLaunch] GetConnectionInEnable GetDatabaseConnection errCode:%d", errCode);
+        LOGE("[AutoLaunch] GetKVConnectionInEnable GetDatabaseConnection errCode:%d", errCode);
         std::lock_guard<std::mutex> autoLock(dataLock_);
         autoLaunchItemMap_.erase(identifier);
         return errCode;
@@ -180,11 +180,11 @@ int AutoLaunch::GetConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std:
         isEmpty = onlineDevices_.empty();
     }
     if (isEmpty) {
-        LOGI("[AutoLaunch] GetConnectionInEnable no online device, ReleaseDatabaseConnection");
+        LOGI("[AutoLaunch] GetKVConnectionInEnable no online device, ReleaseDatabaseConnection");
         IKvDBConnection *kvConn = static_cast<IKvDBConnection*>(autoLaunchItem.conn);
         errCode = KvDBManager::ReleaseDatabaseConnection(kvConn);
         if (errCode != E_OK) {
-            LOGE("[AutoLaunch] GetConnectionInEnable ReleaseDatabaseConnection failed errCode:%d", errCode);
+            LOGE("[AutoLaunch] GetKVConnectionInEnable ReleaseDatabaseConnection failed errCode:%d", errCode);
             std::lock_guard<std::mutex> autoLock(dataLock_);
             autoLaunchItemMap_.erase(identifier);
             return errCode;
@@ -199,9 +199,9 @@ int AutoLaunch::GetConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std:
         autoLaunchItemMap_[identifier].state = AutoLaunchItemState::IDLE;
         autoLaunchItemMap_[identifier].conn = autoLaunchItem.conn;
         autoLaunchItemMap_[identifier].observerHandle = autoLaunchItem.observerHandle;
-        LOGI("[AutoLaunch] GetConnectionInEnable RegisterObserverAndLifeCycleCallback ok");
+        LOGI("[AutoLaunch] GetKVConnectionInEnable RegisterObserverAndLifeCycleCallback ok");
     } else {
-        LOGE("[AutoLaunch] GetConnectionInEnable RegisterObserverAndLifeCycleCallback err, do CloseConnection");
+        LOGE("[AutoLaunch] GetKVConnectionInEnable RegisterObserverAndLifeCycleCallback err, do CloseConnection");
         TryCloseConnection(autoLaunchItem); // do nothing if failed
         std::lock_guard<std::mutex> autoLock(dataLock_);
         autoLaunchItemMap_.erase(identifier);
@@ -1065,24 +1065,24 @@ void AutoLaunch::TryCloseKvConnection(AutoLaunchItem &autoLaunchItem)
 {
     LOGI("[AutoLaunch] TryCloseKvConnection");
     if (autoLaunchItem.conn == nullptr) {
-        LOGI("[AutoLaunch] TryCloseConnection conn is nullptr, do nothing");
+        LOGI("[AutoLaunch] TryCloseKvConnection conn is nullptr, do nothing");
         return;
     }
     IKvDBConnection *kvConn = static_cast<IKvDBConnection*>(autoLaunchItem.conn);
     int errCode = kvConn->RegisterLifeCycleCallback(nullptr);
     if (errCode != E_OK) {
-        LOGE("[AutoLaunch] TryCloseConnection RegisterLifeCycleCallback failed errCode:%d", errCode);
+        LOGE("[AutoLaunch] TryCloseKvConnection RegisterLifeCycleCallback failed errCode:%d", errCode);
     }
     if (autoLaunchItem.observerHandle != nullptr) {
         errCode = kvConn->UnRegisterObserver(autoLaunchItem.observerHandle);
         if (errCode != E_OK) {
-            LOGE("[AutoLaunch] TryCloseConnection UnRegisterObserver failed errCode:%d", errCode);
+            LOGE("[AutoLaunch] TryCloseKvConnection UnRegisterObserver failed errCode:%d", errCode);
         }
         autoLaunchItem.observerHandle = nullptr;
     }
     errCode = KvDBManager::ReleaseDatabaseConnection(kvConn);
     if (errCode != E_OK) {
-        LOGE("[AutoLaunch] TryCloseConnection ReleaseDatabaseConnection failed errCode:%d", errCode);
+        LOGE("[AutoLaunch] TryCloseKvConnection ReleaseDatabaseConnection failed errCode:%d", errCode);
     }
 }
 
@@ -1090,17 +1090,17 @@ void AutoLaunch::TryCloseRelationConnection(AutoLaunchItem &autoLaunchItem)
 {
     LOGI("[AutoLaunch] TryCloseRelationConnection");
     if (autoLaunchItem.conn == nullptr) {
-        LOGI("[AutoLaunch] TryCloseConnection conn is nullptr, do nothing");
+        LOGI("[AutoLaunch] TryCloseRelationConnection conn is nullptr, do nothing");
         return;
     }
     RelationalStoreConnection *rdbConn = static_cast<RelationalStoreConnection*>(autoLaunchItem.conn);
     int errCode = rdbConn->RegisterLifeCycleCallback(nullptr);
     if (errCode != E_OK) {
-        LOGE("[AutoLaunch] TryCloseConnection RegisterLifeCycleCallback failed errCode:%d", errCode);
+        LOGE("[AutoLaunch] TryCloseRelationConnection RegisterLifeCycleCallback failed errCode:%d", errCode);
     }
     errCode = rdbConn->Close();
     if (errCode != E_OK) {
-        LOGE("[AutoLaunch] TryCloseConnection close connection failed errCode:%d", errCode);
+        LOGE("[AutoLaunch] TryCloseRelationConnection close connection failed errCode:%d", errCode);
     }
 }
 } // namespace DistributedDB
