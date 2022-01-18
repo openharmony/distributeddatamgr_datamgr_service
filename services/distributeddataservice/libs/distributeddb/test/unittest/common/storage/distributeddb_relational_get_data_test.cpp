@@ -45,6 +45,7 @@ string g_storeID = "dftStoreID";
 const string g_tableName { "data" };
 DistributedDB::RelationalStoreManager g_mgr(APP_ID, USER_ID);
 RelationalStoreDelegate *g_delegate = nullptr;
+IRelationalStore *g_store = nullptr;
 
 void CreateDBAndTable()
 {
@@ -117,8 +118,8 @@ int GetLogData(int key, uint64_t &flag, TimeStamp &timestamp, const DeviceID &de
     }
 
 END:
-    sqlite3_close(db);
     SQLiteUtils::ResetStatement(statement, true, errCode);
+    sqlite3_close(db);
     return errCode;
 }
 
@@ -139,12 +140,12 @@ const RelationalSyncAbleStorage *GetRelationalStore()
     RelationalDBProperties properties;
     InitStoreProp(g_storePath, APP_ID, USER_ID, properties);
     int errCode = E_OK;
-    auto store = RelationalStoreInstance::GetDataBase(properties, errCode);
-    if (store == nullptr) {
+    g_store = RelationalStoreInstance::GetDataBase(properties, errCode);
+    if (g_store == nullptr) {
         LOGE("Get db failed:%d", errCode);
         return nullptr;
     }
-    return static_cast<SQLiteRelationalStore *>(store)->GetStorageEngine();
+    return static_cast<SQLiteRelationalStore *>(g_store)->GetStorageEngine();
 }
 
 int GetCount(sqlite3 *db, const string &sql, size_t &count)
@@ -259,7 +260,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData1, TestSize.Level1)
      * @tc.expected: Succeed and the count is right.
      */
     auto store = GetRelationalStore();
-    ASSERT_EQ(store, nullptr);
+    ASSERT_NE(store, nullptr);
     ContinueToken token = nullptr;
     QueryObject query(Query::Select(g_tableName));
     std::vector<SingleVerKvEntry *> entries;
@@ -276,6 +277,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData1, TestSize.Level1)
         EXPECT_TRUE(errCode == E_OK || errCode == -E_UNFINISHED);
     }
     EXPECT_EQ(count, RECORD_COUNT);
+    RefObject::DecObjRef(g_store);
 }
 
 /**
@@ -305,7 +307,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetQuerySyncData1, TestSize.Level1)
      * @tc.expected: Get 70 records.
      */
     auto store = GetRelationalStore();
-    ASSERT_EQ(store, nullptr);
+    ASSERT_NE(store, nullptr);
     ContinueToken token = nullptr;
     const unsigned int LIMIT = 80; // limit as 80.
     const unsigned int OFFSET = 30; // offset as 30.
@@ -318,6 +320,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetQuerySyncData1, TestSize.Level1)
     EXPECT_EQ(errCode, E_OK);
     EXPECT_EQ(token, nullptr);
     SingleVerKvEntry::Release(entries);
+    RefObject::DecObjRef(g_store);
 }
 
 /**
@@ -373,7 +376,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetIncorrectTypeData1, TestSize.Lev
      * @tc.expected: Succeed and the count is right.
      */
     auto store = GetRelationalStore();
-    ASSERT_EQ(store, nullptr);
+    ASSERT_NE(store, nullptr);
     ContinueToken token = nullptr;
     QueryObject query(Query::Select(tableName));
     std::vector<SingleVerKvEntry *> entries;
@@ -410,5 +413,6 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetIncorrectTypeData1, TestSize.Lev
     EXPECT_EQ(GetCount(db, sql, count), E_OK);
     EXPECT_EQ(count, 2UL); // The index count is 2.
     sqlite3_close(db);
+    RefObject::DecObjRef(g_store);
 }
 #endif
