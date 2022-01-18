@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifdef RELATIONAL_STORE
 
 #include <mutex>
 #include <openssl/sha.h>
@@ -100,8 +99,6 @@ public:
     constexpr static int64_t MAX_VALID_TIME = BASE_OFFSET * 2; // 20000 year 100ns
 
     static const uint64_t TO_100_NS = 10; // 1us to 100ns
-
-    static const uint64_t MS_TO_100_NS = 10000; // 1ms to 100ns
 
     static const TimeStamp INVALID_TIMESTAMP = 0;
 
@@ -414,6 +411,4 @@ static const sqlite3_api_routines_relational sqlite3HwApis = {
 };
 
 EXPORT_SYMBOLS const sqlite3_api_routines_relational *sqlite3_export_relational_symbols = &sqlite3HwApis;
-#endif
-
 #endif
