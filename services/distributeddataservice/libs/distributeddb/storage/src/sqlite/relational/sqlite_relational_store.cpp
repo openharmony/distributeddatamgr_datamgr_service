@@ -148,7 +148,7 @@ int SQLiteRelationalStore::SaveLogTableVersionToMeta()
     if (errCode != E_OK) {
         LOGE("save log table version to meta table failed. %d", errCode);
     }
-    return E_OK;
+    return errCode;
 }
 
 int SQLiteRelationalStore::CleanDistributedDeviceTable()
@@ -375,10 +375,12 @@ int SQLiteRelationalStore::CreateDistributedTable(const std::string &tableName)
         ReleaseHandle(handle);
         return errCode;
     }
-    (void)handle->Commit();
-    schema.AddRelationalTable(table);
-    properties_.SetSchema(schema);
-    storageEngine_->NotifySchemaChanged();
+    errCode = handle->Commit();
+    if (errCode == E_OK) {
+        schema.AddRelationalTable(table);
+        properties_.SetSchema(schema);
+        storageEngine_->NotifySchemaChanged();
+    }
 
     ReleaseHandle(handle);
     return SaveSchemaToMeta();
