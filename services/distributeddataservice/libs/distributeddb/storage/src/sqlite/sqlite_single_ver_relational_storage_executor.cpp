@@ -25,7 +25,6 @@ SQLiteSingleVerRelationalStorageExecutor::SQLiteSingleVerRelationalStorageExecut
 int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::string &tableName, TableInfo &table)
 {
     if (dbHandle_ == nullptr) {
-        LOGE("[CreateDistributedTable] Begin transaction failed, dbHandle is null.");
         return -E_INVALID_DB;
     }
 
@@ -65,6 +64,197 @@ int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::
         LOGE("[CreateDistributedTable] create log table failed");
         return errCode;
     }
+    return E_OK;
+}
+
+int SQLiteSingleVerRelationalStorageExecutor::UpgradeDistributedTable(const TableInfo &tableInfo,
+    TableInfo &newTableInfo)
+{
+    if (dbHandle_ == nullptr) {
+        return -E_INVALID_DB;
+    }
+
+    int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, tableInfo.GetTableName(), newTableInfo);
+    if (errCode != E_OK) {
+        LOGE("[UpgreadDistributedTable] analysis table schema failed. %d", errCode);
+        return errCode;
+    }
+
+    if (newTableInfo.GetCreateTableSql().find("WITHOUT ROWID") != std::string::npos) {
+        LOGE("[UpgreadDistributedTable] Not support create distributed table without rowid.");
+        return -E_NOT_SUPPORT;
+    }
+
+    // new table should has same or compatible upgrade
+    errCode = tableInfo.CompareWithTable(newTableInfo);
+    if (errCode == -E_RELATIONAL_TABLE_INCOMPATIBLE) {
+        LOGE("[UpgreadDistributedTable] Not support with incompatible upgreade.");
+        return -E_SCHEMA_MISMATCH;
+    }
+
+    errCode = AlterAuxTableForUpgrade(tableInfo, newTableInfo);
+    if (errCode != E_OK) {
+        LOGE("[UpgreadDistributedTable] Alter aux table for upgrade failed. %d", errCode);
+    }
+
+    return errCode;
+}
+
+namespace {
+int GetDeviceTableName(sqlite3 *handle, const std::string &tableName, const std::string &device,
+    std::vector<std::string> &deviceTables)
+{
+    if (device.empty() && tableName.empty()) { // device and table name should not both be empty
+        return -E_INVALID_ARGS;
+    }
+    std::string decicePattern = device.empty() ? "%" : DBCommon::TransferHashString(device);
+    std::string tablePattern = tableName.empty() ? "%" : tableName;
+    std::string deviceTableName = DBConstant::RELATIONAL_PREFIX + tablePattern + "_" + decicePattern;
+
+    const std::string checkSql = "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '" +
+        deviceTableName + "';";
+    sqlite3_stmt *stmt = nullptr;
+    int errCode = SQLiteUtils::GetStatement(handle, checkSql, stmt);
+    if (errCode != E_OK) {
+        SQLiteUtils::ResetStatement(stmt, true, errCode);
+        return errCode;
+    }
+
+    do {
+        errCode = SQLiteUtils::StepWithRetry(stmt, false);
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            errCode = E_OK;
+            break;
+        } else if (errCode != SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+            LOGE("Get table name failed. %d", errCode);
+            break;
+        }
+        std::string realTableName;
+        errCode = SQLiteUtils::GetColumnTextValue(stmt, 0, realTableName); // 0: table name result column index
+        if (errCode != E_OK || realTableName.empty()) { // sqlite might return a row with NULL
+            continue;
+        }
+        if (realTableName.rfind("_log") == (realTableName.length() - 4)) {
+            continue;
+        }
+        deviceTables.emplace_back(realTableName);
+    } while (true);
+
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return errCode;
+}
+
+std::vector<FieldInfo> GetUpgreadeFields(const TableInfo &oldTableInfo, const TableInfo &newTableInfo)
+{
+    std::vector<FieldInfo> fields;
+    auto itOld = oldTableInfo.GetFields().begin();
+    auto itNew = newTableInfo.GetFields().begin();
+    for (; itNew != newTableInfo.GetFields().end(); itNew++) {
+        if (itOld == oldTableInfo.GetFields().end() || itOld->first != itNew->first) {
+            fields.emplace_back(itNew->second);
+            continue;
+        }
+        itOld++;
+    }
+    return fields;
+}
+
+std::map<std::string, CompositeFields> GetChangedIndexes(const TableInfo &oldTableInfo, const TableInfo &newTableInfo)
+{
+    std::map<std::string, CompositeFields> indexes;
+    auto itOld = oldTableInfo.GetIndexDefine().begin();
+    auto itNew = newTableInfo.GetIndexDefine().begin();
+    auto itOldEnd = oldTableInfo.GetIndexDefine().end();
+    auto itNewEnd = newTableInfo.GetIndexDefine().end();
+
+    while(itOld != itOldEnd && itNew != itNewEnd) {
+        if (itOld->first == itNew->first) {
+            if (itOld->second != itNew->second) {
+                indexes.insert({itNew->first, itNew->second});
+            }
+            itOld ++;
+            itNew ++;
+        } else if (itOld->first < itNew->first) {
+            indexes.insert({itOld->first,{}});
+            itOld ++;
+        } else if (itOld->first > itNew->first) {
+            indexes.insert({itNew->first, itNew->second});
+            itNew ++;
+        }
+    }
+
+    while(itOld != itOldEnd) {
+        indexes.insert({itOld->first,{}});
+        itOld ++;
+    }
+
+    while(itNew != itNewEnd) {
+        indexes.insert({itNew->first, itNew->second});
+        itNew ++;
+    }
+
+    return indexes;
+}
+}
+
+int SQLiteSingleVerRelationalStorageExecutor::AlterAuxTableForUpgrade(const TableInfo &oldTableInfo,
+    const TableInfo &newTableInfo)
+{
+    std::vector<FieldInfo> upgradFields = GetUpgreadeFields(oldTableInfo, newTableInfo);
+    std::map<std::string, CompositeFields> upgradeIndexces = GetChangedIndexes(oldTableInfo, newTableInfo);
+    std::vector<std::string> deviceTables;
+    int errCode = GetDeviceTableName(dbHandle_, oldTableInfo.GetTableName(), {}, deviceTables);
+    if (errCode != E_OK) {
+        LOGE("Get device table name for alter table failed. %d", errCode);
+        return errCode;
+    }
+
+    LOGD("Begin to alter table: upgrade fields[%d], indexces[%d], deviceTable[%d]", upgradFields.size(),
+        upgradeIndexces.size(), deviceTables.size());
+    for (auto table : deviceTables) {
+        for (auto field : upgradFields) {
+            std::string alterSql = "ALTER TABLE " + table + " ADD " + field.GetFieldName() + " " +
+                field.GetDataType() + ";";
+            errCode = SQLiteUtils::ExecuteRawSQL(dbHandle_, alterSql);
+            if (errCode != E_OK) {
+                LOGE("Alter table failed. %d", errCode);
+                return errCode;
+            }
+        }
+    }
+
+    for (auto table : deviceTables) {
+        for (auto index : upgradeIndexces) {
+            if (index.first.empty()) {
+                continue;
+            }
+            std::string realIndexName = table + "_" + index.first;
+            std::string deleteIndexSql = "DROP INDEX IF EXISTS " + realIndexName;
+            errCode = SQLiteUtils::ExecuteRawSQL(dbHandle_, deleteIndexSql);
+            if (errCode != E_OK) {
+                LOGE("Drop index failed. %d", errCode);
+                return errCode;
+            }
+
+            if (index.second.empty()) { // Drop index only
+                continue;
+            }
+
+            auto it = index.second.begin();
+            std::string indexDefine = *it++;
+            while(it != index.second.end()) {
+                indexDefine += ", " + *it++;
+            }
+            std::string createIndexSql = "CREATE INDEX IF NOT EXISTS " + realIndexName + " ON " + table +
+                "(" + indexDefine + ");";
+            errCode = SQLiteUtils::ExecuteRawSQL(dbHandle_, createIndexSql);
+            if (errCode != E_OK) {
+                LOGE("Create index failed. %d", errCode);
+                return errCode;
+            }
+        }
+    }
+
     return E_OK;
 }
 

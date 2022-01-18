@@ -115,8 +115,7 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
     std::lock_guard lock(schemaMutex_);
     if (schema_.GetTable(tableName).GetTableName() == tableName) {
         LOGW("distributed table was already created.");
-        // TODO: compare new schema
-        return E_OK;
+        return UpgradeDistributedTable(tableName);
     }
 
     if (schema_.GetTables().size() >= DBConstant::MAX_DISTRIBUTED_TABLE_COUNT) {
@@ -150,6 +149,43 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
     errCode = handle->Commit();
     if (errCode == E_OK) {
         schema_.AddRelationalTable(table);
+        const Key schemaKey(RELATIONAL_SCHEMA_KEY, RELATIONAL_SCHEMA_KEY + strlen(RELATIONAL_SCHEMA_KEY));
+        Value schemaVal;
+        DBCommon::StringToVector(schema_.ToSchemaString(), schemaVal);
+        errCode = handle->PutKvData(schemaKey, schemaVal); // save schema to meta_data
+    }
+    ReleaseExecutor(handle);
+    return errCode;
+}
+
+int SQLiteSingleRelationalStorageEngine::UpgradeDistributedTable(const std::string &tableName)
+{
+    LOGD("Upgrade distributed table.");
+    int errCode = E_OK;
+    auto *handle = static_cast<SQLiteSingleVerRelationalStorageExecutor *>(FindExecutor(true, OperatePerm::NORMAL_PERM,
+        errCode));
+    if (handle == nullptr) {
+        return errCode;
+    }
+
+    errCode = handle->StartTransaction(TransactType::IMMEDIATE);
+    if (errCode != E_OK) {
+        ReleaseExecutor(handle);
+        return errCode;
+    }
+
+    TableInfo newTable;
+    errCode = handle->UpgradeDistributedTable(schema_.GetTable(tableName), newTable);
+    if (errCode != E_OK) {
+        LOGE("Upgrade distributed table failed. %d", errCode);
+        (void)handle->Rollback();
+        ReleaseExecutor(handle);
+        return errCode;
+    }
+
+    errCode = handle->Commit();
+    if (errCode == E_OK) {
+        schema_.AddRelationalTable(newTable);
         const Key schemaKey(RELATIONAL_SCHEMA_KEY, RELATIONAL_SCHEMA_KEY + strlen(RELATIONAL_SCHEMA_KEY));
         Value schemaVal;
         DBCommon::StringToVector(schema_.ToSchemaString(), schemaVal);

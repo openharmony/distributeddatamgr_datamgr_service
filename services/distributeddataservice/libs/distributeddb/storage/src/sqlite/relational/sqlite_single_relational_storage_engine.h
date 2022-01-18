@@ -49,6 +49,8 @@ private:
     // For db.
     int RegisterFunction(sqlite3 *db) const;
 
+    int UpgradeDistributedTable(const std::string &tableName);
+
     RelationalSchemaObject schema_;
     mutable std::mutex schemaMutex_;
 };

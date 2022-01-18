@@ -1443,7 +1443,6 @@ int SQLiteUtils::CloneIndexes(sqlite3 *db, const std::string &oriTableName, cons
     if (errCode != E_OK) {
         return errCode;
     }
-
     errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
     if (errCode != E_OK) {
         LOGE("[SQLite] execute create table sql failed");

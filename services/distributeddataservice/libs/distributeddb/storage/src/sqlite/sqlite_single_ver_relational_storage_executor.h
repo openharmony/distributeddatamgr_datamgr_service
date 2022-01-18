@@ -35,6 +35,8 @@ public:
 
     int CreateDistributedTable(const std::string &tableName, TableInfo &table);
 
+    int UpgradeDistributedTable(const TableInfo &tableInfo, TableInfo &newTableInfo);
+
     int StartTransaction(TransactType type);
     int Commit();
     int Rollback();
@@ -81,6 +83,8 @@ private:
     int SaveSyncLog(sqlite3_stmt *statement, const DataItem &dataItem, TimeStamp &maxTimestamp);
     int PrepareForSavingData(const QueryObject &object, const std::string &deviceName, sqlite3_stmt *&statement) const;
     int PrepareForSavingLog(const QueryObject &object, const std::string &deviceName, sqlite3_stmt *&statement) const;
+
+    int AlterAuxTableForUpgrade(const TableInfo &oldTableInfo, const TableInfo &newTableInfo);
 
     TableInfo table_;
 };

@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include "db_common.h"
 #include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_unit_test.h"
 #include "log_print.h"
@@ -305,4 +306,161 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest005, TestSize.L
      */
     status = g_mgr.CloseStore(delegate);
     EXPECT_EQ(status, OK);
+}
+
+namespace {
+void TableModifyTest(const std::string &modifySql, DBStatus expect)
+{
+    /**
+     * @tc.steps:step1. Prepare db file
+     * @tc.expected: step1. Return OK.
+     */
+    sqlite3 *db = RelationalTestUtils::CreateDataBase(g_dbDir + STORE_ID + DB_SUFFIX);
+    ASSERT_NE(db, nullptr);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
+
+    /**
+     * @tc.steps:step2. Open store
+     * @tc.expected: step2. return OK
+     */
+    RelationalStoreDelegate *delegate = nullptr;
+    DBStatus status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    EXPECT_EQ(status, OK);
+    ASSERT_NE(delegate, nullptr);
+
+    /**
+     * @tc.steps:step3. Create distirbuted table
+     * @tc.expected: step3. Create distributed table OK.
+     */
+    EXPECT_EQ(delegate->CreateDistributedTable("sync_data"), OK);
+
+    /**
+     * @tc.steps:step4. Upgrade table with modifySql
+     * @tc.expected: step4. return OK
+     */
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, modifySql), SQLITE_OK);
+
+    /**
+     * @tc.steps:step5. Create distirbuted table again
+     * @tc.expected: step5. Create distributed table return expect.
+     */
+    EXPECT_EQ(delegate->CreateDistributedTable("sync_data"), expect);
+
+    /**
+     * @tc.steps:step6. Close store
+     * @tc.expected: step6 Return OK.
+     */
+    status = g_mgr.CloseStore(delegate);
+    EXPECT_EQ(status, OK);
+    EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
+}
+}
+
+/**
+  * @tc.name: RelationalTableModifyTest001
+  * @tc.desc: Test modify distributed table with compatible upgrade
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest001, TestSize.Level1)
+{
+    TableModifyTest("ALTER TABLE sync_data ADD COLUMN add_field INTEGER;", OK);
+}
+
+/**
+  * @tc.name: RelationalTableModifyTest002
+  * @tc.desc: Test modify distributed table with incompatible upgrade
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest002, TestSize.Level1)
+{
+    TableModifyTest("ALTER TABLE sync_data ADD COLUMN add_field INTEGER NOT NULL;", SCHEMA_MISMATCH);
+}
+
+/**
+  * @tc.name: RelationalTableModifyTest003
+  * @tc.desc: Test modify distributed table with incompatible upgrade
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest003, TestSize.Level1)
+{
+    TableModifyTest("ALTER TABLE sync_data DROP COLUMN w_timestamp;", SCHEMA_MISMATCH);
+}
+
+namespace {
+void CreateDeviceTable(sqlite3 *db, const std::string &table, const std::string &device)
+{
+    ASSERT_NE(db, nullptr);
+    std::string deviceTable = DBCommon::GetDistributedTableName(device, table);
+    EXPECT_EQ(SQLiteUtils::CreateSameStuTable(db, table, deviceTable, false), E_OK);
+    EXPECT_EQ(SQLiteUtils::CloneIndexes(db, table, deviceTable), E_OK);
+}
+}
+
+/**
+  * @tc.name: RelationalTableModifyTest004
+  * @tc.desc: Test upgrade distributed table with device table exists
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest004, TestSize.Level1)
+{
+    /**
+     * @tc.steps:step1. Prepare db file
+     * @tc.expected: step1. Return OK.
+     */
+    sqlite3 *db = RelationalTestUtils::CreateDataBase(g_dbDir + STORE_ID + DB_SUFFIX);
+    ASSERT_NE(db, nullptr);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
+    CreateDeviceTable(db, "sync_data", "DEVICE_A");
+    CreateDeviceTable(db, "sync_data", "DEVICE_B");
+    CreateDeviceTable(db, "sync_data", "DEVICE_C");
+
+    /**
+     * @tc.steps:step2. Open store
+     * @tc.expected: step2. return OK
+     */
+    RelationalStoreDelegate *delegate = nullptr;
+    DBStatus status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    EXPECT_EQ(status, OK);
+    ASSERT_NE(delegate, nullptr);
+
+    /**
+     * @tc.steps:step3. Create distirbuted table
+     * @tc.expected: step3. Create distributed table OK.
+     */
+    EXPECT_EQ(delegate->CreateDistributedTable("sync_data"), OK);
+
+    /**
+     * @tc.steps:step4. Upgrade table
+     * @tc.expected: step4. return OK
+     */
+    std::string modifySql = "ALTER TABLE sync_data ADD COLUMN add_field INTEGER;";
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, modifySql), SQLITE_OK);
+    std::string indexSql = "CREATE INDEX add_index ON sync_data (add_field);";
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, indexSql), SQLITE_OK);
+    std::string deleteIndexSql = "DROP INDEX IF EXISTS key_index";
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, deleteIndexSql), SQLITE_OK);
+
+    /**
+     * @tc.steps:step5. Create distirbuted table again
+     * @tc.expected: step5. Create distributed table return expect.
+     */
+    EXPECT_EQ(delegate->CreateDistributedTable("sync_data"), OK);
+
+    /**
+     * @tc.steps:step6. Close store
+     * @tc.expected: step6 Return OK.
+     */
+    status = g_mgr.CloseStore(delegate);
+    EXPECT_EQ(status, OK);
+    EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
 }
