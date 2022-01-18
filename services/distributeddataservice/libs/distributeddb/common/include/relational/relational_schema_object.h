@@ -120,6 +120,7 @@ class RelationalSyncStrategy {
 public:
     SyncStrategy GetTableStrategy(const std::string &tableName) const;
     void AddSyncStrategy(const std::string &tableName, const SyncStrategy &strategy);
+    const std::map<std::string, SyncStrategy> &GetStrategies() const;
 private:
     std::map<std::string, SyncStrategy> strategies_;
 };

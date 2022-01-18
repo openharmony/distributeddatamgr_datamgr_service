@@ -68,6 +68,8 @@ public:
     int CkeckAndCleanDistributedTable(const std::vector<std::string> &tableNames,
         std::vector<std::string> &missingTables);
 
+    int CreateDistributedDeviceTable(const std::string &device, const std::string &tableName);
+
 private:
     int PrepareForSyncDataByTime(TimeStamp begin, TimeStamp end,
         sqlite3_stmt *&statement, bool getDeletedData) const;

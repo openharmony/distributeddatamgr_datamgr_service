@@ -15,9 +15,10 @@
 #ifdef RELATIONAL_STORE
 #include "relational_sync_able_storage.h"
 
+#include "db_common.h"
 #include "data_compression.h"
-#include "platform_specific.h"
 #include "generic_single_ver_kv_entry.h"
+#include "platform_specific.h"
 #include "runtime_context.h"
 
 namespace DistributedDB {
@@ -474,7 +475,25 @@ int RelationalSyncAbleStorage::SchemaChanged(int notifyEvent)
 int RelationalSyncAbleStorage::CreateDistributedDeviceTable(const std::string &device,
     const RelationalSyncStrategy &syncStrategy)
 {
-    return E_OK;
+    int errCode = E_OK;
+    auto *handle = GetHandle(true, errCode, OperatePerm::NORMAL_PERM);
+    if (handle == nullptr) {
+        return errCode;
+    }
+    for (const auto &[table, strategy] : syncStrategy.GetStrategies()) {
+        if (!strategy.permitSync) {
+            continue;
+        }
+
+        errCode = handle->CreateDistributedDeviceTable(device, table);
+        if (errCode != E_OK) {
+            LOGE("Create distributed device table failed. %d", errCode);
+            break;
+        }
+    }
+
+    ReleaseHandle(handle);
+    return errCode;
 }
 
 int RelationalSyncAbleStorage::RegisterSchemaChangedCallback(const std::function<void()> &callback)

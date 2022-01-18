@@ -501,6 +501,11 @@ void RelationalSyncStrategy::AddSyncStrategy(const std::string &tableName, const
     strategies_[tableName] = strategy;
 }
 
+const std::map<std::string, SyncStrategy> &RelationalSyncStrategy::GetStrategies() const
+{
+    return strategies_;
+}
+
 RelationalSyncOpinion RelationalSchemaObject::MakeLocalSyncOpinion(const RelationalSchemaObject &localSchema,
     const std::string &remoteSchemaStr, uint8_t remoteSchemaType)
 {

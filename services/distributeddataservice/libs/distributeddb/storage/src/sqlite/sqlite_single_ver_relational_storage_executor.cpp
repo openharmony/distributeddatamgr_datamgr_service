@@ -1014,5 +1014,30 @@ int SQLiteSingleVerRelationalStorageExecutor::CkeckAndCleanDistributedTable(cons
     SQLiteUtils::ResetStatement(stmt, true, errCode);
     return CheckCorruptedStatus(errCode);
 }
+
+int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedDeviceTable(const std::string &device,
+    const std::string &tableName)
+{
+    if (dbHandle_ == nullptr) {
+        return -E_INVALID_DB;
+    }
+
+    if (device.empty() || tableName.empty()) {
+        return -E_INVALID_ARGS;
+    }
+
+    std::string deviceTableName = DBCommon::GetDistributedTableName(device, tableName);
+    int errCode = SQLiteUtils::CreateSameStuTable(dbHandle_, tableName, deviceTableName, false);
+    if (errCode != E_OK) {
+        LOGE("Create device table failed. %d", errCode);
+        return errCode;
+    }
+
+    errCode = SQLiteUtils::CloneIndexes(dbHandle_, tableName, deviceTableName);
+    if (errCode != E_OK) {
+        LOGE("Copy index to device table failed. %d", errCode);
+    }
+    return errCode;
+}
 } // namespace DistributedDB
 #endif
