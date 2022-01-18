@@ -96,12 +96,21 @@ QuerySyncObject::QuerySyncObject(const Query &query)
 QuerySyncObject::~QuerySyncObject()
 {}
 
+uint32_t QuerySyncObject::GetVersion() const
+{
+    uint32_t version = QUERY_SYNC_OBJECT_VERSION_0;
+    if (!tableName_.empty() || !keys_.empty()) {
+        version = QUERY_SYNC_OBJECT_VERSION_1;
+    }
+    return version;
+}
+
 int QuerySyncObject::GetObjContext(ObjContext &objContext) const
 {
     if (!isValid_) {
         return -E_INVALID_QUERY_FORMAT;
     }
-    objContext.version = QUERY_SYNC_OBJECT_VERSION_CURRENT;
+    objContext.version = GetVersion();
     objContext.prefixKey.assign(prefixKey_.begin(), prefixKey_.end());
     objContext.suggestIndex = suggestIndex_;
     objContext.queryObjNodes = queryObjNodes_;
@@ -213,13 +222,15 @@ int QuerySyncObject::SerializeData(Parcel &parcel, uint32_t softWareVersion)
     }
 
     // QUERY_SYNC_OBJECT_VERSION_1 added.
-    (void)parcel.WriteUInt32(static_cast<uint32_t>(isTableNameSpecified_));
-    if (isTableNameSpecified_) {
-        (void)parcel.WriteString(tableName_);
-    }
-    (void)parcel.WriteUInt32(keys_.size());
-    for (const auto &key : keys_) {
-        (void)parcel.WriteVectorChar(key);
+    if (context.version >= QUERY_SYNC_OBJECT_VERSION_1) {
+        (void)parcel.WriteUInt32(static_cast<uint32_t>(isTableNameSpecified_));
+        if (isTableNameSpecified_) {
+            (void)parcel.WriteString(tableName_);
+        }
+        (void)parcel.WriteUInt32(keys_.size());
+        for (const auto &key : keys_) {
+            (void)parcel.WriteVectorChar(key);
+        }
     }
     // QUERY_SYNC_OBJECT_VERSION_1 end.
 
