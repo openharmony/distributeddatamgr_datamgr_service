@@ -389,6 +389,19 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaOpinionTest001
  */
 HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaNegotiateTest001, TestSize.Level1)
 {
+    RelationalSyncOpinion localOpinion;
+    localOpinion.AddSyncOpinion("table_1", SyncOpinion {true, false, false});
+    localOpinion.AddSyncOpinion("table_2", SyncOpinion {false, true, false});
+    localOpinion.AddSyncOpinion("table_3", SyncOpinion {false, false, true});
 
+    RelationalSyncOpinion remoteOpinion;
+    remoteOpinion.AddSyncOpinion("table_2", SyncOpinion {true, false, false});
+    remoteOpinion.AddSyncOpinion("table_3", SyncOpinion {false, true, false});
+    remoteOpinion.AddSyncOpinion("table_4", SyncOpinion {false, false, true});
+    RelationalSyncStrategy strategy = RelationalSchemaObject::ConcludeSyncStrategy(localOpinion, remoteOpinion);
+
+    EXPECT_EQ(strategy.GetStrategies().size(), 2);
+    EXPECT_EQ(strategy.GetTableStrategy("table_2").permitSync, true);
+    EXPECT_EQ(strategy.GetTableStrategy("table_3").permitSync, false);
 }
 #endif
