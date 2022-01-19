@@ -347,6 +347,37 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaCompareTest001
 }
 
 /**
+ * @tc.name: RelationalTableCompareTest001
+ * @tc.desc: Test relational schema negotiate with same schema string
+ * @tc.type: FUNC
+ * @tc.require: AR000GK58I
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalTableCompareTest001, TestSize.Level1)
+{
+    RelationalSchemaObject schemaObj;
+    int errCode = schemaObj.ParseFromSchemaString(NORMAL_SCHEMA);
+    EXPECT_EQ(errCode, E_OK);
+    TableInfo table1 = schemaObj.GetTable("FIRST");
+    TableInfo table2 = schemaObj.GetTable("FIRST");
+    EXPECT_EQ(table1.CompareWithTable(table2), -E_RELATIONAL_TABLE_EQUAL);
+
+    table2.AddIndexDefine("indexname", {"field_name2", "field_name1"});
+    EXPECT_EQ(table1.CompareWithTable(table2), -E_RELATIONAL_TABLE_COMPATIBLE);
+
+    TableInfo table3 = schemaObj.GetTable("SECOND");
+    EXPECT_EQ(table1.CompareWithTable(table3), -E_RELATIONAL_TABLE_INCOMPATIBLE);
+
+    TableInfo table4 = schemaObj.GetTable("FIRST");
+    table4.AddField(table3.GetFields().at("value"));
+    EXPECT_EQ(table1.CompareWithTable(table4), -E_RELATIONAL_TABLE_COMPATIBLE_UPGRADE);
+
+    TableInfo table5 = schemaObj.GetTable("FIRST");
+    table5.AddField(table3.GetFields().at("key"));
+    EXPECT_EQ(table1.CompareWithTable(table5), -E_RELATIONAL_TABLE_COMPATIBLE_UPGRADE);
+}
+
+/**
  * @tc.name: RelationalSchemaOpinionTest001
  * @tc.desc: Test relational schema sync opinion
  * @tc.type: FUNC

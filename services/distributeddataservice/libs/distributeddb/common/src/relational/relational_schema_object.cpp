@@ -336,7 +336,7 @@ int TableInfo::CompareWithTableIndex(const std::map<std::string, CompositeFields
     auto itLocal = indexDefines_.begin();
     auto itInTable = inTableIndex.begin();
     while (itLocal != indexDefines_.end() && itInTable != inTableIndex.end()) {
-        if (itLocal != itInTable) {
+        if (itLocal->first != itInTable->first || itLocal->second != itInTable->second) {
             return -E_RELATIONAL_TABLE_COMPATIBLE;
         }
         itLocal++;
