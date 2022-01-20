@@ -400,6 +400,10 @@ int RelationalSyncAbleStorage::SaveSyncDataItems(const QueryObject &object, std:
     errCode = handle->SaveSyncItems(query, dataItems, deviceName, maxTimestamp);
     if (errCode == E_OK) {
         (void)SetMaxTimeStamp(maxTimestamp);
+        // dataItems size > 0 now because already check befor
+        // all dataItems will write into db now, so need to observer notify here
+        // if some dataItems will not write into db in the future, observer notify here need change
+        TriggerObserverAction(deviceName);
     }
 
     ReleaseHandle(handle);
@@ -518,6 +522,34 @@ int RelationalSyncAbleStorage::GetCompressionAlgo(std::set<CompressAlgorithm> &a
     algorithmSet.clear();
     DataCompression::GetCompressionAlgo(algorithmSet);
     return E_OK;
+}
+
+void RelationalSyncAbleStorage::RegisterObserverAction(const RelationalObserverAction &action)
+{
+    std::lock_guard<std::mutex> lock(dataChangeDeviceMutex_);
+    dataChangeDeviceCallback_ = action;
+}
+
+void RelationalSyncAbleStorage::TriggerObserverAction(const std::string deviceName)
+{
+    {
+        std::lock_guard<std::mutex> lock(dataChangeDeviceMutex_);
+        if (!dataChangeDeviceCallback_) {
+            return;
+        }
+    }
+    IncObjRef(this);
+    int taskErrCode = RuntimeContext::GetInstance()->ScheduleTask([this, deviceName] {
+        std::lock_guard<std::mutex> lock(dataChangeDeviceMutex_);
+        if (dataChangeDeviceCallback_) {
+            dataChangeDeviceCallback_(deviceName);
+        }
+        DecObjRef(this);
+    });
+    if (taskErrCode != E_OK) {
+        LOGE("TriggerObserverAction scheduletask retCode=%d", taskErrCode);
+        DecObjRef(this);
+    }
 }
 
 void RelationalSyncAbleStorage::RegisterHeartBeatListener(const std::function<void()> &listener)

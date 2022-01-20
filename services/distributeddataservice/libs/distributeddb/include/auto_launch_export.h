@@ -19,6 +19,7 @@
 #include "types_export.h"
 #include "kv_store_observer.h"
 #include "kv_store_nb_delegate.h"
+#include "store_observer.h"
 
 namespace DistributedDB {
 struct AutoLaunchOption {
@@ -38,6 +39,7 @@ struct AutoLaunchOption {
     bool isNeedCompressOnSync = false;
     uint8_t compressionRate = 100; // valid in [1, 100].
     bool isAutoSync = true;
+    StoreObserver *relationObserver = nullptr;
 };
 
 struct AutoLaunchParam {

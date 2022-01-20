@@ -367,6 +367,11 @@ int SQLiteRelationalStore::RemoveDeviceData(const std::string &device, const std
     return (errCode != E_OK) ? errCode : syncAbleEngine_->EraseDeviceWaterMark(device, true, tableName);
 }
 
+void SQLiteRelationalStore::RegisterObserverAction(const RelationalObserverAction &action)
+{
+    storageEngine_->RegisterObserverAction(action);
+}
+
 int SQLiteRelationalStore::StopLifeCycleTimer() const
 {
     auto runtimeCxt = RuntimeContext::GetInstance();

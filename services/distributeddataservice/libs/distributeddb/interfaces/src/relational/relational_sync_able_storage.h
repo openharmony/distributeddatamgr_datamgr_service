@@ -24,6 +24,7 @@
 #include "sqlite_single_ver_relational_continue_token.h"
 
 namespace DistributedDB {
+using RelationalObserverAction = std::function<void(const std::string &device)>;
 class RelationalSyncAbleStorage : public RelationalDBSyncInterface, public virtual RefObject {
 public:
     explicit RelationalSyncAbleStorage(StorageEngine *engine);
@@ -101,6 +102,8 @@ public:
     }
 
     int CheckAndInitQueryCondition(QueryObject &query) const override;
+    void RegisterObserverAction(const RelationalObserverAction &action);
+    void TriggerObserverAction(const std::string deviceName);
 
     int CreateDistributedDeviceTable(const std::string &device, const RelationalSyncStrategy &syncStrategy) override;
 
@@ -134,6 +137,8 @@ private:
 
     std::function<void()> onSchemaChanged_;
     mutable std::mutex onSchemaChangedMutex_;
+    std::mutex dataChangeDeviceMutex_;
+    RelationalObserverAction dataChangeDeviceCallback_;
     std::function<void()> heartBeatListener_;
     mutable std::mutex heartBeatMutex_;
 };

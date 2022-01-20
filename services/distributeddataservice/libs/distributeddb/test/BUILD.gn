@@ -128,6 +128,7 @@ ohos_source_set("src_file") {
     "../interfaces/src/relational/relational_store_delegate_impl.cpp",
     "../interfaces/src/relational/relational_store_manager.cpp",
     "../interfaces/src/relational/relational_store_sqlite_ext.cpp",
+    "../interfaces/src/relational/relational_store_changed_data_impl.cpp",
     "../interfaces/src/relational/runtime_config.cpp",
     "../storage/src/data_transformer.cpp",
     "../storage/src/db_properties.cpp",

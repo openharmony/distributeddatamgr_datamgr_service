@@ -20,6 +20,7 @@
 
 #include "query.h"
 #include "types.h"
+#include "store_observer.h"
 
 namespace DistributedDB {
 class RelationalStoreDelegate {
@@ -27,6 +28,7 @@ public:
     DB_API virtual ~RelationalStoreDelegate() = default;
 
     struct Option {
+        StoreObserver *observer = nullptr;
         // split mode
     };
 

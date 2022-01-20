@@ -24,6 +24,7 @@
 #include "log_print.h"
 #include "db_errno.h"
 #include "kv_store_errno.h"
+#include "relational_store_changed_data_impl.h"
 #include "relational_store_delegate_impl.h"
 #include "runtime_context.h"
 #include "platform_specific.h"
@@ -93,6 +94,13 @@ DB_API DBStatus RelationalStoreManager::OpenStore(const std::string &path, const
         conn->Close();
         return DB_ERROR;
     }
+    conn->RegisterObserverAction([option](const std::string &changedDevice) {
+        RelationalStoreChangedDataImpl data(changedDevice);
+        if (option.observer) {
+            LOGD("begin to observer onchange, changedDevice=%s", STR_MASK(changedDevice));
+            option.observer->OnChange(data);
+        }
+    });
     return OK;
 }
 

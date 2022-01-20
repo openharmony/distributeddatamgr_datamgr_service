@@ -28,6 +28,7 @@
 #include "types_export.h"
 #include "relational_store_connection.h"
 #include "relationaldb_properties.h"
+#include "store_observer.h"
 
 namespace DistributedDB {
 enum class AutoLaunchItemState {
@@ -58,6 +59,7 @@ struct AutoLaunchItem {
     bool inObserver = false;
     bool isAutoSync = true;
     DBType type = DBType::DB_INVALID;
+    StoreObserver *relationObserver = nullptr;
 };
 
 class AutoLaunch {

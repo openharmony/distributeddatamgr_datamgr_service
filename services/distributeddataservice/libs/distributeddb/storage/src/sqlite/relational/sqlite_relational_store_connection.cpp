@@ -219,5 +219,10 @@ int SQLiteRelationalStoreConnection::RegisterLifeCycleCallback(const DatabaseLif
 
     return store->RegisterLifeCycleCallback(notifier);
 }
+
+void SQLiteRelationalStoreConnection::RegisterObserverAction(const RelationalObserverAction &action)
+{
+    static_cast<SQLiteRelationalStore *>(store_)->RegisterObserverAction(action);
+}
 }
 #endif
