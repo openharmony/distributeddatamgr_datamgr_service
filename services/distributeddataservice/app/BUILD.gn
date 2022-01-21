@@ -37,7 +37,10 @@ config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include/rdb",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/src",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/rdb",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//utils/system/safwk/native/include",
     "../adapter/include/account",
@@ -52,7 +55,6 @@ config("module_private_config") {
     "//utils/native/base/include",
     "include",
     "src",
-    "src/rdb",
     "//third_party/json/single_include",
     "//base/security/permission/interfaces/innerkits/permission_standard/permissionsdk/main/cpp/include",
     "//base/security/huks/interfaces/innerkits/huks_standard/main/include",
@@ -86,10 +88,10 @@ ohos_shared_library("distributeddataservice") {
   ]
 
   rdb_sources = [
-    "src/rdb/rdb_device_store.cpp",
-    "src/rdb/rdb_service.cpp",
-    "src/rdb/rdb_store.cpp",
-    "src/rdb/rdb_store_factory.cpp",
+    "../../rdb/rdb_device_syncer.cpp",
+    "../../rdb/rdb_service_impl.cpp",
+    "../../rdb/rdb_syncer_factory.cpp",
+    "../../rdb/rdb_syncer_impl.cpp",
   ]
 
   sources += rdb_sources

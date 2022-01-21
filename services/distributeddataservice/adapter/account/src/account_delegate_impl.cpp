@@ -148,8 +148,9 @@ std::string AccountDelegateImpl::GetDeviceAccountIdByUID(int32_t uid) const
 
 void AccountDelegateImpl::NotifyAccountChanged(const AccountEventInfo &accountEventInfo)
 {
-    observerMap_.ForEach([&](std::string key, std::shared_ptr<Observer> val) {
+    observerMap_.ForEach([&accountEventInfo] (const auto& key, const auto& val) {
         val->OnAccountChanged(accountEventInfo);
+        return false;
     });
 }
 
@@ -159,11 +160,11 @@ Status AccountDelegateImpl::Subscribe(std::shared_ptr<Observer> observer)
     if (observer == nullptr || observer->Name().empty()) {
         return Status::INVALID_ARGUMENT;
     }
-    if (observerMap_.ContainsKey(observer->Name())) {
+    if (observerMap_.Contains(observer->Name())) {
         return Status::INVALID_ARGUMENT;
     }
 
-    auto ret = observerMap_.Put(observer->Name(), observer);
+    auto ret = observerMap_.Insert(observer->Name(), observer);
     if (ret) {
         ZLOGD("end");
         return Status::SUCCESS;
@@ -178,11 +179,11 @@ Status AccountDelegateImpl::Unsubscribe(std::shared_ptr<Observer> observer)
     if (observer == nullptr || observer->Name().empty()) {
         return Status::INVALID_ARGUMENT;
     }
-    if (!observerMap_.ContainsKey(observer->Name())) {
+    if (!observerMap_.Contains(observer->Name())) {
         return Status::INVALID_ARGUMENT;
     }
 
-    auto ret = observerMap_.Delete(observer->Name());
+    auto ret = observerMap_.Erase(observer->Name());
     if (ret) {
         ZLOGD("end");
         return Status::SUCCESS;

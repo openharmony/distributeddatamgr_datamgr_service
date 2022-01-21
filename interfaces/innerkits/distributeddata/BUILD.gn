@@ -24,8 +24,10 @@ config("distributeddatafwk_config") {
   include_dirs = [
     "include",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/include",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/include/rdb",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src",
+    "../../../frameworks/common/include",
+    "../../../frameworks/innerkitsimpl/rdb/include",
+    "../../../frameworks/innerkitsimpl/rdb/src",
     "//utils/system/safwk/native/include",
     "//utils/native/base/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
@@ -37,14 +39,17 @@ config("distributeddatafwk_public_config") {
 
   include_dirs = [
     "include",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/include/rdb",
+    "../../../frameworks/innerkitsimpl/rdb/include",
     "//utils/native/base/include",
   ]
 }
 
 ohos_shared_library("distributeddata_inner") {
   part_name = "distributeddatamgr"
-  sources = [
+
+  common_sources = [ "../../../frameworks/common/src/itypes_util.cpp" ]
+
+  kvdb_sources = [
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/blob.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/change_notification.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/data_query.cpp",
@@ -72,15 +77,16 @@ ohos_shared_library("distributeddata_inner") {
   ]
 
   rdb_sources = [
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_client_death_recipient.cpp",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_parcel.cpp",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_service_proxy.cpp",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_service_stub.cpp",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_store_proxy.cpp",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/rdb/rdb_store_stub.cpp",
+    "../../../frameworks/innerkitsimpl/rdb/src/rdb_client_death_recipient.cpp",
+    "../../../frameworks/innerkitsimpl/rdb/src/rdb_manager.cpp",
+    "../../../frameworks/innerkitsimpl/rdb/src/rdb_manager_impl.cpp",
+    "../../../frameworks/innerkitsimpl/rdb/src/rdb_service_proxy.cpp",
+    "../../../frameworks/innerkitsimpl/rdb/src/rdb_service_stub.cpp",
+    "../../../frameworks/innerkitsimpl/rdb/src/rdb_syncer_proxy.cpp",
+    "../../../frameworks/innerkitsimpl/rdb/src/rdb_syncer_stub.cpp",
   ]
 
-  sources += rdb_sources
+  sources = common_sources + kvdb_sources + rdb_sources
 
   configs = [ ":distributeddatafwk_config" ]
 

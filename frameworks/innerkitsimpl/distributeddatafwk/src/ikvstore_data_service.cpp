@@ -390,7 +390,7 @@ Status KvStoreDataServiceProxy::StopWatchDeviceChange(sptr<IDeviceStatusChangeLi
     return static_cast<Status>(reply.ReadInt32());
 }
 
-sptr<IRdbService> KvStoreDataServiceProxy::GetRdbService()
+sptr<DistributedRdb::IRdbService> KvStoreDataServiceProxy::GetRdbService()
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(KvStoreDataServiceProxy::GetDescriptor())) {
@@ -405,7 +405,7 @@ sptr<IRdbService> KvStoreDataServiceProxy::GetRdbService()
         return nullptr;
     }
     auto remoteObject = reply.ReadRemoteObject();
-    return iface_cast<IRdbService>(remoteObject);
+    return iface_cast<DistributedRdb::IRdbService>(remoteObject);
 }
 
 int32_t KvStoreDataServiceStub::GetKvStoreOnRemote(MessageParcel &data, MessageParcel &reply)

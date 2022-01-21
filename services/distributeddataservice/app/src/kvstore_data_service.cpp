@@ -44,7 +44,7 @@
 #include "permission_validator.h"
 #include "process_communicator_impl.h"
 #include "reporter.h"
-#include "rdb_service.h"
+#include "rdb_service_impl.h"
 #include "system_ability_definition.h"
 #include "uninstaller/uninstaller.h"
 
@@ -1331,14 +1331,13 @@ Status KvStoreDataService::StopWatchDeviceChange(sptr<IDeviceStatusChangeListene
 
 void KvStoreDataService::CreateRdbService()
 {
-    rdbService_ = new(std::nothrow) RdbService();
+    rdbService_ = new(std::nothrow) DistributedRdb::RdbServiceImpl();
     if (rdbService_ != nullptr) {
         ZLOGI("create rdb service success");
     }
-    RdbService::Initialzie();
 }
 
-sptr<IRdbService> KvStoreDataService::GetRdbService()
+sptr<DistributedRdb::IRdbService> KvStoreDataService::GetRdbService()
 {
     return rdbService_;
 }

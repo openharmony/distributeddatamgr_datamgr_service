@@ -31,8 +31,12 @@
 #include "backup_handler.h"
 #include "device_change_listener_impl.h"
 
-namespace OHOS::DistributedKv {
+namespace OHOS::DistributedRdb {
 class IRdbService;
+class RdbServiceImpl;
+}
+
+namespace OHOS::DistributedKv {
 class KvStoreAccountObserver;
 class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
@@ -67,7 +71,7 @@ public:
     Status GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy) override;
     Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy) override;
     Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) override;
-    sptr<IRdbService> GetRdbService() override;
+    sptr<DistributedRdb::IRdbService> GetRdbService() override;
     
     void OnDump() override;
 
@@ -184,7 +188,7 @@ private:
     std::mutex deviceListenerMutex_;
     std::shared_ptr<DeviceChangeListenerImpl> deviceListener_;
     
-    sptr<IRdbService> rdbService_;
+    sptr<DistributedRdb::RdbServiceImpl> rdbService_;
 };
 
 class DbMetaCallbackDelegateMgr : public DbMetaCallbackDelegate {

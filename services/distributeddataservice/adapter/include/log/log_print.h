@@ -35,6 +35,10 @@ namespace AppDistributedKv {
 KVSTORE_API static constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL = { LOG_CORE, 0xD001620, "ZDDC" };
 
 } // end namespace AppDistributesdKv
+
+namespace DistributedRdb {
+KVSTORE_API static constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL = { LOG_CORE, 0xD001630, "ZDDR" };
+}
 } // end namespace OHOS
 
 #define ZLOGD(fmt, ...) \
