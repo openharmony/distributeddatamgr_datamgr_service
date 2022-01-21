@@ -99,7 +99,7 @@ QuerySyncObject::~QuerySyncObject()
 uint32_t QuerySyncObject::GetVersion() const
 {
     uint32_t version = QUERY_SYNC_OBJECT_VERSION_0;
-    if (!tableName_.empty() || !keys_.empty()) {
+    if (isTableNameSpecified_ || !keys_.empty()) {
         version = QUERY_SYNC_OBJECT_VERSION_1;
     }
     return version;
