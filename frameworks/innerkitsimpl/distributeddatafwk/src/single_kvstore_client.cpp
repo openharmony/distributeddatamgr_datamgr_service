@@ -387,7 +387,7 @@ Status SingleKvStoreClient::Rollback()
 
 Status SingleKvStoreClient::SetSyncParam(const KvSyncParam &syncParam)
 {
-    KvParam input(TransferTypeToByteArray<KvSyncParam>(syncParam));
+    KvParam input(TransferTypeToByteArray<uint32_t>(syncParam.allowedDelayMs));
     KvParam output;
     return Control(KvControlCmd::SET_SYNC_PARAM, input, output);
 }
@@ -400,8 +400,8 @@ Status SingleKvStoreClient::GetSyncParam(KvSyncParam &syncParam)
     if (ret != Status::SUCCESS) {
         return ret;
     }
-    if (output.Size() == sizeof(syncParam)) {
-        syncParam = TransferByteArrayToType<KvSyncParam>(output.Data());
+    if (output.Size() == sizeof(uint32_t)) {
+        syncParam.allowedDelayMs = TransferByteArrayToType<uint32_t>(output.Data());
         return Status::SUCCESS;
     }
     return Status::ERROR;
@@ -413,7 +413,9 @@ Status SingleKvStoreClient::Control(KvControlCmd cmd, const KvParam &inputParam,
     if (kvStoreProxy_ != nullptr) {
         sptr<KvParam> kvParam;
         Status status = kvStoreProxy_->Control(cmd, inputParam, kvParam);
-        output = *kvParam;
+        if ((status == Status::SUCCESS) && (kvParam != nullptr)) {
+            output = *kvParam;
+        }
         return status;
     }
     ZLOGE("singleKvstore proxy is nullptr.");

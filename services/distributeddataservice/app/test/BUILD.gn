@@ -30,6 +30,7 @@ config("module_private_config") {
     "//utils/system/safwk/native/include",
     "../include",
     "../src",
+    "../src/rdb",
     "../src/uninstaller",
     "../src/flowctrl_manager",
     "../../../../interfaces/innerkits/distributeddata",
@@ -58,6 +59,10 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
+    "../src/rdb/rdb_device_store.cpp",
+    "../src/rdb/rdb_service.cpp",
+    "../src/rdb/rdb_store.cpp",
+    "../src/rdb/rdb_store_factory.cpp",
     "../src/single_kvstore_impl.cpp",
     "unittest/kvstore_impl_logical_isolation_test.cpp",
   ]
@@ -67,7 +72,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -111,6 +116,10 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
+    "../src/rdb/rdb_device_store.cpp",
+    "../src/rdb/rdb_service.cpp",
+    "../src/rdb/rdb_store.cpp",
+    "../src/rdb/rdb_store_factory.cpp",
     "../src/single_kvstore_impl.cpp",
     "unittest/kvstore_impl_physical_isolation_test.cpp",
   ]
@@ -120,7 +129,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -164,6 +173,10 @@ ohos_unittest("KvStoreDataServiceTest") {
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
+    "../src/rdb/rdb_device_store.cpp",
+    "../src/rdb/rdb_service.cpp",
+    "../src/rdb/rdb_store.cpp",
+    "../src/rdb/rdb_store_factory.cpp",
     "../src/single_kvstore_impl.cpp",
     "unittest/kvstore_data_service_test.cpp",
   ]
@@ -173,7 +186,7 @@ ohos_unittest("KvStoreDataServiceTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -215,6 +228,7 @@ ohos_unittest("KvStoreBackupTest") {
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
+    "../src/rdb/rdb_service.cpp",
     "../src/single_kvstore_impl.cpp",
     "unittest/kvstore_app_manager.cpp",
     "unittest/kvstore_backup_test.cpp",
@@ -226,7 +240,7 @@ ohos_unittest("KvStoreBackupTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -261,7 +275,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -299,6 +313,10 @@ ohos_unittest("KvStoreSyncManagerTest") {
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
+    "../src/rdb/rdb_device_store.cpp",
+    "../src/rdb/rdb_service.cpp",
+    "../src/rdb/rdb_store.cpp",
+    "../src/rdb/rdb_store_factory.cpp",
     "../src/single_kvstore_impl.cpp",
   ]
 
@@ -307,7 +325,7 @@ ohos_unittest("KvStoreSyncManagerTest") {
   external_deps = [
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",
@@ -351,6 +369,10 @@ ohos_unittest("KvStoreUninstallerTest") {
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
+    "../src/rdb/rdb_device_store.cpp",
+    "../src/rdb/rdb_service.cpp",
+    "../src/rdb/rdb_store.cpp",
+    "../src/rdb/rdb_store_factory.cpp",
     "../src/single_kvstore_impl.cpp",
     "unittest/uninstaller_test.cpp",
   ]
@@ -372,11 +394,11 @@ ohos_unittest("KvStoreUninstallerTest") {
   ]
 
   external_deps = [
-    "aafwk_standard:base",
-    "aafwk_standard:intent",
+    "ability_runtime:base",
+    "ability_runtime:intent",
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",

@@ -44,11 +44,11 @@
 #include "permission_validator.h"
 #include "process_communicator_impl.h"
 #include "reporter.h"
+#include "rdb_service.h"
 #include "system_ability_definition.h"
 #include "uninstaller/uninstaller.h"
 
-namespace OHOS {
-namespace DistributedKv {
+namespace OHOS::DistributedKv {
 using json = nlohmann::json;
 using namespace std::chrono;
 using namespace OHOS::Security::Permission;
@@ -978,6 +978,7 @@ void KvStoreDataService::OnStart()
             return;
         }
     }
+    CreateRdbService();
     StartService();
 }
 
@@ -1328,6 +1329,20 @@ Status KvStoreDataService::StopWatchDeviceChange(sptr<IDeviceStatusChangeListene
     return Status::SUCCESS;
 }
 
+void KvStoreDataService::CreateRdbService()
+{
+    rdbService_ = new(std::nothrow) RdbService();
+    if (rdbService_ != nullptr) {
+        ZLOGI("create rdb service success");
+    }
+    RdbService::Initialzie();
+}
+
+sptr<IRdbService> KvStoreDataService::GetRdbService()
+{
+    return rdbService_;
+}
+
 bool DbMetaCallbackDelegateMgr::GetKvStoreDiskSize(const std::string &storeId, uint64_t &size)
 {
     if (IsDestruct()) {
@@ -1374,5 +1389,4 @@ void DbMetaCallbackDelegateMgr::GetKvStoreKeys(std::vector<StoreInfo> &dbStats)
     }
     delegate_->CloseKvStore(kvStoreNbDelegatePtr);
 }
-}  // namespace DistributedKv
-}  // namespace OHOS
+}

@@ -1,0 +1,138 @@
+{
+    "name": "@ohos/distributeddatamgr_datamgr",
+    "version": "1.0.0",
+    "description": "Distributed data manager that provides the capability to store data in the databases of different devices",
+    "homePage": "https://gitee.com/openharmony",
+    "license": "Apache V2",
+    "repository": "https://gitee.com/openharmony/distributeddatamgr_datamgr",
+    "domain": "os",
+    "language": "",
+    "publishAs": "code-segment",
+    "private": false,
+    "scripts": {},
+    "tags": [
+        "foundation"
+    ],
+    "keywords": [
+        "distributeddatamgr",
+        "datamgr"
+    ],
+    "envs": [],
+    "dirs": [],
+    "author": {
+        "name": "",
+        "email": "",
+        "url": ""
+    },
+    "contributors": [
+        {
+            "name": "",
+            "email": "",
+            "url": ""
+        }
+    ],
+    "segment": {
+        "destPath": "foundation/distributeddatamgr/distributeddatamgr"
+    },
+    "component": {
+        "name": "distributeddatamgr",
+        "subsystem": "distributeddatamgr",
+        "syscap": [
+            "SystemCapability.Data.DATA_DISTRIBUTEDDATAMGR"
+        ],
+        "features": [],
+        "adapted_system_type": [
+            "standard"
+        ],
+        "rom": "",
+        "ram": "",
+        "deps": {
+            "components": [
+                "libhilog",
+                "ipc_core",
+                "utils",
+                "samgr_proxy",
+                "ace_napi",
+                "base",
+                "intent",
+                "appexecfwk_base",
+                "appexecfwk_core",
+                "batterysrv_client",
+                "softbus_client",
+                "libhukssdk",
+                "libpermissionsdk_standard",
+                "powermgr_client",
+                "system_ability_fwk",
+                "syspara",
+                "cesfwk_innerkits",
+                "libaccountkits",
+                "bytrace_core",
+                "libhisysevent",
+                "fbe_iudf_xattr",
+                "hwdsl" 
+            ],
+            "third_party": [
+                "uv_static",
+                "sqlite",
+                "libz",
+                "jsoncpp",
+                "libcrypto_static"
+            ]
+        },
+        "build": {
+            "sub_component": [
+                "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata:app_distributeddata",
+                "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:build_module",
+                "//foundation/distributeddatamgr/distributeddatamgr/interfaces/jskits/distributeddata:build_module",
+                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app:build_module",
+                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:build_module"
+            ],
+            "inner_kits": [
+                {
+                    "name": "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
+                    "header": {
+                        "header_files": [
+                            "blob.h",
+                            "change_notification.h",
+                            "distributed_kv_data_manager.h",
+                            "kvstore.h",
+                            "kvstore_death_recipient.h",
+                            "kvstore_observer.h",
+                            "kvstore_result_set.h",
+                            "kvstore_snapshot.h",
+                            "kvstore_sync_callback.h",
+                            "single_kvstore.h",
+                            "types.h",
+                            "visibility.h",
+                            "data_query.h",
+                            "device_status_change_listener.h"
+                        ],
+                        "header_base": "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include"
+                    }
+                },
+                {
+                    "name": "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata:app_distributeddata",
+                    "header": {
+                        "header_files": [
+                            "app_blob.h",
+                            "app_change_notification.h",
+                            "app_distributed_kv_data_manager.h",
+                            "app_kvstore.h",
+                            "app_kvstore_conflict_data.h",
+                            "app_kvstore_observer.h",
+                            "app_kvstore_result_set.h",
+                            "app_device_status_change_listener.h",
+                            "app_types.h",
+                            "app_kvstore_corruption_observer.h",
+                            "visibility.h"
+                        ],
+                        "header_base": "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include"
+                    }
+                }
+            ],
+            "test": [
+                "//foundation/distributeddatamgr/distributeddatamgr:build_native_test"
+            ]
+        }
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,50 +13,48 @@
  * limitations under the License.
  */
 #define LOG_TAG "EntryPoint"
-#include "napi/native_api.h"
-#include "napi/native_node_api.h"
-#include "kv_manager.h"
+#include "js_const_properties.h"
+#include "js_field_node.h"
+#include "js_kv_manager.h"
+#include "js_query.h"
+#include "js_schema.h"
 #include "js_util.h"
 #include "log_print.h"
+
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedKv;
 
-extern const char _binary_distributed_data_js_start[];
-extern const char _binary_distributed_data_js_end[];
-
 static napi_value Init(napi_env env, napi_value exports)
 {
-    napi_property_descriptor desc = DECLARE_NAPI_METHOD("createKVManager", KVManager::CreateKVManager);
-    napi_status status = napi_define_properties(env, exports, 1, &desc);
-    ZLOGI("init distributedData %{public}d", status);
+    const napi_property_descriptor desc[] = {
+        DECLARE_NAPI_FUNCTION("createKVManager", JsKVManager::CreateKVManager)
+    };
+    napi_status status = napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
+    ZLOGI("init createKVManager %{public}d", status);
+
+    status = napi_set_named_property(env, exports, "FieldNode", JsFieldNode::Constructor(env));
+    ZLOGI("init FieldNode %{public}d", status);
+
+    status = napi_set_named_property(env, exports, "Schema", JsSchema::Constructor(env));
+    ZLOGI("init Schema %{public}d", status);
+
+    status = napi_set_named_property(env, exports, "Query", JsQuery::Constructor(env));
+    ZLOGI("init Query %{public}d", status);
+
+    status = InitConstProperties(env, exports);
+    ZLOGI("init Enumerate Constants %{public}d", status);
     return exports;
-}
-
-// function name: NAPI_{ModuleName}_GetJSCode
-extern "C" __attribute__((visibility("default"))) void NAPI_data_distributedData_GetJSCode(const char** buf,
-    int* bufLen)
-{
-    if (buf != nullptr) {
-        *buf = _binary_distributed_data_js_start;
-    }
-
-    if (bufLen != nullptr) {
-        *bufLen = _binary_distributed_data_js_end - _binary_distributed_data_js_start;
-    }
 }
 
 static __attribute__((constructor)) void RegisterModule()
 {
-    static napi_module module = {
-        .nm_version = 1,
+    static napi_module module = { .nm_version = 1,
         .nm_flags = 0,
         .nm_filename = nullptr,
         .nm_register_func = Init,
         .nm_modname = "data.distributedData",
-        .nm_priv = ((void *)0),
-        .reserved = { 0 }
-    };
+        .nm_priv = ((void*)0),
+        .reserved = { 0 } };
     napi_module_register(&module);
     ZLOGI("module register data.distributedData");
 }
-

@@ -30,8 +30,8 @@ ohos_static_library("distributeddata_account_static") {
   cflags_cc = [ "-fvisibility=hidden" ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "../utils:distributeddata_utils_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//utils/native/base:utils",
   ]
 
@@ -39,7 +39,7 @@ ohos_static_library("distributeddata_account_static") {
     "appexecfwk_standard:appexecfwk_base",
 
     # "ces:libcommonevent",
-    "aafwk_standard:want",
+    "ability_runtime:want",
     "ces_standard:cesfwk_innerkits",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",

@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
-#include <fstream>
 #include <gtest/gtest.h>
+#include <chrono>
+#include <fstream>
+#include <thread>
 
 #include "db_constant.h"
 #include "db_common.h"
@@ -136,17 +138,18 @@ void DistributedDBInterfacesSpaceManagementTest::TearDown(void) {}
 // use another way calculate small file size(2G)
 static uint64_t CheckRealFileSize(const vector<string> &fileNames)
 {
-    int size = 0;
+    uint64_t size = 0;
     for (const auto &file : fileNames) {
         FILE *fileHandle = nullptr;
         fileHandle = fopen(file.c_str(), "rb");
         if (fileHandle == nullptr) {
-            LOGE("Open file[%s] fail", file.c_str());
+            LOGE("Open file[%s] fail[%d]", file.c_str(), errno);
             continue;
         }
         (void)fseek(fileHandle, 0, SEEK_END);
-        size += ftell(fileHandle);
-        LOGD("CheckRealFileSize:FileName[%s],size[%lld]", file.c_str(), ftell(fileHandle));
+        long fileSize = ftell(fileHandle);
+        LOGD("CheckRealFileSize:FileName[%s],size[%ld]", file.c_str(), fileSize);
+        size += static_cast<uint64_t>(fileSize); // file is less than 16M.
         (void)fclose(fileHandle);
     }
     return size;
@@ -217,7 +220,7 @@ HWTEST_F(DistributedDBInterfacesSpaceManagementTest, GetKvStoreDiskSize001, Test
   * @tc.require: AR000CQDTD
   * @tc.author: sunpeng
   */
-HWTEST_F(DistributedDBInterfacesSpaceManagementTest, GetKvStoreDiskSize002, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSpaceManagementTest, GetKvStoreDiskSize002, TestSize.Level2)
 {
     g_storeId = "distributed_GetKvStoreDiskSize_002";
     GetRealFileUrl();
@@ -261,6 +264,7 @@ HWTEST_F(DistributedDBInterfacesSpaceManagementTest, GetKvStoreDiskSize002, Test
      * @tc.steps: step5/6. Get Db size by GetKvStoreDiskSize.
      * @tc.expected: step5/6. Return right size and ok.
      */
+    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // for vaccum
     singleAndMultiDbSize = 0;
     EXPECT_EQ(g_mgr.GetKvStoreDiskSize(g_storeId, singleAndMultiDbSize), OK);
     ASSERT_TRUE(dbSizeForCheck != singleAndMultiDbSize);

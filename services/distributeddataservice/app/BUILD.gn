@@ -17,22 +17,12 @@ group("build_module") {
   deps = [ ":distributeddataservice" ]
   if (build_public_version) {
     deps += [ ":distributeddata_profile" ]
-    if (use_musl) {
-      deps += [ ":distributed_data.cfg" ]
-    } else {
-      deps += [ ":distributed_data.rc" ]
-    }
+    deps += [ ":distributed_data.cfg" ]
   }
 }
 
 ohos_prebuilt_etc("distributed_data.cfg") {
   source = "distributed_data.cfg"
-  relative_install_dir = "init"
-  subsystem_name = "distributeddatamgr"
-}
-
-ohos_prebuilt_etc("distributed_data.rc") {
-  source = "distributed_data.rc"
   relative_install_dir = "init"
   subsystem_name = "distributeddatamgr"
 }
@@ -47,6 +37,7 @@ config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include/rdb",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//utils/system/safwk/native/include",
     "../adapter/include/account",
@@ -61,6 +52,7 @@ config("module_private_config") {
     "//utils/native/base/include",
     "include",
     "src",
+    "src/rdb",
     "//third_party/json/single_include",
     "//base/security/permission/interfaces/innerkits/permission_standard/permissionsdk/main/cpp/include",
     "//base/security/huks/interfaces/innerkits/huks_standard/main/include",
@@ -93,6 +85,15 @@ ohos_shared_library("distributeddataservice") {
     "src/single_kvstore_impl.cpp",
   ]
 
+  rdb_sources = [
+    "src/rdb/rdb_device_store.cpp",
+    "src/rdb/rdb_service.cpp",
+    "src/rdb/rdb_store.cpp",
+    "src/rdb/rdb_store_factory.cpp",
+  ]
+
+  sources += rdb_sources
+
   configs = [ ":module_private_config" ]
   ldflags = [ "-Wl,--exclude-libs,libcrypto_static.a" ]
   deps = [
@@ -109,13 +110,14 @@ ohos_shared_library("distributeddataservice") {
   ]
 
   external_deps = [
-    "aafwk_standard:base",
-    "aafwk_standard:intent",
+    "ability_runtime:app_manager",
+    "ability_runtime:base",
+    "ability_runtime:intent",
     "appexecfwk_standard:appexecfwk_base",
     "appexecfwk_standard:appexecfwk_core",
     "battery_manager_native:batterysrv_client",
     "hiviewdfx_hilog_native:libhilog",
-    "huks_standard:libhukssdk",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "permission_standard:libpermissionsdk_standard",
     "power_manager_native:powermgr_client",

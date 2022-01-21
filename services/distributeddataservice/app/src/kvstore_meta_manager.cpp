@@ -48,7 +48,17 @@ std::mutex KvStoreMetaManager::cvMutex_;
 KvStoreMetaManager::MetaDeviceChangeListenerImpl KvStoreMetaManager::listener_;
 
 KvStoreMetaManager::KvStoreMetaManager()
-    : metaDBDirectory_(Constant::Concatenate({
+    : metaDelegate_(nullptr,
+            [this](DistributedDB::KvStoreNbDelegate *delegate) {
+                if (delegate == nullptr) {
+                    return;
+                }
+                auto result = kvStoreDelegateManager_.CloseKvStore(delegate);
+                if (result != DistributedDB::DBStatus::OK) {
+                    ZLOGE("CloseMetaKvstore return error status: %d", static_cast<int>(result));
+                }
+            }),
+      metaDBDirectory_(Constant::Concatenate({
       Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/", Constant::META_DIR_NAME })),
       kvStoreDelegateManager_(META_DB_APP_ID, Constant::GetDefaultHarmonyAccountName())
 {

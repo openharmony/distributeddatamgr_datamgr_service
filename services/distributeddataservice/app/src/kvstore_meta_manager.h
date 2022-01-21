@@ -299,7 +299,7 @@ private:
     static constexpr int KEY_SIZE = 32;
     static constexpr int HOURS_PER_YEAR = (24 * 365);
 
-    NbDelegate metaDelegate_ {};
+    NbDelegate metaDelegate_;
     std::string metaDBDirectory_;
     DistributedDB::KvStoreDelegateManager kvStoreDelegateManager_;
     std::vector<uint8_t> vecRootKeyAlias_ {};

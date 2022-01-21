@@ -1515,11 +1515,11 @@ Status SingleKvStoreImpl::Control(KvControlCmd cmd, const KvParam &inputParam, s
     output = nullptr;
     switch (cmd) {
         case KvControlCmd::SET_SYNC_PARAM: {
-            if (inputParam.Size() != sizeof(KvSyncParam)) {
+            if (inputParam.Size() != sizeof(uint32_t)) {
                 return Status::IPC_ERROR;
             }
-            KvSyncParam syncParam = TransferByteArrayToType<KvSyncParam>(inputParam.Data());
-            uint32_t allowedDelayMs = syncParam.allowedDelayMs;
+            uint32_t allowedDelayMs = TransferByteArrayToType<uint32_t>(inputParam.Data());
+            ZLOGE("SET_SYNC_PARAM in %{public}d ms", allowedDelayMs);
             if (allowedDelayMs > 0 && allowedDelayMs < KvStoreSyncManager::SYNC_MIN_DELAY_MS) {
                 return Status::INVALID_ARGUMENT;
             }
@@ -1527,11 +1527,12 @@ Status SingleKvStoreImpl::Control(KvControlCmd cmd, const KvParam &inputParam, s
                 return Status::INVALID_ARGUMENT;
             }
             defaultSyncDelayMs_ = allowedDelayMs;
+            ZLOGE("SET_SYNC_PARAM save %{public}d ms", defaultSyncDelayMs_);
             return Status::SUCCESS;
         }
         case KvControlCmd::GET_SYNC_PARAM: {
-            KvSyncParam syncParam{defaultSyncDelayMs_};
-            output = new KvParam(TransferTypeToByteArray<KvSyncParam>(syncParam));
+            output = new KvParam(TransferTypeToByteArray<uint32_t>(defaultSyncDelayMs_));
+            ZLOGE("GET_SYNC_PARAM read %{public}d ms", defaultSyncDelayMs_);
             return Status::SUCCESS;
         }
         default: {

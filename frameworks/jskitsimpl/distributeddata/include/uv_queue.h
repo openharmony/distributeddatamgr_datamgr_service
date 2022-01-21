@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,25 +12,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef OHOS_KV_MANAGER_H
-#define OHOS_KV_MANAGER_H
+#ifndef OHOS_UV_QUEUE_H
+#define OHOS_UV_QUEUE_H
+#include <functional>
 
-#include <string>
-#include "napi/native_common.h"
 #include "napi/native_api.h"
+#include "napi/native_common.h"
 #include "napi/native_node_api.h"
-#include "distributed_kv_data_manager.h"
-namespace OHOS::DistributedData {
-class KVManager {
-public:
-    static napi_value CreateKVManager(napi_env env, napi_callback_info info);
-    static napi_value GetKVStore(napi_env env, napi_callback_info info);
-private:
-    static napi_value GetCtor(napi_env env);
-    static napi_value Initialize(napi_env env, napi_callback_info info);
+#include "uv.h"
 
-    DistributedKv::DistributedKvDataManager kvDataManager_ {};
-    std::string bundleName_ {};
+namespace OHOS::DistributedData {
+class UvQueue {
+    using NapiArgsGenerator = std::function<void(napi_env env, int& argc, napi_value* argv)>;
+
+public:
+    UvQueue(napi_env env, napi_value callback);
+    virtual ~UvQueue();
+
+    bool operator==(napi_value value);
+
+    void CallFunction(NapiArgsGenerator genArgs = NapiArgsGenerator());
+
+private:
+    napi_env env_ = nullptr;
+    napi_ref callback_ = nullptr;
+    NapiArgsGenerator args;
+    uv_loop_s* loop_ = nullptr;
 };
 }
-#endif // OHOS_KV_MANAGER_H
+#endif // OHOS_UV_QUEUE_H

@@ -41,13 +41,14 @@ ohos_static_library("distributeddata_utils_static") {
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//utils/native/base:utils",
     "//third_party/openssl:libcrypto_static",
+    "//utils/native/base:utils",
   ]
 
   external_deps = [
-    "aafwk_standard:base",
-    "aafwk_standard:intent",
+    "ability_runtime:app_manager",
+    "ability_runtime:base",
+    "ability_runtime:intent",
     "appexecfwk_standard:appexecfwk_base",
     "appexecfwk_standard:appexecfwk_core",
     "bytrace_standard:bytrace_core",

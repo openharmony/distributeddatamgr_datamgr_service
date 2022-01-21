@@ -42,7 +42,7 @@ ohos_static_library("distributeddata_uninstaller_static") {
     "appexecfwk_standard:appexecfwk_base",
 
     # "ces:libcommonevent",
-    "aafwk_standard:want",
+    "ability_runtime:want",
     "ces_standard:cesfwk_innerkits",
     "dmsfwk_standard:zuri",
     "hiviewdfx_hilog_native:libhilog",

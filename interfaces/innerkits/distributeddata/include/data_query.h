@@ -385,6 +385,13 @@ public:
     //     This Query.
     KVSTORE_API DataQuery& KeyPrefix(const std::string &prefix);
 
+    // Select results with specified device Identifier.
+    // Parameters:
+    //     deviceId: device Identifier.
+    // Return:
+    //     This Query.
+    KVSTORE_API DataQuery& DeviceId(const std::string &deviceId);
+
     // Select results with suggested index.
     // Parameters:
     //     index: suggested index.

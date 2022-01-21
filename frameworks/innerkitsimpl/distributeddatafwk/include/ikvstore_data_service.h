@@ -27,8 +27,7 @@
 #include "types.h"
 #include "idevice_status_change_listener.h"
 
-namespace OHOS {
-namespace DistributedKv {
+namespace OHOS::DistributedKv {
 /*
  * IPC-friendly Options struct without std::string schema field.
  * Passing a struct with an std::string field is a potential security exploit.
@@ -47,6 +46,7 @@ struct OptionsIpc {
     bool dataOwnership; // true indicates the ownership of distributed data is DEVICE, otherwise, ACCOUNT
 };
 
+class IRdbService;
 class IKvStoreDataService : public IRemoteBroker {
 public:
     enum {
@@ -62,6 +62,7 @@ public:
         GETDEVICELIST,
         STARTWATCHDEVICECHANGE,
         STOPWATCHDEVICECHANGE,
+        GET_RDB_SERVICE,
         SERVICE_CMD_LAST,
         DATAUSAGESTART = 20,
         DATAUSAGEEND = 40,
@@ -97,6 +98,7 @@ public:
     virtual Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer,
             DeviceFilterStrategy strategy) = 0;
     virtual Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) = 0;
+    virtual sptr<IRdbService> GetRdbService() = 0;
 };
 
 class KvStoreDataServiceStub : public IRemoteStub<IKvStoreDataService> {
@@ -116,6 +118,7 @@ private:
     int32_t StartWatchDeviceChangeOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t StopWatchDeviceChangeOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t GetSingleKvStoreOnRemote(MessageParcel &data, MessageParcel &reply);
+    int32_t GetRdbServiceOnRemote(MessageParcel& data, MessageParcel& reply);
 
     using RequestHandler = int32_t(KvStoreDataServiceStub::*)(MessageParcel&, MessageParcel&);
     static constexpr RequestHandler HANDLERS[SERVICE_CMD_LAST] = {
@@ -131,6 +134,7 @@ private:
         [GETDEVICELIST] = &KvStoreDataServiceStub::GetDeviceListOnRemote,
         [STARTWATCHDEVICECHANGE] = &KvStoreDataServiceStub::StartWatchDeviceChangeOnRemote,
         [STOPWATCHDEVICECHANGE] = &KvStoreDataServiceStub::StopWatchDeviceChangeOnRemote,
+        [GET_RDB_SERVICE] = &KvStoreDataServiceStub::GetRdbServiceOnRemote,
     };
 };
 
@@ -167,10 +171,10 @@ public:
     virtual Status GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy);
     virtual Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy);
     virtual Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer);
+    virtual sptr<IRdbService> GetRdbService();
 private:
     static inline BrokerDelegator<KvStoreDataServiceProxy> delegator_;
 };
-}  // namespace DistributedKv
-}  // namespace OHOS
+}
 
 #endif  // I_KV_STORE_DATA_SERVICE_H

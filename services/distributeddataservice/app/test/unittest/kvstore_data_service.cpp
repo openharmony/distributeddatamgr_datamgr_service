@@ -41,6 +41,7 @@
 #include "permission_validator.h"
 #include "process_communicator_impl.h"
 #include "reporter.h"
+#include "rdb_service.h"
 #include "system_ability_definition.h"
 #include "uninstaller/uninstaller.h"
 
@@ -1263,7 +1264,7 @@ Status KvStoreDataService::GetLocalDevice(DeviceInfo &device)
 Status KvStoreDataService::GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy)
 {
     auto devices = KvStoreUtils::GetProviderInstance().GetRemoteNodesBasicInfo();
-    for(auto const &device : devices) {
+    for (auto const &device : devices) {
         deviceInfoList.push_back({device.deviceId, device.deviceName, device.deviceType});
     }
     ZLOGD("strategy is %d.", strategy);
@@ -1302,6 +1303,11 @@ Status KvStoreDataService::StopWatchDeviceChange(sptr<IDeviceStatusChangeListene
     }
     deviceListeners_.erase(it->first);
     return Status::SUCCESS;
+}
+
+sptr<IRdbService> KvStoreDataService::GetRdbService()
+{
+    return rdbService_;
 }
 
 bool DbMetaCallbackDelegateMgr::GetKvStoreDiskSize(const std::string &storeId, uint64_t &size)

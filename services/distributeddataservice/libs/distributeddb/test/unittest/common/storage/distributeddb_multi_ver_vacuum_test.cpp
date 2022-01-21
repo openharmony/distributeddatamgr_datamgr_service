@@ -694,7 +694,7 @@ HWTEST_F(DistributedDBMultiVerVacuumTest, MultipleTaskNormalStatusSwitch002, Tes
     EXPECT_EQ(errCode, E_OK);
     errCode = vacuum.Launch(DB_IDENTITY_C, &databaseC);
     EXPECT_EQ(errCode, E_OK);
-    bool stepOne = CheckVacuumTaskStatus(vacuum, DB_IDENTITY_A, VacuumTaskStatus::FINISH);
+    bool stepOne = CheckVacuumTaskStatus(vacuum, DB_IDENTITY_A, VacuumTaskStatus::FINISH, 3, 1000); // 3 time, 1000 ms
     EXPECT_EQ(stepOne, true);
     stepOne = CheckVacuumTaskStatus(vacuum, DB_IDENTITY_B, VacuumTaskStatus::FINISH, 3, 1000); // 3 time, 1000 ms
     EXPECT_EQ(stepOne, true);
