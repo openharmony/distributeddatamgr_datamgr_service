@@ -1017,5 +1017,35 @@ int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedDeviceTable(const
     }
     return errCode;
 }
+
+int SQLiteSingleVerRelationalStorageExecutor::CheckQueryObjectLegal(const TableInfo &table, QueryObject &query)
+{
+    if (dbHandle_ == nullptr) {
+        return -E_INVALID_DB;
+    }
+
+    int errCode = E_OK;
+    SqliteQueryHelper helper = query.GetQueryHelper(errCode);
+    if (errCode != E_OK) {
+        LOGE("Get query helper for check query failed. %d", errCode);
+        return errCode;
+    }
+
+    SyncTimeRange defaultTimeRange;
+    sqlite3_stmt *stmt = nullptr;
+    errCode = helper.GetRelationalQueryStatement(dbHandle_, defaultTimeRange.beginTime, defaultTimeRange.endTime, stmt);
+    if (errCode != E_OK) {
+        LOGE("Get query statement for check query failed. %d", errCode);
+        return errCode;
+    }
+
+    errCode = SQLiteUtils::CheckSchemaSchanged(stmt, table, DBConstant::RELATIONAL_LOG_TABLE_FIELD_NUM);
+    if (errCode != E_OK) {
+        LOGE("Check schema failed, schema was changed. %d", errCode);
+    }
+
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return errCode;
+}
 } // namespace DistributedDB
 #endif

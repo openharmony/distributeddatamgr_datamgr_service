@@ -42,6 +42,7 @@ public:
     void SetSchema(const SchemaObject &schema);
 
     bool IsQueryOnlyByKey() const;
+    bool IsQueryForRelationalDB() const;
 
     void SetTableName(const std::string &tableName)
     {

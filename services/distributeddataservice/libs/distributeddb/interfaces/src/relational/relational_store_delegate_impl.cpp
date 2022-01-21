@@ -38,7 +38,7 @@ RelationalStoreDelegateImpl::~RelationalStoreDelegateImpl()
 };
 
 DBStatus RelationalStoreDelegateImpl::Sync(const std::vector<std::string> &devices, SyncMode mode,
-    SyncStatusCallback &onComplete, bool wait)
+    const SyncStatusCallback &onComplete, bool wait)
 {
     return NOT_SUPPORT;
 }
@@ -69,7 +69,7 @@ DBStatus RelationalStoreDelegateImpl::CreateDistributedTable(const std::string &
 }
 
 DBStatus RelationalStoreDelegateImpl::Sync(const std::vector<std::string> &devices, SyncMode mode,
-    const Query &query, SyncStatusCallback &onComplete, bool wait)
+    const Query &query, const SyncStatusCallback &onComplete, bool wait)
 {
     if (conn_ == nullptr) {
         LOGE("Invalid connection for operation!");

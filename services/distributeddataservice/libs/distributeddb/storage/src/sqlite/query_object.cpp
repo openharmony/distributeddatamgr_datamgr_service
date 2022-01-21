@@ -372,7 +372,17 @@ bool QueryObject::IsQueryOnlyByKey() const
 {
     return std::none_of(queryObjNodes_.begin(), queryObjNodes_.end(), [&](const QueryObjNode &node) {
         return node.operFlag != QueryObjType::LIMIT && node.operFlag != QueryObjType::QUERY_BY_KEY_PREFIX &&
-               node.operFlag != QueryObjType::IN_KEYS;
+            node.operFlag != QueryObjType::IN_KEYS;
+    });
+}
+
+bool QueryObject::IsQueryForRelationalDB() const
+{
+    return isTableNameSpecified_ &&
+        std::none_of(queryObjNodes_.begin(), queryObjNodes_.end(), [&](const QueryObjNode &node) {
+        return node.operFlag != QueryObjType::EQUALTO && node.operFlag != QueryObjType::NOT_EQUALTO &&
+            node.operFlag != QueryObjType::AND && node.operFlag != QueryObjType::OR &&
+            node.operFlag != QueryObjType::ORDERBY && node.operFlag != QueryObjType::LIMIT;
     });
 }
 

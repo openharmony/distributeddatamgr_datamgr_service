@@ -872,8 +872,8 @@ int SingleVerDataSync::RequestStart(SingleVerSyncTaskContext *context, int mode)
 void SingleVerDataSync::TranslateErrCodeIfNeed(int mode, uint32_t version, int &errCode)
 {
     // once get data occur E_EKEYREVOKED error, should also send request to remote dev to pull data.
-    if (SyncOperation::TransferSyncMode(mode) == SyncModeType::PUSH_AND_PULL && version > SOFTWARE_VERSION_RELEASE_2_0
-        && errCode == -E_EKEYREVOKED) {
+    if (SyncOperation::TransferSyncMode(mode) == SyncModeType::PUSH_AND_PULL &&
+        version > SOFTWARE_VERSION_RELEASE_2_0 && errCode == -E_EKEYREVOKED) {
         errCode = E_OK;
     }
 }

@@ -33,10 +33,10 @@ public:
     DB_API virtual DBStatus CreateDistributedTable(const std::string &tableName) = 0;
 
     DB_API virtual DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
-        SyncStatusCallback &onComplete, bool wait) = 0;
+        const SyncStatusCallback &onComplete, bool wait) = 0;
 
     DB_API virtual DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
-        const Query &query, SyncStatusCallback &onComplete, bool wait) = 0;
+        const Query &query, const SyncStatusCallback &onComplete, bool wait) = 0;
 
     DB_API virtual DBStatus RemoveDeviceData(const std::string &device) = 0;
 

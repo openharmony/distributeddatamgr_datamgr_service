@@ -100,10 +100,7 @@ public:
         return E_OK;
     }
 
-    int CheckAndInitQueryCondition(QueryObject &query) const override
-    {
-        return E_OK;
-    }
+    int CheckAndInitQueryCondition(QueryObject &query) const override;
 
     int CreateDistributedDeviceTable(const std::string &device, const RelationalSyncStrategy &syncStrategy) override;
 
@@ -116,7 +113,8 @@ public:
     int GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const override;
 
 private:
-    SQLiteSingleVerRelationalStorageExecutor *GetHandle(bool isWrite, int &errCode, OperatePerm perm) const;
+    SQLiteSingleVerRelationalStorageExecutor *GetHandle(bool isWrite, int &errCode,
+        OperatePerm perm = OperatePerm::NORMAL_PERM) const;
     void ReleaseHandle(SQLiteSingleVerRelationalStorageExecutor *&handle) const;
     int SetMaxTimeStamp(TimeStamp timestamp);
 

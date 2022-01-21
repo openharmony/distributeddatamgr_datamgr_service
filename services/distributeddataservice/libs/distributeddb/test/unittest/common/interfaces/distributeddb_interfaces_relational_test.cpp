@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -87,16 +87,6 @@ void DistributedInterfacesRelationalTest::TearDown(void)
     DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir);
 }
 
-namespace {
-void CreateDeviceTable(sqlite3 *db, const std::string &table, const std::string &device)
-{
-    ASSERT_NE(db, nullptr);
-    std::string deviceTable = DBCommon::GetDistributedTableName(device, table);
-    EXPECT_EQ(SQLiteUtils::CreateSameStuTable(db, table, deviceTable, false), E_OK);
-    EXPECT_EQ(SQLiteUtils::CloneIndexes(db, table, deviceTable), E_OK);
-}
-}
-
 /**
   * @tc.name: RelationalStoreTest001
   * @tc.desc: Test open store and create distributed db
@@ -114,7 +104,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest001, TestSize.L
     ASSERT_NE(db, nullptr);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
-    CreateDeviceTable(db, "sync_data", "DEVICE_A");
+    RelationalTestUtils::CreateDeviceTable(db, "sync_data", "DEVICE_A");
     EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
 
     /**
@@ -483,9 +473,9 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest004, Test
     ASSERT_NE(db, nullptr);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
-    CreateDeviceTable(db, "sync_data", "DEVICE_A");
-    CreateDeviceTable(db, "sync_data", "DEVICE_B");
-    CreateDeviceTable(db, "sync_data", "DEVICE_C");
+    RelationalTestUtils::CreateDeviceTable(db, "sync_data", "DEVICE_A");
+    RelationalTestUtils::CreateDeviceTable(db, "sync_data", "DEVICE_B");
+    RelationalTestUtils::CreateDeviceTable(db, "sync_data", "DEVICE_C");
 
     /**
      * @tc.steps:step2. Open store
@@ -545,9 +535,9 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalRemoveDeviceDataTest001,
     ASSERT_NE(db, nullptr);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
-    CreateDeviceTable(db, "sync_data", "DEVICE_A");
-    CreateDeviceTable(db, "sync_data", "DEVICE_B");
-    CreateDeviceTable(db, "sync_data", "DEVICE_C");
+    RelationalTestUtils::CreateDeviceTable(db, "sync_data", "DEVICE_A");
+    RelationalTestUtils::CreateDeviceTable(db, "sync_data", "DEVICE_B");
+    RelationalTestUtils::CreateDeviceTable(db, "sync_data", "DEVICE_C");
 
     /**
      * @tc.steps:step2. Open store

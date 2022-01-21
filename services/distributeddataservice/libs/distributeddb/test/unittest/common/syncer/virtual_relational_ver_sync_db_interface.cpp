@@ -117,8 +117,8 @@ int VirtualRelationalVerSyncDBInterface::GetSyncData(QueryObject &query,
     std::vector<DataItem> dataItemList;
     TableDataWithLog tableDataWithLog = {query.GetTableName(), {}};
     for (const auto &[hashKey, virtualData] : localData_[query.GetTableName()]) {
-        if (virtualData.logInfo.timestamp < timeRange.beginTime
-            || virtualData.logInfo.timestamp >= timeRange.endTime) {
+        if (virtualData.logInfo.timestamp < timeRange.beginTime ||
+            virtualData.logInfo.timestamp >= timeRange.endTime) {
             LOGD("ignore hashkey %s", hashKey.c_str());
             continue;
         }

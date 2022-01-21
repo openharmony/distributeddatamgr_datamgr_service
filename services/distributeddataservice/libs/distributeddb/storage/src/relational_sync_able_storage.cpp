@@ -524,5 +524,35 @@ void RelationalSyncAbleStorage::RegisterHeartBeatListener(const std::function<vo
     std::lock_guard<std::mutex> autoLock(heartBeatMutex_);
     heartBeatListener_ = listener;
 }
+
+int RelationalSyncAbleStorage::CheckAndInitQueryCondition(QueryObject &query) const
+{
+    int errCode = E_OK;
+    auto *handle = GetHandle(false, errCode);
+    if (handle == nullptr) {
+        return errCode;
+    }
+
+    RelationalSchemaObject schema = storageEngine_->GetSchemaRef();
+    TableInfo table = schema.GetTable(query.GetTableName());
+    if (table.GetTableName() != query.GetTableName()) {
+        LOGE("Query table is not a distributed table.");
+        return -E_RELATIONAL_SCHEMA_NOT_FOUND;
+    }
+
+    if (!query.IsQueryForRelationalDB()) {
+        LOGE("Not support for this query type.");
+        return -E_NOT_SUPPORT;
+    }
+    // TODO: query set schema
+
+    errCode = handle->CheckQueryObjectLegal(table, query);
+    if (errCode != E_OK) {
+        LOGE("Check relational query condition failed. %d", errCode);
+    }
+
+    ReleaseHandle(handle);
+    return errCode;
+}
 }
 #endif

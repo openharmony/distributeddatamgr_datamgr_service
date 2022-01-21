@@ -70,6 +70,8 @@ public:
 
     int CreateDistributedDeviceTable(const std::string &device, const std::string &tableName);
 
+    int CheckQueryObjectLegal(const TableInfo &table, QueryObject &query);
+
 private:
     int PrepareForSyncDataByTime(TimeStamp begin, TimeStamp end,
         sqlite3_stmt *&statement, bool getDeletedData) const;

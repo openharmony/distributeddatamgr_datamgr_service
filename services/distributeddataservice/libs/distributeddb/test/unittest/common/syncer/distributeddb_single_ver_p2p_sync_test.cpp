@@ -2240,8 +2240,8 @@ HWTEST_F(DistributedDBSingleVerP2PSyncTest, DatabaseOnlineCallback001, TestSize.
     bool isCheckOk = false;
     auto databaseStatusNotifyCallback = [targetDev, &isCheckOk] (std::string userId,
         std::string appId, std::string storeId, const std::string deviceId, bool onlineStatus) -> void {
-        if (userId == USER_ID && appId == APP_ID && storeId == STORE_ID && deviceId == targetDev
-            && onlineStatus == true) {
+        if (userId == USER_ID && appId == APP_ID && storeId == STORE_ID && deviceId == targetDev &&
+            onlineStatus == true) {
             isCheckOk = true;
         }};
     g_mgr.SetStoreStatusNotifier(databaseStatusNotifyCallback);
@@ -2273,8 +2273,8 @@ HWTEST_F(DistributedDBSingleVerP2PSyncTest, DatabaseOfflineCallback001, TestSize
     bool isCheckOk = false;
     auto databaseStatusNotifyCallback = [targetDev, &isCheckOk] (std::string userId,
         std::string appId, std::string storeId, const std::string deviceId, bool onlineStatus) -> void {
-        if (userId == USER_ID && appId == APP_ID && storeId == STORE_ID && deviceId == targetDev
-            && onlineStatus == false) {
+        if (userId == USER_ID && appId == APP_ID && storeId == STORE_ID && deviceId == targetDev &&
+            onlineStatus == false) {
             isCheckOk = true;
         }};
     g_mgr.SetStoreStatusNotifier(databaseStatusNotifyCallback);

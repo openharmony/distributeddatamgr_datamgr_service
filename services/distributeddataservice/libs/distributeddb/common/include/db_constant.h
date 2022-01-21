@@ -124,6 +124,8 @@ public:
 
     static constexpr int DEF_LIFE_CYCLE_TIME = 60000; // 60S
 
+    static const int RELATIONAL_LOG_TABLE_FIELD_NUM = 7; // field num is relational distributed log table
+
     // For relational
     static const std::string RELATIONAL_PREFIX;
     static const std::string TIMESTAMP_ALIAS;

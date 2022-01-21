@@ -2070,4 +2070,30 @@ int SQLiteUtils::SetPersistWalMode(sqlite3 *db)
     }
     return SQLiteUtils::MapSQLiteErrno(errCode);
 }
+
+int SQLiteUtils::CheckSchemaSchanged(sqlite3_stmt *stmt, const TableInfo &table, int offset)
+{
+    if (stmt == nullptr) {
+        return  -E_INVALID_ARGS;
+    }
+
+    int columnNum = sqlite3_column_count(stmt);
+    if (offset + columnNum != static_cast<int>(table.GetFields().size())) {
+        LOGE("Schema field number does not match.");
+        return -E_RELATIONAL_SCHEMA_CHANGED;
+    }
+
+    auto fields = table.GetFields();
+    for (int i=offset; i<columnNum; i++) {
+        std::string colName = sqlite3_column_name(stmt, i);
+        std::string colType = sqlite3_column_decltype(stmt, i);
+
+        auto it = fields.find(colName);
+        if (it == fields.end() || it->second.GetDataType() != colType) {
+            LOGE("Schema field define does not match.");
+            return -E_RELATIONAL_SCHEMA_CHANGED;
+        }
+    }
+    return E_OK;
+}
 } // namespace DistributedDB

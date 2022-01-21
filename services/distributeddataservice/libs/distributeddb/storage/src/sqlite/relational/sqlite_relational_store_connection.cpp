@@ -203,6 +203,7 @@ int SQLiteRelationalStoreConnection::SyncToDevice(SyncInfo &info)
         int errCode = store->Sync(syncParam);
         if (errCode != E_OK) {
             DecObjRef(this);
+            return errCode;
         }
     }
     return E_OK;
@@ -215,7 +216,7 @@ int SQLiteRelationalStoreConnection::RegisterLifeCycleCallback(const DatabaseLif
         LOGE("[RelationalConnection] store is null, get executor failed!");
         return -E_INVALID_CONNECTION;
     }
-    
+
     return store->RegisterLifeCycleCallback(notifier);
 }
 }

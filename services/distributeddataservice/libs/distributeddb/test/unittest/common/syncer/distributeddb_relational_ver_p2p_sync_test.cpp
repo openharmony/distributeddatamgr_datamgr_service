@@ -57,7 +57,7 @@ namespace {
 
     std::string GetDeviceTableName(const std::string &tableName)
     {
-        return "naturalbase_rdb_aux_" + 
+        return "naturalbase_rdb_aux_" +
             tableName + "_" + DBCommon::TransferStringToHex(DBCommon::TransferHashString(DEVICE_B));
     }
 
@@ -332,7 +332,7 @@ namespace {
         switch (type) {
             case SQLITE_INTEGER: {
                 dataValue = static_cast<int64_t>(sqlite3_column_int64(statement, col));
-                break;    
+                break;
             }
             case SQLITE_FLOAT: {
                 dataValue = sqlite3_column_double(statement, col);
@@ -502,7 +502,7 @@ namespace {
     {
         sqlite3 *db = nullptr;
         EXPECT_EQ(GetDB(db), SQLITE_OK);
-        
+
         EXPECT_EQ(CreateTable(db, remoteFieldInfoList, tableName), SQLITE_OK);
         TableInfo tableInfo;
         SQLiteUtils::AnalysisSchema(db, tableName, tableInfo);
@@ -783,7 +783,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync001, TestSize.Leve
      * @tc.steps: step6. check sync data ensure sync successful
      */
     CheckData(dataMap);
-    
+
     OpenStore();
     std::this_thread::sleep_for(std::chrono::minutes(1));
 }
