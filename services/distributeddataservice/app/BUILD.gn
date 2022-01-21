@@ -37,7 +37,7 @@ config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/src",
     "//foundation/distributeddatamgr/distributeddatamgr/services/rdb",

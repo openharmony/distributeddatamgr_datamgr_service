@@ -25,7 +25,7 @@ config("distributeddatafwk_config") {
     "include",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/include",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src",
-    "../../../frameworks/common/include",
+    "../../../frameworks/common",
     "../../../frameworks/innerkitsimpl/rdb/include",
     "../../../frameworks/innerkitsimpl/rdb/src",
     "//utils/system/safwk/native/include",
@@ -46,8 +46,6 @@ config("distributeddatafwk_public_config") {
 
 ohos_shared_library("distributeddata_inner") {
   part_name = "distributeddatamgr"
-
-  common_sources = [ "../../../frameworks/common/src/itypes_util.cpp" ]
 
   kvdb_sources = [
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/blob.cpp",
@@ -73,6 +71,7 @@ ohos_shared_library("distributeddata_inner") {
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_snapshot_client.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_sync_callback_client.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/single_kvstore_client.cpp",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/itypes_util.cpp",
     "include/types.h",
   ]
 
@@ -86,7 +85,7 @@ ohos_shared_library("distributeddata_inner") {
     "../../../frameworks/innerkitsimpl/rdb/src/rdb_syncer_stub.cpp",
   ]
 
-  sources = common_sources + kvdb_sources + rdb_sources
+  sources = kvdb_sources + rdb_sources
 
   configs = [ ":distributeddatafwk_config" ]
 

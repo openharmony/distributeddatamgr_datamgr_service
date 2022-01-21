@@ -25,7 +25,7 @@ ohos_static_library("distributeddata_account_static") {
     "./src",
     "//utils/native/base/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]

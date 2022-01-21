@@ -26,7 +26,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/broadcaster",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/utils",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
     "//utils/native/base/include",
     "//utils/system/safwk/native/include",
     "../include",
