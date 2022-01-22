@@ -26,19 +26,6 @@
 #include "irdb_service.h"
 
 namespace OHOS::DistributedRdb {
-class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
-public:
-    explicit ServiceDeathRecipient(RdbManagerImpl* owner) : owner_(owner) {}
-    void OnRemoteDied(const wptr<IRemoteObject> &object) override
-    {
-        if (owner_ != nullptr) {
-            owner_->OnRemoteDied();
-        }
-    }
-private:
-    RdbManagerImpl* owner_;
-};
-
 static sptr<DistributedKv::IKvStoreDataService> GetDistributedDataManager()
 {
     auto manager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -54,7 +41,8 @@ static sptr<DistributedKv::IKvStoreDataService> GetDistributedDataManager()
 static void LinkToDeath(const sptr<IRemoteObject>& remote)
 {
     auto& manager = RdbManagerImpl::GetInstance();
-    sptr<ServiceDeathRecipient> deathRecipient = new(std::nothrow) ServiceDeathRecipient(&manager);
+    sptr<RdbManagerImpl::ServiceDeathRecipient> deathRecipient =
+        new(std::nothrow) RdbManagerImpl::ServiceDeathRecipient(&manager);
     if (!remote->AddDeathRecipient(deathRecipient)) {
         ZLOGE("add death recipient failed");
     }

@@ -43,6 +43,19 @@ public:
     int UnRegisterRdbServiceDeathObserver(const std::string &storeName);
     
     void OnRemoteDied();
+    
+    class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
+    public:
+        explicit ServiceDeathRecipient(RdbManagerImpl* owner) : owner_(owner) {}
+        void OnRemoteDied(const wptr<IRemoteObject> &object) override
+        {
+            if (owner_ != nullptr) {
+                owner_->OnRemoteDied();
+            }
+        }
+    private:
+        RdbManagerImpl* owner_;
+    };
 
 private:
     RdbManagerImpl();
