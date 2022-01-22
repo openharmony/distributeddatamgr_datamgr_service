@@ -112,6 +112,7 @@ int GenericSyncer::Initialize(ISyncInterface *syncInterface)
 
     // RegConnectCallback may start a auto sync, this function can not in syncerLock_
     syncEngine_->RegConnectCallback();
+    syncEngine_->SetEqualIdentifier();
     return E_OK;
 }
 
@@ -633,7 +634,11 @@ int GenericSyncer::SetEqualIdentifier(const std::string &identifier, const std::
     if (syncEngine_ == nullptr) {
         return -E_NOT_INIT;
     }
-    return syncEngine_->SetEqualIdentifier(identifier, targets);
+    int errCode = syncEngine_->SetEqualIdentifier(identifier, targets);
+    if (errCode == E_OK) {
+        syncEngine_->SetEqualIdentifierMap(identifier, targets);
+    }
+    return errCode;
 }
 
 std::string GenericSyncer::GetSyncDevicesStr(const std::vector<std::string> &devices) const

@@ -60,6 +60,7 @@ SyncEngine::~SyncEngine()
 {
     LOGD("[SyncEngine] ~SyncEngine!");
     ClearInnerResource();
+    equalIdentifierMap_.clear();
     subManager_ = nullptr;
     LOGD("[SyncEngine] ~SyncEngine ok!");
 }
@@ -742,11 +743,38 @@ int SyncEngine::SetEqualIdentifier(const std::string &identifier, const std::vec
             equalCommunicators_[identifier] = communicator;
         }
     }
-    LOGI("[SyncEngine] set equal identifier %s, original %s",
-        DBCommon::TransferStringToHex(identifier).c_str(), label_.c_str());
+    std::string targetDevices;
+    for (const auto &dev : targets) {
+        targetDevices += DBCommon::StringMasking(dev) + ",";
+    }
+    LOGI("[SyncEngine] set equal identifier=%s, original=%s, targetDevices=%s",
+        DBCommon::TransferStringToHex(identifier).c_str(), label_.c_str(),
+        targetDevices.substr(0, targetDevices.size() - 1).c_str());
     communicatorProxy_->SetEqualCommunicator(communicator, targets);
     communicator->Activate();
     return E_OK;
+}
+
+void SyncEngine::SetEqualIdentifier()
+{
+    std::map<std::string, std::vector<std::string>> equalIdentifier; // key: equalIdentifier value: devices
+    for (auto &item : equalIdentifierMap_) {
+        if (equalIdentifier.find(item.second) == equalIdentifier.end()) {
+            equalIdentifier[item.second] = {item.first};
+        } else {
+            equalIdentifier[item.second].push_back(item.first);
+        }
+    }
+    for (auto &item : equalIdentifier) {
+        SetEqualIdentifier(item.first, item.second);
+    }
+}
+
+void SyncEngine::SetEqualIdentifierMap(const std::string &identifier, const std::vector<std::string> &targets)
+{
+    for (auto &device : targets) {
+        equalIdentifierMap_[device] = identifier;
+    }
 }
 
 void SyncEngine::OfflineHandleByDevice(const std::string &deviceId)
