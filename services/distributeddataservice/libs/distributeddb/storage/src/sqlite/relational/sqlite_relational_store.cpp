@@ -83,6 +83,7 @@ void SQLiteRelationalStore::ReleaseResources()
         sqliteStorageEngine_->ClearEnginePasswd();
         (void)StorageEngineManager::ReleaseStorageEngine(sqliteStorageEngine_);
     }
+    RefObject::DecObjRef(storageEngine_);
 }
 
 int SQLiteRelationalStore::CheckDBMode()

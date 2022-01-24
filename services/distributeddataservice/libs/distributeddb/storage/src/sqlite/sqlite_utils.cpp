@@ -1433,8 +1433,9 @@ int SQLiteUtils::CloneIndexes(sqlite3 *db, const std::string &oriTableName, cons
     while (true) {
         errCode = SQLiteUtils::StepWithRetry(stmt, false);
         if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
-            const unsigned char *indexSql = sqlite3_column_text(stmt, 0);
-            sql += std::string(reinterpret_cast<const char *>(indexSql));
+            std::string indexSql;
+            (void)GetColumnTextValue(stmt, 0, indexSql);
+            sql += indexSql;
             continue;
         }
         if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
