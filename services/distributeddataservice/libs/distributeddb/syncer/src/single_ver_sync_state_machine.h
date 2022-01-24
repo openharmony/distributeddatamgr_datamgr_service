@@ -69,7 +69,7 @@ namespace {
 }
 
 using stateMappingHandler = std::function<uint8_t(void)>;
-class SingleVerSyncStateMachine final : public SyncStateMachine {
+class SingleVerSyncStateMachine : public SyncStateMachine {
 public:
 
     SingleVerSyncStateMachine();
