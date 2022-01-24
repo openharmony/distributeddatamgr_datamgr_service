@@ -15,6 +15,7 @@
 #ifdef RELATIONAL_STORE
 #include "data_transformer.h"
 
+#include "db_common.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "parcel.h"
@@ -66,15 +67,12 @@ int DataTransformer::SerializeDataItem(const RowDataWithLog &data,
         return errCode;
     }
     const LogInfo &logInfo = data.logInfo;
-    errCode = SerializeHashKey(dataItem.hashKey, logInfo.hashKey);
-    if (errCode != E_OK) {
-        return errCode;
-    }
     dataItem.timeStamp = logInfo.timestamp;
     dataItem.dev = logInfo.device;
     dataItem.origDev = logInfo.originDev;
     dataItem.writeTimeStamp = logInfo.wTimeStamp;
     dataItem.flag = logInfo.flag;
+    DBCommon::StringToVector(logInfo.hashKey, dataItem.hashKey);
     return E_OK;
 }
 
@@ -90,15 +88,12 @@ int DataTransformer::DeSerializeDataItem(const DataItem &dataItem, OptRowDataWit
     }
 
     LogInfo &logInfo = data.logInfo;
-    errCode = DeSerializeHashKey(dataItem.hashKey, logInfo.hashKey);
-    if (errCode != E_OK) {
-        return errCode;
-    }
     logInfo.timestamp = dataItem.timeStamp;
     logInfo.device = dataItem.dev;
     logInfo.originDev = dataItem.origDev;
     logInfo.wTimeStamp = dataItem.writeTimeStamp;
     logInfo.flag = dataItem.flag;
+    DBCommon::VectorToString(dataItem.hashKey, logInfo.hashKey);
     return E_OK;
 }
 

@@ -357,6 +357,99 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData2, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetSyncData3
+ * @tc.desc: GetSyncData interface. For deleted data.
+ * @tc.type: FUNC
+ * @tc.require: AR000GK58H
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData3, TestSize.Level1)
+{
+    ASSERT_EQ(g_mgr.OpenStore(g_storePath, g_storeID, RelationalStoreDelegate::Option {}, g_delegate), DBStatus::OK);
+    ASSERT_NE(g_delegate, nullptr);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
+
+    /**
+     * @tc.steps: step1. Create distributed table "dataPlus".
+     * @tc.expected: Succeed, return OK.
+     */
+    const string tableName = g_tableName + "Plus";
+    std::string sql = "CREATE TABLE " + tableName + "(key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, value INTEGER);";
+    sqlite3 *db = nullptr;
+    ASSERT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(tableName), DBStatus::OK);
+
+    /**
+     * @tc.steps: step2. Put 5 records with different type into "dataPlus" table.
+     * @tc.expected: Succeed, return OK.
+     */
+    vector<string> sqls = {
+        "INSERT INTO " + tableName + " VALUES(NULL, 1);",
+        "INSERT INTO " + tableName + " VALUES(NULL, 0.01);",
+        "INSERT INTO " + tableName + " VALUES(NULL, NULL);",
+        "INSERT INTO " + tableName + " VALUES(NULL, 'This is a text.');",
+        "INSERT INTO " + tableName + " VALUES(NULL, x'0123456789');",
+    };
+    const size_t RECORD_COUNT = sqls.size();
+    for (const auto &sql : sqls) {
+        ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    }
+
+    /**
+     * @tc.steps: step3. Delete all "dataPlus" data.
+     * @tc.expected: Succeed.
+     */
+    sql = "DELETE FROM " + tableName + ";";
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+
+    /**
+     * @tc.steps: step4. Get all data from "dataPlus" table.
+     * @tc.expected: Succeed and the count is right.
+     */
+    auto store = GetRelationalStore();
+    ASSERT_NE(store, nullptr);
+    ContinueToken token = nullptr;
+    QueryObject query(Query::Select(tableName));
+    std::vector<SingleVerKvEntry *> entries;
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    EXPECT_EQ(entries.size(), RECORD_COUNT);
+
+    /**
+     * @tc.steps: step5. Put data into "data" table from deviceA.
+     * @tc.expected: Succeed, return OK.
+     */
+    query = QueryObject(Query::Select(g_tableName));
+    const DeviceID deviceID = "deviceA";
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceID), E_OK);
+    SingleVerKvEntry::Release(entries);
+
+    /**
+     * @tc.steps: step6. Check data.
+     * @tc.expected: All data in the two tables are deleted.
+     */
+    sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + tableName + "_log WHERE flag=3;";
+    size_t count = 0;
+    EXPECT_EQ(GetCount(db, sql, count), E_OK);
+    EXPECT_EQ(count, RECORD_COUNT);
+
+    sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_log WHERE flag=1;";
+    count = 0;
+    EXPECT_EQ(GetCount(db, sql, count), E_OK);
+    EXPECT_EQ(count, RECORD_COUNT);
+
+    sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_log as a," +
+                                    DBConstant::RELATIONAL_PREFIX + tableName + "_log as b " +
+          "WHERE hex(a.hash_key)=hex(b.hash_key);";
+    count = 0;
+    EXPECT_EQ(GetCount(db, sql, count), E_OK);
+    EXPECT_EQ(count, RECORD_COUNT);
+
+    sqlite3_close(db);
+    RefObject::DecObjRef(g_store);
+}
+
+/**
  * @tc.name: GetQuerySyncData1
  * @tc.desc: GetSyncData interface.
  * @tc.type: FUNC

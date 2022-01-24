@@ -652,9 +652,6 @@ int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingData(const QueryOb
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statement, const DataItem &dataItem,
     TimeStamp &maxTimestamp)
 {
-    Key hashKey;
-    (void)DBCommon::CalcValueHash(dataItem.key, hashKey);
-    std::string hash = std::string(hashKey.begin(), hashKey.end());
     std::string sql = "select * from " + DBConstant::RELATIONAL_PREFIX + table_.GetTableName() +
         "_log where hash_key = ?;";
     sqlite3_stmt *queryStmt = nullptr;
@@ -663,7 +660,11 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statemen
         LOGE("[info statement] Get statement fail!");
         return -E_INVALID_QUERY_FORMAT;
     }
-    SQLiteUtils::BindTextToStatement(queryStmt, 1, hash);
+    errCode = SQLiteUtils::BindBlobToStatement(queryStmt, 1, dataItem.hashKey);
+    if (errCode != E_OK) {
+        SQLiteUtils::ResetStatement(queryStmt, true, errCode);
+        return errCode;
+    }
 
     LogInfo logInfoGet;
     errCode = SQLiteUtils::StepWithRetry(queryStmt, isMemDb_);
@@ -675,8 +676,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statemen
     SQLiteUtils::ResetStatement(queryStmt, true, errCode);
 
     LogInfo logInfoBind;
-    std::string key = std::string(dataItem.key.begin(), dataItem.key.end());
-    logInfoBind.hashKey = hash;
+    DBCommon::VectorToString(dataItem.hashKey, logInfoBind.hashKey);
     logInfoBind.device = dataItem.dev;
     logInfoBind.timestamp = dataItem.timeStamp;
     int dataKeyBind = -1;
@@ -699,7 +699,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statemen
     SQLiteUtils::BindInt64ToStatement(statement, 3, logInfoBind.timestamp);  // 3 means timestamp index
     SQLiteUtils::BindInt64ToStatement(statement, 4, logInfoBind.wTimeStamp);  // 4 means w_timestamp index
     SQLiteUtils::BindInt64ToStatement(statement, 5, logInfoBind.flag);  // 5 means flag index
-    SQLiteUtils::BindTextToStatement(statement, 6, logInfoBind.hashKey);  // 6 means hashKey index
+    SQLiteUtils::BindBlobToStatement(statement, 6, dataItem.hashKey);  // 6 means hashKey index
     errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
     if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
         return E_OK;
@@ -707,16 +707,21 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statemen
     return errCode;
 }
 
-int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncDataItem(const DataItem &dataItem)
+int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncDataItem(const DataItem &dataItem, const std::string &dev)
 {
-    const std::string tableName = DBCommon::GetDistributedTableName(dataItem.dev, table_.GetTableName());
-    std::string hashKey = std::string(dataItem.hashKey.begin(), dataItem.hashKey.end());
-    std::string sql = "DELETE FROM " + tableName + " WHERE calc_hash(" + table_.GetPrimaryKey() + ")=" + hashKey + ";";
+    const std::string tableName = DBCommon::GetDistributedTableName(dev, table_.GetTableName());
+    std::string sql = "DELETE FROM " + tableName + " WHERE calc_hash(" + table_.GetPrimaryKey() + ")=?;";
     sqlite3_stmt *stmt = nullptr;
     int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
     if (errCode != E_OK) {
         LOGE("[info statement] Get statement fail!");
         return -E_INVALID_QUERY_FORMAT;
+    }
+
+    errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, dataItem.hashKey);
+    if (errCode != E_OK) {
+        SQLiteUtils::ResetStatement(stmt, true, errCode);
+        return errCode;
     }
 
     errCode = SQLiteUtils::StepWithRetry(stmt, isMemDb_);
@@ -727,10 +732,11 @@ int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncDataItem(const DataItem 
     return errCode;
 }
 
-int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(sqlite3_stmt *statement, const DataItem &dataItem)
+int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(sqlite3_stmt *statement, const DataItem &dataItem,
+    const std::string &dev)
 {
     if ((dataItem.flag & DataItem::DELETE_FLAG) != 0) {
-        return DeleteSyncDataItem(dataItem);
+        return DeleteSyncDataItem(dataItem, dev);
     }
 
     std::map<std::string, FieldInfo> colInfos = table_.GetFields();
@@ -786,14 +792,16 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
         if (item.neglect) { // Do not save this record if it is neglected
             continue;
         }
-        errCode = SaveSyncDataItem(statement, item);
+        errCode = SaveSyncDataItem(statement, item, deviceName);
         if (errCode != E_OK && errCode != -E_NOT_FOUND) {
+            LOGE("Save sync dataitem failed:%d.", errCode);
             break;
         }
 
         item.dev = deviceName;
         errCode = SaveSyncLog(logStmt, item, maxTimestamp);
         if (errCode != E_OK) {
+            LOGE("Save sync log failed:%d.", errCode);
             break;
         }
         maxTimestamp = std::max(item.timeStamp, maxTimestamp);

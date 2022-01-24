@@ -361,10 +361,11 @@ namespace {
         std::vector<FieldInfo> fieldInfoList)
     {
         int columnCount = sqlite3_column_count(statement);
+        ASSERT_EQ(static_cast<size_t>(columnCount), fieldInfoList.size());
         for (int col = 0; col < columnCount; ++col) {
             DataValue dataValue;
             GetDataValue(statement, col, dataValue);
-            dataMap[fieldInfoList[col].GetFieldName()] = std::move(dataValue);
+            dataMap[fieldInfoList.at(col).GetFieldName()] = std::move(dataValue);
         }
     }
 
@@ -418,7 +419,7 @@ namespace {
     }
 
     void PrepareVirtualEnvironment(std::map<std::string, DataValue> &dataMap, const std::string &tableName,
-        std::vector<FieldInfo> fieldInfoList)
+        std::vector<FieldInfo> &fieldInfoList)
     {
         PrepareBasicTable(tableName, fieldInfoList);
         GenerateValue(dataMap, fieldInfoList);
@@ -567,6 +568,7 @@ void DistributedDBRelationalVerP2PSyncTest::TearDownTestCase()
 void DistributedDBRelationalVerP2PSyncTest::SetUp(void)
 {
     DistributedDBToolsUnitTest::PrintTestCaseInfo();
+    g_fieldInfoList.clear();
     /**
     * @tc.setup: create virtual device B, and get a KvStoreNbDelegate as deviceA
     */

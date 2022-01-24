@@ -80,9 +80,9 @@ private:
 
     int SaveSyncDataItems(const QueryObject &object, std::vector<DataItem> &dataItems,
         const std::string &deviceName, TimeStamp &timeStamp);
-    int SaveSyncDataItem(sqlite3_stmt *statement, const DataItem &dataItem);
+    int SaveSyncDataItem(sqlite3_stmt *statement, const DataItem &dataItem, const std::string &dev);
 
-    int DeleteSyncDataItem(const DataItem &dataItem);
+    int DeleteSyncDataItem(const DataItem &dataItem, const std::string &dev);
 
     int SaveSyncLog(sqlite3_stmt *statement, const DataItem &dataItem, TimeStamp &maxTimestamp);
     int PrepareForSavingData(const QueryObject &object, const std::string &deviceName, sqlite3_stmt *&statement) const;
