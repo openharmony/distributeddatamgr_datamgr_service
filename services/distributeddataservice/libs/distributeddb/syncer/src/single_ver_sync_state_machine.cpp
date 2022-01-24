@@ -29,6 +29,7 @@
 #include "performance_analysis.h"
 #include "single_ver_sync_target.h"
 #include "single_ver_data_sync.h"
+#include "single_ver_data_sync_utils.h"
 
 namespace DistributedDB {
 namespace {
@@ -1156,7 +1157,7 @@ void SingleVerSyncStateMachine::DataAckRecvErrCodeHandle(int errCode, bool handl
 
 bool SingleVerSyncStateMachine::IsNeedTriggerQueryAutoSync(Message *inMsg, QuerySyncObject &query)
 {
-    return dataSync_->IsNeedTriggerQueryAutoSync(inMsg, query);
+    return SingleVerDataSyncUtils::IsNeedTriggerQueryAutoSync(inMsg, query);
 }
 
 void SingleVerSyncStateMachine::JumpStatusAfterAbilitySync(int mode)
