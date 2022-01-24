@@ -128,6 +128,8 @@ public:
 
     int CheckIntegrity() const override;
 
+    std::string GetStorePath() const;
+
 protected:
     // Create a connection object, no DB ref increased.
     virtual GenericKvDBConnection *NewConnection(int &errCode) = 0;

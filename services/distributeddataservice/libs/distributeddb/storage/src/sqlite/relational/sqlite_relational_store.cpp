@@ -468,5 +468,10 @@ int SQLiteRelationalStore::ResetLifeCycleTimer() const
     }
     return StartLifeCycleTimer(lifeNotifier);
 }
+
+std::string SQLiteRelationalStore::GetStorePath() const
+{
+    return properties_.GetStringProp(DBProperties::DATA_DIR, "");
+}
 }
 #endif

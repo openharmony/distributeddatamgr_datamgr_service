@@ -37,6 +37,8 @@ public:
 
     // Create a db connection.
     virtual RelationalStoreConnection *GetDBConnection(int &errCode) = 0;
+
+    virtual std::string GetStorePath() const = 0;
 };
 } // namespace DistributedDB
 

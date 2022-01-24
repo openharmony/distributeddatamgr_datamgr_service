@@ -266,9 +266,16 @@ IKvDBConnection *KvDBManager::GetDatabaseConnection(const KvDBProperties &proper
             LOGE("Failed to open the db:%d", errCode);
         }
     } else {
-        connection = kvDB->GetDBConnection(errCode);
-        if (connection == nullptr) { // not kill kvdb, Other operations like import may be used concurrently
-            LOGE("Failed to get the db connect for delegate:%d", errCode);
+        bool isMemoryDb = properties.GetBoolProp(KvDBProperties::MEMORY_MODE, false);
+        std::string canonicalDir = properties.GetStringProp(KvDBProperties::DATA_DIR, "");
+        if (!isMemoryDb && (canonicalDir.empty() || canonicalDir != kvDB->GetStorePath())) {
+            LOGE("Failed to check store path, the input path does not match with cached store.");
+            errCode = -E_INVALID_ARGS;
+        } else {
+            connection = kvDB->GetDBConnection(errCode);
+            if (connection == nullptr) { // not kill kvdb, Other operations like import may be used concurrently
+                LOGE("Failed to get the db connect for delegate:%d", errCode);
+            }
         }
         RefObject::DecObjRef(kvDB); // restore the reference increased by the cache.
         kvDB = nullptr;

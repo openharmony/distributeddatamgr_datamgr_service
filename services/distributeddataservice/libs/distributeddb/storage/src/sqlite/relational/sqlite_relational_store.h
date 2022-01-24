@@ -58,6 +58,8 @@ public:
 
     int RegisterLifeCycleCallback(const DatabaseLifeCycleNotifier &notifier);
 
+    std::string GetStorePath() const;
+
 private:
     void ReleaseResources();
 

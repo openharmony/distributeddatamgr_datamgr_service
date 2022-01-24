@@ -19,6 +19,7 @@
 #include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_unit_test.h"
 #include "log_print.h"
+#include "platform_specific.h"
 #include "relational_store_manager.h"
 
 using namespace testing::ext;
@@ -140,7 +141,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest001, TestSize.L
      * @tc.expected: step4. Return OK.
      */
     delegate = nullptr;
-    status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
     EXPECT_EQ(status, OK);
     ASSERT_NE(delegate, nullptr);
     status = g_mgr.CloseStore(delegate);
@@ -214,7 +215,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest003, TestSize.L
      */
     sqlite3 *db = RelationalTestUtils::CreateDataBase(g_dbDir + STORE_ID + DB_SUFFIX);
     ASSERT_NE(db, nullptr);
-    EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=PRESIST;"), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=PERSIST;"), SQLITE_OK);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
     EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
 
@@ -225,7 +226,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest003, TestSize.L
     RelationalStoreDelegate *delegate = nullptr;
 
     // test open store with journal mode is not WAL
-    DBStatus status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    DBStatus status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
     EXPECT_NE(status, OK);
     ASSERT_EQ(delegate, nullptr);
 }
@@ -259,7 +260,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest004, TestSize.L
      * @tc.steps:step2. Open store and create multiple distributed table
      * @tc.expected: step2. The tables in limited quantity were created successfully, the others failed.
      */
-    DBStatus status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    DBStatus status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
     EXPECT_EQ(status, OK);
     ASSERT_NE(delegate, nullptr);
 
@@ -303,12 +304,12 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest005, TestSize.L
      * @tc.expected: step2. return OK
      */
     RelationalStoreDelegate *delegate = nullptr;
-    DBStatus status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    DBStatus status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
     EXPECT_EQ(status, OK);
     ASSERT_NE(delegate, nullptr);
 
     /**
-     * @tc.steps:step3. Create distirbuted table with invald table name
+     * @tc.steps:step3. Create distributed table with invald table name
      * @tc.expected: step3. Create distributed table failed.
      */
     EXPECT_NE(delegate->CreateDistributedTable(DBConstant::SYSTEM_TABLE_PREFIX + "_tmp"), OK);
@@ -345,12 +346,12 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest006, TestSize.L
      * @tc.expected: step2. return OK
      */
     RelationalStoreDelegate *delegate = nullptr;
-    DBStatus status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    DBStatus status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
     EXPECT_EQ(status, OK);
     ASSERT_NE(delegate, nullptr);
 
     /**
-     * @tc.steps:step3. Create distirbuted table with invald table name
+     * @tc.steps:step3. Create distributed table with invald table name
      * @tc.expected: step3. Create distributed table failed.
      */
     EXPECT_EQ(delegate->CreateDistributedTable("sync_data"), OK);
@@ -363,7 +364,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest006, TestSize.L
     EXPECT_EQ(status, OK);
     delegate = nullptr;
 
-    status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
     EXPECT_EQ(status, OK);
     ASSERT_NE(delegate, nullptr);
 
@@ -388,12 +389,12 @@ void TableModifyTest(const std::string &modifySql, DBStatus expect)
      * @tc.expected: step2. return OK
      */
     RelationalStoreDelegate *delegate = nullptr;
-    DBStatus status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    DBStatus status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
     EXPECT_EQ(status, OK);
     ASSERT_NE(delegate, nullptr);
 
     /**
-     * @tc.steps:step3. Create distirbuted table
+     * @tc.steps:step3. Create distributed table
      * @tc.expected: step3. Create distributed table OK.
      */
     EXPECT_EQ(delegate->CreateDistributedTable("sync_data"), OK);
@@ -405,7 +406,7 @@ void TableModifyTest(const std::string &modifySql, DBStatus expect)
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, modifySql), SQLITE_OK);
 
     /**
-     * @tc.steps:step5. Create distirbuted table again
+     * @tc.steps:step5. Create distributed table again
      * @tc.expected: step5. Create distributed table return expect.
      */
     EXPECT_EQ(delegate->CreateDistributedTable("sync_data"), expect);
@@ -482,12 +483,12 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest004, Test
      * @tc.expected: step2. return OK
      */
     RelationalStoreDelegate *delegate = nullptr;
-    DBStatus status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    DBStatus status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
     EXPECT_EQ(status, OK);
     ASSERT_NE(delegate, nullptr);
 
     /**
-     * @tc.steps:step3. Create distirbuted table
+     * @tc.steps:step3. Create distributed table
      * @tc.expected: step3. Create distributed table OK.
      */
     EXPECT_EQ(delegate->CreateDistributedTable("sync_data"), OK);
@@ -504,7 +505,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest004, Test
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, deleteIndexSql), SQLITE_OK);
 
     /**
-     * @tc.steps:step5. Create distirbuted table again
+     * @tc.steps:step5. Create distributed table again
      * @tc.expected: step5. Create distributed table return expect.
      */
     EXPECT_EQ(delegate->CreateDistributedTable("sync_data"), OK);
@@ -544,7 +545,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalRemoveDeviceDataTest001,
      * @tc.expected: step2. return OK
      */
     RelationalStoreDelegate *delegate = nullptr;
-    DBStatus status = g_mgr.OpenStore(g_dbDir  + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    DBStatus status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
     EXPECT_EQ(status, OK);
     ASSERT_NE(delegate, nullptr);
 
@@ -563,4 +564,47 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalRemoveDeviceDataTest001,
     status = g_mgr.CloseStore(delegate);
     EXPECT_EQ(status, OK);
     EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
+}
+
+/**
+  * @tc.name: RelationalOpenStorePathCheckTest001
+  * @tc.desc: Test open store with same label but different path.
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedInterfacesRelationalTest, RelationalOpenStorePathCheckTest001, TestSize.Level1)
+{
+    std::string dir1 = g_dbDir + "dbDir1";
+    EXPECT_EQ(OS::MakeDBDirectory(dir1), E_OK);
+    sqlite3 *db1 = RelationalTestUtils::CreateDataBase(dir1 + STORE_ID + DB_SUFFIX);
+    ASSERT_NE(db1, nullptr);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db1, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db1, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
+    EXPECT_EQ(sqlite3_close_v2(db1), SQLITE_OK);
+
+    std::string dir2 = g_dbDir + "dbDir2";
+    EXPECT_EQ(OS::MakeDBDirectory(dir2), E_OK);
+    sqlite3 *db2 = RelationalTestUtils::CreateDataBase(dir2 + STORE_ID + DB_SUFFIX);
+    ASSERT_NE(db2, nullptr);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db2, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db2, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
+    EXPECT_EQ(sqlite3_close_v2(db2), SQLITE_OK);
+
+    DBStatus status = OK;
+    RelationalStoreDelegate *delegate1 = nullptr;
+    status = g_mgr.OpenStore(dir1 + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate1);
+    EXPECT_EQ(status, OK);
+    ASSERT_NE(delegate1, nullptr);
+
+    RelationalStoreDelegate *delegate2 = nullptr;
+    status = g_mgr.OpenStore(dir2 + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate2);
+    EXPECT_EQ(status, INVALID_ARGS);
+    ASSERT_EQ(delegate2, nullptr);
+
+    status = g_mgr.CloseStore(delegate1);
+    EXPECT_EQ(status, OK);
+
+    status = g_mgr.CloseStore(delegate2);
+    EXPECT_EQ(status, INVALID_ARGS);
 }
