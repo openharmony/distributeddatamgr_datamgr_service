@@ -168,10 +168,14 @@ int MultiVerSyncStateMachine::ReceiveMessageCallback(Message *inMsg)
     return errCode;
 }
 
-void MultiVerSyncStateMachine::StepToTimeout()
+void MultiVerSyncStateMachine::StepToTimeout(TimerId timerId)
 {
     {
         std::lock_guard<std::mutex> lock(stateMachineLock_);
+        TimerId timer = syncContext_->GetTimerId();
+        if (timer != timerId) {
+            return;
+        }
         currentState_ = SYNC_TIME_OUT;
     }
     Abort();

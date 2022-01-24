@@ -87,7 +87,7 @@ int SyncStateMachine::TimeoutCallback(TimerId timerId)
     if (retryTime >= syncContext_->GetSyncRetryTimes() || !syncContext_->IsSyncTaskNeedRetry()) {
         LOGI("[SyncStateMachine][Timeout] TimeoutCallback retryTime:%d", retryTime);
         syncContext_->UnlockObj();
-        StepToTimeout();
+        StepToTimeout(timerId);
         syncContext_->LockObj();
         return E_OK;
     }

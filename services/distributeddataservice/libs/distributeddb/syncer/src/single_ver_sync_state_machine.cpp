@@ -814,9 +814,13 @@ int SingleVerSyncStateMachine::ControlPktRecv(Message *inMsg)
     return errCode;
 }
 
-void SingleVerSyncStateMachine::StepToTimeout()
+void SingleVerSyncStateMachine::StepToTimeout(TimerId timerId)
 {
     std::lock_guard<std::mutex> lock(stateMachineLock_);
+    TimerId timer = syncContext_->GetTimerId();
+    if (timer != timerId) {
+        return;
+    }
     SwitchStateAndStep(Event::TIME_OUT_EVENT);
 }
 
