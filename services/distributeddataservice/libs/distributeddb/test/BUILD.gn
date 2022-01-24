@@ -624,6 +624,10 @@ distributeddb_unittest("DistributedDBSingleVerP2PSubscribeSyncTest") {
   sources = [ "unittest/common/syncer/distributeddb_single_ver_p2p_subsribe_sync_test.cpp" ]
 }
 
+distributeddb_unittest("DistributedDBMockSyncModuleTest") {
+  sources = [ "unittest/common/syncer/distributeddb_mock_sync_module_test.cpp" ]
+}
+
 distributeddb_unittest("DistributedInterfacesRelationalTest") {
   sources = [
     "unittest/common/interfaces/distributeddb_interfaces_relational_test.cpp",
@@ -691,6 +695,7 @@ group("unittest") {
     ":DistributedDBSingleVerMsgScheduleTest",
     ":DistributedDBSingleVerP2PQuerySyncTest",
     ":DistributedDBSingleVerP2PSubscribeSyncTest",
+    ":DistributedDBMockSyncModuleTest",
     ":DistributedDBSingleVerP2PSyncCheckTest",
     ":DistributedDBSingleVerP2PSyncTest",
     ":DistributedDBSingleVersionResultSetTest",
