@@ -47,6 +47,11 @@ namespace {
         "w_timestamp INT," \
         "UNIQUE(device, ori_device));" \
         "CREATE INDEX key_index ON sync_data (key, flag);";
+
+    const std::string EMPTY_COLUMN_TYPE_CREATE_TABLE_SQL = "CREATE TABLE IF NOT EXISTS student(" \
+        "id         INTEGER NOT NULL UNIQUE," \
+        "name       TEXT," \
+        "field_1);";
 }
 
 class DistributedDBRelationalSyncTest : public testing::Test {
@@ -211,4 +216,29 @@ HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest006, TestSize.Level1
         }, true);
 
     EXPECT_EQ(errCode, NOT_SUPPORT);
+}
+
+/**
+  * @tc.name: RelationalSyncTest007
+  * @tc.desc: Test with sync interface, distributed table has empty column type
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest007, TestSize.Level1)
+{
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, EMPTY_COLUMN_TYPE_CREATE_TABLE_SQL), SQLITE_OK);
+    RelationalTestUtils::CreateDeviceTable(db, "student", "DEVICE_A");
+
+    DBStatus status = delegate->CreateDistributedTable("student");
+    EXPECT_EQ(status, OK);
+
+    std::vector<std::string> devices = {DEVICE_A};
+    Query query = Query::Select("student");
+    int errCode = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
+        [&devices](const std::map<std::string, std::vector<TableStatus>> &devicesMap) {
+            EXPECT_EQ(devicesMap.size(), devices.size());
+        }, true);
+
+    EXPECT_EQ(errCode, OK);
 }

@@ -184,7 +184,7 @@ public:
 
     static int SetPersistWalMode(sqlite3 *db);
 
-    static int CheckSchemaSchanged(sqlite3_stmt *stmt, const TableInfo &table, int offset);
+    static int CheckSchemaChanged(sqlite3_stmt *stmt, const TableInfo &table, int offset);
 
 private:
 

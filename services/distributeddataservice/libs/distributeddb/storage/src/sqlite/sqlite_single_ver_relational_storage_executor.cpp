@@ -1039,7 +1039,7 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckQueryObjectLegal(const TableI
         return errCode;
     }
 
-    errCode = SQLiteUtils::CheckSchemaSchanged(stmt, table, DBConstant::RELATIONAL_LOG_TABLE_FIELD_NUM);
+    errCode = SQLiteUtils::CheckSchemaChanged(stmt, table, DBConstant::RELATIONAL_LOG_TABLE_FIELD_NUM);
     if (errCode != E_OK) {
         LOGE("Check schema failed, schema was changed. %d", errCode);
     }

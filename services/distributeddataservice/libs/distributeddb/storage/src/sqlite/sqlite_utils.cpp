@@ -2071,7 +2071,7 @@ int SQLiteUtils::SetPersistWalMode(sqlite3 *db)
     return SQLiteUtils::MapSQLiteErrno(errCode);
 }
 
-int SQLiteUtils::CheckSchemaSchanged(sqlite3_stmt *stmt, const TableInfo &table, int offset)
+int SQLiteUtils::CheckSchemaChanged(sqlite3_stmt *stmt, const TableInfo &table, int offset)
 {
     if (stmt == nullptr) {
         return  -E_INVALID_ARGS;
@@ -2084,9 +2084,11 @@ int SQLiteUtils::CheckSchemaSchanged(sqlite3_stmt *stmt, const TableInfo &table,
     }
 
     auto fields = table.GetFields();
-    for (int i=offset; i<columnNum; i++) {
-        std::string colName = sqlite3_column_name(stmt, i);
-        std::string colType = sqlite3_column_decltype(stmt, i);
+    for (int i = offset; i < columnNum; i++) {
+        const char *name = sqlite3_column_name(stmt, i);
+        std::string colName = (name == nullptr) ? std::string() : name;
+        const char *declType = sqlite3_column_decltype(stmt, i);
+        std::string colType = (declType == nullptr) ? std::string() : declType;
         transform(colType.begin(), colType.end(), colType.begin(), ::tolower);
 
         auto it = fields.find(colName);
