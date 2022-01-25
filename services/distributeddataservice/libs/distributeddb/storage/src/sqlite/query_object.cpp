@@ -312,7 +312,14 @@ int QueryObject::CheckEqualFormat(const std::list<QueryObjNode>::iterator &iter)
 
 int QueryObject::CheckLinkerFormat(const std::list<QueryObjNode>::iterator &iter) const
 {
-    if (iter == queryObjNodes_.begin()) {
+    auto itPre = iter;
+    for (; itPre != queryObjNodes_.begin(); itPre = std::prev(itPre, 1)) {
+        SymbolType symbolType = SqliteQueryHelper::GetSymbolType(std::prev(itPre, 1)->operFlag);
+        if (symbolType != PREFIXKEY_SYMBOL && symbolType != IN_KEYS_SYMBOL) {
+            break;
+        }
+    }
+    if (itPre == queryObjNodes_.begin()) {
         LOGE("Connectives are not allowed in the first place!");
         return -E_INVALID_QUERY_FORMAT;
     }

@@ -128,7 +128,7 @@ public:
 
     int CheckIntegrity() const override;
 
-    std::string GetStorePath() const;
+    std::string GetStorePath() const override;
 
 protected:
     // Create a connection object, no DB ref increased.

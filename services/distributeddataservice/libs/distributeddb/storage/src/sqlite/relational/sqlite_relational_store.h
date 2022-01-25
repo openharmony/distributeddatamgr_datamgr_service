@@ -60,7 +60,7 @@ public:
     void RegisterObserverAction(const RelationalObserverAction &action);
     int RegisterLifeCycleCallback(const DatabaseLifeCycleNotifier &notifier);
 
-    std::string GetStorePath() const;
+    std::string GetStorePath() const override;
 
 private:
     void ReleaseResources();
