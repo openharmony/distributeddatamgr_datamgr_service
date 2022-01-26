@@ -902,7 +902,9 @@ void RelationalTestUtils::CreateDeviceTable(sqlite3 *db, const std::string &tabl
 {
     ASSERT_NE(db, nullptr);
     std::string deviceTable = DBCommon::GetDistributedTableName(device, table);
-    EXPECT_EQ(SQLiteUtils::CreateSameStuTable(db, table, deviceTable, false), E_OK);
+    TableInfo baseTbl;
+    ASSERT_EQ(SQLiteUtils::AnalysisSchema(db, table, baseTbl), E_OK);
+    EXPECT_EQ(SQLiteUtils::CreateSameStuTable(db, baseTbl, deviceTable), E_OK);
     EXPECT_EQ(SQLiteUtils::CloneIndexes(db, table, deviceTable), E_OK);
 }
 } // namespace DistributedDBUnitTest

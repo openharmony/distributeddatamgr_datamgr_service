@@ -285,17 +285,13 @@ int RelationalSyncAbleStorage::GetSyncDataForQuerySync(std::vector<DataItem> &da
         goto ERROR;
     }
 
-    errCode = handle->SetTableInfo(token->GetQuery());
-    if (errCode != E_OK) {
-        goto ERROR;
-    }
-
     do {
         errCode = handle->GetSyncDataByQuery(dataItems,
             Parcel::GetAppendedLen(),
             dataSizeInfo,
             std::bind(&SQLiteSingleVerRelationalContinueToken::GetStatement, *token,
-                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+            token->GetQuery().GetTableName());
         if (errCode == -E_FINISHED) {
             token->FinishGetData();
             errCode = token->IsGetAllDataFinished() ? E_OK : -E_UNFINISHED;
@@ -390,11 +386,6 @@ int RelationalSyncAbleStorage::SaveSyncDataItems(const QueryObject &object, std:
     }
     QueryObject query = object;
     query.SetSchema(storageEngine_->GetSchemaRef());
-    errCode = handle->SetTableInfo(query);
-    if (errCode != E_OK) {
-        ReleaseHandle(handle);
-        return errCode;
-    }
 
     TimeStamp maxTimestamp = 0;
     errCode = handle->SaveSyncItems(query, dataItems, deviceName, maxTimestamp);
@@ -491,7 +482,7 @@ int RelationalSyncAbleStorage::CreateDistributedDeviceTable(const std::string &d
             continue;
         }
 
-        errCode = handle->CreateDistributedDeviceTable(device, table);
+        errCode = handle->CreateDistributedDeviceTable(device, storageEngine_->GetSchemaRef().GetTable(table));
         if (errCode != E_OK) {
             LOGE("Create distributed device table failed. %d", errCode);
             break;

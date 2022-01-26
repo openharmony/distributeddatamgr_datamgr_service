@@ -645,6 +645,10 @@ distributeddb_unittest("DistributedDBRelationalSyncTest") {
   sources = [ "unittest/common/interfaces/distributeddb_interfaces_relational_sync_test.cpp" ]
 }
 
+distributeddb_unittest("DistributedDBRelationalGetDataTest") {
+  sources = [ "unittest/common/storage/distributeddb_relational_get_data_test.cpp" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true

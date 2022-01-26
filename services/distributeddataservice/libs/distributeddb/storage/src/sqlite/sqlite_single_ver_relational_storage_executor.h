@@ -41,11 +41,9 @@ public:
     int Commit();
     int Rollback();
 
-    int SetTableInfo(const QueryObject &query);
-
     // For Get sync data
-    int GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength,
-        const DataSizeSpecInfo &dataSizeInfo, std::function<int(sqlite3 *, sqlite3_stmt *&, bool &)> getStmt);
+    int GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength, const DataSizeSpecInfo &dataSizeInfo,
+        std::function<int(sqlite3 *, sqlite3_stmt *&, bool &)> getStmt, const std::string &baseTbl);
 
     // operation of meta data
     int GetKvData(const Key &key, Value &value) const;
@@ -68,7 +66,7 @@ public:
     int CkeckAndCleanDistributedTable(const std::vector<std::string> &tableNames,
         std::vector<std::string> &missingTables);
 
-    int CreateDistributedDeviceTable(const std::string &device, const std::string &tableName);
+    int CreateDistributedDeviceTable(const std::string &device, const TableInfo &baseTbl);
 
     int CheckQueryObjectLegal(const TableInfo &table, QueryObject &query);
 
@@ -89,6 +87,8 @@ private:
     int PrepareForSavingLog(const QueryObject &object, const std::string &deviceName, sqlite3_stmt *&statement) const;
 
     int AlterAuxTableForUpgrade(const TableInfo &oldTableInfo, const TableInfo &newTableInfo);
+
+    int SetTableInfo(const std::string &baseTbl);
 
     TableInfo table_;
 };

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #ifdef RELATIONAL_STORE
+#ifdef SQLITE_DISTRIBUTE_RELATIONAL
 #include <gtest/gtest.h>
 
 #include "data_transformer.h"
@@ -25,6 +26,7 @@
 #include "generic_single_ver_kv_entry.h"
 #include "kvdb_properties.h"
 #include "log_print.h"
+#include "relational_schema_object.h"
 #include "relational_store_delegate.h"
 #include "relational_store_instance.h"
 #include "relational_store_manager.h"
@@ -421,6 +423,8 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData3, TestSize.Level1)
      */
     query = QueryObject(Query::Select(g_tableName));
     const DeviceID deviceID = "deviceA";
+    ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(g_tableName),
+        DBCommon::GetDistributedTableName(deviceID, g_tableName)));
     EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceID), E_OK);
     SingleVerKvEntry::Release(entries);
 
@@ -627,6 +631,10 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetIncorrectTypeData1, TestSize.Lev
      */
     QueryObject queryPlus(Query::Select(g_tableName));
     const DeviceID deviceID = "deviceA";
+    ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(g_tableName),
+        DBCommon::GetDistributedTableName(deviceID, g_tableName)));
+    ASSERT_EQ(E_OK, SQLiteUtils::CloneIndexes(db, g_tableName,
+        DBCommon::GetDistributedTableName(deviceID, g_tableName)));
     EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(queryPlus, entries, deviceID), E_OK);
     SingleVerKvEntry::Release(entries);
 
@@ -712,6 +720,8 @@ HWTEST_F(DistributedDBRelationalGetDataTest, UpdateData1, TestSize.Level1)
      */
     query = QueryObject(Query::Select(g_tableName));
     const DeviceID deviceID = "deviceA";
+    ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(g_tableName),
+        DBCommon::GetDistributedTableName(deviceID, g_tableName)));
     for (uint32_t i = 0; i < 10; ++i) {  // 10 for test.
         EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceID), E_OK);
     }
@@ -735,4 +745,5 @@ HWTEST_F(DistributedDBRelationalGetDataTest, UpdateData1, TestSize.Level1)
     sqlite3_close(db);
     RefObject::DecObjRef(g_store);
 }
+#endif
 #endif

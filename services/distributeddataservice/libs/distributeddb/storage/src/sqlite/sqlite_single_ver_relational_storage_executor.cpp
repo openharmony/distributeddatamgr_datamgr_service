@@ -293,10 +293,10 @@ int SQLiteSingleVerRelationalStorageExecutor::Rollback()
     return errCode;
 }
 
-int SQLiteSingleVerRelationalStorageExecutor::SetTableInfo(const QueryObject &query)
+int SQLiteSingleVerRelationalStorageExecutor::SetTableInfo(const std::string &baseTbl)
 {
     table_ = {};
-    int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, query.GetTableName(), table_);
+    int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, baseTbl, table_);
     if (errCode != E_OK) {
         LOGE("[CreateDistributedTable] analysis table schema failed");
     }
@@ -612,20 +612,6 @@ int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingData(const QueryOb
     const std::string &deviceName, sqlite3_stmt *&statement) const
 {
     const std::string tableName = DBCommon::GetDistributedTableName(deviceName, object.GetTableName());
-    TableInfo table;
-    int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, tableName, table);
-    if (errCode == -E_NOT_FOUND) {
-        errCode = SQLiteUtils::CreateSameStuTable(dbHandle_, object.GetTableName(), tableName, false);
-        if (errCode == E_OK) {
-            errCode = SQLiteUtils::CloneIndexes(dbHandle_, object.GetTableName(), tableName);
-        }
-    }
-
-    if (errCode != E_OK) {
-        LOGE("[PrepareForSavingData] analysis table schema failed");
-        return errCode;
-    }
-
     std::string dataFormat;
     for (size_t i = 0; i < table_.GetFields().size(); ++i) {
         dataFormat += "?,";
@@ -633,7 +619,7 @@ int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingData(const QueryOb
     dataFormat.pop_back();
 
     std::string sql = "INSERT OR REPLACE INTO " + tableName + " VALUES (" + dataFormat + ");";
-    errCode = SQLiteUtils::GetStatement(dbHandle_, sql, statement);
+    int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, statement);
     if (errCode != E_OK) {
         LOGE("[info statement] Get statement fail!");
         errCode = -E_INVALID_QUERY_FORMAT;
@@ -765,6 +751,10 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(sqlite3_stmt *sta
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObject &object,
     std::vector<DataItem> &dataItems, const std::string &deviceName, TimeStamp &maxTimestamp)
 {
+    const auto &baseTbl = object.GetTableName();
+    if (!table_.IsValid() || table_.GetTableName() != baseTbl) {
+        SetTableInfo(baseTbl);
+    }
     sqlite3_stmt *statement = nullptr;
     int errCode = PrepareForSavingData(object, deviceName, statement);
     if (errCode != E_OK) {
@@ -859,8 +849,12 @@ int SQLiteSingleVerRelationalStorageExecutor::GetDataItemForSync(sqlite3_stmt *s
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength,
-    const DataSizeSpecInfo &dataSizeInfo, std::function<int(sqlite3 *, sqlite3_stmt *&, bool &)> getStmt)
+    const DataSizeSpecInfo &dataSizeInfo, std::function<int(sqlite3 *, sqlite3_stmt *&, bool &)> getStmt,
+    const std::string &baseTbl)
 {
+    if (!table_.IsValid() || table_.GetTableName() != baseTbl) {
+        SetTableInfo(baseTbl);
+    }
     sqlite3_stmt *stmt = nullptr;
     bool isGettingDeletedData = false;
     int errCode = getStmt(dbHandle_, stmt, isGettingDeletedData);
@@ -995,29 +989,24 @@ int SQLiteSingleVerRelationalStorageExecutor::CkeckAndCleanDistributedTable(cons
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedDeviceTable(const std::string &device,
-    const std::string &tableName)
+    const TableInfo &baseTbl)
 {
     if (dbHandle_ == nullptr) {
         return -E_INVALID_DB;
     }
 
-    if (device.empty() || tableName.empty()) {
+    if (device.empty() || !baseTbl.IsValid()) {
         return -E_INVALID_ARGS;
     }
 
-    std::string deviceTableName = DBCommon::GetDistributedTableName(device, tableName);
-    TableInfo table;
-    int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, deviceTableName, table);
-    if (errCode != -E_NOT_FOUND) {
-        return errCode;
-    }
-    errCode = SQLiteUtils::CreateSameStuTable(dbHandle_, tableName, deviceTableName, false);
+    std::string deviceTableName = DBCommon::GetDistributedTableName(device, baseTbl.GetTableName());
+    int errCode = SQLiteUtils::CreateSameStuTable(dbHandle_, baseTbl, deviceTableName);
     if (errCode != E_OK) {
         LOGE("Create device table failed. %d", errCode);
         return errCode;
     }
 
-    errCode = SQLiteUtils::CloneIndexes(dbHandle_, tableName, deviceTableName);
+    errCode = SQLiteUtils::CloneIndexes(dbHandle_, baseTbl.GetTableName(), deviceTableName);
     if (errCode != E_OK) {
         LOGE("Copy index to device table failed. %d", errCode);
     }

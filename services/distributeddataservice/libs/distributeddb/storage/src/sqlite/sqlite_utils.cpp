@@ -1396,38 +1396,37 @@ int SQLiteUtils::AddRelationalLogTableTrigger(sqlite3 *db, const TableInfo &tabl
     return E_OK;
 }
 
-int SQLiteUtils::CreateSameStuTable(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName,
-    bool isCopyData)
+int SQLiteUtils::CreateSameStuTable(sqlite3 *db, const TableInfo &baseTbl, const std::string &newTableName)
 {
-    std::string sql = "SELECT sql FROM sqlite_master WHERE type='table' AND tbl_name='" + oriTableName + "';";
-    sqlite3_stmt *stmt = nullptr;
-    int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
-    if (errCode != E_OK) {
-        goto ERROR;
+    std::string sql = "CREATE TABLE IF NOT EXISTS " + newTableName + "(";
+    const std::map<FieldName, FieldInfo> &fields = baseTbl.GetFields();
+    for (uint32_t cid = 1; cid <= fields.size(); ++cid) {
+        std::string fieldName = baseTbl.GetFieldName(cid);
+        sql += fieldName + " " + fields.at(fieldName).GetDataType();
+        if (fields.at(fieldName).IsNotNull()) {
+            sql += " NOT NULL";
+        }
+        if (fields.at(fieldName).HasDefaultValue()){
+            sql += " DEFAULT " + fields.at(fieldName).GetDefaultValue();
+        }
+        if (fieldName == baseTbl.GetPrimaryKey()) {
+            sql += " PRIMARY KEY";
+        }
+        sql += ",";
     }
-    errCode = SQLiteUtils::StepWithRetry(stmt, false);
-    if (errCode != SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
-        goto ERROR;
-    }
-    errCode = SQLiteUtils::GetColumnTextValue(stmt, 0, sql);
-    if (errCode != E_OK) {
-        goto ERROR;
-    }
-    sql.replace(sql.find(oriTableName), oriTableName.length(), newTableName);
-    errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
-
-ERROR:
+    sql.pop_back();
+    sql += ");";
+    int errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
     if (errCode != E_OK) {
         LOGE("[SQLite] execute create table sql failed");
     }
-    SQLiteUtils::ResetStatement(stmt, true, errCode);
     return errCode;
 }
 
 int SQLiteUtils::CloneIndexes(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName)
 {
     std::string sql =
-        "SELECT 'CREATE ' || CASE WHEN il.'unique' THEN 'UNIQUE ' ELSE '' END || 'INDEX ' || '" +
+        "SELECT 'CREATE ' || CASE WHEN il.'unique' THEN 'UNIQUE ' ELSE '' END || 'INDEX IF NOT EXISTS ' || '" +
             newTableName + "_' || il.name || ' ON ' || '" + newTableName +
             "' || '(' || GROUP_CONCAT(ii.name) || ');' "
         "FROM sqlite_master AS m,"
