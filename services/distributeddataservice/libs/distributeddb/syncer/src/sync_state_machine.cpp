@@ -87,7 +87,7 @@ int SyncStateMachine::TimeoutCallback(TimerId timerId)
     if (retryTime >= syncContext_->GetSyncRetryTimes() || !syncContext_->IsSyncTaskNeedRetry()) {
         LOGI("[SyncStateMachine][Timeout] TimeoutCallback retryTime:%d", retryTime);
         syncContext_->UnlockObj();
-        StepToTimeout();
+        StepToTimeout(timerId);
         syncContext_->LockObj();
         return E_OK;
     }
@@ -169,7 +169,6 @@ int SyncStateMachine::ExecNextTask()
         syncContext_->MoveToNextTarget();
         if (syncContext_->IsCurrentSyncTaskCanBeSkipped()) {
             syncContext_->SetOperationStatus(SyncOperation::OP_FINISHED_ALL);
-            syncContext_->SetTaskExecStatus(ISyncTaskContext::FINISHED);
             continue;
         }
         int errCode = PrepareNextSyncTask();

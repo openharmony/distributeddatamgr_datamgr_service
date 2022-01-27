@@ -56,7 +56,7 @@ protected:
     void SyncStep() override;
 
     // SyncOperation is timeout, step to timeout state
-    void StepToTimeout() override;
+    void StepToTimeout(TimerId timerId) override;
 
     void SyncStepInnerLocked() override;
 

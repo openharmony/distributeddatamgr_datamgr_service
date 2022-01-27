@@ -68,7 +68,7 @@ public:
 protected:
 
     // SyncOperation is timeout, step to timeout state
-    virtual void StepToTimeout() = 0;
+    virtual void StepToTimeout(TimerId timerId) = 0;
 
     // Step the SingleVerSyncStateMachine
     virtual void SyncStep() = 0;
