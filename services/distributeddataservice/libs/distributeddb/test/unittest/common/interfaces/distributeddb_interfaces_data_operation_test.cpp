@@ -1962,4 +1962,45 @@ HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeysAndOther001, TestSize.L
     EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtrForQuery), OK);
     EXPECT_EQ(g_mgr.DeleteKvStore("InKeysAndOther001"), OK);
 }
-#endif
+
+/**
+ * @tc.name: InKeysAndOther002
+ * @tc.desc: Combination of InKeys query and logical filtering
+ * @tc.type: FUNC
+ * @tc.require: AR000EPARK
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeysAndOther002, TestSize.Level1)
+{
+    KvStoreNbDelegate::Option option = {true, false, false};
+    option.schema = SCHEMA_DEFINE2;
+    g_mgr.GetKvStore("InKeysAndOther001", option, g_kvNbDelegateCallbackForQuery);
+    ASSERT_NE(g_kvNbDelegatePtrForQuery, nullptr);
+    EXPECT_EQ(g_kvDelegateStatusForQuery, OK);
+
+    std::set<Key> keys = { KEY_1, KEY_2, KEY_4 };
+    std::vector<Query> queries = {
+        Query::Select().PrefixKey({}).InKeys(keys).Or().EqualTo("$.field_name1", 2),
+        Query::Select().PrefixKey({}).InKeys(keys).And().EqualTo("$.field_name1", 2),
+        Query::Select().InKeys(keys).Or().EqualTo("$.field_name1", 2),
+        Query::Select().InKeys(keys).And().EqualTo("$.field_name1", 2),
+        Query::Select().PrefixKey({}).Or().EqualTo("$.field_name1", 2),
+        Query::Select().PrefixKey({}).And().EqualTo("$.field_name1", 2),
+        Query::Select().PrefixKey({}).And().InKeys(keys).EqualTo("$.field_name1", 2),
+        Query::Select().And().InKeys(keys).EqualTo("$.field_name1", 2),
+        Query::Select().Or().PrefixKey({}).EqualTo("$.field_name1", 2),
+        Query::Select().BeginGroup().PrefixKey({}).Or().EqualTo("$.field_name1", 2).EndGroup(),
+        Query::Select().EqualTo("$.field_name1", 2).Or().InKeys(keys),
+        Query::Select().EqualTo("$.field_name1", 2).Or().PrefixKey({}),
+    };
+
+    for (const auto &query : queries) {
+        std::vector<Entry> entriesRes;
+        int errCode = g_kvNbDelegatePtrForQuery->GetEntries(query, entriesRes);
+        EXPECT_EQ(errCode, INVALID_QUERY_FORMAT);
+    }
+
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtrForQuery), OK);
+    EXPECT_EQ(g_mgr.DeleteKvStore("InKeysAndOther001"), OK);
+}
+#endif // OMIT_JSON

@@ -712,6 +712,34 @@ bool KvStoreObserverUnitTest::IsCleared() const
     return isCleared_;
 }
 
+RelationalStoreObserverUnitTest::RelationalStoreObserverUnitTest() : callCount_(0)
+{
+}
+
+unsigned long RelationalStoreObserverUnitTest::GetCallCount() const
+{
+    return callCount_;
+}
+
+void RelationalStoreObserverUnitTest::OnChange(const StoreChangedData& data)
+{
+    callCount_++;
+    changeDevice_ = data.GetDataChangeDevice();
+    LOGD("Onchangedata : %s", changeDevice_.c_str());
+    LOGD("Onchange() called success!");
+}
+
+void RelationalStoreObserverUnitTest::ResetToZero()
+{
+    callCount_ = 0;
+    changeDevice_.clear();
+}
+
+const std::string RelationalStoreObserverUnitTest::GetDataChangeDevice() const
+{
+    return changeDevice_;
+}
+
 DBStatus DistributedDBToolsUnitTest::SyncTest(KvStoreNbDelegate* delegate,
     const std::vector<std::string>& devices, SyncMode mode,
     std::map<std::string, DBStatus>& statuses, const Query &query)

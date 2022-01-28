@@ -1175,7 +1175,7 @@ void AbilitySync::HandleKvAckSchemaParam(const AbilitySyncAckPacket *recvPacket,
 }
 
 int AbilitySync::HandleRelationAckSchemaParam(const AbilitySyncAckPacket *recvPacket,
-        AbilitySyncAckPacket &sendPacket, ISyncTaskContext *context, bool sendOpinion) const
+    AbilitySyncAckPacket &sendPacket, ISyncTaskContext *context, bool sendOpinion) const
 {
     std::string remoteSchema = recvPacket->GetSchema();
     uint8_t remoteSchemaType = recvPacket->GetSchemaType();

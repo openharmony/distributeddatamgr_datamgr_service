@@ -1263,7 +1263,7 @@ bool SingleVerDataSync::AckPacketIdCheck(const Message *message)
         return false;
     }
     if (message->GetMessageType() == TYPE_NOTIFY || message->IsFeedbackError()) {
-        return false;
+        return true;
     }
     const DataAckPacket *packet = message->GetObject<DataAckPacket>();
     if (packet == nullptr) {

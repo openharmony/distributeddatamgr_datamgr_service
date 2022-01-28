@@ -28,8 +28,7 @@
 
 namespace DistributedDB {
 SingleVerKVSyncer::SingleVerKVSyncer()
-    : autoSyncEnable_(false),
-      triggerSyncTask_(true)
+    : autoSyncEnable_(false), triggerSyncTask_(true)
 {
 }
 

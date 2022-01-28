@@ -25,16 +25,16 @@ ISyncTaskContext *SingleVerSyncEngine::CreateSyncTaskContext()
 {
     SingleVerSyncTaskContext *context = nullptr;
     switch (syncInterface_->GetInterfaceType()) {
-    case ISyncInterface::SYNC_SVD:
-        context = new (std::nothrow) SingleVerKvSyncTaskContext();
-        break;
+        case ISyncInterface::SYNC_SVD:
+            context = new (std::nothrow) SingleVerKvSyncTaskContext();
+            break;
 #ifdef RELATIONAL_STORE
-    case ISyncInterface::SYNC_RELATION:
-        context = new (std::nothrow) SingleVerRelationalSyncTaskContext();
-        break;
+        case ISyncInterface::SYNC_RELATION:
+            context = new (std::nothrow) SingleVerRelationalSyncTaskContext();
+            break;
 #endif
-    default:
-        break;
+        default:
+            break;
     }
 
     if (context == nullptr) {

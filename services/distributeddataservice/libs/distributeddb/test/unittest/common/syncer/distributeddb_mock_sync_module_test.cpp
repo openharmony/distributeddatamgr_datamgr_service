@@ -16,6 +16,7 @@
 #include <gmock/gmock.h>
 
 #include "distributeddb_tools_unit_test.h"
+#include "message.h"
 #include "mock_communicator.h"
 #include "mock_single_ver_state_machine.h"
 #include "mock_sync_task_context.h"
@@ -133,4 +134,38 @@ HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck003, TestSize.Level1)
     EXPECT_CALL(syncTaskContext, SetTaskExecStatus(_)).Times(0);
 
     EXPECT_EQ(stateMachine.CallExecNextTask(), E_OK);
+}
+
+/**
+ * @tc.name: DataSyncCheck001
+ * @tc.desc: Test dataSync recv error ack.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, DataSyncCheck001, TestSize.Level1)
+{
+    SingleVerDataSync dataSync;
+    DistributedDB::Message *message = new(std::nothrow) DistributedDB::Message();
+    ASSERT_TRUE(message != nullptr);
+    message->SetErrorNo(E_FEEDBACK_COMMUNICATOR_NOT_FOUND);
+    EXPECT_EQ(dataSync.AckPacketIdCheck(message), true);
+    delete message;
+}
+
+/**
+ * @tc.name: DataSyncCheck002
+ * @tc.desc: Test dataSync recv notify ack.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, DataSyncCheck002, TestSize.Level1)
+{
+    SingleVerDataSync dataSync;
+    DistributedDB::Message *message = new(std::nothrow) DistributedDB::Message();
+    ASSERT_TRUE(message != nullptr);
+    message->SetMessageType(TYPE_NOTIFY);
+    EXPECT_EQ(dataSync.AckPacketIdCheck(message), true);
+    delete message;
 }

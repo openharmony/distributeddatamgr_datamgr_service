@@ -137,7 +137,7 @@ void DataValueBlobCheck(DataValue &dataValue)
     }
 }
 
-const std::vector<void (*)(DataValue&)> checkFuncList = {
+const std::vector<void (*)(DataValue&)> g_checkFuncList = {
     &DataValueDefaultNullCheck, &DataValueBoolCheck, &DataValueInt64Check,
     &DataValueDoubleCheck, &DataValueStringCheck, &DataValueBlobCheck
 };
@@ -175,7 +175,7 @@ void DistribubtedDBInterfacesDataValueTest::TearDown(void)
  */
 HWTEST_F(DistribubtedDBInterfacesDataValueTest, DataValueCheck001, TestSize.Level1)
 {
-    for (const auto &func : checkFuncList) {
+    for (const auto &func : g_checkFuncList) {
         DataValue dataValue;
         func(dataValue);
     }
@@ -190,11 +190,11 @@ HWTEST_F(DistribubtedDBInterfacesDataValueTest, DataValueCheck001, TestSize.Leve
  */
 HWTEST_F(DistribubtedDBInterfacesDataValueTest, DataValueCheck002, TestSize.Level1)
 {
-    for (uint32_t lastWriteIndex = 0; lastWriteIndex < checkFuncList.size(); lastWriteIndex++) {
+    for (uint32_t lastWriteIndex = 0; lastWriteIndex < g_checkFuncList.size(); lastWriteIndex++) {
         DataValue dataValue;
-        for (uint32_t i = 0; i < checkFuncList.size(); i++) {
-            uint32_t index = (lastWriteIndex + i + 1) % static_cast<int>(checkFuncList.size());
-            checkFuncList[index](dataValue);
+        for (uint32_t i = 0; i < g_checkFuncList.size(); i++) {
+            uint32_t index = (lastWriteIndex + i + 1) % static_cast<int>(g_checkFuncList.size());
+            g_checkFuncList[index](dataValue);
         }
     }
 }

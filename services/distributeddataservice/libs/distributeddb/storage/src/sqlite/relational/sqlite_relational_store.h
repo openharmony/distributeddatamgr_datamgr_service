@@ -28,6 +28,7 @@
 #include "runtime_context.h"
 
 namespace DistributedDB {
+using RelationalObserverAction = std::function<void(const std::string &device)>;
 class SQLiteRelationalStore : public IRelationalStore {
 public:
     SQLiteRelationalStore() = default;
@@ -56,9 +57,10 @@ public:
 
     int RemoveDeviceData(const std::string &device, const std::string &tableName);
 
+    void RegisterObserverAction(const RelationalObserverAction &action);
     int RegisterLifeCycleCallback(const DatabaseLifeCycleNotifier &notifier);
 
-    std::string GetStorePath() const;
+    std::string GetStorePath() const override;
 
 private:
     void ReleaseResources();

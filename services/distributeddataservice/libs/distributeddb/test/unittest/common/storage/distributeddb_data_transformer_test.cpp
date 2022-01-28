@@ -55,7 +55,7 @@ void SetBlob(DataValue &dataValue)
     dataValue.SetBlob(blob);
 }
 
-std::map<StorageType, void(*)(DataValue&)> typeMapFunction = {
+std::map<StorageType, void(*)(DataValue&)> g_typeMapFunction = {
     {StorageType::STORAGE_TYPE_NULL,    &SetNull},
     {StorageType::STORAGE_TYPE_BOOL,    &SetBool},
     {StorageType::STORAGE_TYPE_INTEGER, &SetInt64},
@@ -69,10 +69,10 @@ void GenerateRowData(const std::vector<FieldInfo> &fieldInfoList, RowData &rowDa
     for (auto &item: fieldInfoList) {
         DataValue dataValue;
         StorageType type = StorageType::STORAGE_TYPE_NULL;
-        if (typeMapFunction.find(item.GetStorageType()) != typeMapFunction.end()) {
+        if (g_typeMapFunction.find(item.GetStorageType()) != g_typeMapFunction.end()) {
             type = item.GetStorageType();
         }
-        typeMapFunction[type](dataValue);
+        g_typeMapFunction[type](dataValue);
         rowData.push_back(std::move(dataValue));
     }
 }
@@ -159,7 +159,6 @@ void GenerateDiffFieldInfo(std::vector<FieldInfo> &sendFieldInfoList, std::vecto
     const char sendColumn = 'A';    // sendColumn start with 'A'
     const char receiveColumn = 'B'; // receiveColumn start with 'B'
     // we generate 2 diff schema here (A, B, C, D, E, F) and (B, C, D, E, F, G)
-
     for (uint32_t i = 0; i < columnCounts; i++) {
         FieldInfo sendFieldInfo;
         sendFieldInfo.SetFieldName(std::string(1, static_cast<char>(sendColumn + i)));
@@ -211,7 +210,7 @@ HWTEST_F(DistributedDBDataTransformerTest, DataTransformerCheck001, TestSize.Lev
      */
     std::vector<FieldInfo> fieldInfoList;
     int count = 0;
-    for (const auto &item : typeMapFunction) {
+    for (const auto &item : g_typeMapFunction) {
         FieldInfo fieldInfo;
         fieldInfo.SetStorageType(item.first);
         fieldInfo.SetFieldName(std::to_string(count++));

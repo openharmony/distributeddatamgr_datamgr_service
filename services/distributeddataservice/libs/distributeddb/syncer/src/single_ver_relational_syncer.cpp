@@ -26,7 +26,7 @@ int SingleVerRelationalSyncer::Initialize(ISyncInterface *syncInterface)
         return errCode;
     }
     auto callback = std::bind(&SingleVerRelationalSyncer::SchemaChangeCallback, this);
-    return static_cast<RelationalDBSyncInterface*>(syncInterface)->
+    return static_cast<RelationalDBSyncInterface *>(syncInterface)->
         RegisterSchemaChangedCallback(callback);
 }
 

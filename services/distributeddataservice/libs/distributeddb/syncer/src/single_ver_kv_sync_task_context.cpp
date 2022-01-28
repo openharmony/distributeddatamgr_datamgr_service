@@ -17,7 +17,7 @@
 
 namespace DistributedDB {
 SingleVerKvSyncTaskContext::SingleVerKvSyncTaskContext()
-    : SingleVerSyncTaskContext()
+    : SingleVerSyncTaskContext(), syncStrategy_{}
 {}
 
 SingleVerKvSyncTaskContext::~SingleVerKvSyncTaskContext()
@@ -46,5 +46,4 @@ SyncStrategy SingleVerKvSyncTaskContext::GetSyncStrategy(QuerySyncObject &queryS
 {
     return syncStrategy_;
 }
-
 }

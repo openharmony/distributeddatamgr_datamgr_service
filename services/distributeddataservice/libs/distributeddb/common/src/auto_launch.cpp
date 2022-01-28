@@ -26,6 +26,7 @@
 #include "log_print.h"
 #include "param_check_utils.h"
 #include "relational_store_instance.h"
+#include "relational_store_changed_data_impl.h"
 #include "runtime_context.h"
 #include "semaphore_utils.h"
 #include "sync_able_kvdb_connection.h"
@@ -282,17 +283,22 @@ int AutoLaunch::RegisterObserverAndLifeCycleCallback(AutoLaunchItem &autoLaunchI
 
 int AutoLaunch::RegisterObserver(AutoLaunchItem &autoLaunchItem, const std::string &identifier, bool isExt)
 {
-    LOGI("[AutoLaunch] RegisterObserver");
-    if (autoLaunchItem.type != DBType::DB_KV) {
-        LOGD("[AutoLaunch] Current Type[%d] Not Support Observer", autoLaunchItem.type);
-        return E_OK;
-    }
-
     if (autoLaunchItem.conn == nullptr) {
         LOGE("[AutoLaunch] autoLaunchItem.conn is nullptr");
         return -E_INTERNAL_ERROR;
     }
     LOGI("[AutoLaunch] RegisterObserver type=%d", autoLaunchItem.type);
+    if (autoLaunchItem.type == DBType::DB_RELATION) {
+        RelationalStoreConnection *conn = static_cast<RelationalStoreConnection *>(autoLaunchItem.conn);
+        conn->RegisterObserverAction([autoLaunchItem](const std::string &changedDevice) {
+            RelationalStoreChangedDataImpl data(changedDevice);
+            if (autoLaunchItem.relationObserver) {
+                LOGD("begin to observer onchange, changedDevice=%s", STR_MASK(changedDevice));
+                autoLaunchItem.relationObserver->OnChange(data);
+            }
+        });
+        return E_OK;
+    }
     int errCode;
     Key key;
     KvDBObserverHandle *observerHandle = nullptr;
@@ -727,6 +733,7 @@ int AutoLaunch::AutoLaunchExt(const std::string &identifier)
         param.option.notifier};
     autoLaunchItem.isAutoSync = param.option.isAutoSync;
     autoLaunchItem.type = openType;
+    autoLaunchItem.relationObserver = param.option.relationObserver;
     errCode = RuntimeContext::GetInstance()->ScheduleTask(std::bind(&AutoLaunch::AutoLaunchExtTask, this,
         identifier, autoLaunchItem));
     if (errCode != E_OK) {

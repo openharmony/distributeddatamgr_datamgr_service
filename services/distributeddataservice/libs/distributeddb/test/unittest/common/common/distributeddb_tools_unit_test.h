@@ -36,6 +36,8 @@
 #include "log_print.h"
 #include "message.h"
 #include "query.h"
+#include "store_observer.h"
+#include "store_changed_data.h"
 #include "single_ver_kv_entry.h"
 #include "sqlite_single_ver_natural_store.h"
 #include "sqlite_utils.h"
@@ -250,6 +252,30 @@ private:
     std::list<DistributedDB::Entry> inserted_;
     std::list<DistributedDB::Entry> updated_;
     std::list<DistributedDB::Entry> deleted_;
+};
+
+class RelationalStoreObserverUnitTest : public DistributedDB::StoreObserver {
+public:
+    RelationalStoreObserverUnitTest();
+    ~RelationalStoreObserverUnitTest() {}
+
+    RelationalStoreObserverUnitTest(const RelationalStoreObserverUnitTest&) = delete;
+    RelationalStoreObserverUnitTest& operator=(const RelationalStoreObserverUnitTest&) = delete;
+    RelationalStoreObserverUnitTest(RelationalStoreObserverUnitTest&&) = delete;
+    RelationalStoreObserverUnitTest& operator=(RelationalStoreObserverUnitTest&&) = delete;
+
+    // callback function will be called when the db data is changed.
+    void OnChange(const DistributedDB::StoreChangedData &data);
+
+    // reset the callCount_ to zero.
+    void ResetToZero();
+
+    // get callback results.
+    unsigned long GetCallCount() const;
+    const std::string GetDataChangeDevice() const;
+private:
+    unsigned long callCount_;
+    std::string changeDevice_;
 };
 
 class KvStoreCorruptInfo {

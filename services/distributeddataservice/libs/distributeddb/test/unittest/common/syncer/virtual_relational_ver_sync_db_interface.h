@@ -22,7 +22,7 @@
 #include "relational_schema_object.h"
 
 namespace DistributedDB {
-struct VirtualRowData{
+struct VirtualRowData {
     LogInfo logInfo;
     ObjectData objectData;
 };

@@ -42,6 +42,7 @@ public:
 
     int RemoveDeviceData(const std::string &device) override;
     int RemoveDeviceData(const std::string &device, const std::string &tableName) override;
+    void RegisterObserverAction(const RelationalObserverAction &action) override;
 
 protected:
 
