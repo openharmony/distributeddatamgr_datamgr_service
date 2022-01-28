@@ -24,8 +24,8 @@ class MockCommunicator : public ICommunicator {
 public:
     MOCK_CONST_METHOD1(GetLocalIdentity, int(std::string &));
     MOCK_CONST_METHOD2(GetRemoteCommunicatorVersion, int(const std::string &, uint16_t &));
-    MOCK_METHOD4(SendMessage, int(const std::string &, const Message *, bool, uint32_t));
-    MOCK_METHOD5(SendMessage, int(const std::string &, const Message *, bool, uint32_t, const OnSendEnd &));
+    MOCK_METHOD3(SendMessage, int(const std::string &, const Message *, SendConfig &));
+    MOCK_METHOD4(SendMessage, int(const std::string &, const Message *, SendConfig &, const OnSendEnd &));
     MOCK_CONST_METHOD0(GetCommunicatorMtuSize, uint32_t(void));
     MOCK_CONST_METHOD1(GetCommunicatorMtuSize, uint32_t(const std::string &));
     MOCK_CONST_METHOD0(GetTimeout, uint32_t(void));

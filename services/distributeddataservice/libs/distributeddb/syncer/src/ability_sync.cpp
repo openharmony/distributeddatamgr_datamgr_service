@@ -376,7 +376,9 @@ int AbilitySync::SyncStart(uint32_t sessionId, uint32_t sequenceId, uint16_t rem
     message->SetVersion(MSG_VERSION_EXT);
     message->SetSessionId(sessionId);
     message->SetSequenceId(sequenceId);
-    errCode = communicator_->SendMessage(deviceId_, message, false, SEND_TIME_OUT, handler);
+    SendConfig conf;
+    SetSendConfig(deviceId_, false, SEND_TIME_OUT, conf);
+    errCode = communicator_->SendMessage(deviceId_, message, conf, handler);
     if (errCode != E_OK) {
         LOGE("[AbilitySync][SyncStart] SendPacket failed, err %d", errCode);
         delete message;
@@ -1133,7 +1135,9 @@ int AbilitySync::SendAck(const Message *inMsg, const AbilitySyncAckPacket &ackPa
     ackMessage->SetTarget(deviceId_);
     ackMessage->SetSessionId(inMsg->GetSessionId());
     ackMessage->SetSequenceId(inMsg->GetSequenceId());
-    errCode = communicator_->SendMessage(deviceId_, ackMessage, false, SEND_TIME_OUT);
+    SendConfig conf;
+    SetSendConfig(deviceId_, false, SEND_TIME_OUT, conf);
+    errCode = communicator_->SendMessage(deviceId_, ackMessage, conf);
     if (errCode != E_OK) {
         LOGE("[AbilitySync][SendAck] SendPacket failed, err %d", errCode);
         delete ackMessage;
@@ -1192,5 +1196,17 @@ int AbilitySync::HandleRelationAckSchemaParam(const AbilitySyncAckPacket *recvPa
         sendPacket.SetRelationalSyncOpinion(localOpinion);
     }
     return errCode;
+}
+
+void AbilitySync::SetSendConfig(const std::string &dstTarget, bool nonBlock, uint32_t timeout, SendConfig &sendConf)
+{
+    sendConf.nonBlock = nonBlock;
+    sendConf.timeout = timeout;
+    sendConf.isNeedExtendHead = storageInterface_->GetDbProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE,
+        false);
+    sendConf.paramInfo.appId = storageInterface_->GetDbProperties().GetStringProp(KvDBProperties::APP_ID, "");
+    sendConf.paramInfo.userId = storageInterface_->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
+    sendConf.paramInfo.storeId = storageInterface_->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
+    sendConf.paramInfo.dstTarget = dstTarget;
 }
 } // namespace DistributedDB

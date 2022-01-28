@@ -22,7 +22,7 @@ public:
     SingleVerRelationalSyncer() = default;
     ~SingleVerRelationalSyncer() override = default;
 
-    int Initialize(ISyncInterface *syncInterface) override;
+    int Initialize(ISyncInterface *syncInterface, bool isNeedActive) override;
 
     // Sync function. use SyncParma to reduce paramter.
     int Sync(const SyncParma &param) override;

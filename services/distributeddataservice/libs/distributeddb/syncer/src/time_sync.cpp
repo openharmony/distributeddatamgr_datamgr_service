@@ -457,7 +457,9 @@ bool TimeSync::IsPacketValid(const Message *inMsg, uint16_t messageType)
 
 int TimeSync::SendPacket(const DeviceID &deviceId, const Message *message, const CommErrHandler &handler)
 {
-    int errCode = communicateHandle_->SendMessage(deviceId, message, false, SEND_TIME_OUT, handler);
+    SendConfig conf;
+    timeHelper_->SetSendConfig(deviceId, false, SEND_TIME_OUT, conf);
+    int errCode = communicateHandle_->SendMessage(deviceId, message, conf, handler);
     if (errCode != E_OK) {
         LOGE("[TimeSync] SendPacket failed, err %d", errCode);
     }

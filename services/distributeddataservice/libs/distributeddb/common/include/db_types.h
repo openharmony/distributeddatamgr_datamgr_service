@@ -33,7 +33,7 @@ using ErrorCode = int;
 using SyncId = uint64_t;
 using WaterMark = uint64_t;
 using DatabaseCorruptHandler = std::function<void()>;
-using DatabaseLifeCycleNotifier = std::function<void(const std::string &)>;
+using DatabaseLifeCycleNotifier = std::function<void(const std::string &, const std::string &)>;
 const uint32_t MTU_SIZE = 5 * 1024 * 1024; // 5 M, 1024 is scale
 
 struct DataItem {

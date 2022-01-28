@@ -95,21 +95,29 @@ bool Communicator::IsDeviceOnline(const std::string &device) const
     return commAggrHandle_->IsDeviceOnline(device);
 }
 
-int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg, bool nonBlock, uint32_t timeout)
+int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config)
 {
-    return SendMessage(dstTarget, inMsg, nonBlock, timeout, nullptr);
+    return SendMessage(dstTarget, inMsg, config, nullptr);
 }
 
-int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg, bool nonBlock, uint32_t timeout,
+int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config,
     const OnSendEnd &onEnd)
 {
     if (dstTarget.size() == 0 || inMsg == nullptr) {
         return -E_INVALID_ARGS;
     }
-
+    std::shared_ptr<ExtendHeaderHandle> extendHandle = nullptr;
+    if (config.isNeedExtendHead) {
+        extendHandle = commAggrHandle_->GetExtendHeaderHandle(config.paramInfo);
+        if (extendHandle == nullptr) {
+            LOGE("[Comm][Send] get extendHandle failed");
+            return -E_FEEDBACK_COMMUNICATOR_NOT_FOUND;
+        }
+    }
     int error = E_OK;
     // if error is not E_OK , null pointer will be returned
-    SerialBuffer *buffer = ProtocolProto::ToSerialBuffer(inMsg, error);
+    SerialBuffer *buffer = ProtocolProto::ToSerialBuffer(inMsg, error, extendHandle, false);
+    extendHandle = nullptr;
     if (error != E_OK) {
         LOGE("[Comm][Send] Serial fail, label=%s, error=%d.", VEC_TO_STR(commLabel_), error);
         return error;
@@ -122,8 +130,8 @@ int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg
         return errCode;
     }
 
-    TaskConfig config{nonBlock, timeout, inMsg->GetPriority()};
-    errCode = commAggrHandle_->CreateSendTask(dstTarget, buffer, FrameType::APPLICATION_MESSAGE, config, onEnd);
+    TaskConfig taskConfig{config.nonBlock, config.timeout, inMsg->GetPriority()};
+    errCode = commAggrHandle_->CreateSendTask(dstTarget, buffer, FrameType::APPLICATION_MESSAGE, taskConfig, onEnd);
     if (errCode == E_OK) {
         // if ok, free inMsg, otherwise the caller should take over inMsg
         delete inMsg;

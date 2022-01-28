@@ -463,6 +463,7 @@ Event SingleVerSyncStateMachine::DoTimeSync()
         if (errCode == E_OK) {
             return Event::WAIT_ACK_EVENT;
         }
+        context_->SetTaskErrCode(errCode);
         return TransformErrCodeToEvent(errCode);
     }
 

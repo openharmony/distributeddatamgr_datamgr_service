@@ -42,7 +42,7 @@ public:
     virtual ~ISyncer() {};
 
     // Init the Syncer modules
-    virtual int Initialize(ISyncInterface *syncInterface)
+    virtual int Initialize(ISyncInterface *syncInterface, bool isNeedActive)
     {
         return -E_NOT_SUPPORT;
     }

@@ -116,6 +116,10 @@ void SingleVerKVSyncer::LocalDataChanged(int notifyEvent)
 void SingleVerKVSyncer::RemoteDataChanged(const std::string &device)
 {
     LOGI("[SingleVerKVSyncer] device online dev %s", STR_MASK(device));
+    if (!initialized_) {
+        LOGE("[Syncer] Syncer has not Init");
+        return;
+    }
     std::string userId = syncInterface_->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
     std::string appId = syncInterface_->GetDbProperties().GetStringProp(KvDBProperties::APP_ID, "");
     std::string storeId = syncInterface_->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
@@ -154,6 +158,10 @@ void SingleVerKVSyncer::RemoteDataChanged(const std::string &device)
 
 void SingleVerKVSyncer::QueryAutoSync(const InternalSyncParma &param)
 {
+    if (!initialized_) {
+        LOGE("[Syncer] Syncer has not Init");
+        return;
+    }
     LOGI("[SingleVerKVSyncer] trigger query syncmode=%u,dev=%s", param.mode, GetSyncDevicesStr(param.devices).c_str());
     RefObject::IncObjRef(syncEngine_);
     int retCode = RuntimeContext::GetInstance()->ScheduleTask([this, param] {
@@ -196,6 +204,10 @@ int SingleVerKVSyncer::SyncConditionCheck(QuerySyncObject &query, int mode, bool
 
 void SingleVerKVSyncer::TriggerSubscribe(const std::string &device, const QuerySyncObject &query)
 {
+    if (!initialized_) {
+        LOGE("[Syncer] Syncer has not Init");
+        return;
+    }
     RefObject::IncObjRef(syncEngine_);
     int retCode = RuntimeContext::GetInstance()->ScheduleTask([this, device, query] {
         std::vector<std::string> devices;
@@ -222,6 +234,10 @@ void SingleVerKVSyncer::TriggerSubscribe(const std::string &device, const QueryS
 
 bool SingleVerKVSyncer::TryFullSync(const std::vector<std::string> &devices)
 {
+    if (!initialized_) {
+        LOGE("[Syncer] Syncer has not Init");
+        return true;
+    }
     if (!autoSyncEnable_) {
         LOGD("[Syncer] autoSync no enable");
         return false;
@@ -236,6 +252,10 @@ bool SingleVerKVSyncer::TryFullSync(const std::vector<std::string> &devices)
 
 void SingleVerKVSyncer::TriggerSubQuerySync(const std::vector<std::string> &devices)
 {
+    if (!initialized_) {
+        LOGE("[Syncer] Syncer has not Init");
+        return;
+    }
     int errCode;
     for (auto &device : devices) {
         std::vector<QuerySyncObject> queries;

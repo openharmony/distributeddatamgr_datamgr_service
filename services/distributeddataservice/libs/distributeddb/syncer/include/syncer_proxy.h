@@ -30,7 +30,7 @@ public:
     ~SyncerProxy() {};
 
     // Init the Syncer modules
-    int Initialize(ISyncInterface *syncInterface) override;
+    int Initialize(ISyncInterface *syncInterface, bool isNeedActive) override;
 
     // Close the syncer
     int Close() override;

@@ -247,7 +247,9 @@ int SingleVerDataSync::Send(SingleVerSyncTaskContext *context, const Message *me
             static_cast<uint64_t>(context->GetTimeoutTime()) / mtuSize_); // no overflow
         startFeedDogRet = context->StartFeedDogForSync(time, SyncDirectionFlag::SEND);
     }
-    int errCode = communicateHandle_->SendMessage(context->GetDeviceId(), message, false, SEND_TIME_OUT, handler);
+    SendConfig sendConfig;
+    SetSendConfig(context->GetDeviceId(), false, SEND_TIME_OUT, sendConfig);
+    int errCode = communicateHandle_->SendMessage(context->GetDeviceId(), message, sendConfig, handler);
     if (errCode != E_OK) {
         LOGE("[DataSync][Send] send message failed, errCode=%d", errCode);
         if (startFeedDogRet) {
@@ -2398,5 +2400,17 @@ void SingleVerDataSync::ScheduleInfoHandle(bool isNeedHandleStatus, bool isNeedC
 void SingleVerDataSync::ClearDataMsg()
 {
     msgSchedule_.ClearMsg();
+}
+
+void SingleVerDataSync::SetSendConfig(const std::string &dstTarget, bool nonBlock, uint32_t timeout, SendConfig &sendConf)
+{
+    sendConf.nonBlock = nonBlock;
+    sendConf.timeout = timeout;
+    sendConf.isNeedExtendHead = storage_->GetDbProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE,
+        false);
+    sendConf.paramInfo.appId = storage_->GetDbProperties().GetStringProp(KvDBProperties::APP_ID, "");
+    sendConf.paramInfo.userId = storage_->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
+    sendConf.paramInfo.storeId = storage_->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
+    sendConf.paramInfo.dstTarget = dstTarget;
 }
 } // namespace DistributedDB

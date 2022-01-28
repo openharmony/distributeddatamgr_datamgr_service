@@ -250,14 +250,26 @@ void NetworkAdapter::OnDataReceiveHandler(const DeviceInfos &srcDevInfo, const u
         LOGE("[NAdapt][OnDataRecv] data nullptr or length = %u.", length);
         return;
     }
-    LOGI("[NAdapt][OnDataRecv] Enter, from=%s{private}, length=%u", srcDevInfo.identifier.c_str(), length);
+    uint32_t headLength = 0;
+    std::vector<std::string> userId;
+    std::string currentUserId;
+    DBStatus errCode = processCommunicator_->CheckAndGetDataHeadInfo(data, length, headLength, userId);
+    LOGI("[NAdapt][OnDataRecv] Enter, from=%s{private}, extendHeadLength=%u, totalLength=%u",
+        srcDevInfo.identifier.c_str(), headLength, length);
+    if (errCode == NO_PERMISSION) {
+        LOGI("[NAdapt][OnDataRecv] userId dismatched, drop packet");
+        return;
+    }
     {
         std::lock_guard<std::mutex> onReceiveLockGard(onReceiveMutex_);
         if (!onReceiveHandle_) {
             LOGE("[NAdapt][OnDataRecv] onReceiveHandle invalid.");
             return;
         }
-        onReceiveHandle_(srcDevInfo.identifier, data, length);
+        if (userId.size() >= 1) {
+            currentUserId = userId[0];
+        }
+        onReceiveHandle_(srcDevInfo.identifier, data + headLength, length - headLength, currentUserId);
     }
     // These code is compensation for the probable defect of IProcessCommunicator implementation.
     // As described in the agreement, for the missed online situation, we check the source dev when received.
@@ -388,5 +400,10 @@ bool NetworkAdapter::IsDeviceOnline(const std::string &device)
         return true;
     }
     return false;
+}
+
+std::shared_ptr<ExtendHeaderHandle> NetworkAdapter::GetExtendHeaderHandle(const ExtendInfo &paramInfo)
+{
+    return processCommunicator_->GetExtendHeaderHandle(paramInfo);
 }
 }

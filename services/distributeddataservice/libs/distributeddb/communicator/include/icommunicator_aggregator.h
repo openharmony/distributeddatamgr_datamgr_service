@@ -24,7 +24,7 @@
 namespace DistributedDB {
 class ICommunicator; // Forward Declaration
 // Return E_OK to indicate to retain received frame. Do not block during callback.
-using CommunicatorLackCallback = std::function<int(const LabelType &commLabel)>;
+using CommunicatorLackCallback = std::function<int(const LabelType &commLabel, const std::string &userId)>;
 
 class ICommunicatorAggregator : public virtual RefObject {
 public:

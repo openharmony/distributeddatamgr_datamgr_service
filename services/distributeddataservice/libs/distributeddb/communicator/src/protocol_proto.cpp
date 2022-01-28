@@ -79,7 +79,8 @@ uint32_t ProtocolProto::GetCommLayerFrameHeaderLength()
     return length;
 }
 
-SerialBuffer *ProtocolProto::ToSerialBuffer(const Message *inMsg, int &outErrorNo, bool onlyMsgHeader)
+SerialBuffer *ProtocolProto::ToSerialBuffer(const Message *inMsg, int &outErrorNo,
+    std::shared_ptr<ExtendHeaderHandle> &extendHandle, bool onlyMsgHeader)
 {
     if (inMsg == nullptr) {
         outErrorNo = -E_INVALID_ARGS;
@@ -94,11 +95,28 @@ SerialBuffer *ProtocolProto::ToSerialBuffer(const Message *inMsg, int &outErrorN
             return nullptr;
         }
     }
+    uint32_t headSize = 0;
+    if (extendHandle != nullptr) {
+        DBStatus status = extendHandle->GetHeadDataSize(headSize);
+        if (status != DBStatus::OK) {
+            LOGI("[Proto][ToSerial] get head data size failed,not permit to send");
+            outErrorNo = -E_FEEDBACK_COMMUNICATOR_NOT_FOUND;
+            return nullptr;
+        }
+        if (headSize > SerialBuffer::MAX_EXTEND_HEAD_LENGTH || headSize != BYTE_8_ALIGN(headSize)) {
+            LOGI("[Proto][ToSerial] head data size is larger than 512 or not 8 byte align");
+            outErrorNo = -E_FEEDBACK_COMMUNICATOR_NOT_FOUND;
+            return nullptr;
+        }
+    }
 
     SerialBuffer *buffer = new (std::nothrow) SerialBuffer();
     if (buffer == nullptr) {
         outErrorNo = -E_OUT_OF_MEMORY;
         return nullptr;
+    }
+    if (headSize > 0) {
+        buffer->SetExtendHeadLength(headSize);
     }
     // serializeLen maybe not 8-bytes aligned, let SerialBuffer deal with the padding.
     uint32_t payLoadLength = serializeLen + sizeof(MessageHeader);
@@ -109,6 +127,15 @@ SerialBuffer *ProtocolProto::ToSerialBuffer(const Message *inMsg, int &outErrorN
         delete buffer;
         buffer = nullptr;
         return nullptr;
+    }
+    if (extendHandle != nullptr && headSize > 0) {
+        DBStatus status = extendHandle->FillHeadData(buffer->GetoringinalAddr(), headSize,
+            buffer->GetSize() + headSize);
+        if (status != DBStatus::OK) {
+            LOGI("[Proto][ToSerial] fill head data failed");
+            outErrorNo = -E_FEEDBACK_COMMUNICATOR_NOT_FOUND;
+            return nullptr;
+        }
     }
 
     // Serialize the MessageHeader and data if need
@@ -172,7 +199,8 @@ SerialBuffer *ProtocolProto::BuildEmptyFrameForVersionNegotiate(int &outErrorNo)
 SerialBuffer *ProtocolProto::BuildFeedbackMessageFrame(const Message *inMsg, const LabelType &inLabel,
     int &outErrorNo)
 {
-    SerialBuffer *buffer = ToSerialBuffer(inMsg, outErrorNo, true);
+    std::shared_ptr<ExtendHeaderHandle> extendHandle = nullptr;
+    SerialBuffer *buffer = ToSerialBuffer(inMsg, outErrorNo, extendHandle, true);
     if (buffer == nullptr) {
         // outErrorNo had already been set in ToSerialBuffer
         return nullptr;
@@ -254,17 +282,18 @@ SerialBuffer *ProtocolProto::BuildLabelExchangeAck(uint64_t inDistinctValue, uin
 }
 
 int ProtocolProto::SplitFrameIntoPacketsIfNeed(const SerialBuffer *inBuff, uint32_t inMtuSize,
-    std::vector<std::vector<uint8_t>> &outPieces)
+    std::vector<std::pair<std::vector<uint8_t>, uint32_t>> &outPieces)
 {
     auto bufferBytesLen = inBuff->GetReadOnlyBytesForEntireBuffer();
-    if (bufferBytesLen.second <= inMtuSize) {
+    if ((bufferBytesLen.second + inBuff->GetExtendHeadLength()) <= inMtuSize) {
         return E_OK;
     }
+    uint32_t modifyMtuSize = inMtuSize - inBuff->GetExtendHeadLength();
     // Do Fragmentaion! This function aims at calculate how many fragments to be split into.
     auto frameBytesLen = inBuff->GetReadOnlyBytesForEntireFrame(); // Padding not in the range of fragmentation.
     uint32_t lengthToSplit = frameBytesLen.second - sizeof(CommPhyHeader); // The former is always larger than latter.
     // The inMtuSize pass from CommunicatorAggregator is large enough to be subtract by the latter two.
-    uint32_t maxFragmentLen = inMtuSize - sizeof(CommPhyHeader) - sizeof(CommPhyOptHeader);
+    uint32_t maxFragmentLen = modifyMtuSize - sizeof(CommPhyHeader) - sizeof(CommPhyOptHeader);
     // It can be proved that lengthToSplit is always larger than maxFragmentLen, so quotient won't be zero.
     // The maxFragmentLen won't be zero and in fact large enough to make sure no precision loss during division
     uint16_t quotient = lengthToSplit / maxFragmentLen;
@@ -273,9 +302,8 @@ int ProtocolProto::SplitFrameIntoPacketsIfNeed(const SerialBuffer *inBuff, uint3
     uint16_t fragCount = ((remainder == 0) ? quotient : (quotient + 1));
     // Get CommPhyHeader of this frame to be modified for each packets (Header in network endian)
     auto oriPhyHeader = reinterpret_cast<const CommPhyHeader *>(frameBytesLen.first);
-    int errCode = FrameFragmentation(frameBytesLen.first + sizeof(CommPhyHeader), lengthToSplit,
-        fragCount, *oriPhyHeader, outPieces);
-    return errCode;
+    FrameFragmentInfo fragInfo = {inBuff->GetoringinalAddr(), inBuff->GetExtendHeadLength(), lengthToSplit, fragCount};
+    return FrameFragmentation(frameBytesLen.first + sizeof(CommPhyHeader), fragInfo, *oriPhyHeader, outPieces);
 }
 
 int ProtocolProto::AnalyzeSplitStructure(const ParseResult &inResult, uint32_t &outFragLen, uint32_t &outLastFragLen)
@@ -347,6 +375,13 @@ int ProtocolProto::RegTransformFunction(uint32_t msgId, const TransformFunc &inF
     }
     msgIdMapFunc_[msgId] = inFunc;
     return E_OK;
+}
+
+void ProtocolProto::UnRegTransformFunction(uint32_t msgId)
+{
+    if (msgIdMapFunc_.count(msgId) != 0) {
+        msgIdMapFunc_.erase(msgId);
+    }
 }
 
 int ProtocolProto::SetDivergeHeader(SerialBuffer *inBuff, const LabelType &inCommLabel)
@@ -693,7 +728,7 @@ int ProtocolProto::ParseCommPhyHeaderCheckField(const std::string &srcTarget, co
         return -E_PARSE_FAIL;
     }
     if (phyHeader.packetLen != length) {
-        LOGE("[Proto][ParsePhyCheck] PacketLen=%u Mismatch.", phyHeader.packetLen);
+        LOGE("[Proto][ParsePhyCheck] PacketLen=%u Mismatch length=%u.", phyHeader.packetLen, length);
         return -E_PARSE_FAIL;
     }
     if (phyHeader.paddingLen > MAX_PADDING_LEN) {
@@ -897,9 +932,11 @@ int ProtocolProto::ParseLabelExchangeAck(const uint8_t *bytes, uint32_t length, 
 
 // Note: framePhyHeader is in network endian
 // This function aims at calculating and preparing each part of each packets
-int ProtocolProto::FrameFragmentation(const uint8_t *splitStartBytes, uint32_t splitLength, uint16_t fragCount,
-    const CommPhyHeader &framePhyHeader, std::vector<std::vector<uint8_t>> &outPieces)
+int ProtocolProto::FrameFragmentation(const uint8_t *splitStartBytes, const FrameFragmentInfo &fragmentInfo,
+    const CommPhyHeader &framePhyHeader, std::vector<std::pair<std::vector<uint8_t>, uint32_t>> &outPieces)
 {
+    uint32_t splitLength = fragmentInfo.splitLength;
+    uint16_t fragCount = fragmentInfo.fragCount;
     // It can be guaranteed that fragCount >= 2 and also won't be too large
     if (fragCount < 2) {
         return -E_INVALID_ARGS;
@@ -916,8 +953,8 @@ int ProtocolProto::FrameFragmentation(const uint8_t *splitStartBytes, uint32_t s
         uint32_t pieceTotalLen = alignedPieceFragLen + sizeof(CommPhyHeader) + sizeof(CommPhyOptHeader);
 
         // Since exception is disabled, we have to check the vector size to assure that memory is truly allocated
-        entry.resize(pieceTotalLen); // Note: should use resize other than reserve
-        if (entry.size() != pieceTotalLen) {
+        entry.first.resize(pieceTotalLen + fragmentInfo.extendHeadSize); // Note: should use resize other than reserve
+        if (entry.first.size() != (pieceTotalLen + fragmentInfo.extendHeadSize)) {
             LOGE("[Proto][FrameFrag] Resize failed for length=%u", pieceTotalLen);
             return -E_OUT_OF_MEMORY;
         }
@@ -935,12 +972,25 @@ int ProtocolProto::FrameFragmentation(const uint8_t *splitStartBytes, uint32_t s
         pktPhyOptHeader.fragCount = fragCount;
         pktPhyOptHeader.fragNo = fragNo;
         HeaderConverter::ConvertHostToNet(pktPhyOptHeader, pktPhyOptHeader);
-
-        int errCode = FillFragmentPacket(pktPhyHeader, pktPhyOptHeader, splitStartBytes + byteOffset,
-            pieceFragLen, entry);
-        if (errCode != E_OK) {
+        int err;
+        FragmentPacket packet;
+        uint8_t *ptrPacket = &(entry.first[0]);
+        if (fragmentInfo.extendHeadSize > 0) {
+            packet = {ptrPacket, fragmentInfo.extendHeadSize};
+            err = FillFragmentPacketExtendHead(fragmentInfo.oringinalBytesAddr, fragmentInfo.extendHeadSize, packet);
+            if (err != E_OK) {
+                LOGE("[Proto][FrameFrag] Fill extend head packet fail, fragCount=%u, fragNo=%u", fragCount, fragNo);
+                return err;
+            }
+            ptrPacket += fragmentInfo.extendHeadSize;
+        }
+        packet = {ptrPacket, static_cast<uint32_t>(entry.first.size()) - fragmentInfo.extendHeadSize};
+        err = FillFragmentPacket(pktPhyHeader, pktPhyOptHeader, splitStartBytes + byteOffset,
+            pieceFragLen, packet);
+        entry.second = fragmentInfo.extendHeadSize;
+        if (err != E_OK) {
             LOGE("[Proto][FrameFrag] Fill packet fail, fragCount=%u, fragNo=%u", fragCount, fragNo);
-            return errCode;
+            return err;
         }
 
         fragNo++;
@@ -950,15 +1000,28 @@ int ProtocolProto::FrameFragmentation(const uint8_t *splitStartBytes, uint32_t s
     return E_OK;
 }
 
-// Note: phyHeader and phyOptHeader is in network endian
-int ProtocolProto::FillFragmentPacket(const CommPhyHeader &phyHeader, const CommPhyOptHeader &phyOptHeader,
-    const uint8_t *fragBytes, uint32_t fragLen, std::vector<uint8_t> &outPacket)
+int ProtocolProto::FillFragmentPacketExtendHead(uint8_t *headBytesAddr, uint32_t headLen, FragmentPacket &outPacket)
 {
-    if (outPacket.empty()) {
+    if (headLen > outPacket.leftLength) {
+        LOGE("[Proto][FrameFrag] headLen less than leftLength");
         return -E_INVALID_ARGS;
     }
-    uint8_t *ptrPacket = &(outPacket[0]);
-    uint32_t leftLength = outPacket.size();
+    errno_t retCode = memcpy_s(outPacket.ptrPacket, outPacket.leftLength, headBytesAddr, headLen);
+    if (retCode != EOK) {
+        return -E_SECUREC_ERROR;
+    }
+    return E_OK;
+}
+
+// Note: phyHeader and phyOptHeader is in network endian
+int ProtocolProto::FillFragmentPacket(const CommPhyHeader &phyHeader, const CommPhyOptHeader &phyOptHeader,
+    const uint8_t *fragBytes, uint32_t fragLen, FragmentPacket &outPacket)
+{
+    if (outPacket.leftLength == 0) {
+        return -E_INVALID_ARGS;
+    }
+    uint8_t *ptrPacket = outPacket.ptrPacket;
+    uint32_t leftLength = outPacket.leftLength;
 
     // leftLength is guaranteed to be no smaller than the sum of phyHeaderLen + phyOptHeaderLen + fragLen
     // So, there will be no redundant check during subtraction
@@ -983,12 +1046,12 @@ int ProtocolProto::FillFragmentPacket(const CommPhyHeader &phyHeader, const Comm
 
     // Calculate sum and set sum field
     uint64_t sumResult = 0;
-    int errCode  = CalculateXorSum(&(outPacket[0]) + LENGTH_BEFORE_SUM_RANGE,
-        outPacket.size() - LENGTH_BEFORE_SUM_RANGE, sumResult);
+    int errCode  = CalculateXorSum(outPacket.ptrPacket + LENGTH_BEFORE_SUM_RANGE,
+        outPacket.leftLength - LENGTH_BEFORE_SUM_RANGE, sumResult);
     if (errCode != E_OK) {
         return -E_SUM_CALCULATE_FAIL;
     }
-    auto ptrPhyHeader = reinterpret_cast<CommPhyHeader *>(&(outPacket[0]));
+    auto ptrPhyHeader = reinterpret_cast<CommPhyHeader *>(outPacket.ptrPacket);
     ptrPhyHeader->checkSum = HostToNet(sumResult);
 
     return E_OK;

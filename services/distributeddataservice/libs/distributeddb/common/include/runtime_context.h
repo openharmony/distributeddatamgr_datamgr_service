@@ -84,7 +84,8 @@ public:
     virtual int EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
         const AutoLaunchOption &option) = 0;
 
-    virtual int DisableKvStoreAutoLaunch(const std::string &identifier) = 0;
+    virtual int DisableKvStoreAutoLaunch(const std::string &normalIdentifier, const std::string &dualTupleIdentifier,
+        const std::string &userId) = 0;
 
     virtual void GetAutoLaunchSyncDevices(const std::string &identifier, std::vector<std::string> &devices) const = 0;
 
@@ -114,12 +115,12 @@ public:
     virtual void NotifyDatabaseStatusChange(const std::string &userId, const std::string &appId,
         const std::string &storeId, const std::string &deviceId, bool onlineStatus) = 0;
 
-    virtual int SetSyncActivationCheckCallback(SyncActivationCheckCallback &callback) = 0;
+    virtual int SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback) = 0;
 
     virtual bool IsSyncerNeedActive(std::string &userId, std::string &appId, std::string &storeId) const = 0;
 
     virtual NotificationChain::Listener *RegisterUserChangedListerner(const UserChangedAction &action,
-        bool isActiveEvent) = 0;
+        EventType event) = 0;
 
     virtual int NotifyUserChanged() const = 0;
 protected:

@@ -403,8 +403,10 @@ int SQLiteRelationalStore::StartLifeCycleTimer(const DatabaseLifeCycleNotifier &
         [this](TimerId id) -> int {
             std::lock_guard<std::mutex> lock(lifeCycleMutex_);
             if (lifeCycleNotifier_) {
+                // normal identifier mode
                 auto identifier = properties_.GetStringProp(DBProperties::IDENTIFIER_DATA, "");
-                lifeCycleNotifier_(identifier);
+                auto userId = properties_.GetStringProp(DBProperties::USER_ID, "");
+                lifeCycleNotifier_(identifier, userId);
             }
             return 0;
         },

@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef USER_CHANGE_MONITOR
-#define USER_CHANGE_MONITOR
+#ifndef USER_CHANGE_MONITOR_H
+#define USER_CHANGE_MONITOR_H
 
-#include "runtime_context.h"
-#include "db_types.h"
+#include <shared_mutex>
 #include "platform_specific.h"
 #include "macro_utils.h"
+#include "notification_chain.h"
+#include "runtime_context.h"
 
 namespace DistributedDB {
 class UserChangeMonitor final {
@@ -36,22 +37,22 @@ public:
     void Stop();
 
     // Register a user changed lister, it will be callback when user changed.
-    NotificationChain::Listener *RegisterUserChangedListerner(const UserChangedAction &action, bool isActiveEvent,
+    NotificationChain::Listener *RegisterUserChangedListerner(const UserChangedAction &action, EventType event,
         int &errCode);
 
     // Notify USER_CHANGE_EVENT.
     void NotifyUserChanged() const;
-private:
     static const EventType USER_ACTIVE_EVENT = 3;
     static const EventType USER_NON_ACTIVE_EVENT = 4;
-
+    static const EventType USER_ACTIVE_TO_NON_ACTIVE_EVENT = 5;
+private:
     // prepare notifier chain
     int PrepareNotifierChain();
 
-    mutable std::mutex userChangeMonitorLock_;
+    mutable std::shared_mutex userChangeMonitorLock_;
     NotificationChain *userNotifier_;
     bool isStarted_ = false;
 };
 } // namespace DistributedDB
 
-#endif // USER_CHANGE_MONITOR
+#endif // USER_CHANGE_MONITOR_H

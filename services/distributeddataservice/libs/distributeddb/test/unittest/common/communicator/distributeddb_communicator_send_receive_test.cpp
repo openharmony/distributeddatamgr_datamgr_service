@@ -20,6 +20,9 @@
 #include "distributeddb_tools_unit_test.h"
 #include "log_print.h"
 #include "message.h"
+#include "protocol_proto.h"
+#include "time_sync.h"
+#include "sync_types.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -105,6 +108,16 @@ void DistributedDBCommunicatorSendReceiveTest::TearDown()
     std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Wait 200 ms to make sure all thread quiet
 }
 
+Message *BuildAppLayerFrameMessage()
+{
+    DistributedDBUnitTest::DataSyncMessageInfo info;
+    info.messageId_ = DistributedDB::TIME_SYNC_MESSAGE;
+    info.messageType_ = TYPE_REQUEST;
+    DistributedDB::Message *message = nullptr;
+    DistributedDBUnitTest::DistributedDBToolsUnitTest::BuildMessage(info, message);
+    return message;
+}
+
 /**
  * @tc.name: Send And Receive 001
  * @tc.desc: Test send and receive based on equipment communicator
@@ -145,7 +158,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, SendAndReceive001, TestSize.L
      */
     Message *msgForAA = BuildRegedTinyMessage();
     ASSERT_NE(msgForAA, nullptr);
-    int errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, true, 0);
+    SendConfig conf = {false, 0};
+    int errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(200)); // sleep 200 ms
     EXPECT_EQ(recvMsgForBB, nullptr);
@@ -165,7 +179,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, SendAndReceive001, TestSize.L
      */
     Message *msgForBB = BuildRegedTinyMessage();
     ASSERT_NE(msgForBB, nullptr);
-    errCode = g_commBB->SendMessage(DEVICE_NAME_A, msgForBB, true, 0);
+    conf = {true, 0};
+    errCode = g_commBB->SendMessage(DEVICE_NAME_A, msgForBB, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_EQ(srcTargetForAA, "");
@@ -194,7 +209,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, SendAndReceive002, TestSize.L
      */
     Message *msgForAA = BuildRegedOverSizeMessage();
     ASSERT_NE(msgForAA, nullptr);
-    int errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, true, 0);
+    SendConfig conf = {true, 0};
+    int errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, conf);
     EXPECT_NE(errCode, E_OK);
     delete msgForAA;
     msgForAA = nullptr;
@@ -223,7 +239,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, SendAndReceive003, TestSize.L
      */
     Message *msgForAA = BuildUnRegedTinyMessage();
     ASSERT_NE(msgForAA, nullptr);
-    int errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, true, 0);
+    SendConfig conf = {true, 0};
+    int errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, conf);
     EXPECT_NE(errCode, E_OK);
     delete msgForAA;
     msgForAA = nullptr;
@@ -269,7 +286,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, SendFlowControl001, TestSize.
     while (true) {
         Message *msgForBA = BuildRegedHugeMessage();
         ASSERT_NE(msgForBA, nullptr);
-        int errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, true, 0);
+        SendConfig conf = {true, 0};
+        int errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, conf);
         if (errCode == E_OK) {
             sendCount++;
         } else {
@@ -333,7 +351,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, SendFlowControl002, TestSize.
         while (sendCount < SEND_COUNT_GOAL) {
             Message *msgForBA = BuildRegedHugeMessage();
             ASSERT_NE(msgForBA, nullptr);
-            int errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, false, 0);
+            SendConfig conf = {false, 0};
+            int errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, conf);
             if (errCode != E_OK) {
                 delete msgForBA;
                 msgForBA = nullptr;
@@ -398,7 +417,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, SendFlowControl003, TestSize.
         while (sendCnt < SEND_COUNT_GOAL) {
             Message *msgForBA = BuildRegedHugeMessage();
             ASSERT_NE(msgForBA, nullptr);
-            int errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, false, 100); // 100 ms timeout
+            SendConfig conf = {false, 100};
+            int errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, conf); // 100 ms timeout
             if (errCode != E_OK) {
                 delete msgForBA;
                 msgForBA = nullptr;
@@ -451,7 +471,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, ReceiveCheck001, TestSize.Lev
      */
     g_envDeviceB.adapterHandle->SimulateSendBitErrorInMagicField(true, 0xFFFF);
     Message *msgForBA = BuildRegedTinyMessage();
-    int errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, true, 0);
+    SendConfig conf = {true, 0};
+    int errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_EQ(recvCount, 0);
@@ -463,7 +484,7 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, ReceiveCheck001, TestSize.Lev
      */
     g_envDeviceB.adapterHandle->SimulateSendBitErrorInVersionField(true, 0xFFFF);
     msgForBA = BuildRegedTinyMessage();
-    errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, true, 0);
+    errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_EQ(recvCount, 0);
@@ -475,7 +496,7 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, ReceiveCheck001, TestSize.Lev
      */
     g_envDeviceB.adapterHandle->SimulateSendBitErrorInCheckSumField(true, 0xFFFF);
     msgForBA = BuildRegedTinyMessage();
-    errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, true, 0);
+    errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_EQ(recvCount, 0);
@@ -511,7 +532,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, ReceiveCheck002, TestSize.Lev
      */
     g_envDeviceB.adapterHandle->SimulateSendBitErrorInPacketLenField(true, 0xFFFF);
     Message *msgForBA = BuildRegedTinyMessage();
-    int errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, true, 0);
+    SendConfig conf = {true, 0};
+    int errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_EQ(recvCount, 0);
@@ -523,7 +545,7 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, ReceiveCheck002, TestSize.Lev
      */
     g_envDeviceB.adapterHandle->SimulateSendBitErrorInPacketTypeField(true, 0xFF);
     msgForBA = BuildRegedTinyMessage();
-    errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, true, 0);
+    errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_EQ(recvCount, 0);
@@ -535,7 +557,7 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, ReceiveCheck002, TestSize.Lev
      */
     g_envDeviceB.adapterHandle->SimulateSendBitErrorInPaddingLenField(true, 0xFF);
     msgForBA = BuildRegedTinyMessage();
-    errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, true, 0);
+    errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_EQ(recvCount, 0);
@@ -571,7 +593,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, SendResultNotify001, TestSize
      */
     Message *msgForAA = BuildRegedTinyMessage();
     ASSERT_NE(msgForAA, nullptr);
-    int errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, false, 0, sendResultNotifier);
+    SendConfig conf = {false, 0};
+    int errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, conf, sendResultNotifier);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sleep 100 ms
     ASSERT_EQ(sendResult.size(), static_cast<size_t>(1)); // 1 notify
@@ -588,7 +611,7 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, SendResultNotify001, TestSize
      */
     msgForAA = BuildRegedTinyMessage();
     ASSERT_NE(msgForAA, nullptr);
-    errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, false, 0, sendResultNotifier);
+    errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, conf, sendResultNotifier);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sleep 100 ms
     ASSERT_EQ(sendResult.size(), static_cast<size_t>(2)); // 2 notify
@@ -630,7 +653,8 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, MessageFeedback001, TestSize.
      */
     Message *msgForBB = BuildRegedTinyMessage();
     ASSERT_NE(msgForBB, nullptr);
-    int errCode = g_commBB->SendMessage(DEVICE_NAME_A, msgForBB, false, 0);
+    SendConfig conf = {false, 0};
+    int errCode = g_commBB->SendMessage(DEVICE_NAME_A, msgForBB, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sleep 100 ms
     ASSERT_NE(recvMsgForBB, nullptr);
@@ -655,7 +679,7 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, MessageFeedback001, TestSize.
      */
     Message *msgForBA = BuildRegedTinyMessage();
     ASSERT_NE(msgForBA, nullptr);
-    errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, false, 0);
+    errCode = g_commBA->SendMessage(DEVICE_NAME_A, msgForBA, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sleep 100 ms
     ASSERT_NE(recvMsgForBA, nullptr);
@@ -673,4 +697,52 @@ HWTEST_F(DistributedDBCommunicatorSendReceiveTest, MessageFeedback001, TestSize.
     g_envDeviceB.adapterHandle->SimulateSendBitErrorInMessageIdField(false, 0);
     AdapterStub::DisconnectAdapterStub(g_envDeviceA.adapterHandle, g_envDeviceB.adapterHandle);
     CommunicatorAggregator::EnableCommunicatorNotFoundFeedback(false);
+}
+
+/**
+ * @tc.name: SendAndReceiveWithExtendHead001
+ * @tc.desc: Test fill extendHead func
+ * @tc.type: FUNC
+ * @tc.require: AR000BVDGI AR000CQE0M
+ * @tc.author: zhuwentao
+ */
+HWTEST_F(DistributedDBCommunicatorSendReceiveTest, SendAndReceiveWithExtendHead001, TestSize.Level1)
+{
+    // Preset
+    string srcTargetForAA;
+    Message *recvMsgForAA = nullptr;
+    string srcTargetForBA;
+    Message *recvMsgForBA = nullptr;
+    TimeSync::RegisterTransformFunc();
+    g_commAA->RegOnMessageCallback([&srcTargetForAA, &recvMsgForAA](const std::string &srcTarget, Message *inMsg){
+        srcTargetForAA = srcTarget;
+        recvMsgForAA = inMsg;
+    }, nullptr);
+    g_commBA->RegOnMessageCallback([&srcTargetForBA, &recvMsgForBA](const std::string &srcTarget, Message *inMsg){
+        srcTargetForBA = srcTarget;
+        recvMsgForBA = inMsg;
+    }, nullptr);
+
+    /**
+     * @tc.steps: step1. connect device A with device B
+     */
+    AdapterStub::ConnectAdapterStub(g_envDeviceA.adapterHandle, g_envDeviceB.adapterHandle);
+
+    /**
+     * @tc.steps: step2. device A send ApplayerFrameMessage to device B using communicator AA with extednHead
+     * @tc.expected: step2. communicator BA received the message
+     */
+    Message *msgForAA = BuildAppLayerFrameMessage();
+    ASSERT_NE(msgForAA, nullptr);
+    SendConfig conf = {false, 0, {"appId", "storeId", "userId", "deviceB"}, true};
+    int errCode = g_commAA->SendMessage(DEVICE_NAME_B, msgForAA, conf);
+    EXPECT_EQ(errCode, E_OK);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // sleep 200 ms
+    EXPECT_EQ(srcTargetForBA, DEVICE_NAME_A);
+    ASSERT_NE(recvMsgForBA, nullptr);
+    delete recvMsgForBA;
+    recvMsgForBA = nullptr;
+    DistributedDB::ProtocolProto::UnRegTransformFunction(DistributedDB::TIME_SYNC_MESSAGE);
+    // CleanUp
+    AdapterStub::DisconnectAdapterStub(g_envDeviceA.adapterHandle, g_envDeviceB.adapterHandle);
 }

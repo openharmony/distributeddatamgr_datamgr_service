@@ -35,7 +35,7 @@ public:
     ~GenericSyncer() override;
 
     // Init the Syncer modules
-    int Initialize(ISyncInterface *syncInterface) override;
+    int Initialize(ISyncInterface *syncInterface, bool isNeedActive) override;
 
     // Close
     int Close() override;

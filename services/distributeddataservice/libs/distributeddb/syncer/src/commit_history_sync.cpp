@@ -536,7 +536,8 @@ bool CommitHistorySync::IsPacketValid(const Message *inMsg, uint16_t messageType
 
 int CommitHistorySync::Send(const DeviceID &deviceId, const Message *inMsg)
 {
-    int errCode = communicateHandle_->SendMessage(deviceId, inMsg, false, SEND_TIME_OUT);
+    SendConfig conf = {false, SEND_TIME_OUT};
+    int errCode = communicateHandle_->SendMessage(deviceId, inMsg, conf);
     if (errCode != E_OK) {
         LOGE("CommitHistorySync::Send ERR! err = %d", errCode);
     }

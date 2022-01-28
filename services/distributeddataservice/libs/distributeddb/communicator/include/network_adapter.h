@@ -51,6 +51,7 @@ public:
     int RegSendableCallback(const SendableCallback &onSendable, const Finalizer &inOper) override;
 
     bool IsDeviceOnline(const std::string &device) override;
+    std::shared_ptr<ExtendHeaderHandle> GetExtendHeaderHandle(const ExtendInfo &paramInfo) override;
 
 private:
     void OnDataReceiveHandler(const DeviceInfos &srcDevInfo, const uint8_t *data, uint32_t length);

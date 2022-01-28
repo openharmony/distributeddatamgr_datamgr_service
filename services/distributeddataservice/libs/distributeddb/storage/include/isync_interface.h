@@ -45,6 +45,8 @@ public:
 
     // Get the identifier of this kvdb.
     virtual std::vector<uint8_t> GetIdentifier() const = 0;
+    // Get the dual tuple identifier of this kvdb.
+    virtual std::vector<uint8_t> GetDualTupleIdentifier() const = 0;
 
     // Get the max timestamp of all entries in database.
     virtual void GetMaxTimeStamp(TimeStamp &stamp) const = 0;

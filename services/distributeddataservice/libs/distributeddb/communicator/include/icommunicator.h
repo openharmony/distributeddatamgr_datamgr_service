@@ -21,10 +21,17 @@
 #include "message.h"
 #include "ref_object.h"
 #include "communicator_type_define.h"
+#include "iprocess_communicator.h"
 
 namespace DistributedDB {
 // inMsg is heap memory, its ownership transfers by calling OnMessageCallback
 using OnMessageCallback = std::function<void(const std::string &srcTarget, Message *inMsg)>;
+struct SendConfig {
+    bool nonBlock;
+    uint32_t timeout;
+    ExtendInfo paramInfo;
+    bool isNeedExtendHead = false;
+};
 
 class ICommunicator : public virtual RefObject {
 public:
@@ -56,8 +63,8 @@ public:
     // If send fail in SendMessage, nonBlock true will return, nonBlock false will block and retry
     // timeout is ignore if nonBlock true. OnSendEnd won't always be called such as when in finalize stage.
     // Return 0 as success. Return negative as error
-    virtual int SendMessage(const std::string &dstTarget, const Message *inMsg, bool nonBlock, uint32_t timeout) = 0;
-    virtual int SendMessage(const std::string &dstTarget, const Message *inMsg, bool nonBlock, uint32_t timeout,
+    virtual int SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config) = 0;
+    virtual int SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config,
         const OnSendEnd &onEnd) = 0; // HW Code Regulation do not allow to use default parameters on virtual function
 
     virtual ~ICommunicator() {};

@@ -43,14 +43,13 @@ void VirtualCommunicator::Activate()
 {
 }
 
-int VirtualCommunicator::SendMessage(const std::string &dstTarget, const Message *inMsg, bool nonBlock,
-    uint32_t timeout)
+int VirtualCommunicator::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config)
 {
-    return SendMessage(dstTarget, inMsg, nonBlock, timeout, nullptr);
+    return SendMessage(dstTarget, inMsg, config, nullptr);
 }
 
 int VirtualCommunicator::SendMessage(const std::string &dstTarget, const Message *inMsg,
-    bool nonBlock, uint32_t timeout, const OnSendEnd &onEnd)
+    SendConfig &config, const OnSendEnd &onEnd)
 {
     AutoLock lock(this);
     if (IsKilled()) {

@@ -73,7 +73,11 @@ int TimeHelper::Initialize(const ISyncInterface *inStorage, std::shared_ptr<Meta
     }
     if ((currentSysTime + localTimeOffset) <= maxItemTime) {
         localTimeOffset = maxItemTime - currentSysTime + MS_TO_100_NS; // 1ms
-        SaveLocalTimeOffset(localTimeOffset);
+        int errCode = SaveLocalTimeOffset(localTimeOffset);
+        if (errCode != E_OK) {
+            LOGE("[TimeHelper] save local time offset faield,err=%d", errCode);
+            return errCode;
+        }
     }
     metadata_->SetLastLocalTime(currentSysTime + localTimeOffset);
     return E_OK;
@@ -110,5 +114,17 @@ TimeOffset TimeHelper::GetLocalTimeOffset() const
 int TimeHelper::SaveLocalTimeOffset(TimeOffset offset)
 {
     return metadata_->SaveLocalTimeOffset(offset);
+}
+
+void TimeHelper::SetSendConfig(const std::string &dstTarget, bool nonBlock, uint32_t timeout, SendConfig &sendConf)
+{
+    sendConf.nonBlock = nonBlock;
+    sendConf.timeout = timeout;
+    sendConf.isNeedExtendHead = storage_->GetDbProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE,
+        false);
+    sendConf.paramInfo.appId = storage_->GetDbProperties().GetStringProp(KvDBProperties::APP_ID, "");
+    sendConf.paramInfo.userId = storage_->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
+    sendConf.paramInfo.storeId = storage_->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
+    sendConf.paramInfo.dstTarget = dstTarget;
 }
 } // namespace DistributedDB

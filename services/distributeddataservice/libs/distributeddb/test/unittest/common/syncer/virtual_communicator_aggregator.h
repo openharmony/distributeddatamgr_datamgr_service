@@ -42,6 +42,8 @@ public:
     void RunCommunicatorLackCallback(const LabelType &commLabel);
     void RunOnConnectCallback(const std::string &target, bool isConnect);
 
+    int GetLocalIdentity(std::string &outTarget) const override;
+
     // online a virtual device to the VirtualCommunicator, should call in main thread
     void OnlineDevice(const std::string &deviceId) const;
 
@@ -66,6 +68,8 @@ public:
 
     void RegOnDispatch(const std::function<void(const std::string &target, Message *inMsg)> &onDispatch);
 
+    void SetCurrentUserId(const std::string &userId);
+
     ~VirtualCommunicatorAggregator() {};
     VirtualCommunicatorAggregator() {};
 
@@ -82,6 +86,7 @@ private:
     CommunicatorLackCallback onCommLack_;
     OnConnectCallback onConnect_;
     std::function<void(const std::string &target, Message *inMsg)> onDispatch_;
+    std::string userId_;
 };
 } // namespace DistributedDB
 

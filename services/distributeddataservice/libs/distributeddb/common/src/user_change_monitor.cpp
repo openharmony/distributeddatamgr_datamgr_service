@@ -52,6 +52,7 @@ void UserChangeMonitor::Stop()
     if (userNotifier_ == nullptr) {
         userNotifier_->UnRegisterEventType(USER_ACTIVE_EVENT);
         userNotifier_->UnRegisterEventType(USER_NON_ACTIVE_EVENT);
+        userNotifier_->UnRegisterEventType(USER_ACTIVE_TO_NON_ACTIVE_EVENT);
         RefObject::KillAndDecObjRef(userNotifier_);
         userNotifier_ = nullptr;
     }
@@ -59,14 +60,9 @@ void UserChangeMonitor::Stop()
 }
 
 NotificationChain::Listener *UserChangeMonitor::RegisterUserChangedListerner(const UserChangedAction &action,
-    bool isActiveEvent, int &errCode)
+    EventType event, int &errCode)
 {
-    EventType event;
-    if (isActiveEvent) {
-        event = USER_ACTIVE_EVENT;
-    } else {
-        event = USER_NON_ACTIVE_EVENT;
-    }
+    std::shared_lock<std::shared_mutex> lockGuard(userChangeMonitorLock_);
     if (action == nullptr) {
         errCode = -E_INVALID_ARGS;
         return nullptr;
@@ -75,14 +71,14 @@ NotificationChain::Listener *UserChangeMonitor::RegisterUserChangedListerner(con
         errCode = -E_NOT_INIT;
         return nullptr;
     }
-
+    LOGI("[UserChangeMonitor] RegisterUserChangedListerner event=%d", event);
     return userNotifier_->RegisterListener(event, action, nullptr, errCode);
 }
 
 int UserChangeMonitor::PrepareNotifierChain()
 {
     int errCode = E_OK;
-    std::lock_guard<std::mutex> autoLock(userChangeMonitorLock_);
+    std::unique_lock<std::shared_mutex> lockGuard(userChangeMonitorLock_);
     if (userNotifier_ != nullptr) {
         return E_OK;
     }
@@ -103,18 +99,26 @@ int UserChangeMonitor::PrepareNotifierChain()
             userNotifier_ = nullptr;
             return errCode;
         }
+        errCode = userNotifier_->RegisterEventType(USER_ACTIVE_TO_NON_ACTIVE_EVENT);
+        if (errCode != E_OK) {
+            RefObject::KillAndDecObjRef(userNotifier_);
+            userNotifier_ = nullptr;
+            return errCode;
+        }
     }
     return errCode;
 }
 
 void UserChangeMonitor::NotifyUserChanged() const
 {
-    std::lock_guard<std::mutex> lock(userChangeMonitorLock_);
+    std::shared_lock<std::shared_mutex> lockGuard(userChangeMonitorLock_);
     if (userNotifier_ == nullptr) {
         LOGD("NotifyUNotifyUserChangedserChange fail, userChangedNotifier is null.");
         return;
     }
+    LOGI("[UserChangeMonitor] begin to notify event");
     userNotifier_->NotifyEvent(USER_ACTIVE_EVENT, nullptr);
     userNotifier_->NotifyEvent(USER_NON_ACTIVE_EVENT, nullptr);
+    userNotifier_->NotifyEvent(USER_ACTIVE_TO_NON_ACTIVE_EVENT, nullptr);
 }
 } // namespace DistributedDB

@@ -75,7 +75,8 @@ public:
     int EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
         const AutoLaunchOption &option);
 
-    int DisableKvStoreAutoLaunch(const std::string &identifier);
+    int DisableKvStoreAutoLaunch(const std::string &normalIdentifier, const std::string &dualTupleIdentifier,
+        const std::string &userId);
 
     void GetAutoLaunchSyncDevices(const std::string &identifier, std::vector<std::string> &devices) const;
 
@@ -86,7 +87,8 @@ public:
 
 protected:
 
-    int EnableKvStoreAutoLaunchParmCheck(AutoLaunchItem &autoLaunchItem, const std::string &identifier);
+    int EnableKvStoreAutoLaunchParmCheck(AutoLaunchItem &autoLaunchItem, const std::string &normalIdentifier,
+        const std::string &dualTupleIdentifier, bool isDualTupleMode);
 
     int GetKVConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std::string &identifier);
 
@@ -103,37 +105,39 @@ protected:
 
     int RegisterObserver(AutoLaunchItem &autoLaunchItem, const std::string &identifier, bool isExt);
 
-    void ObserverFunc(const KvDBCommitNotifyData &notifyData, const std::string &identifier);
+    void ObserverFunc(const KvDBCommitNotifyData &notifyData, const std::string &identifier,
+        const std::string &userId);
 
-    void ConnectionLifeCycleCallbackTask(const std::string &identifier);
+    void ConnectionLifeCycleCallbackTask(const std::string &identifier, const std::string &userId);
 
     void OnlineCallBackTask();
 
-    void GetDoOpenMap(std::map<std::string, AutoLaunchItem> &doOpenMap);
+    void GetDoOpenMap(std::map<std::string, std::map<std::string, AutoLaunchItem>> &doOpenMap);
 
-    void GetConnInDoOpenMap(std::map<std::string, AutoLaunchItem> &doOpenMap);
+    void GetConnInDoOpenMap(std::map<std::string, std::map<std::string, AutoLaunchItem>> &doOpenMap);
 
-    void UpdateGlobalMap(std::map<std::string, AutoLaunchItem> &doOpenMap);
+    void UpdateGlobalMap(std::map<std::string, std::map<std::string, AutoLaunchItem>> &doOpenMap);
 
-    void ReceiveUnknownIdentifierCallBackTask(const std::string &identifier);
+    void ReceiveUnknownIdentifierCallBackTask(const std::string &identifier, const std::string userId);
 
     static void CloseNotifier(const AutoLaunchItem &autoLaunchItem);
 
-    void ConnectionLifeCycleCallback(const std::string &identifier);
+    void ConnectionLifeCycleCallback(const std::string &identifier, const std::string &userId);
 
     void OnlineCallBack(const std::string &device, bool isConnect);
 
-    int ReceiveUnknownIdentifierCallBack(const LabelType &label);
+    int ReceiveUnknownIdentifierCallBack(const LabelType &label, const std::string &originalUserId);
 
-    int AutoLaunchExt(const std::string &identifier);
+    int AutoLaunchExt(const std::string &identifier, const std::string &userId);
 
-    void AutoLaunchExtTask(const std::string identifier, AutoLaunchItem autoLaunchItem);
+    void AutoLaunchExtTask(const std::string identifier, const std::string userId, AutoLaunchItem autoLaunchItem);
 
-    void ExtObserverFunc(const KvDBCommitNotifyData &notifyData, const std::string &identifier);
+    void ExtObserverFunc(const KvDBCommitNotifyData &notifyData, const std::string &identifier,
+        const std::string &userId);
 
-    void ExtConnectionLifeCycleCallback(const std::string &identifier);
+    void ExtConnectionLifeCycleCallback(const std::string &identifier, const std::string &userId);
 
-    void ExtConnectionLifeCycleCallbackTask(const std::string &identifier);
+    void ExtConnectionLifeCycleCallbackTask(const std::string &identifier, const std::string &userId);
 
     static int SetConflictNotifier(AutoLaunchItem &autoLaunchItem);
 
@@ -161,13 +165,15 @@ protected:
     mutable std::mutex dataLock_;
     mutable std::mutex communicatorLock_;
     std::set<std::string> onlineDevices_;
-    std::map<std::string, AutoLaunchItem> autoLaunchItemMap_;
+    // key: label, value: <userId, AutoLaunchItem>
+    std::map<std::string, std::map<std::string, AutoLaunchItem>> autoLaunchItemMap_;
     ICommunicatorAggregator *communicatorAggregator_ = nullptr;
     std::condition_variable cv_;
 
     std::mutex extLock_;
     std::map<DBType, AutoLaunchRequestCallback> autoLaunchRequestCallbackMap_;
-    std::map<std::string, AutoLaunchItem> extItemMap_;
+    // key: label, value: <userId, AutoLaunchItem>
+    std::map<std::string, std::map<std::string, AutoLaunchItem>> extItemMap_;
 };
 } // namespace DistributedDB
 #endif // AUTO_LAUNCH_H

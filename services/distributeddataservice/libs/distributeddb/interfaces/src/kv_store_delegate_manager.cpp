@@ -107,7 +107,7 @@ namespace {
             properties.SetIntProp(KvDBProperties::COMPRESSION_RATE,
                 ParamCheckUtils::GetValidCompressionRate(option.compressionRate));
         }
-        properties.SetBoolProp(KvDBProperties::SYNC_DUALTUPLE_MODE, option.syncDualTupleMode);
+        properties.SetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE, option.syncDualTupleMode);
     }
 
     bool CheckObserverConflictParam(const KvStoreNbDelegate::Option &option)
@@ -553,7 +553,8 @@ DBStatus KvStoreDelegateManager::DisableKvStoreAutoLaunch(const std::string &use
 
     std::string syncIdentifier = DBCommon::GenerateIdentifierId(storeId, appId, userId);
     std::string hashIdentifier = DBCommon::TransferHashString(syncIdentifier);
-    int errCode = RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(hashIdentifier);
+    std::string dualIdentifier = DBCommon::TransferHashString(DBCommon::GenerateDualTupleIdentifierId(storeId, appId));
+    int errCode = RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(hashIdentifier, dualIdentifier, userId);
     if (errCode != E_OK) {
         LOGE("[KvStoreManager] Disable auto launch failed:%d", errCode);
         return TransferDBErrno(errCode);
@@ -568,10 +569,13 @@ void KvStoreDelegateManager::SetAutoLaunchRequestCallback(const AutoLaunchReques
 }
 
 std::string KvStoreDelegateManager::GetKvStoreIdentifier(const std::string &userId, const std::string &appId,
-    const std::string &storeId)
+    const std::string &storeId, bool syncDualTupleMode)
 {
     if (!ParamCheckUtils::CheckStoreParameter(storeId, appId, userId)) {
         return "";
+    }
+    if (syncDualTupleMode) {
+        return DBCommon::TransferHashString(appId + "-" + storeId);
     }
     return DBCommon::TransferHashString(userId + "-" + appId + "-" + storeId);
 }
@@ -586,7 +590,7 @@ void KvStoreDelegateManager::SetStoreStatusNotifier(const StoreStatusNotifier &n
     RuntimeContext::GetInstance()->SetStoreStatusNotifier(notifier);
 }
 
-DBStatus KvStoreDelegateManager::SetSyncActivationCheckCallback(SyncActivationCheckCallback &callback)
+DBStatus KvStoreDelegateManager::SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback)
 {
     int errCode = RuntimeContext::GetInstance()->SetSyncActivationCheckCallback(callback);
     return TransferDBErrno(errCode);

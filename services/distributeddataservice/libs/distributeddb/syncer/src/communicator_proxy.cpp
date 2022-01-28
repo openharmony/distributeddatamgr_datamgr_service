@@ -193,12 +193,12 @@ int CommunicatorProxy::GetRemoteCommunicatorVersion(const std::string &target, u
     return -E_NOT_INIT;
 }
 
-int CommunicatorProxy::SendMessage(const std::string &dstTarget, const Message *inMsg, bool nonBlock, uint32_t timeout)
+int CommunicatorProxy::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config)
 {
-    return SendMessage(dstTarget, inMsg, nonBlock, timeout, nullptr);
+    return SendMessage(dstTarget, inMsg, config, nullptr);
 }
 
-int CommunicatorProxy::SendMessage(const std::string &dstTarget, const Message *inMsg, bool nonBlock, uint32_t timeout,
+int CommunicatorProxy::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config,
     const OnSendEnd &onEnd)
 {
     ICommunicator *targetCommunicator = nullptr;
@@ -210,14 +210,14 @@ int CommunicatorProxy::SendMessage(const std::string &dstTarget, const Message *
         }
     }
     if (targetCommunicator != nullptr) {
-        LOGI("[CommProxy] use equal label to send data");
-        int errCode = targetCommunicator->SendMessage(dstTarget, inMsg, nonBlock, timeout, onEnd);
+        LOGD("[CommProxy] use equal label to send data");
+        int errCode = targetCommunicator->SendMessage(dstTarget, inMsg, config, onEnd);
         RefObject::DecObjRef(targetCommunicator);
         return errCode;
     }
 
     if (mainComm_ != nullptr) {
-        return mainComm_->SendMessage(dstTarget, inMsg, nonBlock, timeout, onEnd);
+        return mainComm_->SendMessage(dstTarget, inMsg, config, onEnd);
     }
 
     return -E_NOT_INIT;

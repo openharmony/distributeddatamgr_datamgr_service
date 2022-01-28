@@ -19,10 +19,13 @@
 #include <set>
 #include <string>
 #include <vector>
+#include "endian_convert.h"
 #include "message.h"
 #include "adapter_stub.h"
 #include "frame_header.h"
+#include "iprocess_communicator.h"
 #include "communicator_aggregator.h"
+#include "types.h"
 
 struct EnvHandle {
     DistributedDB::AdapterStub *adapterHandle = nullptr;
@@ -57,6 +60,54 @@ struct RegedOverSizeObject {
 
 struct UnRegedTinyObject {
     uint32_t placeHolder_ = 0;
+};
+
+const uint32_t BUFF_LEN = 16;
+struct ExtendHeadInfo {
+    uint32_t magic;
+    uint32_t length;
+    uint32_t version;
+    uint8_t userId[BUFF_LEN] = {0};
+};
+
+class ExtendHeaderHandleTest : public DistributedDB::ExtendHeaderHandle {
+public:
+    ExtendHeaderHandleTest(const DistributedDB::ExtendInfo &info)
+    {
+        localDbProperty_.appId = info.appId;
+        localDbProperty_.storeId = info.storeId;
+        localDbProperty_.userId = info.userId;
+        localDbProperty_.dstTarget = info.dstTarget;
+    };
+    ~ExtendHeaderHandleTest() {};
+    // headSize should be 8 byte align
+    // return OK and headSize = 0 if no need to fill Head Data
+    // return OK and headSize > 0 if permit sync and will call FillHeadData
+    // return NO_PERMISSION if not permit sync
+    DistributedDB::DBStatus GetHeadDataSize(uint32_t &headSize) override
+    {
+        headSize_ = sizeof(ExtendHeadInfo);
+        headSize_ = BYTE_8_ALIGN(headSize_);
+        headSize = headSize_;
+        return DistributedDB::OK;
+    };
+
+    DistributedDB::DBStatus FillHeadData(uint8_t *data, uint32_t headSize, uint32_t totalLen) override
+    {
+        ExtendHeadInfo info = {MAGIC_NUM, headSize_, 0};
+        DistributedDB::HostToNet(info.magic);
+        DistributedDB::HostToNet(info.length);
+        DistributedDB::HostToNet(info.version);
+        for (uint8_t i = 0; i < BUFF_LEN; i++) {
+            info.userId[i] = localDbProperty_.userId[i];
+        }
+        memcpy_s(data, headSize_, &info, headSize_);
+        return DistributedDB::OK;
+    };
+    static constexpr int MAGIC_NUM = 0xF2;
+private:
+    DistributedDB::ExtendInfo localDbProperty_;
+    uint32_t headSize_;
 };
 
 const std::string DEVICE_NAME_A = "DeviceA";

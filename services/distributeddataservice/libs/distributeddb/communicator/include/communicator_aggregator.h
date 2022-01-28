@@ -89,28 +89,32 @@ public:
 
     static void EnableCommunicatorNotFoundFeedback(bool isEnable);
 
+    std::shared_ptr<ExtendHeaderHandle> GetExtendHeaderHandle(const ExtendInfo &paramInfo);
+
 private:
     // Working in a dedicated thread
     void SendDataRoutine();
     void SendPacketsAndDisposeTask(const SendTask &inTask,
-        const std::vector<std::pair<const uint8_t *, uint32_t>> &eachPacket);
+        const std::vector<std::pair<const uint8_t *, std::pair<uint32_t, uint32_t>>> &eachPacket);
 
     int RetryUntilTimeout(SendTask &inTask, uint32_t timeout, Priority inPrio);
     void TaskFinalizer(const SendTask &inTask, int result);
     void NotifySendableToAllCommunicator();
 
     // Call from Adapter by register these function
-    void OnBytesReceive(const std::string &srcTarget, const uint8_t *bytes, uint32_t length);
+    void OnBytesReceive(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
+        std::string &userId);
     void OnTargetChange(const std::string &target, bool isConnect);
     void OnSendable(const std::string &target);
 
     void OnFragmentReceive(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
-        const ParseResult &inResult);
+        const ParseResult &inResult, std::string &userId);
 
     int OnCommLayerFrameReceive(const std::string &srcTarget, const ParseResult &inResult);
     int OnAppLayerFrameReceive(const std::string &srcTarget, const uint8_t *bytes,
-        uint32_t length, const ParseResult &inResult);
-    int OnAppLayerFrameReceive(const std::string &srcTarget, SerialBuffer *&inFrameBuffer, const ParseResult &inResult);
+        uint32_t length, const ParseResult &inResult, std::string &userId);
+    int OnAppLayerFrameReceive(const std::string &srcTarget, SerialBuffer *&inFrameBuffer,
+        const ParseResult &inResult, std::string &userId);
 
     // Function with suffix NoMutex should be called with mutex in the caller
     int TryDeliverAppLayerFrameToCommunicatorNoMutex(const std::string &srcTarget, SerialBuffer *&inFrameBuffer,

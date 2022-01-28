@@ -102,8 +102,13 @@ namespace {
         {
             if (lackCallback_) {
                 std::vector<uint8_t> vect(identifier.begin(), identifier.end());
-                lackCallback_(vect);
+                lackCallback_(vect, USER_ID1);
             }
+        }
+
+        int GetLocalIdentity(std::string &outTarget) const override
+        {
+            return E_OK;
         }
     private:
         CommunicatorLackCallback lackCallback_;

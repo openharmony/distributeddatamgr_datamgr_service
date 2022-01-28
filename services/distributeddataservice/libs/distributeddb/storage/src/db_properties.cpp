@@ -25,6 +25,8 @@ const std::string DBProperties::APP_ID = "appId";
 const std::string DBProperties::STORE_ID = "storeId";
 const std::string DBProperties::IDENTIFIER_DATA = "identifier";
 const std::string DBProperties::IDENTIFIER_DIR = "identifierDir";
+const std::string DBProperties::DUAL_TUPLE_IDENTIFIER_DATA = "dualTupleIdentifier";
+const std::string DBProperties::SYNC_DUAL_TUPLE_MODE = "syncDualTuple";
 
 std::string DBProperties::GetStringProp(const std::string &name, const std::string &defaultValue) const
 {
@@ -75,5 +77,7 @@ void DBProperties::SetIdentifier(const std::string &userId, const std::string &a
     SetStringProp(DBProperties::STORE_ID, storeId);
     std::string hashIdentifier = DBCommon::TransferHashString(DBCommon::GenerateIdentifierId(storeId, appId, userId));
     SetStringProp(DBProperties::IDENTIFIER_DATA, hashIdentifier);
+    std::string dualIdentifier = DBCommon::TransferHashString(DBCommon::GenerateDualTupleIdentifierId(storeId, appId));
+    SetStringProp(DBProperties::DUAL_TUPLE_IDENTIFIER_DATA, dualIdentifier);
 }
 }

@@ -521,7 +521,8 @@ int ValueSliceSync::GetValidValueSliceHashNode(MultiVerSyncTaskContext *context,
 
 int ValueSliceSync::Send(const DeviceID &deviceId, const Message *inMsg)
 {
-    int errCode = communicateHandle_->SendMessage(deviceId, inMsg, false, SEND_TIME_OUT);
+    SendConfig conf = {false, SEND_TIME_OUT};
+    int errCode = communicateHandle_->SendMessage(deviceId, inMsg, conf);
     if (errCode != E_OK) {
         LOGE("ValueSliceSync::Send ERR! err = %d", errCode);
     }

@@ -23,15 +23,15 @@ namespace DistributedDB {
 class MockAutoLaunch : public AutoLaunch {
 public:
 
-    void SetAutoLaunchItem(const std::string &identify, AutoLaunchItem &item)
+    void SetAutoLaunchItem(const std::string &identify, const std::string &userId, AutoLaunchItem &item)
     {
         std::lock_guard<std::mutex> autoLock(extLock_);
-        extItemMap_[identify] = item;
+        extItemMap_[identify][userId] = item;
     }
 
-    void CallExtConnectionLifeCycleCallbackTask(const std::string &identifier)
+    void CallExtConnectionLifeCycleCallbackTask(const std::string &identifier, const std::string &userId)
     {
-        AutoLaunch::ExtConnectionLifeCycleCallbackTask(identifier);
+        AutoLaunch::ExtConnectionLifeCycleCallbackTask(identifier, userId);
     }
 
     MOCK_METHOD1(TryCloseConnection, void(AutoLaunchItem &));

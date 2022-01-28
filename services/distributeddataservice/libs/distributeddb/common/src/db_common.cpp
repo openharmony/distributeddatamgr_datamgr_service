@@ -287,6 +287,11 @@ std::string DBCommon::GenerateIdentifierId(const std::string &storeId,
     return userId + "-" + appId + "-" + storeId;
 }
 
+std::string DBCommon::GenerateDualTupleIdentifierId(const std::string &storeId, const std::string &appId)
+{
+    return appId + "-" + storeId;
+}
+
 void DBCommon::SetDatabaseIds(KvDBProperties &properties, const std::string &appId, const std::string &userId,
     const std::string &storeId)
 {

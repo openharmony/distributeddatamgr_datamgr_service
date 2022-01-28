@@ -55,6 +55,8 @@ public:
 
     // Get the identifier of this kvdb.
     std::vector<uint8_t> GetIdentifier() const override;
+    // Get the dual tuple identifier of this kvdb.
+    std::vector<uint8_t> GetDualTupleIdentifier() const override;
 
     // Get interface for syncer.
     IKvDBSyncInterface *GetSyncInterface() override;

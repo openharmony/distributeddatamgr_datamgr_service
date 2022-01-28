@@ -30,7 +30,6 @@ const std::string KvDBProperties::CHECK_INTEGRITY = "checkIntegrity";
 const std::string KvDBProperties::RM_CORRUPTED_DB = "rmCorruptedDb";
 const std::string KvDBProperties::COMPRESS_ON_SYNC = "needCompressOnSync";
 const std::string KvDBProperties::COMPRESSION_RATE = "compressionRate";
-const std::string KvDBProperties::SYNC_DUALTUPLE_MODE = "syncDualTupleMode";
 
 KvDBProperties::KvDBProperties()
     : cipherType_(CipherType::AES_256_GCM)

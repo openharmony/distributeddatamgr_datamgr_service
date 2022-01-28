@@ -19,11 +19,14 @@
 #include <string>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include "communicator_type_define.h"
+#include "iprocess_communicator.h"
 
 namespace DistributedDB {
 // SendableCallback only notify when status changed from unsendable to sendable
-using BytesReceiveCallback = std::function<void(const std::string &srcTarget, const uint8_t *bytes, uint32_t length)>;
+using BytesReceiveCallback = std::function<void(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
+    std::string &userId)>;
 using TargetChangeCallback = std::function<void(const std::string &target, bool isConnect)>;
 using SendableCallback = std::function<void(const std::string &target)>;
 
@@ -66,6 +69,8 @@ public:
     virtual int RegSendableCallback(const SendableCallback &onSendable, const Finalizer &inOper) = 0;
 
     virtual bool IsDeviceOnline(const std::string &device) = 0;
+
+    virtual std::shared_ptr<ExtendHeaderHandle> GetExtendHeaderHandle(const ExtendInfo &paramInfo) = 0;
 
     virtual ~IAdapter() {};
 };

@@ -120,6 +120,8 @@ constexpr int E_FORBID_CACHEDB = (E_BASE + 96); // such after rekey can not chec
 constexpr int E_INTERCEPT_DATA_FAIL = (E_BASE + 97); // Intercept push data failed.
 constexpr int E_INVALID_COMPRESS_ALGO = (E_BASE + 98); // The algo is defined, but there's no implement for the algo.
 constexpr int E_LOG_OVER_LIMITS = (E_BASE + 99); // The log file size is over the limits.
+constexpr int E_MODE_MISMATCH = (E_BASE + 100); // dual sync mode mismatch
+constexpr int E_NO_NEED_ACTIVE = (E_BASE + 101); // no need to active sync mode
 // Num 150+ is reserved for schema related errno, since it may be added regularly
 constexpr int E_JSON_PARSE_FAIL = (E_BASE + 150); // Parse json fail in grammatical level
 constexpr int E_JSON_INSERT_PATH_EXIST = (E_BASE + 151); // Path already exist before insert

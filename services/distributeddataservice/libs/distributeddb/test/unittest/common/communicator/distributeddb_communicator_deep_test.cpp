@@ -161,7 +161,8 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, WaitAndRetrySend001, TestSize.Level2
      */
     Message *msgForAB = BuildRegedTinyMessage();
     ASSERT_NE(msgForAB, nullptr);
-    int errCode = g_commAB->SendMessage(DEVICE_NAME_B, msgForAB, true, 0);
+    SendConfig conf = {true, 0};
+    int errCode = g_commAB->SendMessage(DEVICE_NAME_B, msgForAB, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Wait 100 ms
     EXPECT_EQ(msgForBB, nullptr);
@@ -327,7 +328,8 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment001, TestSize.Level2)
     const uint32_t dataLength = 13 * 1024 * 1024; // 13 MB, 1024 is scale
     Message *sendMsgForAB = BuildRegedGiantMessage(dataLength);
     ASSERT_NE(sendMsgForAB, nullptr);
-    int errCode = g_commAB->SendMessage(DEVICE_NAME_B, sendMsgForAB, false, 0);
+    SendConfig conf = {false, 0};
+    int errCode = g_commAB->SendMessage(DEVICE_NAME_B, sendMsgForAB, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(2600)); // Wait 2600 ms to make sure send done
     ASSERT_NE(recvMsgForBB, nullptr);
@@ -387,7 +389,8 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment002, TestSize.Level2)
     uint32_t dataLength = 13 * 1024 * 1024; // 13 MB, 1024 is scale
     Message *sendMsgForBC = BuildRegedGiantMessage(dataLength);
     ASSERT_NE(sendMsgForBC, nullptr);
-    int errCode = g_commBC->SendMessage(DEVICE_NAME_C, sendMsgForBC, false, 0);
+    SendConfig conf = {false, 0};
+    int errCode = g_commBC->SendMessage(DEVICE_NAME_C, sendMsgForBC, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(2600)); // Wait 2600 ms to make sure send done
     EXPECT_EQ(recvMsgForCC, nullptr);
@@ -404,7 +407,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment002, TestSize.Level2)
     dataLength = 17 * 1024 * 1024; // 17 MB, 1024 is scale
     Message *resendMsgForBC = BuildRegedGiantMessage(dataLength);
     ASSERT_NE(resendMsgForBC, nullptr);
-    errCode = g_commBC->SendMessage(DEVICE_NAME_C, resendMsgForBC, false, 0);
+    errCode = g_commBC->SendMessage(DEVICE_NAME_C, resendMsgForBC, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(3400)); // Wait 3400 ms to make sure send done
     ASSERT_NE(recvMsgForCC, nullptr);
@@ -457,7 +460,8 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment003, TestSize.Level3)
     uint32_t dataLength = 23 * 1024 * 1024; // 23 MB, 1024 is scale
     Message *sendMsgForAB = BuildRegedGiantMessage(dataLength);
     ASSERT_NE(sendMsgForAB, nullptr);
-    int errCode = g_commAB->SendMessage(DEVICE_NAME_B, sendMsgForAB, false, 0);
+    SendConfig conf = {false, 0};
+    int errCode = g_commAB->SendMessage(DEVICE_NAME_B, sendMsgForAB, conf);
     EXPECT_EQ(errCode, E_OK);
 
     /**
@@ -465,7 +469,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment003, TestSize.Level3)
      */
     Message *sendMsgForCC = BuildRegedGiantMessage(dataLength);
     ASSERT_NE(sendMsgForCC, nullptr);
-    errCode = g_commCC->SendMessage(DEVICE_NAME_B, sendMsgForCC, false, 0);
+    errCode = g_commCC->SendMessage(DEVICE_NAME_B, sendMsgForCC, conf);
     EXPECT_EQ(errCode, E_OK);
 
     /**

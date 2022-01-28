@@ -54,6 +54,7 @@ RuntimeContextImpl::~RuntimeContextImpl()
     systemApiAdapter_ = nullptr;
     delete lockStatusObserver_;
     lockStatusObserver_ = nullptr;
+    userChangeMonitor_ = nullptr;
 }
 
 // Set the label of this process.
@@ -397,9 +398,10 @@ int RuntimeContextImpl::EnableKvStoreAutoLaunch(const KvDBProperties &properties
     return autoLaunch_.EnableKvStoreAutoLaunch(properties, notifier, option);
 }
 
-int RuntimeContextImpl::DisableKvStoreAutoLaunch(const std::string &identifier)
+int RuntimeContextImpl::DisableKvStoreAutoLaunch(const std::string &normalIdentifier,
+    const std::string &dualTupleIdentifier, const std::string &userId)
 {
-    return autoLaunch_.DisableKvStoreAutoLaunch(identifier);
+    return autoLaunch_.DisableKvStoreAutoLaunch(normalIdentifier, dualTupleIdentifier, userId);
 }
 
 void RuntimeContextImpl::GetAutoLaunchSyncDevices(const std::string &identifier,
@@ -605,7 +607,7 @@ void RuntimeContextImpl::NotifyDatabaseStatusChange(const std::string &userId, c
     });
 }
 
-int RuntimeContextImpl::SetSyncActivationCheckCallback(SyncActivationCheckCallback &callback)
+int RuntimeContextImpl::SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback)
 {
     std::unique_lock<std::shared_mutex> writeLock(syncActivationCheckCallbackMutex_);
     syncActivationCheckCallback_ = callback;
@@ -623,7 +625,7 @@ bool RuntimeContextImpl::IsSyncerNeedActive(std::string &userId, std::string &ap
 }
 
 NotificationChain::Listener *RuntimeContextImpl::RegisterUserChangedListerner(const UserChangedAction &action,
-    bool isActiveEvent)
+    EventType event)
 {
     int errCode;
     std::lock_guard<std::mutex> autoLock(userChangeMonitorLock_);
@@ -636,8 +638,7 @@ NotificationChain::Listener *RuntimeContextImpl::RegisterUserChangedListerner(co
             return nullptr;
         }
     }
-    NotificationChain::Listener *listener = userChangeMonitor_->RegisterUserChangedListerner(action, isActiveEvent,
-        errCode);
+    NotificationChain::Listener *listener = userChangeMonitor_->RegisterUserChangedListerner(action, event, errCode);
     if ((listener == nullptr) || (errCode != E_OK)) {
         LOGE("Register user status changed listener failed, err = %d", errCode);
         return nullptr;
@@ -647,7 +648,6 @@ NotificationChain::Listener *RuntimeContextImpl::RegisterUserChangedListerner(co
 
 int RuntimeContextImpl::NotifyUserChanged() const
 {
-    std::lock_guard<std::mutex> autoLock(userChangeMonitorLock_);
     if (userChangeMonitor_ == nullptr) {
         LOGD("NotifyUserChanged fail, userChangeMonitor is null");
         return -E_NOT_SUPPORT;

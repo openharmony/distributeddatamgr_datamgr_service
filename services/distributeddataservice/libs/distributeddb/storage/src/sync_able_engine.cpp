@@ -102,7 +102,7 @@ void SyncAbleEngine::StartSyncer()
         return;
     }
 
-    int errCode = syncer_.Initialize(store_);
+    int errCode = syncer_.Initialize(store_, true);
     if (errCode == E_OK) {
         started_ = true;
     } else {

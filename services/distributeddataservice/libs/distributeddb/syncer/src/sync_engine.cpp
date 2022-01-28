@@ -113,7 +113,7 @@ int SyncEngine::Initialize(ISyncInterface *syncInterface, std::shared_ptr<Metada
 
 int SyncEngine::Close()
 {
-    LOGI("[SyncEngine] SyncEngine close enter!");
+    LOGI("[SyncEngine] SyncEngine[%s] close enter!", label_.c_str());
     isActive_ = false;
     UnRegCommunicatorsCallback();
     StopAutoSubscribeTimer();
@@ -242,9 +242,17 @@ int SyncEngine::InitComunicator(const ISyncInterface *syncInterface)
         LOGE("[SyncEngine] Get ICommunicatorAggregator error when init the sync engine err = %d", errCode);
         return errCode;
     }
-
     std::vector<uint8_t> label = syncInterface->GetIdentifier();
-    communicator_ = communicatorAggregator->AllocCommunicator(label, errCode);
+    bool isSyncDualTupleMode = syncInterface->GetDbProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE,
+        false);
+    if (isSyncDualTupleMode) {
+        std::vector<uint8_t> dualTuplelabel = syncInterface->GetDualTupleIdentifier();
+        LOGI("[SyncEngine] dual tuple mode, original identifier=%0.6s, target identifier=%0.6s", VEC_TO_STR(label),
+            VEC_TO_STR(dualTuplelabel));
+        communicator_ = communicatorAggregator->AllocCommunicator(dualTuplelabel, errCode);
+    } else {
+        communicator_ = communicatorAggregator->AllocCommunicator(label, errCode);
+    }
     if (communicator_ == nullptr) {
         LOGE("[SyncEngine] AllocCommunicator error when init the sync engine! err = %d", errCode);
         return errCode;

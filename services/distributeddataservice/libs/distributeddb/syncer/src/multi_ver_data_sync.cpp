@@ -576,7 +576,8 @@ bool MultiVerDataSync::IsCommitExisted(const MultiVerCommitNode &commit)
 
 int MultiVerDataSync::Send(const DeviceID &deviceId, const Message *inMsg)
 {
-    int errCode = communicateHandle_->SendMessage(deviceId, inMsg, false, SEND_TIME_OUT);
+    SendConfig conf = {false, SEND_TIME_OUT};
+    int errCode = communicateHandle_->SendMessage(deviceId, inMsg, conf);
     if (errCode != E_OK) {
         LOGE("MultiVerDataSync::Send ERR! ERR = %d", errCode);
     }

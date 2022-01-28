@@ -530,6 +530,13 @@ std::vector<uint8_t> SQLiteSingleVerNaturalStore::GetIdentifier() const
     return identifierVect;
 }
 
+std::vector<uint8_t> SQLiteSingleVerNaturalStore::GetDualTupleIdentifier() const
+{
+    std::string identifier = MyProp().GetStringProp(KvDBProperties::DUAL_TUPLE_IDENTIFIER_DATA, "");
+    std::vector<uint8_t> identifierVect(identifier.begin(), identifier.end());
+    return identifierVect;
+}
+
 // Get interface for syncer.
 IKvDBSyncInterface *SQLiteSingleVerNaturalStore::GetSyncInterface()
 {
@@ -1743,8 +1750,14 @@ int SQLiteSingleVerNaturalStore::StartLifeCycleTimer(const DatabaseLifeCycleNoti
         [this](TimerId id) -> int {
             std::lock_guard<std::mutex> lock(lifeCycleMutex_);
             if (lifeCycleNotifier_) {
-                auto identifier = GetMyProperties().GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
-                lifeCycleNotifier_(identifier);
+                std::string identifier;
+                if (GetMyProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE, false)) {
+                    identifier = GetMyProperties().GetStringProp(KvDBProperties::DUAL_TUPLE_IDENTIFIER_DATA, "");
+                } else {
+                    identifier = GetMyProperties().GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
+                }
+                auto userId = GetMyProperties().GetStringProp(DBProperties::USER_ID, "");
+                lifeCycleNotifier_(identifier, userId);
             }
             return 0;
         },

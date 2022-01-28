@@ -29,6 +29,9 @@ public:
 
     DISABLE_COPY_ASSIGN_MOVE(SerialBuffer);
 
+    // will call the func before alloc buff, calculate the head len which is used for data service
+    void SetExtendHeadLength(uint32_t extendHeaderLen);
+    uint32_t GetExtendHeadLength() const;
     // May be directly send out, so padding is needed
     int AllocBufferByPayloadLength(uint32_t inPayloadLen, uint32_t inHeaderLen);
 
@@ -46,6 +49,8 @@ public:
 
     uint32_t GetSize() const;
 
+    uint8_t *GetoringinalAddr() const;
+
     std::pair<uint8_t *, uint32_t> GetWritableBytesForEntireBuffer();
     std::pair<uint8_t *, uint32_t> GetWritableBytesForEntireFrame();
     std::pair<uint8_t *, uint32_t> GetWritableBytesForHeader();
@@ -55,13 +60,18 @@ public:
     std::pair<const uint8_t *, uint32_t> GetReadOnlyBytesForEntireFrame() const;
     std::pair<const uint8_t *, uint32_t> GetReadOnlyBytesForHeader() const;
     std::pair<const uint8_t *, uint32_t> GetReadOnlyBytesForPayload() const;
+
+    static const uint32_t MAX_EXTEND_HEAD_LENGTH = 512;
 private:
-    uint8_t *bytes_ = nullptr;
+    uint8_t *oringinalBytes_ = nullptr; // all beytes start addr
+    uint8_t *bytes_ = nullptr; // distributeddb start addr
     const uint8_t *externalBytes_ = nullptr;
     uint32_t totalLen_ = 0;
     uint32_t headerLen_ = 0;
     uint32_t payloadLen_ = 0;
     uint32_t paddingLen_ = 0;
+    // only apply message will use extend header
+    uint32_t extendHeadLen_ = 0;
     bool isExternalStackMemory_ = false;
 };
 } // namespace DistributedDB

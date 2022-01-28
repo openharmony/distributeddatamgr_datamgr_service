@@ -17,18 +17,32 @@
 #define PROTOCOLPROTO_H
 
 #include <cstdint>
+#include <memory>
 #include "message.h"
 #include "frame_header.h"
 #include "parse_result.h"
 #include "serial_buffer.h"
 #include "message_transform.h"
 #include "communicator_type_define.h"
+#include "iprocess_communicator.h"
 
 namespace DistributedDB {
 struct PhyHeaderInfo {
     uint64_t sourceId;
     uint32_t frameId;
     FrameType frameType;
+};
+
+struct FrameFragmentInfo {
+    uint8_t *oringinalBytesAddr;
+    uint32_t extendHeadSize;
+    uint32_t splitLength;
+    uint16_t fragCount;
+};
+
+struct FragmentPacket {
+    uint8_t *ptrPacket;
+    uint32_t leftLength;
 };
 
 class ProtocolProto {
@@ -41,7 +55,8 @@ public:
     static uint32_t GetCommLayerFrameHeaderLength();
 
     // For handling application layer message. Return a heap object.
-    static SerialBuffer *ToSerialBuffer(const Message *inMsg, int &outErrorNo, bool onlyMsgHeader = false);
+    static SerialBuffer *ToSerialBuffer(const Message *inMsg, int &outErrorNo,
+        std::shared_ptr<ExtendHeaderHandle> &extendHandle, bool onlyMsgHeader = false);
     static Message *ToMessage(const SerialBuffer *inBuff, int &outErrorNo, bool onlyMsgHeader = false);
 
     // For handling communication layer frame. Return a heap object.
@@ -53,7 +68,7 @@ public:
 
     // Return E_OK if no error happened. outPieces.size equal zero means not split, in this case, use ori buff.
     static int SplitFrameIntoPacketsIfNeed(const SerialBuffer *inBuff, uint32_t inMtuSize,
-        std::vector<std::vector<uint8_t>> &outPieces);
+        std::vector<std::pair<std::vector<uint8_t>, uint32_t>> &outPieces);
     static int AnalyzeSplitStructure(const ParseResult &inResult, uint32_t &outFragLen, uint32_t &outLastFragLen);
 
     // inFrame is the destination, pktBytes and pktLength are the source, fragOffset and fragLength give the boundary
@@ -64,6 +79,8 @@ public:
     // Return E_ALREADY_REGISTER if msgId is already registered
     // Return E_INVALID_ARGS if member of inFunc not all valid
     static int RegTransformFunction(uint32_t msgId, const TransformFunc &inFunc);
+
+    static void UnRegTransformFunction(uint32_t msgId);
 
     // For application layer frame. In send case. Focus on frame.
     static int SetDivergeHeader(SerialBuffer *inBuff, const LabelType &inCommLabel);
@@ -104,10 +121,11 @@ private:
     static int ParseLabelExchange(const uint8_t *bytes, uint32_t length, ParseResult &inResult);
     static int ParseLabelExchangeAck(const uint8_t *bytes, uint32_t length, ParseResult &inResult);
 
-    static int FrameFragmentation(const uint8_t *splitStartBytes, uint32_t splitLength, uint16_t fragCount,
-        const CommPhyHeader &framePhyHeader, std::vector<std::vector<uint8_t>> &outPieces);
+    static int FrameFragmentation(const uint8_t *splitStartBytes, const FrameFragmentInfo &fragmentInfo,
+        const CommPhyHeader &framePhyHeader, std::vector<std::pair<std::vector<uint8_t>, uint32_t>> &outPieces);
     static int FillFragmentPacket(const CommPhyHeader &phyHeader, const CommPhyOptHeader &phyOptHeader,
-        const uint8_t *fragBytes, uint32_t fragLen, std::vector<uint8_t> &outPacket);
+        const uint8_t *fragBytes, uint32_t fragLen, FragmentPacket &outPacket);
+    static int FillFragmentPacketExtendHead(uint8_t *headBytesAddr, uint32_t headLen, FragmentPacket &outPacket);
 
     static std::map<uint32_t, TransformFunc> msgIdMapFunc_;
 };

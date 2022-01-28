@@ -73,7 +73,8 @@ public:
     int EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
         const AutoLaunchOption &option) override;
 
-    int DisableKvStoreAutoLaunch(const std::string &identifier) override;
+    int DisableKvStoreAutoLaunch(const std::string &normalIdentifier, const std::string &dualTupleIdentifier,
+        const std::string &userId) override;
 
     void GetAutoLaunchSyncDevices(const std::string &identifier, std::vector<std::string> &devices) const override;
 
@@ -103,13 +104,13 @@ public:
     void NotifyDatabaseStatusChange(const std::string &userId, const std::string &appId, const std::string &storeId,
         const std::string &deviceId, bool onlineStatus) override;
 
-    int SetSyncActivationCheckCallback(SyncActivationCheckCallback &callback) override;
+    int SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback) override;
 
     bool IsSyncerNeedActive(std::string &userId, std::string &appId, std::string &storeId) const override;
 
     // Register a user changed lister, it will be callback when user change.
     NotificationChain::Listener *RegisterUserChangedListerner(const UserChangedAction &action,
-        bool isActiveEvent) override;
+        EventType event) override;
     // Notify TIME_CHANGE_EVENT.
     int NotifyUserChanged() const override;
 private:

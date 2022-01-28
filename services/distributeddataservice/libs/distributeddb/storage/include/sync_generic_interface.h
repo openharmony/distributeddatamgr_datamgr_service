@@ -139,6 +139,11 @@ public:
     {
         return false;
     }
+
+    std::vector<uint8_t> GetDualTupleIdentifier() const override
+    {
+        return {};
+    }
 };
 }
 #endif // SYNC_GENERIC_INTERFACE_H

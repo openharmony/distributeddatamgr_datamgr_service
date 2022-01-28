@@ -79,7 +79,8 @@ int VirtualCommunicatorAggregator::RegOnConnectCallback(const OnConnectCallback 
 void VirtualCommunicatorAggregator::RunCommunicatorLackCallback(const LabelType &commLabel)
 {
     if (onCommLack_) {
-        onCommLack_(commLabel);
+        std::string userId;
+        onCommLack_(commLabel, userId_);
     }
 }
 
@@ -88,6 +89,11 @@ void VirtualCommunicatorAggregator::RunOnConnectCallback(const std::string &targ
     if (onConnect_) {
         onConnect_(target, isConnect);
     }
+}
+
+int VirtualCommunicatorAggregator::GetLocalIdentity(std::string &outTarget) const
+{
+    return E_OK;
 }
 
 void VirtualCommunicatorAggregator::OnlineDevice(const std::string &deviceId) const
@@ -230,6 +236,11 @@ void VirtualCommunicatorAggregator::RegOnDispatch(
     const std::function<void(const std::string&, Message *inMsg)> &onDispatch)
 {
     onDispatch_ = onDispatch;
+}
+
+void VirtualCommunicatorAggregator::SetCurrentUserId(const std::string &userId)
+{
+    userId_ = userId;
 }
 } // namespace DistributedDB
 

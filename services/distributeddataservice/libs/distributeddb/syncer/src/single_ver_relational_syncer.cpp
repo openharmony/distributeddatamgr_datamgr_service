@@ -19,9 +19,9 @@
 #include "single_ver_sync_engine.h"
 
 namespace DistributedDB {
-int SingleVerRelationalSyncer::Initialize(ISyncInterface *syncInterface)
+int SingleVerRelationalSyncer::Initialize(ISyncInterface *syncInterface, bool isNeedActive)
 {
-    int errCode = SingleVerSyncer::Initialize(syncInterface);
+    int errCode = SingleVerSyncer::Initialize(syncInterface, isNeedActive);
     if (errCode != E_OK) {
         return errCode;
     }

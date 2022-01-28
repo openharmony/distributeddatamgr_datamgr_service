@@ -51,6 +51,8 @@ public:
     static const std::string STORE_ID;
     static const std::string IDENTIFIER_DATA;
     static const std::string IDENTIFIER_DIR;
+    static const std::string DUAL_TUPLE_IDENTIFIER_DATA;
+    static const std::string SYNC_DUAL_TUPLE_MODE;
 
 protected:
     DBProperties() = default;

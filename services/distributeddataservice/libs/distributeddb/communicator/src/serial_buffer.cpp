@@ -18,21 +18,34 @@
 #include "securec.h"
 #include "db_errno.h"
 #include "communicator_type_define.h"
+#include "log_print.h"
 
 namespace DistributedDB {
 SerialBuffer::~SerialBuffer()
 {
-    if (!isExternalStackMemory_ && bytes_ != nullptr) {
-        delete[] bytes_;
+    if (!isExternalStackMemory_ && oringinalBytes_ != nullptr) {
+        delete[] oringinalBytes_;
     }
+    oringinalBytes_ = nullptr;
     bytes_ = nullptr;
     externalBytes_ = nullptr;
+}
+
+void SerialBuffer::SetExtendHeadLength(uint32_t extendHeaderLen)
+{
+    extendHeadLen_ = extendHeaderLen;
+    LOGI("SetExtendHeadLength=%u", extendHeadLen_);
+}
+
+uint32_t SerialBuffer::GetExtendHeadLength() const
+{
+    return extendHeadLen_;
 }
 
 // In case buffer be directly send out, so padding is needed
 int SerialBuffer::AllocBufferByPayloadLength(uint32_t inPayloadLen, uint32_t inHeaderLen)
 {
-    if (bytes_ != nullptr || externalBytes_ != nullptr) {
+    if (oringinalBytes_!= nullptr || bytes_ != nullptr || externalBytes_ != nullptr) {
         return -E_NOT_PERMIT;
     }
 
@@ -43,10 +56,11 @@ int SerialBuffer::AllocBufferByPayloadLength(uint32_t inPayloadLen, uint32_t inH
     if (totalLen_ == 0 || totalLen_ > MAX_TOTAL_LEN) {
         return -E_INVALID_ARGS;
     }
-    bytes_ = new (std::nothrow) uint8_t[totalLen_];
-    if (bytes_ == nullptr) {
+    oringinalBytes_ = new (std::nothrow) uint8_t[totalLen_ + extendHeadLen_];
+    if (oringinalBytes_ == nullptr) {
         return -E_OUT_OF_MEMORY;
     }
+    bytes_ = oringinalBytes_ + extendHeadLen_;
     return E_OK;
 }
 
@@ -68,6 +82,7 @@ int SerialBuffer::AllocBufferByTotalLength(uint32_t inTotalLen, uint32_t inHeade
     if (bytes_ == nullptr) {
         return -E_OUT_OF_MEMORY;
     }
+    oringinalBytes_ = bytes_;
     return E_OK;
 }
 
@@ -115,13 +130,14 @@ SerialBuffer *SerialBuffer::Clone(int &outErrorNo)
             return nullptr;
         }
     }
-
+    twinBuffer->oringinalBytes_ = twinBuffer->bytes_;
     twinBuffer->externalBytes_ = externalBytes_;
     twinBuffer->totalLen_ = totalLen_;
     twinBuffer->headerLen_ = headerLen_;
     twinBuffer->payloadLen_ = payloadLen_;
     twinBuffer->paddingLen_ = paddingLen_;
     twinBuffer->isExternalStackMemory_ = isExternalStackMemory_;
+    twinBuffer->extendHeadLen_ = extendHeadLen_;
     outErrorNo = E_OK;
     return twinBuffer;
 }
@@ -146,6 +162,8 @@ int SerialBuffer::ConvertForCrossThread()
     // Reset external related info
     externalBytes_ = nullptr;
     isExternalStackMemory_ = false;
+    oringinalBytes_ = bytes_;
+    extendHeadLen_ = 0;
     return E_OK;
 }
 
@@ -155,6 +173,11 @@ uint32_t SerialBuffer::GetSize() const
         return 0;
     }
     return totalLen_;
+}
+
+uint8_t *SerialBuffer::GetoringinalAddr() const
+{
+    return oringinalBytes_;
 }
 
 std::pair<uint8_t *, uint32_t> SerialBuffer::GetWritableBytesForEntireBuffer()

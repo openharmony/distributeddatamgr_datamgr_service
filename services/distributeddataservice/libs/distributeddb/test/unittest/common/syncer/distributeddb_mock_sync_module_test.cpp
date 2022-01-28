@@ -212,8 +212,9 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AutoLaunchCheck001, TestSize.Level1)
      * @tc.steps: step1. put AutoLaunchItem in cache to simulate a connection was auto launched
      */
     std::string id = "TestAutoLaunch";
+    std::string userId = "userId";
     AutoLaunchItem item;
-    mockAutoLaunch.SetAutoLaunchItem(id, item);
+    mockAutoLaunch.SetAutoLaunchItem(id, userId, item);
     EXPECT_CALL(mockAutoLaunch, TryCloseConnection(_)).WillOnce(Return());
     /**
      * @tc.steps: step2. send close singal to simulate a connection was unused in 1 min
@@ -225,8 +226,8 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AutoLaunchCheck001, TestSize.Level1)
     std::unique_lock<std::mutex> lock(mutex);
     std::condition_variable cv;
     for (int i = 0; i < loopCount; i++) {
-        std::thread t = std::thread([&finishCount, &mockAutoLaunch, &id, &mutex, &cv] {
-            mockAutoLaunch.CallExtConnectionLifeCycleCallbackTask(id);
+        std::thread t = std::thread([&finishCount, &mockAutoLaunch, &id, &userId, &mutex, &cv]{
+            mockAutoLaunch.CallExtConnectionLifeCycleCallbackTask(id, userId);
             finishCount++;
             if (finishCount == loopCount) {
                 std::unique_lock<std::mutex> lockInner(mutex);

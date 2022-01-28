@@ -48,6 +48,11 @@ public:
 
     bool IsDeviceOnline(const std::string &device) override;
 
+    std::shared_ptr<ExtendHeaderHandle> GetExtendHeaderHandle(const ExtendInfo &paramInfo) override;
+
+    void CheckAndGetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength,
+        std::string &userId);
+
     /*
      * Extended Part
      */

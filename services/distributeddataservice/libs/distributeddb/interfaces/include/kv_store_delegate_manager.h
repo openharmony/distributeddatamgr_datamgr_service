@@ -98,13 +98,13 @@ public:
     DB_API static void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback);
 
     DB_API static std::string GetKvStoreIdentifier(const std::string &userId, const std::string &appId,
-        const std::string &storeId);
+        const std::string &storeId, bool syncDualTupleMode = false);
 
     DB_API static DBStatus SetProcessSystemAPIAdapter(const std::shared_ptr<IProcessSystemApiAdapter> &adapter);
 
     DB_API static void SetStoreStatusNotifier(const StoreStatusNotifier &notifier);
 
-    DB_API static DBStatus SetSyncActivationCheckCallback(SyncActivationCheckCallback &callback);
+    DB_API static DBStatus SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback);
 
     DB_API static DBStatus NotifyUSerChanged();
 private:

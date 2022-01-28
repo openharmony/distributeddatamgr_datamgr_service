@@ -104,6 +104,7 @@ ohos_source_set("src_file") {
     "../common/src/task_queue.cpp",
     "../common/src/time_tick_monitor.cpp",
     "../common/src/types_export.cpp",
+    "../common/src/user_change_monitor.cpp",
     "../common/src/value_object.cpp",
     "../common/src/zlib_compression.cpp",
     "../communicator/src/combine_status.cpp",
@@ -652,6 +653,11 @@ distributeddb_unittest("DistributedDBRelationalGetDataTest") {
       [ "unittest/common/storage/distributeddb_relational_get_data_test.cpp" ]
 }
 
+distributeddb_unittest("DistributedDBSingleVerMultiUserTest") {
+  sources =
+      [ "unittest/common/syncer/distributeddb_single_ver_multi_user_test.cpp" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -707,6 +713,7 @@ group("unittest") {
     ":DistributedDBSingleVerP2PSubscribeSyncTest",
     ":DistributedDBSingleVerP2PSyncCheckTest",
     ":DistributedDBSingleVerP2PSyncTest",
+    ":DistributedDBSingleVerMultiUserTest",
     ":DistributedDBSingleVersionResultSetTest",
     ":DistributedDBSqliteRegisterTest",
     ":DistributedDBStorageCommitStorageTest",

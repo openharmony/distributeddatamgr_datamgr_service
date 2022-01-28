@@ -309,15 +309,16 @@ HWTEST_F(DistributedDBCommunicatorProxyTest, SendMessage001, TestSize.Level1)
      * @tc.steps: step1. Call SendMessage from CommProxy with param DEVICE_B.
      * @tc.expected: step1. MainComm's SendMessage willed called and return E_OK.
      */
-    EXPECT_CALL(mainComm_, SendMessage(DEVICE_B, _, _, _, _)).WillOnce(Return(E_OK));
-    EXPECT_EQ(commProxy_->SendMessage(DEVICE_B, nullptr, true, 0, nullptr), E_OK);
+    SendConfig conf = {true, 0};
+    EXPECT_CALL(mainComm_, SendMessage(DEVICE_B, _, _, _)).WillOnce(Return(E_OK));
+    EXPECT_EQ(commProxy_->SendMessage(DEVICE_B, nullptr, conf, nullptr), E_OK);
 
     /**
      * @tc.steps: step1. Call SendMessage from CommProxy with param DEVICE_C.
      * @tc.expected: step1. ExtComm's SendMessage willed called and return E_OK.
      */
-    EXPECT_CALL(extComm_, SendMessage(DEVICE_C, _, _, _, _)).WillOnce(Return(E_OK));
-    EXPECT_EQ(commProxy_->SendMessage(DEVICE_C, nullptr, true, 0, nullptr), E_OK);
+    EXPECT_CALL(extComm_, SendMessage(DEVICE_C, _, _, _)).WillOnce(Return(E_OK));
+    EXPECT_EQ(commProxy_->SendMessage(DEVICE_C, nullptr, conf, nullptr), E_OK);
 }
 
 /**

@@ -20,12 +20,41 @@
 #include <vector>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include "store_types.h"
 
 namespace DistributedDB {
 // The DeviceInfos may contain other fields(Can only be auxiliary information) besides identifier field in the future.
 struct DeviceInfos {
     std::string identifier; // An unique and fixed identifier representing a device, such as UUID.
+};
+
+struct ExtendInfo {
+    std::string appId;
+    std::string storeId;
+    std::string userId;
+    std::string dstTarget;
+};
+
+class ExtendHeaderHandle {
+public:
+    ExtendHeaderHandle() {};
+    virtual ~ExtendHeaderHandle() {};
+    // headSize should be 8 byte align
+    // return OK and headSize = 0 if no need to fill Head Data
+    // return OK and headSize > 0 if permit sync and will call FillHeadData
+    // return NO_PERMISSION if not permit sync
+    virtual DBStatus GetHeadDataSize(uint32_t &headSize)
+    {
+        headSize = 0;
+        return OK;
+    };
+    // return OK if fill data ok
+    // return not OK if fill data failed
+    virtual DBStatus FillHeadData(uint8_t *data, uint32_t headSize, uint32_t totalLen)
+    {
+        return OK;
+    };
 };
 
 // In OnDeviceChange, all field of devInfo should be valid, isOnline true for online and false for offline.
@@ -112,6 +141,21 @@ public:
             return 5 * 1000; // 5 * 1000ms
         }
         return GetTimeout();
+    }
+
+    virtual std::shared_ptr<ExtendHeaderHandle> GetExtendHeaderHandle(const ExtendInfo &paramInfo)
+    {
+        return nullptr;
+    }
+    // called after OnDataReceive
+    // return NO_PERMISSION while no need to handle the dataBuff if remote device userId is not mate with local userId
+    // return INVALID_FORMAT and headLength = 0 if data service can not deSerialize the buff
+    // return OK if deSerialize ok and get HeadLength/localUserId successfully
+    virtual DBStatus CheckAndGetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength,
+        std::vector<std::string> &userId)
+    {
+        headLength = 0;
+        return OK;
     }
 };
 } // namespace DistributedDB

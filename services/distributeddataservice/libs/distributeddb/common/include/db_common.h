@@ -50,6 +50,8 @@ public:
     static std::string GenerateIdentifierId(const std::string &storeId,
         const std::string &appId, const std::string &userId);
 
+    static std::string GenerateDualTupleIdentifierId(const std::string &storeId, const std::string &appId);
+
     static void SetDatabaseIds(KvDBProperties &properties, const std::string &appId, const std::string &userId,
         const std::string &storeId);
 
@@ -63,6 +65,7 @@ public:
 // Define short macro substitute for original long expression for convenience of using
 #define VEC_TO_STR(x) DBCommon::VectorToHexString(x).c_str()
 #define STR_MASK(x) DBCommon::StringMasking(x).c_str()
+#define STR_TO_HEX(x) DBCommon::TransferStringToHex(x).c_str()
 } // namespace DistributedDB
 
 #endif // DISTRIBUTEDDB_COMMON_H

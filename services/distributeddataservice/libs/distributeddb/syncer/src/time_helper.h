@@ -18,6 +18,7 @@
 
 #include <mutex>
 
+#include "icommunicator.h"
 #include "meta_data.h"
 #include "runtime_context.h"
 
@@ -54,6 +55,8 @@ public:
 
     // Get local time
     int SaveLocalTimeOffset(TimeOffset offset);
+
+    void SetSendConfig(const std::string &dstTarget, bool nonBlock, uint32_t timeout, SendConfig &sendConf);
 
 private:
     static std::mutex systemTimeLock_;

@@ -447,7 +447,7 @@ HWTEST_F(DistributedDBCommunicatorTest, ReportCommunicatorNotFound001, TestSize.
      */
     std::vector<LabelType> lackLabels;
     int errCode = g_envDeviceB.commAggrHandle->RegCommunicatorLackCallback(
-        [&lackLabels](const LabelType &commLabel)->int {
+        [&lackLabels](const LabelType &commLabel, const std::string &userId)->int {
             lackLabels.push_back(commLabel);
             return -E_NOT_FOUND;
         }, nullptr);
@@ -467,7 +467,8 @@ HWTEST_F(DistributedDBCommunicatorTest, ReportCommunicatorNotFound001, TestSize.
     ASSERT_NOT_NULL_AND_ACTIVATE(commAA);
     Message *msgForAA = BuildRegedTinyMessage();
     ASSERT_NE(msgForAA, nullptr);
-    errCode = commAA->SendMessage(DEVICE_NAME_B, msgForAA, true, 0);
+    SendConfig conf = {true, 0};
+    errCode = commAA->SendMessage(DEVICE_NAME_B, msgForAA, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sleep 100 ms
     ASSERT_EQ(lackLabels.size(), static_cast<size_t>(1));
@@ -499,7 +500,8 @@ HWTEST_F(DistributedDBCommunicatorTest, ReportCommunicatorNotFound001, TestSize.
     Message *msgFor##src##label = BuildRegedTinyMessage(); \
     ASSERT_NE(msgFor##src##label, nullptr); \
     msgFor##src##label->SetSessionId(session); \
-    errCode = comm##src##label->SendMessage(DEVICE_NAME_##dst, msgFor##src##label, true, 0); \
+    SendConfig conf = {true, 0}; \
+    errCode = comm##src##label->SendMessage(DEVICE_NAME_##dst, msgFor##src##label, conf); \
     EXPECT_EQ(errCode, E_OK); \
 }
 
@@ -507,7 +509,8 @@ HWTEST_F(DistributedDBCommunicatorTest, ReportCommunicatorNotFound001, TestSize.
 { \
     Message *msgFor##src##label = BuildRegedGiantMessage(size); \
     ASSERT_NE(msgFor##src##label, nullptr); \
-    errCode = comm##src##label->SendMessage(DEVICE_NAME_##dst, msgFor##src##label, false, 0); \
+    SendConfig conf = {false, 0}; \
+    errCode = comm##src##label->SendMessage(DEVICE_NAME_##dst, msgFor##src##label, conf); \
     EXPECT_EQ(errCode, E_OK); \
 }
 
@@ -539,7 +542,7 @@ HWTEST_F(DistributedDBCommunicatorTest, ReDeliverMessage001, TestSize.Level1)
      */
     std::vector<LabelType> lackLabels;
     int errCode = g_envDeviceB.commAggrHandle->RegCommunicatorLackCallback(
-        [&lackLabels](const LabelType &commLabel)->int {
+        [&lackLabels](const LabelType &commLabel, const std::string &userId)->int {
             lackLabels.push_back(commLabel);
             return E_OK;
         }, nullptr);
@@ -626,7 +629,8 @@ HWTEST_F(DistributedDBCommunicatorTest, ReDeliverMessage002, TestSize.Level1)
     /**
      * @tc.steps: step2. device B register communicator not found callback to CommunicatorAggregator
      */
-    int errCode = g_envDeviceB.commAggrHandle->RegCommunicatorLackCallback([](const LabelType &commLabel)->int {
+    int errCode = g_envDeviceB.commAggrHandle->RegCommunicatorLackCallback([](const LabelType &commLabel,
+        const std::string &userId)->int {
         return E_OK;
     }, nullptr);
     EXPECT_EQ(errCode, E_OK);
@@ -699,7 +703,8 @@ HWTEST_F(DistributedDBCommunicatorTest, ReDeliverMessage003, TestSize.Level2)
     /**
      * @tc.steps: step1. device B register communicator not found callback to CommunicatorAggregator
      */
-    int errCode = g_envDeviceB.commAggrHandle->RegCommunicatorLackCallback([](const LabelType &commLabel)->int {
+    int errCode = g_envDeviceB.commAggrHandle->RegCommunicatorLackCallback([](const LabelType &commLabel,
+        const std::string &userId)->int {
         return E_OK;
     }, nullptr);
     EXPECT_EQ(errCode, E_OK);

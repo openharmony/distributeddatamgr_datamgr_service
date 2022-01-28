@@ -55,9 +55,15 @@ int Metadata::Initialize(ISyncInterface* storage)
     int errCode = GetMetadataFromDb(key, timeOffset);
     if (errCode == -E_NOT_FOUND) {
         uint64_t randTimeOffset = GetRandTimeOffset();
-        SaveLocalTimeOffset(TimeHelper::BASE_OFFSET + randTimeOffset);
-    } else {
+        int errCode = SaveLocalTimeOffset(TimeHelper::BASE_OFFSET + randTimeOffset);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+    } else if (errCode == E_OK) {
         localTimeOffset_ = StringToLong(timeOffset);
+    } else {
+        LOGE("Metadata::Initialize get meatadata from db failed,err=%d", errCode);
+        return errCode;
     }
     {
         std::lock_guard<std::mutex> lockGuard(metadataLock_);
@@ -302,7 +308,11 @@ bool IsMetaDataKey(const Key &inKey, const std::string &expectPrefix)
 int Metadata::LoadAllMetadata()
 {
     std::vector<std::vector<uint8_t>> metaDataKeys;
-    GetAllMetadataKey(metaDataKeys);
+    int errCode = GetAllMetadataKey(metaDataKeys);
+    if (errCode != E_OK) {
+        LOGE("[Metadata] get all metadata key failed err=%d", errCode);
+        return errCode;
+    }
 
     std::vector<std::vector<uint8_t>> querySyncIds;
     for (const auto &deviceId : metaDataKeys) {

@@ -356,8 +356,8 @@ void CommunicatorAggregator::SendDataRoutine()
         if (errCode != E_OK) {
             continue; // Not possible to happen
         }
-
-        std::vector<std::vector<uint8_t>> piecePackets;
+        // <vector, extendHeadSize>
+        std::vector<std::pair<std::vector<uint8_t>, uint32_t>> piecePackets;
         errCode = ProtocolProto::SplitFrameIntoPacketsIfNeed(taskToSend.buffer,
             adapterHandle_->GetMtuSize(taskToSend.dstTarget), piecePackets);
         if (errCode != E_OK) {
@@ -365,14 +365,21 @@ void CommunicatorAggregator::SendDataRoutine()
             TaskFinalizer(taskToSend, errCode);
             continue;
         }
-
-        std::vector<std::pair<const uint8_t *, uint32_t>> eachPacket;
+        // <addr, <extendHeadSize, totalLen>>
+        std::vector<std::pair<const uint8_t *, std::pair<uint32_t, uint32_t>>> eachPacket;
         if (piecePackets.size() == 0) {
             // Case that no need to split a frame, just use original buffer as a packet
-            eachPacket.push_back(taskToSend.buffer->GetReadOnlyBytesForEntireBuffer());
+            std::pair<const uint8_t *, uint32_t> tmpEntry = taskToSend.buffer->GetReadOnlyBytesForEntireBuffer();
+            std::pair<const uint8_t *, std::pair<uint32_t, uint32_t>> entry;
+            entry.first = tmpEntry.first - taskToSend.buffer->GetExtendHeadLength();
+            entry.second.first = taskToSend.buffer->GetExtendHeadLength();
+            entry.second.second = tmpEntry.second + entry.second.first;
+            eachPacket.push_back(entry);
         } else {
             for (auto &entry : piecePackets) {
-                eachPacket.push_back(std::make_pair<const uint8_t *, uint32_t>(&(entry[0]), entry.size()));
+                std::pair<const uint8_t *, std::pair<uint32_t, uint32_t>> tmpEntry =
+                    {&(entry.first[0]), {entry.second, entry.first.size()}};
+                eachPacket.push_back(tmpEntry);
             }
         }
 
@@ -381,15 +388,15 @@ void CommunicatorAggregator::SendDataRoutine()
 }
 
 void CommunicatorAggregator::SendPacketsAndDisposeTask(const SendTask &inTask,
-    const std::vector<std::pair<const uint8_t *, uint32_t>> &eachPacket)
+    const std::vector<std::pair<const uint8_t *, std::pair<uint32_t, uint32_t>>> &eachPacket)
 {
     bool taskNeedFinalize = true;
     int errCode = E_OK;
     for (auto &entry : eachPacket) {
-        LOGI("[CommAggr][SendPackets] DoSendBytes, dstTarget=%s{private}, length=%u.", inTask.dstTarget.c_str(),
-            entry.second);
-        ProtocolProto::DisplayPacketInformation(entry.first, entry.second); // For debug, delete in the future
-        errCode = adapterHandle_->SendBytes(inTask.dstTarget, entry.first, entry.second);
+        LOGI("[CommAggr][SendPackets] DoSendBytes, dstTarget=%s{private}, extendHeadLength=%u, totalLength=%u.",
+            inTask.dstTarget.c_str(), entry.second.first, entry.second.second);
+        ProtocolProto::DisplayPacketInformation(entry.first + entry.second.first, entry.second.second); // For debug, delete in the future
+        errCode = adapterHandle_->SendBytes(inTask.dstTarget, entry.first, entry.second.second);
         if (errCode == -E_WAIT_RETRY) {
             LOGE("[CommAggr][SendPackets] SendBytes temporally fail.");
             scheduler_.DelayTaskByTarget(inTask.dstTarget);
@@ -470,7 +477,8 @@ void CommunicatorAggregator::NotifySendableToAllCommunicator()
     }
 }
 
-void CommunicatorAggregator::OnBytesReceive(const std::string &srcTarget, const uint8_t *bytes, uint32_t length)
+void CommunicatorAggregator::OnBytesReceive(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
+    std::string &userId)
 {
     ProtocolProto::DisplayPacketInformation(bytes, length); // For debug, delete in the future
     ParseResult packetResult;
@@ -491,14 +499,14 @@ void CommunicatorAggregator::OnBytesReceive(const std::string &srcTarget, const 
     }
 
     if (packetResult.IsFragment()) {
-        OnFragmentReceive(srcTarget, bytes, length, packetResult);
+        OnFragmentReceive(srcTarget, bytes, length, packetResult, userId);
     } else if (packetResult.GetFrameTypeInfo() != FrameType::APPLICATION_MESSAGE) {
         errCode = OnCommLayerFrameReceive(srcTarget, packetResult);
         if (errCode != E_OK) {
             LOGE("[CommAggr][Receive] CommLayer receive fail, errCode=%d.", errCode);
         }
     } else {
-        errCode = OnAppLayerFrameReceive(srcTarget, bytes, length, packetResult);
+        errCode = OnAppLayerFrameReceive(srcTarget, bytes, length, packetResult, userId);
         if (errCode != E_OK) {
             LOGE("[CommAggr][Receive] AppLayer receive fail, errCode=%d.", errCode);
         }
@@ -557,7 +565,7 @@ void CommunicatorAggregator::OnSendable(const std::string &target)
 }
 
 void CommunicatorAggregator::OnFragmentReceive(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
-    const ParseResult &inResult)
+    const ParseResult &inResult, std::string &userId)
 {
     int errorNo = E_OK;
     ParseResult frameResult;
@@ -590,7 +598,7 @@ void CommunicatorAggregator::OnFragmentReceive(const std::string &srcTarget, con
         delete frameBuffer;
         frameBuffer = nullptr;
     } else {
-        errCode = OnAppLayerFrameReceive(srcTarget, frameBuffer, frameResult);
+        errCode = OnAppLayerFrameReceive(srcTarget, frameBuffer, frameResult, userId);
         if (errCode != E_OK) {
             LOGE("[CommAggr][Receive] AppLayer receive fail after combination, errCode=%d.", errCode);
         }
@@ -636,7 +644,7 @@ int CommunicatorAggregator::OnCommLayerFrameReceive(const std::string &srcTarget
 }
 
 int CommunicatorAggregator::OnAppLayerFrameReceive(const std::string &srcTarget, const uint8_t *bytes,
-    uint32_t length, const ParseResult &inResult)
+    uint32_t length, const ParseResult &inResult, std::string &userId)
 {
     SerialBuffer *buffer = new (std::nothrow) SerialBuffer();
     if (buffer == nullptr) {
@@ -651,7 +659,7 @@ int CommunicatorAggregator::OnAppLayerFrameReceive(const std::string &srcTarget,
         buffer = nullptr;
         return -E_INTERNAL_ERROR;
     }
-    return OnAppLayerFrameReceive(srcTarget, buffer, inResult);
+    return OnAppLayerFrameReceive(srcTarget, buffer, inResult, userId);
 }
 
 // In early time, we cover "OnAppLayerFrameReceive" totally by commMapMutex_, then search communicator, if not found,
@@ -673,7 +681,7 @@ int CommunicatorAggregator::OnAppLayerFrameReceive(const std::string &srcTarget,
 // 3:Search communicator under commMapMutex_ again, if found then deliver frame to that communicator and end.
 // 4:If still not found, retain this frame if need or otherwise send CommunicatorNotFound feedback.
 int CommunicatorAggregator::OnAppLayerFrameReceive(const std::string &srcTarget, SerialBuffer *&inFrameBuffer,
-    const ParseResult &inResult)
+    const ParseResult &inResult, std::string &userId)
 {
     LabelType toLabel = inResult.GetCommLabel();
     {
@@ -688,7 +696,7 @@ int CommunicatorAggregator::OnAppLayerFrameReceive(const std::string &srcTarget,
     {
         std::lock_guard<std::mutex> onCommLackLockGuard(onCommLackMutex_);
         if (onCommLackHandle_) {
-            errCode = onCommLackHandle_(toLabel);
+            errCode = onCommLackHandle_(toLabel, userId);
             LOGI("[CommAggr][AppReceive] On CommLack End."); // Log in case callback block this thread
         } else {
             LOGI("[CommAggr][AppReceive] CommLackHandle invalid currently.");
@@ -732,7 +740,7 @@ int CommunicatorAggregator::RegCallbackToAdapter()
     RefObject::IncObjRef(this); // Reference to be hold by adapter
     int errCode = adapterHandle_->RegBytesReceiveCallback(
         std::bind(&CommunicatorAggregator::OnBytesReceive, this, std::placeholders::_1, std::placeholders::_2,
-            std::placeholders::_3),
+            std::placeholders::_3, std::placeholders::_4),
         [this]() { RefObject::DecObjRef(this); });
     if (errCode != E_OK) {
         RefObject::DecObjRef(this); // Rollback in case reg failed
@@ -866,6 +874,14 @@ void CommunicatorAggregator::SetRemoteCommunicatorVersion(const std::string &tar
 {
     std::lock_guard<std::mutex> versionMapLockGuard(versionMapMutex_);
     versionMap_[target] = version;
+}
+
+std::shared_ptr<ExtendHeaderHandle> CommunicatorAggregator::GetExtendHeaderHandle(const ExtendInfo &paramInfo)
+{
+    if (adapterHandle_ == nullptr) {
+        return nullptr;
+    }
+    return adapterHandle_->GetExtendHeaderHandle(paramInfo);
 }
 
 DEFINE_OBJECT_TAG_FACILITIES(CommunicatorAggregator)
