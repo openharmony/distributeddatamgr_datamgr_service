@@ -241,6 +241,7 @@ protected:
     int retryTime_ = 0;
     int isNeedRetry_ = SyncTaskContext::NO_NEED_RETRY;
     uint32_t requestSessionId_ = 0;
+    uint32_t lastRequestSessionId_ = 0;
     uint32_t sequenceId_ = 1;
     std::function<int(void)> onSyncTaskAdd_;
 
