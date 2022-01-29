@@ -1207,3 +1207,27 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, SerializeAndDeserializeForVer1, Test
      */
     EXPECT_NE(obj1.GetIdentify(), obj2.GetIdentify());
 }
+
+/**
+ * @tc.name: MultiInkeys1
+ * @tc.desc: Test the rc when multiple inkeys exists.
+ * @tc.type: FUNC
+ * @tc.require: AR000GOHO7
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBStorageQuerySyncTest, MultiInkeys1, TestSize.Level1)
+{
+    /**
+     * @tc.steps:step1. Create an invalid query, with multiple inkeys.
+     */
+    Query query = Query::Select().InKeys({KEY_1, KEY_2}).InKeys({KEY_3});
+
+    /**
+     * @tc.steps:step2. Get data.
+     * @tc.expected: Return INVALID_QUERY_FORMAT.
+     */
+    std::vector<Entry> entries;
+    IOption option;
+    option.dataType = IOption::SYNC_DATA;
+    EXPECT_EQ(g_schemaConnect->GetEntries(option, query, entries), -E_INVALID_QUERY_FORMAT);
+}

@@ -244,7 +244,7 @@ int QueryObject::ParseNode(const std::list<QueryObjNode>::iterator &iter)
     } else if (symbolType == IN_KEYS_SYMBOL) {
         if (hasInKeys_) {
             LOGE("Only filter by keys in once!!");
-            return -E_INVALID_ARGS;
+            return -E_INVALID_QUERY_FORMAT;
         }
         int errCode = CheckInKeys();
         if (errCode != E_OK) {

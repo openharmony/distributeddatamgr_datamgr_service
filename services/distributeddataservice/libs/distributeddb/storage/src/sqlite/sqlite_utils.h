@@ -169,8 +169,7 @@ public:
     static int AddRelationalLogTableTrigger(sqlite3 *db, const TableInfo &table);
     static int AnalysisSchema(sqlite3 *db, const std::string &tableName, TableInfo &table);
 
-    static int CreateSameStuTable(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName,
-        bool isCopyData);
+    static int CreateSameStuTable(sqlite3 *db, const TableInfo &baseTbl, const std::string &newTableNames);
     static int CloneIndexes(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName);
 #endif
 

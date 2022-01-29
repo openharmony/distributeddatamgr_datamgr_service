@@ -427,7 +427,7 @@ namespace {
     }
 
     void PrepareVirtualEnvironment(std::map<std::string, DataValue> &dataMap, const std::string &tableName,
-        std::vector<FieldInfo> fieldInfoList, std::vector<RelationalVirtualDevice *> remoteDeviceVec)
+        std::vector<FieldInfo> &fieldInfoList, std::vector<RelationalVirtualDevice *> remoteDeviceVec)
     {
         PrepareBasicTable(tableName, fieldInfoList, remoteDeviceVec);
         GenerateValue(dataMap, fieldInfoList);

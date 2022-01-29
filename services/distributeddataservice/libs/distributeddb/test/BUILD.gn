@@ -58,6 +58,7 @@ config("module_private_config") {
     "JSONCPP_USE_BUILDER",
     "OMIT_FLATBUFFER",
     "RELATIONAL_STORE",
+    "SQLITE_DISTRIBUTE_RELATIONAL",
   ]
 }
 
@@ -645,6 +646,11 @@ distributeddb_unittest("DistributedDBRelationalSyncTest") {
   sources = [ "unittest/common/interfaces/distributeddb_interfaces_relational_sync_test.cpp" ]
 }
 
+distributeddb_unittest("DistributedDBRelationalGetDataTest") {
+  sources =
+      [ "unittest/common/storage/distributeddb_relational_get_data_test.cpp" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -690,6 +696,7 @@ group("unittest") {
     ":DistributedDBMultiVerVacuumTest",
     ":DistributedDBNotificationChainTest",
     ":DistributedDBParcelTest",
+    ":DistributedDBRelationalGetDataTest",
     ":DistributedDBRelationalSchemaObjectTest",
     ":DistributedDBRelationalSyncTest",
     ":DistributedDBSchemaObjectTest",
