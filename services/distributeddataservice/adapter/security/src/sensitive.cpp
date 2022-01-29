@@ -18,18 +18,17 @@
 #include "iprocess_system_api_adapter.h"
 #include "log_print.h"
 #include "serializable.h"
-#include "1.0/dev_slinfo_mgr.h"
 #undef LOG_TAG
 #define LOG_TAG "Sensitive"
 
 namespace OHOS::DistributedKv {
 Sensitive::Sensitive(std::string deviceId, uint32_t type)
-    : deviceId(std::move(deviceId)), securityLevel(DATA_SEC_LEVEL1), deviceType(type)
+    : deviceId(std::move(deviceId)), securityLevel(0), deviceType(type)
 {
 }
 
 Sensitive::Sensitive(const std::vector<uint8_t> &value)
-    : securityLevel(DATA_SEC_LEVEL1), deviceType(0)
+    : securityLevel(0), deviceType(0)
 {
     Unmarshal(value);
 }
@@ -67,56 +66,16 @@ void Sensitive::Unmarshal(const std::vector<uint8_t> &value)
 
 uint32_t Sensitive::GetSensitiveLevel()
 {
-    DEVSLQueryParams query;
-    DEVSL_INIT_PARAMS(&query);
-    query.udid = reinterpret_cast<const uint8_t *>(deviceId.c_str());
-    query.sensitiveData = reinterpret_cast<const uint8_t *>(dataBase64.c_str());
-    query.idLen = uint32_t(deviceId.size());
-    query.sensitiveDataLen = uint32_t(dataBase64.size());
-    if (dataBase64.empty()) {
-        query.devType = GetDevslDeviceType();
-    }
-
-    uint32_t level = DATA_SEC_LEVEL2;
-    uint32_t result = DEVSL_GetHighestSecLevel(&query, &level);
-    if (result != DEVSL_SUCCESS) {
-        ZLOGE("get highest level failed(%.10s)! level: %d, error: %d, cert (%.10s)",
-              deviceId.c_str(), securityLevel, result, dataBase64.c_str());
-        return securityLevel;
-    }
-    securityLevel = level;
-    ZLOGD("get highest level success(%.10s)! level: %d cert (%.10s)",
-          deviceId.c_str(), securityLevel, dataBase64.c_str());
     return securityLevel;
 }
 
 bool Sensitive::operator >= (const DistributedDB::SecurityOption &option)
 {
-    return (option.securityLabel == DistributedDB::NOT_SET) ||
-           (GetSensitiveLevel() >= static_cast<uint32_t>(option.securityLabel - 1));
+    return true;
 }
 
 bool Sensitive::LoadData()
 {
-    uint8_t data[Sensitive::MAX_DATA_LEN + 1];
-    uint32_t length = Sensitive::MAX_DATA_LEN;
-    int32_t result = DEVSL_GetLocalCertData(data, Sensitive::MAX_DATA_LEN, &length);
-    if (result != DEVSL_SUCCESS) {
-        ZLOGE("DEVSL_GetLocalCertData failed %d", result);
-        return false;
-    }
-    data[length] = 0;
-    dataBase64 = reinterpret_cast<char *>(data);
-    DEVSLQueryParams query;
-    DEVSL_INIT_PARAMS(&query);
-    query.udid = reinterpret_cast<const uint8_t *>(deviceId.c_str());
-    query.sensitiveData = data;
-    query.idLen = uint32_t(deviceId.size());
-    query.sensitiveDataLen = length;
-
-    if (DEVSL_GetHighestSecLevel(&query, &securityLevel) != DEVSL_SUCCESS) {
-        securityLevel = DATA_SEC_LEVEL1;
-    }
     return true;
 }
 

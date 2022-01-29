@@ -81,7 +81,7 @@ private:
     DBStatus SetDirSecurityOption(const std::string &filePath, const SecurityOption &option);
     DBStatus SetFileSecurityOption(const std::string &filePath, const SecurityOption &option);
 
-    std::map<int32_t, OnAccessControlledEvent> observers_ { };
+    std::map<int32_t, OnAccessControlledEvent> observers_ {};
     static std::atomic_bool isInitialized_;
 };
 }

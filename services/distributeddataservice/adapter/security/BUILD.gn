@@ -39,14 +39,12 @@ ohos_static_library("distributeddata_security_static") {
   ]
 
   deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/jsoncpp:jsoncpp",
     "//utils/native/base:utils",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
   ]
 
   external_deps = [
-    "dataclassification:fbe_iudf_xattr",
-    "dataclassification:hwdsl",
     "dsoftbus_standard:softbus_client",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",

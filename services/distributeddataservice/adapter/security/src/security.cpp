@@ -18,7 +18,6 @@
 #include <thread>
 #include "communication_provider.h"
 #include "constant.h"
-#include "fbe_sdp_policy.h"
 #include "sensitive.h"
 #include "log_print.h"
 #include "block_integer.h"
@@ -29,23 +28,9 @@
 namespace OHOS::DistributedKv {
 using namespace DistributedDB;
 std::atomic_bool Security::isInitialized_ = true;
-const char * const Security::LABEL_VALUES[S4 + 1] = {
-    "", LABEL_VALUE_S0, LABEL_VALUE_S1, LABEL_VALUE_S2, LABEL_VALUE_S3, LABEL_VALUE_S4
-};
-
-const char * const Security::DATA_DE[] = {
-    "/data/user_de/",
-    "/data/misc_de/",
-    nullptr
-};
-
-const char * const Security::DATA_CE[] = {
-    "/storage/emulated/",
-    "/data/misc_ce/",
-    "/data/user/",
-    "/mnt/mdfs/",
-    nullptr
-};
+const char * const Security::LABEL_VALUES[S4 + 1] = {};
+const char * const Security::DATA_DE[] = {};
+const char * const Security::DATA_CE[] = {};
 
 Security::Security(const std::string &appId, const std::string &userId, const std::string &dir)
 {
@@ -143,76 +128,17 @@ DBStatus Security::GetSecurityOption(const std::string &filePath, SecurityOption
 
 DBStatus Security::GetDirSecurityOption(const std::string &filePath, SecurityOption &option) const
 {
-    if (!IsSupportSecurity()) {
-        option.securityFlag = -1;
-        return OK;
-    }
-
-    int policy = GetPathPolicy(filePath.c_str());
-    switch (policy) {
-        case FSCRYPT_SDP_ECE_CLASS:
-            option.securityFlag = ECE;
-            break;
-        case FSCRYPT_SDP_SECE_CLASS:
-            option.securityFlag = SECE;
-            break;
-        default:
-            option.securityFlag = -1;
-            break;
-    }
-    return OK;
+    return NOT_SUPPORT;
 }
 
 DBStatus Security::GetFileSecurityOption(const std::string &filePath, SecurityOption &option) const
 {
-    if (!IsExits(filePath)) {
-        option = {NOT_SET, ECE};
-        return OK;
-    }
-
-    int userId = GetCurrentUserId();
-    char value[LABEL_VALUE_LEN]{0};
-    int err = GetLabel(userId, filePath.c_str(), LABEL_NAME_SECURITY_LEVEL, value, LABEL_VALUE_LEN);
-    if (err != RET_SDP_OK && err != RET_SDP_NOT_SET_ERROR && err != RET_SDP_NOT_SUPPORT_ATTR) {
-        ZLOGE("Get Label failed! error: %d, value: %s path:%s", err, value, filePath.c_str());
-        return DB_ERROR;
-    }
-
-    if (err == RET_SDP_NOT_SUPPORT_ATTR) {
-        ZLOGD("Not support attr ioctl! value: %s path:%s", value, filePath.c_str());
-        return NOT_SUPPORT;
-    }
-
-    int flag = (err == RET_SDP_OK) ? GetFlag(userId, filePath.c_str(), LABEL_NAME_SECURITY_LEVEL) : ECE;
-    if (flag == -1) {
-        ZLOGE("Get Flag failed! error: %d, value: %s path:%s", err, value, filePath.c_str());
-    }
-
-    option = {Convert2Security(std::string(value)), flag};
-    return OK;
+    return NOT_SUPPORT;
 }
 
 DBStatus Security::SetDirSecurityOption(const std::string &filePath, const SecurityOption &option)
 {
-    int error = RET_SDP_OK;
-    switch (option.securityLabel) {
-        case S3:
-        case S4: {
-            if (IsSupportSecurity()) {
-                int userId = GetCurrentUserId();
-                error = SetSecePathPolicy(userId, filePath.c_str());
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    if (error != RET_SDP_OK && error != RET_SDP_SUPPORT_IUDF_ERROR) {
-        ZLOGE("Set path policy failed(%d)! label:%d, flag:%d path:%s",
-              error, option.securityLabel, option.securityFlag, filePath.c_str());
-        return NO_PERMISSION;
-    }
-    return OK;
+    return NOT_SUPPORT;
 }
 
 DBStatus Security::SetFileSecurityOption(const std::string &filePath, const SecurityOption &option)
@@ -220,28 +146,7 @@ DBStatus Security::SetFileSecurityOption(const std::string &filePath, const Secu
     if (option.securityLabel == NOT_SET) {
         return OK;
     }
-
-    const char *value = Convert2Name(option, !InPathsBox(filePath, DATA_DE));
-    if (value == nullptr) {
-        ZLOGE("Invalid args Label failed! label:%d, flag:%d path:%s",
-              option.securityLabel, option.securityFlag, filePath.c_str());
-        return INVALID_ARGS;
-    }
-
-    int userId = GetCurrentUserId();
-    int err = SetLabel(userId, filePath.c_str(), LABEL_NAME_SECURITY_LEVEL, value, option.securityFlag);
-    if (err != RET_SDP_OK && err != RET_SDP_LABEL_HAS_BEEN_SET && err != RET_SDP_NOT_SUPPORT_ATTR) {
-        ZLOGE("Set Label failed! label:%d, flag:%d value:%s path:%s",
-              option.securityLabel, option.securityFlag, value, filePath.c_str());
-        return DB_ERROR;
-    }
-
-    if (err == RET_SDP_NOT_SUPPORT_ATTR) {
-        ZLOGD("Not support attr ioctl! value: %s path:%s", value, filePath.c_str());
-        return NOT_SUPPORT;
-    }
-
-    return OK;
+    return NOT_SUPPORT;
 }
 
 bool Security::CheckDeviceSecurityAbility(const std::string &devId, const SecurityOption &option) const
@@ -261,30 +166,17 @@ int32_t Security::GetCurrentUserStatus() const
     if (!IsSupportSecurity()) {
         return NO_PWD;
     }
-    return GetLockState(GetCurrentUserId(), FLAG_LOCAL_STATE);
+    return NO_PWD;
 }
 
 bool Security::SubscribeUserStatus(std::function<int32_t(int32_t, int32_t)> &observer) const
 {
-    int error = RegisterLockStateChangeCallback(FLAG_LOCAL_STATE, observer);
-    if (error == RET_LOCK_OK) {
-        // retroactively the current status
-        observer(GetCurrentUserId(), GetCurrentUserStatus());
-    }
-    return (error == RET_LOCK_OK);
+    return false;
 }
 
 const char *Security::Convert2Name(const SecurityOption &option, bool isCE)
 {
     if (option.securityLabel <= NOT_SET || option.securityLabel > S4) {
-        return nullptr;
-    }
-
-    if (isCE && option.securityLabel < S2) {
-        return nullptr;
-    }
-
-    if (!isCE && option.securityLabel >= S2) {
         return nullptr;
     }
 
@@ -303,7 +195,7 @@ int Security::Convert2Security(const std::string &name)
 
 bool Security::IsSupportSecurity()
 {
-    return IsSupportIudf();
+    return false;
 }
 
 bool Security::IsFirstInit()

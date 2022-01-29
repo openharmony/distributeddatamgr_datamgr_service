@@ -16,7 +16,6 @@
 #include "security_adapter.h"
 #include "log_print.h"
 #include "security.h"
-#include "1.0/dev_slinfo_mgr.h"
 #undef LOG_TAG
 #define LOG_TAG "SecurityAdapter"
 
@@ -33,7 +32,6 @@ private:
 
 InstallDevsl::InstallDevsl()
 {
-    (void)DEVSL_OnStart(0);
     security_ = std::make_shared<Security>("distributeddata", "default", "/data/misc_de/0/mdds/Meta");
     if (security_ == nullptr) {
         ZLOGD("Security is nullptr.");
@@ -46,7 +44,6 @@ InstallDevsl::InstallDevsl()
 
 InstallDevsl::~InstallDevsl()
 {
-    DEVSL_ToFinish();
 }
 
 void InstallDevsl::Initialize()
