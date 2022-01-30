@@ -1,0 +1,62 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("//build/ohos_var.gni")
+
+group("build_module") {
+  deps = [ ":distributeddatasvc" ]
+}
+config("module_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    "bootstrap/include",
+    "config/include",
+    "directory/include",
+    "//third_party/json/single_include",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include",
+  ]
+}
+
+ohos_shared_library("distributeddatasvc") {
+  sources = [
+    "bootstrap/src/bootstrap.cpp",
+    "config/src/config_factory.cpp",
+    "config/src/model/checker_config.cpp",
+    "config/src/model/component_config.cpp",
+    "config/src/model/directory_config.cpp",
+    "config/src/model/global_config.cpp",
+    "config/src/model/network_config.cpp",
+    "config/src/model/protocol_config.cpp",
+    "directory/src/directory_manager.cpp",
+  ]
+  cflags = [ "-Wno-multichar" ]
+
+  cflags_cc = [ "-fvisibility=hidden" ]
+
+  configs = [ ":module_public_config" ]
+
+  # ldflags = [ "-Wl,--exclude-libs,libcrypto_static.a" ]
+  deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//utils/native/base:utils",
+  ]
+
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+  ]
+  subsystem_name = "distributeddatamgr"
+}

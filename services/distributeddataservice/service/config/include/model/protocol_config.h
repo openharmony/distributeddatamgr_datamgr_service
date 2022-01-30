@@ -13,10 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef KVSTORE_API
-#define KVSTORE_API __attribute__ ((visibility ("default")))
-#endif
-
-#ifndef API_EXPORT
-#define API_EXPORT __attribute__((visibility ("default")))
-#endif
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_PROTOCOL_CONFIG_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_PROTOCOL_CONFIG_H
+#include "serializable/serializable.h"
+namespace OHOS {
+namespace DistributedData {
+class ProtocolConfig  final : public Serializable {
+public:
+    std::string name;
+    std::string address;
+    std::string transport;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+}
+}
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_PROTOCOL_CONFIG_H

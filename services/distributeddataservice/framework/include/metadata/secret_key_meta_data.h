@@ -13,10 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef KVSTORE_API
-#define KVSTORE_API __attribute__ ((visibility ("default")))
-#endif
-
-#ifndef API_EXPORT
-#define API_EXPORT __attribute__((visibility ("default")))
-#endif
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_SECRET_KEY_META_DATA_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_SECRET_KEY_META_DATA_H
+#include "serializable/serializable.h"
+namespace OHOS {
+namespace DistributedData {
+struct SecretKeyMetaData final : public Serializable {
+    std::vector<uint8_t> time {};
+    std::vector<uint8_t> sKey {};
+    int32_t kvStoreType = 0;
+    ~SecretKeyMetaData();
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+}
+}
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_SECRET_KEY_META_DATA_H

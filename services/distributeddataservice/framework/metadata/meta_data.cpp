@@ -13,10 +13,22 @@
  * limitations under the License.
  */
 
-#ifndef KVSTORE_API
-#define KVSTORE_API __attribute__ ((visibility ("default")))
-#endif
-
-#ifndef API_EXPORT
-#define API_EXPORT __attribute__((visibility ("default")))
-#endif
+#include "metadata/meta_data.h"
+namespace OHOS {
+namespace DistributedData {
+bool MetaData::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(kvStoreType)], kvStoreType);
+    SetValue(node[GET_NAME(kvStoreMetaData)], kvStoreMetaData);
+    SetValue(node[GET_NAME(secretKeyMetaData)], secretKeyMetaData);
+    return true;
+}
+bool MetaData::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(kvStoreType), kvStoreType);
+    GetValue(node, GET_NAME(kvStoreMetaData), kvStoreMetaData);
+    GetValue(node, GET_NAME(secretKeyMetaData), secretKeyMetaData);
+    return true;
+}
+}
+}

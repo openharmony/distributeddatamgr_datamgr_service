@@ -13,10 +13,23 @@
  * limitations under the License.
  */
 
-#ifndef KVSTORE_API
-#define KVSTORE_API __attribute__ ((visibility ("default")))
-#endif
+#include "model/protocol_config.h"
+namespace OHOS {
+namespace DistributedData {
+bool ProtocolConfig::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(name)], name);
+    SetValue(node[GET_NAME(address)], address);
+    SetValue(node[GET_NAME(transport)], transport);
+    return true;
+}
 
-#ifndef API_EXPORT
-#define API_EXPORT __attribute__((visibility ("default")))
-#endif
+bool ProtocolConfig::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(address), address);
+    GetValue(node, GET_NAME(transport), transport);
+    return true;
+}
+}
+}

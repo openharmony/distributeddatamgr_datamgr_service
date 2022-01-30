@@ -1,0 +1,94 @@
+{
+  "processLabel": "distributeddata",
+  "metaData": "service_meta",
+  "version": "000.000.001",
+  "features": ["kvdb", "rdb", "object", "backup", "data_sync"],
+  "components": [
+    {
+      "description": "3rd party adapter",
+      "lib": "libconfigdemo.z.so",
+      "constructor": "",
+      "destructor": "",
+      "params": {
+        "key": "value",
+        "count": 1
+      }
+    },
+    {
+      "lib": "libconfigdemo2.z.so"
+    }
+  ],
+  "bundleChecker": {
+    "checkers": [
+      "SystemChecker",
+      "BundleChecker",
+      "PackageChecker",
+      "ExternalChecker"
+    ],
+    "trusts": [
+      {
+        "bundleName": "bundle_manager_service",
+        "appId": "bundle_manager_service",
+        "checker": "SystemChecker"
+      },
+      {
+        "bundleName": "form_storage",
+        "appId": "form_storage",
+        "checker": "SystemChecker"
+      },
+      {
+        "bundleName": "ivi_config_manager",
+        "appId": "ivi_config_manager",
+        "checker": "SystemChecker"
+      }
+    ]
+  },
+  "networks": {
+    "chains": [
+      "loadBalance",
+      "authentication",
+      "traffic-control",
+      "router",
+      "transport",
+      "fault-inject"
+    ],
+    "routers": [
+      "OHOSRouter"
+    ],
+    "transports": [
+      "softbus"
+    ],
+    "protocols": [
+      {
+        "name": "OHOS softbus",
+        "address": "ohos.distributeddata",
+        "transport": "softbus"
+      }
+    ]
+  },
+  "directory": {
+    "workers": [
+      "appWorker",
+      "serverWorker"
+    ],
+    "metaPath": "/data/service/el0/0/database/ddms/metadata/",
+    "strategy": [
+      {
+        "version": "0",
+        "holder": "ddms",
+        "path": "/data/{security}/0/mdds/{userId}/{bundleName}",
+        "metaPath": "/data/misc_de/0/mdds/Meta"
+      },
+      {
+        "version": "1",
+        "holder": "ddms",
+        "path": "/data/service/{security}/0/database/ddms/{userId}/{bundleName}"
+      },
+      {
+        "version": "2",
+        "hodler": "caller",
+        "path": "/data/{type}/{security}/{userId}/{packageName}/database/{bundleName}"
+      }
+    ]
+  }
+}

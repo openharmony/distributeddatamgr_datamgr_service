@@ -13,10 +13,18 @@
  * limitations under the License.
  */
 
-#ifndef KVSTORE_API
-#define KVSTORE_API __attribute__ ((visibility ("default")))
-#endif
-
-#ifndef API_EXPORT
-#define API_EXPORT __attribute__((visibility ("default")))
-#endif
+#include "eventcenter/event.h"
+namespace OHOS {
+namespace DistributedData {
+Event::Event(int32_t evtId) : evtId_(evtId)
+{
+}
+Event::~Event()
+{
+}
+int32_t Event::GetEventId() const
+{
+    return evtId_;
+}
+}
+}

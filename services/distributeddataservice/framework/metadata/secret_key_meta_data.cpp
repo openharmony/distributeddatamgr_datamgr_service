@@ -12,11 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef KVSTORE_API
-#define KVSTORE_API __attribute__ ((visibility ("default")))
-#endif
-
-#ifndef API_EXPORT
-#define API_EXPORT __attribute__((visibility ("default")))
-#endif
+#include "metadata/secret_key_meta_data.h"
+namespace OHOS {
+namespace DistributedData {
+SecretKeyMetaData::~SecretKeyMetaData()
+{
+    sKey.assign(sKey.size(), 0);
+}
+bool SecretKeyMetaData::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(time)], time);
+    SetValue(node[GET_NAME(sKey)], sKey);
+    SetValue(node[GET_NAME(kvStoreType)], kvStoreType);
+    return true;
+}
+bool SecretKeyMetaData::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(time), time);
+    GetValue(node, GET_NAME(sKey), sKey);
+    GetValue(node, GET_NAME(kvStoreType), kvStoreType);
+    return true;
+}
+}
+}

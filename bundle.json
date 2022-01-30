@@ -85,7 +85,10 @@
                 "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:build_module",
                 "//foundation/distributeddatamgr/distributeddatamgr/interfaces/jskits/distributeddata:build_module",
                 "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app:build_module",
-                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:build_module"
+                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:build_module",
+                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:build_module",
+                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:build_module",
+                "//foundation/distributeddatamgr/distributeddatamgr/conf:build_module"
             ],
             "inner_kits": [
                 {
