@@ -89,7 +89,7 @@ HWTEST_F(CheckerManagerTest, SystemCheckerIVI, TestSize.Level0)
 */
 HWTEST_F(CheckerManagerTest, BundleChecker, TestSize.Level0)
 {
-    ASSERT_EQ("com.huawei.ohos.toteweather",
-        CheckerManager::GetInstance().GetAppId("com.huawei.ohos.toteweather", 100000));
-    ASSERT_TRUE(CheckerManager::GetInstance().IsValid("com.huawei.ohos.toteweather", 100000));
+    ASSERT_EQ("ohos.test.demo",
+        CheckerManager::GetInstance().GetAppId("ohos.test.demo", 100000));
+    ASSERT_TRUE(CheckerManager::GetInstance().IsValid("ohos.test.demo", 100000));
 }

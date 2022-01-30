@@ -130,7 +130,7 @@ public:
             [&action](value_type &value) -> bool { return action(value.first, value.second); });
 #else
         auto count = entries_.size();
-        for (auto it = entries_.begin(); it != entries_.end(); ) {
+        for (auto it = entries_.begin(); it != entries_.end();) {
             if (action((*it).first, (*it).second)) {
                 it = entries_.erase(it);
             } else {
