@@ -122,7 +122,7 @@ public:
     size_type EraseIf(const std::function<bool(const key_type &key, mapped_type &value)> &action) noexcept
     {
         if (action == nullptr) {
-            return;
+            return 0;
         }
         std::lock_guard<decltype(mutex_)> lock(mutex_);
 #if __cplusplus > 201703L
