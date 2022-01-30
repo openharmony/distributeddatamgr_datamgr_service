@@ -29,8 +29,8 @@ namespace OHOS::DistributedKv {
 using namespace DistributedDB;
 std::atomic_bool Security::isInitialized_ = true;
 const char * const Security::LABEL_VALUES[S4 + 1] = {};
-const char * const Security::DATA_DE[] = {};
-const char * const Security::DATA_CE[] = {};
+const char * const Security::DATA_DE[] = { nullptr };
+const char * const Security::DATA_CE[] = { nullptr };
 
 Security::Security(const std::string &appId, const std::string &userId, const std::string &dir)
 {
