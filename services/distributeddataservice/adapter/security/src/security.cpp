@@ -180,16 +180,11 @@ const char *Security::Convert2Name(const SecurityOption &option, bool isCE)
         return nullptr;
     }
 
-    return LABEL_VALUES[option.securityLabel];
+    return nullptr;
 }
 
 int Security::Convert2Security(const std::string &name)
 {
-    for (int i = 0; i <= S4; i++) {
-        if (name == LABEL_VALUES[i]) {
-            return i;
-        }
-    }
     return NOT_SET;
 }
 
