@@ -29,7 +29,7 @@ class RelationalStoreDelegate;
 namespace OHOS::DistributedRdb {
 class RdbDeviceSyncer : public RdbSyncerImpl {
 public:
-    explicit RdbDeviceSyncer(const RdbSyncerParam& param);
+    explicit RdbDeviceSyncer(const RdbSyncerParam& param, pid_t uid);
     
     ~RdbDeviceSyncer() override;
     

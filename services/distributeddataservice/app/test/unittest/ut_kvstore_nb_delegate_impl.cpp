@@ -351,4 +351,19 @@ DBStatus UtKvStoreNbDelegateImpl::DeleteLocalBatch(const std::vector<Key> &keys)
 {
     return OK;
 }
+DBStatus UtKvStoreNbDelegateImpl::Sync(const std::vector<std::string> &devices, SyncMode mode,
+    const std::function<void(const std::map<std::string, DBStatus> &)> &onComplete, Query &query, bool wait)
+{
+    return ALREADY_SET;
+}
+DBStatus UtKvStoreNbDelegateImpl::SubscribeRemoteQuery(const std::vector<std::string> &devices,
+    const std::function<void(const std::map<std::string, DBStatus> &)> &onComplete, Query &query, bool wait)
+{
+    return ALREADY_SET;
+}
+DBStatus UtKvStoreNbDelegateImpl::UnSubscribeRemoteQuery(const std::vector<std::string> &devices,
+    const std::function<void(const std::map<std::string, DBStatus> &)> &onComplete, Query &query, bool wait)
+{
+    return ALREADY_SET;
+}
 }  // namespace DistributedDB

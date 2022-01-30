@@ -21,12 +21,11 @@
 namespace OHOS::DistributedKv {
 class DeviceKvStoreObserverImpl : public KvStoreObserverImpl {
 public:
-    DeviceKvStoreObserverImpl(SubscribeType subscribeType, sptr<IKvStoreObserver> observerProxy, bool deviceSync);
+    DeviceKvStoreObserverImpl(SubscribeType subscribeType, sptr<IKvStoreObserver> observerProxy);
     ~DeviceKvStoreObserverImpl() override;
     void OnChange(const DistributedDB::KvStoreChangedData &data) override;
 private:
     void Transfer(const std::list<DistributedDB::Entry> &input, std::vector<Entry> &output, std::string &deviceId);
-    bool deviceSync_;
     std::string localDeviceId_;
     sptr<IKvStoreObserver> observerProxy_;
 };

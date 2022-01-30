@@ -94,7 +94,7 @@ void AccountDelegateImpl::SubscribeAccountEvent()
     CommonEventSubscribeInfo info(matchingSkills);
     eventSubscriber_ = std::make_shared<EventSubscriber>(info);
     eventSubscriber_->SetEventCallback([&](AccountEventInfo &account) {
-        account.harmonyAccountId = GetCurrentHarmonyAccountId();
+        account.harmonyAccountId = GetCurrentAccountId();
         NotifyAccountChanged(account);
     });
 
@@ -122,7 +122,7 @@ void AccountDelegateImpl::SubscribeAccountEvent()
     th.detach();
 }
 
-std::string AccountDelegateImpl::GetCurrentHarmonyAccountId(const std::string &bundleName) const
+std::string AccountDelegateImpl::GetCurrentAccountId(const std::string &bundleName) const
 {
     ZLOGD("start");
     if (!bundleName.empty() && PermissionValidator::IsAutoLaunchEnabled(bundleName)) {

@@ -17,6 +17,7 @@
 
 #include "kvstore_user_manager.h"
 #include "account_delegate.h"
+#include "checker/checker_manager.h"
 #include "constant.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
@@ -24,6 +25,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
+using namespace DistributedData;
 KvStoreUserManager::KvStoreUserManager(const std::string &deviceAccountId)
     : appMutex_(),
       appMap_(),
@@ -36,49 +38,6 @@ KvStoreUserManager::~KvStoreUserManager()
 {
     ZLOGI("begin.");
     appMap_.clear();
-}
-
-Status KvStoreUserManager::GetKvStore(const Options &options, const std::string &appId, const std::string &storeId,
-                                      const std::vector<uint8_t> &cipherKey,
-                                      std::function<void(sptr<IKvStoreImpl>)> callback)
-{
-    ZLOGI("begin.");
-    std::lock_guard<std::mutex> lg(appMutex_);
-    auto it = appMap_.find(appId);
-    if (it != appMap_.end()) {
-        return (it->second).GetKvStore(options, storeId, cipherKey, callback);
-    }
-
-    auto result = appMap_.emplace(std::piecewise_construct, std::forward_as_tuple(appId),
-                                  std::forward_as_tuple(appId, deviceAccountId_));
-    if (result.second && result.first != appMap_.end()) {
-        return (result.first->second).GetKvStore(options, storeId, cipherKey, callback);
-    } else {
-        ZLOGE("emplace failed.");
-        callback(nullptr);
-        return Status::ERROR;
-    }
-}
-
-Status KvStoreUserManager::GetSingleKvStore(const Options &options, const std::string &appId,
-                                            const std::string &storeId, const std::vector<uint8_t> &cipherKey,
-                                            std::function<void(sptr<ISingleKvStore>)> callback)
-{
-    ZLOGI("begin.");
-    std::lock_guard<std::mutex> lg(appMutex_);
-    auto it = appMap_.find(appId);
-    if (it != appMap_.end()) {
-        return (it->second).GetKvStore(options, storeId, cipherKey, callback);
-    }
-    auto result = appMap_.emplace(std::piecewise_construct, std::forward_as_tuple(appId),
-                                  std::forward_as_tuple(appId, deviceAccountId_));
-    if (result.second && result.first != appMap_.end()) {
-        return (result.first->second).GetKvStore(options, storeId, cipherKey, callback);
-    } else {
-        ZLOGE("emplace failed.");
-        callback(nullptr);
-        return Status::ERROR;
-    }
 }
 
 Status KvStoreUserManager::CloseKvStore(const std::string &appId, const std::string &storeId)
@@ -129,7 +88,7 @@ Status KvStoreUserManager::DeleteKvStore(const std::string &bundleName, const st
         }
         return status;
     }
-    KvStoreAppManager kvStoreAppManager(bundleName, deviceAccountId_);
+    KvStoreAppManager kvStoreAppManager(bundleName, CheckerManager::INVALID_UID);
     return kvStoreAppManager.DeleteKvStore(storeId);
 }
 
@@ -163,6 +122,9 @@ Status KvStoreUserManager::MigrateAllKvStore(const std::string &harmonyAccountId
 std::string KvStoreUserManager::GetDbDir(const std::string &bundleName, const Options &options)
 {
     ZLOGI("begin.");
+    if (options.kvStoreType == KvStoreType::MULTI_VERSION) {
+        return "default";
+    }
     std::lock_guard<std::mutex> lg(appMutex_);
     auto it = appMap_.find(bundleName);
     if (it != appMap_.end()) {
@@ -175,7 +137,7 @@ void KvStoreUserManager::Dump(int fd) const
 {
     const std::string prefix(4, ' ');
     dprintf(fd, "%s--------------------------------------------------------------\n", prefix.c_str());
-    dprintf(fd, "%sUserID        : %s\n", prefix.c_str(), KvStoreUtils::GetAppIdByBundleName(userId_).c_str());
+    dprintf(fd, "%sUserID        : %s\n", prefix.c_str(), userId_.c_str());
     dprintf(fd, "%sApp count     : %u\n", prefix.c_str(), static_cast<uint32_t>(appMap_.size()));
     for (const auto &pair : appMap_) {
         pair.second.Dump(fd);

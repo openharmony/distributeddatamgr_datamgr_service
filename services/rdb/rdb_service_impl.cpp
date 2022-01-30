@@ -16,14 +16,16 @@
 #define LOG_TAG "RdbServiceImpl"
 
 #include "rdb_service_impl.h"
-#include "kvstore_utils.h"
+#include "checker/checker_manager.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "rdb_syncer_impl.h"
 #include "rdb_syncer_factory.h"
 
 namespace OHOS::DistributedRdb {
-RdbServiceImpl::ClientDeathRecipient::ClientDeathRecipient(DeathCallback& callback)
-    : callback_(callback)
+using namespace OHOS::DistributedData;
+RdbServiceImpl::ClientDeathRecipient::ClientDeathRecipient(std::function<void(sptr<IRemoteObject>&)> callback)
+    : callback_(std::move(callback))
 {
     ZLOGI("construct");
 }
@@ -41,57 +43,56 @@ void RdbServiceImpl::ClientDeathRecipient::OnRemoteDied(const wptr<IRemoteObject
     }
 }
 
-void RdbServiceImpl::ClearClientRecipient(const std::string& bundleName, sptr<IRemoteObject>& proxy)
+void RdbServiceImpl::ClearClientRecipient(sptr<IRemoteObject>& proxy)
 {
-    ZLOGI("remove %{public}s", bundleName.c_str());
     recipients_.Erase(proxy);
 }
 
-void RdbServiceImpl::ClearClientSyncers(const std::string& bundleName)
+void RdbServiceImpl::ClearClientSyncers(pid_t pid)
 {
     ZLOGI("enter");
-    std::string appId = DistributedKv::KvStoreUtils::GetAppIdByBundleName(bundleName);
-    auto count = syncers_.EraseIf([&appId](const std::string &key, sptr<RdbSyncerImpl> &value) -> bool {
-        return value->GetAppId() == appId;
-    });
+    auto count = syncers_.Erase(pid);
     ZLOGI("remove %{public}d", static_cast<int>(count));
 }
 
-void RdbServiceImpl::OnClientDied(const std::string &bundleName, sptr<IRemoteObject>& proxy)
+void RdbServiceImpl::OnClientDied(pid_t pid, sptr<IRemoteObject>& proxy)
 {
-    ZLOGI("%{public}s died", bundleName.c_str());
-    ClearClientRecipient(bundleName, proxy);
-    ClearClientSyncers(bundleName);
+    ClearClientRecipient(proxy);
+    ClearClientSyncers(pid);
 }
 
-bool RdbServiceImpl::CheckAccess(const RdbSyncerParam& param) const
+sptr<IRdbSyncer> RdbServiceImpl::CreateSyncer(const RdbSyncerParam& param, pid_t uid, pid_t pid)
 {
-    return !DistributedKv::KvStoreUtils::GetAppIdByBundleName(param.bundleName_).empty();
-}
-
-sptr<IRdbSyncer> RdbServiceImpl::CreateSyncer(const RdbSyncerParam& param)
-{
-    RdbSyncerImpl* syncerNew = RdbSyncerFactory::GetInstance().CreateSyncer(param);
-    syncers_.ComputeIfAbsent(syncerNew->GetIdentifier(),
-        [&syncerNew] (const auto& key) -> auto {
-            ZLOGI("create new syncer %{public}s", key.c_str());
-            if (syncerNew != nullptr) {
-                syncerNew->Init();
-            }
-            return sptr<RdbSyncerImpl>(syncerNew);
-        });
-    return syncers_[syncerNew->GetIdentifier()];
+    sptr<RdbSyncerImpl> syncer;
+    syncers_.Compute(pid, [&param, uid, &syncer] (const auto &key, auto &syncers) -> bool {
+        ZLOGI("create new syncer %{public}d", key);
+        auto it = syncers.find(param.storeName_);
+        if (it != syncers.end()) {
+            syncer = it->second;
+            return true;
+        }
+        syncer = RdbSyncerFactory::GetInstance().CreateSyncer(param, uid);
+        if (syncer == nullptr) {
+            return false;
+        }
+        syncer->Init();
+        syncers.insert({param.storeName_, syncer});
+        return true;
+    });
+    return syncer;
 }
 
 sptr<IRdbSyncer> RdbServiceImpl::GetRdbSyncerInner(const RdbSyncerParam& param)
 {
+    pid_t uid = IPCSkeleton::GetCallingUid();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     ZLOGI("%{public}s %{public}s %{public}s", param.bundleName_.c_str(),
           param.path_.c_str(), param.storeName_.c_str());
-    if (!CheckAccess(param)) {
+    if (!CheckerManager::GetInstance().IsValid(param.bundleName_, uid)) {
         ZLOGI("check access failed");
         return nullptr;
     }
-    return CreateSyncer(param);
+    return CreateSyncer(param, uid, pid);
 }
 
 int RdbServiceImpl::RegisterClientDeathRecipient(const std::string& bundleName, sptr<IRemoteObject> proxy)
@@ -101,10 +102,11 @@ int RdbServiceImpl::RegisterClientDeathRecipient(const std::string& bundleName, 
         return -1;
     }
     
-    ClientDeathRecipient::DeathCallback callback = [bundleName, this] (sptr<IRemoteObject>& object) {
-        OnClientDied(bundleName, object);
-    };
-    sptr<ClientDeathRecipient> recipient = new(std::nothrow) ClientDeathRecipient(callback);
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    sptr<ClientDeathRecipient> recipient = new(std::nothrow) ClientDeathRecipient(
+        [this, pid](sptr<IRemoteObject>& object) {
+            OnClientDied(pid, object);
+        });
     if (recipient == nullptr) {
         ZLOGE("malloc failed");
         return -1;

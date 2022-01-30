@@ -63,7 +63,7 @@ std::shared_ptr<AppDistributedKvDataManager> AppDistributedKvDataManagerImpl::Ge
         return nullptr;
     }
 
-    std::string appId = KvStoreUtils::GetAppIdByBundleName(bundleName);
+    std::string appId = bundleName;
     if (appId.empty()) {
         appId = bundleName;
     }
@@ -153,7 +153,7 @@ Status AppDistributedKvDataManagerImpl::GetKvStore(
                 auto statDelegateMgr = std::make_shared<DelegateMgrCallback>(kvStoreDelegateManager_);
                 auto statDelegate = std::static_pointer_cast<DbMetaCallbackDelegate>(statDelegateMgr);
                 Reporter::GetInstance()->DatabaseStatistic()->Report(
-                    {AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId(), appId_, storeId, 0, statDelegate});
+                    {AccountDelegate::GetInstance()->GetCurrentAccountId(), appId_, storeId, 0, statDelegate});
                 return;
             }
 

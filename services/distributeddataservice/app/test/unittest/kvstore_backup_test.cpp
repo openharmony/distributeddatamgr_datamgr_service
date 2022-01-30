@@ -12,13 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <gtest/gtest.h>
 #include <iostream>
 #include <thread>
 #include <unistd.h>
 #include <vector>
-
+#include <memory>
+#include "checker/checker_manager.h"
 #include "kvstore_impl.h"
 #include "backup_handler.h"
 #include "kv_scheduler.h"
@@ -27,10 +26,11 @@
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "single_kvstore_impl.h"
-
+#include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS;
+using namespace OHOS::DistributedData;
 
 class KvStoreBackupTest : public testing::Test {
 public:
@@ -111,11 +111,11 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest002, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
+    auto trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, CheckerManager::INVALID_UID);
     auto backupHandler = std::make_unique<BackupHandler>();
-    auto trueAppId = KvStoreUtils::GetAppIdByBundleName(appId.appId);
     MetaData metaData{0};
     metaData.kvStoreMetaData.deviceAccountId = "0";
-    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId();
+    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.kvStoreMetaData.appId = trueAppId;
     metaData.kvStoreMetaData.bundleName = appId.appId;
     metaData.kvStoreMetaData.storeId = storeId.storeId;
@@ -164,12 +164,11 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest003, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
+    auto trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, CheckerManager::INVALID_UID);
     auto backupHandler = std::make_unique<BackupHandler>();
-    auto trueAppId = KvStoreUtils::GetAppIdByBundleName(appId.appId);
-
     MetaData metaData{0};
     metaData.kvStoreMetaData.deviceAccountId = "0";
-    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId();
+    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.kvStoreMetaData.appId = trueAppId;
     metaData.kvStoreMetaData.bundleName = appId.appId;
     metaData.kvStoreMetaData.storeId = storeId.storeId;
@@ -227,11 +226,11 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest004, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
+    auto trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, CheckerManager::INVALID_UID);
     auto backupHandler = std::make_unique<BackupHandler>();
-    auto trueAppId = KvStoreUtils::GetAppIdByBundleName(appId.appId);
     MetaData metaData{0};
     metaData.kvStoreMetaData.deviceAccountId = "0";
-    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId();
+    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.kvStoreMetaData.appId = trueAppId;
     metaData.kvStoreMetaData.bundleName = appId.appId;
     metaData.kvStoreMetaData.storeId = storeId.storeId;
@@ -240,11 +239,11 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest004, TestSize.Level1)
 
     backupHandler->SingleKvStoreBackup(metaData);
 
-    auto currentAccountId = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId();
+    auto currentAccountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     std::initializer_list<std::string> fileList = {currentAccountId, "_", trueAppId, "_", storeId.storeId};
     auto backupFileName = Constant::Concatenate(fileList);
     auto backupFileNameHashed = BackupHandler::GetHashedBackupName(backupFileName);
-    auto pathType = KvStoreAppManager::ConvertPathType(appId.appId, metaData.kvStoreMetaData.securityLevel);
+    auto pathType = KvStoreAppManager::ConvertPathType(1000, appId.appId, metaData.kvStoreMetaData.securityLevel);
     std::initializer_list<std::string> backFileList = {BackupHandler::GetBackupPath("0", pathType),
         "/", backupFileNameHashed};
     auto backFilePath = Constant::Concatenate(backFileList);
@@ -284,11 +283,11 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest005, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
+    auto trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, CheckerManager::INVALID_UID);
     auto backupHandler = std::make_unique<BackupHandler>();
-    auto trueAppId = KvStoreUtils::GetAppIdByBundleName(appId.appId);
     MetaData metaData{0};
     metaData.kvStoreMetaData.deviceAccountId = "0";
-    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId();
+    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.kvStoreMetaData.appId = trueAppId;
     metaData.kvStoreMetaData.bundleName = appId.appId;
     metaData.kvStoreMetaData.storeId = storeId.storeId;
@@ -337,11 +336,11 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest006, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
+    auto trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, CheckerManager::INVALID_UID);
     auto backupHandler = std::make_unique<BackupHandler>();
-    auto trueAppId = KvStoreUtils::GetAppIdByBundleName(appId.appId);
     MetaData metaData{0};
     metaData.kvStoreMetaData.deviceAccountId = "0";
-    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId();
+    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.kvStoreMetaData.appId = trueAppId;
     metaData.kvStoreMetaData.bundleName = appId.appId;
     metaData.kvStoreMetaData.storeId = storeId.storeId;
@@ -390,11 +389,11 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest007, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
+    auto trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, CheckerManager::INVALID_UID);
     auto backupHandler = std::make_unique<BackupHandler>();
-    auto trueAppId = KvStoreUtils::GetAppIdByBundleName(appId.appId);
     MetaData metaData{0};
     metaData.kvStoreMetaData.deviceAccountId = "0";
-    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId();
+    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.kvStoreMetaData.appId = trueAppId;
     metaData.kvStoreMetaData.bundleName = appId.appId;
     metaData.kvStoreMetaData.storeId = storeId.storeId;

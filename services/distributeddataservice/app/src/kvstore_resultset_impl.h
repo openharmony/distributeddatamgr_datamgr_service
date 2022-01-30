@@ -26,8 +26,7 @@
 namespace OHOS::DistributedKv {
 class KvStoreResultSetImpl : public KvStoreResultSetStub {
 public:
-    explicit KvStoreResultSetImpl(DistributedDB::KvStoreResultSet *resultSet);
-    KvStoreResultSetImpl(DistributedDB::Key keyPrefix, DistributedDB::KvStoreResultSet *resultSet);
+    explicit KvStoreResultSetImpl(DistributedDB::KvStoreResultSet *resultSet, DistributedDB::Key keyPrefix = {});
     ~KvStoreResultSetImpl() override;
 
     int GetCount() override;

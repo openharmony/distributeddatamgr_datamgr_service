@@ -24,18 +24,31 @@
 
 namespace OHOS {
 namespace DistributedKv {
-
 class KvStoreUserManager {
 public:
     explicit KvStoreUserManager(const std::string &deviceAccountId);
 
     virtual ~KvStoreUserManager();
 
-    Status GetKvStore(const Options &options, const std::string &appId, const std::string &storeId,
-                      const std::vector<uint8_t> &cipherKey, std::function<void(sptr<IKvStoreImpl>)> callback);
-
-    Status GetSingleKvStore(const Options &options, const std::string &appId, const std::string &storeId,
-                            const std::vector<uint8_t> &cipherKey, std::function<void(sptr<ISingleKvStore>)> callback);
+    template<typename T>
+    Status GetKvStore(const Options &options, const std::string &bundleName, const std::string &storeId, pid_t uid,
+        const std::vector<uint8_t> &cipherKey, sptr<T> &kvStore)
+    {
+        std::lock_guard<std::mutex> lg(appMutex_);
+        auto it = appMap_.find(bundleName);
+        if (it == appMap_.end()) {
+            auto result = appMap_.emplace(
+                std::piecewise_construct, std::forward_as_tuple(bundleName), std::forward_as_tuple(bundleName, uid));
+            if (result.second) {
+                it = result.first;
+            }
+        }
+        if (it == appMap_.end()) {
+            kvStore = nullptr;
+            return Status::ERROR;
+        }
+        return (it->second).GetKvStore(options, bundleName, storeId, cipherKey, kvStore);
+    }
 
     Status CloseKvStore(const std::string &appId, const std::string &storeId);
 
@@ -59,7 +72,6 @@ private:
     std::string deviceAccountId_;
     std::string userId_;
 };
-
 }  // namespace DistributedKv
 }  // namespace OHOS
 

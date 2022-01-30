@@ -14,8 +14,6 @@
  */
 
 #include <dirent.h>
-#include <gtest/gtest.h>
-
 #include <cstdint>
 #include <thread>
 #include <vector>
@@ -36,7 +34,7 @@
 #include "common_event_manager.h"
 #include "ohos/aafwk/content/intent.h"
 #include "ohos_account_kits.h"
-
+#include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS;
@@ -309,7 +307,7 @@ HWTEST_F(DistributedDataAccountEventTest, GetKvStore_DefaultDeviceAccount_003, T
 
     // Step2. Splice kvStore data storage expected path by distributedDB hash interface and clear directory.
     DistributedDB::DBStatus dbStatus = DistributedDB::KvStoreDelegateManager::GetDatabaseDir(
-        storeId.storeId, appId.appId, AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId(), hashedStoreId);
+        storeId.storeId, appId.appId, AccountDelegate::GetInstance()->GetCurrentAccountId(), hashedStoreId);
     EXPECT_EQ(dbStatus, DistributedDB::OK) << "Get data directory name from DB failed.";
 
     std::string appDataStoragePath;
@@ -365,7 +363,7 @@ HWTEST_F(DistributedDataAccountEventTest, GetKvStore_DefaultDeviceAccount_004, T
 
     // Step2. Splice kvStore data storage expected path by distributedDB hash interface and clear directory.
     DistributedDB::DBStatus dbStatus = DistributedDB::KvStoreDelegateManager::GetDatabaseDir(
-            storeId.storeId, appId.appId, AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId(), hashedStoreId);
+            storeId.storeId, appId.appId, AccountDelegate::GetInstance()->GetCurrentAccountId(), hashedStoreId);
     EXPECT_EQ(dbStatus, DistributedDB::OK) << "Get data directory name from DB failed.";
 
     std::string appDataStoragePath;

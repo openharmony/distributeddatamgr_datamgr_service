@@ -20,38 +20,33 @@
 #include "log_print.h"
 using namespace OHOS::AppDistributedKv;
 namespace OHOS::DistributedKv {
-DeviceKvStoreObserverImpl::DeviceKvStoreObserverImpl(SubscribeType subscribeType, sptr<IKvStoreObserver> observerProxy,
-    bool deviceSync) : KvStoreObserverImpl(subscribeType, observerProxy), deviceSync_(deviceSync),
-    localDeviceId_{}, observerProxy_(observerProxy)
-{}
+DeviceKvStoreObserverImpl::DeviceKvStoreObserverImpl(SubscribeType subscribeType, sptr<IKvStoreObserver> observerProxy)
+    : KvStoreObserverImpl(subscribeType, observerProxy), localDeviceId_{}, observerProxy_(observerProxy)
+{
+}
 
 DeviceKvStoreObserverImpl::~DeviceKvStoreObserverImpl()
 {}
 
 void DeviceKvStoreObserverImpl::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
-    if (deviceSync_) {
-        std::list<DistributedDB::Entry> insertList = data.GetEntriesInserted();
-        std::list<DistributedDB::Entry> updateList = data.GetEntriesUpdated();
-        std::list<DistributedDB::Entry> deletedList = data.GetEntriesDeleted();
+    std::list<DistributedDB::Entry> insertList = data.GetEntriesInserted();
+    std::list<DistributedDB::Entry> updateList = data.GetEntriesUpdated();
+    std::list<DistributedDB::Entry> deletedList = data.GetEntriesDeleted();
 
-        std::vector<Entry> inserts;
-        std::vector<Entry> updates;
-        std::vector<Entry> deleteds;
-        std::string deviceId;
-        Transfer(insertList, inserts, deviceId);
-        Transfer(updateList, updates, deviceId);
-        Transfer(deletedList, deleteds, deviceId);
-        if (deviceId.empty()) {
-            ZLOGE("Did NOT find any valid deviceId");
-        }
-        ChangeNotification change(std::move(inserts), std::move(updates), std::move(deleteds), deviceId, false);
-        if (observerProxy_ != nullptr) {
-            observerProxy_->OnChange(change, nullptr);
-        }
-        return;
-    } else {
-        KvStoreObserverImpl::OnChange(data);
+    std::vector<Entry> inserts;
+    std::vector<Entry> updates;
+    std::vector<Entry> deleteds;
+    std::string deviceId;
+    Transfer(insertList, inserts, deviceId);
+    Transfer(updateList, updates, deviceId);
+    Transfer(deletedList, deleteds, deviceId);
+    if (deviceId.empty()) {
+        ZLOGE("Did NOT find any valid deviceId");
+    }
+    ChangeNotification change(std::move(inserts), std::move(updates), std::move(deleteds), deviceId, false);
+    if (observerProxy_ != nullptr) {
+        observerProxy_->OnChange(change, nullptr);
     }
 }
 

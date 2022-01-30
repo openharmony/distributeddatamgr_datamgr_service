@@ -14,6 +14,7 @@
  */
 #ifndef OHOS_KV_MANAGER_H
 #define OHOS_KV_MANAGER_H
+#include <mutex>
 #include "distributed_kv_data_manager.h"
 #include "kvstore_death_recipient.h"
 #include "napi_queue.h"

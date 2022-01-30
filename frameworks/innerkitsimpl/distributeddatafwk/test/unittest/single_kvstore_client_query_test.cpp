@@ -15,7 +15,6 @@
 
 #define LOG_TAG "SingleKvStoreClientQueryTest"
 
-#include <gtest/gtest.h>
 #include <unistd.h>
 #include <cstddef>
 #include <cstdint>
@@ -23,7 +22,7 @@
 #include "distributed_kv_data_manager.h"
 #include "types.h"
 #include "log_print.h"
-
+#include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 

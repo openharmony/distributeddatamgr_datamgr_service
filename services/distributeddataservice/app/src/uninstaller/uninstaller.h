@@ -16,7 +16,7 @@
 #ifndef DISTRIBUTEDDATAMGR_UNINSTALLER_H
 #define DISTRIBUTEDDATAMGR_UNINSTALLER_H
 
-#include <memory.h>
+#include <memory>
 #include <mutex>
 
 #include "visibility.h"

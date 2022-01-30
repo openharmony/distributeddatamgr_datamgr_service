@@ -17,7 +17,6 @@
 #include <utility>
 #include "iprocess_system_api_adapter.h"
 #include "log_print.h"
-#include "serializable.h"
 #undef LOG_TAG
 #define LOG_TAG "Sensitive"
 
@@ -35,33 +34,11 @@ Sensitive::Sensitive(const std::vector<uint8_t> &value)
 
 std::vector<uint8_t> Sensitive::Marshal() const
 {
-    Json::Value root;
-    root[GET_NAME(securityLevel)] = securityLevel;
-    root[GET_NAME(deviceId)] = deviceId;
-    root[GET_NAME(dataBase64)] = dataBase64;
-    root[GET_NAME(deviceType)] = deviceType;
-
-    Json::FastWriter writer;
-    auto jsonStr = writer.write(root);
-    ZLOGD("len:%d, value:%.20s!", int32_t(jsonStr.size()), jsonStr.c_str());
-    return {jsonStr.begin(), jsonStr.end()};
+    return {};
 }
 
 void Sensitive::Unmarshal(const std::vector<uint8_t> &value)
 {
-    std::string input(reinterpret_cast<const char *>(value.data()), value.size());
-    Json::Reader reader;
-    Json::Value root;
-    ZLOGD("len:%d, value:%.20s!", int32_t(value.size()), input.c_str());
-    bool success = reader.parse(input, root);
-    if (!success) {
-        ZLOGE("reader.parse failed!");
-    }
-
-    securityLevel = Serializable::GetVal(root[GET_NAME(securityLevel)], securityLevel);
-    deviceId = Serializable::GetVal(root[GET_NAME(deviceId)], deviceId);
-    dataBase64 = Serializable::GetVal(root[GET_NAME(dataBase64)], dataBase64);
-    deviceType = Serializable::GetVal(root[GET_NAME(deviceType)], deviceType);
 }
 
 uint32_t Sensitive::GetSensitiveLevel()

@@ -12,8 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <gtest/gtest.h>
 #include <cstdint>
 #include <thread>
 #include <vector>
@@ -21,6 +19,7 @@
 #include "kvstore_impl.h"
 #include "refbase.h"
 #include "types.h"
+#include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS;

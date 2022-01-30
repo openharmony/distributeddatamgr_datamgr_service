@@ -41,13 +41,13 @@ void RdbSyncerFactory::UnRegister(int type)
     creators_.erase(type);
 }
 
-RdbSyncerImpl* RdbSyncerFactory::CreateSyncer(const RdbSyncerParam& param)
+RdbSyncerImpl* RdbSyncerFactory::CreateSyncer(const RdbSyncerParam& param, pid_t uid)
 {
     auto it = creators_.find(param.type_);
     if (it == creators_.end()) {
         return nullptr;
     }
-    return it->second(param);
+    return it->second(param, uid);
 }
 }
 

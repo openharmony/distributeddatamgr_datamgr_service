@@ -15,6 +15,8 @@
 #ifndef OHOS_NAPI_QUEUE_H
 #define OHOS_NAPI_QUEUE_H
 #include <functional>
+#include <memory>
+#include <string>
 
 #include "log_print.h"
 #include "napi/native_api.h"
@@ -22,9 +24,7 @@
 #include "napi/native_node_api.h"
 
 namespace OHOS::DistributedData {
-using namespace OHOS::DistributedKv; // for ZLOGD/ZLOGE
 constexpr size_t ARGC_MAX = 6;
-
 using NapiCbInfoParser = std::function<void(size_t argc, napi_value* argv)>;
 using NapiAsyncExecute = std::function<void(void)>;
 using NapiAsyncComplete = std::function<void(napi_value&)>;

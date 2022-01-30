@@ -24,10 +24,6 @@ namespace OHOS {
 namespace DistributedKv {
 class KvStoreUtils {
 public:
-    // get app id; KvStore may use BundleName as appId, this function should run in IPC thread
-    // bundleName: string to be hashed
-    KVSTORE_API static std::string GetAppIdByBundleName(const std::string &bundleName);
-
     // convert the name to the anonymous
     // the anonymous string is name[0,3]"***"name[end-3, end]
     // when the anonymous string is shorter than 9, the anonymous is "******"

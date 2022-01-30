@@ -14,7 +14,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "uninstaller.h"
+#include "uninstaller/uninstaller.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;

@@ -26,12 +26,7 @@ KvStoreResultSetImpl::~KvStoreResultSetImpl()
 {
 }
 
-KvStoreResultSetImpl::KvStoreResultSetImpl(DistributedDB::KvStoreResultSet *resultSet)
-    : kvStoreResultSet_(resultSet)
-{
-}
-
-KvStoreResultSetImpl::KvStoreResultSetImpl(DistributedDB::Key keyPrefix, DistributedDB::KvStoreResultSet *resultSet)
+KvStoreResultSetImpl::KvStoreResultSetImpl(DistributedDB::KvStoreResultSet *resultSet, DistributedDB::Key keyPrefix)
     : keyPrefix_(std::move(keyPrefix)), kvStoreResultSet_(resultSet)
 {
 }
