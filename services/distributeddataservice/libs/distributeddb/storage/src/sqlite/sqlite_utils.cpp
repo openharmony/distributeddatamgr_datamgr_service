@@ -1411,7 +1411,7 @@ int SQLiteUtils::CloneIndexes(sqlite3 *db, const std::string &oriTableName, cons
 {
     std::string sql =
         "SELECT 'CREATE ' || CASE WHEN il.'unique' THEN 'UNIQUE ' ELSE '' END || 'INDEX ' || '" +
-            DBConstant::RELATIONAL_PREFIX + "' || il.name || ' ON ' || '" + newTableName +
+            newTableName + "_' || il.name || ' ON ' || '" + newTableName +
             "' || '(' || GROUP_CONCAT(ii.name) || ');' "
         "FROM sqlite_master AS m,"
             "pragma_index_list(m.name) AS il,"
