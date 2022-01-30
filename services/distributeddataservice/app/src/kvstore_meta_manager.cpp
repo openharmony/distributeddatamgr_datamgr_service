@@ -150,6 +150,11 @@ void KvStoreMetaManager::InitMetaParameter()
 
 const KvStoreMetaManager::NbDelegate &KvStoreMetaManager::GetMetaKvStore()
 {
+    if (metaDelegate_ != nullptr) {
+        return metaDelegate_;
+    }
+
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (metaDelegate_ == nullptr) {
         metaDelegate_ = CreateMetaKvStore();
     }
@@ -178,6 +183,7 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
         return nullptr;
     }
     auto release = [this](DistributedDB::KvStoreNbDelegate *delegate) {
+        ZLOGI("release meta data  kv store");
         if (delegate == nullptr) {
             return;
         }

@@ -309,6 +309,7 @@ private:
     static std::mutex cvMutex_;
     static MetaDeviceChangeListenerImpl listener_;
     KvStoreMetaObserver metaObserver_;
+    std::recursive_mutex mutex_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS
