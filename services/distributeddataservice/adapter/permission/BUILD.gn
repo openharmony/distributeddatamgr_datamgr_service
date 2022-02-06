@@ -26,7 +26,6 @@ ohos_static_library("distributeddata_permission_static") {
     "//utils/native/base/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
-    "//third_party/openssl/include/",
   ]
 
   if (build_public_version) {
@@ -36,7 +35,6 @@ ohos_static_library("distributeddata_permission_static") {
   deps = [
     "../utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//third_party/openssl:libcrypto_static",
     "//utils/native/base:utils",
   ]
 

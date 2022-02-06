@@ -29,22 +29,22 @@ namespace OHOS {
 namespace DistributedKv {
 class KvStoreMetaRow {
 public:
-    KVSTORE_API static const std::string KEY_PREFIX;
+    API_EXPORT static const std::string KEY_PREFIX;
 
-    KVSTORE_API static std::vector<uint8_t> GetKeyFor(const std::string &key);
+    API_EXPORT static std::vector<uint8_t> GetKeyFor(const std::string &key);
 };
 
 class SecretMetaRow {
 public:
-    KVSTORE_API static const std::string KEY_PREFIX;
+    API_EXPORT static const std::string KEY_PREFIX;
 
-    KVSTORE_API static std::vector<uint8_t> GetKeyFor(const std::string &key);
+    API_EXPORT static std::vector<uint8_t> GetKeyFor(const std::string &key);
 };
 
 class Constant {
 public:
     // concatenate strings and return a composition string.
-    KVSTORE_API static std::string Concatenate(std::initializer_list<std::string> stringList);
+    API_EXPORT static std::string Concatenate(std::initializer_list<std::string> stringList);
 
     // delete left bland in s by reference.
     template<typename T>
@@ -71,68 +71,67 @@ public:
     static T TrimCopy(T s);
 
     // get default device account id.
-    KVSTORE_API static std::string GetDefaultDeviceAccountId();
+    API_EXPORT static std::string GetDefaultDeviceAccountId();
 
     // get default harmony account name.
-    KVSTORE_API static std::string GetDefaultHarmonyAccountName();
+    API_EXPORT static std::string GetDefaultHarmonyAccountName();
 
     // default group id for synchronization based on harmony account.
-    KVSTORE_API static const std::string DEFAULT_GROUP_ID;
+    API_EXPORT static const std::string DEFAULT_GROUP_ID;
 
     // Indicates whether only storeid are used as hash materials for the DistributedDB path generated.
-    KVSTORE_API static const bool STOREID_ONLY_FLAG;
+    API_EXPORT static const bool STOREID_ONLY_FLAG;
 
     // version for distributed kv data service.
-    KVSTORE_API static const std::string VERSION;
+    API_EXPORT static const std::string VERSION;
 
     // meta name for distributed kv data service.
-    KVSTORE_API static const std::string META_DIR_NAME;
+    API_EXPORT static const std::string META_DIR_NAME;
 
     // name for distributed kv data service.
-    KVSTORE_API static const std::string SERVICE_NAME;
+    API_EXPORT static const std::string SERVICE_NAME;
 
     // root path for distributed kv data service.
-    KVSTORE_API static const std::string ROOT_PATH;
+    API_EXPORT static const std::string ROOT_PATH;
 
     // root path for distributeddata service and system services.
-    KVSTORE_API static const std::string ROOT_PATH_DE;
+    API_EXPORT static const std::string ROOT_PATH_DE;
 
     // root path for self-developed and non-self-developed app.
-    KVSTORE_API static const std::string ROOT_PATH_CE;
+    API_EXPORT static const std::string ROOT_PATH_CE;
 
     // the max length for key is 256.
-    KVSTORE_API static const size_t MAX_KEY_LENGTH;
+    API_EXPORT static const size_t MAX_KEY_LENGTH;
 
     // the max length for value is 1M.
-    KVSTORE_API static const size_t MAX_VALUE_LENGTH;
+    API_EXPORT static const size_t MAX_VALUE_LENGTH;
 
     // the max length for StoreId is 64.
-    KVSTORE_API static const size_t MAX_STORE_ID_LENGTH;
+    API_EXPORT static const size_t MAX_STORE_ID_LENGTH;
 
     // the max batch for putBatch is 128.
-    KVSTORE_API static const size_t MAX_BATCH_SIZE;
+    API_EXPORT static const size_t MAX_BATCH_SIZE;
 
     // the max capacity for ipc is 800KB.
-    KVSTORE_API static const size_t MAX_IPC_CAPACITY;
+    API_EXPORT static const size_t MAX_IPC_CAPACITY;
 
     // service meta db name.
-    KVSTORE_API static const std::string SERVICE_META_DB_NAME;
+    API_EXPORT static const std::string SERVICE_META_DB_NAME;
 
-    KVSTORE_API static const std::string KEY_SEPARATOR;
+    API_EXPORT static const std::string KEY_SEPARATOR;
 
-    KVSTORE_API static const mode_t DEFAULT_MODE;
+    API_EXPORT static const mode_t DEFAULT_MODE;
 
-    KVSTORE_API static const mode_t DEFAULT_MODE_DIR;
+    API_EXPORT static const mode_t DEFAULT_MODE_DIR;
 
-    KVSTORE_API static const mode_t DEFAULT_MODE_FILE;
+    API_EXPORT static const mode_t DEFAULT_MODE_FILE;
 
-    KVSTORE_API static const int SWITCH_RAW_DATA_SIZE;
+    API_EXPORT static const int SWITCH_RAW_DATA_SIZE;
 
-    KVSTORE_API static const int MAX_OPEN_KVSTORES;
+    API_EXPORT static const int MAX_OPEN_KVSTORES;
 
     // name for process label (bus name for communication). compatible with HwDDMP
-    KVSTORE_API static const std::string PROCESS_LABEL;
-    KVSTORE_API static const std::string ROOT_KEY_GENERATED;
+    API_EXPORT static const std::string ROOT_KEY_GENERATED;
 };
 
 // trim from start (in place)

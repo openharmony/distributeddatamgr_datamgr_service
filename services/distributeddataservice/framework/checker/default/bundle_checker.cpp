@@ -12,10 +12,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#define LOG_TAG "BundleChecker"
 
 #include "checker/default/bundle_checker.h"
 #include <memory>
 #include "bundlemgr/bundle_mgr_client.h"
+#include "log/log_print.h"
+#include "utils/crypto.h"
 namespace OHOS {
 namespace DistributedData {
 using namespace AppExecFwk;
@@ -43,11 +46,15 @@ bool BundleChecker::SetTrustInfo(const CheckerManager::Trust &trust)
 
 std::string BundleChecker::GetAppId(pid_t uid, const std::string &bundleName)
 {
+    if (uid < SYSTEM_UID && uid != CheckerManager::INVALID_UID) {
+        return "";
+    }
+
     BundleMgrClient bmsClient;
     std::string bundle = bundleName;
     if (uid != CheckerManager::INVALID_UID) {
         auto success = bmsClient.GetBundleNameForUid(uid, bundle);
-        if (uid < SYSTEM_UID || !success || bundle != bundleName) {
+        if (!success || bundle != bundleName) {
             return "";
         }
     }
@@ -61,8 +68,9 @@ std::string BundleChecker::GetAppId(pid_t uid, const std::string &bundleName)
     if (it != trusts_.end() && (it->second == bundleInfo->appId)) {
         return bundleName;
     }
-
-    return bundleInfo->appId;
+    ZLOGD("bundleName:%{public}s, uid:%{public}d, appId:%{public}s", bundleName.c_str(), uid,
+        bundleInfo->appId.c_str());
+    return Crypto::Sha256(bundleInfo->appId);
 }
 
 bool BundleChecker::IsValid(pid_t uid, const std::string &bundleName)

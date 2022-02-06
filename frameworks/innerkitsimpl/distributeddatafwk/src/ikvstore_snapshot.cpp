@@ -513,7 +513,7 @@ int32_t KvStoreSnapshotImplStub::GetRemote(MessageParcel &data, MessageParcel &r
 int32_t KvStoreSnapshotImplStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                                                  MessageParcel &reply, MessageOption &option)
 {
-    ZLOGD("%d", code);
+    ZLOGD("%{public}d", code);
     std::u16string descriptor = KvStoreSnapshotImplStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {

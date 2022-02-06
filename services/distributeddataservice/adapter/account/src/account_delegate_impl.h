@@ -51,6 +51,7 @@ public:
     void SubscribeAccountEvent() override;
 private:
     ~AccountDelegateImpl();
+    std::string Sha256UserId(const std::string &plainText) const;
     void NotifyAccountChanged(const AccountEventInfo &accountEventInfo);
 
     ConcurrentMap<std::string, std::shared_ptr<Observer>> observerMap_ {};

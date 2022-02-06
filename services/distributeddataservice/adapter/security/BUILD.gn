@@ -23,13 +23,6 @@ ohos_static_library("distributeddata_security_static") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  remove_configs = [ "//build/config/compiler:no_exceptions" ]
-
-  configs = [
-    "//build/config/compiler:exceptions",
-    "//third_party/jsoncpp:jsoncpp_config",
-  ]
-
   include_dirs = [
     "../include/autils",
     "../include/log",
@@ -40,7 +33,6 @@ ohos_static_library("distributeddata_security_static") {
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
-    "//third_party/jsoncpp:jsoncpp",
     "//utils/native/base:utils",
   ]
 

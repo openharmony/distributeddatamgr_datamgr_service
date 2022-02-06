@@ -24,7 +24,6 @@
 #include "battery_info.h"
 #include "battery_srv_client.h"
 #include "constant.h"
-#include "crypto_utils.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_scheduler.h"
 #include "kvstore_data_service.h"
@@ -32,6 +31,7 @@
 #include "kvstore_meta_manager.h"
 #include "power_mgr_client.h"
 #include "time_utils.h"
+#include "utils/crypto.h"
 
 namespace OHOS::DistributedKv {
 using json = nlohmann::json;
@@ -399,6 +399,6 @@ std::string BackupHandler::GetHashedBackupName(const std::string &bundleName)
     if (bundleName.empty()) {
         return bundleName;
     }
-    return CryptoUtils::Sha256(bundleName);
+    return DistributedData::Crypto::Sha256(bundleName);
 }
 } // namespace OHOS::DistributedKv

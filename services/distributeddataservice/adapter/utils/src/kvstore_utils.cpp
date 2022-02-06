@@ -16,9 +16,6 @@
 #define LOG_TAG "KvStoreUtils"
 
 #include "kvstore_utils.h"
-#include "crypto_utils.h"
-#include "ipc_skeleton.h"
-#include "log_print.h"
 #include "permission_validator.h"
 
 namespace OHOS {

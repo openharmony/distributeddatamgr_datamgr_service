@@ -641,7 +641,7 @@ int32_t KvStoreDataServiceStub::GetRdbServiceOnRemote(MessageParcel &data, Messa
 int32_t KvStoreDataServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                                                 MessageParcel &reply, MessageOption &option)
 {
-    ZLOGD("%d", code);
+    ZLOGD("%{public}d", code);
     std::u16string descriptor = KvStoreDataServiceStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {

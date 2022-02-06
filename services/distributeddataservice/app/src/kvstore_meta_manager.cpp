@@ -27,18 +27,19 @@
 #include "account_delegate.h"
 #include "constant.h"
 #include "kvstore_utils.h"
-#include "crypto_utils.h"
 #include "device_kvstore_impl.h"
 #include "kvstore_data_service.h"
 #include "log_print.h"
 #include "reporter.h"
 #include "directory_utils.h"
 #include "kvstore_app_manager.h"
+#include "utils/crypto.h"
 
 namespace OHOS {
 namespace DistributedKv {
 using json = nlohmann::json;
 using namespace std::chrono;
+using namespace OHOS::DistributedData;
 
 // APPID: distributeddata
 // USERID: default
@@ -650,8 +651,7 @@ void KvStoreMetaManager::ReKey(const std::string &userId, const std::string &bun
     if (store == nullptr) {
         return;
     }
-    std::vector<uint8_t> key;
-    CryptoUtils::GetRandomKey(KEY_SIZE, key);
+    std::vector<uint8_t> key = Crypto::Random(KEY_SIZE);
     WriteSecretKeyToMeta(GetMetaKey(userId, "default", bundleName, storeId, "KEY"), key);
     Status status = store->ReKey(key);
     if (status == Status::SUCCESS) {
@@ -666,8 +666,7 @@ void KvStoreMetaManager::ReKey(const std::string &userId, const std::string &bun
     if (store == nullptr) {
         return;
     }
-    std::vector<uint8_t> key;
-    CryptoUtils::GetRandomKey(KEY_SIZE, key);
+    std::vector<uint8_t> key = Crypto::Random(KEY_SIZE);
     WriteSecretKeyToMeta(GetMetaKey(userId, "default", bundleName, storeId, "SINGLE_KEY"), key);
     Status status = store->ReKey(key);
     if (status == Status::SUCCESS) {

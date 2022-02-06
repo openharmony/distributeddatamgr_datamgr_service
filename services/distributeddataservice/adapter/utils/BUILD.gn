@@ -14,7 +14,6 @@ import("//build/ohos.gni")
 
 ohos_static_library("distributeddata_utils_static") {
   sources = [
-    "src/crypto_utils.cpp",
     "src/kvstore_utils.cpp",
   ]
 
@@ -36,12 +35,10 @@ ohos_static_library("distributeddata_utils_static") {
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//utils/native/base/include",
     "../include/dfx",
-    "//third_party/openssl/include/",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//third_party/openssl:libcrypto_static",
     "//utils/native/base:utils",
   ]
 

@@ -28,7 +28,6 @@
 #include "communication_provider.h"
 #include "config_factory.h"
 #include "constant.h"
-#include "crypto_utils.h"
 #include "dds_trace.h"
 #include "device_kvstore_impl.h"
 #include "if_system_ability_manager.h"
@@ -46,6 +45,7 @@
 #include "rdb_service_impl.h"
 #include "system_ability_definition.h"
 #include "uninstaller/uninstaller.h"
+#include "utils/crypto.h"
 
 namespace OHOS::DistributedKv {
 using json = nlohmann::json;
@@ -321,7 +321,7 @@ Status KvStoreDataService::RecoverSecretKey(const Status &alreadyCreated, bool &
             secretKeyFile, metaSecretKey, secretKey, outdated);
         if (secretKey.empty()) {
             ZLOGI("new secret key");
-            CryptoUtils::GetRandomKey(32, secretKey); // 32 is key length
+            secretKey = Crypto::Random(32); // 32 is key length
             KvStoreMetaManager::GetInstance().WriteSecretKeyToMeta(metaSecretKey, secretKey);
             KvStoreMetaManager::GetInstance().WriteSecretKeyToFile(secretKeyFile, secretKey);
         }
@@ -745,13 +745,14 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
 
     int32_t uid = IPCSkeleton::GetCallingUid();
     if (CheckerManager::GetInstance().IsValid(appId.appId, uid)) {
+        ZLOGE("no permission bundleName:%{public}s, uid:%{public}d.", appId.appId.c_str(), uid);
         return Status::PERMISSION_DENIED;
     }
 
     std::lock_guard<std::mutex> lg(clientDeathObserverMutex_);
     auto it = clientDeathObserverMap_.emplace(std::piecewise_construct, std::forward_as_tuple(appId.appId),
         std::forward_as_tuple(appId, *this, std::move(observer)));
-    ZLOGI("map size: %zu.", clientDeathObserverMap_.size());
+    ZLOGI("map size: %{public}zu.", clientDeathObserverMap_.size());
     if (!it.second) {
         ZLOGI("insert failed");
         return Status::ERROR;
