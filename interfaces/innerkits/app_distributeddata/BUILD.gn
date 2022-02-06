@@ -68,8 +68,8 @@ ohos_shared_library("app_distributeddata") {
 
   configs = [ ":distributeddatafwk_config" ]
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//utils/native/base:utils",
   ]

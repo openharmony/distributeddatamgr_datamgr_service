@@ -37,8 +37,8 @@ ohos_static_library("distributeddata_account_static") {
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//utils/native/base:utils",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//utils/native/base:utils",
   ]
 
   external_deps = [

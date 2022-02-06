@@ -60,7 +60,7 @@ std::string BundleChecker::GetAppId(pid_t uid, const std::string &bundleName)
     }
 
     auto bundleInfo = std::make_unique<BundleInfo>();
-    auto success = bmsClient.GetBundleInfo(bundle, BundleFlag::GET_BUNDLE_DEFAULT, *bundleInfo);
+    auto success = bmsClient.GetBundleInfo(bundle, BundleFlag::GET_BUNDLE_DEFAULT, *bundleInfo, Constants::ANY_USERID);
     if (!success) {
         return "";
     }
@@ -83,7 +83,7 @@ bool BundleChecker::IsValid(pid_t uid, const std::string &bundleName)
     }
 
     auto bundleInfo = std::make_unique<BundleInfo>();
-    success = bmsClient.GetBundleInfo(bundle, BundleFlag::GET_BUNDLE_DEFAULT, *bundleInfo);
+    success = bmsClient.GetBundleInfo(bundle, BundleFlag::GET_BUNDLE_DEFAULT, *bundleInfo, Constants::ANY_USERID);
     if (!success) {
         return false;
     }
