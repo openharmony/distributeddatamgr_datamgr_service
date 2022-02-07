@@ -553,8 +553,10 @@ int QuerySyncWaterMarkHelper::ResetRecvQueryWaterMark(const DeviceID &deviceId, 
     {
         std::lock_guard<std::mutex> autoLock(queryWaterMarkLock_);
         std::string prefixKeyStr = QUERY_SYNC_PREFIX_KEY + DBCommon::TransferHashString(deviceId);
-        if (!prefixKeyStr.empty()) {
-            prefixKeyStr += tableName;
+        if (!tableName.empty()) {
+            std::string hashTableName = DBCommon::TransferHashString(tableName);
+            std::string hexTableName = DBCommon::TransferStringToHex(hashTableName);
+            prefixKeyStr += hexTableName;
         }
         
         // remove in db
