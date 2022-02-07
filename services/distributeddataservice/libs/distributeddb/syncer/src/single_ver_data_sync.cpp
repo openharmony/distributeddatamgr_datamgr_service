@@ -1438,8 +1438,11 @@ int SingleVerDataSync::RunPermissionCheck(SingleVerSyncTaskContext *context, con
         // before add permissionCheck, PushStart packet and pullResponse packet do not setMode.
         flag = CHECK_FLAG_RECEIVE;
     }
-    int errCode = RuntimeContext::GetInstance()->RunPermissionCheck(userId, appId, storeId, context->GetDeviceId(),
-        flag);
+    int errCode = E_OK;
+    if (storage_->GetInterfaceType() != ISyncInterface::SYNC_RELATION) {
+        errCode = RuntimeContext::GetInstance()->RunPermissionCheck(userId, appId, storeId, context->GetDeviceId(),
+            flag);
+    }
     if (errCode != E_OK) {
         LOGE("[DataSync][RunPermissionCheck] check failed flag=%d,Label=%s,dev=%s", flag, label_.c_str(),
             STR_MASK(GetDeviceId()));
