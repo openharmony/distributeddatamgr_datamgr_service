@@ -92,6 +92,8 @@ public:
         return tableName_;
     }
 
+    int GetRelationalSyncDataFullSql(std::string &sql);
+    int GetRelationalFullStatement(sqlite3 *dbHandle, uint64_t beginTime, uint64_t endTime, sqlite3_stmt *&statement);
     int GetRelationalSyncDataQuerySql(std::string &sql, bool hasSubQuery);
     int GetRelationalQueryStatement(sqlite3 *dbHandle, uint64_t beginTime, uint64_t endTime, sqlite3_stmt *&statement);
 

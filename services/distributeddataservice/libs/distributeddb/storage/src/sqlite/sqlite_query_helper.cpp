@@ -887,6 +887,24 @@ int SqliteQueryHelper::GetSubscribeSql(const std::string &subscribeId, TriggerMo
     return errCode;
 }
 
+int SqliteQueryHelper::GetRelationalSyncDataFullSql(std::string &sql)
+{
+    if (!isValid_) {
+        return -E_INVALID_QUERY_FORMAT;
+    }
+
+    if (hasPrefixKey_) {
+        LOGE("For relational DB query, prefix key is not supported.");
+        return -E_NOT_SUPPORT;
+    }
+
+    sql = GetSelectAndFromClauseForRDB(tableName_);
+    sql += GetFlagClauseForRDB();
+    sql += GetTimeRangeClauseForRDB();
+    sql += "ORDER BY " + DBConstant::TIMESTAMP_ALIAS + " ASC;";
+    return E_OK;
+}
+
 int SqliteQueryHelper::GetRelationalSyncDataQuerySql(std::string &sql, bool hasSubQuery)
 {
     if (!isValid_) {
@@ -917,11 +935,31 @@ int SqliteQueryHelper::GetRelationalSyncDataQuerySql(std::string &sql, bool hasS
     return errCode;
 }
 
+int SqliteQueryHelper::GetRelationalFullStatement(sqlite3 *dbHandle, uint64_t beginTime, uint64_t endTime,
+    sqlite3_stmt *&statement)
+{
+    std::string sql;
+    int errCode = GetRelationalSyncDataFullSql(sql);
+    if (errCode != E_OK) {
+        LOGE("[Query] Get SQL fail!");
+        return -E_INVALID_QUERY_FORMAT;
+    }
+
+    errCode = SQLiteUtils::GetStatement(dbHandle, sql, statement);
+    if (errCode != E_OK) {
+        LOGE("[Query] Get statement fail!");
+        return -E_INVALID_QUERY_FORMAT;
+    }
+
+    int index = 1; // begin with 1.
+    return BindTimeRange(statement, index, beginTime, endTime);
+}
+
 int SqliteQueryHelper::GetRelationalQueryStatement(sqlite3 *dbHandle, uint64_t beginTime, uint64_t endTime,
     sqlite3_stmt *&statement)
 {
     bool hasSubQuery = false;
-    if (hasLimit_) {
+    if (hasLimit_ || hasOrderBy_) {
         hasSubQuery = true; // Need sub query.
     } else {
         isNeedOrderbyKey_ = false; // Need order by timestamp.

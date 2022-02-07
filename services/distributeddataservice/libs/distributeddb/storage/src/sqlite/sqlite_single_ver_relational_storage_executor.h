@@ -43,7 +43,7 @@ public:
 
     // For Get sync data
     int GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength, const DataSizeSpecInfo &dataSizeInfo,
-        std::function<int(sqlite3 *, sqlite3_stmt *&, bool &)> getStmt, const std::string &baseTbl);
+        std::function<int(sqlite3 *, sqlite3_stmt *&, sqlite3_stmt *&, bool &)> getStmt, const std::string &baseTbl);
 
     // operation of meta data
     int GetKvData(const Key &key, Value &value) const;
@@ -89,6 +89,10 @@ private:
     int AlterAuxTableForUpgrade(const TableInfo &oldTableInfo, const TableInfo &newTableInfo);
 
     int SetTableInfo(const std::string &baseTbl);
+    int DeleteSyncLog(const Key &hashKey);
+    int ProcessMissQueryData(const DataItem &item);
+    int GetMissQueryData(std::vector<DataItem> &dataItems, size_t &dataTotalSize, const Key &cursorHashKey,
+        sqlite3_stmt *fullStmt, size_t appendLength, const DataSizeSpecInfo &dataSizeInfo);
 
     TableInfo table_;
 };

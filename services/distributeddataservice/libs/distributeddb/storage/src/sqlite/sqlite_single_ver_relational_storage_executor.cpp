@@ -784,6 +784,40 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(sqlite3_stmt *sta
     return errCode;
 }
 
+int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncLog(const Key &hashKey)
+{
+    const std::string sql = "DELETE FROM " + DBConstant::RELATIONAL_PREFIX + table_.GetTableName() + "_log "
+                            "WHERE hash_key=?";
+    sqlite3_stmt *stmt = nullptr;
+    int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
+    if (errCode != E_OK) {
+        LOGE("[DeleteSyncLog] Get statement fail!");
+        return errCode;
+    }
+
+    errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, hashKey); // 1 means hashkey index
+    if (errCode != E_OK) {
+        SQLiteUtils::ResetStatement(stmt, true, errCode);
+        return errCode;
+    }
+
+    errCode = SQLiteUtils::StepWithRetry(stmt, isMemDb_);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+        errCode = E_OK;
+    }
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return errCode;
+}
+
+int SQLiteSingleVerRelationalStorageExecutor::ProcessMissQueryData(const DataItem &item)
+{
+    int errCode = DeleteSyncDataItem(item);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    return DeleteSyncLog(item.hashKey);
+}
+
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObject &object,
     std::vector<DataItem> &dataItems, const std::string &deviceName, TimeStamp &maxTimestamp)
 {
@@ -809,8 +843,15 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
         if (item.neglect) { // Do not save this record if it is neglected
             continue;
         }
-
         item.dev = deviceName;
+
+        if ((item.flag & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) != 0) {
+            errCode = ProcessMissQueryData(item);
+            if (errCode != E_OK) {
+                break;
+            }
+            continue;
+        }
         int64_t rowid = -1;
         errCode = SaveSyncDataItem(statement, item, rowid);
         if (errCode != E_OK && errCode != -E_NOT_FOUND) {
@@ -885,16 +926,53 @@ int SQLiteSingleVerRelationalStorageExecutor::GetDataItemForSync(sqlite3_stmt *s
     return errCode;
 }
 
+int SQLiteSingleVerRelationalStorageExecutor::GetMissQueryData(std::vector<DataItem> &dataItems, size_t &dataTotalSize,
+    const Key &cursorHashKey, sqlite3_stmt *fullStmt, size_t appendLength, const DataSizeSpecInfo &dataSizeInfo)
+{
+    int errCode = E_OK;
+    while (true) {
+        DataItem item;
+        errCode = SQLiteUtils::StepWithRetry(fullStmt, isMemDb_);
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+            errCode = GetDataItemForSync(fullStmt, item, false);
+        } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            errCode = -E_FINISHED;
+            break;
+        } else {
+            LOGE("Get full data failed:%d.", errCode);
+            break;
+        }
+        if (item.hashKey == cursorHashKey) {
+            break;
+        }
+        item.value = {};
+        item.flag |= DataItem::REMOTE_DEVICE_DATA_MISS_QUERY;
+
+        // If dataTotalSize value is bigger than blockSize value , reserve the surplus data item.
+        dataTotalSize += GetDataItemSerialSize(item, appendLength);
+        if ((dataTotalSize > dataSizeInfo.blockSize && !dataItems.empty()) ||
+            dataItems.size() >= dataSizeInfo.packetSize) {
+            errCode = -E_UNFINISHED;
+            break;
+        } else {
+            dataItems.push_back(std::move(item));
+        }
+    }
+    return errCode;
+}
+
 int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength,
-    const DataSizeSpecInfo &dataSizeInfo, std::function<int(sqlite3 *, sqlite3_stmt *&, bool &)> getStmt,
+    const DataSizeSpecInfo &dataSizeInfo,
+    std::function<int(sqlite3 *, sqlite3_stmt *&, sqlite3_stmt *&, bool &)> getStmt,
     const std::string &baseTbl)
 {
     if (!table_.IsValid() || table_.GetTableName() != baseTbl) {
         SetTableInfo(baseTbl);
     }
-    sqlite3_stmt *stmt = nullptr;
+    sqlite3_stmt *queryStmt = nullptr;
+    sqlite3_stmt *fullStmt = nullptr;
     bool isGettingDeletedData = false;
-    int errCode = getStmt(dbHandle_, stmt, isGettingDeletedData);
+    int errCode = getStmt(dbHandle_, queryStmt, fullStmt, isGettingDeletedData);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -903,15 +981,22 @@ int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<Dat
     size_t overLongSize = 0;
     do {
         DataItem item;
-        errCode = SQLiteUtils::StepWithRetry(stmt, isMemDb_);
+        errCode = SQLiteUtils::StepWithRetry(queryStmt, isMemDb_);
         if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
-            errCode = GetDataItemForSync(stmt, item, isGettingDeletedData);
+            errCode = GetDataItemForSync(queryStmt, item, isGettingDeletedData);
         } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
             LOGD("Get sync data finished, size of packet:%zu, number of item:%zu", dataTotalSize, dataItems.size());
             errCode = -E_FINISHED;
-            break;
         } else {
             LOGE("Get sync data error:%d", errCode);
+            break;
+        }
+
+        // Get REMOTE_DEVICE_DATA_MISS_QUERY data.
+        if (fullStmt != nullptr) {
+            errCode = GetMissQueryData(dataItems, dataTotalSize, item.hashKey, fullStmt, appendLength, dataSizeInfo);
+        }
+        if (errCode != E_OK) {
             break;
         }
 
@@ -934,7 +1019,8 @@ int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<Dat
     if (overLongSize != 0) {
         LOGW("Over 4M records:%zu.", overLongSize);
     }
-    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    SQLiteUtils::ResetStatement(queryStmt, true, errCode);
+    SQLiteUtils::ResetStatement(fullStmt, true, errCode);
     return errCode;
 }
 

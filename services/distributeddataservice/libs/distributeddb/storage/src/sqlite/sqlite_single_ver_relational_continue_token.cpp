@@ -31,13 +31,26 @@ bool SQLiteSingleVerRelationalContinueToken::CheckValid() const
     return isValid;
 }
 
-int SQLiteSingleVerRelationalContinueToken::GetStatement(sqlite3 *db, sqlite3_stmt *&stmt, bool &isGettingDeletedData)
+int SQLiteSingleVerRelationalContinueToken::GetStatement(sqlite3 *db, sqlite3_stmt *&queryStmt, sqlite3_stmt *&fullStmt,
+    bool &isGettingDeletedData)
 {
     isGettingDeletedData = isGettingDeletedData_;
     if (isGettingDeletedData) {
-        return GetDeletedDataStmt(db, stmt);
+        return GetDeletedDataStmt(db, queryStmt);
     }
-    return GetQuerySyncStatement(db, stmt);
+
+    int errCode = GetQuerySyncStatement(db, queryStmt);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    if (!queryObj_.IsQueryOnlyByKey()) { // If query only by key, no need to deal with REMOTE_DEVICE_DATA_MISS_QUERY.
+        errCode = GetFullStatement(db, fullStmt);
+    }
+    if (errCode != E_OK) {
+        SQLiteUtils::ResetStatement(queryStmt, true, errCode);
+    }
+    return errCode;
 }
 
 void SQLiteSingleVerRelationalContinueToken::SetNextBeginTime(const DataItem &theLastItem)
@@ -79,6 +92,16 @@ int SQLiteSingleVerRelationalContinueToken::GetQuerySyncStatement(sqlite3 *db, s
         return errCode;
     }
     return helper.GetRelationalQueryStatement(db, timeRange_.beginTime, timeRange_.endTime, stmt);
+}
+
+int SQLiteSingleVerRelationalContinueToken::GetFullStatement(sqlite3 *db, sqlite3_stmt *&stmt)
+{
+    int errCode = E_OK;
+    SqliteQueryHelper helper = queryObj_.GetQueryHelper(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    return helper.GetRelationalFullStatement(db, timeRange_.beginTime, timeRange_.endTime, stmt);
 }
 
 int SQLiteSingleVerRelationalContinueToken::GetDeletedDataStmt(sqlite3 *db, sqlite3_stmt *&stmt) const

@@ -290,7 +290,7 @@ int RelationalSyncAbleStorage::GetSyncDataForQuerySync(std::vector<DataItem> &da
             Parcel::GetAppendedLen(),
             dataSizeInfo,
             std::bind(&SQLiteSingleVerRelationalContinueToken::GetStatement, *token,
-                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4),
             token->GetQuery().GetTableName());
         if (errCode == -E_FINISHED) {
             token->FinishGetData();
