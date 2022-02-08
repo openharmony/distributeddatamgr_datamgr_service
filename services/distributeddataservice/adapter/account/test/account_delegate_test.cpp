@@ -64,8 +64,7 @@ HWTEST_F(AccountDelegateTest, Test001, TestSize.Level0)
 */
 HWTEST_F(AccountDelegateTest, Test002, TestSize.Level0)
 {
-    auto account = AccountDelegate::GetInstance();
-    auto id = account->MAIN_DEVICE_ACCOUNT_ID;
+    auto id = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(getuid());
     ZLOGD("observer subscribed %s", id.c_str());
     ASSERT_TRUE(!id.empty());
 }
