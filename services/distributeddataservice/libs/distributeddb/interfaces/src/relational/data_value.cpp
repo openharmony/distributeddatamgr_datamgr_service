@@ -74,11 +74,11 @@ int Blob::WriteBlob(const uint8_t *ptrArray, const uint32_t &size)
     if (ptr_ == nullptr) {
         return -E_OUT_OF_MEMORY;
     }
-    size_ = size;
     errno_t errCode = memcpy_s(ptr_, size, ptrArray, size);
     if (errCode != EOK) {
         return -E_SECUREC_ERROR;
     }
+    size_ = size;
     return E_OK;
 }
 
@@ -148,7 +148,7 @@ DataValue &DataValue::operator=(DataValue &&dataValue) noexcept
     return *this;
 }
 
-DataValue &DataValue::operator=(const bool &boolVal)
+DataValue &DataValue::operator=(bool boolVal)
 {
     ResetValue();
     type_ = StorageType::STORAGE_TYPE_BOOL;
@@ -156,7 +156,7 @@ DataValue &DataValue::operator=(const bool &boolVal)
     return *this;
 }
 
-DataValue &DataValue::operator=(const int64_t &intVal)
+DataValue &DataValue::operator=(int64_t intVal)
 {
     ResetValue();
     type_ = StorageType::STORAGE_TYPE_INTEGER;
@@ -164,7 +164,7 @@ DataValue &DataValue::operator=(const int64_t &intVal)
     return *this;
 }
 
-DataValue &DataValue::operator=(const double &doubleVal)
+DataValue &DataValue::operator=(double doubleVal)
 {
     ResetValue();
     type_ = StorageType::STORAGE_TYPE_REAL;

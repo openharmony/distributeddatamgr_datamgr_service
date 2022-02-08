@@ -17,7 +17,6 @@
 #define SCHEMA_H
 
 #include <string>
-#include <stdint.h>
 
 namespace DistributedDB {
 // SchemaType::NONE represent for KV database which do not have schema. Only invalid SchemaObject is NONE type.

@@ -30,7 +30,7 @@ RelationalStoreDelegateImpl::RelationalStoreDelegateImpl(RelationalStoreConnecti
 RelationalStoreDelegateImpl::~RelationalStoreDelegateImpl()
 {
     if (!releaseFlag_) {
-        LOGF("[KvStoreNbDelegate] Can't release directly");
+        LOGF("[RelationalStore Delegate] Can't release directly");
         return;
     }
 
@@ -108,7 +108,7 @@ DBStatus RelationalStoreDelegateImpl::Close()
 
     int errCode = conn_->Close();
     if (errCode == -E_BUSY) {
-        LOGW("[KvStoreDelegate] busy for close");
+        LOGW("[RelationalStore Delegate] busy for close");
         return BUSY;
     }
     if (errCode != E_OK) {
@@ -116,7 +116,7 @@ DBStatus RelationalStoreDelegateImpl::Close()
         return TransferDBErrno(errCode);
     }
 
-    LOGI("[KvStoreDelegate] Close");
+    LOGI("[RelationalStore Delegate] Close");
     conn_ = nullptr;
     return OK;
 }

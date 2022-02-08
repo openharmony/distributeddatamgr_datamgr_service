@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 #ifdef RELATIONAL_STORE
+#include "relational_schema_object.h"
+
 #include <algorithm>
 
 #include "json_object.h"
-#include "relational_schema_object.h"
 #include "schema_utils.h"
 
 namespace DistributedDB {
@@ -610,7 +611,7 @@ RelationalSyncOpinion RelationalSchemaObject::MakeLocalSyncOpinion(const Relatio
             continue;
         }
         // local table is incompatible with remote table mutually, don't permit sync and need check
-        LOGW("[RelationalSchema][opinion] Local table is incompartible with remote table mutually.");
+        LOGW("[RelationalSchema][opinion] Local table is incompatible with remote table mutually.");
         opinion.AddSyncOpinion(it.first, {false, true, true});
     }
 
@@ -766,8 +767,11 @@ int GetMemberFromJsonObject(const JsonObject &inJsonObject, const std::string &f
     bool isNecessary, FieldValue &fieldValue)
 {
     if (!inJsonObject.IsFieldPathExist(FieldPath {fieldName})) {
-        LOGW("[RelationalSchema][Parse] Get schema %s not exist. isNecessary: %d", fieldName.c_str(), isNecessary);
-        return isNecessary ? -E_SCHEMA_PARSE_FAIL : -E_NOT_FOUND;
+        if (isNecessary) {
+            LOGE("[RelationalSchema][Parse] Get schema %s not exist. isNecessary: %d", fieldName.c_str(), isNecessary);
+            return -E_SCHEMA_PARSE_FAIL;
+        }
+        return -E_NOT_FOUND;
     }
 
     FieldType fieldType;

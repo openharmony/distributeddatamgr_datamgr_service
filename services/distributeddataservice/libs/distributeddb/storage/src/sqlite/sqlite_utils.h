@@ -37,7 +37,7 @@ struct TransactFunc {
     void (*xFunc)(sqlite3_context*, int, sqlite3_value**) = nullptr;
     void (*xStep)(sqlite3_context*, int, sqlite3_value**) = nullptr;
     void (*xFinal)(sqlite3_context*) = nullptr;
-    void(*xDestroy)(void*) = nullptr;
+    void (*xDestroy)(void*) = nullptr;
 };
 
 namespace TriggerMode {
@@ -117,8 +117,6 @@ public:
     static int GetVersion(sqlite3 *db, int &version);
 
     static int GetJournalMode(sqlite3 *db, std::string &mode);
-
-    static int GetSynchronousMode(sqlite3 *db, int &mode);
 
     static int SetUserVer(const OpenDbProperties &properties, int version);
 

@@ -58,7 +58,7 @@ public:
     virtual void RegisterObserverAction(const RelationalObserverAction &action) = 0;
 
 protected:
-    // Get the stashed 'KvDB_ pointer' without ref.
+    // Get the stashed 'RelationalDB_ pointer' without ref.
     template<typename DerivedDBType>
     DerivedDBType *GetDB() const
     {

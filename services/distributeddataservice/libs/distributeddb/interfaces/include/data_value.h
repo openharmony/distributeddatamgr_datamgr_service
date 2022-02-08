@@ -63,9 +63,9 @@ public:
     // move constructor
     DataValue(DataValue &&dataValue) noexcept;
     DataValue &operator=(DataValue &&dataValue) noexcept;
-    DataValue &operator=(const bool &boolVal);
-    DataValue &operator=(const int64_t &intVal);
-    DataValue &operator=(const double &doubleVal);
+    DataValue &operator=(bool boolVal);
+    DataValue &operator=(int64_t intVal);
+    DataValue &operator=(double doubleVal);
     DataValue &operator=(const Blob &blob);
     DataValue &operator=(const std::string &string);
     int Set(Blob *&blob);
