@@ -48,29 +48,28 @@ void UvQueue::CallFunction(NapiArgsGenerator genArgs)
         ZLOGE("no memory for uv_work_t");
         return;
     }
-    work->data = this;
-    this->args = std::move(genArgs);
-
+    work->data = new UvEntry{env_, callback_, std::move(genArgs)};
     uv_queue_work(
         loop_, work, [](uv_work_t* work) {},
         [](uv_work_t* work, int uvstatus) {
-            auto queue = static_cast<UvQueue*>(work->data);
-            int argc = 0;
+            auto *entry = static_cast<UvEntry*>(work->data);
+            int argc = ARGC_MAX;
             napi_value argv[ARGC_MAX] = { nullptr };
-            if (queue->args) {
-                queue->args(queue->env_, argc, argv);
+            if (entry->args) {
+                entry->args(entry->env, argc, argv);
             }
             ZLOGD("queue uv_after_work_cb");
 
             napi_value callback = nullptr;
-            napi_get_reference_value(queue->env_, queue->callback_, &callback);
+            napi_get_reference_value(entry->env, entry->callback, &callback);
             napi_value global = nullptr;
-            napi_get_global(queue->env_, &global);
+            napi_get_global(entry->env, &global);
             napi_value result;
-            napi_status status = napi_call_function(queue->env_, global, callback, argc, argv, &result);
+            napi_status status = napi_call_function(entry->env, global, callback, argc, argv, &result);
             if (status != napi_ok) {
                 ZLOGE("notify data change failed status:%{public}d callback:%{public}p", status, callback);
             }
+            delete entry;
             delete work;
             work = nullptr;
         });
