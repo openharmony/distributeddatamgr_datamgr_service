@@ -55,7 +55,7 @@ void RelationalSyncAbleStorage::DecRefCount()
     DecObjRef(this);
 }
 
-// Get the identifier of this kvdb.
+// Get the identifier of this rdb.
 std::vector<uint8_t> RelationalSyncAbleStorage::GetIdentifier() const
 {
     std::string identifier = storageEngine_->GetIdentifier();
@@ -521,7 +521,7 @@ void RelationalSyncAbleStorage::RegisterObserverAction(const RelationalObserverA
     dataChangeDeviceCallback_ = action;
 }
 
-void RelationalSyncAbleStorage::TriggerObserverAction(const std::string deviceName)
+void RelationalSyncAbleStorage::TriggerObserverAction(const std::string &deviceName)
 {
     {
         std::lock_guard<std::mutex> lock(dataChangeDeviceMutex_);
@@ -569,7 +569,6 @@ int RelationalSyncAbleStorage::CheckAndInitQueryCondition(QueryObject &query) co
     if (handle == nullptr) {
         return errCode;
     }
-
 
     errCode = handle->CheckQueryObjectLegal(table, query);
     if (errCode != E_OK) {

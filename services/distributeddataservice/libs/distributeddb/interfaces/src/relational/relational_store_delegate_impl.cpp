@@ -37,12 +37,6 @@ RelationalStoreDelegateImpl::~RelationalStoreDelegateImpl()
     conn_ = nullptr;
 };
 
-DBStatus RelationalStoreDelegateImpl::Sync(const std::vector<std::string> &devices, SyncMode mode,
-    const SyncStatusCallback &onComplete, bool wait)
-{
-    return NOT_SUPPORT;
-}
-
 DBStatus RelationalStoreDelegateImpl::RemoveDeviceData(const std::string &device)
 {
     return RemoveDeviceData(device, {});

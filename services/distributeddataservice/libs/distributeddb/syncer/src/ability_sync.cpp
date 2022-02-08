@@ -401,7 +401,7 @@ int AbilitySync::AckRecv(const Message *message, ISyncTaskContext *context)
     if (remoteSoftwareVersion > SOFTWARE_VERSION_RELEASE_2_0) {
         HandleVersionV3AckSecOptionParam(packet, context);
         AbilitySyncAckPacket ackPacket;
-        int errCode = HandleVersionV3AckSchemaParam(packet, ackPacket, context, true);
+        errCode = HandleVersionV3AckSchemaParam(packet, ackPacket, context, true);
         if (errCode != E_OK) {
             return errCode;
         }
@@ -1163,7 +1163,7 @@ void AbilitySync::HandleKvAckSchemaParam(const AbilitySyncAckPacket *recvPacket,
     ISyncTaskContext *context, AbilitySyncAckPacket &sendPacket) const
 {
     std::string remoteSchema = recvPacket->GetSchema();
-    uint8_t remoteSchemaType = recvPacket->GetSchemaType(); 
+    uint8_t remoteSchemaType = recvPacket->GetSchemaType();
     bool permitSync = static_cast<bool>(recvPacket->GetPermitSync());
     bool requirePeerConvert = static_cast<bool>(recvPacket->GetRequirePeerConvert());
     SyncOpinion remoteOpinion = {permitSync, requirePeerConvert, true};
@@ -1174,8 +1174,8 @@ void AbilitySync::HandleKvAckSchemaParam(const AbilitySyncAckPacket *recvPacket,
     (static_cast<SingleVerKvSyncTaskContext *>(context))->SetSyncStrategy(localStrategy);
 }
 
-int AbilitySync::HandleRelationAckSchemaParam(const AbilitySyncAckPacket *recvPacket,
-    AbilitySyncAckPacket &sendPacket, ISyncTaskContext *context, bool sendOpinion) const
+int AbilitySync::HandleRelationAckSchemaParam(const AbilitySyncAckPacket *recvPacket, AbilitySyncAckPacket &sendPacket,
+    ISyncTaskContext *context, bool sendOpinion) const
 {
     std::string remoteSchema = recvPacket->GetSchema();
     uint8_t remoteSchemaType = recvPacket->GetSchemaType();

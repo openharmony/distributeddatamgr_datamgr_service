@@ -140,7 +140,7 @@ namespace {
             index++;
         }
         sql += ") VALUES (";
-        while(index > 0) {
+        while (index > 0) {
             sql += "?";
             if (index != 1) {
                 sql += ", ";
@@ -163,7 +163,7 @@ namespace {
 
     void BindValue(const DataValue &item, sqlite3_stmt *stmt, int col)
     {
-        switch(item.GetType()) {
+        switch (item.GetType()) {
             case StorageType::STORAGE_TYPE_BOOL: {
                 bool boolData = false;
                 (void)item.GetBool(boolData);
@@ -207,7 +207,7 @@ namespace {
 
             default:
                 break;
-            }
+        }
     }
 
     void InsertValue(sqlite3 *db, std::map<std::string, DataValue> &dataMap,
@@ -473,8 +473,8 @@ namespace {
         for (auto &[field, value] : data) {
             DataValue target;
             EXPECT_EQ(targetData[0].objectData.GetDataValue(field, target), E_OK);
-            LOGD("field %s actual_val[%s] except_val[%s]",
-                    field.c_str(), target.ToString().c_str(), value.ToString().c_str());
+            LOGD("field %s actual_val[%s] except_val[%s]", field.c_str(), target.ToString().c_str(),
+                value.ToString().c_str());
             EXPECT_TRUE(target == value);
         }
     }
@@ -780,7 +780,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync001, TestSize.Leve
     /**
      * @tc.steps: step2. set auto launch callBack
      */
-    const AutoLaunchRequestCallback callback = [](const std::string &identifier, AutoLaunchParam &param){
+    const AutoLaunchRequestCallback callback = [](const std::string &identifier, AutoLaunchParam &param) {
         if (g_id != identifier) {
             return false;
         }
@@ -834,7 +834,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync002, TestSize.Leve
     /**
      * @tc.steps: step2. set auto launch callBack
      */
-    const AutoLaunchRequestCallback callback = [](const std::string &identifier, AutoLaunchParam &param){
+    const AutoLaunchRequestCallback callback = [](const std::string &identifier, AutoLaunchParam &param) {
         return false;
     };
     g_mgr.SetAutoLaunchRequestCallback(callback);
@@ -844,7 +844,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync002, TestSize.Leve
     g_mgr.CloseStore(g_rdbDelegatePtr);
     g_rdbDelegatePtr = nullptr;
     /**
-     * @tc.steps: step3. store cann't autoLaunch because callback return false
+     * @tc.steps: step3. store can't autoLaunch because callback return false
      */
     LabelType labelType(g_id.begin(), g_id.end());
     g_communicatorAggregator->RunCommunicatorLackCallback(labelType);
@@ -1032,7 +1032,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, PressureSync001, TestSize.Level1
 
     std::mutex mutex;
     std::unique_lock<std::mutex> lock(mutex);
-    cv.wait(lock, [&subFinish]{ return subFinish; });
+    cv.wait(lock, [&subFinish] { return subFinish; });
 }
 
 /*

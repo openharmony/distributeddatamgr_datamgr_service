@@ -137,13 +137,9 @@ std::string QuerySyncObject::GetIdentify() const
     }
 
     // QUERY_SYNC_OBJECT_VERSION_1 added.
-    if (isTableNameSpecified_) {
-        len += Parcel::GetStringLen(tableName_);
-    }
-    if (!keys_.empty()) {
-        for (const auto &key : keys_) {
-            len += Parcel::GetVectorCharLen(key);
-        }
+    len += isTableNameSpecified_ ? Parcel::GetStringLen(tableName_) : 0;
+    for (const auto &key : keys_) {
+        len += Parcel::GetVectorCharLen(key);
     }
     // QUERY_SYNC_OBJECT_VERSION_1 end.
 
@@ -170,10 +166,8 @@ std::string QuerySyncObject::GetIdentify() const
     if (isTableNameSpecified_) {
         (void)parcel.WriteString(tableName_);
     }
-    if (!keys_.empty()) {
-        for (const auto &key : keys_) {
-            (void)parcel.WriteVectorChar(key);
-        }
+    for (const auto &key : keys_) {
+        (void)parcel.WriteVectorChar(key);
     }
     // QUERY_SYNC_OBJECT_VERSION_1 end.
 
@@ -241,6 +235,30 @@ int QuerySyncObject::SerializeData(Parcel &parcel, uint32_t softWareVersion)
     return E_OK;
 }
 
+namespace {
+int DeSerializeVersion1Data(uint32_t version, Parcel &parcel, std::string &tableName, std::set<Key> &keys)
+{
+    if (version >= QUERY_SYNC_OBJECT_VERSION_1) {
+        uint32_t isTblNameExist = 0;
+        (void)parcel.ReadUInt32(isTblNameExist);
+        if (isTblNameExist) {
+            (void)parcel.ReadString(tableName);
+        }
+        uint32_t keysSize = 0;
+        (void)parcel.ReadUInt32(keysSize);
+        if (keysSize > DBConstant::MAX_BATCH_SIZE) {
+            return -E_PARSE_FAIL;
+        }
+        for (uint32_t i = 0; i < keysSize; ++i) {
+            Key key;
+            (void)parcel.ReadVector(key);
+            keys.emplace(key);
+        }
+    }
+    return E_OK;
+}
+}
+
 int QuerySyncObject::DeSerializeData(Parcel &parcel, QuerySyncObject &queryObj)
 {
     std::string magic;
@@ -277,22 +295,9 @@ int QuerySyncObject::DeSerializeData(Parcel &parcel, QuerySyncObject &queryObj)
     // QUERY_SYNC_OBJECT_VERSION_1 added.
     std::string tableName;
     std::set<Key> keys;
-    if (context.version >= QUERY_SYNC_OBJECT_VERSION_1) {
-        uint32_t isTblNameExist = 0;
-        (void)parcel.ReadUInt32(isTblNameExist);
-        if (isTblNameExist) {
-            (void)parcel.ReadString(tableName);
-        }
-        uint32_t keysSize = 0;
-        (void)parcel.ReadUInt32(keysSize);
-        if (keysSize > DBConstant::MAX_BATCH_SIZE) {
-            return -E_PARSE_FAIL;
-        }
-        for (uint32_t i = 0; i < keysSize; ++i) {
-            Key key;
-            (void)parcel.ReadVector(key);
-            keys.emplace(key);
-        }
+    int errCode = DeSerializeVersion1Data(context.version, parcel, tableName, keys);
+    if (errCode != E_OK) {
+        return errCode;
     }
     // QUERY_SYNC_OBJECT_VERSION_1 end.
 

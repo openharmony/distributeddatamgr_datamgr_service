@@ -352,11 +352,23 @@ int TableInfo::CompareWithTableFields(const std::map<std::string, FieldInfo> &in
         return -E_RELATIONAL_TABLE_INCOMPATIBLE;
     }
 
-    return (itInTable == inTableFields.end()) ? -E_RELATIONAL_TABLE_EQUAL : -E_RELATIONAL_TABLE_COMPATIBLE_UPGRADE;
+    if (itInTable == inTableFields.end()) {
+        return -E_RELATIONAL_TABLE_EQUAL;
+    }
+
+    while (itInTable != inTableFields.end()) {
+        if (itInTable->second.IsNotNull() && !itInTable->second.HasDefaultValue()) {
+            LOGW("[Relational][Compare] Table upgrade field should allowed to be empty or have default value.");
+            return -E_RELATIONAL_TABLE_INCOMPATIBLE;
+        }
+        itInTable++;
+    }
+    return -E_RELATIONAL_TABLE_COMPATIBLE_UPGRADE;
 }
 
 int TableInfo::CompareWithTableIndex(const std::map<std::string, CompositeFields> &inTableIndex) const
 {
+    // Index comparison results do not affect synchronization decisions
     auto itLocal = indexDefines_.begin();
     auto itInTable = inTableIndex.begin();
     while (itLocal != indexDefines_.end() && itInTable != inTableIndex.end()) {
@@ -487,7 +499,7 @@ int RelationalSyncOpinion::DeserializeData(Parcel &parcel, RelationalSyncOpinion
     std::string magicStr;
     (void)parcel.ReadString(magicStr);
     if (magicStr != MAGIC) {
-        LOGE("Decerialize sync opinion failed while read MAGIC string [%s]", magicStr.c_str());
+        LOGE("Deserialize sync opinion failed while read MAGIC string [%s]", magicStr.c_str());
         return -E_INVALID_ARGS;
     }
     uint32_t softWareVersion;
@@ -941,7 +953,6 @@ int RelationalSchemaObject::ParseCheckTableFieldInfo(const JsonObject &inJsonObj
         return errCode;
     }
     field.SetColumnId(fieldValue.integerValue);
-
 
     errCode = GetMemberFromJsonObject(inJsonObject, "TYPE", FieldType::LEAF_FIELD_STRING, true, fieldValue);
     if (errCode != E_OK) {

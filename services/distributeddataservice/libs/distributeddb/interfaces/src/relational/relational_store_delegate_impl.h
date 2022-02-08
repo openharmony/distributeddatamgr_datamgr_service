@@ -30,9 +30,6 @@ public:
     DISABLE_COPY_ASSIGN_MOVE(RelationalStoreDelegateImpl);
 
     DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
-        const SyncStatusCallback &onComplete, bool wait) override;
-
-    DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
         const Query &query, const SyncStatusCallback &onComplete, bool wait) override;
 
     DBStatus RemoveDeviceData(const std::string &device) override;

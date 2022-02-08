@@ -25,7 +25,7 @@
 namespace DistributedDB {
 namespace {
     constexpr const char *RELATIONAL_SCHEMA_KEY = "relational_schema";
-    constexpr const char *LOG_TABLE_VERSION_KEY = "log_table_versoin";
+    constexpr const char *LOG_TABLE_VERSION_KEY = "log_table_version";
     constexpr const char *LOG_TABLE_VERSION_1 = "1.0";
 }
 
@@ -120,7 +120,7 @@ int SQLiteRelationalStore::GetSchemaFromMeta()
     RelationalSchemaObject schema;
     errCode = schema.ParseFromSchemaString(schemaStr);
     if (errCode != E_OK) {
-        LOGE("Parse schema string from mata table failed.");
+        LOGE("Parse schema string from meta table failed.");
         return errCode;
     }
 
@@ -176,7 +176,7 @@ int SQLiteRelationalStore::Open(const RelationalDBProperties &properties)
 {
     std::lock_guard<std::mutex> lock(initalMutex_);
     if (isInitialized_) {
-        LOGD("[RelationalStore][Open] relational db was already inited.");
+        LOGD("[RelationalStore][Open] relational db was already initialized.");
         return E_OK;
     }
 

@@ -642,7 +642,7 @@ distributeddb_unittest("DistributedDBRelationalSchemaObjectTest") {
   ]
 }
 
-distributeddb_unittest("DistributedDBRelationalSyncTest") {
+distributeddb_unittest("DistributedDBInterfacesRelationalSyncTest") {
   sources = [ "unittest/common/interfaces/distributeddb_interfaces_relational_sync_test.cpp" ]
 }
 
@@ -685,6 +685,7 @@ group("unittest") {
     ":DistributedDBInterfacesNBUnpublishTest",
     ":DistributedDBInterfacesQueryDBTest",
     ":DistributedDBInterfacesRegisterSyncDBTest",
+    ":DistributedDBInterfacesRelationalSyncTest",
     ":DistributedDBInterfacesSchemaDatabaseUpgradeTest",
     ":DistributedDBInterfacesSpaceManagementTest",
     ":DistributedDBInterfacesTransactionOptimizationTest",
@@ -698,7 +699,6 @@ group("unittest") {
     ":DistributedDBParcelTest",
     ":DistributedDBRelationalGetDataTest",
     ":DistributedDBRelationalSchemaObjectTest",
-    ":DistributedDBRelationalSyncTest",
     ":DistributedDBSchemaObjectTest",
     ":DistributedDBSchemalTest",
     ":DistributedDBSingleVerMsgScheduleTest",

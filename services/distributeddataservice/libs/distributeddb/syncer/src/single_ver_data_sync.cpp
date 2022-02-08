@@ -1438,8 +1438,11 @@ int SingleVerDataSync::RunPermissionCheck(SingleVerSyncTaskContext *context, con
         // before add permissionCheck, PushStart packet and pullResponse packet do not setMode.
         flag = CHECK_FLAG_RECEIVE;
     }
-    int errCode = RuntimeContext::GetInstance()->RunPermissionCheck(userId, appId, storeId, context->GetDeviceId(),
-        flag);
+    int errCode = E_OK;
+    if (storage_->GetInterfaceType() != ISyncInterface::SYNC_RELATION) {
+        errCode = RuntimeContext::GetInstance()->RunPermissionCheck(userId, appId, storeId, context->GetDeviceId(),
+            flag);
+    }
     if (errCode != E_OK) {
         LOGE("[DataSync][RunPermissionCheck] check failed flag=%d,Label=%s,dev=%s", flag, label_.c_str(),
             STR_MASK(GetDeviceId()));
@@ -1967,6 +1970,10 @@ bool SingleVerDataSync::QuerySyncCheck(const SingleVerSyncTaskContext *context) 
         LOGE("[SingleVerDataSync] remote version only support prefix key");
         return false;
     }
+    if (context->GetQuery().HasInKeys() &&
+        context->GetRemoteDbAbility().GetAbilityItem(INKEYS_QUERY) != SUPPORT_MARK) {
+        return false;
+    }
     return true;
 }
 
@@ -2094,6 +2101,11 @@ int SingleVerDataSync::ControlCmdStartCheck(SingleVerSyncTaskContext *context)
         (context->GetMode() != SyncModeType::UNSUBSCRIBE_QUERY)) {
         LOGE("[ControlCmdStartCheck] not support controlCmd");
         return -E_INVALID_ARGS;
+    }
+    if (context->GetMode() == SyncModeType::SUBSCRIBE_QUERY &&
+        context->GetQuery().HasInKeys() &&
+        context->GetRemoteDbAbility().GetAbilityItem(INKEYS_QUERY) != SUPPORT_MARK) {
+        return -E_NOT_SUPPORT;
     }
     if ((context->GetMode() != SyncModeType::SUBSCRIBE_QUERY) || context->GetReceivcPermitCheck()) {
         return E_OK;

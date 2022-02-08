@@ -63,7 +63,7 @@ public:
     int DeleteDistributedDeviceTable(const std::string &device, const std::string &tableName);
     int DeleteDistributedLogTable(const std::string &tableName);
 
-    int CkeckAndCleanDistributedTable(const std::vector<std::string> &tableNames,
+    int CheckAndCleanDistributedTable(const std::vector<std::string> &tableNames,
         std::vector<std::string> &missingTables);
 
     int CreateDistributedDeviceTable(const std::string &device, const TableInfo &baseTbl);

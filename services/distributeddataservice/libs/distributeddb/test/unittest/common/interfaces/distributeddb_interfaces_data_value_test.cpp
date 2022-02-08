@@ -142,7 +142,7 @@ const std::vector<void (*)(DataValue&)> g_checkFuncList = {
     &DataValueDoubleCheck, &DataValueStringCheck, &DataValueBlobCheck
 };
 
-class DistribubtedDBInterfacesDataValueTest : public testing::Test {
+class DistributedDBInterfacesDataValueTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -150,19 +150,19 @@ public:
     void TearDown();
 };
 
-void DistribubtedDBInterfacesDataValueTest::SetUpTestCase(void)
+void DistributedDBInterfacesDataValueTest::SetUpTestCase(void)
 {
 }
 
-void DistribubtedDBInterfacesDataValueTest::TearDownTestCase(void)
+void DistributedDBInterfacesDataValueTest::TearDownTestCase(void)
 {
 }
 
-void DistribubtedDBInterfacesDataValueTest::SetUp(void)
+void DistributedDBInterfacesDataValueTest::SetUp(void)
 {
 }
 
-void DistribubtedDBInterfacesDataValueTest::TearDown(void)
+void DistributedDBInterfacesDataValueTest::TearDown(void)
 {
 }
 
@@ -173,7 +173,7 @@ void DistribubtedDBInterfacesDataValueTest::TearDown(void)
  * @tc.require:
  * @tc.author: zhangqiquan
  */
-HWTEST_F(DistribubtedDBInterfacesDataValueTest, DataValueCheck001, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesDataValueTest, DataValueCheck001, TestSize.Level1)
 {
     for (const auto &func : g_checkFuncList) {
         DataValue dataValue;
@@ -188,7 +188,7 @@ HWTEST_F(DistribubtedDBInterfacesDataValueTest, DataValueCheck001, TestSize.Leve
  * @tc.require:
  * @tc.author: zhangqiquan
  */
-HWTEST_F(DistribubtedDBInterfacesDataValueTest, DataValueCheck002, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesDataValueTest, DataValueCheck002, TestSize.Level1)
 {
     for (uint32_t lastWriteIndex = 0; lastWriteIndex < g_checkFuncList.size(); lastWriteIndex++) {
         DataValue dataValue;

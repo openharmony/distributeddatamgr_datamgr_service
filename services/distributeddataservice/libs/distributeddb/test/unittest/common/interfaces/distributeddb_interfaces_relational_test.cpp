@@ -59,7 +59,7 @@ namespace {
         "CREATE INDEX key_index ON sync_data (key, flag);";
 }
 
-class DistributedInterfacesRelationalTest : public testing::Test {
+class DistributedDBInterfacesRelationalTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -67,23 +67,23 @@ public:
     void TearDown();
 };
 
-void DistributedInterfacesRelationalTest::SetUpTestCase(void)
+void DistributedDBInterfacesRelationalTest::SetUpTestCase(void)
 {
     DistributedDBToolsUnitTest::TestDirInit(g_testDir);
     LOGD("Test dir is %s", g_testDir.c_str());
     g_dbDir = g_testDir + "/";
 }
 
-void DistributedInterfacesRelationalTest::TearDownTestCase(void)
+void DistributedDBInterfacesRelationalTest::TearDownTestCase(void)
 {
 }
 
-void DistributedInterfacesRelationalTest::SetUp(void)
+void DistributedDBInterfacesRelationalTest::SetUp(void)
 {
     DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
-void DistributedInterfacesRelationalTest::TearDown(void)
+void DistributedDBInterfacesRelationalTest::TearDown(void)
 {
     DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir);
 }
@@ -95,7 +95,7 @@ void DistributedInterfacesRelationalTest::TearDown(void)
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest001, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest001, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Prepare db file
@@ -155,7 +155,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest001, TestSize.L
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest002, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest002, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Prepare db file
@@ -207,7 +207,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest002, TestSize.L
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest003, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest003, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Prepare db file with string is not WAL
@@ -238,7 +238,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest003, TestSize.L
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest004, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest004, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Prepare db file with multiple tables
@@ -287,7 +287,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest004, TestSize.L
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest005, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest005, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Prepare db file
@@ -329,7 +329,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest005, TestSize.L
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalStoreTest006, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest006, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Prepare db file
@@ -428,7 +428,7 @@ void TableModifyTest(const std::string &modifySql, DBStatus expect)
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest001, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalTableModifyTest001, TestSize.Level1)
 {
     TableModifyTest("ALTER TABLE sync_data ADD COLUMN add_field INTEGER;", OK);
 }
@@ -440,7 +440,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest001, Test
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest002, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalTableModifyTest002, TestSize.Level1)
 {
     TableModifyTest("ALTER TABLE sync_data ADD COLUMN add_field INTEGER NOT NULL;", SCHEMA_MISMATCH);
 }
@@ -452,7 +452,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest002, Test
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest003, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalTableModifyTest003, TestSize.Level1)
 {
     TableModifyTest("ALTER TABLE sync_data DROP COLUMN w_timestamp;", SCHEMA_MISMATCH);
 }
@@ -464,7 +464,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest003, Test
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest004, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalTableModifyTest004, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Prepare db file
@@ -526,7 +526,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalTableModifyTest004, Test
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalRemoveDeviceDataTest001, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalRemoveDeviceDataTest001, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Prepare db file
@@ -573,7 +573,7 @@ HWTEST_F(DistributedInterfacesRelationalTest, RelationalRemoveDeviceDataTest001,
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedInterfacesRelationalTest, RelationalOpenStorePathCheckTest001, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalOpenStorePathCheckTest001, TestSize.Level1)
 {
     std::string dir1 = g_dbDir + "dbDir1";
     EXPECT_EQ(OS::MakeDBDirectory(dir1), E_OK);

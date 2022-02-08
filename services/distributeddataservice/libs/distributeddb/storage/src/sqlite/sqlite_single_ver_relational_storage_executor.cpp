@@ -76,25 +76,25 @@ int SQLiteSingleVerRelationalStorageExecutor::UpgradeDistributedTable(const Tabl
 
     int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, tableInfo.GetTableName(), newTableInfo);
     if (errCode != E_OK) {
-        LOGE("[UpgreadDistributedTable] analysis table schema failed. %d", errCode);
+        LOGE("[UpgradeDistributedTable] analysis table schema failed. %d", errCode);
         return errCode;
     }
 
     if (newTableInfo.GetCreateTableSql().find("WITHOUT ROWID") != std::string::npos) {
-        LOGE("[UpgreadDistributedTable] Not support create distributed table without rowid.");
+        LOGE("[UpgradeDistributedTable] Not support create distributed table without rowid.");
         return -E_NOT_SUPPORT;
     }
 
     // new table should has same or compatible upgrade
     errCode = tableInfo.CompareWithTable(newTableInfo);
     if (errCode == -E_RELATIONAL_TABLE_INCOMPATIBLE) {
-        LOGE("[UpgreadDistributedTable] Not support with incompatible upgreade.");
+        LOGE("[UpgradeDistributedTable] Not support with incompatible upgrade.");
         return -E_SCHEMA_MISMATCH;
     }
 
     errCode = AlterAuxTableForUpgrade(tableInfo, newTableInfo);
     if (errCode != E_OK) {
-        LOGE("[UpgreadDistributedTable] Alter aux table for upgrade failed. %d", errCode);
+        LOGE("[UpgradeDistributedTable] Alter aux table for upgrade failed. %d", errCode);
     }
 
     return errCode;
@@ -108,9 +108,9 @@ int GetDeviceTableName(sqlite3 *handle, const std::string &tableName, const std:
         return -E_INVALID_ARGS;
     }
     std::string deviceHash = DBCommon::TransferStringToHex(DBCommon::TransferHashString(device));
-    std::string decicePattern = device.empty() ? "%" : deviceHash;
+    std::string devicePattern = device.empty() ? "%" : deviceHash;
     std::string tablePattern = tableName.empty() ? "%" : tableName;
-    std::string deviceTableName = DBConstant::RELATIONAL_PREFIX + tablePattern + "_" + decicePattern;
+    std::string deviceTableName = DBConstant::RELATIONAL_PREFIX + tablePattern + "_" + devicePattern;
 
     const std::string checkSql = "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '" +
         deviceTableName + "';";
@@ -145,7 +145,7 @@ int GetDeviceTableName(sqlite3 *handle, const std::string &tableName, const std:
     return errCode;
 }
 
-std::vector<FieldInfo> GetUpgreadeFields(const TableInfo &oldTableInfo, const TableInfo &newTableInfo)
+std::vector<FieldInfo> GetUpgradeFields(const TableInfo &oldTableInfo, const TableInfo &newTableInfo)
 {
     std::vector<FieldInfo> fields;
     auto itOld = oldTableInfo.GetFields().begin();
@@ -160,6 +160,27 @@ std::vector<FieldInfo> GetUpgreadeFields(const TableInfo &oldTableInfo, const Ta
     return fields;
 }
 
+int UpgradeFields(sqlite3 *db, const std::vector<std::string> &tables, const std::vector<FieldInfo> &fields)
+{
+    if (db == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+
+    int errCode = E_OK;
+    for (auto table : tables) {
+        for (auto field : fields) {
+            std::string alterSql = "ALTER TABLE " + table + " ADD " + field.GetFieldName() + " " +
+                field.GetDataType() + ";";
+            errCode = SQLiteUtils::ExecuteRawSQL(db, alterSql);
+            if (errCode != E_OK) {
+                LOGE("Alter table failed. %d", errCode);
+                break;
+            }
+        }
+    }
+    return errCode;
+}
+
 std::map<std::string, CompositeFields> GetChangedIndexes(const TableInfo &oldTableInfo, const TableInfo &newTableInfo)
 {
     std::map<std::string, CompositeFields> indexes;
@@ -168,40 +189,82 @@ std::map<std::string, CompositeFields> GetChangedIndexes(const TableInfo &oldTab
     auto itOldEnd = oldTableInfo.GetIndexDefine().end();
     auto itNewEnd = newTableInfo.GetIndexDefine().end();
 
-    while(itOld != itOldEnd && itNew != itNewEnd) {
+    while (itOld != itOldEnd && itNew != itNewEnd) {
         if (itOld->first == itNew->first) {
             if (itOld->second != itNew->second) {
                 indexes.insert({itNew->first, itNew->second});
             }
-            itOld ++;
-            itNew ++;
+            itOld++;
+            itNew++;
         } else if (itOld->first < itNew->first) {
             indexes.insert({itOld->first,{}});
-            itOld ++;
+            itOld++;
         } else if (itOld->first > itNew->first) {
             indexes.insert({itNew->first, itNew->second});
-            itNew ++;
+            itNew++;
         }
     }
 
-    while(itOld != itOldEnd) {
+    while (itOld != itOldEnd) {
         indexes.insert({itOld->first,{}});
-        itOld ++;
+        itOld++;
     }
 
-    while(itNew != itNewEnd) {
+    while (itNew != itNewEnd) {
         indexes.insert({itNew->first, itNew->second});
-        itNew ++;
+        itNew++;
     }
 
     return indexes;
+}
+
+int Upgradeindexes(sqlite3 *db, const std::vector<std::string> &tables,
+    const std::map<std::string, CompositeFields> &indexes)
+{
+    if (db == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+
+    int errCode = E_OK;
+    for (const auto &table : tables) {
+        for (const auto &index : indexes) {
+            if (index.first.empty()) {
+                continue;
+            }
+            std::string realIndexName = table + "_" + index.first;
+            std::string deleteIndexSql = "DROP INDEX IF EXISTS " + realIndexName;
+            errCode = SQLiteUtils::ExecuteRawSQL(db, deleteIndexSql);
+            if (errCode != E_OK) {
+                LOGE("Drop index failed. %d", errCode);
+                return errCode;
+            }
+
+            if (index.second.empty()) { // empty means drop index only
+                continue;
+            }
+
+            auto it = index.second.begin();
+            std::string indexDefine = *it++;
+            while (it != index.second.end()) {
+                indexDefine += ", " + *it++;
+            }
+            std::string createIndexSql = "CREATE INDEX IF NOT EXISTS " + realIndexName + " ON " + table +
+                "(" + indexDefine + ");";
+            errCode = SQLiteUtils::ExecuteRawSQL(db, createIndexSql);
+            if (errCode != E_OK) {
+                LOGE("Create index failed. %d", errCode);
+                break;
+            }
+        }
+    }
+    return errCode;
 }
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::AlterAuxTableForUpgrade(const TableInfo &oldTableInfo,
     const TableInfo &newTableInfo)
 {
-    std::vector<FieldInfo> upgradFields = GetUpgreadeFields(oldTableInfo, newTableInfo);
+    std::vector<FieldInfo> upgradeFields = GetUpgradeFields(oldTableInfo, newTableInfo);
     std::map<std::string, CompositeFields> upgradeIndexces = GetChangedIndexes(oldTableInfo, newTableInfo);
     std::vector<std::string> deviceTables;
     int errCode = GetDeviceTableName(dbHandle_, oldTableInfo.GetTableName(), {}, deviceTables);
@@ -210,50 +273,17 @@ int SQLiteSingleVerRelationalStorageExecutor::AlterAuxTableForUpgrade(const Tabl
         return errCode;
     }
 
-    LOGD("Begin to alter table: upgrade fields[%d], indexces[%d], deviceTable[%d]", upgradFields.size(),
+    LOGD("Begin to alter table: upgrade fields[%d], indexces[%d], deviceTable[%d]", upgradeFields.size(),
         upgradeIndexces.size(), deviceTables.size());
-    for (auto table : deviceTables) {
-        for (auto field : upgradFields) {
-            std::string alterSql = "ALTER TABLE " + table + " ADD " + field.GetFieldName() + " " +
-                field.GetDataType() + ";";
-            errCode = SQLiteUtils::ExecuteRawSQL(dbHandle_, alterSql);
-            if (errCode != E_OK) {
-                LOGE("Alter table failed. %d", errCode);
-                return errCode;
-            }
-        }
+    errCode = UpgradeFields(dbHandle_, deviceTables, upgradeFields);
+    if (errCode != E_OK) {
+        LOGE("upgrade fields failed. %d", errCode);
+        return errCode;
     }
 
-    for (auto table : deviceTables) {
-        for (auto index : upgradeIndexces) {
-            if (index.first.empty()) {
-                continue;
-            }
-            std::string realIndexName = table + "_" + index.first;
-            std::string deleteIndexSql = "DROP INDEX IF EXISTS " + realIndexName;
-            errCode = SQLiteUtils::ExecuteRawSQL(dbHandle_, deleteIndexSql);
-            if (errCode != E_OK) {
-                LOGE("Drop index failed. %d", errCode);
-                return errCode;
-            }
-
-            if (index.second.empty()) { // Drop index only
-                continue;
-            }
-
-            auto it = index.second.begin();
-            std::string indexDefine = *it++;
-            while(it != index.second.end()) {
-                indexDefine += ", " + *it++;
-            }
-            std::string createIndexSql = "CREATE INDEX IF NOT EXISTS " + realIndexName + " ON " + table +
-                "(" + indexDefine + ");";
-            errCode = SQLiteUtils::ExecuteRawSQL(dbHandle_, createIndexSql);
-            if (errCode != E_OK) {
-                LOGE("Create index failed. %d", errCode);
-                return errCode;
-            }
-        }
+    errCode = Upgradeindexes(dbHandle_, deviceTables, upgradeIndexces);
+    if (errCode != E_OK) {
+        LOGE("upgrade indexes failed. %d", errCode);
     }
 
     return E_OK;
@@ -901,11 +931,11 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckDBModeForRelational()
 {
     std::string journalMode;
     int errCode = SQLiteUtils::GetJournalMode(dbHandle_, journalMode);
-    if (errCode != E_OK || journalMode != "wal") {
-        LOGE("Not support journal mode %s for relational db, expect wal mode, %d", journalMode.c_str(), errCode);
+    if (errCode == E_OK && journalMode != "wal") {
+        LOGE("Not support journal mode %s for relational db, expect wal mode.", journalMode.c_str());
         return -E_NOT_SUPPORT;
     }
-    return E_OK;
+    return errCode;
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::DeleteDistributedDeviceTable(const std::string &device,
@@ -921,7 +951,7 @@ int SQLiteSingleVerRelationalStorageExecutor::DeleteDistributedDeviceTable(const
     LOGD("Begin to delete device table: deviceTable[%d]", deviceTables.size());
     for (const auto &table : deviceTables) {
         std::string deleteSql = "DROP TABLE IF EXISTS " + table + ";"; // drop the found table
-        int errCode = SQLiteUtils::ExecuteRawSQL(dbHandle_, deleteSql);
+        errCode = SQLiteUtils::ExecuteRawSQL(dbHandle_, deleteSql);
         if (errCode != E_OK) {
             LOGE("Delete device data failed. %d", errCode);
             break;
@@ -944,7 +974,7 @@ int SQLiteSingleVerRelationalStorageExecutor::DeleteDistributedLogTable(const st
     return errCode;
 }
 
-int SQLiteSingleVerRelationalStorageExecutor::CkeckAndCleanDistributedTable(const std::vector<std::string> &tableNames,
+int SQLiteSingleVerRelationalStorageExecutor::CheckAndCleanDistributedTable(const std::vector<std::string> &tableNames,
     std::vector<std::string> &missingTables)
 {
     if (tableNames.empty()) {

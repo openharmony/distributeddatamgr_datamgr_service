@@ -178,7 +178,6 @@ namespace {
             }},)"";
     const std::string TABLE_DEFINE_STR_KEY = R""("PRIMARY_KEY": "field_name1")"";
     const std::string TABLE_DEFINE_STR_KEY_INVALID = R""("PRIMARY_KEY": false)"";
-
 }
 
 class DistributedDBRelationalSchemaObjectTest : public testing::Test {
@@ -362,7 +361,7 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalTableCompareTest001,
 
     TableInfo table5 = schemaObj.GetTable("FIRST");
     table5.AddField(table3.GetFields().at("key"));
-    EXPECT_EQ(table1.CompareWithTable(table5), -E_RELATIONAL_TABLE_COMPATIBLE_UPGRADE);
+    EXPECT_EQ(table1.CompareWithTable(table5), -E_RELATIONAL_TABLE_INCOMPATIBLE);
 }
 
 /**

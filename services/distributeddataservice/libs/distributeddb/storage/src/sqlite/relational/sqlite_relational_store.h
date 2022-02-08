@@ -98,11 +98,10 @@ private:
     mutable std::mutex initalMutex_;
     bool isInitialized_ = false;
 
-    //lifeCycle
+    // lifeCycle
     mutable std::mutex lifeCycleMutex_;
     mutable DatabaseLifeCycleNotifier lifeCycleNotifier_;
     mutable TimerId lifeTimerId_;
-
 };
 }  // namespace DistributedDB
 #endif

@@ -16,9 +16,10 @@
 #define QUERY_OBJECT_H
 
 #include <string>
-#include <relational_schema_object.h>
-#include "schema_object.h"
+
 #include "query.h"
+#include "relational_schema_object.h"
+#include "schema_object.h"
 #include "sqlite_query_helper.h"
 
 namespace DistributedDB {
@@ -61,6 +62,11 @@ public:
     int ParseQueryObjNodes();
 
     bool Empty() const;
+    
+    bool HasInKeys() const
+    {
+        return hasInKeys_;
+    }
 
 #ifdef RELATIONAL_STORE
     int SetSchema(const RelationalSchemaObject &schemaObj);  // The interface can only be used in relational query.

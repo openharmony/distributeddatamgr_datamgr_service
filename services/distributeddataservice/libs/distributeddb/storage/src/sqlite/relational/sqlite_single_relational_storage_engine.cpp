@@ -40,21 +40,6 @@ int SQLiteSingleRelationalStorageEngine::Upgrade(sqlite3 *db)
     return SQLiteUtils::CreateRelationalMetaTable(db);
 }
 
-int SQLiteSingleRelationalStorageEngine::RegisterFunction(sqlite3 *db) const
-{
-    int errCode = SQLiteUtils::RegisterCalcHash(db);
-    if (errCode != E_OK) {
-        LOGE("[engine] register calculate hash failed!");
-        return errCode;
-    }
-
-    errCode = SQLiteUtils::RegisterGetSysTime(db);
-    if (errCode != E_OK) {
-        LOGE("[engine] register get sys time failed!");
-    }
-    return E_OK;
-}
-
 int SQLiteSingleRelationalStorageEngine::CreateNewExecutor(bool isWrite, StorageExecutor *&handle)
 {
     sqlite3 *db = nullptr;
@@ -69,11 +54,6 @@ int SQLiteSingleRelationalStorageEngine::CreateNewExecutor(bool isWrite, Storage
         }
 
         errCode = Upgrade(db); // cerate meta_data table.
-        if (errCode != E_OK) {
-            break;
-        }
-
-        errCode = RegisterFunction(db);
         if (errCode != E_OK) {
             break;
         }
@@ -94,7 +74,7 @@ int SQLiteSingleRelationalStorageEngine::CreateNewExecutor(bool isWrite, Storage
 
 int SQLiteSingleRelationalStorageEngine::ReleaseExecutor(SQLiteSingleVerRelationalStorageExecutor *&handle)
 {
-    if (handle == nullptr) { // TODO: check corrupted
+    if (handle == nullptr) {
         return E_OK;
     }
     StorageExecutor *databaseHandle = handle;
@@ -242,7 +222,7 @@ int SQLiteSingleRelationalStorageEngine::CleanDistributedDeviceTable(std::vector
         return errCode;
     }
 
-    errCode = handle->CkeckAndCleanDistributedTable(schema_.GetTableNames(), missingTables);
+    errCode = handle->CheckAndCleanDistributedTable(schema_.GetTableNames(), missingTables);
     if (errCode == E_OK) {
         errCode = handle->Commit();
         if (errCode == E_OK) {
@@ -250,10 +230,7 @@ int SQLiteSingleRelationalStorageEngine::CleanDistributedDeviceTable(std::vector
             for (const auto &tableName : missingTables) {
                 schema_.RemoveRelationalTable(tableName);
             }
-            const Key schemaKey(RELATIONAL_SCHEMA_KEY, RELATIONAL_SCHEMA_KEY + strlen(RELATIONAL_SCHEMA_KEY));
-            Value schemaVal;
-            DBCommon::StringToVector(schema_.ToSchemaString(), schemaVal);
-            errCode = handle->PutKvData(schemaKey, schemaVal); // save schema to meta_data
+            SaveSchemaToMetaTable(handle, schema_); // save schema to meta_data
         }
     } else {
         LOGE("Check distributed table failed. %d", errCode);

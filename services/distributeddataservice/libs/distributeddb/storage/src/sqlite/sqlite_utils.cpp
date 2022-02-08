@@ -642,9 +642,9 @@ int GetSchemaIndexList(sqlite3 *db, const std::string &tableName, std::vector<st
             (void) SQLiteUtils::GetColumnTextValue(statement, 1, indexName);  // 1 means index name
             std::string origin;
             (void) SQLiteUtils::GetColumnTextValue(statement, 3, origin);  // 3 means index type, whether unique
-            if (origin == "u") {
+            if (origin == "u") { // 'u' means index created by unique constraint
                 uniqueList.push_back(indexName);
-            } else if (origin == "c") {
+            } else if (origin == "c") { // 'c' means index created by user declare
                 indexList.push_back(indexName);
             }
         } else {
@@ -1350,42 +1350,54 @@ static std::string string_format(const std::string& format, Args ... args)
     return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
 }
 
+namespace {
+std::string GetInsertTrigger(const TableInfo table)
+{
+    std::string insertTrigger = "CREATE TRIGGER IF NOT EXISTS ";
+    insertTrigger += "naturalbase_rdb_" + table.GetTableName() + "_ON_INSERT AFTER INSERT \n";
+    insertTrigger += "ON " + table.GetTableName() + "\n";
+    insertTrigger += "BEGIN\n";
+    insertTrigger += "\t INSERT OR REPLACE INTO ";
+    insertTrigger += DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
+    insertTrigger += " (data_key, device, ori_device, timestamp, wtimestamp, flag, hash_key)";
+    insertTrigger += " VALUES (new.rowid, '" + table.GetDevId() + "', '" + table.GetDevId() + "',";
+    insertTrigger += " get_sys_time(0), get_sys_time(0), 0x02,";
+    insertTrigger += " calc_hash(new." + table.GetPrimaryKey() + "));\n";
+    insertTrigger += "END;";
+    return insertTrigger;
+}
+
+std::string GetUpdateTrigger(const TableInfo table)
+{
+    std::string updateTrigger = "CREATE TRIGGER IF NOT EXISTS ";
+    updateTrigger += "naturalbase_rdb_" + table.GetTableName() + "_ON_UPDATE AFTER UPDATE \n";
+    updateTrigger += "ON " + table.GetTableName() + "\n";
+    updateTrigger += "BEGIN\n";
+    updateTrigger += "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
+    updateTrigger += " SET timestamp=get_sys_time(0), device='" + table.GetDevId() + "'";
+    updateTrigger += " where hash_key=calc_hash(old." + table.GetPrimaryKey() + ") and flag&0x10=0;\n";
+    updateTrigger += "END;";
+    return updateTrigger;
+}
+
+std::string GetDeleteTrigger(const TableInfo table)
+{
+    std::string deleteTrigger = "CREATE TRIGGER IF NOT EXISTS ";
+    deleteTrigger += "naturalbase_rdb_" + table.GetTableName() + "_ON_DELETE BEFORE DELETE \n";
+    deleteTrigger += "ON " + table.GetTableName() + "\n";
+    deleteTrigger += "BEGIN\n";
+    deleteTrigger += "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
+    deleteTrigger += " SET flag=0x03,timestamp=get_sys_time(0)";
+    deleteTrigger += " where hash_key=calc_hash(old." + table.GetPrimaryKey() + ");\n";
+    deleteTrigger += "END;";
+    return deleteTrigger;
+}
+}
+
 int SQLiteUtils::AddRelationalLogTableTrigger(sqlite3 *db, const TableInfo &table)
 {
-    std::string insertTrigger =
-        "CREATE TRIGGER IF NOT EXISTS naturalbase_rdb_%s_ON_INSERT AFTER INSERT \n" \
-        "ON %s\n" \
-        "BEGIN\n"  \
-            "\t INSERT OR REPLACE INTO " + DBConstant::RELATIONAL_PREFIX + "%s_log \
-            (data_key, device, ori_device, timestamp, wtimestamp, flag, hash_key)" \
-            "VALUES (new.rowid, '%s', '%s', get_sys_time(0), get_sys_time(0), 0x02, calc_hash(new.%s));\n" \
-        "END;";
-    insertTrigger = string_format(insertTrigger, table.GetTableName().c_str(), table.GetTableName().c_str(),
-        table.GetTableName().c_str(), table.GetDevId().c_str(),
-        table.GetDevId().c_str(), table.GetPrimaryKey().c_str());
-    std::string updateTrigger =
-        "CREATE TRIGGER IF NOT EXISTS naturalbase_rdb_%s_ON_UPDATE AFTER UPDATE \n" \
-        "ON %s\n" \
-        "BEGIN\n"  \
-            "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + "%s_log SET timestamp=get_sys_time(0), device='%s' \
-            where hash_key=calc_hash(old.%s) and flag&0x10=0;\n" \
-        "END;";
-    updateTrigger = string_format(updateTrigger, table.GetTableName().c_str(), table.GetTableName().c_str(),
-        table.GetTableName().c_str(), table.GetDevId().c_str(), table.GetPrimaryKey().c_str());
-    std::string deleteTrigger =
-        "CREATE TRIGGER IF NOT EXISTS naturalbase_rdb_%s_ON_DELETE BEFORE DELETE \n" \
-        "ON %s\n" \
-        "BEGIN\n"  \
-            "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + "%s_log set flag=0x03,timestamp=get_sys_time(0) \
-            WHERE hash_key=calc_hash(old.%s);\n" \
-        "END;";
-    deleteTrigger = string_format(deleteTrigger, table.GetTableName().c_str(),
-        table.GetTableName().c_str(), table.GetTableName().c_str(), table.GetPrimaryKey().c_str());
-
-    std::vector<std::string> sqls = {insertTrigger, updateTrigger, deleteTrigger};
-    // add insert trigger
-    // add update trigger
-    // add delete trigger
+    std::vector<std::string> sqls = {GetInsertTrigger(table), GetUpdateTrigger(table), GetDeleteTrigger(table)};
+    // add insert,update,delete trigger
     for (const auto &sql : sqls) {
         int errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
         if (errCode != E_OK) {
@@ -1406,7 +1418,7 @@ int SQLiteUtils::CreateSameStuTable(sqlite3 *db, const TableInfo &baseTbl, const
         if (fields.at(fieldName).IsNotNull()) {
             sql += " NOT NULL";
         }
-        if (fields.at(fieldName).HasDefaultValue()){
+        if (fields.at(fieldName).HasDefaultValue()) {
             sql += " DEFAULT " + fields.at(fieldName).GetDefaultValue();
         }
         if (fieldName == baseTbl.GetPrimaryKey()) {

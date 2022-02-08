@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#ifdef RELATIONAL_STORE
 #include "relationaldb_properties.h"
 
 namespace DistributedDB {
@@ -37,3 +37,4 @@ RelationalSchemaObject RelationalDBProperties::GetSchema() const
     return schema_;
 }
 }
+#endif
