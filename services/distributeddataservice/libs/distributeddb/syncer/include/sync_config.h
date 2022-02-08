@@ -34,9 +34,9 @@ current ability format:
 |DATABASE_COMPRESSION_ZLIB|ALLPREDICATEQUERY|SUBSCRIBEQUERY|
 */
 constexpr AbilityItem DATABASE_COMPRESSION_ZLIB = {0, 1};
-constexpr AbilityItem ALLPREDICATEQUERY = {1, 1}; // offset: 0 + 1
-constexpr AbilityItem SUBSCRIBEQUERY = {2, 1}; // // offset: 1 + 1
-constexpr AbilityItem INKEYS_QUERY = {3, 1}; // // offset: 2 + 1
+constexpr AbilityItem ALLPREDICATEQUERY = {1, 1}; // 0b10 {1: start at second bit, 1: 1 bit len}
+constexpr AbilityItem SUBSCRIBEQUERY = {2, 1}; //   0b100
+constexpr AbilityItem INKEYS_QUERY = {3, 1}; //    0b1000
 
 const std::vector<AbilityItem> ABILITYBITS = {
     DATABASE_COMPRESSION_ZLIB,
