@@ -65,7 +65,9 @@ namespace {
 
     void OpenStore()
     {
-        g_observer = new (std::nothrow) RelationalStoreObserverUnitTest();
+        if (g_observer == nullptr) {
+            g_observer = new (std::nothrow) RelationalStoreObserverUnitTest();
+        }
         RelationalStoreDelegate::Option option = {g_observer};
         g_mgr.OpenStore(g_dbDir, STORE_ID_1, option, g_rdbDelegatePtr);
         ASSERT_TRUE(g_rdbDelegatePtr != nullptr);
