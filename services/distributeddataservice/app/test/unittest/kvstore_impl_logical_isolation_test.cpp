@@ -16,12 +16,15 @@
 #include <thread>
 #include <vector>
 #include "kvstore_data_service.h"
+#include "kvstore_meta_manager.h"
 #include "kvstore_impl.h"
 #include "refbase.h"
 #include "types.h"
+#include "bootstrap.h"
 #include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
+using namespace OHOS::DistributedData;
 using namespace OHOS;
 
 namespace {
@@ -74,6 +77,11 @@ void KvStoreImplLogicalIsolationTest::TearDownTestCase(void)
 void KvStoreImplLogicalIsolationTest::SetUp(void)
 {
     g_kvStoreDataService = sptr<KvStoreDataService>(new KvStoreDataService());
+    KvStoreMetaManager::GetInstance().InitMetaParameter();
+    Bootstrap::GetInstance().LoadComponents();
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    Bootstrap::GetInstance().LoadNetworks();
     g_kvStoreDataService->CloseAllKvStore(g_appId);
     g_kvStoreDataService->CloseAllKvStore(g_appId1);
     g_kvStoreDataService->CloseAllKvStore(g_appId2);

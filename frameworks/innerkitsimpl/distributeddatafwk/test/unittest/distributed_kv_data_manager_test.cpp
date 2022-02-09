@@ -84,11 +84,13 @@ void DistributedKvDataManagerTest::SetUpTestCase(void)
     create.createIfMissing = true;
     create.encrypt = false;
     create.autoSync = true;
+    create.kvStoreType = MULTI_VERSION;
 
     noCreate.createIfMissing = false;
     noCreate.encrypt = false;
     noCreate.autoSync = true;
     noCreate.dataOwnership = true;
+    noCreate.kvStoreType = MULTI_VERSION;
 
     userId.userId = "account0";
     appId.appId = "com.ohos.kvdatamanager.test";

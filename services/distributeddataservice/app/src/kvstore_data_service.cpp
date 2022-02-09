@@ -117,32 +117,6 @@ void KvStoreDataService::Initialize()
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
 }
 
-bool KvStoreDataService::CheckBundleName(const std::string &bundleName) const
-{
-    if (bundleName.empty() || bundleName.size() > MAX_APP_ID_LENGTH ||
-        bundleName.find(Constant::KEY_SEPARATOR) != std::string::npos) {
-        return false;
-    }
-
-    auto iter = std::find_if_not(bundleName.begin(), bundleName.end(),
-        [](char c) { return (std::isprint(c) && c != '/'); });
-
-    return (iter == bundleName.end());
-}
-
-bool KvStoreDataService::CheckStoreId(const std::string &storeId) const
-{
-    if (storeId.empty() || storeId.size() > Constant::MAX_STORE_ID_LENGTH ||
-        storeId.find(Constant::KEY_SEPARATOR) != std::string::npos) {
-        return false;
-    }
-
-    auto iter = std::find_if_not(storeId.begin(), storeId.end(),
-        [](char c) { return (std::isdigit(c) || std::isalpha(c) || c == '_'); });
-
-    return (iter == storeId.end());
-}
-
 Status KvStoreDataService::GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
                                       std::function<void(sptr<IKvStoreImpl>)> callback)
 {
@@ -194,11 +168,13 @@ Status KvStoreDataService::GetKvStore(const Options &options, const AppId &appId
 
     ZLOGD("get kvstore return status:%d, userId:[%s], bundleName:[%s].",
         param.status, KvStoreUtils::ToBeAnonymous(param.userId).c_str(),  appId.appId.c_str());
-    if (param.status != Status::SUCCESS) {
-        param.status = GetKvStoreFailDo(options, param, keyPara, it->second, store);
+    if (param.status == Status::SUCCESS) {
+        callback(std::move(store));
+        return UpdateMetaData(options, param, keyPara.metaKey, it->second);
     }
+    param.status = GetKvStoreFailDo(options, param, keyPara, it->second, store);
     callback(std::move(store));
-    return UpdateMetaData(options, param, keyPara.metaKey, it->second);
+    return param.status;
 }
 
 Status KvStoreDataService::GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
@@ -243,17 +219,16 @@ Status KvStoreDataService::GetSingleKvStore(const Options &options, const AppId 
         it = result.first;
     }
     sptr<SingleKvStoreImpl> store;
-    status = (it->second).GetKvStore(options, param.bundleName, param.storeId, uid, keyPara.secretKey, store);
+    param.status = (it->second).GetKvStore(options, param.bundleName, param.storeId, uid, keyPara.secretKey, store);
     if (keyPara.outdated) {
         KvStoreMetaManager::GetInstance().ReKey(param.userId, param.bundleName, param.storeId,
             KvStoreAppManager::ConvertPathType(param.uid, param.bundleName, options.securityLevel), store);
     }
-    if (status == Status::SUCCESS) {
+    if (param.status == Status::SUCCESS) {
         callback(std::move(store));
         return UpdateMetaData(options, param, keyPara.metaKey, it->second);
     }
 
-    param.status = status;
     param.status =  GetSingleKvStoreFailDo(options, param, keyPara, it->second, store);
     callback(std::move(store));
     return param.status;
@@ -651,7 +626,7 @@ Status KvStoreDataService::DeleteKvStore(const AppId &appId, const StoreId &stor
         return Status::INVALID_ARGUMENT;
     }
     int32_t uid = IPCSkeleton::GetCallingUid();
-    if (CheckerManager::GetInstance().IsValid(appId.appId, uid)) {
+    if (!CheckerManager::GetInstance().IsValid(appId.appId, uid)) {
         ZLOGE("get appId failed.");
         return Status::PERMISSION_DENIED;
     }
@@ -687,7 +662,7 @@ Status KvStoreDataService::DeleteAllKvStore(const AppId &appId)
     }
 
     int32_t uid = IPCSkeleton::GetCallingUid();
-    if (CheckerManager::GetInstance().IsValid(appId.appId, uid)) {
+    if (!CheckerManager::GetInstance().IsValid(appId.appId, uid)) {
         ZLOGE("get appId failed.");
         return Status::PERMISSION_DENIED;
     }
@@ -726,7 +701,7 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
     }
 
     int32_t uid = IPCSkeleton::GetCallingUid();
-    if (CheckerManager::GetInstance().IsValid(appId.appId, uid)) {
+    if (!CheckerManager::GetInstance().IsValid(appId.appId, uid)) {
         ZLOGE("no permission bundleName:%{public}s, uid:%{public}d.", appId.appId.c_str(), uid);
         return Status::PERMISSION_DENIED;
     }

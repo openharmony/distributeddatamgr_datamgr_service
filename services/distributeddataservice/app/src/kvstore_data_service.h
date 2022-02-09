@@ -155,10 +155,6 @@ private:
 
     Status AppExit(const AppId &appId);
 
-    bool CheckBundleName(const std::string &bundleName) const;
-
-    bool CheckStoreId(const std::string &storeId) const;
-
     bool CheckPermissions(const std::string &userId, const std::string &appId, const std::string &storeId,
                           const std::string &deviceId, uint8_t flag) const;
     void ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
