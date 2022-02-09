@@ -914,4 +914,28 @@ void RelationalTestUtils::CreateDeviceTable(sqlite3 *db, const std::string &tabl
     EXPECT_EQ(SQLiteUtils::CreateSameStuTable(db, baseTbl, deviceTable), E_OK);
     EXPECT_EQ(SQLiteUtils::CloneIndexes(db, table, deviceTable), E_OK);
 }
+
+int RelationalTestUtils::CheckSqlResult(sqlite3 *db, const std::string &sql, bool &result)
+{
+    if (db == nullptr || sql.empty()) {
+        return -E_INVALID_ARGS;
+    }
+    sqlite3_stmt *stmt = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
+    if (errCode != E_OK) {
+        goto END;
+    }
+
+    errCode = SQLiteUtils::StepWithRetry(stmt);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+        result = true;
+        errCode = E_OK;
+    } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+        result = false;
+        errCode = E_OK;
+    }
+END:
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return errCode;
+}
 } // namespace DistributedDBUnitTest

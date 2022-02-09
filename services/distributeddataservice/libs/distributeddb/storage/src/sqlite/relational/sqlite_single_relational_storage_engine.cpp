@@ -135,7 +135,11 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
     RelationalSchemaObject tmpSchema = schema_;
     if (tmpSchema.GetTable(tableName).GetTableName() == tableName) {
         LOGW("distributed table was already created.");
-        return UpgradeDistributedTable(tableName);
+        int errCode = UpgradeDistributedTable(tableName);
+        if (errCode != E_OK) {
+            LOGE("Upgrade distributed table failed. %d", errCode);
+            return errCode;
+        }
     }
 
     if (tmpSchema.GetTables().size() >= DBConstant::MAX_DISTRIBUTED_TABLE_COUNT) {
