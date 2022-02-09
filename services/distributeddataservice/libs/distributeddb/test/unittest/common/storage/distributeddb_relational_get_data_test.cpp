@@ -398,14 +398,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData3, TestSize.Level1)
     }
 
     /**
-     * @tc.steps: step3. Delete all "dataPlus" data.
-     * @tc.expected: Succeed.
-     */
-    sql = "DELETE FROM " + tableName + ";";
-    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
-
-    /**
-     * @tc.steps: step4. Get all data from "dataPlus" table.
+     * @tc.steps: step3. Get all data from "dataPlus" table.
      * @tc.expected: Succeed and the count is right.
      */
     auto store = GetRelationalStore();
@@ -417,7 +410,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData3, TestSize.Level1)
     EXPECT_EQ(entries.size(), RECORD_COUNT);
 
     /**
-     * @tc.steps: step5. Put data into "data" table from deviceA.
+     * @tc.steps: step4. Put data into "data" table from deviceA.
      * @tc.expected: Succeed, return OK.
      */
     query = QueryObject(Query::Select(g_tableName));
@@ -428,7 +421,30 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData3, TestSize.Level1)
     SingleVerKvEntry::Release(entries);
 
     /**
-     * @tc.steps: step6. Check data.
+     * @tc.steps: step5. Delete all "dataPlus" data.
+     * @tc.expected: Succeed.
+     */
+    sql = "DELETE FROM " + tableName + ";";
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+
+    /**
+     * @tc.steps: step6. Get all data from "dataPlus" table.
+     * @tc.expected: Succeed and the count is right.
+     */
+    query = QueryObject(Query::Select(tableName));
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    EXPECT_EQ(entries.size(), RECORD_COUNT);
+
+    /**
+     * @tc.steps: step7. Put data into "data" table from deviceA.
+     * @tc.expected: Succeed, return OK.
+     */
+    query = QueryObject(Query::Select(g_tableName));
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceID), E_OK);
+    SingleVerKvEntry::Release(entries);
+
+    /**
+     * @tc.steps: step8. Check data.
      * @tc.expected: All data in the two tables are deleted.
      */
     sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + tableName + "_log WHERE flag=3;";

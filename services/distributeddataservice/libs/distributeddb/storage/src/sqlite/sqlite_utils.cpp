@@ -2096,4 +2096,12 @@ int SQLiteUtils::CheckSchemaChanged(sqlite3_stmt *stmt, const TableInfo &table, 
     }
     return E_OK;
 }
+
+int64_t SQLiteUtils::GetLastRowId(sqlite3 *db)
+{
+    if (db == nullptr) {
+        return -1;
+    }
+    return sqlite3_last_insert_rowid(db);
+}
 } // namespace DistributedDB
