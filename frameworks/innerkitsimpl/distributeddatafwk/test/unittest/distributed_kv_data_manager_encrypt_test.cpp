@@ -72,6 +72,7 @@ void DistributedKvDataManagerEncryptTest::SetUpTestCase(void)
     createEnc.createIfMissing = true;
     createEnc.encrypt = true;
     createEnc.autoSync = true;
+    createEnc.kvStoreType = MULTI_VERSION;
 
     userId.userId = "account0";
     appId.appId = "com.ohos.nb.service";

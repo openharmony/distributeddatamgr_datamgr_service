@@ -17,12 +17,15 @@
 #include <vector>
 #include "constant.h"
 #include "kvstore_data_service.h"
+#include "kvstore_meta_manager.h"
 #include "kvstore_impl.h"
 #include "refbase.h"
 #include "types.h"
+#include "bootstrap.h"
 #include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
+using namespace OHOS::DistributedData;
 using namespace OHOS;
 
 namespace {
@@ -73,6 +76,11 @@ void KvStoreImplPhysicalIsolationTest::TearDownTestCase(void)
 void KvStoreImplPhysicalIsolationTest::SetUp(void)
 {
     g_kvStoreDataService = sptr<KvStoreDataService>(new KvStoreDataService());
+    KvStoreMetaManager::GetInstance().InitMetaParameter();
+    Bootstrap::GetInstance().LoadComponents();
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    Bootstrap::GetInstance().LoadNetworks();
     g_kvStoreDataService->CloseAllKvStore(g_appId);
     g_kvStoreDataService->CloseAllKvStore(g_appId1);
     g_kvStoreDataService->CloseAllKvStore(g_appId2);
@@ -102,7 +110,7 @@ void KvStoreImplPhysicalIsolationTest::TearDown(void)
 HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation001, TestSize.Level1)
 {
     const std::string storePath = Constant::Concatenate(
-        {Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/", "0", "/", Constant::GetDefaultHarmonyAccountName(),
+        {Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/", "0", "/", Constant::GetDefaultHarmonyAccountName(),
          "/"}) + std::string("phy0/store0");
 
     sptr<IKvStoreImpl> kvStorePtr;
@@ -123,7 +131,7 @@ HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation001, TestSize.Level1
 HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation002, TestSize.Level1)
 {
     const std::string deviceAccountId = "0";
-    const std::string storePath = Constant::Concatenate({ Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/",
+    const std::string storePath = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy0/store0");
 
     sptr<IKvStoreImpl> kvStorePtr;
@@ -132,7 +140,7 @@ HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation002, TestSize.Level1
     EXPECT_EQ(status, Status::SUCCESS) << "GetKvStore return wrong status";
     EXPECT_NE(kvStorePtr, nullptr) << "GetKvStore execute fail!!";
     EXPECT_EQ((static_cast<KvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
-    const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/",
+    const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy0/store1");
     sptr<IKvStoreImpl> kvStorePtr1;
     status = g_kvStoreDataService->GetKvStore(g_defaultOptions, g_appId, g_storeId1,
@@ -153,7 +161,7 @@ HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation002, TestSize.Level1
 HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation003, TestSize.Level1)
 {
     const std::string deviceAccountId = "0";
-    const std::string storePath = Constant::Concatenate({ Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/",
+    const std::string storePath = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy0/store0");
 
     sptr<IKvStoreImpl> kvStorePtr;
@@ -162,7 +170,7 @@ HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation003, TestSize.Level1
     EXPECT_EQ(status, Status::SUCCESS) << "GetKvStore return wrong status";
     EXPECT_NE(kvStorePtr, nullptr) << "GetKvStore execute fail!!";
     EXPECT_EQ((static_cast<KvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
-    const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/",
+    const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy1/store0");
     sptr<IKvStoreImpl> kvStorePtr1;
     status = g_kvStoreDataService->GetKvStore(g_defaultOptions, g_appId1, g_storeId,
@@ -183,7 +191,7 @@ HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation003, TestSize.Level1
 HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation004, TestSize.Level1)
 {
     const std::string deviceAccountId = "0";
-    const std::string storePath = Constant::Concatenate({ Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/",
+    const std::string storePath = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy0/store0");
 
     sptr<IKvStoreImpl> kvStorePtr;
@@ -193,7 +201,7 @@ HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation004, TestSize.Level1
     EXPECT_NE(kvStorePtr, nullptr) << "GetKvStore execute fail!!";
     EXPECT_EQ((static_cast<KvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
 
-    const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/",
+    const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy1/store1");
     sptr<IKvStoreImpl> kvStorePtr1;
     status = g_kvStoreDataService->GetKvStore(g_defaultOptions, g_appId1, g_storeId1,
@@ -214,7 +222,7 @@ HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation004, TestSize.Level1
 HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation005, TestSize.Level1)
 {
     const std::string storePath = Constant::Concatenate(
-        {Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/", "0", "/", Constant::GetDefaultHarmonyAccountName(),
+        {Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/", "0", "/", Constant::GetDefaultHarmonyAccountName(),
          "/"}) + std::string("phy0/store0");
 
     sptr<IKvStoreImpl> kvStorePtr;
@@ -242,7 +250,7 @@ HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation005, TestSize.Level1
 HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation006, TestSize.Level1)
 {
     const std::string storePath = Constant::Concatenate(
-        {Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/", "0", "/", Constant::GetDefaultHarmonyAccountName(),
+        {Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/", "0", "/", Constant::GetDefaultHarmonyAccountName(),
          "/"}) + std::string("phy0/store0");
     sptr<IKvStoreImpl> kvStorePtr;
     sptr<IKvStoreImpl> kvStorePtr1;
@@ -282,11 +290,11 @@ HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation006, TestSize.Level1
 HWTEST_F(KvStoreImplPhysicalIsolationTest, PhysicalIsolation007, TestSize.Level1)
 {
     const std::string deviceAccountId = "0";
-    const std::string storePath = Constant::Concatenate({ Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/",
+    const std::string storePath = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy0/store0");
-    const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/",
+    const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy1/store1");
-    const std::string storePath2 = Constant::Concatenate({ Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/",
+    const std::string storePath2 = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy2/store2");
 
     sptr<IKvStoreImpl> kvStorePtr;
