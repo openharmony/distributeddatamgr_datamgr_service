@@ -35,6 +35,7 @@ config("distributeddata_adapter_public_config") {
     "include/security",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include/",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
   ]
 }
 

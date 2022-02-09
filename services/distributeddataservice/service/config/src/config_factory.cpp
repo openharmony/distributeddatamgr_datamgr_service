@@ -38,7 +38,7 @@ int32_t ConfigFactory::Initialize()
 {
     std::string jsonStr;
     std::ifstream fin(file_);
-    while (!fin.eof()) {
+    while (fin.good()) {
         std::string line;
         std::getline(fin, line);
         jsonStr += line;

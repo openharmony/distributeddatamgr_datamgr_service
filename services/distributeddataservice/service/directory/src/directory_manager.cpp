@@ -18,7 +18,6 @@
 #include <string>
 
 #include "utils/constant.h"
-#include "autils/directory_utils.h"
 #include "directory_ex.h"
 #include "kvstore_context.h"
 #include "log/log_print.h"
@@ -42,17 +41,6 @@ bool ServerDirWorker::CreateDir(ClientContext clientContext, PathType type)
     bool ret = ForceCreateDirectory(directory);
     if (!ret) {
         ZLOGE("create directory[%s] failed, errstr=[%d].", directory.c_str(), errno);
-        return false;
-    }
-    // change mode for directories to 0755, and for files to 0600.
-    ret = DirectoryUtils::ChangeModeDirOnly(directory, Constant::DEFAULT_MODE_DIR);
-    if (!ret) {
-        ZLOGE("change directory[%s] mode failed, errstr=[%d].", directory.c_str(), errno);
-        return false;
-    }
-    ret = DirectoryUtils::ChangeModeFileOnly(directory, Constant::DEFAULT_MODE_FILE);
-    if (!ret) {
-        ZLOGE("change file[%s] mode failed, errstr=[%d].", directory.c_str(), errno);
         return false;
     }
     return true;
@@ -117,7 +105,6 @@ DirectoryManager &DirectoryManager::GetInstance()
 
 std::string DirectoryManager::GetStorePath(const StoreMetaData &metaData)
 {
-    // todo implement;
     return {};
 }
 

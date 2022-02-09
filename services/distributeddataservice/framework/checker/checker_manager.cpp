@@ -63,7 +63,7 @@ std::string CheckerManager::GetAppId(const std::string &bundleName, pid_t uid)
         }
         return appId;
     }
-    return bundleName;
+    return "";
 }
 
 bool CheckerManager::IsValid(const std::string &bundleName, pid_t uid)

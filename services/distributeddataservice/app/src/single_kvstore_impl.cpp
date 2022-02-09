@@ -19,15 +19,11 @@
 #include <fstream>
 #include "account_delegate.h"
 #include "backup_handler.h"
+#include "checker/checker_manager.h"
 #include "constant.h"
 #include "dds_trace.h"
-#include "device_kvstore_resultset_impl.h"
 #include "device_kvstore_impl.h"
-#include "device_kvstore_observer_impl.h"
-#include "kvstore_app_manager.h"
 #include "kvstore_data_service.h"
-#include "kvstore_meta_manager.h"
-#include "kvstore_sync_manager.h"
 #include "kvstore_utils.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -36,6 +32,7 @@
 #include "reporter.h"
 
 namespace OHOS::DistributedKv {
+using namespace OHOS::DistributedData;
 static bool TaskIsBackground(pid_t pid)
 {
     std::ifstream ifs("/proc/" + std::to_string(pid) + "/cgroup", std::ios::in);
@@ -66,27 +63,19 @@ SingleKvStoreImpl::~SingleKvStoreImpl()
     ZLOGI("destructor");
 }
 
-SingleKvStoreImpl::SingleKvStoreImpl(const Options &options, const std::string &deviceAccountId,
-    const std::string &bundleName, const std::string &storeId,
-    const std::string &appDirectory, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate)
-    : options_(options),
-      deviceAccountId_(deviceAccountId),
-      bundleName_(bundleName),
-      storeId_(storeId),
-      storePath_(Constant::Concatenate({ appDirectory, storeId })),
-      kvStoreNbDelegate_(kvStoreNbDelegate),
-      observerMapMutex_(),
-      observerMap_(),
-      storeResultSetMutex_(),
-      storeResultSetMap_(),
-      openCount_(1),
-      flowCtrlManager_(BURST_CAPACITY, SUSTAINED_CAPACITY)
+SingleKvStoreImpl::SingleKvStoreImpl(const Options &options, const std::string &userId, const std::string &bundleName,
+    const std::string &storeId, const std::string &appId, const std::string &directory,
+    DistributedDB::KvStoreNbDelegate *delegate)
+    : options_(options), deviceAccountId_(userId), bundleName_(bundleName), storeId_(storeId), appId_(appId),
+      storePath_(Constant::Concatenate({ directory, storeId })), kvStoreNbDelegate_(delegate), observerMapMutex_(),
+      observerMap_(), storeResultSetMutex_(), storeResultSetMap_(), openCount_(1),
+      flowCtrl_(BURST_CAPACITY, SUSTAINED_CAPACITY)
 {
 }
 
 Status SingleKvStoreImpl::Put(const Key &key, const Value &value)
 {
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -128,6 +117,9 @@ Status SingleKvStoreImpl::Put(const Key &key, const Value &value)
 Status SingleKvStoreImpl::ConvertDbStatus(DistributedDB::DBStatus status)
 {
     switch (status) {
+        case DistributedDB::DBStatus::BUSY: // fallthrough
+        case DistributedDB::DBStatus::DB_ERROR:
+            return Status::DB_ERROR;
         case DistributedDB::DBStatus::OK:
             return Status::SUCCESS;
         case DistributedDB::DBStatus::INVALID_ARGS:
@@ -164,7 +156,7 @@ Status SingleKvStoreImpl::ConvertDbStatus(DistributedDB::DBStatus status)
 Status SingleKvStoreImpl::Delete(const Key &key)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -199,7 +191,7 @@ Status SingleKvStoreImpl::Delete(const Key &key)
 Status SingleKvStoreImpl::Get(const Key &key, Value &value)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -237,14 +229,8 @@ Status SingleKvStoreImpl::Get(const Key &key, Value &value)
 Status SingleKvStoreImpl::SubscribeKvStore(const SubscribeType subscribeType, sptr<IKvStoreObserver> observer)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    return SubscribeKvStore(subscribeType, observer, false);
-}
-
-Status SingleKvStoreImpl::SubscribeKvStore(const SubscribeType subscribeType, sptr<IKvStoreObserver> observer,
-                                           bool deviceCoordinate)
-{
     ZLOGD("start.");
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -256,8 +242,7 @@ Status SingleKvStoreImpl::SubscribeKvStore(const SubscribeType subscribeType, sp
         ZLOGE("kvstore is not open");
         return Status::ILLEGAL_STATE;
     }
-    KvStoreObserverImpl *nbObserver = new (std::nothrow) DeviceKvStoreObserverImpl(subscribeType, observer,
-                                                                                   deviceCoordinate);
+    KvStoreObserverImpl *nbObserver = CreateObserver(subscribeType, observer);
     if (nbObserver == nullptr) {
         ZLOGW("new KvStoreObserverNbImpl failed");
         return Status::ERROR;
@@ -293,6 +278,11 @@ Status SingleKvStoreImpl::SubscribeKvStore(const SubscribeType subscribeType, sp
     return Status::ERROR;
 }
 
+KvStoreObserverImpl *SingleKvStoreImpl::CreateObserver(
+    const SubscribeType subscribeType, sptr<IKvStoreObserver> observer)
+{
+    return new (std::nothrow) KvStoreObserverImpl(subscribeType, observer);
+}
 // Convert KvStore subscribe type to DistributeDB observer mode.
 int SingleKvStoreImpl::ConvertToDbObserverMode(const SubscribeType subscribeType) const
 {
@@ -324,7 +314,7 @@ int SingleKvStoreImpl::ConvertToDbObserverMode(const SubscribeType subscribeType
 Status SingleKvStoreImpl::UnSubscribeKvStore(const SubscribeType subscribeType, sptr<IKvStoreObserver> observer)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -371,7 +361,7 @@ Status SingleKvStoreImpl::UnSubscribeKvStore(const SubscribeType subscribeType, 
 Status SingleKvStoreImpl::GetEntries(const Key &prefixKey, std::vector<Entry> &entries)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -429,7 +419,7 @@ Status SingleKvStoreImpl::GetEntries(const Key &prefixKey, std::vector<Entry> &e
 Status SingleKvStoreImpl::GetEntriesWithQuery(const std::string &query, std::vector<Entry> &entries)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -498,11 +488,10 @@ Status SingleKvStoreImpl::GetEntriesWithQuery(const std::string &query, std::vec
 }
 
 void SingleKvStoreImpl::GetResultSet(const Key &prefixKey,
-                                     std::function<void(Status, sptr<IKvStoreResultSet>)> callback,
-                                     bool deviceCoordinate)
+                                     std::function<void(Status, sptr<IKvStoreResultSet>)> callback)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         callback(Status::EXCEED_MAX_ACCESS_RATE, nullptr);
         return;
@@ -529,58 +518,24 @@ void SingleKvStoreImpl::GetResultSet(const Key &prefixKey,
     ZLOGI("result DBStatus: %d", static_cast<int>(status));
     if (status == DistributedDB::DBStatus::OK) {
         std::lock_guard<std::mutex> lg(storeResultSetMutex_);
-        KvStoreResultSetImpl *storeResultSetImpl = new DeviceKvStoreResultSetImpl(tmpKeyPrefix, dbResultSet,
-                                                                                  deviceCoordinate);
-        sptr<IKvStoreResultSet> storeResultSet = storeResultSetImpl;
+        sptr<KvStoreResultSetImpl> storeResultSet = CreateResultSet(dbResultSet, tmpKeyPrefix);
         callback(Status::SUCCESS, storeResultSet);
-        storeResultSetMap_.emplace(storeResultSetImpl, storeResultSet);
+        storeResultSetMap_.emplace(storeResultSet.GetRefPtr(), storeResultSet);
         return;
     }
-    switch (status) {
-        case DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB: {
-            ZLOGE("GetResultSet failed, distributeddb need recover.");
-            bool success = Import(bundleName_);
-            callback(success ? Status::RECOVER_SUCCESS : Status::RECOVER_FAILED, nullptr);
-            break;
-        }
-        case DistributedDB::DBStatus::BUSY: // fallthrough
-        case DistributedDB::DBStatus::DB_ERROR:
-            callback(Status::DB_ERROR, nullptr);
-            break;
-        case DistributedDB::DBStatus::NOT_FOUND:
-            callback(Status::KEY_NOT_FOUND, nullptr);
-            break;
-        case DistributedDB::DBStatus::INVALID_ARGS:
-            callback(Status::INVALID_ARGUMENT, nullptr);
-            break;
-        case DistributedDB::DBStatus::EKEYREVOKED_ERROR:
-        case DistributedDB::DBStatus::SECURITY_OPTION_CHECK_ERROR:
-            callback(Status::SECURITY_LEVEL_ERROR, nullptr);
-            break;
-        default:
-            callback(Status::ERROR, nullptr);
-            break;
+    if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        bool success = Import(bundleName_);
+        callback(success ? Status::RECOVER_SUCCESS : Status::RECOVER_FAILED, nullptr);
+        return;
     }
-}
-
-void SingleKvStoreImpl::GetResultSet(const Key &prefixKey,
-                                     std::function<void(Status, sptr<IKvStoreResultSet>)> callback)
-{
-    GetResultSet(prefixKey, callback, false);
+    callback(ConvertDbStatus(status), nullptr);
 }
 
 void SingleKvStoreImpl::GetResultSetWithQuery(const std::string &query,
                                               std::function<void(Status, sptr<IKvStoreResultSet>)> callback)
 {
-    GetResultSetWithQuery(query, callback, false);
-}
-
-void SingleKvStoreImpl::GetResultSetWithQuery(const std::string &query,
-                                              std::function<void(Status, sptr<IKvStoreResultSet>)> callback,
-                                              bool deviceCoordinate)
-{
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         callback(Status::EXCEED_MAX_ACCESS_RATE, nullptr);
         return;
@@ -608,10 +563,9 @@ void SingleKvStoreImpl::GetResultSetWithQuery(const std::string &query,
     ZLOGI("result DBStatus: %d", static_cast<int>(status));
     if (status == DistributedDB::DBStatus::OK) {
         std::lock_guard<std::mutex> lg(storeResultSetMutex_);
-        KvStoreResultSetImpl *storeResultSetImpl = new DeviceKvStoreResultSetImpl(dbResultSet, deviceCoordinate);
-        sptr<IKvStoreResultSet> storeResultSet = storeResultSetImpl;
+        sptr<KvStoreResultSetImpl> storeResultSet = CreateResultSet(dbResultSet, {});
         callback(Status::SUCCESS, storeResultSet);
-        storeResultSetMap_.emplace(storeResultSetImpl, storeResultSet);
+        storeResultSetMap_.emplace(storeResultSet.GetRefPtr(), storeResultSet);
         return;
     }
     switch (status) {
@@ -647,10 +601,16 @@ void SingleKvStoreImpl::GetResultSetWithQuery(const std::string &query,
     }
 }
 
+KvStoreResultSetImpl *SingleKvStoreImpl::CreateResultSet(
+    DistributedDB::KvStoreResultSet *resultSet, const DistributedDB::Key &prix)
+{
+    return new (std::nothrow) KvStoreResultSetImpl(resultSet, prix);
+}
+
 Status SingleKvStoreImpl::GetCountWithQuery(const std::string &query, int &result)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -714,22 +674,21 @@ Status SingleKvStoreImpl::CloseResultSet(sptr<IKvStoreResultSet> resultSet)
     if (resultSet == nullptr) {
         return Status::INVALID_ARGUMENT;
     }
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
     std::shared_lock<std::shared_mutex> lock(storeNbDelegateMutex_);
     std::lock_guard<std::mutex> lg(storeResultSetMutex_);
-    KvStoreResultSetImpl *kvStoreResultSetImpl = static_cast<KvStoreResultSetImpl *>(resultSet.GetRefPtr());
     Status status;
-    auto it = storeResultSetMap_.find(kvStoreResultSetImpl);
+    auto it = storeResultSetMap_.find(resultSet.GetRefPtr());
     if (it == storeResultSetMap_.end()) {
         ZLOGE("ResultSet not found in this store.");
         return Status::INVALID_ARGUMENT;
     }
     {
         DdsTrace trace(std::string(LOG_TAG "Delegate::") + std::string(__FUNCTION__));
-        status = kvStoreResultSetImpl->CloseResultSet(kvStoreNbDelegate_);
+        status = it->second->CloseResultSet(kvStoreNbDelegate_);
     }
     if (status == Status::SUCCESS) {
         storeResultSetMap_.erase(it);
@@ -742,7 +701,7 @@ Status SingleKvStoreImpl::CloseResultSet(sptr<IKvStoreResultSet> resultSet)
 Status SingleKvStoreImpl::RemoveDeviceData(const std::string &device)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -780,7 +739,7 @@ Status SingleKvStoreImpl::Sync(const std::vector<std::string> &deviceIds, SyncMo
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     ZLOGD("start.");
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -802,7 +761,7 @@ Status SingleKvStoreImpl::Sync(const std::vector<std::string> &deviceIds, SyncMo
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     ZLOGD("start.");
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -1050,7 +1009,7 @@ Status SingleKvStoreImpl::SubscribeWithQuery(const std::vector<std::string> &dev
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     ZLOGD("start.");
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -1063,7 +1022,7 @@ Status SingleKvStoreImpl::UnSubscribeWithQuery(const std::vector<std::string> &d
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     ZLOGD("start.");
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -1113,7 +1072,7 @@ Status SingleKvStoreImpl::ForceClose(DistributedDB::KvStoreDelegateManager *kvSt
     ZLOGI("start to clean resultset");
     std::lock_guard<std::mutex> lg(storeResultSetMutex_);
     for (auto resultSetPair = storeResultSetMap_.begin(); resultSetPair != storeResultSetMap_.end();) {
-        Status status = (resultSetPair->first)->CloseResultSet(kvStoreNbDelegate_);
+        Status status = (resultSetPair->second)->CloseResultSet(kvStoreNbDelegate_);
         if (status != Status::SUCCESS) {
             ZLOGW("CloseResultSet failed during ForceClose, errCode %d", status);
             return status;
@@ -1166,12 +1125,11 @@ Status SingleKvStoreImpl::MigrateKvStore(const std::string &harmonyAccountId,
     }
 
     if (newDelegateMgr == nullptr) {
-        auto appId = KvStoreUtils::GetAppIdByBundleName(bundleName_);
-        if (appId.empty()) {
+        if (appId_.empty()) {
             ZLOGE("Get appId by bundle name failed.");
             return Status::MIGRATION_KVSTORE_FAILED;
         }
-        newDelegateMgr = new (std::nothrow) DistributedDB::KvStoreDelegateManager(appId, harmonyAccountId);
+        newDelegateMgr = new (std::nothrow) DistributedDB::KvStoreDelegateManager(appId_, harmonyAccountId);
         if (newDelegateMgr == nullptr) {
             ZLOGE("new KvStoreDelegateManager failed.");
             return Status::MIGRATION_KVSTORE_FAILED;
@@ -1265,7 +1223,7 @@ Status SingleKvStoreImpl::RebuildKvStoreResultSet()
     std::lock_guard<std::mutex> lg(storeResultSetMutex_);
     Status retStatus = Status::SUCCESS;
     for (const auto &resultSetPair : storeResultSetMap_) {
-        Status status = (resultSetPair.first)->MigrateKvStore(kvStoreNbDelegate_);
+        Status status = (resultSetPair.second)->MigrateKvStore(kvStoreNbDelegate_);
         if (status != Status::SUCCESS) {
             retStatus = status;
             ZLOGW("rebuild resultset failed, errCode %d", static_cast<int>(status));
@@ -1322,7 +1280,7 @@ Status SingleKvStoreImpl::PutBatch(const std::vector<Entry> &entries)
         ZLOGE("delegate is null.");
         return Status::DB_ERROR;
     }
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -1376,7 +1334,7 @@ Status SingleKvStoreImpl::DeleteBatch(const std::vector<Key> &keys)
         ZLOGE("delegate is null.");
         return Status::DB_ERROR;
     }
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -1427,7 +1385,7 @@ Status SingleKvStoreImpl::StartTransaction()
         ZLOGE("delegate is null.");
         return Status::DB_ERROR;
     }
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -1457,7 +1415,7 @@ Status SingleKvStoreImpl::Commit()
         ZLOGE("delegate is null.");
         return Status::DB_ERROR;
     }
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -1488,7 +1446,7 @@ Status SingleKvStoreImpl::Rollback()
         ZLOGE("delegate is null.");
         return Status::DB_ERROR;
     }
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -1550,17 +1508,16 @@ void SingleKvStoreImpl::IncreaseOpenCount()
 bool SingleKvStoreImpl::Import(const std::string &bundleName) const
 {
     ZLOGI("Single KvStoreImpl Import start");
-    const std::string harmonyAccountId = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId();
+    const std::string harmonyAccountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     auto sKey = KvStoreMetaManager::GetMetaKey(deviceAccountId_, harmonyAccountId, bundleName, storeId_, "SINGLE_KEY");
     std::vector<uint8_t> secretKey;
     bool outdated = false;
-    auto trueAppId = KvStoreUtils::GetAppIdByBundleName(bundleName);
     KvStoreMetaManager::GetInstance().GetSecretKeyFromMeta(sKey, secretKey, outdated);
     MetaData metaData{0};
     metaData.kvStoreMetaData.deviceAccountId = deviceAccountId_;
     metaData.kvStoreMetaData.userId = harmonyAccountId;
     metaData.kvStoreMetaData.bundleName = bundleName;
-    metaData.kvStoreMetaData.appId = trueAppId;
+    metaData.kvStoreMetaData.appId = appId_;
     metaData.kvStoreMetaData.storeId = storeId_;
     metaData.kvStoreMetaData.securityLevel = options_.securityLevel;
     metaData.secretKeyMetaData.secretKey = secretKey;
@@ -1571,7 +1528,7 @@ bool SingleKvStoreImpl::Import(const std::string &bundleName) const
 Status SingleKvStoreImpl::SetCapabilityEnabled(bool enabled)
 {
     ZLOGD("begin.");
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -1596,7 +1553,7 @@ Status SingleKvStoreImpl::SetCapabilityEnabled(bool enabled)
 Status SingleKvStoreImpl::SetCapabilityRange(const std::vector<std::string> &localLabels,
                                              const std::vector<std::string> &remoteSupportLabels)
 {
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -1669,5 +1626,9 @@ void SingleKvStoreImpl::OnDump(int fd) const
     dprintf(fd, "%s    kvStoreType     : %d\n", prefix.c_str(), static_cast<int>(options_.kvStoreType));
     dprintf(fd, "%s    createIfMissing : %d\n", prefix.c_str(), static_cast<int>(options_.createIfMissing));
     dprintf(fd, "%s    schema          : %s\n", prefix.c_str(), options_.schema.c_str());
+}
+std::string SingleKvStoreImpl::GetStoreId()
+{
+    return storeId_;
 }
 }  // namespace OHOS::DistributedKv

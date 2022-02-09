@@ -22,8 +22,8 @@
 #include "relational_store_delegate.h"
 
 namespace OHOS::DistributedRdb {
-RdbDeviceSyncer::RdbDeviceSyncer(const RdbSyncerParam &param)
-    : RdbSyncerImpl(param), isInit_(false), manager_(nullptr), delegate_(nullptr)
+RdbDeviceSyncer::RdbDeviceSyncer(const RdbSyncerParam &param, pid_t uid)
+    : RdbSyncerImpl(param, uid), isInit_(false), manager_(nullptr), delegate_(nullptr)
 {
     ZLOGI("construct %{public}s", param.storeName_.c_str());
 }

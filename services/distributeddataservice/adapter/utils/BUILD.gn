@@ -13,20 +13,13 @@
 import("//build/ohos.gni")
 
 ohos_static_library("distributeddata_utils_static") {
-  sources = [
-    "src/crypto_utils.cpp",
-    "src/kvstore_utils.cpp",
-  ]
+  sources = [ "src/kvstore_utils.cpp" ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
   if (build_public_version) {
     cflags_cc += [ "-DCONFIG_PUBLIC_VERSION" ]
   }
-
-  remove_configs = [ "//build/config/compiler:no_exceptions" ]
-
-  configs = [ "//build/config/compiler:exceptions" ]
 
   include_dirs = [
     "../include/permission",
@@ -36,12 +29,10 @@ ohos_static_library("distributeddata_utils_static") {
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//utils/native/base/include",
     "../include/dfx",
-    "//third_party/openssl/include/",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//third_party/openssl:libcrypto_static",
     "//utils/native/base:utils",
   ]
 

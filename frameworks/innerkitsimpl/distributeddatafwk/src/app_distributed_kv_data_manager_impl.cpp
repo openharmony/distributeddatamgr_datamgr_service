@@ -63,7 +63,7 @@ std::shared_ptr<AppDistributedKvDataManager> AppDistributedKvDataManagerImpl::Ge
         return nullptr;
     }
 
-    std::string appId = KvStoreUtils::GetAppIdByBundleName(bundleName);
+    std::string appId = bundleName;
     if (appId.empty()) {
         appId = bundleName;
     }
@@ -98,7 +98,7 @@ std::shared_ptr<AppDistributedKvDataManager> AppDistributedKvDataManagerImpl::Ge
         return nullptr;
     }
 
-    auto temp = std::make_shared<AppDistributedKvDataManagerImpl>(delegateManager, appId);
+    auto temp = std::make_shared<AppDistributedKvDataManagerImpl>(delegateManager, appId, userId);
     if (temp == nullptr) {
         delete delegateManager;
         delegateManager = nullptr;
@@ -112,8 +112,8 @@ std::shared_ptr<AppDistributedKvDataManager> AppDistributedKvDataManagerImpl::Ge
 }
 
 AppDistributedKvDataManagerImpl::AppDistributedKvDataManagerImpl(
-    DistributedDB::KvStoreDelegateManager *delegateManager, const std::string &appId)
-    : kvStoreDelegateManager_(delegateManager), appId_(appId)
+    DistributedDB::KvStoreDelegateManager *delegateManager, const std::string &appId, const std::string &accountId)
+    : kvStoreDelegateManager_(delegateManager), appId_(appId), accountId_(accountId)
 {
     ZLOGI("construct");
 }
@@ -152,8 +152,7 @@ Status AppDistributedKvDataManagerImpl::GetKvStore(
                 ZLOGI("succeed.");
                 auto statDelegateMgr = std::make_shared<DelegateMgrCallback>(kvStoreDelegateManager_);
                 auto statDelegate = std::static_pointer_cast<DbMetaCallbackDelegate>(statDelegateMgr);
-                Reporter::GetInstance()->DatabaseStatistic()->Report(
-                    {AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId(), appId_, storeId, 0, statDelegate});
+                Reporter::GetInstance()->DatabaseStatistic()->Report({accountId_, appId_, storeId, 0, statDelegate});
                 return;
             }
 

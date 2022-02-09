@@ -14,6 +14,7 @@
 */
 
 #include "checker/checker_manager.h"
+#include "utils/crypto.h"
 #include <gtest/gtest.h>
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -89,7 +90,7 @@ HWTEST_F(CheckerManagerTest, SystemCheckerIVI, TestSize.Level0)
 */
 HWTEST_F(CheckerManagerTest, BundleChecker, TestSize.Level0)
 {
-    ASSERT_EQ("ohos.test.demo",
+    ASSERT_EQ(Crypto::Sha256("ohos.test.demo"),
         CheckerManager::GetInstance().GetAppId("ohos.test.demo", 100000));
     ASSERT_TRUE(CheckerManager::GetInstance().IsValid("ohos.test.demo", 100000));
 }

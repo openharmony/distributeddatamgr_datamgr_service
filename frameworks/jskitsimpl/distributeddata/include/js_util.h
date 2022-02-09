@@ -22,11 +22,8 @@
 #include "napi/native_api.h"
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
-#include "log_print.h"
 
 namespace OHOS::DistributedData {
-using namespace OHOS::DistributedKv;
-
 class JSUtil final {
 public:
     enum {
@@ -39,7 +36,12 @@ public:
         DOUBLE = 5,
         INVALID = 255
     };
-
+    using Blob = OHOS::DistributedKv::Blob;
+    using ChangeNotification = OHOS::DistributedKv::ChangeNotification;
+    using Options = OHOS::DistributedKv::Options;
+    using Entry = OHOS::DistributedKv::Entry;
+    using StoreId = OHOS::DistributedKv::StoreId;
+    using Status = OHOS::DistributedKv::Status;
     /* for kvStore Put/Get : boolean|string|number|Uint8Array */
     using KvStoreVariant = std::variant<std::string, int32_t, float, std::vector<uint8_t>, bool, double>;
     static KvStoreVariant Blob2VariantValue(const Blob& blob);

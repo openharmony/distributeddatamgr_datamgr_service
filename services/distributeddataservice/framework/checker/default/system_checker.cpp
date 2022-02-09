@@ -12,8 +12,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
+#define LOG_TAG "SystemChecker"
 #include "checker/default/system_checker.h"
+#include "log/log_print.h"
 namespace OHOS {
 namespace DistributedData {
 SystemChecker SystemChecker::instance_;
@@ -40,19 +41,17 @@ bool SystemChecker::SetTrustInfo(const CheckerManager::Trust &trust)
 
 std::string SystemChecker::GetAppId(pid_t uid, const std::string &bundleName)
 {
-    if (trusts_.find(bundleName) == trusts_.end() || uid >= SYSTEM_UID || uid == CheckerManager::INVALID_UID) {
+    if (uid >= SYSTEM_UID || uid == CheckerManager::INVALID_UID) {
         return "";
     }
-    return trusts_[bundleName];
+    std::string appId = (trusts_.find(bundleName) != trusts_.end()) ? trusts_[bundleName] : bundleName;
+    ZLOGD("bundleName:%{public}s, uid:%{public}d, appId:%{public}s", bundleName.c_str(), uid, appId.c_str());
+    return appId;
 }
 
 bool SystemChecker::IsValid(pid_t uid, const std::string &bundleName)
 {
-    if (trusts_.find(bundleName) == trusts_.end() || uid >= SYSTEM_UID || uid == CheckerManager::INVALID_UID) {
-        return false;
-    }
-    // todo get appid
-    return true;
+    return (uid < SYSTEM_UID && uid != CheckerManager::INVALID_UID);
 }
 }
 }

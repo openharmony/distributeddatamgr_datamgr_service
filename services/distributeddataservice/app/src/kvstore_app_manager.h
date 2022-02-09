@@ -37,15 +37,15 @@ public:
         PATH_TYPE_MAX
     };
 
-    KvStoreAppManager(const std::string &bundleName, const std::string &deviceAccountId);
+    KvStoreAppManager(const std::string &bundleName, pid_t uid);
 
     virtual ~KvStoreAppManager();
 
-    Status GetKvStore(const Options &options, const std::string &storeId, const std::vector<uint8_t> &cipherKey,
-                      std::function<void(sptr<IKvStoreImpl>)> callback);
+    Status GetKvStore(const Options &options, const std::string &appId, const std::string &storeId,
+                      const std::vector<uint8_t> &cipherKey, sptr<KvStoreImpl> &kvStore);
 
-    Status GetKvStore(const Options &options, const std::string &storeId, const std::vector<uint8_t> &cipherKey,
-                      std::function<void(sptr<ISingleKvStore>)> callback);
+    Status GetKvStore(const Options &options, const std::string &appId, const std::string &storeId,
+                      const std::vector<uint8_t> &cipherKey, sptr<SingleKvStoreImpl> &kvStore);
 
     Status CloseKvStore(const std::string &storeId);
 
@@ -63,10 +63,10 @@ public:
     static Status InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
                                  DistributedDB::KvStoreNbDelegate::Option &dbOption);
 
-    static std::string GetDataStoragePath(const std::string &deviceAccountId, const std::string &bundleName,
+    static std::string GetDataStoragePath(const std::string &userId, const std::string &bundleName,
                                           PathType type);
 
-    static PathType ConvertPathType(const std::string &bundleName, int securityLevel);
+    static PathType ConvertPathType(int32_t uid, const std::string &bundleName, int securityLevel);
 
     std::string GetDbDir(const Options &options) const;
 
@@ -93,9 +93,10 @@ private:
     std::string bundleName_ {};
     std::string deviceAccountId_ {};
     std::string trueAppId_ {};
+    pid_t uid_;
     std::mutex delegateMutex_ {};
     DistributedDB::KvStoreDelegateManager *delegateManagers_[PATH_TYPE_MAX] {nullptr, nullptr};
-    KvStoreFlowCtrlManager flowCtrlManager_;
+    KvStoreFlowCtrlManager flowCtrl_;
     static inline const int BURST_CAPACITY = 50;
     static inline const int SUSTAINED_CAPACITY = 500;
 };

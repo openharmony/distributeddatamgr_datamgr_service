@@ -22,7 +22,6 @@
 #include "log_print.h"
 
 using namespace OHOS::DistributedData;
-using namespace OHOS::DistributedKv;
 
 static napi_value Init(napi_env env, napi_value exports)
 {

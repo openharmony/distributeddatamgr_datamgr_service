@@ -23,6 +23,7 @@
 #include <thread>
 #include "account_delegate.h"
 #include "broadcast_sender.h"
+#include "checker/checker_manager.h"
 #include "constant.h"
 #include "directory_utils.h"
 #include "device_kvstore_impl.h"
@@ -38,10 +39,12 @@
 
 namespace OHOS {
 namespace DistributedKv {
-KvStoreAppManager::KvStoreAppManager(const std::string &bundleName, const std::string &deviceAccountId)
-    : bundleName_(bundleName), deviceAccountId_(deviceAccountId), flowCtrlManager_(BURST_CAPACITY, SUSTAINED_CAPACITY)
+using namespace OHOS::DistributedData;
+KvStoreAppManager::KvStoreAppManager(const std::string &bundleName, pid_t uid)
+    : bundleName_(bundleName), uid_(uid), flowCtrl_(BURST_CAPACITY, SUSTAINED_CAPACITY)
 {
     ZLOGI("begin.");
+    deviceAccountId_ = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
     GetDelegateManager(PATH_DE);
     GetDelegateManager(PATH_CE);
 }
@@ -89,20 +92,19 @@ Status KvStoreAppManager::ConvertErrorStatus(DistributedDB::DBStatus dbStatus, b
     return Status::SUCCESS;
 }
 
-Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &storeId,
-                                     const std::vector<uint8_t> &cipherKey,
-                                     std::function<void(sptr<IKvStoreImpl>)> callback)
+Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &appId, const std::string &storeId,
+    const std::vector<uint8_t> &cipherKey, sptr<KvStoreImpl> &kvStore)
 {
     ZLOGI("begin");
-    PathType type = ConvertPathType(bundleName_, options.securityLevel);
+    kvStore = nullptr;
+    PathType type = ConvertPathType(uid_, bundleName_, options.securityLevel);
     auto *delegateManager = GetDelegateManager(type);
     if (delegateManager == nullptr) {
         ZLOGE("delegateManagers[%d] is nullptr.", type);
-        callback(nullptr);
         return Status::ILLEGAL_STATE;
     }
 
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -110,16 +112,14 @@ Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &
     std::lock_guard<std::mutex> lg(storeMutex_);
     auto it = stores_[type].find(storeId);
     if (it != stores_[type].end()) {
-        sptr<IKvStoreImpl> kvStoreImpl = it->second;
-        ZLOGI("find store in map refcount: %d.", kvStoreImpl->GetSptrRefCount());
-        static_cast<KvStoreImpl *>(kvStoreImpl.GetRefPtr())->IncreaseOpenCount();
-        callback(std::move(kvStoreImpl));
+        kvStore = it->second;
+        ZLOGI("find store in map refcount: %d.", kvStore->GetSptrRefCount());
+        kvStore->IncreaseOpenCount();
         return Status::SUCCESS;
     }
 
     if ((GetTotalKvStoreNum()) >= static_cast<size_t>(Constant::MAX_OPEN_KVSTORES)) {
         ZLOGE("limit %d KvStores can be opened.", Constant::MAX_OPEN_KVSTORES);
-        callback(nullptr);
         return Status::ERROR;
     }
 
@@ -127,7 +127,6 @@ Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &
     auto status = InitDbOption(options, cipherKey, dbOption);
     if (status != Status::SUCCESS) {
         ZLOGE("InitDbOption failed.");
-        callback(nullptr);
         return status;
     }
 
@@ -141,62 +140,56 @@ Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &
 
     if (storeDelegate == nullptr) {
         ZLOGE("storeDelegate is nullptr, status:%d.", static_cast<int>(dbStatusTmp));
-        callback(nullptr);
         return ConvertErrorStatus(dbStatusTmp, options.createIfMissing);
     }
 
     ZLOGD("get delegate");
-    sptr<KvStoreImpl> store = new (std::nothrow)KvStoreImpl(options, deviceAccountId_, bundleName_,
-                                                            storeId, GetDbDir(options), storeDelegate);
-    if (store == nullptr) {
-        callback(nullptr);
+    kvStore = new (std::nothrow)KvStoreImpl(options, deviceAccountId_, bundleName_,
+        appId, storeId, GetDbDir(options), storeDelegate);
+    if (kvStore == nullptr) {
         delegateManager->CloseKvStore(storeDelegate);
+        kvStore = nullptr;
         return Status::ERROR;
     }
-    auto result = stores_[type].emplace(storeId, store);
+    auto result = stores_[type].emplace(storeId, kvStore);
     if (!result.second) {
         ZLOGE("emplace failed.");
-        callback(nullptr);
         delegateManager->CloseKvStore(storeDelegate);
+        kvStore = nullptr;
         return Status::ERROR;
     }
 
-    sptr<IKvStoreImpl> kvStoreImpl = result.first->second;
-    ZLOGD("after emplace refcount: %d", kvStoreImpl->GetSptrRefCount());
-    callback(std::move(kvStoreImpl));
+    ZLOGD("after emplace refcount: %d", kvStore->GetSptrRefCount());
     return Status::SUCCESS;
 }
 
-Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &storeId,
-                                     const std::vector<uint8_t> &cipherKey,
-                                     std::function<void(sptr<ISingleKvStore>)> callback)
+Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &appId, const std::string &storeId,
+    const std::vector<uint8_t> &cipherKey, sptr<SingleKvStoreImpl> &kvStore)
 {
     ZLOGI("begin");
-    PathType type = ConvertPathType(bundleName_, options.securityLevel);
+    kvStore = nullptr;
+    PathType type = ConvertPathType(uid_, bundleName_, options.securityLevel);
     auto *delegateManager = GetDelegateManager(type);
     if (delegateManager == nullptr) {
         ZLOGE("delegateManagers[%d] is nullptr.", type);
-        callback(nullptr);
         return Status::ILLEGAL_STATE;
     }
 
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
     std::lock_guard<std::mutex> lg(storeMutex_);
     auto it = singleStores_[type].find(storeId);
     if (it != singleStores_[type].end()) {
-        sptr<ISingleKvStore> singleKvStoreImpl = it->second;
-        ZLOGI("find store in map refcount: %d.", singleKvStoreImpl->GetSptrRefCount());
-        static_cast<SingleKvStoreImpl *>(singleKvStoreImpl.GetRefPtr())->IncreaseOpenCount();
-        callback(std::move(singleKvStoreImpl));
+        kvStore = it->second;
+        ZLOGI("find store in map refcount: %d.", kvStore->GetSptrRefCount());
+        kvStore->IncreaseOpenCount();
         return Status::SUCCESS;
     }
 
     if ((GetTotalKvStoreNum()) >= static_cast<size_t>(Constant::MAX_OPEN_KVSTORES)) {
         ZLOGE("limit %d KvStores can be opened.", Constant::MAX_OPEN_KVSTORES);
-        callback(nullptr);
         return Status::ERROR;
     }
 
@@ -204,7 +197,6 @@ Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &
     auto status = InitNbDbOption(options, cipherKey, dbOption);
     if (status != Status::SUCCESS) {
         ZLOGE("InitNbDbOption failed.");
-        callback(nullptr);
         return status;
     }
 
@@ -218,31 +210,34 @@ Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &
 
     if (storeDelegate == nullptr) {
         ZLOGE("storeDelegate is nullptr.");
-        callback(nullptr);
         return ConvertErrorStatus(dbStatusTmp, options.createIfMissing);
     }
     std::string kvStorePath = GetDbDir(options);
-    auto store = new (std::nothrow) DeviceKvStoreImpl({
-        options, options.kvStoreType == KvStoreType::DEVICE_COLLABORATION, deviceAccountId_, bundleName_, storeId,
-        kvStorePath}, storeDelegate);
-    if (store == nullptr) {
+    switch (options.kvStoreType) {
+        case KvStoreType::DEVICE_COLLABORATION:
+            kvStore = new (std::nothrow) DeviceKvStoreImpl(
+                options, deviceAccountId_, bundleName_, storeId, trueAppId_, kvStorePath, storeDelegate);
+            break;
+        default:
+            kvStore = new (std::nothrow) SingleKvStoreImpl(
+                options, deviceAccountId_, bundleName_, storeId, trueAppId_, kvStorePath, storeDelegate);
+            break;
+    }
+    if (kvStore == nullptr) {
         ZLOGE("store is nullptr.");
-        callback(nullptr);
         delegateManager->CloseKvStore(storeDelegate);
+        kvStore = nullptr;
         return Status::ERROR;
     }
-    auto result = singleStores_[type].emplace(storeId, store);
+    auto result = singleStores_[type].emplace(storeId, kvStore);
     if (!result.second) {
         ZLOGE("emplace failed.");
-        callback(nullptr);
         delegateManager->CloseKvStore(storeDelegate);
-        delete store;
+        kvStore = nullptr;
         return Status::ERROR;
     }
 
-    sptr<ISingleKvStore> singleKvStoreImpl = result.first->second;
-    ZLOGI("after emplace refcount: %d autoSync: %d",
-        singleKvStoreImpl->GetSptrRefCount(), static_cast<int>(options.autoSync));
+    ZLOGI("after emplace refcount: %d autoSync: %d", kvStore->GetSptrRefCount(), static_cast<int>(options.autoSync));
     if (options.autoSync) {
         bool autoSync = true;
         DistributedDB::PragmaData data = static_cast<DistributedDB::PragmaData>(&autoSync);
@@ -252,7 +247,6 @@ Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &
         }
     }
 
-    callback(std::move(singleKvStoreImpl));
     DistributedDB::AutoLaunchOption launchOption = {
         options.createIfMissing, options.encrypt, dbOption.cipher, dbOption.passwd, dbOption.schema,
         dbOption.createDirByStoreIdOnly, kvStorePath, nullptr
@@ -266,7 +260,7 @@ Status KvStoreAppManager::GetKvStore(const Options &options, const std::string &
 Status KvStoreAppManager::CloseKvStore(const std::string &storeId)
 {
     ZLOGI("CloseKvStore");
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -308,7 +302,7 @@ Status KvStoreAppManager::CloseAllKvStore()
 Status KvStoreAppManager::DeleteKvStore(const std::string &storeId)
 {
     ZLOGI("%s", storeId.c_str());
-    if (!flowCtrlManager_.IsTokenEnough()) {
+    if (!flowCtrl_.IsTokenEnough()) {
         ZLOGE("flow control denied");
         return Status::EXCEED_MAX_ACCESS_RATE;
     }
@@ -419,18 +413,29 @@ Status KvStoreAppManager::InitNbDbOption(const Options &options, const std::vect
 
 std::string KvStoreAppManager::GetDbDir(const Options &options) const
 {
-    return GetDataStoragePath(deviceAccountId_, bundleName_, ConvertPathType(bundleName_, options.securityLevel));
+    return GetDataStoragePath(deviceAccountId_, bundleName_, ConvertPathType(uid_, bundleName_, options.securityLevel));
 }
 
-KvStoreAppManager::PathType KvStoreAppManager::ConvertPathType(const std::string &bundleName, int securityLevel)
+KvStoreAppManager::PathType KvStoreAppManager::ConvertPathType(int32_t uid, const std::string &bundleName,
+                                                               int securityLevel)
 {
-    PathType type = PATH_CE;
-    if ((securityLevel == NO_LABEL && PermissionValidator::IsSystemService(bundleName)) ||
-        securityLevel == S0 ||
-        securityLevel == S1) {
-        type = PATH_DE;
+    switch (securityLevel) {
+        case S0:    // fallthrough
+        case S1:
+            return PATH_DE;
+        case S2:    // fallthrough
+        case S3_EX: // fallthrough
+        case S3:    // fallthrough
+        case S4:    // fallthrough
+            return PATH_CE;
+        default:
+            break;
     }
-    return type;
+    auto *checker = CheckerManager::GetInstance().GetChecker("SystemChecker");
+    if (checker == nullptr || !checker->IsValid(uid, bundleName)) {
+        return PATH_CE;
+    }
+    return PATH_DE;
 }
 
 DistributedDB::KvStoreDelegateManager *KvStoreAppManager::GetDelegateManager(PathType type)
@@ -450,14 +455,14 @@ DistributedDB::KvStoreDelegateManager *KvStoreAppManager::GetDelegateManager(Pat
     DirectoryUtils::ChangeModeDirOnly(directory, Constant::DEFAULT_MODE_DIR);
     DirectoryUtils::ChangeModeFileOnly(directory, Constant::DEFAULT_MODE_FILE);
 
-    trueAppId_ = KvStoreUtils::GetAppIdByBundleName(bundleName_);
+    trueAppId_ = CheckerManager::GetInstance().GetAppId(bundleName_, uid_);
     if (trueAppId_.empty()) {
         delegateManagers_[type] = nullptr;
         ZLOGW("trueAppId_ empty(permission issues?)");
         return nullptr;
     }
 
-    userId_ = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId(bundleName_);
+    userId_ = AccountDelegate::GetInstance()->GetCurrentAccountId(bundleName_);
     ZLOGD("accountId: %s bundleName: %s", KvStoreUtils::ToBeAnonymous(userId_).c_str(), bundleName_.c_str());
     delegateManagers_[type] = new (std::nothrow) DistributedDB::KvStoreDelegateManager(trueAppId_, userId_);
     if (delegateManagers_[type] == nullptr) {
@@ -468,7 +473,6 @@ DistributedDB::KvStoreDelegateManager *KvStoreAppManager::GetDelegateManager(Pat
     DistributedDB::KvStoreConfig kvStoreConfig;
     kvStoreConfig.dataDir = directory;
     delegateManagers_[type]->SetKvStoreConfig(kvStoreConfig);
-    DistributedDB::KvStoreDelegateManager::SetProcessLabel(Constant::PROCESS_LABEL, "default");
     auto communicator = std::make_shared<AppDistributedKv::ProcessCommunicatorImpl>();
     auto result = DistributedDB::KvStoreDelegateManager::SetProcessCommunicator(communicator);
     ZLOGI("app set communicator result:%d.", static_cast<int>(result));
@@ -686,12 +690,12 @@ size_t KvStoreAppManager::GetTotalKvStoreNum() const
     return int(total);
 };
 
-std::string KvStoreAppManager::GetDataStoragePath(const std::string &deviceAccountId, const std::string &bundleName,
+std::string KvStoreAppManager::GetDataStoragePath(const std::string &userId, const std::string &bundleName,
                                                   PathType type)
 {
     std::string miscPath = (type == PATH_DE) ? Constant::ROOT_PATH_DE : Constant::ROOT_PATH_CE;
     return Constant::Concatenate({
-        miscPath, "/", Constant::SERVICE_NAME, "/", deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(),
+        miscPath, "/", Constant::SERVICE_NAME, "/", userId, "/", Constant::GetDefaultHarmonyAccountName(),
         "/", bundleName, "/"
     });
 }

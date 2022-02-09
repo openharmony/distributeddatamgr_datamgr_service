@@ -46,11 +46,12 @@ public:
     static AccountDelegate *GetBaseInstance();
     Status Subscribe(std::shared_ptr<Observer> observer) override;
     Status Unsubscribe(std::shared_ptr<Observer> observer) override;
-    std::string GetCurrentHarmonyAccountId(const std::string &bundleName = "") const override;
+    std::string GetCurrentAccountId(const std::string &bundleName = "") const override;
     std::string GetDeviceAccountIdByUID(int32_t uid) const override;
     void SubscribeAccountEvent() override;
 private:
     ~AccountDelegateImpl();
+    std::string Sha256UserId(const std::string &plainText) const;
     void NotifyAccountChanged(const AccountEventInfo &accountEventInfo);
 
     ConcurrentMap<std::string, std::shared_ptr<Observer>> observerMap_ {};

@@ -26,13 +26,18 @@ ohos_static_library("distributeddata_account_static") {
     "//utils/native/base/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
+  remove_configs = [ "//build/config/compiler:no_exceptions" ]
+
+  configs = [ "//build/config/compiler:exceptions" ]
+
   deps = [
-    "../utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//utils/native/base:utils",
   ]
 

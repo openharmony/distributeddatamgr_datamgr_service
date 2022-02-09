@@ -78,7 +78,8 @@ void KvStoreAppAccessor::EnableKvStoreAutoLaunch()
                 ZLOGE("Get secret key failed.");
                 return;
             }
-            auto pathType = KvStoreAppManager::ConvertPathType(metaData.bundleName, metaData.securityLevel);
+            auto pathType =
+                KvStoreAppManager::ConvertPathType(metaData.uid, metaData.bundleName, metaData.securityLevel);
             std::string appPath = KvStoreAppManager::GetDataStoragePath(
                 metaData.deviceAccountId, metaData.bundleName, pathType);
             DistributedDB::AutoLaunchOption dbLaunchOption;

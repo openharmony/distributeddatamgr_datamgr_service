@@ -22,7 +22,7 @@
 namespace OHOS::DistributedRdb {
 class RdbSyncerImpl : public RdbSyncerStub {
 public:
-    explicit RdbSyncerImpl(const RdbSyncerParam& param);
+    explicit RdbSyncerImpl(const RdbSyncerParam& param, pid_t uid);
     
     RdbSyncerImpl() = delete;
     RdbSyncerImpl(const RdbSyncerImpl&) = delete;

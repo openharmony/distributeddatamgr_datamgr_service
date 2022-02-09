@@ -15,11 +15,12 @@
 
 #include <gtest/gtest.h>
 
-#include "crypto_utils.h"
 #include "permission_validator.h"
+#include "utils/crypto.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
+using namespace OHOS::DistributedData;
 
 class PermissionValidatorTest : public testing::Test {
 public:
@@ -79,5 +80,5 @@ HWTEST_F(PermissionValidatorTest, TestPermissionValidate002, TestSize.Level0)
 HWTEST_F(PermissionValidatorTest, TestPermissionValidate003, TestSize.Level0)
 {
     std::string userId = "ohos";
-    EXPECT_NE(CryptoUtils::Sha256("ohos"), userId);
+    EXPECT_NE(Crypto::Sha256("ohos"), userId);
 }

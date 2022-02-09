@@ -21,14 +21,8 @@
 namespace OHOS::DistributedKv {
 class DeviceKvStoreResultSetImpl : public KvStoreResultSetImpl {
 public:
-    DeviceKvStoreResultSetImpl(DistributedDB::Key tmpKeyPrefix,
-        DistributedDB::KvStoreResultSet *kvStoreResultSet, bool deviceCoordinate);
-    DeviceKvStoreResultSetImpl(DistributedDB::KvStoreResultSet *kvStoreResultSet,
-        bool deviceCoordinate);
-    ~DeviceKvStoreResultSetImpl();
+    explicit DeviceKvStoreResultSetImpl(DistributedDB::KvStoreResultSet *resultSet, DistributedDB::Key keyPrefix = {});
     Status GetEntry(Entry &entry) override;
-private:
-    bool deviceCoordinate_;
 };
 }
 

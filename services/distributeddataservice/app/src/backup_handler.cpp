@@ -24,7 +24,6 @@
 #include "battery_info.h"
 #include "battery_srv_client.h"
 #include "constant.h"
-#include "crypto_utils.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_scheduler.h"
 #include "kvstore_data_service.h"
@@ -32,6 +31,7 @@
 #include "kvstore_meta_manager.h"
 #include "power_mgr_client.h"
 #include "time_utils.h"
+#include "utils/crypto.h"
 
 namespace OHOS::DistributedKv {
 using json = nlohmann::json;
@@ -96,7 +96,7 @@ void BackupHandler::SingleKvStoreBackup(const MetaData &metaData)
     dbOption.secOption = KvStoreAppManager::ConvertSecurity(metaData.kvStoreMetaData.securityLevel);
 
     auto *delegateMgr = new DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
-        AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId(metaData.kvStoreMetaData.bundleName));
+        AccountDelegate::GetInstance()->GetCurrentAccountId(metaData.kvStoreMetaData.bundleName));
 
     std::string appDataStoragePath = KvStoreAppManager::GetDataStoragePath(metaData.kvStoreMetaData.deviceAccountId,
         metaData.kvStoreMetaData.bundleName, backupPara.pathType);
@@ -152,7 +152,7 @@ void BackupHandler::MultiKvStoreBackup(const MetaData &metaData)
     option.createDirByStoreIdOnly = true;
 
     auto *delegateMgr = new DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
-        AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId(metaData.kvStoreMetaData.bundleName));
+        AccountDelegate::GetInstance()->GetCurrentAccountId(metaData.kvStoreMetaData.bundleName));
     std::string appDataStoragePath = KvStoreAppManager::GetDataStoragePath(metaData.kvStoreMetaData.deviceAccountId,
         metaData.kvStoreMetaData.bundleName, backupPara.pathType);
     DistributedDB::KvStoreConfig kvStoreConfig;
@@ -190,7 +190,7 @@ bool BackupHandler::InitBackupPara(const MetaData &metaData, BackupPara &backupP
 {
     BackupPara backupParameter;
     auto pathType = KvStoreAppManager::ConvertPathType(
-        metaData.kvStoreMetaData.bundleName, metaData.kvStoreMetaData.securityLevel);
+        metaData.kvStoreMetaData.uid, metaData.kvStoreMetaData.bundleName, metaData.kvStoreMetaData.securityLevel);
     if (!ForceCreateDirectory(BackupHandler::GetBackupPath(metaData.kvStoreMetaData.deviceAccountId, pathType))) {
         ZLOGE("MultiKvStoreBackup backup create directory failed.");
         return false;
@@ -229,8 +229,8 @@ bool BackupHandler::SingleKvStoreRecover(MetaData &metaData, DistributedDB::KvSt
         ZLOGE("SingleKvStoreRecover failed, delegate is null.");
         return false;
     }
-    auto pathType = KvStoreAppManager::ConvertPathType(metaData.kvStoreMetaData.bundleName,
-                                                       metaData.kvStoreMetaData.securityLevel);
+    auto pathType = KvStoreAppManager::ConvertPathType(
+        metaData.kvStoreMetaData.uid, metaData.kvStoreMetaData.bundleName, metaData.kvStoreMetaData.securityLevel);
     if (!BackupHandler::FileExists(BackupHandler::GetBackupPath(metaData.kvStoreMetaData.deviceAccountId, pathType))) {
         ZLOGE("SingleKvStoreRecover failed, backupDir_ file is not exist.");
         return false;
@@ -267,8 +267,8 @@ bool BackupHandler::MultiKvStoreRecover(MetaData &metaData,
         ZLOGE("MultiKvStoreRecover failed, delegate is null.");
         return false;
     }
-    auto pathType = KvStoreAppManager::ConvertPathType(metaData.kvStoreMetaData.bundleName,
-                                                       metaData.kvStoreMetaData.securityLevel);
+    auto pathType = KvStoreAppManager::ConvertPathType(
+        metaData.kvStoreMetaData.uid, metaData.kvStoreMetaData.bundleName, metaData.kvStoreMetaData.securityLevel);
     if (!BackupHandler::FileExists(BackupHandler::GetBackupPath(metaData.kvStoreMetaData.deviceAccountId, pathType))) {
         ZLOGE("MultiKvStoreRecover failed, backupDir_ file is not exist.");
         return false;
@@ -399,6 +399,6 @@ std::string BackupHandler::GetHashedBackupName(const std::string &bundleName)
     if (bundleName.empty()) {
         return bundleName;
     }
-    return CryptoUtils::Sha256(bundleName);
+    return DistributedData::Crypto::Sha256(bundleName);
 }
 } // namespace OHOS::DistributedKv

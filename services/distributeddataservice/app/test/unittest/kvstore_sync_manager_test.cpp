@@ -12,16 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <gtest/gtest.h>
 #include <cstdint>
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <memory>
+#include "ut_kvstore_nb_delegate_impl.h"
 #include <kvstore_data_service.h>
 #include "kvstore_sync_manager.h"
 #include "log_print.h"
-#include "ut_kvstore_nb_delegate_impl.h"
+#include "gtest/gtest.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
@@ -69,8 +69,8 @@ void KvStoreSyncManagerTest::CreateKvStorePair(bool isAutoSync, const std::strin
     std::string userId = "syncManagerTest";
     std::string appId = "syncTest";
     std::string appDir = "syncTest";
-    kvStore = std::make_unique<SingleKvStoreImpl>(options, userId, appId, storeId, appDir, kvNb.get());
-    kvStore2 = std::make_unique<SingleKvStoreImpl>(options, userId, appId, storeId, appDir, kvNb2.get());
+    kvStore = std::make_unique<SingleKvStoreImpl>(options, userId, appId, storeId, appId, appDir, kvNb.get());
+    kvStore2 = std::make_unique<SingleKvStoreImpl>(options, userId, appId, storeId, appId, appDir, kvNb2.get());
     return;
 }
 

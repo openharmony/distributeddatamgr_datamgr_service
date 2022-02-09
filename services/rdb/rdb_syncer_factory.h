@@ -19,13 +19,13 @@
 #include <functional>
 #include <memory>
 #include <map>
-
+#include <sys/types.h>
 namespace OHOS::DistributedRdb {
 class RdbSyncerImpl;
 struct RdbSyncerParam;
 class RdbSyncerFactory {
 public:
-    using Creator = std::function<RdbSyncerImpl* (const RdbSyncerParam&)>;
+    using Creator = std::function<RdbSyncerImpl* (const RdbSyncerParam&, pid_t)>;
     
     static RdbSyncerFactory& GetInstance();
     
@@ -33,7 +33,7 @@ public:
     
     void UnRegister(int type);
     
-    RdbSyncerImpl* CreateSyncer(const RdbSyncerParam& param);
+    RdbSyncerImpl* CreateSyncer(const RdbSyncerParam& param, pid_t uid);
 
 private:
     std::map<int, Creator> creators_;
@@ -42,9 +42,9 @@ private:
 template <typename T>
 class RdbSyncerCreator {
 public:
-    RdbSyncerImpl* operator()(const RdbSyncerParam& param)
+    RdbSyncerImpl* operator()(const RdbSyncerParam& param, pid_t uid)
     {
-        return static_cast<RdbSyncerImpl*>(new(std::nothrow) T(param));
+        return static_cast<RdbSyncerImpl*>(new(std::nothrow) T(param, uid));
     }
 };
 

@@ -18,6 +18,7 @@ module_output_path = "distributeddatamgr/distributeddataservice"
 config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/src",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
@@ -26,7 +27,10 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/broadcaster",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/utils",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/bootstrap/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/config/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/directory/include",
     "//utils/native/base/include",
     "//utils/system/safwk/native/include",
     "../include",
@@ -86,7 +90,9 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
@@ -139,7 +145,9 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
@@ -192,7 +200,9 @@ ohos_unittest("KvStoreDataServiceTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
@@ -209,6 +219,8 @@ ohos_unittest("KvStoreBackupTest") {
     "../src/device_kvstore_resultset_impl.cpp",
     "../src/kvstore_account_observer.cpp",
     "../src/kvstore_app_accessor.cpp",
+    "../src/kvstore_app_manager.cpp",
+    "../src/kvstore_data_service.cpp",
     "../src/kvstore_impl.cpp",
     "../src/kvstore_meta_manager.cpp",
     "../src/kvstore_observer_impl.cpp",
@@ -218,11 +230,10 @@ ohos_unittest("KvStoreBackupTest") {
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
     "../src/single_kvstore_impl.cpp",
-    "unittest/kvstore_app_manager.cpp",
     "unittest/kvstore_backup_test.cpp",
-    "unittest/kvstore_data_service.cpp",
   ]
 
+  cflags_cc = [ "-DUT_TEST" ]
   configs = [ ":module_private_config" ]
 
   external_deps = [
@@ -245,7 +256,9 @@ ohos_unittest("KvStoreBackupTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
@@ -275,6 +288,8 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
@@ -326,7 +341,9 @@ ohos_unittest("KvStoreSyncManagerTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
@@ -368,7 +385,9 @@ ohos_unittest("KvStoreUninstallerTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]

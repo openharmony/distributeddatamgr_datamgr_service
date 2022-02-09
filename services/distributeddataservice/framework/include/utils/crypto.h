@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,22 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTEDDATAMGR_UNINSTALLER_H
-#define DISTRIBUTEDDATAMGR_UNINSTALLER_H
-
-#include <memory>
-#include <mutex>
-
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_UTILS_CRYPTO_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_UTILS_CRYPTO_H
+#include <string>
+#include <vector>
 #include "visibility.h"
-
-namespace OHOS::DistributedKv {
-class KvStoreDataService;
-enum class Status;
-class Uninstaller {
+namespace OHOS {
+namespace DistributedData {
+class Crypto {
 public:
-    KVSTORE_API virtual Status Init(KvStoreDataService *kvStoreDataService) = 0;
-    KVSTORE_API virtual ~Uninstaller() {};
-    KVSTORE_API static Uninstaller &GetInstance();
+    API_EXPORT static std::string Sha256(const std::string &text, bool isUpper = false);
+    API_EXPORT static std::string Sha256(const void *data, size_t size, bool isUpper = false);
+    API_EXPORT static std::vector<uint8_t> Random(int32_t len);
 };
 }
-#endif // DISTRIBUTEDDATAMGR_UNINSTALLER_H
+}
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_UTILS_CRYPTO_H

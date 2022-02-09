@@ -14,6 +14,7 @@
  */
 #ifndef OHOS_KV_STORE_H
 #define OHOS_KV_STORE_H
+#include <mutex>
 #include "napi_queue.h"
 #include "single_kvstore.h"
 #include "uv_queue.h"

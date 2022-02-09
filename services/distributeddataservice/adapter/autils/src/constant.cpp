@@ -83,8 +83,6 @@ const std::string Constant::SERVICE_META_DB_NAME = "service_meta";
 
 const std::string Constant::KEY_SEPARATOR = "###";
 
-const std::string Constant::PROCESS_LABEL = "distributeddata";
-
 const std::string Constant::ROOT_KEY_GENERATED = "RootKeyGenerated";
 
 std::vector<uint8_t> KvStoreMetaRow::GetKeyFor(const std::string &key)

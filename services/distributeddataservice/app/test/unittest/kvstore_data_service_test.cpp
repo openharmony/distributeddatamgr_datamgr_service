@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include <cstdint>
 #include <thread>
+#include <memory>
 #include <vector>
 #include "kvstore_client_death_observer.h"
 #include "kvstore_data_service.h"
-
+#include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS;

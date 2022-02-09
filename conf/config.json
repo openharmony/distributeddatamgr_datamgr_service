@@ -30,16 +30,6 @@
         "bundleName": "bundle_manager_service",
         "appId": "bundle_manager_service",
         "checker": "SystemChecker"
-      },
-      {
-        "bundleName": "form_storage",
-        "appId": "form_storage",
-        "checker": "SystemChecker"
-      },
-      {
-        "bundleName": "ivi_config_manager",
-        "appId": "ivi_config_manager",
-        "checker": "SystemChecker"
       }
     ]
   },

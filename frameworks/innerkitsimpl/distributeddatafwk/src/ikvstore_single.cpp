@@ -1604,7 +1604,7 @@ int SingleKvStoreStub::OnSyncRequest(MessageParcel &data, MessageParcel &reply)
 int SingleKvStoreStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
                                        MessageOption &option)
 {
-    ZLOGD("%d", code);
+    ZLOGD("%{public}d", code);
     std::u16string descriptor = SingleKvStoreStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {

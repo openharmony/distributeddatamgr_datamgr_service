@@ -16,28 +16,29 @@
 #define LOG_TAG "DeviceKvStoreImpl"
 
 #include "device_kvstore_impl.h"
+
 #include <regex>
-#include "kvstore_utils.h"
+
 #include "constant.h"
+#include "device_kvstore_observer_impl.h"
+#include "device_kvstore_resultset_impl.h"
+#include "kvstore_utils.h"
 #include "log_print.h"
 
 namespace OHOS::DistributedKv {
 using namespace AppDistributedKv;
-
-DeviceKvStoreImpl::DeviceKvStoreImpl(const KvStoreParams &params, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate)
-    : SingleKvStoreImpl(params.options, params.deviceAccountId, params.appId, params.storeId,
-    params.appDirectory, kvStoreNbDelegate), params_(params)
-{}
+DeviceKvStoreImpl::DeviceKvStoreImpl(const Options &options, const std::string &userId, const std::string &bundleName,
+    const std::string &storeId, const std::string &appId, const std::string &directory,
+    DistributedDB::KvStoreNbDelegate *delegate)
+    : SingleKvStoreImpl(options, userId, bundleName, storeId, appId, directory, delegate)
+{
+}
 
 DeviceKvStoreImpl::~DeviceKvStoreImpl()
 {}
 
 Status DeviceKvStoreImpl::Get(const Key &key, Value &value)
 {
-    if (!params_.deviceCoordinate) {
-        return SingleKvStoreImpl::Get(key, value);
-    }
-
     std::vector<uint8_t> tmpkey;
     Status status = DeleteKeyPrefix(key, tmpkey);
     if (status != Status::SUCCESS) {
@@ -52,10 +53,6 @@ Status DeviceKvStoreImpl::Get(const Key &key, Value &value)
 
 Status DeviceKvStoreImpl::Put(const Key &key, const Value &value)
 {
-    if (!params_.deviceCoordinate) {
-        return SingleKvStoreImpl::Put(key, value);
-    }
-
     std::vector<uint8_t> tmpkey;
     AddKeyPrefixAndSuffix(key, tmpkey);
     Key decorateKey(tmpkey);
@@ -64,10 +61,6 @@ Status DeviceKvStoreImpl::Put(const Key &key, const Value &value)
 
 Status DeviceKvStoreImpl::Delete(const Key &key)
 {
-    if (!params_.deviceCoordinate) {
-        return SingleKvStoreImpl::Delete(key);
-    }
-
     std::vector<uint8_t> tmpkey;
     AddKeyPrefixAndSuffix(key, tmpkey);
     Key decorateKey(tmpkey);
@@ -76,10 +69,6 @@ Status DeviceKvStoreImpl::Delete(const Key &key)
 
 Status DeviceKvStoreImpl::GetEntries(const Key &prefixKey, std::vector<Entry> &entries)
 {
-    if (!params_.deviceCoordinate) {
-        return SingleKvStoreImpl::GetEntries(prefixKey, entries);
-    }
-
     std::vector<uint8_t> tmpkey;
     Status status = DeleteKeyPrefix(prefixKey, tmpkey);
     if (status == Status::KEY_NOT_FOUND) {
@@ -111,19 +100,9 @@ Status DeviceKvStoreImpl::GetEntries(const Key &prefixKey, std::vector<Entry> &e
     return ret;
 }
 
-Status DeviceKvStoreImpl::RemoveDeviceData(const std::string &device)
-{
-    return SingleKvStoreImpl::RemoveDeviceData(device);
-}
-
 void DeviceKvStoreImpl::GetResultSet(const Key &prefixKey,
                                      std::function<void(Status, sptr<IKvStoreResultSet>)> callback)
 {
-    if (!params_.deviceCoordinate) {
-        SingleKvStoreImpl::GetResultSet(prefixKey, callback);
-        return;
-    }
-
     std::vector<uint8_t> tmpkey;
     Status status = DeleteKeyPrefix(prefixKey, tmpkey);
     if (status != Status::SUCCESS) {
@@ -132,24 +111,11 @@ void DeviceKvStoreImpl::GetResultSet(const Key &prefixKey,
         return;
     }
     Key decorateKey(tmpkey);
-    SingleKvStoreImpl::GetResultSet(decorateKey, callback, true);
-}
-
-Status DeviceKvStoreImpl::SubscribeKvStore(const SubscribeType subscribeType, sptr<IKvStoreObserver> observer)
-{
-    if (!params_.deviceCoordinate) {
-        return SingleKvStoreImpl::SubscribeKvStore(subscribeType, observer);
-    }
-
-    return SingleKvStoreImpl::SubscribeKvStore(subscribeType, observer, true);
+    SingleKvStoreImpl::GetResultSet(decorateKey, callback);
 }
 
 Status DeviceKvStoreImpl::PutBatch(const std::vector<Entry> &entries)
 {
-    if (!params_.deviceCoordinate) {
-        return SingleKvStoreImpl::PutBatch(entries);
-    }
-
     std::vector<Entry> tmpEntries = entries;
     for (auto &entry : tmpEntries) {
         std::vector<uint8_t> tmpkey;
@@ -163,10 +129,6 @@ Status DeviceKvStoreImpl::PutBatch(const std::vector<Entry> &entries)
 
 Status DeviceKvStoreImpl::DeleteBatch(const std::vector<Key> &keys)
 {
-    if (!params_.deviceCoordinate) {
-        return SingleKvStoreImpl::DeleteBatch(keys);
-    }
-
     std::vector<Key> tmpKeys = keys;
     for (auto &key : tmpKeys) {
         std::vector<uint8_t> tmpkey;
@@ -179,10 +141,6 @@ Status DeviceKvStoreImpl::DeleteBatch(const std::vector<Key> &keys)
 
 Status DeviceKvStoreImpl::GetEntriesWithQuery(const std::string &query, std::vector<Entry> &entries)
 {
-    if (!params_.deviceCoordinate) {
-        return SingleKvStoreImpl::GetEntriesWithQuery(query, entries);
-    }
-
     Status ret = SingleKvStoreImpl::GetEntriesWithQuery(query, entries);
     if (ret != Status::SUCCESS) {
         return ret;
@@ -195,17 +153,6 @@ Status DeviceKvStoreImpl::GetEntriesWithQuery(const std::string &query, std::vec
         entry.key = retKey;
     }
     return ret;
-}
-
-void DeviceKvStoreImpl::GetResultSetWithQuery(const std::string &query,
-                                              std::function<void(Status, sptr<IKvStoreResultSet>)> callback)
-{
-    if (!params_.deviceCoordinate) {
-        SingleKvStoreImpl::GetResultSetWithQuery(query, callback);
-        return;
-    }
-
-    SingleKvStoreImpl::GetResultSetWithQuery(query, callback, true);
 }
 
 std::string DeviceKvStoreImpl::localDeviceId_;
@@ -278,5 +225,17 @@ bool DeviceKvStoreImpl::AddKeyPrefixAndSuffix(const Key &in, std::vector<uint8_t
     KeyEncap ke {static_cast<int>(localDeviceId_.length())};
     out.insert(out.end(), std::begin(ke.byteLen), std::end(ke.byteLen));
     return true;
+}
+
+KvStoreObserverImpl *DeviceKvStoreImpl::CreateObserver(
+    const SubscribeType subscribeType, sptr<IKvStoreObserver> observer)
+{
+    return new (std::nothrow) DeviceKvStoreObserverImpl(subscribeType, observer);
+}
+
+KvStoreResultSetImpl *DeviceKvStoreImpl::CreateResultSet(
+    DistributedDB::KvStoreResultSet *resultSet, const DistributedDB::Key &prix)
+{
+    return new (std::nothrow) DeviceKvStoreResultSetImpl(resultSet, prix);
 }
 }

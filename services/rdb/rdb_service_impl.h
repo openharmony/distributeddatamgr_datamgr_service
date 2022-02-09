@@ -31,28 +31,25 @@ public:
     
     int RegisterClientDeathRecipient(const std::string& bundleName, sptr<IRemoteObject> proxy) override;
     
-    void OnClientDied(const std::string& bundleName, sptr<IRemoteObject>& proxy);
+    void OnClientDied(pid_t pid, sptr<IRemoteObject>& proxy);
 
 private:
-    bool CheckAccess(const RdbSyncerParam& param) const;
+    sptr<IRdbSyncer> CreateSyncer(const RdbSyncerParam& param, pid_t uid, pid_t pid);
     
-    sptr<IRdbSyncer> CreateSyncer(const RdbSyncerParam& param);
+    void ClearClientRecipient(sptr<IRemoteObject>& proxy);
     
-    void ClearClientRecipient(const std::string& bundleName, sptr<IRemoteObject>& proxy);
-    
-    void ClearClientSyncers(const std::string& bundleName);
+    void ClearClientSyncers(pid_t pid);
     
     class ClientDeathRecipient : public DeathRecipient {
     public:
-        using DeathCallback = std::function<void(sptr<IRemoteObject>&)>;
-        explicit ClientDeathRecipient(DeathCallback& callback);
+        explicit ClientDeathRecipient(std::function<void(sptr<IRemoteObject>&)> callback);
         ~ClientDeathRecipient() override;
         void OnRemoteDied(const wptr<IRemoteObject> &object) override;
     private:
-        DeathCallback callback_;
+        std::function<void(sptr<IRemoteObject>&)> callback_;
     };
     
-    ConcurrentMap<std::string, sptr<RdbSyncerImpl>> syncers_; // identifier
+    ConcurrentMap<pid_t, std::map<std::string, sptr<RdbSyncerImpl>>> syncers_; // identifier
     ConcurrentMap<sptr<IRemoteObject>, sptr<ClientDeathRecipient>> recipients_;
 };
 }

@@ -30,7 +30,8 @@ namespace AppDistributedKv {
 // This class provides open, close, delete AppKvStore and manage remote device functions.
 class AppDistributedKvDataManagerImpl final : public AppDistributedKvDataManager {
 public:
-    AppDistributedKvDataManagerImpl(DistributedDB::KvStoreDelegateManager *delegateManager, const std::string &appId);
+    AppDistributedKvDataManagerImpl(DistributedDB::KvStoreDelegateManager *delegateManager, const std::string &appId,
+                                    const std::string &accountId);
 
     static std::shared_ptr<AppDistributedKvDataManager> GetInstance(const std::string &bundleName,
                                                                     const std::string &dataDir,
@@ -57,7 +58,7 @@ private:
     // pointer of class DistributedDB::KvStoreDelegateManager. defined as void* to avoid exposing inside implementions.
     DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager_;
     std::string appId_;
-
+    std::string accountId_;
     std::shared_ptr<AppKvStoreCorruptionObserver> corruptionObserver_;
 };  // class AppDistributedKvDataManagerImpl
 }  // namespace AppDistributedKv

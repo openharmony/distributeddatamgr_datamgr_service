@@ -21,27 +21,15 @@
 
 namespace OHOS::DistributedKv {
 using namespace AppDistributedKv;
-
-DeviceKvStoreResultSetImpl::DeviceKvStoreResultSetImpl(DistributedDB::Key tmpKeyPrefix,
-    DistributedDB::KvStoreResultSet *kvStoreResultSet, bool deviceCoordinate)
-    : KvStoreResultSetImpl(tmpKeyPrefix, kvStoreResultSet), deviceCoordinate_(deviceCoordinate)
-{}
-
-DeviceKvStoreResultSetImpl::DeviceKvStoreResultSetImpl(DistributedDB::KvStoreResultSet *kvStoreResultSet,
-    bool deviceCoordinate) : KvStoreResultSetImpl(kvStoreResultSet), deviceCoordinate_(deviceCoordinate)
-{}
-
-DeviceKvStoreResultSetImpl::~DeviceKvStoreResultSetImpl()
-{}
+DeviceKvStoreResultSetImpl::DeviceKvStoreResultSetImpl(
+    DistributedDB::KvStoreResultSet *resultSet, DistributedDB::Key keyPrefix)
+    : KvStoreResultSetImpl(resultSet, keyPrefix)
+{
+}
 
 Status DeviceKvStoreResultSetImpl::GetEntry(Entry &entry)
 {
     ZLOGD("RS:start");
-    if (!deviceCoordinate_) {
-        ZLOGI("RS: normal");
-        return KvStoreResultSetImpl::GetEntry(entry);
-    }
-
     Entry tmpEntry;
     Status ret = KvStoreResultSetImpl::GetEntry(tmpEntry);
     if (ret != Status::SUCCESS) {

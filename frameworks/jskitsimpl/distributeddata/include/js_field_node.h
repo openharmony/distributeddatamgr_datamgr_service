@@ -14,16 +14,15 @@
  */
 #ifndef OHOS_FIELD_NODE_H
 #define OHOS_FIELD_NODE_H
-#include <list>
 #include <nlohmann/json.hpp>
-
+#include <list>
 #include "js_util.h"
 #include "napi_queue.h"
 
 namespace OHOS::DistributedData {
-using json = nlohmann::json;
 class JsFieldNode {
 public:
+    using json = nlohmann::json;
     JsFieldNode(const std::string& fName);
     ~JsFieldNode() = default;
 

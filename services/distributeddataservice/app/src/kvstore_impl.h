@@ -50,9 +50,11 @@ struct KvStoreObserverImplPtrCompare {
 
 class KvStoreImpl : public KvStoreImplStub {
 public:
-    KvStoreImpl(const Options &options, const std::string &deviceAccountId,
-                const std::string &bundleName, const std::string &storeId,
-                const std::string &appDirectory, DistributedDB::KvStoreDelegate *kvStoreDelegate);
+    KvStoreImpl(const Options &options, const std::string &userId, const std::string &bundleName,
+        const std::string &appId, const std::string &storeId, const std::string &directory,
+        DistributedDB::KvStoreDelegate *delegate);
+
+    std::string GetStoreId();
 
     void GetKvStoreSnapshot(sptr<IKvStoreObserver> observer,
                             std::function<void(Status, sptr<IKvStoreSnapshotImpl>)> callback) override;
@@ -115,6 +117,8 @@ private:
 
     // kvstore name.
     const std::string storeId_;
+
+    const std::string appId_;
 
     // kvstore absolute path in distributeddatamgr.
     const std::string storePath_;

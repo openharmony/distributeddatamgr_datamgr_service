@@ -49,7 +49,7 @@ void DeviceStatusChangeListenerProxy::OnChange(const DeviceInfo &results, const 
 int DeviceStatusChangeListenerStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                                                     MessageParcel &reply, MessageOption &option)
 {
-    ZLOGD("%d", code);
+    ZLOGD("%{public}d", code);
     std::u16string descriptor = DeviceStatusChangeListenerStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {

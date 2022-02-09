@@ -12,10 +12,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#define LOG_TAG "BundleChecker"
 
 #include "checker/default/bundle_checker.h"
 #include <memory>
 #include "bundlemgr/bundle_mgr_client.h"
+#include "log/log_print.h"
+#include "utils/crypto.h"
 namespace OHOS {
 namespace DistributedData {
 using namespace AppExecFwk;
@@ -43,17 +46,21 @@ bool BundleChecker::SetTrustInfo(const CheckerManager::Trust &trust)
 
 std::string BundleChecker::GetAppId(pid_t uid, const std::string &bundleName)
 {
+    if (uid < SYSTEM_UID && uid != CheckerManager::INVALID_UID) {
+        return "";
+    }
+
     BundleMgrClient bmsClient;
     std::string bundle = bundleName;
     if (uid != CheckerManager::INVALID_UID) {
         auto success = bmsClient.GetBundleNameForUid(uid, bundle);
-        if (uid < SYSTEM_UID || !success || bundle != bundleName) {
+        if (!success || bundle != bundleName) {
             return "";
         }
     }
 
     auto bundleInfo = std::make_unique<BundleInfo>();
-    auto success = bmsClient.GetBundleInfo(bundle, BundleFlag::GET_BUNDLE_DEFAULT, *bundleInfo);
+    auto success = bmsClient.GetBundleInfo(bundle, BundleFlag::GET_BUNDLE_DEFAULT, *bundleInfo, Constants::ANY_USERID);
     if (!success) {
         return "";
     }
@@ -61,30 +68,26 @@ std::string BundleChecker::GetAppId(pid_t uid, const std::string &bundleName)
     if (it != trusts_.end() && (it->second == bundleInfo->appId)) {
         return bundleName;
     }
-
-    return bundleInfo->appId;
+    ZLOGD("bundleName:%{public}s, uid:%{public}d, appId:%{public}s", bundleName.c_str(), uid,
+        bundleInfo->appId.c_str());
+    return Crypto::Sha256(bundleInfo->appId);
 }
 
 bool BundleChecker::IsValid(pid_t uid, const std::string &bundleName)
 {
+    if (uid < SYSTEM_UID) {
+        return false;
+    }
+
     BundleMgrClient bmsClient;
     std::string bundle = bundleName;
     auto success = bmsClient.GetBundleNameForUid(uid, bundle);
-    if (uid < SYSTEM_UID || !success || bundle != bundleName) {
+    if (!success || bundle != bundleName) {
         return false;
     }
 
     auto bundleInfo = std::make_unique<BundleInfo>();
-    success = bmsClient.GetBundleInfo(bundle, BundleFlag::GET_BUNDLE_DEFAULT, *bundleInfo);
-    if (!success) {
-        return false;
-    }
-    auto it = trusts_.find(bundleName);
-    if (it != trusts_.end() && (it->second == bundleInfo->appId)) {
-        return true;
-    }
-
-    return true;
+    return bmsClient.GetBundleInfo(bundle, BundleFlag::GET_BUNDLE_DEFAULT, *bundleInfo, Constants::ANY_USERID);
 }
 }
 }

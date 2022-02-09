@@ -34,9 +34,13 @@ public:
     void CallFunction(NapiArgsGenerator genArgs = NapiArgsGenerator());
 
 private:
+    struct UvEntry {
+        napi_env env;
+        napi_ref callback;
+        NapiArgsGenerator args;
+    };
     napi_env env_ = nullptr;
     napi_ref callback_ = nullptr;
-    NapiArgsGenerator args;
     uv_loop_s* loop_ = nullptr;
 };
 }

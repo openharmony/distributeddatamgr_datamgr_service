@@ -20,6 +20,7 @@
 #include <thread>
 #include <vector>
 #include "backup_handler.h"
+#include "checker/checker_manager.h"
 #include "constant.h"
 #include "dds_trace.h"
 #include "kvstore_account_observer.h"
@@ -32,20 +33,19 @@
 
 namespace OHOS {
 namespace DistributedKv {
-KvStoreImpl::KvStoreImpl(const Options &options,
-                         const std::string &deviceAccountId, const std::string &bundleName, const std::string &storeId,
-                         const std::string &appDirectory, DistributedDB::KvStoreDelegate *kvStoreDelegate)
-    : options_(options),
-      deviceAccountId_(deviceAccountId),
-      bundleName_(bundleName),
-      storeId_(storeId),
-      storePath_(Constant::Concatenate({ appDirectory, storeId })),
-      kvStoreDelegate_(kvStoreDelegate),
-      storeObserverMutex_(),
-      observerSet_(),
-      openCount_(1)
+KvStoreImpl::KvStoreImpl(const Options &options, const std::string &userId, const std::string &bundleName,
+    const std::string &appId, const std::string &storeId, const std::string &directory,
+    DistributedDB::KvStoreDelegate *delegate)
+    : options_(options), deviceAccountId_(userId), bundleName_(bundleName), storeId_(storeId), appId_(appId),
+      storePath_(Constant::Concatenate({ directory, storeId })), kvStoreDelegate_(delegate), storeObserverMutex_(),
+      observerSet_(), openCount_(1)
 {
     ZLOGI("construct");
+}
+
+std::string KvStoreImpl::GetStoreId()
+{
+    return storeId_;
 }
 
 void KvStoreImpl::GetKvStoreSnapshot(sptr<IKvStoreObserver> observer,
@@ -517,12 +517,11 @@ Status KvStoreImpl::MigrateKvStore(const std::string &harmonyAccountId,
         return status;
     }
     if (newDelegateMgr == nullptr) {
-        auto appId = KvStoreUtils::GetAppIdByBundleName(bundleName_);
-        if (appId.empty()) {
+        if (appId_.empty()) {
             ZLOGE("Get appId by bundle name failed.");
             return Status::MIGRATION_KVSTORE_FAILED;
         }
-        newDelegateMgr = new (std::nothrow) DistributedDB::KvStoreDelegateManager(appId, harmonyAccountId);
+        newDelegateMgr = new (std::nothrow) DistributedDB::KvStoreDelegateManager(appId_, harmonyAccountId);
         if (newDelegateMgr == nullptr) {
             ZLOGE("new KvStoreDelegateManager failed.");
             return Status::MIGRATION_KVSTORE_FAILED;
@@ -778,19 +777,18 @@ KvStoreImpl::~KvStoreImpl()
 bool KvStoreImpl::Import(const std::string &bundleName) const
 {
     ZLOGI("KvStoreImpl Import start");
-    const std::string harmonyAccountId = AccountDelegate::GetInstance()->GetCurrentHarmonyAccountId();
+    const std::string harmonyAccountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     auto metaSecretKey = KvStoreMetaManager::GetMetaKey(deviceAccountId_, harmonyAccountId, bundleName, storeId_,
                                                         "KEY");
     std::vector<uint8_t> secretKey;
     bool outdated = false;
-    auto trueAppId = KvStoreUtils::GetAppIdByBundleName(bundleName);
     KvStoreMetaManager::GetInstance().GetSecretKeyFromMeta(metaSecretKey, secretKey, outdated);
 
     MetaData metaData{0};
     metaData.kvStoreMetaData.deviceAccountId = deviceAccountId_;
     metaData.kvStoreMetaData.userId = harmonyAccountId;
     metaData.kvStoreMetaData.bundleName = bundleName;
-    metaData.kvStoreMetaData.appId = trueAppId;
+    metaData.kvStoreMetaData.appId = appId_;
     metaData.kvStoreMetaData.storeId = storeId_;
     metaData.kvStoreMetaData.securityLevel = options_.securityLevel;
     metaData.secretKeyMetaData.secretKey = secretKey;

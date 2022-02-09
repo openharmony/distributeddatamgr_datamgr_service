@@ -27,31 +27,31 @@ class ITypesUtil final {
 public:
     static bool Marshalling(const Blob &blob, MessageParcel &data);
     static bool Unmarshalling(MessageParcel &data, Blob &output);
-    
+
     static bool Marshalling(const std::vector<Blob> &blobs, MessageParcel &data);
     static bool Unmarshalling(MessageParcel &data, std::vector<Blob> &output);
-    
+
     static bool Marshalling(const Entry &entry, MessageParcel &data);
     static bool Unmarshalling(MessageParcel &data, Entry &output);
-    
+
     static bool Marshalling(const std::vector<Entry> &entry, MessageParcel &data);
     static bool Unmarshalling(MessageParcel &data, std::vector<Entry> &output);
-    
+
     static bool Marshalling(const DeviceInfo &entry, MessageParcel &data);
     static bool Unmarshalling(MessageParcel &data, DeviceInfo &output);
-    
+
     static bool Marshalling(const std::vector<DeviceInfo> &input, MessageParcel &data);
     static bool Unmarshalling(MessageParcel &data, std::vector<DeviceInfo> &output);
-    
+
     static bool Marshalling(const ChangeNotification &notification, MessageParcel &parcel);
     static bool Unmarshalling(MessageParcel &parcel, ChangeNotification &output);
-    
+
     static bool Marshalling(const DistributedRdb::RdbSyncerParam& param, MessageParcel& parcel);
     static bool UnMarshalling(MessageParcel& parcel, DistributedRdb::RdbSyncerParam& param);
-    
+
     static int64_t GetTotalSize(const std::vector<Entry> &entries);
     static int64_t GetTotalSize(const std::vector<Key> &entries);
-    
+
     template<typename T>
     static Status MarshalToBuffer(const T &input, int size, MessageParcel &data)
     {
@@ -68,7 +68,7 @@ public:
         }
         return data.WriteRawData(buffer.get(), size) ? Status::SUCCESS :  Status::IPC_ERROR;
     }
-    
+
     template<typename T>
     static Status MarshalToBuffer(const std::vector<T> &input, int size, MessageParcel &data)
     {
@@ -90,7 +90,7 @@ public:
         }
         return data.WriteRawData(buffer.get(), size) ? Status::SUCCESS :  Status::IPC_ERROR;
     }
-    
+
     template<typename T>
     static Status UnmarshalFromBuffer(MessageParcel &data, int size, T &output)
     {
@@ -106,7 +106,7 @@ public:
         }
         return output.ReadFromBuffer(buffer, size) ? Status::SUCCESS :  Status::IPC_ERROR;
     }
-    
+
     template<typename T>
     static Status UnmarshalFromBuffer(MessageParcel &data, int size, std::vector<T> &output)
     {
@@ -121,7 +121,7 @@ public:
         if (count < 0 || buffer == nullptr) {
             return Status::INVALID_ARGUMENT;
         }
-        
+
         output.resize(count);
         for (auto &entry : output) {
             if (!entry.ReadFromBuffer(buffer, size)) {
@@ -139,7 +139,7 @@ private:
         bool Writer(const T &entry) { return ITypesUtil::Marshalling(entry, *this); }
         bool Reader(T &entry) { return ITypesUtil::Unmarshalling(*this, entry); }
     };
-    
+
     template <typename T>
     static bool ReadVector(Parcel &parcel, std::vector<T> &val, bool (Parcel::*read)(T &));
     template <typename T>

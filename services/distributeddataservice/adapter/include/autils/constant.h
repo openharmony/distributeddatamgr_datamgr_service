@@ -131,7 +131,6 @@ public:
     KVSTORE_API static const int MAX_OPEN_KVSTORES;
 
     // name for process label (bus name for communication). compatible with HwDDMP
-    KVSTORE_API static const std::string PROCESS_LABEL;
     KVSTORE_API static const std::string ROOT_KEY_GENERATED;
 };
 

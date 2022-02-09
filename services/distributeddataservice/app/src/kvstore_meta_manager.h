@@ -19,8 +19,6 @@
 #include <nlohmann/json.hpp>
 
 #include "app_device_status_change_listener.h"
-#include "hks_api.h"
-#include "hks_param.h"
 #include "types.h"
 #include "system_ability.h"
 #include "kv_store_delegate.h"
@@ -138,7 +136,6 @@ private:
     static constexpr const char *DIRTY_KEY = "isDirty";
 };
 
-
 struct MetaData {
     std::int32_t kvStoreType;
     KvStoreMetaData kvStoreMetaData;
@@ -201,11 +198,11 @@ public:
         const std::string &deviceAccountId, const std::string &groupId, const std::string &bundleName,
         const std::string &storeId, const std::string &key = "");
 
-    static std::string GetSecretKeyFile(const std::string &deviceAccountId, const std::string &appId,
-                                        const std::string &storeId, int securityLevel);
+    static std::string GetSecretKeyFile(const std::string &userId, const std::string &appId,
+                                        const std::string &storeId, int pathType);
 
-    static std::string GetSecretSingleKeyFile(const std::string &deviceAccountId, const std::string &appId,
-                                              const std::string &storeId, int securityLevel);
+    static std::string GetSecretSingleKeyFile(const std::string &userId, const std::string &appId,
+                                              const std::string &storeId, int pathType);
 
     Status GetSecretKeyFromMeta(const std::vector<uint8_t> &metaSecretKey,
                                 std::vector<uint8_t> &key, bool &outdated);
@@ -219,21 +216,21 @@ public:
     Status WriteSecretKeyToFile(const std::string &secretKeyFile, const std::vector<uint8_t> &key);
 
     Status
-    RemoveSecretKey(const std::string &deviceAccountId, const std::string &bundleName, const std::string &storeId);
+    RemoveSecretKey(pid_t uid, const std::string &bundleName, const std::string &storeId);
 
     Status
     RecoverSecretKeyFromFile(const std::string &secretKeyFile, const std::vector<uint8_t> &metaSecretKey,
                              std::vector<uint8_t> &key, bool &outdated);
 
-    void ReKey(const std::string &deviceAccountId, const std::string &bundleName, const std::string &storeId,
-               sptr<IKvStoreImpl> store);
+    void ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId, int32_t pathType,
+               sptr<KvStoreImpl> store);
 
-    void ReKey(const std::string &deviceAccountId, const std::string &bundleName, const std::string &storeId,
-               sptr<ISingleKvStore> store);
+    void ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId, int32_t pathType,
+               sptr<SingleKvStoreImpl> store);
 
     void GetStrategyMetaKey(const StrategyMeta &params, std::string &retVal);
 
-    Status DeleteStrategyMeta(const std::string &bundleName, const std::string &storeId);
+    Status DeleteStrategyMeta(const std::string &bundleName, const std::string &storeId, const std::string &userId);
 
     Status SaveStrategyMetaEnable(const std::string &key, bool enable);
 
@@ -242,7 +239,7 @@ public:
                                   const std::vector<std::string> &remoteSupportLabels);
 
     Status CheckSyncPermission(const std::string &userId, const std::string &appId, const std::string &storeId,
-                               uint8_t flag, const std::string &deviceId);
+                               uint8_t flag, const std::string &remoteId);
 
     Status QueryKvStoreMetaDataByDeviceIdAndAppId(const std::string &devId, const std::string &appId,
                                                   KvStoreMetaData &val);

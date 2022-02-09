@@ -17,8 +17,6 @@
 
 namespace OHOS {
 namespace DistributedKv {
-const std::string AccountDelegate::MAIN_DEVICE_ACCOUNT_ID = "0";
-
 AccountDelegate *AccountDelegate::GetInstance()
 {
     if (getInstance_ == nullptr) {

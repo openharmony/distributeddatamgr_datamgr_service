@@ -14,15 +14,12 @@
  */
 #define LOG_TAG "JS_FieldNode"
 #include "js_field_node.h"
-#include <nlohmann/json.hpp>
-
 #include "js_util.h"
 #include "log_print.h"
 #include "napi_queue.h"
 #include "uv_queue.h"
 
 using namespace OHOS::DistributedKv;
-using json = nlohmann::json;
 
 namespace OHOS::DistributedData {
 static std::string FIELDNAME = "FIELDNAME";
@@ -42,7 +39,7 @@ std::string JsFieldNode::GetFieldName()
     return fieldName;
 }
 
-json JsFieldNode::GetValueForJson()
+JsFieldNode::json JsFieldNode::GetValueForJson()
 {
     if (!fields.empty()) {
         /* example:

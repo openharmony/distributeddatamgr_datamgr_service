@@ -16,23 +16,21 @@
 #define LOG_TAG "RdbSyncerImpl"
 
 #include "rdb_syncer_impl.h"
-#include "kvstore_utils.h"
+#include "account_delegate.h"
+#include "checker/checker_manager.h"
 #include "log_print.h"
 
 namespace OHOS::DistributedRdb {
-static std::string GetCurrentUserId()
-{
-    return "0";
-}
-
-RdbSyncerImpl::RdbSyncerImpl(const RdbSyncerParam &param)
+using namespace OHOS::DistributedData;
+using namespace OHOS::DistributedKv;
+RdbSyncerImpl::RdbSyncerImpl(const RdbSyncerParam &param, pid_t uid)
     : type_(param.type_), bundleName_(param.bundleName_), path_(param.path_),
       storeId_(param.storeName_)
 {
     ZLOGI("construct %{public}s %{public}s %{public}s %{public}d",
           bundleName_.c_str(), userId_.c_str(), storeId_.c_str(), type_);
-    appId_ = DistributedKv::KvStoreUtils::GetAppIdByBundleName(bundleName_);
-    userId_ = GetCurrentUserId();
+    appId_ = CheckerManager::GetInstance().GetAppId(param.bundleName_, uid);
+    userId_ = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
     identifier_ = std::to_string(type_) + "-" + appId_ + "-" + userId_ + "-" + storeId_;
 }
 

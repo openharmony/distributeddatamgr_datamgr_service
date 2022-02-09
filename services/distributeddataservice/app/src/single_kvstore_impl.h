@@ -34,10 +34,11 @@
 namespace OHOS::DistributedKv {
 class SingleKvStoreImpl : public SingleKvStoreStub {
 public:
-    SingleKvStoreImpl(const Options &options, const std::string &deviceAccountId,
-                      const std::string &bundleName, const std::string &storeId,
-                      const std::string &appDirectory, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate);
+    SingleKvStoreImpl(const Options &options, const std::string &userId, const std::string &bundleName,
+        const std::string &storeId, const std::string &appId, const std::string &directory,
+        DistributedDB::KvStoreNbDelegate *delegate);
     ~SingleKvStoreImpl();
+    std::string GetStoreId();
     Status Put(const Key &key, const Value &value) override;
     Status Delete(const Key &key) override;
     Status Get(const Key &key, Value &value) override;
@@ -73,13 +74,13 @@ public:
                               const std::vector<std::string> &remoteSupportLabels) override;
     Status GetSecurityLevel(SecurityLevel &securityLevel) override;
     bool Import(const std::string &bundleName) const;
-    void GetResultSet(const Key &prefixKey, std::function<void(Status, sptr<IKvStoreResultSet>)> callback,
-                      bool deviceCoordinate);
-    Status SubscribeKvStore(const SubscribeType subscribeType, sptr<IKvStoreObserver> observer,
-                            bool deviceCoordinate);
-    void GetResultSetWithQuery(const std::string &query,
-                               std::function<void(Status, sptr<IKvStoreResultSet>)> callback, bool deviceCoordinate);
     void OnDump(int fd) const;
+
+protected:
+    virtual KvStoreObserverImpl *CreateObserver(const SubscribeType subscribeType, sptr<IKvStoreObserver> observer);
+    virtual KvStoreResultSetImpl *CreateResultSet(
+        DistributedDB::KvStoreResultSet *resultSet, const DistributedDB::Key &prix);
+
 private:
     Status ConvertDbStatus(DistributedDB::DBStatus dbStatus);
     uint32_t GetSyncDelayTime(uint32_t allowedDelayMs) const;
@@ -121,6 +122,9 @@ private:
     const std::string bundleName_;
     // kvstore name.
     const std::string storeId_;
+
+    const std::string appId_;
+
     // kvstore absolute path in distributeddatamgr.
     const std::string storePath_;
     // for top-app, 0 means synchronization immediately. for others, 0 means 1000ms.
@@ -140,12 +144,12 @@ private:
     std::mutex observerMapMutex_;
     std::map<IRemoteObject *, KvStoreObserverImpl *> observerMap_;
     std::mutex storeResultSetMutex_;
-    std::map<KvStoreResultSetImpl *, sptr<IKvStoreResultSet>> storeResultSetMap_;
+    std::map<IKvStoreResultSet *, sptr<KvStoreResultSetImpl>> storeResultSetMap_;
     sptr<IKvStoreSyncCallback> syncCallback_;
     int openCount_;
 
     // flowControl
-    KvStoreFlowCtrlManager flowCtrlManager_;
+    KvStoreFlowCtrlManager flowCtrl_;
     static constexpr int BURST_CAPACITY = 1000;
     static constexpr int SUSTAINED_CAPACITY = 10000;
 };

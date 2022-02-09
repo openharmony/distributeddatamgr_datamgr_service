@@ -106,11 +106,11 @@ bool ITypesUtil::Marshalling(const ChangeNotification &notification, MessageParc
     if (!Marshalling(notification.GetInsertEntries(), parcel)) {
         return false;
     }
-    
+
     if (!Marshalling(notification.GetUpdateEntries(), parcel)) {
         return false;
     }
-    
+
     if (!Marshalling(notification.GetDeleteEntries(), parcel)) {
         return false;
     }
@@ -118,7 +118,7 @@ bool ITypesUtil::Marshalling(const ChangeNotification &notification, MessageParc
         ZLOGE("WriteString deviceId_ failed.");
         return false;
     }
-    
+
     return parcel.WriteBool(notification.IsClear());
 }
 
@@ -250,7 +250,7 @@ bool ITypesUtil::ReadVector(Parcel &parcel, std::vector<T> &val, bool (Parcel::*
     if (len < 0) {
         return false;
     }
-    
+
     size_t readAbleSize = parcel.GetReadableBytes();
     size_t size = static_cast<size_t>(len);
     if ((size > readAbleSize) || (size > val.max_size())) {
@@ -260,13 +260,13 @@ bool ITypesUtil::ReadVector(Parcel &parcel, std::vector<T> &val, bool (Parcel::*
     if (val.size() < size) {
         return false;
     }
-    
+
     for (auto &v : val) {
         if (!(parcel.*read)(v)) {
             return false;
         }
     }
-    
+
     return true;
 }
 
@@ -276,11 +276,11 @@ bool ITypesUtil::WriteVector(Parcel &parcel, const std::vector<T> &val, bool (Pa
     if (val.size() > INT_MAX) {
         return false;
     }
-    
+
     if (!parcel.WriteInt32(static_cast<int32_t>(val.size()))) {
         return false;
     }
-    
+
     for (auto &v : val) {
         if (!(parcel.*writer)(v)) {
             return false;

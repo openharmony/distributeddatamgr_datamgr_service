@@ -49,11 +49,10 @@ public:
     KVSTORE_API virtual ~AccountDelegate() = default;
     KVSTORE_API virtual Status Subscribe(std::shared_ptr<Observer> observer) = 0;
     KVSTORE_API virtual Status Unsubscribe(std::shared_ptr<Observer> observer) = 0;
-    KVSTORE_API virtual std::string GetCurrentHarmonyAccountId(const std::string &bundleName = "") const = 0;
+    KVSTORE_API virtual std::string GetCurrentAccountId(const std::string &bundleName = "") const = 0;
     KVSTORE_API virtual std::string GetDeviceAccountIdByUID(int32_t uid) const = 0;
     KVSTORE_API virtual void SubscribeAccountEvent() = 0;
     KVSTORE_API static AccountDelegate *GetInstance();
-    const static std::string MAIN_DEVICE_ACCOUNT_ID;
 private:
     using BaseInstance = AccountDelegate *(*)();
     static BaseInstance getInstance_;

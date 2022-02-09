@@ -16,17 +16,23 @@
 #define LOG_TAG "EVENT_HANDLER"
 
 #include "account_delegate_impl.h"
-#include <unistd.h>
+#include <algorithm>
+#include <list>
+#include <regex>
 #include <thread>
+#include <unistd.h>
+#include <vector>
 #include "constant.h"
-#include "crypto_utils.h"
 #include "ohos_account_kits.h"
 #include "permission_validator.h"
+#include "utils/crypto.h"
 
 namespace OHOS {
 namespace DistributedKv {
 using namespace OHOS::EventFwk;
 using namespace OHOS::AAFwk;
+using namespace OHOS::DistributedData;
+
 EventSubscriber::EventSubscriber(const CommonEventSubscribeInfo &info) : CommonEventSubscriber(info) {}
 
 void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
@@ -94,7 +100,7 @@ void AccountDelegateImpl::SubscribeAccountEvent()
     CommonEventSubscribeInfo info(matchingSkills);
     eventSubscriber_ = std::make_shared<EventSubscriber>(info);
     eventSubscriber_->SetEventCallback([&](AccountEventInfo &account) {
-        account.harmonyAccountId = GetCurrentHarmonyAccountId();
+        account.harmonyAccountId = GetCurrentAccountId();
         NotifyAccountChanged(account);
     });
 
@@ -122,7 +128,7 @@ void AccountDelegateImpl::SubscribeAccountEvent()
     th.detach();
 }
 
-std::string AccountDelegateImpl::GetCurrentHarmonyAccountId(const std::string &bundleName) const
+std::string AccountDelegateImpl::GetCurrentAccountId(const std::string &bundleName) const
 {
     ZLOGD("start");
     if (!bundleName.empty() && PermissionValidator::IsAutoLaunchEnabled(bundleName)) {
@@ -138,7 +144,7 @@ std::string AccountDelegateImpl::GetCurrentHarmonyAccountId(const std::string &b
         return AccountSA::DEFAULT_OHOS_ACCOUNT_UID;
     }
 
-    return CryptoUtils::Sha256UserId(ohosAccountInfo.second.uid_);
+    return Sha256UserId(ohosAccountInfo.second.uid_);
 }
 
 std::string AccountDelegateImpl::GetDeviceAccountIdByUID(int32_t uid) const
@@ -190,6 +196,38 @@ Status AccountDelegateImpl::Unsubscribe(std::shared_ptr<Observer> observer)
     }
     ZLOGD("fail");
     return Status::ERROR;
+}
+
+std::string AccountDelegateImpl::Sha256UserId(const std::string &plainText) const
+{
+    std::regex pattern("^[0-9]+$");
+    if (!std::regex_match(plainText, pattern)) {
+        return plainText;
+    }
+
+    std::string::size_type sizeType;
+    int64_t plainVal;
+    std::string::size_type int64MaxLen(std::to_string(INT64_MAX).size());
+    // plain text length must be less than INT64_MAX string.
+    try {
+        plainVal = static_cast<int64_t>(std::stoll(plainText, &sizeType));
+    } catch (const std::out_of_range &) {
+        plainVal = static_cast<int64_t>(std::stoll(
+            plainText.substr(plainText.size() - int64MaxLen + 1, int64MaxLen - 1), &sizeType));
+    } catch (const std::exception &) {
+        return plainText;
+    }
+
+    union UnionLong {
+        int64_t val;
+        unsigned char byteLen[sizeof(int64_t)];
+    };
+    UnionLong unionLong {};
+    unionLong.val = plainVal;
+    std::list<char> unionList(std::begin(unionLong.byteLen), std::end(unionLong.byteLen));
+    unionList.reverse();
+    std::vector<char> unionVec(unionList.begin(), unionList.end());
+    return Crypto::Sha256(unionVec.data(), unionVec.size(), true);
 }
 }  // namespace DistributedKv
 }  // namespace OHOS
