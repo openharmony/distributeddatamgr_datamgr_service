@@ -1342,7 +1342,7 @@ std::string GetUpdateTrigger(const TableInfo table)
     updateTrigger += "BEGIN\n";
     updateTrigger += "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
     updateTrigger += " SET timestamp=get_sys_time(0), device='" + table.GetDevId() + "'";
-    updateTrigger += " where hash_key=calc_hash(old." + table.GetPrimaryKey() + ") and flag&0x10=0;\n";
+    updateTrigger += " where hash_key=calc_hash(old." + table.GetPrimaryKey() + ") and flag&0x02=0x02;\n";
     updateTrigger += "END;";
     return updateTrigger;
 }
@@ -1355,7 +1355,7 @@ std::string GetDeleteTrigger(const TableInfo table)
     deleteTrigger += "BEGIN\n";
     deleteTrigger += "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
     deleteTrigger += " SET flag=0x03,timestamp=get_sys_time(0)";
-    deleteTrigger += " where hash_key=calc_hash(old." + table.GetPrimaryKey() + ");\n";
+    deleteTrigger += " where hash_key=calc_hash(old." + table.GetPrimaryKey() + ") and flag&0x02=0x02;\n";
     deleteTrigger += "END;";
     return deleteTrigger;
 }

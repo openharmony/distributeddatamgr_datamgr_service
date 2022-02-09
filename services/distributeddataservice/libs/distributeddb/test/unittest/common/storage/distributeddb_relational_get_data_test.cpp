@@ -744,4 +744,65 @@ HWTEST_F(DistributedDBRelationalGetDataTest, UpdateData1, TestSize.Level1)
     sqlite3_close(db);
     RefObject::DecObjRef(g_store);
 }
+
+/**
+ * @tc.name: UpdateDataWithMulDevData1
+ * @tc.desc: UpdateData succeed when there is multiple devices data exists.
+ * @tc.type: FUNC
+ * @tc.require: AR000GK58H
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBRelationalGetDataTest, UpdateDataWithMulDevData1, TestSize.Level1)
+{
+    ASSERT_EQ(g_mgr.OpenStore(g_storePath, g_storeID, RelationalStoreDelegate::Option {}, g_delegate), DBStatus::OK);
+    ASSERT_NE(g_delegate, nullptr);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
+    /**
+     * @tc.steps: step1. Create distributed table "dataPlus".
+     * @tc.expected: Succeed, return OK.
+     */
+    const string tableName = g_tableName + "Plus";
+    std::string sql = "CREATE TABLE " + tableName + "(key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, value INTEGER);";
+    sqlite3 *db = nullptr;
+    ASSERT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(tableName), DBStatus::OK);
+    /**
+     * @tc.steps: step2. Put k1v1 into "dataPlus" table.
+     * @tc.expected: Succeed, return OK.
+     */
+    sql = "INSERT INTO " + tableName + " VALUES(1, 1);"; // k1v1
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    /**
+     * @tc.steps: step3. Get k1v1 from "dataPlus" table.
+     * @tc.expected: Succeed and the count is right.
+     */
+    auto store = GetRelationalStore();
+    ASSERT_NE(store, nullptr);
+    ContinueToken token = nullptr;
+    QueryObject query(Query::Select(tableName));
+    std::vector<SingleVerKvEntry *> entries;
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    /**
+     * @tc.steps: step4. Put k1v1 into "data" table from deviceA.
+     * @tc.expected: Succeed, return OK.
+     */
+    query = QueryObject(Query::Select(g_tableName));
+    const DeviceID deviceID = "deviceA";
+    ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(g_tableName),
+        DBCommon::GetDistributedTableName(deviceID, g_tableName)));
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceID), E_OK);
+    SingleVerKvEntry::Release(entries);
+    /**
+     * @tc.steps: step4. Put k1v1 into "data" table.
+     * @tc.expected: Succeed, return OK.
+     */
+    EXPECT_EQ(AddOrUpdateRecord(1, 1), E_OK); // k1v1
+    /**
+     * @tc.steps: step5. Change k1v1 to k1v2
+     * @tc.expected: Succeed, return OK.
+     */
+    sql = "UPDATE " + g_tableName + " SET value=2 WHERE key=1;"; // k1v1
+    EXPECT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK); // change k1v1 to k1v2
+}
 #endif
