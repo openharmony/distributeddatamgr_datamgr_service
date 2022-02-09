@@ -725,6 +725,7 @@ void RelationalStoreObserverUnitTest::OnChange(const StoreChangedData& data)
 {
     callCount_++;
     changeDevice_ = data.GetDataChangeDevice();
+    data.GetStoreProperty(storeProperty_);
     LOGD("Onchangedata : %s", changeDevice_.c_str());
     LOGD("Onchange() called success!");
 }
@@ -733,11 +734,17 @@ void RelationalStoreObserverUnitTest::ResetToZero()
 {
     callCount_ = 0;
     changeDevice_.clear();
+    storeProperty_ = {};
 }
 
 const std::string RelationalStoreObserverUnitTest::GetDataChangeDevice() const
 {
     return changeDevice_;
+}
+
+DistributedDB::StoreProperty RelationalStoreObserverUnitTest::GetStoreProperty() const
+{
+    return storeProperty_;
 }
 
 DBStatus DistributedDBToolsUnitTest::SyncTest(KvStoreNbDelegate* delegate,

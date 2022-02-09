@@ -541,6 +541,15 @@ namespace {
     {
         PrepareEnvironment(dataMap, g_tableName, localFieldInfoList, remoteFieldInfoList, remoteDeviceVec);
     }
+
+    void CheckIdentify(RelationalStoreObserverUnitTest *observer)
+    {
+        ASSERT_NE(observer, nullptr);
+        StoreProperty property = observer->GetStoreProperty();
+        EXPECT_EQ(property.appId, APP_ID);
+        EXPECT_EQ(property.storeId, STORE_ID_1);
+        EXPECT_EQ(property.userId, USER_ID);
+    }
 }
 
 class DistributedDBRelationalVerP2PSyncTest : public testing::Test {
@@ -1064,6 +1073,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, Observer001, TestSize.Level0)
      */
     EXPECT_EQ(g_observer->GetCallCount(), 1u);
     EXPECT_EQ(g_observer->GetDataChangeDevice(), DEVICE_B);
+    CheckIdentify(g_observer);
 }
 
 /**
@@ -1116,6 +1126,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, observer002, TestSize.Level3)
     EXPECT_EQ(g_deviceB->GenericVirtualDevice::Sync(SYNC_MODE_PUSH_ONLY, query, true), E_OK);
     EXPECT_EQ(observer->GetCallCount(), 1u);
     EXPECT_EQ(observer->GetDataChangeDevice(), DEVICE_B);
+    CheckIdentify(observer);
     std::this_thread::sleep_for(std::chrono::minutes(1));
     delete observer;
 }

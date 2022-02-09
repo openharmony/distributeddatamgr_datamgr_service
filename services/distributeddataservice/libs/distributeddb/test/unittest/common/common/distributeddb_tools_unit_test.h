@@ -273,9 +273,11 @@ public:
     // get callback results.
     unsigned long GetCallCount() const;
     const std::string GetDataChangeDevice() const;
+    DistributedDB::StoreProperty GetStoreProperty() const;
 private:
     unsigned long callCount_;
     std::string changeDevice_;
+    DistributedDB::StoreProperty storeProperty_;
 };
 
 class KvStoreCorruptInfo {
