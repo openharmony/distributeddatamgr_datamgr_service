@@ -16,6 +16,7 @@
 #include "schema_object.h"
 #include <cmath>
 #include <algorithm>
+#include "schema_constant.h"
 #include "schema_utils.h"
 #include "db_errno.h"
 #include "log_print.h"
@@ -54,7 +55,8 @@ bool SchemaObject::FlatBufferSchema::IsFlatBufferSchema(const std::string &inOri
         LOGE("[FBSchema][Is] OriSchema empty.");
         return false;
     }
-    if (inOriginal.size() >= SCHEMA_STRING_SIZE_LIMIT * 2) { // Base64 encode will not exceed 2 times original binary
+    if (inOriginal.size() >= SchemaConstant::SCHEMA_STRING_SIZE_LIMIT * 2) {
+        // Base64 encode will not exceed 2 times original binary
         LOGE("[FBSchema][Is] OriSchemaSize=%zu too large even after base64 encode.", inOriginal.size());
         return false;
     }
@@ -482,19 +484,19 @@ int SchemaObject::FlatBufferSchema::ParseCheckRootTableAttribute(const reflectio
         return -E_SCHEMA_PARSE_FAIL;
     }
 
-    auto versionAttr = rootTableAttr->LookupByKey(KEYWORD_SCHEMA_VERSION.c_str());
+    auto versionAttr = rootTableAttr->LookupByKey(SchemaConstant::KEYWORD_SCHEMA_VERSION.c_str());
     if (!AttributeExistAndHasValue(versionAttr)) {
         LOGE("[FBSchema][ParseRootAttr] No SCHEMA_VERSION attribute or no value.");
         return -E_SCHEMA_PARSE_FAIL;
     }
-    if (SchemaUtils::Strip(versionAttr->value()->str()) != SCHEMA_SUPPORT_VERSION) {
+    if (SchemaUtils::Strip(versionAttr->value()->str()) != SchemaConstant::SCHEMA_SUPPORT_VERSION) {
         LOGE("[FBSchema][ParseRootAttr] Unexpect SCHEMA_VERSION=%s.", versionAttr->value()->c_str());
         return -E_SCHEMA_PARSE_FAIL;
     }
-    owner_.schemaVersion_ = SCHEMA_SUPPORT_VERSION;
-    description_ += (KEYWORD_SCHEMA_VERSION + "=" + SCHEMA_SUPPORT_VERSION + ";");
+    owner_.schemaVersion_ = SchemaConstant::SCHEMA_SUPPORT_VERSION;
+    description_ += (SchemaConstant::KEYWORD_SCHEMA_VERSION + "=" + SchemaConstant::SCHEMA_SUPPORT_VERSION + ";");
 
-    auto skipsizeAttr = rootTableAttr->LookupByKey(KEYWORD_SCHEMA_SKIPSIZE.c_str());
+    auto skipsizeAttr = rootTableAttr->LookupByKey(SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE.c_str());
     if (!AttributeExistAndHasValue(skipsizeAttr)) {
         LOGI("[FBSchema][ParseRootAttr] No SCHEMA_SKIPSIZE attribute or no value.");
         owner_.schemaSkipSize_ = 0; // Default skipsize value
@@ -503,12 +505,12 @@ int SchemaObject::FlatBufferSchema::ParseCheckRootTableAttribute(const reflectio
     std::string skipsizeStr = SchemaUtils::Strip(skipsizeAttr->value()->str());
     int skipsizeInt = std::atoi(skipsizeStr.c_str()); // std::stoi will throw exception
     if (std::to_string(skipsizeInt) != skipsizeStr || skipsizeInt < 0 ||
-        static_cast<uint32_t>(skipsizeInt) > SCHEMA_SKIPSIZE_MAX) {
+        static_cast<uint32_t>(skipsizeInt) > SchemaConstant::SCHEMA_SKIPSIZE_MAX) {
         LOGE("[FBSchema][ParseRootAttr] Unexpect SCHEMA_SKIPSIZE value=%s.", skipsizeAttr->value()->c_str());
         return -E_SCHEMA_PARSE_FAIL;
     }
     owner_.schemaSkipSize_ = static_cast<uint32_t>(skipsizeInt);
-    description_ += (KEYWORD_SCHEMA_SKIPSIZE + "=" + skipsizeStr + ";");
+    description_ += (SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE + "=" + skipsizeStr + ";");
     return E_OK;
 }
 
@@ -547,12 +549,12 @@ int SchemaObject::FlatBufferSchema::ParseCheckRootTableDefine(const reflection::
         }
     }
     uint32_t fieldPathCount = 0;
-    for (uint32_t depth = ROOT_DEFINE_DEPTH; depth < SCHEMA_FEILD_PATH_DEPTH_MAX; depth++) {
+    for (uint32_t depth = ROOT_DEFINE_DEPTH; depth < SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX; depth++) {
         if (owner_.schemaDefine_.count(depth) != 0) {
             fieldPathCount += owner_.schemaDefine_[depth].size();
         }
     }
-    if (fieldPathCount > SCHEMA_FEILD_NAME_COUNT_MAX) {
+    if (fieldPathCount > SchemaConstant::SCHEMA_FEILD_NAME_COUNT_MAX) {
         LOGE("[FBSchema][ParseRootDefine] FieldPath count=%u exceed the limitation.", fieldPathCount);
         return -E_SCHEMA_PARSE_FAIL;
     }
@@ -594,7 +596,7 @@ bool CheckFieldTypeSupport(const reflection::Type &inType, bool isRootField)
 int SchemaObject::FlatBufferSchema::ParseCheckFieldInfo(const reflection::Schema &schema,
     const reflection::Field &field, const FieldPath &path, RawIndexInfos &indexCollect)
 {
-    if (path.empty() || path.size() > SCHEMA_FEILD_PATH_DEPTH_MAX) {
+    if (path.empty() || path.size() > SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX) {
         LOGE("[FBSchema][ParseField] FieldPath size=%zu invalid.", path.size());
         return -E_SCHEMA_PARSE_FAIL;
     }
@@ -642,7 +644,7 @@ void SchemaObject::FlatBufferSchema::CollectRawIndexInfos(const reflection::Fiel
     if (fieldAttr == nullptr) {
         return;
     }
-    auto indexAttr = fieldAttr->LookupByKey(KEYWORD_INDEX.c_str());
+    auto indexAttr = fieldAttr->LookupByKey(SchemaConstant::KEYWORD_INDEX.c_str());
     if (indexAttr == nullptr) {
         return;
     }
@@ -656,7 +658,7 @@ void SchemaObject::FlatBufferSchema::CollectRawIndexInfos(const reflection::Fiel
 int SchemaObject::FlatBufferSchema::ParseCheckStructDefine(const reflection::Schema &schema,
     const reflection::Field &field, const FieldPath &path)
 {
-    if (path.size() >= SCHEMA_FEILD_PATH_DEPTH_MAX) {
+    if (path.size() >= SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX) {
         LOGE("[FBSchema][ParseStruct] Struct define at depth limitation.");
         return -E_SCHEMA_PARSE_FAIL;
     }
@@ -753,7 +755,7 @@ int SchemaObject::FlatBufferSchema::ParseCheckIndexes(const RawIndexInfos &index
         }
         description_ += ("INDEX=" + entry.first + ";");
     }
-    if (owner_.schemaIndexes_.size() > SCHEMA_INDEX_COUNT_MAX) {
+    if (owner_.schemaIndexes_.size() > SchemaConstant::SCHEMA_INDEX_COUNT_MAX) {
         LOGE("[FBSchema][ParseIndex] Index count=%zu exceed limitation.", owner_.schemaIndexes_.size());
         return -E_SCHEMA_PARSE_FAIL;
     }

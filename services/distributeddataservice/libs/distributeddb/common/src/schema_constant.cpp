@@ -16,8 +16,7 @@
 #include "schema_constant.h"
 
 namespace DistributedDB {
-
-const std::string SchemaConstant::SchemaConstant::KEYWORD_SCHEMA_VERSION = "SCHEMA_VERSION";
+const std::string SchemaConstant::KEYWORD_SCHEMA_VERSION = "SCHEMA_VERSION";
 const std::string SchemaConstant::KEYWORD_SCHEMA_MODE = "SCHEMA_MODE";
 const std::string SchemaConstant::KEYWORD_SCHEMA_DEFINE = "SCHEMA_DEFINE";
 const std::string SchemaConstant::KEYWORD_SCHEMA_INDEXES = "SCHEMA_INDEXES";
