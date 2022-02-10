@@ -21,7 +21,7 @@ namespace OHOS {
 namespace DistributedData {
 class CheckerManager {
 public:
-    static constexpr pid_t INVALID_UID = 0;
+    static constexpr pid_t INVALID_UID = -1;
     struct Trust {
         std::string bundleName;
         std::string appId;

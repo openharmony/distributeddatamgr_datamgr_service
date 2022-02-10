@@ -41,7 +41,6 @@ struct Serializable {
     using json = nlohmann::json;
     template<typename T>
     static T GetVal(const json &j, const std::string &name, json::value_t type, const T &def);
-    static bool CheckJsonValue(const json &j, const std::string &name, json::value_t type);
     static json ToJson(const std::string &jsonStr);
 };
 
@@ -103,17 +102,11 @@ struct KvStoreMetaData {
     std::string Marshal() const;
     void Unmarshal(const json &jObject);
 
-    static bool CheckChiefValues(const json &jObject);
-
     static inline std::string GetAppId(const json &jObject)
     {
         return Serializable::GetVal<std::string>(jObject, APP_ID, json::value_t::string, "");
     }
 
-    static inline std::string GetBundleName(const json &jObject)
-    {
-        return Serializable::GetVal<std::string>(jObject, BUNDLE_NAME, json::value_t::string, "");
-    }
     static inline std::string GetStoreId(const json &jObject)
     {
         return Serializable::GetVal<std::string>(jObject, STORE_ID, json::value_t::string, "");
@@ -150,24 +143,9 @@ private:
     static constexpr const char *KVSTORE_TYPE = "kvStoreType";
 };
 
-struct DelegateGuard {
-    using Fn = std::function<void()>;
-    Fn action_;
-    DelegateGuard(Fn action) : action_(std::forward<Fn>(action)) {}
-
-    ~DelegateGuard()
-    {
-        if (action_) {
-            action_();
-        }
-    }
-    DelegateGuard() = delete;
-    DelegateGuard(const DelegateGuard &) = delete;
-    DelegateGuard &operator=(const DelegateGuard &) = delete;
-};
-
 class KvStoreMetaManager {
 public:
+    static constexpr uint32_t META_STORE_VERSION = 0x03000001;
     using NbDelegate = std::unique_ptr<DistributedDB::KvStoreNbDelegate,
         std::function<void(DistributedDB::KvStoreNbDelegate *)>>;
 
@@ -243,10 +221,6 @@ public:
 
     Status QueryKvStoreMetaDataByDeviceIdAndAppId(const std::string &devId, const std::string &appId,
                                                   KvStoreMetaData &val);
-    // json rule
-    void ToJson(nlohmann::json &j, const KvStoreMetaData &k);
-
-    void FromJson(const nlohmann::json &j, KvStoreMetaData &k);
 
     Status GetKvStoreMeta(const std::vector<uint8_t> &metaKey, KvStoreMetaData &kvStoreMetaData);
 
@@ -269,8 +243,6 @@ private:
     void ConcatWithSharps(const std::vector<std::string> &params, std::string &retVal);
 
     Status GetStategyMeta(const std::string &key, std::map<std::string, std::vector<std::string>> &strategies);
-
-    int GetSecurityLevelByBundleName(const std::string &bundleName);
 
     bool GetKvStoreMetaByType(const std::string &name, const std::string &val, KvStoreMetaData &metaData);
 
