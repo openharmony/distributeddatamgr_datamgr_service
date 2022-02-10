@@ -20,18 +20,6 @@
 #include "log_print.h"
 #include "message.h"
 namespace DistributedDB {
-bool SingleVerDataSyncUtils::AckPacketValidCheck(const Message *message)
-{
-    if (message == nullptr) {
-        LOGE("[DataSync] AckRecv message nullptr");
-        return false;
-    }
-    if (message->GetMessageType() == TYPE_NOTIFY || message->IsFeedbackError()) {
-        return true;
-    }
-    return true;
-}
-
 bool SingleVerDataSyncUtils::QuerySyncCheck(const SingleVerSyncTaskContext *context)
 {
     if (!context->IsQuerySync()) {
@@ -334,7 +322,7 @@ void SingleVerDataSyncUtils::SetMessageHeadInfo(Message &message, uint16_t inMsg
     message.SetSessionId(inSessionId);
 }
 
-inline bool SingleVerDataSyncUtils::IsGetDataSuccessfully(int errCode)
+bool SingleVerDataSyncUtils::IsGetDataSuccessfully(int errCode)
 {
     return errCode == E_OK || errCode == -E_UNFINISHED;
 }
@@ -376,9 +364,9 @@ SyncTimeRange SingleVerDataSyncUtils::GetFullSyncDataTimeRange(const std::vector
 }
 
 SyncTimeRange SingleVerDataSyncUtils::GetQuerySyncDataTimeRange(const std::vector<SendDataItem> &inData,
-    WaterMark localMark, WaterMark deletelocalMark, UpdateWaterMark &isUpdate)
+    WaterMark localMark, WaterMark deleteLocalMark, UpdateWaterMark &isUpdate)
 {
-    SyncTimeRange dataTimeRange = {localMark, deletelocalMark, localMark, deletelocalMark};
+    SyncTimeRange dataTimeRange = {localMark, deleteLocalMark, localMark, deleteLocalMark};
     for (size_t i = 0; i < inData.size(); i++) {
         if (inData[i] == nullptr) {
             continue;

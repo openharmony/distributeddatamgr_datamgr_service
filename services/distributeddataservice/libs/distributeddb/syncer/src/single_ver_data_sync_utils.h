@@ -20,8 +20,6 @@
 namespace DistributedDB {
 class SingleVerDataSyncUtils {
 public:
-    static bool AckPacketValidCheck(const Message *message);
-
     static bool QuerySyncCheck(const SingleVerSyncTaskContext *context);
 
     static int AckMsgErrnoCheck(const SingleVerSyncTaskContext *context, const Message *message);
@@ -70,7 +68,7 @@ public:
     static void SetMessageHeadInfo(Message &message, uint16_t inMsgType,
         const std::string &inTarget, uint32_t inSequenceId, uint32_t inSessionId);
 
-    static inline bool IsGetDataSuccessfully(int errCode);
+    static bool IsGetDataSuccessfully(int errCode);
 
     static TimeStamp GetMaxSendDataTime(const std::vector<SendDataItem> &inData);
 
@@ -78,7 +76,7 @@ public:
         UpdateWaterMark &isUpdate);
 
     static SyncTimeRange GetQuerySyncDataTimeRange(const std::vector<SendDataItem> &inData, WaterMark localMark,
-        WaterMark deletelocalMark, UpdateWaterMark &isUpdate);
+        WaterMark deleteLocalMark, UpdateWaterMark &isUpdate);
 
     static SyncTimeRange ReviseLocalMark(SyncType syncType, SyncTimeRange &dataTimeRange, UpdateWaterMark updateMark);
 

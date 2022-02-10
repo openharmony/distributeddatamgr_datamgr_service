@@ -220,6 +220,7 @@ ohos_shared_library("distributeddb") {
     "syncer/src/single_ver_data_message_schedule.cpp",
     "syncer/src/single_ver_data_packet.cpp",
     "syncer/src/single_ver_data_sync.cpp",
+    "syncer/src/single_ver_data_sync_utils.cpp",
     "syncer/src/single_ver_kv_sync_task_context.cpp",
     "syncer/src/single_ver_kv_syncer.cpp",
     "syncer/src/single_ver_relational_sync_task_context.cpp",

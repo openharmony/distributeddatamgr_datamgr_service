@@ -1081,8 +1081,12 @@ int SingleVerDataSync::SendDataAck(SingleVerSyncTaskContext *context, const Mess
 
 bool SingleVerDataSync::AckPacketIdCheck(const Message *message)
 {
-    if (!SingleVerDataSyncUtils::AckPacketValidCheck(message)) {
+    if (message == nullptr) {
+        LOGE("[DataSync] AckRecv message nullptr");
         return false;
+    }
+    if (message->GetMessageType() == TYPE_NOTIFY || message->IsFeedbackError()) {
+        return true;
     }
     const DataAckPacket *packet = message->GetObject<DataAckPacket>();
     if (packet == nullptr) {
