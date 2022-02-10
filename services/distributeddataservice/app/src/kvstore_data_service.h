@@ -43,7 +43,7 @@ class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
 
 public:
     // record kvstore meta version for compatible, should update when modify kvstore meta structure.
-    static constexpr int KVSTORE_META_VERSION = 1;
+    static constexpr int KVSTORE_META_VERSION = 2;
 
     explicit KvStoreDataService(bool runOnCreate = false);
     explicit KvStoreDataService(int32_t systemAbilityId, bool runOnCreate = false);

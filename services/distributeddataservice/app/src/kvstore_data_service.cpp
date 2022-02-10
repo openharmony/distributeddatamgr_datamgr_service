@@ -133,7 +133,7 @@ Status KvStoreDataService::GetKvStore(const Options &options, const AppId &appId
     const int32_t uid = IPCSkeleton::GetCallingUid();
     param.trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, uid);
     if (param.trueAppId.empty()) {
-        ZLOGW("appId empty(permission issues?)");
+        ZLOGW("appId:%{public}s, uid:%{public}d, PERMISSION_DENIED", appId.appId.c_str(), uid);
         return Status::PERMISSION_DENIED;
     }
 
@@ -195,7 +195,7 @@ Status KvStoreDataService::GetSingleKvStore(const Options &options, const AppId 
     const int32_t uid = IPCSkeleton::GetCallingUid();
     param.trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, uid);
     if (param.trueAppId.empty()) {
-        ZLOGW("appId empty(permission issues?)");
+        ZLOGW("appId:%{public}s, uid:%{public}d, PERMISSION_DENIED", appId.appId.c_str(), uid);
         return Status::PERMISSION_DENIED;
     }
 
