@@ -1300,8 +1300,9 @@ int SQLiteUtils::CreateRelationalMetaTable(sqlite3 *db)
 
 int SQLiteUtils::CreateRelationalLogTable(sqlite3 *db, const std::string &oriTableName)
 {
+    const std::string tableName = DBConstant::RELATIONAL_PREFIX + oriTableName + "_log";
     std::string sql =
-        "CREATE TABLE IF NOT EXISTS " + DBConstant::RELATIONAL_PREFIX + oriTableName + "_log(" \
+        "CREATE TABLE IF NOT EXISTS " + tableName + "(" \
         "data_key    INT NOT NULL," \
         "device      BLOB," \
         "ori_device  BLOB," \
@@ -1309,7 +1310,10 @@ int SQLiteUtils::CreateRelationalLogTable(sqlite3 *db, const std::string &oriTab
         "wtimestamp  INT  NOT NULL," \
         "flag        INT  NOT NULL," \
         "hash_key    BLOB NOT NULL,"
-        "PRIMARY KEY(device,hash_key));";
+        "PRIMARY KEY(device,hash_key));"
+        "CREATE INDEX IF NOT EXISTS " + DBConstant::RELATIONAL_PREFIX + "time_flag_index ON " + tableName +
+            "(timestamp, flag);"
+        "CREATE INDEX IF NOT EXISTS " + DBConstant::RELATIONAL_PREFIX + "hashkey_index ON " + tableName + "(hash_key);";
 
     int errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
     if (errCode != E_OK) {
