@@ -65,6 +65,6 @@ const std::string DBConstant::TRIGGER_REFERENCES_OLD = "OLD.";
 const std::string DBConstant::UPDATE_META_FUNC = "update_meta_within_trigger";
 
 const std::string DBConstant::SYSTEM_TABLE_PREFIX = "naturalbase_rdb_";
-const std::string DBConstant::RELATIONAL_PREFIX = SYSTEM_TABLE_PREFIX + "aux_";
-const std::string DBConstant::TIMESTAMP_ALIAS = RELATIONAL_PREFIX + "timestamp";
+const std::string DBConstant::RELATIONAL_PREFIX = "naturalbase_rdb_aux_";
+const std::string DBConstant::TIMESTAMP_ALIAS = "naturalbase_rdb_aux_timestamp";
 }

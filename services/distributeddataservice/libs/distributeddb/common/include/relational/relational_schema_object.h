@@ -117,6 +117,7 @@ public:
     void AddSyncOpinion(const std::string &tableName, const SyncOpinion &opinion);
 private:
     std::map<std::string, SyncOpinion> opinions_;
+    static const uint32_t SYNC_OPINION_VERSION = 1;
 };
 
 class RelationalSyncStrategy {

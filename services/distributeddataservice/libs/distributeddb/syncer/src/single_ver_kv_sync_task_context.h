@@ -29,11 +29,11 @@ public:
     std::string GetQuerySyncId() const override;
     std::string GetDeleteSyncId() const override;
 
-    void SetSyncStrategy(SyncStrategy strategy);
+    void SetSyncStrategy(const SyncStrategy &strategy);
     SyncStrategy GetSyncStrategy(QuerySyncObject &querySyncObject) const override;
 protected:
     ~SingleVerKvSyncTaskContext() override;
-    
+
     SyncStrategy syncStrategy_;
 };
 }

@@ -96,9 +96,9 @@ public:
 
     constexpr static int64_t MAX_VALID_TIME = BASE_OFFSET * 2; // 20000 year 100ns
 
-    static const uint64_t TO_100_NS = 10; // 1us to 100ns
+    constexpr static uint64_t TO_100_NS = 10; // 1us to 100ns
 
-    static const TimeStamp INVALID_TIMESTAMP = 0;
+    constexpr static TimeStamp INVALID_TIMESTAMP = 0;
 
     // Get current system time
     static TimeStamp GetSysCurrentTime()

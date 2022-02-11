@@ -183,6 +183,8 @@ public:
 
     static int CheckSchemaChanged(sqlite3_stmt *stmt, const TableInfo &table, int offset);
 
+    static int64_t GetLastRowId(sqlite3 *db);
+
 private:
 
     static int CreateDataBase(const OpenDbProperties &properties, sqlite3 *&dbTemp, bool setWal);

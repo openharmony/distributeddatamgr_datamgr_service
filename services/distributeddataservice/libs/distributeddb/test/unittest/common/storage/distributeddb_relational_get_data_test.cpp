@@ -363,7 +363,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData2, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: AR000GK58H
  * @tc.author: lidongwei
- */
+  */
 HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData3, TestSize.Level1)
 {
     ASSERT_EQ(g_mgr.OpenStore(g_storePath, g_storeID, RelationalStoreDelegate::Option {}, g_delegate), DBStatus::OK);
@@ -382,7 +382,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData3, TestSize.Level1)
     ASSERT_EQ(g_delegate->CreateDistributedTable(tableName), DBStatus::OK);
 
     /**
-     * @tc.steps: step2. Put 5 records with different type into "dataPlus" table.
+     * @tc.steps: step2. Put 5 records with different type into "dataPlus" table. Put 5 records into "data" table.
      * @tc.expected: Succeed, return OK.
      */
     vector<string> sqls = {
@@ -398,14 +398,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData3, TestSize.Level1)
     }
 
     /**
-     * @tc.steps: step3. Delete all "dataPlus" data.
-     * @tc.expected: Succeed.
-     */
-    sql = "DELETE FROM " + tableName + ";";
-    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
-
-    /**
-     * @tc.steps: step4. Get all data from "dataPlus" table.
+     * @tc.steps: step3. Get all data from "dataPlus" table.
      * @tc.expected: Succeed and the count is right.
      */
     auto store = GetRelationalStore();
@@ -417,33 +410,55 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData3, TestSize.Level1)
     EXPECT_EQ(entries.size(), RECORD_COUNT);
 
     /**
-     * @tc.steps: step5. Put data into "data" table from deviceA.
+     * @tc.steps: step4. Put data into "data" table from deviceA and deviceB
      * @tc.expected: Succeed, return OK.
      */
     query = QueryObject(Query::Select(g_tableName));
-    const DeviceID deviceID = "deviceA";
+    DeviceID deviceA = "deviceA";
     ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(g_tableName),
-        DBCommon::GetDistributedTableName(deviceID, g_tableName)));
-    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceID), E_OK);
+        DBCommon::GetDistributedTableName(deviceA, g_tableName)));
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceA), E_OK);
+
+    DeviceID deviceB = "deviceB";
+    auto rEntries = std::vector<SingleVerKvEntry *>(entries.rbegin(), entries.rend());
+    ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(g_tableName),
+        DBCommon::GetDistributedTableName(deviceB, g_tableName)));
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, rEntries, deviceB), E_OK);
+    rEntries.clear();
+    SingleVerKvEntry::Release(entries);
+
+    /**
+     * @tc.steps: step5. Delete 2 "dataPlus" data from deviceA.
+     * @tc.expected: Succeed.
+     */
+    sql = "DELETE FROM " + tableName + " WHERE rowid<=2;";
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+
+    query = QueryObject(Query::Select(tableName));
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    EXPECT_EQ(entries.size(), RECORD_COUNT);
+
+    query = QueryObject(Query::Select(g_tableName));
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceA), E_OK);
     SingleVerKvEntry::Release(entries);
 
     /**
      * @tc.steps: step6. Check data.
-     * @tc.expected: All data in the two tables are deleted.
+     * @tc.expected: 2 data in the from deviceA are deleted and all data from deviceB are not deleted.
      */
-    sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + tableName + "_log WHERE flag=3;";
+    sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_log WHERE flag&0x01=0x01;";
     size_t count = 0;
     EXPECT_EQ(GetCount(db, sql, count), E_OK);
-    EXPECT_EQ(count, RECORD_COUNT);
+    EXPECT_EQ(count, 2UL);  // 2 for test
 
-    sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_log WHERE flag=1;";
+    sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_" +
+            DBCommon::TransferStringToHex(DBCommon::TransferHashString(deviceA)) + ";";
     count = 0;
     EXPECT_EQ(GetCount(db, sql, count), E_OK);
-    EXPECT_EQ(count, RECORD_COUNT);
+    EXPECT_EQ(count, 3UL);  // 0 for test
 
-    sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_log as a," +
-                                    DBConstant::RELATIONAL_PREFIX + tableName + "_log as b " +
-          "WHERE hex(a.hash_key)=hex(b.hash_key);";
+    sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_" +
+            DBCommon::TransferStringToHex(DBCommon::TransferHashString(deviceB)) + ";";
     count = 0;
     EXPECT_EQ(GetCount(db, sql, count), E_OK);
     EXPECT_EQ(count, RECORD_COUNT);
