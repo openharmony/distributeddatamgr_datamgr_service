@@ -69,6 +69,7 @@ ohos_source_set("src_file") {
   sources = [
     "../common/src/auto_launch.cpp",
     "../common/src/data_compression.cpp",
+    "../common/src/data_value.cpp",
     "../common/src/db_ability.cpp",
     "../common/src/db_common.cpp",
     "../common/src/db_constant.cpp",
@@ -126,7 +127,6 @@ ohos_source_set("src_file") {
     "../interfaces/src/kv_store_nb_delegate_impl.cpp",
     "../interfaces/src/kv_store_result_set_impl.cpp",
     "../interfaces/src/kv_store_snapshot_delegate_impl.cpp",
-    "../interfaces/src/relational/data_value.cpp",
     "../interfaces/src/relational/relational_store_changed_data_impl.cpp",
     "../interfaces/src/relational/relational_store_delegate_impl.cpp",
     "../interfaces/src/relational/relational_store_manager.cpp",

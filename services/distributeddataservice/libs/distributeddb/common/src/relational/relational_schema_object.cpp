@@ -482,7 +482,7 @@ uint32_t RelationalSyncOpinion::CalculateParcelLen(uint32_t softWareVersion) con
 int RelationalSyncOpinion::SerializeData(Parcel &parcel, uint32_t softWareVersion) const
 {
     (void)parcel.WriteString(MAGIC);
-    (void)parcel.WriteUInt32(softWareVersion);
+    (void)parcel.WriteUInt32(SYNC_OPINION_VERSION);
     (void)parcel.WriteUInt32(static_cast<uint32_t>(opinions_.size()));
     (void)parcel.EightByteAlign();
     for (const auto &it : opinions_) {
@@ -505,8 +505,12 @@ int RelationalSyncOpinion::DeserializeData(Parcel &parcel, RelationalSyncOpinion
         LOGE("Deserialize sync opinion failed while read MAGIC string [%s]", magicStr.c_str());
         return -E_INVALID_ARGS;
     }
-    uint32_t softWareVersion;
-    (void)parcel.ReadUInt32(softWareVersion);
+    uint32_t version;
+    (void)parcel.ReadUInt32(version);
+    if (version != SYNC_OPINION_VERSION) {
+        LOGE("Not support sync opinion version: %u", version);
+        return -E_NOT_SUPPORT;
+    }
     uint32_t opinionSize;
     (void)parcel.ReadUInt32(opinionSize);
     (void)parcel.EightByteAlign();
