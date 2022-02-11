@@ -31,9 +31,7 @@ KvStoreSyncCallbackClient::~KvStoreSyncCallbackClient() = default;
 
 void KvStoreSyncCallbackClient::SyncCompleted(const std::map<std::string, Status> &results, const std::string &label)
 {
-    if (label.empty() && kvStoreSyncCallbackInfo_.find(CommonSyncCallbackLabel) != kvStoreSyncCallbackInfo_.end()) {
-        kvStoreSyncCallbackInfo_[CommonSyncCallbackLabel]->SyncCompleted(results);
-    } else if (kvStoreSyncCallbackInfo_.find(label) != kvStoreSyncCallbackInfo_.end()) {
+    if (kvStoreSyncCallbackInfo_.find(label) != kvStoreSyncCallbackInfo_.end()) {
         ZLOGI("label = %{public}s", label.c_str());
         kvStoreSyncCallbackInfo_[label]->SyncCompleted(results);
     }
