@@ -231,6 +231,7 @@ ohos_shared_library("distributeddb") {
     "syncer/src/single_ver_sync_task_context.cpp",
     "syncer/src/single_ver_syncer.cpp",
     "syncer/src/subscribe_manager.cpp",
+    "syncer/src/sync_config.cpp",
     "syncer/src/sync_engine.cpp",
     "syncer/src/sync_operation.cpp",
     "syncer/src/sync_state_machine.cpp",

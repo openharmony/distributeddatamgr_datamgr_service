@@ -1975,7 +1975,7 @@ bool SingleVerDataSync::QuerySyncCheck(const SingleVerSyncTaskContext *context) 
         return false;
     }
     if (context->GetQuery().HasInKeys() &&
-        context->GetRemoteDbAbility().GetAbilityItem(INKEYS_QUERY) != SUPPORT_MARK) {
+        context->GetRemoteDbAbility().GetAbilityItem(SyncConfig::INKEYS_QUERY) != SUPPORT_MARK) {
         return false;
     }
     return true;
@@ -2108,7 +2108,7 @@ int SingleVerDataSync::ControlCmdStartCheck(SingleVerSyncTaskContext *context)
     }
     if (context->GetMode() == SyncModeType::SUBSCRIBE_QUERY &&
         context->GetQuery().HasInKeys() &&
-        context->GetRemoteDbAbility().GetAbilityItem(INKEYS_QUERY) != SUPPORT_MARK) {
+        context->GetRemoteDbAbility().GetAbilityItem(SyncConfig::INKEYS_QUERY) != SUPPORT_MARK) {
         return -E_NOT_SUPPORT;
     }
     if ((context->GetMode() != SyncModeType::SUBSCRIBE_QUERY) || context->GetReceivcPermitCheck()) {

@@ -99,7 +99,7 @@ private:
     bool isInitialized_ = false;
 
     // lifeCycle
-    mutable std::mutex lifeCycleMutex_;
+    std::mutex lifeCycleMutex_;
     DatabaseLifeCycleNotifier lifeCycleNotifier_;
     TimerId lifeTimerId_;
 };

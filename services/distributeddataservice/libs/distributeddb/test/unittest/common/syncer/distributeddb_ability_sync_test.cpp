@@ -122,7 +122,7 @@ HWTEST_F(DistributedDBAbilitySyncTest, RequestPacketTest001, TestSize.Level0)
     AbilitySyncRequestPacket packet1;
     DbAbility ability1;
 #ifndef OMIT_ZLIB
-    ability1.SetAbilityItem(DATABASE_COMPRESSION_ZLIB, SUPPORT_MARK);
+    ability1.SetAbilityItem(SyncConfig::DATABASE_COMPRESSION_ZLIB, SUPPORT_MARK);
 #endif
     packet1.SetProtocolVersion(ABILITY_SYNC_VERSION_V1);
     packet1.SetSoftwareVersion(SOFTWARE_VERSION_CURRENT);
@@ -339,7 +339,7 @@ HWTEST_F(DistributedDBAbilitySyncTest, AckPacketTest001, TestSize.Level0)
     AbilitySyncAckPacket packet1;
     DbAbility ability1;
 #ifndef OMIT_ZLIB
-    ability1.SetAbilityItem(DATABASE_COMPRESSION_ZLIB, SUPPORT_MARK);
+    ability1.SetAbilityItem(SyncConfig::DATABASE_COMPRESSION_ZLIB, SUPPORT_MARK);
 #endif
     packet1.SetProtocolVersion(ABILITY_SYNC_VERSION_V1);
     packet1.SetSoftwareVersion(SOFTWARE_VERSION_CURRENT);

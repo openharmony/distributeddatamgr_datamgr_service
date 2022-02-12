@@ -435,10 +435,12 @@ std::string SingleVerSyncTaskContext::GetRemoteCompressAlgoStr() const
 void SingleVerSyncTaskContext::SetDbAbility(DbAbility &remoteDbAbility)
 {
     remoteDbAbility_ = remoteDbAbility;
-    LOGI("[SingleVerSyncTaskContext] set dev=%s compressAlgo=%s, IsSupAllPredicateQuery=%u, \
-        IsSupSubscribeQuery=%u, inKeys=%u",
-        STR_MASK(GetDeviceId()), GetRemoteCompressAlgoStr().c_str(), remoteDbAbility.GetAbilityItem(ALLPREDICATEQUERY),
-        remoteDbAbility.GetAbilityItem(SUBSCRIBEQUERY), remoteDbAbility.GetAbilityItem(INKEYS_QUERY));
+    LOGI("[SingleVerSyncTaskContext] set dev=%s compressAlgo=%s, IsSupAllPredicateQuery=%u,"
+        "IsSupSubscribeQuery=%u, inKeys=%u",
+        STR_MASK(GetDeviceId()), GetRemoteCompressAlgoStr().c_str(),
+        remoteDbAbility.GetAbilityItem(SyncConfig::ALLPREDICATEQUERY),
+        remoteDbAbility.GetAbilityItem(SyncConfig::SUBSCRIBEQUERY),
+        remoteDbAbility.GetAbilityItem(SyncConfig::INKEYS_QUERY));
 }
 
 CompressAlgorithm SingleVerSyncTaskContext::ChooseCompressAlgo() const

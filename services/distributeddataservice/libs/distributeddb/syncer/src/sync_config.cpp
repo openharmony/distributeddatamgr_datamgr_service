@@ -14,7 +14,10 @@
  */
 #include "sync_config.h"
 namespace DistributedDB {
-constexpr AbilityItem SyncConfig::DATABASE_COMPRESSION_ZLIB = {0, 1};
+const AbilityItem SyncConfig::DATABASE_COMPRESSION_ZLIB = {0, 1};
+const AbilityItem SyncConfig::ALLPREDICATEQUERY = {1, 1}; // 0b10 {1: start at second bit, 1: 1 bit len}
+const AbilityItem SyncConfig::SUBSCRIBEQUERY = {2, 1}; //   0b100
+const AbilityItem SyncConfig::INKEYS_QUERY = {3, 1}; //    0b1000
 
 const std::vector<AbilityItem> SyncConfig::ABILITYBITS = {
     DATABASE_COMPRESSION_ZLIB,
