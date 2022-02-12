@@ -45,7 +45,6 @@ public:
         return pInstance_;
     }
 private:
-//    static const std::string CommonSyncCallbackLabel;
     static std::map<std::string, std::shared_ptr<KvStoreSyncCallback>> kvStoreSyncCallbackInfo_;
     std::mutex syncCallbackMutex_;
     static sptr<KvStoreSyncCallbackClient> pInstance_;
