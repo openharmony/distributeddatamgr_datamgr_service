@@ -190,6 +190,12 @@ uint8_t ParamCheckUtils::GetValidCompressionRate(uint8_t compressionRate)
 
 bool ParamCheckUtils::CheckRelationalTableName(const std::string &tableName)
 {
+    auto iter = std::find_if_not(tableName.begin(), tableName.end(), [](char c) {
+            return (std::isalnum(c) || c == '_');
+        });
+    if (iter != tableName.end()) {
+        return false;
+    }
     return tableName.compare(0, DBConstant::SYSTEM_TABLE_PREFIX.size(), DBConstant::SYSTEM_TABLE_PREFIX) != 0;
 }
 } // namespace DistributedDB

@@ -314,6 +314,8 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest005, TestSize
      */
     EXPECT_NE(delegate->CreateDistributedTable(DBConstant::SYSTEM_TABLE_PREFIX + "_tmp"), OK);
 
+    EXPECT_EQ(delegate->CreateDistributedTable("Handle-J@^."), INVALID_ARGS);
+
     /**
      * @tc.steps:step4. Close store
      * @tc.expected: step4. Return OK.
@@ -558,8 +560,15 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalRemoveDeviceDataTest00
     EXPECT_EQ(delegate->RemoveDeviceData("DEVICE_C", "sync_data"), OK);
 
     /**
-     * @tc.steps:step4. Close store
-     * @tc.expected: step4 Return OK.
+     * @tc.steps:step4. Remove device data with invald args
+     * @tc.expected: step4. invalid
+     */
+    EXPECT_EQ(delegate->RemoveDeviceData(""), INVALID_ARGS);
+    EXPECT_EQ(delegate->RemoveDeviceData("DEVICE_A", "Handle-J@^."), INVALID_ARGS);
+
+    /**
+     * @tc.steps:step5. Close store
+     * @tc.expected: step5 Return OK.
      */
     status = g_mgr.CloseStore(delegate);
     EXPECT_EQ(status, OK);
