@@ -19,7 +19,7 @@
 #include <string>
 #include <functional>
 
-#include "types.h"
+#include "store_types.h"
 #include "db_types.h"
 #include "macro_utils.h"
 #include "query.h"

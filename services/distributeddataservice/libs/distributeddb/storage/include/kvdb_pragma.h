@@ -20,7 +20,7 @@
 #include <string>
 #include <functional>
 
-#include "types.h"
+#include "store_types.h"
 #include "query_sync_object.h"
 
 namespace DistributedDB {

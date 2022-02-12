@@ -23,8 +23,9 @@
 #endif // OMIT_FLATBUFFER
 #include "db_types.h"
 #include "macro_utils.h"
-#include "value_object.h"
+#include "relational_schema_object.h"
 #include "schema.h"
+#include "value_object.h"
 
 namespace DistributedDB {
 using IndexName = FieldPath;
@@ -56,6 +57,9 @@ public:
     ~SchemaObject() = default;
     SchemaObject(const SchemaObject &);
     SchemaObject& operator=(const SchemaObject &);
+#ifdef RELATIONAL_STORE
+    SchemaObject(const TableInfo &tableInfo);  // The construct func can only be used for query.
+#endif  // RELATIONAL_STORE
 
     // Move constructor and move assignment is not need currently
     SchemaObject(SchemaObject &&) = delete;

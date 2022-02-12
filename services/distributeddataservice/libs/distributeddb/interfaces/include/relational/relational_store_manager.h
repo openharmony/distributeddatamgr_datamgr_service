@@ -14,18 +14,20 @@
  */
 #ifndef RELATIONAL_STORE_MANAGER_H
 #define RELATIONAL_STORE_MANAGER_H
-
 #include <string>
 #include <functional>
 #include <mutex>
 
 #include "auto_launch_export.h"
 #include "relational_store_delegate.h"
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 class RelationalStoreManager final {
 public:
+    // Only calculate the table name with device hash, no guarantee for the table exists
+    DB_API static std::string GetDistributedTableName(const std::string &device, const std::string &tableName);
+
     DB_API RelationalStoreManager(const std::string &appId, const std::string &userId);
     DB_API ~RelationalStoreManager() = default;
 
@@ -38,8 +40,6 @@ public:
         const RelationalStoreDelegate::Option &option, RelationalStoreDelegate *&delegate);
 
     DB_API DBStatus CloseStore(RelationalStoreDelegate *store);
-
-    DB_API DBStatus DeleteStore(const std::string &path);
 
     DB_API static void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback);
 

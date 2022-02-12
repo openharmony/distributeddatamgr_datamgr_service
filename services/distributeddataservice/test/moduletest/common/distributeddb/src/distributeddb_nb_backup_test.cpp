@@ -24,7 +24,6 @@
 #include <mutex>
 #include <fstream>
 
-#include "types.h"
 #include "kv_store_nb_delegate.h"
 #include "kv_store_delegate_manager.h"
 #include "distributeddb_nb_test_tools.h"

@@ -398,9 +398,9 @@ void RuntimeContextImpl::GetAutoLaunchSyncDevices(const std::string &identifier,
     return autoLaunch_.GetAutoLaunchSyncDevices(identifier, devices);
 }
 
-void RuntimeContextImpl::SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback)
+void RuntimeContextImpl::SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback, DBType type)
 {
-    autoLaunch_.SetAutoLaunchRequestCallback(callback);
+    autoLaunch_.SetAutoLaunchRequestCallback(callback, type);
 }
 
 NotificationChain::Listener *RuntimeContextImpl::RegisterLockStatusLister(const LockStatusNotifier &action,
@@ -574,5 +574,24 @@ bool RuntimeContextImpl::IsCommunicatorAggregatorValid() const
         return false;
     }
     return true;
+}
+
+void RuntimeContextImpl::SetStoreStatusNotifier(const StoreStatusNotifier &notifier)
+{
+    std::unique_lock<std::shared_mutex> writeLock(databaseStatusCallbackMutex_);
+    databaseStatusNotifyCallback_ = notifier;
+    LOGI("SetStoreStatusNotifier ok");
+}
+
+void RuntimeContextImpl::NotifyDatabaseStatusChange(const std::string &userId, const std::string &appId,
+    const std::string &storeId, const std::string &deviceId, bool onlineStatus)
+{
+    ScheduleTask([this, userId, appId, storeId, deviceId, onlineStatus] {
+        std::shared_lock<std::shared_mutex> autoLock(databaseStatusCallbackMutex_);
+        if (databaseStatusNotifyCallback_) {
+            LOGI("start notify database status:%d", onlineStatus);
+            databaseStatusNotifyCallback_(userId, appId, storeId, deviceId, onlineStatus);
+        }
+    });
 }
 } // namespace DistributedDB

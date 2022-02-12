@@ -16,10 +16,10 @@
 #define RELATIONAL_SCHEMA_OBJECT_H
 #ifdef RELATIONAL_STORE
 #include <map>
-#include "parcel.h"
-#include "schema.h"
 #include "data_value.h"
 #include "json_object.h"
+#include "parcel.h"
+#include "schema.h"
 
 namespace DistributedDB {
 using CompositeFields = std::vector<FieldName>;
@@ -45,6 +45,8 @@ public:
 
     // return field define string like ("fieldName": "MY INT(21), NOT NULL, DEFAULT 123")
     std::string ToAttributeString() const;
+
+    int CompareWithField(const FieldInfo &inField) const;
 private:
     std::string fieldName_;
     std::string dataType_; // Type may be null
@@ -78,10 +80,20 @@ public:
     void AddTrigger(const std::string &triggerName);
     std::string ToTableInfoString() const;
     void SetDevId(const std::string &devId);
+
+    int CompareWithTable(const TableInfo &inTableInfo) const;
+    std::map<FieldPath, SchemaAttribute> GetSchemaDefine() const;
+    std::string GetFieldName(uint32_t cid) const;  // cid begin with 0
+    bool IsValid() const;
+
 private:
     void AddFieldDefineString(std::string &attrStr) const;
     void AddUniqueDefineString(std::string &attrStr) const;
     void AddIndexDefineString(std::string &attrStr) const;
+
+    int CompareWithTableFields(const std::map<std::string, FieldInfo> &inTableFields) const;
+    int CompareWithTableIndex(const std::map<std::string, CompositeFields> &inTableIndex) const;
+
     std::string tableName_;
     std::string devId_;
     bool autoInc_ = false; // only 'INTEGER PRIMARY KEY' could be defined as 'AUTOINCREMENT'
@@ -92,23 +104,27 @@ private:
     std::map<std::string, CompositeFields> indexDefines_;
     std::vector<std::string> triggers_;
     JsonObject ToJsonObject() const;
+    mutable std::vector<std::string> fieldNames_;
 };
 
 class RelationalSyncOpinion {
 public:
-    int CalculateParcelLen(uint32_t softWareVersion) const;
-    int Serialize(Parcel &parcel, uint32_t softWareVersion) const;
-    int Deserialization(const Parcel &parcel);
-    const SyncOpinion &GetTableOpinion(const std::string& tableName) const;
+    uint32_t CalculateParcelLen(uint32_t softWareVersion) const;
+    int SerializeData(Parcel &parcel, uint32_t softWareVersion) const;
+    static int DeserializeData(Parcel &parcel, RelationalSyncOpinion &opinion);
+    SyncOpinion GetTableOpinion(const std::string& tableName) const;
+    const std::map<std::string, SyncOpinion> &GetOpinions() const;
     void AddSyncOpinion(const std::string &tableName, const SyncOpinion &opinion);
 private:
     std::map<std::string, SyncOpinion> opinions_;
+    static const uint32_t SYNC_OPINION_VERSION = 1;
 };
 
 class RelationalSyncStrategy {
 public:
-    const SyncStrategy &GetTableStrategy(const std::string &tableName) const;
+    SyncStrategy GetTableStrategy(const std::string &tableName) const;
     void AddSyncStrategy(const std::string &tableName, const SyncStrategy &strategy);
+    const std::map<std::string, SyncStrategy> &GetStrategies() const;
 private:
     std::map<std::string, SyncStrategy> strategies_;
 };
@@ -136,7 +152,11 @@ public:
 
     void AddRelationalTable(const TableInfo& tb);
 
+    void RemoveRelationalTable(const std::string &tableName);
+
     const std::map<std::string, TableInfo> &GetTables() const;
+
+    std::vector<std::string> GetTableNames() const;
 
     TableInfo GetTable(const std::string& tableName) const;
 
@@ -159,8 +179,10 @@ private:
     int ParseCheckTableIndex(const JsonObject &inJsonObject, TableInfo &resultTable);
     int ParseCheckTablePrimaryKey(const JsonObject &inJsonObject, TableInfo &resultTable);
 
+    void GenerateSchemaString();
+
     bool isValid_ = false; // set to true after parse success from string or add at least one relational table
-    SchemaType schemaType_ = SchemaType::NONE; // Default NONE
+    SchemaType schemaType_ = SchemaType::RELATIVE; // Default RELATIVE
     std::string schemaString_; // The minified and valid schemaString
     std::string schemaVersion_;
     std::map<std::string, TableInfo> tables_;

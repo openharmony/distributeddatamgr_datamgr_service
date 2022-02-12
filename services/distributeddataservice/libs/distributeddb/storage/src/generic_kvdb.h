@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "types.h"
+#include "store_types.h"
 #include "version.h"
 #include "ikvdb.h"
 #include "generic_kvdb_connection.h"
@@ -127,6 +127,8 @@ public:
     virtual void SetConnectionFlag(bool isExisted) const;
 
     int CheckIntegrity() const override;
+
+    std::string GetStorePath() const override;
 
 protected:
     // Create a connection object, no DB ref increased.

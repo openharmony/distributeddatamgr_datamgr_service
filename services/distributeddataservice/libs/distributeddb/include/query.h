@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <set>
 
 #include "query_expression.h"
 #include "types_export.h"
@@ -139,6 +140,8 @@ public:
     DB_API Query &PrefixKey(const std::vector<uint8_t> &key);
 
     DB_API Query &SuggestIndex(const std::string &indexName);
+
+    DB_API Query &InKeys(const std::set<Key> &keys);
 
     friend class GetQueryInfo;
     ~Query() = default;

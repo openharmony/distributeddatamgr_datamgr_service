@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 #include <cmath>
-#include "types.h"
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
 #include "distributed_test_sysinfo.h"

@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 #include "distributeddb_tools_unit_test.h"
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDBUnitTest {
 // define some variables to init a KvStoreDelegateManager object.

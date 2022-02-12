@@ -30,27 +30,16 @@ RelationalStoreDelegateImpl::RelationalStoreDelegateImpl(RelationalStoreConnecti
 RelationalStoreDelegateImpl::~RelationalStoreDelegateImpl()
 {
     if (!releaseFlag_) {
-        LOGF("[KvStoreNbDelegate] Can't release directly");
+        LOGF("[RelationalStore Delegate] Can't release directly");
         return;
     }
 
     conn_ = nullptr;
 };
 
-DBStatus RelationalStoreDelegateImpl::Pragma(PragmaCmd cmd, PragmaData &paramData)
-{
-    return NOT_SUPPORT;
-}
-
-DBStatus RelationalStoreDelegateImpl::Sync(const std::vector<std::string> &devices, SyncMode mode,
-    SyncStatusCallback &onComplete, bool wait)
-{
-    return NOT_SUPPORT;
-}
-
 DBStatus RelationalStoreDelegateImpl::RemoveDeviceData(const std::string &device)
 {
-    return NOT_SUPPORT;
+    return RemoveDeviceData(device, {});
 }
 
 DBStatus RelationalStoreDelegateImpl::CreateDistributedTable(const std::string &tableName)
@@ -74,7 +63,7 @@ DBStatus RelationalStoreDelegateImpl::CreateDistributedTable(const std::string &
 }
 
 DBStatus RelationalStoreDelegateImpl::Sync(const std::vector<std::string> &devices, SyncMode mode,
-    const Query &query, SyncStatusCallback &onComplete, bool wait)
+    const Query &query, const SyncStatusCallback &onComplete, bool wait)
 {
     if (conn_ == nullptr) {
         LOGE("Invalid connection for operation!");
@@ -91,9 +80,24 @@ DBStatus RelationalStoreDelegateImpl::Sync(const std::vector<std::string> &devic
     return OK;
 }
 
-DBStatus RelationalStoreDelegateImpl::RemoveDevicesData(const std::string &tableName, const std::string &device)
+DBStatus RelationalStoreDelegateImpl::RemoveDeviceData(const std::string &device, const std::string &tableName)
 {
-    return NOT_SUPPORT;
+    if (conn_ == nullptr) {
+        LOGE("Invalid connection for operation!");
+        return DB_ERROR;
+    }
+
+    if (device.empty()) {
+        LOGE("[RelationalStore Delegate] Remove device data with unspecified device name.");
+        return INVALID_ARGS;
+    }
+
+    int errCode = conn_->RemoveDeviceData(device, tableName);
+    if (errCode != E_OK) {
+        LOGW("[RelationalStore Delegate] remove device data failed:%d", errCode);
+        return TransferDBErrno(errCode);
+    }
+    return OK;
 }
 
 DBStatus RelationalStoreDelegateImpl::Close()
@@ -104,7 +108,7 @@ DBStatus RelationalStoreDelegateImpl::Close()
 
     int errCode = conn_->Close();
     if (errCode == -E_BUSY) {
-        LOGW("[KvStoreDelegate] busy for close");
+        LOGW("[RelationalStore Delegate] busy for close");
         return BUSY;
     }
     if (errCode != E_OK) {
@@ -112,7 +116,7 @@ DBStatus RelationalStoreDelegateImpl::Close()
         return TransferDBErrno(errCode);
     }
 
-    LOGI("[KvStoreDelegate] Close");
+    LOGI("[RelationalStore Delegate] Close");
     conn_ = nullptr;
     return OK;
 }

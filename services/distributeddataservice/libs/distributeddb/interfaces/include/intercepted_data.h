@@ -17,7 +17,7 @@
 #define INTERCEPTED_DATA_H
 
 #include <vector>
-#include "types.h"
+#include "store_types.h"
 #include "types_export.h"
 
 namespace DistributedDB {

@@ -31,6 +31,7 @@
 #include "log_print.h"
 #include "value_object.h"
 #include "schema_utils.h"
+#include "schema_constant.h"
 #include "time_helper.h"
 #include "platform_specific.h"
 
@@ -613,7 +614,8 @@ int AnalysisSchemaSqlAndTrigger(sqlite3 *db, const std::string &tableName, Table
                 table.AddTrigger(triggerName);
             }
         } else {
-            LOGW("[AnalysisSchema] Step for the analysis create table sql and trigger failed:%d", err);
+            LOGE("[AnalysisSchema] Step for the analysis create table sql and trigger failed:%d", err);
+            errCode = SQLiteUtils::MapSQLiteErrno(err);
             break;
         }
     } while (true);
@@ -628,7 +630,7 @@ int GetSchemaIndexList(sqlite3 *db, const std::string &tableName, std::vector<st
     sqlite3_stmt *statement = nullptr;
     int errCode = SQLiteUtils::GetStatement(db, sql, statement);
     if (errCode != E_OK) {
-        LOGE("[AnalysisSchema] Prepare the get schema index list staement error:%d", errCode);
+        LOGE("[AnalysisSchema] Prepare the get schema index list statement error:%d", errCode);
         return errCode;
     }
 
@@ -642,9 +644,9 @@ int GetSchemaIndexList(sqlite3 *db, const std::string &tableName, std::vector<st
             (void) SQLiteUtils::GetColumnTextValue(statement, 1, indexName);  // 1 means index name
             std::string origin;
             (void) SQLiteUtils::GetColumnTextValue(statement, 3, origin);  // 3 means index type, whether unique
-            if (origin == "u") {
+            if (origin == "u") { // 'u' means index created by unique constraint
                 uniqueList.push_back(indexName);
-            } else if (origin == "c") {
+            } else if (origin == "c") { // 'c' means index created by user declare
                 indexList.push_back(indexName);
             }
         } else {
@@ -760,6 +762,10 @@ int AnalysisSchemaFieldDefine(sqlite3 *db, const std::string &tableName, TableIn
             break;
         }
     } while (true);
+
+    if (table.GetPrimaryKey().empty()) {
+        table.SetPrimaryKey("rowid");
+    }
 
     SQLiteUtils::ResetStatement(statement, true, errCode);
     return errCode;
@@ -923,31 +929,6 @@ int SQLiteUtils::GetJournalMode(sqlite3 *db, std::string &mode)
         errCode = SQLiteUtils::GetColumnTextValue(statement, 0, mode);
     } else {
         LOGE("[SqlUtil][GetJournal] Get db journal_mode failed.");
-        errCode = SQLiteUtils::MapSQLiteErrno(SQLITE_ERROR);
-    }
-
-    SQLiteUtils::ResetStatement(statement, true, errCode);
-    return E_OK;
-}
-
-int SQLiteUtils::GetSynchronousMode(sqlite3 *db, int &mode)
-{
-    if (db == nullptr) {
-        return -E_INVALID_DB;
-    }
-
-    std::string sql = "PRAGMA synchronous;";
-    sqlite3_stmt *statement = nullptr;
-    int errCode = sqlite3_prepare(db, sql.c_str(), -1, &statement, nullptr);
-    if (errCode != SQLITE_OK || statement == nullptr) {
-        errCode = SQLiteUtils::MapSQLiteErrno(errCode);
-        return errCode;
-    }
-
-    if (sqlite3_step(statement) == SQLITE_ROW) {
-        mode = sqlite3_column_int(statement, 0);
-    } else {
-        LOGE("[SqlUtil][GetSynchronous] Get db synchronous failed.");
         errCode = SQLiteUtils::MapSQLiteErrno(SQLITE_ERROR);
     }
 
@@ -1287,7 +1268,7 @@ int SQLiteUtils::RegisterCalcHash(sqlite3 *db)
 
 void SQLiteUtils::GetSysTime(sqlite3_context *ctx, int argc, sqlite3_value **argv)
 {
-    if (ctx == nullptr || argc != 0) {
+    if (ctx == nullptr || argc != 1 || argv == nullptr) {
         LOGE("Parameter does not meet restrictions.");
         return;
     }
@@ -1299,7 +1280,7 @@ int SQLiteUtils::RegisterGetSysTime(sqlite3 *db)
 {
     TransactFunc func;
     func.xFunc = &GetSysTime;
-    return SQLiteUtils::RegisterFunction(db, "get_sys_time", 0, nullptr, func);
+    return SQLiteUtils::RegisterFunction(db, "get_sys_time", 1, nullptr, func);
 }
 
 int SQLiteUtils::CreateRelationalMetaTable(sqlite3 *db)
@@ -1319,8 +1300,9 @@ int SQLiteUtils::CreateRelationalMetaTable(sqlite3 *db)
 
 int SQLiteUtils::CreateRelationalLogTable(sqlite3 *db, const std::string &oriTableName)
 {
+    const std::string tableName = DBConstant::RELATIONAL_PREFIX + oriTableName + "_log";
     std::string sql =
-        "CREATE TABLE IF NOT EXISTS " + DBConstant::RELATIONAL_PREFIX + oriTableName + "_log(" \
+        "CREATE TABLE IF NOT EXISTS " + tableName + "(" \
         "data_key    INT NOT NULL," \
         "device      BLOB," \
         "ori_device  BLOB," \
@@ -1328,7 +1310,10 @@ int SQLiteUtils::CreateRelationalLogTable(sqlite3 *db, const std::string &oriTab
         "wtimestamp  INT  NOT NULL," \
         "flag        INT  NOT NULL," \
         "hash_key    BLOB NOT NULL,"
-        "PRIMARY KEY(device,hash_key));";
+        "PRIMARY KEY(device,hash_key));"
+        "CREATE INDEX IF NOT EXISTS " + DBConstant::RELATIONAL_PREFIX + "time_flag_index ON " + tableName +
+            "(timestamp, flag);"
+        "CREATE INDEX IF NOT EXISTS " + DBConstant::RELATIONAL_PREFIX + "hashkey_index ON " + tableName + "(hash_key);";
 
     int errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
     if (errCode != E_OK) {
@@ -1337,51 +1322,54 @@ int SQLiteUtils::CreateRelationalLogTable(sqlite3 *db, const std::string &oriTab
     return errCode;
 }
 
-template<typename ... Args>
-static std::string string_format(const std::string& format, Args ... args)
+namespace {
+std::string GetInsertTrigger(const TableInfo table)
 {
-    auto size = static_cast<size_t>(1024); // trigger string total len need < 1024
-    auto buf = std::make_unique<char[]>(size);
-    (void)sprintf_s(buf.get(), size, format.c_str(), args ...);
-    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
+    std::string insertTrigger = "CREATE TRIGGER IF NOT EXISTS ";
+    insertTrigger += "naturalbase_rdb_" + table.GetTableName() + "_ON_INSERT AFTER INSERT \n";
+    insertTrigger += "ON " + table.GetTableName() + "\n";
+    insertTrigger += "BEGIN\n";
+    insertTrigger += "\t INSERT OR REPLACE INTO ";
+    insertTrigger += DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
+    insertTrigger += " (data_key, device, ori_device, timestamp, wtimestamp, flag, hash_key)";
+    insertTrigger += " VALUES (new.rowid, '" + table.GetDevId() + "', '" + table.GetDevId() + "',";
+    insertTrigger += " get_sys_time(0), get_sys_time(0), 0x02,";
+    insertTrigger += " calc_hash(new." + table.GetPrimaryKey() + "));\n";
+    insertTrigger += "END;";
+    return insertTrigger;
+}
+
+std::string GetUpdateTrigger(const TableInfo table)
+{
+    std::string updateTrigger = "CREATE TRIGGER IF NOT EXISTS ";
+    updateTrigger += "naturalbase_rdb_" + table.GetTableName() + "_ON_UPDATE AFTER UPDATE \n";
+    updateTrigger += "ON " + table.GetTableName() + "\n";
+    updateTrigger += "BEGIN\n";
+    updateTrigger += "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
+    updateTrigger += " SET timestamp=get_sys_time(0), device='" + table.GetDevId() + "'";
+    updateTrigger += " where hash_key=calc_hash(old." + table.GetPrimaryKey() + ") and flag&0x02=0x02;\n";
+    updateTrigger += "END;";
+    return updateTrigger;
+}
+
+std::string GetDeleteTrigger(const TableInfo table)
+{
+    std::string deleteTrigger = "CREATE TRIGGER IF NOT EXISTS ";
+    deleteTrigger += "naturalbase_rdb_" + table.GetTableName() + "_ON_DELETE BEFORE DELETE \n";
+    deleteTrigger += "ON " + table.GetTableName() + "\n";
+    deleteTrigger += "BEGIN\n";
+    deleteTrigger += "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
+    deleteTrigger += " SET flag=0x03,timestamp=get_sys_time(0)";
+    deleteTrigger += " where hash_key=calc_hash(old." + table.GetPrimaryKey() + ") and flag&0x02=0x02;\n";
+    deleteTrigger += "END;";
+    return deleteTrigger;
+}
 }
 
 int SQLiteUtils::AddRelationalLogTableTrigger(sqlite3 *db, const TableInfo &table)
 {
-    std::string insertTrigger =
-        "CREATE TRIGGER IF NOT EXISTS naturalbase_rdb_%s_ON_INSERT AFTER INSERT \n" \
-        "ON %s\n" \
-        "BEGIN\n"  \
-            "\t INSERT OR REPLACE INTO " + DBConstant::RELATIONAL_PREFIX + "%s_log \
-            (data_key, device, ori_device, timestamp, wtimestamp, flag, hash_key)" \
-            "VALUES (new.rowid, '%s', '%s', get_sys_time(), get_sys_time(), 0x02, calc_hash(new.%s));\n" \
-        "END;";
-    insertTrigger = string_format(insertTrigger, table.GetTableName().c_str(), table.GetTableName().c_str(),
-        table.GetTableName().c_str(), table.GetDevId().c_str(),
-        table.GetDevId().c_str(), table.GetPrimaryKey().c_str());
-    std::string updateTrigger =
-        "CREATE TRIGGER IF NOT EXISTS naturalbase_rdb_%s_ON_UPDATE AFTER UPDATE \n" \
-        "ON %s\n" \
-        "BEGIN\n"  \
-            "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + "%s_log SET timestamp=get_sys_time(), device='%s' \
-            where hash_key=calc_hash(old.%s) and flag&0x10=0;\n" \
-        "END;";
-    updateTrigger = string_format(updateTrigger, table.GetTableName().c_str(), table.GetTableName().c_str(),
-        table.GetTableName().c_str(), table.GetDevId().c_str(), table.GetPrimaryKey().c_str());
-    std::string deleteTrigger =
-        "CREATE TRIGGER IF NOT EXISTS naturalbase_rdb_%s_ON_DELETE BEFORE DELETE \n" \
-        "ON %s\n" \
-        "BEGIN\n"  \
-            "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + "%s_log set flag=0x03,timestamp=get_sys_time() \
-            WHERE hash_key=calc_hash(old.%s);\n" \
-        "END;";
-    deleteTrigger = string_format(deleteTrigger, table.GetTableName().c_str(),
-        table.GetTableName().c_str(), table.GetTableName().c_str(), table.GetPrimaryKey().c_str());
-
-    std::vector<std::string> sqls = {insertTrigger, updateTrigger, deleteTrigger};
-    // add insert trigger
-    // add update trigger
-    // add delete trigger
+    std::vector<std::string> sqls = {GetInsertTrigger(table), GetUpdateTrigger(table), GetDeleteTrigger(table)};
+    // add insert,update,delete trigger
     for (const auto &sql : sqls) {
         int errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
         if (errCode != E_OK) {
@@ -1392,14 +1380,26 @@ int SQLiteUtils::AddRelationalLogTableTrigger(sqlite3 *db, const TableInfo &tabl
     return E_OK;
 }
 
-int SQLiteUtils::CreateSameStuTable(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName,
-    bool isCopyData)
+int SQLiteUtils::CreateSameStuTable(sqlite3 *db, const TableInfo &baseTbl, const std::string &newTableName)
 {
-    std::string sql = "create table IF NOT EXISTS " + newTableName + " as select * from " + oriTableName;
-    if (!isCopyData) {
-        sql += " where 1=0 ";
+    std::string sql = "CREATE TABLE IF NOT EXISTS " + newTableName + "(";
+    const std::map<FieldName, FieldInfo> &fields = baseTbl.GetFields();
+    for (uint32_t cid = 0; cid < fields.size(); ++cid) {
+        std::string fieldName = baseTbl.GetFieldName(cid);
+        sql += fieldName + " " + fields.at(fieldName).GetDataType();
+        if (fields.at(fieldName).IsNotNull()) {
+            sql += " NOT NULL";
+        }
+        if (fields.at(fieldName).HasDefaultValue()) {
+            sql += " DEFAULT " + fields.at(fieldName).GetDefaultValue();
+        }
+        if (fieldName == baseTbl.GetPrimaryKey()) {
+            sql += " PRIMARY KEY";
+        }
+        sql += ",";
     }
-    sql += ";";
+    sql.pop_back();
+    sql += ");";
     int errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
     if (errCode != E_OK) {
         LOGE("[SQLite] execute create table sql failed");
@@ -1410,7 +1410,7 @@ int SQLiteUtils::CreateSameStuTable(sqlite3 *db, const std::string &oriTableName
 int SQLiteUtils::CloneIndexes(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName)
 {
     std::string sql =
-        "SELECT 'CREATE ' || CASE WHEN il.'unique' THEN 'UNIQUE ' ELSE '' END || 'INDEX ' || '" +
+        "SELECT 'CREATE ' || CASE WHEN il.'unique' THEN 'UNIQUE ' ELSE '' END || 'INDEX IF NOT EXISTS ' || '" +
             newTableName + "_' || il.name || ' ON ' || '" + newTableName +
             "' || '(' || GROUP_CONCAT(ii.name) || ');' "
         "FROM sqlite_master AS m,"
@@ -1421,7 +1421,7 @@ int SQLiteUtils::CloneIndexes(sqlite3 *db, const std::string &oriTableName, cons
     sqlite3_stmt *stmt = nullptr;
     int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
     if (errCode != E_OK) {
-        LOGE("[AnalysisSchema] Prepare the clone sql failed:%d", errCode);
+        LOGE("Prepare the clone sql failed:%d", errCode);
         return errCode;
     }
 
@@ -1429,8 +1429,9 @@ int SQLiteUtils::CloneIndexes(sqlite3 *db, const std::string &oriTableName, cons
     while (true) {
         errCode = SQLiteUtils::StepWithRetry(stmt, false);
         if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
-            const unsigned char *indexSql = sqlite3_column_text(stmt, 0);
-            sql += std::string(reinterpret_cast<const char *>(indexSql));
+            std::string indexSql;
+            (void)GetColumnTextValue(stmt, 0, indexSql);
+            sql += indexSql;
             continue;
         }
         if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
@@ -1443,7 +1444,6 @@ int SQLiteUtils::CloneIndexes(sqlite3 *db, const std::string &oriTableName, cons
     if (errCode != E_OK) {
         return errCode;
     }
-
     errCode = SQLiteUtils::ExecuteRawSQL(db, sql);
     if (errCode != E_OK) {
         LOGE("[SQLite] execute create table sql failed");
@@ -1733,10 +1733,10 @@ void SQLiteUtils::FlatBufferExtractByPath(sqlite3_context *ctx, int argc, sqlite
 namespace {
 constexpr uint32_t FLATBUFFER_MAX_CACHE_SIZE = 102400; // 100 KBytes
 
-void FlatBufferCacheFree(std::vector<uint8_t> *inCahce)
+void FlatBufferCacheFree(std::vector<uint8_t> *inCache)
 {
-    delete inCahce;
-    inCahce = nullptr;
+    delete inCache;
+    inCache = nullptr;
 }
 }
 
@@ -1744,7 +1744,7 @@ void SQLiteUtils::FlatBufferExtractInnerFunc(sqlite3_context *ctx, const SchemaO
     RawString inPath)
 {
     // All parameter had already been check inside FlatBufferExtractByPath, only called by FlatBufferExtractByPath
-    if (schema.GetSkipSize() % SECURE_BYTE_ALIGN == 0) {
+    if (schema.GetSkipSize() % SchemaConstant::SECURE_BYTE_ALIGN == 0) {
         TypeValue outExtract;
         int errCode = schema.ExtractValue(ValueSource::FROM_DBFILE, inPath, inValue, outExtract, nullptr);
         if (errCode != E_OK) {
@@ -2053,5 +2053,55 @@ int SQLiteUtils::CheckTableEmpty(sqlite3 *db, const std::string &tableName, bool
 
     SQLiteUtils::ResetStatement(stmt, true, errCode);
     return SQLiteUtils::MapSQLiteErrno(errCode);
+}
+
+int SQLiteUtils::SetPersistWalMode(sqlite3 *db)
+{
+    if (db == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    int opCode = 1;
+    int errCode = sqlite3_file_control(db, "main", SQLITE_FCNTL_PERSIST_WAL, &opCode);
+    if (errCode != SQLITE_OK) {
+        LOGE("Set persist wal mode failed. %d", errCode);
+    }
+    return SQLiteUtils::MapSQLiteErrno(errCode);
+}
+
+int SQLiteUtils::CheckSchemaChanged(sqlite3_stmt *stmt, const TableInfo &table, int offset)
+{
+    if (stmt == nullptr) {
+        return  -E_INVALID_ARGS;
+    }
+
+    int columnNum = sqlite3_column_count(stmt);
+    if (columnNum - offset != static_cast<int>(table.GetFields().size())) {
+        LOGE("Schema field number does not match.");
+        return -E_DISTRIBUTED_SCHEMA_CHANGED;
+    }
+
+    auto fields = table.GetFields();
+    for (int i = offset; i < columnNum; i++) {
+        const char *name = sqlite3_column_name(stmt, i);
+        std::string colName = (name == nullptr) ? std::string() : name;
+        const char *declType = sqlite3_column_decltype(stmt, i);
+        std::string colType = (declType == nullptr) ? std::string() : declType;
+        transform(colType.begin(), colType.end(), colType.begin(), ::tolower);
+
+        auto it = fields.find(colName);
+        if (it == fields.end() || it->second.GetDataType() != colType) {
+            LOGE("Schema field define does not match.");
+            return -E_DISTRIBUTED_SCHEMA_CHANGED;
+        }
+    }
+    return E_OK;
+}
+
+int64_t SQLiteUtils::GetLastRowId(sqlite3 *db)
+{
+    if (db == nullptr) {
+        return -1;
+    }
+    return sqlite3_last_insert_rowid(db);
 }
 } // namespace DistributedDB

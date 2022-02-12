@@ -22,7 +22,6 @@
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_snapshot_callback.h"
-#include "types.h"
 
 using namespace std;
 using namespace testing;

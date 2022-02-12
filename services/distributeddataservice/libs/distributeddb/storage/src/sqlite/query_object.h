@@ -16,8 +16,10 @@
 #define QUERY_OBJECT_H
 
 #include <string>
-#include "schema_object.h"
+
 #include "query.h"
+#include "relational_schema_object.h"
+#include "schema_object.h"
 #include "sqlite_query_helper.h"
 
 namespace DistributedDB {
@@ -26,7 +28,8 @@ public:
     QueryObject();
     explicit QueryObject(const Query &query);
     // for query sync
-    QueryObject(const std::list<QueryObjNode> &queryObjNodes, const std::vector<uint8_t> &prefixKey);
+    QueryObject(const std::list<QueryObjNode> &queryObjNodes, const std::vector<uint8_t> &prefixKey,
+        const std::set<Key> &keys);
     virtual ~QueryObject();
     int Init();
     SqliteQueryHelper GetQueryHelper(int &errCode);
@@ -41,6 +44,7 @@ public:
     void SetSchema(const SchemaObject &schema);
 
     bool IsQueryOnlyByKey() const;
+    bool IsQueryForRelationalDB() const;
 
     void SetTableName(const std::string &tableName)
     {
@@ -58,12 +62,22 @@ public:
     int ParseQueryObjNodes();
 
     bool Empty() const;
+    
+    bool HasInKeys() const
+    {
+        return hasInKeys_;
+    }
+
+#ifdef RELATIONAL_STORE
+    int SetSchema(const RelationalSchemaObject &schemaObj);  // The interface can only be used in relational query.
+#endif
 
 protected:
     std::list<QueryObjNode> queryObjNodes_;
     std::vector<uint8_t> prefixKey_;
     std::string tableName_ = "sync_data";
     std::string suggestIndex_;
+    std::set<Key> keys_;
 
     bool isValid_ = true;
 
@@ -81,6 +95,8 @@ private:
     int CheckLinkerBefore(const std::list<QueryObjNode>::iterator &iter) const;
     void ClearNodesFlag();
     void GetAttrFromQueryObjNodes();
+    int CheckInKeys() const;
+    bool IsRelationalQuery() const;
 
     SchemaObject schema_; // used to check and parse schema filed
     int limit_;
@@ -88,6 +104,7 @@ private:
     bool hasOrderBy_;
     bool hasLimit_;
     bool hasPrefixKey_;
+    bool hasInKeys_;
     int orderByCounts_;
 };
 }

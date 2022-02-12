@@ -186,6 +186,13 @@ void QueryExpression::QueryBySuggestIndex(const std::string &indexName)
     suggestIndex_ = indexName;
 }
 
+void QueryExpression::InKeys(const std::set<Key> &keys)
+{
+    queryInfo_.emplace_back(QueryObjNode{QueryObjType::IN_KEYS, std::string(), QueryValueType::VALUE_TYPE_NULL,
+        std::vector<FieldValue>()});
+    keys_ = keys;
+}
+
 const std::list<QueryObjNode> &QueryExpression::GetQueryExpression()
 {
     if (!GetErrFlag()) {
@@ -212,7 +219,7 @@ const std::string &QueryExpression::GetTableName()
     return tableName_;
 }
 
-bool QueryExpression::IsTableNameSpacified() const
+bool QueryExpression::IsTableNameSpecified() const
 {
     return isTableNameSpecified_;
 }
@@ -220,6 +227,11 @@ bool QueryExpression::IsTableNameSpacified() const
 std::string QueryExpression::GetSuggestIndex() const
 {
     return suggestIndex_;
+}
+
+const std::set<Key> &QueryExpression::GetKeys() const
+{
+    return keys_;
 }
 
 void QueryExpression::BeginGroup()
@@ -241,6 +253,7 @@ void QueryExpression::Reset()
     prefixKey_.clear();
     prefixKey_.shrink_to_fit();
     suggestIndex_.clear();
+    keys_.clear();
 }
 
 void QueryExpression::SetErrFlag(bool flag)

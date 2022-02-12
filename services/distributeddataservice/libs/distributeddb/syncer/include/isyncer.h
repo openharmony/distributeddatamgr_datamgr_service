@@ -23,7 +23,7 @@
 #include "isync_interface.h"
 #include "types_export.h"
 #include "query_sync_object.h"
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 class ISyncer {
@@ -75,7 +75,8 @@ public:
     virtual void EnableAutoSync(bool enable) = 0;
 
     // delete specified device's watermark
-    virtual int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash) = 0;
+    virtual int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash,
+        const std::string &tableName = "") = 0;
 
     // Local data changed callback
     virtual void LocalDataChanged(int notifyEvent) = 0;

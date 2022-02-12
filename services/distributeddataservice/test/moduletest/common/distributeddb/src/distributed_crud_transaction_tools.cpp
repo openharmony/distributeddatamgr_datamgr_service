@@ -28,7 +28,6 @@
 #include "distributeddb_data_generator.h"
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
-#include "types.h"
 
 using namespace std;
 using namespace chrono;

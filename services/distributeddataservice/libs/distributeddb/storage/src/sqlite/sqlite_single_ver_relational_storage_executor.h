@@ -35,15 +35,15 @@ public:
 
     int CreateDistributedTable(const std::string &tableName, TableInfo &table);
 
+    int UpgradeDistributedTable(const TableInfo &tableInfo, TableInfo &newTableInfo);
+
     int StartTransaction(TransactType type);
     int Commit();
     int Rollback();
 
-    int SetTableInfo(const QueryObject &query);
-
     // For Get sync data
-    int GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength,
-        const DataSizeSpecInfo &dataSizeInfo, std::function<int(sqlite3 *, sqlite3_stmt *&, bool &)> getStmt);
+    int GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength, const DataSizeSpecInfo &dataSizeInfo,
+        std::function<int(sqlite3 *, sqlite3_stmt *&, bool &)> getStmt, const std::string &baseTbl);
 
     // operation of meta data
     int GetKvData(const Key &key, Value &value) const;
@@ -60,6 +60,16 @@ public:
 
     int CheckDBModeForRelational();
 
+    int DeleteDistributedDeviceTable(const std::string &device, const std::string &tableName);
+    int DeleteDistributedLogTable(const std::string &tableName);
+
+    int CheckAndCleanDistributedTable(const std::vector<std::string> &tableNames,
+        std::vector<std::string> &missingTables);
+
+    int CreateDistributedDeviceTable(const std::string &device, const TableInfo &baseTbl);
+
+    int CheckQueryObjectLegal(const TableInfo &table, QueryObject &query);
+
 private:
     int PrepareForSyncDataByTime(TimeStamp begin, TimeStamp end,
         sqlite3_stmt *&statement, bool getDeletedData) const;
@@ -68,13 +78,17 @@ private:
 
     int SaveSyncDataItems(const QueryObject &object, std::vector<DataItem> &dataItems,
         const std::string &deviceName, TimeStamp &timeStamp);
-    int SaveSyncDataItem(sqlite3_stmt *statement, const DataItem &dataItem);
+    int SaveSyncDataItem(sqlite3_stmt *statement, const DataItem &dataItem, int64_t &rowid);
 
     int DeleteSyncDataItem(const DataItem &dataItem);
 
-    int SaveSyncLog(sqlite3_stmt *statement, const DataItem &dataItem, TimeStamp &maxTimestamp);
+    int SaveSyncLog(sqlite3_stmt *statement, const DataItem &dataItem, TimeStamp &maxTimestamp, int64_t rowid);
     int PrepareForSavingData(const QueryObject &object, const std::string &deviceName, sqlite3_stmt *&statement) const;
     int PrepareForSavingLog(const QueryObject &object, const std::string &deviceName, sqlite3_stmt *&statement) const;
+
+    int AlterAuxTableForUpgrade(const TableInfo &oldTableInfo, const TableInfo &newTableInfo);
+
+    int SetTableInfo(const std::string &baseTbl);
 
     TableInfo table_;
 };

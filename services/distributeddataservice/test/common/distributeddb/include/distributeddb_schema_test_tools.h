@@ -20,7 +20,6 @@
 #endif
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
-#include "types.h"
 #include "distributeddb_data_generator.h"
 #include "distributeddb_nb_test_tools.h"
 const static int RECORDNUM = 257;

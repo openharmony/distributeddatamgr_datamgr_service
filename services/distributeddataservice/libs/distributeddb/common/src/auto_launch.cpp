@@ -25,6 +25,8 @@
 #include "kvdb_pragma.h"
 #include "log_print.h"
 #include "param_check_utils.h"
+#include "relational_store_instance.h"
+#include "relational_store_changed_data_impl.h"
 #include "runtime_context.h"
 #include "semaphore_utils.h"
 #include "sync_able_kvdb_connection.h"
@@ -136,14 +138,16 @@ int AutoLaunch::EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLa
 {
     LOGI("[AutoLaunch] EnableKvStoreAutoLaunch");
     std::string identifier = properties.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
-    AutoLaunchItem autoLaunchItem { properties, notifier, option.observer, option.conflictType, option.notifier };
+    std::shared_ptr<DBProperties> ptr = std::make_shared<KvDBProperties>(properties);
+    AutoLaunchItem autoLaunchItem { ptr, notifier, option.observer, option.conflictType, option.notifier };
     autoLaunchItem.isAutoSync = option.isAutoSync;
+    autoLaunchItem.type = DBType::DB_KV;
     int errCode = EnableKvStoreAutoLaunchParmCheck(autoLaunchItem, identifier);
     if (errCode != E_OK) {
         LOGE("[AutoLaunch] EnableKvStoreAutoLaunch failed errCode:%d", errCode);
         return errCode;
     }
-    errCode = GetConnectionInEnable(autoLaunchItem, identifier);
+    errCode = GetKVConnectionInEnable(autoLaunchItem, identifier);
     if (errCode == E_OK) {
         LOGI("[AutoLaunch] EnableKvStoreAutoLaunch ok");
     } else {
@@ -152,19 +156,21 @@ int AutoLaunch::EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLa
     return errCode;
 }
 
-int AutoLaunch::GetConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std::string &identifier)
+int AutoLaunch::GetKVConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std::string &identifier)
 {
-    LOGI("[AutoLaunch] GetConnectionInEnable");
+    LOGI("[AutoLaunch] GetKVConnectionInEnable");
     int errCode;
-    autoLaunchItem.conn = KvDBManager::GetDatabaseConnection(autoLaunchItem.properties, errCode, false);
+    std::shared_ptr<KvDBProperties> properties =
+        std::static_pointer_cast<KvDBProperties>(autoLaunchItem.propertiesPtr);
+    autoLaunchItem.conn = KvDBManager::GetDatabaseConnection(*properties, errCode, false);
     if (errCode == -E_ALREADY_OPENED) {
-        LOGI("[AutoLaunch] GetConnectionInEnable user already getkvstore by self");
+        LOGI("[AutoLaunch] GetKVConnectionInEnable user already getkvstore by self");
         std::lock_guard<std::mutex> autoLock(dataLock_);
         autoLaunchItemMap_[identifier].state = AutoLaunchItemState::IDLE;
         return E_OK;
     }
     if (autoLaunchItem.conn == nullptr) {
-        LOGE("[AutoLaunch] GetConnectionInEnable GetDatabaseConnection errCode:%d", errCode);
+        LOGE("[AutoLaunch] GetKVConnectionInEnable GetDatabaseConnection errCode:%d", errCode);
         std::lock_guard<std::mutex> autoLock(dataLock_);
         autoLaunchItemMap_.erase(identifier);
         return errCode;
@@ -175,10 +181,11 @@ int AutoLaunch::GetConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std:
         isEmpty = onlineDevices_.empty();
     }
     if (isEmpty) {
-        LOGI("[AutoLaunch] GetConnectionInEnable no online device, ReleaseDatabaseConnection");
-        errCode = KvDBManager::ReleaseDatabaseConnection(autoLaunchItem.conn);
+        LOGI("[AutoLaunch] GetKVConnectionInEnable no online device, ReleaseDatabaseConnection");
+        IKvDBConnection *kvConn = static_cast<IKvDBConnection*>(autoLaunchItem.conn);
+        errCode = KvDBManager::ReleaseDatabaseConnection(kvConn);
         if (errCode != E_OK) {
-            LOGE("[AutoLaunch] GetConnectionInEnable ReleaseDatabaseConnection failed errCode:%d", errCode);
+            LOGE("[AutoLaunch] GetKVConnectionInEnable ReleaseDatabaseConnection failed errCode:%d", errCode);
             std::lock_guard<std::mutex> autoLock(dataLock_);
             autoLaunchItemMap_.erase(identifier);
             return errCode;
@@ -193,9 +200,9 @@ int AutoLaunch::GetConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std:
         autoLaunchItemMap_[identifier].state = AutoLaunchItemState::IDLE;
         autoLaunchItemMap_[identifier].conn = autoLaunchItem.conn;
         autoLaunchItemMap_[identifier].observerHandle = autoLaunchItem.observerHandle;
-        LOGI("[AutoLaunch] GetConnectionInEnable RegisterObserverAndLifeCycleCallback ok");
+        LOGI("[AutoLaunch] GetKVConnectionInEnable RegisterObserverAndLifeCycleCallback ok");
     } else {
-        LOGE("[AutoLaunch] GetConnectionInEnable RegisterObserverAndLifeCycleCallback err, do CloseConnection");
+        LOGE("[AutoLaunch] GetKVConnectionInEnable RegisterObserverAndLifeCycleCallback err, do CloseConnection");
         TryCloseConnection(autoLaunchItem); // do nothing if failed
         std::lock_guard<std::mutex> autoLock(dataLock_);
         autoLaunchItemMap_.erase(identifier);
@@ -211,20 +218,21 @@ int AutoLaunch::CloseConnectionStrict(AutoLaunchItem &autoLaunchItem)
         LOGI("[AutoLaunch] CloseConnectionStrict conn is nullptr, do nothing");
         return E_OK;
     }
-    int errCode = autoLaunchItem.conn->RegisterLifeCycleCallback(nullptr);
+    IKvDBConnection *kvConn = static_cast<IKvDBConnection*>(autoLaunchItem.conn);
+    int errCode = kvConn->RegisterLifeCycleCallback(nullptr);
     if (errCode != E_OK) {
         LOGE("[AutoLaunch] CloseConnectionStrict RegisterLifeCycleCallback failed errCode:%d", errCode);
         return errCode;
     }
     if (autoLaunchItem.observerHandle != nullptr) {
-        errCode = autoLaunchItem.conn->UnRegisterObserver(autoLaunchItem.observerHandle);
+        errCode = kvConn->UnRegisterObserver(autoLaunchItem.observerHandle);
         if (errCode != E_OK) {
             LOGE("[AutoLaunch] CloseConnectionStrict UnRegisterObserver failed errCode:%d", errCode);
             return errCode;
         }
         autoLaunchItem.observerHandle = nullptr;
     }
-    errCode = KvDBManager::ReleaseDatabaseConnection(autoLaunchItem.conn);
+    errCode = KvDBManager::ReleaseDatabaseConnection(kvConn);
     if (errCode != E_OK) {
         LOGE("[AutoLaunch] CloseConnectionStrict ReleaseDatabaseConnection failed errCode:%d", errCode);
     }
@@ -235,24 +243,16 @@ int AutoLaunch::CloseConnectionStrict(AutoLaunchItem &autoLaunchItem)
 void AutoLaunch::TryCloseConnection(AutoLaunchItem &autoLaunchItem)
 {
     LOGI("[AutoLaunch] TryCloseConnection");
-    if (autoLaunchItem.conn == nullptr) {
-        LOGI("[AutoLaunch] TryCloseConnection conn is nullptr, do nothing");
-        return;
-    }
-    int errCode = autoLaunchItem.conn->RegisterLifeCycleCallback(nullptr);
-    if (errCode != E_OK) {
-        LOGE("[AutoLaunch] TryCloseConnection RegisterLifeCycleCallback failed errCode:%d", errCode);
-    }
-    if (autoLaunchItem.observerHandle != nullptr) {
-        errCode = autoLaunchItem.conn->UnRegisterObserver(autoLaunchItem.observerHandle);
-        if (errCode != E_OK) {
-            LOGE("[AutoLaunch] TryCloseConnection UnRegisterObserver failed errCode:%d", errCode);
-        }
-        autoLaunchItem.observerHandle = nullptr;
-    }
-    errCode = KvDBManager::ReleaseDatabaseConnection(autoLaunchItem.conn);
-    if (errCode != E_OK) {
-        LOGE("[AutoLaunch] TryCloseConnection ReleaseDatabaseConnection failed errCode:%d", errCode);
+    switch (autoLaunchItem.type) {
+        case DBType::DB_KV:
+            TryCloseKvConnection(autoLaunchItem);
+            break;
+        case DBType::DB_RELATION:
+            TryCloseRelationConnection(autoLaunchItem);
+            break;
+        default:
+            LOGD("[AutoLaunch] Unknown type[%d] when try to close connection", autoLaunchItem.type);
+            break;
     }
 }
 
@@ -264,51 +264,57 @@ int AutoLaunch::RegisterObserverAndLifeCycleCallback(AutoLaunchItem &autoLaunchI
         return errCode;
     }
     LOGI("[AutoLaunch] RegisterObserver ok");
-    if (isExt) {
-        errCode = autoLaunchItem.conn->RegisterLifeCycleCallback(std::bind(
-            &AutoLaunch::ExtConnectionLifeCycleCallback, this, std::placeholders::_1));
-    } else {
-        errCode = autoLaunchItem.conn->RegisterLifeCycleCallback(std::bind(&AutoLaunch::ConnectionLifeCycleCallback,
-            this, std::placeholders::_1));
-    }
+
+    errCode = RegisterLifeCycleCallback(autoLaunchItem, identifier, isExt);
     if (errCode != E_OK) {
         LOGE("[AutoLaunch]  RegisterLifeCycleCallback failed, errCode:%d", errCode);
         return errCode;
     }
     LOGI("[AutoLaunch] RegisterLifeCycleCallback ok");
 
-    errCode = SetConflictNotifier(autoLaunchItem.conn, autoLaunchItem.conflictType, autoLaunchItem.conflictNotifier);
+    errCode = SetConflictNotifier(autoLaunchItem);
     if (errCode != E_OK) {
         LOGE("[AutoLaunch]  SetConflictNotifier failed, errCode:%d", errCode);
         return errCode;
     }
 
-    bool enAutoSync = autoLaunchItem.isAutoSync;
-    errCode = static_cast<SyncAbleKvDBConnection *>(autoLaunchItem.conn)->Pragma(PRAGMA_AUTO_SYNC,
-        static_cast<void *>(&enAutoSync));
-    if (errCode != E_OK) {
-        LOGE("[AutoLaunch]  PRAGMA_AUTO_SYNC failed, errCode:%d", errCode);
-        return errCode;
-    }
-    LOGI("[AutoLaunch] set PRAGMA_AUTO_SYNC ok, enAutoSync=%d", enAutoSync);
-    return errCode;
+    return PragmaAutoSync(autoLaunchItem);
 }
 
 int AutoLaunch::RegisterObserver(AutoLaunchItem &autoLaunchItem, const std::string &identifier, bool isExt)
 {
-    LOGI("[AutoLaunch] RegisterObserver");
     if (autoLaunchItem.conn == nullptr) {
         LOGE("[AutoLaunch] autoLaunchItem.conn is nullptr");
         return -E_INTERNAL_ERROR;
     }
+    LOGI("[AutoLaunch] RegisterObserver type=%d", autoLaunchItem.type);
+    if (autoLaunchItem.type == DBType::DB_RELATION) {
+        RelationalStoreConnection *conn = static_cast<RelationalStoreConnection *>(autoLaunchItem.conn);
+        conn->RegisterObserverAction([autoLaunchItem](const std::string &changedDevice) {
+            RelationalStoreChangedDataImpl data(changedDevice);
+            if (autoLaunchItem.propertiesPtr != nullptr) {
+                data.SetStoreProperty({
+                    autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::USER_ID, ""),
+                    autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::APP_ID, ""),
+                    autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::STORE_ID, "")
+                });
+            }
+            if (autoLaunchItem.storeObserver) {
+                LOGD("begin to observer onchange, changedDevice=%s", STR_MASK(changedDevice));
+                autoLaunchItem.storeObserver->OnChange(data);
+            }
+        });
+        return E_OK;
+    }
     int errCode;
     Key key;
     KvDBObserverHandle *observerHandle = nullptr;
+    IKvDBConnection *kvConn = static_cast<IKvDBConnection*>(autoLaunchItem.conn);
     if (isExt) {
-        observerHandle = autoLaunchItem.conn->RegisterObserver(OBSERVER_CHANGES_FOREIGN, key,
+        observerHandle = kvConn->RegisterObserver(OBSERVER_CHANGES_FOREIGN, key,
             std::bind(&AutoLaunch::ExtObserverFunc, this, std::placeholders::_1, identifier), errCode);
     } else {
-        observerHandle = autoLaunchItem.conn->RegisterObserver(OBSERVER_CHANGES_FOREIGN, key,
+        observerHandle = kvConn->RegisterObserver(OBSERVER_CHANGES_FOREIGN, key,
             std::bind(&AutoLaunch::ObserverFunc, this, std::placeholders::_1, identifier), errCode);
     }
 
@@ -341,9 +347,12 @@ void AutoLaunch::ObserverFunc(const KvDBCommitNotifyData &notifyData, const std:
         autoLaunchItem.observer = autoLaunchItemMap_[identifier].observer;
         autoLaunchItem.isWriteOpenNotifiered = autoLaunchItemMap_[identifier].isWriteOpenNotifiered;
         autoLaunchItem.notifier = autoLaunchItemMap_[identifier].notifier;
-        userId = autoLaunchItemMap_[identifier].properties.GetStringProp(KvDBProperties::USER_ID, "");
-        appId = autoLaunchItemMap_[identifier].properties.GetStringProp(KvDBProperties::APP_ID, "");
-        storeId = autoLaunchItemMap_[identifier].properties.GetStringProp(KvDBProperties::STORE_ID, "");
+        
+        std::shared_ptr<KvDBProperties> properties =
+            std::static_pointer_cast<KvDBProperties>(autoLaunchItemMap_[identifier].propertiesPtr);
+        userId = properties->GetStringProp(KvDBProperties::USER_ID, "");
+        appId = properties->GetStringProp(KvDBProperties::APP_ID, "");
+        storeId = properties->GetStringProp(KvDBProperties::STORE_ID, "");
     }
     if (autoLaunchItem.observer != nullptr) {
         LOGI("[AutoLaunch] do user observer");
@@ -440,9 +449,9 @@ void AutoLaunch::GetAutoLaunchSyncDevices(const std::string &identifier, std::ve
 void AutoLaunch::CloseNotifier(const AutoLaunchItem &autoLaunchItem)
 {
     if (autoLaunchItem.notifier) {
-        std::string userId = autoLaunchItem.properties.GetStringProp(KvDBProperties::USER_ID, "");
-        std::string appId = autoLaunchItem.properties.GetStringProp(KvDBProperties::APP_ID, "");
-        std::string storeId = autoLaunchItem.properties.GetStringProp(KvDBProperties::STORE_ID, "");
+        std::string userId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::USER_ID, "");
+        std::string appId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::APP_ID, "");
+        std::string storeId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::STORE_ID, "");
         LOGI("[AutoLaunch] CloseNotifier do autoLaunchItem.notifier");
         autoLaunchItem.notifier(userId, appId, storeId, AutoLaunchStatus::WRITE_CLOSED);
         LOGI("[AutoLaunch] CloseNotifier do autoLaunchItem.notifier finished");
@@ -499,16 +508,17 @@ void AutoLaunch::ConnectionLifeCycleCallback(const std::string &identifier)
     }
 }
 
-IKvDBConnection *AutoLaunch::GetOneConnection(const KvDBProperties &properties, int &errCode)
+int AutoLaunch::OpenOneConnection(AutoLaunchItem &autoLaunchItem)
 {
     LOGI("[AutoLaunch] GetOneConnection");
-    IKvDBConnection *conn = KvDBManager::GetDatabaseConnection(properties, errCode, false);
-    if (errCode == -E_ALREADY_OPENED) {
-        LOGI("[AutoLaunch] GetOneConnection user already getkvstore by self");
-    } else if (conn == nullptr) {
-        LOGE("[AutoLaunch] GetOneConnection GetDatabaseConnection failed errCode:%d", errCode);
+    switch (autoLaunchItem.type) {
+        case DBType::DB_KV:
+            return OpenKvConnection(autoLaunchItem);
+        case DBType::DB_RELATION:
+            return OpenRelationalConnection(autoLaunchItem);
+        default:
+            return -E_INVALID_ARGS;
     }
-    return conn;
 }
 
 void AutoLaunch::OnlineCallBack(const std::string &device, bool isConnect)
@@ -570,8 +580,7 @@ void AutoLaunch::GetConnInDoOpenMap(std::map<std::string, AutoLaunchItem> &doOpe
     SemaphoreUtils sema(1 - doOpenMap.size());
     for (auto &iter : doOpenMap) {
         int errCode = RuntimeContext::GetInstance()->ScheduleTask([&sema, &iter, this] {
-            int ret;
-            iter.second.conn = GetOneConnection(iter.second.properties, ret);
+            int ret = OpenOneConnection(iter.second);
             LOGI("[AutoLaunch] GetConnInDoOpenMap GetOneConnection errCode:%d\n", ret);
             if (iter.second.conn == nullptr) {
                 sema.SendSemaphore();
@@ -623,8 +632,7 @@ void AutoLaunch::ReceiveUnknownIdentifierCallBackTask(const std::string &identif
         std::lock_guard<std::mutex> autoLock(dataLock_);
         autoLaunchItem = autoLaunchItemMap_[identifier];
     }
-    int errCode;
-    autoLaunchItem.conn = GetOneConnection(autoLaunchItem.properties, errCode);
+    int errCode = OpenOneConnection(autoLaunchItem);
     LOGI("[AutoLaunch] ReceiveUnknownIdentifierCallBack GetOneConnection errCode:%d\n", errCode);
     if (autoLaunchItem.conn == nullptr) {
         std::lock_guard<std::mutex> autoLock(dataLock_);
@@ -691,30 +699,28 @@ EXT:
     return AutoLaunchExt(identifier);
 }
 
-void AutoLaunch::SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback)
+void AutoLaunch::SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback, DBType type)
 {
-    LOGI("[AutoLaunch] SetAutoLaunchRequestCallback");
+    LOGI("[AutoLaunch] SetAutoLaunchRequestCallback type[%d]", type);
     std::lock_guard<std::mutex> lock(extLock_);
-    autoLaunchRequestCallback_ = callback;
+    if (callback) {
+        autoLaunchRequestCallbackMap_[type] = callback;
+    } else if (autoLaunchRequestCallbackMap_.find(type) != autoLaunchRequestCallbackMap_.end()) {
+        autoLaunchRequestCallbackMap_.erase(type);
+    }
 }
 
 int AutoLaunch::AutoLaunchExt(const std::string &identifier)
 {
     AutoLaunchParam param;
-    {
-        std::lock_guard<std::mutex> lock(extLock_);
-        if (!autoLaunchRequestCallback_) {
-            LOGI("[AutoLaunch] autoLaunchRequestCallback_ is nullptr");
-            return -E_NOT_FOUND; // not E_OK is ok for communicator
-        }
-        bool needOpen = autoLaunchRequestCallback_(identifier, param);
-        if (!needOpen) {
-            LOGI("[AutoLaunch] autoLaunchRequestCallback_ is not need open");
-            return -E_NOT_FOUND; // not E_OK is ok for communicator
-        }
+    DBType openType = DBType::DB_INVALID;
+    int errCode = ExtAutoLaunchRequestCallBack(identifier, param, openType);
+    if (errCode != E_OK) {
+        return errCode;  // not E_OK is ok for communicator
     }
-    KvDBProperties properties;
-    int errCode = AutoLaunch::GetAutoLaunchProperties(param, properties);
+    
+    std::shared_ptr<DBProperties> ptr;
+    errCode = AutoLaunch::GetAutoLaunchProperties(param, openType, ptr);
     if (errCode != E_OK) {
         LOGE("[AutoLaunch] AutoLaunchExt param check fail errCode:%d", errCode);
         if (!param.notifier) {
@@ -728,9 +734,11 @@ int AutoLaunch::AutoLaunchExt(const std::string &identifier)
         }
         return errCode;
     }
-    AutoLaunchItem autoLaunchItem{properties, param.notifier, param.option.observer, param.option.conflictType,
+    AutoLaunchItem autoLaunchItem{ptr, param.notifier, param.option.observer, param.option.conflictType,
         param.option.notifier};
     autoLaunchItem.isAutoSync = param.option.isAutoSync;
+    autoLaunchItem.type = openType;
+    autoLaunchItem.storeObserver = param.option.storeObserver;
     errCode = RuntimeContext::GetInstance()->ScheduleTask(std::bind(&AutoLaunch::AutoLaunchExtTask, this,
         identifier, autoLaunchItem));
     if (errCode != E_OK) {
@@ -749,8 +757,7 @@ void AutoLaunch::AutoLaunchExtTask(const std::string identifier, AutoLaunchItem 
         }
         extItemMap_[identifier] = autoLaunchItem;
     }
-    int errCode;
-    autoLaunchItem.conn = GetOneConnection(autoLaunchItem.properties, errCode);
+    int errCode = OpenOneConnection(autoLaunchItem);
     LOGI("[AutoLaunch] AutoLaunchExtTask GetOneConnection errCode:%d", errCode);
     if (autoLaunchItem.conn == nullptr) {
         std::lock_guard<std::mutex> autoLock(extLock_);
@@ -803,9 +810,9 @@ void AutoLaunch::ExtObserverFunc(const KvDBCommitNotifyData &notifyData, const s
         }
     }
 
-    std::string userId = autoLaunchItem.properties.GetStringProp(KvDBProperties::USER_ID, "");
-    std::string appId = autoLaunchItem.properties.GetStringProp(KvDBProperties::APP_ID, "");
-    std::string storeId = autoLaunchItem.properties.GetStringProp(KvDBProperties::STORE_ID, "");
+    std::string userId = autoLaunchItem.propertiesPtr->GetStringProp(KvDBProperties::USER_ID, "");
+    std::string appId = autoLaunchItem.propertiesPtr->GetStringProp(KvDBProperties::APP_ID, "");
+    std::string storeId = autoLaunchItem.propertiesPtr->GetStringProp(KvDBProperties::STORE_ID, "");
     int retCode = RuntimeContext::GetInstance()->ScheduleTask([notifier, userId, appId, storeId] {
         LOGI("[AutoLaunch] ExtObserverFunc do user notifier WRITE_OPENED");
         notifier(userId, appId, storeId, AutoLaunchStatus::WRITE_OPENED);
@@ -836,31 +843,35 @@ void AutoLaunch::ExtConnectionLifeCycleCallbackTask(const std::string &identifie
             return;
         }
         autoLaunchItem = extItemMap_[identifier];
+        extItemMap_.erase(identifier);
     }
     LOGI("[AutoLaunch] ExtConnectionLifeCycleCallbackTask do CloseConnection");
     TryCloseConnection(autoLaunchItem); // do nothing if failed
-    {
-        std::lock_guard<std::mutex> lock(extLock_);
-        autoLaunchItem = extItemMap_[identifier];
-        extItemMap_.erase(identifier);
-    }
     if (autoLaunchItem.isWriteOpenNotifiered) {
         CloseNotifier(autoLaunchItem);
     }
 }
 
-int AutoLaunch::SetConflictNotifier(IKvDBConnection *conn, int conflictType, const KvStoreNbConflictNotifier &notifier)
+int AutoLaunch::SetConflictNotifier(AutoLaunchItem &autoLaunchItem)
 {
+    if (autoLaunchItem.type != DBType::DB_KV) {
+        LOGD("[AutoLaunch] Current Type[%d] Not Support ConflictNotifier Now", autoLaunchItem.type);
+        return E_OK;
+    }
+    
+    IKvDBConnection *kvConn = static_cast<IKvDBConnection*>(autoLaunchItem.conn);
+    int conflictType = autoLaunchItem.conflictType;
+    const KvStoreNbConflictNotifier &notifier = autoLaunchItem.conflictNotifier;
     if (conflictType == 0) {
         return E_OK;
     }
     int errCode;
     if (!notifier) {
-        errCode = conn->SetConflictNotifier(conflictType, nullptr);
+        errCode = kvConn->SetConflictNotifier(conflictType, nullptr);
         goto END;
     }
 
-    errCode = conn->SetConflictNotifier(conflictType,
+    errCode = kvConn->SetConflictNotifier(conflictType,
         [conflictType, notifier](const KvDBCommitNotifyData &data) {
             int resultCode;
             const std::list<KvDBConflictEntry> entries = data.GetCommitConflicts(resultCode);
@@ -888,7 +899,28 @@ END:
     return errCode;
 }
 
-int AutoLaunch::GetAutoLaunchProperties(const AutoLaunchParam &param, KvDBProperties &properties)
+int AutoLaunch::GetAutoLaunchProperties(const AutoLaunchParam &param, const DBType &openType,
+    std::shared_ptr<DBProperties> &propertiesPtr)
+{
+    switch (openType) {
+        case DBType::DB_KV: {
+            propertiesPtr = std::make_shared<KvDBProperties>();
+            std::shared_ptr<KvDBProperties> kvPtr = std::static_pointer_cast<KvDBProperties>(propertiesPtr);
+            return GetAutoLaunchKVProperties(param, kvPtr);
+        }
+        case DBType::DB_RELATION: {
+            propertiesPtr = std::make_shared<RelationalDBProperties>();
+            std::shared_ptr<RelationalDBProperties> rdbPtr =
+                std::static_pointer_cast<RelationalDBProperties>(propertiesPtr);
+            return GetAutoLaunchRelationProperties(param, rdbPtr);
+        }
+        default:
+            return -E_INVALID_ARGS;
+    }
+}
+
+int AutoLaunch::GetAutoLaunchKVProperties(const AutoLaunchParam &param,
+    const std::shared_ptr<KvDBProperties> &propertiesPtr)
 {
     SchemaObject schemaObject;
     std::string canonicalDir;
@@ -898,25 +930,185 @@ int AutoLaunch::GetAutoLaunchProperties(const AutoLaunchParam &param, KvDBProper
     }
 
     if (param.option.isEncryptedDb) {
-        properties.SetPassword(param.option.cipher, param.option.passwd);
+        propertiesPtr->SetPassword(param.option.cipher, param.option.passwd);
     }
-    properties.SetStringProp(KvDBProperties::DATA_DIR, canonicalDir);
-    properties.SetBoolProp(KvDBProperties::CREATE_IF_NECESSARY, param.option.createIfNecessary);
-    properties.SetBoolProp(KvDBProperties::CREATE_DIR_BY_STORE_ID_ONLY, param.option.createDirByStoreIdOnly);
-    properties.SetBoolProp(KvDBProperties::MEMORY_MODE, false);
-    properties.SetBoolProp(KvDBProperties::ENCRYPTED_MODE, param.option.isEncryptedDb);
-    properties.SetIntProp(KvDBProperties::DATABASE_TYPE, KvDBProperties::SINGLE_VER_TYPE);
-    properties.SetSchema(schemaObject);
+    propertiesPtr->SetStringProp(KvDBProperties::DATA_DIR, canonicalDir);
+    propertiesPtr->SetBoolProp(KvDBProperties::CREATE_IF_NECESSARY, param.option.createIfNecessary);
+    propertiesPtr->SetBoolProp(KvDBProperties::CREATE_DIR_BY_STORE_ID_ONLY, param.option.createDirByStoreIdOnly);
+    propertiesPtr->SetBoolProp(KvDBProperties::MEMORY_MODE, false);
+    propertiesPtr->SetBoolProp(KvDBProperties::ENCRYPTED_MODE, param.option.isEncryptedDb);
+    propertiesPtr->SetIntProp(KvDBProperties::DATABASE_TYPE, KvDBProperties::SINGLE_VER_TYPE);
+    propertiesPtr->SetSchema(schemaObject);
     if (RuntimeContext::GetInstance()->IsProcessSystemApiAdapterValid()) {
-        properties.SetIntProp(KvDBProperties::SECURITY_LABEL, param.option.secOption.securityLabel);
-        properties.SetIntProp(KvDBProperties::SECURITY_FLAG, param.option.secOption.securityFlag);
+        propertiesPtr->SetIntProp(KvDBProperties::SECURITY_LABEL, param.option.secOption.securityLabel);
+        propertiesPtr->SetIntProp(KvDBProperties::SECURITY_FLAG, param.option.secOption.securityFlag);
     }
-    properties.SetBoolProp(KvDBProperties::COMPRESS_ON_SYNC, param.option.isNeedCompressOnSync);
+    propertiesPtr->SetBoolProp(KvDBProperties::COMPRESS_ON_SYNC, param.option.isNeedCompressOnSync);
     if (param.option.isNeedCompressOnSync) {
-        properties.SetIntProp(KvDBProperties::COMPRESSION_RATE,
+        propertiesPtr->SetIntProp(KvDBProperties::COMPRESSION_RATE,
             ParamCheckUtils::GetValidCompressionRate(param.option.compressionRate));
     }
-    DBCommon::SetDatabaseIds(properties, param.appId, param.userId, param.storeId);
+    DBCommon::SetDatabaseIds(*propertiesPtr, param.appId, param.userId, param.storeId);
     return E_OK;
+}
+
+int AutoLaunch::GetAutoLaunchRelationProperties(const AutoLaunchParam &param,
+    const std::shared_ptr<RelationalDBProperties> &propertiesPtr)
+{
+    if (!ParamCheckUtils::CheckStoreParameter(param.storeId, param.appId, param.userId)) {
+        LOGE("[AutoLaunch] CheckStoreParameter is invalid.");
+        return -E_INVALID_ARGS;
+    }
+    propertiesPtr->SetStringProp(RelationalDBProperties::DATA_DIR, param.path);
+    propertiesPtr->SetIdentifier(param.userId, param.appId, param.storeId);
+    return E_OK;
+}
+
+int AutoLaunch::ExtAutoLaunchRequestCallBack(const std::string &identifier, AutoLaunchParam &param, DBType &openType)
+{
+    std::lock_guard<std::mutex> lock(extLock_);
+    if (autoLaunchRequestCallbackMap_.empty()) {
+        LOGI("[AutoLaunch] autoLaunchRequestCallbackMap_ is empty");
+        return -E_NOT_FOUND; // not E_OK is ok for communicator
+    }
+    
+    bool needOpen = false;
+    for (const auto &[type, callBack] : autoLaunchRequestCallbackMap_) {
+        needOpen = callBack(identifier, param);
+        if (needOpen) {
+            openType = type;
+            break;
+        }
+    }
+    
+    if (!needOpen) {
+        LOGI("[AutoLaunch] autoLaunchRequestCallback is not need open");
+        return -E_NOT_FOUND; // not E_OK is ok for communicator
+    }
+    // inner error happened
+    if (openType >= DBType::DB_INVALID) {
+        LOGW("[AutoLaunch] Unknown DB Type, Ignore the open request");
+        return -E_NOT_FOUND; // not E_OK is ok for communicator
+    }
+    return E_OK;
+}
+
+int AutoLaunch::OpenKvConnection(AutoLaunchItem &autoLaunchItem)
+{
+    std::shared_ptr<KvDBProperties> properties =
+        std::static_pointer_cast<KvDBProperties>(autoLaunchItem.propertiesPtr);
+    int errCode = E_OK;
+    IKvDBConnection *conn = KvDBManager::GetDatabaseConnection(*properties, errCode, false);
+    if (errCode == -E_ALREADY_OPENED) {
+        LOGI("[AutoLaunch] GetOneConnection user already getkvstore by self");
+    } else if (conn == nullptr) {
+        LOGE("[AutoLaunch] GetOneConnection GetDatabaseConnection failed errCode:%d", errCode);
+    }
+    autoLaunchItem.conn = conn;
+    return errCode;
+}
+
+int AutoLaunch::OpenRelationalConnection(AutoLaunchItem &autoLaunchItem)
+{
+    std::shared_ptr<RelationalDBProperties> properties =
+        std::static_pointer_cast<RelationalDBProperties>(autoLaunchItem.propertiesPtr);
+    int errCode = E_OK;
+    auto conn = RelationalStoreInstance::GetDatabaseConnection(*properties, errCode);
+    if (errCode == -E_ALREADY_OPENED) {
+        LOGI("[AutoLaunch] GetOneConnection user already openstore by self");
+    } else if (conn == nullptr) {
+        LOGE("[AutoLaunch] GetOneConnection GetDatabaseConnection failed errCode:%d", errCode);
+    }
+    autoLaunchItem.conn = conn;
+    return errCode;
+}
+
+int AutoLaunch::RegisterLifeCycleCallback(AutoLaunchItem &autoLaunchItem, const std::string &identifier,
+    bool isExt)
+{
+    int errCode = E_OK;
+    DatabaseLifeCycleNotifier notifier;
+    if (isExt) {
+        notifier = std::bind(
+            &AutoLaunch::ExtConnectionLifeCycleCallback, this, std::placeholders::_1);
+    } else {
+        notifier = std::bind(&AutoLaunch::ConnectionLifeCycleCallback,
+            this, std::placeholders::_1);
+    }
+    switch (autoLaunchItem.type) {
+        case DBType::DB_KV:
+            errCode = static_cast<IKvDBConnection*>(autoLaunchItem.conn)->RegisterLifeCycleCallback(notifier);
+            break;
+        case DBType::DB_RELATION:
+            errCode =
+                static_cast<RelationalStoreConnection*>(autoLaunchItem.conn)->RegisterLifeCycleCallback(notifier);
+            break;
+        default:
+            LOGD("[AutoLaunch] Unknown Type[%d]", autoLaunchItem.type);
+            break;
+    }
+    return errCode;
+}
+
+int AutoLaunch::PragmaAutoSync(AutoLaunchItem &autoLaunchItem)
+{
+    int errCode = E_OK;
+    if (autoLaunchItem.type != DBType::DB_KV) {
+        LOGD("[AutoLaunch] Current Type[%d] Not Support AutoSync Now", autoLaunchItem.type);
+        return errCode;
+    }
+    
+    bool enAutoSync = autoLaunchItem.isAutoSync;
+    errCode = static_cast<SyncAbleKvDBConnection *>(autoLaunchItem.conn)->Pragma(PRAGMA_AUTO_SYNC,
+        static_cast<void *>(&enAutoSync));
+    if (errCode != E_OK) {
+        LOGE("[AutoLaunch]  PRAGMA_AUTO_SYNC failed, errCode:%d", errCode);
+        return errCode;
+    }
+    LOGI("[AutoLaunch] set PRAGMA_AUTO_SYNC ok, enAutoSync=%d", enAutoSync);
+    return errCode;
+}
+
+void AutoLaunch::TryCloseKvConnection(AutoLaunchItem &autoLaunchItem)
+{
+    LOGI("[AutoLaunch] TryCloseKvConnection");
+    if (autoLaunchItem.conn == nullptr) {
+        LOGI("[AutoLaunch] TryCloseKvConnection conn is nullptr, do nothing");
+        return;
+    }
+    IKvDBConnection *kvConn = static_cast<IKvDBConnection*>(autoLaunchItem.conn);
+    int errCode = kvConn->RegisterLifeCycleCallback(nullptr);
+    if (errCode != E_OK) {
+        LOGE("[AutoLaunch] TryCloseKvConnection RegisterLifeCycleCallback failed errCode:%d", errCode);
+    }
+    if (autoLaunchItem.observerHandle != nullptr) {
+        errCode = kvConn->UnRegisterObserver(autoLaunchItem.observerHandle);
+        if (errCode != E_OK) {
+            LOGE("[AutoLaunch] TryCloseKvConnection UnRegisterObserver failed errCode:%d", errCode);
+        }
+        autoLaunchItem.observerHandle = nullptr;
+    }
+    errCode = KvDBManager::ReleaseDatabaseConnection(kvConn);
+    if (errCode != E_OK) {
+        LOGE("[AutoLaunch] TryCloseKvConnection ReleaseDatabaseConnection failed errCode:%d", errCode);
+    }
+}
+
+void AutoLaunch::TryCloseRelationConnection(AutoLaunchItem &autoLaunchItem)
+{
+    LOGI("[AutoLaunch] TryCloseRelationConnection");
+    if (autoLaunchItem.conn == nullptr) {
+        LOGI("[AutoLaunch] TryCloseRelationConnection conn is nullptr, do nothing");
+        return;
+    }
+    RelationalStoreConnection *rdbConn = static_cast<RelationalStoreConnection*>(autoLaunchItem.conn);
+    int errCode = rdbConn->RegisterLifeCycleCallback(nullptr);
+    if (errCode != E_OK) {
+        LOGE("[AutoLaunch] TryCloseRelationConnection RegisterLifeCycleCallback failed errCode:%d", errCode);
+    }
+    errCode = rdbConn->Close();
+    if (errCode != E_OK) {
+        LOGE("[AutoLaunch] TryCloseRelationConnection close connection failed errCode:%d", errCode);
+    }
 }
 } // namespace DistributedDB

@@ -17,7 +17,7 @@
 #define KVDB_UTILLS_H
 #include <string>
 
-#include "types.h"
+#include "store_types.h"
 #include "macro_utils.h"
 
 namespace DistributedDB {

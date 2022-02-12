@@ -19,6 +19,17 @@
 #include "single_ver_sync_engine.h"
 
 namespace DistributedDB {
+int SingleVerRelationalSyncer::Initialize(ISyncInterface *syncInterface)
+{
+    int errCode = SingleVerSyncer::Initialize(syncInterface);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    auto callback = std::bind(&SingleVerRelationalSyncer::SchemaChangeCallback, this);
+    return static_cast<RelationalDBSyncInterface *>(syncInterface)->
+        RegisterSchemaChangedCallback(callback);
+}
+
 int SingleVerRelationalSyncer::Sync(const SyncParma &param)
 {
     if (param.mode == SYNC_MODE_PUSH_PULL) {
@@ -59,8 +70,9 @@ int SingleVerRelationalSyncer::GenerateEachSyncTask(const SyncParma &param, uint
     int errCode = E_OK;
     for (const QuerySyncObject &table : tablesQuery) {
         uint32_t subSyncId = GenerateSyncId();
-        LOGI("[SingleVerRelationalSyncer] SubSyncId %d create by SyncId %d, tableName = %s",
-             subSyncId, syncId, table.GetRelationTableName().c_str());
+        std::string hashTableName = DBCommon::TransferHashString(table.GetRelationTableName());
+        LOGI("[SingleVerRelationalSyncer] SubSyncId %d create by SyncId %d, hashTableName = %s",
+            subSyncId, syncId, STR_MASK(DBCommon::TransferStringToHex(hashTableName)));
         subParam.syncQuery = table;
         subParam.onComplete = std::bind(&SingleVerRelationalSyncer::DoOnSubSyncComplete, this, subSyncId,
             syncId, param, std::placeholders::_1);
@@ -137,17 +149,32 @@ void SingleVerRelationalSyncer::EnableAutoSync(bool enable)
 {
 }
 
-int SingleVerRelationalSyncer::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash)
-{
-    return E_OK;
-}
-
 void SingleVerRelationalSyncer::LocalDataChanged(int notifyEvent)
 {
 }
 
-void SingleVerRelationalSyncer::RemoteDataChanged(const std::string &device)
+void SingleVerRelationalSyncer::SchemaChangeCallback()
 {
+    if (syncEngine_ != nullptr) {
+        syncEngine_->ResetAbilitySync();
+    }
+}
+
+int SingleVerRelationalSyncer::SyncConditionCheck(QuerySyncObject &query, int mode, bool isQuerySync,
+    const std::vector<std::string> &devices) const
+{
+    if (!isQuerySync) {
+        return E_OK;
+    }
+    int errCode = static_cast<RelationalDBSyncInterface *>(syncInterface_)->CheckAndInitQueryCondition(query);
+    if (errCode != E_OK) {
+        LOGE("[SingleVerRelationalSyncer] QuerySyncObject check failed");
+        return errCode;
+    }
+    if (mode == SUBSCRIBE_QUERY) {
+        return -E_NOT_SUPPORT;
+    }
+    return E_OK;
 }
 }
 #endif

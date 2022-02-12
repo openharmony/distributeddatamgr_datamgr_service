@@ -16,7 +16,7 @@
 #ifndef KV_STORE_ERRNO_H
 #define KV_STORE_ERRNO_H
 
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 // Transfer the db error code to the DBStatus.

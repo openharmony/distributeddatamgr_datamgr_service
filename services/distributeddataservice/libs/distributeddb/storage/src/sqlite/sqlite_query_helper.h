@@ -16,6 +16,7 @@
 #define SQLITE_QUERY_HELPER_H
 
 #include <list>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -32,12 +33,14 @@ struct QueryObjInfo {
     std::list<QueryObjNode> queryObjNodes_;
     std::vector<uint8_t> prefixKey_;
     std::string suggestIndex_;
+    std::set<Key> keys_;
     int orderByCounts_ = 0; // Record processing to which orderBy node
     bool isValid_ = true;
     bool hasOrderBy_ = false;
     bool hasLimit_ = false;
     bool hasPrefixKey_ = false;
     std::string tableName_;
+    bool isRelationalQuery_ = false;
 };
 
 enum SymbolType : uint32_t {
@@ -50,6 +53,7 @@ enum SymbolType : uint32_t {
     LINK_SYMBOL = 0x0600, // use to link relatonal symbol
     SPECIAL_SYMBOL = 0x0700, // need special precess and need at the last
     SUGGEST_INDEX_SYMBOL = 0x0800,
+    IN_KEYS_SYMBOL = 0x0900,
 };
 
 class SqliteQueryHelper final {
@@ -112,12 +116,19 @@ private:
     int BindTimeRange(sqlite3_stmt *&statement, int &index, uint64_t beginTime, uint64_t endTime) const;
     int BindObjNodes(sqlite3_stmt *&statement, int &index) const;
     int GetSubscribeCondition(const std::string &accessStr, std::string &conditionStr);
+    std::string MapKeysInToSql(size_t keysNum) const;
+    int BindKeysToStmt(std::set<Key> &keys, sqlite3_stmt *&countStmt, int &index) const;
+
+    std::string MapKeysInSubCondition(const std::string &accessStr) const;  // For InKeys.
+    // Return the left string of symbol in compare clause.
+    std::string GetFieldShape(const QueryObjNode &queryNode, const std::string &accessStr = "");
 
     SchemaObject schema_;
     std::list<QueryObjNode> queryObjNodes_;
     std::vector<uint8_t> prefixKey_;
     std::string suggestIndex_;
     std::string tableName_;
+    std::set<Key> keys_;
 
     std::string querySql_;
     std::string countSql_;
@@ -130,6 +141,7 @@ private:
     bool isOrderByAppeared_;
     bool hasPrefixKey_;
     bool isNeedOrderbyKey_;  // The tag field is used for prefix query filtering key sorting
+    bool isRelationalQuery_;
 };
 }
 #endif

@@ -101,7 +101,7 @@ protected:
     int SwitchMachineState(uint8_t event);
 
     // Do state switch with the event, and do syncstep
-    void SwitchStateAndStep(uint8_t event);
+    virtual void SwitchStateAndStep(uint8_t event);
 
     // To Exec next sync task in context targetQueue
     int ExecNextTask();

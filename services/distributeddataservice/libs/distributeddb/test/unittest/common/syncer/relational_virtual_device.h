@@ -16,9 +16,10 @@
 #define RELATIONAL_VIRTUAL_DEVICE_H
 #ifdef RELATIONAL_STORE
 
+#include "data_transformer.h"
 #include "generic_virtual_device.h"
 #include "relational_schema_object.h"
-#include "data_transformer.h"
+#include "virtual_relational_ver_sync_db_interface.h"
 
 namespace DistributedDB {
 class RelationalVirtualDevice final : public GenericVirtualDevice {
@@ -26,10 +27,13 @@ public:
     explicit RelationalVirtualDevice(const std::string &deviceId);
     ~RelationalVirtualDevice() override;
 
-    int PutData(const std::string &tableName, const std::vector<RowDataWithLog> &dataList);
-    int GetAllSyncData(const std::string &tableName, std::vector<RowDataWithLog> &data);
+    int PutData(const std::string &tableName, const std::vector<VirtualRowData> &dataList);
+    int GetAllSyncData(const std::string &tableName, std::vector<VirtualRowData> &data);
+    int GetSyncData(const std::string &tableName, const std::string &hashKey, VirtualRowData &data);
     void SetLocalFieldInfo(const std::vector<FieldInfo> &localFieldInfo);
+    void SetTableInfo(const TableInfo &tableInfo);
     int Sync(SyncMode mode, bool wait) override;
+    void EraseSyncData(const std::string &tableName);
 };
 }
 #endif

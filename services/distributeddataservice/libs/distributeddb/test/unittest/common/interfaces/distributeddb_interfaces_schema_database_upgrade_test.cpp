@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 #include "distributeddb_tools_unit_test.h"
 #include "kv_store_delegate_manager.h"
+#include "schema_constant.h"
 #include "schema_object.h"
 #include "schema_utils.h"
 
@@ -79,18 +80,18 @@ namespace {
     std::string SchemaSwitchMode(const std::string &oriSchemaStr)
     {
         std::string resStr = oriSchemaStr;
-        auto iterStrict = std::search(resStr.begin(), resStr.end(), KEYWORD_MODE_STRICT.begin(),
-            KEYWORD_MODE_STRICT.end());
-        auto iterCompatible = std::search(resStr.begin(), resStr.end(), KEYWORD_MODE_COMPATIBLE.begin(),
-            KEYWORD_MODE_COMPATIBLE.end());
+        auto iterStrict = std::search(resStr.begin(), resStr.end(), SchemaConstant::KEYWORD_MODE_STRICT.begin(),
+            SchemaConstant::KEYWORD_MODE_STRICT.end());
+        auto iterCompatible = std::search(resStr.begin(), resStr.end(), SchemaConstant::KEYWORD_MODE_COMPATIBLE.begin(),
+            SchemaConstant::KEYWORD_MODE_COMPATIBLE.end());
         if (iterStrict != resStr.end()) {
-            resStr.replace(iterStrict, iterStrict + KEYWORD_MODE_STRICT.size(), KEYWORD_MODE_COMPATIBLE.begin(),
-                KEYWORD_MODE_COMPATIBLE.end());
+            resStr.replace(iterStrict, iterStrict + SchemaConstant::KEYWORD_MODE_STRICT.size(),
+                SchemaConstant::KEYWORD_MODE_COMPATIBLE.begin(), SchemaConstant::KEYWORD_MODE_COMPATIBLE.end());
             return resStr;
         }
         if (iterCompatible != resStr.end()) {
-            resStr.replace(iterCompatible, iterCompatible + KEYWORD_MODE_COMPATIBLE.size(), KEYWORD_MODE_STRICT.begin(),
-                KEYWORD_MODE_STRICT.end());
+            resStr.replace(iterCompatible, iterCompatible + SchemaConstant::KEYWORD_MODE_COMPATIBLE.size(),
+                SchemaConstant::KEYWORD_MODE_STRICT.begin(), SchemaConstant::KEYWORD_MODE_STRICT.end());
             return resStr;
         }
         return oriSchemaStr;

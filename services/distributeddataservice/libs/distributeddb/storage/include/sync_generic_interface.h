@@ -129,6 +129,16 @@ public:
     {
         return -E_NOT_SUPPORT;
     }
+
+    virtual int GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const
+    {
+        return -E_NOT_SUPPORT;
+    }
+
+    virtual bool CheckCompatible(const std::string &schema) const
+    {
+        return false;
+    }
 };
 }
 #endif // SYNC_GENERIC_INTERFACE_H

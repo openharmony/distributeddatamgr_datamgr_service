@@ -15,7 +15,6 @@
 #ifndef DELEGATE_CALLBACK_H
 #define DELEGATE_CALLBACK_H
 #include "kv_store_snapshot_delegate.h"
-#include "types.h"
 #include "types_export.h"
 
 // DelegateCallback conclude the Callback implements of function< void(DBStatus, KvStoreSnapshotDelegate*)>

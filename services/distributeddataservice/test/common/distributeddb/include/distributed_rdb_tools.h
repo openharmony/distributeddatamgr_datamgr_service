@@ -19,7 +19,6 @@
 
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
-#include "types.h"
 #include "distributed_test_sysinfo.h"
 #include "distributeddb_data_generator.h"
 #include "log_print.h"

@@ -21,7 +21,7 @@
 #include "kvdb_pragma.h"
 #include "sqlite_single_ver_natural_store.h"
 #include "kvdb_observer_handle.h"
-#include "types.h"
+#include "store_types.h"
 #include "db_common.h"
 #include "sqlite_single_ver_result_set.h"
 #include "sqlite_single_ver_forward_cursor.h"

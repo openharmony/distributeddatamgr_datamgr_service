@@ -21,7 +21,7 @@
 #include <map>
 #include <mutex>
 
-#include "types.h"
+#include "store_types.h"
 #include "db_types.h"
 #include "ikvdb_connection.h"
 #include "kv_store_nb_conflict_data.h"

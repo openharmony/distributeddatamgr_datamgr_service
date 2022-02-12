@@ -24,7 +24,6 @@
 #include "distributeddb_data_generator.h"
 #include "distributeddb_nb_test_tools.h"
 #include "kv_store_delegate_manager.h"
-#include "types.h"
 #include "distributed_test_tools.h"
 
 using namespace std;

@@ -23,7 +23,7 @@
 #include "log_print.h"
 #include "platform_specific.h"
 #include "sqlite_import.h"
-#include "types.h"
+#include "store_types.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;

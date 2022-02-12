@@ -88,11 +88,12 @@ public:
     // Inner function, Used for subscribe sync
     int Sync(const InternalSyncParma &param);
 
-protected:
     // Remote data changed callback
     virtual void RemoteDataChanged(const std::string &device) = 0;
 
     virtual void RemoteDeviceOffline(const std::string &device) = 0;
+
+protected:
 
     // trigger query auto sync or auto subscribe
     // trigger auto subscribe only when subscribe task is failed triggered by remote db opened

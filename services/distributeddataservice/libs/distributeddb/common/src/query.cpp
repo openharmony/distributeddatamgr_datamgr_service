@@ -60,6 +60,12 @@ Query &Query::SuggestIndex(const std::string &indexName)
     return *this;
 }
 
+Query &Query::InKeys(const std::set<Key> &keys)
+{
+    queryExpression_.InKeys(keys);
+    return *this;
+}
+
 Query &Query::OrderBy(const std::string &field, bool isAsc)
 {
     queryExpression_.OrderBy(field, isAsc);

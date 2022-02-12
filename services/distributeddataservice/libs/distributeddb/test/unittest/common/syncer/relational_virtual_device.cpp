@@ -24,14 +24,20 @@ RelationalVirtualDevice::~RelationalVirtualDevice()
 {
 }
 
-int RelationalVirtualDevice::PutData(const std::string &tableName, const std::vector<RowDataWithLog> &dataList)
+int RelationalVirtualDevice::PutData(const std::string &tableName, const std::vector<VirtualRowData> &dataList)
 {
     return static_cast<VirtualRelationalVerSyncDBInterface *>(storage_)->PutLocalData(dataList, tableName);
 }
 
-int RelationalVirtualDevice::GetAllSyncData(const std::string &tableName, std::vector<RowDataWithLog> &data)
+int RelationalVirtualDevice::GetAllSyncData(const std::string &tableName, std::vector<VirtualRowData> &data)
 {
     return static_cast<VirtualRelationalVerSyncDBInterface *>(storage_)->GetAllSyncData(tableName, data);
+}
+
+int RelationalVirtualDevice::GetSyncData(const std::string &tableName,
+    const std::string &hashKey, VirtualRowData &data)
+{
+    return static_cast<VirtualRelationalVerSyncDBInterface *>(storage_)->GetVirtualSyncData(tableName, hashKey, data);
 }
 
 void RelationalVirtualDevice::SetLocalFieldInfo(const std::vector<FieldInfo> &localFieldInfo)
@@ -42,6 +48,16 @@ void RelationalVirtualDevice::SetLocalFieldInfo(const std::vector<FieldInfo> &lo
 int RelationalVirtualDevice::Sync(SyncMode mode, bool wait)
 {
     return -E_NOT_SUPPORT;
+}
+
+void RelationalVirtualDevice::EraseSyncData(const std::string &tableName)
+{
+    static_cast<VirtualRelationalVerSyncDBInterface *>(storage_)->EraseSyncData(tableName);
+}
+
+void RelationalVirtualDevice::SetTableInfo(const TableInfo &tableInfo)
+{
+    static_cast<VirtualRelationalVerSyncDBInterface *>(storage_)->SetTableInfo(tableInfo);
 }
 } // DistributedDB
 #endif

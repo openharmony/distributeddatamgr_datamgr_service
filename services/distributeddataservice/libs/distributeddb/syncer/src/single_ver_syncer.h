@@ -20,10 +20,16 @@
 namespace DistributedDB {
 class SingleVerSyncer : public GenericSyncer {
 public:
+    void RemoteDataChanged(const std::string &device) override;
+
     void RemoteDeviceOffline(const std::string &device) override;
 
     // Set stale data wipe policy
     int SetStaleDataWipePolicy(WipePolicy policy) override;
+
+    // delete specified device's watermark
+    int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash,
+        const std::string &tableName = "") override;
 
 protected:
     // Create a sync engine, if has memory error, will return nullptr.

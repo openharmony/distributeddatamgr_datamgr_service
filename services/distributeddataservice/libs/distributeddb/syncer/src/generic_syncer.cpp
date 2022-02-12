@@ -189,7 +189,7 @@ int GenericSyncer::Sync(const SyncParma &param)
 int GenericSyncer::PrepareSync(const SyncParma &param, uint32_t syncId)
 {
     auto *operation =
-            new (std::nothrow) SyncOperation(syncId, param.devices, param.mode, param.onComplete, param.wait);
+        new (std::nothrow) SyncOperation(syncId, param.devices, param.mode, param.onComplete, param.wait);
     if (operation == nullptr) {
         SubQueuedSyncSize();
         return -E_OUT_OF_MEMORY;

@@ -15,7 +15,8 @@
 #include "generic_virtual_device.h"
 
 #include "multi_ver_sync_task_context.h"
-#include "single_ver_sync_task_context.h"
+#include "single_ver_kv_sync_task_context.h"
+#include "single_ver_relational_sync_task_context.h"
 
 namespace DistributedDB {
 GenericVirtualDevice::GenericVirtualDevice(std::string deviceId)
@@ -86,11 +87,11 @@ int GenericVirtualDevice::Initialize(VirtualCommunicatorAggregator *comAggregato
         return -E_NOT_SUPPORT;
     }
     if (storage_->GetInterfaceType() == IKvDBSyncInterface::SYNC_SVD) {
-        context_ = new (std::nothrow) SingleVerSyncTaskContext;
+        context_ = new (std::nothrow) SingleVerKvSyncTaskContext;
         subManager_ = std::make_shared<SubscribeManager>();
         static_cast<SingleVerSyncTaskContext *>(context_)->SetSubscribeManager(subManager_);
     } else if (storage_->GetInterfaceType() == IKvDBSyncInterface::SYNC_RELATION) {
-        context_ = new (std::nothrow) SingleVerSyncTaskContext;
+        context_ = new (std::nothrow) SingleVerRelationalSyncTaskContext;
     } else {
         context_ = new (std::nothrow) MultiVerSyncTaskContext;
     }
@@ -212,7 +213,13 @@ int GenericVirtualDevice::Sync(SyncMode mode, bool wait)
 
 int GenericVirtualDevice::Sync(SyncMode mode, const Query &query, bool wait)
 {
-    auto operation = new (std::nothrow) SyncOperation(1, {remoteDeviceId_}, mode, nullptr, wait);
+    return Sync(mode, query, nullptr, wait);
+}
+
+int GenericVirtualDevice::Sync(SyncMode mode, const Query &query,
+    const SyncOperation::UserCallback &callBack, bool wait)
+{
+    auto operation = new (std::nothrow) SyncOperation(1, {remoteDeviceId_}, mode, callBack, wait);
     if (operation == nullptr) {
         return -E_OUT_OF_MEMORY;
     }

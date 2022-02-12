@@ -403,7 +403,7 @@ int JsonObject::GetArrayContentOfStringOrStringArray(const FieldPath &inPath,
     int errCode = E_OK;
     const Json::Value &valueNode = GetJsonValueByFieldPath(inPath, errCode);
     if (errCode != E_OK) {
-        LOGE("[Json][GetArrayContent] Get JsonValue Fail=%d.", errCode);
+        LOGW("[Json][GetArrayContent] Get JsonValue Fail=%d.", errCode);
         return errCode;
     }
     if (valueNode.type() != Json::ValueType::arrayValue) {

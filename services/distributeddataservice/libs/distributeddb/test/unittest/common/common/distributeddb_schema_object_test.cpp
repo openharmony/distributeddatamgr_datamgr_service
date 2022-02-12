@@ -20,6 +20,7 @@
 #include "db_errno.h"
 #include "distributeddb_tools_unit_test.h"
 #include "log_print.h"
+#include "schema_constant.h"
 #include "schema_object.h"
 #include "schema_utils.h"
 
@@ -382,17 +383,17 @@ std::string SchemaSwitchMode(const std::string &oriSchemaStr)
 {
     std::string resultSchemaStr = oriSchemaStr;
     auto iterForStrict = std::search(resultSchemaStr.begin(), resultSchemaStr.end(),
-        KEYWORD_MODE_STRICT.begin(), KEYWORD_MODE_STRICT.end());
+        SchemaConstant::KEYWORD_MODE_STRICT.begin(), SchemaConstant::KEYWORD_MODE_STRICT.end());
     auto iterForCompatible = std::search(resultSchemaStr.begin(), resultSchemaStr.end(),
-        KEYWORD_MODE_COMPATIBLE.begin(), KEYWORD_MODE_COMPATIBLE.end());
+        SchemaConstant::KEYWORD_MODE_COMPATIBLE.begin(), SchemaConstant::KEYWORD_MODE_COMPATIBLE.end());
     if (iterForStrict != resultSchemaStr.end()) {
-        resultSchemaStr.replace(iterForStrict, iterForStrict + KEYWORD_MODE_STRICT.size(),
-            KEYWORD_MODE_COMPATIBLE.begin(), KEYWORD_MODE_COMPATIBLE.end());
+        resultSchemaStr.replace(iterForStrict, iterForStrict + SchemaConstant::KEYWORD_MODE_STRICT.size(),
+            SchemaConstant::KEYWORD_MODE_COMPATIBLE.begin(), SchemaConstant::KEYWORD_MODE_COMPATIBLE.end());
         return resultSchemaStr;
     }
     if (iterForCompatible != resultSchemaStr.end()) {
-        resultSchemaStr.replace(iterForCompatible, iterForCompatible + KEYWORD_MODE_COMPATIBLE.size(),
-            KEYWORD_MODE_STRICT.begin(), KEYWORD_MODE_STRICT.end());
+        resultSchemaStr.replace(iterForCompatible, iterForCompatible + SchemaConstant::KEYWORD_MODE_COMPATIBLE.size(),
+            SchemaConstant::KEYWORD_MODE_STRICT.begin(), SchemaConstant::KEYWORD_MODE_STRICT.end());
         return resultSchemaStr;
     }
     return oriSchemaStr;

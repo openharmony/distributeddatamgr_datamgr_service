@@ -21,7 +21,6 @@
 #include "distributeddb_data_generator.h"
 #include "kv_store_changed_data.h"
 #include "kv_store_observer.h"
-#include "types.h"
 
 enum ListType {
     INSERT_LIST = 0,

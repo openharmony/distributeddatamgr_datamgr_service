@@ -16,12 +16,27 @@
 #include "single_ver_sync_engine.h"
 #include "db_common.h"
 #include "single_ver_sync_task_context.h"
+#include "single_ver_kv_sync_task_context.h"
+#include "single_ver_relational_sync_task_context.h"
 #include "log_print.h"
 
 namespace DistributedDB {
 ISyncTaskContext *SingleVerSyncEngine::CreateSyncTaskContext()
 {
-    auto context = new (std::nothrow) SingleVerSyncTaskContext();
+    SingleVerSyncTaskContext *context = nullptr;
+    switch (syncInterface_->GetInterfaceType()) {
+        case ISyncInterface::SYNC_SVD:
+            context = new (std::nothrow) SingleVerKvSyncTaskContext();
+            break;
+#ifdef RELATIONAL_STORE
+        case ISyncInterface::SYNC_RELATION:
+            context = new (std::nothrow) SingleVerRelationalSyncTaskContext();
+            break;
+#endif
+        default:
+            break;
+    }
+
     if (context == nullptr) {
         LOGE("[SingleVerSyncEngine][CreateSyncTaskContext] create failed, may be out of memory");
         return nullptr;

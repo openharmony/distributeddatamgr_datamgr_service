@@ -48,32 +48,16 @@ bool Parcel::IsError() const
 
 int Parcel::WriteBool(bool data)
 {
-    const uint32_t boolLen = GetBoolLen();
-    if (isError_ || parcelLen_ + boolLen > totalLen_) {
-        isError_ = true;
-        return -E_PARSE_FAIL;
-    }
-    errno_t errCode = memcpy_s(bufPtr_, totalLen_ - parcelLen_, &data, sizeof(bool));
-    if (errCode != EOK) {
-        isError_ = true;
-        return -E_SECUREC_ERROR;
-    }
-    bufPtr_ += boolLen;
-    parcelLen_ += boolLen;
-    return E_OK;
+    uint8_t value = data ? 1 : 0;
+    return WriteUInt8(value);
 }
 
 uint32_t Parcel::ReadBool(bool &val)
 {
-    const uint32_t boolLen = GetBoolLen();
-    if (isError_ || parcelLen_ + boolLen > totalLen_) {
-        isError_ = true;
-        return -E_PARSE_FAIL;
-    }
-    val = *(reinterpret_cast<bool *>(bufPtr_));
-    bufPtr_ += boolLen;
-    parcelLen_ += boolLen;
-    return boolLen;
+    uint8_t intVal = 0;
+    uint32_t len = ReadUInt8(intVal);
+    val = intVal == 1 ? true : false;
+    return len;
 }
 
 int Parcel::WriteInt(int32_t data)
@@ -86,6 +70,15 @@ uint32_t Parcel::ReadInt(int32_t &val)
     return ReadInteger(val);
 }
 
+int Parcel::WriteUInt8(uint8_t data)
+{
+    return WriteInteger(data);
+}
+
+uint32_t Parcel::ReadUInt8(uint8_t &val)
+{
+    return ReadInteger(val);
+}
 
 int Parcel::WriteDouble(double data)
 {
@@ -434,7 +427,12 @@ uint32_t Parcel::ReadBlob(char *buffer, uint32_t bufLen)
 
 uint32_t Parcel::GetBoolLen()
 {
-    return GetEightByteAlign(sizeof(bool));
+    return GetUInt8Len();
+}
+
+uint32_t Parcel::GetUInt8Len()
+{
+    return sizeof(uint8_t);
 }
 
 uint32_t Parcel::GetIntLen()

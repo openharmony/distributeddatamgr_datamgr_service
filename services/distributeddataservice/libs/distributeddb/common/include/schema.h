@@ -17,7 +17,6 @@
 #define SCHEMA_H
 
 #include <string>
-#include <stdint.h>
 
 namespace DistributedDB {
 // SchemaType::NONE represent for KV database which do not have schema. Only invalid SchemaObject is NONE type.
@@ -29,11 +28,21 @@ enum class SchemaType : uint8_t {
     RELATIVE = 3,
     UNRECOGNIZED = 4
 };
+
+inline SchemaType ReadSchemaType(uint8_t inType)
+{
+    if (inType >= static_cast<uint8_t>(SchemaType::UNRECOGNIZED)) {
+        return SchemaType::UNRECOGNIZED;
+    }
+    return static_cast<SchemaType>(inType);
+}
+
 struct SyncOpinion {
     bool permitSync = false;
     bool requirePeerConvert = false;
     bool checkOnReceive = false;
 };
+
 struct SyncStrategy {
     bool permitSync = false;
     bool convertOnSend = false;

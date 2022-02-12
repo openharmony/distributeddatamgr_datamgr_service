@@ -16,7 +16,7 @@
 #ifndef KV_STORE_NB_CONFLICT_DATA_H
 #define KV_STORE_NB_CONFLICT_DATA_H
 
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 enum KvStoreNbConflictType {

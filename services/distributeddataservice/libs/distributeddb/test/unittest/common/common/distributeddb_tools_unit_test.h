@@ -36,11 +36,13 @@
 #include "log_print.h"
 #include "message.h"
 #include "query.h"
+#include "store_observer.h"
+#include "store_changed_data.h"
 #include "single_ver_kv_entry.h"
 #include "sqlite_single_ver_natural_store.h"
 #include "sqlite_utils.h"
 #include "sync_types.h"
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDBUnitTest {
 static const int DIR_PERMISSION = 0750;
@@ -252,6 +254,32 @@ private:
     std::list<DistributedDB::Entry> deleted_;
 };
 
+class RelationalStoreObserverUnitTest : public DistributedDB::StoreObserver {
+public:
+    RelationalStoreObserverUnitTest();
+    ~RelationalStoreObserverUnitTest() {}
+
+    RelationalStoreObserverUnitTest(const RelationalStoreObserverUnitTest&) = delete;
+    RelationalStoreObserverUnitTest& operator=(const RelationalStoreObserverUnitTest&) = delete;
+    RelationalStoreObserverUnitTest(RelationalStoreObserverUnitTest&&) = delete;
+    RelationalStoreObserverUnitTest& operator=(RelationalStoreObserverUnitTest&&) = delete;
+
+    // callback function will be called when the db data is changed.
+    void OnChange(const DistributedDB::StoreChangedData &data);
+
+    // reset the callCount_ to zero.
+    void ResetToZero();
+
+    // get callback results.
+    unsigned long GetCallCount() const;
+    const std::string GetDataChangeDevice() const;
+    DistributedDB::StoreProperty GetStoreProperty() const;
+private:
+    unsigned long callCount_;
+    std::string changeDevice_;
+    DistributedDB::StoreProperty storeProperty_;
+};
+
 class KvStoreCorruptInfo {
 public:
     KvStoreCorruptInfo() {}
@@ -269,6 +297,14 @@ public:
     void Reset();
 private:
     std::vector<DatabaseInfo> databaseInfoVect_;
+};
+
+class RelationalTestUtils {
+public:
+    static sqlite3 *CreateDataBase(const std::string &dbUri);
+    static int ExecSql(sqlite3 *db, const std::string &sql);
+    static void CreateDeviceTable(sqlite3 *db, const std::string &table, const std::string &device);
+    static int CheckSqlResult(sqlite3 *db, const std::string &sql, bool &result);
 };
 } // namespace DistributedDBUnitTest
 

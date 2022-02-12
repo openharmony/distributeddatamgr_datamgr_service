@@ -23,8 +23,10 @@
 #include "db_common.h"
 #include "single_ver_kvdb_sync_interface.h"
 #include "single_ver_sync_task_context.h"
+#include "single_ver_kv_sync_task_context.h"
 #ifdef RELATIONAL_STORE
 #include "relational_db_sync_interface.h"
+#include "single_ver_relational_sync_task_context.h"
 #endif
 
 namespace DistributedDB {
@@ -295,6 +297,7 @@ uint32_t AbilitySyncAckPacket::CalculateLen() const
     len += Parcel::GetUInt32Len(); // requirePeerConvert_
     len += Parcel::GetUInt64Len(); // dbCreateTime_
     len += DbAbility::CalculateLen(dbAbility_); // dbAbility_
+    len += relationalSyncOpinion_.CalculateParcelLen(softwareVersion_);
     if (len > INT32_MAX) {
         LOGE("[AbilitySyncAckPacket][CalculateLen]  err len:%llu", len);
         return 0;
@@ -310,6 +313,16 @@ DbAbility AbilitySyncAckPacket::GetDbAbility() const
 void AbilitySyncAckPacket::SetDbAbility(const DbAbility &dbAbility)
 {
     dbAbility_ = dbAbility;
+}
+
+void AbilitySyncAckPacket::SetRelationalSyncOpinion(const RelationalSyncOpinion &relationalSyncOpinion)
+{
+    relationalSyncOpinion_ = relationalSyncOpinion;
+}
+
+RelationalSyncOpinion AbilitySyncAckPacket::GetRelationalSyncOpinion() const
+{
+    return relationalSyncOpinion_;
 }
 
 AbilitySync::AbilitySync()
@@ -387,8 +400,14 @@ int AbilitySync::AckRecv(const Message *message, ISyncTaskContext *context)
     std::string schema = packet->GetSchema();
     if (remoteSoftwareVersion > SOFTWARE_VERSION_RELEASE_2_0) {
         HandleVersionV3AckSecOptionParam(packet, context);
-        SyncOpinion localSyncOpinion = HandleVersionV3AckSchemaParam(packet, schema, context);
-        bool permitSync = ((static_cast<SingleVerSyncTaskContext *>(context))->GetSyncStrategy()).permitSync;
+        AbilitySyncAckPacket ackPacket;
+        errCode = HandleVersionV3AckSchemaParam(packet, ackPacket, context, true);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        auto singleVerContext = static_cast<SingleVerSyncTaskContext *>(context);
+        auto query = singleVerContext->GetQuery();
+        bool permitSync = (singleVerContext->GetSyncStrategy(query)).permitSync;
         if (!permitSync) {
             (static_cast<SingleVerSyncTaskContext *>(context))->SetTaskErrCode(-E_SCHEMA_MISMATCH);
             LOGE("[AbilitySync][AckRecv] scheme check failed");
@@ -403,13 +422,10 @@ int AbilitySync::AckRecv(const Message *message, ISyncTaskContext *context)
         }
         DbAbility remoteDbAbility = packet->GetDbAbility();
         (static_cast<SingleVerSyncTaskContext *>(context))->SetDbAbility(remoteDbAbility);
-        SendAck(message, localSyncOpinion, AbilitySync::CHECK_SUCCESS, true);
+        (void)SendAck(message, AbilitySync::CHECK_SUCCESS, true, ackPacket);
         (static_cast<SingleVerSyncTaskContext *>(context))->SetIsSchemaSync(true);
     } else {
-        bool isCompatible = true;
-        if (IsSingleKvVer()) {
-            isCompatible = static_cast<SingleVerKvDBSyncInterface *>(storageInterface_)->CheckCompatible(schema);
-        }
+        bool isCompatible = static_cast<SyncGenericInterface *>(storageInterface_)->CheckCompatible(schema);
         if (!isCompatible) {
             (static_cast<SingleVerSyncTaskContext *>(context))->SetTaskErrCode(-E_SCHEMA_MISMATCH);
             LOGE("[AbilitySync][AckRecv] scheme check failed");
@@ -430,54 +446,21 @@ int AbilitySync::RequestRecv(const Message *message, ISyncTaskContext *context)
     if (packet == nullptr) {
         return -E_INVALID_ARGS;
     }
-    SyncOpinion localSyncOpinion;
     if (packet->GetSendCode() == -E_VERSION_NOT_SUPPORT) {
-        SendAck(message, localSyncOpinion, -E_VERSION_NOT_SUPPORT, false);
+        AbilitySyncAckPacket ackPacket;
+        (void)SendAck(message, -E_VERSION_NOT_SUPPORT, false, ackPacket);
         LOGI("[AbilitySync][RequestRecv] version can not support, remote version is %u", packet->GetProtocolVersion());
         return -E_VERSION_NOT_SUPPORT;
     }
 
     std::string schema = packet->GetSchema();
-    bool isCompatible = true;
-    if (IsSingleKvVer()) {
-        isCompatible = static_cast<SingleVerKvDBSyncInterface *>(storageInterface_)->CheckCompatible(schema);
-    }
+    bool isCompatible = static_cast<SyncGenericInterface *>(storageInterface_)->CheckCompatible(schema);
     if (!isCompatible) {
         (static_cast<SingleVerSyncTaskContext *>(context))->SetTaskErrCode(-E_SCHEMA_MISMATCH);
     }
     uint32_t remoteSoftwareVersion = packet->GetSoftwareVersion();
     context->SetRemoteSoftwareVersion(remoteSoftwareVersion);
-    int ackCode;
-    if (remoteSoftwareVersion > SOFTWARE_VERSION_RELEASE_2_0) {
-        localSyncOpinion = HandleVersionV3RequestParam(packet, context, schema);
-        if (SecLabelCheck(packet)) {
-            ackCode = E_OK;
-        } else {
-            ackCode = -E_SECURITY_OPTION_CHECK_ERROR;
-        }
-    } else {
-        LOGI("[AbilitySync][RequestRecv] remote version = %u, CheckSchemaCompatible = %d",
-            remoteSoftwareVersion, isCompatible);
-        return SendAck(message, SchemaObject(), E_OK, localSyncOpinion, false);
-    }
-    if (ackCode == E_OK && remoteSoftwareVersion > SOFTWARE_VERSION_RELEASE_3_0) {
-        ackCode = metadata_->SetDbCreateTime(deviceId_, packet->GetDbCreateTime(), true);
-    }
-    LOGI("[AbilitySync][RequestRecv] remote dev=%s,ver=%u,schemaCompatible=%d", STR_MASK(deviceId_),
-        remoteSoftwareVersion, isCompatible);
-    return SendAck(message, localSyncOpinion, ackCode, false);
-}
-
-int AbilitySync::SendAck(const Message *message, SyncOpinion &localSyncOpinion, int ackCode, bool isAckNotify)
-{
-#ifdef RELATIONAL_STORE
-    if (IsSingleRelationalVer()) {
-        SchemaObject schemaObject;
-        return SendAck(message, schemaObject, ackCode, localSyncOpinion, isAckNotify);
-    }
-#endif
-    SchemaObject schemaObject = static_cast<SingleVerKvDBSyncInterface *>(storageInterface_)->GetSchemaInfo();
-    return SendAck(message, schemaObject, ackCode, localSyncOpinion, isAckNotify);
+    return HandleRequestRecv(message, context, isCompatible);
 }
 
 int AbilitySync::AckNotifyRecv(const Message *message, ISyncTaskContext *context)
@@ -502,12 +485,17 @@ int AbilitySync::AckNotifyRecv(const Message *message, ISyncTaskContext *context
     std::string schema = packet->GetSchema();
     uint32_t remoteSoftwareVersion = packet->GetSoftwareVersion();
     context->SetRemoteSoftwareVersion(remoteSoftwareVersion);
-    SyncOpinion localSyncOpinion = HandleVersionV3AckSchemaParam(packet, schema, context);
+    AbilitySyncAckPacket sendPacket;
+    errCode = HandleVersionV3AckSchemaParam(packet, sendPacket, context, false);
+    int ackCode = errCode;
     LOGI("[AckNotifyRecv] receive dev = %s ack notify, remoteSoftwareVersion = %u, ackCode = %d",
         STR_MASK(deviceId_), remoteSoftwareVersion, errCode);
-    (static_cast<SingleVerSyncTaskContext *>(context))->SetIsSchemaSync(true);
-    (void)SendAck(message, SchemaObject(), AbilitySync::LAST_NOTIFY, localSyncOpinion, true);
-    return E_OK;
+    if (errCode == E_OK) {
+        (static_cast<SingleVerSyncTaskContext *>(context))->SetIsSchemaSync(true);
+        ackCode = AbilitySync::LAST_NOTIFY;
+    }
+    (void)SendAckWithEmptySchema(message, ackCode, true);
+    return errCode;
 }
 
 bool AbilitySync::GetAbilitySyncFinishedStatus() const
@@ -546,27 +534,17 @@ bool AbilitySync::SecLabelCheck(const AbilitySyncRequestPacket *packet) const
     }
 }
 
-SyncOpinion AbilitySync::HandleVersionV3RequestParam(const AbilitySyncRequestPacket *packet, ISyncTaskContext *context,
+void AbilitySync::HandleVersionV3RequestParam(const AbilitySyncRequestPacket *packet, ISyncTaskContext *context,
     const std::string &remoteSchema) const
 {
     int32_t remoteSecLabel = packet->GetSecLabel();
     int32_t remoteSecFlag = packet->GetSecFlag();
-    SecurityOption secOption = {remoteSecLabel, remoteSecFlag};
     DbAbility remoteDbAbility = packet->GetDbAbility();
     (static_cast<SingleVerSyncTaskContext *>(context))->SetDbAbility(remoteDbAbility);
-    (static_cast<SingleVerSyncTaskContext *>(context))->SetRemoteSeccurityOption(secOption);
+    (static_cast<SingleVerSyncTaskContext *>(context))->SetRemoteSeccurityOption({remoteSecLabel, remoteSecFlag});
     (static_cast<SingleVerSyncTaskContext *>(context))->SetReceivcPermitCheck(false);
-#ifdef RELATIONAL_STORE
-    if (IsSingleRelationalVer()) {
-        return SyncOpinion{true, false, false};
-    }
-#endif
-    uint8_t remoteSchemaType = packet->GetSchemaType();
-    SchemaObject localSchema = (static_cast<SingleVerKvDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
-    SyncOpinion localSyncOpinion = SchemaObject::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
     LOGI("[AbilitySync][HandleVersionV3RequestParam] remoteSecLabel = %d, remoteSecFlag = %d, remoteSchemaType = %u",
-        remoteSecLabel, remoteSecFlag, remoteSchemaType);
-    return localSyncOpinion;
+        remoteSecLabel, remoteSecFlag, packet->GetSchemaType());
 }
 
 void AbilitySync::HandleVersionV3AckSecOptionParam(const AbilitySyncAckPacket *packet,
@@ -580,26 +558,14 @@ void AbilitySync::HandleVersionV3AckSecOptionParam(const AbilitySyncAckPacket *p
     LOGI("[AbilitySync][AckRecv] remoteSecLabel = %d, remoteSecFlag = %d", remoteSecLabel, remoteSecFlag);
 }
 
-SyncOpinion AbilitySync::HandleVersionV3AckSchemaParam(const AbilitySyncAckPacket *packet,
-    const std::string &remoteSchema, ISyncTaskContext *context) const
+int AbilitySync::HandleVersionV3AckSchemaParam(const AbilitySyncAckPacket *recvPacket,
+    AbilitySyncAckPacket &sendPacket,  ISyncTaskContext *context, bool sendOpinion) const
 {
-    bool permitSync = static_cast<bool>(packet->GetPermitSync());
-    bool requirePeerConvert = static_cast<bool>(packet->GetRequirePeerConvert());
-    SyncOpinion remoteOpinion = {permitSync, requirePeerConvert, true};
-    uint8_t remoteSchemaType = packet->GetSchemaType();
-#ifdef RELATIONAL_STORE
     if (IsSingleRelationalVer()) {
-        auto localOpinion = SyncOpinion{true, false, false};
-        SyncStrategy localStrategy = SchemaObject::ConcludeSyncStrategy(localOpinion, remoteOpinion);
-        (static_cast<SingleVerSyncTaskContext *>(context))->SetSyncStrategy(localStrategy);
-        return localOpinion;
+        return HandleRelationAckSchemaParam(recvPacket, sendPacket, context, sendOpinion);
     }
-#endif
-    SchemaObject localSchema = (static_cast<SingleVerKvDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
-    SyncOpinion localOpinion = SchemaObject::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
-    SyncStrategy localStrategy = SchemaObject::ConcludeSyncStrategy(localOpinion, remoteOpinion);
-    (static_cast<SingleVerSyncTaskContext *>(context))->SetSyncStrategy(localStrategy);
-    return localOpinion;
+    HandleKvAckSchemaParam(recvPacket, context, sendPacket);
+    return E_OK;
 }
 
 void AbilitySync::GetPacketSecOption(SecurityOption &option) const
@@ -698,44 +664,6 @@ int AbilitySync::DeSerialization(const uint8_t *buffer, uint32_t length, Message
     }
 }
 
-#ifdef RELATIONAL_STORE
-int AbilitySync::SendAck(const Message *inMsg, const ISchema &schemaObj, int ackCode, SyncOpinion localOpinion,
-    bool isAckNotify)
-#else
-int AbilitySync::SendAck(const Message *inMsg, const SchemaObject &schemaObj, int ackCode, SyncOpinion localOpinion,
-    bool isAckNotify)
-#endif
-{
-    AbilitySyncAckPacket ackPacket;
-    int errCode = SetAbilityAckBodyInfo(ackPacket, schemaObj, ackCode, localOpinion, isAckNotify);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    Message *ackMessage = new (std::nothrow) Message(ABILITY_SYNC_MESSAGE);
-    if (ackMessage == nullptr) {
-        LOGE("[AbilitySync][SendAck] message create failed, may be memleak!");
-        return -E_OUT_OF_MEMORY;
-    }
-    errCode = ackMessage->SetCopiedObject<>(ackPacket);
-    if (errCode != E_OK) {
-        LOGE("[AbilitySync][SendAck] SetCopiedObject failed, err %d", errCode);
-        delete ackMessage;
-        ackMessage = nullptr;
-        return errCode;
-    }
-    (!isAckNotify) ? ackMessage->SetMessageType(TYPE_RESPONSE) : ackMessage->SetMessageType(TYPE_NOTIFY);
-    ackMessage->SetTarget(deviceId_);
-    ackMessage->SetSessionId(inMsg->GetSessionId());
-    ackMessage->SetSequenceId(inMsg->GetSequenceId());
-    errCode = communicator_->SendMessage(deviceId_, ackMessage, false, SEND_TIME_OUT);
-    if (errCode != E_OK) {
-        LOGE("[AbilitySync][SendAck] SendPacket failed, err %d", errCode);
-        delete ackMessage;
-        ackMessage = nullptr;
-    }
-    return errCode;
-}
-
 int AbilitySync::RequestPacketCalculateLen(const Message *inMsg, uint32_t &len)
 {
     const AbilitySyncRequestPacket *packet = inMsg->GetObject<AbilitySyncRequestPacket>();
@@ -800,6 +728,10 @@ int AbilitySync::AckPacketSerialization(uint8_t *buffer, uint32_t length, const 
     parcel.WriteUInt32(packet->GetRequirePeerConvert());
     parcel.WriteUInt64(packet->GetDbCreateTime());
     int errCode = DbAbility::Serialize(parcel, packet->GetDbAbility());
+    if (parcel.IsError() || errCode != E_OK) {
+        return -E_PARSE_FAIL;
+    }
+    errCode = packet->GetRelationalSyncOpinion().SerializeData(parcel, SOFTWARE_VERSION_CURRENT);
     if (parcel.IsError() || errCode != E_OK) {
         return -E_PARSE_FAIL;
     }
@@ -915,6 +847,13 @@ int AbilitySync::AckPacketDeSerializationTailPart(Parcel &parcel, AbilitySyncAck
         return errCode;
     }
     packet->SetDbAbility(remoteDbAbility);
+    RelationalSyncOpinion relationalSyncOpinion;
+    errCode = RelationalSyncOpinion::DeserializeData(parcel, relationalSyncOpinion);
+    if (errCode != E_OK) {
+        LOGE("[AbilitySync] ack packet DeSerializ RelationalSyncOpinion failed.");
+        return errCode;
+    }
+    packet->SetRelationalSyncOpinion(relationalSyncOpinion);
     return E_OK;
 }
 
@@ -981,20 +920,16 @@ int AbilitySync::SetAbilityRequestBodyInfo(AbilitySyncRequestPacket &packet, uin
     SecurityOption option;
     GetPacketSecOption(option);
     std::string schemaStr;
-    uint32_t schemaType;
+    uint32_t schemaType = 0;
     if (IsSingleKvVer()) {
         SchemaObject schemaObj = (static_cast<SingleVerKvDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
         schemaStr = schemaObj.ToSchemaString();
         schemaType = static_cast<uint32_t>(schemaObj.GetSchemaType());
-    }
-#ifdef RELATIONAL_STORE
-    if (IsSingleRelationalVer()) {
-        // todo demo
+    } else if (IsSingleRelationalVer()) {
         auto schemaObj = (static_cast<RelationalDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
         schemaStr = schemaObj.ToSchemaString();
-        schemaType = 0;
+        schemaType = static_cast<uint32_t>(schemaObj.GetSchemaType());
     }
-#endif
     DbAbility dbAbility;
     errCode = GetDbAbilityInfo(dbAbility);
     if (errCode != E_OK) {
@@ -1021,19 +956,11 @@ int AbilitySync::SetAbilityRequestBodyInfo(AbilitySyncRequestPacket &packet, uin
     return E_OK;
 }
 
-#ifdef RELATIONAL_STORE
-int AbilitySync::SetAbilityAckBodyInfo(AbilitySyncAckPacket &ackPacket, const ISchema &schemaObj, int ackCode,
-    SyncOpinion localOpinion, bool isAckNotify)
-#else
-int AbilitySync::SetAbilityAckBodyInfo(AbilitySyncAckPacket &ackPacket, const SchemaObject &schemaObj, int ackCode,
-    SyncOpinion localOpinion, bool isAckNotify)
-#endif
+int AbilitySync::SetAbilityAckBodyInfo(AbilitySyncAckPacket &ackPacket, int ackCode, bool isAckNotify) const
 {
     int errCode = E_OK;
     ackPacket.SetProtocolVersion(ABILITY_SYNC_VERSION_V1);
     ackPacket.SetSoftwareVersion(SOFTWARE_VERSION_CURRENT);
-    ackPacket.SetSchema(schemaObj.ToSchemaString());
-    ackPacket.SetSchemaType(static_cast<uint32_t>(schemaObj.GetSchemaType()));
     if (!isAckNotify) {
         SecurityOption option;
         GetPacketSecOption(option);
@@ -1056,9 +983,19 @@ int AbilitySync::SetAbilityAckBodyInfo(AbilitySyncAckPacket &ackPacket, const Sc
         ackPacket.SetDbAbility(dbAbility);
     }
     ackPacket.SetAckCode(ackCode);
+    return E_OK;
+}
+
+void AbilitySync::SetAbilityAckSchemaInfo(AbilitySyncAckPacket &ackPacket, const ISchema &schemaObj) const
+{
+    ackPacket.SetSchema(schemaObj.ToSchemaString());
+    ackPacket.SetSchemaType(static_cast<uint32_t>(schemaObj.GetSchemaType()));
+}
+
+void AbilitySync::SetAbilityAckSyncOpinionInfo(AbilitySyncAckPacket &ackPacket, SyncOpinion localOpinion) const
+{
     ackPacket.SetPermitSync(localOpinion.permitSync);
     ackPacket.SetRequirePeerConvert(localOpinion.requirePeerConvert);
-    return E_OK;
 }
 
 int AbilitySync::GetDbAbilityInfo(DbAbility &dbAbility) const
@@ -1108,10 +1045,153 @@ bool AbilitySync::IsSingleKvVer() const
 {
     return storageInterface_->GetInterfaceType() == ISyncInterface::SYNC_SVD;
 }
-#ifdef RELATIONAL_STORE
 bool AbilitySync::IsSingleRelationalVer() const
 {
+#ifdef RELATIONAL_STORE
     return storageInterface_->GetInterfaceType() == ISyncInterface::SYNC_RELATION;
-}
+#elif
+    return false;
 #endif
+}
+
+int AbilitySync::HandleRequestRecv(const Message *message, ISyncTaskContext *context, bool isCompatible)
+{
+    const AbilitySyncRequestPacket *packet = message->GetObject<AbilitySyncRequestPacket>();
+    if (packet == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    uint32_t remoteSoftwareVersion = packet->GetSoftwareVersion();
+    int ackCode;
+    std::string schema = packet->GetSchema();
+    if (remoteSoftwareVersion <= SOFTWARE_VERSION_RELEASE_2_0) {
+        LOGI("[AbilitySync][RequestRecv] remote version = %u, CheckSchemaCompatible = %d",
+            remoteSoftwareVersion, isCompatible);
+        return SendAckWithEmptySchema(message, E_OK, false);
+    }
+    HandleVersionV3RequestParam(packet, context, schema);
+    if (SecLabelCheck(packet)) {
+        ackCode = E_OK;
+    } else {
+        ackCode = -E_SECURITY_OPTION_CHECK_ERROR;
+    }
+    if (ackCode == E_OK && remoteSoftwareVersion > SOFTWARE_VERSION_RELEASE_3_0) {
+        ackCode = metadata_->SetDbCreateTime(deviceId_, packet->GetDbCreateTime(), true);
+    }
+    AbilitySyncAckPacket ackPacket;
+    if (IsSingleRelationalVer()) {
+        ackPacket.SetRelationalSyncOpinion(MakeRelationSyncOpnion(packet, schema));
+    } else {
+        SetAbilityAckSyncOpinionInfo(ackPacket, MakeKvSyncOpnion(packet, schema));
+    }
+    LOGI("[AbilitySync][RequestRecv] remote dev=%s,ver=%u,schemaCompatible=%d", STR_MASK(deviceId_),
+        remoteSoftwareVersion, isCompatible);
+    return SendAck(message, ackCode, false, ackPacket);
+}
+
+int AbilitySync::SendAck(const Message *message, int ackCode, bool isAckNotify, AbilitySyncAckPacket &ackPacket)
+{
+    int errCode = SetAbilityAckBodyInfo(ackPacket, ackCode, isAckNotify);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (IsSingleRelationalVer()) {
+        auto schemaObj = (static_cast<RelationalDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
+        SetAbilityAckSchemaInfo(ackPacket, schemaObj);
+    } else if(IsSingleKvVer()) {
+        SchemaObject schemaObject = static_cast<SingleVerKvDBSyncInterface *>(storageInterface_)->GetSchemaInfo();
+        SetAbilityAckSchemaInfo(ackPacket, schemaObject);
+    }
+    return SendAck(message, ackPacket, isAckNotify);
+}
+
+int AbilitySync::SendAckWithEmptySchema(const Message *message, int ackCode,
+    bool isAckNotify)
+{
+    AbilitySyncAckPacket ackPacket;
+    int errCode = SetAbilityAckBodyInfo(ackPacket, ackCode, isAckNotify);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    SetAbilityAckSchemaInfo(ackPacket, SchemaObject());
+    return SendAck(message, ackPacket, isAckNotify);
+}
+
+int AbilitySync::SendAck(const Message *inMsg, const AbilitySyncAckPacket &ackPacket, bool isAckNotify)
+{
+    Message *ackMessage = new (std::nothrow) Message(ABILITY_SYNC_MESSAGE);
+    if (ackMessage == nullptr) {
+        LOGE("[AbilitySync][SendAck] message create failed, may be memleak!");
+        return -E_OUT_OF_MEMORY;
+    }
+    int errCode = ackMessage->SetCopiedObject<>(ackPacket);
+    if (errCode != E_OK) {
+        LOGE("[AbilitySync][SendAck] SetCopiedObject failed, err %d", errCode);
+        delete ackMessage;
+        ackMessage = nullptr;
+        return errCode;
+    }
+    (!isAckNotify) ? ackMessage->SetMessageType(TYPE_RESPONSE) : ackMessage->SetMessageType(TYPE_NOTIFY);
+    ackMessage->SetTarget(deviceId_);
+    ackMessage->SetSessionId(inMsg->GetSessionId());
+    ackMessage->SetSequenceId(inMsg->GetSequenceId());
+    errCode = communicator_->SendMessage(deviceId_, ackMessage, false, SEND_TIME_OUT);
+    if (errCode != E_OK) {
+        LOGE("[AbilitySync][SendAck] SendPacket failed, err %d", errCode);
+        delete ackMessage;
+        ackMessage = nullptr;
+    }
+    return errCode;
+}
+
+SyncOpinion AbilitySync::MakeKvSyncOpnion(const AbilitySyncRequestPacket *packet, const std::string &remoteSchema) const
+{
+    uint8_t remoteSchemaType = packet->GetSchemaType();
+    SchemaObject localSchema = (static_cast<SingleVerKvDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
+    SyncOpinion localSyncOpinion = SchemaObject::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
+    return localSyncOpinion;
+}
+
+RelationalSyncOpinion AbilitySync::MakeRelationSyncOpnion(const AbilitySyncRequestPacket *packet,
+    const std::string &remoteSchema) const
+{
+    uint8_t remoteSchemaType = packet->GetSchemaType();
+    RelationalSchemaObject localSchema = (static_cast<RelationalDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
+    return RelationalSchemaObject::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
+}
+
+void AbilitySync::HandleKvAckSchemaParam(const AbilitySyncAckPacket *recvPacket,
+    ISyncTaskContext *context, AbilitySyncAckPacket &sendPacket) const
+{
+    std::string remoteSchema = recvPacket->GetSchema();
+    uint8_t remoteSchemaType = recvPacket->GetSchemaType();
+    bool permitSync = static_cast<bool>(recvPacket->GetPermitSync());
+    bool requirePeerConvert = static_cast<bool>(recvPacket->GetRequirePeerConvert());
+    SyncOpinion remoteOpinion = {permitSync, requirePeerConvert, true};
+    SchemaObject localSchema = (static_cast<SingleVerKvDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
+    SyncOpinion syncOpinion = SchemaObject::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
+    SyncStrategy localStrategy = SchemaObject::ConcludeSyncStrategy(syncOpinion, remoteOpinion);
+    SetAbilityAckSyncOpinionInfo(sendPacket, syncOpinion);
+    (static_cast<SingleVerKvSyncTaskContext *>(context))->SetSyncStrategy(localStrategy);
+}
+
+int AbilitySync::HandleRelationAckSchemaParam(const AbilitySyncAckPacket *recvPacket, AbilitySyncAckPacket &sendPacket,
+    ISyncTaskContext *context, bool sendOpinion) const
+{
+    std::string remoteSchema = recvPacket->GetSchema();
+    uint8_t remoteSchemaType = recvPacket->GetSchemaType();
+    auto localSchema = (static_cast<RelationalDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
+    auto localOpinion = RelationalSchemaObject::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
+    auto localStrategy = RelationalSchemaObject::ConcludeSyncStrategy(localOpinion,
+        recvPacket->GetRelationalSyncOpinion());
+    (static_cast<SingleVerRelationalSyncTaskContext *>(context))->SetRelationalSyncStrategy(localStrategy);
+    int errCode = (static_cast<RelationalDBSyncInterface *>(storageInterface_))->
+        CreateDistributedDeviceTable(context->GetDeviceId(), localStrategy);
+    if (errCode != E_OK) {
+        LOGE("[AbilitySync][AckRecv] create distributed device table failed,errCode=%d", errCode);
+    }
+    if (sendOpinion) {
+        sendPacket.SetRelationalSyncOpinion(localOpinion);
+    }
+    return errCode;
+}
 } // namespace DistributedDB

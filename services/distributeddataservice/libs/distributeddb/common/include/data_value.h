@@ -63,9 +63,9 @@ public:
     // move constructor
     DataValue(DataValue &&dataValue) noexcept;
     DataValue &operator=(DataValue &&dataValue) noexcept;
-    DataValue &operator=(const bool &boolVal);
-    DataValue &operator=(const int64_t &intVal);
-    DataValue &operator=(const double &doubleVal);
+    DataValue &operator=(bool boolVal);
+    DataValue &operator=(int64_t intVal);
+    DataValue &operator=(double doubleVal);
     DataValue &operator=(const Blob &blob);
     DataValue &operator=(const std::string &string);
     int Set(Blob *&blob);
@@ -79,7 +79,10 @@ public:
     int GetInt64(int64_t &outVal) const;
     int GetDouble(double &outVal) const;
     int GetBlob(Blob *&outVal) const;
+    int SetBlob(const Blob &val);
     int GetBlob(Blob &outVal) const;
+    int SetText(const std::string &val);
+    int SetText(const uint8_t *val, uint32_t length);
     int GetText(std::string &outVal) const;
     void ResetValue();
     int GetBlobLength(uint32_t &length) const;
@@ -104,6 +107,7 @@ public:
     int GetString(const std::string &fieldName, std::string &outValue) const;
     int GetBlob(const std::string &fieldName, Blob &blob) const;
     void PutDataValue(const std::string &fieldName, const DataValue &value);
+    int GetDataValue(const std::string &fieldName, DataValue &value) const;
 private:
     mutable std::map<std::string, DataValue> fieldData;
 };

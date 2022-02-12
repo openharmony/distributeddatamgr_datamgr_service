@@ -17,7 +17,7 @@
 
 #include "ability_sync.h"
 #include "distributeddb_tools_unit_test.h"
-#include "single_ver_sync_task_context.h"
+#include "single_ver_kv_sync_task_context.h"
 #include "sync_types.h"
 #include "version.h"
 #include "virtual_communicator_aggregator.h"
@@ -434,7 +434,7 @@ HWTEST_F(DistributedDBAbilitySyncTest, RequestReceiveTest001, TestSize.Level0)
      */
     Message msg1(ABILITY_SYNC_MESSAGE);
     msg1.SetMessageType(TYPE_REQUEST);
-    SingleVerSyncTaskContext *context = new (std::nothrow) SingleVerSyncTaskContext();
+    SingleVerSyncTaskContext *context = new (std::nothrow) SingleVerKvSyncTaskContext();
     ASSERT_TRUE(context != nullptr);
     EXPECT_EQ(async.RequestRecv(nullptr, context), -E_INVALID_ARGS);
     EXPECT_EQ(async.RequestRecv(&msg1, nullptr), -E_INVALID_ARGS);
@@ -503,7 +503,7 @@ HWTEST_F(DistributedDBAbilitySyncTest, AckReceiveTest001, TestSize.Level0)
      * @tc.steps: step2. call AckRecv, set inMsg nullptr or set context nullptr
      * @tc.expected: step2. AckRecv return -E_INVALID_ARGS
      */
-    SingleVerSyncTaskContext *context = new (std::nothrow) SingleVerSyncTaskContext();
+    SingleVerSyncTaskContext *context = new (std::nothrow) SingleVerKvSyncTaskContext();
     ASSERT_TRUE(context != nullptr);
     Message msg1(ABILITY_SYNC_MESSAGE);
     msg1.SetMessageType(TYPE_RESPONSE);

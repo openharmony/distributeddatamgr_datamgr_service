@@ -20,7 +20,7 @@
 #include <map>
 #include <functional>
 
-#include "types.h"
+#include "store_types.h"
 #include "kv_store_observer.h"
 #include "kv_store_nb_conflict_data.h"
 #include "kv_store_result_set.h"

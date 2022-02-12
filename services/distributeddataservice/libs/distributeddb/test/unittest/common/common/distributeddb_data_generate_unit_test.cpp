@@ -14,7 +14,7 @@
  */
 
 #include "distributeddb_data_generate_unit_test.h"
-#include "types.h"
+#include "store_types.h"
 
 using namespace DistributedDB;
 

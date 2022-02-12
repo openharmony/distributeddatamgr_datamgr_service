@@ -17,11 +17,14 @@
 #ifdef RELATIONAL_STORE
 
 #include "relational_db_sync_interface.h"
+#include "relationaldb_properties.h"
+#include "runtime_context.h"
 #include "sqlite_single_relational_storage_engine.h"
 
 #include "sqlite_single_ver_relational_continue_token.h"
 
 namespace DistributedDB {
+using RelationalObserverAction = std::function<void(const std::string &device)>;
 class RelationalSyncAbleStorage : public RelationalDBSyncInterface, public virtual RefObject {
 public:
     explicit RelationalSyncAbleStorage(StorageEngine *engine);
@@ -90,21 +93,29 @@ public:
 
     int LocalDataChanged(int notifyEvent, std::vector<QuerySyncObject> &queryObj) override;
 
-    int SchemaChanged(int notifyEvent) override;
-
-    int InterceptData(std::vector<SingleVerKvEntry *> &entries,
-                      const std::string &sourceID, const std::string &targetID) const override
+    int InterceptData(std::vector<SingleVerKvEntry *> &entries, const std::string &sourceID,
+        const std::string &targetID) const override
     {
         return E_OK;
     }
 
-    int CheckAndInitQueryCondition(QueryObject &query) const override
-    {
-        return E_OK;
-    }
+    int CheckAndInitQueryCondition(QueryObject &query) const override;
+    void RegisterObserverAction(const RelationalObserverAction &action);
+    void TriggerObserverAction(const std::string &deviceName);
+
+    int CreateDistributedDeviceTable(const std::string &device, const RelationalSyncStrategy &syncStrategy) override;
+
+    int RegisterSchemaChangedCallback(const std::function<void()> &callback) override;
+
+    void NotifySchemaChanged();
+
+    void RegisterHeartBeatListener(const std::function<void()> &listener);
+
+    int GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const override;
 
 private:
-    SQLiteSingleVerRelationalStorageExecutor *GetHandle(bool isWrite, int &errCode, OperatePerm perm) const;
+    SQLiteSingleVerRelationalStorageExecutor *GetHandle(bool isWrite, int &errCode,
+        OperatePerm perm = OperatePerm::NORMAL_PERM) const;
     void ReleaseHandle(SQLiteSingleVerRelationalStorageExecutor *&handle) const;
     int SetMaxTimeStamp(TimeStamp timestamp);
 
@@ -121,6 +132,13 @@ private:
     TimeStamp currentMaxTimeStamp_ = 0;
     KvDBProperties properties;
     mutable std::mutex maxTimeStampMutex_;
+
+    std::function<void()> onSchemaChanged_;
+    mutable std::mutex onSchemaChangedMutex_;
+    std::mutex dataChangeDeviceMutex_;
+    RelationalObserverAction dataChangeDeviceCallback_;
+    std::function<void()> heartBeatListener_;
+    mutable std::mutex heartBeatMutex_;
 };
 }  // namespace DistributedDB
 #endif

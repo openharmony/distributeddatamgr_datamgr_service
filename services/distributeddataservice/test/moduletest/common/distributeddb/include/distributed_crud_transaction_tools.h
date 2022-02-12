@@ -17,7 +17,6 @@
 
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
-#include "types.h"
 
 enum class CrudMode {
     PUT_BATCH = 0,

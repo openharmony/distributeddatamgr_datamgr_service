@@ -58,7 +58,8 @@ void MultiVerSyncer::EnableAutoSync(bool enable)
     }
 }
 
-int MultiVerSyncer::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash)
+int MultiVerSyncer::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash,
+    const std::string &tableName)
 {
     return -E_NOT_SUPPORT;
 }

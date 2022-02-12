@@ -16,7 +16,6 @@
 #define DELEGATE_KV_MGR_CALLBACK_H
 
 #include "kv_store_delegate.h"
-#include "types.h"
 
 // DelegateKvMgrCallback conclude the Callback implements of function< void(DBStatus, KvStoreDelegate*)>
 class DelegateKvMgrCallback {

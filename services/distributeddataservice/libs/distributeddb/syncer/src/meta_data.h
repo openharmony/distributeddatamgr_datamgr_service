@@ -58,7 +58,7 @@ public:
 
     TimeOffset GetLocalTimeOffset() const;
 
-    int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash);
+    int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash, const std::string &tableName = "");
 
     void SetLastLocalTime(TimeStamp lastLocalTime);
 
@@ -141,7 +141,7 @@ private:
     int LoadDeviceIdDataToMap(const Key &key);
 
     // reset the waterMark to zero
-    int ResetRecvQueryWaterMark(const DeviceID &deviceId);
+    int ResetRecvQueryWaterMark(const DeviceID &deviceId, const std::string &tableName = "");
 
     // store localTimeOffset in ram; if change, should add a lock first, change here and metadata,
     // then release lock

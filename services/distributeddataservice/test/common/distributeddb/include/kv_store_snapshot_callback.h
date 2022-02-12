@@ -15,8 +15,8 @@
 #ifndef KV_STORE_SNAPSHOT_CALLBACK_H
 #define KV_STORE_SNAPSHOT_CALLBACK_H
 
+#include "store_types.h"
 #include "types_export.h"
-#include "types.h"
 
 class KvStoreSnapshotCallback {
 public:

@@ -57,8 +57,8 @@ enum DBStatus {
     SCHEMA_VIOLATE_VALUE, // Values already exist in dbFile do not match new schema
     INTERCEPT_DATA_FAIL, // Interceptor push data failed.
     LOG_OVER_LIMITS, // Log size is over the limits.
-    RELATIONAL_SCHEMA_NOT_FOUND, // the sync table is not a relational table
-    RELATIONAL_SCHEMA_CHANGED, // the schema was changed
+    DISTRIBUTED_SCHEMA_NOT_FOUND, // the sync table is not a distributed table
+    DISTRIBUTED_SCHEMA_CHANGED, // the schema was changed
 };
 
 struct KvStoreConfig {

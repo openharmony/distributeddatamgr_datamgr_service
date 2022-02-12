@@ -104,12 +104,14 @@ void SyncerProxy::EnableAutoSync(bool enable)
     syncer_->EnableAutoSync(enable);
 }
 
-int SyncerProxy::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash)
+int SyncerProxy::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash,
+    const std::string &tableName)
 {
     if (syncer_ == nullptr) {
-        return SyncerFactory::GetSyncer(ISyncInterface::SYNC_SVD)->EraseDeviceWaterMark(deviceId, isNeedHash);
+        LOGE("[SyncerProxy] Syncer no init, unknown rule to erase waterMark!");
+        return -E_NOT_INIT;
     }
-    return syncer_->EraseDeviceWaterMark(deviceId, isNeedHash);
+    return syncer_->EraseDeviceWaterMark(deviceId, isNeedHash, tableName);
 }
 
 void SyncerProxy::LocalDataChanged(int notifyEvent)

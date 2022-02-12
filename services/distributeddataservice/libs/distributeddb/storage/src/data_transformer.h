@@ -33,7 +33,7 @@ struct LogInfo {
     TimeStamp timestamp = 0;
     TimeStamp wTimeStamp = 0;
     uint64_t flag = 0;
-    std::string hashKey; // primary key hash value
+    Key hashKey; // primary key hash value
 };
 
 struct RowDataWithLog {
@@ -72,10 +72,7 @@ public:
         const std::vector<FieldInfo> &localFieldInfo, std::vector<int> &indexMapping);
 
 private:
-    static int SerializeHashKey(Key &key, const std::string &hashKey);
     static int SerializeValue(Value &value, const RowData &rowData, const std::vector<FieldInfo> &fieldInfoList);
-
-    static int DeSerializeHashKey(const Key &key, std::string &hashKey);
     static int DeSerializeValue(const Value &value, OptRowData &optionalData,
         const std::vector<FieldInfo> &remoteFieldInfo, std::vector<int> &indexMapping);
 

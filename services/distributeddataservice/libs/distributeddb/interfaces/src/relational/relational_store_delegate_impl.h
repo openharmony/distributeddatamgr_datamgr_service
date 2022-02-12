@@ -29,22 +29,18 @@ public:
 
     DISABLE_COPY_ASSIGN_MOVE(RelationalStoreDelegateImpl);
 
-    DBStatus Pragma(PragmaCmd cmd, PragmaData &paramData) override;
-
     DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
-        SyncStatusCallback &onComplete, bool wait) override;
-
-    DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
-        const Query &query, SyncStatusCallback &onComplete, bool wait) override;
+        const Query &query, const SyncStatusCallback &onComplete, bool wait) override;
 
     DBStatus RemoveDeviceData(const std::string &device) override;
 
     DBStatus CreateDistributedTable(const std::string &tableName) override;
 
-    DBStatus RemoveDevicesData(const std::string &tableName, const std::string &device) override;
+    DBStatus RemoveDeviceData(const std::string &device, const std::string &tableName) override;
 
     // For connection
     DBStatus Close();
+
     void SetReleaseFlag(bool flag);
 
 private:

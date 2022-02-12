@@ -22,12 +22,12 @@ public:
     SingleVerRelationalSyncer() = default;
     ~SingleVerRelationalSyncer() override = default;
 
+    int Initialize(ISyncInterface *syncInterface) override;
+
     // Sync function. use SyncParma to reduce paramter.
     int Sync(const SyncParma &param) override;
 
     void EnableAutoSync(bool enable) override;
-
-    int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash) override;
 
     void LocalDataChanged(int notifyEvent) override;
 
@@ -35,7 +35,8 @@ protected:
 
     int PrepareSync(const SyncParma &param, uint32_t syncId) override;
 
-    void RemoteDataChanged(const std::string &device) override;
+    int SyncConditionCheck(QuerySyncObject &query, int mode, bool isQuerySync,
+        const std::vector<std::string> &devices) const override;
 
 private:
 
@@ -47,6 +48,8 @@ private:
     void DoOnComplete(const SyncParma &param, uint32_t syncId);
     void DoOnSubSyncComplete(const uint32_t subSyncId, const uint32_t syncId,
         const SyncParma &param, const std::map<std::string, int> &devicesMap);
+
+    void SchemaChangeCallback();
 
     mutable std::mutex syncMapLock_;
     std::map<uint32_t, std::set<uint32_t>> fullSyncIdMap_;

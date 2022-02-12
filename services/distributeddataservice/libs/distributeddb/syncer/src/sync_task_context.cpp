@@ -44,6 +44,7 @@ SyncTaskContext::SyncTaskContext()
       communicator_(nullptr),
       stateMachine_(nullptr),
       requestSessionId_(0),
+      lastRequestSessionId_(0),
       timeHelper_(nullptr),
       remoteSoftwareVersion_(0),
       remoteSoftwareVersionId_(0),
@@ -555,8 +556,14 @@ void SyncTaskContext::CopyTargetData(const ISyncTarget *target, const TaskParam 
         }
         requestSessionId_ = Hash::Hash32Func(deviceId_ + std::to_string(syncId_) +
             std::to_string(TimeHelper::GetSysCurrentTime()));
+        if (lastRequestSessionId_ == requestSessionId_) {
+            // Hash32Func max is 0x7fffffff and UINT32_MAX is 0xffffffff
+            requestSessionId_++;
+            LOGI("last sessionId is equal to this sessionId!");
+        }
         LOGI("[SyncTaskContext][copyTarget] mode=%d,syncId=%d,isAutoSync=%d,isRetry=%d,dev=%s{private}",
             mode_, syncId_, isAutoSync_, syncTaskRetryStatus_, deviceId_.c_str());
+        lastRequestSessionId_ = requestSessionId_;
     } else {
         isAutoSync_ = false;
         LOGI("[SyncTaskContext][copyTarget] for response data dev %s{private},isRetry=%d", deviceId_.c_str(),

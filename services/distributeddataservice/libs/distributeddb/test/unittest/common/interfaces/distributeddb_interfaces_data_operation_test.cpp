@@ -1786,4 +1786,221 @@ HWTEST_F(DistributedDBInterfacesDataOperationTest, PrefixAndOther001, TestSize.L
     EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtrForQuery), OK);
     EXPECT_TRUE(g_mgr.DeleteKvStore("PrefixAndOther001") == OK);
 }
-#endif
+
+/**
+  * @tc.name: InKeys001
+  * @tc.desc: InKeys query base function
+  * @tc.type: FUNC
+  * @tc.require: AR000EPARK
+  * @tc.author: xushaohua
+  */
+HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeys001, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. Create a database And Preset Data
+     */
+    KvStoreNbDelegate::Option option = {true, false, false};
+    g_mgr.GetKvStore("InKeys001", option, g_kvNbDelegateCallbackForQuery);
+    ASSERT_NE(g_kvNbDelegatePtrForQuery, nullptr);
+    EXPECT_EQ(g_kvDelegateStatusForQuery, OK);
+
+    Key key = {'1'};
+    DBStatus status = g_kvNbDelegatePtrForQuery->Put(key, VALUE_1);
+    ASSERT_EQ(status, OK);
+    const int dataSize = 10; // 10 data for test
+    std::set<Key> keys;
+    for (uint8_t i = 0; i < dataSize; i++) {
+        key.push_back(i);
+        DBStatus status = g_kvNbDelegatePtrForQuery->Put(key, VALUE_1);
+        ASSERT_EQ(status, OK);
+        keys.emplace(key);
+        key.pop_back();
+    }
+
+    /**
+     * @tc.steps: step2. Call GetEntries With Query, set all keys at Inkeys.
+     * @tc.expected: step2. Returns KvStoreResultSet, the count is dataSize,
+     *  all data are equals the preset data
+     */
+    KvStoreResultSet *resultSet = nullptr;
+    g_kvNbDelegatePtrForQuery->GetEntries(Query::Select().InKeys(keys), resultSet);
+    ASSERT_NE(resultSet, nullptr);
+    ASSERT_EQ(resultSet->GetCount(), dataSize);
+    for (int i = 0; i < dataSize; i++) {
+        resultSet->MoveToPosition(i);
+        Entry entry;
+        resultSet->GetEntry(entry);
+        key.push_back(i);
+        EXPECT_EQ(key, entry.key);
+        EXPECT_EQ(entry.value, VALUE_1);
+        key.pop_back();
+    }
+    g_kvNbDelegatePtrForQuery->CloseResultSet(resultSet);
+
+    /**
+     * @tc.steps: step3. Call GetEntries With Query, set one other key at Inkeys.
+     * @tc.expected: step3. Returns KvStoreResultSet, the count is 0,
+     */
+    g_kvNbDelegatePtrForQuery->GetEntries(Query::Select().InKeys({KEY_7}), resultSet);
+    ASSERT_NE(resultSet, nullptr);
+    ASSERT_EQ(resultSet->GetCount(), 0);
+    g_kvNbDelegatePtrForQuery->CloseResultSet(resultSet);
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtrForQuery), OK);
+    EXPECT_EQ(g_mgr.DeleteKvStore("InKeys001"), OK);
+}
+
+/**
+ * @tc.name: InKeysLimit001
+ * @tc.desc: InKeys query limit verification
+ * @tc.type: FUNC
+ * @tc.require: AR000EPARK
+ * @tc.author: xushaohua
+ */
+HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeysLimit001, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. Create a database
+     */
+    KvStoreNbDelegate::Option option = {true, false, false};
+    g_mgr.GetKvStore("InKeysLimit001", option, g_kvNbDelegateCallbackForQuery);
+    ASSERT_NE(g_kvNbDelegatePtrForQuery, nullptr);
+    EXPECT_EQ(g_kvDelegateStatusForQuery, OK);
+
+    /**
+     * @tc.steps: step2. Construct a key set, and the key size over MAX_BATCH_SIZE
+     */
+    std::set<Key> keys;
+    for (uint8_t i = 0; i < DBConstant::MAX_BATCH_SIZE + 1; i++) {
+        Key key = { i };
+        keys.emplace(key);
+    }
+
+    /**
+     * @tc.steps: step3. Call GetEntries With Query, set keys at Inkeys.
+     * @tc.expected: step3. Returns OVER_MAX_LIMITS, the resultSet is nullptr,
+     */
+    KvStoreResultSet *resultSet = nullptr;
+    DBStatus status = g_kvNbDelegatePtrForQuery->GetEntries(Query::Select().InKeys(keys), resultSet);
+    EXPECT_EQ(status, OVER_MAX_LIMITS);
+    EXPECT_EQ(resultSet, nullptr);
+
+    /**
+     * @tc.steps: step4. Call GetEntries With Query, set keys empty.
+     * @tc.expected: step4. Returns INVALID_ARGS, the resultSet is nullptr,
+     */
+    status = g_kvNbDelegatePtrForQuery->GetEntries(Query::Select().InKeys({}), resultSet);
+    EXPECT_EQ(status, INVALID_ARGS);
+    EXPECT_EQ(resultSet, nullptr);
+
+    /**
+     * @tc.steps: step4. Call GetEntries With Query, set a invalid key.
+     * @tc.expected: step4. Returns INVALID_ARGS, the resultSet is nullptr,
+     */
+    status = g_kvNbDelegatePtrForQuery->GetEntries(Query::Select().InKeys({{}}), resultSet);
+    EXPECT_EQ(status, INVALID_ARGS);
+    EXPECT_EQ(resultSet, nullptr);
+
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtrForQuery), OK);
+    EXPECT_EQ(g_mgr.DeleteKvStore("InKeysLimit001"), OK);
+}
+
+/**
+ * @tc.name: InKeysAndOther001
+ * @tc.desc: Combination of InKeys query and logical filtering
+ * @tc.type: FUNC
+ * @tc.require: AR000EPARK
+ * @tc.author: xushaohua
+ */
+HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeysAndOther001, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. Create a database And Preset Data
+     */
+    KvStoreNbDelegate::Option option = {true, false, false};
+    option.schema = SCHEMA_DEFINE2;
+    g_mgr.GetKvStore("InKeysAndOther001", option, g_kvNbDelegateCallbackForQuery);
+    ASSERT_NE(g_kvNbDelegatePtrForQuery, nullptr);
+    EXPECT_EQ(g_kvDelegateStatusForQuery, OK);
+
+    PresetDataForPreifxAndOrderBy001();
+
+    std::set<Key> keys = { KEY_1, KEY_2, KEY_4 };
+    std::vector<Entry> entriesRes;
+
+    /**
+     * @tc.steps: step2. Call GetEntries With Query, use EqualTo and InKeys
+     * @tc.expected: step2. Returns OK
+     */
+    Query query1 = Query::Select().EqualTo("$.field_name1", 1).InKeys(keys);
+    int errCode = g_kvNbDelegatePtrForQuery->GetEntries(query1, entriesRes);
+    EXPECT_EQ(errCode, OK);
+
+    /**
+     * @tc.steps: step3. Call GetEntries With Query, use InKeys and EqualTo
+     * @tc.expected: step3. Returns OK
+     */
+    query1 = Query::Select().InKeys(keys).EqualTo("$.field_name1", 1);
+    errCode = g_kvNbDelegatePtrForQuery->GetEntries(query1, entriesRes);
+    EXPECT_EQ(errCode, OK);
+
+    /**
+     * @tc.steps: step4. Call GetEntries With Query, use EqualTo, InKeys and EqualTo, all valid
+     * @tc.expected: step4. Returns OK
+     */
+    query1 = Query::Select().EqualTo("$.field_name1", 1).InKeys(keys).And().EqualTo("$.field_name2", 2);
+    errCode = g_kvNbDelegatePtrForQuery->GetEntries(query1, entriesRes);
+    EXPECT_EQ(errCode, OK);
+
+    /**
+     * @tc.steps: step4. Call GetEntries With Query, use EqualTo, InKeys and EqualTo, has invalid
+     * @tc.expected: step4. Returns NOT_FOUND
+     */
+    query1 = Query::Select().EqualTo("$.field_name1", 1).InKeys(keys).And().EqualTo("$.field_name1", 2);
+    errCode = g_kvNbDelegatePtrForQuery->GetEntries(query1, entriesRes);
+    EXPECT_EQ(errCode, NOT_FOUND);
+
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtrForQuery), OK);
+    EXPECT_EQ(g_mgr.DeleteKvStore("InKeysAndOther001"), OK);
+}
+
+/**
+ * @tc.name: InKeysAndOther002
+ * @tc.desc: Combination of InKeys query and logical filtering
+ * @tc.type: FUNC
+ * @tc.require: AR000EPARK
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeysAndOther002, TestSize.Level1)
+{
+    KvStoreNbDelegate::Option option = {true, false, false};
+    option.schema = SCHEMA_DEFINE2;
+    g_mgr.GetKvStore("InKeysAndOther001", option, g_kvNbDelegateCallbackForQuery);
+    ASSERT_NE(g_kvNbDelegatePtrForQuery, nullptr);
+    EXPECT_EQ(g_kvDelegateStatusForQuery, OK);
+
+    std::set<Key> keys = { KEY_1, KEY_2, KEY_4 };
+    std::vector<Query> queries = {
+        Query::Select().PrefixKey({}).InKeys(keys).Or().EqualTo("$.field_name1", 2),
+        Query::Select().PrefixKey({}).InKeys(keys).And().EqualTo("$.field_name1", 2),
+        Query::Select().InKeys(keys).Or().EqualTo("$.field_name1", 2),
+        Query::Select().InKeys(keys).And().EqualTo("$.field_name1", 2),
+        Query::Select().PrefixKey({}).Or().EqualTo("$.field_name1", 2),
+        Query::Select().PrefixKey({}).And().EqualTo("$.field_name1", 2),
+        Query::Select().PrefixKey({}).And().InKeys(keys).EqualTo("$.field_name1", 2),
+        Query::Select().And().InKeys(keys).EqualTo("$.field_name1", 2),
+        Query::Select().Or().PrefixKey({}).EqualTo("$.field_name1", 2),
+        Query::Select().BeginGroup().PrefixKey({}).Or().EqualTo("$.field_name1", 2).EndGroup(),
+        Query::Select().EqualTo("$.field_name1", 2).Or().InKeys(keys),
+        Query::Select().EqualTo("$.field_name1", 2).Or().PrefixKey({}),
+    };
+
+    for (const auto &query : queries) {
+        std::vector<Entry> entriesRes;
+        int errCode = g_kvNbDelegatePtrForQuery->GetEntries(query, entriesRes);
+        EXPECT_EQ(errCode, INVALID_QUERY_FORMAT);
+    }
+
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtrForQuery), OK);
+    EXPECT_EQ(g_mgr.DeleteKvStore("InKeysAndOther001"), OK);
+}
+#endif // OMIT_JSON

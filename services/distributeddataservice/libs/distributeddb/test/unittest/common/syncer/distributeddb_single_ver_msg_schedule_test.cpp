@@ -18,6 +18,7 @@
 #include "distributeddb_tools_unit_test.h"
 #include "single_ver_data_message_schedule.h"
 #include "single_ver_data_packet.h"
+#include "single_ver_kv_sync_task_context.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -65,7 +66,7 @@ HWTEST_F(DistributedDBSingleVerMsgScheduleTest, MsgSchedule001, TestSize.Level0)
      * @tc.expected: put msg ok
      */
     SingleVerDataMessageSchedule msgSchedule;
-    auto *context = new SingleVerSyncTaskContext();
+    auto *context = new SingleVerKvSyncTaskContext();
     context->SetRemoteSoftwareVersion(SOFTWARE_VERSION_CURRENT);
     DataSyncMessageInfo info;
     info.sessionId_ = 10;
@@ -115,7 +116,7 @@ HWTEST_F(DistributedDBSingleVerMsgScheduleTest, MsgSchedule002, TestSize.Level0)
      * @tc.expected: put msg ok
      */
     SingleVerDataMessageSchedule msgSchedule;
-    auto *context = new SingleVerSyncTaskContext();
+    auto *context = new SingleVerKvSyncTaskContext();
     context->SetRemoteSoftwareVersion(SOFTWARE_VERSION_RELEASE_2_0);
     DataSyncMessageInfo info;
     bool isNeedHandle = true;
@@ -158,7 +159,7 @@ HWTEST_F(DistributedDBSingleVerMsgScheduleTest, MsgSchedule003, TestSize.Level0)
      * @tc.expected: handle ok
      */
     SingleVerDataMessageSchedule msgSchedule;
-    auto *context = new SingleVerSyncTaskContext();
+    auto *context = new SingleVerKvSyncTaskContext();
     context->SetRemoteSoftwareVersion(SOFTWARE_VERSION_CURRENT);
     DataSyncMessageInfo info;
     bool isNeedHandle = true;
@@ -225,7 +226,7 @@ HWTEST_F(DistributedDBSingleVerMsgScheduleTest, MsgSchedule004, TestSize.Level0)
      * @tc.expected: put msg ok
      */
     SingleVerDataMessageSchedule msgSchedule;
-    auto *context = new SingleVerSyncTaskContext();
+    auto *context = new SingleVerKvSyncTaskContext();
     context->SetRemoteSoftwareVersion(SOFTWARE_VERSION_CURRENT);
     DataSyncMessageInfo info;
     info.sessionId_ = 10;
@@ -284,7 +285,7 @@ HWTEST_F(DistributedDBSingleVerMsgScheduleTest, MsgSchedule005, TestSize.Level0)
      * @tc.expected: put msg ok
      */
     SingleVerDataMessageSchedule msgSchedule;
-    auto *context = new SingleVerSyncTaskContext();
+    auto *context = new SingleVerKvSyncTaskContext();
     context->SetRemoteSoftwareVersion(SOFTWARE_VERSION_CURRENT);
     DataSyncMessageInfo info;
     info.sessionId_ = 10;
@@ -341,7 +342,7 @@ HWTEST_F(DistributedDBSingleVerMsgScheduleTest, MsgSchedule006, TestSize.Level0)
      * @tc.expected: put msg ok
      */
     SingleVerDataMessageSchedule msgSchedule;
-    auto *context = new SingleVerSyncTaskContext();
+    auto *context = new SingleVerKvSyncTaskContext();
     context->SetRemoteSoftwareVersion(SOFTWARE_VERSION_CURRENT);
     DataSyncMessageInfo info;
     info.sessionId_ = 10;
@@ -407,7 +408,7 @@ HWTEST_F(DistributedDBSingleVerMsgScheduleTest, MsgSchedule007, TestSize.Level0)
      * @tc.expected: put msg ok and get msg seq1_packet4, seq2_packet5
      */
     SingleVerDataMessageSchedule msgSchedule;
-    auto *context = new SingleVerSyncTaskContext();
+    auto *context = new SingleVerKvSyncTaskContext();
     context->SetRemoteSoftwareVersion(SOFTWARE_VERSION_CURRENT);
     DataSyncMessageInfo info;
     info.sessionId_ = 10;

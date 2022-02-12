@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #ifdef RELATIONAL_STORE
+#include "db_common.h"
 #include "virtual_relational_ver_sync_db_interface.h"
 #include "generic_single_ver_kv_entry.h"
 #include "virtual_single_ver_sync_db_Interface.h"
@@ -50,6 +51,13 @@ namespace {
         LOGD("[GetEntriesFromItems] size:%d", dataItems.size());
         return errCode;
     }
+
+    std::string GetStr(const std::vector<uint8_t> &vec)
+    {
+        std::string str;
+        DBCommon::VectorToString(vec, str);
+        return str;
+    }
 }
 
 int VirtualRelationalVerSyncDBInterface::PutSyncDataWithQuery(const QueryObject &object,
@@ -78,37 +86,30 @@ int VirtualRelationalVerSyncDBInterface::PutSyncDataWithQuery(const QueryObject 
     if (errCode != E_OK) {
         return errCode;
     }
-    std::vector<RowDataWithLog> dataList;
-    std::set<std::string> hashKeySet;
     for (const auto &optRowDataWithLog : optTableDataWithLog.dataList) {
-        RowDataWithLog rowDataWithLog;
-        rowDataWithLog.logInfo = optRowDataWithLog.logInfo;
+        VirtualRowData virtualRowData;
+        virtualRowData.logInfo = optRowDataWithLog.logInfo;
+        int index = 0;
         for (const auto &optItem : optRowDataWithLog.optionalData) {
-            if (!optItem.has_value()) {
-                continue;
+            DataValue dataValue;
+            if (optItem.has_value()) {
+                dataValue = std::move(optItem.value());
             }
-            rowDataWithLog.rowData.push_back(optItem.value());
             LOGD("type:%d", optItem.value().GetType());
+            virtualRowData.objectData.PutDataValue(localFieldInfo_[index].GetFieldName(), dataValue);
+            index++;
         }
-        hashKeySet.insert(rowDataWithLog.logInfo.hashKey);
-        dataList.push_back(rowDataWithLog);
+        syncData_[object.GetTableName()][GetStr(virtualRowData.logInfo.hashKey)] = virtualRowData;
     }
     LOGD("tableName %s", optTableDataWithLog.tableName.c_str());
-    for (const auto &item : syncData_[optTableDataWithLog.tableName]) {
-        if (hashKeySet.find(item.logInfo.hashKey) == hashKeySet.end()) {
-            dataList.push_back(item);
-        }
-    }
-    syncData_[optTableDataWithLog.tableName] = dataList;
-
     return errCode;
 }
 
-int VirtualRelationalVerSyncDBInterface::PutLocalData(const std::vector<RowDataWithLog> &dataList,
+int VirtualRelationalVerSyncDBInterface::PutLocalData(const std::vector<VirtualRowData> &dataList,
     const std::string &tableName)
 {
     for (const auto &item : dataList) {
-        localData_[tableName].push_back(item);
+        localData_[tableName][GetStr(item.logInfo.hashKey)] = item;
     }
     return E_OK;
 }
@@ -123,11 +124,22 @@ int VirtualRelationalVerSyncDBInterface::GetSyncData(QueryObject &query,
     }
     std::vector<DataItem> dataItemList;
     TableDataWithLog tableDataWithLog = {query.GetTableName(), {}};
-    for (const auto &data : localData_[query.GetTableName()]) {
-        if (data.logInfo.timestamp >= timeRange.beginTime && data.logInfo.timestamp < timeRange.endTime) {
-            tableDataWithLog.dataList.push_back(data);
+    for (const auto &[hashKey, virtualData] : localData_[query.GetTableName()]) {
+        if (virtualData.logInfo.timestamp < timeRange.beginTime ||
+            virtualData.logInfo.timestamp >= timeRange.endTime) {
+            LOGD("ignore hashkey %s", hashKey.c_str());
+            continue;
         }
+        RowDataWithLog rowData;
+        for (const auto &field : localFieldInfo_) {
+            DataValue dataValue;
+            (void)virtualData.objectData.GetDataValue(field.GetFieldName(), dataValue);
+            rowData.rowData.push_back(std::move(dataValue));
+        }
+        rowData.logInfo = virtualData.logInfo;
+        tableDataWithLog.dataList.push_back(rowData);
     }
+
     int errCode = DataTransformer::TransformTableData(tableDataWithLog, localFieldInfo_, dataItemList);
     if (errCode != E_OK) {
         return errCode;
@@ -184,11 +196,6 @@ int VirtualRelationalVerSyncDBInterface::LocalDataChanged(int notifyEvent, std::
     return E_OK;
 }
 
-int VirtualRelationalVerSyncDBInterface::SchemaChanged(int notifyEvent)
-{
-    return E_OK;
-}
-
 int VirtualRelationalVerSyncDBInterface::GetInterfaceType() const
 {
     return SYNC_RELATION;
@@ -210,9 +217,9 @@ std::vector<uint8_t> VirtualRelationalVerSyncDBInterface::GetIdentifier() const
 void VirtualRelationalVerSyncDBInterface::GetMaxTimeStamp(TimeStamp &stamp) const
 {
     for (const auto &item : syncData_) {
-        for (const auto &rowDataWithLog : item.second) {
-            if (stamp < rowDataWithLog.logInfo.timestamp) {
-                stamp = rowDataWithLog.logInfo.timestamp;
+        for (const auto &entry : item.second) {
+            if (stamp < entry.second.logInfo.timestamp) {
+                stamp = entry.second.logInfo.timestamp;
             }
         }
     }
@@ -273,6 +280,7 @@ const KvDBProperties &VirtualRelationalVerSyncDBInterface::GetDbProperties() con
 
 void VirtualRelationalVerSyncDBInterface::SetLocalFieldInfo(const std::vector<FieldInfo> &localFieldInfo)
 {
+    localFieldInfo_.clear();
     // sort by dict
     std::map<std::string, FieldInfo> infoMap;
     for (const auto &item : localFieldInfo) {
@@ -284,13 +292,52 @@ void VirtualRelationalVerSyncDBInterface::SetLocalFieldInfo(const std::vector<Fi
 }
 
 int VirtualRelationalVerSyncDBInterface::GetAllSyncData(const std::string &tableName,
-    std::vector<RowDataWithLog> &data)
+    std::vector<VirtualRowData> &data)
 {
     if (syncData_.find(tableName) == syncData_.end()) {
         return -E_NOT_FOUND;
     }
-    data = syncData_[tableName];
+    for (const auto &entry : syncData_[tableName]) {
+        data.push_back(entry.second);
+    }
     return E_OK;
+}
+
+int VirtualRelationalVerSyncDBInterface::GetVirtualSyncData(const std::string &tableName,
+    const std::string &hashKey, VirtualRowData &data)
+{
+    if (syncData_.find(tableName) == syncData_.end()) {
+        return -E_NOT_FOUND;
+    }
+    if (syncData_.find(hashKey) == syncData_.end()) {
+        return -E_NOT_FOUND;
+    }
+    data = syncData_[tableName][hashKey];
+    return E_OK;
+}
+
+void VirtualRelationalVerSyncDBInterface::EraseSyncData(const std::string &tableName)
+{
+    if (syncData_.find(tableName) == syncData_.end()) {
+        return;
+    }
+    syncData_.erase(tableName);
+}
+
+int VirtualRelationalVerSyncDBInterface::CreateDistributedDeviceTable(const std::string &device,
+    const RelationalSyncStrategy &syncStrategy)
+{
+    return E_OK;
+}
+
+int VirtualRelationalVerSyncDBInterface::RegisterSchemaChangedCallback(const std::function<void()> &onSchemaChanged)
+{
+    return E_OK;
+}
+
+void VirtualRelationalVerSyncDBInterface::SetTableInfo(const TableInfo &tableInfo)
+{
+    schemaObj_.AddRelationalTable(tableInfo);
 }
 }
 #endif

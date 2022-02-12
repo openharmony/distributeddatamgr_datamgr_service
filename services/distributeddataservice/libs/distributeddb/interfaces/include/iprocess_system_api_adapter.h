@@ -18,7 +18,7 @@
 
 #include <string>
 #include <functional>
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 using OnAccessControlledEvent = std::function<void(bool isAccessControlled)>;

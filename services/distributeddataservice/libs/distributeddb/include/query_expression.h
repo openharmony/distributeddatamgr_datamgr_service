@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <set>
 
 #include "types_export.h"
 
@@ -57,6 +58,7 @@ enum class QueryObjType : uint32_t {
     LIMIT = 0x0701,
     ORDERBY,
     SUGGEST_INDEX = 0x0801,
+    IN_KEYS = 0x0901,
 };
 
 struct QueryObjNode {
@@ -114,9 +116,12 @@ public:
 
     void SetTableName(const std::string &tableName);
     const std::string &GetTableName();
-    bool IsTableNameSpacified() const;
+    bool IsTableNameSpecified() const;
 
     std::string GetSuggestIndex() const;
+
+    const std::set<Key> &GetKeys() const;
+    void InKeys(const std::set<Key> &keys);
 
     const std::list<QueryObjNode> &GetQueryExpression();
 
@@ -133,6 +138,7 @@ private:
     std::string suggestIndex_;
     std::string tableName_;
     bool isTableNameSpecified_;
+    std::set<Key> keys_;
 };
 
 // specialize for double

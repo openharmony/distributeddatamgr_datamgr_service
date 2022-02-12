@@ -19,7 +19,7 @@
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
 #include "log_print.h"
-#include "types.h"
+#include "store_types.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;

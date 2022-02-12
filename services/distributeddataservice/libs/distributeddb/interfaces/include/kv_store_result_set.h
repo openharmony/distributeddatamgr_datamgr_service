@@ -16,7 +16,7 @@
 #ifndef KV_STORE_RESULT_SET_H
 #define KV_STORE_RESULT_SET_H
 
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 class KvStoreResultSet {

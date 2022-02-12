@@ -21,7 +21,7 @@
 #include <mutex>
 
 #include "iprocess_system_api_adapter.h"
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 class ProcessSystemApiAdapterImpl : public IProcessSystemApiAdapter {

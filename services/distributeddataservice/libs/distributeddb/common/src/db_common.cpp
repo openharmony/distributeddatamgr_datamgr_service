@@ -311,4 +311,21 @@ std::string DBCommon::StringMasking(const std::string &oriStr, size_t remain)
     }
     return oriStr;
 }
+
+std::string DBCommon::GetDistributedTableName(const std::string &device, const std::string &tableName)
+{
+    std::string deviceHashHex = DBCommon::TransferStringToHex(DBCommon::TransferHashString(device));
+    return DBConstant::RELATIONAL_PREFIX + tableName + "_" + deviceHashHex;
+}
+
+void DBCommon::GetDeviceFromName(const std::string &deviceTableName, std::string &deviceHash, std::string &tableName)
+{
+    std::size_t found = deviceTableName.rfind('_');
+    if (found != std::string::npos && found + 1 < deviceTableName.length() &&
+        found > DBConstant::RELATIONAL_PREFIX.length()) {
+        deviceHash = deviceTableName.substr(found + 1);
+        tableName = deviceTableName.substr(DBConstant::RELATIONAL_PREFIX.length(),
+            found - DBConstant::RELATIONAL_PREFIX.length());
+    }
+}
 } // namespace DistributedDB

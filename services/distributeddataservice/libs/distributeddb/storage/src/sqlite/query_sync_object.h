@@ -22,20 +22,23 @@
 #include "parcel.h"
 
 namespace DistributedDB {
-const uint32_t QUERY_SYNC_OBJECT_VERSION_0 = 0; // for kvDB
-const uint32_t QUERY_SYNC_OBJECT_VERSION_1 = 1; // for relational DB, which need specify tableName
+const uint32_t QUERY_SYNC_OBJECT_VERSION_0 = 0;
+const uint32_t QUERY_SYNC_OBJECT_VERSION_1 = 1; // Add tableName_ and keys_.
+const uint32_t QUERY_SYNC_OBJECT_VERSION_CURRENT = QUERY_SYNC_OBJECT_VERSION_1; // always point the last.
 
 struct ObjContext {
     uint32_t version = QUERY_SYNC_OBJECT_VERSION_0; // serialized struct version
     std::vector<uint8_t> prefixKey{};
     std::string suggestIndex{};
     std::list<QueryObjNode> queryObjNodes{};
+    std::vector<Key> keys{};
 };
 
 class QuerySyncObject : public QueryObject {
 public:
     QuerySyncObject();
-    QuerySyncObject(const std::list<QueryObjNode> &queryObjNodes, const std::vector<uint8_t> &prefixKey);
+    QuerySyncObject(const std::list<QueryObjNode> &queryObjNodes, const std::vector<uint8_t> &prefixKey,
+        const std::set<Key> &keys);
     explicit QuerySyncObject(const Query &query);
     ~QuerySyncObject() override;
 
@@ -51,6 +54,7 @@ public:
 private:
     uint32_t CalculateLen() const;
     int GetObjContext(ObjContext &objContext) const;
+    uint32_t GetVersion() const;
 };
 }
 #endif

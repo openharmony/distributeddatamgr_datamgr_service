@@ -2222,3 +2222,69 @@ HWTEST_F(DistributedDBSingleVerP2PSyncTest, SametimeSync001, TestSize.Level3)
     g_kvDelegatePtr->Get(key, actualValue);
     EXPECT_EQ(actualValue, value);
 }
+
+/**
+ * @tc.name: DatabaseOnlineCallback001
+ * @tc.desc: check database status notify online callback
+ * @tc.type: FUNC
+ * @tc.require: AR000CQS3S SR000CQE0B
+ * @tc.author: zhuwentao
+ */
+HWTEST_F(DistributedDBSingleVerP2PSyncTest, DatabaseOnlineCallback001, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. SetStoreStatusNotifier
+     * @tc.expected: step1. SetStoreStatusNotifier ok
+     */
+    std::string targetDev = "DEVICE_X";
+    bool isCheckOk = false;
+    auto databaseStatusNotifyCallback = [targetDev, &isCheckOk] (std::string userId,
+        std::string appId, std::string storeId, const std::string deviceId, bool onlineStatus) -> void {
+        if (userId == USER_ID && appId == APP_ID && storeId == STORE_ID && deviceId == targetDev &&
+            onlineStatus == true) {
+            isCheckOk = true;
+        }};
+    g_mgr.SetStoreStatusNotifier(databaseStatusNotifyCallback);
+    /**
+     * @tc.steps: step2. trigger device online
+     * @tc.expected: step2. check callback ok
+     */
+    g_communicatorAggregator->OnlineDevice(targetDev);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME / 20));
+    EXPECT_EQ(isCheckOk, true);
+    StoreStatusNotifier nullCallback;
+    g_mgr.SetStoreStatusNotifier(nullCallback);
+}
+
+/**
+ * @tc.name: DatabaseOfflineCallback001
+ * @tc.desc: check database status notify online callback
+ * @tc.type: FUNC
+ * @tc.require: AR000CQS3S SR000CQE0B
+ * @tc.author: zhuwentao
+ */
+HWTEST_F(DistributedDBSingleVerP2PSyncTest, DatabaseOfflineCallback001, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. SetStoreStatusNotifier
+     * @tc.expected: step1. SetStoreStatusNotifier ok
+     */
+    std::string targetDev = "DEVICE_X";
+    bool isCheckOk = false;
+    auto databaseStatusNotifyCallback = [targetDev, &isCheckOk] (std::string userId,
+        std::string appId, std::string storeId, const std::string deviceId, bool onlineStatus) -> void {
+        if (userId == USER_ID && appId == APP_ID && storeId == STORE_ID && deviceId == targetDev &&
+            onlineStatus == false) {
+            isCheckOk = true;
+        }};
+    g_mgr.SetStoreStatusNotifier(databaseStatusNotifyCallback);
+    /**
+     * @tc.steps: step2. trigger device offline
+     * @tc.expected: step2. check callback ok
+     */
+    g_communicatorAggregator->OfflineDevice(targetDev);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME / 20));
+    EXPECT_EQ(isCheckOk, true);
+    StoreStatusNotifier nullCallback;
+    g_mgr.SetStoreStatusNotifier(nullCallback);
+}

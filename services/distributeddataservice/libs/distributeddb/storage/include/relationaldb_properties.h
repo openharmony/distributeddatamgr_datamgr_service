@@ -14,7 +14,7 @@
  */
 #ifndef RELATIONALDB_PROPERTIES_H
 #define RELATIONALDB_PROPERTIES_H
-
+#ifdef RELATIONAL_STORE
 #include <map>
 #include <string>
 #include <vector>
@@ -41,4 +41,5 @@ private:
     RelationalSchemaObject schema_;
 };
 }
+#endif
 #endif

@@ -297,9 +297,6 @@ protected:
     int SendControlAck(SingleVerSyncTaskContext *context, const Message *message, int32_t recvCode,
         uint32_t controlCmdType, const CommErrHandler &handler = nullptr);
 
-    std::string GetQuerySyncId(const SingleVerSyncTaskContext *context, const std::string &queryId) const;
-    std::string GetDeleteSyncId(const SingleVerSyncTaskContext *context) const;
-
     uint32_t mtuSize_;
     SyncGenericInterface* storage_;
     ICommunicator* communicateHandle_;

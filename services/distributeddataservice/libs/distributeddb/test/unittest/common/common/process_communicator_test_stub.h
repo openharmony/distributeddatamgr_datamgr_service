@@ -22,7 +22,7 @@
 #include <functional>
 
 #include "iprocess_communicator.h"
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 class ProcessCommunicatorTestStub : public IProcessCommunicator {

@@ -1955,6 +1955,7 @@ HWTEST_F(DistributedDBInterfacesNBDelegateTest, MaxLogCheckPoint001, TestSize.Le
     EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
     EXPECT_EQ(g_mgr.DeleteKvStore("MaxLogCheckPoint001"), OK);
 }
+
 /**
   * @tc.name: CreateMemoryDbWithoutPath
   * @tc.desc: Create memory database without path.
@@ -1974,4 +1975,45 @@ HWTEST_F(DistributedDBInterfacesNBDelegateTest, CreateMemoryDbWithoutPath, TestS
     ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
     EXPECT_TRUE(g_kvDelegateStatus == OK);
     EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+}
+
+/**
+  * @tc.name: OpenStorePathCheckTest001
+  * @tc.desc: Test open store with same label but different path.
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedDBInterfacesNBDelegateTest, OpenStorePathCheckTest001, TestSize.Level1)
+{
+    std::string dir1 = g_testDir + "/dbDir1";
+    EXPECT_EQ(OS::MakeDBDirectory(dir1), E_OK);
+    std::string dir2 = g_testDir + "/dbDir2";
+    EXPECT_EQ(OS::MakeDBDirectory(dir2), E_OK);
+
+    KvStoreDelegateManager mgr1(APP_ID, USER_ID);
+    mgr1.SetKvStoreConfig({dir1});
+
+    KvStoreNbDelegate *delegate1 = nullptr;
+    auto callback1 = bind(&DistributedDBToolsUnitTest::KvStoreNbDelegateCallback, placeholders::_1,
+        placeholders::_2, std::ref(g_kvDelegateStatus), std::ref(delegate1));
+
+    KvStoreNbDelegate::Option option;
+    mgr1.GetKvStore(STORE_ID_1, option, callback1);
+    EXPECT_EQ(g_kvDelegateStatus, OK);
+    ASSERT_NE(delegate1, nullptr);
+
+    KvStoreNbDelegate *delegate2 = nullptr;
+    auto callback2 = bind(&DistributedDBToolsUnitTest::KvStoreNbDelegateCallback, placeholders::_1,
+        placeholders::_2, std::ref(g_kvDelegateStatus), std::ref(delegate2));
+    KvStoreDelegateManager mgr2(APP_ID, USER_ID);
+    mgr2.SetKvStoreConfig({dir2});
+    mgr2.GetKvStore(STORE_ID_1, option, callback2);
+    EXPECT_EQ(g_kvDelegateStatus, INVALID_ARGS);
+    ASSERT_EQ(delegate2, nullptr);
+
+    mgr1.CloseKvStore(delegate1);
+    mgr1.DeleteKvStore(STORE_ID_1);
+    mgr2.CloseKvStore(delegate2);
+    mgr2.DeleteKvStore(STORE_ID_1);
 }

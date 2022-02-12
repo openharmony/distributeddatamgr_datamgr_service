@@ -90,7 +90,7 @@ public:
     int RemoveLeastUsedQuerySyncItems(const std::vector<Key> &querySyncIds);
 
     // reset the waterMark to zero
-    int ResetRecvQueryWaterMark(const DeviceID &deviceId);
+    int ResetRecvQueryWaterMark(const DeviceID &deviceId, const std::string &tableName = "");
 
     static std::string GetQuerySyncPrefixKey();
 

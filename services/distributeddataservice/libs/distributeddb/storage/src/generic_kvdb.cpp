@@ -398,4 +398,9 @@ std::string GenericKvDB::GetStoreIdOnlyIdentifier(const KvDBProperties &properti
     std::string hashStoreDir = DBCommon::TransferStringToHex(hashStoreId);
     return hashStoreDir;
 }
+
+std::string GenericKvDB::GetStorePath() const
+{
+    return properties_.GetStringProp(KvDBProperties::DATA_DIR, "");
+}
 } // namespace DistributedDB

@@ -79,6 +79,18 @@ namespace {
     "\"field_name8\":100,"
     "\"field_name9\":100,"
     "\"field_name10\":100}";
+
+    const std::string SCHEMA_VALUE2 =
+    "{\"field_name1\":false,"
+    "\"field_name2\":true,"
+    "\"field_name3\":100,"
+    "\"field_name4\":200,"
+    "\"field_name5\":3.14,"
+    "\"field_name6\":\"3.1415\","
+    "\"field_name7\":100,"
+    "\"field_name8\":100,"
+    "\"field_name9\":100,"
+    "\"field_name10\":100}";
 }
 
 class DistributedDBSingleVerP2PSubscribeSyncTest : public testing::Test {
@@ -165,7 +177,6 @@ void InitSubSchemaDb()
     ASSERT_TRUE(g_schemaKvDelegateStatus == OK);
     ASSERT_TRUE(g_schemaKvDelegatePtr != nullptr);
 }
-
 
 void CheckUnFinishedMap(uint32_t sizeA, uint32_t sizeB, std::vector<std::string> &deviceAQueies,
     std::vector<std::string> &deviceBQueies, SubscribeManager &subManager)
@@ -725,4 +736,146 @@ HWTEST_F(DistributedDBSingleVerP2PSubscribeSyncTest, subscribeSync002, TestSize.
     LOGI("============step 4============");
     Query query3 = Query::Select().EqualTo("$.field_name1", 1).OrderBy("$.field_name7");
     EXPECT_TRUE(g_schemaKvDelegatePtr->SubscribeRemoteQuery(devices, nullptr, query3, true) == NOT_SUPPORT);
+}
+
+/**
+ * @tc.name: subscribeSync003
+ * @tc.desc: test subscribe sync with inkeys query
+ * @tc.type: FUNC
+ * @tc.require: AR000GOHO7
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBSingleVerP2PSubscribeSyncTest, subscribeSync003, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. InitSchemaDb
+     */
+    LOGI("============step 1============");
+    InitSubSchemaDb();
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+
+    /**
+     * @tc.steps: step2. deviceB subscribe inkeys(k2k4) query to deviceA
+     */
+    LOGI("============step 2============");
+    Query query = Query::Select().InKeys({KEY_2, KEY_4});
+    g_deviceB->Subscribe(QuerySyncObject(query), true, 1);
+
+    /**
+     * @tc.steps: step3. deviceA put k1-k5 and wait
+     */
+    LOGI("============step 3============");
+    EXPECT_EQ(OK, g_schemaKvDelegatePtr->PutBatch({
+        {KEY_1, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end())},
+        {KEY_2, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end())},
+        {KEY_3, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end())},
+        {KEY_4, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end())},
+        {KEY_5, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end())},
+    }));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    /**
+     * @tc.steps: step4. deviceB has k2k4, has no k1k3k5
+     */
+    LOGI("============step 4============");
+    VirtualDataItem item;
+    EXPECT_EQ(g_deviceB->GetData(KEY_2, item), E_OK);
+    EXPECT_EQ(item.value, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end()));
+    EXPECT_EQ(g_deviceB->GetData(KEY_4, item), E_OK);
+    EXPECT_EQ(item.value, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end()));
+    EXPECT_EQ(g_deviceB->GetData(KEY_1, item), -E_NOT_FOUND);
+    EXPECT_EQ(g_deviceB->GetData(KEY_3, item), -E_NOT_FOUND);
+    EXPECT_EQ(g_deviceB->GetData(KEY_5, item), -E_NOT_FOUND);
+}
+
+/**
+ * @tc.name: subscribeSync004
+ * @tc.desc: test subscribe sync with inkeys query
+ * @tc.type: FUNC
+ * @tc.require: AR000GOHO7
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBSingleVerP2PSubscribeSyncTest, subscribeSync004, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. InitSchemaDb
+     */
+    LOGI("============step 1============");
+    InitSubSchemaDb();
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+
+    /**
+     * @tc.steps: step2. deviceB subscribe inkeys(k3k5) and equal to query to deviceA
+     */
+    LOGI("============step 2============");
+    Query query = Query::Select().InKeys({KEY_3, KEY_5}).EqualTo("$.field_name3", 100); // 100 for test.
+    g_deviceB->Subscribe(QuerySyncObject(query), true, 2);
+
+    /**
+     * @tc.steps: step3. deviceA put k1v2,k3v2,k5v1 and wait
+     */
+    LOGI("============step 3============");
+    EXPECT_EQ(OK, g_schemaKvDelegatePtr->PutBatch({
+        {KEY_1, Value(SCHEMA_VALUE2.begin(), SCHEMA_VALUE2.end())},
+        {KEY_3, Value(SCHEMA_VALUE2.begin(), SCHEMA_VALUE2.end())},
+        {KEY_5, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end())},
+    }));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    /**
+     * @tc.steps: step4. deviceB has k3, has no k1k5
+     */
+    LOGI("============step 4============");
+    VirtualDataItem item;
+    EXPECT_EQ(g_deviceB->GetData(KEY_3, item), E_OK);
+    EXPECT_EQ(item.value, Value(SCHEMA_VALUE2.begin(), SCHEMA_VALUE2.end()));
+    EXPECT_EQ(g_deviceB->GetData(KEY_1, item), -E_NOT_FOUND);
+    EXPECT_EQ(g_deviceB->GetData(KEY_5, item), -E_NOT_FOUND);
+}
+
+/**
+ * @tc.name: subscribeSync005
+ * @tc.desc: test subscribe sync with inkeys query
+ * @tc.type: FUNC
+ * @tc.require: AR000GOHO7
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBSingleVerP2PSubscribeSyncTest, subscribeSync005, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. InitSchemaDb
+     */
+    LOGI("============step 1============");
+    InitSubSchemaDb();
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+
+    /**
+     * @tc.steps: step2. deviceB subscribe inkeys(k1, key6) and prefix key "k" query to deviceA
+     */
+    LOGI("============step 2============");
+    Key key6 { 'k', '6' };
+    Query query = Query::Select().InKeys({KEY_1, key6}).PrefixKey({ 'k' });
+    g_deviceB->Subscribe(QuerySyncObject(query), true, 3);
+
+    /**
+     * @tc.steps: step3. deviceA put k1,key6 and wait
+     */
+    LOGI("============step 3============");
+    EXPECT_EQ(OK, g_schemaKvDelegatePtr->PutBatch({
+        {key6, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end())},
+        {KEY_1, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end())},
+    }));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    /**
+     * @tc.steps: step4. deviceB has key6, has no k1
+     */
+    LOGI("============step 4============");
+    VirtualDataItem item;
+    EXPECT_EQ(g_deviceB->GetData(key6, item), E_OK);
+    EXPECT_EQ(item.value, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end()));
+    EXPECT_EQ(g_deviceB->GetData(KEY_1, item), -E_NOT_FOUND);
 }

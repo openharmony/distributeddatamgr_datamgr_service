@@ -20,7 +20,6 @@
 #include <thread>
 #include <string>
 
-#include "types.h"
 #include "kv_store_delegate.h"
 #include "kv_store_nb_delegate.h"
 #include "kv_store_delegate_manager.h"

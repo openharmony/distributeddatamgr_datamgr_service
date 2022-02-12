@@ -604,8 +604,12 @@ int SyncEngine::ExecSyncTask(ISyncTaskContext *context)
     context->SetTaskExecStatus(ISyncTaskContext::RUNNING);
     if (!context->IsTargetQueueEmpty()) {
         context->MoveToNextTarget();
-        int checkErrCode = RunPermissionCheck(context->GetDeviceId(),
-            GetPermissionCheckFlag(context->IsAutoSync(), context->GetMode()));
+        int checkErrCode = E_OK;
+        // rdb dont support PermissionCheck
+        if (syncInterface_->GetInterfaceType() != ISyncInterface::SYNC_RELATION) {
+            checkErrCode = RunPermissionCheck(context->GetDeviceId(),
+                GetPermissionCheckFlag(context->IsAutoSync(), context->GetMode()));
+        }
         if (checkErrCode != E_OK) {
             context->SetOperationStatus(SyncOperation::OP_PERMISSION_CHECK_FAILED);
             context->SetTaskExecStatus(ISyncTaskContext::FINISHED);
@@ -968,5 +972,20 @@ void SyncEngine::ClearInnerResource()
 bool SyncEngine::IsEngineActive() const
 {
     return isActive_;
+}
+
+void SyncEngine::ResetAbilitySync()
+{
+    std::lock_guard<std::mutex> lock(contextMapLock_);
+    for (auto &enrty : syncTaskContextMap_) {
+        auto context = enrty.second;
+        if (context->IsKilled()) {
+            continue;
+        }
+        // IncRef for SyncEngine to make sure context is valid, to avoid a big lock
+        RefObject::IncObjRef(context);
+        context->SetIsNeedResetAbilitySync(true);
+        RefObject::DecObjRef(context);
+    }
 }
 } // namespace DistributedDB

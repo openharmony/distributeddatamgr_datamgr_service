@@ -22,7 +22,7 @@
 
 #include "db_types.h"
 #include "schema_object.h"
-#include "types.h"
+#include "store_types.h"
 #ifdef RELATIONAL_STORE
 #include "relational_schema_object.h"
 #endif
@@ -37,7 +37,7 @@ struct TransactFunc {
     void (*xFunc)(sqlite3_context*, int, sqlite3_value**) = nullptr;
     void (*xStep)(sqlite3_context*, int, sqlite3_value**) = nullptr;
     void (*xFinal)(sqlite3_context*) = nullptr;
-    void(*xDestroy)(void*) = nullptr;
+    void (*xDestroy)(void*) = nullptr;
 };
 
 namespace TriggerMode {
@@ -118,8 +118,6 @@ public:
 
     static int GetJournalMode(sqlite3 *db, std::string &mode);
 
-    static int GetSynchronousMode(sqlite3 *db, int &mode);
-
     static int SetUserVer(const OpenDbProperties &properties, int version);
 
     static int SetUserVer(sqlite3 *db, int version);
@@ -169,8 +167,7 @@ public:
     static int AddRelationalLogTableTrigger(sqlite3 *db, const TableInfo &table);
     static int AnalysisSchema(sqlite3 *db, const std::string &tableName, TableInfo &table);
 
-    static int CreateSameStuTable(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName,
-        bool isCopyData);
+    static int CreateSameStuTable(sqlite3 *db, const TableInfo &baseTbl, const std::string &newTableNames);
     static int CloneIndexes(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName);
 #endif
 
@@ -181,6 +178,12 @@ public:
     static void ExecuteCheckPoint(sqlite3 *db);
 
     static int CheckTableEmpty(sqlite3 *db, const std::string &tableName, bool &isEmpty);
+
+    static int SetPersistWalMode(sqlite3 *db);
+
+    static int CheckSchemaChanged(sqlite3_stmt *stmt, const TableInfo &table, int offset);
+
+    static int64_t GetLastRowId(sqlite3 *db);
 
 private:
 

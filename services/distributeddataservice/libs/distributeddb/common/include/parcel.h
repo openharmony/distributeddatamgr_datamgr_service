@@ -40,6 +40,8 @@ public:
     uint32_t ReadBool(bool &data);
     int WriteInt(int data);
     uint32_t ReadInt(int &val);
+    int WriteUInt8(uint8_t data);
+    uint32_t ReadUInt8(uint8_t &val);
     int WriteDouble(double data);
     uint32_t ReadDouble(double &val);
     int WriteInt64(int64_t data);
@@ -77,13 +79,13 @@ public:
         len = HostToNet(len);
         if (bufPtr_ == nullptr || stepLen > INT32_MAX || parcelLen_ + BYTE_8_ALIGN(stepLen) > totalLen_) {
             LOGE("[WriteVector] bufPtr:%d, stepLen:%llu, totalLen:%llu, parcelLen:%llu",
-                bufPtr_ != nullptr, stepLen, totalLen_, parcelLen_);
+                bufPtr_ != nullptr, ULL(stepLen), ULL(totalLen_), ULL(parcelLen_));
             isError_ = true;
             return -E_PARSE_FAIL;
         }
         errno_t errCode = memcpy_s(bufPtr_, totalLen_ - parcelLen_, &len, sizeof(uint32_t));
         if (errCode != EOK) {
-            LOGE("[ReadVector] totalLen:%llu, parcelLen:%llu", totalLen_, parcelLen_);
+            LOGE("[ReadVector] totalLen:%llu, parcelLen:%llu", ULL(totalLen_), ULL(parcelLen_));
             isError_ = true;
             return -E_SECUREC_ERROR;
         }
@@ -106,7 +108,7 @@ public:
         }
         if (bufPtr_ == nullptr || parcelLen_ + sizeof(uint32_t) > totalLen_ || sizeof(T) > INT32_MAX) {
             LOGE("[ReadVector] bufPtr:%d, totalLen:%llu, parcelLen:%llu, sizeof(T):%zu",
-                bufPtr_ != nullptr, totalLen_, parcelLen_, sizeof(T));
+                bufPtr_ != nullptr, ULL(totalLen_), ULL(parcelLen_), sizeof(T));
             isError_ = true;
             return 0;
         }
@@ -119,7 +121,8 @@ public:
         }
         uint64_t stepLen = static_cast<uint64_t>(len) * sizeof(T) + sizeof(uint32_t);
         if (stepLen > INT32_MAX || parcelLen_ + BYTE_8_ALIGN(stepLen) > totalLen_) {
-            LOGE("[ReadVector] stepLen:%llu, totalLen:%llu, parcelLen:%llu", stepLen, totalLen_, parcelLen_);
+            LOGE("[ReadVector] stepLen:%llu, totalLen:%llu, parcelLen:%llu", ULL(stepLen), ULL(totalLen_),
+                ULL(parcelLen_));
             isError_ = true;
             return 0;
         }
@@ -140,6 +143,7 @@ public:
     void EightByteAlign(); // Avoid reading a single data type across 8 bytes
     static uint32_t GetBoolLen();
     static uint32_t GetIntLen();
+    static uint32_t GetUInt8Len();
     static uint32_t GetUInt32Len();
     static uint32_t GetUInt64Len();
     static uint32_t GetInt64Len();
@@ -189,7 +193,7 @@ uint32_t Parcel::ReadInteger(T &integer)
     }
     if (bufPtr_ == nullptr || parcelLen_ + sizeof(T) > totalLen_) {
         LOGE("[ReadInteger] bufPtr:%d, totalLen:%llu, parcelLen:%llu, sizeof(T):%zu",
-            bufPtr_ != nullptr, totalLen_, parcelLen_, sizeof(T));
+            bufPtr_ != nullptr, ULL(totalLen_), ULL(parcelLen_), sizeof(T));
         isError_ = true;
         return 0;
     }
@@ -208,14 +212,14 @@ int Parcel::WriteInteger(T integer)
     }
     T inData = HostToNet(integer);
     if (parcelLen_ + sizeof(T) > totalLen_) {
-        LOGE("[WriteInteger] totalLen:%llu, parcelLen:%llu, sizeof(T):%zu", totalLen_, parcelLen_, sizeof(T));
+        LOGE("[WriteInteger] totalLen:%llu, parcelLen:%llu, sizeof(T):%zu", ULL(totalLen_), ULL(parcelLen_), sizeof(T));
         isError_ = true;
         return -E_PARSE_FAIL;
     }
     errno_t errCode = memcpy_s(bufPtr_, totalLen_ - parcelLen_, &inData, sizeof(T));
     if (errCode != EOK) {
         LOGE("[WriteInteger] bufPtr:%d, totalLen:%llu, parcelLen:%llu, sizeof(T):%zu",
-            bufPtr_ != nullptr, totalLen_, parcelLen_, sizeof(T));
+            bufPtr_ != nullptr, ULL(totalLen_), ULL(parcelLen_), sizeof(T));
         isError_ = true;
         return -E_SECUREC_ERROR;
     }

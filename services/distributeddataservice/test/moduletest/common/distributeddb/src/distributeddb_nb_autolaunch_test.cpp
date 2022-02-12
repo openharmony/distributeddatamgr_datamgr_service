@@ -25,7 +25,6 @@
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
 #include "process_communicator_test_stub.h"
-#include "types.h"
 
 using namespace std;
 using namespace chrono;

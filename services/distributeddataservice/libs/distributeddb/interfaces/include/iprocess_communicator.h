@@ -20,7 +20,7 @@
 #include <vector>
 #include <cstdint>
 #include <functional>
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 // The DeviceInfos may contain other fields(Can only be auxiliary information) besides identifier field in the future.

@@ -23,7 +23,6 @@
 #include <mutex>
 #include <string>
 #include <condition_variable>
-#include "types.h"
 #include "types_export.h"
 #include "kv_store_delegate.h"
 #include "kv_store_nb_delegate.h"

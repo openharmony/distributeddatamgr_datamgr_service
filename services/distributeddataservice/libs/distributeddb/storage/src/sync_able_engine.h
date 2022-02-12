@@ -46,7 +46,7 @@ public:
     // Get The current virtual timestamp
     uint64_t GetTimeStamp();
 
-    int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash);
+    int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash, const std::string &tableName = "");
 
     int GetLocalIdentity(std::string &outTarget);
 

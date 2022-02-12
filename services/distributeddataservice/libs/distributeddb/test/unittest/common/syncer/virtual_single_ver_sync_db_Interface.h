@@ -21,7 +21,7 @@
 
 #include "single_ver_kvdb_sync_interface.h"
 #include "query_object.h"
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 struct VirtualDataItem {

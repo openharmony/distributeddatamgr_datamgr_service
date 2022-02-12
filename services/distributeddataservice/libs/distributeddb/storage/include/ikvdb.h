@@ -57,6 +57,8 @@ public:
     virtual void EnableAutonomicUpgrade() = 0;
 
     virtual int CheckIntegrity() const = 0;
+
+    virtual std::string GetStorePath() const = 0;
 };
 } // namespace DistributedDB
 

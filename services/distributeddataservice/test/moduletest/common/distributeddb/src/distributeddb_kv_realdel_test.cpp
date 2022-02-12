@@ -25,7 +25,6 @@
 #include "distributeddb_nb_test_tools.h"
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
-#include "types.h"
 
 using namespace std;
 using namespace chrono;

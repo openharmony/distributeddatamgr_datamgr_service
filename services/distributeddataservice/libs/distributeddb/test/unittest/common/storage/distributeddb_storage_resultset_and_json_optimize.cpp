@@ -26,7 +26,7 @@
 #include "sqlite_single_ver_natural_store_connection.h"
 #include "sqlite_single_ver_result_set.h"
 #include "sqlite_utils.h"
-#include "types.h"
+#include "store_types.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;

@@ -33,10 +33,6 @@ public:
     ~SingleVerKvDBSyncInterface() override = default;
 
     virtual SchemaObject GetSchemaInfo() const = 0;
-
-    virtual bool CheckCompatible(const std::string &schema) const = 0;
-
-    virtual int GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const = 0;
 };
 }
 

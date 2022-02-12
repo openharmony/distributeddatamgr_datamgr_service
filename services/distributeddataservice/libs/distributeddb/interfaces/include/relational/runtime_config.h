@@ -21,7 +21,7 @@
 
 #include "iprocess_communicator.h"
 #include "iprocess_system_api_adapter.h"
-#include "types.h"
+#include "store_types.h"
 namespace DistributedDB {
 class RuntimeConfig final {
 public:

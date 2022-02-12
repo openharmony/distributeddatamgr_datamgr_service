@@ -19,7 +19,7 @@
 #include <functional>
 #include <vector>
 
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 class KvStoreSnapshotDelegate {

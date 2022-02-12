@@ -20,6 +20,7 @@
 #include "db_constant.h"
 #include "distributeddb_tools_unit_test.h"
 #include "query.h"
+#include "schema_constant.h"
 #include "schema_utils.h"
 #include "sqlite_import.h"
 #include "sqlite_local_kvdb_connection.h"
@@ -89,7 +90,7 @@ namespace {
         result += "_Level_";
         result += to_string(level);
         if (fullLength) {
-            while (result.size() < SCHEMA_FEILD_NAME_LENGTH_MAX) {
+            while (result.size() < SchemaConstant::SCHEMA_FEILD_NAME_LENGTH_MAX) {
                 result.push_back('_');
             }
         }
@@ -214,14 +215,14 @@ namespace {
     void PrepareCommonInfo(bool fullLength)
     {
         int serial = 0;
-        for (uint32_t level = 1; level <= SCHEMA_FEILD_PATH_DEPTH_MAX; level++) {
+        for (uint32_t level = 1; level <= SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX; level++) {
             FieldPath path = GenerateFieldPath(level, serial, fullLength);
             string pathStr = SchemaUtils::FieldPathString(path);
             g_pathGroup1.push_back(path);
             g_pathStrGroup1.push_back(pathStr);
             serial++;
         }
-        for (uint32_t level = 1; level <= SCHEMA_FEILD_PATH_DEPTH_MAX; level++) {
+        for (uint32_t level = 1; level <= SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX; level++) {
             FieldPath path = GenerateFieldPath(level, serial, fullLength);
             string pathStr = SchemaUtils::FieldPathString(path);
             g_pathGroup2.push_back(path);
@@ -553,8 +554,8 @@ HWTEST_F(DistributedDBInterfacesIndexUnitTest, CreateIndex001, TestSize.Level1)
 namespace {
     void PrepareInfoForCreateIndex002()
     {
-        for (uint32_t serial = 0; serial < SCHEMA_INDEX_COUNT_MAX; serial++) {
-            FieldPath path = GenerateFieldPath(SCHEMA_FEILD_PATH_DEPTH_MAX, serial, true);
+        for (uint32_t serial = 0; serial < SchemaConstant::SCHEMA_INDEX_COUNT_MAX; serial++) {
+            FieldPath path = GenerateFieldPath(SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX, serial, true);
             string pathStr = SchemaUtils::FieldPathString(path);
             g_pathGroup1.push_back(path);
             g_pathStrGroup1.push_back(pathStr);

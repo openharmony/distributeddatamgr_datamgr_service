@@ -145,14 +145,14 @@ TimeOffset Metadata::GetLocalTimeOffset() const
     return localTimeOffset;
 }
 
-int Metadata::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash)
+int Metadata::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash, const std::string &tableName)
 {
     // try to erase all the waterMark
     // erase deleteSync recv waterMark
     WaterMark waterMark = 0;
     int errCodeDeleteSync = SetRecvDeleteSyncWaterMark(deviceId, waterMark);
     // erase querySync recv waterMark
-    int errCodeQuerySync = ResetRecvQueryWaterMark(deviceId);
+    int errCodeQuerySync = ResetRecvQueryWaterMark(deviceId, tableName);
     // peerWaterMark must be erased at last
     int errCode = SavePeerWaterMark(deviceId, 0, isNeedHash);
     if (errCode != E_OK) {
@@ -452,9 +452,9 @@ int Metadata::SetRecvDeleteSyncWaterMark(const DeviceID &deviceId, const WaterMa
     return querySyncWaterMarkHelper_.SetRecvDeleteSyncWaterMark(deviceId, waterMark);
 }
 
-int Metadata::ResetRecvQueryWaterMark(const DeviceID &deviceId)
+int Metadata::ResetRecvQueryWaterMark(const DeviceID &deviceId, const std::string &tableName)
 {
-    return querySyncWaterMarkHelper_.ResetRecvQueryWaterMark(deviceId);
+    return querySyncWaterMarkHelper_.ResetRecvQueryWaterMark(deviceId, tableName);
 }
 
 void Metadata::GetDbCreateTime(const DeviceID &deviceId, uint64_t &outValue)

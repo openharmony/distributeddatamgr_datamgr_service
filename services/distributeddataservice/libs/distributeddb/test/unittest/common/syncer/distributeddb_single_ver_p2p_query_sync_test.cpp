@@ -463,6 +463,77 @@ HWTEST_F(DistributedDBSingleVerP2PQuerySyncTest, NormalSync004, TestSize.Level1)
     }
 }
 
+/**
+ * @tc.name: NormalSync005
+ * @tc.desc: Test normal push sync for inkeys query.
+ * @tc.type: FUNC
+ * @tc.require: AR000GOHO7
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBSingleVerP2PQuerySyncTest, NormalSync005, TestSize.Level1)
+{
+    InitNormalDb();
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+
+    /**
+     * @tc.steps: step1. deviceA put K1-K5
+     */
+    ASSERT_EQ(g_kvDelegatePtr->PutBatch(
+        {{KEY_1, VALUE_1}, {KEY_2, VALUE_2}, {KEY_3, VALUE_3}, {KEY_4, VALUE_4}, {KEY_5, VALUE_5}}), OK);
+
+    /**
+     * @tc.steps: step2. deviceA sync K2,K4 and wait
+     * @tc.expected: step2. sync should return OK.
+     */
+    Query query = Query::Select().InKeys({KEY_2, KEY_4});
+    std::map<std::string, DBStatus> result;
+    ASSERT_EQ(g_tool.SyncTest(g_kvDelegatePtr, devices, SYNC_MODE_PUSH_ONLY, result, query), OK);
+
+    /**
+     * @tc.expected: step3. onComplete should be called.
+     */
+    ASSERT_EQ(result.size(), devices.size());
+    for (const auto &pair : result) {
+        LOGD("dev %s, status %d", pair.first.c_str(), pair.second);
+        EXPECT_EQ(pair.second, OK);
+    }
+
+    /**
+     * @tc.steps: step4. deviceB have K2K4 and have no K1K3K5.
+     * @tc.expected: step4. sync should return OK.
+     */
+    VirtualDataItem item;
+    EXPECT_EQ(g_deviceB->GetData(KEY_2, item), E_OK);
+    EXPECT_EQ(item.value, VALUE_2);
+    EXPECT_EQ(g_deviceB->GetData(KEY_4, item), E_OK);
+    EXPECT_EQ(item.value, VALUE_4);
+    EXPECT_EQ(g_deviceB->GetData(KEY_1, item), -E_NOT_FOUND);
+    EXPECT_EQ(g_deviceB->GetData(KEY_3, item), -E_NOT_FOUND);
+    EXPECT_EQ(g_deviceB->GetData(KEY_5, item), -E_NOT_FOUND);
+
+    /**
+     * @tc.steps: step5. deviceA sync with invalid inkeys query
+     * @tc.expected: step5. sync failed and the rc is right.
+     */
+    query = Query::Select().InKeys({});
+    result.clear();
+    ASSERT_EQ(g_tool.SyncTest(g_kvDelegatePtr, devices, SYNC_MODE_PUSH_ONLY, result, query), INVALID_ARGS);
+
+    std::set<Key> keys;
+    for (uint8_t i = 0; i < DBConstant::MAX_BATCH_SIZE + 1; i++) {
+        Key key = { i };
+        keys.emplace(key);
+    }
+    query = Query::Select().InKeys(keys);
+    result.clear();
+    ASSERT_EQ(g_tool.SyncTest(g_kvDelegatePtr, devices, SYNC_MODE_PUSH_ONLY, result, query), OVER_MAX_LIMITS);
+
+    query = Query::Select().InKeys({{}});
+    result.clear();
+    ASSERT_EQ(g_tool.SyncTest(g_kvDelegatePtr, devices, SYNC_MODE_PUSH_ONLY, result, query), INVALID_ARGS);
+}
+
 HWTEST_F(DistributedDBSingleVerP2PQuerySyncTest, QueryRequestPacketTest001, TestSize.Level1)
 {
     /**

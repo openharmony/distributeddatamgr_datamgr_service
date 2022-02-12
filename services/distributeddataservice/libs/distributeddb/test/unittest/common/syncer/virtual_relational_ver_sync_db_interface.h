@@ -22,6 +22,11 @@
 #include "relational_schema_object.h"
 
 namespace DistributedDB {
+struct VirtualRowData {
+    LogInfo logInfo;
+    ObjectData objectData;
+};
+
 class VirtualRelationalVerSyncDBInterface : public RelationalDBSyncInterface {
 public:
     VirtualRelationalVerSyncDBInterface() = default;
@@ -30,7 +35,7 @@ public:
     int PutSyncDataWithQuery(const QueryObject &query, const std::vector<SingleVerKvEntry *> &entries,
     const std::string &deviceName) override;
 
-    int PutLocalData(const std::vector<RowDataWithLog> &dataList, const std::string &tableName);
+    int PutLocalData(const std::vector<VirtualRowData> &dataList, const std::string &tableName);
 
     RelationalSchemaObject GetSchemaInfo() const override;
 
@@ -43,8 +48,6 @@ public:
     std::vector<QuerySyncObject> GetTablesQuery() override;
 
     int LocalDataChanged(int notifyEvent, std::vector<QuerySyncObject> &queryObj) override;
-
-    int SchemaChanged(int notifyEvent) override;
 
     int GetSyncData(QueryObject &query, const SyncTimeRange &timeRange,
         const DataSizeSpecInfo &dataSizeInfo, ContinueToken &continueStmtToken,
@@ -74,7 +77,9 @@ public:
 
     void SetLocalFieldInfo(const std::vector<FieldInfo> &localFieldInfo);
 
-    int GetAllSyncData(const std::string &tableName, std::vector<RowDataWithLog> &data);
+    int GetAllSyncData(const std::string &tableName, std::vector<VirtualRowData> &data);
+
+    int GetVirtualSyncData(const std::string &tableName, const std::string &hashKey, VirtualRowData &data);
 
     int InterceptData(std::vector<SingleVerKvEntry *> &entries,
         const std::string &sourceID, const std::string &targetID) const override
@@ -87,11 +92,19 @@ public:
         return E_OK;
     }
 
+    int CreateDistributedDeviceTable(const std::string &device, const RelationalSyncStrategy &syncStrategy) override;
+
+    int RegisterSchemaChangedCallback(const std::function<void()> &onSchemaChanged) override;
+
+    void EraseSyncData(const std::string &tableName);
+
+    void SetTableInfo(const TableInfo &tableInfo);
+
 private:
 
     mutable std::map<std::vector<uint8_t>, std::vector<uint8_t>> metadata_;
-    std::map<std::string, std::vector<RowDataWithLog>> syncData_;
-    mutable std::map<std::string, std::vector<RowDataWithLog>> localData_;
+    std::map<std::string, std::map<std::string, VirtualRowData>> syncData_;
+    mutable std::map<std::string, std::map<std::string, VirtualRowData>> localData_;
     std::string schema_;
     RelationalSchemaObject schemaObj_;
     std::vector<FieldInfo> localFieldInfo_;

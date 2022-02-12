@@ -21,7 +21,7 @@
 #include <functional>
 #include <map>
 
-#include "types.h"
+#include "store_types.h"
 #include "ikvdb_connection.h"
 #include "ikvdb_factory.h"
 #include "kv_store_delegate.h"

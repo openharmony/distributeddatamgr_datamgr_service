@@ -17,7 +17,7 @@
 #define KV_STORE_CHANGED_DATA_H
 
 #include <list>
-#include "types.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 class KvStoreChangedData {

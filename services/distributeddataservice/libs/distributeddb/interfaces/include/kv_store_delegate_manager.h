@@ -25,7 +25,7 @@
 #include "kv_store_delegate.h"
 #endif
 #include "kv_store_nb_delegate.h"
-#include "types.h"
+#include "store_types.h"
 #include "iprocess_communicator.h"
 #include "iprocess_system_api_adapter.h"
 #include "auto_launch_export.h"
@@ -101,6 +101,8 @@ public:
         const std::string &storeId);
 
     DB_API static DBStatus SetProcessSystemAPIAdapter(const std::shared_ptr<IProcessSystemApiAdapter> &adapter);
+
+    DB_API static void SetStoreStatusNotifier(const StoreStatusNotifier &notifier);
 
 private:
 

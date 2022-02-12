@@ -19,6 +19,7 @@
 #include "distributeddb_tools_unit_test.h"
 #include "isyncer.h"
 #include "single_ver_sync_state_machine.h"
+#include "single_ver_kv_sync_task_context.h"
 #include "sync_types.h"
 #include "virtual_single_ver_sync_db_Interface.h"
 #include "virtual_time_sync_communicator.h"
@@ -88,7 +89,7 @@ void DistributedDBTimeSyncTest::SetUp(void)
     g_timeSyncB = new (std::nothrow) TimeSync();
     ASSERT_TRUE(g_timeSyncB != nullptr);
 
-    g_syncTaskContext = new (std::nothrow) SingleVerSyncTaskContext();
+    g_syncTaskContext = new (std::nothrow) SingleVerKvSyncTaskContext();
     ASSERT_TRUE(g_syncTaskContext != nullptr);
 }
 

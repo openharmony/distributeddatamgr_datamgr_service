@@ -27,9 +27,6 @@ public:
     // Enable auto sync function
     void EnableAutoSync(bool enable) override;
 
-    // delete specified device's watermark
-    int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash) override;
-
     // Local data changed callback
     void LocalDataChanged(int notifyEvent) override;
 

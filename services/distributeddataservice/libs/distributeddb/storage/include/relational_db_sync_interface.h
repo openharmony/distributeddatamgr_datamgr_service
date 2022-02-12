@@ -37,7 +37,9 @@ public:
 
     virtual int LocalDataChanged(int notifyEvent, std::vector<QuerySyncObject> &queryObj) = 0;
 
-    virtual int SchemaChanged(int notifyEvent) = 0;
+    virtual int CreateDistributedDeviceTable(const std::string &device, const RelationalSyncStrategy &syncStrategy) = 0;
+
+    virtual int RegisterSchemaChangedCallback(const std::function<void()> &callback) = 0;
 };
 }
 #endif // RELATIONAL_STORE

@@ -26,7 +26,7 @@
 
 namespace DistributedDB {
 class IRelationalStore;
-
+using RelationalObserverAction = std::function<void(const std::string &device)>;
 class RelationalStoreConnection : public virtual RefObject {
 public:
     struct SyncInfo {
@@ -53,8 +53,12 @@ public:
     virtual int CreateDistributedTable(const std::string &tableName) = 0;
     virtual int RegisterLifeCycleCallback(const DatabaseLifeCycleNotifier &notifier) = 0;
 
+    virtual int RemoveDeviceData(const std::string &device) = 0;
+    virtual int RemoveDeviceData(const std::string &device, const std::string &tableName) = 0;
+    virtual void RegisterObserverAction(const RelationalObserverAction &action) = 0;
+
 protected:
-    // Get the stashed 'KvDB_ pointer' without ref.
+    // Get the stashed 'RelationalDB_ pointer' without ref.
     template<typename DerivedDBType>
     DerivedDBType *GetDB() const
     {

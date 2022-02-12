@@ -19,12 +19,16 @@
 #include <set>
 #include <map>
 #include <mutex>
-#include "types_export.h"
-#include "kv_store_observer.h"
-#include "kvdb_properties.h"
+#include "auto_launch_export.h"
+#include "db_properties.h"
 #include "ikvdb_connection.h"
 #include "icommunicator_aggregator.h"
-#include "auto_launch_export.h"
+#include "kv_store_observer.h"
+#include "kvdb_properties.h"
+#include "types_export.h"
+#include "relational_store_connection.h"
+#include "relationaldb_properties.h"
+#include "store_observer.h"
 
 namespace DistributedDB {
 enum class AutoLaunchItemState {
@@ -35,19 +39,27 @@ enum class AutoLaunchItemState {
     IDLE,
 };
 
+enum class DBType {
+    DB_KV = 0,
+    DB_RELATION,
+    DB_INVALID,
+};
+
 struct AutoLaunchItem {
-    KvDBProperties properties;
+    std::shared_ptr<DBProperties> propertiesPtr;
     AutoLaunchNotifier notifier;
     KvStoreObserver *observer = nullptr;
     int conflictType = 0;
     KvStoreNbConflictNotifier conflictNotifier;
-    IKvDBConnection *conn = nullptr;
+    void *conn = nullptr;
     KvDBObserverHandle *observerHandle = nullptr;
     bool isWriteOpenNotifiered = false;
     AutoLaunchItemState state = AutoLaunchItemState::UN_INITIAL;
     bool isDisable = false;
     bool inObserver = false;
     bool isAutoSync = true;
+    DBType type = DBType::DB_INVALID;
+    StoreObserver *storeObserver = nullptr;
 };
 
 class AutoLaunch {
@@ -67,23 +79,24 @@ public:
 
     void GetAutoLaunchSyncDevices(const std::string &identifier, std::vector<std::string> &devices) const;
 
-    void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback);
+    void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback, DBType type);
 
-    static int GetAutoLaunchProperties(const AutoLaunchParam &param, KvDBProperties &properties);
+    static int GetAutoLaunchProperties(const AutoLaunchParam &param, const DBType &openType,
+        std::shared_ptr<DBProperties> &propertiesPtr);
 
-private:
+protected:
 
     int EnableKvStoreAutoLaunchParmCheck(AutoLaunchItem &autoLaunchItem, const std::string &identifier);
 
-    int GetConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std::string &identifier);
+    int GetKVConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std::string &identifier);
 
-    IKvDBConnection *GetOneConnection(const KvDBProperties &properties, int &errCode);
+    static int OpenOneConnection(AutoLaunchItem &autoLaunchItem);
 
     // we will return errCode, if errCode != E_OK
-    int CloseConnectionStrict(AutoLaunchItem &autoLaunchItem);
+    static int CloseConnectionStrict(AutoLaunchItem &autoLaunchItem);
 
     // before ReleaseDatabaseConnection, if errCode != E_OK, we not return, we try close more
-    void TryCloseConnection(AutoLaunchItem &autoLaunchItem);
+    virtual void TryCloseConnection(AutoLaunchItem &autoLaunchItem);
 
     int RegisterObserverAndLifeCycleCallback(AutoLaunchItem &autoLaunchItem, const std::string &identifier,
         bool isExt);
@@ -104,7 +117,7 @@ private:
 
     void ReceiveUnknownIdentifierCallBackTask(const std::string &identifier);
 
-    void CloseNotifier(const AutoLaunchItem &autoLaunchItem);
+    static void CloseNotifier(const AutoLaunchItem &autoLaunchItem);
 
     void ConnectionLifeCycleCallback(const std::string &identifier);
 
@@ -122,7 +135,28 @@ private:
 
     void ExtConnectionLifeCycleCallbackTask(const std::string &identifier);
 
-    int SetConflictNotifier(IKvDBConnection *conn, int conflictType, const KvStoreNbConflictNotifier &notifier);
+    static int SetConflictNotifier(AutoLaunchItem &autoLaunchItem);
+
+    int ExtAutoLaunchRequestCallBack(const std::string &identifier, AutoLaunchParam &param, DBType &openType);
+
+    static int GetAutoLaunchKVProperties(const AutoLaunchParam &param,
+        const std::shared_ptr<KvDBProperties> &propertiesPtr);
+        
+    static int GetAutoLaunchRelationProperties(const AutoLaunchParam &param,
+        const std::shared_ptr<RelationalDBProperties> &propertiesPtr);
+
+    static int OpenKvConnection(AutoLaunchItem &autoLaunchItem);
+
+    static int OpenRelationalConnection(AutoLaunchItem &autoLaunchItem);
+
+    int RegisterLifeCycleCallback(AutoLaunchItem &autoLaunchItem, const std::string &identifier,
+        bool isExt);
+
+    static int PragmaAutoSync(AutoLaunchItem &autoLaunchItem);
+
+    void TryCloseKvConnection(AutoLaunchItem &autoLaunchItem);
+
+    void TryCloseRelationConnection(AutoLaunchItem &autoLaunchItem);
 
     mutable std::mutex dataLock_;
     mutable std::mutex communicatorLock_;
@@ -132,7 +166,7 @@ private:
     std::condition_variable cv_;
 
     std::mutex extLock_;
-    AutoLaunchRequestCallback autoLaunchRequestCallback_;
+    std::map<DBType, AutoLaunchRequestCallback> autoLaunchRequestCallbackMap_;
     std::map<std::string, AutoLaunchItem> extItemMap_;
 };
 } // namespace DistributedDB

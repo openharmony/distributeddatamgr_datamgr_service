@@ -1127,7 +1127,7 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, RelationalQuerySyncTest001, TestSize
      * @tc.steps:step1. Create a query object with table name is specified
      * @tc.expected: ok
      */
-    Query query1 = Query::Select("Relatonal_table").EqualTo("field1", "abc");
+    Query query1 = Query::Select("Relational_table").EqualTo("field1", "abc");
     QuerySyncObject obj1(query1);
 
     /**
@@ -1158,10 +1158,10 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, RelationalQuerySyncTest001, TestSize
   */
 HWTEST_F(DistributedDBStorageQuerySyncTest, RelationalQuerySyncTest002, TestSize.Level1)
 {
-    Query query1 = Query::Select("Relatonal_table1").EqualTo("field1", "abc");
+    Query query1 = Query::Select("Relational_table1").EqualTo("field1", "abc");
     QuerySyncObject obj1(query1);
 
-    Query query2 = Query::Select("Relatonal_table2").EqualTo("field1", "abc");
+    Query query2 = Query::Select("Relational_table2").EqualTo("field1", "abc");
     QuerySyncObject obj2(query2);
 
     /**
@@ -1169,4 +1169,65 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, RelationalQuerySyncTest002, TestSize
      * @tc.expected: identity should be different.
      */
     EXPECT_NE(obj1.GetIdentify(), obj2.GetIdentify());
+}
+
+/**
+ * @tc.name: SerializeAndDeserializeForVer1
+ * @tc.desc: Test querySyncObject serialization and deserialization.
+ * @tc.type: FUNC
+ * @tc.require: AR000GOHO7
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBStorageQuerySyncTest, SerializeAndDeserializeForVer1, TestSize.Level1)
+{
+    Query qeury1 = Query::Select("table1").EqualTo("field1", "abc").InKeys({KEY_1, KEY_2, KEY_3});
+    QuerySyncObject obj1(qeury1);
+
+    /**
+     * @tc.steps:step1. Serialize obj1.
+     * @tc.expected: Serialize successfully.
+     */
+    auto len = obj1.CalculateParcelLen(SOFTWARE_VERSION_CURRENT);
+    std::vector<uint8_t> buffer(len);
+    Parcel parcel1(buffer.data(), buffer.size());
+    obj1.SerializeData(parcel1, SOFTWARE_VERSION_CURRENT);
+    ASSERT_EQ(parcel1.IsError(), false);
+
+    /**
+     * @tc.steps:step2. Deserialize obj1.
+     * @tc.expected: Deserialize successfully.
+     */
+    QuerySyncObject obj2;
+    Parcel parcel2(buffer.data(), buffer.size());
+    ASSERT_EQ(parcel2.IsError(), false);
+
+    /**
+     * @tc.steps:step3. check object identity
+     * @tc.expected: identity should be the same.
+     */
+    EXPECT_NE(obj1.GetIdentify(), obj2.GetIdentify());
+}
+
+/**
+ * @tc.name: MultiInkeys1
+ * @tc.desc: Test the rc when multiple inkeys exists.
+ * @tc.type: FUNC
+ * @tc.require: AR000GOHO7
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBStorageQuerySyncTest, MultiInkeys1, TestSize.Level1)
+{
+    /**
+     * @tc.steps:step1. Create an invalid query, with multiple inkeys.
+     */
+    Query query = Query::Select().InKeys({KEY_1, KEY_2}).InKeys({KEY_3});
+
+    /**
+     * @tc.steps:step2. Get data.
+     * @tc.expected: Return INVALID_QUERY_FORMAT.
+     */
+    std::vector<Entry> entries;
+    IOption option;
+    option.dataType = IOption::SYNC_DATA;
+    EXPECT_EQ(g_schemaConnect->GetEntries(option, query, entries), -E_INVALID_QUERY_FORMAT);
 }

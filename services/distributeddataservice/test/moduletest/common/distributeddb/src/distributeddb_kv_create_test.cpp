@@ -25,7 +25,6 @@
 #include "distributed_test_tools.h"
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
-#include "types.h"
 #include "distributed_test_sysinfo.h"
 
 using namespace std;

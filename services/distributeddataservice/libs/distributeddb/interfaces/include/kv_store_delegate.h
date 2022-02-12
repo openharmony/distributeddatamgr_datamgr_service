@@ -19,7 +19,7 @@
 #include <string>
 #include <functional>
 
-#include "types.h"
+#include "store_types.h"
 #include "kv_store_observer.h"
 #include "kv_store_snapshot_delegate.h"
 

@@ -156,6 +156,14 @@ RelationalStoreConnection *RelationalStoreInstance::GetDatabaseConnection(const 
         return nullptr;
     }
 
+    std::string canonicalDir = properties.GetStringProp(KvDBProperties::DATA_DIR, "");
+    if (canonicalDir.empty() || canonicalDir != db->GetStorePath()) {
+        LOGE("Failed to check store path, the input path does not match with cached store.");
+        errCode = -E_INVALID_ARGS;
+        RefObject::DecObjRef(db);
+        return nullptr;
+    }
+
     auto connection = db->GetDBConnection(errCode);
     if (connection == nullptr) { // not kill db, Other operations like import may be used concurrently
         LOGE("Failed to get the db connect for delegate:%d", errCode);

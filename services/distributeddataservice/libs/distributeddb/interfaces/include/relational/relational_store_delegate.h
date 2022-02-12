@@ -19,7 +19,8 @@
 #include <map>
 
 #include "query.h"
-#include "types.h"
+#include "store_types.h"
+#include "store_observer.h"
 
 namespace DistributedDB {
 class RelationalStoreDelegate {
@@ -27,22 +28,18 @@ public:
     DB_API virtual ~RelationalStoreDelegate() = default;
 
     struct Option {
+        StoreObserver *observer = nullptr;
         // split mode
     };
-
-    DB_API virtual DBStatus Pragma(PragmaCmd cmd, PragmaData &paramData) = 0;
-
-    DB_API virtual DBStatus RemoveDeviceData(const std::string &device) = 0;
 
     DB_API virtual DBStatus CreateDistributedTable(const std::string &tableName) = 0;
 
     DB_API virtual DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
-        SyncStatusCallback &onComplete, bool wait) = 0;
+        const Query &query, const SyncStatusCallback &onComplete, bool wait) = 0;
 
-    DB_API virtual DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
-        const Query &query, SyncStatusCallback &onComplete, bool wait) = 0;
+    DB_API virtual DBStatus RemoveDeviceData(const std::string &device) = 0;
 
-    DB_API virtual DBStatus RemoveDevicesData(const std::string &tableName, const std::string &device) = 0;
+    DB_API virtual DBStatus RemoveDeviceData(const std::string &device, const std::string &tableName) = 0;
 };
 } // namespace DistributedDB
 #endif // RELATIONAL_STORE_DELEGATE_H

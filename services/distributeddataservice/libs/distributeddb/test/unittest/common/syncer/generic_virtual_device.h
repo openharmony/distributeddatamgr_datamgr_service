@@ -21,11 +21,10 @@
 #include "meta_data.h"
 #include "subscribe_manager.h"
 #include "sync_task_context.h"
-#include "types.h"
+#include "store_types.h"
 #include "virtual_communicator_aggregator.h"
 
 namespace DistributedDB {
-
 class GenericVirtualDevice {
 public:
     explicit GenericVirtualDevice(std::string deviceId);
@@ -42,6 +41,7 @@ public:
     TimeOffset GetLocalTimeOffset() const;
     virtual int Sync(SyncMode mode, bool wait);
     virtual int Sync(SyncMode mode, const Query &query, bool wait);
+    virtual int Sync(SyncMode mode, const Query &query, const SyncOperation::UserCallback &callBack, bool wait);
 
 protected:
     ICommunicator *communicateHandle_;

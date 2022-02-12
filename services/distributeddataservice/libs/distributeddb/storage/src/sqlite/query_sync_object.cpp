@@ -84,8 +84,9 @@ int DeSerializeDataObjNode(Parcel &parcel, QueryObjNode &objNode)
 QuerySyncObject::QuerySyncObject()
 {}
 
-QuerySyncObject::QuerySyncObject(const std::list<QueryObjNode> &queryObjNodes, const std::vector<uint8_t> &prefixKey)
-    : QueryObject(queryObjNodes, prefixKey)
+QuerySyncObject::QuerySyncObject(const std::list<QueryObjNode> &queryObjNodes, const std::vector<uint8_t> &prefixKey,
+    const std::set<Key> &keys)
+    : QueryObject(queryObjNodes, prefixKey, keys)
 {}
 
 QuerySyncObject::QuerySyncObject(const Query &query)
@@ -95,12 +96,21 @@ QuerySyncObject::QuerySyncObject(const Query &query)
 QuerySyncObject::~QuerySyncObject()
 {}
 
+uint32_t QuerySyncObject::GetVersion() const
+{
+    uint32_t version = QUERY_SYNC_OBJECT_VERSION_0;
+    if (isTableNameSpecified_ || !keys_.empty()) {
+        version = QUERY_SYNC_OBJECT_VERSION_1;
+    }
+    return version;
+}
+
 int QuerySyncObject::GetObjContext(ObjContext &objContext) const
 {
     if (!isValid_) {
         return -E_INVALID_QUERY_FORMAT;
     }
-    objContext.version = isTableNameSpecified_ ? QUERY_SYNC_OBJECT_VERSION_1 : QUERY_SYNC_OBJECT_VERSION_0;
+    objContext.version = GetVersion();
     objContext.prefixKey.assign(prefixKey_.begin(), prefixKey_.end());
     objContext.suggestIndex = suggestIndex_;
     objContext.queryObjNodes = queryObjNodes_;
@@ -114,9 +124,6 @@ std::string QuerySyncObject::GetIdentify() const
     }
     // suggestionIndex is local attribute, do not need to be propagated to remote
     uint64_t len = Parcel::GetVectorCharLen(prefixKey_);
-    if (isTableNameSpecified_) {
-        len += Parcel::GetStringLen(tableName_);
-    }
     for (const QueryObjNode &node : queryObjNodes_) {
         if (node.operFlag == QueryObjType::LIMIT || node.operFlag == QueryObjType::ORDERBY ||
             node.operFlag == QueryObjType::SUGGEST_INDEX) {
@@ -129,14 +136,18 @@ std::string QuerySyncObject::GetIdentify() const
         }
     }
 
+    // QUERY_SYNC_OBJECT_VERSION_1 added.
+    len += isTableNameSpecified_ ? Parcel::GetStringLen(tableName_) : 0;
+    for (const auto &key : keys_) {
+        len += Parcel::GetVectorCharLen(key);
+    }
+    // QUERY_SYNC_OBJECT_VERSION_1 end.
+
     std::vector<uint8_t> buff(len, 0); // It will affect the hash result, the default value cannot be modified
     Parcel parcel(buff.data(), len);
 
     // The order needs to be consistent, otherwise it will affect the hash result
     (void)parcel.WriteVectorChar(prefixKey_);
-    if (isTableNameSpecified_) {
-        (void)parcel.WriteString(tableName_);
-    }
     for (const QueryObjNode &node : queryObjNodes_) {
         if (node.operFlag == QueryObjType::LIMIT || node.operFlag == QueryObjType::ORDERBY ||
             node.operFlag == QueryObjType::SUGGEST_INDEX) {
@@ -150,6 +161,15 @@ std::string QuerySyncObject::GetIdentify() const
             (void)parcel.WriteString(value.stringValue);
         }
     }
+
+    // QUERY_SYNC_OBJECT_VERSION_1 added.
+    if (isTableNameSpecified_) {
+        (void)parcel.WriteString(tableName_);
+    }
+    for (const auto &key : keys_) {
+        (void)parcel.WriteVectorChar(key);
+    }
+    // QUERY_SYNC_OBJECT_VERSION_1 end.
 
     if (parcel.IsError()) {
         return std::string();
@@ -184,9 +204,6 @@ int QuerySyncObject::SerializeData(Parcel &parcel, uint32_t softWareVersion)
     (void)parcel.WriteUInt32(context.version);
     (void)parcel.WriteVectorChar(context.prefixKey);
     (void)parcel.WriteString(context.suggestIndex);
-    if (isTableNameSpecified_) {
-        (void)parcel.WriteString(tableName_);
-    }
     (void)parcel.WriteUInt32(context.queryObjNodes.size());
 
     parcel.EightByteAlign();
@@ -197,11 +214,49 @@ int QuerySyncObject::SerializeData(Parcel &parcel, uint32_t softWareVersion)
             return errCode;
         }
     }
+
+    // QUERY_SYNC_OBJECT_VERSION_1 added.
+    if (context.version >= QUERY_SYNC_OBJECT_VERSION_1) {
+        (void)parcel.WriteUInt32(static_cast<uint32_t>(isTableNameSpecified_));
+        if (isTableNameSpecified_) {
+            (void)parcel.WriteString(tableName_);
+        }
+        (void)parcel.WriteUInt32(keys_.size());
+        for (const auto &key : keys_) {
+            (void)parcel.WriteVectorChar(key);
+        }
+    }
+    // QUERY_SYNC_OBJECT_VERSION_1 end.
+
     if (parcel.IsError()) { // parcel almost success
         return -E_INVALID_ARGS;
     }
     parcel.EightByteAlign();
     return E_OK;
+}
+
+namespace {
+int DeSerializeVersion1Data(uint32_t version, Parcel &parcel, std::string &tableName, std::set<Key> &keys)
+{
+    if (version >= QUERY_SYNC_OBJECT_VERSION_1) {
+        uint32_t isTblNameExist = 0;
+        (void)parcel.ReadUInt32(isTblNameExist);
+        if (isTblNameExist) {
+            (void)parcel.ReadString(tableName);
+        }
+        uint32_t keysSize = 0;
+        (void)parcel.ReadUInt32(keysSize);
+        if (keysSize > DBConstant::MAX_BATCH_SIZE) {
+            return -E_PARSE_FAIL;
+        }
+        for (uint32_t i = 0; i < keysSize; ++i) {
+            Key key;
+            (void)parcel.ReadVector(key);
+            keys.emplace(key);
+        }
+    }
+    return E_OK;
+}
 }
 
 int QuerySyncObject::DeSerializeData(Parcel &parcel, QuerySyncObject &queryObj)
@@ -214,17 +269,13 @@ int QuerySyncObject::DeSerializeData(Parcel &parcel, QuerySyncObject &queryObj)
 
     ObjContext context;
     (void)parcel.ReadUInt32(context.version);
-    if (context.version > QUERY_SYNC_OBJECT_VERSION_1) {
+    if (context.version > QUERY_SYNC_OBJECT_VERSION_CURRENT) {
         LOGE("Parcel version and deserialize version not matched! ver=%u", context.version);
         return -E_VERSION_NOT_SUPPORT;
     }
 
     (void)parcel.ReadVectorChar(context.prefixKey);
     (void)parcel.ReadString(context.suggestIndex);
-    std::string tableName;
-    if (context.version == QUERY_SYNC_OBJECT_VERSION_1) {
-        parcel.ReadString(tableName);
-    }
 
     uint32_t nodesSize = 0;
     (void)parcel.ReadUInt32(nodesSize);
@@ -241,11 +292,20 @@ int QuerySyncObject::DeSerializeData(Parcel &parcel, QuerySyncObject &queryObj)
         context.queryObjNodes.emplace_back(node);
     }
 
+    // QUERY_SYNC_OBJECT_VERSION_1 added.
+    std::string tableName;
+    std::set<Key> keys;
+    int errCode = DeSerializeVersion1Data(context.version, parcel, tableName, keys);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    // QUERY_SYNC_OBJECT_VERSION_1 end.
+
     if (parcel.IsError()) { // almost success
         return -E_INVALID_ARGS;
     }
-    queryObj = QuerySyncObject(context.queryObjNodes, context.prefixKey);
-    if (context.version == QUERY_SYNC_OBJECT_VERSION_1) {
+    queryObj = QuerySyncObject(context.queryObjNodes, context.prefixKey, keys);
+    if (!tableName.empty()) {
         queryObj.SetTableName(tableName);
     }
     return E_OK;
@@ -257,9 +317,6 @@ uint32_t QuerySyncObject::CalculateLen() const
     len += Parcel::GetUInt32Len(); // version
     len += Parcel::GetVectorCharLen(prefixKey_);
     len += Parcel::GetStringLen(suggestIndex_);
-    if (isTableNameSpecified_) {
-        len += Parcel::GetStringLen(tableName_);
-    }
     len += Parcel::GetUInt32Len(); // nodes size
     len = Parcel::GetEightByteAlign(len);
     for (const QueryObjNode &node : queryObjNodes_) {
@@ -276,6 +333,18 @@ uint32_t QuerySyncObject::CalculateLen() const
             len += Parcel::GetInt64Len() + Parcel::GetStringLen(node.fieldValue[i].stringValue);
         }
     }
+
+    // QUERY_SYNC_OBJECT_VERSION_1 added.
+    len += Parcel::GetUInt32Len(); // whether the table name exists.
+    if (isTableNameSpecified_) {
+        len += Parcel::GetStringLen(tableName_);
+    }
+    len += Parcel::GetUInt32Len(); // size of keys_
+    for (const auto &key : keys_) {
+        len += Parcel::GetVectorCharLen(key);
+    }
+    // QUERY_SYNC_OBJECT_VERSION_1 end.
+
     len = Parcel::GetEightByteAlign(len);
     if (len > INT32_MAX) {
         return 0;

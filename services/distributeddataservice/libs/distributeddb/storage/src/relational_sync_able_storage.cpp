@@ -14,8 +14,12 @@
  */
 #ifdef RELATIONAL_STORE
 #include "relational_sync_able_storage.h"
-#include "platform_specific.h"
+
+#include "db_common.h"
+#include "data_compression.h"
 #include "generic_single_ver_kv_entry.h"
+#include "platform_specific.h"
+#include "runtime_context.h"
 
 namespace DistributedDB {
 #define CHECK_STORAGE_ENGINE do { \
@@ -51,10 +55,11 @@ void RelationalSyncAbleStorage::DecRefCount()
     DecObjRef(this);
 }
 
-// Get the identifier of this kvdb.
+// Get the identifier of this rdb.
 std::vector<uint8_t> RelationalSyncAbleStorage::GetIdentifier() const
 {
-    return {};
+    std::string identifier = storageEngine_->GetIdentifier();
+    return std::vector<uint8_t>(identifier.begin(), identifier.end());
 }
 
 // Get the max timestamp of all entries in database.
@@ -91,6 +96,14 @@ void RelationalSyncAbleStorage::ReleaseHandle(SQLiteSingleVerRelationalStorageEx
     }
     StorageExecutor *databaseHandle = handle;
     storageEngine_->Recycle(databaseHandle);
+    std::function<void()> listener = nullptr;
+    {
+        std::lock_guard<std::mutex> autoLock(heartBeatMutex_);
+        listener = heartBeatListener_;
+    }
+    if (listener) {
+        listener();
+    }
 }
 
 // Get meta data associated with the given key.
@@ -272,17 +285,13 @@ int RelationalSyncAbleStorage::GetSyncDataForQuerySync(std::vector<DataItem> &da
         goto ERROR;
     }
 
-    errCode = handle->SetTableInfo(token->GetQuery());
-    if (errCode != E_OK) {
-        goto ERROR;
-    }
-
     do {
         errCode = handle->GetSyncDataByQuery(dataItems,
             Parcel::GetAppendedLen(),
             dataSizeInfo,
             std::bind(&SQLiteSingleVerRelationalContinueToken::GetStatement, *token,
-                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+            token->GetQuery().GetTableName());
         if (errCode == -E_FINISHED) {
             token->FinishGetData();
             errCode = token->IsGetAllDataFinished() ? E_OK : -E_UNFINISHED;
@@ -308,7 +317,7 @@ int RelationalSyncAbleStorage::GetSyncData(QueryObject &query, const SyncTimeRan
     if (!timeRange.IsValid()) {
         return -E_INVALID_ARGS;
     }
-
+    query.SetSchema(storageEngine_->GetSchemaRef());
     auto token = new (std::nothrow) SQLiteSingleVerRelationalContinueToken(timeRange, query);
     if (token == nullptr) {
         LOGE("[SingleVerNStore] Allocate continue token failed.");
@@ -375,17 +384,17 @@ int RelationalSyncAbleStorage::SaveSyncDataItems(const QueryObject &object, std:
     if (handle == nullptr) {
         return errCode;
     }
-
-    errCode = handle->SetTableInfo(object);
-    if (errCode != E_OK) {
-        ReleaseHandle(handle);
-        return errCode;
-    }
+    QueryObject query = object;
+    query.SetSchema(storageEngine_->GetSchemaRef());
 
     TimeStamp maxTimestamp = 0;
-    errCode = handle->SaveSyncItems(object, dataItems, deviceName, maxTimestamp);
+    errCode = handle->SaveSyncItems(query, dataItems, deviceName, maxTimestamp);
     if (errCode == E_OK) {
         (void)SetMaxTimeStamp(maxTimestamp);
+        // dataItems size > 0 now because already check befor
+        // all dataItems will write into db now, so need to observer notify here
+        // if some dataItems will not write into db in the future, observer notify here need change
+        TriggerObserverAction(deviceName);
     }
 
     ReleaseHandle(handle);
@@ -414,7 +423,7 @@ int RelationalSyncAbleStorage::RemoveDeviceData(const std::string &deviceName, b
 
 RelationalSchemaObject RelationalSyncAbleStorage::GetSchemaInfo() const
 {
-    return RelationalSchemaObject();
+    return storageEngine_->GetSchemaRef();
 }
 
 int RelationalSyncAbleStorage::GetSecurityOption(SecurityOption &option) const
@@ -455,9 +464,114 @@ int RelationalSyncAbleStorage::LocalDataChanged(int notifyEvent, std::vector<Que
     return -E_NOT_SUPPORT;
 }
 
-int RelationalSyncAbleStorage::SchemaChanged(int notifyEvent)
+int RelationalSyncAbleStorage::CreateDistributedDeviceTable(const std::string &device,
+    const RelationalSyncStrategy &syncStrategy)
 {
-    return -E_NOT_SUPPORT;
+    int errCode = E_OK;
+    auto *handle = GetHandle(true, errCode, OperatePerm::NORMAL_PERM);
+    if (handle == nullptr) {
+        return errCode;
+    }
+    for (const auto &[table, strategy] : syncStrategy.GetStrategies()) {
+        if (!strategy.permitSync) {
+            continue;
+        }
+
+        errCode = handle->CreateDistributedDeviceTable(device, storageEngine_->GetSchemaRef().GetTable(table));
+        if (errCode != E_OK) {
+            LOGE("Create distributed device table failed. %d", errCode);
+            break;
+        }
+    }
+
+    ReleaseHandle(handle);
+    return errCode;
+}
+
+int RelationalSyncAbleStorage::RegisterSchemaChangedCallback(const std::function<void()> &callback)
+{
+    std::lock_guard lock(onSchemaChangedMutex_);
+    onSchemaChanged_ = callback;
+    return E_OK;
+}
+
+void RelationalSyncAbleStorage::NotifySchemaChanged()
+{
+    std::lock_guard lock(onSchemaChangedMutex_);
+    if (onSchemaChanged_) {
+        LOGD("Notify relational schema was changed");
+        onSchemaChanged_();
+    }
+}
+int RelationalSyncAbleStorage::GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const
+{
+    algorithmSet.clear();
+    DataCompression::GetCompressionAlgo(algorithmSet);
+    return E_OK;
+}
+
+void RelationalSyncAbleStorage::RegisterObserverAction(const RelationalObserverAction &action)
+{
+    std::lock_guard<std::mutex> lock(dataChangeDeviceMutex_);
+    dataChangeDeviceCallback_ = action;
+}
+
+void RelationalSyncAbleStorage::TriggerObserverAction(const std::string &deviceName)
+{
+    {
+        std::lock_guard<std::mutex> lock(dataChangeDeviceMutex_);
+        if (!dataChangeDeviceCallback_) {
+            return;
+        }
+    }
+    IncObjRef(this);
+    int taskErrCode = RuntimeContext::GetInstance()->ScheduleTask([this, deviceName] {
+        std::lock_guard<std::mutex> lock(dataChangeDeviceMutex_);
+        if (dataChangeDeviceCallback_) {
+            dataChangeDeviceCallback_(deviceName);
+        }
+        DecObjRef(this);
+    });
+    if (taskErrCode != E_OK) {
+        LOGE("TriggerObserverAction scheduletask retCode=%d", taskErrCode);
+        DecObjRef(this);
+    }
+}
+
+void RelationalSyncAbleStorage::RegisterHeartBeatListener(const std::function<void()> &listener)
+{
+    std::lock_guard<std::mutex> autoLock(heartBeatMutex_);
+    heartBeatListener_ = listener;
+}
+
+int RelationalSyncAbleStorage::CheckAndInitQueryCondition(QueryObject &query) const
+{
+    if (!query.IsQueryForRelationalDB()) {
+        LOGE("Not support for this query type.");
+        return -E_NOT_SUPPORT;
+    }
+
+    RelationalSchemaObject schema = storageEngine_->GetSchemaRef();
+    TableInfo table = schema.GetTable(query.GetTableName());
+    if (table.GetTableName() != query.GetTableName()) {
+        LOGE("Query table is not a distributed table.");
+        return -E_DISTRIBUTED_SCHEMA_NOT_FOUND;
+    }
+    query.SetSchema(schema);
+
+    int errCode = E_OK;
+    auto *handle = GetHandle(false, errCode);
+    if (handle == nullptr) {
+        return errCode;
+    }
+
+    errCode = handle->CheckQueryObjectLegal(table, query);
+    if (errCode != E_OK) {
+        LOGE("Check relational query condition failed. %d", errCode);
+    }
+
+    ReleaseHandle(handle);
+    return errCode;
 }
 }
 #endif

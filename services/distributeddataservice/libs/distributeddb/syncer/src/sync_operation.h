@@ -52,6 +52,7 @@ public:
         OP_NOT_SUPPORT,
         OP_INTERCEPT_DATA_FAIL,
         OP_MAX_LIMITS,
+        OP_SCHEMA_CHANGED,
         OP_INVALID_ARGS
     };
 

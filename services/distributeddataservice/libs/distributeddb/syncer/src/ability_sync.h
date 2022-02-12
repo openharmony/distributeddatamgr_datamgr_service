@@ -117,6 +117,10 @@ public:
 
     void SetDbAbility(const DbAbility &dbAbility);
 
+    void SetRelationalSyncOpinion(const RelationalSyncOpinion &relationalSyncOpinion);
+
+    RelationalSyncOpinion GetRelationalSyncOpinion() const;
+
 private:
     uint32_t protocolVersion_;
     uint32_t softwareVersion_;
@@ -129,6 +133,7 @@ private:
     uint32_t requirePeerConvert_;
     uint64_t dbCreateTime_;
     DbAbility dbAbility_;
+    RelationalSyncOpinion relationalSyncOpinion_;
 };
 
 class AbilitySync {
@@ -164,13 +169,6 @@ public:
     static int DeSerialization(const uint8_t *buffer, uint32_t length, Message *inMsg); // register to communicator
 
 private:
-#ifdef RELATIONAL_STORE
-    int SendAck(const Message *inMsg, const ISchema &schemaObj, int ackCode, SyncOpinion localOpinion,
-        bool isAckNotify = false);
-#else
-    int SendAck(const Message *inMsg, const SchemaObject &schemaObj, int ackCode, SyncOpinion localOpinion,
-                bool isAckNotify = false);
-#endif
 
     static int RequestPacketSerialization(uint8_t *buffer, uint32_t length, const Message *inMsg);
 
@@ -191,36 +189,51 @@ private:
 
     bool SecLabelCheck(const AbilitySyncRequestPacket *packet) const;
 
-    SyncOpinion HandleVersionV3RequestParam(const AbilitySyncRequestPacket *packet, ISyncTaskContext *context,
+    void HandleVersionV3RequestParam(const AbilitySyncRequestPacket *packet, ISyncTaskContext *context,
         const std::string &remoteSchema) const;
 
     void HandleVersionV3AckSecOptionParam(const AbilitySyncAckPacket *packet,
         ISyncTaskContext *context) const;
 
-    SyncOpinion HandleVersionV3AckSchemaParam(const AbilitySyncAckPacket *packet, const std::string &remoteSchema,
-        ISyncTaskContext *context) const;
+    int HandleVersionV3AckSchemaParam(const AbilitySyncAckPacket *recvPacket,
+        AbilitySyncAckPacket &sendPacket,  ISyncTaskContext *context, bool sendOpinion) const;
+
+    void HandleKvAckSchemaParam(const AbilitySyncAckPacket *recvPacket,
+        ISyncTaskContext *context, AbilitySyncAckPacket &sendPacket) const;
+
+    int HandleRelationAckSchemaParam(const AbilitySyncAckPacket *recvPacket,
+        AbilitySyncAckPacket &sendPacket, ISyncTaskContext *context, bool sendOpinion) const;
 
     void GetPacketSecOption(SecurityOption &option) const;
 
     int SetAbilityRequestBodyInfo(AbilitySyncRequestPacket &packet, uint16_t remoteCommunicatorVersion) const;
 
-#ifdef RELATIONAL_STORE
-    int SetAbilityAckBodyInfo(AbilitySyncAckPacket &ackPacket, const ISchema &schemaObj, int ackCode,
-        SyncOpinion localOpinion, bool isAckNotify);
-#else
-    int SetAbilityAckBodyInfo(AbilitySyncAckPacket &ackPacket, const SchemaObject &schemaObj, int ackCode,
-        SyncOpinion localOpinion, bool isAckNotify);
-#endif
+    int SetAbilityAckBodyInfo(AbilitySyncAckPacket &ackPacket, int ackCode, bool isAckNotify) const;
+
+    void SetAbilityAckSchemaInfo(AbilitySyncAckPacket &ackPacket, const ISchema &schemaObj) const;
+
+    void SetAbilityAckSyncOpinionInfo(AbilitySyncAckPacket &ackPacket, SyncOpinion localOpinion) const;
 
     int GetDbAbilityInfo(DbAbility &dbAbility) const;
 
     int AckMsgCheck(const Message *message, ISyncTaskContext *context) const;
 
     bool IsSingleKvVer() const;
-#ifdef RELATIONAL_STORE
+
     bool IsSingleRelationalVer() const;
-#endif
-    int SendAck(const Message *message, SyncOpinion &localSyncOpinion, int ackCode, bool isAckNotify);
+
+    int SendAck(const Message *message, int ackCode, bool isAckNotify, AbilitySyncAckPacket &ackPacket);
+
+    int SendAckWithEmptySchema(const Message *message, int ackCode, bool isAckNotify);
+
+    int SendAck(const Message *message, const AbilitySyncAckPacket &ackPacket, bool isAckNotify);
+
+    int HandleRequestRecv(const Message *message, ISyncTaskContext *context, bool isCompatible);
+
+    SyncOpinion MakeKvSyncOpnion(const AbilitySyncRequestPacket *packet, const std::string &remoteSchema) const;
+
+    RelationalSyncOpinion MakeRelationSyncOpnion(const AbilitySyncRequestPacket *packet,
+        const std::string &remoteSchema) const;
 
     ICommunicator *communicator_;
     ISyncInterface *storageInterface_;

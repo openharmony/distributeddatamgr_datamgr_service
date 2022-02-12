@@ -24,7 +24,7 @@
 #include "db_errno.h"
 #include "db_types.h"
 #include "param_check_utils.h"
-#include "types.h"
+#include "store_types.h"
 #include "kvdb_pragma.h"
 #include "kvdb_manager.h"
 #include "kv_store_errno.h"

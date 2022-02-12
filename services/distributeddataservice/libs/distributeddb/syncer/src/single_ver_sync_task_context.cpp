@@ -150,7 +150,7 @@ void SingleVerSyncTaskContext::SetContinueToken(ContinueToken token)
 void SingleVerSyncTaskContext::ReleaseContinueToken()
 {
     if (token_ != nullptr) {
-        static_cast<SingleVerKvDBSyncInterface *>(syncInterface_)->ReleaseContinueToken(token_);
+        static_cast<SyncGenericInterface *>(syncInterface_)->ReleaseContinueToken(token_);
         token_ = nullptr;
     }
 }
@@ -351,20 +351,6 @@ bool SingleVerSyncTaskContext::GetSendPermitCheck() const
 {
     return isSendPermitChecked_;
 }
-
-void SingleVerSyncTaskContext::SetSyncStrategy(SyncStrategy strategy)
-{
-    syncStrategy_.permitSync = strategy.permitSync;
-    syncStrategy_.convertOnSend = strategy.convertOnSend;
-    syncStrategy_.convertOnReceive = strategy.convertOnReceive;
-    syncStrategy_.checkOnReceive = strategy.checkOnReceive;
-}
-
-SyncStrategy SingleVerSyncTaskContext::GetSyncStrategy() const
-{
-    return syncStrategy_;
-}
-
 void SingleVerSyncTaskContext::SetIsSchemaSync(bool isSchemaSync)
 {
     isSchemaSync_ = isSchemaSync;
@@ -449,9 +435,10 @@ std::string SingleVerSyncTaskContext::GetRemoteCompressAlgoStr() const
 void SingleVerSyncTaskContext::SetDbAbility(DbAbility &remoteDbAbility)
 {
     remoteDbAbility_ = remoteDbAbility;
-    LOGI("[SingleVerSyncTaskContext] set dev=%s compressAlgo=%s, IsSupAllPredicateQuery=%u, IsSupSubscribeQuery=%u",
+    LOGI("[SingleVerSyncTaskContext] set dev=%s compressAlgo=%s, IsSupAllPredicateQuery=%u, \
+        IsSupSubscribeQuery=%u, inKeys=%u",
         STR_MASK(GetDeviceId()), GetRemoteCompressAlgoStr().c_str(), remoteDbAbility.GetAbilityItem(ALLPREDICATEQUERY),
-        remoteDbAbility.GetAbilityItem(SUBSCRIBEQUERY));
+        remoteDbAbility.GetAbilityItem(SUBSCRIBEQUERY), remoteDbAbility.GetAbilityItem(INKEYS_QUERY));
 }
 
 CompressAlgorithm SingleVerSyncTaskContext::ChooseCompressAlgo() const
@@ -461,7 +448,7 @@ CompressAlgorithm SingleVerSyncTaskContext::ChooseCompressAlgo() const
         return CompressAlgorithm::NONE;
     }
     std::set<CompressAlgorithm> localAlgorithmSet;
-    (void)(static_cast<SingleVerKvDBSyncInterface *>(syncInterface_))->GetCompressionAlgo(localAlgorithmSet);
+    (void)(static_cast<SyncGenericInterface *>(syncInterface_))->GetCompressionAlgo(localAlgorithmSet);
     std::set<CompressAlgorithm> algoIntersection;
     set_intersection(remoteAlgo.begin(), remoteAlgo.end(), localAlgorithmSet.begin(), localAlgorithmSet.end(),
         inserter(algoIntersection, algoIntersection.begin()));

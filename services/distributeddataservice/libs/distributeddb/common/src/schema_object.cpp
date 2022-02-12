@@ -17,6 +17,7 @@
 #include "schema_utils.h"
 #include "db_errno.h"
 #include "log_print.h"
+#include "schema_constant.h"
 
 namespace DistributedDB {
 namespace {
@@ -78,16 +79,6 @@ std::string SchemaObject::GenerateExtractSQL(SchemaType inSchemaType, const Fiel
     resultSql += fieldTypeMapSQLiteType[inFieldType];
     resultSql += ") "; // Reserve blank at end for convenience.
     return resultSql;
-}
-
-namespace {
-inline SchemaType ReadSchemaType(uint8_t inType)
-{
-    if (inType >= static_cast<uint8_t>(SchemaType::UNRECOGNIZED)) {
-        return SchemaType::UNRECOGNIZED;
-    }
-    return static_cast<SchemaType>(inType);
-}
 }
 
 // Some principle in current version describe below. (Relative-type will be introduced in future but not involved now)
@@ -197,6 +188,17 @@ SchemaObject& SchemaObject::operator=(const SchemaObject &other)
     return *this;
 }
 
+#ifdef RELATIONAL_STORE
+SchemaObject::SchemaObject(const TableInfo &tableInfo) : flatbufferSchema_(*this)
+{
+    isValid_ = true;
+    schemaType_ = SchemaType::NONE; // Default NONE
+    schemaVersion_ = "1.0";
+    SchemaDefine schemaDefine = tableInfo.GetSchemaDefine();
+    schemaDefine_.insert({ 0, schemaDefine });
+}
+#endif  // RELATIONAL_STORE
+
 int SchemaObject::ParseFromSchemaString(const std::string &inSchemaString)
 {
     if (isValid_) {
@@ -211,7 +213,7 @@ int SchemaObject::ParseFromSchemaString(const std::string &inSchemaString)
         LOGD("[Schema][Parse] FlatBuffer-Type, Decode before=%zu, after=%zu.", inSchemaString.size(), decoded.size());
     }
     const std::string &oriSchema = ((estimateType == SchemaType::FLATBUFFER) ? decoded : inSchemaString);
-    if (oriSchema.size() > SCHEMA_STRING_SIZE_LIMIT) {
+    if (oriSchema.size() > SchemaConstant::SCHEMA_STRING_SIZE_LIMIT) {
         LOGE("[Schema][Parse] SchemaSize=%zu Too Large.", oriSchema.size());
         return -E_INVALID_ARGS;
     }
@@ -403,7 +405,7 @@ int SchemaObject::VerifyValue(ValueSource sourceType, const RawValue &inValue) c
 
     RawValue rawValue;
     std::vector<uint8_t> cache;
-    if (schemaSkipSize_ % SECURE_BYTE_ALIGN == 0) {
+    if (schemaSkipSize_ % SchemaConstant::SECURE_BYTE_ALIGN == 0) {
         rawValue = {inValue.first + schemaSkipSize_, inValue.second - schemaSkipSize_};
     } else {
         cache.assign(inValue.first + schemaSkipSize_, inValue.first + inValue.second);
@@ -436,7 +438,7 @@ int SchemaObject::ExtractValue(ValueSource sourceType, RawString inPath, const R
 
     RawValue rawValue;
     std::vector<uint8_t> *tempCache = nullptr; // A temporary cache for use when input cache can not hold.
-    if (schemaSkipSize_ % SECURE_BYTE_ALIGN == 0) {
+    if (schemaSkipSize_ % SchemaConstant::SECURE_BYTE_ALIGN == 0) {
         rawValue = {inValue.first + schemaSkipSize_, inValue.second - schemaSkipSize_};
     } else if ((cache != nullptr) && (cache->size() >= (inValue.second - schemaSkipSize_))) {
         // Do not expand the cache if it can not hold
@@ -496,25 +498,26 @@ int CheckOptionalMetaFieldCountAndType(const std::map<FieldPath, FieldType> &met
 {
     uint32_t indexMetaFieldCount = 0;
     uint32_t skipSizeMetaFieldCount = 0;
-    if (metaFieldPathType.count(FieldPath{KEYWORD_SCHEMA_INDEXES}) != 0) {
+    if (metaFieldPathType.count(FieldPath{SchemaConstant::KEYWORD_SCHEMA_INDEXES}) != 0) {
         indexMetaFieldCount++;
-        FieldType type = metaFieldPathType.at(FieldPath{KEYWORD_SCHEMA_INDEXES});
+        FieldType type = metaFieldPathType.at(FieldPath{SchemaConstant::KEYWORD_SCHEMA_INDEXES});
         if (type != FieldType::LEAF_FIELD_ARRAY) {
             LOGE("[Schema][CheckMeta] Expect SCHEMA_INDEXES type ARRAY but %s.",
                 SchemaUtils::FieldTypeString(type).c_str());
             return -E_SCHEMA_PARSE_FAIL;
         }
     }
-    if (metaFieldPathType.count(FieldPath{KEYWORD_SCHEMA_SKIPSIZE}) != 0) {
+    if (metaFieldPathType.count(FieldPath{SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE}) != 0) {
         skipSizeMetaFieldCount++;
-        FieldType type = metaFieldPathType.at(FieldPath{KEYWORD_SCHEMA_SKIPSIZE});
+        FieldType type = metaFieldPathType.at(FieldPath{SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE});
         if (type != FieldType::LEAF_FIELD_INTEGER) {
             LOGE("[Schema][CheckMeta] Expect SCHEMA_SKIPSIZE type INTEGER but %s.",
                 SchemaUtils::FieldTypeString(type).c_str());
             return -E_SCHEMA_PARSE_FAIL;
         }
     }
-    if (metaFieldPathType.size() != (SCHEMA_META_FEILD_COUNT_MIN + indexMetaFieldCount + skipSizeMetaFieldCount)) {
+    if (metaFieldPathType.size() != (SchemaConstant::SCHEMA_META_FEILD_COUNT_MIN + indexMetaFieldCount +
+        skipSizeMetaFieldCount)) {
         LOGE("[Schema][CheckMeta] Unrecognized metaField exist: total=%u, indexField=%u, skipSizeField=%u.",
             metaFieldPathType.size(), indexMetaFieldCount, skipSizeMetaFieldCount);
         return -E_SCHEMA_PARSE_FAIL;
@@ -531,38 +534,38 @@ int SchemaObject::CheckMetaFieldCountAndType(const JsonObject& inJsonObject) con
         LOGE("[Schema][CheckMeta] GetSubFieldPathAndType fail, errCode=%d.", errCode);
         return errCode;
     }
-    if (metaFieldPathType.size() < SCHEMA_META_FEILD_COUNT_MIN ||
-        metaFieldPathType.size() > SCHEMA_META_FEILD_COUNT_MAX) {
+    if (metaFieldPathType.size() < SchemaConstant::SCHEMA_META_FEILD_COUNT_MIN ||
+        metaFieldPathType.size() > SchemaConstant::SCHEMA_META_FEILD_COUNT_MAX) {
         LOGE("[Schema][CheckMeta] Unexpected metafield count=%zu.", metaFieldPathType.size());
         return -E_SCHEMA_PARSE_FAIL;
     }
     // Check KeyWord SCHEMA_VERSION
-    if (metaFieldPathType.count(FieldPath{KEYWORD_SCHEMA_VERSION}) == 0) {
+    if (metaFieldPathType.count(FieldPath{SchemaConstant::KEYWORD_SCHEMA_VERSION}) == 0) {
         LOGE("[Schema][CheckMeta] Expect metafield SCHEMA_VERSION but not find.");
         return -E_SCHEMA_PARSE_FAIL;
     }
-    FieldType type = metaFieldPathType.at(FieldPath{KEYWORD_SCHEMA_VERSION});
+    FieldType type = metaFieldPathType.at(FieldPath{SchemaConstant::KEYWORD_SCHEMA_VERSION});
     if (type != FieldType::LEAF_FIELD_STRING) {
         LOGE("[Schema][CheckMeta] Expect SCHEMA_VERSION type STRING but %s.",
             SchemaUtils::FieldTypeString(type).c_str());
         return -E_SCHEMA_PARSE_FAIL;
     }
     // Check KeyWord SCHEMA_MODE
-    if (metaFieldPathType.count(FieldPath{KEYWORD_SCHEMA_MODE}) == 0) {
+    if (metaFieldPathType.count(FieldPath{SchemaConstant::KEYWORD_SCHEMA_MODE}) == 0) {
         LOGE("[Schema][CheckMeta] Expect metafield SCHEMA_MODE but not find.");
         return -E_SCHEMA_PARSE_FAIL;
     }
-    type = metaFieldPathType.at(FieldPath{KEYWORD_SCHEMA_MODE});
+    type = metaFieldPathType.at(FieldPath{SchemaConstant::KEYWORD_SCHEMA_MODE});
     if (type != FieldType::LEAF_FIELD_STRING) {
         LOGE("[Schema][CheckMeta] Expect SCHEMA_MODE type STRING but %s.", SchemaUtils::FieldTypeString(type).c_str());
         return -E_SCHEMA_PARSE_FAIL;
     }
     // Check KeyWord SCHEMA_DEFINE
-    if (metaFieldPathType.count(FieldPath{KEYWORD_SCHEMA_DEFINE}) == 0) {
+    if (metaFieldPathType.count(FieldPath{SchemaConstant::KEYWORD_SCHEMA_DEFINE}) == 0) {
         LOGE("[Schema][CheckMeta] Expect metafield SCHEMA_DEFINE but not find.");
         return -E_SCHEMA_PARSE_FAIL;
     }
-    type = metaFieldPathType.at(FieldPath{KEYWORD_SCHEMA_DEFINE});
+    type = metaFieldPathType.at(FieldPath{SchemaConstant::KEYWORD_SCHEMA_DEFINE});
     if (type != FieldType::INTERNAL_FIELD_OBJECT) { // LEAF_FIELD_OBJECT indicate an empty object which is not allowed
         LOGE("[Schema][CheckMeta] Expect SCHEMA_DEFINE type INTERNAL_OBJECT but %s.",
             SchemaUtils::FieldTypeString(type).c_str());
@@ -576,28 +579,30 @@ int SchemaObject::ParseCheckSchemaVersionMode(const JsonObject& inJsonObject)
 {
     // Note: it has been checked in CheckMetaFieldCountAndType that SCHEMA_VERSION field exists and its type is string.
     FieldValue versionValue;
-    int errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath{KEYWORD_SCHEMA_VERSION}, versionValue);
+    int errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath{SchemaConstant::KEYWORD_SCHEMA_VERSION},
+        versionValue);
     if (errCode != E_OK) {
         return -E_INTERNAL_ERROR;
     }
-    if (SchemaUtils::Strip(versionValue.stringValue) != SCHEMA_SUPPORT_VERSION) {
+    if (SchemaUtils::Strip(versionValue.stringValue) != SchemaConstant::SCHEMA_SUPPORT_VERSION) {
         LOGE("[Schema][ParseVerMode] Unexpected SCHEMA_VERSION=%s.", versionValue.stringValue.c_str());
         return -E_SCHEMA_PARSE_FAIL;
     }
-    schemaVersion_ = SCHEMA_SUPPORT_VERSION;
+    schemaVersion_ = SchemaConstant::SCHEMA_SUPPORT_VERSION;
 
     // Note: it has been checked in CheckMetaFieldCountAndType that SCHEMA_MODE field exists and its type is string.
     FieldValue modeValue;
-    errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath{KEYWORD_SCHEMA_MODE}, modeValue);
+    errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath{SchemaConstant::KEYWORD_SCHEMA_MODE}, modeValue);
     if (errCode != E_OK) {
         return -E_INTERNAL_ERROR;
     }
     std::string modeStripped = SchemaUtils::Strip(modeValue.stringValue);
-    if (modeStripped != KEYWORD_MODE_STRICT && modeStripped != KEYWORD_MODE_COMPATIBLE) {
+    if (modeStripped != SchemaConstant::KEYWORD_MODE_STRICT &&
+        modeStripped != SchemaConstant::KEYWORD_MODE_COMPATIBLE) {
         LOGE("[Schema][ParseVerMode] Unexpected SCHEMA_MODE=%s.", modeValue.stringValue.c_str());
         return -E_SCHEMA_PARSE_FAIL;
     }
-    schemaMode_ = ((modeStripped == KEYWORD_MODE_STRICT) ? SchemaMode::STRICT : SchemaMode::COMPATIBLE);
+    schemaMode_ = ((modeStripped == SchemaConstant::KEYWORD_MODE_STRICT) ? SchemaMode::STRICT : SchemaMode::COMPATIBLE);
     return E_OK;
 }
 
@@ -607,9 +612,9 @@ int SchemaObject::ParseCheckSchemaDefine(const JsonObject& inJsonObject)
     schemaDefine_.clear();
     // Note: it has been checked in CheckMetaFieldCountAndType that SCHEMA_DEFINE field exists and its type is
     // internal-object. Nest path refer to those field with type internal object that has sub field.
-    std::set<FieldPath> nestPathCurDepth{FieldPath{KEYWORD_SCHEMA_DEFINE}};
+    std::set<FieldPath> nestPathCurDepth{FieldPath{SchemaConstant::KEYWORD_SCHEMA_DEFINE}};
     uint32_t fieldNameCount = 0;
-    for (uint32_t depth = 0; depth < SCHEMA_FEILD_PATH_DEPTH_MAX; depth++) {
+    for (uint32_t depth = 0; depth < SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX; depth++) {
         std::map<FieldPath, FieldType> subPathType;
         int errCode = inJsonObject.GetSubFieldPathAndType(nestPathCurDepth, subPathType);
         if (errCode != E_OK) { // Unlikely
@@ -631,7 +636,7 @@ int SchemaObject::ParseCheckSchemaDefine(const JsonObject& inJsonObject)
             schemaDefine_[depth][FieldPath(++(subField.first.begin()), subField.first.end())] = attribute;
             // Deal with the nestpath and check depth limitation
             if (subField.second == FieldType::INTERNAL_FIELD_OBJECT) {
-                if (depth == SCHEMA_FEILD_PATH_DEPTH_MAX - 1) { // Minus 1 to be the boundary
+                if (depth == SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX - 1) { // Minus 1 to be the boundary
                     LOGE("[Schema][ParseDefine] Path=%s is INTERNAL_FIELD_OBJECT but reach schema depth limitation.",
                         SchemaUtils::FieldPathString(subField.first).c_str());
                     return -E_SCHEMA_PARSE_FAIL;
@@ -644,7 +649,7 @@ int SchemaObject::ParseCheckSchemaDefine(const JsonObject& inJsonObject)
             break;
         }
     }
-    if (fieldNameCount > SCHEMA_FEILD_NAME_COUNT_MAX) {
+    if (fieldNameCount > SchemaConstant::SCHEMA_FEILD_NAME_COUNT_MAX) {
         // Check Field Count Here
         LOGE("[Schema][ParseDefine] FieldName count=%u exceed the limitation.", fieldNameCount);
         return -E_SCHEMA_PARSE_FAIL;
@@ -706,19 +711,19 @@ int SchemaObject::ParseCheckSchemaIndexes(const JsonObject& inJsonObject)
     // Clear schemaIndexes_ to recover from a fail parse
     schemaIndexes_.clear();
     // No SCHEMA_INDEXES field is allowed
-    if (!inJsonObject.IsFieldPathExist(FieldPath{KEYWORD_SCHEMA_INDEXES})) {
+    if (!inJsonObject.IsFieldPathExist(FieldPath{SchemaConstant::KEYWORD_SCHEMA_INDEXES})) {
         LOGD("[Schema][ParseIndex] No SCHEMA_INDEXES Field.");
         return E_OK;
     }
     // The type of SCHEMA_INDEXES field has been checked in CheckMetaFieldCountAndType to be an array
     // If not all members of the array are string type or string-array, this call will return error
     std::vector<std::vector<std::string>> oriIndexArray;
-    int errCode = inJsonObject.GetArrayContentOfStringOrStringArray(FieldPath{KEYWORD_SCHEMA_INDEXES}, oriIndexArray);
+    int errCode = inJsonObject.GetArrayContentOfStringOrStringArray(FieldPath{SchemaConstant::KEYWORD_SCHEMA_INDEXES}, oriIndexArray);
     if (errCode != E_OK) {
         LOGE("[Schema][ParseIndex] GetArrayContent Fail, errCode=%d.", errCode);
         return -E_SCHEMA_PARSE_FAIL;
     }
-    if (oriIndexArray.size() > SCHEMA_INDEX_COUNT_MAX) {
+    if (oriIndexArray.size() > SchemaConstant::SCHEMA_INDEX_COUNT_MAX) {
         LOGE("[Schema][ParseIndex] Index(Ori) count=%zu exceed limitation.", oriIndexArray.size());
         return -E_SCHEMA_PARSE_FAIL;
     }
@@ -734,17 +739,18 @@ int SchemaObject::ParseCheckSchemaIndexes(const JsonObject& inJsonObject)
 int SchemaObject::ParseCheckSchemaSkipSize(const JsonObject& inJsonObject)
 {
     // No SCHEMA_SKIPSIZE field is allowed
-    if (!inJsonObject.IsFieldPathExist(FieldPath{KEYWORD_SCHEMA_SKIPSIZE})) {
+    if (!inJsonObject.IsFieldPathExist(FieldPath{SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE})) {
         LOGD("[Schema][ParseSkipSize] No SCHEMA_SKIPSIZE Field.");
         return E_OK;
     }
     // The type of SCHEMA_SKIPSIZE field has been checked in CheckMetaFieldCountAndType to be an INTEGER
     FieldValue skipSizeValue;
-    int errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath{KEYWORD_SCHEMA_SKIPSIZE}, skipSizeValue);
+    int errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath{SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE}, skipSizeValue);
     if (errCode != E_OK) {
         return -E_INTERNAL_ERROR;
     }
-    if (skipSizeValue.integerValue < 0 || static_cast<uint32_t>(skipSizeValue.integerValue) > SCHEMA_SKIPSIZE_MAX) {
+    if (skipSizeValue.integerValue < 0 ||
+        static_cast<uint32_t>(skipSizeValue.integerValue) > SchemaConstant::SCHEMA_SKIPSIZE_MAX) {
         LOGE("[Schema][ParseSkipSize] Unexpected SCHEMA_SKIPSIZE=%d.", skipSizeValue.integerValue);
         return -E_SCHEMA_PARSE_FAIL;
     }
@@ -764,7 +770,7 @@ int SchemaObject::ParseCheckEachIndexFromStringArray(const std::vector<std::stri
             LOGE("[Schema][ParseEachIndex] IndexPath=%s Invalid.", eachPathStr.c_str());
             return -E_SCHEMA_PARSE_FAIL;
         }
-        if (eachPath.size() == 0 || eachPath.size() > SCHEMA_FEILD_PATH_DEPTH_MAX) {
+        if (eachPath.size() == 0 || eachPath.size() > SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX) {
             LOGE("[Schema][ParseEachIndex] Root not indexable or path=%s depth exceed limit.", eachPathStr.c_str());
             return -E_SCHEMA_PARSE_FAIL;
         }
@@ -846,7 +852,7 @@ int SchemaObject::CompareSchemaSkipSize(const SchemaObject &newSchema) const
 int SchemaObject::CompareSchemaDefine(const SchemaObject &newSchema) const
 {
     bool isEqualExactly = true;
-    for (uint32_t depth = 0; depth < SCHEMA_FEILD_PATH_DEPTH_MAX; depth++) {
+    for (uint32_t depth = 0; depth < SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX; depth++) {
         SchemaDefine emptyDefine;
         const SchemaDefine &defineInOldSchema =
             (schemaDefine_.count(depth) == 0 ? emptyDefine : schemaDefine_.at(depth));
@@ -1158,7 +1164,7 @@ inline std::string ValueFieldType(const std::map<FieldPath, FieldType> &subPathT
 int SchemaObject::CheckValue(const ValueObject &inValue, std::set<FieldPath> &lackingPaths) const
 {
     std::set<FieldPath> nestPathCurDepth{FieldPath()}; // Empty path represent root path
-    for (uint32_t depth = 0; depth < SCHEMA_FEILD_PATH_DEPTH_MAX; depth++) {
+    for (uint32_t depth = 0; depth < SchemaConstant::SCHEMA_FEILD_PATH_DEPTH_MAX; depth++) {
         if (schemaDefine_.count(depth) == 0 || schemaDefine_.at(depth).empty()) { // No schema define in this depth
             break;
         }

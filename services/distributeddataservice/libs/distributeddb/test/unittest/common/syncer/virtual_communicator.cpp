@@ -71,7 +71,7 @@ int VirtualCommunicator::SendMessage(const std::string &dstTarget, const Message
 
 int VirtualCommunicator::GetRemoteCommunicatorVersion(const std::string &deviceId, uint16_t &version) const
 {
-    version = 1;
+    version = UINT16_MAX;
     return E_OK;
 }
 
