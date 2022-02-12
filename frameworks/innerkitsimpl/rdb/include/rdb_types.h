@@ -19,10 +19,16 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <vector>
 
 namespace OHOS::DistributedRdb {
+enum RdbStatus {
+    RDB_OK,
+    RDB_ERROR,
+};
+
 enum RdbDistributedType {
-    RDB_DEVICE_COLLABORATION,
+    RDB_DEVICE_COLLABORATION = 10,
     RDB_DISTRIBUTED_TYPE_MAX
 };
 
@@ -45,16 +51,53 @@ struct SyncOption {
 };
 
 using SyncResult = std::map<std::string, int>; // networkId
-using SyncCallback = std::function<void(SyncResult&)>;
+using SyncCallback = std::function<void(const SyncResult&)>;
+
+enum RdbPredicateOperator {
+    EQUAL_TO,
+    NOT_EQUAL_TO,
+    AND,
+    OR,
+    ORDER_BY,
+    LIMIT,
+    OPERATOR_MAX
+};
+
+struct RdbPredicateOperation {
+    RdbPredicateOperator operator_;
+    std::string field_;
+    std::vector<std::string> values_;
+};
+
+struct RdbPredicates {
+    inline void AddOperation(const RdbPredicateOperator op, const std::string& field,
+                             const std::string& value)
+    {
+        operations_.push_back({op, field, {value}});
+    }
+    inline void AddOperation(const RdbPredicateOperator op, const std::string& field,
+                             const std::vector<std::string>& values)
+    {
+        operations_.push_back({op, field, values});
+    }
+
+    std::string table_;
+    std::vector<std::string> devices_;
+    std::vector<RdbPredicateOperation> operations_;
+};
 
 enum SubscribeMode {
-    LOCAL,
     REMOTE,
-    LOCAL_AND_REMOTE,
+    SUBSCRIBE_MODE_MAX
 };
 
 struct SubscribeOption {
     SubscribeMode mode;
+};
+
+class RdbStoreObserver {
+public:
+    virtual void OnChange(const std::vector<std::string>& devices) = 0; // networkid
 };
 
 struct DropOption {

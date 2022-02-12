@@ -16,7 +16,6 @@
 #define LOG_TAG "RdbServiceProxy"
 
 #include "rdb_service_proxy.h"
-#include "rdb_syncer.h"
 #include "itypes_util.h"
 #include "log_print.h"
 
@@ -24,53 +23,389 @@ namespace OHOS::DistributedRdb {
 RdbServiceProxy::RdbServiceProxy(const sptr<IRemoteObject> &object)
     : IRemoteProxy<IRdbService>(object)
 {
+    ZLOGI("construct");
 }
 
-std::shared_ptr<RdbSyncer> RdbServiceProxy::GetRdbSyncer(const RdbSyncerParam& param)
+void RdbServiceProxy::OnSyncComplete(uint32_t seqNum, const SyncResult &result)
+{
+    syncCallbacks_.ComputeIfPresent(seqNum, [&result] (const auto& key, const SyncCallback& callback) {
+        callback(result);
+    });
+    syncCallbacks_.Erase(seqNum);
+}
+
+void RdbServiceProxy::OnDataChange(const std::string& storeName, const std::vector<std::string> &devices)
+{
+    ZLOGI("%{public}s", storeName.c_str());
+    remoteObservers_.ComputeIfPresent(
+        storeName, [&devices] (const auto& key, const ObserverMapValue& value) {
+            for (const auto& observer : value.first) {
+                observer->OnChange(devices);
+            }
+        });
+}
+
+std::string RdbServiceProxy::ObtainDistributedTableName(const std::string &device, const std::string &table)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(IRdbService::GetDescriptor())) {
         ZLOGE("write descriptor failed");
-        return nullptr;
+        return "";
+    }
+    if (!data.WriteString(device)) {
+        ZLOGE("write device failed");
+        return "";
+    }
+    if (!data.WriteString(table)) {
+        ZLOGE("write table failed");
+        return "";
+    }
+
+    MessageParcel reply;
+    MessageOption option;
+    if (Remote()->SendRequest(RDB_SERVICE_CMD_OBTAIN_TABLE, data, reply, option) != 0) {
+        ZLOGE("send request failed");
+        return "";
+    }
+    return reply.ReadString();
+}
+
+int32_t RdbServiceProxy::InitNotifier(const RdbSyncerParam& param)
+{
+    notifier_ = new (std::nothrow) RdbNotifierStub(
+        [this] (uint32_t seqNum, const SyncResult& result) {
+            OnSyncComplete(seqNum, result);
+        },
+        [this] (const std::string& storeName, const std::vector<std::string>& devices) {
+            OnDataChange(storeName, devices);
+        }
+    );
+    if (notifier_ == nullptr) {
+        ZLOGE("create notifier failed");
+        return RDB_ERROR;
+    }
+
+    if (InitNotifier(param, notifier_->AsObject()) != RDB_OK) {
+        notifier_ = nullptr;
+        return RDB_ERROR;
+    }
+
+    ZLOGI("success");
+    return RDB_OK;
+}
+
+int32_t RdbServiceProxy::InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> notifier)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(IRdbService::GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return RDB_ERROR;
     }
     if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
-        return nullptr;
+        ZLOGE("write param failed");
+        return RDB_ERROR;
     }
-    
+    if (!data.WriteRemoteObject(notifier)) {
+        ZLOGE("write notifier failed");
+        return RDB_ERROR;
+    }
+
     MessageParcel reply;
     MessageOption option;
-    if (Remote()->SendRequest(RDB_SERVICE_CMD_GET_SYNCER, data, reply, option) != 0) {
+    if (Remote()->SendRequest(RDB_SERVICE_CMD_INIT_NOTIFIER, data, reply, option) != 0) {
         ZLOGE("send request failed");
-        return nullptr;
+        return RDB_ERROR;
     }
-    
-    auto remoteObject = reply.ReadRemoteObject();
-    auto syncer = iface_cast<IRdbSyncer>(remoteObject);
-    return std::shared_ptr<IRdbSyncer>(syncer.GetRefPtr(), [holder = syncer] (const auto*) {});
+
+    int32_t res = RDB_ERROR;
+    return reply.ReadInt32(res) ? res : RDB_ERROR;
 }
 
-int RdbServiceProxy::RegisterClientDeathRecipient(const std::string& bundleName, sptr<IRemoteObject> object)
+uint32_t RdbServiceProxy::GetSeqNum()
+{
+    return seqNum_.fetch_add(1);
+}
+
+int32_t RdbServiceProxy::DoSync(const RdbSyncerParam& param, const SyncOption &option,
+                                const RdbPredicates &predicates, SyncResult& result)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(IRdbService::GetDescriptor())) {
         ZLOGE("write descriptor failed");
-        return -1;
+        return RDB_ERROR;
     }
-    if (!data.WriteString(bundleName)) {
-        ZLOGE("write bundle name failed");
-        return -1;
+    if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
+        ZLOGE("write param failed");
+        return RDB_ERROR;
     }
-    if (!data.WriteRemoteObject(object)) {
-        ZLOGE("write remote object failed");
-        return -1;
+    if (!DistributedKv::ITypesUtil::Marshalling(option, data)) {
+        ZLOGE("write option failed");
+        return RDB_ERROR;
     }
+    if (!DistributedKv::ITypesUtil::Marshalling(predicates, data)) {
+        ZLOGE("write predicates failed");
+    }
+    
+    MessageParcel reply;
+    MessageOption opt;
+    if (Remote()->SendRequest(RDB_SERVICE_CMD_SYNC, data, reply, opt) != 0) {
+        ZLOGE("send request failed");
+        return RDB_ERROR;
+    }
+    
+    if (!DistributedKv::ITypesUtil::UnMarshalling(reply, result)) {
+        ZLOGE("read result failed");
+        return RDB_ERROR;
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceProxy::DoSync(const RdbSyncerParam& param, const SyncOption &option,
+                                const RdbPredicates &predicates, const SyncCallback& callback)
+{
+    SyncResult result;
+    if (DoSync(param, option, predicates, result) != RDB_OK) {
+        ZLOGI("failed");
+        return RDB_ERROR;
+    }
+    ZLOGI("success");
+    
+    if (callback != nullptr) {
+        callback(result);
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceProxy::DoAsync(const RdbSyncerParam& param, uint32_t seqNum, const SyncOption &option,
+                                 const RdbPredicates &predicates)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(IRdbService::GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
+        ZLOGE("write param failed");
+        return RDB_ERROR;
+    }
+    if (!data.WriteInt32(seqNum)) {
+        ZLOGE("write seq num failed");
+        return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshalling(option, data)) {
+        ZLOGE("write option failed");
+        return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshalling(predicates, data)) {
+        ZLOGE("write predicates failed");
+    }
+    
+    MessageParcel reply;
+    MessageOption opt;
+    if (Remote()->SendRequest(RDB_SERVICE_CMD_ASYNC, data, reply, opt) != 0) {
+        ZLOGE("send request failed");
+        return RDB_ERROR;
+    }
+    
+    int32_t res = RDB_ERROR;
+    return reply.ReadInt32(res) ? res : RDB_ERROR;
+}
+
+int32_t RdbServiceProxy::DoAsync(const RdbSyncerParam& param, const SyncOption &option,
+                                 const RdbPredicates &predicates, const SyncCallback& callback)
+{
+    uint32_t num = GetSeqNum();
+    if (!syncCallbacks_.Insert(num, callback)) {
+        ZLOGI("insert callback failed");
+        return RDB_ERROR;
+    }
+    ZLOGI("num=%{public}u", num);
+    
+    if (DoAsync(param, num, option, predicates) != RDB_OK) {
+        ZLOGE("failed");
+        syncCallbacks_.Erase(num);
+        return RDB_ERROR;
+    }
+    
+    ZLOGI("success");
+    return RDB_OK;
+}
+
+std::vector<std::string> RdbServiceProxy::GetConnectDevices()
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(IRdbService::GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return {};
+    }
+
     MessageParcel reply;
     MessageOption option;
-    if (Remote()->SendRequest(RDB_SERVICE_CMD_REGISTER_CLIENT_DEATH, data, reply, option) != 0) {
+    if (Remote()->SendRequest(RDB_SERVICE_CMD_GET_DEVICES, data, reply, option) != 0) {
         ZLOGE("send request failed");
-        return -1;
+        return {};
     }
-    int32_t res = -1;
-    return reply.ReadInt32(res) ? res : -1;
+
+    std::vector<std::string> devices;
+    if (!reply.ReadStringVector(&devices)) {
+        ZLOGE("read devices failed");
+        return {};
+    }
+
+    ZLOGI("success");
+    return devices;
+}
+
+int32_t RdbServiceProxy::SetDistributedTables(const RdbSyncerParam& param, const std::vector<std::string> &tables)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(IRdbService::GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
+        ZLOGE("write param failed");
+        return RDB_ERROR;
+    }
+    if (!data.WriteStringVector(tables)) {
+        ZLOGE("write tables failed");
+        return RDB_ERROR;
+    }
+
+    MessageParcel reply;
+    MessageOption option;
+    if (Remote()->SendRequest(RDB_SERVICE_CMD_SET_DIST_TABLE, data, reply, option) != 0) {
+        ZLOGE("send request failed");
+        return RDB_ERROR;
+    }
+
+    int32_t res = RDB_ERROR;
+    return reply.ReadInt32(res) ? res : RDB_ERROR;
+}
+
+int32_t RdbServiceProxy::Sync(const RdbSyncerParam& param, const SyncOption &option,
+                              const RdbPredicates &predicates, const SyncCallback &callback)
+{
+    if (option.isBlock) {
+        return DoSync(param, option, predicates, callback);
+    }
+    return DoAsync(param, option, predicates, callback);
+}
+
+int32_t RdbServiceProxy::Subscribe(const RdbSyncerParam &param, const SubscribeOption &option,
+                                   const RdbStoreObserver &observer)
+{
+    if (option.mode != SubscribeMode::REMOTE) {
+        ZLOGE("subscribe mode invalid");
+        return RDB_ERROR;
+    }
+    if (DoSubscribe(param) != RDB_OK) {
+        ZLOGI("communicate to server failed");
+        return RDB_ERROR;
+    }
+    bool present = remoteObservers_.ComputeIfPresent(
+            param.storeName_, [&observer] (const auto& key, ObserverMapValue& value) {
+                for (const auto& element : value.first) {
+                    if (element == &observer) {
+                        ZLOGE("duplicate observer");
+                        return;
+                    }
+                }
+                value.first.push_back(const_cast<RdbStoreObserver*>(&observer));
+            });
+    if (!present) {
+        remoteObservers_.ComputeIfAbsent(
+            param.storeName_, [&observer, &param] (const auto& key) -> ObserverMapValue {
+                    std::list<RdbStoreObserver*> list;
+                    list.push_back(const_cast<RdbStoreObserver*>(&observer));
+                    return {list, param};
+                });
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceProxy::DoSubscribe(const RdbSyncerParam &param)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(IRdbService::GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
+        ZLOGE("write param failed");
+        return RDB_ERROR;
+    }
+
+    MessageParcel reply;
+    MessageOption option;
+    if (Remote()->SendRequest(RDB_SERVICE_CMD_SUBSCRIBE, data, reply, option) != 0) {
+        ZLOGE("send request failed");
+        return RDB_ERROR;
+    }
+
+    int32_t res = RDB_ERROR;
+    return reply.ReadInt32(res) ? res : RDB_ERROR;
+}
+
+int32_t RdbServiceProxy::UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
+                                     const RdbStoreObserver &observer)
+{
+    DoUnSubscribe(param);
+    bool canErase = false;
+    auto* const observerPtr = const_cast<RdbStoreObserver* const>(&observer);
+    remoteObservers_.ComputeIfPresent(
+        param.storeName_, [observerPtr, &canErase](const auto& key, ObserverMapValue& value) {
+            ZLOGI("before remove size=%{public}d", static_cast<int>(value.first.size()));
+            value.first.remove(observerPtr);
+            ZLOGI("after  remove size=%{public}d", static_cast<int>(value.first.size()));
+            if (value.first.empty()) {
+                canErase = true;
+            }
+    });
+
+    if(canErase) {
+        remoteObservers_.Erase(param.storeName_);
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceProxy::DoUnSubscribe(const RdbSyncerParam &param)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(IRdbService::GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
+        ZLOGE("write param failed");
+        return RDB_ERROR;
+    }
+
+    MessageParcel reply;
+    MessageOption option;
+    if (Remote()->SendRequest(RDB_SERVICE_CMD_UNSUBSCRIBE, data, reply, option) != 0) {
+        ZLOGE("send request failed");
+        return RDB_ERROR;
+    }
+
+    int32_t res = RDB_ERROR;
+    return reply.ReadInt32(res) ? res : RDB_ERROR;
+}
+
+RdbServiceProxy::ObserverMap RdbServiceProxy::ExportObservers()
+{
+    return remoteObservers_;
+}
+
+void RdbServiceProxy::ImportObservers(ObserverMap &observers)
+{
+    ZLOGI("enter");
+    SubscribeOption option {SubscribeMode::REMOTE};
+    observers.ForEach([this, &option](const std::string& key, const ObserverMapValue& value) {
+        for (const auto& observer : value.first) {
+            Subscribe(value.second, option, *observer);
+        }
+        return false;
+    });
 }
 }

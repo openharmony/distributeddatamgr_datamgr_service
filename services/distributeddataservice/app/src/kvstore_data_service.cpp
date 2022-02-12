@@ -859,8 +859,7 @@ void KvStoreDataService::StartService()
     ZLOGI("autoLaunchRequestCallback start");
     auto autoLaunchRequestCallback =
         [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
-            ResolveAutoLaunchParamByIdentifier(identifier, param);
-            return true;
+            return ResolveAutoLaunchParamByIdentifier(identifier, param);
         };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunchRequestCallback);
 
@@ -875,7 +874,7 @@ void KvStoreDataService::StartService()
     ZLOGI("Publish ret: %d", static_cast<int>(ret));
 }
 
-void KvStoreDataService::ResolveAutoLaunchParamByIdentifier(const std::string &identifier,
+bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(const std::string &identifier,
                                                             DistributedDB::AutoLaunchParam &param)
 {
     ZLOGI("start");
@@ -906,16 +905,19 @@ void KvStoreDataService::ResolveAutoLaunchParamByIdentifier(const std::string &i
                 param.appId = entry.second.kvStoreMetaData.appId;
                 param.storeId = entry.second.kvStoreMetaData.storeId;
                 param.option = option;
+                return true;
             }
         }
     }
+    ZLOGI("not find identifier");
+    return false;
 }
 
 bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::string &appId,
                                           const std::string &storeId, const std::string &deviceId, uint8_t flag) const
 {
-    ZLOGI("userId=%.6s appId=%s storeId=%s flag=%d deviceId=%.4s", userId.c_str(), appId.c_str(), storeId.c_str(), flag,
-          deviceId.c_str()); // only print 4 chars of device id
+    ZLOGI("userId=%{public}.6s appId=%{public}s storeId=%{public}s flag=%{public}d deviceId=%{public}.4s",
+          userId.c_str(), appId.c_str(), storeId.c_str(), flag, deviceId.c_str()); // only print 4 chars of device id
     auto &instance = KvStoreMetaManager::GetInstance();
     KvStoreMetaData metaData;
     auto localDevId = DeviceKvStoreImpl::GetLocalDeviceId();

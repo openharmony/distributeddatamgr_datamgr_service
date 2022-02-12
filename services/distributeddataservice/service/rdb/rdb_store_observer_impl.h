@@ -13,24 +13,26 @@
  * limitations under the License.
  */
 
-#ifndef DISTRUBTED_IRDB_SYNCER_H
-#define DISTRUBTED_IRDB_SYNCER_H
+#ifndef DISTRIBUTED_RDB_STORE_OBSERVER_H
+#define DISTRIBUTED_RDB_STORE_OBSERVER_H
 
-#include <iremote_broker.h>
-#include "rdb_types.h"
-#include "rdb_syncer.h"
+#include <sys/types.h>
+#include "store_observer.h"
 
 namespace OHOS::DistributedRdb {
-class IRdbSyncer : public RdbSyncer, public IRemoteBroker {
+class RdbServiceImpl;
+class RdbStoreObserverImpl : public DistributedDB::StoreObserver {
 public:
-    enum {
-        RDB_SYNCER_CMD_SET_DIST_TABLES,
-        RDB_SYNCER_CMD_SYNC,
-        RDB_SYNCER_CMD_SUBSCRIBE,
-        RDB_SYNCER_CMD_REMOVE_DEVICE_DATA,
-        RDB_SYNCER_CMD_MAX
-    };
-    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedRdb.IRdbSyncer");
+    explicit RdbStoreObserverImpl(RdbServiceImpl* owner, pid_t pid = 0);
+
+    ~RdbStoreObserverImpl() override;
+
+    void OnChange(const DistributedDB::StoreChangedData &data) override;
+
+private:
+    pid_t pid_ {};
+    RdbServiceImpl* owner_ {};
 };
+
 }
 #endif

@@ -18,6 +18,8 @@
 #include "ikvstore_data_service.h"
 #include "constant.h"
 #include "irdb_service.h"
+#include "rdb_service_proxy.h"
+#include "itypes_util.h"
 #include "message_parcel.h"
 #include "types.h"
 #include "log_print.h"
@@ -392,20 +394,26 @@ Status KvStoreDataServiceProxy::StopWatchDeviceChange(sptr<IDeviceStatusChangeLi
 
 sptr<DistributedRdb::IRdbService> KvStoreDataServiceProxy::GetRdbService()
 {
+    ZLOGI("enter");
     MessageParcel data;
     if (!data.WriteInterfaceToken(KvStoreDataServiceProxy::GetDescriptor())) {
         ZLOGE("write descriptor failed");
         return nullptr;
     }
+
     MessageParcel reply;
     MessageOption mo { MessageOption::TF_SYNC };
     int32_t error = Remote()->SendRequest(GET_RDB_SERVICE, data, reply, mo);
     if (error != 0) {
-        ZLOGW("SendRequest returned %{public}d", error);
+        ZLOGE("SendRequest returned %{public}d", error);
         return nullptr;
     }
     auto remoteObject = reply.ReadRemoteObject();
-    return iface_cast<DistributedRdb::IRdbService>(remoteObject);
+    if (remoteObject == nullptr) {
+        ZLOGE("remote object is nullptr");
+        return nullptr;
+    }
+    return iface_cast<DistributedRdb::RdbServiceProxy>(remoteObject);
 }
 
 int32_t KvStoreDataServiceStub::GetKvStoreOnRemote(MessageParcel &data, MessageParcel &reply)

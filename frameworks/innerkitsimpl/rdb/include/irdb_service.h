@@ -20,20 +20,38 @@
 
 #include <iremote_broker.h>
 #include "rdb_service.h"
-#include "irdb_syncer.h"
 #include "rdb_types.h"
-#include "rdb_client_death_recipient.h"
 
 namespace OHOS::DistributedRdb {
 class IRdbService : public RdbService, public IRemoteBroker {
 public:
     enum {
-        RDB_SERVICE_CMD_GET_SYNCER,
-        RDB_SERVICE_CMD_REGISTER_CLIENT_DEATH,
+        RDB_SERVICE_CMD_OBTAIN_TABLE,
+        RDB_SERVICE_CMD_GET_DEVICES,
+        RDB_SERVICE_CMD_INIT_NOTIFIER,
+        RDB_SERVICE_CMD_SET_DIST_TABLE,
+        RDB_SERVICE_CMD_SYNC,
+        RDB_SERVICE_CMD_ASYNC,
+        RDB_SERVICE_CMD_SUBSCRIBE,
+        RDB_SERVICE_CMD_UNSUBSCRIBE,
         RDB_SERVICE_CMD_MAX
     };
     
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedRdb.IRdbService");
+
+    virtual std::vector<std::string> GetConnectDevices() = 0;
+
+    virtual int32_t InitNotifier(const RdbSyncerParam& param, const sptr<IRemoteObject> notifier) = 0;
+    
+    virtual int32_t DoSync(const RdbSyncerParam& param, const SyncOption& option,
+                           const RdbPredicates& predicates, SyncResult& result) = 0;
+    
+    virtual int32_t DoAsync(const RdbSyncerParam& param, uint32_t seqNum,
+                            const SyncOption& option, const RdbPredicates& predicates) = 0;
+
+    virtual int32_t DoSubscribe(const RdbSyncerParam& param) = 0;
+
+    virtual int32_t DoUnSubscribe(const RdbSyncerParam& param) = 0;
 };
 }
 #endif

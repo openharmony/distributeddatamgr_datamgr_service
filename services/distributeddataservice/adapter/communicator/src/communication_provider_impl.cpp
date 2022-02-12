@@ -108,7 +108,7 @@ std::vector<DeviceInfo> CommunicationProviderImpl::GetRemoteNodesBasicInfo() con
 
 std::string CommunicationProviderImpl::ToNodeId(const std::string &id) const
 {
-    std::string ret = appDeviceHandler_.ToNodeID(id, "");
+    std::string ret = appDeviceHandler_.ToNodeID("", id);
     if (ret.empty()) {
         ZLOGD("toNodeId failed.");
     }

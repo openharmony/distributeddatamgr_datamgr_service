@@ -157,7 +157,7 @@ private:
 
     bool CheckPermissions(const std::string &userId, const std::string &appId, const std::string &storeId,
                           const std::string &deviceId, uint8_t flag) const;
-    void ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
+    bool ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
 
     bool CheckOptions(const Options &options, const std::vector<uint8_t> &metaKey) const;
     

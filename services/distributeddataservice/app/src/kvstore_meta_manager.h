@@ -146,6 +146,10 @@ private:
 class KvStoreMetaManager {
 public:
     static constexpr uint32_t META_STORE_VERSION = 0x03000001;
+    enum DatabaseType {
+        KVDB,
+        RDB,
+    };
     using NbDelegate = std::unique_ptr<DistributedDB::KvStoreNbDelegate,
         std::function<void(DistributedDB::KvStoreNbDelegate *)>>;
 
@@ -228,7 +232,7 @@ public:
 
     bool GetKvStoreMetaDataByAppId(const std::string &appId, KvStoreMetaData &metaData);
 
-    bool GetFullMetaData(std::map<std::string, MetaData> &entries);
+    bool GetFullMetaData(std::map<std::string, MetaData> &entries, enum DatabaseType type = KVDB);
 private:
     NbDelegate CreateMetaKvStore();
 

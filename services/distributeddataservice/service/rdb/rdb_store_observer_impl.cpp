@@ -13,16 +13,29 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTED_RDB_SYNCER_H
-#define DISTRIBUTED_RDB_SYNCER_H
+#define LOG_TAG "RdbStoreObserverImpl"
 
-#include <vector>
-#include <string>
+#include "rdb_store_observer_impl.h"
+#include "rdb_service_impl.h"
+#include "log_print.h"
 
 namespace OHOS::DistributedRdb {
-class RdbSyncer {
-public:
-    virtual int SetDistributedTables(const std::vector<std::string>& tables) = 0;
-};
+RdbStoreObserverImpl::RdbStoreObserverImpl(RdbServiceImpl* owner, pid_t pid)
+    : pid_(pid), owner_(owner)
+{
+    ZLOGI("construct");
 }
-#endif
+
+RdbStoreObserverImpl::~RdbStoreObserverImpl()
+{
+    ZLOGI("destroy");
+}
+
+void RdbStoreObserverImpl::OnChange(const DistributedDB::StoreChangedData &data)
+{
+    ZLOGI("enter");
+    if (owner_ != nullptr) {
+        owner_->OnDataChange(pid_, data);
+    }
+}
+}

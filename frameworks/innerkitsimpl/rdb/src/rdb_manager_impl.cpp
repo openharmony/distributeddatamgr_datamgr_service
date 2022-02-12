@@ -17,6 +17,7 @@
 
 #include "rdb_manager_impl.h"
 
+#include <thread>
 #include "iservice_registry.h"
 #include "ipc_skeleton.h"
 #include "system_ability_definition.h"
@@ -24,18 +25,30 @@
 #include "log_print.h"
 #include "ikvstore_data_service.h"
 #include "irdb_service.h"
+#include "rdb_service_proxy.h"
 
 namespace OHOS::DistributedRdb {
-static sptr<DistributedKv::IKvStoreDataService> GetDistributedDataManager()
+static sptr<DistributedKv::KvStoreDataServiceProxy> GetDistributedDataManager()
 {
-    auto manager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (manager == nullptr) {
-        ZLOGE("get system ability manager failed");
-        return nullptr;
+    int retry = 0;
+    while (++retry <= RdbManagerImpl::GET_DDMS_RETRY_TIMES) {
+        auto manager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (manager == nullptr) {
+            ZLOGE("get system ability manager failed");
+            return nullptr;
+        }
+        ZLOGI("get distributed data manager %{public}d", retry);
+        auto remoteObject = manager->CheckSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+        if (remoteObject == nullptr) {
+            std::this_thread::sleep_for(std::chrono::seconds(RdbManagerImpl::RETRY_INTERVAL));
+            continue;
+        }
+        ZLOGI("get distributed data manager success");
+        return iface_cast<DistributedKv::KvStoreDataServiceProxy>(remoteObject);
     }
-    ZLOGI("get distributed data manager");
-    auto remoteObject = manager->CheckSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
-    return iface_cast<DistributedKv::IKvStoreDataService>(remoteObject);
+
+    ZLOGE("get distributed data manager failed");
+    return nullptr;
 }
 
 static void LinkToDeath(const sptr<IRemoteObject>& remote)
@@ -56,7 +69,7 @@ RdbManagerImpl::RdbManagerImpl()
 
 RdbManagerImpl::~RdbManagerImpl()
 {
-    ZLOGI("deconstruct");
+    ZLOGI("destroy");
 }
 
 RdbManagerImpl& RdbManagerImpl::GetInstance()
@@ -65,13 +78,20 @@ RdbManagerImpl& RdbManagerImpl::GetInstance()
     return manager;
 }
 
-std::shared_ptr<RdbService> RdbManagerImpl::GetRdbService()
+std::vector<std::string> RdbManagerImpl::GetConnectDevices()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (rdbService_ != nullptr) {
-        return rdbService_;
+    auto service =  GetRdbService();
+    if (service == nullptr) {
+        ZLOGE("get service failed");
+        return std::vector<std::string>();
     }
-    
+
+    return ((RdbServiceProxy *)service.GetRefPtr())->GetConnectDevices();
+}
+
+sptr<IRdbService> RdbManagerImpl::GetRdbService()
+{
     if (distributedDataMgr_ == nullptr) {
         distributedDataMgr_ = GetDistributedDataManager();
     }
@@ -79,50 +99,55 @@ std::shared_ptr<RdbService> RdbManagerImpl::GetRdbService()
         ZLOGE("get distributed data manager failed");
         return nullptr;
     }
-    
-    auto serviceObject = distributedDataMgr_->GetRdbService();
-    if (serviceObject == nullptr) {
+
+    auto service = distributedDataMgr_->GetRdbService();
+    if (service == nullptr) {
         ZLOGE("get rdb service failed");
         return nullptr;
     }
-    LinkToDeath(serviceObject->AsObject());
-    rdbService_ = std::shared_ptr<RdbService>(serviceObject.GetRefPtr(), [holder = serviceObject] (const auto*) {});
-    return rdbService_;
+    return service;
 }
 
-std::shared_ptr<RdbSyncer> RdbManagerImpl::GetRdbSyncer(const RdbSyncerParam &param)
+std::shared_ptr<RdbService> RdbManagerImpl::GetRdbService(const RdbSyncerParam& param)
 {
-    if (param.bundleName_.empty() || param.path_.empty() || param.storeName_.empty()) {
-        ZLOGE("param is invalid");
-        return nullptr;
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (rdbService_ != nullptr) {
+        return rdbService_;
     }
     auto service = GetRdbService();
     if (service == nullptr) {
         return nullptr;
     }
-    RegisterClientDeathRecipient(param.bundleName_);
-    return service->GetRdbSyncer(param);
-}
-
-int RdbManagerImpl::RegisterRdbServiceDeathObserver(const std::string& storeName,
-                                                    const std::function<void()>& observer)
-{
-    serviceDeathObservers_.Insert(storeName, observer);
-    return 0;
-}
-
-int RdbManagerImpl::UnRegisterRdbServiceDeathObserver(const std::string& storeName)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    serviceDeathObservers_.Erase(storeName);
-    return 0;
+    if (((RdbServiceProxy *)service.GetRefPtr())->InitNotifier(param) != RDB_OK) {
+        ZLOGE("init notifier failed");
+        return nullptr;
+    }
+    LinkToDeath(service->AsObject());
+    rdbService_ = std::shared_ptr<RdbService>(service.GetRefPtr(), [holder = service] (const auto*) {});
+    bundleName_ = param.bundleName_;
+    return rdbService_;
 }
 
 void RdbManagerImpl::OnRemoteDied()
 {
     ZLOGI("rdb service has dead!!");
-    NotifyServiceDeath();
+    auto proxy = std::static_pointer_cast<RdbServiceProxy>(rdbService_);
+    auto observers = proxy->ExportObservers();
     ResetServiceHandle();
+
+    std::this_thread::sleep_for(std::chrono::seconds(2)); // sleep two second
+    RdbSyncerParam param;
+    param.bundleName_ = bundleName_;
+    auto service = GetRdbService(param);
+    if (service == nullptr) {
+        return;
+    }
+    proxy = std::static_pointer_cast<RdbServiceProxy>(service);
+    if (proxy == nullptr) {
+        return;
+    }
+    ZLOGI("restore observer");
+    proxy->ImportObservers(observers);
 }
 
 void RdbManagerImpl::ResetServiceHandle()
@@ -131,33 +156,5 @@ void RdbManagerImpl::ResetServiceHandle()
     std::lock_guard<std::mutex> lock(mutex_);
     distributedDataMgr_ = nullptr;
     rdbService_ = nullptr;
-    clientDeathObject_ = nullptr;
-}
-
-void RdbManagerImpl::NotifyServiceDeath()
-{
-    ZLOGI("enter");
-    serviceDeathObservers_.ForEach([] (const auto& key, const auto& value) {
-        if (value != nullptr) {
-            value();
-        }
-        return false;
-    });
-}
-
-void RdbManagerImpl::RegisterClientDeathRecipient(const std::string& bundleName)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (clientDeathObject_ != nullptr) {
-        return;
-    }
-    if (rdbService_ != nullptr) {
-        sptr<IRemoteObject> object = new(std::nothrow) RdbClientDeathRecipientStub();
-        if (rdbService_->RegisterClientDeathRecipient(bundleName, object) != 0) {
-            ZLOGE("register client death recipient failed");
-        } else {
-            clientDeathObject_ = object;
-        }
-    }
 }
 }

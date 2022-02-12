@@ -34,6 +34,7 @@
 #include "directory_utils.h"
 #include "kvstore_app_manager.h"
 #include "utils/crypto.h"
+#include "rdb_types.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -1032,7 +1033,7 @@ Status KvStoreMetaManager::QueryKvStoreMetaDataByDeviceIdAndAppId(const std::str
         }
     }
 
-    ZLOGW("find meta failed id:%s.", appId.c_str());
+    ZLOGW("find meta failed id: %{public}s", appId.c_str());
     return Status::ERROR;
 }
 
@@ -1155,7 +1156,7 @@ void SecretKeyMetaData::Unmarshal(const nlohmann::json &jObject)
     kvStoreType = Serializable::GetVal<KvStoreType>(jObject, KVSTORE_TYPE, json::value_t::number_unsigned, kvStoreType);
 }
 
-bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entries)
+bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entries, enum DatabaseType type)
 {
     ZLOGI("start");
     auto &metaDelegate = GetMetaKvStore();
@@ -1177,8 +1178,8 @@ bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entrie
         auto metaObj = Serializable::ToJson(jsonStr);
         MetaData metaData {0};
         metaData.kvStoreType = MetaData::GetKvStoreType(metaObj);
-        if (metaData.kvStoreType == KvStoreType::INVALID_TYPE) {
-            ZLOGE("Failed to find KVSTORE_TYPE in jsonStr.");
+        if (!(type == KVDB && metaData.kvStoreType < KvStoreType::INVALID_TYPE) &&
+             !(type == RDB && metaData.kvStoreType >= DistributedRdb::RdbDistributedType::RDB_DEVICE_COLLABORATION)) {
             continue;
         }
 

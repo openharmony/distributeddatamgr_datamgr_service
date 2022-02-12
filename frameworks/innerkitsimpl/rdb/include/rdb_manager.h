@@ -20,18 +20,15 @@
 #include <string>
 #include <memory>
 
+#include "rdb_service.h"
+#include "rdb_types.h"
 
 namespace OHOS::DistributedRdb {
-struct RdbSyncerParam;
-class RdbSyncer;
-
 class RdbManager {
 public:
-    static std::shared_ptr<RdbSyncer> GetRdbSyncer(const RdbSyncerParam& param);
-    
-    static int RegisterRdbServiceDeathObserver(const std::string &storeName, const std::function<void()>& observer);
-    
-    static int UnRegisterRdbServiceDeathObserver(const std::string &storeName);
+    static std::vector<std::string> GetConnectDevices();
+
+    static std::shared_ptr<RdbService> GetRdbService(const RdbSyncerParam& param);
 };
 }
 #endif

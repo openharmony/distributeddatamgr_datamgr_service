@@ -200,6 +200,149 @@ bool ITypesUtil::UnMarshalling(MessageParcel& parcel, DistributedRdb::RdbSyncerP
     return true;
 }
 
+bool ITypesUtil::Marshalling(const DistributedRdb::SyncResult &result, MessageParcel &parcel)
+{
+    if (!parcel.WriteInt32(static_cast<int32_t>(result.size()))) {
+        ZLOGE("SyncResult write size failed");
+        return false;
+    }
+    
+    for (const auto& entry : result) {
+        if (!parcel.WriteString(entry.first)) {
+            ZLOGE("SyncResult write device failed");
+            return false;
+        }
+        if (!parcel.WriteInt32(entry.second)) {
+            ZLOGE("SyncResult write int failed");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ITypesUtil::UnMarshalling(MessageParcel &parcel, DistributedRdb::SyncResult &result)
+{
+    int32_t size = 0;
+    if (!parcel.ReadInt32(size)) {
+        ZLOGE("SyncResult read size failed");
+        return false;
+    }
+    if (size <= 0) {
+        ZLOGE("SyncResult size invalid");
+        return false;
+    }
+    
+    for (int32_t i = 0; i < size; i++) {
+        std::string device;
+        if (!parcel.ReadString(device)) {
+            ZLOGE("SyncResult read device failed");
+            return false;
+        }
+        int32_t error;
+        if (!parcel.ReadInt32(error)) {
+            ZLOGE("SyncResult read int failed");
+            return false;
+        }
+        result.insert( { device, error } );
+    }
+    return true;
+}
+
+bool ITypesUtil::Marshalling(const DistributedRdb::SyncOption &option, MessageParcel &parcel)
+{
+    if (!parcel.WriteInt32(option.mode)) {
+        ZLOGE("SyncOption write mode failed");
+        return false;
+    }
+    if (!parcel.WriteBool(option.isBlock)) {
+        ZLOGE("SyncOption write isBlock failed");
+        return false;
+    }
+    return true;
+}
+
+bool ITypesUtil::UnMarshalling(MessageParcel &parcel, DistributedRdb::SyncOption &option)
+{
+    int32_t mode;
+    if (!parcel.ReadInt32(mode)) {
+        ZLOGE("SyncOption read mode failed");
+        return false;
+    }
+    option.mode = static_cast<DistributedRdb::SyncMode>(mode);
+    if (!parcel.ReadBool(option.isBlock)) {
+        ZLOGE("SyncOption read isBlock failed");
+        return false;
+    }
+    return true;
+}
+
+bool ITypesUtil::Marshalling(const DistributedRdb::RdbPredicates &predicates, MessageParcel &parcel)
+{
+    if (!parcel.WriteString(predicates.table_)) {
+        ZLOGE("predicate write table failed");
+        return false;
+    }
+    if (!parcel.WriteStringVector(predicates.devices_)) {
+        ZLOGE("predicate write devices failed");
+        return false;
+    }
+    if (!parcel.WriteUint32(predicates.operations_.size())) {
+        ZLOGE("predicate write operation size failed");
+        return false;
+    }
+    for (const auto& operation : predicates.operations_) {
+        if (!parcel.WriteInt32(operation.operator_)) {
+            ZLOGE("predicate write operator failed");
+            return false;
+        }
+        if (!parcel.WriteString(operation.field_)) {
+            ZLOGE("predicate write field failed");
+            return false;
+        }
+        if (!parcel.WriteStringVector(operation.values_)) {
+            ZLOGE("predicate write values failed");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ITypesUtil::UnMarshalling(MessageParcel &parcel, DistributedRdb::RdbPredicates &predicates)
+{
+    if (!parcel.ReadString(predicates.table_)) {
+        ZLOGE("predicate read table failed");
+        return false;
+    }
+    if (!parcel.ReadStringVector(&predicates.devices_)) {
+        ZLOGE("predicate read devices failed");
+        return false;
+    }
+    uint32_t size = 0;
+    if (!parcel.ReadUint32(size)) {
+        ZLOGE("predicate read operation size failed");
+        return false;
+    }
+    for (uint32_t i = 0; i < size; i++) {
+        int32_t op;
+        if (!parcel.ReadInt32(op)) {
+            ZLOGE("predicate read operator failed");
+            return false;
+        }
+        DistributedRdb::RdbPredicateOperation operation;
+        operation.operator_ = static_cast<DistributedRdb::RdbPredicateOperator>(op);
+        if (!parcel.ReadString(operation.field_)) {
+            ZLOGE("predicate read field failed");
+            return false;
+        }
+        if (!parcel.ReadStringVector(&operation.values_)) {
+            ZLOGE("predicate read values failed");
+            return false;
+        }
+        predicates.operations_.push_back(std::move(operation));
+    }
+    return true;
+}
+
 template<class T>
 std::vector<T> ITypesUtil::Convert2Vector(const std::list<T> &entries)
 {

@@ -76,13 +76,10 @@ ohos_shared_library("distributeddata_inner") {
   ]
 
   rdb_sources = [
-    "../../../frameworks/innerkitsimpl/rdb/src/rdb_client_death_recipient.cpp",
     "../../../frameworks/innerkitsimpl/rdb/src/rdb_manager.cpp",
     "../../../frameworks/innerkitsimpl/rdb/src/rdb_manager_impl.cpp",
+    "../../../frameworks/innerkitsimpl/rdb/src/rdb_notifier.cpp",
     "../../../frameworks/innerkitsimpl/rdb/src/rdb_service_proxy.cpp",
-    "../../../frameworks/innerkitsimpl/rdb/src/rdb_service_stub.cpp",
-    "../../../frameworks/innerkitsimpl/rdb/src/rdb_syncer_proxy.cpp",
-    "../../../frameworks/innerkitsimpl/rdb/src/rdb_syncer_stub.cpp",
   ]
 
   sources = kvdb_sources + rdb_sources

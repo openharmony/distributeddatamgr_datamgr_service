@@ -20,16 +20,24 @@
 #include <string>
 
 #include <iremote_object.h>
+#include "rdb_types.h"
 
 namespace OHOS::DistributedRdb {
-struct RdbSyncerParam;
-class RdbSyncer;
-
 class RdbService {
 public:
-    virtual std::shared_ptr<RdbSyncer> GetRdbSyncer(const RdbSyncerParam& param) = 0;
+    virtual std::string ObtainDistributedTableName(const std::string& device, const std::string& table) = 0;
+
+    virtual int32_t SetDistributedTables(const RdbSyncerParam& param,
+                                         const std::vector<std::string>& tables) = 0;
     
-    virtual int RegisterClientDeathRecipient(const std::string& bundleName, sptr<IRemoteObject> object) = 0;
+    virtual int32_t Sync(const RdbSyncerParam& param, const SyncOption& option,
+                         const RdbPredicates& predicates, const SyncCallback& callback) = 0;
+
+    virtual int32_t Subscribe(const RdbSyncerParam& param, const SubscribeOption& option,
+                              const RdbStoreObserver& observer) = 0;
+
+    virtual int32_t UnSubscribe(const RdbSyncerParam& param, const SubscribeOption& option,
+                                const RdbStoreObserver& observer) = 0;
 };
 }
 #endif

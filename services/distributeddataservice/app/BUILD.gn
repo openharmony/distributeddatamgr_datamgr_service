@@ -45,7 +45,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/src",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/rdb",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/rdb",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//utils/system/safwk/native/include",
     "../adapter/include/account",
@@ -93,10 +93,10 @@ ohos_shared_library("distributeddataservice") {
   ]
 
   rdb_sources = [
-    "../../rdb/rdb_device_syncer.cpp",
-    "../../rdb/rdb_service_impl.cpp",
-    "../../rdb/rdb_syncer_factory.cpp",
-    "../../rdb/rdb_syncer_impl.cpp",
+    "../service/rdb/rdb_service_impl.cpp",
+    "../service/rdb/rdb_service_stub.cpp",
+    "../service/rdb/rdb_store_observer_impl.cpp",
+    "../service/rdb/rdb_syncer.cpp",
   ]
 
   sources += rdb_sources

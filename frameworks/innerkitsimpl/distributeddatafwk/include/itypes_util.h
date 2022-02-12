@@ -48,7 +48,16 @@ public:
 
     static bool Marshalling(const DistributedRdb::RdbSyncerParam& param, MessageParcel& parcel);
     static bool UnMarshalling(MessageParcel& parcel, DistributedRdb::RdbSyncerParam& param);
-
+    
+    static bool Marshalling(const DistributedRdb::SyncResult& result, MessageParcel& parcel);
+    static bool UnMarshalling(MessageParcel& parcel, DistributedRdb::SyncResult& result);
+    
+    static bool Marshalling(const DistributedRdb::SyncOption& option, MessageParcel& parcel);
+    static bool UnMarshalling(MessageParcel& parcel, DistributedRdb::SyncOption& option);
+    
+    static bool Marshalling(const DistributedRdb::RdbPredicates& predicates, MessageParcel& parcel);
+    static bool UnMarshalling(MessageParcel& parcel, DistributedRdb::RdbPredicates& predicates);
+    
     static int64_t GetTotalSize(const std::vector<Entry> &entries);
     static int64_t GetTotalSize(const std::vector<Key> &entries);
 

@@ -404,6 +404,7 @@ std::string SoftBusAdapter::ToUUID(const std::string& id) const
     return "";
 }
 
+// id is return of default value
 std::string SoftBusAdapter::ToNodeID(const std::string& id, const std::string &nodeId) const
 {
     {
@@ -413,7 +414,7 @@ std::string SoftBusAdapter::ToNodeID(const std::string& id, const std::string &n
             if (nodeId == (std::get<0>(tup))) { // id is uuid
                 return e.first;
             }
-            if (id == (std::get<1>(tup))) { // id is udid
+            if (nodeId == (std::get<1>(tup))) { // id is udid
                 return e.first;
             }
         }
@@ -423,7 +424,7 @@ std::string SoftBusAdapter::ToNodeID(const std::string& id, const std::string &n
     std::vector<DeviceInfo> devices;
     NodeBasicInfo *info = nullptr;
     int32_t infoNum = 0;
-    std::string networkId;
+    std::string networkId = id;
     int32_t ret = GetAllNodeDeviceInfo("ohos.distributeddata", &info, &infoNum);
     if (ret == SOFTBUS_OK) {
         lock_guard<mutex> lock(networkMutex_);

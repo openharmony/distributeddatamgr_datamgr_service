@@ -24,23 +24,24 @@
 #include "iremote_object.h"
 #include "concurrent_map.h"
 #include "rdb_types.h"
-#include "rdb_syncer.h"
 
 namespace OHOS::DistributedKv {
-class IKvStoreDataService;
+class KvStoreDataServiceProxy;
 }
 
 namespace OHOS::DistributedRdb {
 class RdbService;
+class IRdbService;
 class RdbManagerImpl {
 public:
+    static constexpr int GET_DDMS_RETRY_TIMES = 3;
+    static constexpr int RETRY_INTERVAL = 1;
+
     static RdbManagerImpl &GetInstance();
-    
-    std::shared_ptr<RdbSyncer> GetRdbSyncer(const RdbSyncerParam& param);
-    
-    int RegisterRdbServiceDeathObserver(const std::string &storeName, const std::function<void()>& callback);
-    
-    int UnRegisterRdbServiceDeathObserver(const std::string &storeName);
+
+    std::vector<std::string> GetConnectDevices();
+
+    std::shared_ptr<RdbService> GetRdbService(const RdbSyncerParam& param);
     
     void OnRemoteDied();
     
@@ -61,21 +62,15 @@ private:
     RdbManagerImpl();
     
     ~RdbManagerImpl();
-    
-    std::shared_ptr<RdbService> GetRdbService();
-    
+
+    sptr<IRdbService> GetRdbService();
+
     void ResetServiceHandle();
-    
-    void NotifyServiceDeath();
-    
-    void RegisterClientDeathRecipient(const std::string &bundleName);
-    
+
     std::mutex mutex_;
-    sptr<OHOS::DistributedKv::IKvStoreDataService> distributedDataMgr_;
+    sptr<OHOS::DistributedKv::KvStoreDataServiceProxy> distributedDataMgr_;
     std::shared_ptr<RdbService> rdbService_;
-    sptr<IRemoteObject> clientDeathObject_;
-    
-    ConcurrentMap<std::string, std::function<void()>> serviceDeathObservers_;
+    std::string bundleName_;
 };
 }
 #endif
