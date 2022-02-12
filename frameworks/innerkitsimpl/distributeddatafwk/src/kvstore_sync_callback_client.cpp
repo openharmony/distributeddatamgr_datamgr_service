@@ -24,33 +24,31 @@ namespace DistributedKv {
 std::mutex KvStoreSyncCallbackClient::syncCallbackMutex_;
 std::map<std::string, std::shared_ptr<KvStoreSyncCallback>> KvStoreSyncCallbackClient::kvStoreSyncCallbackInfo_;
 
-KvStoreSyncCallbackClient::KvStoreSyncCallbackClient() = default;
-
 KvStoreSyncCallbackClient::~KvStoreSyncCallbackClient() = default;
 
-void KvStoreSyncCallbackClient::SyncCompleted(const std::map<std::string, Status> &results, const std::string &label)
+void KvStoreSyncCallbackClient::SyncCompleted(const std::map<std::string, Status> &results, const std::string &syncLabel)
 {
     std::lock_guard<std::mutex> lg(syncCallbackMutex_);
-    if (kvStoreSyncCallbackInfo_.find(label) != kvStoreSyncCallbackInfo_.end()) {
-        ZLOGI("label = %{public}s", label.c_str());
-        kvStoreSyncCallbackInfo_[label]->SyncCompleted(results);
+    if (kvStoreSyncCallbackInfo_.find(syncLabel) != kvStoreSyncCallbackInfo_.end()) {
+        ZLOGI("label = %{public}s", syncLabel.c_str());
+        kvStoreSyncCallbackInfo_[syncLabel]->SyncCompleted(results);
     }
 }
 
 void KvStoreSyncCallbackClient::AddKvStoreSyncCallback(const std::shared_ptr<KvStoreSyncCallback> kvStoreSyncCallback,
-                                                       const std::string &label)
+                                                       const std::string &syncLabel)
 {
     std::lock_guard<std::mutex> lg(syncCallbackMutex_);
-    if (kvStoreSyncCallbackInfo_.find(label) == kvStoreSyncCallbackInfo_.end()) {
-        kvStoreSyncCallbackInfo_.insert( {label, kvStoreSyncCallback} );
+    if (kvStoreSyncCallbackInfo_.find(syncLabel) == kvStoreSyncCallbackInfo_.end()) {
+        kvStoreSyncCallbackInfo_.insert( {syncLabel, kvStoreSyncCallback} );
     }
 }
 
-void KvStoreSyncCallbackClient::DeleteCommonKvStoreSyncCallback()
+void KvStoreSyncCallbackClient::DeleteCommonKvStoreSyncCallback(const std::string &syncLabel)
 {
     std::lock_guard<std::mutex> lg(syncCallbackMutex_);
-    if (kvStoreSyncCallbackInfo_.find(CommonSyncCallbackLabel) != kvStoreSyncCallbackInfo_.end()) {
-        kvStoreSyncCallbackInfo_.erase(CommonSyncCallbackLabel);
+    if (kvStoreSyncCallbackInfo_.find(syncLabel) != kvStoreSyncCallbackInfo_.end()) {
+        kvStoreSyncCallbackInfo_.erase(syncLabel);
     }
 }
 

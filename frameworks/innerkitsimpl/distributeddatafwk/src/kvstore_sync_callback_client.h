@@ -27,26 +27,24 @@ class KvStoreSyncCallbackClient : public KvStoreSyncCallbackStub {
 public:
     virtual ~KvStoreSyncCallbackClient();
 
-    void SyncCompleted(const std::map<std::string, Status> &results, const std::string &label) override;
+    void SyncCompleted(const std::map<std::string, Status> &results, const std::string &syncLabel) override;
 
     void AddKvStoreSyncCallback(const std::shared_ptr<KvStoreSyncCallback> kvStoreSyncCallback,
-                                const std::string &label);
+                                const std::string &syncLabel);
 
-    void DeleteCommonKvStoreSyncCallback();
+    void DeleteCommonKvStoreSyncCallback(const std::string &syncLabel);
 
     std::string GetCommonSyncCallbackLabel();
 
-    static sptr<KvStoreSyncCallbackClient> GetInstance()
+    static KvStoreSyncCallbackClient& GetInstance()
     {
-        static sptr<KvStoreSyncCallbackClient> pInstance_;
+        static KvStoreSyncCallbackClient pInstance_;
         return pInstance_;
     }
 private:
-    KvStoreSyncCallbackClient();
+    KvStoreSyncCallbackClient() = default;
     static std::map<std::string, std::shared_ptr<KvStoreSyncCallback>> kvStoreSyncCallbackInfo_;
     static std::mutex syncCallbackMutex_;
-    const std::string CommonSyncCallbackLabel = "CommonSyncCallbackLabel";
-//    static sptr<KvStoreSyncCallbackClient> pInstance_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

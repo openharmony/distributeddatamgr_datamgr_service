@@ -97,6 +97,7 @@ protected:
     Status Control(KvControlCmd cmd, const KvParam &inputParam, KvParam &outputParam) override;
 
 private:
+    const std::string CommonSyncCallbackLabel = "CommonSyncCallbackLabel";
     sptr<ISingleKvStore> kvStoreProxy_;
     std::map<KvStoreObserver *, sptr<IKvStoreObserver>> registeredObservers_;
     std::mutex observerMapMutex_;
