@@ -828,6 +828,9 @@ HWTEST_F(DistributedDBRelationalGetDataTest, UpdateDataWithMulDevData1, TestSize
      */
     sql = "UPDATE " + g_tableName + " SET value=2 WHERE key=1;"; // k1v1
     EXPECT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK); // change k1v1 to k1v2
+
+    sqlite3_close(db);
+    RefObject::DecObjRef(g_store);
 }
 
 /**

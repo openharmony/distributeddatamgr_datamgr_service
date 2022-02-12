@@ -716,19 +716,19 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statemen
 
 int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&stmt)
 {
-    const std::string tableName = DBCommon::GetDistributedTableName(dataItem.dev, table_.GetTableName());
-    const std::string sql = "DELETE FROM " + tableName + " WHERE rowid IN ("
-        "SELECT data_key FROM " + DBConstant::RELATIONAL_PREFIX + table_.GetTableName() + "_log "
-        "WHERE hash_key=? AND device=? AND flag&0x01=0);";
-    int errCode = E_OK;
     if (stmt == nullptr) {
-        errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
+        const std::string tableName = DBCommon::GetDistributedTableName(dataItem.dev, table_.GetTableName());
+        const std::string sql = "DELETE FROM " + tableName + " WHERE rowid IN ("
+            "SELECT data_key FROM " + DBConstant::RELATIONAL_PREFIX + table_.GetTableName() + "_log "
+            "WHERE hash_key=? AND device=? AND flag&0x01=0);";
+        int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
+        if (errCode != E_OK) {
+            LOGE("[DeleteSyncDataItem] Get statement fail!");
+            return -E_INVALID_QUERY_FORMAT;
+        }
     }
-    if (errCode != E_OK) {
-        LOGE("[DeleteSyncDataItem] Get statement fail!");
-        return -E_INVALID_QUERY_FORMAT;
-    }
-    errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, dataItem.hashKey); // 1 means hash_key index
+
+    int errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, dataItem.hashKey); // 1 means hash_key index
     if (errCode != E_OK) {
         SQLiteUtils::ResetStatement(stmt, true, errCode);
         return errCode;
@@ -788,19 +788,17 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const DataItem &d
 
 int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncLog(const DataItem &dataItem, sqlite3_stmt *&stmt)
 {
-    const std::string sql = "DELETE FROM " + DBConstant::RELATIONAL_PREFIX + table_.GetTableName() + "_log "
-                            "WHERE hash_key=? AND device=?";
-    int errCode = E_OK;
     if (stmt == nullptr) {
-        errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
+        const std::string sql = "DELETE FROM " + DBConstant::RELATIONAL_PREFIX + table_.GetTableName() + "_log "
+                                "WHERE hash_key=? AND device=?";
+        int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
+        if (errCode != E_OK) {
+            LOGE("[DeleteSyncLog] Get statement fail!");
+            return errCode;
+        }
     }
 
-    if (errCode != E_OK) {
-        LOGE("[DeleteSyncLog] Get statement fail!");
-        return errCode;
-    }
-
-    errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, dataItem.hashKey); // 1 means hashkey index
+    int errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, dataItem.hashKey); // 1 means hashkey index
     if (errCode != E_OK) {
         SQLiteUtils::ResetStatement(stmt, true, errCode);
         return errCode;
