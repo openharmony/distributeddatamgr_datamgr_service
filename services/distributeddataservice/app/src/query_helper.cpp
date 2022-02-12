@@ -557,16 +557,6 @@ void QueryHelper::HandleDeviceId(const std::vector<std::string> &words, int &poi
     } else {
         ZLOGD("Join deviceId with user specified prefixkey later.");
     }
-//    if (!hasInKeys_) {
-//        ZLOGD("DeviceId as the only inkey.");
-//        std::set<std::vector<uint8_t>> inDbKeys;
-//        std::vector<uint8_t> dbKey;
-//        dbKey.assign(deviceId_.begin(), deviceId_.begin());
-//        inDbKeys.insert(dbKey);
-//        dbQuery.InKeys(inDbKeys);
-//    } else {
-//        ZLOGD("Join deviceId with user specified inkeys later.");
-//    }
     isSuccess = true;
     pointer += 2; // Pointer goes to next keyword
 }
@@ -706,26 +696,4 @@ std::vector<std::string> QueryHelper::GetStringList(const std::vector<std::strin
         return std::vector<std::string>();
     }
 }
-
-//std::vector<std::string> QueryHelper::GetInKeyList(const std::vector<std::string> &words,
-//                                       int &elementPointer, const int &end) {
-//    std::vector<std::string> values;
-//    bool isEndFound = false;
-//    while (elementPointer <= end) {
-//        if (words.at(elementPointer) == DataQuery::END_IN) {
-//            isEndFound = true;
-//            break;
-//        }
-//        std::string inKeyStr = deviceId_ + StringToString(words.at(elementPointer));
-//        values.push_back(inKeyStr);
-//        ZLOGI("value=%{public}s", inKeyStr.c_str());
-//        elementPointer++;
-//    }
-//    if (isEndFound) {
-//        return values;
-//    } else {
-//        ZLOGE("GetStringList failed.");
-//        return std::vector<std::string>();
-//    }
-//}
 } // namespace OHOS::DistributedKv
