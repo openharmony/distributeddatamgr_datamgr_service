@@ -149,24 +149,6 @@ bool Equal(TableDataWithLog origin, OptTableDataWithLog target)
     }
     return true;
 }
-
-void GenerateDiffFieldInfo(std::vector<FieldInfo> &sendFieldInfoList, std::vector<FieldInfo> &receiveFieldInfoList)
-{
-    const int columnCounts = 6;     // 6 columns
-    const char sendColumn = 'A';    // sendColumn start with 'A'
-    const char receiveColumn = 'B'; // receiveColumn start with 'B'
-    // we generate 2 diff schema here (A, B, C, D, E, F) and (B, C, D, E, F, G)
-    for (uint32_t i = 0; i < columnCounts; i++) {
-        FieldInfo sendFieldInfo;
-        sendFieldInfo.SetFieldName(std::string(1, static_cast<char>(sendColumn + i)));
-        sendFieldInfo.SetStorageType(StorageType::STORAGE_TYPE_INTEGER);
-        sendFieldInfoList.push_back(sendFieldInfo);
-        FieldInfo receiveFieldInfo;
-        receiveFieldInfo.SetFieldName(std::string(1, static_cast<char>(receiveColumn + i)));
-        receiveFieldInfo.SetStorageType(StorageType::STORAGE_TYPE_INTEGER);
-        receiveFieldInfoList.push_back(receiveFieldInfo);
-    }
-}
 }
 
 class DistributedDBDataTransformerTest : public testing::Test {
