@@ -107,7 +107,6 @@ private:
     std::mutex observerMapMutex_;
     std::string storeId_;
     KvStoreSyncCallbackClient syncCallbackClient_;
-//    std::atomic<uint64_t> sequenceId_;
     std::shared_ptr<SyncObserver> syncObserver_;
     bool isRegisterSyncCallback_ = false;
     std::mutex registerCallbackMutex_;
