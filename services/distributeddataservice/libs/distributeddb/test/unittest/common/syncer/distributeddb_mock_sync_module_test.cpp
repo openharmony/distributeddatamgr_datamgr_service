@@ -19,6 +19,7 @@
 #include "message.h"
 #include "mock_auto_launch.h"
 #include "mock_communicator.h"
+#include "mock_single_ver_data_sync.h"
 #include "mock_single_ver_state_machine.h"
 #include "mock_sync_task_context.h"
 #include "virtual_single_ver_sync_db_Interface.h"
@@ -33,6 +34,7 @@ void Init(MockSingleVerStateMachine &stateMachine, MockSyncTaskContext &syncTask
     MockCommunicator &communicator, VirtualSingleVerSyncDBInterface &dbSyncInterface)
 {
     std::shared_ptr<Metadata> metadata = std::make_shared<Metadata>();
+    (void)syncTaskContext.Initialize("device", &dbSyncInterface, metadata, &communicator);
     (void)stateMachine.Initialize(&syncTaskContext, &dbSyncInterface, metadata, &communicator);
 }
 }
@@ -138,6 +140,31 @@ HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: StateMachineCheck004
+ * @tc.desc: Test machine deal time sync ack failed.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck004, TestSize.Level1)
+{
+    MockSingleVerStateMachine stateMachine;
+    MockSyncTaskContext syncTaskContext;
+    MockCommunicator communicator;
+    VirtualSingleVerSyncDBInterface dbSyncInterface;
+    Init(stateMachine, syncTaskContext, communicator, dbSyncInterface);
+
+    DistributedDB::Message *message = new(std::nothrow) DistributedDB::Message();
+    ASSERT_NE(message, nullptr);
+    message->SetMessageType(TYPE_RESPONSE);
+    message->SetSessionId(1u);
+    EXPECT_CALL(syncTaskContext, GetRequestSessionId()).WillRepeatedly(Return(1u));
+    EXPECT_EQ(stateMachine.CallTimeMarkSyncRecv(message), -E_INVALID_ARGS);
+    EXPECT_EQ(syncTaskContext.GetTaskErrCode(), -E_INVALID_ARGS);
+    delete message;
+}
+
+/**
  * @tc.name: DataSyncCheck001
  * @tc.desc: Test dataSync recv error ack.
  * @tc.type: FUNC
@@ -211,4 +238,38 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AutoLaunchCheck001, TestSize.Level1)
     cv.wait(lock, [&finishCount, &loopCount]() {
         return finishCount == loopCount;
     });
+}
+
+/**
+ * @tc.name: SyncDataSync001
+ * @tc.desc: Test request start when RemoveDeviceDataIfNeed failed.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, SyncDataSync001, TestSize.Level1)
+{
+    MockSyncTaskContext syncTaskContext;
+    MockSingleVerDataSync dataSync;
+
+    EXPECT_CALL(dataSync, RemoveDeviceDataIfNeed(_)).WillRepeatedly(Return(-E_BUSY));
+    EXPECT_EQ(dataSync.CallRequestStart(&syncTaskContext, PUSH), -E_BUSY);
+    EXPECT_EQ(syncTaskContext.GetTaskErrCode(), -E_BUSY);
+}
+
+/**
+ * @tc.name: SyncDataSync002
+ * @tc.desc: Test pull request start when RemoveDeviceDataIfNeed failed.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, SyncDataSync002, TestSize.Level1)
+{
+    MockSyncTaskContext syncTaskContext;
+    MockSingleVerDataSync dataSync;
+
+    EXPECT_CALL(dataSync, RemoveDeviceDataIfNeed(_)).WillRepeatedly(Return(-E_BUSY));
+    EXPECT_EQ(dataSync.CallPullRequestStart(&syncTaskContext), -E_BUSY);
+    EXPECT_EQ(syncTaskContext.GetTaskErrCode(), -E_BUSY);
 }

@@ -825,6 +825,7 @@ int SingleVerDataSync::RequestStart(SingleVerSyncTaskContext *context, int mode)
     }
     int errCode = RemoveDeviceDataIfNeed(context);
     if (errCode != E_OK) {
+        context->SetTaskErrCode(errCode);
         return errCode;
     }
     SyncEntry syncData;
@@ -907,6 +908,7 @@ int SingleVerDataSync::PullRequestStart(SingleVerSyncTaskContext *context)
     }
     int errCode = RemoveDeviceDataIfNeed(context);
     if (errCode != E_OK) {
+        context->SetTaskErrCode(errCode);
         return errCode;
     }
     DataRequestPacket *packet = new (std::nothrow) DataRequestPacket;

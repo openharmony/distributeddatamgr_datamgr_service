@@ -13,33 +13,26 @@
  * limitations under the License.
  */
 
-#ifndef MOCK_SINGLE_VER_STATE_MACHINE_H
-#define MOCK_SINGLE_VER_STATE_MACHINE_H
+#ifndef MOCK_SINGLE_VER_DATA_SYNC_H
+#define MOCK_SINGLE_VER_DATA_SYNC_H
 
 #include <gmock/gmock.h>
-#include "single_ver_sync_state_machine.h"
+#include "single_ver_data_sync.h"
 
 namespace DistributedDB {
-class MockSingleVerStateMachine : public SingleVerSyncStateMachine {
+class MockSingleVerDataSync : public SingleVerDataSync {
 public:
-    void CallStepToTimeout(TimerId timerId)
+    int CallRequestStart(SingleVerSyncTaskContext *context, int mode)
     {
-        SingleVerSyncStateMachine::StepToTimeout(timerId);
+        return SingleVerDataSync::RequestStart(context, mode);
     }
 
-    int CallExecNextTask()
+    int CallPullRequestStart(SingleVerSyncTaskContext *context)
     {
-        return SyncStateMachine::ExecNextTask();
+        return SingleVerDataSync::PullRequestStart(context);
     }
 
-    int CallTimeMarkSyncRecv(const Message *inMsg)
-    {
-        return SingleVerSyncStateMachine::TimeMarkSyncRecv(inMsg);
-    }
-
-    MOCK_METHOD1(SwitchStateAndStep, void(uint8_t));
-
-    MOCK_METHOD0(PrepareNextSyncTask, int(void));
+    MOCK_METHOD1(RemoveDeviceDataIfNeed, int(SingleVerSyncTaskContext *));
 };
 } // namespace DistributedDB
-#endif  // #define MOCK_SINGLE_VER_STATE_MACHINE_H
+#endif  // #define MOCK_SINGLE_VER_DATA_SYNC_H

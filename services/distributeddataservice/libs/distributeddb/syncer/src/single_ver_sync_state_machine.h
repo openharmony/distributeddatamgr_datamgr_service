@@ -127,6 +127,8 @@ protected:
     // Called by StartSaveDataNotifyTimer, used to send a save data notify packet
     void SendSaveDataNotifyPacket(uint32_t sessionId, uint32_t sequenceId, uint32_t inMsgId) override;
 
+    int TimeMarkSyncRecv(const Message *inMsg);
+
 private:
     // Used to init sync state machine switchbables
     static void InitStateSwitchTables();
@@ -165,8 +167,6 @@ private:
     int HandleControlAckRecv(const Message *inMsg);
 
     int GetSyncOperationStatus(int errCode) const;
-
-    int TimeMarkSyncRecv(const Message *inMsg);
 
     int AbilitySyncRecv(const Message *inMsg);
 
