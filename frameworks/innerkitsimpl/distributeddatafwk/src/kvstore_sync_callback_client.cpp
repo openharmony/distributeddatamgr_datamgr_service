@@ -15,6 +15,7 @@
 
 #define LOG_TAG "KvStoreSyncCallbackClient"
 
+#include <cinttypes>
 #include <atomic>
 #include "log_print.h"
 #include "kvstore_sync_callback_client.h"
@@ -24,25 +25,24 @@ namespace DistributedKv {
 KvStoreSyncCallbackClient::~KvStoreSyncCallbackClient() = default;
 void KvStoreSyncCallbackClient::SyncCompleted(const std::map<std::string, Status> &results, uint64_t sequenceId)
 {
-    if (SyncCallbackInfo_.Contains(sequenceId)) {
-        SyncCallbackInfo_[sequenceId]->SyncCompleted(results);
+    if (syncCallbackInfo_.Contains(sequenceId)) {
+        syncCallbackInfo_[sequenceId]->SyncCompleted(results);
         DeleteSyncCallback(sequenceId);
     }
 }
 
-void KvStoreSyncCallbackClient::AddSyncCallback(const std::shared_ptr<KvStoreSyncCallback> SyncCallback,
+void KvStoreSyncCallbackClient::AddSyncCallback(const std::shared_ptr<KvStoreSyncCallback> callback,
                                                 uint64_t sequenceId)
 {
-    if (!SyncCallbackInfo_.Contains(sequenceId)) {
-        SyncCallbackInfo_.Insert(sequenceId, SyncCallback);
+    auto inserted = syncCallbackInfo_.Insert(sequenceId, callback);
+    if (!inserted) {
+        ZLOGE("The sequeuceId %{public}" PRIu64 "is repeat!", sequenceId);
     }
 }
 
 void KvStoreSyncCallbackClient::DeleteSyncCallback(uint64_t sequenceId)
 {
-    if (SyncCallbackInfo_.Contains(sequenceId)) {
-        SyncCallbackInfo_.Erase(sequenceId);
-    }
+    syncCallbackInfo_.Erase(sequenceId);
 }
 }  // namespace DistributedKv
 }  // namespace OHOS

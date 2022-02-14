@@ -31,12 +31,12 @@ public:
 
     void SyncCompleted(const std::map<std::string, Status> &results, uint64_t sequenceId) override;
 
-    void AddSyncCallback(const std::shared_ptr<KvStoreSyncCallback> SyncCallback,
+    void AddSyncCallback(const std::shared_ptr<KvStoreSyncCallback> callback,
                          uint64_t sequenceId);
 
     void DeleteSyncCallback(uint64_t sequenceId);
 private:
-    ConcurrentMap<uint64_t, std::shared_ptr<KvStoreSyncCallback>> SyncCallbackInfo_;
+    ConcurrentMap<uint64_t, std::shared_ptr<KvStoreSyncCallback>> syncCallbackInfo_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

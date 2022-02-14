@@ -50,8 +50,7 @@ AppDistributedKv::CommunicationProvider &KvStoreUtils::GetProviderInstance()
 
 uint64_t KvStoreUtils::GenerateSequenceId()
 {
-    ++sequenceId_;
-    return sequenceId_;
+    return ++sequenceId_;
 }
 } // namespace DistributedKv
 } // namespace OHOS
