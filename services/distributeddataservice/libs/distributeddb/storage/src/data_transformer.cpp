@@ -237,9 +237,16 @@ int DeSerializeBlobByType(DataValue &dataValue, Parcel &parcel, StorageType type
         dataValue.ResetValue();
         return E_OK;
     }
-    char array[blobLength];
+    if (blobLength >= DBConstant::MAX_VALUE_SIZE || parcel.IsError()) { // One blob cannot be over one value size.
+        return -E_PARSE_FAIL;
+    }
+    auto array = new (std::nothrow) char[blobLength]();
+    if (array == nullptr) {
+        return -E_OUT_OF_MEMORY;
+    }
     (void)parcel.ReadBlob(array, blobLength);
     if (parcel.IsError()) {
+        delete []array;
         return -E_PARSE_FAIL;
     }
     int errCode = -E_NOT_SUPPORT;
@@ -252,6 +259,7 @@ int DeSerializeBlobByType(DataValue &dataValue, Parcel &parcel, StorageType type
             errCode = dataValue.SetBlob(val);
         }
     }
+    delete []array;
     return errCode;
 }
 
