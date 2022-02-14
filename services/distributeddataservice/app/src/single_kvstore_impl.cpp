@@ -804,7 +804,6 @@ void SingleKvStoreImpl::DoSyncComplete(const std::map<std::string, DistributedDB
     syncRetries_ = 0;
     ZLOGD("callback.");
     if (syncCallback_ != nullptr) {
-        ZLOGI("sequenceId = %{public}llu", sequenceId);
         syncCallback_->SyncCompleted(resultMap, sequenceId);
     }
 }

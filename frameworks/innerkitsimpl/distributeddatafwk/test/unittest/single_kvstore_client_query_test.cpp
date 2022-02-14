@@ -589,3 +589,19 @@ HWTEST_F(SingleKvStoreClientQueryTest, TestQueryC018, TestSize.Level1)
     EXPECT_TRUE(query.ToString().length() > 0);
     ZLOGD("TestQueryC018 end");
 }
+
+/**
+* @tc.name: TestQueryC019
+* @tc.desc: Query InKeys.
+* @tc.type: FUNC
+* @tc.require: AR000GOHO7
+* @tc.author: taoyuxin
+*/
+HWTEST_F(SingleKvStoreClientQueryTest, TestQueryC019, TestSize.Level1)
+{
+ZLOGD("TestQueryC018 start");
+DataQuery query;
+query.InKeys({"test_field_name"});
+EXPECT_TRUE(query.ToString().length() > 0);
+ZLOGD("TestQueryC019 end");
+}
