@@ -22,7 +22,8 @@ SQLiteSingleVerRelationalStorageExecutor::SQLiteSingleVerRelationalStorageExecut
     : SQLiteStorageExecutor(dbHandle, writable, false)
 {}
 
-int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::string &tableName, TableInfo &table)
+int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::string &tableName, TableInfo &table,
+    bool isUpgrade)
 {
     if (dbHandle_ == nullptr) {
         return -E_INVALID_DB;
@@ -46,8 +47,8 @@ int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::
         return errCode;
     }
 
-    if (!isTableEmpty) { // create distributed table should on an empty table
-        LOGE("[CreateDistributedTable] Create distributed table should on an empty table.");
+    if (!isUpgrade && !isTableEmpty) { // create distributed table should on an empty table
+        LOGE("[CreateDistributedTable] Create distributed table should on an empty table when first create.");
         return -E_NOT_SUPPORT;
     }
 

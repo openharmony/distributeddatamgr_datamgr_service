@@ -315,7 +315,6 @@ HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest009, TestS
     DBStatus status = delegate->CreateDistributedTable("student");
     EXPECT_EQ(status, OK);
 
-    LOGD("-----------------------");
     std::vector<std::string> devices = {DEVICE_A};
     Query query = Query::Select("student").EqualTo("$id", 123);
     status = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
@@ -324,7 +323,6 @@ HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest009, TestS
         }, true);
     EXPECT_EQ(status, INVALID_QUERY_FORMAT);
 
-    LOGD("-----------------------");
     query = Query::Select("student").EqualTo("A$id", 123);
     status = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
         [&devices](const std::map<std::string, std::vector<TableStatus>> &devicesMap) {
@@ -332,7 +330,6 @@ HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest009, TestS
         }, true);
     EXPECT_EQ(status, INVALID_QUERY_FORMAT);
 
-    LOGD("-----------------------");
     query = Query::Select("student").EqualTo("$.id", 123);
     status = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
         [&devices](const std::map<std::string, std::vector<TableStatus>> &devicesMap) {

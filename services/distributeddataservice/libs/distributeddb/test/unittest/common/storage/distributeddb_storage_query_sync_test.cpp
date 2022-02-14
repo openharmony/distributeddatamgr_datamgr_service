@@ -848,12 +848,12 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, SameQueryObjectIdInDiffVer001, TestS
 
     Query query3 = Query::Select().NotLike("$.test", "testValue");
     QuerySyncObject querySync3(query3);
-    EXPECT_EQ(querySync3.GetIdentify(), "57688F6AE8E498544B06687E8279C66DBE047D494752D2D539488484A685720C");
+    EXPECT_EQ(querySync3.GetIdentify(), "F2BAC2B53FE81F9928E5F8DCDF502F2419E8CEB5DFC157EEBDDB955A66C0148B");
 
     vector<int> fieldValues{1, 1, 1};
     Query query4 = Query::Select().In("$.test", fieldValues);
     QuerySyncObject querySync4(query4);
-    EXPECT_EQ(querySync4.GetIdentify(), "AD8859821629448961C65AB2AAC81982BD6A4A9716AD70F559BCB37292FD60AF");
+    EXPECT_EQ(querySync4.GetIdentify(), "EEAECCD0E1A7217574ED3092C8DAA39469388FA1B8B7B210185B4257B785FE4D");
 
     Query query5 = Query::Select().OrderBy("$.test.test_child", false);
     QuerySyncObject querySync5(query5);
@@ -865,19 +865,19 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, SameQueryObjectIdInDiffVer001, TestS
 
     Query query7 = Query::Select().IsNull("$.test.test_child");
     QuerySyncObject querySync7(query7);
-    EXPECT_EQ(querySync7.GetIdentify(), "6FF29DD3F5C3CE4F452850C833A85C8620AE3671D037CB3E9D1B563ACC4815CF");
+    EXPECT_EQ(querySync7.GetIdentify(), "762AB5FDF9B1433D6F398269D4DDD6DE6444953F515E87C6796654180A7FF422");
 
     Query query8 = Query::Select().EqualTo("$.test.test_child", true).And().GreaterThan("$.test.test_child", 1);
     QuerySyncObject querySync8(query8);
-    EXPECT_EQ(querySync8.GetIdentify(), "A225696824D2ABCF92BCC969AFD1B00983F54A6239DF9CF5A7285BA287640BF5");
+    EXPECT_EQ(querySync8.GetIdentify(), "B97FBFFBC690DAF25031FD4EE8ADC92F4698B9E81FD4877CD54EDEA122F6A6E0");
 
     Query query9 = Query::Select().GreaterThan("$.test", 1).OrderBy("$.test");
     QuerySyncObject querySync9(query9);
-    EXPECT_EQ(querySync9.GetIdentify(), "8C7CD75D26E0163496BAC4F61246C3CC72AF566C273BA4AD45FCB04B90C90E0A");
+    EXPECT_EQ(querySync9.GetIdentify(), "77480E3EE04EB1500BB2F1A31704EE5676DC81F088A7A300F6D30E3FABA7D0A3");
 
     Query query = Query::Select().GreaterThan("$.test1", 1).OrderBy("$.test1");
     QuerySyncObject querySync(query);
-    EXPECT_EQ(querySync.GetIdentify(), "61AACA0DC84554C4A7A2859154516FA675F412FEAA965B5073BAE6863D0A879A");
+    EXPECT_EQ(querySync.GetIdentify(), "170F5137C0BB49011D7415F706BD96B86F5FAFADA356374981362B1E177263B9");
 }
 
 /**

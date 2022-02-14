@@ -36,6 +36,7 @@
 #include "log_print.h"
 #include "message.h"
 #include "query.h"
+#include "relational_store_sqlite_ext.h"
 #include "store_observer.h"
 #include "store_changed_data.h"
 #include "single_ver_kv_entry.h"
@@ -43,7 +44,6 @@
 #include "sqlite_utils.h"
 #include "sync_types.h"
 #include "store_types.h"
-
 namespace DistributedDBUnitTest {
 static const int DIR_PERMISSION = 0750;
 

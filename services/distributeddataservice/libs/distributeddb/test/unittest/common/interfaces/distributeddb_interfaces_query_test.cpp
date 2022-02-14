@@ -26,15 +26,6 @@ using namespace std;
 namespace {
     const std::string TEST_FIELD_NAME = "$.test";
 
-    std::string FormatQueryFieldName(const std::string &fieldName)
-    {
-        auto pos = fieldName.rfind("$.", 0);
-        if (pos == 0) {
-            return fieldName.substr(2); // 2 : length of '$.'
-        }
-        return fieldName;
-    }
-
     bool CheckQueryContainer(Query &query, std::list<QueryObjNode> &checkList)
     {
         const std::list<QueryObjNode> queryList = GetQueryInfo::GetQueryExpression(query).GetQueryExpression();
@@ -46,7 +37,7 @@ namespace {
         for (auto checkIter = checkList.begin(); checkIter != checkList.end(); checkIter++, queryIter++) {
             EXPECT_EQ(checkIter->operFlag, queryIter->operFlag);
             EXPECT_EQ(checkIter->type, queryIter->type);
-            EXPECT_EQ(FormatQueryFieldName(checkIter->fieldName), queryIter->fieldName);
+            EXPECT_EQ(checkIter->fieldName, queryIter->fieldName);
             if (checkIter->fieldValue.size() != queryIter->fieldValue.size()) {
                 return false;
             }

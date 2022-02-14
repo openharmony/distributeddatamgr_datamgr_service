@@ -133,8 +133,10 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
 {
     std::lock_guard lock(schemaMutex_);
     RelationalSchemaObject tmpSchema = schema_;
+    bool isUpgrade = false;
     if (tmpSchema.GetTable(tableName).GetTableName() == tableName) {
         LOGW("distributed table was already created.");
+        isUpgrade = true;
         int errCode = UpgradeDistributedTable(tableName);
         if (errCode != E_OK) {
             LOGE("Upgrade distributed table failed. %d", errCode);
@@ -162,7 +164,7 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
     }
 
     TableInfo table;
-    errCode = handle->CreateDistributedTable(tableName, table);
+    errCode = handle->CreateDistributedTable(tableName, table, isUpgrade);
     if (errCode != E_OK) {
         LOGE("create distributed table failed. %d", errCode);
         (void)handle->Rollback();

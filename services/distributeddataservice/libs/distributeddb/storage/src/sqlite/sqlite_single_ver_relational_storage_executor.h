@@ -33,7 +33,7 @@ public:
     // Delete the copy and assign constructors
     DISABLE_COPY_ASSIGN_MOVE(SQLiteSingleVerRelationalStorageExecutor);
 
-    int CreateDistributedTable(const std::string &tableName, TableInfo &table);
+    int CreateDistributedTable(const std::string &tableName, TableInfo &table, bool isUpgrade);
 
     int UpgradeDistributedTable(const TableInfo &tableInfo, TableInfo &newTableInfo);
 

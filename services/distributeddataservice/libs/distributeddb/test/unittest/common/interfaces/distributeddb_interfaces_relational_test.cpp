@@ -21,6 +21,7 @@
 #include "log_print.h"
 #include "platform_specific.h"
 #include "relational_store_manager.h"
+#include "relational_store_sqlite_ext.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -59,6 +60,9 @@ namespace {
         "CREATE INDEX key_index ON sync_data (key, flag);";
 
     const std::string UNSUPPORTED_FIELD_TABLE_SQL = "CREATE TABLE IF NOT EXISTS test('$.ID' INT, val BLOB);";
+
+    const std::string INSERT_SYNC_DATA_SQL = "INSERT OR REPLACE INTO sync_data (key, timestamp, flag, hash_key) "
+        "VALUES('KEY', 123456789, 1, 'HASH_KEY');";
 }
 
 class DistributedDBInterfacesRelationalTest : public testing::Test {
@@ -532,6 +536,7 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalTableModifyTest004, Te
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, indexSql), SQLITE_OK);
     std::string deleteIndexSql = "DROP INDEX IF EXISTS key_index";
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, deleteIndexSql), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, INSERT_SYNC_DATA_SQL), SQLITE_OK);
 
     /**
      * @tc.steps:step5. Create distributed table again

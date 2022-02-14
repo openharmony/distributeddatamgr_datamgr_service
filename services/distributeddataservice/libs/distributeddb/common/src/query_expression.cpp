@@ -46,11 +46,15 @@ void QueryExpression::AssemblyQueryInfo(const QueryObjType queryOperType, const 
         }
     }
     std::string formatedField;
-    for (auto it = outPath.begin(); it < outPath.end(); ++it) {
-        if (it != outPath.begin()) {
-            formatedField += ".";
+    if (isTableNameSpecified_) { // remove '$.' prefix in relational query
+        for (auto it = outPath.begin(); it < outPath.end(); ++it) {
+            if (it != outPath.begin()) {
+                formatedField += ".";
+            }
+            formatedField += *it;
         }
-        formatedField += *it;
+    } else {
+        formatedField = field;
     }
     queryInfo_.emplace_back(QueryObjNode{queryOperType, formatedField, type, values});
 }
