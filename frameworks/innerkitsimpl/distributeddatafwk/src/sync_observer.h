@@ -22,10 +22,10 @@ public:
 
     bool Clean();
 
-    void SyncCompleted(const std::map <std::string, DistributedKv::Status> &results) override;
+    void SyncCompleted(const std::map<std::string, DistributedKv::Status> &results) override;
 
 private:
-    std::vector <std::shared_ptr<KvStoreSyncCallback>> callbacks_;
+    std::vector<std::shared_ptr<KvStoreSyncCallback>> callbacks_;
 };
 }
 #endif //DISTRIBUTEDDATAMGR_DATAMGR_SYNC_OBSERVER_H
