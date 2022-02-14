@@ -25,7 +25,7 @@ KvStoreSyncCallbackClient::~KvStoreSyncCallbackClient() = default;
 void KvStoreSyncCallbackClient::SyncCompleted(const std::map<std::string, Status> &results, uint64_t sequenceId)
 {
     if (SyncCallbackInfo_.Contains(sequenceId)) {
-        ZLOGI("label = %{public}llu", sequenceId);
+        ZLOGI("label = %{public}lu", sequenceId);
         SyncCallbackInfo_[sequenceId]->SyncCompleted(results);
         DeleteSyncCallback(sequenceId);
     }
