@@ -86,7 +86,7 @@ constexpr int NOTIFY_MIN_MTU_SIZE = 30 * 1024; // 30k
 
 constexpr int MAX_SUBSCRIBE_NUM_PER_DEV = 4;
 constexpr int MAX_SUBSCRIBE_NUM_PER_DB = 8;
-constexpr int MAX_DEVICES_NUM = 32;
+constexpr size_t MAX_DEVICES_NUM = 32;
 
 // index 0 for packetId in data request
 // if ack reserve size is 1, reserve is {localWaterMark}

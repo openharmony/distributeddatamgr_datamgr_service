@@ -386,7 +386,7 @@ int TimeSync::RequestRecv(const Message *message)
         return -E_INVALID_TIME;
     }
 
-    TimeOffset timeoffsetIgnoreRtt = ackPacket.GetSourceTimeBegin() - targetTimeBegin;
+    TimeOffset timeoffsetIgnoreRtt = static_cast<TimeOffset>(ackPacket.GetSourceTimeBegin() - targetTimeBegin);
     TimeOffset metadataTimeoffset;
     metadata_->GetTimeOffset(deviceId_, metadataTimeoffset);
 
@@ -427,12 +427,12 @@ int TimeSync::SaveTimeOffset(const DeviceID &deviceID, TimeOffset timeOffset)
 
 TimeOffset TimeSync::CalculateTimeOffset(const TimeSyncPacket &timeSyncInfo)
 {
-    TimeOffset roundTrip = (timeSyncInfo.GetSourceTimeEnd() - timeSyncInfo.GetSourceTimeBegin()) -
-        (timeSyncInfo.GetTargetTimeEnd() - timeSyncInfo.GetTargetTimeBegin());
-    TimeOffset offset1 = timeSyncInfo.GetTargetTimeBegin() -
-        timeSyncInfo.GetSourceTimeBegin() - (roundTrip / TRIP_DIV_HALF);
-    TimeOffset offset2 = timeSyncInfo.GetTargetTimeEnd() + (roundTrip / TRIP_DIV_HALF) -
-        timeSyncInfo.GetSourceTimeEnd();
+    TimeOffset roundTrip = static_cast<TimeOffset>((timeSyncInfo.GetSourceTimeEnd() -
+        timeSyncInfo.GetSourceTimeBegin()) - (timeSyncInfo.GetTargetTimeEnd() - timeSyncInfo.GetTargetTimeBegin()));
+    TimeOffset offset1 = static_cast<TimeOffset>(timeSyncInfo.GetTargetTimeBegin() -
+        timeSyncInfo.GetSourceTimeBegin() - (roundTrip / TRIP_DIV_HALF));
+    TimeOffset offset2 = static_cast<TimeOffset>(timeSyncInfo.GetTargetTimeEnd() + (roundTrip / TRIP_DIV_HALF) -
+        timeSyncInfo.GetSourceTimeEnd());
     TimeOffset offset = (offset1 / TRIP_DIV_HALF) + (offset2 / TRIP_DIV_HALF);
     LOGD("TimeSync::CalculateTimeOffset roundTrip= %lld, offset1 = %lld, offset2 = %lld, offset = %lld",
         roundTrip, offset1, offset2, offset);

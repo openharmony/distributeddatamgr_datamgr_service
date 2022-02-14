@@ -55,8 +55,9 @@ int Metadata::Initialize(ISyncInterface* storage)
     int errCode = GetMetadataFromDb(key, timeOffset);
     if (errCode == -E_NOT_FOUND) {
         uint64_t randTimeOffset = GetRandTimeOffset();
-        int errCode = SaveLocalTimeOffset(TimeHelper::BASE_OFFSET + randTimeOffset);
+        int errCode = SaveLocalTimeOffset(TimeHelper::BASE_OFFSET + static_cast<int64_t>(randTimeOffset));
         if (errCode != E_OK) {
+            LOGD("[Metadata][Initialize]SaveLocalTimeOffset failed errCode:%d", errCode);
             return errCode;
         }
     } else if (errCode == E_OK) {

@@ -955,8 +955,8 @@ int SyncEngine::InitTimeChangedListener()
             TimeStamp currentSysTime = TimeHelper::GetSysCurrentTime();
             TimeStamp maxItemTime = 0;
             this->syncInterface_->GetMaxTimeStamp(maxItemTime);
-            if ((currentSysTime + orgOffset) <= maxItemTime) {
-                orgOffset = maxItemTime - currentSysTime + TimeHelper::MS_TO_100_NS; // 1ms
+            if ((currentSysTime + static_cast<TimeStamp>(orgOffset)) <= maxItemTime) {
+                orgOffset = static_cast<TimeOffset>(maxItemTime - currentSysTime + TimeHelper::MS_TO_100_NS); // 1ms
             }
             this->metadata_->SaveLocalTimeOffset(orgOffset);
         }, errCode);

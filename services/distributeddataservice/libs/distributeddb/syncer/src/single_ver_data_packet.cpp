@@ -357,7 +357,7 @@ void ControlRequestPacket::SetPacketHead(int sendCode, uint32_t version, int32_t
 {
     sendCode_ = sendCode;
     version_ = version;
-    controlCmdType_ = controlCmd;
+    controlCmdType_ = static_cast<uint32_t>(controlCmd);
     flag_ = flag;
 }
 
@@ -433,7 +433,7 @@ void ControlAckPacket::SetPacketHead(int recvCode, uint32_t version, int32_t con
 {
     recvCode_ = recvCode;
     version_ = version;
-    controlCmdType_ = controlCmd;
+    controlCmdType_ = static_cast<uint32_t>(controlCmd);
     flag_ = flag;
 }
 

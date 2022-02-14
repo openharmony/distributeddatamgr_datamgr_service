@@ -72,14 +72,14 @@ int TimeHelper::Initialize(const ISyncInterface *inStorage, std::shared_ptr<Meta
         return -E_INVALID_TIME;
     }
     if ((currentSysTime + localTimeOffset) <= maxItemTime) {
-        localTimeOffset = maxItemTime - currentSysTime + MS_TO_100_NS; // 1ms
+        localTimeOffset = static_cast<int>(maxItemTime - currentSysTime + MS_TO_100_NS); // 1ms
         int errCode = SaveLocalTimeOffset(localTimeOffset);
         if (errCode != E_OK) {
             LOGE("[TimeHelper] save local time offset faield,err=%d", errCode);
             return errCode;
         }
     }
-    metadata_->SetLastLocalTime(currentSysTime + localTimeOffset);
+    metadata_->SetLastLocalTime(currentSysTime + static_cast<TimeStamp>(localTimeOffset));
     return E_OK;
 }
 

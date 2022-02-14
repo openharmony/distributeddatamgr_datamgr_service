@@ -309,7 +309,7 @@ int CommitHistorySync::AckRecvCallback(MultiVerSyncTaskContext *context, const M
     uint32_t ver = packet->GetVersion();
     context->SetCommits(commits);
     context->SetCommitIndex(0);
-    context->SetCommitsSize(commits.size());
+    context->SetCommitsSize(static_cast<int>(commits.size()));
     LOGD("CommitHistorySync::AckRecvCallback end, CommitsSize = %llu, dst = %s{private}, ver = %d, myversion = %u",
         commits.size(), context->GetDeviceId().c_str(), ver, SOFTWARE_VERSION_CURRENT);
     return E_OK;

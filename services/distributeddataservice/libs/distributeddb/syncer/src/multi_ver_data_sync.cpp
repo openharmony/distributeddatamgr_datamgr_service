@@ -278,7 +278,7 @@ int MultiVerDataSync::AckRecvCallback(MultiVerSyncTaskContext *context, const Me
     context->ReleaseEntries();
     context->SetEntries(entries);
     context->SetEntriesIndex(0);
-    context->SetEntriesSize(entries.size());
+    context->SetEntriesSize(static_cast<int>(entries.size()));
     LOGD("MultiVerDataSync::AckRecvCallback src=%s{private}, entries num = %llu",
         context->GetDeviceId().c_str(), entries.size());
 

@@ -470,7 +470,7 @@ void SyncTaskContext::CommErrHandlerFunc(int errCode, ISyncTaskContext *context,
         RefObject::IncObjRef(context);
     }
 
-    static_cast<SyncTaskContext *>(context)->CommErrHandlerFuncInner(errCode, sessionId);
+    static_cast<SyncTaskContext *>(context)->CommErrHandlerFuncInner(errCode, static_cast<uint32_t>(sessionId));
     RefObject::DecObjRef(context);
 }
 

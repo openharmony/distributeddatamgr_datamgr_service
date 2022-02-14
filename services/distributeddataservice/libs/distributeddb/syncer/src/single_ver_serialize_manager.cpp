@@ -352,7 +352,7 @@ int SingleVerSerializeManager::DataPacketDeSerialization(const uint8_t *buffer, 
     }
 
     packet->SetVersion(version);
-    packLen += GenericSingleVerKvEntry::DeSerializeDatas(dataItems, parcel);
+    packLen += static_cast<uint32_t>(GenericSingleVerKvEntry::DeSerializeDatas(dataItems, parcel));
     if (parcel.IsError()) {
         return -E_PARSE_FAIL;
     }
@@ -602,7 +602,7 @@ int SingleVerSerializeManager::AckControlPacketDeSerialization(const uint8_t *bu
         errCode = -E_INVALID_ARGS;
         goto ERROR;
     }
-    packet->SetPacketHead(recvCode, version, controlCmdType, flag);
+    packet->SetPacketHead(recvCode, version, static_cast<int32_t>(controlCmdType), flag);
     errCode = inMsg->SetExternalObject<>(packet);
     if (errCode != E_OK) {
         goto ERROR;
@@ -649,7 +649,7 @@ int SingleVerSerializeManager::ControlRequestDeSerialization(Parcel &parcel, Con
         LOGE("[ControlRequestDeSerialization] deserialize failed!");
         return -E_LENGTH_ERROR;
     }
-    packet.SetPacketHead(sendCode, version, controlCmdType, flag);
+    packet.SetPacketHead(sendCode, version, static_cast<int32_t>(controlCmdType), flag);
     return E_OK;
 }
 
@@ -696,8 +696,8 @@ int SingleVerSerializeManager::SubscribeDeSerialization(Parcel &parcel, Message 
     if (errCode != E_OK) {
         goto ERROR;
     }
-    packet->SetPacketHead(controlPacket.GetSendCode(), controlPacket.GetVersion(), controlPacket.GetcontrolCmdType(),
-        controlPacket.GetFlag());
+    packet->SetPacketHead(controlPacket.GetSendCode(), controlPacket.GetVersion(),
+        static_cast<int32_t>(controlPacket.GetcontrolCmdType()), controlPacket.GetFlag());
     packet->SetQuery(querySyncObj);
     errCode = inMsg->SetExternalObject<>(packet);
     if (errCode != E_OK) {

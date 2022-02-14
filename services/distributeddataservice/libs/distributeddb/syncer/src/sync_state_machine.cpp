@@ -277,7 +277,7 @@ bool SyncStateMachine::StartFeedDogForSync(uint32_t time, SyncDirectionFlag flag
         return false;
     }
 
-    int cnt = GetFeedDogTimeout(time / SAVE_DATA_NOTIFY_INTERVAL);
+    uint8_t cnt = GetFeedDogTimeout(time / SAVE_DATA_NOTIFY_INTERVAL);
     LOGI("[SyncStateMachine][feedDog] start cnt:%d, flag:%d", cnt, flag);
 
     std::lock_guard<std::mutex> lockGuard(feedDogLock_[flag]);
@@ -290,7 +290,7 @@ bool SyncStateMachine::StartFeedDogForSync(uint32_t time, SyncDirectionFlag flag
             LOGD("update feedDogUpperLimit = %d", cnt);
             watchDogController_[flag].feedDogUpperLimit = cnt;
         }
-        watchDogController_[flag].feedDogCnt = 0;
+        watchDogController_[flag].feedDogCnt = 0u;
         LOGW("[SyncStateMachine][feedDog] timer has been started!, flag:%d", flag);
         return false;
     }

@@ -725,9 +725,9 @@ void SingleVerDataSync::TransSendDataItemToLocal(const SingleVerSyncTaskContext 
         item->SetOrigDevice(TransferForeignOrigDevName(item->GetOrigDevice(), localHashName));
         TimeStamp tempTimestamp = item->GetTimestamp();
         TimeStamp tempWriteTimestamp = item->GetWriteTimestamp();
-        item->SetTimestamp(tempTimestamp - offset);
+        item->SetTimestamp(tempTimestamp - static_cast<TimeStamp>(offset));
         if (tempWriteTimestamp != 0) {
-            item->SetWriteTimestamp(tempWriteTimestamp - offset);
+            item->SetWriteTimestamp(tempWriteTimestamp - static_cast<TimeStamp>(offset));
         }
 
         if (item->GetTimestamp() > currentLocalTime) {
@@ -1386,7 +1386,7 @@ void SingleVerDataSync::GetPullEndWatermark(const SingleVerSyncTaskContext *cont
         WaterMark endMark = packet->GetEndWaterMark();
         TimeOffset offset;
         metadata_->GetTimeOffset(context->GetDeviceId(), offset);
-        pullEndWatermark = endMark - offset;
+        pullEndWatermark = endMark - static_cast<WaterMark>(offset);
         LOGD("[DataSync][PullEndWatermark] packetEndMark=%llu,offset=%llu,endWaterMark=%llu,label=%s,dev=%s",
             endMark, offset, pullEndWatermark, label_.c_str(), STR_MASK(GetDeviceId()));
     }
@@ -1951,7 +1951,7 @@ int SingleVerDataSync::AckMsgErrnoCheck(const SingleVerSyncTaskContext *context,
     }
     if (message->IsFeedbackError()) {
         LOGE("[DataSync][AckMsgErrnoCheck] message errNo=%d", message->GetErrorNo());
-        return -(message->GetErrorNo());
+        return -static_cast<int>(message->GetErrorNo());
     }
     return E_OK;
 }
@@ -2195,7 +2195,7 @@ int SingleVerDataSync::SendControlAck(SingleVerSyncTaskContext *context, const M
     }
     uint32_t version = std::min(context->GetRemoteSoftwareVersion(), SOFTWARE_VERSION_CURRENT);
     ControlAckPacket ack;
-    ack.SetPacketHead(recvCode, version, controlCmdType, 0);
+    ack.SetPacketHead(recvCode, version, static_cast<int32_t>(controlCmdType), 0);
     int errCode = ackMessage->SetCopiedObject(ack);
     if (errCode != E_OK) {
         delete ackMessage;

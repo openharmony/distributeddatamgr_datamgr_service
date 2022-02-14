@@ -206,7 +206,7 @@ void SubscribeManager::GetRemoteSubscribeQueryIds(const std::string &device,
 int SubscribeManager::LocalSubscribeLimitCheck(const std::vector<std::string> &devices, QuerySyncObject &query) const
 {
     std::shared_lock<std::shared_mutex> lock(localSubscribeMapLock_);
-    int devNum = localSubscribeMap_.size();
+    size_t devNum = localSubscribeMap_.size();
     for (const auto &device : devices) {
         if (localSubscribeMap_.find(device) != localSubscribeMap_.end()) {
             continue;

@@ -959,7 +959,7 @@ int SingleVerSyncStateMachine::MessageCallbackPre(const Message *inMsg)
 
 void SingleVerSyncStateMachine::AddPullResponseTarget(const Message *inMsg, WaterMark pullEndWatermark)
 {
-    int messageType = inMsg->GetMessageId();
+    int messageType = static_cast<int>(inMsg->GetMessageId());
     uint32_t sessionId = inMsg->GetSessionId();
     if (pullEndWatermark == 0) {
         LOGE("[StateMachine][AddPullResponseTarget] pullEndWatermark is 0!");

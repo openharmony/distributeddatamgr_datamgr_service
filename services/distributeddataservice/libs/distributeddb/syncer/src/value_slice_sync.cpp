@@ -217,7 +217,7 @@ int ValueSliceSync::SyncStart(MultiVerSyncTaskContext *context)
             }
             context->SetValueSliceHashNodes(valueHashes);
             context->SetValueSlicesIndex(0);
-            context->SetValueSlicesSize(valueHashes.size());
+            context->SetValueSlicesSize(static_cast<int>(valueHashes.size()));
         } else {
             // all entries are received, move to next commit
             return -E_NOT_FOUND;
