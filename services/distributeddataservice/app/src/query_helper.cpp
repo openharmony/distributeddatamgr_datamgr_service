@@ -511,7 +511,7 @@ void QueryHelper::HandleInKeys(const std::vector<std::string> &words, int &point
         isSuccess = false;
         return;
     }
-    int inkeyPointer = pointer + 2;  // inkeyOffset points at the first inkey value
+    int inkeyPointer = pointer + 2;  // inkeyPointer points at the first inkey value
     const std::vector<std::string> inKeys = GetStringList(words, inkeyPointer, end);
     std::set<std::vector<uint8_t>> inDbKeys;
     for(const std::string &inKey : inKeys) {
@@ -524,7 +524,7 @@ void QueryHelper::HandleInKeys(const std::vector<std::string> &words, int &point
     ZLOGI("size of inKeys=%{public}d", size);
     dbQuery.InKeys(inDbKeys);
     isSuccess = true;
-    pointer = inkeyPointer + 1; // inkeyOffset points at keyword "END", Pointer goes to next keyword
+    pointer = inkeyPointer + 1; // inkeyPointer points at keyword "END", Pointer goes to next keyword
 }
 
 void QueryHelper::HandleSetSuggestIndex(const std::vector<std::string> &words, int &pointer,
