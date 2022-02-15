@@ -38,9 +38,9 @@ ohos_shared_library("distributeddatasvcfwk") {
     "metadata/secret_key_meta_data.cpp",
     "metadata/store_meta_data.cpp",
     "serializable/serializable.cpp",
+    "utils/block_integer.cpp",
     "utils/constant.cpp",
     "utils/crypto.cpp",
-    "utils/block_integer.cpp",
   ]
   cflags = [ "-Wno-multichar" ]
 
