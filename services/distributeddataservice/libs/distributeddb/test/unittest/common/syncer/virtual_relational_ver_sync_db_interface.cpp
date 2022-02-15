@@ -89,8 +89,11 @@ int VirtualRelationalVerSyncDBInterface::PutSyncDataWithQuery(const QueryObject 
     for (const auto &optRowDataWithLog : optTableDataWithLog.dataList) {
         VirtualRowData virtualRowData;
         virtualRowData.logInfo = optRowDataWithLog.logInfo;
-        int index = 0;
+        size_t index = 0;
         for (const auto &optItem : optRowDataWithLog.optionalData) {
+            if (index >= localFieldInfo_.size()) {
+                break;
+            }
             DataValue dataValue = std::move(optItem);
             LOGD("type:%d", optItem.GetType());
             virtualRowData.objectData.PutDataValue(localFieldInfo_[index].GetFieldName(), dataValue);

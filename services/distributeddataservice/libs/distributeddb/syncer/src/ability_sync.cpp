@@ -417,6 +417,7 @@ int AbilitySync::AckRecv(const Message *message, ISyncTaskContext *context)
             errCode = metadata_->SetDbCreateTime(deviceId_, packet->GetDbCreateTime(), true);
             if (errCode != E_OK) {
                 LOGE("[AbilitySync][AckRecv] set db create time failed,errCode=%d", errCode);
+                context->SetTaskErrCode(errCode);
                 return errCode;
             }
         }
@@ -1033,9 +1034,7 @@ int AbilitySync::AckMsgCheck(const Message *message, ISyncTaskContext *context) 
     int ackCode = packet->GetAckCode();
     if (ackCode != E_OK) {
         LOGE("[AbilitySync][AckMsgCheck] received a errCode %d", ackCode);
-        if (ackCode == -E_SECURITY_OPTION_CHECK_ERROR) {
-            context->SetTaskErrCode(-E_SECURITY_OPTION_CHECK_ERROR);
-        }
+        context->SetTaskErrCode(ackCode);
         return ackCode;
     }
     return E_OK;

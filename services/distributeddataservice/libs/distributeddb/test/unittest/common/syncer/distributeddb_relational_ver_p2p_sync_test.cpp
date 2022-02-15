@@ -980,6 +980,53 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AbilitySync002, TestSize.Level1)
 }
 
 /**
+* @tc.name: Ability Sync 003
+* @tc.desc: Test ability sync failed when has different schema.
+* @tc.type: FUNC
+* @tc.require: AR000GK58N
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AbilitySync003, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. set local and remote schema is (BOOL, INTEGER, REAL, TEXT, BLOB)
+     */
+    std::map<std::string, DataValue> dataMap;
+    std::vector<FieldInfo> schema;
+    std::vector<StorageType> localStorageType = g_storageType;
+    GetFieldInfo(schema, localStorageType);
+
+    /**
+     * @tc.steps: step2. create table and insert data
+     */
+    PrepareEnvironment(dataMap, schema, schema, {g_deviceB});
+    
+    /**
+     * @tc.steps: step3. change local table to (BOOL, INTEGER, REAL, TEXT, BLOB)
+     * @tc.expected: sync fail
+     */
+    g_communicatorAggregator->RegOnDispatch([](const std::string &target, Message *inMsg) {
+        if (target != "real_device") {
+            return;
+        }
+        if (inMsg->GetMessageType() != TYPE_NOTIFY || inMsg->GetMessageId() != ABILITY_SYNC_MESSAGE) {
+            return;
+        }
+        sqlite3 *db = nullptr;
+        EXPECT_EQ(GetDB(db), SQLITE_OK);
+        ASSERT_NE(db, nullptr);
+        std::string alterSql = "ALTER TABLE " + g_tableName + " ADD COLUMN NEW_COLUMN TEXT DEFAULT 'DEFAULT_TEXT'";
+        EXPECT_EQ(sqlite3_exec(db, alterSql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+
+        EXPECT_EQ(g_rdbDelegatePtr->CreateDistributedTable(g_tableName), OK);
+    });
+
+    BlockSync(SyncMode::SYNC_MODE_PUSH_ONLY, OK, {DEVICE_B});
+
+    g_communicatorAggregator->RegOnDispatch(nullptr);
+}
+
+/**
 * @tc.name: WaterMark 001
 * @tc.desc: Test sync success after erase waterMark.
 * @tc.type: FUNC
