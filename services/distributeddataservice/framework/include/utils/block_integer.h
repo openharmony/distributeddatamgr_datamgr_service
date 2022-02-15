@@ -19,8 +19,8 @@
 namespace OHOS::DistributedData {
 class BlockInteger {
 public:
-    API_EXPORT explicit BlockInteger(int interval) : interval_(interval){};
-    API_EXPORT BlockInteger(const BlockInteger &integer) : interval_(integer.interval_), value_(integer.value_){};
+    API_EXPORT explicit BlockInteger(int interval) : interval_(interval) {};
+    API_EXPORT BlockInteger(const BlockInteger &integer) : interval_(integer.interval_), value_(integer.value_) {};
     API_EXPORT BlockInteger &operator=(const BlockInteger &integer) = default;
 
     API_EXPORT ~BlockInteger() = default;
