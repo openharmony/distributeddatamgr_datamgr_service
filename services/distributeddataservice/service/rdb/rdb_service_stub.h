@@ -32,13 +32,13 @@ public:
     }
 
     int32_t Subscribe(const RdbSyncerParam& param, const SubscribeOption& option,
-                      const RdbStoreObserver& observer) override
+                      RdbStoreObserver *observer) override
     {
         return 0;
     }
 
     int32_t UnSubscribe(const RdbSyncerParam& param, const SubscribeOption& option,
-                      const RdbStoreObserver& observer) override
+                        RdbStoreObserver *observer) override
     {
         return 0;
     }

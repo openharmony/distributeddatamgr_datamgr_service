@@ -44,10 +44,10 @@ public:
                  const RdbPredicates& predicates, const SyncCallback& callback) override;
 
     int32_t Subscribe(const RdbSyncerParam& param, const SubscribeOption& option,
-                      const RdbStoreObserver& observer) override;
+                      RdbStoreObserver *observer) override;
 
     int32_t UnSubscribe(const RdbSyncerParam& param, const SubscribeOption& option,
-                      const RdbStoreObserver& observer) override;
+                        RdbStoreObserver *observer) override;
 
     ObserverMap ExportObservers();
 

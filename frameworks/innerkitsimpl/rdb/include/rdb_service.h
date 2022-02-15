@@ -33,10 +33,10 @@ public:
                          const RdbPredicates& predicates, const SyncCallback& callback) = 0;
 
     virtual int32_t Subscribe(const RdbSyncerParam& param, const SubscribeOption& option,
-                              const RdbStoreObserver& observer) = 0;
+                              RdbStoreObserver *observer) = 0;
 
     virtual int32_t UnSubscribe(const RdbSyncerParam& param, const SubscribeOption& option,
-                                const RdbStoreObserver& observer) = 0;
+                                RdbStoreObserver *observer) = 0;
 };
 }
 #endif
