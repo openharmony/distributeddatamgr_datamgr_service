@@ -388,7 +388,7 @@ int Parcel::WriteBlob(const char *buffer, uint32_t bufLen)
     uint32_t leftLen = static_cast<uint32_t>(totalLen_ - parcelLen_);
     int errCode = memcpy_s(bufPtr_, leftLen, buffer, bufLen);
     if (errCode != EOK) {
-        LOGE("[WriteBlob] bufPtr:%d, leftLen:%u, buffer:%p, bufLen:%u", bufPtr_ != nullptr, leftLen, buffer, bufLen);
+        LOGE("[WriteBlob] leftLen:%u, bufLen:%u", leftLen, bufLen);
         isError_ = true;
         return -E_SECUREC_ERROR;
     }
@@ -415,7 +415,7 @@ uint32_t Parcel::ReadBlob(char *buffer, uint32_t bufLen)
     }
     int errCode = memcpy_s(buffer, bufLen, bufPtr_, bufLen);
     if (errCode != EOK) {
-        LOGE("[ReadBlob] bufPtr:%d, buffer:%p, bufLen:%u", bufPtr_ != nullptr, buffer, bufLen);
+        LOGE("[ReadBlob] bufLen:%u", bufLen);
         isError_ = true;
         return 0;
     }
