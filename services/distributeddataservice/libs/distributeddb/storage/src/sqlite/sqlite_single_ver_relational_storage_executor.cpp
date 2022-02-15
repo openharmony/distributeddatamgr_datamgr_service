@@ -1189,9 +1189,18 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckQueryObjectLegal(const TableI
         return errCode;
     }
 
-    errCode = SQLiteUtils::CheckSchemaChanged(stmt, table, DBConstant::RELATIONAL_LOG_TABLE_FIELD_NUM);
+    TableInfo newTable;
+    SQLiteUtils::AnalysisSchema(dbHandle_, table.GetTableName(), newTable);
     if (errCode != E_OK) {
-        LOGE("Check schema failed, schema was changed. %d", errCode);
+        LOGE("Check new schema failed. %d", errCode);
+    } else {
+        errCode = table.CompareWithTable(newTable);
+        if (errCode != -E_RELATIONAL_TABLE_EQUAL && errCode != -E_RELATIONAL_TABLE_COMPATIBLE) {
+            LOGE("Check schema failed, schema was changed. %d", errCode);
+            errCode = -E_DISTRIBUTED_SCHEMA_CHANGED;
+        } else {
+            errCode = E_OK;
+        }
     }
 
     SQLiteUtils::ResetStatement(stmt, true, errCode);
