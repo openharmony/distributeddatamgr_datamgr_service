@@ -20,7 +20,7 @@ RelationalStoreChangedDataImpl::~RelationalStoreChangedDataImpl()
 {
 }
 
-DB_API const std::string RelationalStoreChangedDataImpl::GetDataChangeDevice() const
+DB_API std::string RelationalStoreChangedDataImpl::GetDataChangeDevice() const
 {
     std::lock_guard<std::mutex> lock(mutex_);
     // add get changedDevice_ code;

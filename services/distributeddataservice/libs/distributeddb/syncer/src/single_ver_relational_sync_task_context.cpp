@@ -54,12 +54,24 @@ void SingleVerRelationalSyncTaskContext::CopyTargetData(const ISyncTarget *targe
 
 void SingleVerRelationalSyncTaskContext::SetRelationalSyncStrategy(RelationalSyncStrategy strategy)
 {
+    std::lock_guard<std::mutex> autoLock(syncStrategyMutex_);
     relationalSyncStrategy_ = strategy;
 }
 
 SyncStrategy SingleVerRelationalSyncTaskContext::GetSyncStrategy(QuerySyncObject &querySyncObject) const
 {
+    std::lock_guard<std::mutex> autoLock(syncStrategyMutex_);
     return relationalSyncStrategy_.GetTableStrategy(querySyncObject.GetRelationTableName());
+}
+
+void SingleVerRelationalSyncTaskContext::SetIsNeedResetAbilitySync(bool isNeedReset)
+{
+    isNeedResetAbilitySync_ = isNeedReset;
+    if (isNeedResetAbilitySync_) {
+        SetIsSchemaSync(false);
+    }
+    std::lock_guard<std::mutex> autoLock(syncStrategyMutex_);
+    relationalSyncStrategy_ = {};
 }
 }
 #endif

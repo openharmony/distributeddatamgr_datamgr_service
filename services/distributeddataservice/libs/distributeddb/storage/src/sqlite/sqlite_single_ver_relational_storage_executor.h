@@ -33,7 +33,7 @@ public:
     // Delete the copy and assign constructors
     DISABLE_COPY_ASSIGN_MOVE(SQLiteSingleVerRelationalStorageExecutor);
 
-    int CreateDistributedTable(const std::string &tableName, TableInfo &table);
+    int CreateDistributedTable(const std::string &tableName, TableInfo &table, bool isUpgrade);
 
     int UpgradeDistributedTable(const TableInfo &tableInfo, TableInfo &newTableInfo);
 
@@ -42,8 +42,8 @@ public:
     int Rollback();
 
     // For Get sync data
-    int GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength, const DataSizeSpecInfo &dataSizeInfo,
-        std::function<int(sqlite3 *, sqlite3_stmt *&, bool &)> getStmt, const std::string &baseTbl);
+    int GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength, const DataSizeSpecInfo &sizeInfo,
+        std::function<int(sqlite3 *, sqlite3_stmt *&, sqlite3_stmt *&, bool &)> getStmt, const TableInfo &tableInfo);
 
     // operation of meta data
     int GetKvData(const Key &key, Value &value) const;
@@ -54,7 +54,7 @@ public:
 
     // For Put sync data
     int SaveSyncItems(const QueryObject &object, std::vector<DataItem> &dataItems,
-        const std::string &deviceName, TimeStamp &timeStamp);
+        const std::string &deviceName, const TableInfo &table, TimeStamp &timeStamp);
 
     int AnalysisRelationalSchema(const std::string &tableName, TableInfo &tableInfo);
 
@@ -78,19 +78,25 @@ private:
 
     int SaveSyncDataItems(const QueryObject &object, std::vector<DataItem> &dataItems,
         const std::string &deviceName, TimeStamp &timeStamp);
-    int SaveSyncDataItem(sqlite3_stmt *statement, const DataItem &dataItem, int64_t &rowid);
+    int SaveSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&saveDataStmt, sqlite3_stmt *&rmDataStmt,
+        int64_t &rowid);
 
-    int DeleteSyncDataItem(const DataItem &dataItem);
+    int DeleteSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&rmDataStmt);
 
     int SaveSyncLog(sqlite3_stmt *statement, const DataItem &dataItem, TimeStamp &maxTimestamp, int64_t rowid);
-    int PrepareForSavingData(const QueryObject &object, const std::string &deviceName, sqlite3_stmt *&statement) const;
+    int PrepareForSavingData(const QueryObject &object, sqlite3_stmt *&statement) const;
     int PrepareForSavingLog(const QueryObject &object, const std::string &deviceName, sqlite3_stmt *&statement) const;
 
     int AlterAuxTableForUpgrade(const TableInfo &oldTableInfo, const TableInfo &newTableInfo);
 
-    int SetTableInfo(const std::string &baseTbl);
+    int DeleteSyncLog(const DataItem &item, sqlite3_stmt *&rmLogStmt);
+    int ProcessMissQueryData(const DataItem &item, sqlite3_stmt *&rmDataStmt, sqlite3_stmt *&rmLogStmt);
+    int GetMissQueryData(std::vector<DataItem> &dataItems, size_t &dataTotalSize, const Key &cursorHashKey,
+        sqlite3_stmt *fullStmt, size_t appendLength, const DataSizeSpecInfo &dataSizeInfo);
 
-    TableInfo table_;
+    void SetTableInfo(const TableInfo &tableInfo);  // When put or get sync data, must call the func first.
+    std::string baseTblName_;
+    TableInfo table_;  // Always operating table, user table when get, device table when put.
 };
 } // namespace DistributedDB
 #endif

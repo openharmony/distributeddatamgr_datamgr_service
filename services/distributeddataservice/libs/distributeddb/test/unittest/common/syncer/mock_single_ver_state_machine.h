@@ -32,6 +32,11 @@ public:
         return SyncStateMachine::ExecNextTask();
     }
 
+    int CallTimeMarkSyncRecv(const Message *inMsg)
+    {
+        return SingleVerSyncStateMachine::TimeMarkSyncRecv(inMsg);
+    }
+
     MOCK_METHOD1(SwitchStateAndStep, void(uint8_t));
 
     MOCK_METHOD0(PrepareNextSyncTask, int(void));

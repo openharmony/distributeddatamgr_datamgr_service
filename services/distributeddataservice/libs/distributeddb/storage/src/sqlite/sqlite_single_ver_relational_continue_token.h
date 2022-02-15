@@ -30,16 +30,18 @@ public:
     // Check the magic number at the beginning and end of the SQLiteSingleVerRelationalContinueToken.
     bool CheckValid() const;
     // The statement should be release by the caller.
-    int GetStatement(sqlite3 *db, sqlite3_stmt *&stmt, bool &isGettingDeletedData);
+    int GetStatement(sqlite3 *db, sqlite3_stmt *&queryStmt, sqlite3_stmt *&fullStmt, bool &isGettingDeletedData);
     void SetNextBeginTime(const DataItem &theLastItem);
     void FinishGetData();
     bool IsGetAllDataFinished() const;
     const QueryObject &GetQuery() const;
+    void SetFieldNames(const std::vector<std::string> &fieldNames);
 
 private:
     std::string GetDeletedDataSQL() const;
     int GetQuerySyncStatement(sqlite3 *db, sqlite3_stmt *&stmt);
     int GetDeletedDataStmt(sqlite3 *db, sqlite3_stmt *&stmt) const;
+    int GetFullStatement(sqlite3 *db, sqlite3_stmt *&stmt);
 
     static const unsigned int MAGIC_BEGIN = 0x600D0AC7;  // for token guard
     static const unsigned int MAGIC_END = 0x0AC7600D;    // for token guard
@@ -48,6 +50,7 @@ private:
     QueryObject queryObj_;
     const std::string &tableName_;
     SyncTimeRange timeRange_;
+    std::vector<std::string> fieldNames_;
     unsigned int magicEnd_ = MAGIC_END;
 };
 }  // namespace DistributedDB

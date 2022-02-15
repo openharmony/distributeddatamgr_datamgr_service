@@ -127,10 +127,7 @@ bool Equal(const RowDataWithLog &origin, const OptRowDataWithLog &target)
     for (uint32_t i = 0; i < origin.rowData.size(); i++) {
         const auto &originData = origin.rowData[i];
         const auto &targetData = target.optionalData[i];
-        if (!targetData.has_value()) {
-            return false;
-        }
-        if (originData != targetData.value()) {
+        if (originData != targetData) {
             LOGD("VALUE NOT EQUAL!");
             return false;
         }
@@ -151,24 +148,6 @@ bool Equal(TableDataWithLog origin, OptTableDataWithLog target)
         }
     }
     return true;
-}
-
-void GenerateDiffFieldInfo(std::vector<FieldInfo> &sendFieldInfoList, std::vector<FieldInfo> &receiveFieldInfoList)
-{
-    const int columnCounts = 6;     // 6 columns
-    const char sendColumn = 'A';    // sendColumn start with 'A'
-    const char receiveColumn = 'B'; // receiveColumn start with 'B'
-    // we generate 2 diff schema here (A, B, C, D, E, F) and (B, C, D, E, F, G)
-    for (uint32_t i = 0; i < columnCounts; i++) {
-        FieldInfo sendFieldInfo;
-        sendFieldInfo.SetFieldName(std::string(1, static_cast<char>(sendColumn + i)));
-        sendFieldInfo.SetStorageType(StorageType::STORAGE_TYPE_INTEGER);
-        sendFieldInfoList.push_back(sendFieldInfo);
-        FieldInfo receiveFieldInfo;
-        receiveFieldInfo.SetFieldName(std::string(1, static_cast<char>(receiveColumn + i)));
-        receiveFieldInfo.SetStorageType(StorageType::STORAGE_TYPE_INTEGER);
-        receiveFieldInfoList.push_back(receiveFieldInfo);
-    }
 }
 }
 
@@ -234,53 +213,4 @@ HWTEST_F(DistributedDBDataTransformerTest, DataTransformerCheck001, TestSize.Lev
     EXPECT_EQ(DataTransformer::TransformDataItem(dataItemList, fieldInfoList, fieldInfoList, targetData), E_OK);
 
     EXPECT_TRUE(Equal(originData, targetData));
-}
-
-/**
- * @tc.name: DataTransformerCheck002
- * @tc.desc: To test transformer work correctly when table is different between send and receive.
- * @tc.type: Func
- * @tc.require:
- * @tc.author: zhangqiquan
- */
-HWTEST_F(DistributedDBDataTransformerTest, DataTransformerCheck002, TestSize.Level1)
-{
-    /**
-     * @tc.steps: step1. generate the fieldInfoList which contains nullptr, bool, string, double, int64, uint8_t*.
-     */
-    std::vector<FieldInfo> sendFieldInfoList;
-    std::vector<FieldInfo> receiveFieldInfoList;
-    GenerateDiffFieldInfo(sendFieldInfoList, receiveFieldInfoList);
-
-    /**
-     * @tc.steps: step2. generate a originData by fieldInfoList.
-     */
-    TableDataWithLog originData;
-    GenerateTableDataWithLog(sendFieldInfoList, originData);
-
-    /**
-     * @tc.steps: step3. get a value from dataValue.
-     * @tc.expected: get ok and value is true
-     */
-    std::vector<DataItem> dataItemList;
-    EXPECT_EQ(DataTransformer::TransformTableData(originData, sendFieldInfoList, dataItemList), E_OK);
-
-    OptTableDataWithLog targetData;
-    EXPECT_EQ(DataTransformer::TransformDataItem(dataItemList, sendFieldInfoList, receiveFieldInfoList,
-        targetData), E_OK);
-    
-    DataValue target;
-    target = INT64_MAX;
-    EXPECT_EQ(targetData.dataList.size(), dataItemList.size());
-    for (const auto &optDataWithLog : targetData.dataList) {
-        for (uint32_t i = 0; i < optDataWithLog.optionalData.size(); i++) {
-            const std::optional<DataValue> &optData = optDataWithLog.optionalData[i];
-            if (i == optDataWithLog.optionalData.size() - 1) {
-                EXPECT_TRUE(!optData.has_value());
-            } else {
-                EXPECT_TRUE(optData.has_value());
-                EXPECT_EQ(optData.value(), target);
-            }
-        }
-    }
 }

@@ -720,6 +720,16 @@ int AnalysisSchemaIndexAndUnique(sqlite3 *db, const std::string &tableName, Tabl
     return E_OK;
 }
 
+namespace {
+bool CheckFieldName(const std::string &fieldName)
+{
+    auto iter = std::find_if_not(fieldName.begin(), fieldName.end(), [](char c) {
+            return (std::isalnum(c) || c == '_');
+        });
+    return iter == fieldName.end();
+}
+}
+
 int AnalysisSchemaFieldDefine(sqlite3 *db, const std::string &tableName, TableInfo &table)
 {
     std::string sql = "pragma table_info(" + tableName + ")";
@@ -741,6 +751,11 @@ int AnalysisSchemaFieldDefine(sqlite3 *db, const std::string &tableName, TableIn
             field.SetColumnId(sqlite3_column_int(statement, 0));  // 0 means column id index
 
             (void) SQLiteUtils::GetColumnTextValue(statement, 1, tmpString);  // 1 means column name index
+            if (!CheckFieldName(tmpString)) {
+                errCode = -E_NOT_SUPPORT;
+                LOGE("[AnalysisSchema] unsupported field name.");
+                break;
+            }
             field.SetFieldName(tmpString);
 
             (void) SQLiteUtils::GetColumnTextValue(statement, 2, tmpString);  // 2 means datatype index

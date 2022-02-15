@@ -35,6 +35,8 @@ public:
     MOCK_METHOD1(SetTaskExecStatus, void(int));
 
     MOCK_METHOD0(Clear, void(void));
+
+    MOCK_CONST_METHOD0(GetRequestSessionId, uint32_t(void));
 };
 } // namespace DistributedDB
 #endif  // #define MOCK_SINGLE_VER_STATE_MACHINE_H

@@ -865,7 +865,7 @@ int SingleVerSyncStateMachine::TimeMarkSyncRecv(const Message *inMsg)
         if (errCode != E_OK) {
             LOGE("[StateMachine][TimeMarkSyncRecv] AckRecv failed errCode=%d", errCode);
             if (inMsg->GetSessionId() != 0 && inMsg->GetSessionId() == context_->GetRequestSessionId()) {
-                context_->SetTaskErrCode(-E_FEEDBACK_COMMUNICATOR_NOT_FOUND);
+                context_->SetTaskErrCode(errCode);
                 CommErrAbort();
             }
             return errCode;

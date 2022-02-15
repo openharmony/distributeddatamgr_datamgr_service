@@ -91,11 +91,8 @@ int VirtualRelationalVerSyncDBInterface::PutSyncDataWithQuery(const QueryObject 
         virtualRowData.logInfo = optRowDataWithLog.logInfo;
         int index = 0;
         for (const auto &optItem : optRowDataWithLog.optionalData) {
-            DataValue dataValue;
-            if (optItem.has_value()) {
-                dataValue = std::move(optItem.value());
-            }
-            LOGD("type:%d", optItem.value().GetType());
+            DataValue dataValue = std::move(optItem);
+            LOGD("type:%d", optItem.GetType());
             virtualRowData.objectData.PutDataValue(localFieldInfo_[index].GetFieldName(), dataValue);
             index++;
         }
@@ -281,14 +278,7 @@ const KvDBProperties &VirtualRelationalVerSyncDBInterface::GetDbProperties() con
 void VirtualRelationalVerSyncDBInterface::SetLocalFieldInfo(const std::vector<FieldInfo> &localFieldInfo)
 {
     localFieldInfo_.clear();
-    // sort by dict
-    std::map<std::string, FieldInfo> infoMap;
-    for (const auto &item : localFieldInfo) {
-        infoMap[item.GetFieldName()] = item;
-    }
-    for (const auto &item : infoMap) {
-        localFieldInfo_.push_back(item.second);
-    }
+    localFieldInfo_ = localFieldInfo;
 }
 
 int VirtualRelationalVerSyncDBInterface::GetAllSyncData(const std::string &tableName,
@@ -338,6 +328,20 @@ int VirtualRelationalVerSyncDBInterface::RegisterSchemaChangedCallback(const std
 void VirtualRelationalVerSyncDBInterface::SetTableInfo(const TableInfo &tableInfo)
 {
     schemaObj_.AddRelationalTable(tableInfo);
+}
+
+void ObjectData::PutDataValue(const std::string &fieldName, const DataValue &value)
+{
+    fieldData[fieldName] = value;
+}
+
+int ObjectData::GetDataValue(const std::string &fieldName, DataValue &value) const
+{
+    if (fieldData.find(fieldName) == fieldData.end()) {
+        return -E_NOT_FOUND;
+    }
+    value = fieldData[fieldName];
+    return E_OK;
 }
 }
 #endif

@@ -98,18 +98,5 @@ private:
         int64_t iValue;
     } value_{};
 };
-
-class ObjectData {
-public:
-    int GetBool(const std::string &fieldName, bool &outValue) const;
-    int GetInt64(const std::string &fieldName, int64_t &outValue) const;
-    int GetDouble(const std::string &fieldName, double &outValue) const;
-    int GetString(const std::string &fieldName, std::string &outValue) const;
-    int GetBlob(const std::string &fieldName, Blob &blob) const;
-    void PutDataValue(const std::string &fieldName, const DataValue &value);
-    int GetDataValue(const std::string &fieldName, DataValue &value) const;
-private:
-    mutable std::map<std::string, DataValue> fieldData;
-};
 }
 #endif // DISTRIBUTED_DB_DATA_VALUE_H

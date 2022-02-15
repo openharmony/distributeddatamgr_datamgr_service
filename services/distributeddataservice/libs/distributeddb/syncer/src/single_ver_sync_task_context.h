@@ -160,7 +160,7 @@ private:
     SecurityOption remoteSecOption_ = {0, 0}; // remote targe can handle secOption data or not.
     bool isReceivcPermitChecked_ = false;
     bool isSendPermitChecked_ = false;
-    bool isSchemaSync_ = false;
+    std::atomic<bool> isSchemaSync_ = false;
 
     // is receive waterMark err, peerWaterMark bigger than remote localWaterMark
     bool isReceiveWaterMarkErr_ = false;

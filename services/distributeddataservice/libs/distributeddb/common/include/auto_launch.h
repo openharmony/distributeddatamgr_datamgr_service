@@ -66,7 +66,7 @@ class AutoLaunch {
 public:
     AutoLaunch() = default;
 
-    ~AutoLaunch();
+    virtual ~AutoLaunch();
 
     DISABLE_COPY_ASSIGN_MOVE(AutoLaunch);
 
@@ -141,7 +141,7 @@ protected:
 
     static int GetAutoLaunchKVProperties(const AutoLaunchParam &param,
         const std::shared_ptr<KvDBProperties> &propertiesPtr);
-        
+
     static int GetAutoLaunchRelationProperties(const AutoLaunchParam &param,
         const std::shared_ptr<RelationalDBProperties> &propertiesPtr);
 

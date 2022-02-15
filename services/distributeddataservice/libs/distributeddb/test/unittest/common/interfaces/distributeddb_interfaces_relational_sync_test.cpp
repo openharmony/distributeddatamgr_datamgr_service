@@ -54,7 +54,7 @@ namespace {
         "field_1);";
 }
 
-class DistributedDBRelationalSyncTest : public testing::Test {
+class DistributedDBInterfacesRelationalSyncTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void) {};
@@ -65,7 +65,7 @@ protected:
     RelationalStoreDelegate *delegate = nullptr;
 };
 
-void DistributedDBRelationalSyncTest::SetUpTestCase(void)
+void DistributedDBInterfacesRelationalSyncTest::SetUpTestCase(void)
 {
     DistributedDBToolsUnitTest::TestDirInit(g_testDir);
     LOGD("Test dir is %s", g_testDir.c_str());
@@ -76,7 +76,7 @@ void DistributedDBRelationalSyncTest::SetUpTestCase(void)
     RuntimeContext::GetInstance()->SetCommunicatorAggregator(g_communicatorAggregator);
 }
 
-void DistributedDBRelationalSyncTest::SetUp()
+void DistributedDBInterfacesRelationalSyncTest::SetUp()
 {
     DistributedDBToolsUnitTest::PrintTestCaseInfo();
 
@@ -94,7 +94,7 @@ void DistributedDBRelationalSyncTest::SetUp()
     EXPECT_EQ(status, OK);
 }
 
-void DistributedDBRelationalSyncTest::TearDown()
+void DistributedDBInterfacesRelationalSyncTest::TearDown()
 {
     g_mgr.CloseStore(delegate);
     EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
@@ -108,7 +108,7 @@ void DistributedDBRelationalSyncTest::TearDown()
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest001, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest001, TestSize.Level1)
 {
     std::vector<std::string> devices = {DEVICE_A};
     Query query = Query::Select("sync_datb");
@@ -127,7 +127,7 @@ HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest001, TestSize.Level1
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest002, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest002, TestSize.Level1)
 {
     std::vector<std::string> devices = {DEVICE_A};
     Query query = Query::Select("sync_data").Like("value", "abc");
@@ -146,7 +146,7 @@ HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest002, TestSize.Level1
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest003, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest003, TestSize.Level1)
 {
     std::vector<std::string> devices = {DEVICE_A};
     Query query = Query::Select("sync_data").And().Or().EqualTo("flag", 2);
@@ -165,7 +165,7 @@ HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest003, TestSize.Level1
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest004, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest004, TestSize.Level1)
 {
     std::vector<std::string> devices = {DEVICE_A};
     Query query = Query::Select("sync_data").EqualTo("fleg", 2);
@@ -184,7 +184,7 @@ HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest004, TestSize.Level1
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest005, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest005, TestSize.Level1)
 {
     std::string modifySql = "ALTER TABLE sync_data ADD COLUMN add_field INTEGER;";
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, modifySql), SQLITE_OK);
@@ -206,7 +206,7 @@ HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest005, TestSize.Level1
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest006, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest006, TestSize.Level1)
 {
     std::vector<std::string> devices = {DEVICE_A};
     Query query = Query::Select();
@@ -225,7 +225,7 @@ HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest006, TestSize.Level1
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest007, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest007, TestSize.Level1)
 {
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, EMPTY_COLUMN_TYPE_CREATE_TABLE_SQL), SQLITE_OK);
     RelationalTestUtils::CreateDeviceTable(db, "student", DEVICE_A);
@@ -250,7 +250,7 @@ HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest007, TestSize.Level1
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
   */
-HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest008, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest008, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Drop sync_data
@@ -298,4 +298,43 @@ HWTEST_F(DistributedDBRelationalSyncTest, RelationalSyncTest008, TestSize.Level1
         }, true);
 
     EXPECT_EQ(errCode, OK);
+}
+
+/**
+  * @tc.name: RelationalSyncTest009
+  * @tc.desc: Test sync with invalid query
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest009, TestSize.Level1)
+{
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, EMPTY_COLUMN_TYPE_CREATE_TABLE_SQL), SQLITE_OK);
+    RelationalTestUtils::CreateDeviceTable(db, "student", DEVICE_A);
+
+    DBStatus status = delegate->CreateDistributedTable("student");
+    EXPECT_EQ(status, OK);
+
+    std::vector<std::string> devices = {DEVICE_A};
+    Query query = Query::Select("student").EqualTo("$id", 123);
+    status = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
+        [&devices](const std::map<std::string, std::vector<TableStatus>> &devicesMap) {
+            EXPECT_EQ(devicesMap.size(), devices.size());
+        }, true);
+    EXPECT_EQ(status, INVALID_QUERY_FORMAT);
+
+    query = Query::Select("student").EqualTo("A$id", 123);
+    status = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
+        [&devices](const std::map<std::string, std::vector<TableStatus>> &devicesMap) {
+            EXPECT_EQ(devicesMap.size(), devices.size());
+        }, true);
+    EXPECT_EQ(status, INVALID_QUERY_FORMAT);
+
+    query = Query::Select("student").EqualTo("$.id", 123);
+    status = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
+        [&devices](const std::map<std::string, std::vector<TableStatus>> &devicesMap) {
+            EXPECT_EQ(devicesMap.size(), devices.size());
+        }, true);
+
+    EXPECT_EQ(status, OK);
 }

@@ -260,7 +260,7 @@ protected:
     int GetReSendData(SyncEntry &syncData, SingleVerSyncTaskContext *context,
         DataSyncReSendInfo reSendInfo);
 
-    int RemoveDeviceDataIfNeed(SingleVerSyncTaskContext *context);
+    virtual int RemoveDeviceDataIfNeed(SingleVerSyncTaskContext *context);
 
     int GetReSendMode(int mode, uint32_t sequenceId, SyncType syncType);
 

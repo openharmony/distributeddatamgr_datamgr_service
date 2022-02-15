@@ -367,6 +367,7 @@ int SQLiteRelationalStore::RemoveDeviceData(const std::string &device, const std
         return errCode;
     }
     errCode = handle->Commit();
+    storageEngine_->NotifySchemaChanged();
     ReleaseHandle(handle);
     return (errCode != E_OK) ? errCode : syncAbleEngine_->EraseDeviceWaterMark(device, true, tableName);
 }

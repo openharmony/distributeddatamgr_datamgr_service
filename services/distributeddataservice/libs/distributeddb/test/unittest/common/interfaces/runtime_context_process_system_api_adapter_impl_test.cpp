@@ -96,7 +96,7 @@ HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, SetSecurityOption001, Te
     EXPECT_TRUE(g_adapter != nullptr);
     RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(g_adapter);
     errCode = RuntimeContext::GetInstance()->SetSecurityOption(DATA_FILE_PATH, g_option);
-    EXPECT_TRUE(errCode == E_OK);
+    EXPECT_EQ(errCode, E_OK);
 }
 
 /**

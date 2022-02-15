@@ -84,18 +84,26 @@ std::string FieldValue2String(const FieldValue &val, QueryValueType type)
     }
 }
 
-std::string GetSelectAndFromClauseForRDB(const std::string &tableName)
+std::string GetSelectAndFromClauseForRDB(const std::string &tableName, const std::vector<std::string> &fieldNames)
 {
-    return "SELECT b.data_key,"
+    std::string sql = "SELECT b.data_key,"
         "b.device,"
         "b.ori_device,"
         "b.timestamp as " + DBConstant::TIMESTAMP_ALIAS + ","
         "b.wtimestamp,"
         "b.flag,"
-        "b.hash_key,"
-        "a.* "
-        "FROM " + tableName + " AS a INNER JOIN " + DBConstant::RELATIONAL_PREFIX + tableName + "_log AS b "
+        "b.hash_key,";
+    if (fieldNames.empty()) {  // For query check. If column count changed, can be discovered.
+        sql += "a.*";
+    } else {
+        for (const auto &fieldName : fieldNames) {  // For query data.
+            sql += "a." + fieldName + ",";
+        }
+        sql.pop_back();
+    }
+    sql += " FROM " + tableName + " AS a INNER JOIN " + DBConstant::RELATIONAL_PREFIX + tableName + "_log AS b "
         "ON a.rowid=b.data_key ";
+    return sql;
 }
 
 std::string GetTimeRangeClauseForRDB()
@@ -159,10 +167,12 @@ bool SqliteQueryHelper::FilterSymbolToAddBracketLink(std::string &querySql, bool
 }
 
 
-int SqliteQueryHelper::ParseQueryObjNodeToSQL()
+int SqliteQueryHelper::ParseQueryObjNodeToSQL(bool isQueryForSync)
 {
     if (queryObjNodes_.empty()) {
-        querySql_ += ";";
+        if (!isQueryForSync) {
+            querySql_ += ";";
+        }
         return E_OK;
     }
 
@@ -191,7 +201,7 @@ int SqliteQueryHelper::ParseQueryObjNodeToSQL()
 
 int SqliteQueryHelper::ToQuerySql()
 {
-    int errCode = ParseQueryObjNodeToSQL();
+    int errCode = ParseQueryObjNodeToSQL(false);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -207,7 +217,7 @@ int SqliteQueryHelper::ToQuerySql()
 
 int SqliteQueryHelper::ToQuerySyncSql(bool hasSubQuery, bool useTimeStampAlias)
 {
-    int errCode = ParseQueryObjNodeToSQL();
+    int errCode = ParseQueryObjNodeToSQL(true);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -887,7 +897,7 @@ int SqliteQueryHelper::GetSubscribeSql(const std::string &subscribeId, TriggerMo
     return errCode;
 }
 
-int SqliteQueryHelper::GetRelationalSyncDataQuerySql(std::string &sql, bool hasSubQuery)
+int SqliteQueryHelper::GetRelationalSyncDataFullSql(std::string &sql, const std::vector<std::string> &fieldNames)
 {
     if (!isValid_) {
         return -E_INVALID_QUERY_FORMAT;
@@ -898,7 +908,26 @@ int SqliteQueryHelper::GetRelationalSyncDataQuerySql(std::string &sql, bool hasS
         return -E_NOT_SUPPORT;
     }
 
-    sql = AssembleSqlForSuggestIndex(GetSelectAndFromClauseForRDB(tableName_), GetFlagClauseForRDB());
+    sql = GetSelectAndFromClauseForRDB(tableName_, fieldNames);
+    sql += GetFlagClauseForRDB();
+    sql += GetTimeRangeClauseForRDB();
+    sql += "ORDER BY " + DBConstant::TIMESTAMP_ALIAS + " ASC;";
+    return E_OK;
+}
+
+int SqliteQueryHelper::GetRelationalSyncDataQuerySql(std::string &sql, bool hasSubQuery,
+    const std::vector<std::string> &fieldNames)
+{
+    if (!isValid_) {
+        return -E_INVALID_QUERY_FORMAT;
+    }
+
+    if (hasPrefixKey_) {
+        LOGE("For relational DB query, prefix key is not supported.");
+        return -E_NOT_SUPPORT;
+    }
+
+    sql = AssembleSqlForSuggestIndex(GetSelectAndFromClauseForRDB(tableName_, fieldNames), GetFlagClauseForRDB());
     sql = hasSubQuery ? sql : (sql + GetTimeRangeClauseForRDB());
 
     querySql_.clear(); // clear local query sql format
@@ -917,17 +946,37 @@ int SqliteQueryHelper::GetRelationalSyncDataQuerySql(std::string &sql, bool hasS
     return errCode;
 }
 
+int SqliteQueryHelper::GetRelationalFullStatement(sqlite3 *dbHandle, uint64_t beginTime, uint64_t endTime,
+    const std::vector<std::string> &fieldNames, sqlite3_stmt *&statement)
+{
+    std::string sql;
+    int errCode = GetRelationalSyncDataFullSql(sql, fieldNames);
+    if (errCode != E_OK) {
+        LOGE("[Query] Get SQL fail!");
+        return -E_INVALID_QUERY_FORMAT;
+    }
+
+    errCode = SQLiteUtils::GetStatement(dbHandle, sql, statement);
+    if (errCode != E_OK) {
+        LOGE("[Query] Get statement fail!");
+        return -E_INVALID_QUERY_FORMAT;
+    }
+
+    int index = 1; // begin with 1.
+    return BindTimeRange(statement, index, beginTime, endTime);
+}
+
 int SqliteQueryHelper::GetRelationalQueryStatement(sqlite3 *dbHandle, uint64_t beginTime, uint64_t endTime,
-    sqlite3_stmt *&statement)
+    const std::vector<std::string> &fieldNames, sqlite3_stmt *&statement)
 {
     bool hasSubQuery = false;
-    if (hasLimit_) {
+    if (hasLimit_ || hasOrderBy_) {
         hasSubQuery = true; // Need sub query.
     } else {
         isNeedOrderbyKey_ = false; // Need order by timestamp.
     }
     std::string sql;
-    int errCode = GetRelationalSyncDataQuerySql(sql, hasSubQuery);
+    int errCode = GetRelationalSyncDataQuerySql(sql, hasSubQuery, fieldNames);
     if (errCode != E_OK) {
         LOGE("[Query] Get SQL fail!");
         return -E_INVALID_QUERY_FORMAT;
@@ -963,7 +1012,7 @@ int SqliteQueryHelper::GetRelationalQueryStatement(sqlite3 *dbHandle, uint64_t b
          *        b.wtimestamp,b.flag,b.hash_key,a.*
          * FROM tableName AS a INNER JOIN naturalbase_rdb_log AS b
          * ON a.rowid=b.data_key
-         * WHERE (b.flag&0x03=0x02) AND (naturalbase_rdb_timestamp>=? AND naturalbase_rdb_timestamp<?) ;
+         * WHERE (b.flag&0x03=0x02) AND (naturalbase_rdb_timestamp>=? AND naturalbase_rdb_timestamp<?)
          * ORDER BY naturalbase_rdb_timestamp ASC;
          */
         errCode = BindTimeRange(statement, index, beginTime, endTime);

@@ -28,7 +28,7 @@ public:
 
     DISABLE_COPY_ASSIGN_MOVE(RelationalStoreChangedDataImpl);
 
-    const std::string GetDataChangeDevice() const override;
+    std::string GetDataChangeDevice() const override;
 
     void GetStoreProperty(StoreProperty &storeProperty) const override;
 

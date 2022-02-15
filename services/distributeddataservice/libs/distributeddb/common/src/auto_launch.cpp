@@ -347,7 +347,7 @@ void AutoLaunch::ObserverFunc(const KvDBCommitNotifyData &notifyData, const std:
         autoLaunchItem.observer = autoLaunchItemMap_[identifier].observer;
         autoLaunchItem.isWriteOpenNotifiered = autoLaunchItemMap_[identifier].isWriteOpenNotifiered;
         autoLaunchItem.notifier = autoLaunchItemMap_[identifier].notifier;
-        
+
         std::shared_ptr<KvDBProperties> properties =
             std::static_pointer_cast<KvDBProperties>(autoLaunchItemMap_[identifier].propertiesPtr);
         userId = properties->GetStringProp(KvDBProperties::USER_ID, "");
@@ -426,7 +426,7 @@ int AutoLaunch::DisableKvStoreAutoLaunch(const std::string &identifier)
         return errCode;
     }
     if (autoLaunchItem.isWriteOpenNotifiered && autoLaunchItem.notifier) {
-        RuntimeContext::GetInstance()->ScheduleTask([autoLaunchItem, this] { CloseNotifier(autoLaunchItem); });
+        RuntimeContext::GetInstance()->ScheduleTask([autoLaunchItem] { CloseNotifier(autoLaunchItem); });
     }
     LOGI("[AutoLaunch] DisableKvStoreAutoLaunch ok");
     return E_OK;
@@ -718,7 +718,7 @@ int AutoLaunch::AutoLaunchExt(const std::string &identifier)
     if (errCode != E_OK) {
         return errCode;  // not E_OK is ok for communicator
     }
-    
+
     std::shared_ptr<DBProperties> ptr;
     errCode = AutoLaunch::GetAutoLaunchProperties(param, openType, ptr);
     if (errCode != E_OK) {
@@ -858,7 +858,7 @@ int AutoLaunch::SetConflictNotifier(AutoLaunchItem &autoLaunchItem)
         LOGD("[AutoLaunch] Current Type[%d] Not Support ConflictNotifier Now", autoLaunchItem.type);
         return E_OK;
     }
-    
+
     IKvDBConnection *kvConn = static_cast<IKvDBConnection*>(autoLaunchItem.conn);
     int conflictType = autoLaunchItem.conflictType;
     const KvStoreNbConflictNotifier &notifier = autoLaunchItem.conflictNotifier;
@@ -971,7 +971,7 @@ int AutoLaunch::ExtAutoLaunchRequestCallBack(const std::string &identifier, Auto
         LOGI("[AutoLaunch] autoLaunchRequestCallbackMap_ is empty");
         return -E_NOT_FOUND; // not E_OK is ok for communicator
     }
-    
+
     bool needOpen = false;
     for (const auto &[type, callBack] : autoLaunchRequestCallbackMap_) {
         needOpen = callBack(identifier, param);
@@ -980,7 +980,7 @@ int AutoLaunch::ExtAutoLaunchRequestCallBack(const std::string &identifier, Auto
             break;
         }
     }
-    
+
     if (!needOpen) {
         LOGI("[AutoLaunch] autoLaunchRequestCallback is not need open");
         return -E_NOT_FOUND; // not E_OK is ok for communicator
@@ -1057,7 +1057,7 @@ int AutoLaunch::PragmaAutoSync(AutoLaunchItem &autoLaunchItem)
         LOGD("[AutoLaunch] Current Type[%d] Not Support AutoSync Now", autoLaunchItem.type);
         return errCode;
     }
-    
+
     bool enAutoSync = autoLaunchItem.isAutoSync;
     errCode = static_cast<SyncAbleKvDBConnection *>(autoLaunchItem.conn)->Pragma(PRAGMA_AUTO_SYNC,
         static_cast<void *>(&enAutoSync));

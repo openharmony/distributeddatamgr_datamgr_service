@@ -525,7 +525,7 @@ DBStatus KvStoreDelegateManager::EnableKvStoreAutoLaunch(const std::string &user
     if (RuntimeContext::GetInstance() == nullptr) {
         return DB_ERROR;
     }
-    AutoLaunchParam param{ userId, appId, storeId, option, notifier };
+    AutoLaunchParam param{ userId, appId, storeId, option, notifier, {}};
     std::shared_ptr<DBProperties> ptr = std::make_shared<KvDBProperties>();
     int errCode = AutoLaunch::GetAutoLaunchProperties(param, DBType::DB_KV, ptr);
     if (errCode != E_OK) {

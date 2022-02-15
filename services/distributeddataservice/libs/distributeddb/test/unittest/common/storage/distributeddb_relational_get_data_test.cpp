@@ -284,8 +284,8 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData1, TestSize.Level1)
      * @tc.steps: step1. Put 500 records.
      * @tc.expected: Succeed, return OK.
      */
-    const int RECORD_COUNT = 500;
-    for (int i = 0; i < RECORD_COUNT; ++i) {
+    const size_t RECORD_COUNT = 500;
+    for (size_t i = 0; i < RECORD_COUNT; ++i) {
         EXPECT_EQ(AddOrUpdateRecord(i, i), E_OK);
     }
 
@@ -301,7 +301,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetSyncData1, TestSize.Level1)
     DataSizeSpecInfo sizeInfo {MTU_SIZE, 50};
 
     int errCode = store->GetSyncData(query, SyncTimeRange {}, sizeInfo, token, entries);
-    int count = entries.size();
+    auto count = entries.size();
     SingleVerKvEntry::Release(entries);
     EXPECT_EQ(errCode, -E_UNFINISHED);
     while (token != nullptr) {
@@ -484,8 +484,8 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetQuerySyncData1, TestSize.Level1)
      * @tc.steps: step1. Put 100 records.
      * @tc.expected: Succeed, return OK.
      */
-    const int RECORD_COUNT = 100; // 100 records.
-    for (int i = 0; i < RECORD_COUNT; ++i) {
+    const size_t RECORD_COUNT = 100; // 100 records.
+    for (size_t i = 0; i < RECORD_COUNT; ++i) {
         EXPECT_EQ(AddOrUpdateRecord(i, i), E_OK);
     }
 
@@ -527,8 +527,8 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetQuerySyncData2, TestSize.Level1)
      * @tc.steps: step1. Put 100 records.
      * @tc.expected: Succeed, return OK.
      */
-    const int RECORD_COUNT = 100; // 100 records.
-    for (int i = 0; i < RECORD_COUNT; ++i) {
+    const size_t RECORD_COUNT = 100; // 100 records.
+    for (size_t i = 0; i < RECORD_COUNT; ++i) {
         EXPECT_EQ(AddOrUpdateRecord(i, i), E_OK);
     }
 
@@ -541,20 +541,25 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetQuerySyncData2, TestSize.Level1)
     ContinueToken token = nullptr;
 
     Query query = Query::Select(g_tableName).NotEqualTo("key", 10).And().NotEqualTo("value", 20).OrderBy("key", false);
-    size_t expectCount = 98; // expect 98 records.
     QueryObject queryObj(query);
     queryObj.SetSchema(store->GetSchemaInfo());
 
     std::vector<SingleVerKvEntry *> entries;
     EXPECT_EQ(store->GetSyncData(queryObj, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
-    EXPECT_EQ(entries.size(), expectCount);
     EXPECT_EQ(token, nullptr);
+    EXPECT_EQ(entries.size(), RECORD_COUNT);  // expect 98 records. in addition to that, there are 2 miss query data.
+    size_t expectCount = 98;  // expect 98 records.
+    size_t count = 0;
     for (auto iter = entries.begin(); iter != entries.end(); ++iter) {
+        if (((*iter)->GetFlag() & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) == 0) {
+            count++;
+        }
         auto nextOne = std::next(iter, 1);
         if (nextOne != entries.end()) {
-            EXPECT_GT((*iter)->GetTimestamp(), (*nextOne)->GetTimestamp());
+            EXPECT_LT((*iter)->GetTimestamp(), (*nextOne)->GetTimestamp());
         }
     }
+    EXPECT_EQ(count, expectCount);
     SingleVerKvEntry::Release(entries);
 
     /**
@@ -562,14 +567,18 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetQuerySyncData2, TestSize.Level1)
      * @tc.expected: Succeed, Get 98 records.
      */
     query = Query::Select(g_tableName).EqualTo("key", 10).Or().EqualTo("value", 20).OrderBy("key", true);
-    expectCount = 2; // expect 2 records.
     queryObj = QueryObject(query);
     queryObj.SetSchema(store->GetSchemaInfo());
 
     EXPECT_EQ(store->GetSyncData(queryObj, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
-    EXPECT_EQ(entries.size(), expectCount);
+    EXPECT_EQ(entries.size(), RECORD_COUNT);  // expect 2 records. in addition to that, there are 98 miss query data.
     EXPECT_EQ(token, nullptr);
+    expectCount = 2;  // expect 2 records.
+    count = 0;
     for (auto iter = entries.begin(); iter != entries.end(); ++iter) {
+        if (((*iter)->GetFlag() & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) == 0) {
+            count++;
+        }
         auto nextOne = std::next(iter, 1);
         if (nextOne != entries.end()) {
             EXPECT_LT((*iter)->GetTimestamp(), (*nextOne)->GetTimestamp());
@@ -819,5 +828,325 @@ HWTEST_F(DistributedDBRelationalGetDataTest, UpdateDataWithMulDevData1, TestSize
      */
     sql = "UPDATE " + g_tableName + " SET value=2 WHERE key=1;"; // k1v1
     EXPECT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK); // change k1v1 to k1v2
+
+    sqlite3_close(db);
+    RefObject::DecObjRef(g_store);
+}
+
+/**
+ * @tc.name: MissQuery1
+ * @tc.desc: Check REMOTE_DEVICE_DATA_MISS_QUERY flag succeed.
+ * @tc.type: FUNC
+ * @tc.require: AR000GK58H
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBRelationalGetDataTest, MissQuery1, TestSize.Level1)
+{
+    ASSERT_EQ(g_mgr.OpenStore(g_storePath, g_storeID, RelationalStoreDelegate::Option {}, g_delegate), DBStatus::OK);
+    ASSERT_NE(g_delegate, nullptr);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
+    /**
+     * @tc.steps: step1. Create distributed table "dataPlus".
+     * @tc.expected: Succeed, return OK.
+     */
+    const string tableName = g_tableName + "Plus";
+    std::string sql = "CREATE TABLE " + tableName + "(key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, value INTEGER);";
+    sqlite3 *db = nullptr;
+    ASSERT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(tableName), DBStatus::OK);
+
+    /**
+     * @tc.steps: step2. Put 5 records with different type into "dataPlus" table.
+     * @tc.expected: Succeed, return OK.
+     */
+    vector<string> sqls = {
+        "INSERT INTO " + tableName + " VALUES(NULL, 1);",
+        "INSERT INTO " + tableName + " VALUES(NULL, 2);",
+        "INSERT INTO " + tableName + " VALUES(NULL, 3);",
+        "INSERT INTO " + tableName + " VALUES(NULL, 4);",
+        "INSERT INTO " + tableName + " VALUES(NULL, 5);",
+    };
+    const size_t RECORD_COUNT = sqls.size();
+    for (const auto &sql : sqls) {
+        ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    }
+
+    /**
+     * @tc.steps: step3. Get all data from "dataPlus" table.
+     * @tc.expected: Succeed and the count is right.
+     */
+    auto store = GetRelationalStore();
+    ASSERT_NE(store, nullptr);
+    ContinueToken token = nullptr;
+    QueryObject query(Query::Select(tableName).EqualTo("value", 2).Or().EqualTo("value", 3).Or().EqualTo("value", 4));
+    std::vector<SingleVerKvEntry *> entries;
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    EXPECT_EQ(entries.size(), RECORD_COUNT);
+
+    /**
+     * @tc.steps: step4. Put data into "data" table from deviceA for 10 times.
+     * @tc.expected: Succeed, return OK.
+     */
+    query = QueryObject(Query::Select(g_tableName));
+    const DeviceID deviceID = "deviceA";
+    ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(g_tableName),
+        DBCommon::GetDistributedTableName(deviceID, g_tableName)));
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceID), E_OK);
+    SingleVerKvEntry::Release(entries);
+
+    /**
+     * @tc.steps: step5. Check data.
+     * @tc.expected: There is 3 data in table.
+     */
+    std::string getDataSql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_" +
+        DBCommon::TransferStringToHex(DBCommon::TransferHashString(deviceID)) + ";";
+    size_t count = 0;
+    EXPECT_EQ(GetCount(db, getDataSql, count), E_OK);
+    EXPECT_EQ(count, 3U);  // 2,3,4
+
+    std::string getLogSql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_log;";
+    count = 0;
+    EXPECT_EQ(GetCount(db, getLogSql, count), E_OK);
+    EXPECT_EQ(count, 3U);  // 2,3,4
+
+    /**
+     * @tc.steps: step6. Update data. k2v2 to k2v102, k3v3 to k3v103.
+     * @tc.expected: Update succeed.
+     */
+    sqls = {
+        "UPDATE " + tableName + " SET value=102 WHERE value=2;",
+        "UPDATE " + tableName + " SET value=103 WHERE value=3;",
+    };
+    for (const auto &sql : sqls) {
+        ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    }
+
+    /**
+     * @tc.steps: step7. Get all data from "dataPlus" table.
+     * @tc.expected: Succeed and the count is right.
+     */
+    query = QueryObject(Query::Select(tableName).EqualTo("value", 2).Or().EqualTo("value", 3).Or().EqualTo("value", 4));
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    EXPECT_EQ(entries.size(), RECORD_COUNT);
+
+    /**
+     * @tc.steps: step8. Put data into "data" table from deviceA for 10 times.
+     * @tc.expected: Succeed, return OK.
+     */
+    query = QueryObject(Query::Select(g_tableName));
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceID), E_OK);
+    SingleVerKvEntry::Release(entries);
+
+    /**
+     * @tc.steps: step9. Check data.
+     * @tc.expected: There is 1 data in table.
+     */
+    count = 0;
+    EXPECT_EQ(GetCount(db, getDataSql, count), E_OK);
+    EXPECT_EQ(count, 1U);  // 4
+
+    EXPECT_EQ(GetCount(db, getLogSql, count), E_OK);
+    EXPECT_EQ(count, 1U);  // 4
+
+    sqlite3_close(db);
+    RefObject::DecObjRef(g_store);
+}
+
+/**
+ * @tc.name: CompatibleData1
+ * @tc.desc: Check compatibility.
+ * @tc.type: FUNC
+ * @tc.require: AR000GK58H
+ * @tc.author: lidongwei
+  */
+HWTEST_F(DistributedDBRelationalGetDataTest, CompatibleData1, TestSize.Level1)
+{
+    ASSERT_EQ(g_mgr.OpenStore(g_storePath, g_storeID, RelationalStoreDelegate::Option {}, g_delegate), DBStatus::OK);
+    ASSERT_NE(g_delegate, nullptr);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
+    /**
+     * @tc.steps: step1. Create distributed table "dataPlus".
+     * @tc.expected: Succeed, return OK.
+     */
+    const string tableName = g_tableName + "Plus";
+    std::string sql = "CREATE TABLE " + tableName + "(key INTEGER, value INTEGER NOT NULL, \
+        extra_field TEXT NOT NULL DEFAULT 'default_value');";
+    sqlite3 *db = nullptr;
+    ASSERT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(tableName), DBStatus::OK);
+    /**
+     * @tc.steps: step2. Put 1 record into data and dataPlus table.
+     * @tc.expected: Succeed, return OK.
+     */
+    ASSERT_EQ(AddOrUpdateRecord(1, 101), E_OK);
+    sql = "INSERT INTO " + tableName + " VALUES(2, 102, 'f3');"; // k2v102
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    /**
+     * @tc.steps: step3. Get all data from "data" table.
+     * @tc.expected: Succeed and the count is right.
+     */
+    auto store = GetRelationalStore();
+    ASSERT_NE(store, nullptr);
+    ContinueToken token = nullptr;
+    QueryObject query(Query::Select(g_tableName));
+    std::vector<SingleVerKvEntry *> entries;
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    EXPECT_EQ(entries.size(), 1UL);
+    /**
+     * @tc.steps: step4. Put data into "data_plus" table from deviceA.
+     * @tc.expected: Succeed, return OK.
+     */
+    query = QueryObject(Query::Select(tableName));
+    const DeviceID deviceID = "deviceA";
+    ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(tableName),
+        DBCommon::GetDistributedTableName(deviceID, tableName)));
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceID), E_OK);
+    SingleVerKvEntry::Release(entries);
+    /**
+     * @tc.steps: step4. Get all data from "dataPlus" table.
+     * @tc.expected: Succeed and the count is right.
+     */
+    query = QueryObject(Query::Select(tableName));
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    EXPECT_EQ(entries.size(), 1UL);
+    /**
+     * @tc.steps: step5. Put data into "data" table from deviceA.
+     * @tc.expected: Succeed, return OK.
+     */
+    query = QueryObject(Query::Select(g_tableName));
+    ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(g_tableName),
+        DBCommon::GetDistributedTableName(deviceID, g_tableName)));
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(query, entries, deviceID), E_OK);
+    SingleVerKvEntry::Release(entries);
+    /**
+     * @tc.steps: step6. Check data.
+     * @tc.expected: All data in the two tables are same.
+     */
+    sql = "SELECT count(*) FROM " + g_tableName + " as a," + DBConstant::RELATIONAL_PREFIX + tableName + "_" +
+        DBCommon::TransferStringToHex(DBCommon::TransferHashString(deviceID)) + " as b " +
+        "WHERE a.key=b.key AND a.value=b.value;";
+    size_t count = 0;
+    EXPECT_EQ(GetCount(db, sql, count), E_OK);
+    EXPECT_EQ(count, 1UL);
+    sql = "SELECT count(*) FROM " + tableName + " as a," + DBConstant::RELATIONAL_PREFIX + g_tableName + "_" +
+        DBCommon::TransferStringToHex(DBCommon::TransferHashString(deviceID)) + " as b " +
+        "WHERE a.key=b.key AND a.value=b.value;";
+    count = 0;
+    EXPECT_EQ(GetCount(db, sql, count), E_OK);
+    EXPECT_EQ(count, 1UL);
+    sqlite3_close(db);
+    RefObject::DecObjRef(g_store);
+}
+
+/**
+ * @tc.name: GetDataSortByTime1
+ * @tc.desc: All query get data sort by time asc.
+ * @tc.type: FUNC
+ * @tc.require: AR000GK58H
+ * @tc.author: lidongwei
+  */
+HWTEST_F(DistributedDBRelationalGetDataTest, GetDataSortByTime1, TestSize.Level1)
+{
+    ASSERT_EQ(g_mgr.OpenStore(g_storePath, g_storeID, RelationalStoreDelegate::Option {}, g_delegate), DBStatus::OK);
+    ASSERT_NE(g_delegate, nullptr);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
+    /**
+     * @tc.steps: step2. Add 3 record into data. k1v105, k2v104, k3v103, timestamp desc.
+     * @tc.expected: Succeed, return OK.
+     */
+    sqlite3 *db = nullptr;
+    ASSERT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+    std::string sql = "INSERT INTO " + g_tableName + " VALUES(1, 101);"; // k1v101
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    sql = "INSERT INTO " + g_tableName + " VALUES(2, 102);"; // k2v102
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    sql = "INSERT INTO " + g_tableName + " VALUES(3, 103);"; // k3v103
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    sql = "UPDATE " + g_tableName + " SET value=104 WHERE key=2;"; // k2v104
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    sql = "UPDATE " + g_tableName + " SET value=105 WHERE key=1;"; // k1v105
+    ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+    /**
+     * @tc.steps: step3. Get all data from "data" table by all query.
+     * @tc.expected: Succeed and the count is right.
+     */
+    auto store = GetRelationalStore();
+    ASSERT_NE(store, nullptr);
+    ContinueToken token = nullptr;
+    QueryObject query(Query::Select(g_tableName));
+    std::vector<SingleVerKvEntry *> entries;
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    size_t count = 0;
+    for (auto iter = entries.begin(); iter != entries.end(); ++iter) {
+        if (((*iter)->GetFlag() & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) == 0) {
+            count++;
+        }
+        auto nextOne = std::next(iter, 1);
+        if (nextOne != entries.end()) {
+            EXPECT_LT((*iter)->GetTimestamp(), (*nextOne)->GetTimestamp());
+        }
+    }
+    EXPECT_EQ(count, 3UL);
+    SingleVerKvEntry::Release(entries);
+    query = QueryObject(Query::Select(g_tableName).EqualTo("key", 1).Or().EqualTo("key", 3));
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    count = 0;
+    for (auto iter = entries.begin(); iter != entries.end(); ++iter) {
+        if (((*iter)->GetFlag() & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) == 0) {
+            count++;
+        }
+        auto nextOne = std::next(iter, 1);
+        if (nextOne != entries.end()) {
+            EXPECT_LT((*iter)->GetTimestamp(), (*nextOne)->GetTimestamp());
+        }
+    }
+    EXPECT_EQ(count, 2UL);
+    SingleVerKvEntry::Release(entries);
+    query = QueryObject(Query::Select(g_tableName).OrderBy("key", false));
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    count = 0;
+    for (auto iter = entries.begin(); iter != entries.end(); ++iter) {
+        if (((*iter)->GetFlag() & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) == 0) {
+            count++;
+        }
+        auto nextOne = std::next(iter, 1);
+        if (nextOne != entries.end()) {
+            EXPECT_LT((*iter)->GetTimestamp(), (*nextOne)->GetTimestamp());
+        }
+    }
+    EXPECT_EQ(count, 3UL);
+    SingleVerKvEntry::Release(entries);
+    query = QueryObject(Query::Select(g_tableName).OrderBy("value", false));
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    count = 0;
+    for (auto iter = entries.begin(); iter != entries.end(); ++iter) {
+        if (((*iter)->GetFlag() & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) == 0) {
+            count++;
+        }
+        auto nextOne = std::next(iter, 1);
+        if (nextOne != entries.end()) {
+            EXPECT_LT((*iter)->GetTimestamp(), (*nextOne)->GetTimestamp());
+        }
+    }
+    EXPECT_EQ(count, 3UL);
+    SingleVerKvEntry::Release(entries);
+    query = QueryObject(Query::Select(g_tableName).Limit(2));
+    EXPECT_EQ(store->GetSyncData(query, SyncTimeRange {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    count = 0;
+    for (auto iter = entries.begin(); iter != entries.end(); ++iter) {
+        if (((*iter)->GetFlag() & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) == 0) {
+            count++;
+        }
+        auto nextOne = std::next(iter, 1);
+        if (nextOne != entries.end()) {
+            EXPECT_LT((*iter)->GetTimestamp(), (*nextOne)->GetTimestamp());
+        }
+    }
+    EXPECT_EQ(count, 2UL);
+    SingleVerKvEntry::Release(entries);
+    sqlite3_close(db);
+    RefObject::DecObjRef(g_store);
 }
 #endif

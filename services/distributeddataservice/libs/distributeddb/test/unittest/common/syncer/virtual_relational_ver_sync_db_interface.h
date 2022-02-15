@@ -22,6 +22,14 @@
 #include "relational_schema_object.h"
 
 namespace DistributedDB {
+struct ObjectData {
+public:
+    void PutDataValue(const std::string &fieldName, const DataValue &value);
+    int GetDataValue(const std::string &fieldName, DataValue &value) const;
+private:
+    mutable std::map<std::string, DataValue> fieldData;
+};
+
 struct VirtualRowData {
     LogInfo logInfo;
     ObjectData objectData;

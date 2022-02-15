@@ -291,12 +291,15 @@ namespace {
         FieldInfo columnFirst;
         columnFirst.SetFieldName("ID");
         columnFirst.SetStorageType(StorageType::STORAGE_TYPE_INTEGER);
+        columnFirst.SetColumnId(0); // the first column
         FieldInfo columnSecond;
         columnSecond.SetFieldName("NAME");
         columnSecond.SetStorageType(StorageType::STORAGE_TYPE_TEXT);
+        columnSecond.SetColumnId(1); // the 2nd column
         FieldInfo columnThird;
         columnThird.SetFieldName("AGE");
         columnThird.SetStorageType(StorageType::STORAGE_TYPE_INTEGER);
+        columnThird.SetColumnId(2); // the 3rd column(index 2 base 0)
         fieldInfoList.push_back(columnFirst);
         fieldInfoList.push_back(columnSecond);
         fieldInfoList.push_back(columnThird);
@@ -421,7 +424,8 @@ namespace {
         sqlite3_close(db);
     }
 
-    void PrepareEnvironment(std::map<std::string, DataValue> &dataMap, std::vector<RelationalVirtualDevice *> remoteDeviceVec)
+    void PrepareEnvironment(std::map<std::string, DataValue> &dataMap,
+        std::vector<RelationalVirtualDevice *> remoteDeviceVec)
     {
         PrepareBasicTable(g_tableName, g_fieldInfoList, remoteDeviceVec);
         GenerateValue(dataMap, g_fieldInfoList);
@@ -441,7 +445,8 @@ namespace {
         g_deviceB->PutData(tableName, {virtualRowData});
     }
 
-    void PrepareVirtualEnvironment(std::map<std::string, DataValue> &dataMap, std::vector<RelationalVirtualDevice *> remoteDeviceVec)
+    void PrepareVirtualEnvironment(std::map<std::string, DataValue> &dataMap,
+        std::vector<RelationalVirtualDevice *> remoteDeviceVec)
     {
         PrepareVirtualEnvironment(dataMap, g_tableName, g_fieldInfoList, remoteDeviceVec);
     }
@@ -696,8 +701,6 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, NormalSync003, TestSize.Level1)
 
     CheckVirtualData(dataMap);
 
-    int64_t val = 0;
-
     GenerateValue(dataMap, g_fieldInfoList);
     dataMap["AGE"] = static_cast<int64_t>(1);
     InsertValueToDB(dataMap);
@@ -751,6 +754,12 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, NormalSync005, TestSize.Level0)
     PrepareVirtualEnvironment(dataMap, {g_deviceB});
 
     Query query = Query::Select(g_tableName);
+    g_deviceB->GenericVirtualDevice::Sync(SYNC_MODE_PUSH_ONLY, query, true);
+
+    CheckData(dataMap);
+
+    g_rdbDelegatePtr->RemoveDeviceData(DEVICE_B);
+
     g_deviceB->GenericVirtualDevice::Sync(SYNC_MODE_PUSH_ONLY, query, true);
 
     CheckData(dataMap);
@@ -1096,7 +1105,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, observer002, TestSize.Level3)
      * @tc.steps: step2. set auto launch callBack
      */
     RelationalStoreObserverUnitTest *observer = new (std::nothrow) RelationalStoreObserverUnitTest();
-    const AutoLaunchRequestCallback callback = [observer](const std::string &identifier, AutoLaunchParam &param){
+    const AutoLaunchRequestCallback callback = [observer](const std::string &identifier, AutoLaunchParam &param) {
         if (g_id != identifier) {
             return false;
         }

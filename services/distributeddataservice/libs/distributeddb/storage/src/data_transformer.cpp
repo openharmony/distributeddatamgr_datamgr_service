@@ -237,9 +237,16 @@ int DeSerializeBlobByType(DataValue &dataValue, Parcel &parcel, StorageType type
         dataValue.ResetValue();
         return E_OK;
     }
-    char array[blobLength];
+    if (blobLength >= DBConstant::MAX_VALUE_SIZE || parcel.IsError()) { // One blob cannot be over one value size.
+        return -E_PARSE_FAIL;
+    }
+    auto array = new (std::nothrow) char[blobLength]();
+    if (array == nullptr) {
+        return -E_OUT_OF_MEMORY;
+    }
     (void)parcel.ReadBlob(array, blobLength);
     if (parcel.IsError()) {
+        delete []array;
         return -E_PARSE_FAIL;
     }
     int errCode = -E_NOT_SUPPORT;
@@ -252,6 +259,7 @@ int DeSerializeBlobByType(DataValue &dataValue, Parcel &parcel, StorageType type
             errCode = dataValue.SetBlob(val);
         }
     }
+    delete []array;
     return errCode;
 }
 
@@ -323,15 +331,14 @@ int DataTransformer::SerializeValue(Value &value, const RowData &rowData, const 
 int DataTransformer::DeSerializeValue(const Value &value, OptRowData &optionalData,
     const std::vector<FieldInfo> &remoteFieldInfo, std::vector<int> &indexMapping)
 {
+    (void)indexMapping;
     Parcel parcel(const_cast<uint8_t *>(value.data()), value.size());
     uint64_t fieldCount = 0;
     (void)parcel.ReadUInt64(fieldCount);
-    if (fieldCount != remoteFieldInfo.size()) {
-        LOGE("[DataTransformer][DeSerializeValue] unequal field counts!");
-        return -E_INVALID_ARGS;
+    if (fieldCount > DBConstant::MAX_COLUMN || parcel.IsError()) {
+        return -E_PARSE_FAIL;
     }
-    std::vector<DataValue> valueList;
-    for (const auto &fieldInfo : remoteFieldInfo) {
+    for (size_t i = 0; i < fieldCount; ++i) {
         DataValue dataValue;
         uint32_t type = 0;
         parcel.ReadUInt32(type);
@@ -341,20 +348,10 @@ int DataTransformer::DeSerializeValue(const Value &value, OptRowData &optionalDa
         }
         int errCode = iter->second.deSerializeFunc(dataValue, parcel);
         if (errCode != E_OK) {
-            LOGD("[DataTransformer][DeSerializeValue] deSerialize %s failed", fieldInfo.GetFieldName().c_str());
+            LOGD("[DataTransformer][DeSerializeValue] deSerialize failed");
             return errCode;
         }
-        valueList.push_back(std::move(dataValue));
-    }
-    for (const auto &index : indexMapping) {
-        if (index < 0) {
-            optionalData.push_back(std::nullopt);
-            continue;
-        }
-        if (static_cast<uint32_t>(index) >= valueList.size()) {
-            return -E_INTERNAL_ERROR; // should not happen
-        }
-        optionalData.push_back(valueList[index]);
+        optionalData.push_back(std::move(dataValue));
     }
     return E_OK;
 }

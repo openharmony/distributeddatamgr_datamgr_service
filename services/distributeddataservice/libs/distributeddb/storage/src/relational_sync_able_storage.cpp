@@ -290,8 +290,8 @@ int RelationalSyncAbleStorage::GetSyncDataForQuerySync(std::vector<DataItem> &da
             Parcel::GetAppendedLen(),
             dataSizeInfo,
             std::bind(&SQLiteSingleVerRelationalContinueToken::GetStatement, *token,
-                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-            token->GetQuery().GetTableName());
+                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4),
+            storageEngine_->GetSchemaRef().GetTable(token->GetQuery().GetTableName()));
         if (errCode == -E_FINISHED) {
             token->FinishGetData();
             errCode = token->IsGetAllDataFinished() ? E_OK : -E_UNFINISHED;
@@ -335,6 +335,7 @@ int RelationalSyncAbleStorage::GetSyncDataNext(std::vector<SingleVerKvEntry *> &
     if (!token->CheckValid()) {
         return -E_INVALID_ARGS;
     }
+    token->SetFieldNames(storageEngine_->GetSchemaRef().GetTable(token->GetQuery().GetTableName()).GetFieldNames());
 
     std::vector<DataItem> dataItems;
     int errCode = GetSyncDataForQuerySync(dataItems, token, dataSizeInfo);
@@ -388,7 +389,8 @@ int RelationalSyncAbleStorage::SaveSyncDataItems(const QueryObject &object, std:
     query.SetSchema(storageEngine_->GetSchemaRef());
 
     TimeStamp maxTimestamp = 0;
-    errCode = handle->SaveSyncItems(query, dataItems, deviceName, maxTimestamp);
+    errCode = handle->SaveSyncItems(query, dataItems, deviceName,
+        storageEngine_->GetSchemaRef().GetTable(object.GetTableName()), maxTimestamp);
     if (errCode == E_OK) {
         (void)SetMaxTimeStamp(maxTimestamp);
         // dataItems size > 0 now because already check befor
@@ -546,11 +548,6 @@ void RelationalSyncAbleStorage::RegisterHeartBeatListener(const std::function<vo
 
 int RelationalSyncAbleStorage::CheckAndInitQueryCondition(QueryObject &query) const
 {
-    if (!query.IsQueryForRelationalDB()) {
-        LOGE("Not support for this query type.");
-        return -E_NOT_SUPPORT;
-    }
-
     RelationalSchemaObject schema = storageEngine_->GetSchemaRef();
     TableInfo table = schema.GetTable(query.GetTableName());
     if (table.GetTableName() != query.GetTableName()) {

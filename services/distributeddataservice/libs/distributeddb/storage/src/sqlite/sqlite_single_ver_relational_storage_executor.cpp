@@ -22,7 +22,8 @@ SQLiteSingleVerRelationalStorageExecutor::SQLiteSingleVerRelationalStorageExecut
     : SQLiteStorageExecutor(dbHandle, writable, false)
 {}
 
-int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::string &tableName, TableInfo &table)
+int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::string &tableName, TableInfo &table,
+    bool isUpgrade)
 {
     if (dbHandle_ == nullptr) {
         return -E_INVALID_DB;
@@ -46,8 +47,8 @@ int SQLiteSingleVerRelationalStorageExecutor::CreateDistributedTable(const std::
         return errCode;
     }
 
-    if (!isTableEmpty) { // create distributed table should on an empty table
-        LOGE("[CreateDistributedTable] Create distributed table should on an empty table.");
+    if (!isUpgrade && !isTableEmpty) { // create distributed table should on an empty table
+        LOGE("[CreateDistributedTable] Create distributed table should on an empty table when first create.");
         return -E_NOT_SUPPORT;
     }
 
@@ -323,17 +324,12 @@ int SQLiteSingleVerRelationalStorageExecutor::Rollback()
     return errCode;
 }
 
-int SQLiteSingleVerRelationalStorageExecutor::SetTableInfo(const std::string &baseTbl)
+void SQLiteSingleVerRelationalStorageExecutor::SetTableInfo(const TableInfo &tableInfo)
 {
-    table_ = {};
-    int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, baseTbl, table_);
-    if (errCode != E_OK) {
-        LOGE("[CreateDistributedTable] analysis table schema failed");
-    }
-    return errCode;
+    table_ = tableInfo;
 }
 
-static int GetDataValueByType(sqlite3_stmt *statement, DataValue &value, StorageType type, int cid)
+static int GetDataValueByType(sqlite3_stmt *statement, DataValue &value, int cid)
 {
     int errCode = E_OK;
     int storageType = sqlite3_column_type(statement, cid);
@@ -384,10 +380,6 @@ static int GetDataValueByType(sqlite3_stmt *statement, DataValue &value, Storage
 
 static int BindDataValueByType(sqlite3_stmt *statement, const std::optional<DataValue> &data, int cid)
 {
-    if (!data.has_value()) {  // For the column that added after enable distributed.
-        return E_OK;
-    }
-
     int errCode = E_OK;
     StorageType type = data.value().GetType();
     switch (type) {
@@ -639,16 +631,19 @@ int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingLog(const QueryObj
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingData(const QueryObject &object,
-    const std::string &deviceName, sqlite3_stmt *&statement) const
+    sqlite3_stmt *&statement) const
 {
-    const std::string tableName = DBCommon::GetDistributedTableName(deviceName, object.GetTableName());
+    std::string colName;
     std::string dataFormat;
-    for (size_t i = 0; i < table_.GetFields().size(); ++i) {
+    for (size_t colId = 0; colId < table_.GetFields().size(); ++colId) {
+        colName += table_.GetFieldName(colId) + ",";
         dataFormat += "?,";
     }
+    colName.pop_back();
     dataFormat.pop_back();
 
-    std::string sql = "INSERT OR REPLACE INTO " + tableName + " VALUES (" + dataFormat + ");";
+    const std::string sql = "INSERT OR REPLACE INTO " + table_.GetTableName() +
+        " (" + colName + ") VALUES (" + dataFormat + ");";
     int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, statement);
     if (errCode != E_OK) {
         LOGE("[info statement] Get statement fail!");
@@ -660,8 +655,7 @@ int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingData(const QueryOb
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statement, const DataItem &dataItem,
     TimeStamp &maxTimestamp, int64_t rowid)
 {
-    std::string sql = "select * from " + DBConstant::RELATIONAL_PREFIX + table_.GetTableName() +
-        "_log where hash_key = ?;";
+    std::string sql = "select * from " + DBConstant::RELATIONAL_PREFIX + baseTblName_ + "_log where hash_key = ?;";
     sqlite3_stmt *queryStmt = nullptr;
     int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, queryStmt);
     if (errCode != E_OK) {
@@ -714,19 +708,20 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statemen
     return errCode;
 }
 
-int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncDataItem(const DataItem &dataItem)
+int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&stmt)
 {
-    const std::string tableName = DBCommon::GetDistributedTableName(dataItem.dev, table_.GetTableName());
-    const std::string sql = "DELETE FROM " + tableName + " WHERE rowid IN ("
-        "SELECT data_key FROM " + DBConstant::RELATIONAL_PREFIX + table_.GetTableName() + "_log "
-        "WHERE hash_key=? AND device=? AND flag&0x01=0);";
-    sqlite3_stmt *stmt = nullptr;
-    int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
-    if (errCode != E_OK) {
-        LOGE("[info statement] Get statement fail!");
-        return -E_INVALID_QUERY_FORMAT;
+    if (stmt == nullptr) {
+        const std::string sql = "DELETE FROM " + table_.GetTableName() + " WHERE rowid IN ("
+            "SELECT data_key FROM " + DBConstant::RELATIONAL_PREFIX + baseTblName_ + "_log "
+            "WHERE hash_key=? AND device=? AND flag&0x01=0);";
+        int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
+        if (errCode != E_OK) {
+            LOGE("[DeleteSyncDataItem] Get statement fail!");
+            return -E_INVALID_QUERY_FORMAT;
+        }
     }
-    errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, dataItem.hashKey); // 1 means hash_key index
+
+    int errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, dataItem.hashKey); // 1 means hash_key index
     if (errCode != E_OK) {
         SQLiteUtils::ResetStatement(stmt, true, errCode);
         return errCode;
@@ -740,15 +735,15 @@ int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncDataItem(const DataItem 
     if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
         errCode = E_OK;
     }
-    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    SQLiteUtils::ResetStatement(stmt, false, errCode);  // Finalize outside.
     return errCode;
 }
 
-int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(sqlite3_stmt *statement, const DataItem &dataItem,
-    int64_t &rowid)
+int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&saveDataStmt,
+    sqlite3_stmt *&rmDataStmt, int64_t &rowid)
 {
     if ((dataItem.flag & DataItem::DELETE_FLAG) != 0) {
-        return DeleteSyncDataItem(dataItem);
+        return DeleteSyncDataItem(dataItem, rmDataStmt);
     }
 
     std::map<std::string, FieldInfo> colInfos = table_.GetFields();
@@ -758,7 +753,6 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(sqlite3_stmt *sta
     }
 
     std::vector<int> indexMapping;
-    DataTransformer::ReduceMapping(fieldInfos, fieldInfos, indexMapping);
 
     OptRowDataWithLog data;
     int errCode = DataTransformer::DeSerializeDataItem(dataItem, data, fieldInfos, indexMapping);
@@ -767,16 +761,22 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(sqlite3_stmt *sta
         return errCode;
     }
 
-    for (size_t index = 0; index < data.optionalData.size(); index++) {
-        const auto &filedData = data.optionalData[index];
-        errCode = BindDataValueByType(statement, filedData, fieldInfos[index].GetColumnId() + 1);
+    if (data.optionalData.size() != table_.GetFields().size()) {
+        LOGW("Remote data has different fields with local data. Remote size:%zu, local size:%zu",
+            data.optionalData.size(), table_.GetFields().size());
+    }
+
+    auto putSize = std::min(data.optionalData.size(), table_.GetFields().size());
+    for (size_t cid = 0; cid < putSize; ++cid) {
+        const auto &fieldData = data.optionalData[cid];
+        errCode = BindDataValueByType(saveDataStmt, fieldData, cid + 1);
         if (errCode != E_OK) {
-            LOGE("Bind data failed, errCode:%d, cid:%d.", errCode, fieldInfos[index].GetColumnId() + 1);
+            LOGE("Bind data failed, errCode:%d, cid:%d.", errCode, cid + 1);
             return errCode;
         }
     }
 
-    errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
+    errCode = SQLiteUtils::StepWithRetry(saveDataStmt, isMemDb_);
     if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
         rowid = SQLiteUtils::GetLastRowId(dbHandle_);
         errCode = E_OK;
@@ -784,66 +784,118 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(sqlite3_stmt *sta
     return errCode;
 }
 
+int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncLog(const DataItem &dataItem, sqlite3_stmt *&stmt)
+{
+    if (stmt == nullptr) {
+        const std::string sql = "DELETE FROM " + DBConstant::RELATIONAL_PREFIX + baseTblName_ + "_log "
+                                "WHERE hash_key=? AND device=?";
+        int errCode = SQLiteUtils::GetStatement(dbHandle_, sql, stmt);
+        if (errCode != E_OK) {
+            LOGE("[DeleteSyncLog] Get statement fail!");
+            return errCode;
+        }
+    }
+
+    int errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, dataItem.hashKey); // 1 means hashkey index
+    if (errCode != E_OK) {
+        SQLiteUtils::ResetStatement(stmt, true, errCode);
+        return errCode;
+    }
+    errCode = SQLiteUtils::BindTextToStatement(stmt, 2, dataItem.dev); // 2 means device index
+    if (errCode != E_OK) {
+        SQLiteUtils::ResetStatement(stmt, true, errCode);
+        return errCode;
+    }
+    errCode = SQLiteUtils::StepWithRetry(stmt, isMemDb_);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+        errCode = E_OK;
+    }
+    SQLiteUtils::ResetStatement(stmt, false, errCode);  // Finalize outside.
+    return errCode;
+}
+
+int SQLiteSingleVerRelationalStorageExecutor::ProcessMissQueryData(const DataItem &item, sqlite3_stmt *&rmDataStmt,
+    sqlite3_stmt *&rmLogStmt)
+{
+    int errCode = DeleteSyncDataItem(item, rmDataStmt);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    return DeleteSyncLog(item, rmLogStmt);
+}
+
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObject &object,
     std::vector<DataItem> &dataItems, const std::string &deviceName, TimeStamp &maxTimestamp)
 {
-    const auto &baseTbl = object.GetTableName();
-    if (!table_.IsValid() || table_.GetTableName() != baseTbl) {
-        SetTableInfo(baseTbl);
-    }
-    sqlite3_stmt *statement = nullptr;
-    int errCode = PrepareForSavingData(object, deviceName, statement);
+    sqlite3_stmt *saveDataStmt = nullptr;
+    int errCode = PrepareForSavingData(object, saveDataStmt);
     if (errCode != E_OK) {
-        LOGE("[RelationalStorage] Get statement fail!");
+        LOGE("[RelationalStorage] Get saveDataStmt fail!");
         return errCode;
     }
 
-    sqlite3_stmt *logStmt = nullptr;
-    errCode = PrepareForSavingLog(object, deviceName, logStmt);
+    sqlite3_stmt *saveLogStmt = nullptr;
+    errCode = PrepareForSavingLog(object, deviceName, saveLogStmt);
     if (errCode != E_OK) {
-        LOGE("[RelationalStorage] Get statement fail!");
+        SQLiteUtils::ResetStatement(saveDataStmt, true, errCode);
+        LOGE("[RelationalStorage] Get saveLogStmt fail!");
         return errCode;
     }
 
+    sqlite3_stmt *rmDataStmt = nullptr;
+    sqlite3_stmt *rmLogStmt = nullptr;
     for (auto &item : dataItems) {
         if (item.neglect) { // Do not save this record if it is neglected
             continue;
         }
-
         item.dev = deviceName;
+
+        if ((item.flag & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) != 0) {
+            errCode = ProcessMissQueryData(item, rmDataStmt, rmLogStmt);
+            if (errCode != E_OK) {
+                break;
+            }
+            continue;
+        }
         int64_t rowid = -1;
-        errCode = SaveSyncDataItem(statement, item, rowid);
+        errCode = SaveSyncDataItem(item, saveDataStmt, rmDataStmt, rowid);
         if (errCode != E_OK && errCode != -E_NOT_FOUND) {
             LOGE("Save sync dataitem failed:%d.", errCode);
             break;
         }
 
-        errCode = SaveSyncLog(logStmt, item, maxTimestamp, rowid);
+        errCode = SaveSyncLog(saveLogStmt, item, maxTimestamp, rowid);
         if (errCode != E_OK) {
             LOGE("Save sync log failed:%d.", errCode);
             break;
         }
         maxTimestamp = std::max(item.timeStamp, maxTimestamp);
-        SQLiteUtils::ResetStatement(statement, false, errCode);
-        SQLiteUtils::ResetStatement(logStmt, false, errCode);
+        // Need not reset rmDataStmt and rmLogStmt here.
+        SQLiteUtils::ResetStatement(saveDataStmt, false, errCode);
+        SQLiteUtils::ResetStatement(saveLogStmt, false, errCode);
     }
 
     if (errCode == -E_NOT_FOUND) {
         errCode = E_OK;
     }
-    SQLiteUtils::ResetStatement(logStmt, true, errCode);
-    SQLiteUtils::ResetStatement(statement, true, errCode);
+    SQLiteUtils::ResetStatement(rmDataStmt, true, errCode);
+    SQLiteUtils::ResetStatement(rmLogStmt, true, errCode);
+    SQLiteUtils::ResetStatement(saveLogStmt, true, errCode);
+    SQLiteUtils::ResetStatement(saveDataStmt, true, errCode);
     return errCode;
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncItems(const QueryObject &object, std::vector<DataItem> &dataItems,
-    const std::string &deviceName, TimeStamp &timeStamp)
+    const std::string &deviceName, const TableInfo &table, TimeStamp &timeStamp)
 {
     int errCode = StartTransaction(TransactType::IMMEDIATE);
     if (errCode != E_OK) {
         return errCode;
     }
-
+    baseTblName_ = object.GetTableName();
+    SetTableInfo(table);
+    const std::string tableName = DBCommon::GetDistributedTableName(deviceName, baseTblName_);
+    table_.SetTableName(tableName);
     errCode = SaveSyncDataItems(object, dataItems, deviceName, timeStamp);
     if (errCode == E_OK) {
         errCode = Commit();
@@ -865,15 +917,18 @@ int SQLiteSingleVerRelationalStorageExecutor::GetDataItemForSync(sqlite3_stmt *s
 
     std::vector<FieldInfo> fieldInfos;
     if (!isGettingDeletedData) {
-        for (const auto &col: table_.GetFields()) {
-            auto colType = col.second.GetStorageType();
-            auto colId = col.second.GetColumnId() + 7;  // 7 means the count of log table's column.
+        for (size_t cid = 0; cid < table_.GetFields().size(); ++cid) {
             DataValue value;
-            errCode = GetDataValueByType(stmt, value, colType, colId);
+            errCode = GetDataValueByType(stmt, value, cid + DBConstant::RELATIONAL_LOG_TABLE_FIELD_NUM);
             if (errCode != E_OK) {
                 return errCode;
             }
-            fieldInfos.push_back(col.second);
+            auto iter = table_.GetFields().find(table_.GetFieldName(cid));
+            if (iter == table_.GetFields().end()) {
+                LOGE("Get field name failed.");
+                return -E_INTERNAL_ERROR;
+            }
+            fieldInfos.push_back(iter->second);
             data.rowData.push_back(value);
         }
     }
@@ -885,39 +940,30 @@ int SQLiteSingleVerRelationalStorageExecutor::GetDataItemForSync(sqlite3_stmt *s
     return errCode;
 }
 
-int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength,
-    const DataSizeSpecInfo &dataSizeInfo, std::function<int(sqlite3 *, sqlite3_stmt *&, bool &)> getStmt,
-    const std::string &baseTbl)
+int SQLiteSingleVerRelationalStorageExecutor::GetMissQueryData(std::vector<DataItem> &dataItems, size_t &dataTotalSize,
+    const Key &cursorHashKey, sqlite3_stmt *fullStmt, size_t appendLength, const DataSizeSpecInfo &dataSizeInfo)
 {
-    if (!table_.IsValid() || table_.GetTableName() != baseTbl) {
-        SetTableInfo(baseTbl);
-    }
-    sqlite3_stmt *stmt = nullptr;
-    bool isGettingDeletedData = false;
-    int errCode = getStmt(dbHandle_, stmt, isGettingDeletedData);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-
-    size_t dataTotalSize = 0;
-    do {
+    int errCode = E_OK;
+    while (true) {
         DataItem item;
-        errCode = SQLiteUtils::StepWithRetry(stmt, isMemDb_);
+        errCode = SQLiteUtils::StepWithRetry(fullStmt, isMemDb_);
         if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
-            errCode = GetDataItemForSync(stmt, item, isGettingDeletedData);
+            errCode = GetDataItemForSync(fullStmt, item, false);
+            if (errCode != E_OK) {
+                break;
+            }
         } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
-            LOGD("Get sync data finished, size of packet:%zu, number of item:%zu", dataTotalSize, dataItems.size());
             errCode = -E_FINISHED;
             break;
         } else {
-            LOGE("Get sync data error:%d", errCode);
+            LOGE("Get full data failed:%d.", errCode);
             break;
         }
-
-        // If one record is over 4M, ignore it.
-        if (item.value.size() > DBConstant::MAX_VALUE_SIZE) {
-            continue;
+        if (item.hashKey == cursorHashKey) {
+            break;
         }
+        item.value = {};
+        item.flag |= DataItem::REMOTE_DEVICE_DATA_MISS_QUERY;
 
         // If dataTotalSize value is bigger than blockSize value , reserve the surplus data item.
         dataTotalSize += GetDataItemSerialSize(item, appendLength);
@@ -928,9 +974,70 @@ int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<Dat
         } else {
             dataItems.push_back(std::move(item));
         }
-    } while (true);
+    }
+    return errCode;
+}
 
-    SQLiteUtils::ResetStatement(stmt, true, errCode);
+int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength,
+    const DataSizeSpecInfo &sizeInfo, std::function<int(sqlite3 *, sqlite3_stmt *&, sqlite3_stmt *&, bool &)> getStmt,
+    const TableInfo &tableInfo)
+{
+    baseTblName_ = tableInfo.GetTableName();
+    SetTableInfo(tableInfo);
+    sqlite3_stmt *queryStmt = nullptr;
+    sqlite3_stmt *fullStmt = nullptr;
+    bool isGettingDeletedData = false;
+    int errCode = getStmt(dbHandle_, queryStmt, fullStmt, isGettingDeletedData);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    size_t dataTotalSize = 0;
+    size_t overLongSize = 0;
+    do {
+        DataItem item;
+        errCode = SQLiteUtils::StepWithRetry(queryStmt, isMemDb_);
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+            errCode = GetDataItemForSync(queryStmt, item, isGettingDeletedData);
+            if (errCode != E_OK) {
+                break;
+            }
+        } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+            LOGD("Get sync data finished, size of packet:%zu, number of item:%zu", dataTotalSize, dataItems.size());
+            errCode = -E_FINISHED;
+        } else {
+            LOGE("Get sync data error:%d", errCode);
+            break;
+        }
+
+        // Get REMOTE_DEVICE_DATA_MISS_QUERY data.
+        if (fullStmt != nullptr) {
+            errCode = GetMissQueryData(dataItems, dataTotalSize, item.hashKey, fullStmt, appendLength, sizeInfo);
+        }
+        if (errCode != E_OK) {
+            break;
+        }
+
+        // If one record is over 4M, ignore it.
+        if (item.value.size() > DBConstant::MAX_VALUE_SIZE) {
+            overLongSize++;
+            continue;
+        }
+
+        // If dataTotalSize value is bigger than blockSize value , reserve the surplus data item.
+        dataTotalSize += GetDataItemSerialSize(item, appendLength);
+        if ((dataTotalSize > sizeInfo.blockSize && !dataItems.empty()) || dataItems.size() >= sizeInfo.packetSize) {
+            errCode = -E_UNFINISHED;
+            break;
+        } else {
+            dataItems.push_back(std::move(item));
+        }
+    } while (true);
+    if (overLongSize != 0) {
+        LOGW("Over 4M records:%zu.", overLongSize);
+    }
+    SQLiteUtils::ResetStatement(queryStmt, true, errCode);
+    SQLiteUtils::ResetStatement(fullStmt, true, errCode);
     return errCode;
 }
 
@@ -1068,9 +1175,15 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckQueryObjectLegal(const TableI
         return errCode;
     }
 
+    if (!query.IsQueryForRelationalDB()) {
+        LOGE("Not support for this query type.");
+        return -E_NOT_SUPPORT;
+    }
+
     SyncTimeRange defaultTimeRange;
     sqlite3_stmt *stmt = nullptr;
-    errCode = helper.GetRelationalQueryStatement(dbHandle_, defaultTimeRange.beginTime, defaultTimeRange.endTime, stmt);
+    errCode = helper.GetRelationalQueryStatement(dbHandle_, defaultTimeRange.beginTime, defaultTimeRange.endTime, {},
+        stmt);
     if (errCode != E_OK) {
         LOGE("Get query statement for check query failed. %d", errCode);
         return errCode;

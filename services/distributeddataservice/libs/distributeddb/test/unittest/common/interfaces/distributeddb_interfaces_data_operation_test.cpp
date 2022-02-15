@@ -1791,7 +1791,7 @@ HWTEST_F(DistributedDBInterfacesDataOperationTest, PrefixAndOther001, TestSize.L
   * @tc.name: InKeys001
   * @tc.desc: InKeys query base function
   * @tc.type: FUNC
-  * @tc.require: AR000EPARK
+  * @tc.require: AR000GOH06
   * @tc.author: xushaohua
   */
 HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeys001, TestSize.Level1)
@@ -1853,7 +1853,7 @@ HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeys001, TestSize.Level1)
  * @tc.name: InKeysLimit001
  * @tc.desc: InKeys query limit verification
  * @tc.type: FUNC
- * @tc.require: AR000EPARK
+ * @tc.require: AR000GOH06
  * @tc.author: xushaohua
  */
 HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeysLimit001, TestSize.Level1)
@@ -1908,7 +1908,7 @@ HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeysLimit001, TestSize.Leve
  * @tc.name: InKeysAndOther001
  * @tc.desc: Combination of InKeys query and logical filtering
  * @tc.type: FUNC
- * @tc.require: AR000EPARK
+ * @tc.require: AR000GOH06
  * @tc.author: xushaohua
  */
 HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeysAndOther001, TestSize.Level1)
@@ -1967,7 +1967,7 @@ HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeysAndOther001, TestSize.L
  * @tc.name: InKeysAndOther002
  * @tc.desc: Combination of InKeys query and logical filtering
  * @tc.type: FUNC
- * @tc.require: AR000EPARK
+ * @tc.require: AR000GOH06
  * @tc.author: lianhuix
  */
 HWTEST_F(DistributedDBInterfacesDataOperationTest, InKeysAndOther002, TestSize.Level1)

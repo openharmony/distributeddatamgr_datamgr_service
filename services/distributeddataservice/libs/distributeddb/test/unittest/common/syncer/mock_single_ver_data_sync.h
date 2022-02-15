@@ -13,29 +13,26 @@
  * limitations under the License.
  */
 
-#ifndef STORE_CHANGED_DATA_H
-#define STORE_CHANGED_DATA_H
+#ifndef MOCK_SINGLE_VER_DATA_SYNC_H
+#define MOCK_SINGLE_VER_DATA_SYNC_H
 
-#include <list>
-#include "store_types.h"
+#include <gmock/gmock.h>
+#include "single_ver_data_sync.h"
 
 namespace DistributedDB {
-struct StoreProperty {
-    std::string userId;
-    std::string appId;
-    std::string storeId;
-};
-class StoreChangedData {
+class MockSingleVerDataSync : public SingleVerDataSync {
 public:
-    StoreChangedData() {}
-    DB_API virtual ~StoreChangedData() {}
+    int CallRequestStart(SingleVerSyncTaskContext *context, int mode)
+    {
+        return SingleVerDataSync::RequestStart(context, mode);
+    }
 
-    // Interface for Getting the device whose data changed.
-    DB_API virtual std::string GetDataChangeDevice() const = 0;
+    int CallPullRequestStart(SingleVerSyncTaskContext *context)
+    {
+        return SingleVerDataSync::PullRequestStart(context);
+    }
 
-    // Interface for Getting the store whose data changed.
-    DB_API virtual void GetStoreProperty(StoreProperty &storeProperty) const = 0;
+    MOCK_METHOD1(RemoveDeviceDataIfNeed, int(SingleVerSyncTaskContext *));
 };
 } // namespace DistributedDB
-
-#endif // STORE_CHANGED_DATA_H
+#endif  // #define MOCK_SINGLE_VER_DATA_SYNC_H

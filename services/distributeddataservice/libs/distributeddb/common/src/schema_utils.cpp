@@ -25,15 +25,6 @@
 namespace DistributedDB {
 namespace
 {
-    // Currently supported types
-    const std::map<std::string, FieldType> FIELD_TYPE_DIC = {
-        {SchemaConstant::KEYWORD_TYPE_BOOL, FieldType::LEAF_FIELD_BOOL},
-        {SchemaConstant::KEYWORD_TYPE_INTEGER, FieldType::LEAF_FIELD_INTEGER},
-        {SchemaConstant::KEYWORD_TYPE_LONG, FieldType::LEAF_FIELD_LONG},
-        {SchemaConstant::KEYWORD_TYPE_DOUBLE, FieldType::LEAF_FIELD_DOUBLE},
-        {SchemaConstant::KEYWORD_TYPE_STRING, FieldType::LEAF_FIELD_STRING},
-    };
-
     bool IsLegalFieldCharacter(char character)
     {
         return (std::isalnum(character) || character == '_');
@@ -305,6 +296,15 @@ int SchemaUtils::ParseAndCheckSchemaAttribute(const std::string &inAttrString, S
 
 int SchemaUtils::ParseSchemaAttribute(std::vector<std::string> &attrContext, SchemaAttribute &outAttr, bool useAffinity)
 {
+    // Currently supported types
+    static const std::map<std::string, FieldType> FIELD_TYPE_DIC = {
+        {SchemaConstant::KEYWORD_TYPE_BOOL, FieldType::LEAF_FIELD_BOOL},
+        {SchemaConstant::KEYWORD_TYPE_INTEGER, FieldType::LEAF_FIELD_INTEGER},
+        {SchemaConstant::KEYWORD_TYPE_LONG, FieldType::LEAF_FIELD_LONG},
+        {SchemaConstant::KEYWORD_TYPE_DOUBLE, FieldType::LEAF_FIELD_DOUBLE},
+        {SchemaConstant::KEYWORD_TYPE_STRING, FieldType::LEAF_FIELD_STRING},
+    };
+
     // After split attribute? attrContext include 3 type field
     if (attrContext.size() < 3) {
         LOGE("No parsing preprocessing!!");

@@ -84,6 +84,7 @@ public:
     int CompareWithTable(const TableInfo &inTableInfo) const;
     std::map<FieldPath, SchemaAttribute> GetSchemaDefine() const;
     std::string GetFieldName(uint32_t cid) const;  // cid begin with 0
+    const std::vector<std::string> &GetFieldNames() const;  // Sort by cid
     bool IsValid() const;
 
 private:
