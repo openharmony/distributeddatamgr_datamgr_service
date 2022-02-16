@@ -290,7 +290,7 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AbilitySync001, TestSize.Level1)
     ASSERT_TRUE(message != nullptr);
     AbilitySyncAckPacket packet;
     packet.SetAckCode(-E_BUSY);
-    message->SetCopiedObject(&packet);
+    message->SetCopiedObject(packet);
     EXPECT_EQ(abilitySync.AckRecv(message, &syncTaskContext), -E_BUSY);
     delete message;
     EXPECT_EQ(syncTaskContext.GetTaskErrCode(), -E_BUSY);
@@ -321,7 +321,7 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AbilitySync002, TestSize.Level1)
     AbilitySyncAckPacket packet;
     packet.SetAckCode(E_OK);
     packet.SetSoftwareVersion(SOFTWARE_VERSION_CURRENT);
-    message->SetCopiedObject(&packet);
+    message->SetCopiedObject(packet);
     /**
      * @tc.steps: step1. set syncDBInterface busy for save data return -E_BUSY
      */
