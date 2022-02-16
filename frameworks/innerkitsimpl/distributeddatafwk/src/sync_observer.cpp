@@ -20,20 +20,29 @@ SyncObserver::SyncObserver(const std::vector<std::shared_ptr<KvStoreSyncCallback
     :callbacks_(callbacks)
 {};
 
+SyncObserver::SyncObserver()
+{
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    callbacks_.clear();
+}
+
 bool SyncObserver::Add(const std::shared_ptr<KvStoreSyncCallback> callback)
 {
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
     callbacks_.push_back(callback);
     return true;
 }
 
 bool SyncObserver::Clean()
 {
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
     callbacks_.clear();
     return true;
 }
 
 void SyncObserver::SyncCompleted(const std::map<std::string, DistributedKv::Status> &results)
 {
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
     for (auto &callback : callbacks_) {
         callback->SyncCompleted(results);
     }

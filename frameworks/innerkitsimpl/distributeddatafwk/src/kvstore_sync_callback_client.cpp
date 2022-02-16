@@ -22,7 +22,11 @@
 
 namespace OHOS {
 namespace DistributedKv {
-KvStoreSyncCallbackClient::~KvStoreSyncCallbackClient() = default;
+KvStoreSyncCallbackClient::~KvStoreSyncCallbackClient()
+{
+    syncCallbackInfo_.Clear();
+}
+
 void KvStoreSyncCallbackClient::SyncCompleted(const std::map<std::string, Status> &results, uint64_t sequenceId)
 {
     auto finded = syncCallbackInfo_.Find(sequenceId);

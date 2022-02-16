@@ -30,7 +30,11 @@ public:
     using const_reference = typename std::map<_Key, _Tp>::const_reference;
 
     ConcurrentMap() = default;
-    ~ConcurrentMap() = default;
+    ~ConcurrentMap()
+    {
+        Clear();
+    }
+
     ConcurrentMap(const ConcurrentMap &other)
     {
         operator=(std::move(other));

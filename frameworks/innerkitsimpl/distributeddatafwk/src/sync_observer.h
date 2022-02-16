@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <memory>
+#include <mutex>
 #include "kvstore_sync_callback.h"
 
 namespace OHOS::DistributedKv {
@@ -25,7 +26,7 @@ class SyncObserver : public KvStoreSyncCallback {
 public:
     explicit SyncObserver(const std::vector<std::shared_ptr<KvStoreSyncCallback>> &callbacks);
 
-    SyncObserver() = default;
+    SyncObserver();
 
     virtual ~SyncObserver() = default;
 
@@ -36,6 +37,7 @@ public:
     void SyncCompleted(const std::map<std::string, DistributedKv::Status> &results) override;
 
 private:
+    std::recursive_mutex mutex_;
     std::vector<std::shared_ptr<KvStoreSyncCallback>> callbacks_;
 };
 }

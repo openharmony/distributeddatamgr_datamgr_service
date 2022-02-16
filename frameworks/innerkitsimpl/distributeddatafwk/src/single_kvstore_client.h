@@ -28,8 +28,7 @@ class SingleKvStoreClient : public SingleKvStore {
 public:
     explicit SingleKvStoreClient(sptr<ISingleKvStore> kvStoreProxy, const std::string &storeId);
 
-    ~SingleKvStoreClient()
-    {}
+    ~SingleKvStoreClient();
 
     StoreId GetStoreId() const override;
 
@@ -106,7 +105,7 @@ private:
     std::map<KvStoreObserver *, sptr<IKvStoreObserver>> registeredObservers_;
     std::mutex observerMapMutex_;
     std::string storeId_;
-    KvStoreSyncCallbackClient syncCallbackClient_;
+    sptr<KvStoreSyncCallbackClient> syncCallbackClient_;
     std::shared_ptr<SyncObserver> syncObserver_;
     bool isRegisterSyncCallback_ = false;
     std::mutex registerCallbackMutex_;
