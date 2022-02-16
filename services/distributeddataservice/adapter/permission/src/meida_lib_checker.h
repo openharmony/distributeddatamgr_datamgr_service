@@ -28,7 +28,7 @@ public:
     std::string GetAppId(pid_t uid, const std::string &bundleName) override;
     bool IsValid(pid_t uid, const std::string &bundleName) override;
 private:
-    static MeidaLibChecker instance_;
+    static MeidaLibChecker instance_ noexcept;
     static constexpr pid_t SYSTEM_UID = 10000;
     std::map<std::string, std::string> trusts_;
 };

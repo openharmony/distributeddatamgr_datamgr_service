@@ -13,9 +13,12 @@
  * limitations under the License.
  */
 
+#ifndef PERMISSION_VISIBILITY_H
+#define PERMISSION_VISIBILITY_H
 #ifndef API_EXPORT
 #define API_EXPORT __attribute__((visibility ("default")))
 #endif
 #ifndef KVSTORE_API
 #define KVSTORE_API API_EXPORT
+#endif
 #endif
