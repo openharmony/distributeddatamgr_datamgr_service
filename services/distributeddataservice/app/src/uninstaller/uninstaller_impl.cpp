@@ -40,7 +40,7 @@ UninstallEventSubscriber::UninstallEventSubscriber(const CommonEventSubscribeInf
 
 void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
 {
-    ZLOGI("Intent Action Rec");
+    ZLOGI("event received");
     Want want = event.GetWant();
     std::string action = want.GetAction();
     if (action != CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED) {
@@ -62,7 +62,7 @@ void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
 
     auto uri = want.GetUri().ToString();
     if (uri.size() < (PACKAGE_SCHEME.size() + SCHEME_SPLIT.size())) {
-        ZLOGW("invalid intent Uri!");
+        ZLOGW("invalid event!");
         return;
     }
     std::string bundleName = uri.substr(PACKAGE_SCHEME.size() + SCHEME_SPLIT.size());

@@ -69,9 +69,9 @@ void DistributedDataAccountEventTest::TearDownTestCase()
 
 void DistributedDataAccountEventTest::HarmonyAccountLogin()
 {
-    sptr<AAFwk::Intent> intent = new AAFwk::Intent();
-    intent->SetAction(CommonEventSupport::COMMON_EVENT_HWID_LOGIN);
-    sptr<CommonEventData> event = new CommonEventData(intent);
+    sptr<AAFwk::Want> want = new AAFwk::Want();
+    want->SetAction(CommonEventSupport::COMMON_EVENT_HWID_LOGIN);
+    sptr<CommonEventData> event = new CommonEventData(want);
     sptr<CommonEventPublishInfo> publishInfo = new CommonEventPublishInfo();
     auto err = CommonEventManager::GetInstance().PublishCommonEventData(event, publishInfo, nullptr);
     EXPECT_EQ(ERR_OK, err);
@@ -80,9 +80,9 @@ void DistributedDataAccountEventTest::HarmonyAccountLogin()
 
 void DistributedDataAccountEventTest::HarmonyAccountLogout()
 {
-    sptr<AAFwk::Intent> intent = new AAFwk::Intent();
-    intent->SetAction(CommonEventSupport::COMMON_EVENT_HWID_LOGOUT);
-    sptr<CommonEventData> event = new CommonEventData(intent);
+    sptr<AAFwk::Want> want = new AAFwk::Want();
+    Want->SetAction(CommonEventSupport::COMMON_EVENT_HWID_LOGOUT);
+    sptr<CommonEventData> event = new CommonEventData(Want);
     sptr<CommonEventPublishInfo> publishInfo = new CommonEventPublishInfo();
     auto err = CommonEventManager::GetInstance().PublishCommonEventData(event, publishInfo, nullptr);
     EXPECT_EQ(ERR_OK, err);
@@ -91,9 +91,9 @@ void DistributedDataAccountEventTest::HarmonyAccountLogout()
 
 void DistributedDataAccountEventTest::HarmonyAccountDelete()
 {
-    sptr<AAFwk::Intent> intent = new AAFwk::Intent();
-    intent->SetAction(CommonEventSupport::COMMON_EVENT_HWID_TOKEN_INVALID);
-    sptr<CommonEventData> event = new CommonEventData(intent);
+    sptr<AAFwk::Want> want = new AAFwk::Want();
+    Want->SetAction(CommonEventSupport::COMMON_EVENT_HWID_LOGOUT);
+    sptr<CommonEventData> event = new CommonEventData(Want);
     sptr<CommonEventPublishInfo> publishInfo = new CommonEventPublishInfo();
     auto err = CommonEventManager::GetInstance().PublishCommonEventData(event, publishInfo, nullptr);
     EXPECT_EQ(ERR_OK, err);
