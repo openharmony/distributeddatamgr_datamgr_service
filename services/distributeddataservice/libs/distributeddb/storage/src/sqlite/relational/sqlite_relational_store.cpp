@@ -485,5 +485,10 @@ std::string SQLiteRelationalStore::GetStorePath() const
 {
     return properties_.GetStringProp(DBProperties::DATA_DIR, "");
 }
+
+RelationalDBProperties SQLiteRelationalStore::GetProperties() const
+{
+    return properties_;
+}
 }
 #endif

@@ -50,7 +50,7 @@ int SQLiteRelationalStoreConnection::Close()
 
 std::string SQLiteRelationalStoreConnection::GetIdentifier()
 {
-    return std::string();
+    return store_->GetProperties().GetStringProp(RelationalDBProperties::IDENTIFIER_DATA, "");
 }
 
 SQLiteSingleVerRelationalStorageExecutor *SQLiteRelationalStoreConnection::GetExecutor(bool isWrite, int &errCode) const

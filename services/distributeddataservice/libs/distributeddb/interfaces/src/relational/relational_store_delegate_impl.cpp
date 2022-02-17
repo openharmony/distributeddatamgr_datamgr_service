@@ -19,6 +19,7 @@
 #include "kv_store_errno.h"
 #include "log_print.h"
 #include "param_check_utils.h"
+#include "relational_store_instance.h"
 #include "sync_operation.h"
 
 namespace DistributedDB {
@@ -107,7 +108,7 @@ DBStatus RelationalStoreDelegateImpl::Close()
         return OK;
     }
 
-    int errCode = conn_->Close();
+    int errCode = RelationalStoreInstance::ReleaseDataBaseConnection(conn_);
     if (errCode == -E_BUSY) {
         LOGW("[RelationalStore Delegate] busy for close");
         return BUSY;

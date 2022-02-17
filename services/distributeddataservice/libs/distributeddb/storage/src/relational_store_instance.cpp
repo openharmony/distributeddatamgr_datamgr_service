@@ -46,6 +46,26 @@ RelationalStoreInstance *RelationalStoreInstance::GetInstance()
     return instance_;
 }
 
+int RelationalStoreInstance::ReleaseDataBaseConnection(RelationalStoreConnection *connection)
+{
+    if (connection == nullptr) {
+        return -E_INVALID_DB;
+    }
+    auto manager = RelationalStoreInstance::GetInstance();
+    if (manager == nullptr) {
+        return -E_OUT_OF_MEMORY;
+    }
+    std::string identifier = connection->GetIdentifier();
+    manager->EnterDBOpenCloseProcess(identifier);
+    int errCode = connection->Close();
+    manager->ExitDBOpenCloseProcess(identifier);
+
+    if (errCode != E_OK) {
+        LOGE("Release db connection failed. %d", errCode);
+    }
+    return errCode;
+}
+
 int RelationalStoreInstance::CheckDatabaseFileStatus(const std::string &id)
 {
     std::lock_guard<std::mutex> lockGuard(storeLock_);
@@ -150,27 +170,48 @@ RelationalStoreConnection *RelationalStoreInstance::GetDatabaseConnection(const 
 {
     std::string identifier = properties.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
     LOGD("Begin to get [%s] database connection.", STR_MASK(DBCommon::TransferStringToHex(identifier)));
+    RelationalStoreInstance *manager = RelationalStoreInstance::GetInstance();
+    manager->EnterDBOpenCloseProcess(properties.GetStringProp(DBProperties::IDENTIFIER_DATA, ""));
+    RelationalStoreConnection *connection = nullptr;
+    std::string canonicalDir;
     IRelationalStore *db = GetDataBase(properties, errCode);
     if (db == nullptr) {
         LOGE("Failed to open the db:%d", errCode);
-        return nullptr;
+        goto END;
     }
 
-    std::string canonicalDir = properties.GetStringProp(KvDBProperties::DATA_DIR, "");
+    canonicalDir = properties.GetStringProp(KvDBProperties::DATA_DIR, "");
     if (canonicalDir.empty() || canonicalDir != db->GetStorePath()) {
         LOGE("Failed to check store path, the input path does not match with cached store.");
         errCode = -E_INVALID_ARGS;
-        RefObject::DecObjRef(db);
-        return nullptr;
+        goto END;
     }
 
-    auto connection = db->GetDBConnection(errCode);
+    connection = db->GetDBConnection(errCode);
     if (connection == nullptr) { // not kill db, Other operations like import may be used concurrently
         LOGE("Failed to get the db connect for delegate:%d", errCode);
     }
 
+END:
     RefObject::DecObjRef(db); // restore the reference increased by the cache.
+    manager->ExitDBOpenCloseProcess(properties.GetStringProp(DBProperties::IDENTIFIER_DATA, ""));
     return connection;
+}
+
+void RelationalStoreInstance::EnterDBOpenCloseProcess(const std::string &identifier)
+{
+    std::unique_lock<std::mutex> lock(relationalDBOpenMutex_);
+    relationalDBOpenCondition_.wait(lock, [this, &identifier]() {
+        return this->relationalDBOpenSet_.count(identifier) == 0;
+    });
+    (void)relationalDBOpenSet_.insert(identifier);
+}
+
+void RelationalStoreInstance::ExitDBOpenCloseProcess(const std::string &identifier)
+{
+    std::unique_lock<std::mutex> lock(relationalDBOpenMutex_);
+    (void)relationalDBOpenSet_.erase(identifier);
+    relationalDBOpenCondition_.notify_all();
 }
 } // namespace DistributedDB
 #endif

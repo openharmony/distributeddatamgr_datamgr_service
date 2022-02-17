@@ -35,7 +35,7 @@ RelationalSyncAbleStorage::RelationalSyncAbleStorage(StorageEngine *engine)
 RelationalSyncAbleStorage::~RelationalSyncAbleStorage()
 {}
 
-// Get interface type of this kvdb.
+// Get interface type of this relational db.
 int RelationalSyncAbleStorage::GetInterfaceType() const
 {
     return SYNC_RELATION;

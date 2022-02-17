@@ -62,6 +62,8 @@ public:
 
     std::string GetStorePath() const override;
 
+    RelationalDBProperties GetProperties() const override;
+
 private:
     void ReleaseResources();
 

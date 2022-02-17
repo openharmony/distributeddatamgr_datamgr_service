@@ -14,6 +14,8 @@
  */
 
 #include <gtest/gtest.h>
+#include <queue>
+#include <random>
 
 #include "db_common.h"
 #include "distributeddb_data_generate_unit_test.h"
@@ -78,6 +80,7 @@ void DistributedDBInterfacesRelationalTest::SetUpTestCase(void)
     DistributedDBToolsUnitTest::TestDirInit(g_testDir);
     LOGD("Test dir is %s", g_testDir.c_str());
     g_dbDir = g_testDir + "/";
+    DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir);
 }
 
 void DistributedDBInterfacesRelationalTest::TearDownTestCase(void)
@@ -648,4 +651,82 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalOpenStorePathCheckTest
 
     status = g_mgr.CloseStore(delegate2);
     EXPECT_EQ(status, INVALID_ARGS);
+}
+
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalOpenStorePressureTest001, TestSize.Level1)
+{
+    /**
+     * @tc.steps:step1. Prepare db file
+     * @tc.expected: step1. Return OK.
+     */
+    sqlite3 *db = RelationalTestUtils::CreateDataBase(g_dbDir + STORE_ID + DB_SUFFIX);
+    ASSERT_NE(db, nullptr);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
+
+    DBStatus status = OK;
+    for (int i = 0; i < 1000; i++) {
+        RelationalStoreDelegate *delegate = nullptr;
+        status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+        EXPECT_EQ(status, OK);
+        ASSERT_NE(delegate, nullptr);
+
+        status = g_mgr.CloseStore(delegate);
+        EXPECT_EQ(status, OK);
+        delegate = nullptr;
+    }
+}
+
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalOpenStorePressureTest002, TestSize.Level1)
+{
+    /**
+     * @tc.steps:step1. Prepare db file
+     * @tc.expected: step1. Return OK.
+     */
+    sqlite3 *db = RelationalTestUtils::CreateDataBase(g_dbDir + STORE_ID + DB_SUFFIX);
+    ASSERT_NE(db, nullptr);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
+
+    std::queue<RelationalStoreDelegate *> delegateQueue;
+    std::mutex queuelock;
+    default_random_engine e;
+    uniform_int_distribution<unsigned> u(0, 9);
+
+    std::thread openStoreThread([&, this]() {
+        for (int i = 0; i < 1000; i++) {
+            LOGD("++++> open store delegate: %d", i);
+            RelationalStoreDelegate *delegate = nullptr;
+            DBStatus status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+            EXPECT_EQ(status, OK);
+            ASSERT_NE(delegate, nullptr);
+            {
+                std::lock_guard<std::mutex> lock(queuelock);
+                delegateQueue.push(delegate);
+            }
+            LOGD("++++< open store delegate: %d", i);
+        }
+    });
+
+    int cnt = 0;
+    while (cnt < 1000) {
+        RelationalStoreDelegate *delegate = nullptr;
+        {
+            std::lock_guard<std::mutex> lock(queuelock);
+            if (delegateQueue.empty()) {
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
+                continue;
+            }
+            delegate = delegateQueue.front();
+            delegateQueue.pop();
+        }
+        LOGD("++++> close store delegate: %d", cnt);
+        DBStatus status = g_mgr.CloseStore(delegate);
+        LOGD("++++< close store delegate: %d", cnt);
+        EXPECT_EQ(status, OK);
+        delegate = nullptr;
+        cnt++;
+        std::this_thread::sleep_for(std::chrono::microseconds(100 * u(e)));
+    }
+    openStoreThread.join();
 }
