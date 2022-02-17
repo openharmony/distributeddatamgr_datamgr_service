@@ -32,6 +32,7 @@ SingleKvStoreClient::SingleKvStoreClient(sptr<ISingleKvStore> kvStoreProxy, cons
 
 SingleKvStoreClient::~SingleKvStoreClient()
 {
+    kvStoreProxy_->UnRegisterSyncCallback();
     syncObserver_->Clean();
 }
 
@@ -314,6 +315,7 @@ Status SingleKvStoreClient::RegisterSyncCallback(std::shared_ptr<KvStoreSyncCall
         return Status::INVALID_ARGUMENT;
     }
     syncObserver_->Add(callback);
+    RegisterCallback();
     return Status::SUCCESS;
 }
 
@@ -485,10 +487,10 @@ Status SingleKvStoreClient::SyncWithCondition(const std::vector<std::string> &de
     uint64_t sequenceId = KvStoreUtils::GenerateSequenceId();
     if (callback != nullptr) {
         syncCallbackClient_->AddSyncCallback(callback, sequenceId);
-        RegisterCallback();
     } else {
         syncCallbackClient_->AddSyncCallback(syncObserver_, sequenceId);
     }
+    RegisterCallback();
     return kvStoreProxy_->Sync(deviceIds, mode, query.ToString(), sequenceId);
 }
 
