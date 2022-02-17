@@ -32,7 +32,8 @@ public:
     static bool IsStoreIdSafe(const std::string &storeId);
 
     // check appId, userId, storeId.
-    static bool CheckStoreParameter(const std::string &storeId, const std::string &appId, const std::string &userId);
+    static bool CheckStoreParameter(const std::string &storeId, const std::string &appId, const std::string &userId,
+        bool isIgnoreUserIdCheck = false);
 
     // check encrypted args for KvStore.
     static bool CheckEncryptedParameter(CipherType cipher, const CipherPassword &passwd);

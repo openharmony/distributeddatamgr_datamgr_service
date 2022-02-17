@@ -262,6 +262,10 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser001, TestSize.Level0)
     std::vector<std::string> devices;
     devices.push_back(g_deviceB->GetDeviceId());
     CheckSyncTest(NOT_ACTIVE, OK, devices);
+    /**
+     * @tc.steps: step5. g_kvDelegatePtr1 support some pragma cmd call
+     * @tc.expected: step5. Pragma call success
+     */
     int pragmaData = 1;
     PragmaData input = static_cast<PragmaData>(&pragmaData);
     ASSERT_TRUE(g_kvDelegatePtr1->Pragma(AUTO_SYNC, input) == OK);
@@ -275,25 +279,25 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser001, TestSize.Level0)
     ASSERT_TRUE(g_kvDelegatePtr1->Pragma(SET_WIPE_POLICY, input) == OK);
     ASSERT_TRUE(g_kvDelegatePtr1->Pragma(SET_SYNC_RETRY, input) == OK);
     /**
-     * @tc.expected: step5. onComplete should be called, DeviceB have {k1,v1}
+     * @tc.expected: step6. onComplete should be called, DeviceB have {k1,v1}
      */
     VirtualDataItem item;
     g_deviceB->GetData(key, item);
     EXPECT_TRUE(item.value == value);
     /**
-     * @tc.expected: step6. user change
+     * @tc.expected: step7. user change
      */
     g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback2);
     KvStoreDelegateManager::NotifyUSerChanged();
     /**
-     * @tc.steps: step7. g_kvDelegatePtr1 and g_kvDelegatePtr2 call sync
-     * @tc.expected: step7. g_kvDelegatePtr1 call success
+     * @tc.steps: step8. g_kvDelegatePtr1 and g_kvDelegatePtr2 call sync
+     * @tc.expected: step8. g_kvDelegatePtr1 call success
      */
     devices.clear();
     devices.push_back(g_deviceC->GetDeviceId());
     CheckSyncTest(OK, NOT_ACTIVE, devices);
     /**
-     * @tc.expected: step5. onComplete should be called, DeviceC have {k1,v1}
+     * @tc.expected: step9. onComplete should be called, DeviceC have {k1,v1}
      */
     g_deviceC->GetData(key, item);
     EXPECT_TRUE(item.value == value2);
@@ -328,38 +332,45 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser002, TestSize.Level0)
     ASSERT_TRUE(g_kvDelegatePtr1->Put(key, value) == OK);
     ASSERT_TRUE(g_kvDelegatePtr2->Put(key, value) == OK);
     /**
-     * @tc.steps: step4. g_kvDelegatePtr1 and g_kvDelegatePtr2 call sync
-     * @tc.expected: step4. g_kvDelegatePtr2 call success
+     * @tc.steps: step4. GetKvStoreIdentifier success when userId is invalid
+     */
+    std::string userId;
+    ASSERT_TRUE(g_mgr1.GetKvStoreIdentifier(userId, APP_ID, USER_ID_2, true) == OK);
+    userId.resize(130);
+    ASSERT_TRUE(g_mgr1.GetKvStoreIdentifier(userId, APP_ID, USER_ID_2, true) == OK);
+    /**
+     * @tc.steps: step5. g_kvDelegatePtr1 and g_kvDelegatePtr2 call sync
+     * @tc.expected: step5. g_kvDelegatePtr2 call success
      */
     std::vector<std::string> devices;
     devices.push_back(g_deviceB->GetDeviceId());
     CheckSyncTest(NOT_ACTIVE, OK, devices);
     /**
-     * @tc.expected: step5. onComplete should be called, DeviceB have {k1,v1}
+     * @tc.expected: step6. onComplete should be called, DeviceB have {k1,v1}
      */
     VirtualDataItem item;
     g_deviceB->GetData(key, item);
     EXPECT_TRUE(item.value == value);
     /**
-     * @tc.expected: step6. user change
+     * @tc.expected: step7. user change
      */
     KvStoreDelegateManager::NotifyUSerChanged();
     /**
-     * @tc.steps: step7. g_kvDelegatePtr1 and g_kvDelegatePtr2 put {k2, v2}
+     * @tc.steps: step8. g_kvDelegatePtr1 and g_kvDelegatePtr2 put {k2, v2}
      */
     key = {'2'};
     value = {'2'};
     ASSERT_TRUE(g_kvDelegatePtr1->Put(key, value) == OK);
     ASSERT_TRUE(g_kvDelegatePtr2->Put(key, value) == OK);
     /**
-     * @tc.steps: step8. g_kvDelegatePtr1 and g_kvDelegatePtr2 call sync
-     * @tc.expected: step8. g_kvDelegatePtr2 call success
+     * @tc.steps: step9. g_kvDelegatePtr1 and g_kvDelegatePtr2 call sync
+     * @tc.expected: step9. g_kvDelegatePtr2 call success
      */
     devices.clear();
     devices.push_back(g_deviceB->GetDeviceId());
     CheckSyncTest(NOT_ACTIVE, OK, devices);
     /**
-     * @tc.expected: step9. onComplete should be called, DeviceB have {k2,v2}
+     * @tc.expected: step10. onComplete should be called, DeviceB have {k2,v2}
      */
     g_deviceB->GetData(key, item);
     EXPECT_TRUE(item.value == value);
@@ -367,7 +378,7 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser002, TestSize.Level0)
 }
 
 /**
- * @tc.name: multi user 002
+ * @tc.name: multi user 003
  * @tc.desc: enhancement callback return true in multiuser mode
  * @tc.type: FUNC
  * @tc.require: AR000EPARJ
@@ -429,7 +440,7 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser003, TestSize.Level3)
 }
 
 /**
- * @tc.name: MultiUser003
+ * @tc.name: MultiUser004
  * @tc.desc: CommunicatorLackCallback in multi user mode
  * @tc.type: FUNC
  * @tc.require: AR000E8S2T

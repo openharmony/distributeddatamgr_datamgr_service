@@ -571,7 +571,7 @@ void KvStoreDelegateManager::SetAutoLaunchRequestCallback(const AutoLaunchReques
 std::string KvStoreDelegateManager::GetKvStoreIdentifier(const std::string &userId, const std::string &appId,
     const std::string &storeId, bool syncDualTupleMode)
 {
-    if (!ParamCheckUtils::CheckStoreParameter(storeId, appId, userId)) {
+    if (!ParamCheckUtils::CheckStoreParameter(storeId, appId, userId, syncDualTupleMode)) {
         return "";
     }
     if (syncDualTupleMode) {
