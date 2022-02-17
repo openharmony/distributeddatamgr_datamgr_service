@@ -34,7 +34,6 @@ SerialBuffer::~SerialBuffer()
 void SerialBuffer::SetExtendHeadLength(uint32_t extendHeaderLen)
 {
     extendHeadLen_ = extendHeaderLen;
-    LOGI("SetExtendHeadLength=%u", extendHeadLen_);
 }
 
 uint32_t SerialBuffer::GetExtendHeadLength() const
@@ -175,7 +174,7 @@ uint32_t SerialBuffer::GetSize() const
     return totalLen_;
 }
 
-uint8_t *SerialBuffer::GetoringinalAddr() const
+uint8_t *SerialBuffer::GetOringinalAddr() const
 {
     return oringinalBytes_;
 }

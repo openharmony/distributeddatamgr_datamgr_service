@@ -240,7 +240,7 @@ void SyncAbleKvDB::ChangeUserListerner()
 // Get The current virtual timestamp
 uint64_t SyncAbleKvDB::GetTimeStamp()
 {
-    if (!started_) {
+    if (!started_ && !isSyncModuleActiveCheck_) {
         StartSyncer();
     }
     return syncer_.GetTimeStamp();
@@ -287,17 +287,11 @@ int SyncAbleKvDB::EnableManualSync(void)
 
 int SyncAbleKvDB::GetLocalIdentity(std::string &outTarget)
 {
-    if (!started_) {
-        StartSyncer();
-    }
     return syncer_.GetLocalIdentity(outTarget);
 }
 
 int SyncAbleKvDB::SetStaleDataWipePolicy(WipePolicy policy)
 {
-    if (!started_) {
-        StartSyncer();
-    }
     return syncer_.SetStaleDataWipePolicy(policy);
 }
 

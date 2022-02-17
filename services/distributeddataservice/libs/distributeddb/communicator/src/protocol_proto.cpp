@@ -129,7 +129,7 @@ SerialBuffer *ProtocolProto::ToSerialBuffer(const Message *inMsg, int &outErrorN
         return nullptr;
     }
     if (extendHandle != nullptr && headSize > 0) {
-        DBStatus status = extendHandle->FillHeadData(buffer->GetoringinalAddr(), headSize,
+        DBStatus status = extendHandle->FillHeadData(buffer->GetOringinalAddr(), headSize,
             buffer->GetSize() + headSize);
         if (status != DBStatus::OK) {
             LOGI("[Proto][ToSerial] fill head data failed");
@@ -302,7 +302,7 @@ int ProtocolProto::SplitFrameIntoPacketsIfNeed(const SerialBuffer *inBuff, uint3
     uint16_t fragCount = ((remainder == 0) ? quotient : (quotient + 1));
     // Get CommPhyHeader of this frame to be modified for each packets (Header in network endian)
     auto oriPhyHeader = reinterpret_cast<const CommPhyHeader *>(frameBytesLen.first);
-    FrameFragmentInfo fragInfo = {inBuff->GetoringinalAddr(), inBuff->GetExtendHeadLength(), lengthToSplit, fragCount};
+    FrameFragmentInfo fragInfo = {inBuff->GetOringinalAddr(), inBuff->GetExtendHeadLength(), lengthToSplit, fragCount};
     return FrameFragmentation(frameBytesLen.first + sizeof(CommPhyHeader), fragInfo, *oriPhyHeader, outPieces);
 }
 

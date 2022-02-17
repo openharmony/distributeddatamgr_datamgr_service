@@ -49,7 +49,7 @@ public:
 
     uint32_t GetSize() const;
 
-    uint8_t *GetoringinalAddr() const;
+    uint8_t *GetOringinalAddr() const;
 
     std::pair<uint8_t *, uint32_t> GetWritableBytesForEntireBuffer();
     std::pair<uint8_t *, uint32_t> GetWritableBytesForEntireFrame();

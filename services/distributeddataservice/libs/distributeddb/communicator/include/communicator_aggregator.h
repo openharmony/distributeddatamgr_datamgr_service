@@ -103,18 +103,18 @@ private:
 
     // Call from Adapter by register these function
     void OnBytesReceive(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
-        std::string &userId);
+        const std::string &userId);
     void OnTargetChange(const std::string &target, bool isConnect);
     void OnSendable(const std::string &target);
 
     void OnFragmentReceive(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
-        const ParseResult &inResult, std::string &userId);
+        const ParseResult &inResult, const std::string &userId);
 
     int OnCommLayerFrameReceive(const std::string &srcTarget, const ParseResult &inResult);
     int OnAppLayerFrameReceive(const std::string &srcTarget, const uint8_t *bytes,
-        uint32_t length, const ParseResult &inResult, std::string &userId);
+        uint32_t length, const ParseResult &inResult, const std::string &userId);
     int OnAppLayerFrameReceive(const std::string &srcTarget, SerialBuffer *&inFrameBuffer,
-        const ParseResult &inResult, std::string &userId);
+        const ParseResult &inResult, const std::string &userId);
 
     // Function with suffix NoMutex should be called with mutex in the caller
     int TryDeliverAppLayerFrameToCommunicatorNoMutex(const std::string &srcTarget, SerialBuffer *&inFrameBuffer,

@@ -26,7 +26,7 @@
 namespace DistributedDB {
 // SendableCallback only notify when status changed from unsendable to sendable
 using BytesReceiveCallback = std::function<void(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
-    std::string &userId)>;
+    const std::string &userId)>;
 using TargetChangeCallback = std::function<void(const std::string &target, bool isConnect)>;
 using SendableCallback = std::function<void(const std::string &target)>;
 

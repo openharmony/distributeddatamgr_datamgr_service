@@ -25,8 +25,8 @@
 using namespace DistributedDB;
 
 namespace {
-    const uint32_t MTU_SIZE = 5 * 1024 * 1024; // 5 M, 1024 is scale
-    const uint32_t TIME_OUT = 5 * 1000; // 5 S, 1000 is scale
+    const uint32_t STUB_MTU_SIZE = 5 * 1024 * 1024; // 5 M, 1024 is scale
+    const uint32_t STUB_TIME_OUT = 5 * 1000; // 5 S, 1000 is scale
 }
 
 /*
@@ -49,7 +49,7 @@ void AdapterStub::StopAdapter()
 
 uint32_t AdapterStub::GetMtuSize()
 {
-    return MTU_SIZE;
+    return STUB_MTU_SIZE;
 }
 
 uint32_t AdapterStub::GetMtuSize(const std::string &target)
@@ -59,7 +59,7 @@ uint32_t AdapterStub::GetMtuSize(const std::string &target)
 
 uint32_t AdapterStub::GetTimeout()
 {
-    return TIME_OUT;
+    return STUB_TIME_OUT;
 }
 
 uint32_t AdapterStub::GetTimeout(const std::string &target)

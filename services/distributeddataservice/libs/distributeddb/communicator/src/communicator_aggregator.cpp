@@ -478,7 +478,7 @@ void CommunicatorAggregator::NotifySendableToAllCommunicator()
 }
 
 void CommunicatorAggregator::OnBytesReceive(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
-    std::string &userId)
+    const std::string &userId)
 {
     ProtocolProto::DisplayPacketInformation(bytes, length); // For debug, delete in the future
     ParseResult packetResult;
@@ -565,7 +565,7 @@ void CommunicatorAggregator::OnSendable(const std::string &target)
 }
 
 void CommunicatorAggregator::OnFragmentReceive(const std::string &srcTarget, const uint8_t *bytes, uint32_t length,
-    const ParseResult &inResult, std::string &userId)
+    const ParseResult &inResult, const std::string &userId)
 {
     int errorNo = E_OK;
     ParseResult frameResult;
@@ -644,7 +644,7 @@ int CommunicatorAggregator::OnCommLayerFrameReceive(const std::string &srcTarget
 }
 
 int CommunicatorAggregator::OnAppLayerFrameReceive(const std::string &srcTarget, const uint8_t *bytes,
-    uint32_t length, const ParseResult &inResult, std::string &userId)
+    uint32_t length, const ParseResult &inResult, const std::string &userId)
 {
     SerialBuffer *buffer = new (std::nothrow) SerialBuffer();
     if (buffer == nullptr) {
@@ -681,7 +681,7 @@ int CommunicatorAggregator::OnAppLayerFrameReceive(const std::string &srcTarget,
 // 3:Search communicator under commMapMutex_ again, if found then deliver frame to that communicator and end.
 // 4:If still not found, retain this frame if need or otherwise send CommunicatorNotFound feedback.
 int CommunicatorAggregator::OnAppLayerFrameReceive(const std::string &srcTarget, SerialBuffer *&inFrameBuffer,
-    const ParseResult &inResult, std::string &userId)
+    const ParseResult &inResult, const std::string &userId)
 {
     LabelType toLabel = inResult.GetCommLabel();
     {

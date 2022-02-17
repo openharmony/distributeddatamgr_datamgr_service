@@ -123,6 +123,8 @@ protected:
     // Init the Sync engine
     int InitSyncEngine(ISyncInterface *syncInterface);
 
+    int CheckSyncActive(ISyncInterface *syncInterface, bool isNeedActive);
+
     // Used to general a sync id, maybe it is currentSyncId++;
     // The return value is sync id.
     uint32_t GenerateSyncId();

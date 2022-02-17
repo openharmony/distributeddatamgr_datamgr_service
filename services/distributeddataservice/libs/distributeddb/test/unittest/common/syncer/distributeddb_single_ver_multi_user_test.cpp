@@ -151,7 +151,6 @@ void DistributedDBSingleVerMultiUserTest::TearDown(void)
     }
     SyncActivationCheckCallback callback = nullptr;
     g_mgr1.SetSyncActivationCheckCallback(callback);
-    g_mgr2.SetSyncActivationCheckCallback(callback);
 }
 
 void OpenStore1()
@@ -241,7 +240,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser001, TestSize.Level0)
      * @tc.steps: step1. set SyncActivationCheckCallback and only userId2 can active
      */
     g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
-    g_mgr2.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
     /**
      * @tc.steps: step2. openstore1 and openstore2
      * @tc.expected: step2. only user2 sync mode is active
@@ -264,6 +262,18 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser001, TestSize.Level0)
     std::vector<std::string> devices;
     devices.push_back(g_deviceB->GetDeviceId());
     CheckSyncTest(NOT_ACTIVE, OK, devices);
+    int pragmaData = 1;
+    PragmaData input = static_cast<PragmaData>(&pragmaData);
+    ASSERT_TRUE(g_kvDelegatePtr1->Pragma(AUTO_SYNC, input) == OK);
+    pragmaData = 100;
+    input = static_cast<PragmaData>(&pragmaData);
+    ASSERT_TRUE(g_kvDelegatePtr1->Pragma(SET_QUEUED_SYNC_LIMIT, input) == OK);
+    ASSERT_TRUE(g_kvDelegatePtr1->Pragma(GET_QUEUED_SYNC_LIMIT, input) == OK);
+    ASSERT_TRUE(input == static_cast<PragmaData>(&pragmaData));
+    pragmaData = 1;
+    input = static_cast<PragmaData>(&pragmaData);
+    ASSERT_TRUE(g_kvDelegatePtr1->Pragma(SET_WIPE_POLICY, input) == OK);
+    ASSERT_TRUE(g_kvDelegatePtr1->Pragma(SET_SYNC_RETRY, input) == OK);
     /**
      * @tc.expected: step5. onComplete should be called, DeviceB have {k1,v1}
      */
@@ -274,7 +284,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser001, TestSize.Level0)
      * @tc.expected: step6. user change
      */
     g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback2);
-    g_mgr2.SetSyncActivationCheckCallback(g_syncActivationCheckCallback2);
     KvStoreDelegateManager::NotifyUSerChanged();
     /**
      * @tc.steps: step7. g_kvDelegatePtr1 and g_kvDelegatePtr2 call sync
@@ -304,7 +313,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser002, TestSize.Level0)
      * @tc.steps: step1. set SyncActivationCheckCallback and only userId2 can active
      */
     g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
-    g_mgr2.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
     /**
      * @tc.steps: step2. openstore1 and openstore2
      * @tc.expected: step2. only user2 sync mode is active
@@ -371,7 +379,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser003, TestSize.Level3)
      * @tc.steps: step1. set SyncActivationCheckCallback and only userId2 can active
      */
     g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
-    g_mgr2.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
 
     KvStoreObserverUnitTest *observer = new (std::nothrow) KvStoreObserverUnitTest;
     ASSERT_TRUE(observer != nullptr);
@@ -434,7 +441,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser004, TestSize.Level0)
      * @tc.steps: step1. set SyncActivationCheckCallback and only userId2 can active
      */
     g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
-    g_mgr2.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
 
     /**
      * @tc.steps: step2. right param A B enable

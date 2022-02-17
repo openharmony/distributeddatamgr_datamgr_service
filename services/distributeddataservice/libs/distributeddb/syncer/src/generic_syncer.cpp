@@ -93,14 +93,9 @@ int GenericSyncer::Initialize(ISyncInterface *syncInterface, bool isNeedActive)
         if (errCodeMetadata != E_OK || errCodeTimeHelper != E_OK) {
             return -E_INTERNAL_ERROR;
         }
-        bool isSyncDualTupleMode = syncInterface->GetDbProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE,
-            false);
-        LOGI("[Syncer] Syncer[%s] start in mode=%d", label_.c_str(), isSyncDualTupleMode);
-        if (isSyncDualTupleMode) {
-            if (!isNeedActive) {
-                LOGI("syncer no need to active");
-                return -E_NO_NEED_ACTIVE;
-            }
+        int errCode = CheckSyncActive(syncInterface, isNeedActive);
+        if (errCode != E_OK) {
+            return errCode;
         }
 
         if (!RuntimeContext::GetInstance()->IsCommunicatorAggregatorValid()) {
@@ -108,7 +103,7 @@ int GenericSyncer::Initialize(ISyncInterface *syncInterface, bool isNeedActive)
             return -E_NOT_INIT;
         }
 
-        int errCode = SyncModuleInit();
+        errCode = SyncModuleInit();
         if (errCode != E_OK) {
             LOGE("[Syncer] Sync ModuleInit ERR!");
             return -E_INTERNAL_ERROR;
@@ -379,6 +374,23 @@ int GenericSyncer::InitSyncEngine(ISyncInterface *syncInterface)
     }
 }
 
+int GenericSyncer::CheckSyncActive(ISyncInterface *syncInterface, bool isNeedActive)
+{
+    bool isSyncDualTupleMode = syncInterface->GetDbProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE,
+        false);
+    if (!isSyncDualTupleMode || isNeedActive) {
+        return E_OK;
+    }
+    LOGI("[Syncer] syncer no need to active");
+    if (syncEngine_ == nullptr) {
+        syncEngine_ = CreateSyncEngine();
+        if (syncEngine_ == nullptr) {
+            return -E_OUT_OF_MEMORY;
+        }
+    }
+    return -E_NO_NEED_ACTIVE;
+}
+
 uint32_t GenericSyncer::GenerateSyncId()
 {
     std::lock_guard<std::mutex> lock(syncIdLock_);
@@ -639,6 +651,9 @@ void GenericSyncer::GetOnlineDevices(std::vector<std::string> &devices) const
 
 int GenericSyncer::SetSyncRetry(bool isRetry)
 {
+    if (syncEngine_ == nullptr) {
+        return -E_NOT_INIT;
+    }
     syncEngine_->SetSyncRetry(isRetry);
     return E_OK;
 }

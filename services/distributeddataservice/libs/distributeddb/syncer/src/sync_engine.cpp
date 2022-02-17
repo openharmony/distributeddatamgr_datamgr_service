@@ -144,7 +144,9 @@ int SyncEngine::Close()
     }
     // close db, rekey or import scene, need clear all remote query info
     // local query info will destroy with syncEngine destruct
-    subManager_->ClearAllRemoteQuery();
+    if (subManager_ != nullptr) {
+        subManager_->ClearAllRemoteQuery();
+    }
     ClearInnerResource();
     LOGI("[SyncEngine] SyncEngine closed!");
     return E_OK;
@@ -710,6 +712,7 @@ void SyncEngine::SetSyncRetry(bool isRetry)
         return;
     }
     isSyncRetry_ = isRetry;
+    LOGI("[SyncEngine] SetSyncRetry:%d ok", isRetry);
     std::lock_guard<std::mutex> lock(contextMapLock_);
     for (auto &iter : syncTaskContextMap_) {
         ISyncTaskContext *context = iter.second;

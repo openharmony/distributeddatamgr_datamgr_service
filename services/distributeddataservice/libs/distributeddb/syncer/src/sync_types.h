@@ -99,5 +99,4 @@ constexpr uint64_t MAX_TIMESTAMP = INT64_MAX;
 constexpr uint8_t REMOVE_DEVICE_DATA_MARK = 1;
 constexpr uint8_t SUPPORT_MARK = 1; // used for set is support one ability
 }
-
 #endif
