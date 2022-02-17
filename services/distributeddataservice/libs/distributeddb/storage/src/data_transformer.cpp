@@ -280,43 +280,33 @@ int DeSerializeTextValue(DataValue &dataValue, Parcel &parcel)
 
 int SerializeDataValue(const DataValue &dataValue, Parcel &parcel)
 {
-    static const std::map<StorageType, std::function<int(const DataValue&, Parcel&)>> funcs = {
-        { StorageType::STORAGE_TYPE_NULL,    SerializeNullValue },
-        { StorageType::STORAGE_TYPE_BOOL,    SerializeBoolValue },
-        { StorageType::STORAGE_TYPE_INTEGER, SerializeIntValue },
-        { StorageType::STORAGE_TYPE_REAL,    SerializeDoubleValue },
-        { StorageType::STORAGE_TYPE_TEXT,    SerializeTextValue },
-        { StorageType::STORAGE_TYPE_BLOB,    SerializeBlobValue },
+    static const std::vector<std::function<int(const DataValue&, Parcel&)>> funcs {
+        SerializeNullValue, SerializeBoolValue, SerializeIntValue,
+        SerializeDoubleValue, SerializeTextValue, SerializeBlobValue,
     };
-
     StorageType type = dataValue.GetType();
     parcel.WriteUInt32(static_cast<uint32_t>(type));
-    auto iter = funcs.find(type);
-    if (iter == funcs.end()) {
+    if (type < StorageType::STORAGE_TYPE_NULL || type > StorageType::STORAGE_TYPE_BLOB) {
         LOGE("Cannot serialize %u", type);
         return -E_NOT_SUPPORT;
     }
-    return iter->second(dataValue, parcel);
+    return funcs[static_cast<uint32_t>(type) - 1](dataValue, parcel);
 }
 
 int DeserializeDataValue(DataValue &dataValue, Parcel &parcel)
 {
-    static const std::map<StorageType, std::function<int(DataValue&, Parcel&)>> funcs = {
-        { StorageType::STORAGE_TYPE_NULL,    DeSerializeNullValue },
-        { StorageType::STORAGE_TYPE_BOOL,    DeSerializeBoolValue },
-        { StorageType::STORAGE_TYPE_INTEGER, DeSerializeIntValue },
-        { StorageType::STORAGE_TYPE_REAL,    DeSerializeDoubleValue },
-        { StorageType::STORAGE_TYPE_TEXT,    DeSerializeTextValue },
-        { StorageType::STORAGE_TYPE_BLOB,    DeSerializeBlobValue },
+    static const std::vector<std::function<int(DataValue&, Parcel&)>> funcs {
+        DeSerializeNullValue, DeSerializeBoolValue, DeSerializeIntValue,
+        DeSerializeDoubleValue, DeSerializeTextValue, DeSerializeBlobValue,
     };
     uint32_t type = 0;
     parcel.ReadUInt32(type);
-    auto iter = funcs.find(static_cast<StorageType>(type));
-    if (iter == funcs.end()) {
-        LOGE("Cannot deserialize %u", dataValue.GetType());
+    if (type < static_cast<uint32_t>(StorageType::STORAGE_TYPE_NULL) ||
+        type > static_cast<uint32_t>(StorageType::STORAGE_TYPE_BLOB)) {
+        LOGE("Cannot deserialize %u", type);
         return -E_PARSE_FAIL;
     }
-    return iter->second(dataValue, parcel);
+    return funcs[type - 1](dataValue, parcel);
 }
 }
 
