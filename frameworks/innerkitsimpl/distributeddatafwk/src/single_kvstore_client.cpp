@@ -32,7 +32,6 @@ SingleKvStoreClient::SingleKvStoreClient(sptr<ISingleKvStore> kvStoreProxy, cons
 
 SingleKvStoreClient::~SingleKvStoreClient()
 {
-    kvStoreProxy_->UnRegisterSyncCallback();
     syncObserver_->Clean();
 }
 
