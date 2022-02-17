@@ -217,7 +217,7 @@ DBStatus Security::SetFileSecurityOption(const std::string &filePath, const Secu
         return INVALID_ARGS;
     }
 
-    bool result = FileIO::SecurityLabel::SetSecurityLabel(filePath, dataLevel);
+    bool result = OHOS::DistributedFS::ModuleSecurityLabel::SecurityLabel::SetSecurityLabel(filePath, dataLevel);
     if (!result) {
         ZLOGE("set security label failed!, result:%d, datalevel:%s", result, dataLevel.c_str());
         return DB_ERROR;
@@ -239,7 +239,7 @@ DBStatus Security::GetFileSecurityOption(const std::string &filePath, SecurityOp
         return OK;
     }
 
-    std::string value = FileIO::SecurityLabel::GetSecurityLabel(filePath);
+    std::string value = OHOS::DistributedFS::ModuleSecurityLabel::SecurityLabel::GetSecurityLabel(filePath);
     if (!IsXattrValueValid(value)) {
         option = {NOT_SET, ECE};
         return OK;

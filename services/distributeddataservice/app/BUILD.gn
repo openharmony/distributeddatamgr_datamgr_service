@@ -47,7 +47,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/src",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/rdb",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
-    "//foundation/filemanagement/file_api/interfaces/innerkits/include",
+    "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
     "//utils/system/safwk/native/include",
     "../adapter/include/account",
     "../adapter/include/permission",
