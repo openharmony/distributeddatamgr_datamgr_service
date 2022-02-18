@@ -111,7 +111,6 @@ protected:
 private:
     int RegisterEventType(EventType type);
 
-
     SyncerProxy syncer_;
     std::atomic<bool> started_;
     std::atomic<bool> isSyncModuleActiveCheck_;

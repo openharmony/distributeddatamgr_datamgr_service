@@ -108,7 +108,7 @@ void DistributedDBCommunicatorSendReceiveTest::TearDown()
     std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Wait 200 ms to make sure all thread quiet
 }
 
-Message *BuildAppLayerFrameMessage()
+static Message *BuildAppLayerFrameMessage()
 {
     DistributedDBUnitTest::DataSyncMessageInfo info;
     info.messageId_ = DistributedDB::TIME_SYNC_MESSAGE;

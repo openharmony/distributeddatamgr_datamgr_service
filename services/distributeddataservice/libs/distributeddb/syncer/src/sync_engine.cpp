@@ -875,8 +875,6 @@ void SyncEngine::UnRegCommunicatorsCallback()
         communicator_->RegOnConnectCallback(nullptr, nullptr);
         communicator_->RegOnSendableCallback(nullptr, nullptr);
     }
-
-
     std::lock_guard<std::mutex> lock(equalCommunicatorsLock_);
     for (const auto &iter : equalCommunicators_) {
         iter.second->RegOnMessageCallback(nullptr, nullptr);

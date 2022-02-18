@@ -43,16 +43,11 @@ public:
     // If not success, return nullptr and set outErrorNo
     virtual ICommunicator *AllocCommunicator(uint64_t commLabel, int &outErrorNo) = 0;
     virtual ICommunicator *AllocCommunicator(const LabelType &commLabel, int &outErrorNo) = 0;
-
     virtual void ReleaseCommunicator(ICommunicator *inCommunicator) = 0;
-
     virtual int RegCommunicatorLackCallback(const CommunicatorLackCallback &onCommLack, const Finalizer &inOper) = 0;
     virtual int RegOnConnectCallback(const OnConnectCallback &onConnect, const Finalizer &inOper) = 0;
-
     virtual int GetLocalIdentity(std::string &outTarget) const = 0;
-
     virtual ~ICommunicatorAggregator() {};
-
 };
 } // namespace DistributedDB
 

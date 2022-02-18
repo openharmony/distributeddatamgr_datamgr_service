@@ -57,7 +57,7 @@ public:
 
     void SetErrorCode(int32_t errCode);
 
-    void GetErrorCode(int32_t &errorCode) const;
+    void GetErrorCode(int32_t &errCode) const;
 private:
     std::vector<std::vector<uint8_t>> entries_;
     int32_t errorCode_;

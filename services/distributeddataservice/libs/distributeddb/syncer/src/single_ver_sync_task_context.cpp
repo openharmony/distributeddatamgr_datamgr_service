@@ -351,6 +351,7 @@ bool SingleVerSyncTaskContext::GetSendPermitCheck() const
 {
     return isSendPermitChecked_;
 }
+
 void SingleVerSyncTaskContext::SetIsSchemaSync(bool isSchemaSync)
 {
     isSchemaSync_ = isSchemaSync;

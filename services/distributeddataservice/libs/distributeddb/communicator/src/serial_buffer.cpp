@@ -44,7 +44,7 @@ uint32_t SerialBuffer::GetExtendHeadLength() const
 // In case buffer be directly send out, so padding is needed
 int SerialBuffer::AllocBufferByPayloadLength(uint32_t inPayloadLen, uint32_t inHeaderLen)
 {
-    if (oringinalBytes_!= nullptr || bytes_ != nullptr || externalBytes_ != nullptr) {
+    if (oringinalBytes_ != nullptr || bytes_ != nullptr || externalBytes_ != nullptr) {
         return -E_NOT_PERMIT;
     }
 

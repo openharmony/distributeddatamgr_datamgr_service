@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include <memory>
 #include "adapter_stub.h"
+#include <memory>
 #include "db_errno.h"
 #include "endian_convert.h"
 #include "frame_header.h"

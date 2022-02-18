@@ -153,6 +153,7 @@ void DistributedDBSingleVerMultiUserTest::TearDown(void)
     g_mgr1.SetSyncActivationCheckCallback(callback);
 }
 
+namespace {
 void OpenStore1()
 {
     KvStoreNbDelegate::Option option;
@@ -225,6 +226,7 @@ bool AutoLaunchCallBack(const std::string &identifier, AutoLaunchParam &param, K
     param.notifier = nullptr;
     param.option.syncDualTupleMode = true;
     return ret;
+}
 }
 
 /**

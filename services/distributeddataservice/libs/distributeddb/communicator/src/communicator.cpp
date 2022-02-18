@@ -130,7 +130,7 @@ int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg
         return errCode;
     }
 
-    TaskConfig taskConfig{config.nonBlock, config.timeout, inMsg->GetPriority()};
+    TaskConfig taskConfig {config.nonBlock, config.timeout, inMsg->GetPriority()};
     errCode = commAggrHandle_->CreateSendTask(dstTarget, buffer, FrameType::APPLICATION_MESSAGE, taskConfig, onEnd);
     if (errCode == E_OK) {
         // if ok, free inMsg, otherwise the caller should take over inMsg

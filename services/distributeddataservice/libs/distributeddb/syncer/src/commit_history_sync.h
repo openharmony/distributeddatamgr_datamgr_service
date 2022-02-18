@@ -63,9 +63,9 @@ public:
 
     void GetData(std::vector<MultiVerCommitNode> &outData) const;
 
-    void SetErrorCode(int32_t errorCode);
+    void SetErrorCode(int32_t errCode);
 
-    void GetErrorCode(int32_t &errorCode) const;
+    void GetErrorCode(int32_t &errCode) const;
 
     void SetVersion(uint32_t version);
 

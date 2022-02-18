@@ -135,7 +135,6 @@ int RuntimeContextImpl::GetLocalIdentity(std::string &outTarget)
     std::lock_guard<std::mutex> autoLock(communicatorLock_);
     if (communicatorAggregator_ != nullptr) {
         return communicatorAggregator_->GetLocalIdentity(outTarget);
-
     }
     return -E_NOT_INIT;
 }

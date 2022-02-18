@@ -111,7 +111,7 @@ public:
 
     virtual SyncStrategy GetSyncStrategy(QuerySyncObject &querySyncObject) const = 0;
 
-    void SetIsSchemaSync(bool isChecked);
+    void SetIsSchemaSync(bool isSchemaSync);
 
     bool GetIsSchemaSync() const;
 

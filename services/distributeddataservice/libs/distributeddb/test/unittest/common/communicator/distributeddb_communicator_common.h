@@ -72,7 +72,7 @@ struct ExtendHeadInfo {
 
 class ExtendHeaderHandleTest : public DistributedDB::ExtendHeaderHandle {
 public:
-    ExtendHeaderHandleTest(const DistributedDB::ExtendInfo &info)
+    explicit ExtendHeaderHandleTest(const DistributedDB::ExtendInfo &info)
     {
         localDbProperty_.appId = info.appId;
         localDbProperty_.storeId = info.storeId;

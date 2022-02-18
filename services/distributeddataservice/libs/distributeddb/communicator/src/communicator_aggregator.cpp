@@ -377,8 +377,8 @@ void CommunicatorAggregator::SendDataRoutine()
             eachPacket.push_back(entry);
         } else {
             for (auto &entry : piecePackets) {
-                std::pair<const uint8_t *, std::pair<uint32_t, uint32_t>> tmpEntry =
-                    {&(entry.first[0]), {entry.second, entry.first.size()}};
+                std::pair<const uint8_t *, std::pair<uint32_t, uint32_t>> tmpEntry = {&(entry.first[0]),
+                    {entry.second, entry.first.size()}};
                 eachPacket.push_back(tmpEntry);
             }
         }
@@ -395,7 +395,7 @@ void CommunicatorAggregator::SendPacketsAndDisposeTask(const SendTask &inTask,
     for (auto &entry : eachPacket) {
         LOGI("[CommAggr][SendPackets] DoSendBytes, dstTarget=%s{private}, extendHeadLength=%u, totalLength=%u.",
             inTask.dstTarget.c_str(), entry.second.first, entry.second.second);
-        ProtocolProto::DisplayPacketInformation(entry.first + entry.second.first, entry.second.second); // For debug, delete in the future
+        ProtocolProto::DisplayPacketInformation(entry.first + entry.second.first, entry.second.second);
         errCode = adapterHandle_->SendBytes(inTask.dstTarget, entry.first, entry.second.second);
         if (errCode == -E_WAIT_RETRY) {
             LOGE("[CommAggr][SendPackets] SendBytes temporally fail.");

@@ -1006,7 +1006,9 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch013, TestSize.Level3)
      * @tc.steps: step4. param A B disable
      * @tc.expected: step4. notifier WRITE_CLOSED
      */
-    EXPECT_TRUE(RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierB, g_dualIdentifierB, USER_ID) == E_OK);
-    EXPECT_TRUE(RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierC, g_dualIdentifierC, USER_ID) == E_OK);
+    EXPECT_TRUE(RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierB, g_dualIdentifierB, USER_ID)
+        == E_OK);
+    EXPECT_TRUE(RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(g_identifierC, g_dualIdentifierC, USER_ID)
+        == E_OK);
     g_communicatorAggregator->RunOnConnectCallback(REMOTE_DEVICE_ID, false);
 }

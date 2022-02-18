@@ -226,7 +226,7 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AutoLaunchCheck001, TestSize.Level1)
     std::unique_lock<std::mutex> lock(mutex);
     std::condition_variable cv;
     for (int i = 0; i < loopCount; i++) {
-        std::thread t = std::thread([&finishCount, &mockAutoLaunch, &id, &userId, &mutex, &cv]{
+        std::thread t = std::thread([&finishCount, &mockAutoLaunch, &id, &userId, &mutex, &cv] {
             mockAutoLaunch.CallExtConnectionLifeCycleCallbackTask(id, userId);
             finishCount++;
             if (finishCount == loopCount) {

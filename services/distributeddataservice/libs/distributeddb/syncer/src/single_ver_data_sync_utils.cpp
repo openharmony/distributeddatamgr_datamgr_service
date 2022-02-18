@@ -80,8 +80,8 @@ bool SingleVerDataSyncUtils::IsPermitLocalDeviceRecvData(const std::string &devi
     return RuntimeContext::GetInstance()->CheckDeviceSecurityAbility(deviceId, remoteSecOption);
 }
 
-bool SingleVerDataSyncUtils::IsPermitRemoteDeviceRecvData(const std::string &deviceId, const SecurityOption &remoteSecOption,
-    SyncGenericInterface *storage)
+bool SingleVerDataSyncUtils::IsPermitRemoteDeviceRecvData(const std::string &deviceId,
+    const SecurityOption &remoteSecOption, SyncGenericInterface *storage)
 {
     if (storage == nullptr) {
         return -E_INVALID_ARGS;

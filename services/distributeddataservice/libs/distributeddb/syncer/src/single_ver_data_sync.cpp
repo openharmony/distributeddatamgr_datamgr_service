@@ -2004,7 +2004,8 @@ void SingleVerDataSync::ClearDataMsg()
     msgSchedule_.ClearMsg();
 }
 
-void SingleVerDataSync::SetSendConfig(const std::string &dstTarget, bool nonBlock, uint32_t timeout, SendConfig &sendConf)
+void SingleVerDataSync::SetSendConfig(const std::string &dstTarget, bool nonBlock, uint32_t timeout,
+    SendConfig &sendConf)
 {
     sendConf.nonBlock = nonBlock;
     sendConf.timeout = timeout;
