@@ -881,7 +881,6 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
         // Need not reset rmDataStmt and rmLogStmt here.
         ResetAllStatements({saveDataStmt, saveLogStmt, queryStmt}, false, errCode);
     }
-
     if (errCode == -E_NOT_FOUND) {
         errCode = E_OK;
     }
