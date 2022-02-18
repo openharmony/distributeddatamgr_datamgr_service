@@ -133,6 +133,7 @@ void CreateAndGetStore(const std::string &storeId, const std::string &schemaStri
     ASSERT_NE(store, nullptr);
 }
 
+#ifndef OMIT_FLATBUFFER
 std::string FbfFileToSchemaString(const std::string &fileName)
 {
     std::string filePath = g_resourceDir + "fbs_files_for_ut/" + fileName;
@@ -152,6 +153,7 @@ std::string FbfFileToSchemaString(const std::string &fileName)
     LOGE("[FbfFileToSchemaString] read file failed path : %s", filePath.c_str());
     return "";
 }
+#endif
 
 void CheckDataNumByKey(const std::string &storeId, const Key& key, size_t expSize)
 {
@@ -273,6 +275,7 @@ HWTEST_F(DistributedDBStorageSubscribeQueryTest, CheckAndInitQueryCondition001, 
     KvDBManager::ReleaseDatabaseConnection(conn);
 }
 
+#ifndef OMIT_FLATBUFFER
 /**
   * @tc.name: CheckAndInitQueryCondition002
   * @tc.desc: Check the condition always illegal with flatbuffer schema
@@ -309,6 +312,7 @@ HWTEST_F(DistributedDBStorageSubscribeQueryTest, CheckAndInitQueryCondition002, 
     RefObject::KillAndDecObjRef(store);
     KvDBManager::ReleaseDatabaseConnection(conn);
 }
+#endif
 
 /**
   * @tc.name: CheckAndInitQueryCondition003

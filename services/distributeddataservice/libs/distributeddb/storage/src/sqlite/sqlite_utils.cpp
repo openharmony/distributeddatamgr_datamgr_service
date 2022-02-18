@@ -608,10 +608,6 @@ int AnalysisSchemaSqlAndTrigger(sqlite3 *db, const std::string &tableName, Table
                 std::string createTableSql;
                 (void) SQLiteUtils::GetColumnTextValue(statement, 4, createTableSql);  // 4 means create table sql
                 table.SetCreateTableSql(createTableSql);
-            } else if (type == "trigger") {
-                std::string triggerName;
-                (void) SQLiteUtils::GetColumnTextValue(statement, 1, triggerName);  // 1 means trigger name
-                table.AddTrigger(triggerName);
             }
         } else {
             LOGE("[AnalysisSchema] Step for the analysis create table sql and trigger failed:%d", err);
@@ -623,8 +619,7 @@ int AnalysisSchemaSqlAndTrigger(sqlite3 *db, const std::string &tableName, Table
     return errCode;
 }
 
-int GetSchemaIndexList(sqlite3 *db, const std::string &tableName, std::vector<std::string> &indexList,
-    std::vector<std::string> &uniqueList)
+int GetSchemaIndexList(sqlite3 *db, const std::string &tableName, std::vector<std::string> &indexList)
 {
     std::string sql = "pragma index_list(" + tableName + ")";
     sqlite3_stmt *statement = nullptr;
@@ -644,9 +639,7 @@ int GetSchemaIndexList(sqlite3 *db, const std::string &tableName, std::vector<st
             (void) SQLiteUtils::GetColumnTextValue(statement, 1, indexName);  // 1 means index name
             std::string origin;
             (void) SQLiteUtils::GetColumnTextValue(statement, 3, origin);  // 3 means index type, whether unique
-            if (origin == "u") { // 'u' means index created by unique constraint
-                uniqueList.push_back(indexName);
-            } else if (origin == "c") { // 'c' means index created by user declare
+            if (origin == "c") { // 'c' means index created by user declare
                 indexList.push_back(indexName);
             }
         } else {
@@ -687,11 +680,10 @@ int AnalysisSchemaIndexDefine(sqlite3 *db, const std::string &indexName, Composi
     return errCode;
 }
 
-int AnalysisSchemaIndexAndUnique(sqlite3 *db, const std::string &tableName, TableInfo &table)
+int AnalysisSchemaIndex(sqlite3 *db, const std::string &tableName, TableInfo &table)
 {
     std::vector<std::string> indexList;
-    std::vector<std::string> uniqueList;
-    int errCode = GetSchemaIndexList(db, tableName, indexList, uniqueList);
+    int errCode = GetSchemaIndexList(db, tableName, indexList);
     if (errCode != E_OK) {
         LOGE("[AnalysisSchema] get schema index list failed.");
         return errCode;
@@ -706,17 +698,6 @@ int AnalysisSchemaIndexAndUnique(sqlite3 *db, const std::string &tableName, Tabl
         }
         table.AddIndexDefine(indexName, indexDefine);
     }
-
-    for (const auto &uniqueName : uniqueList) {
-        CompositeFields uniqueDefine;
-        errCode = AnalysisSchemaIndexDefine(db, uniqueName, uniqueDefine);
-        if (errCode != E_OK) {
-            LOGE("[AnalysisSchema] analysis schema unique columns failed.");
-            return errCode;
-        }
-        table.AddUniqueDefine(uniqueDefine);
-    }
-
     return E_OK;
 }
 
@@ -795,7 +776,7 @@ int SQLiteUtils::AnalysisSchema(sqlite3 *db, const std::string &tableName, Table
         return errCode;
     }
 
-    errCode = AnalysisSchemaIndexAndUnique(db, tableName, table);
+    errCode = AnalysisSchemaIndex(db, tableName, table);
     if (errCode != E_OK) {
         LOGE("[AnalysisSchema] Analysis index failed.");
         return errCode;
@@ -1338,7 +1319,7 @@ int SQLiteUtils::CreateRelationalLogTable(sqlite3 *db, const std::string &oriTab
 }
 
 namespace {
-std::string GetInsertTrigger(const TableInfo table)
+std::string GetInsertTrigger(const TableInfo &table)
 {
     std::string insertTrigger = "CREATE TRIGGER IF NOT EXISTS ";
     insertTrigger += "naturalbase_rdb_" + table.GetTableName() + "_ON_INSERT AFTER INSERT \n";
@@ -1347,27 +1328,27 @@ std::string GetInsertTrigger(const TableInfo table)
     insertTrigger += "\t INSERT OR REPLACE INTO ";
     insertTrigger += DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
     insertTrigger += " (data_key, device, ori_device, timestamp, wtimestamp, flag, hash_key)";
-    insertTrigger += " VALUES (new.rowid, '" + table.GetDevId() + "', '" + table.GetDevId() + "',";
+    insertTrigger += " VALUES (new.rowid, '', '',";
     insertTrigger += " get_sys_time(0), get_sys_time(0), 0x02,";
     insertTrigger += " calc_hash(new." + table.GetPrimaryKey() + "));\n";
     insertTrigger += "END;";
     return insertTrigger;
 }
 
-std::string GetUpdateTrigger(const TableInfo table)
+std::string GetUpdateTrigger(const TableInfo &table)
 {
     std::string updateTrigger = "CREATE TRIGGER IF NOT EXISTS ";
     updateTrigger += "naturalbase_rdb_" + table.GetTableName() + "_ON_UPDATE AFTER UPDATE \n";
     updateTrigger += "ON " + table.GetTableName() + "\n";
     updateTrigger += "BEGIN\n";
     updateTrigger += "\t UPDATE " + DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
-    updateTrigger += " SET timestamp=get_sys_time(0), device='" + table.GetDevId() + "', flag=0x22";
+    updateTrigger += " SET timestamp=get_sys_time(0), device='', flag=0x22";
     updateTrigger += " where hash_key=calc_hash(old." + table.GetPrimaryKey() + ") and flag&0x02=0x02;\n";
     updateTrigger += "END;";
     return updateTrigger;
 }
 
-std::string GetDeleteTrigger(const TableInfo table)
+std::string GetDeleteTrigger(const TableInfo &table)
 {
     std::string deleteTrigger = "CREATE TRIGGER IF NOT EXISTS ";
     deleteTrigger += "naturalbase_rdb_" + table.GetTableName() + "_ON_DELETE BEFORE DELETE \n";

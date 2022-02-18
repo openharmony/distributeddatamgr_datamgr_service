@@ -202,21 +202,6 @@ void TableInfo::AddField(const FieldInfo &field)
     fields_[field.GetFieldName()] = field;
 }
 
-const std::vector<CompositeFields> &TableInfo::GetUniqueDefine() const
-{
-    return uniqueDefines_;
-}
-
-void TableInfo::AddUniqueDefine(const CompositeFields &uniqueDefine)
-{
-    uniqueDefines_.push_back(uniqueDefine);
-}
-
-void TableInfo::SetUniqueDefines(const std::vector<CompositeFields> &uniqueDefines)
-{
-    uniqueDefines_ = uniqueDefines;
-}
-
 const std::map<std::string, CompositeFields> &TableInfo::GetIndexDefine() const
 {
     return indexDefines_;
@@ -237,16 +222,6 @@ void TableInfo::SetPrimaryKey(const FieldName &fieldName)
     primaryKey_ = fieldName;
 }
 
-void TableInfo::AddTrigger(const std::string &triggerName)
-{
-    triggers_.push_back(triggerName);
-}
-
-const std::vector<std::string> &TableInfo::GetTriggers() const
-{
-    return triggers_;
-}
-
 void TableInfo::AddFieldDefineString(std::string &attrStr) const
 {
     if (fields_.empty()) {
@@ -260,28 +235,6 @@ void TableInfo::AddFieldDefineString(std::string &attrStr) const
         }
     }
     attrStr += "},";
-}
-
-void TableInfo::AddUniqueDefineString(std::string &attrStr) const
-{
-    if (uniqueDefines_.empty()) {
-        return;
-    }
-    attrStr += R"("UNIQUE": [)";
-    for (auto itUniqueDefine = uniqueDefines_.begin(); itUniqueDefine != uniqueDefines_.end(); ++itUniqueDefine) {
-        attrStr += "[\"";
-        for (auto itField = (*itUniqueDefine).begin(); itField != (*itUniqueDefine).end(); ++itField) {
-            attrStr += *itField;
-            if (itField != (*itUniqueDefine).end() - 1) {
-                attrStr += "\",\"";
-            }
-        }
-        attrStr += "\"]";
-        if (itUniqueDefine != uniqueDefines_.end() - 1) {
-            attrStr += ",";
-        }
-    }
-    attrStr += "],";
 }
 
 void TableInfo::AddIndexDefineString(std::string &attrStr) const
@@ -304,16 +257,6 @@ void TableInfo::AddIndexDefineString(std::string &attrStr) const
         }
     }
     attrStr += "}";
-}
-
-const std::string &TableInfo::GetDevId() const
-{
-    return devId_;
-}
-
-void TableInfo::SetDevId(const std::string &devId)
-{
-    devId_ = devId;
 }
 
 int TableInfo::CompareWithTable(const TableInfo &inTableInfo) const
@@ -408,26 +351,6 @@ namespace {
     }
 }
 
-JsonObject TableInfo::ToJsonObject() const
-{
-    FieldValue jsonField;
-    JsonObject tableJson;
-    jsonField.stringValue = tableName_;
-    tableJson.InsertField(FieldPath { "NAME" }, FieldType::LEAF_FIELD_STRING, jsonField);
-    jsonField.boolValue = autoInc_;
-    tableJson.InsertField(FieldPath { "AUTOINCREMENT" }, FieldType::LEAF_FIELD_BOOL, jsonField);
-    jsonField.stringValue = primaryKey_;
-    tableJson.InsertField(FieldPath { "PRIMARY_KEY" }, FieldType::LEAF_FIELD_STRING, jsonField);
-    for (const auto &it : fields_) {
-        jsonField.stringValue = it.second.ToAttributeString();
-        tableJson.InsertField(FieldPath { "DEFINE", it.first }, FieldType::LEAF_FIELD_STRING, jsonField);
-    }
-    for (const auto &it : uniqueDefines_) {
-        jsonField.stringValue = VectorJoin(it, ',');
-    }
-    return tableJson;
-}
-
 std::string TableInfo::ToTableInfoString() const
 {
     std::string attrStr;
@@ -440,7 +363,6 @@ std::string TableInfo::ToTableInfoString() const
     } else {
         attrStr += "false,";
     }
-    AddUniqueDefineString(attrStr);
     if (!primaryKey_.empty()) {
         attrStr += R"("PRIMARY_KEY": ")" + primaryKey_ + "\"";
     }
@@ -813,7 +735,7 @@ int GetMemberFromJsonObject(const JsonObject &inJsonObject, const std::string &f
 
 int RelationalSchemaObject::ParseRelationalSchema(const JsonObject &inJsonObject)
 {
-    int errCode = ParseCheckSchemaVersionMode(inJsonObject);
+    int errCode = ParseCheckSchemaVersion(inJsonObject);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -824,7 +746,7 @@ int RelationalSchemaObject::ParseRelationalSchema(const JsonObject &inJsonObject
     return ParseCheckSchemaTableDefine(inJsonObject);
 }
 
-int RelationalSchemaObject::ParseCheckSchemaVersionMode(const JsonObject &inJsonObject)
+int RelationalSchemaObject::ParseCheckSchemaVersion(const JsonObject &inJsonObject)
 {
     FieldValue fieldValue;
     int errCode = GetMemberFromJsonObject(inJsonObject, SchemaConstant::KEYWORD_SCHEMA_VERSION,
@@ -899,10 +821,6 @@ int RelationalSchemaObject::ParseCheckTableInfo(const JsonObject &inJsonObject)
         return errCode;
     }
     errCode = ParseCheckTableAutoInc(inJsonObject, resultTable);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    errCode = ParseCheckTableUnique(inJsonObject, resultTable);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -1005,21 +923,6 @@ int RelationalSchemaObject::ParseCheckTableAutoInc(const JsonObject &inJsonObjec
     } else if (errCode != -E_NOT_FOUND) {
         return errCode;
     }
-    return E_OK;
-}
-
-int RelationalSchemaObject::ParseCheckTableUnique(const JsonObject &inJsonObject, TableInfo &resultTable)
-{
-    if (!inJsonObject.IsFieldPathExist(FieldPath {"UNIQUE"})) { // UNIQUE is not necessary
-        return E_OK;
-    }
-    std::vector<CompositeFields> uniqueArray;
-    int errCode = inJsonObject.GetArrayContentOfStringOrStringArray(FieldPath {"UNIQUE"}, uniqueArray);
-    if (errCode != E_OK) {
-        LOGE("[RelationalSchema][Parse] Get unique array failed: %d.", errCode);
-        return -E_SCHEMA_PARSE_FAIL;
-    }
-    resultTable.SetUniqueDefines(uniqueArray);
     return E_OK;
 }
 
