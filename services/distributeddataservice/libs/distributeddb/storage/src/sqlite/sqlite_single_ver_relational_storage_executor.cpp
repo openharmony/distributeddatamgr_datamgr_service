@@ -755,20 +755,13 @@ int SQLiteSingleVerRelationalStorageExecutor::DeleteSyncDataItem(const DataItem 
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&saveDataStmt,
-    sqlite3_stmt *&rmDataStmt, int64_t &rowid)
+    sqlite3_stmt *&rmDataStmt, const std::vector<FieldInfo> &fieldInfos, int64_t &rowid)
 {
     if ((dataItem.flag & DataItem::DELETE_FLAG) != 0) {
         return DeleteSyncDataItem(dataItem, rmDataStmt);
     }
 
-    std::map<std::string, FieldInfo> colInfos = table_.GetFields();
-    std::vector<FieldInfo> fieldInfos;
-    for (const auto &col: colInfos) {
-        fieldInfos.push_back(col.second);
-    }
-
     std::vector<int> indexMapping;
-
     OptRowDataWithLog data;
     int errCode = DataTransformer::DeSerializeDataItem(dataItem, data, fieldInfos, indexMapping);
     if (errCode != E_OK) {
@@ -854,6 +847,11 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
         SQLiteUtils::ResetStatement(saveDataStmt, true, errCode);
         return errCode;
     }
+    std::map<std::string, FieldInfo> colInfos = table_.GetFields();
+    std::vector<FieldInfo> fieldInfos;
+    for (const auto &col: colInfos) {
+        fieldInfos.push_back(col.second);
+    }
     sqlite3_stmt *rmDataStmt = nullptr;
     sqlite3_stmt *rmLogStmt = nullptr;
     for (auto &item : dataItems) {
@@ -869,7 +867,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
             continue;
         }
         int64_t rowid = -1;
-        errCode = SaveSyncDataItem(item, saveDataStmt, rmDataStmt, rowid);
+        errCode = SaveSyncDataItem(item, saveDataStmt, rmDataStmt, fieldInfos, rowid);
         if (errCode != E_OK && errCode != -E_NOT_FOUND) {
             LOGE("Save sync dataitem failed:%d.", errCode);
             break;

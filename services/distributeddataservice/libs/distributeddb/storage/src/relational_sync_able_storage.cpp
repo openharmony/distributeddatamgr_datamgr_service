@@ -335,7 +335,7 @@ int RelationalSyncAbleStorage::GetSyncDataNext(std::vector<SingleVerKvEntry *> &
     if (!token->CheckValid()) {
         return -E_INVALID_ARGS;
     }
-    const auto &fieldInfos = storageEngine_->GetSchemaRef().GetTable(token->GetQuery().GetTableName()).GetFieldInfos();
+    const auto fieldInfos = storageEngine_->GetSchemaRef().GetTable(token->GetQuery().GetTableName()).GetFieldInfos();
     std::vector<std::string> fieldNames;
     for (const auto &fieldInfo : fieldInfos) {
         fieldNames.push_back(fieldInfo.GetFieldName());
