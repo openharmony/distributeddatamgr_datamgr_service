@@ -399,35 +399,10 @@ int AbilitySync::AckRecv(const Message *message, ISyncTaskContext *context)
     }
     uint32_t remoteSoftwareVersion = packet->GetSoftwareVersion();
     context->SetRemoteSoftwareVersion(remoteSoftwareVersion);
-    std::string schema = packet->GetSchema();
     if (remoteSoftwareVersion > SOFTWARE_VERSION_RELEASE_2_0) {
-        HandleVersionV3AckSecOptionParam(packet, context);
-        AbilitySyncAckPacket ackPacket;
-        errCode = HandleVersionV3AckSchemaParam(packet, ackPacket, context, true);
-        if (errCode != E_OK) {
-            return errCode;
-        }
-        auto singleVerContext = static_cast<SingleVerSyncTaskContext *>(context);
-        auto query = singleVerContext->GetQuery();
-        bool permitSync = (singleVerContext->GetSyncStrategy(query)).permitSync;
-        if (!permitSync) {
-            (static_cast<SingleVerSyncTaskContext *>(context))->SetTaskErrCode(-E_SCHEMA_MISMATCH);
-            LOGE("[AbilitySync][AckRecv] scheme check failed");
-            return -E_SCHEMA_MISMATCH;
-        }
-        if (remoteSoftwareVersion > SOFTWARE_VERSION_RELEASE_3_0) {
-            errCode = metadata_->SetDbCreateTime(deviceId_, packet->GetDbCreateTime(), true);
-            if (errCode != E_OK) {
-                LOGE("[AbilitySync][AckRecv] set db create time failed,errCode=%d", errCode);
-                context->SetTaskErrCode(errCode);
-                return errCode;
-            }
-        }
-        DbAbility remoteDbAbility = packet->GetDbAbility();
-        (static_cast<SingleVerSyncTaskContext *>(context))->SetDbAbility(remoteDbAbility);
-        (void)SendAck(message, AbilitySync::CHECK_SUCCESS, true, ackPacket);
-        (static_cast<SingleVerSyncTaskContext *>(context))->SetIsSchemaSync(true);
+        errCode = AckRecvWithHighVersion(message, context, packet);
     } else {
+        std::string schema = packet->GetSchema();
         bool isCompatible = static_cast<SyncGenericInterface *>(storageInterface_)->CheckCompatible(schema);
         if (!isCompatible) {
             (static_cast<SingleVerSyncTaskContext *>(context))->SetTaskErrCode(-E_SCHEMA_MISMATCH);
@@ -437,7 +412,7 @@ int AbilitySync::AckRecv(const Message *message, ISyncTaskContext *context)
         LOGI("[AbilitySync][AckRecv]remoteSoftwareVersion = %u, isCompatible = %d,", remoteSoftwareVersion,
             isCompatible);
     }
-    return E_OK;
+    return errCode;
 }
 
 int AbilitySync::RequestRecv(const Message *message, ISyncTaskContext *context)
@@ -1208,5 +1183,37 @@ void AbilitySync::SetSendConfig(const std::string &dstTarget, bool nonBlock, uin
     sendConf.paramInfo.userId = storageInterface_->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
     sendConf.paramInfo.storeId = storageInterface_->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
     sendConf.paramInfo.dstTarget = dstTarget;
+}
+
+int AbilitySync::AckRecvWithHighVersion(const Message *message, ISyncTaskContext *context,
+    const AbilitySyncAckPacket *packet)
+{
+    HandleVersionV3AckSecOptionParam(packet, context);
+    AbilitySyncAckPacket ackPacket;
+    int errCode = HandleVersionV3AckSchemaParam(packet, ackPacket, context, true);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    auto singleVerContext = static_cast<SingleVerSyncTaskContext *>(context);
+    auto query = singleVerContext->GetQuery();
+    bool permitSync = (singleVerContext->GetSyncStrategy(query)).permitSync;
+    if (!permitSync) {
+        (static_cast<SingleVerSyncTaskContext *>(context))->SetTaskErrCode(-E_SCHEMA_MISMATCH);
+        LOGE("[AbilitySync][AckRecv] scheme check failed");
+        return -E_SCHEMA_MISMATCH;
+    }
+    if (context->GetRemoteSoftwareVersion() > SOFTWARE_VERSION_RELEASE_3_0) {
+        errCode = metadata_->SetDbCreateTime(deviceId_, packet->GetDbCreateTime(), true);
+        if (errCode != E_OK) {
+            LOGE("[AbilitySync][AckRecv] set db create time failed,errCode=%d", errCode);
+            context->SetTaskErrCode(errCode);
+            return errCode;
+        }
+    }
+    DbAbility remoteDbAbility = packet->GetDbAbility();
+    (static_cast<SingleVerSyncTaskContext *>(context))->SetDbAbility(remoteDbAbility);
+    (void)SendAck(message, AbilitySync::CHECK_SUCCESS, true, ackPacket);
+    (static_cast<SingleVerSyncTaskContext *>(context))->SetIsSchemaSync(true);
+    return E_OK;
 }
 } // namespace DistributedDB
