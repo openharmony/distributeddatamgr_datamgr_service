@@ -532,10 +532,10 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser005, TestSize.Level0)
     OpenStore1(false);
     OpenStore2(false);
     /**
-     * @tc.steps: step2. call NotifyUSerChanged
+     * @tc.steps: step2. call NotifyUserChanged
      * @tc.expected: step2. return OK
      */
-    EXPECT_TRUE(KvStoreDelegateManager::NotifyUSerChanged() == OK);
+    EXPECT_TRUE(KvStoreDelegateManager::NotifyUserChanged() == OK);
     CloseStore();
     /**
      * @tc.steps: step3. openstore1 open normal sync mode and and openstore2 in dual tuple
@@ -544,9 +544,9 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser005, TestSize.Level0)
     OpenStore1(false);
     OpenStore2();
     /**
-     * @tc.steps: step4. call NotifyUSerChanged
+     * @tc.steps: step4. call NotifyUserChanged
      * @tc.expected: step4. return OK
      */
-    EXPECT_TRUE(KvStoreDelegateManager::NotifyUSerChanged() == OK);
+    EXPECT_TRUE(KvStoreDelegateManager::NotifyUserChanged() == OK);
     CloseStore();
 }

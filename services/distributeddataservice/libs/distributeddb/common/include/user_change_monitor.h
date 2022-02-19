@@ -42,9 +42,9 @@ public:
 
     // Notify USER_CHANGE_EVENT.
     void NotifyUserChanged() const;
-    static const EventType USER_ACTIVE_EVENT = 3;
-    static const EventType USER_NON_ACTIVE_EVENT = 4;
-    static const EventType USER_ACTIVE_TO_NON_ACTIVE_EVENT = 5;
+    static constexpr EventType USER_ACTIVE_EVENT = 3;
+    static constexpr EventType USER_NON_ACTIVE_EVENT = 4;
+    static constexpr EventType USER_ACTIVE_TO_NON_ACTIVE_EVENT = 5;
 private:
     // prepare notifier chain
     int PrepareNotifierChain();
