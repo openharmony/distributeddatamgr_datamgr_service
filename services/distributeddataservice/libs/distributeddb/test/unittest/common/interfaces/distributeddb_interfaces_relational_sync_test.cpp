@@ -269,7 +269,7 @@ HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest008, TestS
         [&devices](const std::map<std::string, std::vector<TableStatus>> &devicesMap) {
             EXPECT_EQ(devicesMap.size(), devices.size());
         }, true);
-    EXPECT_EQ(errCode, INVALID_QUERY_FORMAT);
+    EXPECT_EQ(errCode, DISTRIBUTED_SCHEMA_CHANGED);
 
     /**
      * @tc.steps:step3. recreate sync_data
@@ -337,4 +337,38 @@ HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest009, TestS
         }, true);
 
     EXPECT_EQ(status, OK);
+}
+
+/**
+  * @tc.name: RelationalSyncTest010
+  * @tc.desc: Test sync with shcema changed
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest010, TestSize.Level1)
+{
+
+    std::vector<std::string> devices = {DEVICE_A};
+    Query query = Query::Select("sync_data");
+    int errCode = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
+        [&devices](const std::map<std::string, std::vector<TableStatus>> &devicesMap) {
+            EXPECT_EQ(devicesMap.size(), devices.size());
+        }, true);
+    EXPECT_EQ(errCode, OK);
+
+    std::string modifySql = "DROP TABLE IF EXISTS sync_data;";
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, modifySql), SQLITE_OK);
+
+    errCode = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
+        [&devices](const std::map<std::string, std::vector<TableStatus>> &devicesMap) {
+            EXPECT_EQ(devicesMap.size(), devices.size());
+        }, true);
+    EXPECT_EQ(errCode, DISTRIBUTED_SCHEMA_CHANGED);
+
+    errCode = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
+        [&devices](const std::map<std::string, std::vector<TableStatus>> &devicesMap) {
+            EXPECT_EQ(devicesMap.size(), devices.size());
+        }, true);
+    EXPECT_EQ(errCode, DISTRIBUTED_SCHEMA_CHANGED);
 }

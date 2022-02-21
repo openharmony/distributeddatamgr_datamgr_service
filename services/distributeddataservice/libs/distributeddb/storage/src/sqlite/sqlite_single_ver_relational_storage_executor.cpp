@@ -1164,7 +1164,21 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckQueryObjectLegal(const TableI
         return -E_INVALID_DB;
     }
 
-    int errCode = E_OK;
+    TableInfo newTable;
+    int errCode = SQLiteUtils::AnalysisSchema(dbHandle_, table.GetTableName(), newTable);
+    if (errCode != E_OK && errCode != -E_NOT_FOUND) {
+        LOGE("Check new schema failed. %d", errCode);
+        return errCode;
+    } else {
+        errCode = table.CompareWithTable(newTable);
+        if (errCode != -E_RELATIONAL_TABLE_EQUAL && errCode != -E_RELATIONAL_TABLE_COMPATIBLE) {
+            LOGE("Check schema failed, schema was changed. %d", errCode);
+            return -E_DISTRIBUTED_SCHEMA_CHANGED;
+        } else {
+            errCode = E_OK;
+        }
+    }
+
     SqliteQueryHelper helper = query.GetQueryHelper(errCode);
     if (errCode != E_OK) {
         LOGE("Get query helper for check query failed. %d", errCode);
@@ -1182,21 +1196,6 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckQueryObjectLegal(const TableI
         stmt);
     if (errCode != E_OK) {
         LOGE("Get query statement for check query failed. %d", errCode);
-        return errCode;
-    }
-
-    TableInfo newTable;
-    SQLiteUtils::AnalysisSchema(dbHandle_, table.GetTableName(), newTable);
-    if (errCode != E_OK) {
-        LOGE("Check new schema failed. %d", errCode);
-    } else {
-        errCode = table.CompareWithTable(newTable);
-        if (errCode != -E_RELATIONAL_TABLE_EQUAL && errCode != -E_RELATIONAL_TABLE_COMPATIBLE) {
-            LOGE("Check schema failed, schema was changed. %d", errCode);
-            errCode = -E_DISTRIBUTED_SCHEMA_CHANGED;
-        } else {
-            errCode = E_OK;
-        }
     }
 
     SQLiteUtils::ResetStatement(stmt, true, errCode);
