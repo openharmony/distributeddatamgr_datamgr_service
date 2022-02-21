@@ -38,7 +38,7 @@ struct MetaDataValue {
 class Metadata {
 public:
     Metadata();
-    ~Metadata();
+    virtual ~Metadata();
 
     int Initialize(ISyncInterface *storage);
 
@@ -82,9 +82,10 @@ public:
     int GetRecvQueryWaterMark(const std::string &queryIdentify,
         const std::string &deviceId, WaterMark &waterMark);
 
-    int SetLastQueryTime(const std::string &queryIdentify, const std::string &deviceId, const TimeStamp &timeStamp);
-    
-    int GetLastQueryTime(const std::string &queryIdentify, const std::string &deviceId, TimeStamp &timeStamp);
+    virtual int SetLastQueryTime(const std::string &queryIdentify, const std::string &deviceId,
+        const TimeStamp &timeStamp);
+
+    virtual int GetLastQueryTime(const std::string &queryIdentify, const std::string &deviceId, TimeStamp &timeStamp);
 
     int SetSendDeleteSyncWaterMark(const std::string &deviceId, const WaterMark &waterMark);
 

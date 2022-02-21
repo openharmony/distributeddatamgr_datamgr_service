@@ -28,7 +28,7 @@ namespace {
     const int MAX_CACHE_ITEMS = 200;
     const uint32_t MAX_STORE_ITEMS = 100000;
     // WaterMark Version
-    constexpr uint32_t QUERY_WATERMARK_VERSION_CURRENT = SOFTWARE_VERSION_RELEASE_4_0;
+    constexpr uint32_t QUERY_WATERMARK_VERSION_CURRENT = SOFTWARE_VERSION_RELEASE_6_0;
     constexpr uint32_t DELETE_WATERMARK_VERSION_CURRENT = SOFTWARE_VERSION_RELEASE_3_0;
     // Prefix Key in db
     const std::string QUERY_SYNC_PREFIX_KEY = "querySync";
@@ -323,7 +323,7 @@ int QuerySyncWaterMarkHelper::DeSerializeQueryWaterMark(const Value &dbQueryWate
     parcel.ReadUInt64(queryWaterMark.recvWaterMark);
     parcel.ReadUInt64(queryWaterMark.lastUsedTime);
     parcel.ReadString(queryWaterMark.sql);
-    if (queryWaterMark.version >= SOFTWARE_VERSION_RELEASE_4_0) {
+    if (queryWaterMark.version >= SOFTWARE_VERSION_RELEASE_6_0) {
         parcel.ReadUInt64(queryWaterMark.lastQueryTime);
     }
     if (parcel.IsError()) {
@@ -341,6 +341,7 @@ uint64_t QuerySyncWaterMarkHelper::CalculateQueryWaterMarkSize(const QueryWaterM
     length += Parcel::GetUInt64Len(); // recvWaterMark
     length += Parcel::GetUInt64Len(); // lastUsedTime
     length += Parcel::GetStringLen(queryWaterMark.sql);
+    length += Parcel::GetUInt64Len(); // lastQueryTime
     return length;
 }
 

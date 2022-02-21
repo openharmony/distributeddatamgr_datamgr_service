@@ -19,6 +19,7 @@
 #include "message.h"
 #include "mock_auto_launch.h"
 #include "mock_communicator.h"
+#include "mock_meta_data.h"
 #include "mock_single_ver_data_sync.h"
 #include "mock_single_ver_state_machine.h"
 #include "mock_sync_task_context.h"
@@ -221,6 +222,44 @@ HWTEST_F(DistributedDBMockSyncModuleTest, DataSyncCheck002, TestSize.Level1)
     ASSERT_TRUE(message != nullptr);
     message->SetMessageType(TYPE_NOTIFY);
     EXPECT_EQ(dataSync.AckPacketIdCheck(message), true);
+    delete message;
+}
+
+/**
+ * @tc.name: DataSyncCheck003
+ * @tc.desc: Test dataSync recv notify ack.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, DataSyncCheck003, TestSize.Level1)
+{
+    MockSingleVerDataSync mockDataSync;
+    MockSyncTaskContext mockSyncTaskContext;
+    auto mockMetadata = std::make_shared<MockMetadata>();
+    SyncTimeRange dataTimeRange = {1, 0, 1, 0};
+    mockDataSync.CallUpdateSendInfo(dataTimeRange, &mockSyncTaskContext);
+
+    VirtualSingleVerSyncDBInterface storage;
+    MockCommunicator communicator;
+    std::shared_ptr<Metadata> metadata = std::static_pointer_cast<Metadata>(mockMetadata);
+    mockDataSync.Initialize(&storage, &communicator, metadata, "deviceId");
+    
+    DistributedDB::Message *message = new(std::nothrow) DistributedDB::Message();
+    ASSERT_TRUE(message != nullptr);
+    DataAckPacket packet;
+    message->SetSequenceId(1);
+    message->SetCopiedObject(packet);
+    mockSyncTaskContext.SetQuerySync(true);
+
+    EXPECT_CALL(*mockMetadata, GetLastQueryTime(_, _, _)).WillOnce(Return(E_OK));
+    EXPECT_CALL(*mockMetadata, SetLastQueryTime(_, _, _)).WillOnce([&dataTimeRange](const std::string &queryIdentify,
+        const std::string &deviceId, const TimeStamp &timeStamp) {
+        EXPECT_EQ(timeStamp, dataTimeRange.endTime);
+        return E_OK;
+    });
+    EXPECT_CALL(mockSyncTaskContext, SetOperationStatus(_)).WillOnce(Return());
+    EXPECT_EQ(mockDataSync.TryContinueSync(&mockSyncTaskContext, message), -E_FINISHED);
     delete message;
 }
 

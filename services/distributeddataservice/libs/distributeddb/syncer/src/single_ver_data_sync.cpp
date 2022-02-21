@@ -175,7 +175,7 @@ int SingleVerDataSync::TryContinueSync(SingleVerSyncTaskContext *context, const 
         LOGI("[DataSync] ack seqId not in map");
         return E_OK;
     }
-    if (context->IsQuerySync()) {
+    if (context->IsQuerySync() && storage_->GetInterfaceType() == ISyncInterface::SYNC_RELATION) {
         TimeStamp dbLastQueryTime = 0;
         int errCode = metadata_->GetLastQueryTime(context->GetQuerySyncId(), context->GetDeviceId(), dbLastQueryTime);
         if (errCode == E_OK && dbLastQueryTime < lastQueryTime) {

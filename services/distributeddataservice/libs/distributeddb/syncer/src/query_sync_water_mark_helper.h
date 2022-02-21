@@ -31,7 +31,7 @@ struct QueryWaterMark {
     WaterMark recvWaterMark = 0;
     TimeStamp lastUsedTime = 0; // use for delete data
     std::string sql; // for analyze sql from logs
-    TimeStamp lastQueryTime = 0; // use for miss query scence add in 104
+    TimeStamp lastQueryTime = 0; // use for miss query scene add in 106
 };
 
 struct DeleteWaterMark {

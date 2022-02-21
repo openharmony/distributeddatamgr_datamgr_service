@@ -220,7 +220,7 @@ protected:
 
     virtual int RemoveDeviceDataIfNeed(SingleVerSyncTaskContext *context);
 
-    void UpdateSendInfo(SyncTimeRange dataTimeRange, SingleVerSyncTaskContext *context);
+    virtual void UpdateSendInfo(SyncTimeRange dataTimeRange, SingleVerSyncTaskContext *context);
 
     void FillRequestReSendPacket(const SingleVerSyncTaskContext *context, DataRequestPacket *packet,
         DataSyncReSendInfo reSendInfo, SyncEntry &syncData, int sendCode);
@@ -232,8 +232,6 @@ protected:
     int InterceptData(SyncEntry &syncEntry);
 
     int ControlCmdStartCheck(SingleVerSyncTaskContext *context);
-
-    void FillControlRequestPacket(ControlRequestPacket *packet, SingleVerSyncTaskContext *context);
 
     int SendControlPacket(const ControlRequestPacket *packet, SingleVerSyncTaskContext *context);
 
