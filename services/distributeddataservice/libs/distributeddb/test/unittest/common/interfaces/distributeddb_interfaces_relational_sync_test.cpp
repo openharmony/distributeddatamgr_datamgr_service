@@ -348,7 +348,6 @@ HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest009, TestS
   */
 HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest010, TestSize.Level1)
 {
-
     std::vector<std::string> devices = {DEVICE_A};
     Query query = Query::Select("sync_data");
     int errCode = delegate->Sync(devices, SyncMode::SYNC_MODE_PUSH_ONLY, query,
