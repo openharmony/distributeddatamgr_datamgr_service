@@ -83,8 +83,8 @@ private:
 
     int DeleteSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&rmDataStmt);
 
-    int SaveSyncLog(sqlite3_stmt *statement, sqlite3_stmt *queryStmt, 
-        const DataItem &dataItem, TimeStamp &maxTimestamp, int64_t rowid);
+    int SaveSyncLog(sqlite3_stmt *statement, sqlite3_stmt *queryStmt, const DataItem &dataItem,
+        TimeStamp &maxTimestamp, int64_t rowid);
     int PrepareForSavingData(const QueryObject &object, sqlite3_stmt *&statement) const;
     int PrepareForSavingLog(const QueryObject &object, const std::string &deviceName,
         sqlite3_stmt *&statement,  sqlite3_stmt *&queryStmt) const;

@@ -672,7 +672,7 @@ int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingData(const QueryOb
     return errCode;
 }
 
-int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statement, sqlite3_stmt *queryStmt, 
+int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statement, sqlite3_stmt *queryStmt,
     const DataItem &dataItem, TimeStamp &maxTimestamp, int64_t rowid)
 {
     int errCode = SQLiteUtils::BindBlobToStatement(queryStmt, 1, dataItem.hashKey);
@@ -879,12 +879,12 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
         }
         maxTimestamp = std::max(item.timeStamp, maxTimestamp);
         // Need not reset rmDataStmt and rmLogStmt here.
-        ResetAllStatements({saveDataStmt, saveLogStmt, queryStmt}, false, errCode);
+        ResetAllStatements({ saveDataStmt, saveLogStmt, queryStmt }, false, errCode);
     }
     if (errCode == -E_NOT_FOUND) {
         errCode = E_OK;
     }
-    ResetAllStatements({saveDataStmt, saveLogStmt, queryStmt, rmDataStmt, rmLogStmt}, true, errCode);
+    ResetAllStatements({ saveDataStmt, saveLogStmt, queryStmt, rmDataStmt, rmLogStmt }, true, errCode);
     return errCode;
 }
 

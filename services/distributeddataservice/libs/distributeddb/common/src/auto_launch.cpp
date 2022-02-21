@@ -89,11 +89,11 @@ AutoLaunch::~AutoLaunch()
     for (auto &items : autoLaunchItemMap_) {
         for (auto &iter : items.second) {
             if (iter.second.isDisable) {
-                inDisableSet.insert({items.first, iter.first});
+                inDisableSet.insert({ items.first, iter.first });
             } else if (iter.second.state == AutoLaunchItemState::IDLE && (!iter.second.inObserver)) {
                 TryCloseConnection(iter.second);
             } else {
-                inWaitIdleSet.insert({items.first, iter.first});
+                inWaitIdleSet.insert({ items.first, iter.first });
                 iter.second.isDisable = true;
             }
         }
