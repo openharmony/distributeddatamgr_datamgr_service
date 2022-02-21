@@ -644,7 +644,11 @@ void AutoLaunch::GetConnInDoOpenMap(std::map<std::string, std::map<std::string, 
     if (doOpenMap.empty()) {
         return;
     }
-    SemaphoreUtils sema(1 - doOpenMap.size());
+    uint32_t totalSize = 0;
+    for (auto &items : doOpenMap) {
+        totalSize += items.second.size();
+    }
+    SemaphoreUtils sema(1 - totalSize);
     for (auto &items : doOpenMap) {
         for (auto &iter : items.second) {
             int errCode = RuntimeContext::GetInstance()->ScheduleTask([&sema, &iter, &items, this] {

@@ -113,13 +113,12 @@ int GenericSyncer::Initialize(ISyncInterface *syncInterface, bool isNeedActive)
         if (errCode != E_OK) {
             return errCode;
         }
-
+        syncEngine_->SetEqualIdentifier();
         initialized_ = true;
     }
 
     // RegConnectCallback may start a auto sync, this function can not in syncerLock_
     syncEngine_->RegConnectCallback();
-    syncEngine_->SetEqualIdentifier();
     return E_OK;
 }
 
