@@ -887,7 +887,7 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, DistributedKv::Options
 
     JsSchema *jsSchema = nullptr;
     napi_status status = GetNamedProperty(env, in, "schema", jsSchema);
-    if(status == napi_ok){
+    if (status == napi_ok) {
         options.schema = jsSchema->Dump();
     }
     
