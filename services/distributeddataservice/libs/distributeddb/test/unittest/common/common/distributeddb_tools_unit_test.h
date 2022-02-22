@@ -305,6 +305,7 @@ public:
     static int ExecSql(sqlite3 *db, const std::string &sql);
     static void CreateDeviceTable(sqlite3 *db, const std::string &table, const std::string &device);
     static int CheckSqlResult(sqlite3 *db, const std::string &sql, bool &result);
+    static int CheckTableRecords(sqlite3 *db, const std::string &table);
 };
 } // namespace DistributedDBUnitTest
 

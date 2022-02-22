@@ -296,8 +296,7 @@ int RelationalSyncAbleStorage::GetSyncDataForQuerySync(std::vector<DataItem> &da
             token->FinishGetData();
             errCode = token->IsGetAllDataFinished() ? E_OK : -E_UNFINISHED;
         }
-    } while (errCode == -E_UNFINISHED &&
-             CanHoldDeletedData(dataItems, dataSizeInfo, Parcel::GetAppendedLen()));
+    } while (errCode == -E_UNFINISHED && CanHoldDeletedData(dataItems, dataSizeInfo, Parcel::GetAppendedLen()));
 
 ERROR:
     if (errCode != -E_UNFINISHED && errCode != E_OK) { // Error happened.
@@ -385,7 +384,7 @@ int RelationalSyncAbleStorage::SaveSyncDataItems(const QueryObject &object, std:
     const std::string &deviceName)
 {
     int errCode = E_OK;
-    LOGD("[SQLiteSingleVerNaturalStore::SaveSyncData] Get write handle.");
+    LOGD("[RelationalSyncAbleStorage::SaveSyncDataItems] Get write handle.");
     auto *handle = GetHandle(true, errCode, OperatePerm::NORMAL_PERM);
     if (handle == nullptr) {
         return errCode;

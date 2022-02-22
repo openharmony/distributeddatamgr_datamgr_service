@@ -71,10 +71,28 @@ public:
     int CheckQueryObjectLegal(const TableInfo &table, QueryObject &query);
 
 private:
+    struct SaveSyncDataStmt {
+        sqlite3_stmt *saveDataStmt = nullptr;
+        sqlite3_stmt *saveLogStmt = nullptr;
+        sqlite3_stmt *queryStmt = nullptr;
+        sqlite3_stmt *rmDataStmt = nullptr;
+        sqlite3_stmt *rmLogStmt = nullptr;
+        sqlite3_stmt *querySyncDataPreStmt = nullptr;
+
+        int ResetStatements(bool isNeedFinalize);
+    };
+
     int PrepareForSyncDataByTime(TimeStamp begin, TimeStamp end,
         sqlite3_stmt *&statement, bool getDeletedData) const;
 
     int GetDataItemForSync(sqlite3_stmt *statement, DataItem &dataItem, bool isGettingDeletedData) const;
+
+    int GetSyncDataPre(const DataItem &dataItem, DataItem &itemGet);
+
+    int CheckDataConflictDefeated(const DataItem &item, bool &isDefeated);
+
+    int SaveSyncDataItem(const std::vector<FieldInfo> &fieldInfos, const std::string &deviceName, DataItem &item,
+        TimeStamp &maxTimestamp);
 
     int SaveSyncDataItems(const QueryObject &object, std::vector<DataItem> &dataItems,
         const std::string &deviceName, TimeStamp &timeStamp);
@@ -99,6 +117,8 @@ private:
     void SetTableInfo(const TableInfo &tableInfo);  // When put or get sync data, must call the func first.
     std::string baseTblName_;
     TableInfo table_;  // Always operating table, user table when get, device table when put.
+
+    SaveSyncDataStmt saveStmt_;
 };
 } // namespace DistributedDB
 #endif

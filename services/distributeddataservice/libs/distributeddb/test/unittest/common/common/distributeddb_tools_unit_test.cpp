@@ -938,4 +938,27 @@ END:
     SQLiteUtils::ResetStatement(stmt, true, errCode);
     return errCode;
 }
+
+int RelationalTestUtils::CheckTableRecords(sqlite3 *db, const std::string &table)
+{
+    if (db == nullptr || table.empty()) {
+        return -E_INVALID_ARGS;
+    }
+    int count = -1;
+    std::string sql = "select count(1) from " + table + ";";
+
+    sqlite3_stmt *stmt = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
+    if (errCode != E_OK) {
+        goto END;
+    }
+
+    errCode = SQLiteUtils::StepWithRetry(stmt);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+        count = sqlite3_column_int(stmt, 0);
+    }
+END:
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return count;
+}
 } // namespace DistributedDBUnitTest

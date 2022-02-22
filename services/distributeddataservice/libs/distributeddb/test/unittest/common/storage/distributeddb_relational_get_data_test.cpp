@@ -236,6 +236,9 @@ void DistributedDBRelationalGetDataTest::TearDownTestCase(void)
 void DistributedDBRelationalGetDataTest::SetUp(void)
 {
     DistributedDBToolsUnitTest::PrintTestCaseInfo();
+    if (DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir) != 0) {
+        LOGE("rm test db files error.");
+    }
     CreateDBAndTable();
 }
 
@@ -245,9 +248,7 @@ void DistributedDBRelationalGetDataTest::TearDown(void)
         EXPECT_EQ(g_mgr.CloseStore(g_delegate), DBStatus::OK);
         g_delegate = nullptr;
     }
-    if (DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir) != 0) {
-        LOGE("rm test db files error.");
-    }
+
     return;
 }
 
@@ -1222,13 +1223,13 @@ HWTEST_F(DistributedDBRelationalGetDataTest, CompatibleData2, TestSize.Level1)
     ASSERT_EQ(g_mgr.OpenStore(g_storePath, g_storeID, RelationalStoreDelegate::Option {}, g_delegate), DBStatus::OK);
     ASSERT_NE(g_delegate, nullptr);
     ASSERT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
- 
+
     sqlite3 *db = nullptr;
     ASSERT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
- 
+
     auto store = GetRelationalStore();
     ASSERT_NE(store, nullptr);
- 
+
     /**
      * @tc.steps: step1. Create distributed table from deviceA.
      * @tc.expected: Succeed, return OK.
@@ -1236,7 +1237,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, CompatibleData2, TestSize.Level1)
     const DeviceID deviceID = "deviceA";
     ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(g_tableName),
         DBCommon::GetDistributedTableName(deviceID, g_tableName)));
- 
+
     /**
      * @tc.steps: step2. Alter "data" table and create distributed table again.
      * @tc.expected: Succeed.
@@ -1247,7 +1248,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, CompatibleData2, TestSize.Level1)
         "ALTER TABLE " + g_tableName + " ADD COLUMN blob_type BLOB DEFAULT 123 not null;";
     ASSERT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
     ASSERT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
- 
+
     /**
      * @tc.steps: step3. Check deviceA's distributed table.
      * @tc.expected: The create sql is correct.
@@ -1258,8 +1259,80 @@ HWTEST_F(DistributedDBRelationalGetDataTest, CompatibleData2, TestSize.Level1)
     sql = "SELECT sql FROM sqlite_master WHERE tbl_name='" + DBConstant::RELATIONAL_PREFIX + g_tableName + "_" +
         DBCommon::TransferStringToHex(DBCommon::TransferHashString(deviceID)) + "';";
     EXPECT_EQ(GetOneText(db, sql), expectSql);
- 
+
     sqlite3_close(db);
     RefObject::DecObjRef(g_store);
 }
+
+std::vector<SingleVerKvEntry *> PrepareEntries(std::vector<DataItem> dataItems)
+{
+    std::vector<SingleVerKvEntry *> entries;
+    int errCode = E_OK;
+    for (auto &item : dataItems) {
+        auto entry = new (std::nothrow) GenericSingleVerKvEntry();
+        if (entry == nullptr) {
+            errCode = -E_OUT_OF_MEMORY;
+            LOGE("GetKvEntries failed, errCode:%d", errCode);
+            SingleVerKvEntry::Release(entries);
+            break;
+        }
+        entry->SetEntryData(std::move(item));
+        entries.push_back(entry);
+    }
+    return entries;
+}
+
+/**
+ * @tc.name: CompatibleData2
+ * @tc.desc: Check compatibility.
+ * @tc.type: FUNC
+ * @tc.require: AR000GK58H
+ * @tc.author: lidongwei
+  */
+HWTEST_F(DistributedDBRelationalGetDataTest, PutSyncDataConflictDataTest001, TestSize.Level1)
+{
+    const DeviceID deviceID_A = "deviceA";
+    const DeviceID deviceID_B = "deviceB";
+    sqlite3 *db = RelationalTestUtils::CreateDataBase(g_storePath);
+    RelationalTestUtils::CreateDeviceTable(db, g_tableName, deviceID_B);
+
+    DBStatus status = g_mgr.OpenStore(g_storePath, g_storeID, RelationalStoreDelegate::Option {}, g_delegate);
+    EXPECT_EQ(status, DBStatus::OK);
+    ASSERT_NE(g_delegate, nullptr);
+    EXPECT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
+
+    auto store = const_cast<RelationalSyncAbleStorage *>(GetRelationalStore());
+    ASSERT_NE(store, nullptr);
+
+    RelationalTestUtils::ExecSql(db, "INSERT OR REPLACE INTO " + g_tableName + " (key,value) VALUES (1001,'VAL_1');");
+    RelationalTestUtils::ExecSql(db, "INSERT OR REPLACE INTO " + g_tableName + " (key,value) VALUES (1002,'VAL_2');");
+    RelationalTestUtils::ExecSql(db, "INSERT OR REPLACE INTO " + g_tableName + " (key,value) VALUES (1003,'VAL_3');");
+
+    DataSizeSpecInfo sizeInfo {MTU_SIZE, 50};
+    ContinueToken token = nullptr;
+    QueryObject query(Query::Select(g_tableName));
+    std::vector<SingleVerKvEntry *> entries;
+    int errCode = store->GetSyncData(query, {}, sizeInfo, token, entries);
+    EXPECT_EQ(errCode, E_OK);
+
+    errCode = store->PutSyncDataWithQuery(query, entries, deviceID_B);
+    EXPECT_EQ(errCode, E_OK);
+    GenericSingleVerKvEntry::Release(entries);
+
+    QueryObject query2(Query::Select(g_tableName).EqualTo("key", 1001));
+    std::vector<SingleVerKvEntry *> entries2;
+    store->GetSyncData(query2, {}, sizeInfo, token, entries2);
+
+    // query = QueryObject(Query::Select(g_tableName));
+    errCode = store->PutSyncDataWithQuery(query, entries2, deviceID_B);
+    EXPECT_EQ(errCode, E_OK);
+    GenericSingleVerKvEntry::Release(entries2);
+
+    RefObject::DecObjRef(g_store);
+
+    std::string deviceTable = DBCommon::GetDistributedTableName(deviceID_B, g_tableName);
+    EXPECT_EQ(RelationalTestUtils::CheckTableRecords(db, deviceTable), 3);
+    sqlite3_close_v2(db);
+}
+
 #endif

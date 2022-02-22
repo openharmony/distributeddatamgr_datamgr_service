@@ -19,15 +19,6 @@
 #include "db_common.h"
 
 namespace DistributedDB {
-namespace {
-    void ResetAllStatements(std::initializer_list<sqlite3_stmt *> stmts, bool finalize, int &errCode)
-    {
-        for (sqlite3_stmt *stmt : stmts) {
-            SQLiteUtils::ResetStatement(stmt, finalize, errCode);
-        }
-    }
-}
-
 SQLiteSingleVerRelationalStorageExecutor::SQLiteSingleVerRelationalStorageExecutor(sqlite3 *dbHandle, bool writable)
     : SQLiteStorageExecutor(dbHandle, writable, false)
 {}
@@ -474,7 +465,7 @@ static size_t GetDataItemSerialSize(DataItem &item, size_t appendLen)
     static const size_t maxOrigDevLength = 40;
     size_t devLength = std::max(maxOrigDevLength, item.origDev.size());
     size_t dataSize = (Parcel::GetUInt64Len() * 3 + Parcel::GetUInt32Len() + Parcel::GetVectorCharLen(item.key) +
-                        Parcel::GetVectorCharLen(item.value) + devLength + appendLen);
+        Parcel::GetVectorCharLen(item.value) + devLength + appendLen);
     return dataSize;
 }
 
@@ -832,59 +823,108 @@ int SQLiteSingleVerRelationalStorageExecutor::ProcessMissQueryData(const DataIte
     return DeleteSyncLog(item, rmLogStmt);
 }
 
+int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataPre(const DataItem &dataItem, DataItem &itemGet)
+{
+    if (saveStmt_.queryStmt == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    int errCode = SQLiteUtils::BindBlobToStatement(saveStmt_.queryStmt, 1, dataItem.hashKey);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    errCode = SQLiteUtils::BindTextToStatement(saveStmt_.queryStmt, 2, dataItem.dev);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    LogInfo logInfoGet;
+    errCode = SQLiteUtils::StepWithRetry(saveStmt_.queryStmt, isMemDb_);
+    if (errCode != SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+        errCode = -E_NOT_FOUND;
+    } else {
+        errCode = GetLogData(saveStmt_.queryStmt, logInfoGet);
+    }
+    itemGet.timeStamp = logInfoGet.timestamp;
+    SQLiteUtils::ResetStatement(saveStmt_.queryStmt, false, errCode);
+    return errCode;
+}
+
+int SQLiteSingleVerRelationalStorageExecutor::CheckDataConflictDefeated(const DataItem &dataItem, bool &isDefeated)
+{
+    if ((dataItem.flag & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) != DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) {
+        isDefeated = false; // no need to slove conflict except miss query data
+        return E_OK;
+    }
+
+    DataItem itemGet;
+    int errCode = GetSyncDataPre(dataItem, itemGet);
+    if (errCode != E_OK && errCode != -E_NOT_FOUND) {
+        LOGE("Failed to get raw data. %d", errCode);
+        return errCode;
+    }
+    isDefeated = (dataItem.timeStamp <= itemGet.timeStamp); // defeated if item timestamp is earlier then raw data
+    return E_OK;
+}
+
+int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const std::vector<FieldInfo> &fieldInfos,
+    const std::string &deviceName, DataItem &item, TimeStamp &maxTimestamp)
+{
+    item.dev = deviceName;
+    bool isDefeated = false;
+    int errCode = CheckDataConflictDefeated(item, isDefeated);
+    if (errCode != E_OK) {
+        LOGE("check data conflict failed. %d", errCode);
+        return errCode;
+    }
+
+    if (isDefeated) {
+        LOGD("Data was defeated.");
+        return E_OK;
+    }
+    if ((item.flag & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) != 0) {
+        return ProcessMissQueryData(item, saveStmt_.rmDataStmt, saveStmt_.rmLogStmt);
+    }
+    int64_t rowid = -1;
+    errCode = SaveSyncDataItem(item, saveStmt_.saveDataStmt, saveStmt_.rmDataStmt, fieldInfos, rowid);
+    if (errCode == E_OK || errCode == -E_NOT_FOUND) {
+        errCode = SaveSyncLog(saveStmt_.saveLogStmt, saveStmt_.queryStmt, item, maxTimestamp, rowid);
+    }
+    return errCode;
+}
+
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObject &object,
     std::vector<DataItem> &dataItems, const std::string &deviceName, TimeStamp &maxTimestamp)
 {
-    sqlite3_stmt *saveDataStmt = nullptr;
-    int errCode = PrepareForSavingData(object, saveDataStmt);
+    int errCode = PrepareForSavingData(object, saveStmt_.saveDataStmt);
     if (errCode != E_OK) {
         return errCode;
     }
-    sqlite3_stmt *saveLogStmt = nullptr;
-    sqlite3_stmt *queryStmt = nullptr;
-    errCode = PrepareForSavingLog(object, deviceName, saveLogStmt, queryStmt);
+    errCode = PrepareForSavingLog(object, deviceName, saveStmt_.saveLogStmt, saveStmt_.queryStmt);
     if (errCode != E_OK) {
-        SQLiteUtils::ResetStatement(saveDataStmt, true, errCode);
+        SQLiteUtils::ResetStatement(saveStmt_.saveDataStmt, true, errCode);
         return errCode;
     }
-    std::map<std::string, FieldInfo> colInfos = table_.GetFields();
     std::vector<FieldInfo> fieldInfos;
-    for (const auto &col: colInfos) {
+    for (const auto &col: table_.GetFields()) {
         fieldInfos.push_back(col.second);
     }
-    sqlite3_stmt *rmDataStmt = nullptr;
-    sqlite3_stmt *rmLogStmt = nullptr;
+
     for (auto &item : dataItems) {
         if (item.neglect) { // Do not save this record if it is neglected
             continue;
         }
-        item.dev = deviceName;
-        if ((item.flag & DataItem::REMOTE_DEVICE_DATA_MISS_QUERY) != 0) {
-            errCode = ProcessMissQueryData(item, rmDataStmt, rmLogStmt);
-            if (errCode != E_OK) {
-                break;
-            }
-            continue;
-        }
-        int64_t rowid = -1;
-        errCode = SaveSyncDataItem(item, saveDataStmt, rmDataStmt, fieldInfos, rowid);
-        if (errCode != E_OK && errCode != -E_NOT_FOUND) {
-            LOGE("Save sync dataitem failed:%d.", errCode);
-            break;
-        }
-        errCode = SaveSyncLog(saveLogStmt, queryStmt, item, maxTimestamp, rowid);
+        errCode = SaveSyncDataItem(fieldInfos, deviceName, item, maxTimestamp);
         if (errCode != E_OK) {
-            LOGE("Save sync log failed:%d.", errCode);
             break;
         }
-        maxTimestamp = std::max(item.timeStamp, maxTimestamp);
+        maxTimestamp = std::max(item.timeStamp, maxTimestamp); // ???
         // Need not reset rmDataStmt and rmLogStmt here.
-        ResetAllStatements({ saveDataStmt, saveLogStmt, queryStmt }, false, errCode);
+        saveStmt_.ResetStatements(false);
     }
     if (errCode == -E_NOT_FOUND) {
         errCode = E_OK;
     }
-    ResetAllStatements({ saveDataStmt, saveLogStmt, queryStmt, rmDataStmt, rmLogStmt }, true, errCode);
+    saveStmt_.ResetStatements(true);
     return errCode;
 }
 
@@ -929,7 +969,8 @@ int SQLiteSingleVerRelationalStorageExecutor::GetDataItemForSync(sqlite3_stmt *s
         }
     }
 
-    errCode = DataTransformer::SerializeDataItem(data, table_.GetFieldInfos(), dataItem);
+    errCode = DataTransformer::SerializeDataItem(data,
+        isGettingDeletedData ? std::vector<FieldInfo>() : table_.GetFieldInfos(), dataItem);
     if (errCode != E_OK) {
         LOGE("relational data value transfer to kv fail");
     }
@@ -1199,6 +1240,27 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckQueryObjectLegal(const TableI
     }
 
     SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return errCode;
+}
+
+int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataStmt::ResetStatements(bool isNeedFinalize)
+{
+    int errCode = E_OK;
+    if (saveDataStmt != nullptr) {
+        SQLiteUtils::ResetStatement(saveDataStmt, isNeedFinalize, errCode);
+    }
+    if (saveLogStmt != nullptr) {
+        SQLiteUtils::ResetStatement(saveLogStmt, isNeedFinalize, errCode);
+    }
+    if (queryStmt != nullptr) {
+        SQLiteUtils::ResetStatement(queryStmt, isNeedFinalize, errCode);
+    }
+    if (rmDataStmt != nullptr) {
+        SQLiteUtils::ResetStatement(rmDataStmt, isNeedFinalize, errCode);
+    }
+    if (rmLogStmt != nullptr) {
+        SQLiteUtils::ResetStatement(rmLogStmt, isNeedFinalize, errCode);
+    }
     return errCode;
 }
 } // namespace DistributedDB
