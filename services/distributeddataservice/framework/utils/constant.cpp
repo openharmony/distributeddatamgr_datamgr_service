@@ -85,13 +85,13 @@ const std::string Constant::KEY_SEPARATOR = "###";
 
 std::vector<uint8_t> KvStoreMetaRow::GetKeyFor(const std::string &key)
 {
-    std::string str = Constant::Concatenate({KvStoreMetaRow::KEY_PREFIX, Constant::KEY_SEPARATOR, key });
+    std::string str = Constant::Concatenate({KvStoreMetaRow::KEY_PREFIX, Constant::KEY_SEPARATOR, key});
     return std::vector<uint8_t>(str.begin(), str.end());
 }
 
 std::vector<uint8_t> SecretMetaRow::GetKeyFor(const std::string &key)
 {
-    std::string str = Constant::Concatenate({SecretMetaRow::KEY_PREFIX, Constant::KEY_SEPARATOR, key });
+    std::string str = Constant::Concatenate({SecretMetaRow::KEY_PREFIX, Constant::KEY_SEPARATOR, key});
     return std::vector<uint8_t>(str.begin(), str.end());
 }
 
