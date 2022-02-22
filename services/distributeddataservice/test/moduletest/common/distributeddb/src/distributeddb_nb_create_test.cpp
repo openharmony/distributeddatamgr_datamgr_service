@@ -1195,7 +1195,7 @@ HWTEST_F(DistributeddbNbCreateTest, MemoryDb003, TestSize.Level0)
 
     EXPECT_EQ(manager->CloseKvStore(delegate), OK);
     delegate = nullptr;
-    EXPECT_EQ(manager->DeleteKvStore(STORE_ID_1), NOT_FOUND);
+    EXPECT_EQ(manager->DeleteKvStore(STORE_ID_1), INVALID_ARGS);
 
     ReleaseManager(manager);
 }
