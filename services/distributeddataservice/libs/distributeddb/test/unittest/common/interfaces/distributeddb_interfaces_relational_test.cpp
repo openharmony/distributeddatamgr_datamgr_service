@@ -420,6 +420,11 @@ void TableModifyTest(const std::string &modifySql, DBStatus expect)
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
 
+    RelationalTestUtils::CreateDeviceTable(db, "sync_data", "DEVICE_A");
+    RelationalTestUtils::CreateDeviceTable(db, "sync_data", "DEVICE_B");
+    RelationalTestUtils::CreateDeviceTable(db, "sync_data", "DEVICE_C");
+
+
     /**
      * @tc.steps:step2. Open store
      * @tc.expected: step2. return OK
@@ -466,7 +471,7 @@ void TableModifyTest(const std::string &modifySql, DBStatus expect)
   */
 HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalTableModifyTest001, TestSize.Level1)
 {
-    TableModifyTest("ALTER TABLE sync_data ADD COLUMN add_field INTEGER;", OK);
+    TableModifyTest("ALTER TABLE sync_data ADD COLUMN add_field INTEGER NOT NULL DEFAULT 123;", OK);
 }
 
 /**
@@ -554,6 +559,18 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalTableModifyTest004, Te
     status = g_mgr.CloseStore(delegate);
     EXPECT_EQ(status, OK);
     EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
+}
+
+/**
+  * @tc.name: RelationalTableModifyTest005
+  * @tc.desc: Test modify distributed table with compatible upgrade
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalTableModifyTest005, TestSize.Level1)
+{
+    TableModifyTest("ALTER TABLE sync_data ADD COLUMN add_field STRING NOT NULL DEFAULT 'asdf';", OK);
 }
 
 /**

@@ -172,10 +172,12 @@ int UpgradeFields(sqlite3 *db, const std::vector<std::string> &tables, std::vect
         return a.GetColumnId()< b.GetColumnId();
     });
     int errCode = E_OK;
-    for (auto table : tables) {
-        for (auto field : fields) {
-            std::string alterSql = "ALTER TABLE " + table + " ADD " + field.GetFieldName() + " " +
-                field.GetDataType() + ";";
+    for (const auto &table : tables) {
+        for (const auto &field : fields) {
+            std::string alterSql = "ALTER TABLE " + table + " ADD " + field.GetFieldName() + " " + field.GetDataType();
+            alterSql += field.IsNotNull() ? "NOT NULL" : "";
+            alterSql += field.HasDefaultValue() ? " DEFAULT " + field.GetDefaultValue() : "";
+            alterSql += ";";
             errCode = SQLiteUtils::ExecuteRawSQL(db, alterSql);
             if (errCode != E_OK) {
                 LOGE("Alter table failed. %d", errCode);
@@ -828,11 +830,11 @@ int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataPre(const DataItem &dat
     if (saveStmt_.queryStmt == nullptr) {
         return -E_INVALID_ARGS;
     }
-    int errCode = SQLiteUtils::BindBlobToStatement(saveStmt_.queryStmt, 1, dataItem.hashKey);
+    int errCode = SQLiteUtils::BindBlobToStatement(saveStmt_.queryStmt, 1, dataItem.hashKey); // 1 index for hashkey
     if (errCode != E_OK) {
         return errCode;
     }
-    errCode = SQLiteUtils::BindTextToStatement(saveStmt_.queryStmt, 2, dataItem.dev);
+    errCode = SQLiteUtils::BindTextToStatement(saveStmt_.queryStmt, 2, dataItem.dev); // 2 index for devices
     if (errCode != E_OK) {
         return errCode;
     }
@@ -917,7 +919,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
         if (errCode != E_OK) {
             break;
         }
-        maxTimestamp = std::max(item.timeStamp, maxTimestamp); // ???
+        maxTimestamp = std::max(item.timeStamp, maxTimestamp);
         // Need not reset rmDataStmt and rmLogStmt here.
         saveStmt_.ResetStatements(false);
     }

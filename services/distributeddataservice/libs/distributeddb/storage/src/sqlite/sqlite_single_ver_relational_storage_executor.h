@@ -77,7 +77,6 @@ private:
         sqlite3_stmt *queryStmt = nullptr;
         sqlite3_stmt *rmDataStmt = nullptr;
         sqlite3_stmt *rmLogStmt = nullptr;
-        sqlite3_stmt *querySyncDataPreStmt = nullptr;
 
         int ResetStatements(bool isNeedFinalize);
     };
