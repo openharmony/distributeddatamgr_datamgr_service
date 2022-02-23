@@ -24,6 +24,7 @@
 #include "mock_single_ver_state_machine.h"
 #include "mock_sync_task_context.h"
 #include "virtual_single_ver_sync_db_Interface.h"
+#include "virtual_relational_ver_sync_db_interface.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -240,7 +241,7 @@ HWTEST_F(DistributedDBMockSyncModuleTest, DataSyncCheck003, TestSize.Level1)
     SyncTimeRange dataTimeRange = {1, 0, 1, 0};
     mockDataSync.CallUpdateSendInfo(dataTimeRange, &mockSyncTaskContext);
 
-    VirtualSingleVerSyncDBInterface storage;
+    VirtualRelationalVerSyncDBInterface storage;
     MockCommunicator communicator;
     std::shared_ptr<Metadata> metadata = std::static_pointer_cast<Metadata>(mockMetadata);
     mockDataSync.Initialize(&storage, &communicator, metadata, "deviceId");
