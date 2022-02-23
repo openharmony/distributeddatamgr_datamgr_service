@@ -19,9 +19,11 @@
 #include <vector>
 #include "kvstore_client_death_observer.h"
 #include "kvstore_data_service.h"
+#include "bootstrap.h"
 #include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
+using namespace OHOS::DistributedData;
 using namespace OHOS;
 
 class KvStoreDataServiceTest : public testing::Test {
@@ -57,6 +59,9 @@ HWTEST_F(KvStoreDataServiceTest, RegisterClientDeathObserver001, TestSize.Level1
     appId.appId = "app0";
 
     KvStoreDataService kvDataService;
+    Bootstrap::GetInstance().LoadComponents();
+    Bootstrap::GetInstance().LoadCheckers();
+    KvStoreMetaManager::GetInstance().InitMetaParameter();
     Status status = kvDataService.RegisterClientDeathObserver(appId, new KvStoreClientDeathObserver());
 
     EXPECT_EQ(status, Status::SUCCESS) << "RegisterClientDeathObserver failed";
