@@ -111,6 +111,9 @@ private:
     int DeleteSyncLog(const DataItem &item, sqlite3_stmt *&rmLogStmt);
     int ProcessMissQueryData(const DataItem &item, sqlite3_stmt *&rmDataStmt, sqlite3_stmt *&rmLogStmt);
     int GetMissQueryData(sqlite3_stmt *fullStmt, DataItem &item);
+    int GetQueryDataAndStepNext(bool isFirstTime, bool isGettingDeletedData, sqlite3_stmt *queryStmt, DataItem &item,
+        TimeStamp &queryTime);
+    int GetMissQueryDataAndStepNext(sqlite3_stmt *fullStmt, DataItem &item, TimeStamp &missQueryTime);
 
     void SetTableInfo(const TableInfo &tableInfo);  // When put or get sync data, must call the func first.
     std::string baseTblName_;

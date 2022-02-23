@@ -992,7 +992,7 @@ int SQLiteSingleVerRelationalStorageExecutor::GetMissQueryData(sqlite3_stmt *ful
 }
 
 namespace {
-int StepNext(bool isMemDB, sqlite3_stmt *&stmt, TimeStamp &timestamp)
+int StepNext(bool isMemDB, sqlite3_stmt *stmt, TimeStamp &timestamp)
 {
     if (stmt == nullptr) {
         return -E_INVALID_ARGS;
@@ -1027,6 +1027,28 @@ int AppendData(const DataSizeSpecInfo &sizeInfo, size_t appendLength, size_t &ov
 }
 }
 
+int SQLiteSingleVerRelationalStorageExecutor::GetQueryDataAndStepNext(bool isFirstTime, bool isGettingDeletedData,
+    sqlite3_stmt *queryStmt, DataItem &item, TimeStamp &queryTime)
+{
+    if (!isFirstTime) { // For the first time, never step before, can get nothing
+        int errCode = GetDataItemForSync(queryStmt, item, isGettingDeletedData);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+    }
+    return StepNext(isMemDb_, queryStmt, queryTime);
+}
+
+int SQLiteSingleVerRelationalStorageExecutor::GetMissQueryDataAndStepNext(sqlite3_stmt *fullStmt, DataItem &item,
+    TimeStamp &missQueryTime)
+{
+    int errCode = GetMissQueryData(fullStmt, item);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    return StepNext(isMemDb_, fullStmt, missQueryTime);
+}
+
 int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<DataItem> &dataItems, size_t appendLength,
     const DataSizeSpecInfo &sizeInfo, std::function<int(sqlite3 *, sqlite3_stmt *&, sqlite3_stmt *&, bool &)> getStmt,
     const TableInfo &tableInfo)
@@ -1049,28 +1071,17 @@ int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<Dat
     size_t overLongSize = 0;
     do {
         DataItem item;
-        if (queryTime <= missQueryTime) {
-            if (!isFirstTime) { // For the first time, never step before, can get nothing
-                errCode = GetDataItemForSync(queryStmt, item, isGettingDeletedData);
-                if (errCode != E_OK) {
-                    break;
-                }
-            }
-            if (queryTime == missQueryTime) {
-                errCode = StepNext(isMemDb_, fullStmt, missQueryTime);
-                if (errCode != E_OK) {
-                    break;
-                }
-            }
-            errCode = StepNext(isMemDb_, queryStmt, queryTime);
-        } else {  // queryTime > missQuery
-            errCode = GetMissQueryData(fullStmt, item);
-            if (errCode != E_OK){
+        if (queryTime < missQueryTime) {
+            errCode = GetQueryDataAndStepNext(isFirstTime, isGettingDeletedData, queryStmt, item, queryTime);
+        } else if (queryTime == missQueryTime) {
+            errCode = GetQueryDataAndStepNext(isFirstTime, isGettingDeletedData, queryStmt, item, queryTime);
+            if (errCode != E_OK) {
                 break;
             }
             errCode = StepNext(isMemDb_, fullStmt, missQueryTime);
+        } else {
+            errCode = GetMissQueryDataAndStepNext(fullStmt, item, missQueryTime);
         }
-
         if (errCode != E_OK) {
             break;
         }
