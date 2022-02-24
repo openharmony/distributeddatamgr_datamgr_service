@@ -328,7 +328,7 @@ int GetCurrentMaxTimeStamp(sqlite3 *db, TimeStamp &maxTimestamp)
             ResetStatement(getTimeStmt);
             continue;
         }
-        TimeStamp tableMaxTimestamp = sqlite3_column_int64(getTimeStmt, 0);
+        auto tableMaxTimestamp = static_cast<TimeStamp>(sqlite3_column_int64(getTimeStmt, 0));
         maxTimestamp = (maxTimestamp > tableMaxTimestamp) ? maxTimestamp : tableMaxTimestamp;
         ResetStatement(getTimeStmt);
     }

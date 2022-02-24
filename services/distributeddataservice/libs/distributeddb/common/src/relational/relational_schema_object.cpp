@@ -590,7 +590,7 @@ RelationalSyncOpinion RelationalSchemaObject::MakeLocalSyncOpinion(const Relatio
     }
 
     if (remoteType != SchemaType::RELATIVE) {
-        LOGW("[RelationalSchema][opinion] Not support sync with schema type: local-type=[%d] remote-type=[%d]",
+        LOGW("[RelationalSchema][opinion] Not support sync with schema type: local-type=[%s] remote-type=[%s]",
             SchemaUtils::SchemaTypeString(localType).c_str(), SchemaUtils::SchemaTypeString(remoteType).c_str());
         return {};
     }
