@@ -434,7 +434,6 @@ group("unittest") {
   deps = []
 
   deps += [
-    ":KvStoreBackupTest",
     ":KvStoreDataServiceTest",
     ":KvStoreFlowCtrlManagerTest",
     ":KvStoreImplLogicalIsolationTest",

@@ -108,7 +108,8 @@ public:
 private:
     class KvStoreClientDeathObserverImpl {
     public:
-        KvStoreClientDeathObserverImpl(const AppId &appId, pid_t uid, KvStoreDataService &service, sptr<IRemoteObject> observer);
+        KvStoreClientDeathObserverImpl(const AppId &appId, pid_t uid,
+                                       KvStoreDataService &service, sptr<IRemoteObject> observer);
 
         virtual ~KvStoreClientDeathObserverImpl();
 
