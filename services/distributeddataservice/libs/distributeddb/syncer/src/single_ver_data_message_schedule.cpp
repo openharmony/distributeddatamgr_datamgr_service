@@ -193,8 +193,7 @@ Message *SingleVerDataMessageSchedule::GetMsgFromMap(bool &isNeedHandle)
         uint64_t packetId = packet->GetPacketId();
         if (sequenceId < expectedSequenceId_) {
             uint64_t revisePacketId = finishedPacketId_ - (expectedSequenceId_ - 1 - sequenceId);
-            LOGI("[DataMsgSchedule] msg seqId=%llu less than exSeqId=%llu,pacId=%llu,revisePacId=%llu,label=%s,dev=%s",
-                sequenceId, expectedSequenceId_, packetId, revisePacketId, label_.c_str(), STR_MASK(deviceId_));
+            LOGI("[DataMsgSchedule] drop msg because seqId less than exSeqId");
             if (packetId < revisePacketId) {
                 delete msg;
                 continue;
@@ -205,8 +204,7 @@ Message *SingleVerDataMessageSchedule::GetMsgFromMap(bool &isNeedHandle)
         }
         if (sequenceId == expectedSequenceId_) {
             if (packetId < finishedPacketId_) {
-                LOGI("[DataMsgSchedule] drop msg seqId=%llu,packetId=%llu,label=%s,dev=%s", sequenceId, packetId,
-                    label_.c_str(), STR_MASK(deviceId_));
+                LOGI("[DataMsgSchedule] drop msg because packetId less than finishedPacketId");
                 delete msg;
                 continue;
             }
