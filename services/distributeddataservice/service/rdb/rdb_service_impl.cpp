@@ -125,20 +125,6 @@ std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device
     return DistributedDB::RelationalStoreManager::GetDistributedTableName(uuid, table);
 }
 
-std::vector<std::string> RdbServiceImpl::GetConnectDevices()
-{
-    auto deviceInfos = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteNodesBasicInfo();
-    std::vector<std::string> devices;
-    for (const auto& deviceInfo : deviceInfos) {
-        devices.push_back(deviceInfo.deviceId);
-    }
-    ZLOGI("size=%{public}u", static_cast<uint32_t>(devices.size()));
-    for (const auto& device: devices) {
-        ZLOGI("%{public}.6s", device.c_str());
-    }
-    return devices;
-}
-
 int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam& param, const sptr<IRemoteObject> notifier)
 {
     if (!CheckAccess(param)) {
@@ -262,7 +248,7 @@ int32_t RdbServiceImpl::DoSync(const RdbSyncerParam &param, const SyncOption &op
     if (syncer == nullptr) {
         return RDB_ERROR;
     }
-    return syncer->DoSync(option, predicates, result);
+    return syncer->DoSync(option, const_cast<RdbPredicates&>(predicates), result);
 }
 
 void RdbServiceImpl::OnAsyncComplete(pid_t pid, uint32_t seqNum, const SyncResult &result)
@@ -282,9 +268,10 @@ int32_t RdbServiceImpl::DoAsync(const RdbSyncerParam &param, uint32_t seqNum, co
     if (syncer == nullptr) {
         return RDB_ERROR;
     }
-    return syncer->DoAsync(option, predicates, [this, pid, seqNum] (const SyncResult& result) {
-        OnAsyncComplete(pid, seqNum, result);
-    });
+    return syncer->DoAsync(option, const_cast<RdbPredicates&>(predicates),
+                           [this, pid, seqNum] (const SyncResult& result) {
+                               OnAsyncComplete(pid, seqNum, result);
+                           });
 }
 
 std::string RdbServiceImpl::TransferStringToHex(const std::string &origStr)

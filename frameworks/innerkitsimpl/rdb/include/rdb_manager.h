@@ -26,8 +26,6 @@
 namespace OHOS::DistributedRdb {
 class RdbManager {
 public:
-    static std::vector<std::string> GetConnectDevices();
-
     static std::shared_ptr<RdbService> GetRdbService(const RdbSyncerParam& param);
 };
 }

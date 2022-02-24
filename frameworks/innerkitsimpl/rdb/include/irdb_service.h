@@ -27,7 +27,6 @@ class IRdbService : public RdbService, public IRemoteBroker {
 public:
     enum {
         RDB_SERVICE_CMD_OBTAIN_TABLE,
-        RDB_SERVICE_CMD_GET_DEVICES,
         RDB_SERVICE_CMD_INIT_NOTIFIER,
         RDB_SERVICE_CMD_SET_DIST_TABLE,
         RDB_SERVICE_CMD_SYNC,
@@ -38,8 +37,6 @@ public:
     };
     
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedRdb.IRdbService");
-
-    virtual std::vector<std::string> GetConnectDevices() = 0;
 
     virtual int32_t InitNotifier(const RdbSyncerParam& param, const sptr<IRemoteObject> notifier) = 0;
 

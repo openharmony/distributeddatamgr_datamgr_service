@@ -33,8 +33,6 @@ public:
 
     std::string ObtainDistributedTableName(const std::string& device, const std::string& table) override;
 
-    std::vector<std::string> GetConnectDevices() override;
-
     int32_t InitNotifier(const RdbSyncerParam& param);
     int32_t InitNotifier(const RdbSyncerParam& param, const sptr<IRemoteObject> notifier) override;
     

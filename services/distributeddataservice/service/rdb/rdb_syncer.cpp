@@ -23,6 +23,7 @@
 #include "kvstore_utils.h"
 #include "kvstore_meta_manager.h"
 
+using OHOS::DistributedKv::KvStoreUtils;
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::DistributedKv::KvStoreMetaManager;
 using OHOS::AppDistributedKv::CommunicationProvider;
@@ -177,16 +178,32 @@ int32_t RdbSyncer::SetDistributedTables(const std::vector<std::string> &tables)
     return RDB_OK;
 }
 
+std::vector<std::string> RdbSyncer::GetConnectDevices()
+{
+    auto deviceInfos = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteNodesBasicInfo();
+    std::vector<std::string> devices;
+    for (const auto& deviceInfo : deviceInfos) {
+        devices.push_back(deviceInfo.deviceId);
+    }
+    ZLOGI("size=%{public}u", static_cast<uint32_t>(devices.size()));
+    for (const auto& device: devices) {
+        ZLOGI("%{public}s", KvStoreUtils::ToBeAnonymous(device).c_str());
+    }
+    return devices;
+}
+
 std::vector<std::string> RdbSyncer::NetworkIdToUUID(const std::vector<std::string> &networkIds)
 {
     std::vector<std::string> uuids;
     for (const auto& networkId : networkIds) {
         auto uuid = CommunicationProvider::GetInstance().GetUuidByNodeId(networkId);
         if (uuid.empty()) {
-            ZLOGE("%{public}.6s failed", networkId.c_str());
+            ZLOGE("%{public}s failed", KvStoreUtils::ToBeAnonymous(networkId).c_str());
             continue;
         }
         uuids.push_back(uuid);
+        ZLOGI("%{public}s <--> %{public}s", KvStoreUtils::ToBeAnonymous(networkId).c_str(),
+              KvStoreUtils::ToBeAnonymous(uuid).c_str());
     }
     return uuids;
 }
@@ -261,9 +278,6 @@ DistributedDB::Query RdbSyncer::MakeQuery(const RdbPredicates &predicates)
 {
     ZLOGI("table=%{public}s", predicates.table_.c_str());
     auto query = DistributedDB::Query::Select(predicates.table_);
-    for (const auto& device : predicates.devices_) {
-        ZLOGI("device=%{public}.6s", device.c_str());
-    }
     for (const auto& operation : predicates.operations_) {
         if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
             HANDLES[operation.operator_](operation, query);
@@ -272,7 +286,7 @@ DistributedDB::Query RdbSyncer::MakeQuery(const RdbPredicates &predicates)
     return query;
 }
 
-int32_t RdbSyncer::DoSync(const SyncOption &option, const RdbPredicates &predicates, SyncResult &result)
+int32_t RdbSyncer::DoSync(const SyncOption &option, RdbPredicates &predicates, SyncResult &result)
 {
     ZLOGI("enter");
     auto* delegate = GetDelegate();
@@ -281,7 +295,11 @@ int32_t RdbSyncer::DoSync(const SyncOption &option, const RdbPredicates &predica
         return RDB_ERROR;
     }
 
+    if (predicates.devices_.empty()) {
+        predicates.devices_ = GetConnectDevices();
+    }
     auto devices = NetworkIdToUUID(predicates.devices_);
+
     ZLOGI("delegate sync");
     return delegate->Sync(devices, static_cast<DistributedDB::SyncMode>(option.mode),
                           MakeQuery(predicates), [&result] (const auto& syncStatus) {
@@ -289,14 +307,19 @@ int32_t RdbSyncer::DoSync(const SyncOption &option, const RdbPredicates &predica
                           }, true);
 }
 
-int32_t RdbSyncer::DoAsync(const SyncOption &option, const RdbPredicates &predicates, const SyncCallback& callback)
+int32_t RdbSyncer::DoAsync(const SyncOption &option, RdbPredicates &predicates, const SyncCallback& callback)
 {
     auto* delegate = GetDelegate();
     if (delegate == nullptr) {
         ZLOGE("delegate is nullptr");
         return RDB_ERROR;
     }
+
+    if (predicates.devices_.empty()) {
+        predicates.devices_ = GetConnectDevices();
+    }
     auto devices = NetworkIdToUUID(predicates.devices_);
+
     ZLOGI("delegate sync");
     return delegate->Sync(devices, static_cast<DistributedDB::SyncMode>(option.mode),
                           MakeQuery(predicates), [callback] (const auto& syncStatus) {

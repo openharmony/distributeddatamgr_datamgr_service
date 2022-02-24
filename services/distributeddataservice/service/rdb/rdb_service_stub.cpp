@@ -40,16 +40,6 @@ int32_t RdbServiceStub::OnRemoteObtainDistributedTableName(MessageParcel &data, 
     return RDB_OK;
 }
 
-int32_t RdbServiceStub::OnRemoteGetConnectDevices(MessageParcel& data, MessageParcel& reply)
-{
-    std::vector<std::string> devices = GetConnectDevices();
-    if (!reply.WriteStringVector(devices)) {
-        ZLOGE("write devices failed");
-    }
-
-    return RDB_OK;
-}
-
 int32_t RdbServiceStub::OnRemoteInitNotifier(MessageParcel &data, MessageParcel &reply)
 {
     int32_t error = RDB_ERROR;
