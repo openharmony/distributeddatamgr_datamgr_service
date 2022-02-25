@@ -386,7 +386,7 @@ bool BackupHandler::CheckNeedBackup()
         ZLOGE("the device screen is on.");
         return false;
     }
-    int64_t currentTime = TimeUtils::CurrentTimeMicros();
+    uint64_t currentTime = TimeUtils::CurrentTimeMicros();
     if (currentTime - backupSuccessTime_ < 36000000 && backupSuccessTime_ > 0) { // 36000000 is 10 hours
         ZLOGE("no more than 10 hours since the last backup success.");
         return false;

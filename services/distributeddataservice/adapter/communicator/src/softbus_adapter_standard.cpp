@@ -514,8 +514,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         ZLOGE("OpenSession callback result error");
         return Status::CREATE_SESSION_ERROR;
     }
-    ZLOGD("[SendBytes] start,sessionId is %{public}d, size is %{public}d, session type is %{public}d.",
-        sessionId, size, attr.dataType);
+    ZLOGD("[SendBytes] start, size is %{public}d, session type is %{public}d.", size, attr.dataType);
     int32_t ret = SendBytes(sessionId, (void*)ptr, size);
     if (ret != SOFTBUS_OK) {
         ZLOGE("[SendBytes] to %{public}d failed, ret:%{public}d.", sessionId, ret);
@@ -727,8 +726,8 @@ void AppDataListenerWrap::OnMessageReceived(int sessionId, const void *data, uns
         return;
     }
     std::string peerUuid = softBusAdapter_->GetUuidByNodeId(std::string(peerDevId));
-    ZLOGD("[MessageReceived] sessionId:%{public}d, peerSessionName:%{public}s, peerDevId:%{public}s",
-        sessionId, peerSessionName, SoftBusAdapter::ToBeAnonymous(peerUuid).c_str());
+    ZLOGD("[MessageReceived] peerSessionName:%{public}s, peerDevId:%{public}s", peerSessionName,
+        SoftBusAdapter::ToBeAnonymous(peerUuid).c_str());
     NotifyDataListeners(reinterpret_cast<const uint8_t *>(data), dataLen, peerUuid, {std::string(peerSessionName), ""});
 }
 
@@ -751,8 +750,8 @@ void AppDataListenerWrap::OnBytesReceived(int sessionId, const void *data, unsig
         return;
     }
     std::string peerUuid = softBusAdapter_->GetUuidByNodeId(std::string(peerDevId));
-    ZLOGD("[BytesReceived] sessionId:%{public}d, peerSessionName:%{public}s, peerDevId:%{public}s",
-        sessionId, peerSessionName, SoftBusAdapter::ToBeAnonymous(peerUuid).c_str());
+    ZLOGD("[BytesReceived] peerSessionName:%{public}s, peerDevId:%{public}s", peerSessionName,
+        SoftBusAdapter::ToBeAnonymous(peerUuid).c_str());
     NotifyDataListeners(reinterpret_cast<const uint8_t *>(data), dataLen, peerUuid, {std::string(peerSessionName), ""});
 }
 

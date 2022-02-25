@@ -44,8 +44,8 @@ bool DirectoryConfig::Marshal(json &node) const
 bool DirectoryConfig::Unmarshal(const json &node)
 {
     bool ret = true;
-    ret &= GetValue(node, GET_NAME(currentStrategyVersion), currentStrategyVersion);
-    ret &= GetValue(node, GET_NAME(strategy), strategy);
+    ret = GetValue(node, GET_NAME(currentStrategyVersion), currentStrategyVersion) && ret;
+    ret = GetValue(node, GET_NAME(strategy), strategy) && ret
     return ret;
 }
 }

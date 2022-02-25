@@ -34,7 +34,7 @@ void DeviceChangeListenerImpl::OnDeviceChanged(const AppDistributedKv::DeviceInf
     ZLOGD("networkid:%s", nodeid.c_str());
     ZLOGD("uuid:%s", KvStoreUtils::ToBeAnonymous(info.deviceId).c_str());
     for (auto const &observer : observers_) {
-        observer.second->OnChange( {nodeid, info.deviceName, info.deviceType}, deviceType);
+        observer.second->OnChange({nodeid, info.deviceName, info.deviceType}, deviceType);
     }
 }
 AppDistributedKv::ChangeLevelType DeviceChangeListenerImpl::GetChangeLevelType() const

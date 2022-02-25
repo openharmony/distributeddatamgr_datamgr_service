@@ -45,7 +45,7 @@ void KvStoreFlowCtrlManager::RefreshTokenBucket(TokenBucket &tokenBucket, uint64
 
 bool KvStoreFlowCtrlManager::IsTokenEnough()
 {
-    int curTime = CurrentTimeMicros();
+    uint64_t curTime = CurrentTimeMicros();
     if (IsTokenEnoughSlice(burstTokenBucket_, curTime) && IsTokenEnoughSlice(sustainedTokenBucket_, curTime)) {
         burstTokenBucket_.lastAccessTime = curTime;
         burstTokenBucket_.leftNumInTokenBucket--;

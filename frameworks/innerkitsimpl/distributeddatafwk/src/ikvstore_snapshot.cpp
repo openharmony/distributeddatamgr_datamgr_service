@@ -306,7 +306,6 @@ int32_t KvStoreSnapshotImplStub::GetEntriesOnRemote(MessageParcel &data, Message
     // buffer:  | status | entryLength | rawdatasize | (sptr<Key>)nextkey |
     // rawData: ( | keyLen | key | valueLen | value | ){entryLength}
     sptr<Key> keyPrefix = data.ReadParcelable<Key>();
-    sptr<Key> nextKey = data.ReadParcelable<Key>();
     if (keyPrefix == nullptr) {
         ZLOGW("keyPrefix is null. return.");
         if (!reply.WriteInt32(static_cast<int>(Status::INVALID_ARGUMENT))) {
@@ -314,6 +313,7 @@ int32_t KvStoreSnapshotImplStub::GetEntriesOnRemote(MessageParcel &data, Message
         }
         return 0;
     }
+    sptr<Key> nextKey = data.ReadParcelable<Key>();
     if (nextKey == nullptr) {
         ZLOGW("nextKey is null. return.");
         if (!reply.WriteInt32(static_cast<int>(Status::INVALID_ARGUMENT))) {
