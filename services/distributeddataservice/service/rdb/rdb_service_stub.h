@@ -48,8 +48,6 @@ private:
 
     int32_t OnRemoteObtainDistributedTableName(MessageParcel& data, MessageParcel& reply);
 
-    int32_t OnRemoteGetConnectDevices(MessageParcel& data, MessageParcel& reply);
-
     int32_t OnRemoteInitNotifier(MessageParcel&data, MessageParcel& reply);
     
     int32_t OnRemoteSetDistributedTables(MessageParcel &data, MessageParcel &reply);
@@ -65,7 +63,6 @@ private:
     using RequestHandle = int (RdbServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[RDB_SERVICE_CMD_MAX] = {
         [RDB_SERVICE_CMD_OBTAIN_TABLE] = &RdbServiceStub::OnRemoteObtainDistributedTableName,
-        [RDB_SERVICE_CMD_GET_DEVICES] = &RdbServiceStub::OnRemoteGetConnectDevices,
         [RDB_SERVICE_CMD_INIT_NOTIFIER] = &RdbServiceStub::OnRemoteInitNotifier,
         [RDB_SERVICE_CMD_SET_DIST_TABLE] = &RdbServiceStub::OnRemoteSetDistributedTables,
         [RDB_SERVICE_CMD_SYNC] = &RdbServiceStub::OnRemoteDoSync,

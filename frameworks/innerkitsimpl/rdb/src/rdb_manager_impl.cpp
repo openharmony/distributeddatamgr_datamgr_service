@@ -78,18 +78,6 @@ RdbManagerImpl& RdbManagerImpl::GetInstance()
     return manager;
 }
 
-std::vector<std::string> RdbManagerImpl::GetConnectDevices()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto service =  GetRdbService();
-    if (service == nullptr) {
-        ZLOGE("get service failed");
-        return std::vector<std::string>();
-    }
-
-    return ((RdbServiceProxy *)service.GetRefPtr())->GetConnectDevices();
-}
-
 sptr<IRdbService> RdbManagerImpl::GetRdbService()
 {
     if (distributedDataMgr_ == nullptr) {

@@ -231,31 +231,6 @@ int32_t RdbServiceProxy::DoAsync(const RdbSyncerParam& param, const SyncOption &
     return RDB_OK;
 }
 
-std::vector<std::string> RdbServiceProxy::GetConnectDevices()
-{
-    MessageParcel data;
-    if (!data.WriteInterfaceToken(IRdbService::GetDescriptor())) {
-        ZLOGE("write descriptor failed");
-        return {};
-    }
-
-    MessageParcel reply;
-    MessageOption option;
-    if (Remote()->SendRequest(RDB_SERVICE_CMD_GET_DEVICES, data, reply, option) != 0) {
-        ZLOGE("send request failed");
-        return {};
-    }
-
-    std::vector<std::string> devices;
-    if (!reply.ReadStringVector(&devices)) {
-        ZLOGE("read devices failed");
-        return {};
-    }
-
-    ZLOGI("success");
-    return devices;
-}
-
 int32_t RdbServiceProxy::SetDistributedTables(const RdbSyncerParam& param, const std::vector<std::string> &tables)
 {
     MessageParcel data;

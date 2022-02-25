@@ -17,11 +17,6 @@
 #include "rdb_manager_impl.h"
 
 namespace OHOS::DistributedRdb {
-std::vector<std::string> RdbManager::GetConnectDevices()
-{
-    return RdbManagerImpl::GetInstance().GetConnectDevices();
-}
-
 std::shared_ptr<RdbService> RdbManager::GetRdbService(const RdbSyncerParam& param)
 {
     return RdbManagerImpl::GetInstance().GetRdbService(param);

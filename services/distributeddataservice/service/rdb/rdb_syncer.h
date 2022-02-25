@@ -71,6 +71,7 @@ private:
     pid_t uid_ {};
     uint32_t timerId_ {};
 
+    static std::vector<std::string> GetConnectDevices();
     static std::vector<std::string> NetworkIdToUUID(const std::vector<std::string>& networkIds);
 
     static void HandleSyncStatus(const std::map<std::string, std::vector<DistributedDB::TableStatus>>& SyncStatus,
