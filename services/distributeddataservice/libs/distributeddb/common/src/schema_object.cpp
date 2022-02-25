@@ -718,7 +718,8 @@ int SchemaObject::ParseCheckSchemaIndexes(const JsonObject& inJsonObject)
     // The type of SCHEMA_INDEXES field has been checked in CheckMetaFieldCountAndType to be an array
     // If not all members of the array are string type or string-array, this call will return error
     std::vector<std::vector<std::string>> oriIndexArray;
-    int errCode = inJsonObject.GetArrayContentOfStringOrStringArray(FieldPath{SchemaConstant::KEYWORD_SCHEMA_INDEXES}, oriIndexArray);
+    int errCode = inJsonObject.GetArrayContentOfStringOrStringArray(FieldPath{SchemaConstant::KEYWORD_SCHEMA_INDEXES},
+        oriIndexArray);
     if (errCode != E_OK) {
         LOGE("[Schema][ParseIndex] GetArrayContent Fail, errCode=%d.", errCode);
         return -E_SCHEMA_PARSE_FAIL;
@@ -745,7 +746,8 @@ int SchemaObject::ParseCheckSchemaSkipSize(const JsonObject& inJsonObject)
     }
     // The type of SCHEMA_SKIPSIZE field has been checked in CheckMetaFieldCountAndType to be an INTEGER
     FieldValue skipSizeValue;
-    int errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath{SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE}, skipSizeValue);
+    int errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath{SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE},
+        skipSizeValue);
     if (errCode != E_OK) {
         return -E_INTERNAL_ERROR;
     }

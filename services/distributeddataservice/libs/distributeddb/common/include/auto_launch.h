@@ -53,7 +53,7 @@ struct AutoLaunchItem {
     KvStoreNbConflictNotifier conflictNotifier;
     void *conn = nullptr;
     KvDBObserverHandle *observerHandle = nullptr;
-    bool isWriteOpenNotifiered = false;
+    bool isWriteOpenNotified = false;
     AutoLaunchItemState state = AutoLaunchItemState::UN_INITIAL;
     bool isDisable = false;
     bool inObserver = false;

@@ -19,7 +19,7 @@
 #include "data_value.h"
 #include "json_object.h"
 #include "parcel.h"
-#include "schema.h"
+#include "ischema.h"
 
 namespace DistributedDB {
 using CompositeFields = std::vector<FieldName>;

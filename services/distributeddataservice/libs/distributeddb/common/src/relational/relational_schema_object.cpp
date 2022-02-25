@@ -505,7 +505,6 @@ RelationalSyncOpinion RelationalSchemaObject::MakeLocalSyncOpinion(const Relatio
 {
     SchemaType localType = localSchema.GetSchemaType();
     SchemaType remoteType = ReadSchemaType(remoteSchemaType);
-
     if (remoteType == SchemaType::UNRECOGNIZED) {
         LOGW("[RelationalSchema][opinion] Remote schema type %d is unrecognized.", remoteSchemaType);
         return {};

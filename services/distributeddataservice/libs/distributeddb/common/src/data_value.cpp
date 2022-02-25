@@ -41,7 +41,7 @@ Blob::Blob(Blob &&blob) : ptr_(blob.ptr_), size_(blob.size_)
 
 Blob &Blob::operator=(Blob &&blob) noexcept
 {
-    if (this != &blob) {
+    if (&blob != this) {
         delete[] ptr_;
         ptr_ = blob.ptr_;
         size_ = blob.size_;
@@ -104,7 +104,7 @@ DataValue::DataValue(DataValue &&dataValue) noexcept
 
 DataValue &DataValue::operator=(const DataValue &dataValue)
 {
-    if (this == &dataValue) {
+    if (&dataValue == this) {
         return *this;
     }
     ResetValue();
@@ -131,7 +131,7 @@ DataValue &DataValue::operator=(const DataValue &dataValue)
 
 DataValue &DataValue::operator=(DataValue &&dataValue) noexcept
 {
-    if (this == &dataValue) {
+    if (&dataValue == this) {
         return *this;
     }
     ResetValue();
@@ -299,7 +299,7 @@ int DataValue::GetBlob(Blob &outVal) const
 
 int DataValue::SetText(const std::string &val)
 {
-    return SetText(reinterpret_cast<const uint8_t*>(val.c_str()), val.length());
+    return SetText(reinterpret_cast<const uint8_t *>(val.c_str()), val.length());
 }
 
 int DataValue::SetText(const uint8_t *val, uint32_t length)

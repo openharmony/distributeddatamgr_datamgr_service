@@ -25,7 +25,7 @@
 #include "isync_task_context.h"
 #include "parcel.h"
 #ifdef RELATIONAL_STORE
-#include "schema.h"
+#include "ischema.h"
 #endif
 
 namespace DistributedDB {
