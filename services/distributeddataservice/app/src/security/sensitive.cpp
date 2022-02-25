@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 #include "log_print.h"
+#include "app_types.h"
 #include "kvstore_utils.h"
 #undef LOG_TAG
 #define LOG_TAG "Sensitive"
@@ -54,11 +55,6 @@ bool Sensitive::InitDEVSLQueryParams(DEVSLQueryParams *params, const std::string
     }
     params->udidLen = uint32_t(udid.size());
     return true;
-}
-
-Sensitive::operator bool() const
-{
-    return deviceId.empty() || (securityLevel <= DATA_SEC_LEVEL1);
 }
 
 bool Sensitive::operator >= (const DistributedDB::SecurityOption &option)

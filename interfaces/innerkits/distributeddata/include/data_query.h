@@ -524,7 +524,7 @@ public:
 private:
     std::string str_;
 
-    bool inkeysFlag_;
+    bool inkeysFlag_ = false;
 
     template<typename T>
     void AppendCommon(const std::string &keyword, const std::string &fieldType, std::string &field, const T &value);

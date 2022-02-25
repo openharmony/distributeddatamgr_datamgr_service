@@ -36,7 +36,7 @@ using namespace DistributedDB;
 const std::string Security::LABEL_VALUES[S4 + 1] = {
     "", "s0", "s1", "s2", "s3", "s4"
 };
-ConcurrentMap<std::string, Sensitive> Security::devicesUdid_;
+
 Security::Security()
 {
     ZLOGD("construct");
@@ -92,7 +92,7 @@ DBStatus Security::GetSecurityOption(const std::string &filePath, SecurityOption
 bool Security::CheckDeviceSecurityAbility(const std::string &deviceId, const SecurityOption &option) const
 {
     ZLOGD("The kvstore security level: label:%d", option.securityLabel);
-    Sensitive sensitive = GetSensitiveByUuid(deviceId);
+    Sensitive sensitive = GetDeviceNodeByUuid(deviceId, true, nullptr);
     return (sensitive >= option);
 }
 
@@ -139,14 +139,11 @@ void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
     }
 
     bool isOnline = type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE;
+    Sensitive sensitive = GetDeviceNodeByUuid(info.deviceId, isOnline, nullptr);
+    ZLOGD("device is online:%d, deviceId:%{public}s", isOnline, KvStoreUtils::ToBeAnonymous(info.deviceId).c_str());
     if (isOnline) {
-        Sensitive sensitive = GetSensitiveByUuid(info.deviceId);
-        ZLOGD("device is online, deviceId:%{public}s", KvStoreUtils::ToBeAnonymous(info.deviceId).c_str());
         auto secuiryLevel = sensitive.GetDeviceSecurityLevel();
-        ZLOGI("device is online, secuiry Level:%{public}d", secuiryLevel);
-    } else {
-        EraseSensitiveByUuid(info.deviceId);
-        ZLOGD("device is offline, deviceId:%{public}s", KvStoreUtils::ToBeAnonymous(info.deviceId).c_str());
+        ZLOGI("device is online, secuiry Level:%d", secuiryLevel);
     }
 }
 
@@ -155,39 +152,45 @@ bool Security::IsExits(const std::string &file) const
     return access(file.c_str(), F_OK) == 0;
 }
 
-Sensitive Security::GetSensitiveByUuid(const std::string &uuid)
+Sensitive Security::GetDeviceNodeByUuid(const std::string &uuid, bool isOnline,
+                                        const std::function<std::vector<uint8_t>(void)> &getValue)
 {
-    Sensitive sensitive;
-    devicesUdid_.Compute(uuid, [&sensitive](const auto &key, auto &value) {
-        if (value) {
-            sensitive = value;
-            return true;
+    static std::mutex mutex;
+    static std::map<std::string, Sensitive> devicesUdid;
+    std::lock_guard<std::mutex> guard(mutex);
+    auto it = devicesUdid.find(uuid);
+    if (!isOnline) {
+        if (it != devicesUdid.end()) {
+            devicesUdid.erase(uuid);
         }
+        return Sensitive();
+    }
+    if (it != devicesUdid.end()) {
+        return it->second;
+    }
 
     auto &network = AppDistributedKv::CommunicationProvider::GetInstance();
-        auto devices = network.GetRemoteNodesBasicInfo();
-        devices.push_back(network.GetLocalBasicInfo());
-        for (auto &device : devices) {
-            auto deviceUuid = network.GetUuidByNodeId(device.deviceId);
-            ZLOGD("GetSensitiveByUuid(%.10s) peer device is %.10s", key.c_str(), deviceUuid.c_str());
-            if (key != deviceUuid) {
-                continue;
-            }
-
-            value = Sensitive(network.GetUdidByNodeId(device.deviceId));
-            value.GetDeviceSecurityLevel();
-            sensitive = value;
-            return true;
+    auto devices = network.GetRemoteNodesBasicInfo();
+    devices.push_back(network.GetLocalBasicInfo());
+    for (auto &device : devices) {
+        auto deviceUuid = network.GetUuidByNodeId(device.deviceId);
+        ZLOGD("GetDeviceNodeByUuid(%.10s) peer device is %.10s", uuid.c_str(), deviceUuid.c_str());
+        if (uuid != deviceUuid) {
+            continue;
         }
-        return false;
-    });
-    return sensitive;
-}
 
-bool Security::EraseSensitiveByUuid(const std::string &uuid)
-{
-    devicesUdid_.Erase(uuid);
-    return true;
+        Sensitive sensitive(network.GetUdidByNodeId(device.deviceId));
+        if (getValue == nullptr) {
+            devicesUdid.insert(std::pair<std::string, Sensitive>(uuid, std::move(sensitive)));
+            return devicesUdid[uuid];
+        }
+
+        auto value = getValue();
+        ZLOGI("getValue is not nullptr!");
+        return sensitive;
+    }
+
+    return Sensitive();
 }
 
 int32_t Security::GetCurrentUserStatus() const
