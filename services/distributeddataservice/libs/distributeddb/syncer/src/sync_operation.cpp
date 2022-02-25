@@ -99,6 +99,26 @@ void SyncOperation::SetStatus(const std::string &deviceId, int status)
     }
 }
 
+void SyncOperation::SetUnfinishedDevStatus(int status)
+{
+    LOGD("[SyncOperation] SetUnfinishedDevStatus status %d", status);
+    AutoLock lockGuard(this);
+    if (IsKilled()) {
+        LOGE("[SyncOperation] SetUnfinishedDevStatus failed, the SyncOperation has been killed!");
+        return;
+    }
+    if (isFinished_) {
+        LOGI("[SyncOperation] SetUnfinishedDevStatus already finished");
+        return;
+    }
+    for (auto &item : statuses_) {
+        if (item.second >= OP_FINISHED_ALL) {
+            continue;
+        }
+        item.second = status;
+    }
+}
+
 int SyncOperation::GetStatus(const std::string &deviceId) const
 {
     AutoLock lockGuard(this);
@@ -288,6 +308,7 @@ const std::map<int, DBStatus> &SyncOperation::DBStatusTransMap()
         { static_cast<int>(OP_MAX_LIMITS),                    OVER_MAX_LIMITS },
         { static_cast<int>(OP_SCHEMA_CHANGED),                DISTRIBUTED_SCHEMA_CHANGED },
         { static_cast<int>(OP_INVALID_ARGS),                  INVALID_ARGS },
+        { static_cast<int>(OP_USER_CHANGED),                  USER_CHANGED},
     };
     return transMap;
 }

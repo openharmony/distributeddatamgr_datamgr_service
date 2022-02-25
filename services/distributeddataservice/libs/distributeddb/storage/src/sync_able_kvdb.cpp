@@ -197,7 +197,7 @@ void SyncAbleKvDB::StopSyncer(bool isClosed)
 void SyncAbleKvDB::StopSyncerWithNoLock(bool isClosed)
 {
     ReSetSyncModuleActive();
-    syncer_.Close();
+    syncer_.Close(isClosed);
     if (started_) {
         started_ = false;
     }

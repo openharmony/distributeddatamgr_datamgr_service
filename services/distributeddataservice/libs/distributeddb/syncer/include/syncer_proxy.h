@@ -33,7 +33,7 @@ public:
     int Initialize(ISyncInterface *syncInterface, bool isNeedActive) override;
 
     // Close the syncer
-    int Close() override;
+    int Close(bool isClosed) override;
 
     // Sync function.
     // param devices: The device id list.
