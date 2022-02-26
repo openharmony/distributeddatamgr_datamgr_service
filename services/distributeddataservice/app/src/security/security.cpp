@@ -20,7 +20,6 @@
 #include <regex>
 #include "constant.h"
 #include "log_print.h"
-#include "kvstore_utils.h"
 #include "communication_provider.h"
 #include "dev_slinfo_mgr.h"
 #include "security_label.h"
@@ -143,12 +142,12 @@ void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
     bool isOnline = type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE;
     if (isOnline) {
         Sensitive sensitive = GetSensitiveByUuid(info.deviceId);
-        ZLOGD("device is online, deviceId:%{public}s", KvStoreUtils::ToBeAnonymous(info.deviceId).c_str());
+        ZLOGD("device is online, deviceId:%{public}s", Anonymous::Change(info.deviceId).c_str());
         auto secuiryLevel = sensitive.GetDeviceSecurityLevel();
         ZLOGI("device is online, secuiry Level:%{public}d", secuiryLevel);
     } else {
         EraseSensitiveByUuid(info.deviceId);
-        ZLOGD("device is offline, deviceId:%{public}s", KvStoreUtils::ToBeAnonymous(info.deviceId).c_str());
+        ZLOGD("device is offline, deviceId:%{public}s", Anonymous::Change(info.deviceId).c_str());
     }
 }
 
