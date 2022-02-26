@@ -17,13 +17,13 @@
 #include <utility>
 #include <vector>
 #include "log_print.h"
-#include "app_types.h"
-#include "kvstore_utils.h"
+#include "utils/anonymous.h"
 #undef LOG_TAG
 #define LOG_TAG "Sensitive"
 
 namespace OHOS {
 namespace DistributedKv {
+using Anonymous = DistributedData::Anonymous;
 Sensitive::Sensitive(std::string deviceId)
     : deviceId(std::move(deviceId)), securityLevel(DATA_SEC_LEVEL1)
 {
@@ -45,7 +45,7 @@ uint32_t Sensitive::GetDeviceSecurityLevel()
 
 bool Sensitive::InitDEVSLQueryParams(DEVSLQueryParams *params, const std::string &udid)
 {
-    ZLOGI("udid is [%{public}s]", KvStoreUtils::ToBeAnonymous(udid).c_str());
+    ZLOGI("udid is [%{public}s]", Anonymous::Change(udid).c_str());
     if (params == nullptr || udid.empty()) {
         return false;
     }
@@ -55,6 +55,11 @@ bool Sensitive::InitDEVSLQueryParams(DEVSLQueryParams *params, const std::string
     }
     params->udidLen = uint32_t(udid.size());
     return true;
+}
+
+Sensitive::operator bool() const
+{
+    return (!deviceId.empty()) || (securityLevel > DATA_SEC_LEVEL1);
 }
 
 bool Sensitive::operator >= (const DistributedDB::SecurityOption &option)
@@ -105,20 +110,20 @@ uint32_t Sensitive::GetSensitiveLevel(const std::string &udid)
 {
     DEVSLQueryParams query;
     if (!InitDEVSLQueryParams(&query, udid)) {
-        ZLOGE("init query params failed! udid:[%{public}s]", KvStoreUtils::ToBeAnonymous(udid).c_str());
+        ZLOGE("init query params failed! udid:[%{public}s]", Anonymous::Change(udid).c_str());
         return DATA_SEC_LEVEL1;
     }
 
     uint32_t level = DATA_SEC_LEVEL1;
     int32_t result = DATASL_GetHighestSecLevel(&query, &level);
     if (result != DEVSL_SUCCESS) {
-        ZLOGE("get highest level failed(%{public}s)! level: %d, error: %d",
-            KvStoreUtils::ToBeAnonymous(udid).c_str(), securityLevel, result);
+        ZLOGE("get highest level failed(%{public}s)! level: %{public}d, error: %d",
+            Anonymous::Change(udid).c_str(), securityLevel, result);
         return DATA_SEC_LEVEL1;
     }
     securityLevel = level;
-    ZLOGI("get highest level success(%{public}s)! level: %d, error: %d",
-        KvStoreUtils::ToBeAnonymous(udid).c_str(), securityLevel, result);
+    ZLOGI("get highest level success(%{public}s)! level: %{public}d, error: %d",
+        Anonymous::Change(udid).c_str(), securityLevel, result);
     return securityLevel;
 }
 } // namespace DistributedKv
