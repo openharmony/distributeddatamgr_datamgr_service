@@ -45,7 +45,6 @@ ohos_static_library("distributeddata_uninstaller_static") {
     "ability_base:want",
     "ces_standard:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
-    "dmsfwk_standard:zuri",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
