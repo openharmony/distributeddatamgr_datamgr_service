@@ -57,19 +57,18 @@ public:
 
     static const uint32_t TYPE = 0;
 
-    static int g_sequence = 0;
+    static int g_sequence;
 private:
     char *buf_;
     size_t size_;
     size_t used_;
-
 };
+int DataBuffer::g_sequence = 0;
 
 union Head {
     HeaderInfo headerInfo;
     uint8_t headArray[DataBuffer::HEADER_LEN];
 } __attribute__((packed));
-
 }
 }
 #endif // DISTRIBUTEDDATAMGR_DATA_BUFFER_H
