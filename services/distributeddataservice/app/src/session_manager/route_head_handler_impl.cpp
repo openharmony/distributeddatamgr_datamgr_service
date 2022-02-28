@@ -25,6 +25,7 @@
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
+constexpr const int ALIGN_WIDTH = 8;
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
 {
     auto handler = std::make_shared<RouteHeadHandlerImpl>(info);
@@ -37,7 +38,7 @@ std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo 
 }
 
 RouteHeadHandlerImpl::RouteHeadHandlerImpl(const ExtendInfo &info)
-    : userId_(info.userId), appId_(info.appId), storeId_(info.storeId), deviceId_(info.dstTarget)
+    : userId_(info.userId), appId_(info.appId), storeId_(info.storeId), deviceId_(info.dstTarget), headSize_(0)
 {
     ZLOGI("init route handler, app:%{public}s, user:%{public}s, peer:%{public}s", appId_.c_str(), userId_.c_str(),
         deviceId_.c_str());

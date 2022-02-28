@@ -21,7 +21,6 @@
 #include "session_manager.h"
 
 namespace OHOS::DistributedData {
-constexpr int ALIGN_WIDTH = 8;
 template<typename T> constexpr T GET_ALIGNED_SIZE(T x, int alignWidth)
 {
     return (x + (alignWidth - 1)) & ~(alignWidth - 1);
