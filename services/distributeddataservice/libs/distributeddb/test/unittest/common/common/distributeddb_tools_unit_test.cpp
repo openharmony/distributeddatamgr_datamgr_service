@@ -760,12 +760,12 @@ DBStatus DistributedDBToolsUnitTest::SyncTest(KvStoreNbDelegate* delegate,
         }, query, false);
 
     std::unique_lock<std::mutex> lock(syncLock_);
-    syncCondVar_.wait(lock, [callStatus, &statuses](){
-        if (callStatus != OK) {
-            return true;
-        }
-        return !statuses.empty();
-    });
+    syncCondVar_.wait(lock, [callStatus, &statuses]() {
+            if (callStatus != OK) {
+                return true;
+            }
+            return !statuses.empty();
+        });
     return callStatus;
 }
 
@@ -782,16 +782,16 @@ DBStatus DistributedDBToolsUnitTest::SyncTest(KvStoreNbDelegate* delegate,
         }, wait);
     if (!wait) {
         std::unique_lock<std::mutex> lock(syncLock_);
-        syncCondVar_.wait(lock, [callStatus, &statuses](){
-            if (callStatus != OK) {
-                return true;
-            }
-            if (statuses.size() != 0) {
-                return true;
-            }
-            return false;
-        });
-    }
+        syncCondVar_.wait(lock, [callStatus, &statuses]() {
+                if (callStatus != OK) {
+                    return true;
+                }
+                if (statuses.size() != 0) {
+                    return true;
+                }
+                return false;
+            });
+        }
     return callStatus;
 }
 

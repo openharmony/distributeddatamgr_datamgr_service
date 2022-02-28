@@ -72,7 +72,7 @@ bool SchemaObject::FlatBufferSchema::IsFlatBufferSchema(const std::string &inOri
 
 // A macro check pointer get from flatbuffer that won't be nullptr(required field) in fact after verified by flatbuffer
 #define CHECK_NULL_UNLIKELY_RETURN_ERROR(pointer) \
-    if (pointer == nullptr) { \
+    if ((pointer) == nullptr) { \
         return -E_INTERNAL_ERROR; \
     }
 

@@ -18,8 +18,7 @@
 #include "db_errno.h"
 
 namespace DistributedDB {
-namespace
-{
+namespace {
     const int MAX_OPR_TIMES = 256;
 } // namespace
 

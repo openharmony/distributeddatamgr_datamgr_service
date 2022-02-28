@@ -23,8 +23,7 @@
 #include "schema_constant.h"
 
 namespace DistributedDB {
-namespace
-{
+namespace {
     bool IsLegalFieldCharacter(char character)
     {
         return (std::isalnum(character) || character == '_');
