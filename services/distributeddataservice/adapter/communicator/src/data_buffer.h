@@ -57,11 +57,11 @@ public:
 
     static const uint32_t TYPE = 0;
 
-    static int g_sequence;
 private:
     char *buf_;
     size_t size_;
     size_t used_;
+    static int sequence;
 };
 
 union Head {
