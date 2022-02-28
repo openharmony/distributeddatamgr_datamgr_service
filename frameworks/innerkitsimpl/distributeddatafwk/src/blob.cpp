@@ -174,7 +174,7 @@ Blob *Blob::Unmarshalling(Parcel &parcel)
 }
 
 /* write blob size and data to memory buffer. return error when bufferLeftSize not enough. */
-bool Blob::WriteToBuffer(uint8_t *&cursorPtr, uint8_t &bufferLeftSize) const
+bool Blob::WriteToBuffer(uint8_t *&cursorPtr, int &bufferLeftSize) const
 {
     if (cursorPtr == nullptr || bufferLeftSize < static_cast<int>(blob_.size() + sizeof(int))) {
         return false;

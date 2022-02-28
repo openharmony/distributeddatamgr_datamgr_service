@@ -97,7 +97,7 @@ public:
     KVSTORE_API static Blob *Unmarshalling(Parcel &parcel);
 
     /* write blob size and data to memory buffer. return error when bufferLeftSize not enough. */
-    bool WriteToBuffer(uint8_t *&cursorPtr, uint8_t &bufferLeftSize) const;
+    bool WriteToBuffer(uint8_t *&cursorPtr, int &bufferLeftSize) const;
 
     /* read a blob from memory buffer. */
     bool ReadFromBuffer(const uint8_t *&cursorPtr, int &bufferLeftSize);
