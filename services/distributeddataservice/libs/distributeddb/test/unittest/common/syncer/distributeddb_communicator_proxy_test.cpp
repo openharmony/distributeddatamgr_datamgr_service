@@ -104,12 +104,13 @@ void DistributedDBCommunicatorProxyTest::SetUp(void)
      */
     KvStoreNbDelegate::Option option;
     g_mgr.GetKvStore(STORE_ID, option, g_kvDelegateCallback);
+    std::string identifier = g_mgr.GetKvStoreIdentifier(USER_ID, APP_ID, STORE_ID);
     ASSERT_TRUE(g_kvDelegateStatus == OK);
     ASSERT_TRUE(g_kvDelegatePtr != nullptr);
     commProxy_ = new (std::nothrow) CommunicatorProxy();
     ASSERT_TRUE(commProxy_ != nullptr);
     commProxy_->SetMainCommunicator(&mainComm_);
-    commProxy_->SetEqualCommunicator(&extComm_, { DEVICE_C });
+    commProxy_->SetEqualCommunicator(&extComm_, identifier, { DEVICE_C });
 }
 
 void DistributedDBCommunicatorProxyTest::TearDown(void)

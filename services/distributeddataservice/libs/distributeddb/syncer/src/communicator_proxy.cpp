@@ -30,7 +30,7 @@ CommunicatorProxy::~CommunicatorProxy()
 
     std::lock_guard lock(devCommMapLock_);
     for (const auto &iter : devCommMap_) {
-        RefObject::DecObjRef(devCommMap_[iter.first]);
+        RefObject::DecObjRef(devCommMap_[iter.first].second);
     }
     devCommMap_.clear();
 }
@@ -43,7 +43,7 @@ int CommunicatorProxy::RegOnMessageCallback(const OnMessageCallback &onMessage, 
 
     std::lock_guard lock(devCommMapLock_);
     for (const auto &iter : devCommMap_) {
-        (void) devCommMap_[iter.first]->RegOnMessageCallback(onMessage, inOper);
+        (void) devCommMap_[iter.first].second->RegOnMessageCallback(onMessage, inOper);
     }
     return E_OK;
 }
@@ -56,7 +56,7 @@ int CommunicatorProxy::RegOnConnectCallback(const OnConnectCallback &onConnect, 
 
     std::lock_guard lock(devCommMapLock_);
     for (const auto &iter : devCommMap_) {
-        (void) devCommMap_[iter.first]->RegOnConnectCallback(onConnect, inOper);
+        (void) devCommMap_[iter.first].second->RegOnConnectCallback(onConnect, inOper);
     }
 
     return E_OK;
@@ -70,7 +70,7 @@ int CommunicatorProxy::RegOnSendableCallback(const std::function<void(void)> &on
 
     std::lock_guard lock(devCommMapLock_);
     for (const auto &iter : devCommMap_) {
-        (void) devCommMap_[iter.first]->RegOnSendableCallback(onSendable, inOper);
+        (void) devCommMap_[iter.first].second->RegOnSendableCallback(onSendable, inOper);
     }
 
     return E_OK;
@@ -87,8 +87,8 @@ void CommunicatorProxy::Activate()
     {
         std::lock_guard lock(devCommMapLock_);
         for (const auto &iter : devCommMap_) {
-            tempMap[iter.first] = devCommMap_[iter.first];
-            RefObject::IncObjRef(devCommMap_[iter.first]);
+            tempMap[iter.first] = devCommMap_[iter.first].second;
+            RefObject::IncObjRef(devCommMap_[iter.first].second);
         }
     }
 
@@ -112,7 +112,7 @@ uint32_t CommunicatorProxy::GetCommunicatorMtuSize(const std::string &target) co
     {
         std::lock_guard<std::mutex> lock(devCommMapLock_);
         if (devCommMap_.count(target) != 0) {
-            targetCommunicator = devCommMap_.at(target);
+            targetCommunicator = devCommMap_.at(target).second;
             RefObject::IncObjRef(targetCommunicator);
         }
     }
@@ -143,7 +143,7 @@ uint32_t CommunicatorProxy::GetTimeout(const std::string &target) const
     {
         std::lock_guard<std::mutex> lock(devCommMapLock_);
         if (devCommMap_.count(target) != 0) {
-            targetCommunicator = devCommMap_.at(target);
+            targetCommunicator = devCommMap_.at(target).second;
             RefObject::IncObjRef(targetCommunicator);
         }
     }
@@ -176,7 +176,7 @@ int CommunicatorProxy::GetRemoteCommunicatorVersion(const std::string &target, u
     {
         std::lock_guard<std::mutex> lock(devCommMapLock_);
         if (devCommMap_.count(target) != 0) {
-            targetCommunicator = devCommMap_.at(target);
+            targetCommunicator = devCommMap_.at(target).second;
             RefObject::IncObjRef(targetCommunicator);
         }
     }
@@ -205,7 +205,7 @@ int CommunicatorProxy::SendMessage(const std::string &dstTarget, const Message *
     {
         std::lock_guard<std::mutex> lock(devCommMapLock_);
         if (devCommMap_.count(dstTarget) != 0) {
-            targetCommunicator = devCommMap_[dstTarget];
+            targetCommunicator = devCommMap_[dstTarget].second;
             RefObject::IncObjRef(targetCommunicator);
         }
     }
@@ -229,17 +229,22 @@ void CommunicatorProxy::SetMainCommunicator(ICommunicator *communicator)
     RefObject::IncObjRef(mainComm_);
 }
 
-void CommunicatorProxy::SetEqualCommunicator(ICommunicator *communicator, const std::vector<std::string> &targets)
+void CommunicatorProxy::SetEqualCommunicator(ICommunicator *communicator, const std::string &identifier,
+    const std::vector<std::string> &targets)
 {
     std::lock_guard<std::mutex> lock(devCommMapLock_);
     // Clear offline target
     for (auto dev = devCommMap_.begin(); dev != devCommMap_.end();) {
+        if (identifier != dev->second.first) {
+            dev++;
+            continue;
+        }
         auto iter = std::find_if(targets.begin(), targets.end(),
             [&dev](const std::string &target) {
                 return target == dev->first;
             });
         if (iter == targets.end()) {
-            RefObject::DecObjRef(devCommMap_[dev->first]);
+            RefObject::DecObjRef(devCommMap_[dev->first].second);
             dev = devCommMap_.erase(dev);
             continue;
         }
@@ -250,10 +255,10 @@ void CommunicatorProxy::SetEqualCommunicator(ICommunicator *communicator, const 
     for (const auto &target : targets) {
         if (devCommMap_.count(target) != 0) {
             // change the identifier and dev relation
-            RefObject::DecObjRef(devCommMap_[target]);
+            RefObject::DecObjRef(devCommMap_[target].second);
         }
         RefObject::IncObjRef(communicator);
-        devCommMap_[target] = communicator;
+        devCommMap_[target] = {identifier, communicator};
     }
 }
 } // namespace DistributedDB
