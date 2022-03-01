@@ -237,10 +237,6 @@ group("unittest") {
   deps = []
 
   deps += [
-    ":AppBlobTest",
-    ":AppConflictTest",
-    ":AppDistributedKvDataManagerTest",
-    ":AppDistributedKvStoreTest",
     ":BlobTest",
     ":DistributedKvDataManagerEncryptTest",
     ":DistributedKvDataManagerTest",
