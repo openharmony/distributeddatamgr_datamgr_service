@@ -486,7 +486,7 @@ int RelationalSyncAbleStorage::CreateDistributedDeviceTable(const std::string &d
         return errCode;
     }
 
-    for (const auto &[table, strategy] : syncStrategy.GetStrategies()) {
+    for (const auto &[table, strategy] : syncStrategy) {
         if (!strategy.permitSync) {
             continue;
         }

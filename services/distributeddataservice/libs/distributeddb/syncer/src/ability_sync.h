@@ -27,6 +27,7 @@
 #ifdef RELATIONAL_STORE
 #include "ischema.h"
 #endif
+#include "schema_negotiate.h"
 
 namespace DistributedDB {
 class AbilitySyncRequestPacket {

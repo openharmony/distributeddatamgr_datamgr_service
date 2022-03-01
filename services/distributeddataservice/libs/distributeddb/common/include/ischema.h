@@ -39,19 +39,6 @@ inline SchemaType ReadSchemaType(uint8_t inType)
     return static_cast<SchemaType>(inType);
 }
 
-struct SyncOpinion {
-    bool permitSync = false;
-    bool requirePeerConvert = false;
-    bool checkOnReceive = false;
-};
-
-struct SyncStrategy {
-    bool permitSync = false;
-    bool convertOnSend = false;
-    bool convertOnReceive = false;
-    bool checkOnReceive = false;
-};
-
 struct SchemaAttribute {
     FieldType type = FieldType::LEAF_FIELD_NULL;
     bool isIndexable = false;

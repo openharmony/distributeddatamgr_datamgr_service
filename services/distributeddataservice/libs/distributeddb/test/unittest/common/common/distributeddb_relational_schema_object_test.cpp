@@ -23,6 +23,7 @@
 #include "relational_schema_object.h"
 #include "schema_utils.h"
 #include "schema_constant.h"
+#include "schema_negotiate.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -330,11 +331,11 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaCompareTest001
     int errCode = schemaObj.ParseFromSchemaString(NORMAL_SCHEMA);
     EXPECT_EQ(errCode, E_OK);
 
-    RelationalSyncOpinion opinion = RelationalSchemaObject::MakeLocalSyncOpinion(schemaObj, NORMAL_SCHEMA,
+    RelationalSyncOpinion opinion = SchemaNegotiate::MakeLocalSyncOpinion(schemaObj, NORMAL_SCHEMA,
         static_cast<uint8_t>(SchemaType::RELATIVE));
-    EXPECT_EQ(opinion.GetTableOpinion("FIRST").permitSync, true);
-    EXPECT_EQ(opinion.GetTableOpinion("FIRST").checkOnReceive, false);
-    EXPECT_EQ(opinion.GetTableOpinion("FIRST").requirePeerConvert, false);
+    EXPECT_EQ(opinion.at("FIRST").permitSync, true);
+    EXPECT_EQ(opinion.at("FIRST").checkOnReceive, false);
+    EXPECT_EQ(opinion.at("FIRST").requirePeerConvert, false);
 }
 
 /**
@@ -379,24 +380,24 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaOpinionTest001
 {
     const uint32_t softWareVersion = 106;
     RelationalSyncOpinion opinion;
-    opinion.AddSyncOpinion("table_1", SyncOpinion {true, false, false});
-    opinion.AddSyncOpinion("table_2", SyncOpinion {false, true, false});
-    opinion.AddSyncOpinion("table_3", SyncOpinion {false, false, true});
+    opinion["table_1"] = SyncOpinion {true, false, false};
+    opinion["table_2"] = SyncOpinion {false, true, false};
+    opinion["table_3"] = SyncOpinion {false, false, true};
 
-    uint32_t len = opinion.CalculateParcelLen(softWareVersion);
+    uint32_t len = SchemaNegotiate::CalculateParcelLen(opinion, softWareVersion);
     std::vector<uint8_t> buff(len, 0);
     Parcel writeParcel(buff.data(), len);
-    int errCode = opinion.SerializeData(writeParcel, softWareVersion);
+    int errCode = SchemaNegotiate::SerializeData(opinion, writeParcel, softWareVersion);
     EXPECT_EQ(errCode, E_OK);
 
     Parcel readParcel(buff.data(), len);
     RelationalSyncOpinion opinionRecv;
-    errCode = RelationalSyncOpinion::DeserializeData(readParcel, opinionRecv);
+    errCode = SchemaNegotiate::DeserializeData(readParcel, opinionRecv);
     EXPECT_EQ(errCode, E_OK);
 
-    EXPECT_EQ(opinion.GetOpinions().size(), opinionRecv.GetOpinions().size());
-    for (const auto &it : opinion.GetOpinions()) {
-        SyncOpinion tableOpinionRecv = opinionRecv.GetTableOpinion(it.first);
+    EXPECT_EQ(opinion.size(), opinionRecv.size());
+    for (const auto &it : opinion) {
+        SyncOpinion tableOpinionRecv = opinionRecv.at(it.first);
         EXPECT_EQ(it.second.permitSync, tableOpinionRecv.permitSync);
         EXPECT_EQ(it.second.requirePeerConvert, tableOpinionRecv.requirePeerConvert);
     }
@@ -412,19 +413,19 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaOpinionTest001
 HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaNegotiateTest001, TestSize.Level1)
 {
     RelationalSyncOpinion localOpinion;
-    localOpinion.AddSyncOpinion("table_1", SyncOpinion {true, false, false});
-    localOpinion.AddSyncOpinion("table_2", SyncOpinion {false, true, false});
-    localOpinion.AddSyncOpinion("table_3", SyncOpinion {false, false, true});
+    localOpinion["table_1"] = SyncOpinion {true, false, false};
+    localOpinion["table_2"] = SyncOpinion {false, true, false};
+    localOpinion["table_3"] = SyncOpinion {false, false, true};
 
     RelationalSyncOpinion remoteOpinion;
-    remoteOpinion.AddSyncOpinion("table_2", SyncOpinion {true, false, false});
-    remoteOpinion.AddSyncOpinion("table_3", SyncOpinion {false, true, false});
-    remoteOpinion.AddSyncOpinion("table_4", SyncOpinion {false, false, true});
-    RelationalSyncStrategy strategy = RelationalSchemaObject::ConcludeSyncStrategy(localOpinion, remoteOpinion);
+    remoteOpinion["table_2"] = SyncOpinion {true, false, false};
+    remoteOpinion["table_3"] = SyncOpinion {false, true, false};
+    remoteOpinion["table_4"] = SyncOpinion {false, false, true};
+    RelationalSyncStrategy strategy = SchemaNegotiate::ConcludeSyncStrategy(localOpinion, remoteOpinion);
 
-    EXPECT_EQ(strategy.GetStrategies().size(), 2);
-    EXPECT_EQ(strategy.GetTableStrategy("table_2").permitSync, true);
-    EXPECT_EQ(strategy.GetTableStrategy("table_3").permitSync, false);
+    EXPECT_EQ(strategy.size(), 2u);
+    EXPECT_EQ(strategy.at("table_2").permitSync, true);
+    EXPECT_EQ(strategy.at("table_3").permitSync, false);
 }
 
 /**
