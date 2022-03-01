@@ -58,7 +58,6 @@ ohos_shared_library("distributeddatasvcfwk") {
   external_deps = [
     "ability_base:base",
     "ability_base:want",
-    "ability_runtime:intent",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",

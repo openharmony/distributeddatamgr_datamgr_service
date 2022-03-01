@@ -49,14 +49,12 @@
         "deps": {
             "components": [
                 "ability_base",
-                "ability_runtime",
                 "libhilog",
                 "ipc_core",
                 "utils",
                 "samgr_proxy",
                 "ace_napi",
                 "base",
-                "intent",
                 "appexecfwk_base",
                 "appexecfwk_core",
                 "batterysrv_client",
