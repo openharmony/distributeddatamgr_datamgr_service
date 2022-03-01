@@ -82,19 +82,6 @@ struct KvStoreTuple {
     std::string userId;
     std::string appId;
     std::string storeId;
-
-    KvStoreTuple() = default;
-    KvStoreTuple(std::string userId, std::string appId) : userId(std::move(userId)), appId(std::move(appId))
-    {
-    }
-    KvStoreTuple(std::string userId, std::string appId, std::string storeId)
-        : userId(std::move(userId)), appId(std::move(appId)), storeId(std::move(storeId))
-    {
-    }
-    bool operator<(const KvStoreTuple &that) const
-    {
-        return this->userId < that.userId || this->appId < that.appId || this->storeId < that.storeId;
-    }
 };
 
 struct AppThreadInfo {

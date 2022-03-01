@@ -146,7 +146,6 @@ void KvStoreUserManager::Dump(int fd) const
 
 bool KvStoreUserManager::IsStoreOpened(const std::string &appId, const std::string &storeId)
 {
-//    std::lock_guard<std::mutex> lg(appMutex_);
     auto it = appMap_.find(appId);
     return it != appMap_.end() && it->second.IsStoreOpened(storeId);
 }

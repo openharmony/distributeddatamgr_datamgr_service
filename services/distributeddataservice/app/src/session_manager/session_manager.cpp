@@ -32,7 +32,7 @@ SessionManager &SessionManager::GetInstance()
 
 Session SessionManager::GetSession(const SessionPoint &from, const std::string &targetDeviceId) const
 {
-    ZLOGD("begin. peer device:%{public}.6s", targetDeviceId.c_str());
+    ZLOGD("begin. peer device:%{public}.10s", targetDeviceId.c_str());
     auto users = UserDelegate::GetInstance().GetRemoteUserStatus(targetDeviceId);
     Session session;
     session.appId = from.appId;
