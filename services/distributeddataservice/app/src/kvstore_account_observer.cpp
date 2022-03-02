@@ -17,6 +17,7 @@
 
 #include "kvstore_account_observer.h"
 #include <atomic>
+#include "executor_factory.h"
 #include "kvstore_data_service.h"
 #include "log_print.h"
 
@@ -26,10 +27,11 @@ std::atomic<int> g_kvStoreAccountEventStatus {0};
 void KvStoreAccountObserver::OnAccountChanged(const AccountEventInfo &eventInfo)
 {
     ZLOGI("account event %d, begin.", eventInfo.status);
-    std::thread([this, eventInfo]() {
+    KvStoreTask task([this, eventInfo]() {
         ZLOGI("account event processing in thread");
         kvStoreDataService_.AccountEventChanged(eventInfo);
-    }).detach();
+    });
+    DistributedData::ExecutorFactory::GetInstance().Execute(std::move(task));
     ZLOGI("account event %d, end.", eventInfo.status);
 }
 }  // namespace DistributedKv

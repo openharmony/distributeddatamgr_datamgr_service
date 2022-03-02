@@ -30,8 +30,6 @@ ohos_static_library("distributeddata_auth_static") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  configs = [ "//build/config/compiler:exceptions" ]
-
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//utils/native/base:utils",

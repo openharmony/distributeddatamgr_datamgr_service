@@ -39,6 +39,7 @@
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
 #include "kvstore_app_accessor.h"
+#include "kvstore_device_listener.h"
 #include "kvstore_meta_manager.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
@@ -132,7 +133,8 @@ void KvStoreDataService::Initialize()
 
     accountEventObserver_ = std::make_shared<KvStoreAccountObserver>(*this);
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
-    AppDistributedKv::CommunicationProvider::MakeCommunicationProvider()->StartWatchDeviceChange(this, {});
+    deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
+    KvStoreUtils::GetProviderInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
 }
 
 Status KvStoreDataService::GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
@@ -1273,14 +1275,8 @@ bool KvStoreDataService::IsStoreOpened(const std::string &userId, const std::str
     return it != deviceAccountMap_.end() && it->second.IsStoreOpened(appId, storeId);
 }
 
-void KvStoreDataService::OnDeviceChanged(
-    const AppDistributedKv::DeviceInfo &info, const AppDistributedKv::DeviceChangeType &type) const
+void KvStoreDataService::SetCompatibleIdentify(const AppDistributedKv::DeviceInfo &info) const
 {
-    if (type == AppDistributedKv::DeviceChangeType::DEVICE_OFFLINE) {
-        ZLOGE("ignore device offline");
-        return;
-    }
-
     for (const auto &item : deviceAccountMap_) {
         item.second.SetCompatibleIdentify(info.deviceId);
     }
@@ -1294,7 +1290,6 @@ bool KvStoreDataService::CheckSyncActivation(
     // active sync feature with single active user
     for (const auto &user : users) {
         if (userId == std::to_string(user.id)) {
-            return user.isActive;
             if (!user.isActive) {
                 ZLOGD("the store is not in active user");
                 return false;

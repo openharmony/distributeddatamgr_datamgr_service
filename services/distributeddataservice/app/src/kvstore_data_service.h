@@ -17,20 +17,22 @@
 #define KVSTORE_DATASERVICE_H
 
 #include <map>
-#include <set>
 #include <mutex>
-#include "constant.h"
-#include "ikvstore_data_service.h"
-#include "kvstore_impl.h"
-#include "kvstore_user_manager.h"
-#include "single_kvstore_impl.h"
-#include "system_ability.h"
-#include "reporter.h"
-#include "types.h"
+#include <set>
+
 #include "account_delegate.h"
 #include "backup_handler.h"
+#include "constant.h"
 #include "device_change_listener_impl.h"
+#include "ikvstore_data_service.h"
+#include "kvstore_device_listener.h"
+#include "kvstore_impl.h"
+#include "kvstore_user_manager.h"
+#include "reporter.h"
 #include "security/security.h"
+#include "single_kvstore_impl.h"
+#include "system_ability.h"
+#include "types.h"
 
 namespace OHOS::DistributedRdb {
 class IRdbService;
@@ -41,8 +43,7 @@ namespace OHOS::DistributedKv {
 class KvStoreAccountObserver;
 class KvStoreDataService
     : public SystemAbility
-    , public KvStoreDataServiceStub
-    , public AppDistributedKv::AppDeviceStatusChangeListener {
+    , public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
 
 public:
@@ -89,6 +90,8 @@ public:
 
     void AccountEventChanged(const AccountEventInfo &eventInfo);
 
+    void SetCompatibleIdentify(const AppDistributedKv::DeviceInfo &info) const;
+
     bool CheckBackupFileExist(const std::string &userId, const std::string &bundleName,
                               const std::string &storeId, int pathType);
 
@@ -108,6 +111,7 @@ public:
         Status alreadyCreated = Status::SUCCESS;
         bool outdated = false;
     };
+
 private:
     class KvStoreClientDeathObserverImpl {
     public:
@@ -172,11 +176,8 @@ private:
     bool CheckSyncActivation(const std::string &userId, const std::string &appId, const std::string &storeId);
 
     bool CheckOptions(const Options &options, const std::vector<uint8_t> &metaKey) const;
-    void OnDeviceChanged(
-            const AppDistributedKv::DeviceInfo &info, const AppDistributedKv::DeviceChangeType &type) const override;
     void CreateRdbService();
     bool IsStoreOpened(const std::string &userId, const std::string &appId, const std::string &storeId);
-
     static constexpr int TEN_SEC = 10;
 
     std::mutex accountMutex_;
@@ -191,6 +192,7 @@ private:
 
     std::shared_ptr<Security> security_;
     sptr<DistributedRdb::RdbServiceImpl> rdbService_;
+    std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
 };
 
 class DbMetaCallbackDelegateMgr : public DbMetaCallbackDelegate {
