@@ -21,10 +21,5 @@ KvStoreClientDeathObserverProxy::KvStoreClientDeathObserverProxy(const sptr<IRem
     : IRemoteProxy<IKvStoreClientDeathObserver>(impl)
 {}
 
-int32_t KvStoreClientDeathObserverStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                                        MessageParcel &reply, MessageOption &option)
-{
-    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
-}
 }  // namespace DistributedKv
 }  // namespace OHOS

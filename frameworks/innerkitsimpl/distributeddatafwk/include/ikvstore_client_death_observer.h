@@ -30,8 +30,7 @@ public:
 
 class KvStoreClientDeathObserverStub : public IRemoteStub<IKvStoreClientDeathObserver> {
 public:
-    virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option) override;
+
 };
 
 class KvStoreClientDeathObserverProxy : public IRemoteProxy<IKvStoreClientDeathObserver> {
