@@ -30,7 +30,7 @@ void KvStoreThreadPoolImpl::Start()
     ZLOGI("start");
     running = true;
     for (int i = 0; i < threadNum; i++) {
-        threadList.push_back(KvStoreThread(this));
+        threadList.emplace_back(this);
     }
 }
 

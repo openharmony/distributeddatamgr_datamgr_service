@@ -294,7 +294,7 @@ std::string SoftBusAdapter::GetUuidByNodeId(const std::string &nodeId) const
 {
     char uuid[ID_BUF_LEN] = {0};
     int32_t ret = GetNodeKeyInfo("ohos.distributeddata", nodeId.c_str(),
-        NodeDeivceInfoKey::NODE_KEY_UUID, reinterpret_cast<uint8_t *>(uuid), ID_BUF_LEN);
+        NodeDeviceInfoKey::NODE_KEY_UUID, reinterpret_cast<uint8_t *>(uuid), ID_BUF_LEN);
     if (ret != SOFTBUS_OK) {
         ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", ToBeAnonymous(nodeId).c_str());
         return "";
