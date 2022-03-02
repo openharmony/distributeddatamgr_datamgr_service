@@ -771,6 +771,7 @@ void SyncEngine::SetEqualIdentifier()
 
 void SyncEngine::SetEqualIdentifierMap(const std::string &identifier, const std::vector<std::string> &targets)
 {
+    equalIdentifierMap_.clear();
     for (auto &device : targets) {
         equalIdentifierMap_[device] = identifier;
     }
