@@ -51,4 +51,6 @@ ohos_static_library("distributeddata_permission_static") {
     "ipc:ipc_core",
     "samgr_standard:samgr_proxy",
   ]
+  subsystem_name = "distributeddatamgr"
+  part_name = "distributeddatamgr"
 }

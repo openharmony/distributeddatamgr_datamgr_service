@@ -38,4 +38,6 @@ ohos_static_library("distributeddata_broadcaster_static") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
+  subsystem_name = "distributeddatamgr"
+  part_name = "distributeddatamgr"
 }

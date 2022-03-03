@@ -50,4 +50,6 @@ ohos_static_library("distributeddata_dfx_static") {
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
   ]
+  subsystem_name = "distributeddatamgr"
+  part_name = "distributeddatamgr"
 }

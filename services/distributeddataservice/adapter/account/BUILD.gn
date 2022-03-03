@@ -51,4 +51,6 @@ ohos_static_library("distributeddata_account_static") {
     "ipc:ipc_core",
     "os_account_standard:libaccountkits",
   ]
+  subsystem_name = "distributeddatamgr"
+  part_name = "distributeddatamgr"
 }

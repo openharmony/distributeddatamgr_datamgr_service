@@ -50,4 +50,6 @@ ohos_static_library("distributeddata_uninstaller_static") {
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
+  subsystem_name = "distributeddatamgr"
+  part_name = "distributeddatamgr"
 }
