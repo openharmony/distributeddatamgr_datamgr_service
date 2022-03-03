@@ -737,9 +737,9 @@ Status KvStoreDataService::AppExit(const AppId &appId, pid_t uid)
         ZLOGI("map size: %zu.", clientDeathObserverMap_.size());
     }
 
-    std::string trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, uid);
+    std::string trueAppId = CheckerManager::GetInstance().GetAppId(appIdTmp.appId, uid);
     if (trueAppId.empty()) {
-        ZLOGW("check appId:%{public}s uid:%{public}d failed.", appId.appId.c_str(), uid);
+        ZLOGW("check appId:%{public}s uid:%{public}d failed.", appIdTmp.appId.c_str(), uid);
         return Status::PERMISSION_DENIED;
     }
     const std::string userId = AccountDelegate::GetInstance()->GetCurrentAccountId(appIdTmp.appId);
