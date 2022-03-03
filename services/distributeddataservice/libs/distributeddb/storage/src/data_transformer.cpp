@@ -262,7 +262,7 @@ int DeSerializeTextValue(DataValue &dataValue, Parcel &parcel)
 int SerializeDataValue(const DataValue &dataValue, Parcel &parcel)
 {
     static const std::function<int(const DataValue&, Parcel&)> funcs[] = {
-        SerializeNullValue, SerializeBoolValue, SerializeIntValue,
+        SerializeNullValue, SerializeIntValue,
         SerializeDoubleValue, SerializeTextValue, SerializeBlobValue,
     };
     StorageType type = dataValue.GetType();
@@ -277,7 +277,7 @@ int SerializeDataValue(const DataValue &dataValue, Parcel &parcel)
 int DeserializeDataValue(DataValue &dataValue, Parcel &parcel)
 {
     static const std::function<int(DataValue&, Parcel&)> funcs[] = {
-        DeSerializeNullValue, DeSerializeBoolValue, DeSerializeIntValue,
+        DeSerializeNullValue, DeSerializeIntValue,
         DeSerializeDoubleValue, DeSerializeTextValue, DeSerializeBlobValue,
     };
     uint32_t type = 0;
