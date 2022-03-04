@@ -81,9 +81,9 @@ void SyncAbleKvDB::Close()
 int SyncAbleKvDB::Sync(const ISyncer::SyncParma &parma)
 {
     if (!started_) {
-        StartSyncer();
+        int errCode = StartSyncer();
         if (!started_) {
-            return -E_NOT_INIT;
+            return errCode;
         }
     }
     return syncer_.Sync(parma);
@@ -149,19 +149,20 @@ void SyncAbleKvDB::ReSetSyncModuleActive()
 }
 
 // Start syncer
-void SyncAbleKvDB::StartSyncer(bool isCheckSyncActive, bool isNeedActive)
+int SyncAbleKvDB::StartSyncer(bool isCheckSyncActive, bool isNeedActive)
 {
     std::unique_lock<std::mutex> lock(syncerOperateLock_);
-    StartSyncerWithNoLock(isCheckSyncActive, isNeedActive);
+    int errCode = StartSyncerWithNoLock(isCheckSyncActive, isNeedActive);
     closed_ = false;
+    return errCode;
 }
 
-void SyncAbleKvDB::StartSyncerWithNoLock(bool isCheckSyncActive, bool isNeedActive)
+int SyncAbleKvDB::StartSyncerWithNoLock(bool isCheckSyncActive, bool isNeedActive)
 {
     IKvDBSyncInterface *syncInterface = GetSyncInterface();
     if (syncInterface == nullptr) {
         LOGF("KvDB got null sync interface.");
-        return;
+        return -E_INVALID_ARGS;
     }
     if (!isCheckSyncActive) {
         SetSyncModuleActive();
@@ -185,6 +186,7 @@ void SyncAbleKvDB::StartSyncerWithNoLock(bool isCheckSyncActive, bool isNeedActi
         userChangeListerner_ = RuntimeContext::GetInstance()->RegisterUserChangedListerner(
             std::bind(&SyncAbleKvDB::UserChangeHandle, this), event);
     }
+    return errCode;
 }
 
 // Stop syncer
