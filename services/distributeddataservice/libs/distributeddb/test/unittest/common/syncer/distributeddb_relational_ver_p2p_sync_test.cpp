@@ -1005,7 +1005,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AbilitySync003, TestSize.Level1)
         ASSERT_NE(db, nullptr);
         std::string alterSql = "ALTER TABLE " + g_tableName + " ADD COLUMN NEW_COLUMN TEXT DEFAULT 'DEFAULT_TEXT'";
         EXPECT_EQ(sqlite3_exec(db, alterSql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
-
+        EXPECT_EQ(sqlite3_close(db), SQLITE_OK);
         EXPECT_EQ(g_rdbDelegatePtr->CreateDistributedTable(g_tableName), OK);
     });
 
