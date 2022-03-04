@@ -72,7 +72,6 @@ DBStatus ProcessSystemApiAdapterImpl::SetSecurityOption(const std::string &fileP
     if (dirPtr == nullptr) {
         LOGD("set path secOpt![%s] [%d] [%d]", filePath.c_str(), option.securityFlag, option.securityLabel);
         pathSecOptDic_[filePath] = option;
-        closedir(dirPtr);
         return OK;
     }
 
