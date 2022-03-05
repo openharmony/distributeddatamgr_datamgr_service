@@ -431,7 +431,7 @@ static int BindDataValueByType(sqlite3_stmt *statement, const std::optional<Data
 
 static int GetLogData(sqlite3_stmt *logStatement, LogInfo &logInfo)
 {
-    logInfo.dataKey = sqlite3_column_int(logStatement, 0);  // 0 means dataKey index
+    logInfo.dataKey = sqlite3_column_int64(logStatement, 0);  // 0 means dataKey index
 
     std::vector<uint8_t> dev;
     int errCode = SQLiteUtils::GetColumnBlobValue(logStatement, 1, dev);  // 1 means dev index
@@ -748,9 +748,8 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const DataItem &d
         return DeleteSyncDataItem(dataItem, rmDataStmt);
     }
 
-    std::vector<int> indexMapping;
     OptRowDataWithLog data;
-    int errCode = DataTransformer::DeSerializeDataItem(dataItem, data, fieldInfos, indexMapping);
+    int errCode = DataTransformer::DeSerializeDataItem(dataItem, data, fieldInfos);
     if (errCode != E_OK) {
         LOGE("[RelationalStorageExecutor] DeSerialize dataItem failed! errCode = [%d]", errCode);
         return errCode;

@@ -13,10 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef SCHEMA_H
-#define SCHEMA_H
+#ifndef I_SCHEMA_H
+#define I_SCHEMA_H
 
 #include <string>
+
+#include "db_types.h"
 
 namespace DistributedDB {
 // SchemaType::NONE represent for KV database which do not have schema. Only invalid SchemaObject is NONE type.
@@ -69,4 +71,4 @@ public:
     virtual std::string ToSchemaString() const = 0;
 };
 }
-#endif // SCHEMA_H
+#endif // I_SCHEMA_H

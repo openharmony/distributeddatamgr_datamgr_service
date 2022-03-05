@@ -594,7 +594,7 @@ int SQLiteUtils::CheckIntegrity(sqlite3 *db, const std::string &sql)
 namespace { // anonymous namespace for schema analysis
 int AnalysisSchemaSqlAndTrigger(sqlite3 *db, const std::string &tableName, TableInfo &table)
 {
-    std::string sql = "select type, name, tbl_name, rootpage, sql from sqlite_master where tbl_name = ?";
+    std::string sql = "select type, sql from sqlite_master where tbl_name = ?";
     sqlite3_stmt *statement = nullptr;
     int errCode = SQLiteUtils::GetStatement(db, sql, statement);
     if (errCode != E_OK) {
@@ -620,7 +620,7 @@ int AnalysisSchemaSqlAndTrigger(sqlite3 *db, const std::string &tableName, Table
             (void) SQLiteUtils::GetColumnTextValue(statement, 0, type);
             if (type == "table") {
                 std::string createTableSql;
-                (void) SQLiteUtils::GetColumnTextValue(statement, 4, createTableSql);  // 4 means create table sql
+                (void) SQLiteUtils::GetColumnTextValue(statement, 1, createTableSql); // 1 means create table sql
                 table.SetCreateTableSql(createTableSql);
             }
         } else {
@@ -929,13 +929,13 @@ int SQLiteUtils::GetJournalMode(sqlite3 *db, std::string &mode)
 
     std::string sql = "PRAGMA journal_mode;";
     sqlite3_stmt *statement = nullptr;
-    int errCode = sqlite3_prepare(db, sql.c_str(), -1, &statement, nullptr);
+    int errCode = SQLiteUtils::GetStatement(db, sql, statement);
     if (errCode != SQLITE_OK || statement == nullptr) {
         errCode = SQLiteUtils::MapSQLiteErrno(errCode);
         return errCode;
     }
 
-    if (sqlite3_step(statement) == SQLITE_ROW) {
+    if (SQLiteUtils::StepWithRetry(statement) == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
         errCode = SQLiteUtils::GetColumnTextValue(statement, 0, mode);
     } else {
         LOGE("[SqlUtil][GetJournal] Get db journal_mode failed.");
