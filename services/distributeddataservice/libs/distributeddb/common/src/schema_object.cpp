@@ -746,7 +746,7 @@ int SchemaObject::ParseCheckSchemaSkipSize(const JsonObject& inJsonObject)
     }
     // The type of SCHEMA_SKIPSIZE field has been checked in CheckMetaFieldCountAndType to be an INTEGER
     FieldValue skipSizeValue;
-    int errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath{SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE},
+    int errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath {SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE},
         skipSizeValue);
     if (errCode != E_OK) {
         return -E_INTERNAL_ERROR;

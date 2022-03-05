@@ -163,7 +163,7 @@ HWTEST_F(DistributedDBMultiVerVacuumTest, SingleTaskNormalStatusSwitch002, TestS
 {
     // Preset
     MultiVerVacuum vacuum;
-    MultiVerVacuumExecutorStub databaseB(DbScale{1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
+    MultiVerVacuumExecutorStub databaseB(DbScale {1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
 
     /**
      * @tc.steps: step1. launch dbTaskB for databaseB, then wait for some time
@@ -230,7 +230,7 @@ HWTEST_F(DistributedDBMultiVerVacuumTest, SingleTaskNormalStatusSwitch003, TestS
 {
     // Preset
     MultiVerVacuum vacuum;
-    MultiVerVacuumExecutorStub databaseC(DbScale{1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
+    MultiVerVacuumExecutorStub databaseC(DbScale {1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
 
     /**
      * @tc.steps: step1. launch dbTaskC for databaseC, then wait for some time
@@ -296,7 +296,7 @@ HWTEST_F(DistributedDBMultiVerVacuumTest, SingleTaskNormalStatusSwitch004, TestS
 {
     // Preset
     MultiVerVacuum vacuum;
-    MultiVerVacuumExecutorStub databaseA(DbScale{1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
+    MultiVerVacuumExecutorStub databaseA(DbScale {1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
 
     /**
      * @tc.steps: step1. launch dbTaskA for databaseA, then wait for some time
@@ -354,7 +354,7 @@ HWTEST_F(DistributedDBMultiVerVacuumTest, SingleTaskAbnormalStatusSwitch001, Tes
 {
     // Preset
     MultiVerVacuum vacuum;
-    MultiVerVacuumExecutorStub databaseB(DbScale{1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
+    MultiVerVacuumExecutorStub databaseB(DbScale {1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
 
     /**
      * @tc.steps: step1. launch dbTaskB for databaseB
@@ -549,7 +549,7 @@ HWTEST_F(DistributedDBMultiVerVacuumTest, SingleTaskWriteHandleOccupy001, TestSi
 {
     // Preset
     MultiVerVacuum vacuum;
-    MultiVerVacuumExecutorStub databaseA(DbScale{1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
+    MultiVerVacuumExecutorStub databaseA(DbScale {1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
 
     /**
      * @tc.steps: step1. launch dbTaskA for databaseA
@@ -609,8 +609,8 @@ HWTEST_F(DistributedDBMultiVerVacuumTest, MultipleTaskNormalStatusSwitch001, Tes
 {
     // Preset
     MultiVerVacuum vacuum;
-    MultiVerVacuumExecutorStub databaseA(DbScale{1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
-    MultiVerVacuumExecutorStub databaseB(DbScale{1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
+    MultiVerVacuumExecutorStub databaseA(DbScale {1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
+    MultiVerVacuumExecutorStub databaseB(DbScale {1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
 
     /**
      * @tc.steps: step1. launch dbTaskA for databaseA and dbTaskB for databaseB
@@ -680,9 +680,9 @@ HWTEST_F(DistributedDBMultiVerVacuumTest, MultipleTaskNormalStatusSwitch002, Tes
 {
     // Preset
     MultiVerVacuum vacuum;
-    MultiVerVacuumExecutorStub databaseA(DbScale{1, 1, 1, 1}, 30); // 1 For Scale, 30 For TimeCost, 330ms in Total
-    MultiVerVacuumExecutorStub databaseB(DbScale{1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
-    MultiVerVacuumExecutorStub databaseC(DbScale{1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
+    MultiVerVacuumExecutorStub databaseA(DbScale {1, 1, 1, 1}, 30); // 1 For Scale, 30 For TimeCost, 330ms in Total
+    MultiVerVacuumExecutorStub databaseB(DbScale {1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
+    MultiVerVacuumExecutorStub databaseC(DbScale {1, 1, 2, 2}, 100); // 1, 2 For Scale, 100 For TimeCost, 1.7s in Total
 
     /**
      * @tc.steps: step1. launch dbTaskA,B,C for databaseA,B,C and wait dbTaskA,B FINISH

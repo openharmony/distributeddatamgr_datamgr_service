@@ -512,7 +512,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, ReliableOnline001, TestSize.Level2)
 {
     // Preset
     ClearPreviousTestCaseInfluence();
-    std::atomic<int> count{0};
+    std::atomic<int> count {0};
     OnConnectCallback callback = [&count](const std::string &target, bool isConnect) {
         if (isConnect) {
             count.fetch_add(1, std::memory_order_seq_cst);
