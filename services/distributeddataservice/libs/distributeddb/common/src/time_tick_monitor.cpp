@@ -116,8 +116,8 @@ int TimeTickMonitor::TimeTick(TimerId timerId)
 
     uint64_t monotonicTime = GetMonotonicTime();
     uint64_t systemTime = GetSysCurrentTime();
-    int64_t monotonicOffset = monotonicTime - lastMonotonicTime_;
-    int64_t systemOffset = systemTime - lastSystemTime_;
+    int64_t monotonicOffset = static_cast<int64_t>(monotonicTime - lastMonotonicTime_);
+    int64_t systemOffset = static_cast<int64_t>(systemTime - lastSystemTime_);
     lastMonotonicTime_ = monotonicTime;
     lastSystemTime_ = systemTime;
     int64_t changedOffset = systemOffset - monotonicOffset;

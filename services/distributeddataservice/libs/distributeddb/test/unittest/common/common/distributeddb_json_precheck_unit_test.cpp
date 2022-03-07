@@ -101,7 +101,9 @@ HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseValidString001, TestSize.Level1
      * @tc.steps: step1. Check legal json string with nesting depth of 12.
      * @tc.expected: step1. return value = 12.
      */
-    int stepOne = JsonObject::CalculateNestDepth(JSON_STRING1);
+    int errCode = E_OK;
+    int stepOne = JsonObject::CalculateNestDepth(JSON_STRING1, errCode);
+    EXPECT_TRUE(errCode == E_OK);
     EXPECT_TRUE(stepOne == STRING1_DEPTH);
 
     /**
@@ -126,7 +128,9 @@ HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseValidString002, TestSize.Level1
      * @tc.steps: step1. Check legal json string with nesting depth of 6.
      * @tc.expected: step1. return value = 6.
      */
-    int stepOne = JsonObject::CalculateNestDepth(JSON_STRING3);
+    int errCode = E_OK;
+    int stepOne = JsonObject::CalculateNestDepth(JSON_STRING3, errCode);
+    EXPECT_TRUE(errCode == E_OK);
     EXPECT_TRUE(stepOne == STRING3_DEPTH);
 
     /**
@@ -187,7 +191,9 @@ HWTEST_F(DistributedDBJsonPrecheckUnitTest, ParseInvalidString003, TestSize.Leve
      * @tc.steps: step1. Detect illegal json string with nesting depth greater than 10.
      * @tc.expected: step1. return value > 10.
      */
-    int stepOne = JsonObject::CalculateNestDepth(JSON_STRING5);
+    int errCode = E_OK;
+    int stepOne = JsonObject::CalculateNestDepth(JSON_STRING5, errCode);
+    EXPECT_TRUE(errCode == E_OK);
     EXPECT_TRUE(stepOne > MAX_DEPTH_FOR_TEST);
 
     /**

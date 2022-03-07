@@ -41,17 +41,18 @@ uint32_t JsonObject::SetMaxNestDepth(uint32_t nestDepth)
     return preValue;
 }
 
-uint32_t JsonObject::CalculateNestDepth(const std::string &inString)
+uint32_t JsonObject::CalculateNestDepth(const std::string &inString, int &errCode)
 {
     auto begin = reinterpret_cast<const uint8_t *>(inString.c_str());
     auto end = begin + inString.size();
-    return CalculateNestDepth(begin, end);
+    return CalculateNestDepth(begin, end, errCode);
 }
 
-uint32_t JsonObject::CalculateNestDepth(const uint8_t *dataBegin, const uint8_t *dataEnd)
+uint32_t JsonObject::CalculateNestDepth(const uint8_t *dataBegin, const uint8_t *dataEnd, int &errCode)
 {
     if (dataBegin == nullptr || dataEnd == nullptr || dataBegin >= dataEnd) {
-        return -E_INVALID_ARGS;
+        errCode = -E_INVALID_ARGS;
+        return maxNestDepth_ + 1; // return a invalid depth
     }
     bool isInString = false;
     uint32_t maxDepth = 0;
@@ -111,9 +112,11 @@ int JsonObject::Parse(const std::string &inString)
         LOGE("[Json][Parse] Already Valid.");
         return -E_NOT_PERMIT;
     }
-    uint32_t nestDepth = CalculateNestDepth(inString);
-    if (nestDepth > maxNestDepth_) {
-        LOGE("[Json][Parse] Json nest depth=%u exceed max allowed=%u.", nestDepth, maxNestDepth_);
+    int errCode = E_OK;
+    uint32_t nestDepth = CalculateNestDepth(inString, errCode);
+    if (errCode != E_OK || nestDepth > maxNestDepth_) {
+        LOGE("[Json][Parse] Json calculate nest depth failed %d, depth=%u exceed max allowed=%u.", errCode, nestDepth,
+            maxNestDepth_);
         return -E_JSON_PARSE_FAIL;
     }
 #ifdef JSONCPP_USE_BUILDER
@@ -165,9 +168,11 @@ int JsonObject::Parse(const uint8_t *dataBegin, const uint8_t *dataEnd)
     if (dataBegin == nullptr || dataEnd == nullptr || dataBegin >= dataEnd) {
         return -E_INVALID_ARGS;
     }
-    uint32_t nestDepth = CalculateNestDepth(dataBegin, dataEnd);
-    if (nestDepth > maxNestDepth_) {
-        LOGE("[Json][Parse] Json nest depth=%u exceed max allowed=%u.", nestDepth, maxNestDepth_);
+    int errCode = E_OK;
+    uint32_t nestDepth = CalculateNestDepth(dataBegin, dataEnd, errCode);
+    if (errCode != E_OK || nestDepth > maxNestDepth_) {
+        LOGE("[Json][Parse] Json calculate nest depth failed %d, depth=%u exceed max allowed=%u.", errCode, nestDepth,
+            maxNestDepth_);
         return -E_JSON_PARSE_FAIL;
     }
 #ifdef JSONCPP_USE_BUILDER
@@ -784,12 +789,12 @@ uint32_t JsonObject::SetMaxNestDepth(uint32_t nestDepth)
     return 0;
 }
 
-uint32_t JsonObject::CalculateNestDepth(const std::string &inString)
+uint32_t JsonObject::CalculateNestDepth(const std::string &inString, int &errCode)
 {
     return 0;
 }
 
-uint32_t JsonObject::CalculateNestDepth(const uint8_t *dataBegin, const uint8_t *dataEnd)
+uint32_t JsonObject::CalculateNestDepth(const uint8_t *dataBegin, const uint8_t *dataEnd, int &errCode)
 {
     return 0;
 }
