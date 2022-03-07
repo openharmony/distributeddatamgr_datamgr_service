@@ -419,13 +419,13 @@ HWTEST_F(AppDistributedKvStoreTest, AppKvstorePut007, TestSize.Level1)
     status = appKvStorePtr->Get(localRead, Key("teacher_name_wanger"), ret);
     EXPECT_EQ(status, Status::SUCCESS);
     ASSERT_EQ(ret.Size(), val.size());
-    for(unsigned long i = 0; i < ret.Size(); i++) {
+    for (unsigned long i = 0; i < ret.Size(); i++) {
         EXPECT_EQ(ret.Data()[i], val[i]);
     }
     status = appKvStorePtr->Get(syncRead, Key("teacher_name_wanger"), ret);
     EXPECT_EQ(status, Status::SUCCESS);
     ASSERT_EQ(ret.Size(), val.size());
-    for(unsigned long i = 0; i < ret.Size(); i++) {
+    for (unsigned long i = 0; i < ret.Size(); i++) {
         EXPECT_EQ(ret.Data()[i], val[i]);
     }
 

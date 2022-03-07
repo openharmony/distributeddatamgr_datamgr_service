@@ -282,11 +282,12 @@ bool BackupHandler::MultiKvStoreRecover(MetaData &metaData,
     }
 
     std::string backupName = Constant::Concatenate(
-            {metaData.kvStoreMetaData.userId, "_", metaData.kvStoreMetaData.appId, "_",
-             metaData.kvStoreMetaData.storeId});
-    auto backupFullName = Constant::Concatenate(
-            {BackupHandler::GetBackupPath(metaData.kvStoreMetaData.deviceAccountId, pathType), "/",
-             GetHashedBackupName(backupName)});
+        {metaData.kvStoreMetaData.userId, "_", metaData.kvStoreMetaData.appId, "_",
+         metaData.kvStoreMetaData.storeId});
+    auto backupFullName = Constant::Concatenate({
+        BackupHandler::GetBackupPath(metaData.kvStoreMetaData.deviceAccountId, pathType), "/",
+        GetHashedBackupName(backupName)
+    });
     DistributedDB::DBStatus dbStatus = delegate->Import(backupFullName, password);
     if (dbStatus == DistributedDB::DBStatus::OK) {
         ZLOGI("MultiKvStoreRecover success.");
