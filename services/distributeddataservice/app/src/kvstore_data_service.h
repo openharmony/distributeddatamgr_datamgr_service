@@ -167,6 +167,8 @@ private:
     bool CheckOptions(const Options &options, const std::vector<uint8_t> &metaKey) const;
     
     void CreateRdbService();
+    static Status FillStoreParam(
+        const Options &options, const AppId &appId, const StoreId &storeId, KvStoreParam &param);
 
     static constexpr int TEN_SEC = 10;
 
