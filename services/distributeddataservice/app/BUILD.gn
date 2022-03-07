@@ -12,6 +12,8 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//build/ohos_var.gni")
+import(
+    "//foundation/distributeddatamgr/distributeddatamgr/distributeddatamgr.gni")
 
 group("build_module") {
   deps = [ ":distributeddataservice" ]
@@ -135,7 +137,6 @@ ohos_shared_library("distributeddataservice") {
   external_deps = [
     "ability_base:base",
     "ability_base:want",
-    "battery_manager_native:batterysrv_client",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "dataclassification:data_transit_mgr",
@@ -144,11 +145,18 @@ ohos_shared_library("distributeddataservice") {
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
     "permission_standard:libpermissionsdk_standard",
-    "power_manager_native:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
     "startup_l2:syspara",
   ]
+
+  if (distributeddatamgr_power) {
+    external_deps += [
+      "battery_manager_native:batterysrv_client",
+      "power_manager_native:powermgr_client",
+    ]
+    defines = [ "SUPPORT_POWER" ]
+  }
 
   subsystem_name = "distributeddatamgr"
 }

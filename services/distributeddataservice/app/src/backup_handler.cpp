@@ -21,15 +21,17 @@
 #include <unistd.h>
 #include <nlohmann/json.hpp>
 #include "account_delegate.h"
+#ifdef SUPPORT_POWER
 #include "battery_info.h"
 #include "battery_srv_client.h"
+#include "power_mgr_client.h"
+#endif
 #include "constant.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_scheduler.h"
 #include "kvstore_data_service.h"
 #include "log_print.h"
 #include "kvstore_meta_manager.h"
-#include "power_mgr_client.h"
 #include "time_utils.h"
 #include "utils/crypto.h"
 
@@ -366,6 +368,7 @@ bool BackupHandler::FileExists(const std::string &path)
 
 bool BackupHandler::CheckNeedBackup()
 {
+#ifdef SUPPORT_POWER
     auto &batterySrvClient = PowerMgr::BatterySrvClient::GetInstance();
     auto chargingStatus = batterySrvClient.GetChargingStatus();
     if (chargingStatus != PowerMgr::BatteryChargeState::CHARGE_STATE_ENABLE) {
@@ -391,6 +394,7 @@ bool BackupHandler::CheckNeedBackup()
         ZLOGE("no more than 10 hours since the last backup success.");
         return false;
     }
+#endif
     return true;
 }
 

@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import("//build/test.gni")
+import(
+    "//foundation/distributeddatamgr/distributeddatamgr/distributeddatamgr.gni")
 
 module_output_path = "distributeddatamgr/distributeddataservice"
 
@@ -44,8 +46,12 @@ config("module_private_config") {
     "../src/flowctrl_manager",
     "../../../../interfaces/innerkits/distributeddata",
     "//third_party/json/single_include",
-    "//base/powermgr/power_manager/interfaces/innerkits/native/include",
   ]
+
+  if (distributeddatamgr_power) {
+    include_dirs +=
+        [ "//base/powermgr/power_manager/interfaces/innerkits/native/include" ]
+  }
 }
 
 ohos_unittest("KvStoreImplLogicalIsolationTest") {
@@ -82,17 +88,22 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
-    "battery_manager_native:batterysrv_client",
     "dataclassification:data_transit_mgr",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
     "permission_standard:libpermissionsdk_standard",
-    "power_manager_native:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
+
+  if (distributeddatamgr_power) {
+    external_deps += [
+      "battery_manager_native:batterysrv_client",
+      "power_manager_native:powermgr_client",
+    ]
+  }
 
   kv_sources = [ "../../service/kv/user_delegate.cpp" ]
 
@@ -153,17 +164,22 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
-    "battery_manager_native:batterysrv_client",
     "dataclassification:data_transit_mgr",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
     "permission_standard:libpermissionsdk_standard",
-    "power_manager_native:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
+
+  if (distributeddatamgr_power) {
+    external_deps += [
+      "battery_manager_native:batterysrv_client",
+      "power_manager_native:powermgr_client",
+    ]
+  }
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -220,17 +236,22 @@ ohos_unittest("KvStoreDataServiceTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
-    "battery_manager_native:batterysrv_client",
     "dataclassification:data_transit_mgr",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
     "permission_standard:libpermissionsdk_standard",
-    "power_manager_native:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
+
+  if (distributeddatamgr_power) {
+    external_deps += [
+      "battery_manager_native:batterysrv_client",
+      "power_manager_native:powermgr_client",
+    ]
+  }
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -288,17 +309,22 @@ ohos_unittest("KvStoreBackupTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
-    "battery_manager_native:batterysrv_client",
     "dataclassification:data_transit_mgr",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
     "permission_standard:libpermissionsdk_standard",
-    "power_manager_native:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
+
+  if (distributeddatamgr_power) {
+    external_deps += [
+      "battery_manager_native:batterysrv_client",
+      "power_manager_native:powermgr_client",
+    ]
+  }
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -328,17 +354,22 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
-    "battery_manager_native:batterysrv_client",
     "dataclassification:data_transit_mgr",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
     "permission_standard:libpermissionsdk_standard",
-    "power_manager_native:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
+
+  if (distributeddatamgr_power) {
+    external_deps += [
+      "battery_manager_native:batterysrv_client",
+      "power_manager_native:powermgr_client",
+    ]
+  }
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -387,17 +418,22 @@ ohos_unittest("KvStoreSyncManagerTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
-    "battery_manager_native:batterysrv_client",
     "dataclassification:data_transit_mgr",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
     "permission_standard:libpermissionsdk_standard",
-    "power_manager_native:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
+
+  if (distributeddatamgr_power) {
+    external_deps += [
+      "battery_manager_native:batterysrv_client",
+      "power_manager_native:powermgr_client",
+    ]
+  }
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -473,17 +509,22 @@ ohos_unittest("KvStoreUninstallerTest") {
   external_deps = [
     "ability_base:base",
     "ability_base:want",
-    "battery_manager_native:batterysrv_client",
     "dataclassification:data_transit_mgr",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
     "permission_standard:libpermissionsdk_standard",
-    "power_manager_native:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
+
+  if (distributeddatamgr_power) {
+    external_deps += [
+      "battery_manager_native:batterysrv_client",
+      "power_manager_native:powermgr_client",
+    ]
+  }
 }
 
 ###############################################################################
