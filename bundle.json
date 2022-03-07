@@ -38,7 +38,10 @@
         "name": "distributeddatamgr",
         "subsystem": "distributeddatamgr",
         "syscap": [
-            "SystemCapability.Data.DATA_DISTRIBUTEDDATAMGR"
+            "SystemCapability.Data.DATA_DISTRIBUTEDDATAMGR",
+            "SystemCapability.DistributedDataManager.KVStore.Core",
+            "SystemCapability.DistributedDataManager.KVStore.Lite",
+            "SystemCapability.DistributedDataManager.KVStore.DistributedKVStore"
         ],
         "features": [],
         "adapted_system_type": [
