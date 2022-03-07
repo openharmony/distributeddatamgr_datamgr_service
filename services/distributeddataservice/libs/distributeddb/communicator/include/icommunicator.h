@@ -26,11 +26,13 @@
 namespace DistributedDB {
 // inMsg is heap memory, its ownership transfers by calling OnMessageCallback
 using OnMessageCallback = std::function<void(const std::string &srcTarget, Message *inMsg)>;
+constexpr uint32_t SEND_TIME_OUT = 3000; // 3s
+
 struct SendConfig {
-    bool nonBlock;
-    uint32_t timeout;
-    ExtendInfo paramInfo;
+    bool nonBlock = false;
     bool isNeedExtendHead = false;
+    uint32_t timeout = SEND_TIME_OUT;
+    ExtendInfo paramInfo;
 };
 
 class ICommunicator : public virtual RefObject {

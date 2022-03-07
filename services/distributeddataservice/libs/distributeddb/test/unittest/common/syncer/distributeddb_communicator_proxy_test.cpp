@@ -310,7 +310,7 @@ HWTEST_F(DistributedDBCommunicatorProxyTest, SendMessage001, TestSize.Level1)
      * @tc.steps: step1. Call SendMessage from CommProxy with param DEVICE_B.
      * @tc.expected: step1. MainComm's SendMessage willed called and return E_OK.
      */
-    SendConfig conf = {true, 0};
+    SendConfig conf = {true, false, 0};
     EXPECT_CALL(mainComm_, SendMessage(DEVICE_B, _, _, _)).WillOnce(Return(E_OK));
     EXPECT_EQ(commProxy_->SendMessage(DEVICE_B, nullptr, conf, nullptr), E_OK);
 
