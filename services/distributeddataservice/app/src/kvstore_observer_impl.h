@@ -23,7 +23,6 @@
 
 namespace OHOS {
 namespace DistributedKv {
-
 class KvStoreObserverImpl : public DistributedDB::KvStoreObserver {
 public:
     KvStoreObserverImpl(SubscribeType subscribeType, sptr<IKvStoreObserver> observerProxy);
@@ -40,7 +39,6 @@ private:
     SubscribeType subscribeType_;
     sptr<IKvStoreObserver> observerProxy_;
 };
-
 }  // namespace DistributedKv
 }  // namespace OHOS
 

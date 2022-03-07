@@ -799,9 +799,6 @@ HWTEST_F(DistributedKvDataManagerTest, GetDevice001, TestSize.Level1)
 
     std::vector<DeviceInfo> infos;
     status = manager.GetDeviceList(infos, DeviceFilterStrategy::FILTER);
-    // EXPECT_EQ(Status::SUCCESS, status) << "expected GetDeviceList true";
-    // EXPECT_TRUE(infos.size() == 0) << "expected GetDeviceList exist";
-
     auto listener = std::make_shared<DeviceListenerImpl>();
     status = manager.StartWatchDeviceChange(listener);
     EXPECT_EQ(Status::SUCCESS, status) << "expected StartWatchDeviceChange true";

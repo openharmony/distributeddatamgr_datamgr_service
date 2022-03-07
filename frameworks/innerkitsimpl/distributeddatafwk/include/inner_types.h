@@ -18,13 +18,11 @@
 
 namespace OHOS {
 namespace DistributedKv {
-
 enum class InnerStatus {
     SUCCESS = 0,
     DECREASE_REFCOUNT,
     ERROR,
 };
-
 }
 }
 #endif

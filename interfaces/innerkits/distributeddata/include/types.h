@@ -25,7 +25,6 @@
 
 namespace OHOS {
 namespace DistributedKv {
-
 // key set by client, can be any non-empty bytes array, and less than 1024 size.
 using Key = OHOS::DistributedKv::Blob;
 

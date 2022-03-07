@@ -25,7 +25,6 @@
 
 namespace OHOS {
 namespace DistributedKv {
-
 class KvStoreObserverClient : public KvStoreObserverStub {
 public:
     KvStoreObserverClient(const StoreId &storeId, SubscribeType subscribeType,

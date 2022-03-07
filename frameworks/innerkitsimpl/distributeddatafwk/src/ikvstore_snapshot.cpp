@@ -64,7 +64,6 @@ void KvStoreSnapshotImplProxy::GetEntries(const Key &prefixKey, const Key &nextK
     // buffer:  | status | entryLength | rawdatasize | (sptr<Key>)nextkey |
     // rawData: ( | keyLen | key | valueLen | value | ){entryLength}
     int32_t error = Remote()->SendRequest(GETENTRIES, data, reply, mo);
-
     if (error != 0) {
         ZLOGW("Transact failed");
         callback(Status::IPC_ERROR, entries, Key());
@@ -409,7 +408,6 @@ int32_t KvStoreSnapshotImplStub::GetKeysRemote(MessageParcel &data, MessageParce
         nxtKey = key;
     });
     int bufferSize = GetTotalkeysSize(keyList);
-
     if (bufferSize < Constant::SWITCH_RAW_DATA_SIZE) {
         return WritekeysParcelable(reply, statusTmp, keyList, bufferSize, nxtKey);
     }

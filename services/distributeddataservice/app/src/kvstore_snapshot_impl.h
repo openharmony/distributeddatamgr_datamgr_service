@@ -30,7 +30,6 @@
 
 namespace OHOS {
 namespace DistributedKv {
-
 class KvStoreSnapshotImpl : public KvStoreSnapshotImplStub {
 public:
     explicit KvStoreSnapshotImpl(DistributedDB::KvStoreSnapshotDelegate *kvStoreSnapshotDelegate,
@@ -79,7 +78,6 @@ private:
     void GetKeysFromDelegateLocked(const Key &prefixKey, const Key &nextKey,
                                    std::function<void(Status, std::vector<Key> &, const Key &)> callback);
 };
-
 }  // namespace DistributedKv
 }  // namespace OHOS
 

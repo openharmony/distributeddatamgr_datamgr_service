@@ -419,13 +419,13 @@ HWTEST_F(AppDistributedKvStoreTest, AppKvstorePut007, TestSize.Level1)
     status = appKvStorePtr->Get(localRead, Key("teacher_name_wanger"), ret);
     EXPECT_EQ(status, Status::SUCCESS);
     ASSERT_EQ(ret.Size(), val.size());
-    for(unsigned long i = 0; i < ret.Size(); i++) {
+    for (unsigned long i = 0; i < ret.Size(); i++) {
         EXPECT_EQ(ret.Data()[i], val[i]);
     }
     status = appKvStorePtr->Get(syncRead, Key("teacher_name_wanger"), ret);
     EXPECT_EQ(status, Status::SUCCESS);
     ASSERT_EQ(ret.Size(), val.size());
-    for(unsigned long i = 0; i < ret.Size(); i++) {
+    for (unsigned long i = 0; i < ret.Size(); i++) {
         EXPECT_EQ(ret.Data()[i], val[i]);
     }
 
@@ -582,8 +582,9 @@ HWTEST_F(AppDistributedKvStoreTest, AppKvstorePut011, TestSize.Level1)
 std::string Generate1025KeyLen()
 {
     // Generate key and the length is more than 1024;
+    constexpr int KEY_MAX_LENGTH = 1024;
     std::string str("prefix");
-    for (int i = 0; i < 1024; i++) {
+    for (int i = 0; i < KEY_MAX_LENGTH; i++) {
         str += "a";
     }
     return str;

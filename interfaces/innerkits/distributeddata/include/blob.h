@@ -104,7 +104,6 @@ public:
 private:
     std::vector<uint8_t> blob_;
 };
-
 }  // namespace DistributedKv
 }  // namespace OHOS
 

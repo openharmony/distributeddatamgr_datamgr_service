@@ -21,7 +21,6 @@
 
 namespace OHOS {
 namespace DistributedKv {
-
 class KvStoreDeathRecipientImpl {
 public:
     explicit KvStoreDeathRecipientImpl(std::shared_ptr<KvStoreDeathRecipient> kvStoreDeathRecipient);
@@ -31,7 +30,6 @@ private:
     std::shared_ptr<KvStoreDeathRecipient> kvStoreDeathRecipient_;
 friend struct KvStoreDeathRecipientImplCompare;
 };
-
 }  // namespace DistributedKv
 }  // namespace OHOS
 

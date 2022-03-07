@@ -23,7 +23,6 @@
 
 namespace OHOS {
 namespace DistributedKv {
-
 class KvStoreSyncCallbackClient : public KvStoreSyncCallbackStub {
 public:
     KvStoreSyncCallbackClient() = default;
