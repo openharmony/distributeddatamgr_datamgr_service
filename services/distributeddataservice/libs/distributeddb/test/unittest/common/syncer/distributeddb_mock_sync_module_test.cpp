@@ -419,7 +419,7 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AbilitySync003, TestSize.Level1)
     ASSERT_NE(context, nullptr);
     RelationalSyncStrategy strategy;
     const std::string tableName = "TEST";
-    strategy.AddSyncStrategy(tableName, {true, true, true});
+    strategy[tableName] = {true, true, true};
     context->SetRelationalSyncStrategy(strategy);
     QuerySyncObject query;
     query.SetTableName(tableName);
