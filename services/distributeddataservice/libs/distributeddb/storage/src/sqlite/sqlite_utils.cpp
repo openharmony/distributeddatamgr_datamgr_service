@@ -930,20 +930,19 @@ int SQLiteUtils::GetJournalMode(sqlite3 *db, std::string &mode)
     std::string sql = "PRAGMA journal_mode;";
     sqlite3_stmt *statement = nullptr;
     int errCode = SQLiteUtils::GetStatement(db, sql, statement);
-    if (errCode != SQLITE_OK || statement == nullptr) {
-        errCode = SQLiteUtils::MapSQLiteErrno(errCode);
+    if (errCode != E_OK || statement == nullptr) {
         return errCode;
     }
 
-    if (SQLiteUtils::StepWithRetry(statement) == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+    errCode = SQLiteUtils::StepWithRetry(statement);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
         errCode = SQLiteUtils::GetColumnTextValue(statement, 0, mode);
     } else {
         LOGE("[SqlUtil][GetJournal] Get db journal_mode failed.");
-        errCode = SQLiteUtils::MapSQLiteErrno(SQLITE_ERROR);
     }
 
     SQLiteUtils::ResetStatement(statement, true, errCode);
-    return E_OK;
+    return errCode;
 }
 
 int SQLiteUtils::SetUserVer(const OpenDbProperties &properties, int version)
