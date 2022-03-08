@@ -47,10 +47,10 @@ int DataTransformer::TransformDataItem(const std::vector<DataItem> &dataItems,
         return E_OK;
     }
     std::vector<int> indexMapping;
-    ReduceMapping(remoteFieldInfo, localFieldInfo, indexMapping);
+    ReduceMapping(remoteFieldInfo, localFieldInfo);
     for (const DataItem &dataItem : dataItems) {
         OptRowDataWithLog dataWithLog;
-        int errCode = DeSerializeDataItem(dataItem, dataWithLog, remoteFieldInfo, indexMapping);
+        int errCode = DeSerializeDataItem(dataItem, dataWithLog, remoteFieldInfo);
         if (errCode != E_OK) {
             return errCode;
         }
@@ -77,11 +77,10 @@ int DataTransformer::SerializeDataItem(const RowDataWithLog &data,
 }
 
 int DataTransformer::DeSerializeDataItem(const DataItem &dataItem, OptRowDataWithLog &data,
-    const std::vector<FieldInfo> &remoteFieldInfo, std::vector<int> &indexMapping)
+    const std::vector<FieldInfo> &remoteFieldInfo)
 {
-    int errCode;
     if ((dataItem.flag & DataItem::DELETE_FLAG) == 0) {
-        errCode = DeSerializeValue(dataItem.value, data.optionalData, remoteFieldInfo, indexMapping);
+        int errCode = DeSerializeValue(dataItem.value, data.optionalData, remoteFieldInfo);
         if (errCode != E_OK) {
             return errCode;
         }
@@ -126,19 +125,12 @@ uint32_t DataTransformer::CalDataValueLength(const DataValue &dataValue)
 }
 
 void DataTransformer::ReduceMapping(const std::vector<FieldInfo> &remoteFieldInfo,
-    const std::vector<FieldInfo> &localFieldInfo, std::vector<int> &indexMapping)
+    const std::vector<FieldInfo> &localFieldInfo)
 {
     std::map<std::string, int> fieldMap;
     for (int i = 0; i < static_cast<int>(remoteFieldInfo.size()); ++i) {
         const auto &fieldInfo = remoteFieldInfo[i];
         fieldMap[fieldInfo.GetFieldName()] = i;
-    }
-    for (const auto &fieldInfo : localFieldInfo) {
-        if (fieldMap.find(fieldInfo.GetFieldName()) == fieldMap.end()) {
-            indexMapping.push_back(-E_NOT_FOUND);
-            continue;
-        }
-        indexMapping.push_back(fieldMap[fieldInfo.GetFieldName()]);
     }
 }
 
@@ -262,7 +254,7 @@ int DeSerializeTextValue(DataValue &dataValue, Parcel &parcel)
 int SerializeDataValue(const DataValue &dataValue, Parcel &parcel)
 {
     static const std::function<int(const DataValue&, Parcel&)> funcs[] = {
-        SerializeNullValue, SerializeBoolValue, SerializeIntValue,
+        SerializeNullValue, SerializeIntValue,
         SerializeDoubleValue, SerializeTextValue, SerializeBlobValue,
     };
     StorageType type = dataValue.GetType();
@@ -277,7 +269,7 @@ int SerializeDataValue(const DataValue &dataValue, Parcel &parcel)
 int DeserializeDataValue(DataValue &dataValue, Parcel &parcel)
 {
     static const std::function<int(DataValue&, Parcel&)> funcs[] = {
-        DeSerializeNullValue, DeSerializeBoolValue, DeSerializeIntValue,
+        DeSerializeNullValue, DeSerializeIntValue,
         DeSerializeDoubleValue, DeSerializeTextValue, DeSerializeBlobValue,
     };
     uint32_t type = 0;
@@ -322,9 +314,8 @@ int DataTransformer::SerializeValue(Value &value, const RowData &rowData, const 
 }
 
 int DataTransformer::DeSerializeValue(const Value &value, OptRowData &optionalData,
-    const std::vector<FieldInfo> &remoteFieldInfo, std::vector<int> &indexMapping)
+    const std::vector<FieldInfo> &remoteFieldInfo)
 {
-    (void)indexMapping;
     Parcel parcel(const_cast<uint8_t *>(value.data()), value.size());
     uint64_t fieldCount = 0;
     (void)parcel.ReadUInt64(fieldCount);

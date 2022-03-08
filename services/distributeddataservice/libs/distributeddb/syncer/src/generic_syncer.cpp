@@ -122,7 +122,7 @@ int GenericSyncer::Initialize(ISyncInterface *syncInterface, bool isNeedActive)
     return E_OK;
 }
 
-int GenericSyncer::Close(bool isClosed)
+int GenericSyncer::Close(bool isClosedOperation)
 {
     {
         std::lock_guard<std::mutex> lock(syncerLock_);
@@ -139,7 +139,7 @@ int GenericSyncer::Close(bool isClosed)
         }
         closing_ = true;
     }
-    ClearSyncOperations(isClosed);
+    ClearSyncOperations(isClosedOperation);
     if (syncEngine_ != nullptr) {
         syncEngine_->Close();
         LOGD("[Syncer] Close SyncEngine!");
@@ -425,15 +425,15 @@ bool GenericSyncer::IsValidDevices(const std::vector<std::string> &devices) cons
     return true;
 }
 
-void GenericSyncer::ClearSyncOperations(bool isClosed)
+void GenericSyncer::ClearSyncOperations(bool isClosedOperation)
 {
     std::vector<SyncOperation *> syncOperation;
     {
         std::lock_guard<std::mutex> lock(operationMapLock_);
         for (auto &item : syncOperationMap_) {
             bool isBlockSync = item.second->IsBlockSync();
-            if (isBlockSync || !isClosed) {
-                int status = (!isClosed) ? SyncOperation::OP_USER_CHANGED : SyncOperation::OP_FAILED;
+            if (isBlockSync || !isClosedOperation) {
+                int status = (!isClosedOperation) ? SyncOperation::OP_USER_CHANGED : SyncOperation::OP_FAILED;
                 item.second->SetUnfinishedDevStatus(status);
                 RefObject::IncObjRef(item.second);
                 syncOperation.push_back(item.second);
@@ -459,7 +459,7 @@ void GenericSyncer::ClearSyncOperations(bool isClosed)
 
 void GenericSyncer::TriggerSyncFinished(SyncOperation *operation)
 {
-    if(operation != nullptr && operation->CheckIsAllFinished()) {
+    if (operation != nullptr && operation->CheckIsAllFinished()) {
         operation->Finished();
     }
 }

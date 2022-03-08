@@ -64,6 +64,9 @@ struct AutoLaunchItem {
 
 class AutoLaunch {
 public:
+    static int GetAutoLaunchProperties(const AutoLaunchParam &param, const DBType &openType,
+        std::shared_ptr<DBProperties> &propertiesPtr);
+
     AutoLaunch() = default;
 
     virtual ~AutoLaunch();
@@ -82,20 +85,32 @@ public:
 
     void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback, DBType type);
 
-    static int GetAutoLaunchProperties(const AutoLaunchParam &param, const DBType &openType,
-        std::shared_ptr<DBProperties> &propertiesPtr);
-
 protected:
+    static int OpenOneConnection(AutoLaunchItem &autoLaunchItem);
+
+    // we will return errCode, if errCode != E_OK
+    static int CloseConnectionStrict(AutoLaunchItem &autoLaunchItem);
+
+    static void CloseNotifier(const AutoLaunchItem &autoLaunchItem);
+
+    static int SetConflictNotifier(AutoLaunchItem &autoLaunchItem);
+
+    static int GetAutoLaunchKVProperties(const AutoLaunchParam &param,
+        const std::shared_ptr<KvDBProperties> &propertiesPtr);
+
+    static int GetAutoLaunchRelationProperties(const AutoLaunchParam &param,
+        const std::shared_ptr<RelationalDBProperties> &propertiesPtr);
+
+    static int OpenKvConnection(AutoLaunchItem &autoLaunchItem);
+
+    static int OpenRelationalConnection(AutoLaunchItem &autoLaunchItem);
+
+    static int PragmaAutoSync(AutoLaunchItem &autoLaunchItem);
 
     int EnableKvStoreAutoLaunchParmCheck(AutoLaunchItem &autoLaunchItem, const std::string &normalIdentifier,
         const std::string &dualTupleIdentifier, bool isDualTupleMode);
 
     int GetKVConnectionInEnable(AutoLaunchItem &autoLaunchItem, const std::string &identifier);
-
-    static int OpenOneConnection(AutoLaunchItem &autoLaunchItem);
-
-    // we will return errCode, if errCode != E_OK
-    static int CloseConnectionStrict(AutoLaunchItem &autoLaunchItem);
 
     // before ReleaseDatabaseConnection, if errCode != E_OK, we not return, we try close more
     virtual void TryCloseConnection(AutoLaunchItem &autoLaunchItem);
@@ -120,8 +135,6 @@ protected:
 
     void ReceiveUnknownIdentifierCallBackTask(const std::string &identifier, const std::string userId);
 
-    static void CloseNotifier(const AutoLaunchItem &autoLaunchItem);
-
     void ConnectionLifeCycleCallback(const std::string &identifier, const std::string &userId);
 
     void OnlineCallBack(const std::string &device, bool isConnect);
@@ -139,24 +152,10 @@ protected:
 
     void ExtConnectionLifeCycleCallbackTask(const std::string &identifier, const std::string &userId);
 
-    static int SetConflictNotifier(AutoLaunchItem &autoLaunchItem);
-
     int ExtAutoLaunchRequestCallBack(const std::string &identifier, AutoLaunchParam &param, DBType &openType);
-
-    static int GetAutoLaunchKVProperties(const AutoLaunchParam &param,
-        const std::shared_ptr<KvDBProperties> &propertiesPtr);
-
-    static int GetAutoLaunchRelationProperties(const AutoLaunchParam &param,
-        const std::shared_ptr<RelationalDBProperties> &propertiesPtr);
-
-    static int OpenKvConnection(AutoLaunchItem &autoLaunchItem);
-
-    static int OpenRelationalConnection(AutoLaunchItem &autoLaunchItem);
 
     int RegisterLifeCycleCallback(AutoLaunchItem &autoLaunchItem, const std::string &identifier,
         bool isExt);
-
-    static int PragmaAutoSync(AutoLaunchItem &autoLaunchItem);
 
     void TryCloseKvConnection(AutoLaunchItem &autoLaunchItem);
 

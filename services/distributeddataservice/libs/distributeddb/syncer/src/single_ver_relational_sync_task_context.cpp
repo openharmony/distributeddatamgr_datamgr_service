@@ -61,7 +61,11 @@ void SingleVerRelationalSyncTaskContext::SetRelationalSyncStrategy(RelationalSyn
 SyncStrategy SingleVerRelationalSyncTaskContext::GetSyncStrategy(QuerySyncObject &querySyncObject) const
 {
     std::lock_guard<std::mutex> autoLock(syncStrategyMutex_);
-    return relationalSyncStrategy_.GetTableStrategy(querySyncObject.GetRelationTableName());
+    auto it = relationalSyncStrategy_.find(querySyncObject.GetRelationTableName());
+    if (it == relationalSyncStrategy_.end()) {
+        return {};
+    }
+    return it->second;
 }
 
 void SingleVerRelationalSyncTaskContext::SetIsNeedResetAbilitySync(bool isNeedReset)
@@ -70,6 +74,11 @@ void SingleVerRelationalSyncTaskContext::SetIsNeedResetAbilitySync(bool isNeedRe
     if (isNeedResetAbilitySync_) {
         SetIsSchemaSync(false);
     }
+}
+
+void SingleVerRelationalSyncTaskContext::SchemaChange()
+{
+    SetIsNeedResetAbilitySync(true);
     std::lock_guard<std::mutex> autoLock(syncStrategyMutex_);
     relationalSyncStrategy_ = {};
 }

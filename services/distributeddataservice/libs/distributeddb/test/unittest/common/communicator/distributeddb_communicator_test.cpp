@@ -467,7 +467,7 @@ HWTEST_F(DistributedDBCommunicatorTest, ReportCommunicatorNotFound001, TestSize.
     ASSERT_NOT_NULL_AND_ACTIVATE(commAA);
     Message *msgForAA = BuildRegedTinyMessage();
     ASSERT_NE(msgForAA, nullptr);
-    SendConfig conf = {true, 0};
+    SendConfig conf = {true, false, 0};
     errCode = commAA->SendMessage(DEVICE_NAME_B, msgForAA, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sleep 100 ms
@@ -500,7 +500,7 @@ HWTEST_F(DistributedDBCommunicatorTest, ReportCommunicatorNotFound001, TestSize.
     Message *msgFor##src##label = BuildRegedTinyMessage(); \
     ASSERT_NE(msgFor##src##label, nullptr); \
     msgFor##src##label->SetSessionId(session); \
-    SendConfig conf = {true, 0}; \
+    SendConfig conf = {true, false, 0}; \
     errCode = comm##src##label->SendMessage(DEVICE_NAME_##dst, msgFor##src##label, conf); \
     EXPECT_EQ(errCode, E_OK); \
 }
@@ -509,7 +509,7 @@ HWTEST_F(DistributedDBCommunicatorTest, ReportCommunicatorNotFound001, TestSize.
 { \
     Message *msgFor##src##label = BuildRegedGiantMessage(size); \
     ASSERT_NE(msgFor##src##label, nullptr); \
-    SendConfig conf = {false, 0}; \
+    SendConfig conf = {false, false, 0}; \
     errCode = comm##src##label->SendMessage(DEVICE_NAME_##dst, msgFor##src##label, conf); \
     EXPECT_EQ(errCode, E_OK); \
 }

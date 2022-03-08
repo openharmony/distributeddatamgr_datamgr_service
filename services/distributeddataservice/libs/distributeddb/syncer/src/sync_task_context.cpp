@@ -696,4 +696,9 @@ bool SyncTaskContext::IsCurrentSyncTaskCanBeSkipped() const
 void SyncTaskContext::ResetLastPushTaskStatus()
 {
 }
+
+void SyncTaskContext::SchemaChange()
+{
+    SetIsNeedResetAbilitySync(true);
+}
 } // namespace DistributedDB

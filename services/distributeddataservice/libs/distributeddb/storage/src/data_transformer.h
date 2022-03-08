@@ -27,7 +27,7 @@ using RowData = std::vector<DataValue>;
 using OptRowData = std::vector<DataValue>;
 
 struct LogInfo {
-    int dataKey = -1;
+    int64_t dataKey = -1;
     std::string device;
     std::string originDev;
     TimeStamp timestamp = 0;
@@ -66,14 +66,14 @@ public:
     static int SerializeDataItem(const RowDataWithLog &data, const std::vector<FieldInfo> &fieldInfo,
         DataItem &dataItem);
     static int DeSerializeDataItem(const DataItem &dataItem, OptRowDataWithLog &data,
-        const std::vector<FieldInfo> &remoteFieldInfo, std::vector<int> &indexMapping);
+        const std::vector<FieldInfo> &remoteFieldInfo);
     static void ReduceMapping(const std::vector<FieldInfo> &remoteFieldInfo,
-        const std::vector<FieldInfo> &localFieldInfo, std::vector<int> &indexMapping);
+        const std::vector<FieldInfo> &localFieldInfo);
 
 private:
     static int SerializeValue(Value &value, const RowData &rowData, const std::vector<FieldInfo> &fieldInfoList);
     static int DeSerializeValue(const Value &value, OptRowData &optionalData,
-        const std::vector<FieldInfo> &remoteFieldInfo, std::vector<int> &indexMapping);
+        const std::vector<FieldInfo> &remoteFieldInfo);
 
     static uint32_t CalDataValueLength(const DataValue &dataValue);
 };

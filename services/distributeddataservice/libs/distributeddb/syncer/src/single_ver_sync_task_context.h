@@ -23,7 +23,7 @@
 
 #include "db_ability.h"
 #include "query_sync_object.h"
-#include "ischema.h"
+#include "schema_negotiate.h"
 #include "single_ver_kvdb_sync_interface.h"
 #include "single_ver_sync_target.h"
 #include "subscribe_manager.h"

@@ -596,7 +596,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch006, TestSize.Level3)
         LOGD("AutoLaunch006 disable i:%d", i);
     }
     std::unique_lock<std::mutex> lock(cvLock);
-    cv.wait(lock, [&threadIsWorking] { return threadIsWorking == false; });
+    cv.wait(lock, [&threadIsWorking] { return !threadIsWorking; });
 
     delete observer;
     g_communicatorAggregator->RunOnConnectCallback(REMOTE_DEVICE_ID, false);

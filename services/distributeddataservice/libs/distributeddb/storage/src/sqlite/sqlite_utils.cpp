@@ -515,8 +515,8 @@ int SQLiteUtils::AttachNewDatabase(sqlite3 *db, CipherType type, const CipherPas
         goto END;
     }
     // Passwords do not allow vector operations, so we can not use function BindBlobToStatement here.
-    errCode = sqlite3_bind_blob(statement, 2, static_cast<const void *>(password.GetData()),
-        password.GetSize(), SQLITE_TRANSIENT); // 2nd para is password.
+    errCode = sqlite3_bind_blob(statement, 2, static_cast<const void *>(password.GetData()),  // 2 means password index.
+        password.GetSize(), SQLITE_TRANSIENT);
     if (errCode != SQLITE_OK) {
         LOGE("Bind the attached key failed:%d", errCode);
         errCode = SQLiteUtils::MapSQLiteErrno(errCode);
@@ -594,7 +594,7 @@ int SQLiteUtils::CheckIntegrity(sqlite3 *db, const std::string &sql)
 namespace { // anonymous namespace for schema analysis
 int AnalysisSchemaSqlAndTrigger(sqlite3 *db, const std::string &tableName, TableInfo &table)
 {
-    std::string sql = "select type, name, tbl_name, rootpage, sql from sqlite_master where tbl_name = ?";
+    std::string sql = "select type, sql from sqlite_master where tbl_name = ?";
     sqlite3_stmt *statement = nullptr;
     int errCode = SQLiteUtils::GetStatement(db, sql, statement);
     if (errCode != E_OK) {
@@ -620,7 +620,7 @@ int AnalysisSchemaSqlAndTrigger(sqlite3 *db, const std::string &tableName, Table
             (void) SQLiteUtils::GetColumnTextValue(statement, 0, type);
             if (type == "table") {
                 std::string createTableSql;
-                (void) SQLiteUtils::GetColumnTextValue(statement, 4, createTableSql);  // 4 means create table sql
+                (void) SQLiteUtils::GetColumnTextValue(statement, 1, createTableSql); // 1 means create table sql
                 table.SetCreateTableSql(createTableSql);
             }
         } else {
@@ -929,21 +929,20 @@ int SQLiteUtils::GetJournalMode(sqlite3 *db, std::string &mode)
 
     std::string sql = "PRAGMA journal_mode;";
     sqlite3_stmt *statement = nullptr;
-    int errCode = sqlite3_prepare(db, sql.c_str(), -1, &statement, nullptr);
-    if (errCode != SQLITE_OK || statement == nullptr) {
-        errCode = SQLiteUtils::MapSQLiteErrno(errCode);
+    int errCode = SQLiteUtils::GetStatement(db, sql, statement);
+    if (errCode != E_OK || statement == nullptr) {
         return errCode;
     }
 
-    if (sqlite3_step(statement) == SQLITE_ROW) {
+    errCode = SQLiteUtils::StepWithRetry(statement);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
         errCode = SQLiteUtils::GetColumnTextValue(statement, 0, mode);
     } else {
         LOGE("[SqlUtil][GetJournal] Get db journal_mode failed.");
-        errCode = SQLiteUtils::MapSQLiteErrno(SQLITE_ERROR);
     }
 
     SQLiteUtils::ResetStatement(statement, true, errCode);
-    return E_OK;
+    return errCode;
 }
 
 int SQLiteUtils::SetUserVer(const OpenDbProperties &properties, int version)

@@ -258,10 +258,10 @@ public:
     ~DistributedDBSchemaTestTools() {}
 
     // Delete the copy and assign constructors
-    DistributedDBSchemaTestTools(const DistributedDBSchemaTestTools &DistributedDBSchemaTestTools) = delete;
-    DistributedDBSchemaTestTools& operator=(const DistributedDBSchemaTestTools &DistributedDBSchemaTestTools) = delete;
-    DistributedDBSchemaTestTools(DistributedDBSchemaTestTools &&DistributedDBSchemaTestTools) = delete;
-    DistributedDBSchemaTestTools& operator=(DistributedDBSchemaTestTools &&DistributedDBSchemaTestTools) = delete;
+    DistributedDBSchemaTestTools(const DistributedDBSchemaTestTools &testTool) = delete;
+    DistributedDBSchemaTestTools& operator=(const DistributedDBSchemaTestTools &testTool) = delete;
+    DistributedDBSchemaTestTools(DistributedDBSchemaTestTools &&testTool) = delete;
+    DistributedDBSchemaTestTools& operator=(DistributedDBSchemaTestTools &&testTool) = delete;
     static DistributedDB::Entry GenerateFixedLenJsonSchemaRecord(const unsigned long serialNo,
         const EntrySize &entrySize, const uint8_t keyFilledChr, const uint8_t valueFilledChr);
     static std::vector<DistributedDB::Entry> GenerateFixedJsonSchemaRecords(

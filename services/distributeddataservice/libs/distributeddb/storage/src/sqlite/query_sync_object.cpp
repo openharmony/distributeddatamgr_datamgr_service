@@ -140,8 +140,7 @@ std::string QuerySyncObject::GetIdentify() const
     len += isTableNameSpecified_ ? Parcel::GetStringLen(tableName_) : 0;
     for (const auto &key : keys_) {
         len += Parcel::GetVectorCharLen(key);
-    }
-    // QUERY_SYNC_OBJECT_VERSION_1 end.
+    }  // QUERY_SYNC_OBJECT_VERSION_1 end.
 
     std::vector<uint8_t> buff(len, 0); // It will affect the hash result, the default value cannot be modified
     Parcel parcel(buff.data(), len);
@@ -168,8 +167,7 @@ std::string QuerySyncObject::GetIdentify() const
     }
     for (const auto &key : keys_) {
         (void)parcel.WriteVectorChar(key);
-    }
-    // QUERY_SYNC_OBJECT_VERSION_1 end.
+    }  // QUERY_SYNC_OBJECT_VERSION_1 end.
 
     if (parcel.IsError()) {
         return std::string();
@@ -225,8 +223,7 @@ int QuerySyncObject::SerializeData(Parcel &parcel, uint32_t softWareVersion)
         for (const auto &key : keys_) {
             (void)parcel.WriteVectorChar(key);
         }
-    }
-    // QUERY_SYNC_OBJECT_VERSION_1 end.
+    }  // QUERY_SYNC_OBJECT_VERSION_1 end.
 
     if (parcel.IsError()) { // parcel almost success
         return -E_INVALID_ARGS;
@@ -298,8 +295,7 @@ int QuerySyncObject::DeSerializeData(Parcel &parcel, QuerySyncObject &queryObj)
     int errCode = DeSerializeVersion1Data(context.version, parcel, tableName, keys);
     if (errCode != E_OK) {
         return errCode;
-    }
-    // QUERY_SYNC_OBJECT_VERSION_1 end.
+    }  // QUERY_SYNC_OBJECT_VERSION_1 end.
 
     if (parcel.IsError()) { // almost success
         return -E_INVALID_ARGS;
@@ -342,8 +338,7 @@ uint32_t QuerySyncObject::CalculateLen() const
     len += Parcel::GetUInt32Len(); // size of keys_
     for (const auto &key : keys_) {
         len += Parcel::GetVectorCharLen(key);
-    }
-    // QUERY_SYNC_OBJECT_VERSION_1 end.
+    }  // QUERY_SYNC_OBJECT_VERSION_1 end.
 
     len = Parcel::GetEightByteAlign(len);
     if (len > INT32_MAX) {

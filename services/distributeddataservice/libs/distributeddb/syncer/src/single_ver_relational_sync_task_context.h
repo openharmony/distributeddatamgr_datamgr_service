@@ -35,6 +35,8 @@ public:
     SyncStrategy GetSyncStrategy(QuerySyncObject &querySyncObject) const override;
 
     void SetIsNeedResetAbilitySync(bool isNeedReset) override;
+
+    void SchemaChange() override;
 protected:
     ~SingleVerRelationalSyncTaskContext() override;
     void CopyTargetData(const ISyncTarget *target, const TaskParam &taskParam) override;

@@ -48,7 +48,7 @@ public:
     }
 
     // Close
-    virtual int Close(bool isClosed) = 0;
+    virtual int Close(bool isClosedOperation) = 0;
 
     // Sync function.
     // param devices: The device id list.

@@ -78,7 +78,7 @@ public:
     // Check if the Sync Engine is active, some times synchronization is not allowed
     virtual bool IsEngineActive() const = 0;
 
-    virtual void ResetAbilitySync() = 0;
+    virtual void SchemaChange() = 0;
 
 protected:
     virtual ~ISyncEngine() {};

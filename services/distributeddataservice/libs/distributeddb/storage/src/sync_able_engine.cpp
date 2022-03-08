@@ -114,7 +114,7 @@ void SyncAbleEngine::StartSyncer()
 void SyncAbleEngine::StopSyncer()
 {
     if (started_) {
-        syncer_.Close(false);
+        syncer_.Close(true);
         started_ = false;
     }
 }

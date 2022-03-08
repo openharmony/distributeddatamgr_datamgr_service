@@ -125,7 +125,7 @@ uint32_t DbAbility::GetAbilityBitsLen() const
     return dbAbility_.size();
 }
 
-uint8_t DbAbility::GetAbilityItem(const AbilityItem abilityType) const
+uint8_t DbAbility::GetAbilityItem(const AbilityItem &abilityType) const
 {
     uint8_t data = 0;
     auto iter = dbAbilityItemSet_.find(abilityType);

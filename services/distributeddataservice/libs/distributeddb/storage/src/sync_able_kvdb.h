@@ -92,14 +92,14 @@ protected:
 
     void ReSetSyncModuleActive();
     // Start syncer
-    void StartSyncer(bool isCheckSyncActive = false, bool isNeedActive = true);
+    int StartSyncer(bool isCheckSyncActive = false, bool isNeedActive = true);
 
-    void StartSyncerWithNoLock(bool isCheckSyncActive, bool isNeedActive);
+    int StartSyncerWithNoLock(bool isCheckSyncActive, bool isNeedActive);
 
     // Stop syncer
-    void StopSyncer(bool isClosed = false);
+    void StopSyncer(bool isClosedOperation = false);
 
-    void StopSyncerWithNoLock(bool isClosed = false);
+    void StopSyncerWithNoLock(bool isClosedOperation = false);
 
     void UserChangeHandle();
 

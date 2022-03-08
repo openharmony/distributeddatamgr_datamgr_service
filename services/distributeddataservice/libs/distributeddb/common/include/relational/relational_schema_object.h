@@ -96,39 +96,10 @@ private:
     mutable std::vector<FieldInfo> fieldInfos_;
 };
 
-class RelationalSyncOpinion {
-public:
-    uint32_t CalculateParcelLen(uint32_t softWareVersion) const;
-    int SerializeData(Parcel &parcel, uint32_t softWareVersion) const;
-    static int DeserializeData(Parcel &parcel, RelationalSyncOpinion &opinion);
-    SyncOpinion GetTableOpinion(const std::string& tableName) const;
-    const std::map<std::string, SyncOpinion> &GetOpinions() const;
-    void AddSyncOpinion(const std::string &tableName, const SyncOpinion &opinion);
-private:
-    std::map<std::string, SyncOpinion> opinions_;
-    static const uint32_t SYNC_OPINION_VERSION = 1;
-};
-
-class RelationalSyncStrategy {
-public:
-    SyncStrategy GetTableStrategy(const std::string &tableName) const;
-    void AddSyncStrategy(const std::string &tableName, const SyncStrategy &strategy);
-    const std::map<std::string, SyncStrategy> &GetStrategies() const;
-private:
-    std::map<std::string, SyncStrategy> strategies_;
-};
-
 class RelationalSchemaObject : public ISchema {
 public:
     RelationalSchemaObject() = default;
     ~RelationalSchemaObject() override = default;
-
-    static RelationalSyncOpinion MakeLocalSyncOpinion(const RelationalSchemaObject &localSchema,
-        const std::string &remoteSchema, uint8_t remoteSchemaType);
-
-    // The remoteOpinion.checkOnReceive is ignored
-    static RelationalSyncStrategy ConcludeSyncStrategy(const RelationalSyncOpinion &localOpinion,
-        const RelationalSyncOpinion &remoteOpinion);
 
     bool IsSchemaValid() const override;
 

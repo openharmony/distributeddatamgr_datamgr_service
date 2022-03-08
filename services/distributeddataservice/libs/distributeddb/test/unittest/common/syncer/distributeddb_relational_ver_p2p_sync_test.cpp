@@ -390,7 +390,7 @@ namespace {
     }
 
     void PrepareBasicTable(const std::string &tableName, std::vector<FieldInfo> &fieldInfoList,
-        std::vector<RelationalVirtualDevice *> remoteDeviceVec)
+        std::vector<RelationalVirtualDevice *> &remoteDeviceVec, bool createDistributedTable = true)
     {
         sqlite3 *db = nullptr;
         EXPECT_EQ(GetDB(db), SQLITE_OK);
@@ -406,8 +406,9 @@ namespace {
         for (auto &dev : remoteDeviceVec) {
             dev->SetTableInfo(tableInfo);
         }
-
-        EXPECT_EQ(g_rdbDelegatePtr->CreateDistributedTable(tableName), OK);
+        if (createDistributedTable) {
+            EXPECT_EQ(g_rdbDelegatePtr->CreateDistributedTable(tableName), OK);
+        }
 
         sqlite3_close(db);
     }
@@ -421,9 +422,10 @@ namespace {
     }
 
     void PrepareVirtualEnvironment(std::map<std::string, DataValue> &dataMap, const std::string &tableName,
-        std::vector<FieldInfo> &fieldInfoList, std::vector<RelationalVirtualDevice *> remoteDeviceVec)
+        std::vector<FieldInfo> &fieldInfoList, std::vector<RelationalVirtualDevice *> remoteDeviceVec,
+        bool createDistributedTable = true)
     {
-        PrepareBasicTable(tableName, fieldInfoList, remoteDeviceVec);
+        PrepareBasicTable(tableName, fieldInfoList, remoteDeviceVec, createDistributedTable);
         GenerateValue(dataMap, fieldInfoList);
         VirtualRowData virtualRowData;
         for (const auto &item : dataMap) {
@@ -434,9 +436,9 @@ namespace {
     }
 
     void PrepareVirtualEnvironment(std::map<std::string, DataValue> &dataMap,
-        std::vector<RelationalVirtualDevice *> remoteDeviceVec)
+        std::vector<RelationalVirtualDevice *> remoteDeviceVec, bool createDistributedTable = true)
     {
-        PrepareVirtualEnvironment(dataMap, g_tableName, g_fieldInfoList, remoteDeviceVec);
+        PrepareVirtualEnvironment(dataMap, g_tableName, g_fieldInfoList, remoteDeviceVec, createDistributedTable);
     }
 
     void CheckData(std::map<std::string, DataValue> &targetMap, const std::string &tableName,
@@ -1005,13 +1007,36 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AbilitySync003, TestSize.Level1)
         ASSERT_NE(db, nullptr);
         std::string alterSql = "ALTER TABLE " + g_tableName + " ADD COLUMN NEW_COLUMN TEXT DEFAULT 'DEFAULT_TEXT'";
         EXPECT_EQ(sqlite3_exec(db, alterSql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
-
+        EXPECT_EQ(sqlite3_close(db), SQLITE_OK);
         EXPECT_EQ(g_rdbDelegatePtr->CreateDistributedTable(g_tableName), OK);
     });
 
     BlockSync(SyncMode::SYNC_MODE_PUSH_ONLY, OK, {DEVICE_B});
 
     g_communicatorAggregator->RegOnDispatch(nullptr);
+}
+
+/**
+* @tc.name: Ability Sync 004
+* @tc.desc: Test ability sync failed when one device hasn't distributed table.
+* @tc.type: FUNC
+* @tc.require: AR000GK58N
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AbilitySync004, TestSize.Level1)
+{
+    std::map<std::string, DataValue> dataMap;
+    PrepareVirtualEnvironment(dataMap, {g_deviceB}, false);
+
+    Query query = Query::Select(g_tableName);
+    int res = DB_ERROR;
+    auto callBack = [&res](std::map<std::string, int> resMap) {
+        if (resMap.find("real_device") != resMap.end()) {
+            res = resMap["real_device"];
+        }
+    };
+    EXPECT_EQ(g_deviceB->GenericVirtualDevice::Sync(DistributedDB::SYNC_MODE_PULL_ONLY, query, callBack, true), E_OK);
+    EXPECT_EQ(res, static_cast<int>(SyncOperation::Status::OP_SCHEMA_INCOMPATIBLE));
 }
 
 /**

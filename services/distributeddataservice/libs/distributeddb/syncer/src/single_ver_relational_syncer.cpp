@@ -156,7 +156,7 @@ void SingleVerRelationalSyncer::LocalDataChanged(int notifyEvent)
 void SingleVerRelationalSyncer::SchemaChangeCallback()
 {
     if (syncEngine_ != nullptr) {
-        syncEngine_->ResetAbilitySync();
+        syncEngine_->SchemaChange();
     }
 }
 

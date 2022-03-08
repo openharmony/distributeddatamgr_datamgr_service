@@ -46,12 +46,12 @@ int SyncerProxy::Initialize(ISyncInterface *syncInterface, bool isNeedActive)
     return syncer_->Initialize(syncInterface, isNeedActive);
 }
 
-int SyncerProxy::Close(bool isClosed)
+int SyncerProxy::Close(bool isClosedOperation)
 {
     if (syncer_ == nullptr) {
         return -E_NOT_INIT;
     }
-    return syncer_->Close(isClosed);
+    return syncer_->Close(isClosedOperation);
 }
 
 int SyncerProxy::Sync(const std::vector<std::string> &devices, int mode,

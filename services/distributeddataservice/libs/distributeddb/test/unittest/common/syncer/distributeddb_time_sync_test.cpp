@@ -346,7 +346,7 @@ HWTEST_F(DistributedDBTimeSyncTest, InvalidMessgeTest001, TestSize.Level0)
      */
     msg->SetMessageId(TIME_SYNC_MESSAGE);
     msg->SetMessageType(TYPE_REQUEST);
-    SendConfig conf = {false, 0};
+    SendConfig conf = {false, false, 0};
     errCode = g_virtualCommunicator->SendMessage(DEVICE_B, msg, conf);
     EXPECT_TRUE(errCode == -E_INVALID_ARGS);
 
@@ -417,7 +417,7 @@ HWTEST_F(DistributedDBTimeSyncTest, InvalidMessgeTest002, TestSize.Level0)
      */
     msg->SetMessageId(TIME_SYNC_MESSAGE);
     msg->SetMessageType(TYPE_RESPONSE);
-    SendConfig conf = {false, 0};
+    SendConfig conf = {false, false, 0};
     errCode = g_virtualCommunicator->SendMessage(DEVICE_A, msg, conf);
     EXPECT_TRUE(errCode == -E_INVALID_ARGS);
 

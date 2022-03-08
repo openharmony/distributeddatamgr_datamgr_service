@@ -522,7 +522,7 @@ void AutoLaunch::ConnectionLifeCycleCallbackTask(const std::string &identifier, 
         autoLaunchItem = autoLaunchItemMap_[identifier][userId];
     }
     LOGI("[AutoLaunch] ConnectionLifeCycleCallbackTask do CloseConnection");
-    TryCloseConnection(autoLaunchItem); // do onthing if failed
+    TryCloseConnection(autoLaunchItem); // do nothing if failed
     LOGI("[AutoLaunch] ConnectionLifeCycleCallback do CloseConnection finished");
     {
         std::lock_guard<std::mutex> lock(dataLock_);

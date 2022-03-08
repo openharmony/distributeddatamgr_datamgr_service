@@ -646,7 +646,7 @@ HWTEST_F(DistributeddbNbAutolaunchTest, ClosedSyncPressure001, TestSize.Level0)
  * @tc.name: SyncCommErr 001
  * @tc.desc: Test Sync return Code, when Communicator get some error.
  * @tc.type: FUNC
- * @tc.require: DTS2020052001231
+ * @tc.require:
  * @tc.author: xushaohua
  */
 HWTEST_F(DistributeddbNbAutolaunchTest, SyncCommErr001, TestSize.Level1)

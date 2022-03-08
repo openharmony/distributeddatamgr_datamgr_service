@@ -13,10 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef SCHEMA_H
-#define SCHEMA_H
+#ifndef I_SCHEMA_H
+#define I_SCHEMA_H
 
 #include <string>
+
+#include "db_types.h"
 
 namespace DistributedDB {
 // SchemaType::NONE represent for KV database which do not have schema. Only invalid SchemaObject is NONE type.
@@ -37,19 +39,6 @@ inline SchemaType ReadSchemaType(uint8_t inType)
     return static_cast<SchemaType>(inType);
 }
 
-struct SyncOpinion {
-    bool permitSync = false;
-    bool requirePeerConvert = false;
-    bool checkOnReceive = false;
-};
-
-struct SyncStrategy {
-    bool permitSync = false;
-    bool convertOnSend = false;
-    bool convertOnReceive = false;
-    bool checkOnReceive = false;
-};
-
 struct SchemaAttribute {
     FieldType type = FieldType::LEAF_FIELD_NULL;
     bool isIndexable = false;
@@ -69,4 +58,4 @@ public:
     virtual std::string ToSchemaString() const = 0;
 };
 }
-#endif // SCHEMA_H
+#endif // I_SCHEMA_H

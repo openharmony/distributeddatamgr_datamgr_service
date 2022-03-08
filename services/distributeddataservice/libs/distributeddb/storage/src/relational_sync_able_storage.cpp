@@ -206,7 +206,7 @@ int RelationalSyncAbleStorage::GetAllMetaKeys(std::vector<Key> &keys) const
 
 const KvDBProperties &RelationalSyncAbleStorage::GetDbProperties() const
 {
-    return properties;
+    return properties_;
 }
 
 static int GetKvEntriesByDataItems(std::vector<SingleVerKvEntry *> &entries, std::vector<DataItem> &dataItems)
@@ -486,7 +486,7 @@ int RelationalSyncAbleStorage::CreateDistributedDeviceTable(const std::string &d
         return errCode;
     }
 
-    for (const auto &[table, strategy] : syncStrategy.GetStrategies()) {
+    for (const auto &[table, strategy] : syncStrategy) {
         if (!strategy.permitSync) {
             continue;
         }

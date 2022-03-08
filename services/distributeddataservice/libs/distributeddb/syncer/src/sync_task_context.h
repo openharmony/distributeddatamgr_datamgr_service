@@ -200,7 +200,10 @@ public:
     virtual void ResetLastPushTaskStatus();
 
     bool GetIsNeedResetAbilitySync() const;
+
     void SetIsNeedResetAbilitySync(bool isNeedReset) override;
+
+    void SchemaChange() override;
 
 protected:
     const static int KILL_WAIT_SECONDS = INT32_MAX;

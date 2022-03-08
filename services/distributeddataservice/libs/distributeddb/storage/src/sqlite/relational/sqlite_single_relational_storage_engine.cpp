@@ -17,6 +17,7 @@
 
 #include "db_common.h"
 #include "db_errno.h"
+#include "res_finalizer.h"
 #include "sqlite_single_ver_relational_storage_executor.h"
 
 
@@ -156,10 +157,10 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
     if (handle == nullptr) {
         return errCode;
     }
+    ResFinalizer finalizer([&handle, this] { this->ReleaseExecutor(handle); });
 
     errCode = handle->StartTransaction(TransactType::IMMEDIATE);
     if (errCode != E_OK) {
-        ReleaseExecutor(handle);
         return errCode;
     }
 
@@ -168,7 +169,6 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
     if (errCode != E_OK) {
         LOGE("create distributed table failed. %d", errCode);
         (void)handle->Rollback();
-        ReleaseExecutor(handle);
         return errCode;
     }
 
@@ -177,7 +177,6 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
     if (errCode != E_OK) {
         LOGE("Save schema to meta table for create distributed table failed. %d", errCode);
         (void)handle->Rollback();
-        ReleaseExecutor(handle);
         return errCode;
     }
 
@@ -186,7 +185,6 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
         schema_ = tmpSchema;
         schemaChanged = true;
     }
-    ReleaseExecutor(handle);
     return errCode;
 }
 

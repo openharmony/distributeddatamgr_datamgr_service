@@ -38,7 +38,7 @@ public:
     int Initialize(ISyncInterface *syncInterface, bool isNeedActive) override;
 
     // Close
-    int Close(bool isClosed) override;
+    int Close(bool isClosedOperation) override;
 
     // Sync function.
     // param devices: The device id list.
@@ -139,8 +139,8 @@ protected:
     bool IsValidDevices(const std::vector<std::string> &devices) const;
 
     // Used Clear all SyncOperations.
-    // isClosed is false while userChanged
-    void ClearSyncOperations(bool isClosed);
+    // isClosedOperation is false while userChanged
+    void ClearSyncOperations(bool isClosedOperation);
 
     void TriggerSyncFinished(SyncOperation *operation);
 

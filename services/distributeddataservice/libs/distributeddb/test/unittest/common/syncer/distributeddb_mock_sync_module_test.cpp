@@ -23,6 +23,7 @@
 #include "mock_single_ver_data_sync.h"
 #include "mock_single_ver_state_machine.h"
 #include "mock_sync_task_context.h"
+#include "single_ver_relational_sync_task_context.h"
 #include "virtual_single_ver_sync_db_Interface.h"
 #ifdef DATA_SYNC_CHECK_003
 #include "virtual_relational_ver_sync_db_interface.h"
@@ -392,7 +393,7 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AbilitySync002, TestSize.Level1)
     packet.SetSoftwareVersion(SOFTWARE_VERSION_CURRENT);
     message->SetCopiedObject(packet);
     /**
-     * @tc.steps: step1. set syncDBInterface busy for save data return -E_BUSY
+     * @tc.steps: step2. set syncDBInterface busy for save data return -E_BUSY
      */
     syncDBInterface.SetBusy(true);
     SyncStrategy mockStrategy = {true, false, false};
@@ -400,4 +401,37 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AbilitySync002, TestSize.Level1)
     EXPECT_EQ(abilitySync.AckRecv(message, &syncTaskContext), -E_BUSY);
     delete message;
     EXPECT_EQ(syncTaskContext.GetTaskErrCode(), -E_BUSY);
+}
+
+/**
+ * @tc.name: AbilitySync002
+ * @tc.desc: Test abilitySync when offline.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, AbilitySync003, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. set table TEST is permitSync
+     */
+    SingleVerRelationalSyncTaskContext *context = new (std::nothrow) SingleVerRelationalSyncTaskContext();
+    ASSERT_NE(context, nullptr);
+    RelationalSyncStrategy strategy;
+    const std::string tableName = "TEST";
+    strategy[tableName] = {true, true, true};
+    context->SetRelationalSyncStrategy(strategy);
+    QuerySyncObject query;
+    query.SetTableName(tableName);
+    /**
+     * @tc.steps: step2. set table is need reset ability sync but it still permit sync
+     */
+    context->SetIsNeedResetAbilitySync(true);
+    EXPECT_EQ(context->GetSyncStrategy(query).permitSync, true);
+    /**
+     * @tc.steps: step3. set table is schema change now it dont permit sync
+     */
+    context->SchemaChange();
+    EXPECT_EQ(context->GetSyncStrategy(query).permitSync, false);
+    RefObject::KillAndDecObjRef(context);
 }

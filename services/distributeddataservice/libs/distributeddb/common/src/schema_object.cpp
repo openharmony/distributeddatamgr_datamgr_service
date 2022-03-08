@@ -81,82 +81,6 @@ std::string SchemaObject::GenerateExtractSQL(SchemaType inSchemaType, const Fiel
     return resultSql;
 }
 
-// Some principle in current version describe below. (Relative-type will be introduced in future but not involved now)
-// 1.   PermitSync: Be false may because schemaType-unrecognized, schemaType-different, schema-unparsable,
-//      schemaVersion-unrecognized, schema-incompatible, and so on.
-// 2.   RequirePeerConvert: Be true normally when permitSync false, for future possible sync and convert(by remote).
-// 3.   checkOnReceive: Be false when local is KV-DB, or when local is not KV-DB only if schema type equal as well as
-//      define equal or remote is the upgradation of local.
-SyncOpinion SchemaObject::MakeLocalSyncOpinion(const SchemaObject &localSchema, const std::string &remoteSchema,
-    uint8_t remoteSchemaType)
-{
-    SchemaType localType = localSchema.GetSchemaType(); // An invalid schemaObject will return SchemaType::NONE
-    SchemaType remoteType = ReadSchemaType(remoteSchemaType);
-    // Logic below only be correct in current version, should be redesigned if new type added in the future
-    // 1. If remote-type unrecognized(Include Relative-type), Do not permit sync.
-    if (remoteType == SchemaType::UNRECOGNIZED) {
-        LOGE("[Schema][Opinion] Remote-type=%u unrecognized.", remoteSchemaType);
-        return SyncOpinion{false, true, true};
-    }
-    // 2. If local-type is KV(Here remote-type is within recognized), Always permit sync.
-    if (localType == SchemaType::NONE) {
-        LOGI("[Schema][Opinion] Local-type KV.");
-        return SyncOpinion{true, false, false};
-    }
-    // 3. If remote-type is KV(Here local-type can only be JSON or FLATBUFFER), Always permit sync but need check.
-    if (remoteType == SchemaType::NONE) {
-        LOGI("[Schema][Opinion] Remote-type KV.");
-        return SyncOpinion{true, false, true};
-    }
-    // 4. If local-type differ with remote-type(Here both type can only be JSON or FLATBUFFER), Do not permit sync.
-    if (localType != remoteType) {
-        LOGE("[Schema][Opinion] Local-type=%s differ remote-type=%s.", SchemaUtils::SchemaTypeString(localType).c_str(),
-            SchemaUtils::SchemaTypeString(remoteType).c_str());
-        return SyncOpinion{false, true, true};
-    }
-    // 5. If schema parse fail, Do not permit sync.
-    SchemaObject remoteSchemaObj;
-    int errCode = remoteSchemaObj.ParseFromSchemaString(remoteSchema);
-    if (errCode != E_OK) {
-        LOGE("[Schema][Opinion] Parse remote-schema fail, errCode=%d, remote-type=%s.", errCode,
-            SchemaUtils::SchemaTypeString(remoteType).c_str());
-        return SyncOpinion{false, true, true};
-    }
-    // 6. If remote-schema is not incompatible based on local-schema(SchemaDefine Equal), Permit sync and don't check.
-    errCode = localSchema.CompareAgainstSchemaObject(remoteSchemaObj);
-    if (errCode != -E_SCHEMA_UNEQUAL_INCOMPATIBLE) {
-        return SyncOpinion{true, false, false};
-    }
-    // 7. If local-schema is not incompatible based on remote-schema(Can only be COMPATIBLE_UPGRADE), Sync and check.
-    errCode = remoteSchemaObj.CompareAgainstSchemaObject(localSchema);
-    if (errCode != -E_SCHEMA_UNEQUAL_INCOMPATIBLE) {
-        return SyncOpinion{true, false, true};
-    }
-    // 8. Local-schema incompatible with remote-schema mutually.
-    LOGE("[Schema][Opinion] Local-schema incompatible with remote-schema mutually.");
-    return SyncOpinion{false, true, true};
-}
-
-SyncStrategy SchemaObject::ConcludeSyncStrategy(const SyncOpinion &localOpinion, const SyncOpinion &remoteOpinion)
-{
-    SyncStrategy outStrategy;
-    // Any side permit sync, the final conclusion is permit sync.
-    outStrategy.permitSync = (localOpinion.permitSync || remoteOpinion.permitSync);
-    bool convertConflict = (localOpinion.requirePeerConvert && remoteOpinion.requirePeerConvert);
-    if (convertConflict) {
-        outStrategy.permitSync = false;
-    }
-    // Responsible for conversion on send now that local do not require remote to do conversion
-    outStrategy.convertOnSend = (!localOpinion.requirePeerConvert);
-    // Responsible for conversion on receive since remote will not do conversion on send and require local to convert
-    outStrategy.convertOnReceive = remoteOpinion.requirePeerConvert;
-    // Only depend on local opinion
-    outStrategy.checkOnReceive = localOpinion.checkOnReceive;
-    LOGI("[Schema][Strategy] PermitSync=%d, SendConvert=%d, ReceiveConvert=%d, ReceiveCheck=%d.",
-        outStrategy.permitSync, outStrategy.convertOnSend, outStrategy.convertOnReceive, outStrategy.checkOnReceive);
-    return outStrategy;
-}
-
 SchemaObject::SchemaObject() : flatbufferSchema_(*this) {};
 
 SchemaObject::SchemaObject(const SchemaObject &other)
@@ -746,7 +670,7 @@ int SchemaObject::ParseCheckSchemaSkipSize(const JsonObject& inJsonObject)
     }
     // The type of SCHEMA_SKIPSIZE field has been checked in CheckMetaFieldCountAndType to be an INTEGER
     FieldValue skipSizeValue;
-    int errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath{SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE},
+    int errCode = inJsonObject.GetFieldValueByFieldPath(FieldPath {SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE},
         skipSizeValue);
     if (errCode != E_OK) {
         return -E_INTERNAL_ERROR;
