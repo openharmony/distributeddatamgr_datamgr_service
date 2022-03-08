@@ -498,7 +498,7 @@ void JsKVStore::OffDataChange(napi_env env, size_t argc, napi_value* argv, std::
             break; // stop on fail.
         }
     }
-    found = found || (argc == 0);  // no specified observer, don't care about found or not.
+    found = (argc == 0) || found;  // no specified observer, don't care about found or not.
     CHECK_ARGS(ctxt, found, "not Subscribed!");
 }
 

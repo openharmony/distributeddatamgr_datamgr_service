@@ -61,7 +61,7 @@ private:
     char *buf_;
     size_t size_;
     size_t used_;
-    static int sequence;
+    static int sequence_;
 };
 
 union Head {
