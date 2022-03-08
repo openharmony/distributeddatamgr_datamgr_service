@@ -46,7 +46,8 @@ GenericSyncer::GenericSyncer()
       queuedManualSyncSize_(0),
       queuedManualSyncLimit_(DBConstant::QUEUED_SYNC_LIMIT_DEFAULT),
       manualSyncEnable_(true),
-      closing_(false)
+      closing_(false),
+      engineFinalize_(false)
 {
 }
 
@@ -56,6 +57,10 @@ GenericSyncer::~GenericSyncer()
     if (syncEngine_ != nullptr) {
         syncEngine_->OnKill([this]() { this->syncEngine_->Close(); });
         RefObject::KillAndDecObjRef(syncEngine_);
+        // waiting all thread exist
+        std::mutex engineMutex;
+        std::unique_lock<std::mutex> cvLock(engineMutex);
+        engineFinalizeCv_.wait(cvLock, [this](){ return engineFinalize_; });
         syncEngine_ = nullptr;
     }
     timeHelper_ = nullptr;
@@ -350,7 +355,11 @@ int GenericSyncer::InitSyncEngine(ISyncInterface *syncInterface)
         }
     }
 
-    syncEngine_->OnLastRef([]() { LOGD("[Syncer] SyncEngine finalized"); });
+    syncEngine_->OnLastRef([this]() { 
+        LOGD("[Syncer] SyncEngine finalized"); 
+        engineFinalize_ = true;
+        engineFinalizeCv_.notify_all();
+    });
     const std::function<void(std::string)> onlineFunc = std::bind(&GenericSyncer::RemoteDataChanged,
         this, std::placeholders::_1);
     const std::function<void(std::string)> offlineFunc = std::bind(&GenericSyncer::RemoteDeviceOffline,

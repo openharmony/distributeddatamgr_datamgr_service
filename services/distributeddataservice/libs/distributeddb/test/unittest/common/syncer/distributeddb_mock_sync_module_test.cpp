@@ -23,7 +23,9 @@
 #include "mock_single_ver_data_sync.h"
 #include "mock_single_ver_state_machine.h"
 #include "mock_sync_task_context.h"
+#include "single_ver_kv_syncer.h"
 #include "single_ver_relational_sync_task_context.h"
+#include "virtual_communicator_aggregator.h"
 #include "virtual_single_ver_sync_db_Interface.h"
 #ifdef DATA_SYNC_CHECK_003
 #include "virtual_relational_ver_sync_db_interface.h"
@@ -462,4 +464,27 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AbilitySync003, TestSize.Level1)
     context->SchemaChange();
     EXPECT_EQ(context->GetSyncStrategy(query).permitSync, false);
     RefObject::KillAndDecObjRef(context);
+}
+
+/**
+ * @tc.name: SyncLifeTest001
+ * @tc.desc: Test syncer alive when thread still exist.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, SyncLifeTest001, TestSize.Level3)
+{
+    std::shared_ptr<SingleVerKVSyncer> syncer = std::make_shared<SingleVerKVSyncer>();
+    VirtualCommunicatorAggregator *virtualCommunicatorAggregator = new VirtualCommunicatorAggregator();
+    RuntimeContext::GetInstance()->SetCommunicatorAggregator(virtualCommunicatorAggregator);
+    VirtualSingleVerSyncDBInterface *syncDBInterface = new VirtualSingleVerSyncDBInterface();
+    syncer->Initialize(syncDBInterface, true);
+    syncer->EnableAutoSync(true);
+    for (int i = 0; i < 1000; i++) { // trigger 1000 times auto sync check
+        syncer->LocalDataChanged(SQLITE_GENERAL_NS_PUT_EVENT);
+    }
+    syncer = nullptr;
+    RuntimeContext::GetInstance()->SetCommunicatorAggregator(nullptr);
+    delete syncDBInterface;
 }
