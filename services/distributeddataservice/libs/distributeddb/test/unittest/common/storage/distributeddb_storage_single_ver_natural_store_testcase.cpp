@@ -739,7 +739,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::SyncDatabaseOperate002(S
     DataItem dataItem1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.key);
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.value);
-    dataItem1.timeStamp = 1001; // random timestamp
+    dataItem1.timeStamp = 1001; // 1001 as random timestamp
     dataItem1.writeTimeStamp = dataItem1.timeStamp;
     dataItem1.flag = 0;
 
@@ -804,7 +804,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::SyncDatabaseOperate004(S
     DataItem dataItem1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.key);
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.value);
-    dataItem1.timeStamp = 1997; // random timestamp
+    dataItem1.timeStamp = 1997; // 1997 as random timestamp
     dataItem1.writeTimeStamp = dataItem1.timeStamp;
     dataItem1.flag = 0;
 
@@ -873,13 +873,13 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::SyncDatabaseOperate006(S
      * Insert the data of key length=keyPrefix length - 1, value3.
      * @tc.expected: step2/3/4. Return E_NOT_FOUND.
      */
-    DistributedDBToolsUnitTest::GetRandomKeyValue(key1, 30); // random size
+    DistributedDBToolsUnitTest::GetRandomKeyValue(key1, 30); // 30 as random size
     key3 = key2 = key1;
     key2.push_back('C');
     key3.pop_back();
-    DistributedDBToolsUnitTest::GetRandomKeyValue(value1, 84); // random size
-    DistributedDBToolsUnitTest::GetRandomKeyValue(value2, 101); // random size
-    DistributedDBToolsUnitTest::GetRandomKeyValue(value3, 37); // random size
+    DistributedDBToolsUnitTest::GetRandomKeyValue(value1, 84); // 84 as random size
+    DistributedDBToolsUnitTest::GetRandomKeyValue(value2, 101); // 101 as random size
+    DistributedDBToolsUnitTest::GetRandomKeyValue(value3, 37); // 37 as random size
     EXPECT_EQ(connection->Put(option, key1, value1), E_OK);
     EXPECT_EQ(connection->Put(option, key2, value2), E_OK);
     EXPECT_EQ(connection->Put(option, key3, value3), E_OK);
@@ -924,14 +924,14 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::ClearRemoteData001(SQLit
     DataItem dataItem1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.key);
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.value);
-    dataItem1.timeStamp = 1997; // random timestamp
+    dataItem1.timeStamp = 1997; // 1997 as random timestamp
     dataItem1.writeTimeStamp = dataItem1.timeStamp;
     dataItem1.flag = 0;
 
     DataItem dataItem2;
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem2.key, dataItem1.key.size() + 1);
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem2.value);
-    dataItem2.timeStamp = 2019; // random timestamp
+    dataItem2.timeStamp = 2019; // 2019 as random timestamp
     dataItem2.writeTimeStamp = dataItem2.timeStamp;
     dataItem2.flag = 0;
 
@@ -1013,7 +1013,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteUserKeyValue001(SQ
     int numSelect = GetRawSyncData(url, SYNC_DATA_DEFAULT_SQL, vecSyncData);
 
     bool isFound = false;
-    EXPECT_EQ(numSelect, 2);
+    EXPECT_EQ(numSelect, 2);  // 2 as entry size
     isFound = IsSqlinteExistKey(vecSyncData, KEY_1);
     EXPECT_EQ(isFound, false);
     isFound = IsSqlinteExistKey(vecSyncData, KEY_2);
@@ -1052,7 +1052,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::MemoryDbDeleteUserKeyVal
     int numSelect = GetRawSyncData(url, SYNC_DATA_DEFAULT_SQL, vecSyncData);
 
     bool isFound = false;
-    EXPECT_EQ(numSelect, 2);
+    EXPECT_EQ(numSelect, 2);  // 2 as entry size
     isFound = IsSqlinteExistKey(vecSyncData, KEY_1);
     EXPECT_EQ(isFound, false);
     isFound = IsSqlinteExistKey(vecSyncData, KEY_2);
@@ -1108,7 +1108,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteUserKeyValue002(SQ
     std::vector<SyncData> vecSyncData;
     int numSelect = GetRawSyncData(url, SYNC_DATA_DEFAULT_SQL, vecSyncData);
 
-    EXPECT_EQ(numSelect, 2);
+    EXPECT_EQ(numSelect, 2);  // 2 as entry size
 }
 
 /**
@@ -1341,7 +1341,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteUserKeyValue005(SQ
     std::vector<SyncData> vecSyncData;
     int numSelect = GetRawSyncData(url, SYNC_DATA_DEFAULT_SQL, vecSyncData);
 
-    EXPECT_EQ(numSelect, 2);
+    EXPECT_EQ(numSelect, 2);  // 2 as entry size
     bool isFound = IsSqlinteExistKey(vecSyncData, KEY_1);
     EXPECT_EQ(isFound, true);
 }
@@ -1391,7 +1391,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::MemoryDbDeleteUserKeyVal
     std::vector<SyncData> vecSyncData;
     int numSelect = GetRawSyncData(url, SYNC_DATA_DEFAULT_SQL, vecSyncData);
 
-    EXPECT_EQ(numSelect, 2);
+    EXPECT_EQ(numSelect, 2);  // 2 as entry size
     bool isFound = IsSqlinteExistKey(vecSyncData, KEY_1);
     EXPECT_EQ(isFound, true);
 
@@ -1606,7 +1606,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::TestMetaDataPutAndGet(SQ
     EXPECT_EQ(store->GetMetaData(key1, valueRead), E_OK);
     EXPECT_EQ(DistributedDBToolsUnitTest::IsValueEqual(valueRead, value1), true);
     Value value2;
-    DistributedDBToolsUnitTest::GetRandomKeyValue(value2, static_cast<int>(value1.size() + 3)); // random size
+    DistributedDBToolsUnitTest::GetRandomKeyValue(value2, static_cast<int>(value1.size() + 3)); // 3 as random size
 
     /**
      * @tc.steps:step3. The key value is key1, the value is not empty,
@@ -1663,10 +1663,10 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::TestMetaDataPutAndGet(SQ
      *  or value size greater than 4Mb through PutMetaData of NaturalStore.
      * @tc.expected: step9/10. Return E_INVALID_ARGS.
      */
-    sizeKey.push_back(249); // random
+    sizeKey.push_back(249); // 249 as random size
     EXPECT_EQ(store->PutMetaData(sizeKey, sizeValue), -E_INVALID_ARGS);
     sizeKey.pop_back();
-    sizeValue.push_back(174); // random
+    sizeValue.push_back(174); // 174 as random size
     EXPECT_EQ(store->PutMetaData(sizeKey, sizeValue), -E_INVALID_ARGS);
 
     /**
@@ -1765,7 +1765,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DataBaseCommonPutOperate
     sizeKey.push_back(std::rand()); // random size
     EXPECT_EQ(connection->Put(option, sizeKey, sizeValue), -E_INVALID_ARGS);
     sizeKey.pop_back();
-    sizeValue.push_back(174); // random size
+    sizeValue.push_back(174); // 174 as random size
     EXPECT_EQ(connection->Put(option, sizeKey, sizeValue), -E_INVALID_ARGS);
 }
 

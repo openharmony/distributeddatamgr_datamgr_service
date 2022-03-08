@@ -35,12 +35,6 @@
 #include "value_hash_calc.h"
 
 namespace DistributedDB {
-#define CHECK_STORAGE_ENGINE do { \
-    if (storageEngine_ == nullptr) { \
-        return -E_INVALID_DB; \
-    } \
-} while (0)
-
 namespace {
     constexpr int WAIT_DELEGATE_CALLBACK_TIME = 100;
 
@@ -545,7 +539,9 @@ IKvDBSyncInterface *SQLiteSingleVerNaturalStore::GetSyncInterface()
 
 int SQLiteSingleVerNaturalStore::GetMetaData(const Key &key, Value &value) const
 {
-    CHECK_STORAGE_ENGINE;
+    if (storageEngine_ == nullptr) {
+        return -E_INVALID_DB;
+    }
     if (key.size() > DBConstant::MAX_KEY_SIZE) {
         return -E_INVALID_ARGS;
     }
@@ -615,7 +611,9 @@ int SQLiteSingleVerNaturalStore::DeleteMetaData(const std::vector<Key> &keys)
 
 int SQLiteSingleVerNaturalStore::GetAllMetaKeys(std::vector<Key> &keys) const
 {
-    CHECK_STORAGE_ENGINE;
+    if (storageEngine_ == nullptr) {
+        return -E_INVALID_DB;
+    }
     int errCode = E_OK;
     SQLiteSingleVerStorageExecutor *handle = GetHandle(true, errCode);
     if (handle == nullptr) {
@@ -1185,7 +1183,9 @@ int SQLiteSingleVerNaturalStore::SaveSyncDataItems(const QueryObject &query, std
     const DeviceInfo &deviceInfo, bool checkValueContent)
 {
     // Sync procedure does not care readOnly Flag
-    CHECK_STORAGE_ENGINE;
+    if (storageEngine_ == nullptr) {
+        return -E_INVALID_DB;
+    }
     int errCode = E_OK;
     for (const auto &item : dataItems) {
         // Check only the key and value size
@@ -1384,7 +1384,9 @@ END:
 
 int SQLiteSingleVerNaturalStore::Export(const std::string &filePath, const CipherPassword &passwd)
 {
-    CHECK_STORAGE_ENGINE;
+    if (storageEngine_ == nullptr) {
+        return -E_INVALID_DB;
+    }
     if (MyProp().GetBoolProp(KvDBProperties::MEMORY_MODE, false)) {
         return -E_NOT_SUPPORT;
     }
@@ -1422,7 +1424,9 @@ int SQLiteSingleVerNaturalStore::Export(const std::string &filePath, const Ciphe
 
 int SQLiteSingleVerNaturalStore::Import(const std::string &filePath, const CipherPassword &passwd)
 {
-    CHECK_STORAGE_ENGINE;
+    if (storageEngine_ == nullptr) {
+        return -E_INVALID_DB;
+    }
     if (MyProp().GetBoolProp(KvDBProperties::MEMORY_MODE, false)) {
         return -E_NOT_SUPPORT;
     }

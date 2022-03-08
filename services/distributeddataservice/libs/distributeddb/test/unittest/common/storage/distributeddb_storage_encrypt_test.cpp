@@ -336,8 +336,12 @@ void DistributedDBStorageEncryptTest::SetUp(void)
     /**
       * @tc.Clean DB files created from every test case.
       */
-    remove((STORE_ID + ".db").c_str());
-    remove((STORE_ID2 + ".db").c_str());
+    if (remove((STORE_ID + ".db").c_str()) != 0) {
+        LOGE("remove db failed, errno:%d", errno);
+    }
+    if (remove((STORE_ID2 + ".db").c_str()) != 0) {
+        LOGE("remove db failed, errno:%d", errno);
+    }
 }
 
 void DistributedDBStorageEncryptTest::TearDown(void)
@@ -351,8 +355,12 @@ void DistributedDBStorageEncryptTest::TearDown(void)
     /**
       * @tc.Clean DB files created from every test case.
       */
-    remove((STORE_ID + ".db").c_str());
-    remove((STORE_ID2 + ".db").c_str());
+    if (remove((STORE_ID + ".db").c_str()) != 0) {
+        LOGE("remove db failed, errno:%d", errno);
+    }
+    if (remove((STORE_ID2 + ".db").c_str()) != 0) {
+        LOGE("remove db failed, errno:%d", errno);
+    }
     /**
       * @tc.Wait a number of SLEEP_TIME until remove done.
       */

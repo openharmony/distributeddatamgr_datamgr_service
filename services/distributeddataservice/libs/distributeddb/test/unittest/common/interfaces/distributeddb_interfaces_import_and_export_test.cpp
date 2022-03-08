@@ -96,16 +96,16 @@ void DistributedDBInterfacesImportAndExportTest::SetUpTestCase(void)
 
     g_exportFileDir = g_testDir + "/ExportDir";
     OS::MakeDBDirectory(g_exportFileDir);
-    vector<uint8_t> passwdBuffer1(5, 1);
+    vector<uint8_t> passwdBuffer1(5, 1);  // 5 and 1 as random password.
     int errCode = g_passwd1.SetValue(passwdBuffer1.data(), passwdBuffer1.size());
     ASSERT_EQ(errCode, CipherPassword::ErrorCode::OK);
-    vector<uint8_t> passwdBuffer2(5, 2);
+    vector<uint8_t> passwdBuffer2(5, 2);  // 5 and 2 as random password.
     errCode = g_passwd2.SetValue(passwdBuffer2.data(), passwdBuffer2.size());
     ASSERT_EQ(errCode, CipherPassword::ErrorCode::OK);
-    vector<uint8_t> passwdBuffer3(5, 3);
+    vector<uint8_t> passwdBuffer3(5, 3);  // 5 and 3 as random password.
     errCode = g_passwd3.SetValue(passwdBuffer3.data(), passwdBuffer3.size());
     ASSERT_EQ(errCode, CipherPassword::ErrorCode::OK);
-    vector<uint8_t> passwdBuffer4(5, 4);
+    vector<uint8_t> passwdBuffer4(5, 4);  // 5 and 4 as random password.
     errCode = g_passwd4.SetValue(passwdBuffer4.data(), passwdBuffer4.size());
     ASSERT_EQ(errCode, CipherPassword::ErrorCode::OK);
 }

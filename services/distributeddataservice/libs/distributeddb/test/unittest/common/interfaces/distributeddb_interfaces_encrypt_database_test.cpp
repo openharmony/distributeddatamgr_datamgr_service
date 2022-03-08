@@ -95,7 +95,7 @@ void DistributedDBInterfacesEncryptDatabaseTest::CheckRekeyWithMultiKvStore(bool
      * @tc.expected: step3. return BUSY.
      */
     CipherPassword passwd; // random password
-    vector<uint8_t> passwdBuffer(10, 45);
+    vector<uint8_t> passwdBuffer(10, 45);  // 10 and 45 as random password.
     int errCode = passwd.SetValue(passwdBuffer.data(), passwdBuffer.size());
     ASSERT_EQ(errCode, CipherPassword::ErrorCode::OK);
     EXPECT_EQ(kvStore1->Rekey(passwd), BUSY);
@@ -138,7 +138,7 @@ void DistributedDBInterfacesEncryptDatabaseTest::CheckRekeyWithExistedSnapshot(b
      * @tc.expected: step3. return BUSY.
      */
     CipherPassword passwd; // random password
-    vector<uint8_t> passwdBuffer(10, 45);
+    vector<uint8_t> passwdBuffer(10, 45);  // 10 and 45 as random password.
     int errCode = passwd.SetValue(passwdBuffer.data(), passwdBuffer.size());
     ASSERT_EQ(errCode, CipherPassword::ErrorCode::OK);
     EXPECT_EQ(kvStore->Rekey(passwd), BUSY);
@@ -178,7 +178,7 @@ void DistributedDBInterfacesEncryptDatabaseTest::CheckRekeyWithExistedObserver(b
      * @tc.expected: step3. return BUSY.
      */
     CipherPassword passwd; // random password
-    vector<uint8_t> passwdBuffer(10, 45);
+    vector<uint8_t> passwdBuffer(10, 45);  // 10 and 45 as random password.
     int errCode = passwd.SetValue(passwdBuffer.data(), passwdBuffer.size());
     ASSERT_EQ(errCode, CipherPassword::ErrorCode::OK);
     EXPECT_EQ(kvStore->Rekey(passwd), BUSY);

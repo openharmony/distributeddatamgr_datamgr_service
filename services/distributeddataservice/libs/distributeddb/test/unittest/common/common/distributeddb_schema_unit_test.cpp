@@ -132,14 +132,14 @@ void PreDoubleDataForParseAndCheckSchemaAttribute003()
     SchemaAttribute attributeRes9;
     attributeRes9.type = FieldType::LEAF_FIELD_DOUBLE;
     attributeRes9.hasDefaultValue = true;
-    attributeRes9.defaultValue.doubleValue = 0.1; // test data
+    attributeRes9.defaultValue.doubleValue = 0.1; // 0.1 as test data
     g_schemaAttrDefTestDataDir["DOUBLE,DEFAULT 0.1"] = attributeRes9;
 
     SchemaAttribute attributeRes10;
     attributeRes10.type = FieldType::LEAF_FIELD_DOUBLE;
     attributeRes10.hasNotNullConstraint = true;
     attributeRes10.hasDefaultValue = true;
-    attributeRes10.defaultValue.doubleValue = -0.123456; // test data
+    attributeRes10.defaultValue.doubleValue = -0.123456; // -0.123456 as test data
     g_schemaAttrDefTestDataDir["DOUBLE, NOT NULL,DEFAULT -0.123456"] = attributeRes10;
 
     SchemaAttribute attributeRes11;

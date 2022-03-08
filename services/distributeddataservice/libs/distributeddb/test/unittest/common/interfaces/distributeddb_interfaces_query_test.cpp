@@ -109,7 +109,7 @@ namespace {
     }
 }
 
-class DistributedDBInterfacesQueryDBTest : public testing::Test {
+class DistributedDBInterfacesQueryTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -117,20 +117,20 @@ public:
     void TearDown();
 };
 
-void DistributedDBInterfacesQueryDBTest::SetUpTestCase(void)
+void DistributedDBInterfacesQueryTest::SetUpTestCase(void)
 {
 }
 
-void DistributedDBInterfacesQueryDBTest::TearDownTestCase(void)
+void DistributedDBInterfacesQueryTest::TearDownTestCase(void)
 {
 }
 
-void DistributedDBInterfacesQueryDBTest::SetUp(void)
+void DistributedDBInterfacesQueryTest::SetUp(void)
 {
     DistributedDBUnitTest::DistributedDBToolsUnitTest::PrintTestCaseInfo();
 }
 
-void DistributedDBInterfacesQueryDBTest::TearDown(void)
+void DistributedDBInterfacesQueryTest::TearDown(void)
 {
 }
 
@@ -141,7 +141,7 @@ void DistributedDBInterfacesQueryDBTest::TearDown(void)
   * @tc.require: AR000DR9K6
   * @tc.author: sunpeng
   */
-HWTEST_F(DistributedDBInterfacesQueryDBTest, Query001, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesQueryTest, Query001, TestSize.Level1)
 {
     Query query = Query::Select();
     Query queryCopy = query;
@@ -196,7 +196,7 @@ HWTEST_F(DistributedDBInterfacesQueryDBTest, Query001, TestSize.Level1)
   * @tc.require: AR000DR9K6
   * @tc.author: sunpeng
   */
-HWTEST_F(DistributedDBInterfacesQueryDBTest, Query002, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesQueryTest, Query002, TestSize.Level1)
 {
     float testValue = 1.1;
     Query query = Query::Select().NotEqualTo(".test", testValue);
@@ -214,7 +214,7 @@ HWTEST_F(DistributedDBInterfacesQueryDBTest, Query002, TestSize.Level1)
   * @tc.require: AR000DR9K6
   * @tc.author: sunpeng
   */
-HWTEST_F(DistributedDBInterfacesQueryDBTest, Query003, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesQueryTest, Query003, TestSize.Level1)
 {
     Query query = Query::Select().EqualTo(TEST_FIELD_NAME, true).And().GreaterThan(TEST_FIELD_NAME, 1);
     QueryExpression queryExpression = GetQueryInfo::GetQueryExpression(query);

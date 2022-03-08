@@ -246,10 +246,10 @@ namespace {
         g_mgr.GetKvStore("TestUpgradeNb", option, g_kvNbDelegateCallback);
         ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
         EXPECT_TRUE(g_kvDelegateStatus == OK);
-        if (secOptCheck == true) {
+        if (secOptCheck) {
             CheckSecOpt(secopt);
         }
-        if (putCheck == true) {
+        if (putCheck) {
             EXPECT_TRUE(g_kvNbDelegatePtr->Put(keyTmp, value) == OK);
             EXPECT_TRUE(g_kvNbDelegatePtr->Get(keyTmp, valueRead) == OK);
         }

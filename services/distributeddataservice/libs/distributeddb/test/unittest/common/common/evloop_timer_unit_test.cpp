@@ -53,7 +53,7 @@ EventTime TimerTester::GetCurrentTime()
         LOGE("Get current time failed.");
         return 0;
     }
-    return now / 1000; // microsecond to millisecond.
+    return now / 1000; // 1 ms equals to 1000 us
 }
 
 class DistributedDBEventLoopTimerTest : public testing::Test {

@@ -95,7 +95,7 @@ static void ValueEqual(const Value &read, const Value &origin)
 static int RunSyncMergeForOneCommit(std::vector<MultiVerKvEntry *> &entries)
 {
     MultiVerCommitNode multiVerCommit;
-    multiVerCommit.commitId.resize(20); // commit id size
+    multiVerCommit.commitId.resize(20); // 20 as commit id size
     RAND_bytes(multiVerCommit.commitId.data(), 20);
     multiVerCommit.deviceInfo = DBCommon::TransferHashString("deviceB") + "deviceB1";
 

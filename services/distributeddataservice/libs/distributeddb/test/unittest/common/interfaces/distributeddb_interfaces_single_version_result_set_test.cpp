@@ -58,7 +58,7 @@ namespace {
     const Key LOCAL_KEY_4 = {'K', '4'};
 }
 
-class DistributedDBSingleVersionResultSetTest : public testing::Test {
+class DistributedDBInterfacesSingleVersionResultSetTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -66,7 +66,7 @@ public:
     void TearDown();
 };
 
-void DistributedDBSingleVersionResultSetTest::SetUpTestCase(void)
+void DistributedDBInterfacesSingleVersionResultSetTest::SetUpTestCase(void)
 {
     DistributedDBToolsUnitTest::TestDirInit(g_testDir);
     g_config.dataDir = g_testDir;
@@ -83,7 +83,7 @@ void DistributedDBSingleVersionResultSetTest::SetUpTestCase(void)
     }
 }
 
-void DistributedDBSingleVersionResultSetTest::TearDownTestCase(void)
+void DistributedDBInterfacesSingleVersionResultSetTest::TearDownTestCase(void)
 {
     if (DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir + STORE_ID + "/" + DBConstant::SINGLE_SUB_DIR) != 0) {
         LOGE("rm test db files error!");
@@ -92,7 +92,7 @@ void DistributedDBSingleVersionResultSetTest::TearDownTestCase(void)
     std::this_thread::sleep_for(std::chrono::milliseconds(TIME_LAG));
 }
 
-void DistributedDBSingleVersionResultSetTest::SetUp(void)
+void DistributedDBInterfacesSingleVersionResultSetTest::SetUp(void)
 {
     DistributedDBToolsUnitTest::PrintTestCaseInfo();
     KvStoreNbDelegate::Option delegateOption = {true};
@@ -132,7 +132,7 @@ void DistributedDBSingleVersionResultSetTest::SetUp(void)
     ASSERT_NE(g_rawCursor, nullptr);
 }
 
-void DistributedDBSingleVersionResultSetTest::TearDown(void)
+void DistributedDBInterfacesSingleVersionResultSetTest::TearDown(void)
 {
     if (g_connection != nullptr) {
         g_connection->Close();
@@ -162,7 +162,7 @@ void DistributedDBSingleVersionResultSetTest::TearDown(void)
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest001, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest001, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be INT_MAX, which is larger than the upper limit.
@@ -181,7 +181,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest001,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest002, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest002, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be -1.
@@ -200,7 +200,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest002,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest003, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest003, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 0.
@@ -219,7 +219,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest003,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest004, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest004, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, which is smaller than the upper limit.
@@ -238,7 +238,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest004,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest005, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest005, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be negative (-1).
@@ -257,7 +257,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest005,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest006, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest006, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be 2.
@@ -276,7 +276,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest006,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest007, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest007, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be 0.
@@ -295,7 +295,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest007,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest008, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest008, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be 0.5.
@@ -314,7 +314,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest008,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest009, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest009, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be 1 and resultWindow be null pointer.
@@ -334,7 +334,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest009,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest010, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest010, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be 1 and resultWindow be null pointer.
@@ -360,7 +360,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest010,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest011, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest011, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be 1 and resultWindow be null pointer.
@@ -399,7 +399,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest011,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest012, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest012, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be 1 and resultWindow be null pointer.
@@ -433,7 +433,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest012,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest013, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest013, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be 1 and resultWindow be null pointer.
@@ -468,7 +468,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest013,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest014, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest014, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be 1 and resultWindow be null pointer.
@@ -504,7 +504,7 @@ HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest014,
   * @tc.require: AR000D08KT
   * @tc.author: maokeheng
   */
-HWTEST_F(DistributedDBSingleVersionResultSetTest, SingleVersionResultSetTest015, TestSize.Level1)
+HWTEST_F(DistributedDBInterfacesSingleVersionResultSetTest, SingleVersionResultSetTest015, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Let the WindowSize be 100, and window scale to be 1 and resultWindow be null pointer.

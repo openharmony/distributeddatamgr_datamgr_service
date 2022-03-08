@@ -73,7 +73,9 @@ void DistributedDBStorageTransactionRecordTest::TearDown(void)
         g_transaction = nullptr;
     }
 
-    remove(g_storeDir.c_str());
+    if (remove(g_storeDir.c_str()) != 0) {
+        LOGE("remove db failed, errno:%d", errno);
+    }
 }
 
 /**
