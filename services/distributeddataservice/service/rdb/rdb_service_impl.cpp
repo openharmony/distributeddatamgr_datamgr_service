@@ -248,7 +248,7 @@ int32_t RdbServiceImpl::DoSync(const RdbSyncerParam &param, const SyncOption &op
     if (syncer == nullptr) {
         return RDB_ERROR;
     }
-    return syncer->DoSync(option, const_cast<RdbPredicates&>(predicates), result);
+    return syncer->DoSync(option, predicates, result);
 }
 
 void RdbServiceImpl::OnAsyncComplete(pid_t pid, uint32_t seqNum, const SyncResult &result)
@@ -268,7 +268,7 @@ int32_t RdbServiceImpl::DoAsync(const RdbSyncerParam &param, uint32_t seqNum, co
     if (syncer == nullptr) {
         return RDB_ERROR;
     }
-    return syncer->DoAsync(option, const_cast<RdbPredicates&>(predicates),
+    return syncer->DoAsync(option, predicates,
                            [this, pid, seqNum] (const SyncResult& result) {
                                OnAsyncComplete(pid, seqNum, result);
                            });

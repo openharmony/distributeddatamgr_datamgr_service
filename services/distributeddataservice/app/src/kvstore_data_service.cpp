@@ -202,27 +202,16 @@ Status KvStoreDataService::GetSingleKvStore(const Options &options, const AppId 
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     ZLOGI("begin.");
-    if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()
-        || options.kvStoreType == KvStoreType::MULTI_VERSION) {
-        ZLOGE("invalid argument type.");
-        return Status::INVALID_ARGUMENT;
-    }
-
     KVSTORE_ACCOUNT_EVENT_PROCESSING_CHECKER(Status::SYSTEM_ACCOUNT_EVENT_PROCESSING);
     KvStoreParam param;
-    param.bundleName = appId.appId;
-    param.storeId = storeId.storeId;
-    const int32_t uid = IPCSkeleton::GetCallingUid();
-    param.trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, uid);
-    ZLOGI("%{public}s, %{public}s", param.trueAppId.c_str(), param.bundleName.c_str());
-    if (param.trueAppId.empty()) {
-        ZLOGW("appId:%{public}s, uid:%{public}d, PERMISSION_DENIED", appId.appId.c_str(), uid);
-        return Status::PERMISSION_DENIED;
+    Status status = FillStoreParam(options, appId, storeId, param);
+    if (status != Status::SUCCESS) {
+        callback(nullptr);
+        return status;
     }
 
-    param.userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
     SecretKeyPara keyPara;
-    Status status = KvStoreDataService::GetSecretKey(options, param, keyPara);
+    status = KvStoreDataService::GetSecretKey(options, param, keyPara);
     if (status != Status::SUCCESS) {
         callback(nullptr);
         return status;
@@ -240,19 +229,48 @@ Status KvStoreDataService::GetSingleKvStore(const Options &options, const AppId 
         it = result.first;
     }
     sptr<SingleKvStoreImpl> store;
-    param.status = (it->second).GetKvStore(options, param.bundleName, param.storeId, uid, keyPara.secretKey, store);
+    param.status =
+        (it->second).GetKvStore(options, param.bundleName, param.storeId, param.uid, keyPara.secretKey, store);
     if (keyPara.outdated) {
         KvStoreMetaManager::GetInstance().ReKey(param.userId, param.bundleName, param.storeId,
             KvStoreAppManager::ConvertPathType(param.uid, param.bundleName, options.securityLevel), store);
     }
     if (param.status == Status::SUCCESS) {
+        status = UpdateMetaData(options, param, keyPara.metaKey, it->second);
+        if (status != Status::SUCCESS) {
+            ZLOGE("failed to write meta");
+            callback(nullptr);
+            return status;
+        }
         callback(std::move(store));
-        return UpdateMetaData(options, param, keyPara.metaKey, it->second);
+        return status;
     }
 
     param.status =  GetSingleKvStoreFailDo(options, param, keyPara, it->second, store);
     callback(std::move(store));
     return param.status;
+}
+
+Status KvStoreDataService::FillStoreParam(
+    const Options &options, const AppId &appId, const StoreId &storeId, KvStoreParam &param)
+{
+    if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()
+        || options.kvStoreType == KvStoreType::MULTI_VERSION) {
+        ZLOGE("invalid argument type.");
+        return Status::INVALID_ARGUMENT;
+    }
+    param.bundleName = appId.appId;
+    param.storeId = storeId.storeId;
+    param.uid = IPCSkeleton::GetCallingUid();
+    param.trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, param.uid);
+    ZLOGI("%{public}s, %{public}s", param.trueAppId.c_str(), param.bundleName.c_str());
+    if (param.trueAppId.empty()) {
+        ZLOGW("appId:%{public}s, uid:%{public}d, PERMISSION_DENIED", appId.appId.c_str(), param.uid);
+        return PERMISSION_DENIED;
+    }
+
+    param.userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(param.uid);
+    return SUCCESS;
 }
 
 Status KvStoreDataService::GetSecretKey(const Options &options, const KvStoreParam &kvParas,
@@ -340,12 +358,17 @@ Status KvStoreDataService::RecoverSecretKey(const Status &alreadyCreated, bool &
 Status KvStoreDataService::UpdateMetaData(const Options &options, const KvStoreParam &kvParas,
     const std::vector<uint8_t> &metaKey, KvStoreUserManager &kvStoreUserManager)
 {
+    auto localDeviceId = DeviceKvStoreImpl::GetLocalDeviceId();
+    if (localDeviceId.empty()) {
+        ZLOGE("failed to get local device id");
+        return Status::ERROR;
+    }
     KvStoreMetaData metaData;
     metaData.appId = kvParas.trueAppId;
     metaData.appType = "harmony";
     metaData.bundleName = kvParas.bundleName;
     metaData.deviceAccountId = kvParas.userId;
-    metaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
+    metaData.deviceId = localDeviceId;
     metaData.isAutoSync = options.autoSync;
     metaData.isBackup = options.backup;
     metaData.isEncrypt = options.encrypt;
@@ -754,9 +777,9 @@ Status KvStoreDataService::AppExit(const AppId &appId, pid_t uid)
         ZLOGI("map size: %zu.", clientDeathObserverMap_.size());
     }
 
-    std::string trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, uid);
+    std::string trueAppId = CheckerManager::GetInstance().GetAppId(appIdTmp.appId, uid);
     if (trueAppId.empty()) {
-        ZLOGW("check appId:%{public}s uid:%{public}d failed.", appId.appId.c_str(), uid);
+        ZLOGW("check appId:%{public}s uid:%{public}d failed.", appIdTmp.appId.c_str(), uid);
         return Status::PERMISSION_DENIED;
     }
     const std::string userId = AccountDelegate::GetInstance()->GetCurrentAccountId(appIdTmp.appId);
@@ -833,12 +856,12 @@ void KvStoreDataService::OnStart()
 void KvStoreDataService::StartService()
 {
     static constexpr int32_t RETRY_TIMES = 10;
-    static constexpr int32_t RETRY_INTERVAL = 500; // unit is ms
+    static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
     for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIMES; ++retry) {
         if (!DeviceKvStoreImpl::GetLocalDeviceId().empty()) {
             break;
         }
-        ZLOGE("GetLocalDeviceId failed, reties: %{public}d", static_cast<int>(retry));
+        ZLOGE("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
     }
 
     // register this to ServiceManager.

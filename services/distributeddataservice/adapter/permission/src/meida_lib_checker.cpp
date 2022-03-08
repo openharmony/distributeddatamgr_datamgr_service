@@ -71,7 +71,7 @@ bool MeidaLibChecker::IsValid(pid_t uid, const std::string &bundleName)
     if (uid < SYSTEM_UID && uid != CheckerManager::INVALID_UID) {
         return false;
     }
-    // todo uid-> 应用, 是否对bundleName对应的应用有读写
+
     return true;
 }
 }

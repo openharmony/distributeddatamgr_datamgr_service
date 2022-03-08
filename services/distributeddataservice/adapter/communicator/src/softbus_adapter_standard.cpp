@@ -364,7 +364,7 @@ void SoftBusAdapter::UpdateRelationship(const std::string &networkid, const Devi
         case DeviceChangeType::DEVICE_OFFLINE: {
             auto size = this->networkId2UuidUdid_.erase(networkid);
             if (size == 0) {
-                ZLOGW("not found id:%{public}s.", networkid.c_str());
+                ZLOGW("not found id:%{public}s.", SoftBusAdapter::ToBeAnonymous(networkid).c_str());
             }
             break;
         }
