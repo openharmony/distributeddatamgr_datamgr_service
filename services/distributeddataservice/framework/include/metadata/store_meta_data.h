@@ -35,7 +35,7 @@ struct StoreMetaData final : public Serializable {
     std::string appType = "";
     std::string bundleName = "";
     std::string dataDir = "";
-    std::string deviceAccountId = ""; // todo change to userId
+    std::string deviceAccountId = "";
     std::string deviceId = "";
     std::string schema = "";
     std::string storeId = "";
