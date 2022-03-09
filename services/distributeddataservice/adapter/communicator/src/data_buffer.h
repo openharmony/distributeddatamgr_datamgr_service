@@ -28,26 +28,6 @@ struct HeaderInfo {
     uint32_t sequence;
 } __attribute__((packed));
 
-// header length
-static const int HEADER_LEN = sizeof(HeaderInfo);
-
-// max size for transferring data using pipe is 5M
-static const size_t MAX_DATA_LEN = 1024 * 1024 * 5;
-
-// 5M; max size for transfer using pipe (12 is header length, rest is data wait for transferring)
-static const int MAX_TRANSFER_SIZE = 1024 * 1024 * 5 - HEADER_LEN;
-
-static const uint32_t VERSION = 0;
-
-static const uint32_t TYPE = 0;
-
-static int g_sequence = 0;
-
-union Head {
-    HeaderInfo headerInfo;
-    uint8_t headArray[HEADER_LEN];
-} __attribute__((packed));
-
 class DataBuffer {
 public:
     DataBuffer();
@@ -63,11 +43,31 @@ public:
     void SetBufUsed(size_t used);
 
     size_t GetBufUsed() const;
+
+    // header length
+    static const int HEADER_LEN = sizeof(HeaderInfo);
+
+// max size for transferring data using pipe is 5M
+    static const size_t MAX_DATA_LEN = 1024 * 1024 * 5;
+
+// 5M; max size for transfer using pipe (12 is header length, rest is data wait for transferring)
+    static const int MAX_TRANSFER_SIZE = 1024 * 1024 * 5 - HEADER_LEN;
+
+    static const uint32_t VERSION = 0;
+
+    static const uint32_t TYPE = 0;
+
 private:
     char *buf_;
     size_t size_;
     size_t used_;
+    static int sequence_;
 };
+
+union Head {
+    HeaderInfo headerInfo;
+    uint8_t headArray[DataBuffer::HEADER_LEN];
+} __attribute__((packed));
 }
 }
 #endif // DISTRIBUTEDDATAMGR_DATA_BUFFER_H

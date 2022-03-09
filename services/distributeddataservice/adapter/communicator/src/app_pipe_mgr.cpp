@@ -61,9 +61,9 @@ Status AppPipeMgr::StopWatchDataChange(const AppDataChangeListener *observer, co
 Status AppPipeMgr::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *ptr, int size,
                             const MessageInfo &info)
 {
-    if (size > MAX_TRANSFER_SIZE || size <= 0 || ptr == nullptr ||
+    if (size > DataBuffer::MAX_TRANSFER_SIZE || size <= 0 || ptr == nullptr ||
         pipeInfo.pipeId.empty() || deviceId.deviceId.empty()) {
-        ZLOGW("Input is invalid, maxSize:%d, current size:%d", MAX_TRANSFER_SIZE, size);
+        ZLOGW("Input is invalid, maxSize:%d, current size:%d", DataBuffer::MAX_TRANSFER_SIZE, size);
         return Status::ERROR;
     }
     ZLOGD("pipeInfo:%s ,size:%d", pipeInfo.pipeId.c_str(), size);

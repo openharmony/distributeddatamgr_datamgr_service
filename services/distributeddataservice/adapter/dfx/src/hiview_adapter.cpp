@@ -242,11 +242,12 @@ void HiViewAdapter::StartTimerThread()
     auto fun = [=]() {
         while (true) {
             time_t current = time(nullptr);
-            tm *localTime = localtime(&current);
-            if (localTime == nullptr) {
+            tm localTime = { 0 };
+            tm *result = localtime_r(&current, &localTime);
+            if (result == nullptr) {
                 continue;
             }
-            int currentHour = localTime->tm_hour;
+            int currentHour = localTime.tm_hour;
             if (currentHour < EXEC_TIME) {
                 sleep((EXEC_TIME - currentHour) * SIXTY_SEC * SIXTY_SEC);
                 InvokeDbSize();

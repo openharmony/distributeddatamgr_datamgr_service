@@ -126,7 +126,7 @@ private:
     // distributeddb is responsible for free kvStoreDelegate_,
     // by calling CloseKvStore in KvStoreAppManager,
     // can not free it in KvStoreImpl's destructor.
-    mutable std::shared_mutex storeDelegateMutex_{};
+    mutable std::shared_mutex storeDelegateMutex_ {};
     DistributedDB::KvStoreDelegate *kvStoreDelegate_;
     std::mutex storeObserverMutex_;
     std::set<KvStoreObserverImpl *, KvStoreObserverImplPtrCompare> observerSet_;

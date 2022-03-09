@@ -92,7 +92,7 @@ protected:
         bool result = true;
         values.resize(subNode.size());
         for (size_type i = 0; i < subNode.size(); ++i) {
-            result &= GetValue(subNode[i], "", values[i]);
+            result = GetValue(subNode[i], "", values[i]) && result;
         }
         return result;
     }
@@ -104,7 +104,7 @@ protected:
         size_type i = 0;
         node = json::value_t::array;
         for (const auto &value : values) {
-            result &= SetValue(node[i], value);
+            result = SetValue(node[i], value) && result;
             i++;
         }
         return result;

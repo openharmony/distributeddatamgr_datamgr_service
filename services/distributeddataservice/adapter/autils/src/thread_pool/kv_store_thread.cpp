@@ -31,8 +31,7 @@ KvStoreThread::KvStoreThread(KvStoreThreadPool *threadPool)
     });
 }
 
-KvStoreThread::KvStoreThread(KvStoreThread &&thread)
-    : pool_(thread.pool_)
+KvStoreThread::KvStoreThread(KvStoreThread &&thread) : pool_(thread.pool_)
 {
     realThread_ = std::move(thread.realThread_);
 }

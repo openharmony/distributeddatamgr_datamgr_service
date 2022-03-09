@@ -696,10 +696,9 @@ std::string KvStoreAppManager::GetDataStoragePath(const std::string &userId, con
                                                   PathType type)
 {
     std::string miscPath = (type == PATH_DE) ? Constant::ROOT_PATH_DE : Constant::ROOT_PATH_CE;
-    return Constant::Concatenate({
-        miscPath, "/", Constant::SERVICE_NAME, "/", userId, "/", Constant::GetDefaultHarmonyAccountName(),
-        "/", bundleName, "/"
-    });
+    return Constant::Concatenate(
+        {miscPath, "/", Constant::SERVICE_NAME, "/", userId, "/", Constant::GetDefaultHarmonyAccountName(),
+        "/", bundleName, "/"});
 }
 
 DistributedDB::SecurityOption KvStoreAppManager::ConvertSecurity(int securityLevel)

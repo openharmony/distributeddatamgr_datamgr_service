@@ -279,7 +279,7 @@ HWTEST_F(SingleKvStoreClientQueryTest, TestQueryC009, TestSize.Level1)
     query.InLong("$.test_field_name", vectLong);
     EXPECT_TRUE(query.ToString().length() > 0);
     query.Reset();
-    std::vector<double> vectDouble{ 1.23, 2.23, 3.23 };
+    std::vector<double> vectDouble{1.23, 2.23, 3.23};
     query.InDouble("$.test_field_name", vectDouble);
     EXPECT_TRUE(query.ToString().length() > 0);
     query.Reset();
