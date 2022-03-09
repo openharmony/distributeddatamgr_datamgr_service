@@ -27,7 +27,7 @@ static std::string VALUE_TYPE = "VALUE_TYPE";
 static std::string DEFAULT_VALUE = "DEFAULT_VALUE";
 static std::string IS_DEFAULT_VALUE = "IS_DEFAULT_VALUE";
 static std::string IS_NULLABLE = "IS_NULLABLE";
-static std::string CHILDREN = "CHILDREN"; 
+static std::string CHILDREN = "CHILDREN";
 
 std::map<uint32_t, std::string> JsFieldNode::valueTypeToString_ = {
     { JSUtil::STRING, std::string("STRING") },
@@ -51,7 +51,7 @@ std::string JsFieldNode::GetFieldName()
 JsFieldNode::json JsFieldNode::GetValueForJson()
 {
     if (fields.empty()) {
-        return ValueTypeToString(valueType) + "," + (isNullable ? "NULL" : "NOT NULL");        
+        return ValueTypeToString(valueType) + "," + (isNullable ? "NULL" : "NOT NULL");       
     }
 
     json jsFields;
@@ -123,7 +123,7 @@ napi_value JsFieldNode::AppendChild(napi_env env, napi_callback_info info)
     return ctxt->output;
 }
 
-JsFieldNode* JsFieldNode::GetFieldNode(napi_env env, napi_callback_info info, std::shared_ptr<ContextBase>& ctxt) 
+JsFieldNode* JsFieldNode::GetFieldNode(napi_env env, napi_callback_info info, std::shared_ptr<ContextBase>& ctxt)
 {
     ctxt->GetCbInfoSync(env, info);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");
@@ -132,12 +132,12 @@ JsFieldNode* JsFieldNode::GetFieldNode(napi_env env, napi_callback_info info, st
 
 template <typename T>
 napi_value JsFieldNode::GetContextValue(napi_env env, std::shared_ptr<ContextBase> &ctxt, T &value)
-{      
+{
     JSUtil::SetValue(env, value, ctxt->output);
     return ctxt->output;
 }
 
-napi_value JsFieldNode::GetDefaultValue(napi_env env, napi_callback_info info) 
+napi_value JsFieldNode::GetDefaultValue(napi_env env, napi_callback_info info)
 {
     ZLOGD("FieldNode::GetDefaultValue");
     auto ctxt = std::make_shared<ContextBase>();

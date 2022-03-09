@@ -85,7 +85,7 @@ napi_status JsSchema::ToJson(napi_env env, napi_value inner, JsSchema*& out)
     return JSUtil::Unwrap(env, inner, (void**)(&out), JsSchema::Constructor(env));
 }
 
-JsSchema* JsSchema::GetSchema(napi_env env, napi_callback_info info, std::shared_ptr<ContextBase>& ctxt) 
+JsSchema* JsSchema::GetSchema(napi_env env, napi_callback_info info, std::shared_ptr<ContextBase>& ctxt)
 {
     ctxt->GetCbInfoSync(env, info);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");

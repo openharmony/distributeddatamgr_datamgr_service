@@ -46,7 +46,7 @@ private:
     
     template <typename T>
     static napi_value GetContextValue(napi_env env, std::shared_ptr<ContextBase> &ctxt, T &value);
-    static JsFieldNode* GetFieldNode(napi_env env, napi_callback_info info, std::shared_ptr<ContextBase> &ctxt); 
+    static JsFieldNode* GetFieldNode(napi_env env, napi_callback_info info, std::shared_ptr<ContextBase> &ctxt);
     
     std::string ValueToString(JSUtil::KvStoreVariant value);
     std::string ValueTypeToString(uint32_t type);
