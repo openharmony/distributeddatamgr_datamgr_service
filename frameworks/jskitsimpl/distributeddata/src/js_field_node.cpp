@@ -51,7 +51,7 @@ std::string JsFieldNode::GetFieldName()
 JsFieldNode::json JsFieldNode::GetValueForJson()
 {
     if (fields.empty()) {
-        return ValueTypeToString(valueType) + "," + (isNullable ? "NULL" : "NOT NULL");       
+        return ValueTypeToString(valueType) + "," + (isNullable ? "NULL" : "NOT NULL");     
     }
 
     json jsFields;
