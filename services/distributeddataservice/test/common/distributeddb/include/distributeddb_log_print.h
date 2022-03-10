@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,25 +25,9 @@
     #endif
 #endif
 
-#if defined USING_LOGCAT_LOGGER
-    #include <android/log.h>
-#elif defined _WIN32
-    #define USING_PRINTF_LOGGER
-    #include <cstdio>
-#elif defined USING_HILOG_LOGGER
-    #include "hilog/log.h"
-#endif
+#include "hilog/log.h"
 
-#if defined USING_LOGCAT_LOGGER
-    #define MST_LOG(fmt, ...) \
-        (void)(__android_log_print(static_cast<int>(ANDROID_LOG_INFO), "DistributedDB[TEST]", \
-        "%s: " fmt, __FUNCTION__, ##__VA_ARGS__))
-#elif defined USING_PRINTF_LOGGER
-    #define MST_LOG(fmt, ...) \
-        (void)(std::printf(fmt"\n", ##__VA_ARGS__))
-#elif defined USING_HILOG_LOGGER
-    static constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL = { LOG_CORE, 0xD001630, "DistributedDB[TEST]" };
-    #define MST_LOG(fmt, ...) \
-        OHOS::HiviewDFX::HiLog::Info(LOG_LABEL, "%s: " fmt, __FUNCTION__, ##__VA_ARGS__)
-#endif
+static constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL = { LOG_CORE, 0xD001630, "DistributedDB[TEST]" };
+#define MST_LOG(fmt, ...) \
+    OHOS::HiviewDFX::HiLog::Info(LOG_LABEL, "%s: " fmt, __FUNCTION__, ##__VA_ARGS__)
 #endif
