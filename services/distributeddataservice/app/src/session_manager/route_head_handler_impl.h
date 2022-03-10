@@ -44,9 +44,9 @@ struct SessionDevicePair {
 };
 
 struct SessionUserPair {
-    int sourceUserId;
+    uint32_t sourceUserId;
     uint8_t targetUserCount;
-    int targetUserIds[0];
+    uint32_t targetUserIds[0];
 };
 
 struct SessionAppId {
@@ -69,7 +69,7 @@ private:
     bool PackDataHead(uint8_t *data, uint32_t totalLen);
     bool PackDataBody(uint8_t *data, uint32_t totalLen);
     bool UnPackData(const uint8_t *data, uint32_t totalLen, uint32_t &unpackedSize);
-    const RouteHead *UnPackHeadHead(const uint8_t *data, uint32_t totalLen);
+    bool UnPackHeadHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead);
     bool UnPackHeadBody(const uint8_t *data, uint32_t totalLen);
 
     std::string userId_;
