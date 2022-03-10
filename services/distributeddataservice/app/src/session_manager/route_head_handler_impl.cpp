@@ -198,9 +198,9 @@ bool RouteHeadHandlerImpl::UnPackData(const uint8_t *data, uint32_t totalLen, ui
     }
     unpackedSize = 0;
     RouteHead head = { 0 };
-    bool result = UnPackHeadHead(data, totalLen, head);
+    bool result = UnPackDataHead(data, totalLen, head);
     if (result && head.version == RouteHead::VERSION) {
-        auto isOk = UnPackHeadBody(data + sizeof(RouteHead), totalLen - sizeof(RouteHead));
+        auto isOk = UnPackDataBody(data + sizeof(RouteHead), totalLen - sizeof(RouteHead));
         if (isOk) {
             unpackedSize = sizeof(RouteHead) + head.dataLen;
         }
@@ -209,7 +209,7 @@ bool RouteHeadHandlerImpl::UnPackData(const uint8_t *data, uint32_t totalLen, ui
     return false;
 }
 
-bool RouteHeadHandlerImpl::UnPackHeadHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead)
+bool RouteHeadHandlerImpl::UnPackDataHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead)
 {
     const RouteHead *head = reinterpret_cast<const RouteHead *>(data);
     routeHead.magic = ntohs(head->magic);
@@ -227,7 +227,7 @@ bool RouteHeadHandlerImpl::UnPackHeadHead(const uint8_t *data, uint32_t totalLen
     return true;
 }
 
-bool RouteHeadHandlerImpl::UnPackHeadBody(const uint8_t *data, uint32_t totalLen)
+bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen)
 {
     const uint8_t *ptr = data;
     uint32_t leftSize = totalLen;

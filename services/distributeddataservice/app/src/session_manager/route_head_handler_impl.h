@@ -69,8 +69,8 @@ private:
     bool PackDataHead(uint8_t *data, uint32_t totalLen);
     bool PackDataBody(uint8_t *data, uint32_t totalLen);
     bool UnPackData(const uint8_t *data, uint32_t totalLen, uint32_t &unpackedSize);
-    bool UnPackHeadHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead);
-    bool UnPackHeadBody(const uint8_t *data, uint32_t totalLen);
+    bool UnPackDataHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead);
+    bool UnPackDataBody(const uint8_t *data, uint32_t totalLen);
 
     std::string userId_;
     std::string appId_;
