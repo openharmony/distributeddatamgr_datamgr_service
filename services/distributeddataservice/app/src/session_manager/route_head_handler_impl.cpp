@@ -18,11 +18,11 @@
 
 #include "auth/auth_delegate.h"
 #include "device_kvstore_impl.h"
-#include "utils/endian_converter.h"
 #include "kvstore_meta_manager.h"
 #include "log_print.h"
 #include "securec.h"
 #include "upgrade_manager.h"
+#include "utils/endian_converter.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
@@ -264,7 +264,6 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
     }
     const SessionAppId *appId = reinterpret_cast<const SessionAppId *>(ptr);
     auto appIdLen = ntohl(appId->len);
-
     if (leftSize < sizeof(SessionAppId) + appIdLen) {
         ZLOGE("failed to parse app id");
         return false;
