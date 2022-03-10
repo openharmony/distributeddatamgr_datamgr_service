@@ -35,6 +35,7 @@ public:
         constexpr const int MOCK_PEER_USER = 101;
         status.id = MOCK_PEER_USER;
         userMetaData.users = { status };
+        UserDelegate::GetInstance();
 
         CapMetaData capMetaData;
         capMetaData.version = CapMetaData::CURRENT_VERSION;
@@ -58,21 +59,24 @@ public:
 * @tc.require:
 * @tc.author: illybyy
 */
-HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level0)
+HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
 {
     const DistributedDB::ExtendInfo info = {
-        .userId = "100", .appId = "com.sample.helloworld", .storeId = "test_store", .deviceId = "PEER_DEVICE_ID"
+        .userId = "100", .appId = "com.sample.helloworld", .storeId = "test_store", .dstTarget = "PEER_DEVICE_ID"
     };
     auto sendHandler = RouteHeadHandlerImpl::Create(info);
     ASSERT_NE(sendHandler, nullptr);
-    auto size = sendHandler->GetHeadDataSize();
-    ASSERT_GT(size, 0);
-    std::unique_ptr<uint8_t> data = std::make_unique<uint8_t>(size);
-    sendHandler->FillHeadData(data.get(), size, size);
+    uint32_t routeHeadSize = 0;
+    auto result = sendHandler->GetHeadDataSize(routeHeadSize);
+    ASSERT_GT(routeHeadSize, 0);
+    std::unique_ptr<uint8_t> data = std::make_unique<uint8_t>(routeHeadSize);
+    sendHandler->FillHeadData(data.get(), routeHeadSize, routeHeadSize);
 
     std::vector<std::string> users;
     auto recvHandler = RouteHeadHandlerImpl::Create({});
-    recvHandler->ParseHeadData(data.get(), size, size, users);
+    uint32_t parseSize = 0;
+    recvHandler->ParseHeadData(data.get(), routeHeadSize, parseSize, users);
+    EXPECT_EQ(routeHeadSize, parseSize);
     EXPECT_EQ(users.size(), 1);
     EXPECT_EQ(users[0], "101");
 }
