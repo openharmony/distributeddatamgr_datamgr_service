@@ -351,6 +351,13 @@ int SqliteQueryHelper::BindSyncDataCheckStmt(sqlite3_stmt *statement, const Key 
         }
         index += 2; // prefixKey takes 2 position
     }
+
+    errCode = BindKeysToStmt(keys_, statement, index);
+    if (errCode != E_OK) {
+        SQLiteUtils::ResetStatement(statement, true, errCode);
+        return errCode;
+    }
+
     for (const QueryObjNode &objNode : queryObjNodes_) {
         errCode = BindFieldValue(statement, objNode, index);
         if (errCode != E_OK) {
@@ -1042,7 +1049,7 @@ std::string SqliteQueryHelper::MapKeysInToSql(size_t keysNum) const
     return resultSql;
 }
 
-int SqliteQueryHelper::BindKeysToStmt(std::set<Key> &keys, sqlite3_stmt *&statement, int &index) const
+int SqliteQueryHelper::BindKeysToStmt(const std::set<Key> &keys, sqlite3_stmt *&statement, int &index) const
 {
     if (!keys_.empty()) {
         int errCode = E_OK;
