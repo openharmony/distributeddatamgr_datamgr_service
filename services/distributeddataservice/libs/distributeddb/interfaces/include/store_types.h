@@ -61,6 +61,7 @@ enum DBStatus {
     DISTRIBUTED_SCHEMA_CHANGED, // the schema was changed
     MODE_MISMATCH,
     NOT_ACTIVE,
+    USER_CHANGED,
 };
 
 struct KvStoreConfig {

@@ -389,13 +389,6 @@ static int BindDataValueByType(sqlite3_stmt *statement, const std::optional<Data
     int errCode = E_OK;
     StorageType type = data.value().GetType();
     switch (type) {
-        case StorageType::STORAGE_TYPE_BOOL: {
-            bool boolData = false;
-            (void)data.value().GetBool(boolData);
-            errCode = SQLiteUtils::MapSQLiteErrno(sqlite3_bind_int(statement, cid, boolData));
-            break;
-        }
-
         case StorageType::STORAGE_TYPE_INTEGER: {
             int64_t intData = 0;
             (void)data.value().GetInt64(intData);
@@ -438,7 +431,7 @@ static int BindDataValueByType(sqlite3_stmt *statement, const std::optional<Data
 
 static int GetLogData(sqlite3_stmt *logStatement, LogInfo &logInfo)
 {
-    logInfo.dataKey = sqlite3_column_int(logStatement, 0);  // 0 means dataKey index
+    logInfo.dataKey = sqlite3_column_int64(logStatement, 0);  // 0 means dataKey index
 
     std::vector<uint8_t> dev;
     int errCode = SQLiteUtils::GetColumnBlobValue(logStatement, 1, dev);  // 1 means dev index
@@ -669,11 +662,11 @@ int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingData(const QueryOb
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statement, sqlite3_stmt *queryStmt,
     const DataItem &dataItem, TimeStamp &maxTimestamp, int64_t rowid)
 {
-    int errCode = SQLiteUtils::BindBlobToStatement(queryStmt, 1, dataItem.hashKey);
+    int errCode = SQLiteUtils::BindBlobToStatement(queryStmt, 1, dataItem.hashKey);  // 1 means hashkey index.
     if (errCode != E_OK) {
         return errCode;
     }
-    errCode = SQLiteUtils::BindTextToStatement(queryStmt, 2, dataItem.dev);
+    errCode = SQLiteUtils::BindTextToStatement(queryStmt, 2, dataItem.dev);  // 2 means device index.
     if (errCode != E_OK) {
         return errCode;
     }
@@ -755,9 +748,8 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const DataItem &d
         return DeleteSyncDataItem(dataItem, rmDataStmt);
     }
 
-    std::vector<int> indexMapping;
     OptRowDataWithLog data;
-    int errCode = DataTransformer::DeSerializeDataItem(dataItem, data, fieldInfos, indexMapping);
+    int errCode = DataTransformer::DeSerializeDataItem(dataItem, data, fieldInfos);
     if (errCode != E_OK) {
         LOGE("[RelationalStorageExecutor] DeSerialize dataItem failed! errCode = [%d]", errCode);
         return errCode;
@@ -1099,9 +1091,8 @@ int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<Dat
             break;
         }
     } while (true);
-    if (overLongSize != 0) {
-        LOGW("Over 4M records:%zu.", overLongSize);
-    }
+    LOGI("Get sync data finished, rc:%d, record size:%zu, overlong size:%zu, isDeleted:%d",
+        errCode, dataItems.size(), overLongSize, isGettingDeletedData);
     SQLiteUtils::ResetStatement(queryStmt, true, errCode);
     SQLiteUtils::ResetStatement(fullStmt, true, errCode);
     return errCode;
@@ -1193,7 +1184,7 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckAndCleanDistributedTable(cons
             }
             missingTables.emplace_back(tableName);
         } else if (errCode != SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
-            LOGE("Check distributed table failed. %s", errCode);
+            LOGE("Check distributed table failed. %d", errCode);
             break;
         }
         errCode = E_OK; // Check result ok for distributed table is still exists

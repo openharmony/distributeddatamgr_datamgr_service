@@ -45,7 +45,7 @@ public:
 
     uint32_t GetAbilityBitsLen() const;
 
-    uint8_t GetAbilityItem(const AbilityItem abilityType) const;
+    uint8_t GetAbilityItem(const AbilityItem &abilityType) const;
 
     int SetAbilityItem(const AbilityItem &abilityType, uint8_t data);
 private:

@@ -42,7 +42,7 @@ private:
     IRelationalStore *OpenDatabase(const RelationalDBProperties &properties, int &errCode);
 
     void RemoveKvDBFromCache(const RelationalDBProperties &properties);
-    void SaveKvDBToCache(IRelationalStore *store, const RelationalDBProperties &properties);
+    void SaveRelationalDBToCache(IRelationalStore *store, const RelationalDBProperties &properties);
 
     void EnterDBOpenCloseProcess(const std::string &identifier);
     void ExitDBOpenCloseProcess(const std::string &identifier);

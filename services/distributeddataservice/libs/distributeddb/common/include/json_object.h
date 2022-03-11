@@ -34,8 +34,8 @@ public:
     static uint32_t SetMaxNestDepth(uint32_t nestDepth);
 
     // Calculate nest depth when json string is legal or estimate depth by legal part from illegal json.
-    static uint32_t CalculateNestDepth(const std::string &inString);
-    static uint32_t CalculateNestDepth(const uint8_t *dataBegin, const uint8_t *dataEnd);
+    static uint32_t CalculateNestDepth(const std::string &inString, int &errCode);
+    static uint32_t CalculateNestDepth(const uint8_t *dataBegin, const uint8_t *dataEnd, int &errCode);
 
     // Support default constructor, copy constructor and copy assignment
     JsonObject() = default;

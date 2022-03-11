@@ -417,7 +417,7 @@ int CommunicatorAggregator::RetryUntilTimeout(SendTask &inTask, uint32_t timeout
     int errCode = scheduler_.AddSendTaskIntoSchedule(inTask, inPrio);
     if (errCode != E_OK) {
         bool notTimeout = true;
-        auto retryFunc = [this, inPrio, &inTask]()->bool{
+        auto retryFunc = [this, inPrio, &inTask]()->bool {
             if (this->shutdown_) {
                 delete inTask.buffer;
                 inTask.buffer = nullptr;

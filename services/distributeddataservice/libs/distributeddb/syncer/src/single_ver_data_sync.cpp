@@ -338,7 +338,7 @@ int SingleVerDataSync::GetUnsyncData(SingleVerSyncTaskContext *context, std::vec
         GetLocalDeleteSyncWaterMark(context, deletedStartMark);
         TimeStamp lastQueryTimeStamp = 0;
         errCode = metadata_->GetLastQueryTime(context->GetQuerySyncId(),
-            context->GetDeleteSyncId(), lastQueryTimeStamp);
+            context->GetDeviceId(), lastQueryTimeStamp);
         if (errCode == E_OK) {
             QuerySyncObject queryObj = context->GetQuery();
             errCode = storage_->GetSyncData(queryObj,

@@ -410,7 +410,6 @@ HWTEST_F(DistributedDBSchemalTest, CheckFieldName002, TestSize.Level1)
     for (auto &iter : preData) {
         EXPECT_EQ(SchemaUtils::CheckFieldName(iter), -E_SCHEMA_PARSE_FAIL);
     }
-
 }
 
 /**

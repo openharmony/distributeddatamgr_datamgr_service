@@ -28,11 +28,6 @@ void SetNull(DataValue &dataValue)
     dataValue.ResetValue();
 }
 
-void SetBool(DataValue &dataValue)
-{
-    dataValue = false;
-}
-
 void SetInt64(DataValue &dataValue)
 {
     dataValue = INT64_MAX;
@@ -57,7 +52,6 @@ void SetBlob(DataValue &dataValue)
 
 std::map<StorageType, void(*)(DataValue&)> g_typeMapFunction = {
     {StorageType::STORAGE_TYPE_NULL,    &SetNull},
-    {StorageType::STORAGE_TYPE_BOOL,    &SetBool},
     {StorageType::STORAGE_TYPE_INTEGER, &SetInt64},
     {StorageType::STORAGE_TYPE_REAL,    &SetDouble},
     {StorageType::STORAGE_TYPE_TEXT,    &SetText},

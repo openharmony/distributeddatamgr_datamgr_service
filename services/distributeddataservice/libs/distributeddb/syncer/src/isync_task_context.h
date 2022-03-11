@@ -172,6 +172,8 @@ public:
     virtual bool IsCurrentSyncTaskCanBeSkipped() const = 0;
 
     virtual void SetIsNeedResetAbilitySync(bool isNeedReset) = 0;
+
+    virtual void SchemaChange() = 0;
 protected:
     virtual ~ISyncTaskContext() {};
 };

@@ -22,7 +22,7 @@
 namespace DistributedDB {
 class DefaultFactory final : public IKvDBFactory {
 public:
-    DefaultFactory() {}
+    DefaultFactory() noexcept {}
     ~DefaultFactory() override {}
 
     DISABLE_COPY_ASSIGN_MOVE(DefaultFactory);

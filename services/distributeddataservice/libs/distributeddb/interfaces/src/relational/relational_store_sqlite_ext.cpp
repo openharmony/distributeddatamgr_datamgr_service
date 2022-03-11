@@ -132,10 +132,10 @@ public:
         }
     }
 
-    static TimeStamp GetTime(TimeOffset TimeOffset)
+    static TimeStamp GetTime(TimeOffset timeOffset)
     {
         TimeStamp currentSysTime = GetSysCurrentTime();
-        TimeStamp currentLocalTime = currentSysTime + TimeOffset;
+        TimeStamp currentLocalTime = currentSysTime + timeOffset;
         std::lock_guard<std::mutex> lock(lastLocalTimeLock_);
         if (currentLocalTime <= lastLocalTime_ || currentLocalTime > MAX_VALID_TIME) {
             lastLocalTime_++;

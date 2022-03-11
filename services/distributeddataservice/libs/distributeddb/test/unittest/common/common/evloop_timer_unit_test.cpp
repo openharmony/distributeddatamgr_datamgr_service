@@ -116,7 +116,7 @@ HWTEST_F(DistributedDBEventLoopTimerTest, EventLoopTimerTest001, TestSize.Level0
      * @tc.expected: step2. destroy successfully.
      */
     bool finalized = false;
-    loop->OnLastRef([&finalized](){ finalized = true; });
+    loop->OnLastRef([&finalized]() { finalized = true; });
     loop->DecObjRef(loop);
     loop = nullptr;
     EXPECT_EQ(finalized, true);
@@ -140,7 +140,7 @@ HWTEST_F(DistributedDBEventLoopTimerTest, EventLoopTimerTest002, TestSize.Level1
      */
     std::atomic<bool> running(false);
     EventTime delta = 0;
-    std::thread loopThread([&running, &delta](){
+    std::thread loopThread([&running, &delta]() {
             running = true;
             EventTime start = TimerTester::GetCurrentTime();
             g_loop->Run();
@@ -180,7 +180,7 @@ HWTEST_F(DistributedDBEventLoopTimerTest, EventLoopTimerTest003, TestSize.Level0
     bool finalized = false;
     errCode = timer->SetAction([](EventsMask revents) -> int {
             return E_OK;
-        }, [&finalized](){
+        }, [&finalized]() {
             finalized = true;
         });
     EXPECT_EQ(errCode, E_OK);
@@ -206,7 +206,7 @@ HWTEST_F(DistributedDBEventLoopTimerTest, EventLoopTimerTest004, TestSize.Level1
      * @tc.expected: step1. start successfully.
      */
     std::atomic<bool> running(false);
-    std::thread loopThread([&running](){
+    std::thread loopThread([&running]() {
             running = true;
             g_loop->Run();
         });
@@ -258,7 +258,7 @@ HWTEST_F(DistributedDBEventLoopTimerTest, EventLoopTimerTest005, TestSize.Level1
      * @tc.expected: step1. start successfully.
      */
     std::atomic<bool> running(false);
-    std::thread loopThread([&running](){
+    std::thread loopThread([&running]() {
             running = true;
             g_loop->Run();
         });
@@ -282,7 +282,7 @@ HWTEST_F(DistributedDBEventLoopTimerTest, EventLoopTimerTest005, TestSize.Level1
         [&counter](EventsMask revents) -> int {
             ++counter;
             return E_OK;
-        }, [&finalize](){ finalize = true; });
+        }, [&finalize]() { finalize = true; });
     EXPECT_EQ(errCode, E_OK);
     errCode = g_loop->Add(timer);
     EXPECT_EQ(errCode, E_OK);
@@ -317,7 +317,7 @@ HWTEST_F(DistributedDBEventLoopTimerTest, EventLoopTimerTest006, TestSize.Level1
      * @tc.expected: step1. start successfully.
      */
     std::atomic<bool> running(false);
-    std::thread loopThread([&running](){
+    std::thread loopThread([&running]() {
             running = true;
             g_loop->Run();
         });
@@ -338,7 +338,7 @@ HWTEST_F(DistributedDBEventLoopTimerTest, EventLoopTimerTest006, TestSize.Level1
     std::atomic<int> counter(0);
     std::atomic<bool> finalize(false);
     errCode = timer->SetAction([&counter](EventsMask revents) -> int { ++counter; return -E_STALE; },
-        [&finalize](){ finalize = true; });
+        [&finalize]() { finalize = true; });
     EXPECT_EQ(errCode, E_OK);
     errCode = g_loop->Add(timer);
     EXPECT_EQ(errCode, E_OK);
@@ -373,7 +373,7 @@ HWTEST_F(DistributedDBEventLoopTimerTest, EventLoopTimerTest007, TestSize.Level2
      * @tc.expected: step1. start successfully.
      */
     std::atomic<bool> running(false);
-    std::thread loopThread([&running](){
+    std::thread loopThread([&running]() {
             running = true;
             g_loop->Run();
         });

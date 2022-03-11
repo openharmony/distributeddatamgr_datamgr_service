@@ -140,7 +140,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, WaitAndRetrySend001, TestSize.Level2
 {
     // Preset
     Message *msgForBB = nullptr;
-    g_commBB->RegOnMessageCallback([&msgForBB](const std::string &srcTarget, Message *inMsg){
+    g_commBB->RegOnMessageCallback([&msgForBB](const std::string &srcTarget, Message *inMsg) {
         msgForBB = inMsg;
     }, nullptr);
 
@@ -161,7 +161,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, WaitAndRetrySend001, TestSize.Level2
      */
     Message *msgForAB = BuildRegedTinyMessage();
     ASSERT_NE(msgForAB, nullptr);
-    SendConfig conf = {true, 0};
+    SendConfig conf = {true, false, 0};
     int errCode = g_commAB->SendMessage(DEVICE_NAME_B, msgForAB, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Wait 100 ms
@@ -312,7 +312,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment001, TestSize.Level2)
 {
     // Preset
     Message *recvMsgForBB = nullptr;
-    g_commBB->RegOnMessageCallback([&recvMsgForBB](const std::string &srcTarget, Message *inMsg){
+    g_commBB->RegOnMessageCallback([&recvMsgForBB](const std::string &srcTarget, Message *inMsg) {
         recvMsgForBB = inMsg;
     }, nullptr);
 
@@ -328,7 +328,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment001, TestSize.Level2)
     const uint32_t dataLength = 13 * 1024 * 1024; // 13 MB, 1024 is scale
     Message *sendMsgForAB = BuildRegedGiantMessage(dataLength);
     ASSERT_NE(sendMsgForAB, nullptr);
-    SendConfig conf = {false, 0};
+    SendConfig conf = {false, false, 0};
     int errCode = g_commAB->SendMessage(DEVICE_NAME_B, sendMsgForAB, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(2600)); // Wait 2600 ms to make sure send done
@@ -367,7 +367,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment002, TestSize.Level2)
 {
     // Preset
     Message *recvMsgForCC = nullptr;
-    g_commCC->RegOnMessageCallback([&recvMsgForCC](const std::string &srcTarget, Message *inMsg){
+    g_commCC->RegOnMessageCallback([&recvMsgForCC](const std::string &srcTarget, Message *inMsg) {
         recvMsgForCC = inMsg;
     }, nullptr);
 
@@ -389,7 +389,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment002, TestSize.Level2)
     uint32_t dataLength = 13 * 1024 * 1024; // 13 MB, 1024 is scale
     Message *sendMsgForBC = BuildRegedGiantMessage(dataLength);
     ASSERT_NE(sendMsgForBC, nullptr);
-    SendConfig conf = {false, 0};
+    SendConfig conf = {false, false, 0};
     int errCode = g_commBC->SendMessage(DEVICE_NAME_C, sendMsgForBC, conf);
     EXPECT_EQ(errCode, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(2600)); // Wait 2600 ms to make sure send done
@@ -432,7 +432,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment002, TestSize.Level2)
 HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment003, TestSize.Level3)
 {
     // Preset
-    std::atomic<int> count{0};
+    std::atomic<int> count {0};
     OnMessageCallback callback = [&count](const std::string &srcTarget, Message *inMsg) {
         delete inMsg;
         inMsg = nullptr;
@@ -460,7 +460,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, Fragment003, TestSize.Level3)
     uint32_t dataLength = 23 * 1024 * 1024; // 23 MB, 1024 is scale
     Message *sendMsgForAB = BuildRegedGiantMessage(dataLength);
     ASSERT_NE(sendMsgForAB, nullptr);
-    SendConfig conf = {false, 0};
+    SendConfig conf = {false, false, 0};
     int errCode = g_commAB->SendMessage(DEVICE_NAME_B, sendMsgForAB, conf);
     EXPECT_EQ(errCode, E_OK);
 
@@ -512,7 +512,7 @@ HWTEST_F(DistributedDBCommunicatorDeepTest, ReliableOnline001, TestSize.Level2)
 {
     // Preset
     ClearPreviousTestCaseInfluence();
-    std::atomic<int> count{0};
+    std::atomic<int> count {0};
     OnConnectCallback callback = [&count](const std::string &target, bool isConnect) {
         if (isConnect) {
             count.fetch_add(1, std::memory_order_seq_cst);

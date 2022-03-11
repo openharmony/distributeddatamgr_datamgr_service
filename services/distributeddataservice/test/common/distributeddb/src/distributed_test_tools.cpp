@@ -414,6 +414,7 @@ void CopyFile(const string &srcFile, const string &destFile)
     FILE *pOut = fopen(destFile.c_str(), "w");
     if (pOut == nullptr) {
         perror("pOut");
+        fclose(pIn);
         return;
     }
 
@@ -435,6 +436,8 @@ void CopyDir(const string &srcDir, const string &destDir, const int authRight)
             MST_LOG("[CopyDir] SetDir(%s) failed(%d)!", destFullDir.c_str(), errno);
             return;
         }
+    } else {
+        closedir(dpDest);
     }
     string path = srcFullDir;
     if (srcFullDir.back() != '/') {
@@ -446,7 +449,6 @@ void CopyDir(const string &srcDir, const string &destDir, const int authRight)
 
     DIR *dpSrc = opendir(path.c_str());
     if (dpSrc == nullptr) {
-        closedir(dpDest);
         MST_LOG("[CopyDir] please make sure srcDir(%s) is valid.", srcDir.c_str());
         return;
     }
@@ -466,7 +468,6 @@ void CopyDir(const string &srcDir, const string &destDir, const int authRight)
         }
     }
     closedir(dpSrc);
-    closedir(dpDest);
     MST_LOG("[CopyDir] copy file from %s to %s successfully.", srcDir.c_str(), destDir.c_str());
 }
 

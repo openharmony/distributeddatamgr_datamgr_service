@@ -1530,7 +1530,7 @@ void SQLiteSingleVerStorageExecutor::PutConflictData(const DataItem &itemPut, co
     }
 
     if (dataStatus.preStatus == DataStatus::NOEXISTED ||
-        ((dataStatus.preStatus == DataStatus::DELETED) && (dataStatus.isDeleted == true))) {
+        ((dataStatus.preStatus == DataStatus::DELETED) && dataStatus.isDeleted)) {
         return;
     }
 

@@ -297,7 +297,7 @@ uint32_t AbilitySyncAckPacket::CalculateLen() const
     len += Parcel::GetUInt32Len(); // requirePeerConvert_
     len += Parcel::GetUInt64Len(); // dbCreateTime_
     len += DbAbility::CalculateLen(dbAbility_); // dbAbility_
-    len += relationalSyncOpinion_.CalculateParcelLen(softwareVersion_);
+    len += SchemaNegotiate::CalculateParcelLen(relationalSyncOpinion_);
     if (len > INT32_MAX) {
         LOGE("[AbilitySyncAckPacket][CalculateLen]  err len:%llu", len);
         return 0;
@@ -709,7 +709,7 @@ int AbilitySync::AckPacketSerialization(uint8_t *buffer, uint32_t length, const 
     if (parcel.IsError() || errCode != E_OK) {
         return -E_PARSE_FAIL;
     }
-    errCode = packet->GetRelationalSyncOpinion().SerializeData(parcel, SOFTWARE_VERSION_CURRENT);
+    errCode = SchemaNegotiate::SerializeData(packet->GetRelationalSyncOpinion(), parcel);
     if (parcel.IsError() || errCode != E_OK) {
         return -E_PARSE_FAIL;
     }
@@ -826,7 +826,7 @@ int AbilitySync::AckPacketDeSerializationTailPart(Parcel &parcel, AbilitySyncAck
     }
     packet->SetDbAbility(remoteDbAbility);
     RelationalSyncOpinion relationalSyncOpinion;
-    errCode = RelationalSyncOpinion::DeserializeData(parcel, relationalSyncOpinion);
+    errCode = SchemaNegotiate::DeserializeData(parcel, relationalSyncOpinion);
     if (errCode != E_OK) {
         LOGE("[AbilitySync] ack packet DeSerializ RelationalSyncOpinion failed.");
         return errCode;
@@ -1125,7 +1125,7 @@ SyncOpinion AbilitySync::MakeKvSyncOpnion(const AbilitySyncRequestPacket *packet
 {
     uint8_t remoteSchemaType = packet->GetSchemaType();
     SchemaObject localSchema = (static_cast<SingleVerKvDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
-    SyncOpinion localSyncOpinion = SchemaObject::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
+    SyncOpinion localSyncOpinion = SchemaNegotiate::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
     return localSyncOpinion;
 }
 
@@ -1134,7 +1134,7 @@ RelationalSyncOpinion AbilitySync::MakeRelationSyncOpnion(const AbilitySyncReque
 {
     uint8_t remoteSchemaType = packet->GetSchemaType();
     RelationalSchemaObject localSchema = (static_cast<RelationalDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
-    return RelationalSchemaObject::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
+    return SchemaNegotiate::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
 }
 
 void AbilitySync::HandleKvAckSchemaParam(const AbilitySyncAckPacket *recvPacket,
@@ -1146,8 +1146,8 @@ void AbilitySync::HandleKvAckSchemaParam(const AbilitySyncAckPacket *recvPacket,
     bool requirePeerConvert = static_cast<bool>(recvPacket->GetRequirePeerConvert());
     SyncOpinion remoteOpinion = {permitSync, requirePeerConvert, true};
     SchemaObject localSchema = (static_cast<SingleVerKvDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
-    SyncOpinion syncOpinion = SchemaObject::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
-    SyncStrategy localStrategy = SchemaObject::ConcludeSyncStrategy(syncOpinion, remoteOpinion);
+    SyncOpinion syncOpinion = SchemaNegotiate::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
+    SyncStrategy localStrategy = SchemaNegotiate::ConcludeSyncStrategy(syncOpinion, remoteOpinion);
     SetAbilityAckSyncOpinionInfo(sendPacket, syncOpinion);
     (static_cast<SingleVerKvSyncTaskContext *>(context))->SetSyncStrategy(localStrategy);
 }
@@ -1158,8 +1158,8 @@ int AbilitySync::HandleRelationAckSchemaParam(const AbilitySyncAckPacket *recvPa
     std::string remoteSchema = recvPacket->GetSchema();
     uint8_t remoteSchemaType = recvPacket->GetSchemaType();
     auto localSchema = (static_cast<RelationalDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
-    auto localOpinion = RelationalSchemaObject::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
-    auto localStrategy = RelationalSchemaObject::ConcludeSyncStrategy(localOpinion,
+    auto localOpinion = SchemaNegotiate::MakeLocalSyncOpinion(localSchema, remoteSchema, remoteSchemaType);
+    auto localStrategy = SchemaNegotiate::ConcludeSyncStrategy(localOpinion,
         recvPacket->GetRelationalSyncOpinion());
     (static_cast<SingleVerRelationalSyncTaskContext *>(context))->SetRelationalSyncStrategy(localStrategy);
     int errCode = (static_cast<RelationalDBSyncInterface *>(storageInterface_))->

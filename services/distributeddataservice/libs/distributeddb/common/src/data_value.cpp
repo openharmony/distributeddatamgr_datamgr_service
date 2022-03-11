@@ -41,7 +41,7 @@ Blob::Blob(Blob &&blob) : ptr_(blob.ptr_), size_(blob.size_)
 
 Blob &Blob::operator=(Blob &&blob) noexcept
 {
-    if (this != &blob) {
+    if (&blob != this) {
         delete[] ptr_;
         ptr_ = blob.ptr_;
         size_ = blob.size_;
@@ -104,14 +104,11 @@ DataValue::DataValue(DataValue &&dataValue) noexcept
 
 DataValue &DataValue::operator=(const DataValue &dataValue)
 {
-    if (this == &dataValue) {
+    if (&dataValue == this) {
         return *this;
     }
     ResetValue();
     switch (dataValue.type_) {
-        case StorageType::STORAGE_TYPE_BOOL:
-            (void)dataValue.GetBool(this->value_.bValue);
-            break;
         case StorageType::STORAGE_TYPE_INTEGER:
             (void)dataValue.GetInt64(this->value_.iValue);
             break;
@@ -131,7 +128,7 @@ DataValue &DataValue::operator=(const DataValue &dataValue)
 
 DataValue &DataValue::operator=(DataValue &&dataValue) noexcept
 {
-    if (this == &dataValue) {
+    if (&dataValue == this) {
         return *this;
     }
     ResetValue();
@@ -145,14 +142,6 @@ DataValue &DataValue::operator=(DataValue &&dataValue) noexcept
         default:
             break;
     }
-    return *this;
-}
-
-DataValue &DataValue::operator=(bool boolVal)
-{
-    ResetValue();
-    type_ = StorageType::STORAGE_TYPE_BOOL;
-    value_.bValue = boolVal;
     return *this;
 }
 
@@ -203,8 +192,6 @@ bool DataValue::operator==(const DataValue &dataValue) const
         return false;
     }
     switch (type_) {
-        case StorageType::STORAGE_TYPE_BOOL:
-            return dataValue.value_.bValue == value_.bValue;
         case StorageType::STORAGE_TYPE_INTEGER:
             return dataValue.value_.iValue == value_.iValue;
         case StorageType::STORAGE_TYPE_REAL:
@@ -228,15 +215,6 @@ bool DataValue::operator==(const DataValue &dataValue) const
 bool DataValue::operator!=(const DataValue &dataValue) const
 {
     return !(*this == dataValue);
-}
-
-int DataValue::GetBool(bool &outVal) const
-{
-    if (type_ != StorageType::STORAGE_TYPE_BOOL) {
-        return -E_NOT_SUPPORT;
-    }
-    outVal = value_.bValue;
-    return E_OK;
 }
 
 int DataValue::GetDouble(double &outVal) const
@@ -299,7 +277,7 @@ int DataValue::GetBlob(Blob &outVal) const
 
 int DataValue::SetText(const std::string &val)
 {
-    return SetText(reinterpret_cast<const uint8_t*>(val.c_str()), val.length());
+    return SetText(reinterpret_cast<const uint8_t *>(val.c_str()), val.length());
 }
 
 int DataValue::SetText(const uint8_t *val, uint32_t length)
@@ -352,7 +330,6 @@ void DataValue::ResetValue()
             value_.blobPtr = nullptr;
             break;
         case StorageType::STORAGE_TYPE_NULL:
-        case StorageType::STORAGE_TYPE_BOOL:
         case StorageType::STORAGE_TYPE_INTEGER:
         case StorageType::STORAGE_TYPE_REAL:
         default:
@@ -374,9 +351,6 @@ std::string DataValue::ToString() const
             break;
         case StorageType::STORAGE_TYPE_NULL:
             res = "null";
-            break;
-        case StorageType::STORAGE_TYPE_BOOL:
-            res = std::to_string(value_.bValue);
             break;
         case StorageType::STORAGE_TYPE_INTEGER:
             res = std::to_string(value_.iValue);

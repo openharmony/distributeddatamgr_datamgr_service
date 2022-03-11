@@ -50,12 +50,14 @@ public:
     void SetMainCommunicator(ICommunicator *communicator);
 
     // Set an equal communicator for this database, After this called, send msg to the target will use this communicator
-    void SetEqualCommunicator(ICommunicator *communicator, const std::vector<std::string> &targets);
+    void SetEqualCommunicator(ICommunicator *communicator, const std::string &identifier,
+        const std::vector<std::string> &targets);
 
 private:
     ICommunicator *mainComm_;
     mutable std::mutex devCommMapLock_;
-    std::map<std::string, ICommunicator *> devCommMap_;
+    // key: device value: <identifier, ICommunicator *>
+    std::map<std::string, std::pair<std::string, ICommunicator *>> devCommMap_;
 };
 } // namespace DistributedDB
 #endif // COMMUNICATOR_PROXY_H

@@ -75,7 +75,6 @@ struct InternalSyncParma {
     QuerySyncObject syncQuery;
 };
 
-constexpr uint32_t SEND_TIME_OUT = 3000; // 3s
 constexpr int NOT_SURPPORT_SEC_CLASSIFICATION = 0xff;
 constexpr uint8_t QUERY_SYNC_MODE_BASE = SyncModeType::QUERY_PUSH;
 constexpr int AUTO_RETRY_TIMES = 3;

@@ -880,7 +880,7 @@ int SQLiteSingleVerStorageEngine::CreateNewExecutor(bool isWrite, StorageExecuto
         dbHandle = nullptr;
         return -E_OUT_OF_MEMORY;
     }
-    if (isAttachMeta == true) {
+    if (isAttachMeta) {
         SQLiteSingleVerStorageExecutor *singleVerHandle = static_cast<SQLiteSingleVerStorageExecutor *>(handle);
         singleVerHandle->SetAttachMetaMode(isAttachMeta);
     }

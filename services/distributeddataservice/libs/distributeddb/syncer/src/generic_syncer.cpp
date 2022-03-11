@@ -122,7 +122,7 @@ int GenericSyncer::Initialize(ISyncInterface *syncInterface, bool isNeedActive)
     return E_OK;
 }
 
-int GenericSyncer::Close()
+int GenericSyncer::Close(bool isClosedOperation)
 {
     {
         std::lock_guard<std::mutex> lock(syncerLock_);
@@ -139,7 +139,7 @@ int GenericSyncer::Close()
         }
         closing_ = true;
     }
-    ClearSyncOperations();
+    ClearSyncOperations(isClosedOperation);
     if (syncEngine_ != nullptr) {
         syncEngine_->Close();
         LOGD("[Syncer] Close SyncEngine!");
@@ -425,14 +425,43 @@ bool GenericSyncer::IsValidDevices(const std::vector<std::string> &devices) cons
     return true;
 }
 
-void GenericSyncer::ClearSyncOperations()
+void GenericSyncer::ClearSyncOperations(bool isClosedOperation)
 {
-    std::lock_guard<std::mutex> lock(operationMapLock_);
-    for (auto &iter : syncOperationMap_) {
-        RefObject::KillAndDecObjRef(iter.second);
-        iter.second = nullptr;
+    std::vector<SyncOperation *> syncOperation;
+    {
+        std::lock_guard<std::mutex> lock(operationMapLock_);
+        for (auto &item : syncOperationMap_) {
+            bool isBlockSync = item.second->IsBlockSync();
+            if (isBlockSync || !isClosedOperation) {
+                int status = (!isClosedOperation) ? SyncOperation::OP_USER_CHANGED : SyncOperation::OP_FAILED;
+                item.second->SetUnfinishedDevStatus(status);
+                RefObject::IncObjRef(item.second);
+                syncOperation.push_back(item.second);
+            }
+        }
     }
-    syncOperationMap_.clear();
+    for (auto &operation : syncOperation) {
+        // block sync operation or userChange will trigger remove sync operation
+        // caller won't blocked for block sync
+        // caller won't blocked for userChange operation no mater it is block or non-block sync
+        TriggerSyncFinished(operation);
+        RefObject::DecObjRef(operation);
+    }
+    {
+        std::lock_guard<std::mutex> lock(operationMapLock_);
+        for (auto &iter : syncOperationMap_) {
+            RefObject::KillAndDecObjRef(iter.second);
+            iter.second = nullptr;
+        }
+        syncOperationMap_.clear();
+    }
+}
+
+void GenericSyncer::TriggerSyncFinished(SyncOperation *operation)
+{
+    if (operation != nullptr && operation->CheckIsAllFinished()) {
+        operation->Finished();
+    }
 }
 
 void GenericSyncer::OnSyncFinished(int syncId)

@@ -104,12 +104,13 @@ void DistributedDBCommunicatorProxyTest::SetUp(void)
      */
     KvStoreNbDelegate::Option option;
     g_mgr.GetKvStore(STORE_ID, option, g_kvDelegateCallback);
+    std::string identifier = g_mgr.GetKvStoreIdentifier(USER_ID, APP_ID, STORE_ID);
     ASSERT_TRUE(g_kvDelegateStatus == OK);
     ASSERT_TRUE(g_kvDelegatePtr != nullptr);
     commProxy_ = new (std::nothrow) CommunicatorProxy();
     ASSERT_TRUE(commProxy_ != nullptr);
     commProxy_->SetMainCommunicator(&mainComm_);
-    commProxy_->SetEqualCommunicator(&extComm_, { DEVICE_C });
+    commProxy_->SetEqualCommunicator(&extComm_, identifier, { DEVICE_C });
 }
 
 void DistributedDBCommunicatorProxyTest::TearDown(void)
@@ -309,7 +310,7 @@ HWTEST_F(DistributedDBCommunicatorProxyTest, SendMessage001, TestSize.Level1)
      * @tc.steps: step1. Call SendMessage from CommProxy with param DEVICE_B.
      * @tc.expected: step1. MainComm's SendMessage willed called and return E_OK.
      */
-    SendConfig conf = {true, 0};
+    SendConfig conf = {true, false, 0};
     EXPECT_CALL(mainComm_, SendMessage(DEVICE_B, _, _, _)).WillOnce(Return(E_OK));
     EXPECT_EQ(commProxy_->SendMessage(DEVICE_B, nullptr, conf, nullptr), E_OK);
 

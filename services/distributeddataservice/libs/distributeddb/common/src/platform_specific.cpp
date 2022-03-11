@@ -78,7 +78,7 @@ int CalFileSize(const std::string &fileUrl, uint64_t &size)
         return errCode;
     }
 
-    size = fileStat.st_size;
+    size = static_cast<uint64_t>(fileStat.st_size);
     return E_OK;
 }
 
@@ -138,7 +138,11 @@ int GetRealPath(const std::string &inOriPath, std::string &outRealPath)
     if (realPath == nullptr) {
         return -E_OUT_OF_MEMORY;
     }
-    (void)memset_s(realPath, MAX_PATH_LENGTH + 1, 0, MAX_PATH_LENGTH + 1);
+    if (memset_s(realPath, MAX_PATH_LENGTH + 1, 0, MAX_PATH_LENGTH + 1) != EOK) {
+        delete []realPath;
+        return -E_SECUREC_ERROR;
+    }
+
     if (realpath(inOriPath.c_str(), realPath) == nullptr) {
         LOGE("[RealPath] Get realpath for inOriPath fail:%d.", errno);
         delete []realPath;
@@ -217,7 +221,7 @@ static int GetFilePathAttr(const std::string &topPath, const std::string &relati
         if (isNeedAllPath) {
             file.fileName = fileAbsName;
         }
-        file.fileLen = fileStat.st_size;
+        file.fileLen = static_cast<uint64_t>(fileStat.st_size);
         files.push_back(file);
         if (file.fileType == PATH) {
             errCode = GetFilePathAttr(fileAbsName, relativePath + fileDirInfo->d_name + "/", files, isNeedAllPath);

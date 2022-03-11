@@ -35,33 +35,6 @@ void DataValueDefaultNullCheck(DataValue &dataValue)
     EXPECT_EQ(dataValue.GetType(), StorageType::STORAGE_TYPE_NULL);
 }
 
-void DataValueBoolCheck(DataValue &dataValue)
-{
-    /**
-     * @tc.steps: step1. create a dataValue and set true
-     * @tc.expected: dataValue type is bool.
-     */
-    bool targetVal = true;
-    dataValue = targetVal;
-    EXPECT_EQ(dataValue.GetType(), StorageType::STORAGE_TYPE_BOOL);
-    /**
-     * @tc.steps: step2. get a value from dataValue
-     * @tc.expected: get ok and value is true.
-     */
-    bool val = false;
-    EXPECT_EQ(dataValue.GetBool(val), E_OK);
-    EXPECT_EQ(val, targetVal);
-    /**
-     * @tc.steps: step3. set false and then get it from dataValue.
-     * @tc.expected: get ok and value is false.
-     */
-    targetVal = false;
-    dataValue = targetVal;
-    EXPECT_EQ(dataValue.GetType(), StorageType::STORAGE_TYPE_BOOL);
-    EXPECT_EQ(dataValue.GetBool(val), E_OK);
-    EXPECT_EQ(targetVal, val);
-}
-
 void DataValueDoubleCheck(DataValue &dataValue)
 {
     /**
@@ -138,7 +111,7 @@ void DataValueBlobCheck(DataValue &dataValue)
 }
 
 const std::vector<void (*)(DataValue&)> g_checkFuncList = {
-    &DataValueDefaultNullCheck, &DataValueBoolCheck, &DataValueInt64Check,
+    &DataValueDefaultNullCheck, &DataValueInt64Check,
     &DataValueDoubleCheck, &DataValueStringCheck, &DataValueBlobCheck
 };
 

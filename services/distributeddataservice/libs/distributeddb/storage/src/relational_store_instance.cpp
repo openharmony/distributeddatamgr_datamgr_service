@@ -103,7 +103,7 @@ void RelationalStoreInstance::RemoveKvDBFromCache(const RelationalDBProperties &
     dbs_.erase(identifier);
 }
 
-void RelationalStoreInstance::SaveKvDBToCache(IRelationalStore *store, const RelationalDBProperties &properties)
+void RelationalStoreInstance::SaveRelationalDBToCache(IRelationalStore *store, const RelationalDBProperties &properties)
 {
     if (store == nullptr) {
         return;
@@ -122,6 +122,7 @@ IRelationalStore *RelationalStoreInstance::OpenDatabase(const RelationalDBProper
 {
     auto db = new (std::nothrow) SQLiteRelationalStore();
     if (db == nullptr) {
+        errCode = -E_OUT_OF_MEMORY;
         LOGE("Failed to get relational store! err:%d", errCode);
         return nullptr;
     }
@@ -138,7 +139,7 @@ IRelationalStore *RelationalStoreInstance::OpenDatabase(const RelationalDBProper
         return nullptr;
     }
 
-    SaveKvDBToCache(db, properties);
+    SaveRelationalDBToCache(db, properties);
     return db;
 }
 

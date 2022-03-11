@@ -24,7 +24,7 @@
 #include "db_types.h"
 #include "macro_utils.h"
 #include "relational_schema_object.h"
-#include "schema.h"
+#include "ischema.h"
 #include "value_object.h"
 
 namespace DistributedDB {
@@ -44,13 +44,6 @@ public:
     static std::string GetExtractFuncName(SchemaType inSchemaType);
     static std::string GenerateExtractSQL(SchemaType inSchemaType, const FieldPath &inFieldpath, FieldType inFieldType,
         uint32_t skipSize, const std::string &accessStr = "");
-
-    // The remoteSchemaType may beyond local SchemaType definition
-    static SyncOpinion MakeLocalSyncOpinion(const SchemaObject &localSchema, const std::string &remoteSchema,
-        uint8_t remoteSchemaType);
-
-    // The remoteOpinion.checkOnReceive is ignored
-    static SyncStrategy ConcludeSyncStrategy(const SyncOpinion &localOpinion, const SyncOpinion &remoteOpinion);
 
     // Support default constructor, copy constructor and copy assignment
     SchemaObject();
@@ -215,4 +208,3 @@ private:
 } // namespace DistributedDB
 
 #endif // SCHEMA_OBJECT_H
-

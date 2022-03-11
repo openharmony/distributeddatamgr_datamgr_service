@@ -749,7 +749,7 @@ int SyncEngine::SetEqualIdentifier(const std::string &identifier, const std::vec
     LOGI("[SyncEngine] set equal identifier=%s, original=%s, targetDevices=%s",
         DBCommon::TransferStringToHex(identifier).c_str(), label_.c_str(),
         targetDevices.substr(0, targetDevices.size() - 1).c_str());
-    communicatorProxy_->SetEqualCommunicator(communicator, targets);
+    communicatorProxy_->SetEqualCommunicator(communicator, identifier, targets);
     communicator->Activate();
     return E_OK;
 }
@@ -771,6 +771,13 @@ void SyncEngine::SetEqualIdentifier()
 
 void SyncEngine::SetEqualIdentifierMap(const std::string &identifier, const std::vector<std::string> &targets)
 {
+    for (auto iter = equalIdentifierMap_.begin(); iter != equalIdentifierMap_.end();) {
+        if (identifier == iter->second) {
+            iter = equalIdentifierMap_.erase(iter);
+            continue;
+        }
+        iter++;
+    }
     for (auto &device : targets) {
         equalIdentifierMap_[device] = identifier;
     }
@@ -1000,7 +1007,7 @@ bool SyncEngine::IsEngineActive() const
     return isActive_;
 }
 
-void SyncEngine::ResetAbilitySync()
+void SyncEngine::SchemaChange()
 {
     std::lock_guard<std::mutex> lock(contextMapLock_);
     for (auto &enrty : syncTaskContextMap_) {
@@ -1009,9 +1016,7 @@ void SyncEngine::ResetAbilitySync()
             continue;
         }
         // IncRef for SyncEngine to make sure context is valid, to avoid a big lock
-        RefObject::IncObjRef(context);
-        context->SetIsNeedResetAbilitySync(true);
-        RefObject::DecObjRef(context);
+        context->SchemaChange();
     }
 }
 } // namespace DistributedDB

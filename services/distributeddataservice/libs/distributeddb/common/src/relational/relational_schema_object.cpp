@@ -202,21 +202,6 @@ void TableInfo::AddField(const FieldInfo &field)
     fields_[field.GetFieldName()] = field;
 }
 
-const std::vector<CompositeFields> &TableInfo::GetUniqueDefine() const
-{
-    return uniqueDefines_;
-}
-
-void TableInfo::AddUniqueDefine(const CompositeFields &uniqueDefine)
-{
-    uniqueDefines_.push_back(uniqueDefine);
-}
-
-void TableInfo::SetUniqueDefines(const std::vector<CompositeFields> &uniqueDefines)
-{
-    uniqueDefines_ = uniqueDefines;
-}
-
 const std::map<std::string, CompositeFields> &TableInfo::GetIndexDefine() const
 {
     return indexDefines_;
@@ -237,16 +222,6 @@ void TableInfo::SetPrimaryKey(const FieldName &fieldName)
     primaryKey_ = fieldName;
 }
 
-void TableInfo::AddTrigger(const std::string &triggerName)
-{
-    triggers_.push_back(triggerName);
-}
-
-const std::vector<std::string> &TableInfo::GetTriggers() const
-{
-    return triggers_;
-}
-
 void TableInfo::AddFieldDefineString(std::string &attrStr) const
 {
     if (fields_.empty()) {
@@ -260,28 +235,6 @@ void TableInfo::AddFieldDefineString(std::string &attrStr) const
         }
     }
     attrStr += "},";
-}
-
-void TableInfo::AddUniqueDefineString(std::string &attrStr) const
-{
-    if (uniqueDefines_.empty()) {
-        return;
-    }
-    attrStr += R"("UNIQUE": [)";
-    for (auto itUniqueDefine = uniqueDefines_.begin(); itUniqueDefine != uniqueDefines_.end(); ++itUniqueDefine) {
-        attrStr += "[\"";
-        for (auto itField = (*itUniqueDefine).begin(); itField != (*itUniqueDefine).end(); ++itField) {
-            attrStr += *itField;
-            if (itField != (*itUniqueDefine).end() - 1) {
-                attrStr += "\",\"";
-            }
-        }
-        attrStr += "\"]";
-        if (itUniqueDefine != uniqueDefines_.end() - 1) {
-            attrStr += ",";
-        }
-    }
-    attrStr += "],";
 }
 
 void TableInfo::AddIndexDefineString(std::string &attrStr) const
@@ -304,16 +257,6 @@ void TableInfo::AddIndexDefineString(std::string &attrStr) const
         }
     }
     attrStr += "}";
-}
-
-const std::string &TableInfo::GetDevId() const
-{
-    return devId_;
-}
-
-void TableInfo::SetDevId(const std::string &devId)
-{
-    devId_ = devId;
 }
 
 int TableInfo::CompareWithTable(const TableInfo &inTableInfo) const
@@ -395,39 +338,6 @@ int TableInfo::CompareWithTableIndex(const std::map<std::string, CompositeFields
         -E_RELATIONAL_TABLE_COMPATIBLE;
 }
 
-namespace {
-    std::string VectorJoin(const CompositeFields &fields, char con)
-    {
-        std::string res;
-        auto it = fields.begin();
-        res += *it++;
-        for (; it != fields.end(); ++it) {
-            res += con + *it;
-        }
-        return res;
-    }
-}
-
-JsonObject TableInfo::ToJsonObject() const
-{
-    FieldValue jsonField;
-    JsonObject tableJson;
-    jsonField.stringValue = tableName_;
-    tableJson.InsertField(FieldPath { "NAME" }, FieldType::LEAF_FIELD_STRING, jsonField);
-    jsonField.boolValue = autoInc_;
-    tableJson.InsertField(FieldPath { "AUTOINCREMENT" }, FieldType::LEAF_FIELD_BOOL, jsonField);
-    jsonField.stringValue = primaryKey_;
-    tableJson.InsertField(FieldPath { "PRIMARY_KEY" }, FieldType::LEAF_FIELD_STRING, jsonField);
-    for (const auto &it : fields_) {
-        jsonField.stringValue = it.second.ToAttributeString();
-        tableJson.InsertField(FieldPath { "DEFINE", it.first }, FieldType::LEAF_FIELD_STRING, jsonField);
-    }
-    for (const auto &it : uniqueDefines_) {
-        jsonField.stringValue = VectorJoin(it, ',');
-    }
-    return tableJson;
-}
-
 std::string TableInfo::ToTableInfoString() const
 {
     std::string attrStr;
@@ -440,7 +350,6 @@ std::string TableInfo::ToTableInfoString() const
     } else {
         attrStr += "false,";
     }
-    AddUniqueDefineString(attrStr);
     if (!primaryKey_.empty()) {
         attrStr += R"("PRIMARY_KEY": ")" + primaryKey_ + "\"";
     }
@@ -471,203 +380,6 @@ namespace {
     const std::string MAGIC = "relational_opinion";
 }
 
-uint32_t RelationalSyncOpinion::CalculateParcelLen(uint32_t softWareVersion) const
-{
-    uint64_t len = Parcel::GetStringLen(MAGIC);
-    len += Parcel::GetUInt32Len();
-    len += Parcel::GetUInt32Len();
-    len = Parcel::GetEightByteAlign(len);
-    for (const auto &it : opinions_) {
-        len += Parcel::GetStringLen(it.first);
-        len += Parcel::GetUInt32Len();
-        len += Parcel::GetUInt32Len();
-        len = Parcel::GetEightByteAlign(len);
-    }
-    if (len > UINT32_MAX) {
-        return 0;
-    }
-    return static_cast<uint32_t>(len);
-}
-
-int RelationalSyncOpinion::SerializeData(Parcel &parcel, uint32_t softWareVersion) const
-{
-    (void)parcel.WriteString(MAGIC);
-    (void)parcel.WriteUInt32(SYNC_OPINION_VERSION);
-    (void)parcel.WriteUInt32(static_cast<uint32_t>(opinions_.size()));
-    (void)parcel.EightByteAlign();
-    for (const auto &it : opinions_) {
-        (void)parcel.WriteString(it.first);
-        (void)parcel.WriteUInt32(it.second.permitSync);
-        (void)parcel.WriteUInt32(it.second.requirePeerConvert);
-        (void)parcel.EightByteAlign();
-    }
-    return parcel.IsError() ? -E_INVALID_ARGS : E_OK;
-}
-
-int RelationalSyncOpinion::DeserializeData(Parcel &parcel, RelationalSyncOpinion &opinion)
-{
-    if (!parcel.IsContinueRead()) {
-        return E_OK;
-    }
-    std::string magicStr;
-    (void)parcel.ReadString(magicStr);
-    if (magicStr != MAGIC) {
-        LOGE("Deserialize sync opinion failed while read MAGIC string [%s]", magicStr.c_str());
-        return -E_INVALID_ARGS;
-    }
-    uint32_t version;
-    (void)parcel.ReadUInt32(version);
-    if (version != SYNC_OPINION_VERSION) {
-        LOGE("Not support sync opinion version: %u", version);
-        return -E_NOT_SUPPORT;
-    }
-    uint32_t opinionSize;
-    (void)parcel.ReadUInt32(opinionSize);
-    (void)parcel.EightByteAlign();
-    for (uint32_t i = 0; i < opinionSize; i++) {
-        std::string tableName;
-        SyncOpinion tableOpinion;
-        (void)parcel.ReadString(tableName);
-        uint32_t permitSync;
-        (void)parcel.ReadUInt32(permitSync);
-        tableOpinion.permitSync = static_cast<bool>(permitSync);
-        uint32_t requirePeerConvert;
-        (void)parcel.ReadUInt32(requirePeerConvert);
-        tableOpinion.requirePeerConvert = static_cast<bool>(requirePeerConvert);
-        (void)parcel.EightByteAlign();
-        opinion.AddSyncOpinion(tableName, tableOpinion);
-    }
-    return parcel.IsError() ? -E_INVALID_ARGS : E_OK;
-}
-
-SyncOpinion RelationalSyncOpinion::GetTableOpinion(const std::string &tableName) const
-{
-    auto it = opinions_.find(tableName);
-    if (it == opinions_.end()) {
-        return {};
-    }
-    return it->second;
-}
-
-const std::map<std::string, SyncOpinion> &RelationalSyncOpinion::GetOpinions() const
-{
-    return opinions_;
-}
-
-void RelationalSyncOpinion::AddSyncOpinion(const std::string &tableName, const SyncOpinion &opinion)
-{
-    opinions_[tableName] = opinion;
-}
-
-SyncStrategy RelationalSyncStrategy::GetTableStrategy(const std::string &tableName) const
-{
-    auto it = strategies_.find(tableName);
-    if (it == strategies_.end()) {
-        return {};
-    }
-    return it->second;
-}
-
-void RelationalSyncStrategy::AddSyncStrategy(const std::string &tableName, const SyncStrategy &strategy)
-{
-    strategies_[tableName] = strategy;
-}
-
-const std::map<std::string, SyncStrategy> &RelationalSyncStrategy::GetStrategies() const
-{
-    return strategies_;
-}
-
-RelationalSyncOpinion RelationalSchemaObject::MakeLocalSyncOpinion(const RelationalSchemaObject &localSchema,
-    const std::string &remoteSchema, uint8_t remoteSchemaType)
-{
-    SchemaType localType = localSchema.GetSchemaType();
-    SchemaType remoteType = ReadSchemaType(remoteSchemaType);
-
-    if (remoteType == SchemaType::UNRECOGNIZED) {
-        LOGW("[RelationalSchema][opinion] Remote schema type %d is unrecognized.", remoteSchemaType);
-        return {};
-    }
-
-    if (remoteType != SchemaType::RELATIVE) {
-        LOGW("[RelationalSchema][opinion] Not support sync with schema type: local-type=[%s] remote-type=[%s]",
-            SchemaUtils::SchemaTypeString(localType).c_str(), SchemaUtils::SchemaTypeString(remoteType).c_str());
-        return {};
-    }
-
-    if (!localSchema.IsSchemaValid()) {
-        LOGW("[RelationalSchema][opinion] Local schema is not valid");
-        return {};
-    }
-
-    RelationalSchemaObject remoteSchemaObj;
-    int errCode = remoteSchemaObj.ParseFromSchemaString(remoteSchema);
-    if (errCode != E_OK) {
-        LOGW("[RelationalSchema][opinion] Parse remote schema failed %d, remote schema type %s", errCode,
-            SchemaUtils::SchemaTypeString(remoteType).c_str());
-        return {};
-    }
-
-    RelationalSyncOpinion opinion;
-    for (const auto &it : localSchema.GetTables()) {
-        if (remoteSchemaObj.GetTable(it.first).GetTableName() != it.first) {
-            LOGW("[RelationalSchema][opinion] Table was missing in remote schema");
-            continue;
-        }
-        // remote table is compatible(equal or upgrade) based on local table, permit sync and don't need check
-        errCode = it.second.CompareWithTable(remoteSchemaObj.GetTable(it.first));
-        if (errCode != -E_RELATIONAL_TABLE_INCOMPATIBLE) {
-            opinion.AddSyncOpinion(it.first, {true, false, false});
-            continue;
-        }
-        // local table is compatible upgrade based on remote table, permit sync and need check
-        errCode = remoteSchemaObj.GetTable(it.first).CompareWithTable(it.second);
-        if (errCode != -E_RELATIONAL_TABLE_INCOMPATIBLE) {
-            opinion.AddSyncOpinion(it.first, {true, false, true});
-            continue;
-        }
-        // local table is incompatible with remote table mutually, don't permit sync and need check
-        LOGW("[RelationalSchema][opinion] Local table is incompatible with remote table mutually.");
-        opinion.AddSyncOpinion(it.first, {false, true, true});
-    }
-
-    return opinion;
-}
-
-RelationalSyncStrategy RelationalSchemaObject::ConcludeSyncStrategy(const RelationalSyncOpinion &localOpinion,
-    const RelationalSyncOpinion &remoteOpinion)
-{
-    RelationalSyncStrategy syncStrategy;
-    for (const auto &itLocal : localOpinion.GetOpinions()) {
-        if (remoteOpinion.GetOpinions().find(itLocal.first) == remoteOpinion.GetOpinions().end()) {
-            LOGW("[RelationalSchema][Strategy] Table opinion is not found from remote.");
-            continue;
-        }
-
-        SyncStrategy strategy;
-        SyncOpinion localTableOpinion = itLocal.second;
-        SyncOpinion remoteTableOpinion = remoteOpinion.GetTableOpinion(itLocal.first);
-
-        strategy.permitSync = (localTableOpinion.permitSync || remoteTableOpinion.permitSync);
-
-        bool convertConflict = (localTableOpinion.requirePeerConvert && remoteTableOpinion.requirePeerConvert);
-        if (convertConflict) {
-            // Should not both need peer convert
-            strategy.permitSync = false;
-        }
-        // No peer convert required means local side has convert capability, convert locally takes precedence
-        strategy.convertOnSend = (!localTableOpinion.requirePeerConvert);
-        strategy.convertOnReceive = remoteTableOpinion.requirePeerConvert;
-
-        strategy.checkOnReceive = localTableOpinion.checkOnReceive;
-        LOGI("[RelationalSchema][Strategy] PermitSync=%d, SendConvert=%d, ReceiveConvert=%d, ReceiveCheck=%d.",
-            strategy.permitSync, strategy.convertOnSend, strategy.convertOnReceive, strategy.checkOnReceive);
-        syncStrategy.AddSyncStrategy(itLocal.first, strategy);
-    }
-
-    return syncStrategy;
-}
-
 bool RelationalSchemaObject::IsSchemaValid() const
 {
     return isValid_;
@@ -689,8 +401,8 @@ int RelationalSchemaObject::ParseFromSchemaString(const std::string &inSchemaStr
         return -E_NOT_PERMIT;
     }
 
-    if (inSchemaString.size() > SchemaConstant::SCHEMA_STRING_SIZE_LIMIT) {
-        LOGE("[RelationalSchema][Parse] SchemaSize=%zu Too Large.", inSchemaString.size());
+    if (inSchemaString.empty() || inSchemaString.size() > SchemaConstant::SCHEMA_STRING_SIZE_LIMIT) {
+        LOGE("[RelationalSchema][Parse] SchemaSize=%zu is invalid.", inSchemaString.size());
         return -E_INVALID_ARGS;
     }
     JsonObject schemaObj;
@@ -813,7 +525,7 @@ int GetMemberFromJsonObject(const JsonObject &inJsonObject, const std::string &f
 
 int RelationalSchemaObject::ParseRelationalSchema(const JsonObject &inJsonObject)
 {
-    int errCode = ParseCheckSchemaVersionMode(inJsonObject);
+    int errCode = ParseCheckSchemaVersion(inJsonObject);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -824,7 +536,7 @@ int RelationalSchemaObject::ParseRelationalSchema(const JsonObject &inJsonObject
     return ParseCheckSchemaTableDefine(inJsonObject);
 }
 
-int RelationalSchemaObject::ParseCheckSchemaVersionMode(const JsonObject &inJsonObject)
+int RelationalSchemaObject::ParseCheckSchemaVersion(const JsonObject &inJsonObject)
 {
     FieldValue fieldValue;
     int errCode = GetMemberFromJsonObject(inJsonObject, SchemaConstant::KEYWORD_SCHEMA_VERSION,
@@ -899,10 +611,6 @@ int RelationalSchemaObject::ParseCheckTableInfo(const JsonObject &inJsonObject)
         return errCode;
     }
     errCode = ParseCheckTableAutoInc(inJsonObject, resultTable);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    errCode = ParseCheckTableUnique(inJsonObject, resultTable);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -1005,21 +713,6 @@ int RelationalSchemaObject::ParseCheckTableAutoInc(const JsonObject &inJsonObjec
     } else if (errCode != -E_NOT_FOUND) {
         return errCode;
     }
-    return E_OK;
-}
-
-int RelationalSchemaObject::ParseCheckTableUnique(const JsonObject &inJsonObject, TableInfo &resultTable)
-{
-    if (!inJsonObject.IsFieldPathExist(FieldPath {"UNIQUE"})) { // UNIQUE is not necessary
-        return E_OK;
-    }
-    std::vector<CompositeFields> uniqueArray;
-    int errCode = inJsonObject.GetArrayContentOfStringOrStringArray(FieldPath {"UNIQUE"}, uniqueArray);
-    if (errCode != E_OK) {
-        LOGE("[RelationalSchema][Parse] Get unique array failed: %d.", errCode);
-        return -E_SCHEMA_PARSE_FAIL;
-    }
-    resultTable.SetUniqueDefines(uniqueArray);
     return E_OK;
 }
 

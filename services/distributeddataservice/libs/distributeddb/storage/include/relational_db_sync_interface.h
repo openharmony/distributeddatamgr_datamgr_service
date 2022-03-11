@@ -20,6 +20,7 @@
 #include "relational_schema_object.h"
 #include "single_ver_kv_entry.h"
 #include "sync_generic_interface.h"
+#include "schema_negotiate.h"
 
 namespace DistributedDB {
 class RelationalDBSyncInterface : public SyncGenericInterface {

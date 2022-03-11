@@ -130,7 +130,7 @@ private:
     // data
     SQLiteSingleRelationalStorageEngine *storageEngine_ = nullptr;
     TimeStamp currentMaxTimeStamp_ = 0;
-    KvDBProperties properties;
+    KvDBProperties properties_;
     mutable std::mutex maxTimeStampMutex_;
 
     std::function<void()> onSchemaChanged_;

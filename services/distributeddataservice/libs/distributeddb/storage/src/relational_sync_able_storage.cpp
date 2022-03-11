@@ -206,7 +206,7 @@ int RelationalSyncAbleStorage::GetAllMetaKeys(std::vector<Key> &keys) const
 
 const KvDBProperties &RelationalSyncAbleStorage::GetDbProperties() const
 {
-    return properties;
+    return properties_;
 }
 
 static int GetKvEntriesByDataItems(std::vector<SingleVerKvEntry *> &entries, std::vector<DataItem> &dataItems)
@@ -478,7 +478,15 @@ int RelationalSyncAbleStorage::CreateDistributedDeviceTable(const std::string &d
     if (handle == nullptr) {
         return errCode;
     }
-    for (const auto &[table, strategy] : syncStrategy.GetStrategies()) {
+
+    errCode = handle->StartTransaction(TransactType::IMMEDIATE);
+    if (errCode != E_OK) {
+        LOGE("Start transaction failed:%d", errCode);
+        ReleaseHandle(handle);
+        return errCode;
+    }
+
+    for (const auto &[table, strategy] : syncStrategy) {
         if (!strategy.permitSync) {
             continue;
         }
@@ -488,6 +496,12 @@ int RelationalSyncAbleStorage::CreateDistributedDeviceTable(const std::string &d
             LOGE("Create distributed device table failed. %d", errCode);
             break;
         }
+    }
+
+    if (errCode == E_OK) {
+        errCode = handle->Commit();
+    } else {
+        (void)handle->Rollback();
     }
 
     ReleaseHandle(handle);

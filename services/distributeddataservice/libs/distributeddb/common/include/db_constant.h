@@ -29,6 +29,8 @@ public:
 
     static constexpr size_t MAX_DATA_DIR_LENGTH = 512;
 
+    static constexpr size_t MAX_INKEYS_SIZE = 128;
+
     static constexpr int DB_TYPE_LOCAL = 1;
     static constexpr int DB_TYPE_MULTI_VER = 2;
     static constexpr int DB_TYPE_SINGLE_VER = 3;

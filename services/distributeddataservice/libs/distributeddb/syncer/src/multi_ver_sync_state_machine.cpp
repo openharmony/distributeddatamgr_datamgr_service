@@ -472,16 +472,10 @@ int MultiVerSyncStateMachine::OneCommitSyncFinish()
         // Due to time sync error, commit timestamp may bigger than currentLocalTime, we need to fix the timestamp
         TimeOffset timefixOffset = (commit.timestamp < currentLocalTime) ? 0 : (commit.timestamp -
             static_cast<TimeStamp>(currentLocalTime));
-        ChangeEntriesTimeStamp(entries, outOffset, timefixOffset);
         LOGD("MultiVerSyncStateMachine::OneCommitSyncFinish src=%s, timefixOffset = %lld",
             STR_MASK(context_->GetDeviceId()), timefixOffset);
         commit.timestamp -= static_cast<TimeStamp>(timefixOffset);
-        for (MultiVerKvEntry *entry : entries) {
-            TimeStamp timeStamp;
-            entry->GetTimestamp(timeStamp);
-            timeStamp = timeStamp - outOffset - timefixOffset;
-            entry->SetTimestamp(timeStamp);
-        }
+        ChangeEntriesTimeStamp(entries, outOffset, timefixOffset);
         PerformanceAnalysis *performance = PerformanceAnalysis::GetInstance();
         if (performance != nullptr) {
             performance->StepTimeRecordStart(MV_TEST_RECORDS::RECORD_PUT_COMMIT_DATA);

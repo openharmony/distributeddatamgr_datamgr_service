@@ -32,7 +32,9 @@
 #include "time_helper.h"
 
 namespace DistributedDB {
-namespace {
+using stateMappingHandler = std::function<uint8_t(void)>;
+class SingleVerSyncStateMachine : public SyncStateMachine {
+public:
     enum State {
         IDLE = 0,
         TIME_SYNC,
@@ -66,12 +68,6 @@ namespace {
         CONTROL_CMD_EVENT,
         ANY_EVENT
     };
-}
-
-using stateMappingHandler = std::function<uint8_t(void)>;
-class SingleVerSyncStateMachine : public SyncStateMachine {
-public:
-
     SingleVerSyncStateMachine();
     ~SingleVerSyncStateMachine() override;
 

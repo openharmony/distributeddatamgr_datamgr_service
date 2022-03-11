@@ -37,6 +37,7 @@ namespace {
     const std::string DEVICE_B = "deviceB";
     const std::string DEVICE_C = "deviceC";
     const int WAIT_TIME = 1000; // 1000ms
+    const int WAIT_3_SECONDS = 3000;
 
     KvStoreDelegateManager g_mgr1(APP_ID, USER_ID_1);
     KvStoreDelegateManager g_mgr2(APP_ID, USER_ID_2);
@@ -623,5 +624,187 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser007, TestSize.Level0)
     subThread.detach();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     EXPECT_TRUE(g_kvDelegatePtr1->Rekey(passwd) == OK);
+    CloseStore();
+}
+
+/**
+ * @tc.name: MultiUser008
+ * @tc.desc: test NotifyUserChanged and block sync concurrently
+ * @tc.type: FUNC
+ * @tc.require: AR000E8S2T
+ * @tc.author: zhuwentao
+ */
+HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser008, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. set SyncActivationCheckCallback and only userId1 can active
+     */
+    g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback2);
+    /**
+     * @tc.steps: step2. openstore1 in dual tuple sync mode and openstore2 in normal sync mode
+     * @tc.expected: step2. only user2 sync mode is active
+     */
+
+    OpenStore1(true);
+    OpenStore2(true);
+    /**
+     * @tc.steps: step3. set SyncActivationCheckCallback and only userId2 can active
+     */
+    g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
+
+    /**
+     * @tc.steps: step4. call NotifyUserChanged and block sync db concurrently
+     * @tc.expected: step4. return OK
+     */
+    CipherPassword passwd;
+    thread subThread([&]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        EXPECT_TRUE(KvStoreDelegateManager::NotifyUserChanged() == OK);
+    });
+    subThread.detach();
+    /**
+     * @tc.steps: step5. deviceA call sync and wait
+     * @tc.expected: step5. sync should return OK.
+     */
+    std::map<std::string, DBStatus> result;
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+    DBStatus status = g_tool.SyncTest(g_kvDelegatePtr1, devices, SYNC_MODE_PUSH_ONLY, result, true);
+    ASSERT_TRUE(status == OK);
+
+    /**
+     * @tc.expected: step6. onComplete should be called, and status is USER_CHANGED
+     */
+    ASSERT_TRUE(result.size() == devices.size());
+    for (const auto &pair : result) {
+        LOGD("dev %s, status %d", pair.first.c_str(), pair.second);
+        EXPECT_TRUE(pair.second == USER_CHANGED);
+    }
+    CloseStore();
+}
+
+/**
+ * @tc.name: MultiUser009
+ * @tc.desc: test NotifyUserChanged and non-block sync concurrently
+ * @tc.type: FUNC
+ * @tc.require: AR000E8S2T
+ * @tc.author: zhuwentao
+ */
+HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser009, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. set SyncActivationCheckCallback and only userId1 can active
+     */
+    g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback2);
+    /**
+     * @tc.steps: step2. openstore1 in dual tuple sync mode and openstore2 in normal sync mode
+     * @tc.expected: step2. only user2 sync mode is active
+     */
+
+    OpenStore1(true);
+    OpenStore2(true);
+    /**
+     * @tc.steps: step3. set SyncActivationCheckCallback and only userId2 can active
+     */
+    g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
+
+    /**
+     * @tc.steps: step4. call NotifyUserChanged and block sync db concurrently
+     * @tc.expected: step4. return OK
+     */
+    CipherPassword passwd;
+    thread subThread([&]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        EXPECT_TRUE(KvStoreDelegateManager::NotifyUserChanged() == OK);
+    });
+    subThread.detach();
+    /**
+     * @tc.steps: step5. deviceA call sync and wait
+     * @tc.expected: step5. sync should return OK.
+     */
+    std::map<std::string, DBStatus> result;
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+    DBStatus status = g_tool.SyncTest(g_kvDelegatePtr1, devices, SYNC_MODE_PUSH_ONLY, result, false);
+    ASSERT_TRUE(status == OK);
+
+    /**
+     * @tc.expected: step6. onComplete should be called, and status is USER_CHANGED
+     */
+    ASSERT_TRUE(result.size() == devices.size());
+    for (const auto &pair : result) {
+        LOGD("dev %s, status %d", pair.first.c_str(), pair.second);
+        EXPECT_TRUE(pair.second == USER_CHANGED);
+    }
+    CloseStore();
+}
+
+/**
+ * @tc.name: MultiUser010
+ * @tc.desc: test NotifyUserChanged and non-block sync with multi devices concurrently
+ * @tc.type: FUNC
+ * @tc.require: AR000E8S2T
+ * @tc.author: zhuwentao
+ */
+HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser010, TestSize.Level3)
+{
+    /**
+     * @tc.steps: step1. set SyncActivationCheckCallback and only userId1 can active
+     */
+    g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback2);
+    /**
+     * @tc.steps: step2. openstore1 and openstore2 in dual tuple sync mode
+     * @tc.expected: step2. only userId1 sync mode is active
+     */
+
+    OpenStore1(true);
+    OpenStore2(true);
+    /**
+     * @tc.steps: step3. set SyncActivationCheckCallback and only userId2 can active
+     */
+    g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
+    /**
+     * @tc.steps: step4. deviceA put {k1, v1}
+     */
+    Key key = {'1'};
+    Value value = {'1'};
+    ASSERT_TRUE(g_kvDelegatePtr1->Put(key, value) == OK);
+
+    /**
+     * @tc.steps: step5. deviceB set sava data dely 5s
+     */
+    g_deviceC->SetSaveDataDelayTime(WAIT_3_SECONDS);
+    /**
+     * @tc.steps: step6. call NotifyUserChanged and block sync db concurrently
+     * @tc.expected: step6. return OK
+     */
+    CipherPassword passwd;
+    thread subThread([&]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        EXPECT_TRUE(KvStoreDelegateManager::NotifyUserChanged() == OK);
+    });
+    subThread.detach();
+    /**
+     * @tc.steps: step7. deviceA call sync and wait
+     * @tc.expected: step7. sync should return OK.
+     */
+    std::map<std::string, DBStatus> result;
+    std::vector<std::string> devices = {g_deviceB->GetDeviceId(), g_deviceC->GetDeviceId()};
+    DBStatus status = g_tool.SyncTest(g_kvDelegatePtr1, devices, SYNC_MODE_PUSH_ONLY, result, false);
+    ASSERT_TRUE(status == OK);
+
+    /**
+     * @tc.expected: step8. onComplete should be called, and status is USER_CHANGED
+     */
+    ASSERT_TRUE(result.size() == devices.size());
+    for (const auto &pair : result) {
+        LOGD("dev %s, status %d", pair.first.c_str(), pair.second);
+        if (pair.first == g_deviceB->GetDeviceId()) {
+            EXPECT_TRUE(pair.second == OK);
+        } else {
+            EXPECT_TRUE(pair.second == USER_CHANGED);
+        }
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_3_SECONDS));
     CloseStore();
 }

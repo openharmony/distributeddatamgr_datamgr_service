@@ -25,7 +25,6 @@ namespace DistributedDB {
 enum class StorageType {
     STORAGE_TYPE_NONE = 0,
     STORAGE_TYPE_NULL,
-    STORAGE_TYPE_BOOL,
     STORAGE_TYPE_INTEGER,
     STORAGE_TYPE_REAL,
     STORAGE_TYPE_TEXT,
@@ -63,7 +62,6 @@ public:
     // move constructor
     DataValue(DataValue &&dataValue) noexcept;
     DataValue &operator=(DataValue &&dataValue) noexcept;
-    DataValue &operator=(bool boolVal);
     DataValue &operator=(int64_t intVal);
     DataValue &operator=(double doubleVal);
     DataValue &operator=(const Blob &blob);
@@ -75,7 +73,6 @@ public:
     bool operator!=(const DataValue &dataValue) const;
 
     StorageType GetType() const;
-    int GetBool(bool &outVal) const;
     int GetInt64(int64_t &outVal) const;
     int GetDouble(double &outVal) const;
     int GetBlob(Blob *&outVal) const;
@@ -92,7 +89,6 @@ private:
     StorageType type_ = StorageType::STORAGE_TYPE_NULL;
     union {
         void* zeroMem;
-        bool bValue;
         Blob* blobPtr;
         double dValue;
         int64_t iValue;

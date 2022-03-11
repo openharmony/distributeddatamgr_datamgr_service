@@ -95,7 +95,6 @@ int SQLiteRelationalStoreConnection::StartTransaction()
 
     LOGD("[RelationalConnection] Start transaction finish.");
     writeHandle_ = handle;
-    transactingFlag_.store(true);
     return E_OK;
 }
 
@@ -110,9 +109,6 @@ int SQLiteRelationalStoreConnection::Commit()
 
     int errCode = writeHandle_->Commit();
     ReleaseExecutor(writeHandle_);
-    if (errCode == E_OK) {
-        transactingFlag_.store(false);
-    }
     LOGD("connection commit transaction!");
     return errCode;
 }
@@ -128,9 +124,6 @@ int SQLiteRelationalStoreConnection::RollBack()
 
     int errCode = writeHandle_->Rollback();
     ReleaseExecutor(writeHandle_);
-    if (errCode == E_OK) {
-        transactingFlag_.store(false);
-    }
     LOGI("connection rollback transaction!");
     return errCode;
 }

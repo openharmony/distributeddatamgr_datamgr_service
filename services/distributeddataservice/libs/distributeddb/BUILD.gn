@@ -93,6 +93,7 @@ ohos_shared_library("distributeddb") {
     "common/src/runtime_context.cpp",
     "common/src/runtime_context_impl.cpp",
     "common/src/schema_constant.cpp",
+    "common/src/schema_negotiate.cpp",
     "common/src/schema_object.cpp",
     "common/src/schema_utils.cpp",
     "common/src/semaphore_utils.cpp",

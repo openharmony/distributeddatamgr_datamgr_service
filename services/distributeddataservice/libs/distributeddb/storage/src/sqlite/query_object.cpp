@@ -415,7 +415,7 @@ int QueryObject::CheckInKeys() const
         LOGE("Inkeys cannot be empty.");
         return -E_INVALID_ARGS;
     }
-    if (keys_.size() > DBConstant::MAX_BATCH_SIZE) {
+    if (keys_.size() > DBConstant::MAX_INKEYS_SIZE) {
         LOGE("Inkeys cannot be over 128.");
         return -E_MAX_LIMITS;
     }

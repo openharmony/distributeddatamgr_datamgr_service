@@ -1346,7 +1346,7 @@ int SQLiteSingleVerNaturalStore::Rekey(const CipherPassword &passwd)
 
     std::unique_ptr<SingleVerDatabaseOper> operation;
 
-    // stop the syncer;
+    // stop the syncer
     int errCode = storageEngine_->TryToDisable(false, OperatePerm::REKEY_MONOPOLIZE_PERM);
     if (errCode != E_OK) {
         return errCode;
@@ -1434,7 +1434,7 @@ int SQLiteSingleVerNaturalStore::Import(const std::string &filePath, const Ciphe
         localDev.resize(0);
     }
 
-    // stop the syncer;
+    // stop the syncer
     errCode = storageEngine_->TryToDisable(false, OperatePerm::IMPORT_MONOPOLIZE_PERM);
     if (errCode != E_OK) {
         return errCode;

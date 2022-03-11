@@ -107,7 +107,7 @@ public:
 
     bool IsEngineActive() const override;
 
-    void ResetAbilitySync() override;
+    void SchemaChange() override;
 
 protected:
     // Create a context

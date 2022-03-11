@@ -679,6 +679,7 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalOpenStorePressureTest0
     ASSERT_NE(db, nullptr);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
+    EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
 
     DBStatus status = OK;
     for (int i = 0; i < 1000; i++) {
@@ -703,10 +704,12 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalOpenStorePressureTest0
     ASSERT_NE(db, nullptr);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
     EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
+    EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
 
     std::queue<RelationalStoreDelegate *> delegateQueue;
-    std::mutex queuelock;
-    default_random_engine e;
+    std::mutex queueLock;
+    std::random_device rd;
+    default_random_engine e(rd());
     uniform_int_distribution<unsigned> u(0, 9);
 
     std::thread openStoreThread([&, this]() {
@@ -717,7 +720,7 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalOpenStorePressureTest0
             EXPECT_EQ(status, OK);
             ASSERT_NE(delegate, nullptr);
             {
-                std::lock_guard<std::mutex> lock(queuelock);
+                std::lock_guard<std::mutex> lock(queueLock);
                 delegateQueue.push(delegate);
             }
             LOGD("++++< open store delegate: %d", i);
@@ -728,7 +731,7 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalOpenStorePressureTest0
     while (cnt < 1000) {
         RelationalStoreDelegate *delegate = nullptr;
         {
-            std::lock_guard<std::mutex> lock(queuelock);
+            std::lock_guard<std::mutex> lock(queueLock);
             if (delegateQueue.empty()) {
                 std::this_thread::sleep_for(std::chrono::microseconds(100));
                 continue;

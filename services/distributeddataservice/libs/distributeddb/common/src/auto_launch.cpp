@@ -384,9 +384,9 @@ void AutoLaunch::ObserverFunc(const KvDBCommitNotifyData &notifyData, const std:
         }
         autoLaunchItemMap_[identifier][userId].inObserver = true;
         autoLaunchItem.observer = autoLaunchItemMap_[identifier][userId].observer;
-        autoLaunchItem.isWriteOpenNotifiered = autoLaunchItemMap_[identifier][userId].isWriteOpenNotifiered;
+        autoLaunchItem.isWriteOpenNotified = autoLaunchItemMap_[identifier][userId].isWriteOpenNotified;
         autoLaunchItem.notifier = autoLaunchItemMap_[identifier][userId].notifier;
-        
+
         std::shared_ptr<KvDBProperties> properties =
             std::static_pointer_cast<KvDBProperties>(autoLaunchItemMap_[identifier][userId].propertiesPtr);
         appId = properties->GetStringProp(KvDBProperties::APP_ID, "");
@@ -397,12 +397,12 @@ void AutoLaunch::ObserverFunc(const KvDBCommitNotifyData &notifyData, const std:
         KvStoreChangedDataImpl data(&notifyData);
         (autoLaunchItem.observer)->OnChange(data);
     }
-    LOGI("[AutoLaunch] in observer autoLaunchItem.isWriteOpenNotifiered:%d", autoLaunchItem.isWriteOpenNotifiered);
+    LOGI("[AutoLaunch] in observer autoLaunchItem.isWriteOpenNotified:%d", autoLaunchItem.isWriteOpenNotified);
 
-    if (!autoLaunchItem.isWriteOpenNotifiered && autoLaunchItem.notifier != nullptr) {
+    if (!autoLaunchItem.isWriteOpenNotified && autoLaunchItem.notifier != nullptr) {
         {
             std::lock_guard<std::mutex> autoLock(dataLock_);
-            autoLaunchItemMap_[identifier][userId].isWriteOpenNotifiered = true;
+            autoLaunchItemMap_[identifier][userId].isWriteOpenNotified = true;
         }
         AutoLaunchNotifier notifier = autoLaunchItem.notifier;
         int retCode = RuntimeContext::GetInstance()->ScheduleTask([notifier, userId, appId, storeId] {
@@ -464,7 +464,7 @@ int AutoLaunch::DisableKvStoreAutoLaunch(const std::string &normalIdentifier, co
         cv_.notify_all();
         return errCode;
     }
-    if (autoLaunchItem.isWriteOpenNotifiered && autoLaunchItem.notifier) {
+    if (autoLaunchItem.isWriteOpenNotified && autoLaunchItem.notifier) {
         RuntimeContext::GetInstance()->ScheduleTask([autoLaunchItem] { CloseNotifier(autoLaunchItem); });
     }
     LOGI("[AutoLaunch] DisableKvStoreAutoLaunch ok");
@@ -522,17 +522,17 @@ void AutoLaunch::ConnectionLifeCycleCallbackTask(const std::string &identifier, 
         autoLaunchItem = autoLaunchItemMap_[identifier][userId];
     }
     LOGI("[AutoLaunch] ConnectionLifeCycleCallbackTask do CloseConnection");
-    TryCloseConnection(autoLaunchItem); // do onthing if failed
+    TryCloseConnection(autoLaunchItem); // do nothing if failed
     LOGI("[AutoLaunch] ConnectionLifeCycleCallback do CloseConnection finished");
     {
         std::lock_guard<std::mutex> lock(dataLock_);
         autoLaunchItemMap_[identifier][userId].state = AutoLaunchItemState::IDLE;
         autoLaunchItemMap_[identifier][userId].conn = nullptr;
-        autoLaunchItemMap_[identifier][userId].isWriteOpenNotifiered = false;
+        autoLaunchItemMap_[identifier][userId].isWriteOpenNotified = false;
         cv_.notify_all();
         LOGI("[AutoLaunch] ConnectionLifeCycleCallback notify_all");
     }
-    if (autoLaunchItem.isWriteOpenNotifiered) {
+    if (autoLaunchItem.isWriteOpenNotified) {
         CloseNotifier(autoLaunchItem);
     }
 }
@@ -670,7 +670,7 @@ void AutoLaunch::UpdateGlobalMap(std::map<std::string, std::map<std::string, Aut
             if (iter.second.conn != nullptr) {
                 autoLaunchItemMap_[items.first][iter.first].conn = iter.second.conn;
                 autoLaunchItemMap_[items.first][iter.first].observerHandle = iter.second.observerHandle;
-                autoLaunchItemMap_[items.first][iter.first].isWriteOpenNotifiered = false;
+                autoLaunchItemMap_[items.first][iter.first].isWriteOpenNotified = false;
                 LOGI("[AutoLaunch] UpdateGlobalMap opened conn update map");
             }
             autoLaunchItemMap_[items.first][iter.first].state = AutoLaunchItemState::IDLE;
@@ -712,7 +712,7 @@ void AutoLaunch::ReceiveUnknownIdentifierCallBackTask(const std::string &identif
     std::lock_guard<std::mutex> autoLock(dataLock_);
     autoLaunchItemMap_[identifier][userId].conn = autoLaunchItem.conn;
     autoLaunchItemMap_[identifier][userId].observerHandle = autoLaunchItem.observerHandle;
-    autoLaunchItemMap_[identifier][userId].isWriteOpenNotifiered = false;
+    autoLaunchItemMap_[identifier][userId].isWriteOpenNotified = false;
     autoLaunchItemMap_[identifier][userId].state = AutoLaunchItemState::IDLE;
     cv_.notify_all();
     LOGI("[AutoLaunch] ReceiveUnknownIdentifierCallBackTask conn opened set state IDLE");
@@ -854,7 +854,7 @@ void AutoLaunch::AutoLaunchExtTask(const std::string identifier, const std::stri
     std::lock_guard<std::mutex> autoLock(extLock_);
     extItemMap_[identifier][userId].conn = autoLaunchItem.conn;
     extItemMap_[identifier][userId].observerHandle = autoLaunchItem.observerHandle;
-    extItemMap_[identifier][userId].isWriteOpenNotifiered = false;
+    extItemMap_[identifier][userId].isWriteOpenNotified = false;
     LOGI("[AutoLaunch] AutoLaunchExtTask ok");
 }
 
@@ -881,9 +881,9 @@ void AutoLaunch::ExtObserverFunc(const KvDBCommitNotifyData &notifyData, const s
     {
         std::lock_guard<std::mutex> autoLock(extLock_);
         if (extItemMap_.count(identifier) != 0 && extItemMap_[identifier].count(userId) != 0 &&
-            !extItemMap_[identifier][userId].isWriteOpenNotifiered &&
+            !extItemMap_[identifier][userId].isWriteOpenNotified &&
             autoLaunchItem.notifier != nullptr) {
-            extItemMap_[identifier][userId].isWriteOpenNotifiered = true;
+            extItemMap_[identifier][userId].isWriteOpenNotified = true;
             notifier = autoLaunchItem.notifier;
         } else {
             return;
@@ -929,7 +929,7 @@ void AutoLaunch::ExtConnectionLifeCycleCallbackTask(const std::string &identifie
     }
     LOGI("[AutoLaunch] ExtConnectionLifeCycleCallbackTask do CloseConnection");
     TryCloseConnection(autoLaunchItem); // do nothing if failed
-    if (autoLaunchItem.isWriteOpenNotifiered) {
+    if (autoLaunchItem.isWriteOpenNotified) {
         CloseNotifier(autoLaunchItem);
     }
 }

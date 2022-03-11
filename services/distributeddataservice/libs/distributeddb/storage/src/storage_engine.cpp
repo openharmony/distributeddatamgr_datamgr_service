@@ -396,12 +396,13 @@ StorageExecutor *StorageEngine::FetchStorageExecutor(bool isWrite, std::list<Sto
         StorageExecutor *handle = nullptr;
         errCode = CreateNewExecutor(isWrite, handle);
         if ((errCode != E_OK) || (handle == nullptr)) {
-            if (errCode == -E_EKEYREVOKED) {
-                LOGE("Key revoked status, couldn't create the new executor");
-                if (!usingList.empty()) {
-                    LOGE("Can't create new executor for revoked");
-                    errCode = -E_BUSY;
-                }
+            if (errCode != -E_EKEYREVOKED) {
+                return nullptr;
+            }
+            LOGE("Key revoked status, couldn't create the new executor");
+            if (!usingList.empty()) {
+                LOGE("Can't create new executor for revoked");
+                errCode = -E_BUSY;
             }
             return nullptr;
         }

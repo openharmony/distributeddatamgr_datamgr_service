@@ -17,7 +17,6 @@
 #define COMBINE_STATUS_H
 
 #include <set>
-#include <mutex>
 #include <cstdint>
 
 namespace DistributedDB {

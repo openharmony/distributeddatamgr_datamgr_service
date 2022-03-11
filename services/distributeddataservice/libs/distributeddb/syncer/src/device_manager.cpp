@@ -138,7 +138,7 @@ int DeviceManager::SendLocalDataChanged()
         }
         msg->SetMessageId(LOCAL_DATA_CHANGED);
         msg->SetTarget(deviceId);
-        SendConfig conf = {false, SEND_TIME_OUT};
+        SendConfig conf = {false, false, SEND_TIME_OUT};
         int errCode = communicator_->SendMessage(deviceId, msg, conf);
         if (errCode != E_OK) {
             LOGE("[DeviceManager] SendLocalDataChanged to dev %s{private} failed. err %d",

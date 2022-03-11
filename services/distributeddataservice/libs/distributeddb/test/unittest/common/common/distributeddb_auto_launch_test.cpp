@@ -564,22 +564,22 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch006, TestSize.Level3)
     std::mutex cvLock;
     std::condition_variable cv;
     bool threadIsWorking = true;
-    thread thread([&cvLock, &cv, &threadIsWorking](){
-        LabelType label(g_identifierA.begin(), g_identifierA.end());
-        for (int i = 0; i < TEST_ONLINE_CNT; i++) {
-            g_communicatorAggregator->RunOnConnectCallback(REMOTE_DEVICE_ID, true);
-            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_SHORT_TIME));
-            g_communicatorAggregator->RunOnConnectCallback(REMOTE_DEVICE_ID, false);
-            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_SHORT_TIME));
-            g_communicatorAggregator->RunCommunicatorLackCallback(label);
-            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_SHORT_TIME));
-            LOGD("AutoLaunch006 thread i:%d", i);
-        }
-        std::unique_lock<std::mutex> lock(cvLock);
-        threadIsWorking = false;
-        cv.notify_one();
-    });
-    thread.detach();
+    thread aggregatorThread([&cvLock, &cv, &threadIsWorking]() {
+            LabelType label(g_identifierA.begin(), g_identifierA.end());
+            for (int i = 0; i < TEST_ONLINE_CNT; i++) {
+                g_communicatorAggregator->RunOnConnectCallback(REMOTE_DEVICE_ID, true);
+                std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_SHORT_TIME));
+                g_communicatorAggregator->RunOnConnectCallback(REMOTE_DEVICE_ID, false);
+                std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_SHORT_TIME));
+                g_communicatorAggregator->RunCommunicatorLackCallback(label);
+                std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_SHORT_TIME));
+                LOGD("AutoLaunch006 thread i:%d", i);
+            }
+            std::unique_lock<std::mutex> lock(cvLock);
+            threadIsWorking = false;
+            cv.notify_one();
+        });
+    aggregatorThread.detach();
     AutoLaunchOption option;
     option.notifier = nullptr;
     option.observer = observer;
@@ -596,7 +596,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch006, TestSize.Level3)
         LOGD("AutoLaunch006 disable i:%d", i);
     }
     std::unique_lock<std::mutex> lock(cvLock);
-    cv.wait(lock, [&threadIsWorking]{return threadIsWorking == false;});
+    cv.wait(lock, [&threadIsWorking] { return !threadIsWorking; });
 
     delete observer;
     g_communicatorAggregator->RunOnConnectCallback(REMOTE_DEVICE_ID, false);

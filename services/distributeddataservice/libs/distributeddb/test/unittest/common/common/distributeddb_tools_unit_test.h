@@ -45,8 +45,6 @@
 #include "sync_types.h"
 #include "store_types.h"
 namespace DistributedDBUnitTest {
-static const int DIR_PERMISSION = 0750;
-
 struct DatabaseInfo {
     std::string appId{};
     std::string userId{};

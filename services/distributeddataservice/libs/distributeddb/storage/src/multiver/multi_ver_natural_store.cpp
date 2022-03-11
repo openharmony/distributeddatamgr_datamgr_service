@@ -902,7 +902,7 @@ int MultiVerNaturalStore::CompareVerDataAndLog(IKvDBMultiVerTransaction *transac
         return errCode;
     }
 
-    // compare the version;
+    // compare the version
     if (commitHead->GetCommitVersion() < maxLocalVersion) {
         LOGD("Delete entries");
         errCode = transaction->ClearEntriesByVersion(maxLocalVersion);
@@ -934,7 +934,7 @@ MultiVerStorageExecutor *MultiVerNaturalStore::GetHandle(bool isWrite, int &errC
     }
 
     if (isWrite && !isTrimming) {
-        // stop the trimming;
+        // stop the trimming
         shadowTrimmer_.Pause(GetStringIdentifier());
     }
     StorageExecutor *handle = nullptr;
@@ -946,7 +946,7 @@ MultiVerStorageExecutor *MultiVerNaturalStore::GetHandle(bool isWrite, int &errC
 
     if (handle == nullptr) {
         if (isWrite && !isTrimming) {
-            // restart the trimming;
+            // restart the trimming
             shadowTrimmer_.Continue(GetStringIdentifier(), false);
         }
     } else {

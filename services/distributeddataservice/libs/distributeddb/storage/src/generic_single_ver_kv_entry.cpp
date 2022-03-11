@@ -22,14 +22,6 @@
 #include "version.h"
 
 namespace DistributedDB {
-namespace {
-    enum OperType {
-        SERIALIZE,
-        DESERIALIZE,
-        CAL_LEN,
-    };
-} // namespace
-
 GenericSingleVerKvEntry::GenericSingleVerKvEntry()
 {
 }
@@ -126,7 +118,7 @@ int GenericSingleVerKvEntry::SerializeData(Parcel &parcel, uint32_t targetVersio
     if (errCode != E_OK) {
         return errCode;
     }
-    errCode = AdaptToVersion(SERIALIZE, targetVersion, parcel, len);
+    errCode = AdaptToVersion(OperType::SERIALIZE, targetVersion, parcel, len);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -160,7 +152,7 @@ int GenericSingleVerKvEntry::SerializeDatas(const std::vector<SingleVerKvEntry *
 uint32_t GenericSingleVerKvEntry::CalculateLen(uint32_t targetVersion)
 {
     uint64_t len = 0;
-    int errCode = AdaptToVersion(CAL_LEN, targetVersion, len);
+    int errCode = AdaptToVersion(OperType::CAL_LEN, targetVersion, len);
     if ((len > INT32_MAX) || (errCode != E_OK)) {
         return 0;
     }
@@ -193,7 +185,7 @@ int GenericSingleVerKvEntry::DeSerializeData(Parcel &parcel)
     if (parcel.IsError()) {
         return 0;
     }
-    int errCode = AdaptToVersion(DESERIALIZE, version, parcel, len);
+    int errCode = AdaptToVersion(OperType::DESERIALIZE, version, parcel, len);
     if (errCode != E_OK) {
         len = 0;
     }
@@ -231,17 +223,18 @@ END:
     return len;
 }
 
-int GenericSingleVerKvEntry::AdaptToVersion(int operType, uint32_t targetVersion, Parcel &parcel, uint64_t &datalen)
+int GenericSingleVerKvEntry::AdaptToVersion(OperType operType, uint32_t targetVersion, Parcel &parcel,
+    uint64_t &datalen)
 {
     if (targetVersion < SOFTWARE_VERSION_EARLIEST || targetVersion > SOFTWARE_VERSION_CURRENT) {
         return -E_VERSION_NOT_SUPPORT;
     }
     int errCode = E_OK;
     switch (operType) {
-        case SERIALIZE:
+        case OperType::SERIALIZE:
             errCode = SerializeDataByVersion(targetVersion, parcel);
             break;
-        case DESERIALIZE:
+        case OperType::DESERIALIZE:
             errCode = DeSerializeByVersion(targetVersion, parcel, datalen);
             break;
         default:
@@ -251,13 +244,13 @@ int GenericSingleVerKvEntry::AdaptToVersion(int operType, uint32_t targetVersion
     return errCode;
 }
 
-int GenericSingleVerKvEntry::AdaptToVersion(int operType, uint32_t targetVersion, uint64_t &datalen)
+int GenericSingleVerKvEntry::AdaptToVersion(OperType operType, uint32_t targetVersion, uint64_t &datalen)
 {
     if (targetVersion < SOFTWARE_VERSION_EARLIEST || targetVersion > SOFTWARE_VERSION_CURRENT) {
         return -E_VERSION_NOT_SUPPORT;
     }
 
-    if (operType == CAL_LEN) {
+    if (operType == OperType::CAL_LEN) {
         return CalLenByVersion(targetVersion, datalen);
     } else {
         LOGE("Unknown upgrade serialize oper!");

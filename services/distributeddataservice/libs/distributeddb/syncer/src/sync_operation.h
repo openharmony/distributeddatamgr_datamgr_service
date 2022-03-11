@@ -53,7 +53,8 @@ public:
         OP_INTERCEPT_DATA_FAIL,
         OP_MAX_LIMITS,
         OP_SCHEMA_CHANGED,
-        OP_INVALID_ARGS
+        OP_INVALID_ARGS,
+        OP_USER_CHANGED
     };
 
     using UserCallback = std::function<void(std::map<std::string, int>)>;
@@ -76,6 +77,9 @@ public:
 
     // Set the sync status, running or finished
     void SetStatus(const std::string &deviceId, int status);
+
+    // Set the unfinished devices sync status, running or finished
+    void SetUnfinishedDevStatus(int status);
 
     // Set the identifier, used in SyncOperation::Finished
     void SetIdentifier(const std::vector<uint8_t> &identifier);

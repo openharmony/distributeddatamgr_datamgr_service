@@ -141,7 +141,7 @@ DistributedDB::Message *BuildUnRegedTinyMessage();
 #define ASSERT_NOT_NULL_AND_ACTIVATE(communicator) \
 { \
     ASSERT_NE(communicator, nullptr); \
-    communicator->Activate(); \
+    (communicator)->Activate(); \
 }
 
 #endif // DISTRIBUTEDDB_COMMUNICATOR_COMMON_H
