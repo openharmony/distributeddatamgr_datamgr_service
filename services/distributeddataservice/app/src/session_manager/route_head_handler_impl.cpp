@@ -126,10 +126,10 @@ bool RouteHeadHandlerImpl::PackDataHead(uint8_t *data, uint32_t totalLen)
         return false;
     }
     RouteHead *head = reinterpret_cast<RouteHead *>(ptr);
-    head->magic = htons(RouteHead::MAGIC_NUMBER);
-    head->version = htons(RouteHead::VERSION);
-    head->checkSum = htonll(0);
-    head->dataLen = htonl(totalLen - sizeof(RouteHead));
+    head->magic = htobe(RouteHead::MAGIC_NUMBER);
+    head->version = htobe(RouteHead::VERSION);
+    head->checkSum = htobe(uint64_t(0));
+    head->dataLen = htobe(uint32_t(totalLen - sizeof(RouteHead)));
     return true;
 }
 
@@ -150,16 +150,17 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     ptr += sizeof(SessionDevicePair);
 
     SessionUserPair *userPair = reinterpret_cast<SessionUserPair *>(ptr);
-    userPair->sourceUserId = htonl(session_.sourceUserId);
+    userPair->sourceUserId = htobe(session_.sourceUserId);
     userPair->targetUserCount = session_.targetUserIds.size();
     for (size_t i = 0; i < session_.targetUserIds.size(); ++i) {
-        *(userPair->targetUserIds + i) = htonl(session_.targetUserIds[i]);
+        *(userPair->targetUserIds + i) = htobe(session_.targetUserIds[i]);
     }
     ptr += (sizeof(SessionUserPair) + session_.targetUserIds.size() * sizeof(int));
 
     SessionAppId *appPair = reinterpret_cast<SessionAppId *>(ptr);
-    appPair->len = htonl(data + totalLen - ptr); // left size
-    ret = strcpy_s(appPair->appId, data + totalLen - ptr, session_.appId.c_str());
+    uint32_t appLen = data + totalLen - ptr;
+    appPair->len = htobe(appLen); // left size
+    ret = strcpy_s(appPair->appId, appLen, session_.appId.c_str());
     if (ret != 0) {
         ZLOGE("strcpy for app id failed");
         return false;
@@ -212,10 +213,10 @@ bool RouteHeadHandlerImpl::UnPackData(const uint8_t *data, uint32_t totalLen, ui
 bool RouteHeadHandlerImpl::UnPackDataHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead)
 {
     const RouteHead *head = reinterpret_cast<const RouteHead *>(data);
-    routeHead.magic = ntohs(head->magic);
-    routeHead.version = ntohs(head->version);
-    routeHead.checkSum = ntohll(head->checkSum);
-    routeHead.dataLen = ntohl(head->dataLen);
+    routeHead.magic = betoh(head->magic);
+    routeHead.version = betoh(head->version);
+    routeHead.checkSum = betoh(head->checkSum);
+    routeHead.dataLen = betoh(head->dataLen);
     if (routeHead.magic != RouteHead::MAGIC_NUMBER) {
         ZLOGW("not route head data");
         return false;
@@ -247,14 +248,14 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
         return false;
     }
     const SessionUserPair *userPair = reinterpret_cast<const SessionUserPair *>(ptr);
-    session_.sourceUserId = ntohl(userPair->sourceUserId);
+    session_.sourceUserId = betoh(userPair->sourceUserId);
 
     if (leftSize < sizeof(SessionUserPair) + userPair->targetUserCount * sizeof(int)) {
         ZLOGE("failed to parse user pair, target user");
         return false;
     }
     for (int i = 0; i < userPair->targetUserCount; ++i) {
-        session_.targetUserIds.push_back(ntohl(*(userPair->targetUserIds + i)));
+        session_.targetUserIds.push_back(betoh(*(userPair->targetUserIds + i)));
     }
     ptr += sizeof(SessionUserPair) + userPair->targetUserCount * sizeof(int);
 
@@ -263,7 +264,7 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
         return false;
     }
     const SessionAppId *appId = reinterpret_cast<const SessionAppId *>(ptr);
-    auto appIdLen = ntohl(appId->len);
+    auto appIdLen = betoh(appId->len);
     if (leftSize < sizeof(SessionAppId) + appIdLen) {
         ZLOGE("failed to parse app id");
         return false;

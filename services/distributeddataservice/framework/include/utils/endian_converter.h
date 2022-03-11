@@ -16,23 +16,35 @@
 #ifndef DISTRIBUTEDDATAMGR_ENDIAN_CONVERTER_H
 #define DISTRIBUTEDDATAMGR_ENDIAN_CONVERTER_H
 
-#include <arpa/inet.h>
-#include <asm/byteorder.h>
+#include <endian.h>
 
-static inline uint64_t htonll(const uint64_t value)
+inline uint16_t htobe(uint16_t value)
 {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-    constexpr const uint32_t UINT32_SIZE = 32;
-    constexpr const uint64_t UINT64_MASK_HIGH = 0xFFFFFFFF00000000U;
-    constexpr const uint64_t UINT64_MASK_LOW = 0x00000000FFFFFFFFU;
-    return ((((uint64_t)htonl(value)) << UINT32_SIZE) & UINT64_MASK_HIGH)
-           | (htonl(value >> UINT32_SIZE) & UINT64_MASK_LOW);
-#endif
-    return value;
+    return htobe16(value);
 }
 
-static inline uint64_t ntohll(const uint64_t value)
+inline uint16_t betoh(uint16_t value)
 {
-    return htonll(value);
+    return be16toh(value);
+}
+
+inline uint32_t htobe(uint32_t value)
+{
+    return htobe32(value);
+}
+
+inline uint32_t betoh(uint32_t value)
+{
+    return be32toh(value);
+}
+
+inline uint64_t htobe(uint64_t value)
+{
+    return htobe64(value);
+}
+
+inline uint64_t betoh(uint64_t value)
+{
+    return be64toh(value);
 }
 #endif // DISTRIBUTEDDATAMGR_ENDIAN_CONVERTER_H
