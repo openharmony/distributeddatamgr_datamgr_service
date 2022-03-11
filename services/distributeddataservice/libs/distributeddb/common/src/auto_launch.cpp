@@ -791,7 +791,7 @@ int AutoLaunch::AutoLaunchExt(const std::string &identifier, const std::string &
     }
 
     std::shared_ptr<DBProperties> ptr;
-    errCode = AutoLaunch::GetAutoLaunchProperties(param, openType, ptr);
+    errCode = AutoLaunch::GetAutoLaunchProperties(param, openType, false, ptr);
     if (errCode != E_OK) {
         LOGE("[AutoLaunch] AutoLaunchExt param check fail errCode:%d", errCode);
         if (!param.notifier) {
@@ -981,14 +981,14 @@ END:
     return errCode;
 }
 
-int AutoLaunch::GetAutoLaunchProperties(const AutoLaunchParam &param, const DBType &openType,
+int AutoLaunch::GetAutoLaunchProperties(const AutoLaunchParam &param, const DBType &openType, bool checkDir,
     std::shared_ptr<DBProperties> &propertiesPtr)
 {
     switch (openType) {
         case DBType::DB_KV: {
             propertiesPtr = std::make_shared<KvDBProperties>();
             std::shared_ptr<KvDBProperties> kvPtr = std::static_pointer_cast<KvDBProperties>(propertiesPtr);
-            return GetAutoLaunchKVProperties(param, kvPtr);
+            return GetAutoLaunchKVProperties(param, kvPtr, checkDir);
         }
         case DBType::DB_RELATION: {
             propertiesPtr = std::make_shared<RelationalDBProperties>();
@@ -1002,10 +1002,11 @@ int AutoLaunch::GetAutoLaunchProperties(const AutoLaunchParam &param, const DBTy
 }
 
 int AutoLaunch::GetAutoLaunchKVProperties(const AutoLaunchParam &param,
-    const std::shared_ptr<KvDBProperties> &propertiesPtr)
+    const std::shared_ptr<KvDBProperties> &propertiesPtr, bool checkDir)
 {
     SchemaObject schemaObject;
-    int errCode = ParamCheckUtils::CheckAndTransferAutoLaunchParam(param, schemaObject);
+    std::string canonicalDir;
+    int errCode = ParamCheckUtils::CheckAndTransferAutoLaunchParam(param, checkDir, schemaObject, canonicalDir);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -1013,7 +1014,7 @@ int AutoLaunch::GetAutoLaunchKVProperties(const AutoLaunchParam &param,
     if (param.option.isEncryptedDb) {
         propertiesPtr->SetPassword(param.option.cipher, param.option.passwd);
     }
-    propertiesPtr->SetStringProp(KvDBProperties::DATA_DIR, param.option.dataDir);
+    propertiesPtr->SetStringProp(KvDBProperties::DATA_DIR, canonicalDir);
     propertiesPtr->SetBoolProp(KvDBProperties::CREATE_IF_NECESSARY, param.option.createIfNecessary);
     propertiesPtr->SetBoolProp(KvDBProperties::CREATE_DIR_BY_STORE_ID_ONLY, param.option.createDirByStoreIdOnly);
     propertiesPtr->SetBoolProp(KvDBProperties::MEMORY_MODE, false);

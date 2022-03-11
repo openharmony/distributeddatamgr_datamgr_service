@@ -145,8 +145,8 @@ bool ParamCheckUtils::IsS3SECEOpt(const SecurityOption &secOpt)
     return (secOpt == S3SeceOpt);
 }
 
-int ParamCheckUtils::CheckAndTransferAutoLaunchParam(const AutoLaunchParam &param,
-    SchemaObject &schemaObject)
+int ParamCheckUtils::CheckAndTransferAutoLaunchParam(const AutoLaunchParam &param, bool checkDir,
+    SchemaObject &schemaObject, std::string &canonicalDir)
 {
     if ((param.option.notifier && !ParamCheckUtils::CheckConflictNotifierType(param.option.conflictType)) ||
         (!param.option.notifier && param.option.conflictType != 0)) {
@@ -177,6 +177,16 @@ int ParamCheckUtils::CheckAndTransferAutoLaunchParam(const AutoLaunchParam &para
             LOGE("[AutoLaunch] ParseFromSchemaString is invalid.");
             return -E_INVALID_SCHEMA;
         }
+    }
+
+    if (!checkDir) {
+        canonicalDir = param.option.dataDir;
+        return E_OK;
+    }
+
+    if (!ParamCheckUtils::CheckDataDir(param.option.dataDir, canonicalDir)) {
+        LOGE("[AutoLaunch] CheckDataDir is invalid.");
+        return -E_INVALID_ARGS;
     }
     return E_OK;
 }

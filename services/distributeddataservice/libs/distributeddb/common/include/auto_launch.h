@@ -64,7 +64,7 @@ struct AutoLaunchItem {
 
 class AutoLaunch {
 public:
-    static int GetAutoLaunchProperties(const AutoLaunchParam &param, const DBType &openType,
+    static int GetAutoLaunchProperties(const AutoLaunchParam &param, const DBType &openType, bool checkDir,
         std::shared_ptr<DBProperties> &propertiesPtr);
 
     AutoLaunch() = default;
@@ -96,7 +96,7 @@ protected:
     static int SetConflictNotifier(AutoLaunchItem &autoLaunchItem);
 
     static int GetAutoLaunchKVProperties(const AutoLaunchParam &param,
-        const std::shared_ptr<KvDBProperties> &propertiesPtr);
+        const std::shared_ptr<KvDBProperties> &propertiesPtr, bool checkDir);
 
     static int GetAutoLaunchRelationProperties(const AutoLaunchParam &param,
         const std::shared_ptr<RelationalDBProperties> &propertiesPtr);

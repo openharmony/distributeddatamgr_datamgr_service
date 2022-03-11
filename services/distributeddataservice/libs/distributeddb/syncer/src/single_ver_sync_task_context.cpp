@@ -479,14 +479,14 @@ DEFINE_OBJECT_TAG_FACILITIES(SingleVerSyncTaskContext)
 
 bool SingleVerSyncTaskContext::IsCurrentSyncTaskCanBeSkipped() const
 {
-    if (syncOperation_ == nullptr) {
-        return true;
-    }
     if (mode_ == SyncModeType::PUSH) {
         if (lastFullSyncTaskStatus_ != SyncOperation::OP_FINISHED_ALL) {
             return false;
         }
     } else if (mode_ == SyncModeType::QUERY_PUSH) {
+        if (syncOperation_ == nullptr) {
+            return true;
+        }
         auto it = lastQuerySyncTaskStatusMap_.find(syncOperation_->GetQueryId());
         if (it == lastQuerySyncTaskStatusMap_.end()) {
             // no last query_push and push
