@@ -16,12 +16,14 @@
 #include <gtest/gtest.h>
 
 #include "gmock/gmock.h"
+#include "kvstore_meta_manager.h"
 #include "route_head_handler_impl.h"
 #include "upgrade_manager.h"
 #include "user_delegate.h"
 
 namespace OHOS::DistributedData {
 using namespace testing::ext;
+using namespace OHOS::DistributedKv;
 class SessionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
@@ -40,6 +42,9 @@ public:
         CapMetaData capMetaData;
         capMetaData.version = CapMetaData::CURRENT_VERSION;
         UpgradeManager::GetInstance().Init();
+
+        auto &metaInstance = KvStoreMetaManager::GetInstance();
+        metaInstance.CheckUpdateServiceMeta();
     }
     static void TearDownTestCase()
     {
@@ -62,7 +67,7 @@ public:
 HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
 {
     const DistributedDB::ExtendInfo info = {
-        .userId = "100", .appId = "com.sample.helloworld", .storeId = "test_store", .dstTarget = "PEER_DEVICE_ID"
+        .appId = "com.sample.helloworld", .storeId = "test_store", .userId = "100", .dstTarget = "PEER_DEVICE_ID"
     };
     auto sendHandler = RouteHeadHandlerImpl::Create(info);
     ASSERT_NE(sendHandler, nullptr);
@@ -77,7 +82,7 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     uint32_t parseSize = 0;
     recvHandler->ParseHeadData(data.get(), routeHeadSize, parseSize, users);
     EXPECT_EQ(routeHeadSize, parseSize);
-    EXPECT_EQ(users.size(), 1);
+    ASSERT_EQ(users.size(), 1);
     EXPECT_EQ(users[0], "101");
 }
 } // namespace OHOS::DistributedData
