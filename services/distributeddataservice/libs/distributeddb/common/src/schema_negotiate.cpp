@@ -225,6 +225,10 @@ int SchemaNegotiate::DeserializeData(Parcel &parcel, RelationalSyncOpinion &opin
     uint32_t opinionSize;
     (void)parcel.ReadUInt32(opinionSize);
     (void)parcel.EightByteAlign();
+    static const uint32_t MAX_OPINION_SIZE = 1024; // max 1024 opinions
+    if (parcel.IsError() || opinionSize > MAX_OPINION_SIZE) {
+        return -E_INVALID_ARGS;
+    }
     for (uint32_t i = 0; i < opinionSize; i++) {
         std::string tableName;
         SyncOpinion tableOpinion;
