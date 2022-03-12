@@ -57,7 +57,7 @@ DBStatus RelationalStoreDelegateImpl::CreateDistributedTable(const std::string &
 
     int errCode = conn_->CreateDistributedTable(tableName);
     if (errCode != E_OK) {
-        LOGW("[RelationalStore Delegate] Create Distributed table failed:%d", errCode);
+        LOGE("[RelationalStore Delegate] Create Distributed table failed:%d", errCode);
         return TransferDBErrno(errCode);
     }
     return OK;

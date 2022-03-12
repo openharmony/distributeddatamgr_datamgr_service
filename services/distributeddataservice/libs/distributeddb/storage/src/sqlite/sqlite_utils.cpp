@@ -724,6 +724,41 @@ bool CheckFieldName(const std::string &fieldName)
 }
 }
 
+int SetFieldInfo(sqlite3_stmt *statement, TableInfo &table)
+{
+    FieldInfo field;
+    field.SetColumnId(sqlite3_column_int(statement, 0));  // 0 means column id index
+
+    std::string tmpString;
+    (void) SQLiteUtils::GetColumnTextValue(statement, 1, tmpString);  // 1 means column name index
+    if (!CheckFieldName(tmpString)) {
+        LOGE("[AnalysisSchema] unsupported field name.");
+        return -E_NOT_SUPPORT;
+    }
+    field.SetFieldName(tmpString);
+
+    (void) SQLiteUtils::GetColumnTextValue(statement, 2, tmpString);  // 2 means datatype index
+    field.SetDataType(tmpString);
+
+    field.SetNotNull(static_cast<bool>(sqlite3_column_int64(statement, 3)));  // 3 means whether null index
+
+    (void) SQLiteUtils::GetColumnTextValue(statement, 4, tmpString);  // 4 means default value index
+    if (!tmpString.empty()) {
+        field.SetDefaultValue(tmpString);
+    }
+
+    if (sqlite3_column_int64(statement, 5) != 0) {  // 5 means primary key index
+        if (!table.GetPrimaryKey().empty()) {
+            // Primary key is already set, usually because the primary key has multiple fields, not support
+            LOGE("[AnalysisSchema] Not support for composite primary key");
+            return -E_NOT_SUPPORT;
+        }
+        table.SetPrimaryKey(field.GetFieldName());
+    }
+    table.AddField(field);
+    return E_OK;
+}
+
 int AnalysisSchemaFieldDefine(sqlite3 *db, const std::string &tableName, TableInfo &table)
 {
     std::string sql = "pragma table_info(" + tableName + ")";
@@ -733,39 +768,17 @@ int AnalysisSchemaFieldDefine(sqlite3 *db, const std::string &tableName, TableIn
         LOGE("[AnalysisSchema] Prepare the analysis schema field statement error:%d", errCode);
         return errCode;
     }
+
     do {
         errCode = SQLiteUtils::StepWithRetry(statement);
         if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
             errCode = E_OK;
             break;
         } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
-            FieldInfo field;
-            std::string tmpString;
-
-            field.SetColumnId(sqlite3_column_int(statement, 0));  // 0 means column id index
-
-            (void) SQLiteUtils::GetColumnTextValue(statement, 1, tmpString);  // 1 means column name index
-            if (!CheckFieldName(tmpString)) {
-                errCode = -E_NOT_SUPPORT;
-                LOGE("[AnalysisSchema] unsupported field name.");
+            errCode = SetFieldInfo(statement, table);
+            if (errCode != E_OK) {
                 break;
             }
-            field.SetFieldName(tmpString);
-
-            (void) SQLiteUtils::GetColumnTextValue(statement, 2, tmpString);  // 2 means datatype index
-            field.SetDataType(tmpString);
-
-            field.SetNotNull(static_cast<bool>(sqlite3_column_int64(statement, 3)));  // 3 means whether null index
-
-            (void) SQLiteUtils::GetColumnTextValue(statement, 4, tmpString);  // 4 means default value index
-            if (!tmpString.empty()) {
-                field.SetDefaultValue(tmpString);
-            }
-
-            if (sqlite3_column_int64(statement, 5)) {  // 5 means primary key index
-                table.SetPrimaryKey(field.GetFieldName());
-            }
-            table.AddField(field);
         } else {
             LOGW("[AnalysisSchema] Step for the analysis schema field failed:%d", errCode);
             break;

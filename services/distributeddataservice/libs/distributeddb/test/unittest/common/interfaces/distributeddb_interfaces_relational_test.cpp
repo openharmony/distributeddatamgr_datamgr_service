@@ -63,6 +63,14 @@ namespace {
 
     const std::string UNSUPPORTED_FIELD_TABLE_SQL = "CREATE TABLE IF NOT EXISTS test('$.ID' INT, val BLOB);";
 
+    const std::string COMPOSITE_PRIMARY_KEY_TABLE_SQL = R"(CREATE TABLE workers (
+            worker_id INTEGER,
+            last_name VARCHAR NOT NULL,
+            first_name VARCHAR,
+            join_date DATE,
+            PRIMARY KEY (last_name, first_name)
+        );)";
+
     const std::string INSERT_SYNC_DATA_SQL = "INSERT OR REPLACE INTO sync_data (key, timestamp, flag, hash_key) "
         "VALUES('KEY', 123456789, 1, 'HASH_KEY');";
 }
@@ -404,6 +412,31 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest007, TestSize
     ASSERT_NE(delegate, nullptr);
 
     EXPECT_EQ(delegate->CreateDistributedTable("test"), NOT_SUPPORT);
+    status = g_mgr.CloseStore(delegate);
+    EXPECT_EQ(status, OK);
+}
+
+/**
+  * @tc.name: RelationalStoreTest008
+  * @tc.desc: Test create distributed table with table has composite primary key
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest008, TestSize.Level1)
+{
+    sqlite3 *db = RelationalTestUtils::CreateDataBase(g_dbDir + STORE_ID + DB_SUFFIX);
+    ASSERT_NE(db, nullptr);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, COMPOSITE_PRIMARY_KEY_TABLE_SQL), SQLITE_OK);
+    EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
+
+    RelationalStoreDelegate *delegate = nullptr;
+    DBStatus status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    EXPECT_EQ(status, OK);
+    ASSERT_NE(delegate, nullptr);
+
+    EXPECT_EQ(delegate->CreateDistributedTable("workers"), NOT_SUPPORT);
     status = g_mgr.CloseStore(delegate);
     EXPECT_EQ(status, OK);
 }

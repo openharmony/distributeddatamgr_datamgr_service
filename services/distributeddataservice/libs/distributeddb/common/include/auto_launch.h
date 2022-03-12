@@ -154,8 +154,7 @@ protected:
 
     int ExtAutoLaunchRequestCallBack(const std::string &identifier, AutoLaunchParam &param, DBType &openType);
 
-    int RegisterLifeCycleCallback(AutoLaunchItem &autoLaunchItem, const std::string &identifier,
-        bool isExt);
+    int RegisterLifeCycleCallback(AutoLaunchItem &autoLaunchItem, const std::string &identifier, bool isExt);
 
     void TryCloseKvConnection(AutoLaunchItem &autoLaunchItem);
 
