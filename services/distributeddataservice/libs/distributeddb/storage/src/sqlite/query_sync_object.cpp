@@ -169,15 +169,11 @@ std::string QuerySyncObject::GetIdentify() const
         (void)parcel.WriteVectorChar(key);
     }  // QUERY_SYNC_OBJECT_VERSION_1 end.
 
-    if (parcel.IsError()) {
+    std::vector<uint8_t> hashBuff;
+    if (parcel.IsError() || DBCommon::CalcValueHash(buff, hashBuff) != E_OK) {
         return std::string();
     }
 
-    std::vector<uint8_t> hashBuff;
-    int errCode = DBCommon::CalcValueHash(buff, hashBuff);
-    if (errCode != E_OK) {
-        return std::string();
-    }
     return DBCommon::VectorToHexString(hashBuff);
 }
 

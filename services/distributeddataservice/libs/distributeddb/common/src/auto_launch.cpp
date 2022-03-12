@@ -206,7 +206,6 @@ int AutoLaunch::GetKVConnectionInEnable(AutoLaunchItem &autoLaunchItem, const st
         return E_OK;
     }
     if (autoLaunchItem.conn == nullptr) {
-        LOGE("[AutoLaunch] GetKVConnectionInEnable GetDatabaseConnection errCode:%d", errCode);
         std::lock_guard<std::mutex> autoLock(dataLock_);
         EraseAutoLauchItem(identifier, userId);
         return errCode;
@@ -236,7 +235,6 @@ int AutoLaunch::GetKVConnectionInEnable(AutoLaunchItem &autoLaunchItem, const st
         autoLaunchItemMap_[identifier][userId].state = AutoLaunchItemState::IDLE;
         autoLaunchItemMap_[identifier][userId].conn = autoLaunchItem.conn;
         autoLaunchItemMap_[identifier][userId].observerHandle = autoLaunchItem.observerHandle;
-        LOGI("[AutoLaunch] GetKVConnectionInEnable RegisterObserverAndLifeCycleCallback ok");
     } else {
         LOGE("[AutoLaunch] GetKVConnectionInEnable RegisterObserverAndLifeCycleCallback err, do CloseConnection");
         TryCloseConnection(autoLaunchItem); // do nothing if failed

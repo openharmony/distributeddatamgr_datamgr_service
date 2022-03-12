@@ -399,6 +399,16 @@ int ProtocolProto::SetDivergeHeader(SerialBuffer *inBuff, const LabelType &inCom
     return E_OK;
 }
 
+namespace {
+void FillPhyHeaderLenInfo(CommPhyHeader &header, uint32_t packetLen, uint64_t sum, uint8_t type, uint8_t paddingLen)
+{
+    header.packetLen = packetLen;
+    header.checkSum = sum;
+    header.packetType |= type;
+    header.paddingLen = paddingLen;
+}
+}
+
 int ProtocolProto::SetPhyHeader(SerialBuffer *inBuff, const PhyHeaderInfo &inInfo)
 {
     if (inBuff == nullptr) {
@@ -423,13 +433,11 @@ int ProtocolProto::SetPhyHeader(SerialBuffer *inBuff, const PhyHeaderInfo &inInf
     CommPhyHeader phyHeader;
     phyHeader.magic = MAGIC_CODE;
     phyHeader.version = PROTOCOL_VERSION;
-    phyHeader.packetLen = packetLen;
-    phyHeader.checkSum = 0; // Sum is calculated afterwards
     phyHeader.sourceId = inInfo.sourceId;
     phyHeader.frameId = inInfo.frameId;
-    phyHeader.packetType = packetType;
-    phyHeader.paddingLen = paddingLen;
+    phyHeader.packetType = 0;
     phyHeader.dbIntVer = DB_GLOBAL_VERSION;
+    FillPhyHeaderLenInfo(phyHeader, packetLen, 0, packetType, paddingLen); // Sum is calculated afterwards
     HeaderConverter::ConvertHostToNet(phyHeader, phyHeader);
 
     errno_t retCode = memcpy_s(headerByteLen.first, headerByteLen.second, &phyHeader, sizeof(CommPhyHeader));
@@ -934,8 +942,8 @@ int ProtocolProto::FrameFragmentation(const uint8_t *splitStartBytes, const Fram
     for (auto &entry : outPieces) {
         // subtract 1 for index
         uint32_t pieceFragLen = (fragNo != fragmentInfo.fragCount - 1) ? quotient : (quotient + remainder);
-        uint32_t alignedPieceFragLen = BYTE_8_ALIGN(pieceFragLen); // Add padding length
-        uint32_t pieceTotalLen = alignedPieceFragLen + sizeof(CommPhyHeader) + sizeof(CommPhyOptHeader);
+        uint32_t alignedFragLen = BYTE_8_ALIGN(pieceFragLen); // Add padding length
+        uint32_t pieceTotalLen = alignedFragLen + sizeof(CommPhyHeader) + sizeof(CommPhyOptHeader);
 
         // Since exception is disabled, we have to check the vector size to assure that memory is truly allocated
         entry.first.resize(pieceTotalLen + fragmentInfo.extendHeadSize); // Note: should use resize other than reserve
@@ -946,10 +954,10 @@ int ProtocolProto::FrameFragmentation(const uint8_t *splitStartBytes, const Fram
 
         CommPhyHeader pktPhyHeader;
         HeaderConverter::ConvertNetToHost(framePhyHeader, pktPhyHeader); // Restore to host endian
-        pktPhyHeader.packetLen = pieceTotalLen;
-        pktPhyHeader.checkSum = 0; // The sum value need to be recalculate
-        pktPhyHeader.packetType |= PACKET_TYPE_FRAGMENTED; // Set the FragmentedFlag bit
-        pktPhyHeader.paddingLen = alignedPieceFragLen - pieceFragLen; // The former is always larger than latter
+
+        // The sum value need to be recalculated, and the packet is fragmented.
+        // The alignedFragLen is always larger than pieceFragLen
+        FillPhyHeaderLenInfo(pktPhyHeader, pieceTotalLen, 0, PACKET_TYPE_FRAGMENTED, alignedFragLen - pieceFragLen);
         HeaderConverter::ConvertHostToNet(pktPhyHeader, pktPhyHeader);
 
         CommPhyOptHeader pktPhyOptHeader = {static_cast<uint32_t>(fragmentInfo.splitLength + sizeof(CommPhyHeader)),
