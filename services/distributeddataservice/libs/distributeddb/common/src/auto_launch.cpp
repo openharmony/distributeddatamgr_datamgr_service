@@ -847,7 +847,6 @@ void AutoLaunch::AutoLaunchExtTask(const std::string identifier, const std::stri
             LOGE("[AutoLaunch] AutoLaunchExtTask RegisterObserverAndLifeCycleCallback failed");
             TryCloseConnection(autoLaunchItem); // if here failed, do nothing
             abort = true;
-            break;
         }
     } while (false);
     if (abort) {
@@ -1216,12 +1215,9 @@ void AutoLaunch::NotifyInvalidParam(const AutoLaunchItem &autoLaunchItem)
         return;
     }
     int retCode = RuntimeContext::GetInstance()->ScheduleTask([autoLaunchItem] {
-        std::string userId;
-        std::string appId;
-        std::string storeId;
-        autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::APP_ID, appId);
-        autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::STORE_ID, storeId);
-        autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::USER_ID, userId);
+        std::string userId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::USER_ID, "");
+        std::string appId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::APP_ID, "");
+        std::string storeId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::STORE_ID, "");
         autoLaunchItem.notifier(userId, appId, storeId, INVALID_PARAM);
     });
     if (retCode != E_OK) {
@@ -1231,9 +1227,6 @@ void AutoLaunch::NotifyInvalidParam(const AutoLaunchItem &autoLaunchItem)
 
 int AutoLaunch::CheckAutoLaunchRealPath(const AutoLaunchItem &autoLaunchItem)
 {
-    if (autoLaunchItem.type != DBType::DB_KV) {
-        return E_OK;
-    }
     std::string canonicalDir;
     std::string dataDir = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::DATA_DIR, "");
     if (!ParamCheckUtils::CheckDataDir(dataDir, canonicalDir)) {
