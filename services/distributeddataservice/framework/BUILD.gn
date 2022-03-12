@@ -25,6 +25,7 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include",
+    "../adapter/include",
   ]
 }
 
@@ -37,6 +38,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "eventcenter/event_center.cpp",
     "metadata/capability_meta_data.cpp",
     "metadata/meta_data.cpp",
+    "metadata/meta_data_manager.cpp",
     "metadata/secret_key_meta_data.cpp",
     "metadata/store_meta_data.cpp",
     "metadata/strategy_meta_data.cpp",
@@ -55,6 +57,8 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   ldflags = [ "-Wl,--exclude-libs,libcrypto_static.a" ]
   deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/openssl:libcrypto_static",
     "//utils/native/base:utils",
   ]

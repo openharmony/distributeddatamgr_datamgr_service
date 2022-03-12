@@ -229,6 +229,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "../src/session_manager/upgrade_manager.cpp",
     "../src/single_kvstore_impl.cpp",
     "unittest/kvstore_data_service_test.cpp",
+    "unittest/meta_data_manager_test.cpp",
   ]
   kv_sources = [ "../../service/kv/user_delegate.cpp" ]
 

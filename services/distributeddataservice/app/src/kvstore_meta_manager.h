@@ -158,8 +158,7 @@ public:
         KVDB,
         RDB,
     };
-    using NbDelegate = std::unique_ptr<DistributedDB::KvStoreNbDelegate,
-        std::function<void(DistributedDB::KvStoreNbDelegate *)>>;
+    using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;
     using ChangeObserver = std::function<void(const std::vector<uint8_t> &, const std::vector<uint8_t> &, CHANGE_FLAG)>;
 
     class MetaDeviceChangeListenerImpl : public AppDistributedKv::AppDeviceStatusChangeListener {
