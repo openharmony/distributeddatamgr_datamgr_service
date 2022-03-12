@@ -17,6 +17,7 @@
 
 #include "gmock/gmock.h"
 #include "kvstore_meta_manager.h"
+#include "meta_data_manager.h"
 #include "route_head_handler_impl.h"
 #include "upgrade_manager.h"
 #include "user_delegate.h"
@@ -24,6 +25,7 @@
 namespace OHOS::DistributedData {
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
+using namespace OHOS::DistributedData;
 class SessionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
@@ -37,14 +39,15 @@ public:
         constexpr const int MOCK_PEER_USER = 101;
         status.id = MOCK_PEER_USER;
         userMetaData.users = { status };
-        UserDelegate::GetInstance();
+
+        auto peerUserMetaKey = UserMetaRow::GetKeyFor(userMetaData.deviceId);
+        MetaDataManager::GetInstance().SaveMeta({ peerUserMetaKey.begin(), peerUserMetaKey.end() }, userMetaData);
 
         CapMetaData capMetaData;
         capMetaData.version = CapMetaData::CURRENT_VERSION;
-        UpgradeManager::GetInstance().Init();
 
-        auto &metaInstance = KvStoreMetaManager::GetInstance();
-        metaInstance.CheckUpdateServiceMeta();
+        auto peerCapMetaKey = CapMetaRow::GetKeyFor(userMetaData.deviceId);
+        MetaDataManager::GetInstance().SaveMeta({ peerCapMetaKey.begin(), peerCapMetaKey.end() }, capMetaData);
     }
     static void TearDownTestCase()
     {
