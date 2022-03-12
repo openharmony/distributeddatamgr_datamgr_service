@@ -22,6 +22,7 @@
 #include "log_print.h"
 #include "securec.h"
 #include "upgrade_manager.h"
+#include "utils/endian_converter.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
@@ -125,10 +126,10 @@ bool RouteHeadHandlerImpl::PackDataHead(uint8_t *data, uint32_t totalLen)
         return false;
     }
     RouteHead *head = reinterpret_cast<RouteHead *>(ptr);
-    head->magic = RouteHead::MAGIC_NUMBER;
-    head->version = RouteHead::VERSION;
-    head->checkSum = 0;
-    head->dataLen = static_cast<uint32_t>(totalLen - sizeof(RouteHead));
+    head->magic = HostToNet(RouteHead::MAGIC_NUMBER);
+    head->version = HostToNet(RouteHead::VERSION);
+    head->checkSum = HostToNet(uint64_t(0));
+    head->dataLen = HostToNet(uint32_t(totalLen - sizeof(RouteHead)));
     return true;
 }
 
@@ -149,16 +150,17 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     ptr += sizeof(SessionDevicePair);
 
     SessionUserPair *userPair = reinterpret_cast<SessionUserPair *>(ptr);
-    userPair->sourceUserId = session_.sourceUserId;
+    userPair->sourceUserId = HostToNet(session_.sourceUserId);
     userPair->targetUserCount = session_.targetUserIds.size();
     for (size_t i = 0; i < session_.targetUserIds.size(); ++i) {
-        *(userPair->targetUserIds + i) = session_.targetUserIds[i];
+        *(userPair->targetUserIds + i) = HostToNet(session_.targetUserIds[i]);
     }
     ptr += (sizeof(SessionUserPair) + session_.targetUserIds.size() * sizeof(int));
 
     SessionAppId *appPair = reinterpret_cast<SessionAppId *>(ptr);
-    appPair->len = data + totalLen - ptr; // left size
-    ret = strcpy_s(appPair->appId, data + totalLen - ptr, session_.appId.c_str());
+    uint32_t appLen = data + totalLen - ptr;
+    appPair->len = HostToNet(appLen); // left size
+    ret = strcpy_s(appPair->appId, appLen, session_.appId.c_str());
     if (ret != 0) {
         ZLOGE("strcpy for app id failed");
         return false;
@@ -196,33 +198,37 @@ bool RouteHeadHandlerImpl::UnPackData(const uint8_t *data, uint32_t totalLen, ui
         return false;
     }
     unpackedSize = 0;
-    const RouteHead *head = UnPackHeadHead(data, totalLen);
-    if (head != nullptr && head->version == RouteHead::VERSION) {
-        auto isOk = UnPackHeadBody(data + sizeof(RouteHead), totalLen - sizeof(RouteHead));
+    RouteHead head = { 0 };
+    bool result = UnPackDataHead(data, totalLen, head);
+    if (result && head.version == RouteHead::VERSION) {
+        auto isOk = UnPackDataBody(data + sizeof(RouteHead), totalLen - sizeof(RouteHead));
         if (isOk) {
-            unpackedSize = sizeof(RouteHead) + head->dataLen;
+            unpackedSize = sizeof(RouteHead) + head.dataLen;
         }
         return isOk;
     }
     return false;
 }
 
-const RouteHead *RouteHeadHandlerImpl::UnPackHeadHead(const uint8_t *data, uint32_t totalLen)
+bool RouteHeadHandlerImpl::UnPackDataHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead)
 {
-    const uint8_t *ptr = data;
-    const RouteHead *head = reinterpret_cast<const RouteHead *>(ptr);
-    if (head->magic != RouteHead::MAGIC_NUMBER) {
+    const RouteHead *head = reinterpret_cast<const RouteHead *>(data);
+    routeHead.magic = NetToHost(head->magic);
+    routeHead.version = NetToHost(head->version);
+    routeHead.checkSum = NetToHost(head->checkSum);
+    routeHead.dataLen = NetToHost(head->dataLen);
+    if (routeHead.magic != RouteHead::MAGIC_NUMBER) {
         ZLOGW("not route head data");
-        return nullptr;
+        return false;
     }
-    if (head->dataLen + sizeof(RouteHead) > totalLen) {
+    if (routeHead.dataLen + sizeof(RouteHead) > totalLen) {
         ZLOGE("invalid route head len");
-        return nullptr;
+        return false;
     }
-    return head;
+    return true;
 }
 
-bool RouteHeadHandlerImpl::UnPackHeadBody(const uint8_t *data, uint32_t totalLen)
+bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen)
 {
     const uint8_t *ptr = data;
     uint32_t leftSize = totalLen;
@@ -242,14 +248,14 @@ bool RouteHeadHandlerImpl::UnPackHeadBody(const uint8_t *data, uint32_t totalLen
         return false;
     }
     const SessionUserPair *userPair = reinterpret_cast<const SessionUserPair *>(ptr);
-    session_.sourceUserId = userPair->sourceUserId;
+    session_.sourceUserId = NetToHost(userPair->sourceUserId);
 
     if (leftSize < sizeof(SessionUserPair) + userPair->targetUserCount * sizeof(int)) {
         ZLOGE("failed to parse user pair, target user");
         return false;
     }
     for (int i = 0; i < userPair->targetUserCount; ++i) {
-        session_.targetUserIds.push_back(*(userPair->targetUserIds + i));
+        session_.targetUserIds.push_back(NetToHost(*(userPair->targetUserIds + i)));
     }
     ptr += sizeof(SessionUserPair) + userPair->targetUserCount * sizeof(int);
 
@@ -258,12 +264,12 @@ bool RouteHeadHandlerImpl::UnPackHeadBody(const uint8_t *data, uint32_t totalLen
         return false;
     }
     const SessionAppId *appId = reinterpret_cast<const SessionAppId *>(ptr);
-
-    if (leftSize < sizeof(SessionAppId) + appId->len) {
+    auto appIdLen = NetToHost(appId->len);
+    if (leftSize < sizeof(SessionAppId) + appIdLen) {
         ZLOGE("failed to parse app id");
         return false;
     }
-    session_.appId.append(appId->appId, appId->len);
+    session_.appId.append(appId->appId, appIdLen);
     return true;
 }
 } // namespace OHOS::DistributedData
