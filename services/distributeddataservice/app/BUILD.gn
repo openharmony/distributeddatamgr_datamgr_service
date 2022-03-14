@@ -151,4 +151,5 @@ ohos_shared_library("distributeddataservice") {
   ]
 
   subsystem_name = "distributeddatamgr"
+  part_name = "distributeddatamgr"
 }

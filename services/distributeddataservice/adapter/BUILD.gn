@@ -54,4 +54,5 @@ ohos_shared_library("distributeddata_adapter") {
   public_configs = [ ":distributeddata_adapter_public_config" ]
 
   subsystem_name = "distributeddatamgr"
+  part_name = "distributeddatamgr"
 }

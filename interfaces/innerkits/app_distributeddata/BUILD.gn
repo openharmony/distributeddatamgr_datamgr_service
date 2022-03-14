@@ -52,7 +52,6 @@ config("distributeddatafwk_public_config") {
 }
 
 ohos_shared_library("app_distributeddata") {
-  part_name = "distributeddatamgr"
   sources = [
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/app_blob.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/app_change_notification.cpp",
@@ -82,6 +81,7 @@ ohos_shared_library("app_distributeddata") {
   public_configs = [ ":distributeddatafwk_public_config" ]
 
   subsystem_name = "distributeddatamgr"
+  part_name = "distributeddatamgr"
 }
 
 config("distributeddatafwk_communication_config") {
