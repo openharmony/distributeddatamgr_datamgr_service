@@ -22,7 +22,7 @@
 namespace OHOS::DistributedData {
 class API_EXPORT UserStatus final : public Serializable {
 public:
-    int id;
+    int32_t id;
     bool isActive;
     API_EXPORT UserStatus() = default;
     API_EXPORT ~UserStatus() = default;

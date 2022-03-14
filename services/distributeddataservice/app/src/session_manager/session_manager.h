@@ -24,7 +24,7 @@
 namespace OHOS::DistributedData {
 struct SessionPoint {
     std::string deviceId;
-    int userId;
+    uint32_t userId;
     std::string appId;
 };
 
@@ -32,8 +32,8 @@ class Session : public Serializable {
 public:
     std::string sourceDeviceId;
     std::string targetDeviceId;
-    int32_t sourceUserId;
-    std::vector<int32_t> targetUserIds;
+    uint32_t sourceUserId;
+    std::vector<uint32_t> targetUserIds;
     std::string appId;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
