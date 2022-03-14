@@ -61,13 +61,13 @@ napi_value JsKVManager::CreateKVManager(napi_env env, napi_callback_info info)
     auto ctxt = std::make_shared<ContextInfo>();
     auto input = [env, ctxt](size_t argc, napi_value* argv) {
         // required 1 arguments :: <bundleName>
-        CHECK_ARGS_RETURN_VOID(ctxt, argc == 1, "invalid arguments!");
+        CHECK_ARGS(ctxt, argc == 1, "invalid arguments!");
         std::string bundleName;
         ctxt->status = JSUtil::GetNamedProperty(env, argv[0], "bundleName", bundleName);
-        CHECK_ARGS_RETURN_VOID(ctxt, (ctxt->status == napi_ok) && !bundleName.empty(), "invalid bundleName!");
+        CHECK_ARGS(ctxt, (ctxt->status == napi_ok) && !bundleName.empty(), "invalid bundleName!");
 
         ctxt->ref = JSUtil::NewWithRef(env, argc, argv, (void**)&ctxt->kvManger, JsKVManager::Constructor(env));
-        CHECK_ARGS_RETURN_VOID(ctxt, ctxt->kvManger != nullptr, "KVManager::New failed!");
+        CHECK_ARGS(ctxt, ctxt->kvManger != nullptr, "KVManager::New failed!");
     };
     ctxt->GetCbInfo(env, info, input);
 
@@ -75,7 +75,7 @@ napi_value JsKVManager::CreateKVManager(napi_env env, napi_callback_info info)
     auto output = [env, ctxt](napi_value& result) {
         ctxt->status = napi_get_reference_value(env, ctxt->ref, &result);
         napi_delete_reference(env, ctxt->ref);
-        CHECK_STATUS_RETURN_VOID(ctxt, "output KVManager failed");
+        CHECK_STATUS(ctxt, "output KVManager failed");
     };
     return NapiQueue::AsyncWork(env, ctxt, std::string(__FUNCTION__), noExecute, output);
 }
@@ -90,12 +90,12 @@ struct GetKVStoreContext : public ContextBase {
     {
         auto input = [env, this](size_t argc, napi_value* argv) {
             // required 2 arguments :: <storeId> <options>
-            CHECK_ARGS_RETURN_VOID(this, argc == 2, "invalid arguments!");
+            CHECK_ARGS(this, argc == 2, "invalid arguments!");
             status = JSUtil::GetValue(env, argv[0], storeId);
-            CHECK_ARGS_RETURN_VOID(this, (status == napi_ok) && !storeId.empty(), "invalid storeId!");
+            CHECK_ARGS(this, (status == napi_ok) && !storeId.empty(), "invalid storeId!");
             status = JSUtil::GetValue(env, argv[1], options);
-            CHECK_STATUS_RETURN_VOID(this, "invalid options!");
-            CHECK_ARGS_RETURN_VOID(this, IsStoreTypeSupported(options), "invalid options.KvStoreType");
+            CHECK_STATUS(this, "invalid options!");
+            CHECK_ARGS(this, IsStoreTypeSupported(options), "invalid options.KvStoreType");
             ZLOGD("GetKVStore kvStoreType=%{public}d", options.kvStoreType);
             if (options.kvStoreType == KvStoreType::DEVICE_COLLABORATION) {
                 ref = JSUtil::NewWithRef(env, argc, argv, (void**)&kvStore, JsDeviceKVStore::Constructor(env));
@@ -121,21 +121,21 @@ napi_value JsKVManager::GetKVStore(napi_env env, napi_callback_info info)
     ctxt->GetCbInfo(env, info);
     auto execute = [ctxt]() {
         auto kvm = reinterpret_cast<JsKVManager*>(ctxt->native);
-        CHECK_ARGS_RETURN_VOID(ctxt, kvm != nullptr, "KVManager is null, failed!");
+        CHECK_ARGS(ctxt, kvm != nullptr, "KVManager is null, failed!");
         AppId appId = { kvm->bundleName_ };
         StoreId storeId = { ctxt->storeId };
         std::shared_ptr<DistributedKv::SingleKvStore> kvStore;
         Status status = kvm->kvDataManager_.GetSingleKvStore(ctxt->options, appId, storeId, kvStore);
         ZLOGD("GetSingleKvStore return status:%{public}d", status);
         ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
-        CHECK_STATUS_RETURN_VOID(ctxt, "KVManager->GetSingleKvStore() failed!");
+        CHECK_STATUS(ctxt, "KVManager->GetSingleKvStore() failed!");
         ctxt->kvStore->SetNative(kvStore);
         ctxt->kvStore->SetUvQueue(kvm->uvQueue_);
     };
     auto output = [env, ctxt](napi_value& result) {
         ctxt->status = napi_get_reference_value(env, ctxt->ref, &result);
         napi_delete_reference(env, ctxt->ref);
-        CHECK_STATUS_RETURN_VOID(ctxt, "output KvStore failed");
+        CHECK_STATUS(ctxt, "output KvStore failed");
     };
     return NapiQueue::AsyncWork(env, ctxt, std::string(__FUNCTION__), execute, output);
 }
@@ -156,15 +156,15 @@ napi_value JsKVManager::CloseKVStore(napi_env env, napi_callback_info info)
     auto ctxt = std::make_shared<ContextInfo>();
     auto input = [env, ctxt](size_t argc, napi_value* argv) {
         // required 3 arguments :: <appId> <storeId> <kvStore>
-        CHECK_ARGS_RETURN_VOID(ctxt, argc == 3, "invalid arguments!");
+        CHECK_ARGS(ctxt, argc == 3, "invalid arguments!");
         ctxt->status = JSUtil::GetValue(env, argv[0], ctxt->appId);
-        CHECK_ARGS_RETURN_VOID(ctxt, (ctxt->status == napi_ok) && !ctxt->appId.empty(), "invalid appId!");
+        CHECK_ARGS(ctxt, (ctxt->status == napi_ok) && !ctxt->appId.empty(), "invalid appId!");
         ctxt->status = JSUtil::GetValue(env, argv[1], ctxt->storeId);
-        CHECK_ARGS_RETURN_VOID(ctxt, (ctxt->status == napi_ok) && !ctxt->storeId.empty(), "invalid storeId!");
-        CHECK_ARGS_RETURN_VOID(ctxt, argv[2] != nullptr, "kvStore is nullptr!");
+        CHECK_ARGS(ctxt, (ctxt->status == napi_ok) && !ctxt->storeId.empty(), "invalid storeId!");
+        CHECK_ARGS(ctxt, argv[2] != nullptr, "kvStore is nullptr!");
         bool isSingle = JsKVStore::IsInstanceOf(env, argv[2], ctxt->storeId, JsSingleKVStore::Constructor(env));
         bool isDevice = JsKVStore::IsInstanceOf(env, argv[2], ctxt->storeId, JsDeviceKVStore::Constructor(env));
-        CHECK_ARGS_RETURN_VOID(ctxt, isSingle || isDevice, "kvStore unmatch to storeId!");
+        CHECK_ARGS(ctxt, isSingle || isDevice, "kvStore unmatch to storeId!");
     };
     ctxt->GetCbInfo(env, info, input);
 
@@ -196,12 +196,12 @@ napi_value JsKVManager::DeleteKVStore(napi_env env, napi_callback_info info)
     auto ctxt = std::make_shared<ContextInfo>();
     auto input = [env, ctxt](size_t argc, napi_value* argv) {
         // required 2 arguments :: <appId> <storeId>
-        CHECK_ARGS_RETURN_VOID(ctxt, argc >= 2, "invalid arguments!");
+        CHECK_ARGS(ctxt, argc >= 2, "invalid arguments!");
         size_t index = 0;
         ctxt->status = JSUtil::GetValue(env, argv[index++], ctxt->appId);
-        CHECK_ARGS_RETURN_VOID(ctxt, !ctxt->appId.empty(), "invalid appId");
+        CHECK_ARGS(ctxt, !ctxt->appId.empty(), "invalid appId");
         ctxt->status = JSUtil::GetValue(env, argv[index++], ctxt->storeId);
-        CHECK_ARGS_RETURN_VOID(ctxt, !ctxt->storeId.empty(), "invalid storeId");
+        CHECK_ARGS(ctxt, !ctxt->storeId.empty(), "invalid storeId");
     };
     ctxt->GetCbInfo(env, info, input);
 
@@ -231,15 +231,15 @@ napi_value JsKVManager::GetAllKVStoreId(napi_env env, napi_callback_info info)
     auto ctxt = std::make_shared<ContextInfo>();
     auto input = [env, ctxt](size_t argc, napi_value* argv) {
         // required 1 arguments :: <appId>
-        CHECK_ARGS_RETURN_VOID(ctxt, argc == 1, "invalid arguments!");
+        CHECK_ARGS(ctxt, argc == 1, "invalid arguments!");
         ctxt->status = JSUtil::GetValue(env, argv[0], ctxt->appId);
-        CHECK_ARGS_RETURN_VOID(ctxt, !ctxt->appId.empty(), "invalid appId!");
+        CHECK_ARGS(ctxt, !ctxt->appId.empty(), "invalid appId!");
     };
     ctxt->GetCbInfo(env, info, input);
 
     auto execute = [ctxt]() {
         auto kvm = reinterpret_cast<JsKVManager*>(ctxt->native);
-        CHECK_ARGS_RETURN_VOID(ctxt, kvm != nullptr, "KVManager is null, failed!");
+        CHECK_ARGS(ctxt, kvm != nullptr, "KVManager is null, failed!");
         AppId appId { ctxt->appId };
         Status status = kvm->kvDataManager_.GetAllKvStoreId(appId, ctxt->storeIdList);
         ZLOGD("execute status:%{public}d", status);
@@ -257,19 +257,19 @@ napi_value JsKVManager::On(napi_env env, napi_callback_info info)
     auto ctxt = std::make_shared<ContextBase>();
     auto input = [env, ctxt](size_t argc, napi_value* argv) {
         // required 2 arguments :: <event> <callback>
-        CHECK_ARGS_RETURN_VOID(ctxt, argc == 2, "invalid arguments!");
+        CHECK_ARGS(ctxt, argc == 2, "invalid arguments!");
         std::string event;
         ctxt->status = JSUtil::GetValue(env, argv[0], event);
         ZLOGI("subscribe to event:%{public}s", event.c_str());
-        CHECK_ARGS_RETURN_VOID(ctxt, event == "distributedDataServiceDie", "invalid arg[0], i.e. invalid event!");
+        CHECK_ARGS(ctxt, event == "distributedDataServiceDie", "invalid arg[0], i.e. invalid event!");
 
         napi_valuetype valueType = napi_undefined;
         ctxt->status = napi_typeof(env, argv[1], &valueType);
-        CHECK_STATUS_RETURN_VOID(ctxt, "napi_typeof failed!");
-        CHECK_ARGS_RETURN_VOID(ctxt, valueType == napi_function, "callback is not a function");
+        CHECK_STATUS(ctxt, "napi_typeof failed!");
+        CHECK_ARGS(ctxt, valueType == napi_function, "callback is not a function");
 
         JsKVManager* proxy = reinterpret_cast<JsKVManager*>(ctxt->native);
-        CHECK_ARGS_RETURN_VOID(ctxt, proxy != nullptr, "there is no native kv manager");
+        CHECK_ARGS(ctxt, proxy != nullptr, "there is no native kv manager");
 
         std::lock_guard<std::mutex> lck(proxy->deathMutex_);
         for (auto& it : proxy->deathRecipient_) {
@@ -294,18 +294,18 @@ napi_value JsKVManager::Off(napi_env env, napi_callback_info info)
     auto ctxt = std::make_shared<ContextBase>();
     auto input = [env, ctxt](size_t argc, napi_value* argv) {
         // required 1 or 2 arguments :: <event> [callback]
-        CHECK_ARGS_RETURN_VOID(ctxt, (argc == 1) || (argc == 2), "invalid arguments!");
+        CHECK_ARGS(ctxt, (argc == 1) || (argc == 2), "invalid arguments!");
         std::string event;
         ctxt->status = JSUtil::GetValue(env, argv[0], event);
         // required 1 arguments :: <event>
         ZLOGI("unsubscribe to event:%{public}s %{public}s specified", event.c_str(), (argc == 1) ? "without": "with");
-        CHECK_ARGS_RETURN_VOID(ctxt, event == "distributedDataServiceDie", "invalid arg[0], i.e. invalid event!");
+        CHECK_ARGS(ctxt, event == "distributedDataServiceDie", "invalid arg[0], i.e. invalid event!");
         // have 2 arguments :: have the [callback]
         if (argc == 2) {
             napi_valuetype valueType = napi_undefined;
             ctxt->status = napi_typeof(env, argv[1], &valueType);
-            CHECK_STATUS_RETURN_VOID(ctxt, "napi_typeof failed!");
-            CHECK_ARGS_RETURN_VOID(ctxt, valueType == napi_function, "callback is not a function");
+            CHECK_STATUS(ctxt, "napi_typeof failed!");
+            CHECK_ARGS(ctxt, valueType == napi_function, "callback is not a function");
         }
         JsKVManager* proxy = reinterpret_cast<JsKVManager*>(ctxt->native);
         std::lock_guard<std::mutex> lck(proxy->deathMutex_);
@@ -348,10 +348,10 @@ napi_value JsKVManager::New(napi_env env, napi_callback_info info)
     auto ctxt = std::make_shared<ContextBase>();
     auto input = [env, ctxt, &bundleName](size_t argc, napi_value* argv) {
         // required 1 arguments :: <bundleName>
-        CHECK_ARGS_RETURN_VOID(ctxt, argc == 1, "invalid arguments!");
+        CHECK_ARGS(ctxt, argc == 1, "invalid arguments!");
         ctxt->status = JSUtil::GetNamedProperty(env, argv[0], "bundleName", bundleName);
-        CHECK_STATUS_RETURN_VOID(ctxt, "invalid arg[0], i.e. invalid bundleName!");
-        CHECK_ARGS_RETURN_VOID(ctxt, !bundleName.empty(), "invalid arg[0], i.e. invalid bundleName!");
+        CHECK_STATUS(ctxt, "invalid arg[0], i.e. invalid bundleName!");
+        CHECK_ARGS(ctxt, !bundleName.empty(), "invalid arg[0], i.e. invalid bundleName!");
     };
     ctxt->GetCbInfoSync(env, info, input);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");
