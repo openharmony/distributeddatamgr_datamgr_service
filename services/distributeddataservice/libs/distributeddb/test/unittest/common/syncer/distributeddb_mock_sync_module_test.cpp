@@ -212,6 +212,7 @@ HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck006, TestSize.Level1)
     VirtualSingleVerSyncDBInterface dbSyncInterface;
     Init(stateMachine, syncTaskContext, communicator, dbSyncInterface);
 
+    syncTaskContext.CallSetSyncMode(QUERY_PUSH);
     EXPECT_CALL(syncTaskContext, IsTargetQueueEmpty())
         .WillOnce(Return(false))
         .WillOnce(Return(true));
@@ -221,6 +222,7 @@ HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck006, TestSize.Level1)
     // we expect machine dont change context status when queue not empty
     EXPECT_CALL(syncTaskContext, SetOperationStatus(_)).WillOnce(Return());
     EXPECT_CALL(syncTaskContext, SetTaskExecStatus(_)).WillOnce(Return());
+    EXPECT_CALL(syncTaskContext, Clear()).WillOnce(Return());
 
     EXPECT_EQ(stateMachine.CallExecNextTask(), -E_NO_SYNC_TASK);
 }
