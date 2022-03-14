@@ -27,7 +27,7 @@ namespace OHOS::DistributedData {
     }
 
     JSObserver::JSObserver(std::shared_ptr<UvQueue> uvQueue, napi_value callback)
-            : uvQueue_(uvQueue)
+        : uvQueue_(uvQueue)
     {
         napi_create_reference(uvQueue_->GetEnv(), callback, 1, &callback_);
     }
