@@ -265,7 +265,8 @@ int SQLiteSingleVerStorageExecutor::MigrateDataItem(DataItem &dataItem, NotifyMi
     // Put or delete. Prepare notify data here.
     NotifyConflictAndObserverData notify;
     notify.committedData = syncData.committedData;
-    int errCode = PutIntoConflictAndCommitForMigrateCache(dataItem, {dataItem.dev.empty(), dataItem.dev}, notify);
+    int errCode = PutIntoConflictAndCommitForMigrateCache(dataItem, {dataItem.dev.empty(), dataItem.dev}, notify,
+        syncData.isPermitForceWrite);
     if (errCode != E_OK) {
         ResetForMigrateCacheData();
         LOGE("PutIntoConflictAndCommitForMigrateCache failed, errCode = %d", errCode);
@@ -755,9 +756,9 @@ int SQLiteSingleVerStorageExecutor::BindLocalDataInCacheMode(sqlite3_stmt *state
 }
 
 int SQLiteSingleVerStorageExecutor::PutIntoConflictAndCommitForMigrateCache(DataItem &dataItem,
-    const DeviceInfo &deviceInfo, NotifyConflictAndObserverData &notify)
+    const DeviceInfo &deviceInfo, NotifyConflictAndObserverData &notify, bool isPermitForceWrite)
 {
-    int errCode = PrepareForNotifyConflictAndObserver(dataItem, deviceInfo, notify);
+    int errCode = PrepareForNotifyConflictAndObserver(dataItem, deviceInfo, notify, isPermitForceWrite);
     if (errCode != E_OK) {
         errCode = (errCode == -E_NOT_FOUND ? E_OK : errCode);
         if (errCode == -E_IGNORE_DATA) {

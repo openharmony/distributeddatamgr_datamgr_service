@@ -1216,7 +1216,7 @@ int SQLiteSingleVerStorageExecutor::SaveSyncDataToDatabase(const DataItem &dataI
 }
 
 DataOperStatus SQLiteSingleVerStorageExecutor::JudgeSyncSaveType(DataItem &dataItem,
-    const DataItem &itemGet, const std::string &devName, bool isHashKeyExisted)
+    const DataItem &itemGet, const std::string &devName, bool isHashKeyExisted, bool isPermitForceWrite)
 {
     DataOperStatus status;
     status.isDeleted = ((dataItem.flag & DataItem::DELETE_FLAG) == DataItem::DELETE_FLAG ||
@@ -1229,7 +1229,8 @@ DataOperStatus SQLiteSingleVerStorageExecutor::JudgeSyncSaveType(DataItem &dataI
         }
         std::string deviceName = DBCommon::TransferHashString(devName);
         if (itemGet.writeTimeStamp >= dataItem.writeTimeStamp) {
-            if ((!deviceName.empty()) && (itemGet.dev == deviceName)) {
+            // for multi user mode, no permit to forcewrite
+            if ((!deviceName.empty()) && (itemGet.dev == deviceName) && isPermitForceWrite) {
                 LOGI("Force overwrite the data:%llu vs %llu", itemGet.writeTimeStamp, dataItem.writeTimeStamp);
                 status.isDefeated = false;
                 dataItem.writeTimeStamp = itemGet.writeTimeStamp + 1;
@@ -1282,7 +1283,7 @@ namespace {
 }
 
 int SQLiteSingleVerStorageExecutor::PrepareForNotifyConflictAndObserver(DataItem &dataItem,
-    const DeviceInfo &deviceInfo, NotifyConflictAndObserverData &notify)
+    const DeviceInfo &deviceInfo, NotifyConflictAndObserverData &notify, bool isPermitForceWrite)
 {
     // Check sava data existed info
     int errCode = GetSyncDataItemPre(dataItem, notify.getData, notify.hashKey);
@@ -1305,7 +1306,8 @@ int SQLiteSingleVerStorageExecutor::PrepareForNotifyConflictAndObserver(DataItem
         return ResetSaveSyncStatements(-E_IGNORE_DATA);
     }
 
-    notify.dataStatus = JudgeSyncSaveType(dataItem, notify.getData, deviceInfo.deviceName, isHashKeyExisted);
+    notify.dataStatus = JudgeSyncSaveType(dataItem, notify.getData, deviceInfo.deviceName, isHashKeyExisted,
+        isPermitForceWrite);
     InitCommitNotifyDataKeyStatus(notify.committedData, notify.hashKey, notify.dataStatus);
 
     // Nonexistent data, but deleted by local.
@@ -1337,13 +1339,13 @@ int SQLiteSingleVerStorageExecutor::PrepareForNotifyConflictAndObserver(DataItem
 }
 
 int SQLiteSingleVerStorageExecutor::SaveSyncDataItem(DataItem &dataItem, const DeviceInfo &deviceInfo,
-    TimeStamp &maxStamp, SingleVerNaturalStoreCommitNotifyData *committedData)
+    TimeStamp &maxStamp, SingleVerNaturalStoreCommitNotifyData *committedData, bool isPermitForceWrite)
 {
     NotifyConflictAndObserverData notify = {
         .committedData = committedData
     };
 
-    int errCode = PrepareForNotifyConflictAndObserver(dataItem, deviceInfo, notify);
+    int errCode = PrepareForNotifyConflictAndObserver(dataItem, deviceInfo, notify, isPermitForceWrite);
     if (errCode != E_OK) {
         if (errCode == -E_IGNORE_DATA) {
             errCode = E_OK;

@@ -84,6 +84,7 @@ struct NotifyConflictAndObserverData {
 struct NotifyMigrateSyncData {
     bool isRemote = false;
     bool isRemoveDeviceData = false;
+    bool isPermitForceWrite = true;
     SingleVerNaturalStoreCommitNotifyData *committedData = nullptr;
     std::vector<Entry> entries{};
 };
@@ -124,7 +125,7 @@ public:
     int GetAllSyncedEntries(const std::string &deviceName, std::vector<Entry> &entries) const;
 
     int SaveSyncDataItem(DataItem &dataItem, const DeviceInfo &deviceInfo,
-        TimeStamp &maxStamp, SingleVerNaturalStoreCommitNotifyData *committedData);
+        TimeStamp &maxStamp, SingleVerNaturalStoreCommitNotifyData *committedData, bool isPermitForceWrite = true);
 
     int DeleteLocalKvData(const Key &key, SingleVerNaturalStoreCommitNotifyData *committedData, Value &value,
         TimeStamp &timeStamp);
@@ -274,7 +275,7 @@ private:
         const DataOperStatus &dataStatus, SingleVerNaturalStoreCommitNotifyData *commitData);
 
     static DataOperStatus JudgeSyncSaveType(DataItem &dataItem, const DataItem &itemGet,
-        const std::string &devName, bool isHashKeyExisted);
+        const std::string &devName, bool isHashKeyExisted, bool isPermitForceWrite = true);
 
     static std::string GetOriginDevName(const DataItem &dataItem, const std::string &origDevGet);
 
@@ -356,11 +357,11 @@ private:
 
     // Prepare conflict notify and commit notify data.
     int PrepareForNotifyConflictAndObserver(DataItem &dataItem, const DeviceInfo &deviceInfo,
-        NotifyConflictAndObserverData &notify);
+        NotifyConflictAndObserverData &notify, bool isPermitForceWrite = true);
 
     // Put observer and conflict data into commit notify when migrating cacheDB.
     int PutIntoConflictAndCommitForMigrateCache(DataItem &dataItem, const DeviceInfo &deviceInfo,
-        NotifyConflictAndObserverData &notify);
+        NotifyConflictAndObserverData &notify, bool isPermitForceWrite);
 
     int MigrateDataItems(std::vector<DataItem> &dataItems, NotifyMigrateSyncData &syncData);
 

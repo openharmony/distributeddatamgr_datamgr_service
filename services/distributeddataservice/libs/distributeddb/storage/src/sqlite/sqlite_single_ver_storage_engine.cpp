@@ -241,6 +241,19 @@ int SQLiteSingleVerStorageEngine::MigrateSyncData(SQLiteSingleVerStorageExecutor
     LOGD("Begin migrate sync data, need migrate version[%llu]", GetCacheRecordVersion() - 1);
     uint64_t curMigrateVer = 0; // The migration process is asynchronous and continuous
     NotifyMigrateSyncData syncData;
+    auto kvdbManager = KvDBManager::GetInstance();
+    if (kvdbManager != nullptr) {
+        auto identifier = GetIdentifier();
+        auto kvdb = kvdbManager->FindKvDB(identifier);
+        if (kvdb != nullptr) {
+            auto kvStore = static_cast<SQLiteSingleVerNaturalStore *>(kvdb);
+            syncData.isPermitForceWrite =
+                !(kvStore->GetDbProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE, false));
+            RefObject::DecObjRef(kvdb);
+        } else {
+            LOGE("[SingleVerEngine] kvdb is null.");
+        }
+    }
     // cache atomic version represents version of cacheDb input next time
     while (curMigrateVer < GetCacheRecordVersion()) {
         errCode = MigrateSyncDataByVersion(handle, syncData, curMigrateVer);

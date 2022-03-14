@@ -27,6 +27,11 @@ public:
         return SingleVerKvSyncTaskContext::IsCurrentSyncTaskCanBeSkipped();
     }
 
+    void CallSetSyncMode(int mode)
+    {
+        SingleVerKvSyncTaskContext::SetMode(mode);
+    }
+
     MOCK_CONST_METHOD0(GetTimerId, TimerId(void));
 
     MOCK_CONST_METHOD0(IsTargetQueueEmpty, bool(void));

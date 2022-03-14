@@ -54,8 +54,7 @@ int Metadata::Initialize(ISyncInterface* storage)
 
     int errCode = GetMetadataFromDb(key, timeOffset);
     if (errCode == -E_NOT_FOUND) {
-        uint64_t randTimeOffset = GetRandTimeOffset();
-        int err = SaveLocalTimeOffset(TimeHelper::BASE_OFFSET + static_cast<int64_t>(randTimeOffset));
+        int err = SaveLocalTimeOffset(TimeHelper::BASE_OFFSET);
         if (err != E_OK) {
             LOGD("[Metadata][Initialize]SaveLocalTimeOffset failed errCode:%d", err);
             return err;
@@ -323,14 +322,14 @@ int Metadata::LoadAllMetadata()
     std::vector<std::vector<uint8_t>> querySyncIds;
     for (const auto &deviceId : metaDataKeys) {
         if (IsMetaDataKey(deviceId, DEVICEID_PREFIX_KEY)) {
-            int errCode = LoadDeviceIdDataToMap(deviceId);
+            errCode = LoadDeviceIdDataToMap(deviceId);
             if (errCode != E_OK) {
                 return errCode;
             }
         } else if (IsMetaDataKey(deviceId, QuerySyncWaterMarkHelper::GetQuerySyncPrefixKey())) {
             querySyncIds.push_back(deviceId);
         } else if (IsMetaDataKey(deviceId, QuerySyncWaterMarkHelper::GetDeleteSyncPrefixKey())) {
-            int errCode = querySyncWaterMarkHelper_.LoadDeleteSyncDataToCache(deviceId);
+            errCode = querySyncWaterMarkHelper_.LoadDeleteSyncDataToCache(deviceId);
             if (errCode != E_OK) {
                 return errCode;
             }

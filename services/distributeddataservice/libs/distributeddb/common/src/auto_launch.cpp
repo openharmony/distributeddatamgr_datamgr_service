@@ -143,7 +143,7 @@ int AutoLaunch::EnableKvStoreAutoLaunchParmCheck(AutoLaunchItem &autoLaunchItem,
         return -E_ALREADY_SET;
     }
     uint32_t autoLaunchItemSize = 0;
-    for (const auto item : autoLaunchItemMap_) {
+    for (const auto &item : autoLaunchItemMap_) {
         autoLaunchItemSize += item.second.size();
     }
     if (autoLaunchItemSize == MAX_AUTO_LAUNCH_ITEM_NUM) {
@@ -829,21 +829,27 @@ void AutoLaunch::AutoLaunchExtTask(const std::string identifier, const std::stri
         }
         extItemMap_[identifier][userId] = autoLaunchItem;
     }
-    int errCode = OpenOneConnection(autoLaunchItem);
-    LOGI("[AutoLaunch] AutoLaunchExtTask GetOneConnection errCode:%d", errCode);
-    if (autoLaunchItem.conn == nullptr) {
-        std::lock_guard<std::mutex> autoLock(extLock_);
-        extItemMap_[identifier].erase(userId);
-        if (extItemMap_[identifier].size() == 0) {
-            extItemMap_.erase(identifier);
+    bool abort = false;
+    do {
+        int errCode = CheckAutoLaunchRealPath(autoLaunchItem);
+        if (errCode != E_OK) {
+            abort = true;
+            break;
         }
-        return;
-    }
-
-    errCode = RegisterObserverAndLifeCycleCallback(autoLaunchItem, identifier, true);
-    if (errCode != E_OK) {
-        LOGE("[AutoLaunch] AutoLaunchExtTask RegisterObserverAndLifeCycleCallback failed");
-        TryCloseConnection(autoLaunchItem); // if here failed, do nothing
+        errCode = OpenOneConnection(autoLaunchItem);
+        LOGI("[AutoLaunch] AutoLaunchExtTask GetOneConnection errCode:%d", errCode);
+        if (autoLaunchItem.conn == nullptr) {
+            abort = true;
+            break;
+        }
+        errCode = RegisterObserverAndLifeCycleCallback(autoLaunchItem, identifier, true);
+        if (errCode != E_OK) {
+            LOGE("[AutoLaunch] AutoLaunchExtTask RegisterObserverAndLifeCycleCallback failed");
+            TryCloseConnection(autoLaunchItem); // if here failed, do nothing
+            abort = true;
+        }
+    } while (false);
+    if (abort) {
         std::lock_guard<std::mutex> autoLock(extLock_);
         extItemMap_[identifier].erase(userId);
         if (extItemMap_[identifier].size() == 0) {
@@ -1081,14 +1087,6 @@ int AutoLaunch::OpenKvConnection(AutoLaunchItem &autoLaunchItem)
     std::shared_ptr<KvDBProperties> properties =
         std::static_pointer_cast<KvDBProperties>(autoLaunchItem.propertiesPtr);
     int errCode = E_OK;
-    std::string canonicalDir;
-    std::string dataDir;
-    properties->GetStringProp(KvDBProperties::DATA_DIR, dataDir);
-    if (!ParamCheckUtils::CheckDataDir(dataDir, canonicalDir)) {
-        LOGE("[AutoLaunch] CheckDataDir is invalid Auto Launch failed.");
-        return -E_INVALID_ARGS;
-    }
-    properties->SetStringProp(KvDBProperties::DATA_DIR, canonicalDir);
     IKvDBConnection *conn = KvDBManager::GetDatabaseConnection(*properties, errCode, false);
     if (errCode == -E_ALREADY_OPENED) {
         LOGI("[AutoLaunch] GetOneConnection user already getkvstore by self");
@@ -1209,5 +1207,34 @@ void AutoLaunch::EraseAutoLauchItem(const std::string &identifier, const std::st
     if (autoLaunchItemMap_[identifier].size() == 0) {
         autoLaunchItemMap_.erase(identifier);
     }
+}
+
+void AutoLaunch::NotifyInvalidParam(const AutoLaunchItem &autoLaunchItem)
+{
+    if (!autoLaunchItem.notifier) {
+        return;
+    }
+    int retCode = RuntimeContext::GetInstance()->ScheduleTask([autoLaunchItem] {
+        std::string userId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::USER_ID, "");
+        std::string appId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::APP_ID, "");
+        std::string storeId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::STORE_ID, "");
+        autoLaunchItem.notifier(userId, appId, storeId, INVALID_PARAM);
+    });
+    if (retCode != E_OK) {
+        LOGE("[AutoLaunch] AutoLaunchExt notifier ScheduleTask retCode:%d", retCode);
+    }
+}
+
+int AutoLaunch::CheckAutoLaunchRealPath(const AutoLaunchItem &autoLaunchItem)
+{
+    std::string canonicalDir;
+    std::string dataDir = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::DATA_DIR, "");
+    if (!ParamCheckUtils::CheckDataDir(dataDir, canonicalDir)) {
+        LOGE("[AutoLaunch] CheckDataDir is invalid Auto Launch failed.");
+        NotifyInvalidParam(autoLaunchItem);
+        return -E_INVALID_ARGS;
+    }
+    autoLaunchItem.propertiesPtr->SetStringProp(DBProperties::DATA_DIR, canonicalDir);
+    return E_OK;
 }
 } // namespace DistributedDB

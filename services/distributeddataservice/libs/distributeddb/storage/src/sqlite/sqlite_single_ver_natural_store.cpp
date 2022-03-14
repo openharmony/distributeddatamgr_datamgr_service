@@ -1248,6 +1248,7 @@ int SQLiteSingleVerNaturalStore::SaveSyncItems(const QueryObject &query, std::ve
         ReleaseHandle(handle);
         return errCode;
     }
+    bool isPermitForceWrite = !(GetDbProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE, false));
     errCode = handle->CheckDataWithQuery(query, dataItems, deviceInfo);
     if (errCode != E_OK) {
         goto END;
@@ -1260,7 +1261,7 @@ int SQLiteSingleVerNaturalStore::SaveSyncItems(const QueryObject &query, std::ve
         if (item.neglect) { // Do not save this record if it is neglected
             continue;
         }
-        errCode = handle->SaveSyncDataItem(item, deviceInfo, maxTimestamp, commitData);
+        errCode = handle->SaveSyncDataItem(item, deviceInfo, maxTimestamp, commitData, isPermitForceWrite);
         if (errCode != E_OK && errCode != -E_NOT_FOUND) {
             break;
         }
