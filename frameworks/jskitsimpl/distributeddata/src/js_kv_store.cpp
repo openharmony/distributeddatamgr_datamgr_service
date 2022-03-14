@@ -429,12 +429,12 @@ void JsKVStore::OnDataChange(napi_env env, size_t argc, napi_value* argv, std::s
 
     int32_t type = SUBSCRIBE_COUNT;
     ctxt->status = napi_get_value_int32(env, argv[0], &type);
-    CHECK_ARGS(ctxt, "napi_get_value_int32 failed!");
+    CHECK_STATUS(ctxt, "napi_get_value_int32 failed!");
     CHECK_ARGS(ctxt, ValidSubscribeType(type), "invalid arg[1], i.e. invalid subscribeType");
 
     napi_valuetype valueType = napi_undefined;
     ctxt->status = napi_typeof(env, argv[1], &valueType);
-    CHECK_ARGS(ctxt, "napi_typeof failed!");
+    CHECK_STATUS(ctxt, "napi_typeof failed!");
     CHECK_ARGS(ctxt, valueType == napi_function, "invalid arg[2], i.e. invalid callback");
 
     ZLOGI("subscribe data change type %{public}d", type);
