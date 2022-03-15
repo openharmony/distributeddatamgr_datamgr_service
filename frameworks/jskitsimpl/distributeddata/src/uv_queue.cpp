@@ -13,46 +13,51 @@
  * limitations under the License.
  */
 #define LOG_TAG "UvQueue"
+
 #include "uv_queue.h"
 #include "log_print.h"
 #include "napi_queue.h"
 
 namespace OHOS::DistributedData {
-UvQueue::UvQueue(napi_env env, napi_value callback)
+UvQueue::UvQueue(napi_env env)
     : env_(env)
 {
-    napi_create_reference(env, callback, 1, &callback_);
-    napi_get_uv_event_loop(env, &loop_);
+    if (env != nullptr) {
+        napi_get_uv_event_loop(env, &loop_);
+    }
 }
 
 UvQueue::~UvQueue()
 {
     ZLOGD("no memory leak for queue-callback");
-    napi_delete_reference(env_, callback_);
+    env_ = nullptr;
 }
 
-bool UvQueue::operator==(napi_value value)
+void UvQueue::AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs)
 {
-    napi_value callback = nullptr;
-    napi_get_reference_value(env_, callback_, &callback);
+    if (loop_ == nullptr || !getter) {
+        ZLOGE("loop_ or callback is nullptr");
+        return;
+    }
 
-    bool isEquals = false;
-    napi_strict_equals(env_, value, callback, &isEquals);
-    return isEquals;
-}
-
-void UvQueue::CallFunction(NapiArgsGenerator genArgs)
-{
     uv_work_t* work = new (std::nothrow) uv_work_t;
     if (work == nullptr) {
         ZLOGE("no memory for uv_work_t");
         return;
     }
-    work->data = new UvEntry{env_, callback_, std::move(genArgs)};
+    work->data = new UvEntry{ env_, getter, std::move(genArgs) };
     uv_queue_work(
         loop_, work, [](uv_work_t* work) {},
         [](uv_work_t* work, int uvstatus) {
-            auto *entry = static_cast<UvEntry*>(work->data);
+            std::shared_ptr<UvEntry> entry(static_cast<UvEntry *>(work->data), [work](UvEntry *data) {
+                delete data;
+                delete work;
+            });
+            napi_value method = entry->callback(entry->env);
+            if (method == nullptr) {
+                ZLOGE("the callback is invalid, maybe is cleared!");
+                return ;
+            }
             int argc = 0;
             napi_value argv[ARGC_MAX] = { nullptr };
             if (entry->args) {
@@ -60,19 +65,18 @@ void UvQueue::CallFunction(NapiArgsGenerator genArgs)
                 entry->args(entry->env, argc, argv);
             }
             ZLOGD("queue uv_after_work_cb");
-
-            napi_value callback = nullptr;
-            napi_get_reference_value(entry->env, entry->callback, &callback);
             napi_value global = nullptr;
             napi_get_global(entry->env, &global);
             napi_value result;
-            napi_status status = napi_call_function(entry->env, global, callback, argc, argv, &result);
+            napi_status status = napi_call_function(entry->env, global, method, argc, argv, &result);
             if (status != napi_ok) {
-                ZLOGE("notify data change failed status:%{public}d callback:%{public}p", status, callback);
+                ZLOGE("notify data change failed status:%{public}d callback:%{public}p", status, method);
             }
-            delete entry;
-            delete work;
-            work = nullptr;
         });
+}
+
+napi_env UvQueue::GetEnv()
+{
+    return env_;
 }
 }

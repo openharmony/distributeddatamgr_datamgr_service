@@ -15,32 +15,28 @@
 #ifndef OHOS_UV_QUEUE_H
 #define OHOS_UV_QUEUE_H
 #include <functional>
-
 #include "napi/native_api.h"
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
 #include "uv.h"
 
 namespace OHOS::DistributedData {
-class UvQueue {
-    using NapiArgsGenerator = std::function<void(napi_env env, int& argc, napi_value* argv)>;
-
+class UvQueue final {
 public:
-    UvQueue(napi_env env, napi_value callback);
-    virtual ~UvQueue();
+    using NapiArgsGenerator = std::function<void(napi_env env, int& argc, napi_value* argv)>;
+    using NapiCallbackGetter = std::function<napi_value(napi_env env)>;
+    UvQueue(napi_env env);
+    ~UvQueue();
 
-    bool operator==(napi_value value);
-
-    void CallFunction(NapiArgsGenerator genArgs = NapiArgsGenerator());
-
+    napi_env GetEnv();
+    void AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs = NapiArgsGenerator());
 private:
     struct UvEntry {
         napi_env env;
-        napi_ref callback;
+        NapiCallbackGetter callback;
         NapiArgsGenerator args;
     };
     napi_env env_ = nullptr;
-    napi_ref callback_ = nullptr;
     uv_loop_s* loop_ = nullptr;
 };
 }

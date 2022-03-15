@@ -15,9 +15,11 @@
 #ifndef OHOS_KV_STORE_H
 #define OHOS_KV_STORE_H
 #include <mutex>
+#include <memory>
 #include "napi_queue.h"
 #include "single_kvstore.h"
 #include "uv_queue.h"
+#include "js_observer.h"
 
 namespace OHOS::DistributedData {
 enum {
@@ -27,7 +29,6 @@ enum {
     SUBSCRIBE_LOCAL_REMOTE = 2, /* i.e. SubscribeType::SUBSCRIBE_TYPE_ALL--1   */
     SUBSCRIBE_COUNT = 3
 };
-
 /* [NOTES]
  *    OHOS::DistributedData::JsKVStore is NOT related to DistributedKv::KvStore!!!
  *    OHOS::DistributedData::JsKVStore is wrapped for DistributedKv::SingleKvStore...
@@ -38,6 +39,7 @@ public:
     virtual ~JsKVStore();
 
     void SetNative(std::shared_ptr<DistributedKv::SingleKvStore>& kvStore);
+    void SetUvQueue(std::shared_ptr<UvQueue> uvQueue);
     std::shared_ptr<DistributedKv::SingleKvStore>& GetNative();
 
     static bool IsInstanceOf(napi_env env, napi_value obj, const std::string& storeId, napi_value constructor);
@@ -56,6 +58,22 @@ public:
     static napi_value SetSyncRange(napi_env env, napi_callback_info info);
 
 private:
+    class DataObserver : public DistributedKv::KvStoreObserver, public JSObserver {
+    public:
+        DataObserver(std::shared_ptr<UvQueue> uvQueue, napi_value callback) : JSObserver(uvQueue, callback) {};
+        virtual ~DataObserver() = default;
+        void OnChange(const DistributedKv::ChangeNotification& notification,
+                      std::shared_ptr<DistributedKv::KvStoreSnapshot> snapshot) override;
+        void OnChange(const DistributedKv::ChangeNotification& notification) override;
+    };
+
+    class SyncObserver : public DistributedKv::KvStoreSyncCallback, public JSObserver {
+    public:
+        SyncObserver(std::shared_ptr<UvQueue> uvQueue, napi_value callback) : JSObserver(uvQueue, callback) {};
+        virtual ~SyncObserver() = default;
+        void SyncCompleted(const std::map<std::string, DistributedKv::Status>& results) override;
+    };
+
     /* private static members */
     static void OnDataChange(napi_env env, size_t argc, napi_value* argv, std::shared_ptr<ContextBase> ctxt);
     static void OffDataChange(napi_env env, size_t argc, napi_value* argv, std::shared_ptr<ContextBase> ctxt);
@@ -64,10 +82,10 @@ private:
     static void OffSyncComplete(napi_env env, size_t argc, napi_value* argv, std::shared_ptr<ContextBase> ctxt);
 
     /* private non-static members */
-    napi_status Subscribe(uint8_t type, std::shared_ptr<DistributedKv::KvStoreObserver> observer);
-    napi_status UnSubscribe(uint8_t type, std::shared_ptr<DistributedKv::KvStoreObserver> observer);
+    napi_status Subscribe(uint8_t type, std::shared_ptr<DataObserver> observer);
+    napi_status UnSubscribe(uint8_t type, std::shared_ptr<DataObserver> observer);
 
-    napi_status RegisterSyncCallback(std::shared_ptr<DistributedKv::KvStoreSyncCallback> sync);
+    napi_status RegisterSyncCallback(std::shared_ptr<SyncObserver> sync);
     napi_status UnRegisterSyncCallback();
 
     /* private non-static members */
@@ -78,27 +96,10 @@ private:
     static std::map<std::string, Exec> onEventHandlers_;
     static std::map<std::string, Exec> offEventHandlers_;
 
-    std::shared_ptr<DistributedKv::KvStoreSyncCallback> syncObserver_ = nullptr;
+    std::list<std::shared_ptr<SyncObserver>> syncObservers_;
     std::mutex listMutex_ {};
-    std::list<std::shared_ptr<DistributedKv::KvStoreObserver>> dataObserver_[SUBSCRIBE_COUNT];
-};
-
-class DataObserver : public DistributedKv::KvStoreObserver, public UvQueue {
-public:
-    DataObserver(napi_env env, napi_value callback);
-    virtual ~DataObserver() = default;
-
-    void OnChange(const DistributedKv::ChangeNotification& notification,
-        std::shared_ptr<DistributedKv::KvStoreSnapshot> snapshot) override;
-    void OnChange(const DistributedKv::ChangeNotification& notification) override;
-};
-
-class SyncObserver : public DistributedKv::KvStoreSyncCallback, public UvQueue {
-public:
-    SyncObserver(napi_env env, napi_value callback);
-    virtual ~SyncObserver() = default;
-
-    void SyncCompleted(const std::map<std::string, DistributedKv::Status>& results) override;
+    std::list<std::shared_ptr<DataObserver>> dataObserver_[SUBSCRIBE_COUNT];
+    std::shared_ptr<UvQueue> uvQueue_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_SINGLE_KV_STORE_H

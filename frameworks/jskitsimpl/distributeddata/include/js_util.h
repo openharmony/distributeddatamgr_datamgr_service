@@ -163,6 +163,8 @@ public:
     /* napi_unwrap with napi_instanceof */
     static napi_status Unwrap(napi_env env, napi_value in, void** out, napi_value constructor);
 
+    static bool Equals(napi_env env, napi_value value, napi_ref copy);
+
 private:
     enum {
         /* std::map<key, value> to js::tuple<key, value> */

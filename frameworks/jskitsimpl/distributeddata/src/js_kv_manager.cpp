@@ -30,8 +30,8 @@ bool IsStoreTypeSupported(Options options)
         || (options.kvStoreType == KvStoreType::SINGLE_VERSION);
 }
 
-JsKVManager::JsKVManager(const std::string& bundleName)
-    : bundleName_(bundleName)
+JsKVManager::JsKVManager(const std::string& bundleName, napi_env env)
+    : bundleName_(bundleName), uvQueue_(std::make_shared<UvQueue>(env))
 {
 }
 
@@ -41,6 +41,7 @@ JsKVManager::~JsKVManager()
     std::lock_guard<std::mutex> lck(deathMutex_);
     for (auto& it : deathRecipient_) {
         kvDataManager_.UnRegisterKvStoreServiceDeathRecipient(it);
+        it->Clear();
     }
     deathRecipient_.clear();
 }
@@ -118,7 +119,6 @@ napi_value JsKVManager::GetKVStore(napi_env env, napi_callback_info info)
     ZLOGD("GetKVStore in");
     auto ctxt = std::make_shared<GetKVStoreContext>();
     ctxt->GetCbInfo(env, info);
-
     auto execute = [ctxt]() {
         auto kvm = reinterpret_cast<JsKVManager*>(ctxt->native);
         CHECK_ARGS_RETURN_VOID(ctxt, kvm != nullptr, "KVManager is null, failed!");
@@ -130,6 +130,7 @@ napi_value JsKVManager::GetKVStore(napi_env env, napi_callback_info info)
         ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
         CHECK_STATUS_RETURN_VOID(ctxt, "KVManager->GetSingleKvStore() failed!");
         ctxt->kvStore->SetNative(kvStore);
+        ctxt->kvStore->SetUvQueue(kvm->uvQueue_);
     };
     auto output = [env, ctxt](napi_value& result) {
         ctxt->status = napi_get_reference_value(env, ctxt->ref, &result);
@@ -272,15 +273,14 @@ napi_value JsKVManager::On(napi_env env, napi_callback_info info)
 
         std::lock_guard<std::mutex> lck(proxy->deathMutex_);
         for (auto& it : proxy->deathRecipient_) {
-            auto recipient = std::static_pointer_cast<DeathRecipient>(it);
-            if (*recipient == argv[1]) {
+            if (JSUtil::Equals(env, argv[1], it->GetCallback())) {
                 ZLOGD("KVManager::On callback already register!");
                 return;
             }
         }
-        auto kvStoreDeathRecipient = std::make_shared<DeathRecipient>(env, argv[1]);
-        proxy->kvDataManager_.RegisterKvStoreServiceDeathRecipient(kvStoreDeathRecipient);
-        proxy->deathRecipient_.push_back(kvStoreDeathRecipient);
+        auto deathRecipient = std::make_shared<DeathRecipient>(proxy->uvQueue_, argv[1]);
+        proxy->kvDataManager_.RegisterKvStoreServiceDeathRecipient(deathRecipient);
+        proxy->deathRecipient_.push_back(deathRecipient);
         ZLOGD("on mapsize: %{public}d", static_cast<int>(proxy->deathRecipient_.size()));
     };
     ctxt->GetCbInfoSync(env, info, input);
@@ -311,10 +311,10 @@ napi_value JsKVManager::Off(napi_env env, napi_callback_info info)
         std::lock_guard<std::mutex> lck(proxy->deathMutex_);
         auto it = proxy->deathRecipient_.begin();
         while (it != proxy->deathRecipient_.end()) {
-            auto recipient = std::static_pointer_cast<DeathRecipient>(*it);
             // have 2 arguments :: have the [callback]
-            if ((argc == 1) || *recipient == argv[1]) {
+            if ((argc == 1) || JSUtil::Equals(env, argv[1], (*it)->GetCallback())) {
                 proxy->kvDataManager_.UnRegisterKvStoreServiceDeathRecipient(*it);
+                (*it)->Clear();
                 it = proxy->deathRecipient_.erase(it);
             } else {
                 ++it;
@@ -356,7 +356,7 @@ napi_value JsKVManager::New(napi_env env, napi_callback_info info)
     ctxt->GetCbInfoSync(env, info, input);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");
 
-    JsKVManager* kvManager = new (std::nothrow) JsKVManager(bundleName);
+    JsKVManager* kvManager = new (std::nothrow) JsKVManager(bundleName, env);
     NAPI_ASSERT(env, kvManager !=nullptr, "no memory for kvManager");
 
     auto finalize = [](napi_env env, void* data, void* hint) {
@@ -369,13 +369,8 @@ napi_value JsKVManager::New(napi_env env, napi_callback_info info)
     return ctxt->self;
 }
 
-DeathRecipient::DeathRecipient(napi_env env, napi_value callback)
-    : UvQueue(env, callback)
+void JsKVManager::DeathRecipient::OnRemoteDied()
 {
-}
-
-void DeathRecipient::OnRemoteDied()
-{
-    CallFunction();
+    AsyncCall();
 }
 }

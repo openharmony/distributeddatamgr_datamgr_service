@@ -52,6 +52,7 @@ ohos_shared_library("distributeddata") {
     "../../../frameworks/jskitsimpl/distributeddata/src/js_kv_manager.cpp",
     "../../../frameworks/jskitsimpl/distributeddata/src/js_kv_store.cpp",
     "../../../frameworks/jskitsimpl/distributeddata/src/js_kv_store_resultset.cpp",
+    "../../../frameworks/jskitsimpl/distributeddata/src/js_observer.cpp",
     "../../../frameworks/jskitsimpl/distributeddata/src/js_query.cpp",
     "../../../frameworks/jskitsimpl/distributeddata/src/js_schema.cpp",
     "../../../frameworks/jskitsimpl/distributeddata/src/js_single_kv_store.cpp",

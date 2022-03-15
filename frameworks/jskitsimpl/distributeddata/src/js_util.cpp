@@ -981,4 +981,18 @@ napi_status JSUtil::Unwrap(napi_env env, napi_value in, void** out, napi_value c
     }
     return napi_unwrap(env, in, out);
 }
+
+bool JSUtil::Equals(napi_env env, napi_value value, napi_ref copy)
+{
+    if (copy == nullptr) {
+        return (value == nullptr);
+    }
+
+    napi_value copyValue = nullptr;
+    napi_get_reference_value(env, copy, &copyValue);
+
+    bool isEquals = false;
+    napi_strict_equals(env, value, copyValue, &isEquals);
+    return isEquals;
+}
 } // OHOS::DistributedData

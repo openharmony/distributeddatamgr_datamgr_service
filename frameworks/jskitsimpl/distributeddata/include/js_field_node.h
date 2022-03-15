@@ -14,8 +14,8 @@
  */
 #ifndef OHOS_FIELD_NODE_H
 #define OHOS_FIELD_NODE_H
-#include <nlohmann/json.hpp>
 #include <list>
+#include "nlohmann/json.hpp"
 #include "js_util.h"
 #include "napi_queue.h"
 

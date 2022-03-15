@@ -19,11 +19,12 @@
 #include "kvstore_death_recipient.h"
 #include "napi_queue.h"
 #include "uv_queue.h"
+#include "js_observer.h"
 
 namespace OHOS::DistributedData {
 class JsKVManager {
 public:
-    JsKVManager(const std::string &bundleName);
+    JsKVManager(const std::string &bundleName, napi_env env);
     ~JsKVManager();
 
     static napi_value CreateKVManager(napi_env env, napi_callback_info info);
@@ -41,18 +42,18 @@ private:
     static napi_value Off(napi_env env, napi_callback_info info);
 
 private:
+    class DeathRecipient : public DistributedKv::KvStoreDeathRecipient, public JSObserver {
+    public:
+        DeathRecipient(std::shared_ptr<UvQueue> uvQueue, napi_value callback) : JSObserver(uvQueue, callback) {};
+        virtual ~DeathRecipient() = default;
+        virtual void OnRemoteDied() override;
+    };
+
     DistributedKv::DistributedKvDataManager kvDataManager_ {};
     std::string bundleName_ {};
     std::mutex deathMutex_ {};
-    std::list<std::shared_ptr<DistributedKv::KvStoreDeathRecipient>> deathRecipient_ {};
-};
-
-class DeathRecipient : public DistributedKv::KvStoreDeathRecipient, public UvQueue {
-public:
-    DeathRecipient(napi_env env, napi_value callback);
-    virtual ~DeathRecipient() = default;
-
-    virtual void OnRemoteDied() override;
+    std::list<std::shared_ptr<DeathRecipient>> deathRecipient_ {};
+    std::shared_ptr<UvQueue> uvQueue_;
 };
 }
 #endif // OHOS_KV_MANAGER_H

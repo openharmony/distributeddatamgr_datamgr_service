@@ -57,17 +57,19 @@ JsKVStore::~JsKVStore()
 
     std::lock_guard<std::mutex> lck(listMutex_);
     for (uint8_t type = SUBSCRIBE_LOCAL; type < SUBSCRIBE_COUNT; type++) {
-        for (auto& it : dataObserver_[type]) {
-            auto observer = std::static_pointer_cast<DataObserver>(it);
+        for (auto& observer : dataObserver_[type]) {
             auto subscribeType = ToSubscribeType(type);
             kvStore_->UnSubscribeKvStore(subscribeType, observer);
+            observer->Clear();
         }
         dataObserver_[type].clear();
     }
 
-    if (syncObserver_ != nullptr) {
-        kvStore_->UnRegisterSyncCallback();
+    kvStore_->UnRegisterSyncCallback();
+    for (auto &syncObserver : syncObservers_) {
+        syncObserver->Clear();
     }
+    syncObservers_.clear();
 }
 
 void JsKVStore::SetNative(std::shared_ptr<SingleKvStore>& kvStore)
@@ -439,15 +441,13 @@ void JsKVStore::OnDataChange(napi_env env, size_t argc, napi_value* argv, std::s
     auto proxy = reinterpret_cast<JsKVStore*>(ctxt->native);
     std::lock_guard<std::mutex> lck(proxy->listMutex_);
     for (auto& it : proxy->dataObserver_[type]) {
-        auto observer = std::static_pointer_cast<DataObserver>(it);
-        if (*observer == argv[1]) {
+        if (JSUtil::Equals(env, argv[1], it->GetCallback())) {
             ZLOGI("function is already subscribe type");
             return;
         }
     }
 
-    std::shared_ptr<KvStoreObserver> observer = std::make_shared<DataObserver>(env, argv[1]);
-    ctxt->status = proxy->Subscribe(type, observer);
+    ctxt->status = proxy->Subscribe(type, std::make_shared<DataObserver>(proxy->uvQueue_, argv[1]));
     CHECK_STATUS_RETURN_VOID(ctxt, "Subscribe failed!");
 }
 
@@ -474,16 +474,15 @@ void JsKVStore::OffDataChange(napi_env env, size_t argc, napi_value* argv, std::
     auto proxy = reinterpret_cast<JsKVStore*>(ctxt->native);
     bool found = false;
     napi_status status = napi_ok;
-    auto traverse1Type = [argc, argv, proxy, &found, &status](uint8_t type, auto& observers) {
+    auto traverseType = [argc, argv, proxy, env, &found, &status](uint8_t type, auto& observers) {
         auto it = observers.begin();
         while (it != observers.end()) {
-            auto observer = std::static_pointer_cast<DataObserver>(*it);
-            if ((argc == 1) && !(*observer == argv[0])) {
+            if ((argc == 1) && !JSUtil::Equals(env, argv[0], (*it)->GetCallback())) {
                 ++it;
                 continue; // specified observer and not current iterator
             }
             found = true;
-            status = proxy->UnSubscribe(type, observer);
+            status = proxy->UnSubscribe(type, *it);
             if (status != napi_ok) {
                 break; // stop on fail.
             }
@@ -493,13 +492,12 @@ void JsKVStore::OffDataChange(napi_env env, size_t argc, napi_value* argv, std::
 
     std::lock_guard<std::mutex> lck(proxy->listMutex_);
     for (uint8_t type = SUBSCRIBE_LOCAL; type < SUBSCRIBE_COUNT; type++) {
-        traverse1Type(type, proxy->dataObserver_[type]);
+        traverseType(type, proxy->dataObserver_[type]);
         if (status != napi_ok) {
             break; // stop on fail.
         }
     }
-    found = (argc == 0) || found;  // no specified observer, don't care about found or not.
-    CHECK_ARGS_RETURN_VOID(ctxt, found, "not Subscribed!");
+    CHECK_ARGS_RETURN_VOID(ctxt, found || (argc == 0), "not Subscribed!");
 }
 
 /*
@@ -516,9 +514,8 @@ void JsKVStore::OnSyncComplete(napi_env env, size_t argc, napi_value* argv, std:
     CHECK_STATUS_RETURN_VOID(ctxt, "napi_typeof failed!");
     CHECK_ARGS_RETURN_VOID(ctxt, valueType == napi_function, "invalid arg[1], i.e. invalid callback");
 
-    std::shared_ptr<KvStoreSyncCallback> callback = std::make_shared<SyncObserver>(env, argv[0]);
     auto proxy = reinterpret_cast<JsKVStore*>(ctxt->native);
-    ctxt->status = proxy->RegisterSyncCallback(callback);
+    ctxt->status = proxy->RegisterSyncCallback(std::make_shared<SyncObserver>(proxy->uvQueue_, argv[0]));
     CHECK_STATUS_RETURN_VOID(ctxt, "RegisterSyncCallback failed!");
 }
 
@@ -538,30 +535,36 @@ void JsKVStore::OffSyncComplete(napi_env env, size_t argc, napi_value* argv, std
         ctxt->status = napi_typeof(env, argv[0], &valueType);
         CHECK_STATUS_RETURN_VOID(ctxt, "napi_typeof failed!");
         CHECK_ARGS_RETURN_VOID(ctxt, valueType == napi_function, "invalid arg[1], i.e. invalid callback");
-        auto observer = std::static_pointer_cast<SyncObserver>(proxy->syncObserver_);
-        CHECK_ARGS_RETURN_VOID(ctxt, *observer == argv[0], "invalid arg[1], not Subscribed");
+        std::lock_guard<std::mutex> lck(proxy->listMutex_);
+        auto it = proxy->syncObservers_.begin();
+        while (it != proxy->syncObservers_.end()) {
+            if (JSUtil::Equals(env, argv[0], (*it)->GetCallback())) {
+                (*it)->Clear();
+                proxy->syncObservers_.erase(it);
+                break;
+            }
+        }
+        ctxt->status = napi_ok;
     }
     ZLOGI("unsubscribe syncComplete, %{public}s specified observer.", (argc == 0) ? "without": "with");
-
-    ctxt->status = proxy->UnRegisterSyncCallback();
+    if (argc == 0 || proxy->syncObservers_.empty()) {
+        ctxt->status = proxy->UnRegisterSyncCallback();
+    }
     CHECK_STATUS_RETURN_VOID(ctxt, "UnRegisterSyncCallback failed!");
 }
 
 /*
  * [Internal private non-static]
  */
-napi_status JsKVStore::RegisterSyncCallback(std::shared_ptr<KvStoreSyncCallback> callback)
+napi_status JsKVStore::RegisterSyncCallback(std::shared_ptr<SyncObserver> callback)
 {
-    if (syncObserver_) {
-        kvStore_->UnRegisterSyncCallback();
-        syncObserver_.reset();
-    }
-
     Status status = kvStore_->RegisterSyncCallback(callback);
     if (status != Status::SUCCESS) {
+        callback->Clear();
         return napi_generic_failure;
     }
-    syncObserver_ = callback;
+    std::lock_guard<std::mutex> lck(listMutex_);
+    syncObservers_.push_back(callback);
     return napi_ok;
 }
 
@@ -571,45 +574,53 @@ napi_status JsKVStore::UnRegisterSyncCallback()
     if (status != Status::SUCCESS) {
         return napi_generic_failure;
     }
-    syncObserver_.reset();
+    std::lock_guard<std::mutex> lck(listMutex_);
+    for (auto &syncObserver : syncObservers_) {
+        syncObserver->Clear();
+    }
+    syncObservers_.clear();
     return napi_ok;
 }
 
-napi_status JsKVStore::Subscribe(uint8_t type, std::shared_ptr<KvStoreObserver> observer)
+napi_status JsKVStore::Subscribe(uint8_t type, std::shared_ptr<DataObserver> observer)
 {
     auto subscribeType = ToSubscribeType(type);
     Status status = kvStore_->SubscribeKvStore(subscribeType, observer);
     ZLOGD("kvStore_->SubscribeKvStore(%{public}d) return %{public}d", type, status);
-    if (status == Status::SUCCESS) {
-        dataObserver_[type].push_back(observer);
+    if (status != Status::SUCCESS) {
+        observer->Clear();
+        return napi_generic_failure;
     }
-    return (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
+    dataObserver_[type].push_back(observer);
+    return napi_ok;
 }
 
-napi_status JsKVStore::UnSubscribe(uint8_t type, std::shared_ptr<KvStoreObserver> observer)
+napi_status JsKVStore::UnSubscribe(uint8_t type, std::shared_ptr<DataObserver> observer)
 {
     auto subscribeType = ToSubscribeType(type);
     Status status = kvStore_->UnSubscribeKvStore(subscribeType, observer);
     ZLOGD("kvStore_->UnSubscribeKvStore(%{public}d) return %{public}d", type, status);
-    return (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
+    if (status == Status::SUCCESS) {
+        observer->Clear();
+        return napi_ok;
+    }
+    return napi_generic_failure;
 }
 
-/*
- * DataObserver
- */
-DataObserver::DataObserver(napi_env env, napi_value callback)
-    : UvQueue(env, callback)
+void JsKVStore::SetUvQueue(std::shared_ptr<UvQueue> uvQueue)
 {
+    uvQueue_ = uvQueue;
 }
 
-void DataObserver::OnChange(const ChangeNotification& notification, std::shared_ptr<KvStoreSnapshot> snapshot)
+void JsKVStore::DataObserver::OnChange(const ChangeNotification &notification,
+                                       std::shared_ptr<KvStoreSnapshot> snapshot)
 {
     ZLOGD("data change insert:%{public}zu, update:%{public}zu, delete:%{public}zu",
         notification.GetInsertEntries().size(), notification.GetUpdateEntries().size(),
         notification.GetDeleteEntries().size());
 }
 
-void DataObserver::OnChange(const ChangeNotification& notification)
+void JsKVStore::DataObserver::OnChange(const ChangeNotification& notification)
 {
     ZLOGD("data change insert:%{public}zu, update:%{public}zu, delete:%{public}zu",
         notification.GetInsertEntries().size(), notification.GetUpdateEntries().size(),
@@ -621,24 +632,16 @@ void DataObserver::OnChange(const ChangeNotification& notification)
         argc = 1;
         JSUtil::SetValue(env, notification, argv[0]);
     };
-    CallFunction(args);
+    AsyncCall(args);
 }
 
-/*
- * SyncObserver
- */
-SyncObserver::SyncObserver(napi_env env, napi_value callback)
-    : UvQueue(env, callback)
-{
-}
-
-void SyncObserver::SyncCompleted(const std::map<std::string, DistributedKv::Status>& results)
+void JsKVStore::SyncObserver::SyncCompleted(const std::map<std::string, DistributedKv::Status>& results)
 {
     auto args = [results](napi_env env, int& argc, napi_value* argv) {
         // generate 1 arguments for callback function.
         argc = 1;
         JSUtil::SetValue(env, results, argv[0]);
     };
-    CallFunction(args);
+    AsyncCall(args);
 }
 } // namespace OHOS::DistributedData
