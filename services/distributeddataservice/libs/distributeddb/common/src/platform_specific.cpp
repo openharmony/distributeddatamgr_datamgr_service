@@ -102,7 +102,7 @@ void SplitFilePath(const std::string &filePath, std::string &fileDir, std::strin
 
 int MakeDBDirectory(const std::string &directory)
 {
-    int errCode = mkdir(directory.c_str(), (S_IRWXU | S_IRWXG)); // The permission is 750 for linux based os
+    int errCode = mkdir(directory.c_str(), (S_IRWXU | S_IRGRP | S_IXGRP)); // The permission is 750 for linux based os
     if (errCode < 0) {
         LOGE("[MakeDir] Make directory fail:%d.", errno);
         return -E_SYSTEM_API_FAIL;
