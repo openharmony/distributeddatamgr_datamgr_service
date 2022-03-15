@@ -265,4 +265,5 @@ ohos_shared_library("distributeddb") {
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   subsystem_name = "distributeddatamgr"
+  part_name = "distributeddatamgr"
 }

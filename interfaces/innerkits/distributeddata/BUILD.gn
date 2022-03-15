@@ -45,8 +45,6 @@ config("distributeddatafwk_public_config") {
 }
 
 ohos_shared_library("distributeddata_inner") {
-  part_name = "distributeddatamgr"
-
   kvdb_sources = [
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/blob.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/change_notification.cpp",
@@ -101,4 +99,5 @@ ohos_shared_library("distributeddata_inner") {
   public_configs = [ ":distributeddatafwk_public_config" ]
 
   subsystem_name = "distributeddatamgr"
+  part_name = "distributeddatamgr"
 }

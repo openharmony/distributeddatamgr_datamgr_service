@@ -38,4 +38,5 @@ ohos_static_library("distributeddata_autils_static") {
     "bytrace_standard:bytrace_core",
     "hiviewdfx_hilog_native:libhilog",
   ]
+  part_name = "distributeddatamgr"
 }
