@@ -39,6 +39,7 @@ public:
     std::vector<UserStatus> GetRemoteUserStatus(const std::string &deviceId);
     bool InitLocalUserMeta();
 
+    static constexpr const int SYSTEM_USER = 0;
 private:
     class LocalUserObserver : public AccountDelegate::Observer {
     public:

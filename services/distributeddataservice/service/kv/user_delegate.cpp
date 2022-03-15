@@ -53,11 +53,14 @@ std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
 {
     std::vector<UserStatus> userStatus;
     if (!deviceUserMap_.Contains(deviceId)) {
+        ZLOGI("byy: load meta");
         LoadFromMeta(deviceId);
     }
+    ZLOGI("byy: get device:%{public}s", deviceId.c_str());
     for (const auto &entry : deviceUserMap_[deviceId]) {
         userStatus.emplace_back(entry.first, entry.second);
     }
+    ZLOGI("byy: get %{public}d", deviceUserMap_.Contains(deviceId));
     ZLOGI("device:%{public}.10s, users:%{public}s", deviceId.c_str(), Serializable::Marshall(userStatus).c_str());
     return userStatus;
 }

@@ -159,13 +159,15 @@ bool Security::IsExits(const std::string &file) const
 Sensitive Security::GetSensitiveByUuid(const std::string &uuid)
 {
     Sensitive sensitive;
+    ZLOGI("byy: 1111111");
     devicesUdid_.Compute(uuid, [&sensitive](const auto &key, auto &value) {
         if (value) {
             sensitive = value;
             return true;
         }
-
+    ZLOGI("byy: 22222");
     auto &network = AppDistributedKv::CommunicationProvider::GetInstance();
+    ZLOGI("byy: 33333");
         auto devices = network.GetRemoteNodesBasicInfo();
         devices.push_back(network.GetLocalBasicInfo());
         for (auto &device : devices) {
