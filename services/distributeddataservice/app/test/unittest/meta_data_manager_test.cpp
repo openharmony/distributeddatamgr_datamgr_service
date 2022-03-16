@@ -19,15 +19,17 @@
 #include "gtest/gtest.h"
 #include "kvstore_meta_manager.h"
 #include "log_print.h"
+#include "semaphore_ex.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
+constexpr const char *TEST_KEY = "Hop";
 class MetaDataManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
     {
         OHOS::DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
-        auto metaDelegate = OHOS::DistributedKv::KvStoreMetaManager::GetInstance().GetMetaKvStore();
+        metaDelegate = OHOS::DistributedKv::KvStoreMetaManager::GetInstance().GetMetaKvStore();
         MetaDataManager::GetInstance().SetMetaStore(metaDelegate);
     }
     static void TearDownTestCase()
@@ -35,11 +37,19 @@ public:
     }
     void SetUp()
     {
+        std::string testKey(TEST_KEY);
+        metaDelegate->Delete({ testKey.begin(), testKey.end() });
     }
     void TearDown()
     {
+        std::string testKey(TEST_KEY);
+        metaDelegate->Delete({ testKey.begin(), testKey.end() });
     }
+
+private:
+    static OHOS::DistributedKv::KvStoreMetaManager::NbDelegate metaDelegate;
 };
+OHOS::DistributedKv::KvStoreMetaManager::NbDelegate MetaDataManagerTest::metaDelegate = nullptr;
 
 class Student final : public Serializable {
 public:
@@ -73,20 +83,22 @@ public:
 HWTEST_F(MetaDataManagerTest, MetaBasic_01, TestSize.Level1)
 {
     Student student;
-    student.name = "Hop";
+    student.name = TEST_KEY;
     student.age = 21;
 
+    OHOS::Semaphore sem(0);
     std::string changedKey;
     auto prefix = student.name.substr(0, 1);
     MetaDataManager::GetInstance().SubscribeMeta(
-        prefix, [&changedKey](const std::string &key, const std::string &value, int32_t action) {
+        prefix, [&changedKey, &sem](const std::string &key, const std::string &value, int32_t action) {
             changedKey = key;
+            sem.Post();
             return true;
         });
 
     auto result = MetaDataManager::GetInstance().SaveMeta(student.name, student);
     ASSERT_TRUE(result);
-    ZLOGE("put:%{public}s, changed:%{public}s", student.name.c_str(), changedKey.c_str());
+    sem.Wait();
     EXPECT_TRUE(student.name == changedKey);
 
     Student student1;
