@@ -13,31 +13,33 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
-#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "kvstore_meta_manager.h"
-#include "meta_data_manager.h"
+#include "metadata/meta_data_manager.h"
 #include "route_head_handler_impl.h"
 #include "upgrade_manager.h"
 #include "user_delegate.h"
 
-namespace OHOS::DistributedData {
+namespace {
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS::DistributedData;
+constexpr const char *PEER_DEVICE_ID = "PEER_DEVICE_ID";
+constexpr int PEER_USER_ID = 101;
 class SessionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
     {
+        KvStoreMetaManager::GetInstance().InitMetaParameter();
+        metaDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
+
         // init peer device
         UserMetaData userMetaData;
-        userMetaData.deviceId = "PEER_DEVICE_ID";
+        userMetaData.deviceId = PEER_DEVICE_ID;
 
         UserStatus status;
         status.isActive = true;
-        constexpr const int MOCK_PEER_USER = 101;
-        status.id = MOCK_PEER_USER;
+        status.id = PEER_USER_ID;
         userMetaData.users = { status };
 
         auto peerUserMetaKey = UserMetaRow::GetKeyFor(userMetaData.deviceId);
@@ -51,6 +53,10 @@ public:
     }
     static void TearDownTestCase()
     {
+        auto peerUserMetaKey = UserMetaRow::GetKeyFor(PEER_DEVICE_ID);
+        metaDelegate->Delete(peerUserMetaKey);
+        auto peerCapMetaKey = CapMetaRow::GetKeyFor(PEER_DEVICE_ID);
+        metaDelegate->Delete(peerCapMetaKey);
     }
     void SetUp()
     {
@@ -58,7 +64,11 @@ public:
     void TearDown()
     {
     }
+
+private:
+    static KvStoreMetaManager::NbDelegate metaDelegate;
 };
+KvStoreMetaManager::NbDelegate SessionManagerTest::metaDelegate = nullptr;
 
 /**
 * @tc.name: PackAndUnPack01
@@ -70,22 +80,23 @@ public:
 HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
 {
     const DistributedDB::ExtendInfo info = {
-        .appId = "com.sample.helloworld", .storeId = "test_store", .userId = "100", .dstTarget = "PEER_DEVICE_ID"
+        .appId = "com.sample.helloworld", .storeId = "test_store", .userId = "100", .dstTarget = PEER_DEVICE_ID
     };
     auto sendHandler = RouteHeadHandlerImpl::Create(info);
     ASSERT_NE(sendHandler, nullptr);
     uint32_t routeHeadSize = 0;
-    auto result = sendHandler->GetHeadDataSize(routeHeadSize);
+    sendHandler->GetHeadDataSize(routeHeadSize);
     ASSERT_GT(routeHeadSize, 0);
     std::unique_ptr<uint8_t> data = std::make_unique<uint8_t>(routeHeadSize);
     sendHandler->FillHeadData(data.get(), routeHeadSize, routeHeadSize);
 
     std::vector<std::string> users;
     auto recvHandler = RouteHeadHandlerImpl::Create({});
+    ASSERT_NE(recvHandler, nullptr);
     uint32_t parseSize = 0;
     recvHandler->ParseHeadData(data.get(), routeHeadSize, parseSize, users);
     EXPECT_EQ(routeHeadSize, parseSize);
     ASSERT_EQ(users.size(), 1);
     EXPECT_EQ(users[0], "101");
 }
-} // namespace OHOS::DistributedData
+} // namespace

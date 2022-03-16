@@ -21,15 +21,17 @@
 #include "log_print.h"
 #include "semaphore_ex.h"
 
+namespace {
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
+using KvStoreMetaManager = OHOS::DistributedKv::KvStoreMetaManager;
 constexpr const char *TEST_KEY = "Hop";
 class MetaDataManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
     {
-        OHOS::DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
-        metaDelegate = OHOS::DistributedKv::KvStoreMetaManager::GetInstance().GetMetaKvStore();
+        KvStoreMetaManager::GetInstance().InitMetaParameter();
+        metaDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
         MetaDataManager::GetInstance().SetMetaStore(metaDelegate);
     }
     static void TearDownTestCase()
@@ -37,19 +39,23 @@ public:
     }
     void SetUp()
     {
-        std::string testKey(TEST_KEY);
-        metaDelegate->Delete({ testKey.begin(), testKey.end() });
+        DeleteTestData();
     }
     void TearDown()
+    {
+        DeleteTestData();
+    }
+
+private:
+    void DeleteTestData()
     {
         std::string testKey(TEST_KEY);
         metaDelegate->Delete({ testKey.begin(), testKey.end() });
     }
 
-private:
-    static OHOS::DistributedKv::KvStoreMetaManager::NbDelegate metaDelegate;
+    static KvStoreMetaManager::NbDelegate metaDelegate;
 };
-OHOS::DistributedKv::KvStoreMetaManager::NbDelegate MetaDataManagerTest::metaDelegate = nullptr;
+KvStoreMetaManager::NbDelegate MetaDataManagerTest::metaDelegate = nullptr;
 
 class Student final : public Serializable {
 public:
@@ -82,6 +88,7 @@ public:
 */
 HWTEST_F(MetaDataManagerTest, MetaBasic_01, TestSize.Level1)
 {
+    ZLOGI("begin");
     Student student;
     student.name = TEST_KEY;
     student.age = 21;
@@ -106,4 +113,7 @@ HWTEST_F(MetaDataManagerTest, MetaBasic_01, TestSize.Level1)
     ASSERT_TRUE(result);
     EXPECT_TRUE(student.name == student1.name);
     EXPECT_TRUE(student.age == student1.age);
+
+    ZLOGI("end");
 }
+} // namespace

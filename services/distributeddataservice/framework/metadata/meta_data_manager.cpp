@@ -24,8 +24,8 @@
 namespace OHOS::DistributedData {
 class MetaObserver : public DistributedDB::KvStoreObserver {
 public:
-    MetaObserver(
-        std::shared_ptr<MetaDataManager::MetaStore> metaStore, std::string prefix, MetaDataManager::Observer observer);
+    MetaObserver(const std::shared_ptr<MetaDataManager::MetaStore> &metaStore, const std::string &prefix,
+        const MetaDataManager::Observer &observer);
     ~MetaObserver() override;
 
     // Database change callback
@@ -37,9 +37,9 @@ private:
     std::string prefix_;
 };
 
-MetaObserver::MetaObserver(
-    std::shared_ptr<MetaDataManager::MetaStore> metaStore, std::string prefix, MetaDataManager::Observer observer)
-    : metaStore_(std::move(metaStore)), observer_(std::move(observer)), prefix_(std::move(prefix))
+MetaObserver::MetaObserver(const std::shared_ptr<MetaDataManager::MetaStore> &metaStore, const std::string &prefix,
+    const MetaDataManager::Observer &observer)
+    : metaStore_(metaStore), observer_(observer), prefix_(prefix)
 {
     if (metaStore_ != nullptr) {
         int mode = DistributedDB::OBSERVER_CHANGES_NATIVE | DistributedDB::OBSERVER_CHANGES_FOREIGN;
@@ -68,7 +68,7 @@ void MetaObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
         }
         for (auto &[key, value] : *entries) {
             std::string keyStr(key.begin(), key.end());
-            if (keyStr.compare(prefix_) < 0) {
+            if (keyStr.find(prefix_) != 0) {
                 continue;
             }
             observer_(keyStr, { value.begin(), value.end() }, action);
@@ -111,7 +111,6 @@ bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value
     }
 
     auto data = Serializable::Marshall(value);
-    ZLOGI("data:%{public}s", data.c_str());
     auto status = metaStore_->Put({ key.begin(), key.end() }, { data.begin(), data.end() });
     return status == DistributedDB::DBStatus::OK;
 }
