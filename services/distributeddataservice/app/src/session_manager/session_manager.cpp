@@ -17,6 +17,8 @@
 
 #define LOG_TAG "SessionManager"
 
+#include <algorithm>
+
 #include "auth/auth_delegate.h"
 #include "checker/checker_manager.h"
 #include "log/log_print.h"
@@ -39,11 +41,23 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     session.sourceUserId = from.userId;
     session.sourceDeviceId = from.deviceId;
     session.targetDeviceId = targetDeviceId;
+
+    // system service
+    if (from.userId == UserDelegate::SYSTEM_USER) {
+        auto *checker = CheckerManager::GetInstance().GetChecker(CheckerManager::SYSTEM_CHECKER);
+        if (checker != nullptr && checker->IsValid(UserDelegate::SYSTEM_USER, from.appId)) {
+            session.targetUserIds.push_back(UserDelegate::SYSTEM_USER);
+        }
+    }
+
     for (const auto &user : users) {
         bool isPermitted = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id, targetDeviceId, from.appId);
         ZLOGD("access to peer user %{public}d is %{public}d", user.id, isPermitted);
         if (isPermitted) {
-            session.targetUserIds.push_back(user.id);
+            auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
+            if (it == session.targetUserIds.end()) {
+                session.targetUserIds.push_back(user.id);
+            }
         }
     }
     ZLOGD("end");

@@ -23,6 +23,7 @@ namespace DistributedData {
 class CheckerManager {
 public:
     static constexpr pid_t INVALID_UID = -1;
+    static constexpr const char* SYSTEM_CHECKER = "SystemChecker";
     struct Trust {
         std::string bundleName;
         std::string appId;

@@ -164,7 +164,6 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid)
             sensitive = value;
             return true;
         }
-
     auto &network = AppDistributedKv::CommunicationProvider::GetInstance();
         auto devices = network.GetRemoteNodesBasicInfo();
         devices.push_back(network.GetLocalBasicInfo());
