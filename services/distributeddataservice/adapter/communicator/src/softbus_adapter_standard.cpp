@@ -752,7 +752,7 @@ void AppDataListenerWrap::OnBytesReceived(int sessionId, const void *data, unsig
         return;
     }
     std::string peerUuid = softBusAdapter_->GetUuidByNodeId(std::string(peerDevId));
-    ZLOGD("[BytesReceived] peerSessionName:%{public}s, peerDevId:%{public}s",peerSessionName,
+    ZLOGD("[BytesReceived] peerSessionName:%{public}s, peerDevId:%{public}s", peerSessionName,
         SoftBusAdapter::ToBeAnonymous(peerUuid).c_str());
     NotifyDataListeners(reinterpret_cast<const uint8_t *>(data), dataLen, peerUuid, {std::string(peerSessionName), ""});
 }
