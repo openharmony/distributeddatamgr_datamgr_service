@@ -221,7 +221,7 @@ bool RouteHeadHandlerImpl::UnPackDataHead(const uint8_t *data, uint32_t totalLen
         ZLOGW("not route head data");
         return false;
     }
-    if (routeHead.dataLen + ((uint64_t)sizeof(RouteHead)) > totalLen) {
+    if (routeHead.dataLen + static_cast<uint64_t>(sizeof(RouteHead)) > totalLen) {
         ZLOGE("invalid route head len");
         return false;
     }
@@ -250,7 +250,7 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
     const SessionUserPair *userPair = reinterpret_cast<const SessionUserPair *>(ptr);
     session_.sourceUserId = NetToHost(userPair->sourceUserId);
 
-    if (leftSize < ((uint64_t)sizeof(SessionUserPair)) + userPair->targetUserCount * sizeof(uint32_t)) {
+    if (leftSize < static_cast<uint64_t>(sizeof(SessionUserPair)) + userPair->targetUserCount * sizeof(uint32_t)) {
         ZLOGE("failed to parse user pair, target user");
         return false;
     }
@@ -265,7 +265,7 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
     }
     const SessionAppId *appId = reinterpret_cast<const SessionAppId *>(ptr);
     auto appIdLen = NetToHost(appId->len);
-    if (leftSize < ((uint64_t)sizeof(SessionAppId)) + appIdLen) {
+    if (leftSize < static_cast<uint64_t>(sizeof(SessionAppId)) + appIdLen) {
         ZLOGE("failed to parse app id");
         return false;
     }
