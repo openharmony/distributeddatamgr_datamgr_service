@@ -247,7 +247,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser001, TestSize.Level0)
      * @tc.steps: step2. openstore1 and openstore2
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1();
     OpenStore2();
     /**
@@ -324,7 +323,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser002, TestSize.Level0)
      * @tc.steps: step2. openstore1 and openstore2
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1();
     OpenStore2();
     /**
@@ -529,7 +527,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser005, TestSize.Level0)
      * @tc.steps: step1. openstore1 and openstore2 in normal sync mode
      * @tc.expected: step1. only user2 sync mode is active
      */
-
     OpenStore1(false);
     OpenStore2(false);
     /**
@@ -569,7 +566,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser006, TestSize.Level0)
      * @tc.steps: step2. openstore1 in dual tuple sync mode and openstore2 in normal sync mode
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1(true);
     OpenStore2(false);
     /**
@@ -606,7 +602,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser007, TestSize.Level0)
      * @tc.steps: step2. openstore1 in dual tuple sync mode and openstore2 in normal sync mode
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1(true);
     OpenStore2(false);
     /**
@@ -644,7 +639,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser008, TestSize.Level0)
      * @tc.steps: step2. openstore1 in dual tuple sync mode and openstore2 in normal sync mode
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1(true);
     OpenStore2(true);
     /**
@@ -700,7 +694,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser009, TestSize.Level0)
      * @tc.steps: step2. openstore1 in dual tuple sync mode and openstore2 in normal sync mode
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1(true);
     OpenStore2(true);
     /**
@@ -756,7 +749,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser010, TestSize.Level3)
      * @tc.steps: step2. openstore1 and openstore2 in dual tuple sync mode
      * @tc.expected: step2. only userId1 sync mode is active
      */
-
     OpenStore1(true);
     OpenStore2(true);
     /**
