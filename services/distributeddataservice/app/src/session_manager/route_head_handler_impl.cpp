@@ -212,6 +212,10 @@ bool RouteHeadHandlerImpl::UnPackData(const uint8_t *data, uint32_t totalLen, ui
 
 bool RouteHeadHandlerImpl::UnPackDataHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead)
 {
+    if (totalLen < sizeof(RouteHead)) {
+        ZLOGE("invalid route head len");
+        return false;
+    }
     const RouteHead *head = reinterpret_cast<const RouteHead *>(data);
     routeHead.magic = NetToHost(head->magic);
     routeHead.version = NetToHost(head->version);
@@ -221,8 +225,8 @@ bool RouteHeadHandlerImpl::UnPackDataHead(const uint8_t *data, uint32_t totalLen
         ZLOGW("not route head data");
         return false;
     }
-    if (routeHead.dataLen + sizeof(RouteHead) > totalLen) {
-        ZLOGE("invalid route head len");
+    if (totalLen - sizeof(RouteHead) < routeHead.dataLen) {
+        ZLOGE("invalid route data len");
         return false;
     }
     return true;
@@ -250,14 +254,16 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
     const SessionUserPair *userPair = reinterpret_cast<const SessionUserPair *>(ptr);
     session_.sourceUserId = NetToHost(userPair->sourceUserId);
 
-    if (leftSize < sizeof(SessionUserPair) + userPair->targetUserCount * sizeof(int)) {
+    auto userPairSize = sizeof(SessionUserPair) + userPair->targetUserCount * sizeof(uint32_t);
+    if (leftSize < userPairSize) {
         ZLOGE("failed to parse user pair, target user");
         return false;
     }
     for (int i = 0; i < userPair->targetUserCount; ++i) {
         session_.targetUserIds.push_back(NetToHost(*(userPair->targetUserIds + i)));
     }
-    ptr += sizeof(SessionUserPair) + userPair->targetUserCount * sizeof(int);
+    ptr += userPairSize;
+    leftSize -= userPairSize;
 
     if (leftSize < sizeof(SessionAppId)) {
         ZLOGE("failed to parse app id len");
@@ -265,7 +271,7 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
     }
     const SessionAppId *appId = reinterpret_cast<const SessionAppId *>(ptr);
     auto appIdLen = NetToHost(appId->len);
-    if (leftSize < sizeof(SessionAppId) + appIdLen) {
+    if (leftSize - sizeof(SessionAppId) < appIdLen) {
         ZLOGE("failed to parse app id");
         return false;
     }
