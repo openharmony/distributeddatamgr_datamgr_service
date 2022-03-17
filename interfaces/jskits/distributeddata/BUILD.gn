@@ -65,7 +65,7 @@ ohos_shared_library("distributeddata") {
     #":distributed_data_js",
     "//foundation/ace/napi:ace_napi",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//third_party/libuv:uv_static",
+    "//third_party/libuv:uv",
     "//utils/native/base:utils",
   ]
 
