@@ -225,7 +225,7 @@ bool RouteHeadHandlerImpl::UnPackDataHead(const uint8_t *data, uint32_t totalLen
         ZLOGW("not route head data");
         return false;
     }
-    if (routeHead.dataLen > totalLen - sizeof(RouteHead)) {
+    if (totalLen - sizeof(RouteHead) < routeHead.dataLen) {
         ZLOGE("invalid route data len");
         return false;
     }
