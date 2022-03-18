@@ -21,7 +21,7 @@ int DataBuffer::sequence_ = 0;
 
 const size_t DataBuffer::MAX_DATA_LEN = 1024 * 1024 * 5;
 
-const int DataBuffer::MAX_TRANSFER_SIZE = 1024 * 1024 * 5 - HEADER_LEN;
+const int DataBuffer::MAX_TRANSFER_SIZE = 1024 * 1024 * 5 - DataBuffer::HEADER_LEN;
 
 const uint32_t DataBuffer::VERSION = 0;
 
