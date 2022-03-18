@@ -39,4 +39,5 @@ ohos_static_library("distributeddata_auth_static") {
     "deviceauth_standard:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
   ]
+  part_name = "distributeddatamgr"
 }

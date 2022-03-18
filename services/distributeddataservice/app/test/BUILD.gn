@@ -124,6 +124,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_unittest("KvStoreImplPhysicalIsolationTest") {
@@ -197,6 +198,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_unittest("KvStoreDataServiceTest") {
@@ -269,6 +271,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_unittest("KvStoreBackupTest") {
@@ -344,6 +347,7 @@ ohos_unittest("KvStoreBackupTest") {
   ]
 
   resource_config_file = "//foundation/distributeddatamgr/distributeddatamgr/test/resource/distributeddataservice/ohos_test.xml"
+  part_name = "distributeddatamgr"
 }
 
 ohos_unittest("KvStoreFlowCtrlManagerTest") {
@@ -380,6 +384,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_unittest("KvStoreSyncManagerTest") {
@@ -451,6 +456,7 @@ ohos_unittest("KvStoreSyncManagerTest") {
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_unittest("KvStoreUninstallerTest") {
@@ -525,6 +531,7 @@ ohos_unittest("KvStoreUninstallerTest") {
       "power_manager_native:powermgr_client",
     ]
   }
+  part_name = "distributeddatamgr"
 }
 
 ###############################################################################

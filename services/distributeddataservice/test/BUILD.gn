@@ -83,6 +83,7 @@ ohos_moduletest("DistributeddbKvTransactionTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbKvTransactionPerfTest") {
@@ -105,6 +106,7 @@ ohos_moduletest("DistributeddbKvTransactionPerfTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 ohos_moduletest("DistributeddbKvConcurrencyCrudTest") {
   module_out_path = module_output_path
@@ -125,6 +127,7 @@ ohos_moduletest("DistributeddbKvConcurrencyCrudTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 ohos_moduletest("DistributeddbKvBatchCrudTest") {
   module_out_path = module_output_path
@@ -145,6 +148,7 @@ ohos_moduletest("DistributeddbKvBatchCrudTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 ohos_moduletest("DistributeddbKvCreateTest") {
   module_out_path = module_output_path
@@ -165,6 +169,7 @@ ohos_moduletest("DistributeddbKvCreateTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 ohos_moduletest("DistributeddbKvCrudTest") {
   module_out_path = module_output_path
@@ -185,6 +190,7 @@ ohos_moduletest("DistributeddbKvCrudTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 ohos_moduletest("DistributeddbKvObserverTest") {
   module_out_path = module_output_path
@@ -205,6 +211,7 @@ ohos_moduletest("DistributeddbKvObserverTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 ohos_moduletest("DistributeddbKvObserverSnapTest") {
   module_out_path = module_output_path
@@ -225,6 +232,7 @@ ohos_moduletest("DistributeddbKvObserverSnapTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbKvBackupTest") {
@@ -244,6 +252,7 @@ ohos_moduletest("DistributeddbKvBackupTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbKvRealdelTest") {
@@ -264,6 +273,7 @@ ohos_moduletest("DistributeddbKvRealdelTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbCreateTest") {
@@ -286,6 +296,7 @@ ohos_moduletest("DistributeddbNbCreateTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 ohos_moduletest("DistributeddbNbCrudTest") {
   module_out_path = module_output_path
@@ -307,6 +318,7 @@ ohos_moduletest("DistributeddbNbCrudTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 ohos_moduletest("DistributeddbNbObserverTest") {
   module_out_path = module_output_path
@@ -328,6 +340,7 @@ ohos_moduletest("DistributeddbNbObserverTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbCursorTest") {
@@ -351,6 +364,7 @@ ohos_moduletest("DistributeddbNbCursorTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbBackupTest") {
@@ -374,6 +388,7 @@ ohos_moduletest("DistributeddbNbBackupTest") {
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbBatchCrudTest") {
@@ -396,6 +411,7 @@ ohos_moduletest("DistributeddbNbBatchCrudTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbLocalBatchCrudTest") {
@@ -418,6 +434,7 @@ ohos_moduletest("DistributeddbNbLocalBatchCrudTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbSchemaDbTest") {
@@ -439,6 +456,7 @@ ohos_moduletest("DistributeddbNbSchemaDbTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbPredicateQueryTest") {
@@ -461,6 +479,7 @@ ohos_moduletest("DistributeddbNbPredicateQueryTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbPredicateQueryExpandTest") {
@@ -483,6 +502,7 @@ ohos_moduletest("DistributeddbNbPredicateQueryExpandTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbAutolaunchTest") {
@@ -505,6 +525,7 @@ ohos_moduletest("DistributeddbNbAutolaunchTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributedbNbDbDamageTest") {
@@ -527,6 +548,7 @@ ohos_moduletest("DistributedbNbDbDamageTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbCrudPowerTest") {
@@ -549,6 +571,7 @@ ohos_moduletest("DistributeddbNbCrudPowerTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbSchemaTest") {
@@ -571,6 +594,7 @@ ohos_moduletest("DistributeddbNbSchemaTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ohos_moduletest("DistributeddbNbSchemaUpgradeTest") {
@@ -593,6 +617,7 @@ ohos_moduletest("DistributeddbNbSchemaUpgradeTest") {
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  part_name = "distributeddatamgr"
 }
 
 ###############################################################################
