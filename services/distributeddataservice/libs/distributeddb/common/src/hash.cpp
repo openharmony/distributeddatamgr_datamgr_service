@@ -34,10 +34,10 @@ uint32_t Hash::Hash32Func(const std::string &input)
     size_t idx = 0;
 
     for (idx = 0; idx < input.size(); idx++) {
-        hash = (hash << 4) + input.at(idx); // 4 is offset
+        hash = (hash << 4) + input.at(idx); // left shift the lowest 4 bits for 4 bits.
         uint32_t x = (hash & 0xf0000000);
         if (x != 0) {
-            hash ^= (x >> 24); // 24 is offset
+            hash ^= (x >> 24); // right shift the high byte for 24 bits.
         }
         hash &= ~x;
     }

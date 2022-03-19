@@ -50,6 +50,8 @@ namespace {
             }
         }
     }
+    const std::string HEX_CHAR_MAP = "0123456789abcdef";
+    const std::string CAP_HEX_CHAR_MAP = "0123456789ABCDEF";
 }
 
 int DBCommon::CreateDirectory(const std::string &directory)
@@ -78,11 +80,10 @@ void DBCommon::VectorToString(const std::vector<uint8_t> &src, std::string &dst)
 
 std::string DBCommon::VectorToHexString(const std::vector<uint8_t> &inVec, const std::string &separator)
 {
-    std::string hexChar = "0123456789ABCDEF";
     std::string outString;
     for (auto &entry : inVec) {
-        outString.push_back(hexChar[entry >> 4]); // high 4 bit to one hex.
-        outString.push_back(hexChar[entry & 0x0F]); // low 4 bit to one hex.
+        outString.push_back(CAP_HEX_CHAR_MAP[entry >> 4]); // high 4 bits to one hex.
+        outString.push_back(CAP_HEX_CHAR_MAP[entry & 0x0F]); // low 4 bits to one hex.
         outString += separator;
     }
     outString.erase(outString.size() - separator.size(), separator.size()); // remove needless separator at last
@@ -91,7 +92,6 @@ std::string DBCommon::VectorToHexString(const std::vector<uint8_t> &inVec, const
 
 void DBCommon::PrintHexVector(const std::vector<uint8_t> &data, int line, const std::string &tag)
 {
-    const char *hex = "0123456789ABCDEF";
     const size_t maxDataLength = 1024;
     const int byteHexNum = 2;
     size_t dataLength = data.size();
@@ -106,8 +106,8 @@ void DBCommon::PrintHexVector(const std::vector<uint8_t> &data, int line, const 
     }
 
     for (std::vector<uint8_t>::size_type i = 0; i < dataLength; ++i) {
-        buff[byteHexNum * i] = hex[data[i] >> 4]; // high 4 bit to one hex.
-        buff[byteHexNum * i + 1] = hex[data[i] & 0x0F]; // low 4 bit to one hex.
+        buff[byteHexNum * i] = CAP_HEX_CHAR_MAP[data[i] >> 4]; // high 4 bits to one hex.
+        buff[byteHexNum * i + 1] = CAP_HEX_CHAR_MAP[data[i] & 0x0F]; // low 4 bits to one hex.
     }
     buff[dataLength * byteHexNum] = '\0';
 
@@ -141,12 +141,12 @@ std::string DBCommon::TransferStringToHex(const std::string &origStr)
     if (origStr.empty()) {
         return "";
     }
-    const char *hex = "0123456789abcdef";
+
     std::string tmp;
     for (auto item : origStr) {
         unsigned char currentByte = static_cast<unsigned char>(item);
-        tmp.push_back(hex[currentByte >> 4]); // high 4 bit to one hex.
-        tmp.push_back(hex[currentByte & 0x0F]); // low 4 bit to one hex.
+        tmp.push_back(HEX_CHAR_MAP[currentByte >> 4]); // high 4 bits to one hex.
+        tmp.push_back(HEX_CHAR_MAP[currentByte & 0x0F]); // low 4 bits to one hex.
     }
     return tmp;
 }

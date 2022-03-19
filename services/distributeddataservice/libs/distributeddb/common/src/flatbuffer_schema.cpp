@@ -971,29 +971,39 @@ int SchemaObject::FlatBufferSchema::CompareStruct(const PairConstPointer<reflect
 #else // OMIT_FLATBUFFER
 bool SchemaObject::FlatBufferSchema::IsFlatBufferSchema(const std::string &inOriginal, std::string &outDecoded)
 {
+    (void)inOriginal;
+    (void)outDecoded;
     LOGW("FlatBuffer Omit From Compile.");
     return false;
 }
 
 int SchemaObject::FlatBufferSchema::ParseFlatBufferSchema(const std::string &inDecoded)
 {
+    (void)inDecoded;
     owner_.schemaType_ = SchemaType::FLATBUFFER; // For fix compile warning
     return -E_NOT_PERMIT;
 }
 
 int SchemaObject::FlatBufferSchema::CompareFlatBufferDefine(const FlatBufferSchema &other) const
 {
+    (void)other;
     return -E_NOT_PERMIT;
 }
 
 int SchemaObject::FlatBufferSchema::VerifyFlatBufferValue(const RawValue &inValue, bool tryNoSizePrefix) const
 {
+    (void)inValue;
+    (void)tryNoSizePrefix;
     return -E_NOT_PERMIT;
 }
 
 int SchemaObject::FlatBufferSchema::ExtractFlatBufferValue(RawString inPath, const RawValue &inValue,
     TypeValue &outExtract, bool tryNoSizePrefix) const
 {
+    (void)inPath;
+    (void)inValue;
+    (void)outExtract;
+    (void)tryNoSizePrefix;
     return -E_NOT_PERMIT;
 }
 #endif // OMIT_FLATBUFFER
