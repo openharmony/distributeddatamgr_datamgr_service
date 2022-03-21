@@ -37,5 +37,5 @@ private:
     static std::mutex mutex_;
     static std::shared_ptr<BroadcastSender> instance_;
 };
-}
+}  // namespace OHOS::DistributedKv
 #endif // BROADCAST_SENDER_H

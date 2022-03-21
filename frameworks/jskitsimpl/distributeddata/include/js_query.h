@@ -62,5 +62,5 @@ private:
 private:
     DistributedKv::DataQuery query_;
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_QUERY_H

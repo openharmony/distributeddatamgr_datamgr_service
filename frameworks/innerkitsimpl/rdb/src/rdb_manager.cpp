@@ -21,4 +21,4 @@ std::shared_ptr<RdbService> RdbManager::GetRdbService(const RdbSyncerParam& para
 {
     return RdbManagerImpl::GetInstance().GetRdbService(param);
 }
-}
+} // namespace OHOS::DistributedRdb

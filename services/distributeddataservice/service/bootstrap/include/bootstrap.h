@@ -31,6 +31,6 @@ private:
     static constexpr const char *DEFAULT_LABEL = "distributeddata";
     using Constructor = void(*)(const char *);
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_BOOTSTRAP_BOOTSTRAP_H

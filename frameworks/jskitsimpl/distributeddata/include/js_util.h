@@ -173,5 +173,5 @@ private:
         TUPLE_SIZE
     };
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_JS_UTIL_H

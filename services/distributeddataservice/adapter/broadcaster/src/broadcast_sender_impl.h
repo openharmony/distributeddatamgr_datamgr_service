@@ -26,5 +26,5 @@ private:
     static const inline std::string ACTION_NAME = "DistributedDataMgrStarter";
     static const inline std::string PKG_NAME = "pkgName";
 };
-}
+} // namespace OHOS::DistributedKv
 #endif // BROADCAST_SENDER_IMPL_H

@@ -35,5 +35,5 @@ public:
         return 0;
     }
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

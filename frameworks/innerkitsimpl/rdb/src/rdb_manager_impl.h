@@ -71,5 +71,5 @@ private:
     std::shared_ptr<RdbService> rdbService_;
     std::string bundleName_;
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

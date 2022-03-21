@@ -373,4 +373,4 @@ void JsKVManager::DeathRecipient::OnRemoteDied()
 {
     AsyncCall();
 }
-}
+} // namespace OHOS::DistributedData

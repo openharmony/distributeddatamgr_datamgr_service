@@ -226,5 +226,5 @@ private:
     mutable std::recursive_mutex mutex_;
     std::map<_Key, _Tp> entries_;
 };
-}
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_CONCURRENT_MAP_H

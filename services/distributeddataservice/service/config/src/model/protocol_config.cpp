@@ -31,5 +31,5 @@ bool ProtocolConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(transport), transport);
     return true;
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

@@ -32,7 +32,7 @@ private:
     static constexpr pid_t SYSTEM_UID = 10000;
     std::map<std::string, std::string> trusts_;
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_DISTRIBUTEDDATASERVICE_ADAPTER_PERMISSION_SRC_MEIDA_LIB_CHECKER_H

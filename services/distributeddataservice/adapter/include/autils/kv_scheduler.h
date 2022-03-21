@@ -51,5 +51,5 @@ private:
     std::unique_ptr<std::thread> thread_;
     std::condition_variable condition_;
 };
-} // namespace DistributedKv::OHOS
+} // namespace OHOS::DistributedKv
 #endif // KV_SCHEDULER_H

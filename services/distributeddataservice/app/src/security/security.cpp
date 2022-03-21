@@ -257,4 +257,4 @@ DBStatus Security::GetDirSecurityOption(const std::string &filePath, SecurityOpt
     ZLOGI("the filePath is a directory!");
     return DBStatus::NOT_SUPPORT;
 }
-}
+} // namespace OHOS::DistributedKv

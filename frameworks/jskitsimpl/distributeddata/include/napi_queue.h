@@ -112,5 +112,5 @@ private:
     };
     static void GenerateOutput(ContextBase* ctxt);
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_NAPI_QUEUE_H

@@ -30,4 +30,4 @@ std::shared_ptr<BroadcastSender> BroadcastSender::GetInstance()
     }
     return instance_;
 }
-}
+} // namespace OHOS::DistributedKv

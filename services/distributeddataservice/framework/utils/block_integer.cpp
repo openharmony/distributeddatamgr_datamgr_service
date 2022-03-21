@@ -37,4 +37,4 @@ BlockInteger &BlockInteger::operator=(int value)
     value_ = value;
     return *this;
 }
-}
+} // namespace OHOS::DistributedData

@@ -74,5 +74,5 @@ bool MeidaLibChecker::IsValid(pid_t uid, const std::string &bundleName)
 
     return true;
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

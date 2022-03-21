@@ -48,5 +48,5 @@ bool DirectoryConfig::Unmarshal(const json &node)
     ret = GetValue(node, GET_NAME(strategy), strategy) && ret;
     return ret;
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

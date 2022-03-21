@@ -27,6 +27,6 @@ struct SecretKeyMetaData final : public Serializable {
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_SECRET_KEY_META_DATA_H

@@ -23,6 +23,6 @@ class Anonymous {
 public:
     API_EXPORT static std::string Change(const std::string &name);
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_UTILS_ANONYMOUS_H

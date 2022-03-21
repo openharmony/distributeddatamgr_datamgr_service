@@ -49,6 +49,6 @@ private:
     std::map<std::string, Checker *> checkers_;
     ConcurrentMap<std::string, std::function<Checker *()>> getters_;
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CHECKER_CHECKER_MANAGER_H

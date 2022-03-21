@@ -30,7 +30,7 @@ namespace DistributedData {
 struct Serializable {
 public:
     using json = nlohmann::json;
-    using size_type= nlohmann::json::size_type;
+    using size_type = nlohmann::json::size_type;
     using error_handler_t = nlohmann::detail::error_handler_t;
     API_EXPORT json Marshall() const;
     template<typename T>
@@ -112,6 +112,6 @@ protected:
 
     API_EXPORT static const json &GetSubNode(const json &node, const std::string &name);
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H

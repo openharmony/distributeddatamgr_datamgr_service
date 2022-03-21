@@ -22,6 +22,6 @@
 
 namespace OHOS::DistributedData {
 napi_status InitConstProperties(napi_env env, napi_value exports);
-}
+} // namespace OHOS::DistributedData
 
 #endif // OHOS_JS_CONST_PROPERTIES_H

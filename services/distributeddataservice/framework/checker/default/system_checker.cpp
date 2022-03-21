@@ -53,5 +53,5 @@ bool SystemChecker::IsValid(pid_t uid, const std::string &bundleName)
 {
     return (uid < SYSTEM_UID && uid != CheckerManager::INVALID_UID);
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

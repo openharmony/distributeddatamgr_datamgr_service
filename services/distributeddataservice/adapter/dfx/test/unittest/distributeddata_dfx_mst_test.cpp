@@ -54,7 +54,7 @@ HWTEST_F(DistributedataDfxMSTTest, Dfx001, TestSize.Level0)
      */
     auto comFault = Reporter::GetInstance()->CommunicationFault();
     EXPECT_NE(nullptr, comFault);
-    struct FaultMsg msg{.faultType= FaultType::SERVICE_FAULT, .moduleName = "comm", .interfaceName = "sendData",
+    struct FaultMsg msg{.faultType = FaultType::SERVICE_FAULT, .moduleName = "comm", .interfaceName = "sendData",
             .errorType = Fault::CF_CREATE_SESSION};
     auto repStatus = comFault->Report(msg);
     EXPECT_TRUE(repStatus == ReportStatus::SUCCESS);

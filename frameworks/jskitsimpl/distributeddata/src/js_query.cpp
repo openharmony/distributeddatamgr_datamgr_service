@@ -664,4 +664,4 @@ napi_value JsQuery::GetSqlLike(napi_env env, napi_callback_info info)
     JSUtil::SetValue(env, query.ToString(), ctxt->output);
     return ctxt->output;
 }
-} //
+} // namespace OHOS::DistributedData

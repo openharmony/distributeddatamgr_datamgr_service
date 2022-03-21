@@ -57,4 +57,4 @@ void JSObserver::AsyncCall(UvQueue::NapiArgsGenerator genArgs)
         return callback;
         }, genArgs);
 }
-}
+} // namespace OHOS::DistributedData

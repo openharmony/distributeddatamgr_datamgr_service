@@ -55,7 +55,7 @@ private:
 
     TokenBucket sustainedTokenBucket_; // token bucket to deal with sustained events.
 };
-}
-}
+} // namespace DistributedKv
+} // namespace OHOS
 
 #endif // FOUNDATION_KVSTORE_FLOW_CTRL_MANAGER_H

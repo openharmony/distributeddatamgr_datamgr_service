@@ -70,5 +70,5 @@ bool KvStoreFlowCtrlManager::IsTokenEnoughSlice(TokenBucket &tokenBucket, uint64
         return tokenBucket.leftNumInTokenBucket >= 1;
     }
 }
-}
-}
+} // namespace DistributedKv
+} // namespace OHOS

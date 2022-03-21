@@ -30,5 +30,5 @@ private:
     std::shared_ptr<UvQueue> uvQueue_;
     napi_ref callback_;
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_JS_OBSERVER_H

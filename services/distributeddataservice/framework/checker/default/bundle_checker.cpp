@@ -89,5 +89,5 @@ bool BundleChecker::IsValid(pid_t uid, const std::string &bundleName)
     auto bundleInfo = std::make_unique<BundleInfo>();
     return bmsClient.GetBundleInfo(bundle, BundleFlag::GET_BUNDLE_DEFAULT, *bundleInfo, Constants::ANY_USERID);
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

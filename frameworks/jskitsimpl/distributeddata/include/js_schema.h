@@ -23,7 +23,7 @@
 namespace OHOS::DistributedData {
 class JsSchema {
 public:
-    JsSchema(napi_env env);
+    explicit JsSchema(napi_env env);
     ~JsSchema();
 
     static napi_value Constructor(napi_env env);
@@ -59,5 +59,5 @@ private:
     uint32_t mode = SCHEMA_MODE_SLOPPY;
     uint32_t skip = 0;
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_SCHEMA_H

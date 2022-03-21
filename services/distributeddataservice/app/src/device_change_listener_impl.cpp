@@ -41,4 +41,4 @@ AppDistributedKv::ChangeLevelType DeviceChangeListenerImpl::GetChangeLevelType()
 {
     return AppDistributedKv::ChangeLevelType::MIN;
 }
-}
+} // namespace OHOS::DistributedKv

@@ -44,5 +44,5 @@ private:
     int interval_ = 0;
     int value_ = 0;
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_UTILS_BLOCK_INTEGER_H

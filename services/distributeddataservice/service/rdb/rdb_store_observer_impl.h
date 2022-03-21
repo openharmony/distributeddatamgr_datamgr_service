@@ -33,5 +33,5 @@ private:
     pid_t pid_ {};
     RdbServiceImpl* owner_ {};
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

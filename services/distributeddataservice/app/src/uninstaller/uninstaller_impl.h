@@ -42,5 +42,5 @@ public:
 private:
     std::shared_ptr<UninstallEventSubscriber> subscriber_ {};
 };
-}
+} // namespace OHOS::DistributedKv
 #endif // DISTRIBUTEDDATAMGR_UNINSTALLER_IMPL_H

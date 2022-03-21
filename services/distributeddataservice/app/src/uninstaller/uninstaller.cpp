@@ -22,4 +22,4 @@ Uninstaller &Uninstaller::GetInstance()
     static UninstallerImpl uninstaller;
     return uninstaller;
 }
-}
+} // namespace OHOS::DistributedKv

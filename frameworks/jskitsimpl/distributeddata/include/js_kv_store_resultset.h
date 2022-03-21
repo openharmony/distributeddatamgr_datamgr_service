@@ -46,6 +46,5 @@ private:
 
     std::shared_ptr<DistributedKv::KvStoreResultSet> resultSet_ = nullptr;
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_KV_STORE_RESELTSET_H
-

@@ -38,5 +38,5 @@ public:
     virtual int32_t UnSubscribe(const RdbSyncerParam& param, const SubscribeOption& option,
                                 RdbStoreObserver *observer) = 0;
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

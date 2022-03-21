@@ -140,4 +140,4 @@ napi_status InitConstProperties(napi_env env, napi_value exports)
 
     return napi_define_properties(env, exports, count, properties);
 }
-}
+} // namespace OHOS::DistributedData

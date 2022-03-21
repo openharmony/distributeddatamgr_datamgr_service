@@ -40,5 +40,5 @@ private:
     std::recursive_mutex mutex_;
     std::vector<std::shared_ptr<KvStoreSyncCallback>> callbacks_;
 };
-}
+} // namespace OHOS::DistributedKv
 #endif // DISTRIBUTEDDATAMGR_DATAMGR_SYNC_OBSERVER_H

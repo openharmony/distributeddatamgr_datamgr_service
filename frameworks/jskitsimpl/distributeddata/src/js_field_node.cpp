@@ -274,4 +274,4 @@ std::string JsFieldNode::Dump()
     };
     return jsNode.dump();
 }
-}
+} // namespace OHOS::DistributedData

@@ -218,6 +218,6 @@ protected:
     //     Status of this control operation.
     KVSTORE_API virtual Status Control(KvControlCmd cmd, const KvParam &inputParam, KvParam &output) = 0;
 };
-}  // namespace AppDistributedKv
+}  // namespace DistributedKv
 }  // namespace OHOS
 #endif  // SINGLE_KV_STORE_H

@@ -71,5 +71,5 @@ private:
         [RDB_SERVICE_CMD_UNSUBSCRIBE] = &RdbServiceStub::OnRemoteDoUnSubscribe,
     };
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

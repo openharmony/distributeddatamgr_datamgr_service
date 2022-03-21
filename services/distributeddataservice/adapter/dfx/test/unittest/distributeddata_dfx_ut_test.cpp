@@ -62,7 +62,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx001, TestSize.Level0)
      */
     auto comFault = Reporter::GetInstance()->CommunicationFault();
     EXPECT_NE(nullptr, comFault);
-    struct FaultMsg msg{.faultType= FaultType::SERVICE_FAULT, .moduleName = "comm", .interfaceName = "sendData",
+    struct FaultMsg msg{.faultType = FaultType::SERVICE_FAULT, .moduleName = "comm", .interfaceName = "sendData",
             .errorType = Fault::CF_CREATE_SESSION};
     auto repStatus = comFault->Report(msg);
     EXPECT_TRUE(repStatus == ReportStatus::SUCCESS);
@@ -97,7 +97,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx002, TestSize.Level0)
      */
     auto dbFault = Reporter::GetInstance()->DatabaseFault();
     EXPECT_NE(nullptr, dbFault);
-    struct FaultMsg msg{.faultType= FaultType::SERVICE_FAULT, .moduleName = "database",
+    struct FaultMsg msg{.faultType = FaultType::SERVICE_FAULT, .moduleName = "database",
             .interfaceName = "getKvStore",
             .errorType = Fault::DF_DB_DAMAGE};
     auto repStatus = dbFault->Report(msg);

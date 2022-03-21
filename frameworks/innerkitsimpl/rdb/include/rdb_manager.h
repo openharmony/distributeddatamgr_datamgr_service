@@ -28,5 +28,5 @@ class RdbManager {
 public:
     static std::shared_ptr<RdbService> GetRdbService(const RdbSyncerParam& param);
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

@@ -53,5 +53,5 @@ std::string Crypto::Sha256(const void *data, size_t size, bool isUpper)
     hash[SHA256_DIGEST_LENGTH * 2] = 0;
     return reinterpret_cast<char *>(hash);
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

@@ -109,5 +109,5 @@ bool DdsTrace::SetBytraceEnable()
     ZLOGD("success, current tag is true");
     return true;
 }
-} // namespace OHOS
 } // namespace DistributedKv
+} // namespace OHOS

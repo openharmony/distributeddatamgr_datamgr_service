@@ -431,5 +431,4 @@ bool ITypesUtil::WriteVector(Parcel &parcel, const std::vector<T> &val, bool (Pa
     }
     return true;
 }
-}
-
+} // namespace OHOS::DistributedKv

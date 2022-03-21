@@ -39,5 +39,5 @@ private:
     napi_env env_ = nullptr;
     uv_loop_s* loop_ = nullptr;
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_UV_QUEUE_H

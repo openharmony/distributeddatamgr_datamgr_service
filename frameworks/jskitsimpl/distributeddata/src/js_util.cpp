@@ -737,7 +737,7 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, std::list<DistributedK
 
 napi_status JSUtil::SetValue(napi_env env, const std::list<DistributedKv::Entry>& in, napi_value& out)
 {
-    ZLOGD("napi_value <- std::list<DistributedKv::Entry> %{public}u", static_cast<int>(in.size()));
+    ZLOGD("napi_value <- std::list<DistributedKv::Entry> %{public}d", static_cast<int>(in.size()));
     napi_status status = napi_create_array_with_length(env, in.size(), &out);
     CHECK_RETURN(status == napi_ok, "create array failed!", status);
     int index = 0;
@@ -777,7 +777,7 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, std::vector<Distribute
 
 napi_status JSUtil::SetValue(napi_env env, const std::vector<DistributedKv::Entry>& in, napi_value& out)
 {
-    ZLOGD("napi_value <- std::vector<DistributedKv::Entry> %{public}u", static_cast<int>(in.size()));
+    ZLOGD("napi_value <- std::vector<DistributedKv::Entry> %{public}d", static_cast<int>(in.size()));
     napi_status status = napi_create_array_with_length(env, in.size(), &out);
     CHECK_RETURN(status == napi_ok, "create array failed!", status);
     int index = 0;
@@ -818,7 +818,7 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, std::vector<Distribute
 
 napi_status JSUtil::SetValue(napi_env env, const std::vector<DistributedKv::StoreId>& in, napi_value& out)
 {
-    ZLOGD("napi_value <- std::vector<DistributedKv::StoreId>  %{public}u", static_cast<int>(in.size()));
+    ZLOGD("napi_value <- std::vector<DistributedKv::StoreId>  %{public}d", static_cast<int>(in.size()));
     napi_status status = napi_create_array_with_length(env, in.size(), &out);
     CHECK_RETURN((status == napi_ok), "create_array failed!", status);
     int index = 0;
@@ -995,4 +995,4 @@ bool JSUtil::Equals(napi_env env, napi_value value, napi_ref copy)
     napi_strict_equals(env, value, copyValue, &isEquals);
     return isEquals;
 }
-} // OHOS::DistributedData
+} // namespace OHOS::DistributedData

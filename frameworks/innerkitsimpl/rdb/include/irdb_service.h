@@ -51,5 +51,5 @@ protected:
 
     virtual int32_t DoUnSubscribe(const RdbSyncerParam& param) = 0;
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

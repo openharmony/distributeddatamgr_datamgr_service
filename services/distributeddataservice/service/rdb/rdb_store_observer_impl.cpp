@@ -38,4 +38,4 @@ void RdbStoreObserverImpl::OnChange(const DistributedDB::StoreChangedData &data)
         owner_->OnDataChange(pid_, data);
     }
 }
-}
+} // namespace OHOS::DistributedRdb

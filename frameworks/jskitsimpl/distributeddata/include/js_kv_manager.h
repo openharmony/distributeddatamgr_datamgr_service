@@ -55,5 +55,5 @@ private:
     std::list<std::shared_ptr<DeathRecipient>> deathRecipient_ {};
     std::shared_ptr<UvQueue> uvQueue_;
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_KV_MANAGER_H

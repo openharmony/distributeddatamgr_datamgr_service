@@ -182,4 +182,3 @@ T Constant::TrimCopy(T s)
 }  // namespace DistributedKv
 }  // namespace OHOS
 #endif // KV_DATASERVICE_CONSTANT_H
-

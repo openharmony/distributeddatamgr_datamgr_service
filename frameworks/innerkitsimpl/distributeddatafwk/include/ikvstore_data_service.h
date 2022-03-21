@@ -178,6 +178,6 @@ public:
 private:
     static inline BrokerDelegator<KvStoreDataServiceProxy> delegator_;
 };
-}
+} // namespace OHOS::DistributedKv
 
 #endif  // I_KV_STORE_DATA_SERVICE_H

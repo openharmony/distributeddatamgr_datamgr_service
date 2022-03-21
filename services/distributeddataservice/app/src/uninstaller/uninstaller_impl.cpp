@@ -124,4 +124,4 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
     th.detach();
     return Status::SUCCESS;
 }
-}
+} // namespace OHOS::DistributedKv

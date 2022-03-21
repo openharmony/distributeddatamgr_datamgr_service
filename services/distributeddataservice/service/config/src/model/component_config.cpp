@@ -40,5 +40,5 @@ bool ComponentConfig::Unmarshal(const json &node)
     }
     return true;
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

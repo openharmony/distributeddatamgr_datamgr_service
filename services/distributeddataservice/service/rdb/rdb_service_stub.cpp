@@ -189,4 +189,4 @@ int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageP
     }
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
-}
+} // namespace OHOS::DistributedRdb

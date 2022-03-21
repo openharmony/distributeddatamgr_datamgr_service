@@ -2342,4 +2342,3 @@ HWTEST_F(LocalSubscribeStoreTest, ChangeNotificationMarshalling001, TestSize.Lev
     EXPECT_EQ(changeOut->IsClear(), false);
     delete changeOut;
 }
-

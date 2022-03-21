@@ -35,7 +35,7 @@ enum {
  */
 class JsKVStore {
 public:
-    JsKVStore(const std::string& storeId);
+    explicit JsKVStore(const std::string& storeId);
     virtual ~JsKVStore();
 
     void SetNative(std::shared_ptr<DistributedKv::SingleKvStore>& kvStore);

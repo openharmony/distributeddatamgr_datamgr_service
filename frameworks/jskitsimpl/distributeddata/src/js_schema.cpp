@@ -235,4 +235,4 @@ std::string JsSchema::Dump()
     };
     return js.dump();
 }
-}
+} // namespace OHOS::DistributedData

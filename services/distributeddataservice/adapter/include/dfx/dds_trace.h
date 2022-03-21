@@ -47,6 +47,6 @@ private:
     uint32_t traceCount{ 0 };
     bool isSendToHiview{ false };
 };
-} // namespace OHOS
 } // namespace DistributedKv
+} // namespace OHOS
 #endif

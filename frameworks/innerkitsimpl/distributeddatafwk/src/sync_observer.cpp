@@ -47,4 +47,4 @@ void SyncObserver::SyncCompleted(const std::map<std::string, DistributedKv::Stat
         callback->SyncCompleted(results);
     }
 }
-}
+} // namespace OHOS::DistributedKv

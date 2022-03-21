@@ -36,5 +36,5 @@ bool SecretKeyMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(kvStoreType), kvStoreType);
     return true;
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

@@ -375,4 +375,4 @@ void RdbServiceProxy::ImportObservers(ObserverMap &observers)
         return false;
     });
 }
-}
+} // namespace OHOS::DistributedRdb

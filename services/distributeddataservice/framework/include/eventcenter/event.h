@@ -35,6 +35,6 @@ public:
 private:
     int32_t evtId_;
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_EVENTCENTER_EVENT_H

@@ -102,5 +102,5 @@ public:
 
 struct DropOption {
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

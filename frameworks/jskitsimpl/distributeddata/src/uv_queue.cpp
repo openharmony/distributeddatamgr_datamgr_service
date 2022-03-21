@@ -79,4 +79,4 @@ napi_env UvQueue::GetEnv()
 {
     return env_;
 }
-}
+} // namespace OHOS::DistributedData

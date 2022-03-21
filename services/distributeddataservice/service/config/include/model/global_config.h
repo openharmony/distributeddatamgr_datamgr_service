@@ -35,6 +35,6 @@ public:
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_GLOBAL_CONFIG_H

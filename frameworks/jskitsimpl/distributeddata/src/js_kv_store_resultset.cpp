@@ -271,4 +271,4 @@ napi_value JsKVStoreResultSet::GetEntry(napi_env env, napi_callback_info info) /
     NAPI_ASSERT(env, ctxt->status == napi_ok, "GetEntry failed!");
     return ctxt->output;
 }
-} //
+} // namespace OHOS::DistributedData

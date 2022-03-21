@@ -26,6 +26,6 @@ public:
     API_EXPORT static std::string Sha256(const void *data, size_t size, bool isUpper = false);
     API_EXPORT static std::vector<uint8_t> Random(int32_t len);
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_UTILS_CRYPTO_H

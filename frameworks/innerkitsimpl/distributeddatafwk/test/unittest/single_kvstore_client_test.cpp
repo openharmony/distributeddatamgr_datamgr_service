@@ -165,7 +165,7 @@ void KvStoreSyncCallbackTestImpl::SyncCompleted(const std::map<std::string, Stat
 * @tc.require: SR000DORPS AR000DPRQ7 AR000DDPRPL
 * @tc.author: hongbo
 */
-HWTEST_F(SingleKvStoreClientTest, GetStoreId001 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, GetStoreId001, TestSize.Level1)
 {
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
 
@@ -180,7 +180,7 @@ HWTEST_F(SingleKvStoreClientTest, GetStoreId001 ,TestSize.Level1)
 * @tc.require: SR000DORPS AR000DPRQ7 AR000DDPRPL
 * @tc.author: hongbo
 */
-HWTEST_F(SingleKvStoreClientTest, PutGetDelete001 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, PutGetDelete001, TestSize.Level1)
 {
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
 
@@ -217,7 +217,7 @@ HWTEST_F(SingleKvStoreClientTest, PutGetDelete001 ,TestSize.Level1)
 * @tc.require: SR000DORPS AR000DPRQ7 AR000DDPRPL
 * @tc.author: hongbo
 */
-HWTEST_F(SingleKvStoreClientTest, GetEntriesAndResultSet001 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, GetEntriesAndResultSet001, TestSize.Level1)
 {
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
 
@@ -265,7 +265,7 @@ HWTEST_F(SingleKvStoreClientTest, GetEntriesAndResultSet001 ,TestSize.Level1)
 * @tc.require: SR000DORPS AR000DPRQ7 AR000DDPRPL
 * @tc.author: hongbo
 */
-HWTEST_F(SingleKvStoreClientTest, Subscribe001 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, Subscribe001, TestSize.Level1)
 {
     auto observer = std::make_shared<KvStoreObserverTestImpl>();
     auto subStatus = singleKvStorePtr->SubscribeKvStore(SubscribeType::SUBSCRIBE_TYPE_ALL, observer);
@@ -285,7 +285,7 @@ HWTEST_F(SingleKvStoreClientTest, Subscribe001 ,TestSize.Level1)
 * @tc.require: SR000DORPS AR000DPRQ7 AR000DDPRPL
 * @tc.author: hongbo
 */
-HWTEST_F(SingleKvStoreClientTest, SyncCallback001 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, SyncCallback001, TestSize.Level1)
 {
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
 
@@ -313,7 +313,7 @@ HWTEST_F(SingleKvStoreClientTest, SyncCallback001 ,TestSize.Level1)
 * @tc.require: SR000DORPS AR000DPRQ7 AR000DDPRPL
 * @tc.author: hongbo
 */
-HWTEST_F(SingleKvStoreClientTest, RemoveDeviceData001 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, RemoveDeviceData001, TestSize.Level1)
 {
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
 
@@ -338,7 +338,7 @@ HWTEST_F(SingleKvStoreClientTest, RemoveDeviceData001 ,TestSize.Level1)
 * @tc.require: SR000DORPS AR000DPRQ7 AR000DDPRPL
 * @tc.author: hongbo
 */
-HWTEST_F(SingleKvStoreClientTest, SyncData001 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, SyncData001, TestSize.Level1)
 {
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
     std::string deviceId = "no_exist_device_id";
@@ -354,7 +354,7 @@ HWTEST_F(SingleKvStoreClientTest, SyncData001 ,TestSize.Level1)
 * @tc.require: AR000DPSF1
 * @tc.author: YangLeda
 */
-HWTEST_F(SingleKvStoreClientTest, TestSchemaStoreC001 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, TestSchemaStoreC001, TestSize.Level1)
 {
     std::shared_ptr<SingleKvStore> schemaSingleKvStorePtr;
     DistributedKvDataManager manager;
@@ -384,7 +384,7 @@ HWTEST_F(SingleKvStoreClientTest, TestSchemaStoreC001 ,TestSize.Level1)
 * @tc.require: SR000DOGQE AR000DPUAN
 * @tc.author: wangtao
 */
-HWTEST_F(SingleKvStoreClientTest, SyncData002 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, SyncData002, TestSize.Level1)
 {
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
     std::string deviceId = "no_exist_device_id";
@@ -401,7 +401,7 @@ HWTEST_F(SingleKvStoreClientTest, SyncData002 ,TestSize.Level1)
 * @tc.require: SR000DOGQE AR000DPUAO
 * @tc.author: wangtao
 */
-HWTEST_F(SingleKvStoreClientTest, SetSync001 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, SetSync001, TestSize.Level1)
 {
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
     KvSyncParam syncParam{ 500 }; // 500ms
@@ -420,7 +420,7 @@ HWTEST_F(SingleKvStoreClientTest, SetSync001 ,TestSize.Level1)
 * @tc.require: SR000DOGQE AR000DPUAO
 * @tc.author: wangtao
 */
-HWTEST_F(SingleKvStoreClientTest, SetSync002 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, SetSync002, TestSize.Level1)
 {
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
     KvSyncParam syncParam2{ 50 }; // 50ms
@@ -1104,4 +1104,3 @@ HWTEST_F(SingleKvStoreClientTest, UnSubscribeWithQuery001, TestSize.Level1)
     auto unSubscribeStatus = singleKvStorePtr->UnsubscribeWithQuery(deviceIds, dataQuery);
     EXPECT_NE(unSubscribeStatus, Status::SUCCESS) << "sync device should not return success";
 }
-

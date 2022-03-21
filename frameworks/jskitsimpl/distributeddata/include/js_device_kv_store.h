@@ -21,7 +21,7 @@
 namespace OHOS::DistributedData {
 class JsDeviceKVStore : public JsKVStore {
 public:
-    JsDeviceKVStore(const std::string& storeId);
+    explicit JsDeviceKVStore(const std::string& storeId);
     ~JsDeviceKVStore() = default;
 
     static napi_value Constructor(napi_env env);
@@ -39,5 +39,5 @@ private:
     static napi_value OnEvent(napi_env env, napi_callback_info info);
     static napi_value OffEvent(napi_env env, napi_callback_info info);
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_DEVICE_KV_STORE_H

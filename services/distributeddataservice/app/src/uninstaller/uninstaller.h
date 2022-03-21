@@ -30,5 +30,5 @@ public:
     KVSTORE_API virtual ~Uninstaller() {};
     KVSTORE_API static Uninstaller &GetInstance();
 };
-}
+} // namespace OHOS::DistributedKv
 #endif // DISTRIBUTEDDATAMGR_UNINSTALLER_H

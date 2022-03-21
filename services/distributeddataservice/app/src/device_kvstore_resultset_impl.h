@@ -24,6 +24,6 @@ public:
     explicit DeviceKvStoreResultSetImpl(DistributedDB::KvStoreResultSet *resultSet, DistributedDB::Key keyPrefix = {});
     Status GetEntry(Entry &entry) override;
 };
-}
+} // namespace OHOS::DistributedKv
 
 #endif // DEVICE_KVSTORE_RESULTSET_IMPL_H

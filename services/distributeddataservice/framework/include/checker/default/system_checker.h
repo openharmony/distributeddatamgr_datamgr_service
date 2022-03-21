@@ -32,6 +32,6 @@ private:
     std::map<std::string, std::string> trusts_;
     static SystemChecker instance_;
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_SYSTEM_CHECKER_H

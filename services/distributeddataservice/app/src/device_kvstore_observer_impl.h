@@ -29,5 +29,5 @@ private:
     std::string localDeviceId_;
     sptr<IKvStoreObserver> observerProxy_;
 };
-}
+} // namespace OHOS::DistributedKv
 #endif // DEVICE_KVSTORE_OBSERVER_IMPL_H

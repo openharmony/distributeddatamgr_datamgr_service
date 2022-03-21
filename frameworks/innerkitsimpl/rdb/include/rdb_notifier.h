@@ -79,5 +79,5 @@ private:
     RdbSyncCompleteNotifier completeNotifier_;
     RdbDataChangeNotifier changeNotifier_;
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

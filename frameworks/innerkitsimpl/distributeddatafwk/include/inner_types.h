@@ -23,6 +23,6 @@ enum class InnerStatus {
     DECREASE_REFCOUNT,
     ERROR,
 };
-}
-}
+} // namespace DistributedKv
+} // namespace OHOS
 #endif

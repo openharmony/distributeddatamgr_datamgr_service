@@ -44,5 +44,5 @@ public:
 private:
     KvStoreAppAccessor();
 };
-}
+} // namespace OHOS::DistributedKv
 #endif // KVSTORE_APP_ACCESSOR_H

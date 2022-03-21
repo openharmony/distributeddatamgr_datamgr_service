@@ -108,7 +108,7 @@ int32_t RdbSyncer::Init(pid_t pid, pid_t uid)
 int32_t RdbSyncer::CreateMetaData()
 {
     DistributedKv::KvStoreMetaData meta;
-    meta.kvStoreType =static_cast<DistributedKv::KvStoreType>(RDB_DEVICE_COLLABORATION);
+    meta.kvStoreType = static_cast<DistributedKv::KvStoreType>(RDB_DEVICE_COLLABORATION);
     meta.appId = GetAppId();
     meta.appType = "harmony";
     meta.bundleName = GetBundleName();
@@ -332,4 +332,4 @@ int32_t RdbSyncer::DoAsync(const SyncOption &option, const RdbPredicates &predic
                               callback(result);
                           }, false);
 }
-}
+} // namespace OHOS::DistributedRdb

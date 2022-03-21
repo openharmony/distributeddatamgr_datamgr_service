@@ -94,5 +94,5 @@ CheckerManager::Checker *CheckerManager::GetChecker(const std::string &checker)
     }
     return it->second;
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

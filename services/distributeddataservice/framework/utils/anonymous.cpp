@@ -33,5 +33,5 @@ std::string Anonymous::Change(const std::string &name)
 
     return (name.substr(0, HEAD_SIZE) + REPLACE_CHAIN + name.substr(name.length() - END_SIZE, END_SIZE));
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

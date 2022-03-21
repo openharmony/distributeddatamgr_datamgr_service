@@ -27,4 +27,4 @@ void DeviceStatusChangeListenerClient::OnChange(const DeviceInfo &results, const
         listener_->OnDeviceChanged(results, type);
     }
 }
-}
+} // namespace OHOS::DistributedKv

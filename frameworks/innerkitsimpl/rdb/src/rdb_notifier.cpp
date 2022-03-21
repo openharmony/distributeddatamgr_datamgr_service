@@ -164,4 +164,4 @@ int32_t RdbNotifierStub::OnChange(const std::string& storeName, const std::vecto
     }
     return RDB_OK;
 }
-}
+} // namespace OHOS::DistributedRdb

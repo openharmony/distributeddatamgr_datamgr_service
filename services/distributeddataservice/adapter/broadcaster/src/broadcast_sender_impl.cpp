@@ -60,4 +60,4 @@ void BroadcastSenderImpl::SendEvent(const EventParams &params)
     CommonEventManager::UnSubscribeCommonEvent(subscriberPtr);
     ZLOGI("SendEvent result:%{public}d.", result);
 }
-}
+} // namespace OHOS::DistributedKv

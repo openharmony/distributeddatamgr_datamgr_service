@@ -62,6 +62,6 @@ private:
     ConcurrentMap<int32_t, std::list<std::function<void(const Event &)>>> observers_;
     static thread_local AsyncQueue *asyncQueue_;
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_EVENTCENTER_EVENT_CENTER_H

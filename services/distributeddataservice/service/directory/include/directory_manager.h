@@ -90,5 +90,5 @@ private:
     std::map<std::string, Strategy> patterns_;
     std::string version_;
 };
-} // namespace OHOS::DistributedKv
+} // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_DIRECTORY_MANAGER_H

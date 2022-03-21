@@ -314,4 +314,4 @@ int32_t RdbServiceImpl::DoUnSubscribe(const RdbSyncerParam& param)
     identifiers_.Erase(identifier);
     return RDB_OK;
 }
-}
+} // namespace OHOS::DistributedRdb

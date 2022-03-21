@@ -83,5 +83,5 @@ private:
 
     static inline BrokerDelegator<RdbServiceProxy> delegator_;
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

@@ -37,6 +37,6 @@ private:
     GlobalConfig config_;
     bool isInited = false;
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_CONFIG_FACTORY_H

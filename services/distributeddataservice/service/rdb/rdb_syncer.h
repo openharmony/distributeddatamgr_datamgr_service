@@ -96,5 +96,5 @@ private:
 
     static constexpr int DECIMAL_BASE = 10;
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

@@ -145,4 +145,4 @@ void RdbManagerImpl::ResetServiceHandle()
     distributedDataMgr_ = nullptr;
     rdbService_ = nullptr;
 }
-}
+} // namespace OHOS::DistributedRdb

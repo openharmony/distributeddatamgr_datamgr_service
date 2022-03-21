@@ -120,4 +120,4 @@ void KvStoreAppAccessor::OnCallback(const std::string &userId, const std::string
         ZLOGD("AppId:%s is closed.", appId.c_str());
     }
 }
-}
+} // namespace OHOS::DistributedKv

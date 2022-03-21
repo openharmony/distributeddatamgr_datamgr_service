@@ -30,5 +30,5 @@ bool MetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(secretKeyMetaData), secretKeyMetaData);
     return true;
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

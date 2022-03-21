@@ -27,6 +27,6 @@ struct MetaData final : public Serializable {
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_META_DATA_H

@@ -49,5 +49,5 @@ private:
     void DeletePrefixAndSuffix(const Key &in, std::vector<uint8_t> &out);
     static std::string localDeviceId_;
 };
-}
+} // namespace OHOS::DistributedKv
 #endif // DEVICE_KVSTORE_IMPL_H

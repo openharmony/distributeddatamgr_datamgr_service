@@ -49,4 +49,4 @@ Status DeviceKvStoreResultSetImpl::GetEntry(Entry &entry)
     ZLOGD("RS end.");
     return Status::SUCCESS;
 }
-}
+} // namespace OHOS::DistributedKv

@@ -238,4 +238,4 @@ KvStoreResultSetImpl *DeviceKvStoreImpl::CreateResultSet(
 {
     return new (std::nothrow) DeviceKvStoreResultSetImpl(resultSet, prix);
 }
-}
+} // namespace OHOS::DistributedKv

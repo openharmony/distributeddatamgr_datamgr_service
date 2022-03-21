@@ -81,4 +81,4 @@ void DeviceKvStoreObserverImpl::Transfer(const std::list<DistributedDB::Entry> &
         output.push_back(tmpEntry);
     }
 }
-}
+} // namespace OHOS::DistributedKv

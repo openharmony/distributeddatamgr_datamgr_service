@@ -90,5 +90,5 @@ private:
     static constexpr int32_t MAX_SYNCER_PER_PROCESS = 10;
     static constexpr int32_t SYNCER_TIMEOUT = 60 * 1000; // ms
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif

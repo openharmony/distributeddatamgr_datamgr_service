@@ -68,6 +68,6 @@ union Head {
     HeaderInfo headerInfo;
     uint8_t headArray[DataBuffer::HEADER_LEN];
 } __attribute__((packed));
-}
-}
+} // namespace AppDistributedKv
+} // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_DATA_BUFFER_H

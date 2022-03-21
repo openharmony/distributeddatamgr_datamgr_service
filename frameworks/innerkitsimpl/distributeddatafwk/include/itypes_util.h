@@ -170,6 +170,5 @@ private:
     template<typename T>
     static std::list<T> Convert2List(std::vector<T> &&entries);
 };
-}
+} // namespace OHOS::DistributedKv
 #endif
-

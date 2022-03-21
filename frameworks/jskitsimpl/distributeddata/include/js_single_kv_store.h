@@ -21,7 +21,7 @@
 namespace OHOS::DistributedData {
 class JsSingleKVStore : public JsKVStore {
 public:
-    JsSingleKVStore(const std::string& storeId);
+    explicit JsSingleKVStore(const std::string& storeId);
     ~JsSingleKVStore() = default;
 
     static napi_value Constructor(napi_env env);
@@ -40,5 +40,5 @@ private:
     static napi_value SetSyncParam(napi_env env, napi_callback_info info);
     static napi_value GetSecurityLevel(napi_env env, napi_callback_info info);
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_SINGLE_KV_STORE_H

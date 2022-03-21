@@ -32,5 +32,5 @@ public:
 private:
     std::map<IRemoteObject *, sptr<IDeviceStatusChangeListener>> &observers_;
 };
-}
+} // namespace OHOS::DistributedKv
 #endif // DEV_DEVICE_CHANGE_LISTENER_IMPL_H
