@@ -204,7 +204,7 @@ std::map<std::string, CompositeFields> GetChangedIndexes(const TableInfo &oldTab
             itOld++;
             itNew++;
         } else if (itOld->first < itNew->first) {
-            indexes.insert({itOld->first,{}});
+            indexes.insert({itOld->first, {}});
             itOld++;
         } else if (itOld->first > itNew->first) {
             indexes.insert({itNew->first, itNew->second});
@@ -213,7 +213,7 @@ std::map<std::string, CompositeFields> GetChangedIndexes(const TableInfo &oldTab
     }
 
     while (itOld != itOldEnd) {
-        indexes.insert({itOld->first,{}});
+        indexes.insert({itOld->first, {}});
         itOld++;
     }
 

@@ -103,7 +103,7 @@ int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg
 int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config,
     const OnSendEnd &onEnd)
 {
-    if (dstTarget.size() == 0 || inMsg == nullptr) {
+    if (dstTarget.empty() || inMsg == nullptr) {
         return -E_INVALID_ARGS;
     }
     std::shared_ptr<ExtendHeaderHandle> extendHandle = nullptr;

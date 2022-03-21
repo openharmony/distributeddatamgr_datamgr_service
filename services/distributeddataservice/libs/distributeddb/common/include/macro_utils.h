@@ -24,7 +24,7 @@ namespace DistributedDB {
     ClassName& operator=(ClassName &&) = delete
 
 #define DECLARE_OBJECT_TAG(ClassName) \
-    virtual std::string GetObjectTag() const override; \
+    std::string GetObjectTag() const override; \
     constexpr static const char * const classTag = "Class-"#ClassName
 
 #define DEFINE_OBJECT_TAG_FACILITIES(ClassName) \

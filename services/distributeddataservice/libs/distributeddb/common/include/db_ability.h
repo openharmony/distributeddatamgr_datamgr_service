@@ -29,7 +29,7 @@ public:
     DbAbility();
     DbAbility(const DbAbility &other);
     DbAbility& operator=(const DbAbility &other);
-    ~DbAbility() {};
+    ~DbAbility() = default;
 
     bool operator==(const DbAbility &other) const;
     // translate dbAbility_ to std::vector<uint64_t>

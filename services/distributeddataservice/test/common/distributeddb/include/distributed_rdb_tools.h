@@ -44,7 +44,7 @@ const static std::string NON_EXISTENT_PATH = "/data/test/nonExistent_rdb/";
 const static std::string UNREADABLE_PATH = "/data/test/unreadable_rdb/";
 const static std::string UNWRITABLE_PATH = "/data/test/unwritable_rdb/";
 
-const static std::string NULL_STOREID = "";
+const static std::string NULL_STOREID = {};
 const static std::string ILLEGAL_STOREID = "rdb_$%#@~%";
 const static std::string MODE_STOREID = "rdb_mode";
 const static std::string FULL_STOREID = "rdb_full";

@@ -18,7 +18,6 @@
 #include <gtest/gtest.h>
 #include <openssl/rand.h>
 #include <thread>
-#include <thread>
 
 #include "db_types.h"
 #include "log_print.h"

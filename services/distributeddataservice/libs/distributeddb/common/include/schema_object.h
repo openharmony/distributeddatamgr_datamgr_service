@@ -51,7 +51,7 @@ public:
     SchemaObject(const SchemaObject &);
     SchemaObject& operator=(const SchemaObject &);
 #ifdef RELATIONAL_STORE
-    SchemaObject(const TableInfo &tableInfo);  // The construct func can only be used for query.
+    explicit SchemaObject(const TableInfo &tableInfo);  // The construct func can only be used for query.
 #endif  // RELATIONAL_STORE
 
     // Move constructor and move assignment is not need currently
@@ -145,7 +145,7 @@ private:
     // Choose inner-class other than friend-class to avoid forward declaration and using pointer.
     class FlatBufferSchema {
     public:
-        FlatBufferSchema(SchemaObject &owner) : owner_(owner) {};
+        explicit FlatBufferSchema(SchemaObject &owner) : owner_(owner) {};
         ~FlatBufferSchema() = default;
         DISABLE_COPY_ASSIGN_MOVE(FlatBufferSchema);
         // Copy-Constructor can not define due to Const-Ref member. Code standard require copy assignment be deleted.

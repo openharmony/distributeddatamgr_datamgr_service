@@ -1146,7 +1146,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteUserKeyValue003(SQ
     DataItem dataItem1;
     dataItem1.key = KV_ENTRY_1.key;
     dataItem1.value = KV_ENTRY_3.value;
-    dataItem1.timeStamp= timeStamp - 100UL; // less than current timeStamp
+    dataItem1.timeStamp = timeStamp - 100UL; // less than current timeStamp
     dataItem1.writeTimeStamp = dataItem1.timeStamp;
     dataItem1.flag = 0;
 

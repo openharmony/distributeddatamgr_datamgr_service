@@ -1939,7 +1939,7 @@ HWTEST_F(DistributeddbKvCreateTest, MergeRepeat001, TestSize.Level2)
     vector<Entry> entriesBatch;
     vector<Key> allKeys;
     DistributedDB::Entry entry;
-    int putCount=0;
+    int putCount = 0;
     entry.value.assign(TWO_M_LONG_STRING, 'v');
     GenerateTenThousandRecords(OPER_CNT_END, DEFAULT_START, allKeys, entriesBatch);
     for (vector<Entry>::iterator iter = entriesBatch.begin(); iter != entriesBatch.end(); iter++) {

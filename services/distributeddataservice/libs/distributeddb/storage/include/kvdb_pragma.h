@@ -87,7 +87,7 @@ struct PragmaSync {
 };
 
 struct PragmaRemotePushNotify {
-    PragmaRemotePushNotify(RemotePushFinishedNotifier notifier) : notifier_(notifier) {}
+    explicit PragmaRemotePushNotify(RemotePushFinishedNotifier notifier) : notifier_(notifier) {}
 
     RemotePushFinishedNotifier notifier_;
 };

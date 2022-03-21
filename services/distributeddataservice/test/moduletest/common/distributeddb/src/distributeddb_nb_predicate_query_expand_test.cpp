@@ -568,7 +568,7 @@ HWTEST_F(DistributeddbNbPredicateQueryExpandTest, NotNullTest003, TestSize.Level
      *    and check the query use GetEntries(query, Entries), GetEntries(query, resultSet), GetCount().
      * @tc.expected: step6. query success but the GetEntries will return INVALID_QUERY_FORMAT.
      */
-    Query query5= Query::Select().IsNotNull(".field2.field3");
+    Query query5 = Query::Select().IsNotNull(".field2.field3");
     EXPECT_TRUE(DistributedDBSchemaTestTools::CombinationCheckQueryResult(*g_nbQueryDelegate, query5, entriesExpect,
         DBStatus::INVALID_QUERY_FORMAT, true));
 }

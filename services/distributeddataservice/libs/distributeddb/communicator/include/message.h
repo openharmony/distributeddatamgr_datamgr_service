@@ -39,7 +39,7 @@ class Message {
 public:
     Message() = default;
 
-    Message(uint32_t inMsgId)
+    explicit Message(uint32_t inMsgId)
     {
         messageId_ = inMsgId;
     }

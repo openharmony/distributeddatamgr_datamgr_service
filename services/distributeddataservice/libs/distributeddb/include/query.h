@@ -148,7 +148,7 @@ public:
 
 private:
     Query() = default;
-    Query(const std::string &tableName);
+    explicit Query(const std::string &tableName);
 
     DB_SYMBOL void ExecuteCompareOperation(QueryObjType operType, const std::string &field,
         const QueryValueType type, const FieldValue &fieldValue);

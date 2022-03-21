@@ -23,7 +23,7 @@ template<typename T>
 class ObjectHolderTyped : public ObjectHolder {
 public:
     // Accept a heap object
-    ObjectHolderTyped(T *inObject)
+    explicit ObjectHolderTyped(T *inObject)
     {
         objectPtr_ = inObject;
     }

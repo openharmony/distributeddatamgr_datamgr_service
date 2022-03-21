@@ -51,7 +51,7 @@ void SetFrameType(uint8_t &inPacketType, FrameType inFrameType)
 }
 FrameType GetFrameType(uint8_t inPacketType)
 {
-    uint8_t frameType = ((inPacketType & 0xF0) >> 4); // Use 0x0F to get high 4 bits
+    uint8_t frameType = ((inPacketType & 0xF0) >> 4); // Use 0xF0 to get high 4 bits
     if (frameType >= static_cast<uint8_t>(FrameType::INVALID_MAX_FRAME_TYPE)) {
         return FrameType::INVALID_MAX_FRAME_TYPE;
     }

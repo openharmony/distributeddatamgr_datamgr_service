@@ -29,7 +29,7 @@ namespace DistributedDB {
 class NetworkAdapter : public IAdapter {
 public:
     NetworkAdapter();
-    NetworkAdapter(const std::string &inProcessLabel);
+    explicit NetworkAdapter(const std::string &inProcessLabel);
     NetworkAdapter(const std::string &inProcessLabel, const std::shared_ptr<IProcessCommunicator> &inCommunicator);
 
     ~NetworkAdapter() override;
