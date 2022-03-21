@@ -53,7 +53,7 @@ struct CommDivergeHeader {
     uint16_t version = 0;       // Version to differentiate fields layout
     uint16_t reserved = 0;      // Reserved for future usage
     uint32_t payLoadLen = 0;    // Indicate length of data that follows CommDivergeHeader
-    uint8_t commLabel[COMM_LABEL_LENGTH]; // Indicate which communicator to hand out this frame
+    uint8_t commLabel[COMM_LABEL_LENGTH] = {0}; // Indicate which communicator to hand out this frame
 };
 
 /*
