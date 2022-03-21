@@ -91,7 +91,7 @@ Status AppPipeMgr::Start(const PipeInfo &pipeInfo)
     auto it = dataBusMap_.find(pipeInfo.pipeId);
     if (it != dataBusMap_.end()) {
         ZLOGW("repeated start, pipeInfo:%{public}s.", pipeInfo.pipeId.c_str());
-        return Status::REPEATED_REGISTER;
+        return Status::SUCCESS;
     }
     ZLOGD("Start pipeInfo:%{public}s ", pipeInfo.pipeId.c_str());
     auto handler = std::make_shared<AppPipeHandler>(pipeInfo);
@@ -108,24 +108,20 @@ Status AppPipeMgr::Start(const PipeInfo &pipeInfo)
 // stop server
 Status AppPipeMgr::Stop(const PipeInfo &pipeInfo)
 {
-    std::shared_ptr<AppPipeHandler> appPipeHandler;
-    {
-        std::lock_guard<std::mutex> lock(dataBusMapMutex_);
-        auto it = dataBusMap_.find(pipeInfo.pipeId);
-        if (it == dataBusMap_.end()) {
-            ZLOGW("pipeInfo:%s not found", pipeInfo.pipeId.c_str());
-            return Status::KEY_NOT_FOUND;
-        }
-        appPipeHandler = it->second;
-        int ret = appPipeHandler->RemoveSessionServer(pipeInfo.pipeId);
-        if (ret != 0) {
-            ZLOGW("Stop pipeInfo:%s ret:%d.", pipeInfo.pipeId.c_str(), ret);
-            return Status::ERROR;
-        }
-        dataBusMap_.erase(pipeInfo.pipeId);
-        return Status::SUCCESS;
+    std::lock_guard<std::mutex> lock(dataBusMapMutex_);
+    auto it = dataBusMap_.find(pipeInfo.pipeId);
+    if (it == dataBusMap_.end()) {
+        ZLOGW("pipeInfo:%s not found", pipeInfo.pipeId.c_str());
+        return Status::KEY_NOT_FOUND;
     }
-    return Status::KEY_NOT_FOUND;
+    std::shared_ptr<AppPipeHandler> appPipeHandler = it->second;
+    int ret = appPipeHandler->RemoveSessionServer(pipeInfo.pipeId);
+    if (ret != 0) {
+        ZLOGW("Stop pipeInfo:%s ret:%d.", pipeInfo.pipeId.c_str(), ret);
+        return Status::ERROR;
+    }
+    dataBusMap_.erase(pipeInfo.pipeId);
+    return Status::SUCCESS;
 }
 
 bool AppPipeMgr::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo, const struct DeviceId &peer)

@@ -30,10 +30,10 @@ public:
     virtual ~CommunicationProviderImpl();
 
     // add DeviceChangeListener to watch device change;
-    Status StartWatchDeviceChange(const AppDeviceStatusChangeListener *observer, const PipeInfo &pipeInfo) override;
+    Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo) override;
 
     // stop watching device change;
-    Status StopWatchDeviceChange(const AppDeviceStatusChangeListener *observer, const PipeInfo &pipeInfo) override;
+    Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo) override;
 
     // add DataChangeListener to watch data change;
     Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) override;

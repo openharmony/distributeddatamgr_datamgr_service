@@ -51,10 +51,6 @@ HWTEST_F(DirectoryManagerTest, GetStoragePath01, TestSize.Level0)
     metaData.securityLevel = SecurityLevel::S2;
     auto path = DirectoryManager::GetInstance().GetStorePath(metaData);
     EXPECT_EQ(path, metaData.dataDir);
-
-    metaData.securityLevel = SecurityLevel::S0;
-    path = DirectoryManager::GetInstance().GetStorePath(metaData);
-    EXPECT_EQ(path, "/data/misc_de/0/mdds/10/default/com.sample.helloworld/");
 }
 
 /**
@@ -73,10 +69,6 @@ HWTEST_F(DirectoryManagerTest, GetStorageBackupPath01, TestSize.Level0)
     metaData.securityLevel = SecurityLevel::S2;
     auto path = DirectoryManager::GetInstance().GetStoreBackupPath(metaData);
     EXPECT_EQ(path, metaData.dataDir + "/backup/");
-
-    metaData.securityLevel = SecurityLevel::S0;
-    path = DirectoryManager::GetInstance().GetStoreBackupPath(metaData);
-    EXPECT_EQ(path, "/data/misc_de/0/mdds/10/default/com.sample.helloworld/backup/");
 }
 
 /**
@@ -89,8 +81,5 @@ HWTEST_F(DirectoryManagerTest, GetStorageBackupPath01, TestSize.Level0)
 HWTEST_F(DirectoryManagerTest, GetStorageMetaPath01, TestSize.Level0)
 {
     auto path = DirectoryManager::GetInstance().GetMetaDataStorePath();
-    EXPECT_EQ(path, "/data/service/el1/public/distributeddata/DistributedKvDataService/Meta/");
-
-    path = DirectoryManager::GetInstance().GetMetaDataStorePath();
-    EXPECT_EQ(path, "/data/misc_de/0/mdds/Meta/");
+    EXPECT_EQ(path, "/data/service/el1/public/distributeddata/meta/");
 }

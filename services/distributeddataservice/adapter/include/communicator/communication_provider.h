@@ -19,68 +19,61 @@
 #include <memory>
 #include <vector>
 #include "app_data_change_listener.h"
-#include "app_device_status_change_listener.h"
-#include "app_types.h"
+#include "app_device_change_listener.h"
 #include "idevice_query.h"
-#include "visibility.h"
 namespace OHOS {
 namespace AppDistributedKv {
 class CommunicationProvider {
 public:
     // constructor
-    KVSTORE_API CommunicationProvider() {};
+    API_EXPORT CommunicationProvider() {};
 
     // destructor
-    KVSTORE_API virtual ~CommunicationProvider() {};
+    API_EXPORT virtual ~CommunicationProvider() {};
+
+    // user should use this method to get instance of CommunicationProvider;
+    API_EXPORT static CommunicationProvider &GetInstance();
+
+    API_EXPORT static std::shared_ptr<CommunicationProvider> MakeCommunicationProvider();
 
     // add DeviceChangeListener to watch device change
-    KVSTORE_API
-    virtual Status StartWatchDeviceChange(const AppDeviceStatusChangeListener *observer, const PipeInfo &pipeInfo) = 0;
+    virtual Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo) = 0;
 
     // stop DeviceChangeListener to watch device change
-    KVSTORE_API
-    virtual Status StopWatchDeviceChange(const AppDeviceStatusChangeListener *observer, const PipeInfo &pipeInfo) = 0;
+    virtual Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo) = 0;
 
     // add DataChangeListener to watch data change
-    KVSTORE_API
     virtual Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) = 0;
 
     // stop DataChangeListener to watch data change
-    KVSTORE_API virtual Status StopWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) = 0;
+    virtual Status StopWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) = 0;
 
     // Send data to other device, function will be called back after sent to notify send result
-    KVSTORE_API
     virtual Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *ptr, int size,
                             const MessageInfo &info = {MessageType::DEFAULT}) = 0;
 
     // Get online deviceList
-    KVSTORE_API virtual std::vector<DeviceInfo> GetDeviceList() const = 0;
+    virtual std::vector<DeviceInfo> GetDeviceList() const = 0;
 
     // Get local device information
-    KVSTORE_API virtual DeviceInfo GetLocalDevice() const = 0;
+    virtual DeviceInfo GetLocalDevice() const = 0;
 
     // start one server to listen data from other devices;
-    KVSTORE_API virtual Status Start(const PipeInfo &pipeInfo) = 0;
+    virtual Status Start(const PipeInfo &pipeInfo) = 0;
 
     // stop server
-    KVSTORE_API virtual Status Stop(const PipeInfo &pipeInfo) = 0;
-
-    // user should use this method to get instance of CommunicationProvider;
-    KVSTORE_API static CommunicationProvider &GetInstance();
-
-    KVSTORE_API static std::shared_ptr<CommunicationProvider> MakeCommunicationProvider();
+    virtual Status Stop(const PipeInfo &pipeInfo) = 0;
 
     // check peer device pipeInfo Process
-    KVSTORE_API virtual bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const = 0;
+    virtual bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const = 0;
 
-    KVSTORE_API virtual void SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery) = 0;
-    KVSTORE_API virtual std::string GetUuidByNodeId(const std::string &nodeId) const = 0;
-    KVSTORE_API virtual std::string GetUdidByNodeId(const std::string &nodeId) const = 0;
-    KVSTORE_API virtual DeviceInfo GetLocalBasicInfo() const = 0;
-    KVSTORE_API virtual std::vector<DeviceInfo> GetRemoteNodesBasicInfo() const = 0;
-    KVSTORE_API virtual std::string ToNodeId(const std::string &id) const = 0;
-
-    KVSTORE_API virtual void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) = 0;
+    virtual void SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery) = 0;
+    virtual std::string GetUuidByNodeId(const std::string &nodeId) const = 0;
+    virtual std::string GetUdidByNodeId(const std::string &nodeId) const = 0;
+    virtual DeviceInfo GetLocalBasicInfo() const = 0;
+    virtual std::vector<DeviceInfo> GetRemoteNodesBasicInfo() const = 0;
+    virtual std::string ToNodeId(const std::string &id) const = 0;
+    virtual void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) = 0;
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS

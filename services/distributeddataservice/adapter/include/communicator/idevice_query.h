@@ -16,19 +16,18 @@
 #ifndef IDEVICE_QUERY_H
 #define IDEVICE_QUERY_H
 
-#include "app_types.h"
-#include "visibility.h"
+#include "commu_types.h"
 namespace OHOS {
 namespace AppDistributedKv {
 class IDeviceQuery {
 public:
-    KVSTORE_API virtual ~IDeviceQuery() {};
+    API_EXPORT virtual ~IDeviceQuery() {};
 
     // Get online deviceList
-    KVSTORE_API virtual std::vector<DeviceInfo> GetDeviceList() const = 0;
+    virtual std::vector<DeviceInfo> GetDeviceList() const = 0;
 
     // Get local device information
-    KVSTORE_API virtual DeviceInfo GetLocalDevice() const = 0;
+    virtual DeviceInfo GetLocalDevice() const = 0;
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS

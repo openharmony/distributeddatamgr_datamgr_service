@@ -20,7 +20,6 @@
 #include <mutex>
 #include <string>
 #include <map>
-#include "app_types.h"
 #include "kv_scheduler.h"
 #include "log_print.h"
 #include "reporter.h"

@@ -16,17 +16,16 @@
 #ifndef APP_DISTRIBUTEDDATA_INCLUDE_DATA_CHANGE_LISTENER_H
 #define APP_DISTRIBUTEDDATA_INCLUDE_DATA_CHANGE_LISTENER_H
 
-#include "app_types.h"
-#include "visibility.h"
+#include "commu_types.h"
 namespace OHOS {
 namespace AppDistributedKv {
 class AppDataChangeListener {
 public:
-    KVSTORE_API AppDataChangeListener() = default;
-    KVSTORE_API virtual ~AppDataChangeListener() {};
+    API_EXPORT AppDataChangeListener() = default;
+    API_EXPORT virtual ~AppDataChangeListener() {};
 
-    KVSTORE_API virtual void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size,
-                                       const PipeInfo &pipeInfo) const = 0;
+    API_EXPORT virtual void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size,
+                                      const PipeInfo &pipeInfo) const = 0;
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS

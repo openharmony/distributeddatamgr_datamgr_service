@@ -17,6 +17,7 @@
 #define DISTRIBUTEDDATAMGR_UPGRADE_MANAGER_H
 #include <string>
 
+#include "auth/auth_delegate.h"
 #include "concurrent_map.h"
 #include "kvstore_meta_manager.h"
 #include "metadata/capability_meta_data.h"

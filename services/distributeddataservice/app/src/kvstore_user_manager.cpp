@@ -43,7 +43,7 @@ KvStoreUserManager::~KvStoreUserManager()
 Status KvStoreUserManager::CloseKvStore(const std::string &appId, const std::string &storeId)
 {
     ZLOGI("begin.");
-    std::lock_guard<std::mutex> lg(appMutex_);
+    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
     auto it = appMap_.find(appId);
     if (it != appMap_.end()) {
         return (it->second).CloseKvStore(storeId);
@@ -56,7 +56,7 @@ Status KvStoreUserManager::CloseKvStore(const std::string &appId, const std::str
 Status KvStoreUserManager::CloseAllKvStore(const std::string &appId)
 {
     ZLOGI("begin.");
-    std::lock_guard<std::mutex> lg(appMutex_);
+    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
     auto it = appMap_.find(appId);
     if (it != appMap_.end()) {
         return (it->second).CloseAllKvStore();
@@ -69,7 +69,7 @@ Status KvStoreUserManager::CloseAllKvStore(const std::string &appId)
 void KvStoreUserManager::CloseAllKvStore()
 {
     ZLOGI("begin.");
-    std::lock_guard<std::mutex> lg(appMutex_);
+    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
     for (auto &it : appMap_) {
         (it.second).CloseAllKvStore();
     }
@@ -78,7 +78,7 @@ void KvStoreUserManager::CloseAllKvStore()
 Status KvStoreUserManager::DeleteKvStore(const std::string &bundleName, pid_t uid, const std::string &storeId)
 {
     ZLOGI("begin.");
-    std::lock_guard<std::mutex> lg(appMutex_);
+    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
     auto it = appMap_.find(bundleName);
     if (it != appMap_.end()) {
         auto status = (it->second).DeleteKvStore(storeId);
@@ -95,7 +95,7 @@ Status KvStoreUserManager::DeleteKvStore(const std::string &bundleName, pid_t ui
 void KvStoreUserManager::DeleteAllKvStore()
 {
     ZLOGI("begin.");
-    std::lock_guard<std::mutex> lg(appMutex_);
+    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
     for (auto &it : appMap_) {
         (it.second).DeleteAllKvStore();
     }
@@ -106,7 +106,7 @@ void KvStoreUserManager::DeleteAllKvStore()
 Status KvStoreUserManager::MigrateAllKvStore(const std::string &harmonyAccountId)
 {
     ZLOGI("begin.");
-    std::lock_guard<std::mutex> lg(appMutex_);
+    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
     Status status = Status::SUCCESS;
     for (auto &it : appMap_) {
         status = (it.second).MigrateAllKvStore(harmonyAccountId);
@@ -125,7 +125,7 @@ std::string KvStoreUserManager::GetDbDir(const std::string &bundleName, const Op
     if (options.kvStoreType == KvStoreType::MULTI_VERSION) {
         return "default";
     }
-    std::lock_guard<std::mutex> lg(appMutex_);
+    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
     auto it = appMap_.find(bundleName);
     if (it != appMap_.end()) {
         return (it->second).GetDbDir(options);
@@ -146,12 +146,14 @@ void KvStoreUserManager::Dump(int fd) const
 
 bool KvStoreUserManager::IsStoreOpened(const std::string &appId, const std::string &storeId)
 {
+    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
     auto it = appMap_.find(appId);
     return it != appMap_.end() && it->second.IsStoreOpened(storeId);
 }
 
 void KvStoreUserManager::SetCompatibleIdentify(const std::string &deviceId) const
 {
+    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
     for (const auto &item : appMap_) {
         item.second.SetCompatibleIdentify(deviceId);
     }

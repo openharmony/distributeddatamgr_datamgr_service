@@ -207,7 +207,7 @@ public:
         if (it != entries_.end()) {
             return false;
         }
-        entries_.insert(value_type{key, action(key)});
+        entries_.emplace(key, action(key));
         return true;
     }
 private:

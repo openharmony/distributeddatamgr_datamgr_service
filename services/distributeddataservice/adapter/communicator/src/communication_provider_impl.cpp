@@ -38,13 +38,13 @@ Status CommunicationProviderImpl::Initialize()
     return Status::SUCCESS;
 }
 
-Status CommunicationProviderImpl::StartWatchDeviceChange(const AppDeviceStatusChangeListener *observer,
+Status CommunicationProviderImpl::StartWatchDeviceChange(const AppDeviceChangeListener *observer,
     const PipeInfo &pipeInfo)
 {
     return appDeviceHandler_.StartWatchDeviceChange(observer, pipeInfo);
 }
 
-Status CommunicationProviderImpl::StopWatchDeviceChange(const AppDeviceStatusChangeListener *observer,
+Status CommunicationProviderImpl::StopWatchDeviceChange(const AppDeviceChangeListener *observer,
     const PipeInfo &pipeInfo)
 {
     return appDeviceHandler_.StopWatchDeviceChange(observer, pipeInfo);

@@ -141,7 +141,7 @@ SoftBusAdapter::~SoftBusAdapter()
 void SoftBusAdapter::Init()
 {
     ZLOGI("begin");
-    std::thread th = std::thread([&]() {
+    std::thread th = std::thread([this]() {
         auto communicator = std::make_shared<ProcessCommunicatorImpl>();
         auto retcom = DistributedDB::KvStoreDelegateManager::SetProcessCommunicator(communicator);
         ZLOGI("set communicator ret:%{public}d.", static_cast<int>(retcom));
@@ -162,7 +162,7 @@ void SoftBusAdapter::Init()
     th.detach();
 }
 
-Status SoftBusAdapter::StartWatchDeviceChange(const AppDeviceStatusChangeListener *observer,
+Status SoftBusAdapter::StartWatchDeviceChange(const AppDeviceChangeListener *observer,
     __attribute__((unused)) const PipeInfo &pipeInfo)
 {
     ZLOGI("begin");
@@ -180,7 +180,7 @@ Status SoftBusAdapter::StartWatchDeviceChange(const AppDeviceStatusChangeListene
     return Status::SUCCESS;
 }
 
-Status SoftBusAdapter::StopWatchDeviceChange(const AppDeviceStatusChangeListener *observer,
+Status SoftBusAdapter::StopWatchDeviceChange(const AppDeviceChangeListener *observer,
     __attribute__((unused)) const PipeInfo &pipeInfo)
 {
     ZLOGI("begin");
@@ -200,7 +200,7 @@ Status SoftBusAdapter::StopWatchDeviceChange(const AppDeviceStatusChangeListener
 void SoftBusAdapter::NotifyAll(const DeviceInfo &deviceInfo, const DeviceChangeType &type)
 {
     std::thread th = std::thread([this, deviceInfo, type]() {
-        std::vector<const AppDeviceStatusChangeListener *> listeners;
+        std::vector<const AppDeviceChangeListener *> listeners;
         {
             std::lock_guard<std::mutex> lock(deviceChangeMutex_);
             for (const auto &listener : listeners_) {
@@ -507,13 +507,13 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     if (sessionId < 0) {
         ZLOGW("OpenSession %{public}s, type:%{public}d failed, sessionId:%{public}d",
             pipeInfo.pipeId.c_str(), info.msgType, sessionId);
-        return Status::CREATE_SESSION_ERROR;
+        return Status::NETWORK_ERROR;
     }
     int state = GetSessionStatus(sessionId);
     ZLOGD("waited for notification, state:%{public}d", state);
     if (state != SOFTBUS_OK) {
         ZLOGE("OpenSession callback result error");
-        return Status::CREATE_SESSION_ERROR;
+        return Status::NETWORK_ERROR;
     }
     ZLOGD("[SendBytes] start, size is %{public}d, session type is %{public}d.", size, attr.dataType);
     int32_t ret = SendBytes(sessionId, (void*)ptr, size);

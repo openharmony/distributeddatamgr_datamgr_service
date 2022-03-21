@@ -17,7 +17,6 @@
 #define DISTRIBUTEDDATAMGR_KVSTORE_CONTEXT_H
 #include <string>
 
-#include "types.h"
 namespace OHOS::DistributedData {
 struct ClientContext {
     std::string userId {};

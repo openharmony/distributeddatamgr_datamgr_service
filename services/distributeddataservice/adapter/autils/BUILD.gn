@@ -28,6 +28,7 @@ ohos_static_library("distributeddata_autils_static") {
     "../include/log",
     "//utils/native/base/include",
     "../include/dfx",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]

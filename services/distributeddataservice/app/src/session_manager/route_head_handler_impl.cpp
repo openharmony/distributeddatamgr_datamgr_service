@@ -22,6 +22,7 @@
 #include "log_print.h"
 #include "securec.h"
 #include "upgrade_manager.h"
+#include "bootstrap.h"
 #include "utils/endian_converter.h"
 
 namespace OHOS::DistributedData {
@@ -60,7 +61,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
 {
     ZLOGD("begin");
     headSize = 0;
-    if (appId_ == DistributedKv::KvStoreMetaManager::META_DB_APP_ID) {
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel()) {
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }

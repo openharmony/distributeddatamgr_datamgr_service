@@ -41,9 +41,7 @@ class RdbServiceImpl;
 
 namespace OHOS::DistributedKv {
 class KvStoreAccountObserver;
-class KvStoreDataService
-    : public SystemAbility
-    , public KvStoreDataServiceStub {
+class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
 
 public:

@@ -21,7 +21,6 @@ ohos_static_library("distributeddata_flowctrl_static") {
     "../../src",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//third_party/json/single_include",
     "//utils/native/base/include",
   ]

@@ -20,8 +20,6 @@
 #include <set>
 #include <memory>
 #include <shared_mutex>
-
-#include "auth/auth_delegate.h"
 #include "flowctrl_manager/kvstore_flowctrl_manager.h"
 #include "ikvstore_observer.h"
 #include "ikvstore_single.h"

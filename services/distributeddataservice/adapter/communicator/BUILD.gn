@@ -36,7 +36,8 @@ ohos_static_library("distributeddata_communicator_static") {
     "../include/dfx",
     "../include/log",
     "../include/autils",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
     "//foundation/communication/dsoftbus/core/common/include",
   ]
 

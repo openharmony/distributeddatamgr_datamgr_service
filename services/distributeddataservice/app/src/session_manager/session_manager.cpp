@@ -44,7 +44,7 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
 
     // system service
     if (from.userId == UserDelegate::SYSTEM_USER) {
-        auto *checker = CheckerManager::GetInstance().GetChecker(CheckerManager::SYSTEM_CHECKER);
+        auto *checker = CheckerManager::GetInstance().GetChecker("SystemChecker");
         if (checker != nullptr && checker->IsValid(UserDelegate::SYSTEM_USER, from.appId)) {
             session.targetUserIds.push_back(UserDelegate::SYSTEM_USER);
         }

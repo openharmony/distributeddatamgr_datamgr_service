@@ -40,7 +40,6 @@ config("module_private_config") {
   include_dirs = [
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/bootstrap/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/config/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/directory/include",
@@ -49,8 +48,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/src",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/rdb",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/kv",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/kvdb",
     "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
     "//utils/system/safwk/native/include",
     "../adapter/include/account",
@@ -82,7 +80,6 @@ ohos_shared_library("distributeddataservice") {
     "src/device_kvstore_impl.cpp",
     "src/device_kvstore_observer_impl.cpp",
     "src/device_kvstore_resultset_impl.cpp",
-    "src/executor_factory.cpp",
     "src/kvstore_account_observer.cpp",
     "src/kvstore_app_accessor.cpp",
     "src/kvstore_app_manager.cpp",
@@ -111,7 +108,10 @@ ohos_shared_library("distributeddataservice") {
     "../service/rdb/rdb_syncer.cpp",
   ]
 
-  kv_sources = [ "../service/kv/user_delegate.cpp" ]
+  kv_sources = [
+    "../service/kvdb/executor_factory.cpp",
+    "../service/kvdb/user_delegate.cpp",
+  ]
 
   sources += kv_sources
   sources += rdb_sources

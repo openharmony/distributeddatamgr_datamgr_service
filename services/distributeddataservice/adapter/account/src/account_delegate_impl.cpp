@@ -101,14 +101,14 @@ void AccountDelegateImpl::SubscribeAccountEvent()
         NotifyAccountChanged(account);
     });
 
-    std::thread th = std::thread([&]() {
+    std::thread th = std::thread([eventSubscriber = eventSubscriber_]() {
         int tryTimes = 0;
         constexpr int MAX_RETRY_TIME = 300;
         constexpr int RETRY_WAIT_TIME_S = 1;
 
         // we use this method to make sure register success
         while (tryTimes < MAX_RETRY_TIME) {
-            auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber_);
+            auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber);
             if (result) {
                 break;
             }

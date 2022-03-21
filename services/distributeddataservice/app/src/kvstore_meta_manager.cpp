@@ -40,6 +40,7 @@
 #include "rdb_types.h"
 #include "reporter.h"
 #include "serializable/serializable.h"
+#include "bootstrap.h"
 #include "user_delegate.h"
 #include "utils/crypto.h"
 
@@ -69,7 +70,8 @@ KvStoreMetaManager::KvStoreMetaManager()
                 }
             }),
       metaDBDirectory_("/data/service/el1/public/database/distributeddata/meta"),
-      kvStoreDelegateManager_(META_DB_APP_ID, Constant::GetDefaultHarmonyAccountName())
+      label_(Bootstrap::GetInstance().GetProcessLabel()),
+      kvStoreDelegateManager_(Bootstrap::GetInstance().GetProcessLabel(), Constant::GetDefaultHarmonyAccountName())
 {
     ZLOGI("begin.");
 }
@@ -112,11 +114,11 @@ void KvStoreMetaManager::InitMetaData()
     auto uid = getuid();
     const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
-    auto metaKey = GetMetaKey(userId, "default", META_DB_APP_ID, Constant::SERVICE_META_DB_NAME);
+    auto metaKey = GetMetaKey(userId, "default", label_, Constant::SERVICE_META_DB_NAME);
     struct KvStoreMetaData metaData {
-        .appId = META_DB_APP_ID,
+        .appId = label_,
         .appType = "default",
-        .bundleName = META_DB_APP_ID,
+        .bundleName = label_,
         .dataDir = metaDBDirectory_,
         .deviceAccountId = userId,
         .deviceId = DeviceKvStoreImpl::GetLocalDeviceId(),
@@ -272,7 +274,7 @@ Status KvStoreMetaManager::CheckUpdateServiceMeta(const std::vector<uint8_t> &me
     DistributedDB::Value dbValue = val;
     DistributedDB::DBStatus dbStatus;
     DistributedDB::CipherPassword dbPassword;
-    std::initializer_list<std::string> backList = {META_DB_APP_ID, "_", Constant::SERVICE_META_DB_NAME};
+    std::initializer_list<std::string> backList = {label_, "_", Constant::SERVICE_META_DB_NAME};
     std::string backupName = Constant::Concatenate(backList);
     std::initializer_list<std::string> backFullList = {metaDBDirectory_, "/backup/",
         BackupHandler::GetHashedBackupName(backupName)};

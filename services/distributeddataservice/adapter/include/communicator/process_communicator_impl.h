@@ -24,9 +24,8 @@
 
 namespace OHOS {
 namespace AppDistributedKv {
-class ProcessCommunicatorImpl : public DistributedDB::IProcessCommunicator,
-                                private AppDataChangeListener,
-                                private AppDeviceStatusChangeListener {
+class API_EXPORT ProcessCommunicatorImpl : public DistributedDB::IProcessCommunicator, public AppDataChangeListener,
+                                           public AppDeviceChangeListener {
 public:
     using DBStatus = DistributedDB::DBStatus;
     using OnDeviceChange = DistributedDB::OnDeviceChange;
@@ -35,23 +34,23 @@ public:
     using RouteHeadHandlerCreator =
         std::function<std::shared_ptr<DistributedData::RouteHeadHandler>(const DistributedDB::ExtendInfo &info)>;
 
-    KVSTORE_API ProcessCommunicatorImpl();
-    KVSTORE_API explicit ProcessCommunicatorImpl(RouteHeadHandlerCreator handlerCreator);
-    KVSTORE_API ~ProcessCommunicatorImpl() override;
+    API_EXPORT ProcessCommunicatorImpl();
+    API_EXPORT explicit ProcessCommunicatorImpl(RouteHeadHandlerCreator handlerCreator);
+    API_EXPORT ~ProcessCommunicatorImpl() override;
 
-    KVSTORE_API DBStatus Start(const std::string &processLabel) override;
-    KVSTORE_API DBStatus Stop() override;
+    DBStatus Start(const std::string &processLabel) override;
+    DBStatus Stop() override;
 
-    KVSTORE_API DBStatus RegOnDeviceChange(const OnDeviceChange &callback) override;
-    KVSTORE_API DBStatus RegOnDataReceive(const OnDataReceive &callback) override;
+    DBStatus RegOnDeviceChange(const OnDeviceChange &callback) override;
+    DBStatus RegOnDataReceive(const OnDataReceive &callback) override;
 
-    KVSTORE_API DBStatus SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length) override;
-    KVSTORE_API uint32_t GetMtuSize() override;
-    KVSTORE_API uint32_t GetMtuSize(const DeviceInfos &devInfo) override;
-    KVSTORE_API DeviceInfos GetLocalDeviceInfos() override;
-    KVSTORE_API std::vector<DeviceInfos> GetRemoteOnlineDeviceInfosList() override;
-    KVSTORE_API bool IsSameProcessLabelStartedOnPeerDevice(const DeviceInfos &peerDevInfo) override;
-
+    DBStatus SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length) override;
+    uint32_t GetMtuSize() override;
+    uint32_t GetMtuSize(const DeviceInfos &devInfo) override;
+    DeviceInfos GetLocalDeviceInfos() override;
+    std::vector<DeviceInfos> GetRemoteOnlineDeviceInfosList() override;
+    bool IsSameProcessLabelStartedOnPeerDevice(const DeviceInfos &peerDevInfo) override;
+    void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override;
     API_EXPORT std::shared_ptr<DistributedDB::ExtendHeaderHandle> GetExtendHeaderHandle(
         const DistributedDB::ExtendInfo &info) override;
     API_EXPORT DBStatus CheckAndGetDataHeadInfo(
@@ -60,7 +59,6 @@ public:
 private:
     void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size,
                    const PipeInfo &pipeInfo) const override;
-    void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override;
 
     std::string thisProcessLabel_;
     OnDeviceChange onDeviceChangeHandler_;

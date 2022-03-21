@@ -32,7 +32,6 @@ config("distributeddata_adapter_public_config") {
     "include/autils",
     "include/utils",
     "include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include/",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
   ]

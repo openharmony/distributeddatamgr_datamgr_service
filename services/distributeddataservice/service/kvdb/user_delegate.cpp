@@ -1,0 +1,202 @@
+/*
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "user_delegate.h"
+
+#define LOG_TAG "UserDelegate"
+
+#include "account_delegate.h"
+#include "communication_provider.h"
+#include "device_kvstore_impl.h"
+#include "executor_factory.h"
+#include "kvstore_meta_manager.h"
+#include "log_print.h"
+#include "os_account_manager.h"
+
+namespace OHOS::DistributedData {
+using OHOS::AppDistributedKv::CommunicationProvider;
+using namespace OHOS::DistributedKv;
+using namespace OHOS::AccountSA;
+std::vector<UserStatus> UserDelegate::GetLocalUserStatus()
+{
+    ZLOGI("begin");
+    auto deviceInfo = CommunicationProvider::GetInstance().GetLocalDevice();
+    if (deviceInfo.deviceId.empty()) {
+        ZLOGE("failed to get local device id");
+        return {};
+    }
+    return GetUsers(deviceInfo.deviceId);
+}
+
+std::vector<DistributedData::UserStatus> UserDelegate::GetRemoteUserStatus(const std::string &deviceId)
+{
+    if (deviceId.empty()) {
+        ZLOGE("error input device id");
+        return {};
+    }
+    return GetUsers(deviceId);
+}
+
+std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
+{
+    std::vector<UserStatus> userStatus;
+    if (!deviceUserMap_.Contains(deviceId)) {
+        LoadFromMeta(deviceId);
+    }
+    for (const auto &entry : deviceUserMap_[deviceId]) {
+        userStatus.emplace_back(entry.first, entry.second);
+    }
+    ZLOGI("device:%{public}.10s, users:%{public}s", deviceId.c_str(), Serializable::Marshall(userStatus).c_str());
+    return userStatus;
+}
+
+void UserDelegate::DeleteUsers(const std::string &deviceId)
+{
+    deviceUserMap_.Erase(deviceId);
+}
+
+void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<UserStatus> &userStatus)
+{
+    ZLOGI("begin, device:%{public}.10s, users:%{public}u", deviceId.c_str(), userStatus.size());
+    deviceUserMap_.ComputeIfPresent(deviceId, [](const auto &key, std::map<int, bool> &userMap) {
+        for (auto &user : userMap) {
+            user.second = false;
+        }
+    });
+    for (auto &user : userStatus) {
+        deviceUserMap_[deviceId][user.id] = user.isActive;
+    }
+    ZLOGI("end, device:%{public}.10s, users:%{public}u", deviceId.c_str(), deviceUserMap_[deviceId].size());
+}
+
+bool UserDelegate::InitLocalUserMeta()
+{
+    std::vector<int> osAccountIds = { { 0, true } }; // system user default
+    auto ret = OsAccountManager::QueryActiveOsAccountIds(osAccountIds);
+    if (ret != 0 || osAccountIds.empty()) {
+        ZLOGE("failed to query os accounts, ret:%{public}d", ret);
+        return false;
+    }
+    std::vector<UserStatus> userStatus = { { 0, true } };
+    for (const auto &user : osAccountIds) {
+        userStatus.emplace_back(user, true);
+    }
+    UserMetaData userMetaData;
+    userMetaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
+    UpdateUsers(userMetaData.deviceId, userStatus);
+    for (auto &pair : deviceUserMap_[userMetaData.deviceId]) {
+        userMetaData.users.emplace_back(pair.first, pair.second);
+    }
+
+    auto &metaDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
+    if (metaDelegate == nullptr) {
+        ZLOGE("GetMetaKvStore return nullptr.");
+        return false;
+    }
+    auto dbKey = UserMetaRow::GetKeyFor(userMetaData.deviceId);
+    std::string jsonData = UserMetaData::Marshall(userMetaData);
+    DistributedDB::Value dbValue{ jsonData.begin(), jsonData.end() };
+    ret = metaDelegate->Put(dbKey, dbValue);
+    ZLOGI("put user meta data ret %{public}d", ret);
+    return ret == DistributedDB::DBStatus::OK;
+}
+
+void UserDelegate::LoadFromMeta(const std::string &deviceId)
+{
+    auto &metaDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
+    if (metaDelegate == nullptr) {
+        ZLOGE("GetMetaKvStore return nullptr.");
+        return;
+    }
+
+    auto dbKey = UserMetaRow::GetKeyFor(deviceId);
+    DistributedDB::Value dbValue;
+    auto ret = metaDelegate->Get(dbKey, dbValue);
+    UserMetaData userMetaData;
+    ZLOGI("get user meta data ret %{public}d", ret);
+    if (ret != DistributedDB::DBStatus::OK) {
+        return;
+    }
+    userMetaData.Unmarshall({ dbValue.begin(), dbValue.end() });
+    std::map<int, bool> userMap;
+    for (const auto &user : userMetaData.users) {
+        userMap[user.id] = user.isActive;
+    }
+    deviceUserMap_[deviceId] = userMap;
+}
+
+UserDelegate &UserDelegate::GetInstance()
+{
+    static UserDelegate instance;
+    return instance;
+}
+
+void UserDelegate::Init()
+{
+    KvStoreTask retryTask([this]() {
+        do {
+            static constexpr int RETRY_INTERVAL = 500; // millisecond
+            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL));
+            if (!InitLocalUserMeta()) {
+                continue;
+            }
+            break;
+        } while (true);
+        ZLOGI("update user meta ok");
+    });
+    ExecutorFactory::GetInstance().Execute(std::move(retryTask));
+    auto ret = AccountDelegate::GetInstance()->Subscribe(std::make_shared<LocalUserObserver>(*this));
+    // subscribe user meta in other devices
+    KvStoreMetaManager::GetInstance().SubscribeMeta(UserMetaRow::KEY_PREFIX,
+        [this](const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag) {
+            UserMetaData metaData;
+            metaData.Unmarshall({ value.begin(), value.end() });
+            ZLOGD("flag:%{public}d, value:%{public}.10s", flag, metaData.deviceId.c_str());
+            if (metaData.deviceId == DeviceKvStoreImpl::GetLocalDeviceId()) {
+                ZLOGD("ignore local device user meta change");
+                return;
+            }
+            if (flag == CHANGE_FLAG::INSERT || flag == CHANGE_FLAG::UPDATE) {
+                UpdateUsers(metaData.deviceId, metaData.users);
+            } else if (flag == CHANGE_FLAG::DELETE) {
+                DeleteUsers(metaData.deviceId);
+            } else {
+                ZLOGD("ignored operation");
+            }
+        });
+    ZLOGD("subscribe os account ret:%{public}d", ret);
+}
+
+bool UserDelegate::NotifyUserEvent(const UserDelegate::UserEvent &userEvent)
+{
+    // update all local user status
+    return InitLocalUserMeta();
+}
+
+UserDelegate::LocalUserObserver::LocalUserObserver(UserDelegate &userDelegate) : userDelegate_(userDelegate)
+{
+}
+
+void UserDelegate::LocalUserObserver::OnAccountChanged(const DistributedKv::AccountEventInfo &eventInfo)
+{
+    ZLOGI("event info:%{public}s, %{public}d", eventInfo.deviceAccountId.c_str(), eventInfo.status);
+    userDelegate_.NotifyUserEvent({}); // just notify
+}
+
+std::string UserDelegate::LocalUserObserver::Name()
+{
+    return "user_delegate";
+}
+} // namespace OHOS::DistributedData

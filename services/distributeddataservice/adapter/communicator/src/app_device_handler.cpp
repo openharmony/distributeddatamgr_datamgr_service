@@ -37,13 +37,13 @@ void AppDeviceHandler::Init()
     softbusAdapter_->Init();
 }
 
-Status AppDeviceHandler::StartWatchDeviceChange(const AppDeviceStatusChangeListener *observer,
+Status AppDeviceHandler::StartWatchDeviceChange(const AppDeviceChangeListener *observer,
     __attribute__((unused)) const PipeInfo &pipeInfo)
 {
     return softbusAdapter_->StartWatchDeviceChange(observer, pipeInfo);
 }
 
-Status AppDeviceHandler::StopWatchDeviceChange(const AppDeviceStatusChangeListener *observer,
+Status AppDeviceHandler::StopWatchDeviceChange(const AppDeviceChangeListener *observer,
     __attribute__((unused)) const PipeInfo &pipeInfo)
 {
     return softbusAdapter_->StopWatchDeviceChange(observer, pipeInfo);

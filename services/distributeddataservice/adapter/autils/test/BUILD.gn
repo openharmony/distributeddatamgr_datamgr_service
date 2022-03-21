@@ -18,7 +18,10 @@ module_output_path = "distributeddatamgr/distributeddatafwk"
 config("module_private_config") {
   visibility = [ ":*" ]
 
-  include_dirs = [ "../../include/autils/" ]
+  include_dirs = [
+    "../../include/autils/",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+  ]
 }
 
 ohos_unittest("KvStoreThreadPoolTest") {

@@ -13,35 +13,27 @@
  * limitations under the License.
  */
 
-#ifndef APP_KVSTOR_CONFLICT_DATA_H
-#define APP_KVSTOR_CONFLICT_DATA_H
+#ifndef APP_DEVICE_STATUS_CHANGE_LISTENER_H
+#define APP_DEVICE_STATUS_CHANGE_LISTENER_H
 
-#include <time.h>
-#include <list>
-#include "app_types.h"
-
+#include "commu_types.h"
 namespace OHOS {
 namespace AppDistributedKv {
-class AppKvStoreConflictData {
+enum class ChangeLevelType {
+    HIGH,
+    LOW,
+    MIN,
+};
+class AppDeviceChangeListener {
 public:
-    enum class ConflictValueType {
-        OLD_VALUE = 0,
-        NEW_VALUE,
-    };
-
-    KVSTORE_API virtual ~AppKvStoreConflictData() = default;
-
-    KVSTORE_API virtual AppKvStoreConflictPolicyType GetType() const = 0;
-
-    KVSTORE_API virtual void GetKey(Key &key) const = 0;
-
-    KVSTORE_API virtual Status GetValue(ConflictValueType type, Value &value) const = 0;
-
-    KVSTORE_API virtual bool IsDeleted(ConflictValueType type) const = 0;
-
-    KVSTORE_API virtual bool IsNative(ConflictValueType type) const = 0;
+    API_EXPORT virtual ~AppDeviceChangeListener() {};
+    API_EXPORT virtual void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const = 0;
+    API_EXPORT virtual ChangeLevelType GetChangeLevelType() const
+    {
+        return ChangeLevelType::LOW;
+    }
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS
 
-#endif  // APP_KVSTOR_CONFLICT_DATA_H
+#endif  // APP_DEVICE_STATUS_CHANGE_LISTENER_H

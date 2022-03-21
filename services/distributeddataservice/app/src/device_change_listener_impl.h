@@ -17,11 +17,11 @@
 #define DEV_DEVICE_CHANGE_LISTENER_IMPL_H
 
 #include <map>
-#include "app_device_status_change_listener.h"
+#include "app_device_change_listener.h"
 #include "idevice_status_change_listener.h"
 
 namespace OHOS::DistributedKv {
-class DeviceChangeListenerImpl : public AppDistributedKv::AppDeviceStatusChangeListener {
+class DeviceChangeListenerImpl : public AppDistributedKv::AppDeviceChangeListener {
 public:
     explicit DeviceChangeListenerImpl(std::map<IRemoteObject *,
                                       sptr<IDeviceStatusChangeListener>> &observers);

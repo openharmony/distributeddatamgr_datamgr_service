@@ -22,7 +22,7 @@ namespace OHOS {
 namespace DistributedKv {
 KvStoreThread::KvStoreThread(KvStoreThreadPool *threadPool)
 {
-    realThread_ = std::thread([&, threadPool]() {
+    realThread_ = std::thread([this, threadPool]() {
         // this makes me unconfortable: this lambda capture 'this' by reference, and right after this call this object
         // is move-constructed, so when we call this in Run(), we are actually refer to the old object. we can still
         // use all its non-virtual function, but all arguments and virtual-function are not available.

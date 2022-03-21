@@ -20,7 +20,6 @@
 #include <mutex>
 #include "app_data_change_listener.h"
 #include "app_pipe_handler.h"
-#include "app_types.h"
 #include "data_buffer.h"
 #include "log_print.h"
 

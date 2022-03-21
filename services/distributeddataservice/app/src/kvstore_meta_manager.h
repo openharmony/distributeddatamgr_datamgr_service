@@ -18,7 +18,7 @@
 #include <mutex>
 #include <nlohmann/json.hpp>
 
-#include "app_device_status_change_listener.h"
+#include "app_device_change_listener.h"
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_task.h"
@@ -153,7 +153,6 @@ private:
 class KvStoreMetaManager {
 public:
     static constexpr uint32_t META_STORE_VERSION = 0x03000001;
-    static const inline std::string META_DB_APP_ID = "distributeddata";
     enum DatabaseType {
         KVDB,
         RDB,
@@ -162,7 +161,7 @@ public:
         std::function<void(DistributedDB::KvStoreNbDelegate *)>>;
     using ChangeObserver = std::function<void(const std::vector<uint8_t> &, const std::vector<uint8_t> &, CHANGE_FLAG)>;
 
-    class MetaDeviceChangeListenerImpl : public AppDistributedKv::AppDeviceStatusChangeListener {
+    class MetaDeviceChangeListenerImpl : public AppDistributedKv::AppDeviceChangeListener {
         void OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
                              const AppDistributedKv::DeviceChangeType &type) const override;
 
@@ -176,6 +175,7 @@ public:
     void InitMetaParameter();
     void InitMetaListener();
     void SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer);
+
     const NbDelegate &GetMetaKvStore();
 
     Status CheckUpdateServiceMeta(const std::vector<uint8_t> &metaKey, FLAG flag, const std::vector<uint8_t> &val = {});
@@ -283,6 +283,7 @@ private:
 
     NbDelegate metaDelegate_;
     std::string metaDBDirectory_;
+    const std::string label_;
     DistributedDB::KvStoreDelegateManager kvStoreDelegateManager_;
     std::vector<uint8_t> vecRootKeyAlias_ {};
     std::vector<uint8_t> vecNonce_ {};

@@ -35,6 +35,7 @@ ohos_static_library("distributeddata_dfx_static") {
     "../include/log",
     "../include/autils",
     "//utils/native/base/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
     "//third_party/openssl/include/",
   ]
 

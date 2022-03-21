@@ -26,9 +26,9 @@ public:
     void Init();
 
     // add DeviceChangeListener to watch device change;
-    Status StartWatchDeviceChange(const AppDeviceStatusChangeListener *observer, const PipeInfo &pipeInfo);
+    Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     // stop DeviceChangeListener to watch device change;
-    Status StopWatchDeviceChange(const AppDeviceStatusChangeListener *observer, const PipeInfo &pipeInfo);
+    Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
 
     DeviceInfo GetLocalDevice();
     std::vector<DeviceInfo> GetDeviceList() const;

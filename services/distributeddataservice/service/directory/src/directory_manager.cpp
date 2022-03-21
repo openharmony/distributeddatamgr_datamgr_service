@@ -105,7 +105,7 @@ DirectoryManager &DirectoryManager::GetInstance()
 
 std::string DirectoryManager::GetStorePath(const StoreMetaData &metaData)
 {
-    return {};
+    return metaData.dataDir;
 }
 
 std::string DirectoryManager::GetStoreBackupPath(const StoreMetaData &metaData)
@@ -115,7 +115,7 @@ std::string DirectoryManager::GetStoreBackupPath(const StoreMetaData &metaData)
 
 std::string DirectoryManager::GetMetaDataStorePath()
 {
-    return "/data/service/el0/0/database/ddms/metadata/";
+    return "/data/service/el1/public/distributeddata/meta/";
 }
 void DirectoryManager::AddParams(const Strategy &strategy)
 {

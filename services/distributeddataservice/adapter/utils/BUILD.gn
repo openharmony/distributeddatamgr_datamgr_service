@@ -26,9 +26,9 @@ ohos_static_library("distributeddata_utils_static") {
     "../include/utils",
     "../include/log",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//utils/native/base/include",
     "../include/dfx",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [

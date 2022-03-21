@@ -21,7 +21,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
 #include <thread>
 
 #include "account_delegate.h"
@@ -436,7 +435,7 @@ KvStoreAppManager::PathType KvStoreAppManager::ConvertPathType(int32_t uid, cons
         default:
             break;
     }
-    auto *checker = CheckerManager::GetInstance().GetChecker(CheckerManager::SYSTEM_CHECKER);
+    auto *checker = CheckerManager::GetInstance().GetChecker("SystemChecker");
     if (checker == nullptr || !checker->IsValid(uid, bundleName)) {
         return PATH_CE;
     }

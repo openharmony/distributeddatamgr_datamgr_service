@@ -21,9 +21,9 @@
 #include <set>
 #include <tuple>
 #include <memory>
+#include <vector>
 #include "app_data_change_listener.h"
-#include "app_device_status_change_listener.h"
-#include "app_types.h"
+#include "app_device_change_listener.h"
 #include "platform_specific.h"
 #include "session.h"
 #include "softbus_bus_center.h"
@@ -80,9 +80,9 @@ public:
 
     void Init();
     // add DeviceChangeListener to watch device change;
-    Status StartWatchDeviceChange(const AppDeviceStatusChangeListener *observer, const PipeInfo &pipeInfo);
+    Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     // stop DeviceChangeListener to watch device change;
-    Status StopWatchDeviceChange(const AppDeviceStatusChangeListener *observer, const PipeInfo &pipeInfo);
+    Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     void NotifyAll(const DeviceInfo &deviceInfo, const DeviceChangeType &type);
     DeviceInfo GetLocalDevice();
     std::vector<DeviceInfo> GetDeviceList() const;
@@ -143,7 +143,7 @@ private:
     DeviceInfo localInfo_ {};
     static std::shared_ptr<SoftBusAdapter> instance_;
     std::mutex deviceChangeMutex_;
-    std::set<const AppDeviceStatusChangeListener *> listeners_ {};
+    std::set<const AppDeviceChangeListener *> listeners_ {};
     std::mutex dataChangeMutex_ {};
     std::map<std::string, const AppDataChangeListener *> dataChangeListeners_ {};
     std::mutex busSessionMutex_ {};

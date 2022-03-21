@@ -15,12 +15,12 @@
 
 #ifndef DISTRIBUTEDDATAMGR_KVSTORE_DEVICE_LISTENER_H
 #define DISTRIBUTEDDATAMGR_KVSTORE_DEVICE_LISTENER_H
-#include "app_device_status_change_listener.h"
+#include "app_device_change_listener.h"
 
 namespace OHOS::DistributedKv {
-using AppDeviceStatusChangeListener = AppDistributedKv::AppDeviceStatusChangeListener;
+using AppDeviceChangeListener = AppDistributedKv::AppDeviceChangeListener;
 class KvStoreDataService;
-class KvStoreDeviceListener : public AppDeviceStatusChangeListener {
+class KvStoreDeviceListener : public AppDeviceChangeListener {
 public:
     explicit KvStoreDeviceListener(KvStoreDataService &kvStoreDataService);
     void OnDeviceChanged(

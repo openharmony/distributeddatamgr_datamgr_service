@@ -18,17 +18,17 @@
 #include <memory>
 #include "uv_queue.h"
 namespace OHOS::DistributedData {
-    class JSObserver : public std::enable_shared_from_this<JSObserver> {
-    public:
-        JSObserver(std::shared_ptr <UvQueue> uvQueue, napi_value callback);
-        virtual ~JSObserver();
-        napi_ref GetCallback();
-        void Clear();
-    protected:
-        void AsyncCall(UvQueue::NapiArgsGenerator genArgs = UvQueue::NapiArgsGenerator());
-    private:
-        std::shared_ptr<UvQueue> uvQueue_;
-        napi_ref callback_;
-    };
+class JSObserver : public std::enable_shared_from_this<JSObserver> {
+public:
+    JSObserver(std::shared_ptr <UvQueue> uvQueue, napi_value callback);
+    virtual ~JSObserver();
+    napi_ref GetCallback();
+    void Clear();
+protected:
+    void AsyncCall(UvQueue::NapiArgsGenerator genArgs = UvQueue::NapiArgsGenerator());
+private:
+    std::shared_ptr<UvQueue> uvQueue_;
+    napi_ref callback_;
+};
 }
 #endif // OHOS_JS_OBSERVER_H

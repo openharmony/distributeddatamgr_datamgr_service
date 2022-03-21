@@ -25,7 +25,7 @@ ohos_unittest("CommunicationProviderTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/communicator",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/dfx",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "../src",
   ]
   external_deps = [
@@ -47,7 +47,7 @@ config("module_comm_config") {
     "./unittest/communicator",
     "./unittest/communicator/include",
     "//utils/native/base/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/communicator",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/dfx",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/log",

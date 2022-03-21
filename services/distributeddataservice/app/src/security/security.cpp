@@ -51,7 +51,7 @@ Security::~Security()
 DBStatus Security::RegOnAccessControlledEvent(const OnAccessControlledEvent &callback)
 {
     ZLOGD("add new lock status observer!");
-    return NOT_SUPPORT;
+    return DBStatus::NOT_SUPPORT;
 }
 
 bool Security::IsAccessControlled() const
@@ -164,7 +164,8 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid)
             sensitive = value;
             return true;
         }
-    auto &network = AppDistributedKv::CommunicationProvider::GetInstance();
+
+        auto &network = AppDistributedKv::CommunicationProvider::GetInstance();
         auto devices = network.GetRemoteNodesBasicInfo();
         devices.push_back(network.GetLocalBasicInfo());
         for (auto &device : devices) {
@@ -201,7 +202,7 @@ int32_t Security::GetCurrentUserStatus() const
 
 DBStatus Security::SetFileSecurityOption(const std::string &filePath, const SecurityOption &option)
 {
-    ZLOGI("set security option %d", option.securityLabel);
+    ZLOGI("set security option %{public}d", option.securityLabel);
     if (!IsExits(filePath)) {
         return INVALID_ARGS;
     }
@@ -210,15 +211,15 @@ DBStatus Security::SetFileSecurityOption(const std::string &filePath, const Secu
     }
     auto dataLevel = Convert2Name(option);
     if (dataLevel.empty()) {
-        ZLOGE("Invalid label args! label:%d, flag:%d path:%s",
+        ZLOGE("Invalid label args! label:%d, flag:%{public}d path:%{public}s",
               option.securityLabel, option.securityFlag, filePath.c_str());
         return INVALID_ARGS;
     }
 
     bool result = OHOS::DistributedFS::ModuleSecurityLabel::SecurityLabel::SetSecurityLabel(filePath, dataLevel);
     if (!result) {
-        ZLOGE("set security label failed!, result:%d, datalevel:%s", result, dataLevel.c_str());
-        return DB_ERROR;
+        ZLOGE("set security label failed!, result:%d, datalevel:%{public}s", result, dataLevel.c_str());
+        return DBStatus::DB_ERROR;
     }
 
     return OK;
@@ -227,7 +228,7 @@ DBStatus Security::SetFileSecurityOption(const std::string &filePath, const Secu
 DBStatus Security::SetDirSecurityOption(const std::string &filePath, const SecurityOption &option)
 {
     ZLOGI("the filePath is a directory!");
-    return NOT_SUPPORT;
+    return DBStatus::NOT_SUPPORT;
 }
 
 DBStatus Security::GetFileSecurityOption(const std::string &filePath, SecurityOption &option) const
@@ -242,7 +243,7 @@ DBStatus Security::GetFileSecurityOption(const std::string &filePath, SecurityOp
         option = {NOT_SET, ECE};
         return OK;
     }
-    ZLOGI("get security option %s", value.c_str());
+    ZLOGI("get security option %{public}s", value.c_str());
     if (value == "s3") {
         option = { Convert2Security(value), SECE };
     } else {
@@ -254,6 +255,6 @@ DBStatus Security::GetFileSecurityOption(const std::string &filePath, SecurityOp
 DBStatus Security::GetDirSecurityOption(const std::string &filePath, SecurityOption &option) const
 {
     ZLOGI("the filePath is a directory!");
-    return NOT_SUPPORT;
+    return DBStatus::NOT_SUPPORT;
 }
 }

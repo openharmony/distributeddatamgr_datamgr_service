@@ -20,12 +20,9 @@
 #include <vector>
 #include <unistd.h>
 #include <iostream>
-#include "app_types.h"
-#include "app_device_status_change_listener.h"
+#include "app_device_change_listener.h"
 #include "communication_provider.h"
 #include "log_print.h"
-#include "app_device_handler.h"
-
 using namespace std;
 using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;
@@ -42,7 +39,7 @@ void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceIn
     ZLOGI("data  %{public}s  %s", info.deviceName.c_str(), ptr);
 }
 
-class AppDeviceStatusChangeListenerImpl : public AppDeviceStatusChangeListener {
+class AppDeviceStatusChangeListenerImpl : public AppDeviceChangeListener {
 public:
     void OnDeviceChanged(const OHOS::AppDistributedKv::DeviceInfo &info,
                          const DeviceChangeType &type) const override;
@@ -136,9 +133,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider006, TestSize.Level
     ZLOGD("GetDeviceList size: %zu", devices.size());
     ASSERT_GE(devices.size(), val);
     for (const auto &device : devices) {
-        ZLOGD("GetDeviceList id: %s, name:%s, type:%s",
-              AppDeviceHandler::ToBeAnonymous(device.deviceId).c_str(),
-              device.deviceName.c_str(), device.deviceType.c_str());
+        ZLOGD("GetDeviceList, name:%s, type:%s", device.deviceName.c_str(), device.deviceType.c_str());
     }
     sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
@@ -156,9 +151,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider007, TestSize.Level
     auto device = CommunicationProvider::GetInstance().GetLocalDevice();
     const unsigned long val = 0;
     ASSERT_GE(device.deviceName.length(), val);
-    ZLOGD("GetLocalDevice id: %s, name:%s, type:%s",
-          AppDeviceHandler::ToBeAnonymous(device.deviceId).c_str(),
-          device.deviceName.c_str(), device.deviceType.c_str());
+    ZLOGD("GetLocalDevice, name:%s, type:%s", device.deviceName.c_str(), device.deviceType.c_str());
     sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 

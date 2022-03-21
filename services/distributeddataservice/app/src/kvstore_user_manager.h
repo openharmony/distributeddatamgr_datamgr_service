@@ -34,7 +34,7 @@ public:
     Status GetKvStore(const Options &options, const std::string &bundleName, const std::string &storeId, pid_t uid,
         const std::vector<uint8_t> &cipherKey, sptr<T> &kvStore)
     {
-        std::lock_guard<std::mutex> lg(appMutex_);
+        std::lock_guard<decltype(appMutex_)> lg(appMutex_);
         auto it = appMap_.find(bundleName);
         if (it == appMap_.end()) {
             auto result = appMap_.emplace(
@@ -70,7 +70,7 @@ public:
     void SetCompatibleIdentify(const std::string &deviceId) const;
 
 private:
-    std::mutex appMutex_;
+    mutable std::recursive_mutex appMutex_;
     std::map<std::string, KvStoreAppManager> appMap_;
     std::string userId_;
 };

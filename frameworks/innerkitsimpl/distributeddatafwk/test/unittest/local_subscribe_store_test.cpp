@@ -139,7 +139,9 @@ void KvStoreObserverUnitTest::OnChange(const ChangeNotification &changeNotificat
 }
 
 void KvStoreObserverUnitTest::OnChange(const ChangeNotification &changeNotification)
-{}
+{
+    OnChange(changeNotification, nullptr);
+}
 
 void KvStoreObserverUnitTest::ResetToZero()
 {

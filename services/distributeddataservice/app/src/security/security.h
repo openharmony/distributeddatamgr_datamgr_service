@@ -20,14 +20,14 @@
 #include <concurrent_map.h>
 #include "iprocess_system_api_adapter.h"
 #include "kv_store_delegate_manager.h"
-#include "app_device_status_change_listener.h"
+#include "app_device_change_listener.h"
 #include "visibility.h"
 #include "sensitive.h"
 
 namespace OHOS::DistributedKv {
 class Security
     : public DistributedDB::IProcessSystemApiAdapter,
-      public AppDistributedKv::AppDeviceStatusChangeListener {
+      public AppDistributedKv::AppDeviceChangeListener {
 public:
     using DBStatus = DistributedDB::DBStatus;
     using OnAccessControlledEvent = DistributedDB::OnAccessControlledEvent;

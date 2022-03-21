@@ -28,6 +28,7 @@ config("module_dfx_mst_config") {
     "//utils/native/base/include",
     "//utils/system/safwk/native/include",
     "//third_party/openssl/include/",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
   ]
 }
 
@@ -69,6 +70,7 @@ config("module_dfx_config") {
     "//utils/native/base/include",
     "//utils/system/safwk/native/include",
     "//third_party/openssl/include/",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
   ]
 }
 

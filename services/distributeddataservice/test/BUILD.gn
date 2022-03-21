@@ -42,7 +42,6 @@ config("module_private_config") {
     "moduletest/common/distributeddb/include",
     "//utils/native/base/include",
     "//third_party/sqlite/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "//third_party/openssl/include/",
   ]
