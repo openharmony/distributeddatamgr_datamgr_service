@@ -24,7 +24,7 @@ namespace OHOS {
 namespace DistributedKv {
 class KvStoreTask {
 public:
-    KVSTORE_API ~KvStoreTask() {};
+    KVSTORE_API ~KvStoreTask() {}
     KVSTORE_API KvStoreTask(std::function<void()> lambda);
     KVSTORE_API KvStoreTask(std::function<void()> lambda, const std::string &taskName);
     KVSTORE_API void operator()();

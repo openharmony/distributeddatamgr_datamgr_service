@@ -108,6 +108,7 @@ class KvStoreDataServiceStub : public IRemoteStub<IKvStoreDataService> {
 public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
+
 private:
     int32_t GetKvStoreOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t GetAllKvStoreIdOnRemote(MessageParcel &data, MessageParcel &reply);
@@ -175,6 +176,7 @@ public:
     virtual Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy);
     virtual Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer);
     virtual sptr<DistributedRdb::IRdbService> GetRdbService();
+
 private:
     static inline BrokerDelegator<KvStoreDataServiceProxy> delegator_;
 };

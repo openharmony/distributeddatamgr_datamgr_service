@@ -198,7 +198,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest003, TestSize.Level1)
 
     Value value22;
     kvStoreSnapshotPtr->Get(key2, value22);
-    EXPECT_EQ(value22.ToString(), value2.ToString()) << "KvStoreBackupTest003 muti kvstore backup failed";
+    EXPECT_EQ(value22.ToString(), value2.ToString()) << "KvStoreBackupTest003 multi kvstore backup failed";
 
     kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
     kvDataService.CloseKvStore(appId, storeId);

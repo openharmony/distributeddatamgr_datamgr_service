@@ -30,11 +30,11 @@ public:
         RDB_NOTIFIER_CMD_DATA_CHANGE,
         RDB_NOTIFIER_CMD_MAX
     };
-    
+
     virtual int32_t OnComplete(uint32_t seqNum, const SyncResult& result) = 0;
-    
+
     virtual int32_t OnChange(const std::string& storeName, const std::vector<std::string>& devices) = 0;
-    
+
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedRdb.IRdbNotifier");
 };
 
@@ -42,9 +42,9 @@ class RdbNotifierProxy : public IRemoteProxy<IRdbNotifier> {
 public:
     explicit RdbNotifierProxy(const sptr<IRemoteObject>& object);
     virtual ~RdbNotifierProxy() noexcept;
-    
+
     int32_t OnComplete(uint32_t seqNum, const SyncResult& result) override;
-    
+
     int32_t OnChange(const std::string& storeName, const std::vector<std::string>& devices) override;
 
 private:
@@ -58,24 +58,24 @@ class RdbNotifierStub : public IRemoteStub<IRdbNotifier> {
 public:
     RdbNotifierStub(const RdbSyncCompleteNotifier&, const RdbDataChangeNotifier&);
     virtual ~RdbNotifierStub() noexcept;
-    
+
     int OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) override;
-    
+
     int32_t OnCompleteInner(MessageParcel& data, MessageParcel& reply);
     int32_t OnComplete(uint32_t seqNum, const SyncResult& result) override;
-    
+
     int32_t OnChangeInner(MessageParcel&data, MessageParcel& reply);
     int32_t OnChange(const std::string& storeName, const std::vector<std::string>& devices) override;
-    
+
 private:
     bool CheckInterfaceToken(MessageParcel& data);
-    
+
     using RequestHandle = int32_t (RdbNotifierStub::*)(MessageParcel&, MessageParcel&);
     static constexpr RequestHandle HANDLES[RDB_NOTIFIER_CMD_MAX] = {
         [RDB_NOTIFIER_CMD_SYNC_COMPLETE] = &RdbNotifierStub::OnCompleteInner,
         [RDB_NOTIFIER_CMD_DATA_CHANGE] = &RdbNotifierStub::OnChangeInner,
     };
-    
+
     RdbSyncCompleteNotifier completeNotifier_;
     RdbDataChangeNotifier changeNotifier_;
 };

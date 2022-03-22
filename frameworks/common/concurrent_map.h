@@ -210,6 +210,7 @@ public:
         entries_.emplace(key, action(key));
         return true;
     }
+
 private:
     std::map<_Key, _Tp> Steal() noexcept
     {
@@ -222,6 +223,7 @@ private:
         std::lock_guard<decltype(mutex_)> lock(mutex_);
         return entries_;
     }
+
 private:
     mutable std::recursive_mutex mutex_;
     std::map<_Key, _Tp> entries_;

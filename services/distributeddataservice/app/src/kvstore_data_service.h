@@ -75,7 +75,7 @@ public:
     Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy) override;
     Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) override;
     sptr<DistributedRdb::IRdbService> GetRdbService() override;
-    
+
     void OnDump() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;

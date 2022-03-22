@@ -39,10 +39,12 @@ public:
     Status PutBatch(const std::vector<Entry> &entries) override;
     Status DeleteBatch(const std::vector<Key> &keys) override;
     static std::string GetLocalDeviceId();
+
 protected:
     KvStoreObserverImpl *CreateObserver(const SubscribeType subscribeType, sptr<IKvStoreObserver> observer) override;
     KvStoreResultSetImpl *CreateResultSet(
         DistributedDB::KvStoreResultSet *resultSet, const DistributedDB::Key &prix) override;
+
 private:
     bool AddKeyPrefixAndSuffix(const Key &in, std::vector<uint8_t> &out);
     Status DeleteKeyPrefix(const Key &in, std::vector<uint8_t> &out);

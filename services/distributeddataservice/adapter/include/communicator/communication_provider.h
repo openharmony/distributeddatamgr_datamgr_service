@@ -26,16 +26,15 @@ namespace AppDistributedKv {
 class CommunicationProvider {
 public:
     // constructor
-    API_EXPORT CommunicationProvider() {};
+    API_EXPORT CommunicationProvider() {}
 
     // destructor
-    API_EXPORT virtual ~CommunicationProvider() {};
+    API_EXPORT virtual ~CommunicationProvider() {}
 
     // user should use this method to get instance of CommunicationProvider;
     API_EXPORT static CommunicationProvider &GetInstance();
 
     API_EXPORT static std::shared_ptr<CommunicationProvider> MakeCommunicationProvider();
-
     // add DeviceChangeListener to watch device change
     virtual Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo) = 0;
 

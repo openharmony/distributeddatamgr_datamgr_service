@@ -123,6 +123,11 @@ void KvStoreServiceDeathNotifier::KvStoreDeathRecipient::OnRemoteDied(const wptr
     kvDataServiceProxy_ = nullptr;
     ZLOGI("watcher set size: %zu", serviceDeathWatchers_.size());
     for (const auto &watcher : serviceDeathWatchers_) {
+        if (watcher == nullptr) {
+            ZLOGI("watcher is nullptr");
+            continue;
+        }
+
         std::thread th = std::thread([watcher]() {
             watcher->OnRemoteDied();
         });

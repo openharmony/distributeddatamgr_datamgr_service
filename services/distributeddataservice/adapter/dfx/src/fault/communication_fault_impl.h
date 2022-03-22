@@ -23,7 +23,7 @@ namespace OHOS {
 namespace DistributedKv {
 class CommunicationFaultImpl : public FaultReporter {
 public:
-    virtual ~CommunicationFaultImpl() {};
+    virtual ~CommunicationFaultImpl() {}
     ReportStatus Report(const struct FaultMsg &msg) override;
 };
 }  // namespace DistributedKv

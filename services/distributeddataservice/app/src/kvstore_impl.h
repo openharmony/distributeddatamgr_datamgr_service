@@ -101,6 +101,7 @@ public:
     Status ReKey(const std::vector<uint8_t> &key);
 
     bool Import(const std::string &bundleName) const;
+
 private:
     Status RebuildKvStoreObserver(DistributedDB::KvStoreDelegate *kvStoreDelegate);
 

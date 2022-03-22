@@ -192,7 +192,7 @@ Status DeviceKvStoreImpl::DeleteKeyPrefix(const Key &in, std::vector<uint8_t> &o
     }
     out.insert(out.end(), deviceUuID.begin(), deviceUuID.end());
 
-    std::string original (inData.begin() + deviceIdPrefixLen + localDeviceId_.size(), inData.end());
+    std::string original(inData.begin() + deviceIdPrefixLen + localDeviceId_.size(), inData.end());
     out.insert(out.end(), original.begin(), original.end());
     return Status::SUCCESS;
 }

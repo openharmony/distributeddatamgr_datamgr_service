@@ -48,6 +48,7 @@ public:
         std::string backupFullName;
         std::string backupBackFullName;
     };
+
 private:
     bool CheckNeedBackup();
     bool InitBackupPara(const MetaData &metaData, BackupPara &backupPara);
@@ -56,6 +57,7 @@ private:
     static std::string backupDirDe_;
 
     KvScheduler scheduler_ {};
+    constexpr uint64_t BACKUP_INTERVAL = 3600 * 1000 * 10; // 10 hours
     int64_t backupSuccessTime_ = 0;
 };
 } // namespace OHOS::DistributedKv

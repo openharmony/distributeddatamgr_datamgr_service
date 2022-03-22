@@ -97,9 +97,12 @@ void BackupHandler::SingleKvStoreBackup(const MetaData &metaData)
     dbOption.createDirByStoreIdOnly = true;
     dbOption.secOption = KvStoreAppManager::ConvertSecurity(metaData.kvStoreMetaData.securityLevel);
 
-    auto *delegateMgr = new DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
+    auto *delegateMgr = new (std::nothrow) DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
         AccountDelegate::GetInstance()->GetCurrentAccountId(metaData.kvStoreMetaData.bundleName));
-
+    if (delegateMgr == nullptr) {
+        ZLOGE("delegateMgr is nullptr");
+        return;
+    }
     std::string appDataStoragePath = KvStoreAppManager::GetDataStoragePath(metaData.kvStoreMetaData.deviceAccountId,
         metaData.kvStoreMetaData.bundleName, backupPara.pathType);
     DistributedDB::KvStoreConfig kvStoreConfig = {appDataStoragePath};
@@ -153,8 +156,12 @@ void BackupHandler::MultiKvStoreBackup(const MetaData &metaData)
     option.passwd = backupPara.password;
     option.createDirByStoreIdOnly = true;
 
-    auto *delegateMgr = new DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
+    auto *delegateMgr = new (std::nothrow) DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
         AccountDelegate::GetInstance()->GetCurrentAccountId(metaData.kvStoreMetaData.bundleName));
+    if (delegateMgr == nullptr) {
+        ZLOGE("delegateMgr is nullptr");
+        return;
+    }
     std::string appDataStoragePath = KvStoreAppManager::GetDataStoragePath(metaData.kvStoreMetaData.deviceAccountId,
         metaData.kvStoreMetaData.bundleName, backupPara.pathType);
     DistributedDB::KvStoreConfig kvStoreConfig;
@@ -389,7 +396,7 @@ bool BackupHandler::CheckNeedBackup()
         return false;
     }
     uint64_t currentTime = TimeUtils::CurrentTimeMicros();
-    if (currentTime - backupSuccessTime_ < 36000000 && backupSuccessTime_ > 0) { // 36000000 is 10 hours
+    if (currentTime - backupSuccessTime_ < BACKUP_INTERVAL && backupSuccessTime_ > 0) {
         ZLOGE("no more than 10 hours since the last backup success.");
         return false;
     }

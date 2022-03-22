@@ -201,7 +201,7 @@ napi_value JsFieldNode::GetValueType(napi_env env, napi_callback_info info)
 
 napi_value JsFieldNode::SetValueType(napi_env env, napi_callback_info info)
 {
-    ZLOGD("FieldNode::New");
+    ZLOGD("FieldNode::SetValueType");
     auto ctxt = std::make_shared<ContextBase>();
     uint32_t type = 0;
     auto input = [env, ctxt, &type](size_t argc, napi_value* argv) {

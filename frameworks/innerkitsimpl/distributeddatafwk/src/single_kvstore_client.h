@@ -97,6 +97,7 @@ public:
                               std::shared_ptr<KvStoreSnapshot> &snapshot) const override;
     Status ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot) override;
     Status Clear() override;
+
 protected:
     Status Control(KvControlCmd cmd, const KvParam &inputParam, KvParam &outputParam) override;
 

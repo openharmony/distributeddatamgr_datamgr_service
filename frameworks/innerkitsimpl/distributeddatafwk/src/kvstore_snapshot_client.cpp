@@ -15,9 +15,9 @@
 
 #define LOG_TAG "KvStoreSnapshotClient"
 
+#include "kvstore_snapshot_client.h"
 #include "constant.h"
 #include "dds_trace.h"
-#include "kvstore_snapshot_client.h"
 #include "log_print.h"
 
 namespace OHOS {

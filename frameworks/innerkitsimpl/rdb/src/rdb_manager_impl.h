@@ -41,9 +41,9 @@ public:
     static RdbManagerImpl &GetInstance();
 
     std::shared_ptr<RdbService> GetRdbService(const RdbSyncerParam& param);
-    
+
     void OnRemoteDied();
-    
+
     class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
         explicit ServiceDeathRecipient(RdbManagerImpl* owner) : owner_(owner) {}
@@ -59,7 +59,7 @@ public:
 
 private:
     RdbManagerImpl();
-    
+
     ~RdbManagerImpl();
 
     sptr<IRdbService> GetRdbService();

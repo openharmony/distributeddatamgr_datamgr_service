@@ -101,6 +101,7 @@ public:
 
     /* read a blob from memory buffer. */
     bool ReadFromBuffer(const uint8_t *&cursorPtr, int &bufferLeftSize);
+
 private:
     std::vector<uint8_t> blob_;
 };

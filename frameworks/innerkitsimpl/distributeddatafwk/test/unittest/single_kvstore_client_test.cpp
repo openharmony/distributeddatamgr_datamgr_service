@@ -78,7 +78,7 @@ public:
     std::vector<Entry> insertEntries_;
     std::vector<Entry> updateEntries_;
     std::vector<Entry> deleteEntries_;
-    bool isClear_;
+    bool isClear_ = false;
     KvStoreObserverTestImpl();
     ~KvStoreObserverTestImpl()
     {}

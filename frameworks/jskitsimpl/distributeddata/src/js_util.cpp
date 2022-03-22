@@ -104,6 +104,7 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, std::string& out)
             out = std::string(buf);
         }
         delete[] buf;
+        buf = nullptr;
     } else {
         status = napi_generic_failure;
     }
@@ -890,7 +891,7 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, DistributedKv::Options
     if (status == napi_ok) {
         options.schema = jsSchema->Dump();
     }
-    
+
     int32_t level = 0;
     GetNamedProperty(env, in, "securityLevel", level);
     options.securityLevel = level;

@@ -122,6 +122,7 @@ public:
      * @return HiEvent
      */
     static HiEvent ByJson(int eventID, const std::string& json);
+
 private:
     static void ReportImpl(HiEvent&& event);
 };

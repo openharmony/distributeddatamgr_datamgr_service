@@ -24,6 +24,7 @@ namespace OHOS::DistributedKv {
 class QueryHelper {
 public:
     static DistributedDB::Query StringToDbQuery(const std::string &query, bool &isSuccess);
+
 private:
     static std::string deviceId_;
     static bool hasPrefixKey_;

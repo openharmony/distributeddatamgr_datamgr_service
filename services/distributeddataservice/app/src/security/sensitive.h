@@ -35,6 +35,7 @@ public:
     operator bool () const;
     bool operator >= (const DistributedDB::SecurityOption &option);
     uint32_t GetDeviceSecurityLevel();
+
 private:
     uint32_t GetSensitiveLevel(const std::string &udid);
     bool InitDEVSLQueryParams(DEVSLQueryParams *params, const std::string &udid);

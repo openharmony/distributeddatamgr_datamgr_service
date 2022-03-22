@@ -69,7 +69,7 @@ public:
     static void OnMessageReceived(int sessionId, const void *data, unsigned int dataLen);
     static void OnBytesReceived(int sessionId, const void *data, unsigned int dataLen);
 public:
-    // notifiy all listeners when received message
+    // notify all listeners when received message
     static void NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
                              const PipeInfo &pipeInfo);
     static SoftBusAdapter *softBusAdapter_;

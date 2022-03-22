@@ -15,9 +15,9 @@
 
 #define LOG_TAG "DirectoryUtils"
 
+#include "directory_utils.h"
 #include <dirent.h>
 #include <cstring>
-#include "directory_utils.h"
 #include "log_print.h"
 #include "unistd.h"
 

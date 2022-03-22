@@ -58,6 +58,7 @@ public:
     Status CloseResultSet(DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate);
 
     Status MigrateKvStore(DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate);
+
 private:
     static constexpr int INIT_POSTION = -1;
 

@@ -92,6 +92,7 @@ public:
     virtual bool IsAfterLast();
 
     virtual Status GetEntry(Entry &entry);
+
 private:
     virtual int SendRequest(uint32_t code);
     virtual bool SendRequestRetBool(uint32_t code);

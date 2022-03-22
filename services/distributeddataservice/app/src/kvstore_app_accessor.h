@@ -41,6 +41,7 @@ public:
     void OnCallback(const std::string &userId, const std::string &appId,
                     const std::string &storeId, DistributedDB::AutoLaunchStatus status);
     static KvStoreAppAccessor &GetInstance();
+
 private:
     KvStoreAppAccessor();
 };

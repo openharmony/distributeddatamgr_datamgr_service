@@ -521,6 +521,7 @@ public:
 
     // in keys
     static const std::string IN_KEYS;
+
 private:
     std::string str_;
 

@@ -164,7 +164,6 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid)
             sensitive = value;
             return true;
         }
-
         auto &network = AppDistributedKv::CommunicationProvider::GetInstance();
         auto devices = network.GetRemoteNodesBasicInfo();
         devices.push_back(network.GetLocalBasicInfo());
@@ -194,9 +193,6 @@ bool Security::EraseSensitiveByUuid(const std::string &uuid)
 
 int32_t Security::GetCurrentUserStatus() const
 {
-    if (!IsSupportSecurity()) {
-        return NO_PWD;
-    }
     return NO_PWD;
 }
 
@@ -228,6 +224,8 @@ DBStatus Security::SetFileSecurityOption(const std::string &filePath, const Secu
 DBStatus Security::SetDirSecurityOption(const std::string &filePath, const SecurityOption &option)
 {
     ZLOGI("the filePath is a directory!");
+    (void)filePath;
+    (void)option;
     return DBStatus::NOT_SUPPORT;
 }
 
@@ -255,6 +253,8 @@ DBStatus Security::GetFileSecurityOption(const std::string &filePath, SecurityOp
 DBStatus Security::GetDirSecurityOption(const std::string &filePath, SecurityOption &option) const
 {
     ZLOGI("the filePath is a directory!");
+    (void)filePath;
+    (void)option;
     return DBStatus::NOT_SUPPORT;
 }
 } // namespace OHOS::DistributedKv

@@ -23,6 +23,7 @@
 #include "app_device_change_listener.h"
 #include "communication_provider.h"
 #include "log_print.h"
+
 using namespace std;
 using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;

@@ -26,6 +26,7 @@ namespace OHOS {
 namespace AppDistributedKv {
 class API_EXPORT ProcessCommunicatorImpl : public DistributedDB::IProcessCommunicator, public AppDataChangeListener,
                                            public AppDeviceChangeListener {
+
 public:
     using DBStatus = DistributedDB::DBStatus;
     using OnDeviceChange = DistributedDB::OnDeviceChange;
@@ -51,6 +52,7 @@ public:
     std::vector<DeviceInfos> GetRemoteOnlineDeviceInfosList() override;
     bool IsSameProcessLabelStartedOnPeerDevice(const DeviceInfos &peerDevInfo) override;
     void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override;
+
     API_EXPORT std::shared_ptr<DistributedDB::ExtendHeaderHandle> GetExtendHeaderHandle(
         const DistributedDB::ExtendInfo &info) override;
     API_EXPORT DBStatus CheckAndGetDataHeadInfo(

@@ -32,6 +32,7 @@ public:
     
     static napi_status ToJson(napi_env env, napi_value inner, JsSchema*& out);
     std::string Dump();
+
 private:
     static napi_value GetRootNode(napi_env env, napi_callback_info info);
     static napi_value SetRootNode(napi_env env, napi_callback_info info);

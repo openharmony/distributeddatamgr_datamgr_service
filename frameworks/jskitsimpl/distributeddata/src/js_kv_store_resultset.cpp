@@ -117,7 +117,7 @@ napi_value JsKVStoreResultSet::MoveToFirst(napi_env env, napi_callback_info info
 
 napi_value JsKVStoreResultSet::MoveToLast(napi_env env, napi_callback_info info) /* boolean */
 {
-    ZLOGD("KVStoreResultSet::MoveToFirst()");
+    ZLOGD("KVStoreResultSet::MoveToLast()");
     auto ctxt = std::make_shared<ContextBase>();
     ctxt->GetCbInfoSync(env, info);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");

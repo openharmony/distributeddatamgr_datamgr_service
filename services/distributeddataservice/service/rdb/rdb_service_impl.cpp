@@ -140,7 +140,7 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam& param, const sptr<IRe
         ZLOGE("malloc recipient failed");
         return RDB_ERROR;
     }
-    
+
     if (!notifier->AddDeathRecipient(recipient)) {
         ZLOGE("link to death failed");
         return RDB_ERROR;
@@ -189,7 +189,7 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
         ZLOGE("permission error");
         return nullptr;
     }
-    
+
     pid_t pid = GetCallingPid();
     pid_t uid = GetCallingUid();
     std::shared_ptr<RdbSyncer> syncer;

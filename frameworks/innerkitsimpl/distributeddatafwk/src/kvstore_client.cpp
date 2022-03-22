@@ -15,9 +15,9 @@
 
 #define LOG_TAG "KvStoreClient"
 
+#include "kvstore_client.h"
 #include "constant.h"
 #include "dds_trace.h"
-#include "kvstore_client.h"
 #include "kvstore_observer_client.h"
 #include "kvstore_snapshot_client.h"
 #include "log_print.h"
@@ -52,8 +52,12 @@ Status KvStoreClient::GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observ
         return Status::SERVER_UNAVAILABLE;
     }
 
-    sptr<KvStoreObserverClient> kvStoreObserverClient = new KvStoreObserverClient(GetStoreId(),
+    sptr<KvStoreObserverClient> kvStoreObserverClient = new (std::nothrow) KvStoreObserverClient(GetStoreId(),
         SubscribeType::SUBSCRIBE_TYPE_ALL, observer, KvStoreType::MULTI_VERSION);
+    if (kvStoreObserverClient == nullptr) {
+        ZLOGE("new kvStoreObserverClient failed");
+        return Status::ERROR;
+    }
 
     sptr<IKvStoreSnapshotImpl> snapshotProxyTmp;
     Status statusTmp = Status::SERVER_UNAVAILABLE;

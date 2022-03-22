@@ -27,7 +27,7 @@ enum Status : int32_t;
 class Uninstaller {
 public:
     KVSTORE_API virtual Status Init(KvStoreDataService *kvStoreDataService) = 0;
-    KVSTORE_API virtual ~Uninstaller() {};
+    KVSTORE_API virtual ~Uninstaller() {}
     KVSTORE_API static Uninstaller &GetInstance();
 };
 } // namespace OHOS::DistributedKv

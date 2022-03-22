@@ -33,7 +33,7 @@ public:
         id_ = id;
     }
 
-    virtual ~HiEvent() {};
+    virtual ~HiEvent() {}
 
     HiEvent(const HiEvent& other)
     {
@@ -44,7 +44,7 @@ public:
         return *this;
     }
 
-    HiEvent(HiEvent&& other) {};
+    HiEvent(HiEvent&& other) {}
     HiEvent& operator=(HiEvent&& other)
     {
         return *this;

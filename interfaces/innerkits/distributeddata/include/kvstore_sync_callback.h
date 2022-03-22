@@ -21,7 +21,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
-// client implememt this class to watch kvstore change.
+// client implement this class to watch kvstore change.
 class KvStoreSyncCallback {
 public:
     KVSTORE_API KvStoreSyncCallback() = default;

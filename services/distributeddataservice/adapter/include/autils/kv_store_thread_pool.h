@@ -27,7 +27,7 @@ public:
     KvStoreThreadPool(const KvStoreThreadPool &) = delete;
     KvStoreThreadPool &operator=(KvStoreThreadPool &&) = delete;
     KvStoreThreadPool &operator=(const KvStoreThreadPool &) = delete;
-    KVSTORE_API virtual ~KvStoreThreadPool() {};
+    KVSTORE_API virtual ~KvStoreThreadPool() {}
 
     KVSTORE_API static std::shared_ptr<KvStoreThreadPool> GetPool(int poolSize, bool startImmediately = false);
     KVSTORE_API virtual void Stop() = 0;

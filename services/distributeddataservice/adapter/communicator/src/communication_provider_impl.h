@@ -64,10 +64,12 @@ public:
     std::vector<DeviceInfo> GetRemoteNodesBasicInfo() const override;
     std::string ToNodeId(const std::string &id) const override;
     void SetMessageTransFlag(const struct PipeInfo &pipeInfo, bool flag) override;
+
 protected:
     virtual Status Initialize();
 
     static std::mutex mutex_;
+
 private:
     AppPipeMgr &appPipeMgr_;
     AppDeviceHandler &appDeviceHandler_;

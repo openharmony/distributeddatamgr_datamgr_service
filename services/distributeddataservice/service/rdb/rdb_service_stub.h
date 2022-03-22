@@ -49,11 +49,11 @@ private:
     int32_t OnRemoteObtainDistributedTableName(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnRemoteInitNotifier(MessageParcel&data, MessageParcel& reply);
-    
+
     int32_t OnRemoteSetDistributedTables(MessageParcel &data, MessageParcel &reply);
-    
+
     int32_t OnRemoteDoSync(MessageParcel& data, MessageParcel& reply);
-    
+
     int32_t OnRemoteDoAsync(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnRemoteDoSubscribe(MessageParcel& data, MessageParcel& reply);

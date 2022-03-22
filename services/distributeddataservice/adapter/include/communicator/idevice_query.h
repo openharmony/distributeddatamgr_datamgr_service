@@ -21,7 +21,7 @@ namespace OHOS {
 namespace AppDistributedKv {
 class IDeviceQuery {
 public:
-    API_EXPORT virtual ~IDeviceQuery() {};
+    API_EXPORT virtual ~IDeviceQuery() {}
 
     // Get online deviceList
     virtual std::vector<DeviceInfo> GetDeviceList() const = 0;

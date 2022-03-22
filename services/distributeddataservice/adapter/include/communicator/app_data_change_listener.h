@@ -22,7 +22,7 @@ namespace AppDistributedKv {
 class AppDataChangeListener {
 public:
     API_EXPORT AppDataChangeListener() = default;
-    API_EXPORT virtual ~AppDataChangeListener() {};
+    API_EXPORT virtual ~AppDataChangeListener() {}
 
     API_EXPORT virtual void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size,
                                       const PipeInfo &pipeInfo) const = 0;

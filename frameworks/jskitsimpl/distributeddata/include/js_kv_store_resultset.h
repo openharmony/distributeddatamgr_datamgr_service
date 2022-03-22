@@ -29,6 +29,7 @@ public:
 
     static napi_value Constructor(napi_env env);
     static napi_value New(napi_env env, napi_callback_info info);
+
 private:
     static napi_value GetCount(napi_env env, napi_callback_info info);
     static napi_value GetPosition(napi_env env, napi_callback_info info);

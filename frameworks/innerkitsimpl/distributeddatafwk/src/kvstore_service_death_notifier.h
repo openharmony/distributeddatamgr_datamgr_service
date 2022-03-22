@@ -46,6 +46,7 @@ public:
     static void AddServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipientImpl> watcher);
     // remove watcher for server die msg.
     static void RemoveServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipientImpl> watcher);
+
 private:
     class KvStoreDeathRecipient : public IRemoteObject::DeathRecipient {
     public:

@@ -416,7 +416,7 @@ Status KvStoreDataService::GetKvStoreFailDo(const Options &options, const KvStor
 
     // if kvstore damaged and no backup file, then return DB_ERROR
     if (statusTmp != Status::SUCCESS && getKvStoreStatus == Status::CRYPT_ERROR) {
-        // if backup file not exist, dont need recover
+        // if backup file not exist, don't need recover
         if (!CheckBackupFileExist(kvParas.userId, kvParas.bundleName, kvParas.storeId, path)) {
             return Status::CRYPT_ERROR;
         }
@@ -461,7 +461,7 @@ Status KvStoreDataService::GetSingleKvStoreFailDo(const Options &options, const 
 
     // if kvstore damaged and no backup file, then return DB_ERROR
     if (statusTmp != Status::SUCCESS && getKvStoreStatus == Status::CRYPT_ERROR) {
-        // if backup file not exist, dont need recover
+        // if backup file not exist, don't need recover
         if (!CheckBackupFileExist(kvParas.userId, kvParas.bundleName, kvParas.storeId, path)) {
             return Status::CRYPT_ERROR;
         }
@@ -1058,7 +1058,7 @@ bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::
         }
     }
     if (metaData.appType.compare("default") == 0) {
-        ZLOGD("default, dont check sync permission.");
+        ZLOGD("default, don't check sync permission.");
         return true;
     }
     Status status = instance.CheckSyncPermission(userId, appId, storeId, flag, deviceId);
@@ -1068,7 +1068,7 @@ bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::
     }
 
     if (metaData.appType.compare("harmony") != 0) {
-        ZLOGD("it's A app, dont check sync permission.");
+        ZLOGD("it's A app, don't check sync permission.");
         return true;
     }
 

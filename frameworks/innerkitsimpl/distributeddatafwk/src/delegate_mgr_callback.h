@@ -47,6 +47,7 @@ public:
     {
         return delegate_ == nullptr;
     }
+
 private:
     DistributedDB::KvStoreDelegateManager *delegate_ {};
 };

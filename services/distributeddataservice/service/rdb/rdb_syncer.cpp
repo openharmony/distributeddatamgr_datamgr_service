@@ -166,7 +166,7 @@ int32_t RdbSyncer::SetDistributedTables(const std::vector<std::string> &tables)
         ZLOGE("delegate is nullptr");
         return RDB_ERROR;
     }
-    
+
     for (const auto& table : tables) {
         ZLOGI("%{public}s", table.c_str());
         if (delegate->CreateDistributedTable(table) != DistributedDB::DBStatus::OK) {

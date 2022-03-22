@@ -99,7 +99,7 @@ int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
     }
-    
+
     SyncResult result;
     if (DoSync(param, option, predicates, result) != RDB_OK) {
         reply.WriteInt32(RDB_ERROR);
@@ -138,7 +138,7 @@ int32_t RdbServiceStub::OnRemoteDoAsync(MessageParcel &data, MessageParcel &repl
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
     }
-    
+
     reply.WriteInt32(DoAsync(param, seqNum, option, predicates));
     return RDB_OK;
 }

@@ -51,6 +51,7 @@ public:
     Status AddSyncOperation(uintptr_t syncId, uint32_t delayMs, const SyncFunc &syncFunc,
         const SyncEnd &syncEnd);
     Status RemoveSyncOperation(uintptr_t syncId);
+
 private:
     KvStoreSyncManager();
     ~KvStoreSyncManager();

@@ -86,6 +86,7 @@ public:
         }
         return tmpPath;
     }
+
 private:
     std::map<std::string, Strategy> patterns_;
     std::string version_;

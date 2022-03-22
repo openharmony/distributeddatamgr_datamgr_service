@@ -39,6 +39,7 @@ public:
     const SubscribeType &GetSubscribeType() const;
 
     const std::shared_ptr<KvStoreObserver> GetKvStoreObserver() const;
+
 private:
     static const int MAX_TRY_COUNT = 10;
 

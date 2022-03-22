@@ -90,6 +90,7 @@ private:
     static const inline std::string AVERAGE_TIMES = "AVERAGE_TIME";
     static const inline std::string WORST_TIMES = "WORST_TIME";
     static const inline std::string INTERFACES = "INTERFACES";
+
 private:
     static std::mutex runMutex_;
     static bool running_;

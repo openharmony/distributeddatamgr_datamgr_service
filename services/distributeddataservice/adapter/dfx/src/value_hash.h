@@ -23,8 +23,8 @@ namespace OHOS {
 namespace DistributedKv {
 class ValueHash {
 public:
-    ValueHash() {};
-    ~ValueHash() {};
+    ValueHash() {}
+    ~ValueHash() {}
 
     bool CalcValueHash(const std::string &input, std::string &res)
     {
@@ -49,6 +49,7 @@ public:
         res = std::string(result.end() - LEN, result.end());
         return true;
     }
+
 private:
     static constexpr int LEN = 8; // 8 is the substring length
 };

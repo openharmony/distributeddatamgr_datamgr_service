@@ -56,6 +56,7 @@ public:
 
     // Unmarshall the given parcel from this parcelable object.
     KVSTORE_API static ChangeNotification *Unmarshalling(Parcel &parcel);
+
 private:
     std::vector<Entry> insertEntries_;
 

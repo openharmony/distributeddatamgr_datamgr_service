@@ -31,7 +31,7 @@ struct EventParams {
 class BroadcastSender {
 public:
     KVSTORE_API virtual void SendEvent(const EventParams &params) = 0;
-    KVSTORE_API virtual ~BroadcastSender() {};
+    KVSTORE_API virtual ~BroadcastSender() {}
     KVSTORE_API static std::shared_ptr<BroadcastSender> GetInstance();
 private:
     static std::mutex mutex_;

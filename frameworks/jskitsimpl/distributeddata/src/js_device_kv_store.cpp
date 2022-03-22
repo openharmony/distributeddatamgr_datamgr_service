@@ -99,6 +99,10 @@ napi_value JsDeviceKVStore::Get(napi_env env, napi_callback_info info)
         OHOS::DistributedKv::Key key(deviceKey);
         OHOS::DistributedKv::Value value;
         auto& kvStore = reinterpret_cast<JsDeviceKVStore*>(ctxt->native)->GetNative();
+        if (kvStore == nullptr) {
+            ZLOGE("kvStore is nullptr");
+            return;
+        }
         Status status = kvStore->Get(deviceKey, value);
         ZLOGD("kvStore->Get return %{public}d", status);
         ctxt->value = JSUtil::Blob2VariantValue(value);

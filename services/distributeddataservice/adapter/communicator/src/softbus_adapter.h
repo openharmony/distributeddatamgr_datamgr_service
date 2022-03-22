@@ -40,6 +40,7 @@ class BlockData {
 public:
     explicit BlockData() {}
     ~BlockData() {}
+
 public:
     void SetValue(T &data)
     {
@@ -136,8 +137,9 @@ public:
     void OnSessionOpen(int32_t sessionId, int32_t status);
 
     void OnSessionClose(int32_t sessionId);
+
 private:
-    std::shared_ptr<BlockData<int32_t>> GetSemaphore (int32_t sessinId);
+    std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t sessinId);
     mutable std::mutex networkMutex_ {};
     mutable std::map<std::string, std::tuple<std::string, std::string>> networkId2UuidUdid_ {};
     DeviceInfo localInfo_ {};

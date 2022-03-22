@@ -30,10 +30,10 @@ class RdbSyncer {
 public:
     RdbSyncer(const RdbSyncerParam& param, RdbStoreObserverImpl* observer);
     ~RdbSyncer() noexcept;
-    
+
     int32_t Init(pid_t pid, pid_t uid);
 
-    pid_t GetPid() const ;
+    pid_t GetPid() const;
 
     void SetTimerId(uint32_t timerId);
 
@@ -44,9 +44,9 @@ public:
     std::string GetIdentifier() const;
 
     int32_t SetDistributedTables(const std::vector<std::string>& tables);
-    
+
     int32_t DoSync(const SyncOption& option, const RdbPredicates& predicates, SyncResult& result);
-    
+
     int32_t DoAsync(const SyncOption& option, const RdbPredicates& predicates, const SyncCallback& callback);
 
 private:
@@ -55,9 +55,9 @@ private:
     std::string GetBundleName() const;
 
     std::string GetAppId() const;
-    
+
     std::string GetPath() const;
-    
+
     int32_t CreateMetaData();
 
     DistributedDB::RelationalStoreDelegate* GetDelegate();

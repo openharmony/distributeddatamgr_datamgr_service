@@ -36,9 +36,9 @@ public:
     // first key of the not-transported part. You can use this key as nextKey to get next part of data. When you get an
     // empty nextKey, It means all data has been transported.
     // parameters:
-    // prefixKey: perfix key to search
+    // prefixKey: prefix key to search
     // nextKey: The first key to start in this search.
-    // callback: all entries satisfied perfixKey, status of this call and the first key of the next part of data.
+    // callback: all entries satisfied prefixKey, status of this call and the first key of the next part of data.
     [[deprecated]]
     KVSTORE_API virtual Status GetEntries(const Key &prefixKey, Key &nextKey, std::vector<Entry> &entries) = 0;
 
@@ -49,8 +49,8 @@ public:
     // if some entry in the return set large then 750k, GetEntries may only return entries before this entry. you need
     // to use GetKeys interface to get all keys, then use Get interface to get each entry.
     // parameters:
-    // prefixKey: perfix key to search
-    // callback: all entries satisfies perfixKey, and Stauts for this call.
+    // prefixKey: prefix key to search
+    // callback: all entries satisfies prefixKey, and Stauts for this call.
     KVSTORE_API virtual Status GetEntries(const Key &prefixKey, std::vector<Entry> &entries) = 0;
 
     // Deprecated. use the GetKeys interface without nextKey as parameter instead.
@@ -62,9 +62,9 @@ public:
     // first key of the not-transported part. You can use this key as nextKey to get next part of data. When you get an
     // empty nextKey, It means all data has been transported.
     // parameters:
-    // prefixKey: perfix key to search
+    // prefixKey: prefix key to search
     // nextKey: The first key to start in this search.
-    // callback: all keys satisfies perfixKey, status of this call and the first key of the next part of data.
+    // callback: all keys satisfies prefixKey, status of this call and the first key of the next part of data.
     [[deprecated]]
     KVSTORE_API virtual Status GetKeys(const Key &prefixKey, Key &nextKey, std::vector<Key> &entries) = 0;
 
@@ -73,8 +73,8 @@ public:
     // GetKeys will return all keys whose Key.StartsWith(keyPrefix) is true,
     // if keyPrefix is empty, all keys in the kvstore will be returned.
     // parameters:
-    // prefixKey: perfix key to search
-    // callback: all keys satisfies perfixKey, and Stauts for this call.
+    // prefixKey: prefix key to search
+    // callback: all keys satisfies prefixKey, and Stauts for this call.
     KVSTORE_API
     virtual Status GetKeys(const Key &prefixKey, std::vector<Key> &entries) = 0;
 

@@ -15,10 +15,10 @@
 
 #define LOG_TAG "KvStoreSyncCallbackClient"
 
+#include "kvstore_sync_callback_client.h"
 #include <cinttypes>
 #include <atomic>
 #include "log_print.h"
-#include "kvstore_sync_callback_client.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -39,6 +39,10 @@ void KvStoreSyncCallbackClient::SyncCompleted(const std::map<std::string, Status
 void KvStoreSyncCallbackClient::AddSyncCallback(const std::shared_ptr<KvStoreSyncCallback> callback,
                                                 uint64_t sequenceId)
 {
+    if (callback == nullptr) {
+        ZLOGE("callback is nullptr");
+        return;
+    }
     auto inserted = syncCallbackInfo_.Insert(sequenceId, callback);
     if (!inserted) {
         ZLOGE("The sequeuceId %{public}" PRIu64 "is repeat!", sequenceId);

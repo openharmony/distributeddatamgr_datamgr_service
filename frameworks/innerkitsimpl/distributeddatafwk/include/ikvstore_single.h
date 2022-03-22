@@ -102,6 +102,7 @@ class SingleKvStoreStub : public IRemoteStub<ISingleKvStore> {
 public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
+
 private:
     int PutOnRemote(MessageParcel &data, MessageParcel &reply);
     int DeleteOnRemote(MessageParcel &data, MessageParcel &reply);
@@ -203,6 +204,7 @@ public:
                              uint64_t sequenceId);
     virtual Status UnSubscribe(const std::vector<std::string> &deviceIds, const std::string &query,
                                uint64_t sequenceId);
+
 private:
     static inline BrokerDelegator<SingleKvStoreProxy> delegator_;
 };

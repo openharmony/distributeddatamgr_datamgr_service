@@ -29,6 +29,7 @@ public:
                          const AppDistributedKv::DeviceChangeType &type) const override;
     AppDistributedKv::ChangeLevelType GetChangeLevelType() const override;
     ~DeviceChangeListenerImpl() {}
+
 private:
     std::map<IRemoteObject *, sptr<IDeviceStatusChangeListener>> &observers_;
 };

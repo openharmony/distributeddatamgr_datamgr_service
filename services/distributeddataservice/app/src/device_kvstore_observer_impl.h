@@ -24,6 +24,7 @@ public:
     DeviceKvStoreObserverImpl(SubscribeType subscribeType, sptr<IKvStoreObserver> observerProxy);
     ~DeviceKvStoreObserverImpl() override;
     void OnChange(const DistributedDB::KvStoreChangedData &data) override;
+
 private:
     void Transfer(const std::list<DistributedDB::Entry> &input, std::vector<Entry> &output, std::string &deviceId);
     std::string localDeviceId_;

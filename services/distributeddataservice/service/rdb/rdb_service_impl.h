@@ -32,14 +32,14 @@ public:
     RdbServiceImpl();
 
     void OnClientDied(pid_t pid);
-    
+
     /* IPC interface */
     std::string ObtainDistributedTableName(const std::string& device, const std::string& table) override;
 
     int32_t InitNotifier(const RdbSyncerParam& param, const sptr<IRemoteObject> notifier) override;
-    
+
     int32_t SetDistributedTables(const RdbSyncerParam& param, const std::vector<std::string>& tables) override;
-    
+
     void OnDataChange(pid_t pid, const DistributedDB::StoreChangedData& data);
 
 protected:

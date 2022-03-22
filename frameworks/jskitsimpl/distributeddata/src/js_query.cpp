@@ -285,7 +285,7 @@ napi_value JsQuery::IsNull(napi_env env, napi_callback_info info)
 
 /*
  * InNumber / NotInNumber
- * [NOTES] Recommented to use the napi_typedarray_type
+ * [NOTES] Recommended to use the napi_typedarray_type
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects#indexed_collections
  */
 enum class NumberType : uint8_t {
@@ -338,7 +338,7 @@ struct NumbersContext : public ContextBase {
                 status = JSUtil::GetValue(env, argv[1], doubleList);
                 CHECK_STATUS_RETURN_VOID(this, "invalid arg[1], i.e. invalid number array!");
                 innerType = NumberType::NUMBER_DOUBLE;
-            };
+            }
         };
         GetCbInfoSync(env, info, input);
     }
@@ -518,7 +518,7 @@ napi_value JsQuery::OrderByAsc(napi_env env, napi_callback_info info)
 
 napi_value JsQuery::OrderByDesc(napi_env env, napi_callback_info info)
 {
-    ZLOGD("Query::OrderByAsc()");
+    ZLOGD("Query::OrderByDesc()");
     std::string field;
     auto ctxt = std::make_shared<ContextBase>();
     auto input = [env, ctxt, &field](size_t argc, napi_value* argv) {

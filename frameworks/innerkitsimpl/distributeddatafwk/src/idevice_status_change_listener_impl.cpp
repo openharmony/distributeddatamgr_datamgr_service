@@ -49,7 +49,7 @@ void DeviceStatusChangeListenerProxy::OnChange(const DeviceInfo &results, const 
 int DeviceStatusChangeListenerStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                                                     MessageParcel &reply, MessageOption &option)
 {
-    ZLOGD("%{public}d", code);
+    ZLOGD("%{public}u", code);
     std::u16string descriptor = DeviceStatusChangeListenerStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {
@@ -63,6 +63,7 @@ int DeviceStatusChangeListenerStub::OnRemoteRequest(uint32_t code, MessageParcel
             if (deviceInfoPtr != nullptr) {
                 OnChange(*deviceInfoPtr, type);
                 delete deviceInfoPtr;
+                deviceInfoPtr = nullptr;
             } else {
                 ZLOGW("device info is null");
             }

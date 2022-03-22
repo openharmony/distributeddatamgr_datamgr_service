@@ -30,7 +30,7 @@ KvStoreObserverClient::KvStoreObserverClient(const StoreId &storeId, SubscribeTy
 
 KvStoreObserverClient::~KvStoreObserverClient()
 {
-    ZLOGI("start");
+    ZLOGI("end");
 }
 
 void KvStoreObserverClient::OnChange(const ChangeNotification &changeNotification, sptr<IKvStoreSnapshotImpl> snapshot)

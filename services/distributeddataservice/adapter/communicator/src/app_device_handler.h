@@ -51,6 +51,7 @@ public:
     std::string ToNodeID(const std::string &id, const std::string &nodeId) const;
 
     static std::string ToBeAnonymous(const std::string &name);
+
 private:
     void UpdateRelationship(const std::string &networkid, const DeviceChangeType &type);
     std::shared_ptr<SoftBusAdapter> softbusAdapter_ {};

@@ -35,7 +35,7 @@ public:
         RDB_SERVICE_CMD_UNSUBSCRIBE,
         RDB_SERVICE_CMD_MAX
     };
-    
+
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedRdb.IRdbService");
 
     virtual int32_t InitNotifier(const RdbSyncerParam& param, const sptr<IRemoteObject> notifier) = 0;
@@ -43,7 +43,7 @@ public:
 protected:
     virtual int32_t DoSync(const RdbSyncerParam& param, const SyncOption& option,
                            const RdbPredicates& predicates, SyncResult& result) = 0;
-    
+
     virtual int32_t DoAsync(const RdbSyncerParam& param, uint32_t seqNum,
                             const SyncOption& option, const RdbPredicates& predicates) = 0;
 

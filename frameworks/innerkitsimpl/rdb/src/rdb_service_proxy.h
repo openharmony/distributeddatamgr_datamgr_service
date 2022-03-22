@@ -64,7 +64,7 @@ protected:
 
 private:
     uint32_t GetSeqNum();
-    
+
     int32_t DoSync(const RdbSyncerParam& param, const SyncOption& option,
                    const RdbPredicates& predicates, const SyncCallback& callback);
 
@@ -72,9 +72,9 @@ private:
                     const RdbPredicates& predicates, const SyncCallback& callback);
 
     void OnSyncComplete(uint32_t seqNum, const SyncResult& result);
-    
+
     void OnDataChange(const std::string& storeName, const std::vector<std::string>& devices);
-    
+
     std::atomic<uint32_t> seqNum_ {};
 
     ConcurrentMap<uint32_t, SyncCallback> syncCallbacks_;

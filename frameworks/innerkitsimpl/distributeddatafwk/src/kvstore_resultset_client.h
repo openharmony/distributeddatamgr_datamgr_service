@@ -54,6 +54,7 @@ public:
     Status GetEntry(Entry &entry) const override;
 
     sptr<IKvStoreResultSet> GetKvStoreResultSetProxy() const;
+
 private:
     sptr<IKvStoreResultSet> kvStoreResultSetProxy_;
 };

@@ -28,8 +28,9 @@ public:
     UninstallEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info,
         UninstallEventCallback callback);
 
-    ~UninstallEventSubscriber() {};
+    ~UninstallEventSubscriber() {}
     void OnReceiveEvent(const EventFwk::CommonEventData &event) override;
+
 private:
     static const std::string USER_ID;
     UninstallEventCallback callback_;
@@ -39,6 +40,7 @@ public:
     ~UninstallerImpl();
 
     Status Init(KvStoreDataService *kvStoreDataService) override;
+
 private:
     std::shared_ptr<UninstallEventSubscriber> subscriber_ {};
 };
