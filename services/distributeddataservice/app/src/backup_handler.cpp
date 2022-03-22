@@ -97,12 +97,8 @@ void BackupHandler::SingleKvStoreBackup(const MetaData &metaData)
     dbOption.createDirByStoreIdOnly = true;
     dbOption.secOption = KvStoreAppManager::ConvertSecurity(metaData.kvStoreMetaData.securityLevel);
 
-    auto *delegateMgr = new (std::nothrow) DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
+    auto *delegateMgr = new DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
         AccountDelegate::GetInstance()->GetCurrentAccountId(metaData.kvStoreMetaData.bundleName));
-    if (delegateMgr == nullptr) {
-        ZLOGE("delegateMgr is nullptr");
-        return;
-    }
     std::string appDataStoragePath = KvStoreAppManager::GetDataStoragePath(metaData.kvStoreMetaData.deviceAccountId,
         metaData.kvStoreMetaData.bundleName, backupPara.pathType);
     DistributedDB::KvStoreConfig kvStoreConfig = {appDataStoragePath};
@@ -156,12 +152,8 @@ void BackupHandler::MultiKvStoreBackup(const MetaData &metaData)
     option.passwd = backupPara.password;
     option.createDirByStoreIdOnly = true;
 
-    auto *delegateMgr = new (std::nothrow) DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
+    auto *delegateMgr = new DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
         AccountDelegate::GetInstance()->GetCurrentAccountId(metaData.kvStoreMetaData.bundleName));
-    if (delegateMgr == nullptr) {
-        ZLOGE("delegateMgr is nullptr");
-        return;
-    }
     std::string appDataStoragePath = KvStoreAppManager::GetDataStoragePath(metaData.kvStoreMetaData.deviceAccountId,
         metaData.kvStoreMetaData.bundleName, backupPara.pathType);
     DistributedDB::KvStoreConfig kvStoreConfig;
