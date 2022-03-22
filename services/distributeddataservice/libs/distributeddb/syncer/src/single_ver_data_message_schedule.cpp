@@ -133,8 +133,10 @@ void SingleVerDataMessageSchedule::UpdateMsgMapInner(std::queue<Message *> &msgT
         Message *msg = msgTmpQueue.front();
         msgTmpQueue.pop();
         // insert new msg into map and delete old msg
-        Message *dropMsg = UpdateMsgMapIfNeed(msg);
-        delete dropMsg;
+        int errCode = UpdateMsgMapIfNeed(msg);
+        if (errCode != E_OK) {
+            delete msg;
+        }
     }
 }
 
@@ -293,20 +295,20 @@ int SingleVerDataMessageSchedule::TimeOut(TimerId timerId)
     return E_OK;
 }
 
-Message *SingleVerDataMessageSchedule::UpdateMsgMapIfNeed(Message *msg)
+int SingleVerDataMessageSchedule::UpdateMsgMapIfNeed(Message *msg)
 {
     if (msg == nullptr) {
-        return nullptr;
+        return -E_INVALID_ARGS;
     }
     const DataRequestPacket *packet = msg->GetObject<DataRequestPacket>();
     if (packet == nullptr) {
-        return msg;
+        return -E_INVALID_ARGS;
     }
     uint32_t sessionId = msg->GetSessionId();
     uint32_t sequenceId = msg->GetSequenceId();
     uint64_t packetId = packet->GetPacketId();
     if (prevSessionId_ != 0 && sessionId == prevSessionId_) {
-        return msg;
+        return -E_INVALID_ARGS;
     }
     if (sessionId != currentSessionId_) {
         // make sure all msg sessionId is same in msgMap
@@ -316,18 +318,17 @@ Message *SingleVerDataMessageSchedule::UpdateMsgMapIfNeed(Message *msg)
         finishedPacketId_ = 0;
         expectedSequenceId_ = 1;
     }
-    Message *dropMsg = nullptr;
     if (messageMap_.count(sequenceId) > 0) {
         const auto *cachePacket = messageMap_[sequenceId]->GetObject<DataRequestPacket>();
         if (cachePacket != nullptr) {
             if (packetId != 0 && packetId < cachePacket->GetPacketId()) {
-                return msg;
+                return -E_INVALID_ARGS;
             }
         }
-        dropMsg = messageMap_[sequenceId];
+        delete messageMap_[sequenceId];
         messageMap_[sequenceId] = nullptr;
     }
     messageMap_[sequenceId] = msg;
-    return dropMsg;
+    return E_OK;
 }
 }
