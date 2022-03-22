@@ -147,10 +147,12 @@ void SingleVerRelationalSyncer::DoOnComplete(const SyncParma &param, uint32_t sy
 
 void SingleVerRelationalSyncer::EnableAutoSync(bool enable)
 {
+    (void)enable;
 }
 
 void SingleVerRelationalSyncer::LocalDataChanged(int notifyEvent)
 {
+    (void)notifyEvent;
 }
 
 void SingleVerRelationalSyncer::SchemaChangeCallback()

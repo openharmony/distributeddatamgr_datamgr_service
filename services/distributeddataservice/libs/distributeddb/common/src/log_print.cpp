@@ -90,6 +90,8 @@ void Logger::RegisterLogger(Logger *logger)
 
 void Logger::Log(Level level, const std::string &tag, const char *func, int line, const char *format, ...)
 {
+    (void)func;
+    (void)line;
     if (format == nullptr) {
         return;
     }

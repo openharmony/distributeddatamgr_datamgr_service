@@ -918,11 +918,13 @@ HWTEST_F(DistributedDBRelationalGetDataTest, MissQuery1, TestSize.Level1)
     ExpectCount(db, getLogSql, 3);  // 2,3,4
 
     /**
-     * @tc.steps: step6. Update data. k2v2 to k2v102, k3v3 to k3v103.
+     * @tc.steps: step6. Update data. k2v2 to k2v102, k3v3 to k3v103, k4v4 to k4v104.
      * @tc.expected: Update succeed.
      */
-    ExecSqlAndAssertOK(db, {"UPDATE " + tableName + " SET value=102 WHERE value=2;",
-                            "UPDATE " + tableName + " SET value=103 WHERE value=3;"});
+    ExecSqlAndAssertOK(db, {"INSERT OR REPLACE INTO " + tableName + " VALUES(2, 102);",
+                            "UPDATE " + tableName + " SET value=103 WHERE value=3;",
+                            "DELETE FROM " + tableName + " WHERE key=4;",
+                            "INSERT INTO " + tableName + " VALUES(4, 104);"});
 
     /**
      * @tc.steps: step7. Get all data from "dataPlus" table.
@@ -930,7 +932,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, MissQuery1, TestSize.Level1)
      */
     query = QueryObject(Query::Select(tableName).EqualTo("value", 2).Or().EqualTo("value", 3).Or().EqualTo("value", 4));
     EXPECT_EQ(store->GetSyncData(query, timeRange, DataSizeSpecInfo {}, token, entries), E_OK);
-    EXPECT_EQ(entries.size(), 3U);  // 3 for test, 1 query data and 2 miss query data.
+    EXPECT_EQ(entries.size(), 3U);  // 3 miss query data.
 
     /**
      * @tc.steps: step8. Put data into "data" table from deviceA for 10 times.
@@ -942,10 +944,10 @@ HWTEST_F(DistributedDBRelationalGetDataTest, MissQuery1, TestSize.Level1)
 
     /**
      * @tc.steps: step9. Check data.
-     * @tc.expected: There is 1 data in table.
+     * @tc.expected: There is 0 data in table.
      */
-    ExpectCount(db, getDataSql, 1U);  // 4
-    ExpectCount(db, getLogSql, 1U);  // 4
+    ExpectCount(db, getDataSql, 0U);  // 0 data exists
+    ExpectCount(db, getLogSql, 0U);  // 0 data exists
 
     sqlite3_close(db);
     RefObject::DecObjRef(g_store);

@@ -29,7 +29,7 @@ using AbilityItem = std::pair<uint32_t, uint32_t>;
 // format: {offset, used_bits_num}
 /*
 if need to add new ability, just add append to the last ability
-current ability format: 
+current ability format:
 |first bit|second bit|third bit|
 |DATABASE_COMPRESSION_ZLIB|ALLPREDICATEQUERY|SUBSCRIBEQUERY|
 */

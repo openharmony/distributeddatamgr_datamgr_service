@@ -57,7 +57,7 @@ int LruMap::Put(const std::string &key, const QueryWaterMark &inValue)
 int LruMap::Get(const std::string &key, QueryWaterMark &outValue)
 {
     std::lock_guard<std::mutex> autoLock(lruLock_);
-    if (cache_.count(key) == 0) {
+    if (cache_.find(key) == cache_.end()) {
         return -E_NOT_FOUND;
     }
     outValue = cache_[key];
@@ -190,7 +190,7 @@ int QuerySyncWaterMarkHelper::SetRecvQueryWaterMark(const std::string &queryIden
     std::string cacheKey;
     GetHashQuerySyncDeviceId(deviceId, queryIdentify, cacheKey);
     std::lock_guard<std::mutex> autoLock(queryWaterMarkLock_);
-    return SetRecvQueryWaterMarkWithoutLock(deviceId, cacheKey, waterMark);
+    return SetRecvQueryWaterMarkWithoutLock(cacheKey, waterMark);
 }
 
 int QuerySyncWaterMarkHelper::SetLastQueryTime(const std::string &queryIdentify,
@@ -205,11 +205,11 @@ int QuerySyncWaterMarkHelper::SetLastQueryTime(const std::string &queryIdentify,
         return errCode;
     }
     queryWaterMark.lastQueryTime = timeStamp;
-    return UpdateCacheAndSave(cacheKey, deviceId, queryWaterMark);
+    return UpdateCacheAndSave(cacheKey, queryWaterMark);
 }
 
-int QuerySyncWaterMarkHelper::SetRecvQueryWaterMarkWithoutLock(const std::string &deviceId,
-    const std::string &cacheKey, const WaterMark &waterMark)
+int QuerySyncWaterMarkHelper::SetRecvQueryWaterMarkWithoutLock(const std::string &cacheKey,
+    const WaterMark &waterMark)
 {
     QueryWaterMark queryWaterMark;
     int errCode = GetQueryWaterMarkInCacheAndDb(cacheKey, queryWaterMark);
@@ -217,7 +217,7 @@ int QuerySyncWaterMarkHelper::SetRecvQueryWaterMarkWithoutLock(const std::string
         return errCode;
     }
     queryWaterMark.recvWaterMark = waterMark;
-    return UpdateCacheAndSave(cacheKey, deviceId, queryWaterMark);
+    return UpdateCacheAndSave(cacheKey, queryWaterMark);
 }
 
 int QuerySyncWaterMarkHelper::SetSendQueryWaterMark(const std::string &queryIdentify,
@@ -232,11 +232,11 @@ int QuerySyncWaterMarkHelper::SetSendQueryWaterMark(const std::string &queryIden
         return errCode;
     }
     queryWaterMark.sendWaterMark = waterMark;
-    return UpdateCacheAndSave(cacheKey, deviceId, queryWaterMark);
+    return UpdateCacheAndSave(cacheKey, queryWaterMark);
 }
 
 int QuerySyncWaterMarkHelper::UpdateCacheAndSave(const std::string &cacheKey,
-    const std::string &deviceId, QueryWaterMark &queryWaterMark)
+    QueryWaterMark &queryWaterMark)
 {
     // update lastUsedTime
     int errCode = OS::GetCurrentSysTimeInMicrosecond(queryWaterMark.lastUsedTime);
@@ -473,7 +473,7 @@ void QuerySyncWaterMarkHelper::GetHashDeleteSyncDeviceId(const DeviceID &deviceI
 int QuerySyncWaterMarkHelper::SerializeDeleteWaterMark(const DeleteWaterMark &deleteWaterMark,
     std::vector<uint8_t> &outValue)
 {
-    uint64_t length = CalculateDeleteWaterMarkSize(deleteWaterMark);
+    uint64_t length = CalculateDeleteWaterMarkSize();
     outValue.resize(length);
     Parcel parcel(outValue.data(), outValue.size());
     parcel.WriteUInt32(deleteWaterMark.version);
@@ -502,7 +502,7 @@ int QuerySyncWaterMarkHelper::DeSerializeDeleteWaterMark(const std::vector<uint8
     return E_OK;
 }
 
-uint64_t QuerySyncWaterMarkHelper::CalculateDeleteWaterMarkSize(const DeleteWaterMark &deleteWaterMark)
+uint64_t QuerySyncWaterMarkHelper::CalculateDeleteWaterMarkSize()
 {
     uint64_t length = Parcel::GetUInt32Len(); // version
     length = Parcel::GetEightByteAlign(length);
@@ -578,7 +578,7 @@ int QuerySyncWaterMarkHelper::ResetRecvQueryWaterMark(const DeviceID &deviceId, 
             std::string hexTableName = DBCommon::TransferStringToHex(hashTableName);
             prefixKeyStr += hexTableName;
         }
-        
+
         // remove in db
         Key prefixKey;
         DBCommon::StringToVector(prefixKeyStr, prefixKey);

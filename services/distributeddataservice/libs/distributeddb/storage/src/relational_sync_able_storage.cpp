@@ -588,5 +588,11 @@ int RelationalSyncAbleStorage::CheckAndInitQueryCondition(QueryObject &query) co
     ReleaseHandle(handle);
     return errCode;
 }
+
+bool RelationalSyncAbleStorage::CheckCompatible(const std::string &schema, uint8_t type) const
+{
+    // return true if is relational schema.
+    return !schema.empty() && ReadSchemaType(type) == SchemaType::RELATIVE;
+}
 }
 #endif

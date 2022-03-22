@@ -64,9 +64,9 @@ struct UnRegedTinyObject {
 
 const uint32_t BUFF_LEN = 16;
 struct ExtendHeadInfo {
-    uint32_t magic;
-    uint32_t length;
-    uint32_t version;
+    uint32_t magic = 0;
+    uint32_t length = 0;
+    uint32_t version = 0;
     uint8_t userId[BUFF_LEN] = {0};
 };
 

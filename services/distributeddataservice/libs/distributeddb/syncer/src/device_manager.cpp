@@ -46,10 +46,23 @@ uint32_t DeviceManager::CalculateLen()
 int DeviceManager::RegisterTransformFunc()
 {
     TransformFunc func;
-    func.computeFunc = [](const Message *msg) { return DeviceManager::CalculateLen(); };
+    func.computeFunc = [](const Message *msg) {
+        (void) msg;
+        return DeviceManager::CalculateLen();
+    };
     // LocalDataChanged has no dataPct
-    func.serializeFunc = [](uint8_t *buffer, uint32_t length, const Message *inMsg) { return E_OK; };
-    func.deserializeFunc = [](const uint8_t *buffer, uint32_t length, Message *inMsg) { return E_OK; };
+    func.serializeFunc = [](uint8_t *buffer, uint32_t length, const Message *inMsg) {
+        (void) buffer;
+        (void) length;
+        (void) inMsg;
+        return E_OK;
+    };
+    func.deserializeFunc = [](const uint8_t *buffer, uint32_t length, Message *inMsg) {
+        (void) buffer;
+        (void) length;
+        (void) inMsg;
+        return E_OK;
+    };
     return MessageTransform::RegTransformFunction(LOCAL_DATA_CHANGED, func);
 }
 

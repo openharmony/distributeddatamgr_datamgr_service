@@ -403,7 +403,8 @@ int AbilitySync::AckRecv(const Message *message, ISyncTaskContext *context)
         errCode = AckRecvWithHighVersion(message, context, packet);
     } else {
         std::string schema = packet->GetSchema();
-        bool isCompatible = static_cast<SyncGenericInterface *>(storageInterface_)->CheckCompatible(schema);
+        uint8_t schemaType = packet->GetSchemaType();
+        bool isCompatible = static_cast<SyncGenericInterface *>(storageInterface_)->CheckCompatible(schema, schemaType);
         if (!isCompatible) {
             (static_cast<SingleVerSyncTaskContext *>(context))->SetTaskErrCode(-E_SCHEMA_MISMATCH);
             LOGE("[AbilitySync][AckRecv] scheme check failed");
@@ -432,7 +433,8 @@ int AbilitySync::RequestRecv(const Message *message, ISyncTaskContext *context)
     }
 
     std::string schema = packet->GetSchema();
-    bool isCompatible = static_cast<SyncGenericInterface *>(storageInterface_)->CheckCompatible(schema);
+    uint8_t schemaType = packet->GetSchemaType();
+    bool isCompatible = static_cast<SyncGenericInterface *>(storageInterface_)->CheckCompatible(schema, schemaType);
     if (!isCompatible) {
         (static_cast<SingleVerSyncTaskContext *>(context))->SetTaskErrCode(-E_SCHEMA_MISMATCH);
     }
@@ -512,8 +514,7 @@ bool AbilitySync::SecLabelCheck(const AbilitySyncRequestPacket *packet) const
     }
 }
 
-void AbilitySync::HandleVersionV3RequestParam(const AbilitySyncRequestPacket *packet, ISyncTaskContext *context,
-    const std::string &remoteSchema) const
+void AbilitySync::HandleVersionV3RequestParam(const AbilitySyncRequestPacket *packet, ISyncTaskContext *context) const
 {
     int32_t remoteSecLabel = packet->GetSecLabel();
     int32_t remoteSecFlag = packet->GetSecFlag();
@@ -1044,7 +1045,7 @@ int AbilitySync::HandleRequestRecv(const Message *message, ISyncTaskContext *con
             remoteSoftwareVersion, isCompatible);
         return SendAckWithEmptySchema(message, E_OK, false);
     }
-    HandleVersionV3RequestParam(packet, context, schema);
+    HandleVersionV3RequestParam(packet, context);
     if (SecLabelCheck(packet)) {
         ackCode = E_OK;
     } else {
@@ -1073,7 +1074,7 @@ int AbilitySync::SendAck(const Message *message, int ackCode, bool isAckNotify, 
     if (IsSingleRelationalVer()) {
         auto schemaObj = (static_cast<RelationalDBSyncInterface *>(storageInterface_))->GetSchemaInfo();
         SetAbilityAckSchemaInfo(ackPacket, schemaObj);
-    } else if(IsSingleKvVer()) {
+    } else if (IsSingleKvVer()) {
         SchemaObject schemaObject = static_cast<SingleVerKvDBSyncInterface *>(storageInterface_)->GetSchemaInfo();
         SetAbilityAckSchemaInfo(ackPacket, schemaObject);
     }

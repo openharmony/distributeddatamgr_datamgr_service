@@ -1356,15 +1356,17 @@ int SQLiteUtils::CreateRelationalLogTable(sqlite3 *db, const std::string &oriTab
 namespace {
 std::string GetInsertTrigger(const TableInfo &table)
 {
+    std::string logTblName = DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
     std::string insertTrigger = "CREATE TRIGGER IF NOT EXISTS ";
     insertTrigger += "naturalbase_rdb_" + table.GetTableName() + "_ON_INSERT AFTER INSERT \n";
     insertTrigger += "ON " + table.GetTableName() + "\n";
     insertTrigger += "BEGIN\n";
-    insertTrigger += "\t INSERT OR REPLACE INTO ";
-    insertTrigger += DBConstant::RELATIONAL_PREFIX + table.GetTableName() + "_log";
+    insertTrigger += "\t INSERT OR REPLACE INTO " + logTblName;
     insertTrigger += " (data_key, device, ori_device, timestamp, wtimestamp, flag, hash_key)";
     insertTrigger += " VALUES (new.rowid, '', '',";
-    insertTrigger += " get_sys_time(0), get_sys_time(0), 0x02,";
+    insertTrigger += " get_sys_time(0), get_sys_time(0),";
+    insertTrigger += " CASE WHEN (SELECT count(*)<>0 FROM " + logTblName + " WHERE hash_key=calc_hash(new." +
+        table.GetPrimaryKey() + ") AND flag&0x02=0x02) THEN 0x22 ELSE 0x02 END,";
     insertTrigger += " calc_hash(new." + table.GetPrimaryKey() + "));\n";
     insertTrigger += "END;";
     return insertTrigger;

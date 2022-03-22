@@ -1499,10 +1499,10 @@ const SchemaObject &SQLiteSingleVerNaturalStore::GetSchemaObjectConstRef() const
     return MyProp().GetSchemaConstRef();
 }
 
-bool SQLiteSingleVerNaturalStore::CheckCompatible(const std::string &schema) const
+bool SQLiteSingleVerNaturalStore::CheckCompatible(const std::string &schema, uint8_t type) const
 {
     const SchemaObject &localSchema = MyProp().GetSchemaConstRef();
-    if (!localSchema.IsSchemaValid() || schema.empty()) {
+    if (!localSchema.IsSchemaValid() || schema.empty() || ReadSchemaType(type) == SchemaType::NONE) {
         // If at least one of local or remote is normal-kvdb, then allow sync
         LOGI("IsLocalSchemaDb=%d, IsRemoteSchemaDb=%d.", localSchema.IsSchemaValid(), !schema.empty());
         return true;

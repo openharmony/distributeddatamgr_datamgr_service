@@ -113,6 +113,8 @@ public:
 
     int GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const override;
 
+    bool CheckCompatible(const std::string &schema, uint8_t type) const override;
+
 private:
     SQLiteSingleVerRelationalStorageExecutor *GetHandle(bool isWrite, int &errCode,
         OperatePerm perm = OperatePerm::NORMAL_PERM) const;

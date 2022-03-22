@@ -135,7 +135,7 @@ public:
         return -E_NOT_SUPPORT;
     }
 
-    virtual bool CheckCompatible(const std::string &schema) const
+    virtual bool CheckCompatible(const std::string &schema, uint8_t type) const
     {
         return false;
     }

@@ -32,7 +32,7 @@
 #include "time_helper.h"
 
 namespace DistributedDB {
-using stateMappingHandler = std::function<uint8_t(void)>;
+using StateMappingHandler = std::function<uint8_t(void)>;
 class SingleVerSyncStateMachine : public SyncStateMachine {
 public:
     enum State {
@@ -160,7 +160,7 @@ private:
 
     Event DoInitiactiveControlSync();
 
-    Event GetEventAfterTimeSync(int mode, bool isEarliestVersion);
+    Event GetEventAfterTimeSync(int mode) const;
 
     int HandleControlAckRecv(const Message *inMsg);
 
@@ -219,7 +219,7 @@ private:
     std::unique_ptr<AbilitySync> abilitySync_;
     std::shared_ptr<SingleVerDataSync> dataSync_;
     uint64_t currentRemoteVersionId_;
-    std::map<uint8_t, stateMappingHandler> stateMapping_;
+    std::map<uint8_t, StateMappingHandler> stateMapping_;
 };
 } // namespace DistributedDB
 

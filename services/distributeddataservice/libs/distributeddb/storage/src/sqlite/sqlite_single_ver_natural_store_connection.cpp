@@ -392,7 +392,7 @@ int SQLiteSingleVerNaturalStoreConnection::Pragma(int cmd, void *parameter)
             return PragmaResultSetCacheMaxSize(parameter);
         case PRAGMA_TRIGGER_TO_MIGRATE_DATA:
             return PragmaTriggerToMigrateData(*static_cast<SecurityOption *>(parameter));
-        case PRAGMA_SET_MAX_LOG_SIZE:
+        case PRAGMA_SET_MAX_LOG_LIMIT:
             return PragmaSetMaxLogSize(static_cast<uint64_t *>(parameter));
         case PRAGMA_EXEC_CHECKPOINT:
             return ForceCheckPoint();

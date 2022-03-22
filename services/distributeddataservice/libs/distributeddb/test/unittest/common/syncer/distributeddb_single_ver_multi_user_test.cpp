@@ -247,7 +247,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser001, TestSize.Level0)
      * @tc.steps: step2. openstore1 and openstore2
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1();
     OpenStore2();
     /**
@@ -256,8 +255,8 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser001, TestSize.Level0)
     Key key = {'1'};
     Value value = {'1'};
     Value value2 = {'2'};
-    ASSERT_TRUE(g_kvDelegatePtr1->Put(key, value2) == OK);
-    ASSERT_TRUE(g_kvDelegatePtr2->Put(key, value) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr1->Put(key, value2) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr2->Put(key, value) == OK);
     /**
      * @tc.steps: step4. g_kvDelegatePtr1 and g_kvDelegatePtr2 call sync
      * @tc.expected: step4. g_kvDelegatePtr2 call success
@@ -271,16 +270,16 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser001, TestSize.Level0)
      */
     int pragmaData = 1;
     PragmaData input = static_cast<PragmaData>(&pragmaData);
-    ASSERT_TRUE(g_kvDelegatePtr1->Pragma(AUTO_SYNC, input) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr1->Pragma(AUTO_SYNC, input) == OK);
     pragmaData = 100;
     input = static_cast<PragmaData>(&pragmaData);
-    ASSERT_TRUE(g_kvDelegatePtr1->Pragma(SET_QUEUED_SYNC_LIMIT, input) == OK);
-    ASSERT_TRUE(g_kvDelegatePtr1->Pragma(GET_QUEUED_SYNC_LIMIT, input) == OK);
-    ASSERT_TRUE(input == static_cast<PragmaData>(&pragmaData));
+    EXPECT_TRUE(g_kvDelegatePtr1->Pragma(SET_QUEUED_SYNC_LIMIT, input) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr1->Pragma(GET_QUEUED_SYNC_LIMIT, input) == OK);
+    EXPECT_TRUE(input == static_cast<PragmaData>(&pragmaData));
     pragmaData = 1;
     input = static_cast<PragmaData>(&pragmaData);
-    ASSERT_TRUE(g_kvDelegatePtr1->Pragma(SET_WIPE_POLICY, input) == OK);
-    ASSERT_TRUE(g_kvDelegatePtr1->Pragma(SET_SYNC_RETRY, input) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr1->Pragma(SET_WIPE_POLICY, input) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr1->Pragma(SET_SYNC_RETRY, input) == OK);
     /**
      * @tc.expected: step6. onComplete should be called, DeviceB have {k1,v1}
      */
@@ -324,7 +323,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser002, TestSize.Level0)
      * @tc.steps: step2. openstore1 and openstore2
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1();
     OpenStore2();
     /**
@@ -332,15 +330,15 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser002, TestSize.Level0)
      */
     Key key = {'1'};
     Value value = {'1'};
-    ASSERT_TRUE(g_kvDelegatePtr1->Put(key, value) == OK);
-    ASSERT_TRUE(g_kvDelegatePtr2->Put(key, value) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr1->Put(key, value) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr2->Put(key, value) == OK);
     /**
      * @tc.steps: step4. GetKvStoreIdentifier success when userId is invalid
      */
     std::string userId;
-    ASSERT_TRUE(g_mgr1.GetKvStoreIdentifier(userId, APP_ID, USER_ID_2, true) != "");
+    EXPECT_TRUE(g_mgr1.GetKvStoreIdentifier(userId, APP_ID, USER_ID_2, true) != "");
     userId.resize(130);
-    ASSERT_TRUE(g_mgr1.GetKvStoreIdentifier(userId, APP_ID, USER_ID_2, true) != "");
+    EXPECT_TRUE(g_mgr1.GetKvStoreIdentifier(userId, APP_ID, USER_ID_2, true) != "");
     /**
      * @tc.steps: step5. g_kvDelegatePtr1 and g_kvDelegatePtr2 call sync
      * @tc.expected: step5. g_kvDelegatePtr2 call success
@@ -363,8 +361,8 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser002, TestSize.Level0)
      */
     key = {'2'};
     value = {'2'};
-    ASSERT_TRUE(g_kvDelegatePtr1->Put(key, value) == OK);
-    ASSERT_TRUE(g_kvDelegatePtr2->Put(key, value) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr1->Put(key, value) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr2->Put(key, value) == OK);
     /**
      * @tc.steps: step9. g_kvDelegatePtr1 and g_kvDelegatePtr2 call sync
      * @tc.expected: step9. g_kvDelegatePtr2 call success
@@ -395,7 +393,7 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser003, TestSize.Level3)
     g_mgr1.SetSyncActivationCheckCallback(g_syncActivationCheckCallback1);
 
     KvStoreObserverUnitTest *observer = new (std::nothrow) KvStoreObserverUnitTest;
-    ASSERT_TRUE(observer != nullptr);
+    EXPECT_TRUE(observer != nullptr);
     /**
      * @tc.steps: step2. SetAutoLaunchRequestCallback
      * @tc.expected: step2. success.
@@ -462,7 +460,7 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser004, TestSize.Level0)
      */
     AutoLaunchNotifier notifier = nullptr;
     KvStoreObserverUnitTest *observer = new (std::nothrow) KvStoreObserverUnitTest;
-    ASSERT_TRUE(observer != nullptr);
+    EXPECT_TRUE(observer != nullptr);
     AutoLaunchOption option;
     CipherPassword passwd;
     option = {true, false, CipherType::DEFAULT, passwd, "", false, g_testDir, observer,
@@ -529,7 +527,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser005, TestSize.Level0)
      * @tc.steps: step1. openstore1 and openstore2 in normal sync mode
      * @tc.expected: step1. only user2 sync mode is active
      */
-
     OpenStore1(false);
     OpenStore2(false);
     /**
@@ -569,7 +566,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser006, TestSize.Level0)
      * @tc.steps: step2. openstore1 in dual tuple sync mode and openstore2 in normal sync mode
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1(true);
     OpenStore2(false);
     /**
@@ -584,7 +580,7 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser006, TestSize.Level0)
         EXPECT_TRUE(KvStoreDelegateManager::NotifyUserChanged() == OK);
     });
     subThread.detach();
-    ASSERT_EQ(g_mgr1.CloseKvStore(g_kvDelegatePtr1), OK);
+    EXPECT_EQ(g_mgr1.CloseKvStore(g_kvDelegatePtr1), OK);
     g_kvDelegatePtr1 = nullptr;
     CloseStore();
 }
@@ -606,7 +602,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser007, TestSize.Level0)
      * @tc.steps: step2. openstore1 in dual tuple sync mode and openstore2 in normal sync mode
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1(true);
     OpenStore2(false);
     /**
@@ -644,7 +639,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser008, TestSize.Level0)
      * @tc.steps: step2. openstore1 in dual tuple sync mode and openstore2 in normal sync mode
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1(true);
     OpenStore2(true);
     /**
@@ -670,12 +664,12 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser008, TestSize.Level0)
     std::vector<std::string> devices;
     devices.push_back(g_deviceB->GetDeviceId());
     DBStatus status = g_tool.SyncTest(g_kvDelegatePtr1, devices, SYNC_MODE_PUSH_ONLY, result, true);
-    ASSERT_TRUE(status == OK);
+    EXPECT_TRUE(status == OK);
 
     /**
      * @tc.expected: step6. onComplete should be called, and status is USER_CHANGED
      */
-    ASSERT_TRUE(result.size() == devices.size());
+    EXPECT_TRUE(result.size() == devices.size());
     for (const auto &pair : result) {
         LOGD("dev %s, status %d", pair.first.c_str(), pair.second);
         EXPECT_TRUE(pair.second == USER_CHANGED);
@@ -700,7 +694,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser009, TestSize.Level0)
      * @tc.steps: step2. openstore1 in dual tuple sync mode and openstore2 in normal sync mode
      * @tc.expected: step2. only user2 sync mode is active
      */
-
     OpenStore1(true);
     OpenStore2(true);
     /**
@@ -713,11 +706,22 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser009, TestSize.Level0)
      * @tc.expected: step4. return OK
      */
     CipherPassword passwd;
+    bool startSync = false;
+    std::condition_variable cv;
     thread subThread([&]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::mutex notifyLock;
+        std::unique_lock<std::mutex> lck(notifyLock);
+        cv.wait(lck, [&startSync]() { return startSync; });
         EXPECT_TRUE(KvStoreDelegateManager::NotifyUserChanged() == OK);
     });
     subThread.detach();
+    g_communicatorAggregator->RegOnDispatch([&](const std::string&, Message *inMsg) {
+        if (!startSync) {
+            startSync = true;
+            cv.notify_all();
+        }
+    });
+
     /**
      * @tc.steps: step5. deviceA call sync and wait
      * @tc.expected: step5. sync should return OK.
@@ -725,16 +729,16 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser009, TestSize.Level0)
     std::map<std::string, DBStatus> result;
     std::vector<std::string> devices;
     devices.push_back(g_deviceB->GetDeviceId());
-    DBStatus status = g_tool.SyncTest(g_kvDelegatePtr1, devices, SYNC_MODE_PUSH_ONLY, result, false);
-    ASSERT_TRUE(status == OK);
-
+    DBStatus status = g_tool.SyncTest(g_kvDelegatePtr1, devices, SYNC_MODE_PUSH_ONLY, result, true);
+    EXPECT_EQ(status, OK);
+    g_communicatorAggregator->RegOnDispatch(nullptr);
     /**
      * @tc.expected: step6. onComplete should be called, and status is USER_CHANGED
      */
-    ASSERT_TRUE(result.size() == devices.size());
+    EXPECT_EQ(result.size(), devices.size());
     for (const auto &pair : result) {
         LOGD("dev %s, status %d", pair.first.c_str(), pair.second);
-        EXPECT_TRUE(pair.second == USER_CHANGED);
+        EXPECT_EQ(pair.second, USER_CHANGED);
     }
     CloseStore();
 }
@@ -756,7 +760,6 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser010, TestSize.Level3)
      * @tc.steps: step2. openstore1 and openstore2 in dual tuple sync mode
      * @tc.expected: step2. only userId1 sync mode is active
      */
-
     OpenStore1(true);
     OpenStore2(true);
     /**
@@ -768,7 +771,7 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser010, TestSize.Level3)
      */
     Key key = {'1'};
     Value value = {'1'};
-    ASSERT_TRUE(g_kvDelegatePtr1->Put(key, value) == OK);
+    EXPECT_TRUE(g_kvDelegatePtr1->Put(key, value) == OK);
 
     /**
      * @tc.steps: step5. deviceB set sava data dely 5s
@@ -791,12 +794,12 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser010, TestSize.Level3)
     std::map<std::string, DBStatus> result;
     std::vector<std::string> devices = {g_deviceB->GetDeviceId(), g_deviceC->GetDeviceId()};
     DBStatus status = g_tool.SyncTest(g_kvDelegatePtr1, devices, SYNC_MODE_PUSH_ONLY, result, false);
-    ASSERT_TRUE(status == OK);
+    EXPECT_TRUE(status == OK);
 
     /**
      * @tc.expected: step8. onComplete should be called, and status is USER_CHANGED
      */
-    ASSERT_TRUE(result.size() == devices.size());
+    EXPECT_TRUE(result.size() == devices.size());
     for (const auto &pair : result) {
         LOGD("dev %s, status %d", pair.first.c_str(), pair.second);
         if (pair.first == g_deviceB->GetDeviceId()) {

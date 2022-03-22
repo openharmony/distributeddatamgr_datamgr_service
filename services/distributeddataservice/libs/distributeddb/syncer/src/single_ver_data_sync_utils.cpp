@@ -97,8 +97,8 @@ bool SingleVerDataSyncUtils::IsPermitRemoteDeviceRecvData(const std::string &dev
     return RuntimeContext::GetInstance()->CheckDeviceSecurityAbility(deviceId, localSecOption);
 }
 
-void SingleVerDataSyncUtils::TransDbDataItemToSendDataItem(const SingleVerSyncTaskContext *context,
-    const std::string &localHashName, std::vector<SendDataItem> &outData)
+void SingleVerDataSyncUtils::TransDbDataItemToSendDataItem(const std::string &localHashName,
+    std::vector<SendDataItem> &outData)
 {
     for (size_t i = 0; i < outData.size(); i++) {
         if (outData[i] == nullptr) {
@@ -407,7 +407,7 @@ SyncTimeRange SingleVerDataSyncUtils::ReviseLocalMark(SyncType syncType, SyncTim
     return tmpDataTime;
 }
 
-SyncTimeRange SingleVerDataSyncUtils::GetRecvDataTimeRange(SyncType syncType, SingleVerSyncTaskContext *context,
+SyncTimeRange SingleVerDataSyncUtils::GetRecvDataTimeRange(SyncType syncType,
     const std::vector<SendDataItem> &data, UpdateWaterMark &isUpdate)
 {
     if (syncType != SyncType::QUERY_SYNC_TYPE) {

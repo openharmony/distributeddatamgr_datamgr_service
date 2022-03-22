@@ -134,9 +134,9 @@ SchemaObject VirtualSingleVerSyncDBInterface::GetSchemaInfo() const
     return schemaObj_;
 }
 
-bool VirtualSingleVerSyncDBInterface::CheckCompatible(const std::string& schema) const
+bool VirtualSingleVerSyncDBInterface::CheckCompatible(const std::string& schema, uint8_t type) const
 {
-    if (schema_.empty() && schema.empty()) {
+    if (schema_.empty() && schema.empty() && ReadSchemaType(type) != SchemaType::UNRECOGNIZED) {
         return true;
     }
     return (schemaObj_.CompareAgainstSchemaString(schema) == -E_SCHEMA_EQUAL_EXACTLY);

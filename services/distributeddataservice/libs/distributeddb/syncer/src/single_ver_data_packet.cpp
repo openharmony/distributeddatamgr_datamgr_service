@@ -383,6 +383,7 @@ uint32_t ControlRequestPacket::GetFlag() const
 
 void ControlRequestPacket::SetQuery(const QuerySyncObject &query)
 {
+    (void)query;
 }
 
 uint32_t ControlRequestPacket::CalculateLen() const

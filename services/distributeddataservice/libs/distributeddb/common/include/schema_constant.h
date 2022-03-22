@@ -21,7 +21,7 @@
 // This header is supposed to be included only in source files. Do not include it in any header files.
 namespace DistributedDB {
 class SchemaConstant final {
-public :
+public:
     static const std::string KEYWORD_SCHEMA_VERSION;
     static const std::string KEYWORD_SCHEMA_MODE;
     static const std::string KEYWORD_SCHEMA_DEFINE;

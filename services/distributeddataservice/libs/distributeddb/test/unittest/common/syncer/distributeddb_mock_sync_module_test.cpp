@@ -490,3 +490,27 @@ HWTEST_F(DistributedDBMockSyncModuleTest, SyncLifeTest001, TestSize.Level3)
     RuntimeContext::GetInstance()->SetCommunicatorAggregator(nullptr);
     delete syncDBInterface;
 }
+
+/**
+ * @tc.name: MessageScheduleTest001
+ * @tc.desc: Test MessageSchedule stop timer when no message.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, MessageScheduleTest001, TestSize.Level1)
+{
+    MockSyncTaskContext *context = new MockSyncTaskContext();
+    context->SetRemoteSoftwareVersion(SOFTWARE_VERSION_CURRENT);
+    bool last = false;
+    context->OnLastRef([&last]() {
+        last = true;
+    });
+    SingleVerDataMessageSchedule schedule;
+    bool isNeedHandle = false;
+    bool isNeedContinue = false;
+    schedule.MoveNextMsg(context, isNeedHandle, isNeedContinue);
+    RefObject::KillAndDecObjRef(context);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    EXPECT_TRUE(last);
+}

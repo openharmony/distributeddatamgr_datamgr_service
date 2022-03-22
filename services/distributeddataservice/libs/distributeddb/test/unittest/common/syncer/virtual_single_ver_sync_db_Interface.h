@@ -86,7 +86,7 @@ public:
 
     SchemaObject GetSchemaInfo() const override;
 
-    bool CheckCompatible(const std::string& schema) const override;
+    bool CheckCompatible(const std::string& schema, uint8_t type) const override;
 
     void SetSchemaInfo(const std::string& schema);
 

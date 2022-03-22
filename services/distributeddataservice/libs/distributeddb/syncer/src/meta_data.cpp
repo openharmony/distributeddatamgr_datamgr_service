@@ -509,7 +509,7 @@ int Metadata::SetDbCreateTime(const DeviceID &deviceId, uint64_t inValue, bool i
     MetaDataValue metadata;
     std::lock_guard<std::mutex> lockGuard(metadataLock_);
     DeviceID hashDeviceId;
-    GetHashDeviceId(deviceId, hashDeviceId, true);
+    GetHashDeviceId(deviceId, hashDeviceId, isNeedHash);
     if (metadataMap_.find(hashDeviceId) != metadataMap_.end()) {
         metadata = metadataMap_[hashDeviceId];
         if (metadata.dbCreateTime != 0 && metadata.dbCreateTime != inValue) {

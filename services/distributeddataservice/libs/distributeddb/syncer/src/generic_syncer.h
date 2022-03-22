@@ -147,7 +147,7 @@ protected:
     // Callback when the special sync finished.
     void OnSyncFinished(int syncId);
 
-    inline bool IsManualSync(int inMode) const;
+    bool IsManualSync(int inMode) const;
 
     int AddQueuedManualSyncSize(int mode, bool wait);
 

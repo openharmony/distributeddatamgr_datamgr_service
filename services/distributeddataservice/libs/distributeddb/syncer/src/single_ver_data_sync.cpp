@@ -271,7 +271,7 @@ int SingleVerDataSync::GetData(SingleVerSyncTaskContext *context, std::vector<Se
     }
     if (SingleVerDataSyncUtils::IsGetDataSuccessfully(errCode)) {
         std::string localHashName = DBCommon::TransferHashString(GetLocalDeviceName());
-        SingleVerDataSyncUtils::TransDbDataItemToSendDataItem(context, localHashName, outData);
+        SingleVerDataSyncUtils::TransDbDataItemToSendDataItem(localHashName, outData);
     }
     return errCode;
 }
@@ -946,7 +946,7 @@ int SingleVerDataSync::DataRequestRecv(SingleVerSyncTaskContext *context, const 
         STR_MASK(GetDeviceId()));
     context->SetReceiveWaterMarkErr(false);
     UpdateWaterMark isUpdateWaterMark;
-    SyncTimeRange dataTime = SingleVerDataSyncUtils::GetRecvDataTimeRange(curType, context, data, isUpdateWaterMark);
+    SyncTimeRange dataTime = SingleVerDataSyncUtils::GetRecvDataTimeRange(curType, data, isUpdateWaterMark);
     errCode = RemoveDeviceDataHandle(context, message, dataTime.endTime);
     if (errCode != E_OK) {
         return errCode;

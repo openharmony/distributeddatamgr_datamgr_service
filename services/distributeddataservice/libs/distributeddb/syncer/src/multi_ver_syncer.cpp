@@ -87,8 +87,7 @@ void MultiVerSyncer::RemoteDataChanged(const std::string &device)
 {
     LOGD("[MultiVerSyncer] Remote data changed or device online dev %s{private}", device.c_str());
     if (autoSyncEnable_) {
-        std::vector<std::string> devices;
-        devices.push_back(device);
+        std::vector<std::string> devices {device};
         int errCode = Sync(devices, SyncModeType::AUTO_PULL, nullptr, nullptr, false);
         if (errCode != E_OK) {
             LOGE("[MultiVerSyncer] sync start by RemoteDataChanged failed err %d", errCode);

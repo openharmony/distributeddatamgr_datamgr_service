@@ -112,7 +112,7 @@ private:
 
     int GetQueryWaterMarkFromDB(const DeviceID &dbKeyString, QueryWaterMark &queryWaterMark);
 
-    int SetRecvQueryWaterMarkWithoutLock(const std::string &deviceId, const std::string &cacheKey,
+    int SetRecvQueryWaterMarkWithoutLock(const std::string &cacheKey,
         const WaterMark &waterMark);
 
     // search the queryWaterMark from db or cache_
@@ -129,7 +129,7 @@ private:
         const DeviceID &queryId, DeviceID &hashQuerySyncId);
 
     // put queryWaterMark to lru cache_ and then save to db
-    int UpdateCacheAndSave(const std::string &cacheKey, const std::string &deviceId, QueryWaterMark &queryWaterMark);
+    int UpdateCacheAndSave(const std::string &cacheKey, QueryWaterMark &queryWaterMark);
 
     // search the deleteWaterMark from db or cache_
     // and ensure it exit in cache_
@@ -156,7 +156,7 @@ private:
 
     static int DeSerializeDeleteWaterMark(const std::vector<uint8_t> &inValue, DeleteWaterMark &deleteWaterMark);
 
-    static uint64_t CalculateDeleteWaterMarkSize(const DeleteWaterMark &deleteWaterMark);
+    static uint64_t CalculateDeleteWaterMarkSize();
 
     // store or visit queryWaterMark should add a lock
     // because it will change the eliminationChain

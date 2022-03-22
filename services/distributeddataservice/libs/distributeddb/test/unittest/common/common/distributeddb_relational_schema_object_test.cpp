@@ -271,7 +271,7 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaParseTest002, 
 }
 
 namespace {
-std::string GenerateFromTableStr(const std::string tableStr)
+std::string GenerateFromTableStr(const std::string &tableStr)
 {
     return R""({
         "SCHEMA_VERSION": "2.0",

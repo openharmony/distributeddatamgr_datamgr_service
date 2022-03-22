@@ -137,6 +137,7 @@ void SyncTaskContext::SetOperationStatus(int status)
 
 void SyncTaskContext::SaveLastPushTaskExecStatus(int finalStatus)
 {
+    (void)finalStatus;
 }
 
 void SyncTaskContext::Clear()
@@ -454,6 +455,7 @@ TimeStamp SyncTaskContext::GetCurrentLocalTime() const
 
 void SyncTaskContext::Abort(int status)
 {
+    (void)status;
     Clear();
 }
 

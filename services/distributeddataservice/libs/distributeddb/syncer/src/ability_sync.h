@@ -190,8 +190,7 @@ private:
 
     bool SecLabelCheck(const AbilitySyncRequestPacket *packet) const;
 
-    void HandleVersionV3RequestParam(const AbilitySyncRequestPacket *packet, ISyncTaskContext *context,
-        const std::string &remoteSchema) const;
+    void HandleVersionV3RequestParam(const AbilitySyncRequestPacket *packet, ISyncTaskContext *context) const;
 
     void HandleVersionV3AckSecOptionParam(const AbilitySyncAckPacket *packet,
         ISyncTaskContext *context) const;

@@ -31,8 +31,8 @@ public:
     static bool IsPermitRemoteDeviceRecvData(const std::string &deviceId, const SecurityOption &remoteSecOption,
         SyncGenericInterface *storage);
 
-    static void TransDbDataItemToSendDataItem(const SingleVerSyncTaskContext *context,
-        const std::string &localHashName, std::vector<SendDataItem> &outData);
+    static void TransDbDataItemToSendDataItem(const std::string &localHashName,
+        std::vector<SendDataItem> &outData);
 
     static std::string TransferForeignOrigDevName(const std::string &deviceName, const std::string &localHashName);
 
@@ -80,7 +80,7 @@ public:
 
     static SyncTimeRange ReviseLocalMark(SyncType syncType, SyncTimeRange &dataTimeRange, UpdateWaterMark updateMark);
 
-    static SyncTimeRange GetRecvDataTimeRange(SyncType syncType, SingleVerSyncTaskContext *context,
+    static SyncTimeRange GetRecvDataTimeRange(SyncType syncType,
         const std::vector<SendDataItem> &data, UpdateWaterMark &isUpdate);
 
     static SyncTimeRange GetSyncDataTimeRange(SyncType syncType, WaterMark localMark, WaterMark deleteMark,
