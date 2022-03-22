@@ -317,7 +317,7 @@ int KvStoreResultSetStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
             return GetEntryOnRemote(reply);
         }
         default: {
-            ZLOGW("OnRemoteRequest default %u", code);
+            ZLOGW("OnRemoteRequest default %{public}u", code);
             MessageOption mo { MessageOption::TF_SYNC };
             return IPCObjectStub::OnRemoteRequest(code, data, reply, mo);
         }
