@@ -224,7 +224,7 @@ DBStatus ProcessCommunicatorImpl::CheckAndGetDataHeadInfo(
         ZLOGW("no valid user");
         return DBStatus::NO_PERMISSION;
     }
-    ZLOGD("ok, result:%{public}u, user:%{public}s", users.size(), users.front().c_str());
+    ZLOGD("ok, result:%{public}zu, user:%{public}s", users.size(), users.front().c_str());
     return DBStatus::OK;
 }
 } // namespace AppDistributedKv
