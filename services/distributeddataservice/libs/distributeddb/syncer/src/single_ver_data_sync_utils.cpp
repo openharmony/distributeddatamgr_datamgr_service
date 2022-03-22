@@ -179,7 +179,7 @@ int SingleVerDataSyncUtils::RunPermissionCheck(SingleVerSyncTaskContext *context
             flag);
     }
     if (errCode != E_OK) {
-        LOGE("[DataSync][RunPermissionCheck] check failed flag=%d,Label=%s,dev=%s", flag, label.c_str(),
+        LOGE("[DataSync][RunPermissionCheck] check failed flag=%hhu,Label=%s,dev=%s", flag, label.c_str(),
             STR_MASK(context->GetDeviceId()));
     }
     return errCode;
@@ -324,7 +324,7 @@ void SingleVerDataSyncUtils::SetMessageHeadInfo(Message &message, uint16_t inMsg
 
 bool SingleVerDataSyncUtils::IsGetDataSuccessfully(int errCode)
 {
-    return errCode == E_OK || errCode == -E_UNFINISHED;
+    return (errCode == E_OK || errCode == -E_UNFINISHED);
 }
 
 TimeStamp SingleVerDataSyncUtils::GetMaxSendDataTime(const std::vector<SendDataItem> &inData)

@@ -135,7 +135,7 @@ int SyncAbleKvDBConnection::PragmaSyncAction(const PragmaSync *syncParameter)
     {
         AutoLock lockGuard(this);
         if (IsKilled()) {
-            // If this happens, user are using a closed connection.
+            // If this happens, users are using a closed connection.
             LOGE("Pragma sync on a closed connection.");
             return -E_STALE;
         }

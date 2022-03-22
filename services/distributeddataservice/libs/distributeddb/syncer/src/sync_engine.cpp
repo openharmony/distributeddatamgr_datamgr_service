@@ -347,6 +347,7 @@ void SyncEngine::RemoteDataChangedTask(ISyncTaskContext *context, const ICommuni
         }
     } while (false);
     delete inMsg;
+    inMsg = nullptr;
     ScheduleTaskOut(context, communicator);
 }
 
@@ -512,6 +513,7 @@ void SyncEngine::PutMsgIntoQueue(const std::string &targetDev, Message *inMsg, i
             });
         if (iter != msgQueue_.end()) {
             delete inMsg;
+            inMsg = nullptr;
             return;
         }
     }
@@ -580,7 +582,7 @@ ISyncTaskContext *SyncEngine::GetSyncTaskContext(const std::string &deviceId, in
     ISyncTaskContext *context = CreateSyncTaskContext();
     if (context == nullptr) {
         errCode = -E_OUT_OF_MEMORY;
-        LOGE("[SyncEngine] SyncTaskContext alloc failed, may be no memory avliad!");
+        LOGE("[SyncEngine] SyncTaskContext alloc failed, may be no memory available!");
         return nullptr;
     }
     errCode = context->Initialize(deviceId, syncInterface_, metadata_, communicatorProxy_);

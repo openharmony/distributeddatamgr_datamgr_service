@@ -64,6 +64,7 @@ uint32_t AdapterStub::GetTimeout()
 
 uint32_t AdapterStub::GetTimeout(const std::string &target)
 {
+    (void) target;
     return GetTimeout();
 }
 
@@ -75,7 +76,7 @@ int AdapterStub::GetLocalIdentity(std::string &outTarget)
 
 int AdapterStub::SendBytes(const std::string &dstTarget, const uint8_t *bytes, uint32_t length)
 {
-    LOGI("[UT][Stub][Send] Send length=%d to dstTarget=%s begin.", length, dstTarget.c_str());
+    LOGI("[UT][Stub][Send] Send length=%u to dstTarget=%s begin.", length, dstTarget.c_str());
     ApplySendBlock();
 
     if (QuerySendRetry(dstTarget)) {
@@ -128,6 +129,7 @@ int AdapterStub::RegSendableCallback(const SendableCallback &onSendable, const F
 
 bool AdapterStub::IsDeviceOnline(const std::string &device)
 {
+    (void) device;
     return true;
 }
 

@@ -599,6 +599,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch006, TestSize.Level3)
     cv.wait(lock, [&threadIsWorking] { return !threadIsWorking; });
 
     delete observer;
+    observer = nullptr;
     g_communicatorAggregator->RunOnConnectCallback(REMOTE_DEVICE_ID, false);
 }
 
@@ -764,7 +765,6 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch008, TestSize.Level3)
  * @tc.desc: enhancement callback return bad param
  * @tc.type: FUNC
  * @tc.require: AR000EPARJ
- * @tc.author: wangchuanqing
  */
 HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch009, TestSize.Level3)
 {

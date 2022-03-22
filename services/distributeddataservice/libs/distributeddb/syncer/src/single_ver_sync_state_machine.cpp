@@ -275,7 +275,7 @@ int SingleVerSyncStateMachine::PrepareNextSyncTask()
     }
 
     if (currentState_ != State::IDLE && currentState_ != State::SYNC_TASK_FINISHED) {
-        LOGW("[StateMachine][PrepareNextSyncTask] PreSync may get an err, state=%d,dev=%s",
+        LOGW("[StateMachine][PrepareNextSyncTask] PreSync may get an err, state=%hhu,dev=%s",
             currentState_, STR_MASK(context_->GetDeviceId()));
         currentState_ = State::IDLE;
     }

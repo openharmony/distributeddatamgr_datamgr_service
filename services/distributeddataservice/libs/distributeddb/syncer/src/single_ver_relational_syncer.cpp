@@ -71,7 +71,7 @@ int SingleVerRelationalSyncer::GenerateEachSyncTask(const SyncParma &param, uint
     for (const QuerySyncObject &table : tablesQuery) {
         uint32_t subSyncId = GenerateSyncId();
         std::string hashTableName = DBCommon::TransferHashString(table.GetRelationTableName());
-        LOGI("[SingleVerRelationalSyncer] SubSyncId %d create by SyncId %d, hashTableName = %s",
+        LOGI("[SingleVerRelationalSyncer] SubSyncId %u create by SyncId %d, hashTableName = %s",
             subSyncId, syncId, STR_MASK(DBCommon::TransferStringToHex(hashTableName)));
         subParam.syncQuery = table;
         subParam.onComplete = std::bind(&SingleVerRelationalSyncer::DoOnSubSyncComplete, this, subSyncId,

@@ -424,6 +424,8 @@ int RelationalSyncAbleStorage::PutSyncData(const QueryObject &query, std::vector
 
 int RelationalSyncAbleStorage::RemoveDeviceData(const std::string &deviceName, bool isNeedNotify)
 {
+    (void) deviceName;
+    (void) isNeedNotify;
     return -E_NOT_SUPPORT;
 }
 
@@ -467,6 +469,7 @@ std::vector<QuerySyncObject> RelationalSyncAbleStorage::GetTablesQuery()
 
 int RelationalSyncAbleStorage::LocalDataChanged(int notifyEvent, std::vector<QuerySyncObject> &queryObj)
 {
+    (void) queryObj;
     return -E_NOT_SUPPORT;
 }
 

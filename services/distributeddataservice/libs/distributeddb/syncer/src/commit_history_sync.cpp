@@ -278,7 +278,7 @@ int CommitHistorySync::RequestRecvCallback(const MultiVerSyncTaskContext *contex
     }
 
     errCode = SendAckPacket(context, commits, errCode, message);
-    LOGD("CommitHistorySync::RequestRecvCallback:SendAckPacket, errno = %d, dst=%s{private}, ver = %d, myversion = %u",
+    LOGD("CommitHistorySync::RequestRecvCallback:SendAckPacket, errno = %d, dst=%s{private}, ver = %u, myversion = %u",
          errCode, context->GetDeviceId().c_str(), ver, SOFTWARE_VERSION_CURRENT);
     if (errCode == E_OK) {
         if (commitMap.empty()) {

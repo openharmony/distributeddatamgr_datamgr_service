@@ -183,6 +183,7 @@ Message *BuildRegedTinyMessage()
     Message *outMsg = new (nothrow) Message(REGED_TINY_MSG_ID);
     if (outMsg == nullptr) {
         delete obj;
+        obj = nullptr;
         return nullptr;
     }
 
@@ -245,6 +246,7 @@ Message *BuildRegedGiantMessage(uint32_t length)
     Message *outMsg = new (nothrow) Message(REGED_GIANT_MSG_ID);
     if (outMsg == nullptr) {
         delete obj;
+        obj = nullptr;
         return nullptr;
     }
 

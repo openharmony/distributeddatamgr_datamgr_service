@@ -249,6 +249,7 @@ void GenericKvDBConnection::ReleaseResultSet(IKvDBResultSet *&resultSet)
 
 int GenericKvDBConnection::RegisterLifeCycleCallback(const DatabaseLifeCycleNotifier &notifier)
 {
+    (void) notifier;
     return -E_NOT_SUPPORT;
 }
 

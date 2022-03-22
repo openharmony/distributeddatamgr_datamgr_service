@@ -97,6 +97,7 @@ void MultiVerSyncer::RemoteDataChanged(const std::string &device)
 
 void MultiVerSyncer::RemoteDeviceOffline(const std::string &device)
 {
+    (void) device;
 }
 
 ISyncEngine *MultiVerSyncer::CreateSyncEngine()
@@ -123,6 +124,7 @@ void MultiVerSyncer::SyncOperationKillCallbackInner(int syncId)
 
 int MultiVerSyncer::SetStaleDataWipePolicy(WipePolicy policy)
 {
+    (void) policy;
     return -E_NOT_SUPPORT;
 }
 } // namespace DistributedDB

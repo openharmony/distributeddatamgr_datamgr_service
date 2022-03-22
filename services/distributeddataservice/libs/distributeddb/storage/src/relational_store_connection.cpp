@@ -27,6 +27,8 @@ RelationalStoreConnection::RelationalStoreConnection(IRelationalStore *store)
 
 int RelationalStoreConnection::Pragma(int cmd, void *parameter)
 {
+    (void) cmd;
+    (void) parameter;
     return E_OK;
 }
 }

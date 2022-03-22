@@ -182,6 +182,7 @@ void UserDelegate::Init()
 bool UserDelegate::NotifyUserEvent(const UserDelegate::UserEvent &userEvent)
 {
     // update all local user status
+    (void) userEvent;
     return InitLocalUserMeta();
 }
 

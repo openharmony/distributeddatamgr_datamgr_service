@@ -44,6 +44,7 @@ void SingleVerKvSyncTaskContext::SetSyncStrategy(const SyncStrategy &strategy)
 
 SyncStrategy SingleVerKvSyncTaskContext::GetSyncStrategy(QuerySyncObject &querySyncObject) const
 {
+    (void) querySyncObject;
     return syncStrategy_;
 }
 }

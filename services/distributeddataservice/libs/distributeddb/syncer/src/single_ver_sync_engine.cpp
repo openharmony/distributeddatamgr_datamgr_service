@@ -98,7 +98,7 @@ int SingleVerSyncEngine::SubscribeTimeOut(TimerId id)
     std::lock_guard<std::mutex> lockGuard(timerLock_);
     std::map<std::string, std::vector<QuerySyncObject>> allSyncQueries;
     GetAllUnFinishSubQueries(allSyncQueries);
-    LOGI("[SingleVerSyncEngine] SubscribeTimeOut,size=%d", allSyncQueries.size());
+    LOGI("[SingleVerSyncEngine] SubscribeTimeOut,size=%zu", allSyncQueries.size());
     if (allSyncQueries.size() == 0) {
         LOGI("no need to trigger auto subscribe");
         return E_OK;

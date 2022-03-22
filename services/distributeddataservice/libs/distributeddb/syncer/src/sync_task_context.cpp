@@ -588,7 +588,7 @@ void SyncTaskContext::KillWait()
         },
         KILL_WAIT_SECONDS);
     if (!noDeadLock) {
-        LOGE("[SyncTaskContext] Dead lock maybe happen, we stop waiting the task exit.");
+        LOGE("[SyncTaskContext] Dead lock may happen, we stop waiting the task exit.");
     } else {
         LOGW("[SyncTaskContext] Wait the task exit ok.");
     }
