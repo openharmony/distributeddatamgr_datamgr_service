@@ -30,7 +30,7 @@ bool ITypesUtil::Unmarshalling(MessageParcel &data, Blob &output)
 {
     std::vector<uint8_t> blob;
     bool result = data.ReadUInt8Vector(&blob);
-    output = Blob;
+    output = blob;
     return result;
 }
 
