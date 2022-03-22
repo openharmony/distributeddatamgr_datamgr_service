@@ -132,7 +132,9 @@ void SingleVerDataMessageSchedule::UpdateMsgMapInner(std::queue<Message *> &msgT
     while (!msgTmpQueue.empty()) {
         Message *msg = msgTmpQueue.front();
         msgTmpQueue.pop();
-        ProcessMsgWithNoLock(msg);
+        // insert new msg into map and delete old msg
+        Message *dropMsg = UpdateMsgMapIfNeed(msg);
+        delete dropMsg;
     }
 }
 
@@ -291,22 +293,20 @@ int SingleVerDataMessageSchedule::TimeOut(TimerId timerId)
     return E_OK;
 }
 
-void SingleVerDataMessageSchedule::ProcessMsgWithNoLock(Message *msg)
+Message *SingleVerDataMessageSchedule::UpdateMsgMapIfNeed(Message *msg)
 {
     if (msg == nullptr) {
-        return;
+        return nullptr;
     }
     const DataRequestPacket *packet = msg->GetObject<DataRequestPacket>();
     if (packet == nullptr) {
-        delete msg;
-        return;
+        return msg;
     }
     uint32_t sessionId = msg->GetSessionId();
     uint32_t sequenceId = msg->GetSequenceId();
     uint64_t packetId = packet->GetPacketId();
     if (prevSessionId_ != 0 && sessionId == prevSessionId_) {
-        delete msg;
-        return;
+        return msg;
     }
     if (sessionId != currentSessionId_) {
         // make sure all msg sessionId is same in msgMap
@@ -316,17 +316,18 @@ void SingleVerDataMessageSchedule::ProcessMsgWithNoLock(Message *msg)
         finishedPacketId_ = 0;
         expectedSequenceId_ = 1;
     }
+    Message *dropMsg = nullptr;
     if (messageMap_.count(sequenceId) > 0) {
         const auto *cachePacket = messageMap_[sequenceId]->GetObject<DataRequestPacket>();
         if (cachePacket != nullptr) {
             if (packetId != 0 && packetId < cachePacket->GetPacketId()) {
-                delete msg;
-                return;
+                return msg;
             }
         }
-        delete messageMap_[sequenceId];
+        dropMsg = messageMap_[sequenceId];
         messageMap_[sequenceId] = nullptr;
     }
     messageMap_[sequenceId] = msg;
+    return dropMsg;
 }
 }
