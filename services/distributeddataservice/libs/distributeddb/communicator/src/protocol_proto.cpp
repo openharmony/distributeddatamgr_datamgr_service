@@ -900,6 +900,9 @@ int ProtocolProto::FrameFragmentation(const uint8_t *splitStartBytes, uint32_t s
     const CommPhyHeader &framePhyHeader, std::vector<std::vector<uint8_t>> &outPieces)
 {
     // It can be guaranteed that fragCount >= 2 and also won't be too large
+    if (fragCount < MIN_FRAGMENT_COUNT) {
+        return -E_INVALID_ARGS;
+    }
     outPieces.resize(fragCount); // Note: should use resize other than reserve
     uint32_t quotient = splitLength / fragCount;
     uint16_t remainder = splitLength % fragCount;
