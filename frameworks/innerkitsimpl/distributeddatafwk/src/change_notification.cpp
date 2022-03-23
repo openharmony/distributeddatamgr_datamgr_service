@@ -103,7 +103,6 @@ ChangeNotification *ChangeNotification::Unmarshalling(Parcel &parcel)
     std::vector<Entry> insertEntries;
     std::vector<Entry> updateEntries;
     std::vector<Entry> deleteEntries;
-
     int lenInsert = parcel.ReadInt32();
     if (lenInsert < 0) {
         ZLOGE("lenInsert is %d", lenInsert);
@@ -118,7 +117,6 @@ ChangeNotification *ChangeNotification::Unmarshalling(Parcel &parcel)
             return nullptr;
         }
     }
-
     int lenUpdate = parcel.ReadInt32();
     if (lenUpdate < 0) {
         ZLOGE("lenUpdate is %d", lenUpdate);
@@ -133,7 +131,6 @@ ChangeNotification *ChangeNotification::Unmarshalling(Parcel &parcel)
             return nullptr;
         }
     }
-
     int lenDelete = parcel.ReadInt32();
     if (lenDelete < 0) {
         ZLOGE("lenDelete is %d", lenDelete);
@@ -150,7 +147,6 @@ ChangeNotification *ChangeNotification::Unmarshalling(Parcel &parcel)
     }
     std::string deviceId = parcel.ReadString();
     bool isClear = parcel.ReadBool();
-
     return new(std::nothrow) ChangeNotification(std::move(insertEntries), std::move(updateEntries),
         std::move(deleteEntries), deviceId, isClear);
 }
