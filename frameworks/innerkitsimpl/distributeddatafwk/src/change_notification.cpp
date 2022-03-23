@@ -154,7 +154,7 @@ ChangeNotification *ChangeNotification::Unmarshalling(Parcel &parcel)
     auto result = new(std::nothrow) ChangeNotification(std::move(insertEntries), std::move(updateEntries),
         std::move(deleteEntries), deviceId, isClear);
     if (result == nullptr) {
-        return nullptr
+        return nullptr;
     }
     return result;
 }

@@ -139,8 +139,8 @@ Status KvStoreImplProxy::Put(const Key &key, const Value &value)
         return static_cast<Status>(reply.ReadInt32());
     }
     ZLOGI("putting large data.");
-    std::unique_ptr<uint8_t, void(*)(uint8_t *)> buffer(new(std::nothrow) uint8_t[bufferSize], [](uint8_t *ptr)
-        { delete[] ptr; });
+    std::unique_ptr<uint8_t, void(*)(uint8_t *)> buffer(
+            new(std::nothrow) uint8_t[bufferSize], [](uint8_t *ptr) { delete[] ptr; });
     if (buffer == nullptr) {
         ZLOGW("buffer is null");
         return Status::ERROR;
