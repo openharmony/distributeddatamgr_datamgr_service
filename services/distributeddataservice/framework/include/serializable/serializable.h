@@ -74,7 +74,10 @@ protected:
         if (subNode.is_null()) {
             return false;
         }
-        value = new T();
+        value = new(std::nothrow) T();
+        if (value == nullptr) {
+            return false;
+        }
         bool result = GetValue(subNode, "", *value);
         if (!result) {
             delete value;
