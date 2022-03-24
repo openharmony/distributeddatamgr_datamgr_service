@@ -157,7 +157,7 @@ int SchemaUtils::TransToInteger(const std::string &defaultContent, SchemaAttribu
     if (defaultContent.empty()) {
         return -E_SCHEMA_PARSE_FAIL;
     }
-    int transRes = std::atoi(defaultContent.c_str());
+    int transRes = strtol(defaultContent.c_str(), nullptr, 10); // 10: decimal
     std::string resReview = std::to_string(transRes);
     if (defaultContent.compare(defaultContent.find_first_not_of("+- "), defaultContent.size(),
         resReview, resReview.find_first_not_of("+- "), resReview.size()) == 0) {
@@ -179,7 +179,7 @@ int SchemaUtils::TransToLong(const std::string &defaultContent, SchemaAttribute 
     if (defaultContent.empty()) {
         return -E_SCHEMA_PARSE_FAIL;
     }
-    int64_t transRes = std::atoll(defaultContent.c_str());
+    int64_t transRes = strtoll(defaultContent.c_str(), nullptr, 10); // 10: decimal
     std::string resReview = std::to_string(transRes);
     if (defaultContent.compare(defaultContent.find_first_not_of("+- "), defaultContent.size(),
         resReview, resReview.find_first_not_of("+- "), resReview.size()) == 0) {

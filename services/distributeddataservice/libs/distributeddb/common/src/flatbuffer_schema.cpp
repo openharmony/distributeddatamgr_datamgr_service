@@ -503,7 +503,7 @@ int SchemaObject::FlatBufferSchema::ParseCheckRootTableAttribute(const reflectio
         return E_OK;
     }
     std::string skipsizeStr = SchemaUtils::Strip(skipsizeAttr->value()->str());
-    int skipsizeInt = std::atoi(skipsizeStr.c_str()); // std::stoi will throw exception
+    int skipsizeInt = strtol(skipsizeStr.c_str(), nullptr, 10); // 10: decimal
     if (std::to_string(skipsizeInt) != skipsizeStr || skipsizeInt < 0 ||
         static_cast<uint32_t>(skipsizeInt) > SchemaConstant::SCHEMA_SKIPSIZE_MAX) {
         LOGE("[FBSchema][ParseRootAttr] Unexpect SCHEMA_SKIPSIZE value=%s.", skipsizeAttr->value()->c_str());

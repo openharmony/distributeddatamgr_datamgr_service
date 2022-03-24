@@ -308,11 +308,7 @@ bool EventLoopImpl::IsInLoopThread(bool &started) const
 
 bool EventLoopImpl::EventObjectExists(EventImpl *event) const
 {
-    auto it = polling_.find(event);
-    if (it != polling_.end()) {
-        return true;
-    }
-    return false;
+    return polling_.find(event) != polling_.end();
 }
 
 bool EventLoopImpl::EventFdExists(const EventImpl *event) const

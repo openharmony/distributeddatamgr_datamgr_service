@@ -44,6 +44,6 @@ private:
     std::mutex wakeUpMutex_;
     std::condition_variable wakeUpCondition_;
 };
-}
+} // namespace DistributedDB
 #endif // EVENT_LOOP_USE_SELECT
 #endif // EVENT_LOOP_SELECT_H

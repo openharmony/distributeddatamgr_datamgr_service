@@ -73,7 +73,7 @@ namespace {
     int CallbackReturnCount(void *data, int argc, char **argv, char **azColName)
     {
         if (argc == 1) {
-            int count = atoi(*(argv));
+            int count = strtol(*(argv), nullptr, 10); // 10: decimal
             if (data != nullptr) {
                 int *mid = static_cast<int *>(data);
                 *mid = count;

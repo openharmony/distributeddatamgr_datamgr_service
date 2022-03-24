@@ -82,6 +82,6 @@ int EventLoopSelect::ModifyEvent(EventImpl *event, bool isAdd, EventsMask events
 }
 
 DEFINE_OBJECT_TAG_FACILITIES(EventLoopSelect)
-}
+} // namespace DistributedDB
 
-#endif
+#endif // EVENT_LOOP_USE_SELECT

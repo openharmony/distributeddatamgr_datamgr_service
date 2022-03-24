@@ -56,4 +56,4 @@ IEvent *IEvent::CreateEvent(EventFd fd, EventsMask events,
     errCode = E_OK;
     return event;
 }
-}
+} // namespace DistributedDB

@@ -1100,7 +1100,7 @@ void MoveCursor(KvStoreResultSet &resultSet, const vector<Entry> &entriesBatch)
 {
     int currentPosition = CURSOR_POSITION_NEGATIVE1;
     Entry entry;
-    bool result;
+    bool result = false;
     for (int position = CURSOR_POSITION_NEGATIVE1; position < TEN_RECORDS; ++position) {
         result = resultSet.MoveToNext();
         if (position < (TEN_RECORDS - CURSOR_POSITION_1)) {

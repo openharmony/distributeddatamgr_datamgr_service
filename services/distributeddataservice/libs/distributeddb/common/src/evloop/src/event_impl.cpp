@@ -368,20 +368,13 @@ int EventImpl::Dispatch()
 bool EventImpl::IsValidArg(EventsMask events) const
 {
     EventsMask allEvents = ET_READ | ET_WRITE | ET_ERROR | ET_TIMEOUT;
-    if (!events || (events & (~allEvents))) {
-        return false;
-    }
-    return true;
+    return events && !(events & (~allEvents));
 }
 
 bool EventImpl::IsValidArg(EventTime timeout) const
 {
-    if ((timeout < 0) || (timeout > MAX_TIME_VALUE)) {
-        return false;
-    }
-    return true;
+    return (timeout >= 0) && (timeout <= MAX_TIME_VALUE);
 }
 
 DEFINE_OBJECT_TAG_FACILITIES(EventImpl)
-}
-
+} // namespace DistributedDB

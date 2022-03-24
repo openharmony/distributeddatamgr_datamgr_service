@@ -24,7 +24,6 @@ void DataCompression::GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmS
     for (const auto &item : GetCompressionAlgos()) {
         algorithmSet.insert(item.first);
     }
-    return;
 }
 
 int DataCompression::TransferCompressionAlgo(uint32_t compressAlgoType, CompressAlgorithm &algoType)
