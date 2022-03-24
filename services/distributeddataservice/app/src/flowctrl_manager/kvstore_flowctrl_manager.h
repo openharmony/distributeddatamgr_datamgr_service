@@ -47,9 +47,9 @@ public:
     static const int SUSTAINED_REFRESH_TIME = 60000;
 
 private:
-    void RefreshTokenBucket(TokenBucket &tokenBucket, uint64_t timeStamp);
+    void RefreshTokenBucket(TokenBucket &tokenBucket, uint64_t timestamp);
 
-    bool IsTokenEnoughSlice(TokenBucket &tokenBucket, uint64_t timeStamp);
+    bool IsTokenEnoughSlice(TokenBucket &tokenBucket, uint64_t timestamp);
 
     TokenBucket burstTokenBucket_; // token bucket to deal with events in a burst
 

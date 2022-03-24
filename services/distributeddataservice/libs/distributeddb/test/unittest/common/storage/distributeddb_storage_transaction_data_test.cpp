@@ -128,7 +128,7 @@ static uint64_t GetCommitTimestamp(const CommitID& commitId)
     if (commitStorage == nullptr) {
         return 0;
     }
-    TimeStamp timestamp = INVALID_TIMESTAMP;
+    Timestamp timestamp = INVALID_TIMESTAMP;
     CommitID newCommitId;
     IKvDBCommit *commit = nullptr;
     IKvDBCommitStorage::Property property;
@@ -1092,7 +1092,7 @@ HWTEST_F(DistributedDBStorageTransactionDataTest, DefaultConflictResolution002, 
     /**
      * @tc.steps: step2. Get latest timestamp
      */
-    TimeStamp t1 = GetMaxTimestamp();
+    Timestamp t1 = GetMaxTimestamp();
     EXPECT_TRUE(t1 > 0);
     /**
      * @tc.steps: step3. Put the external entry[KEY_2,VALUE_4,T2] into the database.
@@ -1188,8 +1188,8 @@ HWTEST_F(DistributedDBStorageTransactionDataTest, DefaultConflictResolution003, 
     /**
      * @tc.steps: step2. Get timestampV1
      */
-    TimeStamp timestampV1 = GetMaxTimestamp();
-    TimeStamp timestampClear = timestampV1 + 1;
+    Timestamp timestampV1 = GetMaxTimestamp();
+    Timestamp timestampClear = timestampV1 + 1;
     std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
     /**
      * @tc.steps: step3. Put the local data(KEY_2, VALUE_2) into the database.
@@ -1199,7 +1199,7 @@ HWTEST_F(DistributedDBStorageTransactionDataTest, DefaultConflictResolution003, 
     /**
      * @tc.steps: step4. Get timestampV2
      */
-    TimeStamp timestampV2 = GetMaxTimestamp();
+    Timestamp timestampV2 = GetMaxTimestamp();
     /**
      * @tc.steps: step5. Put the external clear entry into the database.
      * @tc.expected: step5. Put returns E_OK
@@ -1236,7 +1236,7 @@ HWTEST_F(DistributedDBStorageTransactionDataTest, DefaultConflictResolution004, 
      * @tc.expected: step1. Put returns E_OK.
      */
     PutAndCommitEntry(KEY_1, VALUE_1);
-    TimeStamp t1 = GetMaxTimestamp();
+    Timestamp t1 = GetMaxTimestamp();
     EXPECT_TRUE(t1 > 0);
     std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
     /**
@@ -1244,13 +1244,13 @@ HWTEST_F(DistributedDBStorageTransactionDataTest, DefaultConflictResolution004, 
      * @tc.expected: step2. Put returns E_OK.
      */
     PutAndCommitEntry(KEY_2, VALUE_2);
-    TimeStamp t2 = GetMaxTimestamp();
+    Timestamp t2 = GetMaxTimestamp();
     /**
      * @tc.steps: step3. Execute Clear() operation and get the latest timestamp.
      */
     IOption option;
     g_naturalStoreConnection->Clear(option);
-    TimeStamp t3 = GetMaxTimestamp();
+    Timestamp t3 = GetMaxTimestamp();
     EXPECT_TRUE(t3 > 0);
     /**
      * @tc.steps: step4. Put the local data(KEY_3, VALUE_3) into the database and get the latest timestamp.
@@ -1335,7 +1335,7 @@ HWTEST_F(DistributedDBStorageTransactionDataTest, CommitTimestamp001, TestSize.L
     ASSERT_EQ(timeSet.size(), 1UL); // only one timestamp in one commit.
     // Tobe compare the timestamp.
     CommitID commitId;
-    TimeStamp commitTimestamp = GetCommitTimestamp(commitId);
+    Timestamp commitTimestamp = GetCommitTimestamp(commitId);
     LOGD("TimeRecord:%" PRIu64 ", TimeCommit:%" PRIu64, *(timeSet.begin()), commitTimestamp);
     ASSERT_EQ(*(timeSet.begin()), commitTimestamp);
     ASSERT_NE(commitTimestamp, 0UL);
@@ -1434,7 +1434,7 @@ HWTEST_F(DistributedDBStorageTransactionDataTest, CommitTimestamp002, TestSize.L
     EXPECT_EQ(g_naturalStoreConnection->Commit(), E_OK);
 
     CommitID commitId;
-    TimeStamp stampFirst = GetCommitTimestamp(commitId);
+    Timestamp stampFirst = GetCommitTimestamp(commitId);
     ASSERT_NE(stampFirst, 0UL); // non-zero
 
     /**
@@ -1447,7 +1447,7 @@ HWTEST_F(DistributedDBStorageTransactionDataTest, CommitTimestamp002, TestSize.L
      * @tc.steps: step3. Check the timestamp of the two commits.
      * @tc.expected: step3. the timestamp of the second commit is greater than the timestamp of the first commit.
      */
-    TimeStamp stampSecond = GetCommitTimestamp(commitId);
+    Timestamp stampSecond = GetCommitTimestamp(commitId);
     ASSERT_NE(stampSecond, 0UL); // non-zero
     LOGD("TimeFirst:%" PRIu64 ", TimeSecond:%" PRIu64, stampFirst, stampSecond);
     ASSERT_GT(stampSecond, stampFirst);
@@ -1501,7 +1501,7 @@ HWTEST_F(DistributedDBStorageTransactionDataTest, CommitTimestamp003, TestSize.L
      * @tc.steps: step3. Check the timestamp of the commit and the data.
      * @tc.steps: expected. the timestamp of the sync commit is equal to the timestamp of the data record.
      */
-    TimeStamp commitTimestamp = GetCommitTimestamp(commit.commitId);
+    Timestamp commitTimestamp = GetCommitTimestamp(commit.commitId);
     LOGD("TimeRecord:%" PRIu64 ", TimeCommit:%" PRIu64, timestamp, commitTimestamp);
     ASSERT_EQ(timestamp, commitTimestamp);
     ASSERT_NE(commitTimestamp, 0UL);

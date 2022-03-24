@@ -52,7 +52,7 @@ namespace {
     const int WAIT_TIME = 1000; // 1000ms
     const int LIFE_CYCLE_TIME = 5000; // 5000ms
     const int WAIT_SHORT_TIME = 200; // 20ms
-    const TimeStamp TIME_ADD = 1000; // not zero is ok
+    const Timestamp TIME_ADD = 1000; // not zero is ok
     const std::string REMOTE_DEVICE_ID = "remote_device";
     const std::string THIS_DEVICE = "real_device";
 
@@ -172,8 +172,8 @@ static void PutSyncData(const KvDBProperties &prop, const Key &key, const Value 
     ASSERT_NE(connection, nullptr);
     if (kvStore != nullptr) {
         std::vector<DataItem> vect;
-        TimeStamp time;
-        kvStore->GetMaxTimeStamp(time);
+        Timestamp time;
+        kvStore->GetMaxTimestamp(time);
         time += TIME_ADD;
         LOGD("time:%" PRIu64, time);
         vect.push_back({key, value, time, 0, DBCommon::TransferHashString(REMOTE_DEVICE_ID)});

@@ -119,7 +119,7 @@ int SingleVerSyncTaskContext::AddSyncOperation(SyncOperation *operation)
         return -E_OUT_OF_MEMORY;
     }
     newTarget->SetSyncOperation(operation);
-    TimeStamp timstamp = timeHelper_->GetTime();
+    Timestamp timstamp = timeHelper_->GetTime();
     newTarget->SetEndWaterMark(timstamp);
     newTarget->SetTaskType(ISyncTarget::REQUEST);
     AddSyncTarget(newTarget);
@@ -504,17 +504,17 @@ bool SingleVerSyncTaskContext::IsCurrentSyncTaskCanBeSkipped() const
         return false;
     }
 
-    TimeStamp maxTimeStampInDb;
-    syncInterface_->GetMaxTimeStamp(maxTimeStampInDb);
+    Timestamp maxTimestampInDb;
+    syncInterface_->GetMaxTimestamp(maxTimestampInDb);
     uint64_t localWaterMark = 0;
     int errCode = GetCorrectedSendWaterMarkForCurrentTask(localWaterMark);
     if (errCode != E_OK) {
         LOGE("GetLocalWaterMark in state machine failed: %d", errCode);
         return false;
     }
-    if (localWaterMark > maxTimeStampInDb) {
-        LOGI("skip current push task, deviceId_ = %s, localWaterMark = %" PRIu64 ", maxTimeStampInDb = %" PRIu64,
-            STR_MASK(deviceId_), localWaterMark, maxTimeStampInDb);
+    if (localWaterMark > maxTimestampInDb) {
+        LOGI("skip current push task, deviceId_ = %s, localWaterMark = %" PRIu64 ", maxTimestampInDb = %" PRIu64,
+            STR_MASK(deviceId_), localWaterMark, maxTimestampInDb);
         return true;
     }
     return false;

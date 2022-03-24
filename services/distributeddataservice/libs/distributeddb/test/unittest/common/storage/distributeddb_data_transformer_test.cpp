@@ -104,7 +104,7 @@ bool Equal(const LogInfo &origin, const LogInfo &target)
     if (origin.timestamp != target.timestamp) {
         return false;
     }
-    if (origin.wTimeStamp != target.wTimeStamp) {
+    if (origin.wTimestamp != target.wTimestamp) {
         return false;
     }
     return true;

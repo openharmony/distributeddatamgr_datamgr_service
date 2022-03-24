@@ -44,7 +44,7 @@ public:
     void StopSync(int syncId);
 
     // Get The current virtual timestamp
-    uint64_t GetTimeStamp();
+    uint64_t GetTimestamp();
 
     int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash, const std::string &tableName = "");
 

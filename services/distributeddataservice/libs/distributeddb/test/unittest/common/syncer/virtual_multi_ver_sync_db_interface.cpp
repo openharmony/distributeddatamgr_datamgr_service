@@ -49,9 +49,9 @@ std::vector<uint8_t> VirtualMultiVerSyncDBInterface::GetIdentifier() const
     return kvStore_->GetIdentifier();
 }
 
-void VirtualMultiVerSyncDBInterface::GetMaxTimeStamp(TimeStamp &stamp) const
+void VirtualMultiVerSyncDBInterface::GetMaxTimestamp(Timestamp &stamp) const
 {
-    return kvStore_->GetMaxTimeStamp(stamp);
+    return kvStore_->GetMaxTimestamp(stamp);
 }
 
 int VirtualMultiVerSyncDBInterface::GetMetaData(const Key &key, Value &value) const

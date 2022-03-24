@@ -848,7 +848,7 @@ int MultiVerStorageExecutor::CommitTransaction(MultiTransactionType type)
     if ((dataStorage_ == nullptr) || (transaction_ == nullptr)) {
         return -E_INVALID_DB;
     }
-    UpdateVerTimeStamp multiVerTimeStamp = {static_cast<MultiVerNaturalStore *>(kvDB_)->GetCurrentTimeStamp(), true};
+    UpdateVerTimestamp multiVerTimestamp = {static_cast<MultiVerNaturalStore *>(kvDB_)->GetCurrentTimestamp(), true};
     Version commitVersion;
     CommitID commitId;
     int errCode = E_OK;
@@ -858,21 +858,21 @@ int MultiVerStorageExecutor::CommitTransaction(MultiTransactionType type)
         goto END;
     }
 
-    errCode = dataStorage_->CommitWritePhaseOne(transaction_, multiVerTimeStamp);
+    errCode = dataStorage_->CommitWritePhaseOne(transaction_, multiVerTimestamp);
     if (errCode != E_OK) {
         LOGE("commit phase one failed:%d", errCode);
         goto END;
     }
 
     commitVersion = transaction_->GetVersion();
-    errCode = FillAndCommitLogEntry(commitVersion, commitId, multiVerTimeStamp.timestamp);
+    errCode = FillAndCommitLogEntry(commitVersion, commitId, multiVerTimestamp.timestamp);
     if (errCode != E_OK) {
         LOGE("rollback commit phase one failed:%d", errCode);
         dataStorage_->RollbackWritePhaseOne(transaction_, commitVersion);
         goto END;
     }
     LOGD("local commit version:%" PRIu64, commitVersion);
-    static_cast<MultiVerNaturalStore *>(kvDB_)->SetMaxTimeStamp(multiVerTimeStamp.timestamp);
+    static_cast<MultiVerNaturalStore *>(kvDB_)->SetMaxTimestamp(multiVerTimestamp.timestamp);
     dataStorage_->CommitWritePhaseTwo(transaction_);
     static_cast<MultiVerNaturalStore *>(kvDB_)->SetMaxCommitVersion(commitVersion);
 END:
@@ -1234,7 +1234,7 @@ int MultiVerStorageExecutor::FillCommitByForeign(IKvDBCommit *commit,
         commit->SetLeftParentId(header);
         commit->SetRightParentId(multiVerCommit.commitId);
         commit->SetLocalFlag(true);
-        TimeStamp timestamp = static_cast<MultiVerNaturalStore *>(kvDB_)->GetCurrentTimeStamp();
+        Timestamp timestamp = static_cast<MultiVerNaturalStore *>(kvDB_)->GetCurrentTimestamp();
         commit->SetTimestamp(timestamp);
         commit->SetDeviceInfo(strTag);
     } else {
@@ -1251,7 +1251,7 @@ int MultiVerStorageExecutor::FillCommitByForeign(IKvDBCommit *commit,
 }
 
 int MultiVerStorageExecutor::FillAndCommitLogEntry(const Version &versionInfo,
-    const MultiVerCommitNode &multiVerCommit, CommitID &commitId, bool isMerge, TimeStamp &timestamp) const
+    const MultiVerCommitNode &multiVerCommit, CommitID &commitId, bool isMerge, Timestamp &timestamp) const
 {
     if (commitStorage_ == nullptr) {
         return -E_INVALID_DB;
@@ -1272,7 +1272,7 @@ int MultiVerStorageExecutor::FillAndCommitLogEntry(const Version &versionInfo,
         goto END;
     }
 
-    timestamp = isMerge ? static_cast<MultiVerNaturalStore *>(kvDB_)->GetCurrentTimeStamp() : multiVerCommit.timestamp;
+    timestamp = isMerge ? static_cast<MultiVerNaturalStore *>(kvDB_)->GetCurrentTimestamp() : multiVerCommit.timestamp;
     commit->SetTimestamp(timestamp);
 
     // write the commit history.
@@ -1298,17 +1298,17 @@ int MultiVerStorageExecutor::CommitTransaction(const MultiVerCommitNode &multiVe
 
     Version commitVersion;
     CommitID commitId;
-    UpdateVerTimeStamp multiVerTimeStamp = {0ull, false};
+    UpdateVerTimestamp multiVerTimestamp = {0ull, false};
     bool isDataChanged = transaction_->IsDataChanged();
 
-    int errCode = dataStorage_->CommitWritePhaseOne(transaction_, multiVerTimeStamp);
+    int errCode = dataStorage_->CommitWritePhaseOne(transaction_, multiVerTimestamp);
     if (errCode != E_OK) {
         LOGE("commit phase one failed:%d", errCode);
         goto END;
     }
 
     commitVersion = transaction_->GetVersion();
-    errCode = FillAndCommitLogEntry(commitVersion, multiVerCommit, commitId, isMerge, multiVerTimeStamp.timestamp);
+    errCode = FillAndCommitLogEntry(commitVersion, multiVerCommit, commitId, isMerge, multiVerTimestamp.timestamp);
     if (errCode != E_OK) {
         LOGE("rollback commit phase one failed:%d", errCode);
         dataStorage_->RollbackWritePhaseOne(transaction_, commitVersion);
@@ -1316,7 +1316,7 @@ int MultiVerStorageExecutor::CommitTransaction(const MultiVerCommitNode &multiVe
     }
 
     dataStorage_->CommitWritePhaseTwo(transaction_);
-    static_cast<MultiVerNaturalStore *>(kvDB_)->SetMaxTimeStamp(multiVerTimeStamp.timestamp);
+    static_cast<MultiVerNaturalStore *>(kvDB_)->SetMaxTimestamp(multiVerTimestamp.timestamp);
     static_cast<MultiVerNaturalStore *>(kvDB_)->SetMaxCommitVersion(commitVersion);
     LOGD("sync commit version:%" PRIu64, commitVersion);
 END:

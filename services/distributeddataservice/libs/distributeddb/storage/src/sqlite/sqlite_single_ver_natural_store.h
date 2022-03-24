@@ -72,10 +72,10 @@ public:
 
     int GetAllMetaKeys(std::vector<Key> &keys) const override;
 
-    int GetSyncData(TimeStamp begin, TimeStamp end, std::vector<DataItem> &dataItems, ContinueToken &continueStmtToken,
+    int GetSyncData(Timestamp begin, Timestamp end, std::vector<DataItem> &dataItems, ContinueToken &continueStmtToken,
         const DataSizeSpecInfo &dataSizeInfo) const override;
 
-    int GetSyncData(TimeStamp begin, TimeStamp end, std::vector<SingleVerKvEntry *> &entries,
+    int GetSyncData(Timestamp begin, Timestamp end, std::vector<SingleVerKvEntry *> &entries,
         ContinueToken &continueStmtToken, const DataSizeSpecInfo &dataSizeInfo) const override;
 
     int GetSyncData(QueryObject &query, const SyncTimeRange &timeRange, const DataSizeSpecInfo &dataSizeInfo,
@@ -92,9 +92,9 @@ public:
     int PutSyncDataWithQuery(const QueryObject &query, const std::vector<SingleVerKvEntry *> &entries,
         const std::string &deviceName) override;
 
-    void GetMaxTimeStamp(TimeStamp &stamp) const override;
+    void GetMaxTimestamp(Timestamp &stamp) const override;
 
-    int SetMaxTimeStamp(TimeStamp timestamp);
+    int SetMaxTimestamp(Timestamp timestamp);
 
     int Rekey(const CipherPassword &passwd) override;
 
@@ -123,7 +123,7 @@ public:
 
     bool CheckCompatible(const std::string &schema, uint8_t type) const override;
 
-    TimeStamp GetCurrentTimeStamp();
+    Timestamp GetCurrentTimestamp();
 
     SchemaObject GetSchemaObject() const;
 
@@ -163,7 +163,7 @@ public:
 
     void NotifyRemotePushFinished(const std::string &targetId) const override;
 
-    int GetDatabaseCreateTimeStamp(TimeStamp &outTime) const override;
+    int GetDatabaseCreateTimestamp(Timestamp &outTime) const override;
 
     int CheckIntegrity() const override;
 
@@ -245,13 +245,13 @@ private:
     // Currently, this function only suitable to be call from sync in insert_record_from_sync procedure
     // Take attention if future coder attempt to call it in other situation procedure
     int SaveSyncItems(const QueryObject& query, std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo,
-        TimeStamp &maxTimestamp, SingleVerNaturalStoreCommitNotifyData *commitData) const;
+        Timestamp &maxTimestamp, SingleVerNaturalStoreCommitNotifyData *commitData) const;
 
     int SaveSyncDataToCacheDB(const QueryObject &query, std::vector<DataItem> &dataItems,
         const DeviceInfo &deviceInfo);
 
     int SaveSyncItemsInCacheMode(SQLiteSingleVerStorageExecutor *handle, const QueryObject &query,
-        std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo, TimeStamp &maxTimestamp) const;
+        std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo, Timestamp &maxTimestamp) const;
 
     int ClearIncompleteDatabase(const KvDBProperties &kvDBPro) const;
 
@@ -267,7 +267,7 @@ private:
 
     DECLARE_OBJECT_TAG(SQLiteSingleVerNaturalStore);
 
-    TimeStamp currentMaxTimeStamp_ = 0;
+    Timestamp currentMaxTimestamp_ = 0;
     SQLiteSingleVerStorageEngine *storageEngine_;
     bool notificationEventsRegistered_;
     bool notificationConflictEventsRegistered_;
@@ -275,12 +275,12 @@ private:
     bool isReadOnly_;
     mutable std::mutex syncerMutex_;
     mutable std::mutex initialMutex_;
-    mutable std::mutex maxTimeStampMutex_;
+    mutable std::mutex maxTimestampMutex_;
     mutable std::mutex lifeCycleMutex_;
     mutable DatabaseLifeCycleNotifier lifeCycleNotifier_;
     mutable TimerId lifeTimerId_;
     uint32_t autoLifeTime_;
-    mutable TimeStamp createDBTime_;
+    mutable Timestamp createDBTime_;
     mutable std::mutex createDBTimeMutex_;
 
     mutable std::shared_mutex dataInterceptorMutex_;

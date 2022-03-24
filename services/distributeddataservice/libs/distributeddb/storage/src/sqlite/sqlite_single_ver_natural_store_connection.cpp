@@ -42,7 +42,7 @@ SQLiteSingleVerNaturalStoreConnection::SQLiteSingleVerNaturalStoreConnection(SQL
       cacheMaxSizeForNewResultSet_(DEFAULT_RESULT_SET_CACHE_MAX_SIZE),
       conflictType_(0),
       transactionEntrySize_(0),
-      currentMaxTimeStamp_(0),
+      currentMaxTimestamp_(0),
       committedData_(nullptr),
       localCommittedData_(nullptr),
       transactionExeFlag_(false),
@@ -100,8 +100,8 @@ int SQLiteSingleVerNaturalStoreConnection::Get(const IOption &option, const Key 
         std::lock_guard<std::mutex> lock(transactionMutex_);
         if (writeHandle_ != nullptr) {
             LOGD("Transaction started already.");
-            TimeStamp recordTimeStamp;
-            return writeHandle_->GetKvData(dataType, key, value, recordTimeStamp);
+            Timestamp recordTimestamp;
+            return writeHandle_->GetKvData(dataType, key, value, recordTimestamp);
         }
     }
 
@@ -110,8 +110,8 @@ int SQLiteSingleVerNaturalStoreConnection::Get(const IOption &option, const Key 
         return errCode;
     }
 
-    TimeStamp timeStamp;
-    errCode = handle->GetKvData(dataType, key, value, timeStamp);
+    Timestamp timestamp;
+    errCode = handle->GetKvData(dataType, key, value, timestamp);
     ReleaseExecutor(handle);
     return errCode;
 }
@@ -960,7 +960,7 @@ int SQLiteSingleVerNaturalStoreConnection::DeleteLocalEntries(const std::vector<
 // This function currently only be called in local procedure to change sync_data table, do not use in sync procedure.
 // It will check and amend value when need if it is a schema database. return error if some value disagree with the
 // schema. But in sync procedure, we just neglect the value that disagree with schema.
-int SQLiteSingleVerNaturalStoreConnection::SaveEntry(const Entry &entry, bool isDelete, TimeStamp timeStamp)
+int SQLiteSingleVerNaturalStoreConnection::SaveEntry(const Entry &entry, bool isDelete, Timestamp timestamp)
 {
     SQLiteSingleVerNaturalStore *naturalStore = GetDB<SQLiteSingleVerNaturalStore>();
     if (naturalStore == nullptr) {
@@ -981,15 +981,15 @@ int SQLiteSingleVerNaturalStoreConnection::SaveEntry(const Entry &entry, bool is
         }
     }
 
-    dataItem.timeStamp = naturalStore->GetCurrentTimeStamp();
-    if (currentMaxTimeStamp_ > dataItem.timeStamp) {
-        dataItem.timeStamp = currentMaxTimeStamp_;
+    dataItem.timestamp = naturalStore->GetCurrentTimestamp();
+    if (currentMaxTimestamp_ > dataItem.timestamp) {
+        dataItem.timestamp = currentMaxTimestamp_;
     }
 
-    if (timeStamp != 0) {
-        dataItem.writeTimeStamp = timeStamp;
+    if (timestamp != 0) {
+        dataItem.writeTimestamp = timestamp;
     } else {
-        dataItem.writeTimeStamp = dataItem.timeStamp;
+        dataItem.writeTimestamp = dataItem.timestamp;
     }
 
     if (IsExtendedCacheDBMode()) {
@@ -1014,8 +1014,8 @@ int SQLiteSingleVerNaturalStoreConnection::SaveLocalEntry(const Entry &entry, bo
     if (isDelete) {
         dataItem.flag = DataItem::DELETE_FLAG;
     }
-    dataItem.timeStamp = naturalStore->GetCurrentTimeStamp();
-    LOGD("TimeStamp is %" PRIu64, dataItem.timeStamp);
+    dataItem.timestamp = naturalStore->GetCurrentTimestamp();
+    LOGD("Timestamp is %" PRIu64, dataItem.timestamp);
 
     if (IsCacheDBMode()) {
         return SaveLocalItemInCacheMode(dataItem);
@@ -1029,11 +1029,11 @@ int SQLiteSingleVerNaturalStoreConnection::SaveLocalItem(const LocalDataItem &da
     int errCode = E_OK;
     if ((dataItem.flag & DataItem::DELETE_FLAG) == 0) {
         errCode = writeHandle_->PutKvData(SingleVerDataType::LOCAL_TYPE, dataItem.key, dataItem.value,
-            dataItem.timeStamp, localCommittedData_);
+            dataItem.timestamp, localCommittedData_);
     } else {
         Value value;
-        TimeStamp localTimeStamp = 0;
-        errCode = writeHandle_->DeleteLocalKvData(dataItem.key, localCommittedData_, value, localTimeStamp);
+        Timestamp localTimestamp = 0;
+        errCode = writeHandle_->DeleteLocalKvData(dataItem.key, localCommittedData_, value, localTimestamp);
     }
     return errCode;
 }
@@ -1060,12 +1060,12 @@ int SQLiteSingleVerNaturalStoreConnection::SaveEntryNormally(DataItem &dataItem)
         return errCode;
     }
 
-    TimeStamp maxTimestamp = 0;
+    Timestamp maxTimestamp = 0;
     DeviceInfo deviceInfo = {true, ""};
     errCode = writeHandle_->SaveSyncDataItem(dataItem, deviceInfo, maxTimestamp, committedData_);
     if (errCode == E_OK) {
-        if (maxTimestamp > currentMaxTimeStamp_) {
-            currentMaxTimeStamp_ = maxTimestamp;
+        if (maxTimestamp > currentMaxTimestamp_) {
+            currentMaxTimestamp_ = maxTimestamp;
         }
     } else {
         LOGE("Save entry failed, err:%d", errCode);
@@ -1081,13 +1081,13 @@ int SQLiteSingleVerNaturalStoreConnection::SaveEntryInCacheMode(DataItem &dataIt
         return errCode;
     }
 
-    TimeStamp maxTimestamp = 0;
+    Timestamp maxTimestamp = 0;
     DeviceInfo deviceInfo = {true, ""};
     QueryObject query(Query::Select());
     errCode = writeHandle_->SaveSyncDataItemInCacheMode(dataItem, deviceInfo, maxTimestamp, recordVersion, query);
     if (errCode == E_OK) {
-        if (maxTimestamp > currentMaxTimeStamp_) {
-            currentMaxTimeStamp_ = maxTimestamp;
+        if (maxTimestamp > currentMaxTimestamp_) {
+            currentMaxTimestamp_ = maxTimestamp;
         }
     } else {
         LOGE("Save entry failed, err:%d", errCode);
@@ -1337,7 +1337,7 @@ int SQLiteSingleVerNaturalStoreConnection::CommitInner()
     if (naturalStore == nullptr) {
         return -E_INVALID_DB;
     }
-    naturalStore->SetMaxTimeStamp(currentMaxTimeStamp_);
+    naturalStore->SetMaxTimestamp(currentMaxTimestamp_);
 
     if (isCacheOrMigrating) {
         naturalStore->IncreaseCacheRecordVersion();
@@ -1349,7 +1349,7 @@ int SQLiteSingleVerNaturalStoreConnection::RollbackInner()
 {
     int errCode = writeHandle_->Rollback();
     transactionEntrySize_ = 0;
-    currentMaxTimeStamp_ = 0;
+    currentMaxTimestamp_ = 0;
     if (!IsExtendedCacheDBMode()) {
         ReleaseCommitData(committedData_);
         ReleaseCommitData(localCommittedData_);
@@ -1453,7 +1453,7 @@ int SQLiteSingleVerNaturalStoreConnection::PublishLocal(const Key &key, bool del
 int SQLiteSingleVerNaturalStoreConnection::PublishLocalCallback(bool updateTimestamp,
     const SingleVerRecord &localRecord, const SingleVerRecord &syncRecord, const KvStoreNbPublishAction &onConflict)
 {
-    bool isLocalLastest = updateTimestamp ? true : (localRecord.timeStamp > syncRecord.writeTimeStamp);
+    bool isLocalLastest = updateTimestamp ? true : (localRecord.timestamp > syncRecord.writeTimestamp);
     if ((syncRecord.flag & DataItem::DELETE_FLAG) == DataItem::DELETE_FLAG) {
         onConflict({localRecord.key, localRecord.value}, nullptr, isLocalLastest);
     } else {
@@ -1474,13 +1474,13 @@ int SQLiteSingleVerNaturalStoreConnection::PublishInner(SingleVerNaturalStoreCom
 
     if (committedData != nullptr) {
         errCode = writeHandle_->DeleteLocalKvData(localRecord.key, committedData, localRecord.value,
-            localRecord.timeStamp);
+            localRecord.timestamp);
         if (errCode != E_OK) {
             LOGE("Delete local kv data err:%d", errCode);
             return errCode;
         }
     } else {
-        if (!writeHandle_->CheckIfKeyExisted(localRecord.key, true, localRecord.value, localRecord.timeStamp)) {
+        if (!writeHandle_->CheckIfKeyExisted(localRecord.key, true, localRecord.value, localRecord.timestamp)) {
             LOGE("Record not found.");
             return -E_NOT_FOUND;
         }
@@ -1501,16 +1501,16 @@ int SQLiteSingleVerNaturalStoreConnection::PublishInner(SingleVerNaturalStoreCom
         if (updateTimestamp) { // local win
             errCode = SaveEntry({localRecord.key, localRecord.value}, false);
         } else {
-            if (localRecord.timeStamp <= syncRecord.writeTimeStamp) { // sync win
+            if (localRecord.timestamp <= syncRecord.writeTimestamp) { // sync win
                 errCode = -E_STALE;
             } else {
-                errCode = SaveEntry({localRecord.key, localRecord.value}, false, localRecord.timeStamp);
+                errCode = SaveEntry({localRecord.key, localRecord.value}, false, localRecord.timestamp);
             }
         }
     } else {
         isNeedCallback = false;
         if (errCode == -E_NOT_FOUND) {
-            errCode = SaveEntry({localRecord.key, localRecord.value}, false, localRecord.timeStamp);
+            errCode = SaveEntry({localRecord.key, localRecord.value}, false, localRecord.timestamp);
         }
     }
     return errCode;
@@ -1585,13 +1585,13 @@ int SQLiteSingleVerNaturalStoreConnection::UnpublishInner(SingleVerNaturalStoreC
     SingleVerRecord localRecord;
 
     innerErrCode = -E_LOCAL_DEFEAT;
-    if (writeHandle_->CheckIfKeyExisted(syncRecord.key, true, localRecord.value, localRecord.timeStamp)) {
+    if (writeHandle_->CheckIfKeyExisted(syncRecord.key, true, localRecord.value, localRecord.timestamp)) {
         if ((syncRecord.flag & DataItem::DELETE_FLAG) == DataItem::DELETE_FLAG) {
-            if (updateTimestamp || localRecord.timeStamp <= syncRecord.writeTimeStamp) { // sync win
+            if (updateTimestamp || localRecord.timestamp <= syncRecord.writeTimestamp) { // sync win
                 innerErrCode = -E_LOCAL_DELETED;
                 localOperation = LOCAL_OPR_DEL;
             }
-        } else if (updateTimestamp || localRecord.timeStamp <= syncRecord.writeTimeStamp) { // sync win
+        } else if (updateTimestamp || localRecord.timestamp <= syncRecord.writeTimestamp) { // sync win
             innerErrCode = -E_LOCAL_COVERED;
             localOperation = LOCAL_OPR_PUT;
         }
@@ -1629,13 +1629,13 @@ int SQLiteSingleVerNaturalStoreConnection::UnpublishOper(SingleVerNaturalStoreCo
             return errCode;
         }
 
-        TimeStamp time = updateTimestamp ? naturalStore->GetCurrentTimeStamp() : syncRecord.writeTimeStamp;
+        Timestamp time = updateTimestamp ? naturalStore->GetCurrentTimestamp() : syncRecord.writeTimestamp;
         errCode = writeHandle_->PutKvData(SingleVerDataType::LOCAL_TYPE, syncRecord.key, syncRecord.value, time,
             committedData);
     } else if (operType == LOCAL_OPR_DEL) {
-        TimeStamp localTimeStamp = 0;
+        Timestamp localTimestamp = 0;
         Value value;
-        errCode = writeHandle_->DeleteLocalKvData(syncRecord.key, committedData, value, localTimeStamp);
+        errCode = writeHandle_->DeleteLocalKvData(syncRecord.key, committedData, value, localTimestamp);
     }
 
     return errCode;

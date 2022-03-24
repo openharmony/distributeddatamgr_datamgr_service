@@ -50,7 +50,7 @@ public:
     void StopSync();
 
     // Get The current virtual timestamp
-    uint64_t GetTimeStamp();
+    uint64_t GetTimestamp();
 
     void WakeUpSyncer() override;
 

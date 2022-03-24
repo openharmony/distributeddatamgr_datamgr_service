@@ -290,8 +290,8 @@ HWTEST_F(DistributedDBMockSyncModuleTest, DataSyncCheck003, TestSize.Level1)
 
     EXPECT_CALL(*mockMetadata, GetLastQueryTime(_, _, _)).WillOnce(Return(E_OK));
     EXPECT_CALL(*mockMetadata, SetLastQueryTime(_, _, _)).WillOnce([&dataTimeRange](const std::string &queryIdentify,
-        const std::string &deviceId, const TimeStamp &timeStamp) {
-        EXPECT_EQ(timeStamp, dataTimeRange.endTime);
+        const std::string &deviceId, const Timestamp &timestamp) {
+        EXPECT_EQ(timestamp, dataTimeRange.endTime);
         return E_OK;
     });
     EXPECT_CALL(mockSyncTaskContext, SetOperationStatus(_)).WillOnce(Return());

@@ -57,7 +57,7 @@ int SQLiteSingleVerRelationalContinueToken::GetStatement(sqlite3 *db, sqlite3_st
 
 void SQLiteSingleVerRelationalContinueToken::SetNextBeginTime(const DataItem &theLastItem)
 {
-    TimeStamp nextBeginTime = theLastItem.timeStamp + 1;
+    Timestamp nextBeginTime = theLastItem.timestamp + 1;
     if (nextBeginTime > INT64_MAX) {
         nextBeginTime = INT64_MAX;
     }

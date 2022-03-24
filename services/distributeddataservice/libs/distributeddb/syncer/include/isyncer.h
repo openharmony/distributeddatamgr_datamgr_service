@@ -70,7 +70,7 @@ public:
     virtual int StopSync() = 0;
 
     // Get The current virtual timestamp
-    virtual uint64_t GetTimeStamp() = 0;
+    virtual uint64_t GetTimestamp() = 0;
 
     // Enable auto sync function
     virtual void EnableAutoSync(bool enable) = 0;

@@ -25,7 +25,7 @@ namespace DistributedDB {
 class SQLiteSingleVerContinueToken {
 public:
     // For one device.
-    SQLiteSingleVerContinueToken(TimeStamp begin, TimeStamp end);
+    SQLiteSingleVerContinueToken(Timestamp begin, Timestamp end);
 
     // For one device in query sync.
     SQLiteSingleVerContinueToken(const SyncTimeRange &timeRange, const QueryObject &queryObject);
@@ -42,14 +42,14 @@ public:
      */
     bool CheckValid() const;
 
-    TimeStamp GetQueryBeginTime() const;
-    TimeStamp GetQueryEndTime() const;
-    TimeStamp GetDeletedBeginTime() const;
-    TimeStamp GetDeletedEndTime() const;
+    Timestamp GetQueryBeginTime() const;
+    Timestamp GetQueryEndTime() const;
+    Timestamp GetDeletedBeginTime() const;
+    Timestamp GetDeletedEndTime() const;
 
-    void SetNextBeginTime(const DeviceID &deviceID, TimeStamp nextBeginTime);
+    void SetNextBeginTime(const DeviceID &deviceID, Timestamp nextBeginTime);
     const MulDevTimeRanges &GetTimeRanges();
-    void SetDeletedNextBeginTime(const DeviceID &deviceID, TimeStamp nextBeginTime);
+    void SetDeletedNextBeginTime(const DeviceID &deviceID, Timestamp nextBeginTime);
     const MulDevTimeRanges &GetDeletedTimeRanges() const;
 
     void FinishGetQueryData();
@@ -62,10 +62,10 @@ public:
     QueryObject GetQuery() const;
 
 private:
-    void RemovePrevDevAndSetBeginTime(const DeviceID &deviceID, TimeStamp nextBeginTime, MulDevTimeRanges &timeRanges);
+    void RemovePrevDevAndSetBeginTime(const DeviceID &deviceID, Timestamp nextBeginTime, MulDevTimeRanges &timeRanges);
 
-    TimeStamp GetBeginTimeStamp(const MulDevTimeRanges &timeRanges) const;
-    TimeStamp GetEndTimeStamp(const MulDevTimeRanges &timeRanges) const;
+    Timestamp GetBeginTimestamp(const MulDevTimeRanges &timeRanges) const;
+    Timestamp GetEndTimestamp(const MulDevTimeRanges &timeRanges) const;
 
     static const unsigned int MAGIC_BEGIN = 0x600D0AC7;  // for token guard
     static const unsigned int MAGIC_END = 0x0AC7600D;    // for token guard

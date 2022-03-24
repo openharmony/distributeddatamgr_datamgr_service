@@ -63,17 +63,17 @@ std::vector<uint8_t> RelationalSyncAbleStorage::GetIdentifier() const
 }
 
 // Get the max timestamp of all entries in database.
-void RelationalSyncAbleStorage::GetMaxTimeStamp(TimeStamp &stamp) const
+void RelationalSyncAbleStorage::GetMaxTimestamp(Timestamp &stamp) const
 {
-    std::lock_guard<std::mutex> lock(maxTimeStampMutex_);
-    stamp = currentMaxTimeStamp_;
+    std::lock_guard<std::mutex> lock(maxTimestampMutex_);
+    stamp = currentMaxTimestamp_;
 }
 
-int RelationalSyncAbleStorage::SetMaxTimeStamp(TimeStamp timestamp)
+int RelationalSyncAbleStorage::SetMaxTimestamp(Timestamp timestamp)
 {
-    std::lock_guard<std::mutex> lock(maxTimeStampMutex_);
-    if (timestamp > currentMaxTimeStamp_) {
-        currentMaxTimeStamp_ = timestamp;
+    std::lock_guard<std::mutex> lock(maxTimestampMutex_);
+    if (timestamp > currentMaxTimestamp_) {
+        currentMaxTimestamp_ = timestamp;
     }
     return E_OK;
 }
@@ -368,8 +368,8 @@ int RelationalSyncAbleStorage::PutSyncDataWithQuery(const QueryObject &object,
             DataItem item;
             item.origDev = entry->GetOrigDevice();
             item.flag = entry->GetFlag();
-            item.timeStamp = entry->GetTimestamp();
-            item.writeTimeStamp = entry->GetWriteTimestamp();
+            item.timestamp = entry->GetTimestamp();
+            item.writeTimestamp = entry->GetWriteTimestamp();
             entry->GetKey(item.key);
             entry->GetValue(item.value);
             entry->GetHashKey(item.hashKey);
@@ -392,11 +392,11 @@ int RelationalSyncAbleStorage::SaveSyncDataItems(const QueryObject &object, std:
     QueryObject query = object;
     query.SetSchema(storageEngine_->GetSchemaRef());
 
-    TimeStamp maxTimestamp = 0;
+    Timestamp maxTimestamp = 0;
     errCode = handle->SaveSyncItems(query, dataItems, deviceName,
         storageEngine_->GetSchemaRef().GetTable(object.GetTableName()), maxTimestamp);
     if (errCode == E_OK) {
-        (void)SetMaxTimeStamp(maxTimestamp);
+        (void)SetMaxTimestamp(maxTimestamp);
         // dataItems size > 0 now because already check before
         // all dataItems will write into db now, so need to observer notify here
         // if some dataItems will not write into db in the future, observer notify here need change
@@ -445,7 +445,7 @@ void RelationalSyncAbleStorage::NotifyRemotePushFinished(const std::string &devi
 }
 
 // Get the timestamp when database created or imported
-int RelationalSyncAbleStorage::GetDatabaseCreateTimeStamp(TimeStamp &outTime) const
+int RelationalSyncAbleStorage::GetDatabaseCreateTimestamp(Timestamp &outTime) const
 {
     return OS::GetCurrentSysTimeInMicrosecond(outTime);
 }

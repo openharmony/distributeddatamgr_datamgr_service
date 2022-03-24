@@ -140,7 +140,7 @@ private:
         const Version &versionInfo, const CommitID &commitId, bool isMerge) const;
 
     int FillAndCommitLogEntry(const Version &versionInfo, const MultiVerCommitNode &multiVerCommit,
-        CommitID &commitId, bool isMerge, TimeStamp &timestamp) const;
+        CommitID &commitId, bool isMerge, Timestamp &timestamp) const;
 
     int MergeOneCommit(const MultiVerCommitNode &commit);
 

@@ -47,7 +47,7 @@ public:
 
     RelationalSchemaObject GetSchemaInfo() const override;
 
-    int GetDatabaseCreateTimeStamp(TimeStamp &outTime) const override;
+    int GetDatabaseCreateTimestamp(Timestamp &outTime) const override;
 
     int GetBatchMetaData(const std::vector<Key> &keys, std::vector<Entry> &entries) const override;
 
@@ -69,7 +69,7 @@ public:
 
     std::vector<uint8_t> GetIdentifier() const override;
 
-    void GetMaxTimeStamp(TimeStamp &stamp) const override;
+    void GetMaxTimestamp(Timestamp &stamp) const override;
 
     int GetMetaData(const Key &key, Value &value) const override;
 

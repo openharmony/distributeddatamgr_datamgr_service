@@ -30,8 +30,8 @@ struct LogInfo {
     int64_t dataKey = -1;
     std::string device;
     std::string originDev;
-    TimeStamp timestamp = 0;
-    TimeStamp wTimeStamp = 0;
+    Timestamp timestamp = 0;
+    Timestamp wTimestamp = 0;
     uint64_t flag = 0;
     Key hashKey; // primary key hash value
 };

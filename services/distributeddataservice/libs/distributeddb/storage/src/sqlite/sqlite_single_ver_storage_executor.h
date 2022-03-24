@@ -53,12 +53,12 @@ struct DataOperStatus {
 struct SingleVerRecord {
     Key key;
     Value value;
-    TimeStamp timeStamp = 0;
+    Timestamp timestamp = 0;
     uint64_t flag = 0;
     std::string device;
     std::string origDevice;
     Key hashKey;
-    TimeStamp writeTimeStamp = 0;
+    Timestamp writeTimestamp = 0;
 };
 
 struct DeviceInfo {
@@ -69,7 +69,7 @@ struct DeviceInfo {
 struct LocalDataItem {
     Key key;
     Value value;
-    TimeStamp timeStamp = 0;
+    Timestamp timestamp = 0;
     Key hashKey;
     uint64_t flag = 0;
 };
@@ -104,14 +104,14 @@ public:
     DISABLE_COPY_ASSIGN_MOVE(SQLiteSingleVerStorageExecutor);
 
     // Get the Kv data according the type(sync, meta, local data).
-    int GetKvData(SingleVerDataType type, const Key &key, Value &value, TimeStamp &timeStamp) const;
+    int GetKvData(SingleVerDataType type, const Key &key, Value &value, Timestamp &timestamp) const;
 
     // Get the sync data record by hash key.
     int GetKvDataByHashKey(const Key &hashKey, SingleVerRecord &result) const;
 
     // Put the Kv data according the type(meta and the local data).
     int PutKvData(SingleVerDataType type, const Key &key, const Value &value,
-        TimeStamp timestamp, SingleVerNaturalStoreCommitNotifyData *committedData);
+        Timestamp timestamp, SingleVerNaturalStoreCommitNotifyData *committedData);
 
     int GetEntries(SingleVerDataType type, const Key &keyPrefix, std::vector<Entry> &entries) const;
 
@@ -125,10 +125,10 @@ public:
     int GetAllSyncedEntries(const std::string &deviceName, std::vector<Entry> &entries) const;
 
     int SaveSyncDataItem(DataItem &dataItem, const DeviceInfo &deviceInfo,
-        TimeStamp &maxStamp, SingleVerNaturalStoreCommitNotifyData *committedData, bool isPermitForceWrite = true);
+        Timestamp &maxStamp, SingleVerNaturalStoreCommitNotifyData *committedData, bool isPermitForceWrite = true);
 
     int DeleteLocalKvData(const Key &key, SingleVerNaturalStoreCommitNotifyData *committedData, Value &value,
-        TimeStamp &timeStamp);
+        Timestamp &timestamp);
 
     // delete a row data by hashKey, with no tombstone left.
     int EraseSyncData(const Key &hashKey);
@@ -137,14 +137,14 @@ public:
 
     int RemoveDeviceDataInCacheMode(const std::string &deviceName, bool isNeedNotify, uint64_t recordVersion) const;
 
-    void InitCurrentMaxStamp(TimeStamp &maxStamp);
+    void InitCurrentMaxStamp(Timestamp &maxStamp);
 
     void ReleaseContinueStatement();
 
-    int GetSyncDataByTimestamp(std::vector<DataItem> &dataItems, size_t appendedLength, TimeStamp begin,
-        TimeStamp end, const DataSizeSpecInfo &dataSizeInfo) const;
-    int GetDeletedSyncDataByTimestamp(std::vector<DataItem> &dataItems, size_t appendedLength, TimeStamp begin,
-        TimeStamp end, const DataSizeSpecInfo &dataSizeInfo) const;
+    int GetSyncDataByTimestamp(std::vector<DataItem> &dataItems, size_t appendedLength, Timestamp begin,
+        Timestamp end, const DataSizeSpecInfo &dataSizeInfo) const;
+    int GetDeletedSyncDataByTimestamp(std::vector<DataItem> &dataItems, size_t appendedLength, Timestamp begin,
+        Timestamp end, const DataSizeSpecInfo &dataSizeInfo) const;
 
     int GetDeviceIdentifier(PragmaEntryDeviceIdentifier *identifier);
 
@@ -180,7 +180,7 @@ public:
 
     int Rollback();
 
-    bool CheckIfKeyExisted(const Key &key, bool isLocal, Value &value, TimeStamp &timeStamp) const;
+    bool CheckIfKeyExisted(const Key &key, bool isLocal, Value &value, Timestamp &timestamp) const;
 
     int PrepareForSavingData(SingleVerDataType type);
 
@@ -188,13 +188,13 @@ public:
 
     int Reset() override;
 
-    int UpdateLocalDataTimestamp(TimeStamp timestamp);
+    int UpdateLocalDataTimestamp(Timestamp timestamp);
 
     void SetAttachMetaMode(bool attachMetaMode);
 
     int PutLocalDataToCacheDB(const LocalDataItem &dataItem) const;
 
-    int SaveSyncDataItemInCacheMode(DataItem &dataItem, const DeviceInfo &deviceInfo, TimeStamp &maxStamp,
+    int SaveSyncDataItemInCacheMode(DataItem &dataItem, const DeviceInfo &deviceInfo, Timestamp &maxStamp,
         uint64_t recordVersion, const QueryObject &query);
 
     int PrepareForSavingCacheData(SingleVerDataType type);
@@ -214,7 +214,7 @@ public:
     void ClearMigrateData();
 
     // Get current max timestamp.
-    int GetMaxTimeStampDuringMigrating(TimeStamp &maxTimeStamp) const;
+    int GetMaxTimestampDuringMigrating(Timestamp &maxTimestamp) const;
 
     void SetConflictResolvePolicy(int policy);
 
@@ -242,7 +242,7 @@ public:
     int RemoveTrigger(const std::vector<std::string> &triggers);
 
     int GetSyncDataWithQuery(const QueryObject &query, size_t appendLength, const DataSizeSpecInfo &dataSizeInfo,
-        const std::pair<TimeStamp, TimeStamp> &timeRange, std::vector<DataItem> &dataItems) const;
+        const std::pair<Timestamp, Timestamp> &timeRange, std::vector<DataItem> &dataItems) const;
 
     int ForceCheckPoint() const;
 
@@ -285,7 +285,7 @@ private:
 
     int GetSyncDataPreByHashKey(const Key &hashKey, DataItem &itemGet) const;
 
-    int PrepareForSyncDataByTime(TimeStamp begin, TimeStamp end, sqlite3_stmt *&statement, bool getDeletedData = false)
+    int PrepareForSyncDataByTime(Timestamp begin, Timestamp end, sqlite3_stmt *&statement, bool getDeletedData = false)
         const;
 
     int StepForResultEntries(sqlite3_stmt *statement, std::vector<Entry> &entries) const;
@@ -302,13 +302,13 @@ private:
 
     int GetAllEntries(sqlite3_stmt *statement, std::vector<Entry> &entries) const;
 
-    int BindPutKvData(sqlite3_stmt *statement, const Key &key, const Value &value, TimeStamp timestamp,
+    int BindPutKvData(sqlite3_stmt *statement, const Key &key, const Value &value, Timestamp timestamp,
         SingleVerDataType type);
 
     int SaveSyncDataToDatabase(const DataItem &dataItem, const Key &hashKey, const std::string &origDev,
         const std::string &deviceName, bool isUpdate);
 
-    int SaveKvData(SingleVerDataType type, const Key &key, const Value &value, TimeStamp timestamp);
+    int SaveKvData(SingleVerDataType type, const Key &key, const Value &value, Timestamp timestamp);
 
     int DeleteLocalDataInner(SingleVerNaturalStoreCommitNotifyData *committedData,
         const Key &key, const Value &value);
@@ -330,7 +330,7 @@ private:
     int BindPrimaryKeySyncDataInCacheMode(
         sqlite3_stmt *statement, const Key &hashKey, uint64_t recordVersion) const;
 
-    int BindTimeStampSyncDataInCacheMode(sqlite3_stmt *statement, const DataItem &dataItem) const;
+    int BindTimestampSyncDataInCacheMode(sqlite3_stmt *statement, const DataItem &dataItem) const;
 
     int BindDevSyncDataInCacheMode(sqlite3_stmt *statement,
         const std::string &origDev, const std::string &deviceName) const;
@@ -347,13 +347,13 @@ private:
     int BindLocalDataInCacheMode(sqlite3_stmt *statement, const LocalDataItem &dataItem) const;
 
     // Process timestamp for syncdata in cacheDB when migrating.
-    int ProcessTimeStampForSyncDataInCacheDB(std::vector<DataItem> &dataItems);
+    int ProcessTimestampForSyncDataInCacheDB(std::vector<DataItem> &dataItems);
 
     // Get migrateTimeOffset_.
-    int InitMigrateTimeStampOffset();
+    int InitMigrateTimestampOffset();
 
     // Get min timestamp of local data in sync_data, cacheDB.
-    int GetMinTimestampInCacheDB(TimeStamp &minStamp) const;
+    int GetMinTimestampInCacheDB(Timestamp &minStamp) const;
 
     // Prepare conflict notify and commit notify data.
     int PrepareForNotifyConflictAndObserver(DataItem &dataItem, const DeviceInfo &deviceInfo,
@@ -406,13 +406,13 @@ private:
     ExecutorState executorState_;
 
     // Max timestamp in mainDB. Used for migrating.
-    TimeStamp maxTimeStampInMainDB_;
+    Timestamp maxTimestampInMainDB_;
 
     // The offset between min timestamp in cacheDB and max timestamp in mainDB. Used for migrating.
     TimeOffset migrateTimeOffset_;
 
     // Migrating sync flag. When the flag is true, mainDB and cacheDB are attached, migrateSyncStatements_ is set,
-    // maxTimeStampInMainDB_ and migrateTimeOffset_ is meaningful.
+    // maxTimestampInMainDB_ and migrateTimeOffset_ is meaningful.
     bool isSyncMigrating_;
     int conflictResolvePolicy_;
 };

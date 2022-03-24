@@ -554,7 +554,7 @@ END:
     return errCode;
 }
 
-int SQLiteMultiVerTransaction::GetPrePutValues(const Version &versionInfo, TimeStamp timestamp,
+int SQLiteMultiVerTransaction::GetPrePutValues(const Version &versionInfo, Timestamp timestamp,
     std::vector<Value> &values) const
 {
     sqlite3_stmt *statement = nullptr;
@@ -602,7 +602,7 @@ ERROR:
     return errCode;
 }
 
-int SQLiteMultiVerTransaction::RemovePrePutEntries(const Version &versionInfo, TimeStamp timestamp)
+int SQLiteMultiVerTransaction::RemovePrePutEntries(const Version &versionInfo, Timestamp timestamp)
 {
     sqlite3_stmt *statement = nullptr;
     int errCode = SQLiteUtils::GetStatement(db_, DELETE_PRE_PUT_VER_DATA_SQL, statement);
@@ -734,7 +734,7 @@ ERROR:
     return errCode;
 }
 
-TimeStamp SQLiteMultiVerTransaction::GetCurrentMaxTimestamp() const
+Timestamp SQLiteMultiVerTransaction::GetCurrentMaxTimestamp() const
 {
     // consider to get the statement.
     sqlite3_stmt *statement = nullptr;
@@ -743,7 +743,7 @@ TimeStamp SQLiteMultiVerTransaction::GetCurrentMaxTimestamp() const
         LOGE("Get current max timestamp statement error:%d", errCode);
         return 0;
     }
-    TimeStamp timestamp = 0;
+    Timestamp timestamp = 0;
     // Step for getting the latest version
     errCode = SQLiteUtils::StepWithRetry(statement);
     if (errCode != SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
@@ -751,14 +751,14 @@ TimeStamp SQLiteMultiVerTransaction::GetCurrentMaxTimestamp() const
             LOGI("Initial the current max timestamp");
         }
     } else {
-        timestamp = static_cast<TimeStamp>(sqlite3_column_int64(statement, 0)); // the first result.
+        timestamp = static_cast<Timestamp>(sqlite3_column_int64(statement, 0)); // the first result.
     }
     SQLiteUtils::ResetStatement(statement, true, errCode);
     return timestamp;
 }
 
 int SQLiteMultiVerTransaction::UpdateTimestampByVersion(const Version &version,
-    TimeStamp stamp) const
+    Timestamp stamp) const
 {
     if (isReadOnly_) {
         return -E_NOT_SUPPORT;
@@ -1347,7 +1347,7 @@ int SQLiteMultiVerTransaction::GetOneEntry(const GetEntriesStatements &statement
     }
 }
 
-bool SQLiteMultiVerTransaction::IsRecordCleared(const TimeStamp timestamp) const
+bool SQLiteMultiVerTransaction::IsRecordCleared(const Timestamp timestamp) const
 {
     GetClearId();
     if (clearTime_ < 0) {
@@ -1391,16 +1391,16 @@ int SQLiteMultiVerTransaction::CheckIfNeedSaveRecord(sqlite3_stmt *statement, co
         errCode = E_OK;
         isNeedSave = true;
     } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
-        auto readTime = static_cast<TimeStamp>(sqlite3_column_int64(statement, 0)); // the first for time
-        auto readOriTime = static_cast<TimeStamp>(sqlite3_column_int64(statement, 1)); // the second for orig time.
+        auto readTime = static_cast<Timestamp>(sqlite3_column_int64(statement, 0)); // the first for time
+        auto readOriTime = static_cast<Timestamp>(sqlite3_column_int64(statement, 1)); // the second for orig time.
         auto readVersion = static_cast<Version>(sqlite3_column_int64(statement, 2)); // the third for version.
         errCode = SQLiteUtils::GetColumnBlobValue(statement, 3, origVal); // the fourth for origin value.
         if (errCode != E_OK) {
             return errCode;
         }
-        TimeStamp timestamp = NO_TIMESTAMP;
+        Timestamp timestamp = NO_TIMESTAMP;
         static_cast<const GenericMultiVerKvEntry *>(multiVerKvEntry)->GetTimestamp(timestamp);
-        TimeStamp oriTimestamp = NO_TIMESTAMP;
+        Timestamp oriTimestamp = NO_TIMESTAMP;
         static_cast<const GenericMultiVerKvEntry *>(multiVerKvEntry)->GetOriTimestamp(oriTimestamp);
         // Only the latest origin time  is same or the reading time is bigger than putting time.
         isNeedSave = ((readTime < timestamp) && (readOriTime != oriTimestamp || value != origVal));
@@ -1421,7 +1421,7 @@ int SQLiteMultiVerTransaction::CheckIfNeedSaveRecord(const MultiVerKvEntry *mult
     Value &value) const
 {
     auto entry = static_cast<const GenericMultiVerKvEntry *>(multiVerKvEntry);
-    TimeStamp timestamp = NO_TIMESTAMP;
+    Timestamp timestamp = NO_TIMESTAMP;
     entry->GetTimestamp(timestamp);
     if (IsRecordCleared(timestamp)) {
         isNeedSave = false;

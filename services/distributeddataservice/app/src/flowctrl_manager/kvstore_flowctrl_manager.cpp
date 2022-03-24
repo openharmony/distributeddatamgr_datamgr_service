@@ -37,10 +37,10 @@ KvStoreFlowCtrlManager::KvStoreFlowCtrlManager(const int burstCapacity, const in
     sustainedTokenBucket_.refreshTimeGap = SUSTAINED_REFRESH_TIME;
 }
 
-void KvStoreFlowCtrlManager::RefreshTokenBucket(TokenBucket &tokenBucket, uint64_t timeStamp)
+void KvStoreFlowCtrlManager::RefreshTokenBucket(TokenBucket &tokenBucket, uint64_t timestamp)
 {
     tokenBucket.leftNumInTokenBucket = tokenBucket.maxCapacity;
-    tokenBucket.tokenBucketRefreshTime = timeStamp;
+    tokenBucket.tokenBucketRefreshTime = timestamp;
 }
 
 bool KvStoreFlowCtrlManager::IsTokenEnough()
@@ -57,14 +57,14 @@ bool KvStoreFlowCtrlManager::IsTokenEnough()
     return false;
 }
 
-bool KvStoreFlowCtrlManager::IsTokenEnoughSlice(TokenBucket &tokenBucket, uint64_t timeStamp)
+bool KvStoreFlowCtrlManager::IsTokenEnoughSlice(TokenBucket &tokenBucket, uint64_t timestamp)
 {
     // the first time to get token will be allowed;
     // if the gap between this time to get token and the least time to fill the bucket
     // to the full is larger than 10ms, this operation will be allowed;
     if (tokenBucket.tokenBucketRefreshTime == 0 ||
-        timeStamp - tokenBucket.tokenBucketRefreshTime > tokenBucket.refreshTimeGap) {
-        RefreshTokenBucket(tokenBucket, timeStamp);
+        timestamp - tokenBucket.tokenBucketRefreshTime > tokenBucket.refreshTimeGap) {
+        RefreshTokenBucket(tokenBucket, timestamp);
         return true;
     } else {
         return tokenBucket.leftNumInTokenBucket >= 1;

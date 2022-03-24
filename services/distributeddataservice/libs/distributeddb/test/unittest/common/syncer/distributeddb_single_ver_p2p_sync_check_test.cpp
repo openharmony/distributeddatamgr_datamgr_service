@@ -634,7 +634,7 @@ HWTEST_F(DistributedDBSingleVerP2PSyncCheckTest, AckSessionCheck001, TestSize.Le
 
     Key key = {'1'};
     Value value = {'1'};
-    TimeStamp currentTime;
+    Timestamp currentTime;
     (void)OS::GetCurrentSysTimeInMicrosecond(currentTime);
     EXPECT_TRUE(g_deviceB->PutData(key, value, currentTime, 0) == OK);
     EXPECT_TRUE(g_deviceB->Sync(SYNC_MODE_PUSH_ONLY, true) == OK);

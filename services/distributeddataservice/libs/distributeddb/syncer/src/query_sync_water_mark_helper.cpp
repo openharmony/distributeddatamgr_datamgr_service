@@ -194,7 +194,7 @@ int QuerySyncWaterMarkHelper::SetRecvQueryWaterMark(const std::string &queryIden
 }
 
 int QuerySyncWaterMarkHelper::SetLastQueryTime(const std::string &queryIdentify,
-    const std::string &deviceId, const TimeStamp &timeStamp)
+    const std::string &deviceId, const Timestamp &timestamp)
 {
     std::string cacheKey;
     GetHashQuerySyncDeviceId(deviceId, queryIdentify, cacheKey);
@@ -204,7 +204,7 @@ int QuerySyncWaterMarkHelper::SetLastQueryTime(const std::string &queryIdentify,
     if (errCode != E_OK) {
         return errCode;
     }
-    queryWaterMark.lastQueryTime = timeStamp;
+    queryWaterMark.lastQueryTime = timestamp;
     return UpdateCacheAndSave(cacheKey, queryWaterMark);
 }
 
@@ -526,7 +526,7 @@ int QuerySyncWaterMarkHelper::RemoveLeastUsedQuerySyncItems(const std::vector<Ke
     if (querySyncIds.size() < MAX_STORE_ITEMS) {
         return E_OK;
     }
-    std::vector<std::pair<std::string, TimeStamp>> allItems;
+    std::vector<std::pair<std::string, Timestamp>> allItems;
     std::map<std::string, std::vector<uint8_t>> idMap;
     std::vector<std::vector<uint8_t>> waitToRemove;
     for (const auto &id : querySyncIds) {
@@ -557,7 +557,7 @@ int QuerySyncWaterMarkHelper::RemoveLeastUsedQuerySyncItems(const std::vector<Ke
     uint32_t removeCount = allItems.size() - MAX_STORE_ITEMS - waitToRemove.size();
     // quick select the k_th least used
     std::nth_element(allItems.begin(), allItems.begin() + removeCount, allItems.end(),
-        [](std::pair<std::string, TimeStamp> &w1, std::pair<std::string, TimeStamp> &w2) {
+        [](std::pair<std::string, Timestamp> &w1, std::pair<std::string, Timestamp> &w2) {
             return w1.second < w2.second;
         });
     for (uint32_t i = 0; i < removeCount; ++i) {

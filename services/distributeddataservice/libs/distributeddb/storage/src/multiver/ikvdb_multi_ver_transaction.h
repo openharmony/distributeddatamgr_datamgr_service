@@ -39,10 +39,10 @@ public:
     virtual int StartTransaction() = 0;
     virtual int RollBackTransaction() = 0;
     virtual int CommitTransaction() = 0;
-    virtual int UpdateTimestampByVersion(const Version &version, TimeStamp stamp) const = 0;
+    virtual int UpdateTimestampByVersion(const Version &version, Timestamp stamp) const = 0;
     virtual bool IsDataChanged() const = 0; // only for write transaction.
-    virtual bool IsRecordCleared(const TimeStamp timestamp) const = 0;
-    virtual TimeStamp GetCurrentMaxTimestamp() const = 0;
+    virtual bool IsRecordCleared(const Timestamp timestamp) const = 0;
+    virtual Timestamp GetCurrentMaxTimestamp() const = 0;
     virtual void SetVersion(const Version &versionInfo) = 0;
     virtual Version GetVersion() const = 0;
     virtual int GetEntriesByVersion(Version version, std::list<MultiVerTrimedVersionData> &data) const = 0;

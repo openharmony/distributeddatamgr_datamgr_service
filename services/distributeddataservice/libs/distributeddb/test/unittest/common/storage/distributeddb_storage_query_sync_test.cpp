@@ -261,7 +261,7 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, GetQuerySyncData002, TestSize.Level1
      * @tc.steps: step3. Put k3. k3's timestamp t3 is random.
      * @tc.expected: step3. Put k3.
      */
-    auto time3 = static_cast<TimeStamp>(DistributedDBToolsUnitTest::GetRandInt64(0, g_store->GetCurrentTimeStamp()));
+    auto time3 = static_cast<Timestamp>(DistributedDBToolsUnitTest::GetRandInt64(0, g_store->GetCurrentTimestamp()));
     DataItem data3{KEY3, VALUE3, time3, DataItem::LOCAL_FLAG, REMOTE_DEVICE_ID};
     EXPECT_EQ(DistributedDBToolsUnitTest::PutSyncDataTest(g_store, vector{data3}, REMOTE_DEVICE_ID), E_OK);
 
@@ -280,14 +280,14 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, GetQuerySyncData002, TestSize.Level1
      * @tc.expected: step5. Delete k1 k3 successfully.
      */
     IOption option{ IOption::SYNC_DATA };
-    TimeStamp deleteBeginTime = g_store->GetCurrentTimeStamp();
+    Timestamp deleteBeginTime = g_store->GetCurrentTimestamp();
     g_connection->DeleteBatch(option, vector{KEY1, KEY3});
 
     /**
      * @tc.steps: step6. Get deleted data.
      * @tc.expected: step6. Get k1 k3.
      */
-    TimeStamp deleteEndTime = g_store->GetCurrentTimeStamp();
+    Timestamp deleteEndTime = g_store->GetCurrentTimestamp();
     EXPECT_EQ(g_store->GetSyncData(queryObj, SyncTimeRange{0, deleteBeginTime, 0, deleteEndTime}, specInfo, token,
         entries), E_OK);
     EXPECT_EQ(entries.size(), 2UL);
@@ -330,7 +330,7 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, GetQuerySyncData004, TestSize.Level1
      * @tc.steps: step3. Put k3. k3's timestamp t3 is random.
      * @tc.expected: step3. Put k3.
      */
-    auto time3 = static_cast<TimeStamp>(DistributedDBToolsUnitTest::GetRandInt64(0, g_store->GetCurrentTimeStamp()));
+    auto time3 = static_cast<Timestamp>(DistributedDBToolsUnitTest::GetRandInt64(0, g_store->GetCurrentTimestamp()));
     DataItem data3{KEY3, VALUE3, time3, DataItem::LOCAL_FLAG, REMOTE_DEVICE_ID};
     EXPECT_EQ(DistributedDBToolsUnitTest::PutSyncDataTest(g_store, vector{data3}, REMOTE_DEVICE_ID), E_OK);
 
@@ -349,14 +349,14 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, GetQuerySyncData004, TestSize.Level1
      * @tc.expected: step5. Delete k1 k3 successfully.
      */
     IOption option{ IOption::SYNC_DATA };
-    TimeStamp deleteBeginTime = g_store->GetCurrentTimeStamp();
+    Timestamp deleteBeginTime = g_store->GetCurrentTimestamp();
     g_connection->DeleteBatch(option, vector{KEY1, KEY3});
 
     /**
      * @tc.steps: step6. Get deleted data.
      * @tc.expected: step6. Get k1 k3.
      */
-    TimeStamp deleteEndTime = g_store->GetCurrentTimeStamp();
+    Timestamp deleteEndTime = g_store->GetCurrentTimestamp();
     token = new (std::nothrow) SQLiteSingleVerContinueToken{SyncTimeRange{0, deleteBeginTime, 0, deleteEndTime},
         queryObj};
     EXPECT_EQ(g_store->GetSyncDataNext(entries, token, specInfo), E_OK);
@@ -393,7 +393,7 @@ HWTEST_F(DistributedDBStorageQuerySyncTest, GetQuerySyncData006, TestSize.Level1
      * @tc.steps: step2. Get sync data with invalid SyncTimeRange(beginTime is greater than endTime).
      * @tc.expected: step2. GetSyncData return E_INVALID_ARGS.
      */
-    auto time = static_cast<TimeStamp>(DistributedDBToolsUnitTest::GetRandInt64(0, INT64_MAX));
+    auto time = static_cast<Timestamp>(DistributedDBToolsUnitTest::GetRandInt64(0, INT64_MAX));
     EXPECT_EQ(g_store->GetSyncData(queryObj, SyncTimeRange{time, 0, 0}, specInfo, token, entries),
         -E_INVALID_ARGS);
 }

@@ -53,16 +53,16 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::GetSyncData001(SQLiteSin
      */
     IOption option;
     option.dataType = IOption::SYNC_DATA;
-    TimeStamp timeBegin;
-    store->GetMaxTimeStamp(timeBegin);
+    Timestamp timeBegin;
+    store->GetMaxTimestamp(timeBegin);
     Key key1;
     Value value1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(key1);
     DistributedDBToolsUnitTest::GetRandomKeyValue(value1);
 
     EXPECT_EQ(connection->Put(option, key1, value1), E_OK);
-    TimeStamp timeEnd;
-    store->GetMaxTimeStamp(timeEnd);
+    Timestamp timeEnd;
+    store->GetMaxTimestamp(timeEnd);
     EXPECT_GT(timeEnd, timeBegin);
 
     std::vector<DataItem> vect;
@@ -101,8 +101,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::GetSyncData002(SQLiteSin
     DistributedDBToolsUnitTest::GetRandomKeyValue(value);
 
     EXPECT_EQ(connection->Put(option, key, value), E_OK);
-    TimeStamp timestamp;
-    store->GetMaxTimeStamp(timestamp);
+    Timestamp timestamp;
+    store->GetMaxTimestamp(timestamp);
 
     std::vector<DataItem> vect;
     ContinueToken token = nullptr;
@@ -131,8 +131,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::GetSyncData003(SQLiteSin
      */
     IOption option;
     option.dataType = IOption::SYNC_DATA;
-    TimeStamp timeBegin = 1000; // random
-    TimeStamp timeEnd  = 700; // random
+    Timestamp timeBegin = 1000; // random
+    Timestamp timeEnd  = 700; // random
     std::vector<DataItem> vect;
     ContinueToken token = nullptr;
     SyncInputArg inputArg1(timeBegin, timeEnd, MAX_TEST_VAL_SIZE);
@@ -142,14 +142,14 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::GetSyncData003(SQLiteSin
     SyncInputArg inputArg2(timeBegin, timeEnd, MAX_TEST_VAL_SIZE);
     EXPECT_EQ(DistributedDBToolsUnitTest::GetSyncDataTest(inputArg2, store, vect, token), -E_INVALID_ARGS);
 
-    store->GetMaxTimeStamp(timeBegin);
+    store->GetMaxTimestamp(timeBegin);
     Key key1;
     Value value1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(key1);
     DistributedDBToolsUnitTest::GetRandomKeyValue(value1);
 
     EXPECT_EQ(connection->Put(option, key1, value1), E_OK);
-    store->GetMaxTimeStamp(timeEnd);
+    store->GetMaxTimestamp(timeEnd);
 
     SyncInputArg inputArg3(timeEnd, timeBegin, MAX_TEST_VAL_SIZE);
     EXPECT_EQ(DistributedDBToolsUnitTest::GetSyncDataTest(inputArg3, store, vect, token), -E_INVALID_ARGS);
@@ -178,8 +178,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::GetSyncData004(SQLiteSin
         EXPECT_EQ(connection->Put(option, key, value), E_OK);
     }
 
-    TimeStamp timestamp = 0;
-    store->GetMaxTimeStamp(timestamp);
+    Timestamp timestamp = 0;
+    store->GetMaxTimestamp(timestamp);
 
     /**
      * @tc.steps:step1. Obtain the data within the time stamp range
@@ -241,8 +241,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::GetSyncData005(SQLiteSin
         EXPECT_EQ(connection->Put(option, key, value), E_OK);
     }
 
-    TimeStamp timestamp = 0;
-    store->GetMaxTimeStamp(timestamp);
+    Timestamp timestamp = 0;
+    store->GetMaxTimestamp(timestamp);
 
     ContinueToken token = nullptr;
     std::vector<DataItem> dataItems;
@@ -277,8 +277,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::GetSyncData006(SQLiteSin
     IOption option;
     option.dataType = IOption::SYNC_DATA;
     EXPECT_EQ(connection->Put(option, key, value), E_OK);
-    TimeStamp timestamp = 0;
-    store->GetMaxTimeStamp(timestamp);
+    Timestamp timestamp = 0;
+    store->GetMaxTimestamp(timestamp);
 
     ContinueToken token = nullptr;
     std::vector<DataItem> dataItems;
@@ -308,8 +308,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::PutSyncData001(SQLiteSin
 {
     IOption option;
     option.dataType = IOption::SYNC_DATA;
-    TimeStamp timeBegin;
-    store->GetMaxTimeStamp(timeBegin);
+    Timestamp timeBegin;
+    store->GetMaxTimestamp(timeBegin);
     Key key1;
     Value value1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(key1, 13); // random size
@@ -319,23 +319,23 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::PutSyncData001(SQLiteSin
      * @tc.steps:step1/2. Set Ioption to synchronous data and insert a (key1, value1) data record by put interface.
      */
     EXPECT_EQ(connection->Put(option, key1, value1), E_OK);
-    TimeStamp timeEnd;
-    store->GetMaxTimeStamp(timeEnd);
+    Timestamp timeEnd;
+    store->GetMaxTimestamp(timeEnd);
     EXPECT_GT(timeEnd, timeBegin);
 
     DataItem item1;
     std::vector<DataItem> vect;
     item1.key = key1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(item1.value, 18); // random size
-    item1.timeStamp = timeBegin;
-    item1.writeTimeStamp = item1.timeStamp;
+    item1.timestamp = timeBegin;
+    item1.writeTimestamp = item1.timestamp;
     item1.flag = 0;
     vect.push_back(item1);
 
     /**
-     * @tc.steps:step3. Insert a (key1, value2!=value1, timeStamp, false) data record
-     *  through the PutSyncData interface. The value of timeStamp is less than or equal
-     *  to the value of timeStamp. For Compare the timestamp to determine whether to synchronization data.
+     * @tc.steps:step3. Insert a (key1, value2!=value1, timestamp, false) data record
+     *  through the PutSyncData interface. The value of timestamp is less than or equal
+     *  to the value of timestamp. For Compare the timestamp to determine whether to synchronization data.
      * @tc.expected: step3. Return OK.
      */
     EXPECT_EQ(DistributedDBToolsUnitTest::PutSyncDataTest(store, vect, "deviceB"), E_OK);
@@ -349,15 +349,15 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::PutSyncData001(SQLiteSin
     EXPECT_EQ(connection->Get(option, key1, valueRead), E_OK);
     EXPECT_EQ(DistributedDBToolsUnitTest::IsValueEqual(valueRead, value1), true);
 
-    item1.timeStamp = timeEnd + 1;
-    item1.writeTimeStamp = item1.timeStamp;
+    item1.timestamp = timeEnd + 1;
+    item1.writeTimestamp = item1.timestamp;
     vect.clear();
     vect.push_back(item1);
 
     /**
-     * @tc.steps:step5. Insert a (key1, value3!=value1, timeStamp, false) data record
-     *  through the PutSyncData interface of the NaturalStore. The value of timeStamp
-     *  is greater than that of timeStamp inserted in 2.
+     * @tc.steps:step5. Insert a (key1, value3!=value1, timestamp, false) data record
+     *  through the PutSyncData interface of the NaturalStore. The value of timestamp
+     *  is greater than that of timestamp inserted in 2.
      * @tc.expected: step5. Return OK.
      */
     EXPECT_EQ(DistributedDBToolsUnitTest::PutSyncDataTest(store, vect, "deviceB"), E_OK);
@@ -403,8 +403,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::PutSyncData002(SQLiteSin
 {
     IOption option;
     option.dataType = IOption::SYNC_DATA;
-    TimeStamp timeBegin;
-    store->GetMaxTimeStamp(timeBegin);
+    Timestamp timeBegin;
+    store->GetMaxTimestamp(timeBegin);
     Key key1;
     Value value1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(key1, 37); // random size
@@ -414,23 +414,23 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::PutSyncData002(SQLiteSin
      * @tc.steps:step1/2. Set Ioption to synchronous data and insert a (key1, value1) data record by put interface.
      */
     EXPECT_EQ(connection->Put(option, key1, value1), E_OK);
-    TimeStamp timeEnd;
-    store->GetMaxTimeStamp(timeEnd);
+    Timestamp timeEnd;
+    store->GetMaxTimestamp(timeEnd);
     EXPECT_GT(timeEnd, timeBegin);
 
     DataItem item1;
     std::vector<DataItem> vect;
     item1.key = key1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(item1.value, 18); // random size
-    item1.timeStamp = timeBegin;
-    item1.writeTimeStamp = item1.timeStamp;
+    item1.timestamp = timeBegin;
+    item1.writeTimestamp = item1.timestamp;
     item1.flag = 1;
     DistributedDBToolsUnitTest::CalcHash(key1, item1.key);
     vect.push_back(item1);
     /**
-     * @tc.steps:step3. Insert a (key1, value2!=value1, timeStamp, false) data record
-     *  through the PutSyncData interface. The value of timeStamp is less than or equal
-     *  to the value of timeStamp. For Compare the timestamp to determine whether delete data.
+     * @tc.steps:step3. Insert a (key1, value2!=value1, timestamp, false) data record
+     *  through the PutSyncData interface. The value of timestamp is less than or equal
+     *  to the value of timestamp. For Compare the timestamp to determine whether delete data.
      * @tc.expected: step3. Return OK.
      */
     EXPECT_EQ(DistributedDBToolsUnitTest::PutSyncDataTest(store, vect, "deviceB"), E_OK);
@@ -444,15 +444,15 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::PutSyncData002(SQLiteSin
     EXPECT_EQ(connection->Get(option, key1, valueRead), E_OK);
     EXPECT_EQ(DistributedDBToolsUnitTest::IsValueEqual(valueRead, value1), true);
 
-    item1.timeStamp = timeEnd + 1;
-    item1.writeTimeStamp = item1.timeStamp;
+    item1.timestamp = timeEnd + 1;
+    item1.writeTimestamp = item1.timestamp;
     vect.clear();
     vect.push_back(item1);
 
     /**
-     * @tc.steps:step5. Insert a (key1, value3!=value1, timeStamp, false) data record
-     *  through the PutSyncData interfac. The value of timeStamp
-     *  is greater than that of timeStamp inserted in step2.
+     * @tc.steps:step5. Insert a (key1, value3!=value1, timestamp, false) data record
+     *  through the PutSyncData interfac. The value of timestamp
+     *  is greater than that of timestamp inserted in step2.
      * @tc.expected: step5. Return OK.
      */
     EXPECT_EQ(DistributedDBToolsUnitTest::PutSyncDataTest(store, vect, "deviceB"), E_OK);
@@ -487,18 +487,18 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::PutSyncData003(SQLiteSin
 {
     IOption option;
     option.dataType = IOption::SYNC_DATA;
-    TimeStamp timeBegin;
-    store->GetMaxTimeStamp(timeBegin);
+    Timestamp timeBegin;
+    store->GetMaxTimestamp(timeBegin);
     DataItem dataItem1;
     DataItem dataItem2;
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.key, 23); // random size
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem2.key, 15); // random size
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.value);
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem2.value);
-    dataItem1.timeStamp = timeBegin + 1; // ensure bigger timeStamp
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
-    dataItem2.timeStamp = timeBegin + 2; // ensure bigger timeStamp
-    dataItem2.writeTimeStamp = dataItem2.timeStamp;
+    dataItem1.timestamp = timeBegin + 1; // ensure bigger timestamp
+    dataItem1.writeTimestamp = dataItem1.timestamp;
+    dataItem2.timestamp = timeBegin + 2; // ensure bigger timestamp
+    dataItem2.writeTimestamp = dataItem2.timestamp;
     dataItem1.flag = dataItem2.flag = 0;
 
     /**
@@ -530,8 +530,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::PutSyncData003(SQLiteSin
 
     DataItem dataItem4 = dataItem1;
     dataItem4.flag = 1;
-    dataItem4.timeStamp += 1;
-    dataItem4.writeTimeStamp = dataItem4.timeStamp;
+    dataItem4.timestamp += 1;
+    dataItem4.writeTimestamp = dataItem4.timestamp;
     DistributedDBToolsUnitTest::CalcHash(dataItem1.key, dataItem4.key);
     vect = {dataItem4, dataItem3};
     EXPECT_EQ(DistributedDBToolsUnitTest::PutSyncDataTest(store, vect, "deviceB"), E_OK);
@@ -602,27 +602,27 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteMetaData001(SQLite
 }
 
 /**
-  * @tc.name: GetCurrentMaxTimeStamp001
+  * @tc.name: GetCurrentMaxTimestamp001
   * @tc.desc: To test the function of obtaining the maximum timestamp when a record exists in the database.
   * @tc.type: FUNC
   * @tc.require: AR000CCPOM
   * @tc.author: wangbingquan
   */
-void DistributedDBStorageSingleVerNaturalStoreTestCase::GetCurrentMaxTimeStamp001(SQLiteSingleVerNaturalStore *&store,
+void DistributedDBStorageSingleVerNaturalStoreTestCase::GetCurrentMaxTimestamp001(SQLiteSingleVerNaturalStore *&store,
     SQLiteSingleVerNaturalStoreConnection *&connection)
 {
     Key key1;
     Value value1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(key1);
     DistributedDBToolsUnitTest::GetRandomKeyValue(value1);
-    TimeStamp timeBegin = 0;
-    TimeStamp timeMiddle = 0;
-    TimeStamp timeEnd = 0;
+    Timestamp timeBegin = 0;
+    Timestamp timeMiddle = 0;
+    Timestamp timeEnd = 0;
 
     /**
      * @tc.steps:step1/2. Insert a data record into the synchronization database.
      */
-    store->GetMaxTimeStamp(timeBegin);
+    store->GetMaxTimestamp(timeBegin);
     IOption option;
     option.dataType = IOption::SYNC_DATA;
     EXPECT_EQ(connection->Put(option, key1, value1), E_OK);
@@ -630,7 +630,7 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::GetCurrentMaxTimeStamp00
     /**
      * @tc.steps:step3. The current maximum timestamp is A.
      */
-    store->GetMaxTimeStamp(timeMiddle);
+    store->GetMaxTimestamp(timeMiddle);
     EXPECT_GT(timeMiddle, timeBegin);
 
     /**
@@ -642,25 +642,25 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::GetCurrentMaxTimeStamp00
      * @tc.steps:step5. Obtain the maximum timestamp B and check whether B>=A exists.
      * @tc.expected: step5. The obtained timestamp is B>=A.
      */
-    store->GetMaxTimeStamp(timeEnd);
+    store->GetMaxTimestamp(timeEnd);
     EXPECT_GT(timeEnd, timeMiddle);
 }
 
 /**
-  * @tc.name: GetCurrentMaxTimeStamp002
+  * @tc.name: GetCurrentMaxTimestamp002
   * @tc.desc: Obtain the maximum timestamp when no record exists in the test record library.
   * @tc.type: FUNC
   * @tc.require: AR000CCPOM
   * @tc.author: wangbingquan
   */
-void DistributedDBStorageSingleVerNaturalStoreTestCase::GetCurrentMaxTimeStamp002(SQLiteSingleVerNaturalStore *&store)
+void DistributedDBStorageSingleVerNaturalStoreTestCase::GetCurrentMaxTimestamp002(SQLiteSingleVerNaturalStore *&store)
 {
     /**
      * @tc.steps:step1. Obtains the maximum timestamp in the current database record.
      * @tc.expected: step1. Return timestamp is 0.
      */
-    TimeStamp timestamp = 10; // non-zero
-    store->GetMaxTimeStamp(timestamp);
+    Timestamp timestamp = 10; // non-zero
+    store->GetMaxTimestamp(timestamp);
     EXPECT_EQ(timestamp, 0UL);
 }
 
@@ -739,8 +739,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::SyncDatabaseOperate002(S
     DataItem dataItem1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.key);
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.value);
-    dataItem1.timeStamp = 1001; // 1001 as random timestamp
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    dataItem1.timestamp = 1001; // 1001 as random timestamp
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     dataItem1.flag = 0;
 
     /**
@@ -804,8 +804,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::SyncDatabaseOperate004(S
     DataItem dataItem1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.key);
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.value);
-    dataItem1.timeStamp = 1997; // 1997 as random timestamp
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    dataItem1.timestamp = 1997; // 1997 as random timestamp
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     dataItem1.flag = 0;
 
     std::vector<DataItem> vect = {dataItem1};
@@ -924,15 +924,15 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::ClearRemoteData001(SQLit
     DataItem dataItem1;
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.key);
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem1.value);
-    dataItem1.timeStamp = 1997; // 1997 as random timestamp
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    dataItem1.timestamp = 1997; // 1997 as random timestamp
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     dataItem1.flag = 0;
 
     DataItem dataItem2;
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem2.key, dataItem1.key.size() + 1);
     DistributedDBToolsUnitTest::GetRandomKeyValue(dataItem2.value);
-    dataItem2.timeStamp = 2019; // 2019 as random timestamp
-    dataItem2.writeTimeStamp = dataItem2.timeStamp;
+    dataItem2.timestamp = 2019; // 2019 as random timestamp
+    dataItem2.writeTimestamp = dataItem2.timestamp;
     dataItem2.flag = 0;
 
     /**
@@ -1140,21 +1140,21 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteUserKeyValue003(SQ
     Value valueRead;
     EXPECT_NE(connection->Get(option, KEY_1, valueRead), E_OK);
 
-    TimeStamp timeStamp = 0;
-    store->GetMaxTimeStamp(timeStamp);
+    Timestamp timestamp = 0;
+    store->GetMaxTimestamp(timestamp);
 
     DataItem dataItem1;
     dataItem1.key = KV_ENTRY_1.key;
     dataItem1.value = KV_ENTRY_3.value;
-    dataItem1.timeStamp = timeStamp - 100UL; // less than current timeStamp
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    dataItem1.timestamp = timestamp - 100UL; // less than current timestamp
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     dataItem1.flag = 0;
 
     DataItem dataItem2;
     dataItem2.key = KV_ENTRY_1.key;
     dataItem2.value = KV_ENTRY_4.value;
-    dataItem2.timeStamp = timeStamp + 100UL; // bigger than current timeStamp
-    dataItem2.writeTimeStamp = dataItem2.timeStamp;
+    dataItem2.timestamp = timestamp + 100UL; // bigger than current timestamp
+    dataItem2.writeTimestamp = dataItem2.timestamp;
     dataItem2.flag = 0;
     std::vector<DataItem> vect = {dataItem1};
 
@@ -1212,10 +1212,10 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteUserKeyValue004(SQ
     DataItem dataItem1;
     dataItem1.key = KV_ENTRY_1.key;
     dataItem1.value = KV_ENTRY_1.value;
-    store->GetMaxTimeStamp(dataItem1.timeStamp);
+    store->GetMaxTimestamp(dataItem1.timestamp);
     dataItem1.flag = 1;
-    dataItem1.timeStamp += 1;
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    dataItem1.timestamp += 1;
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     /**
      * @tc.steps: step1 2 3. Synchronize data to another device B; delete key1 data from device B;
      *  pull the action of key1 to local.
@@ -1261,10 +1261,10 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::MemoryDbDeleteUserKeyVal
     DataItem dataItem1;
     dataItem1.key = KV_ENTRY_1.key;
     dataItem1.value = KV_ENTRY_1.value;
-    store->GetMaxTimeStamp(dataItem1.timeStamp);
+    store->GetMaxTimestamp(dataItem1.timestamp);
     dataItem1.flag = 1;
-    dataItem1.timeStamp += 1;
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    dataItem1.timestamp += 1;
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     /**
      * @tc.steps: step1 2 3. Synchronize data to another device B; delete key1 data from device B;
      *  pull the action of key1 to local.
@@ -1308,9 +1308,9 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteUserKeyValue005(SQ
     DataItem dataItem1;
     dataItem1.key = KV_ENTRY_1.key;
     dataItem1.value = KV_ENTRY_1.value;
-    store->GetMaxTimeStamp(dataItem1.timeStamp);
-    dataItem1.timeStamp = dataItem1.timeStamp + 10UL;
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    store->GetMaxTimestamp(dataItem1.timestamp);
+    dataItem1.timestamp = dataItem1.timestamp + 10UL;
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     dataItem1.flag = 1;
 
     /**
@@ -1365,9 +1365,9 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::MemoryDbDeleteUserKeyVal
     DataItem dataItem1;
     dataItem1.key = KV_ENTRY_1.key;
     dataItem1.value = KV_ENTRY_1.value;
-    store->GetMaxTimeStamp(dataItem1.timeStamp);
-    dataItem1.timeStamp = TimeHelper::GetSysCurrentTime();
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    store->GetMaxTimestamp(dataItem1.timestamp);
+    dataItem1.timestamp = TimeHelper::GetSysCurrentTime();
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     dataItem1.flag = 1;
 
     /**
@@ -1419,9 +1419,9 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteUserKeyValue006(SQ
     DataItem dataItem1;
     dataItem1.key = KV_ENTRY_1.key;
     dataItem1.value = KV_ENTRY_1.value;
-    store->GetMaxTimeStamp(dataItem1.timeStamp);
-    dataItem1.timeStamp = dataItem1.timeStamp + 10UL;
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    store->GetMaxTimestamp(dataItem1.timestamp);
+    dataItem1.timestamp = dataItem1.timestamp + 10UL;
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     dataItem1.flag = 1;
 
     /**
@@ -1441,8 +1441,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteUserKeyValue006(SQ
     dataItem1.key = KV_ENTRY_1.key;
     dataItem1.flag = 0;
     dataItem1.value = KV_ENTRY_2.value;
-    dataItem1.timeStamp = dataItem1.timeStamp - 100UL; // less than current timeStamp
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    dataItem1.timestamp = dataItem1.timestamp - 100UL; // less than current timestamp
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     /**
      * @tc.steps: step3. Remote device C syncs new data (key1, value2),
      *  timestamp is less than delete timestamp, to local.
@@ -1457,8 +1457,8 @@ void DistributedDBStorageSingleVerNaturalStoreTestCase::DeleteUserKeyValue006(SQ
     EXPECT_NE(connection->Get(option, KEY_1, valueRead), E_OK);
 
     dataItem1.value = KV_ENTRY_3.value;
-    dataItem1.timeStamp = dataItem1.timeStamp + 200UL; // bigger than current timeStamp
-    dataItem1.writeTimeStamp = dataItem1.timeStamp;
+    dataItem1.timestamp = dataItem1.timestamp + 200UL; // bigger than current timestamp
+    dataItem1.writeTimestamp = dataItem1.timestamp;
     /**
      * @tc.steps: step5. Remote device C syncs new data (key1, value2),
      *  timestamp is bigger than delete timestamp, to local.
@@ -1559,7 +1559,7 @@ int DistributedDBStorageSingleVerNaturalStoreTestCase::GetRawSyncData(const std:
             stuSyncData.value.assign(blobValue, blobValue + valueLength);
         }
 
-        stuSyncData.timeStamp = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_TIME_INDEX));
+        stuSyncData.timestamp = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_TIME_INDEX));
         stuSyncData.flag = sqlite3_column_int64(statement, SYNC_RES_FLAG_INDEX);
         vecSyncData.push_back(stuSyncData);
     }

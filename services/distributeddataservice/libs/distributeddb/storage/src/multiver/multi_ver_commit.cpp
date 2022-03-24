@@ -71,12 +71,12 @@ void MultiVerCommit::SetRightParentId(const CommitID &id)
     return;
 }
 
-TimeStamp MultiVerCommit::GetTimestamp() const
+Timestamp MultiVerCommit::GetTimestamp() const
 {
     return timestamp_;
 }
 
-void MultiVerCommit::SetTimestamp(TimeStamp timestamp)
+void MultiVerCommit::SetTimestamp(Timestamp timestamp)
 {
     timestamp_ = timestamp;
     return;

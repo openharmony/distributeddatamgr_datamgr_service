@@ -963,10 +963,10 @@ int SyncEngine::InitTimeChangedListener()
             TimeOffset changedTimeOffset = *(reinterpret_cast<TimeOffset *>(changedOffset)) *
                 static_cast<TimeOffset>(TimeHelper::TO_100_NS);
             TimeOffset orgOffset = this->metadata_->GetLocalTimeOffset() - changedTimeOffset;
-            TimeStamp currentSysTime = TimeHelper::GetSysCurrentTime();
-            TimeStamp maxItemTime = 0;
-            this->syncInterface_->GetMaxTimeStamp(maxItemTime);
-            if ((currentSysTime + static_cast<TimeStamp>(orgOffset)) <= maxItemTime) {
+            Timestamp currentSysTime = TimeHelper::GetSysCurrentTime();
+            Timestamp maxItemTime = 0;
+            this->syncInterface_->GetMaxTimestamp(maxItemTime);
+            if ((currentSysTime + static_cast<Timestamp>(orgOffset)) <= maxItemTime) {
                 orgOffset = static_cast<TimeOffset>(maxItemTime - currentSysTime + TimeHelper::MS_TO_100_NS); // 1ms
             }
             this->metadata_->SaveLocalTimeOffset(orgOffset);

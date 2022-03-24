@@ -34,7 +34,7 @@ public:
 
     std::vector<uint8_t> GetIdentifier() const override;
 
-    void GetMaxTimeStamp(TimeStamp &stamp) const override;
+    void GetMaxTimestamp(Timestamp &stamp) const override;
 
     int GetMetaData(const Key &key, Value &value) const override;
 

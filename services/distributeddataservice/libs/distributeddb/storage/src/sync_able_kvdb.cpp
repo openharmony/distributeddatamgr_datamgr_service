@@ -252,12 +252,12 @@ void SyncAbleKvDB::ChangeUserListerner()
 }
 
 // Get The current virtual timestamp
-uint64_t SyncAbleKvDB::GetTimeStamp()
+uint64_t SyncAbleKvDB::GetTimestamp()
 {
     if (!started_ && !isSyncModuleActiveCheck_) {
         StartSyncer();
     }
-    return syncer_.GetTimeStamp();
+    return syncer_.GetTimestamp();
 }
 
 // Get the dataItem's append length

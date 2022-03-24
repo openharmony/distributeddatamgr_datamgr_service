@@ -447,7 +447,7 @@ static int GetLogData(sqlite3_stmt *logStatement, LogInfo &logInfo)
     }
     logInfo.originDev = std::string(oriDev.begin(), oriDev.end());
     logInfo.timestamp = static_cast<uint64_t>(sqlite3_column_int64(logStatement, 3));  // 3 means timestamp index
-    logInfo.wTimeStamp = static_cast<uint64_t>(sqlite3_column_int64(logStatement, 4));  // 4 means w_timestamp index
+    logInfo.wTimestamp = static_cast<uint64_t>(sqlite3_column_int64(logStatement, 4));  // 4 means w_timestamp index
     logInfo.flag = static_cast<uint64_t>(sqlite3_column_int64(logStatement, 5));  // 5 means flag index
     logInfo.flag &= (~DataItem::LOCAL_FLAG);
     logInfo.flag &= (~DataItem::UPDATE_FLAG);
@@ -658,7 +658,7 @@ int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingData(const QueryOb
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statement, sqlite3_stmt *queryStmt,
-    const DataItem &dataItem, TimeStamp &maxTimestamp, int64_t rowid)
+    const DataItem &dataItem, Timestamp &maxTimestamp, int64_t rowid)
 {
     int errCode = SQLiteUtils::BindBlobToStatement(queryStmt, 1, dataItem.hashKey);  // 1 means hashkey index.
     if (errCode != E_OK) {
@@ -680,14 +680,14 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statemen
     LogInfo logInfoBind;
     logInfoBind.hashKey = dataItem.hashKey;
     logInfoBind.device = dataItem.dev;
-    logInfoBind.timestamp = dataItem.timeStamp;
+    logInfoBind.timestamp = dataItem.timestamp;
     logInfoBind.flag = dataItem.flag;
-    logInfoBind.wTimeStamp = maxTimestamp;
+    logInfoBind.wTimestamp = maxTimestamp;
 
     if (errCode == -E_NOT_FOUND) { // insert
         logInfoBind.originDev = dataItem.dev;
     } else if (errCode == E_OK) { // update
-        logInfoBind.wTimeStamp = logInfoGet.wTimeStamp;
+        logInfoBind.wTimestamp = logInfoGet.wTimestamp;
         logInfoBind.originDev = logInfoGet.originDev;
     } else {
         return errCode;
@@ -698,7 +698,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statemen
     std::vector<uint8_t> originDev(logInfoBind.originDev.begin(), logInfoBind.originDev.end());
     SQLiteUtils::BindBlobToStatement(statement, 2, originDev);  // 2 means ori_dev index
     SQLiteUtils::BindInt64ToStatement(statement, 3, logInfoBind.timestamp);  // 3 means timestamp index
-    SQLiteUtils::BindInt64ToStatement(statement, 4, logInfoBind.wTimeStamp);  // 4 means w_timestamp index
+    SQLiteUtils::BindInt64ToStatement(statement, 4, logInfoBind.wTimestamp);  // 4 means w_timestamp index
     SQLiteUtils::BindInt64ToStatement(statement, 5, logInfoBind.flag);  // 5 means flag index
     SQLiteUtils::BindBlobToStatement(statement, 6, logInfoBind.hashKey);  // 6 means hashKey index
     errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
@@ -837,7 +837,7 @@ int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataPre(const DataItem &dat
     } else {
         errCode = GetLogData(saveStmt_.queryStmt, logInfoGet);
     }
-    itemGet.timeStamp = logInfoGet.timestamp;
+    itemGet.timestamp = logInfoGet.timestamp;
     SQLiteUtils::ResetStatement(saveStmt_.queryStmt, false, errCode);
     return errCode;
 }
@@ -855,12 +855,12 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckDataConflictDefeated(const Da
         LOGE("Failed to get raw data. %d", errCode);
         return errCode;
     }
-    isDefeated = (dataItem.timeStamp <= itemGet.timeStamp); // defeated if item timestamp is earlier then raw data
+    isDefeated = (dataItem.timestamp <= itemGet.timestamp); // defeated if item timestamp is earlier then raw data
     return E_OK;
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const std::vector<FieldInfo> &fieldInfos,
-    const std::string &deviceName, DataItem &item, TimeStamp &maxTimestamp)
+    const std::string &deviceName, DataItem &item, Timestamp &maxTimestamp)
 {
     item.dev = deviceName;
     bool isDefeated = false;
@@ -886,7 +886,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const std::vector
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObject &object,
-    std::vector<DataItem> &dataItems, const std::string &deviceName, TimeStamp &maxTimestamp)
+    std::vector<DataItem> &dataItems, const std::string &deviceName, Timestamp &maxTimestamp)
 {
     int errCode = PrepareForSavingData(object, saveStmt_.saveDataStmt);
     if (errCode != E_OK) {
@@ -910,7 +910,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
         if (errCode != E_OK) {
             break;
         }
-        maxTimestamp = std::max(item.timeStamp, maxTimestamp);
+        maxTimestamp = std::max(item.timestamp, maxTimestamp);
         // Need not reset rmDataStmt and rmLogStmt here.
         saveStmt_.ResetStatements(false);
     }
@@ -922,7 +922,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncItems(const QueryObject &object, std::vector<DataItem> &dataItems,
-    const std::string &deviceName, const TableInfo &table, TimeStamp &timeStamp)
+    const std::string &deviceName, const TableInfo &table, Timestamp &timestamp)
 {
     int errCode = StartTransaction(TransactType::IMMEDIATE);
     if (errCode != E_OK) {
@@ -932,7 +932,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncItems(const QueryObject &o
     SetTableInfo(table);
     const std::string tableName = DBCommon::GetDistributedTableName(deviceName, baseTblName_);
     table_.SetTableName(tableName);
-    errCode = SaveSyncDataItems(object, dataItems, deviceName, timeStamp);
+    errCode = SaveSyncDataItems(object, dataItems, deviceName, timestamp);
     if (errCode == E_OK) {
         errCode = Commit();
     } else {
@@ -982,7 +982,7 @@ int SQLiteSingleVerRelationalStorageExecutor::GetMissQueryData(sqlite3_stmt *ful
 }
 
 namespace {
-int StepNext(bool isMemDB, sqlite3_stmt *stmt, TimeStamp &timestamp)
+int StepNext(bool isMemDB, sqlite3_stmt *stmt, Timestamp &timestamp)
 {
     if (stmt == nullptr) {
         return -E_INVALID_ARGS;
@@ -1018,7 +1018,7 @@ int AppendData(const DataSizeSpecInfo &sizeInfo, size_t appendLength, size_t &ov
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::GetQueryDataAndStepNext(bool isFirstTime, bool isGettingDeletedData,
-    sqlite3_stmt *queryStmt, DataItem &item, TimeStamp &queryTime)
+    sqlite3_stmt *queryStmt, DataItem &item, Timestamp &queryTime)
 {
     if (!isFirstTime) { // For the first time, never step before, can get nothing
         int errCode = GetDataItemForSync(queryStmt, item, isGettingDeletedData);
@@ -1030,7 +1030,7 @@ int SQLiteSingleVerRelationalStorageExecutor::GetQueryDataAndStepNext(bool isFir
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::GetMissQueryDataAndStepNext(sqlite3_stmt *fullStmt, DataItem &item,
-    TimeStamp &missQueryTime)
+    Timestamp &missQueryTime)
 {
     int errCode = GetMissQueryData(fullStmt, item);
     if (errCode != E_OK) {
@@ -1053,8 +1053,8 @@ int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<Dat
         return errCode;
     }
 
-    TimeStamp queryTime = 0;
-    TimeStamp missQueryTime = (fullStmt == nullptr ? INT64_MAX : 0);
+    Timestamp queryTime = 0;
+    Timestamp missQueryTime = (fullStmt == nullptr ? INT64_MAX : 0);
 
     bool isFirstTime = true;
     size_t dataTotalSize = 0;

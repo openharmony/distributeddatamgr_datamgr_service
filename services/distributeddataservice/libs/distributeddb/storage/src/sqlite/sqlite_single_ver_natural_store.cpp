@@ -61,7 +61,7 @@ namespace {
             return;
         }
 
-        TimeStamp nextBeginTime = dataItems.back().timeStamp + 1;
+        Timestamp nextBeginTime = dataItems.back().timestamp + 1;
         if (nextBeginTime > INT64_MAX) {
             nextBeginTime = INT64_MAX;
         }
@@ -96,7 +96,7 @@ namespace {
             return;
         }
 
-        TimeStamp nextBeginTime = dataItems.back().timeStamp + 1;
+        Timestamp nextBeginTime = dataItems.back().timestamp + 1;
         if (nextBeginTime > INT64_MAX) {
             nextBeginTime = INT64_MAX;
         }
@@ -158,7 +158,7 @@ namespace {
 }
 
 SQLiteSingleVerNaturalStore::SQLiteSingleVerNaturalStore()
-    : currentMaxTimeStamp_(0),
+    : currentMaxTimestamp_(0),
       storageEngine_(nullptr),
       notificationEventsRegistered_(false),
       notificationConflictEventsRegistered_(false),
@@ -553,8 +553,8 @@ int SQLiteSingleVerNaturalStore::GetMetaData(const Key &key, Value &value) const
         return errCode;
     }
 
-    TimeStamp timeStamp;
-    errCode = handle->GetKvData(SingleVerDataType::META_TYPE, key, value, timeStamp);
+    Timestamp timestamp;
+    errCode = handle->GetKvData(SingleVerDataType::META_TYPE, key, value, timestamp);
     ReleaseHandle(handle);
     HeartBeatForLifeCycle();
     return errCode;
@@ -646,7 +646,7 @@ void SQLiteSingleVerNaturalStore::CommitAndReleaseNotifyData(SingleVerNaturalSto
     }
 }
 
-int SQLiteSingleVerNaturalStore::GetSyncData(TimeStamp begin, TimeStamp end, std::vector<SingleVerKvEntry *> &entries,
+int SQLiteSingleVerNaturalStore::GetSyncData(Timestamp begin, Timestamp end, std::vector<SingleVerKvEntry *> &entries,
     ContinueToken &continueStmtToken, const DataSizeSpecInfo &dataSizeInfo) const
 {
     int errCode = CheckReadDataControlled();
@@ -681,7 +681,7 @@ ERROR:
     return errCode;
 }
 
-int SQLiteSingleVerNaturalStore::GetSyncData(TimeStamp begin, TimeStamp end, std::vector<DataItem> &dataItems,
+int SQLiteSingleVerNaturalStore::GetSyncData(Timestamp begin, Timestamp end, std::vector<DataItem> &dataItems,
     ContinueToken &continueStmtToken, const DataSizeSpecInfo &dataSizeInfo) const
 {
     if (begin >= end || dataSizeInfo.blockSize > DBConstant::MAX_SYNC_BLOCK_SIZE) {
@@ -900,8 +900,8 @@ int SQLiteSingleVerNaturalStore::PutSyncDataWithQuery(const QueryObject &query,
             DataItem item;
             item.origDev = entry->GetOrigDevice();
             item.flag = entry->GetFlag();
-            item.timeStamp = entry->GetTimestamp();
-            item.writeTimeStamp = entry->GetWriteTimestamp();
+            item.timestamp = entry->GetTimestamp();
+            item.writeTimestamp = entry->GetWriteTimestamp();
             entry->GetKey(item.key);
             entry->GetValue(item.value);
             dataItems.push_back(item);
@@ -916,17 +916,17 @@ int SQLiteSingleVerNaturalStore::PutSyncDataWithQuery(const QueryObject &query,
     return errCode;
 }
 
-void SQLiteSingleVerNaturalStore::GetMaxTimeStamp(TimeStamp &stamp) const
+void SQLiteSingleVerNaturalStore::GetMaxTimestamp(Timestamp &stamp) const
 {
-    std::lock_guard<std::mutex> lock(maxTimeStampMutex_);
-    stamp = currentMaxTimeStamp_;
+    std::lock_guard<std::mutex> lock(maxTimestampMutex_);
+    stamp = currentMaxTimestamp_;
 }
 
-int SQLiteSingleVerNaturalStore::SetMaxTimeStamp(TimeStamp timestamp)
+int SQLiteSingleVerNaturalStore::SetMaxTimestamp(Timestamp timestamp)
 {
-    std::lock_guard<std::mutex> lock(maxTimeStampMutex_);
-    if (timestamp > currentMaxTimeStamp_) {
-        currentMaxTimeStamp_ = timestamp;
+    std::lock_guard<std::mutex> lock(maxTimestampMutex_);
+    if (timestamp > currentMaxTimestamp_) {
+        currentMaxTimestamp_ = timestamp;
     }
     return E_OK;
 }
@@ -1158,8 +1158,8 @@ void SQLiteSingleVerNaturalStore::InitCurrentMaxStamp()
         return;
     }
 
-    handle->InitCurrentMaxStamp(currentMaxTimeStamp_);
-    LOGD("Init max timestamp:%" PRIu64, currentMaxTimeStamp_);
+    handle->InitCurrentMaxStamp(currentMaxTimestamp_);
+    LOGD("Init max timestamp:%" PRIu64, currentMaxTimestamp_);
     ReleaseHandle(handle);
 }
 
@@ -1220,12 +1220,12 @@ int SQLiteSingleVerNaturalStore::SaveSyncDataToMain(const QueryObject &query, st
         return -E_OUT_OF_MEMORY;
     }
     InitConflictNotifiedFlag(committedData);
-    TimeStamp maxTimestamp = 0;
+    Timestamp maxTimestamp = 0;
     bool isNeedCommit = false;
     int errCode = SaveSyncItems(query, dataItems, deviceInfo, maxTimestamp, committedData);
     if (errCode == E_OK) {
         isNeedCommit = true;
-        (void)SetMaxTimeStamp(maxTimestamp);
+        (void)SetMaxTimestamp(maxTimestamp);
     }
 
     CommitAndReleaseNotifyData(committedData, isNeedCommit, SQLITE_GENERAL_NS_SYNC_EVENT);
@@ -1235,7 +1235,7 @@ int SQLiteSingleVerNaturalStore::SaveSyncDataToMain(const QueryObject &query, st
 // Currently, this function only suitable to be call from sync in insert_record_from_sync procedure
 // Take attention if future coder attempt to call it in other situation procedure
 int SQLiteSingleVerNaturalStore::SaveSyncItems(const QueryObject &query, std::vector<DataItem> &dataItems,
-    const DeviceInfo &deviceInfo, TimeStamp &maxTimestamp, SingleVerNaturalStoreCommitNotifyData *commitData) const
+    const DeviceInfo &deviceInfo, Timestamp &maxTimestamp, SingleVerNaturalStoreCommitNotifyData *commitData) const
 {
     int errCode = E_OK;
     int innerCode = E_OK;
@@ -1293,20 +1293,20 @@ int SQLiteSingleVerNaturalStore::SaveSyncDataToCacheDB(const QueryObject &query,
         return errCode;
     }
 
-    TimeStamp maxTimestamp = 0;
+    Timestamp maxTimestamp = 0;
     errCode = SaveSyncItemsInCacheMode(handle, query, dataItems, deviceInfo, maxTimestamp);
     if (errCode != E_OK) {
         LOGE("[SingleVerNStore] Failed to save sync data in cache mode, err : %d", errCode);
     } else {
-        (void)SetMaxTimeStamp(maxTimestamp);
+        (void)SetMaxTimestamp(maxTimestamp);
     }
     ReleaseHandle(handle);
     return errCode;
 }
 
-TimeStamp SQLiteSingleVerNaturalStore::GetCurrentTimeStamp()
+Timestamp SQLiteSingleVerNaturalStore::GetCurrentTimestamp()
 {
-    return GetTimeStamp();
+    return GetTimestamp();
 }
 
 int SQLiteSingleVerNaturalStore::InitStorageEngine(const KvDBProperties &kvDBProp, bool isNeedUpdateSecOpt)
@@ -1601,11 +1601,11 @@ int SQLiteSingleVerNaturalStore::GetSchema(SchemaObject &schema) const
         return errCode;
     }
 
-    TimeStamp timeStamp;
+    Timestamp timestamp;
     std::string schemaKey = DBConstant::SCHEMA_KEY;
     Key key(schemaKey.begin(), schemaKey.end());
     Value value;
-    errCode = handle->GetKvData(SingleVerDataType::META_TYPE, key, value, timeStamp);
+    errCode = handle->GetKvData(SingleVerDataType::META_TYPE, key, value, timestamp);
     if (errCode == E_OK) {
         std::string schemaValue(value.begin(), value.end());
         errCode = schema.ParseFromSchemaString(schemaValue);
@@ -1643,7 +1643,7 @@ int SQLiteSingleVerNaturalStore::DecideReadOnlyBaseOnSchema(const KvDBProperties
 
 void SQLiteSingleVerNaturalStore::InitialLocalDataTimestamp()
 {
-    TimeStamp timeStamp = GetCurrentTimeStamp();
+    Timestamp timestamp = GetCurrentTimestamp();
 
     int errCode = E_OK;
     auto handle = GetHandle(true, errCode);
@@ -1651,7 +1651,7 @@ void SQLiteSingleVerNaturalStore::InitialLocalDataTimestamp()
         return;
     }
 
-    errCode = handle->UpdateLocalDataTimestamp(timeStamp);
+    errCode = handle->UpdateLocalDataTimestamp(timestamp);
     if (errCode != E_OK) {
         LOGE("Update the timestamp for local data failed:%d", errCode);
     }
@@ -1952,7 +1952,7 @@ void SQLiteSingleVerNaturalStore::CheckAmendValueContentForSyncProcedure(std::ve
 
 int SQLiteSingleVerNaturalStore::SaveSyncItemsInCacheMode(SQLiteSingleVerStorageExecutor *handle,
     const QueryObject &query, std::vector<DataItem> &dataItems, const DeviceInfo &deviceInfo,
-    TimeStamp &maxTimestamp) const
+    Timestamp &maxTimestamp) const
 {
     int errCode = handle->StartTransaction(TransactType::IMMEDIATE);
     if (errCode != E_OK) {
@@ -1998,7 +1998,7 @@ void SQLiteSingleVerNaturalStore::NotifyRemotePushFinished(const std::string &ta
     NotifyRemotePushFinishedInner(targetId);
 }
 
-int SQLiteSingleVerNaturalStore::GetDatabaseCreateTimeStamp(TimeStamp &outTime) const
+int SQLiteSingleVerNaturalStore::GetDatabaseCreateTimestamp(Timestamp &outTime) const
 {
     // Found in memory.
     {
@@ -2013,11 +2013,11 @@ int SQLiteSingleVerNaturalStore::GetDatabaseCreateTimeStamp(TimeStamp &outTime) 
     Value value;
     int errCode = GetMetaData(key, value);
     if (errCode != E_OK) {
-        LOGD("GetDatabaseCreateTimeStamp failed, errCode = %d.", errCode);
+        LOGD("GetDatabaseCreateTimestamp failed, errCode = %d.", errCode);
         return errCode;
     }
 
-    TimeStamp createDBTime = 0;
+    Timestamp createDBTime = 0;
     Parcel parcel(value.data(), value.size());
     (void)parcel.ReadUInt64(createDBTime);
     if (parcel.IsError()) {
@@ -2044,7 +2044,7 @@ int SQLiteSingleVerNaturalStore::CheckIntegrity() const
 
 int SQLiteSingleVerNaturalStore::SaveCreateDBTime()
 {
-    TimeStamp createDBTime = GetCurrentTimeStamp();
+    Timestamp createDBTime = GetCurrentTimestamp();
     const Key key(CREATE_DB_TIME.begin(), CREATE_DB_TIME.end());
     Value value(Parcel::GetUInt64Len());
     Parcel parcel(value.data(), Parcel::GetUInt64Len());
@@ -2068,8 +2068,8 @@ int SQLiteSingleVerNaturalStore::SaveCreateDBTime()
 
 int SQLiteSingleVerNaturalStore::SaveCreateDBTimeIfNotExisted()
 {
-    TimeStamp createDBTime = 0;
-    int errCode = GetDatabaseCreateTimeStamp(createDBTime);
+    Timestamp createDBTime = 0;
+    int errCode = GetDatabaseCreateTimestamp(createDBTime);
     if (errCode == -E_NOT_FOUND) {
         errCode = SaveCreateDBTime();
     }

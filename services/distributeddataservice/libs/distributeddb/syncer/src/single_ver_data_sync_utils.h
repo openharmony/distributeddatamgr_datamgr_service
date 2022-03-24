@@ -70,7 +70,7 @@ public:
 
     static bool IsGetDataSuccessfully(int errCode);
 
-    static TimeStamp GetMaxSendDataTime(const std::vector<SendDataItem> &inData);
+    static Timestamp GetMaxSendDataTime(const std::vector<SendDataItem> &inData);
 
     static SyncTimeRange GetFullSyncDataTimeRange(const std::vector<SendDataItem> &inData, WaterMark localMark,
         UpdateWaterMark &isUpdate);

@@ -78,12 +78,12 @@ void SyncAbleEngine::StopSync(int syncId)
 }
 
 // Get The current virtual timestamp
-uint64_t SyncAbleEngine::GetTimeStamp()
+uint64_t SyncAbleEngine::GetTimestamp()
 {
     if (!started_) {
         StartSyncer();
     }
-    return syncer_.GetTimeStamp();
+    return syncer_.GetTimestamp();
 }
 
 int SyncAbleEngine::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash, const std::string &tableName)

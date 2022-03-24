@@ -29,7 +29,7 @@ struct SyncData {
     std::vector<uint8_t> hashKey;
     std::vector<uint8_t> key;
     std::vector<uint8_t> value;
-    uint64_t timeStamp;
+    uint64_t timestamp;
     uint64_t flag;
     std::string deviceInfo;
 };
@@ -75,10 +75,10 @@ public:
     static void DeleteMetaData001(DistributedDB::SQLiteSingleVerNaturalStore *&store,
         DistributedDB::SQLiteSingleVerNaturalStoreConnection *&connection);
 
-    static void GetCurrentMaxTimeStamp001(DistributedDB::SQLiteSingleVerNaturalStore *&store,
+    static void GetCurrentMaxTimestamp001(DistributedDB::SQLiteSingleVerNaturalStore *&store,
         DistributedDB::SQLiteSingleVerNaturalStoreConnection *&connection);
 
-    static void GetCurrentMaxTimeStamp002(DistributedDB::SQLiteSingleVerNaturalStore *&store);
+    static void GetCurrentMaxTimestamp002(DistributedDB::SQLiteSingleVerNaturalStore *&store);
 
     static void LocalDatabaseOperate001(DistributedDB::SQLiteSingleVerNaturalStore *&store,
         DistributedDB::SQLiteSingleVerNaturalStoreConnection *&connection);

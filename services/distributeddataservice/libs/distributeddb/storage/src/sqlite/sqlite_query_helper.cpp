@@ -220,7 +220,7 @@ int SqliteQueryHelper::ToQuerySql()
     return errCode;
 }
 
-int SqliteQueryHelper::ToQuerySyncSql(bool hasSubQuery, bool useTimeStampAlias)
+int SqliteQueryHelper::ToQuerySyncSql(bool hasSubQuery, bool useTimestampAlias)
 {
     int errCode = ParseQueryObjNodeToSQL(true);
     if (errCode != E_OK) {
@@ -229,7 +229,7 @@ int SqliteQueryHelper::ToQuerySyncSql(bool hasSubQuery, bool useTimeStampAlias)
 
     // Order by time when no order by and no limit and no need order by key.
     if (!hasOrderBy_ && !hasLimit_ && !isNeedOrderbyKey_) {
-        querySql_ += (useTimeStampAlias ?
+        querySql_ += (useTimestampAlias ?
             ("ORDER BY " + DBConstant::TIMESTAMP_ALIAS + " ASC") :
             "ORDER BY timestamp ASC");
     }

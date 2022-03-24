@@ -31,8 +31,8 @@ public:
     virtual void SetLeftParentId(const CommitID &id) = 0;
     virtual CommitID GetRightParentId() const = 0;
     virtual void SetRightParentId(const CommitID &id) = 0;
-    virtual TimeStamp GetTimestamp() const = 0;
-    virtual void SetTimestamp(TimeStamp timestamp) = 0;
+    virtual Timestamp GetTimestamp() const = 0;
+    virtual void SetTimestamp(Timestamp timestamp) = 0;
     virtual bool GetLocalFlag() const = 0;
     virtual void SetLocalFlag(bool localFlag) = 0;
     virtual DeviceID GetDeviceInfo() const = 0;

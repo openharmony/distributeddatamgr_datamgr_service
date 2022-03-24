@@ -31,10 +31,10 @@
 namespace DistributedDB {
 using SendDataItem = SingleVerKvEntry *;
 struct ReSendInfo {
-    TimeStamp start = 0;
-    TimeStamp end = 0;
-    TimeStamp deleteBeginTime = 0;
-    TimeStamp deleteEndTime = 0;
+    Timestamp start = 0;
+    Timestamp end = 0;
+    Timestamp deleteBeginTime = 0;
+    Timestamp deleteEndTime = 0;
     // packetId is used for matched ackpacket packetId which saved in ackPacket.reserve
     // if equaled, means need to handle the ack, or drop. it is always increased
     uint64_t packetId = 0;
@@ -43,10 +43,10 @@ struct ReSendInfo {
 struct DataSyncReSendInfo {
     uint32_t sessionId = 0;
     uint32_t sequenceId = 0;
-    TimeStamp start = 0; // means normal or sync data localwatermark
-    TimeStamp end = 0;
-    TimeStamp deleteDataStart = 0; // means delete data localwatermark
-    TimeStamp deleteDataEnd = 0;
+    Timestamp start = 0; // means normal or sync data localwatermark
+    Timestamp end = 0;
+    Timestamp deleteDataStart = 0; // means delete data localwatermark
+    Timestamp deleteDataEnd = 0;
     uint64_t packetId = 0;
 };
 
@@ -134,9 +134,9 @@ protected:
 
     int32_t ReSend(SingleVerSyncTaskContext *context, DataSyncReSendInfo reSendInfo);
 
-    void SetSessionEndTimeStamp(TimeStamp end);
+    void SetSessionEndTimestamp(Timestamp end);
 
-    TimeStamp GetSessionEndTimeStamp() const;
+    Timestamp GetSessionEndTimestamp() const;
 
     void FillDataRequestPacket(DataRequestPacket *packet, SingleVerSyncTaskContext *context,
         SyncEntry &syncData, int sendCode, int mode);
@@ -267,8 +267,8 @@ protected:
     // max sequenceId has been sent
     uint32_t maxSequenceIdHasSent_ = 0;
     bool isAllDataHasSent_ = false;
-    // in a sync session, the last data timeStamp
-    TimeStamp sessionEndTimeStamp_ = 0;
+    // in a sync session, the last data timestamp
+    Timestamp sessionEndTimestamp_ = 0;
 };
 }  // namespace DistributedDB
 

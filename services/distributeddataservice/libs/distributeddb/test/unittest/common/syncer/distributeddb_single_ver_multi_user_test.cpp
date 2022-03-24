@@ -417,7 +417,7 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser003, TestSize.Level3)
      */
     Key key = {'1'};
     Value value = {'1'};
-    TimeStamp currentTime;
+    Timestamp currentTime;
     (void)OS::GetCurrentSysTimeInMicrosecond(currentTime);
     EXPECT_TRUE(g_deviceB->PutData(key, value, currentTime, 0) == OK);
     /**
@@ -486,7 +486,7 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser004, TestSize.Level0)
      */
     Key key = {'1'};
     Value value = {'1'};
-    TimeStamp currentTime;
+    Timestamp currentTime;
     (void)OS::GetCurrentSysTimeInMicrosecond(currentTime);
     EXPECT_TRUE(g_deviceB->PutData(key, value, currentTime, 0) == OK);
     /**

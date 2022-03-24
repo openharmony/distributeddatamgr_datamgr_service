@@ -46,7 +46,7 @@ public:
     int StartWrite(KvDataType dataType, IKvDBMultiVerTransaction *&transaction) override;
 
     int CommitWritePhaseOne(IKvDBMultiVerTransaction *transaction,
-        const UpdateVerTimeStamp &multiVerTimeStamp) override;
+        const UpdateVerTimestamp &multiVerTimestamp) override;
 
     int RollbackWritePhaseOne(IKvDBMultiVerTransaction *transaction, const Version &versionInfo) override;
 

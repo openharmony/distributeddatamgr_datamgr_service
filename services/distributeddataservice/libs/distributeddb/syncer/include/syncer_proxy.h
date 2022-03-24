@@ -54,7 +54,7 @@ public:
     int StopSync() override;
 
     // Get The current virtual timestamp
-    uint64_t GetTimeStamp() override;
+    uint64_t GetTimestamp() override;
 
     // Enable auto sync function
     void EnableAutoSync(bool enable) override;

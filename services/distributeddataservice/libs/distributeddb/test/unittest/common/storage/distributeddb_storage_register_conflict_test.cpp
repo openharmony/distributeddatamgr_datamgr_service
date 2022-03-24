@@ -274,7 +274,7 @@ static void SyncPutConflictData(int deltaTime)
     IOption option;
     option.dataType = IOption::SYNC_DATA;
 
-    TimeStamp timeEnd = TimeHelper::GetSysCurrentTime();
+    Timestamp timeEnd = TimeHelper::GetSysCurrentTime();
     std::vector<DataItem> vect;
     vect.push_back({KEY_1, VALUE_1, timeEnd, 0, DBCommon::TransferHashString("deviceB")});
     EXPECT_EQ(DistributedDBToolsUnitTest::PutSyncDataTest(g_store, vect, "deviceB"), E_OK);
@@ -308,7 +308,7 @@ static void SyncDeleteConflictData(const int deltaTime)
     IOption option;
     option.dataType = IOption::SYNC_DATA;
 
-    TimeStamp time = TimeHelper::GetSysCurrentTime();
+    Timestamp time = TimeHelper::GetSysCurrentTime();
 
     std::vector<DataItem> vect;
     vect.push_back({KEY_1, VALUE_1, time, 0, DBCommon::TransferHashString("deviceB")});
@@ -332,7 +332,7 @@ static void SyncPutFromDiffDevConflictData(const int deltaTime)
     IOption option;
     option.dataType = IOption::SYNC_DATA;
 
-    TimeStamp time = TimeHelper::GetSysCurrentTime();
+    Timestamp time = TimeHelper::GetSysCurrentTime();
 
     std::vector<DataItem> vect;
     vect.push_back({KEY_1, VALUE_1, time, 0, DBCommon::TransferHashString("deviceB")});
@@ -353,7 +353,7 @@ static void SyncDeleteFromDiffDevConflictData(const int deltaTime)
     IOption option;
     option.dataType = IOption::SYNC_DATA;
 
-    TimeStamp time = TimeHelper::GetSysCurrentTime();
+    Timestamp time = TimeHelper::GetSysCurrentTime();
 
     std::vector<DataItem> vect;
     vect.push_back({KEY_1, VALUE_1, time, 0, DBCommon::TransferHashString("deviceB")});
@@ -463,7 +463,7 @@ HWTEST_F(DistributedDBStorageRegisterConflictTest, ConflictNotificationTest003, 
   */
 HWTEST_F(DistributedDBStorageRegisterConflictTest, ConflictNotificationTest004, TestSize.Level1)
 {
-    TimeStamp time = TimeHelper::GetSysCurrentTime();
+    Timestamp time = TimeHelper::GetSysCurrentTime();
     /**
      * @tc.steps:step1/2. Sync a kv data into database with KEY_1, VALUE_1 and setup conflict notifier.
      * @tc.expected: step1/2. setup conflict notifier success.
@@ -496,7 +496,7 @@ HWTEST_F(DistributedDBStorageRegisterConflictTest, ConflictNotificationTest004, 
   */
 HWTEST_F(DistributedDBStorageRegisterConflictTest, ConflictNotificationTest005, TestSize.Level1)
 {
-    TimeStamp time = TimeHelper::GetSysCurrentTime();
+    Timestamp time = TimeHelper::GetSysCurrentTime();
     /**
      * @tc.steps:step1/2. Sync a kv data into database with KEY_1, VALUE_1 and setup conflict notifier.
      * @tc.expected: step1/2. setup conflict notifier success.
@@ -533,7 +533,7 @@ HWTEST_F(DistributedDBStorageRegisterConflictTest, ConflictNotificationTest006, 
      * @tc.expected: step1/2. setup conflict notifier success and no conflict being triggered.
      */
     EXPECT_TRUE(g_kvNbDelegatePtr->SetConflictNotifier(CONFLICT_ALL, NotifierCallback) == OK);
-    TimeStamp time = TimeHelper::GetSysCurrentTime();
+    Timestamp time = TimeHelper::GetSysCurrentTime();
     std::vector<DataItem> vect;
     vect.push_back({KEY_1, VALUE_1, time, 1, DBCommon::TransferHashString("deviceB")});
     EXPECT_EQ(DistributedDBToolsUnitTest::PutSyncDataTest(g_store, vect, "deviceB"), E_OK);
@@ -725,7 +725,7 @@ HWTEST_F(DistributedDBStorageRegisterConflictTest, ConflictNotificationTest014, 
   */
 HWTEST_F(DistributedDBStorageRegisterConflictTest, ConflictNotificationTest015, TestSize.Level1)
 {
-    TimeStamp timeEnd = TimeHelper::GetSysCurrentTime();
+    Timestamp timeEnd = TimeHelper::GetSysCurrentTime();
 
     std::vector<DataItem> vect;
     vect.push_back({KEY_1, VALUE_1, timeEnd, 0, "deviceB", 0, "deviceB"});
@@ -754,7 +754,7 @@ HWTEST_F(DistributedDBStorageRegisterConflictTest, ConflictNotificationTest016, 
 {
     IOption option;
     option.dataType = IOption::SYNC_DATA;
-    TimeStamp timeEnd = TimeHelper::GetSysCurrentTime();
+    Timestamp timeEnd = TimeHelper::GetSysCurrentTime();
 
     std::vector<DataItem> vect;
     vect.push_back({KEY_1, VALUE_1, timeEnd, 0, DBCommon::TransferHashString("deviceB")});
@@ -823,7 +823,7 @@ HWTEST_F(DistributedDBStorageRegisterConflictTest, ConflictNotificationTest017, 
     g_connection->Put(option, KEY_1, VALUE_1);
     ASSERT_EQ(g_connection->SetConflictNotifier(CONFLICT_ALL, NotifierConnectCallback), E_OK);
 
-    TimeStamp timeEnd = TimeHelper::GetSysCurrentTime();
+    Timestamp timeEnd = TimeHelper::GetSysCurrentTime();
     static const uint32_t addTimestamp = 10000;
     vect.push_back({KEY_1, VALUE_2, timeEnd + addTimestamp, 0, "", timeEnd + addTimestamp,
         DBCommon::TransferHashString("deviceB")});

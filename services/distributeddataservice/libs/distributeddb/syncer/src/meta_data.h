@@ -31,7 +31,7 @@ struct MetaDataValue {
     uint64_t lastUpdateTime = 0;
     uint64_t localWaterMark = 0;
     uint64_t peerWaterMark = 0;
-    TimeStamp dbCreateTime = 0;
+    Timestamp dbCreateTime = 0;
     uint64_t clearDeviceDataMark = 0; // Default 0 for not remove device data.
 };
 
@@ -62,9 +62,9 @@ public:
 
     int EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash, const std::string &tableName);
 
-    void SetLastLocalTime(TimeStamp lastLocalTime);
+    void SetLastLocalTime(Timestamp lastLocalTime);
 
-    TimeStamp GetLastLocalTime() const;
+    Timestamp GetLastLocalTime() const;
 
     int SetSendQueryWaterMark(const std::string &queryIdentify,
         const std::string &deviceId, const WaterMark &waterMark);
@@ -83,9 +83,9 @@ public:
         const std::string &deviceId, WaterMark &waterMark);
 
     virtual int SetLastQueryTime(const std::string &queryIdentify, const std::string &deviceId,
-        const TimeStamp &timeStamp);
+        const Timestamp &timestamp);
 
-    virtual int GetLastQueryTime(const std::string &queryIdentify, const std::string &deviceId, TimeStamp &timeStamp);
+    virtual int GetLastQueryTime(const std::string &queryIdentify, const std::string &deviceId, Timestamp &timestamp);
 
     int SetSendDeleteSyncWaterMark(const std::string &deviceId, const WaterMark &waterMark);
 
@@ -164,7 +164,7 @@ private:
 
     // store localTimeOffset in ram, used to make timestamp increase
     mutable std::mutex lastLocalTimeLock_;
-    TimeStamp lastLocalTime_;
+    Timestamp lastLocalTime_;
 
     QuerySyncWaterMarkHelper querySyncWaterMarkHelper_;
 

@@ -138,7 +138,7 @@ public:
     virtual void SafeExit() = 0;
 
     // Get current localtime from TimeHelper
-    virtual TimeStamp GetCurrentLocalTime() const = 0;
+    virtual Timestamp GetCurrentLocalTime() const = 0;
 
     // Set the remount software version num
     virtual void SetRemoteSoftwareVersion(uint32_t version) = 0;

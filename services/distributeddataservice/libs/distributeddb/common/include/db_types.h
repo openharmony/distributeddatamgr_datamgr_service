@@ -25,7 +25,7 @@
 #include "db_constant.h"
 
 namespace DistributedDB {
-using TimeStamp = uint64_t;
+using Timestamp = uint64_t;
 using ContinueToken = void *;
 using DeviceID = std::string;
 using TimeOffset = int64_t;
@@ -39,10 +39,10 @@ const uint32_t MTU_SIZE = 5 * 1024 * 1024; // 5 M, 1024 is scale
 struct DataItem {
     Key key;
     Value value;
-    TimeStamp timeStamp = 0;
+    Timestamp timestamp = 0;
     uint64_t flag = 0;
     std::string origDev;
-    TimeStamp writeTimeStamp = 0;
+    Timestamp writeTimestamp = 0;
     std::string dev;
     bool neglect = false;
     Key hashKey{};
@@ -126,11 +126,11 @@ enum SingleVerConflictResolvePolicy {
 };
 
 struct SyncTimeRange {
-    TimeStamp beginTime = 0;
-    TimeStamp deleteBeginTime = 0;
-    TimeStamp endTime = static_cast<TimeStamp>(INT64_MAX);
-    TimeStamp deleteEndTime = static_cast<TimeStamp>(INT64_MAX);
-    TimeStamp lastQueryTime = 0;
+    Timestamp beginTime = 0;
+    Timestamp deleteBeginTime = 0;
+    Timestamp endTime = static_cast<Timestamp>(INT64_MAX);
+    Timestamp deleteEndTime = static_cast<Timestamp>(INT64_MAX);
+    Timestamp lastQueryTime = 0;
     bool IsValid() const
     {
         return (beginTime <= endTime && deleteBeginTime <= deleteEndTime);

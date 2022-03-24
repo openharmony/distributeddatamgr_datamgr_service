@@ -568,11 +568,11 @@ bool RuntimeContextImpl::IsProcessSystemApiAdapterValid() const
     return true;
 }
 
-void RuntimeContextImpl::NotifyTimeStampChanged(TimeOffset offset) const
+void RuntimeContextImpl::NotifyTimestampChanged(TimeOffset offset) const
 {
     std::lock_guard<std::mutex> autoLock(timeTickMonitorLock_);
     if (timeTickMonitor_ == nullptr) {
-        LOGD("NotifyTimeStampChanged fail, timeTickMonitor_ is null.");
+        LOGD("NotifyTimestampChanged fail, timeTickMonitor_ is null.");
         return;
     }
     timeTickMonitor_->NotifyTimeChange(offset);

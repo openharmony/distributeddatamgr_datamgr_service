@@ -445,7 +445,7 @@ void SyncTaskContext::SafeExit()
     }
 }
 
-TimeStamp SyncTaskContext::GetCurrentLocalTime() const
+Timestamp SyncTaskContext::GetCurrentLocalTime() const
 {
     if (timeHelper_ == nullptr) {
         return TimeHelper::INVALID_TIMESTAMP;

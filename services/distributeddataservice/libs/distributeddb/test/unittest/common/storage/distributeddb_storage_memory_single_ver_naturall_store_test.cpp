@@ -205,9 +205,9 @@ HWTEST_F(DistributedDBStorageMemorySingleVerNaturalStoreTest, PutSyncData001, Te
      * @tc.steps:step1/2. Set Ioption to synchronous data and insert a (key1, value1) data record by put interface.
      */
     /**
-     * @tc.steps:step3. Insert a (key1, value2!=value1, timeStamp, false) data record
-     *  through the PutSyncData interface. The value of timeStamp is less than or equal
-     *  to the value of timeStamp. For Compare the timestamp to determine whether to synchronization data.
+     * @tc.steps:step3. Insert a (key1, value2!=value1, timestamp, false) data record
+     *  through the PutSyncData interface. The value of timestamp is less than or equal
+     *  to the value of timestamp. For Compare the timestamp to determine whether to synchronization data.
      * @tc.expected: step3. Return OK.
      */
     /**
@@ -216,9 +216,9 @@ HWTEST_F(DistributedDBStorageMemorySingleVerNaturalStoreTest, PutSyncData001, Te
      * @tc.expected: step4. Return OK.The obtained value is value1.
      */
     /**
-     * @tc.steps:step5. Insert a (key1, value3!=value1, timeStamp, false) data record
-     *  through the PutSyncData interface of the NaturalStore. The value of timeStamp
-     *  is greater than that of timeStamp inserted in 2.
+     * @tc.steps:step5. Insert a (key1, value3!=value1, timestamp, false) data record
+     *  through the PutSyncData interface of the NaturalStore. The value of timestamp
+     *  is greater than that of timestamp inserted in 2.
      * @tc.expected: step5. Return OK.
      */
     /**
@@ -252,9 +252,9 @@ HWTEST_F(DistributedDBStorageMemorySingleVerNaturalStoreTest, PutSyncData002, Te
      * @tc.steps:step1/2. Set Ioption to synchronous data and insert a (key1, value1) data record by put interface.
      */
     /**
-     * @tc.steps:step3. Insert a (key1, value2!=value1, timeStamp, false) data record
-     *  through the PutSyncData interface. The value of timeStamp is less than or equal
-     *  to the value of timeStamp. For Compare the timestamp to determine whether delete data.
+     * @tc.steps:step3. Insert a (key1, value2!=value1, timestamp, false) data record
+     *  through the PutSyncData interface. The value of timestamp is less than or equal
+     *  to the value of timestamp. For Compare the timestamp to determine whether delete data.
      * @tc.expected: step3. Return OK.
      */
     /**
@@ -263,9 +263,9 @@ HWTEST_F(DistributedDBStorageMemorySingleVerNaturalStoreTest, PutSyncData002, Te
      * @tc.expected: step4. Return OK.The obtained value is value1.
      */
     /**
-     * @tc.steps:step5. Insert a (key1, value3!=value1, timeStamp, false) data record
-     *  through the PutSyncData interfac. The value of timeStamp
-     *  is greater than that of timeStamp inserted in step2.
+     * @tc.steps:step5. Insert a (key1, value3!=value1, timestamp, false) data record
+     *  through the PutSyncData interfac. The value of timestamp
+     *  is greater than that of timestamp inserted in step2.
      * @tc.expected: step5. Return OK.
      */
     /**
@@ -416,13 +416,13 @@ HWTEST_F(DistributedDBStorageMemorySingleVerNaturalStoreTest, GetMetaData001, Te
 }
 
 /**
-  * @tc.name: GetCurrentMaxTimeStamp001
+  * @tc.name: GetCurrentMaxTimestamp001
   * @tc.desc: To test the function of obtaining the maximum timestamp when a record exists in the database.
   * @tc.type: FUNC
   * @tc.require: AR000CCPOM
   * @tc.author: wangbingquan
   */
-HWTEST_F(DistributedDBStorageMemorySingleVerNaturalStoreTest, GetCurrentMaxTimeStamp001, TestSize.Level1)
+HWTEST_F(DistributedDBStorageMemorySingleVerNaturalStoreTest, GetCurrentMaxTimestamp001, TestSize.Level1)
 {
     /**
      * @tc.steps:step1/2. Insert a data record into the synchronization database.
@@ -437,23 +437,23 @@ HWTEST_F(DistributedDBStorageMemorySingleVerNaturalStoreTest, GetCurrentMaxTimeS
      * @tc.steps:step5. Obtain the maximum timestamp B and check whether B>=A exists.
      * @tc.expected: step5. The obtained timestamp is B>=A.
      */
-    DistributedDBStorageSingleVerNaturalStoreTestCase::GetCurrentMaxTimeStamp001(g_store, g_connection);
+    DistributedDBStorageSingleVerNaturalStoreTestCase::GetCurrentMaxTimestamp001(g_store, g_connection);
 }
 
 /**
-  * @tc.name: GetCurrentMaxTimeStamp002
+  * @tc.name: GetCurrentMaxTimestamp002
   * @tc.desc: Obtain the maximum timestamp when no record exists in the test record library.
   * @tc.type: FUNC
   * @tc.require: AR000CCPOM
   * @tc.author: wangbingquan
   */
-HWTEST_F(DistributedDBStorageMemorySingleVerNaturalStoreTest, GetCurrentMaxTimeStamp002, TestSize.Level1)
+HWTEST_F(DistributedDBStorageMemorySingleVerNaturalStoreTest, GetCurrentMaxTimestamp002, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Obtains the maximum timestamp in the current database record.
      * @tc.expected: step1. Return timestamp is 0.
      */
-    DistributedDBStorageSingleVerNaturalStoreTestCase::GetCurrentMaxTimeStamp002(g_store);
+    DistributedDBStorageSingleVerNaturalStoreTestCase::GetCurrentMaxTimestamp002(g_store);
 }
 
 /**

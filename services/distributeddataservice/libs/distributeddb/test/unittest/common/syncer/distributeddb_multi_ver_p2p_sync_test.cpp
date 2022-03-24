@@ -604,8 +604,8 @@ HWTEST_F(DistributedDBMultiVerP2PSyncTest, IsolationSync003, TestSize.Level2)
     EXPECT_EQ(value, DistributedDBUnitTest::VALUE_1);
 }
 
-static void SetTimeSyncPacketField(TimeSyncPacket &inPacket, TimeStamp sourceBegin, TimeStamp sourceEnd,
-    TimeStamp targetBegin, TimeStamp targetEnd, SyncId theId)
+static void SetTimeSyncPacketField(TimeSyncPacket &inPacket, Timestamp sourceBegin, Timestamp sourceEnd,
+    Timestamp targetBegin, Timestamp targetEnd, SyncId theId)
 {
     inPacket.SetSourceTimeBegin(sourceBegin);
     inPacket.SetSourceTimeEnd(sourceEnd);

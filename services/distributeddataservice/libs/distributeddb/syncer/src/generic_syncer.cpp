@@ -96,7 +96,7 @@ int GenericSyncer::Initialize(ISyncInterface *syncInterface, bool isNeedActive)
         // It will be clear in destructor.
         int errCodeMetadata = InitMetaData(syncInterface);
 
-        // As timeHelper_ will be used in GetTimeStamp, it should not be clear even if engine init failed.
+        // As timeHelper_ will be used in GetTimestamp, it should not be clear even if engine init failed.
         // It will be clear in destructor.
         int errCodeTimeHelper = InitTimeHelper(syncInterface);
         if (errCodeMetadata != E_OK || errCodeTimeHelper != E_OK) {
@@ -272,7 +272,7 @@ int GenericSyncer::StopSync()
     return E_OK;
 }
 
-uint64_t GenericSyncer::GetTimeStamp()
+uint64_t GenericSyncer::GetTimestamp()
 {
     if (timeHelper_ == nullptr) {
         return TimeHelper::GetSysCurrentTime();

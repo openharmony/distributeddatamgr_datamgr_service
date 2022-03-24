@@ -302,8 +302,8 @@ void PutSyncData(const std::string &storeId, const Key &key, const Value &value,
     ASSERT_NE(connection, nullptr);
     if (kvStore != nullptr) {
         std::vector<DataItem> vect;
-        TimeStamp time = 100; // initial valid timestamp.
-        kvStore->GetMaxTimeStamp(time);
+        Timestamp time = 100; // initial valid timestamp.
+        kvStore->GetMaxTimestamp(time);
         if (isCover) {
             time += 10; // add the diff for 10.
         } else {

@@ -26,7 +26,7 @@ public:
     SyncGenericInterface() = default;
     ~SyncGenericInterface() override = default;
 
-    virtual int GetSyncData(TimeStamp begin, TimeStamp end, std::vector<DataItem> &dataItems,
+    virtual int GetSyncData(Timestamp begin, Timestamp end, std::vector<DataItem> &dataItems,
         ContinueToken &continueStmtToken, const DataSizeSpecInfo &dataSizeInfo) const
     {
         LOGE("GetSyncData not support!");
@@ -36,7 +36,7 @@ public:
     // Get the data which would be synced to other devices according the timestamp.
     // if the data size is over than the blockSize, It would alloc one token and assign to continueStmtToken,
     // it should be released when the read operation terminate.
-    virtual int GetSyncData(TimeStamp begin, TimeStamp end, std::vector<SingleVerKvEntry *> &entries,
+    virtual int GetSyncData(Timestamp begin, Timestamp end, std::vector<SingleVerKvEntry *> &entries,
         ContinueToken &continueStmtToken, const DataSizeSpecInfo &dataSizeInfo) const
     {
         LOGE("GetSyncData not support!");
@@ -93,7 +93,7 @@ public:
     }
 
     // Get the timestamp when database created or imported
-    virtual int GetDatabaseCreateTimeStamp(TimeStamp &outTime) const
+    virtual int GetDatabaseCreateTimestamp(Timestamp &outTime) const
     {
         return -E_NOT_SUPPORT;
     }

@@ -39,13 +39,13 @@ public:
 
     void SetOrigDevice(const std::string &dev) override;
 
-    TimeStamp GetTimestamp() const override;
+    Timestamp GetTimestamp() const override;
 
-    void SetTimestamp(TimeStamp time) override;
+    void SetTimestamp(Timestamp time) override;
 
-    TimeStamp GetWriteTimestamp() const override;
+    Timestamp GetWriteTimestamp() const override;
 
-    void SetWriteTimestamp(TimeStamp time) override;
+    void SetWriteTimestamp(Timestamp time) override;
 
     void GetKey(Key &key) const;
     const Key &GetKey() const override;

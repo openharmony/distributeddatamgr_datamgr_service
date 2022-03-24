@@ -21,10 +21,10 @@
 
 namespace DistributedDB {
 std::mutex TimeHelper::systemTimeLock_;
-TimeStamp TimeHelper::lastSystemTimeUs_ = 0;
-TimeStamp TimeHelper::currentIncCount_ = 0;
+Timestamp TimeHelper::lastSystemTimeUs_ = 0;
+Timestamp TimeHelper::currentIncCount_ = 0;
 
-TimeStamp TimeHelper::GetSysCurrentTime()
+Timestamp TimeHelper::GetSysCurrentTime()
 {
     uint64_t curTime = 0;
     std::lock_guard<std::mutex> lock(systemTimeLock_);
@@ -43,7 +43,7 @@ TimeStamp TimeHelper::GetSysCurrentTime()
         lastSystemTimeUs_ = curTime;
         currentIncCount_ = 0;
     }
-    return (curTime * TO_100_NS) + currentIncCount_; // Currently TimeStamp is uint64_t
+    return (curTime * TO_100_NS) + currentIncCount_; // Currently Timestamp is uint64_t
 }
 
 TimeHelper::TimeHelper()
@@ -65,9 +65,9 @@ int TimeHelper::Initialize(const ISyncInterface *inStorage, std::shared_ptr<Meta
     }
     metadata_ = inMetadata;
     storage_ = inStorage;
-    TimeStamp currentSysTime = GetSysCurrentTime();
+    Timestamp currentSysTime = GetSysCurrentTime();
     TimeOffset localTimeOffset = GetLocalTimeOffset();
-    TimeStamp maxItemTime = GetMaxDataItemTime();
+    Timestamp maxItemTime = GetMaxDataItemTime();
     if (currentSysTime > MAX_VALID_TIME || localTimeOffset > MAX_VALID_TIME || maxItemTime > MAX_VALID_TIME) {
         return -E_INVALID_TIME;
     }
@@ -79,16 +79,16 @@ int TimeHelper::Initialize(const ISyncInterface *inStorage, std::shared_ptr<Meta
             return errCode;
         }
     }
-    metadata_->SetLastLocalTime(currentSysTime + static_cast<TimeStamp>(localTimeOffset));
+    metadata_->SetLastLocalTime(currentSysTime + static_cast<Timestamp>(localTimeOffset));
     return E_OK;
 }
 
-TimeStamp TimeHelper::GetTime()
+Timestamp TimeHelper::GetTime()
 {
-    TimeStamp currentSysTime = GetSysCurrentTime();
+    Timestamp currentSysTime = GetSysCurrentTime();
     TimeOffset localTimeOffset = GetLocalTimeOffset();
-    TimeStamp currentLocalTime = currentSysTime + localTimeOffset;
-    TimeStamp lastLocalTime = metadata_->GetLastLocalTime();
+    Timestamp currentLocalTime = currentSysTime + localTimeOffset;
+    Timestamp lastLocalTime = metadata_->GetLastLocalTime();
     if (currentLocalTime <= lastLocalTime || currentLocalTime > MAX_VALID_TIME) {
         lastLocalTime++;
         currentLocalTime = lastLocalTime;
@@ -99,10 +99,10 @@ TimeStamp TimeHelper::GetTime()
     return currentLocalTime;
 }
 
-TimeStamp TimeHelper::GetMaxDataItemTime()
+Timestamp TimeHelper::GetMaxDataItemTime()
 {
-    TimeStamp timestamp = 0;
-    storage_->GetMaxTimeStamp(timestamp);
+    Timestamp timestamp = 0;
+    storage_->GetMaxTimestamp(timestamp);
     return timestamp;
 }
 

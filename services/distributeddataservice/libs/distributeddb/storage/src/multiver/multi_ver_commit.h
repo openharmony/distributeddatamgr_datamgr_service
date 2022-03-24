@@ -42,8 +42,8 @@ public:
     CommitID GetRightParentId() const override;
     void SetRightParentId(const CommitID &id) override;
 
-    TimeStamp GetTimestamp() const override;
-    void SetTimestamp(TimeStamp timestamp) override;
+    Timestamp GetTimestamp() const override;
+    void SetTimestamp(Timestamp timestamp) override;
 
     bool GetLocalFlag() const override;
     void SetLocalFlag(bool localFlag) override;
@@ -61,7 +61,7 @@ private:
     CommitID commitID_;
     CommitID leftParentID_;
     CommitID rightParentID_;
-    TimeStamp timestamp_;
+    Timestamp timestamp_;
     bool localFlag_;
     DeviceID deviceInfo_;
 };

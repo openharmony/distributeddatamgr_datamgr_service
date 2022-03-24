@@ -72,12 +72,12 @@ public:
     int GetEntriesByVersion(const Version &versionInfo, std::vector<MultiVerKvEntry *> &entries) const override;
 
     // Update the timestamp of the version.
-    int UpdateTimestampByVersion(const Version &version, TimeStamp stamp) const override;
+    int UpdateTimestampByVersion(const Version &version, Timestamp stamp) const override;
 
     bool IsDataChanged() const override;
 
     // Get the max timestamp to generate the new version for the writing transaction
-    TimeStamp GetCurrentMaxTimestamp() const override;
+    Timestamp GetCurrentMaxTimestamp() const override;
 
     // Reset the version.
     void ResetVersion();
@@ -86,7 +86,7 @@ public:
     int Reset(CipherType type, const CipherPassword &passwd);
 
     // Check if the entry already cleared
-    bool IsRecordCleared(const TimeStamp timestamp) const override;
+    bool IsRecordCleared(const Timestamp timestamp) const override;
 
     void SetVersion(const Version &versionInfo) override;
 
@@ -146,7 +146,7 @@ private:
 
     int GetOneEntry(const GetEntriesStatements &statements, const Key &lastKey, Entry &entry, int &errCode) const;
 
-    int RemovePrePutEntries(const Version &versionInfo, TimeStamp timestamp);
+    int RemovePrePutEntries(const Version &versionInfo, Timestamp timestamp);
 
     int CheckToSaveRecord(const MultiVerKvEntry *entry, bool &isNeedSave, std::vector<Value> &values);
 
@@ -162,7 +162,7 @@ private:
 
     int GetOriginKeyValueByHash(MultiVerEntryData &item, Value &value) const;
 
-    int GetPrePutValues(const Version &versionInfo, TimeStamp timestamp, std::vector<Value> &values) const;
+    int GetPrePutValues(const Version &versionInfo, Timestamp timestamp, std::vector<Value> &values) const;
 
     static const std::string CREATE_TABLE_SQL;
     static const std::string SELECT_ONE_SQL; // select the rowid

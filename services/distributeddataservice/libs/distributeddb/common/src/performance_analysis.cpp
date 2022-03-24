@@ -161,7 +161,7 @@ void PerformanceAnalysis::StepTimeRecordEnd(uint32_t step)
     if ((timePair.endTime < timePair.startTime) || (timePair.startTime == 0) || (timePair.endTime == 0)) {
         return;
     }
-    TimeStamp offset = timePair.endTime - timePair.startTime;
+    Timestamp offset = timePair.endTime - timePair.startTime;
     if (stepTimeRecordInfo_[step].max < offset) {
         stepTimeRecordInfo_[step].max = offset;
     }

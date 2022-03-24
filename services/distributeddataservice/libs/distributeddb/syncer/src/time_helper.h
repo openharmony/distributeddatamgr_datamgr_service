@@ -33,10 +33,10 @@ public:
 
     static const uint64_t MS_TO_100_NS = 10000; // 1ms to 100ns
 
-    static const TimeStamp INVALID_TIMESTAMP = 0;
+    static const Timestamp INVALID_TIMESTAMP = 0;
 
     // Get current system time
-    static TimeStamp GetSysCurrentTime();
+    static Timestamp GetSysCurrentTime();
 
     TimeHelper();
     ~TimeHelper();
@@ -44,11 +44,11 @@ public:
     // Init the TimeHelper
     int Initialize(const ISyncInterface *inStorage, std::shared_ptr<Metadata> &inMetadata);
 
-    // Get TimeStamp when write data into db, export interface;
-    TimeStamp GetTime();
+    // Get Timestamp when write data into db, export interface;
+    Timestamp GetTime();
 
     // Get max data time from db
-    TimeStamp GetMaxDataItemTime();
+    Timestamp GetMaxDataItemTime();
 
     // Get local time offset
     TimeOffset GetLocalTimeOffset() const;
@@ -60,8 +60,8 @@ public:
 
 private:
     static std::mutex systemTimeLock_;
-    static TimeStamp lastSystemTimeUs_;
-    static TimeStamp currentIncCount_;
+    static Timestamp lastSystemTimeUs_;
+    static Timestamp currentIncCount_;
     static const uint64_t MAX_INC_COUNT = 9; // last bit from 0-9
     const ISyncInterface *storage_;
     std::shared_ptr<Metadata> metadata_;

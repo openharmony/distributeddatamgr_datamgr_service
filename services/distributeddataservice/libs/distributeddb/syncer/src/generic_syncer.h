@@ -59,7 +59,7 @@ public:
     int StopSync() override;
 
     // Get The current virtual timestamp
-    uint64_t GetTimeStamp() override;
+    uint64_t GetTimestamp() override;
 
     // Get manual sync queue size
     int GetQueuedSyncSize(int *queuedSyncSize) const override;

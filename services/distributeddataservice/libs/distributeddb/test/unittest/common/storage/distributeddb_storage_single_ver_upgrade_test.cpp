@@ -186,7 +186,7 @@ namespace {
         ASSERT_EQ(SQLiteUtils::GetStatement(db, CHECK_V1_LOCAL_UPGRADE, statement), E_OK);
         ASSERT_NE(statement, nullptr);
         ASSERT_EQ(SQLiteUtils::StepWithRetry(statement), SQLiteUtils::MapSQLiteErrno(SQLITE_ROW));
-        TimeStamp stamp = static_cast<uint64_t>(sqlite3_column_int64(statement, 0));
+        Timestamp stamp = static_cast<uint64_t>(sqlite3_column_int64(statement, 0));
         EXPECT_NE(stamp, 0UL);
 
         Value readHashValue;

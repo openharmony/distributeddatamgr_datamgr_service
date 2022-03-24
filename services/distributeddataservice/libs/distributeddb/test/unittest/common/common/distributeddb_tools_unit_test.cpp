@@ -635,7 +635,7 @@ void DistributedDBToolsUnitTest::ConvertSingleVerEntryToItems(std::vector<Distri
             DataItem item;
             item.origDev = entry->GetOrigDevice();
             item.flag = entry->GetFlag();
-            item.timeStamp = entry->GetTimestamp();
+            item.timestamp = entry->GetTimestamp();
             entry->GetKey(item.key);
             entry->GetValue(item.value);
             dataItems.push_back(item);

@@ -97,7 +97,7 @@ public:
     bool IsCommunicatorAggregatorValid() const override;
 
     // Notify TIME_CHANGE_EVENT.
-    void NotifyTimeStampChanged(TimeOffset offset) const override;
+    void NotifyTimestampChanged(TimeOffset offset) const override;
 
     void SetStoreStatusNotifier(const StoreStatusNotifier &notifier) override;
 

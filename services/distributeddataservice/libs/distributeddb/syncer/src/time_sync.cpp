@@ -45,42 +45,42 @@ TimeSyncPacket::~TimeSyncPacket()
 {
 }
 
-void TimeSyncPacket::SetSourceTimeBegin(TimeStamp sourceTimeBegin)
+void TimeSyncPacket::SetSourceTimeBegin(Timestamp sourceTimeBegin)
 {
     sourceTimeBegin_ = sourceTimeBegin;
 }
 
-TimeStamp TimeSyncPacket::GetSourceTimeBegin() const
+Timestamp TimeSyncPacket::GetSourceTimeBegin() const
 {
     return sourceTimeBegin_;
 }
 
-void TimeSyncPacket::SetSourceTimeEnd(TimeStamp sourceTimeEnd)
+void TimeSyncPacket::SetSourceTimeEnd(Timestamp sourceTimeEnd)
 {
     sourceTimeEnd_ = sourceTimeEnd;
 }
 
-TimeStamp TimeSyncPacket::GetSourceTimeEnd() const
+Timestamp TimeSyncPacket::GetSourceTimeEnd() const
 {
     return sourceTimeEnd_;
 }
 
-void TimeSyncPacket::SetTargetTimeBegin(TimeStamp targetTimeBegin)
+void TimeSyncPacket::SetTargetTimeBegin(Timestamp targetTimeBegin)
 {
     targetTimeBegin_ = targetTimeBegin;
 }
 
-TimeStamp TimeSyncPacket::GetTargetTimeBegin() const
+Timestamp TimeSyncPacket::GetTargetTimeBegin() const
 {
     return targetTimeBegin_;
 }
 
-void TimeSyncPacket::SetTargetTimeEnd(TimeStamp targetTimeEnd)
+void TimeSyncPacket::SetTargetTimeEnd(Timestamp targetTimeEnd)
 {
     targetTimeEnd_ = targetTimeEnd;
 }
 
-TimeStamp TimeSyncPacket::GetTargetTimeEnd() const
+Timestamp TimeSyncPacket::GetTargetTimeEnd() const
 {
     return targetTimeEnd_;
 }
@@ -194,7 +194,7 @@ int TimeSync::SyncStart(const CommErrHandler &handler,  uint32_t sessionId)
 {
     isOnline_ = true;
     TimeSyncPacket packet;
-    TimeStamp startTime = timeHelper_->GetTime();
+    Timestamp startTime = timeHelper_->GetTime();
     packet.SetSourceTimeBegin(startTime);
     // send timeSync request
     LOGD("[TimeSync] startTime = %" PRIu64 ", dev = %s{private}", startTime, deviceId_.c_str());
@@ -246,10 +246,10 @@ int TimeSync::Serialization(uint8_t *buffer, uint32_t length, const Message *inM
     }
 
     Parcel parcel(buffer, length);
-    TimeStamp srcBegin = packet->GetSourceTimeBegin();
-    TimeStamp srcEnd = packet->GetSourceTimeEnd();
-    TimeStamp targetBegin = packet->GetTargetTimeBegin();
-    TimeStamp targetEnd = packet->GetTargetTimeEnd();
+    Timestamp srcBegin = packet->GetSourceTimeBegin();
+    Timestamp srcEnd = packet->GetSourceTimeEnd();
+    Timestamp targetBegin = packet->GetTargetTimeBegin();
+    Timestamp targetEnd = packet->GetTargetTimeEnd();
 
     int errCode = parcel.WriteUInt32(TIME_SYNC_VERSION_V1);
     if (errCode != E_OK) {
@@ -283,10 +283,10 @@ int TimeSync::DeSerialization(const uint8_t *buffer, uint32_t length, Message *i
     }
     TimeSyncPacket packet;
     Parcel parcel(const_cast<uint8_t *>(buffer), length);
-    TimeStamp srcBegin;
-    TimeStamp srcEnd;
-    TimeStamp targetBegin;
-    TimeStamp targetEnd;
+    Timestamp srcBegin;
+    Timestamp srcEnd;
+    Timestamp targetBegin;
+    Timestamp targetEnd;
 
     uint32_t version = 0;
     parcel.ReadUInt32(version);
@@ -330,7 +330,7 @@ int TimeSync::AckRecv(const Message *message, uint32_t targetSessionId)
     }
 
     TimeSyncPacket packetData = TimeSyncPacket(*packet);
-    TimeStamp sourceTimeEnd = timeHelper_->GetTime();
+    Timestamp sourceTimeEnd = timeHelper_->GetTime();
     packetData.SetSourceTimeEnd(sourceTimeEnd);
     if (packetData.GetSourceTimeBegin() > packetData.GetSourceTimeEnd() ||
         packetData.GetTargetTimeBegin() > packetData.GetTargetTimeEnd() ||
@@ -367,7 +367,7 @@ int TimeSync::RequestRecv(const Message *message)
     if (!IsPacketValid(message, TYPE_REQUEST)) {
         return -E_INVALID_ARGS;
     }
-    TimeStamp targetTimeBegin = timeHelper_->GetTime();
+    Timestamp targetTimeBegin = timeHelper_->GetTime();
 
     const TimeSyncPacket *packet = message->GetObject<TimeSyncPacket>();
     if (packet == nullptr) {
@@ -377,7 +377,7 @@ int TimeSync::RequestRecv(const Message *message)
     // build timeSync ack packet
     TimeSyncPacket ackPacket = TimeSyncPacket(*packet);
     ackPacket.SetTargetTimeBegin(targetTimeBegin);
-    TimeStamp targetTimeEnd = timeHelper_->GetTime();
+    Timestamp targetTimeEnd = timeHelper_->GetTime();
     ackPacket.SetTargetTimeEnd(targetTimeEnd);
     LOGD("TimeSync::RequestRecv, dev = %s{private}, sTimeEnd = %" PRIu64 ", tTimeEnd = %" PRIu64 ", sbegin = %" PRIu64
         ", tbegin = %" PRIu64, deviceId_.c_str(), ackPacket.GetSourceTimeEnd(), ackPacket.GetTargetTimeEnd(),

@@ -34,8 +34,8 @@ namespace {
             storageItem.key = item.key;
             storageItem.value = item.value;
             storageItem.flag = item.flag;
-            storageItem.timeStamp = item.timeStamp;
-            storageItem.writeTimeStamp = item.writeTimeStamp;
+            storageItem.timestamp = item.timestamp;
+            storageItem.writeTimestamp = item.writeTimestamp;
             storageItem.hashKey = item.hashKey;
             entry->SetEntryData(std::move(storageItem));
             entries.push_back(entry);
@@ -71,8 +71,8 @@ int VirtualRelationalVerSyncDBInterface::PutSyncDataWithQuery(const QueryObject 
             DataItem item;
             item.origDev = entry->GetOrigDevice();
             item.flag = entry->GetFlag();
-            item.timeStamp = entry->GetTimestamp();
-            item.writeTimeStamp = entry->GetWriteTimestamp();
+            item.timestamp = entry->GetTimestamp();
+            item.writeTimestamp = entry->GetWriteTimestamp();
             entry->GetKey(item.key);
             entry->GetValue(item.value);
             entry->GetHashKey(item.hashKey);
@@ -153,7 +153,7 @@ RelationalSchemaObject VirtualRelationalVerSyncDBInterface::GetSchemaInfo() cons
     return schemaObj_;
 }
 
-int VirtualRelationalVerSyncDBInterface::GetDatabaseCreateTimeStamp(TimeStamp &outTime) const
+int VirtualRelationalVerSyncDBInterface::GetDatabaseCreateTimestamp(Timestamp &outTime) const
 {
     return E_OK;
 }
@@ -214,7 +214,7 @@ std::vector<uint8_t> VirtualRelationalVerSyncDBInterface::GetIdentifier() const
     return {};
 }
 
-void VirtualRelationalVerSyncDBInterface::GetMaxTimeStamp(TimeStamp &stamp) const
+void VirtualRelationalVerSyncDBInterface::GetMaxTimestamp(Timestamp &stamp) const
 {
     for (const auto &item : syncData_) {
         for (const auto &entry : item.second) {
@@ -223,7 +223,7 @@ void VirtualRelationalVerSyncDBInterface::GetMaxTimeStamp(TimeStamp &stamp) cons
             }
         }
     }
-    LOGD("VirtualSingleVerSyncDBInterface::GetMaxTimeStamp time = %" PRIu64, stamp);
+    LOGD("VirtualSingleVerSyncDBInterface::GetMaxTimestamp time = %" PRIu64, stamp);
 }
 
 int VirtualRelationalVerSyncDBInterface::GetMetaData(const Key &key, Value &value) const

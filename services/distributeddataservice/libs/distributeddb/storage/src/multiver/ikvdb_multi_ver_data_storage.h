@@ -31,7 +31,7 @@ enum class KvDataType {
     KV_DATA_SYNC_P2P,
 };
 
-struct UpdateVerTimeStamp {
+struct UpdateVerTimestamp {
     uint64_t timestamp = 0ull;
     bool isNeedUpdate = false;
 };
@@ -50,7 +50,7 @@ public:
     virtual int Open(const Property &property) = 0;
     virtual int StartWrite(KvDataType dataType, IKvDBMultiVerTransaction *&transaction) = 0;
     virtual int CommitWritePhaseOne(IKvDBMultiVerTransaction *transaction,
-        const UpdateVerTimeStamp &multiVerTimeStamp) = 0;
+        const UpdateVerTimestamp &multiVerTimestamp) = 0;
     virtual int RollbackWritePhaseOne(IKvDBMultiVerTransaction *transaction, const Version &versionInfo) = 0;
     virtual int RollbackWrite(IKvDBMultiVerTransaction *transaction) = 0;
     virtual void CommitWritePhaseTwo(IKvDBMultiVerTransaction *transaction) = 0;

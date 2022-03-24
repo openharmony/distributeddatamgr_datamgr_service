@@ -101,7 +101,7 @@ public:
 
 private:
     int ToQuerySql();
-    int ToQuerySyncSql(bool hasSubQuery, bool useTimeStampAlias = false);
+    int ToQuerySyncSql(bool hasSubQuery, bool useTimestampAlias = false);
     int ToGetCountSql();
     int ParseQueryExpression(const QueryObjNode &queryNode, std::string &querySql,
         const std::string &accessStr = "", bool placeholder = true);

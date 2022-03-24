@@ -166,7 +166,7 @@ int SingleVerDataSync::TryContinueSync(SingleVerSyncTaskContext *context, const 
         LOGI("[DataSync] ignore ack,sessionId is different");
         return E_OK;
     }
-    TimeStamp lastQueryTime = 0;
+    Timestamp lastQueryTime = 0;
     if (reSendMap_.count(sequenceId) != 0) {
         lastQueryTime = reSendMap_[sequenceId].end;
         reSendMap_.erase(sequenceId);
@@ -176,7 +176,7 @@ int SingleVerDataSync::TryContinueSync(SingleVerSyncTaskContext *context, const 
         return E_OK;
     }
     if (context->IsQuerySync() && storage_->GetInterfaceType() == ISyncInterface::SYNC_RELATION) {
-        TimeStamp dbLastQueryTime = 0;
+        Timestamp dbLastQueryTime = 0;
         int errCode = metadata_->GetLastQueryTime(context->GetQuerySyncId(), context->GetDeviceId(), dbLastQueryTime);
         if (errCode == E_OK && dbLastQueryTime < lastQueryTime) {
             errCode = metadata_->SetLastQueryTime(context->GetQuerySyncId(), context->GetDeviceId(), lastQueryTime);
@@ -337,13 +337,13 @@ int SingleVerDataSync::GetUnsyncData(SingleVerSyncTaskContext *context, std::vec
     } else {
         WaterMark deletedStartMark = 0;
         GetLocalDeleteSyncWaterMark(context, deletedStartMark);
-        TimeStamp lastQueryTimeStamp = 0;
+        Timestamp lastQueryTimestamp = 0;
         errCode = metadata_->GetLastQueryTime(context->GetQuerySyncId(),
-            context->GetDeviceId(), lastQueryTimeStamp);
+            context->GetDeviceId(), lastQueryTimestamp);
         if (errCode == E_OK) {
             QuerySyncObject queryObj = context->GetQuery();
             errCode = storage_->GetSyncData(queryObj,
-                SyncTimeRange{ startMark, deletedStartMark, endMark, endMark, lastQueryTimeStamp},
+                SyncTimeRange{ startMark, deletedStartMark, endMark, endMark, lastQueryTimestamp},
                 syncDataSizeInfo, token, outData);
         }
     }
@@ -585,14 +585,14 @@ int SingleVerDataSync::DealRemoveDeviceDataByAck(SingleVerSyncTaskContext *conte
     return errCode;
 }
 
-void SingleVerDataSync::SetSessionEndTimeStamp(TimeStamp end)
+void SingleVerDataSync::SetSessionEndTimestamp(Timestamp end)
 {
-    sessionEndTimeStamp_ = end;
+    sessionEndTimestamp_ = end;
 }
 
-TimeStamp SingleVerDataSync::GetSessionEndTimeStamp() const
+Timestamp SingleVerDataSync::GetSessionEndTimestamp() const
 {
-    return sessionEndTimeStamp_;
+    return sessionEndTimestamp_;
 }
 
 void SingleVerDataSync::UpdateSendInfo(SyncTimeRange dataTimeRange, SingleVerSyncTaskContext *context)
@@ -695,7 +695,7 @@ int SingleVerDataSync::RequestStart(SingleVerSyncTaskContext *context, int mode)
     UpdateWaterMark isUpdateWaterMark;
     SyncTimeRange dataTime = GetSyncDataTimeRange(curType, context, syncData.entries, isUpdateWaterMark);
     if (errCode == E_OK) {
-        SetSessionEndTimeStamp(std::max(dataTime.endTime, dataTime.deleteEndTime));
+        SetSessionEndTimestamp(std::max(dataTime.endTime, dataTime.deleteEndTime));
     }
     FillDataRequestPacket(packet, context, syncData, errCode, mode);
     errCode = SendDataPacket(curType, packet, context);
@@ -809,7 +809,7 @@ int SingleVerDataSync::PullResponseStart(SingleVerSyncTaskContext *context)
     UpdateWaterMark isUpdateWaterMark;
     SyncTimeRange dataTime = GetSyncDataTimeRange(curType, context, syncData.entries, isUpdateWaterMark);
     if (errCode == E_OK) {
-        SetSessionEndTimeStamp(std::max(dataTime.endTime, dataTime.deleteEndTime));
+        SetSessionEndTimestamp(std::max(dataTime.endTime, dataTime.deleteEndTime));
     }
     errCode = SendPullResponseDataPkt(ackCode, syncData, context);
     if (errCode == E_OK || errCode == -E_TIMEOUT) {
@@ -1641,12 +1641,12 @@ void SingleVerDataSync::FillRequestReSendPacket(const SingleVerSyncTaskContext *
     // transer reSend mode, RESPONSE_PULL transfer to push or query push
     // PUSH_AND_PULL mode which sequenceId lager than first transfer to push or query push
     int reSendMode = SingleVerDataSyncUtils::GetReSendMode(context->GetMode(), reSendInfo.sequenceId, curType);
-    if (GetSessionEndTimeStamp() == std::max(reSendInfo.end, reSendInfo.deleteDataEnd) ||
+    if (GetSessionEndTimestamp() == std::max(reSendInfo.end, reSendInfo.deleteDataEnd) ||
         SyncOperation::TransferSyncMode(context->GetMode()) == SyncModeType::PULL) {
         LOGI("[DataSync][ReSend] set lastid,label=%s,dev=%s", label_.c_str(), STR_MASK(GetDeviceId()));
         packet->SetLastSequence();
     }
-    if (sendCode == E_OK && GetSessionEndTimeStamp() == std::max(reSendInfo.end, reSendInfo.deleteDataEnd) &&
+    if (sendCode == E_OK && GetSessionEndTimestamp() == std::max(reSendInfo.end, reSendInfo.deleteDataEnd) &&
         context->GetMode() == SyncModeType::RESPONSE_PULL) {
         sendCode = SEND_FINISHED;
     }

@@ -27,7 +27,7 @@ public:
 
     int GetData(const Key &key, VirtualDataItem &item);
     int GetData(const Key &key, Value &value);
-    int PutData(const Key &key, const Value &value, const TimeStamp &time, int flag);
+    int PutData(const Key &key, const Value &value, const Timestamp &time, int flag);
     int PutData(const Key &key, const Value &value);
     int DeleteData(const Key &key);
     int StartTransaction();

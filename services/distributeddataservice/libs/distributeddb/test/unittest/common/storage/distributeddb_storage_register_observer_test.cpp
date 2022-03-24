@@ -195,14 +195,14 @@ namespace {
         entries.push_back(entry);
 
         // test sync insert
-        TimeStamp time;
-        g_singleVerNaturaStore->GetMaxTimeStamp(time);
+        Timestamp time;
+        g_singleVerNaturaStore->GetMaxTimestamp(time);
 
         DataItem dataItem;
         dataItem.key = entry.key;
         dataItem.value = entry.value;
-        dataItem.timeStamp = time + 1;
-        dataItem.writeTimeStamp = dataItem.timeStamp;
+        dataItem.timestamp = time + 1;
+        dataItem.writeTimestamp = dataItem.timestamp;
         dataItem.flag = 0;
         vector<DataItem> insertDataItems;
         insertDataItems.push_back(dataItem);
@@ -212,8 +212,8 @@ namespace {
         TestAndClearCallbackResult(isSyncRegisted, entries, g_emptyEntries, g_emptyEntries);
         // test sync update
         vector<DataItem> updateDataItems;
-        dataItem.timeStamp++;
-        dataItem.writeTimeStamp = dataItem.timeStamp;
+        dataItem.timestamp++;
+        dataItem.writeTimestamp = dataItem.timestamp;
         updateDataItems.push_back(dataItem);
         result = DistributedDBToolsUnitTest::PutSyncDataTest(g_singleVerNaturaStore, updateDataItems, "deviceB");
 
@@ -223,8 +223,8 @@ namespace {
         // test sync delete
         vector<DataItem> deleteDataItems;
         DataItem dataItem1 = dataItem;
-        dataItem1.timeStamp++;
-        dataItem1.writeTimeStamp = dataItem1.timeStamp;
+        dataItem1.timestamp++;
+        dataItem1.writeTimestamp = dataItem1.timestamp;
         dataItem1.flag = 1;
         DistributedDBToolsUnitTest::CalcHash(dataItem.key, dataItem1.key);
         deleteDataItems.push_back(dataItem1);
@@ -677,11 +677,11 @@ HWTEST_F(DistributedDBStorageRegisterObserverTest, RegisterObserver013, TestSize
     return;
 }
 
-static void PreSyncDataForRegisterObserver014(TimeStamp time, vector<DataItem> &dataItems)
+static void PreSyncDataForRegisterObserver014(Timestamp time, vector<DataItem> &dataItems)
 {
     // sync data
-    DataItem dataItem = {g_entry1.key, g_entry1.value, .timeStamp = ++time, .flag = 1};
-    dataItem.writeTimeStamp = dataItem.timeStamp;
+    DataItem dataItem = {g_entry1.key, g_entry1.value, .timestamp = ++time, .flag = 1};
+    dataItem.writeTimestamp = dataItem.timestamp;
     DistributedDBToolsUnitTest::CalcHash(g_entry1.key, dataItem.key);
     dataItems.push_back(dataItem);
 
@@ -725,8 +725,8 @@ HWTEST_F(DistributedDBStorageRegisterObserverTest, RegisterObserver014, TestSize
     g_singleVerNaturaStoreConnection->Put(opt, g_oldEntry3.key, g_oldEntry3.value);
     g_singleVerNaturaStoreConnection->Put(opt, g_oldEntry4.key, g_oldEntry4.value);
     // get max time
-    TimeStamp time;
-    g_singleVerNaturaStore->GetMaxTimeStamp(time);
+    Timestamp time;
+    g_singleVerNaturaStore->GetMaxTimestamp(time);
     std::this_thread::sleep_for(std::chrono::milliseconds(OBSERVER_SLEEP_TIME));
 
     /**

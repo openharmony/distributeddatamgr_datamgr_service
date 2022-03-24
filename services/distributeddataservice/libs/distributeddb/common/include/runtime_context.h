@@ -108,7 +108,7 @@ public:
     virtual bool IsCommunicatorAggregatorValid() const = 0;
 
     // Notify TIME_CHANGE_EVENT.
-    virtual void NotifyTimeStampChanged(TimeOffset offset) const = 0;
+    virtual void NotifyTimestampChanged(TimeOffset offset) const = 0;
 
     virtual void SetStoreStatusNotifier(const StoreStatusNotifier &notifier) = 0;
 

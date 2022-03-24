@@ -25,10 +25,10 @@ public:
     virtual ~SingleVerKvEntry() {};
     virtual std::string GetOrigDevice() const = 0;
     virtual void SetOrigDevice(const std::string &device) = 0;
-    virtual TimeStamp GetTimestamp() const = 0;
-    virtual void SetTimestamp(TimeStamp timestamp) = 0;
-    virtual TimeStamp GetWriteTimestamp() const = 0;
-    virtual void SetWriteTimestamp(TimeStamp timestamp) = 0;
+    virtual Timestamp GetTimestamp() const = 0;
+    virtual void SetTimestamp(Timestamp timestamp) = 0;
+    virtual Timestamp GetWriteTimestamp() const = 0;
+    virtual void SetWriteTimestamp(Timestamp timestamp) = 0;
     virtual uint64_t GetFlag() const = 0;
     virtual int SerializeData(Parcel &parcel, uint32_t softWareVersion) = 0;
     virtual int DeSerializeData(Parcel &parcel) = 0;

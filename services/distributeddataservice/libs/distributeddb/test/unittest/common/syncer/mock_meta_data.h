@@ -21,9 +21,9 @@
 namespace DistributedDB {
 class MockMetadata : public Metadata {
 public:
-    MOCK_METHOD3(SetLastQueryTime, int(const std::string &, const std::string &, const TimeStamp &));
+    MOCK_METHOD3(SetLastQueryTime, int(const std::string &, const std::string &, const Timestamp &));
 
-    MOCK_METHOD3(GetLastQueryTime, int(const std::string &, const std::string &, TimeStamp &));
+    MOCK_METHOD3(GetLastQueryTime, int(const std::string &, const std::string &, Timestamp &));
 };
 } // namespace DistributedDB
 #endif  // #define MOCK_META_DATA_H

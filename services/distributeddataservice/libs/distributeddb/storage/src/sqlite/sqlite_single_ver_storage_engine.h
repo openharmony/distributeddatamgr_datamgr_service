@@ -85,7 +85,7 @@ private:
     void EndMigrate(SQLiteSingleVerStorageExecutor *&handle, EngineState stateBeforeMigrate, int errCode,
         bool isNeedTriggerSync);
     void ResetCacheRecordVersion();
-    void SetMaxTimeStamp(TimeStamp maxTimeStamp) const;
+    void SetMaxTimestamp(Timestamp maxTimestamp) const;
     int EraseDeviceWaterMark(SQLiteSingleVerStorageExecutor *&handle, const std::vector<DataItem> &dataItems);
 
     // For db.

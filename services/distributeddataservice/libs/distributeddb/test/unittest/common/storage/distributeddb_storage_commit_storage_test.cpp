@@ -61,25 +61,25 @@ namespace {
     DeviceID g_remoteDeviceB = "remote_device_B";
     DeviceID g_remoteDeviceC = "remote_device_C";
     DeviceID g_remoteDeviceD = "remote_device_D";
-    const TimeStamp TIME_STAMP1 = 100;
-    const TimeStamp TIME_STAMP2 = 200;
-    const TimeStamp TIME_STAMP3 = 300;
-    const TimeStamp TIME_STAMP4 = 400;
-    const TimeStamp TIME_STAMP5 = 500;
-    const TimeStamp TIME_STAMP6 = 600;
-    const TimeStamp TIME_STAMP7 = 700;
-    const TimeStamp TIME_STAMP8 = 800;
-    const TimeStamp TIME_STAMP9 = 900;
-    const TimeStamp TIME_STAMP10 = 1000;
-    const TimeStamp TIME_STAMP11 = 1100;
-    const TimeStamp TIME_STAMP12 = 1200;
+    const Timestamp TIME_STAMP1 = 100;
+    const Timestamp TIME_STAMP2 = 200;
+    const Timestamp TIME_STAMP3 = 300;
+    const Timestamp TIME_STAMP4 = 400;
+    const Timestamp TIME_STAMP5 = 500;
+    const Timestamp TIME_STAMP6 = 600;
+    const Timestamp TIME_STAMP7 = 700;
+    const Timestamp TIME_STAMP8 = 800;
+    const Timestamp TIME_STAMP9 = 900;
+    const Timestamp TIME_STAMP10 = 1000;
+    const Timestamp TIME_STAMP11 = 1100;
+    const Timestamp TIME_STAMP12 = 1200;
 
     struct CommitInfo {
         Version version;
         string commitID;
         string leftCommitID;
         string rightCommitID;
-        TimeStamp timestamp;
+        Timestamp timestamp;
         bool localFlag;
         DeviceID deviceInfo;
     };
@@ -107,7 +107,7 @@ namespace {
         CommitID rightCommitID = commit->GetRightParentId();
         string rightCommitIDStr = TransCommitIDToStr(rightCommitID);
         ASSERT_STREQ(rightCommitIDStr.c_str(), commitInfo.rightCommitID.c_str());
-        TimeStamp timestamp = commit->GetTimestamp();
+        Timestamp timestamp = commit->GetTimestamp();
         ASSERT_EQ(timestamp, commitInfo.timestamp);
         bool localFlag = commit->GetLocalFlag();
         ASSERT_EQ(localFlag, commitInfo.localFlag);

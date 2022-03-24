@@ -891,9 +891,9 @@ int AbilitySync::SetAbilityRequestBodyInfo(AbilitySyncRequestPacket &packet, uin
 {
     uint64_t dbCreateTime;
     int errCode =
-        (static_cast<SyncGenericInterface *>(storageInterface_))->GetDatabaseCreateTimeStamp(dbCreateTime);
+        (static_cast<SyncGenericInterface *>(storageInterface_))->GetDatabaseCreateTimestamp(dbCreateTime);
     if (errCode != E_OK) {
-        LOGE("[AbilitySync][FillAbilityRequest] GetDatabaseCreateTimeStamp failed, err %d", errCode);
+        LOGE("[AbilitySync][FillAbilityRequest] GetDatabaseCreateTimestamp failed, err %d", errCode);
         return errCode;
     }
     SecurityOption option;
@@ -947,9 +947,9 @@ int AbilitySync::SetAbilityAckBodyInfo(AbilitySyncAckPacket &ackPacket, int ackC
         ackPacket.SetSecFlag(option.securityFlag);
         uint64_t dbCreateTime = 0;
         errCode =
-            (static_cast<SyncGenericInterface *>(storageInterface_))->GetDatabaseCreateTimeStamp(dbCreateTime);
+            (static_cast<SyncGenericInterface *>(storageInterface_))->GetDatabaseCreateTimestamp(dbCreateTime);
         if (errCode != E_OK) {
-            LOGE("[AbilitySync][SyncStart] GetDatabaseCreateTimeStamp failed, err %d", errCode);
+            LOGE("[AbilitySync][SyncStart] GetDatabaseCreateTimestamp failed, err %d", errCode);
             ackCode = errCode;
         }
         DbAbility dbAbility;

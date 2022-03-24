@@ -120,7 +120,7 @@ private:
     int DeleteSyncEntries(const std::vector<Key> &keys);
     int DeleteLocalEntries(const std::vector<Key> &keys);
 
-    int SaveEntry(const Entry &entry, bool isDelete, TimeStamp timeStamp = 0);
+    int SaveEntry(const Entry &entry, bool isDelete, Timestamp timestamp = 0);
 
     int CheckDataStatus(const Key &key, const Value &value, bool isDelete) const;
 
@@ -211,7 +211,7 @@ private:
 
     int conflictType_;
     uint32_t transactionEntrySize_; // used for transaction
-    TimeStamp currentMaxTimeStamp_; // used for transaction
+    Timestamp currentMaxTimestamp_; // used for transaction
     SingleVerNaturalStoreCommitNotifyData *committedData_; // used for transaction
     SingleVerNaturalStoreCommitNotifyData *localCommittedData_;
     std::atomic<bool> transactionExeFlag_;

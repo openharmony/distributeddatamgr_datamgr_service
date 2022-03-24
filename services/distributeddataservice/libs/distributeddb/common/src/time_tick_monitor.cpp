@@ -128,7 +128,7 @@ int TimeTickMonitor::TimeTick(TimerId timerId)
     return E_OK;
 }
 
-TimeStamp TimeTickMonitor::GetSysCurrentTime()
+Timestamp TimeTickMonitor::GetSysCurrentTime()
 {
     uint64_t curTime = 0;
     int errCode = OS::GetCurrentSysTimeInMicrosecond(curTime);
@@ -139,7 +139,7 @@ TimeStamp TimeTickMonitor::GetSysCurrentTime()
     return curTime;
 }
 
-TimeStamp TimeTickMonitor::GetMonotonicTime()
+Timestamp TimeTickMonitor::GetMonotonicTime()
 {
     uint64_t time;
     int errCode = OS::GetMonotonicRelativeTimeInMicrosecond(time);

@@ -16,7 +16,7 @@
 #include "sqlite_single_ver_continue_token.h"
 
 namespace DistributedDB {
-SQLiteSingleVerContinueToken::SQLiteSingleVerContinueToken(TimeStamp begin, TimeStamp end)
+SQLiteSingleVerContinueToken::SQLiteSingleVerContinueToken(Timestamp begin, Timestamp end)
     : timeRanges_(MulDevTimeRanges{{"", {begin, end}}})
 {}
 
@@ -39,27 +39,27 @@ bool SQLiteSingleVerContinueToken::CheckValid() const
     return ((magicBegin_ == MAGIC_BEGIN) && (magicEnd_ == MAGIC_END));
 }
 
-TimeStamp SQLiteSingleVerContinueToken::GetQueryBeginTime() const
+Timestamp SQLiteSingleVerContinueToken::GetQueryBeginTime() const
 {
-    return GetBeginTimeStamp(timeRanges_);
+    return GetBeginTimestamp(timeRanges_);
 }
 
-TimeStamp SQLiteSingleVerContinueToken::GetQueryEndTime() const
+Timestamp SQLiteSingleVerContinueToken::GetQueryEndTime() const
 {
-    return GetEndTimeStamp(timeRanges_);
+    return GetEndTimestamp(timeRanges_);
 }
 
-TimeStamp SQLiteSingleVerContinueToken::GetDeletedBeginTime() const
+Timestamp SQLiteSingleVerContinueToken::GetDeletedBeginTime() const
 {
-    return GetBeginTimeStamp(deleteTimeRanges_);
+    return GetBeginTimestamp(deleteTimeRanges_);
 }
 
-TimeStamp SQLiteSingleVerContinueToken::GetDeletedEndTime() const
+Timestamp SQLiteSingleVerContinueToken::GetDeletedEndTime() const
 {
-    return GetEndTimeStamp(deleteTimeRanges_);
+    return GetEndTimestamp(deleteTimeRanges_);
 }
 
-void SQLiteSingleVerContinueToken::SetNextBeginTime(const DeviceID &deviceID, TimeStamp nextBeginTime)
+void SQLiteSingleVerContinueToken::SetNextBeginTime(const DeviceID &deviceID, Timestamp nextBeginTime)
 {
     RemovePrevDevAndSetBeginTime(deviceID, nextBeginTime, timeRanges_);
 }
@@ -69,7 +69,7 @@ const MulDevTimeRanges& SQLiteSingleVerContinueToken::GetTimeRanges()
     return timeRanges_;
 }
 
-void SQLiteSingleVerContinueToken::SetDeletedNextBeginTime(const DeviceID &deviceID, TimeStamp nextBeginTime)
+void SQLiteSingleVerContinueToken::SetDeletedNextBeginTime(const DeviceID &deviceID, Timestamp nextBeginTime)
 {
     RemovePrevDevAndSetBeginTime(deviceID, nextBeginTime, deleteTimeRanges_);
 }
@@ -112,7 +112,7 @@ QueryObject SQLiteSingleVerContinueToken::GetQuery() const
     return QueryObject{};
 }
 
-void SQLiteSingleVerContinueToken::RemovePrevDevAndSetBeginTime(const DeviceID &deviceID, TimeStamp nextBeginTime,
+void SQLiteSingleVerContinueToken::RemovePrevDevAndSetBeginTime(const DeviceID &deviceID, Timestamp nextBeginTime,
     MulDevTimeRanges &timeRanges)
 {
     auto iter = timeRanges.find(deviceID);
@@ -123,7 +123,7 @@ void SQLiteSingleVerContinueToken::RemovePrevDevAndSetBeginTime(const DeviceID &
     iter->second.first = nextBeginTime;
 }
 
-TimeStamp SQLiteSingleVerContinueToken::GetBeginTimeStamp(const MulDevTimeRanges &timeRanges) const
+Timestamp SQLiteSingleVerContinueToken::GetBeginTimestamp(const MulDevTimeRanges &timeRanges) const
 {
     if (timeRanges.empty()) {
         return 0;
@@ -131,10 +131,10 @@ TimeStamp SQLiteSingleVerContinueToken::GetBeginTimeStamp(const MulDevTimeRanges
     return timeRanges.begin()->second.first;
 }
 
-TimeStamp SQLiteSingleVerContinueToken::GetEndTimeStamp(const MulDevTimeRanges &timeRanges) const
+Timestamp SQLiteSingleVerContinueToken::GetEndTimestamp(const MulDevTimeRanges &timeRanges) const
 {
     if (timeRanges.empty()) {
-        return static_cast<TimeStamp>(INT64_MAX);
+        return static_cast<Timestamp>(INT64_MAX);
     }
     return timeRanges.begin()->second.second;
 }

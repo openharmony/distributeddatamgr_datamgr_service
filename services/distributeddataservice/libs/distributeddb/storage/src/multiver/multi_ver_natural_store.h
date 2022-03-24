@@ -66,7 +66,7 @@ public:
     std::vector<uint8_t> GetIdentifier() const override;
 
     // Get the max timestamp of all entries in database.
-    void GetMaxTimeStamp(TimeStamp &stamp) const override;
+    void GetMaxTimestamp(Timestamp &stamp) const override;
 
     // Get meta data associated with the given key.
     int GetMetaData(const Key &key, Value &value) const override;
@@ -120,10 +120,10 @@ public:
 
     int GetDiffEntries(const CommitID &begin, const CommitID &end, MultiVerDiffData &data) const;
 
-    uint64_t GetCurrentTimeStamp();
+    uint64_t GetCurrentTimestamp();
 
     // Set the max timestamp
-    void SetMaxTimeStamp(TimeStamp stamp);
+    void SetMaxTimestamp(Timestamp stamp);
 
     Version GetMaxCommitVersion() const;
 

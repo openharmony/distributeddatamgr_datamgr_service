@@ -49,7 +49,7 @@ public:
     virtual std::vector<uint8_t> GetDualTupleIdentifier() const = 0;
 
     // Get the max timestamp of all entries in database.
-    virtual void GetMaxTimeStamp(TimeStamp &stamp) const = 0;
+    virtual void GetMaxTimestamp(Timestamp &stamp) const = 0;
 
     // Get meta data associated with the given key.
     virtual int GetMetaData(const Key &key, Value &value) const = 0;

@@ -248,7 +248,7 @@ void SingleVerNaturalStoreCommitNotifyData::PutIntoConflictData(const DataItemIn
     // If the new item is deleted, just using the key of the old data item.
     // If the items are all deleted, this function should not be executed.
     conflictData.key = isDeleted ? orgItemInfo.dataItem.key : newItemInfo.dataItem.key;
-    if (newItemInfo.dataItem.writeTimeStamp <= orgItemInfo.dataItem.writeTimeStamp) {
+    if (newItemInfo.dataItem.writeTimestamp <= orgItemInfo.dataItem.writeTimestamp) {
         std::swap(conflictData.newData, conflictData.oldData);
     }
 

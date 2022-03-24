@@ -43,7 +43,7 @@ public:
     std::vector<uint8_t> GetIdentifier() const override;
 
     // Get the max timestamp of all entries in database.
-    void GetMaxTimeStamp(TimeStamp &stamp) const override;
+    void GetMaxTimestamp(Timestamp &stamp) const override;
 
     // Get meta data associated with the given key.
     int GetMetaData(const Key &key, Value &value) const override;
@@ -82,7 +82,7 @@ public:
     void NotifyRemotePushFinished(const std::string &deviceId) const override;
 
     // Get the timestamp when database created or imported
-    int GetDatabaseCreateTimeStamp(TimeStamp &outTime) const override;
+    int GetDatabaseCreateTimestamp(Timestamp &outTime) const override;
 
     // Get batch meta data associated with the given key.
     int GetBatchMetaData(const std::vector<Key> &keys, std::vector<Entry> &entries) const override;
@@ -119,7 +119,7 @@ private:
     SQLiteSingleVerRelationalStorageExecutor *GetHandle(bool isWrite, int &errCode,
         OperatePerm perm = OperatePerm::NORMAL_PERM) const;
     void ReleaseHandle(SQLiteSingleVerRelationalStorageExecutor *&handle) const;
-    int SetMaxTimeStamp(TimeStamp timestamp);
+    int SetMaxTimestamp(Timestamp timestamp);
 
     // get
     int GetSyncDataForQuerySync(std::vector<DataItem> &dataItems, SQLiteSingleVerRelationalContinueToken *&token,
@@ -131,9 +131,9 @@ private:
 
     // data
     SQLiteSingleRelationalStorageEngine *storageEngine_ = nullptr;
-    TimeStamp currentMaxTimeStamp_ = 0;
+    Timestamp currentMaxTimestamp_ = 0;
     KvDBProperties properties_;
-    mutable std::mutex maxTimeStampMutex_;
+    mutable std::mutex maxTimestampMutex_;
 
     std::function<void()> onSchemaChanged_;
     mutable std::mutex onSchemaChangedMutex_;

@@ -88,12 +88,12 @@ int SyncerProxy::StopSync()
     return syncer_->StopSync();
 }
 
-uint64_t SyncerProxy::GetTimeStamp()
+uint64_t SyncerProxy::GetTimestamp()
 {
     if (syncer_ == nullptr) {
-        return SyncerFactory::GetSyncer(ISyncInterface::SYNC_SVD)->GetTimeStamp();
+        return SyncerFactory::GetSyncer(ISyncInterface::SYNC_SVD)->GetTimestamp();
     }
-    return syncer_->GetTimeStamp();
+    return syncer_->GetTimestamp();
 }
 
 void SyncerProxy::EnableAutoSync(bool enable)

@@ -710,7 +710,7 @@ int MultiVerNaturalStoreCommitStorage::TransferValueToCommit(const Value &value,
         return -E_UNEXPECTED_DATA;
     }
 
-    TimeStamp timestamp = 0;
+    Timestamp timestamp = 0;
     uint64_t localFlag = 1;
     Version versionInfo;
 

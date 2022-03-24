@@ -87,7 +87,7 @@ private:
 
 const uint64_t MULTIPLES_BETWEEN_SECONDS_AND_MICROSECONDS = 1000000;
 
-using TimeStamp = uint64_t;
+using Timestamp = uint64_t;
 using TimeOffset = int64_t;
 
 class TimeHelper {
@@ -98,10 +98,10 @@ public:
 
     constexpr static uint64_t TO_100_NS = 10; // 1us to 100ns
 
-    constexpr static TimeStamp INVALID_TIMESTAMP = 0;
+    constexpr static Timestamp INVALID_TIMESTAMP = 0;
 
     // Get current system time
-    static TimeStamp GetSysCurrentTime()
+    static Timestamp GetSysCurrentTime()
     {
         uint64_t curTime = 0;
         int errCode = GetCurrentSysTimeInMicrosecond(curTime);
@@ -120,22 +120,22 @@ public:
             lastSystemTimeUs_ = curTime;
             currentIncCount_ = 0;
         }
-        return (curTime * TO_100_NS) + currentIncCount_; // Currently TimeStamp is uint64_t
+        return (curTime * TO_100_NS) + currentIncCount_; // Currently Timestamp is uint64_t
     }
 
     // Init the TimeHelper
-    static void Initialize(TimeStamp maxTimeStamp)
+    static void Initialize(Timestamp maxTimestamp)
     {
         std::lock_guard<std::mutex> lock(lastLocalTimeLock_);
-        if (lastSystemTimeUs_ < maxTimeStamp) {
-            lastSystemTimeUs_ = maxTimeStamp;
+        if (lastSystemTimeUs_ < maxTimestamp) {
+            lastSystemTimeUs_ = maxTimestamp;
         }
     }
 
-    static TimeStamp GetTime(TimeOffset timeOffset)
+    static Timestamp GetTime(TimeOffset timeOffset)
     {
-        TimeStamp currentSysTime = GetSysCurrentTime();
-        TimeStamp currentLocalTime = currentSysTime + timeOffset;
+        Timestamp currentSysTime = GetSysCurrentTime();
+        Timestamp currentLocalTime = currentSysTime + timeOffset;
         std::lock_guard<std::mutex> lock(lastLocalTimeLock_);
         if (currentLocalTime <= lastLocalTime_ || currentLocalTime > MAX_VALID_TIME) {
             lastLocalTime_++;
@@ -160,18 +160,18 @@ private:
     }
 
     static std::mutex systemTimeLock_;
-    static TimeStamp lastSystemTimeUs_;
-    static TimeStamp currentIncCount_;
+    static Timestamp lastSystemTimeUs_;
+    static Timestamp currentIncCount_;
     static const uint64_t MAX_INC_COUNT = 9; // last bit from 0-9
 
-    static TimeStamp lastLocalTime_;
+    static Timestamp lastLocalTime_;
     static std::mutex lastLocalTimeLock_;
 };
 
 std::mutex TimeHelper::systemTimeLock_;
-TimeStamp TimeHelper::lastSystemTimeUs_ = 0;
-TimeStamp TimeHelper::currentIncCount_ = 0;
-TimeStamp TimeHelper::lastLocalTime_ = 0;
+Timestamp TimeHelper::lastSystemTimeUs_ = 0;
+Timestamp TimeHelper::currentIncCount_ = 0;
+Timestamp TimeHelper::lastLocalTime_ = 0;
 std::mutex TimeHelper::lastLocalTimeLock_;
 
 struct TransactFunc {
@@ -298,7 +298,7 @@ int GetColumnTestValue(sqlite3_stmt *stmt, int index, std::string &value)
     return E_OK;
 }
 
-int GetCurrentMaxTimeStamp(sqlite3 *db, TimeStamp &maxTimestamp)
+int GetCurrentMaxTimestamp(sqlite3 *db, Timestamp &maxTimestamp)
 {
     if (db == nullptr) {
         return -E_ERROR;
@@ -328,7 +328,7 @@ int GetCurrentMaxTimeStamp(sqlite3 *db, TimeStamp &maxTimestamp)
             ResetStatement(getTimeStmt);
             continue;
         }
-        auto tableMaxTimestamp = static_cast<TimeStamp>(sqlite3_column_int64(getTimeStmt, 0));
+        auto tableMaxTimestamp = static_cast<Timestamp>(sqlite3_column_int64(getTimeStmt, 0));
         maxTimestamp = (maxTimestamp > tableMaxTimestamp) ? maxTimestamp : tableMaxTimestamp;
         ResetStatement(getTimeStmt);
     }
@@ -343,8 +343,8 @@ SQLITE_API int sqlite3_open_relational(const char *filename, sqlite3 **ppDb)
     if (err != SQLITE_OK) {
         return err;
     }
-    TimeStamp currentMaxTimestamp = 0;
-    (void)GetCurrentMaxTimeStamp(*ppDb, currentMaxTimestamp);
+    Timestamp currentMaxTimestamp = 0;
+    (void)GetCurrentMaxTimestamp(*ppDb, currentMaxTimestamp);
     TimeHelper::Initialize(currentMaxTimestamp);
     RegisterCalcHash(*ppDb);
     RegisterGetSysTime(*ppDb);
@@ -357,8 +357,8 @@ SQLITE_API int sqlite3_open16_relational(const void *filename, sqlite3 **ppDb)
     if (err != SQLITE_OK) {
         return err;
     }
-    TimeStamp currentMaxTimestamp = 0;
-    (void)GetCurrentMaxTimeStamp(*ppDb, currentMaxTimestamp);
+    Timestamp currentMaxTimestamp = 0;
+    (void)GetCurrentMaxTimestamp(*ppDb, currentMaxTimestamp);
     TimeHelper::Initialize(currentMaxTimestamp);
     RegisterCalcHash(*ppDb);
     RegisterGetSysTime(*ppDb);
@@ -371,8 +371,8 @@ SQLITE_API int sqlite3_open_v2_relational(const char *filename, sqlite3 **ppDb, 
     if (err != SQLITE_OK) {
         return err;
     }
-    TimeStamp currentMaxTimestamp = 0;
-    (void)GetCurrentMaxTimeStamp(*ppDb, currentMaxTimestamp);
+    Timestamp currentMaxTimestamp = 0;
+    (void)GetCurrentMaxTimestamp(*ppDb, currentMaxTimestamp);
     TimeHelper::Initialize(currentMaxTimestamp);
     RegisterCalcHash(*ppDb);
     RegisterGetSysTime(*ppDb);

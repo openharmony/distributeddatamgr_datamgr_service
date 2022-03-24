@@ -106,7 +106,7 @@ void SingleVerDataSyncUtils::TransDbDataItemToSendDataItem(const std::string &lo
         }
         outData[i]->SetOrigDevice(outData[i]->GetOrigDevice().empty() ? localHashName : outData[i]->GetOrigDevice());
         if (i == 0 || i == (outData.size() - 1)) {
-            LOGD("[DataSync][TransToSendItem] printData packet=%zu,timeStamp=%" PRIu64 ",flag=%" PRIu64, i,
+            LOGD("[DataSync][TransToSendItem] printData packet=%zu,timestamp=%" PRIu64 ",flag=%" PRIu64, i,
                 outData[i]->GetTimestamp(), outData[i]->GetFlag());
         }
     }
@@ -125,17 +125,17 @@ void SingleVerDataSyncUtils::TransSendDataItemToLocal(const SingleVerSyncTaskCon
     const std::string &localHashName, const std::vector<SendDataItem> &data)
 {
     TimeOffset offset = context->GetTimeOffset();
-    TimeStamp currentLocalTime = context->GetCurrentLocalTime();
+    Timestamp currentLocalTime = context->GetCurrentLocalTime();
     for (auto &item : data) {
         if (item == nullptr) {
             continue;
         }
         item->SetOrigDevice(TransferForeignOrigDevName(item->GetOrigDevice(), localHashName));
-        TimeStamp tempTimestamp = item->GetTimestamp();
-        TimeStamp tempWriteTimestamp = item->GetWriteTimestamp();
-        item->SetTimestamp(tempTimestamp - static_cast<TimeStamp>(offset));
+        Timestamp tempTimestamp = item->GetTimestamp();
+        Timestamp tempWriteTimestamp = item->GetWriteTimestamp();
+        item->SetTimestamp(tempTimestamp - static_cast<Timestamp>(offset));
         if (tempWriteTimestamp != 0) {
-            item->SetWriteTimestamp(tempWriteTimestamp - static_cast<TimeStamp>(offset));
+            item->SetWriteTimestamp(tempWriteTimestamp - static_cast<Timestamp>(offset));
         }
 
         if (item->GetTimestamp() > currentLocalTime) {
@@ -327,14 +327,14 @@ bool SingleVerDataSyncUtils::IsGetDataSuccessfully(int errCode)
     return (errCode == E_OK || errCode == -E_UNFINISHED);
 }
 
-TimeStamp SingleVerDataSyncUtils::GetMaxSendDataTime(const std::vector<SendDataItem> &inData)
+Timestamp SingleVerDataSyncUtils::GetMaxSendDataTime(const std::vector<SendDataItem> &inData)
 {
-    TimeStamp stamp = 0;
+    Timestamp stamp = 0;
     for (size_t i = 0; i < inData.size(); i++) {
         if (inData[i] == nullptr) {
             continue;
         }
-        TimeStamp tempStamp = inData[i]->GetTimestamp();
+        Timestamp tempStamp = inData[i]->GetTimestamp();
         if (stamp < tempStamp) {
             stamp = tempStamp;
         }
@@ -345,22 +345,22 @@ TimeStamp SingleVerDataSyncUtils::GetMaxSendDataTime(const std::vector<SendDataI
 SyncTimeRange SingleVerDataSyncUtils::GetFullSyncDataTimeRange(const std::vector<SendDataItem> &inData,
     WaterMark localMark, UpdateWaterMark &isUpdate)
 {
-    TimeStamp maxTimeStamp = localMark;
-    TimeStamp minTimeStamp = localMark;
+    Timestamp maxTimestamp = localMark;
+    Timestamp minTimestamp = localMark;
     for (size_t i = 0; i < inData.size(); i++) {
         if (inData[i] == nullptr) {
             continue;
         }
-        TimeStamp tempStamp = inData[i]->GetTimestamp();
-        if (maxTimeStamp < tempStamp) {
-            maxTimeStamp = tempStamp;
+        Timestamp tempStamp = inData[i]->GetTimestamp();
+        if (maxTimestamp < tempStamp) {
+            maxTimestamp = tempStamp;
         }
-        if (minTimeStamp > tempStamp) {
-            minTimeStamp = tempStamp;
+        if (minTimestamp > tempStamp) {
+            minTimestamp = tempStamp;
         }
         isUpdate.normalUpdateMark = true;
     }
-    return {minTimeStamp, 0, maxTimeStamp, 0};
+    return {minTimestamp, 0, maxTimestamp, 0};
 }
 
 SyncTimeRange SingleVerDataSyncUtils::GetQuerySyncDataTimeRange(const std::vector<SendDataItem> &inData,
@@ -371,7 +371,7 @@ SyncTimeRange SingleVerDataSyncUtils::GetQuerySyncDataTimeRange(const std::vecto
         if (inData[i] == nullptr) {
             continue;
         }
-        TimeStamp tempStamp = inData[i]->GetTimestamp();
+        Timestamp tempStamp = inData[i]->GetTimestamp();
         if ((inData[i]->GetFlag() & DataItem::DELETE_FLAG) == 0) { // query data
             if (dataTimeRange.endTime < tempStamp) {
                 dataTimeRange.endTime = tempStamp;

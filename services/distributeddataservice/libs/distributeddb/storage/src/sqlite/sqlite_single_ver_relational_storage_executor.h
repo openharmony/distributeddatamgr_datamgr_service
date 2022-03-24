@@ -54,7 +54,7 @@ public:
 
     // For Put sync data
     int SaveSyncItems(const QueryObject &object, std::vector<DataItem> &dataItems,
-        const std::string &deviceName, const TableInfo &table, TimeStamp &timeStamp);
+        const std::string &deviceName, const TableInfo &table, Timestamp &timestamp);
 
     int AnalysisRelationalSchema(const std::string &tableName, TableInfo &tableInfo);
 
@@ -81,7 +81,7 @@ private:
         int ResetStatements(bool isNeedFinalize);
     };
 
-    int PrepareForSyncDataByTime(TimeStamp begin, TimeStamp end,
+    int PrepareForSyncDataByTime(Timestamp begin, Timestamp end,
         sqlite3_stmt *&statement, bool getDeletedData) const;
 
     int GetDataItemForSync(sqlite3_stmt *statement, DataItem &dataItem, bool isGettingDeletedData) const;
@@ -91,17 +91,17 @@ private:
     int CheckDataConflictDefeated(const DataItem &item, bool &isDefeated);
 
     int SaveSyncDataItem(const std::vector<FieldInfo> &fieldInfos, const std::string &deviceName, DataItem &item,
-        TimeStamp &maxTimestamp);
+        Timestamp &maxTimestamp);
 
     int SaveSyncDataItems(const QueryObject &object, std::vector<DataItem> &dataItems,
-        const std::string &deviceName, TimeStamp &timeStamp);
+        const std::string &deviceName, Timestamp &timestamp);
     int SaveSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&saveDataStmt, sqlite3_stmt *&rmDataStmt,
         const std::vector<FieldInfo> &fieldInfos, int64_t &rowid);
 
     int DeleteSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&rmDataStmt);
 
     int SaveSyncLog(sqlite3_stmt *statement, sqlite3_stmt *queryStmt, const DataItem &dataItem,
-        TimeStamp &maxTimestamp, int64_t rowid);
+        Timestamp &maxTimestamp, int64_t rowid);
     int PrepareForSavingData(const QueryObject &object, sqlite3_stmt *&statement) const;
     int PrepareForSavingLog(const QueryObject &object, const std::string &deviceName,
         sqlite3_stmt *&statement,  sqlite3_stmt *&queryStmt) const;
@@ -112,8 +112,8 @@ private:
     int ProcessMissQueryData(const DataItem &item, sqlite3_stmt *&rmDataStmt, sqlite3_stmt *&rmLogStmt);
     int GetMissQueryData(sqlite3_stmt *fullStmt, DataItem &item);
     int GetQueryDataAndStepNext(bool isFirstTime, bool isGettingDeletedData, sqlite3_stmt *queryStmt, DataItem &item,
-        TimeStamp &queryTime);
-    int GetMissQueryDataAndStepNext(sqlite3_stmt *fullStmt, DataItem &item, TimeStamp &missQueryTime);
+        Timestamp &queryTime);
+    int GetMissQueryDataAndStepNext(sqlite3_stmt *fullStmt, DataItem &item, Timestamp &missQueryTime);
 
     void SetTableInfo(const TableInfo &tableInfo);  // When put or get sync data, must call the func first.
     std::string baseTblName_;

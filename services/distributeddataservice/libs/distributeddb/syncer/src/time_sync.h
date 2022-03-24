@@ -27,21 +27,21 @@ public:
     TimeSyncPacket();
     ~TimeSyncPacket();
 
-    void SetSourceTimeBegin(TimeStamp sourceTimeBegin);
+    void SetSourceTimeBegin(Timestamp sourceTimeBegin);
 
-    TimeStamp GetSourceTimeBegin() const;
+    Timestamp GetSourceTimeBegin() const;
 
-    void SetSourceTimeEnd(TimeStamp sourceTimeEnd);
+    void SetSourceTimeEnd(Timestamp sourceTimeEnd);
 
-    TimeStamp GetSourceTimeEnd() const;
+    Timestamp GetSourceTimeEnd() const;
 
-    void SetTargetTimeBegin(TimeStamp targetTimeBegin);
+    void SetTargetTimeBegin(Timestamp targetTimeBegin);
 
-    TimeStamp GetTargetTimeBegin() const;
+    Timestamp GetTargetTimeBegin() const;
 
-    void SetTargetTimeEnd(TimeStamp targetTimeEnd);
+    void SetTargetTimeEnd(Timestamp targetTimeEnd);
 
-    TimeStamp GetTargetTimeEnd() const;
+    Timestamp GetTargetTimeEnd() const;
 
     void SetVersion(uint32_t version);
 
@@ -49,10 +49,10 @@ public:
 
     static uint32_t CalculateLen();
 private:
-    TimeStamp sourceTimeBegin_;  // start point time on peer
-    TimeStamp sourceTimeEnd_;    // end point time on local
-    TimeStamp targetTimeBegin_;  // start point time on peer
-    TimeStamp targetTimeEnd_;    // end point time on peer
+    Timestamp sourceTimeBegin_;  // start point time on peer
+    Timestamp sourceTimeEnd_;    // end point time on local
+    Timestamp targetTimeBegin_;  // start point time on peer
+    Timestamp targetTimeEnd_;    // end point time on peer
     uint32_t version_;
 };
 

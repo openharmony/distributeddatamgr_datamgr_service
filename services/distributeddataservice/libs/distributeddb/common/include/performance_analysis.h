@@ -53,13 +53,13 @@ enum MV_TEST_RECORDS : uint32_t {
 };
 
 struct TimePair {
-    TimeStamp startTime = 0;
-    TimeStamp endTime = 0;
+    Timestamp startTime = 0;
+    Timestamp endTime = 0;
 };
 
 struct StatisticsInfo {
-    TimeStamp max = 0;
-    TimeStamp min = 0;
+    Timestamp max = 0;
+    Timestamp min = 0;
     float average = 0.0;
 };
 

@@ -165,10 +165,10 @@ int SQLiteSingleVerStorageEngine::MigrateSyncDataByVersion(SQLiteSingleVerStorag
 
     CommitNotifyForMigrateCache(syncData);
 
-    TimeStamp timestamp = 0;
-    errCode = handle->GetMaxTimeStampDuringMigrating(timestamp);
+    Timestamp timestamp = 0;
+    errCode = handle->GetMaxTimestampDuringMigrating(timestamp);
     if (errCode == E_OK) {
-        SetMaxTimeStamp(timestamp);
+        SetMaxTimestamp(timestamp);
     }
 
     errCode = ReleaseHandleTransiently(handle, 2ull); // temporary release handle 2ms
@@ -523,7 +523,7 @@ void SQLiteSingleVerStorageEngine::EndMigrate(SQLiteSingleVerStorageExecutor *&h
     }
     // Notify max timestamp offset for SyncEngine.
     // When time change offset equals 0, SyncEngine can adjust local time offset according to max timestamp.
-    RuntimeContext::GetInstance()->NotifyTimeStampChanged(0);
+    RuntimeContext::GetInstance()->NotifyTimestampChanged(0);
     if (isNeedTriggerSync) {
         commitNotifyFunc_(SQLITE_GENERAL_FINISH_MIGRATE_EVENT, nullptr);
     }
@@ -1064,7 +1064,7 @@ void SQLiteSingleVerStorageEngine::InitConflictNotifiedFlag(SingleVerNaturalStor
     committedData->SetConflictedNotifiedFlag(static_cast<int>(conflictFlag));
 }
 
-void SQLiteSingleVerStorageEngine::SetMaxTimeStamp(TimeStamp maxTimeStamp) const
+void SQLiteSingleVerStorageEngine::SetMaxTimestamp(Timestamp maxTimestamp) const
 {
     auto kvdbManager = KvDBManager::GetInstance();
     if (kvdbManager == nullptr) {
@@ -1073,12 +1073,12 @@ void SQLiteSingleVerStorageEngine::SetMaxTimeStamp(TimeStamp maxTimeStamp) const
     auto identifier = GetIdentifier();
     auto kvdb = kvdbManager->FindKvDB(identifier);
     if (kvdb == nullptr) {
-        LOGE("[SQLiteSingleVerStorageEngine::SetMaxTimeStamp] kvdb is null.");
+        LOGE("[SQLiteSingleVerStorageEngine::SetMaxTimestamp] kvdb is null.");
         return;
     }
 
     auto kvStore = static_cast<SQLiteSingleVerNaturalStore *>(kvdb);
-    kvStore->SetMaxTimeStamp(maxTimeStamp);
+    kvStore->SetMaxTimestamp(maxTimestamp);
     RefObject::DecObjRef(kvdb);
     return;
 }

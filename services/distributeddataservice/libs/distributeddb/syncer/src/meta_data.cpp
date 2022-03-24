@@ -181,7 +181,7 @@ int Metadata::EraseDeviceWaterMark(const std::string &deviceId, bool isNeedHash,
     return E_OK;
 }
 
-void Metadata::SetLastLocalTime(TimeStamp lastLocalTime)
+void Metadata::SetLastLocalTime(Timestamp lastLocalTime)
 {
     std::lock_guard<std::mutex> lock(lastLocalTimeLock_);
     if (lastLocalTime > lastLocalTime_) {
@@ -189,7 +189,7 @@ void Metadata::SetLastLocalTime(TimeStamp lastLocalTime)
     }
 }
 
-TimeStamp Metadata::GetLastLocalTime() const
+Timestamp Metadata::GetLastLocalTime() const
 {
     std::lock_guard<std::mutex> lock(lastLocalTimeLock_);
     return lastLocalTime_;
@@ -427,21 +427,21 @@ int Metadata::SetSendQueryWaterMark(const std::string &queryIdentify,
     return querySyncWaterMarkHelper_.SetSendQueryWaterMark(queryIdentify, deviceId, waterMark);
 }
 
-int Metadata::GetLastQueryTime(const std::string &queryIdentify, const std::string &deviceId, TimeStamp &timeStamp)
+int Metadata::GetLastQueryTime(const std::string &queryIdentify, const std::string &deviceId, Timestamp &timestamp)
 {
     QueryWaterMark queryWaterMark;
     int errCode = querySyncWaterMarkHelper_.GetQueryWaterMark(queryIdentify, deviceId, queryWaterMark);
     if (errCode != E_OK) {
         return errCode;
     }
-    timeStamp = queryWaterMark.lastQueryTime;
+    timestamp = queryWaterMark.lastQueryTime;
     return E_OK;
 }
 
 int Metadata::SetLastQueryTime(const std::string &queryIdentify, const std::string &deviceId,
-    const TimeStamp &timeStamp)
+    const Timestamp &timestamp)
 {
-    return querySyncWaterMarkHelper_.SetLastQueryTime(queryIdentify, deviceId, timeStamp);
+    return querySyncWaterMarkHelper_.SetLastQueryTime(queryIdentify, deviceId, timestamp);
 }
 
 int Metadata::GetSendDeleteSyncWaterMark(const DeviceID &deviceId, WaterMark &waterMark, bool isAutoLift)

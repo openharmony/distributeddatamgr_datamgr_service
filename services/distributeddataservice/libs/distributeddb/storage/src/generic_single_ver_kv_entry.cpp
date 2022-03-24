@@ -40,24 +40,24 @@ void GenericSingleVerKvEntry::SetOrigDevice(const std::string &dev)
     dataItem_.origDev = dev;
 }
 
-TimeStamp GenericSingleVerKvEntry::GetTimestamp() const
+Timestamp GenericSingleVerKvEntry::GetTimestamp() const
 {
-    return dataItem_.timeStamp;
+    return dataItem_.timestamp;
 }
 
-void GenericSingleVerKvEntry::SetTimestamp(TimeStamp time)
+void GenericSingleVerKvEntry::SetTimestamp(Timestamp time)
 {
-    dataItem_.timeStamp = time;
+    dataItem_.timestamp = time;
 }
 
-TimeStamp GenericSingleVerKvEntry::GetWriteTimestamp() const
+Timestamp GenericSingleVerKvEntry::GetWriteTimestamp() const
 {
-    return dataItem_.writeTimeStamp;
+    return dataItem_.writeTimestamp;
 }
 
-void GenericSingleVerKvEntry::SetWriteTimestamp(TimeStamp time)
+void GenericSingleVerKvEntry::SetWriteTimestamp(Timestamp time)
 {
-    dataItem_.writeTimeStamp = time;
+    dataItem_.writeTimestamp = time;
 }
 
 void GenericSingleVerKvEntry::SetEntryData(DataItem &&dataItem)
@@ -268,7 +268,7 @@ int GenericSingleVerKvEntry::SerializeDataByFirstVersion(Parcel &parcel) const
     if (errCode != E_OK) {
         return errCode;
     }
-    errCode = parcel.WriteUInt64(dataItem_.timeStamp);
+    errCode = parcel.WriteUInt64(dataItem_.timestamp);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -282,11 +282,11 @@ int GenericSingleVerKvEntry::SerializeDataByFirstVersion(Parcel &parcel) const
 
 int GenericSingleVerKvEntry::SerializeDataByLaterVersion(Parcel &parcel, uint32_t targetVersion) const
 {
-    TimeStamp writeTimeStamp = dataItem_.writeTimeStamp;
-    if (writeTimeStamp == 0) {
-        writeTimeStamp = dataItem_.timeStamp;
+    Timestamp writeTimestamp = dataItem_.writeTimestamp;
+    if (writeTimestamp == 0) {
+        writeTimestamp = dataItem_.timestamp;
     }
-    int errCode = parcel.WriteUInt64(writeTimeStamp);
+    int errCode = parcel.WriteUInt64(writeTimestamp);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -337,15 +337,15 @@ void GenericSingleVerKvEntry::DeSerializeByFirstVersion(uint64_t &len, Parcel &p
 {
     len += parcel.ReadVectorChar(dataItem_.key);
     len += parcel.ReadVectorChar(dataItem_.value);
-    len += parcel.ReadUInt64(dataItem_.timeStamp);
+    len += parcel.ReadUInt64(dataItem_.timestamp);
     len += parcel.ReadUInt64(dataItem_.flag);
     len += parcel.ReadString(dataItem_.origDev);
-    dataItem_.writeTimeStamp = dataItem_.timeStamp;
+    dataItem_.writeTimestamp = dataItem_.timestamp;
 }
 
 void GenericSingleVerKvEntry::DeSerializeByLaterVersion(uint64_t &len, Parcel &parcel, uint32_t targetVersion)
 {
-    len += parcel.ReadUInt64(dataItem_.writeTimeStamp);
+    len += parcel.ReadUInt64(dataItem_.writeTimestamp);
     if (targetVersion >= SOFTWARE_VERSION_RELEASE_6_0) {
         len += parcel.ReadVector(dataItem_.hashKey);
     }

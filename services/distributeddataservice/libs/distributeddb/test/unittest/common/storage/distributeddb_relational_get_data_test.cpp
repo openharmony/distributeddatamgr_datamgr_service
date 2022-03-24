@@ -84,7 +84,7 @@ int AddOrUpdateRecord(int64_t key, int64_t value)
     return errCode;
 }
 
-int GetLogData(int key, uint64_t &flag, TimeStamp &timestamp, const DeviceID &device = "")
+int GetLogData(int key, uint64_t &flag, Timestamp &timestamp, const DeviceID &device = "")
 {
     string tableName = g_tableName;
     if (!device.empty()) {
@@ -111,8 +111,8 @@ int GetLogData(int key, uint64_t &flag, TimeStamp &timestamp, const DeviceID &de
     }
     errCode = SQLiteUtils::StepWithRetry(statement, false);
     if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
-        timestamp = static_cast<TimeStamp>(sqlite3_column_int64(statement, 0));
-        flag = static_cast<TimeStamp>(sqlite3_column_int64(statement, 1));
+        timestamp = static_cast<Timestamp>(sqlite3_column_int64(statement, 0));
+        flag = static_cast<Timestamp>(sqlite3_column_int64(statement, 1));
         errCode = E_OK;
     } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
         errCode = -E_NOT_FOUND;
@@ -317,7 +317,7 @@ HWTEST_F(DistributedDBRelationalGetDataTest, LogTbl1, TestSize.Level1)
      * @tc.expected: Record exists.
      */
     uint64_t flag = 0;
-    TimeStamp timestamp1 = 0;
+    Timestamp timestamp1 = 0;
     EXPECT_EQ(GetLogData(insertKey, flag, timestamp1), E_OK);
     EXPECT_EQ(flag, DataItem::LOCAL_FLAG);
     EXPECT_NE(timestamp1, 0ULL);

@@ -150,7 +150,7 @@ public:
     void SafeExit() override;
 
     // Get current local time from TimeHelper
-    TimeStamp GetCurrentLocalTime() const override;
+    Timestamp GetCurrentLocalTime() const override;
 
     // Set the remount software version num
     void SetRemoteSoftwareVersion(uint32_t version) override;

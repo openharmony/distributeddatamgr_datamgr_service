@@ -167,7 +167,7 @@ int SQLiteMultiVerDataStorage::StartWrite(KvDataType dataType, IKvDBMultiVerTran
 // do the first step of commit record.
 // commit the transaction, and avoid other operation reading the new data.
 int SQLiteMultiVerDataStorage::CommitWritePhaseOne(IKvDBMultiVerTransaction *transaction,
-    const UpdateVerTimeStamp &multiVerTimeStamp)
+    const UpdateVerTimestamp &multiVerTimestamp)
 {
     if (transaction == nullptr) {
         LOGE("Invalid transaction!");
@@ -177,8 +177,8 @@ int SQLiteMultiVerDataStorage::CommitWritePhaseOne(IKvDBMultiVerTransaction *tra
     // Call the commit of the sqlite.
     Version versionInfo = transaction->GetVersion();
 
-    if (multiVerTimeStamp.isNeedUpdate) {
-        (void)transaction->UpdateTimestampByVersion(versionInfo, multiVerTimeStamp.timestamp);
+    if (multiVerTimestamp.isNeedUpdate) {
+        (void)transaction->UpdateTimestampByVersion(versionInfo, multiVerTimestamp.timestamp);
     }
 
     int errCode = transaction->CommitTransaction();

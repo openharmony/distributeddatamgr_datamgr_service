@@ -29,16 +29,16 @@
 
 namespace DistributedDB {
 namespace {
-void ChangeEntriesTimeStamp(std::vector<MultiVerKvEntry *> &entries, TimeOffset outOffset, TimeOffset timefixOffset)
+void ChangeEntriesTimestamp(std::vector<MultiVerKvEntry *> &entries, TimeOffset outOffset, TimeOffset timefixOffset)
 {
     for (MultiVerKvEntry *entry : entries) {
         if (entry == nullptr) {
             continue;
         }
-        TimeStamp timeStamp;
-        entry->GetTimestamp(timeStamp);
-        timeStamp = timeStamp - static_cast<TimeStamp>(outOffset + timefixOffset);
-        entry->SetTimestamp(timeStamp);
+        Timestamp timestamp;
+        entry->GetTimestamp(timestamp);
+        timestamp = timestamp - static_cast<Timestamp>(outOffset + timefixOffset);
+        entry->SetTimestamp(timestamp);
     }
 }
 }
@@ -469,16 +469,16 @@ int MultiVerSyncStateMachine::OneCommitSyncFinish()
             LOGI("MultiVerSyncStateMachine::OneCommitSyncFinish GetTimeOffset fail errCode:%d", errCode);
             return errCode;
         }
-        TimeStamp currentLocalTime = context_->GetCurrentLocalTime();
-        commit.timestamp -= static_cast<TimeStamp>(outOffset);
+        Timestamp currentLocalTime = context_->GetCurrentLocalTime();
+        commit.timestamp -= static_cast<Timestamp>(outOffset);
 
         // Due to time sync error, commit timestamp may bigger than currentLocalTime, we need to fix the timestamp
         TimeOffset timefixOffset = (commit.timestamp < currentLocalTime) ? 0 : (commit.timestamp -
-            static_cast<TimeStamp>(currentLocalTime));
+            static_cast<Timestamp>(currentLocalTime));
         LOGD("MultiVerSyncStateMachine::OneCommitSyncFinish src=%s, timefixOffset = %" PRId64,
             STR_MASK(context_->GetDeviceId()), timefixOffset);
-        commit.timestamp -= static_cast<TimeStamp>(timefixOffset);
-        ChangeEntriesTimeStamp(entries, outOffset, timefixOffset);
+        commit.timestamp -= static_cast<Timestamp>(timefixOffset);
+        ChangeEntriesTimestamp(entries, outOffset, timefixOffset);
         PerformanceAnalysis *performance = PerformanceAnalysis::GetInstance();
         if (performance != nullptr) {
             performance->StepTimeRecordStart(MV_TEST_RECORDS::RECORD_PUT_COMMIT_DATA);

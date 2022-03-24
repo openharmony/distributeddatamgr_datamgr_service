@@ -42,8 +42,8 @@ namespace {
             storageItem.key = item.key;
             storageItem.value = item.value;
             storageItem.flag = item.flag;
-            storageItem.timeStamp = item.timeStamp;
-            storageItem.writeTimeStamp = item.writeTimeStamp;
+            storageItem.timestamp = item.timestamp;
+            storageItem.writeTimestamp = item.writeTimestamp;
             entry->SetEntryData(std::move(storageItem));
             entries.push_back(entry);
         }
@@ -112,7 +112,7 @@ int VirtualSingleVerSyncDBInterface::GetAllMetaKeys(std::vector<Key> &keys) cons
     return E_OK;
 }
 
-int VirtualSingleVerSyncDBInterface::GetSyncData(TimeStamp begin, TimeStamp end, std::vector<DataItem> &dataItems,
+int VirtualSingleVerSyncDBInterface::GetSyncData(Timestamp begin, Timestamp end, std::vector<DataItem> &dataItems,
     ContinueToken &continueStmtToken, const DataSizeSpecInfo &dataSizeInfo) const
 {
     return -E_NOT_SUPPORT;
@@ -142,27 +142,27 @@ bool VirtualSingleVerSyncDBInterface::CheckCompatible(const std::string& schema,
     return (schemaObj_.CompareAgainstSchemaString(schema) == -E_SCHEMA_EQUAL_EXACTLY);
 }
 
-int VirtualSingleVerSyncDBInterface::PutData(const Key &key, const Value &value, const TimeStamp &time, int flag)
+int VirtualSingleVerSyncDBInterface::PutData(const Key &key, const Value &value, const Timestamp &time, int flag)
 {
     VirtualDataItem item;
     item.key = key;
     item.value = value;
-    item.timeStamp = time;
-    item.writeTimeStamp = time;
+    item.timestamp = time;
+    item.writeTimestamp = time;
     item.flag = flag;
     item.isLocal = true;
     dbData_.push_back(item);
     return E_OK;
 }
 
-void VirtualSingleVerSyncDBInterface::GetMaxTimeStamp(TimeStamp& stamp) const
+void VirtualSingleVerSyncDBInterface::GetMaxTimestamp(Timestamp& stamp) const
 {
     for (auto iter = dbData_.begin(); iter != dbData_.end(); ++iter) {
-        if (stamp < iter->writeTimeStamp) {
-            stamp = iter->writeTimeStamp;
+        if (stamp < iter->writeTimestamp) {
+            stamp = iter->writeTimestamp;
         }
     }
-    LOGD("VirtualSingleVerSyncDBInterface::GetMaxTimeStamp time = %" PRIu64, stamp);
+    LOGD("VirtualSingleVerSyncDBInterface::GetMaxTimestamp time = %" PRIu64, stamp);
 }
 
 int VirtualSingleVerSyncDBInterface::RemoveDeviceData(const std::string &deviceName, bool isNeedNotify)
@@ -177,8 +177,8 @@ int VirtualSingleVerSyncDBInterface::GetSyncData(const Key &key, VirtualDataItem
     if (iter != dbData_.end()) {
         dataItem.key = iter->key;
         dataItem.value = iter->value;
-        dataItem.timeStamp = iter->timeStamp;
-        dataItem.writeTimeStamp = iter->writeTimeStamp;
+        dataItem.timestamp = iter->timestamp;
+        dataItem.writeTimestamp = iter->writeTimestamp;
         dataItem.flag = iter->flag;
         dataItem.isLocal = iter->isLocal;
         return E_OK;
@@ -186,7 +186,7 @@ int VirtualSingleVerSyncDBInterface::GetSyncData(const Key &key, VirtualDataItem
     return -E_NOT_FOUND;
 }
 
-int VirtualSingleVerSyncDBInterface::GetSyncData(TimeStamp begin, TimeStamp end,
+int VirtualSingleVerSyncDBInterface::GetSyncData(Timestamp begin, Timestamp end,
     std::vector<SingleVerKvEntry *> &entries, ContinueToken &continueStmtToken,
     const DataSizeSpecInfo &dataSizeInfo) const
 {
@@ -208,12 +208,12 @@ int VirtualSingleVerSyncDBInterface::GetSyncDataNext(std::vector<SingleVerKvEntr
     return 0;
 }
 
-int VirtualSingleVerSyncDBInterface::GetSyncData(TimeStamp begin, TimeStamp end, uint32_t blockSize,
+int VirtualSingleVerSyncDBInterface::GetSyncData(Timestamp begin, Timestamp end, uint32_t blockSize,
     std::vector<VirtualDataItem> &dataItems, ContinueToken &continueStmtToken) const
 {
     for (const auto &data : dbData_) {
         if (data.isLocal) {
-            if (data.writeTimeStamp >= begin && data.writeTimeStamp < end) {
+            if (data.writeTimestamp >= begin && data.writeTimestamp < end) {
                 dataItems.push_back(data);
             }
         }
@@ -244,23 +244,23 @@ int VirtualSingleVerSyncDBInterface::PutSyncData(std::vector<VirtualDataItem>& d
         LOGD("PutSyncData");
         auto dbDataIter = std::find_if(dbData_.begin(), dbData_.end(),
             [iter](VirtualDataItem item) { return item.key == iter->key; });
-        if ((dbDataIter != dbData_.end()) && (dbDataIter->writeTimeStamp < iter->writeTimeStamp)) {
-            // if has conflict, compare writeTimeStamp
-            LOGI("conflict data time local %" PRIu64 ", remote %" PRIu64, dbDataIter->writeTimeStamp,
-                iter->writeTimeStamp);
+        if ((dbDataIter != dbData_.end()) && (dbDataIter->writeTimestamp < iter->writeTimestamp)) {
+            // if has conflict, compare writeTimestamp
+            LOGI("conflict data time local %" PRIu64 ", remote %" PRIu64, dbDataIter->writeTimestamp,
+                iter->writeTimestamp);
             dbDataIter->key = iter->key;
             dbDataIter->value = iter->value;
-            dbDataIter->timeStamp = iter->timeStamp;
-            dbDataIter->writeTimeStamp = iter->writeTimeStamp;
+            dbDataIter->timestamp = iter->timestamp;
+            dbDataIter->writeTimestamp = iter->writeTimestamp;
             dbDataIter->flag = iter->flag;
             dbDataIter->isLocal = false;
         } else {
-            LOGI("PutSyncData, use remote data %" PRIu64, iter->timeStamp);
+            LOGI("PutSyncData, use remote data %" PRIu64, iter->timestamp);
             VirtualDataItem dataItem;
             dataItem.key = iter->key;
             dataItem.value = iter->value;
-            dataItem.timeStamp = iter->timeStamp;
-            dataItem.writeTimeStamp = iter->writeTimeStamp;
+            dataItem.timestamp = iter->timestamp;
+            dataItem.writeTimestamp = iter->writeTimestamp;
             dataItem.flag = iter->flag;
             dataItem.isLocal = false;
             dbData_.push_back(dataItem);
@@ -302,7 +302,7 @@ void VirtualSingleVerSyncDBInterface::NotifyRemotePushFinished(const std::string
 {
 }
 
-int VirtualSingleVerSyncDBInterface::GetDatabaseCreateTimeStamp(TimeStamp &outTime) const
+int VirtualSingleVerSyncDBInterface::GetDatabaseCreateTimestamp(Timestamp &outTime) const
 {
     return E_OK;
 }
@@ -323,11 +323,11 @@ int VirtualSingleVerSyncDBInterface::GetSyncData(QueryObject &query, const SyncT
         }
 
         if ((data.flag & VirtualDataItem::DELETE_FLAG) != 0) {
-            if (data.timeStamp >= timeRange.deleteBeginTime && data.timeStamp < timeRange.deleteEndTime) {
+            if (data.timestamp >= timeRange.deleteBeginTime && data.timestamp < timeRange.deleteEndTime) {
                 dataItems.push_back(data);
             }
         } else {
-            if (data.timeStamp >= timeRange.beginTime && data.timeStamp < timeRange.endTime &&
+            if (data.timestamp >= timeRange.beginTime && data.timestamp < timeRange.endTime &&
                 data.key >= startKey && data.key <= endKey) {
                 dataItems.push_back(data);
             }
@@ -388,8 +388,8 @@ int VirtualSingleVerSyncDBInterface::PutSyncDataWithQuery(const QueryObject &que
         VirtualDataItem item;
         genericKvEntry->GetKey(item.key);
         genericKvEntry->GetValue(item.value);
-        item.timeStamp = genericKvEntry->GetTimestamp();
-        item.writeTimeStamp = genericKvEntry->GetWriteTimestamp();
+        item.timestamp = genericKvEntry->GetTimestamp();
+        item.writeTimestamp = genericKvEntry->GetWriteTimestamp();
         item.flag = genericKvEntry->GetFlag();
         item.isLocal = false;
         dataItems.push_back(item);

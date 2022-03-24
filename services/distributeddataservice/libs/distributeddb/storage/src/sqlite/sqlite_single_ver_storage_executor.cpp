@@ -70,7 +70,7 @@ SQLiteSingleVerStorageExecutor::SQLiteSingleVerStorageExecutor(sqlite3 *dbHandle
       isTransactionOpen_(false),
       attachMetaMode_(false),
       executorState_(ExecutorState::INVALID),
-      maxTimeStampInMainDB_(0),
+      maxTimestampInMainDB_(0),
       migrateTimeOffset_(0),
       isSyncMigrating_(false),
       conflictResolvePolicy_(DEFAULT_LAST_WIN)
@@ -85,7 +85,7 @@ SQLiteSingleVerStorageExecutor::SQLiteSingleVerStorageExecutor(sqlite3 *dbHandle
       isTransactionOpen_(false),
       attachMetaMode_(false),
       executorState_(executorState),
-      maxTimeStampInMainDB_(0),
+      maxTimestampInMainDB_(0),
       migrateTimeOffset_(0),
       isSyncMigrating_(false),
       conflictResolvePolicy_(DEFAULT_LAST_WIN)
@@ -100,7 +100,7 @@ SQLiteSingleVerStorageExecutor::~SQLiteSingleVerStorageExecutor()
 }
 
 int SQLiteSingleVerStorageExecutor::GetKvData(SingleVerDataType type, const Key &key, Value &value,
-    TimeStamp &timeStamp) const
+    Timestamp &timestamp) const
 {
     std::string sql;
     if (type == SingleVerDataType::LOCAL_TYPE) {
@@ -140,9 +140,9 @@ int SQLiteSingleVerStorageExecutor::GetKvData(SingleVerDataType type, const Key 
 
     // get timestamp
     if (type == SingleVerDataType::LOCAL_TYPE) {
-        timeStamp = static_cast<TimeStamp>(sqlite3_column_int64(statement, GET_KV_RES_LOCAL_TIME_INDEX));
+        timestamp = static_cast<Timestamp>(sqlite3_column_int64(statement, GET_KV_RES_LOCAL_TIME_INDEX));
     } else if (type == SingleVerDataType::SYNC_TYPE) {
-        timeStamp = static_cast<TimeStamp>(sqlite3_column_int64(statement, GET_KV_RES_SYNC_TIME_INDEX));
+        timestamp = static_cast<Timestamp>(sqlite3_column_int64(statement, GET_KV_RES_SYNC_TIME_INDEX));
     }
 
 END:
@@ -151,7 +151,7 @@ END:
 }
 
 int SQLiteSingleVerStorageExecutor::BindPutKvData(sqlite3_stmt *statement, const Key &key, const Value &value,
-    TimeStamp timestamp, SingleVerDataType type)
+    Timestamp timestamp, SingleVerDataType type)
 {
     int errCode = SQLiteUtils::BindBlobToStatement(statement, BIND_KV_KEY_INDEX, key, false);
     if (errCode != E_OK) {
@@ -205,8 +205,8 @@ int SQLiteSingleVerStorageExecutor::GetKvDataByHashKey(const Key &hashKey, Singl
     errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
     if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
         result.hashKey = hashKey;
-        result.timeStamp = static_cast<TimeStamp>(sqlite3_column_int64(statement, SYNC_RES_TIME_INDEX));
-        result.writeTimeStamp = static_cast<TimeStamp>(sqlite3_column_int64(statement, SYNC_RES_W_TIME_INDEX));
+        result.timestamp = static_cast<Timestamp>(sqlite3_column_int64(statement, SYNC_RES_TIME_INDEX));
+        result.writeTimestamp = static_cast<Timestamp>(sqlite3_column_int64(statement, SYNC_RES_W_TIME_INDEX));
         result.flag = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_FLAG_INDEX));
         // get key
         errCode = SQLiteUtils::GetColumnBlobValue(statement, SYNC_RES_KEY_INDEX, result.key);
@@ -241,7 +241,7 @@ END:
 }
 
 int SQLiteSingleVerStorageExecutor::SaveKvData(SingleVerDataType type, const Key &key, const Value &value,
-    TimeStamp timestamp)
+    Timestamp timestamp)
 {
     sqlite3_stmt *statement = nullptr;
     std::string sql;
@@ -272,16 +272,16 @@ ERROR:
 }
 
 int SQLiteSingleVerStorageExecutor::PutKvData(SingleVerDataType type, const Key &key, const Value &value,
-    TimeStamp timestamp, SingleVerNaturalStoreCommitNotifyData *committedData)
+    Timestamp timestamp, SingleVerNaturalStoreCommitNotifyData *committedData)
 {
     if (type != SingleVerDataType::LOCAL_TYPE && type != SingleVerDataType::META_TYPE) {
         return -E_INVALID_ARGS;
     }
     // committedData is only for local data, not for meta data.
     bool isLocal = (SingleVerDataType::LOCAL_TYPE == type);
-    TimeStamp localTimeStamp = 0;
+    Timestamp localTimestamp = 0;
     Value readValue;
-    bool isExisted = CheckIfKeyExisted(key, isLocal, readValue, localTimeStamp);
+    bool isExisted = CheckIfKeyExisted(key, isLocal, readValue, localTimestamp);
     if (isLocal && committedData != nullptr) {
         ExistStatus existedStatus = isExisted ? ExistStatus::EXIST : ExistStatus::NONE;
         Key hashKey;
@@ -400,7 +400,7 @@ END:
     return CheckCorruptedStatus(errCode);
 }
 
-void SQLiteSingleVerStorageExecutor::InitCurrentMaxStamp(TimeStamp &maxStamp)
+void SQLiteSingleVerStorageExecutor::InitCurrentMaxStamp(Timestamp &maxStamp)
 {
     if (dbHandle_ == nullptr) {
         return;
@@ -420,7 +420,7 @@ void SQLiteSingleVerStorageExecutor::InitCurrentMaxStamp(TimeStamp &maxStamp)
     SQLiteUtils::ResetStatement(statement, true, errCode);
 }
 
-int SQLiteSingleVerStorageExecutor::PrepareForSyncDataByTime(TimeStamp begin, TimeStamp end,
+int SQLiteSingleVerStorageExecutor::PrepareForSyncDataByTime(Timestamp begin, Timestamp end,
     sqlite3_stmt *&statement, bool getDeletedData) const
 {
     if (dbHandle_ == nullptr) {
@@ -464,8 +464,8 @@ void SQLiteSingleVerStorageExecutor::ReleaseContinueStatement()
 namespace {
 int GetDataItemForSync(sqlite3_stmt *statement, DataItem &dataItem)
 {
-    dataItem.timeStamp = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_TIME_INDEX));
-    dataItem.writeTimeStamp = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_W_TIME_INDEX));
+    dataItem.timestamp = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_TIME_INDEX));
+    dataItem.writeTimestamp = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_W_TIME_INDEX));
     dataItem.flag = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_FLAG_INDEX));
     dataItem.flag &= (~DataItem::LOCAL_FLAG);
     std::vector<uint8_t> devVect;
@@ -522,7 +522,7 @@ int SQLiteSingleVerStorageExecutor::GetSyncDataItems(std::vector<DataItem> &data
 }
 
 int SQLiteSingleVerStorageExecutor::GetSyncDataByTimestamp(std::vector<DataItem> &dataItems, size_t appendLength,
-    TimeStamp begin, TimeStamp end, const DataSizeSpecInfo &dataSizeInfo) const
+    Timestamp begin, Timestamp end, const DataSizeSpecInfo &dataSizeInfo) const
 {
     sqlite3_stmt *statement = nullptr;
     int errCode = PrepareForSyncDataByTime(begin, end, statement);
@@ -536,7 +536,7 @@ int SQLiteSingleVerStorageExecutor::GetSyncDataByTimestamp(std::vector<DataItem>
 }
 
 int SQLiteSingleVerStorageExecutor::GetDeletedSyncDataByTimestamp(std::vector<DataItem> &dataItems, size_t appendLength,
-    TimeStamp begin, TimeStamp end, const DataSizeSpecInfo &dataSizeInfo) const
+    Timestamp begin, Timestamp end, const DataSizeSpecInfo &dataSizeInfo) const
 {
     sqlite3_stmt *statement = nullptr;
     int errCode = PrepareForSyncDataByTime(begin, end, statement, true);
@@ -564,7 +564,7 @@ int AppendDataItem(std::vector<DataItem> &dataItems, const DataItem &item, size_
     return E_OK;
 }
 
-int GetFullDataStatement(sqlite3 *db, const std::pair<TimeStamp, TimeStamp> &timeRange, sqlite3_stmt *&stmt)
+int GetFullDataStatement(sqlite3 *db, const std::pair<Timestamp, Timestamp> &timeRange, sqlite3_stmt *&stmt)
 {
     int errCode = SQLiteUtils::GetStatement(db, SELECT_SYNC_MODIFY_SQL, stmt);
     if (errCode != E_OK) {
@@ -587,7 +587,7 @@ ERR:
     return errCode;
 }
 
-int GetQueryDataStatement(sqlite3 *db, QueryObject query, const std::pair<TimeStamp, TimeStamp> &timeRange,
+int GetQueryDataStatement(sqlite3 *db, QueryObject query, const std::pair<Timestamp, Timestamp> &timeRange,
     sqlite3_stmt *&stmt)
 {
     int errCode = E_OK;
@@ -609,7 +609,7 @@ int GetNextDataItem(sqlite3_stmt *stmt, bool isMemDB, DataItem &item)
 }
 
 int SQLiteSingleVerStorageExecutor::GetSyncDataWithQuery(const QueryObject &query, size_t appendLength,
-    const DataSizeSpecInfo &dataSizeInfo, const std::pair<TimeStamp, TimeStamp> &timeRange,
+    const DataSizeSpecInfo &dataSizeInfo, const std::pair<Timestamp, Timestamp> &timeRange,
     std::vector<DataItem> &dataItems) const
 {
     sqlite3_stmt *fullStmt = nullptr; // statement for get all modified data in the time range
@@ -1050,14 +1050,14 @@ int SQLiteSingleVerStorageExecutor::Rollback()
 }
 
 bool SQLiteSingleVerStorageExecutor::CheckIfKeyExisted(const Key &key, bool isLocal,
-    Value &value, TimeStamp &timeStamp) const
+    Value &value, Timestamp &timestamp) const
 {
     // not local value, no need to get the value.
     if (!isLocal) {
         return false;
     }
 
-    int errCode = GetKvData(SingleVerDataType::LOCAL_TYPE, key, value, timeStamp);
+    int errCode = GetKvData(SingleVerDataType::LOCAL_TYPE, key, value, timestamp);
     if (errCode != E_OK) {
         return false;
     }
@@ -1225,14 +1225,14 @@ DataOperStatus SQLiteSingleVerStorageExecutor::JudgeSyncSaveType(DataItem &dataI
             status.preStatus = DataStatus::EXISTED;
         }
         std::string deviceName = DBCommon::TransferHashString(devName);
-        if (itemGet.writeTimeStamp >= dataItem.writeTimeStamp) {
+        if (itemGet.writeTimestamp >= dataItem.writeTimestamp) {
             // for multi user mode, no permit to forcewrite
             if ((!deviceName.empty()) && (itemGet.dev == deviceName) && isPermitForceWrite) {
                 LOGI("Force overwrite the data:%" PRIu64 " vs %" PRIu64,
-                    itemGet.writeTimeStamp, dataItem.writeTimeStamp);
+                    itemGet.writeTimestamp, dataItem.writeTimestamp);
                 status.isDefeated = false;
-                dataItem.writeTimeStamp = itemGet.writeTimeStamp + 1;
-                dataItem.timeStamp = itemGet.timeStamp;
+                dataItem.writeTimestamp = itemGet.writeTimestamp + 1;
+                dataItem.timestamp = itemGet.timestamp;
             } else {
                 status.isDefeated = true;
             }
@@ -1337,7 +1337,7 @@ int SQLiteSingleVerStorageExecutor::PrepareForNotifyConflictAndObserver(DataItem
 }
 
 int SQLiteSingleVerStorageExecutor::SaveSyncDataItem(DataItem &dataItem, const DeviceInfo &deviceInfo,
-    TimeStamp &maxStamp, SingleVerNaturalStoreCommitNotifyData *committedData, bool isPermitForceWrite)
+    Timestamp &maxStamp, SingleVerNaturalStoreCommitNotifyData *committedData, bool isPermitForceWrite)
 {
     NotifyConflictAndObserverData notify = {
         .committedData = committedData
@@ -1362,7 +1362,7 @@ int SQLiteSingleVerStorageExecutor::SaveSyncDataItem(DataItem &dataItem, const D
     errCode = SaveSyncDataToDatabase(dataItem, notify.hashKey, origDev, deviceInfo.deviceName, isUpdate);
     if (errCode == E_OK) {
         PutIntoCommittedData(dataItem, notify.getData, notify.dataStatus, notify.hashKey, committedData);
-        maxStamp = std::max(dataItem.timeStamp, maxStamp);
+        maxStamp = std::max(dataItem.timestamp, maxStamp);
     } else {
         LOGE("Save sync data to db failed:%d", errCode);
     }
@@ -1499,16 +1499,16 @@ int SQLiteSingleVerStorageExecutor::BindSavedSyncData(sqlite3_stmt *statement, c
         return errCode;
     }
 
-    errCode = SQLiteUtils::BindInt64ToStatement(statement, BIND_SYNC_STAMP_INDEX, dataItem.timeStamp);
+    errCode = SQLiteUtils::BindInt64ToStatement(statement, BIND_SYNC_STAMP_INDEX, dataItem.timestamp);
     if (errCode != E_OK) {
         LOGE("Bind saved sync data stamp failed:%d", errCode);
         return errCode;
     }
 
     const int writeTimeIndex = isUpdate ? BIND_SYNC_UPDATE_W_TIME_INDEX : BIND_SYNC_W_TIME_INDEX;
-    errCode = SQLiteUtils::BindInt64ToStatement(statement, writeTimeIndex, dataItem.writeTimeStamp);
+    errCode = SQLiteUtils::BindInt64ToStatement(statement, writeTimeIndex, dataItem.writeTimestamp);
     LOGD("Write timestamp:%" PRIu64 " timestamp:%" PRIu64 ", %" PRIu64,
-        dataItem.writeTimeStamp, dataItem.timeStamp, dataItem.flag);
+        dataItem.writeTimestamp, dataItem.timestamp, dataItem.flag);
     if (errCode != E_OK) {
         LOGE("Bind saved sync data write stamp failed:%d", errCode);
         return errCode;
@@ -1606,8 +1606,8 @@ int SQLiteSingleVerStorageExecutor::GetSyncDataPreByHashKey(const Key &hashKey, 
     if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) { // no find the key
         errCode = -E_NOT_FOUND;
     } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
-        itemGet.timeStamp = static_cast<TimeStamp>(sqlite3_column_int64(statement, SYNC_RES_TIME_INDEX));
-        itemGet.writeTimeStamp = static_cast<TimeStamp>(sqlite3_column_int64(statement, SYNC_RES_W_TIME_INDEX));
+        itemGet.timestamp = static_cast<Timestamp>(sqlite3_column_int64(statement, SYNC_RES_TIME_INDEX));
+        itemGet.writeTimestamp = static_cast<Timestamp>(sqlite3_column_int64(statement, SYNC_RES_W_TIME_INDEX));
         itemGet.flag = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_FLAG_INDEX));
         errCode = SQLiteUtils::GetColumnBlobValue(statement, SYNC_RES_KEY_INDEX, itemGet.key);
         if (errCode != E_OK) {
@@ -1677,9 +1677,9 @@ ERROR:
 }
 
 int SQLiteSingleVerStorageExecutor::DeleteLocalKvData(const Key &key,
-    SingleVerNaturalStoreCommitNotifyData *committedData, Value &value, TimeStamp &timeStamp)
+    SingleVerNaturalStoreCommitNotifyData *committedData, Value &value, Timestamp &timestamp)
 {
-    int errCode = GetKvData(SingleVerDataType::LOCAL_TYPE, key, value, timeStamp);
+    int errCode = GetKvData(SingleVerDataType::LOCAL_TYPE, key, value, timestamp);
     if (errCode != E_OK) {
         return CheckCorruptedStatus(errCode);
     }
@@ -1935,7 +1935,7 @@ int SQLiteSingleVerStorageExecutor::InitResultSet(QueryObject &queryObj, sqlite3
     return CheckCorruptedStatus(errCode);
 }
 
-int SQLiteSingleVerStorageExecutor::UpdateLocalDataTimestamp(TimeStamp timestamp)
+int SQLiteSingleVerStorageExecutor::UpdateLocalDataTimestamp(Timestamp timestamp)
 {
     const std::string updateSql = "UPDATE local_data SET timestamp=";
     std::string sql = updateSql + std::to_string(timestamp) + " WHERE timestamp=0;";
@@ -1961,7 +1961,7 @@ int SQLiteSingleVerStorageExecutor::GetOneRawDataItem(sqlite3_stmt *statement, D
         return errCode;
     }
 
-    dataItem.timeStamp = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_TIME_INDEX));
+    dataItem.timestamp = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_TIME_INDEX));
     dataItem.flag = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_FLAG_INDEX));
 
     std::vector<uint8_t> devVect;
@@ -1982,7 +1982,7 @@ int SQLiteSingleVerStorageExecutor::GetOneRawDataItem(sqlite3_stmt *statement, D
     if (errCode != E_OK) {
         return errCode;
     }
-    dataItem.writeTimeStamp = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_W_TIME_INDEX));
+    dataItem.writeTimestamp = static_cast<uint64_t>(sqlite3_column_int64(statement, SYNC_RES_W_TIME_INDEX));
     if (errCode != E_OK) {
         return errCode;
     }

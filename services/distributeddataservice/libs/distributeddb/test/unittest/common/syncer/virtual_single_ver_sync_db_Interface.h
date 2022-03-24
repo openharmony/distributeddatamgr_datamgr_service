@@ -27,8 +27,8 @@ namespace DistributedDB {
 struct VirtualDataItem {
     Key key;
     Value value;
-    TimeStamp timeStamp = 0;
-    TimeStamp writeTimeStamp = 0;
+    Timestamp timestamp = 0;
+    Timestamp writeTimestamp = 0;
     uint64_t flag = 0;
     bool isLocal = true;
     static const uint64_t DELETE_FLAG = 0x01;
@@ -54,7 +54,7 @@ public:
 
     int GetAllMetaKeys(std::vector<Key>& keys) const override;
 
-    int GetSyncData(TimeStamp begin, TimeStamp end, std::vector<DataItem> &dataItems,
+    int GetSyncData(Timestamp begin, Timestamp end, std::vector<DataItem> &dataItems,
         ContinueToken &continueStmtToken, const DataSizeSpecInfo &dataSizeInfo) const override;
 
     int GetSyncDataNext(std::vector<DataItem> &dataItems, ContinueToken &continueStmtToken,
@@ -62,7 +62,7 @@ public:
 
     void ReleaseContinueToken(ContinueToken& continueStmtToken) const override;
 
-    void GetMaxTimeStamp(TimeStamp& stamp) const override;
+    void GetMaxTimestamp(Timestamp& stamp) const override;
 
     int RemoveDeviceData(const std::string &deviceName, bool isNeedNotify) override;
 
@@ -70,9 +70,9 @@ public:
 
     int PutSyncData(const DataItem& item);
 
-    int PutData(const Key &key, const Value &value, const TimeStamp &time, int flag);
+    int PutData(const Key &key, const Value &value, const Timestamp &time, int flag);
 
-    int GetSyncData(TimeStamp begin, TimeStamp end, std::vector<SingleVerKvEntry *> &entries,
+    int GetSyncData(Timestamp begin, Timestamp end, std::vector<SingleVerKvEntry *> &entries,
         ContinueToken &continueStmtToken, const DataSizeSpecInfo &dataSizeInfo) const override;
 
     int GetSyncData(QueryObject &query, const SyncTimeRange &timeRange, const DataSizeSpecInfo &dataSizeInfo,
@@ -102,7 +102,7 @@ public:
 
     void NotifyRemotePushFinished(const std::string &targetId) const override;
 
-    int GetDatabaseCreateTimeStamp(TimeStamp &outTime) const override;
+    int GetDatabaseCreateTimestamp(Timestamp &outTime) const override;
 
     int GetCompressionOption(bool &needCompressOnSync, uint8_t &compressionRate) const override;
     int GetCompressionAlgo(std::set<CompressAlgorithm> &algorithmSet) const override;
@@ -121,7 +121,7 @@ public:
 
     void SetBusy(bool busy);
 private:
-    int GetSyncData(TimeStamp begin, TimeStamp end, uint32_t blockSize, std::vector<VirtualDataItem>& dataItems,
+    int GetSyncData(Timestamp begin, Timestamp end, uint32_t blockSize, std::vector<VirtualDataItem>& dataItems,
         ContinueToken& continueStmtToken) const;
 
     int GetSyncDataNext(std::vector<VirtualDataItem>& dataItems,

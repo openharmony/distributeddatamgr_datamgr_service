@@ -47,10 +47,10 @@ private:
     static const uint64_t INVALID_TIMESTAMP = 0;
 
     // Get the current system time
-    static TimeStamp GetSysCurrentTime();
+    static Timestamp GetSysCurrentTime();
 
     // Get the Monotonic time
-    static TimeStamp GetMonotonicTime();
+    static Timestamp GetMonotonicTime();
 
     // prepare notifier chain
     int PrepareNotifierChain();
@@ -63,8 +63,8 @@ private:
     RuntimeContext *runtimeCxt_;
     TimerId monitorTimerId_ = 0;
     TimerAction monitorCallback_;
-    TimeStamp lastMonotonicTime_ = 0;
-    TimeStamp lastSystemTime_ = 0;
+    Timestamp lastMonotonicTime_ = 0;
+    Timestamp lastSystemTime_ = 0;
     bool isStarted_ = false;
 };
 } // namespace DistributedDB
