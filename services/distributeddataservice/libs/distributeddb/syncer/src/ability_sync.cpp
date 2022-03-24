@@ -459,7 +459,7 @@ int AbilitySync::AckNotifyRecv(const Message *message, ISyncTaskContext *context
     }
     int errCode = packet->GetAckCode();
     if (errCode != E_OK) {
-        LOGE("[AbilitySync][AckNotifyRecv] received a errCode %d", errCode);
+        LOGE("[AbilitySync][AckNotifyRecv] received an errCode %d", errCode);
         return errCode;
     }
     std::string schema = packet->GetSchema();

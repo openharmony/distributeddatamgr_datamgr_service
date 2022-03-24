@@ -979,8 +979,8 @@ int ProtocolProto::FrameFragmentation(const uint8_t *splitStartBytes, const Fram
             pieceFragLen, packet);
         entry.second = fragmentInfo.extendHeadSize;
         if (err != E_OK) {
-            LOGE("[Proto][FrameFrag] Fill packet fail, fragCount=%" PRIu16 ", fragNo=%" PRIu16,
-                fragmentInfo.fragCount, fragNo);
+            LOGE("[Proto][FrameFrag] Fill packet fail, fragCount=%" PRIu16 ", fragNo=%" PRIu16, fragmentInfo.fragCount,
+                fragNo);
             return err;
         }
 

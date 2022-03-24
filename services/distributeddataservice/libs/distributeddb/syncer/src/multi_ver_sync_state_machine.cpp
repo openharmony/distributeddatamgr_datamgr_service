@@ -305,7 +305,9 @@ int MultiVerSyncStateMachine::PrepareNextSyncTask()
 
 void MultiVerSyncStateMachine::SendSaveDataNotifyPacket(uint32_t sessionId, uint32_t sequenceId, uint32_t inMsgId)
 {
-    (void) sequenceId;
+    (void)sessionId;
+    (void)sequenceId;
+    (void)inMsgId;
 }
 
 void MultiVerSyncStateMachine::CommErrAbort()

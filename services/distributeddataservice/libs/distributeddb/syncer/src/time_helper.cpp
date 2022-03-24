@@ -75,7 +75,7 @@ int TimeHelper::Initialize(const ISyncInterface *inStorage, std::shared_ptr<Meta
         localTimeOffset = static_cast<TimeOffset>(maxItemTime - currentSysTime + MS_TO_100_NS); // 1ms
         int errCode = SaveLocalTimeOffset(localTimeOffset);
         if (errCode != E_OK) {
-            LOGE("[TimeHelper] save local time offset faield,err=%d", errCode);
+            LOGE("[TimeHelper] save local time offset failed,err=%d", errCode);
             return errCode;
         }
     }
