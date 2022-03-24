@@ -158,6 +158,8 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     ptr += (sizeof(SessionUserPair) + session_.targetUserIds.size() * sizeof(int));
 
     SessionAppId *appPair = reinterpret_cast<SessionAppId *>(ptr);
+    ptr += sizeof(SessionAppId);
+
     uint32_t appLen = data + totalLen - ptr;
     appPair->len = HostToNet(appLen); // left size
     ret = strcpy_s(appPair->appId, appLen, session_.appId.c_str());
