@@ -55,7 +55,7 @@ int ZlibCompression::Compress(const std::vector<uint8_t> &srcData, std::vector<u
 }
 
 int ZlibCompression::Uncompress(const std::vector<uint8_t> &srcData, std::vector<uint8_t> &destData,
-    unsigned long destLen) const
+    uint64_t destLen) const
 {
     auto srcLen = srcData.size();
     if (srcLen > DBConstant::MAX_SYNC_BLOCK_SIZE || destLen > DBConstant::MAX_SYNC_BLOCK_SIZE) {

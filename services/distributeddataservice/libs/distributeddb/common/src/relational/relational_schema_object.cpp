@@ -376,10 +376,6 @@ std::map<FieldPath, SchemaAttribute> TableInfo::GetSchemaDefine() const
     return schemaDefine;
 }
 
-namespace {
-    const std::string MAGIC = "relational_opinion";
-}
-
 bool RelationalSchemaObject::IsSchemaValid() const
 {
     return isValid_;

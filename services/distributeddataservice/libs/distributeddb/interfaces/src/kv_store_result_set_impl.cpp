@@ -43,8 +43,8 @@ int KvStoreResultSetImpl::GetPosition() const
 
 bool KvStoreResultSetImpl::Move(int offset)
 {
-    long long position = GetPosition();
-    long long aimPos = position + offset;
+    int64_t position = GetPosition();
+    int64_t aimPos = position + offset;
     if (aimPos > INT_MAX) {
         return MoveToPosition(INT_MAX);
     }
