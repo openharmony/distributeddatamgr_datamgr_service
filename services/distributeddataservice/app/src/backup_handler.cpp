@@ -95,6 +95,7 @@ void BackupHandler::SingleKvStoreBackup(const MetaData &metaData)
     dbOption.passwd = backupPara.password;
     dbOption.createDirByStoreIdOnly = true;
     dbOption.secOption = KvStoreAppManager::ConvertSecurity(metaData.kvStoreMetaData.securityLevel);
+
     auto *delegateMgr = new DistributedDB::KvStoreDelegateManager(metaData.kvStoreMetaData.appId,
         AccountDelegate::GetInstance()->GetCurrentAccountId(metaData.kvStoreMetaData.bundleName));
     std::string appDataStoragePath = KvStoreAppManager::GetDataStoragePath(metaData.kvStoreMetaData.deviceAccountId,
