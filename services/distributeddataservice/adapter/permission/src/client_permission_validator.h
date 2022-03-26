@@ -62,7 +62,7 @@ public:
 
     void UpdatePermissionStatus(int32_t uid, const std::string &permissionType, bool permissionStatus);
 
-    bool CheckClientSyncPermission(const KvStoreTuple &kvStoreTuple, std::uint32_t tokenId, std::int32_t curUid);
+    bool CheckClientSyncPermission(const KvStoreTuple &kvStoreTuple, std::uint32_t tokenId);
 
 private:
     ClientPermissionValidator() = default;
@@ -76,7 +76,6 @@ private:
     void RebuildBundleManager();
 
     std::mutex tupleMutex_;
-    std::map<KvStoreTuple, AppPermissionInfo, KvStoreTupleCmp> kvStoreTupleMap_;
     std::mutex permissionMutex_;
     std::map<std::int32_t, bool> dataSyncPermissionMap_;
 };
