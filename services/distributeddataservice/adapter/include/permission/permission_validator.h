@@ -45,7 +45,7 @@ public:
     // check whether the client process have enough privilege to share data with the other devices.
     // uid: client process uid
     KVSTORE_API static bool CheckSyncPermission(const std::string &userId, const std::string &appId,
-        std::int32_t uid = 0);
+        std::uint32_t tokenId, std::int32_t uid = 0);
 
     KVSTORE_API static bool RegisterPermissionChanged(
         const KvStoreTuple &kvStoreTuple, const AppThreadInfo &appThreadInfo);

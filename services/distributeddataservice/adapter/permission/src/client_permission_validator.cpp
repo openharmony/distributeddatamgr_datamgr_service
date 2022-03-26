@@ -18,6 +18,8 @@
 #include "client_permission_validator.h"
 #include <cstdint>
 #include <string>
+#include "accesstoken_kit.h"
+#include "log_print.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -46,11 +48,26 @@ void ClientPermissionValidator::UpdatePermissionStatus(
     }
 }
 
-bool ClientPermissionValidator::CheckClientSyncPermission(const KvStoreTuple &kvStoreTuple, std::int32_t curUid)
+bool ClientPermissionValidator::CheckClientSyncPermission(const KvStoreTuple &kvStoreTuple,
+                                                          std::uint32_t tokenId, std::int32_t curUid)
 {
-    (void) kvStoreTuple;
-    (void) curUid;
-    return true;
+    std::int32_t uid;
+    std::lock_guard<std::mutex> tupleLock(tupleMutex_);
+    auto tupleMapIt = kvStoreTupleMap_.find(kvStoreTuple);
+    if (tupleMapIt != kvStoreTupleMap_.end()) {
+        uid = tupleMapIt->second.uid;
+    } else {
+        ZLOGD("can't find this kvstore tuple[%s-%s-%s] in kvStoreTupleMap_[%zu].",
+              kvStoreTuple.userId.c_str(), kvStoreTuple.appId.c_str(), kvStoreTuple.storeId.c_str(),
+              kvStoreTupleMap_.size());
+        if (curUid != 0) {
+            bool permissionStatus =
+                (Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, DISTRIBUTED_DATASYNC) ==
+                 Security::AccessToken::PERMISSION_GRANTED);
+            return permissionStatus;
+        }
+    }
+    return false;
 }
 
 bool ClientPermissionValidator::RegisterPermissionChanged(

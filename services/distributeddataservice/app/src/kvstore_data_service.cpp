@@ -375,6 +375,7 @@ Status KvStoreDataService::UpdateMetaData(const Options &options, const KvStoreP
     metaData.kvStoreType = options.kvStoreType;
     metaData.schema = options.schema;
     metaData.storeId = kvParas.storeId;
+    metaData.tokenId = IPCSkeleton::GetCallingTokenID();
     metaData.userId = AccountDelegate::GetInstance()->GetCurrentAccountId(kvParas.bundleName);
     metaData.uid = IPCSkeleton::GetCallingUid();
     metaData.version = STORE_VERSION;
@@ -1075,7 +1076,7 @@ bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::
     if (PermissionValidator::IsAutoLaunchEnabled(appId)) {
         return true;
     }
-    bool ret = PermissionValidator::CheckSyncPermission(userId, appId, metaData.uid);
+    bool ret = PermissionValidator::CheckSyncPermission(userId, appId, metaData.tokenId, metaData.uid);
     ZLOGD("checking sync permission ret:%{public}d.", ret);
     return ret;
 }

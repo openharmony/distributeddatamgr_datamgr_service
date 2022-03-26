@@ -44,6 +44,7 @@ ohos_static_library("distributeddata_permission_static") {
   external_deps = [
     "ability_base:base",
     "ability_base:want",
+    "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
