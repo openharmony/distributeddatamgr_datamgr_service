@@ -50,6 +50,7 @@ void ClientPermissionValidator::UpdatePermissionStatus(
 
 bool ClientPermissionValidator::CheckClientSyncPermission(const KvStoreTuple &kvStoreTuple, std::uint32_t tokenId)
 {
+    (void)kvStoreTuple;
     return (Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, DISTRIBUTED_DATASYNC) ==
             Security::AccessToken::PERMISSION_GRANTED);
 }
