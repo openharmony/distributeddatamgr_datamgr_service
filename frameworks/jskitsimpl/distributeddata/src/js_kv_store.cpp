@@ -86,10 +86,10 @@ bool JsKVStore::IsInstanceOf(napi_env env, napi_value obj, const std::string& st
 {
     bool result = false;
     napi_status status = napi_instanceof(env, obj, constructor, &result);
-    CHECK_RETURN(result, "is not instance of JsKVStore!", false);
+    CHECK_RETURN((status == napi_ok) && (result != false), "is not instance of JsKVStore!", false);
 
     JsKVStore* kvStore = nullptr;
-    status = napi_unwrap(env, obj, (void**)&kvStore);
+    status = napi_unwrap(env, obj, reinterpret_cast<void**>(&kvStore));
     CHECK_RETURN((status == napi_ok) && (kvStore != nullptr), "can not unwrap to JsKVStore!", false);
     return kvStore->storeId_ == storeId;
 }

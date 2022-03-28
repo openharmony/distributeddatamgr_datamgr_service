@@ -56,7 +56,7 @@ class MyDeathRecipient : public KvStoreDeathRecipient {
 public:
     MyDeathRecipient() {}
     virtual ~MyDeathRecipient() {}
-    virtual void OnRemoteDied() override {}
+    void OnRemoteDied() override {}
 };
 
 DistributedKvDataManager DistributedKvDataManagerTest::manager;
@@ -257,7 +257,7 @@ HWTEST_F(DistributedKvDataManagerTest, GetAllKvStore001, TestSize.Level1)
     std::vector<StoreId> storeIds;
     Status status = manager.GetAllKvStoreId(appId, storeIds);
     EXPECT_EQ(status, Status::SUCCESS);
-    EXPECT_EQ(storeIds.size(), (unsigned long)0);
+    EXPECT_EQ(storeIds.size(), static_cast<size_t>(0));
 }
 
 /**
@@ -307,7 +307,7 @@ HWTEST_F(DistributedKvDataManagerTest, GetAllKvStore002, TestSize.Level1)
     EXPECT_TRUE(haveId1);
     EXPECT_TRUE(haveId2);
     EXPECT_TRUE(haveId3);
-    EXPECT_EQ(storeIds.size(), (unsigned long)3);
+    EXPECT_EQ(storeIds.size(), static_cast<size_t>(3));
 }
 
 /**

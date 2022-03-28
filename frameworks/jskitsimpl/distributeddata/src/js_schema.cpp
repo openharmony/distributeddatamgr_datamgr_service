@@ -82,7 +82,7 @@ napi_value JsSchema::New(napi_env env, napi_callback_info info)
 napi_status JsSchema::ToJson(napi_env env, napi_value inner, JsSchema*& out)
 {
     ZLOGD("Schema::ToJson");
-    return JSUtil::Unwrap(env, inner, (void**)(&out), JsSchema::Constructor(env));
+    return JSUtil::Unwrap(env, inner, reinterpret_cast<void**>(&out), JsSchema::Constructor(env));
 }
 
 JsSchema* JsSchema::GetSchema(napi_env env, napi_callback_info info, std::shared_ptr<ContextBase>& ctxt)
@@ -110,7 +110,7 @@ napi_value JsSchema::GetRootNode(napi_env env, napi_callback_info info)
         std::string root(SCHEMA_DEFINE);
         JSUtil::SetValue(env, root, argv[0]);
         schema->ref = JSUtil::NewWithRef(env, argc, argv,
-            (void**)&schema->rootNode, JsFieldNode::Constructor(env));
+            reinterpret_cast<void**>(&schema->rootNode), JsFieldNode::Constructor(env));
     }
     NAPI_ASSERT(env, schema->ref != nullptr, "no root, please set first!");
     NAPI_CALL(env, napi_get_reference_value(env, schema->ref, &ctxt->output));
@@ -125,7 +125,7 @@ napi_value JsSchema::SetRootNode(napi_env env, napi_callback_info info)
         // required 2 arguments :: <root-node>
         CHECK_ARGS_RETURN_VOID(ctxt, argc == 1, "invalid arguments!");
         JsFieldNode* node = nullptr;
-        ctxt->status = JSUtil::Unwrap(env, argv[0], (void**)(&node), JsFieldNode::Constructor(env));
+        ctxt->status = JSUtil::Unwrap(env, argv[0], reinterpret_cast<void**>(&node), JsFieldNode::Constructor(env));
         CHECK_STATUS_RETURN_VOID(ctxt, "napi_unwrap to FieldNode failed");
         CHECK_ARGS_RETURN_VOID(ctxt, node != nullptr, "invalid arg[0], i.e. invalid node!");
 

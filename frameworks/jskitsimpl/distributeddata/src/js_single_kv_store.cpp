@@ -125,7 +125,7 @@ static napi_status GetVariantArgs(napi_env env, size_t argc, napi_value* argv, V
         CHECK_RETURN(!va.keyPrefix.empty(), "invalid arg[0], i.e. invalid keyPrefix!", napi_invalid_arg);
         va.type = ArgsType::KEYPREFIX;
     } else if (type == napi_object) {
-        status = JSUtil::Unwrap(env, argv[0], (void**)(&va.query), JsQuery::Constructor(env));
+        status = JSUtil::Unwrap(env, argv[0], reinterpret_cast<void**>(&va.query), JsQuery::Constructor(env));
         CHECK_RETURN(va.query != nullptr, "invalid arg[0], i.e. invalid query!", napi_invalid_arg);
         va.type = ArgsType::QUERY;
     }
@@ -200,7 +200,7 @@ napi_value JsSingleKVStore::GetResultSet(napi_env env, napi_callback_info info)
         CHECK_ARGS_RETURN_VOID(ctxt, argc == 1, "invalid arguments!");
         ctxt->status = GetVariantArgs(env, argc, argv, ctxt->va);
         CHECK_STATUS_RETURN_VOID(ctxt, "invalid arguments!");
-        ctxt->ref = JSUtil::NewWithRef(env, 0, nullptr, (void**)(&ctxt->resultSet),
+        ctxt->ref = JSUtil::NewWithRef(env, 0, nullptr, reinterpret_cast<void**>(&ctxt->resultSet),
             JsKVStoreResultSet::Constructor(env));
         CHECK_ARGS_RETURN_VOID(ctxt, ctxt->resultSet != nullptr, "KVStoreResultSet::New failed!");
         CHECK_ARGS_RETURN_VOID(ctxt, ctxt->ref != nullptr, "KVStoreResultSet::New failed!");
@@ -250,7 +250,7 @@ napi_value JsSingleKVStore::CloseResultSet(napi_env env, napi_callback_info info
         napi_valuetype type = napi_undefined;
         ctxt->status = napi_typeof(env, argv[0], &type);
         CHECK_ARGS_RETURN_VOID(ctxt, type == napi_object, "invalid arg[0], i.e. invalid resultSet!");
-        ctxt->status = JSUtil::Unwrap(env, argv[0], (void**)(&ctxt->resultSet),
+        ctxt->status = JSUtil::Unwrap(env, argv[0], reinterpret_cast<void**>(&ctxt->resultSet),
             JsKVStoreResultSet::Constructor(env));
         CHECK_ARGS_RETURN_VOID(ctxt, ctxt->resultSet != nullptr, "invalid arg[0], i.e. invalid resultSet!");
     };
@@ -284,7 +284,7 @@ napi_value JsSingleKVStore::GetResultSize(napi_env env, napi_callback_info info)
         napi_valuetype type = napi_undefined;
         ctxt->status = napi_typeof(env, argv[0], &type);
         CHECK_ARGS_RETURN_VOID(ctxt, type == napi_object, "invalid arg[0], i.e. invalid query!");
-        ctxt->status = JSUtil::Unwrap(env, argv[0], (void**)(&ctxt->query), JsQuery::Constructor(env));
+        ctxt->status = JSUtil::Unwrap(env, argv[0], reinterpret_cast<void**>(&ctxt->query), JsQuery::Constructor(env));
         CHECK_ARGS_RETURN_VOID(ctxt, ctxt->query != nullptr, "invalid arg[0], i.e. invalid query!");
     };
     ctxt->GetCbInfo(env, info, input);

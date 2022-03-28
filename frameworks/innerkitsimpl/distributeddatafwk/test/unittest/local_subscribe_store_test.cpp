@@ -96,10 +96,10 @@ public:
     // reset the callCount_ to zero.
     void ResetToZero();
 
-    unsigned long GetCallCount() const;
+    uint64_t GetCallCount() const;
 
 private:
-    unsigned long callCount_;
+    uint64_t callCount_;
 };
 
 KvStoreObserverUnitTest::KvStoreObserverUnitTest()
@@ -148,7 +148,7 @@ void KvStoreObserverUnitTest::ResetToZero()
     callCount_ = 0;
 }
 
-unsigned long KvStoreObserverUnitTest::GetCallCount() const
+uint64_t KvStoreObserverUnitTest::GetCallCount() const
 {
     return callCount_;
 }

@@ -66,7 +66,8 @@ napi_value JsKVManager::CreateKVManager(napi_env env, napi_callback_info info)
         ctxt->status = JSUtil::GetNamedProperty(env, argv[0], "bundleName", bundleName);
         CHECK_ARGS_RETURN_VOID(ctxt, (ctxt->status == napi_ok) && !bundleName.empty(), "invalid bundleName!");
 
-        ctxt->ref = JSUtil::NewWithRef(env, argc, argv, (void**)&ctxt->kvManger, JsKVManager::Constructor(env));
+        ctxt->ref = JSUtil::NewWithRef(env, argc, argv, reinterpret_cast<void**>(&ctxt->kvManger),
+                                       JsKVManager::Constructor(env));
         CHECK_ARGS_RETURN_VOID(ctxt, ctxt->kvManger != nullptr, "KVManager::New failed!");
     };
     ctxt->GetCbInfo(env, info, input);
@@ -98,9 +99,11 @@ struct GetKVStoreContext : public ContextBase {
             CHECK_ARGS_RETURN_VOID(this, IsStoreTypeSupported(options), "invalid options.KvStoreType");
             ZLOGD("GetKVStore kvStoreType=%{public}d", options.kvStoreType);
             if (options.kvStoreType == KvStoreType::DEVICE_COLLABORATION) {
-                ref = JSUtil::NewWithRef(env, argc, argv, (void**)&kvStore, JsDeviceKVStore::Constructor(env));
+                ref = JSUtil::NewWithRef(env, argc, argv, reinterpret_cast<void**>(&kvStore),
+                                         JsDeviceKVStore::Constructor(env));
             } else if (options.kvStoreType == KvStoreType::SINGLE_VERSION) {
-                ref = JSUtil::NewWithRef(env, argc, argv, (void**)&kvStore, JsSingleKVStore::Constructor(env));
+                ref = JSUtil::NewWithRef(env, argc, argv, reinterpret_cast<void**>(&kvStore),
+                                         JsSingleKVStore::Constructor(env));
             }
         };
         ContextBase::GetCbInfo(env, info, input);

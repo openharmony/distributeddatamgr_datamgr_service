@@ -46,7 +46,7 @@ private:
     public:
         DeathRecipient(std::shared_ptr<UvQueue> uvQueue, napi_value callback) : JSObserver(uvQueue, callback) {};
         virtual ~DeathRecipient() = default;
-        virtual void OnRemoteDied() override;
+        void OnRemoteDied() override;
     };
 
     DistributedKv::DistributedKvDataManager kvDataManager_ {};

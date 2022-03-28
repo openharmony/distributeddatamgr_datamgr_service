@@ -33,8 +33,8 @@ public:
 
 class KvStoreObserverStub : public IRemoteStub<IKvStoreObserver> {
 public:
-    virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option) override;
+    int OnRemoteRequest(uint32_t code, MessageParcel &data,
+                        MessageParcel &reply, MessageOption &option) override;
 };
 
 class KvStoreObserverProxy : public IRemoteProxy<IKvStoreObserver> {

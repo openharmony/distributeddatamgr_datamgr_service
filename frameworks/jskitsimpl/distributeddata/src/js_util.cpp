@@ -450,7 +450,8 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, std::vector<int32_t>& 
     napi_value buffer = nullptr;
     size_t offset = 0;
     uint8_t* data = nullptr;
-    napi_status status = napi_get_typedarray_info(env, in, &type, &length, (void**)&data, &buffer, &offset);
+    napi_status status = napi_get_typedarray_info(env, in, &type, &length,
+                                                  reinterpret_cast<void**>(&data), &buffer, &offset);
     ZLOGD("array type=%{public}d length=%{public}d offset=%{public}d", (int)type, (int)length, (int)offset);
     CHECK_RETURN(status == napi_ok, "napi_get_typedarray_info failed!", napi_invalid_arg);
     CHECK_RETURN(type <= napi_int32_array, "is not int32 supported typed array!", napi_invalid_arg);
@@ -488,7 +489,8 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, std::vector<uint32_t>&
     napi_value buffer = nullptr;
     size_t offset = 0;
     uint8_t* data = nullptr;
-    napi_status status = napi_get_typedarray_info(env, in, &type, &length, (void**)&data, &buffer, &offset);
+    napi_status status = napi_get_typedarray_info(env, in, &type, &length,
+                                                  reinterpret_cast<void**>(&data), &buffer, &offset);
     ZLOGD("napi_get_typedarray_info type=%{public}d", (int)type);
     CHECK_RETURN(status == napi_ok, "napi_get_typedarray_info failed!", napi_invalid_arg);
     CHECK_RETURN((type <= napi_uint16_array) || (type == napi_uint32_array), "invalid type!", napi_invalid_arg);
@@ -526,7 +528,8 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, std::vector<int64_t>& 
     napi_value buffer = nullptr;
     size_t offset = 0;
     uint8_t* data = nullptr;
-    napi_status status = napi_get_typedarray_info(env, in, &type, &length, (void**)&data, &buffer, &offset);
+    napi_status status = napi_get_typedarray_info(env, in, &type, &length,
+                                                  reinterpret_cast<void**>(&data), &buffer, &offset);
     ZLOGD("array type=%{public}d length=%{public}d offset=%{public}d", (int)type, (int)length, (int)offset);
     CHECK_RETURN(status == napi_ok, "napi_get_typedarray_info failed!", napi_invalid_arg);
     CHECK_RETURN((type <= napi_uint32_array) || (type == napi_bigint64_array), "invalid type!", napi_invalid_arg);
@@ -560,6 +563,7 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, std::vector<double>& o
     bool isTypedArray = false;
     napi_status status = napi_is_typedarray(env, in, &isTypedArray);
     ZLOGD("napi_value -> std::vector<double> input %{public}s a TypedArray", isTypedArray ? "is" : "is not");
+    CHECK_RETURN((status == napi_ok), "napi_is_typedarray failed!", status);
     if (isTypedArray) {
         ZLOGD("napi_value -> std::vector<double> ");
         napi_typedarray_type type = napi_biguint64_array;
@@ -567,7 +571,7 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, std::vector<double>& o
         napi_value buffer = nullptr;
         size_t offset = 0;
         uint8_t* data = nullptr;
-        status = napi_get_typedarray_info(env, in, &type, &length, (void**)&data, &buffer, &offset);
+        status = napi_get_typedarray_info(env, in, &type, &length, reinterpret_cast<void**>(&data), &buffer, &offset);
         ZLOGD("napi_get_typedarray_info status=%{public}d type=%{public}d", status, (int)type);
         CHECK_RETURN(status == napi_ok, "napi_get_typedarray_info failed!", napi_invalid_arg);
         CHECK_RETURN((length > 0) && (data != nullptr), "invalid data!", napi_invalid_arg);

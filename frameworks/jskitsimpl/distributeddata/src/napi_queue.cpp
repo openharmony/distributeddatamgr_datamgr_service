@@ -107,7 +107,7 @@ napi_value NapiQueue::AsyncWork(napi_env env, std::shared_ptr<ContextBase> ctxt,
             }
             GenerateOutput(ctxt);
         },
-        (void*)(ctxt.get()), &ctxt->work);
+        reinterpret_cast<void*>(ctxt.get()), &ctxt->work);
     napi_queue_async_work(ctxt->env, ctxt->work);
     ctxt->hold = ctxt; // save crossing-thread ctxt.
     return promise;

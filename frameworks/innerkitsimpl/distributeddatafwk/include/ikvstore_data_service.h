@@ -106,8 +106,8 @@ public:
 
 class KvStoreDataServiceStub : public IRemoteStub<IKvStoreDataService> {
 public:
-    virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option) override;
+    int OnRemoteRequest(uint32_t code, MessageParcel &data,
+                        MessageParcel &reply, MessageOption &option) override;
 
 private:
     int32_t GetKvStoreOnRemote(MessageParcel &data, MessageParcel &reply);

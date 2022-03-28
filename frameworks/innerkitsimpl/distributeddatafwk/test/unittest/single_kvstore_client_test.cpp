@@ -96,10 +96,10 @@ public:
     // reset the callCount_ to zero.
     void ResetToZero();
 
-    unsigned long GetCallCount() const;
+    uint64_t GetCallCount() const;
 
 private:
-    unsigned long callCount_;
+    uint64_t callCount_;
 };
 
 void KvStoreObserverTestImpl::OnChange(const ChangeNotification &changeNotification)
@@ -145,7 +145,7 @@ void KvStoreObserverTestImpl::ResetToZero()
     callCount_ = 0;
 }
 
-unsigned long KvStoreObserverTestImpl::GetCallCount() const
+uint64_t KvStoreObserverTestImpl::GetCallCount() const
 {
     return callCount_;
 }
@@ -222,10 +222,10 @@ HWTEST_F(SingleKvStoreClientTest, GetEntriesAndResultSet001, TestSize.Level1)
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
 
     // prepare 10
-    unsigned long sum = 10;
+    size_t sum = 10;
     int sum_1 = 10;
     std::string prefix = "prefix_";
-    for (unsigned long i = 0; i < sum; i++) {
+    for (size_t i = 0; i < sum; i++) {
         singleKvStorePtr->Put({prefix + std::to_string(i)}, {std::to_string(i)});
     }
 
@@ -250,7 +250,7 @@ HWTEST_F(SingleKvStoreClientTest, GetEntriesAndResultSet001, TestSize.Level1)
     Entry entry;
     resultSet->GetEntry(entry);
 
-    for (unsigned long i = 0; i < sum; i++) {
+    for (size_t i = 0; i < sum; i++) {
         singleKvStorePtr->Delete({prefix + std::to_string(i)});
     }
 
@@ -710,7 +710,7 @@ HWTEST_F(SingleKvStoreClientTest, SingleKvStoreDdmDeleteBatch001, TestSize.Level
     EXPECT_EQ(Status::SUCCESS, status2) << "singleKvStore deletebatch data return wrong status";
     std::vector<Entry> results;
     singleKvStorePtr->GetEntries("SingleKvStoreDdmDeleteBatch001_", results);
-    unsigned long sum = 0;
+    size_t sum = 0;
     EXPECT_EQ(results.size(), sum) << "entries size is not equal 0.";
 }
 
@@ -751,7 +751,7 @@ HWTEST_F(SingleKvStoreClientTest, SingleKvStoreDdmDeleteBatch002, TestSize.Level
     EXPECT_EQ(Status::SUCCESS, status2) << "KvStore deletebatch data return wrong status";
     std::vector<Entry> results;
     singleKvStorePtr->GetEntries("SingleKvStoreDdmDeleteBatch002_", results);
-    unsigned long sum = 0;
+    size_t sum = 0;
     EXPECT_EQ(results.size(), sum) << "entries size is not equal 0.";
 }
 
@@ -791,7 +791,7 @@ HWTEST_F(SingleKvStoreClientTest, SingleKvStoreDdmDeleteBatch003, TestSize.Level
     EXPECT_EQ(Status::INVALID_ARGUMENT, status2) << "KvStore deletebatch data return wrong status";
     std::vector<Entry> results;
     singleKvStorePtr->GetEntries("SingleKvStoreDdmDeleteBatch003_", results);
-    unsigned long sum = 3;
+    size_t sum = 3;
     EXPECT_EQ(results.size(), sum) << "entries size is not equal 3.";
 }
 
@@ -829,14 +829,14 @@ HWTEST_F(SingleKvStoreClientTest, SingleKvStoreDdmDeleteBatch004, TestSize.Level
 
     std::vector<Entry> results1;
     singleKvStorePtr->GetEntries("SingleKvStoreDdmDeleteBatch004_", results1);
-    unsigned long sum1 = 3;
+    size_t sum1 = 3;
     EXPECT_EQ(results1.size(), sum1) << "entries size1111 is not equal 3.";
 
     Status status2 = singleKvStorePtr->DeleteBatch(keys);
     EXPECT_EQ(Status::INVALID_ARGUMENT, status2) << "SingleKvStore deletebatch data return wrong status";
     std::vector<Entry> results;
     singleKvStorePtr->GetEntries("SingleKvStoreDdmDeleteBatch004_", results);
-    unsigned long sum = 3;
+    size_t sum = 3;
     EXPECT_EQ(results.size(), sum) << "entries size is not equal 3.";
 }
 
@@ -875,14 +875,14 @@ HWTEST_F(SingleKvStoreClientTest, SingleKvStoreDdmDeleteBatch005, TestSize.Level
 
     std::vector<Entry> results1;
     singleKvStorePtr->GetEntries("SingleKvStoreDdmDeleteBatch005_", results1);
-    unsigned long sum1 = 3;
+    size_t sum1 = 3;
     EXPECT_EQ(results1.size(), sum1) << "entries111 size is not equal 3.";
 
     Status status2 = singleKvStorePtr->DeleteBatch(keys);
     EXPECT_EQ(Status::INVALID_ARGUMENT, status2) << "SingleKvStore deletebatch data return wrong status";
     std::vector<Entry> results;
     singleKvStorePtr->GetEntries("SingleKvStoreDdmDeleteBatch005_", results);
-    unsigned long sum = 3;
+    size_t sum = 3;
     EXPECT_EQ(results.size(), sum) << "entries size is not equal 3.";
 }
 

@@ -165,7 +165,7 @@ napi_value JsKVStoreResultSet::Move(napi_env env, napi_callback_info info) /* bo
     auto input = [env, ctxt, &offset](size_t argc, napi_value* argv) {
         // required 1 arguments :: <offset>
         CHECK_ARGS_RETURN_VOID(ctxt, argc == 1, "invalid arguments!");
-        ctxt->status = napi_get_value_int32(env, argv[0], (int32_t*)&offset);
+        ctxt->status = napi_get_value_int32(env, argv[0], reinterpret_cast<int32_t*>(&offset));
     };
     ctxt->GetCbInfoSync(env, info, input);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");
@@ -184,7 +184,7 @@ napi_value JsKVStoreResultSet::MoveToPosition(napi_env env, napi_callback_info i
     auto input = [env, ctxt, &position](size_t argc, napi_value* argv) {
         // required 1 arguments :: <position>
         CHECK_ARGS_RETURN_VOID(ctxt, argc == 1, "invalid arguments!");
-        ctxt->status = napi_get_value_int32(env, argv[0], (int32_t*)&position);
+        ctxt->status = napi_get_value_int32(env, argv[0], reinterpret_cast<int32_t*>(&position));
     };
     ctxt->GetCbInfoSync(env, info, input);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");

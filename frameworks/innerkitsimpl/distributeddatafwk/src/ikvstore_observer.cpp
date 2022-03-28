@@ -17,6 +17,7 @@
 
 #include "ikvstore_observer.h"
 #include <chrono>
+#include <cinttypes>
 #include "constant.h"
 #include "log_print.h"
 #include "message_parcel.h"
@@ -98,9 +99,8 @@ void KvStoreObserverProxy::OnChange(const ChangeNotification &changeNotification
         ZLOGE("Write ChangeNotification buffer size to parcel failed.");
         return;
     }
-    ZLOGD("I(%lld) U(%lld) D(%lld) T(%lld)", static_cast<long long>(insertBufferSize),
-          static_cast<long long>(updateBufferSize), static_cast<long long>(deleteBufferSize),
-          static_cast<long long>(totalBufferSize));
+    ZLOGD("I(%" PRId64") U(%" PRId64") D(%" PRId64") T(%" PRId64")",
+          insertBufferSize, updateBufferSize, deleteBufferSize, totalBufferSize);
     if (totalBufferSize < Constant::SWITCH_RAW_DATA_SIZE) {
         if (!data.WriteParcelable(&changeNotification)) {
             ZLOGW("Write ChangeNotification to parcel failed.");

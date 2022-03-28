@@ -109,7 +109,7 @@ napi_value JsFieldNode::AppendChild(napi_env env, napi_callback_info info)
     auto input = [env, ctxt, &child](size_t argc, napi_value* argv) {
         // required 1 arguments :: <child>
         CHECK_ARGS_RETURN_VOID(ctxt, argc == 1, "invalid arguments!");
-        ctxt->status = JSUtil::Unwrap(env, argv[0], (void**)(&child), JsFieldNode::Constructor(env));
+        ctxt->status = JSUtil::Unwrap(env, argv[0], reinterpret_cast<void**>(&child), JsFieldNode::Constructor(env));
         CHECK_STATUS_RETURN_VOID(ctxt, "napi_unwrap to FieldNode failed");
         CHECK_ARGS_RETURN_VOID(ctxt, child != nullptr, "invalid arg[0], i.e. invalid FieldNode!");
     };

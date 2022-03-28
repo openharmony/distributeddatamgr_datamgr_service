@@ -100,8 +100,8 @@ public:
 
 class SingleKvStoreStub : public IRemoteStub<ISingleKvStore> {
 public:
-    virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option) override;
+    int OnRemoteRequest(uint32_t code, MessageParcel &data,
+                        MessageParcel &reply, MessageOption &option) override;
 
 private:
     int PutOnRemote(MessageParcel &data, MessageParcel &reply);

@@ -32,8 +32,8 @@ public:
 
 class KvStoreSyncCallbackStub : public IRemoteStub<IKvStoreSyncCallback> {
 public:
-    virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option) override;
+    int OnRemoteRequest(uint32_t code, MessageParcel &data,
+                        MessageParcel &reply, MessageOption &option) override;
 };
 
 class KvStoreSyncCallbackProxy : public IRemoteProxy<IKvStoreSyncCallback> {

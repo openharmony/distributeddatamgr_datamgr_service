@@ -206,7 +206,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider017, TestSize.Level
     CommunicationProvider::GetInstance().StartWatchDataChange(dataListener17, id17);
     CommunicationProvider::GetInstance().Start(id17);
     std::string content = "Helloworlds";
-    const uint8_t *t = (uint8_t *)(content.c_str());
+    const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
     DeviceId di17 = {"127.0.0.2"};
     Status status = CommunicationProvider::GetInstance().SendData(id17, di17, t, content.length());
     EXPECT_NE(status, Status::SUCCESS);
