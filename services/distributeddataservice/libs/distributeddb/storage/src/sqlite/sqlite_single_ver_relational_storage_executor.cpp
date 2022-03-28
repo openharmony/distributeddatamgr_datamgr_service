@@ -658,7 +658,7 @@ int SQLiteSingleVerRelationalStorageExecutor::PrepareForSavingData(const QueryOb
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statement, sqlite3_stmt *queryStmt,
-    const DataItem &dataItem, Timestamp &maxTimestamp, int64_t rowid)
+    const DataItem &dataItem, int64_t rowid)
 {
     int errCode = SQLiteUtils::BindBlobToStatement(queryStmt, 1, dataItem.hashKey);  // 1 means hashkey index.
     if (errCode != E_OK) {
@@ -682,9 +682,9 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncLog(sqlite3_stmt *statemen
     logInfoBind.device = dataItem.dev;
     logInfoBind.timestamp = dataItem.timestamp;
     logInfoBind.flag = dataItem.flag;
-    logInfoBind.wTimestamp = maxTimestamp;
 
     if (errCode == -E_NOT_FOUND) { // insert
+        logInfoBind.wTimestamp = dataItem.writeTimestamp;
         logInfoBind.originDev = dataItem.dev;
     } else if (errCode == E_OK) { // update
         logInfoBind.wTimestamp = logInfoGet.wTimestamp;
@@ -860,7 +860,7 @@ int SQLiteSingleVerRelationalStorageExecutor::CheckDataConflictDefeated(const Da
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const std::vector<FieldInfo> &fieldInfos,
-    const std::string &deviceName, DataItem &item, Timestamp &maxTimestamp)
+    const std::string &deviceName, DataItem &item)
 {
     item.dev = deviceName;
     bool isDefeated = false;
@@ -880,13 +880,13 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const std::vector
     int64_t rowid = -1;
     errCode = SaveSyncDataItem(item, saveStmt_.saveDataStmt, saveStmt_.rmDataStmt, fieldInfos, rowid);
     if (errCode == E_OK || errCode == -E_NOT_FOUND) {
-        errCode = SaveSyncLog(saveStmt_.saveLogStmt, saveStmt_.queryStmt, item, maxTimestamp, rowid);
+        errCode = SaveSyncLog(saveStmt_.saveLogStmt, saveStmt_.queryStmt, item, rowid);
     }
     return errCode;
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObject &object,
-    std::vector<DataItem> &dataItems, const std::string &deviceName, Timestamp &maxTimestamp)
+    std::vector<DataItem> &dataItems, const std::string &deviceName)
 {
     int errCode = PrepareForSavingData(object, saveStmt_.saveDataStmt);
     if (errCode != E_OK) {
@@ -906,11 +906,10 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
         if (item.neglect) { // Do not save this record if it is neglected
             continue;
         }
-        errCode = SaveSyncDataItem(fieldInfos, deviceName, item, maxTimestamp);
+        errCode = SaveSyncDataItem(fieldInfos, deviceName, item);
         if (errCode != E_OK) {
             break;
         }
-        maxTimestamp = std::max(item.timestamp, maxTimestamp);
         // Need not reset rmDataStmt and rmLogStmt here.
         saveStmt_.ResetStatements(false);
     }
@@ -922,7 +921,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItems(const QueryObjec
 }
 
 int SQLiteSingleVerRelationalStorageExecutor::SaveSyncItems(const QueryObject &object, std::vector<DataItem> &dataItems,
-    const std::string &deviceName, const TableInfo &table, Timestamp &timestamp)
+    const std::string &deviceName, const TableInfo &table)
 {
     int errCode = StartTransaction(TransactType::IMMEDIATE);
     if (errCode != E_OK) {
@@ -932,7 +931,7 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncItems(const QueryObject &o
     SetTableInfo(table);
     const std::string tableName = DBCommon::GetDistributedTableName(deviceName, baseTblName_);
     table_.SetTableName(tableName);
-    errCode = SaveSyncDataItems(object, dataItems, deviceName, timestamp);
+    errCode = SaveSyncDataItems(object, dataItems, deviceName);
     if (errCode == E_OK) {
         errCode = Commit();
     } else {

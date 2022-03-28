@@ -54,7 +54,7 @@ public:
 
     // For Put sync data
     int SaveSyncItems(const QueryObject &object, std::vector<DataItem> &dataItems,
-        const std::string &deviceName, const TableInfo &table, Timestamp &timestamp);
+        const std::string &deviceName, const TableInfo &table);
 
     int AnalysisRelationalSchema(const std::string &tableName, TableInfo &tableInfo);
 
@@ -92,18 +92,15 @@ private:
 
     int CheckDataConflictDefeated(const DataItem &item, bool &isDefeated);
 
-    int SaveSyncDataItem(const std::vector<FieldInfo> &fieldInfos, const std::string &deviceName, DataItem &item,
-        Timestamp &maxTimestamp);
+    int SaveSyncDataItem(const std::vector<FieldInfo> &fieldInfos, const std::string &deviceName, DataItem &item);
 
-    int SaveSyncDataItems(const QueryObject &object, std::vector<DataItem> &dataItems,
-        const std::string &deviceName, Timestamp &timestamp);
+    int SaveSyncDataItems(const QueryObject &object, std::vector<DataItem> &dataItems, const std::string &deviceName);
     int SaveSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&saveDataStmt, sqlite3_stmt *&rmDataStmt,
         const std::vector<FieldInfo> &fieldInfos, int64_t &rowid);
 
     int DeleteSyncDataItem(const DataItem &dataItem, sqlite3_stmt *&rmDataStmt);
 
-    int SaveSyncLog(sqlite3_stmt *statement, sqlite3_stmt *queryStmt, const DataItem &dataItem,
-        Timestamp &maxTimestamp, int64_t rowid);
+    int SaveSyncLog(sqlite3_stmt *statement, sqlite3_stmt *queryStmt, const DataItem &dataItem, int64_t rowid);
     int PrepareForSavingData(const QueryObject &object, sqlite3_stmt *&statement) const;
     int PrepareForSavingLog(const QueryObject &object, const std::string &deviceName,
         sqlite3_stmt *&statement,  sqlite3_stmt *&queryStmt) const;
