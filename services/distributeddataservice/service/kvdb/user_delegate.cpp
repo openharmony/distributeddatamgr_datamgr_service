@@ -69,7 +69,7 @@ void UserDelegate::DeleteUsers(const std::string &deviceId)
 
 void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<UserStatus> &userStatus)
 {
-    ZLOGI("begin, device:%{public}.10s, users:%{public}u", deviceId.c_str(), userStatus.size());
+    ZLOGI("begin, device:%{public}.10s, users:%{public}zu", deviceId.c_str(), userStatus.size());
     deviceUserMap_.ComputeIfPresent(deviceId, [](const auto &key, std::map<int, bool> &userMap) {
         for (auto &user : userMap) {
             user.second = false;
@@ -78,7 +78,8 @@ void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<Us
     for (auto &user : userStatus) {
         deviceUserMap_[deviceId][user.id] = user.isActive;
     }
-    ZLOGI("end, device:%{public}.10s, users:%{public}u", deviceId.c_str(), deviceUserMap_[deviceId].size());
+    ZLOGI("end, device:%{public}.10s, users:%{public}zu", deviceId.c_str(),
+          deviceUserMap_[deviceId].size());
 }
 
 bool UserDelegate::InitLocalUserMeta()
