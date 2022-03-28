@@ -228,6 +228,33 @@ HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck006, TestSize.Level1)
 }
 
 /**
+ * @tc.name: StateMachineCheck007
+ * @tc.desc: Test machine DoSaveDataNotify in another thread.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck007, TestSize.Level3)
+{
+    MockSingleVerStateMachine stateMachine;
+    uint8_t callCount = 0;
+    EXPECT_CALL(stateMachine, DoSaveDataNotify(_, _, _))
+        .WillRepeatedly([&callCount](uint32_t sessionId, uint32_t sequenceId, uint32_t inMsgId) {
+            (void) sessionId;
+            (void) sequenceId;
+            (void) inMsgId;
+            callCount++;
+            std::this_thread::sleep_for(std::chrono::seconds(4)); // sleep 4s
+        });
+    stateMachine.CallStartSaveDataNotify(0, 0, 0);
+    std::this_thread::sleep_for(std::chrono::seconds(5)); // sleep 5s
+    stateMachine.CallStopSaveDataNotify();
+    // timer is called once in 2s, we sleep 5s timer call twice
+    EXPECT_EQ(callCount, 2);
+    std::this_thread::sleep_for(std::chrono::seconds(10)); // sleep 10s to wait all thread exit
+}
+
+/**
  * @tc.name: DataSyncCheck001
  * @tc.desc: Test dataSync recv error ack.
  * @tc.type: FUNC

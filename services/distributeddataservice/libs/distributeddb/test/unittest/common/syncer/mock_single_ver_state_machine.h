@@ -42,9 +42,21 @@ public:
         SingleVerSyncStateMachine::DataAckRecvErrCodeHandle(errCode, handleError);
     }
 
+    bool CallStartSaveDataNotify(uint32_t sessionId, uint32_t sequenceId, uint32_t inMsgId)
+    {
+        return SingleVerSyncStateMachine::StartSaveDataNotify(sessionId, sequenceId, inMsgId);
+    }
+
+    void CallStopSaveDataNotify()
+    {
+        SingleVerSyncStateMachine::StopSaveDataNotify();
+    }
+
     MOCK_METHOD1(SwitchStateAndStep, void(uint8_t));
 
     MOCK_METHOD0(PrepareNextSyncTask, int(void));
+
+    MOCK_METHOD3(DoSaveDataNotify, void(uint32_t, uint32_t, uint32_t));
 };
 } // namespace DistributedDB
 #endif  // #define MOCK_SINGLE_VER_STATE_MACHINE_H
