@@ -29,7 +29,7 @@ public:
     static int TransferCompressionAlgo(uint32_t compressAlgoType, CompressAlgorithm &algoType);
 
     virtual int Compress(const std::vector<uint8_t> &srcData, std::vector<uint8_t> &destData) const = 0;
-    virtual int Uncompress(const std::vector<uint8_t> &srcData, std::vector<uint8_t> &destData, uint64_t destLen)
+    virtual int Uncompress(const std::vector<uint8_t> &srcData, std::vector<uint8_t> &destData, uint32_t destLen)
         const = 0;
 
 protected:

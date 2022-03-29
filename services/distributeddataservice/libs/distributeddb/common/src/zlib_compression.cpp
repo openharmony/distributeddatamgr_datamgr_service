@@ -55,7 +55,7 @@ int ZlibCompression::Compress(const std::vector<uint8_t> &srcData, std::vector<u
 }
 
 int ZlibCompression::Uncompress(const std::vector<uint8_t> &srcData, std::vector<uint8_t> &destData,
-    uint64_t destLen) const
+    uint32_t destLen) const
 {
     auto srcLen = srcData.size();
     if (srcLen > DBConstant::MAX_SYNC_BLOCK_SIZE || destLen > DBConstant::MAX_SYNC_BLOCK_SIZE) {
@@ -67,13 +67,14 @@ int ZlibCompression::Uncompress(const std::vector<uint8_t> &srcData, std::vector
     destData.resize(destLen);
 
     // Uncompress.
-    int errCode = uncompress(destData.data(), &destLen, srcData.data(), srcData.size());
+    uLongf destDataLen = destLen;
+    int errCode = uncompress(destData.data(), &destDataLen, srcData.data(), srcData.size());
     if (errCode != Z_OK) {
         LOGE("Uncompress failed, errCode = %d", errCode);
         return -E_SYSTEM_API_FAIL;
     }
 
-    destData.resize(destLen);
+    destData.resize(destDataLen);
     destData.shrink_to_fit();
     return E_OK;
 }

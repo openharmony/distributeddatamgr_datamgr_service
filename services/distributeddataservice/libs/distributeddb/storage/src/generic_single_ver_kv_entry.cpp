@@ -403,7 +403,7 @@ int GenericSingleVerKvEntry::Compress(const std::vector<SingleVerKvEntry *> &kvE
 }
 
 int GenericSingleVerKvEntry::Uncompress(const std::vector<uint8_t> &srcData, std::vector<SingleVerKvEntry *> &kvEntries,
-    uint64_t destLen, CompressAlgorithm algo)
+    uint32_t destLen, CompressAlgorithm algo)
 {
     // Uncompress data.
     std::vector<uint8_t> destData(destLen, 0);

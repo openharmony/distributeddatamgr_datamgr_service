@@ -25,7 +25,7 @@ public:
     ~ZlibCompression() = default;
 
     int Compress(const std::vector<uint8_t> &srcData, std::vector<uint8_t> &destData) const override;
-    int Uncompress(const std::vector<uint8_t> &srcData, std::vector<uint8_t> &destData, uint64_t destLen) const
+    int Uncompress(const std::vector<uint8_t> &srcData, std::vector<uint8_t> &destData, uint32_t destLen) const
         override;
 
 protected:
