@@ -95,7 +95,8 @@ void KvStoreMetaManager::SubscribeMeta(const std::string &keyPrefix, const Chang
 void KvStoreMetaManager::InitMetaListener()
 {
     InitMetaData();
-    auto status = AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(&listener_, { "metaMgr" });
+    auto status = AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(
+        &listener_, { "metaMgr" });
     if (status != AppDistributedKv::Status::SUCCESS) {
         ZLOGW("register failed.");
         return;

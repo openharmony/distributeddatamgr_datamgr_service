@@ -134,7 +134,8 @@ void KvStoreDataService::Initialize()
     accountEventObserver_ = std::make_shared<KvStoreAccountObserver>(*this);
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
-    AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
+    AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(
+        deviceInnerListener_.get(), { "innerListener" });
 }
 
 Status KvStoreDataService::GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
@@ -1250,7 +1251,8 @@ void KvStoreDataService::InitSecurityAdapter()
     auto dbStatus = DistributedDB::KvStoreDelegateManager::SetProcessSystemAPIAdapter(security_);
     ZLOGD("set distributed db system api adapter: %d.", static_cast<int>(dbStatus));
 
-    auto status = AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(security_.get(), {"security"});
+    auto status = AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(
+        security_.get(), {"security"});
     if (status != AppDistributedKv::Status::SUCCESS) {
         ZLOGD("security register device change failed, status:%d", static_cast<int>(status));
     }
@@ -1266,7 +1268,8 @@ Status KvStoreDataService::StartWatchDeviceChange(sptr<IDeviceStatusChangeListen
     std::lock_guard<std::mutex> lck(deviceListenerMutex_);
     if (deviceListener_ == nullptr) {
         deviceListener_ = std::make_shared<DeviceChangeListenerImpl>(deviceListeners_);
-        AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(deviceListener_.get(), {"serviceWatcher"});
+        AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(
+            deviceListener_.get(), {"serviceWatcher"});
     }
     IRemoteObject *objectPtr = observer->AsObject().GetRefPtr();
     auto listenerPair = std::make_pair(objectPtr, observer);
