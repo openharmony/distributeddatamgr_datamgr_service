@@ -327,7 +327,7 @@ Status KvStoreAppManager::DeleteAllKvStore()
     if (GetTotalKvStoreNum() == 0) {
         return Status::STORE_NOT_OPEN;
     }
-    ZLOGI("delete %d KvStores.", static_cast<int32_t>(GetTotalKvStoreNum()));
+    ZLOGI("delete %d KvStores.", int32_t(GetTotalKvStoreNum()));
 
     Status status = DeleteAllKvStore(PATH_DE);
     if (status != Status::SUCCESS) {
@@ -592,7 +592,6 @@ Status KvStoreAppManager::DeleteKvStore(const std::string &storeId, PathType typ
     if (singleStores_[type].empty() && stores_[type].empty()) {
         SwitchDelegateManager(type, nullptr);
         delete delegateManager;
-        delegateManager = nullptr;
     }
     return (status != DistributedDB::DBStatus::OK) ? Status::DB_ERROR : Status::SUCCESS;
 }
@@ -642,7 +641,6 @@ Status KvStoreAppManager::DeleteAllKvStore(PathType type)
     singleStores_[type].clear();
     SwitchDelegateManager(type, nullptr);
     delete delegateManager;
-    delegateManager = nullptr;
     return Status::SUCCESS;
 }
 
