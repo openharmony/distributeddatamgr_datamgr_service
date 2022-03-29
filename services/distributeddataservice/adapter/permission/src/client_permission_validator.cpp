@@ -18,6 +18,8 @@
 #include "client_permission_validator.h"
 #include <cstdint>
 #include <string>
+#include "accesstoken_kit.h"
+#include "log_print.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -46,11 +48,11 @@ void ClientPermissionValidator::UpdatePermissionStatus(
     }
 }
 
-bool ClientPermissionValidator::CheckClientSyncPermission(const KvStoreTuple &kvStoreTuple, std::int32_t curUid)
+bool ClientPermissionValidator::CheckClientSyncPermission(const KvStoreTuple &kvStoreTuple, std::uint32_t tokenId)
 {
-    (void) kvStoreTuple;
-    (void) curUid;
-    return true;
+    (void)kvStoreTuple;
+    return (Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, DISTRIBUTED_DATASYNC) ==
+            Security::AccessToken::PERMISSION_GRANTED);
 }
 
 bool ClientPermissionValidator::RegisterPermissionChanged(

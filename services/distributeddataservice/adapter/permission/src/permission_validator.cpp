@@ -36,10 +36,11 @@ std::set<std::string> PermissionValidator::autoLaunchEnableList_ = {
 };
 
 // check whether the client process have enough privilege to share data with the other devices.
-bool PermissionValidator::CheckSyncPermission(const std::string &userId, const std::string &appId, std::int32_t uid)
+bool PermissionValidator::CheckSyncPermission(const std::string &userId, const std::string &appId,
+                                              std::uint32_t tokenId)
 {
     KvStoreTuple kvStoreTuple {userId, appId};
-    return ClientPermissionValidator::GetInstance().CheckClientSyncPermission(kvStoreTuple, uid);
+    return ClientPermissionValidator::GetInstance().CheckClientSyncPermission(kvStoreTuple, tokenId);
 }
 
 bool PermissionValidator::RegisterPermissionChanged(

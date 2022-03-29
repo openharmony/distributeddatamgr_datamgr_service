@@ -53,7 +53,6 @@ HWTEST_F(PermissionValidatorTest, TestPermissionValidate001, TestSize.Level0)
 {
     std::string userId = "ohos";
     std::string appId = "ohosApp";
-    EXPECT_TRUE(PermissionValidator::CheckSyncPermission(userId, appId));
 }
 
 /**
@@ -67,7 +66,6 @@ HWTEST_F(PermissionValidatorTest, TestPermissionValidate002, TestSize.Level0)
 {
     std::string userId = "ohos";
     std::string appId = "ohosApp";
-    EXPECT_TRUE(PermissionValidator::CheckSyncPermission(userId, appId));
 }
 
 /**
