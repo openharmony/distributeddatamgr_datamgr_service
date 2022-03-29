@@ -19,7 +19,6 @@
 
 #include <regex>
 #include <sstream>
-#include <string>
 
 #include "kvstore_utils.h"
 #include "data_query.h"
