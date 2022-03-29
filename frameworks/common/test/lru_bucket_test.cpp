@@ -48,7 +48,7 @@ protected:
 
     void TearDown() {}
 
-    LRUBucket<std::string, TestValue> bucket_{10};
+    LRUBucket<std::string, TestValue> bucket_{TEST_CAPACITY};
 };
 
 /**
