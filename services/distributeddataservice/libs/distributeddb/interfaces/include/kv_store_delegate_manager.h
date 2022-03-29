@@ -119,6 +119,7 @@ private:
     static const std::string DEFAULT_PROCESS_APP_ID;
     static std::mutex communicatorMutex_;
     static std::shared_ptr<IProcessCommunicator> processCommunicator_;
+    static std::mutex multiUserMutex_;
 
     KvStoreConfig kvStoreConfig_;
     std::string appId_;

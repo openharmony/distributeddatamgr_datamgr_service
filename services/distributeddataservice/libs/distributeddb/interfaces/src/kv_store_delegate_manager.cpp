@@ -42,6 +42,7 @@ namespace DistributedDB {
 const std::string KvStoreDelegateManager::DEFAULT_PROCESS_APP_ID = "default";
 std::mutex KvStoreDelegateManager::communicatorMutex_;
 std::shared_ptr<IProcessCommunicator> KvStoreDelegateManager::processCommunicator_ = nullptr;
+std::mutex KvStoreDelegateManager::multiUserMutex_;
 
 namespace {
     const int GET_CONNECT_RETRY = 3;
@@ -592,12 +593,14 @@ void KvStoreDelegateManager::SetStoreStatusNotifier(const StoreStatusNotifier &n
 
 DBStatus KvStoreDelegateManager::SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback)
 {
+    std::lock_guard<std::mutex> lock(multiUserMutex_);
     int errCode = RuntimeContext::GetInstance()->SetSyncActivationCheckCallback(callback);
     return TransferDBErrno(errCode);
 }
 
 DBStatus KvStoreDelegateManager::NotifyUserChanged()
 {
+    std::lock_guard<std::mutex> lock(multiUserMutex_);
     int errCode = RuntimeContext::GetInstance()->NotifyUserChanged();
     return TransferDBErrno(errCode);
 }
