@@ -101,7 +101,7 @@ struct KvStoreMetaData {
     KvStoreType kvStoreType = KvStoreType::DEVICE_COLLABORATION;
     std::string schema = "";
     std::string storeId = "";
-    std::uint32_t tokenId;
+    std::uint32_t tokenId = 0;
     std::string userId = "";
     std::int32_t uid = -1;
     std::uint32_t version = 0;
