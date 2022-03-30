@@ -1603,6 +1603,7 @@ int SingleVerDataSync::RemoveDeviceDataIfNeed(SingleVerSyncTaskContext *context)
         return E_OK;
     }
     uint64_t clearRemoteDataMark = 0;
+    std::lock_guard<std::mutex> autoLock(removeDeviceDataLock_);
     metadata_->GetRemoveDataMark(context->GetDeviceId(), clearRemoteDataMark);
     if (clearRemoteDataMark == 0) {
         return E_OK;

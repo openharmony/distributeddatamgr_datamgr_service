@@ -269,6 +269,8 @@ protected:
     bool isAllDataHasSent_ = false;
     // in a sync session, the last data timestamp
     Timestamp sessionEndTimestamp_ = 0;
+
+    std::mutex removeDeviceDataLock_;
 };
 }  // namespace DistributedDB
 
