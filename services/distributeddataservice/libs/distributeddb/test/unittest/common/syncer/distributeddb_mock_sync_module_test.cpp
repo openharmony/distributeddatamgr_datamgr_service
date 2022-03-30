@@ -14,6 +14,7 @@
  */
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <thread>
 
 #include "distributeddb_tools_unit_test.h"
 #include "message.h"
@@ -401,6 +402,63 @@ HWTEST_F(DistributedDBMockSyncModuleTest, SyncDataSync002, TestSize.Level1)
     EXPECT_CALL(dataSync, RemoveDeviceDataIfNeed(_)).WillRepeatedly(Return(-E_BUSY));
     EXPECT_EQ(dataSync.CallPullRequestStart(&syncTaskContext), -E_BUSY);
     EXPECT_EQ(syncTaskContext.GetTaskErrCode(), -E_BUSY);
+}
+
+/**
+ * @tc.name: SyncDataSync003
+ * @tc.desc: Test call RemoveDeviceDataIfNeed in diff thread.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, SyncDataSync003, TestSize.Level1)
+{
+    MockSyncTaskContext syncTaskContext;
+    MockSingleVerDataSync dataSync;
+
+    VirtualSingleVerSyncDBInterface storage;
+    MockCommunicator communicator;
+    std::shared_ptr<MockMetadata> mockMetadata = std::make_shared<MockMetadata>();
+    std::shared_ptr<Metadata> metadata = std::static_pointer_cast<Metadata>(mockMetadata);
+    metadata->Initialize(&storage);
+    const std::string deviceId = "deviceId";
+    dataSync.Initialize(&storage, &communicator, metadata, deviceId);
+    syncTaskContext.SetRemoteSoftwareVersion(SOFTWARE_VERSION_CURRENT);
+    syncTaskContext.Initialize(deviceId, &storage, metadata, &communicator);
+    syncTaskContext.EnableClearRemoteStaleData(true);
+
+    /**
+     * @tc.steps: step1. set diff db createtime for rebuild label in meta
+     */
+    metadata->SetDbCreateTime(deviceId, 1, true); // 1 is old db createTime
+    metadata->SetDbCreateTime(deviceId, 2, true); // 1 is new db createTime
+
+    DistributedDB::Key k1 = {'k', '1'};
+    DistributedDB::Value v1 = {'v', '1'};
+    DistributedDB::Key k2 = {'k', '2'};
+    DistributedDB::Value v2 = {'v', '2'};
+
+    /**
+     * @tc.steps: step2. call RemoveDeviceDataIfNeed in diff thread and then put data
+     */
+    std::thread thread1([&]() {
+        (void)dataSync.CallRemoveDeviceDataIfNeed(&syncTaskContext);
+        storage.PutDeviceData(deviceId, k1, v1);
+        LOGD("PUT FINISH");
+    });
+    std::thread thread2([&]() {
+        (void)dataSync.CallRemoveDeviceDataIfNeed(&syncTaskContext);
+        storage.PutDeviceData(deviceId, k2, v2);
+        LOGD("PUT FINISH");
+    });
+    thread1.join();
+    thread2.join();
+
+    DistributedDB::Value actualValue;
+    storage.GetDeviceData(deviceId, k1, actualValue);
+    EXPECT_EQ(v1, actualValue);
+    storage.GetDeviceData(deviceId, k2, actualValue);
+    EXPECT_EQ(v2, actualValue);
 }
 
 /**

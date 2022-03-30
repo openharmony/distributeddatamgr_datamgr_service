@@ -37,6 +37,11 @@ public:
         SingleVerDataSync::UpdateSendInfo(dataTimeRange, context);
     }
 
+    int CallRemoveDeviceDataIfNeed(SingleVerSyncTaskContext *context)
+    {
+        return SingleVerDataSync::RemoveDeviceDataIfNeed(context);
+    }
+
     MOCK_METHOD1(RemoveDeviceDataIfNeed, int(SingleVerSyncTaskContext *));
 };
 } // namespace DistributedDB

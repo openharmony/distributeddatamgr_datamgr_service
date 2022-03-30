@@ -167,6 +167,9 @@ void VirtualSingleVerSyncDBInterface::GetMaxTimestamp(Timestamp& stamp) const
 
 int VirtualSingleVerSyncDBInterface::RemoveDeviceData(const std::string &deviceName, bool isNeedNotify)
 {
+    std::lock_guard<std::mutex> autoLock(deviceDataLock_);
+    deviceData_.erase(deviceName);
+    LOGD("RemoveDeviceData FINISH");
     return E_OK;
 }
 
@@ -416,5 +419,17 @@ int VirtualSingleVerSyncDBInterface::RemoveSubscribe(const std::vector<std::stri
 void VirtualSingleVerSyncDBInterface::SetBusy(bool busy)
 {
     busy_ = busy;
+}
+
+void VirtualSingleVerSyncDBInterface::PutDeviceData(const std::string &deviceName, const Key &key, const Value &value)
+{
+    std::lock_guard<std::mutex> autoLock(deviceDataLock_);
+    deviceData_[deviceName][key] = value;
+}
+
+void VirtualSingleVerSyncDBInterface::GetDeviceData(const std::string &deviceName, const Key &key, Value &value)
+{
+    std::lock_guard<std::mutex> autoLock(deviceDataLock_);
+    value = deviceData_[deviceName][key];
 }
 }  // namespace DistributedDB

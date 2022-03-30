@@ -17,6 +17,7 @@
 #define KVDB_SYNCABLE_TEST_H
 
 #include <map>
+#include <mutex>
 #include <vector>
 
 #include "single_ver_kvdb_sync_interface.h"
@@ -120,6 +121,10 @@ public:
     int RemoveSubscribe(const std::vector<std::string> &subscribeIds) override;
 
     void SetBusy(bool busy);
+
+    void PutDeviceData(const std::string &deviceName, const Key &key, const Value &value);
+
+    void GetDeviceData(const std::string &deviceName, const Key &key, Value &value);
 private:
     int GetSyncData(Timestamp begin, Timestamp end, uint32_t blockSize, std::vector<VirtualDataItem>& dataItems,
         ContinueToken& continueStmtToken) const;
@@ -137,6 +142,9 @@ private:
     uint64_t saveDataDelayTime_ = 0;
     SecurityOption secOption_;
     bool busy_ = false;
+
+    std::mutex deviceDataLock_;
+    std::map<std::string, std::map<Key, Value>> deviceData_;
 };
 }  // namespace DistributedDB
 
