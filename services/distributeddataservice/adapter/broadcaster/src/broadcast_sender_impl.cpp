@@ -38,6 +38,7 @@ CommonEventSubscriberListener::CommonEventSubscriberListener(const CommonEventSu
 
 void CommonEventSubscriberListener::OnReceiveEvent(const CommonEventData &data)
 {
+    (void) data;
     ZLOGI("receive event.");
 }
 

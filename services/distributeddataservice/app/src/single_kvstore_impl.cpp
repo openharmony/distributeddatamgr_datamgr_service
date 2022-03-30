@@ -900,7 +900,7 @@ std::vector<std::string> SingleKvStoreImpl::MapNodeIdToUuids(const std::vector<s
     for (auto const &nodeId : deviceIds) {
         std::string uuid = AppDistributedKv::CommunicationProvider::GetInstance().GetUuidByNodeId(nodeId);
         if (!uuid.empty()) {
-            deviceUuids.push_back(uuid);
+            deviceUuids.emplace_back(uuid);
         }
     }
     return deviceUuids;
@@ -931,7 +931,7 @@ Status SingleKvStoreImpl::DoSubscribe(const std::vector<std::string> &deviceIds,
         }
         DdsTrace trace(std::string(LOG_TAG "Delegate::") + std::string(__FUNCTION__));
         status = kvStoreNbDelegate_->SubscribeRemoteQuery(deviceUuids, syncEnd, dbQuery, false);
-        ZLOGD("end: %d", static_cast<uint32_t>(status));
+        ZLOGD("end: %u", static_cast<uint32_t>(status));
     }
     Reporter::GetInstance()->VisitStatistic()->Report({bundleName_, __FUNCTION__});
     return ConvertDbStatus(status);
@@ -962,7 +962,7 @@ Status SingleKvStoreImpl::DoUnSubscribe(const std::vector<std::string> &deviceId
         }
         DdsTrace trace(std::string(LOG_TAG "Delegate::") + std::string(__FUNCTION__));
         status = kvStoreNbDelegate_->UnSubscribeRemoteQuery(deviceUuids, syncEnd, dbQuery, false);
-        ZLOGD("end: %d", static_cast<uint32_t>(status));
+        ZLOGD("end: %u", static_cast<uint32_t>(status));
     }
     return ConvertDbStatus(status);
 }

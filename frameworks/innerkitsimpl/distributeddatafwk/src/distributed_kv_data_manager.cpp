@@ -121,6 +121,7 @@ Status DistributedKvDataManager::GetSingleKvStore(const Options &options, const 
     singleKvStore = std::make_shared<SingleKvStoreClient>(std::move(proxyTmp), storeIdTmp);
     return status;
 }
+
 Status DistributedKvDataManager::GetAllKvStoreId(const AppId &appId, std::vector<StoreId> &storeIds)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));

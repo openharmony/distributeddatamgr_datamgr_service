@@ -583,7 +583,7 @@ bool SoftBusAdapter::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
 
 void SoftBusAdapter::SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag)
 {
-    ZLOGI("pipeInfo: %s flag: %d", pipeInfo.pipeId.c_str(), static_cast<bool>(flag));
+    ZLOGI("pipeInfo: %s flag: %d", pipeInfo.pipeId.c_str(), flag);
     flag_ = flag;
 }
 

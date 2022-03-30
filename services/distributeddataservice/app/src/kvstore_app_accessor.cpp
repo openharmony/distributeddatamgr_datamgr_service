@@ -102,6 +102,7 @@ void KvStoreAppAccessor::EnableKvStoreAutoLaunch()
 
 void KvStoreAppAccessor::DisableKvStoreAutoLaunch(const AppAccessorParam &param)
 {
+    (void) param;
 }
 
 void KvStoreAppAccessor::OnCallback(const std::string &userId, const std::string &appId, const std::string &storeId,

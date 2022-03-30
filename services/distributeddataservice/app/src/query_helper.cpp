@@ -15,14 +15,15 @@
 
 #define LOG_TAG "QueryHelper"
 
+#include "query_helper.h"
+
 #include <regex>
 #include <sstream>
-#include <string>
+
 #include "kvstore_utils.h"
 #include "data_query.h"
 #include "log_print.h"
 #include "types.h"
-#include "query_helper.h"
 
 namespace OHOS::DistributedKv {
 constexpr int QUERY_SKIP_SIZE = 1;

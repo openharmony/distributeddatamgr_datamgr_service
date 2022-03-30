@@ -1135,6 +1135,7 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::~KvSt
 void KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::OnRemoteDied(
     const wptr<IRemoteObject> &remote)
 {
+    (void) remote;
     ZLOGI("begin");
     kvStoreClientDeathObserverImpl_.NotifyClientDie();
 }

@@ -23,6 +23,7 @@ bool MetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(secretKeyMetaData)], secretKeyMetaData);
     return true;
 }
+
 bool MetaData::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(kvStoreType), kvStoreType);

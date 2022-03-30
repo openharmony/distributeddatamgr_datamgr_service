@@ -133,7 +133,7 @@ bool ReadFromBuff(MessageParcel &data, const int &len, const int &bufferSize, st
 {
     const uint8_t *buffer = reinterpret_cast<const uint8_t *>(data.ReadRawData(bufferSize));
     if (buffer == nullptr) {
-        ZLOGE("new buffer filed");
+        ZLOGE("new buffer failed");
         return false;
     }
     int bufferLeftSize = bufferSize;
