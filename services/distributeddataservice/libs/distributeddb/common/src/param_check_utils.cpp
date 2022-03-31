@@ -105,10 +105,7 @@ bool ParamCheckUtils::CheckConflictNotifierType(int conflictType)
     if (conflictType >= CONFLICT_FOREIGN_KEY_ONLY) {
         conflictType -= CONFLICT_FOREIGN_KEY_ONLY;
     }
-    if (conflictType != 0) {
-        return false;
-    }
-    return true;
+    return (conflictType == 0);
 }
 
 bool ParamCheckUtils::CheckSecOption(const SecurityOption &secOption)

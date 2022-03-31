@@ -106,4 +106,4 @@ void LockStatusObserver::OnStatusChange(bool isLocked) const
     }
     lockStatusChangedNotifier_->NotifyEvent(LOCK_STATUS_CHANGE_EVENT, &isLocked);
 }
-}
+}  // namespace DistributedDB

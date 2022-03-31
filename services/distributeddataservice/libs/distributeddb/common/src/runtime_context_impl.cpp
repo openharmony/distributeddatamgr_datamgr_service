@@ -562,10 +562,7 @@ int RuntimeContextImpl::SetProcessSystemApiAdapter(const std::shared_ptr<IProces
 bool RuntimeContextImpl::IsProcessSystemApiAdapterValid() const
 {
     std::lock_guard<std::recursive_mutex> autoLock(systemApiAdapterLock_);
-    if (systemApiAdapter_ == nullptr) {
-        return false;
-    }
-    return true;
+    return (systemApiAdapter_ != nullptr);
 }
 
 void RuntimeContextImpl::NotifyTimestampChanged(TimeOffset offset) const

@@ -48,7 +48,7 @@ PerformanceAnalysis::PerformanceAnalysis(uint32_t inStepNum)
         stepIter.min = ULLONG_MAX;
         stepIter.average = 0;
     }
-    for (std::vector<uint64_t>::iterator iter = counts_.begin(); iter != counts_.end(); ++iter) {
+    for (auto iter = counts_.begin(); iter != counts_.end(); ++iter) {
         *iter = 0;
     }
     fileNumber_ = 0;
@@ -59,14 +59,7 @@ PerformanceAnalysis::~PerformanceAnalysis() {};
 
 bool PerformanceAnalysis::IsStepValid(uint32_t step) const
 {
-    if (stepNum_ >= MAX_TIMERECORD_STEP_NUM) {
-        return false;
-    }
-
-    if (step < stepNum_) {
-        return true;
-    }
-    return false;
+    return (stepNum_ < MAX_TIMERECORD_STEP_NUM && step < stepNum_);
 }
 
 bool PerformanceAnalysis::IsOpen() const
@@ -133,7 +126,7 @@ void PerformanceAnalysis::StepTimeRecordStart(uint32_t step)
         LOGE("[performance_analysis] GetCurrentSysTimeInMicrosecond fail");
     } else {
         timePair.startTime = curTime;
-        LOGD("[performance_analysis] StepTimeRecordStart step:%d, curTime:%lu", step, curTime);
+        LOGD("[performance_analysis] StepTimeRecordStart step:%" PRIu32 ", curTime:%" PRIu64, step, curTime);
         (void)InsertTimeRecord(timePair, step);
     }
 }
@@ -156,7 +149,7 @@ void PerformanceAnalysis::StepTimeRecordEnd(uint32_t step)
     uint64_t curTime = 0;
     (void)OS::GetCurrentSysTimeInMicrosecond(curTime);
     timePair.endTime = curTime;
-    LOGD("[performance_analysis] StepTimeRecordEnd step:%d, curTime:%lu", step, curTime);
+    LOGD("[performance_analysis] StepTimeRecordEnd step:%" PRIu32 ", curTime:%" PRIu64, step, curTime);
 
     if ((timePair.endTime < timePair.startTime) || (timePair.startTime == 0) || (timePair.endTime == 0)) {
         return;

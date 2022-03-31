@@ -41,10 +41,7 @@ namespace {
 }
 bool CheckPathExistence(const std::string &filePath)
 {
-    if (access(filePath.c_str(), ACCESS_MODE_EXISTENCE) < 0) {
-        return false;
-    }
-    return true;
+    return (access(filePath.c_str(), ACCESS_MODE_EXISTENCE) == 0);
 }
 
 int RenameFilePath(const std::string &oldFilePath, const std::string &newFilePath)

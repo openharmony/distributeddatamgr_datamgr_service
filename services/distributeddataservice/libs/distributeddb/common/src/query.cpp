@@ -149,4 +149,4 @@ void Query::ExecuteCompareOperation(QueryObjType operType, const std::string &fi
             return;
     }
 }
-}
+}  // namespace DistributedDB
