@@ -1096,6 +1096,7 @@ std::string KvStoreMetaData::Marshal() const
         {VERSION, version},
         {SECURITY_LEVEL, securityLevel},
         {DIRTY_KEY, isDirty},
+        {TOKEN_ID, tokenId},
     };
     return jval.dump();
 }
@@ -1139,6 +1140,7 @@ void KvStoreMetaData::Unmarshal(const nlohmann::json &jObject)
     securityLevel = Serializable::GetVal<uint32_t>(jObject, SECURITY_LEVEL, json::value_t::number_unsigned,
                                                    securityLevel);
     isDirty = Serializable::GetVal<uint32_t>(jObject, DIRTY_KEY, json::value_t::boolean, isDirty);
+    tokenId = Serializable::GetVal<uint32_t>(jObject, TOKEN_ID, json::value_t::number_unsigned, tokenId);
 }
 
 template<typename T>

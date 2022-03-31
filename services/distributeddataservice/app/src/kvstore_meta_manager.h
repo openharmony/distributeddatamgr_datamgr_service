@@ -101,6 +101,7 @@ struct KvStoreMetaData {
     KvStoreType kvStoreType = KvStoreType::DEVICE_COLLABORATION;
     std::string schema = "";
     std::string storeId = "";
+    std::uint32_t tokenId = 0;
     std::string userId = "";
     std::int32_t uid = -1;
     std::uint32_t version = 0;
@@ -134,6 +135,7 @@ private:
     static constexpr const char *VERSION = "version";
     static constexpr const char *SECURITY_LEVEL = "securityLevel";
     static constexpr const char *DIRTY_KEY = "isDirty";
+    static constexpr const char *TOKEN_ID = "tokenId";
 };
 
 struct MetaData {

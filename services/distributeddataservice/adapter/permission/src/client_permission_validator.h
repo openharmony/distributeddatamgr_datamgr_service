@@ -62,7 +62,7 @@ public:
 
     void UpdatePermissionStatus(int32_t uid, const std::string &permissionType, bool permissionStatus);
 
-    bool CheckClientSyncPermission(const KvStoreTuple &kvStoreTuple, std::int32_t curUid);
+    bool CheckClientSyncPermission(const KvStoreTuple &kvStoreTuple, std::uint32_t tokenId);
 
 private:
     ClientPermissionValidator() = default;
