@@ -47,7 +47,6 @@ public:
     // if storeId is not valid, INVALID_ARGUMENT and nullptr,
     // if appId has no permission, PERMISSION_DENIED and nullptr,
     // otherwise, SUCCESS and the unipue_ptr of kvstore, which client can use to operate kvstore, will be returned.
-    [[deprecated]]
     API_EXPORT Status GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
                                  std::shared_ptr<KvStore> &kvStore);
 
