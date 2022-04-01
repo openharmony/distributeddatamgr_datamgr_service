@@ -394,6 +394,7 @@ Status KvStoreAppManager::InitNbDbOption(const Options &options, const std::vect
 
     dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
     dbOption.createIfNecessary = options.createIfMissing;
+    dbOption.isMemoryDb = (!options.persistent);
     dbOption.isEncryptedDb = options.encrypt;
     if (options.encrypt) {
         dbOption.cipher = DistributedDB::CipherType::AES_256_GCM;
