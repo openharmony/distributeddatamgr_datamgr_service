@@ -47,7 +47,6 @@ ohos_shared_library("distributeddatasvc") {
 
   configs = [ ":module_public_config" ]
 
-  # ldflags = [ "-Wl,--exclude-libs,libcrypto_shared.a" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",

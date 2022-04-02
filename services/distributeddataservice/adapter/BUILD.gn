@@ -41,7 +41,6 @@ ohos_shared_library("distributeddata_adapter") {
   sources = []
 
   configs = [ ":distributeddata_adapter_private_config" ]
-  ldflags = [ "-Wl,--exclude-libs,libcrypto_shared.a" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/autils:distributeddata_autils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
