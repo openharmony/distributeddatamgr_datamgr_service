@@ -32,14 +32,14 @@ public:
         int id;
         bool isActive;
     };
-    static UserDelegate &GetInstance();
+    API_EXPORT static UserDelegate &GetInstance();
 
-    void Init();
-    std::vector<UserStatus> GetLocalUserStatus();
-    std::vector<UserStatus> GetRemoteUserStatus(const std::string &deviceId);
-    bool InitLocalUserMeta();
+    API_EXPORT void Init();
+    API_EXPORT std::vector<UserStatus> GetLocalUserStatus();
+    API_EXPORT std::vector<UserStatus> GetRemoteUserStatus(const std::string &deviceId);
+    API_EXPORT bool InitLocalUserMeta();
 
-    static constexpr const int SYSTEM_USER = 0;
+    API_EXPORT static constexpr const int SYSTEM_USER = 0;
 private:
     class LocalUserObserver : public AccountDelegate::Observer {
     public:

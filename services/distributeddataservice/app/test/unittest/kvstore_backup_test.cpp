@@ -135,74 +135,13 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest002, TestSize.Level1)
     kvStorePtr->Get(key2, value22);
     auto kptr = static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr());
     bool importRes = kptr->Import(appId.appId);
-    EXPECT_EQ(importRes, true) << "KvStoreBackupTest002 NO_LABEL single kvstore import failed";
+    EXPECT_TRUE(importRes) << "KvStoreBackupTest002 NO_LABEL single kvstore import failed";
     kvStorePtr->Get(key2, value22);
     EXPECT_EQ(value22.ToString(), value2.ToString()) << "KvStoreBackupTest002 single kvstore backup failed";
 
     kvDataService.CloseKvStore(appId, storeId);
 }
-/**
-* @tc.name: KvStoreBackupTest003
-* @tc.desc: kvstore backup test for multi db
-* @tc.type: FUNC
-* @tc.require: AR000DR9JM AR000D08K5
-* @tc.author: guodaoxin
-*/
-HWTEST_F(KvStoreBackupTest, KvStoreBackupTest003, TestSize.Level1)
-{
-    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
-        .kvStoreType = KvStoreType::MULTI_VERSION, .dataOwnership = true };
-    AppId appId = { "backup3" };
-    StoreId storeId = { "store3" };
 
-    KvStoreDataService kvDataService;
-    kvDataService.DeleteKvStore(appId, storeId);
-    sptr<IKvStoreImpl> kvStorePtr;
-    Status status = kvDataService.GetKvStore(options, appId, storeId,
-        [&](sptr<IKvStoreImpl> kvStore) { kvStorePtr = std::move(kvStore);});
-
-    EXPECT_EQ(status, Status::SUCCESS) << "KvStoreBackupTest003 set backup true failed";
-
-    Key key1("test1_key");
-    Value value1("test1_value");
-    kvStorePtr->Put(key1, value1);
-    Key key2("test2_key");
-    Value value2("test2_value");
-    kvStorePtr->Put(key2, value2);
-
-    auto trueAppId = CheckerManager::GetInstance().GetAppId(appId.appId, 1000);
-    auto backupHandler = std::make_unique<BackupHandler>();
-    MetaData metaData;
-    metaData.kvStoreMetaData.deviceAccountId = "0";
-    metaData.kvStoreMetaData.userId = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    metaData.kvStoreMetaData.appId = trueAppId;
-    metaData.kvStoreMetaData.bundleName = appId.appId;
-    metaData.kvStoreMetaData.storeId = storeId.storeId;
-    metaData.kvStoreMetaData.isBackup = true;
-    metaData.kvStoreType = KvStoreType::MULTI_VERSION;
-
-    backupHandler->MultiKvStoreBackup(metaData);
-
-    kvStorePtr->Delete(key2);
-
-    auto kptr = static_cast<KvStoreImpl *>(kvStorePtr.GetRefPtr());
-    kptr->Import(appId.appId);
-
-    sptr<IKvStoreSnapshotImpl> kvStoreSnapshotPtr;
-    kvStorePtr->GetKvStoreSnapshot(nullptr,
-                                   [&](Status status, sptr<IKvStoreSnapshotImpl> kvStoreSnapshot) {
-                                       kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-                                   });
-
-    EXPECT_NE(nullptr, kvStoreSnapshotPtr) << "KvStoreBackupTest003, kvStoreSnapshotPtr is nullptr";
-
-    Value value22;
-    kvStoreSnapshotPtr->Get(key2, value22);
-    EXPECT_EQ(value22.ToString(), value2.ToString()) << "KvStoreBackupTest003 multi kvstore backup failed";
-
-    kvStorePtr->ReleaseKvStoreSnapshot(std::move(kvStoreSnapshotPtr));
-    kvDataService.CloseKvStore(appId, storeId);
-}
 /**
 * @tc.name: KvStoreBackupTest004
 * @tc.desc: kvstore backup delete test

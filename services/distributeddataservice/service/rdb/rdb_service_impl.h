@@ -25,9 +25,10 @@
 #include "concurrent_map.h"
 #include "store_observer.h"
 #include "timer.h"
+#include "visibility.h"
 
 namespace OHOS::DistributedRdb {
-class RdbServiceImpl : public RdbServiceStub {
+class API_EXPORT RdbServiceImpl : public RdbServiceStub {
 public:
     RdbServiceImpl();
 

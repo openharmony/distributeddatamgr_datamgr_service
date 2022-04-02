@@ -21,8 +21,8 @@ using OHOS::DistributedKv::KvStoreTask;
 using OHOS::DistributedKv::KvStoreThreadPool;
 class ExecutorFactory {
 public:
-    static ExecutorFactory &GetInstance();
-    bool Execute(KvStoreTask &&task);
+    API_EXPORT static ExecutorFactory &GetInstance();
+    API_EXPORT bool Execute(KvStoreTask &&task);
 
 private:
     ExecutorFactory();
