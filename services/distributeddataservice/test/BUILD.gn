@@ -77,7 +77,7 @@ ohos_moduletest("DistributeddbKvTransactionTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -100,7 +100,7 @@ ohos_moduletest("DistributeddbKvTransactionPerfTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -121,7 +121,7 @@ ohos_moduletest("DistributeddbKvConcurrencyCrudTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -142,7 +142,7 @@ ohos_moduletest("DistributeddbKvBatchCrudTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -163,7 +163,7 @@ ohos_moduletest("DistributeddbKvCreateTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -184,7 +184,7 @@ ohos_moduletest("DistributeddbKvCrudTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -205,7 +205,7 @@ ohos_moduletest("DistributeddbKvObserverTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -226,7 +226,7 @@ ohos_moduletest("DistributeddbKvObserverSnapTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -246,7 +246,7 @@ ohos_moduletest("DistributeddbKvBackupTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -267,7 +267,7 @@ ohos_moduletest("DistributeddbKvRealdelTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -290,7 +290,7 @@ ohos_moduletest("DistributeddbNbCreateTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -312,7 +312,7 @@ ohos_moduletest("DistributeddbNbCrudTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -334,7 +334,7 @@ ohos_moduletest("DistributeddbNbObserverTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -358,7 +358,7 @@ ohos_moduletest("DistributeddbNbCursorTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -381,7 +381,7 @@ ohos_moduletest("DistributeddbNbBackupTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -405,7 +405,7 @@ ohos_moduletest("DistributeddbNbBatchCrudTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -428,7 +428,7 @@ ohos_moduletest("DistributeddbNbLocalBatchCrudTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -450,7 +450,7 @@ ohos_moduletest("DistributeddbNbSchemaDbTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -473,7 +473,7 @@ ohos_moduletest("DistributeddbNbPredicateQueryTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -496,7 +496,7 @@ ohos_moduletest("DistributeddbNbPredicateQueryExpandTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -519,7 +519,7 @@ ohos_moduletest("DistributeddbNbAutolaunchTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -542,7 +542,7 @@ ohos_moduletest("DistributedbNbDbDamageTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -565,7 +565,7 @@ ohos_moduletest("DistributeddbNbCrudPowerTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -588,7 +588,7 @@ ohos_moduletest("DistributeddbNbSchemaTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]
@@ -611,7 +611,7 @@ ohos_moduletest("DistributeddbNbSchemaUpgradeTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
     "//utils/native/base:utils",
   ]

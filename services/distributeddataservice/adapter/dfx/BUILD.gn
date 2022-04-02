@@ -43,7 +43,7 @@ ohos_static_library("distributeddata_dfx_static") {
 
   deps = [
     "../autils:distributeddata_autils_static",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//utils/native/base:utils",
   ]
   external_deps = [

@@ -56,9 +56,9 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   configs = [ ":module_public_config" ]
 
-  ldflags = [ "-Wl,--exclude-libs,libcrypto_static.a" ]
+  ldflags = [ "-Wl,--exclude-libs,libcrypto_shared.a" ]
   deps = [
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
     "//utils/native/base:utils",
   ]
 

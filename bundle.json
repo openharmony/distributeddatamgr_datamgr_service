@@ -78,7 +78,7 @@
                 "sqlite",
                 "libz",
                 "jsoncpp",
-                "libcrypto_static"
+                "libcrypto_shared"
             ]
         },
         "build": {

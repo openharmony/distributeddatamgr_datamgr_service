@@ -272,7 +272,7 @@ ohos_source_set("src_file") {
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps += [
     "//third_party/jsoncpp:jsoncpp",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
   part_name = "distributeddatamgr"
@@ -301,7 +301,7 @@ template("distributeddb_unittest") {
     ldflags = [ "-Wl,--exclude-libs,ALL" ]
     deps += [
       "//third_party/jsoncpp:jsoncpp",
-      "//third_party/openssl:libcrypto_static",
+      "//third_party/openssl:libcrypto_shared",
     ]
     external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
   }
