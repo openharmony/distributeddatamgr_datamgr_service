@@ -259,7 +259,7 @@ ohos_shared_library("distributeddb") {
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps += [
     "//third_party/jsoncpp:jsoncpp",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
