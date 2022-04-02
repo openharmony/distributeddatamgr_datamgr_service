@@ -190,6 +190,11 @@ public:
     uint64_t GetMaxLogSize() const;
 
 private:
+    struct TransPair {
+        int index;
+        RegisterFuncType funcType;
+    };
+    static RegisterFuncType GetFuncType(int index, const TransPair *transMap, int32_t len);
     int CheckDatabaseRecovery(const KvDBProperties &kvDBProp);
 
     void CommitAndReleaseNotifyData(SingleVerNaturalStoreCommitNotifyData *&committedData,

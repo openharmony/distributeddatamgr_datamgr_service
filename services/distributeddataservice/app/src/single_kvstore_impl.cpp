@@ -499,7 +499,7 @@ void SingleKvStoreImpl::GetResultSet(const Key &prefixKey,
         std::lock_guard<std::mutex> lg(storeResultSetMutex_);
         sptr<KvStoreResultSetImpl> storeResultSet = CreateResultSet(dbResultSet, tmpKeyPrefix);
         callback(Status::SUCCESS, storeResultSet);
-        storeResultSetMap_.emplace(storeResultSet.GetRefPtr(), storeResultSet);
+        storeResultSetMap_.emplace(storeResultSet->AsObject().GetRefPtr(), storeResultSet);
         return;
     }
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
@@ -544,7 +544,7 @@ void SingleKvStoreImpl::GetResultSetWithQuery(const std::string &query,
         std::lock_guard<std::mutex> lg(storeResultSetMutex_);
         sptr<KvStoreResultSetImpl> storeResultSet = CreateResultSet(dbResultSet, {});
         callback(Status::SUCCESS, storeResultSet);
-        storeResultSetMap_.emplace(storeResultSet.GetRefPtr(), storeResultSet);
+        storeResultSetMap_.emplace(storeResultSet->AsObject().GetRefPtr(), storeResultSet);
         return;
     }
     switch (status) {
@@ -660,7 +660,7 @@ Status SingleKvStoreImpl::CloseResultSet(sptr<IKvStoreResultSet> resultSet)
     std::shared_lock<std::shared_mutex> lock(storeNbDelegateMutex_);
     std::lock_guard<std::mutex> lg(storeResultSetMutex_);
     Status status;
-    auto it = storeResultSetMap_.find(resultSet.GetRefPtr());
+    auto it = storeResultSetMap_.find(resultSet->AsObject().GetRefPtr());
     if (it == storeResultSetMap_.end()) {
         ZLOGE("ResultSet not found in this store.");
         return Status::INVALID_ARGUMENT;

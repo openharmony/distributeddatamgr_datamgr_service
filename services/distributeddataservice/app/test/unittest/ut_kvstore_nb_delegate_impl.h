@@ -88,6 +88,7 @@ public:
 
     void SetSyncStatus(DBStatus status);
     void SetNeighbor(const std::shared_ptr<UtKvStoreNbDelegateImpl> &neighbor);
+    void SetAutoSync(bool isAutoSync);
     DBStatus PutLocalBatch(const std::vector<Entry> &entries) override;
 
     DBStatus DeleteLocalBatch(const std::vector<Key> &keys) override;
@@ -136,6 +137,7 @@ private:
     std::vector<const KvStoreObserver *> observerMap_{};
     std::weak_ptr<UtKvStoreNbDelegateImpl> neighbor_{};
     DBStatus syncStatus_{ OK };
+    bool isAutoSync_;
 };
 }  // namespace DistributedDB
 

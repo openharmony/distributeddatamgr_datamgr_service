@@ -84,13 +84,13 @@ void DistributedKvDataManagerTest::SetUpTestCase(void)
     create.createIfMissing = true;
     create.encrypt = false;
     create.autoSync = true;
-    create.kvStoreType = MULTI_VERSION;
+    create.kvStoreType = SINGLE_VERSION;
 
     noCreate.createIfMissing = false;
     noCreate.encrypt = false;
     noCreate.autoSync = true;
     noCreate.dataOwnership = true;
-    noCreate.kvStoreType = MULTI_VERSION;
+    noCreate.kvStoreType = SINGLE_VERSION;
 
     userId.userId = "account0";
     appId.appId = "com.ohos.kvdatamanager.test";
@@ -126,7 +126,7 @@ void DistributedKvDataManagerTest::TearDown(void)
 
 /**
 * @tc.name: GetKvStore001
-* @tc.desc: Get an exist KvStore
+* @tc.desc: Get an exist SingleKvStore
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -134,20 +134,20 @@ void DistributedKvDataManagerTest::TearDown(void)
 HWTEST_F(DistributedKvDataManagerTest, GetKvStore001, TestSize.Level1)
 {
     ZLOGI("GetKvStore001 begin.");
-    std::shared_ptr<KvStore> notExistKvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeId64, notExistKvStorePtr);
+    std::shared_ptr<SingleKvStore> notExistKvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, notExistKvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(notExistKvStorePtr, nullptr);
+    EXPECT_NE(notExistKvStore, nullptr);
 
-    std::shared_ptr<KvStore> existKvStorePtr;
-    status = manager.GetKvStore(noCreate, appId, storeId64, existKvStorePtr);
+    std::shared_ptr<SingleKvStore> existKvStore;
+    status = manager.GetSingleKvStore(noCreate, appId, storeId64, existKvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(existKvStorePtr, nullptr);
+    EXPECT_NE(existKvStore, nullptr);
 }
 
 /**
 * @tc.name: GetKvStore002
-* @tc.desc: Create and get a new KvStore
+* @tc.desc: Create and get a new SingleKvStore
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -155,17 +155,17 @@ HWTEST_F(DistributedKvDataManagerTest, GetKvStore001, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, GetKvStore002, TestSize.Level1)
 {
     ZLOGI("GetKvStore002 begin.");
-    std::shared_ptr<KvStore> notExistKvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeId64, notExistKvStorePtr);
+    std::shared_ptr<SingleKvStore> notExistKvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, notExistKvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(notExistKvStorePtr, nullptr);
+    EXPECT_NE(notExistKvStore, nullptr);
     manager.CloseKvStore(appId, storeId64);
     manager.DeleteKvStore(appId, storeId64);
 }
 
 /**
 * @tc.name: GetKvStore003
-* @tc.desc: Get a non-existing KvStore, and the callback function should receive STORE_NOT_FOUND and
+* @tc.desc: Get a non-existing SingleKvStore, and the callback function should receive STORE_NOT_FOUND and
 * get a nullptr.
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
@@ -174,15 +174,15 @@ HWTEST_F(DistributedKvDataManagerTest, GetKvStore002, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, GetKvStore003, TestSize.Level1)
 {
     ZLOGI("GetKvStore003 begin.");
-    std::shared_ptr<KvStore> notExistKvStorePtr;
-    Status status = manager.GetKvStore(noCreate, appId, storeId64, notExistKvStorePtr);
+    std::shared_ptr<SingleKvStore> notExistKvStore;
+    Status status = manager.GetSingleKvStore(noCreate, appId, storeId64, notExistKvStore);
     ASSERT_EQ(status, Status::STORE_NOT_FOUND);
-    EXPECT_EQ(notExistKvStorePtr, nullptr);
+    EXPECT_EQ(notExistKvStore, nullptr);
 }
 
 /**
 * @tc.name: GetKvStore004
-* @tc.desc: Create a KvStore with an empty storeId, and the callback function should receive
+* @tc.desc: Create a SingleKvStore with an empty storeId, and the callback function should receive
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -190,15 +190,15 @@ HWTEST_F(DistributedKvDataManagerTest, GetKvStore003, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, GetKvStore004, TestSize.Level1)
 {
     ZLOGI("GetKvStore004 begin.");
-    std::shared_ptr<KvStore> notExistKvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeIdEmpty, notExistKvStorePtr);
+    std::shared_ptr<SingleKvStore> notExistKvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeIdEmpty, notExistKvStore);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
-    EXPECT_EQ(notExistKvStorePtr, nullptr);
+    EXPECT_EQ(notExistKvStore, nullptr);
 }
 
 /**
 * @tc.name: GetKvStore005
-* @tc.desc: Get a KvStore with an empty storeId, and the callback function should receive INVALID_ARGUMENT
+* @tc.desc: Get a SingleKvStore with an empty storeId, and the callback function should receive INVALID_ARGUMENT
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -206,15 +206,15 @@ HWTEST_F(DistributedKvDataManagerTest, GetKvStore004, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, GetKvStore005, TestSize.Level1)
 {
     ZLOGI("GetKvStore005 begin.");
-    std::shared_ptr<KvStore> notExistKvStorePtr;
-    Status status = manager.GetKvStore(noCreate, appId, storeIdEmpty, notExistKvStorePtr);
+    std::shared_ptr<SingleKvStore> notExistKvStore;
+    Status status = manager.GetSingleKvStore(noCreate, appId, storeIdEmpty, notExistKvStore);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
-    EXPECT_EQ(notExistKvStorePtr, nullptr);
+    EXPECT_EQ(notExistKvStore, nullptr);
 }
 
 /**
 * @tc.name: GetKvStore006
-* @tc.desc: Create a KvStore with a 65-byte storeId, and the callback function should receive INVALID_ARGUMENT
+* @tc.desc: Create a SingleKvStore with a 65-byte storeId, and the callback function should receive INVALID_ARGUMENT
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -222,15 +222,15 @@ HWTEST_F(DistributedKvDataManagerTest, GetKvStore005, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, GetKvStore006, TestSize.Level1)
 {
     ZLOGI("GetKvStore006 begin.");
-    std::shared_ptr<KvStore> notExistKvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeId65, notExistKvStorePtr);
+    std::shared_ptr<SingleKvStore> notExistKvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeId65, notExistKvStore);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
-    EXPECT_EQ(notExistKvStorePtr, nullptr);
+    EXPECT_EQ(notExistKvStore, nullptr);
 }
 
 /**
 * @tc.name: GetKvStore007
-* @tc.desc: Get a KvStore with a 65-byte storeId, the callback function should receive INVALID_ARGUMENT
+* @tc.desc: Get a SingleKvStore with a 65-byte storeId, the callback function should receive INVALID_ARGUMENT
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -238,10 +238,10 @@ HWTEST_F(DistributedKvDataManagerTest, GetKvStore006, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, GetKvStore007, TestSize.Level1)
 {
     ZLOGI("GetKvStore007 begin.");
-    std::shared_ptr<KvStore> notExistKvStorePtr;
-    Status status = manager.GetKvStore(noCreate, appId, storeId65, notExistKvStorePtr);
+    std::shared_ptr<SingleKvStore> notExistKvStore;
+    Status status = manager.GetSingleKvStore(noCreate, appId, storeId65, notExistKvStore);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
-    EXPECT_EQ(notExistKvStorePtr, nullptr);
+    EXPECT_EQ(notExistKvStore, nullptr);
 }
 
 /**
@@ -262,7 +262,7 @@ HWTEST_F(DistributedKvDataManagerTest, GetAllKvStore001, TestSize.Level1)
 
 /**
 * @tc.name: GetAllKvStore002
-* @tc.desc: Get all KvStore IDs when no KvStore exists, and the callback function should receive a 0-length vector.
+* @tc.desc: Get all SingleKvStore IDs when no KvStore exists, and the callback function should receive a empty vector.
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -276,14 +276,14 @@ HWTEST_F(DistributedKvDataManagerTest, GetAllKvStore002, TestSize.Level1)
     id2.storeId = "id2";
     StoreId id3;
     id3.storeId = "id3";
-    std::shared_ptr<KvStore> kvStore;
-    Status status = manager.GetKvStore(create, appId, id1, kvStore);
+    std::shared_ptr<SingleKvStore> kvStore;
+    Status status = manager.GetSingleKvStore(create, appId, id1, kvStore);
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status, Status::SUCCESS);
-    status = manager.GetKvStore(create, appId, id2, kvStore);
+    status = manager.GetSingleKvStore(create, appId, id2, kvStore);
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status, Status::SUCCESS);
-    status = manager.GetKvStore(create, appId, id3, kvStore);
+    status = manager.GetSingleKvStore(create, appId, id3, kvStore);
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status, Status::SUCCESS);
     std::vector<StoreId> storeIds;
@@ -320,10 +320,10 @@ HWTEST_F(DistributedKvDataManagerTest, GetAllKvStore002, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, CloseKvStore001, TestSize.Level1)
 {
     ZLOGI("CloseKvStore001 begin.");
-    std::shared_ptr<KvStore> kvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeId64, kvStorePtr);
+    std::shared_ptr<SingleKvStore> kvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, kvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr, nullptr);
+    ASSERT_NE(kvStore, nullptr);
 
     Status stat = manager.CloseKvStore(appId, storeId64);
     EXPECT_EQ(stat, Status::SUCCESS);
@@ -331,7 +331,7 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStore001, TestSize.Level1)
 
 /**
 * @tc.name: CloseKvStore002
-* @tc.desc: Close a closed KvStore, and the callback function should return SUCCESS.
+* @tc.desc: Close a closed SingleKvStore, and the callback function should return SUCCESS.
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -339,10 +339,10 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStore001, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, CloseKvStore002, TestSize.Level1)
 {
     ZLOGI("CloseKvStore002 begin.");
-    std::shared_ptr<KvStore> kvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeId64, kvStorePtr);
+    std::shared_ptr<SingleKvStore> kvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, kvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr, nullptr);
+    ASSERT_NE(kvStore, nullptr);
 
     manager.CloseKvStore(appId, storeId64);
     Status stat = manager.CloseKvStore(appId, storeId64);
@@ -351,7 +351,7 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStore002, TestSize.Level1)
 
 /**
 * @tc.name: CloseKvStore003
-* @tc.desc: Close a KvStore with an empty storeId, and the callback function should return INVALID_ARGUMENT.
+* @tc.desc: Close a SingleKvStore with an empty storeId, and the callback function should return INVALID_ARGUMENT.
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -365,7 +365,7 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStore003, TestSize.Level1)
 
 /**
 * @tc.name: CloseKvStore004
-* @tc.desc: Close a KvStore with a 65-byte storeId, and the callback function should return INVALID_ARGUMENT.
+* @tc.desc: Close a SingleKvStore with a 65-byte storeId, and the callback function should return INVALID_ARGUMENT.
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -379,7 +379,7 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStore004, TestSize.Level1)
 
 /**
 * @tc.name: CloseKvStore005
-* @tc.desc: Close a non-existing KvStore, and the callback function should return STORE_NOT_OPEN.
+* @tc.desc: Close a non-existing SingleKvStore, and the callback function should return STORE_NOT_OPEN.
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -393,7 +393,7 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStore005, TestSize.Level1)
 
 /**
 * @tc.name: CloseKvStoreMulti001
-* @tc.desc: Open a KvStore several times and close them one by one, and the callback function should return SUCCESS.
+* @tc.desc: Open a SingleKvStore several times and close them one by one.
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000CSKRU
 * @tc.author: liqiao
@@ -401,15 +401,15 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStore005, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, CloseKvStoreMulti001, TestSize.Level1)
 {
     ZLOGI("CloseKvStoreMulti001 begin.");
-    std::shared_ptr<KvStore> notExistKvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeId64, notExistKvStorePtr);
+    std::shared_ptr<SingleKvStore> notExistKvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, notExistKvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(notExistKvStorePtr, nullptr);
+    EXPECT_NE(notExistKvStore, nullptr);
 
-    std::shared_ptr<KvStore> existKvStorePtr;
-    manager.GetKvStore(noCreate, appId, storeId64, existKvStorePtr);
+    std::shared_ptr<SingleKvStore> existKvStore;
+    manager.GetSingleKvStore(noCreate, appId, storeId64, existKvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(existKvStorePtr, nullptr);
+    EXPECT_NE(existKvStore, nullptr);
 
     Status stat = manager.CloseKvStore(appId, storeId64);
     EXPECT_EQ(stat, Status::SUCCESS);
@@ -420,7 +420,7 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStoreMulti001, TestSize.Level1)
 
 /**
 * @tc.name: CloseKvStoreMulti002
-* @tc.desc: Open a KvStore several times and close them one by one, and the callback function should return SUCCESS.
+* @tc.desc: Open a SingleKvStore several times and close them one by one.
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000CSKRU
 * @tc.author: liqiao
@@ -428,20 +428,20 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStoreMulti001, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, CloseKvStoreMulti002, TestSize.Level1)
 {
     ZLOGI("CloseKvStoreMulti002 begin.");
-    std::shared_ptr<KvStore> notExistKvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeId64, notExistKvStorePtr);
+    std::shared_ptr<SingleKvStore> notExistKvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, notExistKvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(notExistKvStorePtr, nullptr);
+    EXPECT_NE(notExistKvStore, nullptr);
 
-    std::shared_ptr<KvStore> existKvStorePtr1;
-    status = manager.GetKvStore(noCreate, appId, storeId64, existKvStorePtr1);
+    std::shared_ptr<SingleKvStore> existKvStore1;
+    status = manager.GetSingleKvStore(noCreate, appId, storeId64, existKvStore1);
     ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(existKvStorePtr1, nullptr);
+    EXPECT_NE(existKvStore1, nullptr);
 
-    std::shared_ptr<KvStore> existKvStorePtr2;
-    status = manager.GetKvStore(noCreate, appId, storeId64, existKvStorePtr2);
+    std::shared_ptr<SingleKvStore> existKvStore2;
+    status = manager.GetSingleKvStore(noCreate, appId, storeId64, existKvStore2);
     ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(existKvStorePtr2, nullptr);
+    EXPECT_NE(existKvStore2, nullptr);
 
     Status stat = manager.CloseKvStore(appId, storeId64);
     EXPECT_EQ(stat, Status::SUCCESS);
@@ -457,63 +457,6 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStoreMulti002, TestSize.Level1)
 }
 
 /**
-* @tc.name: CloseKvStoreMulti003
-* @tc.desc: Open a KvStore several times and close them one by one, and the callback function should return SUCCESS.
-* @tc.type: FUNC
-* @tc.require: SR000CQDU0 AR000CSKRU
-* @tc.author: liqiao
-*/
-HWTEST_F(DistributedKvDataManagerTest, CloseKvStoreMulti003, TestSize.Level1)
-{
-    ZLOGI("CloseKvStoreMulti003 begin.");
-    std::shared_ptr<KvStore> notExistKvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeId64, notExistKvStorePtr);
-    ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(notExistKvStorePtr, nullptr);
-
-    std::shared_ptr<KvStore> existKvStorePtr1;
-    status = manager.GetKvStore(noCreate, appId, storeId64, existKvStorePtr1);
-    ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(existKvStorePtr1, nullptr);
-
-    std::shared_ptr<KvStore> existKvStorePtr2;
-    status = manager.GetKvStore(noCreate, appId, storeId64, existKvStorePtr2);
-    ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(existKvStorePtr2, nullptr);
-
-    Status stat = manager.CloseKvStore(appId, storeId64);
-    EXPECT_EQ(stat, Status::SUCCESS);
-
-    stat = manager.CloseKvStore(appId, storeId64);
-    EXPECT_EQ(stat, Status::SUCCESS);
-
-    Key keyInt = "math_score_int";
-    Value valueInt = Value(TransferTypeToByteArray<int>(-100));
-    status = existKvStorePtr2->Put(keyInt, valueInt);
-    EXPECT_EQ(Status::SUCCESS, status) << "KvStore put data return wrong status";
-    std::shared_ptr<KvStoreSnapshot> kvStoreSnapshotPtr;
-    existKvStorePtr2->GetKvStoreSnapshot(nullptr, kvStoreSnapshotPtr);
-
-    EXPECT_NE(nullptr, kvStoreSnapshotPtr) << "kvStoreSnapshotPtr is nullptr";
-
-    std::shared_ptr<KvStore> existKvStorePtr3;
-    status = manager.GetKvStore(noCreate, appId, storeId64, existKvStorePtr3);
-    ASSERT_EQ(status, Status::SUCCESS);
-    EXPECT_NE(existKvStorePtr3, nullptr);
-
-    stat = manager.CloseKvStore(appId, storeId64);
-    EXPECT_EQ(stat, Status::SUCCESS);
-
-    Value valueRetInt;
-    Status statusTmp = kvStoreSnapshotPtr->Get(keyInt, valueRetInt);
-    EXPECT_EQ(Status::SUCCESS, statusTmp) << "KvStoreSnapshot get data return wrong status";
-    EXPECT_EQ(valueInt, valueRetInt) << "valueInt and valueRetInt are not equal";
-
-    stat = manager.CloseKvStore(appId, storeId64);
-    EXPECT_EQ(stat, Status::SUCCESS);
-}
-
-/**
 * @tc.name: CloseAllKvStore001
 * @tc.desc: Close all opened KvStores, and the callback function should return SUCCESS.
 * @tc.type: FUNC
@@ -523,15 +466,15 @@ HWTEST_F(DistributedKvDataManagerTest, CloseKvStoreMulti003, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, CloseAllKvStore001, TestSize.Level1)
 {
     ZLOGI("CloseAllKvStore001 begin.");
-    std::shared_ptr<KvStore> kvStorePtr1;
-    Status status = manager.GetKvStore(create, appId, storeId64, kvStorePtr1);
+    std::shared_ptr<SingleKvStore> kvStore1;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, kvStore1);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr1, nullptr);
+    ASSERT_NE(kvStore1, nullptr);
 
-    std::shared_ptr<KvStore> kvStorePtr2;
-    status = manager.GetKvStore(create, appId, storeIdTest, kvStorePtr2);
+    std::shared_ptr<SingleKvStore> kvStore2;
+    status = manager.GetSingleKvStore(create, appId, storeIdTest, kvStore2);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr2, nullptr);
+    ASSERT_NE(kvStore2, nullptr);
 
     Status stat = manager.CloseAllKvStore(appId);
     EXPECT_EQ(stat, Status::SUCCESS);
@@ -547,15 +490,15 @@ HWTEST_F(DistributedKvDataManagerTest, CloseAllKvStore001, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, CloseAllKvStore002, TestSize.Level1)
 {
     ZLOGI("CloseAllKvStore002 begin.");
-    std::shared_ptr<KvStore> kvStorePtr1;
-    Status status = manager.GetKvStore(create, appId, storeId64, kvStorePtr1);
+    std::shared_ptr<SingleKvStore> kvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, kvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr1, nullptr);
+    ASSERT_NE(kvStore, nullptr);
 
-    std::shared_ptr<KvStore> kvStorePtr2;
-    status = manager.GetKvStore(create, appId, storeIdTest, kvStorePtr2);
+    std::shared_ptr<SingleKvStore> kvStore2;
+    status = manager.GetSingleKvStore(create, appId, storeIdTest, kvStore2);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr2, nullptr);
+    ASSERT_NE(kvStore2, nullptr);
 
     Status stat = manager.CloseKvStore(appId, storeId64);
     EXPECT_EQ(stat, Status::SUCCESS);
@@ -574,10 +517,10 @@ HWTEST_F(DistributedKvDataManagerTest, CloseAllKvStore002, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, DeleteKvStore001, TestSize.Level1)
 {
     ZLOGI("DeleteKvStore001 begin.");
-    std::shared_ptr<KvStore> kvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeId64, kvStorePtr);
+    std::shared_ptr<SingleKvStore> kvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, kvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr, nullptr);
+    ASSERT_NE(kvStore, nullptr);
 
     Status stat = manager.CloseKvStore(appId, storeId64);
     ASSERT_EQ(stat, Status::SUCCESS);
@@ -588,7 +531,7 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteKvStore001, TestSize.Level1)
 
 /**
 * @tc.name: DeleteKvStore002
-* @tc.desc: Delete an opened KvStore, and the callback function should return SUCCESS.
+* @tc.desc: Delete an opened SingleKvStore, and the callback function should return SUCCESS.
 * @tc.type: FUNC
 * @tc.require: SR000CQDU0 AR000BVTDM
 * @tc.author: liqiao
@@ -596,10 +539,10 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteKvStore001, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, DeleteKvStore002, TestSize.Level1)
 {
     ZLOGI("DeleteKvStore002 begin.");
-    std::shared_ptr<KvStore> kvStorePtr;
-    Status status = manager.GetKvStore(create, appId, storeId64, kvStorePtr);
+    std::shared_ptr<SingleKvStore> kvStore;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, kvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr, nullptr);
+    ASSERT_NE(kvStore, nullptr);
 
     // first close it if opened, and then delete it.
     Status stat = manager.DeleteKvStore(appId, storeId64);
@@ -659,14 +602,14 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteKvStore005, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore001, TestSize.Level1)
 {
     ZLOGI("DeleteAllKvStore001 begin.");
-    std::shared_ptr<KvStore> kvStorePtr1;
-    Status status = manager.GetKvStore(create, appId, storeId64, kvStorePtr1);
+    std::shared_ptr<SingleKvStore> kvStore1;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, kvStore1);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr1, nullptr);
-    std::shared_ptr<KvStore> kvStorePtr2;
-    status = manager.GetKvStore(create, appId, storeIdTest, kvStorePtr2);
+    ASSERT_NE(kvStore1, nullptr);
+    std::shared_ptr<SingleKvStore> kvStore2;
+    status = manager.GetSingleKvStore(create, appId, storeIdTest, kvStore2);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr2, nullptr);
+    ASSERT_NE(kvStore2, nullptr);
     Status stat = manager.CloseKvStore(appId, storeId64);
     EXPECT_EQ(stat, Status::SUCCESS);
     stat = manager.CloseKvStore(appId, storeIdTest);
@@ -686,14 +629,14 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore001, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore002, TestSize.Level1)
 {
     ZLOGI("DeleteAllKvStore002 begin.");
-    std::shared_ptr<KvStore> kvStorePtr1;
-    Status status = manager.GetKvStore(create, appId, storeId64, kvStorePtr1);
+    std::shared_ptr<SingleKvStore> kvStore1;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, kvStore1);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr1, nullptr);
-    std::shared_ptr<KvStore> kvStorePtr2;
-    status = manager.GetKvStore(create, appId, storeIdTest, kvStorePtr2);
+    ASSERT_NE(kvStore1, nullptr);
+    std::shared_ptr<SingleKvStore> kvStore2;
+    status = manager.GetSingleKvStore(create, appId, storeIdTest, kvStore2);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr2, nullptr);
+    ASSERT_NE(kvStore2, nullptr);
     Status stat = manager.CloseKvStore(appId, storeId64);
     EXPECT_EQ(stat, Status::SUCCESS);
 
@@ -725,14 +668,14 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore003, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore004, TestSize.Level1)
 {
     ZLOGI("DeleteAllKvStore004 begin.");
-    std::shared_ptr<KvStore> kvStorePtr1;
-    Status status = manager.GetKvStore(create, appId, storeId64, kvStorePtr1);
+    std::shared_ptr<SingleKvStore> kvStore1;
+    Status status = manager.GetSingleKvStore(create, appId, storeId64, kvStore1);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr1, nullptr);
-    std::shared_ptr<KvStore> kvStorePtr2;
-    status = manager.GetKvStore(create, appId, storeIdTest, kvStorePtr2);
+    ASSERT_NE(kvStore1, nullptr);
+    std::shared_ptr<SingleKvStore> kvStore2;
+    status = manager.GetSingleKvStore(create, appId, storeIdTest, kvStore2);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr2, nullptr);
+    ASSERT_NE(kvStore2, nullptr);
     Status stat = manager.CloseKvStore(appId, storeId64);
     EXPECT_EQ(stat, Status::SUCCESS);
     stat = manager.CloseKvStore(appId, storeIdTest);
@@ -753,9 +696,9 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore004, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, RegisterKvStoreServiceDeathRecipient001, TestSize.Level1)
 {
     ZLOGI("RegisterKvStoreServiceDeathRecipient001 begin.");
-    std::shared_ptr<KvStoreDeathRecipient> kvStoreDeathRecipientPtr = std::make_shared<MyDeathRecipient>();
-    manager.RegisterKvStoreServiceDeathRecipient(kvStoreDeathRecipientPtr);
-    kvStoreDeathRecipientPtr->OnRemoteDied();
+    std::shared_ptr<KvStoreDeathRecipient> kvStoreDeathRecipient = std::make_shared<MyDeathRecipient>();
+    manager.RegisterKvStoreServiceDeathRecipient(kvStoreDeathRecipient);
+    kvStoreDeathRecipient->OnRemoteDied();
 }
 
 /**

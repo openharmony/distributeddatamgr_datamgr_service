@@ -39,8 +39,9 @@ public:
     API_EXPORT void SetMetaStore(std::shared_ptr<MetaStore> metaStore);
     API_EXPORT bool SaveMeta(const std::string &key, const Serializable &value);
     API_EXPORT bool LoadMeta(const std::string &key, Serializable &value);
+    API_EXPORT bool DelMeta(const std::string &key);
     API_EXPORT bool SubscribeMeta(const std::string &prefix, Observer observer);
-
+    API_EXPORT bool Unsubscribe(std::string filter);
 private:
     MetaDataManager();
     ~MetaDataManager();

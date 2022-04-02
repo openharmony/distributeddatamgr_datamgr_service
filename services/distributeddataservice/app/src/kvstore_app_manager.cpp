@@ -436,8 +436,7 @@ KvStoreAppManager::PathType KvStoreAppManager::ConvertPathType(int32_t uid, cons
         default:
             break;
     }
-    auto *checker = CheckerManager::GetInstance().GetChecker("SystemChecker");
-    if (checker == nullptr || !checker->IsValid(uid, bundleName)) {
+    if (CheckerManager::GetInstance().GetAppId(bundleName, uid) != bundleName) {
         return PATH_CE;
     }
     return PATH_DE;

@@ -1563,34 +1563,52 @@ void SQLiteSingleVerNaturalStore::InitDataBaseOption(const KvDBProperties &kvDBP
 int SQLiteSingleVerNaturalStore::TransObserverTypeToRegisterFunctionType(
     int observerType, RegisterFuncType &type) const
 {
-    static const std::map<int, RegisterFuncType> transMap {
+    static constexpr TransPair transMap[] = {
         { static_cast<int>(SQLITE_GENERAL_NS_PUT_EVENT),       OBSERVER_SINGLE_VERSION_NS_PUT_EVENT },
         { static_cast<int>(SQLITE_GENERAL_NS_SYNC_EVENT),      OBSERVER_SINGLE_VERSION_NS_SYNC_EVENT },
         { static_cast<int>(SQLITE_GENERAL_NS_LOCAL_PUT_EVENT), OBSERVER_SINGLE_VERSION_NS_LOCAL_EVENT },
         { static_cast<int>(SQLITE_GENERAL_CONFLICT_EVENT),     OBSERVER_SINGLE_VERSION_NS_CONFLICT_EVENT },
     };
-    auto iter = transMap.find(observerType);
-    if (iter == transMap.end()) {
+    auto funcType = GetFuncType(observerType, transMap, sizeof(transMap) / sizeof(TransPair));
+    if (funcType == REGISTER_FUNC_TYPE_MAX) {
         return -E_NOT_SUPPORT;
     }
-    type = iter->second;
+    type = funcType;
     return E_OK;
 }
 
 int SQLiteSingleVerNaturalStore::TransConflictTypeToRegisterFunctionType(
     int conflictType, RegisterFuncType &type) const
 {
-    static const std::map<int, RegisterFuncType> transMap {
+    static constexpr TransPair transMap[] = {
         { static_cast<int>(SQLITE_GENERAL_NS_FOREIGN_KEY_ONLY), CONFLICT_SINGLE_VERSION_NS_FOREIGN_KEY_ONLY },
         { static_cast<int>(SQLITE_GENERAL_NS_FOREIGN_KEY_ORIG), CONFLICT_SINGLE_VERSION_NS_FOREIGN_KEY_ORIG },
         { static_cast<int>(SQLITE_GENERAL_NS_NATIVE_ALL),       CONFLICT_SINGLE_VERSION_NS_NATIVE_ALL },
     };
-    auto iter = transMap.find(conflictType);
-    if (iter == transMap.end()) {
+    auto funcType = GetFuncType(conflictType, transMap, sizeof(transMap) / sizeof(TransPair));
+    if (funcType == REGISTER_FUNC_TYPE_MAX) {
         return -E_NOT_SUPPORT;
     }
-    type = iter->second;
+    type = funcType;
     return E_OK;
+}
+
+RegisterFuncType SQLiteSingleVerNaturalStore::GetFuncType(int index, const TransPair *transMap, int32_t len)
+{
+    int32_t head = 0;
+    int32_t end = len - 1;
+    while (head < end) {
+        int32_t mid = (head + end) / 2;
+        if (transMap[mid].index < index) {
+            head = mid + 1;
+            continue;
+        }
+        if (transMap[mid].index > index) {
+            end = mid - 1;
+        }
+        return transMap[mid].funcType;
+    }
+    return REGISTER_FUNC_TYPE_MAX;
 }
 
 int SQLiteSingleVerNaturalStore::GetSchema(SchemaObject &schema) const

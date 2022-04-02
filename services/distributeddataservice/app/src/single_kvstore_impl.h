@@ -149,7 +149,7 @@ private:
     std::mutex observerMapMutex_;
     std::map<IRemoteObject *, KvStoreObserverImpl *> observerMap_;
     std::mutex storeResultSetMutex_;
-    std::map<IKvStoreResultSet *, sptr<KvStoreResultSetImpl>> storeResultSetMap_;
+    std::map<IRemoteObject *, sptr<KvStoreResultSetImpl>> storeResultSetMap_;
     sptr<IKvStoreSyncCallback> syncCallback_;
     int openCount_;
 

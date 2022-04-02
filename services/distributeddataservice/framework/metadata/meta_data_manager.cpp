@@ -130,6 +130,17 @@ bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value)
     return true;
 }
 
+bool MetaDataManager::DelMeta(const std::string &key)
+{
+    if (!inited_) {
+        return false;
+    }
+
+    DistributedDB::Value data;
+    auto status = metaStore_->Delete({ key.begin(), key.end() });
+    return ((status == DistributedDB::DBStatus::OK) || (status == DistributedDB::DBStatus::NOT_FOUND));
+}
+
 bool MetaDataManager::SubscribeMeta(const std::string &prefix, Observer observer)
 {
     if (!inited_) {
@@ -140,5 +151,14 @@ bool MetaDataManager::SubscribeMeta(const std::string &prefix, Observer observer
         prefix, [ this, &observer ](const std::string &key) -> auto {
             return std::make_shared<MetaObserver>(metaStore_, key, observer);
         });
+}
+
+bool MetaDataManager::Unsubscribe(std::string filter)
+{
+    if (!inited_) {
+        return false;
+    }
+
+    return metaObservers_.Erase(filter);
 }
 } // namespace OHOS::DistributedData

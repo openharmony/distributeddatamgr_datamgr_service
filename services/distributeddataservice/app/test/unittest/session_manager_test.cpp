@@ -54,9 +54,9 @@ public:
     static void TearDownTestCase()
     {
         auto peerUserMetaKey = UserMetaRow::GetKeyFor(PEER_DEVICE_ID);
-        metaDelegate->Delete(peerUserMetaKey);
+        MetaDataManager::GetInstance().DelMeta(std::string(peerUserMetaKey.begin(), peerUserMetaKey.end()));
         auto peerCapMetaKey = CapMetaRow::GetKeyFor(PEER_DEVICE_ID);
-        metaDelegate->Delete(peerCapMetaKey);
+        MetaDataManager::GetInstance().DelMeta(std::string(peerCapMetaKey.begin(), peerCapMetaKey.end()));
     }
     void SetUp()
     {
@@ -87,7 +87,7 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     uint32_t routeHeadSize = 0;
     sendHandler->GetHeadDataSize(routeHeadSize);
     ASSERT_GT(routeHeadSize, 0);
-    std::unique_ptr<uint8_t> data = std::make_unique<uint8_t>(routeHeadSize);
+    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(routeHeadSize);
     sendHandler->FillHeadData(data.get(), routeHeadSize, routeHeadSize);
 
     std::vector<std::string> users;

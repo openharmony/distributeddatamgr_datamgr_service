@@ -107,6 +107,7 @@ HWTEST_F(MetaDataManagerTest, MetaBasic_01, TestSize.Level1)
     ASSERT_TRUE(result);
     sem.Wait();
     EXPECT_TRUE(student.name == changedKey);
+    MetaDataManager::GetInstance().Unsubscribe(prefix);
 
     Student student1;
     result = MetaDataManager::GetInstance().LoadMeta(student.name, student1);

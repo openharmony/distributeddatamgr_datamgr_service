@@ -60,7 +60,6 @@ void PermissionValidator::UpdateKvStoreTupleMap(const KvStoreTuple &srcKvStoreTu
     return ClientPermissionValidator::GetInstance().UpdateKvStoreTupleMap(srcKvStoreTuple, dstKvStoreTuple);
 }
 
-
 // Check whether the bundle name is in the system service list.
 bool PermissionValidator::IsSystemService(const std::string &bundleName)
 {

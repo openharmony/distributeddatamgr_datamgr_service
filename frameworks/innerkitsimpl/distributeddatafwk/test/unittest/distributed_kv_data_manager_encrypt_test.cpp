@@ -72,7 +72,7 @@ void DistributedKvDataManagerEncryptTest::SetUpTestCase(void)
     createEnc.createIfMissing = true;
     createEnc.encrypt = true;
     createEnc.autoSync = true;
-    createEnc.kvStoreType = MULTI_VERSION;
+    createEnc.kvStoreType = SINGLE_VERSION;
 
     userId.userId = "account0";
     appId.appId = "com.ohos.nb.service";
@@ -107,26 +107,20 @@ void DistributedKvDataManagerEncryptTest::TearDown(void)
 HWTEST_F(DistributedKvDataManagerEncryptTest, kvstore_ddm_createEncryptedStore_001, TestSize.Level1)
 {
     ZLOGI("kvstore_ddm_createEncryptedStore_001 begin.");
-    std::shared_ptr<KvStore> kvStorePtr;
-    Status status = manager.GetKvStore(createEnc, appId, storeId, kvStorePtr);
+    std::shared_ptr<SingleKvStore> kvStore;
+    Status status = manager.GetSingleKvStore(createEnc, appId, storeId, kvStore);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_NE(kvStorePtr, nullptr);
+    ASSERT_NE(kvStore, nullptr);
 
     Key key = "age";
     Value value = "18";
-    status = kvStorePtr->Put(key, value);
+    status = kvStore->Put(key, value);
     EXPECT_EQ(Status::SUCCESS, status) << "KvStore put data return wrong status";
 
-    std::shared_ptr<KvStoreSnapshot> snapshot;
-    // [create and] open and initialize kvstore snapshot instance.
-    status = kvStorePtr->GetKvStoreSnapshot(nullptr, snapshot);
-    EXPECT_EQ(Status::SUCCESS, status) << "KvStore GetKvStoreSnapshot data return wrong status";
-    ASSERT_NE(nullptr, snapshot) << "snapshot is nullptr";
     // get value from kvstore.
     Value valueRet;
-    Status statusRet = snapshot->Get(key, valueRet);
-    EXPECT_EQ(Status::SUCCESS, statusRet) << "KvStoreSnapshot get data return wrong status";
+    Status statusRet = kvStore->Get(key, valueRet);
+    EXPECT_EQ(Status::SUCCESS, statusRet) << "get data return wrong status";
 
     EXPECT_EQ(value, valueRet) << "value and valueRet are not equal";
-    kvStorePtr->ReleaseKvStoreSnapshot(snapshot);
 }

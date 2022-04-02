@@ -92,7 +92,10 @@ DBStatus UtKvStoreNbDelegateImpl::CloseResultSet(KvStoreResultSet *&resultSet)
 DBStatus UtKvStoreNbDelegateImpl::Put(const Key &key, const Value &value)
 {
     DbValue dbValue{ value, true, false, false };
-    return DoPut(key, dbValue);
+    auto status = DoPut(key, dbValue);
+    void *autoSync = &isAutoSync_;
+    Pragma(AUTO_SYNC, reinterpret_cast<PragmaData &>(autoSync));
+    return status;
 }
 
 DBStatus UtKvStoreNbDelegateImpl::DoPut(const Key &key, const DbValue &dbValue)
@@ -122,7 +125,10 @@ DBStatus UtKvStoreNbDelegateImpl::PutByOtherDevice(const Key &key, const Value &
 
 DBStatus UtKvStoreNbDelegateImpl::Delete(const Key &key)
 {
-    return DoDelete(key, true);
+    auto status = DoDelete(key, true);
+    void *autoSync = &isAutoSync_;
+    Pragma(AUTO_SYNC, reinterpret_cast<PragmaData &>(autoSync));
+    return status;
 }
 
 DBStatus UtKvStoreNbDelegateImpl::DoDelete(const Key &key, bool isLocalDelete)
@@ -383,5 +389,10 @@ DBStatus UtKvStoreNbDelegateImpl::UnSubscribeRemoteQuery(const std::vector<std::
                                                          const Query &query, bool wait)
 {
     return ALREADY_SET;
+}
+
+void UtKvStoreNbDelegateImpl::SetAutoSync(bool isAutoSync)
+{
+    isAutoSync_ = isAutoSync;
 }
 }  // namespace DistributedDB

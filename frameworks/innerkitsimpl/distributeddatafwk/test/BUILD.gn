@@ -73,56 +73,52 @@ ohos_unittest("DistributedKvDataManagerEncryptTest") {
   ]
 }
 
-ohos_unittest("KvStoreClientTest") {
-  module_out_path = module_output_path
-
-  sources = [
-    "unittest/kvstore_client_test.cpp",
-    "unittest/single_kvstore_client_query_test.cpp",
-    "unittest/single_kvstore_client_test.cpp",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
-    "samgr_standard:samgr_proxy",
-  ]
-
-  deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//third_party/googletest:gtest_main",
-    "//utils/native/base:utils",
-  ]
-}
-
-ohos_unittest("KvStoreSnapshotClientTest") {
-  module_out_path = module_output_path
-
-  sources = [ "unittest/kvstore_snapshot_client_test.cpp" ]
-
-  configs = [ ":module_private_config" ]
-
-  external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
-    "samgr_standard:samgr_proxy",
-  ]
-
-  deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//third_party/googletest:gtest_main",
-    "//utils/native/base:utils",
-  ]
-}
-
 ohos_unittest("LocalSubscribeStoreTest") {
   module_out_path = module_output_path
 
   sources = [ "unittest/local_subscribe_store_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "samgr_standard:samgr_proxy",
+  ]
+
+  deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//third_party/googletest:gtest_main",
+    "//utils/native/base:utils",
+  ]
+}
+
+ohos_unittest("SingleKvStoreClientQueryTest") {
+  module_out_path = module_output_path
+
+  sources = [ "unittest/single_kvstore_client_query_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "samgr_standard:samgr_proxy",
+  ]
+
+  deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//third_party/googletest:gtest_main",
+    "//utils/native/base:utils",
+  ]
+}
+
+ohos_unittest("SingleKvStoreClientTest") {
+  module_out_path = module_output_path
+
+  sources = [ "unittest/single_kvstore_client_test.cpp" ]
 
   configs = [ ":module_private_config" ]
 
@@ -165,9 +161,9 @@ group("unittest") {
     ":BlobTest",
     ":DistributedKvDataManagerEncryptTest",
     ":DistributedKvDataManagerTest",
-    ":KvStoreClientTest",
-    ":KvStoreSnapshotClientTest",
     ":LocalSubscribeStoreTest",
+    ":SingleKvStoreClientQueryTest",
+    ":SingleKvStoreClientTest",
   ]
 }
 ###############################################################################
