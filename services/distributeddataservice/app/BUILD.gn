@@ -143,7 +143,6 @@ ohos_shared_library("distributeddataservice") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
-    "permission_standard:libpermissionsdk_standard",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
     "startup_l2:syspara",

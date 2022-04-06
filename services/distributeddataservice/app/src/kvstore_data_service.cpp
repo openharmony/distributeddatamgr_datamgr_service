@@ -43,8 +43,6 @@
 #include "kvstore_meta_manager.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
-#include "permission/permission.h"
-#include "permission/permission_kit.h"
 #include "permission_validator.h"
 #include "process_communicator_impl.h"
 #include "rdb_service_impl.h"
@@ -60,7 +58,6 @@
 namespace OHOS::DistributedKv {
 using json = nlohmann::json;
 using namespace std::chrono;
-using namespace OHOS::Security::Permission;
 using namespace OHOS::DistributedData;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 
@@ -813,26 +810,6 @@ int KvStoreDataService::Dump(int fd, const std::vector<std::u16string> &args)
     return 0;
 }
 
-void KvStoreDataService::AddPermission() const
-{
-    const PermissionDef permission {
-        .permissionName = "ohos.permission.DISTRIBUTED_DATASYNC",
-        .bundleName = "ohos.distributeddata",
-        .grantMode = GrantMode::SYSTEM_GRANT,
-        .availableScope = AVAILABLE_SCOPE_ALL,
-        .label = "distributeddata",
-        .labelId = 9527,
-        .description = "distributeddata service",
-        .descriptionId = 9528
-    };
-    const std::vector<PermissionDef> permissionDefs{ permission };
-    PermissionKit::AddDefPermissions({ permission });
-    std::vector<std::string> permissions;
-    permissions.push_back(permission.permissionName);
-    PermissionKit::AddSystemGrantedReqPermissions(permission.bundleName, permissions);
-    PermissionKit::GrantSystemGrantedPermission(permission.bundleName, permission.permissionName);
-}
-
 void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
@@ -872,10 +849,7 @@ void KvStoreDataService::StartService()
         Reporter::GetInstance()->ServiceFault()->Report(msg);
     }
     Uninstaller::GetInstance().Init(this);
-#ifndef UT_TEST
-    // add softbus permission.
-    AddPermission();
-#endif
+
     std::string backupPath = BackupHandler::GetBackupPath(
         AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(getuid()), KvStoreAppManager::PATH_DE);
     ZLOGI("backupPath is : %s ", backupPath.c_str());

@@ -92,7 +92,6 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
-    "permission_standard:libpermissionsdk_standard",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -174,7 +173,6 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
-    "permission_standard:libpermissionsdk_standard",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -249,7 +247,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
-    "permission_standard:libpermissionsdk_standard",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -325,7 +322,6 @@ ohos_unittest("KvStoreBackupTest") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
-    "permission_standard:libpermissionsdk_standard",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -371,7 +367,6 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
-    "permission_standard:libpermissionsdk_standard",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -438,7 +433,6 @@ ohos_unittest("KvStoreSyncManagerTest") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
-    "permission_standard:libpermissionsdk_standard",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -532,7 +526,6 @@ ohos_unittest("KvStoreUninstallerTest") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account_standard:os_account_innerkits",
-    "permission_standard:libpermissionsdk_standard",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]

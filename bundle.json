@@ -62,7 +62,6 @@
                 "batterysrv_client",
                 "softbus_client",
                 "libhukssdk",
-                "libpermissionsdk_standard",
                 "powermgr_client",
                 "system_ability_fwk",
                 "syspara",

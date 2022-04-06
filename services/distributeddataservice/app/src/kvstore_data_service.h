@@ -136,8 +136,6 @@ private:
         sptr<KvStoreDeathRecipient> deathRecipient_;
     };
 
-    void AddPermission() const;
-
     void Initialize();
 
     void StartService();
