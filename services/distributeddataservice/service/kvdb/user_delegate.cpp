@@ -74,7 +74,7 @@ void UserDelegate::DeleteUsers(const std::string &deviceId)
 
 void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<UserStatus> &userStatus)
 {
-    ZLOGI("begin, device:%{public}.10s, users:%{public}zu", deviceId.c_str(), userStatus.size());
+    ZLOGI("begin, device:%{public}.10s, users:%{public}zu", Anonymous::Change(deviceId).c_str(), userStatus.size());
     deviceUserMap_.ComputeIfPresent(deviceId, [](const auto &key, std::map<int, bool> &userMap) {
         for (auto &user : userMap) {
             user.second = false;

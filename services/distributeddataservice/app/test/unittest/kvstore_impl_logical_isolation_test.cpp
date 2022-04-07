@@ -78,6 +78,7 @@ void KvStoreImplLogicalIsolationTest::SetUp(void)
 {
     g_kvStoreDataService = sptr<KvStoreDataService>(new KvStoreDataService());
     KvStoreMetaManager::GetInstance().InitMetaParameter();
+    KvStoreMetaManager::GetInstance().InitMetaListener();
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();

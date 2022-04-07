@@ -220,14 +220,11 @@ void KvStoreMetaManager::ConfigMetaDataManager()
     std::initializer_list<std::string> backFull = { metaDBDirectory_, "/backup/",
                                                     BackupHandler::GetHashedBackupName(fileName) };
     auto fullName = Constant::Concatenate(backFull);
-
-    MetaDataManager::GetInstance().SetMetaStore(metaDelegate_);
-    MetaDataManager::GetInstance().SetBackup([fullName](const auto &store) -> int32_t {
+    auto backup = [fullName](const auto &store) -> int32_t {
         DistributedDB::CipherPassword password;
         return store->Export(fullName, password);
-    });
-
-    MetaDataManager::GetInstance().SetSyncer([](const auto &store, int32_t status) {
+    };
+    auto syncer = [](const auto &store, int32_t status) {
         ZLOGI("Syncer status: %{public}d", status);
         std::vector<std::string> devs;
         auto devices = AppDistributedKv::CommunicationProvider::GetInstance().GetDeviceList();
@@ -247,7 +244,8 @@ void KvStoreMetaManager::ConfigMetaDataManager()
         if (status != DistributedDB::OK) {
             ZLOGW("meta data sync error %{public}d.", status);
         }
-    });
+    };
+    MetaDataManager::GetInstance().Initialize(metaDelegate_, backup, syncer);
 }
 
 std::vector<uint8_t> KvStoreMetaManager::GetMetaKey(const std::string &deviceAccountId,
