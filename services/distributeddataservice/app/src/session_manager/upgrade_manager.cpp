@@ -71,7 +71,7 @@ bool UpgradeManager::InitLocalCapability()
     CapMetaData capMetaData;
     capMetaData.version = CapMetaData::CURRENT_VERSION;
     auto dbKey = CapMetaRow::GetKeyFor(localDeviceId);
-    bool status = MetaDataManager::GetInstance().SaveMeta({dbKey.begin(), dbKey.end()}, capMetaData);
+    bool status = MetaDataManager::GetInstance().SaveMeta({ dbKey.begin(), dbKey.end() }, capMetaData);
     if (status) {
         capabilityMap_.Insert(localDeviceId, capMetaData);
     }

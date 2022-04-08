@@ -83,7 +83,8 @@ void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<Us
     for (auto &user : userStatus) {
         deviceUserMap_[deviceId][user.id] = user.isActive;
     }
-    ZLOGI("end, device:%{public}s, users:%{public}zu", Anonymous::Change(deviceId).c_str(), deviceUserMap_[deviceId].size());
+    ZLOGI("end, device:%{public}s, users:%{public}zu", Anonymous::Change(deviceId).c_str(),
+        deviceUserMap_[deviceId].size());
 }
 
 bool UserDelegate::InitLocalUserMeta()
