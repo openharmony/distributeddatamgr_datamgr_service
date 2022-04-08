@@ -21,9 +21,18 @@
 namespace OHOS::AppDistributedKv {
 using Status = DistributedKv::Status;
 struct API_EXPORT DeviceInfo {
-    std::string deviceId;
+    std::string uuid;
+    std::string udid;
+    std::string networkId;
     std::string deviceName;
-    std::string deviceType;
+    uint32_t deviceType;
+};
+
+enum DeviceType {
+    SMART_WATCH,
+    KID_WATCH,
+    PHONE,
+    OTHERS,
 };
 
 struct API_EXPORT PipeInfo {

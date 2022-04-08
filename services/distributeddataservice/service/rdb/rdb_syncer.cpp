@@ -114,7 +114,7 @@ int32_t RdbSyncer::CreateMetaData()
     newMeta.appId = GetAppId();
     newMeta.appType = "harmony";
     newMeta.bundleName = GetBundleName();
-    newMeta.deviceId = CommunicationProvider::GetInstance().GetLocalDevice().deviceId;
+    newMeta.deviceId = CommunicationProvider::GetInstance().GetLocalDevice().uuid;
     newMeta.storeId = GetStoreId();
     newMeta.uid = uid_;
     newMeta.user = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid_);
@@ -181,10 +181,10 @@ int32_t RdbSyncer::SetDistributedTables(const std::vector<std::string> &tables)
 
 std::vector<std::string> RdbSyncer::GetConnectDevices()
 {
-    auto deviceInfos = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteNodesBasicInfo();
+    auto deviceInfos = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteDevices();
     std::vector<std::string> devices;
     for (const auto& deviceInfo : deviceInfos) {
-        devices.push_back(deviceInfo.deviceId);
+        devices.push_back(deviceInfo.networkId);
     }
     ZLOGI("size=%{public}u", static_cast<uint32_t>(devices.size()));
     for (const auto& device: devices) {

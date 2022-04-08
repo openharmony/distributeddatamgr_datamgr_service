@@ -277,7 +277,7 @@ Status DistributedKvDataManager::GetDeviceList(std::vector<DeviceInfo> &deviceIn
         return Status::ERROR;
     }
 
-    return kvDataServiceProxy->GetDeviceList(deviceInfoList, strategy);
+    return kvDataServiceProxy->GetRemoteDevices(deviceInfoList, strategy);
 }
 
 static std::map<DeviceStatusChangeListener *, sptr<IDeviceStatusChangeListener>> deviceObservers_;

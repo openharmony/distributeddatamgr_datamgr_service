@@ -49,12 +49,20 @@ DeviceInfo ArkCommunicationProvider::GetLocalDevice() const
     return deviceQuery_->GetLocalDevice();
 }
 
-std::vector<DeviceInfo> ArkCommunicationProvider::GetDeviceList() const
+std::vector<DeviceInfo> ArkCommunicationProvider::GetRemoteDevices() const
 {
     if (deviceQuery_ == nullptr) {
-        return CommunicationProviderImpl::GetDeviceList();
+        return CommunicationProviderImpl::GetRemoteDevices();
     }
-    return deviceQuery_->GetDeviceList();
+    return deviceQuery_->GetRemoteDevices();
+}
+
+DeviceInfo ArkCommunicationProvider::GetDeviceInfo(const std::string &networkId) const
+{
+    if (deviceQuery_ == nullptr) {
+        return CommunicationProviderImpl::GetDeviceInfo(networkId);
+    }
+    return deviceQuery_->GetDeviceInfo(networkId);
 }
 
 void ArkCommunicationProvider::SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery)

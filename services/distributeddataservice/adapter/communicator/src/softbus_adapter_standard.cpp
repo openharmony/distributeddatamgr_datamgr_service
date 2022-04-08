@@ -108,7 +108,9 @@ void AppDeviceListenerWrap::SetDeviceHandler(SoftBusAdapter *handler)
 
 void AppDeviceListenerWrap::NotifyAll(NodeBasicInfo *info, DeviceChangeType type)
 {
-    DeviceInfo di = {std::string(info->networkId), std::string(info->deviceName), std::to_string(info->deviceTypeId)};
+    std::string uuid = softBusAdapter_->GetUuidByNodeId(std::string(info->networkId));
+    std::string udid = softBusAdapter_->GetUdidByNodeId(std::string(info->networkId));
+    DeviceInfo di = { uuid, udid, info->networkId, info->deviceName, info->deviceTypeId };
     softBusAdapter_->NotifyAll(di, type);
 }
 
@@ -208,16 +210,14 @@ void SoftBusAdapter::NotifyAll(const DeviceInfo &deviceInfo, const DeviceChangeT
             }
         }
         ZLOGD("high");
-        std::string uuid = GetUuidByNodeId(deviceInfo.deviceId);
-        ZLOGD("[Notify] to DB from: %{public}s, type:%{public}d", ToBeAnonymous(uuid).c_str(), type);
-        UpdateRelationship(deviceInfo.deviceId, type);
+        ZLOGD("[Notify] to DB from: %{public}s, type:%{public}d", ToBeAnonymous(deviceInfo.uuid).c_str(), type);
+        UpdateRelationship(deviceInfo, type);
         for (const auto &device : listeners) {
             if (device == nullptr) {
                 continue;
             }
             if (device->GetChangeLevelType() == ChangeLevelType::HIGH) {
-                DeviceInfo di = {uuid, deviceInfo.deviceName, deviceInfo.deviceType};
-                device->OnDeviceChanged(di, type);
+                device->OnDeviceChanged(deviceInfo, type);
                 break;
             }
         }
@@ -227,9 +227,8 @@ void SoftBusAdapter::NotifyAll(const DeviceInfo &deviceInfo, const DeviceChangeT
                 continue;
             }
             if (device->GetChangeLevelType() == ChangeLevelType::LOW) {
-                DeviceInfo di = {uuid, deviceInfo.deviceName, deviceInfo.deviceType};
-                device->OnDeviceChanged(di, DeviceChangeType::DEVICE_OFFLINE);
-                device->OnDeviceChanged(di, type);
+                device->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_OFFLINE);
+                device->OnDeviceChanged(deviceInfo, type);
             }
         }
         ZLOGD("min");
@@ -238,15 +237,14 @@ void SoftBusAdapter::NotifyAll(const DeviceInfo &deviceInfo, const DeviceChangeT
                 continue;
             }
             if (device->GetChangeLevelType() == ChangeLevelType::MIN) {
-                DeviceInfo di = {uuid, deviceInfo.deviceName, deviceInfo.deviceType};
-                device->OnDeviceChanged(di, type);
+                device->OnDeviceChanged(deviceInfo, type);
             }
         }
     });
     th.detach();
 }
 
-std::vector<DeviceInfo> SoftBusAdapter::GetDeviceList() const
+std::vector<DeviceInfo> SoftBusAdapter::GetRemoteDevices() const
 {
     std::vector<DeviceInfo> dis;
     NodeBasicInfo *info = nullptr;
@@ -262,7 +260,8 @@ std::vector<DeviceInfo> SoftBusAdapter::GetDeviceList() const
 
     for (int i = 0; i < infoNum; i++) {
         std::string uuid = GetUuidByNodeId(std::string(info[i].networkId));
-        DeviceInfo deviceInfo = {uuid, std::string(info[i].deviceName), std::to_string(info[i].deviceTypeId)};
+        std::string udid = GetUdidByNodeId(std::string(info[i].networkId));
+        DeviceInfo deviceInfo = { uuid, udid, info[i].networkId, info[i].deviceName, info[i].deviceTypeId };
         dis.push_back(deviceInfo);
     }
     if (info != nullptr) {
@@ -271,9 +270,18 @@ std::vector<DeviceInfo> SoftBusAdapter::GetDeviceList() const
     return dis;
 }
 
+DeviceInfo SoftBusAdapter::GetDeviceInfo(const std::string &id)
+{
+    DeviceInfo cacheInfo = GetDeviceCacheInfo(id);
+    if (cacheInfo.networkId.empty()) {
+        ZLOGE("Get DeviceInfo failed.");
+    }
+    return cacheInfo;
+}
+
 DeviceInfo SoftBusAdapter::GetLocalDevice()
 {
-    if (!localInfo_.deviceId.empty()) {
+    if (!localInfo_.uuid.empty()) {
         return localInfo_;
     }
 
@@ -281,12 +289,13 @@ DeviceInfo SoftBusAdapter::GetLocalDevice()
     int32_t ret = GetLocalNodeDeviceInfo("ohos.distributeddata", &info);
     if (ret != SOFTBUS_OK) {
         ZLOGE("GetLocalNodeDeviceInfo error");
-        return DeviceInfo();
+        return {};
     }
     std::string uuid = GetUuidByNodeId(std::string(info.networkId));
+    std::string udid = GetUdidByNodeId(std::string(info.networkId));
     ZLOGD("[LocalDevice] id:%{private}s, name:%{private}s, type:%{private}d",
         ToBeAnonymous(uuid).c_str(), info.deviceName, info.deviceTypeId);
-    localInfo_ = {uuid, std::string(info.deviceName), std::to_string(info.deviceTypeId)};
+    localInfo_ = { uuid, udid, info.networkId, info.deviceName, info.deviceTypeId };
     return localInfo_;
 }
 
@@ -321,59 +330,29 @@ DeviceInfo SoftBusAdapter::GetLocalBasicInfo() const
     int32_t ret = GetLocalNodeDeviceInfo("ohos.distributeddata", &info);
     if (ret != SOFTBUS_OK) {
         ZLOGE("GetLocalNodeDeviceInfo error");
-        return DeviceInfo();
+        return {};
     }
     ZLOGD("[LocalBasicInfo] networkId:%{private}s, name:%{private}s, type:%{private}d",
         ToBeAnonymous(std::string(info.networkId)).c_str(), info.deviceName, info.deviceTypeId);
-    DeviceInfo localInfo = {std::string(info.networkId), std::string(info.deviceName),
-        std::to_string(info.deviceTypeId)};
+    std::string uuid = GetUuidByNodeId(std::string(info.networkId));
+    std::string udid = GetUdidByNodeId(std::string(info.networkId));
+    DeviceInfo localInfo = { uuid, udid, info.networkId, info.deviceName, info.deviceTypeId };
     return localInfo;
 }
 
-std::vector<DeviceInfo> SoftBusAdapter::GetRemoteNodesBasicInfo() const
+void SoftBusAdapter::UpdateRelationship(const DeviceInfo &deviceInfo, const DeviceChangeType &type)
 {
-    ZLOGD("begin");
-    std::vector<DeviceInfo> dis;
-    NodeBasicInfo *info = nullptr;
-    int32_t infoNum = 0;
-    dis.clear();
-
-    int32_t ret = GetAllNodeDeviceInfo("ohos.distributeddata", &info, &infoNum);
-    if (ret != SOFTBUS_OK) {
-        ZLOGE("GetAllNodeDeviceInfo error");
-        return dis;
-    }
-    ZLOGD("GetAllNodeDeviceInfo success infoNum=%{public}d", infoNum);
-
-    for (int i = 0; i < infoNum; i++) {
-        dis.push_back({std::string(info[i].networkId), std::string(info[i].deviceName),
-                       std::to_string(info[i].deviceTypeId)});
-    }
-    if (info != nullptr) {
-        FreeNodeInfo(info);
-    }
-    return dis;
-}
-
-void SoftBusAdapter::UpdateRelationship(const std::string &networkid, const DeviceChangeType &type)
-{
-    auto uuid = GetUuidByNodeId(networkid);
-    auto udid = GetUdidByNodeId(networkid);
-    lock_guard<mutex> lock(networkMutex_);
     switch (type) {
         case DeviceChangeType::DEVICE_OFFLINE: {
-            auto size = this->networkId2UuidUdid_.erase(networkid);
-            if (size == 0) {
-                ZLOGW("not found id:%{public}s.", SoftBusAdapter::ToBeAnonymous(networkid).c_str());
-            }
+            deviceInfos_.Erase(deviceInfo.networkId);
+            deviceInfos_.Erase(deviceInfo.uuid);
+            deviceInfos_.Erase(deviceInfo.udid);
             break;
         }
         case DeviceChangeType::DEVICE_ONLINE: {
-            std::pair<std::string, std::tuple<std::string, std::string>> value = {networkid, {uuid, udid}};
-            auto res = this->networkId2UuidUdid_.insert(std::move(value));
-            if (!res.second) {
-                ZLOGW("insert failed.");
-            }
+            deviceInfos_.InsertOrAssign(deviceInfo.networkId, deviceInfo);
+            deviceInfos_.InsertOrAssign(deviceInfo.uuid, deviceInfo);
+            deviceInfos_.InsertOrAssign(deviceInfo.udid, deviceInfo);
             break;
         }
         default: {
@@ -383,67 +362,70 @@ void SoftBusAdapter::UpdateRelationship(const std::string &networkid, const Devi
     }
 }
 
-std::string SoftBusAdapter::ToUUID(const std::string& id) const
+DeviceInfo SoftBusAdapter::GetDeviceInfoFromCache(const std::string &id) const
 {
-    lock_guard<mutex> lock(networkMutex_);
-    auto res = networkId2UuidUdid_.find(id);
-    if (res != networkId2UuidUdid_.end()) { // id is networkid
-        return std::get<0>(res->second);
+    auto deviceInfo = deviceInfos_.Find(id);
+    if (deviceInfo.first) {
+        return deviceInfo.second;
     }
-
-    for (auto const &e : networkId2UuidUdid_) {
-        auto tup = e.second;
-        if (id == (std::get<0>(tup))) { // id is uuid
-            return id;
-        }
-        if (id == (std::get<1>(tup))) { // id is udid
-            return std::get<0>(tup);
-        }
-    }
-    ZLOGW("unknown id.");
-    return "";
+    ZLOGI("did not get deviceInfo from cache. ");
+    return {};
 }
 
-// id is return of default value
-std::string SoftBusAdapter::ToNodeID(const std::string& id, const std::string &nodeId) const
+void SoftBusAdapter::UpdateDeviceCacheInfo() const
 {
-    {
-        lock_guard<mutex> lock(networkMutex_);
-        for (auto const &e : networkId2UuidUdid_) {
-            auto tup = e.second;
-            if (nodeId == (std::get<0>(tup))) { // id is uuid
-                return e.first;
-            }
-            if (nodeId == (std::get<1>(tup))) { // id is udid
-                return e.first;
-            }
-        }
-    }
-
     ZLOGW("get the network id from devices.");
-    std::vector<DeviceInfo> devices;
     NodeBasicInfo *info = nullptr;
     int32_t infoNum = 0;
-    std::string networkId = id;
-    int32_t ret = GetAllNodeDeviceInfo("ohos.distributeddata", &info, &infoNum);
-    if (ret == SOFTBUS_OK) {
-        lock_guard<mutex> lock(networkMutex_);
-        for (int i = 0; i < infoNum; i++) {
-            if (networkId2UuidUdid_.find(info[i].networkId) != networkId2UuidUdid_.end()) {
-                continue;
-            }
-            auto uuid = GetUuidByNodeId(std::string(info[i].networkId));
-            auto udid = GetUdidByNodeId(std::string(info[i].networkId));
-            networkId2UuidUdid_.insert({info[i].networkId, {uuid, udid}});
-            if (uuid == nodeId || udid == nodeId) {
-                networkId = info[i].networkId;
-            }
-        }
+    int32_t ret = GetAllNodeDeviceInfo("ohos.distributeddata", &info, &infoNum);  // to find from softbus
+    if (ret != SOFTBUS_OK) {
+        ZLOGE("GetAllNodeDeviceInfo error");
+        return;
+    }
+    ZLOGD("GetAllNodeDeviceInfo success infoNum=%{public}d", infoNum);
+    for (int i = 0; i < infoNum; i++) {
+        auto networkId = info[i].networkId;
+        auto uuid = GetUuidByNodeId(networkId);
+        auto udid = GetUdidByNodeId(networkId);
+        DeviceInfo deviceInfo = { uuid, udid, networkId, info[i].deviceName, info[i].deviceTypeId };
+        deviceInfos_.InsertOrAssign(uuid, deviceInfo);
+        deviceInfos_.InsertOrAssign(udid, deviceInfo);
+        deviceInfos_.InsertOrAssign(networkId, deviceInfo);
     }
     if (info != nullptr) {
         FreeNodeInfo(info);
     }
-    return networkId;
+}
+
+DeviceInfo SoftBusAdapter::GetDeviceCacheInfo(const std::string &id) const
+{
+    DeviceInfo cacheInfo = GetDeviceInfoFromCache(id);
+    if (!cacheInfo.networkId.empty()) {
+        return cacheInfo;
+    }
+    UpdateDeviceCacheInfo();
+    cacheInfo = GetDeviceInfoFromCache(id);
+    return cacheInfo;
+}
+
+std::string SoftBusAdapter::ToUUID(const std::string &id) const
+{
+    DeviceInfo cacheInfo = GetDeviceCacheInfo(id);
+    if (cacheInfo.uuid.empty()) {
+        ZLOGW("unknown id.");
+        return "";
+    }
+    return cacheInfo.uuid;
+}
+
+std::string SoftBusAdapter::ToNodeID(const std::string &nodeId, const std::string &defaultId) const
+{
+    DeviceInfo cacheInfo = GetDeviceCacheInfo(nodeId);
+    if (cacheInfo.networkId.empty()) {
+        ZLOGW("unknown id.");
+        return defaultId;
+    }
+    return cacheInfo.networkId;
 }
 
 std::string SoftBusAdapter::ToBeAnonymous(const std::string &name)
@@ -503,7 +485,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     ZLOGD("[SendData] to %{public}s ,session:%{public}s, size:%{public}d", ToBeAnonymous(deviceId.deviceId).c_str(),
         pipeInfo.pipeId.c_str(), size);
     int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(),
-        ToNodeID("", deviceId.deviceId).c_str(), "GROUP_ID", &attr);
+        ToNodeID(deviceId.deviceId, "").c_str(), "GROUP_ID", &attr);
     if (sessionId < 0) {
         ZLOGW("OpenSession %{public}s, type:%{public}d failed, sessionId:%{public}d",
             pipeInfo.pipeId.c_str(), info.msgType, sessionId);
@@ -569,7 +551,7 @@ bool SoftBusAdapter::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
     }
     SessionAttribute attr;
     attr.dataType = TYPE_BYTES;
-    int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(), ToNodeID("", peer.deviceId).c_str(),
+    int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(), ToNodeID(peer.deviceId, "").c_str(),
         "GROUP_ID", &attr);
     ZLOGI("[IsSameStartedOnPeer] sessionId=%{public}d", sessionId);
     if (sessionId == INVALID_SESSION_ID) {
@@ -611,8 +593,8 @@ void SoftBusAdapter::DeleteSession(const std::string &sessionName)
     busSessionMap_.erase(sessionName);
 }
 
-void SoftBusAdapter::NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
-    const PipeInfo &pipeInfo)
+void SoftBusAdapter::NotifyDataListeners(const uint8_t *ptr, int size, const std::string &deviceId,
+                                         const PipeInfo &pipeInfo)
 {
     ZLOGD("begin");
     lock_guard<mutex> lock(dataChangeMutex_);
@@ -620,7 +602,7 @@ void SoftBusAdapter::NotifyDataListeners(const uint8_t *ptr, const int size, con
     if (it != dataChangeListeners_.end()) {
         ZLOGD("ready to notify, pipeName:%{public}s, deviceId:%{public}s.",
             pipeInfo.pipeId.c_str(), ToBeAnonymous(deviceId).c_str());
-        DeviceInfo deviceInfo = {deviceId, "", ""};
+        DeviceInfo deviceInfo = GetDeviceInfo(deviceId);
         it->second->OnMessage(deviceInfo, ptr, size, pipeInfo);
         TrafficStat ts { pipeInfo.pipeId, deviceId, 0, size };
         Reporter::GetInstance()->TrafficStatistic()->Report(ts);

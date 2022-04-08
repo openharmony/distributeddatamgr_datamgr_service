@@ -128,13 +128,13 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider005, TestSize.Level
 */
 HWTEST_F(CommunicationProviderImplTest, CommunicationProvider006, TestSize.Level1)
 {
-    ZLOGI("GetDeviceList");
-    auto devices = CommunicationProvider::GetInstance().GetDeviceList();
+    ZLOGI("GetRemoteDevices");
+    auto devices = CommunicationProvider::GetInstance().GetRemoteDevices();
     const unsigned long val = 0;
-    ZLOGD("GetDeviceList size: %zu", devices.size());
+    ZLOGD("GetRemoteDevices size: %{public}zu", devices.size());
     ASSERT_GE(devices.size(), val);
     for (const auto &device : devices) {
-        ZLOGD("GetDeviceList, name:%s, type:%s", device.deviceName.c_str(), device.deviceType.c_str());
+        ZLOGD("GetRemoteDevices, name:%{public}s, type:0x%{public}x", device.deviceName.c_str(), device.deviceType);
     }
     sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
@@ -152,7 +152,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider007, TestSize.Level
     auto device = CommunicationProvider::GetInstance().GetLocalDevice();
     const unsigned long val = 0;
     ASSERT_GE(device.deviceName.length(), val);
-    ZLOGD("GetLocalDevice, name:%s, type:%s", device.deviceName.c_str(), device.deviceType.c_str());
+    ZLOGD("GetLocalDevice, name:%{public}s, type:0x%{public}x", device.deviceName.c_str(), device.deviceType);
     sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 

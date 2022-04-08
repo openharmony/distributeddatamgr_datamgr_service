@@ -18,6 +18,7 @@
 #include "kvstore_sync_callback_client.h"
 #include <cinttypes>
 #include <atomic>
+#include "dds_trace.h"
 #include "log_print.h"
 
 namespace OHOS {
@@ -29,6 +30,7 @@ KvStoreSyncCallbackClient::~KvStoreSyncCallbackClient()
 
 void KvStoreSyncCallbackClient::SyncCompleted(const std::map<std::string, Status> &results, uint64_t sequenceId)
 {
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
     auto finded = syncCallbackInfo_.Find(sequenceId);
     if (finded.first) {
         finded.second->SyncCompleted(results);

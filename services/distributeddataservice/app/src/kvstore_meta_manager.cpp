@@ -227,9 +227,9 @@ void KvStoreMetaManager::ConfigMetaDataManager()
     auto syncer = [](const auto &store, int32_t status) {
         ZLOGI("Syncer status: %{public}d", status);
         std::vector<std::string> devs;
-        auto devices = AppDistributedKv::CommunicationProvider::GetInstance().GetDeviceList();
+        auto devices = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteDevices();
         for (auto const &dev : devices) {
-            devs.push_back(dev.deviceId);
+            devs.push_back(dev.uuid);
         }
 
         if (devs.empty()) {
@@ -852,9 +852,9 @@ Status KvStoreMetaManager::DeleteStrategyMeta(const std::string &bundleName, con
 void KvStoreMetaManager::SyncMeta()
 {
     std::vector<std::string> devs;
-    auto deviceList = AppDistributedKv::CommunicationProvider::GetInstance().GetDeviceList();
+    auto deviceList = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteDevices();
     for (auto const &dev : deviceList) {
-        devs.push_back(dev.deviceId);
+        devs.push_back(dev.uuid);
     }
 
     if (devs.empty()) {

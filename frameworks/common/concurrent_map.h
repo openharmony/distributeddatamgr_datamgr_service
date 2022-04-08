@@ -92,6 +92,14 @@ public:
         return (entries_.find(key) != entries_.end());
     }
 
+    template <typename _Obj>
+    bool InsertOrAssign(const key_type &key, _Obj &&obj) noexcept
+    {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        auto it = entries_.insert_or_assign(key, std::forward<_Obj>(obj));
+        return it.second;
+    }
+
     bool Insert(const key_type &key, const mapped_type &value) noexcept
     {
         std::lock_guard<decltype(mutex_)> lock(mutex_);

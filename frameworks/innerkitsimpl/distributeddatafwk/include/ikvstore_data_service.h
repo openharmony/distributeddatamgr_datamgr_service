@@ -58,7 +58,7 @@ public:
         REGISTERCLIENTDEATHOBSERVER,
         GETSINGLEKVSTORE,
         GETLOCALDEVICE,
-        GETDEVICELIST,
+        GETREMOTEDEVICES,
         STARTWATCHDEVICECHANGE,
         STOPWATCHDEVICECHANGE,
         GET_RDB_SERVICE,
@@ -93,7 +93,7 @@ public:
     virtual Status RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer) = 0;
 
     virtual Status GetLocalDevice(DeviceInfo &device) = 0;
-    virtual Status GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy) = 0;
+    virtual Status GetRemoteDevices(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy) = 0;
     virtual Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer,
             DeviceFilterStrategy strategy) = 0;
     virtual Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) = 0;
@@ -114,7 +114,7 @@ private:
     int32_t DeleteAllKvStoreOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t RegisterClientDeathObserverOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t GetLocalDeviceOnRemote(MessageParcel &data, MessageParcel &reply);
-    int32_t GetDeviceListOnRemote(MessageParcel &data, MessageParcel &reply);
+    int32_t GetRemoteDevicesOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t StartWatchDeviceChangeOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t StopWatchDeviceChangeOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t GetSingleKvStoreOnRemote(MessageParcel &data, MessageParcel &reply);
@@ -131,7 +131,7 @@ private:
         [REGISTERCLIENTDEATHOBSERVER] = &KvStoreDataServiceStub::RegisterClientDeathObserverOnRemote,
         [GETSINGLEKVSTORE] = &KvStoreDataServiceStub::GetSingleKvStoreOnRemote,
         [GETLOCALDEVICE] = &KvStoreDataServiceStub::GetLocalDeviceOnRemote,
-        [GETDEVICELIST] = &KvStoreDataServiceStub::GetDeviceListOnRemote,
+        [GETREMOTEDEVICES] = &KvStoreDataServiceStub::GetRemoteDevicesOnRemote,
         [STARTWATCHDEVICECHANGE] = &KvStoreDataServiceStub::StartWatchDeviceChangeOnRemote,
         [STOPWATCHDEVICECHANGE] = &KvStoreDataServiceStub::StopWatchDeviceChangeOnRemote,
         [GET_RDB_SERVICE] = &KvStoreDataServiceStub::GetRdbServiceOnRemote,
@@ -168,7 +168,7 @@ public:
     virtual Status RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer);
 
     virtual Status GetLocalDevice(DeviceInfo &device);
-    virtual Status GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy);
+    virtual Status GetRemoteDevices(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy);
     virtual Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy);
     virtual Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer);
     virtual sptr<IRemoteObject> GetRdbService();

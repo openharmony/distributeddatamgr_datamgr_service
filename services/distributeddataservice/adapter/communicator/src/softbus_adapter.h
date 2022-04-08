@@ -22,6 +22,7 @@
 #include <tuple>
 #include <memory>
 #include <vector>
+#include <concurrent_map.h>
 #include "app_data_change_listener.h"
 #include "app_device_change_listener.h"
 #include "platform_specific.h"
@@ -86,13 +87,12 @@ public:
     Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     void NotifyAll(const DeviceInfo &deviceInfo, const DeviceChangeType &type);
     DeviceInfo GetLocalDevice();
-    std::vector<DeviceInfo> GetDeviceList() const;
+    std::vector<DeviceInfo> GetRemoteDevices() const;
+    DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNodeId(const std::string &nodeId) const;
     std::string GetUdidByNodeId(const std::string &nodeId) const;
     // get local device node information;
     DeviceInfo GetLocalBasicInfo() const;
-    // get all remote connected device's node information;
-    std::vector<DeviceInfo> GetRemoteNodesBasicInfo() const;
     // transfer nodeId or udid to uuid
     // input: id
     // output: uuid
@@ -102,7 +102,7 @@ public:
     // input: id
     // output: nodeId
     // return: transfer success or not
-    std::string ToNodeID(const std::string &id, const std::string &nodeId) const;
+    std::string ToNodeID(const std::string &nodeId, const std::string &defaultId) const;
     static std::string ToBeAnonymous(const std::string &name);
 
     // add DataChangeListener to watch data change;
@@ -123,14 +123,13 @@ public:
 
     int RemoveSessionServerAdapter(const std::string &sessionName) const;
 
-    void UpdateRelationship(const std::string &networkid, const DeviceChangeType &type);
+    void UpdateRelationship(const DeviceInfo &deviceInfo, const DeviceChangeType &type);
 
     void InsertSession(const std::string &sessionName);
 
     void DeleteSession(const std::string &sessionName);
 
-    void NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
-        const PipeInfo &pipeInfo);
+    void NotifyDataListeners(const uint8_t *ptr, int size, const std::string &deviceId, const PipeInfo &pipeInfo);
 
     int32_t GetSessionStatus(int32_t sessionId);
 
@@ -139,9 +138,11 @@ public:
     void OnSessionClose(int32_t sessionId);
 
 private:
+    DeviceInfo GetDeviceInfoFromCache(const std::string &id) const;
+    void UpdateDeviceCacheInfo() const;
+    DeviceInfo GetDeviceCacheInfo(const std::string &id) const;
     std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t sessinId);
-    mutable std::mutex networkMutex_ {};
-    mutable std::map<std::string, std::tuple<std::string, std::string>> networkId2UuidUdid_ {};
+    mutable ConcurrentMap<std::string, DeviceInfo> deviceInfos_ {};
     DeviceInfo localInfo_ {};
     static std::shared_ptr<SoftBusAdapter> instance_;
     std::mutex deviceChangeMutex_;

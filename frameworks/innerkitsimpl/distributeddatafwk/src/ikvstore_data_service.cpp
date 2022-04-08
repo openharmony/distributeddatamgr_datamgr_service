@@ -306,7 +306,7 @@ Status KvStoreDataServiceProxy::GetLocalDevice(OHOS::DistributedKv::DeviceInfo &
     return status;
 }
 
-Status KvStoreDataServiceProxy::GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy)
+Status KvStoreDataServiceProxy::GetRemoteDevices(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(KvStoreDataServiceProxy::GetDescriptor())) {
@@ -319,7 +319,7 @@ Status KvStoreDataServiceProxy::GetDeviceList(std::vector<DeviceInfo> &deviceInf
     }
     MessageParcel reply;
     MessageOption mo { MessageOption::TF_SYNC };
-    int32_t error = Remote()->SendRequest(GETDEVICELIST, data, reply, mo);
+    int32_t error = Remote()->SendRequest(GETREMOTEDEVICES, data, reply, mo);
     if (error != 0) {
         ZLOGW("SendRequest returned %d", error);
         return Status::IPC_ERROR;
@@ -477,11 +477,11 @@ int32_t KvStoreDataServiceStub::GetAllKvStoreIdOnRemote(MessageParcel &data, Mes
     }
     return 0;
 }
-int32_t KvStoreDataServiceStub::GetDeviceListOnRemote(MessageParcel &data, MessageParcel &reply)
+int32_t KvStoreDataServiceStub::GetRemoteDevicesOnRemote(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<DeviceInfo> infos;
     DeviceFilterStrategy strategy = static_cast<DeviceFilterStrategy>(data.ReadInt32());
-    Status status = GetDeviceList(infos, strategy);
+    Status status = GetRemoteDevices(infos, strategy);
     if (!reply.WriteInt32(static_cast<int>(status))) {
         return -1;
     }

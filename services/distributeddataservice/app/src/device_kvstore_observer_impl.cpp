@@ -54,7 +54,7 @@ void DeviceKvStoreObserverImpl::Transfer(const std::list<DistributedDB::Entry> &
                                          std::string &deviceId)
 {
     if (localDeviceId_.empty()) {
-        auto localDevId = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().deviceId;
+        auto localDevId = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().uuid;
         if (localDevId.empty()) {
             return;
         }
@@ -69,7 +69,7 @@ void DeviceKvStoreObserverImpl::Transfer(const std::list<DistributedDB::Entry> &
             ZLOGI("Get deviceId from Entry.");
             auto uuid = std::string(entry.key.begin(), entry.key.begin() + localDeviceId_.length());
             if (localDeviceId_.compare(uuid) == 0) {
-                deviceId = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalBasicInfo().deviceId;
+                deviceId = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalBasicInfo().networkId;
             } else {
                 deviceId = AppDistributedKv::CommunicationProvider::GetInstance().ToNodeId(uuid);
             }

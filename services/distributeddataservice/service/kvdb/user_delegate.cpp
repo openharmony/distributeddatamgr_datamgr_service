@@ -37,11 +37,11 @@ std::vector<UserStatus> UserDelegate::GetLocalUserStatus()
 {
     ZLOGI("begin");
     auto deviceInfo = CommunicationProvider::GetInstance().GetLocalDevice();
-    if (deviceInfo.deviceId.empty()) {
+    if (deviceInfo.uuid.empty()) {
         ZLOGE("failed to get local device id");
         return {};
     }
-    return GetUsers(deviceInfo.deviceId);
+    return GetUsers(deviceInfo.uuid);
 }
 
 std::vector<DistributedData::UserStatus> UserDelegate::GetRemoteUserStatus(const std::string &deviceId)

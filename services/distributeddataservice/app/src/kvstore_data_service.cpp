@@ -1183,15 +1183,15 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
 Status KvStoreDataService::GetLocalDevice(DeviceInfo &device)
 {
     auto tmpDevice = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalBasicInfo();
-    device = {tmpDevice.deviceId, tmpDevice.deviceName, tmpDevice.deviceType};
+    device = { tmpDevice.networkId, tmpDevice.deviceName, std::to_string(tmpDevice.deviceType) };
     return Status::SUCCESS;
 }
 
-Status KvStoreDataService::GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy)
+Status KvStoreDataService::GetRemoteDevices(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy)
 {
-    auto devices = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteNodesBasicInfo();
+    auto devices = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteDevices();
     for (auto const &device : devices) {
-        DeviceInfo deviceInfo = {device.deviceId, device.deviceName, device.deviceType};
+        DeviceInfo deviceInfo = { device.networkId, device.deviceName, std::to_string(device.deviceType) };
         deviceInfoList.push_back(deviceInfo);
     }
     ZLOGD("strategy is %{public}d.", strategy);
@@ -1263,7 +1263,7 @@ bool KvStoreDataService::IsStoreOpened(const std::string &userId, const std::str
 void KvStoreDataService::SetCompatibleIdentify(const AppDistributedKv::DeviceInfo &info) const
 {
     for (const auto &item : deviceAccountMap_) {
-        item.second.SetCompatibleIdentify(info.deviceId);
+        item.second.SetCompatibleIdentify(info.uuid);
     }
 }
 

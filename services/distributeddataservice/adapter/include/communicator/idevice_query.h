@@ -24,10 +24,12 @@ public:
     API_EXPORT virtual ~IDeviceQuery() {}
 
     // Get online deviceList
-    virtual std::vector<DeviceInfo> GetDeviceList() const = 0;
+    virtual std::vector<DeviceInfo> GetRemoteDevices() const = 0;
 
     // Get local device information
     virtual DeviceInfo GetLocalDevice() const = 0;
+    // Get deviceType by networkId
+    virtual DeviceInfo GetDeviceInfo(const std::string &networkId) const = 0;
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS
