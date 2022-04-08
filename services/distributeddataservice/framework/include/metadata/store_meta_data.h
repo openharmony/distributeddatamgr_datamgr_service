@@ -20,46 +20,53 @@
 #include "serializable/serializable.h"
 
 namespace OHOS::DistributedData {
-struct StoreMetaData final : public Serializable {
-    // record kvstore meta version for compatible, should update when modify kvstore meta structure.
-    static constexpr uint32_t META_VERSION_SUPPORT_MULTIUSER = 0x03000002;
-    static constexpr uint32_t META_VERSION_SUPPORT_MULTIUSER_HOS = 0x03000001;
+struct API_EXPORT StoreMetaData final : public Serializable {
+    // record meta version for compatible, should update when modify store meta data structure.
+    static constexpr uint32_t CURRENT_VERSION = 0x03000003;
+    // UID -> uid, deviceAccountId -> userId, userId -> user
+    static constexpr uint32_t FIELD_CHANGED_TAG = 0x03000003;
+    uint32_t version = CURRENT_VERSION;
     bool isAutoSync = false;
     bool isBackup = false;
     bool isDirty = false;
     bool isEncrypt = false;
-    int32_t kvStoreType = 0;
+    int32_t storeType = -1;
     int32_t securityLevel = 0;
     int32_t uid = -1;
+    uint32_t tokenId = 0;
     std::string appId = "";
     std::string appType = "";
     std::string bundleName = "";
     std::string dataDir = "";
-    std::string deviceAccountId = "";
     std::string deviceId = "";
     std::string schema = "";
     std::string storeId = "";
-    std::string userId = "";
-    uint32_t version = META_VERSION_SUPPORT_MULTIUSER;
+    std::string user = "";
+    std::string account = "";
 
     API_EXPORT ~StoreMetaData();
     API_EXPORT StoreMetaData();
-    API_EXPORT StoreMetaData(const std::string &appId, const std::string &storeId, const std::string &userId);
+    API_EXPORT StoreMetaData(const std::string &userId, const std::string &appId, const std::string &storeId);
+    API_EXPORT bool operator==(const StoreMetaData &metaData) const;
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
+    API_EXPORT static std::string GetKey(const std::initializer_list<std::string> &fields);
+    API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
+
+private:
+    static constexpr const char *KEY_PREFIX = "KvStoreMetaData";
 };
+
 class KvStoreMetaRow {
 public:
-    KVSTORE_API static const std::string KEY_PREFIX;
-
-    KVSTORE_API static std::vector<uint8_t> GetKeyFor(const std::string &key);
+    API_EXPORT static const std::string KEY_PREFIX;
+    API_EXPORT std::vector<uint8_t> GetKeyFor(const std::string &key);
 };
 
 class SecretMetaRow {
 public:
-    KVSTORE_API static const std::string KEY_PREFIX;
-
-    KVSTORE_API static std::vector<uint8_t> GetKeyFor(const std::string &key);
+    API_EXPORT static const std::string KEY_PREFIX;
+    API_EXPORT static std::vector<uint8_t> GetKeyFor(const std::string &key);
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_STORE_META_DATA_H

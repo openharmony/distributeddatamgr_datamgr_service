@@ -20,6 +20,8 @@
 #include "device_kvstore_impl.h"
 #include "executor_factory.h"
 #include "log_print.h"
+#include "metadata/meta_data_manager.h"
+#include "utils/anonymous.h"
 #include "utils/constant.h"
 
 namespace OHOS::DistributedData {
@@ -52,44 +54,29 @@ CapMetaData UpgradeManager::GetCapability(const std::string &deviceId, bool &sta
     }
     ZLOGI("load capability from meta");
     CapMetaData capMetaData;
-    auto &metaDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        ZLOGE("GetMetaKvStore return nullptr.");
-        status = false;
-        return capMetaData;
-    }
     auto dbKey = CapMetaRow::GetKeyFor(deviceId);
     ZLOGD("cap key:%{public}s", std::string(dbKey.begin(), dbKey.end()).c_str());
-    DistributedDB::Value dbValue;
-    auto ret = metaDelegate->Get(dbKey, dbValue);
-    if (ret != DistributedDB::DBStatus::OK) {
-        ZLOGE("get cap meta failed, ret:%{public}d", ret);
-        status = false;
-        return capMetaData;
+    status = MetaDataManager::GetInstance().LoadMeta(std::string(dbKey.begin(), dbKey.end()), capMetaData);
+    if (status) {
+        capabilityMap_.Insert(deviceId, capMetaData);
     }
-    capMetaData.Unmarshall({ dbValue.begin(), dbValue.end() });
-    bool isOk = capabilityMap_.Insert(deviceId, capMetaData);
-    ZLOGI("device:%{public}.10s, version:%{public}d, insert:%{public}d", deviceId.c_str(), capMetaData.version, isOk);
+    ZLOGI("device:%{public}s, version:%{public}d, insert:%{public}d", Anonymous::Change(deviceId).c_str(),
+        capMetaData.version, status);
     return capMetaData;
 }
 
 bool UpgradeManager::InitLocalCapability()
 {
-    auto &metaDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        ZLOGE("GetMetaKvStore return nullptr.");
-        return false;
-    }
     auto localDeviceId = DeviceKvStoreImpl::GetLocalDeviceId();
     CapMetaData capMetaData;
     capMetaData.version = CapMetaData::CURRENT_VERSION;
     auto dbKey = CapMetaRow::GetKeyFor(localDeviceId);
-    std::string jsonData = CapMetaData::Marshall(capMetaData);
-    DistributedDB::Value dbValue { jsonData.begin(), jsonData.end() };
-    auto ret = metaDelegate->Put(dbKey, dbValue);
-    ZLOGI("put capability meta data ret %{public}d", ret);
-    bool isOk = capabilityMap_.Insert(localDeviceId, capMetaData);
-    return ret == DistributedDB::DBStatus::OK && isOk;
+    bool status = MetaDataManager::GetInstance().SaveMeta({ dbKey.begin(), dbKey.end() }, capMetaData);
+    if (status) {
+        capabilityMap_.Insert(localDeviceId, capMetaData);
+    }
+    ZLOGI("put capability meta data ret %{public}d", status);
+    return status;
 }
 
 void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegate *storeDelegate,

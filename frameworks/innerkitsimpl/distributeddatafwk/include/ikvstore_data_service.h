@@ -27,10 +27,6 @@
 #include "types.h"
 #include "idevice_status_change_listener.h"
 
-namespace OHOS::DistributedRdb {
-class IRdbService;
-}
-
 namespace OHOS::DistributedKv {
 /*
  * IPC-friendly Options struct without std::string schema field.
@@ -101,7 +97,7 @@ public:
     virtual Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer,
             DeviceFilterStrategy strategy) = 0;
     virtual Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) = 0;
-    virtual sptr<DistributedRdb::IRdbService> GetRdbService() = 0;
+    virtual sptr<IRemoteObject> GetRdbService() = 0;
 };
 
 class KvStoreDataServiceStub : public IRemoteStub<IKvStoreDataService> {
@@ -175,7 +171,7 @@ public:
     virtual Status GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy);
     virtual Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy);
     virtual Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer);
-    virtual sptr<DistributedRdb::IRdbService> GetRdbService();
+    virtual sptr<IRemoteObject> GetRdbService();
 
 private:
     static inline BrokerDelegator<KvStoreDataServiceProxy> delegator_;

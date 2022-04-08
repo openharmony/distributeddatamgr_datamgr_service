@@ -392,7 +392,7 @@ Status KvStoreDataServiceProxy::StopWatchDeviceChange(sptr<IDeviceStatusChangeLi
     return static_cast<Status>(reply.ReadInt32());
 }
 
-sptr<DistributedRdb::IRdbService> KvStoreDataServiceProxy::GetRdbService()
+sptr<IRemoteObject> KvStoreDataServiceProxy::GetRdbService()
 {
     ZLOGI("enter");
     MessageParcel data;
@@ -413,7 +413,7 @@ sptr<DistributedRdb::IRdbService> KvStoreDataServiceProxy::GetRdbService()
         ZLOGE("remote object is nullptr");
         return nullptr;
     }
-    return iface_cast<DistributedRdb::RdbServiceProxy>(remoteObject);
+    return remoteObject;
 }
 
 int32_t KvStoreDataServiceStub::GetKvStoreOnRemote(MessageParcel &data, MessageParcel &reply)
@@ -641,8 +641,7 @@ int32_t KvStoreDataServiceStub::GetLocalDeviceOnRemote(MessageParcel &data, Mess
 
 int32_t KvStoreDataServiceStub::GetRdbServiceOnRemote(MessageParcel &data, MessageParcel &reply)
 {
-    auto rdbService = GetRdbService();
-    reply.WriteRemoteObject(rdbService->AsObject().GetRefPtr());
+    reply.WriteRemoteObject(GetRdbService());
     return 0;
 }
 

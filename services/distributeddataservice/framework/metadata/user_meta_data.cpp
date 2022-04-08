@@ -56,7 +56,7 @@ UserStatus::UserStatus(int id, bool isActive) : id(id), isActive(isActive)
 }
 
 const std::string UserMetaRow::KEY_PREFIX = "UserMeta";
-std::vector<uint8_t> UserMetaRow::GetKeyFor(const std::string &key)
+std::string UserMetaRow::GetKeyFor(const std::string &key)
 {
     std::string str = Constant::Concatenate({ KEY_PREFIX, Constant::KEY_SEPARATOR, key });
     return { str.begin(), str.end() };

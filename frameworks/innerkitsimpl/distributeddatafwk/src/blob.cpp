@@ -98,6 +98,11 @@ Blob::operator const std::vector<uint8_t> &() const
     return Data();
 }
 
+Blob::operator std::vector<uint8_t> &&() noexcept
+{
+    return std::move(blob_);
+}
+
 size_t Blob::Size() const
 {
     return blob_.size();

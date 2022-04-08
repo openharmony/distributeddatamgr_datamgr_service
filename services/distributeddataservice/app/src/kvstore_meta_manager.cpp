@@ -108,7 +108,7 @@ void KvStoreMetaManager::InitMetaListener()
 void KvStoreMetaManager::InitMetaData()
 {
     ZLOGI("start.");
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGI("get meta failed.");
         return;
@@ -164,7 +164,7 @@ void KvStoreMetaManager::InitMetaParameter()
     vecAad_ = std::vector<uint8_t>(HKS_BLOB_TYPE_AAD, HKS_BLOB_TYPE_AAD + strlen(HKS_BLOB_TYPE_AAD));
 }
 
-const KvStoreMetaManager::NbDelegate &KvStoreMetaManager::GetMetaKvStore()
+KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
 {
     if (metaDelegate_ != nullptr) {
         return metaDelegate_;
@@ -174,7 +174,7 @@ const KvStoreMetaManager::NbDelegate &KvStoreMetaManager::GetMetaKvStore()
     if (metaDelegate_ == nullptr) {
         metaDelegate_ = CreateMetaKvStore();
     }
-    MetaDataManager::GetInstance().SetMetaStore(metaDelegate_);
+    ConfigMetaDataManager();
     return metaDelegate_;
 }
 
@@ -211,6 +211,41 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
         }
     };
     return NbDelegate(kvStoreNbDelegatePtr, release);
+}
+
+void KvStoreMetaManager::ConfigMetaDataManager()
+{
+    std::initializer_list<std::string> backList = {label_, "_", Constant::SERVICE_META_DB_NAME};
+    std::string fileName = Constant::Concatenate(backList);
+    std::initializer_list<std::string> backFull = { metaDBDirectory_, "/backup/",
+                                                    BackupHandler::GetHashedBackupName(fileName) };
+    auto fullName = Constant::Concatenate(backFull);
+    auto backup = [fullName](const auto &store) -> int32_t {
+        DistributedDB::CipherPassword password;
+        return store->Export(fullName, password);
+    };
+    auto syncer = [](const auto &store, int32_t status) {
+        ZLOGI("Syncer status: %{public}d", status);
+        std::vector<std::string> devs;
+        auto devices = AppDistributedKv::CommunicationProvider::GetInstance().GetDeviceList();
+        for (auto const &dev : devices) {
+            devs.push_back(dev.deviceId);
+        }
+
+        if (devs.empty()) {
+            ZLOGW("no devices need sync meta data.");
+            return;
+        }
+
+        status = store->Sync(devs, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, [](auto &) {
+            ZLOGD("meta data sync completed.");
+        });
+
+        if (status != DistributedDB::OK) {
+            ZLOGW("meta data sync error %{public}d.", status);
+        }
+    };
+    MetaDataManager::GetInstance().Initialize(metaDelegate_, backup, syncer);
 }
 
 std::vector<uint8_t> KvStoreMetaManager::GetMetaKey(const std::string &deviceAccountId,
@@ -267,7 +302,7 @@ Status KvStoreMetaManager::CheckUpdateServiceMeta(const std::vector<uint8_t> &me
                                                   const std::vector<uint8_t> &val)
 {
     ZLOGD("begin.");
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGE("GetMetaKvStore return nullptr.");
         return Status::DB_ERROR;
@@ -356,7 +391,7 @@ Status KvStoreMetaManager::GenerateRootKey()
     }
     HksFreeParamSet(&paramSet);
 
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGE("GetMetaKvStore return nullptr.");
         return Status::DB_ERROR;
@@ -375,7 +410,7 @@ Status KvStoreMetaManager::GenerateRootKey()
 Status KvStoreMetaManager::CheckRootKeyExist()
 {
     ZLOGI("GenerateRootKey.");
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGE("GetMetaKvStore return nullptr.");
         return Status::DB_ERROR;
@@ -497,7 +532,7 @@ bool KvStoreMetaManager::DecryptWorkKey(const std::vector<uint8_t> &encryptedKey
 Status KvStoreMetaManager::WriteSecretKeyToMeta(const std::vector<uint8_t> &metaKey, const std::vector<uint8_t> &key)
 {
     ZLOGD("start");
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGE("GetMetaKvStore return nullptr.");
         return Status::DB_ERROR;
@@ -550,7 +585,7 @@ Status KvStoreMetaManager::WriteSecretKeyToFile(const std::string &secretKeyFile
 
 Status KvStoreMetaManager::RemoveSecretKey(pid_t uid, const std::string &bundleName, const std::string &storeId)
 {
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGE("GetMetaKvStore return nullptr.");
         return Status::DB_ERROR;
@@ -588,7 +623,7 @@ Status KvStoreMetaManager::RemoveSecretKey(pid_t uid, const std::string &bundleN
 Status KvStoreMetaManager::GetSecretKeyFromMeta(const std::vector<uint8_t> &metaSecretKey, std::vector<uint8_t> &key,
                                                 bool &outdated)
 {
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGE("GetMetaKvStore return nullptr.");
         return Status::DB_ERROR;
@@ -640,7 +675,7 @@ Status KvStoreMetaManager::RecoverSecretKeyFromFile(const std::string &secretKey
     system_clock::time_point createTimeChrono = system_clock::from_time_t(createTime);
     outdated = ((createTimeChrono + hours(HOURS_PER_YEAR)) < system_clock::now()); // secretKey valid for 1 year.
 
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGE("GetMetaKvStore return nullptr.");
         return Status::DB_ERROR;
@@ -709,7 +744,7 @@ void KvStoreMetaManager::ConcatWithSharps(const std::vector<std::string> &params
 Status KvStoreMetaManager::SaveStrategyMetaEnable(const std::string &key, bool enable)
 {
     ZLOGD("begin");
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         return Status::ERROR;
     }
@@ -751,7 +786,7 @@ Status KvStoreMetaManager::SaveStrategyMetaLabels(const std::string &key,
                                                   const std::vector<std::string> &localLabels,
                                                   const std::vector<std::string> &remoteSupportLabels)
 {
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         return Status::ERROR;
     }
@@ -801,7 +836,7 @@ Status KvStoreMetaManager::DeleteStrategyMeta(const std::string &bundleName, con
     StrategyMeta params = {devId, userId, Constant::DEFAULT_GROUP_ID, bundleName, storeId};
     GetStrategyMetaKey(params, key);
 
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         return Status::ERROR;
     }
@@ -827,7 +862,7 @@ void KvStoreMetaManager::SyncMeta()
         return;
     }
 
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGW("meta db sync failed.");
         return;
@@ -845,7 +880,7 @@ void KvStoreMetaManager::SyncMeta()
 
 void KvStoreMetaManager::SubscribeMetaKvStore()
 {
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGW("register meta observer failed.");
         return;
@@ -919,7 +954,7 @@ Status KvStoreMetaManager::GetStategyMeta(const std::string &key,
                                           std::map<std::string, std::vector<std::string>> &strategies)
 {
     ZLOGD("get meta key:%s.", key.c_str());
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGW("get delegate error.");
         return Status::ERROR;
@@ -1019,7 +1054,7 @@ Status KvStoreMetaManager::QueryKvStoreMetaDataByDeviceIdAndAppId(const std::str
                                                                   KvStoreMetaData &val)
 {
     ZLOGD("query meta start.");
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGW("get delegate error.");
         return Status::ERROR;
@@ -1054,7 +1089,7 @@ Status KvStoreMetaManager::QueryKvStoreMetaDataByDeviceIdAndAppId(const std::str
 Status KvStoreMetaManager::GetKvStoreMeta(const std::vector<uint8_t> &metaKey, KvStoreMetaData &metaData)
 {
     ZLOGD("begin.");
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         ZLOGE("GetMetaKvStore return nullptr.");
         return Status::DB_ERROR;
@@ -1175,7 +1210,7 @@ void SecretKeyMetaData::Unmarshal(const nlohmann::json &jObject)
 bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entries, enum DatabaseType type)
 {
     ZLOGI("start");
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         return false;
     }
@@ -1227,7 +1262,7 @@ bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entrie
 bool KvStoreMetaManager::GetKvStoreMetaByType(const std::string &name, const std::string &val,
                                               KvStoreMetaData &metaData)
 {
-    auto &metaDelegate = GetMetaKvStore();
+    auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
         return false;
     }

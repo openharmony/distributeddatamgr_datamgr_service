@@ -59,6 +59,8 @@ public:
 
     API_EXPORT operator const std::vector<uint8_t> &() const;
 
+    API_EXPORT operator std::vector<uint8_t> &&() noexcept;
+
     // Return the length (in bytes) of the referenced data
     API_EXPORT size_t Size() const;
 

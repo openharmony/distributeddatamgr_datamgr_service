@@ -18,7 +18,7 @@
 #include "serializable/serializable.h"
 namespace OHOS {
 namespace DistributedData {
-struct SecretKeyMetaData final : public Serializable {
+struct API_EXPORT SecretKeyMetaData final : public Serializable {
     std::vector<uint8_t> time {};
     std::vector<uint8_t> sKey {};
     int32_t kvStoreType = 0;

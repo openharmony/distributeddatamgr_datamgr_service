@@ -43,7 +43,7 @@ public:
 class UserMetaRow {
 public:
     API_EXPORT static const std::string KEY_PREFIX;
-    API_EXPORT static std::vector<uint8_t> GetKeyFor(const std::string &key);
+    API_EXPORT static std::string GetKeyFor(const std::string &key);
 };
 } // namespace OHOS::DistributedData
 

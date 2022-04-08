@@ -21,14 +21,18 @@
 #include "communication_provider.h"
 #include "device_kvstore_impl.h"
 #include "executor_factory.h"
-#include "kvstore_meta_manager.h"
 #include "log_print.h"
+#include "metadata/meta_data_manager.h"
 #include "os_account_manager.h"
-
+#include "utils/anonymous.h"
 namespace OHOS::DistributedData {
 using OHOS::AppDistributedKv::CommunicationProvider;
 using namespace OHOS::DistributedKv;
 using namespace OHOS::AccountSA;
+std::string GetLocalDeviceId()
+{
+    return DeviceKvStoreImpl::GetLocalDeviceId();
+}
 std::vector<UserStatus> UserDelegate::GetLocalUserStatus()
 {
     ZLOGI("begin");
@@ -58,7 +62,8 @@ std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
     for (const auto &entry : deviceUserMap_[deviceId]) {
         userStatus.emplace_back(entry.first, entry.second);
     }
-    ZLOGI("device:%{public}.10s, users:%{public}s", deviceId.c_str(), Serializable::Marshall(userStatus).c_str());
+    ZLOGI("device:%{public}s, users:%{public}s", Anonymous::Change(deviceId).c_str(),
+        Serializable::Marshall(userStatus).c_str());
     return userStatus;
 }
 
@@ -69,7 +74,7 @@ void UserDelegate::DeleteUsers(const std::string &deviceId)
 
 void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<UserStatus> &userStatus)
 {
-    ZLOGI("begin, device:%{public}.10s, users:%{public}zu", deviceId.c_str(), userStatus.size());
+    ZLOGI("begin, device:%{public}.10s, users:%{public}zu", Anonymous::Change(deviceId).c_str(), userStatus.size());
     deviceUserMap_.ComputeIfPresent(deviceId, [](const auto &key, std::map<int, bool> &userMap) {
         for (auto &user : userMap) {
             user.second = false;
@@ -78,8 +83,8 @@ void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<Us
     for (auto &user : userStatus) {
         deviceUserMap_[deviceId][user.id] = user.isActive;
     }
-    ZLOGI("end, device:%{public}.10s, users:%{public}zu", deviceId.c_str(),
-          deviceUserMap_[deviceId].size());
+    ZLOGI("end, device:%{public}s, users:%{public}zu", Anonymous::Change(deviceId).c_str(),
+        deviceUserMap_[deviceId].size());
 }
 
 bool UserDelegate::InitLocalUserMeta()
@@ -95,42 +100,20 @@ bool UserDelegate::InitLocalUserMeta()
         userStatus.emplace_back(user, true);
     }
     UserMetaData userMetaData;
-    userMetaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
+    userMetaData.deviceId = GetLocalDeviceId();
     UpdateUsers(userMetaData.deviceId, userStatus);
     for (auto &pair : deviceUserMap_[userMetaData.deviceId]) {
         userMetaData.users.emplace_back(pair.first, pair.second);
     }
 
-    auto &metaDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        ZLOGE("GetMetaKvStore return nullptr.");
-        return false;
-    }
-    auto dbKey = UserMetaRow::GetKeyFor(userMetaData.deviceId);
-    std::string jsonData = UserMetaData::Marshall(userMetaData);
-    DistributedDB::Value dbValue{ jsonData.begin(), jsonData.end() };
-    ret = metaDelegate->Put(dbKey, dbValue);
-    ZLOGI("put user meta data ret %{public}d", ret);
-    return ret == DistributedDB::DBStatus::OK;
+    ZLOGI("put user meta data save meta data");
+    return MetaDataManager::GetInstance().SaveMeta(UserMetaRow::GetKeyFor(userMetaData.deviceId), userMetaData);
 }
 
 void UserDelegate::LoadFromMeta(const std::string &deviceId)
 {
-    auto &metaDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        ZLOGE("GetMetaKvStore return nullptr.");
-        return;
-    }
-
-    auto dbKey = UserMetaRow::GetKeyFor(deviceId);
-    DistributedDB::Value dbValue;
-    auto ret = metaDelegate->Get(dbKey, dbValue);
     UserMetaData userMetaData;
-    ZLOGI("get user meta data ret %{public}d", ret);
-    if (ret != DistributedDB::DBStatus::OK) {
-        return;
-    }
-    userMetaData.Unmarshall({ dbValue.begin(), dbValue.end() });
+    MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(deviceId), userMetaData);
     std::map<int, bool> userMap;
     for (const auto &user : userMetaData.users) {
         userMap[user.id] = user.isActive;
@@ -159,24 +142,24 @@ void UserDelegate::Init()
     });
     ExecutorFactory::GetInstance().Execute(std::move(retryTask));
     auto ret = AccountDelegate::GetInstance()->Subscribe(std::make_shared<LocalUserObserver>(*this));
-    // subscribe user meta in other devices
-    KvStoreMetaManager::GetInstance().SubscribeMeta(UserMetaRow::KEY_PREFIX,
-        [this](const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag) {
+    MetaDataManager::GetInstance().Subscribe(
+        UserMetaRow::KEY_PREFIX, [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
             UserMetaData metaData;
-            metaData.Unmarshall({ value.begin(), value.end() });
-            ZLOGD("flag:%{public}d, value:%{public}.10s", flag, metaData.deviceId.c_str());
-            if (metaData.deviceId == DeviceKvStoreImpl::GetLocalDeviceId()) {
+            UserMetaData::Unmarshall(value, metaData);
+            ZLOGD("flag:%{public}d, value:%{public}s", flag, Anonymous::Change(metaData.deviceId).c_str());
+            if (metaData.deviceId == GetLocalDeviceId()) {
                 ZLOGD("ignore local device user meta change");
-                return;
+                return false;
             }
-            if (flag == CHANGE_FLAG::INSERT || flag == CHANGE_FLAG::UPDATE) {
+            if (flag == MetaDataManager::INSERT || flag == MetaDataManager::UPDATE) {
                 UpdateUsers(metaData.deviceId, metaData.users);
-            } else if (flag == CHANGE_FLAG::DELETE) {
+            } else if (flag == MetaDataManager::DELETE) {
                 DeleteUsers(metaData.deviceId);
             } else {
                 ZLOGD("ignored operation");
             }
-        });
+            return true;
+    });
     ZLOGD("subscribe os account ret:%{public}d", ret);
 }
 
