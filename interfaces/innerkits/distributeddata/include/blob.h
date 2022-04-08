@@ -41,12 +41,14 @@ public:
 
     // construct a Blob use std::string.
     API_EXPORT Blob(const std::string &str);
+    API_EXPORT Blob &operator=(const std::string &str);
 
     // construct a Blob use char pointer and len.
     API_EXPORT Blob(const char *str, size_t n);
 
     // construct a Blob use char pointer.
     API_EXPORT Blob(const char *str);
+    API_EXPORT Blob &operator=(const char *str);
 
     // construct a Blob use std::vector<uint8_t>
     API_EXPORT Blob(const std::vector<uint8_t> &bytes);

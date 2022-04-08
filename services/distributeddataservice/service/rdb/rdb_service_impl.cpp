@@ -105,7 +105,7 @@ void RdbServiceImpl::OnClientDied(pid_t pid)
         for (const auto& [name, syncer] : syncers) {
             timer_.Unregister(syncer->GetTimerId());
         }
-        syncers_.Erase(key);
+        return false;
     });
     notifiers_.Erase(pid);
     identifiers_.EraseIf([pid](const auto& key, pid_t& value) {
@@ -175,6 +175,7 @@ void RdbServiceImpl::OnDataChange(pid_t pid, const DistributedDB::StoreChangedDa
         std::string device = data.GetDataChangeDevice();
         auto networkId = CommunicationProvider::GetInstance().ToNodeId(device);
         value->OnChange(property.storeId, { networkId });
+        return true;
     });
 }
 
@@ -184,6 +185,7 @@ void RdbServiceImpl::SyncerTimeout(std::shared_ptr<RdbSyncer> syncer)
     syncers_.ComputeIfPresent(syncer->GetPid(), [this, &syncer](const auto& key, StoreSyncersType& syncers) {
         syncers.erase(syncer->GetStoreId());
         syncerNum_--;
+        return true;
     });
 }
 
@@ -209,22 +211,22 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
         }
         if (syncers.size() >= MAX_SYNCER_PER_PROCESS) {
             ZLOGE("%{public}d exceed MAX_PROCESS_SYNCER_NUM", pid);
-            return false;
+            return !syncers.empty();
         }
         if (syncerNum_ >= MAX_SYNCER_NUM) {
             ZLOGE("no available syncer");
-            return false;
+            return !syncers.empty();
         }
         auto syncer_ = std::make_shared<RdbSyncer>(param, new (std::nothrow) RdbStoreObserverImpl(this, pid));
         if (syncer_->Init(pid, uid) != 0) {
-            return false;
+            return !syncers.empty();
         }
         syncers[param.storeName_] = syncer_;
         syncer = syncer_;
         syncerNum_++;
         uint32_t timerId = timer_.Register([this, syncer]() { SyncerTimeout(syncer); }, SYNCER_TIMEOUT, true);
         syncer->SetTimerId(timerId);
-        return true;
+        return !syncers.empty();
     });
 
     if (syncer != nullptr) {
@@ -260,6 +262,7 @@ void RdbServiceImpl::OnAsyncComplete(pid_t pid, uint32_t seqNum, const SyncResul
     ZLOGI("pid=%{public}d seqnum=%{public}u", pid, seqNum);
     notifiers_.ComputeIfPresent(pid, [seqNum, &result] (const auto& key, const sptr<RdbNotifierProxy>& value) {
         value->OnComplete(seqNum, result);
+        return true;
     });
 }
 

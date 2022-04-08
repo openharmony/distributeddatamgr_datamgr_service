@@ -103,7 +103,7 @@ napi_value JsDeviceKVStore::Get(napi_env env, napi_callback_info info)
             ZLOGE("kvStore is nullptr");
             return;
         }
-        Status status = kvStore->Get(deviceKey, value);
+        Status status = kvStore->Get(key, value);
         ZLOGD("kvStore->Get return %{public}d", status);
         ctxt->value = JSUtil::Blob2VariantValue(value);
         ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;

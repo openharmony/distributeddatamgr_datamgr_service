@@ -549,10 +549,6 @@ private:
 
     bool ValidateField(const std::string &field);
 
-    bool ValidateValue(const std::string &value);
-
-    bool ValidateStringValueList(const std::vector<std::string> &valueList);
-
     template<typename T>
     std::string BasicToString(const T &value);
 };

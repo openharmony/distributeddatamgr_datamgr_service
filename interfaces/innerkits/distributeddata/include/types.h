@@ -37,8 +37,39 @@ struct UserId {
 };
 
 // app identifier from Bms
-struct AppId {
+struct API_EXPORT AppId {
     std::string appId;
+    // support std::string convert to AppId
+    AppId(const std::string &id = "") noexcept : appId(id)
+    {
+    }
+    AppId(std::string &&id) noexcept : appId(std::move(id))
+    {
+    }
+
+    // support std::string convert to AppId
+    AppId &operator=(std::string &&id) noexcept
+    {
+        appId = std::move(id);
+        return *this;
+    }
+    AppId &operator=(const std::string &id) noexcept
+    {
+        appId = id;
+        return *this;
+    }
+
+    // support AppId convert to std::string
+    operator std::string &() noexcept
+    {
+        return appId;
+    }
+    // support AppId convert to const std::string
+    operator const std::string &() const noexcept
+    {
+        return appId;
+    }
+
     inline bool IsValid() const
     {
         if (appId.empty() || appId.size() > MAX_APP_ID_LEN) {
@@ -62,8 +93,39 @@ private:
 // kvstore name set by client by calling GetKvStore,
 // storeId len must be less or equal than 256,
 // and can not be empty and all space.
-struct StoreId {
+struct API_EXPORT StoreId {
     std::string storeId;
+    // support std::string convert to StoreId
+    StoreId(const std::string &id = "") noexcept : storeId(id)
+    {
+    }
+    StoreId(std::string &&id) noexcept : storeId(std::move(id))
+    {
+    }
+
+    // support std::string convert to StoreId
+    StoreId &operator=(std::string &&id) noexcept
+    {
+        storeId = std::move(id);
+        return *this;
+    }
+    StoreId &operator=(const std::string &id) noexcept
+    {
+        storeId = id;
+        return *this;
+    }
+
+    // support StoreId convert to std::string
+    operator std::string &() noexcept
+    {
+        return storeId;
+    }
+    // support StoreId convert to const std::string
+    operator const std::string &() const noexcept
+    {
+        return storeId;
+    }
+
     inline bool IsValid() const
     {
         if (storeId.empty() || storeId.size() > MAX_STORE_ID_LEN) {
@@ -144,7 +206,7 @@ struct Entry : public virtual Parcelable {
         return entry;
     }
 
-    KVSTORE_API virtual ~Entry() {}
+    API_EXPORT virtual ~Entry() {}
 };
 
 enum class SyncPolicy {

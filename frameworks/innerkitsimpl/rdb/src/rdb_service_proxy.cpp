@@ -30,6 +30,7 @@ void RdbServiceProxy::OnSyncComplete(uint32_t seqNum, const SyncResult &result)
 {
     syncCallbacks_.ComputeIfPresent(seqNum, [&result] (const auto& key, const SyncCallback& callback) {
         callback(result);
+        return true;
     });
     syncCallbacks_.Erase(seqNum);
 }
@@ -42,6 +43,7 @@ void RdbServiceProxy::OnDataChange(const std::string& storeName, const std::vect
             for (const auto& observer : value.first) {
                 observer->OnChange(devices);
             }
+            return true;
         });
 }
 
@@ -283,7 +285,7 @@ int32_t RdbServiceProxy::Subscribe(const RdbSyncerParam &param, const SubscribeO
             for (const auto& element : value.first) {
                 if (element == observer) {
                     ZLOGE("duplicate observer");
-                    return false;
+                    return true;
                 }
             }
             value.first.push_back(observer);
@@ -319,20 +321,13 @@ int32_t RdbServiceProxy::UnSubscribe(const RdbSyncerParam &param, const Subscrib
                                      RdbStoreObserver *observer)
 {
     DoUnSubscribe(param);
-    bool canErase = false;
     observers_.ComputeIfPresent(
-        param.storeName_, [observer, &canErase](const auto& key, ObserverMapValue& value) {
+        param.storeName_, [observer](const auto& key, ObserverMapValue& value) {
             ZLOGI("before remove size=%{public}d", static_cast<int>(value.first.size()));
             value.first.remove(observer);
             ZLOGI("after  remove size=%{public}d", static_cast<int>(value.first.size()));
-            if (value.first.empty()) {
-                canErase = true;
-            }
+            return !(value.first.empty());
     });
-
-    if (canErase) {
-        observers_.Erase(param.storeName_);
-    }
     return RDB_OK;
 }
 

@@ -77,7 +77,7 @@ Status KvStoreSnapshotClient::GetEntries(const Key &prefixKey, std::vector<Entry
         ZLOGE("snapshot proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;
     }
-    Key startKey = "";
+    Key startKey("");
     Status status = Status::ERROR;
     do {
         kvStoreSnapshotProxy_->GetEntries(prefixKey, startKey,
@@ -86,7 +86,7 @@ Status KvStoreSnapshotClient::GetEntries(const Key &prefixKey, std::vector<Entry
                 if (stat != Status::SUCCESS) {
                     return;
                 }
-                startKey = result.empty() ? "" : next;
+                startKey = result.empty() ? Key("") : next;
                 entries.insert(entries.end(), result.begin(), result.end());
             });
     } while (status == Status::SUCCESS && startKey.ToString() != "");
@@ -137,7 +137,7 @@ Status KvStoreSnapshotClient::GetKeys(const Key &prefixKey, std::vector<Key> &en
         ZLOGE("snapshot proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;
     }
-    Key startKey = "";
+    Key startKey("");
     Status status = Status::ERROR;
     do {
         kvStoreSnapshotProxy_->GetKeys(prefixKey, startKey,
@@ -146,7 +146,7 @@ Status KvStoreSnapshotClient::GetKeys(const Key &prefixKey, std::vector<Key> &en
                 if (stat != Status::SUCCESS) {
                     return;
                 }
-                startKey = result.empty() ? "" : next;
+                startKey = result.empty() ? Key("") : next;
                 entries.insert(entries.end(), result.begin(), result.end());
             });
     } while (status == Status::SUCCESS && startKey.ToString() != "");
