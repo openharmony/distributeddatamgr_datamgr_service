@@ -123,13 +123,11 @@ int32_t RdbSyncer::CreateMetaData()
 
     auto metaKey = StoreMetaData::GetKey({ newMeta.user, "default", newMeta.bundleName, newMeta.storeId });
     StoreMetaData oldMeta;
-    if (!MetaDataManager::GetInstance().LoadMeta(metaKey, oldMeta)) {
-        return RDB_ERROR;
-    }
-
-    if (newMeta == oldMeta) {
-        ZLOGI("ignore same meta");
-        return RDB_OK;
+    if (MetaDataManager::GetInstance().LoadMeta(metaKey, oldMeta)) {
+        if (newMeta == oldMeta) {
+            ZLOGI("ignore same meta");
+            return RDB_OK;
+        }
     }
 
     auto saved = MetaDataManager::GetInstance().SaveMeta(metaKey, newMeta);

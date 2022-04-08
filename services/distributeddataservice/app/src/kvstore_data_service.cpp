@@ -827,6 +827,7 @@ void KvStoreDataService::OnStart()
 void KvStoreDataService::StartService()
 {
     // register this to ServiceManager.
+    KvStoreMetaManager::GetInstance().InitMetaListener();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {
         FaultMsg msg = {FaultType::SERVICE_FAULT, "service", __FUNCTION__, Fault::SF_SERVICE_PUBLISH};
@@ -841,7 +842,6 @@ void KvStoreDataService::StartService()
         ZLOGE("backup create directory failed");
     }
     // Initialize meta db delegate manager.
-    KvStoreMetaManager::GetInstance().InitMetaListener();
     KvStoreMetaManager::GetInstance().SubscribeMeta(
         KvStoreMetaRow::KEY_PREFIX, [this](const std::vector<uint8_t> &key, const std::vector<uint8_t> &value,
                                         CHANGE_FLAG flag) { OnStoreMetaChanged(key, value, flag); });
