@@ -189,6 +189,10 @@ private:
 
     static uint8_t GetPermissionCheckFlag(bool isAutoSync, int syncMode);
 
+    void IncExecTaskCount();
+
+    void DecExecTaskCount();
+
     ICommunicator *communicator_;
     DeviceManager *deviceManager_;
     std::function<void(const std::string &)> onRemoteDataChanged_;
@@ -213,6 +217,8 @@ private:
 
     // key: device value: equalIdentifier
     std::map<std::string, std::string> equalIdentifierMap_;
+    std::mutex execTaskCountLock_;
+    std::condition_variable execTaskCv_;
 };
 } // namespace DistributedDB
 
