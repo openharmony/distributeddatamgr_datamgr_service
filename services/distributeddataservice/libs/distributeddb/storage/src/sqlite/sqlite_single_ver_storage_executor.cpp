@@ -554,13 +554,12 @@ int AppendDataItem(std::vector<DataItem> &dataItems, const DataItem &item, size_
     const DataSizeSpecInfo &dataSizeInfo)
 {
     // If dataTotalSize value is bigger than blockSize value , reserve the surplus data item.
-    dataTotalSize += SQLiteSingleVerStorageExecutor::GetDataItemSerialSize(item, appendLength);
-    if ((dataTotalSize > dataSizeInfo.blockSize && !dataItems.empty()) ||
-        dataItems.size() >= dataSizeInfo.packetSize) {
+    size_t appendSize = dataTotalSize + SQLiteSingleVerStorageExecutor::GetDataItemSerialSize(item, appendLength);
+    if ((appendSize > dataSizeInfo.blockSize && !dataItems.empty()) || dataItems.size() >= dataSizeInfo.packetSize) {
         return -E_UNFINISHED;
-    } else {
-        dataItems.push_back(item);
     }
+    dataItems.push_back(item);
+    dataTotalSize = appendSize;
     return E_OK;
 }
 
