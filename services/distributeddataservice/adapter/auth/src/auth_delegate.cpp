@@ -80,7 +80,7 @@ AuthHandler::RelatedGroup AuthHandler::GetGroupInfo(
         ZLOGI("get group type:%{public}d", groups.front().groupType);
         return groups.front();
     }
-    ZLOGD("there is no group to access to peer device:%{public}.10s", Anonymous::Change(peerDeviceId).c_str());
+    ZLOGD("there is no group to access to peer device:%{public}s", Anonymous::Change(peerDeviceId).c_str());
     return {};
 }
 

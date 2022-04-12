@@ -104,7 +104,7 @@ napi_value JsSchema::GetRootNode(napi_env env, napi_callback_info info)
     ZLOGD("Schema::GetRootNode");
     auto ctxt = std::make_shared<ContextBase>();
     auto schema = GetSchema(env, info, ctxt);
-    CHECK_RETURN(schema != nullptr, "finalize null!", nullptr);
+    CHECK_RETURN(schema != nullptr, "getSchema nullptr!", nullptr);
     if (schema->rootNode == nullptr) {
         int argc = 1;
         napi_value argv[1] = { nullptr };
@@ -148,7 +148,7 @@ napi_value JsSchema::GetMode(napi_env env, napi_callback_info info)
     ZLOGD("Schema::GetMode");
     auto ctxt = std::make_shared<ContextBase>();
     auto schema = GetSchema(env, info, ctxt);
-    CHECK_RETURN(schema != nullptr, "finalize null!", nullptr);
+    CHECK_RETURN(schema != nullptr, "getSchema nullptr!", nullptr);
     return GetContextValue(env, ctxt, schema->mode);
 }
 
@@ -175,7 +175,7 @@ napi_value JsSchema::GetSkip(napi_env env, napi_callback_info info)
     ZLOGD("Schema::GetSkip");
     auto ctxt = std::make_shared<ContextBase>();
     auto schema = GetSchema(env, info, ctxt);
-    CHECK_RETURN(schema != nullptr, "finalize null!", nullptr);
+    CHECK_RETURN(schema != nullptr, "getSchema nullptr!", nullptr);
     return GetContextValue(env, ctxt, schema->skip);
 }
 
@@ -202,7 +202,7 @@ napi_value JsSchema::GetIndexes(napi_env env, napi_callback_info info)
     ZLOGD("Schema::GetIndexes");
     auto ctxt = std::make_shared<ContextBase>();
     auto schema = GetSchema(env, info, ctxt);
-    CHECK_RETURN(schema != nullptr, "finalize null!", nullptr);
+    CHECK_RETURN(schema != nullptr, "getSchema nullptr!", nullptr);
     return GetContextValue(env, ctxt, schema->indexes);
 }
 
