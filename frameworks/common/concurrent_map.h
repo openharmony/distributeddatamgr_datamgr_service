@@ -131,6 +131,8 @@ public:
         return entries_.size();
     }
 
+    // The action`s return true mains meet the erase condition
+    // The action`s return false mains not meet the erase condition
     size_type EraseIf(const std::function<bool(const key_type &key, mapped_type &value)> &action) noexcept
     {
         if (action == nullptr) {
@@ -173,6 +175,7 @@ public:
         }
     }
 
+    // The action's return value mains that the element is keep in map or not; true mains keep, false mains remove.
     bool Compute(const key_type &key, const std::function<bool(const key_type &, mapped_type &)> &action)
     {
         if (action == nullptr) {
@@ -187,11 +190,14 @@ public:
         if (it == entries_.end()) {
             return false;
         }
-        action(it->first, it->second);
+        if (!action(it->first, it->second)) {
+            entries_.erase(key);
+        }
         return true;
     }
 
-    bool ComputeIfPresent(const key_type &key, const std::function<void(const key_type &, mapped_type &)> &action)
+    // The action's return value mains that the element is keep in map or not; true mains keep, false mains remove.
+    bool ComputeIfPresent(const key_type &key, const std::function<bool(const key_type &, mapped_type &)> &action)
     {
         if (action == nullptr) {
             return false;
@@ -201,7 +207,9 @@ public:
         if (it == entries_.end()) {
             return false;
         }
-        action(key, it->second);
+        if (!action(key, it->second)) {
+            entries_.erase(key);
+        }
         return true;
     }
 

@@ -79,6 +79,7 @@ void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<Us
         for (auto &user : userMap) {
             user.second = false;
         }
+        return true;
     });
     for (auto &user : userStatus) {
         deviceUserMap_[deviceId][user.id] = user.isActive;

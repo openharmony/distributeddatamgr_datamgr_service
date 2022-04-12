@@ -1605,6 +1605,7 @@ RegisterFuncType SQLiteSingleVerNaturalStore::GetFuncType(int index, const Trans
         }
         if (transMap[mid].index > index) {
             end = mid - 1;
+            continue;
         }
         return transMap[mid].funcType;
     }

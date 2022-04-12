@@ -41,10 +41,12 @@ public:
     // kvstore newer than the resulting snapshot.
     // observer: observer for subscribe.
     // snapshot: [output] the KvStoreSnapshot instance.
+    [[deprecated]]
     virtual Status GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
                                       std::shared_ptr<KvStoreSnapshot> &snapshot) const = 0;
 
     // Release snapshot created by calling GetKvStoreSnapshot.
+    [[deprecated]]
     virtual Status ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot) = 0;
 
     // Mutation operations.
@@ -99,19 +101,19 @@ public:
     // client is responsible for free observer after and only after call UnSubscribeKvStore.
     // otherwise, codes in sdk may use a freed memory and cause unexpected result.
     // Parameters:
-    // subscribeType: strategy for this subscribe, default right now.
+    // type: strategy for this subscribe, default right now.
     // observer: callback client provided, client must implement KvStoreObserver and override OnChange function, when
     // data changed in store, OnChange will called in Observer.
-    virtual Status SubscribeKvStore(SubscribeType subscribeType, std::shared_ptr<KvStoreObserver> observer) = 0;
+    virtual Status SubscribeKvStore(SubscribeType type, std::shared_ptr<KvStoreObserver> observer) = 0;
 
     // unSubscribe kvstore to un-watch data change in the kvstore,
     // after this call, no message will be received even data change in the kvstore.
     // client is responsible for free observer after and only after call UnSubscribeKvStore.
     // otherwise, codes in sdk may use a freed memory and cause unexpected result.
     // Parameters:
-    // subscribeType: strategy for this subscribe, default right now.
+    // type: strategy for this subscribe, default right now.
     // observer: callback client provided in SubscribeKvStore.
-    virtual Status UnSubscribeKvStore(SubscribeType subscribeType, std::shared_ptr<KvStoreObserver> observer) = 0;
+    virtual Status UnSubscribeKvStore(SubscribeType type, std::shared_ptr<KvStoreObserver> observer) = 0;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS
