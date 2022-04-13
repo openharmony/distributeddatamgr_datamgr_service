@@ -162,7 +162,7 @@ bool MetaDataManager::GetEntries(const std::string &prefix, std::vector<Bytes> &
         return false;
     }
     entries.resize(dbEntries.size());
-    for (int i = 0; i < dbEntries.size(); ++i) {
+    for (size_t i = 0; i < dbEntries.size(); ++i) {
         entries[i] = std::move(dbEntries[i].value);
     }
     return true;
