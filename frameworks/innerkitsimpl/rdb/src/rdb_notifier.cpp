@@ -108,7 +108,7 @@ bool RdbNotifierStub::CheckInterfaceToken(MessageParcel& data)
 int RdbNotifierStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
                                      MessageOption &option)
 {
-    ZLOGD("code:%{public}u, pid:%{public}d", code, IPCSkeleton::GetCallingPid());
+    ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {
         return RDB_ERROR;
     }
