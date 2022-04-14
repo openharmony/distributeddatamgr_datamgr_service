@@ -26,6 +26,9 @@
 namespace OHOS::DistributedKv {
 class ITypesUtil final {
 public:
+    static bool Marshalling(MessageParcel &data);
+    static bool Unmarshalling(MessageParcel &data);
+
     static bool Marshalling(const std::string &input, MessageParcel &data);
     static bool Unmarshalling(MessageParcel &data, std::string &output);
 
@@ -53,11 +56,19 @@ public:
     static bool Marshalling(const DistributedRdb::RdbPredicates &predicates, MessageParcel &parcel);
     static bool Unmarshalling(MessageParcel &parcel, DistributedRdb::RdbPredicates &predicates);
 
+    static bool Marshalling(const Options &input, MessageParcel &data);
+    static bool Unmarshalling(MessageParcel &data, Options &output);
+
     static int64_t GetTotalSize(const std::vector<Entry> &entries);
     static int64_t GetTotalSize(const std::vector<Key> &entries);
 
     template<class T> static bool Marshalling(const std::vector<T> &val, MessageParcel &parcel);
     template<class T> static bool Unmarshalling(MessageParcel &parcel, std::vector<T> &val);
+
+    template<typename T, typename... Types>
+    static bool Marshalling(MessageParcel &parcel, const T &first, const Types &...others);
+    template<typename T, typename... Types>
+    static bool Unmarshalling(MessageParcel &parcel, T &first, Types &...others);
 
     template<typename T> static Status MarshalToBuffer(const T &input, int size, MessageParcel &data);
 
@@ -65,10 +76,6 @@ public:
 
     template<typename T> static Status UnmarshalFromBuffer(MessageParcel &data, int size, T &output);
     template<typename T> static Status UnmarshalFromBuffer(MessageParcel &data, int size, std::vector<T> &output);
-
-private:
-    template<typename T> static std::vector<T> Convert2Vector(const std::list<T> &entries);
-    template<typename T> static std::list<T> Convert2List(std::vector<T> &&entries);
 };
 
 template<class T> bool ITypesUtil::Marshalling(const std::vector<T> &val, MessageParcel &parcel)
@@ -82,7 +89,7 @@ template<class T> bool ITypesUtil::Marshalling(const std::vector<T> &val, Messag
     }
 
     for (auto &v : val) {
-        if (!ITypesUtil::Marshalling(v, parcel)) {
+        if (!Marshalling(v, parcel)) {
             return false;
         }
     }
@@ -108,7 +115,7 @@ template<class T> bool ITypesUtil::Unmarshalling(MessageParcel &parcel, std::vec
     }
 
     for (auto &v : val) {
-        if (!ITypesUtil::Unmarshalling(parcel, v)) {
+        if (!Unmarshalling(parcel, v)) {
             return false;
         }
     }
@@ -190,6 +197,33 @@ template<typename T> Status ITypesUtil::UnmarshalFromBuffer(MessageParcel &data,
         }
     }
     return Status::SUCCESS;
+}
+
+template<typename T, typename... Types>
+bool ITypesUtil::Marshalling(MessageParcel &parcel, const T &first, const Types &...others)
+{
+    if (sizeof...(others) == 0) {
+        return true;
+    }
+
+    if (!Marshalling(first, parcel)) {
+        return false;
+    }
+
+    return Marshalling(parcel, others...);
+}
+
+template<typename T, typename... Types>
+bool ITypesUtil::Unmarshalling(MessageParcel &parcel, T &first, Types &...others)
+{
+    if (sizeof...(others) == 0) {
+        return true;
+    }
+
+    if (!Unmarshalling(parcel, first)) {
+        return false;
+    }
+    return Unmarshalling(parcel, others...);
 }
 } // namespace OHOS::DistributedKv
 #endif

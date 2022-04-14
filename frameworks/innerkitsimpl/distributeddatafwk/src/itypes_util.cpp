@@ -21,6 +21,16 @@
 #include "log_print.h"
 
 namespace OHOS::DistributedKv {
+bool ITypesUtil::Marshalling(MessageParcel &data)
+{
+    return true;
+}
+
+bool ITypesUtil::Unmarshalling(MessageParcel &data)
+{
+    return true;
+}
+
 bool ITypesUtil::Marshalling(const std::string &input, MessageParcel &data)
 {
     return data.WriteString(input);
@@ -324,23 +334,48 @@ bool ITypesUtil::Unmarshalling(MessageParcel &parcel, DistributedRdb::RdbPredica
     return true;
 }
 
-template<class T> std::vector<T> ITypesUtil::Convert2Vector(const std::list<T> &entries)
+bool ITypesUtil::Marshalling(const Options &input, MessageParcel &data)
 {
-    std::vector<T> vector(entries.size());
-    int i = 0;
-    for (const auto &entry : entries) {
-        vector[i++] = entry;
+    if (!data.WriteString(input.schema)) {
+        ZLOGE("schema is failed");
+        return false;
     }
-    return vector;
+    std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(sizeof(input));
+    Options *target = reinterpret_cast<Options *>(buffer.get());
+    target->createIfMissing = input.createIfMissing;
+    target->encrypt = input.encrypt;
+    target->persistent = input.persistent;
+    target->backup = input.backup;
+    target->autoSync = input.autoSync;
+    target->securityLevel = input.securityLevel;
+    target->syncPolicy = input.syncPolicy;
+    target->kvStoreType = input.kvStoreType;
+    target->syncable = input.syncable;
+    target->dataOwnership = input.dataOwnership;
+    return data.WriteRawData(buffer.get(), sizeof(input));
 }
 
-template<class T> std::list<T> ITypesUtil::Convert2List(std::vector<T> &&entries)
+bool ITypesUtil::Unmarshalling(MessageParcel &data, Options &output)
 {
-    std::list<T> result;
-    for (auto &entry : entries) {
-        result.push_back(std::move(entry));
+    if (!data.ReadString(output.schema)) {
+        ZLOGE("read schema failed");
+        return false;
     }
-    return result;
+    const Options *source = reinterpret_cast<const Options *>(data.ReadRawData(sizeof(output)));
+    if (source == nullptr) {
+        return false;
+    }
+    output.createIfMissing = source->createIfMissing;
+    output.encrypt = source->encrypt;
+    output.persistent = source->persistent;
+    output.backup = source->backup;
+    output.autoSync = source->autoSync;
+    output.securityLevel = source->securityLevel;
+    output.syncPolicy = source->syncPolicy;
+    output.kvStoreType = source->kvStoreType;
+    output.syncable = source->syncable;
+    output.dataOwnership = source->dataOwnership;
+    return true;
 }
 
 int64_t ITypesUtil::GetTotalSize(const std::vector<Entry> &entries)
