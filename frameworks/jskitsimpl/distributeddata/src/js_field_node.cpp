@@ -142,10 +142,7 @@ napi_value JsFieldNode::GetDefaultValue(napi_env env, napi_callback_info info)
     ZLOGD("FieldNode::GetDefaultValue");
     auto ctxt = std::make_shared<ContextBase>();
     auto fieldNode = GetFieldNode(env, info, ctxt);
-
-    napi_value result = nullptr;
-    napi_get_undefined(env, &result);
-    CHECK_RETURN(fieldNode != nullptr, "getFieldNode nullptr!", result);
+    CHECK_RETURN(fieldNode != nullptr, "getFieldNode nullptr!", nullptr);
     return GetContextValue(env, ctxt, fieldNode->defaultValue);
 }
 
@@ -204,10 +201,7 @@ napi_value JsFieldNode::GetValueType(napi_env env, napi_callback_info info)
     ZLOGD("FieldNode::GetValueType");
     auto ctxt = std::make_shared<ContextBase>();
     auto fieldNode = GetFieldNode(env, info, ctxt);
-
-    napi_value result = nullptr;
-    napi_get_undefined(env, &result);
-    CHECK_RETURN(fieldNode != nullptr, "getFieldNode nullptr!", result);
+    CHECK_RETURN(fieldNode != nullptr, "getFieldNode nullptr!", nullptr);
     return GetContextValue(env, ctxt, fieldNode->valueType);
 }
 

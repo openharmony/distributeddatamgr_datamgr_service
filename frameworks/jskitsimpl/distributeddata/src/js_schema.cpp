@@ -104,10 +104,7 @@ napi_value JsSchema::GetRootNode(napi_env env, napi_callback_info info)
     ZLOGD("Schema::GetRootNode");
     auto ctxt = std::make_shared<ContextBase>();
     auto schema = GetSchema(env, info, ctxt);
-
-    napi_value result = nullptr;
-    napi_get_undefined(env, &result);
-    CHECK_RETURN(schema != nullptr, "getSchema nullptr!", result);
+    CHECK_RETURN(schema != nullptr, "getSchema nullptr!", nullptr);
     if (schema->rootNode == nullptr) {
         int argc = 1;
         napi_value argv[1] = { nullptr };
@@ -151,10 +148,7 @@ napi_value JsSchema::GetMode(napi_env env, napi_callback_info info)
     ZLOGD("Schema::GetMode");
     auto ctxt = std::make_shared<ContextBase>();
     auto schema = GetSchema(env, info, ctxt);
-
-    napi_value result = nullptr;
-    napi_get_undefined(env, &result);
-    CHECK_RETURN(schema != nullptr, "getSchema nullptr!", result);
+    CHECK_RETURN(schema != nullptr, "getSchema nullptr!", nullptr);
     return GetContextValue(env, ctxt, schema->mode);
 }
 
@@ -181,10 +175,7 @@ napi_value JsSchema::GetSkip(napi_env env, napi_callback_info info)
     ZLOGD("Schema::GetSkip");
     auto ctxt = std::make_shared<ContextBase>();
     auto schema = GetSchema(env, info, ctxt);
-
-    napi_value result = nullptr;
-    napi_get_undefined(env, &result);
-    CHECK_RETURN(schema != nullptr, "getSchema nullptr!", result);
+    CHECK_RETURN(schema != nullptr, "getSchema nullptr!", nullptr);
     return GetContextValue(env, ctxt, schema->skip);
 }
 
@@ -192,7 +183,7 @@ napi_value JsSchema::SetSkip(napi_env env, napi_callback_info info)
 {
     auto ctxt = std::make_shared<ContextBase>();
     uint32_t skip = false;
-    auto input = [env, ctxt, &skip](size_t argc, napi_value* argv) {
+    auto input = [env, ctxt, &skip](size_t argc, napi_value* argv) {j
         // required 1 arguments :: <skip size>
         CHECK_ARGS_RETURN_VOID(ctxt, argc == 1, "invalid arguments!");
         ctxt->status = JSUtil::GetValue(env, argv[0], skip);
