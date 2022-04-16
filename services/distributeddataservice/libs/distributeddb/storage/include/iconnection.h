@@ -22,7 +22,6 @@
 #include "macro_utils.h"
 
 namespace DistributedDB {
-
 class IConnection {
 public:
     IConnection();
