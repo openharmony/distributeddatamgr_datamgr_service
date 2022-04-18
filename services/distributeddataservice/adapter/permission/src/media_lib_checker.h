@@ -13,26 +13,26 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_DISTRIBUTEDDATASERVICE_ADAPTER_PERMISSION_SRC_MEIDA_LIB_CHECKER_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_DISTRIBUTEDDATASERVICE_ADAPTER_PERMISSION_SRC_MEIDA_LIB_CHECKER_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_DISTRIBUTEDDATASERVICE_ADAPTER_PERMISSION_SRC_MEDIA_LIB_CHECKER_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_DISTRIBUTEDDATASERVICE_ADAPTER_PERMISSION_SRC_MEDIA_LIB_CHECKER_H
 
 #include "checker/checker_manager.h"
 namespace OHOS {
 namespace DistributedData {
-class MeidaLibChecker : public CheckerManager::Checker {
+class MediaLibChecker : public CheckerManager::Checker {
 public:
-    MeidaLibChecker() noexcept;
-    ~MeidaLibChecker();
+    MediaLibChecker() noexcept;
+    ~MediaLibChecker();
     void Initialize() override;
     bool SetTrustInfo(const DistributedData::CheckerManager::Trust &trust) override;
     std::string GetAppId(pid_t uid, const std::string &bundleName) override;
     bool IsValid(pid_t uid, const std::string &bundleName) override;
 private:
-    static MeidaLibChecker instance_;
+    static MediaLibChecker instance_;
     static constexpr pid_t SYSTEM_UID = 10000;
     std::map<std::string, std::string> trusts_;
 };
 } // namespace DistributedData
 } // namespace OHOS
 
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_DISTRIBUTEDDATASERVICE_ADAPTER_PERMISSION_SRC_MEIDA_LIB_CHECKER_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_DISTRIBUTEDDATASERVICE_ADAPTER_PERMISSION_SRC_MEDIA_LIB_CHECKER_H
