@@ -22,8 +22,6 @@
 #include "common_event_support.h"
 #include "kvstore_meta_manager.h"
 #include "log_print.h"
-#include "ohos/aafwk/base/array_wrapper.h"
-#include "ohos/aafwk/base/string_wrapper.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::EventFwk;
