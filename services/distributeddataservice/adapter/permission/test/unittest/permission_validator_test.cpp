@@ -51,21 +51,8 @@ void PermissionValidatorTest::TearDown(void)
   */
 HWTEST_F(PermissionValidatorTest, TestPermissionValidate001, TestSize.Level0)
 {
-    std::string userId = "ohos";
-    std::string appId = "ohosApp";
-}
-
-/**
-  * @tc.name: TestPermissionValidate002
-  * @tc.desc: test if CheckPermission can return correct permission.
-  * @tc.type: FUNC
-  * @tc.require:AR000DPSGU
-  * @tc.author: liqiao
-  */
-HWTEST_F(PermissionValidatorTest, TestPermissionValidate002, TestSize.Level0)
-{
-    std::string userId = "ohos";
-    std::string appId = "ohosApp";
+    uint32_t tokenId = 0;
+    EXPECT_FALSE(PermissionValidator::GetInstance().CheckSyncPermission(tokenId));
 }
 
 /**
@@ -75,7 +62,7 @@ HWTEST_F(PermissionValidatorTest, TestPermissionValidate002, TestSize.Level0)
   * @tc.require: AR000DPSH0 AR000DPSEC
   * @tc.author: liqiao
   */
-HWTEST_F(PermissionValidatorTest, TestPermissionValidate003, TestSize.Level0)
+HWTEST_F(PermissionValidatorTest, TestPermissionValidate002, TestSize.Level0)
 {
     std::string userId = "ohos";
     EXPECT_NE(Crypto::Sha256("ohos"), userId);

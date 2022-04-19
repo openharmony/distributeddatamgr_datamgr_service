@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include "meida_lib_checker.h"
+#include "media_lib_checker.h"
 
-#define LOG_TAG "MeidaLibChecker"
+#define LOG_TAG "MediaLibChecker"
 
 #include <memory>
 #include "bundlemgr/bundle_mgr_client.h"
@@ -24,27 +24,27 @@
 namespace OHOS {
 namespace DistributedData {
 using namespace AppExecFwk;
-MeidaLibChecker MeidaLibChecker::instance_;
-constexpr pid_t MeidaLibChecker::SYSTEM_UID;
-MeidaLibChecker::MeidaLibChecker() noexcept
+MediaLibChecker MediaLibChecker::instance_;
+constexpr pid_t MediaLibChecker::SYSTEM_UID;
+MediaLibChecker::MediaLibChecker() noexcept
 {
     CheckerManager::GetInstance().RegisterPlugin(
         "MediaLibraryChecker", [this]() -> auto { return this; });
 }
 
-MeidaLibChecker::~MeidaLibChecker()
+MediaLibChecker::~MediaLibChecker()
 {}
 
-void MeidaLibChecker::Initialize()
+void MediaLibChecker::Initialize()
 {}
 
-bool MeidaLibChecker::SetTrustInfo(const CheckerManager::Trust &trust)
+bool MediaLibChecker::SetTrustInfo(const CheckerManager::Trust &trust)
 {
     trusts_[trust.bundleName] = trust.appId;
     return true;
 }
 
-std::string MeidaLibChecker::GetAppId(pid_t uid, const std::string &bundleName)
+std::string MediaLibChecker::GetAppId(pid_t uid, const std::string &bundleName)
 {
     if (!IsValid(uid, bundleName)) {
         return "";
@@ -63,7 +63,7 @@ std::string MeidaLibChecker::GetAppId(pid_t uid, const std::string &bundleName)
     return Crypto::Sha256(bundleInfo->appId);
 }
 
-bool MeidaLibChecker::IsValid(pid_t uid, const std::string &bundleName)
+bool MediaLibChecker::IsValid(pid_t uid, const std::string &bundleName)
 {
     if (trusts_.find(bundleName) == trusts_.end()) {
         return false;

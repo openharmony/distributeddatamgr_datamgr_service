@@ -29,8 +29,7 @@
 #define LOG_TAG "Security"
 namespace OHOS::DistributedKv {
 namespace {
-    const std::string SECURITY_VALUE_XATTR_PARRERN = "s([01234])";
-    const std::string EMPTY_STRING = "";
+    constexpr const char *SECURITY_VALUE_XATTR_PARRERN = "s([01234])";
 }
 using namespace DistributedDB;
 using Anonymous = DistributedData::Anonymous;
@@ -110,7 +109,7 @@ int Security::Convert2Security(const std::string &name)
 const std::string Security::Convert2Name(const SecurityOption &option)
 {
     if (option.securityLabel <= NOT_SET || option.securityLabel > S4) {
-        return EMPTY_STRING;
+        return "";
     }
 
     return LABEL_VALUES[option.securityLabel];

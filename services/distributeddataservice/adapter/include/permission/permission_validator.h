@@ -15,55 +15,21 @@
 
 #ifndef PERMISSION_VALIDATOR_H
 #define PERMISSION_VALIDATOR_H
-#include <set>
 #include <string>
 #include "types.h"
 #include "visibility.h"
 
 namespace OHOS {
 namespace DistributedKv {
-// Compare function for kvStoreTupleMap_.
-struct KvStoreTupleCmp {
-    bool operator()(const KvStoreTuple &lKey, const KvStoreTuple &rKey) const
-    {
-        if (lKey.userId != rKey.userId) {
-            return lKey.userId < rKey.userId;
-        }
-        if (lKey.appId != rKey.appId) {
-            return lKey.appId < rKey.appId;
-        }
-        if (lKey.storeId != rKey.storeId) {
-            return lKey.storeId < rKey.storeId;
-        }
-
-        return false;
-    }
-};
-
 class PermissionValidator {
 public:
+    API_EXPORT static PermissionValidator &GetInstance();
     // check whether the client process have enough privilege to share data with the other devices.
-    // uid: client process uid
-    KVSTORE_API static bool CheckSyncPermission(const std::string &userId, const std::string &appId,
-        std::uint32_t tokenId);
-
-    KVSTORE_API static bool RegisterPermissionChanged(
-        const KvStoreTuple &kvStoreTuple, const AppThreadInfo &appThreadInfo);
-
-    KVSTORE_API static void UnregisterPermissionChanged(const KvStoreTuple &kvStoreTuple);
-
-    KVSTORE_API static void UpdateKvStoreTupleMap(const KvStoreTuple &srcKvStoreTuple,
-                                                  const KvStoreTuple &dstKvStoreTuple);
-
-    // Check whether the bundle name is in the system service list.
-    KVSTORE_API static bool IsSystemService(const std::string &bundleName);
-
-    // Check whether the app with this bundle name is auto launch enabled.
-    KVSTORE_API static bool IsAutoLaunchEnabled(const std::string &bundleName);
+    // tokenId: client process tokenId
+    API_EXPORT  bool CheckSyncPermission(uint32_t tokenId);
 
 private:
-    static std::set<std::string> systemServiceList_; // the full list for system services.
-    static std::set<std::string> autoLaunchEnableList_; // the list for auto launch enabled app.
+    static constexpr const char *DISTRIBUTED_DATASYNC = "ohos.permission.DISTRIBUTED_DATASYNC";
 };
 } // namespace DistributedKv
 } // namespace OHOS

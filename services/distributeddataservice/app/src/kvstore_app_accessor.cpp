@@ -44,10 +44,7 @@ KvStoreAppAccessor &KvStoreAppAccessor::GetInstance()
 
 void KvStoreAppAccessor::EnableKvStoreAutoLaunch(const AppAccessorParam &param)
 {
-    if (!PermissionValidator::IsAutoLaunchEnabled(param.appId)) {
-        ZLOGI("AppId:%s is not allowed.", param.appId.c_str());
-        return;
-    }
+    return;
 
     auto callback = std::bind(&KvStoreAppAccessor::OnCallback, this, std::placeholders::_1, std::placeholders::_2,
                               std::placeholders::_3, std::placeholders::_4);
@@ -64,14 +61,12 @@ void KvStoreAppAccessor::EnableKvStoreAutoLaunch(const AppAccessorParam &param)
 void KvStoreAppAccessor::EnableKvStoreAutoLaunch()
 {
     ZLOGI("start");
+    return;
     std::map<std::string, MetaData> entries;
     if (KvStoreMetaManager::GetInstance().GetFullMetaData(entries)) {
         for (auto &meta : entries) {
             KvStoreMetaData &metaData = meta.second.kvStoreMetaData;
             ZLOGI("meta appId:%s", metaData.appId.c_str());
-            if (!PermissionValidator::IsAutoLaunchEnabled(metaData.appId)) {
-                continue;
-            }
             DistributedDB::CipherPassword password;
             const std::vector<uint8_t> &secretKey = meta.second.secretKeyMetaData.secretKey;
             if (password.SetValue(secretKey.data(), secretKey.size()) != DistributedDB::CipherPassword::OK) {

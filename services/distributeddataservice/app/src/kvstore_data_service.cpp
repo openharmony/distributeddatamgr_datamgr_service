@@ -741,10 +741,6 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
         return Status::ERROR;
     }
     ZLOGI("insert success");
-    const std::string userId = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    KvStoreTuple kvStoreTuple {userId, CheckerManager::GetInstance().GetAppId(appId.appId, uid)};
-    AppThreadInfo appThreadInfo {IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid()};
-    PermissionValidator::RegisterPermissionChanged(kvStoreTuple, appThreadInfo);
     return Status::SUCCESS;
 }
 
@@ -765,9 +761,6 @@ Status KvStoreDataService::AppExit(const AppId &appId, pid_t uid)
         ZLOGW("check appId:%{public}s uid:%{public}d failed.", appIdTmp.appId.c_str(), uid);
         return Status::PERMISSION_DENIED;
     }
-    const std::string userId = AccountDelegate::GetInstance()->GetCurrentAccountId(appIdTmp.appId);
-    KvStoreTuple kvStoreTuple {userId, trueAppId};
-    PermissionValidator::UnregisterPermissionChanged(kvStoreTuple);
 
     CloseAllKvStore(appIdTmp);
     return Status::SUCCESS;
@@ -1032,10 +1025,7 @@ bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::
         return true;
     }
 
-    if (PermissionValidator::IsAutoLaunchEnabled(appId)) {
-        return true;
-    }
-    bool ret = PermissionValidator::CheckSyncPermission(userId, appId, metaData.tokenId);
+    bool ret = PermissionValidator::GetInstance().CheckSyncPermission(metaData.tokenId);
     ZLOGD("checking sync permission ret:%{public}d.", ret);
     return ret;
 }

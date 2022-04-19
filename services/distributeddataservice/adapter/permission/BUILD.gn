@@ -14,8 +14,7 @@ import("//build/ohos.gni")
 
 ohos_static_library("distributeddata_permission_static") {
   sources = [
-    "src/client_permission_validator.cpp",
-    "src/meida_lib_checker.cpp",
+    "src/media_lib_checker.cpp",
     "src/permission_validator.cpp",
   ]
 
