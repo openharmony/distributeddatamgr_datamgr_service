@@ -162,7 +162,7 @@ std::string DeviceKvStoreImpl::GetLocalDeviceId()
         return localDeviceId_;
     }
 
-    localDeviceId_ = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().deviceId;
+    localDeviceId_ = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().uuid;
     return localDeviceId_;
 }
 

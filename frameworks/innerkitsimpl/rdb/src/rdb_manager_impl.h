@@ -31,7 +31,7 @@ class KvStoreDataServiceProxy;
 
 namespace OHOS::DistributedRdb {
 class RdbService;
-class IRdbService;
+class RdbServiceProxy;
 class RdbManagerImpl {
 public:
     static constexpr int GET_SA_RETRY_TIMES = 3;
@@ -62,7 +62,7 @@ private:
 
     ~RdbManagerImpl();
 
-    sptr<IRdbService> GetRdbService();
+    sptr<RdbServiceProxy> GetRdbService();
 
     void ResetServiceHandle();
 

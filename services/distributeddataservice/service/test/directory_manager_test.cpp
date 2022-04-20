@@ -45,7 +45,7 @@ public:
 HWTEST_F(DirectoryManagerTest, GetStoragePath01, TestSize.Level0)
 {
     StoreMetaData metaData;
-    metaData.userId = "10";
+    metaData.user = "10";
     metaData.bundleName = "com.sample.helloworld";
     metaData.dataDir = "/data/app/el1/10/com.sample.helloworld";
     metaData.securityLevel = SecurityLevel::S2;
@@ -63,7 +63,7 @@ HWTEST_F(DirectoryManagerTest, GetStoragePath01, TestSize.Level0)
 HWTEST_F(DirectoryManagerTest, GetStorageBackupPath01, TestSize.Level0)
 {
     StoreMetaData metaData;
-    metaData.userId = "10";
+    metaData.user = "10";
     metaData.bundleName = "com.sample.helloworld";
     metaData.dataDir = "/data/app/el1/10/com.sample.helloworld";
     metaData.securityLevel = SecurityLevel::S2;

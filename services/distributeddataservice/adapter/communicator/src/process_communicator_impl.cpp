@@ -123,6 +123,20 @@ DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const 
     return DBStatus::OK;
 }
 
+DeviceType ProcessCommunicatorImpl::GetDeviceType(int32_t deviceType)
+{
+    switch (deviceType) {
+        case 0x06D:  // SMART_WATCH
+        case 0x0A1:  // SMART_WATCH
+            return SMART_WATCH;
+        case 0x085:  // KID_WATCH
+        case 0x0A3:  // KID_WATCH
+            return KID_WATCH;
+        default:
+            return OTHERS;
+    }
+}
+
 uint32_t ProcessCommunicatorImpl::GetMtuSize()
 {
     return MTU_SIZE;
@@ -131,13 +145,12 @@ uint32_t ProcessCommunicatorImpl::GetMtuSize()
 uint32_t ProcessCommunicatorImpl::GetMtuSize(const DeviceInfos &devInfo)
 {
     ZLOGI("GetMtuSize start");
-    std::vector<DeviceInfo> devInfos = CommunicationProvider::GetInstance().GetDeviceList();
-    for (auto const &entry : devInfos) {
-        ZLOGI("GetMtuSize deviceType: %{public}s", entry.deviceType.c_str());
-        bool isWatch = (entry.deviceType == SMART_WATCH_TYPE || entry.deviceType == CHILDREN_WATCH_TYPE);
-        if (entry.deviceId == devInfo.identifier && isWatch) {
-            return MTU_SIZE_WATCH;
-        }
+    const auto &comm = CommunicationProvider::GetInstance();
+    DeviceInfo deviceInfo = comm.GetDeviceInfo(devInfo.identifier);
+    DeviceType deviceType = GetDeviceType(deviceInfo.deviceType);
+    if (deviceType == SMART_WATCH || deviceType == KID_WATCH) {
+        ZLOGI("GetMtuSize deviceType: %{public}d", deviceInfo.deviceType);
+        return MTU_SIZE_WATCH;
     }
     return MTU_SIZE;
 }
@@ -146,17 +159,17 @@ DeviceInfos ProcessCommunicatorImpl::GetLocalDeviceInfos()
 {
     DeviceInfos localDevInfos;
     DeviceInfo devInfo = CommunicationProvider::GetInstance().GetLocalDevice();
-    localDevInfos.identifier = devInfo.deviceId;
+    localDevInfos.identifier = devInfo.uuid;
     return localDevInfos;
 }
 
 std::vector<DeviceInfos> ProcessCommunicatorImpl::GetRemoteOnlineDeviceInfosList()
 {
     std::vector<DeviceInfos> remoteDevInfos;
-    std::vector<DeviceInfo> devInfoVec = CommunicationProvider::GetInstance().GetDeviceList();
+    std::vector<DeviceInfo> devInfoVec = CommunicationProvider::GetInstance().GetRemoteDevices();
     for (auto const &entry : devInfoVec) {
         DeviceInfos remoteDev;
-        remoteDev.identifier = entry.deviceId;
+        remoteDev.identifier = entry.uuid;
         remoteDevInfos.push_back(remoteDev);
     }
     return remoteDevInfos;
@@ -178,7 +191,7 @@ void ProcessCommunicatorImpl::OnMessage(const DeviceInfo &info, const uint8_t *p
         return;
     }
     DeviceInfos devInfo;
-    devInfo.identifier = info.deviceId;
+    devInfo.identifier = info.uuid;
     onDataReceiveHandler_(devInfo, ptr, static_cast<uint32_t>(size));
 }
 
@@ -190,7 +203,7 @@ void ProcessCommunicatorImpl::OnDeviceChanged(const DeviceInfo &info, const Devi
         return;
     }
     DeviceInfos devInfo;
-    devInfo.identifier = info.deviceId;
+    devInfo.identifier = info.uuid;
     onDeviceChangeHandler_(devInfo, (type == DeviceChangeType::DEVICE_ONLINE));
 }
 

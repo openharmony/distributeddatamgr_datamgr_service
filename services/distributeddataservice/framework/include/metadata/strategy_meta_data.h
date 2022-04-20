@@ -17,7 +17,7 @@
 #define DISTRIBUTEDDATAMGR_STRATEGY_META_DATA_H
 #include "serializable/serializable.h"
 namespace OHOS::DistributedData {
-struct StrategyMeta final : public Serializable {
+struct API_EXPORT StrategyMeta final : public Serializable {
     std::string devId;
     std::string devAccId;
     std::string grpId;

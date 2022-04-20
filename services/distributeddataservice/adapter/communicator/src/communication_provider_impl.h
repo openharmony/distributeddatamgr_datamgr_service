@@ -46,7 +46,10 @@ public:
         const MessageInfo &info) override;
 
     // Get online deviceList
-    std::vector<DeviceInfo> GetDeviceList() const override;
+    std::vector<DeviceInfo> GetRemoteDevices() const override;
+
+    // Get deviceInfo by id
+    DeviceInfo GetDeviceInfo(const std::string &networkId) const override;
 
     // Get local device information
     DeviceInfo GetLocalDevice() const override;
@@ -61,7 +64,6 @@ public:
     std::string GetUuidByNodeId(const std::string &nodeId) const override;
     std::string GetUdidByNodeId(const std::string &nodeId) const override;
     DeviceInfo GetLocalBasicInfo() const override;
-    std::vector<DeviceInfo> GetRemoteNodesBasicInfo() const override;
     std::string ToNodeId(const std::string &id) const override;
     void SetMessageTransFlag(const struct PipeInfo &pipeInfo, bool flag) override;
 

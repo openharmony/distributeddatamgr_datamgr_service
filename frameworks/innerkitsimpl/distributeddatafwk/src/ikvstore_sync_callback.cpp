@@ -18,6 +18,7 @@
 #include "ikvstore_sync_callback.h"
 #include <chrono>
 #include <ctime>
+#include <ipc_skeleton.h>
 #include <map>
 #include "log_print.h"
 #include "message_parcel.h"
@@ -67,6 +68,7 @@ void KvStoreSyncCallbackProxy::SyncCompleted(const std::map<std::string, Status>
 int32_t KvStoreSyncCallbackStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                                                  MessageParcel &reply, MessageOption &option)
 {
+    ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     std::u16string descriptor = KvStoreSyncCallbackStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {

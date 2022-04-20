@@ -31,8 +31,7 @@ public:
     static void SetUpTestCase()
     {
         KvStoreMetaManager::GetInstance().InitMetaParameter();
-        metaDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
-        MetaDataManager::GetInstance().SetMetaStore(metaDelegate);
+        KvStoreMetaManager::GetInstance().InitMetaListener();
     }
     static void TearDownTestCase()
     {
@@ -50,12 +49,9 @@ private:
     void DeleteTestData()
     {
         std::string testKey(TEST_KEY);
-        metaDelegate->Delete({ testKey.begin(), testKey.end() });
+        MetaDataManager::GetInstance().DelMeta(testKey);
     }
-
-    static KvStoreMetaManager::NbDelegate metaDelegate;
 };
-KvStoreMetaManager::NbDelegate MetaDataManagerTest::metaDelegate = nullptr;
 
 class Student final : public Serializable {
 public:
@@ -96,7 +92,7 @@ HWTEST_F(MetaDataManagerTest, MetaBasic_01, TestSize.Level1)
     OHOS::Semaphore sem(0);
     std::string changedKey;
     auto prefix = student.name.substr(0, 1);
-    MetaDataManager::GetInstance().SubscribeMeta(
+    MetaDataManager::GetInstance().Subscribe(
         prefix, [&changedKey, &sem](const std::string &key, const std::string &value, int32_t action) {
             changedKey = key;
             sem.Post();

@@ -309,6 +309,7 @@ Status SingleKvStoreClient::UnSubscribeKvStore(SubscribeType subscribeType, std:
 
 Status SingleKvStoreClient::RegisterSyncCallback(std::shared_ptr<KvStoreSyncCallback> callback)
 {
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
     ZLOGI("begin.");
     if (callback == nullptr) {
         ZLOGW("return INVALID_ARGUMENT.");
@@ -476,6 +477,7 @@ Status SingleKvStoreClient::GetSecurityLevel(SecurityLevel &securityLevel) const
 Status SingleKvStoreClient::SyncWithCondition(const std::vector<std::string> &devices, SyncMode mode,
                                               const DataQuery &query, std::shared_ptr<KvStoreSyncCallback> callback)
 {
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
     if (kvStoreProxy_ == nullptr) {
         ZLOGE("singleKvstore proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;
@@ -496,6 +498,7 @@ Status SingleKvStoreClient::SyncWithCondition(const std::vector<std::string> &de
 
 Status SingleKvStoreClient::SubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query)
 {
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
     if (kvStoreProxy_ == nullptr) {
         ZLOGE("singleKvstore proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;
@@ -512,6 +515,7 @@ Status SingleKvStoreClient::SubscribeWithQuery(const std::vector<std::string> &d
 
 Status SingleKvStoreClient::UnsubscribeWithQuery(const std::vector<std::string> &deviceIds, const DataQuery &query)
 {
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
     if (kvStoreProxy_ == nullptr) {
         ZLOGE("singleKvstore proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;

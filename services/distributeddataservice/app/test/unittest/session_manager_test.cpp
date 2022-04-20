@@ -31,7 +31,7 @@ public:
     static void SetUpTestCase()
     {
         KvStoreMetaManager::GetInstance().InitMetaParameter();
-        metaDelegate = KvStoreMetaManager::GetInstance().GetMetaKvStore();
+        KvStoreMetaManager::GetInstance().InitMetaListener();
 
         // init peer device
         UserMetaData userMetaData;
@@ -64,11 +64,7 @@ public:
     void TearDown()
     {
     }
-
-private:
-    static KvStoreMetaManager::NbDelegate metaDelegate;
 };
-KvStoreMetaManager::NbDelegate SessionManagerTest::metaDelegate = nullptr;
 
 /**
 * @tc.name: PackAndUnPack01

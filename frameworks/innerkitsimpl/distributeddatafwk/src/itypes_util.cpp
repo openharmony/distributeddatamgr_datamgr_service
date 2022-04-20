@@ -16,11 +16,21 @@
 #define LOG_TAG "ITypesUtil"
 
 #include "itypes_util.h"
-#include <climits>
+
 #include "autils/constant.h"
 #include "log_print.h"
 
 namespace OHOS::DistributedKv {
+bool ITypesUtil::Marshalling(const std::string &input, MessageParcel &data)
+{
+    return data.WriteString(input);
+}
+
+bool ITypesUtil::Unmarshalling(MessageParcel &data, std::string &output)
+{
+    return data.ReadString(output);
+}
+
 bool ITypesUtil::Marshalling(const Blob &blob, MessageParcel &data)
 {
     return data.WriteUInt8Vector(blob.Data());
@@ -32,26 +42,6 @@ bool ITypesUtil::Unmarshalling(MessageParcel &data, Blob &output)
     bool result = data.ReadUInt8Vector(&blob);
     output = blob;
     return result;
-}
-
-bool ITypesUtil::Marshalling(const std::vector<Blob> &blobs, MessageParcel &data)
-{
-    return WriteVector(data, blobs, ITypesUtil::GetParcelWriter<Blob>());
-}
-
-bool ITypesUtil::Unmarshalling(MessageParcel &data, std::vector<Blob> &output)
-{
-    return ReadVector(data, output, ITypesUtil::GetParcelReader<Blob>());
-}
-
-bool ITypesUtil::Marshalling(const std::vector<Entry> &entry, MessageParcel &data)
-{
-    return WriteVector(data, entry, ITypesUtil::GetParcelWriter<Entry>());
-}
-
-bool ITypesUtil::Unmarshalling(MessageParcel &data, std::vector<Entry> &output)
-{
-    return ReadVector(data, output, ITypesUtil::GetParcelReader<Entry>());
 }
 
 bool ITypesUtil::Marshalling(const Entry &entry, MessageParcel &data)
@@ -90,16 +80,6 @@ bool ITypesUtil::Unmarshalling(MessageParcel &data, DeviceInfo &output)
         return false;
     }
     return data.ReadString(output.deviceType);
-}
-
-bool ITypesUtil::Marshalling(const std::vector<DeviceInfo> &input, MessageParcel &data)
-{
-    return WriteVector(data, input, ITypesUtil::GetParcelWriter<DeviceInfo>());
-}
-
-bool ITypesUtil::Unmarshalling(MessageParcel &data, std::vector<DeviceInfo> &output)
-{
-    return ReadVector(data, output, ITypesUtil::GetParcelReader<DeviceInfo>());
 }
 
 bool ITypesUtil::Marshalling(const ChangeNotification &notification, MessageParcel &parcel)
@@ -147,12 +127,12 @@ bool ITypesUtil::Unmarshalling(MessageParcel &parcel, ChangeNotification &output
         ZLOGE("WriteString deviceId_ failed.");
         return false;
     }
-    output = ChangeNotification(std::move(insertEntries), std::move(updateEntries), std::move(deleteEntries), deviceId,
-                                isClear);
+    output = ChangeNotification(
+        std::move(insertEntries), std::move(updateEntries), std::move(deleteEntries), deviceId, isClear);
     return true;
 }
 
-bool ITypesUtil::Marshalling(const DistributedRdb::RdbSyncerParam& param, MessageParcel& parcel)
+bool ITypesUtil::Marshalling(const DistributedRdb::RdbSyncerParam &param, MessageParcel &parcel)
 {
     if (!parcel.WriteString(param.bundleName_)) {
         ZLOGE("RdbStoreParam write bundle name failed");
@@ -176,7 +156,7 @@ bool ITypesUtil::Marshalling(const DistributedRdb::RdbSyncerParam& param, Messag
     }
     return true;
 }
-bool ITypesUtil::Unmarshalling(MessageParcel& parcel, DistributedRdb::RdbSyncerParam& param)
+bool ITypesUtil::Unmarshalling(MessageParcel &parcel, DistributedRdb::RdbSyncerParam &param)
 {
     if (!parcel.ReadString(param.bundleName_)) {
         ZLOGE("RdbStoreParam read bundle name failed");
@@ -208,7 +188,7 @@ bool ITypesUtil::Marshalling(const DistributedRdb::SyncResult &result, MessagePa
         return false;
     }
 
-    for (const auto& entry : result) {
+    for (const auto &entry : result) {
         if (!parcel.WriteString(entry.first)) {
             ZLOGE("SyncResult write device failed");
             return false;
@@ -291,7 +271,7 @@ bool ITypesUtil::Marshalling(const DistributedRdb::RdbPredicates &predicates, Me
         ZLOGE("predicate write operation size failed");
         return false;
     }
-    for (const auto& operation : predicates.operations_) {
+    for (const auto &operation : predicates.operations_) {
         if (!parcel.WriteInt32(operation.operator_)) {
             ZLOGE("predicate write operator failed");
             return false;
@@ -344,8 +324,7 @@ bool ITypesUtil::Unmarshalling(MessageParcel &parcel, DistributedRdb::RdbPredica
     return true;
 }
 
-template<class T>
-std::vector<T> ITypesUtil::Convert2Vector(const std::list<T> &entries)
+template<class T> std::vector<T> ITypesUtil::Convert2Vector(const std::list<T> &entries)
 {
     std::vector<T> vector(entries.size());
     int i = 0;
@@ -355,8 +334,7 @@ std::vector<T> ITypesUtil::Convert2Vector(const std::list<T> &entries)
     return vector;
 }
 
-template<class T>
-std::list<T> ITypesUtil::Convert2List(std::vector<T> &&entries)
+template<class T> std::list<T> ITypesUtil::Convert2List(std::vector<T> &&entries)
 {
     std::list<T> result;
     for (auto &entry : entries) {
@@ -364,6 +342,7 @@ std::list<T> ITypesUtil::Convert2List(std::vector<T> &&entries)
     }
     return result;
 }
+
 int64_t ITypesUtil::GetTotalSize(const std::vector<Entry> &entries)
 {
     int64_t bufferSize = 1;
@@ -375,6 +354,7 @@ int64_t ITypesUtil::GetTotalSize(const std::vector<Entry> &entries)
     }
     return bufferSize - 1;
 }
+
 int64_t ITypesUtil::GetTotalSize(const std::vector<Key> &entries)
 {
     int64_t bufferSize = 1;
@@ -385,51 +365,5 @@ int64_t ITypesUtil::GetTotalSize(const std::vector<Key> &entries)
         bufferSize += item.RawSize();
     }
     return bufferSize - 1;
-}
-
-template<typename T>
-bool ITypesUtil::ReadVector(Parcel &parcel, std::vector<T> &val, bool (Parcel::*read)(T &))
-{
-    int32_t len = parcel.ReadInt32();
-    if (len < 0) {
-        return false;
-    }
-
-    size_t readAbleSize = parcel.GetReadableBytes();
-    size_t size = static_cast<size_t>(len);
-    if ((size > readAbleSize) || (size > val.max_size())) {
-        return false;
-    }
-    val.resize(size);
-    if (val.size() < size) {
-        return false;
-    }
-
-    for (auto &v : val) {
-        if (!(parcel.*read)(v)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-template<typename T>
-bool ITypesUtil::WriteVector(Parcel &parcel, const std::vector<T> &val, bool (Parcel::*writer)(const T &))
-{
-    if (val.size() > INT_MAX) {
-        return false;
-    }
-
-    if (!parcel.WriteInt32(static_cast<int32_t>(val.size()))) {
-        return false;
-    }
-
-    for (auto &v : val) {
-        if (!(parcel.*writer)(v)) {
-            return false;
-        }
-    }
-    return true;
 }
 } // namespace OHOS::DistributedKv

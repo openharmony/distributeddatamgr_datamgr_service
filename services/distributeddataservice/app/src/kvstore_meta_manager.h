@@ -176,7 +176,6 @@ public:
     void InitMetaParameter();
     void InitMetaListener();
     void SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer);
-    const NbDelegate &GetMetaKvStore();
 
     Status CheckUpdateServiceMeta(const std::vector<uint8_t> &metaKey, FLAG flag, const std::vector<uint8_t> &val = {});
 
@@ -243,7 +242,11 @@ public:
     bool GetFullMetaData(std::map<std::string, MetaData> &entries, enum DatabaseType type = KVDB);
 
 private:
+    NbDelegate GetMetaKvStore();
+
     NbDelegate CreateMetaKvStore();
+
+    void ConfigMetaDataManager();
 
     KvStoreMetaManager();
 

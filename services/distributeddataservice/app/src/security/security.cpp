@@ -134,20 +134,20 @@ bool Security::IsSupportSecurity()
 void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
                                const AppDistributedKv::DeviceChangeType &type) const
 {
-    if (info.deviceId.empty()) {
+    if (info.networkId.empty()) {
         ZLOGD("deviceId is empty");
         return;
     }
 
     bool isOnline = type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE;
     if (isOnline) {
-        Sensitive sensitive = GetSensitiveByUuid(info.deviceId);
-        ZLOGD("device is online, deviceId:%{public}s", Anonymous::Change(info.deviceId).c_str());
+        Sensitive sensitive = GetSensitiveByUuid(info.uuid);
+        ZLOGD("device is online, deviceId:%{public}s", Anonymous::Change(info.uuid).c_str());
         auto secuiryLevel = sensitive.GetDeviceSecurityLevel();
         ZLOGI("device is online, secuiry Level:%{public}d", secuiryLevel);
     } else {
-        EraseSensitiveByUuid(info.deviceId);
-        ZLOGD("device is offline, deviceId:%{public}s", Anonymous::Change(info.deviceId).c_str());
+        EraseSensitiveByUuid(info.uuid);
+        ZLOGD("device is offline, deviceId:%{public}s", Anonymous::Change(info.uuid).c_str());
     }
 }
 
@@ -165,17 +165,17 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid)
             return true;
         }
         auto &network = AppDistributedKv::CommunicationProvider::GetInstance();
-        auto devices = network.GetRemoteNodesBasicInfo();
+        auto devices = network.GetRemoteDevices();
         devices.push_back(network.GetLocalBasicInfo());
         for (auto &device : devices) {
-            auto deviceUuid = network.GetUuidByNodeId(device.deviceId);
+            auto deviceUuid = device.uuid;
             ZLOGD("GetSensitiveByUuid(%{public}s) peer device is %{public}s",
                 Anonymous::Change(key).c_str(), Anonymous::Change(deviceUuid).c_str());
             if (key != deviceUuid) {
                 continue;
             }
 
-            value = Sensitive(network.GetUdidByNodeId(device.deviceId));
+            value = Sensitive(device.udid);
             value.GetDeviceSecurityLevel();
             sensitive = value;
             return true;

@@ -16,6 +16,7 @@
 #define LOG_TAG "DevChangeStatusListener"
 
 #include "idevice_status_change_listener.h"
+#include <ipc_skeleton.h>
 #include "log_print.h"
 #include "itypes_util.h"
 
@@ -50,7 +51,7 @@ void DeviceStatusChangeListenerProxy::OnChange(const DeviceInfo &results, const 
 int DeviceStatusChangeListenerStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                                                     MessageParcel &reply, MessageOption &option)
 {
-    ZLOGD("%{public}u", code);
+    ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     std::u16string descriptor = DeviceStatusChangeListenerStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {

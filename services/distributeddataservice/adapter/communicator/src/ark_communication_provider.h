@@ -29,7 +29,9 @@ public:
     static CommunicationProvider &Init();
     void SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery) override;
     // Get online deviceList
-    std::vector<DeviceInfo> GetDeviceList() const override;
+    std::vector<DeviceInfo> GetRemoteDevices() const override;
+    // Get deviceInfo by Id
+    DeviceInfo GetDeviceInfo(const std::string &networkId) const override;
     // Get local device information
     DeviceInfo GetLocalDevice() const override;
 

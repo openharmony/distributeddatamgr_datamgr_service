@@ -16,6 +16,7 @@
 #define LOG_TAG "RdbNotifier"
 
 #include "rdb_notifier.h"
+#include <ipc_skeleton.h>
 #include "itypes_util.h"
 #include "log_print.h"
 
@@ -107,7 +108,7 @@ bool RdbNotifierStub::CheckInterfaceToken(MessageParcel& data)
 int RdbNotifierStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
                                      MessageOption &option)
 {
-    ZLOGI("code=%{public}u", code);
+    ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {
         return RDB_ERROR;
     }

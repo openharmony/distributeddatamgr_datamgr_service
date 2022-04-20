@@ -55,9 +55,14 @@ DeviceInfo CommunicationProviderImpl::GetLocalDevice() const
     return appDeviceHandler_.GetLocalDevice();
 }
 
-std::vector<DeviceInfo> CommunicationProviderImpl::GetDeviceList() const
+std::vector<DeviceInfo> CommunicationProviderImpl::GetRemoteDevices() const
 {
-    return appDeviceHandler_.GetDeviceList();
+    return appDeviceHandler_.GetRemoteDevices();
+}
+
+DeviceInfo CommunicationProviderImpl::GetDeviceInfo(const std::string &networkId) const
+{
+    return appDeviceHandler_.GetDeviceInfo(networkId);
 }
 
 Status CommunicationProviderImpl::StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo)
@@ -101,14 +106,9 @@ DeviceInfo CommunicationProviderImpl::GetLocalBasicInfo() const
     return appDeviceHandler_.GetLocalBasicInfo();
 }
 
-std::vector<DeviceInfo> CommunicationProviderImpl::GetRemoteNodesBasicInfo() const
-{
-    return appDeviceHandler_.GetRemoteNodesBasicInfo();
-}
-
 std::string CommunicationProviderImpl::ToNodeId(const std::string &id) const
 {
-    std::string ret = appDeviceHandler_.ToNodeID("", id);
+    std::string ret = appDeviceHandler_.ToNodeID(id, "");
     if (ret.empty()) {
         ZLOGD("toNodeId failed.");
     }

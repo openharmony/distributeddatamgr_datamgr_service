@@ -20,12 +20,14 @@
 #include "account_delegate.h"
 #include "checker/checker_manager.h"
 #include "log_print.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/meta_data_manager.h"
 #include "kvstore_utils.h"
-#include "kvstore_meta_manager.h"
 
 using OHOS::DistributedKv::KvStoreUtils;
 using OHOS::DistributedKv::AccountDelegate;
-using OHOS::DistributedKv::KvStoreMetaManager;
+using OHOS::DistributedData::StoreMetaData;
+using OHOS::DistributedData::MetaDataManager;
 using OHOS::AppDistributedKv::CommunicationProvider;
 
 namespace OHOS::DistributedRdb {
@@ -107,30 +109,29 @@ int32_t RdbSyncer::Init(pid_t pid, pid_t uid)
 
 int32_t RdbSyncer::CreateMetaData()
 {
-    DistributedKv::KvStoreMetaData meta;
-    meta.kvStoreType = static_cast<DistributedKv::KvStoreType>(RDB_DEVICE_COLLABORATION);
-    meta.appId = GetAppId();
-    meta.appType = "harmony";
-    meta.bundleName = GetBundleName();
-    meta.deviceId = CommunicationProvider::GetInstance().GetLocalDevice().deviceId;
-    meta.storeId = GetStoreId();
-    meta.userId = AccountDelegate::GetInstance()->GetCurrentAccountId(GetBundleName());
-    meta.uid = uid_;
-    meta.deviceAccountId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid_);
-    meta.dataDir = GetPath();
+    StoreMetaData newMeta;
+    newMeta.storeType = static_cast<int32_t>(RDB_DEVICE_COLLABORATION);
+    newMeta.appId = GetAppId();
+    newMeta.appType = "harmony";
+    newMeta.bundleName = GetBundleName();
+    newMeta.deviceId = CommunicationProvider::GetInstance().GetLocalDevice().uuid;
+    newMeta.storeId = GetStoreId();
+    newMeta.uid = uid_;
+    newMeta.user = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid_);
+    newMeta.account = AccountDelegate::GetInstance()->GetCurrentAccountId(GetBundleName());
+    newMeta.dataDir = GetPath();
 
-    std::string metaString = meta.Marshal();
-    std::vector<uint8_t> metaValue(metaString.begin(), metaString.end());
-    auto metaKey = KvStoreMetaManager::GetMetaKey(meta.deviceAccountId, "default", meta.bundleName, meta.storeId);
-    DistributedKv::KvStoreMetaData oldMeta;
-    if (KvStoreMetaManager::GetInstance().GetKvStoreMeta(metaKey, oldMeta) == DistributedKv::Status::SUCCESS) {
-        if (metaString == oldMeta.Marshal()) {
+    auto metaKey = StoreMetaData::GetKey({ newMeta.user, "default", newMeta.bundleName, newMeta.storeId });
+    StoreMetaData oldMeta;
+    if (MetaDataManager::GetInstance().LoadMeta(metaKey, oldMeta)) {
+        if (newMeta == oldMeta) {
             ZLOGI("ignore same meta");
             return RDB_OK;
         }
     }
-    auto status = KvStoreMetaManager::GetInstance().CheckUpdateServiceMeta(metaKey, DistributedKv::UPDATE, metaValue);
-    return static_cast<int32_t>(status);
+
+    auto saved = MetaDataManager::GetInstance().SaveMeta(metaKey, newMeta);
+    return saved ? RDB_OK : RDB_ERROR;
 }
 
 DistributedDB::RelationalStoreDelegate* RdbSyncer::GetDelegate()
@@ -180,10 +181,10 @@ int32_t RdbSyncer::SetDistributedTables(const std::vector<std::string> &tables)
 
 std::vector<std::string> RdbSyncer::GetConnectDevices()
 {
-    auto deviceInfos = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteNodesBasicInfo();
+    auto deviceInfos = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteDevices();
     std::vector<std::string> devices;
     for (const auto& deviceInfo : deviceInfos) {
-        devices.push_back(deviceInfo.deviceId);
+        devices.push_back(deviceInfo.networkId);
     }
     ZLOGI("size=%{public}u", static_cast<uint32_t>(devices.size()));
     for (const auto& device: devices) {

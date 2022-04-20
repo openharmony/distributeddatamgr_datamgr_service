@@ -18,16 +18,18 @@
 #include "rdb_service_impl.h"
 #include "account_delegate.h"
 #include "checker/checker_manager.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/meta_data_manager.h"
 #include "communication_provider.h"
-#include "kvstore_utils.h"
 #include "log_print.h"
-#include "kvstore_meta_manager.h"
+#include "utils/anonymous.h"
 
 using OHOS::DistributedKv::AccountDelegate;
-using OHOS::DistributedKv::KvStoreMetaManager;
-using OHOS::DistributedKv::MetaData;
 using OHOS::AppDistributedKv::CommunicationProvider;
 using OHOS::DistributedData::CheckerManager;
+using OHOS::DistributedData::MetaDataManager;
+using OHOS::DistributedData::StoreMetaData;
+using OHOS::DistributedData::Anonymous;
 using DistributedDB::RelationalStoreManager;
 
 namespace OHOS::DistributedRdb {
@@ -65,26 +67,28 @@ bool RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distribute
 {
     std::string identifierHex = TransferStringToHex(identifier);
     ZLOGI("%{public}.6s", identifierHex.c_str());
-    std::map<std::string, MetaData> entries;
-    if (!KvStoreMetaManager::GetInstance().GetFullMetaData(entries, KvStoreMetaManager::RDB)) {
+    std::vector<StoreMetaData> entries;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({}), entries)) {
         ZLOGE("get meta failed");
         return false;
     }
     ZLOGI("size=%{public}d", static_cast<int32_t>(entries.size()));
+    for (const auto& entry : entries) {
+        if (entry.storeType != RDB_DEVICE_COLLABORATION) {
+            continue;
+        }
 
-    for (const auto& [key, entry] : entries) {
         auto aIdentifier = DistributedDB::RelationalStoreManager::GetRelationalStoreIdentifier(
-            entry.kvStoreMetaData.deviceAccountId, entry.kvStoreMetaData.appId, entry.kvStoreMetaData.storeId);
-        ZLOGI("%{public}s %{public}s %{public}s", entry.kvStoreMetaData.deviceAccountId.c_str(),
-              entry.kvStoreMetaData.appId.c_str(), entry.kvStoreMetaData.storeId.c_str());
+            entry.user, entry.appId, entry.storeId);
+        ZLOGI("%{public}s %{public}s %{public}s", entry.user.c_str(), entry.appId.c_str(), entry.storeId.c_str());
         if (aIdentifier != identifier) {
             continue;
         }
-        ZLOGI("find identifier %{public}s", entry.kvStoreMetaData.storeId.c_str());
-        param.userId = entry.kvStoreMetaData.deviceAccountId;
-        param.appId = entry.kvStoreMetaData.appId;
-        param.storeId = entry.kvStoreMetaData.storeId;
-        param.path = entry.kvStoreMetaData.dataDir;
+        ZLOGI("find identifier %{public}s", entry.storeId.c_str());
+        param.userId = entry.user;
+        param.appId = entry.appId;
+        param.storeId = entry.storeId;
+        param.path = entry.dataDir;
         param.option.storeObserver = &autoLaunchObserver_;
         return true;
     }
@@ -101,7 +105,7 @@ void RdbServiceImpl::OnClientDied(pid_t pid)
         for (const auto& [name, syncer] : syncers) {
             timer_.Unregister(syncer->GetTimerId());
         }
-        syncers_.Erase(key);
+        return false;
     });
     notifiers_.Erase(pid);
     identifiers_.EraseIf([pid](const auto& key, pid_t& value) {
@@ -116,7 +120,7 @@ bool RdbServiceImpl::CheckAccess(const RdbSyncerParam &param)
 
 std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device, const std::string &table)
 {
-    ZLOGI("device=%{public}.6s table=%{public}s", device.c_str(), table.c_str());
+    ZLOGI("device=%{public}s table=%{public}s", Anonymous::Change(device).c_str(), table.c_str());
     auto uuid = AppDistributedKv::CommunicationProvider::GetInstance().GetUuidByNodeId(device);
     if (uuid.empty()) {
         ZLOGE("get uuid failed");
@@ -171,6 +175,7 @@ void RdbServiceImpl::OnDataChange(pid_t pid, const DistributedDB::StoreChangedDa
         std::string device = data.GetDataChangeDevice();
         auto networkId = CommunicationProvider::GetInstance().ToNodeId(device);
         value->OnChange(property.storeId, { networkId });
+        return true;
     });
 }
 
@@ -180,6 +185,7 @@ void RdbServiceImpl::SyncerTimeout(std::shared_ptr<RdbSyncer> syncer)
     syncers_.ComputeIfPresent(syncer->GetPid(), [this, &syncer](const auto& key, StoreSyncersType& syncers) {
         syncers.erase(syncer->GetStoreId());
         syncerNum_--;
+        return true;
     });
 }
 
@@ -205,22 +211,22 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
         }
         if (syncers.size() >= MAX_SYNCER_PER_PROCESS) {
             ZLOGE("%{public}d exceed MAX_PROCESS_SYNCER_NUM", pid);
-            return false;
+            return !syncers.empty();
         }
         if (syncerNum_ >= MAX_SYNCER_NUM) {
             ZLOGE("no available syncer");
-            return false;
+            return !syncers.empty();
         }
         auto syncer_ = std::make_shared<RdbSyncer>(param, new (std::nothrow) RdbStoreObserverImpl(this, pid));
         if (syncer_->Init(pid, uid) != 0) {
-            return false;
+            return !syncers.empty();
         }
         syncers[param.storeName_] = syncer_;
         syncer = syncer_;
         syncerNum_++;
         uint32_t timerId = timer_.Register([this, syncer]() { SyncerTimeout(syncer); }, SYNCER_TIMEOUT, true);
         syncer->SetTimerId(timerId);
-        return true;
+        return !syncers.empty();
     });
 
     if (syncer != nullptr) {
@@ -256,6 +262,7 @@ void RdbServiceImpl::OnAsyncComplete(pid_t pid, uint32_t seqNum, const SyncResul
     ZLOGI("pid=%{public}d seqnum=%{public}u", pid, seqNum);
     notifiers_.ComputeIfPresent(pid, [seqNum, &result] (const auto& key, const sptr<RdbNotifierProxy>& value) {
         value->OnComplete(seqNum, result);
+        return true;
     });
 }
 

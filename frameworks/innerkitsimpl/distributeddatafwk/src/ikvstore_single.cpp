@@ -17,6 +17,7 @@
 
 #include "ikvstore_single.h"
 #include <cinttypes>
+#include <ipc_skeleton.h>
 #include "constant.h"
 #include "log_print.h"
 
@@ -1626,7 +1627,7 @@ int SingleKvStoreStub::OnSyncRequest(MessageParcel &data, MessageParcel &reply)
 int SingleKvStoreStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
                                        MessageOption &option)
 {
-    ZLOGD("%{public}u", code);
+    ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     std::u16string descriptor = SingleKvStoreStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {

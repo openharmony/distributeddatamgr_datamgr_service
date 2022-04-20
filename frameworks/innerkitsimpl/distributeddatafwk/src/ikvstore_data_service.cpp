@@ -16,6 +16,7 @@
 #define LOG_TAG "KvStoreDataServiceProxy"
 
 #include "ikvstore_data_service.h"
+#include <ipc_skeleton.h>
 #include "constant.h"
 #include "irdb_service.h"
 #include "rdb_service_proxy.h"
@@ -306,7 +307,7 @@ Status KvStoreDataServiceProxy::GetLocalDevice(OHOS::DistributedKv::DeviceInfo &
     return status;
 }
 
-Status KvStoreDataServiceProxy::GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy)
+Status KvStoreDataServiceProxy::GetRemoteDevices(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(KvStoreDataServiceProxy::GetDescriptor())) {
@@ -319,7 +320,7 @@ Status KvStoreDataServiceProxy::GetDeviceList(std::vector<DeviceInfo> &deviceInf
     }
     MessageParcel reply;
     MessageOption mo { MessageOption::TF_SYNC };
-    int32_t error = Remote()->SendRequest(GETDEVICELIST, data, reply, mo);
+    int32_t error = Remote()->SendRequest(GETREMOTEDEVICES, data, reply, mo);
     if (error != 0) {
         ZLOGW("SendRequest returned %d", error);
         return Status::IPC_ERROR;
@@ -392,7 +393,7 @@ Status KvStoreDataServiceProxy::StopWatchDeviceChange(sptr<IDeviceStatusChangeLi
     return static_cast<Status>(reply.ReadInt32());
 }
 
-sptr<DistributedRdb::IRdbService> KvStoreDataServiceProxy::GetRdbService()
+sptr<IRemoteObject> KvStoreDataServiceProxy::GetRdbService()
 {
     ZLOGI("enter");
     MessageParcel data;
@@ -413,7 +414,7 @@ sptr<DistributedRdb::IRdbService> KvStoreDataServiceProxy::GetRdbService()
         ZLOGE("remote object is nullptr");
         return nullptr;
     }
-    return iface_cast<DistributedRdb::RdbServiceProxy>(remoteObject);
+    return remoteObject;
 }
 
 int32_t KvStoreDataServiceStub::GetKvStoreOnRemote(MessageParcel &data, MessageParcel &reply)
@@ -477,11 +478,11 @@ int32_t KvStoreDataServiceStub::GetAllKvStoreIdOnRemote(MessageParcel &data, Mes
     }
     return 0;
 }
-int32_t KvStoreDataServiceStub::GetDeviceListOnRemote(MessageParcel &data, MessageParcel &reply)
+int32_t KvStoreDataServiceStub::GetRemoteDevicesOnRemote(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<DeviceInfo> infos;
     DeviceFilterStrategy strategy = static_cast<DeviceFilterStrategy>(data.ReadInt32());
-    Status status = GetDeviceList(infos, strategy);
+    Status status = GetRemoteDevices(infos, strategy);
     if (!reply.WriteInt32(static_cast<int>(status))) {
         return -1;
     }
@@ -641,15 +642,14 @@ int32_t KvStoreDataServiceStub::GetLocalDeviceOnRemote(MessageParcel &data, Mess
 
 int32_t KvStoreDataServiceStub::GetRdbServiceOnRemote(MessageParcel &data, MessageParcel &reply)
 {
-    auto rdbService = GetRdbService();
-    reply.WriteRemoteObject(rdbService->AsObject().GetRefPtr());
+    reply.WriteRemoteObject(GetRdbService());
     return 0;
 }
 
 int32_t KvStoreDataServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                                                 MessageParcel &reply, MessageOption &option)
 {
-    ZLOGD("%{public}u", code);
+    ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     std::u16string descriptor = KvStoreDataServiceStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {

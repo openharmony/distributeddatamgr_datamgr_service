@@ -78,7 +78,7 @@ RdbManagerImpl& RdbManagerImpl::GetInstance()
     return manager;
 }
 
-sptr<IRdbService> RdbManagerImpl::GetRdbService()
+sptr<RdbServiceProxy> RdbManagerImpl::GetRdbService()
 {
     if (distributedDataMgr_ == nullptr) {
         distributedDataMgr_ = GetDistributedDataManager();
@@ -88,12 +88,12 @@ sptr<IRdbService> RdbManagerImpl::GetRdbService()
         return nullptr;
     }
 
-    auto service = distributedDataMgr_->GetRdbService();
-    if (service == nullptr) {
+    auto remote = distributedDataMgr_->GetRdbService();
+    if (remote == nullptr) {
         ZLOGE("get rdb service failed");
         return nullptr;
     }
-    return service;
+    return iface_cast<DistributedRdb::RdbServiceProxy>(remote);
 }
 
 std::shared_ptr<RdbService> RdbManagerImpl::GetRdbService(const RdbSyncerParam& param)
@@ -106,11 +106,12 @@ std::shared_ptr<RdbService> RdbManagerImpl::GetRdbService(const RdbSyncerParam& 
     if (service == nullptr) {
         return nullptr;
     }
-    if (((RdbServiceProxy *)service.GetRefPtr())->InitNotifier(param) != RDB_OK) {
+    if (service->InitNotifier(param) != RDB_OK) {
         ZLOGE("init notifier failed");
         return nullptr;
     }
-    LinkToDeath(service->AsObject());
+    sptr<IRdbService> serviceBase = service;
+    LinkToDeath(serviceBase->AsObject());
     rdbService_ = std::shared_ptr<RdbService>(service.GetRefPtr(), [holder = service] (const auto*) {});
     bundleName_ = param.bundleName_;
     return rdbService_;

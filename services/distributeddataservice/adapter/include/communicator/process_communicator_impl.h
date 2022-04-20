@@ -61,6 +61,7 @@ public:
 private:
     void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size,
                    const PipeInfo &pipeInfo) const override;
+    static DeviceType GetDeviceType(int32_t deviceType);
 
     std::string thisProcessLabel_;
     OnDeviceChange onDeviceChangeHandler_;
@@ -72,8 +73,6 @@ private:
 
     static constexpr uint32_t MTU_SIZE = 4194304; // the max transmission unit size(4M - 80B)
     static constexpr uint32_t MTU_SIZE_WATCH = 81920; // the max transmission unit size(80K)
-    static constexpr const char *SMART_WATCH_TYPE = "SMART_WATCH";
-    static constexpr const char *CHILDREN_WATCH_TYPE = "CHILDREN_WATCH";
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS

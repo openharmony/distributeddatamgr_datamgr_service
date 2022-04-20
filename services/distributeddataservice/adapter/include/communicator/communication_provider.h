@@ -52,7 +52,10 @@ public:
                             const MessageInfo &info = {MessageType::DEFAULT}) = 0;
 
     // Get online deviceList
-    virtual std::vector<DeviceInfo> GetDeviceList() const = 0;
+    virtual std::vector<DeviceInfo> GetRemoteDevices() const = 0;
+
+    // Get deviceInfo by id
+    virtual DeviceInfo GetDeviceInfo(const std::string &networkId) const = 0;
 
     // Get local device information
     virtual DeviceInfo GetLocalDevice() const = 0;
@@ -70,7 +73,6 @@ public:
     virtual std::string GetUuidByNodeId(const std::string &nodeId) const = 0;
     virtual std::string GetUdidByNodeId(const std::string &nodeId) const = 0;
     virtual DeviceInfo GetLocalBasicInfo() const = 0;
-    virtual std::vector<DeviceInfo> GetRemoteNodesBasicInfo() const = 0;
     virtual std::string ToNodeId(const std::string &id) const = 0;
     virtual void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) = 0;
 };

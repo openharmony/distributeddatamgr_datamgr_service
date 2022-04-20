@@ -70,12 +70,26 @@ Blob::Blob(const std::string &str)
 {
 }
 
+Blob &Blob::operator=(const std::string &str)
+{
+    blob_ = { str.begin(), str.end() };
+    return *this;
+}
+
 Blob::Blob(const char *str)
     : blob_()
 {
     if (str != nullptr) {
         blob_ = std::vector<uint8_t>(str, str + strlen(str));
     }
+}
+
+Blob &Blob::operator=(const char *str)
+{
+    if (str != nullptr) {
+        blob_ = std::vector<uint8_t>(str, str + strlen(str));
+    }
+    return *this;
 }
 
 Blob::Blob(const std::vector<uint8_t> &bytes)
@@ -96,6 +110,11 @@ const std::vector<uint8_t> &Blob::Data() const
 Blob::operator const std::vector<uint8_t> &() const
 {
     return Data();
+}
+
+Blob::operator std::vector<uint8_t> &&() noexcept
+{
+    return std::move(blob_);
 }
 
 size_t Blob::Size() const

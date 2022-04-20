@@ -71,10 +71,10 @@ public:
     Status RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer) override;
 
     Status GetLocalDevice(DeviceInfo &device) override;
-    Status GetDeviceList(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy) override;
+    Status GetRemoteDevices(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy) override;
     Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy) override;
     Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) override;
-    sptr<DistributedRdb::IRdbService> GetRdbService() override;
+    sptr<IRemoteObject> GetRdbService() override;
 
     void OnDump() override;
 

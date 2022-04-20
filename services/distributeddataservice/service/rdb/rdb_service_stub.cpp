@@ -16,6 +16,7 @@
 #define LOG_TAG "RdbServiceStub"
 
 #include "rdb_service_stub.h"
+#include <ipc_skeleton.h>
 #include "log_print.h"
 #include "itypes_util.h"
 
@@ -180,7 +181,7 @@ bool RdbServiceStub::CheckInterfaceToken(MessageParcel& data)
 
 int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
-    ZLOGI("code=%{public}u", code);
+    ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {
         return RDB_ERROR;
     }

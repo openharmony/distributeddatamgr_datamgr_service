@@ -18,16 +18,16 @@ namespace OHOS {
 namespace DistributedData {
 bool MetaData::Marshal(json &node) const
 {
-    SetValue(node[GET_NAME(kvStoreType)], kvStoreType);
-    SetValue(node[GET_NAME(kvStoreMetaData)], kvStoreMetaData);
+    SetValue(node[GET_NAME(storeType)], storeType);
+    SetValue(node[GET_NAME(storeMetaData)], storeMetaData);
     SetValue(node[GET_NAME(secretKeyMetaData)], secretKeyMetaData);
     return true;
 }
 
 bool MetaData::Unmarshal(const json &node)
 {
-    GetValue(node, GET_NAME(kvStoreType), kvStoreType);
-    GetValue(node, GET_NAME(kvStoreMetaData), kvStoreMetaData);
+    GetValue(node, GET_NAME(storeType), storeType);
+    GetValue(node, GET_NAME(storeMetaData), storeMetaData);
     GetValue(node, GET_NAME(secretKeyMetaData), secretKeyMetaData);
     return true;
 }

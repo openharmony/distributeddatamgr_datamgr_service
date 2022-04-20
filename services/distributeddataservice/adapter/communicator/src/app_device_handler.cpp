@@ -49,9 +49,14 @@ Status AppDeviceHandler::StopWatchDeviceChange(const AppDeviceChangeListener *ob
     return softbusAdapter_->StopWatchDeviceChange(observer, pipeInfo);
 }
 
-std::vector<DeviceInfo> AppDeviceHandler::GetDeviceList() const
+std::vector<DeviceInfo> AppDeviceHandler::GetRemoteDevices() const
 {
-    return softbusAdapter_->GetDeviceList();
+    return softbusAdapter_->GetRemoteDevices();
+}
+
+DeviceInfo AppDeviceHandler::GetDeviceInfo(const std::string &networkId) const
+{
+    return softbusAdapter_->GetDeviceInfo(networkId);
 }
 
 DeviceInfo AppDeviceHandler::GetLocalDevice()
@@ -69,19 +74,14 @@ DeviceInfo AppDeviceHandler::GetLocalBasicInfo() const
     return softbusAdapter_->GetLocalBasicInfo();
 }
 
-std::vector<DeviceInfo> AppDeviceHandler::GetRemoteNodesBasicInfo() const
-{
-    return softbusAdapter_->GetRemoteNodesBasicInfo();
-}
-
 std::string AppDeviceHandler::GetUdidByNodeId(const std::string &nodeId) const
 {
     return softbusAdapter_->GetUdidByNodeId(nodeId);
 }
 
-void AppDeviceHandler::UpdateRelationship(const std::string &networkid, const DeviceChangeType &type)
+void AppDeviceHandler::UpdateRelationship(const DeviceInfo &deviceInfo, const DeviceChangeType &type)
 {
-    return softbusAdapter_->UpdateRelationship(networkid, type);
+    return softbusAdapter_->UpdateRelationship(deviceInfo, type);
 }
 
 std::string AppDeviceHandler::ToUUID(const std::string& id) const
@@ -89,9 +89,9 @@ std::string AppDeviceHandler::ToUUID(const std::string& id) const
     return softbusAdapter_->ToUUID(id);
 }
 
-std::string AppDeviceHandler::ToNodeID(const std::string& id, const std::string &nodeId) const
+std::string AppDeviceHandler::ToNodeID(const std::string &nodeId, const std::string &defaultId) const
 {
-    return softbusAdapter_->ToNodeID(id, nodeId);
+    return softbusAdapter_->ToNodeID(nodeId, defaultId);
 }
 
 std::string AppDeviceHandler::ToBeAnonymous(const std::string &name)

@@ -17,6 +17,7 @@
 
 #include "ikvstore.h"
 #include <cinttypes>
+#include <ipc_skeleton.h>
 #include "message_parcel.h"
 #include "constant.h"
 #include "log_print.h"
@@ -676,7 +677,7 @@ int32_t KvStoreImplStub::UnSubscribeKvStoreOnRemote(MessageParcel &data, Message
 int32_t KvStoreImplStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                                          MessageParcel &reply, MessageOption &option)
 {
-    ZLOGD("%{public}u", code);
+    ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     std::u16string descriptor = KvStoreImplStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {
