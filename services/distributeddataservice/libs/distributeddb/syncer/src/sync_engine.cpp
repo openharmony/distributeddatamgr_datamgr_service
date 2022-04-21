@@ -452,10 +452,12 @@ int SyncEngine::ScheduleDealMsg(ISyncTaskContext *context, Message *inMsg)
 
 void SyncEngine::MessageReciveCallback(const std::string &targetDev, Message *inMsg)
 {
+    IncExecTaskCount();
     int errCode = MessageReciveCallbackInner(targetDev, inMsg);
     if (errCode != E_OK) {
         delete inMsg;
         inMsg = nullptr;
+        DecExecTaskCount();
         LOGE("[SyncEngine] MessageReciveCallback failed!");
     }
 }
@@ -487,26 +489,21 @@ int SyncEngine::MessageReciveCallbackInner(const std::string &targetDev, Message
             return -E_BUSY;
         }
 
-        if (execTaskCount_ >= MAX_EXEC_NUM) {
+        if (execTaskCount_ > MAX_EXEC_NUM) {
             PutMsgIntoQueue(targetDev, inMsg, msgSize);
+            // task dont exec here
+            DecExecTaskCount();
             return E_OK;
         }
     }
 
-    IncExecTaskCount();
     int errCode = E_OK;
-    do {
-        ISyncTaskContext *nextContext = GetConextForMsg(targetDev, errCode);
-        if (errCode != E_OK) {
-            break;
-        }
-        LOGD("[SyncEngine] MessageReciveCallback MSG ID = %d", inMsg->GetMessageId());
-        errCode = ScheduleDealMsg(nextContext, inMsg);
-    } while (false);
+    ISyncTaskContext *nextContext = GetConextForMsg(targetDev, errCode);
     if (errCode != E_OK) {
-        DecExecTaskCount();
+        return errCode;
     }
-    return errCode;
+    LOGD("[SyncEngine] MessageReciveCallback MSG ID = %d", inMsg->GetMessageId());
+    return ScheduleDealMsg(nextContext, inMsg);
 }
 
 void SyncEngine::PutMsgIntoQueue(const std::string &targetDev, Message *inMsg, int msgSize)
