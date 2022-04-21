@@ -38,7 +38,7 @@
 **图 1**  数据分布式运作示意图<a name="fig371116145419"></a>
 
 
-![](figures/zh-cn_image_0000001162536643.png)
+![](figures/distributed_datamgr_subsystem_architecture.png)
 
 ## 目录<a name="section161941989596"></a>
 
