@@ -124,5 +124,4 @@ distributeddatamgr\_distributeddatamgr
 
 third\_party\_sqlite
 
-third\_party\_flatbuffers
 
