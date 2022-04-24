@@ -35,7 +35,7 @@ ohos_static_library("distributeddata_broadcaster_static") {
     # "ces:libcommonevent",
     "ability_base:want",
     "bundle_framework:appexecfwk_base",
-    "ces_standard:cesfwk_innerkits",
+    "common_event_service:cesfwk_innerkits",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
