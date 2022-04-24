@@ -38,7 +38,7 @@ You call APIs of DDS to create, access, and subscribe to distributed databases. 
 **Figure  1**  How DDS works<a name="fig371116145419"></a>  
 
 
-![](figures/en-us_image_0000001162536643.png)
+![](figures/distributed-datamgr-subsystem-architecture.png)
 
 ## Directory Structure<a name="section161941989596"></a>
 
