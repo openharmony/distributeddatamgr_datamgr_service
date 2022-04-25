@@ -656,8 +656,12 @@ int RuntimeContextImpl::NotifyUserChanged() const
     return E_OK;
 }
 
-uint64_t RuntimeContextImpl::GenerateSessionId()
+uint32_t RuntimeContextImpl::GenerateSessionId()
 {
-    return currentSessionId_.fetch_add(1, std::memory_order_seq_cst);
+    uint32_t sessionId = currentSessionId_++;
+    if (sessionId == 0) {
+        sessionId = currentSessionId_++;
+    }
+    return sessionId;
 }
 } // namespace DistributedDB

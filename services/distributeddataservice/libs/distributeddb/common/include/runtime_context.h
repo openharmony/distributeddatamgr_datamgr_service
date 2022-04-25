@@ -125,7 +125,7 @@ public:
     virtual int NotifyUserChanged() const = 0;
 
     // Generate global sessionId in current process
-    virtual uint64_t GenerateSessionId() = 0;
+    virtual uint32_t GenerateSessionId() = 0;
 protected:
     RuntimeContext() = default;
     virtual ~RuntimeContext() {}
