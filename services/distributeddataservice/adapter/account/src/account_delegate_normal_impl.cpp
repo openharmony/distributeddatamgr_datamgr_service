@@ -56,7 +56,7 @@ std::string AccountDelegateNormalImpl::GetCurrentAccountId(const std::string &bu
         return AccountSA::DEFAULT_OHOS_ACCOUNT_UID;
     }
 
-    return Sha256UserId(ohosAccountInfo.second.uid_);
+    return Sha256AccountId(ohosAccountInfo.second.uid_);
 }
 
 std::string AccountDelegateNormalImpl::GetDeviceAccountIdByUID(int32_t uid) const
@@ -123,7 +123,7 @@ AccountDelegateNormalImpl::~AccountDelegateNormalImpl()
     observerMap_.Clear();
 }
 
-std::string AccountDelegateNormalImpl::Sha256UserId(const std::string &plainText) const
+std::string AccountDelegateNormalImpl::Sha256AccountId(const std::string &plainText) const
 {
     std::regex pattern("^[0-9]+$");
     if (!std::regex_match(plainText, pattern)) {
@@ -141,16 +141,8 @@ std::string AccountDelegateNormalImpl::Sha256UserId(const std::string &plainText
         plainVal = atoll(plainText.substr(plainText.size() - int64MaxLen + 1, int64MaxLen - 1).c_str());
     }
 
-    union UnionLong {
-        int64_t val;
-        unsigned char byteLen[sizeof(int64_t)];
-    };
-    UnionLong unionLong {};
-    unionLong.val = plainVal;
-    std::list<char> unionList(std::begin(unionLong.byteLen), std::end(unionLong.byteLen));
-    unionList.reverse();
-    std::vector<char> unionVec(unionList.begin(), unionList.end());
-    return Crypto::Sha256(unionVec.data(), unionVec.size(), true);
+    int64_t pValBigEndian = htobe64(plainVal);
+    return Crypto::Sha256(std::to_string(pValBigEndian), true);
 }
 }  // namespace DistributedKv
 }  // namespace OHOS

@@ -34,7 +34,7 @@ public:
 
 private:
     ~AccountDelegateNormalImpl();
-    std::string Sha256UserId(const std::string &plainText) const;
+    std::string Sha256AccountId(const std::string &plainText) const;
     std::shared_ptr<EventSubscriber> eventSubscriber_ {};
 };
 }  // namespace DistributedKv
