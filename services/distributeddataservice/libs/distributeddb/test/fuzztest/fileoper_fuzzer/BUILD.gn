@@ -71,8 +71,6 @@ ohos_fuzztest("FileOperFuzzTest") {
     "//third_party/jsoncpp:jsoncpp",
     "//third_party/openssl:libcrypto_shared",
     "//utils/native/base:utils",
-
-    #"//third_party/googletest:gtest_main",
   ]
 
   defines = [
