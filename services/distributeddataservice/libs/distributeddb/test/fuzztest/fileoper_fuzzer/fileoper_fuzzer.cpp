@@ -27,7 +27,7 @@ namespace OHOS {
     {
         std::vector<Entry> entries;
         auto count = static_cast<int>(std::min(size, size_t(1024)));
-        for(int i = 1; i < count; i++) {
+        for (int i = 1; i < count; i++) {
             Entry entry;
             entry.key = std::vector<uint8_t> (data, data + i);
             entry.value = std::vector<uint8_t> (data, data + size);
@@ -41,8 +41,8 @@ namespace OHOS {
         KvStoreNbDelegate::Option nbOption = {true, false, true};
         KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
 
-        g_kvManager.GetKvStore("distributed_file_oper_single", nbOption, [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate * kvNbDelegate)
-        {
+        g_kvManager.GetKvStore("distributed_file_oper_single", nbOption, 
+                               [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate * kvNbDelegate) {
             if (status == DBStatus::OK) {
                 kvNbDelegatePtr = kvNbDelegate;
             }
@@ -70,7 +70,8 @@ namespace OHOS {
         passwd.SetValue(data, size);
         KvStoreDelegate::Option option = {true, false, true, CipherType::DEFAULT, passwd};
         KvStoreDelegate *kvDelegatePtr = nullptr;
-        g_kvManager.GetKvStore("distributed_file_oper_multi", option, [&kvDelegatePtr](DBStatus status, KvStoreDelegate* kvStoreDelegate) {
+        g_kvManager.GetKvStore("distributed_file_oper_multi", option, 
+                               [&kvDelegatePtr](DBStatus status, KvStoreDelegate* kvStoreDelegate) {
             if (status == DBStatus::OK) {
                 kvDelegatePtr = kvStoreDelegate;
             }

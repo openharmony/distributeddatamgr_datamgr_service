@@ -18,6 +18,4 @@
 
 #define FUZZ_PROJECT_NAME "fileoper_fuzzer"
 
-#include <cstdint>
-
 #endif // FILEOPER_FUZZER_H

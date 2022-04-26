@@ -22,7 +22,6 @@
 #include <set>
 #include <sys/types.h>
 
-
 #include "db_common.h"
 #include "db_constant.h"
 #include "generic_single_ver_kv_entry.h"
@@ -32,7 +31,6 @@
 
 using namespace DistributedDB;
 namespace DistributedDBTest {
-
     int DistributedDBToolsTest::GetCurrentDir(std::string &dir)
     {
         static const int maxFileLength = 1024;

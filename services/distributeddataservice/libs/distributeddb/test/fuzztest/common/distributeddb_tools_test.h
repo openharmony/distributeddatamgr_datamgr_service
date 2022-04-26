@@ -34,37 +34,16 @@
 #include "query.h"
 
 namespace DistributedDBTest {
-    struct DatabaseInfo {
-        std::string appId{};
-        std::string userId{};
-        std::string storeId{};
-        std::string dir{};
-        int dbUserVersion = 0;
-    };
-
-
+    
     class DistributedDBToolsTest final {
     public:
         DistributedDBToolsTest() {}
-
         ~DistributedDBToolsTest() {}
-
-        DistributedDBToolsTest(const DistributedDBToolsTest &) = delete;
-
-        DistributedDBToolsTest &operator=(const DistributedDBToolsTest &) = delete;
-
-        DistributedDBToolsTest(DistributedDBToolsTest &&) = delete;
-
-        DistributedDBToolsTest &operator=(DistributedDBToolsTest &&) = delete;
-
-      
+    
         static void TestDirInit(std::string &);
-
         // remove the test db files in the test directory of dir.
         static int RemoveTestDbFiles(const std::string &);
-
         static int GetCurrentDir(std::string& dir);
-
     };
 } // namespace DistributedDBTest
 #endif // DISTRIBUTEDDB_TOOLS_TEST_H
