@@ -34,6 +34,11 @@ public:
     {
         return "accountTestObserver";
     }
+
+    LevelType GetLevelType()
+    {
+        return LevelType::LOW;
+    }
 };
 /**
 * @tc.name: Test001

@@ -16,6 +16,7 @@
 
 #include "account_delegate_normal_impl.h"
 #include <algorithm>
+#include <endian.h>
 #include <list>
 #include <regex>
 #include <thread>
