@@ -746,6 +746,7 @@ group("fuzztest") {
   deps = []
   deps += [
     "fuzztest/fileoper_fuzzer:fuzztest",
+    "fuzztest/iprocesscommunicator_fuzzer:fuzztest",
     "fuzztest/query_fuzzer:fuzztest",
   ]
 }
