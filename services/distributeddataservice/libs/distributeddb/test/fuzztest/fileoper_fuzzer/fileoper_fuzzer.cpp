@@ -41,8 +41,8 @@ namespace OHOS {
         KvStoreNbDelegate::Option nbOption = {true, false, true};
         KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
 
-        g_kvManager.GetKvStore("distributed_file_oper_single", nbOption, 
-                               [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate * kvNbDelegate) {
+        g_kvManager.GetKvStore("distributed_file_oper_single", nbOption, [&kvNbDelegatePtr](DBStatus status, 
+                               KvStoreNbDelegate * kvNbDelegate) {
             if (status == DBStatus::OK) {
                 kvNbDelegatePtr = kvNbDelegate;
             }
@@ -70,8 +70,8 @@ namespace OHOS {
         passwd.SetValue(data, size);
         KvStoreDelegate::Option option = {true, false, true, CipherType::DEFAULT, passwd};
         KvStoreDelegate *kvDelegatePtr = nullptr;
-        g_kvManager.GetKvStore("distributed_file_oper_multi", option, 
-                               [&kvDelegatePtr](DBStatus status, KvStoreDelegate* kvStoreDelegate) {
+        g_kvManager.GetKvStore("distributed_file_oper_multi", option, [&kvDelegatePtr](DBStatus status, 
+                               KvStoreDelegate* kvStoreDelegate) {
             if (status == DBStatus::OK) {
                 kvDelegatePtr = kvStoreDelegate;
             }

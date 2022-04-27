@@ -33,8 +33,7 @@
 #include "message.h"
 #include "query.h"
 
-namespace DistributedDBTest {
-    
+namespace DistributedDBTest {  
     class DistributedDBToolsTest final {
     public:
         DistributedDBToolsTest() {}

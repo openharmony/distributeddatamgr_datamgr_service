@@ -114,5 +114,4 @@ namespace DistributedDBTest {
         LOGI("Total %d test db files are removed!", nFile);
         return 0;
     }
-
 }
