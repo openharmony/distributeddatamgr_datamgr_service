@@ -31,11 +31,6 @@ enum class AccountStatus {
     DEVICE_ACCOUNT_SWITCHED, // the device account is switched
 };
 
-enum class LevelType {
-    HIGH,
-    LOW,
-};
-
 struct AccountEventInfo {
     std::string harmonyAccountId;
     std::string deviceAccountId;
@@ -46,12 +41,16 @@ class AccountDelegate {
 public:
     class Observer {
     public:
+        enum class LevelType {
+            HIGH,
+            LOW,
+        };
         API_EXPORT virtual ~Observer() = default;
         API_EXPORT virtual void OnAccountChanged(const AccountEventInfo &eventInfo) = 0;
 
         // must specify unique name for observer
         API_EXPORT virtual std::string Name() = 0;
-        API_EXPORT virtual LevelType GetLevelType() = 0;
+        API_EXPORT virtual LevelType GetLevel() = 0;
     };
     API_EXPORT virtual ~AccountDelegate() = default;
     API_EXPORT virtual Status Subscribe(std::shared_ptr<Observer> observer) = 0;

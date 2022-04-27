@@ -85,18 +85,6 @@ private:
     static RelatedGroup GetGroupInfo(int32_t localUserId, const std::string &appId, const std::string &peerDeviceId);
 };
 
-class AuthHandlerStub : public AuthHandler {
-public:
-    // override for mock auth in current version, need remove in the future
-    bool CheckAccess(
-        int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId) override;
-
-private:
-    bool IsUserActive(const std::vector<UserStatus> &userStatus, int32_t userId);
-    static constexpr pid_t UID_CAPACITY = 10000;
-    static constexpr int SYSTEM_USER = 0;
-};
-
 class AuthDelegate {
 public:
     API_EXPORT static AuthHandler *GetInstance();

@@ -35,7 +35,7 @@ public:
         return "accountTestObserver";
     }
 
-    LevelType GetLevelType()
+    LevelType GetLevel()
     {
         return LevelType::LOW;
     }

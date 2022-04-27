@@ -25,6 +25,18 @@
 #include "user_delegate.h"
 
 namespace OHOS::DistributedData {
+class AuthHandlerStub : public AuthHandler {
+public:
+    // override for mock auth in current version, need remove in the future
+    bool CheckAccess(
+        int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId) override;
+
+private:
+    bool IsUserActive(const std::vector<UserStatus> &userStatus, int32_t userId);
+    static constexpr pid_t UID_CAPACITY = 10000;
+    static constexpr int SYSTEM_USER = 0;
+};
+
 bool AuthHandler::CheckAccess(
     int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId)
 {

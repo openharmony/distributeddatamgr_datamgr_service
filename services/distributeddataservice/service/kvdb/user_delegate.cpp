@@ -184,9 +184,4 @@ std::string UserDelegate::LocalUserObserver::Name()
 {
     return "user_delegate";
 }
-
-LevelType UserDelegate::LocalUserObserver::GetLevelType()
-{
-    return LevelType::HIGH;
-}
 } // namespace OHOS::DistributedData

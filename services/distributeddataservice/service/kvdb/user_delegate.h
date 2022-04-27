@@ -25,7 +25,6 @@
 
 namespace OHOS::DistributedData {
 using AccountDelegate = DistributedKv::AccountDelegate;
-using LevelType = DistributedKv::LevelType;
 using DistributedData::UserStatus;
 class UserDelegate {
 public:
@@ -47,7 +46,10 @@ private:
         explicit LocalUserObserver(UserDelegate &userDelegate);
         void OnAccountChanged(const DistributedKv::AccountEventInfo &eventInfo) override;
         std::string Name() override;
-        LevelType GetLevelType() override;
+        LevelType GetLevel() override
+        {
+            return LevelType::HIGH;
+        }
 
     private:
         UserDelegate &userDelegate_;
