@@ -49,7 +49,7 @@ public:
         onDataReceive_ = callback;
         return DistributedDB::OK;
     }
-    DistributedDB::DBStatus SendData(const DistributedDB::DeviceInfos &dstDevInfo, 
+    DistributedDB::DBStatus SendData(const DistributedDB::DeviceInfos &dstDevInfo,
         const uint8_t *datas, uint32_t length) override
     {
         return DistributedDB::OK;
@@ -111,7 +111,7 @@ void CommunicatorFuzzer(const uint8_t* data, size_t size)
     kvManager.SetKvStoreConfig(config);
     KvStoreNbDelegate::Option option = {true, false, false};
     KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
-    kvManager.GetKvStore(rawString,option, 
+    kvManager.GetKvStore(rawString, option,
         [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate* kvNbDelegate) {
             if (status == DBStatus::OK) {
                 kvNbDelegatePtr = kvNbDelegate;
