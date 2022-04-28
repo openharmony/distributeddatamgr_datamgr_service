@@ -33,7 +33,7 @@
 #include "message.h"
 #include "query.h"
 
-namespace DistributedDBTest {
+namespace DistributedDBTest {  
 class DistributedDBToolsTest final {
 public:
     DistributedDBToolsTest() {}
@@ -43,6 +43,22 @@ public:
     // remove the test db files in the test directory of dir.
     static int RemoveTestDbFiles(const std::string &);
     static int GetCurrentDir(std::string& dir);
+};
+
+class KvStoreObserverTest : public DistributedDB::KvStoreObserver {
+public:
+    KvStoreObserverTest();
+    ~KvStoreObserverTest() {}
+
+    // callback function will be called when the db data is changed.
+    void OnChange(const DistributedDB::KvStoreChangedData&);
+
+private:
+    unsigned long callCount_;
+    bool isCleared_;
+    std::list<DistributedDB::Entry> inserted_;
+    std::list<DistributedDB::Entry> updated_;
+    std::list<DistributedDB::Entry> deleted_;
 };
 } // namespace DistributedDBTest
 #endif // DISTRIBUTEDDB_TOOLS_TEST_H
