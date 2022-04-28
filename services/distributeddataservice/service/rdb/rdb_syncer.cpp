@@ -86,7 +86,7 @@ std::string RdbSyncer::GetAppId() const
 
 std::string RdbSyncer::GetPath() const
 {
-    return param_.path_;
+    return param_.realPath_;
 }
 
 std::string RdbSyncer::GetStoreId() const

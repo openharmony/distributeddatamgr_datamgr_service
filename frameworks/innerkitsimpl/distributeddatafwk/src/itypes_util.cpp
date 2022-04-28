@@ -148,12 +148,16 @@ bool ITypesUtil::Marshalling(const DistributedRdb::RdbSyncerParam &param, Messag
         ZLOGE("RdbStoreParam write bundle name failed");
         return false;
     }
-    if (!parcel.WriteString(param.path_)) {
+    if (!parcel.WriteString(param.relativePath_)) {
         ZLOGE("RdbStoreParam write directory failed");
         return false;
     }
     if (!parcel.WriteString(param.storeName_)) {
         ZLOGE("RdbStoreParam write store name failed");
+        return false;
+    }
+    if (!parcel.WriteString(param.encryptLevel_)) {
+        ZLOGE("RdbStoreParam write security level failed");
         return false;
     }
     if (!parcel.WriteInt32(param.type_)) {
@@ -166,18 +170,23 @@ bool ITypesUtil::Marshalling(const DistributedRdb::RdbSyncerParam &param, Messag
     }
     return true;
 }
+
 bool ITypesUtil::Unmarshalling(MessageParcel &parcel, DistributedRdb::RdbSyncerParam &param)
 {
     if (!parcel.ReadString(param.bundleName_)) {
         ZLOGE("RdbStoreParam read bundle name failed");
         return false;
     }
-    if (!parcel.ReadString(param.path_)) {
+    if (!parcel.ReadString(param.relativePath_)) {
         ZLOGE("RdbStoreParam read directory failed");
         return false;
     }
     if (!parcel.ReadString(param.storeName_)) {
         ZLOGE("RdbStoreParam read store name failed");
+        return false;
+    }
+    if (!parcel.ReadString(param.encryptLevel_)) {
+        ZLOGE("RdbStoreParam read security level failed");
         return false;
     }
     if (!parcel.ReadInt32(param.type_)) {

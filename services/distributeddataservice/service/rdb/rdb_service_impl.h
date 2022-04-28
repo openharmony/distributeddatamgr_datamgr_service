@@ -59,6 +59,8 @@ private:
 
     bool CheckAccess(const RdbSyncerParam& param);
 
+    RdbSyncerParam ToServiceParam(const RdbSyncerParam& param);
+
     bool ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
 
     void SyncerTimeout(std::shared_ptr<RdbSyncer> syncer);
