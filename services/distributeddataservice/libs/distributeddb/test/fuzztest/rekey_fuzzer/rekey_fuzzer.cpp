@@ -27,7 +27,7 @@ namespace OHOS {
         std::vector<Entry> entries;
 
         auto count = static_cast<int>(std::min(size, size_t(1024)));
-        for(int i = 1; i < count; i++) {
+        for (int i = 1; i < count; i++) {
             Entry entry;
             entry.key = std::vector<uint8_t> (data, data + i);
             entry.value = std::vector<uint8_t> (data, data + size);
@@ -39,6 +39,7 @@ namespace OHOS {
     void SingerVerReKey(const uint8_t* data, size_t size)
     {
         CipherPassword passwd;
+        // div 2 -> half
         passwd.SetValue(data, (size / 2));
 
         KvStoreNbDelegate::Option nbOption = {true, false, true, CipherType::DEFAULT, passwd};
@@ -62,6 +63,7 @@ namespace OHOS {
     void MultiVerVerReKey(const uint8_t* data, size_t size)
     {
         CipherPassword passwd;
+        // div 2 -> half
         passwd.SetValue(data, (size / 2));
 
         KvStoreNbDelegate::Option nbOption = {true, false, true, CipherType::DEFAULT, passwd};

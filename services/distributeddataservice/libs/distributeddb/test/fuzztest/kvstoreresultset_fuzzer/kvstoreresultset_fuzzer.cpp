@@ -24,8 +24,6 @@ using namespace std;
 
 namespace OHOS {
     static auto g_kvManager = KvStoreDelegateManager("APP_ID", "USER_ID");
-
-
     void ResultSetFuzzer(const uint8_t* data, size_t size)
     {
         KvStoreNbDelegate::Option option = {true, false, true};
@@ -62,6 +60,9 @@ namespace OHOS {
             readResultSet->MoveToFirst();
             readResultSet->MoveToLast();
 
+            if (size == 0) {
+                return;
+            }
             auto pos = U32_AT(data) % size;
             readResultSet->MoveToPosition(pos++);
             readResultSet->Move(0 - pos);
@@ -74,7 +75,6 @@ namespace OHOS {
 
         g_kvManager.CloseKvStore(kvNbDelegatePtr);
         g_kvManager.DeleteKvStore("distributed_nb_delegate_result_set_test");
-
     }
 }
 
