@@ -16,50 +16,50 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ##############################fuzztest##########################################
-  ohos_fuzztest("KvStoreResultSetFuzzTest") {
+ohos_fuzztest("KvStoreResultSetFuzzTest") {
   module_out_path = "distributeddatamgr/distributeddb"
 
   include_dirs = [
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/common",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/common",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/syncer",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/storage",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/include",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/interfaces/include",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/interfaces/src",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/storage/include",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/storage/src",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/storage/src/sqlite",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/storage/src/multiver",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/include",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/communicator/include",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/communicator/src",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/syncer/include",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/syncer/src",
-  "//utils/native/base/include",
-  "//third_party/sqlite/include",
-  "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/include/relational",
-  "//third_party/jsoncpp/include/json",
-  "//third_party/skia/third_party/externals/spirv-headers/tools/buildHeaders/jsoncpp/dist/json",
-  "//third_party/skia/third_party/externals/swiftshader/third_party/SPIRV-Headers/tools/buildHeaders/jsoncpp/dist/json",
-  "//third_party/jsoncpp/include/json",
-  "//third_party/grpc/src/core/lib/json",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/common",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/common",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/syncer",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/storage",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/interfaces/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/interfaces/src",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/storage/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/storage/src",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/storage/src/sqlite",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/storage/src/multiver",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/communicator/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/communicator/src",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/syncer/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/syncer/src",
+    "//utils/native/base/include",
+    "//third_party/sqlite/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/include/relational",
+    "//third_party/jsoncpp/include/json",
+    "//third_party/skia/third_party/externals/spirv-headers/tools/buildHeaders/jsoncpp/dist/json",
+    "//third_party/skia/third_party/externals/swiftshader/third_party/SPIRV-Headers/tools/buildHeaders/jsoncpp/dist/json",
+    "//third_party/jsoncpp/include/json",
+    "//third_party/grpc/src/core/lib/json",
   ]
 
   cflags = [
-        "-g",
-        "-O0",
-        "-Wno-unused-variable",
-        "-fno-omit-frame-pointer",
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
   ]
 
   sources = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/db_common.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/log_print.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/platform_specific.cpp",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/common/distributeddb_data_generate_unit_test.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/common/distributeddb_tools_test.cpp",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/common/distributeddb_data_generate_unit_test.cpp",
     "kvstoreresultset_fuzzer.cpp",
   ]
 
@@ -82,13 +82,13 @@ import("//build/test.gni")
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//third_party/jsoncpp:jsoncpp",
-    "//utils/native/base:utils",
     "//third_party/openssl:libcrypto_shared",
+    "//utils/native/base:utils",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-
 }
+
 ###############################################################################
 
 group("fuzztest") {
@@ -99,4 +99,3 @@ group("fuzztest") {
     ":KvStoreResultSetFuzzTest",
   ]
 }
-
