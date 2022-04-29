@@ -53,6 +53,8 @@ ohos_fuzztest("QueryFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
+  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/query_fuzzer"
+
   sources = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/db_common.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/json_object.cpp",

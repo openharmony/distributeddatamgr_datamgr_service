@@ -54,6 +54,8 @@ ohos_fuzztest("KvStoreDelegateCurdFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
+  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/kvstoredelegate_curd_fuzzer"
+
   sources = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/db_common.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/log_print.cpp",
