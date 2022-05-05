@@ -19,7 +19,7 @@ declare_args() {
   }
 
   if (!defined(global_parts_info) ||
-      defined(global_parts_info.account_os_account_standard)) {
+      defined(global_parts_info.account_os_account)) {
     os_account_part_is_enabled = true
   } else {
     os_account_part_is_enabled = false

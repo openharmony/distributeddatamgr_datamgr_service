@@ -55,8 +55,8 @@ ohos_static_library("distributeddata_account_static") {
     sources += [ "src/account_delegate_normal_impl.cpp" ]
     cflags_cc += [ "-DOS_ACCOUNT_PART_IS_ENABLED" ]
     external_deps += [
-      "os_account_standard:libaccountkits",
-      "os_account_standard:os_account_innerkits",
+      "os_account:libaccountkits",
+      "os_account:os_account_innerkits",
     ]
   } else {
     sources += [ "src/account_delegate_default_impl.cpp" ]
