@@ -18,7 +18,7 @@
 #include "dds_trace.h"
 #include <atomic>
 #include <cinttypes>
-#include "bytrace.h"
+#include "hitrace_meter.h"
 #include "log_print.h"
 #include "time_utils.h"
 #include "reporter.h"

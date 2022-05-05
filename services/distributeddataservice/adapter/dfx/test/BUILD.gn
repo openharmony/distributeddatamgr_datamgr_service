@@ -40,8 +40,8 @@ ohos_unittest("DistributeddataDfxMSTTest") {
   configs = [ ":module_dfx_mst_config" ]
 
   external_deps = [
-    "bytrace_standard:bytrace_core",
     "hisysevent_native:libhisysevent",
+    "hitrace_native:hitrace_meter",
     "hiviewdfx_hilog_native:libhilog",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
@@ -97,8 +97,8 @@ ohos_unittest("DistributeddataDfxUTTest") {
   configs = [ ":module_dfx_config" ]
 
   external_deps = [
-    "bytrace_standard:bytrace_core",
     "hisysevent_native:libhisysevent",
+    "hitrace_native:hitrace_meter",
     "hiviewdfx_hilog_native:libhilog",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]

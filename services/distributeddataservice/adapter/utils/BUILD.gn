@@ -39,8 +39,7 @@ ohos_static_library("distributeddata_utils_static") {
     "ability_base:want",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
-    "bytrace_standard:bytrace_core",
-    "bytrace_standard:bytrace_core",
+    "hitrace_native:hitrace_meter",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]

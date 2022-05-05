@@ -36,7 +36,7 @@ ohos_static_library("distributeddata_autils_static") {
   deps = [ "//utils/native/base:utils" ]
 
   external_deps = [
-    "bytrace_standard:bytrace_core",
+    "hitrace_native:hitrace_meter",
     "hiviewdfx_hilog_native:libhilog",
   ]
   subsystem_name = "distributeddatamgr"
