@@ -17,11 +17,13 @@
 #include "media_lib_checker.h"
 #include <memory>
 #include "accesstoken_kit.h"
+#include "bundlemgr/bundle_mgr_client.h"
 #include "hap_token_info.h"
 #include "log/log_print.h"
 #include "utils/crypto.h"
 namespace OHOS {
 namespace DistributedData {
+using namespace AppExecFwk;
 using namespace Security::AccessToken;
 MediaLibChecker MediaLibChecker::instance_;
 MediaLibChecker::MediaLibChecker() noexcept
@@ -47,15 +49,18 @@ std::string MediaLibChecker::GetAppId(const CheckerManager::StoreInfo &info)
     if (!IsValid(info)) {
         return "";
     }
-
-    HapTokenInfo hapTokenInfo;
-    auto success = AccessTokenKit::GetHapTokenInfo(info.tokenId, hapTokenInfo);
-    if (success != RET_SUCCESS || info.bundleName != hapTokenInfo.bundleName) {
+    BundleMgrClient bmsClient;
+    std::string orionBundle;
+    (void)bmsClient.GetBundleNameForUid(info.uid, orionBundle);
+    auto bundleInfo = std::make_unique<BundleInfo>();
+    auto success =
+        bmsClient.GetBundleInfo(info.bundleName, BundleFlag::GET_BUNDLE_DEFAULT, *bundleInfo, Constants::ANY_USERID);
+    if (!success) {
         return "";
     }
-    ZLOGD("bundleName:%{public}s, uid:%{public}d, token:%{public}u, appId:%{public}s",
-        info.bundleName.c_str(), info.uid, info.tokenId, hapTokenInfo.appID.c_str());
-    return Crypto::Sha256(hapTokenInfo.appID);
+    ZLOGD("orion: %{public}s, uid: %{public}d, bundle: %{public}s appId: %{public}s", orionBundle.c_str(), info.uid,
+        info.bundleName.c_str(), bundleInfo->appId.c_str());
+    return Crypto::Sha256(bundleInfo->appId);
 }
 
 bool MediaLibChecker::IsValid(const CheckerManager::StoreInfo &info)
