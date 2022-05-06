@@ -18,6 +18,7 @@ group("build_native_test") {
     "frameworks/innerkitsimpl/distributeddatafwk/test:unittest",
     "services/distributeddataservice/adapter/test:unittest",
     "services/distributeddataservice/app/test:unittest",
+    "services/distributeddataservice/framework/test:unittest",
     "services/distributeddataservice/libs/distributeddb/test:unittest",
     "services/distributeddataservice/test:moduletest",
   ]

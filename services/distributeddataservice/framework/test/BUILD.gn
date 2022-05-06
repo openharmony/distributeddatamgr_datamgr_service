@@ -21,6 +21,7 @@ config("module_private_config") {
 
   include_dirs = [
     "../include/",
+    "../../service/",
   ]
 }
 
@@ -30,13 +31,19 @@ ohos_unittest("CheckerManagerTest") {
     "../checker/checker_manager.cpp",
     "../checker/default/bundle_checker.cpp",
     "../checker/default/system_checker.cpp",
+    "../utils/crypto.cpp",
     "checker_manager_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "ability_base:base",
+    "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
@@ -44,18 +51,30 @@ ohos_unittest("CheckerManagerTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_shared",
     "//utils/native/base:utils",
   ]
 }
 
 ohos_unittest("EventCenterTest") {
   module_out_path = module_output_path
-  sources = [ "event_center_test.cpp" ]
+  sources = [
+    "../eventcenter/event.cpp",
+    "../eventcenter/event_center.cpp",
+    "event_center_test.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
@@ -71,11 +90,20 @@ ohos_unittest("EventCenterTest") {
 ohos_unittest("SerializableTest") {
   module_out_path = module_output_path
 
-  sources = [ "serializable_test.cpp" ]
+  sources = [
+    "../serializable/serializable.cpp",
+    "serializable_test.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
@@ -84,6 +112,7 @@ ohos_unittest("SerializableTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_shared",
     "//utils/native/base:utils",
   ]
 }

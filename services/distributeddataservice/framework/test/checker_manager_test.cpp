@@ -14,9 +14,11 @@
 */
 
 #include "checker/checker_manager.h"
-#include "utils/crypto.h"
-#include "nativetoken_kit.h"
 #include "accesstoken_kit.h"
+#include "bootstrap/include/bootstrap.h"
+#include "hap_token_info.h"
+#include "nativetoken_kit.h"
+#include "utils/crypto.h"
 #include <gtest/gtest.h>
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -25,9 +27,17 @@ class CheckerManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void) {}
     static void TearDownTestCase(void) {}
-    void SetUp() {}
+    void SetUp();
     void TearDown() {}
 };
+
+void CheckerManagerTest::SetUp(void)
+{
+    Bootstrap::GetInstance().LoadComponents();
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    Bootstrap::GetInstance().LoadNetworks();
+}
 /**
 * @tc.name: checkers
 * @tc.desc: checker the bundle name of the system abilities.
@@ -105,10 +115,40 @@ HWTEST_F(CheckerManagerTest, SystemCheckerIVI, TestSize.Level0)
 */
 HWTEST_F(CheckerManagerTest, BundleChecker, TestSize.Level0)
 {
-    CheckerManager::StoreInfo info;
-    info.uid = 2000000;
-    info.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
-    info.bundleName = "ohos.test.demo";
-    ASSERT_EQ(Crypto::Sha256("ohos.test.demo"), CheckerManager::GetInstance().GetAppId(info));
-    ASSERT_TRUE(CheckerManager::GetInstance().IsValid(info));
+    HapInfoParams info = {
+        .userID = 100,
+        .bundleName = "ohos.test.demo",
+        .instIndex = 0,
+        .appIDDesc = "ohos.test.demo"
+    };
+    PermissionDef infoManagerTestPermDef = {
+        .permissionName = "ohos.permission.test",
+        .bundleName = "ohos.test.demo",
+        .grantMode = 1,
+        .availableLevel = APL_NORMAL,
+        .label = "label",
+        .labelId = 1,
+        .description = "open the door",
+        .descriptionId = 1
+    };
+    PermissionStateFull infoManagerTestState = {
+        .permissionName = "ohos.permission.test",
+        .isGeneral = true,
+        .resDeviceID = {"local"},
+        .grantStatus = {PermissionState::PERMISSION_GRANTED},
+        .grantFlags = {1}
+    };
+    HapPolicyParams policy = {
+        .apl = APL_NORMAL,
+        .domain = "test.domain",
+        .permList = {infoManagerTestPermDef},
+        .permStateList = {infoManagerTestState}
+    };
+    AccessTokenKit::AllocHapToken(info, policy);
+    CheckerManager::StoreInfo storeInfo;
+    storeInfo.uid = 2000000;
+    storeInfo.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    storeInfo.bundleName = "ohos.test.demo";
+    ASSERT_EQ(Crypto::Sha256("ohos.test.demo"), CheckerManager::GetInstance().GetAppId(storeInfo));
+    ASSERT_TRUE(CheckerManager::GetInstance().IsValid(storeInfo));
 }
