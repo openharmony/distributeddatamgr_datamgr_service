@@ -51,8 +51,8 @@ public:
     // Get the protocol version of remote target. Return -E_NOT_FOUND if no record.
     int GetRemoteCommunicatorVersion(const std::string &target, uint16_t &outVersion) const override;
 
-    int SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config) override;
-    int SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config,
+    int SendMessage(const std::string &dstTarget, const Message *inMsg, const SendConfig &config) override;
+    int SendMessage(const std::string &dstTarget, const Message *inMsg, const SendConfig &config,
         const OnSendEnd &onEnd) override;
 
     // Call by CommunicatorAggregator directly

@@ -30,7 +30,7 @@ SyncAbleEngine::~SyncAbleEngine()
 {}
 
 // Start a sync action.
-int SyncAbleEngine::Sync(const ISyncer::SyncParma &parm)
+int SyncAbleEngine::Sync(const ISyncer::SyncParma &parm, uint64_t connectionId)
 {
     if (!started_) {
         StartSyncer();
@@ -38,7 +38,7 @@ int SyncAbleEngine::Sync(const ISyncer::SyncParma &parm)
             return -E_NOT_INIT;
         }
     }
-    return syncer_.Sync(parm);
+    return syncer_.Sync(parm, connectionId);
 }
 
 void SyncAbleEngine::WakeUpSyncer()
@@ -67,14 +67,6 @@ int SyncAbleEngine::EnableManualSync(void)
 int SyncAbleEngine::DisableManualSync(void)
 {
     return syncer_.DisableManualSync();
-}
-
-// Stop a sync action in progress.
-void SyncAbleEngine::StopSync(int syncId)
-{
-    if (started_) {
-        syncer_.RemoveSyncOperation(syncId);
-    }
 }
 
 // Get The current virtual timestamp
@@ -140,5 +132,12 @@ int SyncAbleEngine::GetLocalIdentity(std::string &outTarget)
         StartSyncer();
     }
     return syncer_.GetLocalIdentity(outTarget);
+}
+
+void SyncAbleEngine::StopSync(uint64_t connectionId)
+{
+    if (started_) {
+        syncer_.StopSync(connectionId);
+    }
 }
 }

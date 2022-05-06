@@ -25,7 +25,7 @@ public:
     int Initialize(ISyncInterface *syncInterface, bool isNeedActive) override;
 
     // Sync function. use SyncParma to reduce parameter.
-    int Sync(const SyncParma &param) override;
+    int Sync(const SyncParma &param, uint64_t connectionId) override;
 
     void EnableAutoSync(bool enable) override;
 
@@ -33,7 +33,7 @@ public:
 
 protected:
 
-    int PrepareSync(const SyncParma &param, uint32_t syncId) override;
+    int PrepareSync(const SyncParma &param, uint32_t syncId, uint64_t connectionId) override;
 
     int SyncConditionCheck(QuerySyncObject &query, int mode, bool isQuerySync,
         const std::vector<std::string> &devices) const override;
@@ -41,7 +41,7 @@ protected:
 private:
 
     int GenerateEachSyncTask(const SyncParma &param, uint32_t syncId,
-        const std::vector<QuerySyncObject> &tablesQuery, std::set<uint32_t> &subSyncIdSet);
+        const std::vector<QuerySyncObject> &tablesQuery, uint64_t connectionId, std::set<uint32_t> &subSyncIdSet);
 
     void DoRollBack(std::set<uint32_t> &subSyncIdSet);
 

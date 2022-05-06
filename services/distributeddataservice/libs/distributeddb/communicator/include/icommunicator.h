@@ -22,6 +22,7 @@
 #include "ref_object.h"
 #include "communicator_type_define.h"
 #include "iprocess_communicator.h"
+#include "db_properties.h"
 
 namespace DistributedDB {
 // inMsg is heap memory, its ownership transfers by calling OnMessageCallback
@@ -34,6 +35,19 @@ struct SendConfig {
     uint32_t timeout = SEND_TIME_OUT;
     ExtendInfo paramInfo;
 };
+
+inline void SetSendConfigParam(const DBProperties &dbProperty, const std::string &dstTarget, bool nonBlock,
+    uint32_t timeout, SendConfig &sendConf)
+{
+    sendConf.nonBlock = nonBlock;
+    sendConf.timeout = timeout;
+    sendConf.isNeedExtendHead = dbProperty.GetBoolProp(DBProperties::SYNC_DUAL_TUPLE_MODE,
+        false);
+    sendConf.paramInfo.appId = dbProperty.GetStringProp(DBProperties::APP_ID, "");
+    sendConf.paramInfo.userId = dbProperty.GetStringProp(DBProperties::USER_ID, "");
+    sendConf.paramInfo.storeId = dbProperty.GetStringProp(DBProperties::STORE_ID, "");
+    sendConf.paramInfo.dstTarget = dstTarget;
+}
 
 class ICommunicator : public virtual RefObject {
 public:
@@ -65,8 +79,8 @@ public:
     // If send fail in SendMessage, nonBlock true will return, nonBlock false will block and retry
     // timeout is ignore if nonBlock true. OnSendEnd won't always be called such as when in finalize stage.
     // Return 0 as success. Return negative as error
-    virtual int SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config) = 0;
-    virtual int SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config,
+    virtual int SendMessage(const std::string &dstTarget, const Message *inMsg, const SendConfig &config) = 0;
+    virtual int SendMessage(const std::string &dstTarget, const Message *inMsg, const SendConfig &config,
         const OnSendEnd &onEnd) = 0; // HW Code Regulation do not allow to use default parameters on virtual function
 
     virtual ~ICommunicator() {};

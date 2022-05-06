@@ -82,13 +82,14 @@ int VirtualTimeSyncCommunicator::GetLocalIdentity(std::string &outTarget) const
     return 0;
 }
 
-int VirtualTimeSyncCommunicator::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config)
+int VirtualTimeSyncCommunicator::SendMessage(const std::string &dstTarget, const Message *inMsg,
+    const SendConfig &config)
 {
     return SendMessage(dstTarget, inMsg, config, nullptr);
 }
 
 int VirtualTimeSyncCommunicator::SendMessage(const std::string &dstTarget, const Message *inMsg,
-    SendConfig &config, const OnSendEnd &onEnd)
+    const SendConfig &config, const OnSendEnd &onEnd)
 {
     if (!isEnable_) {
         LOGD("[VirtualTimeSyncCommunicator]the VirtualTimeSyncCommunicator disabled!");

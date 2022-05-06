@@ -19,10 +19,11 @@
 #include <string>
 #include <functional>
 
-#include "store_types.h"
 #include "db_types.h"
+#include "iconnection.h"
 #include "macro_utils.h"
 #include "query.h"
+#include "store_types.h"
 
 namespace DistributedDB {
 class IKvDB;
@@ -34,7 +35,7 @@ class IKvDBResultSet;
 using KvDBObserverAction = std::function<void(const KvDBCommitNotifyData &data)>;
 using KvDBConflictAction = std::function<void(const KvDBCommitNotifyData &data)>;
 
-class IKvDBConnection {
+class IKvDBConnection : public IConnection {
 public:
     IKvDBConnection() = default;
     virtual ~IKvDBConnection() {};

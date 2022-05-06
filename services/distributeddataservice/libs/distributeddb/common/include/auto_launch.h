@@ -133,7 +133,7 @@ protected:
 
     void UpdateGlobalMap(std::map<std::string, std::map<std::string, AutoLaunchItem>> &doOpenMap);
 
-    void ReceiveUnknownIdentifierCallBackTask(const std::string &identifier, const std::string userId);
+    void ReceiveUnknownIdentifierCallBackTask(const std::string &identifier, const std::string &userId);
 
     void ConnectionLifeCycleCallback(const std::string &identifier, const std::string &userId);
 
@@ -143,7 +143,7 @@ protected:
 
     int AutoLaunchExt(const std::string &identifier, const std::string &userId);
 
-    void AutoLaunchExtTask(const std::string identifier, const std::string userId, AutoLaunchItem autoLaunchItem);
+    void AutoLaunchExtTask(const std::string &identifier, const std::string &userId, AutoLaunchItem &autoLaunchItem);
 
     void ExtObserverFunc(const KvDBCommitNotifyData &notifyData, const std::string &identifier,
         const std::string &userId);

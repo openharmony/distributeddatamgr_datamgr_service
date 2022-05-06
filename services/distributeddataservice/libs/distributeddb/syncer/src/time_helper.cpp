@@ -118,13 +118,6 @@ int TimeHelper::SaveLocalTimeOffset(TimeOffset offset)
 
 void TimeHelper::SetSendConfig(const std::string &dstTarget, bool nonBlock, uint32_t timeout, SendConfig &sendConf)
 {
-    sendConf.nonBlock = nonBlock;
-    sendConf.timeout = timeout;
-    sendConf.isNeedExtendHead = storage_->GetDbProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE,
-        false);
-    sendConf.paramInfo.appId = storage_->GetDbProperties().GetStringProp(KvDBProperties::APP_ID, "");
-    sendConf.paramInfo.userId = storage_->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
-    sendConf.paramInfo.storeId = storage_->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
-    sendConf.paramInfo.dstTarget = dstTarget;
+    SetSendConfigParam(storage_->GetDbProperties(), dstTarget, false, SEND_TIME_OUT, sendConf);
 }
 } // namespace DistributedDB

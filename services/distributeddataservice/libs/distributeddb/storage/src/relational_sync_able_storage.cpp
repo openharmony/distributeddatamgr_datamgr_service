@@ -255,7 +255,7 @@ static size_t GetDataItemSerialSize(const DataItem &item, size_t appendLen)
 }
 
 static bool CanHoldDeletedData(const std::vector<DataItem> &dataItems, const DataSizeSpecInfo &dataSizeInfo,
-     size_t appendLen)
+    size_t appendLen)
 {
     bool reachThreshold = (dataItems.size() >= dataSizeInfo.packetSize);
     for (size_t i = 0, blockSize = 0; !reachThreshold && i < dataItems.size(); i++) {

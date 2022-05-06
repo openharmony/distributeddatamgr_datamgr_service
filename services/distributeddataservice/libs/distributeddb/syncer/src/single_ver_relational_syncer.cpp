@@ -30,7 +30,7 @@ int SingleVerRelationalSyncer::Initialize(ISyncInterface *syncInterface, bool is
         RegisterSchemaChangedCallback(callback);
 }
 
-int SingleVerRelationalSyncer::Sync(const SyncParma &param)
+int SingleVerRelationalSyncer::Sync(const SyncParma &param, uint64_t connectionId)
 {
     if (param.mode == SYNC_MODE_PUSH_PULL) {
         return -E_NOT_SUPPORT;
@@ -38,10 +38,10 @@ int SingleVerRelationalSyncer::Sync(const SyncParma &param)
     if (param.syncQuery.GetRelationTableName().empty()) {
         return -E_NOT_SUPPORT;
     }
-    return GenericSyncer::Sync(param);
+    return GenericSyncer::Sync(param, connectionId);
 }
 
-int SingleVerRelationalSyncer::PrepareSync(const SyncParma &param, uint32_t syncId)
+int SingleVerRelationalSyncer::PrepareSync(const SyncParma &param, uint32_t syncId, uint64_t connectionId)
 {
     const auto &syncInterface = static_cast<RelationalDBSyncInterface *>(syncInterface_);
     std::vector<QuerySyncObject> tablesQuery;
@@ -51,7 +51,7 @@ int SingleVerRelationalSyncer::PrepareSync(const SyncParma &param, uint32_t sync
         tablesQuery = syncInterface->GetTablesQuery();
     }
     std::set<uint32_t> subSyncIdSet;
-    int errCode = GenerateEachSyncTask(param, syncId, tablesQuery, subSyncIdSet);
+    int errCode = GenerateEachSyncTask(param, syncId, tablesQuery, connectionId, subSyncIdSet);
     if (errCode != E_OK) {
         DoRollBack(subSyncIdSet);
         return errCode;
@@ -63,7 +63,7 @@ int SingleVerRelationalSyncer::PrepareSync(const SyncParma &param, uint32_t sync
 }
 
 int SingleVerRelationalSyncer::GenerateEachSyncTask(const SyncParma &param, uint32_t syncId,
-    const std::vector<QuerySyncObject> &tablesQuery, std::set<uint32_t> &subSyncIdSet)
+    const std::vector<QuerySyncObject> &tablesQuery, uint64_t connectionId, std::set<uint32_t> &subSyncIdSet)
 {
     SyncParma subParam = param;
     subParam.isQuerySync = true;
@@ -80,7 +80,7 @@ int SingleVerRelationalSyncer::GenerateEachSyncTask(const SyncParma &param, uint
             std::lock_guard<std::mutex> lockGuard(syncMapLock_);
             fullSyncIdMap_[syncId].insert(subSyncId);
         }
-        errCode = GenericSyncer::PrepareSync(subParam, subSyncId);
+        errCode = GenericSyncer::PrepareSync(subParam, subSyncId, connectionId);
         if (errCode != E_OK) {
             LOGW("[SingleVerRelationalSyncer] PrepareSync failed errCode:%d", errCode);
             std::lock_guard<std::mutex> lockGuard(syncMapLock_);

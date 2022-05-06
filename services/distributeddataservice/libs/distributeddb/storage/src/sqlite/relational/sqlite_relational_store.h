@@ -41,7 +41,7 @@ public:
     SQLiteSingleVerRelationalStorageExecutor *GetHandle(bool isWrite, int &errCode) const;
     void ReleaseHandle(SQLiteSingleVerRelationalStorageExecutor *&handle) const;
 
-    int Sync(const ISyncer::SyncParma &syncParam);
+    int Sync(const ISyncer::SyncParma &syncParam, uint64_t connectionId);
 
     void ReleaseDBConnection(RelationalStoreConnection *connection);
 
@@ -63,6 +63,8 @@ public:
     std::string GetStorePath() const override;
 
     RelationalDBProperties GetProperties() const override;
+
+    void StopSync(uint64_t connectionId);
 
 private:
     void ReleaseResources();

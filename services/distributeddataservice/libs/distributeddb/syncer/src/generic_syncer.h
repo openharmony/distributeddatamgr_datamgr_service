@@ -51,12 +51,14 @@ public:
         const std::function<void(void)> &onFinalize, bool wait) override;
 
     // Sync function. use SyncParma to reduce parameter.
-    int Sync(const SyncParma &param) override;
+    int Sync(const SyncParma &param);
+
+    int Sync(const SyncParma &param, uint64_t connectionId) override;
 
     // Remove the operation, with the given syncId, used to clean resource if sync finished or failed.
     int RemoveSyncOperation(int syncId) override;
 
-    int StopSync() override;
+    int StopSync(uint64_t connectionId) override;
 
     // Get The current virtual timestamp
     uint64_t GetTimestamp() override;
@@ -103,7 +105,7 @@ protected:
     // Create a sync engine, if has memory error, will return nullptr.
     virtual ISyncEngine *CreateSyncEngine() = 0;
 
-    virtual int PrepareSync(const SyncParma &param, uint32_t syncId);
+    virtual int PrepareSync(const SyncParma &param, uint32_t syncId, uint64_t connectionId);
 
     // Add a Sync Operation, after call this function, the operation will be start
     virtual void AddSyncOperation(SyncOperation *operation);
@@ -178,7 +180,8 @@ protected:
     static int currentSyncId_;
     static std::mutex syncIdLock_;
     // For sync in progress.
-    std::list<int> syncIdList_;
+    std::map<uint64_t, std::list<int>> connectionIdMap_;
+    std::map<int, uint64_t> syncIdMap_;
 
     ISyncEngine *syncEngine_;
     ISyncInterface *syncInterface_;

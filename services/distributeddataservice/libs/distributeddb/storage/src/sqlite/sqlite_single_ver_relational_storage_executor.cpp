@@ -1071,15 +1071,13 @@ int SQLiteSingleVerRelationalStorageExecutor::GetSyncDataByQuery(std::vector<Dat
         } else {
             errCode = GetMissQueryDataAndStepNext(fullStmt, item, missQueryTime);
         }
-        if (errCode != E_OK) {
-            break;
+
+        if (errCode == E_OK && !isFirstTime) {
+            errCode = AppendData(sizeInfo, appendLength, overLongSize, dataTotalSize, dataItems, std::move(item));
         }
 
-        if (!isFirstTime) {
-            errCode = AppendData(sizeInfo, appendLength, overLongSize, dataTotalSize, dataItems, std::move(item));
-            if (errCode != E_OK) {
-                break;
-            }
+        if (errCode != E_OK) {
+            break;
         }
 
         isFirstTime = false;

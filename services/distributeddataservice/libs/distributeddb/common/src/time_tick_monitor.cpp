@@ -123,7 +123,13 @@ int TimeTickMonitor::TimeTick(TimerId timerId)
     int64_t changedOffset = systemOffset - monotonicOffset;
     if (std::abs(changedOffset) > MAX_NOISE) {
         LOGI("Local system time may be changed! changedOffset %ld", changedOffset);
-        timeChangedNotifier_->NotifyEvent(TIME_CHANGE_EVENT, &changedOffset);
+        int ret = RuntimeContext::GetInstance()->ScheduleTask([this, changedOffset](){
+            int64_t offset = changedOffset;
+            timeChangedNotifier_->NotifyEvent(TIME_CHANGE_EVENT, &offset);
+        });
+        if (ret != E_OK) {
+            LOGE("TimeTickMonitor ScheduleTask failed %d", ret);
+        }
     }
     return E_OK;
 }

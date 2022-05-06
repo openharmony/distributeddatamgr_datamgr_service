@@ -78,7 +78,7 @@ void SyncAbleKvDB::Close()
 }
 
 // Start a sync action.
-int SyncAbleKvDB::Sync(const ISyncer::SyncParma &parma)
+int SyncAbleKvDB::Sync(const ISyncer::SyncParma &parma, uint64_t connectionId)
 {
     if (!started_) {
         int errCode = StartSyncer();
@@ -86,7 +86,7 @@ int SyncAbleKvDB::Sync(const ISyncer::SyncParma &parma)
             return errCode;
         }
     }
-    return syncer_.Sync(parma);
+    return syncer_.Sync(parma, connectionId);
 }
 
 void SyncAbleKvDB::EnableAutoSync(bool enable)
@@ -103,10 +103,10 @@ void SyncAbleKvDB::WakeUpSyncer()
 }
 
 // Stop a sync action in progress.
-void SyncAbleKvDB::StopSync()
+void SyncAbleKvDB::StopSync(uint64_t connectionId)
 {
     if (started_) {
-        syncer_.StopSync();
+        syncer_.StopSync(connectionId);
     }
 }
 

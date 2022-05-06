@@ -675,7 +675,7 @@ void AutoLaunch::UpdateGlobalMap(std::map<std::string, std::map<std::string, Aut
     LOGI("[AutoLaunch] UpdateGlobalMap finish notify_all");
 }
 
-void AutoLaunch::ReceiveUnknownIdentifierCallBackTask(const std::string &identifier, const std::string userId)
+void AutoLaunch::ReceiveUnknownIdentifierCallBackTask(const std::string &identifier, const std::string &userId)
 {
     LOGI("[AutoLaunch] ReceiveUnknownIdentifierCallBackTask identifier=%.6s", STR_TO_HEX(identifier));
     AutoLaunchItem autoLaunchItem;
@@ -812,8 +812,8 @@ int AutoLaunch::AutoLaunchExt(const std::string &identifier, const std::string &
     return errCode;
 }
 
-void AutoLaunch::AutoLaunchExtTask(const std::string identifier, const std::string userId,
-    AutoLaunchItem autoLaunchItem)
+void AutoLaunch::AutoLaunchExtTask(const std::string &identifier, const std::string &userId,
+    AutoLaunchItem &autoLaunchItem)
 {
     {
         std::lock_guard<std::mutex> autoLock(extLock_);

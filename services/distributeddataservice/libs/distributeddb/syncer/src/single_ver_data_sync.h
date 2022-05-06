@@ -243,8 +243,6 @@ protected:
     int SendControlAck(SingleVerSyncTaskContext *context, const Message *message, int32_t recvCode,
         uint32_t controlCmdType, const CommErrHandler &handler = nullptr);
 
-    void SetSendConfig(const std::string &dstTarget, bool nonBlock, uint32_t timeout, SendConfig &sendConf);
-
     uint32_t mtuSize_;
     SyncGenericInterface* storage_;
     ICommunicator* communicateHandle_;

@@ -185,6 +185,11 @@ int GenericSyncer::Sync(const InternalSyncParma &param)
 
 int GenericSyncer::Sync(const SyncParma &param)
 {
+    return Sync(param, DBConstant::IGNORE_CONNECTION_ID);
+}
+
+int GenericSyncer::Sync(const SyncParma &param, uint64_t connectionId)
+{
     int errCode = SyncParamCheck(param);
     if (errCode != E_OK) {
         return errCode;
@@ -195,7 +200,7 @@ int GenericSyncer::Sync(const SyncParma &param)
     }
 
     uint32_t syncId = GenerateSyncId();
-    errCode = PrepareSync(param, syncId);
+    errCode = PrepareSync(param, syncId, connectionId);
     if (errCode != E_OK) {
         LOGE("[Syncer] PrepareSync failed when sync called, err %d", errCode);
         return errCode;
@@ -204,7 +209,7 @@ int GenericSyncer::Sync(const SyncParma &param)
     return E_OK;
 }
 
-int GenericSyncer::PrepareSync(const SyncParma &param, uint32_t syncId)
+int GenericSyncer::PrepareSync(const SyncParma &param, uint32_t syncId, uint64_t connectionId)
 {
     auto *operation =
         new (std::nothrow) SyncOperation(syncId, param.devices, param.mode, param.onComplete, param.wait);
@@ -217,14 +222,15 @@ int GenericSyncer::PrepareSync(const SyncParma &param, uint32_t syncId)
         std::lock_guard<std::mutex> autoLock(syncerLock_);
         PerformanceAnalysis::GetInstance()->StepTimeRecordStart(PT_TEST_RECORDS::RECORD_SYNC_TOTAL);
         InitSyncOperation(operation, param);
-        LOGI("[Syncer] GenerateSyncId %d, mode = %d, wait = %d , label = %s, devices = %s", syncId, param.mode,
-             param.wait, label_.c_str(), GetSyncDevicesStr(param.devices).c_str());
+        LOGI("[Syncer] GenerateSyncId %" PRIu32 ", mode = %d, wait = %d, label = %s, devices = %s", syncId, param.mode,
+            param.wait, label_.c_str(), GetSyncDevicesStr(param.devices).c_str());
         AddSyncOperation(operation);
         PerformanceAnalysis::GetInstance()->StepTimeRecordEnd(PT_TEST_RECORDS::RECORD_SYNC_TOTAL);
     }
-    if (!param.wait) {
+    if (!param.wait && connectionId != DBConstant::IGNORE_CONNECTION_ID) {
         std::lock_guard<std::mutex> lockGuard(syncIdLock_);
-        syncIdList_.push_back(static_cast<int>(syncId));
+        connectionIdMap_[connectionId].push_back(static_cast<int>(syncId));
+        syncIdMap_[static_cast<int>(syncId)] = connectionId;
     }
     if (operation->CheckIsAllFinished()) {
         operation->Finished();
@@ -253,20 +259,31 @@ int GenericSyncer::RemoveSyncOperation(int syncId)
         RefObject::KillAndDecObjRef(operation);
         operation = nullptr;
         std::lock_guard<std::mutex> lockGuard(syncIdLock_);
-        syncIdList_.remove(syncId);
+        if (syncIdMap_.find(syncId) == syncIdMap_.end()) {
+            return E_OK;
+        }
+        uint64_t connectionId = syncIdMap_[syncId];
+        if (connectionIdMap_.find(connectionId) != connectionIdMap_.end()) {
+            connectionIdMap_[connectionId].remove(syncId);
+        }
+        syncIdMap_.erase(syncId);
         return E_OK;
     }
     return -E_INVALID_ARGS;
 }
 
-int GenericSyncer::StopSync()
+int GenericSyncer::StopSync(uint64_t connectionId)
 {
     std::list<int> syncIdList;
     {
         std::lock_guard<std::mutex> lockGuard(syncIdLock_);
-        syncIdList = syncIdList_;
+        if (connectionIdMap_.find(connectionId) == connectionIdMap_.end()) {
+            return E_OK;
+        }
+        syncIdList = connectionIdMap_[connectionId];
+        connectionIdMap_.erase(connectionId);
     }
-    for (const auto &syncId : syncIdList) {
+    for (auto syncId : syncIdList) {
         RemoveSyncOperation(syncId);
     }
     return E_OK;
@@ -463,6 +480,11 @@ void GenericSyncer::ClearSyncOperations(bool isClosedOperation)
         }
         syncOperationMap_.clear();
     }
+    {
+        std::lock_guard<std::mutex> lock(syncIdLock_);
+        connectionIdMap_.clear();
+        syncIdMap_.clear();
+    }
 }
 
 void GenericSyncer::TriggerSyncFinished(SyncOperation *operation)
@@ -474,10 +496,6 @@ void GenericSyncer::TriggerSyncFinished(SyncOperation *operation)
 
 void GenericSyncer::OnSyncFinished(int syncId)
 {
-    {
-        std::lock_guard<std::mutex> lockGuard(syncIdLock_);
-        syncIdList_.remove(syncId);
-    }
     (void)(RemoveSyncOperation(syncId));
 }
 

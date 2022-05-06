@@ -57,8 +57,8 @@ public:
     // Get local target name for identify self
     int GetLocalIdentity(std::string &outTarget) const override;
 
-    int SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config) override;
-    int SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config,
+    int SendMessage(const std::string &dstTarget, const Message *inMsg, const SendConfig &config) override;
+    int SendMessage(const std::string &dstTarget, const Message *inMsg, const SendConfig &config,
         const OnSendEnd &onEnd) override;
 
     int GetRemoteCommunicatorVersion(const std::string &deviceId, uint16_t &version) const override;

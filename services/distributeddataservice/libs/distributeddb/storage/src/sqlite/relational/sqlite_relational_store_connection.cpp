@@ -19,7 +19,18 @@
 
 namespace DistributedDB {
 SQLiteRelationalStoreConnection::SQLiteRelationalStoreConnection(SQLiteRelationalStore *store)
-    : RelationalStoreConnection(store) {}
+    : RelationalStoreConnection(store)
+{
+    OnKill([this]() {
+        auto *store = GetDB<SQLiteRelationalStore>();
+        if (store == nullptr) {
+            return;
+        }
+        UnlockObj();
+        store->StopSync(GetConnectionId());
+        LockObj();
+    });
+}
 // Close and release the connection.
 int SQLiteRelationalStoreConnection::Close()
 {
@@ -193,8 +204,7 @@ int SQLiteRelationalStoreConnection::SyncToDevice(SyncInfo &info)
         syncParam.relationOnComplete = info.onComplete;
         syncParam.syncQuery = QuerySyncObject(info.query);
         syncParam.onFinalize =  [this]() { DecObjRef(this); };
-
-        int errCode = store->Sync(syncParam);
+        int errCode = store->Sync(syncParam, GetConnectionId());
         if (errCode != E_OK) {
             DecObjRef(this);
             return errCode;

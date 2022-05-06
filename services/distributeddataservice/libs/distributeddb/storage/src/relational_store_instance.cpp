@@ -79,6 +79,7 @@ static IRelationalStore *GetFromCache(const RelationalDBProperties &properties, 
 {
     errCode = E_OK;
     std::string identifier = properties.GetStringProp(RelationalDBProperties::IDENTIFIER_DATA, "");
+    std::lock_guard<std::mutex> lockGuard(storeLock_);
     auto iter = dbs_.find(identifier);
     if (iter == dbs_.end()) {
         errCode = -E_NOT_FOUND;
@@ -98,23 +99,17 @@ static IRelationalStore *GetFromCache(const RelationalDBProperties &properties, 
 // Save to IKvDB to the global map
 void RelationalStoreInstance::RemoveKvDBFromCache(const RelationalDBProperties &properties)
 {
-    std::lock_guard<std::mutex> lockGuard(storeLock_);
     std::string identifier = properties.GetStringProp(RelationalDBProperties::IDENTIFIER_DATA, "");
+    std::lock_guard<std::mutex> lockGuard(storeLock_);
     dbs_.erase(identifier);
 }
 
 void RelationalStoreInstance::SaveRelationalDBToCache(IRelationalStore *store, const RelationalDBProperties &properties)
 {
-    if (store == nullptr) {
-        return;
-    }
-
-    {
-        std::string identifier = properties.GetStringProp(RelationalDBProperties::IDENTIFIER_DATA, "");
-        store->WakeUpSyncer();
-        if (dbs_.count(identifier) == 0) {
-            dbs_.insert(std::pair<std::string, IRelationalStore *>(identifier, store));
-        }
+    std::string identifier = properties.GetStringProp(RelationalDBProperties::IDENTIFIER_DATA, "");
+    std::lock_guard<std::mutex> lockGuard(storeLock_);
+    if (dbs_.count(identifier) == 0) {
+        dbs_.insert(std::pair<std::string, IRelationalStore *>(identifier, store));
     }
 }
 
@@ -138,6 +133,7 @@ IRelationalStore *RelationalStoreInstance::OpenDatabase(const RelationalDBProper
         RefObject::KillAndDecObjRef(db);
         return nullptr;
     }
+    db->WakeUpSyncer();
 
     SaveRelationalDBToCache(db, properties);
     return db;
@@ -145,7 +141,6 @@ IRelationalStore *RelationalStoreInstance::OpenDatabase(const RelationalDBProper
 
 IRelationalStore *RelationalStoreInstance::GetDataBase(const RelationalDBProperties &properties, int &errCode)
 {
-    std::lock_guard<std::mutex> lockGuard(storeLock_);
     auto *db = GetFromCache(properties, errCode);
     if (db != nullptr) {
         LOGD("Get db from cache.");
@@ -172,6 +167,10 @@ RelationalStoreConnection *RelationalStoreInstance::GetDatabaseConnection(const 
     std::string identifier = properties.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
     LOGD("Begin to get [%s] database connection.", STR_MASK(DBCommon::TransferStringToHex(identifier)));
     RelationalStoreInstance *manager = RelationalStoreInstance::GetInstance();
+    if (manager == nullptr) {
+        errCode = -E_OUT_OF_MEMORY;
+        return nullptr;
+    }
     manager->EnterDBOpenCloseProcess(properties.GetStringProp(DBProperties::IDENTIFIER_DATA, ""));
     RelationalStoreConnection *connection = nullptr;
     std::string canonicalDir;

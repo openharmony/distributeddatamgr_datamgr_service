@@ -16,7 +16,6 @@
 #define DATA_TRANSFORMER_H
 #ifdef RELATIONAL_STORE
 
-#include <optional>
 #include <vector>
 #include "data_value.h"
 #include "db_types.h"

@@ -64,12 +64,12 @@ int SyncerProxy::Sync(const std::vector<std::string> &devices, int mode,
     return syncer_->Sync(devices, mode, onComplete, onFinalize, wait);
 }
 
-int SyncerProxy::Sync(const SyncParma &parma)
+int SyncerProxy::Sync(const SyncParma &parma, uint64_t connectionId)
 {
     if (syncer_ == nullptr) {
         return -E_NOT_INIT;
     }
-    return syncer_->Sync(parma);
+    return syncer_->Sync(parma, connectionId);
 }
 
 int SyncerProxy::RemoveSyncOperation(int syncId)
@@ -80,12 +80,12 @@ int SyncerProxy::RemoveSyncOperation(int syncId)
     return syncer_->RemoveSyncOperation(syncId);
 }
 
-int SyncerProxy::StopSync()
+int SyncerProxy::StopSync(uint64_t connectionId)
 {
     if (syncer_ == nullptr) {
         return -E_NOT_INIT;
     }
-    return syncer_->StopSync();
+    return syncer_->StopSync(connectionId);
 }
 
 uint64_t SyncerProxy::GetTimestamp()

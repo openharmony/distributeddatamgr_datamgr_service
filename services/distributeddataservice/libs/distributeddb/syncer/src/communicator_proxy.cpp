@@ -193,12 +193,12 @@ int CommunicatorProxy::GetRemoteCommunicatorVersion(const std::string &target, u
     return -E_NOT_INIT;
 }
 
-int CommunicatorProxy::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config)
+int CommunicatorProxy::SendMessage(const std::string &dstTarget, const Message *inMsg, const SendConfig &config)
 {
     return SendMessage(dstTarget, inMsg, config, nullptr);
 }
 
-int CommunicatorProxy::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config,
+int CommunicatorProxy::SendMessage(const std::string &dstTarget, const Message *inMsg, const SendConfig &config,
     const OnSendEnd &onEnd)
 {
     ICommunicator *targetCommunicator = nullptr;

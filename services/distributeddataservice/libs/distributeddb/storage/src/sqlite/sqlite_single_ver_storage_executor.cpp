@@ -554,13 +554,12 @@ int AppendDataItem(std::vector<DataItem> &dataItems, const DataItem &item, size_
     const DataSizeSpecInfo &dataSizeInfo)
 {
     // If dataTotalSize value is bigger than blockSize value , reserve the surplus data item.
-    dataTotalSize += SQLiteSingleVerStorageExecutor::GetDataItemSerialSize(item, appendLength);
-    if ((dataTotalSize > dataSizeInfo.blockSize && !dataItems.empty()) ||
-        dataItems.size() >= dataSizeInfo.packetSize) {
+    size_t appendSize = dataTotalSize + SQLiteSingleVerStorageExecutor::GetDataItemSerialSize(item, appendLength);
+    if ((appendSize > dataSizeInfo.blockSize && !dataItems.empty()) || dataItems.size() >= dataSizeInfo.packetSize) {
         return -E_UNFINISHED;
-    } else {
-        dataItems.push_back(item);
     }
+    dataItems.push_back(item);
+    dataTotalSize = appendSize;
     return E_OK;
 }
 
@@ -665,20 +664,19 @@ int SQLiteSingleVerStorageExecutor::GetSyncDataWithQuery(sqlite3_stmt *fullStmt,
                 LOGE("Get next changed data failed. %d", errCode);
                 return errCode;
             }
-            if (!isMatchItemFinished && matchItem.key == fullItem.key) {
-                errCode = AppendDataItem(dataItems, matchItem, dataTotalSize, appendLength, dataSizeInfo);
-                if (errCode == -E_UNFINISHED) {
-                    goto END;
-                }
-                break; // step to next match data
-            } else {
-                DBCommon::CalcValueHash(fullItem.key, fullItem.key);
+            bool matchData = true;
+            if (isMatchItemFinished || matchItem.key != fullItem.key) {
+                matchData = false; // got miss query data
+                DBCommon::CalcValueHash(fullItem.key, fullItem.key); // set and send key with hash_key
                 Value().swap(fullItem.value); // not send value when data miss query
-                fullItem.flag |= DataItem::REMOTE_DEVICE_DATA_MISS_QUERY;
-                errCode = AppendDataItem(dataItems, fullItem, dataTotalSize, appendLength, dataSizeInfo);
-                if (errCode == -E_UNFINISHED) {
-                    goto END;
-                }
+                fullItem.flag |= DataItem::REMOTE_DEVICE_DATA_MISS_QUERY; // mark with miss query flag
+            }
+            errCode = AppendDataItem(dataItems, fullItem, dataTotalSize, appendLength, dataSizeInfo);
+            if (errCode == -E_UNFINISHED) {
+                goto END;
+            }
+            if (matchData) {
+                break; // step to next match data
             }
         }
     }

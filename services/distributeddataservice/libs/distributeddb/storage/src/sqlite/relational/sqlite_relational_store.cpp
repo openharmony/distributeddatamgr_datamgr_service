@@ -265,9 +265,9 @@ void SQLiteRelationalStore::ReleaseHandle(SQLiteSingleVerRelationalStorageExecut
     }
 }
 
-int SQLiteRelationalStore::Sync(const ISyncer::SyncParma &syncParam)
+int SQLiteRelationalStore::Sync(const ISyncer::SyncParma &syncParam, uint64_t connectionId)
 {
-    return syncAbleEngine_->Sync(syncParam);
+    return syncAbleEngine_->Sync(syncParam, connectionId);
 }
 
 // Called when a connection released.
@@ -489,6 +489,11 @@ std::string SQLiteRelationalStore::GetStorePath() const
 RelationalDBProperties SQLiteRelationalStore::GetProperties() const
 {
     return properties_;
+}
+
+void SQLiteRelationalStore::StopSync(uint64_t connectionId)
+{
+    return syncAbleEngine_->StopSync(connectionId);
 }
 }
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,7 +49,7 @@ void UserChangeMonitor::Stop()
     if (!isStarted_) {
         return;
     }
-    if (userNotifier_ == nullptr) {
+    if (userNotifier_ != nullptr) {
         userNotifier_->UnRegisterEventType(USER_ACTIVE_EVENT);
         userNotifier_->UnRegisterEventType(USER_NON_ACTIVE_EVENT);
         userNotifier_->UnRegisterEventType(USER_ACTIVE_TO_NON_ACTIVE_EVENT);
@@ -82,30 +82,29 @@ int UserChangeMonitor::PrepareNotifierChain()
     if (userNotifier_ != nullptr) {
         return E_OK;
     }
+    userNotifier_ = new (std::nothrow) NotificationChain();
     if (userNotifier_ == nullptr) {
-        userNotifier_ = new (std::nothrow) NotificationChain();
-        if (userNotifier_ == nullptr) {
-            return -E_OUT_OF_MEMORY;
-        }
-        errCode = userNotifier_->RegisterEventType(USER_ACTIVE_EVENT);
-        if (errCode != E_OK) {
-            RefObject::KillAndDecObjRef(userNotifier_);
-            userNotifier_ = nullptr;
-            return errCode;
-        }
-        errCode = userNotifier_->RegisterEventType(USER_NON_ACTIVE_EVENT);
-        if (errCode != E_OK) {
-            RefObject::KillAndDecObjRef(userNotifier_);
-            userNotifier_ = nullptr;
-            return errCode;
-        }
-        errCode = userNotifier_->RegisterEventType(USER_ACTIVE_TO_NON_ACTIVE_EVENT);
-        if (errCode != E_OK) {
-            RefObject::KillAndDecObjRef(userNotifier_);
-            userNotifier_ = nullptr;
-            return errCode;
-        }
+        return -E_OUT_OF_MEMORY;
     }
+    errCode = userNotifier_->RegisterEventType(USER_ACTIVE_EVENT);
+    if (errCode != E_OK) {
+        goto ERROR_HANDLE;
+    }
+    errCode = userNotifier_->RegisterEventType(USER_NON_ACTIVE_EVENT);
+    if (errCode != E_OK) {
+        userNotifier_->UnRegisterEventType(USER_ACTIVE_EVENT);
+        goto ERROR_HANDLE;
+    }
+    errCode = userNotifier_->RegisterEventType(USER_ACTIVE_TO_NON_ACTIVE_EVENT);
+    if (errCode != E_OK) {
+        userNotifier_->UnRegisterEventType(USER_ACTIVE_EVENT);
+        userNotifier_->UnRegisterEventType(USER_NON_ACTIVE_EVENT);
+        goto ERROR_HANDLE;
+    }
+    return errCode;
+ERROR_HANDLE:
+    RefObject::KillAndDecObjRef(userNotifier_);
+    userNotifier_ = nullptr;
     return errCode;
 }
 

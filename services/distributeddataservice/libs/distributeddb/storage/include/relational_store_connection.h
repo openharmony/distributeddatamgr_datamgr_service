@@ -20,6 +20,7 @@
 #include <string>
 
 #include "db_types.h"
+#include "iconnection.h"
 #include "macro_utils.h"
 #include "ref_object.h"
 #include "relational_store_delegate.h"
@@ -27,7 +28,7 @@
 namespace DistributedDB {
 class IRelationalStore;
 using RelationalObserverAction = std::function<void(const std::string &device)>;
-class RelationalStoreConnection : public virtual RefObject {
+class RelationalStoreConnection : public IConnection, public virtual RefObject {
 public:
     struct SyncInfo {
         const std::vector<std::string> &devices;

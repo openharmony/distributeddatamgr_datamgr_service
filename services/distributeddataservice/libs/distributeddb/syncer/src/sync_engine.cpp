@@ -118,6 +118,12 @@ int SyncEngine::Close()
     UnRegCommunicatorsCallback();
     StopAutoSubscribeTimer();
 
+    std::unique_lock<std::mutex> closeLock(execTaskCountLock_);
+    bool isTimeout = execTaskCv_.wait_for(closeLock, std::chrono::milliseconds(DBConstant::MIN_TIMEOUT),
+        [this]() { return execTaskCount_ == 0; });
+    if (!isTimeout) {
+        LOGD("SyncEngine Close with executing task!");
+    }
     // Clear SyncContexts
     {
         std::unique_lock<std::mutex> lock(contextMapLock_);
@@ -355,16 +361,16 @@ void SyncEngine::RemoteDataChangedTask(ISyncTaskContext *context, const ICommuni
 void SyncEngine::ScheduleTaskOut(ISyncTaskContext *context, const ICommunicator *communicator)
 {
     (void)DealMsgUtilQueueEmpty();
-    {
-        std::lock_guard<std::mutex> lock(queueLock_);
-        execTaskCount_--;
-    }
+    DecExecTaskCount();
     RefObject::DecObjRef(communicator);
     RefObject::DecObjRef(context);
 }
 
 int SyncEngine::DealMsgUtilQueueEmpty()
 {
+    if (!isActive_) {
+        return -E_BUSY; // db is closing just return
+    }
     int errCode = E_OK;
     Message *inMsg = nullptr;
     {
@@ -377,19 +383,23 @@ int SyncEngine::DealMsgUtilQueueEmpty()
         queueCacheSize_ -= GetMsgSize(inMsg);
     }
 
+    IncExecTaskCount();
     // it will deal with the first message in queue, we should increase object reference counts and sure that resources
     // could be prevented from destroying by other threads.
-    ISyncTaskContext *nextContext = GetConextForMsg(inMsg->GetTarget(), errCode);
+    do {
+        ISyncTaskContext *nextContext = GetConextForMsg(inMsg->GetTarget(), errCode);
+        if (errCode != E_OK) {
+            break;
+        }
+        errCode = ScheduleDealMsg(nextContext, inMsg);
+        if (errCode != E_OK) {
+            RefObject::DecObjRef(nextContext);
+        }
+    } while (false);
     if (errCode != E_OK) {
         delete inMsg;
         inMsg = nullptr;
-        return errCode;
-    }
-    errCode = ScheduleDealMsg(nextContext, inMsg);
-    if (errCode != E_OK) {
-        RefObject::DecObjRef(nextContext);
-        delete inMsg;
-        inMsg = nullptr;
+        DecExecTaskCount();
     }
     return errCode;
 }
@@ -425,13 +435,10 @@ int SyncEngine::ScheduleDealMsg(ISyncTaskContext *context, Message *inMsg)
 {
     if (inMsg == nullptr) {
         LOGE("[SyncEngine] MessageReciveCallback inMsg is null!");
+        DecExecTaskCount();
         return E_OK;
     }
     RefObject::IncObjRef(communicatorProxy_);
-    {
-        std::lock_guard<std::mutex> incLock(queueLock_);
-        execTaskCount_++;
-    }
     int errCode = E_OK;
     // deal remote local data changed message
     if (inMsg->GetMessageId() == LOCAL_DATA_CHANGED) {
@@ -444,20 +451,18 @@ int SyncEngine::ScheduleDealMsg(ISyncTaskContext *context, Message *inMsg)
     if (errCode != E_OK) {
         LOGE("[SyncEngine] MessageReciveCallbackTask Schedule failed err %d", errCode);
         RefObject::DecObjRef(communicatorProxy_);
-        {
-            std::lock_guard<std::mutex> decLock(queueLock_);
-            execTaskCount_--;
-        }
     }
     return errCode;
 }
 
 void SyncEngine::MessageReciveCallback(const std::string &targetDev, Message *inMsg)
 {
+    IncExecTaskCount();
     int errCode = MessageReciveCallbackInner(targetDev, inMsg);
     if (errCode != E_OK) {
         delete inMsg;
         inMsg = nullptr;
+        DecExecTaskCount();
         LOGE("[SyncEngine] MessageReciveCallback failed!");
     }
 }
@@ -489,8 +494,10 @@ int SyncEngine::MessageReciveCallbackInner(const std::string &targetDev, Message
             return -E_BUSY;
         }
 
-        if (execTaskCount_ >= MAX_EXEC_NUM) {
+        if (execTaskCount_ > MAX_EXEC_NUM) {
             PutMsgIntoQueue(targetDev, inMsg, msgSize);
+            // task dont exec here
+            DecExecTaskCount();
             return E_OK;
         }
     }
@@ -500,7 +507,6 @@ int SyncEngine::MessageReciveCallbackInner(const std::string &targetDev, Message
     if (errCode != E_OK) {
         return errCode;
     }
-
     LOGD("[SyncEngine] MessageReciveCallback MSG ID = %d", inMsg->GetMessageId());
     return ScheduleDealMsg(nextContext, inMsg);
 }
@@ -1021,5 +1027,20 @@ void SyncEngine::SchemaChange()
         // IncRef for SyncEngine to make sure context is valid, to avoid a big lock
         context->SchemaChange();
     }
+}
+
+void SyncEngine::IncExecTaskCount()
+{
+    std::lock_guard<std::mutex> incLock(execTaskCountLock_);
+    execTaskCount_++;
+}
+
+void SyncEngine::DecExecTaskCount()
+{
+    {
+        std::lock_guard<std::mutex> decLock(execTaskCountLock_);
+        execTaskCount_--;
+    }
+    execTaskCv_.notify_all();
 }
 } // namespace DistributedDB

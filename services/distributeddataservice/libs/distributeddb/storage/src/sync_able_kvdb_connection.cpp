@@ -20,6 +20,7 @@
 #include "db_constant.h"
 #include "kvdb_pragma.h"
 #include "performance_analysis.h"
+#include "runtime_context.h"
 #include "sync_able_kvdb.h"
 
 namespace DistributedDB {
@@ -34,7 +35,7 @@ SyncAbleKvDBConnection::SyncAbleKvDBConnection(SyncAbleKvDB *kvDB)
         }
         // Drop the lock before we call RemoveSyncOperation().
         UnlockObj();
-        db->StopSync();
+        db->StopSync(GetConnectionId());
         LockObj();
     });
 }
@@ -151,7 +152,7 @@ int SyncAbleKvDBConnection::PragmaSyncAction(const PragmaSync *syncParameter)
     syncParam.onFinalize =  [this]() { DecObjRef(this); };
     syncParam.onComplete = std::bind(&SyncAbleKvDBConnection::OnSyncComplete, this, std::placeholders::_1,
         syncParameter->onComplete_, syncParameter->wait_);
-    int errCode = kvDB->Sync(syncParam);
+    int errCode = kvDB->Sync(syncParam, GetConnectionId());
     if (errCode != E_OK) {
         DecObjRef(this);
     }

@@ -136,6 +136,7 @@ ohos_shared_library("distributeddb") {
     "storage/src/generic_kvdb.cpp",
     "storage/src/generic_kvdb_connection.cpp",
     "storage/src/generic_single_ver_kv_entry.cpp",
+    "storage/src/iconnection.cpp",
     "storage/src/ikvdb_factory.cpp",
     "storage/src/kvdb_commit_notify_filterable_data.cpp",
     "storage/src/kvdb_manager.cpp",

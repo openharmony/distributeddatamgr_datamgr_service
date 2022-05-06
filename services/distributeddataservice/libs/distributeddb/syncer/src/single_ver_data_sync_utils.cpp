@@ -163,15 +163,19 @@ int SingleVerDataSyncUtils::RunPermissionCheck(SingleVerSyncTaskContext *context
     std::string userId = storage->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
     std::string storeId = storage->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
     uint8_t flag;
-    if (mode == SyncModeType::PUSH) {
-        flag = CHECK_FLAG_RECEIVE;
-    } else if (mode == SyncModeType::PULL) {
-        flag = CHECK_FLAG_SEND;
-    } else if (mode == SyncModeType::PUSH_AND_PULL) {
-        flag = CHECK_FLAG_SEND | CHECK_FLAG_RECEIVE;
-    } else {
-        // before add permissionCheck, PushStart packet and pullResponse packet do not setMode.
-        flag = CHECK_FLAG_RECEIVE;
+    switch (mode) {
+        case SyncModeType::PUSH:
+            flag = CHECK_FLAG_RECEIVE;
+            break;
+        case SyncModeType::PULL:
+            flag = CHECK_FLAG_SEND;
+            break;
+        case SyncModeType::PUSH_AND_PULL:
+            flag = CHECK_FLAG_SEND | CHECK_FLAG_RECEIVE;
+            break;
+        default:
+            flag = CHECK_FLAG_RECEIVE;
+            break;
     }
     int errCode = E_OK;
     if (storage->GetInterfaceType() != ISyncInterface::SYNC_RELATION) {

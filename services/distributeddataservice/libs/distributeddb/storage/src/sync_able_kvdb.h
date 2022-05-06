@@ -41,13 +41,13 @@ public:
     void Close() override;
 
     // Start a sync action.
-    int Sync(const ISyncer::SyncParma &parma);
+    int Sync(const ISyncer::SyncParma &parma, uint64_t connectionId);
 
     // Enable auto sync
     void EnableAutoSync(bool enable);
 
     // Stop a sync action in progress.
-    void StopSync();
+    void StopSync(uint64_t connectionId);
 
     // Get The current virtual timestamp
     uint64_t GetTimestamp();

@@ -95,12 +95,12 @@ bool Communicator::IsDeviceOnline(const std::string &device) const
     return commAggrHandle_->IsDeviceOnline(device);
 }
 
-int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config)
+int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg, const SendConfig &config)
 {
     return SendMessage(dstTarget, inMsg, config, nullptr);
 }
 
-int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg, SendConfig &config,
+int Communicator::SendMessage(const std::string &dstTarget, const Message *inMsg, const SendConfig &config,
     const OnSendEnd &onEnd)
 {
     if (dstTarget.empty() || inMsg == nullptr) {
