@@ -29,10 +29,16 @@ public:
     static void TearDownTestCase(void) {}
     void SetUp();
     void TearDown() {}
+    NativeTokenInfoParams infoInstance;
 };
 
 void CheckerManagerTest::SetUp(void)
 {
+    infoInstance.dcapsNum = 0;
+    infoInstance.dcaps = nullptr;
+    infoInstance.processName = "foundation";
+    infoInstance.aplStr = "system_core";
+
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
@@ -66,7 +72,7 @@ HWTEST_F(CheckerManagerTest, SystemCheckerBMS, TestSize.Level0)
 {
     CheckerManager::StoreInfo info;
     info.uid = 1000;
-    info.tokenId = GetAccessTokenId("foundation", nullptr, 0, "system_core");
+    info.tokenId = GetAccessTokenId(&infoInstance);
     info.bundleName = "bundle_manager_service";
     ASSERT_EQ("bundle_manager_service", CheckerManager::GetInstance().GetAppId(info));
     ASSERT_TRUE(CheckerManager::GetInstance().IsValid(info));
@@ -83,7 +89,7 @@ HWTEST_F(CheckerManagerTest, SystemCheckerForm, TestSize.Level0)
 {
     CheckerManager::StoreInfo info;
     info.uid = 1000;
-    info.tokenId = GetAccessTokenId("foundation", nullptr, 0, "system_core");
+    info.tokenId = GetAccessTokenId(&infoInstance);
     info.bundleName = "form_storage";
     ASSERT_EQ("form_storage", CheckerManager::GetInstance().GetAppId(info));
     ASSERT_TRUE(CheckerManager::GetInstance().IsValid(info));
@@ -100,7 +106,7 @@ HWTEST_F(CheckerManagerTest, SystemCheckerIVI, TestSize.Level0)
 {
     CheckerManager::StoreInfo info;
     info.uid = 1000;
-    info.tokenId = GetAccessTokenId("foundation", nullptr, 0, "system_core");
+    info.tokenId = GetAccessTokenId(&infoInstance);
     info.bundleName = "ivi_config_manager";
     ASSERT_EQ("ivi_config_manager", CheckerManager::GetInstance().GetAppId(info));
     ASSERT_TRUE(CheckerManager::GetInstance().IsValid(info));
