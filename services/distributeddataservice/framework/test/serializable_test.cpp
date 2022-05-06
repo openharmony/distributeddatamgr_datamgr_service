@@ -21,7 +21,7 @@ using namespace OHOS::DistributedData;
 
 class SerializableTest : public testing::Test {
 public:
-    struct Normal : public Serializable {
+    struct Normal final : public Serializable {
     public:
         std::string name = "Test";
         int32_t count = 0;
@@ -60,7 +60,7 @@ public:
         }
     };
 
-    struct NormalEx : public Serializable {
+    struct NormalEx final : public Serializable {
     public:
         std::vector<Normal> normals {Normal(), Normal()};
         Normal normal;
