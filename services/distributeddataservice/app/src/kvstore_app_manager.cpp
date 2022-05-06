@@ -455,11 +455,11 @@ DistributedDB::KvStoreDelegateManager *KvStoreAppManager::GetDelegateManager(Pat
     DirectoryUtils::ChangeModeDirOnly(directory, Constant::DEFAULT_MODE_DIR);
     DirectoryUtils::ChangeModeFileOnly(directory, Constant::DEFAULT_MODE_FILE);
 
-    trueAppId_ = CheckerManager::GetInstance().GetAppId({uid_, token_, bundleName_, ""});
+    trueAppId_ = CheckerManager::GetInstance().GetAppId({ uid_, token_, bundleName_ });
     if (trueAppId_.empty()) {
         delegateManagers_[type] = nullptr;
         ZLOGW("check bundleName:%{public}s uid:%{public}d token:%{public}u failed.",
-+              bundleName_.c_str(), uid_, token_);
+            bundleName_.c_str(), uid_, token_);
         return nullptr;
     }
 

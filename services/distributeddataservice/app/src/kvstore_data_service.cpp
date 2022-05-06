@@ -342,16 +342,17 @@ Status KvStoreDataService::GetSingleKvStoreFailDo(Status status, const Options &
             return Status::ERROR;
         }
         // get existing encrypted store failed, retry with key stored in file
-        Status status = KvStoreMetaManager::GetInstance().RecoverSecretKeyFromFile(
+        Status statusRet = KvStoreMetaManager::GetInstance().RecoverSecretKeyFromFile(
             secKeyParas.secretKeyFile, secKeyParas.metaSecretKey, secKeyParas.secretKey, secKeyParas.outdated);
-        if (status != Status::SUCCESS) {
+        if (statusRet != Status::SUCCESS) {
             kvStore = nullptr;
             return Status::CRYPT_ERROR;
         }
         // here callback is called twice
         statusTmp = kvUserManager.GetKvStore(options, metaData, secKeyParas.secretKey, kvStore);
         if (secKeyParas.outdated) {
-            KvStoreMetaManager::GetInstance().ReKey(metaData.user, metaData.bundleName, metaData.storeId, path, kvStore);
+            KvStoreMetaManager::GetInstance().ReKey(
+                metaData.user, metaData.bundleName, metaData.storeId, path, kvStore);
         }
     }
 
@@ -663,7 +664,7 @@ Status KvStoreDataService::AppExit(const AppId &appId, pid_t uid, uint32_t token
         ZLOGI("map size: %zu.", clientDeathObserverMap_.size());
     }
 
-    std::string trueAppId = CheckerManager::GetInstance().GetAppId({ uid, token, appIdTmp.appId, "" });
+    std::string trueAppId = CheckerManager::GetInstance().GetAppId({ uid, token, appIdTmp.appId });
     if (trueAppId.empty()) {
         ZLOGW("check appId:%{public}s uid:%{public}d token:%{public}u failed.",
             appIdTmp.appId.c_str(), uid, token);

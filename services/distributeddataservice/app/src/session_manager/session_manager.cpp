@@ -52,7 +52,7 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     }
     // system service
     if (from.userId == UserDelegate::SYSTEM_USER) {
-        if (CheckerManager::GetInstance().GetAppId({ metaData.uid, metaData.tokenId, metaData.bundleName, "" })
+        if (CheckerManager::GetInstance().GetAppId({ metaData.uid, metaData.tokenId, metaData.bundleName })
             == metaData.bundleName) {
             session.targetUserIds.push_back(UserDelegate::SYSTEM_USER);
         }

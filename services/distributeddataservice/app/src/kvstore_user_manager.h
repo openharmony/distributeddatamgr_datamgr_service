@@ -32,7 +32,8 @@ using StoreMetaData = DistributedData::StoreMetaData;
     virtual ~KvStoreUserManager();
 
     template<typename T>
-    Status GetKvStore(const Options &options, const StoreMetaData &metaData, const std::vector<uint8_t> &cipherKey, sptr<T> &kvStore)
+    Status GetKvStore(
+        const Options &options, const StoreMetaData &metaData, const std::vector<uint8_t> &cipherKey, sptr<T> &kvStore)
     {
         std::lock_guard<decltype(appMutex_)> lg(appMutex_);
         auto it = appMap_.find(metaData.bundleName);

@@ -776,7 +776,7 @@ KvStoreImpl::~KvStoreImpl()
 
 bool KvStoreImpl::Import(const std::string &bundleName) const
 {
-     ZLOGI("KvStoreImpl Import start");
+    ZLOGI("KvStoreImpl Import start");
     const std::string account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     DistributedData::StoreMetaData metaData;
     metaData.user = deviceAccountId_;

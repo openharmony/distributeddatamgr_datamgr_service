@@ -125,7 +125,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest002, TestSize.Level1)
     metaData.storeId = storeId.storeId;
     metaData.isBackup = true;
     metaData.storeType = KvStoreType::SINGLE_VERSION;
-    metaData.appId = CheckerManager::GetInstance().GetAppId({0, 0, appId.appId, storeId.storeId});
+    metaData.appId = CheckerManager::GetInstance().GetAppId({ 0, 0, appId.appId, storeId.storeId });
     backupHandler->SingleKvStoreBackup(metaData);
 
     kvStorePtr->Delete(key2);
@@ -173,7 +173,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest004, TestSize.Level1)
     StoreMetaData metaData;
     metaData.user = "0";
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    metaData.appId = CheckerManager::GetInstance().GetAppId({0, 0, appId.appId, storeId.storeId});
+    metaData.appId = CheckerManager::GetInstance().GetAppId({ 0, 0, appId.appId, storeId.storeId });
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     metaData.isBackup = true;
@@ -285,7 +285,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest006, TestSize.Level1)
     metaData.isBackup = true;
     metaData.securityLevel = SecurityLevel::S2;
     metaData.storeType = KvStoreType::SINGLE_VERSION;
-    metaData.appId = CheckerManager::GetInstance().GetAppId({0, 0, appId.appId, storeId.storeId});
+    metaData.appId = CheckerManager::GetInstance().GetAppId({ 0, 0, appId.appId, storeId.storeId });
     backupHandler->SingleKvStoreBackup(metaData);
 
     kvStorePtr->Delete(key2);
@@ -336,7 +336,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest007, TestSize.Level1)
     metaData.isBackup = true;
     metaData.securityLevel = SecurityLevel::S4;
     metaData.storeType = KvStoreType::SINGLE_VERSION;
-    metaData.appId = CheckerManager::GetInstance().GetAppId({0, 0, appId.appId, storeId.storeId});
+    metaData.appId = CheckerManager::GetInstance().GetAppId({ 0, 0, appId.appId, storeId.storeId });
     backupHandler->SingleKvStoreBackup(metaData);
 
     kvStorePtr->Delete(key2);

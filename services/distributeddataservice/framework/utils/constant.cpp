@@ -20,7 +20,7 @@
 
 namespace OHOS {
 namespace DistributedData {
-constexpr const char * Constant::KEY_SEPARATOR;
+constexpr const char *Constant::KEY_SEPARATOR;
 
 std::string Constant::Concatenate(std::initializer_list<std::string> stringList)
 {

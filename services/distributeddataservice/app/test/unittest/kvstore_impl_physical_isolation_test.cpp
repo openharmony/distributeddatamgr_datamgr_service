@@ -119,7 +119,8 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation001, TestSize.
                                           [&](sptr<ISingleKvStore> kvStore) { kvStorePtr = std::move(kvStore); });
     EXPECT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     EXPECT_NE(kvStorePtr, nullptr) << "GetSingleKvStore execute fail!!";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) <<
+        "StorePath EQ fail";
     status = g_kvStoreDataService->CloseKvStore(g_appId, g_storeId);
 }
 /**
@@ -140,7 +141,8 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation002, TestSize.
                                           [&](sptr<ISingleKvStore> kvStore) { kvStorePtr = std::move(kvStore); });
     EXPECT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     EXPECT_NE(kvStorePtr, nullptr) << "GetSingleKvStore execute fail!!";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) <<
+        "StorePath EQ fail";
     const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy0/store1");
     sptr<ISingleKvStore> kvStorePtr1;
@@ -148,7 +150,8 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation002, TestSize.
                                               [&](sptr<ISingleKvStore> kvStore) { kvStorePtr1 = std::move(kvStore); });
     EXPECT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     EXPECT_NE(kvStorePtr1, nullptr) << "GetSingleKvStore execute fail!!";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath1) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath1) <<
+        "StorePath EQ fail";
     status = g_kvStoreDataService->CloseKvStore(g_appId, g_storeId);
     status = g_kvStoreDataService->CloseKvStore(g_appId, g_storeId1);
 }
@@ -170,7 +173,8 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation003, TestSize.
                                           [&](sptr<ISingleKvStore> kvStore) { kvStorePtr = std::move(kvStore); });
     EXPECT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     EXPECT_NE(kvStorePtr, nullptr) << "GetSingleKvStore execute fail!!";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) <<
+        "StorePath EQ fail";
     const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy1/store0");
     sptr<ISingleKvStore> kvStorePtr1;
@@ -178,7 +182,8 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation003, TestSize.
                                               [&](sptr<ISingleKvStore> kvStore) { kvStorePtr1 = std::move(kvStore); });
     EXPECT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     EXPECT_NE(kvStorePtr1, nullptr) << "GetSingleKvStore execute fail!!";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath1) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath1) <<
+        "StorePath EQ fail";
     status = g_kvStoreDataService->CloseKvStore(g_appId, g_storeId);
     status = g_kvStoreDataService->CloseKvStore(g_appId1, g_storeId);
 }
@@ -200,7 +205,8 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation004, TestSize.
                                           [&](sptr<ISingleKvStore> kvStore) { kvStorePtr = std::move(kvStore); });
     EXPECT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     EXPECT_NE(kvStorePtr, nullptr) << "GetSingleKvStore execute fail!!";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) <<
+        "StorePath EQ fail";
 
     const std::string storePath1 = Constant::Concatenate({ Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
         deviceAccountId, "/", Constant::GetDefaultHarmonyAccountName(), "/" }) + std::string("phy1/store1");
@@ -209,7 +215,8 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation004, TestSize.
                                               [&](sptr<ISingleKvStore> kvStore) { kvStorePtr1 = std::move(kvStore); });
     EXPECT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     EXPECT_NE(kvStorePtr1, nullptr) << "GetSingleKvStore execute fail!!";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath1) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath1) <<
+        "StorePath EQ fail";
     status = g_kvStoreDataService->CloseKvStore(g_appId, g_storeId);
     status = g_kvStoreDataService->CloseKvStore(g_appId1, g_storeId1);
 }
@@ -231,14 +238,16 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation005, TestSize.
                                           [&](sptr<ISingleKvStore> kvStore) { kvStorePtr = std::move(kvStore); });
     EXPECT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     EXPECT_NE(kvStorePtr, nullptr) << "GetSingleKvStore execute fail!!";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) <<
+        "StorePath EQ fail";
 
     sptr<ISingleKvStore> kvStorePtr1;
     status = g_kvStoreDataService->GetSingleKvStore(g_defaultOptions, g_appId, g_storeId,
                                               [&](sptr<ISingleKvStore> kvStore) { kvStorePtr1 = std::move(kvStore); });
     EXPECT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     EXPECT_NE(kvStorePtr1, nullptr) << "GetSingleKvStore execute fail!!";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath) <<
+        "StorePath EQ fail";
     status = g_kvStoreDataService->CloseKvStore(g_appId, g_storeId);
 }
 /**
@@ -261,12 +270,12 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation006, TestSize.
     ASSERT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     std::thread thread1([&]() {
         Status status1 = g_kvStoreDataService->GetSingleKvStore(g_defaultOptions, g_appId, g_storeId,
-                                               [&](sptr<ISingleKvStore> kvStore) { kvStorePtr1 = std::move(kvStore); });
+            [&](sptr<ISingleKvStore> kvStore) { kvStorePtr1 = std::move(kvStore); });
         ASSERT_EQ(status1, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     });
     std::thread thread2([&]() {
         Status status2 = g_kvStoreDataService->GetSingleKvStore(g_defaultOptions, g_appId, g_storeId,
-                                               [&](sptr<ISingleKvStore> kvStore) { kvStorePtr2 = std::move(kvStore); });
+            [&](sptr<ISingleKvStore> kvStore) { kvStorePtr2 = std::move(kvStore); });
         ASSERT_EQ(status2, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     });
     thread1.join();
@@ -276,9 +285,12 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation006, TestSize.
     EXPECT_NE(kvStorePtr2, nullptr) << "GetSingleKvStore execute fail!!";
     EXPECT_EQ(kvStorePtr, kvStorePtr1) << "Two SingleKvStoreImpl EQ fail";
     EXPECT_EQ(kvStorePtr, kvStorePtr2) << "Two SingleKvStoreImpl EQ fail";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr2.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) <<
+        "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath) <<
+        "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr2.GetRefPtr()))->GetStorePath(), storePath) <<
+        "StorePath EQ fail";
     status = g_kvStoreDataService->CloseKvStore(g_appId, g_storeId);
 }
 /**
@@ -306,12 +318,12 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation007, TestSize.
     ASSERT_EQ(status, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     std::thread thread1([&]() {
         Status status1 = g_kvStoreDataService->GetSingleKvStore(g_defaultOptions, g_appId1, g_storeId1,
-                                               [&](sptr<ISingleKvStore> kvStore) { kvStorePtr1 = std::move(kvStore); });
+            [&](sptr<ISingleKvStore> kvStore) { kvStorePtr1 = std::move(kvStore); });
         ASSERT_EQ(status1, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     });
     std::thread thread2([&]() {
         Status status2 = g_kvStoreDataService->GetSingleKvStore(g_defaultOptions, g_appId2, g_storeId2,
-                                               [&](sptr<ISingleKvStore> kvStore) { kvStorePtr2 = std::move(kvStore); });
+            [&](sptr<ISingleKvStore> kvStore) { kvStorePtr2 = std::move(kvStore); });
         ASSERT_EQ(status2, Status::SUCCESS) << "GetSingleKvStore return wrong status";
     });
     thread1.join();
@@ -321,9 +333,12 @@ HWTEST_F(SingleKvStoreImplPhysicalIsolationTest, PhysicalIsolation007, TestSize.
     EXPECT_NE(kvStorePtr2, nullptr) << "GetSingleKvStore execute fail!!";
     EXPECT_NE(kvStorePtr, kvStorePtr1) << "Two SingleKvStoreImpl NE fail";
     EXPECT_NE(kvStorePtr, kvStorePtr2) << "Two SingleKvStoreImpl NE fail";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) << "StorePath EQ fail";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath1) << "StorePath EQ fail";
-    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr2.GetRefPtr()))->GetStorePath(), storePath2) << "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr.GetRefPtr()))->GetStorePath(), storePath) <<
+        "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr1.GetRefPtr()))->GetStorePath(), storePath1) <<
+        "StorePath EQ fail";
+    EXPECT_EQ((static_cast<SingleKvStoreImpl *>(kvStorePtr2.GetRefPtr()))->GetStorePath(), storePath2) <<
+        "StorePath EQ fail";
     status = g_kvStoreDataService->CloseKvStore(g_appId, g_storeId);
     status = g_kvStoreDataService->CloseKvStore(g_appId1, g_storeId1);
     status = g_kvStoreDataService->CloseKvStore(g_appId2, g_storeId2);

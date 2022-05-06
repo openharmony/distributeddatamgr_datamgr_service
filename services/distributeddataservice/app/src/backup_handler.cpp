@@ -99,7 +99,8 @@ void BackupHandler::SingleKvStoreBackup(const StoreMetaData &metaData)
     DistributedDB::KvStoreNbDelegate::Option dbOption;
     SetDBOptions(dbOption, backupPara, metaData);
     DistributedDB::KvStoreDelegateManager delegateMgr(metaData.appId, metaData.user);
-    std::string path = KvStoreAppManager::GetDataStoragePath(metaData.account, metaData.bundleName, backupPara.pathType);
+    std::string path = KvStoreAppManager::GetDataStoragePath(
+        metaData.account, metaData.bundleName, backupPara.pathType);
     DistributedDB::KvStoreConfig kvStoreConfig = { path };
     delegateMgr.SetKvStoreConfig(kvStoreConfig);
     std::function<void(DistributedDB::DBStatus, DistributedDB::KvStoreNbDelegate *)> fun =
