@@ -1379,4 +1379,97 @@ HWTEST_F(DistributedDBRelationalGetDataTest, GetMaxTimestamp1, TestSize.Level1)
     sqlite3_close(db);
     RefObject::DecObjRef(g_store);
 }
+
+/**
+ * @tc.name: NoPkData1
+ * @tc.desc: For no pk data.
+ * @tc.type: FUNC
+ * @tc.require: AR000GK58H
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBRelationalGetDataTest, NoPkData1, TestSize.Level1)
+{
+    ASSERT_EQ(g_mgr.OpenStore(g_storePath, g_storeID, RelationalStoreDelegate::Option {}, g_delegate), DBStatus::OK);
+    ASSERT_NE(g_delegate, nullptr);
+
+    sqlite3 *db = nullptr;
+    ASSERT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+    ExecSqlAndAssertOK(db, "DROP TABLE IF EXISTS " + g_tableName + "; \
+        CREATE TABLE " + g_tableName + "(key INTEGER NOT NULL, value INTEGER);");
+    ASSERT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
+
+    /**
+     * @tc.steps: step1. Create distributed table "dataPlus".
+     * @tc.expected: Succeed, return OK.
+     */
+    const string tableName = g_tableName + "Plus";
+    ExecSqlAndAssertOK(db, "CREATE TABLE " + tableName + "(key INTEGER NOT NULL, value INTEGER);");
+    ASSERT_EQ(g_delegate->CreateDistributedTable(tableName), DBStatus::OK);
+
+    /**
+     * @tc.steps: step2. Put 2 data into "data" table.
+     * @tc.expected: Succeed.
+     */
+    ASSERT_EQ(AddOrUpdateRecord(1, 1), E_OK);
+    ASSERT_EQ(AddOrUpdateRecord(2, 2), E_OK);
+
+    /**
+     * @tc.steps: step3. Get data from "data" table.
+     * @tc.expected: Succeed.
+     */
+    auto store = GetRelationalStore();
+    ASSERT_NE(store, nullptr);
+
+    ContinueToken token = nullptr;
+    QueryObject query(Query::Select(g_tableName));
+    std::vector<SingleVerKvEntry *> entries;
+    EXPECT_EQ(store->GetSyncData(query, {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    EXPECT_EQ(entries.size(), 2U);  // expect 2 data.
+
+    /**
+     * @tc.steps: step4. Put data into "data" table from deviceA.
+     * @tc.expected: Succeed, return OK.
+     */
+    QueryObject queryPlus(Query::Select(tableName));
+    const DeviceID deviceID = "deviceA";
+    ASSERT_EQ(E_OK, SQLiteUtils::CreateSameStuTable(db, store->GetSchemaInfo().GetTable(tableName),
+        DBCommon::GetDistributedTableName(deviceID, tableName)));
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(queryPlus, entries, deviceID), E_OK);
+    SingleVerKvEntry::Release(entries);
+
+    /**
+     * @tc.steps: step5. Changet data in "data" table.
+     * @tc.expected: Succeed.
+     */
+    ExecSqlAndAssertOK(db, {"UPDATE " + g_tableName + " SET value=101 WHERE key=1;",
+                            "DELETE FROM " + g_tableName + " WHERE key=2;",
+                            "INSERT INTO " + g_tableName + " VALUES(2, 102);"});
+
+    /**
+     * @tc.steps: step6. Get data from "data" table.
+     * @tc.expected: Succeed.
+     */
+    EXPECT_EQ(store->GetSyncData(query, {}, DataSizeSpecInfo {}, token, entries), E_OK);
+    EXPECT_EQ(entries.size(), 2U);  // expect 2 data.
+
+    /**
+     * @tc.steps: step7. Put data into "data" table from deviceA.
+     * @tc.expected: Succeed, return OK.
+     */
+    EXPECT_EQ(const_cast<RelationalSyncAbleStorage *>(store)->PutSyncDataWithQuery(queryPlus, entries, deviceID), E_OK);
+    SingleVerKvEntry::Release(entries);
+
+    /**
+     * @tc.steps: step8. Check data.
+     * @tc.expected: There is 2 data.
+     */
+    std::string sql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + tableName + "_" +
+        DBCommon::TransferStringToHex(DBCommon::TransferHashString(deviceID)) + ";";
+    size_t count = 0;
+    EXPECT_EQ(GetCount(db, sql, count), E_OK);
+    EXPECT_EQ(count, 2U); // expect 2 data.
+
+    sqlite3_close(db);
+    RefObject::DecObjRef(g_store);
+}
 #endif

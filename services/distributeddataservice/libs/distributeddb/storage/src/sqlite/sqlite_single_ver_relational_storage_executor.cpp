@@ -746,6 +746,15 @@ int SQLiteSingleVerRelationalStorageExecutor::SaveSyncDataItem(const DataItem &d
         return DeleteSyncDataItem(dataItem, rmDataStmt);
     }
 
+    // For no pk data, cannot replace. Must delete and insert.
+    if (table_.GetPrimaryKey() == "rowid") {
+        int errCode = DeleteSyncDataItem(dataItem, rmDataStmt);
+        if (errCode != E_OK) {
+            LOGE("Delete no pk data before insert failed, errCode=%d.", errCode);
+            return errCode;
+        }
+    }
+
     OptRowDataWithLog data;
     int errCode = DataTransformer::DeSerializeDataItem(dataItem, data, fieldInfos);
     if (errCode != E_OK) {
