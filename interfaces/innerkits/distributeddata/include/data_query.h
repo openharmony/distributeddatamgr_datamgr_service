@@ -262,7 +262,7 @@ public:
     //     value: the field value list.
     // Return:
     //     This Query.
-    API_EXPORT DataQuery &InInt(const std::string &field, const std::vector<int> &valueList);
+    API_EXPORT DataQuery &In(const std::string &field, const std::vector<int> &valueList);
 
     // In long value list.
     // Parameters:
@@ -270,7 +270,7 @@ public:
     //     value: the field value list.
     // Return:
     //     This Query.
-    API_EXPORT DataQuery &InLong(const std::string &field, const std::vector<int64_t> &valueList);
+    API_EXPORT DataQuery &In(const std::string &field, const std::vector<int64_t> &valueList);
 
     // In Double value list.
     // Parameters:
@@ -278,7 +278,7 @@ public:
     //     value: the field value list.
     // Return:
     //     This Query.
-    API_EXPORT DataQuery &InDouble(const std::string &field, const std::vector<double> &valueList);
+    API_EXPORT DataQuery &In(const std::string &field, const std::vector<double> &valueList);
 
     // In String value list.
     // Parameters:
@@ -286,7 +286,7 @@ public:
     //     value: the field value list.
     // Return:
     //     This Query.
-    API_EXPORT DataQuery &InString(const std::string &field, const std::vector<std::string> &valueList);
+    API_EXPORT DataQuery &In(const std::string &field, const std::vector<std::string> &valueList);
 
     // Not in int value list.
     // Parameters:
@@ -294,7 +294,7 @@ public:
     //     value: the field value list.
     // Return:
     //     This Query.
-    API_EXPORT DataQuery &NotInInt(const std::string &field, const std::vector<int> &valueList);
+    API_EXPORT DataQuery &NotIn(const std::string &field, const std::vector<int> &valueList);
 
     // Not in long value list.
     // Parameters:
@@ -302,7 +302,7 @@ public:
     //     value: the field value list.
     // Return:
     //     This Query.
-    API_EXPORT DataQuery &NotInLong(const std::string &field, const std::vector<int64_t> &valueList);
+    API_EXPORT DataQuery &NotIn(const std::string &field, const std::vector<int64_t> &valueList);
 
     // Not in Double value list.
     // Parameters:
@@ -310,7 +310,7 @@ public:
     //     value: the field value list.
     // Return:
     //     This Query.
-    API_EXPORT DataQuery &NotInDouble(const std::string &field, const std::vector<double> &valueList);
+    API_EXPORT DataQuery &NotIn(const std::string &field, const std::vector<double> &valueList);
 
     // Not in String value list.
     // Parameters:
@@ -318,7 +318,7 @@ public:
     //     value: the field value list.
     // Return:
     //     This Query.
-    API_EXPORT DataQuery &NotInString(const std::string &field, const std::vector<std::string> &valueList);
+    API_EXPORT DataQuery &NotIn(const std::string &field, const std::vector<std::string> &valueList);
 
     // Like String value.
     // Parameters:

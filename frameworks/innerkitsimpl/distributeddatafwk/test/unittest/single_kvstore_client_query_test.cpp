@@ -272,19 +272,19 @@ HWTEST_F(SingleKvStoreClientQueryTest, TestQueryC009, TestSize.Level1)
     ZLOGD("TestQueryC009 start");
     DataQuery query;
     std::vector<int> vectInt{ 10, 20, 30 };
-    query.InInt("$.test_field_name", vectInt);
+    query.In("$.test_field_name", vectInt);
     EXPECT_TRUE(query.ToString().length() > 0);
     query.Reset();
     std::vector<int64_t> vectLong{ (int64_t) 100, (int64_t) 200, (int64_t) 300 };
-    query.InLong("$.test_field_name", vectLong);
+    query.In("$.test_field_name", vectLong);
     EXPECT_TRUE(query.ToString().length() > 0);
     query.Reset();
     std::vector<double> vectDouble{1.23, 2.23, 3.23};
-    query.InDouble("$.test_field_name", vectDouble);
+    query.In("$.test_field_name", vectDouble);
     EXPECT_TRUE(query.ToString().length() > 0);
     query.Reset();
     std::vector<std::string> vectString{ "value 1", "value 2", "value 3" };
-    query.InString("$.test_field_name", vectString);
+    query.In("$.test_field_name", vectString);
     EXPECT_TRUE(query.ToString().length() > 0);
     ZLOGD("TestQueryC009 end");
 }
@@ -301,19 +301,19 @@ HWTEST_F(SingleKvStoreClientQueryTest, TestQueryC010, TestSize.Level1)
     ZLOGD("TestQueryC010 start");
     DataQuery query;
     std::vector<int> vectInt{ 10, 20, 30 };
-    query.NotInInt("$.test_field_name", vectInt);
+    query.NotIn("$.test_field_name", vectInt);
     EXPECT_TRUE(query.ToString().length() > 0);
     query.Reset();
     std::vector<int64_t> vectLong{ (int64_t) 100, (int64_t) 200, (int64_t) 300 };
-    query.NotInLong("$.test_field_name", vectLong);
+    query.NotIn("$.test_field_name", vectLong);
     EXPECT_TRUE(query.ToString().length() > 0);
     query.Reset();
     std::vector<double> vectDouble{ 1.23, 2.23, 3.23 };
-    query.NotInDouble("$.test_field_name", vectDouble);
+    query.NotIn("$.test_field_name", vectDouble);
     EXPECT_TRUE(query.ToString().length() > 0);
     query.Reset();
     std::vector<std::string> vectString{ "value 1", "value 2", "value 3" };
-    query.NotInString("$.test_field_name", vectString);
+    query.NotIn("$.test_field_name", vectString);
     EXPECT_TRUE(query.ToString().length() > 0);
     ZLOGD("TestQueryC010 end");
 }
