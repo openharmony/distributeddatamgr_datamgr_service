@@ -19,34 +19,30 @@ namespace DistributedData {
 bool DirectoryConfig::DirectoryStrategy::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(version)], version);
-    SetValue(node[GET_NAME(holder)], holder);
-    SetValue(node[GET_NAME(path)], path);
+    SetValue(node[GET_NAME(pattern)], pattern);
     SetValue(node[GET_NAME(metaPath)], metaPath);
+    SetValue(node[GET_NAME(autoCreate)], autoCreate);
     return true;
 }
 
 bool DirectoryConfig::DirectoryStrategy::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(version), version);
-    GetValue(node, GET_NAME(holder), holder);
-    GetValue(node, GET_NAME(path), path);
+    GetValue(node, GET_NAME(pattern), pattern);
     GetValue(node, GET_NAME(metaPath), metaPath);
+    GetValue(node, GET_NAME(autoCreate), autoCreate);
     return true;
 }
 
 bool DirectoryConfig::Marshal(json &node) const
 {
-    SetValue(node[GET_NAME(currentStrategyVersion)], currentStrategyVersion);
     SetValue(node[GET_NAME(strategy)], strategy);
     return true;
 }
 
 bool DirectoryConfig::Unmarshal(const json &node)
 {
-    bool ret = true;
-    ret = GetValue(node, GET_NAME(currentStrategyVersion), currentStrategyVersion) && ret;
-    ret = GetValue(node, GET_NAME(strategy), strategy) && ret;
-    return ret;
+    return GetValue(node, GET_NAME(strategy), strategy);
 }
 } // namespace DistributedData
 } // namespace OHOS

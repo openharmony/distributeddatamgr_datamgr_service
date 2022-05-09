@@ -18,78 +18,51 @@
 
 #include <map>
 #include <memory>
-#include "visibility.h"
-#include "kvstore_context.h"
+
 #include "metadata/store_meta_data.h"
+#include "visibility.h"
 namespace OHOS::DistributedData {
-enum PathType {
-    PATH_DE,
-    PATH_CE,
-};
-class DirWorker {
-public:
-    DirWorker() = default;
-    virtual std::string GetDir(ClientContext clientContext, PathType type) = 0;
-    virtual bool CreateDir(ClientContext clientContext, PathType type) = 0;
-    virtual std::string GetBackupDir(ClientContext clientContext, PathType type) = 0;
-    virtual std::string GetSecretKeyDir(ClientContext clientContext, PathType type) = 0;
-    virtual std::string GetMetaDir() = 0;
-};
-
-class ServerDirWorker : public DirWorker {
-public:
-    static ServerDirWorker &GetInstance();
-
-    std::string GetDir(ClientContext clientContext, PathType type) override;
-    bool CreateDir(ClientContext clientContext, PathType type) override;
-    std::string GetBackupDir(ClientContext clientContext, PathType type) override;
-    std::string GetSecretKeyDir(ClientContext clientContext, PathType type) override;
-    std::string GetMetaDir() override;
-
-public:
-    static std::map<PathType, std::string> rootPathMap_;
-};
-
-class ClientDirWorker : public DirWorker {
-public:
-    static ClientDirWorker &GetInstance();
-
-    std::string GetDir(ClientContext clientContext, PathType type) override;
-    bool CreateDir(ClientContext clientContext, PathType type) override;
-    std::string GetBackupDir(ClientContext clientContext, PathType type) override;
-    std::string GetSecretKeyDir(ClientContext clientContext, PathType type) override;
-    std::string GetMetaDir() override;
-};
-
 class DirectoryManager {
 public:
+    static constexpr uint32_t INVALID_VERSION = 0xFFFFFFFF;
     struct Strategy {
-        std::string version;
-        std::string holder;
-        std::string path;
+        bool autoCreate = false;
+        uint32_t version = 0;
+        std::string pattern;
         std::string metaPath;
     };
     API_EXPORT static DirectoryManager &GetInstance();
-    API_EXPORT std::string CreatePath(const ClientContext &context, PathType type);
-    API_EXPORT std::string GetStorePath(const StoreMetaData &metaData);
-    API_EXPORT std::string GetStoreBackupPath(const StoreMetaData &metaData);
-    API_EXPORT std::string GetMetaDataStorePath();
-
-    API_EXPORT void AddParams(const Strategy &strategy);
-    API_EXPORT void SetCurrentVersion(const std::string &version);
-
-    inline static std::string JoinPath(std::initializer_list<std::string> stringList)
-    {
-        std::string tmpPath;
-        for (const std::string &str : stringList) {
-            tmpPath += (str + "/");
-        }
-        return tmpPath;
-    }
+    API_EXPORT std::string GetStorePath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
+    API_EXPORT std::string GetSecretKeyPath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
+    API_EXPORT std::string GetStoreBackupPath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
+    API_EXPORT std::string GetMetaStorePath(uint32_t version = INVALID_VERSION);
+    API_EXPORT std::vector<uint32_t> GetVersions();
+    API_EXPORT void Initialize(const std::vector<Strategy> &strategies);
 
 private:
-    std::map<std::string, Strategy> patterns_;
-    std::string version_;
+    using Action = std::string (DirectoryManager::*)(const StoreMetaData &) const;
+    struct StrategyImpl {
+        bool autoCreate = false;
+        uint32_t version;
+        std::string metaPath;
+        std::vector<std::string> path;
+        std::vector<Action> pipes;
+    };
+
+    DirectoryManager();
+    std::string GetType(const StoreMetaData &metaData) const;
+    std::string GetStore(const StoreMetaData &metaData) const;
+    std::string GetSecurity(const StoreMetaData &metaData) const;
+    std::string GetArea(const StoreMetaData &metaData) const;
+    std::string GetUserId(const StoreMetaData &metaData) const;
+    std::string GetBundleName(const StoreMetaData &metaData) const;
+    std::string GetHapName(const StoreMetaData &metaData) const;
+    std::vector<std::string> Split(const std::string &source, const std::string &pattern) const;
+    int32_t GetVersionIndex(uint32_t version) const;
+    std::string GenPath(const StoreMetaData &metaData, uint32_t version, const std::string &exPath = "") const;
+    bool CreateDirectory(const std::string &path) const;
+    const std::map<std::string, Action> actions_;
+    std::vector<StrategyImpl> strategies_;
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_DIRECTORY_MANAGER_H

@@ -25,7 +25,6 @@ public:
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
     };
-    std::string currentStrategyVersion;
     std::vector<DirectoryStrategy> strategy;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

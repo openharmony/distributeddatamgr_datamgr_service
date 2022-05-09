@@ -15,88 +15,24 @@
 #define LOG_TAG "DirectoryManager"
 #include "directory_manager.h"
 
+#include <dirent.h>
+#include <sys/stat.h>
+
 #include <string>
 
-#include "utils/constant.h"
-#include "directory_ex.h"
-#include "kvstore_context.h"
+#include "accesstoken_kit.h"
 #include "log/log_print.h"
+#include "types.h"
+#include "unistd.h"
 namespace OHOS::DistributedData {
-using namespace DistributedKv;
-std::map<PathType, std::string> ServerDirWorker::rootPathMap_ = {
-    { PATH_DE, "/data/misc_de/0/mdds" },
-    { PATH_CE, "/data/misc_ce/0/mdds" },
-};
-std::string ServerDirWorker::GetDir(ClientContext clientContext, PathType type)
+using OHOS::DistributedKv::SecurityLevel;
+using namespace OHOS::Security::AccessToken;
+DirectoryManager::DirectoryManager()
+    : actions_({ { "{security}", &DirectoryManager::GetSecurity }, { "{store}", &DirectoryManager::GetStore },
+        { "{type}", &DirectoryManager::GetType }, { "{area}", &DirectoryManager::GetArea },
+        { "{userId}", &DirectoryManager::GetUserId }, { "{bundleName}", &DirectoryManager::GetBundleName },
+        { "{hapName}", &DirectoryManager::GetHapName } })
 {
-    if (rootPathMap_.find(type) == rootPathMap_.end()) {
-        return "";
-    }
-    return DirectoryManager::JoinPath(
-        { rootPathMap_.at(type), clientContext.userId, "default", clientContext.bundleName });
-}
-bool ServerDirWorker::CreateDir(ClientContext clientContext, PathType type)
-{
-    std::string directory = GetDir(clientContext, type);
-    bool ret = ForceCreateDirectory(directory);
-    if (!ret) {
-        ZLOGE("create directory[%s] failed, errstr=[%d].", directory.c_str(), errno);
-        return false;
-    }
-    return true;
-}
-ServerDirWorker &ServerDirWorker::GetInstance()
-{
-    static ServerDirWorker instance;
-    return instance;
-}
-std::string ServerDirWorker::GetBackupDir(ClientContext clientContext, PathType type)
-{
-    if (rootPathMap_.find(type) == rootPathMap_.end()) {
-        return "";
-    }
-    return DirectoryManager::JoinPath({ rootPathMap_.at(type), clientContext.userId,
-        "default", clientContext.bundleName, "backup" });
-}
-std::string ServerDirWorker::GetMetaDir()
-{
-    return DirectoryManager::JoinPath({ rootPathMap_.at(PATH_DE), "Meta" });
-}
-std::string ServerDirWorker::GetSecretKeyDir(ClientContext clientContext, PathType type)
-{
-    return GetDir(clientContext, type);
-}
-std::string ClientDirWorker::GetDir(ClientContext clientContext, PathType type)
-{
-    return clientContext.dataDir;
-}
-bool ClientDirWorker::CreateDir(ClientContext clientContext, PathType type)
-{
-    return true;
-}
-ClientDirWorker &ClientDirWorker::GetInstance()
-{
-    static ClientDirWorker instance;
-    return instance;
-}
-std::string ClientDirWorker::GetBackupDir(ClientContext clientContext, PathType type)
-{
-    return DirectoryManager::JoinPath({ clientContext.dataDir, "backup" });
-}
-std::string ClientDirWorker::GetMetaDir()
-{
-    return std::string("/data/service/el1/public/distributeddata/DistributedKvDataService/Meta/");
-}
-std::string ClientDirWorker::GetSecretKeyDir(ClientContext clientContext, PathType type)
-{
-    return GetDir(clientContext, type);
-}
-
-std::string DirectoryManager::CreatePath(const ClientContext &context, PathType type)
-{
-    (void) context;
-    (void) type;
-    return "";
 }
 
 DirectoryManager &DirectoryManager::GetInstance()
@@ -105,26 +41,196 @@ DirectoryManager &DirectoryManager::GetInstance()
     return instance;
 }
 
-std::string DirectoryManager::GetStorePath(const StoreMetaData &metaData)
+std::string DirectoryManager::GetStorePath(const StoreMetaData &metaData, uint32_t version)
 {
-    return metaData.dataDir;
+    return GenPath(metaData, version, "");
 }
 
-std::string DirectoryManager::GetStoreBackupPath(const StoreMetaData &metaData)
+std::string DirectoryManager::GetStoreBackupPath(const StoreMetaData &metaData, uint32_t version)
 {
-    return GetStorePath(metaData) + "/backup/";
+    return GenPath(metaData, version, "backup");
 }
 
-std::string DirectoryManager::GetMetaDataStorePath()
+std::string DirectoryManager::GetSecretKeyPath(const StoreMetaData &metaData, uint32_t version)
 {
-    return "/data/service/el1/public/distributeddata/meta/";
+    return GenPath(metaData, version, "secret");
 }
-void DirectoryManager::AddParams(const Strategy &strategy)
+
+std::string DirectoryManager::GetMetaStorePath(uint32_t version)
 {
-    patterns_[strategy.version] = strategy;
+    int32_t index = GetVersionIndex(version);
+    if (index < 0) {
+        return "";
+    }
+    return strategies_[index].metaPath;
 }
-void DirectoryManager::SetCurrentVersion(const std::string &version)
+
+void DirectoryManager::Initialize(const std::vector<Strategy> &strategies)
 {
-    version_ = version;
+    strategies_.resize(strategies.size());
+    for (int i = 0; i < strategies.size(); ++i) {
+        const Strategy &strategy = strategies[i];
+        StrategyImpl &impl = strategies_[i];
+        impl.autoCreate = strategy.autoCreate;
+        impl.version = strategy.version;
+        impl.metaPath = strategy.metaPath;
+        impl.path = Split(strategy.pattern, "/");
+        impl.pipes.clear();
+        for (auto &value : impl.path) {
+            auto it = actions_.find(value);
+            impl.pipes.push_back(it == actions_.end() ? nullptr : it->second);
+        }
+    }
+
+    std::sort(strategies_.begin(), strategies_.end(),
+        [](const StrategyImpl &curr, const StrategyImpl &prev) { return curr.version > prev.version; });
+}
+
+std::string DirectoryManager::GetType(const StoreMetaData &metaData) const
+{
+    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_NATIVE) {
+        return "service";
+    }
+    return "app";
+}
+
+std::string DirectoryManager::GetStore(const StoreMetaData &metaData) const
+{
+    if (metaData.storeType < 10) {
+        return "kvdb";
+    }
+    // rdb use empty session
+    return "";
+}
+
+std::string DirectoryManager::GetSecurity(const StoreMetaData &metaData) const
+{
+    switch (metaData.securityLevel) {
+        case SecurityLevel::NO_LABEL:
+            if ((metaData.bundleName != metaData.appId) || (metaData.appType != "harmony")) {
+                break;
+            }
+        case SecurityLevel::S0:
+        case SecurityLevel::S1:
+            return "misc_de";
+    }
+    return "misc_ce";
+}
+
+std::string DirectoryManager::GetArea(const StoreMetaData &metaData) const
+{
+    return std::string("el") + std::to_string(metaData.area);
+}
+
+std::string DirectoryManager::GetUserId(const StoreMetaData &metaData) const
+{
+    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_NATIVE) {
+        return "public";
+    }
+    return metaData.user;
+}
+
+std::string DirectoryManager::GetBundleName(const StoreMetaData &metaData) const
+{
+    if (metaData.instanceId == 0) {
+        return metaData.bundleName;
+    }
+    return metaData.bundleName + "_" + std::to_string(metaData.instanceId);
+}
+
+std::string DirectoryManager::GetHapName(const StoreMetaData &metaData) const
+{
+    return metaData.hapName;
+}
+
+std::vector<std::string> DirectoryManager::Split(const std::string &source, const std::string &pattern) const
+{
+    std::vector<std::string> values;
+    std::string::size_type pos = 0;
+    std::string::size_type nextPos = 0;
+    while (nextPos != std::string::npos) {
+        nextPos = source.find(pattern, pos);
+        if (nextPos == pos) {
+            pos = pos + pattern.size();
+            continue;
+        }
+        values.push_back(source.substr(pos, nextPos - pos));
+        pos = nextPos + pattern.size();
+    }
+    return values;
+}
+
+int32_t DirectoryManager::GetVersionIndex(uint32_t version) const
+{
+    for (int i = 0; i < strategies_.size(); ++i) {
+        if (version >= strategies_[i].version) {
+            return i;
+        }
+    }
+    return int32_t(strategies_.size()) - 1;
+}
+
+std::vector<uint32_t> DirectoryManager::GetVersions()
+{
+    std::vector<uint32_t> versions;
+    for (int i = 0; i < strategies_.size(); ++i) {
+        versions[i] = strategies_[i].version;
+    }
+    return versions;
+}
+
+std::string DirectoryManager::GenPath(const StoreMetaData &metaData, uint32_t version, const std::string &exPath) const
+{
+    int32_t index = GetVersionIndex(version);
+    if (index < 0) {
+        return "";
+    }
+    std::string path;
+    auto &strategy = strategies_[index];
+    for (int i = 0; i < strategy.pipes.size(); ++i) {
+        std::string section;
+        if (strategy.pipes[i] == nullptr) {
+            section = strategy.path[i];
+        } else {
+            section = (this->*(strategy.pipes[i]))(metaData);
+        }
+        if (section.empty()) {
+            continue;
+        }
+        path += "/" + section;
+    }
+    if (!exPath.empty()) {
+        path += "/" + exPath;
+    }
+    if (strategy.autoCreate) {
+        CreateDirectory(path);
+    }
+    return path;
+}
+
+bool DirectoryManager::CreateDirectory(const std::string &path) const
+{
+    if (access(path.c_str(), F_OK) == 0) {
+        return true;
+    }
+
+    std::string::size_type index = 0;
+    do {
+        std::string subPath;
+        index = path.find('/', index + 1);
+        if (index == std::string::npos) {
+            subPath = path;
+        } else {
+            subPath = path.substr(0, index);
+        }
+
+        if (access(subPath.c_str(), F_OK) != 0) {
+            if (mkdir(subPath.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) != 0) {
+                return false;
+            }
+        }
+    } while (index != std::string::npos);
+
+    return access(path.c_str(), F_OK) == 0;
 }
 } // namespace OHOS::DistributedData

@@ -74,14 +74,15 @@ void Bootstrap::LoadNetworks()
 }
 void Bootstrap::LoadDirectory()
 {
-    auto *global = ConfigFactory::GetInstance().GetGlobalConfig();
-    if (global == nullptr || global->directory == nullptr) {
+    auto *config = ConfigFactory::GetInstance().GetDirectoryConfig();
+    if (config == nullptr) {
         return;
     }
-    for (const auto &strategy : global->directory->strategy) {
-        DirectoryManager::GetInstance().AddParams(strategy);
+    std::vector<DirectoryManager::Strategy> strategies(config->strategy.size());
+    for (int i = 0; i < config->strategy.size(); ++i) {
+        strategies[i] = config->strategy[i];
     }
-    DirectoryManager::GetInstance().SetCurrentVersion(global->directory->currentStrategyVersion);
+    DirectoryManager::GetInstance().Initialize(strategies);
 }
 } // namespace DistributedData
 } // namespace OHOS

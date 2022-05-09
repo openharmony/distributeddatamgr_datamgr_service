@@ -29,7 +29,6 @@
 #include "single_kvstore_impl.h"
 #include "types.h"
 
-
 namespace OHOS {
 namespace DistributedKv {
 class KvStoreAppManager {

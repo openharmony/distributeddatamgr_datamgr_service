@@ -28,6 +28,7 @@
 #include "kvstore_device_listener.h"
 #include "kvstore_impl.h"
 #include "kvstore_user_manager.h"
+#include "metadata/store_meta_data.h"
 #include "reporter.h"
 #include "security/security.h"
 #include "single_kvstore_impl.h"

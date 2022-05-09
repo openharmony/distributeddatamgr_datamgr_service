@@ -29,6 +29,9 @@ public:
     static bool Marshalling(MessageParcel &data);
     static bool Unmarshalling(MessageParcel &data);
 
+    static bool Marshalling(int32_t input, MessageParcel &data);
+    static bool Unmarshalling(MessageParcel &data, int32_t &output);
+
     static bool Marshalling(const std::string &input, MessageParcel &data);
     static bool Unmarshalling(MessageParcel &data, std::string &output);
 
@@ -58,6 +61,9 @@ public:
 
     static bool Marshalling(const Options &input, MessageParcel &data);
     static bool Unmarshalling(MessageParcel &data, Options &output);
+
+    static bool Marshalling(const sptr<IRemoteObject> &input, MessageParcel &data);
+    static bool Unmarshalling(MessageParcel &data, sptr<IRemoteObject> &output);
 
     static int64_t GetTotalSize(const std::vector<Entry> &entries);
     static int64_t GetTotalSize(const std::vector<Key> &entries);

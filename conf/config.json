@@ -63,27 +63,17 @@
     ]
   },
   "directory": {
-    "workers": [
-      "appWorker",
-      "serverWorker"
-    ],
-    "metaPath": "/data/service/el0/0/database/ddms/metadata/",
     "strategy": [
       {
-        "version": "0",
-        "holder": "ddms",
-        "path": "/data/{security}/0/mdds/{userId}/{bundleName}",
-        "metaPath": "/data/misc_de/0/mdds/Meta"
+        "version": 0,
+        "pattern": "/data/{security}/0/mdds/{userId}/default/{bundleName}",
+        "metaPath": "/data/misc_de/0/mdds/Meta",
+        "autoCreate": true
       },
       {
-        "version": "1",
-        "holder": "ddms",
-        "path": "/data/service/{security}/0/database/ddms/{userId}/{bundleName}"
-      },
-      {
-        "version": "2",
-        "hodler": "caller",
-        "path": "/data/{type}/{security}/{userId}/{packageName}/database/{bundleName}"
+        "version": 50331651,
+        "pattern": "/data/{type}/{area}/{userId}/database/{bundleName}/{hapName}/{store}",
+        "metaPath": "/data/service/el1/public/database/distributeddata/meta"
       }
     ]
   }

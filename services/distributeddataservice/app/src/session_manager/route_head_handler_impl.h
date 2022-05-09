@@ -37,10 +37,10 @@ struct RouteHead {
     uint32_t dataLen;
 };
 
-constexpr const int32_t DEVICE_ID_SIZE_MAX = 65;
+constexpr const int32_t MAX_DEVICE_ID = 65;
 struct SessionDevicePair {
-    char sourceDeviceId[DEVICE_ID_SIZE_MAX];
-    char targetDeviceId[DEVICE_ID_SIZE_MAX];
+    char sourceId[MAX_DEVICE_ID];
+    char targetId[MAX_DEVICE_ID];
 };
 
 struct SessionUserPair {

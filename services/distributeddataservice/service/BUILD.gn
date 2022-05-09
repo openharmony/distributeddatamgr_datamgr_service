@@ -54,6 +54,7 @@ ohos_shared_library("distributeddatasvc") {
   ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]

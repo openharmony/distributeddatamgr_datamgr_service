@@ -67,5 +67,10 @@ GlobalConfig *ConfigFactory::GetGlobalConfig()
 {
     return &config_;
 }
+
+DirectoryConfig *ConfigFactory::GetDirectoryConfig()
+{
+    return config_.directory;
+}
 } // namespace DistributedData
 } // namespace OHOS

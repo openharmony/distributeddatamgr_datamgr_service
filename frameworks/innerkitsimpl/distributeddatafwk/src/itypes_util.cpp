@@ -16,7 +16,7 @@
 #define LOG_TAG "ITypesUtil"
 
 #include "itypes_util.h"
-
+#include "iremote_object.h"
 #include "autils/constant.h"
 #include "log_print.h"
 
@@ -29,6 +29,16 @@ bool ITypesUtil::Marshalling(MessageParcel &data)
 bool ITypesUtil::Unmarshalling(MessageParcel &data)
 {
     return true;
+}
+
+bool ITypesUtil::Marshalling(int32_t input, MessageParcel &data)
+{
+    return data.WriteInt32(input);
+}
+
+bool ITypesUtil::Unmarshalling(MessageParcel &data, int32_t &output)
+{
+    return data.ReadInt32(output);
 }
 
 bool ITypesUtil::Marshalling(const std::string &input, MessageParcel &data)
@@ -384,6 +394,17 @@ bool ITypesUtil::Unmarshalling(MessageParcel &data, Options &output)
     output.kvStoreType = source->kvStoreType;
     output.syncable = source->syncable;
     output.dataOwnership = source->dataOwnership;
+    return true;
+}
+
+bool ITypesUtil::Marshalling(const sptr<IRemoteObject> &input, MessageParcel &data)
+{
+    return data.WriteRemoteObject(input);
+}
+
+bool ITypesUtil::Unmarshalling(MessageParcel &data, sptr<IRemoteObject> &output)
+{
+    output = data.ReadRemoteObject();
     return true;
 }
 

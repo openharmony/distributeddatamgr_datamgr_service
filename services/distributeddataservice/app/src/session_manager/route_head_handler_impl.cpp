@@ -141,12 +141,12 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
 {
     uint8_t *ptr = data;
     SessionDevicePair *devicePair = reinterpret_cast<SessionDevicePair *>(ptr);
-    auto ret = strcpy_s(devicePair->sourceDeviceId, DEVICE_ID_SIZE_MAX, session_.sourceDeviceId.c_str());
+    auto ret = strcpy_s(devicePair->sourceId, MAX_DEVICE_ID, session_.sourceDeviceId.c_str());
     if (ret != 0) {
         ZLOGE("strcpy for source device id failed");
         return false;
     }
-    ret = strcpy_s(devicePair->targetDeviceId, DEVICE_ID_SIZE_MAX, session_.targetDeviceId.c_str());
+    ret = strcpy_s(devicePair->targetId, MAX_DEVICE_ID, session_.targetDeviceId.c_str());
     if (ret != 0) {
         ZLOGE("strcpy for target device id failed");
         return false;
@@ -248,8 +248,8 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
         return false;
     }
     const SessionDevicePair *devicePair = reinterpret_cast<const SessionDevicePair *>(ptr);
-    session_.sourceDeviceId.append(devicePair->sourceDeviceId, DEVICE_ID_SIZE_MAX - 1);
-    session_.targetDeviceId.append(devicePair->targetDeviceId, DEVICE_ID_SIZE_MAX - 1);
+    session_.sourceDeviceId = std::string(devicePair->sourceId, strnlen(devicePair->sourceId, MAX_DEVICE_ID));
+    session_.targetDeviceId = std::string(devicePair->targetId, strnlen(devicePair->targetId, MAX_DEVICE_ID));
     ptr += sizeof(SessionDevicePair);
     leftSize -= sizeof(SessionDevicePair);
 
