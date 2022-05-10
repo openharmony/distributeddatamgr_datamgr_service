@@ -49,7 +49,7 @@ void UserChangeMonitor::Stop()
     if (!isStarted_) {
         return;
     }
-    if (userNotifier_ == nullptr) {
+    if (userNotifier_ != nullptr) {
         userNotifier_->UnRegisterEventType(USER_ACTIVE_EVENT);
         userNotifier_->UnRegisterEventType(USER_NON_ACTIVE_EVENT);
         userNotifier_->UnRegisterEventType(USER_ACTIVE_TO_NON_ACTIVE_EVENT);
