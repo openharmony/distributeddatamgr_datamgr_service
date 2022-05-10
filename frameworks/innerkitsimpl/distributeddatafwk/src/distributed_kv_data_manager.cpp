@@ -232,13 +232,7 @@ void DistributedKvDataManager::RegisterKvStoreServiceDeathRecipient(
         ZLOGW("Register KvStoreService Death Recipient input is null.");
         return;
     }
-    std::shared_ptr<KvStoreDeathRecipientImpl> kvStoreDeathRecipientImpl =
-        std::make_shared<KvStoreDeathRecipientImpl>(kvStoreDeathRecipient);
-    if (kvStoreDeathRecipientImpl != nullptr) {
-        KvStoreServiceDeathNotifier::AddServiceDeathWatcher(kvStoreDeathRecipientImpl);
-    } else {
-        ZLOGW("Register KvStoreService Death Recipient failed.");
-    }
+    KvStoreServiceDeathNotifier::AddServiceDeathWatcher(kvStoreDeathRecipient);
 }
 
 void DistributedKvDataManager::UnRegisterKvStoreServiceDeathRecipient(
@@ -249,13 +243,7 @@ void DistributedKvDataManager::UnRegisterKvStoreServiceDeathRecipient(
         ZLOGW("UnRegister KvStoreService Death Recipient input is null.");
         return;
     }
-    std::shared_ptr<KvStoreDeathRecipientImpl> kvStoreDeathRecipientImpl =
-        std::make_shared<KvStoreDeathRecipientImpl>(kvStoreDeathRecipient);
-    if (kvStoreDeathRecipientImpl != nullptr) {
-        KvStoreServiceDeathNotifier::RemoveServiceDeathWatcher(kvStoreDeathRecipientImpl);
-    } else {
-        ZLOGW("UnRegister KvStoreService Death Recipient failed.");
-    }
+    KvStoreServiceDeathNotifier::RemoveServiceDeathWatcher(kvStoreDeathRecipient);
 }
 
 Status DistributedKvDataManager::GetLocalDevice(DeviceInfo &localDevice)

@@ -21,19 +21,11 @@
 #include <thread>
 #include "ikvstore_data_service.h"
 #include "iremote_object.h"
-#include "kvstore_death_recipient_impl.h"
+#include "kvstore_death_recipient.h"
 #include "refbase.h"
 
 namespace OHOS {
 namespace DistributedKv {
-struct KvStoreDeathRecipientImplCompare {
-    bool operator()(const std::shared_ptr<KvStoreDeathRecipientImpl> lhs,
-                    const std::shared_ptr<KvStoreDeathRecipientImpl> rhs) const
-    {
-        return lhs->kvStoreDeathRecipient_ < rhs->kvStoreDeathRecipient_;
-    }
-};
-
 class KvStoreServiceDeathNotifier final {
 public:
     KvStoreServiceDeathNotifier() = delete;
@@ -43,16 +35,16 @@ public:
     // temporarily used, should get in service side from binder.
     static void SetAppId(const AppId &appId);
     // add watcher for server die msg.
-    static void AddServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipientImpl> watcher);
+    static void AddServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipient> watcher);
     // remove watcher for server die msg.
-    static void RemoveServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipientImpl> watcher);
+    static void RemoveServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipient> watcher);
 
 private:
-    class KvStoreDeathRecipient : public IRemoteObject::DeathRecipient {
+    class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
-        KvStoreDeathRecipient();
+        ServiceDeathRecipient();
 
-        virtual ~KvStoreDeathRecipient();
+        virtual ~ServiceDeathRecipient();
 
         void OnRemoteDied(const wptr<IRemoteObject> &remote) override;
     };
@@ -63,10 +55,10 @@ private:
     // lock for kvDataServiceProxy_ and serviceDeathWatchers_.
     static std::mutex watchMutex_;
     static sptr<IKvStoreDataService> kvDataServiceProxy_;
-    static sptr<KvStoreDeathRecipient> deathRecipientPtr_;
+    static sptr<ServiceDeathRecipient> deathRecipientPtr_;
     static sptr<IRemoteObject> clientDeathObserverPtr_;
     // set of watchers for server die msg.
-    static std::set<std::shared_ptr<KvStoreDeathRecipientImpl>, KvStoreDeathRecipientImplCompare> serviceDeathWatchers_;
+    static std::set<std::shared_ptr<KvStoreDeathRecipient>> serviceDeathWatchers_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

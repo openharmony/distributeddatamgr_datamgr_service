@@ -29,10 +29,9 @@ namespace DistributedKv {
 AppId KvStoreServiceDeathNotifier::appId_;
 std::mutex KvStoreServiceDeathNotifier::watchMutex_;
 sptr<IKvStoreDataService> KvStoreServiceDeathNotifier::kvDataServiceProxy_;
-sptr<KvStoreServiceDeathNotifier::KvStoreDeathRecipient> KvStoreServiceDeathNotifier::deathRecipientPtr_;
+sptr<KvStoreServiceDeathNotifier::ServiceDeathRecipient> KvStoreServiceDeathNotifier::deathRecipientPtr_;
 sptr<IRemoteObject> KvStoreServiceDeathNotifier::clientDeathObserverPtr_;
-std::set<std::shared_ptr<KvStoreDeathRecipientImpl>, KvStoreDeathRecipientImplCompare>
-    KvStoreServiceDeathNotifier::serviceDeathWatchers_;
+std::set<std::shared_ptr<KvStoreDeathRecipient>> KvStoreServiceDeathNotifier::serviceDeathWatchers_;
 
 void KvStoreServiceDeathNotifier::SetAppId(const AppId &appId)
 {
@@ -62,7 +61,7 @@ sptr<IKvStoreDataService> KvStoreServiceDeathNotifier::GetDistributedKvDataServi
     }
 
     if (deathRecipientPtr_ == nullptr) {
-        deathRecipientPtr_ = new (std::nothrow) KvStoreDeathRecipient();
+        deathRecipientPtr_ = new (std::nothrow) ServiceDeathRecipient();
         if (deathRecipientPtr_ == nullptr) {
             ZLOGW("new KvStoreDeathRecipient failed");
             return nullptr;
@@ -92,10 +91,10 @@ void KvStoreServiceDeathNotifier::RegisterClientDeathObserver()
     kvDataServiceProxy_->RegisterClientDeathObserver(appId_, clientDeathObserverPtr_);
 }
 
-void KvStoreServiceDeathNotifier::AddServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipientImpl> watcher)
+void KvStoreServiceDeathNotifier::AddServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipient> watcher)
 {
     std::lock_guard<std::mutex> lg(watchMutex_);
-    auto ret = serviceDeathWatchers_.insert(watcher);
+    auto ret = serviceDeathWatchers_.insert(std::move(watcher));
     if (ret.second) {
         ZLOGI("success set size: %zu", serviceDeathWatchers_.size());
     } else {
@@ -103,10 +102,10 @@ void KvStoreServiceDeathNotifier::AddServiceDeathWatcher(std::shared_ptr<KvStore
     }
 }
 
-void KvStoreServiceDeathNotifier::RemoveServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipientImpl> watcher)
+void KvStoreServiceDeathNotifier::RemoveServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipient> watcher)
 {
     std::lock_guard<std::mutex> lg(watchMutex_);
-    auto it = serviceDeathWatchers_.find(watcher);
+    auto it = serviceDeathWatchers_.find(std::move(watcher));
     if (it != serviceDeathWatchers_.end()) {
         serviceDeathWatchers_.erase(it);
         ZLOGI("find & erase set size: %zu", serviceDeathWatchers_.size());
@@ -115,7 +114,7 @@ void KvStoreServiceDeathNotifier::RemoveServiceDeathWatcher(std::shared_ptr<KvSt
     }
 }
 
-void KvStoreServiceDeathNotifier::KvStoreDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
+void KvStoreServiceDeathNotifier::ServiceDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     ZLOGW("DistributedDataMgrService died.");
     // Need to do this with the lock held
@@ -135,12 +134,12 @@ void KvStoreServiceDeathNotifier::KvStoreDeathRecipient::OnRemoteDied(const wptr
     }
 }
 
-KvStoreServiceDeathNotifier::KvStoreDeathRecipient::KvStoreDeathRecipient()
+KvStoreServiceDeathNotifier::ServiceDeathRecipient::ServiceDeathRecipient()
 {
     ZLOGI("constructor.");
 }
 
-KvStoreServiceDeathNotifier::KvStoreDeathRecipient::~KvStoreDeathRecipient()
+KvStoreServiceDeathNotifier::ServiceDeathRecipient::~ServiceDeathRecipient()
 {
     ZLOGI("destructor.");
 }

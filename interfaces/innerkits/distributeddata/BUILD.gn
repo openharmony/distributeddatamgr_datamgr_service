@@ -63,7 +63,6 @@ ohos_shared_library("distributeddata_inner") {
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/itypes_util.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_client.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_client_death_observer.cpp",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_death_recipient_impl.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_observer_client.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_resultset_client.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_service_death_notifier.cpp",
