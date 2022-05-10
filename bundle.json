@@ -117,7 +117,8 @@
             ],
             "test": [
                 "//foundation/distributeddatamgr/distributeddatamgr:build_native_test",
-                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test:distributeddatamgr_fuzztest"
+                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test:distributeddatamgr_fuzztest",
+                "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/test:fuzztest"
             ]
         }
     }
