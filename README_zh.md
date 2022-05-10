@@ -120,8 +120,8 @@
 
 分布式数据管理子系统
 
-distributeddatamgr\_distributeddatamgr
+distributeddatamgr\_datamgr 
 
-third\_party\_sqlite
+[third\_party\_sqlite](https://gitee.com/openharmony/third_party_sqlite)
 
 
