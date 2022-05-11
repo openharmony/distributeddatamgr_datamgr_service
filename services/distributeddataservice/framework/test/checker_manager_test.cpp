@@ -15,7 +15,7 @@
 
 #include "checker/checker_manager.h"
 #include "accesstoken_kit.h"
-#include "bootstrap/include/bootstrap.h"
+#include "bootstrap.h"
 #include "hap_token_info.h"
 #include "nativetoken_kit.h"
 #include "utils/crypto.h"
@@ -29,13 +29,17 @@ public:
     static void TearDownTestCase(void) {}
     void SetUp();
     void TearDown();
-    NativeTokenInfoParams infoInstance;
+    NativeTokenInfoParams infoInstance{0};
 };
 
 void CheckerManagerTest::SetUp(void)
 {
     infoInstance.dcapsNum = 0;
+    infoInstance.permsNum = 0;
+    infoInstance.aclsNum = 0;
     infoInstance.dcaps = nullptr;
+    infoInstance.perms = nullptr;
+    infoInstance.acls = nullptr;
     infoInstance.processName = "foundation";
     infoInstance.aplStr = "system_core";
 

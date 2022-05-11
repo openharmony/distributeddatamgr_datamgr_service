@@ -21,28 +21,20 @@ config("module_private_config") {
 
   include_dirs = [
     "../include/",
-    "../../service/",
+    "../../service/bootstrap/include/",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
 }
 
 ohos_unittest("CheckerManagerTest") {
   module_out_path = module_output_path
-  sources = [
-    "../checker/checker_manager.cpp",
-    "../utils/crypto.cpp",
-    "checker_manager_test.cpp",
-  ]
+  sources = [ "checker_manager_test.cpp" ]
 
   configs = [ ":module_private_config" ]
 
   external_deps = [
-    "ability_base:base",
-    "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
@@ -51,6 +43,7 @@ ohos_unittest("CheckerManagerTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
@@ -60,21 +53,11 @@ ohos_unittest("CheckerManagerTest") {
 
 ohos_unittest("EventCenterTest") {
   module_out_path = module_output_path
-  sources = [
-    "../eventcenter/event.cpp",
-    "../eventcenter/event_center.cpp",
-    "event_center_test.cpp",
-  ]
+  sources = [ "event_center_test.cpp" ]
 
   configs = [ ":module_private_config" ]
 
   external_deps = [
-    "ability_base:base",
-    "ability_base:want",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
@@ -82,6 +65,7 @@ ohos_unittest("EventCenterTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
@@ -90,20 +74,13 @@ ohos_unittest("EventCenterTest") {
 ohos_unittest("SerializableTest") {
   module_out_path = module_output_path
 
-  sources = [
-    "../serializable/serializable.cpp",
-    "serializable_test.cpp",
-  ]
+  sources = [ "serializable_test.cpp" ]
 
   configs = [ ":module_private_config" ]
 
   external_deps = [
     "ability_base:base",
     "ability_base:want",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
@@ -111,6 +88,7 @@ ohos_unittest("SerializableTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//utils/native/base:utils",
