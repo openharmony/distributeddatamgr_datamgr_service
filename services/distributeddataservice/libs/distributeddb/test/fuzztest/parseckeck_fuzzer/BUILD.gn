@@ -16,7 +16,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("KvStoreNbDelegateCurdFuzzTest") {
+ohos_fuzztest("ParseCkeckFuzzTest") {
   module_out_path = "distributeddatamgr/distributeddb"
 
   include_dirs = [
@@ -54,15 +54,19 @@ ohos_fuzztest("KvStoreNbDelegateCurdFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/kvstorenbdelegate_curd_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/parseckeck_fuzzer"
 
   sources = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/db_common.cpp",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/flatbuffer_schema.cpp",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/json_object.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/log_print.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/platform_specific.cpp",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/schema_object.cpp",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/schema_utils.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/common/distributeddb_tools_test.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/common/distributeddb_data_generate_unit_test.cpp",
-    "kvstorenbdelegate_curd_fuzzer.cpp",
+    "parseckeck_fuzzer.cpp",
   ]
 
   defines = [
@@ -98,6 +102,6 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":KvStoreNbDelegateCurdFuzzTest",
+    ":ParseCkeckFuzzTest",
   ]
 }

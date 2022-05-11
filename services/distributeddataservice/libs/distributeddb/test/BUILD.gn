@@ -745,14 +745,15 @@ group("distributeddatamgr_fuzztest") {
   testonly = true
   deps = []
   deps += [
+    "fuzztest/delegate_fuzzer:fuzztest",
     "fuzztest/fileoper_fuzzer:fuzztest",
+    "fuzztest/importfile_fuzzer:fuzztest",
     "fuzztest/iprocesscommunicator_fuzzer:fuzztest",
-    "fuzztest/kvstoredelegate_curd_fuzzer:fuzztest",
-    "fuzztest/kvstorenbdelegate_curd_fuzzer:fuzztest",
     "fuzztest/kvstoreresultset_fuzzer:fuzztest",
+    "fuzztest/nbdelegate_fuzzer:fuzztest",
+    "fuzztest/parseckeck_fuzzer:fuzztest",
     "fuzztest/query_fuzzer:fuzztest",
     "fuzztest/rekey_fuzzer:fuzztest",
-    "fuzztest/schema_parseckeck_fuzzer:fuzztest",
   ]
 }
 ###############################################################################

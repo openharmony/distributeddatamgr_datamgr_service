@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "schema_parseckeck_fuzzer.h"
+#include "parseckeck_fuzzer.h"
 #include "distributeddb_tools_test.h"
 #include "schema_object.h"
 #include "schema_utils.h"

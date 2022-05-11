@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "kvstoredelegate_curd_fuzzer.h"
+#include "delegate_fuzzer.h"
 #include "distributeddb_data_generate_unit_test.h"
 #include "distributeddb_tools_test.h"
 

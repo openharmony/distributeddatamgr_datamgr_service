@@ -16,7 +16,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("KvStoreDelegateCurdFuzzTest") {
+ohos_fuzztest("DelegateFuzzTest") {
   module_out_path = "distributeddatamgr/distributeddb"
 
   include_dirs = [
@@ -54,7 +54,7 @@ ohos_fuzztest("KvStoreDelegateCurdFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/kvstoredelegate_curd_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/delegate_fuzzer"
 
   sources = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/db_common.cpp",
@@ -62,7 +62,7 @@ ohos_fuzztest("KvStoreDelegateCurdFuzzTest") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/platform_specific.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/common/distributeddb_tools_test.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/common/distributeddb_data_generate_unit_test.cpp",
-    "kvstoredelegate_curd_fuzzer.cpp",
+    "delegate_fuzzer.cpp",
   ]
 
   defines = [
@@ -98,6 +98,6 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":KvStoreDelegateCurdFuzzTest",
+    ":DelegateFuzzTest",
   ]
 }
