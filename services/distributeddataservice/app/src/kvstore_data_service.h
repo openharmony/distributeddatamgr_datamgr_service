@@ -174,7 +174,7 @@ private:
     std::mutex accountMutex_;
     std::map<std::string, KvStoreUserManager> deviceAccountMap_;
     std::mutex clientDeathObserverMutex_;
-    std::map<std::string, KvStoreClientDeathObserverImpl> clientDeathObserverMap_;
+    std::map<uint32_t, KvStoreClientDeathObserverImpl> clientDeathObserverMap_;
     std::shared_ptr<KvStoreAccountObserver> accountEventObserver_;
     std::unique_ptr<BackupHandler> backup_;
     std::map<IRemoteObject *, sptr<IDeviceStatusChangeListener>> deviceListeners_;

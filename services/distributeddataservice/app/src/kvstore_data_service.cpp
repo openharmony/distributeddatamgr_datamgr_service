@@ -644,18 +644,23 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
         return Status::INVALID_ARGUMENT;
     }
 
-    pid_t uid = IPCSkeleton::GetCallingUid();
-    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-    std::lock_guard<std::mutex> lg(clientDeathObserverMutex_);
-    auto it = clientDeathObserverMap_.emplace(std::piecewise_construct, std::forward_as_tuple(appId.appId),
-        std::forward_as_tuple(appId, uid, tokenId, *this, std::move(observer)));
-    ZLOGI("map size: %{public}zu.", clientDeathObserverMap_.size());
-    if (!it.second) {
-        ZLOGI("insert failed");
-        return Status::ERROR;
+    CheckerManager::StoreInfo info;
+    info.uid = IPCSkeleton::GetCallingUid();
+    info.tokenId = IPCSkeleton::GetCallingTokenID();
+    info.bundleName = appId.appId;
+    info.storeId = "";
+    if (!CheckerManager::GetInstance().IsValid(info)) {
+        ZLOGW("check bundleName:%{public}s uid:%{public}d failed.", appId.appId.c_str(), info.uid);
+        return Status::PERMISSION_DENIED;
     }
-    ZLOGI("insert success");
-    return Status::SUCCESS;
+
+    std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
+    clientDeathObserverMap_.erase(info.tokenId);
+    auto it = clientDeathObserverMap_.emplace(std::piecewise_construct, std::forward_as_tuple(info.tokenId),
+        std::forward_as_tuple(appId, info.uid, info.tokenId, *this, std::move(observer)));
+    ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d inserted:%{public}s.",
+        appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid(), it.second ? "success" : "failed");
+    return it.second ? Status::SUCCESS : Status::ERROR;
 }
 
 Status KvStoreDataService::AppExit(const AppId &appId, pid_t uid, uint32_t token)
@@ -664,18 +669,16 @@ Status KvStoreDataService::AppExit(const AppId &appId, pid_t uid, uint32_t token
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
-    {
-        std::lock_guard<std::mutex> lg(clientDeathObserverMutex_);
-        clientDeathObserverMap_.erase(appIdTmp.appId);
-        ZLOGI("map size: %zu.", clientDeathObserverMap_.size());
-    }
+    std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
+    clientDeathObserverMap_.erase(token);
 
     const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
-    std::lock_guard<std::mutex> lg(accountMutex_);
+    std::lock_guard<std::mutex> lock(accountMutex_);
     auto it = deviceAccountMap_.find(userId);
     if (it != deviceAccountMap_.end()) {
         auto status = (it->second).CloseAllKvStore(appIdTmp.appId);
-        ZLOGI("Close all kv store %{public}s, status:%{public}d.", appIdTmp.appId.c_str(), status);
+        ZLOGI("Close all kv store %{public}s uid:%{public}d, status:%{public}d.",
+            appIdTmp.appId.c_str(), uid, status);
     }
     return Status::SUCCESS;
 }
