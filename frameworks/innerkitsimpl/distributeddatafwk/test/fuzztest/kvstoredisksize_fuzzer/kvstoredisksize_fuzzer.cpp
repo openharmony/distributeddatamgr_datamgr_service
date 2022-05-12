@@ -28,10 +28,10 @@ namespace OHOS {
         KvStoreNbDelegate::Option nbOption {true, true, false, CipherType::DEFAULT, passwd};
         KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
         g_kvManager.GetKvStore(rawString, nbOption,
-                [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate* kvNbDelegate) {
-                    if (status == DBStatus::OK) {
-                        kvNbDelegatePtr = kvNbDelegate;
-                    }
+            [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate* kvNbDelegate) {
+                if (status == DBStatus::OK) {
+                    kvNbDelegatePtr = kvNbDelegate;
+                }
         });
 
         if (kvNbDelegatePtr) {

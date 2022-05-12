@@ -115,6 +115,21 @@ int DistributedDBToolsTest::RemoveTestDbFiles(const std::string& dir)
     return 0;
 }
 
+void DistributedDBToolsTest::GetRandomKeyValue(std::vector<uint8_t> &value, uint32_t defaultSize)
+{
+    uint32_t randSize = 0;
+    if (defaultSize == 0) {
+        uint8_t simSize = 0;
+        RAND_bytes(&simSize, 1);
+        randSize = (simSize == 0) ? 1 : simSize;
+    } else {
+        randSize = defaultSize;
+    }
+
+    value.resize(randSize);
+    RAND_bytes(value.data(), randSize);
+}
+
 KvStoreObserverTest::KvStoreObserverTest() : callCount_(0), isCleared_(false)
 {}
 
