@@ -18,7 +18,7 @@
 
 #include <memory>
 
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 #include "concurrent_map.h"
 #include "metadata/user_meta_data.h"
 #include "visibility.h"

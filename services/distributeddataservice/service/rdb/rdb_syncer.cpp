@@ -17,7 +17,7 @@
 
 #include "rdb_syncer.h"
 
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "log_print.h"
 #include "metadata/store_meta_data.h"

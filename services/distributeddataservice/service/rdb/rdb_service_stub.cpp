@@ -69,13 +69,13 @@ int32_t RdbServiceStub::OnRemoteInitNotifier(MessageParcel &data, MessageParcel 
 int32_t RdbServiceStub::OnRemoteSetDistributedTables(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    if (!DistributedKv::ITypesUtil::Unmarshalling(data, param)) {
+    std::vector<std::string> tables;
+    if (!DistributedKv::ITypesUtil::Unmarshalling(data, param, tables)) {
         ZLOGE("read param failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
     }
-    std::vector<std::string> tables;
-    data.ReadStringVector(&tables);
+
     reply.WriteInt32(SetDistributedTables(param, tables));
     return RDB_OK;
 }
@@ -83,20 +83,10 @@ int32_t RdbServiceStub::OnRemoteSetDistributedTables(MessageParcel &data, Messag
 int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    if (!DistributedKv::ITypesUtil::Unmarshalling(data, param)) {
-        ZLOGE("read param failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
-    }
     SyncOption option {};
-    if (!DistributedKv::ITypesUtil::Unmarshalling(data, option)) {
-        ZLOGE("read option failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
-    }
     RdbPredicates predicates;
-    if (!DistributedKv::ITypesUtil::Unmarshalling(data, predicates)) {
-        ZLOGE("read predicates failed");
+    if (!DistributedKv::ITypesUtil::Unmarshalling(data, param, option, predicates)) {
+        ZLOGE("read param or option or predicates failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
     }
@@ -116,26 +106,11 @@ int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply
 int32_t RdbServiceStub::OnRemoteDoAsync(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    if (!DistributedKv::ITypesUtil::Unmarshalling(data, param)) {
-        ZLOGE("read param failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
-    }
     uint32_t seqNum;
-    if (!data.ReadUint32(seqNum)) {
-        ZLOGI("read seq num failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
-    }
     SyncOption option {};
-    if (!DistributedKv::ITypesUtil::Unmarshalling(data, option)) {
-        ZLOGE("read option failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
-    }
     RdbPredicates predicates;
-    if (!DistributedKv::ITypesUtil::Unmarshalling(data, predicates)) {
-        ZLOGE("read predicates failed");
+    if (!DistributedKv::ITypesUtil::Unmarshalling(data, param, seqNum, option, predicates)) {
+        ZLOGE("read param failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
     }

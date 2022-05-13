@@ -101,22 +101,6 @@ ohos_shared_library("distributeddataservice") {
     "src/single_kvstore_impl.cpp",
   ]
 
-  rdb_sources = [
-    "../service/rdb/rdb_service_impl.cpp",
-    "../service/rdb/rdb_service_stub.cpp",
-    "../service/rdb/rdb_store_observer_impl.cpp",
-    "../service/rdb/rdb_syncer.cpp",
-  ]
-
-  kv_sources = [
-    "../service/kvdb/auth_delegate.cpp",
-    "../service/kvdb/executor_factory.cpp",
-    "../service/kvdb/user_delegate.cpp",
-  ]
-
-  sources += kv_sources
-  sources += rdb_sources
-
   configs = [ ":module_private_config" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",

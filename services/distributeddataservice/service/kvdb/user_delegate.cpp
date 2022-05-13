@@ -18,8 +18,7 @@
 #define LOG_TAG "UserDelegate"
 
 #include <thread>
-#include "account_delegate.h"
-#include "communication_provider.h"
+#include "communicator/communication_provider.h"
 #include "executor_factory.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"

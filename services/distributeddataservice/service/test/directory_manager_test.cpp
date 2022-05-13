@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#include "directory_manager.h"
-
 #include <gtest/gtest.h>
-#include "types.h"
 #include "accesstoken_kit.h"
+#include "bootstrap.h"
+#include "directory_manager.h"
 #include "nativetoken_kit.h"
+#include "types.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -69,11 +69,13 @@ public:
     {
         tokenParam_.processName = "foundation";
         tokenParam_.aplStr = "system_core";
+
+        Bootstrap::GetInstance().LoadDirectory();
     }
     void TearDown() {}
 
 protected:
-    NativeTokenInfoParams tokenParam_{ 0 };
+    NativeTokenInfoParams tokenParam_  {0};
 };
 
 /**
@@ -91,7 +93,7 @@ HWTEST_F(DirectoryManagerTest, GetBundleStorePath, TestSize.Level0)
     metaData.dataDir = "/data/app/el1/100/database/ohos.test.demo/kvdb";
     metaData.securityLevel = SecurityLevel::S2;
     metaData.area = 1;
-    metaData.tokenId = AccessTokenKit::GetHapTokenID(10, "ohos.test.demo", 0);
+    metaData.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
     HapTokenInfo tokenInfo;
     AccessTokenKit::GetHapTokenInfo(metaData.tokenId, tokenInfo);
     metaData.appId = tokenInfo.appID;
