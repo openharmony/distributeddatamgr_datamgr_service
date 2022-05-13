@@ -19,33 +19,33 @@
 using namespace DistributedDB;
 using namespace DistributedDBTest;
 namespace OHOS {
-    static auto g_kvManager = KvStoreDelegateManager("APP_ID", "USER_ID");
-    void NbDbTest(const uint8_t *data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        CipherPassword passwd;
-        passwd.SetValue(data, size);
-        KvStoreNbDelegate::Option nbOption {true, true, false, CipherType::DEFAULT, passwd};
-        KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
-        g_kvManager.GetKvStore(rawString, nbOption,
-            [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate* kvNbDelegate) {
-                if (status == DBStatus::OK) {
-                    kvNbDelegatePtr = kvNbDelegate;
-                }
-        });
+static auto g_kvManager = KvStoreDelegateManager("APP_ID", "USER_ID");
+void NbDbTest(const uint8_t *data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    CipherPassword passwd;
+    passwd.SetValue(data, size);
+    KvStoreNbDelegate::Option nbOption {true, true, false, CipherType::DEFAULT, passwd};
+    KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
+    g_kvManager.GetKvStore(rawString, nbOption,
+        [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate* kvNbDelegate) {
+            if (status == DBStatus::OK) {
+                kvNbDelegatePtr = kvNbDelegate;
+            }
+    });
 
-        if (kvNbDelegatePtr) {
-            Key key;
-            Value value;
-            DistributedDBToolsTest::GetRandomKeyValue(key, DBConstant::MAX_KEY_SIZE);
-            DistributedDBToolsTest::GetRandomKeyValue(value, DBConstant::MAX_VALUE_SIZE);
-            kvNbDelegatePtr->Put(key, value);
-            g_kvManager.CloseKvStore(kvNbDelegatePtr);
-        }
-        uint64_t dbSize = 0;
-        g_kvManager.GetKvStoreDiskSize(rawString, dbSize);
-        g_kvManager.DeleteKvStore(rawString);
+    if (kvNbDelegatePtr != nullptr) {
+        Key key;
+        Value value;
+        DistributedDBToolsTest::GetRandomKeyValue(key, DBConstant::MAX_KEY_SIZE);
+        DistributedDBToolsTest::GetRandomKeyValue(value, DBConstant::MAX_VALUE_SIZE);
+        kvNbDelegatePtr->Put(key, value);
+        g_kvManager.CloseKvStore(kvNbDelegatePtr);
     }
+    uint64_t dbSize = 0;
+    g_kvManager.GetKvStoreDiskSize(rawString, dbSize);
+    g_kvManager.DeleteKvStore(rawString);
+}
 }
 
 /* Fuzzer entry point */

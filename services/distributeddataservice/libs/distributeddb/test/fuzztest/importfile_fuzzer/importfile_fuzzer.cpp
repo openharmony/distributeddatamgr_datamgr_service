@@ -27,42 +27,42 @@ using namespace std;
 static KvStoreConfig g_config;
 
 namespace OHOS {
-    void SingerVerImport(const uint8_t *data, size_t size, const std::string &importFile)
-    {
-        static auto kvManager = KvStoreDelegateManager("APP_ID", "USER_ID");
-        kvManager.SetKvStoreConfig(g_config);
-        kvManager.SetProcessLabel("FUZZ", "DISTRIBUTEDDB");
-        kvManager.SetProcessCommunicator(std::make_shared<ProcessCommunicatorTestStub>());
-        CipherPassword passwd;
-        passwd.SetValue(data, size);
-        KvStoreNbDelegate::Option option = {true, false, true, CipherType::DEFAULT, passwd};
+void SingerVerImport(const uint8_t *data, size_t size, const std::string &importFile)
+{
+    static auto kvManager = KvStoreDelegateManager("APP_ID", "USER_ID");
+    kvManager.SetKvStoreConfig(g_config);
+    kvManager.SetProcessLabel("FUZZ", "DISTRIBUTEDDB");
+    kvManager.SetProcessCommunicator(std::make_shared<ProcessCommunicatorTestStub>());
+    CipherPassword passwd;
+    passwd.SetValue(data, size);
+    KvStoreNbDelegate::Option option = {true, false, true, CipherType::DEFAULT, passwd};
 
-        KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
-        kvManager.GetKvStore("distributed_import_single", option,
-            [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate* kvNbDelegate) {
-                if (status == DBStatus::OK) {
-                    kvNbDelegatePtr = kvNbDelegate;
-                }
-            });
-        if (kvNbDelegatePtr == nullptr) {
-            return;
-        }
-
-        kvNbDelegatePtr->Import(importFile, passwd);
-        kvManager.CloseKvStore(kvNbDelegatePtr);
-        kvManager.DeleteKvStore("distributed_import_single");
+    KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
+    kvManager.GetKvStore("distributed_import_single", option,
+        [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate* kvNbDelegate) {
+            if (status == DBStatus::OK) {
+                kvNbDelegatePtr = kvNbDelegate;
+            }
+        });
+    if (kvNbDelegatePtr == nullptr) {
+        return;
     }
 
-    bool MakeImportFile(const uint8_t *data, size_t size, const std::string &realPath)
-    {
-        std::ofstream ofs(realPath, std::ofstream::out);
-        if (!ofs.is_open()) {
-            LOGE("the file open failed");
-            return false;
-        }
-        ofs.write(reinterpret_cast<const char *>(data), size);
-        return true;
+    kvNbDelegatePtr->Import(importFile, passwd);
+    kvManager.CloseKvStore(kvNbDelegatePtr);
+    kvManager.DeleteKvStore("distributed_import_single");
+}
+
+bool MakeImportFile(const uint8_t *data, size_t size, const std::string &realPath)
+{
+    std::ofstream ofs(realPath, std::ofstream::out);
+    if (!ofs.is_open()) {
+        LOGE("the file open failed");
+        return false;
     }
+    ofs.write(reinterpret_cast<const char *>(data), size);
+    return true;
+}
 }
 
 /* Fuzzer entry point */

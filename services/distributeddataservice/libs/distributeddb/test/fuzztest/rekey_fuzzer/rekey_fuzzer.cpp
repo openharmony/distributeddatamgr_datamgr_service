@@ -21,69 +21,69 @@ using namespace DistributedDB;
 using namespace DistributedDBTest;
 
 namespace OHOS {
-    static auto g_kvManager = KvStoreDelegateManager("APP_ID", "USER_ID");
-    std::vector<Entry> CreateEntries(const uint8_t* data, size_t size)
-    {
-        std::vector<Entry> entries;
+static auto g_kvManager = KvStoreDelegateManager("APP_ID", "USER_ID");
+std::vector<Entry> CreateEntries(const uint8_t* data, size_t size)
+{
+    std::vector<Entry> entries;
 
-        auto count = static_cast<int>(std::min(size, size_t(1024)));
-        for (int i = 1; i < count; i++) {
-            Entry entry;
-            entry.key = std::vector<uint8_t> (data, data + i);
-            entry.value = std::vector<uint8_t> (data, data + size);
-            entries.push_back(entry);
-        }
-        return entries;
+    auto count = static_cast<int>(std::min(size, size_t(1024)));
+    for (int i = 1; i < count; i++) {
+        Entry entry;
+        entry.key = std::vector<uint8_t> (data, data + i);
+        entry.value = std::vector<uint8_t> (data, data + size);
+        entries.push_back(entry);
     }
+    return entries;
+}
 
-    void SingerVerReKey(const uint8_t* data, size_t size)
-    {
+void SingerVerReKey(const uint8_t* data, size_t size)
+{
+    CipherPassword passwd;
+    // div 2 -> half
+    passwd.SetValue(data, (size / 2));
+
+    KvStoreNbDelegate::Option nbOption = {true, false, true, CipherType::DEFAULT, passwd};
+    KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
+
+    g_kvManager.GetKvStore("distributed_nb_rekey_test", nbOption,
+        [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate * kvNbDelegate) {
+            if (status == DBStatus::OK) {
+                kvNbDelegatePtr = kvNbDelegate;
+            }
+        });
+
+    if (kvNbDelegatePtr) {
+        kvNbDelegatePtr->PutBatch(CreateEntries(data, size));
+        passwd.SetValue(data, size);
+        kvNbDelegatePtr->Rekey(passwd);
+        g_kvManager.CloseKvStore(kvNbDelegatePtr);
+    }
+}
+
+void MultiVerVerReKey(const uint8_t* data, size_t size)
+{
+    CipherPassword passwd;
+    // div 2 -> half
+    passwd.SetValue(data, (size / 2));
+
+    KvStoreNbDelegate::Option nbOption = {true, false, true, CipherType::DEFAULT, passwd};
+    KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
+
+    g_kvManager.GetKvStore("distributed_rekey_test", nbOption,
+        [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate * kvNbDelegate) {
+            if (status == DBStatus::OK) {
+                kvNbDelegatePtr = kvNbDelegate;
+            }
+        });
+
+    if (kvNbDelegatePtr) {
+        kvNbDelegatePtr->PutBatch(CreateEntries(data, size));
         CipherPassword passwd;
-        // div 2 -> half
-        passwd.SetValue(data, (size / 2));
-
-        KvStoreNbDelegate::Option nbOption = {true, false, true, CipherType::DEFAULT, passwd};
-        KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
-
-        g_kvManager.GetKvStore("distributed_nb_rekey_test", nbOption,
-            [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate * kvNbDelegate) {
-                if (status == DBStatus::OK) {
-                    kvNbDelegatePtr = kvNbDelegate;
-                }
-            });
-
-        if (kvNbDelegatePtr) {
-            kvNbDelegatePtr->PutBatch(CreateEntries(data, size));
-            passwd.SetValue(data, size);
-            kvNbDelegatePtr->Rekey(passwd);
-            g_kvManager.CloseKvStore(kvNbDelegatePtr);
-        }
+        passwd.SetValue(data, size);
+        kvNbDelegatePtr->Rekey(passwd);
+        g_kvManager.CloseKvStore(kvNbDelegatePtr);
     }
-
-    void MultiVerVerReKey(const uint8_t* data, size_t size)
-    {
-        CipherPassword passwd;
-        // div 2 -> half
-        passwd.SetValue(data, (size / 2));
-
-        KvStoreNbDelegate::Option nbOption = {true, false, true, CipherType::DEFAULT, passwd};
-        KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
-
-        g_kvManager.GetKvStore("distributed_rekey_test", nbOption,
-            [&kvNbDelegatePtr](DBStatus status, KvStoreNbDelegate * kvNbDelegate) {
-                if (status == DBStatus::OK) {
-                    kvNbDelegatePtr = kvNbDelegate;
-                }
-            });
-
-        if (kvNbDelegatePtr) {
-            kvNbDelegatePtr->PutBatch(CreateEntries(data, size));
-            CipherPassword passwd;
-            passwd.SetValue(data, size);
-            kvNbDelegatePtr->Rekey(passwd);
-            g_kvManager.CloseKvStore(kvNbDelegatePtr);
-        }
-    }
+}
 }
 
 /* Fuzzer entry point */

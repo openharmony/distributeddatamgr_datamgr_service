@@ -21,73 +21,73 @@ using namespace DistributedDB;
 using namespace DistributedDBTest;
 
 namespace OHOS {
-    std::vector<Entry> CreateEntries(const uint8_t* data, size_t size, std::vector<Key>& keys)
-    {
-        std::vector<Entry> entries;
-        // key'length is less than 1024.
-        auto count = static_cast<int>(std::min(size, size_t(1024)));
-        for (int i = 1; i < count; i++) {
-            Entry entry;
-            entry.key = std::vector<uint8_t>(data, data + 1);
-            entry.value = std::vector<uint8_t>(data, data + size);
-            keys.push_back(entry.key);
-            entries.push_back(entry);
-        }
-        return entries;
+std::vector<Entry> CreateEntries(const uint8_t* data, size_t size, std::vector<Key>& keys)
+{
+    std::vector<Entry> entries;
+    // key'length is less than 1024.
+    auto count = static_cast<int>(std::min(size, size_t(1024)));
+    for (int i = 1; i < count; i++) {
+        Entry entry;
+        entry.key = std::vector<uint8_t>(data, data + 1);
+        entry.value = std::vector<uint8_t>(data, data + size);
+        keys.push_back(entry.key);
+        entries.push_back(entry);
     }
+    return entries;
+}
 
-    void MultiCombineFuzzer(const uint8_t* data, size_t size, KvStoreDelegate::Option &option)
-    {
-        static auto kvManger = KvStoreDelegateManager("APP_ID", "USER_ID");
-        KvStoreConfig config;
-        DistributedDBToolsTest::TestDirInit(config.dataDir);
-        kvManger.SetKvStoreConfig(config);
-        KvStoreDelegate *kvDelegatePtr = nullptr;
-        kvManger.GetKvStore("distributed_delegate_test", option,
-            [&kvDelegatePtr](DBStatus status, KvStoreDelegate* kvDelegate) {
-                if (status == DBStatus::OK) {
-                    kvDelegatePtr = kvDelegate;
-                }
-            });
-        KvStoreObserverTest *observer = new (std::nothrow) KvStoreObserverTest;
-        if ((kvDelegatePtr == nullptr) || (observer == nullptr)) {
-            return;
-        }
-
-        kvDelegatePtr->RegisterObserver(observer);
-        Key key = std::vector<uint8_t>(data, data + (size % 1024)); /* 1024 is max */
-        Value value = std::vector<uint8_t>(data, data + size);
-        kvDelegatePtr->Put(key, value);
-        KvStoreSnapshotDelegate* kvStoreSnapshotPtr = nullptr;
-        kvDelegatePtr->GetKvStoreSnapshot(nullptr,
-            [&kvStoreSnapshotPtr](DBStatus status, KvStoreSnapshotDelegate* kvStoreSnapshot) {
-                kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
-            });
-        if (kvStoreSnapshotPtr == nullptr) {
-            return;
-        }
-        auto valueCallback = [&value] (DBStatus status, const Value &getValue) {
-            value = getValue;
-        };
-
-        kvStoreSnapshotPtr->Get(key, valueCallback);
-        kvDelegatePtr->Delete(key);
-        kvStoreSnapshotPtr->Get(key, valueCallback);
-        std::vector<Key> keys;
-        kvDelegatePtr->PutBatch(CreateEntries(data, size, keys));
-        Key keyPrefix = std::vector<uint8_t>(data, data + 1);
-        kvStoreSnapshotPtr->GetEntries(keyPrefix, [](DBStatus status, const std::vector<Entry> &entries) {
-            (void) entries.size();
+void MultiCombineFuzzer(const uint8_t* data, size_t size, KvStoreDelegate::Option &option)
+{
+    static auto kvManger = KvStoreDelegateManager("APP_ID", "USER_ID");
+    KvStoreConfig config;
+    DistributedDBToolsTest::TestDirInit(config.dataDir);
+    kvManger.SetKvStoreConfig(config);
+    KvStoreDelegate *kvDelegatePtr = nullptr;
+    kvManger.GetKvStore("distributed_delegate_test", option,
+        [&kvDelegatePtr](DBStatus status, KvStoreDelegate* kvDelegate) {
+            if (status == DBStatus::OK) {
+                kvDelegatePtr = kvDelegate;
+            }
         });
-
-        kvDelegatePtr->DeleteBatch(keys);
-        kvDelegatePtr->Clear();
-        kvDelegatePtr->UnRegisterObserver(observer);
-        kvDelegatePtr->ReleaseKvStoreSnapshot(kvStoreSnapshotPtr);
-        kvManger.CloseKvStore(kvDelegatePtr);
-        kvManger.DeleteKvStore("distributed_delegate_test");
-        DistributedDBToolsTest::RemoveTestDbFiles(config.dataDir);
+    KvStoreObserverTest *observer = new (std::nothrow) KvStoreObserverTest;
+    if ((kvDelegatePtr == nullptr) || (observer == nullptr)) {
+        return;
     }
+
+    kvDelegatePtr->RegisterObserver(observer);
+    Key key = std::vector<uint8_t>(data, data + (size % 1024)); /* 1024 is max */
+    Value value = std::vector<uint8_t>(data, data + size);
+    kvDelegatePtr->Put(key, value);
+    KvStoreSnapshotDelegate* kvStoreSnapshotPtr = nullptr;
+    kvDelegatePtr->GetKvStoreSnapshot(nullptr,
+        [&kvStoreSnapshotPtr](DBStatus status, KvStoreSnapshotDelegate* kvStoreSnapshot) {
+            kvStoreSnapshotPtr = std::move(kvStoreSnapshot);
+        });
+    if (kvStoreSnapshotPtr == nullptr) {
+        return;
+    }
+    auto valueCallback = [&value] (DBStatus status, const Value &getValue) {
+        value = getValue;
+    };
+
+    kvStoreSnapshotPtr->Get(key, valueCallback);
+    kvDelegatePtr->Delete(key);
+    kvStoreSnapshotPtr->Get(key, valueCallback);
+    std::vector<Key> keys;
+    kvDelegatePtr->PutBatch(CreateEntries(data, size, keys));
+    Key keyPrefix = std::vector<uint8_t>(data, data + 1);
+    kvStoreSnapshotPtr->GetEntries(keyPrefix, [](DBStatus status, const std::vector<Entry> &entries) {
+        (void) entries.size();
+    });
+
+    kvDelegatePtr->DeleteBatch(keys);
+    kvDelegatePtr->Clear();
+    kvDelegatePtr->UnRegisterObserver(observer);
+    kvDelegatePtr->ReleaseKvStoreSnapshot(kvStoreSnapshotPtr);
+    kvManger.CloseKvStore(kvDelegatePtr);
+    kvManger.DeleteKvStore("distributed_delegate_test");
+    DistributedDBToolsTest::RemoveTestDbFiles(config.dataDir);
+}
 }
 
 /* Fuzzer entry point */

@@ -24,65 +24,65 @@ using namespace DistributedDBTest;
 static KvStoreConfig g_config;
 
 namespace OHOS {
-    void GetSchmaKvstore(const uint8_t* data, size_t size)
-    {
-        static auto kvManager = KvStoreDelegateManager("APP_ID", "USER_ID");
-        kvManager.SetKvStoreConfig(g_config);
-        KvStoreNbDelegate::Option option = {true, false, false};
-        std::string schemaString(reinterpret_cast<const char *>(data), size);
-        option.schema = schemaString;
-        KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
+void GetSchmaKvstore(const uint8_t* data, size_t size)
+{
+    static auto kvManager = KvStoreDelegateManager("APP_ID", "USER_ID");
+    kvManager.SetKvStoreConfig(g_config);
+    KvStoreNbDelegate::Option option = {true, false, false};
+    std::string schemaString(reinterpret_cast<const char *>(data), size);
+    option.schema = schemaString;
+    KvStoreNbDelegate *kvNbDelegatePtr = nullptr;
 
-        kvManager.GetKvStore("distributed_nb_get_schemakvstore", option,
-            [&kvNbDelegatePtr] (DBStatus status, KvStoreNbDelegate* kvNbDelegate) {
-                if (status == DBStatus::OK) {
-                    kvNbDelegatePtr = kvNbDelegate;
-                }
-            });
+    kvManager.GetKvStore("distributed_nb_get_schemakvstore", option,
+        [&kvNbDelegatePtr] (DBStatus status, KvStoreNbDelegate* kvNbDelegate) {
+            if (status == DBStatus::OK) {
+                kvNbDelegatePtr = kvNbDelegate;
+            }
+        });
 
-        kvManager.CloseKvStore(kvNbDelegatePtr);
-        kvManager.DeleteKvStore("distributed_nb_get_schemakvstore");
-    }
+    kvManager.CloseKvStore(kvNbDelegatePtr);
+    kvManager.DeleteKvStore("distributed_nb_get_schemakvstore");
+}
 
-    void ParseSchemaString(const uint8_t* data, size_t size)
-    {
-        std::string schemaString(reinterpret_cast<const char *>(data), size);
-        SchemaObject schemaOri;
-        schemaOri.ParseFromSchemaString(schemaString);
-        schemaOri.CompareAgainstSchemaString(schemaString);
-    }
+void ParseSchemaString(const uint8_t* data, size_t size)
+{
+    std::string schemaString(reinterpret_cast<const char *>(data), size);
+    SchemaObject schemaOri;
+    schemaOri.ParseFromSchemaString(schemaString);
+    schemaOri.CompareAgainstSchemaString(schemaString);
+}
 
-    void CompareSchemaString(const uint8_t* data, size_t size)
-    {
-        // beginning half / 2
-        std::string schemaString(data, data + (size / 2));
-        // ending half / 2 ~ end.
-        std::string schemaString2(data + (size / 2), data + size);
-        SchemaObject schemaOri;
-        schemaOri.ParseFromSchemaString(schemaString);
-        schemaOri.ParseFromSchemaString(schemaString2);
-    }
+void CompareSchemaString(const uint8_t* data, size_t size)
+{
+    // beginning half / 2
+    std::string schemaString(data, data + (size / 2));
+    // ending half / 2 ~ end.
+    std::string schemaString2(data + (size / 2), data + size);
+    SchemaObject schemaOri;
+    schemaOri.ParseFromSchemaString(schemaString);
+    schemaOri.ParseFromSchemaString(schemaString2);
+}
 
-    void CheckFieldName(const uint8_t* data, size_t size)
-    {
-        std::string schemaAttrString(reinterpret_cast<const char *>(data), size);
-        SchemaUtils::CheckFieldName(schemaAttrString);
-    }
+void CheckFieldName(const uint8_t* data, size_t size)
+{
+    std::string schemaAttrString(reinterpret_cast<const char *>(data), size);
+    SchemaUtils::CheckFieldName(schemaAttrString);
+}
 
-    void ParseFieldPath(const uint8_t* data, size_t size)
-    {
-        std::string schemaAttrString(reinterpret_cast<const char *>(data), size);
-        FieldPath outPath;
-        SchemaUtils::ParseAndCheckFieldPath(schemaAttrString, outPath);
-    }
+void ParseFieldPath(const uint8_t* data, size_t size)
+{
+    std::string schemaAttrString(reinterpret_cast<const char *>(data), size);
+    FieldPath outPath;
+    SchemaUtils::ParseAndCheckFieldPath(schemaAttrString, outPath);
+}
 
-    void CheckSchemaAttribute(const uint8_t* data, size_t size)
-    {
-        std::string schemaAttrString(reinterpret_cast<const char *>(data), size);
-        SchemaAttribute outAttr;
-        SchemaUtils::ParseAndCheckSchemaAttribute(schemaAttrString, outAttr);
-        SchemaUtils::ParseAndCheckSchemaAttribute(schemaAttrString, outAttr);
-    }
+void CheckSchemaAttribute(const uint8_t* data, size_t size)
+{
+    std::string schemaAttrString(reinterpret_cast<const char *>(data), size);
+    SchemaAttribute outAttr;
+    SchemaUtils::ParseAndCheckSchemaAttribute(schemaAttrString, outAttr);
+    SchemaUtils::ParseAndCheckSchemaAttribute(schemaAttrString, outAttr);
+}
 }
 
 /* Fuzzer entry point */
