@@ -21,8 +21,9 @@ ohos_static_library("distributeddata_account_static") {
   ]
 
   include_dirs = [
-    "../include/log",
     "../include/account",
+    "../include/autils",
+    "../include/log",
     "../include/permission",
     "../include/utils",
     "./src",
@@ -39,7 +40,7 @@ ohos_static_library("distributeddata_account_static") {
   configs = [ "//build/config/compiler:exceptions" ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//utils/native/base:utils",
   ]
 
