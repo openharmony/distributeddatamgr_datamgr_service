@@ -33,6 +33,7 @@ ohos_static_library("distributeddata_broadcaster_static") {
 
   external_deps = [
     # "ces:libcommonevent",
+    "ability_base:base",
     "ability_base:want",
     "bundle_framework:appexecfwk_base",
     "common_event_service:cesfwk_innerkits",

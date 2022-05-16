@@ -19,7 +19,7 @@
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "log_print.h"
-#include "ohos/aafwk/base/string_wrapper.h"
+#include "string_wrapper.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::EventFwk;
