@@ -528,9 +528,4 @@ Status SingleKvStoreClient::UnsubscribeWithQuery(const std::vector<std::string> 
     syncCallbackClient_->AddSyncCallback(syncObserver_, sequenceId);
     return kvStoreProxy_->UnSubscribe(deviceIds, query.ToString(), sequenceId);
 }
-
-Status SingleKvStoreClient::Clear()
-{
-    return Status::NOT_SUPPORT;
-}
 } // namespace OHOS::DistributedKv

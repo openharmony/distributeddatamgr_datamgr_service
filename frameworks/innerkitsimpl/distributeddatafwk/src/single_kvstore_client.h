@@ -93,7 +93,6 @@ public:
 
     Status SubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query) override;
     Status UnsubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query) override;
-    Status Clear() override;
 
 protected:
     Status Control(KvControlCmd cmd, const KvParam &inputParam, KvParam &outputParam) override;
