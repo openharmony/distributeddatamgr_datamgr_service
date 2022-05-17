@@ -15,8 +15,9 @@
 #define LOG_TAG "JS_DeviceKVStore"
 #include "js_device_kv_store.h"
 #include <iomanip>
-
+#include "kv_utils.h"
 #include "js_kv_store_resultset.h"
+#include "datashare_predicates.h"
 #include "js_query.h"
 #include "js_util.h"
 #include "log_print.h"
@@ -24,7 +25,7 @@
 #include "uv_queue.h"
 
 using namespace OHOS::DistributedKv;
-
+using namespace OHOS::DataShare;
 namespace OHOS::DistributedData {
 constexpr int DEVICEID_WIDTH = 4;
 static std::string GetDeviceKey(const std::string& deviceId, const std::string& key)
@@ -121,6 +122,7 @@ enum class ArgsType : uint8_t {
     DEVICEID_KEYPREFIX = 0,
     DEVICEID_QUERY,
     QUERY,
+    PREDICATES,
     UNKNOWN = 255
 };
 struct VariantArgs {
@@ -129,6 +131,7 @@ struct VariantArgs {
     std::string keyPrefix;
     JsQuery* query;
     ArgsType type = ArgsType::UNKNOWN;
+    DataSharePredicates predicates;
 };
 
 static napi_status GetVariantArgs(napi_env env, size_t argc, napi_value* argv, VariantArgs& va)
@@ -264,7 +267,13 @@ napi_value JsDeviceKVStore::GetResultSet(napi_env env, napi_callback_info info)
             auto query = ctxt->va.query->GetNative();
             status = kvStore->GetResultSetWithQuery(query.ToString(), kvResultSet);
             ZLOGD("kvStore->GetEntriesWithQuery() return %{public}d", status);
-        }
+        }  else if (ctxt->va.type == ArgsType::PREDICATES) {
+            DataQuery query;
+            status = KvUtils::ToQuery(ctxt->va.predicates, query);
+            ZLOGD("ArgsType::PREDICATES ToQuery return %{public}d", status);
+            status = kvStore->GetResultSetWithQuery(query.ToString(), kvResultSet);
+            ZLOGD("ArgsType::PREDICATES GetResultSetWithQuery return %{public}d", status);
+        };
         ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
         CHECK_STATUS_RETURN_VOID(ctxt, "kvStore->GetResultSet() failed!");
         ctxt->resultSet->SetNative(kvResultSet);

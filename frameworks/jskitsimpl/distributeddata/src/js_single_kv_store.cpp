@@ -16,13 +16,15 @@
 #include "js_single_kv_store.h"
 #include "js_util.h"
 #include "js_kv_store_resultset.h"
+#include "datashare_predicates.h"
 #include "js_query.h"
 #include "log_print.h"
 #include "napi_queue.h"
 #include "uv_queue.h"
+#include "kv_utils.h"
 
 using namespace OHOS::DistributedKv;
-
+using namespace OHOS::DataShare;
 namespace OHOS::DistributedData {
 JsSingleKVStore::JsSingleKVStore(const std::string& storeId)
     : JsKVStore(storeId)
@@ -104,6 +106,7 @@ enum class ArgsType : uint8_t {
     /* input arguments' combination type */
     KEYPREFIX = 0,
     QUERY,
+    PREDICATES,
     UNKNOWN = 255
 };
 struct VariantArgs {
@@ -111,6 +114,7 @@ struct VariantArgs {
     std::string keyPrefix;
     JsQuery* query;
     ArgsType type = ArgsType::UNKNOWN;
+    DataSharePredicates predicates;
 };
 
 static napi_status GetVariantArgs(napi_env env, size_t argc, napi_value* argv, VariantArgs& va)
@@ -125,9 +129,19 @@ static napi_status GetVariantArgs(napi_env env, size_t argc, napi_value* argv, V
         CHECK_RETURN(!va.keyPrefix.empty(), "invalid arg[0], i.e. invalid keyPrefix!", napi_invalid_arg);
         va.type = ArgsType::KEYPREFIX;
     } else if (type == napi_object) {
-        status = JSUtil::Unwrap(env, argv[0], reinterpret_cast<void**>(&va.query), JsQuery::Constructor(env));
-        CHECK_RETURN(va.query != nullptr, "invalid arg[0], i.e. invalid query!", napi_invalid_arg);
-        va.type = ArgsType::QUERY;
+        bool result = false;
+        status = napi_instanceof(env, argv[0], JsQuery::Constructor(env), &result);
+        if ((status == napi_ok) && (result != false)) {
+            status = JSUtil::Unwrap(env, argv[0], reinterpret_cast<void**>(&va.query), JsQuery::Constructor(env));
+            CHECK_RETURN(va.query != nullptr, "invalid arg[0], i.e. invalid query!", napi_invalid_arg);
+            va.type = ArgsType::QUERY;
+        } else {
+            status = JSUtil::GetValue(env, argv[0], va.predicates);
+            va.type = ArgsType::PREDICATES;
+            ZLOGD("kvStoreDataShare->GetResultSet return %{public}d", status);
+            CHECK_RETURN(true, "invalid arg[0], i.e. invalid predicates!", napi_invalid_arg);
+            // CHECK_RETURN(va.predicates, "invalid arg[0], i.e. invalid predicates!", napi_invalid_arg);
+        } 
     }
     return status;
 };
@@ -219,7 +233,13 @@ napi_value JsSingleKVStore::GetResultSet(napi_env env, napi_callback_info info)
             auto query = ctxt->va.query->GetNative();
             status = kvStore->GetResultSetWithQuery(query.ToString(), kvResultSet);
             ZLOGD("kvStore->GetEntriesWithQuery() return %{public}d", status);
-        }
+        } else if (ctxt->va.type == ArgsType::PREDICATES) {
+            DataQuery query;
+            status = KvUtils::ToQuery(ctxt->va.predicates, query);
+            ZLOGD("ArgsType::PREDICATES ToQuery return %{public}d", status);
+            status = kvStore->GetResultSetWithQuery(query.ToString(), kvResultSet);
+            ZLOGD("ArgsType::PREDICATES GetResultSetWithQuery return %{public}d", status);
+        };
         ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
         CHECK_STATUS_RETURN_VOID(ctxt, "kvStore->GetResultSet() failed!");
         ctxt->resultSet->SetNative(kvResultSet);

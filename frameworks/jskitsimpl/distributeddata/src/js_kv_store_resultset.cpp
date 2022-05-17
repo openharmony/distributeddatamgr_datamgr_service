@@ -18,8 +18,11 @@
 #include "log_print.h"
 #include "napi_queue.h"
 #include "uv_queue.h"
+#include "kvstore_datashare_result_set.h"
+#include "kv_utils.h"
 
 using namespace OHOS::DistributedKv;
+using namespace OHOS::DataShare;
 namespace OHOS::DistributedData {
 void JsKVStoreResultSet::SetNative(std::shared_ptr<KvStoreResultSet>& resultSet)
 {
@@ -271,4 +274,9 @@ napi_value JsKVStoreResultSet::GetEntry(napi_env env, napi_callback_info info) /
     NAPI_ASSERT(env, ctxt->status == napi_ok, "GetEntry failed!");
     return ctxt->output;
 }
-} // namespace OHOS::DistributedData
+
+std::shared_ptr<ResultSetBridge> JsKVStoreResultSet::Create()
+{
+    return KvUtils::ToResultSetBridge(resultSet_);
+} 
+}// namespace OHOS::DistributedData

@@ -22,6 +22,8 @@
 #include "napi/native_api.h"
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
+#include "datashare_predicates.h"
+#include "datashare_values_bucket.h"
 
 namespace OHOS::DistributedData {
 class JSUtil final {
@@ -136,6 +138,10 @@ public:
     static napi_status SetValue(napi_env env, const std::map<std::string, Status>& in, napi_value& out);
     
     static napi_status GetValue(napi_env env, napi_value in, JsSchema*& out);
+
+    static napi_status GetValue(napi_env env, napi_value in, std::vector<DataShare::DataShareValuesBucket> &out);
+    static napi_status GetValue(napi_env &env, napi_value &in, DataShare::DataShareValuesBucket &out);
+    static napi_status GetValue(napi_env env, napi_value in, DataShare::DataSharePredicates &out);
 
     /* napi_get_named_property wrapper */
     template <typename T>
