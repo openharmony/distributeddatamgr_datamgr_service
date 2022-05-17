@@ -142,8 +142,8 @@ std::string AccountDelegateNormalImpl::Sha256AccountId(const std::string &plainT
         plain = atoll(plainText.substr(plainText.size() - int64MaxLen + 1, int64MaxLen - 1).c_str());
     }
 
-    plain = htobe64(plain);
-    return Crypto::Sha256(static_cast<void *>(&plain), sizeof(plain), true);
+    auto plainVal = htobe64(plain);
+    return Crypto::Sha256(static_cast<void *>(&plainVal), sizeof(plainVal), true);
 }
 }  // namespace DistributedKv
 }  // namespace OHOS
