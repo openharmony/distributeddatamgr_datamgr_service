@@ -16,11 +16,11 @@
 #define LOG_TAG "RdbServiceImpl"
 
 #include "rdb_service_impl.h"
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "communication_provider.h"
+#include "communicator/communication_provider.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
 #include "accesstoken_kit.h"

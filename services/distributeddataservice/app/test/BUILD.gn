@@ -103,17 +103,9 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     ]
   }
 
-  kv_sources = [
-    "../../service/kvdb/auth_delegate.cpp",
-    "../../service/kvdb/executor_factory.cpp",
-    "../../service/kvdb/user_delegate.cpp",
-  ]
-
-  sources += kv_sources
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/account:distributeddata_account_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
@@ -156,13 +148,6 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "../src/single_kvstore_impl.cpp",
     "unittest/kvstore_impl_physical_isolation_test.cpp",
   ]
-  kv_sources = [
-    "../../service/kvdb/auth_delegate.cpp",
-    "../../service/kvdb/executor_factory.cpp",
-    "../../service/kvdb/user_delegate.cpp",
-  ]
-
-  sources += kv_sources
 
   configs = [ ":module_private_config" ]
 
@@ -186,7 +171,6 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/account:distributeddata_account_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
@@ -229,13 +213,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "../src/single_kvstore_impl.cpp",
     "unittest/kvstore_data_service_test.cpp",
   ]
-  kv_sources = [
-    "../../service/kvdb/auth_delegate.cpp",
-    "../../service/kvdb/executor_factory.cpp",
-    "../../service/kvdb/user_delegate.cpp",
-  ]
 
-  sources += kv_sources
   configs = [ ":module_private_config" ]
 
   external_deps = [
@@ -258,7 +236,6 @@ ohos_unittest("KvStoreDataServiceTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/account:distributeddata_account_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
@@ -302,13 +279,7 @@ ohos_unittest("KvStoreBackupTest") {
     "../src/single_kvstore_impl.cpp",
     "unittest/kvstore_backup_test.cpp",
   ]
-  kv_sources = [
-    "../../service/kvdb/auth_delegate.cpp",
-    "../../service/kvdb/executor_factory.cpp",
-    "../../service/kvdb/user_delegate.cpp",
-  ]
 
-  sources += kv_sources
   cflags_cc = [ "-DUT_TEST" ]
   configs = [ ":module_private_config" ]
 
@@ -332,7 +303,6 @@ ohos_unittest("KvStoreBackupTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/account:distributeddata_account_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
@@ -410,13 +380,7 @@ ohos_unittest("KvStoreSyncManagerTest") {
     "../src/session_manager/upgrade_manager.cpp",
     "../src/single_kvstore_impl.cpp",
   ]
-  kv_sources = [
-    "../../service/kvdb/auth_delegate.cpp",
-    "../../service/kvdb/executor_factory.cpp",
-    "../../service/kvdb/user_delegate.cpp",
-  ]
 
-  sources += kv_sources
   configs = [ ":module_private_config" ]
 
   external_deps = [
@@ -439,7 +403,6 @@ ohos_unittest("KvStoreSyncManagerTest") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/account:distributeddata_account_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
@@ -482,19 +445,12 @@ ohos_unittest("KvStoreUninstallerTest") {
     "../src/single_kvstore_impl.cpp",
     "unittest/uninstaller_test.cpp",
   ]
-  kv_sources = [
-    "../../service/kvdb/auth_delegate.cpp",
-    "../../service/kvdb/executor_factory.cpp",
-    "../../service/kvdb/user_delegate.cpp",
-  ]
 
-  sources += kv_sources
   configs = [ ":module_private_config" ]
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/account:distributeddata_account_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",

@@ -22,8 +22,12 @@ config("module_public_config") {
     "bootstrap/include",
     "config/include",
     "directory/include",
+    "kvdb",
+    "rdb",
     "//third_party/json/single_include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/kvdb/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include",
   ]
@@ -40,6 +44,13 @@ ohos_shared_library("distributeddatasvc") {
     "config/src/model/network_config.cpp",
     "config/src/model/protocol_config.cpp",
     "directory/src/directory_manager.cpp",
+    "kvdb/auth_delegate.cpp",
+    "kvdb/executor_factory.cpp",
+    "kvdb/user_delegate.cpp",
+    "rdb/rdb_service_impl.cpp",
+    "rdb/rdb_service_stub.cpp",
+    "rdb/rdb_store_observer_impl.cpp",
+    "rdb/rdb_syncer.cpp",
   ]
   cflags = [ "-Wno-multichar" ]
 
@@ -49,12 +60,15 @@ ohos_shared_library("distributeddatasvc") {
 
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//utils/native/base:utils",
   ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "deviceauth_standard:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]

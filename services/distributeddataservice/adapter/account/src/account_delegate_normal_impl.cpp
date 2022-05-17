@@ -131,19 +131,19 @@ std::string AccountDelegateNormalImpl::Sha256AccountId(const std::string &plainT
         return plainText;
     }
 
-    int64_t plainVal;
+    int64_t plain;
     std::string::size_type int64MaxLen(std::to_string(INT64_MAX).size());
     // plain text length must be less than INT64_MAX string.
-    plainVal = atoll(plainText.c_str());
-    if (plainVal == 0) {
+    plain = atoll(plainText.c_str());
+    if (plain == 0) {
         return plainText;
     }
-    if (plainVal == INT64_MAX) {
-        plainVal = atoll(plainText.substr(plainText.size() - int64MaxLen + 1, int64MaxLen - 1).c_str());
+    if (plain == INT64_MAX) {
+        plain = atoll(plainText.substr(plainText.size() - int64MaxLen + 1, int64MaxLen - 1).c_str());
     }
 
-    plainVal = htobe64(plainVal);
-    return Crypto::Sha256(std::to_string(plainVal), true);
+    plain = htobe64(plain);
+    return Crypto::Sha256(static_cast<void *>(&plain), sizeof(plain), true);
 }
 }  // namespace DistributedKv
 }  // namespace OHOS
