@@ -47,25 +47,6 @@ public:
     // if storeId is not valid, INVALID_ARGUMENT and nullptr,
     // if appId has no permission, PERMISSION_DENIED and nullptr,
     // otherwise, SUCCESS and the unipue_ptr of kvstore, which client can use to operate kvstore, will be returned.
-    [[deprecated]]
-    API_EXPORT Status GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
-                                 std::shared_ptr<KvStore> &kvStore);
-
-    // Open kvstore instance with the given storeId, creating it if needed.
-    // It is allowed to open the same kvstore concurrently
-    // multiple times, but only one KvStoreImpl will be created.
-    // Parameters:
-    // options: the config of the kvstore, including encrypt,
-    // create if needed and whether need sync between devices.
-    // appId: the name of the application.
-    // :storeId: the name of the kvstore.
-    // callback: including status and KvStore instance returned by this call.
-    // callback will return:
-    // if Options.createIfMissing is false and kvstore has not been created before,
-    // STORE_NOT_FOUND and nullptr,
-    // if storeId is not valid, INVALID_ARGUMENT and nullptr,
-    // if appId has no permission, PERMISSION_DENIED and nullptr,
-    // otherwise, SUCCESS and the unipue_ptr of kvstore, which client can use to operate kvstore, will be returned.
     API_EXPORT Status GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
                                        std::shared_ptr<SingleKvStore> &singleKvStore);
 

@@ -224,38 +224,6 @@ bool BackupHandler::SingleKvStoreRecover(StoreMetaData &metaData, DistributedDB:
     return false;
 }
 
-bool BackupHandler::MultiKvStoreRecover(StoreMetaData &metaData, DistributedDB::KvStoreDelegate *delegate)
-{
-    ZLOGI("start.");
-    if (delegate == nullptr) {
-        ZLOGE("MultiKvStoreRecover failed, delegate is null.");
-        return false;
-    }
-    auto pathType = KvStoreAppManager::ConvertPathType(metaData);
-    if (!BackupHandler::FileExists(BackupHandler::GetBackupPath(metaData.user, pathType))) {
-        ZLOGE("MultiKvStoreRecover failed, backupDir_ file is not exist.");
-        return false;
-    }
-
-    ZLOGI("MultiKvStoreRecover start.");
-    DistributedDB::CipherPassword password;
-    if (!GetPassword(metaData, password)) {
-        ZLOGE("Set secret key failed.");
-        return false;
-    }
-
-    std::string backupName = Constant::Concatenate({ metaData.account, "_", metaData.appId, "_", metaData.storeId });
-    auto backupFullName = Constant::Concatenate(
-        { BackupHandler::GetBackupPath(metaData.user, pathType), "/", GetHashedBackupName(backupName) });
-    DistributedDB::DBStatus dbStatus = delegate->Import(backupFullName, password);
-    if (dbStatus == DistributedDB::DBStatus::OK) {
-        ZLOGI("MultiKvStoreRecover success.");
-        return true;
-    }
-    ZLOGI("MultiKvStoreRecover failed.");
-    return false;
-}
-
 std::string BackupHandler::backupDirCe_;
 std::string BackupHandler::backupDirDe_;
 const std::string &BackupHandler::GetBackupPath(const std::string &deviceAccountId, int pathType)

@@ -103,37 +103,6 @@ void KvStoreUserManager::DeleteAllKvStore()
     appMap_.clear();
 }
 
-// Migrate all KvStore DB delegate object when harmony account changed.
-Status KvStoreUserManager::MigrateAllKvStore(const std::string &harmonyAccountId)
-{
-    ZLOGI("begin.");
-    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
-    Status status = Status::SUCCESS;
-    for (auto &it : appMap_) {
-        status = (it.second).MigrateAllKvStore(harmonyAccountId);
-        if (status != Status::SUCCESS) {
-            ZLOGE("migrate all kvstore for app-%s failed, status:%d.",
-                it.first.c_str(), static_cast<int>(status));
-            status = Status::MIGRATION_KVSTORE_FAILED;
-        }
-    }
-    return status;
-}
-
-std::string KvStoreUserManager::GetDbDir(const StoreMetaData &metaData)
-{
-    ZLOGI("begin.");
-    if (metaData.storeType == KvStoreType::MULTI_VERSION) {
-        return "default";
-    }
-    std::lock_guard<decltype(appMutex_)> lg(appMutex_);
-    auto it = appMap_.find(metaData.bundleName);
-    if (it != appMap_.end()) {
-        return (it->second).GetDbDir(metaData);
-    }
-    return "";
-}
-
 void KvStoreUserManager::Dump(int fd) const
 {
     const std::string prefix(4, ' ');

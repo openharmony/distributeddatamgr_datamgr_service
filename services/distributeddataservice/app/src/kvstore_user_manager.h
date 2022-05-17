@@ -19,7 +19,6 @@
 #include <map>
 #include <mutex>
 #include "kvstore_app_manager.h"
-#include "kvstore_impl.h"
 #include "types.h"
 #include "metadata/store_meta_data.h"
 
@@ -61,10 +60,6 @@ public:
     Status DeleteKvStore(const std::string &bundleName, pid_t uid, uint32_t token, const std::string &storeId);
 
     void DeleteAllKvStore();
-
-    Status MigrateAllKvStore(const std::string &harmonyAccountId);
-
-    std::string GetDbDir(const StoreMetaData &metaData);
 
     void Dump(int fd) const;
 

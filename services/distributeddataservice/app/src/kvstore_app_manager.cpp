@@ -29,7 +29,6 @@
 #include "constant.h"
 #include "device_kvstore_impl.h"
 #include "directory_utils.h"
-#include "ikvstore.h"
 #include "kv_store_delegate.h"
 #include "kvstore_app_accessor.h"
 #include "kvstore_utils.h"
@@ -54,9 +53,6 @@ KvStoreAppManager::KvStoreAppManager(const std::string &bundleName, pid_t uid, u
 KvStoreAppManager::~KvStoreAppManager()
 {
     ZLOGD("begin.");
-    stores_[PATH_DE].clear();
-    stores_[PATH_CE].clear();
-
     {
         std::lock_guard<std::mutex> guard(delegateMutex_);
         delete delegateManagers_[PATH_DE];
@@ -91,77 +87,6 @@ Status KvStoreAppManager::ConvertErrorStatus(DistributedDB::DBStatus dbStatus, b
             return Status::STORE_NOT_FOUND;
         }
     }
-    return Status::SUCCESS;
-}
-
-Status KvStoreAppManager::GetKvStore(const Options &options, const StoreMetaData &metaData,
-    const std::vector<uint8_t> &cipherKey, sptr<KvStoreImpl> &kvStore)
-{
-    ZLOGI("begin");
-    kvStore = nullptr;
-    PathType type = ConvertPathType(metaData);
-    auto *delegateManager = GetDelegateManager(type);
-    if (delegateManager == nullptr) {
-        ZLOGE("delegateManagers[%d] is nullptr.", type);
-        return Status::ILLEGAL_STATE;
-    }
-
-    if (!flowCtrl_.IsTokenEnough()) {
-        ZLOGE("flow control denied");
-        return Status::EXCEED_MAX_ACCESS_RATE;
-    }
-
-    std::lock_guard<std::mutex> lg(storeMutex_);
-    auto it = stores_[type].find(metaData.storeId);
-    if (it != stores_[type].end()) {
-        kvStore = it->second;
-        ZLOGI("find store in map refcount: %d.", kvStore->GetSptrRefCount());
-        kvStore->IncreaseOpenCount();
-        return Status::SUCCESS;
-    }
-
-    if ((GetTotalKvStoreNum()) >= static_cast<size_t>(Constant::MAX_OPEN_KVSTORES)) {
-        ZLOGE("limit %d KvStores can be opened.", Constant::MAX_OPEN_KVSTORES);
-        return Status::ERROR;
-    }
-
-    DistributedDB::KvStoreDelegate::Option dbOption;
-    auto status = InitDbOption(options, cipherKey, dbOption);
-    if (status != Status::SUCCESS) {
-        ZLOGE("InitDbOption failed.");
-        return status;
-    }
-
-    DistributedDB::KvStoreDelegate *storeDelegate = nullptr;
-    DistributedDB::DBStatus dbStatusTmp;
-    delegateManager->GetKvStore(metaData.storeId, dbOption,
-        [&storeDelegate, &dbStatusTmp](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreDelegate *delegate) {
-            storeDelegate = delegate;
-            dbStatusTmp = dbStatus;
-        });
-
-    if (storeDelegate == nullptr) {
-        ZLOGE("storeDelegate is nullptr, status:%d.", static_cast<int>(dbStatusTmp));
-        return ConvertErrorStatus(dbStatusTmp, options.createIfMissing);
-    }
-
-    ZLOGD("get delegate");
-    kvStore = new (std::nothrow)KvStoreImpl(options, metaData.user, metaData.bundleName,
-        metaData.appId, metaData.storeId, GetDbDir(metaData), storeDelegate);
-    if (kvStore == nullptr) {
-        delegateManager->CloseKvStore(storeDelegate);
-        kvStore = nullptr;
-        return Status::ERROR;
-    }
-    auto result = stores_[type].emplace(metaData.storeId, kvStore);
-    if (!result.second) {
-        ZLOGE("emplace failed.");
-        delegateManager->CloseKvStore(storeDelegate);
-        kvStore = nullptr;
-        return Status::ERROR;
-    }
-
-    ZLOGD("after emplace refcount: %d", kvStore->GetSptrRefCount());
     return Status::SUCCESS;
 }
 
@@ -342,38 +267,6 @@ Status KvStoreAppManager::DeleteAllKvStore()
     return Status::SUCCESS;
 }
 
-Status KvStoreAppManager::MigrateAllKvStore(const std::string &harmonyAccountId)
-{
-    ZLOGI("begin");
-    std::lock_guard<std::mutex> lg(storeMutex_);
-    userId_ = harmonyAccountId;
-    ZLOGI("path de migration begin.");
-    Status statusDE = MigrateAllKvStore(harmonyAccountId, PATH_DE);
-    ZLOGI("path ce migration begin.");
-    Status statusCE = MigrateAllKvStore(harmonyAccountId, PATH_CE);
-    return (statusCE != Status::SUCCESS) ? statusCE : statusDE;
-}
-
-Status KvStoreAppManager::InitDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
-                                       DistributedDB::KvStoreDelegate::Option &dbOption)
-{
-    DistributedDB::CipherPassword password;
-    auto status = password.SetValue(cipherKey.data(), cipherKey.size());
-    if (status != DistributedDB::CipherPassword::ErrorCode::OK) {
-        ZLOGE("Failed to set the passwd.");
-        return Status::DB_ERROR;
-    }
-    dbOption.createIfNecessary = options.createIfMissing;
-    dbOption.localOnly = false;
-    dbOption.isEncryptedDb = options.encrypt;
-    if (options.encrypt) {
-        dbOption.cipher = DistributedDB::CipherType::AES_256_GCM;
-        dbOption.passwd = password;
-    }
-    dbOption.createDirByStoreIdOnly = options.dataOwnership;
-    return Status::SUCCESS;
-}
-
 Status KvStoreAppManager::InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
                                          DistributedDB::KvStoreNbDelegate::Option &dbOption)
 {
@@ -494,21 +387,6 @@ Status KvStoreAppManager::CloseKvStore(const std::string &storeId, PathType type
         return Status::ILLEGAL_STATE;
     }
 
-    auto it = stores_[type].find(storeId);
-    if (it != stores_[type].end()) {
-        ZLOGD("find store and close delegate.");
-        InnerStatus status = it->second->Close(delegateManager);
-        if (status == InnerStatus::SUCCESS) {
-            stores_[type].erase(it);
-            return Status::SUCCESS;
-        }
-        if (status == InnerStatus::DECREASE_REFCOUNT) {
-            return Status::SUCCESS;
-        }
-        ZLOGE("delegate close error: %d.", static_cast<int>(status));
-        return Status::DB_ERROR;
-    }
-
     auto itSingle = singleStores_[type].find(storeId);
     if (itSingle != singleStores_[type].end()) {
         ZLOGD("find single store and close delegate.");
@@ -535,17 +413,6 @@ Status KvStoreAppManager::CloseAllKvStore(PathType type)
         return Status::ILLEGAL_STATE;
     }
 
-    for (auto it = stores_[type].begin(); it != stores_[type].end(); it = stores_[type].erase(it)) {
-        KvStoreImpl *currentStore = it->second.GetRefPtr();
-        ZLOGI("close kvstore, refcount %d.", it->second->GetSptrRefCount());
-        Status status = currentStore->ForceClose(delegateManager);
-        if (status != Status::SUCCESS) {
-            ZLOGE("delegate close error: %d.", static_cast<int>(status));
-            return Status::DB_ERROR;
-        }
-    }
-    stores_[type].clear();
-
     for (auto it = singleStores_[type].begin(); it != singleStores_[type].end(); it = singleStores_[type].erase(it)) {
         SingleKvStoreImpl *currentStore = it->second.GetRefPtr();
         ZLOGI("close kvstore, refcount %d.", it->second->GetSptrRefCount());
@@ -567,15 +434,6 @@ Status KvStoreAppManager::DeleteKvStore(const std::string &storeId, PathType typ
         return Status::ILLEGAL_STATE;
     }
     std::lock_guard<std::mutex> lg(storeMutex_);
-    auto it = stores_[type].find(storeId);
-    if (it != stores_[type].end()) {
-        Status status = it->second->ForceClose(delegateManager);
-        if (status != Status::SUCCESS) {
-            return Status::DB_ERROR;
-        }
-        stores_[type].erase(it);
-    }
-
     auto itSingle = singleStores_[type].find(storeId);
     if (itSingle != singleStores_[type].end()) {
         Status status = itSingle->second->ForceClose(delegateManager);
@@ -586,7 +444,7 @@ Status KvStoreAppManager::DeleteKvStore(const std::string &storeId, PathType typ
     }
 
     DistributedDB::DBStatus status = delegateManager->DeleteKvStore(storeId);
-    if (singleStores_[type].empty() && stores_[type].empty()) {
+    if (singleStores_[type].empty()) {
         SwitchDelegateManager(type, nullptr);
         delete delegateManager;
     }
@@ -600,24 +458,6 @@ Status KvStoreAppManager::DeleteAllKvStore(PathType type)
         ZLOGE("delegateManager[%d] is null.", type);
         return Status::ILLEGAL_STATE;
     }
-
-    for (auto it = stores_[type].begin(); it != stores_[type].end(); it = stores_[type].erase(it)) {
-        std::string storeId = it->first;
-        KvStoreImpl *currentStore = it->second.GetRefPtr();
-        Status status = currentStore->ForceClose(delegateManager);
-        if (status != Status::SUCCESS) {
-            ZLOGE("delegate delete close failed error: %d.", static_cast<int>(status));
-            return Status::DB_ERROR;
-        }
-
-        ZLOGI("delete kvstore, refcount %d.", it->second->GetSptrRefCount());
-        DistributedDB::DBStatus dbStatus = delegateManager->DeleteKvStore(storeId);
-        if (dbStatus != DistributedDB::DBStatus::OK) {
-            ZLOGE("delegate delete error: %d.", static_cast<int>(dbStatus));
-            return Status::DB_ERROR;
-        }
-    }
-    stores_[type].clear();
 
     for (auto it = singleStores_[type].begin(); it != singleStores_[type].end(); it = singleStores_[type].erase(it)) {
         std::string storeId = it->first;
@@ -641,49 +481,9 @@ Status KvStoreAppManager::DeleteAllKvStore(PathType type)
     return Status::SUCCESS;
 }
 
-Status KvStoreAppManager::MigrateAllKvStore(const std::string &harmonyAccountId, PathType type)
-{
-    auto *delegateManager = GetDelegateManager(type);
-    if (delegateManager == nullptr) {
-        ZLOGE("delegateManager is nullptr.");
-        return Status::ILLEGAL_STATE;
-    }
-
-    std::string dirPath = GetDataStoragePath(deviceAccountId_, bundleName_, type);
-    DistributedDB::KvStoreDelegateManager *newDelegateManager = nullptr;
-    Status status = Status::SUCCESS;
-    ZLOGI("KvStore migration begin.");
-    for (auto &it : stores_[type]) {
-        sptr<KvStoreImpl> impl = it.second;
-        if (impl->MigrateKvStore(harmonyAccountId, dirPath, delegateManager, newDelegateManager) != Status::SUCCESS) {
-            status = Status::MIGRATION_KVSTORE_FAILED;
-            ZLOGE("migrate kvstore for appId-%s failed.", bundleName_.c_str());
-            // skip this failed, continue to migrate other kvstore.
-        }
-    }
-
-    ZLOGI("SingleKvStore migration begin.");
-    for (auto &it : singleStores_[type]) {
-        sptr<SingleKvStoreImpl> impl = it.second;
-        if (impl->MigrateKvStore(harmonyAccountId, dirPath, delegateManager, newDelegateManager) != Status::SUCCESS) {
-            status = Status::MIGRATION_KVSTORE_FAILED;
-            ZLOGE("migrate single kvstore for appId-%s failed.", bundleName_.c_str());
-            // skip this failed, continue to migrate other kvstore.
-        }
-    }
-
-    if (newDelegateManager != nullptr) {
-        delegateManager = SwitchDelegateManager(type, newDelegateManager);
-        delete delegateManager;
-    }
-    return status;
-}
-
 size_t KvStoreAppManager::GetTotalKvStoreNum() const
 {
-    size_t total = stores_[PATH_DE].size();
-    total += stores_[PATH_CE].size();
-    total += singleStores_[PATH_DE].size();
+    size_t total = singleStores_[PATH_DE].size();
     total += singleStores_[PATH_CE].size();
     return int(total);
 };

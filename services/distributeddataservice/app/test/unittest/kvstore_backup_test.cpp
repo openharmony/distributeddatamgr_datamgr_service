@@ -18,7 +18,6 @@
 #include <vector>
 #include <memory>
 #include "bootstrap.h"
-#include "kvstore_impl.h"
 #include "backup_handler.h"
 #include "kvstore_data_service.h"
 #include "log_print.h"

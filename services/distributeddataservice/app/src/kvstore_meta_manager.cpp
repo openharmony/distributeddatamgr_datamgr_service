@@ -270,20 +270,6 @@ std::vector<uint8_t> KvStoreMetaManager::GetMetaKey(const std::string &deviceAcc
     return SecretMetaRow::GetKeyFor(originKey);
 }
 
-std::string KvStoreMetaManager::GetSecretKeyFile(const std::string &userId, const std::string &appId,
-                                                 const std::string &storeId, int pathType)
-{
-    std::string hashedStoreId;
-    DistributedDB::DBStatus result = DistributedDB::KvStoreDelegateManager::GetDatabaseDir(storeId, hashedStoreId);
-    if (DistributedDB::OK != result) {
-        ZLOGE("get data base directory by kvstore store id failed, result = %d.", result);
-        return "";
-    }
-    std::string miscPath = (pathType == KvStoreAppManager::PATH_DE) ? Constant::ROOT_PATH_DE : Constant::ROOT_PATH_CE;
-    return miscPath + "/" + Constant::SERVICE_NAME + "/" + userId + "/" + Constant::GetDefaultHarmonyAccountName()
-           + "/" + appId + "/" + hashedStoreId + ".mul.key";
-}
-
 std::string KvStoreMetaManager::GetSecretSingleKeyFile(const std::string &userId, const std::string &appId,
                                                        const std::string &storeId, int pathType)
 {
@@ -606,12 +592,7 @@ Status KvStoreMetaManager::RemoveSecretKey(pid_t uid, const std::string &bundleN
     }
 
     for (int32_t pathType = KvStoreAppManager::PATH_DE; pathType < KvStoreAppManager::PATH_TYPE_MAX; ++pathType) {
-        std::string keyFile = GetSecretKeyFile(userId, bundleName, storeId, pathType);
-        if (!RemoveFile(keyFile)) {
-            ZLOGW("remove secret key file %{public}s fail.", keyFile.c_str());
-            status = Status::DB_ERROR;
-        }
-        keyFile = GetSecretSingleKeyFile(userId, bundleName, storeId, pathType);
+        std::string keyFile = GetSecretSingleKeyFile(userId, bundleName, storeId, pathType);
         if (!RemoveFile(keyFile)) {
             ZLOGW("remove secretKeyFile Single fail.");
             status = Status::DB_ERROR;
@@ -690,21 +671,6 @@ Status KvStoreMetaManager::RecoverSecretKeyFromFile(const std::string &secretKey
         return Status::DB_ERROR;
     }
     return Status::SUCCESS;
-}
-
-void KvStoreMetaManager::ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId,
-    int32_t pathType, sptr<KvStoreImpl> store)
-{
-    if (store == nullptr) {
-        return;
-    }
-    std::vector<uint8_t> key = Crypto::Random(KEY_SIZE);
-    WriteSecretKeyToMeta(GetMetaKey(userId, "default", bundleName, storeId, "KEY"), key);
-    Status status = store->ReKey(key);
-    if (status == Status::SUCCESS) {
-        WriteSecretKeyToFile(GetSecretKeyFile(userId, bundleName, storeId, pathType), key);
-    }
-    key.assign(key.size(), 0);
 }
 
 void KvStoreMetaManager::ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId,

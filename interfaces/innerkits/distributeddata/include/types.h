@@ -243,8 +243,7 @@ struct Options {
 
     inline bool IsValidType() const
     {
-        return kvStoreType == KvStoreType::DEVICE_COLLABORATION || kvStoreType == KvStoreType::SINGLE_VERSION
-               || kvStoreType == KvStoreType::MULTI_VERSION;
+        return kvStoreType == KvStoreType::DEVICE_COLLABORATION || kvStoreType == KvStoreType::SINGLE_VERSION;
     }
 };
 

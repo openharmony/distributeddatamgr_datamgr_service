@@ -22,7 +22,6 @@
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_task.h"
-#include "kvstore_impl.h"
 #include "single_kvstore_impl.h"
 #include "system_ability.h"
 #include "types.h"
@@ -210,9 +209,6 @@ public:
     Status
     RecoverSecretKeyFromFile(const std::string &secretKeyFile, const std::vector<uint8_t> &metaSecretKey,
                              std::vector<uint8_t> &key, bool &outdated);
-
-    void ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId, int32_t pathType,
-               sptr<KvStoreImpl> store);
 
     void ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId, int32_t pathType,
                sptr<SingleKvStoreImpl> store);

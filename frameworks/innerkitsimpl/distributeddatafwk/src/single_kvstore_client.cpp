@@ -528,23 +528,4 @@ Status SingleKvStoreClient::UnsubscribeWithQuery(const std::vector<std::string> 
     syncCallbackClient_->AddSyncCallback(syncObserver_, sequenceId);
     return kvStoreProxy_->UnSubscribe(deviceIds, query.ToString(), sequenceId);
 }
-
-Status SingleKvStoreClient::GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
-                                               std::shared_ptr<KvStoreSnapshot> &snapshot) const
-{
-    (void) observer;
-    (void) snapshot;
-    return Status::NOT_SUPPORT;
-}
-
-Status SingleKvStoreClient::ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot)
-{
-    (void) snapshot;
-    return Status::NOT_SUPPORT;
-}
-
-Status SingleKvStoreClient::Clear()
-{
-    return Status::NOT_SUPPORT;
-}
 } // namespace OHOS::DistributedKv

@@ -93,10 +93,6 @@ public:
 
     Status SubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query) override;
     Status UnsubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query) override;
-    Status GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
-                              std::shared_ptr<KvStoreSnapshot> &snapshot) const override;
-    Status ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot) override;
-    Status Clear() override;
 
 protected:
     Status Control(KvControlCmd cmd, const KvParam &inputParam, KvParam &outputParam) override;

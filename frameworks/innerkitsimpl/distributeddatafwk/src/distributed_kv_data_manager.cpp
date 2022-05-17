@@ -18,7 +18,6 @@
 #include "distributed_kv_data_manager.h"
 #include "constant.h"
 #include "ikvstore_data_service.h"
-#include "kvstore_client.h"
 #include "kvstore_service_death_notifier.h"
 #include "log_print.h"
 #include "refbase.h"
@@ -34,49 +33,6 @@ DistributedKvDataManager::DistributedKvDataManager()
 
 DistributedKvDataManager::~DistributedKvDataManager()
 {}
-
-Status DistributedKvDataManager::GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
-                                            std::shared_ptr<KvStore> &kvStore)
-{
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
-
-    kvStore = nullptr;
-    std::string storeIdTmp = Constant::TrimCopy<std::string>(storeId.storeId);
-    if (storeIdTmp.size() == 0 || storeIdTmp.size() > Constant::MAX_STORE_ID_LENGTH) {
-        ZLOGE("invalid storeId.");
-        return Status::INVALID_ARGUMENT;
-    }
-
-    KvStoreServiceDeathNotifier::SetAppId(appId);
-    sptr<IKvStoreDataService> kvDataServiceProxy = KvStoreServiceDeathNotifier::GetDistributedKvDataService();
-    Status status = Status::SERVER_UNAVAILABLE;
-    if (kvDataServiceProxy == nullptr) {
-        ZLOGE("proxy is nullptr.");
-        return status;
-    }
-
-    ZLOGD("call proxy.");
-    sptr<IKvStoreImpl> proxyTmp;
-    status = kvDataServiceProxy->GetKvStore(options, appId, storeId,
-        [&](sptr<IKvStoreImpl> proxy) { proxyTmp = std::move(proxy); });
-    if (status == Status::RECOVER_SUCCESS) {
-        ZLOGE("proxy recover success: %d", static_cast<int>(status));
-        kvStore = std::make_shared<KvStoreClient>(std::move(proxyTmp), storeIdTmp);
-        return status;
-    }
-
-    if (status != Status::SUCCESS) {
-        ZLOGE("proxy return error: %d", static_cast<int>(status));
-        return status;
-    }
-
-    if (proxyTmp == nullptr) {
-        ZLOGE("proxy return nullptr.");
-        return status;
-    }
-    kvStore = std::make_shared<KvStoreClient>(std::move(proxyTmp), storeIdTmp);
-    return status;
-}
 
 Status DistributedKvDataManager::GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
                                                   std::shared_ptr<SingleKvStore> &singleKvStore)

@@ -16,7 +16,6 @@
 #ifndef KVSTORE_OBSERVER_IMPL_H
 #define KVSTORE_OBSERVER_IMPL_H
 
-#include "ikvstore.h"
 #include "ikvstore_observer.h"
 #include "kv_store_delegate.h"
 #include "types.h"

@@ -35,20 +35,6 @@ public:
     // Get kvstore name of this kvstore instance.
     virtual StoreId GetStoreId() const = 0;
 
-    // Creates a snapshot of the kvstore, allowing the client app to read a
-    // consistent data of the content of the kvstore.
-    // If observer is provided, it will receive notifications for changes of the
-    // kvstore newer than the resulting snapshot.
-    // observer: observer for subscribe.
-    // snapshot: [output] the KvStoreSnapshot instance.
-    [[deprecated]]
-    virtual Status GetKvStoreSnapshot(std::shared_ptr<KvStoreObserver> observer,
-                                      std::shared_ptr<KvStoreSnapshot> &snapshot) const = 0;
-
-    // Release snapshot created by calling GetKvStoreSnapshot.
-    [[deprecated]]
-    virtual Status ReleaseKvStoreSnapshot(std::shared_ptr<KvStoreSnapshot> &snapshot) = 0;
-
     // Mutation operations.
     // Key level operations.
     // Mutations are bundled together into atomic commits. If a transaction is in
@@ -76,10 +62,6 @@ public:
     // if keys contains invalid key, all delete will fail.
     // keys memory size should not be greater than IPC transport limit, and can not be empty.
     virtual Status DeleteBatch(const std::vector<Key> &keys) = 0;
-
-    // clear all entries in the kvstore.
-    // after this call, IsClear function in ChangeNotification in subscription return true.
-    virtual Status Clear() = 0;
 
     // start transaction.
     // all changes to this kvstore will be in a same transaction and will not change the store until Commit() or

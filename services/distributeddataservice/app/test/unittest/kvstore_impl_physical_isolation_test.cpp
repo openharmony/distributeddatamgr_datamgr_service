@@ -18,7 +18,6 @@
 #include "constant.h"
 #include "kvstore_data_service.h"
 #include "kvstore_meta_manager.h"
-#include "kvstore_impl.h"
 #include "refbase.h"
 #include "types.h"
 #include "bootstrap.h"

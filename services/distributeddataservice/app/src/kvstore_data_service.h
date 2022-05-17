@@ -26,7 +26,6 @@
 #include "device_change_listener_impl.h"
 #include "ikvstore_data_service.h"
 #include "kvstore_device_listener.h"
-#include "kvstore_impl.h"
 #include "kvstore_user_manager.h"
 #include "metadata/store_meta_data.h"
 #include "reporter.h"
@@ -54,9 +53,6 @@ public:
     explicit KvStoreDataService(int32_t systemAbilityId, bool runOnCreate = false);
     virtual ~KvStoreDataService();
 
-    Status GetKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
-                      std::function<void(sptr<IKvStoreImpl>)> callback) override;
-
     Status GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
                       std::function<void(sptr<ISingleKvStore>)> callback) override;
 
@@ -77,7 +73,7 @@ public:
     Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy) override;
     Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) override;
     sptr<IRemoteObject> GetRdbService() override;
-
+    sptr<IRemoteObject> GetKVdbService() override;
     void OnDump() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;
@@ -164,7 +160,6 @@ private:
     bool CheckSyncActivation(const std::string &userId, const std::string &appId, const std::string &storeId);
 
     bool CheckOptions(const Options &options, const std::vector<uint8_t> &metaKey) const;
-    void CreateRdbService();
     bool IsStoreOpened(const std::string &userId, const std::string &appId, const std::string &storeId);
     static Status FillStoreParam(
         const Options &options, const AppId &appId, const StoreId &storeId, StoreMetaData &metaData);
@@ -182,6 +177,7 @@ private:
     std::shared_ptr<DeviceChangeListenerImpl> deviceListener_;
 
     std::shared_ptr<Security> security_;
+    std::mutex mutex_;
     sptr<DistributedRdb::RdbServiceImpl> rdbService_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
 };
