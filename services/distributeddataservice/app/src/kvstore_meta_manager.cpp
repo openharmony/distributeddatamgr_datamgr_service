@@ -154,7 +154,7 @@ void KvStoreMetaManager::InitMetaParameter()
         ZLOGE("create directories failed");
         return;
     }
-    ret = ForceCreateDirectory(metaDBDirectory_ + "/backup");
+    ForceCreateDirectory(metaDBDirectory_ + "/backup");
 
     DistributedDB::KvStoreConfig kvStoreConfig {metaDBDirectory_};
     kvStoreDelegateManager_.SetKvStoreConfig(kvStoreConfig);

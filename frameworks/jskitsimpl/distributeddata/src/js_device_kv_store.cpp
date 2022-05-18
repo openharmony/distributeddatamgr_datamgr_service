@@ -140,7 +140,7 @@ static napi_status GetVariantArgs(napi_env env, size_t argc, napi_value* argv, V
     if (type == napi_string) {
         // number 2 means: required 2 arguments, <deviceId> <keyPrefix/query>
         CHECK_RETURN(argc == 2, "invalid arguments!", napi_invalid_arg);
-        status = JSUtil::GetValue(env, argv[0], va.deviceId);
+        JSUtil::GetValue(env, argv[0], va.deviceId);
         CHECK_RETURN(!va.deviceId.empty(), "invalid arg[0], i.e. invalid deviceId!", napi_invalid_arg);
 
         status = napi_typeof(env, argv[1], &type);
