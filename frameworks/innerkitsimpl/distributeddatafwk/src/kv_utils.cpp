@@ -26,7 +26,7 @@ namespace OHOS {
 namespace DistributedKv {
 using namespace DataShare;
 std::shared_ptr<ResultSetBridge> KvUtils::ToResultSetBridge(
-    const std::shared_ptr<KvStoreResultSet> resultSet)
+    std::shared_ptr<KvStoreResultSet> resultSet)
 {
     if (resultSet == nullptr) {
         ZLOGE("param error, kvResultSet nullptr");
@@ -46,7 +46,7 @@ Status KvUtils::ToQuery(const DataSharePredicates &predicates, DataQuery &query)
     return status;
 }
 
-std::vector<Entry> KvUtils::ToEntry(const std::vector<DataShareValuesBucket> &valueBuckets)
+std::vector<Entry> KvUtils::ToEntries(const std::vector<DataShareValuesBucket> &valueBuckets)
 {
     auto KvValuesBucket = std::make_shared<KvStoreValuesBucket>();
     std::vector<Entry> entries = KvValuesBucket->ToEntry(valueBuckets);
@@ -61,36 +61,6 @@ Entry KvUtils::ToEntry(const DataShareValuesBucket &valueBucket)
 {
     auto KvValuesBucket = std::make_shared<KvStoreValuesBucket>();
     return KvValuesBucket->ToEntry(valueBucket);
-}
-
-Status KvUtils::GetKeys(const DataSharePredicates &predicates, std::vector<Key> &keys)
-{
-    std::list<OperationItem> operationList = predicates.GetOperationList();
-    if (operationList.empty()) {
-        ZLOGE("operationList is null");
-        return Status::ERROR;
-    }
-
-    std::vector<std::string> myKeys;
-    for(const auto &oper : operationList)
-    { 
-        if (oper.operation != IN_KEY) {
-            ZLOGE("find operation failed");
-            return Status::NOT_SUPPORT;
-        }
-        std::vector<std::string> val;
-        int status = oper.para1.GetStringVector(val);
-        if (status != E_OK) {
-            ZLOGE("GetStringVector failed: %{public}d", status);
-            return Status::ERROR;
-        }
-        myKeys.insert(myKeys.end(), val.begin(), val.end());
-    }
-    for (const auto &it : myKeys)
-    {
-        keys.push_back(it.c_str());
-    }
-    return Status::SUCCESS;  
 }
 } // namespace DistributedKv
 } // namespace OHOS

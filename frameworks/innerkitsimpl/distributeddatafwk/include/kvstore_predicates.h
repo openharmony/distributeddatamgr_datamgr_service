@@ -41,7 +41,7 @@ public:
     KvStorePredicates() = default;
     ~KvStorePredicates() = default;
     Status ToQuery(const DataShare::DataSharePredicates &predicates, DataQuery &query);
-    
+    Status GetKeys(const DataShare::DataSharePredicates &predicates, std::vector<Key> &keys);
 private:
     Status EqualTo(const DataShare::OperationItem &oper, DataQuery &query);
     Status NotEqualTo(const DataShare::OperationItem &oper, DataQuery &query);

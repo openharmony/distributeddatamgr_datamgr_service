@@ -36,7 +36,6 @@ int KvStoreDataShareResultSet::GetAllColumnsName(std::vector<std::string> &colum
     columnsName = { "key", "value" };
     return E_OK;
 }
-// bool KvStoreDataShareResultSet::FillBlock(int pos, DataShareBlockWriter &writer)
 bool KvStoreDataShareResultSet::FillBlock(int pos, ResultSetBridge::Writer &writer)
 {
     if (kvResultSet_ == nullptr) {

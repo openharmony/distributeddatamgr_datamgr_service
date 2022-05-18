@@ -33,13 +33,10 @@ public:
 
     int GetAllColumnsName(std::vector<std::string> &columnsName) override;
     
-    // bool OnGo(int oldRowIndex, int newRowIndex, const std::shared_ptr<DataShare::DataShareBlockWriter> &writer) override;
     bool OnGo(int32_t start, int32_t length, DataShare::ResultSetBridge::Writer &writer) override;
   
 private:
     int Count();
-
-    // bool FillBlock(int startRowIndex, const std::shared_ptr<DataShare::DataShareBlockWriter> &writer);
 
     bool FillBlock(int startRowIndex, DataShare::ResultSetBridge::Writer &writer);
 

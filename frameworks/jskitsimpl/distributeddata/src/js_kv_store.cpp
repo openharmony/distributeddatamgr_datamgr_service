@@ -143,7 +143,7 @@ napi_value JsKVStore::Put(napi_env env, napi_callback_info info)
         Status status = Status::ERROR;
         if (ctxt->type == napi_object) {
             auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
-            ctxt->entries = KvUtils::ToEntry(ctxt->valueBuckets);
+            ctxt->entries = KvUtils::ToEntries(ctxt->valueBuckets);
             ZLOGD("kvStoreDataShare->ToEntry return");
             status = kvStore->PutBatch(ctxt->entries);
             CHECK_STATUS_RETURN_VOID(ctxt, "kvStoreDataShare->Put, i.e. Put error!");
@@ -197,7 +197,8 @@ napi_value JsKVStore::Delete(napi_env env, napi_callback_info info)
         Status status = Status::ERROR;
         if (ctxt->type == napi_object) {
             std::vector<Key> keys;
-            status = KvUtils::GetKeys(ctxt->predicates, keys);
+            auto kvPredicates = std::make_shared<KvStorePredicates>();
+            status = kvPredicates->GetKeys(ctxt->predicates, keys);
             ZLOGD("GetKeys return %{public}d", status);
             auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
             status = kvStore->DeleteBatch(keys);

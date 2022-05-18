@@ -104,6 +104,36 @@ Status KvStorePredicates::ToQuery(const DataSharePredicates &predicates, DataQue
     return Status::SUCCESS;
 }
 
+Status KvStorePredicates::GetKeys(const DataSharePredicates &predicates, std::vector<Key> &keys)
+{
+    std::list<OperationItem> operationList = predicates.GetOperationList();
+    if (operationList.empty()) {
+        ZLOGE("operationList is null");
+        return Status::ERROR;
+    }
+
+    std::vector<std::string> myKeys;
+    for(const auto &oper : operationList)
+    { 
+        if (oper.operation != IN_KEY) {
+            ZLOGE("find operation failed");
+            return Status::NOT_SUPPORT;
+        }
+        std::vector<std::string> val;
+        int status = oper.para1.GetStringVector(val);
+        if (status != E_OK) {
+            ZLOGE("GetStringVector failed: %{public}d", status);
+            return Status::ERROR;
+        }
+        myKeys.insert(myKeys.end(), val.begin(), val.end());
+    }
+    for (const auto &it : myKeys)
+    {
+        keys.push_back(it.c_str());
+    }
+    return Status::SUCCESS;  
+}
+
 Status KvStorePredicates::InKeys(const OperationItem &oper, DataQuery &query)
 {
     std::vector<std::string> keys;

@@ -31,8 +31,8 @@ public:
 
 private:
     Status ToEntryData(const std::map<std::string, DataShare::DataShareValueObject> &valuesMap, const std::string field, Blob &kv);
-    const std::string KEY = "key";
-    const std::string VALUE = "value";
+    static constexpr const char *KEY= "key";
+    static constexpr const char *VALUE= "value";
 };
 } // namespace DistributedKv
 } // namespace OHOS

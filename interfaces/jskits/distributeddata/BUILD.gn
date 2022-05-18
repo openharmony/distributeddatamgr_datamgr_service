@@ -64,6 +64,7 @@ ohos_shared_library("distributeddata") {
     "../../../frameworks/jskitsimpl/distributeddata/src/js_util.cpp",
     "../../../frameworks/jskitsimpl/distributeddata/src/napi_queue.cpp",
     "../../../frameworks/jskitsimpl/distributeddata/src/uv_queue.cpp",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_predicates.cpp",
   ]
 
   deps = [
