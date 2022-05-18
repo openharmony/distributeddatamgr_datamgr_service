@@ -150,7 +150,7 @@ static napi_status GetVariantArgs(napi_env env, size_t argc, napi_value* argv, V
             CHECK_RETURN(!va.keyPrefix.empty(), "invalid arg[1], i.e. invalid keyPrefix!", napi_invalid_arg);
             va.type = ArgsType::DEVICEID_KEYPREFIX;
         } else if (type == napi_object) {
-            status = JSUtil::Unwrap(env, argv[1], reinterpret_cast<void**>(&va.query), JsQuery::Constructor(env));
+            JSUtil::Unwrap(env, argv[1], reinterpret_cast<void**>(&va.query), JsQuery::Constructor(env));
             CHECK_RETURN(va.query != nullptr, "invalid arg[1], i.e. invalid query!", napi_invalid_arg);
             va.type = ArgsType::DEVICEID_QUERY;
         }
