@@ -23,7 +23,7 @@ namespace OHOS::DistributedData {
 class JsKVStoreResultSet :public DataShare::ResultSetBridge::Creator {
 public:
     JsKVStoreResultSet() = default;
-    ~JsKVStoreResultSet() = default;
+    virtual ~JsKVStoreResultSet() = default;
 
     void SetNative(std::shared_ptr<DistributedKv::KvStoreResultSet>& resultSet);
     std::shared_ptr<DistributedKv::KvStoreResultSet>& GetNative();
