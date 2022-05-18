@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cinttypes>
 #include <thread>
 #include "distributed_test_sysinfo.h"
 #include "distributeddb_data_generator.h"
@@ -78,8 +79,8 @@ void DistributedTestSysInfo::GetSysMemOccpy(SeqNo seqNo)
     if (result3 != 2 || result4 != 2 || result5 != 2) { // there are 2 incoming param.
         MST_LOG("get mem2 info failed.");
     }
-    MST_LOG(" [MemTotal] = %llu \n [MemFree] = %llu \n [Buffers] = %llu \n [Cached] = %llu \n [SwapCached] = %llu ",
-        memOccupy->memTotal_, memOccupy->memFree_, memOccupy->buffers_,
+    MST_LOG(" [MemTotal] = %" PRIu64 " \n [MemFree] = %" PRIu64 " \n [Buffers] = %" PRIu64 " \n [Cached] = %" PRIu64 \
+        " \n [SwapCached] = %" PRIu64, memOccupy->memTotal_, memOccupy->memFree_, memOccupy->buffers_,
         memOccupy->cached_, memOccupy->swapCached_);
     fclose(fp);
     fp = nullptr;
