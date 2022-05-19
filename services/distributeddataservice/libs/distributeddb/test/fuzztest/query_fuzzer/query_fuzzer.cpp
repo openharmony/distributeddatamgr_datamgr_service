@@ -24,93 +24,93 @@ namespace {
 }
 
 namespace OHOS {
-    void FuzzEqualTo(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        Query query = Query::Select().EqualTo(rawString, static_cast<int>(size));
-    }
+void FuzzEqualTo(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    Query query = Query::Select().EqualTo(rawString, static_cast<int>(size));
+}
 
-    void FuzzNotEqualTo(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        Query query = Query::Select().NotEqualTo(TEST_FIELD_NAME, rawString);
-    }
+void FuzzNotEqualTo(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    Query query = Query::Select().NotEqualTo(TEST_FIELD_NAME, rawString);
+}
 
-    void FuzzGreaterThan(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        Query query = Query::Select().GreaterThan(rawString, static_cast<int>(U32_AT(data)));
-    }
+void FuzzGreaterThan(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    Query query = Query::Select().GreaterThan(rawString, static_cast<int>(U32_AT(data)));
+}
 
-    void FuzzLessThan(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        Query query = Query::Select().LessThan(TEST_FIELD_NAME, rawString);
-    }
+void FuzzLessThan(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    Query query = Query::Select().LessThan(TEST_FIELD_NAME, rawString);
+}
 
-    void FuzzGreaterThanOrEqualTo(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        Query query = Query::Select().GreaterThanOrEqualTo(rawString, static_cast<int>(size));
-    }
+void FuzzGreaterThanOrEqualTo(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    Query query = Query::Select().GreaterThanOrEqualTo(rawString, static_cast<int>(size));
+}
 
-    void FuzzLessThanOrEqualTo(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        Query query = Query::Select().LessThanOrEqualTo(TEST_FIELD_NAME, rawString);
-    }
+void FuzzLessThanOrEqualTo(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    Query query = Query::Select().LessThanOrEqualTo(TEST_FIELD_NAME, rawString);
+}
 
-    void FuzzOrderBy(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        Query query = Query::Select().GreaterThanOrEqualTo(rawString, true);
-        query = Query::Select().GreaterThanOrEqualTo(rawString, false);
-    }
+void FuzzOrderBy(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    Query query = Query::Select().GreaterThanOrEqualTo(rawString, true);
+    query = Query::Select().GreaterThanOrEqualTo(rawString, false);
+}
 
-    void FuzzLimit(const uint8_t* data, size_t size)
-    {
-        Query query = Query::Select().Limit(static_cast<int>(size), static_cast<int>(U32_AT(data)));
-    }
+void FuzzLimit(const uint8_t* data, size_t size)
+{
+    Query query = Query::Select().Limit(static_cast<int>(size), static_cast<int>(U32_AT(data)));
+}
 
-    void FuzzLike(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        Query query = Query::Select().Like(rawString, rawString);
-    }
+void FuzzLike(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    Query query = Query::Select().Like(rawString, rawString);
+}
 
-    void FuzzNotLike(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        Query query = Query::Select().NotLike(TEST_FIELD_NAME, rawString);
-    }
+void FuzzNotLike(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    Query query = Query::Select().NotLike(TEST_FIELD_NAME, rawString);
+}
 
-    void FuzzIn(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        std::vector<std::string> values;
-        // 512 max size
-        for (int i = 0; i < static_cast<int>(U32_AT(data) % 512); i++) {
-            values.push_back(rawString);
-        }
-        Query query = Query::Select().In(TEST_FIELD_NAME, values);
+void FuzzIn(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    std::vector<std::string> values;
+    // 512 max size
+    for (int i = 0; i < static_cast<int>(U32_AT(data) % 512); i++) {
+        values.push_back(rawString);
     }
+    Query query = Query::Select().In(TEST_FIELD_NAME, values);
+}
 
-    void FuzzNotIn(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        std::vector<std::string> values;
-        // 512 max size
-        for (int i = 0; i < static_cast<int>(size % 512); i++) {
-            values.push_back(rawString);
-        }
-        Query query = Query::Select().NotIn(TEST_FIELD_NAME, values);
+void FuzzNotIn(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    std::vector<std::string> values;
+    // 512 max size
+    for (int i = 0; i < static_cast<int>(size % 512); i++) {
+        values.push_back(rawString);
     }
+    Query query = Query::Select().NotIn(TEST_FIELD_NAME, values);
+}
 
-    void FuzzIsNull(const uint8_t* data, size_t size)
-    {
-        std::string rawString(reinterpret_cast<const char *>(data), size);
-        Query query = Query::Select().IsNull(rawString);
-    }
+void FuzzIsNull(const uint8_t* data, size_t size)
+{
+    std::string rawString(reinterpret_cast<const char *>(data), size);
+    Query query = Query::Select().IsNull(rawString);
+}
 }
 
 /* Fuzzer entry point */
