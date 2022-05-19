@@ -54,7 +54,11 @@ std::string RdbServiceProxy::ObtainDistributedTableName(const std::string &devic
         ZLOGE("write descriptor failed");
         return "";
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(data, device, table)) {
+    if (!data.WriteString(device)) {
+        ZLOGE("write device failed");
+        return "";
+    }
+    if (!data.WriteString(table)) {
         ZLOGE("write table failed");
         return "";
     }
@@ -99,8 +103,12 @@ int32_t RdbServiceProxy::InitNotifier(const RdbSyncerParam &param, const sptr<IR
         ZLOGE("write descriptor failed");
         return RDB_ERROR;
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(data, param, notifier)) {
+    if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
         ZLOGE("write param failed");
+        return RDB_ERROR;
+    }
+    if (!data.WriteRemoteObject(notifier)) {
+        ZLOGE("write notifier failed");
         return RDB_ERROR;
     }
 
@@ -128,9 +136,16 @@ int32_t RdbServiceProxy::DoSync(const RdbSyncerParam& param, const SyncOption &o
         ZLOGE("write descriptor failed");
         return RDB_ERROR;
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(data, param, option, predicates)) {
+    if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
         ZLOGE("write param failed");
         return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshalling(option, data)) {
+        ZLOGE("write option failed");
+        return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshalling(predicates, data)) {
+        ZLOGE("write predicates failed");
     }
 
     MessageParcel reply;
@@ -171,9 +186,20 @@ int32_t RdbServiceProxy::DoAsync(const RdbSyncerParam& param, uint32_t seqNum, c
         ZLOGE("write descriptor failed");
         return RDB_ERROR;
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(data, param, seqNum, option, predicates)) {
+    if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
         ZLOGE("write param failed");
         return RDB_ERROR;
+    }
+    if (!data.WriteInt32(seqNum)) {
+        ZLOGE("write seq num failed");
+        return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshalling(option, data)) {
+        ZLOGE("write option failed");
+        return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshalling(predicates, data)) {
+        ZLOGE("write predicates failed");
     }
 
     MessageParcel reply;
@@ -214,8 +240,12 @@ int32_t RdbServiceProxy::SetDistributedTables(const RdbSyncerParam& param, const
         ZLOGE("write descriptor failed");
         return RDB_ERROR;
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(data, param, tables)) {
+    if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
         ZLOGE("write param failed");
+        return RDB_ERROR;
+    }
+    if (!data.WriteStringVector(tables)) {
+        ZLOGE("write tables failed");
         return RDB_ERROR;
     }
 
