@@ -25,6 +25,7 @@
 #include <chrono>
 #include <thread>
 
+#include "accesstoken_kit.h"
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
 #include "bootstrap.h"
@@ -35,6 +36,7 @@
 #include "dds_trace.h"
 #include "device_kvstore_impl.h"
 #include "executor_factory.h"
+#include "hap_token_info.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
@@ -650,6 +652,14 @@ Status KvStoreDataService::AppExit(const AppId &appId, pid_t uid, uint32_t token
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
+
+    if (appId.appId == "com.ohos.medialibrary.MediaLibraryDataA") {
+        HapTokenInfo tokenInfo;
+        AccessTokenKit::GetHapTokenInfo(token, tokenInfo);
+        ZLOGI("not close bundle:%{public}s, tokenInfo.bundle:%{public}s, uid:%{public}d, token:%{public}u",
+            appId.appId.c_str(), tokenInfo.bundleName.c_str(), uid, token);
+        return Status::SUCCESS;
+    }
     std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
     clientDeathObserverMap_.erase(token);
 
