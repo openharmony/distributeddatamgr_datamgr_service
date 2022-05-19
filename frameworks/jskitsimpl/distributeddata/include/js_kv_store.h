@@ -62,8 +62,6 @@ private:
     public:
         DataObserver(std::shared_ptr<UvQueue> uvQueue, napi_value callback) : JSObserver(uvQueue, callback) {};
         virtual ~DataObserver() = default;
-        void OnChange(const DistributedKv::ChangeNotification& notification,
-                      std::shared_ptr<DistributedKv::KvStoreSnapshot> snapshot) override;
         void OnChange(const DistributedKv::ChangeNotification& notification) override;
     };
 

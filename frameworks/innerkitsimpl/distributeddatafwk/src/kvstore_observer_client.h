@@ -19,7 +19,6 @@
 #include <memory>
 #include "change_notification.h"
 #include "ikvstore_observer.h"
-#include "ikvstore_snapshot.h"
 #include "kvstore_observer.h"
 #include "refbase.h"
 
@@ -32,7 +31,7 @@ public:
 
     ~KvStoreObserverClient();
 
-    void OnChange(const ChangeNotification &changeNotification, sptr<IKvStoreSnapshotImpl> snapshot) override;
+    void OnChange(const ChangeNotification &changeNotification) override;
 
     const StoreId &GetStoreId() const;
 

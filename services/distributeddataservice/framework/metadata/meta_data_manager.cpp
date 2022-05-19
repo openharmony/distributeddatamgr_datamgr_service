@@ -17,7 +17,7 @@
 #define LOG_TAG "MetaDataManager"
 
 #include "kv_store_nb_delegate.h"
-#include "log/log_print.h"
+#include "log_print.h"
 
 namespace OHOS::DistributedData {
 class MetaObserver : public DistributedDB::KvStoreObserver {

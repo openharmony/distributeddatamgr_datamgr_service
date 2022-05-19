@@ -38,8 +38,8 @@ void KvStoreSyncCallbackClient::SyncCompleted(const std::map<std::string, Status
     }
 }
 
-void KvStoreSyncCallbackClient::AddSyncCallback(const std::shared_ptr<KvStoreSyncCallback> callback,
-                                                uint64_t sequenceId)
+void KvStoreSyncCallbackClient::AddSyncCallback(
+    const std::shared_ptr<KvStoreSyncCallback> callback, uint64_t sequenceId)
 {
     if (callback == nullptr) {
         ZLOGE("callback is nullptr");

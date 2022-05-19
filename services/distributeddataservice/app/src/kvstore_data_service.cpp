@@ -696,11 +696,12 @@ void KvStoreDataService::OnStart()
         }
         ZLOGE("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
     }
-    Initialize();
+    ZLOGI("Bootstrap configs and plugins.");
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
     Bootstrap::GetInstance().LoadNetworks();
+    Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr != nullptr) {
         ZLOGI("samgr exist.");

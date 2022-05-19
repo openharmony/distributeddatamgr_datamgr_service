@@ -102,7 +102,6 @@
                             "kvstore_death_recipient.h",
                             "kvstore_observer.h",
                             "kvstore_result_set.h",
-                            "kvstore_snapshot.h",
                             "kvstore_sync_callback.h",
                             "single_kvstore.h",
                             "types.h",

@@ -23,7 +23,6 @@ ohos_unittest("DistributeddataAccountTest") {
     "//utils/native/base/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/account",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/log",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/utils",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
