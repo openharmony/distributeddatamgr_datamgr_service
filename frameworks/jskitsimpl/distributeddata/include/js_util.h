@@ -140,7 +140,7 @@ public:
     static napi_status GetValue(napi_env env, napi_value in, JsSchema*& out);
 
     static napi_status GetValue(napi_env env, napi_value in, std::vector<DataShare::DataShareValuesBucket> &out);
-    static napi_status GetValue(napi_env &env, napi_value &in, DataShare::DataShareValuesBucket &out);
+    static napi_status GetValue(napi_env env, napi_value in, DataShare::DataShareValuesBucket &out);
     static napi_status GetValue(napi_env env, napi_value in, DataShare::DataSharePredicates &out);
 
     /* napi_get_named_property wrapper */

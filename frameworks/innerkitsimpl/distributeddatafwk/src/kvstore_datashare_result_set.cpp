@@ -31,7 +31,7 @@ int KvStoreDataShareResultSet::GetRowCount(int32_t &count)
     return count == INVALID_COUNT ? E_ERROR : E_OK;
 }
 
-int KvStoreDataShareResultSet::GetAllColumnsName(std::vector<std::string> &columnsName)
+int KvStoreDataShareResultSet::GetAllColumnNames(std::vector<std::string> &columnsName)
 {
     columnsName = { "key", "value" };
     return E_OK;
@@ -58,16 +58,16 @@ bool KvStoreDataShareResultSet::FillBlock(int pos, ResultSetBridge::Writer &writ
         ZLOGE("SharedBlock is full: %{public}d", statusAlloc);
         return false;
     }
-    // int keyStatus = writer.Write(0, &entry.key.Data(), entry.key.Size()); //需打开屏蔽
-    // if (keyStatus != E_OK) { 
-    //     ZLOGE("WriteBlob key error: %{public}d", keyStatus);
-    //     return false;
-    // }
-    // int valueStatus = writer.Write(1, &entry.value.Data(), entry.value.Size());//需打开屏蔽
-    // if (valueStatus != E_OK) {
-    //     ZLOGE("WriteBlob value error: %{public}d", valueStatus);
-    //     return false;
-    // }
+    int keyStatus = writer.Write(0, &entry.key.Data(), entry.key.Size()); 
+    if (keyStatus != E_OK) { 
+        ZLOGE("WriteBlob key error: %{public}d", keyStatus);
+        return false;
+    }
+    int valueStatus = writer.Write(1, &entry.value.Data(), entry.value.Size());
+    if (valueStatus != E_OK) {
+        ZLOGE("WriteBlob value error: %{public}d", valueStatus);
+        return false;
+    }
     return true;
 }
 
@@ -88,21 +88,16 @@ int KvStoreDataShareResultSet::Count()
     resultRowCount = count;
     return count;
 }
-bool KvStoreDataShareResultSet::OnGo(int32_t start, int32_t length, ResultSetBridge::Writer &writer) 
+bool KvStoreDataShareResultSet::OnGo(int32_t start, int32_t target, ResultSetBridge::Writer &writer) 
 {
-    if ((start < 0) || (length < 0) || (start > length) || (length >= Count())) {
-        ZLOGE("nowRowIndex out of line: %{public}d", length);
+    if ((start < 0) || (target < 0) || (start > target) || (target >= Count())) {
+        ZLOGE("nowRowIndex out of line: %{public}d", target);
         return false;
     }
-    // int statusColumn = writer.SetColumnNum(2);
-    // if (statusColumn != E_OK) {
-    //     ZLOGE("SetColumnNum faild: %{public}d", statusColumn);
-    //     return false;
-    // }
-    for (int pos = start; pos <= length; pos++) {
-        bool ret = FillBlock(pos, writer);
+    for (int pos = 0; pos < target; pos++) {
+        bool ret = FillBlock(pos + start, writer);
         if (!ret) {
-            ZLOGE("nowRowIndex out of line: %{public}d", length);
+            ZLOGE("nowRowIndex out of line: %{public}d", target);
             return ret;
         }
     }

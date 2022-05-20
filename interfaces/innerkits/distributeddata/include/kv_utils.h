@@ -32,12 +32,14 @@ public:
     static Entry ToEntry(const DataShare::DataShareValuesBucket &valueBucket);
     static std::vector<Entry> ToEntries(const std::vector<DataShare::DataShareValuesBucket> &valueBuckets);
 private:
-    KvUtils() = delete;
     KvUtils(KvUtils &&) = delete;
     KvUtils(const KvUtils &) = delete;
     KvUtils &operator=(KvUtils &&) = delete;
     KvUtils &operator=(const KvUtils &) = delete;
     ~KvUtils() = delete;
+    static Status ToEntryData(const std::map<std::string, DataShare::DataShareValueObject> &valuesMap, const std::string field, Blob &kv);
+    static const std::string KEY;
+    static const std::string VALUE;
 };
 } // namespace DistributedKv
 } // namespace OHOS

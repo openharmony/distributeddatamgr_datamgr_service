@@ -31,9 +31,9 @@ public:
 
     int GetRowCount(int32_t &count) override;
 
-    int GetAllColumnsName(std::vector<std::string> &columnsName) override;
+    int GetAllColumnNames(std::vector<std::string> &columnNames) override;
     
-    bool OnGo(int32_t start, int32_t length, DataShare::ResultSetBridge::Writer &writer) override;
+    bool OnGo(int32_t startRowIndex, int32_t targetRowIndex, DataShare::ResultSetBridge::Writer &writer) override;
   
 private:
     int Count();

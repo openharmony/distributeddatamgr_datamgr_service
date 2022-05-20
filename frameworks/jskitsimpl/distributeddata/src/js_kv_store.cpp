@@ -140,22 +140,22 @@ napi_value JsKVStore::Put(napi_env env, napi_callback_info info)
     });
 
     auto execute = [ctxt]() {
-        Status status = Status::ERROR;
-        if (ctxt->type == napi_object) {
-            auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
-            ctxt->entries = KvUtils::ToEntries(ctxt->valueBuckets);
-            ZLOGD("kvStoreDataShare->ToEntry return");
-            status = kvStore->PutBatch(ctxt->entries);
-            CHECK_STATUS_RETURN_VOID(ctxt, "kvStoreDataShare->Put, i.e. Put error!");
-        } else if (ctxt->type == napi_string) {
+        if (ctxt->type == napi_string) {
             OHOS::DistributedKv::Key key(ctxt->key);
             OHOS::DistributedKv::Value value(ctxt->value);
             auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
-            status = kvStore->Put(key, value);
+            Status status = kvStore->Put(key, value);
             ZLOGD("kvStore->Put return %{public}d", status);
+            ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
+            CHECK_STATUS_RETURN_VOID(ctxt, "kvStore->Put() failed!");
+        } else if (ctxt->type == napi_object) {
+            auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
+            ctxt->entries = KvUtils::ToEntries(ctxt->valueBuckets);
+            ZLOGD("kvStoreDataShare->ToEntry return");
+            Status status = kvStore->PutBatch(ctxt->entries);
+            ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
+            CHECK_STATUS_RETURN_VOID(ctxt, "kvStoreDataShare->Put, i.e. Put error!");
         }
-        ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
-        CHECK_STATUS_RETURN_VOID(ctxt, "kvStore->Put() failed!");
     };
     return NapiQueue::AsyncWork(env, ctxt, std::string(__FUNCTION__), execute);
 }
@@ -194,23 +194,24 @@ napi_value JsKVStore::Delete(napi_env env, napi_callback_info info)
     });
 
     return NapiQueue::AsyncWork(env, ctxt, std::string(__FUNCTION__), [ctxt]() {
-        Status status = Status::ERROR;
-        if (ctxt->type == napi_object) {
+        if (ctxt->type == napi_string) {
+            OHOS::DistributedKv::Key key(ctxt->key);
+            auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
+            Status status = kvStore->Delete(key);
+            ZLOGD("kvStore->Put return %{public}d", status);
+            ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
+            CHECK_STATUS_RETURN_VOID(ctxt, "kvStore->Delete() failed!");
+        } else if (ctxt->type == napi_object) {
             std::vector<Key> keys;
             auto kvPredicates = std::make_shared<KvStorePredicates>();
-            status = kvPredicates->GetKeys(ctxt->predicates, keys);
+            Status status = kvPredicates->GetKeys(ctxt->predicates, keys);
+            ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
+            CHECK_STATUS_RETURN_VOID(ctxt, "kvStore GetKeys failed!");
             ZLOGD("GetKeys return %{public}d", status);
             auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
             status = kvStore->DeleteBatch(keys);
             ZLOGD("kv Datashare Delete return %{public}d", status);
-        } else if (ctxt->type == napi_string) {
-            OHOS::DistributedKv::Key key(ctxt->key);
-            auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
-            status = kvStore->Delete(key);
         }
-        ZLOGD("kvStore->Delete return %{public}d", status);
-        ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
-        CHECK_STATUS_RETURN_VOID(ctxt, "kvStore->Delete() failed!");
     });
 }
 

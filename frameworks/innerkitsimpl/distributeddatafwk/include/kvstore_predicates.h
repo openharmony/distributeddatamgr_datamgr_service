@@ -25,19 +25,6 @@ namespace OHOS {
 namespace DistributedKv {
 class KvStorePredicates {
 public:
-    struct Context {
-        int intValue;
-        int64_t longValue;
-        double doubleValue;
-        bool boolValue;
-        std::string field;
-        std::string stringValue;
-        std::vector<int> intList;
-        std::vector<int64_t> longList;
-        std::vector<double> doubleList;
-        std::vector<std::string> stringList;
-        DataShare::DataSharePredicatesObjectType innerType;
-    };
     KvStorePredicates() = default;
     ~KvStorePredicates() = default;
     Status ToQuery(const DataShare::DataSharePredicates &predicates, DataQuery &query);
@@ -62,7 +49,6 @@ private:
     Status Limit(const DataShare::OperationItem &oper, DataQuery &query);
     Status InKeys(const DataShare::OperationItem &oper, DataQuery &query);
     Status KeyPrefix(const DataShare::OperationItem &oper, DataQuery &query);
-    Status GetContext(const DataShare::OperationItem &oper, Context &context);
     using QueryHandler = Status (KvStorePredicates::*)(const DataShare::OperationItem &, DataQuery &);
     static constexpr QueryHandler HANDLERS[DataShare::LAST_TYPE] = {
             [DataShare::EQUAL_TO] = &KvStorePredicates::EqualTo,
