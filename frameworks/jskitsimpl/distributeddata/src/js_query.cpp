@@ -345,23 +345,25 @@ struct NumbersContext : public ContextBase {
 
 napi_value JsQuery::InNumber(napi_env env, napi_callback_info info)
 {
+    ZLOGD("Query::InNumber()");
     auto ctxt = std::make_shared<NumbersContext>();
     ctxt->GetNumberSync(env, info);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");
 
     auto& query = reinterpret_cast<JsQuery*>(ctxt->native)->query_;
     if (ctxt->innerType == NumberType::NUMBER_INT) {
-        query.InInt(ctxt->field, ctxt->intList);
+        query.In(ctxt->field, ctxt->intList);
     } else if (ctxt->innerType == NumberType::NUMBER_LONG) {
-        query.InLong(ctxt->field, ctxt->longList);
+        query.In(ctxt->field, ctxt->longList);
     } else if (ctxt->innerType == NumberType::NUMBER_DOUBLE) {
-        query.InDouble(ctxt->field, ctxt->doubleList);
+        query.In(ctxt->field, ctxt->doubleList);
     }
     return ctxt->self;
 }
 
 napi_value JsQuery::InString(napi_env env, napi_callback_info info)
 {
+    ZLOGD("Query::InString()");
     struct StringsContext : public ContextBase {
         std::string field;
         std::vector<std::string> valueList;
@@ -379,23 +381,24 @@ napi_value JsQuery::InString(napi_env env, napi_callback_info info)
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");
 
     auto& query = reinterpret_cast<JsQuery*>(ctxt->native)->query_;
-    query.InString(ctxt->field, ctxt->valueList);
+    query.In(ctxt->field, ctxt->valueList);
     return ctxt->self;
 }
 
 napi_value JsQuery::NotInNumber(napi_env env, napi_callback_info info)
 {
+    ZLOGD("Query::NotInNumber()");
     auto ctxt = std::make_shared<NumbersContext>();
     ctxt->GetNumberSync(env, info);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");
 
     auto& query = reinterpret_cast<JsQuery*>(ctxt->native)->query_;
     if (ctxt->innerType == NumberType::NUMBER_INT) {
-        query.NotInInt(ctxt->field, ctxt->intList);
+        query.NotIn(ctxt->field, ctxt->intList);
     } else if (ctxt->innerType == NumberType::NUMBER_LONG) {
-        query.NotInLong(ctxt->field, ctxt->longList);
+        query.NotIn(ctxt->field, ctxt->longList);
     } else if (ctxt->innerType == NumberType::NUMBER_DOUBLE) {
-        query.NotInDouble(ctxt->field, ctxt->doubleList);
+        query.NotIn(ctxt->field, ctxt->doubleList);
     }
     return ctxt->self;
 }
@@ -420,7 +423,7 @@ napi_value JsQuery::NotInString(napi_env env, napi_callback_info info)
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");
 
     auto& query = reinterpret_cast<JsQuery*>(ctxt->native)->query_;
-    query.NotInString(ctxt->field, ctxt->valueList);
+    query.NotIn(ctxt->field, ctxt->valueList);
     return ctxt->self;
 }
 

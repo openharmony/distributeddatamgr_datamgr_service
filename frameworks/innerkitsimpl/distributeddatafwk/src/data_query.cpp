@@ -336,8 +336,9 @@ DataQuery& DataQuery::IsNotNull(const std::string &field)
     return *this;
 }
 
-DataQuery& DataQuery::InInt(const std::string &field, const std::vector<int> &valueList)
+DataQuery& DataQuery::In(const std::string &field, const std::vector<int> &valueList)
 {
+    ZLOGD("DataQuery::In int");
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(IN, TYPE_INTEGER, myField, valueList);
@@ -345,8 +346,9 @@ DataQuery& DataQuery::InInt(const std::string &field, const std::vector<int> &va
     return *this;
 }
 
-DataQuery& DataQuery::InLong(const std::string &field, const std::vector<int64_t> &valueList)
+DataQuery& DataQuery::In(const std::string &field, const std::vector<int64_t> &valueList)
 {
+    ZLOGD("DataQuery::In int64_t");
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(IN, TYPE_LONG, myField, valueList);
@@ -354,8 +356,9 @@ DataQuery& DataQuery::InLong(const std::string &field, const std::vector<int64_t
     return *this;
 }
 
-DataQuery& DataQuery::InDouble(const std::string &field, const std::vector<double> &valueList)
+DataQuery& DataQuery::In(const std::string &field, const std::vector<double> &valueList)
 {
+    ZLOGD("DataQuery::In double");
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(IN, TYPE_DOUBLE, myField, valueList);
@@ -363,8 +366,9 @@ DataQuery& DataQuery::InDouble(const std::string &field, const std::vector<doubl
     return *this;
 }
 
-DataQuery& DataQuery::InString(const std::string &field, const std::vector<std::string> &valueList)
+DataQuery& DataQuery::In(const std::string &field, const std::vector<std::string> &valueList)
 {
+    ZLOGD("DataQuery::In string");
     std::string myField = field;
     std::vector<std::string> myValueList(valueList);
     if (ValidateField(myField)) {
@@ -373,8 +377,9 @@ DataQuery& DataQuery::InString(const std::string &field, const std::vector<std::
     return *this;
 }
 
-DataQuery& DataQuery::NotInInt(const std::string &field, const std::vector<int> &valueList)
+DataQuery& DataQuery::NotIn(const std::string &field, const std::vector<int> &valueList)
 {
+     ZLOGD("DataQuery::NotIn int");
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(NOT_IN, TYPE_INTEGER, myField, valueList);
@@ -382,8 +387,9 @@ DataQuery& DataQuery::NotInInt(const std::string &field, const std::vector<int> 
     return *this;
 }
 
-DataQuery& DataQuery::NotInLong(const std::string &field, const std::vector<int64_t> &valueList)
+DataQuery& DataQuery::NotIn(const std::string &field, const std::vector<int64_t> &valueList)
 {
+    ZLOGD("DataQuery::NotIn int64_t");
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(NOT_IN, TYPE_LONG, myField, valueList);
@@ -391,8 +397,9 @@ DataQuery& DataQuery::NotInLong(const std::string &field, const std::vector<int6
     return *this;
 }
 
-DataQuery& DataQuery::NotInDouble(const std::string &field, const std::vector<double> &valueList)
+DataQuery& DataQuery::NotIn(const std::string &field, const std::vector<double> &valueList)
 {
+    ZLOGD("DataQuery::NotIn double");
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(NOT_IN, TYPE_DOUBLE, myField, valueList);
@@ -400,8 +407,9 @@ DataQuery& DataQuery::NotInDouble(const std::string &field, const std::vector<do
     return *this;
 }
 
-DataQuery& DataQuery::NotInString(const std::string &field, const std::vector<std::string> &valueList)
+DataQuery& DataQuery::NotIn(const std::string &field, const std::vector<std::string> &valueList)
 {
+    ZLOGD("DataQuery::NotIn string");
     std::string myField = field;
     std::vector<std::string> myValueList(valueList);
     if (ValidateField(myField)) {

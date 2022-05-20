@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-
 #ifndef KVSTORE_PREDICATE_H
 #define KVSTORE_PREDICATE_H
 
