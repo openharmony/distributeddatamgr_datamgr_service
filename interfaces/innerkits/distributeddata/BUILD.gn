@@ -33,7 +33,7 @@ config("distributeddatafwk_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/data_share/provider/include",
     "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/data_share/common/include",
-    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common/include"
+    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common/include",
   ]
 }
 
@@ -66,17 +66,17 @@ ohos_shared_library("distributeddata_inner") {
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/itypes_util.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_client.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_client_death_observer.cpp",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_datashare_result_set.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_death_recipient_impl.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_observer_client.cpp",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_predicates.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_resultset_client.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_service_death_notifier.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_snapshot_client.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_sync_callback_client.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/single_kvstore_client.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/sync_observer.cpp",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvdbstore_datashare_native.cpp",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvdbstore_result_set.cpp",
-    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_predicates.cpp",
+    "../../../frameworks/innerkitsimpl/distributeddatafwk/src/kv_utils.cpp",
     "include/types.h",
   ]
 
@@ -92,12 +92,12 @@ ohos_shared_library("distributeddata_inner") {
   configs = [ ":distributeddatafwk_config" ]
 
   deps = [
+    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common:datashare_common",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//utils/native/base:utils",
-    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common:datashare_common"
-    # "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/data_share:datashare_common"
   ]
+
   external_deps = [
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",

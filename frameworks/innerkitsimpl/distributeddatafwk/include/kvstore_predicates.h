@@ -24,27 +24,68 @@
 
 namespace OHOS {
 namespace DistributedKv {
-using namespace DataShare;
-
-class KvStorePredicate
-{
+class KvStorePredicates {
 public:
-	KvStorePredicate(const DataSharePredicates &predicates);
-
-	~KvStorePredicate() = default;
-	
-	Status ToQuery(DataQuery &query);
-
+    struct Context {
+        int intValue;
+        int64_t longValue;
+        double doubleValue;
+        bool boolValue;
+        std::string field;
+        std::string stringValue;
+        std::vector<int> intList;
+        std::vector<int64_t> longList;
+        std::vector<double> doubleList;
+        std::vector<std::string> stringList;
+        DataShare::DataSharePredicatesObjectType innerType;
+    };
+    KvStorePredicates() = default;
+    ~KvStorePredicates() = default;
+    Status ToQuery(const DataShare::DataSharePredicates &predicates, DataQuery &query);
+    Status GetKeys(const DataShare::DataSharePredicates &predicates, std::vector<Key> &keys);
 private:
-	Status InKeys(const OperationItem &oper, DataQuery &query);
-	
-	Status KeyPrefix(const OperationItem &oper, DataQuery &query);
-
-	using QueryHandler = Status (KvStorePredicate::*)(const OperationItem &, DataQuery &);
-
-	static const std::map<OperationType, QueryHandler> HANDLERS;
-
-	DataSharePredicates predicates_;
+    Status EqualTo(const DataShare::OperationItem &oper, DataQuery &query);
+    Status NotEqualTo(const DataShare::OperationItem &oper, DataQuery &query);
+    Status GreaterThan(const DataShare::OperationItem &oper, DataQuery &query);
+    Status LessThan(const DataShare::OperationItem &oper, DataQuery &query);
+    Status GreaterThanOrEqualTo(const DataShare::OperationItem &oper, DataQuery &query);
+    Status LessThanOrEqualTo(const DataShare::OperationItem &oper, DataQuery &query);
+    Status And(const DataShare::OperationItem &oper, DataQuery &query);
+    Status Or(const DataShare::OperationItem &oper, DataQuery &query);
+    Status IsNull(const DataShare::OperationItem &oper, DataQuery &query);
+    Status IsNotNull(const DataShare::OperationItem &oper, DataQuery &query);
+    Status In(const DataShare::OperationItem &oper, DataQuery &query);
+    Status NotIn(const DataShare::OperationItem &oper, DataQuery &query);
+    Status Like(const DataShare::OperationItem &oper, DataQuery &query);
+    Status Unlike(const DataShare::OperationItem &oper, DataQuery &query);
+    Status OrderByAsc(const DataShare::OperationItem &oper, DataQuery &query);
+    Status OrderByDesc(const DataShare::OperationItem &oper, DataQuery &query);
+    Status Limit(const DataShare::OperationItem &oper, DataQuery &query);
+    Status InKeys(const DataShare::OperationItem &oper, DataQuery &query);
+    Status KeyPrefix(const DataShare::OperationItem &oper, DataQuery &query);
+    Status GetContext(const DataShare::OperationItem &oper, Context &context);
+    using QueryHandler = Status (KvStorePredicates::*)(const DataShare::OperationItem &, DataQuery &);
+    static constexpr QueryHandler HANDLERS[DataShare::LAST_TYPE] = {
+            [DataShare::EQUAL_TO] = &KvStorePredicates::EqualTo,
+            [DataShare::NOT_EQUAL_TO] = &KvStorePredicates::NotEqualTo,
+            [DataShare::GREATER_THAN] = &KvStorePredicates::GreaterThan,
+            [DataShare::LESS_THAN] = &KvStorePredicates::LessThan,
+            [DataShare::GREATER_THAN_OR_EQUAL_TO] = &KvStorePredicates::GreaterThanOrEqualTo,
+            [DataShare::LESS_THAN_OR_EQUAL_TO] = &KvStorePredicates::LessThanOrEqualTo,
+            [DataShare::AND] = &KvStorePredicates::And,
+            [DataShare::OR] = &KvStorePredicates::Or,
+            [DataShare::IS_NULL] = &KvStorePredicates::IsNull,
+            [DataShare::IS_NOT_NULL] = &KvStorePredicates::IsNotNull,
+            [DataShare::NOT_IN] = &KvStorePredicates::NotIn,
+            [DataShare::LIKE] = &KvStorePredicates::Like,
+            [DataShare::UNLIKE] = &KvStorePredicates::Unlike,
+            [DataShare::ORDER_BY_ASC] = &KvStorePredicates::OrderByAsc,
+            [DataShare::ORDER_BY_DESC] = &KvStorePredicates::OrderByDesc,
+            [DataShare::LIMIT] = &KvStorePredicates::Limit,
+            [DataShare::IN_KEY] = &KvStorePredicates::InKeys,
+            [DataShare::KEY_PREFIX] = &KvStorePredicates::KeyPrefix,
+            [DataShare::IN] = &KvStorePredicates::In,
+            };
 };
 }// namespace DistributedKv
 }//namespace 
