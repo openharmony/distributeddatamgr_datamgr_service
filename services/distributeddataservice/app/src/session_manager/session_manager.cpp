@@ -21,7 +21,7 @@
 
 #include "auth_delegate.h"
 #include "checker/checker_manager.h"
-#include "log/log_print.h"
+#include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "user_delegate.h"

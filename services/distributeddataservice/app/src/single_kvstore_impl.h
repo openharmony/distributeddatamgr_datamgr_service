@@ -61,9 +61,6 @@ public:
     Status ReKey(const std::vector<uint8_t> &key);
     InnerStatus Close(DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager);
     Status ForceClose(DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager);
-    Status MigrateKvStore(const std::string &harmonyAccountId, const std::string &kvStoreDataDir,
-                          DistributedDB::KvStoreDelegateManager *oldDelegateMgr,
-                          DistributedDB::KvStoreDelegateManager *&newDelegateMgr);
     void IncreaseOpenCount();
     Status PutBatch(const std::vector<Entry> &entries) override;
     Status DeleteBatch(const std::vector<Key> &keys) override;
@@ -100,8 +97,6 @@ private:
                   uint64_t sequenceId);
     Status DoQuerySync(const std::vector<std::string> &deviceIds, SyncMode mode, const std::string &query,
                        const KvStoreSyncManager::SyncEnd &syncEnd, uint64_t sequenceId);
-    Status RebuildKvStoreObserver(DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate);
-    Status RebuildKvStoreResultSet();
     int ConvertToDbObserverMode(SubscribeType subscribeType) const;
     DistributedDB::SyncMode ConvertToDbSyncMode(SyncMode syncMode) const;
     Status DoSubscribe(const std::vector<std::string> &deviceIds,
@@ -120,8 +115,6 @@ private:
 
     // kvstore options.
     const Options options_;
-    // kvstore cipherKey.
-    const std::vector<uint8_t> cipherKey_;
     // deviceAccount id get from service
     std::string deviceAccountId_;
     // appId get from PMS.
@@ -136,7 +129,6 @@ private:
     // for top-app, 0 means synchronization immediately. for others, 0 means 1000ms.
     uint32_t defaultSyncDelayMs_{ 0 };
     std::atomic_uint32_t waitingSyncCount_{ 0 };
-    std::atomic_uint32_t waitingAutoSyncCount_{ 0 };
     std::atomic_uint32_t syncRetries_{ 0 };
     std::vector<std::string> lastSyncDeviceIds_{ };
     SyncMode lastSyncMode_{ SyncMode::PULL };

@@ -18,7 +18,6 @@
 
 #include <memory>
 #include "change_notification.h"
-#include "kvstore_snapshot.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -28,9 +27,6 @@ public:
     API_EXPORT KvStoreObserver() = default;
 
     API_EXPORT virtual ~KvStoreObserver() {}
-
-    // client override this function to receive change notification.
-    virtual void OnChange(const ChangeNotification &changeNotification, std::shared_ptr<KvStoreSnapshot> snapshot) = 0;
 
     // client override this function to receive change notification.
     API_EXPORT virtual void OnChange(const ChangeNotification &changeNotification) {}

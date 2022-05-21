@@ -111,7 +111,7 @@ std::shared_ptr<RdbService> RdbManagerImpl::GetRdbService(const RdbSyncerParam& 
         return nullptr;
     }
     sptr<IRdbService> serviceBase = service;
-    LinkToDeath(serviceBase->AsObject());
+    LinkToDeath(serviceBase->AsObject().GetRefPtr());
     rdbService_ = std::shared_ptr<RdbService>(service.GetRefPtr(), [holder = service] (const auto*) {});
     bundleName_ = param.bundleName_;
     return rdbService_;

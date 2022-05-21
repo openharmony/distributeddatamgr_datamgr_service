@@ -15,7 +15,7 @@
 #define LOG_TAG "SystemChecker"
 #include "system_checker.h"
 #include "accesstoken_kit.h"
-#include "log/log_print.h"
+#include "log_print.h"
 namespace OHOS {
 namespace DistributedData {
 using namespace Security::AccessToken;

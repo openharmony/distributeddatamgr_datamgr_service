@@ -17,7 +17,6 @@
 #define KVSTORE_H
 
 #include "kvstore_observer.h"
-#include "kvstore_snapshot.h"
 #include "types.h"
 
 namespace OHOS {

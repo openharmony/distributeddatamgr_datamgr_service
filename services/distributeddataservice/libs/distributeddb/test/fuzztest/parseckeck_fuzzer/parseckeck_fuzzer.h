@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#ifndef KVSTOREDELEGATE_CURD_FUZZER_H
-#define KVSTOREDELEGATE_CURD_FUZZER_H
+#ifndef PARSECHECK_FUZZER_H
+#define PARSECHECK_FUZZER_H
 
-#define FUZZ_PROJECT_NAME "KvStoreDelegate_CURD_fuzzer"
+#define FUZZ_PROJECT_NAME "ParseCkeck_fuzzer"
 
-#endif // KVSTOREDELEGATE_CURD_FUZZER_H
+#endif // PARSECHECK_FUZZER_H

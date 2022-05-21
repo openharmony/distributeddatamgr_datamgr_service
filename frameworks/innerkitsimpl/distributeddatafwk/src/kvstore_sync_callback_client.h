@@ -30,8 +30,7 @@ public:
 
     void SyncCompleted(const std::map<std::string, Status> &results, uint64_t sequenceId) override;
 
-    void AddSyncCallback(const std::shared_ptr<KvStoreSyncCallback> callback,
-                         uint64_t sequenceId);
+    void AddSyncCallback(const std::shared_ptr<KvStoreSyncCallback> callback, uint64_t sequenceId);
 
     void DeleteSyncCallback(uint64_t sequenceId);
 private:

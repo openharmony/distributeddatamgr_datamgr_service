@@ -660,14 +660,6 @@ void JsKVStore::SetUvQueue(std::shared_ptr<UvQueue> uvQueue)
     uvQueue_ = uvQueue;
 }
 
-void JsKVStore::DataObserver::OnChange(const ChangeNotification &notification,
-                                       std::shared_ptr<KvStoreSnapshot> snapshot)
-{
-    ZLOGD("data change insert:%{public}zu, update:%{public}zu, delete:%{public}zu",
-        notification.GetInsertEntries().size(), notification.GetUpdateEntries().size(),
-        notification.GetDeleteEntries().size());
-}
-
 void JsKVStore::DataObserver::OnChange(const ChangeNotification& notification)
 {
     ZLOGD("data change insert:%{public}zu, update:%{public}zu, delete:%{public}zu",

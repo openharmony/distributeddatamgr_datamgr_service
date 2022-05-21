@@ -80,7 +80,7 @@ void KvStoreObserverImpl::OnChange(const DistributedDB::KvStoreChangedData &data
 
     ChangeNotification change(std::move(inserts), std::move(updates), std::move(deleteds), std::string(), false);
     ZLOGI("call proxy OnChange");
-    observerProxy_->OnChange(change, nullptr);
+    observerProxy_->OnChange(change);
 }
 
 SubscribeType KvStoreObserverImpl::GetSubscribeType() const

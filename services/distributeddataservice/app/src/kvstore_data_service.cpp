@@ -25,6 +25,7 @@
 #include <chrono>
 #include <thread>
 
+#include "accesstoken_kit.h"
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
 #include "bootstrap.h"
@@ -35,6 +36,7 @@
 #include "dds_trace.h"
 #include "device_kvstore_impl.h"
 #include "executor_factory.h"
+#include "hap_token_info.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
@@ -61,6 +63,7 @@ namespace OHOS::DistributedKv {
 using json = nlohmann::json;
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
+using namespace Security::AccessToken;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
@@ -171,7 +174,7 @@ Status KvStoreDataService::GetSingleKvStore(const Options &options, const AppId 
     sptr<SingleKvStoreImpl> store;
     status = (it->second).GetKvStore(options, metaData, keyPara.secretKey, store);
     if (keyPara.outdated) {
-        KvStoreMetaManager::GetInstance().ReKey(metaData.account, metaData.bundleName, metaData.storeId,
+        KvStoreMetaManager::GetInstance().ReKey(metaData.user, metaData.bundleName, metaData.storeId,
             KvStoreAppManager::ConvertPathType(metaData), store);
     }
     if (status == Status::SUCCESS) {
@@ -650,6 +653,13 @@ Status KvStoreDataService::AppExit(const AppId &appId, pid_t uid, uint32_t token
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
+    if (appId.appId == "com.ohos.medialibrary.MediaLibraryDataA") {
+        HapTokenInfo tokenInfo;
+        AccessTokenKit::GetHapTokenInfo(token, tokenInfo);
+        ZLOGI("not close bundle:%{public}s, tokenInfo.bundle:%{public}s, uid:%{public}d, token:%{public}u",
+            appId.appId.c_str(), tokenInfo.bundleName.c_str(), uid, token);
+        return Status::SUCCESS;
+    }
     std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
     clientDeathObserverMap_.erase(token);
 
@@ -696,11 +706,12 @@ void KvStoreDataService::OnStart()
         }
         ZLOGE("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
     }
-    Initialize();
+    ZLOGI("Bootstrap configs and plugins.");
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
     Bootstrap::GetInstance().LoadNetworks();
+    Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr != nullptr) {
         ZLOGI("samgr exist.");

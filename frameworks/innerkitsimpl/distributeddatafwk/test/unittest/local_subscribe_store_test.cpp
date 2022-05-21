@@ -99,9 +99,6 @@ public:
     KvStoreObserverUnitTest(KvStoreObserverUnitTest &&) = delete;
     KvStoreObserverUnitTest &operator=(KvStoreObserverUnitTest &&) = delete;
 
-    // callback function will be called when the db data is changed.
-    void OnChange(const ChangeNotification &changeNotification, std::shared_ptr<KvStoreSnapshot> snapshot);
-
     void OnChange(const ChangeNotification &changeNotification);
 
     // reset the callCount_ to zero.
@@ -122,8 +119,7 @@ KvStoreObserverUnitTest::KvStoreObserverUnitTest()
     isClear_ = false;
 }
 
-void KvStoreObserverUnitTest::OnChange(const ChangeNotification &changeNotification,
-                                       std::shared_ptr<KvStoreSnapshot> snapshot)
+void KvStoreObserverUnitTest::OnChange(const ChangeNotification &changeNotification)
 {
     ZLOGD("begin.");
     callCount_++;
@@ -132,11 +128,6 @@ void KvStoreObserverUnitTest::OnChange(const ChangeNotification &changeNotificat
     deleteEntries_ = changeNotification.GetDeleteEntries();
     changeNotification.GetDeviceId();
     isClear_ = changeNotification.IsClear();
-}
-
-void KvStoreObserverUnitTest::OnChange(const ChangeNotification &changeNotification)
-{
-    OnChange(changeNotification, nullptr);
 }
 
 void KvStoreObserverUnitTest::ResetToZero()

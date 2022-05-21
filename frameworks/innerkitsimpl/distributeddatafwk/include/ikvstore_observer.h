@@ -19,7 +19,6 @@
 #include "change_notification.h"
 #include "iremote_broker.h"
 #include "ikvstore_observer.h"
-#include "ikvstore_snapshot.h"
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
 
@@ -28,7 +27,7 @@ namespace DistributedKv {
 class IKvStoreObserver : public IRemoteBroker {
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedKv.IKvStoreObserver");
-    virtual void OnChange(const ChangeNotification &changeNotification, sptr<IKvStoreSnapshotImpl> snapshot) = 0;
+    virtual void OnChange(const ChangeNotification &changeNotification) = 0;
 };
 
 class KvStoreObserverStub : public IRemoteStub<IKvStoreObserver> {
@@ -41,7 +40,7 @@ class KvStoreObserverProxy : public IRemoteProxy<IKvStoreObserver> {
 public:
     explicit KvStoreObserverProxy(const sptr<IRemoteObject> &impl);
     ~KvStoreObserverProxy() = default;
-    void OnChange(const ChangeNotification &changeNotification, sptr<IKvStoreSnapshotImpl> snapshot) override;
+    void OnChange(const ChangeNotification &changeNotification) override;
 private:
     static inline BrokerDelegator<KvStoreObserverProxy> delegator_;
 };

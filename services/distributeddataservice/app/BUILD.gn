@@ -88,7 +88,6 @@ ohos_shared_library("distributeddataservice") {
     "src/kvstore_meta_manager.cpp",
     "src/kvstore_observer_impl.cpp",
     "src/kvstore_resultset_impl.cpp",
-    "src/kvstore_snapshot_impl.cpp",
     "src/kvstore_sync_manager.cpp",
     "src/kvstore_user_manager.cpp",
     "src/query_helper.cpp",

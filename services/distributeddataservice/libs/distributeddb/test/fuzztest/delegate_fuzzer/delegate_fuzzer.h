@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#ifndef KVSTORENBDELEGATE_CURD_FUZZER_H
-#define KVSTORENBDELEGATE_CURD_FUZZER_H
+#ifndef EDELEGATE_FUZZER_H
+#define EDELEGATE_FUZZER_H
 
-#define FUZZ_PROJECT_NAME "KvStoreNbDelegate_CURD_fuzzer"
+#define FUZZ_PROJECT_NAME "Delegate_fuzzer"
 
-#endif // KVSTORENBDELEGATE_CURD_FUZZER_H
+#endif // EDELEGATE_FUZZER_H

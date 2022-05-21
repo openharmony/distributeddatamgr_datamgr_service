@@ -16,8 +16,8 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("KvStoreDelegateCurdFuzzTest") {
-  module_out_path = "distributeddatamgr/distributeddb"
+ohos_fuzztest("AutoLaunchFuzzTest") {
+  module_out_path = "distributeddatamgr/distributeddatafwk"
 
   include_dirs = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/common",
@@ -47,22 +47,21 @@ ohos_fuzztest("KvStoreDelegateCurdFuzzTest") {
     "//third_party/grpc/src/core/lib/json",
   ]
 
+  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/test/fuzztest/autolaunch_fuzzer"
+
   cflags = [
     "-g",
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-
-  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/kvstoredelegate_curd_fuzzer"
-
   sources = [
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/db_common.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/log_print.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/common/src/platform_specific.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/fuzztest/common/distributeddb_tools_test.cpp",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test/unittest/common/common/distributeddb_data_generate_unit_test.cpp",
-    "kvstoredelegate_curd_fuzzer.cpp",
+    "autolaunch_fuzzer.cpp",
   ]
 
   defines = [
@@ -92,12 +91,12 @@ ohos_fuzztest("KvStoreDelegateCurdFuzzTest") {
 }
 
 ###############################################################################
-
 group("fuzztest") {
   testonly = true
   deps = []
   deps += [
     # deps file
-    ":KvStoreDelegateCurdFuzzTest",
+    ":AutoLaunchFuzzTest",
   ]
 }
+###############################################################################

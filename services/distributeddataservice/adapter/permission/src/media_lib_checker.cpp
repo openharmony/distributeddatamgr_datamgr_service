@@ -19,7 +19,7 @@
 #include "accesstoken_kit.h"
 #include "bundlemgr/bundle_mgr_client.h"
 #include "hap_token_info.h"
-#include "log/log_print.h"
+#include "log_print.h"
 #include "utils/crypto.h"
 namespace OHOS {
 namespace DistributedData {
