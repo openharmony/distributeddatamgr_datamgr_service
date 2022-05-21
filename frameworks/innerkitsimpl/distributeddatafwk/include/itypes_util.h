@@ -208,6 +208,10 @@ template<typename T> Status ITypesUtil::UnmarshalFromBuffer(MessageParcel &data,
 template<typename T, typename... Types>
 bool ITypesUtil::Marshalling(MessageParcel &parcel, const T &first, const Types &...others)
 {
+    if (sizeof...(others) == 0) {
+        return true;
+    }
+
     if (!Marshalling(first, parcel)) {
         return false;
     }
@@ -218,10 +222,13 @@ bool ITypesUtil::Marshalling(MessageParcel &parcel, const T &first, const Types 
 template<typename T, typename... Types>
 bool ITypesUtil::Unmarshalling(MessageParcel &parcel, T &first, Types &...others)
 {
+    if (sizeof...(others) == 0) {
+        return true;
+    }
+
     if (!Unmarshalling(parcel, first)) {
         return false;
     }
-
     return Unmarshalling(parcel, others...);
 }
 } // namespace OHOS::DistributedKv
