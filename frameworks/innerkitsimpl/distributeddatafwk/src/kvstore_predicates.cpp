@@ -16,9 +16,9 @@
 #define LOG_TAG "KvStorePredicates"
 
 #include "cov_util.h"
-#include "kvstore_predicates.h"
 #include "log_print.h"
 #include "datashare_errno.h"
+#include "kvstore_predicates.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -27,7 +27,7 @@ constexpr KvStorePredicates::QueryHandler KvStorePredicates::HANDLERS[LAST_TYPE]
 
 Status KvStorePredicates::ToQuery(const DataSharePredicates &predicates, DataQuery &query)
 {
-    std::list<OperationItem> operationList = predicates.GetOperationList();    
+    std::list<OperationItem> operationList = predicates.GetOperationList();  
     for (const auto &oper : operationList) {
         if (oper.operation < 0 || oper.operation >= LAST_TYPE) {
             ZLOGE("operation param error");
@@ -51,8 +51,7 @@ Status KvStorePredicates::GetKeys(const DataSharePredicates &predicates, std::ve
     }
 
     std::vector<std::string> myKeys;
-    for(const auto &oper : operationList)
-    { 
+    for (const auto &oper : operationList) {
         if (oper.operation != IN_KEY) {
             ZLOGE("find operation failed");
             return Status::NOT_SUPPORT;
@@ -65,11 +64,10 @@ Status KvStorePredicates::GetKeys(const DataSharePredicates &predicates, std::ve
         }
         myKeys.insert(myKeys.end(), val.begin(), val.end());
     }
-    for (const auto &it : myKeys)
-    {
+    for (const auto &it : myKeys) {
         keys.push_back(it.c_str());
     }
-    return Status::SUCCESS;  
+    return Status::SUCCESS;
 }
 
 Status KvStorePredicates::InKeys(const OperationItem &oper, DataQuery &query)
@@ -98,7 +96,6 @@ Status KvStorePredicates::KeyPrefix(const OperationItem &oper, DataQuery &query)
 
 Status KvStorePredicates::EqualTo(const OperationItem &oper, DataQuery &query)
 {
-
     std::string field;
     int status = oper.para1.GetString(field);
     if (status != E_OK) {
@@ -112,7 +109,6 @@ Status KvStorePredicates::EqualTo(const OperationItem &oper, DataQuery &query)
 
 Status KvStorePredicates::NotEqualTo(const OperationItem &oper, DataQuery &query)
 {
-
     std::string field;
     int status = oper.para1.GetString(field);
     if (status != E_OK) {
@@ -138,7 +134,7 @@ Status KvStorePredicates::GreaterThan(const OperationItem &oper, DataQuery &quer
 }
 
 Status KvStorePredicates::LessThan(const OperationItem &oper, DataQuery &query)
-{   
+{
     std::string field;
     int status = oper.para1.GetString(field);
     if (status != E_OK) {
@@ -151,7 +147,7 @@ Status KvStorePredicates::LessThan(const OperationItem &oper, DataQuery &query)
 }
 
 Status KvStorePredicates::GreaterThanOrEqualTo(const OperationItem &oper, DataQuery &query)
-{   
+{
     std::string field;
     int status = oper.para1.GetString(field);
     if (status != E_OK) {
@@ -213,7 +209,7 @@ Status KvStorePredicates::IsNotNull(const OperationItem &oper, DataQuery &query)
 }
 
 Status KvStorePredicates::In(const OperationItem &oper, DataQuery &query)
-{   
+{
     std::string field;
     int status = oper.para1.GetString(field);
     if (status != E_OK) {
