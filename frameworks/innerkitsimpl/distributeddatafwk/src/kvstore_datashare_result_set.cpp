@@ -58,12 +58,12 @@ bool KvStoreDataShareResultSet::FillBlock(int pos, ResultSetBridge::Writer &writ
         ZLOGE("SharedBlock is full: %{public}d", statusAlloc);
         return false;
     }
-    int keyStatus = writer.Write(0, &entry.key.Data(), entry.key.Size()); 
+    int keyStatus = writer.Write(0, (uint8_t *)&entry.key.Data(), entry.key.Size()); 
     if (keyStatus != E_OK) { 
         ZLOGE("WriteBlob key error: %{public}d", keyStatus);
         return false;
     }
-    int valueStatus = writer.Write(1, &entry.value.Data(), entry.value.Size());
+    int valueStatus = writer.Write(1, (uint8_t *)&entry.value.Data(), entry.value.Size());
     if (valueStatus != E_OK) {
         ZLOGE("WriteBlob value error: %{public}d", valueStatus);
         return false;
@@ -94,7 +94,7 @@ bool KvStoreDataShareResultSet::OnGo(int32_t start, int32_t target, ResultSetBri
         ZLOGE("nowRowIndex out of line: %{public}d", target);
         return false;
     }
-    for (int pos = 0; pos < target; pos++) {
+    for (int pos = start; pos <= target; pos++) {
         bool ret = FillBlock(pos + start, writer);
         if (!ret) {
             ZLOGE("nowRowIndex out of line: %{public}d", target);
