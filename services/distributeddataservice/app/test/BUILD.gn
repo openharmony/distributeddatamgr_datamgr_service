@@ -71,7 +71,6 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     "../src/kvstore_meta_manager.cpp",
     "../src/kvstore_observer_impl.cpp",
     "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_snapshot_impl.cpp",
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
@@ -87,6 +86,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
     "deviceauth_standard:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
@@ -136,7 +136,6 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "../src/kvstore_meta_manager.cpp",
     "../src/kvstore_observer_impl.cpp",
     "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_snapshot_impl.cpp",
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
@@ -152,6 +151,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
     "deviceauth_standard:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
@@ -201,7 +201,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "../src/kvstore_meta_manager.cpp",
     "../src/kvstore_observer_impl.cpp",
     "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_snapshot_impl.cpp",
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
@@ -217,6 +216,7 @@ ohos_unittest("KvStoreDataServiceTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
     "deviceauth_standard:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
@@ -267,7 +267,6 @@ ohos_unittest("KvStoreBackupTest") {
     "../src/kvstore_meta_manager.cpp",
     "../src/kvstore_observer_impl.cpp",
     "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_snapshot_impl.cpp",
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
@@ -284,6 +283,7 @@ ohos_unittest("KvStoreBackupTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
     "deviceauth_standard:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
@@ -325,6 +325,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
     "deviceauth_standard:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
@@ -369,7 +370,6 @@ ohos_unittest("KvStoreSyncManagerTest") {
     "../src/kvstore_meta_manager.cpp",
     "../src/kvstore_observer_impl.cpp",
     "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_snapshot_impl.cpp",
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
@@ -384,6 +384,7 @@ ohos_unittest("KvStoreSyncManagerTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
     "deviceauth_standard:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
@@ -433,7 +434,6 @@ ohos_unittest("KvStoreUninstallerTest") {
     "../src/kvstore_meta_manager.cpp",
     "../src/kvstore_observer_impl.cpp",
     "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_snapshot_impl.cpp",
     "../src/kvstore_sync_manager.cpp",
     "../src/kvstore_user_manager.cpp",
     "../src/query_helper.cpp",
@@ -466,6 +466,7 @@ ohos_unittest("KvStoreUninstallerTest") {
   external_deps = [
     "ability_base:base",
     "ability_base:want",
+    "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
     "deviceauth_standard:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",

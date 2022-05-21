@@ -102,7 +102,6 @@
                             "kvstore_death_recipient.h",
                             "kvstore_observer.h",
                             "kvstore_result_set.h",
-                            "kvstore_snapshot.h",
                             "kvstore_sync_callback.h",
                             "single_kvstore.h",
                             "types.h",
@@ -117,7 +116,8 @@
             ],
             "test": [
                 "//foundation/distributeddatamgr/distributeddatamgr:build_native_test",
-                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test:distributeddatamgr_fuzztest"
+                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test:distributeddatamgr_fuzztest",
+                "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/test:fuzztest"
             ]
         }
     }

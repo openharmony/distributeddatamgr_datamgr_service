@@ -84,7 +84,7 @@ bool WriteListToParcelByBuf(MessageParcel &data, const int64_t &bufferSize, cons
     return true;
 }
 
-void KvStoreObserverProxy::OnChange(const ChangeNotification &changeNotification, sptr<IKvStoreSnapshotImpl> snapshot)
+void KvStoreObserverProxy::OnChange(const ChangeNotification &changeNotification)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -116,11 +116,6 @@ void KvStoreObserverProxy::OnChange(const ChangeNotification &changeNotification
             ZLOGE("WriteChangeList to Parcel by buffer failed");
             return;
         }
-    }
-
-    if (snapshot != nullptr && !data.WriteRemoteObject(snapshot->AsObject().GetRefPtr())) {
-        ZLOGE("write strong parcel failed.");
-        return;
     }
 
     MessageOption mo { MessageOption::TF_WAIT_TIME };
@@ -189,13 +184,7 @@ int32_t KvStoreObserverStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                     ZLOGE("changeNotification is nullptr");
                     return errorResult;
                 }
-                sptr<IRemoteObject> remote = data.ReadRemoteObject();
-                if (remote != nullptr) {
-                    sptr<IKvStoreSnapshotImpl> kvStoreSnapshotProxy = iface_cast<IKvStoreSnapshotImpl>(remote);
-                    OnChange(*changeNotification, std::move(kvStoreSnapshotProxy));
-                } else {
-                    OnChange(*changeNotification, nullptr);
-                }
+                OnChange(*changeNotification);
             } else {
                 std::vector<Entry> insertEntries;
                 bool result = ReadListFromBuf(data, insertEntries);
@@ -222,14 +211,7 @@ int32_t KvStoreObserverStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
                 bool isClear = data.ReadBool();
                 ChangeNotification change(std::move(insertEntries), std::move(updateEntries), std::move(deleteEntries),
                     deviceId, isClear);
-                sptr<IRemoteObject> remote = data.ReadRemoteObject();
-                if (remote != nullptr) {
-                    sptr<IKvStoreSnapshotImpl> kvStoreSnapshotProxy = iface_cast<IKvStoreSnapshotImpl>(remote);
-                    OnChange(change, std::move(kvStoreSnapshotProxy));
-                } else {
-                    ZLOGD("read kvstoreSnapshot is nullptr.");
-                    OnChange(change, nullptr);
-                }
+                OnChange(change);
             }
             return 0;
         }

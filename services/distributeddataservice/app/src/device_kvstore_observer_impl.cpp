@@ -46,7 +46,7 @@ void DeviceKvStoreObserverImpl::OnChange(const DistributedDB::KvStoreChangedData
     }
     ChangeNotification change(std::move(inserts), std::move(updates), std::move(deleteds), deviceId, false);
     if (observerProxy_ != nullptr) {
-        observerProxy_->OnChange(change, nullptr);
+        observerProxy_->OnChange(change);
     }
 }
 

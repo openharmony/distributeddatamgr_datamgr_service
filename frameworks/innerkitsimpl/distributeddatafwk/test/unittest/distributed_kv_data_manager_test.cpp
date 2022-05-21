@@ -714,37 +714,3 @@ HWTEST_F(DistributedKvDataManagerTest, UnRegisterKvStoreServiceDeathRecipient001
     std::shared_ptr<KvStoreDeathRecipient> kvStoreDeathRecipientPtr = std::make_shared<MyDeathRecipient>();
     manager.UnRegisterKvStoreServiceDeathRecipient(kvStoreDeathRecipientPtr);
 }
-
-class DeviceListenerImpl : public DeviceStatusChangeListener {
-public:
-    void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override
-    {
-    }
-    DeviceFilterStrategy GetFilterStrategy() const override
-    {
-        return DeviceFilterStrategy::NO_FILTER;
-    }
-};
-/**
-* @tc.name: GetDevice001
-* @tc.desc: Get device id.
-* @tc.type: FUNC
-* @tc.require: SR000DOH1R AR000DPSGU
-* @tc.author: hongbo
-*/
-HWTEST_F(DistributedKvDataManagerTest, GetDevice001, TestSize.Level1)
-{
-    ZLOGI("GetDevice001 begin.");
-    DeviceInfo info;
-    Status status = manager.GetLocalDevice(info);
-    EXPECT_EQ(Status::SUCCESS, status) << "expected getLocalDevice true";
-    EXPECT_TRUE(info.deviceId.size() > 0) << "expected deviceId exist";
-
-    std::vector<DeviceInfo> infos;
-    status = manager.GetDeviceList(infos, DeviceFilterStrategy::FILTER);
-    auto listener = std::make_shared<DeviceListenerImpl>();
-    status = manager.StartWatchDeviceChange(listener);
-    EXPECT_EQ(Status::SUCCESS, status) << "expected StartWatchDeviceChange true";
-    status = manager.StopWatchDeviceChange(listener);
-    EXPECT_EQ(Status::SUCCESS, status) << "expected StopWatchDeviceChange true";
-}

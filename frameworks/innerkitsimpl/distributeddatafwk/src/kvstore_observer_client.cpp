@@ -16,7 +16,6 @@
 #define LOG_TAG "KvStoreObserverClient"
 
 #include "kvstore_observer_client.h"
-#include "kvstore_snapshot_client.h"
 #include "log_print.h"
 
 namespace OHOS {
@@ -33,17 +32,13 @@ KvStoreObserverClient::~KvStoreObserverClient()
     ZLOGI("end");
 }
 
-void KvStoreObserverClient::OnChange(const ChangeNotification &changeNotification, sptr<IKvStoreSnapshotImpl> snapshot)
+void KvStoreObserverClient::OnChange(const ChangeNotification &changeNotification)
 {
     ZLOGI("start");
     if (kvStoreObserver_ != nullptr) {
         if (type_ == KvStoreType::SINGLE_VERSION) {
             ZLOGI("SINGLE_VERSION start");
             kvStoreObserver_->OnChange(changeNotification);
-        } else {
-            ZLOGI("MULTI_VERSION start");
-            kvStoreObserver_->OnChange(changeNotification,
-                                       std::make_unique<KvStoreSnapshotClient>(std::move(snapshot)));
         }
     }
 }

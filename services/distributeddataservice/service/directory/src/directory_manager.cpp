@@ -21,7 +21,7 @@
 #include <string>
 
 #include "accesstoken_kit.h"
-#include "log/log_print.h"
+#include "log_print.h"
 #include "types.h"
 #include "unistd.h"
 namespace OHOS::DistributedData {

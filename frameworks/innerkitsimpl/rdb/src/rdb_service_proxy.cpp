@@ -55,7 +55,7 @@ std::string RdbServiceProxy::ObtainDistributedTableName(const std::string &devic
         return "";
     }
     if (!DistributedKv::ITypesUtil::Marshalling(data, device, table)) {
-        ZLOGE("write table failed");
+        ZLOGE("write to message parcel failed");
         return "";
     }
 
@@ -83,7 +83,7 @@ int32_t RdbServiceProxy::InitNotifier(const RdbSyncerParam& param)
         return RDB_ERROR;
     }
 
-    if (InitNotifier(param, notifier_->AsObject()) != RDB_OK) {
+    if (InitNotifier(param, notifier_->AsObject().GetRefPtr()) != RDB_OK) {
         notifier_ = nullptr;
         return RDB_ERROR;
     }
@@ -100,7 +100,7 @@ int32_t RdbServiceProxy::InitNotifier(const RdbSyncerParam &param, const sptr<IR
         return RDB_ERROR;
     }
     if (!DistributedKv::ITypesUtil::Marshalling(data, param, notifier)) {
-        ZLOGE("write param failed");
+        ZLOGE("write to message parcel failed");
         return RDB_ERROR;
     }
 
@@ -129,7 +129,7 @@ int32_t RdbServiceProxy::DoSync(const RdbSyncerParam& param, const SyncOption &o
         return RDB_ERROR;
     }
     if (!DistributedKv::ITypesUtil::Marshalling(data, param, option, predicates)) {
-        ZLOGE("write param failed");
+        ZLOGE("write to message parcel failed");
         return RDB_ERROR;
     }
 
@@ -172,7 +172,7 @@ int32_t RdbServiceProxy::DoAsync(const RdbSyncerParam& param, uint32_t seqNum, c
         return RDB_ERROR;
     }
     if (!DistributedKv::ITypesUtil::Marshalling(data, param, seqNum, option, predicates)) {
-        ZLOGE("write param failed");
+        ZLOGE("write to message parcel failed");
         return RDB_ERROR;
     }
 
@@ -215,7 +215,7 @@ int32_t RdbServiceProxy::SetDistributedTables(const RdbSyncerParam& param, const
         return RDB_ERROR;
     }
     if (!DistributedKv::ITypesUtil::Marshalling(data, param, tables)) {
-        ZLOGE("write param failed");
+        ZLOGE("write to message parcel failed");
         return RDB_ERROR;
     }
 
@@ -272,7 +272,7 @@ int32_t RdbServiceProxy::DoSubscribe(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
-        ZLOGE("write param failed");
+        ZLOGE("write to message parcel failed");
         return RDB_ERROR;
     }
 
@@ -309,7 +309,7 @@ int32_t RdbServiceProxy::DoUnSubscribe(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     if (!DistributedKv::ITypesUtil::Marshalling(param, data)) {
-        ZLOGE("write param failed");
+        ZLOGE("write to message parcel failed");
         return RDB_ERROR;
     }
 

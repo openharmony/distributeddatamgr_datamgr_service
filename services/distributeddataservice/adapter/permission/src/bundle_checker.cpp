@@ -18,7 +18,7 @@
 #include <memory>
 #include "accesstoken_kit.h"
 #include "hap_token_info.h"
-#include "log/log_print.h"
+#include "log_print.h"
 #include "utils/crypto.h"
 namespace OHOS {
 namespace DistributedData {
