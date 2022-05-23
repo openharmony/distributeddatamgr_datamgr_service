@@ -385,29 +385,35 @@ napi_value JsDeviceKVStore::RemoveDeviceData(napi_env env, napi_callback_info in
 
 /*
  * [JS API Prototype]
- *  sync(deviceIdList:string[], mode:SyncMode):void
+ *  sync(deviceIdList:string[], mode:SyncMode, allowedDelayMs?:number):void
  */
 napi_value JsDeviceKVStore::Sync(napi_env env, napi_callback_info info)
 {
     struct SyncContext : public ContextBase {
         std::vector<std::string> deviceIdList;
         uint32_t mode = 0;
+        uint32_t allowedDelayMs = 0;
     };
     auto ctxt = std::make_shared<SyncContext>();
     auto input = [env, ctxt](size_t argc, napi_value* argv) {
-        // required 2 arguments :: <deviceIdList> + <mode>
-        CHECK_ARGS_RETURN_VOID(ctxt, argc == 2, "invalid arguments!");
+        // required 3 arguments :: <deviceIdList> <mode> [allowedDelayMs]
+        CHECK_ARGS_RETURN_VOID(ctxt, (argc == 2) || (argc == 3), "invalid arguments!");
         ctxt->status = JSUtil::GetValue(env, argv[0], ctxt->deviceIdList);
         CHECK_STATUS_RETURN_VOID(ctxt, "invalid arg[0], i.e. invalid deviceIdList!");
         ctxt->status = JSUtil::GetValue(env, argv[1], ctxt->mode);
         CHECK_STATUS_RETURN_VOID(ctxt, "invalid arg[1], i.e. invalid mode!");
         CHECK_ARGS_RETURN_VOID(ctxt, ctxt->mode <= uint32_t(SyncMode::PUSH_PULL), "invalid arg[1], i.e. invalid mode!");
+        // have 3 arguments :: have the allowedDelayMs
+        if (argc == 3) {
+            ctxt->status = JSUtil::GetValue(env, argv[2], ctxt->allowedDelayMs);
+            CHECK_STATUS_RETURN_VOID(ctxt, "ininvalid arg[1], i.e. invalid allowedDelayMs!");
+        }
     };
     ctxt->GetCbInfoSync(env, info, input);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");
 
     auto& kvStore = reinterpret_cast<JsDeviceKVStore*>(ctxt->native)->GetNative();
-    Status status = kvStore->Sync(ctxt->deviceIdList, static_cast<SyncMode>(ctxt->mode));
+    Status status = kvStore->Sync(ctxt->deviceIdList, static_cast<SyncMode>(ctxt->mode), ctxt->allowedDelayMs);
     ZLOGD("kvStore->Sync return %{public}d!", status);
     NAPI_ASSERT(env, status == Status::SUCCESS, "kvStore->Sync() failed!");
     return nullptr;
