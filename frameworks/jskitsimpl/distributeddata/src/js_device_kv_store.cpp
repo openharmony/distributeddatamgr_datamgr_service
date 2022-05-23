@@ -404,7 +404,7 @@ napi_value JsDeviceKVStore::Sync(napi_env env, napi_callback_info info)
         CHECK_STATUS_RETURN_VOID(ctxt, "invalid arg[1], i.e. invalid mode!");
         CHECK_ARGS_RETURN_VOID(ctxt, ctxt->mode <= uint32_t(SyncMode::PUSH_PULL), "invalid arg[1], i.e. invalid mode!");
         // have 3 arguments :: have the allowedDelayMs
-        if(argc == 3) {
+        if (argc == 3) {
             ctxt->status = JSUtil::GetValue(env, argv[2], ctxt->allowedDelayMs);
             CHECK_STATUS_RETURN_VOID(ctxt, "ininvalid arg[1], i.e. invalid allowedDelayMs!");
         }
