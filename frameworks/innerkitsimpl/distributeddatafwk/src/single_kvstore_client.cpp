@@ -97,9 +97,10 @@ Status SingleKvStoreClient::GetResultSet(const Key &prefix, std::shared_ptr<KvSt
         return statusTmp;
     }
 
-    resultSet = std::shared_ptr<KvStoreResultSetClient>(new KvStoreResultSetClient(resultSetTmp), [proxy = kvStoreProxy_] (auto result) {
+    resultSet = std::shared_ptr<KvStoreResultSetClient>(
+        new KvStoreResultSetClient(resultSetTmp), [proxy = kvStoreProxy_] (auto result) {
         ZLOGE("kvstore proxy ResultSet closed.");
-        proxy->CloseResultSet(result->GetKvStoreResultSetProxy());   
+        proxy->CloseResultSet(result->GetKvStoreResultSetProxy());
     });
     return statusTmp;
 }
@@ -133,9 +134,10 @@ Status SingleKvStoreClient::GetResultSetWithQuery(const std::string &query,
         return statusTmp;
     }
 
-    resultSet = std::shared_ptr<KvStoreResultSetClient>(new KvStoreResultSetClient(resultSetTmp), [proxy = kvStoreProxy_] (auto result) {
+    resultSet = std::shared_ptr<KvStoreResultSetClient>(
+        new KvStoreResultSetClient(resultSetTmp), [proxy = kvStoreProxy_] (auto result) {
         ZLOGE("kvstore proxy ResultSetwithquery closed.");
-        proxy->CloseResultSet(result->GetKvStoreResultSetProxy());   
+        proxy->CloseResultSet(result->GetKvStoreResultSetProxy());  
     });
     return statusTmp;
 }
@@ -275,7 +277,7 @@ Status SingleKvStoreClient::SubscribeKvStore(SubscribeType subscribeType, std::s
     // remove storeId after remove SubscribeKvStore function in manager. currently reserve for convenience.
     sptr<KvStoreObserverClient> ipcObserver =
             new (std::nothrow) KvStoreObserverClient(GetStoreId(), subscribeType, observer,
-                    KvStoreType::SINGLE_VERSION);
+                    KvStoreType::SINGLE_VERSION );
     if (ipcObserver == nullptr) {
         ZLOGW("new KvStoreObserverClient failed");
         return Status::ERROR;

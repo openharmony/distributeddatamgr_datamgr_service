@@ -14,7 +14,6 @@
  */
 #define LOG_TAG "JSUtil"
 #include "js_util.h"
-#include "types.h"
 #include <endian.h>
 #include <securec.h>
 #include "datashare_predicates_proxy.h"
@@ -23,6 +22,7 @@
 #include "log_print.h"
 #include "napi_queue.h"
 #include "kv_utils.h"
+#include "types.h"
 
 using namespace OHOS::DistributedKv;
 using namespace OHOS::DataShare;
@@ -1045,8 +1045,7 @@ napi_status JSUtil::GetValue(napi_value in, napi_env env, std::vector<Distribute
         CHECK_RETURN((status == napi_ok) && (type == napi_object), "invalid type", napi_invalid_arg);
         GetValueBucketObject(valueBucket, env, in);
         CHECK_RETURN(status == napi_ok, "not a string", napi_invalid_arg);
-        DistributedKv::Entry entry;
-        entry = KvUtils::ToEntry(valueBucket);
+        DistributedKv::Entry entry = KvUtils::ToEntry(valueBucket);
         out.push_back(entry);
     }
     return status;

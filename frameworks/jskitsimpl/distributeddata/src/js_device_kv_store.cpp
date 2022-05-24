@@ -159,7 +159,6 @@ static napi_status GetVariantArgs(napi_env env, size_t argc, napi_value* argv, V
                 va.type = ArgsType::DEVICEID_QUERY;
             } else {
                 status = JSUtil::GetValue(env, argv[1], va.dataQuery);
-                // va.type = ArgsType::DEVICEID_PREDICATES;
                 ZLOGD("kvStoreDataShare->GetResultSet return %{public}d", status);
                 CHECK_RETURN(true, "invalid arg[0], i.e. invalid predicates!", napi_invalid_arg);
             }

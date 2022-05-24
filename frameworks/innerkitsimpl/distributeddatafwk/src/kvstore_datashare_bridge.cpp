@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "KvStoreDataShareBrige"
+#define LOG_TAG "KvStoreDataShareBridge"
 
 #include "constant.h"
 #include "log_print.h"
@@ -22,21 +22,21 @@
 namespace OHOS {
 namespace DistributedKv {
 using namespace DataShare;
-KvStoreDataShareBrige::KvStoreDataShareBrige(std::shared_ptr<KvStoreResultSet> kvResultSet)
+KvStoreDataShareBridge::KvStoreDataShareBridge(std::shared_ptr<KvStoreResultSet> kvResultSet)
     :kvResultSet_(kvResultSet) {};
 
-int KvStoreDataShareBrige::GetRowCount(int32_t &count)
+int KvStoreDataShareBridge::GetRowCount(int32_t &count)
 {
     count = Count();
     return count == INVALID_COUNT ? E_ERROR : E_OK;
 }
 
-int KvStoreDataShareBrige::GetAllColumnNames(std::vector<std::string> &columnsName)
+int KvStoreDataShareBridge::GetAllColumnNames(std::vector<std::string> &columnsName)
 {
     columnsName = { "key", "value" };
     return E_OK;
 }
-bool KvStoreDataShareBrige::FillBlock(int pos, ResultSetBridge::Writer &writer)
+bool KvStoreDataShareBridge::FillBlock(int pos, ResultSetBridge::Writer &writer)
 {
     if (kvResultSet_ == nullptr) {
         ZLOGE("kvResultSet_ nullptr");
@@ -71,7 +71,7 @@ bool KvStoreDataShareBrige::FillBlock(int pos, ResultSetBridge::Writer &writer)
     return true;
 }
 
-int KvStoreDataShareBrige::Count()
+int KvStoreDataShareBridge::Count()
 {
     if (kvResultSet_ == nullptr) {
         ZLOGE("kvResultSet_ nullptr");
@@ -88,7 +88,7 @@ int KvStoreDataShareBrige::Count()
     resultRowCount = count;
     return count;
 }
-bool KvStoreDataShareBrige::OnGo(int32_t start, int32_t target, ResultSetBridge::Writer &writer)
+bool KvStoreDataShareBridge::OnGo(int32_t start, int32_t target, ResultSetBridge::Writer &writer)
 {
     if ((start < 0) || (target < 0) || (start > target) || (target >= Count())) {
         ZLOGE("nowRowIndex out of line: %{public}d", target);

@@ -34,7 +34,7 @@ std::shared_ptr<ResultSetBridge> KvUtils::ToResultSetBridge(std::shared_ptr<KvSt
         ZLOGE("param error, kvResultSet nullptr");
         return nullptr;
     }
-    return std::make_shared<KvStoreDataShareBrige>(resultSet);
+    return std::make_shared<KvStoreDataShareBridge>(resultSet);
 }
 
 Status KvUtils::ToQuery(const DataSharePredicates &predicates, DataQuery &query)
@@ -105,7 +105,8 @@ Status KvUtils::GetKeys(const DataSharePredicates &predicates, std::vector<Key> 
     return Status::SUCCESS;
 }
 
-Status KvUtils::ToEntryData(const std::map<std::string, DataShareValueObject> &valuesMap, const std::string field, Blob &kv)
+Status KvUtils::ToEntryData(const std::map<std::string, DataShareValueObject> &valuesMap,
+    const std::string field, Blob &kv)
 {
     auto it = valuesMap.find(field);
     if (it == valuesMap.end()) {

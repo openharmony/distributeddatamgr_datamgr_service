@@ -23,11 +23,11 @@
 
 namespace OHOS {
 namespace DistributedKv {
-class KvStoreDataShareBrige : public DataShare::ResultSetBridge {
+class KvStoreDataShareBridge : public DataShare::ResultSetBridge {
 public:
-    KvStoreDataShareBrige(std::shared_ptr<KvStoreResultSet> kvResultSet);
+    KvStoreDataShareBridge(std::shared_ptr<KvStoreResultSet> kvResultSet);
 
-    ~KvStoreDataShareBrige() = default;
+    ~KvStoreDataShareBridge() = default;
 
     int GetRowCount(int32_t &count) override;
 

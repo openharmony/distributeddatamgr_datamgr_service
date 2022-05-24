@@ -198,12 +198,6 @@ napi_value JsKVStore::Delete(napi_env env, napi_callback_info info)
             ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
             CHECK_STATUS_RETURN_VOID(ctxt, "kvStore->Delete() failed!");
         } else if (ctxt->type == napi_object) {
-            // std::vector<Key> keys;
-            // auto kvPredicates = std::make_shared<KvStorePredicates>();
-            // Status status = kvPredicates->GetKeys(ctxt->predicates, keys);
-            // ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
-            // CHECK_STATUS_RETURN_VOID(ctxt, "kvStore GetKeys failed!");
-            // ZLOGD("GetKeys return %{public}d", status);
             auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
             Status status = kvStore->DeleteBatch(ctxt->keys);
             ZLOGD("kv Datashare Delete return %{public}d", status);
