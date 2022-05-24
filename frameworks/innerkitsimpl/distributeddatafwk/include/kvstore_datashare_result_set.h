@@ -45,6 +45,7 @@ private:
     int32_t resultRowCount {INVALID_COUNT};
 
     std::shared_ptr<KvStoreResultSet> kvResultSet_;
+
 };
 } // namespace DistributedKv
 } // namespace OHOS

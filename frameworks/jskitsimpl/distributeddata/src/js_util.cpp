@@ -16,13 +16,14 @@
 #include "js_util.h"
 #include <endian.h>
 #include <securec.h>
-
+#include "datashare_predicates_proxy.h"
+#include "napi_datashare_values_bucket.h"
 #include "js_schema.h"
 #include "log_print.h"
 #include "napi_queue.h"
 
 using namespace OHOS::DistributedKv;
-
+using namespace OHOS::DataShare;
 namespace OHOS::DistributedData {
 constexpr int32_t STR_MAX_LENGTH = 4096;
 constexpr size_t STR_TAIL_LENGTH = 1;
@@ -998,5 +999,50 @@ bool JSUtil::Equals(napi_env env, napi_value value, napi_ref copy)
     bool isEquals = false;
     napi_strict_equals(env, value, copyValue, &isEquals);
     return isEquals;
+}
+
+napi_status JSUtil::GetValue(napi_env env, napi_value in, DataSharePredicates &out)
+{
+    ZLOGD("napi_value -> std::GetValue predicate");
+    napi_valuetype type = napi_undefined;
+    napi_status status = napi_typeof(env, in, &type);
+    CHECK_RETURN((status == napi_ok) && (type == napi_object), "invalid type", napi_invalid_arg);
+    DataSharePredicates *predicates = GetNativePredicatesObject(env, in);
+    CHECK_RETURN((predicates != nullptr), "invalid type", napi_invalid_arg);
+    out = *predicates;
+    return status;
+}
+
+napi_status JSUtil::GetValue(napi_env env, napi_value in, std::vector<DataShareValuesBucket>& out)
+{
+    ZLOGD("napi_value -> std::vector<DataShareValuesBucket>");
+    out.clear();
+    bool isArray = false;
+    napi_is_array(env, in, &isArray);
+    CHECK_RETURN(isArray, "not an array", napi_invalid_arg);
+
+    uint32_t length = 0;
+    napi_status status = napi_get_array_length(env, in, &length);
+    CHECK_RETURN((status == napi_ok) && (length > 0), "get_array failed!", napi_invalid_arg);
+    for (uint32_t i = 0; i < length; ++i) {
+        ZLOGD("length is %{public}d: ", length);
+        napi_value item = nullptr;
+        status = napi_get_element(env, in, i, &item);
+        CHECK_RETURN((status == napi_ok), "no element", napi_invalid_arg);
+        DataShareValuesBucket valueBucket;
+        status = GetValue(env, item, valueBucket);
+        CHECK_RETURN(status == napi_ok, "not a string", napi_invalid_arg);
+        out.push_back(valueBucket);
+    }
+    return status;
+}
+
+napi_status JSUtil::GetValue(napi_env env, napi_value in, DataShareValuesBucket &out)
+{
+    napi_valuetype type = napi_undefined;
+    napi_status status = napi_typeof(env, in, &type);
+    CHECK_RETURN((status == napi_ok) && (type == napi_object), "invalid type", napi_invalid_arg);
+    GetValueBucketObject(out, env, in);
+    return status;
 }
 } // namespace OHOS::DistributedData

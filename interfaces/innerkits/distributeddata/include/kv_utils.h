@@ -22,6 +22,7 @@
 #include "datashare_values_bucket.h"
 #include "kvstore_result_set.h"
 #include "result_set_bridge.h"
+#include "single_kvstore.h"
 
 namespace OHOS {
 namespace DistributedKv {

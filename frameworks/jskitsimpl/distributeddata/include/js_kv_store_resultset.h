@@ -16,19 +16,22 @@
 #define OHOS_KV_STORE_RESELTSET_H
 #include <string>
 #include "napi_queue.h"
+#include "result_set_bridge.h"
 #include "kvstore_result_set.h"
 
 namespace OHOS::DistributedData {
-class JsKVStoreResultSet {
+class JsKVStoreResultSet : public DataShare::ResultSetBridge::Creator {
 public:
     JsKVStoreResultSet() = default;
-    ~JsKVStoreResultSet() = default;
+    virtual ~JsKVStoreResultSet() = default;
 
     void SetNative(std::shared_ptr<DistributedKv::KvStoreResultSet>& resultSet);
     std::shared_ptr<DistributedKv::KvStoreResultSet>& GetNative();
 
     static napi_value Constructor(napi_env env);
     static napi_value New(napi_env env, napi_callback_info info);
+
+    virtual std::shared_ptr<DataShare::ResultSetBridge> Create() override;
 
 private:
     static napi_value GetCount(napi_env env, napi_callback_info info);
