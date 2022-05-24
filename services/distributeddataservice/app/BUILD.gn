@@ -135,6 +135,7 @@ ohos_shared_library("distributeddataservice") {
   external_deps = [
     "ability_base:base",
     "ability_runtime:intent",
+    "access_token:libaccesstoken_sdk",
     "battery_manager_native:batterysrv_client",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
