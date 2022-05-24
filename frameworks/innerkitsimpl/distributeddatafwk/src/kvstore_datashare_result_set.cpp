@@ -25,13 +25,6 @@ using namespace DataShare;
 KvStoreDataShareResultSet::KvStoreDataShareResultSet(std::shared_ptr<KvStoreResultSet> kvResultSet)
     :kvResultSet_(kvResultSet) {};
 
-KvStoreDataShareResultSet::~KvStoreDataShareResultSet()
-{
-    if (kvStore_ != nullptr) {
-        kvStore_->CloseResultSet(kvResultSet_);
-    }
-}
-
 int KvStoreDataShareResultSet::GetRowCount(int32_t &count)
 {
     count = Count();
