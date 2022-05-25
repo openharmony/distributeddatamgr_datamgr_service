@@ -174,7 +174,7 @@ Status KvStoreDataService::GetSingleKvStore(const Options &options, const AppId 
     sptr<SingleKvStoreImpl> store;
     status = (it->second).GetKvStore(options, metaData, keyPara.secretKey, store);
     if (keyPara.outdated) {
-        KvStoreMetaManager::GetInstance().ReKey(metaData.account, metaData.bundleName, metaData.storeId,
+        KvStoreMetaManager::GetInstance().ReKey(metaData.user, metaData.bundleName, metaData.storeId,
             KvStoreAppManager::ConvertPathType(metaData), store);
     }
     if (status == Status::SUCCESS) {
