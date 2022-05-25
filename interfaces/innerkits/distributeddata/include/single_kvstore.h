@@ -56,7 +56,7 @@ public:
     //     entries: entries will be returned in this parameter.
     // Return:
     //     Status of this GetEntries operation.
-    virtual Status GetEntriesWithQuery(const DataQuery &query, std::vector<Entry> &entries) const = 0;
+    virtual Status GetEntries(const DataQuery &query, std::vector<Entry> &entries) const = 0;
 
     // Get ResultSet in this store which key start with prefixKey.
     // Parameters:
@@ -72,8 +72,7 @@ public:
     //     resultSet: resultSet will be returned in this parameter.
     // Return:
     //     Status of this GetResultSet operation.
-    virtual Status GetResultSetWithQuery(const DataQuery &query,
-                                         std::shared_ptr<KvStoreResultSet> &resultSet) const = 0;
+    virtual Status GetResultSet(const DataQuery &query, std::shared_ptr<KvStoreResultSet> &resultSet) const = 0;
 
     // Close the ResultSet returned by GetResultSet.
     // Parameters:
@@ -88,7 +87,7 @@ public:
     //     result: result will be returned in this parameter.
     // Return:
     //     Status of this CloseResultSet operation.
-    virtual Status GetCountWithQuery(const DataQuery &query, int &count) const = 0;
+    virtual Status GetCount(const DataQuery &query, int &count) const = 0;
 
     // Sync store with other devices. This is an asynchronous method,
     // sync will fail if there is a syncing operation in progress.
@@ -159,13 +158,12 @@ public:
      * Return:
      *     Status of this Sync operation.
      */
-    virtual Status SyncWithCondition(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query,
-                                     std::shared_ptr<KvStoreSyncCallback> syncCallback) = 0;
+    virtual Status Sync(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query,
+        std::shared_ptr<KvStoreSyncCallback> syncCallback) = 0;
 
-    API_EXPORT inline Status SyncWithCondition(const std::vector<std::string> &devices, SyncMode mode,
-                                               const DataQuery &query)
+    API_EXPORT inline Status Sync(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query)
     {
-        return SyncWithCondition(devices, mode, query, nullptr);
+        return Sync(devices, mode, query, nullptr);
     }
 
     /*
