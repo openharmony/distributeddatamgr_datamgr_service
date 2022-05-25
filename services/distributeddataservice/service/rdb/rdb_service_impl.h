@@ -57,6 +57,8 @@ private:
     std::string GenIdentifier(const RdbSyncerParam& param);
 
     bool CheckAccess(const RdbSyncerParam& param);
+    
+    RdbSyncerParam ToServiceParam(const RdbSyncerParam &param);
 
     bool ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
 
