@@ -62,7 +62,7 @@ int DeviceStatusChangeListenerStub::OnRemoteRequest(uint32_t code, MessageParcel
         case ONCHANGE: {
             DeviceChangeType type = static_cast<DeviceChangeType>(data.ReadInt32());
             DeviceInfo deviceInfo;
-            if (ITypesUtil::Unmarshalling(data, deviceInfo)) {
+            if (ITypesUtil::Unmarshal(data, deviceInfo)) {
                 OnChange(deviceInfo, type);
             } else {
                 ZLOGW("device info is null");

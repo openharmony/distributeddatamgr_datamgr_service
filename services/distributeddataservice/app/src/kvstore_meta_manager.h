@@ -186,9 +186,6 @@ public:
         const std::string &deviceAccountId, const std::string &groupId, const std::string &bundleName,
         const std::string &storeId, const std::string &key = "");
 
-    static std::string GetSecretKeyFile(const std::string &userId, const std::string &appId,
-                                        const std::string &storeId, int pathType);
-
     static std::string GetSecretSingleKeyFile(const std::string &userId, const std::string &appId,
                                               const std::string &storeId, int pathType);
 

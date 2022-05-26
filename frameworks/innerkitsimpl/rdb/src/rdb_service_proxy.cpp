@@ -54,7 +54,7 @@ std::string RdbServiceProxy::ObtainDistributedTableName(const std::string &devic
         ZLOGE("write descriptor failed");
         return "";
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(data, device, table)) {
+    if (!DistributedKv::ITypesUtil::Marshal(data, device, table)) {
         ZLOGE("write to message parcel failed");
         return "";
     }
@@ -99,7 +99,7 @@ int32_t RdbServiceProxy::InitNotifier(const RdbSyncerParam &param, const sptr<IR
         ZLOGE("write descriptor failed");
         return RDB_ERROR;
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(data, param, notifier)) {
+    if (!DistributedKv::ITypesUtil::Marshal(data, param, notifier)) {
         ZLOGE("write to message parcel failed");
         return RDB_ERROR;
     }
@@ -128,7 +128,7 @@ int32_t RdbServiceProxy::DoSync(const RdbSyncerParam& param, const SyncOption &o
         ZLOGE("write descriptor failed");
         return RDB_ERROR;
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(data, param, option, predicates)) {
+    if (!DistributedKv::ITypesUtil::Marshal(data, param, option, predicates)) {
         ZLOGE("write to message parcel failed");
         return RDB_ERROR;
     }
@@ -140,7 +140,7 @@ int32_t RdbServiceProxy::DoSync(const RdbSyncerParam& param, const SyncOption &o
         return RDB_ERROR;
     }
 
-    if (!DistributedKv::ITypesUtil::Unmarshalling(reply, result)) {
+    if (!DistributedKv::ITypesUtil::Unmarshal(reply, result)) {
         ZLOGE("read result failed");
         return RDB_ERROR;
     }
@@ -171,7 +171,7 @@ int32_t RdbServiceProxy::DoAsync(const RdbSyncerParam& param, uint32_t seqNum, c
         ZLOGE("write descriptor failed");
         return RDB_ERROR;
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(data, param, seqNum, option, predicates)) {
+    if (!DistributedKv::ITypesUtil::Marshal(data, param, seqNum, option, predicates)) {
         ZLOGE("write to message parcel failed");
         return RDB_ERROR;
     }
@@ -214,7 +214,7 @@ int32_t RdbServiceProxy::SetDistributedTables(const RdbSyncerParam& param, const
         ZLOGE("write descriptor failed");
         return RDB_ERROR;
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(data, param, tables)) {
+    if (!DistributedKv::ITypesUtil::Marshal(data, param, tables)) {
         ZLOGE("write to message parcel failed");
         return RDB_ERROR;
     }

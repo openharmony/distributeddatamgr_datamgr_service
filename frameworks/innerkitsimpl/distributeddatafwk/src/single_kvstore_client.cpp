@@ -55,7 +55,7 @@ Status SingleKvStoreClient::GetEntries(const Key &prefix, std::vector<Entry> &en
     return kvStoreProxy_->GetEntries(prefix, entries);
 }
 
-Status SingleKvStoreClient::GetEntriesWithQuery(const std::string &query, std::vector<Entry> &entries) const
+Status SingleKvStoreClient::GetEntries(const DataQuery &query, std::vector<Entry> &entries) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
 
@@ -63,13 +63,8 @@ Status SingleKvStoreClient::GetEntriesWithQuery(const std::string &query, std::v
         ZLOGE("kvstore proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;
     }
-    ZLOGD("Cpp client GetEntriesWithQuery");
-    return kvStoreProxy_->GetEntriesWithQuery(query, entries);
-}
-
-Status SingleKvStoreClient::GetEntriesWithQuery(const DataQuery &query, std::vector<Entry> &entries) const
-{
-    return GetEntriesWithQuery(query.ToString(), entries);
+    ZLOGD("Cpp client GetEntries");
+    return kvStoreProxy_->GetEntriesWithQuery(query.ToString(), entries);
 }
 
 Status SingleKvStoreClient::GetResultSet(const Key &prefix, std::shared_ptr<KvStoreResultSet> &resultSet) const
@@ -105,8 +100,8 @@ Status SingleKvStoreClient::GetResultSet(const Key &prefix, std::shared_ptr<KvSt
     return statusTmp;
 }
 
-Status SingleKvStoreClient::GetResultSetWithQuery(const std::string &query,
-                                                  std::shared_ptr<KvStoreResultSet> &resultSet) const
+Status SingleKvStoreClient::GetResultSet(const DataQuery &query,
+                                         std::shared_ptr<KvStoreResultSet> &resultSet) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
 
@@ -117,13 +112,13 @@ Status SingleKvStoreClient::GetResultSetWithQuery(const std::string &query,
         return statusTmp;
     }
 
-    ZLOGD("Cpp client GetResultSetWithQuery");
+    ZLOGD("Cpp client GetResultSet");
     sptr<IKvStoreResultSet> resultSetTmp;
     auto callFun = [&](Status status, sptr<IKvStoreResultSet> proxy) {
         statusTmp = status;
         resultSetTmp = proxy;
     };
-    kvStoreProxy_->GetResultSetWithQuery(query, callFun);
+    kvStoreProxy_->GetResultSetWithQuery(query.ToString(), callFun);
     if (statusTmp != Status::SUCCESS) {
         ZLOGE("return error: %d.", static_cast<int>(statusTmp));
         return statusTmp;
@@ -133,19 +128,12 @@ Status SingleKvStoreClient::GetResultSetWithQuery(const std::string &query,
         ZLOGE("resultSetTmp is nullptr.");
         return statusTmp;
     }
-
     resultSet = std::shared_ptr<KvStoreResultSetClient>(
         new KvStoreResultSetClient(resultSetTmp), [proxy = kvStoreProxy_] (auto result) {
         ZLOGE("kvstore proxy ResultSetwithquery closed.");
         proxy->CloseResultSet(result->GetKvStoreResultSetProxy());
     });
     return statusTmp;
-}
-
-Status SingleKvStoreClient::GetResultSetWithQuery(const DataQuery &query,
-                                                  std::shared_ptr<KvStoreResultSet> &resultSet) const
-{
-    return GetResultSetWithQuery(query.ToString(), resultSet);
 }
 
 Status SingleKvStoreClient::CloseResultSet(std::shared_ptr<KvStoreResultSet> &resultSet)
@@ -164,7 +152,7 @@ Status SingleKvStoreClient::CloseResultSet(std::shared_ptr<KvStoreResultSet> &re
     return kvStoreProxy_->CloseResultSet(resultSetClient->GetKvStoreResultSetProxy());
 }
 
-Status SingleKvStoreClient::GetCountWithQuery(const std::string &query, int &count) const
+Status SingleKvStoreClient::GetCount(const DataQuery &query, int &count) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
 
@@ -172,13 +160,8 @@ Status SingleKvStoreClient::GetCountWithQuery(const std::string &query, int &cou
         ZLOGE("kvstore proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;
     }
-    ZLOGD("Cpp client GetCountWithQuery");
-    return kvStoreProxy_->GetCountWithQuery(query, count);
-}
-
-Status SingleKvStoreClient::GetCountWithQuery(const DataQuery &query, int &count) const
-{
-    return GetCountWithQuery(query.ToString(), count);
+    ZLOGD("Cpp client GetCount");
+    return kvStoreProxy_->GetCountWithQuery(query.ToString(), count);
 }
 
 Status SingleKvStoreClient::Sync(const std::vector<std::string> &devices, SyncMode mode, uint32_t allowedDelayMs)
@@ -483,8 +466,8 @@ Status SingleKvStoreClient::GetSecurityLevel(SecurityLevel &securityLevel) const
     return Status::SERVER_UNAVAILABLE;
 }
 
-Status SingleKvStoreClient::SyncWithCondition(const std::vector<std::string> &devices, SyncMode mode,
-                                              const DataQuery &query, std::shared_ptr<KvStoreSyncCallback> callback)
+Status SingleKvStoreClient::Sync(const std::vector<std::string> &devices, SyncMode mode,
+                                 const DataQuery &query, std::shared_ptr<KvStoreSyncCallback> callback)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
     if (kvStoreProxy_ == nullptr) {

@@ -128,7 +128,7 @@ int32_t RdbNotifierStub::OnCompleteInner(MessageParcel &data, MessageParcel &rep
         return RDB_ERROR;
     }
     SyncResult result;
-    if (!DistributedKv::ITypesUtil::Unmarshalling(data, result)) {
+    if (!DistributedKv::ITypesUtil::Unmarshal(data, result)) {
         ZLOGE("read sync result failed");
         return RDB_ERROR;
     }

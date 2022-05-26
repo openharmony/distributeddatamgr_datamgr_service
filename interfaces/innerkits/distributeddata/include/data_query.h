@@ -411,118 +411,120 @@ public:
     //     String representation of this query.
     API_EXPORT std::string ToString() const;
 
+private:
+
+    friend class QueryHelper;
     // equal to
-    static const std::string EQUAL_TO;
+    static const char * const EQUAL_TO;
 
     // not equal to
-    static const std::string NOT_EQUAL_TO;
+    static const char * const NOT_EQUAL_TO;
 
     // greater than
-    static const std::string GREATER_THAN;
+    static const char * const GREATER_THAN;
 
     // less than
-    static const std::string LESS_THAN;
+    static const char * const LESS_THAN;
 
     // greater than or equal to
-    static const std::string GREATER_THAN_OR_EQUAL_TO;
+    static const char * const GREATER_THAN_OR_EQUAL_TO;
 
     // less than or equal to
-    static const std::string LESS_THAN_OR_EQUAL_TO;
+    static const char * const LESS_THAN_OR_EQUAL_TO;
 
     // is null
-    static const std::string IS_NULL;
+    static const char * const IS_NULL;
 
     // in
-    static const std::string IN;
+    static const char * const IN;
 
     // not in
-    static const std::string NOT_IN;
+    static const char * const NOT_IN;
 
     // like
-    static const std::string LIKE;
+    static const char * const LIKE;
 
     // not like
-    static const std::string NOT_LIKE;
+    static const char * const NOT_LIKE;
 
     // and
-    static const std::string AND;
+    static const char * const AND;
 
     // or
-    static const std::string OR;
+    static const char * const OR;
 
     // order by asc
-    static const std::string ORDER_BY_ASC;
+    static const char * const ORDER_BY_ASC;
 
     // order by desc
-    static const std::string ORDER_BY_DESC;
+    static const char * const ORDER_BY_DESC;
 
     // limit
-    static const std::string LIMIT;
+    static const char * const LIMIT;
 
     // space
-    static const std::string SPACE;
+    static const char * const SPACE;
 
     // '^'
-    static const std::string SPECIAL;
+    static const char * const SPECIAL;
 
     // '^' escape
-    static const std::string SPECIAL_ESCAPE;
+    static const char * const SPECIAL_ESCAPE;
 
     // space escape
-    static const std::string SPACE_ESCAPE;
+    static const char * const SPACE_ESCAPE;
 
     // empty string
-    static const std::string EMPTY_STRING;
+    static const char * const EMPTY_STRING;
 
     // start in
-    static const std::string START_IN;
+    static const char * const START_IN;
 
     // end in
-    static const std::string END_IN;
+    static const char * const END_IN;
 
     // begin group
-    static const std::string BEGIN_GROUP;
+    static const char * const BEGIN_GROUP;
 
     // end group
-    static const std::string END_GROUP;
+    static const char * const END_GROUP;
 
     // key prefix
-    static const std::string KEY_PREFIX;
+    static const char * const KEY_PREFIX;
 
     // device id
-    static const std::string DEVICE_ID;
+    static const char * const DEVICE_ID;
 
     // is not null
-    static const std::string IS_NOT_NULL;
+    static const char * const IS_NOT_NULL;
 
     // type string
-    static const std::string TYPE_STRING;
+    static const char * const TYPE_STRING;
 
     // type integer
-    static const std::string TYPE_INTEGER;
+    static const char * const TYPE_INTEGER;
 
     // type long
-    static const std::string TYPE_LONG;
+    static const char * const TYPE_LONG;
 
     // type double
-    static const std::string TYPE_DOUBLE;
+    static const char * const TYPE_DOUBLE;
 
     // type boolean
-    static const std::string TYPE_BOOLEAN;
+    static const char * const TYPE_BOOLEAN;
 
     // value true
-    static const std::string VALUE_TRUE;
+    static const char * const VALUE_TRUE;
 
     // value false
-    static const std::string VALUE_FALSE;
+    static const char * const VALUE_FALSE;
 
     // suggested index
-    static const std::string SUGGEST_INDEX;
+    static const char * const SUGGEST_INDEX;
 
     // in keys
-    static const std::string IN_KEYS;
+    static const char * const IN_KEYS;
 
-private:
     std::string str_;
 
     bool inkeysFlag_ = false;
