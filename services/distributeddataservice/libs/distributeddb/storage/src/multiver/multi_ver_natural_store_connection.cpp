@@ -238,9 +238,7 @@ int MultiVerNaturalStoreConnection::DeleteBatch(const IOption &option, const std
         errCode = writeHandle_->Delete(item);
         if (errCode == E_OK) {
             needCommit = true;
-        } else if (errCode == -E_NOT_FOUND) {
-            errCode = E_OK;
-        } else {
+        } else if (errCode != -E_NOT_FOUND) {
             if (isAuto) {
                 (void)(RollBackTransactionInner());
             }

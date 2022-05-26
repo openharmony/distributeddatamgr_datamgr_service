@@ -123,8 +123,7 @@ int MultiVerDatabaseOper::RekeyPostHandle(const CipherPassword &passwd)
     if (errCode != E_OK) {
         return errCode;
     }
-    errCode = RekeyRecover(multiVerNaturalStore_->GetDbProperties());
-    return E_OK;
+    return RekeyRecover(multiVerNaturalStore_->GetDbProperties());
 }
 
 int MultiVerDatabaseOper::ExportAllDatabases(const std::string &currentDir, const CipherPassword &passwd,

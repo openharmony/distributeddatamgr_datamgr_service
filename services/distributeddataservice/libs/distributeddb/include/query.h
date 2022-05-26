@@ -99,7 +99,7 @@ public:
     DB_API Query &In(const std::string &field, const std::vector<T> &values)
     {
         std::vector<FieldValue> fieldValues;
-        QueryValueType type;
+        QueryValueType type = QueryValueType::VALUE_TYPE_NULL;
         for (const auto &value : values) {
             FieldValue fieldValue;
             type = GetFieldTypeAndValue(value, fieldValue);
@@ -114,7 +114,7 @@ public:
     DB_API Query &NotIn(const std::string &field, const std::vector<T> &values)
     {
         std::vector<FieldValue> fieldValues;
-        QueryValueType type;
+        QueryValueType type = QueryValueType::VALUE_TYPE_NULL;
         for (const auto &value : values) {
             FieldValue fieldValue;
             type = GetFieldTypeAndValue(value, fieldValue);

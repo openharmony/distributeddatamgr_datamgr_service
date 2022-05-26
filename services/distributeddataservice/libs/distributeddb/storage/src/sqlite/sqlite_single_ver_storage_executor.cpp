@@ -498,6 +498,10 @@ int SQLiteSingleVerStorageExecutor::GetSyncDataItems(std::vector<DataItem> &data
         errCode = SQLiteUtils::StepWithRetry(statement, isMemDb_);
         if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
             errCode = GetDataItemForSync(statement, dataItem);
+            if (errCode != E_OK) {
+                LOGE("GetDataItemForSync failed:%d", errCode);
+                return errCode;
+            }
         } else {
             if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
                 LOGD("Get sync data finished, size of packet:%zu, number of item:%zu", dataTotalSize, dataItems.size());
