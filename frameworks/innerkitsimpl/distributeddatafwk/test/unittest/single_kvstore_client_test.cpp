@@ -1059,7 +1059,7 @@ HWTEST_F(SingleKvStoreClientTest, SyncWithCondition001, TestSize.Level1)
     std::vector<std::string> deviceIds = {"invalid_device_id1", "invalid_device_id2"};
     DataQuery dataQuery;
     dataQuery.KeyPrefix("name");
-    auto syncStatus = singleKvStorePtr->SyncWithCondition(deviceIds, SyncMode::PUSH, dataQuery, nullptr);
+    auto syncStatus = singleKvStorePtr->Sync(deviceIds, SyncMode::PUSH, dataQuery, nullptr);
     EXPECT_NE(syncStatus, Status::SUCCESS) << "sync device should not return success";
 }
 

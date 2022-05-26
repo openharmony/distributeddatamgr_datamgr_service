@@ -34,15 +34,15 @@ public:
 
     Status GetEntries(const Key &prefix, std::vector<Entry> &entries) const override;
 
-    Status GetEntriesWithQuery(const DataQuery &query, std::vector<Entry> &entries) const override;
+    Status GetEntries(const DataQuery &query, std::vector<Entry> &entries) const override;
 
     Status GetResultSet(const Key &prefix, std::shared_ptr<KvStoreResultSet> &resultSet) const override;
 
-    Status GetResultSetWithQuery(const DataQuery &query, std::shared_ptr<KvStoreResultSet> &resultSet) const override;
+    Status GetResultSet(const DataQuery &query, std::shared_ptr<KvStoreResultSet> &resultSet) const override;
 
     Status CloseResultSet(std::shared_ptr<KvStoreResultSet> &resultSet) override;
 
-    Status GetCountWithQuery(const DataQuery &query, int &count) const override;
+    Status GetCount(const DataQuery &query, int &count) const override;
 
     Status Sync(const std::vector<std::string> &devices, SyncMode mode, uint32_t allowedDelayMs) override;
 
@@ -82,8 +82,8 @@ public:
                               const std::vector<std::string> &remoteLabels) const override;
 
     Status GetSecurityLevel(SecurityLevel &securityLevel) const override;
-    Status SyncWithCondition(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query,
-                             std::shared_ptr<KvStoreSyncCallback> syncCallback) override;
+    Status Sync(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query,
+                std::shared_ptr<KvStoreSyncCallback> syncCallback) override;
 
     Status SubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query) override;
     Status UnsubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query) override;
