@@ -1029,36 +1029,6 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, std::vector<Blob> &out
     return nstatus;
 }
 
-napi_status JSUtil::GetValue(napi_value in, napi_env env, std::vector<DistributedKv::Entry> &out)
-{
-    out.clear();
-    ZLOGD("napi_value -> std::vector<DistributedKv::Entry> ");
-    bool isArray = false;
-    napi_is_array(env, in, &isArray);
-    CHECK_RETURN(isArray, "not array", napi_invalid_arg);
-
-    uint32_t length = 0;
-    napi_status status = napi_get_array_length(env, in, &length);
-    CHECK_RETURN((status == napi_ok) && (length > 0), "get_array failed!", status);
-    for (uint32_t i = 0; i < length; ++i) {
-        napi_value item = nullptr;
-        status = napi_get_element(env, in, i, &item);
-        CHECK_RETURN((status == napi_ok), "no element", status);
-        if ((status != napi_ok) || (item == nullptr)) {
-            continue;
-        }
-        DataShareValuesBucket valueBucket;
-        napi_valuetype type = napi_undefined;
-        napi_status status = napi_typeof(env, in, &type);
-        CHECK_RETURN((status == napi_ok) && (type == napi_object), "invalid type", napi_invalid_arg);
-        GetValueBucketObject(valueBucket, env, in);
-        CHECK_RETURN(status == napi_ok, "not a string", napi_invalid_arg);
-        DistributedKv::Entry entry = KvUtils::ToEntry(valueBucket);
-        out.push_back(entry);
-    }
-    return status;
-}
-
 napi_status JSUtil::GetValue(napi_env env, napi_value in, DataQuery &query)
 {
     ZLOGD("napi_value -> std::GetValue DataQuery");

@@ -42,11 +42,11 @@ Status KvUtils::ToQuery(const DataSharePredicates &predicates, DataQuery &query)
 {
     std::list<OperationItem> operations = predicates.GetOperationList();
     for (const auto &oper : operations) {
-    if (oper.operation < 0 || oper.operation >= LAST_TYPE) {
-        ZLOGE("operation param error");
-        return Status::NOT_SUPPORT;
-    }
-    (*HANDLERS[oper.operation])(oper, query);
+        if (oper.operation < 0 || oper.operation >= LAST_TYPE) {
+            ZLOGE("operation param error");
+            return Status::NOT_SUPPORT;
+        }
+        (*HANDLERS[oper.operation])(oper, query);
     }
     return Status::SUCCESS;
 }
@@ -125,9 +125,10 @@ Status KvUtils::ToEntryData(const std::map<std::string, DataShareValueObject> &v
     } else if (type == DataShareValueObjectType::TYPE_INT) {
         ZLOGE("Value bucket type int");
         int64_t data = it->second;
-        uint8_t *dataU8 = reinterpret_cast<uint8_t*>(&data);
+        uint64_t data64 = htobe64(*reinterpret_cast<uint64_t*>(&data));
+        uint8_t *dataU8 = reinterpret_cast<uint8_t*>(&data64);
         uData.push_back(KvUtils::INTEGER);
-        uData.insert(uData.end(), dataU8, dataU8 + sizeof(double) / sizeof(uint8_t));
+        uData.insert(uData.end(), dataU8, dataU8 + sizeof(int64_t) / sizeof(uint8_t));
     } else if (type == DataShareValueObjectType::TYPE_DOUBLE) {
         ZLOGE("Value bucket type double");
         double data = it->second;

@@ -267,16 +267,16 @@ napi_value JsDeviceKVStore::GetResultSet(napi_env env, napi_callback_info info)
         } else if (ctxt->va.type == ArgsType::DEVICEID_QUERY) {
             auto query = ctxt->va.query->GetNative();
             query.DeviceId(ctxt->va.deviceId);
-            status = kvStore->GetResultSetWithQuery(query.ToString(), kvResultSet);
+            status = kvStore->GetResultSet(query.ToString(), kvResultSet);
             ZLOGD("kvStore->GetEntriesWithQuery() return %{public}d", status);
         } else if (ctxt->va.type == ArgsType::QUERY) {
             auto query = ctxt->va.query->GetNative();
-            status = kvStore->GetResultSetWithQuery(query.ToString(), kvResultSet);
+            status = kvStore->GetResultSet(query.ToString(), kvResultSet);
             ZLOGD("kvStore->GetEntriesWithQuery() return %{public}d", status);
         } else {
             ctxt->va.dataQuery.DeviceId(ctxt->va.deviceId);
             ZLOGD("ArgsType::DEVICEID_PREDICATES ToQuery return %{public}d", status);
-            status = kvStore->GetResultSetWithQuery(ctxt->va.dataQuery.ToString(), kvResultSet);
+            status = kvStore->GetResultSet(ctxt->va.dataQuery.ToString(), kvResultSet);
             ZLOGD("ArgsType::DEVICEID_PREDICATES GetResultSetWithQuery return %{public}d", status);
         };
         ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
