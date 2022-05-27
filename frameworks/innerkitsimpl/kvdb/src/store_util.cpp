@@ -73,7 +73,7 @@ std::string StoreUtil::Anonymous(const std::string &name)
 
 uint32_t StoreUtil::Anonymous(const void *ptr)
 {
-    uint32_t hash = (uintptr_t(ptr) & 0xFFFFFFFF) ^ ((uintptr_t(ptr) >> 32) & 0xFFFFFFFF);
+    uint32_t hash = (uintptr_t(ptr) & 0xFFFFFFFF);
     hash = (hash & 0xFFFF) ^ ((hash >> 16) & 0xFFFF);
     return hash;
 }

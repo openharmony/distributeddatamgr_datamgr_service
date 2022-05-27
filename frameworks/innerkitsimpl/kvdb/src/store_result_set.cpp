@@ -161,7 +161,7 @@ Status StoreResultSet::GetEntry(Entry &entry) const
     auto dbStatus = impl_->GetEntry(dbEntry);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, position:%{public}s", status, impl_->GetPosition());
+        ZLOGE("failed! status:%{public}d, position:%{public}d", status, impl_->GetPosition());
         return status;
     }
     entry.key = ConvertKey(std::move(dbEntry.key));
