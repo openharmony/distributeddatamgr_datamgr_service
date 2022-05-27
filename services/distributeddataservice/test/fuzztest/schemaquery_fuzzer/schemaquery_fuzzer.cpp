@@ -46,18 +46,19 @@ void ExecuteQuery(SingleKvStore* singleKvStorePtr, const DataQuery &query)
         return;
     }
     std::vector<Entry> results1;
-    singleKvStorePtr->GetEntriesWithQuery(query.ToString(), results1);
+    singleKvStorePtr->GetEntries(query, results1);
+    Key prefix1;
     std::vector<Entry> results2;
-    singleKvStorePtr->GetEntriesWithQuery(query, results2);
+    singleKvStorePtr->GetEntries(prefix1, results2);
     std::shared_ptr<KvStoreResultSet> callback1;
-    singleKvStorePtr->GetResultSetWithQuery(query, callback1);
-    auto closeResultSetStatus = singleKvStorePtr->CloseResultSet(callback1);
+    singleKvStorePtr->GetResultSet(query, callback1);
+    singleKvStorePtr->CloseResultSet(callback1);
+    Key prefix2;
     std::shared_ptr<KvStoreResultSet> callback2;
-    singleKvStorePtr->GetResultSetWithQuery(query.ToString(), callback2);
-    closeResultSetStatus = singleKvStorePtr->CloseResultSet(callback2);
+    singleKvStorePtr->GetResultSet(prefix2, callback2);
+    singleKvStorePtr->CloseResultSet(callback2);
     int resultSize = 0;
-    singleKvStorePtr->GetCountWithQuery(query.ToString(), resultSize);
-    singleKvStorePtr->GetCountWithQuery(query, resultSize);
+    singleKvStorePtr->GetCount(query, resultSize);
 }
 
 // Test 2: Query EqualTo.
