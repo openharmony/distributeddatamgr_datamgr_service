@@ -15,6 +15,7 @@
 
 #define LOG_TAG "KvUtils"
 
+#include <endian.h>
 #include "kv_utils.h"
 #include "cov_util.h"
 #include "log_print.h"
