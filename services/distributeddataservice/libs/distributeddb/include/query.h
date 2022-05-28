@@ -144,10 +144,9 @@ public:
     DB_API Query &InKeys(const std::set<Key> &keys);
 
     friend class GetQueryInfo;
-    ~Query() = default;
-
+    DB_API ~Query() = default;
+    DB_API Query() = default;
 private:
-    Query() = default;
     explicit Query(const std::string &tableName);
 
     DB_SYMBOL void ExecuteCompareOperation(QueryObjType operType, const std::string &field,

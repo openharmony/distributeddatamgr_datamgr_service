@@ -268,11 +268,11 @@ napi_value JsDeviceKVStore::GetResultSet(napi_env env, napi_callback_info info)
             auto query = ctxt->va.query->GetNative();
             query.DeviceId(ctxt->va.deviceId);
             status = kvStore->GetResultSet(query, kvResultSet);
-            ZLOGD("kvStore->GetEntriesWithQuery() return %{public}d", status);
+            ZLOGD("kvStore->GetEntries() return %{public}d", status);
         } else if (ctxt->va.type == ArgsType::QUERY) {
             auto query = ctxt->va.query->GetNative();
             status = kvStore->GetResultSet(query, kvResultSet);
-            ZLOGD("kvStore->GetEntriesWithQuery() return %{public}d", status);
+            ZLOGD("kvStore->GetEntries() return %{public}d", status);
         } else {
             ctxt->va.dataQuery.DeviceId(ctxt->va.deviceId);
             ZLOGD("ArgsType::DEVICEID_PREDICATES ToQuery return %{public}d", status);

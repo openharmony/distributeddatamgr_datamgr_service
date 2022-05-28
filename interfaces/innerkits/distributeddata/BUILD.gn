@@ -28,9 +28,10 @@ config("distributeddatafwk_config") {
     "../../../frameworks/common",
     "../../../frameworks/innerkitsimpl/rdb/include",
     "../../../frameworks/innerkitsimpl/rdb/src",
+    "../../../frameworks/innerkitsimpl/kvdb/include",
+    "../../../frameworks/innerkitsimpl/kvdb/src",
     "//utils/system/safwk/native/include",
     "//utils/native/base/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/data_share/provider/include",
     "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/data_share/common/include",
     "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common/include",
@@ -48,7 +49,7 @@ config("distributeddatafwk_public_config") {
 }
 
 ohos_shared_library("distributeddata_inner") {
-  kvdb_sources = [
+  old_sources = [
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/blob.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/change_notification.cpp",
     "../../../frameworks/innerkitsimpl/distributeddatafwk/src/data_query.cpp",
@@ -81,7 +82,18 @@ ohos_shared_library("distributeddata_inner") {
     "../../../frameworks/innerkitsimpl/rdb/src/rdb_service_proxy.cpp",
   ]
 
-  sources = kvdb_sources + rdb_sources
+  kvdb_sources = [
+    "../../../frameworks/innerkitsimpl/kvdb/src/dev_manager.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/kvdb_service_client.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/observer_bridge.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/security_manager.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/single_store_impl.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/store_factory.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/store_result_set.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/store_util.cpp",
+  ]
+
+  sources = old_sources + rdb_sources + kvdb_sources
 
   configs = [ ":distributeddatafwk_config" ]
 
@@ -89,6 +101,7 @@ ohos_shared_library("distributeddata_inner") {
     "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common:datashare_common",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//utils/native/base:utils",
   ]
   external_deps = [

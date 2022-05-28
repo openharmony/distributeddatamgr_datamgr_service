@@ -38,6 +38,9 @@ public:
     static bool Marshalling(const std::string &input, MessageParcel &data);
     static bool Unmarshalling(std::string &output, MessageParcel &data);
 
+    static bool Marshalling(const std::vector<uint8_t> &input, MessageParcel &data);
+    static bool Unmarshalling(std::vector<uint8_t> &output, MessageParcel &data);
+
     static bool Marshalling(const Blob &blob, MessageParcel &data);
     static bool Unmarshalling(Blob &output, MessageParcel &data);
 

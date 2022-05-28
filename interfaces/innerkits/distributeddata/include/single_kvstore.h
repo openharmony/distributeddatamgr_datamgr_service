@@ -89,6 +89,15 @@ public:
     //     Status of this CloseResultSet operation.
     virtual Status GetCount(const DataQuery &query, int &count) const = 0;
 
+    // Remove the device data synced from remote.
+    // Parameters:
+    //     device: device id.
+    // Return:
+    //     Status of this remove operation.
+    virtual Status RemoveDeviceData(const std::string &device) = 0;
+
+    virtual Status GetSecurityLevel(SecurityLevel &securityLevel) const = 0;
+
     // Sync store with other devices. This is an asynchronous method,
     // sync will fail if there is a syncing operation in progress.
     // Parameters:
@@ -100,17 +109,29 @@ public:
     //     Status of this Sync operation.
     virtual Status Sync(const std::vector<std::string> &devices, SyncMode mode, uint32_t allowedDelayMs) = 0;
 
+    /*
+     *  Sync store with other devices only syncing the data which is satisfied with the condition.
+     *  This is an asynchronous method, sync will fail if there is a syncing operation in progress.
+     * Parameters:
+     *     deviceIds: device list to sync, this is network id from soft bus.
+     *     query: the query condition.
+     *     mode: mode can be set to SyncMode::PUSH, SyncMode::PULL and SyncMode::PUSH_PULL. PUSH_PULL will firstly
+     *           push all not-local store to listed devices, then pull these stores back.
+     * Return:
+     *     Status of this Sync operation.
+     */
+    virtual Status Sync(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query,
+        std::shared_ptr<KvStoreSyncCallback> syncCallback) = 0;
+
     API_EXPORT inline Status Sync(const std::vector<std::string> &devices, SyncMode mode)
     {
         return Sync(devices, mode, 0);
     }
 
-    // Remove the device data synced from remote.
-    // Parameters:
-    //     device: device id.
-    // Return:
-    //     Status of this remove operation.
-    virtual Status RemoveDeviceData(const std::string &device) = 0;
+    API_EXPORT inline Status Sync(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query)
+    {
+        return Sync(devices, mode, query, nullptr);
+    }
 
     // register message for sync operation.
     // Parameters:
@@ -144,27 +165,6 @@ public:
 
     virtual Status SetCapabilityRange(const std::vector<std::string> &localLabels,
                                       const std::vector<std::string> &remoteLabels) const = 0;
-
-    virtual Status GetSecurityLevel(SecurityLevel &securityLevel) const = 0;
-
-    /*
-     * Sync store with other devices only syncing the data which is satisfied with the condition.
-     * This is an asynchronous method, sync will fail if there is a syncing operation in progress.
-     * Parameters:
-     *     deviceIds: device list to sync, this is network id from soft bus.
-     *     query: the query condition.
-     *     mode: mode can be set to SyncMode::PUSH, SyncMode::PULL and SyncMode::PUSH_PULL. PUSH_PULL will firstly
-     *           push all not-local store to listed devices, then pull these stores back.
-     * Return:
-     *     Status of this Sync operation.
-     */
-    virtual Status Sync(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query,
-        std::shared_ptr<KvStoreSyncCallback> syncCallback) = 0;
-
-    API_EXPORT inline Status Sync(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query)
-    {
-        return Sync(devices, mode, query, nullptr);
-    }
 
     /*
      * Subscribe store with other devices consistently Synchronize the data which is satisfied with the condition.

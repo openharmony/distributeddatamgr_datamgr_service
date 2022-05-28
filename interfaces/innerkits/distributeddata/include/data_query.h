@@ -19,8 +19,11 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <memory>
 #include "visibility.h"
-
+namespace DistributedDB {
+class Query;
+}
 namespace OHOS {
 namespace DistributedKv {
 class DataQuery {
@@ -414,6 +417,7 @@ public:
 private:
 
     friend class QueryHelper;
+    friend class SingleStoreImpl;
     // equal to
     static const char * const EQUAL_TO;
 
@@ -528,6 +532,12 @@ private:
     std::string str_;
 
     bool inkeysFlag_ = false;
+
+    std::shared_ptr<DistributedDB::Query> query_;
+
+    std::string deviceId_;
+
+    std::string prefix_;
 
     template<typename T>
     void AppendCommon(const std::string &keyword, const std::string &fieldType, std::string &field, const T &value);

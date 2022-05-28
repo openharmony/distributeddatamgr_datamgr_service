@@ -191,7 +191,7 @@ enum KvStoreType : int32_t {
     INVALID_TYPE,
 };
 
-enum SecurityLevel : int {
+enum SecurityLevel : int32_t {
     NO_LABEL,
     S0,
     S1,
@@ -199,6 +199,14 @@ enum SecurityLevel : int {
     S3_EX,
     S3,
     S4,
+};
+
+enum Area : int32_t {
+    EL0,
+    EL1,
+    EL2,
+    EL3,
+    EL4
 };
 
 enum class KvControlCmd {
@@ -234,9 +242,10 @@ struct Options {
     bool persistent = true;
     bool backup = true;
     bool autoSync = true;
-    int securityLevel = SecurityLevel::NO_LABEL;
+    int32_t securityLevel = NO_LABEL;
+    int32_t area = EL1;
     SyncPolicy syncPolicy = SyncPolicy::HIGH;
-    KvStoreType kvStoreType = KvStoreType::DEVICE_COLLABORATION;
+    KvStoreType kvStoreType = DEVICE_COLLABORATION;
     bool syncable = true; // let bms delete first
     std::string schema = "";
     bool dataOwnership = true; // true indicates the ownership of distributed data is DEVICE, otherwise, ACCOUNT

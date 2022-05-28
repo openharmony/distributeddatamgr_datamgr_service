@@ -61,6 +61,16 @@ bool ITypesUtil::Unmarshalling(std::string &output, MessageParcel &data)
     return data.ReadString(output);
 }
 
+bool ITypesUtil::Marshalling(const std::vector<uint8_t> &input, MessageParcel &data)
+{
+    return data.WriteUInt8Vector(input);
+}
+
+bool ITypesUtil::Unmarshalling(std::vector<uint8_t> &output, MessageParcel &data)
+{
+    return data.ReadUInt8Vector(&output);
+}
+
 bool ITypesUtil::Marshalling(const Blob &blob, MessageParcel &data)
 {
     return data.WriteUInt8Vector(blob.Data());

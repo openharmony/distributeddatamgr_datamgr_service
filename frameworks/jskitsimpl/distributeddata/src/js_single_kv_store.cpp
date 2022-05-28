@@ -228,7 +228,7 @@ napi_value JsSingleKVStore::GetResultSet(napi_env env, napi_callback_info info)
         } else if (ctxt->va.type == ArgsType::QUERY) {
             auto query = ctxt->va.query->GetNative();
             status = kvStore->GetResultSet(query, kvResultSet);
-            ZLOGD("kvStore->GetEntriesWithQuery() return %{public}d", status);
+            ZLOGD("kvStore->GetEntries() return %{public}d", status);
         } else {
             status = kvStore->GetResultSet(ctxt->va.dataQuery.ToString(), kvResultSet);
             ZLOGD("ArgsType::PREDICATES GetResultSetWithQuery return %{public}d", status);

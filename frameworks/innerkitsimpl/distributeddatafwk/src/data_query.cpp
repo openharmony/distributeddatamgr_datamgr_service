@@ -17,7 +17,7 @@
 
 #include "data_query.h"
 #include "log_print.h"
-
+#include "query.h"
 namespace OHOS {
 namespace DistributedKv {
 const char * const DataQuery::EQUAL_TO = "^EQUAL";
@@ -61,12 +61,15 @@ constexpr int MAX_QUERY_LENGTH = 5 * 1024; // Max query string length 5k
 
 DataQuery::DataQuery()
 {
+    query_ = std::make_shared<DistributedDB::Query>();
 }
 
 DataQuery& DataQuery::Reset()
 {
     str_ = "";
     inkeysFlag_ = false;
+    deviceId_ = "";
+    prefix_ = "";
     return *this;
 }
 
@@ -75,6 +78,7 @@ DataQuery& DataQuery::EqualTo(const std::string &field, const int value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(EQUAL_TO, TYPE_INTEGER, myField, value);
+        query_->EqualTo(field, value);
     }
     return *this;
 }
@@ -84,6 +88,7 @@ DataQuery& DataQuery::EqualTo(const std::string &field, const int64_t value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(EQUAL_TO, TYPE_LONG, myField, value);
+        query_->EqualTo(field, value);
     }
     return *this;
 }
@@ -93,6 +98,7 @@ DataQuery& DataQuery::EqualTo(const std::string &field, const double value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(EQUAL_TO, TYPE_DOUBLE, myField, value);
+        query_->EqualTo(field, value);
     }
     return *this;
 }
@@ -103,6 +109,7 @@ DataQuery& DataQuery::EqualTo(const std::string &field, const std::string &value
     std::string myValue = value;
     if (ValidateField(myField)) {
         AppendCommonString(EQUAL_TO, TYPE_STRING, myField, myValue);
+        query_->EqualTo(field, value);
     }
     return *this;
 }
@@ -112,6 +119,7 @@ DataQuery& DataQuery::EqualTo(const std::string &field, const bool value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonBoolean(EQUAL_TO, TYPE_BOOLEAN, myField, value);
+        query_->EqualTo(field, value);
     }
     return *this;
 }
@@ -121,6 +129,7 @@ DataQuery& DataQuery::NotEqualTo(const std::string &field, const int value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(NOT_EQUAL_TO, TYPE_INTEGER, myField, value);
+        query_->NotEqualTo(field, value);
     }
     return *this;
 }
@@ -130,6 +139,7 @@ DataQuery& DataQuery::NotEqualTo(const std::string &field, const int64_t value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(NOT_EQUAL_TO, TYPE_LONG, myField, value);
+        query_->NotEqualTo(field, value);
     }
     return *this;
 }
@@ -139,6 +149,7 @@ DataQuery& DataQuery::NotEqualTo(const std::string &field, const double value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(NOT_EQUAL_TO, TYPE_DOUBLE, myField, value);
+        query_->NotEqualTo(field, value);
     }
     return *this;
 }
@@ -149,6 +160,7 @@ DataQuery& DataQuery::NotEqualTo(const std::string &field, const std::string &va
     std::string myValue = value;
     if (ValidateField(myField)) {
         AppendCommonString(NOT_EQUAL_TO, TYPE_STRING, myField, myValue);
+        query_->NotEqualTo(field, value);
     }
     return *this;
 }
@@ -158,6 +170,7 @@ DataQuery& DataQuery::NotEqualTo(const std::string &field, const bool value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonBoolean(NOT_EQUAL_TO, TYPE_BOOLEAN, myField, value);
+        query_->NotEqualTo(field, value);
     }
     return *this;
 }
@@ -167,6 +180,7 @@ DataQuery& DataQuery::GreaterThan(const std::string &field, const int value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(GREATER_THAN, TYPE_INTEGER, myField, value);
+        query_->GreaterThan(field, value);
     }
     return *this;
 }
@@ -176,6 +190,7 @@ DataQuery& DataQuery::GreaterThan(const std::string &field, const int64_t value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(GREATER_THAN, TYPE_LONG, myField, value);
+        query_->GreaterThan(field, value);
     }
     return *this;
 }
@@ -185,6 +200,7 @@ DataQuery& DataQuery::GreaterThan(const std::string &field, const double value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(GREATER_THAN, TYPE_DOUBLE, myField, value);
+        query_->GreaterThan(field, value);
     }
     return *this;
 }
@@ -195,6 +211,7 @@ DataQuery& DataQuery::GreaterThan(const std::string &field, const std::string &v
     std::string myValue = value;
     if (ValidateField(myField)) {
         AppendCommonString(GREATER_THAN, TYPE_STRING, myField, myValue);
+        query_->GreaterThan(field, value);
     }
     return *this;
 }
@@ -204,6 +221,7 @@ DataQuery& DataQuery::LessThan(const std::string &field, const int value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(LESS_THAN, TYPE_INTEGER, myField, value);
+        query_->LessThan(field, value);
     }
     return *this;
 }
@@ -213,6 +231,7 @@ DataQuery& DataQuery::LessThan(const std::string &field, const int64_t value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(LESS_THAN, TYPE_LONG, myField, value);
+        query_->LessThan(field, value);
     }
     return *this;
 }
@@ -222,6 +241,7 @@ DataQuery& DataQuery::LessThan(const std::string &field, const double value)
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(LESS_THAN, TYPE_DOUBLE, myField, value);
+        query_->LessThan(field, value);
     }
     return *this;
 }
@@ -232,6 +252,7 @@ DataQuery& DataQuery::LessThan(const std::string &field, const std::string &valu
     std::string myValue = value;
     if (ValidateField(myField)) {
         AppendCommonString(LESS_THAN, TYPE_STRING, myField, myValue);
+        query_->LessThan(field, value);
     }
     return *this;
 }
@@ -241,6 +262,7 @@ DataQuery& DataQuery::GreaterThanOrEqualTo(const std::string &field, const int v
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(GREATER_THAN_OR_EQUAL_TO, TYPE_INTEGER, myField, value);
+        query_->GreaterThanOrEqualTo(field, value);
     }
     return *this;
 }
@@ -250,6 +272,7 @@ DataQuery& DataQuery::GreaterThanOrEqualTo(const std::string &field, const int64
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(GREATER_THAN_OR_EQUAL_TO, TYPE_LONG, myField, value);
+        query_->GreaterThanOrEqualTo(field, value);
     }
     return *this;
 }
@@ -259,6 +282,7 @@ DataQuery& DataQuery::GreaterThanOrEqualTo(const std::string &field, const doubl
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(GREATER_THAN_OR_EQUAL_TO, TYPE_DOUBLE, myField, value);
+        query_->GreaterThanOrEqualTo(field, value);
     }
     return *this;
 }
@@ -269,6 +293,7 @@ DataQuery& DataQuery::GreaterThanOrEqualTo(const std::string &field, const std::
     std::string myValue = value;
     if (ValidateField(myField)) {
         AppendCommonString(GREATER_THAN_OR_EQUAL_TO, TYPE_STRING, myField, myValue);
+        query_->GreaterThanOrEqualTo(field, value);
     }
     return *this;
 }
@@ -278,6 +303,7 @@ DataQuery& DataQuery::LessThanOrEqualTo(const std::string &field, const int valu
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(LESS_THAN_OR_EQUAL_TO, TYPE_INTEGER, myField, value);
+        query_->LessThanOrEqualTo(field, value);
     }
     return *this;
 }
@@ -287,6 +313,7 @@ DataQuery& DataQuery::LessThanOrEqualTo(const std::string &field, const int64_t 
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(LESS_THAN_OR_EQUAL_TO, TYPE_LONG, myField, value);
+        query_->LessThanOrEqualTo(field, value);
     }
     return *this;
 }
@@ -296,6 +323,7 @@ DataQuery& DataQuery::LessThanOrEqualTo(const std::string &field, const double v
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommon(LESS_THAN_OR_EQUAL_TO, TYPE_DOUBLE, myField, value);
+        query_->LessThanOrEqualTo(field, value);
     }
     return *this;
 }
@@ -306,6 +334,7 @@ DataQuery& DataQuery::LessThanOrEqualTo(const std::string &field, const std::str
     std::string myValue = value;
     if (ValidateField(myField)) {
         AppendCommonString(LESS_THAN_OR_EQUAL_TO, TYPE_STRING, myField, myValue);
+        query_->LessThanOrEqualTo(field, value);
     }
     return *this;
 }
@@ -319,6 +348,7 @@ DataQuery& DataQuery::IsNull(const std::string &field)
         str_.append(SPACE);
         EscapeSpace(myField);
         str_.append(myField);
+        query_->IsNull(field);
     }
     return *this;
 }
@@ -332,6 +362,7 @@ DataQuery& DataQuery::IsNotNull(const std::string &field)
         str_.append(SPACE);
         EscapeSpace(myField);
         str_.append(myField);
+        query_->IsNotNull(field);
     }
     return *this;
 }
@@ -342,6 +373,7 @@ DataQuery& DataQuery::In(const std::string &field, const std::vector<int> &value
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(IN, TYPE_INTEGER, myField, valueList);
+        query_->In(field, valueList);
     }
     return *this;
 }
@@ -352,6 +384,7 @@ DataQuery& DataQuery::In(const std::string &field, const std::vector<int64_t> &v
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(IN, TYPE_LONG, myField, valueList);
+        query_->In(field, valueList);
     }
     return *this;
 }
@@ -362,6 +395,7 @@ DataQuery& DataQuery::In(const std::string &field, const std::vector<double> &va
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(IN, TYPE_DOUBLE, myField, valueList);
+        query_->In(field, valueList);
     }
     return *this;
 }
@@ -373,6 +407,7 @@ DataQuery& DataQuery::In(const std::string &field, const std::vector<std::string
     std::vector<std::string> myValueList(valueList);
     if (ValidateField(myField)) {
         AppendCommonListString(IN, TYPE_STRING, myField, myValueList);
+        query_->In(field, valueList);
     }
     return *this;
 }
@@ -383,6 +418,7 @@ DataQuery& DataQuery::NotIn(const std::string &field, const std::vector<int> &va
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(NOT_IN, TYPE_INTEGER, myField, valueList);
+        query_->NotIn(field, valueList);
     }
     return *this;
 }
@@ -393,6 +429,7 @@ DataQuery& DataQuery::NotIn(const std::string &field, const std::vector<int64_t>
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(NOT_IN, TYPE_LONG, myField, valueList);
+        query_->NotIn(field, valueList);
     }
     return *this;
 }
@@ -403,6 +440,7 @@ DataQuery& DataQuery::NotIn(const std::string &field, const std::vector<double> 
     std::string myField = field;
     if (ValidateField(myField)) {
         AppendCommonList(NOT_IN, TYPE_DOUBLE, myField, valueList);
+        query_->NotIn(field, valueList);
     }
     return *this;
 }
@@ -414,6 +452,7 @@ DataQuery& DataQuery::NotIn(const std::string &field, const std::vector<std::str
     std::vector<std::string> myValueList(valueList);
     if (ValidateField(myField)) {
         AppendCommonListString(NOT_IN, TYPE_STRING, myField, myValueList);
+        query_->NotIn(field, valueList);
     }
     return *this;
 }
@@ -424,6 +463,7 @@ DataQuery& DataQuery::Like(const std::string &field, const std::string &value)
     std::string myValue = value;
     if (ValidateField(myField)) {
         AppendCommonString(LIKE, myField, myValue);
+        query_->Like(field, value);
     }
     return *this;
 }
@@ -434,6 +474,7 @@ DataQuery& DataQuery::Unlike(const std::string &field, const std::string &value)
     std::string myValue = value;
     if (ValidateField(myField)) {
         AppendCommonString(NOT_LIKE, myField, myValue);
+        query_->NotLike(field, value);
     }
     return *this;
 }
@@ -442,6 +483,7 @@ DataQuery& DataQuery::And()
 {
     str_.append(SPACE);
     str_.append(AND);
+    query_->And();
     return *this;
 }
 
@@ -449,6 +491,7 @@ DataQuery& DataQuery::Or()
 {
     str_.append(SPACE);
     str_.append(OR);
+    query_->Or();
     return *this;
 }
 
@@ -461,6 +504,7 @@ DataQuery& DataQuery::OrderByAsc(const std::string &field)
         str_.append(SPACE);
         EscapeSpace(myField);
         str_.append(myField);
+        query_->OrderBy(field);
     }
     return *this;
 }
@@ -474,6 +518,7 @@ DataQuery& DataQuery::OrderByDesc(const std::string &field)
         str_.append(SPACE);
         EscapeSpace(myField);
         str_.append(myField);
+        query_->OrderBy(field, false);
     }
     return *this;
 }
@@ -490,6 +535,7 @@ DataQuery& DataQuery::Limit(const int number, const int offset)
     str_.append(BasicToString(number));
     str_.append(SPACE);
     str_.append(BasicToString(offset));
+    query_->Limit(number, offset);
     return *this;
 }
 
@@ -497,6 +543,7 @@ DataQuery& DataQuery::BeginGroup()
 {
     str_.append(SPACE);
     str_.append(BEGIN_GROUP);
+    query_->BeginGroup();
     return *this;
 }
 
@@ -504,6 +551,7 @@ DataQuery& DataQuery::EndGroup()
 {
     str_.append(SPACE);
     str_.append(END_GROUP);
+    query_->EndGroup();
     return *this;
 }
 
@@ -516,6 +564,7 @@ DataQuery& DataQuery::KeyPrefix(const std::string &prefix)
         str_.append(SPACE);
         EscapeSpace(myPrefix);
         str_.append(myPrefix);
+        prefix_ = prefix;
     }
     return *this;
 }
@@ -531,6 +580,7 @@ DataQuery& DataQuery::DeviceId(const std::string &deviceId)
         EscapeSpace(device);
         start.append(device);
         str_ = start + str_; // start with diveceId
+        deviceId_ = deviceId;
     }
     return *this;
 }
@@ -544,6 +594,7 @@ DataQuery& DataQuery::SetSuggestIndex(const std::string &index)
         str_.append(SPACE);
         EscapeSpace(suggestIndex);
         str_.append(suggestIndex);
+        query_->SuggestIndex(index);
     }
     return *this;
 }
@@ -572,6 +623,11 @@ DataQuery& DataQuery::InKeys(const std::vector<std::string> &keys)
         }
     }
     str_.append(END_IN);
+    std::set<DistributedDB::Key> dbKeys;
+    for (const auto &key : keys) {
+        dbKeys.insert({ key.begin(), key.end() });
+    }
+    query_->InKeys(dbKeys);
     return *this;
 }
 
