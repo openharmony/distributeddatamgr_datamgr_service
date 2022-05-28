@@ -27,6 +27,7 @@
 namespace OHOS {
 namespace DistributedKv {
 AppId KvStoreServiceDeathNotifier::appId_;
+std::mutex KvStoreServiceDeathNotifier::mutex_;
 std::mutex KvStoreServiceDeathNotifier::watchMutex_;
 sptr<IKvStoreDataService> KvStoreServiceDeathNotifier::kvDataServiceProxy_;
 sptr<KvStoreServiceDeathNotifier::ServiceDeathRecipient> KvStoreServiceDeathNotifier::deathRecipientPtr_;
@@ -35,7 +36,14 @@ std::set<std::shared_ptr<KvStoreDeathRecipient>> KvStoreServiceDeathNotifier::se
 
 void KvStoreServiceDeathNotifier::SetAppId(const AppId &appId)
 {
+    std::lock_guard<decltype(mutex_)> lg(mutex_);
     appId_ = appId;
+}
+
+AppId KvStoreServiceDeathNotifier::GetAppId()
+{
+    std::lock_guard<decltype(mutex_)> lg(mutex_);
+    return appId_;
 }
 
 sptr<IKvStoreDataService> KvStoreServiceDeathNotifier::GetDistributedKvDataService()
@@ -88,7 +96,7 @@ void KvStoreServiceDeathNotifier::RegisterClientDeathObserver()
         ZLOGW("new KvStoreClientDeathObserver failed");
         return;
     }
-    kvDataServiceProxy_->RegisterClientDeathObserver(appId_, clientDeathObserverPtr_);
+    kvDataServiceProxy_->RegisterClientDeathObserver(GetAppId(), clientDeathObserverPtr_);
 }
 
 void KvStoreServiceDeathNotifier::AddServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipient> watcher)

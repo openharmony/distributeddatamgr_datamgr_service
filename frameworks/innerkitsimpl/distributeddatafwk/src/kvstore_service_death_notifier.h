@@ -34,6 +34,7 @@ public:
     static sptr<IKvStoreDataService> GetDistributedKvDataService();
     // temporarily used, should get in service side from binder.
     static void SetAppId(const AppId &appId);
+    static AppId GetAppId();
     // add watcher for server die msg.
     static void AddServiceDeathWatcher(std::shared_ptr<KvStoreDeathRecipient> watcher);
     // remove watcher for server die msg.
@@ -54,6 +55,7 @@ private:
     static AppId appId_;
     // lock for kvDataServiceProxy_ and serviceDeathWatchers_.
     static std::mutex watchMutex_;
+    static std::mutex mutex_;
     static sptr<IKvStoreDataService> kvDataServiceProxy_;
     static sptr<ServiceDeathRecipient> deathRecipientPtr_;
     static sptr<IRemoteObject> clientDeathObserverPtr_;
