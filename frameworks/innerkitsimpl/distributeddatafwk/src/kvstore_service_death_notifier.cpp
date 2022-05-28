@@ -83,7 +83,7 @@ void KvStoreServiceDeathNotifier::RegisterClientDeathObserver(const AppId &appId
         ZLOGW("new KvStoreClientDeathObserver failed");
         return;
     }
-    Status status = kvDataServiceProxy_->RegisterClientDeathObserver(appId_, clientDeathObserverPtr_);
+    Status status = kvDataServiceProxy_->RegisterClientDeathObserver(appId, clientDeathObserverPtr_);
     if (status != Status::SUCCESS) {
         ZLOGW("RegisterClientDeathObserver failed");
         return;
