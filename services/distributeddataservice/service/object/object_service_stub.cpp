@@ -35,6 +35,10 @@ int32_t ObjectServiceStub::ObjectStoreSaveOnRemote(MessageParcel &data, MessageP
         ZLOGW("read device list failed.");
         return -1;
     }
+    if (obj == nullptr) {
+        ZLOGW("callback null");
+        return -1;
+    }
     sptr<IObjectSaveCallback> callback = iface_cast<IObjectSaveCallback>(obj);
     int32_t status = ObjectStoreSave(bundleName, sessionId, deviceList, objectData, callback);
     if (!reply.WriteInt32(static_cast<int>(status))) {
@@ -53,6 +57,10 @@ int32_t ObjectServiceStub::ObjectStoreRevokeSaveOnRemote(MessageParcel &data, Me
         ZLOGW("read device list failed.");
         return -1;
     }
+    if (obj == nullptr) {
+        ZLOGW("callback null");
+        return -1;
+    }
     sptr<IObjectRevokeSaveCallback> callback = iface_cast<IObjectRevokeSaveCallback>(obj);
     int32_t status = ObjectStoreRevokeSave(bundleName, sessionId, callback);
     if (!reply.WriteInt32(static_cast<int>(status))) {
@@ -69,6 +77,10 @@ int32_t ObjectServiceStub::ObjectStoreRetrieveOnRemote(MessageParcel &data, Mess
     sptr<IRemoteObject> obj;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
         ZLOGW("read device list failed.");
+        return -1;
+    }
+    if (obj == nullptr) {
+        ZLOGW("callback null");
         return -1;
     }
     sptr<IObjectRetrieveCallback> callback = iface_cast<IObjectRetrieveCallback>(obj);

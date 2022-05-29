@@ -25,9 +25,6 @@
 
 namespace OHOS {
 namespace DistributedObject {
-constexpr static const char *SEPERATOR = "_";
-constexpr static const char *PROPERTY_PREFIX = "p_";
-constexpr static const char *LOCAL_DEVICE = "local";
 typedef std::function<void(const std::map<std::string, int32_t> &results)> SyncCallBack;
 enum Result { SUCCESS_USER_IN_USE, SUCCESS_USER_HAS_FINISHED, ERR_SID_NOT_EXIST };
 enum Status : int32_t { SUCCESS = 0, FAILED };
@@ -63,6 +60,9 @@ public:
     void SetData(const std::string &dataDir, const std::string &userId);
     int32_t Clear();
 private:
+    constexpr static const char *SEPERATOR = "_";
+    constexpr static const char *PROPERTY_PREFIX = "p_";
+    constexpr static const char *LOCAL_DEVICE = "local";
     DistributedDB::KvStoreNbDelegate *OpenObjectKvStore();
     int32_t CloseObjectKvStore();
     void FlushClosedStore();
@@ -74,7 +74,7 @@ private:
     int32_t SyncOnStore(const std::string &prefix, const std::vector<std::string> &deviceList, SyncCallBack &callback);
     int32_t RevokeSaveToStore(const std::string &appId, const std::string &sessionId);
     int32_t RetrieveFromStore(
-        std::string appId, const std::string &sessionId, std::map<std::string, std::vector<uint8_t>> &results);
+        const std::string &appId, const std::string &sessionId, std::map<std::string, std::vector<uint8_t>> &results);
     void SyncCompleted(const std::map<std::string, DistributedDB::DBStatus> &results, uint64_t sequenceId);
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
@@ -93,7 +93,7 @@ private:
         return result;
     };
     std::mutex kvStoreMutex_;
-    DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager_;
+    DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
     uint32_t syncCount_ = 0;
     std::string userId_;

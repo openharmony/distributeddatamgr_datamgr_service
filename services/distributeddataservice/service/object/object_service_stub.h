@@ -32,9 +32,9 @@ private:
 
     using RequestHandle = int (ObjectServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[OBJECTSTORE_SERVICE_CMD_MAX] = {
-        [OBJECTSTORE_SAVE] = &ObjectServiceStub::ObjectStoreSaveOnRemote,
-        [OBJECTSTORE_REVOKE_SAVE] = &ObjectServiceStub::ObjectStoreRevokeSaveOnRemote,
-        [OBJECTSTORE_RETRIEVE] = &ObjectServiceStub::ObjectStoreRetrieveOnRemote,
+        &ObjectServiceStub::ObjectStoreSaveOnRemote,
+        &ObjectServiceStub::ObjectStoreRevokeSaveOnRemote,
+        &ObjectServiceStub::ObjectStoreRetrieveOnRemote,
     };
 };
 } // namespace OHOS::DistributedRdb

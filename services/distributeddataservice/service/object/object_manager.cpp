@@ -37,7 +37,7 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
         .createIfNecessary = true, .isEncryptedDb = false, .createDirByStoreIdOnly = true, .syncDualTupleMode = true
     };
     ZLOGI("start GetKvStore");
-    kvStoreDelegateManager_->GetKvStore(OBJECTSTORE_DB_STOREID, option,
+    kvStoreDelegateManager_->GetKvStore(UtilsConstants::OBJECTSTORE_DB_STOREID, option,
         [&store](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate) {
             if (dbStatus != DistributedDB::DBStatus::OK) {
                 ZLOGE("GetKvStore fail %{public}d", dbStatus);
@@ -367,7 +367,7 @@ int32_t ObjectStoreManager::RevokeSaveToStore(const std::string &appId, const st
 }
 
 int32_t ObjectStoreManager::RetrieveFromStore(
-    std::string appId, const std::string &sessionId, std::map<std::string, std::vector<uint8_t>> &results)
+    const std::string &appId, const std::string &sessionId, std::map<std::string, std::vector<uint8_t>> &results)
 {
     std::vector<DistributedDB::Entry> entries;
     std::string prefix = GetPropertyPrefix(appId, sessionId);
