@@ -37,7 +37,7 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
         .isEncryptedDb = false,
         .createDirByStoreIdOnly = true,
         .syncDualTupleMode = true,
-        .secOption = { DistributedDB::S1, DistributedDB::ECE };
+        .secOption = { DistributedDB::S1, DistributedDB::ECE }
 };
 ZLOGI("start GetKvStore");
     kvStoreDelegateManager_->GetKvStore(UtilsConstants::OBJECTSTORE_DB_STOREID, option,
