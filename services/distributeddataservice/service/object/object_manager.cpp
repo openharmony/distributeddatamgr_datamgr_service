@@ -27,16 +27,19 @@ namespace OHOS {
 namespace DistributedObject {
 ObjectStoreManager::ObjectStoreManager()
 {
-    syncCount_ = 0;
 }
 
 DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
 {
-    DistributedDB::KvStoreNbDelegate *store;
+    DistributedDB::KvStoreNbDelegate *store = nullptr;
     DistributedDB::KvStoreNbDelegate::Option option = {
-        .createIfNecessary = true, .isEncryptedDb = false, .createDirByStoreIdOnly = true, .syncDualTupleMode = true
-    };
-    ZLOGI("start GetKvStore");
+        .createIfNecessary = true,
+        .isEncryptedDb = false,
+        .createDirByStoreIdOnly = true,
+        .syncDualTupleMode = true,
+        .secOption = { DistributedDB::S1, DistributedDB::ECE };
+};
+ZLOGI("start GetKvStore");
     kvStoreDelegateManager_->GetKvStore(UtilsConstants::OBJECTSTORE_DB_STOREID, option,
         [&store](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate) {
             if (dbStatus != DistributedDB::DBStatus::OK) {
@@ -207,7 +210,7 @@ void ObjectStoreManager::SetData(const std::string &dataDir, const std::string &
         DistributedData::Bootstrap::GetInstance().GetProcessLabel(), userId);
     DistributedDB::KvStoreConfig kvStoreConfig { dataDir };
     kvStoreDelegateManager_->SetKvStoreConfig(kvStoreConfig);
-    userId_ = dataDir;
+    userId_ = userId;
 }
 
 int32_t ObjectStoreManager::Open()
@@ -244,17 +247,13 @@ int32_t ObjectStoreManager::Close()
     return SUCCESS;
 }
 
-int32_t ObjectStoreManager::CloseObjectKvStore()
-{
-    return kvStoreDelegateManager_->CloseKvStore(delegate_);
-}
-
 void ObjectStoreManager::SyncCompleted(
     const std::map<std::string, DistributedDB::DBStatus> &results, uint64_t sequenceId)
 {
     std::string userId;
     Result result = SequenceSyncManager::GetInstance()->Process(sequenceId, results, userId);
     if (result == SUCCESS_USER_HAS_FINISHED && userId == userId_) {
+        std::lock_guard<std::mutex> lock(kvStoreMutex_);
         SetSyncStatus(false);
         FlushClosedStore();
     }
@@ -335,10 +334,6 @@ int32_t ObjectStoreManager::SyncOnStore(
 
 int32_t ObjectStoreManager::SetSyncStatus(bool status)
 {
-    std::lock_guard<std::mutex> lock(kvStoreMutex_);
-    if (delegate_ == nullptr) {
-        return SUCCESS;
-    }
     isSyncing_ = status;
     return SUCCESS;
 }
@@ -390,10 +385,6 @@ uint64_t SequenceSyncManager::AddNotifier(const std::string &userId, SyncCallBac
 {
     std::lock_guard<std::mutex> lock(notifierLock_);
     uint64_t sequenceId = KvStoreUtils::GenerateSequenceId();
-    while (seqIdCallbackRelations_.count(sequenceId) != 0) {
-        ZLOGE("sequenceId repeat");
-        sequenceId = KvStoreUtils::GenerateSequenceId();
-    }
     userIdSeqIdRelations_[userId].emplace_back(sequenceId);
     seqIdCallbackRelations_[sequenceId] = callback;
     return sequenceId;

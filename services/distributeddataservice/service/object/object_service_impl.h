@@ -26,11 +26,6 @@ public:
     ObjectServiceImpl();
 
     void Initialize();
-    static ObjectStoreManager *GetInstance()
-    {
-        static ObjectStoreManager *manager = new ObjectStoreManager();
-        return manager;
-    }
     int32_t ObjectStoreSave(const std::string &bundleName, const std::string &sessionId,
         const std::vector<std::string> &deviceList, const std::map<std::string, std::vector<uint8_t>> &data,
         sptr<IObjectSaveCallback> callback) override;

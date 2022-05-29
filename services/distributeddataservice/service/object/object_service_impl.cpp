@@ -39,7 +39,7 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
 
     DistributedData::CheckerManager::StoreInfo storeInfo;
     storeInfo.uid = uid;
-    storeInfo.tokenId = GetCallingTokenID();
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.bundleName = bundleName;
     storeInfo.storeId = sessionId;
     std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
@@ -51,7 +51,7 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
         ZLOGE("object save permission denied");
         return PERMISSION_DENIED;
     }
-    int32_t status = GetInstance()->Save(appId, sessionId, data, deviceList, callback);
+    int32_t status = ObjectStoreManager::GetInstance()->Save(appId, sessionId, data, deviceList, callback);
     if (status != SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }
@@ -85,13 +85,9 @@ void ObjectServiceImpl::Initialize()
     saveMeta.area = 1;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     saveMeta.storeType = KvStoreType::SINGLE_VERSION;
-    GetInstance()->SetData(saveMeta.dataDir, userId);
+    ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, userId);
     DistributedData::StoreMetaData oldMeta;
-    auto saved = DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), oldMeta);
-    if (!saved) {
-        ZLOGE("LoadMeta failed");
-    }
-    saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
+    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
     if (!saved) {
         ZLOGE("SaveMeta failed");
     }
@@ -119,7 +115,7 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
         ZLOGE("object revoke save permission denied");
         return PERMISSION_DENIED;
     }
-    int32_t status = GetInstance()->RevokeSave(appId, sessionId, callback);
+    int32_t status = ObjectStoreManager::GetInstance()->RevokeSave(appId, sessionId, callback);
     if (status != SUCCESS) {
         ZLOGE("revoke save fail %{public}d", status);
     }
@@ -145,7 +141,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
         ZLOGE("object retrieve permission denied");
         return PERMISSION_DENIED;
     }
-    int32_t status = GetInstance()->Retrieve(appId, sessionId, callback);
+    int32_t status = ObjectStoreManager::GetInstance()->Retrieve(appId, sessionId, callback);
     if (status != SUCCESS) {
         ZLOGE("retrieve fail %{public}d", status);
     }
@@ -155,7 +151,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
 void ObjectServiceImpl::Clear()
 {
     ZLOGI("begin.");
-    int32_t status = GetInstance()->Clear();
+    int32_t status = ObjectStoreManager::GetInstance()->Clear();
     if (status != SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }

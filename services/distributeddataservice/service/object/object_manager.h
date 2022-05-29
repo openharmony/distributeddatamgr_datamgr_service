@@ -16,6 +16,8 @@
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_MANAGER_H
 #define DISTRIBUTEDDATAMGR_OBJECT_MANAGER_H
 
+#include <atomic>
+
 #include "communication_provider.h"
 #include "iobject_callback.h"
 #include "kvstore_sync_callback.h"
@@ -25,9 +27,16 @@
 
 namespace OHOS {
 namespace DistributedObject {
-typedef std::function<void(const std::map<std::string, int32_t> &results)> SyncCallBack;
-enum Result { SUCCESS_USER_IN_USE, SUCCESS_USER_HAS_FINISHED, ERR_SID_NOT_EXIST };
-enum Status : int32_t { SUCCESS = 0, FAILED };
+using SyncCallBack = std::function<void(const std::map<std::string, int32_t> &results)>;
+enum Result {
+    SUCCESS_USER_IN_USE,
+    SUCCESS_USER_HAS_FINISHED,
+    ERR_SID_NOT_EXIST
+};
+enum Status : int32_t {
+    SUCCESS = 0,
+    FAILED
+};
 class SequenceSyncManager {
 public:
     static SequenceSyncManager *GetInstance()
@@ -51,6 +60,11 @@ private:
 class ObjectStoreManager {
 public:
     ObjectStoreManager();
+    static ObjectStoreManager *GetInstance()
+    {
+        static ObjectStoreManager *manager = new ObjectStoreManager();
+        return manager;
+    }
     int32_t Save(const std::string &appId, const std::string &sessionId,
         const std::map<std::string, std::vector<uint8_t>> &data, const std::vector<std::string> &deviceList,
         sptr<IObjectSaveCallback> &callback);
@@ -64,7 +78,6 @@ private:
     constexpr static const char *PROPERTY_PREFIX = "p_";
     constexpr static const char *LOCAL_DEVICE = "local";
     DistributedDB::KvStoreNbDelegate *OpenObjectKvStore();
-    int32_t CloseObjectKvStore();
     void FlushClosedStore();
     int32_t Open();
     int32_t Close();
@@ -87,17 +100,14 @@ private:
     };
     inline std::string BytesToStr(const std::vector<uint8_t> &src)
     {
-        std::string result;
-        std::vector<uint8_t> rstStr(src.begin(), src.end());
-        result.assign(reinterpret_cast<char *>(rstStr.data()), rstStr.size());
-        return result;
+        return std::string(src.begin(), src.end());
     };
     std::mutex kvStoreMutex_;
     DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
     uint32_t syncCount_ = 0;
     std::string userId_;
-    bool isSyncing_ = false;
+    std::atomic<bool> isSyncing_ = false;
 };
 } // namespace DistributedObject
 } // namespace OHOS
