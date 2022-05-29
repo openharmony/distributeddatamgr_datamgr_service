@@ -72,7 +72,7 @@ void ObjectServiceImpl::Initialize()
     DistributedData::StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.deviceId = localDeviceId;
-    saveMeta.storeId = DistributedObject::UtilsConstants::OBJECTSTORE_DB_STOREID;
+    saveMeta.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
     saveMeta.isAutoSync = false;
     saveMeta.isBackup = false;
     saveMeta.isEncrypt = false;

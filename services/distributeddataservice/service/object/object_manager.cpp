@@ -40,7 +40,7 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
         .secOption = { DistributedDB::S1, DistributedDB::ECE }
 };
 ZLOGI("start GetKvStore");
-    kvStoreDelegateManager_->GetKvStore(UtilsConstants::OBJECTSTORE_DB_STOREID, option,
+    kvStoreDelegateManager_->GetKvStore(ObjectCommon::OBJECTSTORE_DB_STOREID, option,
         [&store](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate) {
             if (dbStatus != DistributedDB::DBStatus::OK) {
                 ZLOGE("GetKvStore fail %{public}d", dbStatus);

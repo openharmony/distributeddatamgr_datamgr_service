@@ -17,7 +17,7 @@
 #define DISTRIBUTEDDATAMGR_OBJECT_COMMON_H
 namespace OHOS {
 namespace DistributedObject {
-class UtilsConstants {
+class ObjectCommon {
 public:
     constexpr static const char *OBJECTSTORE_DB_STOREID = "distributedObject_";
 };
