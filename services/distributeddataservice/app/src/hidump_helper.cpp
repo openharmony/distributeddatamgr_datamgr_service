@@ -39,7 +39,7 @@ constexpr const char *ILLEGAL_INFOMATION = "The arguments are illegal and you ca
 
 const std::map<std::string, HidumpFlag> ARGS_MAP = {
     { ARGS_HELP, HidumpFlag::GET_HELP },
-    { ARGS_ALL , HidumpFlag::GET_ALL_INFO },
+    { ARGS_ALL, HidumpFlag::GET_ALL_INFO },
     { ARGS_DEVICEID, HidumpFlag::GET_DEVICE_INFO },
     { ARGS_USER_INFO, HidumpFlag::GET_USER_INFO },
     { ARGS_APP_INFO, HidumpFlag::GET_APP_INFO },

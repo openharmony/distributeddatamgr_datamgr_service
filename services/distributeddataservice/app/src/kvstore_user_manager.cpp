@@ -105,7 +105,7 @@ void KvStoreUserManager::DeleteAllKvStore()
 
 void KvStoreUserManager::Dump(int fd, const HidumpFlag &flag) const
 {
-    if (flag == HidumpFlag::GET_USER_INFO || flag == HidumpFlag::GET_ALL_INFO){
+    if (flag == HidumpFlag::GET_USER_INFO || flag == HidumpFlag::GET_ALL_INFO) {
         const std::string prefix(4, ' ');
         dprintf(fd, "%s--------------------------------------------------------------\n", prefix.c_str());
         dprintf(fd, "%sUserID        : %s\n", prefix.c_str(), userId_.c_str());
