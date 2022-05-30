@@ -103,14 +103,16 @@ void KvStoreUserManager::DeleteAllKvStore()
     appMap_.clear();
 }
 
-void KvStoreUserManager::Dump(int fd) const
+void KvStoreUserManager::Dump(int fd, const HidumpFlag &flag) const
 {
-    const std::string prefix(4, ' ');
-    dprintf(fd, "%s--------------------------------------------------------------\n", prefix.c_str());
-    dprintf(fd, "%sUserID        : %s\n", prefix.c_str(), userId_.c_str());
-    dprintf(fd, "%sApp count     : %u\n", prefix.c_str(), static_cast<uint32_t>(appMap_.size()));
+    if (flag == HidumpFlag::GET_USER_INFO || flag == HidumpFlag::GET_ALL_INFO){
+        const std::string prefix(4, ' ');
+        dprintf(fd, "%s--------------------------------------------------------------\n", prefix.c_str());
+        dprintf(fd, "%sUserID        : %s\n", prefix.c_str(), userId_.c_str());
+        dprintf(fd, "%sApp count     : %u\n", prefix.c_str(), static_cast<uint32_t>(appMap_.size()));
+    }
     for (const auto &pair : appMap_) {
-        pair.second.Dump(fd);
+        pair.second.Dump(fd, flag);
     }
 }
 

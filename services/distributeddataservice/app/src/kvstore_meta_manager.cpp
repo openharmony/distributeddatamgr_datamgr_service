@@ -44,6 +44,7 @@
 #include "bootstrap.h"
 #include "user_delegate.h"
 #include "utils/crypto.h"
+#include "hidump_helper.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -151,6 +152,10 @@ void KvStoreMetaManager::InitMetaParameter()
     if (!ret) {
         FaultMsg msg = {FaultType::SERVICE_FAULT, "user", __FUNCTION__, Fault::SF_CREATE_DIR};
         Reporter::GetInstance()->ServiceFault()->Report(msg);
+        std::string errorInfo;
+        errorInfo.append(__FUNCTION__)
+            .append(". user create directories failed.");
+        HidumpHelper::GetInstance().AddErrorInfo(errorInfo);
         ZLOGE("create directories failed");
         return;
     }

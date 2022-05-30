@@ -27,6 +27,7 @@
 #include "nocopyable.h"
 #include "single_kvstore_impl.h"
 #include "types.h"
+#include "hidump_helper.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -64,7 +65,7 @@ public:
 
     static std::string GetDbDir(const StoreMetaData &metaData);
 
-    void Dump(int fd) const;
+    void Dump(int fd, const HidumpFlag &flag) const;
 
     static DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
 

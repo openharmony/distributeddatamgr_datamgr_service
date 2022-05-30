@@ -33,6 +33,7 @@
 #include "single_kvstore_impl.h"
 #include "system_ability.h"
 #include "types.h"
+#include "hidump_helper.h"
 
 namespace OHOS::DistributedRdb {
 class IRdbService;
@@ -91,6 +92,7 @@ public:
     bool CheckBackupFileExist(const std::string &userId, const std::string &bundleName,
                               const std::string &storeId, int pathType);
 
+    Status DumpInner(int fd, const HidumpFlag &flag) const;
     struct SecretKeyPara {
         std::vector<uint8_t> metaKey;
         std::vector<uint8_t> secretKey;

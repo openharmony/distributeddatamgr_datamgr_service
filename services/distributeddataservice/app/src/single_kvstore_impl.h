@@ -30,6 +30,7 @@
 #include "kvstore_resultset_impl.h"
 #include "kvstore_sync_manager.h"
 #include "inner_types.h"
+#include "hidump_helper.h"
 
 namespace OHOS::DistributedKv {
 class SingleKvStoreImpl : public SingleKvStoreStub {
@@ -73,7 +74,7 @@ public:
                               const std::vector<std::string> &remoteSupportLabels) override;
     Status GetSecurityLevel(SecurityLevel &securityLevel) override;
     bool Import(const std::string &bundleName) const;
-    void OnDump(int fd) const;
+    void OnDump(int fd, const HidumpFlag &flag) const;
     void SetCompatibleIdentify(const std::string &changedDevice);
     void SetCompatibleIdentify();
     std::string GetStorePath() const;

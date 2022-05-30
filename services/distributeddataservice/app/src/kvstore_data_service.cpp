@@ -58,6 +58,7 @@
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
 #include "utils/converter.h"
+#include "string_ex.h"
 
 namespace OHOS::DistributedKv {
 using json = nlohmann::json;
@@ -686,13 +687,34 @@ int KvStoreDataService::Dump(int fd, const std::vector<std::u16string> &args)
     if (uid > maxUid) {
         return 0;
     }
-    dprintf(fd, "------------------------------------------------------------------\n");
-    dprintf(fd, "DeviceAccount count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
-    for (const auto &pair : deviceAccountMap_) {
-        dprintf(fd, "DeviceAccountID    : %s\n", pair.first.c_str());
-        pair.second.Dump(fd);
+
+    std::vector<std::string> argsStr;
+    for (auto item : args) {
+        argsStr.emplace_back(Str16ToStr8(item));
     }
-    return 0;
+
+    if (HidumpHelper::GetInstance().Dump(fd, *this, argsStr)) {
+        return 0;
+    }
+
+    ZLOGD("HidumpHelper failed");
+    return HIDUMP_ERROR;
+}
+
+Status KvStoreDataService::DumpInner(int fd, const HidumpFlag &flag) const
+{
+    Status errCode = HIDUMP_ERROR;
+    if (flag == HidumpFlag::GET_DEVICE_INFO || flag == HidumpFlag::GET_ALL_INFO) {
+        dprintf(fd, "------------------------------------------------------------------\n");
+        dprintf(fd, "DeviceAccount count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
+    }
+    for (const auto &pair : deviceAccountMap_) {
+        if (flag == HidumpFlag::GET_DEVICE_INFO || flag == HidumpFlag::GET_ALL_INFO) {
+            dprintf(fd, "DeviceAccountID    : %s\n", pair.first.c_str());
+        }
+        pair.second.Dump(fd, flag);
+    }
+    return errCode;
 }
 
 void KvStoreDataService::OnStart()
@@ -733,6 +755,10 @@ void KvStoreDataService::StartService()
     if (!ret) {
         FaultMsg msg = {FaultType::SERVICE_FAULT, "service", __FUNCTION__, Fault::SF_SERVICE_PUBLISH};
         Reporter::GetInstance()->ServiceFault()->Report(msg);
+        std::string errorInfo;
+        errorInfo.append(__FUNCTION__)
+            .append("Service publish failed.");
+        HidumpHelper::GetInstance().AddErrorInfo(errorInfo);
     }
     Uninstaller::GetInstance().Init(this);
 

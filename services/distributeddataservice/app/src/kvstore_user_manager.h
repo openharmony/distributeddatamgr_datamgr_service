@@ -21,6 +21,7 @@
 #include "kvstore_app_manager.h"
 #include "types.h"
 #include "metadata/store_meta_data.h"
+#include "hidump_helper.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -61,7 +62,7 @@ public:
 
     void DeleteAllKvStore();
 
-    void Dump(int fd) const;
+    void Dump(int fd, const HidumpFlag &flag) const;
 
     bool IsStoreOpened(const std::string &appId, const std::string &storeId);
     void SetCompatibleIdentify(const std::string &deviceId) const;
