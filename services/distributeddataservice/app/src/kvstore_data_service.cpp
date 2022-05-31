@@ -39,6 +39,7 @@
 #include "hap_token_info.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
+#include "kvdb_service_impl.h"
 #include "kvstore_account_observer.h"
 #include "kvstore_app_accessor.h"
 #include "kvstore_device_listener.h"
@@ -59,8 +60,8 @@
 #include "upgrade_manager.h"
 #include "user_delegate.h"
 #include "utils/block_integer.h"
-#include "utils/crypto.h"
 #include "utils/converter.h"
+#include "utils/crypto.h"
 
 namespace OHOS::DistributedKv {
 using json = nlohmann::json;
