@@ -106,7 +106,6 @@ ohos_shared_library("distributeddata_inner") {
   configs = [ ":distributeddatafwk_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common:datashare_common",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",

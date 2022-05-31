@@ -39,9 +39,9 @@ std::shared_ptr<ResultSetBridge> KvUtils::ToResultSetBridge(std::shared_ptr<KvSt
     return std::make_shared<KvStoreDataShareBridge>(resultSet);
 }
 
-Status KvUtils::ToQuery(const DataSharePredicates &predicates, DataQuery &query)
+Status KvUtils::ToQuery(const DataShareAbsPredicates &predicates, DataQuery &query)
 {
-    std::list<OperationItem> operations = predicates.GetOperationList();
+    const auto &operations = predicates.GetOperationList();
     for (const auto &oper : operations) {
         if (oper.operation < 0 || oper.operation >= LAST_TYPE) {
             ZLOGE("operation param error");
@@ -64,19 +64,18 @@ std::vector<Entry> KvUtils::ToEntries(const std::vector<DataShareValuesBucket> &
 
 Entry KvUtils::ToEntry(const DataShareValuesBucket &valueBucket)
 {
-    std::map<std::string, DataShareValueObject> valuesMap;
-    valueBucket.GetAll(valuesMap);
+    const auto &values = valueBucket.valuesMap;
     if (valuesMap.empty()) {
         ZLOGE("valuesMap is null");
         return {};
     }
     Entry entry;
-    Status status = ToEntryData(valuesMap, KEY, entry.key);
+    Status status = ToEntryData(values, KEY, entry.key);
     if (status != Status::SUCCESS) {
         ZLOGE("GetEntry key failed: %{public}d", status);
         return {};
     }
-    status = ToEntryData(valuesMap, VALUE, entry.value);
+    status = ToEntryData(values, VALUE, entry.value);
     if (status != Status::SUCCESS) {
         ZLOGE("GetEntry value failed: %{public}d", status);
         return {};
@@ -84,9 +83,9 @@ Entry KvUtils::ToEntry(const DataShareValuesBucket &valueBucket)
     return entry;
 }
 
-Status KvUtils::GetKeys(const DataSharePredicates &predicates, std::vector<Key> &keys)
+Status KvUtils::GetKeys(const DataShareAbsPredicates &predicates, std::vector<Key> &keys)
 {
-    std::list<OperationItem> operations = predicates.GetOperationList();
+    const auto &operations = predicates.GetOperationList();
     if (operations.empty()) {
         ZLOGE("operations is null");
         return Status::ERROR;
@@ -115,7 +114,7 @@ Status KvUtils::ToEntryData(const std::map<std::string, DataShareValueObject> &v
         ZLOGE("field is not find!");
         return Status::ERROR;
     }
-    DataShareValueObjectType type = it->second.GetType();
+    DataShareValueObjectType type = it->second.type;
 
     std::vector<uint8_t> uData;
     if (type == DataShareValueObjectType::TYPE_BLOB) {
@@ -150,6 +149,11 @@ Status KvUtils::ToEntryData(const std::map<std::string, DataShareValueObject> &v
     }
     blob = Blob(uData);
     return Status::SUCCESS;
+}
+
+void KvUtils::NoSupport(const DataShare::OperationItem &oper, DataQuery &query)
+{
+    ZLOGE("invalid operation:%{public}d", oper.operation);
 }
 
 void KvUtils::InKeys(const OperationItem &oper, DataQuery &query)

@@ -17,7 +17,7 @@
 #define KV_UTILS_H
 
 #include "types.h"
-#include "datashare_predicates.h"
+#include "datashare_abs_predicates.h"
 #include "data_query.h"
 #include "datashare_values_bucket.h"
 #include "kvstore_result_set.h"
@@ -37,11 +37,12 @@ public:
         INVALID = 255
     };
     static std::shared_ptr<DataShare::ResultSetBridge> ToResultSetBridge(std::shared_ptr<KvStoreResultSet> resultSet);
-    static Status ToQuery(const DataShare::DataSharePredicates &predicates, DataQuery &query);
+    static Status ToQuery(const DataShare::DataShareAbsPredicates &predicates, DataQuery &query);
     static Entry ToEntry(const DataShare::DataShareValuesBucket &valueBucket);
     static std::vector<Entry> ToEntries(const std::vector<DataShare::DataShareValuesBucket> &valueBuckets);
-    static Status GetKeys(const DataShare::DataSharePredicates &predicates, std::vector<Key> &keys);
+    static Status GetKeys(const DataShare::DataShareAbsPredicates &predicates, std::vector<Key> &keys);
 private:
+    static void NoSupport(const DataShare::OperationItem &oper, DataQuery &query);
     static void EqualTo(const DataShare::OperationItem &oper, DataQuery &query);
     static void NotEqualTo(const DataShare::OperationItem &oper, DataQuery &query);
     static void GreaterThan(const DataShare::OperationItem &oper, DataQuery &query);
@@ -73,6 +74,7 @@ private:
     static const std::string VALUE;
     using QueryHandler = void (*)(const DataShare::OperationItem &, DataQuery &);
     static constexpr QueryHandler HANDLERS[DataShare::LAST_TYPE] = {
+        [DataShare::INVALID_OPERATION] = &KvUtils::NoSupport,
         [DataShare::EQUAL_TO] = &KvUtils::EqualTo,
         [DataShare::NOT_EQUAL_TO] = &KvUtils::NotEqualTo,
         [DataShare::GREATER_THAN] = &KvUtils::GreaterThan,
@@ -83,15 +85,27 @@ private:
         [DataShare::OR] = &KvUtils::Or,
         [DataShare::IS_NULL] = &KvUtils::IsNull,
         [DataShare::IS_NOT_NULL] = &KvUtils::IsNotNull,
+        [DataShare::IN] = &KvUtils::In,
         [DataShare::NOT_IN] = &KvUtils::NotIn,
         [DataShare::LIKE] = &KvUtils::Like,
         [DataShare::UNLIKE] = &KvUtils::Unlike,
         [DataShare::ORDER_BY_ASC] = &KvUtils::OrderByAsc,
         [DataShare::ORDER_BY_DESC] = &KvUtils::OrderByDesc,
         [DataShare::LIMIT] = &KvUtils::Limit,
+        [DataShare::OFFSET] = &KvUtils::NoSupport,
+        [DataShare::BEGIN_WARP] = &KvUtils::NoSupport,
+        [DataShare::END_WARP] = &KvUtils::NoSupport,
+        [DataShare::BEGIN_WITH] = &KvUtils::NoSupport,
+        [DataShare::END_WITH] = &KvUtils::NoSupport,
         [DataShare::IN_KEY] = &KvUtils::InKeys,
-        [DataShare::KEY_PREFIX] = &KvUtils::KeyPrefix,
-        [DataShare::IN] = &KvUtils::In,
+        [DataShare::DISTINCT] = &KvUtils::NoSupport,
+        [DataShare::GROUP_BY] = &KvUtils::NoSupport,
+        [DataShare::INDEXED_BY] = &KvUtils::NoSupport,
+        [DataShare::CONTAINS] = &KvUtils::NoSupport,
+        [DataShare::GLOB] = &KvUtils::NoSupport,
+        [DataShare::BETWEEN] = &KvUtils::NoSupport,
+        [DataShare::NOTBETWEEN] = &KvUtils::NoSupport,
+        [DataShare::KEY_PREFIX] = &KvUtils::KeyPrefix,  
         };
 };
 } // namespace DistributedKv
