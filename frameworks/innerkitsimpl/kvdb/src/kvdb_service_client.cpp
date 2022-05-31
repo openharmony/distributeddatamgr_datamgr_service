@@ -15,7 +15,7 @@
 #define LOG_TAG "KVDBServiceClient"
 #include "kvdb_service_client.h"
 
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "itypes_util.h"
 #include "kvstore_observer_client.h"

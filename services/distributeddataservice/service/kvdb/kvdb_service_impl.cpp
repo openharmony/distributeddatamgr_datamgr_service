@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#define LOG_TAG "KVDBServiceImpl"
 #include "kvdb_service_impl.h"
 
 #include "account/account_delegate.h"
