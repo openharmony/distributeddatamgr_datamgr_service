@@ -124,13 +124,13 @@ ohos_shared_library("distributeddataservice") {
     "bundle_framework:appexecfwk_core",
     "dataclassification:data_transit_mgr",
     "deviceauth_standard:deviceauth_sdk",
+    "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
     "startup_l2:syspara",
-    "hitrace_native:libhitrace",
   ]
 
   if (distributeddatamgr_power) {
