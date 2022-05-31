@@ -114,16 +114,15 @@ bool DdsTrace::SetBytraceEnable()
 
 void DdsTrace::SetOptionSwitch(unsigned int option)
 {
-    if ((option & BYTRACE_ON) == BYTRACE_ON){
+    if ((option & BYTRACE_ON) == BYTRACE_ON) {
         switchOption |= BYTRACE_ON;
     }
-    if ((option & TRACE_CHAIN_ON) == TRACE_CHAIN_ON){
+    if ((option & TRACE_CHAIN_ON) == TRACE_CHAIN_ON) {
         switchOption |= TRACE_CHAIN_ON;
     }
-    if ((option & API_PERFORMANCE_TRACE_ON) == API_PERFORMANCE_TRACE_ON){
+    if ((option & API_PERFORMANCE_TRACE_ON) == API_PERFORMANCE_TRACE_ON) {
         switchOption |= API_PERFORMANCE_TRACE_ON;
     }
 }
-
 } // namespace DistributedKv
 } // namespace OHOS

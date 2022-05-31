@@ -113,8 +113,8 @@ ohos_shared_library("distributeddata_inner") {
     "//utils/native/base:utils",
   ]
   external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
     "hitrace_native:libhitrace",
+    "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "samgr_standard:samgr_proxy",
   ]
