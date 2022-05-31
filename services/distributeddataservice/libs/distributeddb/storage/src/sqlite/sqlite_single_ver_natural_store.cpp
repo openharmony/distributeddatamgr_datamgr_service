@@ -22,6 +22,7 @@
 #include "data_compression.h"
 #include "db_common.h"
 #include "db_constant.h"
+#include "db_dump_helper.h"
 #include "db_dfx_adapter.h"
 #include "db_errno.h"
 #include "generic_single_ver_kv_entry.h"
@@ -2334,7 +2335,7 @@ void SQLiteSingleVerNaturalStore::Dump(int fd)
     std::string storeId = MyProp().GetStringProp(DBProperties::STORE_ID, "");
     std::string label = MyProp().GetStringProp(DBProperties::IDENTIFIER_DATA, "");
     label = DBCommon::TransferStringToHex(label);
-    dprintf(fd, "\tdb appId = %s, userId = %s, storeId = %s, label = %s\n",
+    DBDumpHelper::Dump(fd, "\tdb appId = %s, userId = %s, storeId = %s, label = %s\n",
         appId.c_str(), userId.c_str(), storeId.c_str(), label.c_str());
     SyncAbleKvDB::Dump(fd);
 }

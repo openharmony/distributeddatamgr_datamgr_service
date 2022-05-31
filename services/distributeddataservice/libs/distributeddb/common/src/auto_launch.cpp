@@ -18,6 +18,7 @@
 #include <map>
 
 #include "db_common.h"
+#include "db_dump_helper.h"
 #include "db_dfx_adapter.h"
 #include "db_errno.h"
 #include "kv_store_changed_data_impl.h"
@@ -1247,15 +1248,15 @@ int AutoLaunch::CheckAutoLaunchRealPath(const AutoLaunchItem &autoLaunchItem)
 void AutoLaunch::Dump(int fd)
 {
     std::lock_guard<std::mutex> lock(dataLock_);
-    dprintf(fd, "\tenableAutoLaunch info [\n");
+    DBDumpHelper::Dump(fd, "\tenableAutoLaunch info [\n");
     for (const auto &[label, userItem] : autoLaunchItemMap_) {
         std::string hashLabel = DBCommon::TransferStringToHex(label);
-        dprintf(fd, "\t\tlabel = %s, userId = [\n", hashLabel.c_str());
+        DBDumpHelper::Dump(fd, "\t\tlabel = %s, userId = [\n", hashLabel.c_str());
         for (const auto &entry : userItem) {
-            dprintf(fd, "\t\t\t%s\n", entry.first.c_str());
+            DBDumpHelper::Dump(fd, "\t\t\t%s\n", entry.first.c_str());
         }
-        dprintf(fd, "\t\t]\n");
+        DBDumpHelper::Dump(fd, "\t\t]\n");
     }
-    dprintf(fd, "\t]\n");
+    DBDumpHelper::Dump(fd, "\t]\n");
 }
 } // namespace DistributedDB

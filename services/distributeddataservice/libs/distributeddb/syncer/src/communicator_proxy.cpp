@@ -15,6 +15,7 @@
 #include "communicator_proxy.h"
 #include "db_constant.h"
 #include "db_common.h"
+#include "db_dump_helper.h"
 #include "log_print.h"
 
 namespace DistributedDB {
@@ -268,7 +269,7 @@ void CommunicatorProxy::Dump(int fd)
     std::lock_guard<std::mutex> lock(devCommMapLock_);
     for (const auto &[target, communicator] : devCommMap_) {
         std::string label = DBCommon::TransferStringToHex(communicator.first);
-        dprintf(fd, "\t\ttarget = %s, label = %s\n", target.c_str(), label.c_str());
+        DBDumpHelper::Dump(fd, "\t\ttarget = %s, label = %s\n", target.c_str(), label.c_str());
     }
 }
 } // namespace DistributedDB

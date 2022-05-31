@@ -16,6 +16,7 @@
 #include "sqlite_relational_store.h"
 
 #include "db_common.h"
+#include "db_dump_helper.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "db_types.h"
@@ -509,7 +510,7 @@ void SQLiteRelationalStore::Dump(int fd)
         label = sqliteStorageEngine_->GetProperties().GetStringProp(DBProperties::IDENTIFIER_DATA, "");
     }
     label = DBCommon::TransferStringToHex(label);
-    dprintf(fd, "\tdb appId = %s, userId = %s, storeId = %s, label = %s\n",
+    DBDumpHelper::Dump(fd, "\tdb appId = %s, userId = %s, storeId = %s, label = %s\n",
         appId.c_str(), userId.c_str(), storeId.c_str(), label.c_str());
     if (syncAbleEngine_ != nullptr) {
         syncAbleEngine_->Dump(fd);

@@ -73,6 +73,7 @@ ohos_shared_library("distributeddb") {
     "common/src/data_value.cpp",
     "common/src/db_common.cpp",
     "common/src/db_constant.cpp",
+    "common/src/db_dump_helper.cpp",
     "common/src/db_dfx_adapter.cpp",
     "common/src/evloop/src/event_impl.cpp",
     "common/src/evloop/src/event_loop_epoll.cpp",

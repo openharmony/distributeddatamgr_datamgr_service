@@ -20,6 +20,7 @@
 #include <string>
 
 #include "log_print.h"
+#include "db_dump_helper.h"
 #include "db_errno.h"
 #include "kvdb_manager.h"
 #include "relational_store_instance.h"
@@ -48,7 +49,6 @@ const std::string DBDfxAdapter::EVENT_OPEN_DATABASE_FAILED = "OPEN_DATABASE_FAIL
 
 void DBDfxAdapter::Dump(int fd, const std::vector<std::u16string> &args)
 {
-#ifdef RUNNING_ON_LINUX
     const std::u16string u16DumpParam =
         std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(DUMP_PARAM);
     bool abort = true;
@@ -61,17 +61,13 @@ void DBDfxAdapter::Dump(int fd, const std::vector<std::u16string> &args)
     if (abort) {
         return;
     }
-    dprintf(fd, "DistributedDB Dump Message Info:\n\n");
-    dprintf(fd, "DistributedDB Database Basic Message Info:\n");
+    DBDumpHelper::Dump(fd, "DistributedDB Dump Message Info:\n\n");
+    DBDumpHelper::Dump(fd, "DistributedDB Database Basic Message Info:\n");
     KvDBManager::GetInstance()->Dump(fd);
     RelationalStoreInstance::GetInstance()->Dump(fd);
-    dprintf(fd, "DistributedDB Common Message Info:\n");
+    DBDumpHelper::Dump(fd, "DistributedDB Common Message Info:\n");
     RuntimeContext::GetInstance()->DumpCommonInfo(fd);
-    dprintf(fd, "\tlast error msg = %s\n", SQLiteUtils::GetLastErrorMsg().c_str());
-#else
-    (void) fd;
-    (void) args;
-#endif
+    DBDumpHelper::Dump(fd, "\tlast error msg = %s\n", SQLiteUtils::GetLastErrorMsg().c_str());
 }
 
 #ifdef USE_DFX_ABILITY

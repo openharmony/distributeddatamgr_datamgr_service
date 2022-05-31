@@ -14,6 +14,7 @@
  */
 #include "sync_able_engine.h"
 
+#include "db_dump_helper.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "parcel.h"
@@ -144,10 +145,10 @@ void SyncAbleEngine::StopSync(uint64_t connectionId)
 void SyncAbleEngine::Dump(int fd)
 {
     SyncerBasicInfo basicInfo = syncer_.DumpSyncerBasicInfo();
-    dprintf(fd, "\tisSyncActive = %d, isAutoSync = %d\n\n", basicInfo.isSyncActive,
+    DBDumpHelper::Dump(fd, "\tisSyncActive = %d, isAutoSync = %d\n\n", basicInfo.isSyncActive,
         basicInfo.isAutoSync);
     if (basicInfo.isSyncActive) {
-        dprintf(fd, "\tDistributedDB Database Sync Module Message Info:\n");
+        DBDumpHelper::Dump(fd, "\tDistributedDB Database Sync Module Message Info:\n");
         syncer_.Dump(fd);
     }
 }

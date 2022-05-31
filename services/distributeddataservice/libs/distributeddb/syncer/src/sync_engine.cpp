@@ -21,6 +21,7 @@
 
 #include "ability_sync.h"
 #include "db_common.h"
+#include "db_dump_helper.h"
 #include "db_errno.h"
 #include "device_manager.h"
 #include "hash.h"
@@ -1050,17 +1051,17 @@ void SyncEngine::Dump(int fd)
     if (communicatorProxy_ != nullptr) {
         communicatorProxy_->GetLocalIdentity(communicatorLabel);
     }
-    dprintf(fd, "\tcommunicator label = %s, equalIdentify Info [\n", communicatorLabel.c_str());
+    DBDumpHelper::Dump(fd, "\tcommunicator label = %s, equalIdentify Info [\n", communicatorLabel.c_str());
     if (communicatorProxy_ != nullptr) {
         communicatorProxy_->GetLocalIdentity(communicatorLabel);
         communicatorProxy_->Dump(fd);
     }
-    dprintf(fd, "\t]\n\tcontext info [\n");
+    DBDumpHelper::Dump(fd, "\t]\n\tcontext info [\n");
     // dump context info
     std::lock_guard<std::mutex> autoLock(contextMapLock_);
     for (const auto &entry : syncTaskContextMap_) {
         entry.second->Dump(fd);
     }
-    dprintf(fd, "\t]\n\n");
+    DBDumpHelper::Dump(fd, "\t]\n\n");
 }
 } // namespace DistributedDB
