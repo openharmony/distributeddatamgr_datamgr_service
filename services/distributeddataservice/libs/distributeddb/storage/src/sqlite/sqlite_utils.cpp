@@ -26,8 +26,8 @@
 #include "sqlite_import.h"
 #include "securec.h"
 #include "db_constant.h"
-#include "db_errno.h"
 #include "db_common.h"
+#include "db_errno.h"
 #include "log_print.h"
 #include "value_object.h"
 #include "schema_utils.h"
@@ -68,22 +68,35 @@ namespace {
 
     bool g_configLog = false;
     std::mutex g_logMutex;
+    std::string g_lastErrorMsg;
 
     void SqliteLogCallback(void *data, int err, const char *msg)
     {
         bool verboseLog = (data != nullptr);
         auto errType = static_cast<unsigned int>(err);
         errType &= 0xFF;
+        bool isErrorMsg = false;
         if (errType == 0 || errType == SQLITE_CONSTRAINT || errType == SQLITE_SCHEMA ||
             errType == SQLITE_NOTICE || err == SQLITE_WARNING_AUTOINDEX) {
             if (verboseLog) {
                 LOGD("[SQLite] Error[%d] sys[%d] %s ", err, errno, sqlite3_errstr(err));
+                isErrorMsg = true;
             }
         } else if (errType == SQLITE_WARNING || errType == SQLITE_IOERR ||
             errType == SQLITE_CORRUPT || errType == SQLITE_CANTOPEN) {
             LOGI("[SQLite] Error[%d], sys[%d], %s", err, errno, sqlite3_errstr(err));
+            isErrorMsg = true;
         } else {
             LOGE("[SQLite] Error[%d], sys[%d]", err, errno);
+        }
+
+        if (!isErrorMsg) {
+            return;
+        }
+        const char *errMsg = sqlite3_errstr(err);
+        std::lock_guard<std::mutex> autoLock(g_logMutex);
+        if (errMsg != nullptr) {
+            g_lastErrorMsg = std::string(errMsg);
         }
     }
 
@@ -189,7 +202,6 @@ END:
     if (errCode != E_OK && errno == EKEYREVOKED) {
         errCode = -E_EKEYREVOKED;
     }
-
     db = dbTemp;
     return errCode;
 }
@@ -2128,5 +2140,11 @@ int64_t SQLiteUtils::GetLastRowId(sqlite3 *db)
         return -1;
     }
     return sqlite3_last_insert_rowid(db);
+}
+
+std::string SQLiteUtils::GetLastErrorMsg()
+{
+    std::lock_guard<std::mutex> autoLock(g_logMutex);
+    return g_lastErrorMsg;
 }
 } // namespace DistributedDB

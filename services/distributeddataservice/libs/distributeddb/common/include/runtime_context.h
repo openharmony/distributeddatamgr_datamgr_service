@@ -126,6 +126,8 @@ public:
 
     // Generate global sessionId in current process
     virtual uint32_t GenerateSessionId() = 0;
+
+    virtual void DumpCommonInfo(int fd) = 0;
 protected:
     RuntimeContext() = default;
     virtual ~RuntimeContext() {}

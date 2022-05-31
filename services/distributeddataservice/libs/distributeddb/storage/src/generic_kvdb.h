@@ -130,6 +130,8 @@ public:
 
     std::string GetStorePath() const override;
 
+    void Dump(int fd) override;
+
 protected:
     // Create a connection object, no DB ref increased.
     virtual GenericKvDBConnection *NewConnection(int &errCode) = 0;

@@ -16,6 +16,7 @@
 #include "sqlite_single_ver_natural_store_connection.h"
 
 #include "db_constant.h"
+#include "db_dfx_adapter.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "kvdb_pragma.h"
@@ -845,7 +846,7 @@ int SQLiteSingleVerNaturalStoreConnection::PutBatchInner(const IOption &option, 
     if ((transactionEntrySize_ + entries.size()) > DBConstant::MAX_TRANSACTION_ENTRY_SIZE) {
         return -E_MAX_LIMITS;
     }
-
+    DBDfxAdapter::StartTraceSQL();
     if (option.dataType == IOption::SYNC_DATA) {
         errCode = SaveSyncEntries(entries);
     } else {
@@ -863,6 +864,7 @@ int SQLiteSingleVerNaturalStoreConnection::PutBatchInner(const IOption &option, 
             errCode = (innerCode != E_OK) ? innerCode : errCode;
         }
     }
+    DBDfxAdapter::FinishTraceSQL();
     return errCode;
 }
 

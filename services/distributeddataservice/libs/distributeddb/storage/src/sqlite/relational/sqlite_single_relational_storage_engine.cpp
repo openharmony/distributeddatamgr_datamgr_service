@@ -26,7 +26,9 @@ namespace {
     constexpr const char *RELATIONAL_SCHEMA_KEY = "relational_schema";
 }
 
-SQLiteSingleRelationalStorageEngine::SQLiteSingleRelationalStorageEngine() {};
+SQLiteSingleRelationalStorageEngine::SQLiteSingleRelationalStorageEngine(RelationalDBProperties properties)
+    : properties_(properties)
+{}
 
 SQLiteSingleRelationalStorageEngine::~SQLiteSingleRelationalStorageEngine() {};
 
@@ -264,6 +266,11 @@ int SQLiteSingleRelationalStorageEngine::CleanDistributedDeviceTable(std::vector
 
     ReleaseExecutor(handle);
     return errCode;
+}
+
+const RelationalDBProperties &SQLiteSingleRelationalStorageEngine::GetProperties() const
+{
+    return properties_;
 }
 }
 #endif

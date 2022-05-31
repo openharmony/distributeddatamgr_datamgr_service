@@ -185,6 +185,7 @@ public:
 
     static int64_t GetLastRowId(sqlite3 *db);
 
+    static std::string GetLastErrorMsg();
 private:
 
     static int CreateDataBase(const OpenDbProperties &properties, sqlite3 *&dbTemp, bool setWal);

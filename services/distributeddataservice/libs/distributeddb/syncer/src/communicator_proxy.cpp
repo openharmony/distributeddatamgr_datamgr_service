@@ -261,4 +261,12 @@ void CommunicatorProxy::SetEqualCommunicator(ICommunicator *communicator, const 
         devCommMap_[target] = {identifier, communicator};
     }
 }
+
+void CommunicatorProxy::Dump(int fd)
+{
+    std::lock_guard<std::mutex> lock(devCommMapLock_);
+    for (const auto &[target, communicator] : devCommMap_) {
+        dprintf(fd, "\t\t\ttarget = %s, label = %s\n", target.c_str(), communicator.first.c_str());
+    }
+}
 } // namespace DistributedDB

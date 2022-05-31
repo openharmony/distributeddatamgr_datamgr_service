@@ -49,6 +49,8 @@ public:
 
     // Stop a sync action in progress
     void StopSync(uint64_t connectionId);
+
+    void Dump(int fd);
 private:
     // Start syncer
     void StartSyncer();

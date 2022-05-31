@@ -22,6 +22,7 @@
 #include "data_compression.h"
 #include "db_common.h"
 #include "db_constant.h"
+#include "db_dfx_adapter.h"
 #include "db_errno.h"
 #include "generic_single_ver_kv_entry.h"
 #include "intercepted_data_impl.h"
@@ -1244,6 +1245,7 @@ int SQLiteSingleVerNaturalStore::SaveSyncItems(const QueryObject &query, std::ve
     if (handle == nullptr) {
         return errCode;
     }
+    DBDfxAdapter::StartTraceSQL();
     errCode = handle->StartTransaction(TransactType::IMMEDIATE);
     if (errCode != E_OK) {
         ReleaseHandle(handle);
@@ -1280,6 +1282,7 @@ END:
     } else {
         (void)handle->Rollback(); // Keep the error code of the first scene
     }
+    DBDfxAdapter::FinishTraceSQL();
     ReleaseHandle(handle);
     return errCode;
 }
@@ -1294,12 +1297,14 @@ int SQLiteSingleVerNaturalStore::SaveSyncDataToCacheDB(const QueryObject &query,
     }
 
     Timestamp maxTimestamp = 0;
+    DBDfxAdapter::StartTraceSQL();
     errCode = SaveSyncItemsInCacheMode(handle, query, dataItems, deviceInfo, maxTimestamp);
     if (errCode != E_OK) {
         LOGE("[SingleVerNStore] Failed to save sync data in cache mode, err : %d", errCode);
     } else {
         (void)SetMaxTimestamp(maxTimestamp);
     }
+    DBDfxAdapter::FinishTraceSQL();
     ReleaseHandle(handle);
     return errCode;
 }
@@ -2320,6 +2325,17 @@ END:
     }
     ReleaseHandle(handle);
     return errCode;
+}
+
+void SQLiteSingleVerNaturalStore::Dump(int fd)
+{
+    std::string userId = MyProp().GetStringProp(DBProperties::USER_ID, "");
+    std::string appId = MyProp().GetStringProp(DBProperties::APP_ID, "");
+    std::string storeId = MyProp().GetStringProp(DBProperties::STORE_ID, "");
+    std::string label = MyProp().GetStringProp(DBProperties::IDENTIFIER_DATA, "");
+    dprintf(fd, "\tdb appId = %s, userId = %s, storeId = %s, label = %s\n",
+        appId.c_str(), userId.c_str(), storeId.c_str(), label.c_str());
+    SyncAbleKvDB::Dump(fd);
 }
 
 DEFINE_OBJECT_TAG_FACILITIES(SQLiteSingleVerNaturalStore)

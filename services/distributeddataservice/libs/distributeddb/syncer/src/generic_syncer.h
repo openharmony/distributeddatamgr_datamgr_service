@@ -95,6 +95,10 @@ public:
 
     virtual void RemoteDeviceOffline(const std::string &device) = 0;
 
+    void Dump(int fd) override;
+
+    SyncerBasicInfo DumpSyncerBasicInfo() override;
+
 protected:
 
     // trigger query auto sync or auto subscribe

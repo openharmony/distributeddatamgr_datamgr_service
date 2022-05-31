@@ -59,6 +59,8 @@ public:
     virtual int CheckIntegrity() const = 0;
 
     virtual std::string GetStorePath() const = 0;
+
+    virtual void Dump(int fd) = 0;
 };
 } // namespace DistributedDB
 

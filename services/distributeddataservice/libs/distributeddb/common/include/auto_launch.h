@@ -85,6 +85,8 @@ public:
 
     void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback, DBType type);
 
+    void Dump(int fd);
+
 protected:
     static int OpenOneConnection(AutoLaunchItem &autoLaunchItem);
 

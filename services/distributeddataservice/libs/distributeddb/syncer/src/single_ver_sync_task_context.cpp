@@ -50,6 +50,9 @@ int SingleVerSyncTaskContext::Initialize(const std::string &deviceId,
         return -E_OUT_OF_MEMORY;
     }
     deviceId_ = deviceId;
+    std::vector<uint8_t> dbIdentifier = syncInterface->GetIdentifier();
+    dbIdentifier.resize(3); // only show 3 bytes
+    dbIdentify_ = DBCommon::VectorToHexString(dbIdentifier);
     TimerAction timeOutCallback;
     int errCode = stateMachine_->Initialize(this, syncInterface, metadata, communicator);
     if (errCode != E_OK) {

@@ -15,6 +15,7 @@
 
 #include "runtime_context_impl.h"
 #include "db_errno.h"
+#include "db_dfx_adapter.h"
 #include "log_print.h"
 #include "communicator_aggregator.h"
 #include "network_adapter.h"
@@ -56,6 +57,7 @@ RuntimeContextImpl::~RuntimeContextImpl()
     delete lockStatusObserver_;
     lockStatusObserver_ = nullptr;
     userChangeMonitor_ = nullptr;
+    DBDfxAdapter::Finalize();
 }
 
 // Set the label of this process.
@@ -663,5 +665,10 @@ uint32_t RuntimeContextImpl::GenerateSessionId()
         sessionId = currentSessionId_++;
     }
     return sessionId;
+}
+
+void RuntimeContextImpl::DumpCommonInfo(int fd)
+{
+    autoLaunch_.Dump(fd);
 }
 } // namespace DistributedDB

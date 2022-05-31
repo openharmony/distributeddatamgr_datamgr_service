@@ -27,6 +27,11 @@
 #include "store_types.h"
 
 namespace DistributedDB {
+struct SyncerBasicInfo {
+    bool isSyncActive = false;
+    bool isAutoSync = false;
+    bool isClearHistoryData = false;
+};
 class ISyncer {
 public:
     struct SyncParma {
@@ -111,6 +116,10 @@ public:
 
     // Set an equal identifier for this database, After this called, send msg to the target will use this identifier
     virtual int SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets) = 0;
+
+    virtual void Dump(int fd) = 0;
+
+    virtual SyncerBasicInfo DumpSyncerBasicInfo() = 0;
 };
 } // namespace DistributedDB
 

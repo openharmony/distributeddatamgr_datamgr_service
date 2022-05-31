@@ -1043,4 +1043,24 @@ void SyncEngine::DecExecTaskCount()
     }
     execTaskCv_.notify_all();
 }
+
+void SyncEngine::Dump(int fd)
+{
+    std::string communicatorLabel;
+    if (communicatorProxy_ != nullptr) {
+        communicatorProxy_->GetLocalIdentity(communicatorLabel);
+    }
+    dprintf(fd, "\t\tcommunicator label = %s, equalIdentify Info [\n", communicatorLabel.c_str());
+    if (communicatorProxy_ != nullptr) {
+        communicatorProxy_->GetLocalIdentity(communicatorLabel);
+        communicatorProxy_->Dump(fd);
+    }
+    dprintf(fd, "\t\t]\n\t\tcontext info [\n");
+    // dump context info
+    std::lock_guard<std::mutex> autoLock(contextMapLock_);
+    for (const auto &entry : syncTaskContextMap_) {
+        entry.second->Dump(fd);
+    }
+    dprintf(fd, "\t\t]\n\n");
+}
 } // namespace DistributedDB

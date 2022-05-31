@@ -41,6 +41,8 @@ public:
     virtual std::string GetStorePath() const = 0;
 
     virtual RelationalDBProperties GetProperties() const = 0;
+
+    virtual void Dump(int fd) = 0;
 };
 } // namespace DistributedDB
 
