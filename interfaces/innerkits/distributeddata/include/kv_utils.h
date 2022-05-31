@@ -105,7 +105,7 @@ private:
         [DataShare::GLOB] = &KvUtils::NoSupport,
         [DataShare::BETWEEN] = &KvUtils::NoSupport,
         [DataShare::NOTBETWEEN] = &KvUtils::NoSupport,
-        [DataShare::KEY_PREFIX] = &KvUtils::KeyPrefix,  
+        [DataShare::KEY_PREFIX] = &KvUtils::KeyPrefix, 
         };
 };
 } // namespace DistributedKv

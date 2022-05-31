@@ -432,9 +432,10 @@ napi_value JsDeviceKVStore::Sync(napi_env env, napi_callback_info info)
         CHECK_ARGS_RETURN_VOID(ctxt, (argc == 2) || (argc == 3) || (argc == 4), "invalid arguments!");
         ctxt->status = JSUtil::GetValue(env, argv[0], ctxt->deviceIdList);
         CHECK_STATUS_RETURN_VOID(ctxt, "invalid arg[0], i.e. invalid deviceIdList!");
-        napi_typeof(env, argv[1], &ctxt->type);   
+        napi_typeof(env, argv[1], &ctxt->type);
         if (ctxt->type == napi_object) {
-            ctxt->status = JSUtil::Unwrap(env, argv[1], reinterpret_cast<void**>(&ctxt->query), JsQuery::Constructor(env));
+            ctxt->status = JSUtil::Unwrap(env,
+                argv[1], reinterpret_cast<void**>(&ctxt->query), JsQuery::Constructor(env));
             CHECK_STATUS_RETURN_VOID(ctxt, "invalid arg[1], i.e. invalid mode!");
             ctxt->status = JSUtil::GetValue(env, argv[2], ctxt->mode);
         }
@@ -445,7 +446,7 @@ napi_value JsDeviceKVStore::Sync(napi_env env, napi_callback_info info)
             }
         }
         CHECK_ARGS_RETURN_VOID(ctxt, ctxt->mode <= uint32_t(SyncMode::PUSH_PULL), "invalid arg[1], i.e. invalid mode!");
-        CHECK_STATUS_RETURN_VOID(ctxt, "invalid arg[2], i.e. invalid arguement[2]!");       
+        CHECK_STATUS_RETURN_VOID(ctxt, "invalid arg[2], i.e. invalid arguement[2]!");
     };
     ctxt->GetCbInfoSync(env, info, input);
     NAPI_ASSERT(env, ctxt->status == napi_ok, "invalid arguments!");

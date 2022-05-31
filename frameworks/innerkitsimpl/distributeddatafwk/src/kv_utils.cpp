@@ -65,7 +65,7 @@ std::vector<Entry> KvUtils::ToEntries(const std::vector<DataShareValuesBucket> &
 Entry KvUtils::ToEntry(const DataShareValuesBucket &valueBucket)
 {
     const auto &values = valueBucket.valuesMap;
-    if (valuesMap.empty()) {
+    if (values.empty()) {
         ZLOGE("valuesMap is null");
         return {};
     }
