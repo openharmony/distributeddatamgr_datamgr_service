@@ -29,6 +29,7 @@
 #ifdef USE_DFX_ABILITY
 #include "hitrace_meter.h"
 #include "hisysevent.h"
+#include "string_ex.h"
 #endif
 
 namespace DistributedDB {
@@ -53,10 +54,17 @@ void DBDfxAdapter::Dump(int fd, const std::vector<std::u16string> &args)
         std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(DUMP_PARAM);
     bool abort = true;
     for (auto &arg : args) {
+#ifdef USE_DFX_ABILITY
+        if (OHOS::Str16ToStr8(arg) == DUMP_PARAM) {
+            abort = false;
+            break;
+        }
+#else
         if (u16DumpParam == arg) {
             abort = false;
             break;
         }
+#endif
     }
     if (abort) {
         return;
