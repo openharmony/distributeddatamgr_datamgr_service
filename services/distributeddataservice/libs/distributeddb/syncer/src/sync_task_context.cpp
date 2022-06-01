@@ -710,9 +710,9 @@ void SyncTaskContext::SchemaChange()
 
 void SyncTaskContext::Dump(int fd)
 {
-    std::string target = deviceId_;
     size_t totalSyncTaskCount = 0u;
     size_t autoSyncTaskCount = 0u;
+    size_t reponseTaskCount = 0u;
     {
         std::lock_guard<std::mutex> lock(targetQueueLock_);
         totalSyncTaskCount = requestTargetQueue_.size() + responseTargetQueue_.size();
@@ -721,8 +721,10 @@ void SyncTaskContext::Dump(int fd)
                 autoSyncTaskCount++;
             }
         }
+        reponseTaskCount = responseTargetQueue_.size();
     }
-    DBDumpHelper::Dump(fd, "\t\ttarget = %s, total sync task count = %zu, auto sync task count = %zu\n",
-        deviceId_.c_str(), totalSyncTaskCount, autoSyncTaskCount);
+    DBDumpHelper::Dump(fd, "\t\ttarget = %s, total sync task count = %zu, auto sync task count = %zu\n,"
+        " response task count = %zu",
+        deviceId_.c_str(), totalSyncTaskCount, autoSyncTaskCount, reponseTaskCount);
 }
 } // namespace DistributedDB
