@@ -36,10 +36,10 @@ public:
 
 private:
     std::vector<Entry> ConvertDB(const std::list<DBEntry> &dbEntries, std::string &deviceId) const;
-    std::shared_ptr<DistributedKv::KvStoreObserver> observer_;
-    sptr<IKvStoreObserver> remote_;
     AppId appId_;
     StoreId storeId_;
+    std::shared_ptr<DistributedKv::KvStoreObserver> observer_;
+    sptr<IKvStoreObserver> remote_;
     Convert convert_;
 };
 } // namespace OHOS::DistributedKv
