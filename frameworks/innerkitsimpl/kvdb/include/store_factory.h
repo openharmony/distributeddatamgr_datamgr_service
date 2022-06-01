@@ -21,12 +21,12 @@
 #include "kv_store_delegate_manager.h"
 #include "single_store_impl.h"
 namespace OHOS::DistributedKv {
-class StoreFactory {
+class API_EXPORT StoreFactory {
 public:
     static StoreFactory &GetInstance();
     std::shared_ptr<SingleKvStore> Create(
-        const std::string &path, const Options &options, const AppId &appId, const StoreId &storeId, Status &status);
-    Status Delete(const std::string &path, const AppId &appId, const StoreId &storeId);
+        const AppId &appId, const StoreId &storeId, const Options &options, const std::string &path, Status &status);
+    Status Delete(const AppId &appId, const StoreId &storeId, const std::string &path);
     Status Close(const AppId &appId, const StoreId &storeId);
     bool IsExits(const AppId &appId, const StoreId &storeId);
 

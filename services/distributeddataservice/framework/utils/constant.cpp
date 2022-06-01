@@ -35,5 +35,21 @@ std::string Constant::Concatenate(std::initializer_list<std::string> stringList)
     }
     return result;
 }
+
+std::string Constant::Join(
+    const std::string &prefix, const std::string &separator, std::initializer_list<std::string> params)
+{
+    std::string::size_type size = prefix.size();
+    for (const std::string &param : params) {
+        size += separator.size() + param.size();
+    }
+    std::string result;
+    result.reserve(size);
+    result.append(prefix);
+    for (const std::string &str : params) {
+        result.append(separator).append(str);
+    }
+    return result;
+}
 }  // namespace DistributedData
 }  // namespace OHOS

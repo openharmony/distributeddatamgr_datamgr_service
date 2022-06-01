@@ -20,9 +20,9 @@
 
 namespace OHOS {
 namespace DistributedKv {
-KvStoreObserverClient::KvStoreObserverClient(const StoreId &storeId, SubscribeType subscribeType,
-                                             std::shared_ptr<KvStoreObserver> kvStoreObserver, KvStoreType type)
-    : storeId_(storeId), subscribeType_(subscribeType), kvStoreObserver_(kvStoreObserver), type_(type)
+KvStoreObserverClient::KvStoreObserverClient(
+    const StoreId &storeId, SubscribeType subscribeType, std::shared_ptr<KvStoreObserver> kvStoreObserver)
+    : storeId_(storeId), subscribeType_(subscribeType), kvStoreObserver_(kvStoreObserver)
 {
     ZLOGI("start");
 }
@@ -36,10 +36,8 @@ void KvStoreObserverClient::OnChange(const ChangeNotification &changeNotificatio
 {
     ZLOGI("start");
     if (kvStoreObserver_ != nullptr) {
-        if (type_ == KvStoreType::SINGLE_VERSION) {
-            ZLOGI("SINGLE_VERSION start");
-            kvStoreObserver_->OnChange(changeNotification);
-        }
+        ZLOGI("SINGLE_VERSION start");
+        kvStoreObserver_->OnChange(changeNotification);
     }
 }
 

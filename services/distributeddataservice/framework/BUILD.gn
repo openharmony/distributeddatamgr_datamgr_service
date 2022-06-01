@@ -36,6 +36,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "eventcenter/event.cpp",
     "eventcenter/event_center.cpp",
     "metadata/capability_meta_data.cpp",
+    "metadata/capability_range.cpp",
     "metadata/meta_data.cpp",
     "metadata/meta_data_manager.cpp",
     "metadata/secret_key_meta_data.cpp",

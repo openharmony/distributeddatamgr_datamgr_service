@@ -45,6 +45,7 @@ class ObjectServiceImpl;
 }
 
 namespace OHOS::DistributedKv {
+class KVDBServiceImpl;
 class KvStoreAccountObserver;
 class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
@@ -188,6 +189,7 @@ private:
     std::shared_ptr<Security> security_;
     std::mutex mutex_;
     sptr<DistributedRdb::RdbServiceImpl> rdbService_;
+    sptr<DistributedKv::KVDBServiceImpl> kvdbService_;
     sptr<DistributedObject::ObjectServiceImpl> objectService_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
 };

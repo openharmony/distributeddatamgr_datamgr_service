@@ -15,10 +15,11 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_H
-#include <iremote_broker.h>
-
 #include <memory>
 
+#include "ikvstore_observer.h"
+#include "ikvstore_sync_callback.h"
+#include "iremote_broker.h"
 #include "kvstore_death_recipient.h"
 #include "single_kvstore.h"
 #include "types.h"
@@ -27,7 +28,13 @@ namespace OHOS::DistributedKv {
 class API_EXPORT KVDBService : public IRemoteBroker {
 public:
     using SingleKVStore = SingleKvStore;
-
+    struct SyncInfo {
+        uint64_t seqId = -1;
+        int32_t mode = PUSH_PULL;
+        uint32_t delay = 0;
+        std::vector<std::string> devices;
+        std::string query;
+    };
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedKv.KVDBService");
 
     API_EXPORT KVDBService() = default;
@@ -35,10 +42,26 @@ public:
     API_EXPORT virtual ~KVDBService() = default;
 
     virtual Status GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds) = 0;
-
-    virtual Status Delete(const std::string &path, const AppId &appId, const StoreId &storeId) = 0;
-
-    virtual Status Sync(const std::vector<std::string> &devices, const AppId &appId, const StoreId &storeId) = 0;
+    virtual Status BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options) = 0;
+    virtual Status AfterCreate(
+        const AppId &appId, const StoreId &storeId, const Options &options, const std::vector<uint8_t> &password) = 0;
+    virtual Status Delete(const AppId &appId, const StoreId &storeId, const std::string &path) = 0;
+    virtual Status Sync(const AppId &appId, const StoreId &storeId, SyncInfo &syncInfo) = 0;
+    virtual Status RegisterSyncCallback(
+        const AppId &appId, const StoreId &storeId, sptr<IKvStoreSyncCallback> callback) = 0;
+    virtual Status UnregisterSyncCallback(const AppId &appId, const StoreId &storeId) = 0;
+    virtual Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) = 0;
+    virtual Status GetSyncParam(const AppId &appId, const StoreId &storeId, KvSyncParam &syncParam) = 0;
+    virtual Status EnableCapability(const AppId &appId, const StoreId &storeId) = 0;
+    virtual Status DisableCapability(const AppId &appId, const StoreId &storeId) = 0;
+    virtual Status SetCapability(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &local,
+        const std::vector<std::string> &remote) = 0;
+    virtual Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId,
+        const std::vector<std::string> &devices, const std::string &query) = 0;
+    virtual Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId,
+        const std::vector<std::string> &devices, const std::string &query) = 0;
+    virtual Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) = 0;
+    virtual Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) = 0;
 
 protected:
     enum TransId : int32_t {
@@ -48,13 +71,19 @@ protected:
         TRANS_AFTER_CREATE,
         TRANS_DELETE,
         TRANS_SYNC,
+        TRANS_REGISTER_CALLBACK,
+        TRANS_UNREGISTER_CALLBACK,
+        TRANS_SET_SYNC_PARAM,
+        TRANS_GET_SYNC_PARAM,
+        TRANS_ENABLE_CAP,
+        TRANS_DISABLE_CAP,
+        TRANS_SET_CAP,
+        TRANS_ADD_SUB_INFO,
+        TRANS_RMV_SUB_INFO,
+        TRANS_SUB,
+        TRANS_UNSUB,
         TRANS_BUTT,
     };
-
-    virtual Status BeforeCreate(const Options &options, const AppId &appId, const StoreId &storeId) = 0;
-
-    virtual Status AfterCreate(
-        const Options &options, const AppId &appId, const StoreId &storeId, const std::vector<uint8_t> &password) = 0;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_H

@@ -26,8 +26,8 @@ namespace OHOS {
 namespace DistributedKv {
 class KvStoreObserverClient : public KvStoreObserverStub {
 public:
-    KvStoreObserverClient(const StoreId &storeId, SubscribeType subscribeType,
-            std::shared_ptr<KvStoreObserver> kvStoreObserver, KvStoreType type);
+    KvStoreObserverClient(
+        const StoreId &storeId, SubscribeType subscribeType, std::shared_ptr<KvStoreObserver> kvStoreObserver);
 
     ~KvStoreObserverClient();
 
@@ -48,7 +48,6 @@ private:
 
     // client is responsible for free it when call UnSubscribeKvStore.
     std::shared_ptr<KvStoreObserver> kvStoreObserver_;
-    KvStoreType type_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

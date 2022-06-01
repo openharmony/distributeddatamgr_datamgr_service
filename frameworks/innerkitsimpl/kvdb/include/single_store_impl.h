@@ -24,15 +24,17 @@
 #include "observer_bridge.h"
 #include "single_kvstore.h"
 #include "sync_observer.h"
+#include "ikvstore_observer.h"
 
 namespace OHOS::DistributedKv {
 class API_EXPORT SingleStoreImpl : public SingleKvStore {
 public:
     using Observer = KvStoreObserver;
+    using IPCObserver = IKvStoreObserver;
     using SyncCallback = KvStoreSyncCallback;
     using ResultSet = KvStoreResultSet;
     using DBStore = DistributedDB::KvStoreNbDelegate;
-    SingleStoreImpl(std::shared_ptr<DBStore> dbStore);
+    SingleStoreImpl(const AppId &appId, std::shared_ptr<DBStore> dbStore);
     ~SingleStoreImpl() = default;
     StoreId GetStoreId() const override;
     Status Put(const Key &key, const Value &value) override;
@@ -54,6 +56,7 @@ public:
     Status GetSecurityLevel(SecurityLevel &securityLevel) const override;
     Status RemoveDeviceData(const std::string &device) override;
     Status Close();
+
     // IPC interface
     Status Sync(const std::vector<std::string> &devices, SyncMode mode, uint32_t allowedDelayMs) override;
     Status Sync(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query,
@@ -71,9 +74,9 @@ public:
 protected:
     static constexpr size_t MAX_KEY_LENGTH = 1024;
     int ConvertMode(SubscribeType type) const;
-    bool IsValidKey(const Key &key) const;
     virtual std::vector<uint8_t> ConvertDBKey(const Key &key) const;
     virtual Key ConvertKey(DistributedDB::Key &&key) const;
+    virtual sptr<IPCObserver> GetIPCObserver(std::shared_ptr<Observer> observer) const;
     std::function<void(ObserverBridge *)> BridgeReleaser(SubscribeType type);
 
 private:
@@ -83,6 +86,7 @@ private:
 
     mutable std::shared_mutex mutex_;
     std::string storeId_;
+    AppId appId_;
     std::shared_ptr<DBStore> dbStore_ = nullptr;
     std::shared_ptr<SyncObserver> syncObserver_ = nullptr;
     ConcurrentMap<uintptr_t, std::map<int32_t, std::shared_ptr<ObserverBridge>>> observers_;

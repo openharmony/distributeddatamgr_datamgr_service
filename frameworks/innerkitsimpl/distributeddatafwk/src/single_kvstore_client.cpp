@@ -258,9 +258,8 @@ Status SingleKvStoreClient::SubscribeKvStore(SubscribeType subscribeType, std::s
         return Status::STORE_ALREADY_SUBSCRIBE;
     }
     // remove storeId after remove SubscribeKvStore function in manager. currently reserve for convenience.
-    sptr<KvStoreObserverClient> ipcObserver =
-            new (std::nothrow) KvStoreObserverClient(GetStoreId(),
-            subscribeType, observer, KvStoreType::SINGLE_VERSION);
+    sptr<KvStoreObserverClient> ipcObserver = new (std::nothrow)
+        KvStoreObserverClient(GetStoreId(), subscribeType, observer);
     if (ipcObserver == nullptr) {
         ZLOGW("new KvStoreObserverClient failed");
         return Status::ERROR;

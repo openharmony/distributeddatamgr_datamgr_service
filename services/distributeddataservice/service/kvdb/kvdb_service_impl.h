@@ -13,19 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H
-#define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H
-#include <functional>
-
-#include "concurrent_map.h"
-#include "iremote_broker.h"
-#include "iremote_proxy.h"
-#include "kvdb_service.h"
-
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_IMPL_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_IMPL_H
+#include "kvdb_service_stub.h"
 namespace OHOS::DistributedKv {
-class API_EXPORT KVDBServiceClient : public IRemoteProxy<KVDBService> {
+class API_EXPORT KVDBServiceImpl final : public KVDBServiceStub {
 public:
-    static std::shared_ptr<KVDBServiceClient> GetInstance();
+    API_EXPORT KVDBServiceImpl();
+    virtual ~KVDBServiceImpl();
     Status GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds) override;
     Status BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options) override;
     Status AfterCreate(const AppId &appId, const StoreId &storeId, const Options &options,
@@ -47,26 +42,6 @@ public:
         const std::string &query) override;
     Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
-
-    std::shared_ptr<SingleKvStore> GetKVStore(
-        const AppId &appId, const StoreId &storeId, const Options &options, const std::string &path, Status &status);
-    Status CloseKVStore(const AppId &appId, const StoreId &storeId);
-    Status CloseKVStore(const AppId &appId, std::shared_ptr<SingleKVStore> &kvStore);
-    Status CloseAllKVStore(const AppId &appId);
-
-private:
-    explicit KVDBServiceClient(const sptr<IRemoteObject> &object);
-    virtual ~KVDBServiceClient() = default;
-    class ServiceDeath : public KvStoreDeathRecipient {
-    public:
-        ServiceDeath() = default;
-        virtual ~ServiceDeath() = default;
-        void OnRemoteDied() override;
-    };
-    static std::mutex mutex_;
-    static std::shared_ptr<KVDBServiceClient> instance_;
-    static std::atomic_bool isWatched_;
-    sptr<IRemoteObject> remote_;
 };
 } // namespace OHOS::DistributedKv
-#endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_IMPL_H

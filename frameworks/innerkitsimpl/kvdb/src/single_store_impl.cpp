@@ -17,12 +17,14 @@
 
 #include "dds_trace.h"
 #include "dev_manager.h"
+#include "kvstore_observer_client.h"
 #include "log_print.h"
 #include "store_result_set.h"
 #include "store_util.h"
 
 namespace OHOS::DistributedKv {
-SingleStoreImpl::SingleStoreImpl(std::shared_ptr<DBStore> dbStore) : dbStore_(std::move(dbStore))
+SingleStoreImpl::SingleStoreImpl(const AppId &appId, std::shared_ptr<DBStore> dbStore)
+    : appId_(appId), dbStore_(std::move(dbStore))
 {
     syncObserver_ = std::make_shared<SyncObserver>();
 }
@@ -31,7 +33,7 @@ StoreId SingleStoreImpl::GetStoreId() const
 {
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return { storeId_ };
     }
     return { dbStore_->GetStoreId() };
@@ -42,7 +44,7 @@ Status SingleStoreImpl::Put(const Key &key, const Value &value)
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
@@ -54,7 +56,7 @@ Status SingleStoreImpl::Put(const Key &key, const Value &value)
     auto dbStatus = dbStore_->Put(dbKey, value);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, key:%{public}s, value size:%{public}zu", status,
+        ZLOGE("status:0x%{public}x, key:%{public}s, value size:%{public}zu", status,
             StoreUtil::Anonymous(key.ToString()).c_str(), value.Size());
     }
     // do auto sync process
@@ -66,7 +68,7 @@ Status SingleStoreImpl::PutBatch(const std::vector<Entry> &entries)
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
@@ -85,7 +87,7 @@ Status SingleStoreImpl::PutBatch(const std::vector<Entry> &entries)
     auto dbStatus = dbStore_->PutBatch(dbEntries);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, entries size:%{public}zu", status, entries.size());
+        ZLOGE("status:0x%{public}x, entries size:%{public}zu", status, entries.size());
     }
     // do auto sync process
     return status;
@@ -96,7 +98,7 @@ Status SingleStoreImpl::Delete(const Key &key)
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
@@ -108,7 +110,7 @@ Status SingleStoreImpl::Delete(const Key &key)
     auto dbStatus = dbStore_->Delete(dbKey);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, key:%{public}s", status, StoreUtil::Anonymous(key.ToString()).c_str());
+        ZLOGE("status:0x%{public}x, key:%{public}s", status, StoreUtil::Anonymous(key.ToString()).c_str());
     }
     return status;
 }
@@ -118,7 +120,7 @@ Status SingleStoreImpl::DeleteBatch(const std::vector<Key> &keys)
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
@@ -134,7 +136,7 @@ Status SingleStoreImpl::DeleteBatch(const std::vector<Key> &keys)
     auto dbStatus = dbStore_->DeleteBatch(dbKeys);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, keys size:%{public}zu", status, keys.size());
+        ZLOGE("status:0x%{public}x, keys size:%{public}zu", status, keys.size());
     }
     // do auto sync process
     return status;
@@ -145,14 +147,14 @@ Status SingleStoreImpl::StartTransaction()
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
     auto dbStatus = dbStore_->StartTransaction();
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d", status);
+        ZLOGE("status:0x%{public}x storeId:%{public}s", status, dbStore_->GetStoreId().c_str());
     }
     return status;
 }
@@ -162,14 +164,14 @@ Status SingleStoreImpl::Commit()
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
     auto dbStatus = dbStore_->Commit();
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d", status);
+        ZLOGE("status:0x%{public}x storeId:%{public}s", status, dbStore_->GetStoreId().c_str());
     }
     return status;
 }
@@ -179,14 +181,14 @@ Status SingleStoreImpl::Rollback()
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
     auto dbStatus = dbStore_->Rollback();
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d", status);
+        ZLOGE("status:0x%{public}x storeId:%{public}s", status, dbStore_->GetStoreId().c_str());
     }
     return status;
 }
@@ -196,7 +198,7 @@ Status SingleStoreImpl::SubscribeKvStore(SubscribeType type, std::shared_ptr<Obs
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
@@ -219,12 +221,10 @@ Status SingleStoreImpl::SubscribeKvStore(SubscribeType type, std::shared_ptr<Obs
     }
 
     if (type == SubscribeType::SUBSCRIBE_TYPE_REMOTE || type == SubscribeType::SUBSCRIBE_TYPE_ALL) {
-        // status = proxy_->RegisterObserver({}, ConvertMode(type), bridge);
     }
 
     if (status != SUCCESS) {
-        ZLOGE("failed! type:%{public}d, status:%{public}d, observer:0x%x", type, status,
-            StoreUtil::Anonymous(bridge.get()));
+        ZLOGE("status:0x%{public}x, type:%{public}d, observer:0x%x", status, type, StoreUtil::Anonymous(bridge.get()));
     }
     return status;
 }
@@ -251,7 +251,7 @@ Status SingleStoreImpl::Get(const Key &key, Value &value)
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
@@ -265,7 +265,7 @@ Status SingleStoreImpl::Get(const Key &key, Value &value)
     value = std::move(dbValue);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, key:%{public}s", status, key.ToString().c_str());
+        ZLOGE("status:0x%{public}x, key:%{public}s", status, key.ToString().c_str());
     }
     return status;
 }
@@ -282,7 +282,7 @@ Status SingleStoreImpl::GetEntries(const Key &prefix, std::vector<Entry> &entrie
     dbQuery.PrefixKey(dbPrefix);
     auto status = GetEntries(dbQuery, entries);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, prefix:%{public}s", status, prefix.ToString().c_str());
+        ZLOGE("status:0x%{public}x, prefix:%{public}s", status, prefix.ToString().c_str());
     }
     return status;
 }
@@ -294,7 +294,7 @@ Status SingleStoreImpl::GetEntries(const DataQuery &query, std::vector<Entry> &e
     dbQuery.PrefixKey(GetPrefix(query));
     auto status = GetEntries(dbQuery, entries);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, query:%{public}s", status, query.ToString().c_str());
+        ZLOGE("status:0x%{public}x, query:%{public}s", status, query.ToString().c_str());
     }
     return status;
 }
@@ -311,7 +311,7 @@ Status SingleStoreImpl::GetResultSet(const Key &prefix, std::shared_ptr<ResultSe
     dbQuery.PrefixKey(dbPrefix);
     auto status = GetResultSet(dbQuery, resultSet);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, prefix:%{public}s", status, prefix.ToString().c_str());
+        ZLOGE("status:0x%{public}x, prefix:%{public}s", status, prefix.ToString().c_str());
     }
     return status;
 }
@@ -323,7 +323,7 @@ Status SingleStoreImpl::GetResultSet(const DataQuery &query, std::shared_ptr<Res
     dbQuery.PrefixKey(GetPrefix(query));
     auto status = GetResultSet(dbQuery, resultSet);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, query:%{public}s", status, query.ToString().c_str());
+        ZLOGE("status:0x%{public}x, query:%{public}s", status, query.ToString().c_str());
     }
     return status;
 }
@@ -337,7 +337,7 @@ Status SingleStoreImpl::CloseResultSet(std::shared_ptr<ResultSet> &resultSet)
     }
     auto status = resultSet->Close();
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d", status);
+        ZLOGE("status:0x%{public}x storeId:%{public}s", status, dbStore_->GetStoreId().c_str());
     }
     resultSet = nullptr;
     return status;
@@ -348,7 +348,7 @@ Status SingleStoreImpl::GetCount(const DataQuery &query, int &result) const
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s is already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
     DistributedDB::Query dbQuery = *(query.query_);
@@ -356,7 +356,7 @@ Status SingleStoreImpl::GetCount(const DataQuery &query, int &result) const
     auto dbStatus = dbStore_->GetCount(dbQuery, result);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, query:%{public}s", status, query.ToString().c_str());
+        ZLOGE("status:0x%{public}x query:%{public}s", status, query.ToString().c_str());
     }
     return status;
 }
@@ -366,14 +366,14 @@ Status SingleStoreImpl::GetSecurityLevel(SecurityLevel &securityLevel) const
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s is already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
     DistributedDB::SecurityOption option;
     auto dbStatus = dbStore_->GetSecurityOption(option);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, security:[%{public}d, %{public}d]", status, option.securityFlag,
+        ZLOGE("status:0x%{public}x, security:[%{public}d, %{public}d]", status, option.securityFlag,
             option.securityLabel);
     }
     return status;
@@ -384,14 +384,14 @@ Status SingleStoreImpl::RemoveDeviceData(const std::string &device)
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s is already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
     auto dbStatus = dbStore_->RemoveDeviceData(DevManager::GetInstance().ToUUID(device));
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("failed! status:%{public}d, device:%{public}s", status, StoreUtil::Anonymous(device).c_str());
+        ZLOGE("status:0x%{public}x, device:%{public}s", status, StoreUtil::Anonymous(device).c_str());
     }
     return status;
 }
@@ -412,7 +412,7 @@ Status SingleStoreImpl::RegisterSyncCallback(std::shared_ptr<SyncCallback> callb
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
     if (callback == nullptr) {
-        ZLOGW("return INVALID_ARGUMENT.");
+        ZLOGW("INVALID_ARGUMENT.");
         return INVALID_ARGUMENT;
     }
     syncObserver_->Add(callback);
@@ -428,6 +428,7 @@ Status SingleStoreImpl::UnRegisterSyncCallback()
 
 Status SingleStoreImpl::SetSyncParam(const KvSyncParam &syncParam)
 {
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
     return NOT_SUPPORT;
 }
 
@@ -469,19 +470,29 @@ Status SingleStoreImpl::Close()
     return SUCCESS;
 }
 
-bool SingleStoreImpl::IsValidKey(const Key &key) const
-{
-    return key.Empty() || key.Size() > MAX_KEY_LENGTH || std::isspace(key[0]) || std::isspace(key[key.Size() - 1]);
-}
-
 std::vector<uint8_t> SingleStoreImpl::ConvertDBKey(const Key &key) const
 {
-    return IsValidKey(key) ? std::vector<uint8_t>(key) : std::vector<uint8_t>();
+    auto begin = std::find_if(key.Data().begin(), key.Data().end(), [](int ch) { return !std::isspace(ch); });
+    auto rBegin = std::find_if(key.Data().rbegin(), key.Data().rend(), [](int ch) { return !std::isspace(ch); });
+    auto end = static_cast<decltype(begin)>(rBegin.base());
+    std::vector<uint8_t> dbKey;
+    dbKey.assign(begin, end);
+    if (dbKey.size() >= MAX_KEY_LENGTH) {
+        dbKey.clear();
+    }
+    return dbKey;
 }
 
 Key SingleStoreImpl::ConvertKey(DistributedDB::Key &&key) const
 {
     return std::move(key);
+}
+
+sptr<SingleStoreImpl::IPCObserver> SingleStoreImpl::GetIPCObserver(std::shared_ptr<Observer> observer) const
+{
+    sptr<KvStoreObserverClient> ipcObserver =
+        new KvStoreObserverClient({ dbStore_->GetStoreId() }, SUBSCRIBE_TYPE_REMOTE, observer);
+    return sptr<IPCObserver>();
 }
 
 int SingleStoreImpl::ConvertMode(SubscribeType type) const
@@ -517,7 +528,7 @@ std::function<void(ObserverBridge *)> SingleStoreImpl::BridgeReleaser(SubscribeT
             // status = proxy_->UnregisterObserver({}, ConvertMode(type), bridge);
         }
         if (status != SUCCESS) {
-            ZLOGE("failed! type:%{public}d, status:%{public}d, observer:0x%x", type, status, StoreUtil::Anonymous(obj));
+            ZLOGE("status:0x%{public}x type:%{public}d,, observer:0x%x", status, type, StoreUtil::Anonymous(obj));
         }
         delete obj;
     };
@@ -527,7 +538,7 @@ Status SingleStoreImpl::GetResultSet(const DistributedDB::Query &query, std::sha
 {
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s is already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 
@@ -544,7 +555,7 @@ Status SingleStoreImpl::GetEntries(const DistributedDB::Query &query, std::vecto
 {
     std::shared_lock<decltype(mutex_)> lock;
     if (dbStore_ == nullptr) {
-        ZLOGE("failed! the db:%{public}s is already closed!", storeId_.c_str());
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ALREADY_CLOSED;
     }
 

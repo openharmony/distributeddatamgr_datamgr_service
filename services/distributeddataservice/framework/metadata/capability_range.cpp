@@ -13,21 +13,21 @@
  * limitations under the License.
  */
 
-#include "security_manager.h"
-namespace OHOS::DistributedKv {
-SecurityManager &SecurityManager::GetInstance()
+#include "metadata/capability_range.h"
+namespace OHOS::DistributedData {
+bool CapabilityRange::Marshal(json &node) const
 {
-    static SecurityManager instance;
-    return instance;
+    bool ret = true;
+    ret = SetValue(node[GET_NAME(localLabel)], localLabel) && ret;
+    ret = SetValue(node[GET_NAME(remoteLabel)], remoteLabel) && ret;
+    return ret;
 }
 
-SecurityManager::DBPassword SecurityManager::GetDBPassword(
-    const AppId &appId, const StoreId &storeId, const std::string &path)
+bool CapabilityRange::Unmarshal(const json &node)
 {
-    return SecurityManager::DBPassword();
+    bool ret = true;
+    ret = GetValue(node, GET_NAME(localLabel), localLabel) && ret;
+    ret = GetValue(node, GET_NAME(remoteLabel), remoteLabel) && ret;
+    return ret;
 }
-
-void SecurityManager::DelDBPassword(const AppId &appId, const StoreId &storeId, const std::string &path)
-{
-}
-} // namespace OHOS::DistributedKv
+} // namespace OHOS::DistributedData

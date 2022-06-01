@@ -18,12 +18,12 @@
 #include "types.h"
 #include "types_export.h"
 namespace OHOS::DistributedKv {
-class SecurityManager {
+class API_EXPORT SecurityManager {
 public:
     using DBPassword = DistributedDB::CipherPassword;
     static SecurityManager &GetInstance();
-    DBPassword GetDBPassword(const std::string &path, const AppId &appId, const StoreId &storeId);
-    void DelDBPassword(const std::string &path, const AppId &appId, const StoreId &storeId);
+    DBPassword GetDBPassword(const AppId &appId, const StoreId &storeId, const std::string &path);
+    void DelDBPassword(const AppId &appId, const StoreId &storeId, const std::string &path);
 
 private:
     static constexpr const char *ROOT_KEY_ALIAS = "distributed_db_root_key";

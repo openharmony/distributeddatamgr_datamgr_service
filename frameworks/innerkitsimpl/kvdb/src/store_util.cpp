@@ -112,7 +112,7 @@ Status StoreUtil::ConvertStatus(StoreUtil::DBStatus status)
         case DBStatus::SECURITY_OPTION_CHECK_ERROR:
             return Status::SECURITY_LEVEL_ERROR;
         default:
-            ZLOGE("unknown db error:%{public}d", status);
+            ZLOGE("unknown db error:0x%{public}x", status);
             break;
     }
     return Status::ERROR;

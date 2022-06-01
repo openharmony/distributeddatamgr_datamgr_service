@@ -39,6 +39,7 @@
 #include "hap_token_info.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
+#include "kvdb_service_impl.h"
 #include "kvstore_account_observer.h"
 #include "kvstore_app_accessor.h"
 #include "kvstore_device_listener.h"
@@ -59,14 +60,13 @@
 #include "upgrade_manager.h"
 #include "user_delegate.h"
 #include "utils/block_integer.h"
-#include "utils/crypto.h"
 #include "utils/converter.h"
+#include "utils/crypto.h"
 
 namespace OHOS::DistributedKv {
-using json = nlohmann::json;
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
-using namespace Security::AccessToken;
+using namespace OHOS::Security::AccessToken;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
@@ -1235,7 +1235,14 @@ sptr<IRemoteObject> KvStoreDataService::GetRdbService()
 
 sptr<IRemoteObject> KvStoreDataService::GetKVdbService()
 {
-    return sptr<IRemoteObject>();
+    if (kvdbService_ == nullptr) {
+        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
+        if (kvdbService_ == nullptr) {
+            kvdbService_ = new (std::nothrow) KVDBServiceImpl();
+        }
+        return kvdbService_ == nullptr ? nullptr : kvdbService_->AsObject().GetRefPtr();
+    }
+    return kvdbService_->AsObject().GetRefPtr();
 }
 
 bool DbMetaCallbackDelegateMgr::GetKvStoreDiskSize(const std::string &storeId, uint64_t &size)

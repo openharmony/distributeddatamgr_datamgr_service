@@ -28,18 +28,18 @@ StoreFactory &StoreFactory::GetInstance()
 }
 
 std::shared_ptr<SingleKvStore> StoreFactory::Create(
-    const std::string &path, const Options &options, const AppId &appId, const StoreId &storeId, Status &status)
+    const AppId &appId, const StoreId &storeId, const Options &options, const std::string &path, Status &status)
 {
     DBStatus dbStatus = DBStatus::OK;
     std::shared_ptr<SingleStoreImpl> kvStore;
-    stores_.Compute(appId, [&](auto &, auto &values) {
-        if (values.find(storeId) != values.end()) {
-            return !values.empty();
+    stores_.Compute(appId, [&](auto &, auto &stores) {
+        if (stores.find(storeId) != stores.end()) {
+            return !stores.empty();
         }
         auto dbManager = GetDBManager(path, appId);
-        auto password = SecurityManager::GetInstance().GetDBPassword(path, appId, storeId);
+        auto password = SecurityManager::GetInstance().GetDBPassword(appId, storeId, path);
         dbManager->GetKvStore(storeId, GetDBOption(options, password),
-            [&dbManager, &kvStore, &values, &dbStatus](auto status, auto *store) {
+            [&dbManager, &kvStore, &stores, &appId, &dbStatus](auto status, auto *store) {
                 dbStatus = status;
                 if (store == nullptr) {
                     ZLOGE("Create DBStore failed, status:%{public}d", status);
@@ -47,21 +47,21 @@ std::shared_ptr<SingleKvStore> StoreFactory::Create(
                 }
                 auto release = [dbManager](auto *store) { dbManager->CloseKvStore(store); };
                 auto dbStore = std::shared_ptr<DBStore>(store, release);
-                kvStore = std::make_shared<SingleStoreImpl>(dbStore);
-                values[dbStore->GetStoreId()] = kvStore;
+                kvStore = std::make_shared<SingleStoreImpl>(appId, dbStore);
+                stores[dbStore->GetStoreId()] = kvStore;
             });
-        return !values.empty();
+        return !stores.empty();
     });
     status = StoreUtil::ConvertStatus(dbStatus);
     return kvStore;
 }
 
-Status StoreFactory::Delete(const std::string &path, const AppId &appId, const StoreId &storeId)
+Status StoreFactory::Delete(const AppId &appId, const StoreId &storeId, const std::string &path)
 {
     Close(appId, storeId);
     auto dbManager = GetDBManager(path, appId);
     auto status = dbManager->DeleteKvStore(storeId);
-    SecurityManager::GetInstance().DelDBPassword(path, appId, storeId);
+    SecurityManager::GetInstance().DelDBPassword(appId, storeId, path);
     return StoreUtil::ConvertStatus(status);
 }
 
