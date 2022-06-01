@@ -568,9 +568,7 @@ void SyncTaskContext::CopyTargetData(const ISyncTarget *target, const TaskParam 
         LOGI("[SyncTaskContext][copyTarget] mode=%d,syncId=%d,isAutoSync=%d,isRetry=%d,dev=%s{private}",
             mode_, syncId_, isAutoSync_, syncTaskRetryStatus_, deviceId_.c_str());
         lastRequestSessionId_ = requestSessionId_;
-        if (syncInterface_ != nullptr) {
-            DBDfxAdapter::StartAsyncTrace(DBDfxAdapter::SYNC_ACTION + dbIdentify_, static_cast<int>(syncId_));
-        }
+        DBDfxAdapter::StartAsyncTrace(syncActionName_, static_cast<int>(syncId_));
     } else {
         isAutoSync_ = false;
         LOGI("[SyncTaskContext][copyTarget] for response data dev %s{private},isRetry=%d", deviceId_.c_str(),
@@ -605,7 +603,7 @@ void SyncTaskContext::ClearSyncOperation()
 {
     std::lock_guard<std::mutex> lock(operationLock_);
     if (syncOperation_ != nullptr) {
-        DBDfxAdapter::FinishAsyncTrace(DBDfxAdapter::SYNC_ACTION + dbIdentify_, static_cast<int>(syncId_));
+        DBDfxAdapter::FinishAsyncTrace(syncActionName_, static_cast<int>(syncId_));
         RefObject::DecObjRef(syncOperation_);
         syncOperation_ = nullptr;
     }

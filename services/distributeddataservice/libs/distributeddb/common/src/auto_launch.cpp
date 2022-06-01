@@ -1250,8 +1250,7 @@ void AutoLaunch::Dump(int fd)
     std::lock_guard<std::mutex> lock(dataLock_);
     DBDumpHelper::Dump(fd, "\tenableAutoLaunch info [\n");
     for (const auto &[label, userItem] : autoLaunchItemMap_) {
-        std::string hashLabel = DBCommon::TransferStringToHex(label);
-        DBDumpHelper::Dump(fd, "\t\tlabel = %s, userId = [\n", hashLabel.c_str());
+        DBDumpHelper::Dump(fd, "\t\tlabel = %s, userId = [\n", DBCommon::TransferStringToHex(label).c_str());
         for (const auto &entry : userItem) {
             DBDumpHelper::Dump(fd, "\t\t\t%s\n", entry.first.c_str());
         }

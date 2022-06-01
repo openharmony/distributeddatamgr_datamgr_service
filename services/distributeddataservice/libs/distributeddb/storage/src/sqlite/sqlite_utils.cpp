@@ -75,24 +75,19 @@ namespace {
         bool verboseLog = (data != nullptr);
         auto errType = static_cast<unsigned int>(err);
         errType &= 0xFF;
-        bool isErrorMsg = false;
         if (errType == 0 || errType == SQLITE_CONSTRAINT || errType == SQLITE_SCHEMA ||
             errType == SQLITE_NOTICE || err == SQLITE_WARNING_AUTOINDEX) {
             if (verboseLog) {
                 LOGD("[SQLite] Error[%d] sys[%d] %s ", err, errno, sqlite3_errstr(err));
-                isErrorMsg = true;
             }
         } else if (errType == SQLITE_WARNING || errType == SQLITE_IOERR ||
             errType == SQLITE_CORRUPT || errType == SQLITE_CANTOPEN) {
             LOGI("[SQLite] Error[%d], sys[%d], %s", err, errno, sqlite3_errstr(err));
-            isErrorMsg = true;
         } else {
             LOGE("[SQLite] Error[%d], sys[%d]", err, errno);
-        }
-
-        if (!isErrorMsg) {
             return;
         }
+
         const char *errMsg = sqlite3_errstr(err);
         std::lock_guard<std::mutex> autoLock(g_logMutex);
         if (errMsg != nullptr) {

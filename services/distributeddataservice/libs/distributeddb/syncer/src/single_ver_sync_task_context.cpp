@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include "db_common.h"
+#include "db_dfx_adapter.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "isyncer.h"
@@ -52,7 +53,8 @@ int SingleVerSyncTaskContext::Initialize(const std::string &deviceId,
     deviceId_ = deviceId;
     std::vector<uint8_t> dbIdentifier = syncInterface->GetIdentifier();
     dbIdentifier.resize(3); // only show 3 bytes
-    dbIdentify_ = DBCommon::VectorToHexString(dbIdentifier);
+    syncActionName_ = DBDfxAdapter::SYNC_ACTION + "_" +
+        DBCommon::VectorToHexString(dbIdentifier) + "_" + deviceId_.c_str();
     TimerAction timeOutCallback;
     int errCode = stateMachine_->Initialize(this, syncInterface, metadata, communicator);
     if (errCode != E_OK) {

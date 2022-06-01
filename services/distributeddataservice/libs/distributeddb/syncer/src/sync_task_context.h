@@ -239,7 +239,7 @@ protected:
     int status_;
     int taskExecStatus_;
     std::string deviceId_;
-    std::string dbIdentify_;
+    std::string syncActionName_;
     ISyncInterface *syncInterface_;
     ICommunicator *communicator_;
     ISyncStateMachine *stateMachine_;
