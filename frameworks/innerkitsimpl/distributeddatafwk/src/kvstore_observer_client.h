@@ -26,7 +26,7 @@ namespace OHOS {
 namespace DistributedKv {
 class KvStoreObserverClient : public KvStoreObserverStub {
 public:
-    KvStoreObserverClient(std::shared_ptr<KvStoreObserver> kvStoreObserver);
+    explicit KvStoreObserverClient(std::shared_ptr<KvStoreObserver> kvStoreObserver);
 
     ~KvStoreObserverClient();
 

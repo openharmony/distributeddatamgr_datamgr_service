@@ -72,7 +72,6 @@ SystemApi::DBStatus SystemApi::SetSecurityOption(const std::string &filePath, co
     }
 
     return DBStatus::OK;
-
 }
 
 SystemApi::DBStatus SystemApi::GetSecurityOption(const std::string &filePath, DBOption &option) const
