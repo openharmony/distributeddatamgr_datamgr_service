@@ -111,6 +111,7 @@ int SQLiteSingleVerNaturalStoreConnection::Get(const IOption &option, const Key 
 
     SQLiteSingleVerStorageExecutor *handle = GetExecutor(false, errCode);
     if (handle == nullptr) {
+        DBDfxAdapter::FinishTraceSQL();
         return errCode;
     }
 
@@ -179,6 +180,7 @@ int SQLiteSingleVerNaturalStoreConnection::GetEntries(const IOption &option, con
     SQLiteSingleVerStorageExecutor *handle = GetExecutor(false, errCode);
     if (handle == nullptr) {
         LOGE("[Connection]::[GetEntries] Get executor failed, errCode = [%d]", errCode);
+        DBDfxAdapter::FinishTraceSQL();
         return errCode;
     }
 
@@ -222,6 +224,7 @@ int SQLiteSingleVerNaturalStoreConnection::GetEntries(const IOption &option, con
 
     SQLiteSingleVerStorageExecutor *handle = GetExecutor(false, errCode);
     if (handle == nullptr) {
+        DBDfxAdapter::FinishTraceSQL();
         return errCode;
     }
 
@@ -265,6 +268,7 @@ int SQLiteSingleVerNaturalStoreConnection::GetCount(const IOption &option, const
 
     SQLiteSingleVerStorageExecutor *handle = GetExecutor(false, errCode);
     if (handle == nullptr) {
+        DBDfxAdapter::FinishTraceSQL();
         return errCode;
     }
     errCode = handle->GetCount(queryObj, count);
@@ -847,10 +851,10 @@ int SQLiteSingleVerNaturalStoreConnection::GetDeviceIdentifier(PragmaEntryDevice
 
 int SQLiteSingleVerNaturalStoreConnection::PutBatchInner(const IOption &option, const std::vector<Entry> &entries)
 {
+    DBDfxAdapter::StartTraceSQL();
     std::lock_guard<std::mutex> lock(transactionMutex_);
     bool isAuto = false;
     int errCode = E_OK;
-    DBDfxAdapter::StartTraceSQL();
     if (writeHandle_ == nullptr) {
         isAuto = true;
         errCode = StartTransactionInner();
@@ -861,6 +865,7 @@ int SQLiteSingleVerNaturalStoreConnection::PutBatchInner(const IOption &option, 
     }
 
     if ((transactionEntrySize_ + entries.size()) > DBConstant::MAX_TRANSACTION_ENTRY_SIZE) {
+        DBDfxAdapter::FinishTraceSQL();
         return -E_MAX_LIMITS;
     }
 
@@ -887,11 +892,11 @@ int SQLiteSingleVerNaturalStoreConnection::PutBatchInner(const IOption &option, 
 
 int SQLiteSingleVerNaturalStoreConnection::DeleteBatchInner(const IOption &option, const std::vector<Key> &keys)
 {
+    DBDfxAdapter::StartTraceSQL();
     std::lock_guard<std::mutex> lock(transactionMutex_);
     bool isAuto = false;
     int errCode = E_OK;
 
-    DBDfxAdapter::StartTraceSQL();
     if (writeHandle_ == nullptr) {
         isAuto = true;
         errCode = StartTransactionInner();
@@ -902,6 +907,7 @@ int SQLiteSingleVerNaturalStoreConnection::DeleteBatchInner(const IOption &optio
     }
 
     if ((transactionEntrySize_ + keys.size()) > DBConstant::MAX_TRANSACTION_ENTRY_SIZE) {
+        DBDfxAdapter::FinishTraceSQL();
         return -E_MAX_LIMITS;
     }
 
