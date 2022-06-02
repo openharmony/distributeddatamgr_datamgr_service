@@ -16,6 +16,7 @@
 #ifndef SQLITE_UTILS_H
 #define SQLITE_UTILS_H
 
+#include <mutex>
 #include <string>
 #include <vector>
 #include "sqlite_import.h"
@@ -219,6 +220,11 @@ private:
 #endif
 
     static void UpdateMetaDataWithinTrigger(sqlite3_context *ctx, int argc, sqlite3_value **argv);
+
+    static void SqliteLogCallback(void *data, int err, const char *msg);
+
+    static std::mutex logMutex_;
+    static std::string lastErrorMsg_;
 };
 } // namespace DistributedDB
 
