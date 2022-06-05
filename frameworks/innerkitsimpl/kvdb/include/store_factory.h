@@ -24,11 +24,11 @@ namespace OHOS::DistributedKv {
 class API_EXPORT StoreFactory {
 public:
     static StoreFactory &GetInstance();
-    std::shared_ptr<SingleKvStore> Create(
+    std::shared_ptr<SingleKvStore> GetOrOpenStore(
         const AppId &appId, const StoreId &storeId, const Options &options, const std::string &path, Status &status);
     Status Delete(const AppId &appId, const StoreId &storeId, const std::string &path);
     Status Close(const AppId &appId, const StoreId &storeId);
-    bool IsExits(const AppId &appId, const StoreId &storeId);
+    bool IsOpen(const AppId &appId, const StoreId &storeId);
 
 private:
     using DBManager = DistributedDB::KvStoreDelegateManager;

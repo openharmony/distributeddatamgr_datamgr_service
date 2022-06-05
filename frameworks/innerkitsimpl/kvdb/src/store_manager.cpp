@@ -28,15 +28,15 @@ StoreManager &StoreManager::GetInstance()
 std::shared_ptr<SingleKvStore> StoreManager::GetKVStore(
     const AppId &appId, const StoreId &storeId, const Options &options, const std::string &path, Status &status)
 {
-    if (StoreFactory::GetInstance().IsExits(appId, storeId)) {
-        return StoreFactory::GetInstance().Create(appId, storeId, options, path, status);
+    if (StoreFactory::GetInstance().IsOpen(appId, storeId)) {
+        return StoreFactory::GetInstance().GetOrOpenStore(appId, storeId, options, path, status);
     }
 
     auto service = KVDBServiceClient::GetInstance();
     if (service != nullptr) {
         service->BeforeCreate(appId, storeId, options);
     }
-    auto kvStore = StoreFactory::GetInstance().Create(appId, storeId, options, path, status);
+    auto kvStore = StoreFactory::GetInstance().GetOrOpenStore(appId, storeId, options, path, status);
     auto password = SecurityManager::GetInstance().GetDBPassword(appId, storeId, path);
     std::vector<uint8_t> pwd(password.GetData(), password.GetData() + password.GetSize());
     if (service != nullptr) {

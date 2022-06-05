@@ -15,6 +15,7 @@
 #define LOG_TAG "StoreFactory"
 #include "store_factory.h"
 
+#include "device_store_impl.h"
 #include "log_print.h"
 #include "security_manager.h"
 #include "single_store_impl.h"
@@ -33,7 +34,7 @@ StoreFactory::StoreFactory()
     (void)DBManager::SetProcessSystemAPIAdapter(std::make_shared<SystemApi>());
 }
 
-std::shared_ptr<SingleKvStore> StoreFactory::Create(
+std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(
     const AppId &appId, const StoreId &storeId, const Options &options, const std::string &path, Status &status)
 {
     DBStatus dbStatus = DBStatus::OK;
@@ -46,7 +47,7 @@ std::shared_ptr<SingleKvStore> StoreFactory::Create(
         auto dbManager = GetDBManager(path, appId);
         auto password = SecurityManager::GetInstance().GetDBPassword(appId, storeId, path);
         dbManager->GetKvStore(storeId, GetDBOption(options, password),
-            [&dbManager, &kvStore, &stores, &appId, &dbStatus](auto status, auto *store) {
+            [&dbManager, &kvStore, &stores, &appId, &dbStatus, &options](auto status, auto *store) {
                 dbStatus = status;
                 if (store == nullptr) {
                     ZLOGE("Create DBStore failed, status:%{public}d", status);
@@ -54,7 +55,11 @@ std::shared_ptr<SingleKvStore> StoreFactory::Create(
                 }
                 auto release = [dbManager](auto *store) { dbManager->CloseKvStore(store); };
                 auto dbStore = std::shared_ptr<DBStore>(store, release);
-                kvStore = std::make_shared<SingleStoreImpl>(appId, dbStore);
+                if (options.kvStoreType == DEVICE_COLLABORATION) {
+                    kvStore = std::make_shared<DeviceStoreImpl>(appId, dbStore);
+                } else {
+                    kvStore = std::make_shared<SingleStoreImpl>(appId, dbStore);
+                }
                 stores[dbStore->GetStoreId()] = kvStore;
             });
         return !stores.empty();
@@ -88,7 +93,7 @@ Status StoreFactory::Close(const AppId &appId, const StoreId &storeId)
     return SUCCESS;
 }
 
-bool StoreFactory::IsExits(const AppId &appId, const StoreId &storeId)
+bool StoreFactory::IsOpen(const AppId &appId, const StoreId &storeId)
 {
     bool isExits = false;
     stores_.ComputeIfPresent(appId, [&storeId, &isExits](auto &, auto &values) {

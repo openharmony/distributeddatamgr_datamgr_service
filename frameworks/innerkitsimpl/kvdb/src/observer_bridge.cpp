@@ -24,9 +24,14 @@ ObserverBridge::ObserverBridge(const AppId &app, const StoreId &store, std::shar
 
 ObserverBridge::~ObserverBridge()
 {
-    if (remote_ != nullptr) {
-        KVDBServiceClient::GetInstance()->Unsubscribe(appId_, storeId_, remote_);
+    if (remote_ == nullptr) {
+        return;
     }
+    auto service = KVDBServiceClient::GetInstance();
+    if (service == nullptr) {
+        return;
+    }
+    service->Unsubscribe(appId_, storeId_, remote_);
 }
 
 Status ObserverBridge::RegisterRemoteObserver()
@@ -49,6 +54,7 @@ Status ObserverBridge::UnregisterRemoteObserver()
     if (remote_ == nullptr) {
         return SUCCESS;
     }
+
     auto service = KVDBServiceClient::GetInstance();
     if (service == nullptr) {
         return SERVER_UNAVAILABLE;
@@ -62,10 +68,10 @@ Status ObserverBridge::UnregisterRemoteObserver()
 void ObserverBridge::OnChange(const DBChangedData &data)
 {
     std::string deviceId;
-    ChangeNotification notification(ConvertDB(data.GetEntriesInserted(), deviceId),
+    ChangeNotification notice(ConvertDB(data.GetEntriesInserted(), deviceId),
         ConvertDB(data.GetEntriesUpdated(), deviceId), ConvertDB(data.GetEntriesDeleted(), deviceId), deviceId, false);
 
-    observer_->OnChange(notification);
+    observer_->OnChange(notice);
 }
 
 std::vector<Entry> ObserverBridge::ConvertDB(const std::list<DBEntry> &dbEntries, std::string &deviceId) const

@@ -91,6 +91,7 @@ ohos_shared_library("distributeddata_inner") {
 
   kvdb_sources = [
     "../../../frameworks/innerkitsimpl/kvdb/src/dev_manager.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/device_store_impl.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/kvdb_service_client.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/observer_bridge.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/security_manager.cpp",

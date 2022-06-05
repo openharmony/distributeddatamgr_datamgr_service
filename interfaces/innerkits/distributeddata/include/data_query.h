@@ -418,6 +418,7 @@ private:
 
     friend class QueryHelper;
     friend class SingleStoreImpl;
+    friend class DeviceStoreImpl;
     // equal to
     static const char * const EQUAL_TO;
 

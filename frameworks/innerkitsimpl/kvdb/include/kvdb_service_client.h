@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H
 #include <functional>
@@ -21,7 +20,7 @@
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
 #include "kvdb_service.h"
-
+#include "kvstore_sync_callback_client.h"
 namespace OHOS::DistributedKv {
 class API_EXPORT KVDBServiceClient : public IRemoteProxy<KVDBService> {
 public:
@@ -47,6 +46,7 @@ public:
         const std::string &query) override;
     Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
+    sptr<KvStoreSyncCallbackClient> GetSyncAgent(const AppId &appId);
 
 private:
     explicit KVDBServiceClient(const sptr<IRemoteObject> &object);
@@ -61,6 +61,7 @@ private:
     static std::shared_ptr<KVDBServiceClient> instance_;
     static std::atomic_bool isWatched_;
     sptr<IRemoteObject> remote_;
+    ConcurrentMap<std::string, sptr<KvStoreSyncCallbackClient>> syncAgents_;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H

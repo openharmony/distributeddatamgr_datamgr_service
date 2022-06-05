@@ -574,3 +574,47 @@ HWTEST_F(SingleStoreImplTest, GetSecurityLevel, TestSize.Level0)
     ASSERT_EQ(status, SUCCESS);
     ASSERT_EQ(securityLevel, S1);
 }
+
+/**
+* @tc.name: RegisterSyncCallback
+* @tc.desc: register the data sync callback
+* @tc.type: FUNC
+* @tc.require: I4XVQQ
+* @tc.author: Sven Wang
+*/
+HWTEST_F(SingleStoreImplTest, RegisterSyncCallback, TestSize.Level0)
+{
+    ASSERT_NE(kvStore_, nullptr);
+    class TestSyncCallback : public  KvStoreSyncCallback {
+    public:
+        void SyncCompleted(const map<std::string, Status> &results) override
+        {
+        }
+    };
+    auto callback = std::make_shared<TestSyncCallback>();
+    auto status = kvStore_->RegisterSyncCallback(callback);
+    ASSERT_EQ(status, SUCCESS);
+}
+
+/**
+* @tc.name: UnRegisterSyncCallback
+* @tc.desc: unregister the data sync callback
+* @tc.type: FUNC
+* @tc.require: I4XVQQ
+* @tc.author: Sven Wang
+*/
+HWTEST_F(SingleStoreImplTest, UnRegisterSyncCallback, TestSize.Level0)
+{
+    ASSERT_NE(kvStore_, nullptr);
+    class TestSyncCallback : public  KvStoreSyncCallback {
+    public:
+        void SyncCompleted(const map<std::string, Status> &results) override
+        {
+        }
+    };
+    auto callback = std::make_shared<TestSyncCallback>();
+    auto status = kvStore_->RegisterSyncCallback(callback);
+    ASSERT_EQ(status, SUCCESS);
+    status = kvStore_->UnRegisterSyncCallback();
+    ASSERT_EQ(status, SUCCESS);
+}

@@ -54,6 +54,7 @@ namespace OHOS::DistributedKv {
 std::mutex KVDBServiceClient::mutex_;
 std::shared_ptr<KVDBServiceClient> KVDBServiceClient::instance_;
 std::atomic_bool KVDBServiceClient::isWatched_(false);
+
 std::shared_ptr<KVDBServiceClient> KVDBServiceClient::GetInstance()
 {
     if (!isWatched_.exchange(true)) {
@@ -277,5 +278,21 @@ Status KVDBServiceClient::Unsubscribe(const AppId &appId, const StoreId &storeId
             appId.appId.c_str(), storeId.storeId.c_str(), StoreUtil::Anonymous(observer.GetRefPtr()));
     }
     return static_cast<Status>(status);
+}
+
+sptr<KvStoreSyncCallbackClient> KVDBServiceClient::GetSyncAgent(const AppId &appId)
+{
+    auto it = syncAgents_.Find(appId);
+    if (it.first && it.second == nullptr) {
+        syncAgents_.Erase(appId);
+    }
+
+    syncAgents_.ComputeIfAbsent(appId.appId, [this](const std::string &key) {
+        sptr<KvStoreSyncCallbackClient> agent = new (std::nothrow) KvStoreSyncCallbackClient();
+        RegisterSyncCallback({ key }, { "" }, agent);
+        return agent;
+    });
+
+    return syncAgents_[appId];
 }
 } // namespace OHOS::DistributedKv

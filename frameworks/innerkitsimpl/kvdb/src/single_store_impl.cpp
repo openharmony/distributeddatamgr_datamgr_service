@@ -44,7 +44,7 @@ Status SingleStoreImpl::Put(const Key &key, const Value &value)
         return ALREADY_CLOSED;
     }
 
-    DistributedDB::Key dbKey = ConvertDBKey(key);
+    DBKey dbKey = ToLocalDBKey(key);
     if (dbKey.empty()) {
         ZLOGE("invalid key:%{public}s, size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
         return INVALID_ARGUMENT;
@@ -69,10 +69,10 @@ Status SingleStoreImpl::PutBatch(const std::vector<Entry> &entries)
         return ALREADY_CLOSED;
     }
 
-    std::vector<DistributedDB::Entry> dbEntries;
-    DistributedDB::Entry dbEntry;
+    std::vector<DBEntry> dbEntries;
     for (const auto &entry : entries) {
-        dbEntry.key = ConvertDBKey(entry.key);
+        DBEntry dbEntry;
+        dbEntry.key = ToLocalDBKey(entry.key);
         if (dbEntry.key.empty()) {
             ZLOGE("invalid key:%{public}s, size:%{public}zu", StoreUtil::Anonymous(entry.key.ToString()).c_str(),
                 entry.key.Size());
@@ -99,11 +99,12 @@ Status SingleStoreImpl::Delete(const Key &key)
         return ALREADY_CLOSED;
     }
 
-    DistributedDB::Key dbKey = ConvertDBKey(key);
+    DBKey dbKey = ToLocalDBKey(key);
     if (dbKey.empty()) {
         ZLOGE("invalid key:%{public}s, size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
         return INVALID_ARGUMENT;
     }
+
     auto dbStatus = dbStore_->Delete(dbKey);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
@@ -122,9 +123,9 @@ Status SingleStoreImpl::DeleteBatch(const std::vector<Key> &keys)
         return ALREADY_CLOSED;
     }
 
-    std::vector<DistributedDB::Key> dbKeys;
+    std::vector<DBKey> dbKeys;
     for (const auto &key : keys) {
-        DistributedDB::Key dbKey = ConvertDBKey(key);
+        DBKey dbKey = ToLocalDBKey(key);
         if (dbKey.empty()) {
             ZLOGE("invalid key:%{public}s, size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
             return INVALID_ARGUMENT;
@@ -217,7 +218,8 @@ Status SingleStoreImpl::SubscribeKvStore(SubscribeType type, std::shared_ptr<Obs
                 auto release = BridgeReleaser();
                 StoreId storeId{ storeId_ };
                 AppId appId{ appId_ };
-                pair.second = std::shared_ptr<ObserverBridge>(new ObserverBridge(appId, storeId, observer), release);
+                pair.second = std::shared_ptr<ObserverBridge>(
+                    new ObserverBridge(appId, storeId, observer, GetConvert()), release);
             }
             bridge = pair.second;
             realType = (realType & (~pair.first));
@@ -301,13 +303,13 @@ Status SingleStoreImpl::Get(const Key &key, Value &value)
         return ALREADY_CLOSED;
     }
 
-    DistributedDB::Key dbKey = ConvertDBKey(key);
+    DBKey dbKey = ToWholeDBKey(key);
     if (dbKey.empty()) {
         ZLOGE("invalid key:%{public}s, size:%{public}zu", key.ToString().c_str(), key.Size());
         return INVALID_ARGUMENT;
     }
 
-    DistributedDB::Value dbValue;
+    DBValue dbValue;
     auto dbStatus = dbStore_->Get(dbKey, dbValue);
     value = std::move(dbValue);
     auto status = StoreUtil::ConvertStatus(dbStatus);
@@ -320,13 +322,13 @@ Status SingleStoreImpl::Get(const Key &key, Value &value)
 Status SingleStoreImpl::GetEntries(const Key &prefix, std::vector<Entry> &entries) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    DistributedDB::Key dbPrefix = ConvertDBKey(prefix);
+    DBKey dbPrefix = GetPrefix(prefix);
     if (dbPrefix.empty() && !prefix.Empty()) {
         ZLOGE("invalid prefix:%{public}s, size:%{public}zu", prefix.ToString().c_str(), prefix.Size());
         return INVALID_ARGUMENT;
     }
 
-    DistributedDB::Query dbQuery = DistributedDB::Query::Select();
+    DBQuery dbQuery = DBQuery::Select();
     dbQuery.PrefixKey(dbPrefix);
     auto status = GetEntries(dbQuery, entries);
     if (status != SUCCESS) {
@@ -338,7 +340,7 @@ Status SingleStoreImpl::GetEntries(const Key &prefix, std::vector<Entry> &entrie
 Status SingleStoreImpl::GetEntries(const DataQuery &query, std::vector<Entry> &entries) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    DistributedDB::Query dbQuery = *(query.query_);
+    DBQuery dbQuery = *(query.query_);
     dbQuery.PrefixKey(GetPrefix(query));
     auto status = GetEntries(dbQuery, entries);
     if (status != SUCCESS) {
@@ -350,12 +352,13 @@ Status SingleStoreImpl::GetEntries(const DataQuery &query, std::vector<Entry> &e
 Status SingleStoreImpl::GetResultSet(const Key &prefix, std::shared_ptr<ResultSet> &resultSet) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    DistributedDB::Key dbPrefix = ConvertDBKey(prefix);
+    DBKey dbPrefix = GetPrefix(prefix);
     if (dbPrefix.empty() && !prefix.Empty()) {
         ZLOGE("invalid prefix:%{public}s, size:%{public}zu", prefix.ToString().c_str(), prefix.Size());
         return INVALID_ARGUMENT;
     }
-    DistributedDB::Query dbQuery = DistributedDB::Query::Select();
+
+    DBQuery dbQuery = DistributedDB::Query::Select();
     dbQuery.PrefixKey(dbPrefix);
     auto status = GetResultSet(dbQuery, resultSet);
     if (status != SUCCESS) {
@@ -367,7 +370,7 @@ Status SingleStoreImpl::GetResultSet(const Key &prefix, std::shared_ptr<ResultSe
 Status SingleStoreImpl::GetResultSet(const DataQuery &query, std::shared_ptr<ResultSet> &resultSet) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    DistributedDB::Query dbQuery = *(query.query_);
+    DBQuery dbQuery = *(query.query_);
     dbQuery.PrefixKey(GetPrefix(query));
     auto status = GetResultSet(dbQuery, resultSet);
     if (status != SUCCESS) {
@@ -401,7 +404,7 @@ Status SingleStoreImpl::GetCount(const DataQuery &query, int &result) const
         return ALREADY_CLOSED;
     }
 
-    DistributedDB::Query dbQuery = *(query.query_);
+    DBQuery dbQuery = *(query.query_);
     dbQuery.PrefixKey(GetPrefix(query));
     auto dbStatus = dbStore_->GetCount(dbQuery, result);
     auto status = StoreUtil::ConvertStatus(dbStatus);
@@ -570,20 +573,17 @@ Status SingleStoreImpl::Close()
     return SUCCESS;
 }
 
-std::vector<uint8_t> SingleStoreImpl::ConvertDBKey(const Key &key) const
+std::vector<uint8_t> SingleStoreImpl::ToLocalDBKey(const Key &key) const
 {
-    auto begin = std::find_if(key.Data().begin(), key.Data().end(), [](int ch) { return !std::isspace(ch); });
-    auto rBegin = std::find_if(key.Data().rbegin(), key.Data().rend(), [](int ch) { return !std::isspace(ch); });
-    auto end = static_cast<decltype(begin)>(rBegin.base());
-    std::vector<uint8_t> dbKey;
-    dbKey.assign(begin, end);
-    if (dbKey.size() >= MAX_KEY_LENGTH) {
-        dbKey.clear();
-    }
-    return dbKey;
+    return GetPrefix(key);
 }
 
-Key SingleStoreImpl::ConvertKey(DistributedDB::Key &&key) const
+std::vector<uint8_t> SingleStoreImpl::ToWholeDBKey(const Key &key) const
+{
+    return GetPrefix(key);
+}
+
+Key SingleStoreImpl::ToKey(DBKey &&key) const
 {
     return std::move(key);
 }
@@ -625,7 +625,7 @@ Status SingleStoreImpl::GetResultSet(const DistributedDB::Query &query, std::sha
     if (dbResultSet == nullptr) {
         return StoreUtil::ConvertStatus(status);
     }
-    resultSet = std::make_shared<StoreResultSet>(dbResultSet, dbStore_);
+    resultSet = std::make_shared<StoreResultSet>(dbResultSet, dbStore_, GetConvert());
     return SUCCESS;
 }
 
@@ -637,41 +637,43 @@ Status SingleStoreImpl::GetEntries(const DistributedDB::Query &query, std::vecto
         return ALREADY_CLOSED;
     }
 
-    std::vector<DistributedDB::Entry> dbEntries;
+    std::vector<DBEntry> dbEntries;
     auto dbStatus = dbStore_->GetEntries(query, dbEntries);
     entries.resize(dbEntries.size());
     auto it = entries.begin();
     for (auto &dbEntry : dbEntries) {
-        auto &entry = *it++;
-        entry.key = ConvertKey(std::move(dbEntry.key));
+        auto &entry = *it;
+        entry.key = ToKey(std::move(dbEntry.key));
         entry.value = std::move(dbEntry.value);
+        ++it;
     }
     return StoreUtil::ConvertStatus(dbStatus);
 }
 
-std::vector<uint8_t> SingleStoreImpl::GetPrefix(const DataQuery &query) const
+std::vector<uint8_t> SingleStoreImpl::GetPrefix(const Key &prefix) const
 {
-    std::string prefix = DevManager::GetInstance().ToUUID(query.deviceId_) + query.prefix_;
-    return { prefix.begin(), prefix.end() };
+    auto begin = std::find_if(prefix.Data().begin(), prefix.Data().end(), [](int ch) { return !std::isspace(ch); });
+    auto rBegin = std::find_if(prefix.Data().rbegin(), prefix.Data().rend(), [](int ch) { return !std::isspace(ch); });
+    auto end = static_cast<decltype(begin)>(rBegin.base());
+    std::vector<uint8_t> dbKey;
+    dbKey.assign(begin, end);
+    if (dbKey.size() >= MAX_KEY_LENGTH) {
+        dbKey.clear();
+    }
+    return dbKey;
 }
 
-sptr<KvStoreSyncCallbackClient> SingleStoreImpl::GetIPCSyncClient(std::shared_ptr<KVDBService> service)
+std::vector<uint8_t> SingleStoreImpl::GetPrefix(const DataQuery &query) const
 {
-    sptr<KvStoreSyncCallbackClient> callback;
-    {
-        std::lock_guard<decltype(mutex_)> lock(mutex_);
-        if (syncCallback_ != nullptr) {
-            return syncCallback_;
-        }
-        syncCallback_ = new (std::nothrow) KvStoreSyncCallbackClient();
-        callback = syncCallback_;
-    }
+    return GetPrefix(Key(query.prefix_));
+}
 
-    if (service != nullptr) {
-        service->RegisterSyncCallback({ appId_ }, { storeId_ }, callback);
-    }
-
-    return callback;
+SingleStoreImpl::Convert SingleStoreImpl::GetConvert() const
+{
+    return [](const DBKey &key, std::string &deviceId) {
+        deviceId = "";
+        return Key(key);
+    };
 }
 
 Status SingleStoreImpl::DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer)
@@ -681,12 +683,12 @@ Status SingleStoreImpl::DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCal
         return SERVER_UNAVAILABLE;
     }
 
-    auto syncClient = GetIPCSyncClient(service);
-    if (syncClient == nullptr) {
-        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
+    auto syncAgent = service->GetSyncAgent({ appId_ });
+    if (syncAgent == nullptr) {
+        ZLOGE("failed! invalid agent app:%{public}s, store:%{public}s!", appId_.c_str(), storeId_.c_str());
         return ILLEGAL_STATE;
     }
-    syncClient->AddSyncCallback(observer, syncInfo.seqId);
+    syncAgent->AddSyncCallback(observer, syncInfo.seqId);
     return service->Sync({ appId_ }, { storeId_ }, syncInfo);
 }
 } // namespace OHOS::DistributedKv

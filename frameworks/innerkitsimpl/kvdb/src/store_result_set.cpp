@@ -15,12 +15,11 @@
 #define LOG_TAG "StoreResultSet"
 #include "store_result_set.h"
 
-#include "dds_trace.h"
 #include "log_print.h"
 #include "store_util.h"
 namespace OHOS::DistributedKv {
-StoreResultSet::StoreResultSet(DBResultSet *impl, std::shared_ptr<DBStore> dbStore)
-    : impl_(impl), dbStore_(std::move(dbStore))
+StoreResultSet::StoreResultSet(DBResultSet *impl, std::shared_ptr<DBStore> dbStore, Convert convert)
+    : impl_(impl), dbStore_(std::move(dbStore)), convert_(std::move(convert))
 {
 }
 
@@ -170,14 +169,15 @@ Status StoreResultSet::GetEntry(Entry &entry) const
         return ALREADY_CLOSED;
     }
 
-    DistributedDB::Entry dbEntry;
+    DBEntry dbEntry;
     auto dbStatus = impl_->GetEntry(dbEntry);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
         ZLOGE("failed! status:%{public}d, position:%{public}d", status, impl_->GetPosition());
         return status;
     }
-    entry.key = ConvertKey(std::move(dbEntry.key));
+    std::string deviceId;
+    entry.key = convert_ ? convert_(std::move(dbEntry.key), deviceId) : Key(std::move(dbEntry.key));
     entry.value = std::move(dbEntry.value);
     return SUCCESS;
 }
@@ -195,10 +195,5 @@ Status StoreResultSet::Close()
         dbStore_ = nullptr;
     }
     return status;
-}
-
-Key StoreResultSet::ConvertKey(DistributedDB::Key &&key) const
-{
-    return Key(std::move(key));
 }
 } // namespace OHOS::DistributedKv

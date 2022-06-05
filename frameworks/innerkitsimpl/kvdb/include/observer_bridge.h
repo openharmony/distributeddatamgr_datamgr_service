@@ -23,12 +23,13 @@ namespace OHOS::DistributedKv {
 class IKvStoreObserver;
 class API_EXPORT ObserverBridge : public DistributedDB::KvStoreObserver {
 public:
-    using Convert = std::function<Key(const DistributedDB::Key &key, std::string &deviceId)>;
     using Observer = DistributedKv::KvStoreObserver;
     using DBEntry = DistributedDB::Entry;
+    using DBKey = DistributedDB::Key;
     using DBChangedData = DistributedDB::KvStoreChangedData;
+    using Convert = std::function<Key(const DBKey &key, std::string &deviceId)>;
 
-    ObserverBridge(const AppId &app, const StoreId &store, std::shared_ptr<Observer> observer, Convert cvt = nullptr);
+    ObserverBridge(const AppId &app, const StoreId &store, std::shared_ptr<Observer> observer, Convert convert);
     ~ObserverBridge();
     Status RegisterRemoteObserver();
     Status UnregisterRemoteObserver();

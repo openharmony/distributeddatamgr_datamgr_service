@@ -31,7 +31,12 @@ public:
     using SyncCallback = KvStoreSyncCallback;
     using ResultSet = KvStoreResultSet;
     using DBStore = DistributedDB::KvStoreNbDelegate;
+    using DBEntry = DistributedDB::Entry;
+    using DBKey = DistributedDB::Key;
+    using DBValue = DistributedDB::Value;
+    using DBQuery = DistributedDB::Query;
     using SyncInfo = KVDBService::SyncInfo;
+    using Convert = std::function<Key(const DBKey &key, std::string &deviceId)>;
     SingleStoreImpl(const AppId &appId, std::shared_ptr<DBStore> dbStore);
     ~SingleStoreImpl() = default;
     StoreId GetStoreId() const override;
@@ -71,16 +76,18 @@ public:
 
 protected:
     static constexpr size_t MAX_KEY_LENGTH = 1024;
-    virtual std::vector<uint8_t> ConvertDBKey(const Key &key) const;
-    virtual Key ConvertKey(DistributedDB::Key &&key) const;
-    std::function<void(ObserverBridge *)> BridgeReleaser();
+    virtual std::vector<uint8_t> ToLocalDBKey(const Key &key) const;
+    virtual std::vector<uint8_t> ToWholeDBKey(const Key &key) const;
+    virtual Key ToKey(DBKey &&key) const;
+    virtual std::vector<uint8_t> GetPrefix(const Key &prefix) const;
+    virtual std::vector<uint8_t> GetPrefix(const DataQuery &query) const;
+    virtual Convert GetConvert() const;
 
 private:
     Status GetResultSet(const DistributedDB::Query &query, std::shared_ptr<ResultSet> &resultSet) const;
     Status GetEntries(const DistributedDB::Query &query, std::vector<Entry> &entries) const;
-    std::vector<uint8_t> GetPrefix(const DataQuery &query) const;
-    sptr<KvStoreSyncCallbackClient> GetIPCSyncClient(std::shared_ptr<KVDBService> service);
     Status DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer);
+    std::function<void(ObserverBridge *)> BridgeReleaser();
 
     std::string appId_;
     std::string storeId_;
