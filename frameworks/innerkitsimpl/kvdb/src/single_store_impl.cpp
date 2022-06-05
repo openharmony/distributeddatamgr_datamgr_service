@@ -655,7 +655,7 @@ std::vector<uint8_t> SingleStoreImpl::GetPrefix(const DataQuery &query) const
     return { prefix.begin(), prefix.end() };
 }
 
-sptr<KvStoreSyncCallbackClient> SingleStoreImpl::GetIPCSyncClient()
+sptr<KvStoreSyncCallbackClient> SingleStoreImpl::GetIPCSyncClient(std::shared_ptr<KVDBService> service)
 {
     sptr<KvStoreSyncCallbackClient> callback;
     {
@@ -667,8 +667,8 @@ sptr<KvStoreSyncCallbackClient> SingleStoreImpl::GetIPCSyncClient()
         callback = syncCallback_;
     }
 
-    if (callback != nullptr) {
-        KVDBServiceClient::GetInstance()->RegisterSyncCallback({ appId_ }, { storeId_ }, callback);
+    if (service != nullptr) {
+        service->RegisterSyncCallback({ appId_ }, { storeId_ }, callback);
     }
 
     return callback;
@@ -676,12 +676,17 @@ sptr<KvStoreSyncCallbackClient> SingleStoreImpl::GetIPCSyncClient()
 
 Status SingleStoreImpl::DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer)
 {
-    auto syncClient = GetIPCSyncClient();
+    auto service = KVDBServiceClient::GetInstance();
+    if (service == nullptr) {
+        return SERVER_UNAVAILABLE;
+    }
+
+    auto syncClient = GetIPCSyncClient(service);
     if (syncClient == nullptr) {
         ZLOGE("db:%{public}s already closed!", storeId_.c_str());
         return ILLEGAL_STATE;
     }
     syncClient->AddSyncCallback(observer, syncInfo.seqId);
-    return KVDBServiceClient::GetInstance()->Sync({ appId_ }, { storeId_ }, syncInfo);
+    return service->Sync({ appId_ }, { storeId_ }, syncInfo);
 }
 } // namespace OHOS::DistributedKv

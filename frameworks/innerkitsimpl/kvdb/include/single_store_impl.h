@@ -79,7 +79,7 @@ private:
     Status GetResultSet(const DistributedDB::Query &query, std::shared_ptr<ResultSet> &resultSet) const;
     Status GetEntries(const DistributedDB::Query &query, std::vector<Entry> &entries) const;
     std::vector<uint8_t> GetPrefix(const DataQuery &query) const;
-    sptr<KvStoreSyncCallbackClient> GetIPCSyncClient();
+    sptr<KvStoreSyncCallbackClient> GetIPCSyncClient(std::shared_ptr<KVDBService> service);
     Status DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer);
 
     std::string appId_;
