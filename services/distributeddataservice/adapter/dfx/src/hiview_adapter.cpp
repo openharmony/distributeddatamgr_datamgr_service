@@ -22,7 +22,6 @@
 
 namespace OHOS {
 namespace DistributedKv {
-
 using OHOS::HiviewDFX::HiSysEvent;
 std::shared_ptr<KvStoreThreadPool> HiViewAdapter::pool_ = KvStoreThreadPool::GetPool(POOL_SIZE, true);
 
