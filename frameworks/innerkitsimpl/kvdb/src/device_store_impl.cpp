@@ -14,7 +14,10 @@
  */
 #define LOG_TAG "DeviceStoreImpl"
 #include "device_store_impl.h"
+
+#include <endian.h>
 #include <regex>
+
 #include "dev_manager.h"
 #include "log_print.h"
 namespace OHOS::DistributedKv {
