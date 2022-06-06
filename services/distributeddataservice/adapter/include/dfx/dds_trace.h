@@ -23,7 +23,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
-enum SwitchOption {
+enum TraceSwitch {
     DEBUG_CLOSE = 0x00,
     BYTRACE_ON = 0x01,
     API_PERFORMANCE_TRACE_ON = 0x02,
@@ -40,13 +40,12 @@ private:
     void Middle(const std::string &beforeValue, const std::string &afterValue);
     void Finish(const std::string &value);
     bool SetBytraceEnable();
-    void SetOptionSwitch(unsigned int option);
 
     static std::atomic_uint indexCount;
     static std::atomic_bool isSetBytraceEnabled;
     std::string traceValue{ };
     HiviewDFX::HiTraceId traceId;
-    uint32_t switchOption{ 0 };
+    uint32_t traceSwitch{ 0 };;
     uint64_t lastTime{ 0 };
     uint32_t traceCount{ 0 };
 };
