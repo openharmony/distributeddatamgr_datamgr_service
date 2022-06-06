@@ -64,11 +64,6 @@ int SQLiteSingleRelationalStorageEngine::CreateNewExecutor(bool isWrite, Storage
         return errCode;
     }
     do {
-        errCode = SQLiteUtils::SetPersistWalMode(db);
-        if (errCode != E_OK) {
-            break;
-        }
-
         errCode = Upgrade(db); // create meta_data table.
         if (errCode != E_OK) {
             break;

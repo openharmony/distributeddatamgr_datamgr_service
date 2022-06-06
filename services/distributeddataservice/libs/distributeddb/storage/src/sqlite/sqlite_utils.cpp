@@ -180,7 +180,16 @@ int SQLiteUtils::OpenDatabase(const OpenDbProperties &properties, sqlite3 *&db, 
     errCode = ExecuteRawSQL(dbTemp, SYNC_MODE_FULL_SQL);
     if (errCode != E_OK) {
         LOGE("SQLite sync mode failed: %d", errCode);
+        goto END;
     }
+
+    if (!properties.isMemDb) {
+        errCode = SQLiteUtils::SetPersistWalMode(dbTemp);
+        if (errCode != E_OK) {
+            LOGE("SQLite set persist wall mode failed: %d", errCode);
+        }
+    }
+
 END:
     if (errCode != E_OK && dbTemp != nullptr) {
         (void)sqlite3_close_v2(dbTemp);
