@@ -35,14 +35,14 @@ DdsTrace::DdsTrace(const std::string& value, unsigned int option)
     : traceSwitch_(option)
 {
     traceValue_ = value;
-    traceCount_ = ++indexCount;
+    traceCount_ = ++indexCount_;
     SetBytraceEnable();
     Start(value);
 }
 
 DdsTrace::~DdsTrace()
 {
-    Finish(traceValue);
+    Finish(traceValue_);
 }
 
 void DdsTrace::SetMiddleTrace(const std::string& beforeValue, const std::string& afterValue)
@@ -60,12 +60,12 @@ void DdsTrace::Start(const std::string& value)
         StartTrace(BYTRACE_LABEL, value);
     }
     if ((traceSwitch_ & TRACE_CHAIN_ON) == TRACE_CHAIN_ON) {
-        traceId = HiTrace::Begin(value, HITRACE_FLAG_DEFAULT);
+        traceId_ = HiTrace::Begin(value, HITRACE_FLAG_DEFAULT);
     }
     if ((traceSwitch_ & API_PERFORMANCE_TRACE_ON) == API_PERFORMANCE_TRACE_ON) {
         lastTime_ = TimeUtils::CurrentTimeMicros();
     }
-    ZLOGD("DdsTrace-Start: Trace[%{public}u] %{public}s In", traceCount_, value_.c_str());
+    ZLOGD("DdsTrace-Start: Trace[%{public}u] %{public}s In", traceCount_, value.c_str());
 }
 
 void DdsTrace::Middle(const std::string& beforeValue, const std::string& afterValue)
@@ -76,7 +76,7 @@ void DdsTrace::Middle(const std::string& beforeValue, const std::string& afterVa
     if ((traceSwitch_ & BYTRACE_ON) == BYTRACE_ON) {
         MiddleTrace(BYTRACE_LABEL, beforeValue, afterValue);
     }
-    ZLOGD("DdsTrace-Middle: Trace[%{public}u] %{public}s --- %{public}s", traceCount,
+    ZLOGD("DdsTrace-Middle: Trace[%{public}u] %{public}s --- %{public}s", traceCount_,
         beforeValue.c_str(), afterValue.c_str());
 }
 
@@ -96,7 +96,7 @@ void DdsTrace::Finish(const std::string& value)
         delta = TimeUtils::CurrentTimeMicros() - lastTime_;
         Reporter::GetInstance()->ApiPerformanceStatistic()->Report({value, delta, delta, delta});
     }
-    ZLOGD("DdsTrace-Finish: Trace[%u] %{public}s Out: %{public}" PRIu64"us.", traceCount, value.c_str(), delta);
+    ZLOGD("DdsTrace-Finish: Trace[%u] %{public}s Out: %{public}" PRIu64"us.", traceCount_, value.c_str(), delta);
 }
 
 bool DdsTrace::SetBytraceEnable()
