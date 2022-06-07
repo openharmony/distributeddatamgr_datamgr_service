@@ -74,6 +74,7 @@ public:
     Status GetSecurityLevel(SecurityLevel &securityLevel) override;
     bool Import(const std::string &bundleName) const;
     void OnDump(int fd) const;
+    void DumpStoreName(int fd) const;
     void SetCompatibleIdentify(const std::string &changedDevice);
     void SetCompatibleIdentify();
     std::string GetStorePath() const;

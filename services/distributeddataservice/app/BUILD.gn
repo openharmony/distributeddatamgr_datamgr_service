@@ -83,6 +83,7 @@ ohos_shared_library("distributeddataservice") {
     "src/device_kvstore_impl.cpp",
     "src/device_kvstore_observer_impl.cpp",
     "src/device_kvstore_resultset_impl.cpp",
+    "src/dump_helper.cpp",
     "src/kvstore_account_observer.cpp",
     "src/kvstore_app_accessor.cpp",
     "src/kvstore_app_manager.cpp",
