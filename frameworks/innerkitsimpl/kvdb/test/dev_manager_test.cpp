@@ -94,35 +94,3 @@ HWTEST_F(DevManagerTest, GetRemoteDevices001, TestSize.Level1)
     vector<DevManager::DeviceInfo> devInfo = devManager.GetRemoteDevices();
     EXPECT_EQ(devInfo.size(), 0);
 }
-
-/**
-* @tc.name: GetDeviceInfo001
-* @tc.desc: Get device info from nodeId
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: taoyuxin
-*/
-HWTEST_F(DevManagerTest, GetDeviceInfo001, TestSize.Level1)
-{
-    ZLOGI("GetDeviceInfo001 begin.");
-    DevManager &devManager = manager.GetInstance();
-    std::string id = "abc";
-    DevManager::DeviceInfo devInfo = devManager.GetDeviceInfo(id);
-    EXPECT_EQ(devInfo.networkId, "");
-}
-
-/**
-* @tc.name: ToNodeId001
-* @tc.desc: Get networkId from uuid or udid
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: taoyuxin
-*/
-HWTEST_F(DevManagerTest, ToNodeId001, TestSize.Level1)
-{
-    ZLOGI("ToNodeId001 begin.");
-    DevManager &devManager = manager.GetInstance();
-    std::string id = "abc";
-    std::string networkId = devManager.ToNodeID(id);
-    EXPECT_EQ(networkId, "");
-}

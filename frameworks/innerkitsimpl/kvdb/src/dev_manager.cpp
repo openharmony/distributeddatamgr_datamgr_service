@@ -28,12 +28,15 @@ DevManager &DevManager::GetInstance()
 
 std::string DevManager::ToUUID(const std::string &networkId) const
 {
-    DevManager::DeviceInfo cacheInfo = GetDeviceCacheInfo(networkId);
-    if (cacheInfo.uuid.empty()) {
-        ZLOGW("unknown id.");
-        return "";
+    DeviceInfo deviceInfo;
+    if (deviceInfos_.Get(networkId, deviceInfo)) {
+        return deviceInfo.uuid;
     }
-    return cacheInfo.uuid;
+    std::string uuid = GetUuidByNetworkId(networkId);
+    std::string udid = GetUdidByNetworkId(networkId);
+    deviceInfo = { uuid, udid, networkId };
+    deviceInfos_.Set(networkId, deviceInfo);
+    return uuid;
 }
 
 DevManager::DeviceInfo DevManager::GetLocalDevice()
@@ -48,9 +51,10 @@ DevManager::DeviceInfo DevManager::GetLocalDevice()
         ZLOGE("GetLocalNodeDeviceInfo error");
         return {};
     }
-    std::string uuid = GetUuidByNodeId(std::string(info.networkId));
-    std::string udid = GetUdidByNodeId(std::string(info.networkId));
-    ZLOGD("[LocalDevice] id:%{private}s, name:%{private}s, type:%{private}d",
+    std::string networkId = std::string(info.networkId);
+    std::string uuid = GetUuidByNetworkId(networkId);
+    std::string udid = GetUdidByNetworkId(networkId);
+    ZLOGD("[LocalDevice] id:%{public}s, name:%{public}s, type:%{public}d",
           StoreUtil::Anonymous(uuid).c_str(), info.deviceName, info.deviceTypeId);
     localInfo_ = { uuid, udid, info.networkId };
     return localInfo_;
@@ -58,116 +62,51 @@ DevManager::DeviceInfo DevManager::GetLocalDevice()
 
 std::vector<DevManager::DeviceInfo> DevManager::GetRemoteDevices() const
 {
-    std::vector<DeviceInfo> dis;
+    std::vector<DeviceInfo> devices;
     NodeBasicInfo *info = nullptr;
     int32_t infoNum = 0;
-    dis.clear();
 
     int32_t ret = GetAllNodeDeviceInfo("ohos.distributeddata", &info, &infoNum);
     if (ret != SOFTBUS_OK) {
         ZLOGE("GetAllNodeDeviceInfo error");
-        return dis;
+        return devices;
     }
     ZLOGD("GetAllNodeDeviceInfo success infoNum=%{public}d", infoNum);
 
     for (int i = 0; i < infoNum; i++) {
-        std::string uuid = GetUuidByNodeId(std::string(info[i].networkId));
-        std::string udid = GetUdidByNodeId(std::string(info[i].networkId));
+        std::string networkId = std::string(info[i].networkId);
+        std::string uuid = GetUuidByNetworkId(networkId);
+        std::string udid = GetUdidByNetworkId(networkId);
         DeviceInfo deviceInfo = { uuid, udid, info[i].networkId };
-        dis.push_back(deviceInfo);
+        devices.push_back(std::move(deviceInfo));
     }
     if (info != nullptr) {
         FreeNodeInfo(info);
     }
-    return dis;
+    return devices;
 }
 
-DevManager::DeviceInfo DevManager::GetDeviceInfo(const std::string &id) const
-{
-    DevManager::DeviceInfo cacheInfo = GetDeviceCacheInfo(id);
-    if (cacheInfo.networkId.empty()) {
-        ZLOGE("Get DeviceInfo failed.");
-    }
-    return cacheInfo;
-}
-
-std::string DevManager::ToNodeID(const std::string &nodeId) const
-{
-    DeviceInfo cacheInfo = GetDeviceCacheInfo(nodeId);
-    if (cacheInfo.networkId.empty()) {
-        ZLOGW("unknown id.");
-        return "";
-    }
-    return cacheInfo.networkId;
-}
-
-std::string DevManager::GetUuidByNodeId(const std::string &nodeId) const
+std::string DevManager::GetUuidByNetworkId(const std::string &networkId) const
 {
     char uuid[ID_BUF_LEN] = {0};
-    int32_t ret = GetNodeKeyInfo("ohos.distributeddata", nodeId.c_str(),
+    int32_t ret = GetNodeKeyInfo("ohos.distributeddata", networkId.c_str(),
                                  NodeDeviceInfoKey::NODE_KEY_UUID, reinterpret_cast<uint8_t *>(uuid), ID_BUF_LEN);
     if (ret != SOFTBUS_OK) {
-        ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", StoreUtil::Anonymous(nodeId).c_str());
+        ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", StoreUtil::Anonymous(networkId).c_str());
         return "";
     }
     return std::string(uuid);
 }
 
-std::string DevManager::GetUdidByNodeId(const std::string &nodeId) const
+std::string DevManager::GetUdidByNetworkId(const std::string &networkId) const
 {
     char udid[ID_BUF_LEN] = {0};
-    int32_t ret = GetNodeKeyInfo("ohos.distributeddata", nodeId.c_str(),
+    int32_t ret = GetNodeKeyInfo("ohos.distributeddata", networkId.c_str(),
                                  NodeDeviceInfoKey::NODE_KEY_UDID, reinterpret_cast<uint8_t *>(udid), ID_BUF_LEN);
     if (ret != SOFTBUS_OK) {
-        ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", StoreUtil::Anonymous(nodeId).c_str());
+        ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", StoreUtil::Anonymous(networkId).c_str());
         return "";
     }
     return std::string(udid);
-}
-
-DevManager::DeviceInfo DevManager::GetDeviceInfoFromCache(const std::string &id) const
-{
-    auto deviceInfo = deviceInfos_.Find(id);
-    if (deviceInfo.first) {
-        return deviceInfo.second;
-    }
-    ZLOGI("did not get deviceInfo from cache. ");
-    return {};
-}
-
-DevManager::DeviceInfo DevManager::GetDeviceCacheInfo(const std::string &id) const
-{
-    DeviceInfo cacheInfo = GetDeviceInfoFromCache(id);
-    if (!cacheInfo.networkId.empty()) {
-        return cacheInfo;
-    }
-    UpdateDeviceCacheInfo();
-    cacheInfo = GetDeviceInfoFromCache(id);
-    return cacheInfo;
-}
-
-void DevManager::UpdateDeviceCacheInfo() const
-{
-    ZLOGW("get the network id from devices.");
-    NodeBasicInfo *info = nullptr;
-    int32_t infoNum = 0;
-    int32_t ret = GetAllNodeDeviceInfo("ohos.distributeddata", &info, &infoNum);  // to find from softbus
-    if (ret != SOFTBUS_OK) {
-        ZLOGE("GetAllNodeDeviceInfo error");
-        return;
-    }
-    ZLOGD("GetAllNodeDeviceInfo success infoNum=%{public}d", infoNum);
-    for (int i = 0; i < infoNum; i++) {
-        auto networkId = info[i].networkId;
-        auto uuid = GetUuidByNodeId(networkId);
-        auto udid = GetUdidByNodeId(networkId);
-        DevManager::DeviceInfo deviceInfo = { uuid, udid, networkId };
-        deviceInfos_.InsertOrAssign(uuid, deviceInfo);
-        deviceInfos_.InsertOrAssign(udid, deviceInfo);
-        deviceInfos_.InsertOrAssign(networkId, deviceInfo);
-    }
-    if (info != nullptr) {
-        FreeNodeInfo(info);
-    }
 }
 } // namespace OHOS::DistributedKv
