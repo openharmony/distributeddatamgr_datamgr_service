@@ -28,19 +28,28 @@ DevManager &DevManager::GetInstance()
 
 std::string DevManager::ToUUID(const std::string &networkId) const
 {
-    DeviceInfo deviceInfo;
+    if (networkId.empty()) {
+        ZLOGE("networkId is empty, get uuid failed");
+        return networkId;
+    }
+    DetailInfo deviceInfo;
     if (deviceInfos_.Get(networkId, deviceInfo)) {
         return deviceInfo.uuid;
     }
+
     std::string uuid = GetUuidByNetworkId(networkId);
     std::string udid = GetUdidByNetworkId(networkId);
-    deviceInfo = { uuid, udid, networkId };
+    if (uuid.empty() && udid.empty()) {
+        return uuid.empty() ? networkId : uuid;
+    }
+    deviceInfo = { uuid, std::move(udid), networkId, "", "" };
     deviceInfos_.Set(networkId, deviceInfo);
     return uuid;
 }
 
-DevManager::DeviceInfo DevManager::GetLocalDevice()
+const DevManager::DetailInfo &DevManager::GetLocalDevice()
 {
+    std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
     if (!localInfo_.uuid.empty()) {
         return localInfo_;
     }
@@ -49,20 +58,24 @@ DevManager::DeviceInfo DevManager::GetLocalDevice()
     int32_t ret = GetLocalNodeDeviceInfo("ohos.distributeddata", &info);
     if (ret != SOFTBUS_OK) {
         ZLOGE("GetLocalNodeDeviceInfo error");
-        return {};
+        return invalidDetail_;
     }
     std::string networkId = std::string(info.networkId);
     std::string uuid = GetUuidByNetworkId(networkId);
     std::string udid = GetUdidByNetworkId(networkId);
+    if (uuid.empty() || udid.empty() || networkId.empty()) {
+        return invalidDetail_;
+    }
     ZLOGD("[LocalDevice] id:%{public}s, name:%{public}s, type:%{public}d",
           StoreUtil::Anonymous(uuid).c_str(), info.deviceName, info.deviceTypeId);
-    localInfo_ = { uuid, udid, info.networkId };
+    localInfo_ = { std::move(uuid), std::move(udid), std::move(networkId),
+                   std::string(info.deviceName), std::string(info.deviceName) };
     return localInfo_;
 }
 
-std::vector<DevManager::DeviceInfo> DevManager::GetRemoteDevices() const
+std::vector<DevManager::DetailInfo> DevManager::GetRemoteDevices() const
 {
-    std::vector<DeviceInfo> devices;
+    std::vector<DetailInfo> devices;
     NodeBasicInfo *info = nullptr;
     int32_t infoNum = 0;
 
@@ -77,7 +90,8 @@ std::vector<DevManager::DeviceInfo> DevManager::GetRemoteDevices() const
         std::string networkId = std::string(info[i].networkId);
         std::string uuid = GetUuidByNetworkId(networkId);
         std::string udid = GetUdidByNetworkId(networkId);
-        DeviceInfo deviceInfo = { uuid, udid, info[i].networkId };
+        DetailInfo deviceInfo = { std::move(uuid), std::move(udid), std::move(networkId),
+                                  std::string(info[i].deviceName), std::string(info[i].deviceName) };
         devices.push_back(std::move(deviceInfo));
     }
     if (info != nullptr) {

@@ -26,7 +26,6 @@ class DevManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
-    static DevManager manager;
 
     void SetUp();
     void TearDown();
@@ -54,8 +53,8 @@ void DevManagerTest::TearDown(void)
 HWTEST_F(DevManagerTest, GetLocalDevice001, TestSize.Level1)
 {
     ZLOGI("GetLocalDevice001 begin.");
-    DevManager &devManager = manager.GetInstance();
-    DevManager::DeviceInfo devInfo = devManager.GetLocalDevice();
+    DevManager &devManager = OHOS::DistributedKv::DevManager::GetInstance();
+    DevManager::DetailInfo devInfo = devManager.GetLocalDevice();
 
     EXPECT_NE(devInfo.networkId, "");
     EXPECT_NE(devInfo.uuid, "");
@@ -72,12 +71,12 @@ HWTEST_F(DevManagerTest, GetLocalDevice001, TestSize.Level1)
 HWTEST_F(DevManagerTest, ToUUID001, TestSize.Level1)
 {
     ZLOGI("ToUUID001 begin.");
-    DevManager &devManager = manager.GetInstance();
-    DevManager::DeviceInfo devInfo = devManager.GetLocalDevice();
+    DevManager &devManager = OHOS::DistributedKv::DevManager::GetInstance();
+    DevManager::DetailInfo devInfo = devManager.GetLocalDevice();
     EXPECT_NE(devInfo.networkId, "");
     std::string uuid = devManager.ToUUID(devInfo.networkId);
-    EXPECT_EQ(uuid, "");
-    EXPECT_NE(uuid, devInfo.uuid);
+    EXPECT_NE(uuid, "");
+    EXPECT_EQ(uuid, devInfo.uuid);
 }
 
 /**
@@ -90,7 +89,7 @@ HWTEST_F(DevManagerTest, ToUUID001, TestSize.Level1)
 HWTEST_F(DevManagerTest, GetRemoteDevices001, TestSize.Level1)
 {
     ZLOGI("GetRemoteDevices001 begin.");
-    DevManager &devManager = manager.GetInstance();
-    vector<DevManager::DeviceInfo> devInfo = devManager.GetRemoteDevices();
+    DevManager &devManager = OHOS::DistributedKv::DevManager::GetInstance();
+    vector<DevManager::DetailInfo> devInfo = devManager.GetRemoteDevices();
     EXPECT_EQ(devInfo.size(), 0);
 }
