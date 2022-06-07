@@ -34,7 +34,7 @@ constexpr const char *ILLEGAL_INFOMATION = "The arguments are illegal and you ca
 }
 
 void DumpHelper::AddDumpOperation(const DumpNoParamFunc &dumpAll, const DumpNoParamFunc &dumpUserInfo,
-        const DumpWithParamFunc &dumpAppInfo, const DumpWithParamFunc &dumpStoreInfo)
+    const DumpWithParamFunc &dumpAppInfo, const DumpWithParamFunc &dumpStoreInfo)
 {
     if (dumpAll == nullptr || dumpUserInfo == nullptr || dumpAppInfo == nullptr || dumpStoreInfo == nullptr) {
         return;

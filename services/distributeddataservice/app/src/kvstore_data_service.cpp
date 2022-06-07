@@ -834,7 +834,6 @@ void KvStoreDataService::StartService()
     if (dbStatus != DistributedDB::DBStatus::OK) {
         ZLOGE("SetPermissionCheck callback failed.");
     }
-    ZLOGI("autoLaunchRequestCallback start");
     auto autoLaunchRequestCallback =
         [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
             return ResolveAutoLaunchParamByIdentifier(identifier, param);

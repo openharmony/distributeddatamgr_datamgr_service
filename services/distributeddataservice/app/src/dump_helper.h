@@ -25,7 +25,6 @@
 
 namespace OHOS {
 namespace DistributedKv {
-
 class DumpHelper : public Singleton<DumpHelper> {
 public:
     using DumpNoParamFunc = std::function<void(int)>;
@@ -37,7 +36,6 @@ public:
     void AddErrorInfo(const std::string &error);
     void ShowError(int fd);
     bool Dump(int fd, const std::vector<std::string> &args);
-
 private:
     void ShowHelp(int fd);
     void ShowIllealInfomation(int fd);
@@ -51,4 +49,3 @@ private:
 }  // namespace DistributedKv
 }  // namespace OHOS
 #endif  // DISTRIBUTEDDATA_SERVICE_DUMPE_HELPER_H
-

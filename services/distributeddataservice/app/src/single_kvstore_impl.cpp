@@ -1476,7 +1476,7 @@ Status SingleKvStoreImpl::GetSecurityLevel(SecurityLevel &securityLevel)
 void SingleKvStoreImpl::OnDump(int fd) const
 {
     auto query = DistributedDB::Query::Select();
-    query.PrefixKey({});
+    query.PrefixKey({ });
     int count = 0;
     kvStoreNbDelegate_->GetCount(query, count);
     dprintf(fd, DEFAUL_RETRACT"------------------------------------------------------\n");
