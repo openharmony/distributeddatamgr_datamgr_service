@@ -80,6 +80,8 @@ public:
 
     virtual void SchemaChange() = 0;
 
+    virtual void Dump(int fd) = 0;
+
 protected:
     virtual ~ISyncEngine() {};
 };

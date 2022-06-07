@@ -15,10 +15,12 @@
 #define LOG_TAG "StoreFactory"
 #include "store_factory.h"
 
+#include "device_store_impl.h"
 #include "log_print.h"
 #include "security_manager.h"
 #include "single_store_impl.h"
 #include "store_util.h"
+#include "system_api.h"
 namespace OHOS::DistributedKv {
 using namespace DistributedDB;
 StoreFactory &StoreFactory::GetInstance()
@@ -27,19 +29,25 @@ StoreFactory &StoreFactory::GetInstance()
     return instance;
 }
 
-std::shared_ptr<SingleKvStore> StoreFactory::Create(
-    const std::string &path, const Options &options, const AppId &appId, const StoreId &storeId, Status &status)
+StoreFactory::StoreFactory()
+{
+    (void)DBManager::SetProcessSystemAPIAdapter(std::make_shared<SystemApi>());
+}
+
+std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(
+    const AppId &appId, const StoreId &storeId, const Options &options, const std::string &path, Status &status)
 {
     DBStatus dbStatus = DBStatus::OK;
     std::shared_ptr<SingleStoreImpl> kvStore;
-    stores_.Compute(appId, [&](auto &, auto &values) {
-        if (values.find(storeId) != values.end()) {
-            return !values.empty();
+    stores_.Compute(appId, [&](auto &, auto &stores) {
+        if (stores.find(storeId) != stores.end()) {
+            kvStore = stores[storeId];
+            return !stores.empty();
         }
         auto dbManager = GetDBManager(path, appId);
-        auto password = SecurityManager::GetInstance().GetDBPassword(path, appId, storeId);
+        auto password = SecurityManager::GetInstance().GetDBPassword(appId, storeId, path);
         dbManager->GetKvStore(storeId, GetDBOption(options, password),
-            [&dbManager, &kvStore, &values, &dbStatus](auto status, auto *store) {
+            [&dbManager, &kvStore, &stores, &appId, &dbStatus, &options](auto status, auto *store) {
                 dbStatus = status;
                 if (store == nullptr) {
                     ZLOGE("Create DBStore failed, status:%{public}d", status);
@@ -47,21 +55,25 @@ std::shared_ptr<SingleKvStore> StoreFactory::Create(
                 }
                 auto release = [dbManager](auto *store) { dbManager->CloseKvStore(store); };
                 auto dbStore = std::shared_ptr<DBStore>(store, release);
-                kvStore = std::make_shared<SingleStoreImpl>(dbStore);
-                values[dbStore->GetStoreId()] = kvStore;
+                if (options.kvStoreType == DEVICE_COLLABORATION) {
+                    kvStore = std::make_shared<DeviceStoreImpl>(appId, dbStore);
+                } else {
+                    kvStore = std::make_shared<SingleStoreImpl>(appId, dbStore);
+                }
+                stores[dbStore->GetStoreId()] = kvStore;
             });
-        return !values.empty();
+        return !stores.empty();
     });
     status = StoreUtil::ConvertStatus(dbStatus);
     return kvStore;
 }
 
-Status StoreFactory::Delete(const std::string &path, const AppId &appId, const StoreId &storeId)
+Status StoreFactory::Delete(const AppId &appId, const StoreId &storeId, const std::string &path)
 {
     Close(appId, storeId);
     auto dbManager = GetDBManager(path, appId);
     auto status = dbManager->DeleteKvStore(storeId);
-    SecurityManager::GetInstance().DelDBPassword(path, appId, storeId);
+    SecurityManager::GetInstance().DelDBPassword(appId, storeId, path);
     return StoreUtil::ConvertStatus(status);
 }
 
@@ -81,7 +93,7 @@ Status StoreFactory::Close(const AppId &appId, const StoreId &storeId)
     return SUCCESS;
 }
 
-bool StoreFactory::IsExits(const AppId &appId, const StoreId &storeId)
+bool StoreFactory::IsOpen(const AppId &appId, const StoreId &storeId)
 {
     bool isExits = false;
     stores_.ComputeIfPresent(appId, [&storeId, &isExits](auto &, auto &values) {

@@ -189,6 +189,8 @@ public:
 
     uint64_t GetMaxLogSize() const;
 
+    void Dump(int fd) override;
+
 private:
     struct TransPair {
         int index;

@@ -44,6 +44,7 @@
 #include "bootstrap.h"
 #include "user_delegate.h"
 #include "utils/crypto.h"
+#include "dump_helper.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -149,6 +150,7 @@ void KvStoreMetaManager::InitMetaParameter()
     ZLOGI("start.");
     bool ret = ForceCreateDirectory(metaDBDirectory_);
     if (!ret) {
+        DumpHelper::GetInstance().AddErrorInfo("InitMetaParameter: user create directories failed.");
         ZLOGE("create directories failed");
         return;
     }

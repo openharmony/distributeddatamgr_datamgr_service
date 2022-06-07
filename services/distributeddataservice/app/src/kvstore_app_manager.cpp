@@ -38,6 +38,8 @@
 #include "route_head_handler_impl.h"
 #include "types.h"
 
+#define DEFAUL_RETRACT "        "
+
 namespace OHOS {
 namespace DistributedKv {
 using namespace OHOS::DistributedData;
@@ -514,16 +516,53 @@ DistributedDB::SecurityOption KvStoreAppManager::ConvertSecurity(int securityLev
 
 void KvStoreAppManager::Dump(int fd) const
 {
-    const std::string prefix(8, ' ');
-    std::string dePath = GetDataStoragePath(deviceAccountId_, bundleName_, PATH_DE);
-    std::string cePath = GetDataStoragePath(deviceAccountId_, bundleName_, PATH_CE);
     size_t singleStoreNum = singleStores_[PATH_DE].size() + singleStores_[PATH_CE].size();
-    dprintf(fd, "%s----------------------------------------------------------\n", prefix.c_str());
-    dprintf(fd, "%sAppID         : %s\n", prefix.c_str(), trueAppId_.c_str());
-    dprintf(fd, "%sBundleName    : %s\n", prefix.c_str(), bundleName_.c_str());
-    dprintf(fd, "%sAppDEDirectory: %s\n", prefix.c_str(), dePath.c_str());
-    dprintf(fd, "%sAppCEDirectory: %s\n", prefix.c_str(), cePath.c_str());
-    dprintf(fd, "%sStore count   : %u\n", prefix.c_str(), static_cast<uint32_t>(singleStoreNum));
+    dprintf(fd, DEFAUL_RETRACT"----------------------------------------------------------\n");
+    dprintf(fd, DEFAUL_RETRACT"AppID         : %s\n", trueAppId_.c_str());
+    dprintf(fd, DEFAUL_RETRACT"BundleName    : %s\n", bundleName_.c_str());
+    dprintf(fd, DEFAUL_RETRACT"Store count   : %u\n", static_cast<uint32_t>(singleStoreNum));
+    for (const auto &singleStoreMap : singleStores_) {
+        for (const auto &pair : singleStoreMap) {
+            pair.second->OnDump(fd);
+        }
+    }
+}
+
+void KvStoreAppManager::DumpUserInfo(int fd) const
+{
+    dprintf(fd, DEFAUL_RETRACT"----------------------------------------------------------\n");
+    dprintf(fd, DEFAUL_RETRACT"AppID         : %s\n", trueAppId_.c_str());
+}
+
+void KvStoreAppManager::DumpAppInfo(int fd) const
+{
+    size_t singleStoreNum = singleStores_[PATH_DE].size() + singleStores_[PATH_CE].size();
+    dprintf(fd, DEFAUL_RETRACT"----------------------------------------------------------\n");
+    dprintf(fd, DEFAUL_RETRACT"AppID         : %s\n", trueAppId_.c_str());
+    dprintf(fd, DEFAUL_RETRACT"BundleName    : %s\n", bundleName_.c_str());
+    dprintf(fd, DEFAUL_RETRACT"Store count   : %u\n", static_cast<uint32_t>(singleStoreNum));
+    for (const auto &singleStoreMap : singleStores_) {
+        for (const auto &pair : singleStoreMap) {
+            pair.second->DumpStoreName(fd);
+        }
+    }
+}
+
+void KvStoreAppManager::DumpStoreInfo(int fd, const std::string &storeId) const
+{
+    if (storeId != "") {
+        for (const auto &singleStoreMap : singleStores_) {
+            auto it = singleStoreMap.find(storeId);
+            if (it != singleStoreMap.end()) {
+                dprintf(fd, DEFAUL_RETRACT"----------------------------------------------------------\n");
+                dprintf(fd, DEFAUL_RETRACT"AppID         : %s\n", trueAppId_.c_str());
+                it->second->OnDump(fd);
+            }
+            return;
+        }
+    }
+
+    dprintf(fd, DEFAUL_RETRACT"AppID         : %s\n", trueAppId_.c_str());
     for (const auto &singleStoreMap : singleStores_) {
         for (const auto &pair : singleStoreMap) {
             pair.second->OnDump(fd);

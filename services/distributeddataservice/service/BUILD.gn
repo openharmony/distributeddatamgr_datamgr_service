@@ -49,6 +49,8 @@ ohos_shared_library("distributeddatasvc") {
     "directory/src/directory_manager.cpp",
     "kvdb/auth_delegate.cpp",
     "kvdb/executor_factory.cpp",
+    "kvdb/kvdb_service_impl.cpp",
+    "kvdb/kvdb_service_stub.cpp",
     "kvdb/user_delegate.cpp",
     "object/object_manager.cpp",
     "object/object_service_impl.cpp",
@@ -67,7 +69,6 @@ ohos_shared_library("distributeddatasvc") {
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//utils/native/base:utils",

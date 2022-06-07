@@ -46,8 +46,6 @@ ohos_shared_library("distributeddata") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/data_share/provider/include",
     "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/data_share/common/include",
-    "//foundation/distributeddatamgr/appdatamgr/frameworks/js/napi/data_share/common/include",
-    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common/include",
   ]
 
   sources = [
@@ -71,7 +69,6 @@ ohos_shared_library("distributeddata") {
   deps = [
     #":distributed_data_js",
     "//foundation/arkui/napi:ace_napi",
-    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common:datashare_common",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//third_party/libuv:uv",
     "//utils/native/base:utils",

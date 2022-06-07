@@ -59,6 +59,8 @@ config("module_private_config") {
     "OMIT_FLATBUFFER",
     "RELATIONAL_STORE",
     "SQLITE_DISTRIBUTE_RELATIONAL",
+    "USE_DFX_ABILITY",
+    "TRACE_SQLITE_EXECUTE",
   ]
 }
 
@@ -72,6 +74,8 @@ ohos_source_set("src_file") {
     "../common/src/data_value.cpp",
     "../common/src/db_common.cpp",
     "../common/src/db_constant.cpp",
+    "../common/src/db_dfx_adapter.cpp",
+    "../common/src/db_dump_helper.cpp",
     "../common/src/evloop/src/event_impl.cpp",
     "../common/src/evloop/src/event_loop_epoll.cpp",
     "../common/src/evloop/src/event_loop_impl.cpp",
@@ -275,7 +279,11 @@ ohos_source_set("src_file") {
     "//third_party/jsoncpp:jsoncpp",
     "//third_party/openssl:libcrypto_shared",
   ]
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "hisysevent_native:libhisysevent",
+    "hitrace_native:hitrace_meter",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
   part_name = "distributeddatamgr"
 }
 
@@ -304,7 +312,11 @@ template("distributeddb_unittest") {
       "//third_party/jsoncpp:jsoncpp",
       "//third_party/openssl:libcrypto_shared",
     ]
-    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    external_deps = [
+      "hisysevent_native:libhisysevent",
+      "hitrace_native:hitrace_meter",
+      "hiviewdfx_hilog_native:libhilog",
+    ]
   }
 }
 

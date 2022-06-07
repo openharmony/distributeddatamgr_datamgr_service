@@ -33,6 +33,7 @@
 #include "single_kvstore_impl.h"
 #include "system_ability.h"
 #include "types.h"
+#include "dump_helper.h"
 
 namespace OHOS::DistributedRdb {
 class IRdbService;
@@ -45,6 +46,7 @@ class ObjectServiceImpl;
 }
 
 namespace OHOS::DistributedKv {
+class KVDBServiceImpl;
 class KvStoreAccountObserver;
 class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
@@ -173,6 +175,11 @@ private:
     static Status FillStoreParam(
         const Options &options, const AppId &appId, const StoreId &storeId, StoreMetaData &metaData);
 
+    void DumpAll(int fd);
+    void DumpUserInfo(int fd);
+    void DumpAppInfo(int fd, const std::string &appId);
+    void DumpStoreInfo(int fd, const std::string &storeId);
+
     static constexpr int TEN_SEC = 10;
 
     std::mutex accountMutex_;
@@ -188,6 +195,7 @@ private:
     std::shared_ptr<Security> security_;
     std::mutex mutex_;
     sptr<DistributedRdb::RdbServiceImpl> rdbService_;
+    sptr<DistributedKv::KVDBServiceImpl> kvdbService_;
     sptr<DistributedObject::ObjectServiceImpl> objectService_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
 };

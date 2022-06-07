@@ -37,7 +37,6 @@ ohos_static_library("distributeddata_permission_static") {
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "../utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//utils/native/base:utils",
   ]

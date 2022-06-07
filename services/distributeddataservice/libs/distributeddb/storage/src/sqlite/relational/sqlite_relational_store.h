@@ -66,6 +66,8 @@ public:
 
     void StopSync(uint64_t connectionId);
 
+    void Dump(int fd) override;
+
 private:
     void ReleaseResources();
 

@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H
 #include <functional>
@@ -21,33 +20,48 @@
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
 #include "kvdb_service.h"
-
+#include "kvstore_sync_callback_client.h"
 namespace OHOS::DistributedKv {
-class KVDBServiceClient : public IRemoteProxy<KVDBService> {
+class API_EXPORT KVDBServiceClient : public IRemoteProxy<KVDBService> {
 public:
-    static std::shared_ptr<KVDBServiceClient> CreateInstance();
+    static std::shared_ptr<KVDBServiceClient> GetInstance();
     Status GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds) override;
-
-    Status Delete(const std::string &path, const AppId &appId, const StoreId &storeId) override;
-    Status Sync(const std::vector<std::string> &devices, const AppId &appId, const StoreId &storeId) override;
-    std::shared_ptr<SingleKvStore> GetKVStore(
-        const std::string &path, const Options &options, const AppId &appId, const StoreId &storeId, Status &status);
-    Status CloseKVStore(const AppId &appId, const StoreId &storeId);
-    Status CloseKVStore(const AppId &appId, std::shared_ptr<SingleKVStore> &kvStore);
-    Status CloseAllKVStore(const AppId &appId);
-
-protected:
-    Status BeforeCreate(const Options &options, const AppId &appId, const StoreId &storeId) override;
-    Status AfterCreate(const Options &options, const AppId &appId, const StoreId &storeId,
+    Status BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options) override;
+    Status AfterCreate(const AppId &appId, const StoreId &storeId, const Options &options,
         const std::vector<uint8_t> &password) override;
+    Status Delete(const AppId &appId, const StoreId &storeId) override;
+    Status Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
+    Status RegisterSyncCallback(
+        const AppId &appId, const StoreId &storeId, sptr<IKvStoreSyncCallback> callback) override;
+    Status UnregisterSyncCallback(const AppId &appId, const StoreId &storeId) override;
+    Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) override;
+    Status GetSyncParam(const AppId &appId, const StoreId &storeId, KvSyncParam &syncParam) override;
+    Status EnableCapability(const AppId &appId, const StoreId &storeId) override;
+    Status DisableCapability(const AppId &appId, const StoreId &storeId) override;
+    Status SetCapability(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &local,
+        const std::vector<std::string> &remote) override;
+    Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &devices,
+        const std::string &query) override;
+    Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &devices,
+        const std::string &query) override;
+    Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
+    Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
+    sptr<KvStoreSyncCallbackClient> GetSyncAgent(const AppId &appId);
 
 private:
     explicit KVDBServiceClient(const sptr<IRemoteObject> &object);
     virtual ~KVDBServiceClient() = default;
-    friend class BrokerCreator<KVDBServiceClient>;
-    static BrokerDelegator<KVDBServiceClient> delegator_;
-    std::function<void(int, int)> value;
+    class ServiceDeath : public KvStoreDeathRecipient {
+    public:
+        ServiceDeath() = default;
+        virtual ~ServiceDeath() = default;
+        void OnRemoteDied() override;
+    };
+    static std::mutex mutex_;
+    static std::shared_ptr<KVDBServiceClient> instance_;
+    static std::atomic_bool isWatched_;
     sptr<IRemoteObject> remote_;
+    ConcurrentMap<std::string, sptr<KvStoreSyncCallbackClient>> syncAgents_;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H

@@ -26,29 +26,17 @@ namespace OHOS {
 namespace DistributedKv {
 class KvStoreObserverClient : public KvStoreObserverStub {
 public:
-    KvStoreObserverClient(const StoreId &storeId, SubscribeType subscribeType,
-            std::shared_ptr<KvStoreObserver> kvStoreObserver, KvStoreType type);
+    explicit KvStoreObserverClient(std::shared_ptr<KvStoreObserver> kvStoreObserver);
 
     ~KvStoreObserverClient();
 
     void OnChange(const ChangeNotification &changeNotification) override;
 
-    const StoreId &GetStoreId() const;
-
-    const SubscribeType &GetSubscribeType() const;
-
-    const std::shared_ptr<KvStoreObserver> GetKvStoreObserver() const;
-
 private:
     static const int MAX_TRY_COUNT = 10;
 
-    StoreId storeId_;
-
-    SubscribeType subscribeType_;
-
     // client is responsible for free it when call UnSubscribeKvStore.
     std::shared_ptr<KvStoreObserver> kvStoreObserver_;
-    KvStoreType type_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

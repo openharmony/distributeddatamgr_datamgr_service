@@ -70,6 +70,7 @@ DataQuery& DataQuery::Reset()
     inkeysFlag_ = false;
     deviceId_ = "";
     prefix_ = "";
+    query_ = std::make_shared<DistributedDB::Query>();
     return *this;
 }
 

@@ -408,4 +408,8 @@ std::string GenericKvDB::GetStorePath() const
 {
     return properties_.GetStringProp(KvDBProperties::DATA_DIR, "");
 }
+
+void GenericKvDB::Dump(int fd)
+{
+}
 } // namespace DistributedDB

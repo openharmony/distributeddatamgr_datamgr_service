@@ -112,7 +112,7 @@ struct AppThreadInfo {
     std::int32_t uid;
 };
 
-enum class SubscribeType {
+enum SubscribeType : uint32_t {
     DEFAULT = 0, // default let bms delete
     SUBSCRIBE_TYPE_LOCAL = 1, // local changes of syncable kv store
     SUBSCRIBE_TYPE_REMOTE = 2, // synced data changes from remote devices
@@ -171,14 +171,14 @@ struct Entry : public virtual Parcelable {
     API_EXPORT virtual ~Entry() {}
 };
 
-enum class SyncPolicy {
+enum SyncPolicy : int32_t {
     LOW,
     MEDIUM,
     HIGH,
     HIGHTEST,
 };
 
-enum class SyncMode {
+enum SyncMode : int32_t {
     PULL,
     PUSH,
     PUSH_PULL,
@@ -209,7 +209,7 @@ enum Area : int32_t {
     EL4
 };
 
-enum class KvControlCmd {
+enum KvControlCmd : int32_t {
     SET_SYNC_PARAM = 1,
     GET_SYNC_PARAM,
 };

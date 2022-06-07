@@ -14,10 +14,12 @@
  */
 
 #ifndef OMIT_MULTI_VER
-#include "multi_ver_sync_task_context.h"
+#include "db_common.h"
+#include "db_dfx_adapter.h"
+#include "log_print.h"
 #include "multi_ver_sync_state_machine.h"
 #include "multi_ver_sync_target.h"
-#include "log_print.h"
+#include "multi_ver_sync_task_context.h"
 
 namespace DistributedDB {
 DEFINE_OBJECT_TAG_FACILITIES(MultiVerSyncTaskContext)
@@ -59,6 +61,10 @@ int MultiVerSyncTaskContext::Initialize(const std::string &deviceId, ISyncInterf
         std::lock_guard<std::mutex> lock(synTaskContextSetLock_);
         synTaskContextSet_.insert(this);
     }
+    std::vector<uint8_t> label = syncInterface_->GetIdentifier();
+    label.resize(3); // only show 3 bytes
+    syncActionName_ = DBDfxAdapter::SYNC_ACTION + "_" +
+        DBCommon::VectorToHexString(label) + "_" + deviceId_.c_str();
     return errCode;
 }
 

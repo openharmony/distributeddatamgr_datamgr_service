@@ -96,6 +96,12 @@ public:
     // Set an equal identifier for this database, After this called, send msg to the target will use this identifier
     int SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets) override;
 
+    // Dump syncer info
+    void Dump(int fd) override;
+
+    // Dump syncer basic info
+    SyncerBasicInfo DumpSyncerBasicInfo() override;
+
 private:
     std::mutex syncerLock_;
     std::shared_ptr<ISyncer> syncer_;

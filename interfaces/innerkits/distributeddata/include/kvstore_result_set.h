@@ -22,6 +22,8 @@ namespace OHOS {
 namespace DistributedKv {
 class KvStoreResultSet {
 public:
+    inline static constexpr int INVALID_COUNT = -ALREADY_CLOSED;
+    inline static constexpr int INVALID_POSITION = -ALREADY_CLOSED;
     API_EXPORT virtual ~KvStoreResultSet() {}
 
     // Returns the count of rows in the result set.

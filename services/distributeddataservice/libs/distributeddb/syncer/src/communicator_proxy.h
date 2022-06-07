@@ -53,6 +53,8 @@ public:
     void SetEqualCommunicator(ICommunicator *communicator, const std::string &identifier,
         const std::vector<std::string> &targets);
 
+    void Dump(int fd);
+
 private:
     ICommunicator *mainComm_;
     mutable std::mutex devCommMapLock_;

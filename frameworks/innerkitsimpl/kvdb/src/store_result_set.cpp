@@ -15,12 +15,11 @@
 #define LOG_TAG "StoreResultSet"
 #include "store_result_set.h"
 
-#include "dds_trace.h"
 #include "log_print.h"
 #include "store_util.h"
 namespace OHOS::DistributedKv {
-StoreResultSet::StoreResultSet(DBResultSet *impl, std::shared_ptr<DBStore> dbStore)
-    : impl_(impl), dbStore_(std::move(dbStore))
+StoreResultSet::StoreResultSet(DBResultSet *impl, std::shared_ptr<DBStore> dbStore, Convert convert)
+    : impl_(impl), dbStore_(std::move(dbStore)), convert_(std::move(convert))
 {
 }
 
@@ -34,144 +33,157 @@ StoreResultSet::~StoreResultSet()
 
 int StoreResultSet::GetCount() const
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return INVALID_COUNT;
     }
+
     return impl_->GetCount();
 }
 
 int StoreResultSet::GetPosition() const
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return INVALID_POSITION;
     }
+
     return impl_->GetPosition();
 }
 
 bool StoreResultSet::MoveToFirst()
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return false;
     }
+
     return impl_->MoveToFirst();
 }
 bool StoreResultSet::MoveToLast()
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return false;
     }
+
     return impl_->MoveToLast();
 }
 
 bool StoreResultSet::MoveToNext()
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return false;
     }
+
     return impl_->MoveToNext();
 }
 
 bool StoreResultSet::MoveToPrevious()
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return false;
     }
+
     return impl_->MoveToPrevious();
 }
 
 bool StoreResultSet::Move(int offset)
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return false;
     }
+
     return impl_->Move(offset);
 }
 
 bool StoreResultSet::MoveToPosition(int position)
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return false;
     }
+
     return impl_->MoveToPosition(position);
 }
 
 bool StoreResultSet::IsFirst() const
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return false;
     }
+
     return impl_->IsFirst();
 }
 bool StoreResultSet::IsLast() const
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return false;
     }
+
     return impl_->IsLast();
 }
 
 bool StoreResultSet::IsBeforeFirst() const
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return false;
     }
+
     return impl_->IsBeforeFirst();
 }
 
 bool StoreResultSet::IsAfterLast() const
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
-        return ALREADY_CLOSED;
+        ZLOGW("already closed");
+        return false;
     }
+
     return impl_->IsAfterLast();
 }
 
 Status StoreResultSet::GetEntry(Entry &entry) const
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::shared_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr) {
+        ZLOGW("already closed");
         return ALREADY_CLOSED;
     }
-    DistributedDB::Entry dbEntry;
+
+    DBEntry dbEntry;
     auto dbStatus = impl_->GetEntry(dbEntry);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
         ZLOGE("failed! status:%{public}d, position:%{public}d", status, impl_->GetPosition());
         return status;
     }
-    entry.key = ConvertKey(std::move(dbEntry.key));
+    std::string deviceId;
+    entry.key = convert_ ? convert_(std::move(dbEntry.key), deviceId) : Key(std::move(dbEntry.key));
     entry.value = std::move(dbEntry.value);
     return SUCCESS;
 }
 
 Status StoreResultSet::Close()
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     std::unique_lock<decltype(mutex_)> lock(mutex_);
     if (impl_ == nullptr || dbStore_ == nullptr) {
         return SUCCESS;
@@ -183,10 +195,5 @@ Status StoreResultSet::Close()
         dbStore_ = nullptr;
     }
     return status;
-}
-
-Key StoreResultSet::ConvertKey(DistributedDB::Key &&key) const
-{
-    return Key(std::move(key));
 }
 } // namespace OHOS::DistributedKv

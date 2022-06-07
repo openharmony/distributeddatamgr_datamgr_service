@@ -32,6 +32,9 @@ public:
     // concatenate strings and return a composition string.
     API_EXPORT static std::string Concatenate(std::initializer_list<std::string> stringList);
 
+    API_EXPORT static std::string Join(
+        const std::string &prefix, const std::string &separator, std::initializer_list<std::string> params);
+
     // delete left bland in s by reference.
     template<typename T>
     static void LeftTrim(T &s);

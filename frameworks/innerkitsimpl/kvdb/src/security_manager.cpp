@@ -22,12 +22,12 @@ SecurityManager &SecurityManager::GetInstance()
 }
 
 SecurityManager::DBPassword SecurityManager::GetDBPassword(
-    const std::string &path, const AppId &appId, const StoreId &storeId)
+    const AppId &appId, const StoreId &storeId, const std::string &path)
 {
     return SecurityManager::DBPassword();
 }
 
-void SecurityManager::DelDBPassword(const std::string &path, const AppId &appId, const StoreId &storeId)
+void SecurityManager::DelDBPassword(const AppId &appId, const StoreId &storeId, const std::string &path)
 {
 }
 } // namespace OHOS::DistributedKv

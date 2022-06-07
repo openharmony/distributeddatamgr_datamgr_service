@@ -46,6 +46,7 @@ ohos_shared_library("distributeddata_adapter") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/autils:distributeddata_autils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/dfx:distributeddata_dfx_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

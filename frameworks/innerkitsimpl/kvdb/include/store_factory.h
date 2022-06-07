@@ -21,14 +21,14 @@
 #include "kv_store_delegate_manager.h"
 #include "single_store_impl.h"
 namespace OHOS::DistributedKv {
-class StoreFactory {
+class API_EXPORT StoreFactory {
 public:
     static StoreFactory &GetInstance();
-    std::shared_ptr<SingleKvStore> Create(
-        const std::string &path, const Options &options, const AppId &appId, const StoreId &storeId, Status &status);
-    Status Delete(const std::string &path, const AppId &appId, const StoreId &storeId);
+    std::shared_ptr<SingleKvStore> GetOrOpenStore(
+        const AppId &appId, const StoreId &storeId, const Options &options, const std::string &path, Status &status);
+    Status Delete(const AppId &appId, const StoreId &storeId, const std::string &path);
     Status Close(const AppId &appId, const StoreId &storeId);
-    bool IsExits(const AppId &appId, const StoreId &storeId);
+    bool IsOpen(const AppId &appId, const StoreId &storeId);
 
 private:
     using DBManager = DistributedDB::KvStoreDelegateManager;
@@ -36,6 +36,7 @@ private:
     using DBStore = DistributedDB::KvStoreNbDelegate;
     using DBPassword = DistributedDB::CipherPassword;
 
+    StoreFactory();
     std::shared_ptr<DBManager> GetDBManager(const std::string &path, const AppId &appId);
     DBOption GetDBOption(const Options &options, const DBPassword &password) const;
     ConcurrentMap<std::string, std::shared_ptr<DBManager>> dbManagers_;

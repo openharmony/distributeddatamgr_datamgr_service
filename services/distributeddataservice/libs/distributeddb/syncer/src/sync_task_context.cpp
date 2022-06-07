@@ -19,6 +19,8 @@
 #include <cmath>
 
 #include "db_constant.h"
+#include "db_dump_helper.h"
+#include "db_dfx_adapter.h"
 #include "db_errno.h"
 #include "hash.h"
 #include "isync_state_machine.h"
@@ -566,6 +568,7 @@ void SyncTaskContext::CopyTargetData(const ISyncTarget *target, const TaskParam 
         LOGI("[SyncTaskContext][copyTarget] mode=%d,syncId=%d,isAutoSync=%d,isRetry=%d,dev=%s{private}",
             mode_, syncId_, isAutoSync_, syncTaskRetryStatus_, deviceId_.c_str());
         lastRequestSessionId_ = requestSessionId_;
+        DBDfxAdapter::StartAsyncTrace(syncActionName_, static_cast<int>(syncId_));
     } else {
         isAutoSync_ = false;
         LOGI("[SyncTaskContext][copyTarget] for response data dev %s{private},isRetry=%d", deviceId_.c_str(),
@@ -600,6 +603,7 @@ void SyncTaskContext::ClearSyncOperation()
 {
     std::lock_guard<std::mutex> lock(operationLock_);
     if (syncOperation_ != nullptr) {
+        DBDfxAdapter::FinishAsyncTrace(syncActionName_, static_cast<int>(syncId_));
         RefObject::DecObjRef(syncOperation_);
         syncOperation_ = nullptr;
     }
@@ -702,5 +706,25 @@ void SyncTaskContext::ResetLastPushTaskStatus()
 void SyncTaskContext::SchemaChange()
 {
     SetIsNeedResetAbilitySync(true);
+}
+
+void SyncTaskContext::Dump(int fd)
+{
+    size_t totalSyncTaskCount = 0u;
+    size_t autoSyncTaskCount = 0u;
+    size_t reponseTaskCount = 0u;
+    {
+        std::lock_guard<std::mutex> lock(targetQueueLock_);
+        totalSyncTaskCount = requestTargetQueue_.size() + responseTargetQueue_.size();
+        for (const auto &target : requestTargetQueue_) {
+            if (target->IsAutoSync()) {
+                autoSyncTaskCount++;
+            }
+        }
+        reponseTaskCount = responseTargetQueue_.size();
+    }
+    DBDumpHelper::Dump(fd, "\t\ttarget = %s, total sync task count = %zu, auto sync task count = %zu,"
+        " response task count = %zu\n",
+        deviceId_.c_str(), totalSyncTaskCount, autoSyncTaskCount, reponseTaskCount);
 }
 } // namespace DistributedDB

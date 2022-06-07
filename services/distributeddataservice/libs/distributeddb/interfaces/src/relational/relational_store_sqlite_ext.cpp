@@ -276,6 +276,24 @@ int GetStatement(sqlite3 *db, const std::string &sql, sqlite3_stmt *&stmt)
     return E_OK;
 }
 
+int ExecuteRawSQL(sqlite3 *db, const std::string &sql)
+{
+    if (db == nullptr) {
+        return -E_ERROR;
+    }
+    char *errMsg = nullptr;
+    int errCode = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errMsg);
+    if (errCode != SQLITE_OK) {
+        errCode = -E_ERROR;
+    }
+
+    if (errMsg != nullptr) {
+        sqlite3_free(errMsg);
+        errMsg = nullptr;
+    }
+    return errCode;
+}
+
 int StepWithRetry(sqlite3_stmt *stmt)
 {
     if (stmt == nullptr) {
@@ -335,6 +353,18 @@ int GetCurrentMaxTimestamp(sqlite3 *db, Timestamp &maxTimestamp)
     ResetStatement(checkTableStmt);
     return E_OK;
 }
+
+void PostHandle(sqlite3 *db)
+{
+    Timestamp currentMaxTimestamp = 0;
+    (void)GetCurrentMaxTimestamp(db, currentMaxTimestamp);
+    TimeHelper::Initialize(currentMaxTimestamp);
+    RegisterCalcHash(db);
+    RegisterGetSysTime(db);
+
+    std::string recursiveTrigger = "PRAGMA recursive_triggers = ON;";
+    (void)ExecuteRawSQL(db, recursiveTrigger);
+}
 }
 
 SQLITE_API int sqlite3_open_relational(const char *filename, sqlite3 **ppDb)
@@ -343,11 +373,7 @@ SQLITE_API int sqlite3_open_relational(const char *filename, sqlite3 **ppDb)
     if (err != SQLITE_OK) {
         return err;
     }
-    Timestamp currentMaxTimestamp = 0;
-    (void)GetCurrentMaxTimestamp(*ppDb, currentMaxTimestamp);
-    TimeHelper::Initialize(currentMaxTimestamp);
-    RegisterCalcHash(*ppDb);
-    RegisterGetSysTime(*ppDb);
+    PostHandle(*ppDb);
     return err;
 }
 
@@ -357,11 +383,7 @@ SQLITE_API int sqlite3_open16_relational(const void *filename, sqlite3 **ppDb)
     if (err != SQLITE_OK) {
         return err;
     }
-    Timestamp currentMaxTimestamp = 0;
-    (void)GetCurrentMaxTimestamp(*ppDb, currentMaxTimestamp);
-    TimeHelper::Initialize(currentMaxTimestamp);
-    RegisterCalcHash(*ppDb);
-    RegisterGetSysTime(*ppDb);
+    PostHandle(*ppDb);
     return err;
 }
 
@@ -371,11 +393,7 @@ SQLITE_API int sqlite3_open_v2_relational(const char *filename, sqlite3 **ppDb, 
     if (err != SQLITE_OK) {
         return err;
     }
-    Timestamp currentMaxTimestamp = 0;
-    (void)GetCurrentMaxTimestamp(*ppDb, currentMaxTimestamp);
-    TimeHelper::Initialize(currentMaxTimestamp);
-    RegisterCalcHash(*ppDb);
-    RegisterGetSysTime(*ppDb);
+    PostHandle(*ppDb);
     return err;
 }
 

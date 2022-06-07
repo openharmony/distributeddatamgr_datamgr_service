@@ -285,4 +285,11 @@ void SingleVerKVSyncer::TriggerSubQuerySync(const std::vector<std::string> &devi
         }
     }
 }
+
+SyncerBasicInfo SingleVerKVSyncer::DumpSyncerBasicInfo()
+{
+    SyncerBasicInfo basicInfo = GenericSyncer::DumpSyncerBasicInfo();
+    basicInfo.isAutoSync = autoSyncEnable_;
+    return basicInfo;
+}
 } // namespace DistributedDB

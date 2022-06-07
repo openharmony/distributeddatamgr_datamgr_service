@@ -16,6 +16,7 @@
 #include "runtime_config.h"
 
 #include "db_constant.h"
+#include "db_dfx_adapter.h"
 #include "kvdb_manager.h"
 #include "kv_store_errno.h"
 #include "log_print.h"
@@ -82,6 +83,11 @@ DBStatus RuntimeConfig::SetPermissionCheckCallback(const PermissionCheckCallback
 DBStatus RuntimeConfig::SetProcessSystemAPIAdapter(const std::shared_ptr<IProcessSystemApiAdapter> &adapter)
 {
     return TransferDBErrno(RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(adapter));
+}
+
+void RuntimeConfig::Dump(int fd, const std::vector<std::u16string> &args)
+{
+    DBDfxAdapter::Dump(fd, args);
 }
 } // namespace DistributedDB
 #endif

@@ -33,10 +33,9 @@ config("distributeddatafwk_config") {
     "../../../frameworks/innerkitsimpl/kvdb/src",
     "//utils/system/safwk/native/include",
     "//utils/native/base/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/app_distributeddata/include",
     "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/data_share/provider/include",
     "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/data_share/common/include",
-    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common/include",
+    "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
   ]
 }
 
@@ -92,13 +91,16 @@ ohos_shared_library("distributeddata_inner") {
 
   kvdb_sources = [
     "../../../frameworks/innerkitsimpl/kvdb/src/dev_manager.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/device_store_impl.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/kvdb_service_client.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/observer_bridge.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/security_manager.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/single_store_impl.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/store_factory.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/store_manager.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/store_result_set.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/store_util.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/system_api.cpp",
   ]
 
   sources = old_sources + rdb_sources + kvdb_sources + object_sources
@@ -106,13 +108,13 @@ ohos_shared_library("distributeddata_inner") {
   configs = [ ":distributeddatafwk_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/data_share/common:datashare_common",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
     "//utils/native/base:utils",
   ]
   external_deps = [
+    "dataclassification:data_transit_mgr",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "samgr_standard:samgr_proxy",

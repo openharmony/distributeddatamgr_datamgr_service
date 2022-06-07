@@ -44,7 +44,7 @@ public:
 
     Status GetCount(const DataQuery &query, int &count) const override;
 
-    Status Sync(const std::vector<std::string> &devices, SyncMode mode, uint32_t allowedDelayMs) override;
+    Status Sync(const std::vector<std::string> &devices, SyncMode mode, uint32_t delay) override;
 
     Status RemoveDeviceData(const std::string &device) override;
 
@@ -81,7 +81,7 @@ public:
     Status SetCapabilityRange(const std::vector<std::string> &localLabels,
                               const std::vector<std::string> &remoteLabels) const override;
 
-    Status GetSecurityLevel(SecurityLevel &securityLevel) const override;
+    Status GetSecurityLevel(SecurityLevel &secLevel) const override;
     Status Sync(const std::vector<std::string> &devices, SyncMode mode, const DataQuery &query,
                 std::shared_ptr<KvStoreSyncCallback> syncCallback) override;
 

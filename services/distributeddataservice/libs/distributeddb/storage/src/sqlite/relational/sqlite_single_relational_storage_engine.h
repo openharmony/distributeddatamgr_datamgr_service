@@ -17,13 +17,14 @@
 #ifdef RELATIONAL_STORE
 
 #include "macro_utils.h"
+#include "relationaldb_properties.h"
 #include "sqlite_storage_engine.h"
 #include "sqlite_single_ver_relational_storage_executor.h"
 
 namespace DistributedDB {
 class SQLiteSingleRelationalStorageEngine : public SQLiteStorageEngine {
 public:
-    SQLiteSingleRelationalStorageEngine();
+    explicit SQLiteSingleRelationalStorageEngine(RelationalDBProperties properties);
     ~SQLiteSingleRelationalStorageEngine() override;
 
     // Delete the copy and assign constructors
@@ -36,6 +37,8 @@ public:
     int CreateDistributedTable(const std::string &tableName, bool &schemaChanged);
 
     int CleanDistributedDeviceTable(std::vector<std::string> &missingTables);
+
+    const RelationalDBProperties &GetProperties() const;
 
 protected:
     StorageExecutor *NewSQLiteStorageExecutor(sqlite3 *db, bool isWrite, bool isMemDb) override;
@@ -53,6 +56,8 @@ private:
 
     RelationalSchemaObject schema_;
     mutable std::mutex schemaMutex_;
+
+    RelationalDBProperties properties_;
 };
 } // namespace DistributedDB
 #endif

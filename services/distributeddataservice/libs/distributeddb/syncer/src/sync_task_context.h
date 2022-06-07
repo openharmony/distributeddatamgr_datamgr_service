@@ -205,6 +205,8 @@ public:
 
     void SchemaChange() override;
 
+    void Dump(int fd) override;
+
 protected:
     const static int KILL_WAIT_SECONDS = INT32_MAX;
 
@@ -237,6 +239,7 @@ protected:
     int status_;
     int taskExecStatus_;
     std::string deviceId_;
+    std::string syncActionName_;
     ISyncInterface *syncInterface_;
     ICommunicator *communicator_;
     ISyncStateMachine *stateMachine_;

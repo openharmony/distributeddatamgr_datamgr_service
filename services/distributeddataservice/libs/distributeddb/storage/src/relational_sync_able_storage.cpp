@@ -15,8 +15,9 @@
 #ifdef RELATIONAL_STORE
 #include "relational_sync_able_storage.h"
 
-#include "db_common.h"
 #include "data_compression.h"
+#include "db_common.h"
+#include "db_dfx_adapter.h"
 #include "generic_single_ver_kv_entry.h"
 #include "platform_specific.h"
 #include "runtime_context.h"
@@ -408,9 +409,10 @@ int RelationalSyncAbleStorage::SaveSyncDataItems(const QueryObject &object, std:
     }
     QueryObject query = object;
     query.SetSchema(storageEngine_->GetSchemaRef());
-
+    DBDfxAdapter::StartTraceSQL();
     errCode = handle->SaveSyncItems(query, dataItems, deviceName,
         storageEngine_->GetSchemaRef().GetTable(object.GetTableName()));
+    DBDfxAdapter::FinishTraceSQL();
     if (errCode == E_OK) {
         // dataItems size > 0 now because already check before
         // all dataItems will write into db now, so need to observer notify here

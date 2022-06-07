@@ -26,7 +26,10 @@ class API_EXPORT StoreResultSet : public KvStoreResultSet {
 public:
     using DBResultSet = DistributedDB::KvStoreResultSet;
     using DBStore = DistributedDB::KvStoreNbDelegate;
-    StoreResultSet(DBResultSet *impl, std::shared_ptr<DBStore> dbStore);
+    using DBEntry = DistributedDB::Entry;
+    using DBKey = DistributedDB::Key;
+    using Convert = std::function<Key(const DBKey &key, std::string &deviceId)>;
+    StoreResultSet(DBResultSet *impl, std::shared_ptr<DBStore> dbStore, Convert convert);
     ~StoreResultSet();
     int GetCount() const override;
     int GetPosition() const override;
@@ -43,13 +46,11 @@ public:
     Status GetEntry(Entry &entry) const override;
     Status Close() override;
 
-protected:
-    virtual Key ConvertKey(DistributedDB::Key &&key) const;
-
 private:
     mutable std::shared_mutex mutex_;
     DBResultSet *impl_;
     std::shared_ptr<DBStore> dbStore_;
+    Convert convert_;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_STORE_RESULT_SET_H

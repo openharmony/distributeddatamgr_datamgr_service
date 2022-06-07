@@ -35,6 +35,9 @@ public:
     static bool Marshalling(int32_t input, MessageParcel &data);
     static bool Unmarshalling(int32_t &output, MessageParcel &data);
 
+    static bool Marshalling(uint64_t input, MessageParcel &data);
+    static bool Unmarshalling(uint64_t &output, MessageParcel &data);
+
     static bool Marshalling(const std::string &input, MessageParcel &data);
     static bool Unmarshalling(std::string &output, MessageParcel &data);
 
@@ -257,7 +260,7 @@ template<class K, class V> bool ITypesUtil::Unmarshalling(std::map<K, V> &val, M
 
     size_t readAbleSize = parcel.GetReadableBytes();
     size_t len = static_cast<size_t>(size);
-    if ((len * (sizeof(K) + sizeof(V)) > readAbleSize) || len > val.max_size()) {
+    if ((len > readAbleSize) || len > val.max_size()) {
         return false;
     }
 

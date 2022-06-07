@@ -13,15 +13,19 @@
  * limitations under the License.
  */
 #include "metadata/strategy_meta_data.h"
+
+#include "utils/constant.h"
 namespace OHOS::DistributedData {
 bool StrategyMeta::Marshal(json &node) const
 {
     bool ret = true;
     ret = SetValue(node[GET_NAME(devId)], devId) && ret;
-    ret = SetValue(node[GET_NAME(devAccId)], devAccId) && ret;
-    ret = SetValue(node[GET_NAME(grpId)], grpId) && ret;
+    ret = SetValue(node[GET_NAME(userId)], userId) && ret;
     ret = SetValue(node[GET_NAME(bundleName)], bundleName) && ret;
+    ret = SetValue(node[GET_NAME(instanceId)], instanceId) && ret;
     ret = SetValue(node[GET_NAME(storeId)], storeId) && ret;
+    ret = SetValue(node[GET_NAME(capabilityEnabled)], capabilityEnabled) && ret;
+    ret = SetValue(node[GET_NAME(capabilityRange)], capabilityRange) && ret;
     return ret;
 }
 
@@ -29,15 +33,32 @@ bool StrategyMeta::Unmarshal(const json &node)
 {
     bool ret = true;
     ret = GetValue(node, GET_NAME(devId), devId) && ret;
-    ret = GetValue(node, GET_NAME(devAccId), devAccId) && ret;
-    ret = GetValue(node, GET_NAME(grpId), grpId) && ret;
+    ret = GetValue(node, GET_NAME(userId), userId) && ret;
     ret = GetValue(node, GET_NAME(bundleName), bundleName) && ret;
+    ret = GetValue(node, GET_NAME(instanceId), instanceId) && ret;
     ret = GetValue(node, GET_NAME(storeId), storeId) && ret;
+    ret = GetValue(node, GET_NAME(capabilityEnabled), capabilityEnabled) && ret;
+    ret = GetValue(node, GET_NAME(capabilityRange), capabilityRange) && ret;
     return ret;
 }
-StrategyMeta::StrategyMeta(const std::string &devId, const std::string &devAccId, const std::string &grpId,
-    const std::string &bundleName, const std::string &storeId)
-    : devId(devId), devAccId(devAccId), grpId(grpId), bundleName(bundleName), storeId(storeId)
+
+StrategyMeta::StrategyMeta(
+    const std::string &devId, const std::string &userId, const std::string &bundleName, const std::string &storeId)
+    : devId(devId), userId(userId), bundleName(bundleName), storeId(storeId)
 {
+}
+
+std::string StrategyMeta::GetKey()
+{
+    if (instanceId == 0) {
+        return Constant::Join(PREFIX, Constant::KEY_SEPARATOR, { devId, userId, "default", bundleName, storeId });
+    }
+    return Constant::Join(PREFIX, Constant::KEY_SEPARATOR,
+        { devId, userId, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
+std::string StrategyMeta::GetPrefix(const std::initializer_list<std::string> &fields)
+{
+    return Constant::Join(PREFIX, Constant::KEY_SEPARATOR, fields);
 }
 } // namespace OHOS::DistributedData
