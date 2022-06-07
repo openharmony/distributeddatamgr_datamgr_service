@@ -26,9 +26,10 @@
 #include "log_print.h"
 
 namespace OHOS::DistributedKv {
-using namespace OHOS::EventFwk;
 using namespace OHOS::AAFwk;
 using namespace OHOS::AppExecFwk;
+using namespace OHOS::DistributedData;
+using namespace OHOS::EventFwk;
 const std::string UninstallEventSubscriber::USER_ID = "userId";
 
 UninstallEventSubscriber::UninstallEventSubscriber(const CommonEventSubscribeInfo &info,
