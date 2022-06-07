@@ -101,13 +101,10 @@ void DdsTrace::Finish(const std::string& value)
 
 bool DdsTrace::SetBytraceEnable()
 {
-    if (isSetBytraceEnabled_) {
+    if (isSetBytraceEnabled_exchange(true)) {
         return true;
     }
-
     UpdateTraceLabel();
-    isSetBytraceEnabled_ = true;
-
     ZLOGD("success, current tag is true");
     return true;
 }
