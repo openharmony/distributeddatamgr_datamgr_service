@@ -20,7 +20,9 @@
 #include <unistd.h>
 #include "common_event_manager.h"
 #include "common_event_support.h"
-#include "kvstore_meta_manager.h"
+#include "device_kvstore_impl.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/store_meta_data.h"
 #include "log_print.h"
 
 namespace OHOS::DistributedKv {
@@ -28,9 +30,6 @@ using namespace OHOS::EventFwk;
 using namespace OHOS::AAFwk;
 using namespace OHOS::AppExecFwk;
 const std::string UninstallEventSubscriber::USER_ID = "userId";
-const std::string PACKAGE_SCHEME = "package";
-const std::string SCHEME_SPLIT = ":";
-const std::string EXTRA_REPLACING = "intent.extra.REPLACING";
 
 UninstallEventSubscriber::UninstallEventSubscriber(const CommonEventSubscribeInfo &info,
     UninstallEventCallback callback)
@@ -46,24 +45,9 @@ void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
         return;
     }
 
-    auto params = want.GetParams();
-    auto &paramMap = params.GetParams();
-    for (auto &[key, value] : paramMap) {
-        size_t pos = key.rfind(EXTRA_REPLACING);
-        if (pos != std::string::npos) {
-            if (want.GetBoolParam(key, false)) {
-                ZLOGI("is update package!");
-                return;
-            }
-            break;
-        }
-    }
-
-    ElementName elementName = want.GetElement();
-    std::string bundleName = elementName.GetBundleName();
-    ZLOGI("bundleName is %s", bundleName.c_str());
-
+    std::string bundleName = want.GetElement().GetBundleName();
     int userId = want.GetIntParam(USER_ID, -1);
+    ZLOGI("bundleName:%s, user:%d", bundleName.c_str(), userId);
     callback_(bundleName, userId);
 }
 
@@ -85,15 +69,20 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     CommonEventSubscribeInfo info(matchingSkills);
     auto callback = [kvStoreDataService](const std::string &bundleName, int userId) {
-        KvStoreMetaData kvStoreMetaData;
-        if (!KvStoreMetaManager::GetInstance().GetKvStoreMetaDataByBundleName(bundleName, kvStoreMetaData)) {
+        std::string prefix = StoreMetaData::GetPrefix({ DeviceKvStoreImpl::GetLocalDeviceId(),
+            std::to_string(userId), "default", bundleName });
+        std::vector<StoreMetaData> storeMetaData;
+        if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+            ZLOGE("LoadKeys failed!");
             return;
         }
-        if (!kvStoreMetaData.appId.empty() && !kvStoreMetaData.storeId.empty()) {
-            ZLOGI("Has been uninstalled bundleName:%s", bundleName.c_str());
-            AppId appId = {kvStoreMetaData.bundleName};
-            StoreId storeId = {kvStoreMetaData.storeId};
-            kvStoreDataService->DeleteKvStore(appId, storeId);
+        for (const auto &meta : storeMetaData) {
+            if (!meta.appId.empty() && !meta.storeId.empty()) {
+                ZLOGI("Has been uninstalled bundleName:%s", bundleName.c_str());
+                AppId appId = {meta.bundleName};
+                StoreId storeId = {meta.storeId};
+                kvStoreDataService->DeleteKvStore(appId, storeId);
+            }
         }
     };
     subscriber_ = std::make_shared<UninstallEventSubscriber>(info, callback);

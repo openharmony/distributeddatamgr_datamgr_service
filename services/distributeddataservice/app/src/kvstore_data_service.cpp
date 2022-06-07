@@ -1081,12 +1081,13 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
         case AccountStatus::DEVICE_ACCOUNT_DELETE: {
             g_kvStoreAccountEventStatus = 1;
             // delete all kvstore belong to this device account
-            for (auto &it : deviceAccountMap_) {
-                (it.second).DeleteAllKvStore();
-            }
             auto it = deviceAccountMap_.find(eventInfo.deviceAccountId);
             if (it != deviceAccountMap_.end()) {
+                (it->second).DeleteAllKvStore();
                 deviceAccountMap_.erase(eventInfo.deviceAccountId);
+            } else {
+                KvStoreUserManager kvStoreUserManager(eventInfo.deviceAccountId);
+                kvStoreUserManager.DeleteAllKvStore();
             }
             std::initializer_list<std::string> dirList = {Constant::ROOT_PATH_DE, "/",
                 Constant::SERVICE_NAME, "/", eventInfo.deviceAccountId};
