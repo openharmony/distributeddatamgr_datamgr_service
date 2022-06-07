@@ -717,30 +717,14 @@ int KvStoreDataService::Dump(int fd, const std::vector<std::u16string> &args)
     }
 
     std::vector<std::string> argsStr;
-    std::string options = "";
     for (auto item : args) {
         argsStr.emplace_back(Str16ToStr8(item));
     }
 
-    DumpFlag flag = DumpHelper::GetInstance().Dump(fd, argsStr, options);
-    switch (flag) {
-        case DumpFlag::DUMP_ALL:
-            DumpAll(fd);
-            return 0;
-        case DumpFlag::DUMP_USER_INFO:
-            DumpUserInfo(fd);
-            return 0;
-        case DumpFlag::DUMP_APP_INFO:
-            DumpAppInfo(fd, options);
-            return 0;
-        case DumpFlag::DUMP_STORE_INFO:
-            DumpStoreInfo(fd, options);
-            return 0;
-        case DumpFlag::DUMP_DONE:
-            return 0;
-        default:
-            break;
+    if (DumpHelper::GetInstance().Dump(fd, argsStr)) {
+        return 0;
     }
+
     ZLOGE("DumpHelper failed");
     return ERROR;
 }
@@ -748,7 +732,7 @@ int KvStoreDataService::Dump(int fd, const std::vector<std::u16string> &args)
 void KvStoreDataService::DumpAll(int fd)
 {
     dprintf(fd, "------------------------------------------------------------------\n");
-    dprintf(fd, "DeviceAccount count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
+    dprintf(fd, "User count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
     for (const auto &pair : deviceAccountMap_) {
         pair.second.Dump(fd);
     }
@@ -757,7 +741,7 @@ void KvStoreDataService::DumpAll(int fd)
 void KvStoreDataService::DumpUserInfo(int fd)
 {
     dprintf(fd, "------------------------------------------------------------------\n");
-    dprintf(fd, "DeviceAccount count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
+    dprintf(fd, "User count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
     for (const auto &pair : deviceAccountMap_) {
         pair.second.DumpUserInfo(fd);
     }
@@ -765,6 +749,8 @@ void KvStoreDataService::DumpUserInfo(int fd)
 
 void KvStoreDataService::DumpAppInfo(int fd, const std::string &appId)
 {
+    dprintf(fd, "------------------------------------------------------------------\n");
+    dprintf(fd, "User count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
     for (const auto &pair : deviceAccountMap_) {
         pair.second.DumpAppInfo(fd, appId);
     }
@@ -772,6 +758,8 @@ void KvStoreDataService::DumpAppInfo(int fd, const std::string &appId)
 
 void KvStoreDataService::DumpStoreInfo(int fd, const std::string &storeId)
 {
+    dprintf(fd, "------------------------------------------------------------------\n");
+    dprintf(fd, "User count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
     for (const auto &pair : deviceAccountMap_) {
         pair.second.DumpStoreInfo(fd, storeId);
     }
@@ -861,6 +849,12 @@ void KvStoreDataService::StartService()
         KvStoreAppAccessor::GetInstance().EnableKvStoreAutoLaunch();
     });
     th.detach();
+    DumpHelper::GetInstance().AddDumpOperation(
+        std::bind(&KvStoreDataService::DumpAll, this, std::placeholders::_1),
+        std::bind(&KvStoreDataService::DumpUserInfo, this, std::placeholders::_1),
+        std::bind(&KvStoreDataService::DumpAppInfo, this, std::placeholders::_1, std::placeholders::_2),
+        std::bind(&KvStoreDataService::DumpStoreInfo, this, std::placeholders::_1, std::placeholders::_2)
+    );
     ZLOGI("Publish ret: %{public}d", static_cast<int>(ret));
 }
 

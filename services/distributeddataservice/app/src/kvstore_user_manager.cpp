@@ -23,6 +23,8 @@
 #include "log_print.h"
 #include "permission_validator.h"
 
+#define DEFAUL_RETRACT "    "
+
 namespace OHOS {
 namespace DistributedKv {
 using namespace DistributedData;
@@ -105,10 +107,9 @@ void KvStoreUserManager::DeleteAllKvStore()
 
 void KvStoreUserManager::Dump(int fd) const
 {
-    const std::string prefix(4, ' ');
-    dprintf(fd, "%s--------------------------------------------------------------\n", prefix.c_str());
-    dprintf(fd, "%sUserID        : %s\n", prefix.c_str(), userId_.c_str());
-    dprintf(fd, "%sApp count     : %u\n", prefix.c_str(), static_cast<uint32_t>(appMap_.size()));
+    dprintf(fd, DEFAUL_RETRACT"--------------------------------------------------------------\n");
+    dprintf(fd, DEFAUL_RETRACT"UserID        : %s\n", userId_.c_str());
+    dprintf(fd, DEFAUL_RETRACT"App count     : %u\n", static_cast<uint32_t>(appMap_.size()));
     for (const auto &pair : appMap_) {
         pair.second.Dump(fd);
     }
@@ -116,10 +117,9 @@ void KvStoreUserManager::Dump(int fd) const
 
 void KvStoreUserManager::DumpUserInfo(int fd) const
 {
-    const std::string prefix(4, ' ');
-    dprintf(fd, "%s--------------------------------------------------------------\n", prefix.c_str());
-    dprintf(fd, "%sUserID        : %s\n", prefix.c_str(), userId_.c_str());
-    dprintf(fd, "%sApp count     : %u\n", prefix.c_str(), static_cast<uint32_t>(appMap_.size()));
+    dprintf(fd, DEFAUL_RETRACT"--------------------------------------------------------------\n");
+    dprintf(fd, DEFAUL_RETRACT"UserID        : %s\n", userId_.c_str());
+    dprintf(fd, DEFAUL_RETRACT"App count     : %u\n", static_cast<uint32_t>(appMap_.size()));
     for (const auto &pair : appMap_) {
         pair.second.DumpUserInfo(fd);
     }
@@ -127,7 +127,8 @@ void KvStoreUserManager::DumpUserInfo(int fd) const
 
 void KvStoreUserManager::DumpAppInfo(int fd, const std::string &appId) const
 {
-    const std::string prefix(4, ' ');
+    dprintf(fd, DEFAUL_RETRACT"--------------------------------------------------------------\n");
+    dprintf(fd, DEFAUL_RETRACT"UserID        : %s\n", userId_.c_str());
     if (appId != "") {
         auto it = appMap_.find(appId);
         if (it != appMap_.end()) {
@@ -143,6 +144,8 @@ void KvStoreUserManager::DumpAppInfo(int fd, const std::string &appId) const
 
 void KvStoreUserManager::DumpStoreInfo(int fd, const std::string &storeId) const
 {
+    dprintf(fd, DEFAUL_RETRACT"--------------------------------------------------------------\n");
+    dprintf(fd, DEFAUL_RETRACT"UserID        : %s\n", userId_.c_str());
     for (const auto &pair : appMap_) {
         pair.second.DumpStoreInfo(fd, storeId);
     }

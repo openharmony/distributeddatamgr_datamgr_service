@@ -21,16 +21,28 @@ namespace OHOS {
 namespace DistributedKv {
 namespace {
 constexpr int32_t MAX_RECORED_ERROR = 10;
-constexpr int32_t FIRST_PARAM = 0;
-constexpr int32_t SECOND_PARAM = 1;
-constexpr int32_t ONE_COMMEND_PARAM = 1;
-constexpr int32_t TWO_COMMEND_PARAM = 2;
-constexpr const char *ARGS_HELP = "-h";
-constexpr const char *ARGS_USER_INFO = "-userInfo";
-constexpr const char *ARGS_APP_INFO = "-appInfo";
-constexpr const char *ARGS_STORE_INFO = "-storeInfo";
-constexpr const char *ARGS_ERROR_INFO = "-errorInfo";
+constexpr int32_t SUB_CMD_NAME = 0;
+constexpr int32_t SUB_CMD_PARAM = 1;
+constexpr int32_t CMD_NO_PARAM = 1;
+constexpr int32_t CMD_HAS_PARAM = 2;
+constexpr const char *CMD_HELP = "-h";
+constexpr const char *CMD_USER_INFO = "-userInfo";
+constexpr const char *CMD_APP_INFO = "-appInfo";
+constexpr const char *CMD_STORE_INFO = "-storeInfo";
+constexpr const char *CMD_ERROR_INFO = "-errorInfo";
 constexpr const char *ILLEGAL_INFOMATION = "The arguments are illegal and you can enter '-h' for help.\n";
+}
+
+void DumpHelper::AddDumpOperation(const DumpNoParamFunc &dumpAll, const DumpNoParamFunc &dumpUserInfo,
+        const DumpWithParamFunc &dumpAppInfo, const DumpWithParamFunc &dumpStoreInfo)
+{
+    if (dumpAll == nullptr || dumpUserInfo == nullptr || dumpAppInfo == nullptr || dumpStoreInfo == nullptr) {
+        return;
+    }
+    dumpAll_ = dumpAll;
+    dumpUserInfo_ = dumpUserInfo;
+    dumpAppInfo_ = dumpAppInfo;
+    dumpStoreInfo_ = dumpStoreInfo;
 }
 
 void DumpHelper::AddErrorInfo(const std::string &error)
@@ -53,34 +65,47 @@ void DumpHelper::ShowError(int fd)
     }
 }
 
-DumpFlag DumpHelper::Dump(int fd, const std::vector<std::string> &args, std::string &options)
+bool DumpHelper::Dump(int fd, const std::vector<std::string> &args)
 {
     std::string command = "";
+    std::string param = "";
 
-    if (args.size() == ONE_COMMEND_PARAM) {
-        command = args.at(FIRST_PARAM);
-    } else if (args.size() == TWO_COMMEND_PARAM) {
-        command = args.at(FIRST_PARAM);
-        options = args.at(SECOND_PARAM);
+    if (args.size() == CMD_NO_PARAM) {
+        command = args.at(SUB_CMD_NAME);
+    } else if (args.size() == CMD_HAS_PARAM) {
+        command = args.at(SUB_CMD_NAME);
+        param = args.at(SUB_CMD_PARAM);
     } else {
         ShowError(fd);
-        return DumpFlag::DUMP_ALL;
+        if (!dumpAll_) {
+            return false;
+        }
+        dumpAll_(fd);
     }
 
-    if (command == ARGS_HELP) {
+    if (command == CMD_HELP) {
         ShowHelp(fd);
-    } else if (command ==ARGS_ERROR_INFO) {
+    } else if (command == CMD_ERROR_INFO) {
         ShowError(fd);
-    } else if (command == ARGS_USER_INFO) {
-        return DumpFlag::DUMP_USER_INFO;
-    } else if (command == ARGS_APP_INFO) {
-        return DumpFlag::DUMP_APP_INFO;
-    } else if (command == ARGS_STORE_INFO) {
-        return DumpFlag::DUMP_STORE_INFO;
+    } else if (command == CMD_USER_INFO) {
+        if (!dumpUserInfo_) {
+            return false;
+        }
+        dumpUserInfo_(fd);
+    } else if (command == CMD_APP_INFO) {
+        if (!dumpAppInfo_) {
+            return false;
+        }
+        dumpAppInfo_(fd, param);
+    } else if (command == CMD_STORE_INFO) {
+        if (!dumpStoreInfo_) {
+            return false;
+        }
+        dumpStoreInfo_(fd, param);
     } else {
         ShowIllealInfomation(fd);
     }
-    return DumpFlag::DUMP_DONE;
+    return true;
 }
 
 void DumpHelper::ShowHelp(int fd)
@@ -88,22 +113,22 @@ void DumpHelper::ShowHelp(int fd)
     std::string result;
     result.append("Usage:dump  <command> [options]\n")
           .append("Description:\n")
-          .append(ARGS_USER_INFO)
+          .append(CMD_USER_INFO)
 		  .append("            ")
           .append("dump all user information in the system\n")
-          .append(ARGS_APP_INFO)
+          .append(CMD_APP_INFO)
 		  .append("             ")
           .append("dump list of all app information in the system\n")
-          .append(ARGS_APP_INFO)
+          .append(CMD_APP_INFO)
 		  .append(" [appID]     ")
           .append("dump information about the specified app in the system\n")
-          .append(ARGS_STORE_INFO)
+          .append(CMD_STORE_INFO)
 		  .append("           ")
           .append("dump list of all store information in the system\n")
-          .append(ARGS_STORE_INFO)
+          .append(CMD_STORE_INFO)
 		  .append(" [storeID] ")
           .append("dump information about the specified store in the system\n")
-          .append(ARGS_ERROR_INFO)
+          .append(CMD_ERROR_INFO)
 		  .append("           ")
           .append("dump the recent errors information in the system\n");
     dprintf(fd, "%s\n", result.c_str());

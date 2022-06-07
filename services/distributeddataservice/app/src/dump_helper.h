@@ -25,27 +25,28 @@
 
 namespace OHOS {
 namespace DistributedKv {
-enum class DumpFlag {
-    DUMP_DONE = 0,
-    DUMP_ALL,
-    DUMP_USER_INFO,
-    DUMP_APP_INFO,
-    DUMP_STORE_INFO,
-};
 
 class DumpHelper : public Singleton<DumpHelper> {
 public:
+    using DumpNoParamFunc = std::function<void(int)>;
+    using DumpWithParamFunc = std::function<void(int, const std::string &)>;
     DumpHelper() = default;
     virtual ~DumpHelper() = default;
+    void AddDumpOperation(const DumpNoParamFunc &dumpAll, const DumpNoParamFunc &dumpUserInfo,
+        const DumpWithParamFunc &dumpAppInfo, const DumpWithParamFunc &dumpStoreInfo);
     void AddErrorInfo(const std::string &error);
     void ShowError(int fd);
-    DumpFlag Dump(int fd, const std::vector<std::string> &args, std::string &options);
+    bool Dump(int fd, const std::vector<std::string> &args);
 
 private:
     void ShowHelp(int fd);
     void ShowIllealInfomation(int fd);
     mutable std::mutex hidumperMutex_;
     std::list<std::string> g_errorInfo;
+    DumpNoParamFunc dumpAll_;
+    DumpNoParamFunc dumpUserInfo_;
+    DumpWithParamFunc dumpAppInfo_;
+    DumpWithParamFunc dumpStoreInfo_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS
