@@ -34,6 +34,7 @@ struct StatisticWrap {
     int code;
 };
 
+namespace {
 // fault key
 constexpr const char *FAULT_TYPE = "FAULT_TYPE";
 constexpr const char *MODULE_NAME = "MODULE_NAME";
@@ -84,6 +85,7 @@ const std::map<int, std::string> EVENT_COVERT_TABLE = {
     {DfxCodeConstant::DATABASE_SECURITY, "DATABASE_REKEY_FAILED"},
     {DfxCodeConstant::DATABASE_BEHAVIOUR, "DATABASE_BEHAVIOUR"},
 };
+}
 
 class HiViewAdapter {
 public:
