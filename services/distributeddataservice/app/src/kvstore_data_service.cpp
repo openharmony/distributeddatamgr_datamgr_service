@@ -600,7 +600,30 @@ Status KvStoreDataService::DeleteKvStore(const AppId &appId, const StoreId &stor
     if (!BackupHandler::RemoveFile(backFilePath)) {
         ZLOGE("DeleteKvStore RemoveFile backFilePath failed.");
     }
-    return DeleteKvStore(appId.appId, storeId);
+    return DeleteKvStore(appId.appId, storeId, info.uid);
+}
+
+Status KvStoreDataService::DeleteKvStore(const StoreMetaData &metaData)
+{
+     // delete the backup file
+    std::initializer_list<std::string> backFileList = {
+        AccountDelegate::GetInstance()->GetCurrentAccountId(), "_", metaData.bundleName, "_", metaData.storeId};
+    auto backupFileName = Constant::Concatenate(backFileList);
+    const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(metaData.uid);
+    std::initializer_list<std::string> backPathListDE = {BackupHandler::GetBackupPath(userId,
+        KvStoreAppManager::PATH_DE), "/", BackupHandler::GetHashedBackupName(backupFileName)};
+    auto backFilePath = Constant::Concatenate(backPathListDE);
+    if (!BackupHandler::RemoveFile(backFilePath)) {
+        ZLOGE("DeleteKvStore RemoveFile backFilePath failed.");
+    }
+    std::initializer_list<std::string> backPathListCE = {BackupHandler::GetBackupPath(userId,
+        KvStoreAppManager::PATH_CE), "/", BackupHandler::GetHashedBackupName(backupFileName)};
+    backFilePath = Constant::Concatenate(backPathListCE);
+    if (!BackupHandler::RemoveFile(backFilePath)) {
+        ZLOGE("DeleteKvStore RemoveFile backFilePath failed.");
+    }
+
+    return DeleteKvStore(metaData.bundleName, {metaData.storeId}, metaData.uid);
 }
 
 /* delete all kv store */
@@ -1029,7 +1052,7 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::
     kvStoreClientDeathObserverImpl_.NotifyClientDie();
 }
 
-Status KvStoreDataService::DeleteKvStore(const std::string &bundleName, const StoreId &storeId)
+Status KvStoreDataService::DeleteKvStore(const std::string &bundleName, const StoreId &storeId, pid_t uid)
 {
     ZLOGI("begin.");
     if (!storeId.IsValid()) {
@@ -1037,7 +1060,6 @@ Status KvStoreDataService::DeleteKvStore(const std::string &bundleName, const St
         return Status::INVALID_ARGUMENT;
     }
 
-    const pid_t uid = IPCSkeleton::GetCallingUid();
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
     std::lock_guard<std::mutex> lg(accountMutex_);

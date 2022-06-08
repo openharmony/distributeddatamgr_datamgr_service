@@ -79,10 +79,8 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
         }
         for (const auto &meta : storeMetaData) {
             if (!meta.appId.empty() && !meta.storeId.empty()) {
-                ZLOGI("Has been uninstalled bundleName:%s", bundleName.c_str());
-                AppId appId = {meta.bundleName};
-                StoreId storeId = {meta.storeId};
-                kvStoreDataService->DeleteKvStore(appId, storeId);
+                ZLOGI("uninstalled bundleName:%s, stordId:%s", bundleName.c_str(), meta.storeId.c_str());
+                kvStoreDataService->DeleteKvStore(meta);
             }
         }
     };
