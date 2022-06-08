@@ -33,6 +33,7 @@
 #include "single_kvstore_impl.h"
 #include "system_ability.h"
 #include "types.h"
+#include "dump_helper.h"
 
 namespace OHOS::DistributedRdb {
 class IRdbService;
@@ -173,6 +174,11 @@ private:
     bool IsStoreOpened(const std::string &userId, const std::string &appId, const std::string &storeId);
     static Status FillStoreParam(
         const Options &options, const AppId &appId, const StoreId &storeId, StoreMetaData &metaData);
+
+    void DumpAll(int fd);
+    void DumpUserInfo(int fd);
+    void DumpAppInfo(int fd, const std::string &appId);
+    void DumpStoreInfo(int fd, const std::string &storeId);
 
     static constexpr int TEN_SEC = 10;
 

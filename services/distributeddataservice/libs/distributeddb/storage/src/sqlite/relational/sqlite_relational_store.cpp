@@ -16,6 +16,7 @@
 #include "sqlite_relational_store.h"
 
 #include "db_common.h"
+#include "db_dump_helper.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "db_types.h"
@@ -180,7 +181,7 @@ int SQLiteRelationalStore::Open(const RelationalDBProperties &properties)
         return E_OK;
     }
 
-    sqliteStorageEngine_ = new (std::nothrow) SQLiteSingleRelationalStorageEngine();
+    sqliteStorageEngine_ = new (std::nothrow) SQLiteSingleRelationalStorageEngine(properties);
     if (sqliteStorageEngine_ == nullptr) {
         LOGE("[RelationalStore][Open] Create storage engine failed");
         return -E_OUT_OF_MEMORY;
@@ -494,6 +495,26 @@ RelationalDBProperties SQLiteRelationalStore::GetProperties() const
 void SQLiteRelationalStore::StopSync(uint64_t connectionId)
 {
     return syncAbleEngine_->StopSync(connectionId);
+}
+
+void SQLiteRelationalStore::Dump(int fd)
+{
+    std::string userId = "";
+    std::string appId = "";
+    std::string storeId = "";
+    std::string label = "";
+    if (sqliteStorageEngine_ != nullptr) {
+        userId = sqliteStorageEngine_->GetProperties().GetStringProp(DBProperties::USER_ID, "");
+        appId = sqliteStorageEngine_->GetProperties().GetStringProp(DBProperties::APP_ID, "");
+        storeId = sqliteStorageEngine_->GetProperties().GetStringProp(DBProperties::STORE_ID, "");
+        label = sqliteStorageEngine_->GetProperties().GetStringProp(DBProperties::IDENTIFIER_DATA, "");
+    }
+    label = DBCommon::TransferStringToHex(label);
+    DBDumpHelper::Dump(fd, "\tdb appId = %s, userId = %s, storeId = %s, label = %s\n",
+        appId.c_str(), userId.c_str(), storeId.c_str(), label.c_str());
+    if (syncAbleEngine_ != nullptr) {
+        syncAbleEngine_->Dump(fd);
+    }
 }
 }
 #endif

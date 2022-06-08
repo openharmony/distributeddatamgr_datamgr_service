@@ -26,7 +26,9 @@ namespace {
     constexpr const char *RELATIONAL_SCHEMA_KEY = "relational_schema";
 }
 
-SQLiteSingleRelationalStorageEngine::SQLiteSingleRelationalStorageEngine() {};
+SQLiteSingleRelationalStorageEngine::SQLiteSingleRelationalStorageEngine(RelationalDBProperties properties)
+    : properties_(properties)
+{}
 
 SQLiteSingleRelationalStorageEngine::~SQLiteSingleRelationalStorageEngine() {};
 
@@ -64,11 +66,6 @@ int SQLiteSingleRelationalStorageEngine::CreateNewExecutor(bool isWrite, Storage
         return errCode;
     }
     do {
-        errCode = SQLiteUtils::SetPersistWalMode(db);
-        if (errCode != E_OK) {
-            break;
-        }
-
         errCode = Upgrade(db); // create meta_data table.
         if (errCode != E_OK) {
             break;
@@ -264,6 +261,11 @@ int SQLiteSingleRelationalStorageEngine::CleanDistributedDeviceTable(std::vector
 
     ReleaseExecutor(handle);
     return errCode;
+}
+
+const RelationalDBProperties &SQLiteSingleRelationalStorageEngine::GetProperties() const
+{
+    return properties_;
 }
 }
 #endif

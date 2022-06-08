@@ -62,6 +62,9 @@ public:
     void DeleteAllKvStore();
 
     void Dump(int fd) const;
+    void DumpUserInfo(int fd) const;
+    void DumpAppInfo(int fd, const std::string &appId) const;
+    void DumpStoreInfo(int fd, const std::string &storeId) const;
 
     bool IsStoreOpened(const std::string &appId, const std::string &storeId);
     void SetCompatibleIdentify(const std::string &deviceId) const;

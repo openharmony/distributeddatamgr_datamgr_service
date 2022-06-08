@@ -198,4 +198,20 @@ int SyncerProxy::SetEqualIdentifier(const std::string &identifier, const std::ve
     }
     return syncer_->SetEqualIdentifier(identifier, targets);
 }
+
+void SyncerProxy::Dump(int fd)
+{
+    if (syncer_ == nullptr) {
+        return;
+    }
+    return syncer_->Dump(fd);
+}
+
+SyncerBasicInfo SyncerProxy::DumpSyncerBasicInfo()
+{
+    if (syncer_ == nullptr) {
+        return SyncerBasicInfo { false, false, false };
+    }
+    return syncer_->DumpSyncerBasicInfo();
+}
 } // namespace DistributedDB

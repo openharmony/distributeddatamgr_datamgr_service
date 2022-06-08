@@ -17,8 +17,10 @@
 
 #include <map>
 
-#include "db_errno.h"
 #include "db_common.h"
+#include "db_dump_helper.h"
+#include "db_dfx_adapter.h"
+#include "db_errno.h"
 #include "kv_store_changed_data_impl.h"
 #include "kv_store_nb_conflict_data_impl.h"
 #include "kvdb_manager.h"
@@ -543,14 +545,24 @@ void AutoLaunch::ConnectionLifeCycleCallback(const std::string &identifier, cons
 int AutoLaunch::OpenOneConnection(AutoLaunchItem &autoLaunchItem)
 {
     LOGI("[AutoLaunch] GetOneConnection");
+    int errCode;
     switch (autoLaunchItem.type) {
         case DBType::DB_KV:
-            return OpenKvConnection(autoLaunchItem);
+            errCode = OpenKvConnection(autoLaunchItem);
+            break;
         case DBType::DB_RELATION:
-            return OpenRelationalConnection(autoLaunchItem);
+            errCode = OpenRelationalConnection(autoLaunchItem);
+            break;
         default:
-            return -E_INVALID_ARGS;
+            errCode = -E_INVALID_ARGS;
     }
+    if (errCode == -E_INVALID_PASSWD_OR_CORRUPTED_DB) {
+        std::string userId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::USER_ID, "");
+        std::string appId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::APP_ID, "");
+        std::string storeId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::STORE_ID, "");
+        DBDfxAdapter::ReportFault( { DBDfxAdapter::EVENT_OPEN_DATABASE_FAILED, userId, appId, storeId, errCode } );
+    }
+    return errCode;
 }
 
 void AutoLaunch::OnlineCallBack(const std::string &device, bool isConnect)
@@ -1231,5 +1243,19 @@ int AutoLaunch::CheckAutoLaunchRealPath(const AutoLaunchItem &autoLaunchItem)
     }
     autoLaunchItem.propertiesPtr->SetStringProp(DBProperties::DATA_DIR, canonicalDir);
     return E_OK;
+}
+
+void AutoLaunch::Dump(int fd)
+{
+    std::lock_guard<std::mutex> lock(dataLock_);
+    DBDumpHelper::Dump(fd, "\tenableAutoLaunch info [\n");
+    for (const auto &[label, userItem] : autoLaunchItemMap_) {
+        DBDumpHelper::Dump(fd, "\t\tlabel = %s, userId = [\n", DBCommon::TransferStringToHex(label).c_str());
+        for (const auto &entry : userItem) {
+            DBDumpHelper::Dump(fd, "\t\t\t%s\n", entry.first.c_str());
+        }
+        DBDumpHelper::Dump(fd, "\t\t]\n");
+    }
+    DBDumpHelper::Dump(fd, "\t]\n");
 }
 } // namespace DistributedDB

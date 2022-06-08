@@ -23,8 +23,8 @@
 namespace OHOS::DistributedKv {
 std::vector<uint8_t> DeviceStoreImpl::ToLocalDBKey(const Key &key) const
 {
-    auto deviceId = DevManager::GetInstance().GetLocalDevice().deviceId;
-    if (deviceId.empty()) {
+    auto uuid = DevManager::GetInstance().GetLocalDevice().uuid;
+    if (uuid.empty()) {
         return {};
     }
 
@@ -36,9 +36,9 @@ std::vector<uint8_t> DeviceStoreImpl::ToLocalDBKey(const Key &key) const
     // |local uuid|original key|uuid len|
     // |---- -----|------------|---4----|
     std::vector<uint8_t> dbKey;
-    dbKey.insert(dbKey.end(), deviceId.begin(), deviceId.end());
+    dbKey.insert(dbKey.end(), uuid.begin(), uuid.end());
     dbKey.insert(dbKey.end(), input.begin(), input.end());
-    uint32_t length = deviceId.length();
+    uint32_t length = uuid.length();
     length = htole32(length);
     dbKey.insert(dbKey.end(), &length, &length + sizeof(length));
     return dbKey;
@@ -101,14 +101,14 @@ std::vector<uint8_t> DeviceStoreImpl::ConvertNetwork(const Key &in, bool withLen
         return in.Data();
     }
     size_t deviceLen = *(reinterpret_cast<const uint32_t *>(in.Data().data()));
-    std::string deviceId(in.Data().begin() + sizeof(uint32_t), in.Data().begin() + sizeof(uint32_t) + deviceLen);
+    std::string networkId(in.Data().begin() + sizeof(uint32_t), in.Data().begin() + sizeof(uint32_t) + deviceLen);
     std::regex patten("^[0-9]*$");
-    if (!std::regex_match(deviceId, patten)) {
+    if (!std::regex_match(networkId, patten)) {
         ZLOGE("device id length is error.");
         return in.Data();
     }
-    deviceId = DevManager::GetInstance().ToUUID(deviceId);
-    if (deviceId.empty()) {
+    std::string uuid = DevManager::GetInstance().ToUUID(networkId);
+    if (uuid.empty()) {
         return in.Data();
     }
 
@@ -117,10 +117,10 @@ std::vector<uint8_t> DeviceStoreImpl::ConvertNetwork(const Key &in, bool withLen
     // |-------------|--------------|----4-----|
     // |  Mandatory  |   Mandatory  | Optional |
     std::vector<uint8_t> out;
-    out.insert(out.end(), deviceId.begin(), deviceId.end());
+    out.insert(out.end(), uuid.begin(), uuid.end());
     out.insert(out.end(), in.Data().begin() + sizeof(uint32_t) + deviceLen, in.Data().end());
     if (withLen) {
-        uint32_t length = deviceId.length();
+        uint32_t length = uuid.length();
         length = htole32(length);
         out.insert(out.end(), &length, &length + sizeof(length));
     }

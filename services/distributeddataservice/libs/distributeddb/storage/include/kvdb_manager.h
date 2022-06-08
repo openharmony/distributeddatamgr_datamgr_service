@@ -62,6 +62,9 @@ public:
 
     // Get a KvDBManager instance, Singleton mode
     static KvDBManager *GetInstance();
+
+    // Dump all db message in cache
+    void Dump(int fd);
 private:
     // Generate a KvDB unique Identifier
     static std::string GenerateKvDBIdentifier(const KvDBProperties &property);

@@ -115,6 +115,7 @@ ohos_shared_library("distributeddata_inner") {
   ]
   external_deps = [
     "dataclassification:data_transit_mgr",
+    "dsoftbus_standard:softbus_client",
     "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",

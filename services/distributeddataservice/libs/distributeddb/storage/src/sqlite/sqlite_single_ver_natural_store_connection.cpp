@@ -16,6 +16,7 @@
 #include "sqlite_single_ver_natural_store_connection.h"
 
 #include "db_constant.h"
+#include "db_dfx_adapter.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "kvdb_pragma.h"
@@ -95,24 +96,29 @@ int SQLiteSingleVerNaturalStoreConnection::Get(const IOption &option, const Key 
         return errCode;
     }
 
+    DBDfxAdapter::StartTraceSQL();
     {
         // need to check if the transaction started
         std::lock_guard<std::mutex> lock(transactionMutex_);
         if (writeHandle_ != nullptr) {
             LOGD("Transaction started already.");
             Timestamp recordTimestamp;
-            return writeHandle_->GetKvData(dataType, key, value, recordTimestamp);
+            errCode = writeHandle_->GetKvData(dataType, key, value, recordTimestamp);
+            DBDfxAdapter::FinishTraceSQL();
+            return errCode;
         }
     }
 
     SQLiteSingleVerStorageExecutor *handle = GetExecutor(false, errCode);
     if (handle == nullptr) {
+        DBDfxAdapter::FinishTraceSQL();
         return errCode;
     }
 
     Timestamp timestamp;
     errCode = handle->GetKvData(dataType, key, value, timestamp);
     ReleaseExecutor(handle);
+    DBDfxAdapter::FinishTraceSQL();
     return errCode;
 }
 
@@ -160,22 +166,27 @@ int SQLiteSingleVerNaturalStoreConnection::GetEntries(const IOption &option, con
         return errCode;
     }
 
+    DBDfxAdapter::StartTraceSQL();
     {
         std::lock_guard<std::mutex> lock(transactionMutex_);
         if (writeHandle_ != nullptr) {
             LOGD("Transaction started already.");
-            return writeHandle_->GetEntries(type, keyPrefix, entries);
+            errCode = writeHandle_->GetEntries(type, keyPrefix, entries);
+            DBDfxAdapter::FinishTraceSQL();
+            return errCode;
         }
     }
 
     SQLiteSingleVerStorageExecutor *handle = GetExecutor(false, errCode);
     if (handle == nullptr) {
         LOGE("[Connection]::[GetEntries] Get executor failed, errCode = [%d]", errCode);
+        DBDfxAdapter::FinishTraceSQL();
         return errCode;
     }
 
     errCode = handle->GetEntries(type, keyPrefix, entries);
     ReleaseExecutor(handle);
+    DBDfxAdapter::FinishTraceSQL();
     return errCode;
 }
 
@@ -200,21 +211,26 @@ int SQLiteSingleVerNaturalStoreConnection::GetEntries(const IOption &option, con
         const SchemaObject &schemaObjRef = naturalStore->GetSchemaObjectConstRef();
         queryObj.SetSchema(schemaObjRef);
     }
+    DBDfxAdapter::StartTraceSQL();
     {
         std::lock_guard<std::mutex> lock(transactionMutex_);
         if (writeHandle_ != nullptr) {
             LOGD("Transaction started already.");
-            return writeHandle_->GetEntries(queryObj, entries);
+            errCode = writeHandle_->GetEntries(queryObj, entries);
+            DBDfxAdapter::FinishTraceSQL();
+            return errCode;
         }
     }
 
     SQLiteSingleVerStorageExecutor *handle = GetExecutor(false, errCode);
     if (handle == nullptr) {
+        DBDfxAdapter::FinishTraceSQL();
         return errCode;
     }
 
     errCode = handle->GetEntries(queryObj, entries);
     ReleaseExecutor(handle);
+    DBDfxAdapter::FinishTraceSQL();
     return errCode;
 }
 
@@ -239,20 +255,25 @@ int SQLiteSingleVerNaturalStoreConnection::GetCount(const IOption &option, const
         const SchemaObject &schemaObjRef = naturalStore->GetSchemaObjectConstRef();
         queryObj.SetSchema(schemaObjRef);
     }
+    DBDfxAdapter::StartTraceSQL();
     {
         std::lock_guard<std::mutex> lock(transactionMutex_);
         if (writeHandle_ != nullptr) {
             LOGD("Transaction started already.");
-            return writeHandle_->GetCount(queryObj, count);
+            errCode = writeHandle_->GetCount(queryObj, count);
+            DBDfxAdapter::FinishTraceSQL();
+            return errCode;
         }
     }
 
     SQLiteSingleVerStorageExecutor *handle = GetExecutor(false, errCode);
     if (handle == nullptr) {
+        DBDfxAdapter::FinishTraceSQL();
         return errCode;
     }
     errCode = handle->GetCount(queryObj, count);
     ReleaseExecutor(handle);
+    DBDfxAdapter::FinishTraceSQL();
     return errCode;
 }
 
@@ -830,19 +851,21 @@ int SQLiteSingleVerNaturalStoreConnection::GetDeviceIdentifier(PragmaEntryDevice
 
 int SQLiteSingleVerNaturalStoreConnection::PutBatchInner(const IOption &option, const std::vector<Entry> &entries)
 {
+    DBDfxAdapter::StartTraceSQL();
     std::lock_guard<std::mutex> lock(transactionMutex_);
     bool isAuto = false;
     int errCode = E_OK;
-
     if (writeHandle_ == nullptr) {
         isAuto = true;
         errCode = StartTransactionInner();
         if (errCode != E_OK) {
             return errCode;
+            DBDfxAdapter::FinishTraceSQL();
         }
     }
 
     if ((transactionEntrySize_ + entries.size()) > DBConstant::MAX_TRANSACTION_ENTRY_SIZE) {
+        DBDfxAdapter::FinishTraceSQL();
         return -E_MAX_LIMITS;
     }
 
@@ -863,11 +886,13 @@ int SQLiteSingleVerNaturalStoreConnection::PutBatchInner(const IOption &option, 
             errCode = (innerCode != E_OK) ? innerCode : errCode;
         }
     }
+    DBDfxAdapter::FinishTraceSQL();
     return errCode;
 }
 
 int SQLiteSingleVerNaturalStoreConnection::DeleteBatchInner(const IOption &option, const std::vector<Key> &keys)
 {
+    DBDfxAdapter::StartTraceSQL();
     std::lock_guard<std::mutex> lock(transactionMutex_);
     bool isAuto = false;
     int errCode = E_OK;
@@ -876,11 +901,13 @@ int SQLiteSingleVerNaturalStoreConnection::DeleteBatchInner(const IOption &optio
         isAuto = true;
         errCode = StartTransactionInner();
         if (errCode != E_OK) {
+            DBDfxAdapter::FinishTraceSQL();
             return errCode;
         }
     }
 
     if ((transactionEntrySize_ + keys.size()) > DBConstant::MAX_TRANSACTION_ENTRY_SIZE) {
+        DBDfxAdapter::FinishTraceSQL();
         return -E_MAX_LIMITS;
     }
 
@@ -901,6 +928,7 @@ int SQLiteSingleVerNaturalStoreConnection::DeleteBatchInner(const IOption &optio
             errCode = (innerCode != E_OK) ? innerCode : errCode;
         }
     }
+    DBDfxAdapter::FinishTraceSQL();
     return errCode;
 }
 

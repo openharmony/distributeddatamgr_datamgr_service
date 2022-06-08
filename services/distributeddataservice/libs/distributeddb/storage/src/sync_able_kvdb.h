@@ -83,6 +83,8 @@ public:
 
     virtual void SetDataInterceptor(const PushDataInterceptor &interceptor) = 0;
 
+    void Dump(int fd) override;
+
 protected:
     virtual IKvDBSyncInterface *GetSyncInterface() = 0;
 

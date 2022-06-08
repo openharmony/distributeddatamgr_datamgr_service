@@ -109,6 +109,8 @@ public:
 
     void SchemaChange() override;
 
+    void Dump(int fd) override;
+
 protected:
     // Create a context
     virtual ISyncTaskContext *CreateSyncTaskContext() = 0;

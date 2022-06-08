@@ -37,6 +37,8 @@ public:
 
     void TriggerSubscribe(const std::string &device, const QuerySyncObject &query);
 
+    SyncerBasicInfo DumpSyncerBasicInfo() override;
+
 protected:
     int SyncConditionCheck(QuerySyncObject &query, int mode, bool isQuerySync,
         const std::vector<std::string> &devices) const override;

@@ -795,4 +795,24 @@ int GenericSyncer::BuildSyncEngine()
     });
     return E_OK;
 }
+
+void GenericSyncer::Dump(int fd)
+{
+    if (syncEngine_ == nullptr) {
+        return;
+    }
+    syncEngine_->Dump(fd);
+}
+
+SyncerBasicInfo GenericSyncer::DumpSyncerBasicInfo()
+{
+    SyncerBasicInfo baseInfo;
+    RefObject::IncObjRef(syncEngine_);
+    if (syncEngine_ == nullptr) {
+        return baseInfo;
+    }
+    baseInfo.isSyncActive = syncEngine_->IsEngineActive();
+    RefObject::DecObjRef(syncEngine_);
+    return baseInfo;
+}
 } // namespace DistributedDB

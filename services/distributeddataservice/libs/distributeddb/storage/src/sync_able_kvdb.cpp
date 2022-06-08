@@ -15,6 +15,7 @@
 
 #include "sync_able_kvdb.h"
 
+#include "db_dump_helper.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "parcel.h"
@@ -374,5 +375,16 @@ int SyncAbleKvDB::SetSyncRetry(bool isRetry)
 int SyncAbleKvDB::SetEqualIdentifier(const std::string &identifier, const std::vector<std::string> &targets)
 {
     return syncer_.SetEqualIdentifier(identifier, targets);
+}
+
+void SyncAbleKvDB::Dump(int fd)
+{
+    SyncerBasicInfo basicInfo = syncer_.DumpSyncerBasicInfo();
+    DBDumpHelper::Dump(fd, "\tisSyncActive = %d, isAutoSync = %d\n\n", basicInfo.isSyncActive,
+        basicInfo.isAutoSync);
+    if (basicInfo.isSyncActive) {
+        DBDumpHelper::Dump(fd, "\tDistributedDB Database Sync Module Message Info:\n");
+        syncer_.Dump(fd);
+    }
 }
 }

@@ -213,5 +213,15 @@ void RelationalStoreInstance::ExitDBOpenCloseProcess(const std::string &identifi
     (void)relationalDBOpenSet_.erase(identifier);
     relationalDBOpenCondition_.notify_all();
 }
+
+void RelationalStoreInstance::Dump(int fd)
+{
+    std::lock_guard<std::mutex> autoLock(storeLock_);
+    for (const auto &entry : dbs_) {
+        RefObject::IncObjRef(entry.second);
+        entry.second->Dump(fd);
+        RefObject::DecObjRef(entry.second);
+    }
+}
 } // namespace DistributedDB
 #endif

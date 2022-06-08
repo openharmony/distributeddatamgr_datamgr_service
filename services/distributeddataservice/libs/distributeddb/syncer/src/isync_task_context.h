@@ -174,6 +174,8 @@ public:
     virtual void SetIsNeedResetAbilitySync(bool isNeedReset) = 0;
 
     virtual void SchemaChange() = 0;
+
+    virtual void Dump(int fd) = 0;
 protected:
     virtual ~ISyncTaskContext() {};
 };

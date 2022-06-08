@@ -18,12 +18,28 @@
 #include <string>
 
 #include "types.h"
+#include "lru_bucket.h"
 namespace OHOS::DistributedKv {
 class API_EXPORT DevManager {
 public:
+    struct DetailInfo {
+        std::string uuid;
+        std::string udid;
+        std::string networkId;
+        std::string deviceName;
+        std::string deviceType;
+    };
     static DevManager &GetInstance();
     std::string ToUUID(const std::string &networkId) const;
-    DeviceInfo GetLocalDevice() const;
+    const DetailInfo &GetLocalDevice();
+    std::vector<DetailInfo> GetRemoteDevices() const;
+private:
+    const DetailInfo invalidDetail_ {};
+    std::mutex mutex_ {};
+    DetailInfo localInfo_ {};
+    mutable LRUBucket<std::string, DetailInfo> deviceInfos_ {16};
+    std::string GetUuidByNetworkId(const std::string &networkId) const;
+    std::string GetUdidByNetworkId(const std::string &networkId) const;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_DEV_MANAGER_H

@@ -46,7 +46,11 @@ config("distrdb_config") {
     "OMIT_FLATBUFFER",
     "RELATIONAL_STORE",
     "SQLITE_DISTRIBUTE_RELATIONAL",
+    "USE_DFX_ABILITY",
   ]
+  if (is_debug) {
+    defines += [ "TRACE_SQLITE_EXECUTE" ]
+  }
 }
 
 config("distrdb_public_config") {
@@ -69,6 +73,8 @@ ohos_shared_library("distributeddb") {
     "common/src/data_value.cpp",
     "common/src/db_common.cpp",
     "common/src/db_constant.cpp",
+    "common/src/db_dfx_adapter.cpp",
+    "common/src/db_dump_helper.cpp",
     "common/src/evloop/src/event_impl.cpp",
     "common/src/evloop/src/event_loop_epoll.cpp",
     "common/src/evloop/src/event_loop_impl.cpp",
@@ -263,7 +269,11 @@ ohos_shared_library("distributeddb") {
     "//third_party/openssl:libcrypto_shared",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "hisysevent_native:libhisysevent",
+    "hitrace_native:hitrace_meter",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
 
   subsystem_name = "distributeddatamgr"
   part_name = "distributeddatamgr"

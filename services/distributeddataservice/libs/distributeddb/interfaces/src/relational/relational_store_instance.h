@@ -37,6 +37,8 @@ public:
 
     // public for test mock
     static IRelationalStore *GetDataBase(const RelationalDBProperties &properties, int &errCode);
+
+    void Dump(int fd);
 private:
 
     IRelationalStore *OpenDatabase(const RelationalDBProperties &properties, int &errCode);

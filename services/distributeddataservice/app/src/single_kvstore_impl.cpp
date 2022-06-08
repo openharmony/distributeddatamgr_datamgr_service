@@ -34,6 +34,8 @@
 #include "upgrade_manager.h"
 #include "metadata/meta_data_manager.h"
 
+#define DEFAUL_RETRACT "            "
+
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 static bool TaskIsBackground(pid_t pid)
@@ -224,6 +226,11 @@ Status SingleKvStoreImpl::Get(const Key &key, Value &value)
     }
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGI("Get failed, distributeddb need recover.");
+        std::string errorInfo;
+        errorInfo.append(__FUNCTION__).append(": Get failed. ")
+            .append("key is ").append(key.ToString())
+            .append(". bundleName is ").append(bundleName_);
+        DumpHelper::GetInstance().AddErrorInfo(errorInfo);
         return (Import(bundleName_) ? Status::RECOVER_SUCCESS : Status::RECOVER_FAILED);
     }
     return ConvertDbStatus(status);
@@ -928,6 +935,10 @@ Status SingleKvStoreImpl::DoSubscribe(const std::vector<std::string> &deviceIds,
         std::shared_lock<std::shared_mutex> lock(storeNbDelegateMutex_);
         if (kvStoreNbDelegate_ == nullptr) {
             ZLOGE("kvstore is not open");
+            std::string errorInfo;
+            errorInfo.append(__FUNCTION__).append(": Subscribe failed because kvstore is not open. ")
+                .append("bundleName is ").append(bundleName_);
+            DumpHelper::GetInstance().AddErrorInfo(errorInfo);
             return Status::ILLEGAL_STATE;
         }
         DdsTrace trace(std::string(LOG_TAG "Delegate::") + std::string(__FUNCTION__));
@@ -1144,6 +1155,10 @@ Status SingleKvStoreImpl::PutBatch(const std::vector<Entry> &entries)
         status = kvStoreNbDelegate_->PutBatch(dbEntries);
     }
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        std::string errorInfo;
+        errorInfo.append(__FUNCTION__).append(": PutBatch failed. ")
+            .append("bundleName is ").append(bundleName_);
+        DumpHelper::GetInstance().AddErrorInfo(errorInfo);
         ZLOGE("PutBatch failed, distributeddb need recover.");
         return (Import(bundleName_) ? Status::RECOVER_SUCCESS : Status::RECOVER_FAILED);
     }
@@ -1195,6 +1210,10 @@ Status SingleKvStoreImpl::DeleteBatch(const std::vector<Key> &keys)
         status = kvStoreNbDelegate_->DeleteBatch(dbKeys);
     }
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        std::string errorInfo;
+        errorInfo.append(__FUNCTION__).append(": DeleteBatch failed. ")
+            .append("bundleName is ").append(bundleName_);
+        DumpHelper::GetInstance().AddErrorInfo(errorInfo);
         ZLOGE("DeleteBatch failed, distributeddb need recover.");
         return (Import(bundleName_) ? Status::RECOVER_SUCCESS : Status::RECOVER_FAILED);
     }
@@ -1233,6 +1252,10 @@ Status SingleKvStoreImpl::StartTransaction()
         status = kvStoreNbDelegate_->StartTransaction();
     }
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        std::string errorInfo;
+        errorInfo.append(__FUNCTION__).append(": StartTransaction failed. ")
+            .append("bundleName is ").append(bundleName_);
+        DumpHelper::GetInstance().AddErrorInfo(errorInfo);
         ZLOGE("StartTransaction failed, distributeddb need recover.");
         return (Import(bundleName_) ? Status::RECOVER_SUCCESS : Status::RECOVER_FAILED);
     }
@@ -1263,6 +1286,10 @@ Status SingleKvStoreImpl::Commit()
         status = kvStoreNbDelegate_->Commit();
     }
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        std::string errorInfo;
+        errorInfo.append(__FUNCTION__).append(": Commit failed. ")
+            .append("bundleName is ").append(bundleName_);
+        DumpHelper::GetInstance().AddErrorInfo(errorInfo);
         ZLOGE("Commit failed, distributeddb need recover.");
         return (Import(bundleName_) ? Status::RECOVER_SUCCESS : Status::RECOVER_FAILED);
     }
@@ -1294,6 +1321,10 @@ Status SingleKvStoreImpl::Rollback()
         status = kvStoreNbDelegate_->Rollback();
     }
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        std::string errorInfo;
+        errorInfo.append(__FUNCTION__).append(": Rollback failed. ")
+            .append("bundleName is ").append(bundleName_);
+        DumpHelper::GetInstance().AddErrorInfo(errorInfo);
         ZLOGE("Rollback failed, distributeddb need recover.");
         return (Import(bundleName_) ? Status::RECOVER_SUCCESS : Status::RECOVER_FAILED);
     }
@@ -1444,19 +1475,29 @@ Status SingleKvStoreImpl::GetSecurityLevel(SecurityLevel &securityLevel)
 
 void SingleKvStoreImpl::OnDump(int fd) const
 {
-    const std::string prefix(12, ' ');
-    dprintf(fd, "%s------------------------------------------------------\n", prefix.c_str());
-    dprintf(fd, "%sStoreID    : %s\n", prefix.c_str(), storeId_.c_str());
-    dprintf(fd, "%sStorePath  : %s\n", prefix.c_str(), storePath_.c_str());
+    auto query = DistributedDB::Query::Select();
+    query.PrefixKey({ });
+    int count = 0;
+    kvStoreNbDelegate_->GetCount(query, count);
+    dprintf(fd, DEFAUL_RETRACT"------------------------------------------------------\n");
+    dprintf(fd, DEFAUL_RETRACT"StoreID    : %s\n", storeId_.c_str());
+    dprintf(fd, DEFAUL_RETRACT"StorePath  : %s\n", storePath_.c_str());
 
-    dprintf(fd, "%sOptions :\n", prefix.c_str());
-    dprintf(fd, "%s    backup          : %d\n", prefix.c_str(), static_cast<int>(options_.backup));
-    dprintf(fd, "%s    encrypt         : %d\n", prefix.c_str(), static_cast<int>(options_.encrypt));
-    dprintf(fd, "%s    autoSync        : %d\n", prefix.c_str(), static_cast<int>(options_.autoSync));
-    dprintf(fd, "%s    persistent      : %d\n", prefix.c_str(), static_cast<int>(options_.persistent));
-    dprintf(fd, "%s    kvStoreType     : %d\n", prefix.c_str(), static_cast<int>(options_.kvStoreType));
-    dprintf(fd, "%s    createIfMissing : %d\n", prefix.c_str(), static_cast<int>(options_.createIfMissing));
-    dprintf(fd, "%s    schema          : %s\n", prefix.c_str(), options_.schema.c_str());
+    dprintf(fd, DEFAUL_RETRACT"Options :\n");
+    dprintf(fd, DEFAUL_RETRACT"    backup          : %d\n", static_cast<int>(options_.backup));
+    dprintf(fd, DEFAUL_RETRACT"    encrypt         : %d\n", static_cast<int>(options_.encrypt));
+    dprintf(fd, DEFAUL_RETRACT"    autoSync        : %d\n", static_cast<int>(options_.autoSync));
+    dprintf(fd, DEFAUL_RETRACT"    persistent      : %d\n", static_cast<int>(options_.persistent));
+    dprintf(fd, DEFAUL_RETRACT"    kvStoreType     : %d\n", static_cast<int>(options_.kvStoreType));
+    dprintf(fd, DEFAUL_RETRACT"    createIfMissing : %d\n", static_cast<int>(options_.createIfMissing));
+    dprintf(fd, DEFAUL_RETRACT"    schema          : %s\n", options_.schema.c_str());
+    dprintf(fd, DEFAUL_RETRACT"    entriesCount    : %d\n", count);
+}
+
+void SingleKvStoreImpl::DumpStoreName(int fd) const
+{
+    dprintf(fd, DEFAUL_RETRACT"------------------------------------------------------\n");
+    dprintf(fd, DEFAUL_RETRACT"StoreID    : %s\n", storeId_.c_str());
 }
 
 std::string SingleKvStoreImpl::GetStoreId()
