@@ -17,6 +17,7 @@
 #define QUERY_HELPER_H
 
 #include <set>
+
 #include "query.h"
 #include "types.h"
 
@@ -26,70 +27,45 @@ public:
     API_EXPORT static DistributedDB::Query StringToDbQuery(const std::string &query, bool &isSuccess);
 
 private:
+    using DBQuery = DistributedDB::Query;
     static std::string deviceId_;
     static bool hasPrefixKey_;
     static bool hasInKeys_;
-    static void Handle(const std::vector<std::string> &words, int &pointer,
-                       const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleExtra(const std::vector<std::string> &words, int &pointer,
-                            const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleEqualTo(const std::vector<std::string> &words, int &pointer,
-                              const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleNotEqualTo(const std::vector<std::string> &words, int &pointer,
-                                 const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleGreaterThan(const std::vector<std::string> &words, int &pointer,
-                                  const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleLessThan(const std::vector<std::string> &words, int &pointer,
-                               const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleGreaterThanOrEqualTo(const std::vector<std::string> &words, int &pointer,
-                                           const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleLessThanOrEqualTo(const std::vector<std::string> &words, int &pointer,
-                                        const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleIsNull(const std::vector<std::string> &words, int &pointer,
-                             const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleIsNotNull(const std::vector<std::string> &words, int &pointer,
-                             const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleIn(const std::vector<std::string> &words, int &pointer,
-                         const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleNotIn(const std::vector<std::string> &words, int &pointer,
-                            const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleLike(const std::vector<std::string> &words, int &pointer,
-                           const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleNotLike(const std::vector<std::string> &words, int &pointer,
-                              const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleAnd(const std::vector<std::string> &words, int &pointer,
-                          const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleOr(const std::vector<std::string> &words, int &pointer,
-                         const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleOrderByAsc(const std::vector<std::string> &words, int &pointer,
-                                 const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleOrderByDesc(const std::vector<std::string> &words, int &pointer,
-                                  const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleLimit(const std::vector<std::string> &words, int &pointer,
-                            const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleBeginGroup(const std::vector<std::string> &words, int &pointer,
-                                 const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleEndGroup(const std::vector<std::string> &words, int &pointer,
-                               const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleKeyPrefix(const std::vector<std::string> &words, int &pointer,
-                                const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleInKeys(const std::vector<std::string> &words, int &pointer,
-                             const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleSetSuggestIndex(const std::vector<std::string> &words, int &pointer,
-                                      const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
-    static void HandleDeviceId(const std::vector<std::string> &words, int &pointer,
-                               const int &end, bool &isSuccess, DistributedDB::Query &dbQuery);
+    static bool Handle(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleExtra(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleEqualTo(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleNotEqualTo(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleGreaterThan(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleLessThan(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleGreaterThanOrEqualTo(
+        const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleLessThanOrEqualTo(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleIsNull(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleIsNotNull(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleIn(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleNotIn(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleLike(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleNotLike(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleAnd(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleOr(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleOrderByAsc(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleOrderByDesc(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleLimit(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleBeginGroup(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleEndGroup(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleKeyPrefix(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleInKeys(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleSetSuggestIndex(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleDeviceId(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
     static int StringToInt(const std::string &word);
     static int64_t StringToLong(const std::string &word);
     static double StringToDouble(const std::string &word);
     static bool StringToBoolean(const std::string &word);
     static std::string StringToString(const std::string &word);
-    static std::vector<int> GetIntegerList(const std::vector<std::string> &words, int &elementPointer, const int &end);
-    static std::vector<int64_t> GetLongList(const std::vector<std::string> &words, int &elementPointer, const int &end);
-    static std::vector<double> GetDoubleList(const std::vector<std::string> &words,
-                                             int &elementPointer, const int &end);
-    static std::vector<std::string> GetStringList(const std::vector<std::string> &words,
-                                                  int &elementPointer, const int &end);
+    static std::vector<int> GetIntegerList(const std::vector<std::string> &words, int &elementPointer, int end);
+    static std::vector<int64_t> GetLongList(const std::vector<std::string> &words, int &elementPointer, int end);
+    static std::vector<double> GetDoubleList(const std::vector<std::string> &words, int &elementPointer, int end);
+    static std::vector<std::string> GetStringList(const std::vector<std::string> &words, int &elementPointer, int end);
 };
 } // namespace OHOS::DistributedKv
 #endif // QUERY_HELPER_H
