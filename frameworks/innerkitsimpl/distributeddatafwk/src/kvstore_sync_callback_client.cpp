@@ -30,7 +30,8 @@ KvStoreSyncCallbackClient::~KvStoreSyncCallbackClient()
 
 void KvStoreSyncCallbackClient::SyncCompleted(const std::map<std::string, Status> &results, uint64_t sequenceId)
 {
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__),
+        TraceSwitch::BYTRACE_ON | TraceSwitch::API_PERFORMANCE_TRACE_ON);
     auto finded = syncCallbackInfo_.Find(sequenceId);
     if (finded.first) {
         finded.second->SyncCompleted(results);
