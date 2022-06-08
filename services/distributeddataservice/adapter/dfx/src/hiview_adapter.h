@@ -34,59 +34,6 @@ struct StatisticWrap {
     int code;
 };
 
-namespace {
-// fault key
-constexpr const char *FAULT_TYPE = "FAULT_TYPE";
-constexpr const char *MODULE_NAME = "MODULE_NAME";
-constexpr const char *INTERFACE_NAME = "INTERFACE_NAME";
-constexpr const char *ERROR_TYPE = "ERROR_TYPE";
-constexpr const char *SYNC_ERROR_INFO = "SYNC_ERROR_INFO";
-// Database statistic
-constexpr const char *USER_ID = "ANONYMOUS_UID";
-constexpr const char *APP_ID = "APP_ID";
-constexpr const char *STORE_ID = "STORE_ID";
-constexpr const char *DB_SIZE = "DB_SIZE";
-// interface visit statistic
-constexpr const char *TIMES = "TIMES";
-constexpr const char *DEVICE_ID = "ANONYMOUS_DID";
-constexpr const char *SEND_SIZE = "SEND_SIZE";
-constexpr const char *RECEIVED_SIZE = "RECEIVED_SIZE";
-constexpr const char *COMPLETE_TIME = "COMPLETE_TIME";
-constexpr const char *SIZE = "SIZE";
-constexpr const char *SRC_DEVICE_ID = "ANONYMOUS_SRC_DID";
-constexpr const char *DST_DEVICE_ID = "ANONYMOUS_DST_DID";
-constexpr const char *AVERAGE_TIMES = "AVERAGE_TIME";
-constexpr const char *WORST_TIMES = "WORST_TIME";
-constexpr const char *INTERFACES = "INTERFACES";
-constexpr const char *TAG = "TAG";
-constexpr const char *POWERSTATS = "PowerStats";
-// security key
-constexpr const char *SECURITY_INFO = "SECURITY_INFO";
-constexpr const char *DEVICE_SENSITIVE_LEVEL = "DEVICE_SENSITIVE_LEVEL";
-constexpr const char *OPTION_SENSITIVE_LEVEL = "OPTION_SENSITIVE_LEVEL";
-// behaviour key
-constexpr const char *BEHAVIOUR_INFO = "BEHAVIOUR_INFO";
-
-const std::map<int, std::string> EVENT_COVERT_TABLE = {
-    {DfxCodeConstant::SERVICE_FAULT, "SERVICE_FAULT"},
-    {DfxCodeConstant::RUNTIME_FAULT, "RUNTIME_FAULT"},
-    {DfxCodeConstant::DATABASE_FAULT, "DATABASE_FAULT"},
-    {DfxCodeConstant::COMMUNICATION_FAULT, "DATABASE_FAULT"},
-    {DfxCodeConstant::DATABASE_STATISTIC, "COMMUNICATION_FAULT}"},
-    {DfxCodeConstant::VISIT_STATISTIC, "VISIT_STATISTIC"},
-    {DfxCodeConstant::TRAFFIC_STATISTIC, "VISIT_STATISTIC"},
-    {DfxCodeConstant::DATABASE_PERFORMANCE_STATISTIC, "DATABASE_PERFORMANCE_STATISTIC"},
-    {DfxCodeConstant::API_PERFORMANCE_STATISTIC, "API_PERFORMANCE_STATISTIC"},
-    {DfxCodeConstant::API_PERFORMANCE_INTERFACE, "API_PERFORMANCE_STATISTIC"},
-    {DfxCodeConstant::DATABASE_SYNC_FAILED, "DATABASE_SYNC_FAILED"},
-    {DfxCodeConstant::DATABASE_RECOVERY_FAILED, "DATABASE_SYNC_FAILED"},
-    {DfxCodeConstant::DATABASE_OPEN_FAILED, "DATABASE_RECOVERY_FAILED"},
-    {DfxCodeConstant::DATABASE_REKEY_FAILED, "DATABASE_OPEN_FAILED"},
-    {DfxCodeConstant::DATABASE_SECURITY, "DATABASE_REKEY_FAILED"},
-    {DfxCodeConstant::DATABASE_BEHAVIOUR, "DATABASE_BEHAVIOUR"},
-};
-}
-
 class HiViewAdapter {
 public:
     ~HiViewAdapter();
