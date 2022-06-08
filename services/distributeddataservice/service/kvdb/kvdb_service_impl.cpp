@@ -102,13 +102,14 @@ Status KVDBServiceImpl::SetSyncParam(const AppId &appId, const StoreId &storeId,
 
 Status KVDBServiceImpl::GetSyncParam(const AppId &appId, const StoreId &storeId, KvSyncParam &syncParam)
 {
-    delayTimes_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [&storeId, &syncParam](auto &key, std::map<std::string, uint32_t> &values) {
-        auto it = values.find(storeId);
-        if (it != values.end()) {
-            syncParam.allowedDelayMs = it->second;
-        }
-        return !values.empty();
-    });
+    delayTimes_.ComputeIfPresent(
+        IPCSkeleton::GetCallingTokenID(), [&storeId, &syncParam](auto &key, std::map<std::string, uint32_t> &values) {
+            auto it = values.find(storeId);
+            if (it != values.end()) {
+                syncParam.allowedDelayMs = it->second;
+            }
+            return !values.empty();
+        });
     return SUCCESS;
 }
 
@@ -253,5 +254,4 @@ int32_t KVDBServiceImpl::GetInstIndex(uint32_t tokenId, const AppId &appId)
     }
     return tokenInfo.instIndex;
 }
-
 } // namespace OHOS::DistributedKv
