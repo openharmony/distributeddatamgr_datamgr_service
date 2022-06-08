@@ -552,7 +552,7 @@ HWTEST_F(SingleStoreImplTest, RemoveDeviceData, TestSize.Level0)
     status = kvStore_->GetCount({}, count);
     ASSERT_EQ(status, SUCCESS);
     ASSERT_EQ(count, 10);
-    status = kvStore_->RemoveDeviceData(DevManager::GetInstance().GetLocalDevice().deviceId);
+    status = kvStore_->RemoveDeviceData(DevManager::GetInstance().GetLocalDevice().uuid);
     ASSERT_EQ(status, SUCCESS);
     status = kvStore_->GetCount({}, count);
     ASSERT_EQ(status, SUCCESS);
