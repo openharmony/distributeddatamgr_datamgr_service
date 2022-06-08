@@ -530,9 +530,7 @@ Status KvStoreDataService::CloseKvStore(const AppId &appId, const StoreId &store
             return status;
         }
     }
-    FaultMsg msg = {FaultType::RUNTIME_FAULT, "user", __FUNCTION__, Fault::RF_CLOSE_DB};
-    Reporter::GetInstance()->ServiceFault()->Report(msg);
-    ZLOGE("return STORE_NOT_OPEN.");
+    ZLOGE("store not open.");
     return Status::STORE_NOT_OPEN;
 }
 
@@ -802,8 +800,6 @@ void KvStoreDataService::StartService()
     InitObjectStore();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {
-        FaultMsg msg = {FaultType::SERVICE_FAULT, "service", __FUNCTION__, Fault::SF_SERVICE_PUBLISH};
-        Reporter::GetInstance()->ServiceFault()->Report(msg);
         DumpHelper::GetInstance().AddErrorInfo("StartService: Service publish failed.");
     }
     Uninstaller::GetInstance().Init(this);
@@ -995,6 +991,8 @@ bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::
         qstatus = instance.QueryKvStoreMetaDataByDeviceIdAndAppId("", appId, metaData); // local device id maybe null
         if (qstatus != Status::SUCCESS) {
             ZLOGW("query appId failed.");
+            Reporter::GetInstance()->SecurityReporter()->Report(
+                {userId, appId, storeId, KvStoreUtils::ToBeAnonymous(deviceId), SecurityInfo::PERMISSIONS_APPID_FAILE});
             return false;
         }
     }
@@ -1005,6 +1003,8 @@ bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::
     Status status = instance.CheckSyncPermission(userId, appId, storeId, flag, deviceId);
     if (status != Status::SUCCESS) {
         ZLOGW("PermissionCheck failed.");
+        Reporter::GetInstance()->SecurityReporter()->Report(
+            {userId, appId, storeId, KvStoreUtils::ToBeAnonymous(deviceId), SecurityInfo::PERMISSIONS_DEVICEID_FAILE});
         return false;
     }
 
@@ -1014,7 +1014,11 @@ bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::
     }
 
     bool ret = PermissionValidator::GetInstance().CheckSyncPermission(metaData.tokenId);
-    ZLOGD("checking sync permission ret:%{public}d.", ret);
+    if (!ret) {
+        Reporter::GetInstance()->SecurityReporter()->Report(
+            {userId, appId, storeId, KvStoreUtils::ToBeAnonymous(deviceId), SecurityInfo::PERMISSIONS_TOKENID_FAILE});
+    }
+
     return ret;
 }
 

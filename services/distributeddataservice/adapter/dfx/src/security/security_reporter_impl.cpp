@@ -13,20 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTEDDATAMGR_FAULT_REPORTER_H
-#define DISTRIBUTEDDATAMGR_FAULT_REPORTER_H
-
-#include "dfx_types.h"
+#include "security_reporter_impl.h"
 
 namespace OHOS {
 namespace DistributedKv {
-class FaultReporter {
-public:
-    KVSTORE_API virtual ReportStatus Report(const FaultMsg &msg) = 0;
-    KVSTORE_API virtual ReportStatus Report(const CommFaultMsg &msg) = 0;
-    KVSTORE_API virtual ReportStatus Report(const DBFaultMsg &ms) = 0;
-    KVSTORE_API virtual ~FaultReporter() {}
-};
-}  // namespace DistributedKv
-}  // namespace OHOS
-#endif // DISTRIBUTEDDATAMGR_FAULT_REPORTER_H
+ReportStatus SecurityReporterImpl::Report(const SecurityPermissionsMsg &msg)
+{
+    HiViewAdapter::ReportPermissionsSecurity(DfxCodeConstant::DATABASE_SECURITY, msg);
+    return ReportStatus::SUCCESS;
+}
+ReportStatus SecurityReporterImpl::Report(const SecuritySensitiveLevelMsg &msg)
+{
+    HiViewAdapter::ReportSensitiveLevelSecurity(DfxCodeConstant::DATABASE_SECURITY, msg);
+    return ReportStatus::SUCCESS;
+}
+} // namespace DistributedKv
+} // namespace OHOS

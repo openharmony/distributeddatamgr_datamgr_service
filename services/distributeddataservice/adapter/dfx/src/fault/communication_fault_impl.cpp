@@ -17,9 +17,9 @@
 
 namespace OHOS {
 namespace DistributedKv {
-ReportStatus CommunicationFaultImpl::Report(const FaultMsg &msg)
+ReportStatus CommunicationFaultImpl::Report(const CommFaultMsg &msg)
 {
-    HiViewAdapter::ReportFault(DfxCodeConstant::COMMUNICATION_FAULT, msg);
+    HiViewAdapter::ReportCommFault(DfxCodeConstant::DATABASE_SYNC_FAILED, msg);
     return ReportStatus::SUCCESS;
 }
 } // namespace DistributedKv

@@ -21,6 +21,8 @@
 #include "dfx_types.h"
 #include "statistic_reporter.h"
 #include "fault_reporter.h"
+#include "security_reporter.h"
+#include "behaviour_reporter.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -36,6 +38,9 @@ public:
     KVSTORE_API StatisticReporter<VisitStat>* VisitStatistic();
     KVSTORE_API StatisticReporter<TrafficStat>* TrafficStatistic();
     KVSTORE_API StatisticReporter<ApiPerformanceStat>* ApiPerformanceStatistic();
+
+    KVSTORE_API SecurityReporter* SecurityReporter();
+    KVSTORE_API BehaviourReporter* BehaviourReporter();
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

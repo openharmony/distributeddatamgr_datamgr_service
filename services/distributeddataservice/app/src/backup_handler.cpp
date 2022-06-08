@@ -125,6 +125,8 @@ void BackupHandler::SingleKvStoreBackup(const StoreMetaData &metaData)
                 if (status == DistributedDB::DBStatus::OK) {
                     ZLOGD("SingleKvStoreBackup export success.");
                     RemoveFile(backupBackFullName);
+                    Reporter::GetInstance()->BehaviourReporter()->Report(
+                        {metaData.account, metaData.appId, metaData.storeId, BehaviourType::DATABASE_BACKUP_SUCCESS});
                 } else {
                     ZLOGE("SingleKvStoreBackup export failed, status is %d.", status);
                     RenameFile(backupBackFullName, backupFullName);

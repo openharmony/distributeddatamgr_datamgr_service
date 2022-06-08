@@ -14,6 +14,7 @@ import("//build/ohos.gni")
 
 ohos_static_library("distributeddata_dfx_static") {
   sources = [
+    "src/behaviour/behaviour_reporter_impl.cpp",
     "src/dds_trace.cpp",
     "src/fault/communication_fault_impl.cpp",
     "src/fault/database_fault_impl.cpp",
@@ -21,6 +22,7 @@ ohos_static_library("distributeddata_dfx_static") {
     "src/fault/service_fault_impl.cpp",
     "src/hiview_adapter.cpp",
     "src/reporter.cpp",
+    "src/security/security_reporter_impl.cpp",
     "src/statistic/api_performance_statistic_impl.cpp",
     "src/statistic/database_statistic_impl.cpp",
     "src/statistic/traffic_statistic_impl.cpp",
