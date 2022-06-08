@@ -21,8 +21,15 @@
 #include <iremote_broker.h>
 #include "rdb_service.h"
 #include "rdb_types.h"
-
 namespace OHOS::DistributedRdb {
+#ifndef DECLARE_INTERFACE_DESCRIPTOR_IN
+#define DECLARE_INTERFACE_DESCRIPTOR_IN(DESCRIPTOR)                      \
+    static inline const std::u16string &GetDescriptor()                  \
+    {                                                                    \
+        static std::u16string metaDescriptor_ = { DESCRIPTOR };          \
+        return metaDescriptor_;                                          \
+    }
+#endif
 class IRdbService : public RdbService, public IRemoteBroker {
 public:
     enum {
@@ -36,7 +43,7 @@ public:
         RDB_SERVICE_CMD_MAX
     };
 
-    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedRdb.IRdbService");
+    DECLARE_INTERFACE_DESCRIPTOR_IN(u"OHOS.DistributedRdb.IRdbService");
 
     virtual int32_t InitNotifier(const RdbSyncerParam& param, const sptr<IRemoteObject> notifier) = 0;
 
