@@ -34,9 +34,9 @@
 namespace DistributedDB {
 namespace {
 #ifdef USE_DFX_ABILITY
-static constexpr uint64_t HITRACE_LABEL = HITRACE_TAG_DISTRIBUTEDDATA;
+constexpr uint64_t HITRACE_LABEL = HITRACE_TAG_DISTRIBUTEDDATA;
 #endif
-static const std::string DUMP_PARAM = "dump-distributeddb";
+constexpr const char *DUMP_PARAM = "dump-distributeddb";
 }
 
 const std::string DBDfxAdapter::EVENT_CODE = "ERROR_CODE";
@@ -51,14 +51,10 @@ void DBDfxAdapter::Dump(int fd, const std::vector<std::u16string> &args)
 {
     const std::u16string u16DumpParam =
         std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}.from_bytes(DUMP_PARAM);
-    bool abort = true;
-    for (auto &arg : args) {
-        if (u16DumpParam == arg) {
-            abort = false;
-            break;
-        }
-    }
-    if (abort) {
+    auto find = std::any_of(args.begin(), args.end(), [&](const std::u16string &arg) {
+        return arg == u16DumpParam;
+    });
+    if (!find) {
         return;
     }
     DBDumpHelper::Dump(fd, "DistributedDB Dump Message Info:\n\n");
@@ -78,6 +74,8 @@ void DBDfxAdapter::ReportFault(const ReportTask &reportTask)
         OHOS::HiviewDFX::HiSysEvent::Write(OHOS::HiviewDFX::HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             reportTask.eventName,
             OHOS::HiviewDFX::HiSysEvent::EventType::FAULT,
+            APP_ID, reportTask.appId,
+            STORE_ID, reportTask.storeId,
             EVENT_CODE, std::to_string(reportTask.errCode));
     });
 }

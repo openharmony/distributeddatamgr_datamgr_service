@@ -510,8 +510,8 @@ void SQLiteRelationalStore::Dump(int fd)
         label = sqliteStorageEngine_->GetProperties().GetStringProp(DBProperties::IDENTIFIER_DATA, "");
     }
     label = DBCommon::TransferStringToHex(label);
-    DBDumpHelper::Dump(fd, "\tdb appId = %s, userId = %s, storeId = %s, label = %s\n",
-        appId.c_str(), userId.c_str(), storeId.c_str(), label.c_str());
+    DBDumpHelper::Dump(fd, "\tdb userId = %s, appId = %s, storeId = %s, label = %s\n",
+        userId.c_str(), appId.c_str(), storeId.c_str(), label.c_str());
     if (syncAbleEngine_ != nullptr) {
         syncAbleEngine_->Dump(fd);
     }

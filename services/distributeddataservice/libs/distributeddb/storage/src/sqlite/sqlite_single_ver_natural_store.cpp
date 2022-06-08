@@ -2336,8 +2336,8 @@ void SQLiteSingleVerNaturalStore::Dump(int fd)
     std::string storeId = MyProp().GetStringProp(DBProperties::STORE_ID, "");
     std::string label = MyProp().GetStringProp(DBProperties::IDENTIFIER_DATA, "");
     label = DBCommon::TransferStringToHex(label);
-    DBDumpHelper::Dump(fd, "\tdb appId = %s, userId = %s, storeId = %s, label = %s\n",
-        appId.c_str(), userId.c_str(), storeId.c_str(), label.c_str());
+    DBDumpHelper::Dump(fd, "\tdb userId = %s, appId = %s, storeId = %s, label = %s\n",
+        userId.c_str(), appId.c_str(), storeId.c_str(), label.c_str());
     SyncAbleKvDB::Dump(fd);
 }
 
