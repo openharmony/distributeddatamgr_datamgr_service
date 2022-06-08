@@ -25,14 +25,6 @@
 #include "types.h"
 #include "visibility.h"
 namespace OHOS::DistributedKv {
-#ifndef DECLARE_INTERFACE_DESCRIPTOR_IN
-#define DECLARE_INTERFACE_DESCRIPTOR_IN(DESCRIPTOR)                      \
-    static inline const std::u16string &GetDescriptor()                  \
-    {                                                                    \
-        static std::u16string metaDescriptor_ = { DESCRIPTOR };          \
-        return metaDescriptor_;                                          \
-    }
-#endif
 class API_EXPORT KVDBService : public IRemoteBroker {
 public:
     using SingleKVStore = SingleKvStore;
@@ -43,7 +35,7 @@ public:
         std::vector<std::string> devices;
         std::string query;
     };
-    DECLARE_INTERFACE_DESCRIPTOR_IN(u"OHOS.DistributedKv.KVDBService");
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedKv.KVDBService");
 
     API_EXPORT KVDBService() = default;
 

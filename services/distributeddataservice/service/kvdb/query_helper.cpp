@@ -12,26 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "QueryHelper"
-
 #include "query_helper.h"
-
 #include <regex>
 #include <sstream>
-
 #include "data_query.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "types.h"
-
 namespace OHOS::DistributedKv {
 constexpr int QUERY_SKIP_SIZE = 1;
 constexpr int QUERY_WORD_SIZE = 2;
 constexpr int MAX_QUERY_LENGTH = 5 * 1024; // Max query string length 5k
 constexpr int MAX_QUERY_COMPLEXITY = 500;  // Max query complexity 500
-bool QueryHelper::hasPrefixKey_{};
-std::string QueryHelper::deviceId_{};
+bool QueryHelper::hasPrefixKey_ = false;
+std::string QueryHelper::deviceId_;
 
 DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool &isSuccess)
 {
@@ -158,7 +153,7 @@ bool QueryHelper::HandleEqualTo(const std::vector<std::string> &words, int &poin
         ZLOGE("EqualTo wrong type.");
         return false;
     }
-    pointer += 4; // Pointer goes to next keyword
+    pointer += 4; // 4 Pointer goes to next keyword
     return true;
 }
 
@@ -185,7 +180,7 @@ bool QueryHelper::HandleNotEqualTo(const std::vector<std::string> &words, int &p
         ZLOGE("NotEqualTo wrong type.");
         return false;
     }
-    pointer += 4; // Pointer goes to next keyword
+    pointer += 4; // 4 Pointer goes to next keyword
     return true;
 }
 
@@ -210,7 +205,7 @@ bool QueryHelper::HandleGreaterThan(const std::vector<std::string> &words, int &
         ZLOGE("GreaterThan wrong type.");
         return false;
     }
-    pointer += 4; // Pointer goes to next keyword
+    pointer += 4; // 4 Pointer goes to next keyword
     return true;
 }
 
@@ -235,7 +230,7 @@ bool QueryHelper::HandleLessThan(const std::vector<std::string> &words, int &poi
         ZLOGE("LessThan wrong type.");
         return false;
     }
-    pointer += 4; // Pointer goes to next keyword
+    pointer += 4; // 4 Pointer goes to next keyword
     return true;
 }
 
@@ -261,7 +256,7 @@ bool QueryHelper::HandleGreaterThanOrEqualTo(
         ZLOGE("GreaterThanOrEqualTo wrong type.");
         return false;
     }
-    pointer += 4; // Pointer goes to next keyword
+    pointer += 4; // 4 Pointer goes to next keyword
     return true;
 }
 
@@ -287,7 +282,7 @@ bool QueryHelper::HandleLessThanOrEqualTo(
         ZLOGE("LessThanOrEqualTo wrong type.");
         return false;
     }
-    pointer += 4; // Pointer goes to next keyword
+    pointer += 4; // 4 Pointer goes to next keyword
     return true;
 }
 
@@ -299,7 +294,7 @@ bool QueryHelper::HandleIsNull(const std::vector<std::string> &words, int &point
     }
     const std::string &fieldName = words.at(pointer + 1); // fieldName
     dbQuery.IsNull(StringToString(fieldName));
-    pointer += 2; // Pointer goes to next keyword
+    pointer += 2; // 2 Pointer goes to next keyword
     return true;
 }
 
@@ -311,7 +306,7 @@ bool QueryHelper::HandleIsNotNull(const std::vector<std::string> &words, int &po
     }
     const std::string &fieldName = words.at(pointer + 1); // fieldName
     dbQuery.IsNotNull(StringToString(fieldName));
-    pointer += 2; // Pointer goes to next keyword
+    pointer += 2; // 2 Pointer goes to next keyword
     return true;
 }
 
@@ -382,7 +377,7 @@ bool QueryHelper::HandleLike(const std::vector<std::string> &words, int &pointer
     const std::string &fieldName = words.at(pointer + 1);  // fieldName
     const std::string &fieldValue = words.at(pointer + 2); // fieldValue
     dbQuery.Like(StringToString(fieldName), StringToString(fieldValue));
-    pointer += 3; // Pointer goes to next keyword
+    pointer += 3; // 3 Pointer goes to next keyword
     return true;
 }
 
@@ -395,7 +390,7 @@ bool QueryHelper::HandleNotLike(const std::vector<std::string> &words, int &poin
     const std::string &fieldName = words.at(pointer + 1);  // fieldName
     const std::string &fieldValue = words.at(pointer + 2); // fieldValue
     dbQuery.NotLike(StringToString(fieldName), StringToString(fieldValue));
-    pointer += 3; // Pointer goes to next keyword
+    pointer += 3; // 3 Pointer goes to next keyword
     return true;
 }
 
@@ -421,7 +416,7 @@ bool QueryHelper::HandleOrderByAsc(const std::vector<std::string> &words, int &p
     }
     const std::string &fieldName = words.at(pointer + 1); // fieldName
     dbQuery.OrderBy(StringToString(fieldName), true);
-    pointer += 2; // Pointer goes to next keyword
+    pointer += 2; // 2 Pointer goes to next keyword
     return true;
 }
 
@@ -433,7 +428,7 @@ bool QueryHelper::HandleOrderByDesc(const std::vector<std::string> &words, int &
     }
     const std::string &fieldName = words.at(pointer + 1); // fieldName
     dbQuery.OrderBy(StringToString(fieldName), false);
-    pointer += 2; // Pointer goes to next keyword
+    pointer += 2; // 2 Pointer goes to next keyword
     return true;
 }
 
@@ -446,7 +441,7 @@ bool QueryHelper::HandleLimit(const std::vector<std::string> &words, int &pointe
     const int number = StringToInt(words.at(pointer + 1)); // number
     const int offset = StringToInt(words.at(pointer + 2)); // offset
     dbQuery.Limit(number, offset);
-    pointer += 3; // Pointer goes to next keyword
+    pointer += 3; // 3 Pointer goes to next keyword
     return true;
 }
 
@@ -473,7 +468,7 @@ bool QueryHelper::HandleKeyPrefix(const std::vector<std::string> &words, int &po
     const std::string &prefix = deviceId_ + StringToString(words.at(pointer + 1)); // prefix
     const std::vector<uint8_t> prefixVector(prefix.begin(), prefix.end());
     dbQuery.PrefixKey(prefixVector);
-    pointer += 2; // Pointer goes to next keyword
+    pointer += 2; // 2 Pointer goes to next keyword
     return true;
 }
 
@@ -532,7 +527,7 @@ bool QueryHelper::HandleDeviceId(const std::vector<std::string> &words, int &poi
     } else {
         ZLOGD("Join deviceId with user specified prefixkey later.");
     }
-    pointer += 2; // Pointer goes to next keyword
+    pointer += 2; // 2 Pointer goes to next keyword
     return true;
 }
 

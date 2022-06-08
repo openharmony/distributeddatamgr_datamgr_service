@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <gtest/gtest.h>
 #include <unistd.h>
-
-#include <iostream>
 #include <memory>
 #include <thread>
 #include <vector>
@@ -22,10 +21,8 @@
 #include "backup_handler.h"
 #include "bootstrap.h"
 #include "communication_provider.h"
-#include "gtest/gtest.h"
 #include "kv_store_delegate_manager.h"
 #include "kvstore_data_service.h"
-#include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "process_communicator_impl.h"
 #include "session_manager/route_head_handler_impl.h"

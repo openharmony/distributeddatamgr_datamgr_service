@@ -20,15 +20,6 @@
 
 #include <iremote_broker.h>
 #include "object_service.h"
-#ifndef DECLARE_INTERFACE_DESCRIPTOR_IN
-#define DECLARE_INTERFACE_DESCRIPTOR_IN(DESCRIPTOR)                      \
-    static inline const std::u16string &GetDescriptor()                  \
-    {                                                                    \
-        static std::u16string metaDescriptor_ = { DESCRIPTOR };          \
-        return metaDescriptor_;                                          \
-    }
-#endif
-
 namespace OHOS::DistributedObject {
 class IObjectService : public ObjectService, public IRemoteBroker {
 public:
@@ -38,7 +29,7 @@ public:
         OBJECTSTORE_RETRIEVE,
         OBJECTSTORE_SERVICE_CMD_MAX
     };
-    DECLARE_INTERFACE_DESCRIPTOR_IN(u"OHOS.DistributedObject.IObjectService");
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectService");
 };
 } // namespace OHOS::DistributedRdb
 #endif
