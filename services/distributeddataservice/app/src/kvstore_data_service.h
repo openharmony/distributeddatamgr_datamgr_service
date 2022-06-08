@@ -112,8 +112,7 @@ public:
 private:
     class KvStoreClientDeathObserverImpl {
     public:
-        KvStoreClientDeathObserverImpl(const AppId &appId, pid_t uid, uint32_t token,
-                                       KvStoreDataService &service, sptr<IRemoteObject> observer);
+        KvStoreClientDeathObserverImpl(const AppId &appId, KvStoreDataService &service, sptr<IRemoteObject> observer);
 
         virtual ~KvStoreClientDeathObserverImpl();
 
@@ -128,9 +127,10 @@ private:
             KvStoreClientDeathObserverImpl &kvStoreClientDeathObserverImpl_;
         };
         void NotifyClientDie();
-        AppId appId_;
         pid_t uid_;
+        pid_t pid_;
         uint32_t token_;
+        AppId appId_;
         KvStoreDataService &dataService_;
         sptr<IRemoteObject> observerProxy_;
         sptr<KvStoreDeathRecipient> deathRecipient_;
@@ -162,7 +162,7 @@ private:
     Status GetSingleKvStoreFailDo(Status status, const Options &options, const StoreMetaData &metaData,
         SecretKeyPara &secKeyParas, KvStoreUserManager &kvUserManager, sptr<SingleKvStoreImpl> &kvStore);
 
-    Status AppExit(const AppId &appId, pid_t uid, uint32_t token);
+    Status AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId);
 
     bool CheckPermissions(const std::string &userId, const std::string &appId, const std::string &storeId,
                           const std::string &deviceId, uint8_t flag) const;
@@ -195,7 +195,7 @@ private:
     std::shared_ptr<Security> security_;
     std::mutex mutex_;
     sptr<DistributedRdb::RdbServiceImpl> rdbService_;
-    sptr<DistributedKv::KVDBServiceImpl> kvdbService_;
+    sptr<KVDBServiceImpl> kvdbService_;
     sptr<DistributedObject::ObjectServiceImpl> objectService_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
 };

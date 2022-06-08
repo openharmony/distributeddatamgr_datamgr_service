@@ -16,7 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_H
 #include <memory>
-
+#include <limits>
 #include "ikvstore_observer.h"
 #include "ikvstore_sync_callback.h"
 #include "iremote_broker.h"
@@ -29,7 +29,7 @@ class API_EXPORT KVDBService : public IRemoteBroker {
 public:
     using SingleKVStore = SingleKvStore;
     struct SyncInfo {
-        uint64_t seqId = -1;
+        uint64_t seqId = std::numeric_limits<uint64_t>::max();
         int32_t mode = PUSH_PULL;
         uint32_t delay = 0;
         std::vector<std::string> devices;
@@ -47,9 +47,8 @@ public:
         const AppId &appId, const StoreId &storeId, const Options &options, const std::vector<uint8_t> &password) = 0;
     virtual Status Delete(const AppId &appId, const StoreId &storeId) = 0;
     virtual Status Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) = 0;
-    virtual Status RegisterSyncCallback(
-        const AppId &appId, const StoreId &storeId, sptr<IKvStoreSyncCallback> callback) = 0;
-    virtual Status UnregisterSyncCallback(const AppId &appId, const StoreId &storeId) = 0;
+    virtual Status RegisterSyncCallback(const AppId &appId, sptr<IKvStoreSyncCallback> callback) = 0;
+    virtual Status UnregisterSyncCallback(const AppId &appId) = 0;
     virtual Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) = 0;
     virtual Status GetSyncParam(const AppId &appId, const StoreId &storeId, KvSyncParam &syncParam) = 0;
     virtual Status EnableCapability(const AppId &appId, const StoreId &storeId) = 0;

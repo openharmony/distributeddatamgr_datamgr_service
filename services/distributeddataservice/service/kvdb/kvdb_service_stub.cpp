@@ -15,6 +15,7 @@
 #define LOG_TAG "KVDBServiceStub"
 #include "kvdb_service_stub.h"
 
+#include "checker/checker_manager.h"
 #include "ipc_skeleton.h"
 #include "itypes_util.h"
 #include "log_print.h"
@@ -42,7 +43,7 @@ const KVDBServiceStub::Handler KVDBServiceStub::HANDLERS[TRANS_BUTT] = {
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    ZLOGD("code:%{public}u, callingPid:%{public}u", code, IPCSkeleton::GetCallingPid());
+    ZLOGI("code:%{public}u, callingPid:%{public}u", code, IPCSkeleton::GetCallingPid());
     std::u16string local = KVDBServiceStub::GetDescriptor();
     std::u16string remote = data.ReadInterfaceToken();
     if (local != remote) {
@@ -50,18 +51,35 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
         return -1;
     }
 
-    if (TRANS_HEAD <= code && code < TRANS_BUTT && HANDLERS[code] != nullptr) {
-        AppId appId;
-        StoreId storeId;
-        if (!ITypesUtil::Unmarshal(data, appId, storeId)) {
-            ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
-            return IPC_STUB_INVALID_DATA_ERR;
-        }
-        appId.appId = Constant::TrimCopy(appId.appId);
-        storeId.storeId = Constant::TrimCopy(storeId.storeId);
+    if (TRANS_HEAD > code || code >= TRANS_BUTT || HANDLERS[code] != nullptr) {
+        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+    AppId appId;
+    StoreId storeId;
+    if (!ITypesUtil::Unmarshal(data, appId, storeId)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    appId.appId = Constant::TrimCopy(appId.appId);
+    storeId.storeId = Constant::TrimCopy(storeId.storeId);
+
+    CheckerManager::StoreInfo info;
+    info.uid = IPCSkeleton::GetCallingUid();
+    info.tokenId = IPCSkeleton::GetCallingTokenID();
+    info.bundleName = appId.appId;
+    info.storeId = storeId.storeId;
+    if (CheckerManager::GetInstance().IsValid(info)) {
         return (this->*HANDLERS[code])(appId, storeId, data, reply);
     }
-    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    ZLOGE("PERMISSION_DENIED uid:%{public}d, appId:%{public}s, storeId:%{public}s", info.uid, info.bundleName.c_str(),
+        info.storeId.c_str());
+
+    if (!ITypesUtil::Marshal(reply, PERMISSION_DENIED)) {
+        ZLOGE("Marshal PERMISSION_DENIED code£º%{public}u, appId:%{public}s storeId:%{public}s", code,
+            appId.appId.c_str(), storeId.storeId.c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
 }
 
 int32_t KVDBServiceStub::OnGetStoreIds(
@@ -148,7 +166,7 @@ int32_t KVDBServiceStub::OnRegisterCallback(
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto syncCallback = (remoteObj == nullptr) ? nullptr : iface_cast<IKvStoreSyncCallback>(remoteObj);
-    int32_t status = RegisterSyncCallback(appId, storeId, syncCallback);
+    int32_t status = RegisterSyncCallback(appId, syncCallback);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             storeId.storeId.c_str());
@@ -160,7 +178,7 @@ int32_t KVDBServiceStub::OnRegisterCallback(
 int32_t KVDBServiceStub::OnUnregisterCallback(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    int32_t status = UnregisterSyncCallback(appId, storeId);
+    int32_t status = UnregisterSyncCallback(appId);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             storeId.storeId.c_str());

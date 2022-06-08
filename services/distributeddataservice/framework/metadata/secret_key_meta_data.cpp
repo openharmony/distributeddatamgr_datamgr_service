@@ -41,16 +41,19 @@ bool SecretKeyMetaData::Unmarshal(const json &node)
 
 std::string SecretKeyMetaData::GetKey(const std::initializer_list<std::string> &fields)
 {
-    std::string prefix = KEY_PREFIX;
-    for (const auto &field : fields) {
-        prefix.append(Constant::KEY_SEPARATOR).append(field);
-    }
+    std::string prefix = GetPrefix(fields);
+    prefix.append("SINGLE_KEY");
     return prefix;
 }
 
 std::string SecretKeyMetaData::GetPrefix(const std::initializer_list<std::string> &fields)
 {
-    return GetKey(fields).append(Constant::KEY_SEPARATOR);
+    std::string prefix = KEY_PREFIX;
+    for (const auto &field : fields) {
+        prefix.append(Constant::KEY_SEPARATOR).append(field);
+    }
+    prefix.append(Constant::KEY_SEPARATOR);
+    return prefix;
 }
 } // namespace DistributedData
 } // namespace OHOS

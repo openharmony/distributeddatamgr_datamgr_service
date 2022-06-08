@@ -670,13 +670,13 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
     std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
     clientDeathObserverMap_.erase(info.tokenId);
     auto it = clientDeathObserverMap_.emplace(std::piecewise_construct, std::forward_as_tuple(info.tokenId),
-        std::forward_as_tuple(appId, info.uid, info.tokenId, *this, std::move(observer)));
+        std::forward_as_tuple(appId, *this, std::move(observer)));
     ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d inserted:%{public}s.",
         appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid(), it.second ? "success" : "failed");
     return it.second ? Status::SUCCESS : Status::ERROR;
 }
 
-Status KvStoreDataService::AppExit(const AppId &appId, pid_t uid, uint32_t token)
+Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId)
 {
     ZLOGI("AppExit");
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
@@ -1028,12 +1028,14 @@ void KvStoreDataService::OnStop()
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(
-    const AppId &appId, pid_t uid, uint32_t token, KvStoreDataService &service, sptr<IRemoteObject> observer)
-    : appId_(appId), uid_(uid), token_(token), dataService_(service), observerProxy_(std::move(observer)),
-    deathRecipient_(new KvStoreDeathRecipient(*this))
+    const AppId &appId, KvStoreDataService &service, sptr<IRemoteObject> observer)
+    : appId_(appId), dataService_(service), observerProxy_(std::move(observer)),
+      deathRecipient_(new KvStoreDeathRecipient(*this))
 {
     ZLOGI("KvStoreClientDeathObserverImpl");
-
+    uid_ = IPCSkeleton::GetCallingUid();
+    pid_ = IPCSkeleton::GetCallingPid();
+    token_ = IPCSkeleton::GetCallingTokenID();
     if (observerProxy_ != nullptr) {
         ZLOGI("add death recipient");
         observerProxy_->AddDeathRecipient(deathRecipient_);
@@ -1049,12 +1051,20 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverI
         ZLOGI("remove death recipient");
         observerProxy_->RemoveDeathRecipient(deathRecipient_);
     }
+    sptr<KVDBServiceImpl> kvdbService;
+    {
+        std::lock_guard<decltype(dataService_.mutex_)> lockGuard(dataService_.mutex_);
+        kvdbService = dataService_.kvdbService_;
+    }
+    if (kvdbService) {
+        kvdbService->AppExit(uid_, pid_, token_, appId_);
+    }
 }
 
 void KvStoreDataService::KvStoreClientDeathObserverImpl::NotifyClientDie()
 {
     ZLOGI("appId: %{public}s uid:%{public}d tokenId:%{public}u", appId_.appId.c_str(), uid_, token_);
-    dataService_.AppExit(appId_, uid_, token_);
+    dataService_.AppExit(uid_, pid_, token_, appId_);
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvStoreDeathRecipient(

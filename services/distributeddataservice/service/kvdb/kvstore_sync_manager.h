@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
-class KvStoreSyncManager {
+class API_EXPORT KvStoreSyncManager {
 public:
     static constexpr uint32_t SYNC_DEFAULT_DELAY_MS = 1000;
     static constexpr uint32_t SYNC_MIN_DELAY_MS = 100;

@@ -20,7 +20,6 @@
 #include "concurrent_map.h"
 #include "kv_store_nb_delegate.h"
 #include "kvdb_service.h"
-#include "kvstore_sync_callback_client.h"
 #include "observer_bridge.h"
 #include "single_kvstore.h"
 #include "sync_observer.h"
@@ -37,7 +36,7 @@ public:
     using DBQuery = DistributedDB::Query;
     using SyncInfo = KVDBService::SyncInfo;
     using Convert = std::function<Key(const DBKey &key, std::string &deviceId)>;
-    SingleStoreImpl(const AppId &appId, std::shared_ptr<DBStore> dbStore);
+    SingleStoreImpl(std::shared_ptr<DBStore> dbStore, const AppId &appId, const Options &options);
     ~SingleStoreImpl() = default;
     StoreId GetStoreId() const override;
     Status Put(const Key &key, const Value &value) override;
@@ -87,15 +86,15 @@ private:
     Status GetResultSet(const DistributedDB::Query &query, std::shared_ptr<ResultSet> &resultSet) const;
     Status GetEntries(const DistributedDB::Query &query, std::vector<Entry> &entries) const;
     Status DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer);
+    void DoAutoSync();
     std::function<void(ObserverBridge *)> BridgeReleaser();
 
+    std::shared_ptr<DBStore> dbStore_ = nullptr;
     std::string appId_;
     std::string storeId_;
+    bool autoSync_ = false;
     mutable std::shared_mutex rwMutex_;
-    mutable std::mutex mutex_;
-    std::shared_ptr<DBStore> dbStore_ = nullptr;
     std::shared_ptr<SyncObserver> syncObserver_ = nullptr;
-    sptr<KvStoreSyncCallbackClient> syncCallback_ = nullptr;
     ConcurrentMap<uintptr_t, std::pair<uint32_t, std::shared_ptr<ObserverBridge>>> observers_;
 };
 } // namespace OHOS::DistributedKv
