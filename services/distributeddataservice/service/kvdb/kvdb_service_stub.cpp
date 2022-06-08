@@ -75,7 +75,7 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
         info.storeId.c_str());
 
     if (!ITypesUtil::Marshal(reply, PERMISSION_DENIED)) {
-        ZLOGE("Marshal PERMISSION_DENIED code£º%{public}u, appId:%{public}s storeId:%{public}s", code,
+        ZLOGE("Marshal PERMISSION_DENIED code:%{public}u, appId:%{public}s storeId:%{public}s", code,
             appId.appId.c_str(), storeId.storeId.c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
