@@ -309,13 +309,12 @@ void ObjectStoreManager::ProcessOldEntry(const std::string &appId)
         }
     }
     if (sessionIds.size() < MAX_OBJECT_SIZE_PER_APP) {
-        ZLOGI("app size %{public}d", sessionIds.size());
         return;
     }
     ZLOGI("app object is full, delete oldest one %{public}s", deleteKey.c_str());
-    status = delegate_->Delete(std::vector<uint8_t>(deleteKey.begin(), deleteKey.end()));
-    if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("Delete fail %{public}d", status);
+    int32_t result = RevokeSaveToStore(deleteKey);
+    if (result != SUCCESS) {
+        ZLOGE("RevokeSaveToStore fail %{public}d", result);
         return;
     }
 }
