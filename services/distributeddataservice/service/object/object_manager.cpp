@@ -52,6 +52,37 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
     return store;
 }
 
+void ObjectStoreManager::ProcessSyncCallback(
+    const std::map<std::string, int32_t> &results, const std::string &appId, const std::string &sessionId)
+{
+    bool isLocal = false;
+    std::string deviceId;
+    for (auto &item : results) {
+        deviceId = item.first;
+        if (item.first == LOCAL_DEVICE) {
+            isLocal = true;
+            break;
+        }
+    }
+    if (!isLocal) {
+        ZLOGE("delete local data sessionId = %{public}s", sessionId.c_str());
+        int32_t result = Open();
+        if (result != SUCCESS) {
+            ZLOGE("Open objectStore DB failed,please check DB status");
+            return;
+        }
+        // delete local data
+        result = RevokeSaveToStore(GetPropertyPrefix(appId, sessionId, deviceId));
+        if (result != SUCCESS) {
+            ZLOGE("Save to store failed,please check DB status, status = %{public}d", result);
+            Close();
+            return;
+        }
+        Close();
+    }
+    return;
+}
+
 int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &sessionId,
     const std::map<std::string, std::vector<uint8_t>> &data, const std::vector<std::string> &deviceList,
     sptr<IObjectSaveCallback> &callback)
@@ -78,32 +109,7 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
     }
     SyncCallBack tmp = [callback, appId, sessionId, this](const std::map<std::string, int32_t> &results) {
         callback->Completed(results);
-        bool isLocal = false;
-        std::string deviceId;
-        for (auto &item : results) {
-            deviceId = item.first;
-            if (item.first == LOCAL_DEVICE) {
-                isLocal = true;
-                break;
-            }
-        }
-        if (!isLocal) {
-            ZLOGE("delete local data sessionId = %{public}s", sessionId.c_str());
-            int32_t result = Open();
-            if (result != SUCCESS) {
-                ZLOGE("Open objectStore DB failed,please check DB status");
-                return;
-            }
-            // delete local data
-            result = RevokeSaveToStore(GetPropertyPrefix(appId, sessionId, deviceId));
-            if (result != SUCCESS) {
-                ZLOGE("Save to store failed,please check DB status, status = %{public}d", result);
-                Close();
-                return;
-            }
-            Close();
-        }
-        return;
+        ProcessSyncCallback(results, appId, sessionId);
     };
     ZLOGI("start SyncOnStore");
     result = SyncOnStore(GetPropertyPrefix(appId, sessionId, deviceList.at(0)), deviceList, tmp);
@@ -299,7 +305,7 @@ void ObjectStoreManager::ProcessOldEntry(const std::string &appId)
         }
         if (oldestTime == 0 || oldestTime > sessionIds[id]) {
             oldestTime = sessionIds[id];
-            deleteKey = key;
+            deleteKey = GetPrefixWithoutDeviceId(appId, id);
         }
     }
     if (sessionIds.size() < MAX_OBJECT_SIZE_PER_APP) {
