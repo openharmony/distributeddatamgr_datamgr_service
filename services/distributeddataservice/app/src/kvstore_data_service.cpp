@@ -588,7 +588,10 @@ Status KvStoreDataService::DeleteKvStore(const AppId &appId, const StoreId &stor
     }
 
     HapTokenInfo tokenInfo;
-    AccessTokenKit::GetHapTokenInfo(info.tokenId, tokenInfo);
+    tokenInfo.instIndex = 0;
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) == TOKEN_HAP) {
+        AccessTokenKit::GetHapTokenInfo(info.tokenId, tokenInfo);
+    }
 
     StoreMetaData storeMetaData;
     storeMetaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
@@ -631,7 +634,8 @@ Status KvStoreDataService::DeleteKvStore(StoreMetaData &metaData)
         if (!MetaDataManager::GetInstance().DelMeta(metaKey)) {
             ZLOGW("Remove Kvstore MetaData failed.");
         }
-        metaKey = SecretKeyMeta::GetKey({ metaData.user, "default", metaData.bundleName, metaData.storeId });
+        std::string instancId = metaData.instanceId == 0 ? "" : std::to_string(metaData.instanceId);
+        metaKey = SecretKeyMeta::GetKey({ metaData.user, "default", metaData.bundleName, metaData.storeId, instancId});
         MetaDataManager::GetInstance().DelMeta(metaKey, true);
         metaKey = StrategyMetaData::GetPrefix({
             metaData.deviceId, metaData.user, "default", metaData.bundleName, metaData.storeId });
