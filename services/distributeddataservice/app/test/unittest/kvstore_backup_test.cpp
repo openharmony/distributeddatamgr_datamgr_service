@@ -12,21 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <gtest/gtest.h>
-#include <unistd.h>
-#include <memory>
+#include <iostream>
 #include <thread>
+#include <unistd.h>
 #include <vector>
-
-#include "backup_handler.h"
+#include <memory>
 #include "bootstrap.h"
-#include "communication_provider.h"
-#include "kv_store_delegate_manager.h"
+#include "backup_handler.h"
 #include "kvstore_data_service.h"
-#include "metadata/meta_data_manager.h"
-#include "process_communicator_impl.h"
-#include "session_manager/route_head_handler_impl.h"
+#include "log_print.h"
 #include "single_kvstore_impl.h"
+#include "metadata/meta_data_manager.h"
+#include "communication_provider.h"
+#include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS;
@@ -46,6 +44,12 @@ protected:
 };
 
 void KvStoreBackupTest::SetUpTestCase(void)
+{}
+
+void KvStoreBackupTest::TearDownTestCase(void)
+{}
+
+void KvStoreBackupTest::SetUp(void)
 {
     const std::string backupDirCe = "/data/misc_ce/0/mdds/0/default/backup";
     unlink(backupDirCe.c_str());
@@ -54,22 +58,12 @@ void KvStoreBackupTest::SetUpTestCase(void)
     const std::string backupDirDe = "/data/misc_de/0/mdds/0/default/backup";
     unlink(backupDirDe.c_str());
     mkdir(backupDirDe.c_str(), KvStoreBackupTest::DEFAULT_DIR_MODE);
+    KvStoreMetaManager::GetInstance().InitMetaParameter();
+    KvStoreMetaManager::GetInstance().InitMetaListener();
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
     Bootstrap::GetInstance().LoadNetworks();
-    KvStoreMetaManager::GetInstance().InitMetaParameter();
-    KvStoreMetaManager::GetInstance().InitMetaListener();
-    DistributedDB::KvStoreDelegateManager::SetProcessLabel("KvStoreBackupTest", "default");
-    auto communicator = std::make_shared<AppDistributedKv::ProcessCommunicatorImpl>(RouteHeadHandlerImpl::Create);
-    (void)DistributedDB::KvStoreDelegateManager::SetProcessCommunicator(communicator);
-}
-
-void KvStoreBackupTest::TearDownTestCase(void)
-{}
-
-void KvStoreBackupTest::SetUp(void)
-{
     deviceId_ = CommunicationProvider::GetInstance().GetLocalDevice().uuid;
 }
 

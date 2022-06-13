@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #define LOG_TAG "KvSyncManager"
+
 #include "kvstore_sync_manager.h"
 #include "log_print.h"
 

@@ -23,8 +23,8 @@
 #include "store_result_set.h"
 #include "store_util.h"
 namespace OHOS::DistributedKv {
-SingleStoreImpl::SingleStoreImpl(std::shared_ptr<DBStore> dbStore, const AppId &appId, const Options &options)
-    : dbStore_(std::move(dbStore)), appId_(appId.appId), autoSync_(options.autoSync)
+SingleStoreImpl::SingleStoreImpl(const AppId &appId, std::shared_ptr<DBStore> dbStore)
+    : appId_(appId.appId), dbStore_(std::move(dbStore))
 {
     storeId_ = dbStore_->GetStoreId();
     syncObserver_ = std::make_shared<SyncObserver>();
@@ -56,7 +56,7 @@ Status SingleStoreImpl::Put(const Key &key, const Value &value)
         ZLOGE("status:0x%{public}x, key:%{public}s, value size:%{public}zu", status,
             StoreUtil::Anonymous(key.ToString()).c_str(), value.Size());
     }
-    DoAutoSync();
+    // do auto sync process
     return status;
 }
 
@@ -86,7 +86,7 @@ Status SingleStoreImpl::PutBatch(const std::vector<Entry> &entries)
     if (status != SUCCESS) {
         ZLOGE("status:0x%{public}x, entries size:%{public}zu", status, entries.size());
     }
-    DoAutoSync();
+    // do auto sync process
     return status;
 }
 
@@ -110,7 +110,7 @@ Status SingleStoreImpl::Delete(const Key &key)
     if (status != SUCCESS) {
         ZLOGE("status:0x%{public}x, key:%{public}s", status, StoreUtil::Anonymous(key.ToString()).c_str());
     }
-    DoAutoSync();
+    // do auto sync process
     return status;
 }
 
@@ -138,7 +138,7 @@ Status SingleStoreImpl::DeleteBatch(const std::vector<Key> &keys)
     if (status != SUCCESS) {
         ZLOGE("status:0x%{public}x, keys size:%{public}zu", status, keys.size());
     }
-    DoAutoSync();
+    // do auto sync process
     return status;
 }
 
@@ -561,6 +561,15 @@ Status SingleStoreImpl::Close()
 {
     observers_.Clear();
     syncObserver_->Clean();
+    std::shared_ptr<KVDBServiceClient> service;
+    {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        service = (syncCallback_ != nullptr) ? KVDBServiceClient::GetInstance() : nullptr;
+        syncCallback_ = nullptr;
+    }
+    if (service != nullptr) {
+        service->UnregisterSyncCallback({ appId_ }, { storeId_ });
+    }
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     dbStore_ = nullptr;
     return SUCCESS;
@@ -681,22 +690,7 @@ Status SingleStoreImpl::DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCal
         ZLOGE("failed! invalid agent app:%{public}s, store:%{public}s!", appId_.c_str(), storeId_.c_str());
         return ILLEGAL_STATE;
     }
-
     syncAgent->AddSyncCallback(observer, syncInfo.seqId);
     return service->Sync({ appId_ }, { storeId_ }, syncInfo);
-}
-
-void SingleStoreImpl::DoAutoSync()
-{
-    if (!autoSync_) {
-        return;
-    }
-
-    SyncInfo syncInfo;
-    auto service = KVDBServiceClient::GetInstance();
-    if (service == nullptr) {
-        return;
-    }
-    service->Sync({ appId_ }, { storeId_ }, syncInfo);
 }
 } // namespace OHOS::DistributedKv

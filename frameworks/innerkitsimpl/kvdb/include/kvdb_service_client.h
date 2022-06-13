@@ -31,8 +31,9 @@ public:
         const std::vector<uint8_t> &password) override;
     Status Delete(const AppId &appId, const StoreId &storeId) override;
     Status Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
-    Status RegisterSyncCallback(const AppId &appId, sptr<IKvStoreSyncCallback> callback) override;
-    Status UnregisterSyncCallback(const AppId &appIdd) override;
+    Status RegisterSyncCallback(
+        const AppId &appId, const StoreId &storeId, sptr<IKvStoreSyncCallback> callback) override;
+    Status UnregisterSyncCallback(const AppId &appId, const StoreId &storeId) override;
     Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) override;
     Status GetSyncParam(const AppId &appId, const StoreId &storeId, KvSyncParam &syncParam) override;
     Status EnableCapability(const AppId &appId, const StoreId &storeId) override;
@@ -60,8 +61,7 @@ private:
     static std::shared_ptr<KVDBServiceClient> instance_;
     static std::atomic_bool isWatched_;
     sptr<IRemoteObject> remote_;
-    std::mutex agentMtx_;
-    sptr<KvStoreSyncCallbackClient> syncAgent_;
+    ConcurrentMap<std::string, sptr<KvStoreSyncCallbackClient>> syncAgents_;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H

@@ -22,6 +22,7 @@
 #include "datetime_ex.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
+#include "query_helper.h"
 
 namespace OHOS {
 namespace DistributedObject {

@@ -21,6 +21,7 @@
 #include <iremote_broker.h>
 #include "rdb_service.h"
 #include "rdb_types.h"
+
 namespace OHOS::DistributedRdb {
 class IRdbService : public RdbService, public IRemoteBroker {
 public:

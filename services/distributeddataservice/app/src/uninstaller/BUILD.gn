@@ -25,7 +25,6 @@ ohos_static_library("distributeddata_uninstaller_static") {
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/kvdb",
     "//third_party/json/single_include",
     "//utils/native/base/include",
     "//base/security/huks/interfaces/innerkits/huks_standard/main/include",

@@ -20,8 +20,8 @@
 namespace OHOS::DistributedData {
 class API_EXPORT CapMetaData final : public Serializable {
 public:
-    static constexpr int32_t CURRENT_VERSION = 1;
-    static constexpr int32_t INVALID_VERSION = -1;
+    const static int32_t CURRENT_VERSION = 1;
+    const static int32_t INVALID_VERSION = -1;
     int32_t version = INVALID_VERSION;
 
     API_EXPORT bool Marshal(json &node) const override;
@@ -30,7 +30,7 @@ public:
 
 class CapMetaRow {
 public:
-    static constexpr const char *KEY_PREFIX = "CapabilityMeta";
+    static const std::string KEY_PREFIX;
     API_EXPORT static std::vector<uint8_t> GetKeyFor(const std::string &key);
 };
 } // namespace OHOS::DistributedData

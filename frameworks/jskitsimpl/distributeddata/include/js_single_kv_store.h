@@ -35,6 +35,8 @@ private:
     static napi_value GetResultSize(napi_env env, napi_callback_info info);
     static napi_value RemoveDeviceData(napi_env env, napi_callback_info info);
     static napi_value Sync(napi_env env, napi_callback_info info);
+    static napi_value OnEvent(napi_env env, napi_callback_info info);
+    static napi_value OffEvent(napi_env env, napi_callback_info info);
     static napi_value SetSyncParam(napi_env env, napi_callback_info info);
     static napi_value GetSecurityLevel(napi_env env, napi_callback_info info);
 };

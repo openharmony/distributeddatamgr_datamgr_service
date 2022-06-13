@@ -16,20 +16,19 @@
 #ifndef KVSTORE_SYNC_MANAGER_H
 #define KVSTORE_SYNC_MANAGER_H
 
-#include <list>
 #include <map>
-
+#include <list>
+#include "types.h"
 #include "kv_scheduler.h"
 #include "kv_store_nb_delegate.h"
-#include "types.h"
 
 namespace OHOS {
 namespace DistributedKv {
-class API_EXPORT KvStoreSyncManager {
+class KvStoreSyncManager {
 public:
     static constexpr uint32_t SYNC_DEFAULT_DELAY_MS = 1000;
     static constexpr uint32_t SYNC_MIN_DELAY_MS = 100;
-    static constexpr uint32_t SYNC_MAX_DELAY_MS = 1000 * 3600 * 24; // 24hours
+    static constexpr uint32_t SYNC_MAX_DELAY_MS = 1000 * 3600 * 24;  // 24hours
     static constexpr uint32_t SYNC_RETRY_MAX_COUNT = 3;
     static KvStoreSyncManager *GetInstance()
     {
@@ -41,15 +40,16 @@ public:
     using SyncFunc = std::function<Status(const SyncEnd &)>;
 
     struct KvSyncOperation {
-        uintptr_t syncId = 0;
-        uint32_t opSeq = 0;
-        uint32_t delayMs = 0;
-        SyncFunc syncFunc;
-        SyncEnd syncEnd;
-        TimePoint beginTime;
+        uintptr_t syncId{ 0 };
+        uint32_t opSeq{ 0 };
+        uint32_t delayMs{ 0 };
+        SyncFunc syncFunc{};
+        SyncEnd  syncEnd{};
+        TimePoint beginTime{};
     };
     using OpPred = std::function<bool(KvSyncOperation &)>;
-    Status AddSyncOperation(uintptr_t syncId, uint32_t delayMs, const SyncFunc &syncFunc, const SyncEnd &syncEnd);
+    Status AddSyncOperation(uintptr_t syncId, uint32_t delayMs, const SyncFunc &syncFunc,
+        const SyncEnd &syncEnd);
     Status RemoveSyncOperation(uintptr_t syncId);
 
 private:
@@ -68,15 +68,16 @@ private:
     static constexpr uint32_t REALTIME_PRIOR_SYNCING_MS = 300;
     static constexpr uint32_t DELAY_TIME_RANGE_DIVISOR = 4;
 
-    mutable std::mutex syncOpsMutex_;
-    std::list<KvSyncOperation> realtimeSyncingOps_;
-    std::list<KvSyncOperation> delaySyncingOps_;
-    std::multimap<TimePoint, KvSyncOperation> scheduleSyncOps_;
+    mutable std::mutex syncOpsMutex_{};
+    std::list<KvSyncOperation> realtimeSyncingOps_{};
+    std::list<KvSyncOperation> delaySyncingOps_{};
+    std::multimap<TimePoint, KvSyncOperation> scheduleSyncOps_{};
 
-    KvScheduler syncScheduler_;
-    TimePoint nextScheduleTime_;
-    std::atomic_uint32_t syncOpSeq_ = 0;
+    KvScheduler syncScheduler_{};
+    TimePoint nextScheduleTime_{};
+    std::atomic_uint32_t syncOpSeq_{ 0 };
 };
-} // namespace DistributedKv
-} // namespace OHOS
-#endif // KVSTORE_SYNC_MANAGER_H
+}  // namespace DistributedKv
+}  // namespace OHOS
+
+#endif  // KVSTORE_SYNC_MANAGER_H

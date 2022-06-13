@@ -56,9 +56,9 @@ std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(
                 auto release = [dbManager](auto *store) { dbManager->CloseKvStore(store); };
                 auto dbStore = std::shared_ptr<DBStore>(store, release);
                 if (options.kvStoreType == DEVICE_COLLABORATION) {
-                    kvStore = std::make_shared<DeviceStoreImpl>(dbStore, appId, options);
+                    kvStore = std::make_shared<DeviceStoreImpl>(appId, dbStore);
                 } else {
-                    kvStore = std::make_shared<SingleStoreImpl>(dbStore, appId, options);
+                    kvStore = std::make_shared<SingleStoreImpl>(appId, dbStore);
                 }
                 stores[dbStore->GetStoreId()] = kvStore;
             });

@@ -153,23 +153,25 @@ Status KVDBServiceClient::Sync(const AppId &appId, const StoreId &storeId, const
     return static_cast<Status>(status);
 }
 
-Status KVDBServiceClient::RegisterSyncCallback(const AppId &appId, sptr<IKvStoreSyncCallback> callback)
+Status KVDBServiceClient::RegisterSyncCallback(
+    const AppId &appId, const StoreId &storeId, sptr<IKvStoreSyncCallback> callback)
 {
     MessageParcel reply;
-    int32_t status = IPC_SEND(TRANS_REGISTER_CALLBACK, reply, appId, StoreId(), callback->AsObject().GetRefPtr());
+    int32_t status = IPC_SEND(TRANS_REGISTER_CALLBACK, reply, appId, storeId, callback->AsObject().GetRefPtr());
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, appId:%{public}s, callback:0x%{public}x", status, appId.appId.c_str(),
-            StoreUtil::Anonymous(callback.GetRefPtr()));
+        ZLOGE("status:0x%{public}x, appId:%{public}s, storeId:%{public}s, callback:0x%{public}x", status,
+            appId.appId.c_str(), storeId.storeId.c_str(), StoreUtil::Anonymous(callback.GetRefPtr()));
     }
     return static_cast<Status>(status);
 }
 
-Status KVDBServiceClient::UnregisterSyncCallback(const AppId &appId)
+Status KVDBServiceClient::UnregisterSyncCallback(const AppId &appId, const StoreId &storeId)
 {
     MessageParcel reply;
-    int32_t status = IPC_SEND(TRANS_UNREGISTER_CALLBACK, reply, appId, StoreId());
+    int32_t status = IPC_SEND(TRANS_UNREGISTER_CALLBACK, reply, appId, storeId);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, appId:%{public}s", status, appId.appId.c_str());
+        ZLOGE("status:0x%{public}x, appId:%{public}s, storeId:%{public}s", status, appId.appId.c_str(),
+            storeId.storeId.c_str());
     }
     return static_cast<Status>(status);
 }
@@ -280,16 +282,17 @@ Status KVDBServiceClient::Unsubscribe(const AppId &appId, const StoreId &storeId
 
 sptr<KvStoreSyncCallbackClient> KVDBServiceClient::GetSyncAgent(const AppId &appId)
 {
-    std::lock_guard<decltype(agentMtx_)> lockGuard(agentMtx_);
-    if (syncAgent_ != nullptr) {
-        return syncAgent_;
+    auto it = syncAgents_.Find(appId);
+    if (it.first && it.second == nullptr) {
+        syncAgents_.Erase(appId);
     }
 
-    sptr<KvStoreSyncCallbackClient> syncAgent = new (std::nothrow) KvStoreSyncCallbackClient();
-    auto status = RegisterSyncCallback(appId, syncAgent);
-    if (status == SUCCESS) {
-        syncAgent_ = std::move(syncAgent);
-    }
-    return syncAgent_;
+    syncAgents_.ComputeIfAbsent(appId.appId, [this](const std::string &key) {
+        sptr<KvStoreSyncCallbackClient> agent = new (std::nothrow) KvStoreSyncCallbackClient();
+        RegisterSyncCallback({ key }, { "" }, agent);
+        return agent;
+    });
+
+    return syncAgents_[appId];
 }
 } // namespace OHOS::DistributedKv

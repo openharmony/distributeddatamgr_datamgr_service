@@ -17,9 +17,6 @@
 
 #include "utils/constant.h"
 namespace OHOS::DistributedData {
-constexpr int32_t CapMetaData::CURRENT_VERSION;
-constexpr int32_t CapMetaData::INVALID_VERSION;
-constexpr const char *CapMetaRow::KEY_PREFIX;
 bool CapMetaData::Marshal(json &node) const
 {
     bool ret = true;
@@ -34,6 +31,7 @@ bool CapMetaData::Unmarshal(const json &node)
     return ret;
 }
 
+const std::string CapMetaRow::KEY_PREFIX = "CapabilityMeta";
 std::vector<uint8_t> CapMetaRow::GetKeyFor(const std::string &key)
 {
     std::string str = Constant::Concatenate({ KEY_PREFIX, Constant::KEY_SEPARATOR, key });

@@ -12,26 +12,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #define LOG_TAG "QueryHelper"
+
 #include "query_helper.h"
+
 #include <regex>
 #include <sstream>
-#include "data_query.h"
+
 #include "kvstore_utils.h"
+#include "data_query.h"
 #include "log_print.h"
 #include "types.h"
+
 namespace OHOS::DistributedKv {
 constexpr int QUERY_SKIP_SIZE = 1;
 constexpr int QUERY_WORD_SIZE = 2;
 constexpr int MAX_QUERY_LENGTH = 5 * 1024; // Max query string length 5k
-constexpr int MAX_QUERY_COMPLEXITY = 500;  // Max query complexity 500
-bool QueryHelper::hasPrefixKey_ = false;
-std::string QueryHelper::deviceId_;
+constexpr int MAX_QUERY_COMPLEXITY = 500; // Max query complexity 500
+bool QueryHelper::hasPrefixKey_{ };
+std::string QueryHelper::deviceId_{};
 
 DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool &isSuccess)
 {
     ZLOGI("query string length:%{public}zu", query.length());
-    DBQuery dbQuery = DBQuery::Select();
+    DistributedDB::Query dbQuery = DistributedDB::Query::Select();
     if (query.empty()) {
         ZLOGI("Query string is empty.");
         isSuccess = true;
@@ -49,95 +54,98 @@ DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool
     std::regex regex(" ");
     std::vector<std::string> words(
         std::sregex_token_iterator(inputTrim.begin(), inputTrim.end(), regex, -1), // regex split string by space
-        std::sregex_token_iterator());
+        std::sregex_token_iterator()
+    );
 
-    int pointer = 0;            // Read pointer starts at 0
+    int pointer = 0; // Read pointer starts at 0
     int end = words.size() - 1; // Read pointer ends at size - 1
-    int count = 0;              // Counts how many keywords has been handled
+    int count = 0; // Counts how many keywords has been handled
     while (pointer <= end && count <= MAX_QUERY_COMPLEXITY) {
         count++;
         std::string keyword = words.at(pointer);
         if (keyword == DataQuery::EQUAL_TO) {
-            isSuccess = HandleEqualTo(words, pointer, end, dbQuery);
+            HandleEqualTo(words, pointer, end, isSuccess, dbQuery);
         } else if (keyword == DataQuery::NOT_EQUAL_TO) {
-            isSuccess = HandleNotEqualTo(words, pointer, end, dbQuery);
+            HandleNotEqualTo(words, pointer, end, isSuccess, dbQuery);
         } else if (keyword == DataQuery::GREATER_THAN) {
-            isSuccess = HandleGreaterThan(words, pointer, end, dbQuery);
+            HandleGreaterThan(words, pointer, end, isSuccess, dbQuery);
         } else if (keyword == DataQuery::LESS_THAN) {
-            isSuccess = HandleLessThan(words, pointer, end, dbQuery);
+            HandleLessThan(words, pointer, end, isSuccess, dbQuery);
         } else if (keyword == DataQuery::GREATER_THAN_OR_EQUAL_TO) {
-            isSuccess = HandleGreaterThanOrEqualTo(words, pointer, end, dbQuery);
+            HandleGreaterThanOrEqualTo(words, pointer, end, isSuccess, dbQuery);
         } else if (keyword == DataQuery::LESS_THAN_OR_EQUAL_TO) {
-            isSuccess = HandleLessThanOrEqualTo(words, pointer, end, dbQuery);
+            HandleLessThanOrEqualTo(words, pointer, end, isSuccess, dbQuery);
         } else {
-            isSuccess = Handle(words, pointer, end, dbQuery);
+            Handle(words, pointer, end, isSuccess, dbQuery);
         }
         if (!isSuccess) {
             ZLOGE("Invalid params.");
-            return DBQuery::Select();
+            return DistributedDB::Query::Select();
         }
     }
     return dbQuery;
 }
 
-bool QueryHelper::Handle(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::Handle(const std::vector<std::string> &words, int &pointer,
+                         const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     std::string keyword = words.at(pointer);
     if (keyword == DataQuery::IS_NULL) {
-        return HandleIsNull(words, pointer, end, dbQuery);
+        HandleIsNull(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::IN) {
-        return HandleIn(words, pointer, end, dbQuery);
+        HandleIn(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::NOT_IN) {
-        return HandleNotIn(words, pointer, end, dbQuery);
+        HandleNotIn(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::LIKE) {
-        return HandleLike(words, pointer, end, dbQuery);
+        HandleLike(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::NOT_LIKE) {
-        return HandleNotLike(words, pointer, end, dbQuery);
+        HandleNotLike(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::AND) {
-        return HandleAnd(words, pointer, end, dbQuery);
+        HandleAnd(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::OR) {
-        return HandleOr(words, pointer, end, dbQuery);
+        HandleOr(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::ORDER_BY_ASC) {
-        return HandleOrderByAsc(words, pointer, end, dbQuery);
+        HandleOrderByAsc(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::ORDER_BY_DESC) {
-        return HandleOrderByDesc(words, pointer, end, dbQuery);
+        HandleOrderByDesc(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::LIMIT) {
-        return HandleLimit(words, pointer, end, dbQuery);
+        HandleLimit(words, pointer, end, isSuccess, dbQuery);
     } else {
-        return HandleExtra(words, pointer, end, dbQuery);
+        HandleExtra(words, pointer, end, isSuccess, dbQuery);
     }
 }
 
-bool QueryHelper::HandleExtra(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleExtra(const std::vector<std::string> &words, int &pointer,
+                              const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     std::string keyword = words.at(pointer);
     if (keyword == DataQuery::BEGIN_GROUP) {
-        return HandleBeginGroup(words, pointer, end, dbQuery);
+        HandleBeginGroup(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::END_GROUP) {
-        return HandleEndGroup(words, pointer, end, dbQuery);
+        HandleEndGroup(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::KEY_PREFIX) {
-        return HandleKeyPrefix(words, pointer, end, dbQuery);
+        HandleKeyPrefix(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::IS_NOT_NULL) {
-        return HandleIsNotNull(words, pointer, end, dbQuery);
+        HandleIsNotNull(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::DEVICE_ID) {
-        return HandleDeviceId(words, pointer, end, dbQuery);
+        HandleDeviceId(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::SUGGEST_INDEX) {
-        return HandleSetSuggestIndex(words, pointer, end, dbQuery);
+        HandleSetSuggestIndex(words, pointer, end, isSuccess, dbQuery);
     } else if (keyword == DataQuery::IN_KEYS) {
-        return HandleInKeys(words, pointer, end, dbQuery);
+        HandleInKeys(words, pointer, end, isSuccess, dbQuery);
+    } else {
+        ZLOGE("Invalid keyword.");
+        isSuccess = false;
     }
-    ZLOGE("Invalid keyword.");
-    return false;
 }
 
-bool QueryHelper::HandleEqualTo(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleEqualTo(const std::vector<std::string> &words, int &pointer,
+                                const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 3 > end) { // This keyword has 3 following params
         ZLOGE("EqualTo not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    const std::string &fieldType = words.at(pointer + 1);  // fieldType
-    const std::string &fieldName = words.at(pointer + 2);  // fieldName
+    const std::string &fieldType = words.at(pointer + 1); // fieldType
+    const std::string &fieldName = words.at(pointer + 2); // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
     if (fieldType == DataQuery::TYPE_INTEGER) {
         dbQuery.EqualTo(StringToString(fieldName), StringToInt(fieldValue));
@@ -151,20 +159,22 @@ bool QueryHelper::HandleEqualTo(const std::vector<std::string> &words, int &poin
         dbQuery.EqualTo(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("EqualTo wrong type.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    pointer += 4; // 4 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 4; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleNotEqualTo(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleNotEqualTo(const std::vector<std::string> &words, int &pointer,
+                                   const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 3 > end) { // This keyword has 3 following params
         ZLOGE("NotEqualTo not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    const std::string &fieldType = words.at(pointer + 1);  // fieldType
-    const std::string &fieldName = words.at(pointer + 2);  // fieldName
+    const std::string &fieldType = words.at(pointer + 1); // fieldType
+    const std::string &fieldName = words.at(pointer + 2); // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
     if (fieldType == DataQuery::TYPE_INTEGER) {
         dbQuery.NotEqualTo(StringToString(fieldName), StringToInt(fieldValue));
@@ -178,20 +188,22 @@ bool QueryHelper::HandleNotEqualTo(const std::vector<std::string> &words, int &p
         dbQuery.NotEqualTo(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("NotEqualTo wrong type.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    pointer += 4; // 4 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 4; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleGreaterThan(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleGreaterThan(const std::vector<std::string> &words, int &pointer,
+                                    const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 3 > end) { // This keyword has 3 following params
         ZLOGE("GreaterThan not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    const std::string &fieldType = words.at(pointer + 1);  // fieldType
-    const std::string &fieldName = words.at(pointer + 2);  // fieldName
+    const std::string &fieldType = words.at(pointer + 1); // fieldType
+    const std::string &fieldName = words.at(pointer + 2); // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
     if (fieldType == DataQuery::TYPE_INTEGER) {
         dbQuery.GreaterThan(StringToString(fieldName), StringToInt(fieldValue));
@@ -203,20 +215,22 @@ bool QueryHelper::HandleGreaterThan(const std::vector<std::string> &words, int &
         dbQuery.GreaterThan(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("GreaterThan wrong type.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    pointer += 4; // 4 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 4; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleLessThan(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleLessThan(const std::vector<std::string> &words, int &pointer,
+                                 const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 3 > end) { // This keyword has 3 following params
         ZLOGE("LessThan not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    const std::string &fieldType = words.at(pointer + 1);  // fieldType
-    const std::string &fieldName = words.at(pointer + 2);  // fieldName
+    const std::string &fieldType = words.at(pointer + 1); // fieldType
+    const std::string &fieldName = words.at(pointer + 2); // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
     if (fieldType == DataQuery::TYPE_INTEGER) {
         dbQuery.LessThan(StringToString(fieldName), StringToInt(fieldValue));
@@ -228,21 +242,22 @@ bool QueryHelper::HandleLessThan(const std::vector<std::string> &words, int &poi
         dbQuery.LessThan(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("LessThan wrong type.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    pointer += 4; // 4 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 4; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleGreaterThanOrEqualTo(
-    const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleGreaterThanOrEqualTo(const std::vector<std::string> &words, int &pointer,
+                                             const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 3 > end) { // This keyword has 3 following params
         ZLOGE("GreaterThanOrEqualTo not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    const std::string &fieldType = words.at(pointer + 1);  // fieldType
-    const std::string &fieldName = words.at(pointer + 2);  // fieldName
+    const std::string &fieldType = words.at(pointer + 1); // fieldType
+    const std::string &fieldName = words.at(pointer + 2); // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
     if (fieldType == DataQuery::TYPE_INTEGER) {
         dbQuery.GreaterThanOrEqualTo(StringToString(fieldName), StringToInt(fieldValue));
@@ -254,21 +269,22 @@ bool QueryHelper::HandleGreaterThanOrEqualTo(
         dbQuery.GreaterThanOrEqualTo(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("GreaterThanOrEqualTo wrong type.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    pointer += 4; // 4 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 4; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleLessThanOrEqualTo(
-    const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleLessThanOrEqualTo(const std::vector<std::string> &words, int &pointer,
+                                          const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 3 > end) { // This keyword has 3 following params
         ZLOGE("LessThanOrEqualTo not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    const std::string &fieldType = words.at(pointer + 1);  // fieldType
-    const std::string &fieldName = words.at(pointer + 2);  // fieldName
+    const std::string &fieldType = words.at(pointer + 1); // fieldType
+    const std::string &fieldName = words.at(pointer + 2); // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
     if (fieldType == DataQuery::TYPE_INTEGER) {
         dbQuery.LessThanOrEqualTo(StringToString(fieldName), StringToInt(fieldValue));
@@ -280,45 +296,49 @@ bool QueryHelper::HandleLessThanOrEqualTo(
         dbQuery.LessThanOrEqualTo(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("LessThanOrEqualTo wrong type.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    pointer += 4; // 4 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 4; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleIsNull(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleIsNull(const std::vector<std::string> &words, int &pointer,
+                               const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 1 > end) { // This keyword has 1 following params
         ZLOGE("IsNull not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
     const std::string &fieldName = words.at(pointer + 1); // fieldName
     dbQuery.IsNull(StringToString(fieldName));
-    pointer += 2; // 2 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 2; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleIsNotNull(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleIsNotNull(const std::vector<std::string> &words, int &pointer,
+                                  const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 1 > end) { // This keyword has 1 following params
         ZLOGE("IsNotNull not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
     const std::string &fieldName = words.at(pointer + 1); // fieldName
     dbQuery.IsNotNull(StringToString(fieldName));
-    pointer += 2; // 2 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 2; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleIn(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleIn(const std::vector<std::string> &words, int &pointer,
+                           const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 4 > end || words.at(pointer + 3) != DataQuery::START_IN) { // This keyword has at least 4 params
         ZLOGE("In not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
     const std::string &fieldType = words.at(pointer + 1); // fieldType
     const std::string &fieldName = words.at(pointer + 2); // fieldName
-    int elementPointer = pointer + 4;                     // first fieldValue, or END if list is empty
+    int elementPointer = pointer + 4; // first fieldValue, or END if list is empty
     if (fieldType == DataQuery::TYPE_INTEGER) {
         const std::vector<int> intValueList = GetIntegerList(words, elementPointer, end);
         dbQuery.In(StringToString(fieldName), intValueList);
@@ -333,21 +353,23 @@ bool QueryHelper::HandleIn(const std::vector<std::string> &words, int &pointer, 
         dbQuery.In(StringToString(fieldName), stringValueList);
     } else {
         ZLOGE("In wrong type.");
-        return false;
+        isSuccess = false;
+        return;
     }
+    isSuccess = true;
     pointer = elementPointer + 1; // Pointer goes to next keyword
-    return true;
 }
 
-bool QueryHelper::HandleNotIn(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleNotIn(const std::vector<std::string> &words, int &pointer,
+                              const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 4 > end || words.at(pointer + 3) != DataQuery::START_IN) { // This keyword has at least 4 params
         ZLOGE("NotIn not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
     const std::string &fieldType = words.at(pointer + 1); // fieldType
     const std::string &fieldName = words.at(pointer + 2); // fieldName
-    int elementPointer = pointer + 4;                     // first fieldValue, or END if list is empty
+    int elementPointer = pointer + 4; // first fieldValue, or END if list is empty
     if (fieldType == DataQuery::TYPE_INTEGER) {
         const std::vector<int> intValueList = GetIntegerList(words, elementPointer, end);
         dbQuery.NotIn(StringToString(fieldName), intValueList);
@@ -362,126 +384,134 @@ bool QueryHelper::HandleNotIn(const std::vector<std::string> &words, int &pointe
         dbQuery.NotIn(StringToString(fieldName), stringValueList);
     } else {
         ZLOGE("NotIn wrong type.");
-        return false;
+        isSuccess = false;
+        return;
     }
+    isSuccess = true;
     pointer = elementPointer + 1; // Pointer goes to next keyword
-    return true;
 }
 
-bool QueryHelper::HandleLike(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleLike(const std::vector<std::string> &words, int &pointer,
+                             const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 2 > end) { // This keyword has 2 following params
         ZLOGE("Like not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    const std::string &fieldName = words.at(pointer + 1);  // fieldName
+    const std::string &fieldName = words.at(pointer + 1); // fieldName
     const std::string &fieldValue = words.at(pointer + 2); // fieldValue
     dbQuery.Like(StringToString(fieldName), StringToString(fieldValue));
-    pointer += 3; // 3 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 3; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleNotLike(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleNotLike(const std::vector<std::string> &words, int &pointer,
+                                const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 2 > end) { // This keyword has 2 following params
         ZLOGE("NotLike not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    const std::string &fieldName = words.at(pointer + 1);  // fieldName
+    const std::string &fieldName = words.at(pointer + 1); // fieldName
     const std::string &fieldValue = words.at(pointer + 2); // fieldValue
     dbQuery.NotLike(StringToString(fieldName), StringToString(fieldValue));
-    pointer += 3; // 3 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 3; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleAnd(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleAnd(const std::vector<std::string> &words, int &pointer,
+                            const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     dbQuery.And();
+    isSuccess = true;
     pointer += 1; // Pointer goes to next keyword
-    return true;
 }
 
-bool QueryHelper::HandleOr(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleOr(const std::vector<std::string> &words, int &pointer,
+                           const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     dbQuery.Or();
+    isSuccess = true;
     pointer += 1; // Pointer goes to next keyword
-    return true;
 }
 
-bool QueryHelper::HandleOrderByAsc(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleOrderByAsc(const std::vector<std::string> &words, int &pointer,
+                                   const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 1 > end) { // This keyword has 1 following params
         ZLOGE("OrderByAsc not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
     const std::string &fieldName = words.at(pointer + 1); // fieldName
     dbQuery.OrderBy(StringToString(fieldName), true);
-    pointer += 2; // 2 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 2; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleOrderByDesc(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleOrderByDesc(const std::vector<std::string> &words, int &pointer,
+                                    const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 1 > end) { // This keyword has 1 following params
         ZLOGE("OrderByDesc not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
     const std::string &fieldName = words.at(pointer + 1); // fieldName
     dbQuery.OrderBy(StringToString(fieldName), false);
-    pointer += 2; // 2 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 2; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleLimit(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleLimit(const std::vector<std::string> &words, int &pointer,
+                              const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 2 > end) { // This keyword has 2 following params
         ZLOGE("Limit not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
     const int number = StringToInt(words.at(pointer + 1)); // number
     const int offset = StringToInt(words.at(pointer + 2)); // offset
     dbQuery.Limit(number, offset);
-    pointer += 3; // 3 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 3; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleBeginGroup(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleBeginGroup(const std::vector<std::string> &words, int &pointer,
+                                   const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     dbQuery.BeginGroup();
+    isSuccess = true;
     pointer += 1; // Pointer goes to next keyword
-    return true;
 }
 
-bool QueryHelper::HandleEndGroup(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleEndGroup(const std::vector<std::string> &words, int &pointer,
+                                 const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     dbQuery.EndGroup();
+    isSuccess = true;
     pointer += 1; // Pointer goes to next keyword
-    return true;
 }
 
-bool QueryHelper::HandleKeyPrefix(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleKeyPrefix(const std::vector<std::string> &words, int &pointer,
+                                  const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 1 > end) { // This keyword has 1 following params
         ZLOGE("KeyPrefix not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
     const std::string &prefix = deviceId_ + StringToString(words.at(pointer + 1)); // prefix
     const std::vector<uint8_t> prefixVector(prefix.begin(), prefix.end());
     dbQuery.PrefixKey(prefixVector);
-    pointer += 2; // 2 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 2; // Pointer goes to next keyword
 }
 
-bool QueryHelper::HandleInKeys(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleInKeys(const std::vector<std::string> &words, int &pointer,
+                               const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     // pointer points at keyword "IN_KEYS", (pointer + 1) points at keyword "START_IN"
     int startInOffSet = pointer + 1;
     int queryLen = end - pointer;
     if (queryLen < 2 || words.at(startInOffSet) != DataQuery::START_IN) { // This keyword has at least 2 params
         ZLOGE("In not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
-    int inkeyOffSet = startInOffSet + 1; // inkeyOffSet points at the first inkey value
+    int inkeyOffSet = startInOffSet + 1;  // inkeyOffSet points at the first inkey value
     const std::vector<std::string> inKeys = GetStringList(words, inkeyOffSet, end);
     std::set<std::vector<uint8_t>> inDbKeys;
     for (const std::string &inKey : inKeys) {
@@ -493,28 +523,30 @@ bool QueryHelper::HandleInKeys(const std::vector<std::string> &words, int &point
     int size = inDbKeys.size();
     ZLOGI("size of inKeys=%{public}d", size);
     dbQuery.InKeys(inDbKeys);
+    isSuccess = true;
     int endOffSet = inkeyOffSet;
     pointer = endOffSet + 1; // endOffSet points at keyword "END", Pointer goes to next keyword
-    return true;
 }
 
-bool QueryHelper::HandleSetSuggestIndex(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleSetSuggestIndex(const std::vector<std::string> &words, int &pointer,
+                                        const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + QUERY_SKIP_SIZE > end) {
         ZLOGE("HandleSetSuggestIndex not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
     std::string index = StringToString(words.at(pointer + QUERY_SKIP_SIZE));
     dbQuery.SuggestIndex(index);
+    isSuccess = true;
     pointer += QUERY_WORD_SIZE;
-    return true;
 }
 
-bool QueryHelper::HandleDeviceId(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
-{
+void QueryHelper::HandleDeviceId(const std::vector<std::string> &words, int &pointer,
+                                 const int &end, bool &isSuccess, DistributedDB::Query &dbQuery) {
     if (pointer + 1 > end) { // This keyword has 1 following params
         ZLOGE("DeviceId not enough params.");
-        return false;
+        isSuccess = false;
+        return;
     }
     deviceId_ = StringToString(words.at(pointer + 1)); // deviceId
     ZLOGI("query devId string length:%zu", deviceId_.length());
@@ -527,33 +559,29 @@ bool QueryHelper::HandleDeviceId(const std::vector<std::string> &words, int &poi
     } else {
         ZLOGD("Join deviceId with user specified prefixkey later.");
     }
-    pointer += 2; // 2 Pointer goes to next keyword
-    return true;
+    isSuccess = true;
+    pointer += 2; // Pointer goes to next keyword
 }
 
-int QueryHelper::StringToInt(const std::string &word)
-{
+int QueryHelper::StringToInt(const std::string &word) {
     int result;
     std::istringstream(word) >> result;
     return result;
 }
 
-int64_t QueryHelper::StringToLong(const std::string &word)
-{
+int64_t QueryHelper::StringToLong(const std::string &word) {
     int64_t result;
     std::istringstream(word) >> result;
     return result;
 }
 
-double QueryHelper::StringToDouble(const std::string &word)
-{
+double QueryHelper::StringToDouble(const std::string &word) {
     double result;
     std::istringstream(word) >> result;
     return result;
 }
 
-bool QueryHelper::StringToBoolean(const std::string &word)
-{
+bool QueryHelper::StringToBoolean(const std::string &word) {
     if (word == DataQuery::VALUE_TRUE) {
         return true;
     } else if (word == DataQuery::VALUE_FALSE) {
@@ -564,8 +592,7 @@ bool QueryHelper::StringToBoolean(const std::string &word)
     }
 }
 
-std::string QueryHelper::StringToString(const std::string &word)
-{
+std::string QueryHelper::StringToString(const std::string &word) {
     std::string result = word;
     if (result.compare(DataQuery::EMPTY_STRING) == 0) {
         result = "";
@@ -578,7 +605,7 @@ std::string QueryHelper::StringToString(const std::string &word)
             break;
         }
         result.replace(index, 2, DataQuery::SPACE); // 2 chars to be replaced
-        index += 1;                                 // replaced with 1 char, keep searching the remaining string
+        index += 1; // replaced with 1 char, keep searching the remaining string
     }
     index = 0; // search from the beginning of the string
     while (true) {
@@ -587,13 +614,13 @@ std::string QueryHelper::StringToString(const std::string &word)
             break;
         }
         result.replace(index, 3, DataQuery::SPECIAL); // 3 chars to be replaced
-        index += 1;                                   // replaced with 1 char, keep searching the remaining string
+        index += 1; // replaced with 1 char, keep searching the remaining string
     }
     return result;
 }
 
-std::vector<int> QueryHelper::GetIntegerList(const std::vector<std::string> &words, int &elementPointer, int end)
-{
+std::vector<int> QueryHelper::GetIntegerList(const std::vector<std::string> &words,
+                                             int &elementPointer, const int &end) {
     std::vector<int> valueList;
     bool isEndFound = false;
     while (elementPointer <= end) {
@@ -612,8 +639,8 @@ std::vector<int> QueryHelper::GetIntegerList(const std::vector<std::string> &wor
     }
 }
 
-std::vector<int64_t> QueryHelper::GetLongList(const std::vector<std::string> &words, int &elementPointer, int end)
-{
+std::vector<int64_t> QueryHelper::GetLongList(const std::vector<std::string> &words,
+                                           int &elementPointer, const int &end) {
     std::vector<int64_t> valueList;
     bool isEndFound = false;
     while (elementPointer <= end) {
@@ -632,8 +659,8 @@ std::vector<int64_t> QueryHelper::GetLongList(const std::vector<std::string> &wo
     }
 }
 
-std::vector<double> QueryHelper::GetDoubleList(const std::vector<std::string> &words, int &elementPointer, int end)
-{
+std::vector<double> QueryHelper::GetDoubleList(const std::vector<std::string> &words,
+                                               int &elementPointer, const int &end) {
     std::vector<double> valueList;
     bool isEndFound = false;
     while (elementPointer <= end) {
@@ -652,8 +679,8 @@ std::vector<double> QueryHelper::GetDoubleList(const std::vector<std::string> &w
     }
 }
 
-std::vector<std::string> QueryHelper::GetStringList(const std::vector<std::string> &words, int &elementPointer, int end)
-{
+std::vector<std::string> QueryHelper::GetStringList(const std::vector<std::string> &words,
+                                                    int &elementPointer, const int &end) {
     std::vector<std::string> valueList;
     bool isEndFound = false;
     while (elementPointer <= end) {
