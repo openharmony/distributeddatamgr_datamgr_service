@@ -20,6 +20,7 @@
 
 #include <iremote_broker.h>
 #include "object_service.h"
+
 namespace OHOS::DistributedObject {
 class IObjectService : public ObjectService, public IRemoteBroker {
 public:

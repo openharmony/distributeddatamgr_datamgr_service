@@ -70,6 +70,7 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     CommonEventSubscribeInfo info(matchingSkills);
     auto callback = [kvStoreDataService](const std::string &bundleName, int userId) {
+        kvStoreDataService->DeleteObjectsByAppId(bundleName);
         std::string prefix = StoreMetaData::GetPrefix({ DeviceKvStoreImpl::GetLocalDeviceId(),
             std::to_string(userId), "default", bundleName });
         std::vector<StoreMetaData> storeMetaData;
