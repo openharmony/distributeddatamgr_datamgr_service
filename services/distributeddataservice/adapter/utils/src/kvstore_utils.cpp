@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "KvStoreUtils"
 
 #include "kvstore_utils.h"
+#include <limits>
 #include "permission_validator.h"
 
 namespace OHOS {
@@ -41,7 +41,11 @@ std::string KvStoreUtils::ToBeAnonymous(const std::string &name)
 
 uint64_t KvStoreUtils::GenerateSequenceId()
 {
-    return ++sequenceId_;
+    uint64_t seqId = ++sequenceId_;
+    if (seqId == std::numeric_limits<uint64_t>::max()) {
+        return ++sequenceId_;
+    }
+    return seqId;
 }
 } // namespace DistributedKv
 } // namespace OHOS

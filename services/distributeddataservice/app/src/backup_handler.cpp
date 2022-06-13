@@ -125,6 +125,8 @@ void BackupHandler::SingleKvStoreBackup(const StoreMetaData &metaData)
                 if (status == DistributedDB::DBStatus::OK) {
                     ZLOGD("SingleKvStoreBackup export success.");
                     RemoveFile(backupBackFullName);
+                    Reporter::GetInstance()->BehaviourReporter()->Report(
+                        {metaData.account, metaData.appId, metaData.storeId, BehaviourType::DATABASE_BACKUP_SUCCESS});
                 } else {
                     ZLOGE("SingleKvStoreBackup export failed, status is %d.", status);
                     RenameFile(backupBackFullName, backupFullName);
@@ -178,8 +180,7 @@ bool BackupHandler::GetPassword(const StoreMetaData &metaData, DistributedDB::Ci
         return true;
     }
 
-    std::string key = SecretKeyMetaData::GetKey({ metaData.user, "default", metaData.bundleName, metaData.storeId,
-        metaData.storeType == SINGLE_VERSION ? "SINGLE_KEY" : "KEY" });
+    std::string key = SecretKeyMetaData::GetKey({ metaData.user, "default", metaData.bundleName, metaData.storeId });
     SecretKeyMetaData secretKey;
     MetaDataManager::GetInstance().LoadMeta(key, secretKey, true);
     std::vector<uint8_t> decryptKey;

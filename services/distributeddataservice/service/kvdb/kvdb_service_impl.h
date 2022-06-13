@@ -15,7 +15,10 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_IMPL_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_IMPL_H
+#include "concurrent_map.h"
 #include "kvdb_service_stub.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/strategy_meta_data.h"
 namespace OHOS::DistributedKv {
 class API_EXPORT KVDBServiceImpl final : public KVDBServiceStub {
 public:
@@ -27,9 +30,8 @@ public:
         const std::vector<uint8_t> &password) override;
     Status Delete(const AppId &appId, const StoreId &storeId) override;
     Status Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
-    Status RegisterSyncCallback(
-        const AppId &appId, const StoreId &storeId, sptr<IKvStoreSyncCallback> callback) override;
-    Status UnregisterSyncCallback(const AppId &appId, const StoreId &storeId) override;
+    Status RegisterSyncCallback(const AppId &appId, sptr<IKvStoreSyncCallback> callback) override;
+    Status UnregisterSyncCallback(const AppId &appId) override;
     Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) override;
     Status GetSyncParam(const AppId &appId, const StoreId &storeId, KvSyncParam &syncParam) override;
     Status EnableCapability(const AppId &appId, const StoreId &storeId) override;
@@ -42,6 +44,19 @@ public:
         const std::string &query) override;
     Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
+    Status AppExit(pid_t uid, pid_t pid, uint32_t tokenId, const AppId &appId);
+
+private:
+    using StoreMetaData = OHOS::DistributedData::StoreMetaData;
+    using StrategyMeta = OHOS::DistributedData::StrategyMeta;
+    void AddOptions(const Options &options, StoreMetaData &metaData);
+    StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId);
+    StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
+    int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
+
+    ConcurrentMap<uint32_t, std::pair<pid_t, sptr<IKvStoreSyncCallback>>> syncAgents_;
+    ConcurrentMap<uint32_t, std::pair<pid_t, sptr<IKvStoreObserver>>> dataObservers_;
+    ConcurrentMap<uint32_t, std::map<std::string, uint32_t>> delayTimes_;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_IMPL_H

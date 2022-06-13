@@ -17,7 +17,6 @@
 
 #include <mutex>
 #include <thread>
-#include "dds_trace.h"
 #include "dfx_types.h"
 #include "kv_store_delegate_manager.h"
 #include "log_print.h"

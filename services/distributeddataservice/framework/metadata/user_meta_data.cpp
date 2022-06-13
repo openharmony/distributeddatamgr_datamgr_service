@@ -17,6 +17,7 @@
 #include "utils/constant.h"
 
 namespace OHOS::DistributedData {
+constexpr const char *UserMetaRow::KEY_PREFIX;
 bool UserMetaData::Marshal(json &node) const
 {
     bool ret = true;
@@ -54,7 +55,6 @@ UserStatus::UserStatus(int id, bool isActive) : id(id), isActive(isActive)
 {
 }
 
-const std::string UserMetaRow::KEY_PREFIX = "UserMeta";
 std::string UserMetaRow::GetKeyFor(const std::string &key)
 {
     std::string str = Constant::Concatenate({ KEY_PREFIX, Constant::KEY_SEPARATOR, key });

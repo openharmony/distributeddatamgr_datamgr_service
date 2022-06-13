@@ -20,7 +20,6 @@
 #include <string>
 #include "log_print.h"
 #include "reporter.h"
-#include "dds_trace.h"
 
 #ifdef LOG_TAG
     #undef LOG_TAG

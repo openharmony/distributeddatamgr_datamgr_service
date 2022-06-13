@@ -42,7 +42,7 @@ public:
 
 class UserMetaRow {
 public:
-    API_EXPORT static const std::string KEY_PREFIX;
+    API_EXPORT static constexpr const char *KEY_PREFIX = "UserMeta";
     API_EXPORT static std::string GetKeyFor(const std::string &key);
 };
 } // namespace OHOS::DistributedData

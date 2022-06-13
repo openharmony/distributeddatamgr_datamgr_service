@@ -26,86 +26,85 @@
 namespace OHOS {
 namespace DistributedKv {
 static constexpr uint64_t BYTRACE_LABEL = HITRACE_TAG_DISTRIBUTEDDATA;
+using OHOS::HiviewDFX::HiTrace;
 
-std::atomic_uint DdsTrace::switchOption = DdsTrace::API_PERFORMANCE_TRACE_ON;
-std::atomic_uint DdsTrace::indexCount = 0; // the value is changed by different thread
-std::atomic_bool DdsTrace::isSetBytraceEnabled = false;
+std::atomic_uint DdsTrace::indexCount_ = 0; // the value is changed by different thread
+std::atomic_bool DdsTrace::isSetBytraceEnabled_ = false;
 
-DdsTrace::DdsTrace(const std::string& value, bool isSend)
+DdsTrace::DdsTrace(const std::string& value, unsigned int option)
+    : traceSwitch_(option)
 {
-    traceValue = value;
-    traceCount = ++indexCount;
-    isSendToHiview = isSend;
+    traceValue_ = value;
+    traceCount_ = ++indexCount_;
     SetBytraceEnable();
-
     Start(value);
 }
 
 DdsTrace::~DdsTrace()
 {
-    Finish(traceValue);
+    Finish(traceValue_);
 }
 
 void DdsTrace::SetMiddleTrace(const std::string& beforeValue, const std::string& afterValue)
 {
-    traceValue = afterValue;
+    traceValue_ = afterValue;
     Middle(beforeValue, afterValue);
 }
 
 void DdsTrace::Start(const std::string& value)
 {
-    if (switchOption == DEBUG_CLOSE) {
+    if (traceSwitch_ == DEBUG_CLOSE) {
         return;
     }
-    if ((switchOption & BYTRACE_ON) == BYTRACE_ON) {
+    if ((traceSwitch_ & BYTRACE_ON) == BYTRACE_ON) {
         StartTrace(BYTRACE_LABEL, value);
     }
-    if ((switchOption & API_PERFORMANCE_TRACE_ON) == API_PERFORMANCE_TRACE_ON) {
-        lastTime = TimeUtils::CurrentTimeMicros();
+    if ((traceSwitch_ & TRACE_CHAIN_ON) == TRACE_CHAIN_ON) {
+        traceId_ = HiTrace::Begin(value, HITRACE_FLAG_DEFAULT);
     }
-    ZLOGD("DdsTrace-Start: Trace[%{public}u] %{public}s In", traceCount, value.c_str());
+    if ((traceSwitch_ & API_PERFORMANCE_TRACE_ON) == API_PERFORMANCE_TRACE_ON) {
+        lastTime_ = TimeUtils::CurrentTimeMicros();
+    }
+    ZLOGD("DdsTrace-Start: Trace[%{public}u] %{public}s In", traceCount_, value.c_str());
 }
 
 void DdsTrace::Middle(const std::string& beforeValue, const std::string& afterValue)
 {
-    if (switchOption == DEBUG_CLOSE) {
+    if (traceSwitch_ == DEBUG_CLOSE) {
         return;
     }
-    if (switchOption & BYTRACE_ON) {
+    if ((traceSwitch_ & BYTRACE_ON) == BYTRACE_ON) {
         MiddleTrace(BYTRACE_LABEL, beforeValue, afterValue);
     }
-    ZLOGD("DdsTrace-Middle: Trace[%{public}u] %{public}s --- %{public}s", traceCount,
+    ZLOGD("DdsTrace-Middle: Trace[%{public}u] %{public}s --- %{public}s", traceCount_,
         beforeValue.c_str(), afterValue.c_str());
 }
 
 void DdsTrace::Finish(const std::string& value)
 {
     uint64_t delta = 0;
-    if (switchOption == DEBUG_CLOSE) {
+    if (traceSwitch_ == DEBUG_CLOSE) {
         return;
     }
-    if (switchOption & BYTRACE_ON) {
+    if ((traceSwitch_ & BYTRACE_ON) == BYTRACE_ON) {
         FinishTrace(BYTRACE_LABEL);
     }
-    if (switchOption & API_PERFORMANCE_TRACE_ON) {
-        delta = TimeUtils::CurrentTimeMicros() - lastTime;
-        if (isSendToHiview) {
-            Reporter::GetInstance()->ApiPerformanceStatistic()->Report({value, delta, delta, delta});
-        }
+    if ((traceSwitch_ & TRACE_CHAIN_ON) == TRACE_CHAIN_ON) {
+        HiTrace::End(traceId_);
     }
-    ZLOGD("DdsTrace-Finish: Trace[%u] %{public}s Out: %{public}" PRIu64"us.", traceCount, value.c_str(), delta);
+    if ((traceSwitch_ & API_PERFORMANCE_TRACE_ON) == API_PERFORMANCE_TRACE_ON) {
+        delta = TimeUtils::CurrentTimeMicros() - lastTime_;
+        Reporter::GetInstance()->ApiPerformanceStatistic()->Report({value, delta, delta, delta});
+    }
+    ZLOGD("DdsTrace-Finish: Trace[%u] %{public}s Out: %{public}" PRIu64"us.", traceCount_, value.c_str(), delta);
 }
 
 bool DdsTrace::SetBytraceEnable()
 {
-    if (isSetBytraceEnabled) {
+    if (isSetBytraceEnabled_.exchange(true)) {
         return true;
     }
-
     UpdateTraceLabel();
-    isSetBytraceEnabled = true;
-    DdsTrace::switchOption = DdsTrace::BYTRACE_ON | DdsTrace::API_PERFORMANCE_TRACE_ON;
-
     ZLOGD("success, current tag is true");
     return true;
 }
