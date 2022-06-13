@@ -20,6 +20,7 @@ module_output_path = "distributeddatamgr/distributeddataservice"
 config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
+    "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/preferences/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/src",
@@ -94,6 +95,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "preferences:native_preferences",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -158,6 +160,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "preferences:native_preferences",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -222,6 +225,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "preferences:native_preferences",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -466,6 +470,7 @@ ohos_unittest("KvStoreUninstallerTest") {
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "preferences:native_preferences",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
