@@ -16,11 +16,11 @@
 #include "visit_statistic_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 ReportStatus VisitStatisticImpl::Report(const VisitStat &stat)
 {
     HiViewAdapter::ReportVisitStatistic(DfxCodeConstant::VISIT_STATISTIC, stat);
     return ReportStatus::SUCCESS;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS

@@ -18,7 +18,7 @@
 #include "reporter.h"
 
 using namespace testing::ext;
-using namespace OHOS::DistributedKv;
+using namespace OHOS::DistributedDataDfx;
 
 class DistributedataDfxMSTTest : public testing::Test {
 public:

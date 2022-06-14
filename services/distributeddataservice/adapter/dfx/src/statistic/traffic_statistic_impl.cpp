@@ -16,11 +16,11 @@
 #include "traffic_statistic_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 ReportStatus TrafficStatisticImpl::Report(const TrafficStat &stat)
 {
     HiViewAdapter::ReportTrafficStatistic(DfxCodeConstant::TRAFFIC_STATISTIC, stat);
     return ReportStatus::SUCCESS;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS

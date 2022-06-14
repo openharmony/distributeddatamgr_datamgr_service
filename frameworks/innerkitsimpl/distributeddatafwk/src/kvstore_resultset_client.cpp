@@ -19,6 +19,7 @@
 #include "kvstore_resultset_client.h"
 
 namespace OHOS::DistributedKv {
+using namespace OHOS::DistributedDataDfx;
 KvStoreResultSetClient::KvStoreResultSetClient(sptr<IKvStoreResultSet> kvStoreProxy)
     :kvStoreResultSetProxy_(kvStoreProxy)
 {}

@@ -20,13 +20,13 @@
 #include "hiview_adapter.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 class BehaviourReporterImpl : public BehaviourReporter {
 public:
     virtual ~BehaviourReporterImpl() {}
     ReportStatus Report(const struct BehaviourMsg &msg) override;
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_IMPL_H
 

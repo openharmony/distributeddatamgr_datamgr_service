@@ -16,11 +16,11 @@
 #include "database_statistic_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 ReportStatus DatabaseStatisticImpl::Report(const DbStat &stat)
 {
     HiViewAdapter::ReportDatabaseStatistic(DfxCodeConstant::DATABASE_STATISTIC, stat);
     return ReportStatus::SUCCESS;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS

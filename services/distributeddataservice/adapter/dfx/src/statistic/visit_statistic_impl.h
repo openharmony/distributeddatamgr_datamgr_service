@@ -20,12 +20,12 @@
 #include "hiview_adapter.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 class VisitStatisticImpl : public StatisticReporter<VisitStat> {
 public:
     virtual ~VisitStatisticImpl() {}
     ReportStatus Report(const VisitStat &stat) override;
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_VISIT_STATISTIC_IMPL_H

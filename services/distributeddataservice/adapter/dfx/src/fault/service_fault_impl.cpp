@@ -16,11 +16,11 @@
 #include "service_fault_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
-ReportStatus ServiceFaultImpl::Report(const OHOS::DistributedKv::FaultMsg &msg)
+namespace DistributedDataDfx {
+ReportStatus ServiceFaultImpl::Report(const OHOS::DistributedDataDfx::FaultMsg &msg)
 {
     HiViewAdapter::ReportFault(DfxCodeConstant::SERVICE_FAULT, msg);
     return ReportStatus::SUCCESS;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS

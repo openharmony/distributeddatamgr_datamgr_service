@@ -23,6 +23,7 @@
 #include "store_result_set.h"
 #include "store_util.h"
 namespace OHOS::DistributedKv {
+using namespace OHOS::DistributedDataDfx;
 SingleStoreImpl::SingleStoreImpl(std::shared_ptr<DBStore> dbStore, const AppId &appId, const Options &options)
     : dbStore_(std::move(dbStore)), appId_(appId.appId), autoSync_(options.autoSync)
 {

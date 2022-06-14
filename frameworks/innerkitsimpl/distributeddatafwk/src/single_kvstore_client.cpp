@@ -25,6 +25,7 @@
 #include "kvstore_utils.h"
 
 namespace OHOS::DistributedKv {
+using namespace OHOS::DistributedDataDfx;
 SingleKvStoreClient::SingleKvStoreClient(sptr<ISingleKvStore> kvStoreProxy, const std::string &storeId)
     : kvStoreProxy_(kvStoreProxy), storeId_(storeId), syncCallbackClient_(new KvStoreSyncCallbackClient()),
       syncObserver_(std::make_shared<SyncObserver>())

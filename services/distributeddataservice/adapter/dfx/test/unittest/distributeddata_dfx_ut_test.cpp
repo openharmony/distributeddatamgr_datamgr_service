@@ -20,7 +20,7 @@
 #include "value_hash.h"
 
 using namespace testing::ext;
-using namespace OHOS::DistributedKv;
+using namespace OHOS::DistributedDataDfx;
 
 class DistributedataDfxUTTest : public testing::Test {
 public:

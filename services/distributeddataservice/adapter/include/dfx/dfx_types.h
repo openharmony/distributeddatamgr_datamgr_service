@@ -21,7 +21,7 @@
 #include "db_meta_callback_delegate.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 struct ModuleName {
     static const inline std::string DEVICE = "DEVICE";
     static const inline std::string USER = "USER";
@@ -156,7 +156,7 @@ struct DbStat {
     std::string appId;
     std::string storeId;
     int dbSize;
-    std::shared_ptr<DbMetaCallbackDelegate> delegate;
+    std::shared_ptr<DistributedKv::DbMetaCallbackDelegate> delegate;
 
     KVSTORE_API std::string GetKey() const
     {
@@ -189,6 +189,6 @@ enum class ReportStatus {
     SUCCESS = 0,
     ERROR = 1,
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_DFX_TYPES_H

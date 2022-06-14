@@ -16,11 +16,11 @@
 #include "runtime_fault_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 ReportStatus RuntimeFaultImpl::Report(const FaultMsg &msg)
 {
     HiViewAdapter::ReportFault(DfxCodeConstant::RUNTIME_FAULT, msg);
     return ReportStatus::SUCCESS;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS

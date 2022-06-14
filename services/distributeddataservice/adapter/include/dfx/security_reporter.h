@@ -19,13 +19,13 @@
 #include "dfx_types.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 class SecurityReporter {
 public:
     KVSTORE_API virtual ReportStatus Report(const SecurityPermissionsMsg &msg) = 0;
     KVSTORE_API virtual ReportStatus Report(const SecuritySensitiveLevelMsg &msg) = 0;
     KVSTORE_API virtual ~SecurityReporter() {}
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_SECURITY_REPORTER_H

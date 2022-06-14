@@ -20,12 +20,12 @@
 #include "hiview_adapter.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 class DatabaseStatisticImpl : public StatisticReporter<DbStat> {
 public:
     virtual ~DatabaseStatisticImpl() {}
     ReportStatus Report(const DbStat &stat) override;
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_DATABASE_STATISTIC_IMPL_H

@@ -20,13 +20,13 @@
 #include "hiview_adapter.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 class SecurityReporterImpl : public SecurityReporter {
 public:
     virtual ~SecurityReporterImpl() {}
     virtual ReportStatus Report(const SecurityPermissionsMsg &msg) override;
     virtual ReportStatus Report(const SecuritySensitiveLevelMsg &msg) override;
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_SECURITY_REPORTER_IMPL_H
