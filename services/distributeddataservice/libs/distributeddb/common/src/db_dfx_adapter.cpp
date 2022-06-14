@@ -49,13 +49,15 @@ const std::string DBDfxAdapter::EVENT_OPEN_DATABASE_FAILED = "OPEN_DATABASE_FAIL
 
 void DBDfxAdapter::Dump(int fd, const std::vector<std::u16string> &args)
 {
-    const std::u16string u16DumpParam =
-        std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}.from_bytes(DUMP_PARAM);
-    auto find = std::any_of(args.begin(), args.end(), [&](const std::u16string &arg) {
-        return arg == u16DumpParam;
-    });
-    if (!find) {
-        return;
+    if (!args.empty()) {
+        const std::u16string u16DumpParam =
+            std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}.from_bytes(DUMP_PARAM);
+        auto find = std::any_of(args.begin(), args.end(), [&u16DumpParam](const std::u16string &arg) {
+            return arg == u16DumpParam;
+        });
+        if (!find) {
+            return;
+        }
     }
     DBDumpHelper::Dump(fd, "DistributedDB Dump Message Info:\n\n");
     DBDumpHelper::Dump(fd, "DistributedDB Database Basic Message Info:\n");
