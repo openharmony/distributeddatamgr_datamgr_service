@@ -43,9 +43,6 @@ const std::string Constant::ROOT_PATH_DE = "/data/misc_de/0";
 /* root path for self-developed and non-self-developed app. */
 const std::string Constant::ROOT_PATH_CE = "/data/misc_ce/0";
 
-/* root path for preferences of corrupted db. */
-const std::string Constant::ROOT_PATH_PERF = "/data/misc_de/pref_corruptedDb";
-
 // the max length for key is 1024.
 const size_t Constant::MAX_KEY_LENGTH = 1024;
 

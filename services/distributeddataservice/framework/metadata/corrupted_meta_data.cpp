@@ -18,7 +18,6 @@
 #include "utils/constant.h"
 namespace OHOS {
 namespace DistributedData {
-
 bool CorruptedMetaData::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(appId)], appId);
