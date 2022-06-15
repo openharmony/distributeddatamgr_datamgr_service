@@ -637,7 +637,7 @@ Status KvStoreDataService::DeleteKvStore(StoreMetaData &metaData)
             metaKey = SecretKeyMeta::GetKey({metaData.user, "default", metaData.bundleName, metaData.storeId});
         } else {
             metaKey = SecretKeyMeta::GetKey({
-                metaData.user, "default", metaData.bundleName, metaData.storeId, metaData.instanceId});
+                metaData.user, "default", metaData.bundleName, metaData.storeId, std::to_string(metaData.instanceId)});
         }
         MetaDataManager::GetInstance().DelMeta(metaKey, true);
         auto secretKeyFile = KvStoreMetaManager::GetSecretSingleKeyFile(
