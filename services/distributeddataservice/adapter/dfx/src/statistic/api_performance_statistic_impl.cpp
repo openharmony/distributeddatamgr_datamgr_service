@@ -16,12 +16,12 @@
 #include "api_performance_statistic_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 ReportStatus ApiPerformanceStatisticImpl::Report(const ApiPerformanceStat &stat)
 {
     HiViewAdapter::ReportApiPerformanceStatistic(DfxCodeConstant::API_PERFORMANCE_INTERFACE, stat);
     return ReportStatus::SUCCESS;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS
 

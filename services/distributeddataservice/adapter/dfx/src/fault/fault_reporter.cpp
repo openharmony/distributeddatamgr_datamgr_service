@@ -16,6 +16,6 @@
 #include "fault_reporter.h"
 
 namespace OHOS {
-namespace DistributedKv {
-} // namespace DistributedKv
+namespace DistributedDataDfx {
+} // namespace DistributedDataDfx
 } // namespace OHOS

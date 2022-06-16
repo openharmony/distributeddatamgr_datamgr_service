@@ -21,6 +21,7 @@
 #include "kvstore_resultset_impl.h"
 
 namespace OHOS::DistributedKv {
+using namespace OHOS::DistributedDataDfx;
 constexpr int KvStoreResultSetImpl::INIT_POSTION;
 KvStoreResultSetImpl::~KvStoreResultSetImpl()
 {

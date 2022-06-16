@@ -45,6 +45,7 @@ constexpr int32_t DEVICE_ID_SIZE_MAX = 65;
 constexpr int32_t ID_BUF_LEN = 65;
 constexpr uint32_t WAIT_MAX_TIME = 5;
 using namespace std;
+using namespace OHOS::DistributedDataDfx;
 using namespace OHOS::DistributedKv;
 
 class AppDeviceListenerWrap {

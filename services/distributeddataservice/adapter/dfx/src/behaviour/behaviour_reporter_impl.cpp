@@ -16,12 +16,12 @@
 #include "behaviour_reporter_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 ReportStatus BehaviourReporterImpl::Report(const BehaviourMsg &msg)
 {
     HiViewAdapter::ReportBehaviour(DfxCodeConstant::DATABASE_BEHAVIOUR, msg);
     return ReportStatus::SUCCESS;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS
 

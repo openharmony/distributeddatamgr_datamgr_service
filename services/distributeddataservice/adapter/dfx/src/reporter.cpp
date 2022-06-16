@@ -28,7 +28,7 @@
 #include "behaviour/behaviour_reporter_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 Reporter* Reporter::GetInstance()
 {
     static Reporter reporter;
@@ -94,5 +94,5 @@ BehaviourReporter* Reporter::BehaviourReporter()
     static BehaviourReporterImpl behaviourReporterImpl;
     return &behaviourReporterImpl;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS

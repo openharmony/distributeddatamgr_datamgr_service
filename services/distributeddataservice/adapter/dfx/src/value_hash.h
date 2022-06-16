@@ -20,7 +20,7 @@
 #include <openssl/sha.h>
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 class ValueHash {
 public:
     ValueHash() {}
@@ -53,6 +53,6 @@ public:
 private:
     static constexpr int LEN = 8; // 8 is the substring length
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_VALUE_HASH_H

@@ -19,7 +19,7 @@
 #include "fault_reporter.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 class RuntimeFaultImpl : public FaultReporter {
 public:
     virtual ~RuntimeFaultImpl() {}
@@ -33,6 +33,6 @@ public:
     };
     ReportStatus Report(const FaultMsg &msg) override;
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_RUNTIME_FAULT_IMPL_H

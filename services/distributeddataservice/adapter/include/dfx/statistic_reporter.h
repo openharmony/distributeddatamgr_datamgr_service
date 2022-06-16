@@ -19,13 +19,13 @@
 #include "dfx_types.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 template<typename T>
 class StatisticReporter {
 public:
     KVSTORE_API virtual ReportStatus Report(const T &stat) = 0;
     KVSTORE_API virtual ~StatisticReporter() {}
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_STATISTIC_REPORTER_H

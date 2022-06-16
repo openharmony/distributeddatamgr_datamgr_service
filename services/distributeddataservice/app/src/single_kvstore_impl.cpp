@@ -38,6 +38,7 @@
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
+using namespace OHOS::DistributedDataDfx;
 static bool TaskIsBackground(pid_t pid)
 {
     std::ifstream ifs("/proc/" + std::to_string(pid) + "/cgroup", std::ios::in);

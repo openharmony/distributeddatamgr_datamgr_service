@@ -16,7 +16,7 @@
 #include "database_fault_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 ReportStatus DatabaseFaultImpl::Report(const DBFaultMsg &msg)
 {
     int eventID = DfxCodeConstant::DATABASE_FAULT;
@@ -33,5 +33,5 @@ ReportStatus DatabaseFaultImpl::Report(const DBFaultMsg &msg)
     HiViewAdapter::ReportDBFault(eventID, msg);
     return ReportStatus::SUCCESS;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS

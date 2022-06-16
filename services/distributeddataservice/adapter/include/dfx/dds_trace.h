@@ -22,7 +22,7 @@
 #include "hitrace/trace.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 enum TraceSwitch {
     DEBUG_CLOSE = 0x00,
     BYTRACE_ON = 0x01,
@@ -49,6 +49,6 @@ private:
     uint64_t lastTime_{ 0 };
     uint32_t traceCount_{ 0 };
 };
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS
 #endif

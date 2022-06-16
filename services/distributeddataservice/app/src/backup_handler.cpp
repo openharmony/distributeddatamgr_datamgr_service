@@ -40,6 +40,7 @@
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
+using namespace DistributedDataDfx;
 using namespace AppDistributedKv;
 BackupHandler::BackupHandler(IKvStoreDataService *kvStoreDataService)
 {

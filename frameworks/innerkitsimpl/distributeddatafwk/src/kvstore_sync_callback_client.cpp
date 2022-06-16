@@ -23,6 +23,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
+using namespace OHOS::DistributedDataDfx;
 KvStoreSyncCallbackClient::~KvStoreSyncCallbackClient()
 {
     syncCallbackInfo_.Clear();

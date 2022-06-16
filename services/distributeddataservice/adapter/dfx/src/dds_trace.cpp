@@ -24,9 +24,10 @@
 #include "reporter.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 static constexpr uint64_t BYTRACE_LABEL = HITRACE_TAG_DISTRIBUTEDDATA;
 using OHOS::HiviewDFX::HiTrace;
+using namespace DistributedKv;
 
 std::atomic_uint DdsTrace::indexCount_ = 0; // the value is changed by different thread
 std::atomic_bool DdsTrace::isSetBytraceEnabled_ = false;
@@ -108,5 +109,5 @@ bool DdsTrace::SetBytraceEnable()
     ZLOGD("success, current tag is true");
     return true;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS

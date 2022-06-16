@@ -19,12 +19,12 @@
 #include "dfx_types.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 class BehaviourReporter {
 public:
     KVSTORE_API virtual ReportStatus Report(const BehaviourMsg &msg) = 0;
     KVSTORE_API virtual ~BehaviourReporter() {}
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_H

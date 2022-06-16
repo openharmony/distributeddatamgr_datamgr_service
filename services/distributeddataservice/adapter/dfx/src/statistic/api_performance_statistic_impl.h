@@ -20,13 +20,13 @@
 #include "hiview_adapter.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 class ApiPerformanceStatisticImpl : public StatisticReporter<ApiPerformanceStat> {
 public:
     virtual ~ApiPerformanceStatisticImpl() {}
     ReportStatus Report(const ApiPerformanceStat &stat) override;
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_API_PERFORMANCE_STATISTIC_IMPL_H
 

@@ -26,7 +26,7 @@
 #include "value_hash.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 template<typename T>
 struct StatisticWrap {
     T val;
@@ -51,7 +51,7 @@ public:
 
 private:
     static constexpr int POOL_SIZE = 3;
-    static std::shared_ptr<KvStoreThreadPool> pool_;
+    static std::shared_ptr<DistributedKv::KvStoreThreadPool> pool_;
 
     static std::mutex visitMutex_;
     static std::map<std::string, StatisticWrap<VisitStat>> visitStat_;
@@ -81,6 +81,6 @@ private:
     static const inline int WAIT_TIME = 1 * 60 * 60; // 1 hours
     static const inline int PERIOD_TIME_US = 1 * 1000 * 1000; // 1 s
 };
-}  // namespace DistributedKv
+}  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_HI_VIEW_ADAPTER_H

@@ -16,11 +16,11 @@
 #include "communication_fault_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedDataDfx {
 ReportStatus CommunicationFaultImpl::Report(const CommFaultMsg &msg)
 {
     HiViewAdapter::ReportCommFault(DfxCodeConstant::DATABASE_SYNC_FAILED, msg);
     return ReportStatus::SUCCESS;
 }
-} // namespace DistributedKv
+} // namespace DistributedDataDfx
 } // namespace OHOS

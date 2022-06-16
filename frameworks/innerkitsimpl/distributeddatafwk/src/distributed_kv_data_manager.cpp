@@ -28,6 +28,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
+using namespace OHOS::DistributedDataDfx;
 DistributedKvDataManager::DistributedKvDataManager()
 {}
 
