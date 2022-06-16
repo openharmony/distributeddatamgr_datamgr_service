@@ -29,7 +29,7 @@ ohos_unittest("CommunicationProviderTest") {
     "../src",
   ]
   external_deps = [
-    "dsoftbus_standard:softbus_client",
+    "dsoftbus:softbus_client",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
