@@ -95,7 +95,6 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
-    "preferences:native_preferences",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -160,7 +159,6 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
-    "preferences:native_preferences",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -225,7 +223,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
-    "preferences:native_preferences",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
@@ -470,7 +467,6 @@ ohos_unittest("KvStoreUninstallerTest") {
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
-    "preferences:native_preferences",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
