@@ -89,7 +89,6 @@ void DistributedKvDataManagerTest::SetUpTestCase(void)
     noCreate.createIfMissing = false;
     noCreate.encrypt = false;
     noCreate.autoSync = true;
-    noCreate.dataOwnership = true;
     noCreate.kvStoreType = SINGLE_VERSION;
 
     userId.userId = "account0";

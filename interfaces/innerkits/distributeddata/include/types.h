@@ -242,13 +242,13 @@ struct Options {
     bool persistent = true;
     bool backup = true;
     bool autoSync = true;
+    bool syncable = true; // let bms delete first
     int32_t securityLevel = NO_LABEL;
     int32_t area = EL1;
     SyncPolicy syncPolicy = SyncPolicy::HIGH;
     KvStoreType kvStoreType = DEVICE_COLLABORATION;
-    bool syncable = true; // let bms delete first
     std::string schema = "";
-    bool dataOwnership = true; // true indicates the ownership of distributed data is DEVICE, otherwise, ACCOUNT
+    std::string baseDir = "";
 
     inline bool IsValidType() const
     {

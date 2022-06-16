@@ -90,10 +90,10 @@ public:
     // Parameters:
     // appId: the name of the application.
     // storeId: the name of the kvstore.
-    API_EXPORT Status DeleteKvStore(const AppId &appId, const StoreId &storeId);
+    API_EXPORT Status DeleteKvStore(const AppId &appId, const StoreId &storeId, const std::string &path = "");
 
     // delete all kvstore.
-    API_EXPORT Status DeleteAllKvStore(const AppId &appId);
+    API_EXPORT Status DeleteAllKvStore(const AppId &appId, const std::string &path = "");
 
     API_EXPORT void RegisterKvStoreServiceDeathRecipient(std::shared_ptr<KvStoreDeathRecipient> deathRecipient);
 

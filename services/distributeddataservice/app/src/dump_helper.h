@@ -20,6 +20,7 @@
 #include <vector>
 #include <map>
 #include <list>
+#include <functional>
 #include "store_errno.h"
 #include "singleton.h"
 

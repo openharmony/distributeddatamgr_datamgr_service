@@ -875,7 +875,11 @@ void KvStoreDataService::StartService()
     }
     auto autoLaunchRequestCallback =
         [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
-            return ResolveAutoLaunchParamByIdentifier(identifier, param);
+            auto status = ResolveAutoLaunchParamByIdentifier(identifier, param);
+            if (kvdbService_) {
+                kvdbService_->ResolveAutoLaunch(identifier, param);
+            }
+            return status;
         };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunchRequestCallback);
 
@@ -996,7 +1000,6 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const MetaData &meta, const
         .autoSync = storeMeta.isAutoSync,
         .securityLevel = storeMeta.securityLevel,
         .kvStoreType = static_cast<KvStoreType>(storeMeta.kvStoreType),
-        .dataOwnership = true,
     };
     DistributedDB::KvStoreNbDelegate::Option dbOptions;
     KvStoreAppManager::InitNbDbOption(options, meta.secretKeyMetaData.secretKey, dbOptions);

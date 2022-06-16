@@ -12,28 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "SingleKvStoreImpl"
-
 #include "single_kvstore_impl.h"
 #include <fstream>
-#include "account_delegate.h"
 #include "auth_delegate.h"
 #include "backup_handler.h"
 #include "checker/checker_manager.h"
 #include "constant.h"
 #include "dds_trace.h"
 #include "device_kvstore_impl.h"
-#include "kvstore_data_service.h"
-#include "kvstore_utils.h"
 #include "ipc_skeleton.h"
+#include "kvstore_utils.h"
 #include "log_print.h"
+#include "metadata/meta_data_manager.h"
 #include "permission_validator.h"
 #include "query_helper.h"
+#include "dump_helper.h"
 #include "reporter.h"
 #include "upgrade_manager.h"
-#include "metadata/meta_data_manager.h"
-
 #define DEFAUL_RETRACT "            "
 
 namespace OHOS::DistributedKv {

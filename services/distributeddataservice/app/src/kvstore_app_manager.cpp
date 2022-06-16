@@ -298,7 +298,7 @@ Status KvStoreAppManager::InitNbDbOption(const Options &options, const std::vect
     }
 
     dbOption.schema = options.schema;
-    dbOption.createDirByStoreIdOnly = options.dataOwnership;
+    dbOption.createDirByStoreIdOnly = true;
     dbOption.secOption = ConvertSecurity(options.securityLevel);
     return Status::SUCCESS;
 }

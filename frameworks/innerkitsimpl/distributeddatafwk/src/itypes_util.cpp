@@ -348,11 +348,11 @@ bool ITypesUtil::Marshalling(const Options &input, MessageParcel &data)
     target->persistent = input.persistent;
     target->backup = input.backup;
     target->autoSync = input.autoSync;
+    target->syncable = input.syncable;
     target->securityLevel = input.securityLevel;
+    target->area = input.area;
     target->syncPolicy = input.syncPolicy;
     target->kvStoreType = input.kvStoreType;
-    target->syncable = input.syncable;
-    target->dataOwnership = input.dataOwnership;
     return data.WriteRawData(buffer.get(), sizeof(input));
 }
 
@@ -372,10 +372,10 @@ bool ITypesUtil::Unmarshalling(Options &output, MessageParcel &data)
     output.backup = source->backup;
     output.autoSync = source->autoSync;
     output.securityLevel = source->securityLevel;
+    output.area = source->area;
     output.syncPolicy = source->syncPolicy;
     output.kvStoreType = source->kvStoreType;
     output.syncable = source->syncable;
-    output.dataOwnership = source->dataOwnership;
     return true;
 }
 

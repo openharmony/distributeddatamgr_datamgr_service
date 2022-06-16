@@ -138,7 +138,7 @@ StoreFactory::DBOption StoreFactory::GetDBOption(const Options &options, const D
     }
 
     dbOption.schema = options.schema;
-    dbOption.createDirByStoreIdOnly = options.dataOwnership;
+    dbOption.createDirByStoreIdOnly = true;
     dbOption.secOption = StoreUtil::GetDBSecurity(options.securityLevel);
     return dbOption;
 }

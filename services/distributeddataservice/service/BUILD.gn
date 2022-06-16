@@ -21,6 +21,7 @@ config("module_public_config") {
   include_dirs = [
     "bootstrap/include",
     "config/include",
+    "crypto/include",
     "directory/include",
     "kvdb",
     "rdb",
@@ -46,6 +47,7 @@ ohos_shared_library("distributeddatasvc") {
     "config/src/model/global_config.cpp",
     "config/src/model/network_config.cpp",
     "config/src/model/protocol_config.cpp",
+    "crypto/src/crypto_manager.cpp",
     "directory/src/directory_manager.cpp",
     "kvdb/auth_delegate.cpp",
     "kvdb/executor_factory.cpp",
@@ -53,6 +55,7 @@ ohos_shared_library("distributeddatasvc") {
     "kvdb/kvdb_service_stub.cpp",
     "kvdb/kvstore_sync_manager.cpp",
     "kvdb/query_helper.cpp",
+    "kvdb/store_cache.cpp",
     "kvdb/user_delegate.cpp",
     "object/object_manager.cpp",
     "object/object_service_impl.cpp",
@@ -80,6 +83,7 @@ ohos_shared_library("distributeddatasvc") {
     "access_token:libaccesstoken_sdk",
     "deviceauth_standard:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
+    "huks:libhukssdk",
     "ipc:ipc_core",
   ]
   subsystem_name = "distributeddatamgr"

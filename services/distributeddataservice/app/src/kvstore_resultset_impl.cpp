@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "KvStoreResultsetImpl"
+#include "kvstore_resultset_impl.h"
 
 #include <utility>
+
 #include "dds_trace.h"
 #include "log_print.h"
-#include "kvstore_resultset_impl.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedDataDfx;

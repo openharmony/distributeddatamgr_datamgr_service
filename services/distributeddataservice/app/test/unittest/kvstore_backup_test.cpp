@@ -85,8 +85,7 @@ void KvStoreBackupTest::TearDown(void)
 */
 HWTEST_F(KvStoreBackupTest, KvStoreBackupTest001, TestSize.Level1)
 {
-    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
-        .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
+    Options options = { .kvStoreType = KvStoreType::SINGLE_VERSION};
     AppId appId = { "backup1" };
     StoreId storeId = { "store1" };
     KvStoreDataService kvDataService;
@@ -107,8 +106,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest001, TestSize.Level1)
 */
 HWTEST_F(KvStoreBackupTest, KvStoreBackupTest002, TestSize.Level1)
 {
-    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
-        .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
+    Options options = { .kvStoreType = KvStoreType::SINGLE_VERSION };
     AppId appId = { "backup2" };
     StoreId storeId = { "store2" };
 
@@ -155,8 +153,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest002, TestSize.Level1)
 */
 HWTEST_F(KvStoreBackupTest, KvStoreBackupTest004, TestSize.Level1)
 {
-    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
-            .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
+    Options options = { .kvStoreType = KvStoreType::SINGLE_VERSION};
     AppId appId = { "backup4" };
     StoreId storeId = { "store4" };
 
@@ -209,8 +206,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest004, TestSize.Level1)
 */
 HWTEST_F(KvStoreBackupTest, KvStoreBackupTest005, TestSize.Level1)
 {
-    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
-        .securityLevel = SecurityLevel::S0, .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
+    Options options = { .securityLevel = SecurityLevel::S0, .kvStoreType = KvStoreType::SINGLE_VERSION};
     AppId appId = { "backup5" };
     StoreId storeId = { "store5" };
 
@@ -257,8 +253,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest005, TestSize.Level1)
 */
 HWTEST_F(KvStoreBackupTest, KvStoreBackupTest006, TestSize.Level1)
 {
-    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
-        .securityLevel = SecurityLevel::S2, .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
+    Options options = { .securityLevel = SecurityLevel::S2, .kvStoreType = KvStoreType::SINGLE_VERSION};
     AppId appId = { "backup6" };
     StoreId storeId = { "store6" };
 
@@ -305,8 +300,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest006, TestSize.Level1)
 */
 HWTEST_F(KvStoreBackupTest, KvStoreBackupTest007, TestSize.Level1)
 {
-    Options options = { .createIfMissing = true, .encrypt = false, .backup = true, .autoSync = true,
-        .securityLevel = SecurityLevel::S4, .kvStoreType = KvStoreType::SINGLE_VERSION, .dataOwnership = true };
+    Options options = { .securityLevel = SecurityLevel::S4, .kvStoreType = KvStoreType::SINGLE_VERSION};
     AppId appId = { "backup7" };
     StoreId storeId = { "store7" };
 

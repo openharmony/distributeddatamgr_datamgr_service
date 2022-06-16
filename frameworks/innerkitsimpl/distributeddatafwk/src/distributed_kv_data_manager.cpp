@@ -153,7 +153,7 @@ Status DistributedKvDataManager::CloseAllKvStore(const AppId &appId)
     return Status::SERVER_UNAVAILABLE;
 }
 
-Status DistributedKvDataManager::DeleteKvStore(const AppId &appId, const StoreId &storeId)
+Status DistributedKvDataManager::DeleteKvStore(const AppId &appId, const StoreId &storeId, const std::string &path)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__),
         TraceSwitch::BYTRACE_ON | TraceSwitch::TRACE_CHAIN_ON);
@@ -173,7 +173,7 @@ Status DistributedKvDataManager::DeleteKvStore(const AppId &appId, const StoreId
     return Status::SERVER_UNAVAILABLE;
 }
 
-Status DistributedKvDataManager::DeleteAllKvStore(const AppId &appId)
+Status DistributedKvDataManager::DeleteAllKvStore(const AppId &appId, const std::string &path)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__),
         TraceSwitch::BYTRACE_ON | TraceSwitch::TRACE_CHAIN_ON);
