@@ -86,7 +86,7 @@ public:
         return std::pair { true, it->second };
     }
 
-    bool Contains(const key_type& key) const noexcept
+    bool Contains(const key_type &key) const noexcept
     {
         std::lock_guard<decltype(mutex_)> lock(mutex_);
         return (entries_.find(key) != entries_.end());

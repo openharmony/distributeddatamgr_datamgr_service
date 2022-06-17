@@ -27,10 +27,10 @@ public:
     static AutoSyncTimer &GetInstance();
     void AddAutoSyncStore(const std::string& appId, const std::set<StoreId>& storeIds);
     std::map<std::string, std::set<StoreId>> GetStoreIds();
-    std::function<void()> ProcessTask();
 private:
     static constexpr size_t TIME_TASK_NUM = 5;
     static constexpr size_t SYNC_STORE_NUM = 10;
+    std::function<void()> ProcessTask();
     ConcurrentMap<std::string, std::set<StoreId>> stores_;
     SchedulerTask delaySyncTask_;
     SchedulerTask forceSyncTask_;

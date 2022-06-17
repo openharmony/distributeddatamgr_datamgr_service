@@ -89,7 +89,7 @@ std::function<void()> AutoSyncTimer::ProcessTask()
             }
         }
         if (!stores_.Empty()) {
-            stores_.ForEach([this, &service, &syncInfo](const std::string &key, const std::set<StoreId> &value) {
+            stores_.ForEach([this](const std::string &key, const std::set<StoreId> &value) {
                 AddAutoSyncStore(key, value);
                 return false;
             });
