@@ -72,12 +72,8 @@ private:
 private:
     static std::mutex runMutex_;
     static bool running_;
-    static const inline int EXEC_HOUR_TIME = 23;
-    static const inline int EXEC_MIN_TIME = 60;
-    static const inline int SIXTY_SEC = 60;
-
-    static const inline int WAIT_TIME = 1 * 60; // 1 minute
-    static const inline int PERIOD_TIME_US = 1 * 1000 * 1000; // 1 s
+    static const inline int DAILY_REPORT_TIME = 23;
+    static const inline int WAIT_TIME = 1 * 60 * 60; // 1 hours
 };
 }  // namespace DistributedDataDfx
 }  // namespace OHOS

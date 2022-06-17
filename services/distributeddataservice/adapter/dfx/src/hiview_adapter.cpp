@@ -362,18 +362,13 @@ void HiViewAdapter::StartTimerThread()
                 continue;
             }
             int currentHour = localTime.tm_hour;
-            int currentMin = localTime.tm_min;
-            if ((EXEC_MIN_TIME - currentMin) != EXEC_MIN_TIME) {
-                sleep((EXEC_MIN_TIME - currentMin) * SIXTY_SEC);
-                InvokeTraffic();
-                InvokeVisit();
-                if (currentHour == EXEC_HOUR_TIME) {
-                    InvokeDbSize();
-                    InvokeApiPerformance();
-                }
-            } else {
-                sleep(WAIT_TIME);
+            InvokeTraffic();
+            InvokeVisit();
+            if (currentHour == DAILY_REPORT_TIME) {
+                InvokeDbSize();
+                InvokeApiPerformance();
             }
+            sleep(WAIT_TIME);
         }
     };
     std::thread th = std::thread(fun);

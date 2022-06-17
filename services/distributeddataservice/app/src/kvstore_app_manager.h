@@ -23,6 +23,7 @@
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
 #include "kvstore_meta_manager.h"
+#include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "nocopyable.h"
 #include "single_kvstore_impl.h"

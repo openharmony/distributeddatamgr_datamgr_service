@@ -122,11 +122,13 @@ Status SingleKvStoreImpl::CheckDbIsCorrupted(DistributedDB::DBStatus status, con
 {
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGW("option %{public}s failed, recovery database.", funName);
-        CorruptedMetaData corruptedMetaData = CorruptedMetaData(appId_, bundleName_, storeId_);
-        MetaDataManager::GetInstance().LoadMeta(corruptedMetaData.GetKey(), corruptedMetaData, true);
-        if (!corruptedMetaData.corruptedStatus) {
-            corruptedMetaData.corruptedStatus = true;
-            MetaDataManager::GetInstance().SaveMeta(corruptedMetaData.GetKey(), corruptedMetaData, true);
+        StoreMetaData metaData = StoreMetaData(deviceAccountId_, bundleName_, storeId_);
+        metaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
+        MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+
+        if (!metaData.isCorrupted) {
+            metaData.isCorrupted = true;
+            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
             Reporter::GetInstance()->DatabaseFault()->Report(
                 {bundleName_, storeId_, "KVDB", Fault::DF_DB_CORRUPTED});
         }
@@ -1405,18 +1407,18 @@ void SingleKvStoreImpl::IncreaseOpenCount()
 bool SingleKvStoreImpl::Import(const std::string &bundleName) const
 {
     ZLOGI("Single KvStoreImpl Import start");
-    StoreMetaData metaData;
-    metaData.user = deviceAccountId_;
-    metaData.bundleName = bundleName;
-    metaData.storeId = storeId_;
+    StoreMetaData metaData = StoreMetaData(deviceAccountId_, bundleName, storeId_);
     metaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     std::shared_lock<std::shared_mutex> lock(storeNbDelegateMutex_);
     auto result = std::make_unique<BackupHandler>()->SingleKvStoreRecover(metaData, kvStoreNbDelegate_);
     if (result) {
-        CorruptedMetaData corruptedMetaData = CorruptedMetaData(appId_, bundleName_, storeId_);
-        MetaDataManager::GetInstance().DelMeta(corruptedMetaData.GetKey(), true);
+        metaData.isCorrupted = false;
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
     }
+    Reporter::GetInstance()->BehaviourReporter()->Report(
+        {deviceAccountId_, bundleName_, storeId_, BehaviourType::DATABASE_RECOVERY,
+        (result) ? BehaviourResult::BEHAVIOUR_SUCCESS : BehaviourResult::BEHAVIOUR_FAILED, ""});
     return result;
 }
 
