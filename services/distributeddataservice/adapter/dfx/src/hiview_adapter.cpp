@@ -81,6 +81,7 @@ std::mutex HiViewAdapter::apiPerformanceMutex_;
 std::map<std::string, StatisticWrap<ApiPerformanceStat>> HiViewAdapter::apiPerformanceStat_;
 
 bool HiViewAdapter::running_ = false;
+Utils::Timer *HiViewAdapter::timer_ = nullptr;
 std::mutex HiViewAdapter::runMutex_;
 
 void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
@@ -345,34 +346,25 @@ void HiViewAdapter::InvokeApiPerformance()
 
 void HiViewAdapter::StartTimerThread()
 {
-    if (running_) {
+    if (timer_ != nullptr) {
         return;
     }
-    std::lock_guard<std::mutex> lock(runMutex_);
-    if (running_) {
-        return;
+    timer_ = new Utils::Timer("hiviewAdapterTimer");
+    timer_->Register(DoReport, WAIT_TIME);
+    timer_->Setup();
+}
+
+void HiViewAdapter::DoReport()
+{
+    time_t current = time(nullptr);
+    tm localTime = { 0 };
+    tm *result = localtime_r(&current, &localTime);
+    if ((result != nullptr) && (localTime.tm_hour == DAILY_REPORT_TIME)) {
+        InvokeDbSize();
+        InvokeApiPerformance();
     }
-    running_ = true;
-    auto fun = []() {
-        while (true) {
-            time_t current = time(nullptr);
-            tm localTime = { 0 };
-            tm *result = localtime_r(&current, &localTime);
-            if (result == nullptr) {
-                continue;
-            }
-            int currentHour = localTime.tm_hour;
-            InvokeTraffic();
-            InvokeVisit();
-            if (currentHour == DAILY_REPORT_TIME) {
-                InvokeDbSize();
-                InvokeApiPerformance();
-            }
-            sleep(WAIT_TIME);
-        }
-    };
-    std::thread th = std::thread(fun);
-    th.detach();
+    InvokeTraffic();
+    InvokeVisit();
 }
 
 std::string HiViewAdapter::CoverEventID(int dfxCode)

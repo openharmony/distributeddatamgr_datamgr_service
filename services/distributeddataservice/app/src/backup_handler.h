@@ -43,6 +43,7 @@ public:
     static bool RemoveFile(const std::string &path);
     static bool FileExists(const std::string &path);
     static std::string GetHashedBackupName(const std::string &bundleName);
+    void GetBackupInfo(StoreMetaData &metaData, std::string &fullName, int64_t &time);
 
     struct BackupPara {
         KvStoreAppManager::PathType pathType;

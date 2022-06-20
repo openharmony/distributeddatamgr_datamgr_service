@@ -242,9 +242,11 @@ Status KvStoreAppManager::DeleteKvStore(const std::string &storeId)
     if (statusDE == Status::SUCCESS || statusCE == Status::SUCCESS) {
         StoreMetaData metaData = StoreMetaData(deviceAccountId_, bundleName_, storeId);
         metaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
-        MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-        metaData.isCorrupted = false;
-        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+        auto isMateExist = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+        if (isMateExist) {
+            metaData.isCorrupted = false;
+            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+        }
         return Status::SUCCESS;
     }
 

@@ -31,6 +31,7 @@
 #include "permission_validator.h"
 #include "query_helper.h"
 #include "reporter.h"
+#include "time_utils.h"
 #include "upgrade_manager.h"
 #include "metadata/meta_data_manager.h"
 
@@ -125,7 +126,6 @@ Status SingleKvStoreImpl::CheckDbIsCorrupted(DistributedDB::DBStatus status, con
         StoreMetaData metaData = StoreMetaData(deviceAccountId_, bundleName_, storeId_);
         metaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
         MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-
         if (!metaData.isCorrupted) {
             metaData.isCorrupted = true;
             MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
@@ -1407,7 +1407,10 @@ void SingleKvStoreImpl::IncreaseOpenCount()
 bool SingleKvStoreImpl::Import(const std::string &bundleName) const
 {
     ZLOGI("Single KvStoreImpl Import start");
-    StoreMetaData metaData = StoreMetaData(deviceAccountId_, bundleName, storeId_);
+    StoreMetaData metaData;
+    metaData.user = deviceAccountId_;
+    metaData.bundleName = bundleName;
+    metaData.storeId = storeId_;
     metaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     std::shared_lock<std::shared_mutex> lock(storeNbDelegateMutex_);
@@ -1416,9 +1419,20 @@ bool SingleKvStoreImpl::Import(const std::string &bundleName) const
         metaData.isCorrupted = false;
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
     }
+
+    int64_t currentTime = TimeUtils::CurrentTimeMicros();
+    int64_t backupTime;
+    std::string backupName;
+    std::string message;
+    std::make_unique<BackupHandler>()->GetBackupInfo(metaData, backupName, backupTime);
+
+    message.append(" Extension Info: backup name [").append(backupName)
+        .append("], backup time [").append(std::to_string(backupTime))
+        .append("], recovery time [").append(std::to_string(currentTime)).append("]");
+
     Reporter::GetInstance()->BehaviourReporter()->Report(
         {deviceAccountId_, bundleName_, storeId_, BehaviourType::DATABASE_RECOVERY,
-        (result) ? BehaviourResult::BEHAVIOUR_SUCCESS : BehaviourResult::BEHAVIOUR_FAILED, ""});
+        (result) ? BehaviourResult::BEHAVIOUR_SUCCESS : BehaviourResult::BEHAVIOUR_FAILED, message});
     return result;
 }
 

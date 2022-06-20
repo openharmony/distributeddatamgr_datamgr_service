@@ -23,6 +23,7 @@
 #include "hisysevent.h"
 #include "kv_store_thread_pool.h"
 #include "kv_store_task.h"
+#include "timer.h"
 #include "value_hash.h"
 
 namespace OHOS {
@@ -69,9 +70,11 @@ private:
     static void InvokeApiPerformance();
 
     static std::string CoverEventID(int dfxCode);
+    static void DoReport();
 private:
     static std::mutex runMutex_;
     static bool running_;
+    static Utils::Timer *timer_;
     static const inline int DAILY_REPORT_TIME = 23;
     static const inline int WAIT_TIME = 1 * 60 * 60; // 1 hours
 };

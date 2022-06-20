@@ -42,6 +42,7 @@ namespace OHOS::DistributedKv {
 using namespace DistributedData;
 using namespace DistributedDataDfx;
 using namespace AppDistributedKv;
+constexpr const int64_t NANOSEC_TO_MICROSEC = 1000;
 BackupHandler::BackupHandler(IKvStoreDataService *kvStoreDataService)
 {
 }
@@ -228,6 +229,19 @@ bool BackupHandler::SingleKvStoreRecover(StoreMetaData &metaData, DistributedDB:
     }
     ZLOGI("SingleKvStoreRecover failed.");
     return false;
+}
+
+void BackupHandler::GetBackupInfo(StoreMetaData &metaData, std::string &fullName, int64_t &time)
+{
+    auto backupPath = BackupHandler::GetBackupPath(metaData.user, KvStoreAppManager::ConvertPathType(metaData));
+    auto backupName = GetHashedBackupName(
+        Constant::Concatenate({ metaData.account, "_", metaData.appId, "_", metaData.storeId }));
+    fullName = Constant::Concatenate({ backupPath , "/", backupName});
+
+    struct stat curStat;
+    stat(fullName.c_str(), &curStat);
+    time = curStat.st_mtim.tv_sec * SEC_TO_MICROSEC + curStat.st_mtim.tv_nsec / NANOSEC_TO_MICROSEC;
+    return;
 }
 
 std::string BackupHandler::backupDirCe_;
