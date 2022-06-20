@@ -197,6 +197,10 @@ int GenericSingleVerKvEntry::DeSerializeDatas(std::vector<SingleVerKvEntry *> &k
     uint64_t len = 0;
     uint32_t size = 0;
     len += parcel.ReadUInt32(size);
+    if (size > DBConstant::MAX_NORMAL_PACK_ITEM_SIZE) {
+        len = 0;
+        goto END;
+    }
     parcel.EightByteAlign();
     len = BYTE_8_ALIGN(len);
     for (uint32_t i = 0; i < size; i++) {
@@ -208,7 +212,7 @@ int GenericSingleVerKvEntry::DeSerializeDatas(std::vector<SingleVerKvEntry *> &k
         }
         len += kvEntry->DeSerializeData(parcel);
         kvEntries.push_back(kvEntry);
-        if (len > INT32_MAX) {
+        if (len > INT32_MAX || parcel.IsError()) {
             len = 0;
             goto END;
         }
