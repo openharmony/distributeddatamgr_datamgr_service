@@ -25,7 +25,6 @@
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
-#include "permission_validator.h"
 #include "query_helper.h"
 #include "dump_helper.h"
 #include "reporter.h"

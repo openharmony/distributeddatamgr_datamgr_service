@@ -21,7 +21,6 @@
 #include "constant.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
-#include "permission_validator.h"
 
 #define DEFAUL_RETRACT "    "
 

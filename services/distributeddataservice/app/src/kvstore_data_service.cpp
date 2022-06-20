@@ -611,9 +611,9 @@ Status KvStoreDataService::DeleteKvStore(const AppId &appId, const StoreId &stor
 Status KvStoreDataService::DeleteKvStore(StoreMetaData &metaData)
 {
      // delete the backup file
-    auto backFilePath = DirectoryManager::GetInstance().GetStoreBackupPath(metaData);
+    auto backFilePath = BackupHandler::GetBackupPath(metaData.user, KvStoreAppManager::ConvertPathType(metaData));
     auto backupFileName = Constant::Concatenate({ metaData.account, "_", metaData.bundleName, "_", metaData.storeId });
-    auto backFile = Constant::Concatenate({ backFilePath, BackupHandler::GetHashedBackupName(backupFileName) });
+    auto backFile = Constant::Concatenate({ backFilePath, "/", BackupHandler::GetHashedBackupName(backupFileName) });
     if (!BackupHandler::RemoveFile(backFile)) {
         ZLOGE("DeleteKvStore RemoveFile backFilePath failed.");
     }

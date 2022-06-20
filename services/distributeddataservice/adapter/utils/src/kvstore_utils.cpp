@@ -16,7 +16,6 @@
 
 #include "kvstore_utils.h"
 #include <limits>
-#include "permission_validator.h"
 
 namespace OHOS {
 namespace DistributedKv {

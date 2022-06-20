@@ -12,14 +12,16 @@
 # limitations under the License.
 import("//build/ohos.gni")
 
-ohos_static_library("distributeddata_permission_static") {
-  sources = [ "src/permission_validator.cpp" ]
+ohos_static_library("distributeddata_checker_static") {
+  sources = [
+    "bundle_checker.cpp",
+    "media_lib_checker.cpp",
+    "system_checker.cpp",
+  ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
   include_dirs = [
-    "../include/permission",
-    "../include/utils",
     "//utils/native/base/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
@@ -31,12 +33,16 @@ ohos_static_library("distributeddata_permission_static") {
   }
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
-    "../utils:distributeddata_utils_static",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//utils/native/base:utils",
   ]
 
   external_deps = [
+    "ability_base:base",
+    "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "samgr_standard:samgr_proxy",

@@ -26,7 +26,6 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/secret_key_meta_data.h"
 #include "log_print.h"
-#include "permission_validator.h"
 
 namespace OHOS::DistributedKv {
 using MetaDataManager = DistributedData::MetaDataManager;

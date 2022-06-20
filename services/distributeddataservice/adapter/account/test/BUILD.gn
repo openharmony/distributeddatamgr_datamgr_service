@@ -30,7 +30,6 @@ ohos_unittest("DistributeddataAccountTest") {
 
   deps = [
     "../:distributeddata_account_static",
-    "../../permission:distributeddata_permission_static",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
