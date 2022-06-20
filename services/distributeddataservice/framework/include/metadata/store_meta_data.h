@@ -35,7 +35,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     int32_t area = 0;
     int32_t uid = -1;
     uint32_t tokenId = 0;
-    uint32_t instanceId = 0;
+    int32_t instanceId = 0;
     std::string appId = "";
     std::string appType = "";
     std::string bundleName = "";
