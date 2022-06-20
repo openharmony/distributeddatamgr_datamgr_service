@@ -731,7 +731,7 @@ Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const A
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
-    if (appId.appId == "com.ohos.medialibrary.MediaLibraryDataA") {
+    if (appId.appId == "com.ohos.medialibrary.medialibrarydata") {
         HapTokenInfo tokenInfo;
         AccessTokenKit::GetHapTokenInfo(token, tokenInfo);
         ZLOGI("not close bundle:%{public}s, tokenInfo.bundle:%{public}s, uid:%{public}d, token:%{public}u",

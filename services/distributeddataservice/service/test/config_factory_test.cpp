@@ -90,8 +90,8 @@ HWTEST_F(ConfigFactoryTest, CheckerConfig, TestSize.Level0)
     ASSERT_EQ(checker->trusts[0].bundleName, "bundle_manager_service");
     ASSERT_EQ(checker->trusts[0].appId, "bundle_manager_service");
     ASSERT_EQ(checker->trusts[0].checker, "SystemChecker");
-    ASSERT_EQ(checker->trusts[1].bundleName, "com.ohos.medialibrary.MediaLibraryDataA");
-    ASSERT_EQ(checker->trusts[1].appId, "com.ohos.medialibrary.MediaLibraryDataA");
+    ASSERT_EQ(checker->trusts[1].bundleName, "com.ohos.medialibrary.medialibrarydata");
+    ASSERT_EQ(checker->trusts[1].appId, "com.ohos.medialibrary.medialibrarydata");
     ASSERT_EQ(checker->trusts[1].checker, "MediaLibraryChecker");
 }
 
