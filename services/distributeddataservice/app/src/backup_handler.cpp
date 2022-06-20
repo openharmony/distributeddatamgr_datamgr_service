@@ -234,9 +234,9 @@ bool BackupHandler::SingleKvStoreRecover(StoreMetaData &metaData, DistributedDB:
 void BackupHandler::GetBackupInfo(StoreMetaData &metaData, std::string &fullName, int64_t &time)
 {
     auto backupPath = BackupHandler::GetBackupPath(metaData.user, KvStoreAppManager::ConvertPathType(metaData));
-    auto backupName = GetHashedBackupName(
-        Constant::Concatenate({ metaData.account, "_", metaData.appId, "_", metaData.storeId }));
-    fullName = Constant::Concatenate({ backupPath , "/", backupName});
+    auto rowBackupName = Constant::Concatenate({ metaData.account, "_", metaData.appId, "_", metaData.storeId });
+    auto hashBackupName = GetHashedBackupName(rowBackupName);
+    fullName = Constant::Concatenate({ backupPath , "/", hashBackupName});
 
     struct stat curStat;
     stat(fullName.c_str(), &curStat);
