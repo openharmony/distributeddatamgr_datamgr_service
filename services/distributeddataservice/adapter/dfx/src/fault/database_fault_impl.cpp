@@ -24,7 +24,7 @@ ReportStatus DatabaseFaultImpl::Report(const DBFaultMsg &msg)
         eventID = DfxCodeConstant::DATABASE_CORRUPTED_FAILED;
     } else if (msg.errorType == Fault::DF_DB_REKEY_FAILED) {
         eventID = DfxCodeConstant::DATABASE_REKEY_FAILED;
-    } else if (msg.errorType == Fault::DF_DB_DAMAGE){
+    } else if (msg.errorType == Fault::DF_DB_DAMAGE) {
         eventID = DfxCodeConstant::DATABASE_FAULT;
     } else {
         return ReportStatus::ERROR;
