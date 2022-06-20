@@ -89,7 +89,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
-    "deviceauth_standard:deviceauth_sdk",
+    "device_auth:deviceauth_sdk",
     "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
@@ -153,7 +153,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
-    "deviceauth_standard:deviceauth_sdk",
+    "device_auth:deviceauth_sdk",
     "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
@@ -217,7 +217,7 @@ ohos_unittest("KvStoreDataServiceTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
-    "deviceauth_standard:deviceauth_sdk",
+    "device_auth:deviceauth_sdk",
     "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
@@ -283,7 +283,7 @@ ohos_unittest("KvStoreBackupTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
-    "deviceauth_standard:deviceauth_sdk",
+    "device_auth:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
@@ -324,7 +324,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
-    "deviceauth_standard:deviceauth_sdk",
+    "device_auth:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
@@ -382,7 +382,7 @@ ohos_unittest("KvStoreSyncManagerTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
-    "deviceauth_standard:deviceauth_sdk",
+    "device_auth:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
@@ -461,7 +461,7 @@ ohos_unittest("KvStoreUninstallerTest") {
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "dataclassification:data_transit_mgr",
-    "deviceauth_standard:deviceauth_sdk",
+    "device_auth:deviceauth_sdk",
     "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
