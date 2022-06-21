@@ -81,7 +81,7 @@ std::mutex HiViewAdapter::apiPerformanceMutex_;
 std::map<std::string, StatisticWrap<ApiPerformanceStat>> HiViewAdapter::apiPerformanceStat_;
 
 bool HiViewAdapter::running_ = false;
-DistributedKv::KvScheduler *HiViewAdapter::scheduler_ = nullptr;
+std::unique_ptr<KvScheduler> HiViewAdapter::scheduler_ = std::make_unique<KvScheduler>();
 std::mutex HiViewAdapter::runMutex_;
 
 void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
@@ -368,7 +368,6 @@ void HiViewAdapter::StartTimerThread()
         InvokeTraffic();
         InvokeVisit();
     };
-    scheduler_ = new DistributedKv::KvScheduler();
     scheduler_->Every(delay, internal, fun);
 }
 
