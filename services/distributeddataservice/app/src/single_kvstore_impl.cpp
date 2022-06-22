@@ -1409,8 +1409,8 @@ bool SingleKvStoreImpl::Import(const std::string &bundleName) const
     metaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     std::shared_lock<std::shared_mutex> lock(storeNbDelegateMutex_);
-    auto result = std::make_unique<BackupHandler>()->SingleKvStoreRecover(metaData, kvStoreNbDelegate_);
-    if (result) {
+    auto recoverResult = std::make_unique<BackupHandler>()->SingleKvStoreRecover(metaData, kvStoreNbDelegate_);
+    if (recoverResult) {
         metaData.isCorrupted = false;
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
     }
@@ -1427,8 +1427,8 @@ bool SingleKvStoreImpl::Import(const std::string &bundleName) const
 
     Reporter::GetInstance()->BehaviourReporter()->Report(
         {deviceAccountId_, bundleName_, storeId_, BehaviourType::DATABASE_RECOVERY,
-        (result) ? BehaviourResult::BEHAVIOUR_SUCCESS : BehaviourResult::BEHAVIOUR_FAILED, message});
-    return result;
+        (recoverResult) ? BehaviourResult::BEHAVIOUR_SUCCESS : BehaviourResult::BEHAVIOUR_FAILED, message});
+    return recoverResult;
 }
 
 Status SingleKvStoreImpl::SetCapabilityEnabled(bool enabled)
