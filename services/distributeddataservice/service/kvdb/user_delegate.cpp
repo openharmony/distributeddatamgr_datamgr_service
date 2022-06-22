@@ -47,6 +47,26 @@ std::vector<UserStatus> UserDelegate::GetLocalUserStatus()
     return GetUsers(deviceId);
 }
 
+std::set<std::string> UserDelegate::GetLocalUsers()
+{
+    auto deviceId = GetLocalDeviceId();
+    if (deviceId.empty()) {
+        ZLOGE("failed to get local device id");
+        return {};
+    }
+    if (!deviceUserMap_.Contains(deviceId)) {
+        LoadFromMeta(deviceId);
+    }
+    std::set<std::string> users;
+    deviceUserMap_.ComputeIfPresent(deviceId, [&users](auto&, std::map<int, bool> &value){
+        for (auto [user, active] : value) {
+            users.emplace(std::to_string(user));
+        }
+        return !value.empty();
+    });
+    return users;
+}
+
 std::vector<DistributedData::UserStatus> UserDelegate::GetRemoteUserStatus(const std::string &deviceId)
 {
     if (deviceId.empty()) {

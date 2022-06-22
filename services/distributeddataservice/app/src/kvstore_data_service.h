@@ -172,7 +172,9 @@ private:
     bool CheckSyncActivation(const std::string &userId, const std::string &appId, const std::string &storeId);
 
     bool CheckOptions(const Options &options, const std::vector<uint8_t> &metaKey) const;
-    bool IsStoreOpened(const std::string &userId, const std::string &appId, const std::string &storeId);
+    std::set<std::string> GetStoreOpenedUser(const std::string &appId, const std::string &storeId)
+    std::vector<std::string> GetIntersectionUser(const std::set<std::string> &left,
+                                                 const std::set<std::string> &right);
     static Status FillStoreParam(
         const Options &options, const AppId &appId, const StoreId &storeId, StoreMetaData &metaData);
 
