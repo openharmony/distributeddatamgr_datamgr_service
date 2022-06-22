@@ -70,7 +70,6 @@ private:
     static void InvokeApiPerformance();
 
     static std::string CoverEventID(int dfxCode);
-    static void DoReport();
 private:
     static std::mutex runMutex_;
     static bool running_;
