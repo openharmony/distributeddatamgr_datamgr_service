@@ -432,7 +432,7 @@ int32_t ObjectStoreManager::RetrieveFromStore(
 void ObjectStoreManager::ProcessKeyByIndex(std::string &key, uint8_t index)
 {
     std::size_t pos;
-    int8_t i = 0;
+    uint8_t i = 0;
     do {
         pos = key.find(SEPERATOR);
         if (pos == std::string::npos) {
