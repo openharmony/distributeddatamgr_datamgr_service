@@ -1292,29 +1292,29 @@ bool KvStoreDataService::CheckSyncActivation(
     const std::string &userId, const std::string &appId, const std::string &storeId)
 {
     ZLOGD("user:%{public}s, app:%{public}s, store:%{public}s", userId.c_str(), appId.c_str(), storeId.c_str());
-    std::set<std::string> activeUsers = UserDelegate::GetInstance().GetLocalUser();
+    std::set<std::string> activeUsers = UserDelegate::GetInstance().GetLocalUsers();
     std::set<std::string> storeOpenedUser = GetStoreOpenedUser(appId, storeId);
-	storeOpenedUser.emplace(userId);
+    storeOpenedUser.emplace(userId);
     auto users = GetIntersectionUser(activeUsers, storeOpenedUser);
-	return users.size() == storeOpenedUser.size();
+    return users.size() == storeOpenedUser.size();
 }
 
 std::vector<std::string> KvStoreDataService::GetIntersectionUser(
     const std::set<std::string> &left, const std::set<std::string> &right)
 {
     std::vector<std::string> users;
-    for (auto lIt = left.begin(), rIt = right.begin(); lIt != left.end() && rIt != right.end(); ) {
+    for (auto lIt = left.begin(), rIt = right.begin(); lIt != left.end() && rIt != right.end();) {
         if (*lIt == *rIt) {
-		    users.emplace_back(*rIt);
+            users.emplace_back(*rIt);
             ++lIt;
-			++rIt;
-			continue;
+            ++rIt;
+            continue;
         }
-		if (*lIt < *rIt) {
-		    lIt++;
-			continue;
-		}
-		rIt++;
+        if (*lIt < *rIt) {
+            lIt++;
+            continue;
+        }
+        rIt++;
     }
     return users;
 }

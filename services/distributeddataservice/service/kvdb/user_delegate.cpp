@@ -58,7 +58,7 @@ std::set<std::string> UserDelegate::GetLocalUsers()
         LoadFromMeta(deviceId);
     }
     std::set<std::string> users;
-    deviceUserMap_.ComputeIfPresent(deviceId, [&users](auto&, std::map<int, bool> &value){
+    deviceUserMap_.ComputeIfPresent(deviceId, [&users](auto&, std::map<int, bool> &value) {
         for (auto [user, active] : value) {
             users.emplace(std::to_string(user));
         }
