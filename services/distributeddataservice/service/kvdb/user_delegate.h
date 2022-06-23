@@ -17,7 +17,7 @@
 #define DISTRIBUTEDDATAMGR_USER_DELEGATE_H
 
 #include <memory>
-
+#include <set>
 #include "account/account_delegate.h"
 #include "concurrent_map.h"
 #include "metadata/user_meta_data.h"
@@ -36,6 +36,7 @@ public:
 
     API_EXPORT void Init();
     API_EXPORT std::vector<UserStatus> GetLocalUserStatus();
+    API_EXPORT std::set<std::string> GetLocalUsers();
     API_EXPORT std::vector<UserStatus> GetRemoteUserStatus(const std::string &deviceId);
     API_EXPORT bool InitLocalUserMeta();
 
