@@ -329,7 +329,7 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
     }
     auto status = delegate_->PutBatch(entries);
     if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("putBatch fail  %{public}d", status);
+        ZLOGE("putBatch fail %{public}d", status);
     }
     return status;
 }
