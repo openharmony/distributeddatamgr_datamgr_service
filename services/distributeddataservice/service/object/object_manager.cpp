@@ -41,7 +41,7 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
     kvStoreDelegateManager_->GetKvStore(ObjectCommon::OBJECTSTORE_DB_STOREID, option,
         [&store](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate) {
             if (dbStatus != DistributedDB::DBStatus::OK) {
-                ZLOGE("GetKvStore fail 0x%{public}x", dbStatus);
+                ZLOGE("GetKvStore fail %{public}d", dbStatus);
                 return;
             }
             ZLOGI("GetKvStore successsfully");
@@ -161,7 +161,7 @@ int32_t ObjectStoreManager::Retrieve(
     std::map<std::string, std::vector<uint8_t>> results;
     int32_t status = RetrieveFromStore(appId, sessionId, results);
     if (status != SUCCESS) {
-        ZLOGE("Retrieve from store failed,please check DB status, status = 0x%{public}x", status);
+        ZLOGE("Retrieve from store failed,please check DB status, status = %{public}d", status);
         Close();
         callback->Completed(std::map<std::string, std::vector<uint8_t>>());
         return status;
@@ -169,7 +169,7 @@ int32_t ObjectStoreManager::Retrieve(
     // delete local data
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(appId, sessionId));
     if (status != SUCCESS) {
-        ZLOGE("revoke save to store failed,please check DB status, status = 0x%{public}x", status);
+        ZLOGE("revoke save to store failed,please check DB status, status = %{public}d", status);
         Close();
         callback->Completed(std::map<std::string, std::vector<uint8_t>>());
         return status;
@@ -230,7 +230,7 @@ int32_t ObjectStoreManager::Open()
         delegate_ = OpenObjectKvStore();
         if (delegate_ == nullptr) {
             ZLOGE("open failed,please check DB status");
-            return DB_ERROR;
+            return DBSTATUS_ERROR;
         }
         syncCount_ = 1;
     } else {
@@ -284,7 +284,7 @@ void ObjectStoreManager::ProcessOldEntry(const std::string &appId)
     std::vector<DistributedDB::Entry> entries;
     auto status = delegate_->GetEntries(std::vector<uint8_t>(appId.begin(), appId.end()), entries);
     if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("GetEntries fail 0x%{public}x", status);
+        ZLOGE("GetEntries fail %{public}d", status);
         return;
     }
 
@@ -329,7 +329,7 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
     }
     auto status = delegate_->PutBatch(entries);
     if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("putBatch fail  0x%{public}x", status);
+        ZLOGE("putBatch fail  %{public}d", status);
     }
     return status;
 }
@@ -405,7 +405,7 @@ int32_t ObjectStoreManager::RevokeSaveToStore(const std::string &prefix)
     if (!keys.empty()) {
         status = delegate_->DeleteBatch(keys);
         if (status != DistributedDB::DBStatus::OK) {
-            ZLOGE("DeleteBatch failed,please check DB status, status = 0x%{public}x", status);
+            ZLOGE("DeleteBatch failed,please check DB status, status = %{public}d", status);
             return DB_ERROR;
         }
     }
@@ -419,7 +419,7 @@ int32_t ObjectStoreManager::RetrieveFromStore(
     std::string prefix = GetPrefixWithoutDeviceId(appId, sessionId);
     auto status = delegate_->GetEntries(std::vector<uint8_t>(prefix.begin(), prefix.end()), entries);
     if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("GetEntries failed,please check DB status, status = 0x%{public}x", status);
+        ZLOGE("GetEntries failed,please check DB status, status = %{public}d", status);
         return DB_ERROR;
     }
     ZLOGI("GetEntries successfully");

@@ -75,7 +75,7 @@ public:
 private:
     enum Status {
         SUCCESS,
-        DB_ERROR,
+        DBSTATUS_ERROR,
         INNER_ERROR
     };
     constexpr static const char *SEPERATOR = "_";
