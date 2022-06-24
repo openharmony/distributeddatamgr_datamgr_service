@@ -58,7 +58,7 @@ void DeviceKvStoreTest::SetUpTestCase(void)
     options.area = EL1;
     options.baseDir = std::string("/data/service/el1/public/database/odmf");
     AppId appId = { "odmf" };
-    StoreId storeId = { "student_single" }; // define kvstore(database) name.
+    StoreId storeId = { "student_device" }; // define kvstore(database) name.
     mkdir(options.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     // [create and] open and initialize kvstore instance.
     status_ = manager.GetSingleKvStore(options, appId, storeId, kvStore_);
@@ -165,7 +165,7 @@ HWTEST_F(DeviceKvStoreTest, GetStoreId001, TestSize.Level1)
     EXPECT_NE(kvStore_, nullptr) << "kvStorePtr is null.";
 
     auto storID = kvStore_->GetStoreId();
-    EXPECT_EQ(storID.storeId, "student_single");
+    EXPECT_EQ(storID.storeId, "student_device");
 }
 
 /**
@@ -359,11 +359,11 @@ HWTEST_F(DeviceKvStoreTest, TestSchemaStoreC001, TestSize.Level1)
     options.area = EL1;
     options.baseDir = "/data/service/el1/public/database/odmf";
     AppId appId = { "odmf" };
-    StoreId storeId = { "schema_store_id" };
+    StoreId storeId = { "schema_device_id" };
     (void)manager.GetSingleKvStore(options, appId, storeId, deviceKvStore);
     ASSERT_NE(deviceKvStore, nullptr) << "kvStorePtr is null.";
     auto result = deviceKvStore->GetStoreId();
-    EXPECT_EQ(result.storeId, "schema_store_id");
+    EXPECT_EQ(result.storeId, "schema_device_id");
 
     Key testKey = {"TestSchemaStoreC001_key"};
     Value testValue = {"{\"age\":10}"};
@@ -1017,11 +1017,11 @@ HWTEST_F(DeviceKvStoreTest, DeviceSync001 ,TestSize.Level1)
     options.area = EL1;
     options.baseDir = "/data/service/el1/public/database/odmf";
     AppId appId = { "odmf" };
-    StoreId storeId = { "schema_store_id001" };
+    StoreId storeId = { "schema_device_id001" };
     manager.GetSingleKvStore(options, appId, storeId, schemaSingleKvStorePtr);
     ASSERT_NE(schemaSingleKvStorePtr, nullptr) << "kvStorePtr is null.";
     auto result = schemaSingleKvStorePtr->GetStoreId();
-    EXPECT_EQ(result.storeId, "schema_store_id001");
+    EXPECT_EQ(result.storeId, "schema_device_id001");
 
     auto testStatus = schemaSingleKvStorePtr->SetCapabilityEnabled(true);
     EXPECT_EQ(testStatus, Status::SUCCESS) << "set fail";
@@ -1043,11 +1043,11 @@ HWTEST_F(DeviceKvStoreTest, DeviceSync002 ,TestSize.Level1)
     options.area = EL1;
     options.baseDir = "/data/service/el1/public/database/odmf";
     AppId appId = { "odmf" };
-    StoreId storeId = { "schema_store_id002" };
+    StoreId storeId = { "schema_device_id002" };
     manager.GetSingleKvStore(options, appId, storeId, schemaSingleKvStorePtr);
     ASSERT_NE(schemaSingleKvStorePtr, nullptr) << "kvStorePtr is null.";
     auto result = schemaSingleKvStorePtr->GetStoreId();
-    EXPECT_EQ(result.storeId, "schema_store_id002");
+    EXPECT_EQ(result.storeId, "schema_device_id002");
 
     std::vector<std::string> local = {"A", "B"};
     std::vector<std::string> remote = {"C", "D"};
