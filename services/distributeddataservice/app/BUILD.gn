@@ -42,6 +42,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/bootstrap/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/config/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/crypto/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/directory/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/session_manager",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
