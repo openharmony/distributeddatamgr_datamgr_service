@@ -57,7 +57,8 @@ public:
     Status GetCount(const DataQuery &query, int &count) const override;
     Status GetSecurityLevel(SecurityLevel &secLevel) const override;
     Status RemoveDeviceData(const std::string &device) override;
-    Status Close();
+    int32_t Close(bool isForce = false);
+    int32_t AddRef();
 
     // IPC interface
     Status Sync(const std::vector<std::string> &devices, SyncMode mode, uint32_t delay) override;
@@ -93,6 +94,7 @@ private:
     std::string appId_;
     std::string storeId_;
     bool autoSync_ = false;
+    int32_t ref_ = 1;
     mutable std::shared_mutex rwMutex_;
     std::shared_ptr<SyncObserver> syncObserver_ = nullptr;
     ConcurrentMap<uintptr_t, std::pair<uint32_t, std::shared_ptr<ObserverBridge>>> observers_;

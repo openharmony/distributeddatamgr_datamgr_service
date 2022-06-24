@@ -39,10 +39,8 @@ public:
     Status DisableCapability(const AppId &appId, const StoreId &storeId) override;
     Status SetCapability(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &local,
         const std::vector<std::string> &remote) override;
-    Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &devices,
-        const std::string &query) override;
-    Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &devices,
-        const std::string &query) override;
+    Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
+    Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     sptr<KvStoreSyncCallbackClient> GetSyncAgent(const AppId &appId);

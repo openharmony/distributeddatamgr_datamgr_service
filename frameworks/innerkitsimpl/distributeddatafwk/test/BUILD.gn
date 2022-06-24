@@ -136,6 +136,27 @@ ohos_unittest("SingleKvStoreClientTest") {
   ]
 }
 
+ohos_unittest("DeviceKvStoreTest") {
+  module_out_path = module_output_path
+
+  sources = [ "unittest/device_kvstore_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "samgr_standard:samgr_proxy",
+  ]
+
+  deps = [
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//third_party/googletest:gtest_main",
+    "//utils/native/base:utils",
+  ]
+}
+
 ohos_unittest("BlobTest") {
   module_out_path = module_output_path
 
@@ -159,6 +180,7 @@ group("unittest") {
 
   deps += [
     ":BlobTest",
+    ":DeviceKvStoreTest",
     ":DistributedKvDataManagerEncryptTest",
     ":DistributedKvDataManagerTest",
     ":LocalSubscribeStoreTest",

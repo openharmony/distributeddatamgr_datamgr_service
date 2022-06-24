@@ -55,10 +55,8 @@ public:
     virtual Status DisableCapability(const AppId &appId, const StoreId &storeId) = 0;
     virtual Status SetCapability(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &local,
         const std::vector<std::string> &remote) = 0;
-    virtual Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId,
-        const std::vector<std::string> &devices, const std::string &query) = 0;
-    virtual Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId,
-        const std::vector<std::string> &devices, const std::string &query) = 0;
+    virtual Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) = 0;
+    virtual Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) = 0;
     virtual Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) = 0;
     virtual Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) = 0;
 
@@ -77,8 +75,8 @@ protected:
         TRANS_ENABLE_CAP,
         TRANS_DISABLE_CAP,
         TRANS_SET_CAP,
-        TRANS_ADD_SUB_INFO,
-        TRANS_RMV_SUB_INFO,
+        TRANS_ADD_SUB,
+        TRANS_RMV_SUB,
         TRANS_SUB,
         TRANS_UNSUB,
         TRANS_BUTT,

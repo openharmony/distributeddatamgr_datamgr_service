@@ -253,6 +253,7 @@ struct Options {
     SyncPolicy syncPolicy = SyncPolicy::HIGH;
     KvStoreType kvStoreType = DEVICE_COLLABORATION;
     std::string schema = "";
+    std::string hapName = "";
     std::string baseDir = "";
 
     inline bool IsValidType() const

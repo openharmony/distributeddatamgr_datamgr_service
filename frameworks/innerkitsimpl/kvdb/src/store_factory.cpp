@@ -42,10 +42,11 @@ std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(
     stores_.Compute(appId, [&](auto &, auto &stores) {
         if (stores.find(storeId) != stores.end()) {
             kvStore = stores[storeId];
+            kvStore->AddRef();
             return !stores.empty();
         }
         auto dbManager = GetDBManager(path, appId);
-        auto password = SecurityManager::GetInstance().GetDBPassword(appId, storeId, path);
+        auto password = SecurityManager::GetInstance().GetDBPassword(storeId, path, options.encrypt);
         dbManager->GetKvStore(storeId, GetDBOption(options, password),
             [&dbManager, &kvStore, &appId, &dbStatus, &options](auto status, auto *store) {
                 dbStatus = status;
@@ -76,27 +77,34 @@ std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(
 
 Status StoreFactory::Delete(const AppId &appId, const StoreId &storeId, const std::string &path)
 {
-    Close(appId, storeId);
+    Close(appId, storeId, true);
     auto dbManager = GetDBManager(path, appId);
     auto status = dbManager->DeleteKvStore(storeId);
-    SecurityManager::GetInstance().DelDBPassword(appId, storeId, path);
+    SecurityManager::GetInstance().DelDBPassword(storeId, path);
     return StoreUtil::ConvertStatus(status);
 }
 
-Status StoreFactory::Close(const AppId &appId, const StoreId &storeId)
+Status StoreFactory::Close(const AppId &appId, const StoreId &storeId, bool isForce)
 {
-    stores_.ComputeIfPresent(appId, [&storeId](auto &, auto &values) {
+    Status status = STORE_NOT_OPEN;
+    stores_.ComputeIfPresent(appId, [&storeId, &status, isForce](auto &, auto &values) {
         for (auto it = values.begin(); it != values.end();) {
             if (!storeId.storeId.empty() && (it->first != storeId.storeId)) {
                 ++it;
-            } else {
-                it->second->Close();
+                continue;
+            }
+
+            status = SUCCESS;
+            auto ref = it->second->Close(isForce);
+            if (ref <= 0) {
                 it = values.erase(it);
+            } else {
+                ++it;
             }
         }
         return !values.empty();
     });
-    return SUCCESS;
+    return status;
 }
 
 bool StoreFactory::IsOpen(const AppId &appId, const StoreId &storeId)
@@ -113,14 +121,16 @@ std::shared_ptr<StoreFactory::DBManager> StoreFactory::GetDBManager(const std::s
 {
     std::shared_ptr<DBManager> dbManager;
     dbManagers_.Compute(path, [&dbManager, &appId](const auto &path, std::shared_ptr<DBManager> &manager) {
-        if (manager == nullptr) {
-            manager = std::make_shared<DBManager>(appId.appId, "default");
-            std::string fullPath = path + "/kvdb";
-            StoreUtil::InitPath(fullPath);
-            manager->SetKvStoreConfig({ fullPath });
+        if (manager != nullptr) {
+            dbManager = manager;
+            return true;
         }
-        dbManager = manager;
-        return true;
+        std::string fullPath = path + "/kvdb";
+        auto result = StoreUtil::InitPath(fullPath);
+        dbManager = std::make_shared<DBManager>(appId.appId, "default");
+        dbManager->SetKvStoreConfig({ fullPath });
+        manager = dbManager;
+        return result;
     });
     return dbManager;
 }
@@ -129,7 +139,7 @@ StoreFactory::DBOption StoreFactory::GetDBOption(const Options &options, const D
 {
     DBOption dbOption;
     dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
-    dbOption.createIfNecessary = true;
+    dbOption.createIfNecessary = options.createIfMissing;
     dbOption.isMemoryDb = (!options.persistent);
     dbOption.isEncryptedDb = options.encrypt;
     if (options.encrypt) {

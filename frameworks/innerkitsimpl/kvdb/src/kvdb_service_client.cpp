@@ -28,7 +28,7 @@
 namespace OHOS::DistributedKv {
 #define IPC_SEND(code, reply, ...)                                              \
     ({                                                                          \
-        int32_t __status;                                                       \
+        int32_t __status = SUCCESS;                                             \
         do {                                                                    \
             MessageParcel request;                                              \
             if (!request.WriteInterfaceToken(GetDescriptor())) {                \
@@ -232,26 +232,24 @@ Status KVDBServiceClient::SetCapability(const AppId &appId, const StoreId &store
     return static_cast<Status>(status);
 }
 
-Status KVDBServiceClient::AddSubscribeInfo(
-    const AppId &appId, const StoreId &storeId, const std::vector<std::string> &devices, const std::string &query)
+Status KVDBServiceClient::AddSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
 {
     MessageParcel reply;
-    int32_t status = IPC_SEND(TRANS_ADD_SUB_INFO, reply, appId, storeId, devices, query);
+    int32_t status = IPC_SEND(TRANS_ADD_SUB, reply, appId, storeId, syncInfo.seqId, syncInfo.devices, syncInfo.query);
     if (status != SUCCESS) {
         ZLOGE("status:0x%{public}x, appId:%{public}s, storeId:%{public}s, query:%{public}s", status,
-            appId.appId.c_str(), storeId.storeId.c_str(), StoreUtil::Anonymous(query).c_str());
+            appId.appId.c_str(), storeId.storeId.c_str(), StoreUtil::Anonymous(syncInfo.query).c_str());
     }
     return static_cast<Status>(status);
 }
 
-Status KVDBServiceClient::RmvSubscribeInfo(
-    const AppId &appId, const StoreId &storeId, const std::vector<std::string> &devices, const std::string &query)
+Status KVDBServiceClient::RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
 {
     MessageParcel reply;
-    int32_t status = IPC_SEND(TRANS_RMV_SUB_INFO, reply, appId, storeId, devices, query);
+    int32_t status = IPC_SEND(TRANS_RMV_SUB, reply, appId, storeId, syncInfo.seqId, syncInfo.devices, syncInfo.query);
     if (status != SUCCESS) {
         ZLOGE("status:0x%{public}x, appId:%{public}s, storeId:%{public}s, query:%{public}s", status,
-            appId.appId.c_str(), storeId.storeId.c_str(), StoreUtil::Anonymous(query).c_str());
+            appId.appId.c_str(), storeId.storeId.c_str(), StoreUtil::Anonymous(syncInfo.query).c_str());
     }
     return static_cast<Status>(status);
 }

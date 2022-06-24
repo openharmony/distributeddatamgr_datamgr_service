@@ -12,16 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "DistributedKvDataManagerEncryptTest"
+#include <gtest/gtest.h>
 
 #include "distributed_kv_data_manager.h"
 #include "kvstore_death_recipient.h"
-#include <gtest/gtest.h>
-#include <cstdint>
-#include <vector>
-#include "types.h"
 #include "log_print.h"
+#include "types.h"
+
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 
@@ -64,8 +62,8 @@ StoreId DistributedKvDataManagerEncryptTest::storeId;
 void DistributedKvDataManagerEncryptTest::RemoveAllStore(DistributedKvDataManager manager)
 {
     manager.CloseAllKvStore(appId);
-    manager.DeleteKvStore(appId, storeId);
-    manager.DeleteAllKvStore(appId);
+    manager.DeleteKvStore(appId, storeId, createEnc.baseDir);
+    manager.DeleteAllKvStore(appId, createEnc.baseDir);
 }
 void DistributedKvDataManagerEncryptTest::SetUpTestCase(void)
 {
@@ -78,11 +76,17 @@ void DistributedKvDataManagerEncryptTest::SetUpTestCase(void)
     appId.appId = "com.ohos.nb.service";
 
     storeId.storeId = "EncryptStoreId";
+
+    createEnc.area = EL1;
+    createEnc.baseDir = std::string("/data/service/el1/public/database/") + appId.appId;
+    mkdir(createEnc.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
 }
 
 void DistributedKvDataManagerEncryptTest::TearDownTestCase(void)
 {
     RemoveAllStore(manager);
+    remove((createEnc.baseDir + "/kvdb").c_str());
+    remove(createEnc.baseDir.c_str());
 }
 
 void DistributedKvDataManagerEncryptTest::SetUp(void)

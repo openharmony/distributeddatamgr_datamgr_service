@@ -29,7 +29,8 @@ public:
     static std::string Anonymous(const std::string &name);
     static uint32_t Anonymous(const void *ptr);
     static Status ConvertStatus(DBStatus status);
-    static int32_t InitPath(const std::string &path);
+    static bool InitPath(const std::string &path);
+    static bool Remove(const std::string &path);
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_STORE_UTIL_H

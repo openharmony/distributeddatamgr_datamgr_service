@@ -15,6 +15,7 @@
 #define LOG_TAG "SingleStoreImpl"
 #include "single_store_impl.h"
 
+#include "auto_sync_timer.h"
 #include "dds_trace.h"
 #include "dev_manager.h"
 #include "kvdb_service_client.h"
@@ -22,7 +23,6 @@
 #include "log_print.h"
 #include "store_result_set.h"
 #include "store_util.h"
-#include "auto_sync_timer.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedDataDfx;
 SingleStoreImpl::SingleStoreImpl(std::shared_ptr<DBStore> dbStore, const AppId &appId, const Options &options)
@@ -453,13 +453,14 @@ Status SingleStoreImpl::RemoveDeviceData(const std::string &device)
     return status;
 }
 
-Status SingleStoreImpl::Sync(const std::vector<std::string> &devices, SyncMode mode, uint32_t allowedDelayMs)
+Status SingleStoreImpl::Sync(const std::vector<std::string> &devices, SyncMode mode, uint32_t delay)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     KVDBService::SyncInfo syncInfo;
     syncInfo.seqId = KvStoreUtils::GenerateSequenceId();
     syncInfo.mode = mode;
-    syncInfo.delay = mode;
+    syncInfo.delay = delay;
+    syncInfo.devices = devices;
     return DoSync(syncInfo, syncObserver_);
 }
 
@@ -528,8 +529,8 @@ Status SingleStoreImpl::SetCapabilityEnabled(bool enabled) const
     return service->DisableCapability({ appId_ }, { storeId_ });
 }
 
-Status SingleStoreImpl::SetCapabilityRange(
-    const std::vector<std::string> &localLabels, const std::vector<std::string> &remoteLabels) const
+Status SingleStoreImpl::SetCapabilityRange(const std::vector<std::string> &localLabels,
+    const std::vector<std::string> &remoteLabels) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__), true);
     auto service = KVDBServiceClient::GetInstance();
@@ -546,7 +547,18 @@ Status SingleStoreImpl::SubscribeWithQuery(const std::vector<std::string> &devic
     if (service == nullptr) {
         return SERVER_UNAVAILABLE;
     }
-    return service->AddSubscribeInfo({ appId_ }, { storeId_ }, devices, query.ToString());
+    SyncInfo syncInfo;
+    syncInfo.seqId = KvStoreUtils::GenerateSequenceId();
+    syncInfo.devices = devices;
+    syncInfo.query = query.ToString();
+    auto syncAgent = service->GetSyncAgent({ appId_ });
+    if (syncAgent == nullptr) {
+        ZLOGE("failed! invalid agent app:%{public}s, store:%{public}s!", appId_.c_str(), storeId_.c_str());
+        return ILLEGAL_STATE;
+    }
+
+    syncAgent->AddSyncCallback(syncObserver_, syncInfo.seqId);
+    return service->AddSubscribeInfo({ appId_ }, { storeId_ }, syncInfo);
 }
 
 Status SingleStoreImpl::UnsubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query)
@@ -556,16 +568,41 @@ Status SingleStoreImpl::UnsubscribeWithQuery(const std::vector<std::string> &dev
     if (service == nullptr) {
         return SERVER_UNAVAILABLE;
     }
-    return service->RmvSubscribeInfo({ appId_ }, { storeId_ }, devices, query.ToString());
+    SyncInfo syncInfo;
+    syncInfo.seqId = KvStoreUtils::GenerateSequenceId();
+    syncInfo.devices = devices;
+    syncInfo.query = query.ToString();
+    auto syncAgent = service->GetSyncAgent({ appId_ });
+    if (syncAgent == nullptr) {
+        ZLOGE("failed! invalid agent app:%{public}s, store:%{public}s!", appId_.c_str(), storeId_.c_str());
+        return ILLEGAL_STATE;
+    }
+
+    syncAgent->AddSyncCallback(syncObserver_, syncInfo.seqId);
+    return service->RmvSubscribeInfo({ appId_ }, { storeId_ }, syncInfo);
 }
 
-Status SingleStoreImpl::Close()
+int32_t SingleStoreImpl::AddRef()
 {
+    ref_++;
+    return ref_;
+}
+
+int32_t SingleStoreImpl::Close(bool isForce)
+{
+    if (isForce) {
+        ref_ = 1;
+    }
+    ref_--;
+    if (ref_ != 0) {
+        return ref_;
+    }
+
     observers_.Clear();
     syncObserver_->Clean();
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     dbStore_ = nullptr;
-    return SUCCESS;
+    return ref_;
 }
 
 std::vector<uint8_t> SingleStoreImpl::ToLocalDBKey(const Key &key) const
@@ -650,8 +687,11 @@ std::vector<uint8_t> SingleStoreImpl::GetPrefix(const Key &prefix) const
     auto begin = std::find_if(prefix.Data().begin(), prefix.Data().end(), [](int ch) { return !std::isspace(ch); });
     auto rBegin = std::find_if(prefix.Data().rbegin(), prefix.Data().rend(), [](int ch) { return !std::isspace(ch); });
     auto end = static_cast<decltype(begin)>(rBegin.base());
-    std::vector<uint8_t> dbKey;
-    dbKey.assign(begin, end);
+    if (end <= begin) {
+        return {};
+    }
+
+    std::vector<uint8_t> dbKey(begin, end);
     if (dbKey.size() >= MAX_KEY_LENGTH) {
         dbKey.clear();
     }
@@ -690,6 +730,6 @@ void SingleStoreImpl::DoAutoSync()
     if (!autoSync_) {
         return;
     }
-    AutoSyncTimer::GetInstance().DoAutoSync(appId_, {{storeId_}});
+    AutoSyncTimer::GetInstance().DoAutoSync(appId_, { { storeId_ } });
 }
 } // namespace OHOS::DistributedKv

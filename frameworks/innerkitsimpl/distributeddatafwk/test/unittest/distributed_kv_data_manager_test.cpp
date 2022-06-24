@@ -12,13 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "DistributedKvDataManagerTest"
-
 #include "distributed_kv_data_manager.h"
-#include <cstdint>
 #include <gtest/gtest.h>
 #include <vector>
+
 #include "kvstore_death_recipient.h"
 #include "log_print.h"
 #include "types.h"
@@ -77,22 +75,26 @@ Entry DistributedKvDataManagerTest::entryB;
 void DistributedKvDataManagerTest::RemoveAllStore(DistributedKvDataManager manager)
 {
     manager.CloseAllKvStore(appId);
-    manager.DeleteAllKvStore(appId);
+    manager.DeleteAllKvStore(appId, create.baseDir);
 }
 void DistributedKvDataManagerTest::SetUpTestCase(void)
 {
+    userId.userId = "account0";
+    appId.appId = "ohos.kvdatamanager.test";
     create.createIfMissing = true;
     create.encrypt = false;
     create.autoSync = true;
     create.kvStoreType = SINGLE_VERSION;
+    create.area = EL1;
+    create.baseDir = std::string("/data/service/el1/public/database/") + appId.appId;
+    mkdir(create.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
 
     noCreate.createIfMissing = false;
     noCreate.encrypt = false;
     noCreate.autoSync = true;
     noCreate.kvStoreType = SINGLE_VERSION;
-
-    userId.userId = "account0";
-    appId.appId = "com.ohos.kvdatamanager.test";
+    noCreate.area = EL1;
+    noCreate.baseDir = create.baseDir;
 
     storeId64.storeId = "a000000000b000000000c000000000d000000000e000000000f000000000g000";
     storeId65.storeId = "a000000000b000000000c000000000d000000000e000000000f000000000g000"
@@ -110,6 +112,8 @@ void DistributedKvDataManagerTest::SetUpTestCase(void)
 void DistributedKvDataManagerTest::TearDownTestCase(void)
 {
     RemoveAllStore(manager);
+    remove((create.baseDir + "/kvdb").c_str());
+    remove(create.baseDir.c_str());
 }
 
 void DistributedKvDataManagerTest::SetUp(void)
@@ -524,7 +528,7 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteKvStore001, TestSize.Level1)
     Status stat = manager.CloseKvStore(appId, storeId64);
     ASSERT_EQ(stat, Status::SUCCESS);
 
-    stat = manager.DeleteKvStore(appId, storeId64);
+    stat = manager.DeleteKvStore(appId, storeId64, create.baseDir);
     EXPECT_EQ(stat, Status::SUCCESS);
 }
 
@@ -544,7 +548,7 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteKvStore002, TestSize.Level1)
     ASSERT_NE(kvStore, nullptr);
 
     // first close it if opened, and then delete it.
-    Status stat = manager.DeleteKvStore(appId, storeId64);
+    Status stat = manager.DeleteKvStore(appId, storeId64, create.baseDir);
     EXPECT_EQ(stat, Status::SUCCESS);
 }
 
@@ -558,7 +562,7 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteKvStore002, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, DeleteKvStore003, TestSize.Level1)
 {
     ZLOGI("DeleteKvStore003 begin.");
-    Status stat = manager.DeleteKvStore(appId, storeId64);
+    Status stat = manager.DeleteKvStore(appId, storeId64, create.baseDir);
     EXPECT_EQ(stat, Status::STORE_NOT_FOUND);
 }
 
@@ -614,7 +618,7 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore001, TestSize.Level1)
     stat = manager.CloseKvStore(appId, storeIdTest);
     EXPECT_EQ(stat, Status::SUCCESS);
 
-    stat = manager.DeleteAllKvStore(appId);
+    stat = manager.DeleteAllKvStore(appId, create.baseDir);
     EXPECT_EQ(stat, Status::SUCCESS);
 }
 
@@ -639,7 +643,7 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore002, TestSize.Level1)
     Status stat = manager.CloseKvStore(appId, storeId64);
     EXPECT_EQ(stat, Status::SUCCESS);
 
-    stat = manager.DeleteAllKvStore(appId);
+    stat = manager.DeleteAllKvStore(appId, create.baseDir);
     EXPECT_EQ(stat, Status::SUCCESS);
 }
 
@@ -653,7 +657,7 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore002, TestSize.Level1)
 HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore003, TestSize.Level1)
 {
     ZLOGI("DeleteAllKvStore003 begin.");
-    Status stat = manager.DeleteAllKvStore(appId);
+    Status stat = manager.DeleteAllKvStore(appId, create.baseDir);
     EXPECT_EQ(stat, Status::SUCCESS);
 }
 
@@ -679,9 +683,9 @@ HWTEST_F(DistributedKvDataManagerTest, DeleteAllKvStore004, TestSize.Level1)
     EXPECT_EQ(stat, Status::SUCCESS);
     stat = manager.CloseKvStore(appId, storeIdTest);
     EXPECT_EQ(stat, Status::SUCCESS);
-    stat = manager.DeleteKvStore(appId, storeIdTest);
+    stat = manager.DeleteKvStore(appId, storeIdTest, create.baseDir);
     EXPECT_EQ(stat, Status::SUCCESS);
-    stat = manager.DeleteAllKvStore(appId);
+    stat = manager.DeleteAllKvStore(appId, create.baseDir);
     EXPECT_EQ(stat, Status::SUCCESS);
 }
 

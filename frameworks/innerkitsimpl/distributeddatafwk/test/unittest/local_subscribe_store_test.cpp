@@ -14,12 +14,11 @@
  */
 
 #define LOG_TAG "LocalSubscribeStoreTest"
-
-#include <cstddef>
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <unistd.h>
 #include <vector>
+
 #include "distributed_kv_data_manager.h"
 #include "log_print.h"
 #include "types.h"
@@ -51,13 +50,16 @@ StoreId LocalSubscribeStoreTest::storeId;
 
 void LocalSubscribeStoreTest::SetUpTestCase(void)
 {
+    mkdir("/data/service/el1/public/database/odmf", (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
 }
 
 void LocalSubscribeStoreTest::TearDownTestCase(void)
 {
     manager.CloseKvStore(appId, kvStore);
     kvStore = nullptr;
-    manager.DeleteKvStore(appId, storeId);
+    manager.DeleteKvStore(appId, storeId, "/data/service/el1/public/database/odmf");
+    remove("/data/service/el1/public/database/odmf/kvdb");
+    remove("/data/service/el1/public/database/odmf");
 }
 
 void LocalSubscribeStoreTest::SetUp(void)
@@ -67,10 +69,11 @@ void LocalSubscribeStoreTest::SetUp(void)
     options.encrypt = false;  // not supported yet.
     options.autoSync = true;  // not supported yet.
     options.kvStoreType = KvStoreType::SINGLE_VERSION;
-
+    options.area = EL1;
+    options.baseDir = std::string("/data/service/el1/public/database/odmf");
     appId.appId = "odmf";         // define app name.
     storeId.storeId = "student";  // define kvstore(database) name
-    manager.DeleteKvStore(appId, storeId);
+    manager.DeleteKvStore(appId, storeId, options.baseDir);
     // [create and] open and initialize kvstore instance.
     statusGetKvStore = manager.GetSingleKvStore(options, appId, storeId, kvStore);
     EXPECT_EQ(Status::SUCCESS, statusGetKvStore) << "statusGetKvStore return wrong status";

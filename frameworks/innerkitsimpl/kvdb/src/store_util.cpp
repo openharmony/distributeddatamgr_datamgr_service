@@ -89,7 +89,7 @@ Status StoreUtil::ConvertStatus(StoreUtil::DBStatus status)
         case DBStatus::INVALID_ARGS:
             return Status::INVALID_ARGUMENT;
         case DBStatus::NOT_FOUND:
-            return Status::KEY_NOT_FOUND;
+            return Status::NOT_FOUND;
         case DBStatus::INVALID_VALUE_FIELDS:
             return Status::INVALID_VALUE_FIELDS;
         case DBStatus::INVALID_FIELD_TYPE:
@@ -108,6 +108,12 @@ Status StoreUtil::ConvertStatus(StoreUtil::DBStatus status)
             return Status::TIME_OUT;
         case DBStatus::OVER_MAX_LIMITS:
             return Status::OVER_MAX_SUBSCRIBE_LIMITS;
+        case DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB:
+            return Status::CRYPT_ERROR;
+        case DBStatus::SCHEMA_MISMATCH:
+            return Status::SCHEMA_MISMATCH;
+        case DBStatus::INVALID_SCHEMA:
+            return Status::INVALID_SCHEMA;
         case DBStatus::EKEYREVOKED_ERROR: // fallthrough
         case DBStatus::SECURITY_OPTION_CHECK_ERROR:
             return Status::SECURITY_LEVEL_ERROR;
@@ -117,13 +123,25 @@ Status StoreUtil::ConvertStatus(StoreUtil::DBStatus status)
     }
     return Status::ERROR;
 }
-int32_t StoreUtil::InitPath(const std::string &path)
+bool StoreUtil::InitPath(const std::string &path)
 {
     if (access(path.c_str(), F_OK) == 0) {
         return true;
     }
     if (mkdir(path.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) != 0 && errno != EEXIST) {
         ZLOGE("mkdir error:%{public}d, path:%{public}s", errno, path.c_str());
+        return false;
+    }
+    return true;
+}
+
+bool StoreUtil::Remove(const std::string &path)
+{
+    if (access(path.c_str(), F_OK) != 0) {
+        return true;
+    }
+    if (remove(path.c_str()) != 0) {
+        ZLOGE("remove error:%{public}d, path:%{public}s", errno, path.c_str());
         return false;
     }
     return true;

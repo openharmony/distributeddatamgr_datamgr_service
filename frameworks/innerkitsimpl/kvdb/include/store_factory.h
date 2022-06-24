@@ -27,7 +27,7 @@ public:
     std::shared_ptr<SingleKvStore> GetOrOpenStore(
         const AppId &appId, const StoreId &storeId, const Options &options, const std::string &path, Status &status);
     Status Delete(const AppId &appId, const StoreId &storeId, const std::string &path);
-    Status Close(const AppId &appId, const StoreId &storeId);
+    Status Close(const AppId &appId, const StoreId &storeId, bool isForce = false);
     bool IsOpen(const AppId &appId, const StoreId &storeId);
 
 private:

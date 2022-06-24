@@ -341,6 +341,12 @@ bool ITypesUtil::Marshalling(const Options &input, MessageParcel &data)
         ZLOGE("schema is failed");
         return false;
     }
+
+    if (!data.WriteString(input.hapName)) {
+        ZLOGE("hapName is failed");
+        return false;
+    }
+
     std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(sizeof(input));
     Options *target = reinterpret_cast<Options *>(buffer.get());
     target->createIfMissing = input.createIfMissing;
@@ -362,6 +368,12 @@ bool ITypesUtil::Unmarshalling(Options &output, MessageParcel &data)
         ZLOGE("read schema failed");
         return false;
     }
+
+    if (!data.ReadString(output.hapName)) {
+        ZLOGE("read hapName failed");
+        return false;
+    }
+
     const Options *source = reinterpret_cast<const Options *>(data.ReadRawData(sizeof(output)));
     if (source == nullptr) {
         return false;

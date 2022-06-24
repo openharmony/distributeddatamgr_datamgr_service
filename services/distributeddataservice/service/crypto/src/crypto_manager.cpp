@@ -28,6 +28,7 @@ CryptoManager::CryptoManager()
     vecNonce_ = std::vector<uint8_t>(HKS_BLOB_TYPE_NONCE, HKS_BLOB_TYPE_NONCE + strlen(HKS_BLOB_TYPE_NONCE));
     vecAad_ = std::vector<uint8_t>(HKS_BLOB_TYPE_AAD, HKS_BLOB_TYPE_AAD + strlen(HKS_BLOB_TYPE_AAD));
 }
+
 CryptoManager::~CryptoManager()
 {
 }
@@ -42,14 +43,14 @@ int32_t CryptoManager::GenerateRootKey()
 {
     ZLOGI("GenerateRootKey.");
     struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    struct HksParamSet *param = nullptr;
-    int32_t ret = HksInitParamSet(&param);
+    struct HksParamSet *params = nullptr;
+    int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
         return ret;
     }
 
-    struct HksParam genKeyParams[] = {
+    struct HksParam hksParam[] = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
@@ -58,34 +59,69 @@ int32_t CryptoManager::GenerateRootKey()
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
     };
 
-    ret = HksAddParams(param, genKeyParams, sizeof(genKeyParams) / sizeof(genKeyParams[0]));
+    ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksAddParams failed with error %{public}d", ret);
-        HksFreeParamSet(&param);
+        HksFreeParamSet(&params);
         return ret;
     }
 
-    ret = HksBuildParamSet(&param);
+    ret = HksBuildParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksBuildParamSet failed with error %{public}d", ret);
-        HksFreeParamSet(&param);
+        HksFreeParamSet(&params);
         return ret;
     }
 
-    ret = HksGenerateKey(&rootKeyName, param, nullptr);
+    ret = HksGenerateKey(&rootKeyName, params, nullptr);
+    HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksGenerateKey failed with error %{public}d", ret);
-        HksFreeParamSet(&param);
-        return ret;
     }
-    HksFreeParamSet(&param);
     ZLOGI("GenerateRootKey Succeed.");
-    return HKS_SUCCESS;
+    return ret;
 }
 
 bool CryptoManager::IsExistRootKey()
 {
-    return false;
+    ZLOGI("GenerateRootKey.");
+    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
+    struct HksParamSet *params = nullptr;
+    int32_t ret = HksInitParamSet(&params);
+    if (ret != HKS_SUCCESS) {
+        ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
+        return ret;
+    }
+
+    struct HksParam hksParam[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
+        { .tag = HKS_TAG_DIGEST, .uint32Param = 0 },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+    };
+
+    ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
+    if (ret != HKS_SUCCESS) {
+        ZLOGE("HksAddParams failed with error %{public}d", ret);
+        HksFreeParamSet(&params);
+        return ret;
+    }
+
+    ret = HksBuildParamSet(&params);
+    if (ret != HKS_SUCCESS) {
+        ZLOGE("HksBuildParamSet failed with error %{public}d", ret);
+        HksFreeParamSet(&params);
+        return ret;
+    }
+
+    ret = HksKeyExist(&rootKeyName, params);
+    HksFreeParamSet(&params);
+    if (ret != HKS_SUCCESS) {
+        ZLOGE("HksEncrypt failed with error %{public}d", ret);
+    }
+    return ret == HKS_SUCCESS;
 }
 
 std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)
@@ -100,7 +136,7 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)
         ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
         return {};
     }
-    struct HksParam param[] = {
+    struct HksParam hksParam[] = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
         { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT },
         { .tag = HKS_TAG_DIGEST, .uint32Param = 0 },
@@ -109,7 +145,7 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)
         { .tag = HKS_TAG_NONCE, .blob = blobNonce },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
     };
-    ret = HksAddParams(params, param, sizeof(param) / sizeof(param[0]));
+    ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksAddParams failed with error %{public}d", ret);
         HksFreeParamSet(&params);
@@ -126,12 +162,12 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)
     uint8_t cipherBuf[256] = { 0 };
     struct HksBlob cipherText = { sizeof(cipherBuf), cipherBuf };
     ret = HksEncrypt(&rootKeyName, params, &plainKey, &cipherText);
+    (void)HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksEncrypt failed with error %{public}d", ret);
-        HksFreeParamSet(&params);
         return {};
     }
-    (void)HksFreeParamSet(&params);
+
     std::vector<uint8_t> encryptedKey(cipherText.data, cipherText.data + cipherText.size);
     (void)memset_s(cipherBuf, sizeof(cipherBuf), 0, sizeof(cipherBuf));
     return encryptedKey;
@@ -150,7 +186,7 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &
         ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
         return false;
     }
-    struct HksParam param[] = {
+    struct HksParam hksParam[] = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
         { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_DECRYPT },
         { .tag = HKS_TAG_DIGEST, .uint32Param = 0 },
@@ -159,7 +195,7 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &
         { .tag = HKS_TAG_NONCE, .blob = blobNonce },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
     };
-    ret = HksAddParams(params, param, sizeof(param) / sizeof(param[0]));
+    ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksAddParams failed with error %{public}d", ret);
         HksFreeParamSet(&params);
@@ -172,15 +208,15 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &
         HksFreeParamSet(&params);
         return false;
     }
+
     uint8_t plainBuf[256] = { 0 };
     struct HksBlob plainKeyBlob = { sizeof(plainBuf), plainBuf };
     ret = HksDecrypt(&rootKeyName, params, &encryptedKeyBlob, &plainKeyBlob);
+    (void)HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
-        ZLOGW("HksDecrypt failed with error %{public}d", ret);
-        HksFreeParamSet(&params);
+        ZLOGE("HksDecrypt failed with error %{public}d", ret);
         return false;
     }
-    (void)HksFreeParamSet(&params);
 
     key.assign(plainKeyBlob.data, plainKeyBlob.data + plainKeyBlob.size);
     (void)memset_s(plainBuf, sizeof(plainBuf), 0, sizeof(plainBuf));

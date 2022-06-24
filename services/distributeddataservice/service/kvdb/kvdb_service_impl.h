@@ -45,10 +45,8 @@ public:
     Status DisableCapability(const AppId &appId, const StoreId &storeId) override;
     Status SetCapability(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &local,
         const std::vector<std::string> &remote) override;
-    Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &devices,
-        const std::string &query) override;
-    Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &devices,
-        const std::string &query) override;
+    Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
+    Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status AppExit(pid_t uid, pid_t pid, uint32_t tokenId, const AppId &appId);
@@ -62,11 +60,16 @@ private:
     using SyncEnd = KvStoreSyncManager::SyncEnd;
     using DBResult = std::map<std::string, DistributedDB::DBStatus>;
     using DBStatus = DistributedDB::DBStatus;
+    enum SyncAction {
+        ACTION_SYNC,
+        ACTION_SUBSCRIBE,
+        ACTION_UNSUBSCRIBE,
+    };
     void AddOptions(const Options &options, StoreMetaData &metaData);
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId);
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
-    Status DoSync(const StoreMetaData &metaData, const SyncInfo &syncInfo, const SyncEnd &complete);
+    Status DoSync(const StoreMetaData &metaData, const SyncInfo &syncInfo, const SyncEnd &complete, int32_t type);
     Status DoComplete(const StoreMetaData &metaData, const SyncInfo &syncInfo, const DBResult &dbResult);
     uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
     Status ConvertDbStatus(DBStatus status);

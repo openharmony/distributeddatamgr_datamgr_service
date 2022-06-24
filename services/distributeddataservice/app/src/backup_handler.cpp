@@ -12,14 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "BackupHandler"
-
 #include "backup_handler.h"
+
 #include <directory_ex.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <nlohmann/json.hpp>
+
 #include "account_delegate.h"
 #ifdef SUPPORT_POWER
 #include "battery_info.h"
@@ -28,13 +27,12 @@
 #endif
 #include "communication_provider.h"
 #include "constant.h"
-#include "kv_store_delegate_manager.h"
+#include "crypto_manager.h"
 #include "kv_scheduler.h"
+#include "kv_store_delegate_manager.h"
 #include "kvstore_data_service.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
-#include "metadata/secret_key_meta_data.h"
-#include "metadata/store_meta_data.h"
 #include "time_utils.h"
 #include "utils/crypto.h"
 
@@ -185,7 +183,7 @@ bool BackupHandler::GetPassword(const StoreMetaData &metaData, DistributedDB::Ci
     SecretKeyMetaData secretKey;
     MetaDataManager::GetInstance().LoadMeta(key, secretKey, true);
     std::vector<uint8_t> decryptKey;
-    KvStoreMetaManager::GetInstance().DecryptWorkKey(secretKey.sKey, decryptKey);
+    CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptKey);
     if (password.SetValue(decryptKey.data(), decryptKey.size()) != DistributedDB::CipherPassword::OK) {
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         ZLOGE("Set secret key value failed. len is (%d)", int32_t(decryptKey.size()));

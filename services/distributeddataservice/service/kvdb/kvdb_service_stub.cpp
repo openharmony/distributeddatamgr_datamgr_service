@@ -51,9 +51,10 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
         return -1;
     }
 
-    if (TRANS_HEAD > code || code >= TRANS_BUTT || HANDLERS[code] != nullptr) {
+    if (TRANS_HEAD > code || code >= TRANS_BUTT || HANDLERS[code] == nullptr) {
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
+
     AppId appId;
     StoreId storeId;
     if (!ITypesUtil::Unmarshal(data, appId, storeId)) {
@@ -259,16 +260,15 @@ int32_t KVDBServiceStub::OnSetCapability(
     return ERR_NONE;
 }
 
-int32_t KVDBServiceStub::OnAddSubInfo(
-    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+int32_t KVDBServiceStub::OnAddSubInfo(const AppId &appId, const StoreId &storeId, MessageParcel &data,
+    MessageParcel &reply)
 {
-    std::vector<std::string> devices;
-    std::string query;
-    if (!ITypesUtil::Unmarshal(data, devices, query)) {
+    SyncInfo syncInfo;
+    if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.devices, syncInfo.query)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    int32_t status = AddSubscribeInfo(appId, storeId, devices, query);
+    int32_t status = AddSubscribeInfo(appId, storeId, syncInfo);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             storeId.storeId.c_str());
@@ -277,16 +277,15 @@ int32_t KVDBServiceStub::OnAddSubInfo(
     return ERR_NONE;
 }
 
-int32_t KVDBServiceStub::OnRmvSubInfo(
-    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+int32_t KVDBServiceStub::OnRmvSubInfo(const AppId &appId, const StoreId &storeId, MessageParcel &data,
+    MessageParcel &reply)
 {
-    std::vector<std::string> devices;
-    std::string query;
-    if (!ITypesUtil::Unmarshal(data, devices, query)) {
+    SyncInfo syncInfo;
+    if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.devices, syncInfo.query)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    int32_t status = RmvSubscribeInfo(appId, storeId, devices, query);
+    int32_t status = RmvSubscribeInfo(appId, storeId, syncInfo);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             storeId.storeId.c_str());
