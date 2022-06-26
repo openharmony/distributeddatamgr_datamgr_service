@@ -620,9 +620,7 @@ static std::string SingleGenerate1025KeyLen()
 */
 HWTEST_F(DeviceKvStoreTest, DdmPutBatch005, TestSize.Level2)
 {
-
     EXPECT_NE(nullptr, kvStore_) << "kvStore is nullptr";
-
     std::vector<Entry> entries;
     Entry entry1, entry2, entry3;
     entry1.key = SingleGenerate1025KeyLen();
