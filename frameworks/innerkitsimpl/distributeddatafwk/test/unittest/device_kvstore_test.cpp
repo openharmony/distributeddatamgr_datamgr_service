@@ -60,10 +60,8 @@ void DeviceKvStoreTest::SetUpTestCase(void)
 {
     DistributedKvDataManager manager;
     options_.area = EL1;
-    // options_.baseDir = std::string("/data/service/el1/public/database/odmf");
     AppId appId = { "odmf" };
     StoreId storeId = { "student_device" }; // define kvstore(database) name.
-    // mkdir(options_.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     // [create and] open and initialize kvstore instance.
     status_ = manager.GetSingleKvStore(options_, appId, storeId, kvStore_);
     DeviceInfo deviceInfo;
@@ -373,7 +371,6 @@ HWTEST_F(DeviceKvStoreTest, TestSchemaStoreC001, TestSize.Level1)
     options.encrypt = true;
     options.schema = VALID_SCHEMA;
     options.area = EL1;
-    // options.baseDir = "/data/service/el1/public/database/odmf";
     AppId appId = { "odmf" };
     StoreId storeId = { "schema_device_id" };
     (void)manager.GetSingleKvStore(options, appId, storeId, deviceKvStore);
@@ -1036,7 +1033,6 @@ HWTEST_F(DeviceKvStoreTest, DeviceSync001 ,TestSize.Level1)
     Options options;
     options.encrypt = true;
     options.area = EL1;
-    // options.baseDir = "/data/service/el1/public/database/odmf";
     AppId appId = { "odmf" };
     StoreId storeId = { "schema_device_id001" };
     manager.GetSingleKvStore(options, appId, storeId, kvStore);
@@ -1063,7 +1059,6 @@ HWTEST_F(DeviceKvStoreTest, DeviceSync002 ,TestSize.Level1)
     Options options;
     options.encrypt = true;
     options.area = EL1;
-    // options.baseDir = "/data/service/el1/public/database/odmf";
     AppId appId = { "odmf" };
     StoreId storeId = { "schema_device_id002" };
     manager.GetSingleKvStore(options, appId, storeId, kvStore);
