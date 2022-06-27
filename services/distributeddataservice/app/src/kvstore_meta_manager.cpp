@@ -42,7 +42,6 @@
 #include "user_delegate.h"
 #include "utils/crypto.h"
 
-
 namespace OHOS {
 namespace DistributedKv {
 using json = nlohmann::json;
