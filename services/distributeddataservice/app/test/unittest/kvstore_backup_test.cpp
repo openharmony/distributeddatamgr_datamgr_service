@@ -124,14 +124,13 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest002, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
-    auto backupHandler = std::make_unique<BackupHandler>();
     StoreMetaData metaData;
     metaData.user = "0";
     metaData.deviceId = deviceId_;
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    backupHandler->SingleKvStoreBackup(metaData);
+    BackupHandler::GetInstance().SingleKvStoreBackup(metaData);
 
     kvStorePtr->Delete(key2);
     Value value22;
@@ -172,29 +171,28 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest004, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
-    auto backupHandler = std::make_unique<BackupHandler>();
     StoreMetaData metaData;
     metaData.user = "0";
     metaData.deviceId = deviceId_;
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    backupHandler->SingleKvStoreBackup(metaData);
+    BackupHandler::GetInstance().SingleKvStoreBackup(metaData);
 
     auto currentAccountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     std::initializer_list<std::string> fileList = {currentAccountId, "_", metaData.appId, "_", storeId.storeId};
     auto backupFileName = Constant::Concatenate(fileList);
-    auto backupFileNameHashed = BackupHandler::GetHashedBackupName(backupFileName);
+    auto backupFileNameHashed = BackupHandler::GetInstance().GetHashedBackupName(backupFileName);
     auto pathType = KvStoreAppManager::ConvertPathType(metaData);
-    std::initializer_list<std::string> backFileList = {BackupHandler::GetBackupPath("0", pathType),
+    std::initializer_list<std::string> backFileList = {BackupHandler::GetInstance().GetBackupPath("0", pathType),
         "/", backupFileNameHashed};
     auto backFilePath = Constant::Concatenate(backFileList);
-    bool ret = BackupHandler::FileExists(backFilePath);
+    bool ret = BackupHandler::GetInstance().FileExists(backFilePath);
     EXPECT_EQ(ret, true) << "KvStoreBackupTest004 backup file failed";
 
     kvDataService.CloseKvStore(appId, storeId);
     kvDataService.DeleteKvStore(appId, storeId);
-    ret = BackupHandler::FileExists(backFilePath);
+    ret = BackupHandler::GetInstance().FileExists(backFilePath);
     EXPECT_EQ(ret, false) << "KvStoreBackupTest004 delete backup file failed";
 }
 /**
@@ -224,14 +222,13 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest005, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
-    auto backupHandler = std::make_unique<BackupHandler>();
     StoreMetaData metaData;
     metaData.user = "0";
     metaData.deviceId = deviceId_;
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    backupHandler->SingleKvStoreBackup(metaData);
+    BackupHandler::GetInstance().SingleKvStoreBackup(metaData);
 
     kvStorePtr->Delete(key2);
     Value value22;
@@ -271,14 +268,13 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest006, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
-    auto backupHandler = std::make_unique<BackupHandler>();
     StoreMetaData metaData;
     metaData.user = "0";
     metaData.deviceId = deviceId_;
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    backupHandler->SingleKvStoreBackup(metaData);
+    BackupHandler::GetInstance().SingleKvStoreBackup(metaData);
 
     kvStorePtr->Delete(key2);
     Value value22;
@@ -318,14 +314,13 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest007, TestSize.Level1)
     Value value2("test2_value");
     kvStorePtr->Put(key2, value2);
 
-    auto backupHandler = std::make_unique<BackupHandler>();
     StoreMetaData metaData;
     metaData.user = "0";
     metaData.deviceId = deviceId_;
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    backupHandler->SingleKvStoreBackup(metaData);
+    BackupHandler::GetInstance().SingleKvStoreBackup(metaData);
 
     kvStorePtr->Delete(key2);
     Value value22;

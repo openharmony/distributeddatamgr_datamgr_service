@@ -23,6 +23,7 @@
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
 #include "kvstore_meta_manager.h"
+#include "metadata/corrupted_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "nocopyable.h"
 #include "single_kvstore_impl.h"
@@ -37,6 +38,7 @@ public:
         PATH_CE,
         PATH_TYPE_MAX
     };
+    using CorruptedMetaData = DistributedData::CorruptedMetaData;
     using StoreMetaData = DistributedData::StoreMetaData;
 
     KvStoreAppManager(const std::string &bundleName, pid_t uid, uint32_t token);
