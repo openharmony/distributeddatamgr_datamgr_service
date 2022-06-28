@@ -277,7 +277,7 @@ int32_t RdbServiceImpl::DoSync(const RdbSyncerParam &param, const SyncOption &op
                                const RdbPredicates &predicates, SyncResult &result)
 {
     uint32_t tokenId = GetCallingTokenID();
-    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(storeInfo.tokenId)) {
+    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("Rdb sync permission denied");
         return RDB_ERROR;
     }
