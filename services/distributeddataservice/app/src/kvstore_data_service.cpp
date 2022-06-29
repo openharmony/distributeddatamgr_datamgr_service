@@ -102,6 +102,8 @@ KvStoreDataService::~KvStoreDataService()
 {
     ZLOGI("begin.");
     deviceAccountMap_.clear();
+    clientDeathObserverMap_.clear();
+    deviceListeners_.clear();
 }
 
 void KvStoreDataService::Initialize()
