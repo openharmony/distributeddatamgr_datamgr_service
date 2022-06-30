@@ -102,7 +102,7 @@ struct KvStoreMetaData {
     std::string storeId = "";
     std::uint32_t tokenId = 0;
     std::string userId = "";
-    std::string user ="";
+    std::string user = "";
     std::int32_t uid = -1;
     std::uint32_t version = 0;
     int securityLevel = 0;
