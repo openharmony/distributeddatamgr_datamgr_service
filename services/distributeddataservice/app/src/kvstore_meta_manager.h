@@ -102,7 +102,6 @@ struct KvStoreMetaData {
     std::string storeId = "";
     std::uint32_t tokenId = 0;
     std::string userId = "";
-    std::string user = "";
     std::int32_t uid = -1;
     std::uint32_t version = 0;
     int securityLevel = 0;
@@ -123,7 +122,6 @@ private:
     static constexpr const char *KVSTORE_TYPE = "kvStoreType";
     static constexpr const char *DEVICE_ID = "deviceId";
     static constexpr const char *USER_ID = "userId";
-    static constexpr const char *USER = "user";
     static constexpr const char *STORE_ID = "storeId";
     static constexpr const char *ENCRYPT = "isEncrypt";
     static constexpr const char *BACKUP = "isBackup";

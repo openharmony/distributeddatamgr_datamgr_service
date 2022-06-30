@@ -942,7 +942,6 @@ void KvStoreMetaData::Unmarshal(const nlohmann::json &jObject)
     isAutoSync = Serializable::GetVal<bool>(jObject, AUTO_SYNC, json::value_t::boolean, isAutoSync);
     appId = Serializable::GetVal<std::string>(jObject, APP_ID, json::value_t::string, appId);
     userId = Serializable::GetVal<std::string>(jObject, USER_ID, json::value_t::string, userId);
-    user = Serializable::GetVal<std::string>(jObject, USER, json::value_t::string, user);
     storeId = Serializable::GetVal<std::string>(jObject, STORE_ID, json::value_t::string, storeId);
     bundleName = Serializable::GetVal<std::string>(jObject, BUNDLE_NAME, json::value_t::string, bundleName);
     deviceAccountId = Serializable::GetVal<std::string>(jObject, DEVICE_ACCOUNT_ID, json::value_t::string,

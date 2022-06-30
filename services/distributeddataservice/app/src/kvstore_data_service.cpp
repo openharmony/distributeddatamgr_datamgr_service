@@ -969,6 +969,9 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
             if (password.SetValue(secretKey.data(), secretKey.size()) != DistributedDB::CipherPassword::OK) {
                 ZLOGE("Get secret key failed.");
             }
+            if (storeMeta.bundleName == Bootstrap::GetInstance().GetProcessLabel()) {
+                param.userId = storeMeta.deviceAccountId;
+            }
             option.passwd = password;
             option.schema = storeMeta.schema;
             option.createDirByStoreIdOnly = true;
@@ -976,7 +979,6 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
             option.secOption = KvStoreAppManager::ConvertSecurity(storeMeta.securityLevel);
             option.isAutoSync = storeMeta.isAutoSync;
             option.syncDualTupleMode = true; // dual tuple flag
-            param.userId = storeMeta.user;
             param.appId = storeMeta.appId;
             param.storeId = storeMeta.storeId;
             param.option = option;
