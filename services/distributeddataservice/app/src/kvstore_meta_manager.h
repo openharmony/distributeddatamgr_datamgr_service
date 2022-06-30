@@ -178,10 +178,6 @@ public:
 
     Status CheckUpdateServiceMeta(const std::vector<uint8_t> &metaKey, FLAG flag, const std::vector<uint8_t> &val = {});
 
-    Status GenerateRootKey();
-
-    Status CheckRootKeyExist();
-
     static std::vector<uint8_t> GetMetaKey(
         const std::string &deviceAccountId, const std::string &groupId, const std::string &bundleName,
         const std::string &storeId, const std::string &key = "");
@@ -191,10 +187,6 @@ public:
 
     Status GetSecretKeyFromMeta(const std::vector<uint8_t> &metaSecretKey,
                                 std::vector<uint8_t> &key, bool &outdated);
-
-    std::vector<uint8_t> EncryptWorkKey(const std::vector<uint8_t> &key);
-
-    bool DecryptWorkKey(const std::vector<uint8_t> &encryptedKey, std::vector<uint8_t> &key);
 
     Status WriteSecretKeyToMeta(const std::vector<uint8_t> &metaKey, const std::vector<uint8_t> &key);
 
@@ -264,15 +256,12 @@ private:
         void HandleChanges(CHANGE_FLAG flag, const std::list<DistributedDB::Entry> &list);
     };
 
-    static constexpr const char *ROOT_KEY_ALIAS = "distributed_db_root_key";
     static constexpr const char *STRATEGY_META_PREFIX = "StrategyMetaData";
     static constexpr const char *CAPABILITY_ENABLED = "capabilityEnabled";
     static constexpr const char *CAPABILITY_RANGE = "capabilityRange";
     static constexpr const char *LOCAL_LABEL = "localLabel";
     static constexpr const char *REMOTE_LABEL = "remoteLabel";
     static constexpr const char *HARMONY_APP = "harmony";
-    static constexpr const char *HKS_BLOB_TYPE_NONCE = "Z5s0Bo571KoqwIi6";
-    static constexpr const char *HKS_BLOB_TYPE_AAD = "distributeddata";
     static constexpr int KEY_SIZE = 32;
     static constexpr int HOURS_PER_YEAR = (24 * 365);
 
@@ -280,9 +269,6 @@ private:
     std::string metaDBDirectory_;
     const std::string label_;
     DistributedDB::KvStoreDelegateManager kvStoreDelegateManager_;
-    std::vector<uint8_t> vecRootKeyAlias_ {};
-    std::vector<uint8_t> vecNonce_ {};
-    std::vector<uint8_t> vecAad_ {};
     static std::condition_variable cv_;
     static std::mutex cvMutex_;
     static MetaDeviceChangeListenerImpl listener_;
