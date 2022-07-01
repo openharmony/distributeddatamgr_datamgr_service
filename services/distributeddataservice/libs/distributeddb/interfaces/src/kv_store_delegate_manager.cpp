@@ -611,4 +611,9 @@ DBStatus KvStoreDelegateManager::NotifyUserChanged()
     int errCode = RuntimeContext::GetInstance()->NotifyUserChanged();
     return TransferDBErrno(errCode);
 }
+
+bool KvStoreDelegateManager::IsProcessSystemApiAdapterValid()
+{
+    return RuntimeContext::GetInstance()->IsProcessSystemApiAdapterValid();
+}
 } // namespace DistributedDB

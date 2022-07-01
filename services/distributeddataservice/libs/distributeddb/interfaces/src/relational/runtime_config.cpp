@@ -85,6 +85,11 @@ DBStatus RuntimeConfig::SetProcessSystemAPIAdapter(const std::shared_ptr<IProces
     return TransferDBErrno(RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(adapter));
 }
 
+bool RuntimeConfig::IsProcessSystemApiAdapterValid()
+{
+    return RuntimeContext::GetInstance()->IsProcessSystemApiAdapterValid();
+}
+
 void RuntimeConfig::Dump(int fd, const std::vector<std::u16string> &args)
 {
     DBDfxAdapter::Dump(fd, args);

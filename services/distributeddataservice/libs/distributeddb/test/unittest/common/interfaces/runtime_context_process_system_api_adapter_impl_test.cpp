@@ -273,3 +273,26 @@ HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, CheckDeviceSecurityAbili
     t2.join();
     t3.join();
 }
+
+/**
+ * @tc.name: SetSystemApiAdapterTest001
+ * @tc.desc: Set SecurityOption.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RuntimeContextProcessSystemApiAdapterImplTest, SetSystemApiAdapterTest001, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. remove system api adapter
+     * @tc.expected: step1. return false
+     */
+    RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(nullptr);
+    EXPECT_FALSE(g_mgr.IsProcessSystemApiAdapterValid());
+
+    /**
+     * @tc.steps: step2. set g_adapter
+     * @tc.expected: step2. return true
+     */
+    RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(g_adapter);
+    EXPECT_TRUE(g_mgr.IsProcessSystemApiAdapterValid());
+}
