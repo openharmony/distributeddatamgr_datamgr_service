@@ -114,12 +114,7 @@ SingleStoreImpl::Convert DeviceStoreImpl::GetConvert() const
 
         length = le32toh(length);
         if (deviceId.empty()) {
-            deviceId = { key.begin(), key.begin() + length };
-            if (deviceId == DevManager::GetInstance().GetLocalDevice().uuid) {
-                deviceId = DevManager::GetInstance().GetLocalDevice().networkId;
-            } else {
-                deviceId = DevManager::GetInstance().ToNetworkId(deviceId);
-            }
+            deviceId = DevManager::GetInstance().ToNetworkId({ key.begin(), key.begin() + length });
         }
 
         Key result(std::vector<uint8_t>(key.begin() + length, key.end() - sizeof(uint32_t)));

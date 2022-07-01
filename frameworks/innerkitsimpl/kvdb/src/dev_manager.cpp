@@ -14,13 +14,46 @@
  */
 #define LOG_TAG "DevManager"
 #include "dev_manager.h"
-#include "softbus_bus_center.h"
+#include <thread>
 #include "log_print.h"
+#include "softbus_bus_center.h"
 #include "store_util.h"
 namespace OHOS::DistributedKv {
 constexpr int32_t SOFTBUS_OK = 0;
 constexpr int32_t ID_BUF_LEN = 65;
 constexpr size_t DevManager::MAX_ID_LEN;
+constexpr const char *PKG_NAME = "ohos.distributeddata";
+static void Online(NodeBasicInfo *info);
+static void Offline(NodeBasicInfo *info);
+static void OnChange(NodeBasicInfoType type, NodeBasicInfo *info);
+
+INodeStateCb g_DeviceChange = {
+    .events = EVENT_NODE_STATE_MASK,
+    .onNodeOnline = Online,
+    .onNodeOffline = Offline,
+    .onNodeBasicInfoChanged = OnChange,
+};
+
+DevManager::DevManager()
+{
+    std::thread th = std::thread([]() {
+        int i = 0;
+        constexpr int RETRY_TIMES = 300;
+        while (i++ < RETRY_TIMES) {
+            int32_t errNo = RegNodeDeviceStateCb(PKG_NAME, &g_DeviceChange);
+            if (errNo != SOFTBUS_OK) {
+                ZLOGE("RegNodeDeviceStateCb fail %{public}d, time:%{public}d", errNo, i);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                continue;
+            }
+            ZLOGI("RegNodeDeviceStateCb success");
+            return;
+        }
+        ZLOGE("Init failed %{public}d times and exit now.", RETRY_TIMES);
+    });
+    th.detach();
+}
+
 DevManager &DevManager::GetInstance()
 {
     static DevManager instance;
@@ -49,7 +82,7 @@ std::string DevManager::ToNetworkId(const std::string &uuid) const
 {
     DetailInfo deviceInfo;
     if (deviceInfos_.Get(uuid, deviceInfo)) {
-        return deviceInfo.uuid;
+        return deviceInfo.networkId;
     }
     auto infos = GetRemoteDevices();
     for (auto &info : infos) {
@@ -59,7 +92,9 @@ std::string DevManager::ToNetworkId(const std::string &uuid) const
             return info.networkId;
         }
     }
-    return "";
+
+    std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
+    return (localInfo_.uuid == uuid) ? localInfo_.networkId : "";
 }
 
 const DevManager::DetailInfo &DevManager::GetLocalDevice()
@@ -70,7 +105,7 @@ const DevManager::DetailInfo &DevManager::GetLocalDevice()
     }
 
     NodeBasicInfo info;
-    int32_t ret = GetLocalNodeDeviceInfo("ohos.distributeddata", &info);
+    int32_t ret = GetLocalNodeDeviceInfo(PKG_NAME, &info);
     if (ret != SOFTBUS_OK) {
         ZLOGE("GetLocalNodeDeviceInfo error");
         return invalidDetail_;
@@ -94,7 +129,7 @@ std::vector<DevManager::DetailInfo> DevManager::GetRemoteDevices() const
     NodeBasicInfo *info = nullptr;
     int32_t infoNum = 0;
 
-    int32_t ret = GetAllNodeDeviceInfo("ohos.distributeddata", &info, &infoNum);
+    int32_t ret = GetAllNodeDeviceInfo(PKG_NAME, &info, &infoNum);
     if (ret != SOFTBUS_OK) {
         ZLOGE("GetAllNodeDeviceInfo error");
         return devices;
@@ -106,7 +141,7 @@ std::vector<DevManager::DetailInfo> DevManager::GetRemoteDevices() const
         std::string uuid = GetUuidByNetworkId(networkId);
         std::string udid = GetUdidByNetworkId(networkId);
         DetailInfo deviceInfo = { std::move(uuid), std::move(udid), std::move(networkId),
-                                  std::string(info[i].deviceName), std::string(info[i].deviceName) };
+            std::string(info[i].deviceName), std::string(info[i].deviceName) };
         devices.push_back(std::move(deviceInfo));
     }
     if (info != nullptr) {
@@ -118,8 +153,8 @@ std::vector<DevManager::DetailInfo> DevManager::GetRemoteDevices() const
 std::string DevManager::GetUuidByNetworkId(const std::string &networkId) const
 {
     char uuid[ID_BUF_LEN] = {0};
-    int32_t ret = GetNodeKeyInfo("ohos.distributeddata", networkId.c_str(),
-                                 NodeDeviceInfoKey::NODE_KEY_UUID, reinterpret_cast<uint8_t *>(uuid), ID_BUF_LEN);
+    int32_t ret = GetNodeKeyInfo(PKG_NAME, networkId.c_str(), NodeDeviceInfoKey::NODE_KEY_UUID,
+        reinterpret_cast<uint8_t *>(uuid), ID_BUF_LEN);
     if (ret != SOFTBUS_OK) {
         ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", StoreUtil::Anonymous(networkId).c_str());
         return "";
@@ -129,13 +164,50 @@ std::string DevManager::GetUuidByNetworkId(const std::string &networkId) const
 
 std::string DevManager::GetUdidByNetworkId(const std::string &networkId) const
 {
-    char udid[ID_BUF_LEN] = {0};
-    int32_t ret = GetNodeKeyInfo("ohos.distributeddata", networkId.c_str(),
-                                 NodeDeviceInfoKey::NODE_KEY_UDID, reinterpret_cast<uint8_t *>(udid), ID_BUF_LEN);
+    char udid[ID_BUF_LEN] = { 0 };
+    int32_t ret = GetNodeKeyInfo(PKG_NAME, networkId.c_str(), NodeDeviceInfoKey::NODE_KEY_UDID,
+        reinterpret_cast<uint8_t *>(udid), ID_BUF_LEN);
     if (ret != SOFTBUS_OK) {
         ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", StoreUtil::Anonymous(networkId).c_str());
         return "";
     }
     return std::string(udid);
+}
+
+void DevManager::Online(const std::string &networkId)
+{
+    // do nothing
+}
+
+void DevManager::Offline(const std::string &networkId)
+{
+    DetailInfo deviceInfo;
+    if (deviceInfos_.Get(networkId, deviceInfo)) {
+        deviceInfos_.Delete(networkId);
+        deviceInfos_.Delete(deviceInfo.uuid);
+    }
+}
+
+void DevManager::OnChanged(const std::string &networkId)
+{
+    // do nothing
+}
+
+static void Online(NodeBasicInfo *info)
+{
+    DevManager::GetInstance().Online(info->networkId);
+}
+
+static void Offline(NodeBasicInfo *info)
+{
+    DevManager::GetInstance().Offline(info->networkId);
+}
+
+static void OnChange(NodeBasicInfoType type, NodeBasicInfo *info)
+{
+    if (type != TYPE_NETWORK_ID) {
+        return;
+    }
+    DevManager::GetInstance().OnChanged(info->networkId);
 }
 } // namespace OHOS::DistributedKv

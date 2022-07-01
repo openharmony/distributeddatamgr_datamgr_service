@@ -35,15 +35,18 @@ public:
     std::string ToNetworkId(const std::string &uuid) const;
     const DetailInfo &GetLocalDevice();
     std::vector<DetailInfo> GetRemoteDevices() const;
+    void Online(const std::string &networkId);
+    void Offline(const std::string &networkId);
+    void OnChanged(const std::string &networkId);
 private:
-    DevManager() = default;
+    DevManager();
     ~DevManager() = default;
-    const DetailInfo invalidDetail_ {};
-    std::mutex mutex_ {};
-    DetailInfo localInfo_ {};
-    mutable LRUBucket<std::string, DetailInfo> deviceInfos_ {64};
     std::string GetUuidByNetworkId(const std::string &networkId) const;
     std::string GetUdidByNetworkId(const std::string &networkId) const;
+    const DetailInfo invalidDetail_ {};
+    mutable std::mutex mutex_ {};
+    DetailInfo localInfo_ {};
+    mutable LRUBucket<std::string, DetailInfo> deviceInfos_ {64};
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_DEV_MANAGER_H
