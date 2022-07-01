@@ -55,6 +55,24 @@ Upgrade::DBStatus Upgrade::UpdateStore(const StoreMeta &old, const StoreMeta &me
     return status;
 }
 
+Upgrade::DBStatus Upgrade::ExportStore(const StoreMeta &old, const StoreMeta &meta)
+{
+    if (old.dataDir == meta.dataDir) {
+        return DBStatus::OK;
+    }
+
+    if (!exporter_) {
+        return DBStatus::NOT_SUPPORT;
+    }
+
+    DBPassword password;
+    auto backupFile = exporter_(old, password);
+    if (backupFile.empty()) {
+        return DBStatus::NOT_FOUND;
+    }
+    return DBStatus::OK;
+}
+
 void Upgrade::UpdatePassword(const StoreMeta &meta, const std::vector<uint8_t> &password)
 {
     if (meta.isEncrypt) {

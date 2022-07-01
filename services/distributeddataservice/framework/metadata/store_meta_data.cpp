@@ -103,16 +103,8 @@ StoreMetaData::StoreMetaData(const std::string &userId, const std::string &appId
 
 bool StoreMetaData::operator==(const StoreMetaData &metaData) const
 {
-    if (!((isAutoSync && metaData.isAutoSync) || (!isAutoSync && !metaData.isAutoSync))) {
-        return false;
-    }
-    if (!((isBackup && metaData.isBackup) || (!isBackup && !metaData.isBackup))) {
-        return false;
-    }
-    if (!((isDirty && metaData.isDirty) || (!isDirty && !metaData.isDirty))) {
-        return false;
-    }
-    if (!((isEncrypt && metaData.isEncrypt) || (!isEncrypt && !metaData.isEncrypt))) {
+    if (Constant::NotEqual(isAutoSync, metaData.isAutoSync) || Constant::NotEqual(isBackup, metaData.isBackup) ||
+        Constant::NotEqual(isDirty, metaData.isDirty) || Constant::NotEqual(isEncrypt, metaData.isEncrypt)) {
         return false;
     }
     return (version == metaData.version && storeType == metaData.storeType &&

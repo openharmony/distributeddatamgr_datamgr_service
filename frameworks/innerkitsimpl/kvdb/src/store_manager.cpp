@@ -38,7 +38,13 @@ std::shared_ptr<SingleKvStore> StoreManager::GetKVStore(const AppId &appId, cons
 
     auto service = KVDBServiceClient::GetInstance();
     if (service != nullptr) {
-        service->BeforeCreate(appId, storeId, options);
+        status = service->BeforeCreate(appId, storeId, options);
+    }
+
+    if (status == STORE_META_CHANGED) {
+        ZLOGE("appId:%{public}s, storeId:%{public}s type:%{public}d encrypt:%{public}d", appId.appId.c_str(),
+            storeId.storeId.c_str(), options.kvStoreType, options.encrypt);
+        return nullptr;
     }
 
     bool isCreate = false;

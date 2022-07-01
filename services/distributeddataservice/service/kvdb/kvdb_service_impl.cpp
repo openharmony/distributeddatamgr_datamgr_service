@@ -265,8 +265,22 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
 
 Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options)
 {
-    ZLOGD("appId:%{public}s, storeId:%{public}s, nothing to do", appId.appId.c_str(), storeId.storeId.c_str());
-    return SUCCESS;
+    ZLOGD("appId:%{public}s storeId:%{public}s to export data", appId.appId.c_str(), storeId.storeId.c_str());
+    StoreMetaData meta = GetStoreMetaData(appId, storeId);
+    AddOptions(options, meta);
+
+    StoreMetaData old;
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old);
+    if (!isCreated || old == meta) {
+        return SUCCESS;
+    }
+    if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt)) {
+        ZLOGE("meta appId:%{public}s storeId:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d",
+            appId.appId.c_str(), storeId.storeId.c_str(), old.storeType, meta.storeType, old.isEncrypt, meta.isEncrypt);
+        return Status::STORE_META_CHANGED;
+    }
+    auto dbStatus = Upgrade::GetInstance().ExportStore(old, meta);
+    return dbStatus == DBStatus::OK ? SUCCESS : DB_ERROR;
 }
 
 Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, const Options &options,
@@ -285,13 +299,12 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), oldMeta);
     if (isCreated && oldMeta != metaData) {
         // implement update
-
         auto dbStatus = Upgrade::GetInstance().UpdateStore(oldMeta, metaData, password);
         ZLOGI("update status:%{public}d appId:%{public}s storeId:%{public}s inst:%{public}d "
             "type:%{public}d->%{public}d dir:%{public}s", dbStatus, appId.appId.c_str(), storeId.storeId.c_str(),
             metaData.instanceId, oldMeta.storeType, metaData.storeType, metaData.dataDir.c_str());
         if (dbStatus != DBStatus::OK) {
-            return DB_ERROR;
+            return STORE_UPGRADE_FAILED;
         }
     }
 

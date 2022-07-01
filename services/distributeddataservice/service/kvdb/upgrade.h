@@ -31,11 +31,13 @@ public:
     using DBManager = DistributedDB::KvStoreDelegateManager;
     using Exporter = std::function<std::string(const StoreMeta &, DBPassword &)>;
     using Cleaner = std::function<Status(const StoreMeta &)>;
-    static Upgrade &GetInstance();
+    API_EXPORT static Upgrade &GetInstance();
+    API_EXPORT bool RegisterExporter(uint32_t version, Exporter exporter);
+    API_EXPORT bool RegisterCleaner(uint32_t version, Cleaner cleaner);
+
     DBStatus UpdateStore(const StoreMeta &old, const StoreMeta &metaData, const std::vector<uint8_t> &pwd);
+    DBStatus ExportStore(const StoreMeta &old, const StoreMeta &meta);
     void UpdatePassword(const StoreMeta &meta, const std::vector<uint8_t> &password);
-    bool RegisterExporter(uint32_t version, Exporter exporter);
-    bool RegisterCleaner(uint32_t version, Cleaner cleaner);
 
 private:
     using AutoStore = std::unique_ptr<DBStore, std::function<void(DBStore *)>>;

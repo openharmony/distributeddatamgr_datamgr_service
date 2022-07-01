@@ -301,12 +301,12 @@ bool BackupHandler::RemoveFile(const std::string &path)
 bool BackupHandler::FileExists(const std::string &path)
 {
     if (path.empty()) {
-        ZLOGI("FileExists: path is empty");
+        ZLOGI("path is empty");
         return false;
     }
 
     if (access(path.c_str(), F_OK) != 0) {
-        ZLOGI("FileExists: file is not exist");
+        ZLOGI("file%{public}s is not exist", path.c_str());
         return false;
     }
     return true;

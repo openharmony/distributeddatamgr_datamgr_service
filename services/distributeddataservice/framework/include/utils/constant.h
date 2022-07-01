@@ -37,6 +37,10 @@ public:
 
     API_EXPORT static bool IsBackground(pid_t pid);
 
+    API_EXPORT static bool Equal(bool first, bool second);
+
+    API_EXPORT static bool NotEqual(bool first, bool second);
+
     // delete left bland in s by reference.
     template<typename T>
     static void LeftTrim(T &s);
