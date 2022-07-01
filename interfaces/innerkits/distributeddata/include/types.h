@@ -127,6 +127,17 @@ enum SubscribeType : uint32_t {
 struct Entry : public virtual Parcelable {
     Key key;
     Value value;
+    /* write blob size and data to memory buffer. return error when bufferLeftSize not enough. */
+    bool WriteToBuffer(uint8_t *&cursorPtr, int &bufferLeftSize) const {
+        return key.WriteToBuffer(cursorPtr, bufferLeftSize) &&
+               value.WriteToBuffer(cursorPtr, bufferLeftSize);
+    }
+    /* read a blob from memory buffer. */
+    bool ReadFromBuffer(const uint8_t *&cursorPtr, int &bufferLeftSize) {
+        return key.ReadFromBuffer(cursorPtr, bufferLeftSize) &&
+               value.ReadFromBuffer(cursorPtr, bufferLeftSize);
+    }
+
     // Write a parcelable object to the given parcel.
     // The object position is saved into Parcel if set savePosition to
     // true, and this intends to use in kernel data transaction.
@@ -140,6 +151,11 @@ struct Entry : public virtual Parcelable {
             return false;
         }
         return true;
+    }
+
+    size_t RawEntrySize()
+    {
+        return key.RawSize() + value.RawSize();
     }
 
     // Read data from the given parcel into this parcelable object.
