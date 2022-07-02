@@ -131,7 +131,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest002, TestSize.Level1)
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    backupHandler->SingleKvStoreBackup(metaData);
+    backupHandler->DoBackup(metaData);
 
     kvStorePtr->Delete(key2);
     Value value22;
@@ -179,7 +179,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest004, TestSize.Level1)
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    backupHandler->SingleKvStoreBackup(metaData);
+    backupHandler->DoBackup(metaData);
 
     auto currentAccountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     std::initializer_list<std::string> fileList = {currentAccountId, "_", metaData.appId, "_", storeId.storeId};
@@ -231,7 +231,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest005, TestSize.Level1)
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    backupHandler->SingleKvStoreBackup(metaData);
+    backupHandler->DoBackup(metaData);
 
     kvStorePtr->Delete(key2);
     Value value22;
@@ -278,7 +278,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest006, TestSize.Level1)
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    backupHandler->SingleKvStoreBackup(metaData);
+    backupHandler->DoBackup(metaData);
 
     kvStorePtr->Delete(key2);
     Value value22;
@@ -325,7 +325,7 @@ HWTEST_F(KvStoreBackupTest, KvStoreBackupTest007, TestSize.Level1)
     metaData.bundleName = appId.appId;
     metaData.storeId = storeId.storeId;
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    backupHandler->SingleKvStoreBackup(metaData);
+    backupHandler->DoBackup(metaData);
 
     kvStorePtr->Delete(key2);
     Value value22;

@@ -18,6 +18,7 @@
 #include <map>
 #include <variant>
 #include "data_query.h"
+#include "js_kv_manager.h"
 #include "change_notification.h"
 #include "napi/native_api.h"
 #include "napi/native_common.h"
@@ -56,6 +57,8 @@ public:
     /* for query value related : number|string|boolean */
     using QueryVariant = std::variant<std::string, bool, double>;
 
+    static napi_status GetValue(napi_env env, napi_value in, napi_value& out);
+    static napi_status SetValue(napi_env env, napi_value in, napi_value& out);
     /* napi_value <-> bool */
     static napi_status GetValue(napi_env env, napi_value in, bool& out);
     static napi_status SetValue(napi_env env, const bool& in, napi_value& out);
@@ -148,6 +151,9 @@ public:
     static napi_status GetValue(napi_env env, napi_value jsValue, ValueObject &valueObject);
     static napi_status GetValue(napi_env env, napi_value jsValue, ValuesBucket &valuesBucket);
 
+    static napi_status GetValue(napi_env env, napi_value in, ContextParam &param);
+
+    static napi_status GetCurrentAbilityParam(napi_env env, ContextParam &param);
     /* napi_get_named_property wrapper */
     template <typename T>
     static inline napi_status GetNamedProperty(napi_env env, napi_value in, const std::string& prop, T& value)

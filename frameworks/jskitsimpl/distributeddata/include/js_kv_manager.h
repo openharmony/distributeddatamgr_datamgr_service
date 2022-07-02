@@ -22,9 +22,14 @@
 #include "js_observer.h"
 
 namespace OHOS::DistributedData {
+struct ContextParam {
+    std::string baseDir = "";
+    std::string hapName = "";
+    int32_t area = DistributedKv::Area::EL1;
+};
 class JsKVManager {
 public:
-    JsKVManager(const std::string &bundleName, napi_env env);
+    JsKVManager(const std::string &bundleName, napi_env env, ContextParam param);
     ~JsKVManager();
 
     static napi_value CreateKVManager(napi_env env, napi_callback_info info);
@@ -54,6 +59,7 @@ private:
     std::mutex deathMutex_ {};
     std::list<std::shared_ptr<DeathRecipient>> deathRecipient_ {};
     std::shared_ptr<UvQueue> uvQueue_;
+    ContextParam param_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_KV_MANAGER_H

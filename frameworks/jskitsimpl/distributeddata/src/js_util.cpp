@@ -16,10 +16,13 @@
 #include "js_util.h"
 #include <endian.h>
 #include <securec.h>
+#include "ability.h"
+#include "hap_module_info.h"
 #include "js_schema.h"
-#include "log_print.h"
-#include "napi_queue.h"
 #include "kv_utils.h"
+#include "log_print.h"
+#include "napi_base_context.h"
+#include "napi_queue.h"
 #include "types.h"
 
 using namespace OHOS::DistributedKv;
@@ -30,6 +33,19 @@ constexpr size_t STR_TAIL_LENGTH = 1;
 struct PredicatesProxy {
     std::shared_ptr<DataShareAbsPredicates> predicates_;
 };
+
+napi_status JSUtil::GetValue(napi_env env, napi_value in, napi_value& out)
+{
+    out = in;
+    return napi_ok;
+}
+
+napi_status SetValue(napi_env env, napi_value in, napi_value& out)
+{
+    out = in;
+    return napi_ok;
+}
+
 /* napi_value <-> bool */
 napi_status JSUtil::GetValue(napi_env env, napi_value in, bool& out)
 {
@@ -1090,5 +1106,58 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, DataQuery &query)
         ZLOGD("napi_value -> GetValue DataQuery failed ");
     }
     return nstatus;
+}
+
+napi_status JSUtil::GetCurrentAbilityParam(napi_env env, ContextParam &param)
+{
+    auto ability = AbilityRuntime::GetCurrentAbility(env);
+    if (ability == nullptr) {
+        ZLOGE("GetCurrentAbility -> ability pointer is nullptr");
+        return napi_invalid_arg;
+    }
+
+    auto context = ability->GetAbilityContext();
+    if (context == nullptr) {
+        ZLOGE("Get fa context  -> fa context pointer is nullptr");
+        return napi_invalid_arg;
+    }
+    param.area = context->GetArea();
+    param.baseDir = context->GetDatabaseDir();
+    auto hapInfo = context->GetHapModuleInfo();
+    if (hapInfo != nullptr) {
+        param.hapName = hapInfo->moduleName;
+    }
+    ZLOGI("area:%{public}d hapName:%{public}s baseDir:%{public}s", param.area, param.hapName.c_str(),
+        param.baseDir.c_str());
+    return napi_ok;
+}
+
+napi_status JSUtil::GetValue(napi_env env, napi_value in, ContextParam &param)
+{
+    if (in == nullptr) {
+        ZLOGD("hasProp is false -> fa stage");
+        return GetCurrentAbilityParam(env, param);
+    }
+
+    bool isStageMode = false;
+    napi_status status = GetNamedProperty(env, in, "stageMode", isStageMode);
+    CHECK_RETURN(status == napi_ok, "get stageMode param failed", napi_invalid_arg);
+    if (!isStageMode) {
+        ZLOGD("isStageMode is false -> fa stage");
+        return GetCurrentAbilityParam(env, param);
+    }
+
+    ZLOGD("stage mode branch");
+    status = GetNamedProperty(env, in, "databaseDir", param.baseDir);
+    CHECK_RETURN(status == napi_ok, "get databaseDir param failed", napi_invalid_arg);
+    status = GetNamedProperty(env, in, "area", param.area);
+    CHECK_RETURN(status == napi_ok, "get area param failed", napi_invalid_arg);
+    napi_value hapInfo = nullptr;
+    GetNamedProperty(env, in, "currentHapModuleInfo", hapInfo);
+    if (hapInfo != nullptr) {
+        status = GetNamedProperty(env, hapInfo, "moduleName", param.hapName);
+        CHECK_RETURN(status == napi_ok, "get hap name failed", napi_invalid_arg);
+    }
+    return napi_ok;
 }
 } // namespace OHOS::DistributedData

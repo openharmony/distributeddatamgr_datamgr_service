@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_IMPL_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_IMPL_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_IMPL_H
+#define OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_IMPL_H
 #include <set>
 #include <vector>
 
@@ -51,6 +51,7 @@ public:
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status AppExit(pid_t uid, pid_t pid, uint32_t tokenId, const AppId &appId);
     Status ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param);
+    void OnUserChanged();
 
 private:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
@@ -75,6 +76,7 @@ private:
     uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
     Status ConvertDbStatus(DBStatus status) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;
+    std::shared_ptr<StoreCache::Observers> GetObservers(uint32_t tokenId, const std::string &storeId);
 
     struct SyncAgent {
         pid_t pid_ = 0;
@@ -82,11 +84,10 @@ private:
         sptr<IKvStoreSyncCallback> callback_;
         std::map<std::string, uint32_t> delayTimes_;
         std::map<std::string, std::shared_ptr<StoreCache::Observers>> observers_;
-        std::map<std::string, std::pair<std::vector<std::string>, std::string>> conditions_;
         void ReInit(pid_t pid, const AppId &appId);
     };
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     StoreCache storeCache_;
 };
 } // namespace OHOS::DistributedKv
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_IMPL_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_IMPL_H

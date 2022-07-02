@@ -15,6 +15,7 @@
 
 #include "metadata/store_meta_data.h"
 
+#include "metadata/secret_key_meta_data.h"
 #include "utils/constant.h"
 namespace OHOS {
 namespace DistributedData {
@@ -102,27 +103,35 @@ StoreMetaData::StoreMetaData(const std::string &userId, const std::string &appId
 
 bool StoreMetaData::operator==(const StoreMetaData &metaData) const
 {
-    if (!((isAutoSync && metaData.isAutoSync) || (!isAutoSync && !metaData.isAutoSync))) {
-        return false;
-    }
-    if (!((isBackup && metaData.isBackup) || (!isBackup && !metaData.isBackup))) {
-        return false;
-    }
-    if (!((isDirty && metaData.isDirty) || (!isDirty && !metaData.isDirty))) {
-        return false;
-    }
-    if (!((isEncrypt && metaData.isEncrypt) || (!isEncrypt && !metaData.isEncrypt))) {
+    if (Constant::NotEqual(isAutoSync, metaData.isAutoSync) || Constant::NotEqual(isBackup, metaData.isBackup) ||
+        Constant::NotEqual(isDirty, metaData.isDirty) || Constant::NotEqual(isEncrypt, metaData.isEncrypt)) {
         return false;
     }
     return (version == metaData.version && storeType == metaData.storeType &&
             securityLevel == metaData.securityLevel && area == metaData.area && uid == metaData.uid &&
-            tokenId != metaData.tokenId && instanceId == metaData.instanceId && appId == metaData.appId &&
+            tokenId == metaData.tokenId && instanceId == metaData.instanceId && appId == metaData.appId &&
             appType == metaData.appId && bundleName == metaData.bundleName && dataDir == metaData.dataDir);
 }
 
 bool StoreMetaData::operator!=(const StoreMetaData &metaData) const
 {
     return !(*this == metaData);
+}
+
+std::string StoreMetaData::GetKey() const
+{
+    if (instanceId == 0) {
+        return GetKey({ deviceId, user, "default", bundleName, storeId });
+    }
+    return GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
+std::string StoreMetaData::GetSecretKey() const
+{
+    if (version < CURRENT_VERSION) {
+        return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId });
+    }
+    return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
 }
 
 std::string StoreMetaData::GetKey(const std::initializer_list<std::string> &fields)
@@ -132,14 +141,6 @@ std::string StoreMetaData::GetKey(const std::initializer_list<std::string> &fiel
         prefix.append(Constant::KEY_SEPARATOR).append(field);
     }
     return prefix;
-}
-
-std::string StoreMetaData::GetKey()
-{
-    if (instanceId == 0) {
-        return GetKey({ deviceId, user, "default", bundleName, storeId });
-    }
-    return GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
 }
 
 std::string StoreMetaData::GetPrefix(const std::initializer_list<std::string> &fields)

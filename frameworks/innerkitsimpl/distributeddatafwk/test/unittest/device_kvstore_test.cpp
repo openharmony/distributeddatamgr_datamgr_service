@@ -60,6 +60,8 @@ void DeviceKvStoreTest::SetUpTestCase(void)
 {
     DistributedKvDataManager manager;
     options_.area = EL1;
+    options_.baseDir = std::string("/data/service/el1/public/database/odmf");
+    mkdir(options_.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     AppId appId = { "odmf" };
     StoreId storeId = { "student_device" }; // define kvstore(database) name.
     // [create and] open and initialize kvstore instance.
@@ -71,6 +73,9 @@ void DeviceKvStoreTest::SetUpTestCase(void)
 
 void DeviceKvStoreTest::TearDownTestCase(void)
 {
+    DistributedKvDataManager manager;
+    AppId appId = { "odmf" };
+    manager.DeleteAllKvStore(appId, options_.baseDir);
     remove("/data/service/el1/public/database/odmf/key");
     remove("/data/service/el1/public/database/odmf/kvdb");
     remove("/data/service/el1/public/database/odmf");
@@ -220,13 +225,13 @@ HWTEST_F(DeviceKvStoreTest, PutGetDelete001, TestSize.Level1)
 }
 
 /**
-* @tc.name: GetEntriesAndResultSet001
-* @tc.desc: Batch put values and get values.
+* @tc.name: GetDataQueryEntriesAndResultSet
+* @tc.desc: get entries and result set by data query.
 * @tc.type: FUNC
 * @tc.require: I5DE2A
 * @tc.author: Sven Wang
 */
-HWTEST_F(DeviceKvStoreTest, GetEntriesAndResultSet001, TestSize.Level1)
+HWTEST_F(DeviceKvStoreTest, GetDataQueryEntriesAndResultSet, TestSize.Level1)
 {
     EXPECT_NE(kvStore_, nullptr) << "kvStore is nullptr.";
 
@@ -238,12 +243,18 @@ HWTEST_F(DeviceKvStoreTest, GetEntriesAndResultSet001, TestSize.Level1)
         kvStore_->Put({prefix + std::to_string(i)}, {std::to_string(i)});
     }
 
+    DataQuery dataQuery;
+    dataQuery.KeyPrefix(prefix);
+    dataQuery.DeviceId(deviceId_);
+    kvStore_->GetCount(dataQuery, sum_1);
+    EXPECT_EQ(sum_1, sum) << "count is not equal 10.";
+
     std::vector<Entry> results;
-    kvStore_->GetEntries({ GetKey(prefix) }, results);
+    kvStore_->GetEntries(dataQuery, results);
     EXPECT_EQ(results.size(), sum) << "entries size is not equal 10.";
 
     std::shared_ptr<KvStoreResultSet> resultSet;
-    Status status = kvStore_->GetResultSet({ GetKey(prefix) }, resultSet);
+    Status status = kvStore_->GetResultSet(dataQuery, resultSet);
     EXPECT_EQ(status, Status::SUCCESS);
     EXPECT_EQ(resultSet->GetCount(), sum_1) << "resultSet size is not equal 10.";
     resultSet->IsFirst();
@@ -263,8 +274,111 @@ HWTEST_F(DeviceKvStoreTest, GetEntriesAndResultSet001, TestSize.Level1)
         kvStore_->Delete({GetKey(prefix + std::to_string(i))});
     }
 
-    auto closeResultSetStatus = kvStore_->CloseResultSet(resultSet);
-    EXPECT_EQ(closeResultSetStatus, Status::SUCCESS) << "Close resultSet failed.";
+    status = kvStore_->CloseResultSet(resultSet);
+    EXPECT_EQ(status, Status::SUCCESS) << "Close resultSet failed.";
+}
+
+/**
+* @tc.name: GetPrefixQueryEntriesAndResultSet
+* @tc.desc: get entries and result set by prefix query.
+* @tc.type: FUNC
+* @tc.require: I5DE2A
+* @tc.author: Sven Wang
+*/
+HWTEST_F(DeviceKvStoreTest, GetPrefixQueryEntriesAndResultSet, TestSize.Level1)
+{
+    EXPECT_NE(kvStore_, nullptr) << "kvStore is nullptr.";
+    if (options_.baseDir.empty()) {
+        return;
+    }
+
+    // prepare 10
+    size_t sum = 10;
+    int sum_1 = 10;
+    std::string prefix = "prefix_";
+    for (size_t i = 0; i < sum; i++) {
+        kvStore_->Put({prefix + std::to_string(i)}, {std::to_string(i)});
+    }
+
+    DataQuery dataQuery;
+    dataQuery.KeyPrefix(GetKey(prefix));
+    kvStore_->GetCount(dataQuery, sum_1);
+    EXPECT_EQ(sum_1, sum) << "count is not equal 10.";
+
+    std::vector<Entry> results;
+    kvStore_->GetEntries(dataQuery, results);
+    EXPECT_EQ(results.size(), sum) << "entries size is not equal 10.";
+
+    std::shared_ptr<KvStoreResultSet> resultSet;
+    Status status = kvStore_->GetResultSet(dataQuery, resultSet);
+    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(resultSet->GetCount(), sum_1) << "resultSet size is not equal 10.";
+    resultSet->IsFirst();
+    resultSet->IsAfterLast();
+    resultSet->IsBeforeFirst();
+    resultSet->MoveToPosition(1);
+    resultSet->IsLast();
+    resultSet->MoveToPrevious();
+    resultSet->MoveToNext();
+    resultSet->MoveToLast();
+    resultSet->MoveToFirst();
+    resultSet->GetPosition();
+    Entry entry;
+    resultSet->GetEntry(entry);
+
+    for (size_t i = 0; i < sum; i++) {
+        kvStore_->Delete({GetKey(prefix + std::to_string(i))});
+    }
+
+    status = kvStore_->CloseResultSet(resultSet);
+    EXPECT_EQ(status, Status::SUCCESS) << "Close resultSet failed.";
+}
+
+/**
+* @tc.name: GetPrefixEntriesAndResultSet
+* @tc.desc: get entries and result set by prefix.
+* @tc.type: FUNC
+* @tc.require: I5DE2A
+* @tc.author: Sven Wang
+*/
+HWTEST_F(DeviceKvStoreTest, GetPrefixEntriesAndResultSet, TestSize.Level1)
+{
+    EXPECT_NE(kvStore_, nullptr) << "kvStore is nullptr.";
+
+    // prepare 10
+    size_t sum = 10;
+    int sum_1 = 10;
+    std::string prefix = "prefix_";
+    for (size_t i = 0; i < sum; i++) {
+        kvStore_->Put({prefix + std::to_string(i)}, {std::to_string(i)});
+    }
+    std::vector<Entry> results;
+    kvStore_->GetEntries(GetKey(prefix + "      "), results);
+    EXPECT_EQ(results.size(), sum) << "entries size is not equal 10.";
+
+    std::shared_ptr<KvStoreResultSet> resultSet;
+    Status status = kvStore_->GetResultSet({ GetKey(std::string("    ") + prefix + "      ") }, resultSet);
+    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(resultSet->GetCount(), sum_1) << "resultSet size is not equal 10.";
+    resultSet->IsFirst();
+    resultSet->IsAfterLast();
+    resultSet->IsBeforeFirst();
+    resultSet->MoveToPosition(1);
+    resultSet->IsLast();
+    resultSet->MoveToPrevious();
+    resultSet->MoveToNext();
+    resultSet->MoveToLast();
+    resultSet->MoveToFirst();
+    resultSet->GetPosition();
+    Entry entry;
+    resultSet->GetEntry(entry);
+
+    for (size_t i = 0; i < sum; i++) {
+        kvStore_->Delete({GetKey(prefix + std::to_string(i))});
+    }
+
+    status = kvStore_->CloseResultSet(resultSet);
+    EXPECT_EQ(status, Status::SUCCESS) << "Close resultSet failed.";
 }
 
 /**
@@ -371,6 +485,7 @@ HWTEST_F(DeviceKvStoreTest, TestSchemaStoreC001, TestSize.Level1)
     options.encrypt = true;
     options.schema = VALID_SCHEMA;
     options.area = EL1;
+    options.baseDir = std::string("/data/service/el1/public/database/odmf");
     AppId appId = { "odmf" };
     StoreId storeId = { "schema_device_id" };
     (void)manager.GetSingleKvStore(options, appId, storeId, deviceKvStore);
@@ -1031,6 +1146,7 @@ HWTEST_F(DeviceKvStoreTest, DeviceSync001 ,TestSize.Level1)
     Options options;
     options.encrypt = true;
     options.area = EL1;
+    options.baseDir = std::string("/data/service/el1/public/database/odmf");
     AppId appId = { "odmf" };
     StoreId storeId = { "schema_device_id001" };
     manager.GetSingleKvStore(options, appId, storeId, kvStore);
@@ -1057,6 +1173,7 @@ HWTEST_F(DeviceKvStoreTest, DeviceSync002 ,TestSize.Level1)
     Options options;
     options.encrypt = true;
     options.area = EL1;
+    options.baseDir = std::string("/data/service/el1/public/database/odmf");
     AppId appId = { "odmf" };
     StoreId storeId = { "schema_device_id002" };
     manager.GetSingleKvStore(options, appId, storeId, kvStore);

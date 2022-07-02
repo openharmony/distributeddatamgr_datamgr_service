@@ -390,14 +390,8 @@ Status KvStoreMetaManager::RemoveSecretKey(pid_t uid, const std::string &bundleN
     }
     const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
     Status status = Status::SUCCESS;
-    DistributedDB::Key secretDbKey = GetMetaKey(userId, "default", bundleName, storeId, "KEY");
     DistributedDB::Key secretSingleDbKey = GetMetaKey(userId, "default", bundleName, storeId, "SINGLE_KEY");
-    DistributedDB::DBStatus dbStatus = metaDelegate->DeleteLocal(secretDbKey);
-    if (dbStatus != DistributedDB::DBStatus::OK) {
-        ZLOGE("delete secretDbKey fail Status %d", static_cast<int>(dbStatus));
-        status = Status::DB_ERROR;
-    }
-    dbStatus = metaDelegate->DeleteLocal(secretSingleDbKey);
+    DistributedDB::DBStatus dbStatus = metaDelegate->DeleteLocal(secretSingleDbKey);
     if (dbStatus != DistributedDB::DBStatus::OK) {
         ZLOGE("delete secretSingleDbKey fail Status %d", static_cast<int>(dbStatus));
         status = Status::DB_ERROR;
@@ -485,6 +479,24 @@ Status KvStoreMetaManager::RecoverSecretKeyFromFile(const std::string &secretKey
         return Status::DB_ERROR;
     }
     return Status::SUCCESS;
+}
+
+std::vector<uint8_t> KvStoreMetaManager::GetSecretKeyFromFile(const std::string &secretKeyFile)
+{
+    std::vector<char> fileBuffer;
+    if (!LoadBufferFromFile(secretKeyFile, fileBuffer)) {
+        return {};
+    }
+    if (fileBuffer.size() < sizeof(time_t) / sizeof(uint8_t) + KEY_SIZE) {
+        return {};
+    }
+    auto iter = fileBuffer.begin() + (sizeof(time_t) / sizeof(uint8_t));
+
+    SecretKeyMetaData secretKey;
+    secretKey.secretKey.insert(secretKey.secretKey.end(), iter, fileBuffer.end());
+    std::vector<uint8_t> key;
+    CryptoManager::GetInstance().Decrypt(secretKey.secretKey, key);
+    return key;
 }
 
 void KvStoreMetaManager::ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId,

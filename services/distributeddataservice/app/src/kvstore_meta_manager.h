@@ -197,6 +197,8 @@ public:
     Status RecoverSecretKeyFromFile(const std::string &secretKeyFile, const std::vector<uint8_t> &metaSecretKey,
         std::vector<uint8_t> &key, bool &outdated);
 
+    std::vector<uint8_t> GetSecretKeyFromFile(const std::string &fileName);
+
     void ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId, int32_t pathType,
                sptr<SingleKvStoreImpl> store);
 

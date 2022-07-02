@@ -89,8 +89,8 @@ void ObserverBridge::ObserverClient::OnChange(const ChangeNotification &data)
 
     std::string deviceId;
     auto inserted = ConvertDB(data.GetInsertEntries(), deviceId);
-    auto updated = ConvertDB(data.GetInsertEntries(), deviceId);
-    auto deleted = ConvertDB(data.GetInsertEntries(), deviceId);
+    auto updated = ConvertDB(data.GetUpdateEntries(), deviceId);
+    auto deleted = ConvertDB(data.GetDeleteEntries(), deviceId);
     ChangeNotification notice(std::move(inserted), std::move(updated), std::move(deleted), deviceId, false);
     KvStoreObserverClient::OnChange(notice);
 }

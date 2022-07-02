@@ -13,13 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_SERVICE_KVDB_STORE_CACHE_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_SERVICE_KVDB_STORE_CACHE_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_STORE_CACHE_H
+#define OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_STORE_CACHE_H
 #include <kv_store_delegate_manager.h>
-
 #include <chrono>
 #include <memory>
-
 #include "concurrent_map.h"
 #include "kv_scheduler.h"
 #include "kv_store_nb_delegate.h"
@@ -46,6 +44,9 @@ public:
     using Observers = std::set<sptr<IKvStoreObserver>, Less<IKvStoreObserver>>;
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using Time = std::chrono::system_clock::time_point;
+    using DBOption = DistributedDB::KvStoreNbDelegate::Option;
+    using DBSecurity = DistributedDB::SecurityOption;
+    using DBPassword = DistributedDB::CipherPassword;
 
     struct DBStoreDelegate : public DBObserver {
         DBStoreDelegate(DBStore *delegate, std::shared_ptr<Observers> observers);
@@ -59,23 +60,23 @@ public:
     private:
         std::vector<Entry> Convert(const std::list<DBEntry> &dbEntries);
         mutable Time time_;
-        DBStore *delegate_;
-        std::shared_ptr<Observers> observers_;
+        DBStore *delegate_ = nullptr;
+        std::shared_ptr<Observers> observers_ = nullptr;
     };
 
     DBStore *GetStore(const StoreMetaData &data, std::shared_ptr<Observers> observers, DBStatus &status);
     void CloseStore(uint32_t tokenId, const std::string &storeId);
-
+    void CloseExcept(const std::set<int32_t> &users);
+    void SetObserver(uint32_t tokenId, const std::string &storeId, std::shared_ptr<Observers> observers);
+    static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
+    static DBSecurity GetDBSecurity(int32_t secLevel);
+    static DBPassword GetDBPassword(const StoreMetaData &data);
 private:
-    using DBOption = DistributedDB::KvStoreNbDelegate::Option;
-    using DBSecurity = DistributedDB::SecurityOption;
-    void CollectGarbage();
-    DBOption GetDBOption(const StoreMetaData &data) const;
-    DBSecurity GetDBSecurity(int32_t secLevel) const;
+    void GarbageCollect();
     static constexpr int64_t INTERVAL = 1;
     static constexpr size_t TIME_TASK_NUM = 1;
     ConcurrentMap<uint32_t, std::map<std::string, DBStoreDelegate>> stores_;
     KvScheduler scheduler_{ TIME_TASK_NUM };
 };
 } // namespace OHOS::DistributedKv
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_SERVICE_KVDB_STORE_CACHE_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_STORE_CACHE_H

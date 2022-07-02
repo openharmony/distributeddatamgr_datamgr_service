@@ -48,6 +48,11 @@ std::string AccountDelegateDefaultImpl::GetDeviceAccountIdByUID(int32_t uid) con
     return std::to_string(0);
 }
 
+int32_t AccountDelegateDefaultImpl::GetUserByToken(uint32_t tokenId) const
+{
+    return 0;
+}
+
 bool AccountDelegateDefaultImpl::QueryUsers(std::vector<int> &users)
 {
     ZLOGD("no account part.");

@@ -15,9 +15,7 @@
 #define LOG_TAG "JS_DeviceKVStore"
 #include "js_device_kv_store.h"
 #include <iomanip>
-#include "kv_utils.h"
 #include "js_kv_store_resultset.h"
-#include "datashare_predicates.h"
 #include "js_query.h"
 #include "js_util.h"
 #include "log_print.h"
