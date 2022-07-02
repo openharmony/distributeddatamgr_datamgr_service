@@ -987,6 +987,7 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const MetaData &meta, const
     }
     delegateManager->SetKvStoreConfig({ storeMeta.dataDir });
     Options options = {
+        .createIfMissing = false,
         .encrypt = storeMeta.isEncrypt,
         .autoSync = storeMeta.isAutoSync,
         .securityLevel = storeMeta.securityLevel,

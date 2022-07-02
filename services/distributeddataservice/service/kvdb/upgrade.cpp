@@ -53,11 +53,8 @@ Upgrade::DBStatus Upgrade::UpdateStore(const StoreMeta &old, const StoreMeta &me
         return DBStatus::DB_ERROR;
     }
 
-    auto status = kvStore->Import(backupFile, password);
-    if (status == DBStatus::OK) {
-        cleaner_(old);
-    }
-    return status;
+    cleaner_(old);
+    return DBStatus::OK;
 }
 
 Upgrade::DBStatus Upgrade::ExportStore(const StoreMeta &old, const StoreMeta &meta)
