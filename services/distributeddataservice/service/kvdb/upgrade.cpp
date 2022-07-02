@@ -80,7 +80,7 @@ Upgrade::DBStatus Upgrade::ExportStore(const StoreMeta &old, const StoreMeta &me
 
 void Upgrade::UpdatePassword(const StoreMeta &meta, const std::vector<uint8_t> &password)
 {
-    if (meta.isEncrypt) {
+    if (!meta.isEncrypt) {
         return ;
     }
 
