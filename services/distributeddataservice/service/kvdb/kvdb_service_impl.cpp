@@ -309,7 +309,7 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
 
     MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
     Upgrade::GetInstance().UpdatePassword(metaData, password);
-    ZLOGD("appId:%{public}s, storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s",
+    ZLOGI("appId:%{public}s, storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s",
         appId.appId.c_str(), storeId.storeId.c_str(), metaData.instanceId, metaData.storeType,
         metaData.dataDir.c_str());
     return status;

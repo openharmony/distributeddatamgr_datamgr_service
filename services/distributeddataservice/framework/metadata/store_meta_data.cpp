@@ -110,7 +110,7 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
     return (version == metaData.version && storeType == metaData.storeType &&
             securityLevel == metaData.securityLevel && area == metaData.area && uid == metaData.uid &&
             tokenId == metaData.tokenId && instanceId == metaData.instanceId && appId == metaData.appId &&
-            appType == metaData.appId && bundleName == metaData.bundleName && dataDir == metaData.dataDir);
+            appType == metaData.appType && bundleName == metaData.bundleName && dataDir == metaData.dataDir);
 }
 
 bool StoreMetaData::operator!=(const StoreMetaData &metaData) const
