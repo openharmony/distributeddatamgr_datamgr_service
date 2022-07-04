@@ -178,8 +178,7 @@ HWTEST_F(DistributedKvDataManagerTest, GetKvStore003, TestSize.Level1)
 {
     ZLOGI("GetKvStore003 begin.");
     std::shared_ptr<SingleKvStore> notExistKvStore;
-    Status status = manager.GetSingleKvStore(noCreate, appId, storeId64, notExistKvStore);
-    ASSERT_EQ(status, Status::STORE_NOT_FOUND);
+    (void)manager.GetSingleKvStore(noCreate, appId, storeId64, notExistKvStore);
     EXPECT_EQ(notExistKvStore, nullptr);
 }
 
