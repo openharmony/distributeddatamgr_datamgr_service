@@ -31,7 +31,7 @@ StoreFactory &StoreFactory::GetInstance()
 
 StoreFactory::StoreFactory()
 {
-    if(DBManager::IsProcessSystemApiAdapterValid()) {
+    if (DBManager::IsProcessSystemApiAdapterValid()) {
         return;
     }
     (void)DBManager::SetProcessSystemAPIAdapter(std::make_shared<SystemApi>());
