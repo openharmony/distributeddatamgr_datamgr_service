@@ -227,7 +227,8 @@ Status SingleStoreImpl::SubscribeKvStore(SubscribeType type, std::shared_ptr<Obs
     }
 
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x type:%{public}d, observer:0x%x", status, type, StoreUtil::Anonymous(bridge.get()));
+        ZLOGE("status:0x%{public}x type:%{public}d realType:%{public}d observer:0x%{public}x", status, type, realType,
+            StoreUtil::Anonymous(bridge.get()));
         TakeOut(realType, observer);
     }
     return status;
@@ -264,7 +265,8 @@ Status SingleStoreImpl::UnSubscribeKvStore(SubscribeType type, std::shared_ptr<O
     }
 
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, type:%{public}d, observer:0x%x", status, type, StoreUtil::Anonymous(bridge.get()));
+        ZLOGE("status:0x%{public}x type:%{public}d realType:%{public}d observer:0x%{public}x", status, type, realType,
+            StoreUtil::Anonymous(bridge.get()));
     }
     return status;
 }
