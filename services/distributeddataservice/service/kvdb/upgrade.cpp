@@ -91,12 +91,14 @@ void Upgrade::UpdatePassword(const StoreMeta &meta, const std::vector<uint8_t> &
 
 bool Upgrade::RegisterExporter(uint32_t version, Exporter exporter)
 {
+    (void)version;
     exporter_ = std::move(exporter);
     return exporter_ != nullptr;
 }
 
 bool Upgrade::RegisterCleaner(uint32_t version, Cleaner cleaner)
 {
+    (void)version;
     cleaner_ = std::move(cleaner);
     return cleaner_ != nullptr;
 }

@@ -213,7 +213,7 @@ Status SingleStoreImpl::SubscribeKvStore(SubscribeType type, std::shared_ptr<Obs
     uint32_t realType = type;
     std::shared_ptr<ObserverBridge> bridge = PutIn(realType, observer);
     if (bridge == nullptr) {
-        return STORE_ALREADY_SUBSCRIBE;
+        return (realType == type) ? OVER_MAX_SUBSCRIBE_LIMITS : STORE_ALREADY_SUBSCRIBE;
     }
 
     Status status = SUCCESS;
@@ -222,12 +222,13 @@ Status SingleStoreImpl::SubscribeKvStore(SubscribeType type, std::shared_ptr<Obs
         status = StoreUtil::ConvertStatus(dbStatus);
     }
 
-    if ((realType & SUBSCRIBE_TYPE_REMOTE) == SUBSCRIBE_TYPE_REMOTE) {
-        bridge->RegisterRemoteObserver();
+    if (((realType & SUBSCRIBE_TYPE_REMOTE) == SUBSCRIBE_TYPE_REMOTE) && status == SUCCESS) {
+        realType &= ~SUBSCRIBE_TYPE_LOCAL;
+        status = bridge->RegisterRemoteObserver();
     }
 
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x type:%{public}d realType:%{public}d observer:0x%{public}x", status, type, realType,
+        ZLOGE("status:0x%{public}x type:%{public}d->%{public}d observer:0x%{public}x", status, type, realType,
             StoreUtil::Anonymous(bridge.get()));
         TakeOut(realType, observer);
     }
@@ -260,12 +261,13 @@ Status SingleStoreImpl::UnSubscribeKvStore(SubscribeType type, std::shared_ptr<O
         status = StoreUtil::ConvertStatus(dbStatus);
     }
 
-    if ((realType & SUBSCRIBE_TYPE_REMOTE) == SUBSCRIBE_TYPE_REMOTE) {
-        bridge->UnregisterRemoteObserver();
+    if (((realType & SUBSCRIBE_TYPE_REMOTE) == SUBSCRIBE_TYPE_REMOTE) && status == SUCCESS) {
+        realType &= ~SUBSCRIBE_TYPE_LOCAL;
+        status = bridge->UnregisterRemoteObserver();
     }
 
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x type:%{public}d realType:%{public}d observer:0x%{public}x", status, type, realType,
+        ZLOGE("status:0x%{public}x type:%{public}d->%{public}d observer:0x%{public}x", status, type, realType,
             StoreUtil::Anonymous(bridge.get()));
     }
     return status;
@@ -626,8 +628,14 @@ std::shared_ptr<ObserverBridge> SingleStoreImpl::PutIn(uint32_t &realType, std::
     observers_.Compute(uintptr_t(observer.get()),
         [this, &realType, observer, &bridge](const auto &, std::pair<uint32_t, std::shared_ptr<ObserverBridge>> &pair) {
             if ((pair.first & realType) == realType) {
+                realType = (realType & (~pair.first));
                 return (pair.first != 0);
             }
+
+            if (observers_.Size() > MAX_OBSERVER_SIZE) {
+                return false;
+            }
+
             if (pair.first == 0) {
                 auto release = BridgeReleaser();
                 StoreId storeId{ storeId_ };

@@ -43,7 +43,7 @@ const KVDBServiceStub::Handler KVDBServiceStub::HANDLERS[TRANS_BUTT] = {
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    ZLOGI("code:%{public}u, callingPid:%{public}u", code, IPCSkeleton::GetCallingPid());
+    ZLOGI("code:%{public}u callingPid:%{public}u", code, IPCSkeleton::GetCallingPid());
     std::u16string local = KVDBServiceStub::GetDescriptor();
     std::u16string remote = data.ReadInterfaceToken();
     if (local != remote) {
@@ -72,11 +72,11 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
     if (CheckerManager::GetInstance().IsValid(info)) {
         return (this->*HANDLERS[code])(appId, storeId, data, reply);
     }
-    ZLOGE("PERMISSION_DENIED uid:%{public}d, appId:%{public}s, storeId:%{public}s", info.uid, info.bundleName.c_str(),
+    ZLOGE("PERMISSION_DENIED uid:%{public}d appId:%{public}s storeId:%{public}s", info.uid, info.bundleName.c_str(),
         info.storeId.c_str());
 
     if (!ITypesUtil::Marshal(reply, PERMISSION_DENIED)) {
-        ZLOGE("Marshal PERMISSION_DENIED code:%{public}u, appId:%{public}s storeId:%{public}s", code,
+        ZLOGE("Marshal PERMISSION_DENIED code:%{public}u appId:%{public}s storeId:%{public}s", code,
             appId.appId.c_str(), storeId.storeId.c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

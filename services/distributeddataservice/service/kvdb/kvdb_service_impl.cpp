@@ -57,7 +57,7 @@ Status KVDBServiceImpl::GetStoreIds(const AppId &appId, std::vector<StoreId> &st
     for (auto &item : metaData) {
         storeIds.push_back({ item.storeId });
     }
-    ZLOGD("appId:%{public}s, store size:%{public}zu", appId.appId.c_str(), storeIds.size());
+    ZLOGD("appId:%{public}s store size:%{public}zu", appId.appId.c_str(), storeIds.size());
     return SUCCESS;
 }
 
@@ -71,7 +71,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     syncAgents_.ComputeIfPresent(tokenId, [&appId, &storeId](auto &key, SyncAgent &syncAgent) {
         if (syncAgent.pid_ != IPCSkeleton::GetCallingPid()) {
-            ZLOGW("agent already changed! old pid:%{public}d, new pid:%{public}d, appId:%{public}s",
+            ZLOGW("agent already changed! old pid:%{public}d new pid:%{public}d appId:%{public}s",
                 IPCSkeleton::GetCallingPid(), syncAgent.pid_, appId.appId.c_str());
             return true;
         }
@@ -83,7 +83,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
 
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
-    ZLOGD("appId:%{public}s, storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+    ZLOGD("appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
     return SUCCESS;
 }
 
@@ -249,7 +249,7 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
         tokenId);
     syncAgents_.ComputeIfPresent(tokenId, [&appId, &storeId, &observer](auto &key, SyncAgent &value) {
         if (value.pid_ != IPCSkeleton::GetCallingPid()) {
-            ZLOGW("agent already changed! old pid:%{public}d, new pid:%{public}d, appId:%{public}s",
+            ZLOGW("agent already changed! old pid:%{public}d new pid:%{public}d appId:%{public}s",
                 IPCSkeleton::GetCallingPid(), value.pid_, appId.appId.c_str());
             return true;
         }
@@ -273,9 +273,10 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     if (!isCreated || old == meta) {
         return SUCCESS;
     }
-    if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt)) {
-        ZLOGE("meta appId:%{public}s storeId:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d",
-            appId.appId.c_str(), storeId.storeId.c_str(), old.storeType, meta.storeType, old.isEncrypt, meta.isEncrypt);
+    if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) || old.area != meta.area) {
+        ZLOGE("meta appId:%{public}s storeId:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d", appId.appId.c_str(), storeId.storeId.c_str(), old.storeType,
+            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
         return Status::STORE_META_CHANGED;
     }
     auto dbStatus = Upgrade::GetInstance().ExportStore(old, meta);
@@ -286,7 +287,7 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
     const std::vector<uint8_t> &password)
 {
     if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()) {
-        ZLOGE("failed, please check type:%{public}d, appId:%{public}s, storeId:%{public}s", options.kvStoreType,
+        ZLOGE("failed please check type:%{public}d appId:%{public}s storeId:%{public}s", options.kvStoreType,
             appId.appId.c_str(), storeId.storeId.c_str());
         return INVALID_ARGUMENT;
     }
@@ -309,7 +310,7 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
 
     MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
     Upgrade::GetInstance().UpdatePassword(metaData, password);
-    ZLOGI("appId:%{public}s, storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s",
+    ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s",
         appId.appId.c_str(), storeId.storeId.c_str(), metaData.instanceId, metaData.storeType,
         metaData.dataDir.c_str());
     return status;
@@ -317,7 +318,7 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
 
 Status KVDBServiceImpl::AppExit(pid_t uid, pid_t pid, uint32_t tokenId, const AppId &appId)
 {
-    ZLOGI("pid:%{public}d, uid:%{public}d, appId:%{public}s", pid, uid, appId.appId.c_str());
+    ZLOGI("pid:%{public}d uid:%{public}d appId:%{public}s", pid, uid, appId.appId.c_str());
     std::vector<std::string> storeIds;
     syncAgents_.ComputeIfPresent(tokenId, [pid, &storeIds](auto &, SyncAgent &value) {
         if (value.pid_ != pid) {
@@ -592,7 +593,7 @@ void KVDBServiceImpl::OnUserChanged()
 
 void KVDBServiceImpl::SyncAgent::ReInit(pid_t pid, const AppId &appId)
 {
-    ZLOGW("now pid:%{public}d, pid:%{public}d, appId:%{public}s, callback:%{public}d, observer:%{public}zu", pid, pid_,
+    ZLOGW("pid:%{public}d->%{public}d appId:%{public}s callback:%{public}d observer:%{public}zu", pid, pid_,
         appId_.appId.c_str(), callback_ == nullptr, observers_.size());
     pid_ = pid;
     appId_ = appId;

@@ -46,7 +46,11 @@ Status ObserverBridge::RegisterRemoteObserver()
     }
 
     remote_ = new (std::nothrow) ObserverClient(observer_, convert_);
-    return service->Subscribe(appId_, storeId_, remote_);
+    auto status = service->Subscribe(appId_, storeId_, remote_);
+    if (status != SUCCESS) {
+        remote_ = nullptr;
+    }
+    return status;
 }
 
 Status ObserverBridge::UnregisterRemoteObserver()

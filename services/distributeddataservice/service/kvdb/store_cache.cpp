@@ -55,7 +55,7 @@ StoreCache::DBStore *StoreCache::GetStore(const StoreMetaData &data, std::shared
             DistributedDB::PragmaData data = static_cast<DistributedDB::PragmaData>(&autoSync);
             auto syncStatus = store->Pragma(DistributedDB::PragmaCmd::AUTO_SYNC, data);
             if (syncStatus != DistributedDB::DBStatus::OK) {
-                ZLOGE("status: %d", static_cast<int>(syncStatus));
+                ZLOGE("auto sync status:%{public}d", static_cast<int>(syncStatus));
             }
         }
 
