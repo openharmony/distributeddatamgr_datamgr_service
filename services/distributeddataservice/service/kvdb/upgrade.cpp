@@ -16,7 +16,7 @@
 #include "upgrade.h"
 
 #include <chrono>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "crypto_manager.h"
 #include "metadata/secret_key_meta_data.h"

@@ -16,7 +16,7 @@
 #include "kvdb_service_impl.h"
 
 #include <chrono>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"

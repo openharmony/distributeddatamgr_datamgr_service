@@ -52,9 +52,9 @@ void AutoSyncTimerTest::SetUpTestCase(void)
 
 void AutoSyncTimerTest::TearDownTestCase(void)
 {
-    remove("/data/service/el1/public/database/ut_test/key");
-    remove("/data/service/el1/public/database/ut_test/kvdb");
-    remove("/data/service/el1/public/database/ut_test");
+    (void)remove("/data/service/el1/public/database/ut_test/key");
+    (void)remove("/data/service/el1/public/database/ut_test/kvdb");
+    (void)remove("/data/service/el1/public/database/ut_test");
 }
 
 void AutoSyncTimerTest::SetUp(void)

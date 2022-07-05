@@ -112,8 +112,8 @@ void DistributedKvDataManagerTest::SetUpTestCase(void)
 void DistributedKvDataManagerTest::TearDownTestCase(void)
 {
     RemoveAllStore(manager);
-    remove((create.baseDir + "/kvdb").c_str());
-    remove(create.baseDir.c_str());
+    (void)remove((create.baseDir + "/kvdb").c_str());
+    (void)remove(create.baseDir.c_str());
 }
 
 void DistributedKvDataManagerTest::SetUp(void)

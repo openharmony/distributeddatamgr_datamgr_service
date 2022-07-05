@@ -67,9 +67,9 @@ void SingleKvStoreClientTest::SetUpTestCase(void)
 
 void SingleKvStoreClientTest::TearDownTestCase(void)
 {
-    remove("/data/service/el1/public/database/odmf/key");
-    remove("/data/service/el1/public/database/odmf/kvdb");
-    remove("/data/service/el1/public/database/odmf");
+    (void)remove("/data/service/el1/public/database/odmf/key");
+    (void)remove("/data/service/el1/public/database/odmf/kvdb");
+    (void)remove("/data/service/el1/public/database/odmf");
 }
 
 void SingleKvStoreClientTest::SetUp(void)
@@ -1012,7 +1012,7 @@ HWTEST_F(SingleKvStoreClientTest, Transaction002, TestSize.Level2)
 * @tc.require:AR000EPAM8 AR000EPAMD
 * @tc.author: HongBo
 */
-HWTEST_F(SingleKvStoreClientTest, DeviceSync001 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, DeviceSync001, TestSize.Level1)
 {
     std::shared_ptr<SingleKvStore> schemaSingleKvStorePtr;
     DistributedKvDataManager manager;
@@ -1040,7 +1040,7 @@ HWTEST_F(SingleKvStoreClientTest, DeviceSync001 ,TestSize.Level1)
 * @tc.require:SR000EPA22 AR000EPAM9
 * @tc.author: HongBo
 */
-HWTEST_F(SingleKvStoreClientTest, DeviceSync002 ,TestSize.Level1)
+HWTEST_F(SingleKvStoreClientTest, DeviceSync002, TestSize.Level1)
 {
     std::shared_ptr<SingleKvStore> schemaSingleKvStorePtr;
     DistributedKvDataManager manager;

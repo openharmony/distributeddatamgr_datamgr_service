@@ -58,8 +58,8 @@ void LocalSubscribeStoreTest::TearDownTestCase(void)
     manager.CloseKvStore(appId, kvStore);
     kvStore = nullptr;
     manager.DeleteKvStore(appId, storeId, "/data/service/el1/public/database/odmf");
-    remove("/data/service/el1/public/database/odmf/kvdb");
-    remove("/data/service/el1/public/database/odmf");
+    (void)remove("/data/service/el1/public/database/odmf/kvdb");
+    (void)remove("/data/service/el1/public/database/odmf");
 }
 
 void LocalSubscribeStoreTest::SetUp(void)

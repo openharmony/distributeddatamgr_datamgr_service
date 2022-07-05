@@ -39,9 +39,9 @@ void UpgradeTest::SetUpTestCase(void)
 
 void UpgradeTest::TearDownTestCase(void)
 {
-    remove(KEY_DIR);
-    remove(DB_DIR);
-    remove(APP_DIR);
+    (void)remove(KEY_DIR);
+    (void)remove(DB_DIR);
+    (void)remove(APP_DIR);
 }
 
 void UpgradeTest::SetUp(void)

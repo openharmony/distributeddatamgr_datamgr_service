@@ -139,7 +139,7 @@ std::vector<uint8_t> DeviceStoreImpl::ConvertNetwork(const Key &in, bool withLen
         return ToLocal(in, withLen);
     }
 
-    uint32_t devLen = atol(deviceLen.c_str());
+    size_t devLen = static_cast<size_t>(atol(deviceLen.c_str()));
     if (devLen > in.Data().size() + sizeof(uint32_t)) {
         // | original key |
         // |--------------|

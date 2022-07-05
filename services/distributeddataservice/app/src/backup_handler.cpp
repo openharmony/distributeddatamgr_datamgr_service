@@ -290,7 +290,7 @@ bool BackupHandler::SingleKvStoreRecover(StoreMetaData &metaData, DistributedDB:
         { BackupHandler::GetBackupPath(metaData.user, pathType), "/", GetHashedBackupName(backupName) });
     DistributedDB::DBStatus dbStatus = delegate->Import(backupFullName, password);
 
-    int64_t currentTime = TimeUtils::CurrentTimeMicros();
+    uint64_t currentTime = TimeUtils::CurrentTimeMicros();
     int64_t backupTime = GetBackupTime(backupFullName);
     std::string message;
     message.append(" backup name [").append(backupFullName)
