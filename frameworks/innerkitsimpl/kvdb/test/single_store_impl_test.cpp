@@ -253,7 +253,7 @@ HWTEST_F(SingleStoreImplTest, SubscribeKvStore, TestSize.Level0)
     ASSERT_EQ(status, STORE_ALREADY_SUBSCRIBE);
     status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_ALL, observer);
     ASSERT_EQ(status, STORE_ALREADY_SUBSCRIBE);
-    status = kvStore_->SubscribeKvStore(DEFAULT, observer);
+    status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_ALL, observer);
     ASSERT_EQ(status, STORE_ALREADY_SUBSCRIBE);
     status = kvStore_->Put({ "Put Test" }, { "Put Value" });
     ASSERT_EQ(status, SUCCESS);
