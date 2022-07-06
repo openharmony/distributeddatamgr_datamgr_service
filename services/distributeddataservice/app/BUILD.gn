@@ -125,10 +125,10 @@ ohos_shared_library("distributeddataservice") {
     "device_auth:deviceauth_sdk",
     "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
+    "init:libbegetutil",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
-    "startup_l2:syspara",
   ]
 
   if (distributeddatamgr_power) {

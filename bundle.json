@@ -67,7 +67,7 @@
                 "libhukssdk",
                 "powermgr_client",
                 "system_ability_fwk",
-                "syspara",
+                "init",
                 "cesfwk_innerkits",
                 "libaccountkits",
                 "bytrace_core",
