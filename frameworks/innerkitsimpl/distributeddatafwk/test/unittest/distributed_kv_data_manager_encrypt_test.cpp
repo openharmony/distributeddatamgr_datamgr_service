@@ -85,8 +85,8 @@ void DistributedKvDataManagerEncryptTest::SetUpTestCase(void)
 void DistributedKvDataManagerEncryptTest::TearDownTestCase(void)
 {
     RemoveAllStore(manager);
-    remove((createEnc.baseDir + "/kvdb").c_str());
-    remove(createEnc.baseDir.c_str());
+    (void)remove((createEnc.baseDir + "/kvdb").c_str());
+    (void)remove(createEnc.baseDir.c_str());
 }
 
 void DistributedKvDataManagerEncryptTest::SetUp(void)

@@ -15,22 +15,20 @@
 #define LOG_TAG "KvStoreMetaManager"
 
 #include "kvstore_meta_manager.h"
-
-#include <directory_ex.h>
-#include <file_ex.h>
-#include <unistd.h>
-
 #include <chrono>
 #include <condition_variable>
+#include <directory_ex.h>
+#include <file_ex.h>
 #include <thread>
-
+#include <unistd.h>
 #include "account_delegate.h"
+#include "bootstrap.h"
 #include "constant.h"
+#include "crypto_manager.h"
 #include "device_kvstore_impl.h"
 #include "directory_utils.h"
+#include "dump_helper.h"
 #include "executor_factory.h"
-#include "hks_api.h"
-#include "hks_param.h"
 #include "kvstore_app_manager.h"
 #include "kvstore_data_service.h"
 #include "kvstore_utils.h"
@@ -41,10 +39,8 @@
 #include "rdb_types.h"
 #include "reporter.h"
 #include "serializable/serializable.h"
-#include "bootstrap.h"
 #include "user_delegate.h"
 #include "utils/crypto.h"
-#include "dump_helper.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -158,10 +154,6 @@ void KvStoreMetaManager::InitMetaParameter()
 
     DistributedDB::KvStoreConfig kvStoreConfig {metaDBDirectory_};
     kvStoreDelegateManager_.SetKvStoreConfig(kvStoreConfig);
-
-    vecRootKeyAlias_ = std::vector<uint8_t>(ROOT_KEY_ALIAS, ROOT_KEY_ALIAS + strlen(ROOT_KEY_ALIAS));
-    vecNonce_ = std::vector<uint8_t>(HKS_BLOB_TYPE_NONCE, HKS_BLOB_TYPE_NONCE + strlen(HKS_BLOB_TYPE_NONCE));
-    vecAad_ = std::vector<uint8_t>(HKS_BLOB_TYPE_AAD, HKS_BLOB_TYPE_AAD + strlen(HKS_BLOB_TYPE_AAD));
 }
 
 KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
@@ -335,186 +327,6 @@ Status KvStoreMetaManager::CheckUpdateServiceMeta(const std::vector<uint8_t> &me
     return (dbStatus != DistributedDB::DBStatus::OK) ? Status::DB_ERROR : Status::SUCCESS;
 }
 
-Status KvStoreMetaManager::GenerateRootKey()
-{
-    ZLOGI("GenerateRootKey.");
-    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), &(vecRootKeyAlias_[0]) };
-    struct HksParamSet *paramSet = nullptr;
-    int32_t ret = HksInitParamSet(&paramSet);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
-        return Status::ERROR;
-    }
-
-    struct HksParam genKeyParams[] = {
-        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
-        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
-        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
-        { .tag = HKS_TAG_DIGEST, .uint32Param = 0 },
-        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
-        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-    };
-
-    ret = HksAddParams(paramSet, genKeyParams, sizeof(genKeyParams) / sizeof(genKeyParams[0]));
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksAddParams failed with error %{public}d", ret);
-        HksFreeParamSet(&paramSet);
-        return Status::ERROR;
-    }
-
-    ret = HksBuildParamSet(&paramSet);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksBuildParamSet failed with error %{public}d", ret);
-        HksFreeParamSet(&paramSet);
-        return Status::ERROR;
-    }
-
-    ret = HksGenerateKey(&rootKeyName, paramSet, NULL);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksGenerateKey failed with error %{public}d", ret);
-        HksFreeParamSet(&paramSet);
-        return Status::ERROR;
-    }
-    HksFreeParamSet(&paramSet);
-
-    auto metaDelegate = GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        ZLOGE("GetMetaKvStore return nullptr.");
-        return Status::DB_ERROR;
-    }
-
-    DistributedDB::Key dbKey = std::vector<uint8_t>(Constant::ROOT_KEY_GENERATED.begin(),
-        Constant::ROOT_KEY_GENERATED.end());
-    if (metaDelegate->PutLocal(dbKey, {ROOT_KEY_ALIAS, ROOT_KEY_ALIAS + strlen(ROOT_KEY_ALIAS)}) !=
-        DistributedDB::DBStatus::OK) {
-        return Status::ERROR;
-    }
-    ZLOGI("GenerateRootKey Succeed.");
-    return Status::SUCCESS;
-}
-
-Status KvStoreMetaManager::CheckRootKeyExist()
-{
-    ZLOGI("GenerateRootKey.");
-    auto metaDelegate = GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        ZLOGE("GetMetaKvStore return nullptr.");
-        return Status::DB_ERROR;
-    }
-
-    DistributedDB::Key dbKey = std::vector<uint8_t>(Constant::ROOT_KEY_GENERATED.begin(),
-                                                    Constant::ROOT_KEY_GENERATED.end());
-    DistributedDB::Value dbValue;
-    if (metaDelegate->GetLocal(dbKey, dbValue) == DistributedDB::DBStatus::OK) {
-        ZLOGI("root key exist.");
-        return Status::SUCCESS;
-    }
-    return Status::ERROR;
-}
-
-std::vector<uint8_t> KvStoreMetaManager::EncryptWorkKey(const std::vector<uint8_t> &key)
-{
-    struct HksBlob blobAad = { uint32_t(vecAad_.size()), &(vecAad_[0]) };
-    struct HksBlob blobNonce = { uint32_t(vecNonce_.size()), &(vecNonce_[0]) };
-    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), &(vecRootKeyAlias_[0]) };
-    struct HksBlob plainKey = { uint32_t(key.size()), const_cast<uint8_t *>(&(key[0])) };
-    uint8_t cipherBuf[256] = { 0 };
-    struct HksBlob encryptedKey = { sizeof(cipherBuf), cipherBuf };
-    std::vector<uint8_t> encryptedKeyVec;
-    struct HksParamSet *encryptParamSet = nullptr;
-    int32_t ret = HksInitParamSet(&encryptParamSet);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
-        return {};
-    }
-    struct HksParam encryptParams[] = {
-        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
-        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT },
-        { .tag = HKS_TAG_DIGEST, .uint32Param = 0 },
-        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
-        { .tag = HKS_TAG_NONCE, .blob = blobNonce },
-        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
-    };
-    ret = HksAddParams(encryptParamSet, encryptParams, sizeof(encryptParams) / sizeof(encryptParams[0]));
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksAddParams failed with error %{public}d", ret);
-        HksFreeParamSet(&encryptParamSet);
-        return {};
-    }
-
-    ret = HksBuildParamSet(&encryptParamSet);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksBuildParamSet failed with error %{public}d", ret);
-        HksFreeParamSet(&encryptParamSet);
-        return {};
-    }
-
-    ret = HksEncrypt(&rootKeyName, encryptParamSet, &plainKey, &encryptedKey);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksEncrypt failed with error %{public}d", ret);
-        HksFreeParamSet(&encryptParamSet);
-        return {};
-    }
-    (void)HksFreeParamSet(&encryptParamSet);
-
-    for (uint32_t i = 0; i < encryptedKey.size; i++) {
-        encryptedKeyVec.push_back(encryptedKey.data[i]);
-    }
-    return encryptedKeyVec;
-}
-
-bool KvStoreMetaManager::DecryptWorkKey(const std::vector<uint8_t> &encryptedKey, std::vector<uint8_t> &key)
-{
-    struct HksBlob blobAad = { uint32_t(vecAad_.size()), &(vecAad_[0]) };
-    struct HksBlob blobNonce = { uint32_t(vecNonce_.size()), &(vecNonce_[0]) };
-    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), &(vecRootKeyAlias_[0]) };
-    struct HksBlob encryptedKeyBlob = { uint32_t(encryptedKey.size()), const_cast<uint8_t *>(&(encryptedKey[0])) };
-    uint8_t plainBuf[256] = { 0 };
-    struct HksBlob plainKeyBlob = { sizeof(plainBuf), plainBuf };
-    struct HksParamSet *decryptParamSet = nullptr;
-    int32_t ret = HksInitParamSet(&decryptParamSet);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
-        return false;
-    }
-    struct HksParam decryptParams[] = {
-        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
-        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_DECRYPT },
-        { .tag = HKS_TAG_DIGEST, .uint32Param = 0 },
-        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
-        { .tag = HKS_TAG_NONCE, .blob = blobNonce },
-        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
-    };
-    ret = HksAddParams(decryptParamSet, decryptParams, sizeof(decryptParams) / sizeof(decryptParams[0]));
-    if (ret !=  HKS_SUCCESS) {
-        ZLOGE("HksAddParams failed with error %{public}d", ret);
-        HksFreeParamSet(&decryptParamSet);
-        return false;
-    }
-
-    ret = HksBuildParamSet(&decryptParamSet);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksBuildParamSet failed with error %{public}d", ret);
-        HksFreeParamSet(&decryptParamSet);
-        return false;
-    }
-
-    ret = HksDecrypt(&rootKeyName, decryptParamSet, &encryptedKeyBlob, &plainKeyBlob);
-    if (ret != HKS_SUCCESS) {
-        ZLOGW("HksDecrypt failed with error %{public}d", ret);
-        HksFreeParamSet(&decryptParamSet);
-        return false;
-    }
-    (void)HksFreeParamSet(&decryptParamSet);
-
-    for (uint32_t i = 0; i < plainKeyBlob.size; i++) {
-        key.push_back(plainKeyBlob.data[i]);
-    }
-    return true;
-}
-
 Status KvStoreMetaManager::WriteSecretKeyToMeta(const std::vector<uint8_t> &metaKey, const std::vector<uint8_t> &key)
 {
     ZLOGD("start");
@@ -527,7 +339,7 @@ Status KvStoreMetaManager::WriteSecretKeyToMeta(const std::vector<uint8_t> &meta
     SecretKeyMetaData secretKey;
     secretKey.kvStoreType = KvStoreType::DEVICE_COLLABORATION;
     secretKey.timeValue = TransferTypeToByteArray<time_t>(system_clock::to_time_t(system_clock::now()));
-    secretKey.secretKey = EncryptWorkKey(key);
+    secretKey.secretKey = CryptoManager::GetInstance().Encrypt(key);
     if (secretKey.secretKey.empty()) {
         ZLOGE("encrypt work key error.");
         return Status::CRYPT_ERROR;
@@ -546,7 +358,7 @@ Status KvStoreMetaManager::WriteSecretKeyToMeta(const std::vector<uint8_t> &meta
 Status KvStoreMetaManager::WriteSecretKeyToFile(const std::string &secretKeyFile, const std::vector<uint8_t> &key)
 {
     ZLOGD("start");
-    std::vector<uint8_t> secretKey = EncryptWorkKey(key);
+    std::vector<uint8_t> secretKey = CryptoManager::GetInstance().Encrypt(key);
     if (secretKey.empty()) {
         ZLOGW("encrypt work key error.");
         return Status::CRYPT_ERROR;
@@ -578,14 +390,8 @@ Status KvStoreMetaManager::RemoveSecretKey(pid_t uid, const std::string &bundleN
     }
     const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
     Status status = Status::SUCCESS;
-    DistributedDB::Key secretDbKey = GetMetaKey(userId, "default", bundleName, storeId, "KEY");
     DistributedDB::Key secretSingleDbKey = GetMetaKey(userId, "default", bundleName, storeId, "SINGLE_KEY");
-    DistributedDB::DBStatus dbStatus = metaDelegate->DeleteLocal(secretDbKey);
-    if (dbStatus != DistributedDB::DBStatus::OK) {
-        ZLOGE("delete secretDbKey fail Status %d", static_cast<int>(dbStatus));
-        status = Status::DB_ERROR;
-    }
-    dbStatus = metaDelegate->DeleteLocal(secretSingleDbKey);
+    DistributedDB::DBStatus dbStatus = metaDelegate->DeleteLocal(secretSingleDbKey);
     if (dbStatus != DistributedDB::DBStatus::OK) {
         ZLOGE("delete secretSingleDbKey fail Status %d", static_cast<int>(dbStatus));
         status = Status::DB_ERROR;
@@ -624,7 +430,9 @@ Status KvStoreMetaManager::GetSecretKeyFromMeta(const std::vector<uint8_t> &meta
     }
     SecretKeyMetaData sKeyValue(jsonObj);
     time_t createTime = TransferByteArrayToType<time_t>(sKeyValue.timeValue);
-    DecryptWorkKey(sKeyValue.secretKey, key);
+    if (!CryptoManager::GetInstance().Decrypt(sKeyValue.secretKey, key)) {
+        return Status::ERROR;
+    }
     system_clock::time_point createTimeChrono = system_clock::from_time_t(createTime);
     outdated = ((createTimeChrono + hours(HOURS_PER_YEAR)) < system_clock::now()); // secretKey valid for 1 year.
     return Status::SUCCESS;
@@ -650,7 +458,7 @@ Status KvStoreMetaManager::RecoverSecretKeyFromFile(const std::string &secretKey
     time_t createTime = TransferByteArrayToType<time_t>(timeVec);
     SecretKeyMetaData secretKey;
     secretKey.secretKey.insert(secretKey.secretKey.end(), iter, fileBuffer.end());
-    if (!DecryptWorkKey(secretKey.secretKey, key)) {
+    if (!CryptoManager::GetInstance().Decrypt(secretKey.secretKey, key)) {
         return Status::ERROR;
     }
     system_clock::time_point createTimeChrono = system_clock::from_time_t(createTime);
@@ -671,6 +479,24 @@ Status KvStoreMetaManager::RecoverSecretKeyFromFile(const std::string &secretKey
         return Status::DB_ERROR;
     }
     return Status::SUCCESS;
+}
+
+std::vector<uint8_t> KvStoreMetaManager::GetSecretKeyFromFile(const std::string &secretKeyFile)
+{
+    std::vector<char> fileBuffer;
+    if (!LoadBufferFromFile(secretKeyFile, fileBuffer)) {
+        return {};
+    }
+    if (fileBuffer.size() < sizeof(time_t) / sizeof(uint8_t) + KEY_SIZE) {
+        return {};
+    }
+    auto iter = fileBuffer.begin() + (sizeof(time_t) / sizeof(uint8_t));
+
+    SecretKeyMetaData secretKey;
+    secretKey.secretKey.insert(secretKey.secretKey.end(), iter, fileBuffer.end());
+    std::vector<uint8_t> key;
+    CryptoManager::GetInstance().Decrypt(secretKey.secretKey, key);
+    return key;
 }
 
 void KvStoreMetaManager::ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId,
@@ -1216,7 +1042,7 @@ bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entrie
                 continue;
             }
             metaData.secretKeyMetaData.Unmarshal(secretObj);
-            KvStoreMetaManager::GetInstance().DecryptWorkKey(metaData.secretKeyMetaData.secretKey, decryptKey);
+            CryptoManager::GetInstance().Decrypt(metaData.secretKeyMetaData.secretKey, decryptKey);
         }
         entries.insert({{kvStoreMeta.key.begin(), kvStoreMeta.key.end()}, {metaData}});
         std::fill(decryptKey.begin(), decryptKey.end(), 0);

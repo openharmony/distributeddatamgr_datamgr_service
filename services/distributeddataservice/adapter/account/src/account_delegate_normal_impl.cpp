@@ -21,6 +21,7 @@
 #include <regex>
 #include <thread>
 #include <unistd.h>
+#include "accesstoken_kit.h"
 #include "log_print.h"
 #include "ohos_account_kits.h"
 #include "os_account_manager.h"
@@ -31,6 +32,7 @@ namespace DistributedKv {
 using namespace OHOS::EventFwk;
 using namespace OHOS::AAFwk;
 using namespace OHOS::DistributedData;
+using namespace Security::AccessToken;
 AccountDelegate::BaseInstance AccountDelegate::getInstance_ = AccountDelegateNormalImpl::GetBaseInstance;
 
 AccountDelegateNormalImpl *AccountDelegateNormalImpl::GetInstance()
@@ -69,6 +71,20 @@ std::string AccountDelegateNormalImpl::GetDeviceAccountIdByUID(int32_t uid) cons
         return {};
     }
     return std::to_string(userId);
+}
+
+int32_t AccountDelegateNormalImpl::GetUserByToken(uint32_t tokenId) const
+{
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) == TOKEN_NATIVE) {
+        return 0;
+    }
+
+    HapTokenInfo tokenInfo;
+    if (AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo) != RET_SUCCESS) {
+        return -1;
+    }
+
+    return tokenInfo.userID;
 }
     
 bool AccountDelegateNormalImpl::QueryUsers(std::vector<int> &users)

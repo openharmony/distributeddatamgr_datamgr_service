@@ -33,6 +33,7 @@
 #include "communication_provider.h"
 #include "config_factory.h"
 #include "constant.h"
+#include "crypto_manager.h"
 #include "dds_trace.h"
 #include "device_kvstore_impl.h"
 #include "executor_factory.h"
@@ -102,6 +103,8 @@ KvStoreDataService::~KvStoreDataService()
 {
     ZLOGI("begin.");
     deviceAccountMap_.clear();
+    clientDeathObserverMap_.clear();
+    deviceListeners_.clear();
 }
 
 void KvStoreDataService::Initialize()
@@ -123,14 +126,14 @@ void KvStoreDataService::Initialize()
     InitSecurityAdapter();
     KvStoreMetaManager::GetInstance().InitMetaParameter();
     std::thread th = std::thread([]() {
-        if (KvStoreMetaManager::GetInstance().CheckRootKeyExist() == Status::SUCCESS) {
+        if (CryptoManager::GetInstance().IsExistRootKey()) {
             return;
         }
         constexpr int RETRY_MAX_TIMES = 100;
         int retryCount = 0;
         constexpr int RETRY_TIME_INTERVAL_MILLISECOND = 1 * 1000 * 1000; // retry after 1 second
         while (retryCount < RETRY_MAX_TIMES) {
-            if (KvStoreMetaManager::GetInstance().GenerateRootKey() == Status::SUCCESS) {
+            if (CryptoManager::GetInstance().GenerateRootKey() == Status::SUCCESS) {
                 ZLOGI("GenerateRootKey success.");
                 break;
             }
@@ -234,6 +237,7 @@ Status KvStoreDataService::FillStoreParam(
         ZLOGE("invalid argument type.");
         return Status::INVALID_ARGUMENT;
     }
+    metaData.version = STORE_VERSION;
     metaData.securityLevel = options.securityLevel;
     metaData.storeType = options.kvStoreType;
     metaData.isBackup = options.backup;
@@ -345,7 +349,7 @@ Status KvStoreDataService::UpdateMetaData(const Options &options, const StoreMet
     saveMeta.isEncrypt = options.encrypt;
     saveMeta.storeType = options.kvStoreType;
     saveMeta.schema = options.schema;
-    saveMeta.version = StoreMetaData::CURRENT_VERSION;
+    saveMeta.version = STORE_VERSION;
     saveMeta.securityLevel = options.securityLevel;
     saveMeta.dataDir = KvStoreAppManager::GetDbDir(metaData);
     auto saved = MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
@@ -630,24 +634,17 @@ Status KvStoreDataService::DeleteKvStore(StoreMetaData &metaData)
     }
 
     if (status == Status::SUCCESS) {
-        auto metaKey = metaData.GetKey();
-        if (!MetaDataManager::GetInstance().DelMeta(metaKey)) {
+        if (!MetaDataManager::GetInstance().DelMeta(metaData.GetKey())) {
             ZLOGW("Remove Kvstore MetaData failed.");
         }
-        if (metaData.instanceId == 0) {
-            metaKey = SecretKeyMeta::GetKey({metaData.user, "default", metaData.bundleName, metaData.storeId});
-        } else {
-            metaKey = SecretKeyMeta::GetKey({
-                metaData.user, "default", metaData.bundleName, metaData.storeId, std::to_string(metaData.instanceId)});
-        }
-        MetaDataManager::GetInstance().DelMeta(metaKey, true);
+        MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
         auto secretKeyFile = KvStoreMetaManager::GetSecretSingleKeyFile(
             metaData.user, metaData.bundleName, metaData.storeId, KvStoreAppManager::ConvertPathType(metaData));
         if (!RemoveFile(secretKeyFile)) {
             ZLOGE("remove secretkey file single fail.");
         }
-        metaKey = StrategyMetaData::GetPrefix({
-            metaData.deviceId, metaData.user, "default", metaData.bundleName, metaData.storeId });
+        auto metaKey = StrategyMetaData::GetPrefix(
+            { metaData.deviceId, metaData.user, "default", metaData.bundleName, metaData.storeId });
         MetaDataManager::GetInstance().DelMeta(metaKey);
     }
     return status;
@@ -849,56 +846,42 @@ void KvStoreDataService::StartService()
     // register this to ServiceManager.
     KvStoreMetaManager::GetInstance().InitMetaListener();
     InitObjectStore();
+    backup_ = std::make_unique<BackupHandler>(this);
+    backup_->Initialize();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {
         DumpHelper::GetInstance().AddErrorInfo("StartService: Service publish failed.");
     }
     Uninstaller::GetInstance().Init(this);
-
-    std::string backupPath = BackupHandler::GetBackupPath(
-        AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(getuid()), KvStoreAppManager::PATH_DE);
-    ZLOGI("backupPath is : %s ", backupPath.c_str());
-    if (!ForceCreateDirectory(backupPath)) {
-        ZLOGE("backup create directory failed");
-    }
     // Initialize meta db delegate manager.
-    KvStoreMetaManager::GetInstance().SubscribeMeta(
-        KvStoreMetaRow::KEY_PREFIX, [this](const std::vector<uint8_t> &key, const std::vector<uint8_t> &value,
-                                        CHANGE_FLAG flag) { OnStoreMetaChanged(key, value, flag); });
+    KvStoreMetaManager::GetInstance().SubscribeMeta(KvStoreMetaRow::KEY_PREFIX,
+        [this](const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag) {
+            OnStoreMetaChanged(key, value, flag);
+        });
     UpgradeManager::GetInstance().Init();
     UserDelegate::GetInstance().Init();
 
     // subscribe account event listener to EventNotificationMgr
     AccountDelegate::GetInstance()->SubscribeAccountEvent();
-    auto permissionCheckCallback =
-        [this](const std::string &userId, const std::string &appId, const std::string
-        &storeId, const std::string &deviceId, uint8_t flag) -> bool {
-            // temp add permission whilelist for ddmp; this should be config in ddmp manifest.
-            ZLOGD("checking sync permission start appid:%s, stid:%s.", appId.c_str(), storeId.c_str());
-            return CheckPermissions(userId, appId, storeId, deviceId, flag);
-        };
-    auto dbStatus = KvStoreDelegateManager::SetPermissionCheckCallback(permissionCheckCallback);
+    auto permissionCheck = [this](const std::string &userId, const std::string &appId, const std::string &storeId,
+                               const std::string &deviceId, uint8_t flag) -> bool {
+        // temp add permission whilelist for ddmp; this should be config in ddmp manifest.
+        ZLOGD("Check permission start appid:%{public}s storeId:%{public}s.", appId.c_str(), storeId.c_str());
+        return CheckPermissions(userId, appId, storeId, deviceId, flag);
+    };
+    auto dbStatus = KvStoreDelegateManager::SetPermissionCheckCallback(permissionCheck);
     if (dbStatus != DistributedDB::DBStatus::OK) {
         ZLOGE("SetPermissionCheck callback failed.");
     }
-    auto autoLaunchRequestCallback =
-        [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
-            auto status = ResolveAutoLaunchParamByIdentifier(identifier, param);
-            if (kvdbService_) {
-                kvdbService_->ResolveAutoLaunch(identifier, param);
-            }
-            return status;
-        };
-    KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunchRequestCallback);
-
-    backup_ = std::make_unique<BackupHandler>(this);
+    auto autoLaunch = [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
+        auto status = ResolveAutoLaunchParamByIdentifier(identifier, param);
+        if (kvdbService_) {
+            kvdbService_->ResolveAutoLaunch(identifier, param);
+        }
+        return status;
+    };
+    KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
     backup_->BackSchedule();
-
-    std::thread th = std::thread([]() {
-        sleep(TEN_SEC);
-        KvStoreAppAccessor::GetInstance().EnableKvStoreAutoLaunch();
-    });
-    th.detach();
     DumpHelper::GetInstance().AddDumpOperation(
         std::bind(&KvStoreDataService::DumpAll, this, std::placeholders::_1),
         std::bind(&KvStoreDataService::DumpUserInfo, this, std::placeholders::_1),
@@ -967,7 +950,7 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
                 ZLOGE("Get secret key failed.");
             }
             if (storeMeta.bundleName == Bootstrap::GetInstance().GetProcessLabel()) {
-                param.userId = storeMeta.userId;
+                param.userId = storeMeta.deviceAccountId;
             }
             option.passwd = password;
             option.schema = storeMeta.schema;
@@ -989,7 +972,7 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
 void KvStoreDataService::ResolveAutoLaunchCompatible(const MetaData &meta, const std::string &identifier)
 {
     ZLOGI("AutoLaunch:peer device is old tuple, begin to open store");
-    if (meta.kvStoreType > KvStoreType::SINGLE_VERSION) {
+    if (meta.kvStoreType > KvStoreType::SINGLE_VERSION || meta.kvStoreMetaData.version > STORE_VERSION) {
         ZLOGW("no longer support multi or higher version store type");
         return;
     }
@@ -1004,6 +987,7 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const MetaData &meta, const
     }
     delegateManager->SetKvStoreConfig({ storeMeta.dataDir });
     Options options = {
+        .createIfMissing = false,
         .encrypt = storeMeta.isEncrypt,
         .autoSync = storeMeta.isAutoSync,
         .securityLevel = storeMeta.securityLevel,
@@ -1148,6 +1132,7 @@ Status KvStoreDataService::DeleteKvStoreOnly(const StoreMetaData &metaData)
 void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
 {
     ZLOGI("account event %{public}d changed process, begin.", eventInfo.status);
+    NotifyAccountEvent(eventInfo);
     std::lock_guard<std::mutex> lg(accountMutex_);
     switch (eventInfo.status) {
         case AccountStatus::DEVICE_ACCOUNT_DELETE: {
@@ -1161,11 +1146,11 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 KvStoreUserManager kvStoreUserManager(eventInfo.deviceAccountId);
                 kvStoreUserManager.DeleteAllKvStore();
             }
-            std::initializer_list<std::string> dirList = {Constant::ROOT_PATH_DE, "/",
-                Constant::SERVICE_NAME, "/", eventInfo.deviceAccountId};
+            std::initializer_list<std::string> dirList = { Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
+                eventInfo.deviceAccountId };
             std::string userDir = Constant::Concatenate(dirList);
             ForceRemoveDirectory(userDir);
-            dirList = {Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/", eventInfo.deviceAccountId};
+            dirList = { Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/", eventInfo.deviceAccountId };
             userDir = Constant::Concatenate(dirList);
             ForceRemoveDirectory(userDir);
             g_kvStoreAccountEventStatus = 0;
@@ -1174,7 +1159,6 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
         case AccountStatus::DEVICE_ACCOUNT_SWITCHED: {
             auto ret = DistributedDB::KvStoreDelegateManager::NotifyUserChanged();
             ZLOGI("notify delegate manager result:%{public}d", ret);
-            objectService_->Clear();
             break;
         }
         default: {
@@ -1182,6 +1166,24 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
         }
     }
     ZLOGI("account event %{public}d changed process, end.", eventInfo.status);
+}
+void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
+{
+    sptr<DistributedRdb::RdbServiceImpl> rdbService;
+    sptr<KVDBServiceImpl> kvdbService;
+    sptr<DistributedObject::ObjectServiceImpl> objectService;
+    {
+        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
+        rdbService = rdbService_;
+        kvdbService = kvdbService_;
+        objectService = objectService_;
+    }
+    if (kvdbService) {
+        kvdbService->OnUserChanged();
+    }
+    if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_SWITCHED && objectService) {
+        objectService.clear();
+    }
 }
 
 Status KvStoreDataService::GetLocalDevice(DeviceInfo &device)

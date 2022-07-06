@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#define LOG_TAG "StoreManager"
 #include "store_manager.h"
 
 #include "kvdb_service_client.h"
 #include "security_manager.h"
 #include "store_factory.h"
+#include "log_print.h"
 namespace OHOS::DistributedKv {
 StoreManager &StoreManager::GetInstance()
 {
@@ -28,6 +29,8 @@ StoreManager &StoreManager::GetInstance()
 std::shared_ptr<SingleKvStore> StoreManager::GetKVStore(const AppId &appId, const StoreId &storeId,
     const Options &options, Status &status)
 {
+    ZLOGD("appId:%{public}s, storeId:%{public}s type:%{public}d area:%{public}d dir:%{public}s", appId.appId.c_str(),
+        storeId.storeId.c_str(), options.kvStoreType, options.area, options.baseDir.c_str());
     if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()) {
         status = INVALID_ARGUMENT;
         return nullptr;
@@ -35,7 +38,13 @@ std::shared_ptr<SingleKvStore> StoreManager::GetKVStore(const AppId &appId, cons
 
     auto service = KVDBServiceClient::GetInstance();
     if (service != nullptr) {
-        service->BeforeCreate(appId, storeId, options);
+        status = service->BeforeCreate(appId, storeId, options);
+    }
+
+    if (status == STORE_META_CHANGED) {
+        ZLOGE("appId:%{public}s, storeId:%{public}s type:%{public}d encrypt:%{public}d", appId.appId.c_str(),
+            storeId.storeId.c_str(), options.kvStoreType, options.encrypt);
+        return nullptr;
     }
 
     bool isCreate = false;
@@ -54,6 +63,7 @@ std::shared_ptr<SingleKvStore> StoreManager::GetKVStore(const AppId &appId, cons
 
 Status StoreManager::CloseKVStore(const AppId &appId, const StoreId &storeId)
 {
+    ZLOGD("appId:%{public}s, storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
     if (!appId.IsValid() || !storeId.IsValid()) {
         return INVALID_ARGUMENT;
     }
@@ -74,6 +84,7 @@ Status StoreManager::CloseKVStore(const AppId &appId, std::shared_ptr<SingleKvSt
 
 Status StoreManager::CloseAllKVStore(const AppId &appId)
 {
+    ZLOGD("appId:%{public}s", appId.appId.c_str());
     if (!appId.IsValid()) {
         return INVALID_ARGUMENT;
     }
@@ -83,6 +94,8 @@ Status StoreManager::CloseAllKVStore(const AppId &appId)
 
 Status StoreManager::Delete(const AppId &appId, const StoreId &storeId, const std::string &path)
 {
+    ZLOGD("appId:%{public}s, storeId:%{public}s dir:%{public}s", appId.appId.c_str(), storeId.storeId.c_str(),
+        path.c_str());
     if (!appId.IsValid() || !storeId.IsValid()) {
         return INVALID_ARGUMENT;
     }

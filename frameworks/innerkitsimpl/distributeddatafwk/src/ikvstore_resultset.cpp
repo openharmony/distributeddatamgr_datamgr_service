@@ -20,6 +20,7 @@
 #include "constant.h"
 #include "message_parcel.h"
 #include "log_print.h"
+#include "itypes_util.h"
 
 namespace OHOS::DistributedKv {
 enum {
@@ -140,7 +141,7 @@ Status KvStoreResultSetProxy::GetEntry(Entry &entry)
     }
     bool ret = reply.SetMaxCapacity(Constant::MAX_IPC_CAPACITY);  // 800K
     if (!ret) {
-        ZLOGW("set max capacity failed.");
+        ZLOGE("set max capacity failed.");
         return Status::ERROR;
     }
 
@@ -148,18 +149,33 @@ Status KvStoreResultSetProxy::GetEntry(Entry &entry)
     ZLOGI("start");
     int32_t error = Remote()->SendRequest(GETENTRY, data, reply, mo);
     if (error != 0) {
-        ZLOGW("SendRequest failed, error is %d", error);
+        ZLOGE("SendRequest failed, error is %d", error);
         return Status::IPC_ERROR;
     }
 
-    Status status = static_cast<Status>(reply.ReadInt32());
-    if (status != Status::SUCCESS) {
-        ZLOGW("status not success(%d)", static_cast<int>(status));
-        return status;
+    int32_t status = 0;
+    int32_t bufferSize = 0;
+    if (!ITypesUtil::Unmarshal(reply, status, bufferSize)) {
+        ZLOGE("read status or bufferSize failed");
+        return Status::ERROR;
     }
-    sptr<Entry> valueTmp = reply.ReadParcelable<Entry>();
-    if (valueTmp != nullptr) {
-        entry = *valueTmp;
+
+    if (bufferSize < Constant::SWITCH_RAW_DATA_SIZE) {
+        if (!ITypesUtil::Unmarshal(reply, entry)) {
+            ZLOGE("read entry failed");
+            return Status::ERROR;
+        }
+        return Status::SUCCESS;
+    }
+    ZLOGI("getting large data");
+    if (bufferSize > static_cast<int64_t>(reply.GetRawDataCapacity())) {
+        ZLOGW("bufferSize %d larger than message parcel limit", bufferSize);
+        return Status::ERROR;
+    }
+    status = ITypesUtil::UnmarshalFromBuffer(reply, bufferSize, entry);
+    if (status != Status::SUCCESS) {
+        ZLOGE("read entry failed (%{public}d).", status);
+        return Status::ERROR;
     }
     return Status::SUCCESS;
 }
@@ -197,14 +213,38 @@ bool KvStoreResultSetProxy::SendRequestRetBool(uint32_t code)
 }
 int KvStoreResultSetStub::GetEntryOnRemote(MessageParcel &reply)
 {
+    if (!reply.SetMaxCapacity(Constant::MAX_IPC_CAPACITY)) {
+        ZLOGE("set reply MessageParcel capacity failed");
+        return -1;
+    }
+
     Entry entry;
-    Status ret = GetEntry(entry);
-    if (!reply.WriteInt32(static_cast<int>(ret)) ||
-        !reply.WriteParcelable(&entry)) {
-        ZLOGW("ResultSet service side GetEntry fail.");
+    int32_t status = GetEntry(entry);
+    int32_t bufferSize = entry.RawSize();
+    if (!ITypesUtil::Marshal(reply, status, bufferSize)) {
+        ZLOGE("write status or bufferSize failed.");
+        return -1;
+    }
+    if (bufferSize < Constant::SWITCH_RAW_DATA_SIZE) {
+        if (!ITypesUtil::Marshal(reply, entry)) {
+            ZLOGE("write entry failed.");
+            return -1;
+        }
+        return 0;
+    }
+    ZLOGI("getting big data");
+    if (bufferSize > static_cast<int64_t>(reply.GetRawDataCapacity())) {
+        ZLOGW("bufferSize %d larger than message parcel limit", bufferSize);
+        return 0;
+    }
+    status = ITypesUtil::MarshalToBuffer(entry, bufferSize, reply);
+    if (status != Status::SUCCESS) {
+        ZLOGE("write entry failed (%{public}d).", status);
+        return -1;
     }
     return 0;
 }
+
 int KvStoreResultSetStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
                                           MessageOption &option)
 {

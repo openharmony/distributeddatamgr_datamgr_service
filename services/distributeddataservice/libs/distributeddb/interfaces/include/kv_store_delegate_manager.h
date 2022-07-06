@@ -102,6 +102,8 @@ public:
 
     DB_API static DBStatus SetProcessSystemAPIAdapter(const std::shared_ptr<IProcessSystemApiAdapter> &adapter);
 
+    DB_API static bool IsProcessSystemApiAdapterValid();
+
     DB_API static void SetStoreStatusNotifier(const StoreStatusNotifier &notifier);
 
     DB_API static DBStatus SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback);

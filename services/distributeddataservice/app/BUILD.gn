@@ -68,7 +68,6 @@ config("module_private_config") {
     "src",
     "src/security",
     "//third_party/json/single_include",
-    "//base/security/huks/interfaces/innerkits/huks_standard/main/include",
   ]
 
   cflags = [ "-Wno-multichar" ]
@@ -126,7 +125,6 @@ ohos_shared_library("distributeddataservice") {
     "device_auth:deviceauth_sdk",
     "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
-    "huks:libhukssdk",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",

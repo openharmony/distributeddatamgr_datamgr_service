@@ -31,6 +31,9 @@ protected:
     Convert GetConvert() const override;
     std::vector<uint8_t> ConvertNetwork(const Key &in, bool withLen = false) const;
     std::vector<uint8_t> ToLocal(const Key &in, bool withLen) const;
+
+private:
+    static constexpr size_t MAX_DEV_KEY_LEN = 896;
 };
 }
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_DEVICE_STORE_IMPL_H

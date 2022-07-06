@@ -12,19 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "DistributedKvDataManager"
-
 #include "distributed_kv_data_manager.h"
+
+#include "communication_provider.h"
 #include "constant.h"
+#include "dds_trace.h"
+#include "device_status_change_listener_client.h"
 #include "ikvstore_data_service.h"
 #include "kvstore_service_death_notifier.h"
 #include "log_print.h"
 #include "refbase.h"
 #include "single_kvstore_client.h"
-#include "dds_trace.h"
-#include "communication_provider.h"
-#include "device_status_change_listener_client.h"
+#include "store_manager.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -47,8 +47,13 @@ Status DistributedKvDataManager::GetSingleKvStore(const Options &options, const 
         ZLOGE("invalid storeId.");
         return Status::INVALID_ARGUMENT;
     }
-
     KvStoreServiceDeathNotifier::SetAppId(appId);
+    if (!options.baseDir.empty()) {
+        Status status = Status::INVALID_ARGUMENT;
+        singleKvStore = StoreManager::GetInstance().GetKVStore(appId, storeId, options, status);
+        return status;
+    }
+
     sptr<IKvStoreDataService> kvDataServiceProxy = KvStoreServiceDeathNotifier::GetDistributedKvDataService();
     Status status = Status::SERVER_UNAVAILABLE;
     if (kvDataServiceProxy == nullptr) {
@@ -111,6 +116,11 @@ Status DistributedKvDataManager::CloseKvStore(const AppId &appId, const StoreId 
         return Status::INVALID_ARGUMENT;
     }
 
+    auto status = StoreManager::GetInstance().CloseKVStore(appId, storeId);
+    if (status == SUCCESS) {
+        return status;
+    }
+
     sptr<IKvStoreDataService> kvDataServiceProxy = KvStoreServiceDeathNotifier::GetDistributedKvDataService();
     if (kvDataServiceProxy != nullptr) {
         return kvDataServiceProxy->CloseKvStore(appId, storeId);
@@ -129,10 +139,16 @@ Status DistributedKvDataManager::CloseKvStore(const AppId &appId, std::shared_pt
         return Status::INVALID_ARGUMENT;
     }
     KvStoreServiceDeathNotifier::SetAppId(appId);
+    StoreId storeId = kvStorePtr->GetStoreId();
+    kvStorePtr = nullptr;
+
+    auto status = StoreManager::GetInstance().CloseKVStore(appId, storeId);
+    if (status == SUCCESS) {
+        return status;
+    }
+
     sptr<IKvStoreDataService> kvDataServiceProxy = KvStoreServiceDeathNotifier::GetDistributedKvDataService();
     if (kvDataServiceProxy != nullptr) {
-        StoreId storeId = kvStorePtr->GetStoreId();
-        kvStorePtr = nullptr;
         return kvDataServiceProxy->CloseKvStore(appId, storeId);
     }
     ZLOGE("proxy is nullptr.");
@@ -145,12 +161,23 @@ Status DistributedKvDataManager::CloseAllKvStore(const AppId &appId)
         TraceSwitch::BYTRACE_ON | TraceSwitch::TRACE_CHAIN_ON);
 
     KvStoreServiceDeathNotifier::SetAppId(appId);
+
+    auto status = StoreManager::GetInstance().CloseAllKVStore(appId);
+    Status remote = SERVER_UNAVAILABLE;
     sptr<IKvStoreDataService> kvDataServiceProxy = KvStoreServiceDeathNotifier::GetDistributedKvDataService();
     if (kvDataServiceProxy != nullptr) {
-        return kvDataServiceProxy->CloseAllKvStore(appId);
+        remote = kvDataServiceProxy->CloseAllKvStore(appId);
     }
-    ZLOGE("proxy is nullptr.");
-    return Status::SERVER_UNAVAILABLE;
+    if (status != SUCCESS && status != STORE_NOT_OPEN) {
+        return status;
+    }
+    if (remote != SUCCESS && remote != STORE_NOT_OPEN) {
+        return remote;
+    }
+    if (status == STORE_NOT_OPEN && remote == STORE_NOT_OPEN) {
+        return STORE_NOT_OPEN;
+    }
+    return SUCCESS;
 }
 
 Status DistributedKvDataManager::DeleteKvStore(const AppId &appId, const StoreId &storeId, const std::string &path)
@@ -165,6 +192,10 @@ Status DistributedKvDataManager::DeleteKvStore(const AppId &appId, const StoreId
     }
 
     KvStoreServiceDeathNotifier::SetAppId(appId);
+    if (!path.empty()) {
+        return StoreManager::GetInstance().Delete(appId, storeId, path);
+    }
+
     sptr<IKvStoreDataService> kvDataServiceProxy = KvStoreServiceDeathNotifier::GetDistributedKvDataService();
     if (kvDataServiceProxy != nullptr) {
         return kvDataServiceProxy->DeleteKvStore(appId, storeId);
@@ -177,8 +208,23 @@ Status DistributedKvDataManager::DeleteAllKvStore(const AppId &appId, const std:
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__),
         TraceSwitch::BYTRACE_ON | TraceSwitch::TRACE_CHAIN_ON);
-
     KvStoreServiceDeathNotifier::SetAppId(appId);
+
+    if (!path.empty()) {
+        std::vector<StoreId> storeIds;
+        Status status = GetAllKvStoreId(appId, storeIds);
+        if (status != SUCCESS) {
+            return status;
+        }
+        for (auto &storeId : storeIds) {
+            status = StoreManager::GetInstance().Delete(appId, storeId, path);
+            if (status != SUCCESS) {
+                return status;
+            }
+        }
+        return SUCCESS;
+    }
+
     sptr<IKvStoreDataService> kvDataServiceProxy = KvStoreServiceDeathNotifier::GetDistributedKvDataService();
     if (kvDataServiceProxy != nullptr) {
         return kvDataServiceProxy->DeleteAllKvStore(appId);

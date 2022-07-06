@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_STUB_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_STUB_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H
+#define OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H
 #include "iremote_stub.h"
 #include "kvdb_service.h"
 namespace OHOS::DistributedKv {
@@ -44,4 +44,4 @@ private:
     static const Handler HANDLERS[TRANS_BUTT];
 };
 } // namespace OHOS::DistributedKv
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_KVDB_SERVICE_STUB_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H

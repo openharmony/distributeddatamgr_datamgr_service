@@ -54,6 +54,16 @@ std::string Constant::Join(const std::string &prefix, const std::string &separat
     return result;
 }
 
+bool Constant::Equal(bool first, bool second)
+{
+    return (first && second) || (!first && !second);
+}
+
+bool Constant::NotEqual(bool first, bool second)
+{
+    return (first || second) && (!first || !second);
+}
+
 bool Constant::IsBackground(pid_t pid)
 {
     std::ifstream ifs("/proc/" + std::to_string(pid) + "/cgroup", std::ios::in);

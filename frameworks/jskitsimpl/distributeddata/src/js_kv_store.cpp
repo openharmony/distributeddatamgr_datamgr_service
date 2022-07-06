@@ -163,11 +163,11 @@ napi_value JsKVStore::Delete(napi_env env, napi_callback_info info)
         ctxt->status = napi_typeof(env, argv[0], &(ctxt->type));
         if (ctxt->type == napi_string) {
             ctxt->status = JSUtil::GetValue(env, argv[0], ctxt->key);
-            ZLOGD("kvStore->Put return %{public}d", ctxt->status);
+            ZLOGD("kvStore->Delete %{public}.6s  status:%{public}d", ctxt->key.c_str(), ctxt->status);
             CHECK_STATUS_RETURN_VOID(ctxt, "invalid arg[0], i.e. invalid key!");
         } else if (ctxt->type == napi_object) {
             ctxt->status = JSUtil::GetValue(env, argv[0], ctxt->keys);
-            ZLOGD("kvStoreDataShare->Delete return %{public}d", ctxt->status);
+            ZLOGD("kvStore->Delete status:%{public}d", ctxt->status);
             CHECK_STATUS_RETURN_VOID(ctxt, "invalid arg[0], i.e. invalid predicates!");
         }
     });
@@ -177,13 +177,13 @@ napi_value JsKVStore::Delete(napi_env env, napi_callback_info info)
             OHOS::DistributedKv::Key key(ctxt->key);
             auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
             Status status = kvStore->Delete(key);
-            ZLOGD("kvStore->Put return %{public}d", status);
+            ZLOGD("kvStore->Delete %{public}.6s status:%{public}d", ctxt->key.c_str(), status);
             ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
             CHECK_STATUS_RETURN_VOID(ctxt, "kvStore->Delete() failed!");
         } else if (ctxt->type == napi_object) {
             auto& kvStore = reinterpret_cast<JsKVStore*>(ctxt->native)->kvStore_;
             Status status = kvStore->DeleteBatch(ctxt->keys);
-            ZLOGD("kv Datashare Delete return %{public}d", status);
+            ZLOGD("kvStore->DeleteBatch status:%{public}d", status);
         }
     });
 }

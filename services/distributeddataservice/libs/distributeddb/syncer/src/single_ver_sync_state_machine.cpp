@@ -400,7 +400,7 @@ Event SingleVerSyncStateMachine::DoPassiveDataSyncWithSlidingWindow()
         RefObject::AutoLock lock(context_);
         if (context_->GetRspTargetQueueSize() != 0) {
             PreStartPullResponse();
-        } else {
+        } else if (context_->GetRetryStatus() == static_cast<int>(SyncTaskContext::NO_NEED_RETRY)) {
             return RESPONSE_TASK_FINISHED_EVENT;
         }
     }

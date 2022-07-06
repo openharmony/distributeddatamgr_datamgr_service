@@ -16,6 +16,7 @@
 #include "device_store_impl.h"
 
 #include <endian.h>
+#include <iomanip>
 #include <regex>
 
 #include "dev_manager.h"
@@ -33,8 +34,8 @@ std::vector<uint8_t> DeviceStoreImpl::ToLocal(const Key &in, bool withLen) const
         return {};
     }
 
-    std::vector<uint8_t> input = withLen ? SingleStoreImpl::GetPrefix(in) : in.Data();
-    if (input.empty()) {
+    std::vector<uint8_t> original = TrimKey(in);
+    if ((original.empty() && withLen) || original.size() > MAX_DEV_KEY_LEN) {
         return {};
     }
 
@@ -42,7 +43,7 @@ std::vector<uint8_t> DeviceStoreImpl::ToLocal(const Key &in, bool withLen) const
     // |---- -----|------------|---4----|
     std::vector<uint8_t> dbKey;
     dbKey.insert(dbKey.end(), uuid.begin(), uuid.end());
-    dbKey.insert(dbKey.end(), input.begin(), input.end());
+    dbKey.insert(dbKey.end(), original.begin(), original.end());
     if (withLen) {
         uint32_t length = uuid.length();
         length = htole32(length);
@@ -80,21 +81,23 @@ Key DeviceStoreImpl::ToKey(DBKey &&key) const
 
 std::vector<uint8_t> DeviceStoreImpl::GetPrefix(const Key &prefix) const
 {
-    // |  uuid    |original key|
-    // |---- -----|------------|
+    // |  length  | networkId | original key |
+    // |----4-----|-----------|--------------|
     return ConvertNetwork(prefix);
 }
 
 std::vector<uint8_t> DeviceStoreImpl::GetPrefix(const DataQuery &query) const
 {
-    std::vector<uint8_t> prefix;
-    uint32_t length = query.deviceId_.size();
-    prefix.insert(prefix.end(), &length, &length + sizeof(length));
-    prefix.insert(prefix.end(), query.deviceId_.begin(), query.deviceId_.end());
-    prefix.insert(prefix.end(), query.prefix_.begin(), query.prefix_.end());
-    // |  uuid    |original key|
-    // |---- -----|------------|
-    return ConvertNetwork(std::move(prefix));
+    if (query.deviceId_.empty()) {
+        return ConvertNetwork(query.prefix_);
+    }
+    // |  length  | networkId | original key |
+    // |----4-----|-----------|--------------|
+    std::ostringstream oss;
+    oss << std::setfill('0') << std::setw(sizeof(uint32_t)) << query.deviceId_.length();
+    oss << query.deviceId_ << query.prefix_;
+    std::string prefix = oss.str();
+    return ConvertNetwork(prefix);
 }
 
 SingleStoreImpl::Convert DeviceStoreImpl::GetConvert() const
@@ -110,7 +113,10 @@ SingleStoreImpl::Convert DeviceStoreImpl::GetConvert() const
         }
 
         length = le32toh(length);
-        deviceId = { key.begin(), key.begin() + length };
+        if (deviceId.empty()) {
+            deviceId = DevManager::GetInstance().ToNetworkId({ key.begin(), key.begin() + length });
+        }
+
         Key result(std::vector<uint8_t>(key.begin() + length, key.end() - sizeof(uint32_t)));
         return std::move(key);
     };
@@ -119,35 +125,50 @@ SingleStoreImpl::Convert DeviceStoreImpl::GetConvert() const
 std::vector<uint8_t> DeviceStoreImpl::ConvertNetwork(const Key &in, bool withLen) const
 {
     // input
-    // | network ID len | networkID | original key|
-    // |--------4-------|-----------|------------|
+    // | network ID len | networkID | original key |
+    // |--------4-------|-----------|--------------|
+    size_t begin = 0;
     if (in.Size() < sizeof(uint32_t)) {
         return ToLocal(in, withLen);
     }
-    std::string deviceLen(in.Data().data(), in.Data().data() + sizeof(uint32_t));
+    std::string deviceLen(in.Data().begin() + begin, in.Data().begin() + begin + sizeof(uint32_t));
     std::regex patten("^[0-9]*$");
     if (!std::regex_match(deviceLen, patten)) {
+        // | original key |
+        // |--------------|
         return ToLocal(in, withLen);
     }
 
-    uint32_t devLen = atol(deviceLen.c_str());
+    size_t devLen = static_cast<size_t>(atol(deviceLen.c_str()));
     if (devLen > in.Data().size() + sizeof(uint32_t)) {
+        // | original key |
+        // |--------------|
         return ToLocal(in, withLen);
     }
+    begin += sizeof(uint32_t);
 
-    std::string networkId(in.Data().begin() + sizeof(uint32_t), in.Data().begin() + sizeof(uint32_t) + devLen);
+    std::string networkId(in.Data().begin() + begin, in.Data().begin() + begin + devLen);
     std::string uuid = DevManager::GetInstance().ToUUID(networkId);
     if (uuid.empty()) {
-        return ToLocal(in, withLen);
+        // | original key |
+        // |--------------|
+        return devLen != DevManager::MAX_ID_LEN ? ToLocal(in, withLen) : std::vector<uint8_t>();
     }
+    begin += devLen;
 
     // output
     // | device uuid | original key | uuid len |
     // |-------------|--------------|----4-----|
     // |  Mandatory  |   Mandatory  | Optional |
+    std::vector<uint8_t> original{ in.Data().begin() + begin, in.Data().end() };
+    original = TrimKey(std::move(original));
+    if ((original.empty() && withLen) || original.size() > MAX_DEV_KEY_LEN) {
+        return {};
+    }
+
     std::vector<uint8_t> out;
     out.insert(out.end(), uuid.begin(), uuid.end());
-    out.insert(out.end(), in.Data().begin() + sizeof(uint32_t) + devLen, in.Data().end());
+    out.insert(out.end(), original.begin(), original.end());
     if (withLen) {
         uint32_t length = uuid.length();
         length = htole32(length);
@@ -156,4 +177,4 @@ std::vector<uint8_t> DeviceStoreImpl::ConvertNetwork(const Key &in, bool withLen
     }
     return out;
 }
-}
+} // namespace OHOS::DistributedKv

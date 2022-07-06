@@ -75,15 +75,20 @@ public:
     Status UnsubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query) override;
 
 protected:
-    static constexpr size_t MAX_KEY_LENGTH = 1024;
     virtual std::vector<uint8_t> ToLocalDBKey(const Key &key) const;
     virtual std::vector<uint8_t> ToWholeDBKey(const Key &key) const;
     virtual Key ToKey(DBKey &&key) const;
     virtual std::vector<uint8_t> GetPrefix(const Key &prefix) const;
     virtual std::vector<uint8_t> GetPrefix(const DataQuery &query) const;
     virtual Convert GetConvert() const;
+    std::vector<uint8_t> TrimKey(const Key &prefix) const;
 
 private:
+    static constexpr size_t MAX_KEY_LENGTH = 1024;
+    static constexpr size_t MAX_VALUE_LENGTH = 4 * 1024 * 1024;
+    static constexpr size_t MAX_OBSERVER_SIZE = 8;
+    std::shared_ptr<ObserverBridge> PutIn(uint32_t &realType, std::shared_ptr<Observer> observer);
+    std::shared_ptr<ObserverBridge> TakeOut(uint32_t &realType, std::shared_ptr<Observer> observer);
     Status GetResultSet(const DistributedDB::Query &query, std::shared_ptr<ResultSet> &resultSet) const;
     Status GetEntries(const DistributedDB::Query &query, std::vector<Entry> &entries) const;
     Status DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer);

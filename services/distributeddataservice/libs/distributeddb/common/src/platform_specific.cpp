@@ -99,7 +99,7 @@ void SplitFilePath(const std::string &filePath, std::string &fileDir, std::strin
 
 int MakeDBDirectory(const std::string &directory)
 {
-    int errCode = mkdir(directory.c_str(), (S_IRWXU | S_IRGRP | S_IXGRP)); // The permission is 750 for linux based os
+    int errCode = mkdir(directory.c_str(), (S_IRWXU | S_IRWXG)); // The permission is 770 for linux based os
     if (errCode < 0) {
         LOGE("[MakeDir] Make directory fail:%d.", errno);
         return -E_SYSTEM_API_FAIL;
@@ -114,7 +114,7 @@ int RemoveDBDirectory(const std::string &directory)
 
 int CreateFileByFileName(const std::string &fileName)
 {
-    int fp = open(fileName.c_str(), (O_WRONLY | O_CREAT), (S_IRUSR | S_IWUSR | S_IRGRP));
+    int fp = open(fileName.c_str(), (O_WRONLY | O_CREAT), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP));
     if (fp < 0) {
         LOGE("[CreateFile] Create file fail:%d.", errno);
         return -E_SYSTEM_API_FAIL;

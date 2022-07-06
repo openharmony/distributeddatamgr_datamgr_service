@@ -253,7 +253,7 @@ HWTEST_F(SingleStoreImplTest, SubscribeKvStore, TestSize.Level0)
     ASSERT_EQ(status, STORE_ALREADY_SUBSCRIBE);
     status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_ALL, observer);
     ASSERT_EQ(status, STORE_ALREADY_SUBSCRIBE);
-    status = kvStore_->SubscribeKvStore(DEFAULT, observer);
+    status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_ALL, observer);
     ASSERT_EQ(status, STORE_ALREADY_SUBSCRIBE);
     status = kvStore_->Put({ "Put Test" }, { "Put Value" });
     ASSERT_EQ(status, SUCCESS);
@@ -273,6 +273,67 @@ HWTEST_F(SingleStoreImplTest, SubscribeKvStore, TestSize.Level0)
     ASSERT_EQ(observer->insert_.size(), 0);
     ASSERT_EQ(observer->update_.size(), 0);
     ASSERT_EQ(observer->delete_.size(), 1);
+}
+
+/**
+* @tc.name: SubscribeKvStore002
+* @tc.desc: subscribe local
+* @tc.type: FUNC
+* @tc.require: I4XVQQ
+* @tc.author: Hollokin
+*/
+HWTEST_F(SingleStoreImplTest, SubscribeKvStore002, TestSize.Level0)
+{
+    ASSERT_NE(kvStore_, nullptr);
+    std::shared_ptr<TestObserver> subscribedObserver;
+    std::shared_ptr<TestObserver> unSubscribedObserver;
+    for (int i = 0; i < 15; ++i) {
+        auto observer = std::make_shared<TestObserver>();
+        auto status1 = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_LOCAL, observer);
+        auto status2 = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_REMOTE, observer);
+        if (i < 8) {
+            ASSERT_EQ(status1, SUCCESS);
+            ASSERT_EQ(status2, SUCCESS);
+            subscribedObserver = observer;
+        } else {
+            ASSERT_EQ(status1, OVER_MAX_SUBSCRIBE_LIMITS);
+            ASSERT_EQ(status2, OVER_MAX_SUBSCRIBE_LIMITS);
+            unSubscribedObserver = observer;
+        }
+    }
+
+    auto status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_LOCAL, subscribedObserver);
+    ASSERT_EQ(status, STORE_ALREADY_SUBSCRIBE);
+
+    status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_LOCAL, {});
+    ASSERT_EQ(status, INVALID_ARGUMENT);
+
+    status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_REMOTE, subscribedObserver);
+    ASSERT_EQ(status, STORE_ALREADY_SUBSCRIBE);
+
+    status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_ALL, subscribedObserver);
+    ASSERT_EQ(status, STORE_ALREADY_SUBSCRIBE);
+
+    status = kvStore_->UnSubscribeKvStore(SUBSCRIBE_TYPE_LOCAL, subscribedObserver);
+    ASSERT_EQ(status, SUCCESS);
+    status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_LOCAL, subscribedObserver);
+    ASSERT_EQ(status, SUCCESS);
+
+    status = kvStore_->UnSubscribeKvStore(SUBSCRIBE_TYPE_ALL, subscribedObserver);
+    ASSERT_EQ(status, SUCCESS);
+    status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_LOCAL, unSubscribedObserver);
+    ASSERT_EQ(status, SUCCESS);
+    subscribedObserver = unSubscribedObserver;
+    status = kvStore_->UnSubscribeKvStore(SUBSCRIBE_TYPE_LOCAL, subscribedObserver);
+    ASSERT_EQ(status, SUCCESS);
+    auto observer = std::make_shared<TestObserver>();
+    status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_LOCAL, observer);
+    ASSERT_EQ(status, SUCCESS);
+    status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_ALL, observer);
+    ASSERT_EQ(status, SUCCESS);
+    observer = std::make_shared<TestObserver>();
+    status = kvStore_->SubscribeKvStore(SUBSCRIBE_TYPE_ALL, observer);
+    ASSERT_EQ(status, OVER_MAX_SUBSCRIBE_LIMITS);
 }
 
 /**

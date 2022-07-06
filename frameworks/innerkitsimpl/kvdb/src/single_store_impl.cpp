@@ -47,15 +47,16 @@ Status SingleStoreImpl::Put(const Key &key, const Value &value)
     }
 
     DBKey dbKey = ToLocalDBKey(key);
-    if (dbKey.empty()) {
-        ZLOGE("invalid key:%{public}s, size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
+    if (dbKey.empty() || value.Size() > MAX_VALUE_LENGTH) {
+        ZLOGE("invalid key:%{public}s size:[k:%{public}zu v:%{public}zu]",
+            StoreUtil::Anonymous(key.ToString()).c_str(), key.Size(), value.Size());
         return INVALID_ARGUMENT;
     }
 
     auto dbStatus = dbStore_->Put(dbKey, value);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, key:%{public}s, value size:%{public}zu", status,
+        ZLOGE("status:0x%{public}x key:%{public}s, value size:%{public}zu", status,
             StoreUtil::Anonymous(key.ToString()).c_str(), value.Size());
     }
     DoAutoSync();
@@ -75,9 +76,9 @@ Status SingleStoreImpl::PutBatch(const std::vector<Entry> &entries)
     for (const auto &entry : entries) {
         DBEntry dbEntry;
         dbEntry.key = ToLocalDBKey(entry.key);
-        if (dbEntry.key.empty()) {
-            ZLOGE("invalid key:%{public}s, size:%{public}zu", StoreUtil::Anonymous(entry.key.ToString()).c_str(),
-                entry.key.Size());
+        if (dbEntry.key.empty() || entry.value.Size() > MAX_VALUE_LENGTH) {
+            ZLOGE("invalid key:%{public}s size:[k:%{public}zu v:%{public}zu]",
+                StoreUtil::Anonymous(entry.key.ToString()).c_str(), entry.key.Size(), entry.value.Size());
             return INVALID_ARGUMENT;
         }
         dbEntry.value = entry.value;
@@ -86,7 +87,7 @@ Status SingleStoreImpl::PutBatch(const std::vector<Entry> &entries)
     auto dbStatus = dbStore_->PutBatch(dbEntries);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, entries size:%{public}zu", status, entries.size());
+        ZLOGE("status:0x%{public}x entries size:%{public}zu", status, entries.size());
     }
     DoAutoSync();
     return status;
@@ -103,14 +104,14 @@ Status SingleStoreImpl::Delete(const Key &key)
 
     DBKey dbKey = ToLocalDBKey(key);
     if (dbKey.empty()) {
-        ZLOGE("invalid key:%{public}s, size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
+        ZLOGE("invalid key:%{public}s size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
         return INVALID_ARGUMENT;
     }
 
     auto dbStatus = dbStore_->Delete(dbKey);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, key:%{public}s", status, StoreUtil::Anonymous(key.ToString()).c_str());
+        ZLOGE("status:0x%{public}x key:%{public}s", status, StoreUtil::Anonymous(key.ToString()).c_str());
     }
     DoAutoSync();
     return status;
@@ -129,7 +130,7 @@ Status SingleStoreImpl::DeleteBatch(const std::vector<Key> &keys)
     for (const auto &key : keys) {
         DBKey dbKey = ToLocalDBKey(key);
         if (dbKey.empty()) {
-            ZLOGE("invalid key:%{public}s, size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
+            ZLOGE("invalid key:%{public}s size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
             return INVALID_ARGUMENT;
         }
         dbKeys.push_back(std::move(dbKey));
@@ -138,7 +139,7 @@ Status SingleStoreImpl::DeleteBatch(const std::vector<Key> &keys)
     auto dbStatus = dbStore_->DeleteBatch(dbKeys);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, keys size:%{public}zu", status, keys.size());
+        ZLOGE("status:0x%{public}x keys size:%{public}zu", status, keys.size());
     }
     DoAutoSync();
     return status;
@@ -210,27 +211,9 @@ Status SingleStoreImpl::SubscribeKvStore(SubscribeType type, std::shared_ptr<Obs
     }
 
     uint32_t realType = type;
-    std::shared_ptr<ObserverBridge> bridge = nullptr;
-    observers_.Compute(uintptr_t(observer.get()),
-        [this, &realType, observer, &bridge](const auto &, std::pair<uint32_t, std::shared_ptr<ObserverBridge>> &pair) {
-            if ((pair.first & realType) == realType) {
-                return (pair.first != 0);
-            }
-            if (pair.first == 0) {
-                auto release = BridgeReleaser();
-                StoreId storeId{ storeId_ };
-                AppId appId{ appId_ };
-                pair.second = std::shared_ptr<ObserverBridge>(
-                    new ObserverBridge(appId, storeId, observer, GetConvert()), release);
-            }
-            bridge = pair.second;
-            realType = (realType & (~pair.first));
-            pair.first = pair.first | realType;
-            return (pair.first != 0);
-        });
-
+    std::shared_ptr<ObserverBridge> bridge = PutIn(realType, observer);
     if (bridge == nullptr) {
-        return STORE_ALREADY_SUBSCRIBE;
+        return (realType == type) ? OVER_MAX_SUBSCRIBE_LIMITS : STORE_ALREADY_SUBSCRIBE;
     }
 
     Status status = SUCCESS;
@@ -239,12 +222,15 @@ Status SingleStoreImpl::SubscribeKvStore(SubscribeType type, std::shared_ptr<Obs
         status = StoreUtil::ConvertStatus(dbStatus);
     }
 
-    if ((realType & SUBSCRIBE_TYPE_REMOTE) == SUBSCRIBE_TYPE_REMOTE) {
-        bridge->RegisterRemoteObserver();
+    if (((realType & SUBSCRIBE_TYPE_REMOTE) == SUBSCRIBE_TYPE_REMOTE) && status == SUCCESS) {
+        realType &= ~SUBSCRIBE_TYPE_LOCAL;
+        status = bridge->RegisterRemoteObserver();
     }
 
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, type:%{public}d, observer:0x%x", status, type, StoreUtil::Anonymous(bridge.get()));
+        ZLOGE("status:0x%{public}x type:%{public}d->%{public}d observer:0x%{public}x", status, type, realType,
+            StoreUtil::Anonymous(bridge.get()));
+        TakeOut(realType, observer);
     }
     return status;
 }
@@ -264,18 +250,7 @@ Status SingleStoreImpl::UnSubscribeKvStore(SubscribeType type, std::shared_ptr<O
     }
 
     uint32_t realType = type;
-    std::shared_ptr<ObserverBridge> bridge = nullptr;
-    observers_.ComputeIfPresent(uintptr_t(observer.get()),
-        [&realType, observer, &bridge](const auto &, std::pair<uint32_t, std::shared_ptr<ObserverBridge>> &pair) {
-            if ((pair.first & realType) == 0) {
-                return (pair.first != 0);
-            }
-            realType = (realType & pair.first);
-            pair.first = (pair.first & (~realType));
-            bridge = pair.second;
-            return (pair.first != 0);
-        });
-
+    std::shared_ptr<ObserverBridge> bridge = TakeOut(realType, observer);
     if (bridge == nullptr) {
         return STORE_NOT_SUBSCRIBE;
     }
@@ -286,12 +261,14 @@ Status SingleStoreImpl::UnSubscribeKvStore(SubscribeType type, std::shared_ptr<O
         status = StoreUtil::ConvertStatus(dbStatus);
     }
 
-    if ((realType & SUBSCRIBE_TYPE_REMOTE) == SUBSCRIBE_TYPE_REMOTE) {
-        bridge->UnregisterRemoteObserver();
+    if (((realType & SUBSCRIBE_TYPE_REMOTE) == SUBSCRIBE_TYPE_REMOTE) && status == SUCCESS) {
+        realType &= ~SUBSCRIBE_TYPE_LOCAL;
+        status = bridge->UnregisterRemoteObserver();
     }
 
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, type:%{public}d, observer:0x%x", status, type, StoreUtil::Anonymous(bridge.get()));
+        ZLOGE("status:0x%{public}x type:%{public}d->%{public}d observer:0x%{public}x", status, type, realType,
+            StoreUtil::Anonymous(bridge.get()));
     }
     return status;
 }
@@ -307,7 +284,7 @@ Status SingleStoreImpl::Get(const Key &key, Value &value)
 
     DBKey dbKey = ToWholeDBKey(key);
     if (dbKey.empty()) {
-        ZLOGE("invalid key:%{public}s, size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
+        ZLOGE("invalid key:%{public}s size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
         return INVALID_ARGUMENT;
     }
 
@@ -316,7 +293,7 @@ Status SingleStoreImpl::Get(const Key &key, Value &value)
     value = std::move(dbValue);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, key:%{public}s", status, StoreUtil::Anonymous(key.ToString()).c_str());
+        ZLOGE("status:0x%{public}x key:%{public}s", status, StoreUtil::Anonymous(key.ToString()).c_str());
     }
     return status;
 }
@@ -326,7 +303,7 @@ Status SingleStoreImpl::GetEntries(const Key &prefix, std::vector<Entry> &entrie
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     DBKey dbPrefix = GetPrefix(prefix);
     if (dbPrefix.empty() && !prefix.Empty()) {
-        ZLOGE("invalid prefix:%{public}s, size:%{public}zu", StoreUtil::Anonymous(prefix.ToString()).c_str(),
+        ZLOGE("invalid prefix:%{public}s size:%{public}zu", StoreUtil::Anonymous(prefix.ToString()).c_str(),
             prefix.Size());
         return INVALID_ARGUMENT;
     }
@@ -335,7 +312,7 @@ Status SingleStoreImpl::GetEntries(const Key &prefix, std::vector<Entry> &entrie
     dbQuery.PrefixKey(dbPrefix);
     auto status = GetEntries(dbQuery, entries);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, prefix:%{public}s", status, StoreUtil::Anonymous(prefix.ToString()).c_str());
+        ZLOGE("status:0x%{public}x prefix:%{public}s", status, StoreUtil::Anonymous(prefix.ToString()).c_str());
     }
     return status;
 }
@@ -347,7 +324,7 @@ Status SingleStoreImpl::GetEntries(const DataQuery &query, std::vector<Entry> &e
     dbQuery.PrefixKey(GetPrefix(query));
     auto status = GetEntries(dbQuery, entries);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, query:%{public}s", status, StoreUtil::Anonymous(query.ToString()).c_str());
+        ZLOGE("status:0x%{public}x query:%{public}s", status, StoreUtil::Anonymous(query.ToString()).c_str());
     }
     return status;
 }
@@ -357,7 +334,7 @@ Status SingleStoreImpl::GetResultSet(const Key &prefix, std::shared_ptr<ResultSe
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     DBKey dbPrefix = GetPrefix(prefix);
     if (dbPrefix.empty() && !prefix.Empty()) {
-        ZLOGE("invalid prefix:%{public}s, size:%{public}zu", StoreUtil::Anonymous(prefix.ToString()).c_str(),
+        ZLOGE("invalid prefix:%{public}s size:%{public}zu", StoreUtil::Anonymous(prefix.ToString()).c_str(),
             prefix.Size());
         return INVALID_ARGUMENT;
     }
@@ -366,7 +343,7 @@ Status SingleStoreImpl::GetResultSet(const Key &prefix, std::shared_ptr<ResultSe
     dbQuery.PrefixKey(dbPrefix);
     auto status = GetResultSet(dbQuery, resultSet);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, prefix:%{public}s", status, StoreUtil::Anonymous(prefix.ToString()).c_str());
+        ZLOGE("status:0x%{public}x prefix:%{public}s", status, StoreUtil::Anonymous(prefix.ToString()).c_str());
     }
     return status;
 }
@@ -378,7 +355,7 @@ Status SingleStoreImpl::GetResultSet(const DataQuery &query, std::shared_ptr<Res
     dbQuery.PrefixKey(GetPrefix(query));
     auto status = GetResultSet(dbQuery, resultSet);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, query:%{public}s", status, StoreUtil::Anonymous(query.ToString()).c_str());
+        ZLOGE("status:0x%{public}x query:%{public}s", status, StoreUtil::Anonymous(query.ToString()).c_str());
     }
     return status;
 }
@@ -432,8 +409,7 @@ Status SingleStoreImpl::GetSecurityLevel(SecurityLevel &secLevel) const
     secLevel = static_cast<SecurityLevel>(StoreUtil::GetSecLevel(option));
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, security:[%{public}d, %{public}d]", status, option.securityFlag,
-            option.securityLabel);
+        ZLOGE("status:0x%{public}x security:[%{public}d]", status, option.securityLabel);
     }
     return status;
 }
@@ -450,7 +426,7 @@ Status SingleStoreImpl::RemoveDeviceData(const std::string &device)
     auto dbStatus = dbStore_->RemoveDeviceData(DevManager::GetInstance().ToUUID(device));
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
-        ZLOGE("status:0x%{public}x, device:%{public}s", status, StoreUtil::Anonymous(device).c_str());
+        ZLOGE("status:0x%{public}x device:%{public}s", status, StoreUtil::Anonymous(device).c_str());
     }
     return status;
 }
@@ -646,6 +622,51 @@ std::function<void(ObserverBridge *)> SingleStoreImpl::BridgeReleaser()
     };
 }
 
+std::shared_ptr<ObserverBridge> SingleStoreImpl::PutIn(uint32_t &realType, std::shared_ptr<Observer> observer)
+{
+    std::shared_ptr<ObserverBridge> bridge = nullptr;
+    observers_.Compute(uintptr_t(observer.get()),
+        [this, &realType, observer, &bridge](const auto &, std::pair<uint32_t, std::shared_ptr<ObserverBridge>> &pair) {
+            if ((pair.first & realType) == realType) {
+                realType = (realType & (~pair.first));
+                return (pair.first != 0);
+            }
+
+            if (observers_.Size() > MAX_OBSERVER_SIZE) {
+                return false;
+            }
+
+            if (pair.first == 0) {
+                auto release = BridgeReleaser();
+                StoreId storeId{ storeId_ };
+                AppId appId{ appId_ };
+                pair.second = std::shared_ptr<ObserverBridge>(
+                    new ObserverBridge(appId, storeId, observer, GetConvert()), release);
+            }
+            bridge = pair.second;
+            realType = (realType & (~pair.first));
+            pair.first = pair.first | realType;
+            return (pair.first != 0);
+        });
+    return bridge;
+}
+
+std::shared_ptr<ObserverBridge> SingleStoreImpl::TakeOut(uint32_t &realType, std::shared_ptr<Observer> observer)
+{
+    std::shared_ptr<ObserverBridge> bridge = nullptr;
+    observers_.ComputeIfPresent(uintptr_t(observer.get()),
+        [&realType, observer, &bridge](const auto &, std::pair<uint32_t, std::shared_ptr<ObserverBridge>> &pair) {
+            if ((pair.first & realType) == 0) {
+                return (pair.first != 0);
+            }
+            realType = (realType & pair.first);
+            pair.first = (pair.first & (~realType));
+            bridge = pair.second;
+            return (pair.first != 0);
+        });
+    return bridge;
+}
+
 Status SingleStoreImpl::GetResultSet(const DistributedDB::Query &query, std::shared_ptr<ResultSet> &resultSet) const
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
@@ -686,15 +707,8 @@ Status SingleStoreImpl::GetEntries(const DistributedDB::Query &query, std::vecto
 
 std::vector<uint8_t> SingleStoreImpl::GetPrefix(const Key &prefix) const
 {
-    auto begin = std::find_if(prefix.Data().begin(), prefix.Data().end(), [](int ch) { return !std::isspace(ch); });
-    auto rBegin = std::find_if(prefix.Data().rbegin(), prefix.Data().rend(), [](int ch) { return !std::isspace(ch); });
-    auto end = static_cast<decltype(begin)>(rBegin.base());
-    if (end <= begin) {
-        return {};
-    }
-
-    std::vector<uint8_t> dbKey(begin, end);
-    if (dbKey.size() >= MAX_KEY_LENGTH) {
+    std::vector<uint8_t> dbKey = TrimKey(prefix);
+    if (dbKey.size() > MAX_KEY_LENGTH) {
         dbKey.clear();
     }
     return dbKey;
@@ -710,6 +724,16 @@ SingleStoreImpl::Convert SingleStoreImpl::GetConvert() const
     return nullptr;
 }
 
+std::vector<uint8_t> SingleStoreImpl::TrimKey(const Key &prefix) const
+{
+    auto begin = std::find_if(prefix.Data().begin(), prefix.Data().end(), [](int ch) { return !std::isspace(ch); });
+    auto rBegin = std::find_if(prefix.Data().rbegin(), prefix.Data().rend(), [](int ch) { return !std::isspace(ch); });
+    auto end = static_cast<decltype(begin)>(rBegin.base());
+    if (end <= begin) {
+        return {};
+    }
+    return {begin, end};
+}
 Status SingleStoreImpl::DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer)
 {
     auto service = KVDBServiceClient::GetInstance();
@@ -719,7 +743,7 @@ Status SingleStoreImpl::DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCal
 
     auto syncAgent = service->GetSyncAgent({ appId_ });
     if (syncAgent == nullptr) {
-        ZLOGE("failed! invalid agent app:%{public}s, store:%{public}s!", appId_.c_str(), storeId_.c_str());
+        ZLOGE("failed! invalid agent app:%{public}s store:%{public}s!", appId_.c_str(), storeId_.c_str());
         return ILLEGAL_STATE;
     }
 
@@ -732,7 +756,7 @@ void SingleStoreImpl::DoAutoSync()
     if (!autoSync_) {
         return;
     }
-    ZLOGD("app:%{public}s, store:%{public}s!", appId_.c_str(), storeId_.c_str());
+    ZLOGD("app:%{public}s store:%{public}s!", appId_.c_str(), storeId_.c_str());
     AutoSyncTimer::GetInstance().DoAutoSync(appId_, { { storeId_ } });
 }
 } // namespace OHOS::DistributedKv

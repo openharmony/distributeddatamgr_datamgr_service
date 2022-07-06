@@ -53,7 +53,7 @@ void DistributedDBStorageTransactionRecordTest::SetUpTestCase(void)
 
 void DistributedDBStorageTransactionRecordTest::TearDownTestCase(void)
 {
-    remove(g_testDir.c_str());
+    (void)remove(g_testDir.c_str());
 }
 
 void DistributedDBStorageTransactionRecordTest::SetUp(void)

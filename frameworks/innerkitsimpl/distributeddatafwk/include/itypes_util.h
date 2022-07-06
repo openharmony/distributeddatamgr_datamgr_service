@@ -158,8 +158,10 @@ Status ITypesUtil::MarshalToBuffer(const T &input, int size, MessageParcel &data
     if (buffer == nullptr) {
         return Status::ILLEGAL_STATE;
     }
+
+    int leftSize = size;
     uint8_t *cursor = buffer.get();
-    if (!input.WriteToBuffer(cursor, size)) {
+    if (!input.WriteToBuffer(cursor, leftSize)) {
         return Status::IPC_ERROR;
     }
     return data.WriteRawData(buffer.get(), size) ? Status::SUCCESS : Status::IPC_ERROR;

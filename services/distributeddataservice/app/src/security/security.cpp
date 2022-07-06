@@ -197,8 +197,8 @@ int32_t Security::GetCurrentUserStatus() const
 
 DBStatus Security::SetFileSecurityOption(const std::string &filePath, const SecurityOption &option)
 {
-    ZLOGI("set security option %{public}d", option.securityLabel);
     if (!IsExits(filePath)) {
+        ZLOGE("option:%{public}d file:%{public}s not exits", option.securityLabel, filePath.c_str());
         return INVALID_ARGS;
     }
     if (option.securityLabel == NOT_SET) {
@@ -206,18 +206,23 @@ DBStatus Security::SetFileSecurityOption(const std::string &filePath, const Secu
     }
     auto dataLevel = Convert2Name(option);
     if (dataLevel.empty()) {
-        ZLOGE("Invalid label args! label:%d, flag:%{public}d path:%{public}s",
-              option.securityLabel, option.securityFlag, filePath.c_str());
+        ZLOGE("Invalid args! label:%{public}d path:%{public}s", option.securityLabel, filePath.c_str());
         return INVALID_ARGS;
     }
 
     bool result = OHOS::DistributedFS::ModuleSecurityLabel::SecurityLabel::SetSecurityLabel(filePath, dataLevel);
-    if (!result) {
-        ZLOGE("set security label failed!, result:%d, datalevel:%{public}s", result, dataLevel.c_str());
-        return DBStatus::DB_ERROR;
+    if (result) {
+        return OK;
     }
 
-    return OK;
+    auto error = errno;
+    std::string current = OHOS::DistributedFS::ModuleSecurityLabel::SecurityLabel::GetSecurityLabel(filePath);
+    ZLOGE("failed! error:%{public}d current:%{public}s label:%{public}s file:%{public}s", error, current.c_str(),
+        dataLevel.c_str(), filePath.c_str());
+    if (current == dataLevel) {
+        return OK;
+    }
+    return DistributedDB::DB_ERROR;
 }
 
 DBStatus Security::SetDirSecurityOption(const std::string &filePath, const SecurityOption &option)
@@ -240,6 +245,7 @@ DBStatus Security::GetFileSecurityOption(const std::string &filePath, SecurityOp
         option = {NOT_SET, ECE};
         return OK;
     }
+
     ZLOGI("get security option %{public}s", value.c_str());
     if (value == "s3") {
         option = { Convert2Security(value), SECE };
