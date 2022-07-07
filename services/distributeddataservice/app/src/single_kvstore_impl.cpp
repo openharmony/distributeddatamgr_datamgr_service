@@ -118,12 +118,11 @@ Status SingleKvStoreImpl::CheckDbIsCorrupted(DistributedDB::DBStatus status, con
 {
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGW("option %{public}s failed, recovery database.", funName);
-        StoreMetaData metaData = StoreMetaData(deviceAccountId_, bundleName_, storeId_);
-        metaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
-        MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-        if (!metaData.isCorrupted) {
+        CorruptedMetaData metaData = CorruptedMetaData(deviceAccountId_, bundleName_, storeId_);
+        auto loadResult = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
+        if ((!metaData.isCorrupted) || (!loadResult)) {
             metaData.isCorrupted = true;
-            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
             Reporter::GetInstance()->DatabaseFault()->Report(
                 {bundleName_, storeId_, "KVDB", Fault::DF_DB_CORRUPTED});
         }
@@ -1432,8 +1431,12 @@ bool SingleKvStoreImpl::Import(const std::string &bundleName) const
     std::shared_lock<std::shared_mutex> lock(storeNbDelegateMutex_);
     auto recoverResult = BackupHandler::SingleKvStoreRecover(metaData, kvStoreNbDelegate_);
     if (recoverResult) {
-        metaData.isCorrupted = false;
-        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+        CorruptedMetaData metaData = CorruptedMetaData(deviceAccountId_, bundleName_, storeId_);
+        MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
+        if (metaData.isCorrupted == true) {
+            metaData.isCorrupted = false;
+            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
+        }
     }
     return recoverResult;
 }

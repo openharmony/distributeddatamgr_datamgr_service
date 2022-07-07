@@ -27,6 +27,7 @@
 #include "ikvstore_data_service.h"
 #include "kvstore_device_listener.h"
 #include "kvstore_user_manager.h"
+#include "metadata/corrupted_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "reporter.h"
 #include "security/security.h"
@@ -52,6 +53,7 @@ class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
 
 public:
+    using CorruptedMetaData = DistributedData::CorruptedMetaData;
     using StoreMetaData = DistributedData::StoreMetaData;
     // record kvstore meta version for compatible, should update when modify kvstore meta structure.
     static constexpr uint32_t STORE_VERSION = 0x03000001;

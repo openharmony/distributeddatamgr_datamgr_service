@@ -35,7 +35,6 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(uid)], uid);
     SetValue(node[GET_NAME(tokenId)], tokenId);
     SetValue(node[GET_NAME(instanceId)], instanceId);
-    SetValue(node[GET_NAME(isCorrupted)], isCorrupted);
     SetValue(node[GET_NAME(appId)], appId);
     SetValue(node[GET_NAME(appType)], appType);
     SetValue(node[GET_NAME(bundleName)], bundleName);
@@ -67,7 +66,6 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(uid), uid);
     GetValue(node, GET_NAME(tokenId), tokenId);
     GetValue(node, GET_NAME(instanceId), instanceId);
-    GetValue(node, GET_NAME(isCorrupted), isCorrupted);
     GetValue(node, GET_NAME(appId), appId);
     GetValue(node, GET_NAME(appType), appType);
     GetValue(node, GET_NAME(bundleName), bundleName);
