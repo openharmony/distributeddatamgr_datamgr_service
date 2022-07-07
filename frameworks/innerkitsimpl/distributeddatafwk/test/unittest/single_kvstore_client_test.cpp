@@ -266,7 +266,7 @@ HWTEST_F(SingleKvStoreClientTest, GetEmptyEntries, TestSize.Level1)
 {
     EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
     std::vector<Entry> results;
-    auto status = singleKvStorePtr->GetEntries({"SUCCESS_TEST"}, results);
+    auto status = singleKvStorePtr->GetEntries({ "SUCCESS_TEST" }, results);
     EXPECT_EQ(status, Status::SUCCESS) << "status is not SUCCESS.";
     EXPECT_EQ(results.size(), 0) << "entries size is not empty.";
 }
