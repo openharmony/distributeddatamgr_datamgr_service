@@ -702,7 +702,12 @@ Status SingleStoreImpl::GetEntries(const DistributedDB::Query &query, std::vecto
         entry.value = std::move(dbEntry.value);
         ++it;
     }
-    return StoreUtil::ConvertStatus(dbStatus);
+
+    auto status = StoreUtil::ConvertStatus(dbStatus);
+    if (status == NOT_FOUND) {
+        status = SUCCESS;
+    }
+    return status;
 }
 
 std::vector<uint8_t> SingleStoreImpl::GetPrefix(const Key &prefix) const
@@ -734,6 +739,7 @@ std::vector<uint8_t> SingleStoreImpl::TrimKey(const Key &prefix) const
     }
     return {begin, end};
 }
+
 Status SingleStoreImpl::DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer)
 {
     auto service = KVDBServiceClient::GetInstance();
