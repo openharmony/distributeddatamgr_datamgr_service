@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <limits.h>
+#include <climits>
 #include <sys/time.h>
 #include <fcntl.h>
 #include <dirent.h>
