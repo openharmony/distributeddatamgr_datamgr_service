@@ -39,11 +39,9 @@ CryptoManager &CryptoManager::GetInstance()
     return instance;
 }
 
-int32_t CryptoManager::GenerateRootKey()
+int32_t GenerateKeyPre(HksParamSet *params)
 {
-    ZLOGI("GenerateRootKey.");
-    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    struct HksParamSet *params = nullptr;
+    ZLOGI("GenerateKey.");
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
@@ -70,9 +68,21 @@ int32_t CryptoManager::GenerateRootKey()
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksBuildParamSet failed with error %{public}d", ret);
         HksFreeParamSet(&params);
+    }
+    return ret;
+}
+
+
+int32_t CryptoManager::GenerateRootKey()
+{
+    ZLOGI("GenerateRootKey.");
+    struct HksParamSet *params = nullptr;
+    int32_t ret = GenerateKeyPre(params);
+    if (ret != HKS_SUCCESS) { 
+        ZLOGE("GenerateKeyPre failed with error %{public}d", ret);
         return ret;
     }
-
+    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
     ret = HksGenerateKey(&rootKeyName, params, nullptr);
     HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
@@ -84,42 +94,19 @@ int32_t CryptoManager::GenerateRootKey()
 
 bool CryptoManager::IsExistRootKey()
 {
-    ZLOGI("GenerateRootKey.");
-    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
+    ZLOGI("IsExistRootKey.");
     struct HksParamSet *params = nullptr;
-    int32_t ret = HksInitParamSet(&params);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
+    int32_t ret = GenerateKeyPre(params);
+    if (ret != HKS_SUCCESS) { 
+        ZLOGE("IsExistRootKey failed with error %{public}d", ret);
         return ret;
     }
 
-    struct HksParam hksParam[] = {
-        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
-        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
-        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
-        { .tag = HKS_TAG_DIGEST, .uint32Param = 0 },
-        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
-        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-    };
-
-    ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksAddParams failed with error %{public}d", ret);
-        HksFreeParamSet(&params);
-        return ret;
-    }
-
-    ret = HksBuildParamSet(&params);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksBuildParamSet failed with error %{public}d", ret);
-        HksFreeParamSet(&params);
-        return ret;
-    }
-
+    struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
     ret = HksKeyExist(&rootKeyName, params);
     HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
-        ZLOGE("HksEncrypt failed with error %{public}d", ret);
+        ZLOGE("HksKeyExist failed with error %{public}d", ret);
     }
     return ret == HKS_SUCCESS;
 }
