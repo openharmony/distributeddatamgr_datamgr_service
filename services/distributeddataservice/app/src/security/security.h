@@ -54,6 +54,8 @@ public:
     void OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
                          const AppDistributedKv::DeviceChangeType &type) const override;
 
+    AppDistributedKv::ChangeLevelType GetChangeLevelType() const override;
+
 private:
     enum {
         NO_PWD = -1,

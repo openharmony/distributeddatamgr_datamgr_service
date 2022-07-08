@@ -47,6 +47,11 @@ Security::~Security()
     ZLOGD("destructor");
 }
 
+AppDistributedKv::ChangeLevelType Security::GetChangeLevelType() const
+{
+    return AppDistributedKv::ChangeLevelType::HIGH;
+}
+
 DBStatus Security::RegOnAccessControlledEvent(const OnAccessControlledEvent &callback)
 {
     ZLOGD("add new lock status observer!");
