@@ -137,8 +137,8 @@ uint64_t DeviceObserverTest::GetCallCount() const
 * @tc.name: KvStoreDdmSubscribeKvStore001
 * @tc.desc: Subscribe success
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore001, TestSize.Level1)
 {
@@ -176,8 +176,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore002, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore003
 * @tc.desc: Subscribe success and OnChange callback after put
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore003, TestSize.Level1)
 {
@@ -205,8 +205,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore003, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore004
 * @tc.desc: The same observer subscribe three times and OnChange callback after put
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore004, TestSize.Level2)
 {
@@ -237,8 +237,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore004, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore005
 * @tc.desc: The different observer subscribe three times and OnChange callback after put
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore005, TestSize.Level2)
 {
@@ -279,8 +279,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore005, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore006
 * @tc.desc: Unsubscribe an observer and subscribe again - the map should be cleared after unsubscription.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore006, TestSize.Level2)
 {
@@ -327,8 +327,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore006, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore007
 * @tc.desc: Subscribe to an observer - OnChange callback is called multiple times after the put operation.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore007, TestSize.Level2)
 {
@@ -366,8 +366,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore007, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore008
 * @tc.desc: Subscribe to an observer - OnChange callback is called multiple times after the put&update operations.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore008, TestSize.Level2)
 {
@@ -405,8 +405,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore008, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore009
 * @tc.desc: Subscribe to an observer - OnChange callback is called multiple times after the putBatch operation.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore009, TestSize.Level2)
 {
@@ -455,8 +455,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore009, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore010
 * @tc.desc: Subscribe to an observer - OnChange callback is called multiple times after the putBatch update operation.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore010, TestSize.Level2)
 {
@@ -505,8 +505,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore010, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore011
 * @tc.desc: Subscribe to an observer - OnChange callback is called after successful deletion.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore011, TestSize.Level2)
 {
@@ -545,8 +545,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore011, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore012
 * @tc.desc: Subscribe to an observer - OnChange callback is not called after deletion of non-existing keys.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore012, TestSize.Level2)
 {
@@ -585,8 +585,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore012, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore013
 * @tc.desc: Subscribe to an observer - OnChange callback is called after KvStore is cleared.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore013, TestSize.Level2)
 {
@@ -623,8 +623,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore013, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore014
 * @tc.desc: Subscribe to an observer - OnChange callback is not called after non-existing data in KvStore is cleared.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore014, TestSize.Level2)
 {
@@ -646,8 +646,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore014, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore015
 * @tc.desc: Subscribe to an observer - OnChange callback is called after the deleteBatch operation.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore015, TestSize.Level2)
 {
@@ -691,8 +691,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore015, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore016
 * @tc.desc: Subscribe to an observer - OnChange callback is called after deleteBatch of non-existing keys.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore016, TestSize.Level2)
 {
@@ -736,8 +736,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore016, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStore020
 * @tc.desc: Unsubscribe an observer two times.
 * @tc.type: FUNC
-* @tc.require: AR000CQDU9 AR000CQS37
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore020, TestSize.Level2)
 {
@@ -759,8 +759,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStore020, TestSize.
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification001
 * @tc.desc: Subscribe to an observer successfully - callback is called with a notification after the put operation.
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification001, TestSize.Level1)
 {
@@ -792,8 +792,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification00
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification002
 * @tc.desc: Subscribe to the same observer three times - callback is called with a notification after the put operation.
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification002, TestSize.Level2)
 {
@@ -827,8 +827,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification00
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification003
 * @tc.desc: The different observer subscribe three times and callback with notification after put
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification003, TestSize.Level2)
 {
@@ -880,8 +880,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification00
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification004
 * @tc.desc: Verify notification after an observer is unsubscribed and then subscribed again.
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification004, TestSize.Level2)
 {
@@ -937,8 +937,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification00
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification005
 * @tc.desc: Subscribe to an observer, callback with notification many times after put the different data
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification005, TestSize.Level2)
 {
@@ -988,8 +988,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification00
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification006
 * @tc.desc: Subscribe to an observer, callback with notification many times after put the same data
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification006, TestSize.Level2)
 {
@@ -1039,8 +1039,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification00
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification007
 * @tc.desc: Subscribe to an observer, callback with notification many times after put&update
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification007, TestSize.Level2)
 {
@@ -1081,8 +1081,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification00
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification008
 * @tc.desc: Subscribe to an observer, callback with notification one times after putbatch&update
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification008, TestSize.Level2)
 {
@@ -1134,8 +1134,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification00
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification009
 * @tc.desc: Subscribe to an observer, callback with notification one times after putbatch all different data
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification009, TestSize.Level2)
 {
@@ -1180,8 +1180,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification00
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification010
 * @tc.desc: Subscribe to an observer, callback with notification one times after putbatch both different and same data
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification010, TestSize.Level2)
 {
@@ -1226,8 +1226,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification01
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification011
 * @tc.desc: Subscribe to an observer, callback with notification one times after putbatch all same data
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification011, TestSize.Level2)
 {
@@ -1270,8 +1270,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification01
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification012
 * @tc.desc: Subscribe to an observer, callback with notification many times after putbatch all different data
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification012, TestSize.Level2)
 {
@@ -1335,8 +1335,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification01
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification013
 * @tc.desc: Subscribe to an observer, callback with notification many times after putbatch both different and same data
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification013, TestSize.Level2)
 {
@@ -1401,8 +1401,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification01
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification014
 * @tc.desc: Subscribe to an observer, callback with notification many times after putbatch all same data
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification014, TestSize.Level2)
 {
@@ -1466,8 +1466,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification01
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification015
 * @tc.desc: Subscribe to an observer, callback with notification many times after putbatch complex data
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification015, TestSize.Level2)
 {
@@ -1532,8 +1532,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification01
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification016
 * @tc.desc: Pressure test subscribe, callback with notification many times after putbatch
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification016, TestSize.Level2)
 {
@@ -1569,8 +1569,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification01
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification017
 * @tc.desc: Subscribe to an observer, callback with notification after delete success
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification017, TestSize.Level2)
 {
@@ -1612,8 +1612,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification01
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification018
 * @tc.desc: Subscribe to an observer, not callback after delete which key not exist
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification018, TestSize.Level2)
 {
@@ -1653,8 +1653,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification01
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification019
 * @tc.desc: Subscribe to an observer, delete the same data many times and only first delete callback with notification
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification019, TestSize.Level2)
 {
@@ -1702,8 +1702,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification01
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification020
 * @tc.desc: Subscribe to an observer, callback with notification after deleteBatch
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification020, TestSize.Level2)
 {
@@ -1752,8 +1752,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification02
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification021
 * @tc.desc: Subscribe to an observer, not callback after deleteBatch which all keys not exist
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification021, TestSize.Level2)
 {
@@ -1799,8 +1799,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification02
 * @tc.desc: Subscribe to an observer, deletebatch the same data many times and only first deletebatch callback with
 * notification
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification022, TestSize.Level2)
 {
@@ -1855,8 +1855,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification02
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification023
 * @tc.desc: Subscribe to an observer, include Clear Put PutBatch Delete DeleteBatch
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification023, TestSize.Level2)
 {
@@ -1914,8 +1914,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification02
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification024
 * @tc.desc: Subscribe to an observer[use transaction], include Clear Put PutBatch Delete DeleteBatch
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification024, TestSize.Level2)
 {
@@ -1970,8 +1970,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification02
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification025
 * @tc.desc: Subscribe to an observer[use transaction], include Clear Put PutBatch Delete DeleteBatch
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: liuyuhui
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification025, TestSize.Level2)
 {
@@ -2030,8 +2030,8 @@ HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification02
 * @tc.name: KvStoreDdmSubscribeKvStoreNotification026
 * @tc.desc: Subscribe to an observer[use transaction], include bigData PutBatch  update  insert delete
 * @tc.type: FUNC
-* @tc.require: AR000CIFGM
-* @tc.author: dukaizhan
+* @tc.require: I5GG0N
+* @tc.author: blue sky
 */
 HWTEST_F(LocalSubscribeDeviceStoreTest, KvStoreDdmSubscribeKvStoreNotification026, TestSize.Level2)
 {
