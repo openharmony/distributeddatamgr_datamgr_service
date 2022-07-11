@@ -301,6 +301,7 @@ HWTEST_F(DeviceKvStoreTest, GetPrefixQueryEntriesAndResultSet, TestSize.Level1)
 
     DataQuery dataQuery;
     dataQuery.KeyPrefix(GetKey(prefix));
+    dataQuery.Limit(10, 0);
     kvStore_->GetCount(dataQuery, sumGet);
     EXPECT_EQ(sumGet, sum) << "count is not equal 10.";
 

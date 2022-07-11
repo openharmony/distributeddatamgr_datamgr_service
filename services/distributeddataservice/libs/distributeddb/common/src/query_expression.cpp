@@ -184,7 +184,7 @@ void QueryExpression::Or()
 
 void QueryExpression::QueryByPrefixKey(const std::vector<uint8_t> &key)
 {
-    queryInfo_.emplace_back(QueryObjNode{QueryObjType::QUERY_BY_KEY_PREFIX, std::string(),
+    queryInfo_.emplace_front(QueryObjNode{QueryObjType::QUERY_BY_KEY_PREFIX, std::string(),
         QueryValueType::VALUE_TYPE_NULL, std::vector<FieldValue>()});
     prefixKey_ = key;
 }

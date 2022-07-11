@@ -256,6 +256,57 @@ HWTEST_F(SingleKvStoreClientTest, GetEntriesAndResultSet001, TestSize.Level1)
 }
 
 /**
+* @tc.name: GetEntriesByDataQuery
+* @tc.desc: Batch put values and get values.
+* @tc.type: FUNC
+* @tc.require: I5GFGR
+* @tc.author: Sven Wang
+*/
+HWTEST_F(SingleKvStoreClientTest, GetEntriesByDataQuery, TestSize.Level1)
+{
+    EXPECT_NE(singleKvStorePtr, nullptr) << "kvStorePtr is null.";
+
+    // prepare 10
+    size_t sum = 10;
+    int sum_1 = 10;
+    std::string prefix = "prefix_";
+    for (size_t i = 0; i < sum; i++) {
+        singleKvStorePtr->Put({prefix + std::to_string(i)}, {std::to_string(i)});
+    }
+
+    std::vector<Entry> results;
+    singleKvStorePtr->GetEntries({ prefix }, results);
+    EXPECT_EQ(results.size(), sum) << "entries size is not equal 10.";
+    DataQuery dataQuery;
+    dataQuery.KeyPrefix(prefix);
+    dataQuery.Limit(10, 0);
+    std::shared_ptr<KvStoreResultSet> resultSet;
+    Status status = singleKvStorePtr->GetResultSet(dataQuery, resultSet);
+    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(resultSet->GetCount(), sum_1) << "resultSet size is not equal 10.";
+    resultSet->IsFirst();
+    resultSet->IsAfterLast();
+    resultSet->IsBeforeFirst();
+    resultSet->MoveToPosition(1);
+    resultSet->IsLast();
+    resultSet->MoveToPrevious();
+    resultSet->MoveToNext();
+    resultSet->MoveToLast();
+    resultSet->MoveToFirst();
+    resultSet->GetPosition();
+    Entry entry;
+    resultSet->GetEntry(entry);
+
+    for (size_t i = 0; i < sum; i++) {
+        singleKvStorePtr->Delete({prefix + std::to_string(i)});
+    }
+
+    auto closeResultSetStatus = singleKvStorePtr->CloseResultSet(resultSet);
+    EXPECT_EQ(closeResultSetStatus, Status::SUCCESS) << "close resultSet failed.";
+}
+
+
+/**
 * @tc.name: GetEmptyEntries
 * @tc.desc: Batch get empty values.
 * @tc.type: FUNC
