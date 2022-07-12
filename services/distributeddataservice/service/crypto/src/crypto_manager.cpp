@@ -39,7 +39,7 @@ CryptoManager &CryptoManager::GetInstance()
     return instance;
 }
 
-int32_t GetRootKeyParams(HksParamSet *params)
+int32_t GetRootKeyParams(HksParamSet *&params)
 {
     ZLOGI("GetRootKeyParams.");
     int32_t ret = HksInitParamSet(&params);
