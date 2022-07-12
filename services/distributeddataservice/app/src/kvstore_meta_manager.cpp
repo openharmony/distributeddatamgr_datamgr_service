@@ -165,7 +165,7 @@ void KvStoreMetaManager::InitMetaParameter()
                 break;
             }
             if (status == CryptoManager::ErrCode::NOT_EXIST &&
-                CryptoManager::GetInstance().GenerateRootKey() == CryptoManager::ErrCode::SUCCESS){
+                CryptoManager::GetInstance().GenerateRootKey() == CryptoManager::ErrCode::SUCCESS) {
                 ZLOGI("GenerateRootKey success.");
                 break;
             }
