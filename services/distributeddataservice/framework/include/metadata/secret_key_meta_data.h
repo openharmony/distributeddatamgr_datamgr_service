@@ -32,17 +32,6 @@ struct API_EXPORT SecretKeyMetaData final : public Serializable {
 private:
     static constexpr const char *KEY_PREFIX = "SecretKey";
 };
-
-struct API_EXPORT RootKeyMetaData final : public Serializable {
-public:
-    std::string rootKey;
-    API_EXPORT bool Marshal(json &node) const override;
-    API_EXPORT bool Unmarshal(const json &node) override;
-
-    API_EXPORT std::string GetKey();
-private:
-    static constexpr const char *KEY_PREFIX = "RootKey";
-};
 } // namespace DistributedData
 } // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_SECRET_KEY_META_DATA_H

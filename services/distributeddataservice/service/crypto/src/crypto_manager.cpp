@@ -88,7 +88,6 @@ int32_t CryptoManager::GenerateRootKey()
     HksFreeParamSet(&params);
     if (ret == HKS_SUCCESS) {
         ZLOGI("GenerateRootKey Succeed.");
-        SaveKey();
         return ErrCode::SUCCESS;
     }
 
@@ -99,11 +98,6 @@ int32_t CryptoManager::GenerateRootKey()
 int32_t CryptoManager::CheckRootKey()
 {
     ZLOGI("CheckRootKey.");
-    RootKeyMetaData metaData;
-    if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true)) {
-        return ErrCode::SUCCESS;
-    }
-
     struct HksParamSet *params = nullptr;
     int32_t ret = GetRootKeyParams(params);
     if (ret != HKS_SUCCESS) {
@@ -115,7 +109,6 @@ int32_t CryptoManager::CheckRootKey()
     ret = HksKeyExist(&rootKeyName, params);
     HksFreeParamSet(&params);
     if (ret == HKS_SUCCESS) {
-        SaveKey();
         return ErrCode::SUCCESS;
     }
     ZLOGE("HksKeyExist failed with error %{public}d", ret);
@@ -123,13 +116,6 @@ int32_t CryptoManager::CheckRootKey()
         return ErrCode::NOT_EXIST;
     }
     return ErrCode::ERROR;
-}
-
-void CryptoManager::SaveKey()
-{
-    RootKeyMetaData metaData;
-    metaData.rootKey = ROOT_KEY_ALIAS;
-    MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
 }
 
 std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)

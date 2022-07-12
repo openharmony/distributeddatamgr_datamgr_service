@@ -40,7 +40,6 @@ private:
     static constexpr int HOURS_PER_YEAR = (24 * 365);
     CryptoManager();
     ~CryptoManager();
-    void SaveKey();
     std::vector<uint8_t> vecRootKeyAlias_{};
     std::vector<uint8_t> vecNonce_{};
     std::vector<uint8_t> vecAad_{};
