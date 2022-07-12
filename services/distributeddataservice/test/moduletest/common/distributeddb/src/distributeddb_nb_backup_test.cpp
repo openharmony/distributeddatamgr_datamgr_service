@@ -244,7 +244,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest003, TestSize.Level2)
      * @tc.expected: step1. call successfully.
      */
     g_readyFlag.store(false);
-    thread subThread([&]() {
+    thread subThread([&filePath]() {
         EXPECT_EQ(g_nbBackupDelegate->Import(filePath, NULL_PASSWD), OK);
         g_readyFlag.store(true);
         g_backupVar.notify_all();
@@ -293,7 +293,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest004, TestSize.Level3)
      * @tc.expected: step1. call successfully if step1 running before step2, else return busy.
      */
     g_readyFlag.store(false);
-    thread subThread([&]() {
+    thread subThread([]() {
         DBStatus rekeyStatus = g_nbBackupDelegate->Rekey(g_passwd1);
         EXPECT_TRUE(rekeyStatus == OK || rekeyStatus == BUSY);
         MST_LOG("The rekeyStatus is %d", rekeyStatus);
@@ -351,7 +351,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest005, TestSize.Level2)
      * @tc.expected: step1. call successfully.
      */
     g_readyFlag.store(false);
-    thread subThread([&]() {
+    thread subThread([&filePath]() {
         std::this_thread::sleep_for(std::chrono::microseconds(WAIT_FOR_LONG_TIME));
         DBStatus exportStatus = g_nbBackupDelegate->Export(filePath, NULL_PASSWD);
         EXPECT_EQ(exportStatus, OK);
@@ -400,7 +400,7 @@ HWTEST_F(DistributeddbNbBackupTest, ExportTest006, TestSize.Level3)
      * @tc.expected: step1. call successfully.
      */
     g_readyFlag.store(false);
-    thread subThread([&]() {
+    thread subThread([&filePath]() {
         DBStatus exportStatus = g_nbBackupDelegate->Export(filePath, NULL_PASSWD);
         EXPECT_EQ(exportStatus, OK);
         g_readyFlag.store(true);
@@ -852,7 +852,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest008, TestSize.Level3)
      * @tc.expected: step1. start successfully if step1 running before step2, else return BUSY.
      */
     g_readyFlag.store(false);
-    thread subThread([&]() {
+    thread subThread([&filePath]() {
         DBStatus importStatus = g_nbBackupDelegate->Import(filePath, NULL_PASSWD);
         EXPECT_TRUE(importStatus == OK || importStatus == BUSY);
         g_readyFlag.store(true);
@@ -908,7 +908,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest009, TestSize.Level3)
      * @tc.expected: step1. start successfully if step1 running before step2, else return BUSY.
      */
     g_readyFlag.store(false);
-    thread subThread([&]() {
+    thread subThread([&filePath]() {
         DBStatus importStatus = g_nbBackupDelegate->Import(filePath, NULL_PASSWD);
         EXPECT_TRUE(importStatus == OK || importStatus == BUSY);
         g_readyFlag.store(true);
@@ -956,7 +956,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest010, TestSize.Level3)
      * @tc.expected: step1. start successfully.
      */
     g_readyFlag.store(false);
-    thread subThread([&]() {
+    thread subThread([]() {
         EXPECT_EQ(g_nbBackupDelegate->Rekey(g_passwd1), OK);
         g_readyFlag.store(true);
         g_backupVar.notify_one();
@@ -1002,7 +1002,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest011, TestSize.Level3)
      * @tc.expected: step1. start successfully.
      */
     g_readyFlag.store(false);
-    thread subThread([&]() {
+    thread subThread([&filePath]() {
         EXPECT_EQ(g_nbBackupDelegate->Import(filePath, NULL_PASSWD), OK);
         g_readyFlag.store(true);
         g_backupVar.notify_one();
