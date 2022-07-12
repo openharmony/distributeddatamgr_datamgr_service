@@ -151,9 +151,30 @@ void KvStoreMetaManager::InitMetaParameter()
         return;
     }
     ForceCreateDirectory(metaDBDirectory_ + "/backup");
-
     DistributedDB::KvStoreConfig kvStoreConfig {metaDBDirectory_};
     kvStoreDelegateManager_.SetKvStoreConfig(kvStoreConfig);
+
+    std::thread th = std::thread([]() {
+        constexpr int RETRY_MAX_TIMES = 100;
+        int retryCount = 0;
+        constexpr int RETRY_TIME_INTERVAL_MILLISECOND = 1 * 1000 * 1000; // retry after 1 second
+        while (retryCount < RETRY_MAX_TIMES) {
+            auto status = CryptoManager::GetInstance().CheckRootKey();
+            if (status == CryptoManager::ErrCode::SUCCESS) {
+                ZLOGI("root key exist.");
+                break;
+            }
+            if (status == CryptoManager::ErrCode::NOT_EXIST &&
+                CryptoManager::GetInstance().GenerateRootKey() == CryptoManager::ErrCode::SUCCESS){
+                ZLOGI("GenerateRootKey success.");
+                break;
+            }
+            retryCount++;
+            ZLOGE("GenerateRootKey failed.");
+            usleep(RETRY_TIME_INTERVAL_MILLISECOND);
+        }
+    });
+    th.detach();
 }
 
 KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()

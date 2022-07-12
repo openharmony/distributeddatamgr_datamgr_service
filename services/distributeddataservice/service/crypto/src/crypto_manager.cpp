@@ -20,6 +20,8 @@
 #include "hks_api.h"
 #include "hks_param.h"
 #include "log_print.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/secret_key_meta_data.h"
 #include "securec.h"
 namespace OHOS::DistributedData {
 CryptoManager::CryptoManager()
@@ -72,7 +74,6 @@ int32_t GetRootKeyParams(HksParamSet *params)
     return ret;
 }
 
-
 int32_t CryptoManager::GenerateRootKey()
 {
     ZLOGI("GenerateRootKey.");
@@ -80,35 +81,55 @@ int32_t CryptoManager::GenerateRootKey()
     int32_t ret = GetRootKeyParams(params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("GetRootKeyParams failed with error %{public}d", ret);
-        return ret;
+        return ErrCode::ERROR;
     }
     struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
     ret = HksGenerateKey(&rootKeyName, params, nullptr);
     HksFreeParamSet(&params);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksGenerateKey failed with error %{public}d", ret);
+    if (ret == HKS_SUCCESS) {
+        ZLOGI("GenerateRootKey Succeed.");
+        SaveKey();
+        return ErrCode::SUCCESS;
     }
-    ZLOGI("GenerateRootKey Succeed.");
-    return ret;
+
+    ZLOGE("HksGenerateKey failed with error %{public}d", ret);
+    return ErrCode::ERROR;
 }
 
-bool CryptoManager::IsExistRootKey()
+int32_t CryptoManager::CheckRootKey()
 {
-    ZLOGI("IsExistRootKey.");
+    ZLOGI("CheckRootKey.");
+    RootKeyMetaData metaData;
+    if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true)) {
+        return ErrCode::SUCCESS;
+    }
+
     struct HksParamSet *params = nullptr;
     int32_t ret = GetRootKeyParams(params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("GetRootKeyParams failed with error %{public}d", ret);
-        return ret;
+        return ErrCode::ERROR;
     }
 
     struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
     ret = HksKeyExist(&rootKeyName, params);
     HksFreeParamSet(&params);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksKeyExist failed with error %{public}d", ret);
+    if (ret == HKS_SUCCESS) {
+        SaveKey();
+        return ErrCode::SUCCESS;
     }
-    return ret == HKS_SUCCESS;
+    ZLOGE("HksKeyExist failed with error %{public}d", ret);
+    if (ret == HKS_ERROR_NOT_EXIST) {
+        return ErrCode::NOT_EXIST;
+    }
+    return ErrCode::ERROR;
+}
+
+void CryptoManager::SaveKey()
+{
+    RootKeyMetaData metaData;
+    metaData.rootKey = ROOT_KEY_ALIAS;
+    MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
 }
 
 std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)

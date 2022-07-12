@@ -20,10 +20,12 @@ namespace DistributedData {
 SecretKeyMetaData::SecretKeyMetaData()
 {
 }
+
 SecretKeyMetaData::~SecretKeyMetaData()
 {
     sKey.assign(sKey.size(), 0);
 }
+
 bool SecretKeyMetaData::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(time)], time);
@@ -31,6 +33,7 @@ bool SecretKeyMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(storeType)], storeType);
     return true;
 }
+
 bool SecretKeyMetaData::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(time), time);
@@ -54,6 +57,23 @@ std::string SecretKeyMetaData::GetPrefix(const std::initializer_list<std::string
     }
     prefix.append(Constant::KEY_SEPARATOR);
     return prefix;
+}
+
+bool RootKeyMetaData::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(rootKey)], rootKey);
+    return true;
+}
+
+bool RootKeyMetaData::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(rootKey), rootKey);
+    return true;
+}
+
+std::string RootKeyMetaData::GetKey()
+{
+    return Constant::Join(KEY_PREFIX, Constant::KEY_SEPARATOR, { rootKey });
 }
 } // namespace DistributedData
 } // namespace OHOS

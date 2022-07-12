@@ -33,7 +33,6 @@
 #include "communication_provider.h"
 #include "config_factory.h"
 #include "constant.h"
-#include "crypto_manager.h"
 #include "dds_trace.h"
 #include "device_kvstore_impl.h"
 #include "executor_factory.h"
@@ -125,25 +124,6 @@ void KvStoreDataService::Initialize()
 
     InitSecurityAdapter();
     KvStoreMetaManager::GetInstance().InitMetaParameter();
-    std::thread th = std::thread([]() {
-        if (CryptoManager::GetInstance().IsExistRootKey()) {
-            return;
-        }
-        constexpr int RETRY_MAX_TIMES = 100;
-        int retryCount = 0;
-        constexpr int RETRY_TIME_INTERVAL_MILLISECOND = 1 * 1000 * 1000; // retry after 1 second
-        while (retryCount < RETRY_MAX_TIMES) {
-            if (CryptoManager::GetInstance().GenerateRootKey() == Status::SUCCESS) {
-                ZLOGI("GenerateRootKey success.");
-                break;
-            }
-            retryCount++;
-            ZLOGE("GenerateRootKey failed.");
-            usleep(RETRY_TIME_INTERVAL_MILLISECOND);
-        }
-    });
-    th.detach();
-
     accountEventObserver_ = std::make_shared<KvStoreAccountObserver>(*this);
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);

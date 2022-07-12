@@ -17,24 +17,30 @@
 #include <cstdint>
 #include <vector>
 #include "visibility.h"
+
 namespace OHOS::DistributedData {
 class API_EXPORT CryptoManager {
 public:
     static CryptoManager &GetInstance();
     int32_t GenerateRootKey();
-    bool IsExistRootKey();
+    int32_t CheckRootKey();
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key);
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key);
 
+    enum ErrCode : int32_t {
+        SUCCESS,
+        NOT_EXIST,
+        ERROR,
+    };
 private:
     static constexpr const char *ROOT_KEY_ALIAS = "distributed_db_root_key";
     static constexpr const char *HKS_BLOB_TYPE_NONCE = "Z5s0Bo571KoqwIi6";
     static constexpr const char *HKS_BLOB_TYPE_AAD = "distributeddata";
-    static constexpr const char *ROOT_KEY_GENERATED = "RootKeyGenerated";
     static constexpr int KEY_SIZE = 32;
     static constexpr int HOURS_PER_YEAR = (24 * 365);
     CryptoManager();
     ~CryptoManager();
+    void SaveKey();
     std::vector<uint8_t> vecRootKeyAlias_{};
     std::vector<uint8_t> vecNonce_{};
     std::vector<uint8_t> vecAad_{};
