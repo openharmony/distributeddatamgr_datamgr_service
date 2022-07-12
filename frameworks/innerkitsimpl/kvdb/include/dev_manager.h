@@ -12,15 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_DEV_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_DEV_MANAGER_H
 #include <string>
-
 #include "types.h"
 #include "lru_bucket.h"
 namespace OHOS::DistributedKv {
-class API_EXPORT DevManager {
+class DevManager {
 public:
     static constexpr size_t MAX_ID_LEN = 64;
     struct DetailInfo {

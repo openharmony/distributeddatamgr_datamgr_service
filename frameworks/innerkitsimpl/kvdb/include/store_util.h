@@ -15,12 +15,11 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_STORE_UTIL_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_STORE_UTIL_H
-#include "visibility.h"
 #include "kv_store_delegate_manager.h"
 #include "store_errno.h"
 #include "store_types.h"
 namespace OHOS::DistributedKv {
-class API_EXPORT StoreUtil final {
+class StoreUtil final {
 public:
     using DBSecurity = DistributedDB::SecurityOption;
     using DBStatus = DistributedDB::DBStatus;

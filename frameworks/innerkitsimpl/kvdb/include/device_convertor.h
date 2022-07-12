@@ -12,28 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_DEVICE_STORE_IMPL_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_DEVICE_STORE_IMPL_H
-#include "single_store_impl.h"
+#include <vector>
+#include "convertor.h"
 namespace OHOS::DistributedKv {
-class DeviceStoreImpl : public SingleStoreImpl {
+class DeviceConvertor : public Convertor {
 public:
-    using SingleStoreImpl::SingleStoreImpl;
-    ~DeviceStoreImpl() = default;
-
-protected:
     std::vector<uint8_t> ToLocalDBKey(const Key &key) const override;
     std::vector<uint8_t> ToWholeDBKey(const Key &key) const override;
-    Key ToKey(DBKey &&key) const override;
+    Key ToKey(DBKey &&key, std::string &deviceId) const override;
     std::vector<uint8_t> GetPrefix(const Key &prefix) const override;
     std::vector<uint8_t> GetPrefix(const DataQuery &query) const override;
-    Convert GetConvert() const override;
-    std::vector<uint8_t> ConvertNetwork(const Key &in, bool withLen = false) const;
-    std::vector<uint8_t> ToLocal(const Key &in, bool withLen) const;
 
 private:
     static constexpr size_t MAX_DEV_KEY_LEN = 896;
+    std::vector<uint8_t> ConvertNetwork(const Key &in, bool withLen = false) const;
+    std::vector<uint8_t> ToLocal(const Key &in, bool withLen) const;
 };
-}
+} // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_DEVICE_STORE_IMPL_H

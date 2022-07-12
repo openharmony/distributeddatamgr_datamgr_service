@@ -273,10 +273,11 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     if (!isCreated || old == meta) {
         return SUCCESS;
     }
-    if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) || old.area != meta.area) {
+    if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
+        old.area != meta.area || !options.persistent) {
         ZLOGE("meta appId:%{public}s storeId:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d", appId.appId.c_str(), storeId.storeId.c_str(), old.storeType,
-            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+              "area:%{public}d->%{public}d persistent:%{public}d", appId.appId.c_str(), storeId.storeId.c_str(),
+            old.storeType, meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent);
         return Status::STORE_META_CHANGED;
     }
     auto dbStatus = Upgrade::GetInstance().ExportStore(old, meta);

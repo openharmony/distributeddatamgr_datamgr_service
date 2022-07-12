@@ -16,15 +16,15 @@
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SINGLE_STORE_IMPL_H
 #include <functional>
 #include <shared_mutex>
-
 #include "concurrent_map.h"
+#include "convertor.h"
 #include "kv_store_nb_delegate.h"
 #include "kvdb_service.h"
 #include "observer_bridge.h"
 #include "single_kvstore.h"
 #include "sync_observer.h"
 namespace OHOS::DistributedKv {
-class API_EXPORT SingleStoreImpl : public SingleKvStore {
+class SingleStoreImpl : public SingleKvStore {
 public:
     using Observer = KvStoreObserver;
     using SyncCallback = KvStoreSyncCallback;
@@ -36,7 +36,7 @@ public:
     using DBQuery = DistributedDB::Query;
     using SyncInfo = KVDBService::SyncInfo;
     using Convert = std::function<Key(const DBKey &key, std::string &deviceId)>;
-    SingleStoreImpl(std::shared_ptr<DBStore> dbStore, const AppId &appId, const Options &options);
+    SingleStoreImpl(std::shared_ptr<DBStore> dbStore, const AppId &appId, const Options &options, const Convertor &cvt);
     ~SingleStoreImpl() = default;
     StoreId GetStoreId() const override;
     Status Put(const Key &key, const Value &value) override;
@@ -75,32 +75,25 @@ public:
     Status UnsubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query) override;
 
 protected:
-    virtual std::vector<uint8_t> ToLocalDBKey(const Key &key) const;
-    virtual std::vector<uint8_t> ToWholeDBKey(const Key &key) const;
-    virtual Key ToKey(DBKey &&key) const;
-    virtual std::vector<uint8_t> GetPrefix(const Key &prefix) const;
-    virtual std::vector<uint8_t> GetPrefix(const DataQuery &query) const;
-    virtual Convert GetConvert() const;
-    std::vector<uint8_t> TrimKey(const Key &prefix) const;
-
-private:
-    static constexpr size_t MAX_KEY_LENGTH = 1024;
-    static constexpr size_t MAX_VALUE_LENGTH = 4 * 1024 * 1024;
-    static constexpr size_t MAX_OBSERVER_SIZE = 8;
+    virtual Status DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer);
+    virtual void DoAutoSync();
     std::shared_ptr<ObserverBridge> PutIn(uint32_t &realType, std::shared_ptr<Observer> observer);
     std::shared_ptr<ObserverBridge> TakeOut(uint32_t &realType, std::shared_ptr<Observer> observer);
-    Status GetResultSet(const DistributedDB::Query &query, std::shared_ptr<ResultSet> &resultSet) const;
-    Status GetEntries(const DistributedDB::Query &query, std::vector<Entry> &entries) const;
-    Status DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer);
-    void DoAutoSync();
+
+private:
+    static constexpr size_t MAX_VALUE_LENGTH = 4 * 1024 * 1024;
+    static constexpr size_t MAX_OBSERVER_SIZE = 8;
+    Status GetResultSet(const DBQuery &query, std::shared_ptr<ResultSet> &resultSet) const;
+    Status GetEntries(const DBQuery &query, std::vector<Entry> &entries) const;
     std::function<void(ObserverBridge *)> BridgeReleaser();
 
-    std::shared_ptr<DBStore> dbStore_ = nullptr;
+    const Convertor &convertor_;
     std::string appId_;
     std::string storeId_;
     bool autoSync_ = false;
     int32_t ref_ = 1;
     mutable std::shared_mutex rwMutex_;
+    std::shared_ptr<DBStore> dbStore_ = nullptr;
     std::shared_ptr<SyncObserver> syncObserver_ = nullptr;
     ConcurrentMap<uintptr_t, std::pair<uint32_t, std::shared_ptr<ObserverBridge>>> observers_;
 };

@@ -12,22 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "DeviceStoreImpl"
-#include "device_store_impl.h"
-
+#define LOG_TAG "DeviceConvertor"
+#include "device_convertor.h"
 #include <endian.h>
 #include <iomanip>
 #include <regex>
-
 #include "dev_manager.h"
 #include "log_print.h"
 namespace OHOS::DistributedKv {
-std::vector<uint8_t> DeviceStoreImpl::ToLocalDBKey(const Key &key) const
+std::vector<uint8_t> DeviceConvertor::ToLocalDBKey(const Key &key) const
 {
     return ToLocal(key, true);
 }
 
-std::vector<uint8_t> DeviceStoreImpl::ToLocal(const Key &in, bool withLen) const
+std::vector<uint8_t> DeviceConvertor::ToLocal(const Key &in, bool withLen) const
 {
     auto uuid = DevManager::GetInstance().GetLocalDevice().uuid;
     if (uuid.empty()) {
@@ -53,14 +51,14 @@ std::vector<uint8_t> DeviceStoreImpl::ToLocal(const Key &in, bool withLen) const
     return dbKey;
 }
 
-std::vector<uint8_t> DeviceStoreImpl::ToWholeDBKey(const Key &key) const
+std::vector<uint8_t> DeviceConvertor::ToWholeDBKey(const Key &key) const
 {
     // | device uuid | original key | uuid len |
     // |-------------|--------------|-----4----|
     return ConvertNetwork(key, true);
 }
 
-Key DeviceStoreImpl::ToKey(DBKey &&key) const
+Key DeviceConvertor::ToKey(DBKey &&key, std::string &deviceId) const
 {
     // |  uuid    |original key|uuid len|
     // |---- -----|------------|---4----|
@@ -73,20 +71,24 @@ Key DeviceStoreImpl::ToKey(DBKey &&key) const
         return std::move(key);
     }
 
+    if (deviceId.empty()) {
+        deviceId = DevManager::GetInstance().ToNetworkId({ key.begin(), key.begin() + length });
+    }
+
     length = le32toh(length);
     key.erase(key.begin(), key.begin() + length);
     key.erase(key.end() - sizeof(uint32_t), key.end());
     return std::move(key);
 }
 
-std::vector<uint8_t> DeviceStoreImpl::GetPrefix(const Key &prefix) const
+std::vector<uint8_t> DeviceConvertor::GetPrefix(const Key &prefix) const
 {
     // |  length  | networkId | original key |
     // |----4-----|-----------|--------------|
     return ConvertNetwork(prefix);
 }
 
-std::vector<uint8_t> DeviceStoreImpl::GetPrefix(const DataQuery &query) const
+std::vector<uint8_t> DeviceConvertor::GetPrefix(const DataQuery &query) const
 {
     if (query.deviceId_.empty()) {
         return ConvertNetwork(query.prefix_);
@@ -100,28 +102,7 @@ std::vector<uint8_t> DeviceStoreImpl::GetPrefix(const DataQuery &query) const
     return ConvertNetwork(prefix);
 }
 
-SingleStoreImpl::Convert DeviceStoreImpl::GetConvert() const
-{
-    return [](const DBKey &key, std::string &deviceId) -> Key {
-        if (key.size() < sizeof(uint32_t)) {
-            return std::move(key);
-        }
-
-        uint32_t length = *(reinterpret_cast<const uint32_t *>(&(*(key.end() - sizeof(uint32_t)))));
-        if (length > key.size() - sizeof(uint32_t)) {
-            return std::move(key);
-        }
-
-        length = le32toh(length);
-        if (deviceId.empty()) {
-            deviceId = DevManager::GetInstance().ToNetworkId({ key.begin(), key.begin() + length });
-        }
-
-        return Key(std::vector<uint8_t>(key.begin() + length, key.end() - sizeof(uint32_t)));
-    };
-}
-
-std::vector<uint8_t> DeviceStoreImpl::ConvertNetwork(const Key &in, bool withLen) const
+std::vector<uint8_t> DeviceConvertor::ConvertNetwork(const Key &in, bool withLen) const
 {
     // input
     // | network ID len | networkID | original key |

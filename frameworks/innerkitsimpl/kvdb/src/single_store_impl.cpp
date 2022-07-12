@@ -14,7 +14,6 @@
  */
 #define LOG_TAG "SingleStoreImpl"
 #include "single_store_impl.h"
-
 #include "auto_sync_timer.h"
 #include "dds_trace.h"
 #include "dev_manager.h"
@@ -25,10 +24,12 @@
 #include "store_util.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedDataDfx;
-SingleStoreImpl::SingleStoreImpl(std::shared_ptr<DBStore> dbStore, const AppId &appId, const Options &options)
-    : dbStore_(std::move(dbStore)), appId_(appId.appId), autoSync_(options.autoSync)
+SingleStoreImpl::SingleStoreImpl(std::shared_ptr<DBStore> dbStore, const AppId &appId, const Options &options,
+    const Convertor &cvt) : dbStore_(std::move(dbStore)), convertor_(cvt)
 {
+    appId_ = appId.appId;
     storeId_ = dbStore_->GetStoreId();
+    autoSync_ = options.autoSync;
     syncObserver_ = std::make_shared<SyncObserver>();
 }
 
@@ -46,7 +47,7 @@ Status SingleStoreImpl::Put(const Key &key, const Value &value)
         return ALREADY_CLOSED;
     }
 
-    DBKey dbKey = ToLocalDBKey(key);
+    DBKey dbKey = convertor_.ToLocalDBKey(key);
     if (dbKey.empty() || value.Size() > MAX_VALUE_LENGTH) {
         ZLOGE("invalid key:%{public}s size:[k:%{public}zu v:%{public}zu]",
             StoreUtil::Anonymous(key.ToString()).c_str(), key.Size(), value.Size());
@@ -75,7 +76,7 @@ Status SingleStoreImpl::PutBatch(const std::vector<Entry> &entries)
     std::vector<DBEntry> dbEntries;
     for (const auto &entry : entries) {
         DBEntry dbEntry;
-        dbEntry.key = ToLocalDBKey(entry.key);
+        dbEntry.key = convertor_.ToLocalDBKey(entry.key);
         if (dbEntry.key.empty() || entry.value.Size() > MAX_VALUE_LENGTH) {
             ZLOGE("invalid key:%{public}s size:[k:%{public}zu v:%{public}zu]",
                 StoreUtil::Anonymous(entry.key.ToString()).c_str(), entry.key.Size(), entry.value.Size());
@@ -102,7 +103,7 @@ Status SingleStoreImpl::Delete(const Key &key)
         return ALREADY_CLOSED;
     }
 
-    DBKey dbKey = ToLocalDBKey(key);
+    DBKey dbKey = convertor_.ToLocalDBKey(key);
     if (dbKey.empty()) {
         ZLOGE("invalid key:%{public}s size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
         return INVALID_ARGUMENT;
@@ -128,7 +129,7 @@ Status SingleStoreImpl::DeleteBatch(const std::vector<Key> &keys)
 
     std::vector<DBKey> dbKeys;
     for (const auto &key : keys) {
-        DBKey dbKey = ToLocalDBKey(key);
+        DBKey dbKey = convertor_.ToLocalDBKey(key);
         if (dbKey.empty()) {
             ZLOGE("invalid key:%{public}s size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
             return INVALID_ARGUMENT;
@@ -282,7 +283,7 @@ Status SingleStoreImpl::Get(const Key &key, Value &value)
         return ALREADY_CLOSED;
     }
 
-    DBKey dbKey = ToWholeDBKey(key);
+    DBKey dbKey = convertor_.ToWholeDBKey(key);
     if (dbKey.empty()) {
         ZLOGE("invalid key:%{public}s size:%{public}zu", StoreUtil::Anonymous(key.ToString()).c_str(), key.Size());
         return INVALID_ARGUMENT;
@@ -301,7 +302,7 @@ Status SingleStoreImpl::Get(const Key &key, Value &value)
 Status SingleStoreImpl::GetEntries(const Key &prefix, std::vector<Entry> &entries) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    DBKey dbPrefix = GetPrefix(prefix);
+    DBKey dbPrefix = convertor_.GetPrefix(prefix);
     if (dbPrefix.empty() && !prefix.Empty()) {
         ZLOGE("invalid prefix:%{public}s size:%{public}zu", StoreUtil::Anonymous(prefix.ToString()).c_str(),
             prefix.Size());
@@ -321,7 +322,7 @@ Status SingleStoreImpl::GetEntries(const DataQuery &query, std::vector<Entry> &e
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     DBQuery dbQuery = *(query.query_);
-    dbQuery.PrefixKey(GetPrefix(query));
+    dbQuery.PrefixKey(convertor_.GetPrefix(query));
     auto status = GetEntries(dbQuery, entries);
     if (status != SUCCESS) {
         ZLOGE("status:0x%{public}x query:%{public}s", status, StoreUtil::Anonymous(query.ToString()).c_str());
@@ -332,7 +333,7 @@ Status SingleStoreImpl::GetEntries(const DataQuery &query, std::vector<Entry> &e
 Status SingleStoreImpl::GetResultSet(const Key &prefix, std::shared_ptr<ResultSet> &resultSet) const
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    DBKey dbPrefix = GetPrefix(prefix);
+    DBKey dbPrefix = convertor_.GetPrefix(prefix);
     if (dbPrefix.empty() && !prefix.Empty()) {
         ZLOGE("invalid prefix:%{public}s size:%{public}zu", StoreUtil::Anonymous(prefix.ToString()).c_str(),
             prefix.Size());
@@ -352,7 +353,7 @@ Status SingleStoreImpl::GetResultSet(const DataQuery &query, std::shared_ptr<Res
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
     DBQuery dbQuery = *(query.query_);
-    dbQuery.PrefixKey(GetPrefix(query));
+    dbQuery.PrefixKey(convertor_.GetPrefix(query));
     auto status = GetResultSet(dbQuery, resultSet);
     if (status != SUCCESS) {
         ZLOGE("status:0x%{public}x query:%{public}s", status, StoreUtil::Anonymous(query.ToString()).c_str());
@@ -386,7 +387,7 @@ Status SingleStoreImpl::GetCount(const DataQuery &query, int &result) const
     }
 
     DBQuery dbQuery = *(query.query_);
-    dbQuery.PrefixKey(GetPrefix(query));
+    dbQuery.PrefixKey(convertor_.GetPrefix(query));
     auto dbStatus = dbStore_->GetCount(dbQuery, result);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     if (status != SUCCESS) {
@@ -583,21 +584,6 @@ int32_t SingleStoreImpl::Close(bool isForce)
     return ref_;
 }
 
-std::vector<uint8_t> SingleStoreImpl::ToLocalDBKey(const Key &key) const
-{
-    return GetPrefix(key);
-}
-
-std::vector<uint8_t> SingleStoreImpl::ToWholeDBKey(const Key &key) const
-{
-    return GetPrefix(key);
-}
-
-Key SingleStoreImpl::ToKey(DBKey &&key) const
-{
-    return std::move(key);
-}
-
 std::function<void(ObserverBridge *)> SingleStoreImpl::BridgeReleaser()
 {
     return [this](ObserverBridge *obj) {
@@ -640,8 +626,7 @@ std::shared_ptr<ObserverBridge> SingleStoreImpl::PutIn(uint32_t &realType, std::
                 auto release = BridgeReleaser();
                 StoreId storeId{ storeId_ };
                 AppId appId{ appId_ };
-                pair.second = std::shared_ptr<ObserverBridge>(
-                    new ObserverBridge(appId, storeId, observer, GetConvert()), release);
+                pair.second = { new ObserverBridge(appId, storeId, observer, convertor_), release };
             }
             bridge = pair.second;
             realType = (realType & (~pair.first));
@@ -667,7 +652,7 @@ std::shared_ptr<ObserverBridge> SingleStoreImpl::TakeOut(uint32_t &realType, std
     return bridge;
 }
 
-Status SingleStoreImpl::GetResultSet(const DistributedDB::Query &query, std::shared_ptr<ResultSet> &resultSet) const
+Status SingleStoreImpl::GetResultSet(const DBQuery &query, std::shared_ptr<ResultSet> &resultSet) const
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (dbStore_ == nullptr) {
@@ -680,11 +665,11 @@ Status SingleStoreImpl::GetResultSet(const DistributedDB::Query &query, std::sha
     if (dbResultSet == nullptr) {
         return StoreUtil::ConvertStatus(status);
     }
-    resultSet = std::make_shared<StoreResultSet>(dbResultSet, dbStore_, GetConvert());
+    resultSet = std::make_shared<StoreResultSet>(dbResultSet, dbStore_, convertor_);
     return SUCCESS;
 }
 
-Status SingleStoreImpl::GetEntries(const DistributedDB::Query &query, std::vector<Entry> &entries) const
+Status SingleStoreImpl::GetEntries(const DBQuery &query, std::vector<Entry> &entries) const
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (dbStore_ == nullptr) {
@@ -693,12 +678,13 @@ Status SingleStoreImpl::GetEntries(const DistributedDB::Query &query, std::vecto
     }
 
     std::vector<DBEntry> dbEntries;
+    std::string deviceId;
     auto dbStatus = dbStore_->GetEntries(query, dbEntries);
     entries.resize(dbEntries.size());
     auto it = entries.begin();
     for (auto &dbEntry : dbEntries) {
         auto &entry = *it;
-        entry.key = ToKey(std::move(dbEntry.key));
+        entry.key = convertor_.ToKey(std::move(dbEntry.key), deviceId);
         entry.value = std::move(dbEntry.value);
         ++it;
     }
@@ -708,36 +694,6 @@ Status SingleStoreImpl::GetEntries(const DistributedDB::Query &query, std::vecto
         status = SUCCESS;
     }
     return status;
-}
-
-std::vector<uint8_t> SingleStoreImpl::GetPrefix(const Key &prefix) const
-{
-    std::vector<uint8_t> dbKey = TrimKey(prefix);
-    if (dbKey.size() > MAX_KEY_LENGTH) {
-        dbKey.clear();
-    }
-    return dbKey;
-}
-
-std::vector<uint8_t> SingleStoreImpl::GetPrefix(const DataQuery &query) const
-{
-    return GetPrefix(Key(query.prefix_));
-}
-
-SingleStoreImpl::Convert SingleStoreImpl::GetConvert() const
-{
-    return nullptr;
-}
-
-std::vector<uint8_t> SingleStoreImpl::TrimKey(const Key &prefix) const
-{
-    auto begin = std::find_if(prefix.Data().begin(), prefix.Data().end(), [](int ch) { return !std::isspace(ch); });
-    auto rBegin = std::find_if(prefix.Data().rbegin(), prefix.Data().rend(), [](int ch) { return !std::isspace(ch); });
-    auto end = static_cast<decltype(begin)>(rBegin.base());
-    if (end <= begin) {
-        return {};
-    }
-    return {begin, end};
 }
 
 Status SingleStoreImpl::DoSync(const SyncInfo &syncInfo, std::shared_ptr<SyncCallback> observer)

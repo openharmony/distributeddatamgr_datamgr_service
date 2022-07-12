@@ -16,9 +16,9 @@
 #include "store_manager.h"
 
 #include "kvdb_service_client.h"
+#include "log_print.h"
 #include "security_manager.h"
 #include "store_factory.h"
-#include "log_print.h"
 namespace OHOS::DistributedKv {
 StoreManager &StoreManager::GetInstance()
 {
@@ -31,6 +31,7 @@ std::shared_ptr<SingleKvStore> StoreManager::GetKVStore(const AppId &appId, cons
 {
     ZLOGD("appId:%{public}s, storeId:%{public}s type:%{public}d area:%{public}d dir:%{public}s", appId.appId.c_str(),
         storeId.storeId.c_str(), options.kvStoreType, options.area, options.baseDir.c_str());
+    status = ILLEGAL_STATE;
     if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()) {
         status = INVALID_ARGUMENT;
         return nullptr;
@@ -49,7 +50,7 @@ std::shared_ptr<SingleKvStore> StoreManager::GetKVStore(const AppId &appId, cons
 
     bool isCreate = false;
     auto kvStore = StoreFactory::GetInstance().GetOrOpenStore(appId, storeId, options, status, isCreate);
-    if (isCreate) {
+    if (isCreate && options.persistent) {
         auto password = SecurityManager::GetInstance().GetDBPassword(storeId, options.baseDir, options.encrypt);
         std::vector<uint8_t> pwd(password.GetData(), password.GetData() + password.GetSize());
         if (service != nullptr) {

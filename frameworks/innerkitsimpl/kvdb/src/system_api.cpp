@@ -14,10 +14,9 @@
  */
 #define LOG_TAG "SystemApi"
 #include "system_api.h"
-
+#include <regex>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <regex>
 #include "log_print.h"
 #include "security_label.h"
 #include "store_util.h"

@@ -15,14 +15,13 @@
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_CLIENT_H
 #include <functional>
-
 #include "concurrent_map.h"
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
 #include "kvdb_service.h"
 #include "kvstore_sync_callback_client.h"
 namespace OHOS::DistributedKv {
-class API_EXPORT KVDBServiceClient : public IRemoteProxy<KVDBService> {
+class KVDBServiceClient : public IRemoteProxy<KVDBService> {
 public:
     static std::shared_ptr<KVDBServiceClient> GetInstance();
     Status GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds) override;
