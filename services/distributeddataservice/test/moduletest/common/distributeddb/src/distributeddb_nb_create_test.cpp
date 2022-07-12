@@ -1635,7 +1635,7 @@ HWTEST_F(DistributeddbNbCreateTest, RekeyDb003, TestSize.Level3)
         EXPECT_EQ(result1->Put(iter->key, iter->value), OK);
     }
     bool rekeyFlag = false;
-    thread subThread([&]() {
+    thread subThread([&result1, &rekeyFlag]() {
         DBStatus rekeyStatus = result1->Rekey(g_passwd1);
         EXPECT_TRUE(rekeyStatus == OK || rekeyStatus == BUSY);
         rekeyFlag = true;
