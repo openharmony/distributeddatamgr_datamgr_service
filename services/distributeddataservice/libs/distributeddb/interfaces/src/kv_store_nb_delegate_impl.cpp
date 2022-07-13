@@ -590,7 +590,7 @@ DBStatus KvStoreNbDelegateImpl::Rekey(const CipherPassword &password)
     return TransferDBErrno(errCode);
 }
 
-DBStatus KvStoreNbDelegateImpl::Export(const std::string &filePath, const CipherPassword &passwd)
+DBStatus KvStoreNbDelegateImpl::Export(const std::string &filePath, const CipherPassword &passwd, bool force)
 {
     if (conn_ == nullptr) {
         LOGE("%s", INVALID_CONNECTION.c_str());
@@ -611,7 +611,7 @@ DBStatus KvStoreNbDelegateImpl::Export(const std::string &filePath, const Cipher
     }
 
     canonicalUrl = canonicalUrl + "/" + fileName;
-    if (OS::CheckPathExistence(canonicalUrl)) {
+    if (!force && OS::CheckPathExistence(canonicalUrl)) {
         return FILE_ALREADY_EXISTED;
     }
 

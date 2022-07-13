@@ -483,6 +483,7 @@ int PackageFile::ExePackage(const string &sourcePath, const string &targetFile,
     if (fileContexts.empty()) {
         return -E_EMPTY_PATH;
     }
+    bool targetExists = OS::CheckPathExistence(targetFile);
     ofstream targetHandle(targetFile, ios::out | ios::binary);
     if (!targetHandle.good()) {
         Clear(targetHandle, targetFile);
@@ -490,11 +491,13 @@ int PackageFile::ExePackage(const string &sourcePath, const string &targetFile,
         return -E_INVALID_PATH;
     }
 
-    errCode = CopyFilePermissions(sourcePath + FILE_SEPARATOR + string(fileContexts.front().fileName), targetFile);
-    if (errCode != E_OK) {
-        LOGE("Copy file fail when execute pack files! errCode = [%d]", errCode);
-        Clear(targetHandle, targetFile);
-        return errCode;
+    if (!targetExists) {
+        errCode = CopyFilePermissions(sourcePath + FILE_SEPARATOR + string(fileContexts.front().fileName), targetFile);
+        if (errCode != E_OK) {
+            LOGE("Copy file fail when execute pack files! errCode = [%d]", errCode);
+            Clear(targetHandle, targetFile);
+            return errCode;
+        }
     }
 
     errCode = PackFileHeader(targetHandle, fileInfo, static_cast<uint32_t>(fileContexts.size()));

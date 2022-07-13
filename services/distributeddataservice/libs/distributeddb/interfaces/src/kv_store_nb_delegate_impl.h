@@ -98,7 +98,7 @@ public:
 
     // Empty passwords represent non-encrypted files.
     // Export existing database files to a specified database file in the specified directory.
-    DBStatus Export(const std::string &filePath, const CipherPassword &passwd) override;
+    DBStatus Export(const std::string &filePath, const CipherPassword &passwd, bool force) override;
 
     // Import the existing database files to the specified database file in the specified directory.
     DBStatus Import(const std::string &filePath, const CipherPassword &passwd) override;

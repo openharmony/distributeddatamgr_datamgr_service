@@ -1129,4 +1129,54 @@ HWTEST_F(DistributedDBInterfacesImportAndExportTest, SeparaDbNoPasswdRekey, Test
     EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
     EXPECT_EQ(g_mgr.DeleteKvStore("SeparaDbNoPasswdRekey"), OK);
 }
+
+/**
+  * @tc.name: ForceExportTest001
+  * @tc.desc: Force export to an existing file.
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedDBInterfacesImportAndExportTest, ForceExportTest001, TestSize.Level1)
+{
+    KvStoreNbDelegate::Option option = {true, false, false};
+    g_mgr.GetKvStore("ForceExportTest001", option, g_kvNbDelegateCallback);
+    EXPECT_EQ(g_kvDelegateStatus, OK);
+    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+
+    EXPECT_EQ(g_kvNbDelegatePtr->Put(KEY_1, VALUE_1), OK);
+
+    CipherPassword passwd;
+    std::string exportFileName = g_exportFileDir + "ForceExportTest001.back";
+
+    OS::FileHandle file;
+    OS::OpenFile(exportFileName, file);
+    std::string text = "Hello world.";
+    write(file.handle, text.c_str(), text.length());
+    OS::CloseFile(file);
+
+    OS::SetFilePermissions(exportFileName, S_IRWXU);
+    EXPECT_EQ(g_kvNbDelegatePtr->Export(exportFileName, passwd, true), OK);
+
+    uint32_t filePermission = 0;
+    OS::GetFilePermissions(exportFileName, filePermission);
+    EXPECT_EQ(filePermission, static_cast<uint32_t>(S_IRWXU));
+
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+    g_kvNbDelegatePtr = nullptr;
+    EXPECT_EQ(g_mgr.DeleteKvStore("ForceExportTest001"), OK);
+
+    g_mgr.GetKvStore(STORE_ID_1, option, g_kvNbDelegateCallback);
+    EXPECT_EQ(g_kvDelegateStatus, OK);
+    ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
+
+    EXPECT_EQ(g_kvNbDelegatePtr->Import(exportFileName, passwd), OK);
+    Value val;
+    g_kvNbDelegatePtr->Get(KEY_1, val);
+    EXPECT_EQ(val, VALUE_1);
+
+    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+    g_kvNbDelegatePtr = nullptr;
+    EXPECT_EQ(g_mgr.DeleteKvStore(STORE_ID_1), OK);
+}
 #endif

@@ -156,7 +156,7 @@ public:
 
     // Empty passwords represent non-encrypted files.
     // Export existing database files to a specified database file in the specified directory.
-    DB_API virtual DBStatus Export(const std::string &filePath, const CipherPassword &passwd) = 0;
+    DB_API virtual DBStatus Export(const std::string &filePath, const CipherPassword &passwd, bool force = false) = 0;
 
     // Import the existing database files to the specified database file in the specified directory.
     // Warning Import may reopen database file in locked state
