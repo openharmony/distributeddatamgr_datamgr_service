@@ -24,3 +24,15 @@ group("build_native_test") {
     "services/distributeddataservice/test:moduletest",
   ]
 }
+
+###############################################################################
+
+group("fuzztest") {
+  testonly = true
+  deps = []
+  deps += [
+    "test/fuzztest/autolaunch_fuzzer:fuzztest",
+    "test/fuzztest/kvstore_fuzzer:fuzztest",
+    "test/fuzztest/kvstoredisksize_fuzzer:fuzztest",
+  ]
+}

@@ -47,7 +47,7 @@ ohos_fuzztest("AutoLaunchFuzzTest") {
     "//third_party/grpc/src/core/lib/json",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/test/fuzztest/autolaunch_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/test/fuzztest/autolaunch_fuzzer"
 
   cflags = [
     "-g",

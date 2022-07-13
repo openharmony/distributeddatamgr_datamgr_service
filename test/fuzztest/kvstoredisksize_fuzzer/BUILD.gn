@@ -47,7 +47,7 @@ ohos_fuzztest("KvStoreDiskSizeFuzzTest") {
     "//third_party/grpc/src/core/lib/json",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/test/fuzztest/kvstoredisksize_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/test/fuzztest/kvstoredisksize_fuzzer"
 
   cflags = [
     "-g",

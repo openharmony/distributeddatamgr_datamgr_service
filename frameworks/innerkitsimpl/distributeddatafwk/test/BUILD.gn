@@ -210,15 +210,3 @@ group("unittest") {
     ":SingleKvStoreClientTest",
   ]
 }
-
-###############################################################################
-
-group("fuzztest") {
-  testonly = true
-  deps = []
-  deps += [
-    "fuzztest/autolaunch_fuzzer:fuzztest",
-    "fuzztest/kvstoredisksize_fuzzer:fuzztest",
-  ]
-}
-###############################################################################
