@@ -72,7 +72,6 @@ int32_t GetRootKeyParams(HksParamSet *&params)
     return ret;
 }
 
-
 int32_t CryptoManager::GenerateRootKey()
 {
     ZLOGI("GenerateRootKey.");
@@ -80,35 +79,41 @@ int32_t CryptoManager::GenerateRootKey()
     int32_t ret = GetRootKeyParams(params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("GetRootKeyParams failed with error %{public}d", ret);
-        return ret;
+        return ErrCode::ERROR;
     }
     struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
     ret = HksGenerateKey(&rootKeyName, params, nullptr);
     HksFreeParamSet(&params);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksGenerateKey failed with error %{public}d", ret);
+    if (ret == HKS_SUCCESS) {
+        ZLOGI("GenerateRootKey Succeed.");
+        return ErrCode::SUCCESS;
     }
-    ZLOGI("GenerateRootKey Succeed.");
-    return ret;
+
+    ZLOGE("HksGenerateKey failed with error %{public}d", ret);
+    return ErrCode::ERROR;
 }
 
-bool CryptoManager::IsExistRootKey()
+int32_t CryptoManager::CheckRootKey()
 {
-    ZLOGI("IsExistRootKey.");
+    ZLOGI("CheckRootKey.");
     struct HksParamSet *params = nullptr;
     int32_t ret = GetRootKeyParams(params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("GetRootKeyParams failed with error %{public}d", ret);
-        return ret;
+        return ErrCode::ERROR;
     }
 
     struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
     ret = HksKeyExist(&rootKeyName, params);
     HksFreeParamSet(&params);
-    if (ret != HKS_SUCCESS) {
-        ZLOGE("HksKeyExist failed with error %{public}d", ret);
+    if (ret == HKS_SUCCESS) {
+        return ErrCode::SUCCESS;
     }
-    return ret == HKS_SUCCESS;
+    ZLOGE("HksKeyExist failed with error %{public}d", ret);
+    if (ret == HKS_ERROR_NOT_EXIST) {
+        return ErrCode::NOT_EXIST;
+    }
+    return ErrCode::ERROR;
 }
 
 std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)

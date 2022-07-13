@@ -20,10 +20,12 @@ namespace DistributedData {
 SecretKeyMetaData::SecretKeyMetaData()
 {
 }
+
 SecretKeyMetaData::~SecretKeyMetaData()
 {
     sKey.assign(sKey.size(), 0);
 }
+
 bool SecretKeyMetaData::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(time)], time);
@@ -31,6 +33,7 @@ bool SecretKeyMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(storeType)], storeType);
     return true;
 }
+
 bool SecretKeyMetaData::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(time), time);
