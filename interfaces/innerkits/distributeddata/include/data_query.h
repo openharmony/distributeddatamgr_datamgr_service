@@ -532,14 +532,11 @@ private:
 
     std::string str_;
 
-    bool inkeysFlag_ = false;
-
+    bool hasKeys_ = false;
+    bool hasPrefix_ = false;
     std::shared_ptr<DistributedDB::Query> query_;
-
     std::string deviceId_;
-
     std::string prefix_;
-
     std::vector<std::string> keys_;
 
     template<typename T>

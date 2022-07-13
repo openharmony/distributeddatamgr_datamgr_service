@@ -25,6 +25,9 @@ public:
     std::vector<uint8_t> GetPrefix(const Key &prefix) const override;
     std::vector<uint8_t> GetPrefix(const DataQuery &query) const override;
 
+protected:
+    std::string GetRealKey(const std::string &key, const DataQuery &query) const override;
+
 private:
     static constexpr size_t MAX_DEV_KEY_LEN = 896;
     std::vector<uint8_t> ConvertNetwork(const Key &in, bool withLen = false) const;

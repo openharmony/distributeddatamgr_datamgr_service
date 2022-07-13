@@ -32,6 +32,7 @@ public:
     DBQuery GetDBQuery(const DataQuery &query) const;
 
 protected:
+    virtual std::string GetRealKey(const std::string &key, const DataQuery &query) const;
     std::vector<uint8_t> TrimKey(const Key &prefix) const;
 
 private:

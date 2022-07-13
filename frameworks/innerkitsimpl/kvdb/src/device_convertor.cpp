@@ -90,16 +90,24 @@ std::vector<uint8_t> DeviceConvertor::GetPrefix(const Key &prefix) const
 
 std::vector<uint8_t> DeviceConvertor::GetPrefix(const DataQuery &query) const
 {
+    // |  length  | networkId | original key |
+    // |----4-----|-----------|--------------|
+    return ConvertNetwork(GetRealKey(query.prefix_, query));
+}
+
+std::string DeviceConvertor::GetRealKey(const std::string &key, const DataQuery &query) const
+{
     if (query.deviceId_.empty()) {
-        return ConvertNetwork(query.prefix_);
+        return key;
     }
+
     // |  length  | networkId | original key |
     // |----4-----|-----------|--------------|
     std::ostringstream oss;
     oss << std::setfill('0') << std::setw(sizeof(uint32_t)) << query.deviceId_.length();
-    oss << query.deviceId_ << query.prefix_;
-    std::string prefix = oss.str();
-    return ConvertNetwork(prefix);
+    oss << query.deviceId_ << key;
+    std::string realKey = oss.str();
+    return realKey;
 }
 
 std::vector<uint8_t> DeviceConvertor::ConvertNetwork(const Key &in, bool withLen) const
