@@ -67,7 +67,8 @@ DataQuery::DataQuery()
 DataQuery& DataQuery::Reset()
 {
     str_ = "";
-    inkeysFlag_ = false;
+    hasKeys_ = false;
+    hasPrefix_ = false;
     deviceId_ = "";
     prefix_ = "";
     query_ = std::make_shared<DistributedDB::Query>();
@@ -566,6 +567,7 @@ DataQuery& DataQuery::KeyPrefix(const std::string &prefix)
         EscapeSpace(myPrefix);
         str_.append(myPrefix);
         prefix_ = prefix;
+        hasPrefix_ = true;
     }
     return *this;
 }
@@ -606,11 +608,11 @@ DataQuery& DataQuery::InKeys(const std::vector<std::string> &keys)
         ZLOGE("Invalid number param");
         return *this;
     }
-    if (inkeysFlag_) {
+    if (hasKeys_) {
         ZLOGE("cannot set inkeys more than once");
         return *this;
     }
-    inkeysFlag_ = true;
+    hasKeys_ = true;
     str_.append(SPACE);
     str_.append(IN_KEYS);
     str_.append(SPACE);
@@ -624,11 +626,7 @@ DataQuery& DataQuery::InKeys(const std::vector<std::string> &keys)
         }
     }
     str_.append(END_IN);
-    std::set<DistributedDB::Key> dbKeys;
-    for (const auto &key : keys) {
-        dbKeys.insert({ key.begin(), key.end() });
-    }
-    query_->InKeys(dbKeys);
+    keys_ = keys;
     return *this;
 }
 

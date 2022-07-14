@@ -12,14 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef SDB_AUTO_SYNC_TIMER_H
 #define SDB_AUTO_SYNC_TIMER_H
 #include <set>
+#include "concurrent_map.h"
 #include "kv_scheduler.h"
 #include "kvdb_service.h"
-#include "concurrent_map.h"
-
 namespace OHOS::DistributedKv {
 class AutoSyncTimer {
 public:
@@ -27,6 +25,7 @@ public:
     static constexpr uint32_t AUTO_SYNC_INTERVAL = 50;
     static AutoSyncTimer &GetInstance();
     void DoAutoSync(const std::string &appId, const std::set<StoreId> &storeIds);
+
 private:
     static constexpr size_t TIME_TASK_NUM = 5;
     static constexpr size_t SYNC_STORE_NUM = 10;
@@ -42,8 +41,7 @@ private:
     SchedulerTask delaySyncTask_;
     SchedulerTask forceSyncTask_;
     std::mutex mutex_;
-    KvScheduler scheduler_ { TIME_TASK_NUM };
+    KvScheduler scheduler_{ TIME_TASK_NUM };
 };
-}
-
+} // namespace OHOS::DistributedKv
 #endif // SDB_AUTO_SYNC_TIMER_H

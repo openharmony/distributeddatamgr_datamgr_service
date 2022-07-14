@@ -417,8 +417,8 @@ public:
 private:
 
     friend class QueryHelper;
-    friend class SingleStoreImpl;
-    friend class DeviceStoreImpl;
+    friend class DeviceConvertor;
+    friend class Convertor;
     // equal to
     static const char * const EQUAL_TO;
 
@@ -532,13 +532,12 @@ private:
 
     std::string str_;
 
-    bool inkeysFlag_ = false;
-
+    bool hasKeys_ = false;
+    bool hasPrefix_ = false;
     std::shared_ptr<DistributedDB::Query> query_;
-
     std::string deviceId_;
-
     std::string prefix_;
+    std::vector<std::string> keys_;
 
     template<typename T>
     void AppendCommon(const std::string &keyword, const std::string &fieldType, std::string &field, const T &value);

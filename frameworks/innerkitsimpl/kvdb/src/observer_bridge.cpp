@@ -13,12 +13,11 @@
  * limitations under the License.
  */
 #include "observer_bridge.h"
-
 #include "kvdb_service_client.h"
 #include "kvstore_observer_client.h"
 namespace OHOS::DistributedKv {
-ObserverBridge::ObserverBridge(const AppId &app, const StoreId &store, std::shared_ptr<Observer> observer, Convert cvt)
-    : appId_(app), storeId_(store), observer_(std::move(observer)), convert_(std::move(cvt))
+ObserverBridge::ObserverBridge(AppId appId, StoreId store, std::shared_ptr<Observer> observer, const Convertor &cvt)
+    : appId_(std::move(appId)), storeId_(std::move(store)), observer_(std::move(observer)), convert_(cvt)
 {
 }
 
@@ -72,54 +71,36 @@ Status ObserverBridge::UnregisterRemoteObserver()
 void ObserverBridge::OnChange(const DBChangedData &data)
 {
     std::string deviceId;
-    auto inserted = ConvertDB(data.GetEntriesInserted(), deviceId);
-    auto updated = ConvertDB(data.GetEntriesUpdated(), deviceId);
-    auto deleted = ConvertDB(data.GetEntriesDeleted(), deviceId);
+    auto inserted = ConvertDB(data.GetEntriesInserted(), deviceId, convert_);
+    auto updated = ConvertDB(data.GetEntriesUpdated(), deviceId, convert_);
+    auto deleted = ConvertDB(data.GetEntriesDeleted(), deviceId, convert_);
     ChangeNotification notice(std::move(inserted), std::move(updated), std::move(deleted), deviceId, false);
     observer_->OnChange(notice);
 }
 
-ObserverBridge::ObserverClient::ObserverClient(std::shared_ptr<Observer> observer, Convert &convert)
-    : KvStoreObserverClient(observer), convert_(convert)
+ObserverBridge::ObserverClient::ObserverClient(std::shared_ptr<Observer> observer, const Convertor &cvt)
+    : KvStoreObserverClient(observer), convert_(cvt)
 {
 }
 
 void ObserverBridge::ObserverClient::OnChange(const ChangeNotification &data)
 {
-    if (convert_ == nullptr) {
-        KvStoreObserverClient::OnChange(data);
-        return;
-    }
-
     std::string deviceId;
-    auto inserted = ConvertDB(data.GetInsertEntries(), deviceId);
-    auto updated = ConvertDB(data.GetUpdateEntries(), deviceId);
-    auto deleted = ConvertDB(data.GetDeleteEntries(), deviceId);
+    auto inserted = ObserverBridge::ConvertDB(data.GetInsertEntries(), deviceId, convert_);
+    auto updated = ObserverBridge::ConvertDB(data.GetUpdateEntries(), deviceId, convert_);
+    auto deleted = ObserverBridge::ConvertDB(data.GetDeleteEntries(), deviceId, convert_);
     ChangeNotification notice(std::move(inserted), std::move(updated), std::move(deleted), deviceId, false);
     KvStoreObserverClient::OnChange(notice);
 }
 
-std::vector<Entry> ObserverBridge::ObserverClient::ConvertDB(const std::vector<Entry> &dbEntries,
-    std::string &deviceId) const
+template<class T>
+std::vector<Entry> ObserverBridge::ConvertDB(const T &dbEntries, std::string &deviceId, const Convertor &convert)
 {
     std::vector<Entry> entries(dbEntries.size());
     auto it = entries.begin();
     for (const auto &dbEntry : dbEntries) {
         Entry &entry = *it;
-        entry.key = convert_ ? convert_(dbEntry.key, deviceId) : Key(dbEntry.key);
-        entry.value = dbEntry.value;
-        ++it;
-    }
-    return entries;
-}
-
-std::vector<Entry> ObserverBridge::ConvertDB(const std::list<DBEntry> &dbEntries, std::string &deviceId) const
-{
-    std::vector<Entry> entries(dbEntries.size());
-    auto it = entries.begin();
-    for (const auto &dbEntry : dbEntries) {
-        Entry &entry = *it;
-        entry.key = convert_ ? convert_(dbEntry.key, deviceId) : Key(dbEntry.key);
+        entry.key = convert.ToKey(DBKey(dbEntry.key), deviceId);
         entry.value = dbEntry.value;
         ++it;
     }

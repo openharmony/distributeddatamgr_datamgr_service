@@ -198,7 +198,7 @@ void QueryExpression::QueryBySuggestIndex(const std::string &indexName)
 
 void QueryExpression::InKeys(const std::set<Key> &keys)
 {
-    queryInfo_.emplace_back(QueryObjNode{QueryObjType::IN_KEYS, std::string(), QueryValueType::VALUE_TYPE_NULL,
+    queryInfo_.emplace_front(QueryObjNode{QueryObjType::IN_KEYS, std::string(), QueryValueType::VALUE_TYPE_NULL,
         std::vector<FieldValue>()});
     keys_ = keys;
 }

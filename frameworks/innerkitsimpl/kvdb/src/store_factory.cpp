@@ -15,7 +15,7 @@
 #define LOG_TAG "StoreFactory"
 #include "store_factory.h"
 
-#include "device_store_impl.h"
+#include "device_convertor.h"
 #include "log_print.h"
 #include "security_manager.h"
 #include "single_store_impl.h"
@@ -35,6 +35,9 @@ StoreFactory::StoreFactory()
         return;
     }
     (void)DBManager::SetProcessSystemAPIAdapter(std::make_shared<SystemApi>());
+    convertors_[DEVICE_COLLABORATION] = new DeviceConvertor();
+    convertors_[SINGLE_VERSION] = new Convertor();
+    convertors_[MULTI_VERSION] = new Convertor();
 }
 
 std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(const AppId &appId, const StoreId &storeId,
@@ -54,18 +57,15 @@ std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(const AppId &appId, 
         auto password = SecurityManager::GetInstance().GetDBPassword(storeId, options.baseDir, options.encrypt);
         DBStatus dbStatus = DBStatus::DB_ERROR;
         dbManager->GetKvStore(storeId, GetDBOption(options, password),
-            [&dbManager, &kvStore, &appId, &dbStatus, &options](auto status, auto *store) {
+            [this, &dbManager, &kvStore, &appId, &dbStatus, &options](auto status, auto *store) {
                 dbStatus = status;
                 if (store == nullptr) {
                     return;
                 }
                 auto release = [dbManager](auto *store) { dbManager->CloseKvStore(store); };
                 auto dbStore = std::shared_ptr<DBStore>(store, release);
-                if (options.kvStoreType == DEVICE_COLLABORATION) {
-                    kvStore = std::make_shared<DeviceStoreImpl>(dbStore, appId, options);
-                } else {
-                    kvStore = std::make_shared<SingleStoreImpl>(dbStore, appId, options);
-                }
+                const Convertor &convertor = *(convertors_[options.kvStoreType]);
+                kvStore = std::make_shared<SingleStoreImpl>(dbStore, appId, options, convertor);
             });
         status = StoreUtil::ConvertStatus(dbStatus);
         if (kvStore == nullptr) {

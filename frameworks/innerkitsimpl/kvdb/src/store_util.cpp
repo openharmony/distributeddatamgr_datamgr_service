@@ -18,7 +18,6 @@
 #include <unistd.h>
 #include "log_print.h"
 #include "types.h"
-
 namespace OHOS::DistributedKv {
 constexpr mode_t DEFAULT_UMASK = 0002;
 constexpr int32_t HEAD_SIZE = 3;
@@ -58,6 +57,32 @@ int32_t StoreUtil::GetSecLevel(StoreUtil::DBSecurity dbSec)
     return NO_LABEL;
 }
 
+StoreUtil::DBMode StoreUtil::GetDBMode(SyncMode syncMode)
+{
+    DBMode dbMode;
+    if (syncMode == SyncMode::PUSH) {
+        dbMode = DBMode::SYNC_MODE_PUSH_ONLY;
+    } else if (syncMode == SyncMode::PULL) {
+        dbMode = DBMode::SYNC_MODE_PULL_ONLY;
+    } else {
+        dbMode = DBMode::SYNC_MODE_PUSH_PULL;
+    }
+    return dbMode;
+}
+
+uint32_t StoreUtil::GetObserverMode(SubscribeType subType)
+{
+    uint32_t mode;
+    if (subType == SubscribeType::SUBSCRIBE_TYPE_LOCAL) {
+        mode = DistributedDB::OBSERVER_CHANGES_NATIVE;
+    } else if (subType == SubscribeType::SUBSCRIBE_TYPE_REMOTE) {
+        mode = DistributedDB::OBSERVER_CHANGES_FOREIGN;
+    } else {
+        mode = DistributedDB::OBSERVER_CHANGES_FOREIGN | DistributedDB::OBSERVER_CHANGES_NATIVE;
+    }
+    return mode;
+}
+
 std::string StoreUtil::Anonymous(const std::string &name)
 {
     if (name.length() <= HEAD_SIZE) {
@@ -78,7 +103,7 @@ uint32_t StoreUtil::Anonymous(const void *ptr)
     return hash;
 }
 
-Status StoreUtil::ConvertStatus(StoreUtil::DBStatus status)
+Status StoreUtil::ConvertStatus(DBStatus status)
 {
     switch (status) {
         case DBStatus::BUSY: // fallthrough

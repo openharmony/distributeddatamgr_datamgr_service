@@ -12,20 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SERVICE_H
-#include <memory>
 #include <limits>
+#include <memory>
 #include "ikvstore_observer.h"
 #include "ikvstore_sync_callback.h"
 #include "iremote_broker.h"
 #include "kvstore_death_recipient.h"
 #include "single_kvstore.h"
 #include "types.h"
-#include "visibility.h"
 namespace OHOS::DistributedKv {
-class API_EXPORT KVDBService : public IRemoteBroker {
+class KVDBService : public IRemoteBroker {
 public:
     using SingleKVStore = SingleKvStore;
     struct SyncInfo {
