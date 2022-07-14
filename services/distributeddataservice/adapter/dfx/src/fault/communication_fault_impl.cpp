@@ -14,6 +14,7 @@
  */
 
 #include "communication_fault_impl.h"
+#include "dfx_types.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {

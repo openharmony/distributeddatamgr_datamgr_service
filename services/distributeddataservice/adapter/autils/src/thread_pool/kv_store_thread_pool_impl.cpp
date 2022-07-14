@@ -17,6 +17,10 @@
 
 #include "kv_store_thread_pool_impl.h"
 #include "log_print.h"
+#include "foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/autils/src/thread_pool/kv_store_thread.h"
+#include "functional"
+#include "list"
+#include "type_traits"
 
 namespace OHOS {
 namespace DistributedKv {
