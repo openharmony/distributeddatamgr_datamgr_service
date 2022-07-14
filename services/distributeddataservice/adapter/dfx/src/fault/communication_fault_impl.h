@@ -18,7 +18,7 @@
 
 #include "fault_reporter.h"
 #include "hiview_adapter.h"
-#include "dfx_types.h"
+#include "dfx_types.h" 
 
 namespace OHOS {
 namespace DistributedDataDfx {
