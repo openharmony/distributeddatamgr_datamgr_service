@@ -64,6 +64,7 @@
 #include "utils/converter.h"
 #include "string_ex.h"
 #include "utils/crypto.h"
+#include "runtime_config.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -849,7 +850,7 @@ void KvStoreDataService::StartService()
         ZLOGD("Check permission start appid:%{public}s storeId:%{public}s.", appId.c_str(), storeId.c_str());
         return CheckPermissions(userId, appId, storeId, deviceId, flag);
     };
-    auto dbStatus = KvStoreDelegateManager::SetPermissionCheckCallback(permissionCheck);
+    auto dbStatus = DistributedDB::RuntimeConfig::SetPermissionCheckCallback(permissionCheck);
     if (dbStatus != DistributedDB::DBStatus::OK) {
         ZLOGE("SetPermissionCheck callback failed.");
     }
