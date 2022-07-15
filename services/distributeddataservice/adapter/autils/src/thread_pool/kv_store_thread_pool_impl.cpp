@@ -14,9 +14,13 @@
  */
 
 #define LOG_TAG "KvStoreThreadPoolImpl"
-
-#include "kv_store_thread_pool_impl.h"
+#include <functional>
+#include <list>
+#include <type_traits>
 #include "log_print.h"
+#include "kv_store_thread.h"
+#include "kv_store_thread_pool_impl.h"
+
 
 namespace OHOS {
 namespace DistributedKv {
