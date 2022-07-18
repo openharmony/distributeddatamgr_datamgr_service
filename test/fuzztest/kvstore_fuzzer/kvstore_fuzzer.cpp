@@ -35,7 +35,8 @@ void SetUpTestCase(void)
     options.area = EL1;
     options.baseDir = std::string("/data/service/el1/public/database/odmf");
     AppId appId = { "odmf" };
-    StoreId storeId = { "student_single" }; /* define kvstore(database) name. */
+    /* define kvstore(database) name. */
+    StoreId storeId = { "student_single" };
     mkdir(options.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     /* [create and] open and initialize kvstore instance. */
     status_ = manager.GetSingleKvStore(options, appId, storeId, singleKvStore_);
