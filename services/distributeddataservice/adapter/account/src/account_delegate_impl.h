@@ -42,11 +42,17 @@ private:
 
 class AccountDelegateImpl : public AccountDelegate {
 public:
+    ~AccountDelegateImpl();
     Status Subscribe(std::shared_ptr<Observer> observer) override;
     Status Unsubscribe(std::shared_ptr<Observer> observer) override;
     void NotifyAccountChanged(const AccountEventInfo &accountEventInfo);
+    bool RegisterHashFunc(HashFunc hash) override;
 
+protected:
+    std::string DoHash(const void *data, size_t size, bool isUpper) const;
+private:
     ConcurrentMap<std::string, std::shared_ptr<Observer>> observerMap_ {};
+    HashFunc hash_ = nullptr;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

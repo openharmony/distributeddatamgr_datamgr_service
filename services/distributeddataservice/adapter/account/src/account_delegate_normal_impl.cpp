@@ -25,7 +25,6 @@
 #include "log_print.h"
 #include "ohos_account_kits.h"
 #include "os_account_manager.h"
-#include "utils/crypto.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -34,16 +33,10 @@ using namespace OHOS::AAFwk;
 using namespace OHOS::DistributedData;
 using namespace Security::AccessToken;
 AccountDelegate::BaseInstance AccountDelegate::getInstance_ = AccountDelegateNormalImpl::GetBaseInstance;
-
-AccountDelegateNormalImpl *AccountDelegateNormalImpl::GetInstance()
+AccountDelegate *AccountDelegateNormalImpl::GetBaseInstance()
 {
     static AccountDelegateNormalImpl accountDelegate;
     return &accountDelegate;
-}
-
-AccountDelegate *AccountDelegateNormalImpl::GetBaseInstance()
-{
-    return AccountDelegateNormalImpl::GetInstance();
 }
 
 std::string AccountDelegateNormalImpl::GetCurrentAccountId() const
@@ -137,7 +130,6 @@ AccountDelegateNormalImpl::~AccountDelegateNormalImpl()
     if (!result) {
         ZLOGE("Fail to unregister account event listener!");
     }
-    observerMap_.Clear();
 }
 
 std::string AccountDelegateNormalImpl::Sha256AccountId(const std::string &plainText) const
@@ -159,7 +151,7 @@ std::string AccountDelegateNormalImpl::Sha256AccountId(const std::string &plainT
     }
 
     auto plainVal = htobe64(plain);
-    return Crypto::Sha256(static_cast<void *>(&plainVal), sizeof(plainVal), true);
+    return DoHash(static_cast<void *>(&plainVal), sizeof(plainVal), true);
 }
 }  // namespace DistributedKv
 }  // namespace OHOS

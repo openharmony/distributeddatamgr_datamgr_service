@@ -794,6 +794,7 @@ void KvStoreDataService::DumpStoreInfo(int fd, const std::string &storeId)
 void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
+    AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
     static constexpr int32_t RETRY_TIMES = 10;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
     for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIMES; ++retry) {

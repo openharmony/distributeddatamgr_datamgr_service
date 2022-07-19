@@ -24,16 +24,10 @@ namespace {
 }
 
 AccountDelegate::BaseInstance AccountDelegate::getInstance_ = AccountDelegateDefaultImpl::GetBaseInstance;
-
-AccountDelegateDefaultImpl *AccountDelegateDefaultImpl::GetInstance()
+AccountDelegate *AccountDelegateDefaultImpl::GetBaseInstance()
 {
     static AccountDelegateDefaultImpl accountDelegate;
     return &accountDelegate;
-}
-
-AccountDelegate *AccountDelegateDefaultImpl::GetBaseInstance()
-{
-    return AccountDelegateDefaultImpl::GetInstance();
 }
 
 std::string AccountDelegateDefaultImpl::GetCurrentAccountId() const
@@ -69,7 +63,6 @@ void AccountDelegateDefaultImpl::SubscribeAccountEvent()
 AccountDelegateDefaultImpl::~AccountDelegateDefaultImpl()
 {
     ZLOGD("destruct");
-    observerMap_.Clear();
 }
 }  // namespace DistributedKv
 }  // namespace OHOS

@@ -134,7 +134,7 @@ ohos_shared_library("distributeddataservice") {
   if (distributeddatamgr_power) {
     external_deps += [
       "battery_manager_native:batterysrv_client",
-      "power_manager_native:powermgr_client",
+      "power_manager:powermgr_client",
     ]
     defines = [ "SUPPORT_POWER" ]
   }

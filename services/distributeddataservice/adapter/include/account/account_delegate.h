@@ -52,6 +52,7 @@ public:
         API_EXPORT virtual std::string Name() = 0;
         API_EXPORT virtual LevelType GetLevel() = 0;
     };
+    using HashFunc = std::string(*)(const void *data, size_t size, bool isUpper);
     API_EXPORT virtual ~AccountDelegate() = default;
     API_EXPORT virtual Status Subscribe(std::shared_ptr<Observer> observer) = 0;
     API_EXPORT virtual Status Unsubscribe(std::shared_ptr<Observer> observer) = 0;
@@ -60,6 +61,7 @@ public:
     API_EXPORT virtual int32_t GetUserByToken(uint32_t tokenId) const = 0;
     API_EXPORT virtual void SubscribeAccountEvent() = 0;
     API_EXPORT virtual bool QueryUsers(std::vector<int> &users) = 0;
+    API_EXPORT virtual bool RegisterHashFunc(HashFunc hash) = 0;
     API_EXPORT static AccountDelegate *GetInstance();
 
 private:

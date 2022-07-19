@@ -54,6 +54,11 @@ void EventSubscriber::SetEventCallback(EventCallback callback)
     eventCallback_ = callback;
 }
 
+AccountDelegateImpl::~AccountDelegateImpl()
+{
+    observerMap_.Clear();
+}
+
 void AccountDelegateImpl::NotifyAccountChanged(const AccountEventInfo &accountEventInfo)
 {
     observerMap_.ForEach([&accountEventInfo] (const auto& key, const auto& val) {
@@ -106,6 +111,20 @@ Status AccountDelegateImpl::Unsubscribe(std::shared_ptr<Observer> observer)
     }
     ZLOGD("fail");
     return Status::ERROR;
+}
+
+bool AccountDelegateImpl::RegisterHashFunc(HashFunc hash)
+{
+    hash_ = hash;
+    return true;
+}
+
+std::string AccountDelegateImpl::DoHash(const void *data, size_t size, bool isUpper) const
+{
+    if (hash_ == nullptr) {
+        return std::string(static_cast<const char *>(data), size);
+    }
+    return hash_(data, size, isUpper);
 }
 }  // namespace DistributedKv
 }  // namespace OHOS

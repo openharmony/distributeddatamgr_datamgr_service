@@ -25,7 +25,6 @@ namespace OHOS {
 namespace DistributedKv {
 class AccountDelegateNormalImpl final : public AccountDelegateImpl {
 public:
-    static AccountDelegateNormalImpl *GetInstance();
     static AccountDelegate *GetBaseInstance();
     std::string GetCurrentAccountId() const override;
     std::string GetDeviceAccountIdByUID(int32_t uid) const override;

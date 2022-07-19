@@ -39,10 +39,7 @@ ohos_static_library("distributeddata_account_static") {
 
   configs = [ "//build/config/compiler:exceptions" ]
 
-  deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//utils/native/base:utils",
-  ]
+  deps = [ "//utils/native/base:utils" ]
 
   external_deps = [
     "ability_base:want",
