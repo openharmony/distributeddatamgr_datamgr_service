@@ -51,28 +51,27 @@ void TearDown(void)
 
 void PutFuzz(const uint8_t *data, size_t size)
 {
-    std::string rawString(reinterpret_cast<const char *>(data), size);
-    Key skey = {rawString};
-    Value sval = {rawString};
-    singleKvStore_->Put(skey, sval);
-    singleKvStore_->Delete(skey);
+    std::string skey(reinterpret_cast<const char *>(data), size);
+    std::string svalue(reinterpret_cast<const char *>(data), size + 1);
+    Key key = {skey};
+    Value val = {svalue};
+    singleKvStore_->Put(key, val);
+    singleKvStore_->Delete(key);
 }
 
 void PutBatchFuzz(const uint8_t *data, size_t size)
 {
-    std::string rawString(reinterpret_cast<const char *>(data), size);
-    std::string rawString1 = rawString + "test_1";
-    std::string rawString2 = rawString + "test_2";
-    std::string rawString3 = rawString + "test_3";
+    std::string skey(reinterpret_cast<const char *>(data), size);
+    std::string svalue(reinterpret_cast<const char *>(data), size);
     std::vector<Entry> entries;
     std::vector<Key> keys;
     Entry entry1, entry2, entry3;
-    entry1.key = {rawString1};
-    entry1.value = {rawString1};
-    entry2.key = {rawString2};
-    entry2.value = {rawString2};
-    entry3.key = {rawString3};
-    entry3.value = {rawString3};
+    entry1.key = {skey + "test_key1"};
+    entry1.value = {svalue + "test_val1"};
+    entry2.key = {skey + "test_key2"};
+    entry2.value = {svalue + "test_val2"};
+    entry3.key = {skey + "test_key3"};
+    entry3.value = {svalue + "test_val3"};
     entries.push_back(entry1);
     entries.push_back(entry2);
     entries.push_back(entry3);
@@ -85,98 +84,120 @@ void PutBatchFuzz(const uint8_t *data, size_t size)
 
 void GetFuzz(const uint8_t *data, size_t size)
 {
-    std::string rawString(reinterpret_cast<const char *>(data), size);
-    Key skey = {rawString};
-    Value sval = {rawString};
-    Value sval1;
-    singleKvStore_->Put(skey, sval);
-    singleKvStore_->Get(skey, sval1);
-    singleKvStore_->Delete(skey);
+    std::string skey(reinterpret_cast<const char *>(data), size);
+    std::string svalue(reinterpret_cast<const char *>(data), size + 1);
+    Key key = {skey};
+    Value val = {svalue};
+    Value val1;
+    singleKvStore_->Put(key, val);
+    singleKvStore_->Get(key, val1);
+    singleKvStore_->Delete(key);
 }
 
 void GetEntriesFuzz1(const uint8_t *data, size_t size)
 {
-    std::string rawString(reinterpret_cast<const char *>(data), size);
+    std::string prefix(reinterpret_cast<const char *>(data), size);
     std::string keys = "test_";
     size_t sum = 10;
     std::vector<Entry> results;
     for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Put(rawString + keys + std::to_string(i), { keys + std::to_string(i) });
+        singleKvStore_->Put(prefix + keys + std::to_string(i), { keys + std::to_string(i) });
     }
-    singleKvStore_->GetEntries(rawString, results);
+    singleKvStore_->GetEntries(prefix, results);
     for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Delete(rawString + keys + std::to_string(i));
+        singleKvStore_->Delete(prefix + keys + std::to_string(i));
     }
 }
 
 void GetEntriesFuzz2(const uint8_t *data, size_t size)
 {
-    std::string rawString(reinterpret_cast<const char *>(data), size);
+    std::string prefix(reinterpret_cast<const char *>(data), size);
     DataQuery dataQuery;
-    dataQuery.KeyPrefix(rawString);
+    dataQuery.KeyPrefix(prefix);
     std::string keys = "test_";
     std::vector<Entry> entries;
     size_t sum = 10;
     for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Put(rawString + keys + std::to_string(i), keys + std::to_string(i));
+        singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
     }
     singleKvStore_->GetEntries(dataQuery, entries);
     for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Delete(rawString + keys + std::to_string(i));
+        singleKvStore_->Delete(prefix + keys + std::to_string(i));
     }
 }
 
 void GetResultSetFuzz1(const uint8_t *data, size_t size)
 {
-    std::string rawString(reinterpret_cast<const char *>(data), size);
+    std::string prefix(reinterpret_cast<const char *>(data), size);
     std::string keys = "test_";
-    auto fuzzedInt = static_cast<int>(size);
+    int position = static_cast<int>(size);
     std::shared_ptr<KvStoreResultSet> resultSet;
     size_t sum = 10;
     for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Put(rawString + keys + std::to_string(i), keys + std::to_string(i));
+        singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
     }
-    singleKvStore_->GetResultSet(rawString, resultSet);
-    resultSet->Move(fuzzedInt);
-    resultSet->MoveToPosition(fuzzedInt);
+    singleKvStore_->GetResultSet(prefix, resultSet);
+    resultSet->Move(position);
+    resultSet->MoveToPosition(position);
     Entry entry;
     resultSet->GetEntry(entry);
     for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Delete(rawString + keys + std::to_string(i));
+        singleKvStore_->Delete(prefix + keys + std::to_string(i));
     }
 }
 
 void GetResultSetFuzz2(const uint8_t *data, size_t size)
 {
-    std::string rawString(reinterpret_cast<const char *>(data), size);
+    std::string prefix(reinterpret_cast<const char *>(data), size);
     DataQuery dataQuery;
-    dataQuery.KeyPrefix(rawString);
+    dataQuery.KeyPrefix(prefix);
     std::string keys = "test_";
     std::shared_ptr<KvStoreResultSet> resultSet;
     size_t sum = 10;
     for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Put(rawString + keys + std::to_string(i), keys + std::to_string(i));
+        singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
     }
     singleKvStore_->GetResultSet(dataQuery, resultSet);
     for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Delete(rawString + keys + std::to_string(i));
+        singleKvStore_->Delete(prefix + keys + std::to_string(i));
     }
 }
 
-void GetCountFuzz(const uint8_t *data, size_t size)
+void GetCountFuzz1(const uint8_t *data, size_t size)
 {
     int count;
-    std::string rawString(reinterpret_cast<const char *>(data), size);
+    std::string prefix(reinterpret_cast<const char *>(data), size);
     DataQuery query;
-    query.KeyPrefix(rawString);
+    query.KeyPrefix(prefix);
     std::string keys = "test_";
     size_t sum = 10;
     for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Put(rawString + keys + std::to_string(i), keys + std::to_string(i));
+        singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
     }
     singleKvStore_->GetCount(query, count);
     for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Delete(rawString + keys + std::to_string(i));
+        singleKvStore_->Delete(prefix + keys + std::to_string(i));
+    }
+}
+
+void GetCountFuzz2(const uint8_t *data, size_t size)
+{
+    int count;
+    size_t sum = 10;
+    std::vector<std::string> keys;
+    std::string prefix(reinterpret_cast<const char *>(data), size);
+    for (size_t i = 0; i < sum; i++) {
+        keys.push_back(prefix);
+    }
+    DataQuery query;
+    query.InKeys(keys);
+    std::string skey = "test_";
+    for (size_t i = 0; i < sum; i++) {
+        singleKvStore_->Put(prefix + skey + std::to_string(i), skey + std::to_string(i));
+    }
+    singleKvStore_->GetCount(query, count);
+    for (size_t i = 0; i < sum; i++) {
+        singleKvStore_->Delete(prefix + skey + std::to_string(i));
     }
 }
 }
@@ -192,9 +213,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::GetEntriesFuzz2(data, size);
     OHOS::GetResultSetFuzz1(data, size);
     OHOS::GetResultSetFuzz2(data, size);
-    OHOS::GetCountFuzz(data, size);
+    OHOS::GetCountFuzz1(data, size);
+    OHOS::GetCountFuzz2(data, size);
     OHOS::TearDown();
     /* Run your code on data */
     return 0;
 }
-
