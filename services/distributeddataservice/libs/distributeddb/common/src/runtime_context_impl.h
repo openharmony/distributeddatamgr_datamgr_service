@@ -69,8 +69,7 @@ public:
 
     int SetPermissionCheckCallback(const PermissionCheckCallbackV3 &callback) override;
 
-    int RunPermissionCheck(const std::string &userId, const std::string &appId, const std::string &storeId,
-        const std::string &deviceId, uint8_t flag) const override;
+    int RunPermissionCheck(const CheckParam &param, uint8_t flag) const override;
 
     int EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
         const AutoLaunchOption &option) override;
@@ -171,6 +170,7 @@ private:
 
     mutable std::shared_mutex syncActivationCheckCallbackMutex_{};
     SyncActivationCheckCallback syncActivationCheckCallback_;
+    SyncActivationCheckCallbackV2 syncActivationCheckCallbackV2_;
 
     mutable std::mutex userChangeMonitorLock_;
     std::unique_ptr<UserChangeMonitor> userChangeMonitor_;

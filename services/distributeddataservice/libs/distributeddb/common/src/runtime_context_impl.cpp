@@ -377,27 +377,23 @@ int RuntimeContextImpl::SetPermissionCheckCallback(const PermissionCheckCallback
     return E_OK;
 }
 
-int RuntimeContextImpl::RunPermissionCheck(const std::string &userId, const std::string &appId,
-    const std::string &storeId, const std::string &deviceId, uint8_t flag) const
+int RuntimeContextImpl::RunPermissionCheck(const CheckParam &param, uint8_t flag) const
 {
     bool checkResult = false;
     std::shared_lock<std::shared_mutex> autoLock(permissionCheckCallbackMutex_);
-    if (permissionCheckCallbackV2_) {
-        checkResult = permissionCheckCallbackV2_(userId, appId, storeId, deviceId, flag);
-        if (checkResult) {
-            return E_OK;
-        } else {
-            return -E_NOT_PERMIT;
-        }
+    if (permissionCheckCallbackV3_) {
+        checkResult = permissionCheckCallbackV3_(param, flag);
+    } else if (permissionCheckCallbackV2_) {
+        checkResult = permissionCheckCallbackV2_(param.userId, param.appId, param.storeId, param.deviceId, flag);
     } else if (permissionCheckCallback_) {
-        checkResult = permissionCheckCallback_(userId, appId, storeId, flag);
-        if (checkResult) {
-            return E_OK;
-        } else {
-            return -E_NOT_PERMIT;
-        }
+        checkResult = permissionCheckCallback_(param.userId, param.appId, param.storeId, flag);
     } else {
         return E_OK;
+    }
+    if (checkResult) {
+        return E_OK;
+    } else {
+        return -E_NOT_PERMIT;
     }
 }
 

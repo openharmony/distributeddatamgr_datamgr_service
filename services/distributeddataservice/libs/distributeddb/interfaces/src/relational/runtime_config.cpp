@@ -81,6 +81,12 @@ DBStatus RuntimeConfig::SetPermissionCheckCallback(const PermissionCheckCallback
     return TransferDBErrno(errCode);
 }
 
+DBStatus RuntimeConfig::SetPermissionCheckCallback(const PermissionCheckCallbackV3 &callback)
+{
+    int errCode = RuntimeContext::GetInstance()->SetPermissionCheckCallback(callback);
+    return TransferDBErrno(errCode);
+}
+
 DBStatus RuntimeConfig::SetProcessSystemAPIAdapter(const std::shared_ptr<IProcessSystemApiAdapter> &adapter)
 {
     return TransferDBErrno(RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(adapter));

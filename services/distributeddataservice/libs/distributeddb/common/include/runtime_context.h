@@ -80,8 +80,7 @@ public:
 
     virtual int SetPermissionCheckCallback(const PermissionCheckCallbackV3 &callback) = 0;
 
-    virtual int RunPermissionCheck(const std::string &userId, const std::string &appId, const std::string &storeId,
-        const std::string &deviceId, uint8_t flag) const = 0;
+    virtual int RunPermissionCheck(const CheckParam &param, uint8_t flag) const = 0;
 
     virtual int EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
         const AutoLaunchOption &option) = 0;

@@ -529,12 +529,6 @@ DBStatus KvStoreDelegateManager::SetPermissionCheckCallback(const PermissionChec
     return TransferDBErrno(errCode);
 }
 
-DBStatus KvStoreDelegateManager::SetPermissionCheckCallback(const PermissionCheckCallbackV3 &callback)
-{
-    int errCode = RuntimeContext::GetInstance()->SetPermissionCheckCallback(callback);
-    return TransferDBErrno(errCode);
-}
-
 DBStatus KvStoreDelegateManager::EnableKvStoreAutoLaunch(const std::string &userId, const std::string &appId,
     const std::string &storeId, const AutoLaunchOption &option, const AutoLaunchNotifier &notifier)
 {

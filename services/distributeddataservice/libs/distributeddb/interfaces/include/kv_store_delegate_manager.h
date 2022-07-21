@@ -89,8 +89,6 @@ public:
 
     DB_API static DBStatus SetPermissionCheckCallback(const PermissionCheckCallbackV2 &callback);
 
-    DB_API static DBStatus SetPermissionCheckCallback(const PermissionCheckCallbackV3 &callback);
-
     DB_API static DBStatus EnableKvStoreAutoLaunch(const std::string &userId, const std::string &appId,
         const std::string &storeId, const AutoLaunchOption &option, const AutoLaunchNotifier &notifier);
 
