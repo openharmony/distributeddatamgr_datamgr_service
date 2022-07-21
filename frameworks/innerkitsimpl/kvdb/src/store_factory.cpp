@@ -31,13 +31,13 @@ StoreFactory &StoreFactory::GetInstance()
 
 StoreFactory::StoreFactory()
 {
+    convertors_[DEVICE_COLLABORATION] = new DeviceConvertor();
+    convertors_[SINGLE_VERSION] = new Convertor();
+    convertors_[MULTI_VERSION] = new Convertor();
     if (DBManager::IsProcessSystemApiAdapterValid()) {
         return;
     }
     (void)DBManager::SetProcessSystemAPIAdapter(std::make_shared<SystemApi>());
-    convertors_[DEVICE_COLLABORATION] = new DeviceConvertor();
-    convertors_[SINGLE_VERSION] = new Convertor();
-    convertors_[MULTI_VERSION] = new Convertor();
 }
 
 std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(const AppId &appId, const StoreId &storeId,
