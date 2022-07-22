@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/appdatamgr/data_share/datashare.gni")
 
 group("build_module") {
   deps = [ ":distributeddata_inner" ]
@@ -33,8 +34,8 @@ config("distributeddatafwk_config") {
     "../../../frameworks/innerkitsimpl/kvdb/src",
     "//utils/system/safwk/native/include",
     "//utils/native/base/include",
-    "//foundation/distributeddatamgr/appdatamgr/data_share/interfaces/inner_api/provider/include",
-    "//foundation/distributeddatamgr/appdatamgr/data_share/interfaces/inner_api/common/include",
+    "${datashare_innerapi_path}/common/include",
+    "${datashare_innerapi_path}/provider/include",
     "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
   ]
 }

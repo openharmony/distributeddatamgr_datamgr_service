@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/ohos/ace/ace.gni")
+import("//foundation/distributeddatamgr/appdatamgr/data_share/datashare.gni")
 
 base_output_path = get_label_info(":distributed_data_js", "target_out_dir")
 distributed_data_js_obj_path = base_output_path + "/distributed_data.o"
@@ -44,8 +45,8 @@ ohos_shared_library("distributeddata") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/log",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include/autils",
-    "//foundation/distributeddatamgr/appdatamgr/data_share/interfaces/inner_api/provider/include",
-    "//foundation/distributeddatamgr/appdatamgr/data_share/interfaces/inner_api/common/include",
+    "${datashare_innerapi_path}/common/include",
+    "${datashare_innerapi_path}/provider/include",
   ]
 
   sources = [
