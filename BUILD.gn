@@ -36,3 +36,10 @@ group("fuzztest") {
     "test/fuzztest/kvstoredisksize_fuzzer:fuzztest",
   ]
 }
+
+group("distributedtest") {
+  testonly = true
+  deps = []
+  deps += [ "test/distributedtest/single_kvstore_client:distributedtest" ]
+}
+###############################################################################
