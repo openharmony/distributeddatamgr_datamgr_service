@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/ohos/ace/ace.gni")
-import("//foundation/distributeddatamgr/appdatamgr/data_share/datashare.gni")
+import("//foundation/distributeddatamgr/data_share/datashare.gni")
 
 base_output_path = get_label_info(":distributed_data_js", "target_out_dir")
 distributed_data_js_obj_path = base_output_path + "/distributed_data.o"
