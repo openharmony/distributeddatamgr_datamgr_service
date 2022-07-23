@@ -52,7 +52,8 @@ std::string SystemChecker::GetAppId(const CheckerManager::StoreInfo &info)
 
 bool SystemChecker::IsValid(const CheckerManager::StoreInfo &info)
 {
-    return (AccessTokenKit::GetTokenTypeFlag(info.tokenId) == TOKEN_NATIVE || info.uid == CheckerManager::ROOT_UID);
+    auto type = AccessTokenKit::GetTokenTypeFlag(info.tokenId);
+    return (type == TOKEN_NATIVE || type == TOKEN_SHELL || info.uid == CheckerManager::ROOT_UID);
 }
 } // namespace DistributedData
 } // namespace OHOS

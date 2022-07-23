@@ -68,7 +68,8 @@ std::string AccountDelegateNormalImpl::GetDeviceAccountIdByUID(int32_t uid) cons
 
 int32_t AccountDelegateNormalImpl::GetUserByToken(uint32_t tokenId) const
 {
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) == TOKEN_NATIVE) {
+    auto type = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    if (type == TOKEN_NATIVE || type == TOKEN_SHELL) {
         return 0;
     }
 

@@ -108,7 +108,8 @@ void DirectoryManager::Initialize(const std::vector<Strategy> &strategies)
 
 std::string DirectoryManager::GetType(const StoreMetaData &metaData) const
 {
-    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_NATIVE) {
+    auto type = AccessTokenKit::GetTokenTypeFlag(metaData.tokenId);
+    if (type == TOKEN_NATIVE || type == TOKEN_SHELL) {
         return "service";
     }
     return "app";
@@ -145,7 +146,8 @@ std::string DirectoryManager::GetArea(const StoreMetaData &metaData) const
 
 std::string DirectoryManager::GetUserId(const StoreMetaData &metaData) const
 {
-    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_NATIVE) {
+    auto type = AccessTokenKit::GetTokenTypeFlag(metaData.tokenId);
+    if (type == TOKEN_NATIVE || type == TOKEN_SHELL) {
         return "public";
     }
     return metaData.user;

@@ -131,7 +131,7 @@ RdbSyncerParam RdbServiceImpl::ToServiceParam(const RdbSyncerParam &param)
     auto serviceParam = param;
     Security::AccessToken::AccessTokenID callerToken = GetCallingTokenID();
     auto accessToken = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(callerToken);
-    if (accessToken == Security::AccessToken::TOKEN_NATIVE) {
+    if (accessToken == Security::AccessToken::TOKEN_NATIVE || accessToken == Security::AccessToken::TOKEN_SHELL) {
         ZLOGD("native access");
         serviceParam.realPath_ = "/data/service/el1/public/database/" + param.bundleName_ + '/' + param.relativePath_;
     } else if (accessToken == Security::AccessToken::TOKEN_HAP) {
