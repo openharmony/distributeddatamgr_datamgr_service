@@ -616,7 +616,7 @@ Status KvStoreDataService::DeleteKvStore(StoreMetaData &metaData)
     if (status == Status::SUCCESS) {
         MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
         MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
-        MetaDataManager::GetInstance().DelMeta(metaData.GetstrategyKey());
+        MetaDataManager::GetInstance().DelMeta(metaData.GetStrategyKey());
         auto secretKeyFile = KvStoreMetaManager::GetSecretSingleKeyFile(
             metaData.user, metaData.bundleName, metaData.storeId, KvStoreAppManager::ConvertPathType(metaData));
         if (!RemoveFile(secretKeyFile)) {
@@ -1136,9 +1136,9 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 if (meta.user != eventInfo.userId) {
                     continue;
                 }
-                ZLOGI("metadata bundlname:%s, user:%s", meta.bundleName.c_str(), meta.user.c_str());
+                ZLOGI("bundlname:%s, user:%s", meta.bundleName.c_str(), meta.user.c_str());
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey());
-                MetaDataManager::GetInstance().DelMeta(meta.GetstrategyKey());
+                MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
             }
             g_kvStoreAccountEventStatus = 0;

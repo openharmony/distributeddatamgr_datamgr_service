@@ -87,7 +87,7 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
                 ZLOGI("uninstalled bundleName:%s, stordId:%s", bundleName.c_str(), meta.storeId.c_str());
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey());
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
-                MetaDataManager::GetInstance().DelMeta(meta.GetstrategyKey());
+                MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
                 kvStoreDataService->DeleteKvStore(meta);
             }
         }

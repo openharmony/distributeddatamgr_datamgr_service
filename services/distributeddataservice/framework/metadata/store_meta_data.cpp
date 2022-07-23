@@ -133,7 +133,7 @@ std::string StoreMetaData::GetSecretKey() const
     return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
 }
 
-std::string StoreMetaData::GetstrategyKey() const
+std::string StoreMetaData::GetStrategyKey() const
 {
     if (instanceId == 0) {
         return StrategyMeta::GetPrefix({ deviceId, user, "default", bundleName, storeId });

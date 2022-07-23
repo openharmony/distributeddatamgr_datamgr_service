@@ -83,7 +83,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
 
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
-    MetaDataManager::GetInstance().DelMeta(metaData.GetstrategyKey());
+    MetaDataManager::GetInstance().DelMeta(metaData.GetStrategyKey());
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d",
         appId.appId.c_str(), storeId.storeId.c_str(), metaData.instanceId);
     return SUCCESS;
