@@ -120,6 +120,13 @@ public:
     uint32_t GenerateSessionId() override;
 
     void DumpCommonInfo(int fd) override;
+<<<<<<< HEAD
+=======
+
+    void CloseAutoLaunchConnection(DBType type, const DBProperties &properties) override;
+
+    int SetPermissionConditionCallback(const PermissionConditionCallback &callback) override;
+>>>>>>> e5209216... SetPermissionConditionCallback
 private:
     static constexpr int MAX_TP_THREADS = 10;  // max threads of the task pool.
     static constexpr int MIN_TP_THREADS = 1;   // min threads of the task pool.
@@ -178,6 +185,9 @@ private:
     std::unique_ptr<UserChangeMonitor> userChangeMonitor_;
 
     std::atomic<uint32_t> currentSessionId_;
+
+    mutable std::mutex permissionConditionLock_;
+    PermissionConditionCallback permissionConditionCallback_;
 };
 } // namespace DistributedDB
 

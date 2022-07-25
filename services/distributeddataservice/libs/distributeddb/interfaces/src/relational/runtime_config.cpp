@@ -122,5 +122,11 @@ DBStatus RuntimeConfig::SetSyncActivationCheckCallback(const SyncActivationCheck
     int errCode = RuntimeContext::GetInstance()->SetSyncActivationCheckCallback(callback);
     return TransferDBErrno(errCode);
 }
+
+DBStatus RuntimeConfig::SetPermissionConditionCallback(const PermissionConditionCallback &callback)
+{
+    int errCode = RuntimeContext::GetInstance()->SetPermissionConditionCallback(callback);
+    return TransferDBErrno(errCode);
+}
 } // namespace DistributedDB
 #endif

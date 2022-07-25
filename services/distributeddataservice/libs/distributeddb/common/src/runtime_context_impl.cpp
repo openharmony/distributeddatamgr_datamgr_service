@@ -690,4 +690,11 @@ void RuntimeContextImpl::DumpCommonInfo(int fd)
 {
     autoLaunch_.Dump(fd);
 }
+
+int RuntimeContextImpl::SetPermissionConditionCallback(const PermissionConditionCallback &callback)
+{
+    std::lock_guard<std::mutex> autoLock(permissionConditionLock_);
+    permissionConditionCallback_ = callback;
+    return E_OK;
+}
 } // namespace DistributedDB
