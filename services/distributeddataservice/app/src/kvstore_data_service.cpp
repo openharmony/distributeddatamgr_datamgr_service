@@ -614,18 +614,14 @@ Status KvStoreDataService::DeleteKvStore(StoreMetaData &metaData)
     }
 
     if (status == Status::SUCCESS) {
-        if (!MetaDataManager::GetInstance().DelMeta(metaData.GetKey())) {
-            ZLOGW("Remove Kvstore MetaData failed.");
-        }
+        MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
         MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
+        MetaDataManager::GetInstance().DelMeta(metaData.GetStrategyKey());
         auto secretKeyFile = KvStoreMetaManager::GetSecretSingleKeyFile(
             metaData.user, metaData.bundleName, metaData.storeId, KvStoreAppManager::ConvertPathType(metaData));
         if (!RemoveFile(secretKeyFile)) {
             ZLOGE("remove secretkey file single fail.");
         }
-        auto metaKey = StrategyMetaData::GetPrefix(
-            { metaData.deviceId, metaData.user, "default", metaData.bundleName, metaData.storeId });
-        MetaDataManager::GetInstance().DelMeta(metaKey);
     }
     return status;
 }
@@ -1119,21 +1115,33 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
         case AccountStatus::DEVICE_ACCOUNT_DELETE: {
             g_kvStoreAccountEventStatus = 1;
             // delete all kvstore belong to this device account
-            auto it = deviceAccountMap_.find(eventInfo.deviceAccountId);
+            auto it = deviceAccountMap_.find(eventInfo.userId);
             if (it != deviceAccountMap_.end()) {
                 (it->second).DeleteAllKvStore();
-                deviceAccountMap_.erase(eventInfo.deviceAccountId);
+                deviceAccountMap_.erase(eventInfo.userId);
             } else {
-                KvStoreUserManager kvStoreUserManager(eventInfo.deviceAccountId);
+                KvStoreUserManager kvStoreUserManager(eventInfo.userId);
                 kvStoreUserManager.DeleteAllKvStore();
             }
             std::initializer_list<std::string> dirList = { Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
-                eventInfo.deviceAccountId };
+                eventInfo.userId };
             std::string userDir = Constant::Concatenate(dirList);
             ForceRemoveDirectory(userDir);
-            dirList = { Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/", eventInfo.deviceAccountId };
+            dirList = { Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/", eventInfo.userId };
             userDir = Constant::Concatenate(dirList);
             ForceRemoveDirectory(userDir);
+
+            std::vector<StoreMetaData> metaData;
+            MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({""}), metaData);
+            for (const auto &meta : metaData) {
+                if (meta.user != eventInfo.userId) {
+                    continue;
+                }
+                ZLOGI("bundlname:%s, user:%s", meta.bundleName.c_str(), meta.user.c_str());
+                MetaDataManager::GetInstance().DelMeta(meta.GetKey());
+                MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
+                MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
+            }
             g_kvStoreAccountEventStatus = 0;
             break;
         }

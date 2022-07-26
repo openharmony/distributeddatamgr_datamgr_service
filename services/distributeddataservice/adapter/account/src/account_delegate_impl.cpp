@@ -39,10 +39,10 @@ void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
 
     if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
         accountEventInfo.status = AccountStatus::DEVICE_ACCOUNT_DELETE;
-        accountEventInfo.deviceAccountId = std::to_string(event.GetCode());
+        accountEventInfo.userId = std::to_string(event.GetCode());
     } else if (action == CommonEventSupport::COMMON_EVENT_USER_SWITCHED) {
         accountEventInfo.status = AccountStatus::DEVICE_ACCOUNT_SWITCHED;
-        accountEventInfo.deviceAccountId = std::to_string(event.GetCode());
+        accountEventInfo.userId = std::to_string(event.GetCode());
     } else {
         return;
     }

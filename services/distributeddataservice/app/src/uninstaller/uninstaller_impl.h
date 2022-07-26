@@ -21,7 +21,7 @@
 #include "uninstaller.h"
 
 namespace OHOS::DistributedKv {
-using UninstallEventCallback = std::function<void(const std::string &bundleName, int userId)>;
+using UninstallEventCallback = std::function<void(const std::string &bundleName, int32_t userId, int32_t appIndex)>;
 
 class UninstallEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
@@ -32,7 +32,8 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &event) override;
 
 private:
-    static const std::string USER_ID;
+    static constexpr const char *USER_ID = "userId";
+    static constexpr const char *SANDBOX_APP_INDEX = "sandbox_app_index";
     UninstallEventCallback callback_;
 };
 class UninstallerImpl : public Uninstaller {

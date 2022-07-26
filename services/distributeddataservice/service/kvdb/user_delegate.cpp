@@ -202,7 +202,7 @@ UserDelegate::LocalUserObserver::LocalUserObserver(UserDelegate &userDelegate) :
 
 void UserDelegate::LocalUserObserver::OnAccountChanged(const DistributedKv::AccountEventInfo &eventInfo)
 {
-    ZLOGI("event info:%{public}s, %{public}d", eventInfo.deviceAccountId.c_str(), eventInfo.status);
+    ZLOGI("event info:%{public}s, %{public}d", eventInfo.userId.c_str(), eventInfo.status);
     userDelegate_.NotifyUserEvent({}); // just notify
 }
 
