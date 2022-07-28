@@ -218,6 +218,16 @@ int SingleVerSerializeManager::DataPacketSyncerPartSerialization(Parcel &parcel,
         }
     }
     parcel.EightByteAlign();
+    std::map<std::string, std::string> extraConditions = packet->GetExtraConditions();
+    parcel.WriteUInt32(static_cast<uint32_t>(extraConditions.size()));
+    for (const auto &entry : extraConditions) {
+        parcel.WriteString(entry.first);
+        parcel.WriteString(entry.second);
+    }
+    if (parcel.IsError()) {
+        return -E_PARSE_FAIL;
+    }
+    parcel.EightByteAlign();
     return E_OK;
 }
 
@@ -264,6 +274,7 @@ int SingleVerSerializeManager::DataPacketSerialization(uint8_t *buffer, uint32_t
             return errCode;
         }
     }
+
     return E_OK;
 }
 
@@ -396,7 +407,10 @@ int SingleVerSerializeManager::DataPacketDeSerialization(const uint8_t *buffer, 
             goto ERROR;
         }
     }
-
+    errCode = DataPacketExtraConditionsDeserialization(parcel, packet);
+    if (errCode != E_OK) {
+        goto ERROR;
+    }
     errCode = inMsg->SetExternalObject<>(packet);
     if (errCode != E_OK) {
         goto ERROR;
@@ -843,6 +857,29 @@ int SingleVerSerializeManager::BuildISyncPacket(Message *inMsg, ISyncPacket *&pa
     if (packet == nullptr) {
         return -E_OUT_OF_MEMORY;
     }
+    return E_OK;
+}
+
+int SingleVerSerializeManager::DataPacketExtraConditionsDeserialization(Parcel &parcel, DataRequestPacket *packet)
+{
+    if (!parcel.IsContinueRead()) {
+        return E_OK;
+    }
+    uint32_t conditionSize = 0u;
+    (void) parcel.ReadUInt32(conditionSize);
+    std::map<std::string, std::string> extraConditions;
+    for (uint32_t i = 0; i < conditionSize; i++) {
+        std::string conditionKey;
+        std::string conditionVal;
+        (void) parcel.ReadString(conditionKey);
+        (void) parcel.ReadString(conditionVal);
+        extraConditions[conditionKey] = conditionVal;
+    }
+    parcel.EightByteAlign();
+    if (parcel.IsError()) {
+        return -E_PARSE_FAIL;
+    }
+    packet->SetExtraConditions(extraConditions);
     return E_OK;
 }
 }  // namespace DistributedDB

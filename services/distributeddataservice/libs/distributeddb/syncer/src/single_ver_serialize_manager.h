@@ -59,6 +59,7 @@ private:
     static int DataPacketDeSerialization(const uint8_t *buffer, uint32_t length, Message *inMsg);
     static int DataPacketSyncerPartDeSerialization(Parcel &parcel, DataRequestPacket *packet, uint32_t packLen,
         uint32_t length, uint32_t version);
+    static int DataPacketExtraConditionsDeserialization(Parcel &parcel, DataRequestPacket *packet);
 
     static int AckPacketCalculateLen(const Message *inMsg, uint32_t &len);
     static int AckPacketSerialization(uint8_t *buffer, uint32_t length, const Message *inMsg);

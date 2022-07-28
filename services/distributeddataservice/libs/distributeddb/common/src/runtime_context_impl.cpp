@@ -698,8 +698,14 @@ int RuntimeContextImpl::SetPermissionConditionCallback(const PermissionCondition
     return E_OK;
 }
 
-std::map<std::string, std::string> RuntimeContextImpl::GetPermissionCheckParam(const PermissionConditionParam &param)
+std::map<std::string, std::string> RuntimeContextImpl::GetPermissionCheckParam(const DBProperties &properies)
 {
+    PermissionConditionParam param = { 
+        properies.GetStringProp(DBProperties::USER_ID, ""),
+        properies.GetStringProp(DBProperties::APP_ID, ""),
+        properies.GetStringProp(DBProperties::STORE_ID, ""),
+        properies.GetIntProp(DBProperties::INSTANCE_ID, 0)
+    };
     std::shared_lock<std::shared_mutex> autoLock(permissionConditionLock_);
     if (permissionConditionCallback_ == nullptr) {
         return {};

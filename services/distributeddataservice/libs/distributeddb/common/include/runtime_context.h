@@ -134,7 +134,7 @@ public:
 
     virtual int SetPermissionConditionCallback(const PermissionConditionCallback &callback) = 0;
 
-    virtual std::map<std::string, std::string> GetPermissionCheckParam(const PermissionConditionParam &param) = 0;
+    virtual std::map<std::string, std::string> GetPermissionCheckParam(const DBProperties &properies) = 0;
 protected:
     RuntimeContext() = default;
     virtual ~RuntimeContext() {}
