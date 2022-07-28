@@ -20,6 +20,7 @@
 #include "single_kvstore.h"
 #include "uv_queue.h"
 #include "js_observer.h"
+#include "js_kv_manager.h"
 
 namespace OHOS::DistributedData {
 enum {
@@ -41,6 +42,8 @@ public:
     void SetNative(std::shared_ptr<DistributedKv::SingleKvStore>& kvStore);
     void SetUvQueue(std::shared_ptr<UvQueue> uvQueue);
     std::shared_ptr<DistributedKv::SingleKvStore>& GetNative();
+    void SetContextParam(std::shared_ptr<ContextParam>& param);
+    std::shared_ptr<ContextParam>& GetContextParam();
 
     static bool IsInstanceOf(napi_env env, napi_value obj, const std::string& storeId, napi_value constructor);
 
@@ -56,6 +59,9 @@ public:
     static napi_value Rollback(napi_env env, napi_callback_info info);
     static napi_value EnableSync(napi_env env, napi_callback_info info);
     static napi_value SetSyncRange(napi_env env, napi_callback_info info);
+    static napi_value Backup(napi_env env, napi_callback_info info);
+    static napi_value Restore(napi_env env, napi_callback_info info);
+    static napi_value DeleteBackup(napi_env env, napi_callback_info info);
 
 private:
     class DataObserver : public DistributedKv::KvStoreObserver, public JSObserver {
@@ -89,6 +95,7 @@ private:
     /* private non-static members */
     std::shared_ptr<DistributedKv::SingleKvStore> kvStore_ = nullptr;
     std::string storeId_;
+    std::shared_ptr<ContextParam> param_ = nullptr;
 
     using Exec = std::function<void(napi_env, size_t, napi_value*, std::shared_ptr<ContextBase>)>;
     static std::map<std::string, Exec> onEventHandlers_;

@@ -25,30 +25,30 @@ SecurityManager &SecurityManager::GetInstance()
     return instance;
 }
 
-SecurityManager::DBPassword SecurityManager::GetDBPassword(const StoreId &storeId, const std::string &path,
-    bool encrypt)
+SecurityManager::DBPassword SecurityManager::GetKey(const std::string &name, const std::string &path, bool createIfNotExit)
 {
-    if (!encrypt) {
-        return DBPassword();
-    }
-
-    auto secKey = LoadRandomKey(storeId, path);
+    auto secKey = LoadKeyFormFile(name, path);
     if (secKey.empty()) {
-        secKey = Random(KEY_SIZE);
-        SaveRandomKey(storeId, path, secKey);
+        if (!createIfNotExit) {
+            return DBPassword();
+        } else {
+            secKey = Random(KEY_SIZE);
+            SaveKeyToFile(name, path, secKey);
+        }
     }
-
     DBPassword password;
     password.SetValue(secKey.data(), secKey.size());
     secKey.assign(secKey.size(), 0);
     return password;
 }
 
-void SecurityManager::DelDBPassword(const StoreId &storeId, const std::string &path)
+bool SecurityManager::SaveKey(const std::string &name, const std::string &path, const std::vector<uint8_t> &key)
 {
-    auto keyPath = path + "/key/" + storeId.storeId + ".key";
-    StoreUtil::Remove(keyPath);
-    keyPath = path + "/key/" + storeId.storeId + ".rekey";
+    return SaveKeyToFile(name, path, key);
+}
+void SecurityManager::DelKey(const std::string &name, const std::string &path)
+{
+    auto keyPath = path + "/key/" + name + ".key";
     StoreUtil::Remove(keyPath);
 }
 
@@ -63,9 +63,9 @@ std::vector<uint8_t> SecurityManager::Random(int32_t len)
     return key;
 }
 
-std::vector<uint8_t> SecurityManager::LoadRandomKey(const StoreId &storeId, const std::string &path)
+std::vector<uint8_t> SecurityManager::LoadKeyFormFile(const std::string &name, const std::string &path)
 {
-    auto keyPath = path + "/key/" + storeId.storeId + ".key";
+    auto keyPath = path + "/key/" + name + ".key";
     if (!FileExists(keyPath)) {
         return {};
     }
@@ -94,18 +94,18 @@ std::vector<uint8_t> SecurityManager::LoadRandomKey(const StoreId &storeId, cons
     return key;
 }
 
-bool SecurityManager::SaveRandomKey(const StoreId &storeId, const std::string &path, const std::vector<uint8_t> &key)
+bool SecurityManager::SaveKeyToFile(const std::string &name, const std::string &path, const std::vector<uint8_t> &key)
 {
     auto keyPath = path + "/key";
     StoreUtil::InitPath(keyPath);
-    keyPath = keyPath + "/" + storeId.storeId + ".key";
     std::vector<char> content;
     auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::system_clock::now());
     std::vector<uint8_t> date(reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time));
     content.push_back(char((sizeof(time_t) / sizeof(uint8_t)) + KEY_SIZE));
     content.insert(content.end(), date.begin(), date.end());
     content.insert(content.end(), key.begin(), key.end());
-    auto ret = SaveBufferToFile(keyPath, content);
+    auto keyFullPath = keyPath+ "/" + name + ".key";
+    auto ret = SaveBufferToFile(keyFullPath, content);
     content.assign(content.size(), 0);
     return ret;
 }

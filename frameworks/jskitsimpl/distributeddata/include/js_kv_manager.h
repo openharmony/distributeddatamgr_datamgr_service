@@ -59,7 +59,7 @@ private:
     std::mutex deathMutex_ {};
     std::list<std::shared_ptr<DeathRecipient>> deathRecipient_ {};
     std::shared_ptr<UvQueue> uvQueue_;
-    ContextParam param_;
+    std::shared_ptr<ContextParam> param_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_KV_MANAGER_H

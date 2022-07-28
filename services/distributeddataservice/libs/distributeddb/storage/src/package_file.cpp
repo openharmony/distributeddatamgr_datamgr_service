@@ -35,7 +35,6 @@ namespace {
     constexpr uint32_t MAX_FILE_NAME_LEN = 256;
     constexpr uint32_t CHECKSUM_LEN = SHA256_DIGEST_LENGTH;
     constexpr uint32_t CHECKSUM_BLOCK_SIZE = 64;
-    constexpr uint32_t DEVICE_ID_LEN = SHA256_DIGEST_LENGTH;
     constexpr uint32_t MAGIC_LEN = 16;
     constexpr uint32_t CURRENT_VERSION = 0;
     constexpr uint64_t BUFFER_LEN = 4096;
@@ -43,7 +42,7 @@ namespace {
     const string FILE_SEPARATOR = "/";
     const string INVALID_FILE_WORDS = "..";
 
-    const uint32_t FILE_HEADER_LEN = MAGIC_LEN + CHECKSUM_LEN + DEVICE_ID_LEN + Parcel::GetUInt32Len() * 3;
+    const uint32_t FILE_HEADER_LEN = MAGIC_LEN + CHECKSUM_LEN + Parcel::GetUInt32Len() * 3;
     const uint32_t FILE_CONTEXT_LEN = MAX_FILE_NAME_LEN + Parcel::GetUInt32Len() * 2 + Parcel::GetUInt64Len() * 2;
 }
 
@@ -173,9 +172,6 @@ static int FileContentCopy(ifstream &sourceFile, ofstream &targetFile, uint64_t 
 
 static int PackFileHeader(ofstream &targetFile, const FileInfo &fileInfo, uint32_t fileNum)
 {
-    if (fileInfo.deviceID.size() != DEVICE_ID_LEN) {
-        return -E_INVALID_ARGS;
-    }
     vector<uint8_t> buffer(FILE_HEADER_LEN, 0);
     vector<char> checksum(CHECKSUM_LEN, 0);
     Parcel parcel(buffer.data(), FILE_HEADER_LEN);
@@ -190,10 +186,6 @@ static int PackFileHeader(ofstream &targetFile, const FileInfo &fileInfo, uint32
         return errCode;
     }
     errCode = parcel.WriteBlob(checksum.data(), CHECKSUM_LEN);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    errCode = parcel.WriteBlob(fileInfo.deviceID.c_str(), DEVICE_ID_LEN);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -257,13 +249,6 @@ static int UnpackFileHeader(ifstream &sourceFile, const string &sourceFileName, 
         LOGE("Checksum check failed.");
         return -E_INVALID_FILE;
     }
-    buffer.resize(DEVICE_ID_LEN);
-    (void)parcel.ReadBlob(buffer.data(), DEVICE_ID_LEN);
-    if (parcel.IsError()) {
-        return -E_PARSE_FAIL;
-    }
-    fileInfo.deviceID.resize(DEVICE_ID_LEN);
-    fileInfo.deviceID.assign(buffer.begin(), buffer.end());
     (void)parcel.ReadUInt32(fileInfo.dbType);
     (void)parcel.ReadUInt32(fileNum);
     if (parcel.IsError()) {

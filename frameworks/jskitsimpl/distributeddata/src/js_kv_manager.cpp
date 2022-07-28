@@ -31,7 +31,7 @@ bool IsStoreTypeSupported(Options options)
 }
 
 JsKVManager::JsKVManager(const std::string &bundleName, napi_env env, ContextParam param)
-    : bundleName_(bundleName), uvQueue_(std::make_shared<UvQueue>(env)), param_(std::move(param))
+    : bundleName_(bundleName), uvQueue_(std::make_shared<UvQueue>(env)), param_(std::make_shared<ContextParam>(param))
 {
 }
 
@@ -127,9 +127,9 @@ napi_value JsKVManager::GetKVStore(napi_env env, napi_callback_info info)
         CHECK_ARGS_RETURN_VOID(ctxt, kvm != nullptr, "KVManager is null, failed!");
         AppId appId = { kvm->bundleName_ };
         StoreId storeId = { ctxt->storeId };
-        ctxt->options.baseDir = kvm->param_.baseDir;
-        ctxt->options.area = kvm->param_.area + 1;
-        ctxt->options.hapName = kvm->param_.hapName;
+        ctxt->options.baseDir = kvm->param_->baseDir;
+        ctxt->options.area = kvm->param_->area + 1;
+        ctxt->options.hapName = kvm->param_->hapName;
         ZLOGD("Options area:%{public}d dir:%{public}s", ctxt->options.area, ctxt->options.baseDir.c_str());
         std::shared_ptr<DistributedKv::SingleKvStore> kvStore;
         Status status = kvm->kvDataManager_.GetSingleKvStore(ctxt->options, appId, storeId, kvStore);
@@ -137,6 +137,7 @@ napi_value JsKVManager::GetKVStore(napi_env env, napi_callback_info info)
         ctxt->status = (status == Status::SUCCESS) ? napi_ok : napi_generic_failure;
         CHECK_STATUS_RETURN_VOID(ctxt, "GetSingleKvStore() failed!");
         ctxt->kvStore->SetNative(kvStore);
+        ctxt->kvStore->SetContextParam(kvm->param_);
         ctxt->kvStore->SetUvQueue(kvm->uvQueue_);
     };
     auto output = [env, ctxt](napi_value& result) {
@@ -217,7 +218,7 @@ napi_value JsKVManager::DeleteKVStore(napi_env env, napi_callback_info info)
         StoreId storeId { ctxt->storeId };
         auto kvm = reinterpret_cast<JsKVManager*>(ctxt->native);
         CHECK_ARGS_RETURN_VOID(ctxt, kvm != nullptr, "KVManager is null, failed!");
-        std::string databaseDir = kvm->param_.baseDir;
+        std::string databaseDir = kvm->param_->baseDir;
         ZLOGD("DeleteKVStore databaseDir is: %{public}s", databaseDir.c_str());
         Status status = kvm->kvDataManager_.DeleteKvStore(appId, storeId, databaseDir);
         ZLOGD("DeleteKvStore status:%{public}d", status);

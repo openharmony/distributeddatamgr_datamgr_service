@@ -88,6 +88,11 @@ public:
     Status SubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query) override;
     Status UnsubscribeWithQuery(const std::vector<std::string> &devices, const DataQuery &query) override;
 
+    Status Backup(std::string &file, std::string &baseDir) override;
+    Status Restore(std::string &file, std::string &baseDir) override;
+    Status DeleteBackup(std::vector<std::string> &files, std::string &baseDir,
+        std::map<std::string, DistributedKv::Status> &status) override;
+
 protected:
     Status Control(KvControlCmd cmd, const KvParam &inputParam, KvParam &outputParam);
 

@@ -43,6 +43,9 @@ napi_value JsSingleKVStore::Constructor(napi_env env)
         DECLARE_NAPI_FUNCTION("rollback", JsKVStore::Rollback),
         DECLARE_NAPI_FUNCTION("enableSync", JsKVStore::EnableSync),
         DECLARE_NAPI_FUNCTION("setSyncRange", JsKVStore::SetSyncRange),
+        DECLARE_NAPI_FUNCTION("backup", JsKVStore::Backup),
+        DECLARE_NAPI_FUNCTION("restore", JsKVStore::Restore),
+        DECLARE_NAPI_FUNCTION("deleteBackup", JsKVStore::DeleteBackup),
         /* JsSingleKVStore externs JsKVStore */
         DECLARE_NAPI_FUNCTION("get", JsSingleKVStore::Get),
         DECLARE_NAPI_FUNCTION("getEntries", JsSingleKVStore::GetEntries),

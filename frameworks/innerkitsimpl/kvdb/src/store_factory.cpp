@@ -54,7 +54,7 @@ std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(const AppId &appId, 
         }
 
         auto dbManager = GetDBManager(options.baseDir, appId);
-        auto password = SecurityManager::GetInstance().GetDBPassword(storeId, options.baseDir, options.encrypt);
+        auto password = SecurityManager::GetInstance().GetKey(storeId.storeId, options.baseDir, options.encrypt);
         DBStatus dbStatus = DBStatus::DB_ERROR;
         dbManager->GetKvStore(storeId, GetDBOption(options, password),
             [this, &dbManager, &kvStore, &appId, &dbStatus, &options](auto status, auto *store) {
@@ -85,7 +85,7 @@ Status StoreFactory::Delete(const AppId &appId, const StoreId &storeId, const st
     Close(appId, storeId, true);
     auto dbManager = GetDBManager(path, appId);
     auto status = dbManager->DeleteKvStore(storeId);
-    SecurityManager::GetInstance().DelDBPassword(storeId, path);
+    SecurityManager::GetInstance().DelKey(storeId.storeId, path);
     return StoreUtil::ConvertStatus(status);
 }
 
@@ -125,6 +125,7 @@ std::shared_ptr<StoreFactory::DBManager> StoreFactory::GetDBManager(const std::s
         dbManager = std::make_shared<DBManager>(appId.appId, "default");
         dbManager->SetKvStoreConfig({ fullPath });
         manager = dbManager;
+        BackupManager::GetInstance().Init(path);
         return result;
     });
     return dbManager;

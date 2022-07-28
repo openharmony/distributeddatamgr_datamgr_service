@@ -21,8 +21,9 @@ class SecurityManager {
 public:
     using DBPassword = DistributedDB::CipherPassword;
     static SecurityManager &GetInstance();
-    DBPassword GetDBPassword(const StoreId &storeId, const std::string &path, bool encrypt);
-    void DelDBPassword(const StoreId &storeId, const std::string &path);
+    DBPassword GetKey(const std::string &name, const std::string &path, bool createIfNotExit = false);
+    bool SaveKey(const std::string &name, const std::string &path, const std::vector<uint8_t> &key);
+    void DelKey(const std::string &name, const std::string &path);
 
 private:
     static constexpr const char *ROOT_KEY_ALIAS = "distributed_db_root_key";
@@ -33,9 +34,9 @@ private:
     static constexpr const char *HKS_BLOB_TYPE_AAD = "distributeddata";
     static constexpr int KEY_SIZE = 32;
 
-    static std::vector<uint8_t> Random(int32_t len);
-    std::vector<uint8_t> LoadRandomKey(const StoreId &storeId, const std::string &path);
-    bool SaveRandomKey(const StoreId &storeId, const std::string &path, const std::vector<uint8_t> &key);
+    std::vector<uint8_t> Random(int32_t len);
+    std::vector<uint8_t> LoadKeyFormFile(const std::string &name, const std::string &path);
+    bool SaveKeyToFile(const std::string &name, const std::string &path, const std::vector<uint8_t> &key);
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_SECURITY_MANAGER_H

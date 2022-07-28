@@ -25,6 +25,11 @@ public:
     using DBSecurity = DistributedDB::SecurityOption;
     using DBStatus = DistributedDB::DBStatus;
     using DBMode = DistributedDB::SyncMode;
+    struct FileInfo {
+        std::string name;
+        size_t size;
+        time_t modifyTime;
+    };
     static DBSecurity GetDBSecurity(int32_t secLevel);
     static int32_t GetSecLevel(DBSecurity dbSec);
     static DBMode GetDBMode(SyncMode syncMode);
@@ -33,6 +38,11 @@ public:
     static uint32_t Anonymous(const void *ptr);
     static Status ConvertStatus(DBStatus status);
     static bool InitPath(const std::string &path);
+    static bool CreateFile(const std::string &name);
+    static bool GetSubPath(const std::string &path, std::vector<std::string> &subPaths);
+    static bool GetFiles(const std::string &path, std::vector<struct FileInfo> &fileList);
+    static bool Rename(const std::string &oldName, const std::string &newName);
+    static bool IsFileExist(const std::string &name);
     static bool Remove(const std::string &path);
 };
 } // namespace OHOS::DistributedKv

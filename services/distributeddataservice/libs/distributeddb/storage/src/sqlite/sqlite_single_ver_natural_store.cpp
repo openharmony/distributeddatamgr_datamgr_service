@@ -1400,15 +1400,8 @@ int SQLiteSingleVerNaturalStore::Export(const std::string &filePath, const Ciphe
         return -E_NOT_SUPPORT;
     }
 
-    // Exclusively write resources
-    std::string localDev;
-    int errCode = GetLocalIdentity(localDev);
-    if (errCode != E_OK) {
-        LOGE("Get local dev id err:%d", errCode);
-        localDev.resize(0);
-    }
-
     // The write handle is applied to prevent writing data during the export process.
+    int errCode;
     SQLiteSingleVerStorageExecutor *handle = GetHandle(true, errCode, OperatePerm::NORMAL_PERM);
     if (handle == nullptr) {
         return errCode;
@@ -1423,7 +1416,6 @@ int SQLiteSingleVerNaturalStore::Export(const std::string &filePath, const Ciphe
     }
 
     std::unique_ptr<SingleVerDatabaseOper> operation = std::make_unique<SingleVerDatabaseOper>(this, storageEngine_);
-    operation->SetLocalDevId(localDev);
     LOGI("Begin export the kv store");
     errCode = operation->Export(filePath, passwd);
 
@@ -1440,14 +1432,8 @@ int SQLiteSingleVerNaturalStore::Import(const std::string &filePath, const Ciphe
         return -E_NOT_SUPPORT;
     }
 
-    std::string localDev;
-    int errCode = GetLocalIdentity(localDev);
-    if (errCode != E_OK) {
-        LOGE("Failed to GetLocalIdentity!");
-        localDev.resize(0);
-    }
-
     // stop the syncer
+    int errCode;
     errCode = storageEngine_->TryToDisable(false, OperatePerm::IMPORT_MONOPOLIZE_PERM);
     if (errCode != E_OK) {
         return errCode;
@@ -1469,7 +1455,6 @@ int SQLiteSingleVerNaturalStore::Import(const std::string &filePath, const Ciphe
     }
 
     operation = std::make_unique<SingleVerDatabaseOper>(this, storageEngine_);
-    operation->SetLocalDevId(localDev);
     errCode = operation->Import(filePath, passwd);
     if (errCode != E_OK) {
         goto END;

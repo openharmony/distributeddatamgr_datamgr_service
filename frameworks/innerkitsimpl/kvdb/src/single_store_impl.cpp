@@ -15,6 +15,7 @@
 #define LOG_TAG "SingleStoreImpl"
 #include "single_store_impl.h"
 #include "auto_sync_timer.h"
+#include "backup_manager.h"
 #include "dds_trace.h"
 #include "dev_manager.h"
 #include "kvdb_service_client.h"
@@ -31,6 +32,7 @@ SingleStoreImpl::SingleStoreImpl(std::shared_ptr<DBStore> dbStore, const AppId &
     storeId_ = dbStore_->GetStoreId();
     autoSync_ = options.autoSync;
     syncObserver_ = std::make_shared<SyncObserver>();
+    BackupManager::GetInstance().Prepare(options.baseDir, storeId_, options.backup);
 }
 
 StoreId SingleStoreImpl::GetStoreId() const
@@ -579,6 +581,52 @@ int32_t SingleStoreImpl::Close(bool isForce)
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     dbStore_ = nullptr;
     return ref_;
+}
+
+Status SingleStoreImpl::Backup(std::string &file, std::string &baseDir)
+{
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (dbStore_ == nullptr) {
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
+        return ALREADY_CLOSED;
+    }
+    auto status = BackupManager::GetInstance().Backup(file, baseDir, storeId_, dbStore_);
+    if (status != SUCCESS) {
+        ZLOGE("status:0x%{public}x storeId:%{public}s", status, storeId_.c_str());
+    }
+    return status;
+}
+
+Status SingleStoreImpl::Restore(std::string &file, std::string &baseDir)
+{
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (dbStore_ == nullptr) {
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
+        return ALREADY_CLOSED;
+    }
+    auto status = BackupManager::GetInstance().Restore(file, baseDir, storeId_, dbStore_);
+    if (status != SUCCESS) {
+        ZLOGE("status:0x%{public}x storeId:%{public}s", status, storeId_.c_str());
+    }
+    return status;
+}
+
+Status SingleStoreImpl::DeleteBackup(std::vector<std::string> &files, std::string &baseDir,
+    std::map<std::string, DistributedKv::Status> &results)
+{
+    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (dbStore_ == nullptr) {
+        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
+        return ALREADY_CLOSED;
+    }
+    auto status = BackupManager::GetInstance().DeleteBackup(files, baseDir, storeId_, results);
+    if (status != SUCCESS) {
+        ZLOGE("status:0x%{public}x storeId:%{public}s", status, storeId_.c_str());
+    }
+    return status;
 }
 
 std::function<void(ObserverBridge *)> SingleStoreImpl::BridgeReleaser()

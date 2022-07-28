@@ -18,6 +18,7 @@
 
 #include "kvstore_observer.h"
 #include "types.h"
+#include <map>
 
 namespace OHOS {
 namespace DistributedKv {
@@ -95,6 +96,23 @@ public:
     // type: strategy for this subscribe, default right now.
     // observer: callback client provided in SubscribeKvStore.
     virtual Status UnSubscribeKvStore(SubscribeType type, std::shared_ptr<KvStoreObserver> observer) = 0;
+
+    // backup the store to a specified backup file
+    // file: target file of backup.
+    // baseDir: root path of store manager.
+    virtual Status Backup(std::string &file, std::string &baseDir) = 0;
+
+    // restore the store from a specified backup file
+    // file: the file of backup data.
+    // baseDir: root path of store manager.
+    virtual Status Restore(std::string &file, std::string &baseDir) = 0;
+
+    // delete the backup files.
+    // files the list of backup file to be delete.
+    // baseDir: root path of store manager.
+    // status: result of delete backup
+    virtual Status DeleteBackup(std::vector<std::string> &files, std::string &baseDir,
+        std::map<std::string, DistributedKv::Status> &status) = 0;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

@@ -92,6 +92,7 @@ ohos_shared_library("distributeddata_inner") {
 
   kvdb_sources = [
     "../../../frameworks/innerkitsimpl/kvdb/src/auto_sync_timer.cpp",
+    "../../../frameworks/innerkitsimpl/kvdb/src/backup_manager.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/convertor.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/dev_manager.cpp",
     "../../../frameworks/innerkitsimpl/kvdb/src/device_convertor.cpp",
