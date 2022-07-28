@@ -96,7 +96,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -160,7 +160,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -224,7 +224,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -289,7 +289,7 @@ ohos_unittest("KvStoreBackupTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -330,7 +330,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -387,7 +387,7 @@ ohos_unittest("KvStoreSyncManagerTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -467,7 +467,7 @@ ohos_unittest("KvStoreUninstallerTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
