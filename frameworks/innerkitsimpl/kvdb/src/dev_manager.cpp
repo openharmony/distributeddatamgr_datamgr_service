@@ -22,6 +22,7 @@
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedHardware;
 constexpr int32_t DM_OK = 0;
+constexpr int32_t DM_ERROR = -1;
 constexpr size_t DevManager::MAX_ID_LEN;
 constexpr const char *PKG_NAME = "ohos.distributeddata";
 class KvDeviceStateCallback : public DeviceStateCallback {
@@ -93,7 +94,7 @@ void DevManager::RegisterDevCallback()
     std::thread th = std::thread([this]() {
         constexpr int RETRY_TIMES = 300;
         int i = 0;
-        int32_t errNo = -1;
+        int32_t errNo = DM_ERROR;
         while (i++ < RETRY_TIMES) {
             errNo = Init();
             if (errNo == DM_OK) {
@@ -101,7 +102,7 @@ void DevManager::RegisterDevCallback()
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-        ZLOGE("reg device exit now: %{public}d times, errNo: %{public}d", i, errNo);
+        ZLOGI("reg device exit now: %{public}d times, errNo: %{public}d", i, errNo);
     });
     th.detach();
 }
