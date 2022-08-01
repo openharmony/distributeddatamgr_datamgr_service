@@ -258,7 +258,7 @@ ohos_shared_library("distributeddb") {
 
   deps = [
     "//third_party/sqlite:sqlite",
-    "//third_party/zlib:libz",
+    "//third_party/zlib:shared_libz",
   ]
 
   configs += [ "//third_party/jsoncpp:jsoncpp_config" ]
