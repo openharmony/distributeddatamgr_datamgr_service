@@ -61,7 +61,7 @@ UninstallerImpl::~UninstallerImpl()
     }
 }
 
-void UninstallerImpl::UnSubscribeEvent()
+void UninstallerImpl::UnsubscribeEvent()
 {
     auto res = CommonEventManager::UnSubscribeCommonEvent(subscriber_);
     if (!res) {

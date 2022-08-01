@@ -841,8 +841,8 @@ void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const st
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;
     }
-    AccountDelegate::GetInstance()->UnSubscribeAccountEvent();
-    Uninstaller::GetInstance().UnSubscribeEvent();
+    AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
+    Uninstaller::GetInstance().UnsubscribeEvent();
 }
 
 void KvStoreDataService::StartService()

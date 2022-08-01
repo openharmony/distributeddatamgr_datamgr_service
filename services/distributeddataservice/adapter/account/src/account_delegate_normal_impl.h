@@ -31,7 +31,7 @@ public:
     int32_t GetUserByToken(uint32_t tokenId) const override;
     bool QueryUsers(std::vector<int> &users) override;
     void SubscribeAccountEvent() override;
-    void UnSubscribeAccountEvent() override;
+    void UnsubscribeAccountEvent() override;
 
 private:
     ~AccountDelegateNormalImpl();

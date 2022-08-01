@@ -133,7 +133,7 @@ AccountDelegateNormalImpl::~AccountDelegateNormalImpl()
     }
 }
 
-void AccountDelegateNormalImpl::UnSubscribeAccountEvent()
+void AccountDelegateNormalImpl::UnsubscribeAccountEvent()
 {
     auto res = CommonEventManager::UnSubscribeCommonEvent(eventSubscriber_);
     if (!res) {

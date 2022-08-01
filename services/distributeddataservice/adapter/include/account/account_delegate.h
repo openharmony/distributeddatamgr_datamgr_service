@@ -60,7 +60,7 @@ public:
     API_EXPORT virtual std::string GetDeviceAccountIdByUID(int32_t uid) const = 0;
     API_EXPORT virtual int32_t GetUserByToken(uint32_t tokenId) const = 0;
     API_EXPORT virtual void SubscribeAccountEvent() = 0;
-    API_EXPORT virtual void UnSubscribeAccountEvent() = 0;
+    API_EXPORT virtual void UnsubscribeAccountEvent() = 0;
     API_EXPORT virtual bool QueryUsers(std::vector<int> &users) = 0;
     API_EXPORT virtual bool RegisterHashFunc(HashFunc hash) = 0;
     API_EXPORT static AccountDelegate *GetInstance();

@@ -60,7 +60,7 @@ void AccountDelegateDefaultImpl::SubscribeAccountEvent()
     ZLOGD("no account part.");
 }
 
-void AccountDelegateDefaultImpl::UnSubscribeAccountEvent()
+void AccountDelegateDefaultImpl::UnsubscribeAccountEvent()
 {
     ZLOGD("no account part.");
 }
