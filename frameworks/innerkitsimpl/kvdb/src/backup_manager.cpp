@@ -16,7 +16,6 @@
 
 #include "backup_manager.h"
 #include "log_print.h"
-#include "securec.h"
 #include "security_manager.h"
 
 namespace OHOS::DistributedKv {
@@ -280,8 +279,7 @@ std::map<std::string, BackupManager::ResidueInfo> BackupManager::BuildResidueInf
         auto backupName = GetBackupName(file.name);
         auto it = residueInfoList.find(backupName);
         if (it == residueInfoList.end()) {
-            ResidueInfo residueInfo;
-            memset_s(&residueInfo, sizeof(ResidueInfo), 0, sizeof(ResidueInfo));
+            ResidueInfo residueInfo = { 0, 0, false, false, false, false };
             SetResidueInfo(residueInfo, files, backupName, BACKUP_POSTFIX);
             SetResidueInfo(residueInfo, keys, BACKUP_KEY_PREFIX + storeId + "_" + backupName, BACKUP_KEY_POSTFIX);
             residueInfoList.emplace(backupName, residueInfo);

@@ -18,7 +18,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "log_print.h"
-#include "securec.h"
 #include "types.h"
 namespace OHOS::DistributedKv {
 constexpr mode_t DEFAULT_UMASK = 0002;
@@ -207,8 +206,7 @@ std::vector<StoreUtil::FileInfo> StoreUtil::GetFiles(const std::string &path)
             struct stat fileStat;
             auto fullName = path + "/" + dp->d_name;
             stat(fullName.c_str(), &fileStat);
-            FileInfo fileInfo;
-            memset_s(&fileInfo, sizeof(FileInfo), 0, sizeof(FileInfo));
+            FileInfo fileInfo = { "", 0, 0 };
             fileInfo.name = dp->d_name;
             fileInfo.modifyTime = fileStat.st_mtim.tv_sec;
             fileInfo.size = fileStat.st_size;

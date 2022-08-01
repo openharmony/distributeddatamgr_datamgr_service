@@ -619,10 +619,6 @@ Status SingleStoreImpl::DeleteBackup(const std::vector<std::string> &files, cons
     std::map<std::string, DistributedKv::Status> &results)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (dbStore_ == nullptr) {
-        ZLOGE("db:%{public}s already closed!", storeId_.c_str());
-        return ALREADY_CLOSED;
-    }
     for (auto &file : files) {
         results.emplace(file, DEVICE_NOT_FOUND);
     }
