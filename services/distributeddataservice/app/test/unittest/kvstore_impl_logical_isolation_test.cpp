@@ -17,6 +17,7 @@
 #include <vector>
 #include "kvstore_data_service.h"
 #include "kvstore_meta_manager.h"
+#include "grant_data_sync_permission.h"
 #include "refbase.h"
 #include "types.h"
 #include "bootstrap.h"
@@ -60,6 +61,10 @@ void SingleKvStoreImplLogicalIsolationTest::SetUpTestCase(void)
 
     g_appId2.appId = "lgc2";
     g_storeId2.storeId = "store2";
+
+    GrantDataSyncPermission::GrantPermission(g_appId.appId);
+    GrantDataSyncPermission::GrantPermission(g_appId1.appId);
+    GrantDataSyncPermission::GrantPermission(g_appId2.appId);
 }
 
 void SingleKvStoreImplLogicalIsolationTest::TearDownTestCase(void)

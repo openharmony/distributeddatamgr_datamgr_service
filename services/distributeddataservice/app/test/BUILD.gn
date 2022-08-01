@@ -82,6 +82,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
     "../src/session_manager/session_manager.cpp",
     "../src/session_manager/upgrade_manager.cpp",
     "../src/single_kvstore_impl.cpp",
+    "unittest/grant_data_sync_permission.h",
     "unittest/kvstore_impl_logical_isolation_test.cpp",
   ]
 
@@ -89,6 +90,7 @@ ohos_unittest("KvStoreImplLogicalIsolationTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
@@ -146,6 +148,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
     "../src/session_manager/session_manager.cpp",
     "../src/session_manager/upgrade_manager.cpp",
     "../src/single_kvstore_impl.cpp",
+    "unittest/grant_data_sync_permission.h",
     "unittest/kvstore_impl_physical_isolation_test.cpp",
   ]
 
@@ -153,6 +156,7 @@ ohos_unittest("KvStoreImplPhysicalIsolationTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",

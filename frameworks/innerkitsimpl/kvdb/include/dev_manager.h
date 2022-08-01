@@ -17,6 +17,7 @@
 #include <string>
 #include "types.h"
 #include "lru_bucket.h"
+#include "device_manager.h"
 namespace OHOS::DistributedKv {
 class DevManager {
 public:
@@ -36,11 +37,11 @@ public:
     void Online(const std::string &networkId);
     void Offline(const std::string &networkId);
     void OnChanged(const std::string &networkId);
+    void RegisterDevCallback();
 private:
     DevManager();
     ~DevManager() = default;
-    std::string GetUuidByNetworkId(const std::string &networkId) const;
-    std::string GetUdidByNetworkId(const std::string &networkId) const;
+    int32_t Init();
     const DetailInfo invalidDetail_ {};
     mutable std::mutex mutex_ {};
     DetailInfo localInfo_ {};

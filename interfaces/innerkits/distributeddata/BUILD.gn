@@ -37,6 +37,7 @@ config("distributeddatafwk_config") {
     "${datashare_innerapi_path}/common/include",
     "${datashare_innerapi_path}/provider/include",
     "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
   ]
 }
 
@@ -114,6 +115,7 @@ ohos_shared_library("distributeddata_inner") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp:devicemanagersdk",
   ]
   external_deps = [
     "c_utils:utils",

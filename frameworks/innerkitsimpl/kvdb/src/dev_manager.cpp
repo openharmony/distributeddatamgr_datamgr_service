@@ -16,40 +16,89 @@
 #include "dev_manager.h"
 #include <thread>
 #include "log_print.h"
-#include "softbus_bus_center.h"
+#include "device_manager_callback.h"
+#include "dm_device_info.h"
 #include "store_util.h"
 namespace OHOS::DistributedKv {
-constexpr int32_t SOFTBUS_OK = 0;
-constexpr int32_t ID_BUF_LEN = 65;
+using namespace OHOS::DistributedHardware;
+constexpr int32_t DM_OK = 0;
+constexpr int32_t DM_ERROR = -1;
 constexpr size_t DevManager::MAX_ID_LEN;
 constexpr const char *PKG_NAME = "ohos.distributeddata";
-static void Online(NodeBasicInfo *info);
-static void Offline(NodeBasicInfo *info);
-static void OnChange(NodeBasicInfoType type, NodeBasicInfo *info);
-
-INodeStateCb g_DeviceChange = {
-    .events = EVENT_NODE_STATE_MASK,
-    .onNodeOnline = Online,
-    .onNodeOffline = Offline,
-    .onNodeBasicInfoChanged = OnChange,
+class KvDeviceStateCallback : public DeviceStateCallback {
+public:
+    void OnDeviceOnline(const DmDeviceInfo &deviceInfo) override;
+    void OnDeviceOffline(const DmDeviceInfo &deviceInfo) override;
+    void OnDeviceChanged(const DmDeviceInfo &deviceInfo) override;
+    void OnDeviceReady(const DmDeviceInfo &deviceInfo) override;
 };
+
+void KvDeviceStateCallback::OnDeviceOnline(const DmDeviceInfo &deviceInfo)
+{
+    DevManager::GetInstance().Online(deviceInfo.networkId);
+}
+
+void KvDeviceStateCallback::OnDeviceOffline(const DmDeviceInfo &deviceInfo)
+{
+    DevManager::GetInstance().Offline(deviceInfo.networkId);
+}
+
+void KvDeviceStateCallback::OnDeviceChanged(const DmDeviceInfo &deviceInfo)
+{
+    DevManager::GetInstance().OnChanged(deviceInfo.networkId);
+}
+
+void KvDeviceStateCallback::OnDeviceReady(const DmDeviceInfo &deviceInfo)
+{
+}
+
+class DmDeathCallback : public DmInitCallback {
+public:
+    void OnRemoteDied() override;
+};
+
+void DmDeathCallback::OnRemoteDied()
+{
+    ZLOGI("dm device manager died, init it again");
+    DevManager::GetInstance().RegisterDevCallback();
+}
 
 DevManager::DevManager()
 {
-    std::thread th = std::thread([]() {
-        int i = 0;
+    RegisterDevCallback();
+}
+
+int32_t DevManager::Init()
+{
+    auto &deviceManager = DeviceManager::GetInstance();
+    auto deviceInitCallback = std::make_shared<DmDeathCallback>();
+    auto deviceCallback = std::make_shared<KvDeviceStateCallback>();
+    int32_t errNo = deviceManager.InitDeviceManager(PKG_NAME, deviceInitCallback);
+    if (errNo != DM_OK) {
+        return errNo;
+    }
+    errNo = deviceManager.RegisterDevStateCallback(PKG_NAME, "", deviceCallback);
+    return errNo;
+}
+
+void DevManager::RegisterDevCallback()
+{
+    int32_t errNo = Init();
+    if (errNo != DM_OK) {
+        ZLOGE("register device failed, try again");
+    }
+    std::thread th = std::thread([this]() {
         constexpr int RETRY_TIMES = 300;
+        int i = 0;
+        int32_t errNo = DM_ERROR;
         while (i++ < RETRY_TIMES) {
-            int32_t errNo = RegNodeDeviceStateCb(PKG_NAME, &g_DeviceChange);
-            if (errNo != SOFTBUS_OK) {
-                ZLOGE("RegNodeDeviceStateCb fail %{public}d, time:%{public}d", errNo, i);
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-                continue;
+            errNo = Init();
+            if (errNo == DM_OK) {
+                break;
             }
-            ZLOGI("RegNodeDeviceStateCb success");
-            return;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-        ZLOGE("Init failed %{public}d times and exit now.", RETRY_TIMES);
+        ZLOGI("reg device exit now: %{public}d times, errNo: %{public}d", i, errNo);
     });
     th.detach();
 }
@@ -67,8 +116,11 @@ std::string DevManager::ToUUID(const std::string &networkId) const
         return deviceInfo.uuid;
     }
 
-    std::string uuid = GetUuidByNetworkId(networkId);
-    std::string udid = GetUdidByNetworkId(networkId);
+    std::string uuid;
+    std::string udid;
+    auto &deviceManager = DeviceManager::GetInstance();
+    deviceManager.GetUuidByNetworkId(PKG_NAME, networkId, uuid);
+    deviceManager.GetUdidByNetworkId(PKG_NAME, networkId, udid);
     if (uuid.empty() || udid.empty() || networkId.empty()) {
         return "";
     }
@@ -104,15 +156,18 @@ const DevManager::DetailInfo &DevManager::GetLocalDevice()
         return localInfo_;
     }
 
-    NodeBasicInfo info;
-    int32_t ret = GetLocalNodeDeviceInfo(PKG_NAME, &info);
-    if (ret != SOFTBUS_OK) {
+    DmDeviceInfo info;
+    auto &deviceManager = DeviceManager::GetInstance();
+    int32_t ret = deviceManager.GetLocalDeviceInfo(PKG_NAME, info);
+    if (ret != DM_OK) {
         ZLOGE("GetLocalNodeDeviceInfo error");
         return invalidDetail_;
     }
     std::string networkId = std::string(info.networkId);
-    std::string uuid = GetUuidByNetworkId(networkId);
-    std::string udid = GetUdidByNetworkId(networkId);
+    std::string uuid;
+    deviceManager.GetUuidByNetworkId(PKG_NAME, networkId, uuid);
+    std::string udid;
+    deviceManager.GetUdidByNetworkId(PKG_NAME, networkId, udid);
     if (uuid.empty() || udid.empty() || networkId.empty()) {
         return invalidDetail_;
     }
@@ -126,52 +181,25 @@ const DevManager::DetailInfo &DevManager::GetLocalDevice()
 std::vector<DevManager::DetailInfo> DevManager::GetRemoteDevices() const
 {
     std::vector<DetailInfo> devices;
-    NodeBasicInfo *info = nullptr;
-    int32_t infoNum = 0;
-
-    int32_t ret = GetAllNodeDeviceInfo(PKG_NAME, &info, &infoNum);
-    if (ret != SOFTBUS_OK) {
-        ZLOGE("GetAllNodeDeviceInfo error");
+    std::vector<DmDeviceInfo> dmDeviceInfos {};
+    auto &deviceManager = DeviceManager::GetInstance();
+    int32_t ret = deviceManager.GetTrustedDeviceList(PKG_NAME, "", dmDeviceInfos);
+    if (ret != DM_OK) {
+        ZLOGE("GetTrustedDeviceList error");
         return devices;
     }
-    ZLOGD("GetAllNodeDeviceInfo success infoNum=%{public}d", infoNum);
 
-    for (int i = 0; i < infoNum; i++) {
-        std::string networkId = std::string(info[i].networkId);
-        std::string uuid = GetUuidByNetworkId(networkId);
-        std::string udid = GetUdidByNetworkId(networkId);
+    for (const auto &dmDeviceInfo : dmDeviceInfos) {
+        std::string networkId = dmDeviceInfo.networkId;
+        std::string uuid;
+        std::string udid;
+        deviceManager.GetUuidByNetworkId(PKG_NAME, networkId, uuid);
+        deviceManager.GetUdidByNetworkId(PKG_NAME, networkId, udid);
         DetailInfo deviceInfo = { std::move(uuid), std::move(udid), std::move(networkId),
-            std::string(info[i].deviceName), std::string(info[i].deviceName) };
+                                  std::string(dmDeviceInfo.deviceName), std::to_string(dmDeviceInfo.deviceTypeId) };
         devices.push_back(std::move(deviceInfo));
     }
-    if (info != nullptr) {
-        FreeNodeInfo(info);
-    }
     return devices;
-}
-
-std::string DevManager::GetUuidByNetworkId(const std::string &networkId) const
-{
-    char uuid[ID_BUF_LEN] = {0};
-    int32_t ret = GetNodeKeyInfo(PKG_NAME, networkId.c_str(), NodeDeviceInfoKey::NODE_KEY_UUID,
-        reinterpret_cast<uint8_t *>(uuid), ID_BUF_LEN);
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", StoreUtil::Anonymous(networkId).c_str());
-        return "";
-    }
-    return std::string(uuid);
-}
-
-std::string DevManager::GetUdidByNetworkId(const std::string &networkId) const
-{
-    char udid[ID_BUF_LEN] = { 0 };
-    int32_t ret = GetNodeKeyInfo(PKG_NAME, networkId.c_str(), NodeDeviceInfoKey::NODE_KEY_UDID,
-        reinterpret_cast<uint8_t *>(udid), ID_BUF_LEN);
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("GetNodeKeyInfo error, nodeId:%{public}s", StoreUtil::Anonymous(networkId).c_str());
-        return "";
-    }
-    return std::string(udid);
 }
 
 void DevManager::Online(const std::string &networkId)
@@ -191,23 +219,5 @@ void DevManager::Offline(const std::string &networkId)
 void DevManager::OnChanged(const std::string &networkId)
 {
     // do nothing
-}
-
-static void Online(NodeBasicInfo *info)
-{
-    DevManager::GetInstance().Online(info->networkId);
-}
-
-static void Offline(NodeBasicInfo *info)
-{
-    DevManager::GetInstance().Offline(info->networkId);
-}
-
-static void OnChange(NodeBasicInfoType type, NodeBasicInfo *info)
-{
-    if (type != TYPE_NETWORK_ID) {
-        return;
-    }
-    DevManager::GetInstance().OnChanged(info->networkId);
 }
 } // namespace OHOS::DistributedKv
