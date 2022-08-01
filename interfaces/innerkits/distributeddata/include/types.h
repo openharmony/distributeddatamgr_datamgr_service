@@ -118,7 +118,6 @@ struct AppThreadInfo {
 };
 
 enum SubscribeType : uint32_t {
-    DEFAULT = 0, // default let bms delete
     SUBSCRIBE_TYPE_LOCAL = 1, // local changes of syncable kv store
     SUBSCRIBE_TYPE_REMOTE = 2, // synced data changes from remote devices
     SUBSCRIBE_TYPE_ALL = 3, // both local changes and synced data changes
