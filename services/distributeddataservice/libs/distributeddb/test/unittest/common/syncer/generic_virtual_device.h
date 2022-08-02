@@ -19,6 +19,7 @@
 
 #include "ikvdb_sync_interface.h"
 #include "meta_data.h"
+#include "remote_executor.h"
 #include "subscribe_manager.h"
 #include "sync_task_context.h"
 #include "store_types.h"
@@ -42,7 +43,8 @@ public:
     virtual int Sync(SyncMode mode, bool wait);
     virtual int Sync(SyncMode mode, const Query &query, bool wait);
     virtual int Sync(SyncMode mode, const Query &query, const SyncOperation::UserCallback &callBack, bool wait);
-
+    virtual int RemoteQuery(const std::string &device, const RemoteCondition &condition,
+        uint64_t timeout, std::shared_ptr<ResultSet> &result);
 protected:
     ICommunicator *communicateHandle_;
     VirtualCommunicatorAggregator *communicatorAggregator_;
@@ -54,6 +56,7 @@ protected:
     std::function<void(const std::string &)> onRemoteDataChanged_;
 
     std::shared_ptr<SubscribeManager> subManager_;
+    RemoteExecutor *executor_;
 };
 }
 #endif // GENERIC_VIRTUAL_DEVICE_H

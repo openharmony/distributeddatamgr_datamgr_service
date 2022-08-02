@@ -880,6 +880,7 @@ int DistributedDBToolsUnitTest::BuildMessage(const DataSyncMessageInfo &messageI
 
 sqlite3 *RelationalTestUtils::CreateDataBase(const std::string &dbUri)
 {
+    LOGD("Create database: %s", dbUri.c_str());
     sqlite3 *db = nullptr;
     if (int r = sqlite3_open_v2(dbUri.c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) != SQLITE_OK) {
         LOGE("Open database [%s] failed. %d", dbUri.c_str(), r);
@@ -902,6 +903,39 @@ int RelationalTestUtils::ExecSql(sqlite3 *db, const std::string &sql)
         LOGE("Execute sql failed. %d err: %s", errCode, errMsg);
     }
     sqlite3_free(errMsg);
+    return errCode;
+}
+
+int RelationalTestUtils::ExecSql(sqlite3 *db, const std::string &sql,
+    const std::function<int (sqlite3_stmt *)> &bindCallback, const std::function<int (sqlite3_stmt *)> &resultCallback)
+{
+    if (db == nullptr || sql.empty()) {
+        return -E_INVALID_ARGS;
+    }
+
+    sqlite3_stmt *stmt = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
+    if (errCode != E_OK) {
+        goto END;
+    }
+    if (bindCallback) {
+        errCode = bindCallback(stmt);
+        if (errCode != E_OK) {
+            goto END;
+        }
+    }
+
+    errCode = SQLiteUtils::StepWithRetry(stmt);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+        errCode = E_OK;
+        if (resultCallback && resultCallback(stmt) != E_OK) { // continue step stmt while callback return E_OK
+            goto END;
+        }
+    } else if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+        errCode = E_OK;
+    }
+END:
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
     return errCode;
 }
 
@@ -960,5 +994,61 @@ int RelationalTestUtils::CheckTableRecords(sqlite3 *db, const std::string &table
 END:
     SQLiteUtils::ResetStatement(stmt, true, errCode);
     return count;
+}
+
+int RelationalTestUtils::GetMetaData(sqlite3 *db, const DistributedDB::Key &key, DistributedDB::Value &value)
+{
+    if (db == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+
+    std::string sql = "SELECT value FROM " + DBConstant::RELATIONAL_PREFIX + "metadata WHERE key = ?;";
+    sqlite3_stmt *stmt = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
+    if (errCode != E_OK) {
+        goto END;
+    }
+    errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, key);
+    if (errCode != E_OK) {
+        goto END;
+    }
+
+    errCode = SQLiteUtils::StepWithRetry(stmt);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+        errCode = SQLiteUtils::GetColumnBlobValue(stmt, 0, value);
+    }
+END:
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return errCode;
+}
+
+int RelationalTestUtils::SetMetaData(sqlite3 *db, const DistributedDB::Key &key, const DistributedDB::Value &value)
+{
+    if (db == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+
+    std::string sql = "INSERT OR REPLACE INTO " + DBConstant::RELATIONAL_PREFIX + "metadata VALUES (?, ?);";
+    sqlite3_stmt *stmt = nullptr;
+    int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
+    if (errCode != E_OK) {
+        goto END;
+    }
+    errCode = SQLiteUtils::BindBlobToStatement(stmt, 1, key);
+    if (errCode != E_OK) {
+        goto END;
+    }
+    errCode = SQLiteUtils::BindBlobToStatement(stmt, 2, value); // 2: bind index
+    if (errCode != E_OK) {
+        goto END;
+    }
+
+    errCode = SQLiteUtils::StepWithRetry(stmt);
+    if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_DONE)) {
+        errCode = E_OK;
+    }
+END:
+    SQLiteUtils::ResetStatement(stmt, true, errCode);
+    return SQLiteUtils::MapSQLiteErrno(errCode);
 }
 } // namespace DistributedDBUnitTest

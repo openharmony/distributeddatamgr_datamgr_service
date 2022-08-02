@@ -23,6 +23,7 @@ namespace DistributedDB {
 std::mutex TimeHelper::systemTimeLock_;
 Timestamp TimeHelper::lastSystemTimeUs_ = 0;
 Timestamp TimeHelper::currentIncCount_ = 0;
+std::atomic<Timestamp> TimeHelper::lastMonotonicTime_ = 0;
 
 Timestamp TimeHelper::GetSysCurrentTime()
 {
@@ -68,10 +69,11 @@ int TimeHelper::Initialize(const ISyncInterface *inStorage, std::shared_ptr<Meta
     Timestamp currentSysTime = GetSysCurrentTime();
     TimeOffset localTimeOffset = GetLocalTimeOffset();
     Timestamp maxItemTime = GetMaxDataItemTime();
-    if (currentSysTime > MAX_VALID_TIME || localTimeOffset > MAX_VALID_TIME || maxItemTime > MAX_VALID_TIME) {
+    if (currentSysTime > MAX_VALID_TIME || maxItemTime > MAX_VALID_TIME) {
         return -E_INVALID_TIME;
     }
-    if ((currentSysTime + localTimeOffset) <= maxItemTime) {
+    Timestamp virtualSysTime = static_cast<Timestamp>(currentSysTime + localTimeOffset);
+    if (virtualSysTime <= maxItemTime || virtualSysTime > BUFFER_VALID_TIME) {
         localTimeOffset = static_cast<TimeOffset>(maxItemTime - currentSysTime + MS_TO_100_NS); // 1ms
         int errCode = SaveLocalTimeOffset(localTimeOffset);
         if (errCode != E_OK) {
@@ -79,6 +81,7 @@ int TimeHelper::Initialize(const ISyncInterface *inStorage, std::shared_ptr<Meta
             return errCode;
         }
     }
+    lastMonotonicTime_ = GetMonotonicTime();
     metadata_->SetLastLocalTime(currentSysTime + static_cast<Timestamp>(localTimeOffset));
     return E_OK;
 }
@@ -89,8 +92,14 @@ Timestamp TimeHelper::GetTime()
     TimeOffset localTimeOffset = GetLocalTimeOffset();
     Timestamp currentLocalTime = currentSysTime + localTimeOffset;
     Timestamp lastLocalTime = metadata_->GetLastLocalTime();
-    if (currentLocalTime <= lastLocalTime || currentLocalTime > MAX_VALID_TIME) {
-        lastLocalTime++;
+    Timestamp currentMonotonicTime = GetMonotonicTime();
+    Timestamp deltaTime = 1UL;
+    if (currentMonotonicTime != INVALID_TIMESTAMP && lastMonotonicTime_ != INVALID_TIMESTAMP) {
+        deltaTime = currentMonotonicTime - lastMonotonicTime_;
+    }
+    lastMonotonicTime_ = currentMonotonicTime;
+    if (currentLocalTime <= lastLocalTime || currentLocalTime > BUFFER_VALID_TIME) {
+        lastLocalTime += deltaTime;
         currentLocalTime = lastLocalTime;
         metadata_->SetLastLocalTime(lastLocalTime);
     } else {
@@ -119,5 +128,15 @@ int TimeHelper::SaveLocalTimeOffset(TimeOffset offset)
 void TimeHelper::SetSendConfig(const std::string &dstTarget, bool nonBlock, uint32_t timeout, SendConfig &sendConf)
 {
     SetSendConfigParam(storage_->GetDbProperties(), dstTarget, false, SEND_TIME_OUT, sendConf);
+}
+
+Timestamp TimeHelper::GetMonotonicTime()
+{
+    Timestamp time = INVALID_TIMESTAMP;
+    int errCode = OS::GetMonotonicRelativeTimeInMicrosecond(time);
+    if (errCode != E_OK) {
+        LOGE("GetMonotonicTime ERR! errCode = %d", errCode);
+    }
+    return time;
 }
 } // namespace DistributedDB

@@ -122,6 +122,11 @@ constexpr int E_INVALID_COMPRESS_ALGO = (E_BASE + 98); // The algo is defined, b
 constexpr int E_LOG_OVER_LIMITS = (E_BASE + 99); // The log file size is over the limits.
 constexpr int E_MODE_MISMATCH = (E_BASE + 100); // dual sync mode mismatch
 constexpr int E_NO_NEED_ACTIVE = (E_BASE + 101); // no need to active sync mode
+constexpr int E_REMOTE_OVER_SIZE = (E_BASE + 102); // for remote query, over MAX_REMOTEDATA_SIZE
+constexpr int E_NONEXISTENT = (E_BASE + 103);  // for result set, nonexistent index
+constexpr int E_TYPE_MISMATCH = (E_BASE + 104);  // for result set, mismatch type
+constexpr int E_DENIED_SQL = (E_BASE + 105);  // denied sql, not permit to execute
+constexpr int E_USER_CHANGE = (E_BASE + 106); // user change
 // Num 150+ is reserved for schema related errno, since it may be added regularly
 constexpr int E_JSON_PARSE_FAIL = (E_BASE + 150); // Parse json fail in grammatical level
 constexpr int E_JSON_INSERT_PATH_EXIST = (E_BASE + 151); // Path already exist before insert

@@ -1146,7 +1146,7 @@ HWTEST_F(DistributedDBSingleVerP2PQuerySyncTest, VerifyMetaDataQuerySync001, Tes
  */
 HWTEST_F(DistributedDBSingleVerP2PQuerySyncTest, VerifyLruMap001, TestSize.Level1)
 {
-    LruMap lruMap;
+    LruMap<std::string, QueryWaterMark> lruMap;
     const int maxCacheItems = 200;
 
     /**

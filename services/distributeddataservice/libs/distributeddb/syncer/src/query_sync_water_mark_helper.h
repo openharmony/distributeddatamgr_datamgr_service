@@ -23,6 +23,7 @@
 #include <vector>
 #include "db_types.h"
 #include "ikvdb_sync_interface.h"
+#include "lru_map.h"
 
 namespace DistributedDB {
 struct QueryWaterMark {
@@ -38,25 +39,6 @@ struct DeleteWaterMark {
     uint32_t version = 0;
     WaterMark sendWaterMark = 0;
     WaterMark recvWaterMark = 0;
-};
-
-// LRU map
-class LruMap final {
-public:
-    LruMap() = default;
-    ~LruMap() = default;
-
-    DISABLE_COPY_ASSIGN_MOVE(LruMap);
-
-    int Get(const std::string &key, QueryWaterMark &outValue);
-    int Put(const std::string &key, const QueryWaterMark &inValue);
-    void RemoveWithPrefixKey(const std::string &prefixKey);
-private:
-    int Elimination(const std::string &key, const QueryWaterMark &inQueryWaterMark);
-
-    std::mutex lruLock_;
-    std::map<std::string, QueryWaterMark> cache_;
-    std::deque<std::pair<std::string, QueryWaterMark>> eliminationChain_;
 };
 
 class QuerySyncWaterMarkHelper {
@@ -162,7 +144,7 @@ private:
     // because it will change the eliminationChain
     // and the queryWaterMark use a LRU Map to store in ram
     std::mutex queryWaterMarkLock_;
-    LruMap querySyncCache_;
+    LruMap<std::string, QueryWaterMark> querySyncCache_;
     std::map<DeviceID, std::map<std::string, std::string>> deviceIdToHashQuerySyncIdMap_;
 
     // also store deleteKeyWaterMark should add a lock

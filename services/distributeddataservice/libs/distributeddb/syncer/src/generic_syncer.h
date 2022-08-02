@@ -99,6 +99,9 @@ public:
 
     SyncerBasicInfo DumpSyncerBasicInfo() override;
 
+    int RemoteQuery(const std::string &device, const RemoteCondition &condition,
+        uint64_t timeout, uint64_t connectionId, std::shared_ptr<ResultSet> &result) override;
+
 protected:
 
     // trigger query auto sync or auto subscribe

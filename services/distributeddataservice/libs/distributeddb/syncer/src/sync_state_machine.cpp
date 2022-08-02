@@ -166,12 +166,15 @@ void SyncStateMachine::SwitchStateAndStep(uint8_t event)
 int SyncStateMachine::ExecNextTask()
 {
     while (!syncContext_->IsTargetQueueEmpty()) {
-        syncContext_->MoveToNextTarget();
+        int errCode = syncContext_->GetNextTarget(false);
+        if (errCode != E_OK) {
+            continue;
+        }
         if (syncContext_->IsCurrentSyncTaskCanBeSkipped()) {
             syncContext_->SetOperationStatus(SyncOperation::OP_FINISHED_ALL);
             continue;
         }
-        int errCode = PrepareNextSyncTask();
+        errCode = PrepareNextSyncTask();
         if (errCode != E_OK) {
             LOGE("[SyncStateMachine] PrepareSync failed");
             syncContext_->SetOperationStatus(SyncOperation::OP_FAILED);
@@ -378,7 +381,6 @@ void SyncStateMachine::DoSaveDataNotify(uint32_t sessionId, uint32_t sequenceId,
     }
     SendSaveDataNotifyPacket(sessionId, sequenceId, inMsgId);
     saveDataNotifyCount_++;
-    return;
 }
 
 void SyncStateMachine::DoFeedDogForSync(SyncDirectionFlag flag)

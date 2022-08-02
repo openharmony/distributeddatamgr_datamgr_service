@@ -418,7 +418,7 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest007, TestSize
 
 /**
   * @tc.name: RelationalStoreTest008
-  * @tc.desc: Test create distributed table with table has composite primary key
+  * @tc.desc: Test create distributed table with table has composite primary keys
   * @tc.type: FUNC
   * @tc.require: AR000GK58F
   * @tc.author: lianhuix
@@ -440,6 +440,33 @@ HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest008, TestSize
     status = g_mgr.CloseStore(delegate);
     EXPECT_EQ(status, OK);
 }
+
+/**
+  * @tc.name: RelationalStoreTest009
+  * @tc.desc: Test create distributed table with table has history data
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedDBInterfacesRelationalTest, RelationalStoreTest009, TestSize.Level1)
+{
+    sqlite3 *db = RelationalTestUtils::CreateDataBase(g_dbDir + STORE_ID + DB_SUFFIX);
+    ASSERT_NE(db, nullptr);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, "PRAGMA journal_mode=WAL;"), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL), SQLITE_OK);
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, INSERT_SYNC_DATA_SQL), SQLITE_OK);
+    EXPECT_EQ(sqlite3_close_v2(db), SQLITE_OK);
+
+    RelationalStoreDelegate *delegate = nullptr;
+    DBStatus status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    EXPECT_EQ(status, OK);
+    ASSERT_NE(delegate, nullptr);
+
+    EXPECT_EQ(delegate->CreateDistributedTable("sync_data"), NOT_SUPPORT);
+    status = g_mgr.CloseStore(delegate);
+    EXPECT_EQ(status, OK);
+}
+
 
 namespace {
 void TableModifyTest(const std::string &modifySql, DBStatus expect)

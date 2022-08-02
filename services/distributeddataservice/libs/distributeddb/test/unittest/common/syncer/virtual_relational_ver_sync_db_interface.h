@@ -41,11 +41,12 @@ public:
     ~VirtualRelationalVerSyncDBInterface() override = default;
 
     int PutSyncDataWithQuery(const QueryObject &query, const std::vector<SingleVerKvEntry *> &entries,
-    const std::string &deviceName) override;
+        const std::string &deviceName) override;
 
     int PutLocalData(const std::vector<VirtualRowData> &dataList, const std::string &tableName);
 
     RelationalSchemaObject GetSchemaInfo() const override;
+    void SetSchemaInfo(const RelationalSchemaObject &schema);
 
     int GetDatabaseCreateTimestamp(Timestamp &outTime) const override;
 
@@ -84,7 +85,7 @@ public:
 
     int GetAllMetaKeys(std::vector<Key> &keys) const override;
 
-    const KvDBProperties &GetDbProperties() const override;
+    const RelationalDBProperties &GetDbProperties() const override;
 
     void SetLocalFieldInfo(const std::vector<FieldInfo> &localFieldInfo);
 
@@ -111,6 +112,11 @@ public:
 
     void SetTableInfo(const TableInfo &tableInfo);
 
+    int ExecuteQuery(const PreparedStmt &prepStmt, size_t packetSize, RelationalRowDataSet &data,
+        ContinueToken &token) const override;
+
+    const RelationalDBProperties &GetRelationalDbProperties() const override;
+
 private:
     mutable std::map<std::vector<uint8_t>, std::vector<uint8_t>> metadata_;
     std::map<std::string, std::map<std::string, VirtualRowData>> syncData_;
@@ -119,6 +125,7 @@ private:
     RelationalSchemaObject schemaObj_;
     std::vector<FieldInfo> localFieldInfo_;
     KvDBProperties properties_;
+    RelationalDBProperties rdbProperties_;
     SecurityOption secOption_;
 };
 }

@@ -79,7 +79,7 @@ public:
     int ReceiveMessageCallback(Message *inMsg) override;
 
     // Called by CommErrHandler, used to abort sync when handle err
-    void CommErrAbort() override;
+    void CommErrAbort(uint32_t sessionId = 0) override;
 
     int HandleDataRequestRecv(const Message *inMsg);
 
@@ -126,6 +126,8 @@ protected:
     int TimeMarkSyncRecv(const Message *inMsg);
 
     void DataAckRecvErrCodeHandle(int errCode, bool handleError);
+
+    void ResponsePullError(int errCode, bool ignoreInnerErr);
 
 private:
     // Used to init sync state machine switchbables
@@ -180,8 +182,6 @@ private:
 
     void HandleDataAckRecvWithSlidingWindow(int errCode, const Message *inMsg, bool ignoreInnerErr);
 
-    void ResponsePullError(int errCode, bool ignoreInnerErr);
-
     void Clear();
 
     bool IsPacketValid(const Message *inMsg) const;
@@ -207,6 +207,8 @@ private:
     void JumpStatusAfterAbilitySync(int mode);
 
     void ControlAckRecvErrCodeHandle(int errCode);
+
+    void InnerErrorAbort(uint32_t sessionId);
 
     DISABLE_COPY_ASSIGN_MOVE(SingleVerSyncStateMachine);
 

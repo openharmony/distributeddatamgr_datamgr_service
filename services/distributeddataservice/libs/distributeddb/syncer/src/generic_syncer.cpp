@@ -286,6 +286,9 @@ int GenericSyncer::StopSync(uint64_t connectionId)
     for (auto syncId : syncIdList) {
         RemoveSyncOperation(syncId);
     }
+    if (syncEngine_ != nullptr) {
+        syncEngine_->NotifyConnectionClosed(connectionId);
+    }
     return E_OK;
 }
 
@@ -398,7 +401,7 @@ int GenericSyncer::InitSyncEngine(ISyncInterface *syncInterface)
 
 int GenericSyncer::CheckSyncActive(ISyncInterface *syncInterface, bool isNeedActive)
 {
-    bool isSyncDualTupleMode = syncInterface->GetDbProperties().GetBoolProp(KvDBProperties::SYNC_DUAL_TUPLE_MODE,
+    bool isSyncDualTupleMode = syncInterface->GetDbProperties().GetBoolProp(DBProperties::SYNC_DUAL_TUPLE_MODE,
         false);
     if (!isSyncDualTupleMode || isNeedActive) {
         return E_OK;
@@ -465,6 +468,11 @@ void GenericSyncer::ClearSyncOperations(bool isClosedOperation)
             }
         }
     }
+
+    if (!isClosedOperation) { // means user changed
+        syncEngine_->NotifyUserChange();
+    }
+
     for (auto &operation : syncOperation) {
         // block sync operation or userChange will trigger remove sync operation
         // caller won't blocked for block sync
@@ -807,12 +815,33 @@ void GenericSyncer::Dump(int fd)
 SyncerBasicInfo GenericSyncer::DumpSyncerBasicInfo()
 {
     SyncerBasicInfo baseInfo;
-    RefObject::IncObjRef(syncEngine_);
     if (syncEngine_ == nullptr) {
         return baseInfo;
     }
+    RefObject::IncObjRef(syncEngine_);
     baseInfo.isSyncActive = syncEngine_->IsEngineActive();
     RefObject::DecObjRef(syncEngine_);
     return baseInfo;
+}
+
+int GenericSyncer::RemoteQuery(const std::string &device, const RemoteCondition &condition,
+    uint64_t timeout, uint64_t connectionId, std::shared_ptr<ResultSet> &result)
+{
+    ISyncEngine *syncEngine = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(syncerLock_);
+        int errCode = StatusCheck();
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        syncEngine = syncEngine_;
+        RefObject::IncObjRef(syncEngine);
+    }
+    if (syncEngine == nullptr) {
+        return -E_NOT_INIT;
+    }
+    int errCode = syncEngine->RemoteQuery(device, condition, timeout, connectionId, result);
+    RefObject::DecObjRef(syncEngine);
+    return errCode;
 }
 } // namespace DistributedDB

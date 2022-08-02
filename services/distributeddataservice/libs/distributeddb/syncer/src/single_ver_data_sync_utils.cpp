@@ -39,7 +39,7 @@ bool SingleVerDataSyncUtils::QuerySyncCheck(const SingleVerSyncTaskContext *cont
         return false;
     }
     if (context->GetQuery().HasInKeys() &&
-        context->GetRemoteDbAbility().GetAbilityItem(SyncConfig::INKEYS_QUERY) != SUPPORT_MARK) {
+        context->IsNotSupportAbility(SyncConfig::INKEYS_QUERY)) {
         return false;
     }
     return true;

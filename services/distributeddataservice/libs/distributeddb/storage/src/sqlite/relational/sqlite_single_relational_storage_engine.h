@@ -34,11 +34,12 @@ public:
 
     const RelationalSchemaObject &GetSchemaRef() const;
 
-    int CreateDistributedTable(const std::string &tableName, bool &schemaChanged);
+    int CreateDistributedTable(const std::string &tableName, const std::string &identity, bool &schemaChanged);
 
     int CleanDistributedDeviceTable(std::vector<std::string> &missingTables);
 
     const RelationalDBProperties &GetProperties() const;
+    void SetProperties(const RelationalDBProperties &properties);
 
 protected:
     StorageExecutor *NewSQLiteStorageExecutor(sqlite3 *db, bool isWrite, bool isMemDb) override;
@@ -53,6 +54,8 @@ private:
     int RegisterFunction(sqlite3 *db) const;
 
     int UpgradeDistributedTable(const std::string &tableName);
+    int CreateDistributedTable(const std::string &tableName, bool isUpgraded, const std::string &identity,
+        bool &schemaChanged, RelationalSchemaObject &tmpSchema);
 
     RelationalSchemaObject schema_;
     mutable std::mutex schemaMutex_;

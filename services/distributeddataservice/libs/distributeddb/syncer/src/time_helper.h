@@ -25,9 +25,11 @@
 namespace DistributedDB {
 class TimeHelper {
 public:
-    constexpr static int64_t BASE_OFFSET = 10000LL * 365LL * 24LL * 3600LL * 1000LL * 1000LL * 10L; // 10000 year 100ns
+    constexpr static int64_t BASE_OFFSET = 10000LL * 365LL * 24LL * 3600LL * 1000LL * 1000LL * 10L; // 10000year 100ns
 
-    constexpr static int64_t MAX_VALID_TIME = BASE_OFFSET * 2; // 20000 year 100ns
+    constexpr static int64_t BUFFER_VALID_TIME = BASE_OFFSET * 2; // 20000 year 200ns
+
+    constexpr static int64_t MAX_VALID_TIME = INT64_MAX; // sqlite only support int64 as integer
 
     static const uint64_t TO_100_NS = 10; // 1us to 100ns
 
@@ -58,11 +60,14 @@ public:
 
     void SetSendConfig(const std::string &dstTarget, bool nonBlock, uint32_t timeout, SendConfig &sendConf);
 
+    static Timestamp GetMonotonicTime();
+
 private:
     static std::mutex systemTimeLock_;
     static Timestamp lastSystemTimeUs_;
     static Timestamp currentIncCount_;
     static const uint64_t MAX_INC_COUNT = 9; // last bit from 0-9
+    static std::atomic<Timestamp> lastMonotonicTime_;
     const ISyncInterface *storage_;
     std::shared_ptr<Metadata> metadata_;
 };

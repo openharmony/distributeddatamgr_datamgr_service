@@ -150,5 +150,21 @@ void RelationalStoreDelegateImpl::OnSyncComplete(const std::map<std::string, std
         onComplete(res);
     }
 }
+
+DBStatus RelationalStoreDelegateImpl::RemoteQuery(const std::string &device, const RemoteCondition &condition,
+    uint64_t timeout, std::shared_ptr<ResultSet> &result)
+{
+    if (conn_ == nullptr) {
+        LOGE("Invalid connection for operation!");
+        return DB_ERROR;
+    }
+    int errCode = conn_->RemoteQuery(device, condition, timeout, result);
+    if (errCode != E_OK) {
+        LOGW("[RelationalStore Delegate] remote query failed:%d", errCode);
+        result = nullptr;
+        return TransferDBErrno(errCode);
+    }
+    return OK;
+}
 } // namespace DistributedDB
 #endif

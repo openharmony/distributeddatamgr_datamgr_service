@@ -83,6 +83,7 @@ DB_API DBStatus RelationalStoreManager::OpenStore(const std::string &path, const
 
     RelationalDBProperties properties;
     InitStoreProp(canonicalDir, appId_, userId_, storeId, properties);
+    properties.SetBoolProp(RelationalDBProperties::SYNC_DUAL_TUPLE_MODE, option.syncDualTupleMode);
 
     int errCode = E_OK;
     auto *conn = GetOneConnectionWithRetry(properties, errCode);
@@ -141,10 +142,13 @@ void RelationalStoreManager::SetAutoLaunchRequestCallback(const AutoLaunchReques
 }
 
 std::string RelationalStoreManager::GetRelationalStoreIdentifier(const std::string &userId, const std::string &appId,
-    const std::string &storeId)
+    const std::string &storeId, bool syncDualTupleMode)
 {
-    if (!ParamCheckUtils::CheckStoreParameter(storeId, appId, userId)) {
+    if (!ParamCheckUtils::CheckStoreParameter(storeId, appId, userId, syncDualTupleMode)) {
         return "";
+    }
+    if (syncDualTupleMode) {
+        return DBCommon::TransferHashString(appId + "-" + storeId);
     }
     return DBCommon::TransferHashString(DBCommon::GenerateIdentifierId(storeId, appId, userId));
 }

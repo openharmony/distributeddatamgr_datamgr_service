@@ -44,7 +44,7 @@ public:
     DB_API static void SetAutoLaunchRequestCallback(const AutoLaunchRequestCallback &callback);
 
     DB_API static std::string GetRelationalStoreIdentifier(const std::string &userId, const std::string &appId,
-        const std::string &storeId);
+        const std::string &storeId, bool syncDualTupleMode = false);
 
 private:
     std::string appId_;

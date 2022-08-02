@@ -94,6 +94,34 @@ SyncStrategy SchemaNegotiate::ConcludeSyncStrategy(const SyncOpinion &localOpini
     return outStrategy;
 }
 
+RelationalSyncOpinion SchemaNegotiate::MakeOpinionEachTable(const RelationalSchemaObject &localSchema,
+    const RelationalSchemaObject &remoteSchema)
+{
+    RelationalSyncOpinion opinion;
+    for (const auto &it : localSchema.GetTables()) {
+        if (remoteSchema.GetTable(it.first).GetTableName() != it.first) {
+            LOGW("[RelationalSchema][opinion] Table was missing in remote schema");
+            continue;
+        }
+        // remote table is compatible(equal or upgrade) based on local table, permit sync and don't need check
+        int errCode = it.second.CompareWithTable(remoteSchema.GetTable(it.first), localSchema.GetSchemaVersion());
+        if (errCode != -E_RELATIONAL_TABLE_INCOMPATIBLE) {
+            opinion[it.first] = {true, false, false};
+            continue;
+        }
+        // local table is compatible upgrade based on remote table, permit sync and need check
+        errCode = remoteSchema.GetTable(it.first).CompareWithTable(it.second, remoteSchema.GetSchemaVersion());
+        if (errCode != -E_RELATIONAL_TABLE_INCOMPATIBLE) {
+            opinion[it.first] = {true, false, true};
+            continue;
+        }
+        // local table is incompatible with remote table mutually, don't permit sync and need check
+        LOGW("[RelationalSchema][opinion] Local table is incompatible with remote table mutually.");
+        opinion[it.first] = {false, true, true};
+    }
+    return opinion;
+}
+
 RelationalSyncOpinion SchemaNegotiate::MakeLocalSyncOpinion(const RelationalSchemaObject &localSchema,
     const std::string &remoteSchema, uint8_t remoteSchemaType)
 {
@@ -123,30 +151,20 @@ RelationalSyncOpinion SchemaNegotiate::MakeLocalSyncOpinion(const RelationalSche
         return {};
     }
 
-    RelationalSyncOpinion opinion;
-    for (const auto &it : localSchema.GetTables()) {
-        if (remoteSchemaObj.GetTable(it.first).GetTableName() != it.first) {
-            LOGW("[RelationalSchema][opinion] Table was missing in remote schema");
-            continue;
-        }
-        // remote table is compatible(equal or upgrade) based on local table, permit sync and don't need check
-        errCode = it.second.CompareWithTable(remoteSchemaObj.GetTable(it.first));
-        if (errCode != -E_RELATIONAL_TABLE_INCOMPATIBLE) {
-            opinion[it.first] = {true, false, false};
-            continue;
-        }
-        // local table is compatible upgrade based on remote table, permit sync and need check
-        errCode = remoteSchemaObj.GetTable(it.first).CompareWithTable(it.second);
-        if (errCode != -E_RELATIONAL_TABLE_INCOMPATIBLE) {
-            opinion[it.first] = {true, false, true};
-            continue;
-        }
-        // local table is incompatible with remote table mutually, don't permit sync and need check
-        LOGW("[RelationalSchema][opinion] Local table is incompatible with remote table mutually.");
-        opinion[it.first] = {false, true, true};
+    if (localSchema.GetSchemaVersion() != remoteSchemaObj.GetSchemaVersion()) {
+        LOGW("[RelationalSchema][opinion] Schema version mismatch, local %s, remote %s",
+            localSchema.GetSchemaVersion().c_str(), remoteSchemaObj.GetSchemaVersion().c_str());
+        return {};
     }
 
-    return opinion;
+    if (localSchema.GetSchemaVersion() == SchemaConstant::SCHEMA_SUPPORT_VERSION_V2_1 &&
+        localSchema.GetTableMode() != remoteSchemaObj.GetTableMode()) {
+        LOGW("[RelationalSchema][opinion] Schema table mode mismatch, local %d, remote %d",
+            localSchema.GetTableMode(), remoteSchemaObj.GetTableMode());
+        return {};
+    }
+
+    return MakeOpinionEachTable(localSchema, remoteSchemaObj);
 }
 
 RelationalSyncStrategy SchemaNegotiate::ConcludeSyncStrategy(const RelationalSyncOpinion &localOpinion,

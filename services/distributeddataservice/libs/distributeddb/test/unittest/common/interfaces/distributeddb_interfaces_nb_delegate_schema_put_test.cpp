@@ -82,48 +82,39 @@ namespace {
         EXPECT_EQ(g_kvStore->Put(key, value), CONSTRAIN_VIOLATION);
 
         /**
-         * @tc.steps:step2. Put one data whose value has different fields with the schema(less value is not null).
-         * @tc.expected: step2. return CONSTRAIN_VIOLATION.
-         */
-        DistributedDBToolsUnitTest::GetRandomKeyValue(key);
-        std::string filedDiffData = "{\"field_name1\":true,\"field_name3\":10}";
-        value.assign(filedDiffData.begin(), filedDiffData.end());
-        EXPECT_EQ(kvStore->Put(key, value), CONSTRAIN_VIOLATION);
-
-        /**
-         * @tc.steps:step3. Put one data whose value has different type with the schema.
-         * @tc.expected: step3. return INVALID_FIELD_TYPE.
+         * @tc.steps:step2. Put one data whose value has different type with the schema.
+         * @tc.expected: step2. return INVALID_FIELD_TYPE.
          */
         std::string typeDiffData = "{\"field_name1\":30,\"field_name2\":10}";
         value.assign(typeDiffData.begin(), typeDiffData.end());
         EXPECT_EQ(kvStore->Put(key, value), INVALID_FIELD_TYPE);
 
         /**
-         * @tc.steps:step4. Put one data whose value has constrain violation with the schema.
-         * @tc.expected: step4. return CONSTRAIN_VIOLATION.
+         * @tc.steps:step3. Put one data whose value has constrain violation with the schema.
+         * @tc.expected: step3. return CONSTRAIN_VIOLATION.
          */
         std::string constrainDiffData = "{\"field_name1\":false,\"field_name2\":null}";
         value.assign(constrainDiffData.begin(), constrainDiffData.end());
         EXPECT_EQ(kvStore->Put(key, value), CONSTRAIN_VIOLATION);
 
         /**
-         * @tc.steps:step5. Put one data whose value has invalid json.
-         * @tc.expected: step5. return INVALID_FORMAT.
+         * @tc.steps:step4. Put one data whose value has invalid json.
+         * @tc.expected: step4. return INVALID_FORMAT.
          */
         std::string invalidJsonData = "{\"field_name1\":false,\"field_name2\":10";
         value.assign(invalidJsonData.begin(), invalidJsonData.end());
         EXPECT_EQ(kvStore->Put(key, value), INVALID_FORMAT);
 
         /**
-         * @tc.steps:step6. Put one data whose value is empty.
-         * @tc.expected: step6. return INVALID_FORMAT.
+         * @tc.steps:step5. Put one data whose value is empty.
+         * @tc.expected: step5. return INVALID_FORMAT.
          */
         value.clear();
         EXPECT_EQ(kvStore->Put(key, value), INVALID_FORMAT);
 
         /**
-         * @tc.steps:step7. Put one data whose value is match with the schema.
-         * @tc.expected: step7. return INVALID_FORMAT.
+         * @tc.steps:step6. Put one data whose value is match with the schema.
+         * @tc.expected: step6. return INVALID_FORMAT.
          */
         std::string validJsonData = "{\"field_name1\":false,\"field_name2\":10}";
         value.assign(validJsonData.begin(), validJsonData.end());
@@ -223,9 +214,22 @@ HWTEST_F(DistributedDBInterfacesNBDelegateSchemaPutTest, PutValueStrictSchemaChe
     std::string moreData = "{\"field_name1\":true,\"field_name2\":10,\"field_name3\":10}";
     Value value(moreData.begin(), moreData.end());
     EXPECT_EQ(g_kvStore->Put(key, value), INVALID_VALUE_FIELDS);
+
     /**
-     * @tc.steps:step2. Put the data whose value is mismatch with the schema.
-     * @tc.expected: step2. return not OK.
+     * @tc.steps:step2. Put one data whose value has diff fields than the schema.
+     * @tc.expected: step2. return INVALID_VALUE_FIELDS.
+     */
+    std::string diffData = "{\"field_name2\":10,\"field_name3\":10}";
+    Value value1(diffData.begin(), diffData.end());
+    EXPECT_EQ(g_kvStore->Put(key, value1), INVALID_VALUE_FIELDS);
+
+    std::string filedDiffData = "{\"field_name1\":true,\"field_name3\":10}";
+    value.assign(filedDiffData.begin(), filedDiffData.end());
+    EXPECT_EQ(g_kvStore->Put(key, value), INVALID_VALUE_FIELDS);
+
+    /**
+     * @tc.steps:step3. Put the data whose value is mismatch with the schema.
+     * @tc.expected: step3. return not OK.
      */
     CheckPutSchemaData(g_kvStore);
     CheckPutBatchSchemaData(g_kvStore);
@@ -252,6 +256,16 @@ HWTEST_F(DistributedDBInterfacesNBDelegateSchemaPutTest, PutValueCompaSchemaChec
     std::string moreData = "{\"field_name1\":true,\"field_name2\":10,\"field_name3\":10}";
     Value value(moreData.begin(), moreData.end());
     EXPECT_EQ(g_kvStore->Put(key, value), OK);
+
+
+    /**
+     * @tc.steps:step2. Put one data whose value has different fields with the schema(less value is not null).
+     * @tc.expected: step2. return CONSTRAIN_VIOLATION.
+     */
+    std::string filedDiffData = "{\"field_name1\":true,\"field_name3\":10}";
+    value.assign(filedDiffData.begin(), filedDiffData.end());
+    EXPECT_EQ(g_kvStore->Put(key, value), CONSTRAIN_VIOLATION);
+
     /**
      * @tc.steps:step2. Put the data whose value is mismatch with the schema.
      * @tc.expected: step2. return not OK.

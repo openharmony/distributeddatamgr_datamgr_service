@@ -70,10 +70,14 @@ void VirtualSingleVerSyncDBInterface::DecRefCount()
 {
 }
 
+void VirtualSingleVerSyncDBInterface::SetIdentifier(std::vector<uint8_t> &identifier)
+{
+    identifier_ = std::move(identifier);
+}
+
 std::vector<uint8_t> VirtualSingleVerSyncDBInterface::GetIdentifier() const
 {
-    std::vector<uint8_t> identifier;
-    return identifier;
+    return identifier_;
 }
 
 int VirtualSingleVerSyncDBInterface::GetMetaData(const Key &key, Value &value) const

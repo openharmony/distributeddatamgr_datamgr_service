@@ -38,6 +38,7 @@ const std::string DBConstant::SQLITE_DB_EXTENSION = ".db";
 const std::string DBConstant::SQLITE_MEMDB_IDENTIFY = "?mode=memory&cache=shared";
 
 const std::string DBConstant::SCHEMA_KEY = "schemaKey";
+const std::string DBConstant::RELATIONAL_SCHEMA_KEY = "relational_schema";
 
 const std::string DBConstant::PATH_POSTFIX_UNPACKED = "_unpacked";
 const std::string DBConstant::PATH_POSTFIX_IMPORT_BACKUP = "_import_bak";
@@ -67,4 +68,10 @@ const std::string DBConstant::UPDATE_META_FUNC = "update_meta_within_trigger";
 const std::string DBConstant::SYSTEM_TABLE_PREFIX = "naturalbase_rdb_";
 const std::string DBConstant::RELATIONAL_PREFIX = "naturalbase_rdb_aux_";
 const std::string DBConstant::TIMESTAMP_ALIAS = "naturalbase_rdb_aux_timestamp";
+
+const std::string DBConstant::LOG_TABLE_VERSION_1 = "1.0";
+const std::string DBConstant::LOG_TABLE_VERSION_2 = "2.0";
+const std::string DBConstant::LOG_TABLE_VERSION_CURRENT = "2.0";
+
+const std::string DBConstant::LOG_TABLE_VERSION_KEY = "log_table_version";
 }

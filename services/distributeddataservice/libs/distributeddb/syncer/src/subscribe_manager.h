@@ -82,7 +82,7 @@ public:
     // get device remote subscribeQueries from remoteSubscribedMap_ while data change
     void GetRemoteSubscribeQueries(const std::string &device, std::vector<QuerySyncObject> &subscribeQueries) const;
 
-    bool IsRemoteContainSubscribe(const std::string &device, const QuerySyncObject &query) const;
+    bool IsLastRemoteContainSubscribe(const std::string &device, const std::string &queryId) const;
 
     int LocalSubscribeLimitCheck(const std::vector<std::string> &devices, QuerySyncObject &query) const;
 private:

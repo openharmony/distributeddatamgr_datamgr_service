@@ -71,7 +71,7 @@ int SingleVerRelationalSyncer::GenerateEachSyncTask(const SyncParma &param, uint
     for (const QuerySyncObject &table : tablesQuery) {
         uint32_t subSyncId = GenerateSyncId();
         std::string hashTableName = DBCommon::TransferHashString(table.GetRelationTableName());
-        LOGI("[SingleVerRelationalSyncer] SubSyncId %u create by SyncId %d, hashTableName = %s",
+        LOGI("[SingleVerRelationalSyncer] SubSyncId %" PRIu32 " create by SyncId %" PRIu32 ", hashTableName = %s",
             subSyncId, syncId, STR_MASK(DBCommon::TransferStringToHex(hashTableName)));
         subParam.syncQuery = table;
         subParam.onComplete = std::bind(&SingleVerRelationalSyncer::DoOnSubSyncComplete, this, subSyncId,
@@ -157,8 +157,17 @@ void SingleVerRelationalSyncer::LocalDataChanged(int notifyEvent)
 
 void SingleVerRelationalSyncer::SchemaChangeCallback()
 {
-    if (syncEngine_ != nullptr) {
+    if (syncEngine_ == nullptr) {
+        return;
+    }
+    RefObject::IncObjRef(syncEngine_);
+    int errCode = RuntimeContext::GetInstance()->ScheduleTask([this] {
         syncEngine_->SchemaChange();
+        RefObject::DecObjRef(syncEngine_);
+    });
+    if (errCode != E_OK) {
+        LOGE("[SchemaChangeCallback] SchemaChangeCallback retCode:%d", errCode);
+        RefObject::DecObjRef(syncEngine_);
     }
 }
 

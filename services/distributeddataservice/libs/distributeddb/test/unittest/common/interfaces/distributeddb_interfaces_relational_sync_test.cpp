@@ -52,6 +52,34 @@ namespace {
         "id         INTEGER NOT NULL UNIQUE," \
         "name       TEXT," \
         "field_1);";
+
+    const std::string NORMAL_CREATE_TABLE_SQL_STUDENT = R""(create table student_1 (
+            id      INTEGER PRIMARY KEY,
+            name    STRING,
+            level   INTGER,
+            score   INTGER
+        ))"";
+
+    void FakeOldVersionDB(sqlite3 *db)
+    {
+        std::string dropTrigger = "DROP TRIGGER IF EXISTS naturalbase_rdb_student_1_ON_UPDATE;";
+        EXPECT_EQ(RelationalTestUtils::ExecSql(db, dropTrigger), SQLITE_OK);
+
+        std::string oldTrigger = "CREATE TRIGGER naturalbase_rdb_student_1_ON_UPDATE AFTER UPDATE \n"
+            "ON student_1\n"
+            "BEGIN\n"
+            "\t UPDATE naturalbase_rdb_aux_student_1_log SET timestamp=get_sys_time(0), device='', "
+            "flag=0x22 WHERE hash_key=calc_hash(OLD.id) AND flag&0x02=0x02;\n"
+            "END;";
+        EXPECT_EQ(RelationalTestUtils::ExecSql(db, oldTrigger), SQLITE_OK);
+        std::string logVersion = "UPDATE naturalbase_rdb_aux_metadata SET value = '1.0'" \
+            " where key = 'log_table_version'";
+        Key key;
+        DBCommon::StringToVector("log_table_version", key);
+        Value val;
+        DBCommon::StringToVector("1.0", val);
+        EXPECT_EQ(RelationalTestUtils::SetMetaData(db, key, val), SQLITE_OK);
+    }
 }
 
 class DistributedDBInterfacesRelationalSyncTest : public testing::Test {
@@ -375,4 +403,78 @@ HWTEST_F(DistributedDBInterfacesRelationalSyncTest, RelationalSyncTest010, TestS
             EXPECT_EQ(devicesMap.size(), devices.size());
         }, true);
     EXPECT_EQ(errCode, DISTRIBUTED_SCHEMA_CHANGED);
+}
+
+/**
+  * @tc.name: UpdatePrimaryKeyTest001
+  * @tc.desc: Test update data's primary key
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, UpdatePrimaryKeyTest001, TestSize.Level1)
+{
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL_STUDENT), SQLITE_OK);
+    RelationalTestUtils::CreateDeviceTable(db, "student_1", DEVICE_A);
+
+    DBStatus status = delegate->CreateDistributedTable("student_1");
+    EXPECT_EQ(status, OK);
+
+    std::string insertSql = "insert into student_1 (id, name, level, score) values (1001, 'xue', 2, 95);";
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, insertSql), SQLITE_OK);
+
+    std::string updateSql = "update student_1 set id = 1002 where name = 'xue';";
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, updateSql), SQLITE_OK);
+
+    int cnt = RelationalTestUtils::CheckTableRecords(db, DBConstant::RELATIONAL_PREFIX + "student_1" + "_log");
+    EXPECT_EQ(cnt, 2);
+}
+
+/**
+  * @tc.name: UpgradeTriggerTest001
+  * @tc.desc: Test upgrade from old version
+  * @tc.type: FUNC
+  * @tc.require: AR000GK58F
+  * @tc.author: lianhuix
+  */
+HWTEST_F(DistributedDBInterfacesRelationalSyncTest, UpgradeTriggerTest001, TestSize.Level1)
+{
+    EXPECT_EQ(RelationalTestUtils::ExecSql(db, NORMAL_CREATE_TABLE_SQL_STUDENT), SQLITE_OK);
+    RelationalTestUtils::CreateDeviceTable(db, "student_1", DEVICE_A);
+
+    DBStatus status = delegate->CreateDistributedTable("student_1");
+    EXPECT_EQ(status, OK);
+
+    EXPECT_EQ(g_mgr.CloseStore(delegate), OK);
+    delegate = nullptr;
+
+    FakeOldVersionDB(db);
+
+    status = g_mgr.OpenStore(g_dbDir + STORE_ID + DB_SUFFIX, STORE_ID, {}, delegate);
+    EXPECT_EQ(status, OK);
+    ASSERT_NE(delegate, nullptr);
+
+    // checkTrigger
+    std::string resultTrigger;
+    int errCode = RelationalTestUtils::ExecSql(db, "SELECT sql FROM sqlite_master WHERE type = ? AND name = ?",
+        [](sqlite3_stmt *stmt) {
+            (void)SQLiteUtils::BindTextToStatement(stmt, 1, "trigger"); // 1: bind index
+            (void)SQLiteUtils::BindTextToStatement(stmt, 2, "naturalbase_rdb_student_1_ON_UPDATE"); // 2: bind index
+            return E_OK;
+        }, [&resultTrigger](sqlite3_stmt *stmt) {
+            (void)SQLiteUtils::GetColumnTextValue(stmt, 0, resultTrigger);
+            return E_OK;
+        });
+    EXPECT_EQ(errCode, E_OK);
+    LOGD("result trigger: %s", resultTrigger.c_str());
+    std::string expectTrigger = "CREATE TRIGGER naturalbase_rdb_student_1_ON_UPDATE AFTER UPDATE \n"
+        "ON student_1\n"
+        "BEGIN\n"
+        "\t UPDATE naturalbase_rdb_aux_student_1_log SET data_key=-1,timestamp=get_sys_time(0), device='',"
+        " flag=0x03 WHERE hash_key=calc_hash(OLD.id) AND flag&0x02=0x02;\n"
+        "\t INSERT OR REPLACE INTO naturalbase_rdb_aux_student_1_log VALUES (NEW.rowid, '', '', get_sys_time(0), "
+        "get_sys_time(0), CASE WHEN (calc_hash(NEW.id) != calc_hash(NEW.id)) " \
+        "THEN 0x02 ELSE 0x22 END, calc_hash(NEW.id));\n"
+        "END";
+    EXPECT_TRUE(resultTrigger == expectTrigger);
 }

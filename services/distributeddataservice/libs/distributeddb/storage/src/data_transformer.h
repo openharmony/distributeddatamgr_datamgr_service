@@ -69,12 +69,14 @@ public:
     static void ReduceMapping(const std::vector<FieldInfo> &remoteFieldInfo,
         const std::vector<FieldInfo> &localFieldInfo);
 
+    static uint32_t CalDataValueLength(const DataValue &dataValue);
+    static int DeserializeDataValue(DataValue &dataValue, Parcel &parcel);
+    static int SerializeDataValue(const DataValue &dataValue, Parcel &parcel);
+
 private:
     static int SerializeValue(Value &value, const RowData &rowData, const std::vector<FieldInfo> &fieldInfoList);
     static int DeSerializeValue(const Value &value, OptRowData &optionalData,
         const std::vector<FieldInfo> &remoteFieldInfo);
-
-    static uint32_t CalDataValueLength(const DataValue &dataValue);
 };
 }
 

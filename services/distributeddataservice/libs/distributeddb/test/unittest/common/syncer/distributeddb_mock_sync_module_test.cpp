@@ -17,13 +17,16 @@
 #include <thread>
 
 #include "distributeddb_tools_unit_test.h"
+#include "generic_single_ver_kv_entry.h"
 #include "message.h"
 #include "mock_auto_launch.h"
 #include "mock_communicator.h"
 #include "mock_meta_data.h"
 #include "mock_single_ver_data_sync.h"
 #include "mock_single_ver_state_machine.h"
+#include "mock_sync_engine.h"
 #include "mock_sync_task_context.h"
+#include "remote_executor_packet.h"
 #include "single_ver_kv_syncer.h"
 #include "single_ver_relational_sync_task_context.h"
 #include "virtual_communicator_aggregator.h"
@@ -253,6 +256,82 @@ HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck007, TestSize.Level3)
     // timer is called once in 2s, we sleep 5s timer call twice
     EXPECT_EQ(callCount, 2);
     std::this_thread::sleep_for(std::chrono::seconds(10)); // sleep 10s to wait all thread exit
+}
+
+/**
+ * @tc.name: StateMachineCheck008
+ * @tc.desc: test machine process when last sync task send packet failed.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhuwentao
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck008, TestSize.Level1)
+{
+    MockSingleVerStateMachine stateMachine;
+    MockSyncTaskContext syncTaskContext;
+    MockCommunicator communicator;
+    VirtualSingleVerSyncDBInterface dbSyncInterface;
+    Init(stateMachine, syncTaskContext, communicator, dbSyncInterface);
+    syncTaskContext.CallCommErrHandlerFuncInner(-E_PERIPHERAL_INTERFACE_FAIL, 1u);
+    EXPECT_EQ(syncTaskContext.IsCommNormal(), true);
+}
+
+/**
+ * @tc.name: StateMachineCheck009
+ * @tc.desc: test machine process when last sync task send packet failed.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhuwentao
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck009, TestSize.Level1)
+{
+    MockSingleVerStateMachine stateMachine;
+    MockSyncTaskContext syncTaskContext;
+    MockCommunicator communicator;
+    VirtualSingleVerSyncDBInterface dbSyncInterface;
+    Init(stateMachine, syncTaskContext, communicator, dbSyncInterface);
+    stateMachine.CallSwitchMachineState(1u); // START_SYNC_EVENT
+    stateMachine.CommErrAbort(1u);
+    EXPECT_EQ(stateMachine.GetCurrentState(), 1u);
+}
+
+/**
+ * @tc.name: StateMachineCheck010
+ * @tc.desc: test machine process when error happened in response pull.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck010, TestSize.Level1)
+{
+    MockSingleVerStateMachine stateMachine;
+    MockSyncTaskContext syncTaskContext;
+    MockCommunicator communicator;
+    VirtualSingleVerSyncDBInterface dbSyncInterface;
+    Init(stateMachine, syncTaskContext, communicator, dbSyncInterface);
+    EXPECT_CALL(stateMachine, SwitchStateAndStep(_)).WillOnce(Return());
+    stateMachine.CallResponsePullError(-E_BUSY, false);
+    EXPECT_EQ(syncTaskContext.GetTaskErrCode(), -E_BUSY);
+}
+
+/**
+ * @tc.name: StateMachineCheck011
+ * @tc.desc: test machine process when error happened in response pull.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, StateMachineCheck011, TestSize.Level1)
+{
+    MockSingleVerStateMachine stateMachine;
+    MockSyncTaskContext syncTaskContext;
+    MockCommunicator communicator;
+    VirtualSingleVerSyncDBInterface dbSyncInterface;
+    Init(stateMachine, syncTaskContext, communicator, dbSyncInterface);
+    syncTaskContext.CallSetTaskExecStatus(SyncTaskContext::RUNNING);
+    EXPECT_CALL(syncTaskContext, GetRequestSessionId()).WillOnce(Return(1u));
+    syncTaskContext.ClearAllSyncTask();
+    EXPECT_EQ(syncTaskContext.IsCommNormal(), false);
 }
 
 /**
@@ -554,6 +633,43 @@ HWTEST_F(DistributedDBMockSyncModuleTest, AbilitySync003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: AbilitySync004
+ * @tc.desc: Test abilitySync when offline.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, AbilitySync004, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. set table TEST is permitSync
+     */
+    auto *context = new (std::nothrow) SingleVerKvSyncTaskContext();
+    ASSERT_NE(context, nullptr);
+    /**
+     * @tc.steps: step2. test context recv dbAbility in diff thread
+     */
+    const int loopCount = 1000;
+    std::atomic<int> finishCount = 0;
+    std::mutex mutex;
+    std::unique_lock<std::mutex> lock(mutex);
+    std::condition_variable cv;
+    for (int i = 0; i < loopCount; i++) {
+        std::thread t = std::thread([&] {
+            DbAbility dbAbility;
+            context->SetDbAbility(dbAbility);
+            finishCount++;
+            if (finishCount == loopCount) {
+                cv.notify_one();
+            }
+        });
+        t.detach();
+    }
+    cv.wait(lock, [&]() { return finishCount == loopCount; });
+    RefObject::KillAndDecObjRef(context);
+}
+
+/**
  * @tc.name: SyncLifeTest001
  * @tc.desc: Test syncer alive when thread still exist.
  * @tc.type: FUNC
@@ -598,4 +714,152 @@ HWTEST_F(DistributedDBMockSyncModuleTest, MessageScheduleTest001, TestSize.Level
     RefObject::KillAndDecObjRef(context);
     std::this_thread::sleep_for(std::chrono::seconds(1));
     EXPECT_TRUE(last);
+}
+
+/**
+ * @tc.name: SyncEngineTest001
+ * @tc.desc: Test SyncEngine receive message when closing.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, SyncEngineTest001, TestSize.Level1)
+{
+    std::unique_ptr<MockSyncEngine> enginePtr = std::make_unique<MockSyncEngine>();
+    EXPECT_CALL(*enginePtr, CreateSyncTaskContext()).WillRepeatedly(Return(nullptr));
+    VirtualCommunicatorAggregator *virtualCommunicatorAggregator = new VirtualCommunicatorAggregator();
+    VirtualSingleVerSyncDBInterface syncDBInterface;
+    std::shared_ptr<Metadata> metaData = std::make_shared<Metadata>();
+    ASSERT_NE(virtualCommunicatorAggregator, nullptr);
+    RuntimeContext::GetInstance()->SetCommunicatorAggregator(virtualCommunicatorAggregator);
+    enginePtr->Initialize(&syncDBInterface, metaData, nullptr, nullptr, nullptr);
+    auto communicator =
+        static_cast<VirtualCommunicator *>(virtualCommunicatorAggregator->GetCommunicator("real_device"));
+    RefObject::IncObjRef(communicator);
+    std::thread thread1([&]() {
+        if (communicator == nullptr) {
+            return;
+        }
+        for (int count = 0; count < 100; count++) { // loop 100 times
+            auto *message = new(std::nothrow) DistributedDB::Message();
+            communicator->CallbackOnMessage("src", message);
+        }
+    });
+    std::thread thread2([&]() {
+        enginePtr->Close();
+    });
+    thread1.join();
+    thread2.join();
+
+    LOGD("FINISHED");
+    RefObject::KillAndDecObjRef(communicator);
+    communicator = nullptr;
+    enginePtr = nullptr;
+    metaData = nullptr;
+    RuntimeContext::GetInstance()->SetCommunicatorAggregator(nullptr);
+    virtualCommunicatorAggregator = nullptr;
+}
+
+/**
+* @tc.name: remote query packet 001
+* @tc.desc: Test RemoteExecutorRequestPacket Serialization And DeSerialization
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBMockSyncModuleTest, RemoteQueryPacket001, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. create remoteExecutorRequestPacket
+     */
+    RemoteExecutorRequestPacket packet;
+    packet.SetNeedResponse();
+    packet.SetVersion(SOFTWARE_VERSION_RELEASE_6_0);
+
+    /**
+     * @tc.steps: step2. serialization to parcel
+     */
+    std::vector<uint8_t> buffer(packet.CalculateLen());
+    Parcel parcel(buffer.data(), buffer.size());
+    ASSERT_EQ(packet.Serialization(parcel), E_OK);
+    ASSERT_FALSE(parcel.IsError());
+
+    /**
+     * @tc.steps: step3. deserialization from parcel
+     */
+    RemoteExecutorRequestPacket targetPacket;
+    Parcel targetParcel(buffer.data(), buffer.size());
+    ASSERT_EQ(targetPacket.DeSerialization(targetParcel), E_OK);
+    ASSERT_FALSE(parcel.IsError());
+
+    /**
+     * @tc.steps: step4. check packet is equal
+     */
+    EXPECT_EQ(packet.GetVersion(), targetPacket.GetVersion());
+    EXPECT_EQ(packet.GetFlag(), targetPacket.GetFlag());
+}
+
+/**
+* @tc.name: remote query packet 002
+* @tc.desc: Test RemoteExecutorAckPacket Serialization And DeSerialization
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBMockSyncModuleTest, RemoteQueryPacket002, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. create remoteExecutorRequestPacket
+     */
+    RemoteExecutorAckPacket packet;
+    packet.SetLastAck();
+    packet.SetAckCode(-E_INTERNAL_ERROR);
+    packet.SetVersion(SOFTWARE_VERSION_RELEASE_6_0);
+
+    /**
+     * @tc.steps: step2. serialization to parcel
+     */
+    std::vector<uint8_t> buffer(packet.CalculateLen());
+    Parcel parcel(buffer.data(), buffer.size());
+    ASSERT_EQ(packet.Serialization(parcel), E_OK);
+    ASSERT_FALSE(parcel.IsError());
+
+    /**
+     * @tc.steps: step3. deserialization from parcel
+     */
+    RemoteExecutorAckPacket targetPacket;
+    Parcel targetParcel(buffer.data(), buffer.size());
+    ASSERT_EQ(targetPacket.DeSerialization(targetParcel), E_OK);
+    ASSERT_FALSE(parcel.IsError());
+
+    /**
+     * @tc.steps: step4. check packet is equal
+     */
+    EXPECT_EQ(packet.GetVersion(), targetPacket.GetVersion());
+    EXPECT_EQ(packet.GetFlag(), targetPacket.GetFlag());
+    EXPECT_EQ(packet.GetAckCode(), targetPacket.GetAckCode());
+}
+
+/**
+ * @tc.name: SingleVerKvEntryTest001
+ * @tc.desc: Test SingleVerKvEntry Serialize and DeSerialize.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBMockSyncModuleTest, SingleVerKvEntryTest001, TestSize.Level1)
+{
+    std::vector<SingleVerKvEntry *> kvEntries;
+    size_t len = 0u;
+    for (size_t i = 0; i < DBConstant::MAX_NORMAL_PACK_ITEM_SIZE + 1; ++i) {
+        auto entryPtr = new GenericSingleVerKvEntry();
+        kvEntries.push_back(entryPtr);
+        len += entryPtr->CalculateLen(SOFTWARE_VERSION_CURRENT);
+        len = BYTE_8_ALIGN(len);
+    }
+    std::vector<uint8_t> srcData(len, 0);
+    Parcel parcel(srcData.data(), srcData.size());
+    EXPECT_EQ(GenericSingleVerKvEntry::SerializeDatas(kvEntries, parcel, SOFTWARE_VERSION_CURRENT), E_OK);
+    parcel = Parcel(srcData.data(), srcData.size());
+    EXPECT_EQ(GenericSingleVerKvEntry::DeSerializeDatas(kvEntries, parcel), 0);
 }

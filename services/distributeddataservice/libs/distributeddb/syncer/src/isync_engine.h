@@ -82,6 +82,13 @@ public:
 
     virtual void Dump(int fd) = 0;
 
+    virtual int RemoteQuery(const std::string &device, const RemoteCondition &condition,
+        uint64_t timeout, uint64_t connectionId, std::shared_ptr<ResultSet> &result) = 0;
+
+    virtual void NotifyConnectionClosed(uint64_t connectionId) = 0;
+
+    virtual void NotifyUserChange() = 0;
+
 protected:
     virtual ~ISyncEngine() {};
 };

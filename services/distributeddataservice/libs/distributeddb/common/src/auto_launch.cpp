@@ -321,45 +321,14 @@ int AutoLaunch::RegisterObserver(AutoLaunchItem &autoLaunchItem, const std::stri
         return -E_INTERNAL_ERROR;
     }
     LOGI("[AutoLaunch] RegisterObserver type=%d", static_cast<int>(autoLaunchItem.type));
-    if (autoLaunchItem.type == DBType::DB_RELATION) {
-        RelationalStoreConnection *conn = static_cast<RelationalStoreConnection *>(autoLaunchItem.conn);
-        conn->RegisterObserverAction([autoLaunchItem](const std::string &changedDevice) {
-            RelationalStoreChangedDataImpl data(changedDevice);
-            if (autoLaunchItem.propertiesPtr != nullptr) {
-                data.SetStoreProperty({
-                    autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::USER_ID, ""),
-                    autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::APP_ID, ""),
-                    autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::STORE_ID, "")
-                });
-            }
-            if (autoLaunchItem.storeObserver) {
-                LOGD("begin to observer onchange, changedDevice=%s", STR_MASK(changedDevice));
-                autoLaunchItem.storeObserver->OnChange(data);
-            }
-        });
-        return E_OK;
+    switch (autoLaunchItem.type) {
+        case DBType::DB_RELATION:
+            return RegisterRelationalObserver(autoLaunchItem, identifier, isExt);
+        case DBType::DB_KV:
+            return RegisterKvObserver(autoLaunchItem, identifier, isExt);
+        default:
+            return -E_INVALID_ARGS;
     }
-    std::shared_ptr<KvDBProperties> properties =
-        std::static_pointer_cast<KvDBProperties>(autoLaunchItem.propertiesPtr);
-    std::string userId = properties->GetStringProp(KvDBProperties::USER_ID, "");
-    int errCode;
-    Key key;
-    KvDBObserverHandle *observerHandle = nullptr;
-    IKvDBConnection *kvConn = static_cast<IKvDBConnection *>(autoLaunchItem.conn);
-    if (isExt) {
-        observerHandle = kvConn->RegisterObserver(OBSERVER_CHANGES_FOREIGN, key,
-            std::bind(&AutoLaunch::ExtObserverFunc, this, std::placeholders::_1, identifier, userId), errCode);
-    } else {
-        observerHandle = kvConn->RegisterObserver(OBSERVER_CHANGES_FOREIGN, key,
-            std::bind(&AutoLaunch::ObserverFunc, this, std::placeholders::_1, identifier, userId), errCode);
-    }
-
-    if (errCode != E_OK) {
-        LOGE("[AutoLaunch] RegisterObserver failed:%d!", errCode);
-        return errCode;
-    }
-    autoLaunchItem.observerHandle = observerHandle;
-    return E_OK;
 }
 
 void AutoLaunch::ObserverFunc(const KvDBCommitNotifyData &notifyData, const std::string &identifier,
@@ -1056,6 +1025,7 @@ int AutoLaunch::GetAutoLaunchRelationProperties(const AutoLaunchParam &param,
     }
     propertiesPtr->SetStringProp(RelationalDBProperties::DATA_DIR, param.path);
     propertiesPtr->SetIdentifier(param.userId, param.appId, param.storeId);
+    propertiesPtr->SetBoolProp(RelationalDBProperties::SYNC_DUAL_TUPLE_MODE, param.option.syncDualTupleMode);
     return E_OK;
 }
 
@@ -1257,5 +1227,63 @@ void AutoLaunch::Dump(int fd)
         DBDumpHelper::Dump(fd, "\t\t]\n");
     }
     DBDumpHelper::Dump(fd, "\t]\n");
+}
+
+int AutoLaunch::RegisterKvObserver(AutoLaunchItem &autoLaunchItem, const std::string &identifier, bool isExt)
+{
+    std::shared_ptr<KvDBProperties> properties =
+        std::static_pointer_cast<KvDBProperties>(autoLaunchItem.propertiesPtr);
+    std::string userId = properties->GetStringProp(KvDBProperties::USER_ID, "");
+    int errCode;
+    Key key;
+    KvDBObserverHandle *observerHandle = nullptr;
+    IKvDBConnection *kvConn = static_cast<IKvDBConnection *>(autoLaunchItem.conn);
+    observerHandle = kvConn->RegisterObserver(OBSERVER_CHANGES_FOREIGN, key,
+        std::bind((isExt ? &AutoLaunch::ExtObserverFunc : &AutoLaunch::ObserverFunc), this, std::placeholders::_1,
+        identifier, userId), errCode);
+    if (errCode != E_OK) {
+        LOGE("[AutoLaunch] RegisterObserver failed:%d!", errCode);
+        return errCode;
+    }
+    autoLaunchItem.observerHandle = observerHandle;
+    return errCode;
+}
+
+int AutoLaunch::RegisterRelationalObserver(AutoLaunchItem &autoLaunchItem, const std::string &identifier, bool isExt)
+{
+    RelationalStoreConnection *conn = static_cast<RelationalStoreConnection *>(autoLaunchItem.conn);
+    conn->RegisterObserverAction([this, autoLaunchItem, identifier](const std::string &changedDevice) {
+        RelationalStoreChangedDataImpl data(changedDevice);
+        std::string userId;
+        std::string appId;
+        std::string storeId;
+        if (autoLaunchItem.propertiesPtr != nullptr) {
+            userId = autoLaunchItem.propertiesPtr->GetStringProp(KvDBProperties::USER_ID, "");
+            appId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::APP_ID, "");
+            storeId = autoLaunchItem.propertiesPtr->GetStringProp(DBProperties::STORE_ID, "");
+            data.SetStoreProperty({ userId, appId, storeId });
+        }
+        if (autoLaunchItem.storeObserver) {
+            LOGD("begin to observer onchange, changedDevice=%s", STR_MASK(changedDevice));
+            autoLaunchItem.storeObserver->OnChange(data);
+        }
+        bool isWriteOpenNotified = false;
+        AutoLaunchNotifier notifier = nullptr;
+        {
+            std::lock_guard<std::mutex> autoLock(extLock_);
+            if (extItemMap_.find(identifier) == extItemMap_.end() ||
+                extItemMap_[identifier].find(userId) == extItemMap_[identifier].end()) {
+                LOGE("[AutoLaunch] ExtObserverFunc this identifier not in map");
+                return;
+            }
+            notifier = extItemMap_[identifier][userId].notifier;
+            isWriteOpenNotified = extItemMap_[identifier][userId].isWriteOpenNotified;
+            extItemMap_[identifier][userId].isWriteOpenNotified = true;
+        }
+        if (!isWriteOpenNotified && notifier != nullptr) {
+            notifier(userId, appId, storeId, WRITE_OPENED);
+        }
+    });
+    return E_OK;
 }
 } // namespace DistributedDB

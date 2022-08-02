@@ -14,21 +14,36 @@
  */
 
 #include "single_ver_serialize_manager.h"
+
+#include "db_common.h"
+#include "generic_single_ver_kv_entry.h"
 #include "icommunicator.h"
 #include "log_print.h"
 #include "message_transform.h"
 #include "parcel.h"
-#include "generic_single_ver_kv_entry.h"
+#include "remote_executor_packet.h"
 #include "sync_types.h"
 #include "version.h"
-#include "db_common.h"
 
 namespace DistributedDB {
+std::mutex SingleVerSerializeManager::handlesLock_;
+std::map<uint32_t, TransformFunc> SingleVerSerializeManager::messageHandles_;
 int SingleVerSerializeManager::Serialization(uint8_t *buffer, uint32_t length, const Message *inMsg)
 {
     if ((buffer == nullptr) || !(IsPacketValid(inMsg))) {
         return -E_MESSAGE_ID_ERROR;
     }
+    SerializeFunc serializeFunc = nullptr;
+    {
+        std::lock_guard<std::mutex> autoLock(handlesLock_);
+        if (messageHandles_.find(inMsg->GetMessageId()) != messageHandles_.end()) {
+            serializeFunc = messageHandles_.at(inMsg->GetMessageId()).serializeFunc;
+        }
+    }
+    if (serializeFunc != nullptr) {
+        return serializeFunc(buffer, length, inMsg);
+    }
+
     if (inMsg->GetMessageId() == CONTROL_SYNC_MESSAGE) {
         return ControlSerialization(buffer, length, inMsg);
     }
@@ -65,6 +80,16 @@ int SingleVerSerializeManager::DeSerialization(const uint8_t *buffer, uint32_t l
     if ((buffer == nullptr) || !(IsPacketValid(inMsg))) {
         return -E_MESSAGE_ID_ERROR;
     }
+    DeserializeFunc deserializeFunc = nullptr;
+    {
+        std::lock_guard<std::mutex> autoLock(handlesLock_);
+        if (messageHandles_.find(inMsg->GetMessageId()) != messageHandles_.end()) {
+            deserializeFunc = messageHandles_.at(inMsg->GetMessageId()).deserializeFunc;
+        }
+    }
+    if (deserializeFunc != nullptr) {
+        return deserializeFunc(buffer, length, inMsg);
+    }
     if (inMsg->GetMessageId() == CONTROL_SYNC_MESSAGE) {
         return ControlDeSerialization(buffer, length, inMsg);
     }
@@ -100,6 +125,16 @@ uint32_t SingleVerSerializeManager::CalculateLen(const Message *inMsg)
 {
     if (!(IsPacketValid(inMsg))) {
         return 0;
+    }
+    ComputeLengthFunc computeFunc = nullptr;
+    {
+        std::lock_guard<std::mutex> autoLock(handlesLock_);
+        if (messageHandles_.find(inMsg->GetMessageId()) != messageHandles_.end()) {
+            computeFunc = messageHandles_.at(inMsg->GetMessageId()).computeFunc;
+        }
+    }
+    if (computeFunc != nullptr) {
+        return computeFunc(inMsg);
     }
     if (inMsg->GetMessageId() == CONTROL_SYNC_MESSAGE) {
         return CalculateControlLen(inMsg);
@@ -159,22 +194,9 @@ uint32_t SingleVerSerializeManager::CalculateControlLen(const Message *inMsg)
 
 int SingleVerSerializeManager::RegisterTransformFunc()
 {
-    TransformFunc func;
-    func.computeFunc = std::bind(&SingleVerSerializeManager::CalculateLen, std::placeholders::_1);
-    func.serializeFunc = std::bind(&SingleVerSerializeManager::Serialization, std::placeholders::_1,
-                                   std::placeholders::_2, std::placeholders::_3);
-    func.deserializeFunc = std::bind(&SingleVerSerializeManager::DeSerialization, std::placeholders::_1,
-                                     std::placeholders::_2, std::placeholders::_3);
-
-    int errCode = MessageTransform::RegTransformFunction(QUERY_SYNC_MESSAGE, func);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    errCode = MessageTransform::RegTransformFunction(DATA_SYNC_MESSAGE, func);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    return MessageTransform::RegTransformFunction(CONTROL_SYNC_MESSAGE, func);
+    int errCode = RegisterCommunicatorTransformFunc();
+    RegisterInnerTransformFunc();
+    return errCode;
 }
 
 int SingleVerSerializeManager::DataPacketSyncerPartSerialization(Parcel &parcel, const DataRequestPacket *packet)
@@ -709,5 +731,118 @@ ERROR:
     delete packet;
     packet = nullptr;
     return errCode;
+}
+
+int SingleVerSerializeManager::RegisterCommunicatorTransformFunc()
+{
+    TransformFunc func;
+    func.computeFunc = std::bind(&SingleVerSerializeManager::CalculateLen, std::placeholders::_1);
+    func.serializeFunc = std::bind(&SingleVerSerializeManager::Serialization, std::placeholders::_1,
+        std::placeholders::_2, std::placeholders::_3);
+    func.deserializeFunc = std::bind(&SingleVerSerializeManager::DeSerialization, std::placeholders::_1,
+        std::placeholders::_2, std::placeholders::_3);
+
+    static std::vector<MessageId> messageIds = {
+        QUERY_SYNC_MESSAGE, DATA_SYNC_MESSAGE, CONTROL_SYNC_MESSAGE, REMOTE_EXECUTE_MESSAGE
+    };
+    int errCode = E_OK;
+    for (auto &id : messageIds) {
+        int retCode = MessageTransform::RegTransformFunction(static_cast<uint32_t>(id), func);
+        if (retCode != E_OK) {
+            LOGE("[SingleVerSerializeManager][RegisterTransformFunc] regist messageId %u failed %d",
+                static_cast<uint32_t>(id), retCode);
+            errCode = retCode;
+        }
+    }
+    return errCode;
+}
+
+void SingleVerSerializeManager::RegisterInnerTransformFunc()
+{
+    TransformFunc func;
+    func.computeFunc = std::bind(&SingleVerSerializeManager::ISyncPacketCalculateLen, std::placeholders::_1);
+    func.serializeFunc = std::bind(&SingleVerSerializeManager::ISyncPacketSerialization,
+        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    func.deserializeFunc = std::bind(&SingleVerSerializeManager::ISyncPacketDeSerialization,
+        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    std::lock_guard<std::mutex> autoLock(handlesLock_);
+    messageHandles_.emplace(static_cast<uint32_t>(REMOTE_EXECUTE_MESSAGE), func);
+}
+
+uint32_t SingleVerSerializeManager::ISyncPacketCalculateLen(const Message *inMsg)
+{
+    if (inMsg == nullptr) {
+        return 0u;
+    }
+    uint32_t len = 0u;
+    const auto packet = inMsg->GetObject<ISyncPacket>();
+    if (packet != nullptr) {
+        len = packet->CalculateLen();
+    }
+    return len;
+}
+
+int SingleVerSerializeManager::ISyncPacketSerialization(uint8_t *buffer, uint32_t length,
+    const Message *inMsg)
+{
+    if (inMsg == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    int errCode = E_OK;
+    Parcel parcel(buffer, length);
+    auto packet = inMsg->GetObject<ISyncPacket>();
+    if (packet != nullptr) {
+        errCode = packet->Serialization(parcel);
+    }
+    return errCode;
+}
+
+int SingleVerSerializeManager::ISyncPacketDeSerialization(const uint8_t *buffer, uint32_t length,
+    Message *inMsg)
+{
+    if (inMsg == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    ISyncPacket *packet = nullptr;
+    int errCode = BuildISyncPacket(inMsg, packet);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    Parcel parcel(const_cast<uint8_t *>(buffer), length);
+    do {
+        errCode = packet->DeSerialization(parcel);
+        if (errCode != E_OK) {
+            break;
+        }
+        errCode = inMsg->SetExternalObject(packet);
+    } while (false);
+    if (errCode != E_OK) {
+        delete packet;
+        packet = nullptr;
+    }
+    return E_OK;
+}
+
+int SingleVerSerializeManager::BuildISyncPacket(Message *inMsg, ISyncPacket *&packet)
+{
+    uint32_t messageId = inMsg->GetMessageId();
+    if (messageId != static_cast<uint32_t>(REMOTE_EXECUTE_MESSAGE)) {
+        return -E_INVALID_ARGS;
+    }
+    switch (inMsg->GetMessageType()) {
+        case TYPE_REQUEST:
+            packet = new(std::nothrow) RemoteExecutorRequestPacket();
+            break;
+        case TYPE_RESPONSE:
+            packet = new(std::nothrow) RemoteExecutorAckPacket();
+            break;
+        default:
+            packet = nullptr;
+            break;
+    }
+    if (packet == nullptr) {
+        return -E_OUT_OF_MEMORY;
+    }
+    return E_OK;
 }
 }  // namespace DistributedDB

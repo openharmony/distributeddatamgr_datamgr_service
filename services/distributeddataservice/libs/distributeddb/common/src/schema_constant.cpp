@@ -24,6 +24,7 @@ const std::string SchemaConstant::KEYWORD_SCHEMA_SKIPSIZE = "SCHEMA_SKIPSIZE";
 const std::string SchemaConstant::KEYWORD_SCHEMA_TYPE = "SCHEMA_TYPE";
 const std::string SchemaConstant::KEYWORD_SCHEMA_TABLE = "TABLES";
 const std::string SchemaConstant::KEYWORD_INDEX = "INDEX"; // For FlatBuffer-Schema
+const std::string SchemaConstant::KEYWORD_TABLE_MODE = "TABLE_MODE";
 
 const std::string SchemaConstant::KEYWORD_MODE_STRICT = "STRICT";
 const std::string SchemaConstant::KEYWORD_MODE_COMPATIBLE = "COMPATIBLE";
@@ -40,9 +41,14 @@ const std::string SchemaConstant::KEYWORD_ATTR_VALUE_NULL = "null";
 const std::string SchemaConstant::KEYWORD_ATTR_VALUE_TRUE = "true";
 const std::string SchemaConstant::KEYWORD_ATTR_VALUE_FALSE = "false";
 
+const std::string SchemaConstant::KEYWORD_TABLE_SPLIT_DEVICE = "SPLIT_BY_DEVICE";
+const std::string SchemaConstant::KEYWORD_TABLE_COLLABORATION = "COLLABORATION";
+
 const std::string SchemaConstant::KEYWORD_TYPE_RELATIVE = "RELATIVE";
 const std::string SchemaConstant::SCHEMA_SUPPORT_VERSION = "1.0";
 const std::string SchemaConstant::SCHEMA_SUPPORT_VERSION_V2 = "2.0";
+const std::string SchemaConstant::SCHEMA_SUPPORT_VERSION_V2_1 = "2.1";
+const std::string SchemaConstant::SCHEMA_CURRENT_VERSION = SCHEMA_SUPPORT_VERSION_V2_1;
 
 const uint32_t SchemaConstant::SCHEMA_META_FEILD_COUNT_MAX = 5;
 const uint32_t SchemaConstant::SCHEMA_META_FEILD_COUNT_MIN = 3;
@@ -58,4 +64,3 @@ const uint32_t SchemaConstant::SCHEMA_SKIPSIZE_MAX = 4194302; // 4M - 2 Bytes
 
 const uint32_t SchemaConstant::SECURE_BYTE_ALIGN = 8; // 8 bytes align
 } // namespace DistributedDB
-

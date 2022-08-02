@@ -68,14 +68,20 @@ public:
 
     void Dump(int fd) override;
 
+    int RemoteQuery(const std::string &device, const RemoteCondition &condition, uint64_t timeout,
+        uint64_t connectionId, std::shared_ptr<ResultSet> &result);
+
 private:
     void ReleaseResources();
 
     // 1 store 1 connection
     void DecreaseConnectionCounter();
     int CheckDBMode();
-    int GetSchemaFromMeta();
+    int GetSchemaFromMeta(RelationalSchemaObject &schema);
     int SaveSchemaToMeta();
+    int CheckTableModeFromMeta(DistributedTableMode mode, bool isUnSet);
+    int SaveTableModeToMeta(DistributedTableMode mode);
+    int CheckProperties(RelationalDBProperties properties);
 
     int SaveLogTableVersionToMeta();
 
@@ -86,20 +92,18 @@ private:
     void HeartBeat();
     int ResetLifeCycleTimer();
 
+    void IncreaseConnectionCounter();
+    int InitStorageEngine(const RelationalDBProperties &kvDBProp);
+
     // use for sync Interactive
     std::unique_ptr<SyncAbleEngine> syncAbleEngine_ = nullptr; // For storage operate sync function
     // use ref obj same as kv
     RelationalSyncAbleStorage *storageEngine_ = nullptr; // For storage operate data
     SQLiteSingleRelationalStorageEngine *sqliteStorageEngine_ = nullptr;
 
-    void IncreaseConnectionCounter();
-    int InitStorageEngine(const RelationalDBProperties &kvDBProp);
     std::mutex connectMutex_;
     std::atomic<int> connectionCount_ = 0;
     std::vector<std::function<void(void)>> closeNotifiers_;
-
-    mutable std::mutex schemaMutex_;
-    RelationalDBProperties properties_;
 
     mutable std::mutex initalMutex_;
     bool isInitialized_ = false;

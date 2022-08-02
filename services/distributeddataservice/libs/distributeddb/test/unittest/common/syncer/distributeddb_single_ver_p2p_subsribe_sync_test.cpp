@@ -39,6 +39,7 @@ namespace {
     const string SCHEMA_STORE_ID = "kv_store_sync_schema_test";
     const std::string DEVICE_A = "deviceA";
     const std::string DEVICE_B = "deviceB";
+    const std::string DEVICE_C = "deviceC";
 
     KvStoreDelegateManager g_schemaMgr(SCHEMA_APP_ID, USER_ID);
     KvStoreConfig g_config;
@@ -47,6 +48,7 @@ namespace {
     KvStoreNbDelegate* g_schemaKvDelegatePtr = nullptr;
     VirtualCommunicatorAggregator* g_communicatorAggregator = nullptr;
     KvVirtualDevice* g_deviceB = nullptr;
+    KvVirtualDevice* g_deviceC = nullptr;
 
     // the type of g_kvDelegateCallback is function<void(DBStatus, KvStoreDelegate*)>
     auto g_schemaKvDelegateCallback = bind(&DistributedDBToolsUnitTest::KvStoreNbDelegateCallback,
@@ -145,6 +147,11 @@ void DistributedDBSingleVerP2PSubscribeSyncTest::SetUp(void)
     VirtualSingleVerSyncDBInterface *syncInterfaceB = new (std::nothrow) VirtualSingleVerSyncDBInterface();
     ASSERT_TRUE(syncInterfaceB != nullptr);
     ASSERT_EQ(g_deviceB->Initialize(g_communicatorAggregator, syncInterfaceB), E_OK);
+    g_deviceC = new (std::nothrow) KvVirtualDevice(DEVICE_C);
+    ASSERT_TRUE(g_deviceC != nullptr);
+    VirtualSingleVerSyncDBInterface *syncInterfaceC = new (std::nothrow) VirtualSingleVerSyncDBInterface();
+    ASSERT_TRUE(syncInterfaceC != nullptr);
+    ASSERT_EQ(g_deviceC->Initialize(g_communicatorAggregator, syncInterfaceC), E_OK);
 }
 
 void DistributedDBSingleVerP2PSubscribeSyncTest::TearDown(void)
@@ -162,6 +169,10 @@ void DistributedDBSingleVerP2PSubscribeSyncTest::TearDown(void)
     if (g_deviceB != nullptr) {
         delete g_deviceB;
         g_deviceB = nullptr;
+    }
+    if (g_deviceC != nullptr) {
+        delete g_deviceC;
+        g_deviceC = nullptr;
     }
     PermissionCheckCallbackV2 nullCallback;
     EXPECT_EQ(g_schemaMgr.SetPermissionCheckCallback(nullCallback), OK);
@@ -874,6 +885,62 @@ HWTEST_F(DistributedDBSingleVerP2PSubscribeSyncTest, subscribeSync005, TestSize.
      * @tc.steps: step4. deviceB has key6, has no k1
      */
     LOGI("============step 4============");
+    VirtualDataItem item;
+    EXPECT_EQ(g_deviceB->GetData(key6, item), E_OK);
+    EXPECT_EQ(item.value, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end()));
+    EXPECT_EQ(g_deviceB->GetData(KEY_1, item), -E_NOT_FOUND);
+}
+
+
+/**
+ * @tc.name: subscribeSync006
+ * @tc.desc: test one device unsubscribe no effect other device
+ * @tc.type: FUNC
+ * @tc.require: AR000GOHO7
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBSingleVerP2PSubscribeSyncTest, SubscribeSync006, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. InitSchemaDb
+     */
+    LOGI("============step 1============");
+    InitSubSchemaDb();
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+    devices.push_back(g_deviceC->GetDeviceId());
+
+    /**
+     * @tc.steps: step2. deviceB unsubscribe inkeys(k1, key6) and prefix key "k" query to deviceA
+     */
+    LOGI("============step 2============");
+    Key key6 { 'k', '6' };
+    Query query = Query::Select().InKeys({KEY_1, key6}).PrefixKey({ 'k' });
+    g_deviceB->Online();
+    g_deviceC->Online();
+    g_deviceB->Subscribe(QuerySyncObject(query), true, 3);
+    g_deviceC->Subscribe(QuerySyncObject(query), true, 3);
+
+    /**
+     * @tc.steps: step3. deviceC unsubscribe
+     */
+    LOGI("============step 3============");
+    g_deviceC->UnSubscribe(QuerySyncObject(query), true, 3);
+
+    /**
+     * @tc.steps: step4. deviceA put k1,key6 and wait
+     */
+    LOGI("============step 4============");
+    EXPECT_EQ(OK, g_schemaKvDelegatePtr->PutBatch({
+        {key6, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end())},
+        {KEY_1, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end())},
+    }));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    /**
+     * @tc.steps: step5. deviceB has key6, has no k1
+     */
+    LOGI("============step 5============");
     VirtualDataItem item;
     EXPECT_EQ(g_deviceB->GetData(key6, item), E_OK);
     EXPECT_EQ(item.value, Value(SCHEMA_VALUE1.begin(), SCHEMA_VALUE1.end()));

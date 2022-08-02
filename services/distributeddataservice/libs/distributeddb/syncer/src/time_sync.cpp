@@ -450,7 +450,7 @@ bool TimeSync::IsPacketValid(const Message *inMsg, uint16_t messageType)
         return false;
     }
     if (messageType != inMsg->GetMessageType()) {
-        LOGD("input Type = %hu, inMsg type = %hu", messageType, inMsg->GetMessageType());
+        LOGD("input Type = %" PRId16 ", inMsg type = %" PRIu16, messageType, inMsg->GetMessageType());
         return false;
     }
     return true;

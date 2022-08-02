@@ -168,6 +168,10 @@ protected:
 
     int CheckAutoLaunchRealPath(const AutoLaunchItem &autoLaunchItem);
 
+    int RegisterKvObserver(AutoLaunchItem &autoLaunchItem, const std::string &identifier, bool isExt);
+
+    int RegisterRelationalObserver(AutoLaunchItem &autoLaunchItem, const std::string &identifier, bool isExt);
+
     mutable std::mutex dataLock_;
     mutable std::mutex communicatorLock_;
     std::set<std::string> onlineDevices_;

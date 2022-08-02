@@ -1103,10 +1103,14 @@ int SchemaObject::CheckValue(const ValueObject &inValue, std::set<FieldPath> &la
         }
         nestPathCurDepth.clear(); // Clear it for collecting new nestPath
 
-        if ((schemaMode_ == SchemaMode::STRICT) && (subPathType.size() > schemaDefine_.at(depth).size())) {
-            LOGE("[Schema][CheckValue] ValueFieldCount=%zu more than SchemaFieldCount=%zu at depth=%u",
-                subPathType.size(), schemaDefine_.at(depth).size(), depth);
-            return -E_VALUE_MISMATCH_FEILD_COUNT; // Value contain more field than schema
+        if (schemaMode_ == SchemaMode::STRICT) {
+            bool hasUndefined = std::any_of(subPathType.begin(), subPathType.end(), [this, depth] (const auto &it) {
+                return (schemaDefine_.at(depth).count(it.first) == 0);
+            });
+            if (hasUndefined) {
+                LOGE("[Schema][CheckValue] Undefined field in STRICT mode");
+                return -E_VALUE_MISMATCH_FEILD_COUNT; // Value contain more field than schema
+            }
         }
 
         for (const auto &schemaItem : schemaDefine_.at(depth)) { // Check each field define in schema

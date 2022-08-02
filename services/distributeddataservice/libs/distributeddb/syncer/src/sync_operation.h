@@ -54,7 +54,8 @@ public:
         OP_MAX_LIMITS,
         OP_SCHEMA_CHANGED,
         OP_INVALID_ARGS,
-        OP_USER_CHANGED
+        OP_USER_CHANGED,
+        OP_DENIED_SQL,
     };
 
     using UserCallback = std::function<void(std::map<std::string, int>)>;

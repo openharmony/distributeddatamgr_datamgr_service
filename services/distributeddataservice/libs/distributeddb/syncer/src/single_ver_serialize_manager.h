@@ -17,6 +17,8 @@
 #define SINGLE_VER_SERIALIZE_MANAGER_NEW_H
 
 #include "icommunicator.h"
+#include "isync_packet.h"
+#include "message_transform.h"
 #include "parcel.h"
 #include "single_ver_data_packet.h"
 
@@ -78,6 +80,17 @@ private:
     static int SubscribeCalculateLen(const Message *inMsg, uint32_t &len);
     static int SubscribeSerialization(uint8_t *buffer, uint32_t length, const Message *inMsg);
     static int SubscribeDeSerialization(Parcel &parcel, Message *inMsg, ControlRequestPacket &controlPacket);
+
+    static int RegisterCommunicatorTransformFunc();
+    static void RegisterInnerTransformFunc();
+
+    static uint32_t ISyncPacketCalculateLen(const Message *inMsg);
+    static int ISyncPacketSerialization(uint8_t *buffer, uint32_t length, const Message *inMsg);
+    static int ISyncPacketDeSerialization(const uint8_t *buffer, uint32_t length, Message *inMsg);
+    static int BuildISyncPacket(Message *inMsg, ISyncPacket *&packet);
+
+    static std::mutex handlesLock_;
+    static std::map<uint32_t, TransformFunc> messageHandles_;
 };
 }  // namespace DistributedDB
 

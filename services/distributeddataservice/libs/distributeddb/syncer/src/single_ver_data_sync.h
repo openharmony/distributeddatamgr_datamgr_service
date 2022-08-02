@@ -269,6 +269,7 @@ protected:
     Timestamp sessionEndTimestamp_ = 0;
 
     std::mutex removeDeviceDataLock_;
+    std::mutex unsubscribeLock_;
 };
 }  // namespace DistributedDB
 

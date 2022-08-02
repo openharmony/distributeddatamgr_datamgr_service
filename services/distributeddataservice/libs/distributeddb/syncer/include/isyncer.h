@@ -21,6 +21,7 @@
 #include <mutex>
 #include <map>
 
+#include "distributeddb/result_set.h"
 #include "isync_interface.h"
 #include "types_export.h"
 #include "query_sync_object.h"
@@ -120,6 +121,9 @@ public:
     virtual void Dump(int fd) = 0;
 
     virtual SyncerBasicInfo DumpSyncerBasicInfo() = 0;
+
+    virtual int RemoteQuery(const std::string &device, const RemoteCondition &condition,
+        uint64_t timeout, uint64_t connectionId, std::shared_ptr<ResultSet> &result) = 0;
 };
 } // namespace DistributedDB
 

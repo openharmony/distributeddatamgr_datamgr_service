@@ -16,7 +16,6 @@
 #include "result_entries_window.h"
 
 #include <limits>
-
 #include "db_constant.h"
 #include "db_errno.h"
 

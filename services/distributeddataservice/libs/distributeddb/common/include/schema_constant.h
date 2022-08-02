@@ -30,6 +30,7 @@ public:
     static const std::string KEYWORD_SCHEMA_TYPE;
     static const std::string KEYWORD_SCHEMA_TABLE;
     static const std::string KEYWORD_INDEX; // For FlatBuffer-Schema
+    static const std::string KEYWORD_TABLE_MODE;
 
     static const std::string KEYWORD_MODE_STRICT;
     static const std::string KEYWORD_MODE_COMPATIBLE;
@@ -46,9 +47,14 @@ public:
     static const std::string KEYWORD_ATTR_VALUE_TRUE;
     static const std::string KEYWORD_ATTR_VALUE_FALSE;
 
+    static const std::string KEYWORD_TABLE_SPLIT_DEVICE;
+    static const std::string KEYWORD_TABLE_COLLABORATION;
+
     static const std::string KEYWORD_TYPE_RELATIVE;
     static const std::string SCHEMA_SUPPORT_VERSION;
     static const std::string SCHEMA_SUPPORT_VERSION_V2;
+    static const std::string SCHEMA_SUPPORT_VERSION_V2_1;
+    static const std::string SCHEMA_CURRENT_VERSION;
 
     static const uint32_t SCHEMA_META_FEILD_COUNT_MAX;
     static const uint32_t SCHEMA_META_FEILD_COUNT_MIN;

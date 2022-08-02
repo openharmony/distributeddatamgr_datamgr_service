@@ -18,6 +18,7 @@
 
 #include <memory.h>
 
+#include "notification_chain.h"
 #include "ref_object.h"
 #include "syncer_proxy.h"
 
@@ -51,16 +52,39 @@ public:
     void StopSync(uint64_t connectionId);
 
     void Dump(int fd);
+
+    int RemoteQuery(const std::string &device, const RemoteCondition &condition, uint64_t timeout,
+        uint64_t connectionId, std::shared_ptr<ResultSet> &result);
 private:
     // Start syncer
-    void StartSyncer();
+    int StartSyncer(bool isCheckSyncActive = false, bool isNeedActive = true);
+
+    int StartSyncerWithNoLock(bool isCheckSyncActive, bool isNeedActive);
 
     // Stop syncer
-    void StopSyncer();
+    void StopSyncer(bool isClosedOperation = false);
+
+    void StopSyncerWithNoLock(bool isClosedOperation = false);
+
+    void SetSyncModuleActive();
+
+    bool GetSyncModuleActive();
+
+    void ReSetSyncModuleActive();
+
+    void UserChangeHandle();
+
+    void ChangeUserListerner();
 
     SyncerProxy syncer_; // use for sync Interactive
     std::atomic<bool> started_;
+    std::atomic<bool> closed_;
+    std::atomic<bool> isSyncModuleActiveCheck_;
+    std::atomic<bool> isSyncNeedActive_;
     ISyncInterface *store_;
+
+    mutable std::mutex syncerOperateLock_;
+    NotificationChain::Listener *userChangeListerner_;
 };
 }  // namespace DistributedDB
 #endif // SYNC_ABLE_ENGINE_H

@@ -18,29 +18,36 @@
 #include "db_common.h"
 #include "db_errno.h"
 #include "res_finalizer.h"
+#include "sqlite_relational_database_upgrader.h"
 #include "sqlite_single_ver_relational_storage_executor.h"
 
 
 namespace DistributedDB {
-namespace {
-    constexpr const char *RELATIONAL_SCHEMA_KEY = "relational_schema";
-}
-
 SQLiteSingleRelationalStorageEngine::SQLiteSingleRelationalStorageEngine(RelationalDBProperties properties)
     : properties_(properties)
 {}
 
-SQLiteSingleRelationalStorageEngine::~SQLiteSingleRelationalStorageEngine() {};
+SQLiteSingleRelationalStorageEngine::~SQLiteSingleRelationalStorageEngine()
+{}
 
 StorageExecutor *SQLiteSingleRelationalStorageEngine::NewSQLiteStorageExecutor(sqlite3 *dbHandle, bool isWrite,
     bool isMemDb)
 {
-    return new (std::nothrow) SQLiteSingleVerRelationalStorageExecutor(dbHandle, isWrite);
+    auto mode = static_cast<DistributedTableMode>(properties_.GetIntProp(RelationalDBProperties::DISTRIBUTED_TABLE_MODE,
+        DistributedTableMode::SPLIT_BY_DEVICE));
+    return new (std::nothrow) SQLiteSingleVerRelationalStorageExecutor(dbHandle, isWrite, mode);
 }
 
 int SQLiteSingleRelationalStorageEngine::Upgrade(sqlite3 *db)
 {
-    return SQLiteUtils::CreateRelationalMetaTable(db);
+    int errCode = SQLiteUtils::CreateRelationalMetaTable(db);
+    if (errCode != E_OK) {
+        LOGE("Create relational store meta table failed. err=%d", errCode);
+        return errCode;
+    }
+    LOGD("[RelationalEngine][Upgrade] upgrade relational store.");
+    auto upgrader = std::make_unique<SqliteRelationalDatabaseUpgrader>(db);
+    return upgrader->Upgrade();
 }
 
 int SQLiteSingleRelationalStorageEngine::RegisterFunction(sqlite3 *db) const
@@ -116,7 +123,7 @@ const RelationalSchemaObject &SQLiteSingleRelationalStorageEngine::GetSchemaRef(
 namespace {
 int SaveSchemaToMetaTable(SQLiteSingleVerRelationalStorageExecutor *handle, const RelationalSchemaObject &schema)
 {
-    const Key schemaKey(RELATIONAL_SCHEMA_KEY, RELATIONAL_SCHEMA_KEY + strlen(RELATIONAL_SCHEMA_KEY));
+    const Key schemaKey(DBConstant::RELATIONAL_SCHEMA_KEY.begin(), DBConstant::RELATIONAL_SCHEMA_KEY.end());
     Value schemaVal;
     DBCommon::StringToVector(schema.ToSchemaString(), schemaVal);
     int errCode = handle->PutKvData(schemaKey, schemaVal); // save schema to meta_data
@@ -127,26 +134,34 @@ int SaveSchemaToMetaTable(SQLiteSingleVerRelationalStorageExecutor *handle, cons
 }
 }
 
-int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::string &tableName, bool &schemaChanged)
+int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::string &tableName,
+    const std::string &identity, bool &schemaChanged)
 {
     std::lock_guard lock(schemaMutex_);
-    RelationalSchemaObject tmpSchema = schema_;
-    bool isUpgrade = false;
-    if (tmpSchema.GetTable(tableName).GetTableName() == tableName) {
-        LOGW("distributed table was already created.");
-        isUpgrade = true;
+    RelationalSchemaObject schema = schema_;
+    bool isUpgraded = false;
+    if (schema.GetTable(tableName).GetTableName() == tableName) {
+        LOGI("distributed table bas been created.");
+        isUpgraded = true;
         int errCode = UpgradeDistributedTable(tableName);
         if (errCode != E_OK) {
             LOGE("Upgrade distributed table failed. %d", errCode);
             return errCode;
         }
+        // Triggers may need to be rebuilt, no return directly
     }
 
-    if (tmpSchema.GetTables().size() >= DBConstant::MAX_DISTRIBUTED_TABLE_COUNT) {
+    if (schema.GetTables().size() >= DBConstant::MAX_DISTRIBUTED_TABLE_COUNT) {
         LOGE("The number of distributed tables is exceeds limit.");
         return -E_MAX_LIMITS;
     }
 
+    return CreateDistributedTable(tableName, isUpgraded, identity, schemaChanged, schema);
+}
+
+int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::string &tableName, bool isUpgraded,
+    const std::string &identity, bool &schemaChanged, RelationalSchemaObject &schema)
+{
     LOGD("Create distributed table.");
     int errCode = E_OK;
     auto *handle = static_cast<SQLiteSingleVerRelationalStorageExecutor *>(FindExecutor(true, OperatePerm::NORMAL_PERM,
@@ -161,16 +176,19 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
         return errCode;
     }
 
+    auto mode = static_cast<DistributedTableMode>(properties_.GetIntProp(
+        RelationalDBProperties::DISTRIBUTED_TABLE_MODE, DistributedTableMode::SPLIT_BY_DEVICE));
     TableInfo table;
-    errCode = handle->CreateDistributedTable(tableName, table, isUpgrade);
+    errCode = handle->CreateDistributedTable(tableName, mode, isUpgraded, identity, table);
     if (errCode != E_OK) {
         LOGE("create distributed table failed. %d", errCode);
         (void)handle->Rollback();
         return errCode;
     }
 
-    tmpSchema.AddRelationalTable(table);
-    errCode = SaveSchemaToMetaTable(handle, tmpSchema);
+    schema.SetTableMode(mode);
+    schema.AddRelationalTable(table);
+    errCode = SaveSchemaToMetaTable(handle, schema);
     if (errCode != E_OK) {
         LOGE("Save schema to meta table for create distributed table failed. %d", errCode);
         (void)handle->Rollback();
@@ -179,7 +197,7 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
 
     errCode = handle->Commit();
     if (errCode == E_OK) {
-        schema_ = tmpSchema;
+        schema_ = schema;
         schemaChanged = true;
     }
     return errCode;
@@ -188,7 +206,7 @@ int SQLiteSingleRelationalStorageEngine::CreateDistributedTable(const std::strin
 int SQLiteSingleRelationalStorageEngine::UpgradeDistributedTable(const std::string &tableName)
 {
     LOGD("Upgrade distributed table.");
-    RelationalSchemaObject tmpSchema = schema_;
+    RelationalSchemaObject schema = schema_;
     int errCode = E_OK;
     auto *handle = static_cast<SQLiteSingleVerRelationalStorageExecutor *>(FindExecutor(true, OperatePerm::NORMAL_PERM,
         errCode));
@@ -202,8 +220,9 @@ int SQLiteSingleRelationalStorageEngine::UpgradeDistributedTable(const std::stri
         return errCode;
     }
 
-    TableInfo newTable;
-    errCode = handle->UpgradeDistributedTable(tmpSchema.GetTable(tableName), newTable);
+    auto mode = static_cast<DistributedTableMode>(properties_.GetIntProp(
+        RelationalDBProperties::DISTRIBUTED_TABLE_MODE, DistributedTableMode::SPLIT_BY_DEVICE));
+    errCode = handle->UpgradeDistributedTable(tableName, mode, schema);
     if (errCode != E_OK) {
         LOGE("Upgrade distributed table failed. %d", errCode);
         (void)handle->Rollback();
@@ -211,8 +230,7 @@ int SQLiteSingleRelationalStorageEngine::UpgradeDistributedTable(const std::stri
         return errCode;
     }
 
-    tmpSchema.AddRelationalTable(newTable);
-    errCode = SaveSchemaToMetaTable(handle, tmpSchema);
+    errCode = SaveSchemaToMetaTable(handle, schema);
         if (errCode != E_OK) {
         LOGE("Save schema to meta table for upgrade distributed table failed. %d", errCode);
         (void)handle->Rollback();
@@ -222,7 +240,7 @@ int SQLiteSingleRelationalStorageEngine::UpgradeDistributedTable(const std::stri
 
     errCode = handle->Commit();
     if (errCode == E_OK) {
-        schema_ = tmpSchema;
+        schema_ = schema;
     }
     ReleaseExecutor(handle);
     return errCode;
@@ -266,6 +284,11 @@ int SQLiteSingleRelationalStorageEngine::CleanDistributedDeviceTable(std::vector
 const RelationalDBProperties &SQLiteSingleRelationalStorageEngine::GetProperties() const
 {
     return properties_;
+}
+
+void SQLiteSingleRelationalStorageEngine::SetProperties(const RelationalDBProperties &properties)
+{
+    properties_ = properties;
 }
 }
 #endif

@@ -17,365 +17,12 @@
 
 #include <algorithm>
 
+#include "db_common.h"
 #include "json_object.h"
 #include "schema_constant.h"
 #include "schema_utils.h"
 
 namespace DistributedDB {
-const std::string &FieldInfo::GetFieldName() const
-{
-    return fieldName_;
-}
-
-void FieldInfo::SetFieldName(const std::string &fileName)
-{
-    fieldName_ = fileName;
-}
-
-const std::string &FieldInfo::GetDataType() const
-{
-    return dataType_;
-}
-
-static StorageType AffinityType(const std::string &dataType)
-{
-    return StorageType::STORAGE_TYPE_NULL;
-}
-
-void FieldInfo::SetDataType(const std::string &dataType)
-{
-    dataType_ = dataType;
-    transform(dataType_.begin(), dataType_.end(), dataType_.begin(), ::tolower);
-    storageType_ = AffinityType(dataType_);
-}
-
-bool FieldInfo::IsNotNull() const
-{
-    return isNotNull_;
-}
-
-void FieldInfo::SetNotNull(bool isNotNull)
-{
-    isNotNull_ = isNotNull;
-}
-
-bool FieldInfo::HasDefaultValue() const
-{
-    return hasDefaultValue_;
-}
-
-const std::string &FieldInfo::GetDefaultValue() const
-{
-    return defaultValue_;
-}
-
-void FieldInfo::SetDefaultValue(const std::string &value)
-{
-    hasDefaultValue_ = true;
-    defaultValue_ = value;
-}
-
-// convert to StorageType according "Determination Of Column Affinity"
-StorageType FieldInfo::GetStorageType() const
-{
-    return storageType_;
-}
-
-void FieldInfo::SetStorageType(StorageType storageType)
-{
-    storageType_ = storageType;
-}
-
-int FieldInfo::GetColumnId() const
-{
-    return cid_;
-}
-
-void FieldInfo::SetColumnId(int cid)
-{
-    cid_ = cid;
-}
-
-std::string FieldInfo::ToAttributeString() const
-{
-    std::string attrStr = "\"" + fieldName_ + "\": {";
-    attrStr += "\"COLUMN_ID\":" + std::to_string(cid_) + ",";
-    attrStr += "\"TYPE\":\"" + dataType_ + "\",";
-    attrStr += "\"NOT_NULL\":" + std::string(isNotNull_ ? "true" : "false");
-    if (hasDefaultValue_) {
-        attrStr += ",";
-        attrStr += "\"DEFAULT\":\"" + defaultValue_ + "\"";
-    }
-    attrStr += "}";
-    return attrStr;
-}
-
-int FieldInfo::CompareWithField(const FieldInfo &inField) const
-{
-    if (fieldName_ != inField.GetFieldName() || dataType_ != inField.GetDataType() ||
-        isNotNull_ != inField.IsNotNull()) {
-        return false;
-    }
-    if (hasDefaultValue_ && inField.HasDefaultValue()) {
-        return defaultValue_ == inField.GetDefaultValue();
-    }
-    return hasDefaultValue_ == inField.HasDefaultValue();
-}
-
-const std::string &TableInfo::GetTableName() const
-{
-    return tableName_;
-}
-
-void TableInfo::SetTableName(const std::string &tableName)
-{
-    tableName_ = tableName;
-}
-
-void TableInfo::SetAutoIncrement(bool autoInc)
-{
-    autoInc_ = autoInc;
-}
-
-bool TableInfo::GetAutoIncrement() const
-{
-    return autoInc_;
-}
-
-const std::string &TableInfo::GetCreateTableSql() const
-{
-    return sql_;
-}
-
-void TableInfo::SetCreateTableSql(std::string sql)
-{
-    sql_ = sql;
-    for (auto &c : sql) {
-        c = static_cast<char>(std::toupper(c));
-    }
-    if (sql.find("AUTOINCREMENT") != std::string::npos) {
-        autoInc_ = true;
-    }
-}
-
-const std::map<std::string, FieldInfo> &TableInfo::GetFields() const
-{
-    return fields_;
-}
-
-const std::vector<FieldInfo> &TableInfo::GetFieldInfos() const
-{
-    if (!fieldInfos_.empty() && fieldInfos_.size() == fields_.size()) {
-        return fieldInfos_;
-    }
-    fieldInfos_.resize(fields_.size());
-    if (fieldInfos_.size() != fields_.size()) {
-        LOGE("GetField error, alloc memory failed.");
-        return fieldInfos_;
-    }
-    for (const auto &entry : fields_) {
-        if (static_cast<size_t>(entry.second.GetColumnId()) >= fieldInfos_.size()) {
-            LOGE("Cid is over field size.");
-            fieldInfos_.clear();
-            return fieldInfos_;
-        }
-        fieldInfos_.at(entry.second.GetColumnId()) = entry.second;
-    }
-    return fieldInfos_;
-}
-
-std::string TableInfo::GetFieldName(uint32_t cid) const
-{
-    if (cid >= fields_.size() || GetFieldInfos().empty()) {
-        return {};
-    }
-    return GetFieldInfos().at(cid).GetFieldName();
-}
-
-bool TableInfo::IsValid() const
-{
-    return !tableName_.empty();
-}
-
-void TableInfo::AddField(const FieldInfo &field)
-{
-    fields_[field.GetFieldName()] = field;
-}
-
-const std::map<std::string, CompositeFields> &TableInfo::GetIndexDefine() const
-{
-    return indexDefines_;
-}
-
-void TableInfo::AddIndexDefine(const std::string &indexName, const CompositeFields &indexDefine)
-{
-    indexDefines_[indexName] = indexDefine;
-}
-
-const FieldName &TableInfo::GetPrimaryKey() const
-{
-    return primaryKey_;
-}
-
-void TableInfo::SetPrimaryKey(const FieldName &fieldName)
-{
-    primaryKey_ = fieldName;
-}
-
-void TableInfo::AddFieldDefineString(std::string &attrStr) const
-{
-    if (fields_.empty()) {
-        return;
-    }
-    attrStr += R"("DEFINE": {)";
-    for (auto itField = fields_.begin(); itField != fields_.end(); ++itField) {
-        attrStr += itField->second.ToAttributeString();
-        if (itField != std::prev(fields_.end(), 1)) {
-            attrStr += ",";
-        }
-    }
-    attrStr += "},";
-}
-
-void TableInfo::AddIndexDefineString(std::string &attrStr) const
-{
-    if (indexDefines_.empty()) {
-        return;
-    }
-    attrStr += R"(,"INDEX": {)";
-    for (auto itIndexDefine = indexDefines_.begin(); itIndexDefine != indexDefines_.end(); ++itIndexDefine) {
-        attrStr += "\"" + (*itIndexDefine).first + "\": [\"";
-        for (auto itField = itIndexDefine->second.begin(); itField != itIndexDefine->second.end(); ++itField) {
-            attrStr += *itField;
-            if (itField != itIndexDefine->second.end() - 1) {
-                attrStr += "\",\"";
-            }
-        }
-        attrStr += "\"]";
-        if (itIndexDefine != std::prev(indexDefines_.end(), 1)) {
-            attrStr += ",";
-        }
-    }
-    attrStr += "}";
-}
-
-int TableInfo::CompareWithTable(const TableInfo &inTableInfo) const
-{
-    if (tableName_ != inTableInfo.GetTableName()) {
-        LOGW("[Relational][Compare] Table name is not same");
-        return -E_RELATIONAL_TABLE_INCOMPATIBLE;
-    }
-
-    if (primaryKey_ != inTableInfo.GetPrimaryKey()) {
-        LOGW("[Relational][Compare] Table primary key is not same");
-        return -E_RELATIONAL_TABLE_INCOMPATIBLE;
-    }
-
-    int fieldCompareResult = CompareWithTableFields(inTableInfo.GetFields());
-    if (fieldCompareResult == -E_RELATIONAL_TABLE_INCOMPATIBLE) {
-        LOGW("[Relational][Compare] Compare table fields with in table, %d", fieldCompareResult);
-        return -E_RELATIONAL_TABLE_INCOMPATIBLE;
-    }
-
-    int indexCompareResult = CompareWithTableIndex(inTableInfo.GetIndexDefine());
-    return (fieldCompareResult == -E_RELATIONAL_TABLE_EQUAL) ? indexCompareResult : fieldCompareResult;
-}
-
-int TableInfo::CompareWithTableFields(const std::map<std::string, FieldInfo> &inTableFields) const
-{
-    auto itLocal = fields_.begin();
-    auto itInTable = inTableFields.begin();
-    int errCode = -E_RELATIONAL_TABLE_EQUAL;
-    while (itLocal != fields_.end() && itInTable != inTableFields.end()) {
-        if (itLocal->first == itInTable->first) { // Same field
-            if (!itLocal->second.CompareWithField(itInTable->second)) { // Compare field
-                LOGW("[Relational][Compare] Table field is incompatible"); // not compatible
-                return -E_RELATIONAL_TABLE_INCOMPATIBLE;
-            }
-            itLocal++; // Compare next field
-        } else { // Assume local table fields is a subset of in table
-            if (itInTable->second.IsNotNull() && !itInTable->second.HasDefaultValue()) { // Upgrade field not compatible
-                LOGW("[Relational][Compare] Table upgrade field should allowed to be empty or have default value.");
-                return -E_RELATIONAL_TABLE_INCOMPATIBLE;
-            }
-            errCode = -E_RELATIONAL_TABLE_COMPATIBLE_UPGRADE;
-        }
-        itInTable++; // Next in table field
-    }
-
-    if (itLocal != fields_.end()) {
-        LOGW("[Relational][Compare] Table field is missing");
-        return -E_RELATIONAL_TABLE_INCOMPATIBLE;
-    }
-
-    if (itInTable == inTableFields.end()) {
-        return errCode;
-    }
-
-    while (itInTable != inTableFields.end()) {
-        if (itInTable->second.IsNotNull() && !itInTable->second.HasDefaultValue()) {
-            LOGW("[Relational][Compare] Table upgrade field should allowed to be empty or have default value.");
-            return -E_RELATIONAL_TABLE_INCOMPATIBLE;
-        }
-        itInTable++;
-    }
-    return -E_RELATIONAL_TABLE_COMPATIBLE_UPGRADE;
-}
-
-int TableInfo::CompareWithTableIndex(const std::map<std::string, CompositeFields> &inTableIndex) const
-{
-    // Index comparison results do not affect synchronization decisions
-    auto itLocal = indexDefines_.begin();
-    auto itInTable = inTableIndex.begin();
-    while (itLocal != indexDefines_.end() && itInTable != inTableIndex.end()) {
-        if (itLocal->first != itInTable->first || itLocal->second != itInTable->second) {
-            return -E_RELATIONAL_TABLE_COMPATIBLE;
-        }
-        itLocal++;
-        itInTable++;
-    }
-    return (itLocal == indexDefines_.end() && itInTable == inTableIndex.end()) ? -E_RELATIONAL_TABLE_EQUAL :
-        -E_RELATIONAL_TABLE_COMPATIBLE;
-}
-
-std::string TableInfo::ToTableInfoString() const
-{
-    std::string attrStr;
-    attrStr += "{";
-    attrStr += R"("NAME": ")" + tableName_ + "\",";
-    AddFieldDefineString(attrStr);
-    attrStr += R"("AUTOINCREMENT": )";
-    if (autoInc_) {
-        attrStr += "true,";
-    } else {
-        attrStr += "false,";
-    }
-    if (!primaryKey_.empty()) {
-        attrStr += R"("PRIMARY_KEY": ")" + primaryKey_ + "\"";
-    }
-    AddIndexDefineString(attrStr);
-    attrStr += "}";
-    return attrStr;
-}
-
-std::map<FieldPath, SchemaAttribute> TableInfo::GetSchemaDefine() const
-{
-    std::map<FieldPath, SchemaAttribute> schemaDefine;
-    for (const auto &[fieldName, fieldInfo] : GetFields()) {
-        FieldValue defaultValue;
-        defaultValue.stringValue = fieldInfo.GetDefaultValue();
-        schemaDefine[std::vector { fieldName }] = SchemaAttribute {
-            .type = FieldType::LEAF_FIELD_NULL,     // For relational schema, the json field type is unimportant.
-            .isIndexable = true,                    // For relational schema, all field is indexable.
-            .hasNotNullConstraint = fieldInfo.IsNotNull(),
-            .hasDefaultValue = fieldInfo.HasDefaultValue(),
-            .defaultValue = defaultValue,
-            .customFieldType = {}
-        };
-    }
-    return schemaDefine;
-}
-
 bool RelationalSchemaObject::IsSchemaValid() const
 {
     return isValid_;
@@ -424,14 +71,19 @@ void RelationalSchemaObject::GenerateSchemaString()
 {
     schemaString_ = {};
     schemaString_ += "{";
-    schemaString_ += R"("SCHEMA_VERSION":"2.0",)";
+    schemaString_ += R"("SCHEMA_VERSION":")" + schemaVersion_ + R"(",)";
     schemaString_ += R"("SCHEMA_TYPE":"RELATIVE",)";
+    if (schemaVersion_ == SchemaConstant::SCHEMA_SUPPORT_VERSION_V2_1) {
+        std::string modeString = tableMode_ == DistributedTableMode::COLLABORATION ?
+            SchemaConstant::KEYWORD_TABLE_COLLABORATION : SchemaConstant::KEYWORD_TABLE_SPLIT_DEVICE;
+        schemaString_ += R"("TABLE_MODE":")" + modeString + R"(",)";
+    }
     schemaString_ += R"("TABLES":[)";
     for (auto it = tables_.begin(); it != tables_.end(); it++) {
         if (it != tables_.begin()) {
             schemaString_ += ",";
         }
-        schemaString_ += it->second.ToTableInfoString();
+        schemaString_ += it->second.ToTableInfoString(schemaVersion_);
     }
     schemaString_ += R"(])";
     schemaString_ += "}";
@@ -441,9 +93,12 @@ void RelationalSchemaObject::AddRelationalTable(const TableInfo &tb)
 {
     tables_[tb.GetTableName()] = tb;
     isValid_ = true;
+    if (tb.GetPrimaryKey().size() > 1) { // Table with composite primary keys
+        // Composite primary keys are supported since version 2.1
+        schemaVersion_ = SchemaConstant::SCHEMA_CURRENT_VERSION;
+    }
     GenerateSchemaString();
 }
-
 
 void RelationalSchemaObject::RemoveRelationalTable(const std::string &tableName)
 {
@@ -472,6 +127,25 @@ TableInfo RelationalSchemaObject::GetTable(const std::string &tableName) const
         return it->second;
     }
     return {};
+}
+
+std::string RelationalSchemaObject::GetSchemaVersion() const
+{
+    return schemaVersion_;
+}
+
+DistributedTableMode RelationalSchemaObject::GetTableMode() const
+{
+    return tableMode_;
+}
+
+void RelationalSchemaObject::SetTableMode(DistributedTableMode mode)
+{
+    tableMode_ = mode;
+    if (tableMode_ == DistributedTableMode::COLLABORATION) {
+        schemaVersion_ = SchemaConstant::SCHEMA_CURRENT_VERSION;
+    }
+    GenerateSchemaString();
 }
 
 int RelationalSchemaObject::CompareAgainstSchemaObject(const std::string &inSchemaString,
@@ -530,7 +204,20 @@ int RelationalSchemaObject::ParseRelationalSchema(const JsonObject &inJsonObject
     if (errCode != E_OK) {
         return errCode;
     }
+    errCode = ParseCheckTableMode(inJsonObject);
+    if (errCode != E_OK) {
+        return errCode;
+    }
     return ParseCheckSchemaTableDefine(inJsonObject);
+}
+
+namespace {
+inline bool IsSchemaVersionValid(const std::string &version)
+{
+    std::string stripedVersion = SchemaUtils::Strip(version);
+    return stripedVersion == SchemaConstant::SCHEMA_SUPPORT_VERSION_V2 ||
+        stripedVersion == SchemaConstant::SCHEMA_SUPPORT_VERSION_V2_1;
+}
 }
 
 int RelationalSchemaObject::ParseCheckSchemaVersion(const JsonObject &inJsonObject)
@@ -542,12 +229,13 @@ int RelationalSchemaObject::ParseCheckSchemaVersion(const JsonObject &inJsonObje
         return errCode;
     }
 
-    if (SchemaUtils::Strip(fieldValue.stringValue) != SchemaConstant::SCHEMA_SUPPORT_VERSION_V2) {
-        LOGE("[RelationalSchema][Parse] Unexpected SCHEMA_VERSION=%s.", fieldValue.stringValue.c_str());
-        return -E_SCHEMA_PARSE_FAIL;
+    if (IsSchemaVersionValid(fieldValue.stringValue)) {
+        schemaVersion_ = fieldValue.stringValue;
+        return E_OK;
     }
-    schemaVersion_ = SchemaConstant::SCHEMA_SUPPORT_VERSION_V2;
-    return E_OK;
+
+    LOGE("[RelationalSchema][Parse] Unexpected SCHEMA_VERSION=%s.", fieldValue.stringValue.c_str());
+    return -E_SCHEMA_PARSE_FAIL;
 }
 
 int RelationalSchemaObject::ParseCheckSchemaType(const JsonObject &inJsonObject)
@@ -564,6 +252,38 @@ int RelationalSchemaObject::ParseCheckSchemaType(const JsonObject &inJsonObject)
         return -E_SCHEMA_PARSE_FAIL;
     }
     schemaType_ = SchemaType::RELATIVE;
+    return E_OK;
+}
+
+namespace {
+inline bool IsTableModeValid(const std::string &mode)
+{
+    std::string stripedMode = SchemaUtils::Strip(mode);
+    return stripedMode == SchemaConstant::KEYWORD_TABLE_SPLIT_DEVICE ||
+        stripedMode == SchemaConstant::KEYWORD_TABLE_COLLABORATION;
+}
+}
+
+int RelationalSchemaObject::ParseCheckTableMode(const JsonObject &inJsonObject)
+{
+    if (schemaVersion_ == SchemaConstant::SCHEMA_SUPPORT_VERSION_V2) {
+        return E_OK; // version 2 has no table mode, no parsing required
+    }
+
+    FieldValue fieldValue;
+    int errCode = GetMemberFromJsonObject(inJsonObject, SchemaConstant::KEYWORD_TABLE_MODE,
+        FieldType::LEAF_FIELD_STRING, true, fieldValue);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    if (!IsTableModeValid(fieldValue.stringValue)) {
+        LOGE("[RelationalSchema][Parse] Unexpected TABLE_MODE=%s.", fieldValue.stringValue.c_str());
+        return -E_SCHEMA_PARSE_FAIL;
+    }
+
+    tableMode_ = SchemaUtils::Strip(fieldValue.stringValue) == SchemaConstant::KEYWORD_TABLE_SPLIT_DEVICE ?
+        DistributedDB::SPLIT_BY_DEVICE : DistributedTableMode::COLLABORATION;
     return E_OK;
 }
 
@@ -616,6 +336,10 @@ int RelationalSchemaObject::ParseCheckTableInfo(const JsonObject &inJsonObject)
         return errCode;
     }
     errCode = ParseCheckTableIndex(inJsonObject, resultTable);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    errCode = ParseCheckTableUnique(inJsonObject, resultTable);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -715,10 +439,33 @@ int RelationalSchemaObject::ParseCheckTableAutoInc(const JsonObject &inJsonObjec
 
 int RelationalSchemaObject::ParseCheckTablePrimaryKey(const JsonObject &inJsonObject, TableInfo &resultTable)
 {
-    FieldValue fieldValue;
-    int errCode = GetMemberFromJsonObject(inJsonObject, "PRIMARY_KEY", FieldType::LEAF_FIELD_STRING, false, fieldValue);
-    if (errCode == E_OK) {
-        resultTable.SetPrimaryKey(fieldValue.stringValue);
+    if (!inJsonObject.IsFieldPathExist(FieldPath {"PRIMARY_KEY"})) {
+        return E_OK;
+    }
+
+    FieldType type;
+    int errCode = inJsonObject.GetFieldTypeByFieldPath(FieldPath {"PRIMARY_KEY"}, type);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    if (type == FieldType::LEAF_FIELD_STRING) { // Compatible with schema 2.0
+        FieldValue fieldValue;
+        errCode = GetMemberFromJsonObject(inJsonObject, "PRIMARY_KEY", FieldType::LEAF_FIELD_STRING, false, fieldValue);
+        if (errCode == E_OK) {
+            resultTable.SetPrimaryKey(fieldValue.stringValue, 1);
+        }
+    } else if (type == FieldType::LEAF_FIELD_ARRAY) {
+        CompositeFields multiPrimaryKey;
+        errCode = inJsonObject.GetStringArrayByFieldPath(FieldPath {"PRIMARY_KEY"}, multiPrimaryKey);
+        if (errCode == E_OK) {
+            int index = 1; // primary key index
+            for (const auto &item : multiPrimaryKey) {
+                resultTable.SetPrimaryKey(item, index++);
+            }
+        }
+    } else {
+        errCode = -E_SCHEMA_PARSE_FAIL;
     }
     return errCode;
 }
@@ -749,6 +496,22 @@ int RelationalSchemaObject::ParseCheckTableIndex(const JsonObject &inJsonObject,
         }
         resultTable.AddIndexDefine(field.first[1], indexDefine); // 1 : second element in path
     }
+    return E_OK;
+}
+
+int RelationalSchemaObject::ParseCheckTableUnique(const JsonObject &inJsonObject, TableInfo &resultTable)
+{
+    if (!inJsonObject.IsFieldPathExist(FieldPath {"UNIQUE"})) { // UNIQUE is not necessary
+        return E_OK;
+    }
+
+    std::vector<CompositeFields> uniques;
+    int errCode = inJsonObject.GetArrayContentOfStringOrStringArray(FieldPath {"UNIQUE"}, uniques);
+    if (errCode != E_OK) {
+        LOGE("[RelationalSchema][Parse] Get schema TABLES UNIQUE failed: %d.", errCode);
+        return -E_SCHEMA_PARSE_FAIL;
+    }
+    resultTable.SetUniqueDefine(uniques);
     return E_OK;
 }
 }

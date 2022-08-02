@@ -77,7 +77,7 @@ int AdapterStub::GetLocalIdentity(std::string &outTarget)
 
 int AdapterStub::SendBytes(const std::string &dstTarget, const uint8_t *bytes, uint32_t length)
 {
-    LOGI("[UT][Stub][Send] Send length=%u to dstTarget=%s begin.", length, dstTarget.c_str());
+    LOGI("[UT][Stub][Send] Send length=%" PRIu32 " to dstTarget=%s begin.", length, dstTarget.c_str());
     ApplySendBlock();
 
     if (QuerySendRetry(dstTarget)) {

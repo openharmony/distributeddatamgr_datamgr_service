@@ -54,10 +54,12 @@ public:
     static uint32_t CalculateParcelLen(const RelationalSyncOpinion &opinions);
     static int SerializeData(const RelationalSyncOpinion &opinions, Parcel &parcel);
     static int DeserializeData(Parcel &parcel, RelationalSyncOpinion &opinion);
-
 private:
     SchemaNegotiate() = default;
     ~SchemaNegotiate() = default;
+
+    static RelationalSyncOpinion MakeOpinionEachTable(const RelationalSchemaObject &localSchema,
+        const RelationalSchemaObject &remoteSchema);
 };
 }
 

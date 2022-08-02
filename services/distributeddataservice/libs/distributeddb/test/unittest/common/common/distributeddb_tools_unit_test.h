@@ -44,6 +44,7 @@
 #include "sqlite_utils.h"
 #include "sync_types.h"
 #include "store_types.h"
+#include "types_export.h"
 namespace DistributedDBUnitTest {
 struct DatabaseInfo {
     std::string appId{};
@@ -218,8 +219,8 @@ public:
 private:
     static int OpenMockMultiDb(DatabaseInfo &dbInfo, DistributedDB::OpenDbProperties &properties);
 
-    std::mutex syncLock_{};
-    std::condition_variable syncCondVar_{};
+    std::mutex syncLock_ {};
+    std::condition_variable syncCondVar_ {};
 };
 
 class KvStoreObserverUnitTest : public DistributedDB::KvStoreObserver {
@@ -301,9 +302,13 @@ class RelationalTestUtils {
 public:
     static sqlite3 *CreateDataBase(const std::string &dbUri);
     static int ExecSql(sqlite3 *db, const std::string &sql);
+    static int ExecSql(sqlite3 *db, const std::string &sql, const std::function<int (sqlite3_stmt *)> &bindCallback,
+        const std::function<int (sqlite3_stmt *)> &resultCallback);
     static void CreateDeviceTable(sqlite3 *db, const std::string &table, const std::string &device);
     static int CheckSqlResult(sqlite3 *db, const std::string &sql, bool &result);
     static int CheckTableRecords(sqlite3 *db, const std::string &table);
+    static int GetMetaData(sqlite3 *db, const DistributedDB::Key &key, DistributedDB::Value &value);
+    static int SetMetaData(sqlite3 *db, const DistributedDB::Key &key, const DistributedDB::Value &value);
 };
 } // namespace DistributedDBUnitTest
 

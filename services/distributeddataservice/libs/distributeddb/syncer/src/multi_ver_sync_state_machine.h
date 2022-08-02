@@ -47,7 +47,7 @@ public:
     int ReceiveMessageCallback(Message *inMsg) override;
 
     // Called by CommErrHandler, used to abort sync when handle err
-    void CommErrAbort() override;
+    void CommErrAbort(uint32_t sessionId = 0) override;
 
     DISABLE_COPY_ASSIGN_MOVE(MultiVerSyncStateMachine);
 

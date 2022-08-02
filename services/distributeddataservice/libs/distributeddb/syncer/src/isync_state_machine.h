@@ -46,7 +46,7 @@ public:
     virtual void Abort() = 0;
 
     // Called by CommErrHandler, Sub class should realize this function to abort sync when handle err
-    virtual void CommErrAbort() = 0;
+    virtual void CommErrAbort(uint32_t sessionId = 0) = 0;
 
     // start a timer to ResetWatchDog when sync data one (key,value) size bigger than mtu
     virtual bool StartFeedDogForSync(uint32_t time, SyncDirectionFlag flag) = 0;

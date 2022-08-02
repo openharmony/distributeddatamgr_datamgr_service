@@ -73,6 +73,42 @@ public:
     // Get the result set obj
     void GetResultSet(IKvDBResultSet *&resultSet) const;
 
+    // Returns whether the result set is empty.
+    bool IsClosed() const override;
+
+    // Clear the result set. Set the position -1.
+    void Close() override;
+
+    // Get column names.
+    void GetColumnNames(std::vector<std::string> &columnNames) const override;
+
+    // Get the column name by column index. Returns OK, NOT_FOUND or NONEXISTENT.
+    DBStatus GetColumnType(int columnIndex, ColumnType &columnType) const override;
+
+    // Get the column index by column name. Returns OK, NOT_FOUND or NONEXISTENT.
+    DBStatus GetColumnIndex(const std::string &columnName, int &columnIndex) const override;
+
+    // Get the column name by column index. Returns OK, NOT_FOUND or NONEXISTENT.
+    DBStatus GetColumnName(int columnIndex, std::string &columnName) const override;
+
+    // Get blob. Returns OK,, NOT_FOUND NONEXISTENT or TYPE_MISMATCH.
+    DBStatus Get(int columnIndex, std::vector<uint8_t> &value) const override;
+
+    // Get string. Returns OK, NOT_FOUND, NONEXISTENT or TYPE_MISMATCH.
+    DBStatus Get(int columnIndex, std::string &value) const override;
+
+    // Get int64. Returns OK, NOT_FOUND, NONEXISTENT or TYPE_MISMATCH.
+    DBStatus Get(int columnIndex, int64_t &value) const override;
+
+    // Get double. Returns OK, NOT_FOUND, NONEXISTENT or TYPE_MISMATCH.
+    DBStatus Get(int columnIndex, double &value) const override;
+
+    // Get whether the column value is null. Returns OK, NOT_FOUND or NONEXISTENT.
+    DBStatus IsColumnNull(int columnIndex, bool &isNull) const override;
+
+    // Get the row record. Returns OK, NOT_FOUND or NOT_SUPPORT.
+    DBStatus GetRow(std::map<std::string, VariantData> &data) const override;
+
 private:
     static const int INIT_POSTION;
     IKvDBResultSet * const resultSet_;

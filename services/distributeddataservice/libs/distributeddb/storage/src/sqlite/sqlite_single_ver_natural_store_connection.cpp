@@ -859,6 +859,7 @@ int SQLiteSingleVerNaturalStoreConnection::PutBatchInner(const IOption &option, 
         isAuto = true;
         errCode = StartTransactionInner();
         if (errCode != E_OK) {
+            DBDfxAdapter::FinishTraceSQL();
             return errCode;
             DBDfxAdapter::FinishTraceSQL();
         }

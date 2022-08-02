@@ -30,6 +30,7 @@ public:
     static constexpr size_t MAX_DATA_DIR_LENGTH = 512;
 
     static constexpr size_t MAX_INKEYS_SIZE = 128;
+    static constexpr size_t MAX_SQL_ARGS_COUNT = 100;
 
     static constexpr int DB_TYPE_LOCAL = 1;
     static constexpr int DB_TYPE_MULTI_VER = 2;
@@ -44,6 +45,8 @@ public:
     static constexpr int MAX_ENTRIES_SIZE = 1000000;
 
     static constexpr uint32_t MAX_COLUMN  = 32767;
+
+    static constexpr int MAX_REMOTEDATA_SIZE = 4194304;  // 4M.
 
     // In querySync, when getting query data finished,
     // if the block size reach the half of max block size, will get deleted data next;
@@ -75,6 +78,7 @@ public:
     static const std::string SQLITE_DB_EXTENSION;
     static const std::string SQLITE_MEMDB_IDENTIFY;
     static const std::string SCHEMA_KEY;
+    static const std::string RELATIONAL_SCHEMA_KEY;
 
     static const std::string PATH_POSTFIX_UNPACKED;
     static const std::string PATH_POSTFIX_IMPORT_BACKUP;
@@ -134,6 +138,12 @@ public:
     // For relational
     static const std::string RELATIONAL_PREFIX;
     static const std::string TIMESTAMP_ALIAS;
+
+    static const std::string LOG_TABLE_VERSION_1;
+    static const std::string LOG_TABLE_VERSION_2;
+    static const std::string LOG_TABLE_VERSION_CURRENT;
+
+    static const std::string LOG_TABLE_VERSION_KEY;
 };
 } // namespace DistributedDB
 

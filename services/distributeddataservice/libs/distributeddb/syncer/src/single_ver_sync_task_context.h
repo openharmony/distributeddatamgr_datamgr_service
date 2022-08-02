@@ -128,7 +128,7 @@ public:
     std::string GetRemoteCompressAlgoStr() const;
     void SetDbAbility(DbAbility &remoteDbAbility);
     CompressAlgorithm ChooseCompressAlgo() const;
-    const DbAbility& GetRemoteDbAbility() const;
+    bool IsNotSupportAbility(const AbilityItem &abilityItem) const;
 
     void SetSubscribeManager(std::shared_ptr<SubscribeManager> &subManager);
     std::shared_ptr<SubscribeManager> GetSubscribeManager() const;
@@ -138,6 +138,8 @@ public:
 
     virtual std::string GetQuerySyncId() const = 0;
     virtual std::string GetDeleteSyncId() const = 0;
+
+    void SetCommNormal(bool isCommNormal);
 protected:
     ~SingleVerSyncTaskContext() override;
     void CopyTargetData(const ISyncTarget *target, const TaskParam &taskParam) override;
@@ -166,6 +168,7 @@ private:
     bool isReceiveWaterMarkErr_ = false;
 
     // For db ability
+    mutable std::mutex remoteDbAbilityLock_;
     DbAbility remoteDbAbility_;
 
     // For subscribe manager

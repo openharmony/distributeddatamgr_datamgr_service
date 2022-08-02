@@ -16,10 +16,11 @@
 #ifndef KV_STORE_RESULT_SET_H
 #define KV_STORE_RESULT_SET_H
 
+#include "distributeddb/result_set.h"
 #include "store_types.h"
 
 namespace DistributedDB {
-class KvStoreResultSet {
+class KvStoreResultSet : public ResultSet {
 public:
     DB_API virtual ~KvStoreResultSet() {};
 
@@ -63,6 +64,42 @@ public:
 
     // Get a key-value entry.
     DB_API virtual DBStatus GetEntry(Entry &entry) const = 0;
+
+    // Returns whether the result set is empty.
+    DB_API virtual bool IsClosed() const = 0;
+
+    // Clear the result set. Set the position -1.
+    DB_API virtual void Close() = 0;
+
+    // Get column names.
+    DB_API virtual void GetColumnNames(std::vector<std::string> &columnNames) const = 0;
+
+    // Get the column name by column index. Returns OK, NOT_FOUND or NONEXISTENT.
+    DB_API virtual DBStatus GetColumnType(int columnIndex, ColumnType &columnType) const = 0;
+
+    // Get the column index by column name. Returns OK, NOT_FOUND or NONEXISTENT.
+    DB_API virtual DBStatus GetColumnIndex(const std::string &columnName, int &columnIndex) const = 0;
+
+    // Get the column name by column index. Returns OK, NOT_FOUND or NONEXISTENT.
+    DB_API virtual DBStatus GetColumnName(int columnIndex, std::string &columnName) const = 0;
+
+    // Get blob. Returns OK,, NOT_FOUND NONEXISTENT or TYPE_MISMATCH.
+    DB_API virtual DBStatus Get(int columnIndex, std::vector<uint8_t> &value) const = 0;
+
+    // Get string. Returns OK, NOT_FOUND, NONEXISTENT or TYPE_MISMATCH.
+    DB_API virtual DBStatus Get(int columnIndex, std::string &value) const = 0;
+
+    // Get int64. Returns OK, NOT_FOUND, NONEXISTENT or TYPE_MISMATCH.
+    DB_API virtual DBStatus Get(int columnIndex, int64_t &value) const = 0;
+
+    // Get double. Returns OK, NOT_FOUND, NONEXISTENT or TYPE_MISMATCH.
+    DB_API virtual DBStatus Get(int columnIndex, double &value) const = 0;
+
+    // Get whether the column value is null. Returns OK, NOT_FOUND or NONEXISTENT.
+    DB_API virtual DBStatus IsColumnNull(int columnIndex, bool &isNull) const = 0;
+
+    // Get the row record. Returns OK, NOT_FOUND or NOT_SUPPORT.
+    DB_API virtual DBStatus GetRow(std::map<std::string, VariantData> &data) const = 0;
 };
 } // namespace DistributedDB
 

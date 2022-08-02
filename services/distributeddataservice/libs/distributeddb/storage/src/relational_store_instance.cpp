@@ -174,6 +174,7 @@ RelationalStoreConnection *RelationalStoreInstance::GetDatabaseConnection(const 
     manager->EnterDBOpenCloseProcess(properties.GetStringProp(DBProperties::IDENTIFIER_DATA, ""));
     RelationalStoreConnection *connection = nullptr;
     std::string canonicalDir;
+    DistributedTableMode mode = DistributedTableMode::SPLIT_BY_DEVICE;
     IRelationalStore *db = GetDataBase(properties, errCode);
     if (db == nullptr) {
         LOGE("Failed to open the db:%d", errCode);
@@ -183,6 +184,14 @@ RelationalStoreConnection *RelationalStoreInstance::GetDatabaseConnection(const 
     canonicalDir = properties.GetStringProp(KvDBProperties::DATA_DIR, "");
     if (canonicalDir.empty() || canonicalDir != db->GetStorePath()) {
         LOGE("Failed to check store path, the input path does not match with cached store.");
+        errCode = -E_INVALID_ARGS;
+        goto END;
+    }
+    mode = static_cast<DistributedTableMode>(properties.GetIntProp(RelationalDBProperties::DISTRIBUTED_TABLE_MODE,
+        DistributedTableMode::SPLIT_BY_DEVICE));
+    if (mode != db->GetProperties().GetIntProp(RelationalDBProperties::DISTRIBUTED_TABLE_MODE,
+        DistributedTableMode::SPLIT_BY_DEVICE)) {
+        LOGE("Failed to check table mode.");
         errCode = -E_INVALID_ARGS;
         goto END;
     }

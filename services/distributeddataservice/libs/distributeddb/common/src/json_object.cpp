@@ -29,6 +29,7 @@ namespace {
     const std::string JSON_CONFIG_INDENTATION = "indentation";
     const std::string JSON_CONFIG_COLLECT_COMMENTS = "collectComments";
     const std::string JSON_CONFIG_PRECISION = "precision";
+    const std::string JSON_CONFIG_REJECT_DUP_KEYS = "rejectDupKeys";
 #endif
 }
 uint32_t JsonObject::maxNestDepth_ = MAX_NEST_DEPTH;
@@ -124,6 +125,7 @@ int JsonObject::Parse(const std::string &inString)
     Json::CharReaderBuilder builder;
     Json::CharReaderBuilder::strictMode(&builder.settings_);
     builder[JSON_CONFIG_COLLECT_COMMENTS] = false;
+    builder[JSON_CONFIG_REJECT_DUP_KEYS] = false;
     std::unique_ptr<Json::CharReader> const jsonReader(builder.newCharReader());
 
     auto begin = reinterpret_cast<const std::string::value_type *>(inString.c_str());
@@ -183,6 +185,7 @@ int JsonObject::Parse(const uint8_t *dataBegin, const uint8_t *dataEnd)
     Json::CharReaderBuilder builder;
     Json::CharReaderBuilder::strictMode(&builder.settings_);
     builder[JSON_CONFIG_COLLECT_COMMENTS] = false;
+    builder[JSON_CONFIG_REJECT_DUP_KEYS] = false;
     std::unique_ptr<Json::CharReader> const jsonReader(builder.newCharReader());
     // The endDoc parameter of reader::parse refer to the byte after the string itself
     if (!jsonReader->parse(begin, end, &value_, &errs)) {

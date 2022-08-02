@@ -15,7 +15,6 @@
 #include "subscribe_manager.h"
 
 #include <mutex>
-
 #include "db_common.h"
 #include "sync_types.h"
 
@@ -171,21 +170,19 @@ void SubscribeManager::GetRemoteSubscribeQueries(const std::string &device,
     GetSubscribeQueries(device, remoteSubscribedMap_, remoteSubscribedTotalMap_, subscribeQueries);
 }
 
-bool SubscribeManager::IsRemoteContainSubscribe(const std::string &device, const QuerySyncObject &query) const
+bool SubscribeManager::IsLastRemoteContainSubscribe(const std::string &device, const std::string &queryId) const
 {
     std::shared_lock<std::shared_mutex> lockGuard(remoteSubscribedMapLock_);
-    auto iter = remoteSubscribedMap_.find(device);
-    if (iter == remoteSubscribedMap_.end()) {
-        LOGD("[SubscribeManager] dev=%s not in remoteSubscribedMap", STR_MASK(device));
+    if (remoteSubscribedMap_.find(device) == remoteSubscribedMap_.end()) {
+        LOGI("[SubscribeManager] dev=%s not in remoteSubscribedMap", STR_MASK(device));
         return false;
     }
-    std::string queryId = query.GetIdentify();
-    auto subIter = iter->second.find(queryId);
-    if (subIter == iter->second.end()) {
-        LOGE("[SubscribeManager] queryId=%s not in RemoteTotalMap", STR_MASK(queryId));
+    auto iter = remoteSubscribedTotalMap_.find(queryId);
+    if (iter == remoteSubscribedTotalMap_.end()) {
+        LOGD("[SubscribeManager] queryId=%s not in remoteSubscribedTotalMap", STR_MASK(queryId));
         return false;
     }
-    return true;
+    return iter->second.second == 1;
 }
 
 void SubscribeManager::GetRemoteSubscribeQueryIds(const std::string &device,

@@ -963,7 +963,7 @@ IKvDB* KvDBManager::FindKvDB(const std::string &identifier) const
 void KvDBManager::Dump(int fd)
 {
     std::lock_guard<std::mutex> lockGuard(kvDBLock_);
-    for (auto &entry : singleVerNaturalStores_) {
+    for (const auto &entry : singleVerNaturalStores_) {
         RefObject::IncObjRef(entry.second);
         entry.second->Dump(fd);
         RefObject::DecObjRef(entry.second);

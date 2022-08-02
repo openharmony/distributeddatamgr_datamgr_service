@@ -273,7 +273,7 @@ HWTEST_F(DistributedDBAutoLaunchUnitTest, AutoLaunch002, TestSize.Level3)
             std::string identifier = DBCommon::TransferHashString(userId + "-" + appId + "-" + storeId);
             std::unique_lock<std::mutex> lock(cvMutex);
             statusMap[identifier] = status;
-            LOGD("int AutoLaunch002 notifier statusMap.size():%d", statusMap.size());
+            LOGD("int AutoLaunch002 notifier statusMap.size():%zu", statusMap.size());
             if (statusMap.size() == 2) { // A and B
                 finished = true;
                 cv.notify_one();

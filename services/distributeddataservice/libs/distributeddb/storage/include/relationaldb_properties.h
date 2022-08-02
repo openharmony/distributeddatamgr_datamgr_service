@@ -37,6 +37,8 @@ public:
     // get schema
     RelationalSchemaObject GetSchema() const;
 
+    static const std::string DISTRIBUTED_TABLE_MODE;
+
 private:
     RelationalSchemaObject schema_;
 };

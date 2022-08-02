@@ -259,6 +259,20 @@ void SyncTaskContext::MoveToNextTarget()
     }
 }
 
+int SyncTaskContext::GetNextTarget(bool isNeedSetFinished)
+{
+    MoveToNextTarget();
+    int checkErrCode = RunPermissionCheck(GetPermissionCheckFlag(IsAutoSync(), GetMode()));
+    if (checkErrCode != E_OK) {
+        SetOperationStatus(SyncOperation::OP_PERMISSION_CHECK_FAILED);
+        if (isNeedSetFinished) {
+            SetTaskExecStatus(ISyncTaskContext::FINISHED);
+        }
+        return checkErrCode;
+    }
+    return E_OK;
+}
+
 uint32_t SyncTaskContext::GetSyncId() const
 {
     return syncId_;
@@ -506,7 +520,7 @@ void SyncTaskContext::CommErrHandlerFuncInner(int errCode, uint32_t sessionId)
 {
     {
         RefObject::AutoLock lock(this);
-        if (sessionId != requestSessionId_) {
+        if ((sessionId != requestSessionId_) || (requestSessionId_ == 0)) {
             return;
         }
 
@@ -515,11 +529,9 @@ void SyncTaskContext::CommErrHandlerFuncInner(int errCode, uint32_t sessionId)
             // it seems unnecessary to change isCommNormal_ value, so just return here
             return;
         }
-
-        isCommNormal_ = false;
     }
     LOGE("[SyncTaskContext][CommErr] errCode %d", errCode);
-    stateMachine_->CommErrAbort();
+    stateMachine_->CommErrAbort(sessionId);
 }
 
 int SyncTaskContext::TimeOut(TimerId id)
@@ -726,5 +738,39 @@ void SyncTaskContext::Dump(int fd)
     DBDumpHelper::Dump(fd, "\t\ttarget = %s, total sync task count = %zu, auto sync task count = %zu,"
         " response task count = %zu\n",
         deviceId_.c_str(), totalSyncTaskCount, autoSyncTaskCount, reponseTaskCount);
+}
+
+int SyncTaskContext::RunPermissionCheck(uint8_t flag) const
+{
+    std::string appId = syncInterface_->GetDbProperties().GetStringProp(KvDBProperties::APP_ID, "");
+    std::string userId = syncInterface_->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
+    std::string storeId = syncInterface_->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
+    int errCode = RuntimeContext::GetInstance()->RunPermissionCheck(userId, appId, storeId, deviceId_, flag);
+    if (errCode != E_OK) {
+        LOGE("[SyncTaskContext] RunPermissionCheck not pass errCode:%d, flag:%d, %s{private}",
+            errCode, flag, deviceId_.c_str());
+    }
+    return errCode;
+}
+
+uint8_t SyncTaskContext::GetPermissionCheckFlag(bool isAutoSync, int syncMode)
+{
+    uint8_t flag = 0;
+    int mode = SyncOperation::TransferSyncMode(syncMode);
+    if (mode == SyncModeType::PUSH || mode == SyncModeType::RESPONSE_PULL) {
+        flag = CHECK_FLAG_SEND;
+    } else if (mode == SyncModeType::PULL) {
+        flag = CHECK_FLAG_RECEIVE;
+    } else if (mode == SyncModeType::PUSH_AND_PULL) {
+        flag = CHECK_FLAG_SEND | CHECK_FLAG_RECEIVE;
+    }
+    if (isAutoSync) {
+        flag = flag | CHECK_FLAG_AUTOSYNC;
+    }
+    if (mode != SyncModeType::RESPONSE_PULL) {
+        // it means this sync is started by local
+        flag = flag | CHECK_FLAG_SPONSOR;
+    }
+    return flag;
 }
 } // namespace DistributedDB

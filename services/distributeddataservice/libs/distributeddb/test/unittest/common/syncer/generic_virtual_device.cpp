@@ -14,6 +14,7 @@
  */
 #include "generic_virtual_device.h"
 
+#include "kv_store_errno.h"
 #include "multi_ver_sync_task_context.h"
 #include "single_ver_kv_sync_task_context.h"
 #include "single_ver_relational_sync_task_context.h"
@@ -28,7 +29,8 @@ GenericVirtualDevice::GenericVirtualDevice(std::string deviceId)
       remoteDeviceId_("real_device"),
       context_(nullptr),
       onRemoteDataChanged_(nullptr),
-      subManager_(nullptr)
+      subManager_(nullptr),
+      executor_(nullptr)
 {
 }
 
@@ -65,6 +67,10 @@ GenericVirtualDevice::~GenericVirtualDevice()
     context_ = nullptr;
     metadata_ = nullptr;
     storage_ = nullptr;
+    if (executor_ != nullptr) {
+        RefObject::KillAndDecObjRef(executor_);
+        executor_ = nullptr;
+    }
 }
 
 int GenericVirtualDevice::Initialize(VirtualCommunicatorAggregator *comAggregator, ISyncInterface *syncInterface)
@@ -103,6 +109,12 @@ int GenericVirtualDevice::Initialize(VirtualCommunicatorAggregator *comAggregato
     context_->Initialize(remoteDeviceId_, storage_, metadata_, communicateHandle_);
     context_->SetRetryStatus(SyncTaskContext::NO_NEED_RETRY);
     context_->RegOnSyncTask(std::bind(&GenericVirtualDevice::StartResponseTask, this));
+
+    executor_ = new (std::nothrow) RemoteExecutor();
+    if (executor_ == nullptr) {
+        return -E_OUT_OF_MEMORY;
+    }
+    executor_->Initialize(syncInterface, communicateHandle_);
     return E_OK;
 }
 
@@ -130,7 +142,14 @@ int GenericVirtualDevice::MessageCallback(const std::string &deviceId, Message *
         return -E_INVALID_ARGS;
     }
 
-    LOGD("[GenericVirtualDevice] onMessage, src %s", deviceId.c_str());
+    LOGD("[GenericVirtualDevice] onMessage, src %s id %u", deviceId.c_str(), inMsg->GetMessageId());
+    if (inMsg->GetMessageId() == REMOTE_EXECUTE_MESSAGE && executor_ != nullptr) {
+        RefObject::IncObjRef(executor_);
+        executor_->ReceiveMessage(deviceId, inMsg);
+        RefObject::DecObjRef(executor_);
+        return E_OK;
+    }
+
     RefObject::IncObjRef(context_);
     RefObject::IncObjRef(communicateHandle_);
     SyncTaskContext *context = context_;
@@ -237,5 +256,19 @@ int GenericVirtualDevice::Sync(SyncMode mode, const Query &query,
     operation->WaitIfNeed();
     RefObject::KillAndDecObjRef(operation);
     return errCode;
+}
+
+int GenericVirtualDevice::RemoteQuery(const std::string &device, const RemoteCondition &condition,
+    uint64_t timeout, std::shared_ptr<ResultSet> &result)
+{
+    if (executor_ == nullptr) {
+        result = nullptr;
+        return TransferDBErrno(-E_BUSY);
+    }
+    int errCode = executor_->RemoteQuery(device, condition, timeout, 1u, result);
+    if (errCode != E_OK) {
+        result = nullptr;
+    }
+    return TransferDBErrno(errCode);
 }
 } // DistributedDB

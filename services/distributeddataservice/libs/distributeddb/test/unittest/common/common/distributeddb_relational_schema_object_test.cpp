@@ -57,7 +57,7 @@ namespace {
                     }
                 },
                 "AUTOINCREMENT": true,
-                "UNIQUE": ["field_name1", ["field_name2", "field_name3"]],
+                "UNIQUE": [["field_name1"], ["field_name2", "field_name3"]],
                 "PRIMARY_KEY": "field_name1",
                 "INDEX": {
                     "index_name1": ["field_name1", "field_name2"],
@@ -78,6 +78,57 @@ namespace {
                     }
                 },
                 "PRIMARY_KEY": "field_name1"
+            }]
+        })"";
+
+    const std::string NORMAL_SCHEMA_V2_1 = R""({
+            "SCHEMA_VERSION": "2.1",
+            "SCHEMA_TYPE": "RELATIVE",
+            "TABLE_MODE": "SPLIT_BY_DEVICE",
+            "TABLES": [{
+                "NAME": "FIRST",
+                "DEFINE": {
+                    "field_name1": {
+                        "COLUMN_ID":1,
+                        "TYPE": "STRING",
+                        "NOT_NULL": true,
+                        "DEFAULT": "abcd"
+                    },
+                    "field_name2": {
+                        "COLUMN_ID":2,
+                        "TYPE": "MYINT(21)",
+                        "NOT_NULL": false,
+                        "DEFAULT": "222"
+                    },
+                    "field_name3": {
+                        "COLUMN_ID":3,
+                        "TYPE": "INTGER",
+                        "NOT_NULL": false,
+                        "DEFAULT": "1"
+                    }
+                },
+                "AUTOINCREMENT": true,
+                "UNIQUE": [["field_name1"], ["field_name2", "field_name3"]],
+                "PRIMARY_KEY": ["field_name1", "field_name3"],
+                "INDEX": {
+                    "index_name1": ["field_name1", "field_name2"],
+                    "index_name2": ["field_name3"]
+                }
+            }, {
+                "NAME": "SECOND",
+                "DEFINE": {
+                    "key": {
+                        "COLUMN_ID":1,
+                        "TYPE": "BLOB",
+                        "NOT_NULL": true
+                    },
+                    "value": {
+                        "COLUMN_ID":2,
+                        "TYPE": "BLOB",
+                        "NOT_NULL": false
+                    }
+                },
+                "PRIMARY_KEY": ["field_name1"]
             }]
         })"";
 
@@ -113,12 +164,16 @@ namespace {
 
     const std::string SCHEMA_VERSION_STR_1 = R"("SCHEMA_VERSION": "1.0",)";
     const std::string SCHEMA_VERSION_STR_2 = R"("SCHEMA_VERSION": "2.0",)";
+    const std::string SCHEMA_VERSION_STR_2_1 = R"("SCHEMA_VERSION": "2.1",)";
     const std::string SCHEMA_VERSION_STR_INVALID = R"("SCHEMA_VERSION": "awd3",)";
     const std::string SCHEMA_TYPE_STR_NONE = R"("SCHEMA_TYPE": "NONE",)";
     const std::string SCHEMA_TYPE_STR_JSON = R"("SCHEMA_TYPE": "JSON",)";
     const std::string SCHEMA_TYPE_STR_FLATBUFFER = R"("SCHEMA_TYPE": "FLATBUFFER",)";
     const std::string SCHEMA_TYPE_STR_RELATIVE = R"("SCHEMA_TYPE": "RELATIVE",)";
     const std::string SCHEMA_TYPE_STR_INVALID = R"("SCHEMA_TYPE": "adewaaSAD",)";
+    const std::string SCHEMA_TABLE_MODE_COLLABORATION = R"("TABLE_MODE": "COLLABORATION",)";
+    const std::string SCHEMA_TABLE_MODE_SPLIT_BY_DEVICE = R"("TABLE_MODE": "SPLIT_BY_DEVICE",)";
+    const std::string SCHEMA_TABLE_MODE_INVALID = R"("TABLE_MODE": "SPLIT_BY_USER",)";
 
     const std::string SCHEMA_TABLE_STR = R""("TABLES": [{
             "NAME": "FIRST",
@@ -179,7 +234,8 @@ namespace {
                 "DEFAULT": "abcd"
             }},)"";
     const std::string TABLE_DEFINE_STR_KEY = R""("PRIMARY_KEY": "field_name1")"";
-    const std::string TABLE_DEFINE_STR_KEY_INVALID = R""("PRIMARY_KEY": false)"";
+    const std::string TABLE_DEFINE_BOOL_KEY_INVALID = R""("PRIMARY_KEY": false)"";
+    const std::string TABLE_DEFINE_BOOL_ARRAY_KEY_INVALID = R""("PRIMARY_KEY": [false, true, true])"";
 }
 
 class DistributedDBRelationalSchemaObjectTest : public testing::Test {
@@ -208,10 +264,19 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaParseTest001, 
     RelationalSchemaObject schemaObj;
     int errCode = schemaObj.ParseFromSchemaString(schemaStr);
     EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(schemaObj.GetTable("FIRST").GetUniqueDefine().size(), 2u);
 
     RelationalSchemaObject schemaObj2;
     schemaObj2.ParseFromSchemaString(schemaObj.ToSchemaString());
     EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(schemaObj2.GetTable("FIRST").GetUniqueDefine().size(), 2u);
+
+    RelationalSyncOpinion op = SchemaNegotiate::MakeLocalSyncOpinion(schemaObj, schemaObj2.ToSchemaString(),
+        static_cast<uint8_t>(SchemaType::RELATIVE));
+
+    EXPECT_EQ(op.size(), 2u);
+    EXPECT_EQ(op.at("FIRST").permitSync, true);
+    EXPECT_EQ(op.at("SECOND").permitSync, true);
 }
 
 /**
@@ -310,13 +375,73 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaParseTest003, 
     EXPECT_EQ(errCode, -E_SCHEMA_PARSE_FAIL);
 
     std::string invalidTableStr05 = "{" + TABLE_DEFINE_STR_NAME + TABLE_DEFINE_STR_FIELDS +
-        TABLE_DEFINE_STR_KEY_INVALID + "}";
+        TABLE_DEFINE_BOOL_KEY_INVALID + "}";
+    errCode = schemaObj.ParseFromSchemaString(GenerateFromTableStr("[" + invalidTableStr05 + "]"));
+    EXPECT_EQ(errCode, -E_SCHEMA_PARSE_FAIL);
+
+    std::string invalidTableStr06 = "{" + TABLE_DEFINE_STR_NAME + TABLE_DEFINE_STR_FIELDS +
+        TABLE_DEFINE_BOOL_ARRAY_KEY_INVALID + "}";
     errCode = schemaObj.ParseFromSchemaString(GenerateFromTableStr("[" + invalidTableStr05 + "]"));
     EXPECT_EQ(errCode, -E_SCHEMA_PARSE_FAIL);
 
     errCode = schemaObj.ParseFromSchemaString("");
     EXPECT_EQ(errCode, -E_INVALID_ARGS);
 }
+
+/**
+ * @tc.name: RelationalSchemaParseTest004
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaParseTest004, TestSize.Level1)
+{
+    RelationalSchemaObject schemaObj;
+    int errCode = E_OK;
+
+    std::string schema = "{" + SCHEMA_VERSION_STR_2_1 + SCHEMA_TABLE_MODE_COLLABORATION + SCHEMA_TYPE_STR_RELATIVE +
+        SCHEMA_TABLE_STR + "}";
+    errCode = schemaObj.ParseFromSchemaString(schema);
+    EXPECT_EQ(errCode, E_OK);
+}
+
+/**
+ * @tc.name: RelationalSchemaParseTest005
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaParseTest005, TestSize.Level1)
+{
+    RelationalSchemaObject schemaObj;
+    int errCode = E_OK;
+
+    std::string schema = "{" + SCHEMA_VERSION_STR_2_1 + SCHEMA_TABLE_MODE_SPLIT_BY_DEVICE + SCHEMA_TYPE_STR_RELATIVE +
+        SCHEMA_TABLE_STR + "}";
+    errCode = schemaObj.ParseFromSchemaString(schema);
+    EXPECT_EQ(errCode, E_OK);
+}
+
+/**
+ * @tc.name: RelationalSchemaParseTest006
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaParseTest006, TestSize.Level1)
+{
+    RelationalSchemaObject schemaObj;
+    int errCode = E_OK;
+
+    std::string schema = "{" + SCHEMA_VERSION_STR_2_1 + SCHEMA_TABLE_MODE_INVALID + SCHEMA_TYPE_STR_RELATIVE +
+        SCHEMA_TABLE_STR + "}";
+    errCode = schemaObj.ParseFromSchemaString(schema);
+    EXPECT_EQ(errCode, -E_SCHEMA_PARSE_FAIL);
+}
+
 
 /**
  * @tc.name: RelationalSchemaCompareTest001
@@ -336,6 +461,81 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaCompareTest001
     EXPECT_EQ(opinion.at("FIRST").permitSync, true);
     EXPECT_EQ(opinion.at("FIRST").checkOnReceive, false);
     EXPECT_EQ(opinion.at("FIRST").requirePeerConvert, false);
+}
+
+/**
+ * @tc.name: RelationalSchemaCompareTest002
+ * @tc.desc: Test relational schema v2.1 negotiate with same schema string
+ * @tc.type: FUNC
+ * @tc.require: AR000H2PKN
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaCompareTest002, TestSize.Level1)
+{
+    RelationalSchemaObject schemaObj;
+    int errCode = schemaObj.ParseFromSchemaString(NORMAL_SCHEMA_V2_1);
+    EXPECT_EQ(errCode, E_OK);
+
+    RelationalSyncOpinion opinion = SchemaNegotiate::MakeLocalSyncOpinion(schemaObj, NORMAL_SCHEMA_V2_1,
+        static_cast<uint8_t>(SchemaType::RELATIVE));
+    EXPECT_EQ(opinion.at("FIRST").permitSync, true);
+    EXPECT_EQ(opinion.at("FIRST").checkOnReceive, false);
+    EXPECT_EQ(opinion.at("FIRST").requirePeerConvert, false);
+}
+
+/**
+ * @tc.name: RelationalSchemaCompareTest003
+ * @tc.desc: Test relational schema v2.1 negotiate with schema v2.0
+ * @tc.type: FUNC
+ * @tc.require: AR000H2PKN
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaCompareTest003, TestSize.Level1)
+{
+    RelationalSchemaObject schemaObj;
+    int errCode = schemaObj.ParseFromSchemaString(NORMAL_SCHEMA_V2_1);
+    EXPECT_EQ(errCode, E_OK);
+
+    RelationalSyncOpinion opinion = SchemaNegotiate::MakeLocalSyncOpinion(schemaObj, NORMAL_SCHEMA,
+        static_cast<uint8_t>(SchemaType::RELATIVE));
+    EXPECT_TRUE(opinion.empty());
+}
+
+/**
+ * @tc.name: RelationalSchemaCompareTest004
+ * @tc.desc: Test relational schema v2.0 negotiate with schema v2.1
+ * @tc.type: FUNC
+ * @tc.require: AR000H2PKN
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaCompareTest004, TestSize.Level1)
+{
+    RelationalSchemaObject schemaObj;
+    int errCode = schemaObj.ParseFromSchemaString(NORMAL_SCHEMA);
+    EXPECT_EQ(errCode, E_OK);
+
+    RelationalSyncOpinion opinion = SchemaNegotiate::MakeLocalSyncOpinion(schemaObj, NORMAL_SCHEMA_V2_1,
+        static_cast<uint8_t>(SchemaType::RELATIVE));
+    EXPECT_TRUE(opinion.empty());
+}
+
+/**
+ * @tc.name: RelationalSchemaCompareTest005
+ * @tc.desc: Test collaboration relational schema negotiate with other table mode
+ * @tc.type: FUNC
+ * @tc.require: AR000H2PKN
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalSchemaCompareTest005, TestSize.Level1)
+{
+    RelationalSchemaObject schemaObj;
+    int errCode = schemaObj.ParseFromSchemaString(NORMAL_SCHEMA_V2_1);
+    EXPECT_EQ(errCode, E_OK);
+    schemaObj.SetTableMode(DistributedTableMode::COLLABORATION);
+
+    RelationalSyncOpinion opinion = SchemaNegotiate::MakeLocalSyncOpinion(schemaObj, NORMAL_SCHEMA_V2_1,
+        static_cast<uint8_t>(SchemaType::RELATIVE));
+    EXPECT_TRUE(opinion.empty());
 }
 
 /**
@@ -367,6 +567,16 @@ HWTEST_F(DistributedDBRelationalSchemaObjectTest, RelationalTableCompareTest001,
     TableInfo table5 = schemaObj.GetTable("FIRST");
     table5.AddField(table3.GetFields().at("key"));
     EXPECT_EQ(table1.CompareWithTable(table5), -E_RELATIONAL_TABLE_INCOMPATIBLE);
+
+    TableInfo table6 = schemaObj.GetTable("FIRST");
+    table6.SetUniqueDefine({{"field_name1", "field_name1"}});
+    EXPECT_EQ(table1.CompareWithTable(table6, SchemaConstant::SCHEMA_SUPPORT_VERSION_V2_1),
+        -E_RELATIONAL_TABLE_INCOMPATIBLE);
+
+    TableInfo table7 = schemaObj.GetTable("FIRST");
+    table7.SetAutoIncrement(false);
+    EXPECT_EQ(table1.CompareWithTable(table7, SchemaConstant::SCHEMA_SUPPORT_VERSION_V2_1),
+        -E_RELATIONAL_TABLE_INCOMPATIBLE);
 }
 
 /**

@@ -310,7 +310,7 @@ void MultiVerSyncStateMachine::SendSaveDataNotifyPacket(uint32_t sessionId, uint
     (void)inMsgId;
 }
 
-void MultiVerSyncStateMachine::CommErrAbort()
+void MultiVerSyncStateMachine::CommErrAbort(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(stateMachineLock_);
     Abort();

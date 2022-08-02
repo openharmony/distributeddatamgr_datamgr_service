@@ -125,6 +125,8 @@ public:
     void PutDeviceData(const std::string &deviceName, const Key &key, const Value &value);
 
     void GetDeviceData(const std::string &deviceName, const Key &key, Value &value);
+
+    void SetIdentifier(std::vector<uint8_t> &identifier);
 private:
     int GetSyncData(Timestamp begin, Timestamp end, uint32_t blockSize, std::vector<VirtualDataItem>& dataItems,
         ContinueToken& continueStmtToken) const;
@@ -145,6 +147,7 @@ private:
 
     std::mutex deviceDataLock_;
     std::map<std::string, std::map<Key, Value>> deviceData_;
+    std::vector<uint8_t> identifier_;
 };
 }  // namespace DistributedDB
 

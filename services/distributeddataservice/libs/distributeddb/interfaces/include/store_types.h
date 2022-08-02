@@ -62,6 +62,9 @@ enum DBStatus {
     MODE_MISMATCH,
     NOT_ACTIVE,
     USER_CHANGED,
+    NONEXISTENT,  // for row record, pass invalid column name or invalid column index.
+    TYPE_MISMATCH,  // for row record, get value with mismatch func.
+    REMOTE_OVER_SIZE, // for remote query, the data is too many, only get part or data.
 };
 
 struct KvStoreConfig {
@@ -120,5 +123,10 @@ using KvStoreCorruptionHandler = std::function<void (const std::string &appId, c
 using StoreCorruptionHandler = std::function<void (const std::string &appId, const std::string &userId,
     const std::string &storeId)>;
 using SyncStatusCallback = std::function<void(const std::map<std::string, std::vector<TableStatus>> &devicesMap)>;
+
+struct RemoteCondition {
+    std::string sql;  // The sql statement;
+    std::vector<std::string> bindArgs;  // The bind args.
+};
 } // namespace DistributedDB
 #endif // KV_STORE_TYPE_H

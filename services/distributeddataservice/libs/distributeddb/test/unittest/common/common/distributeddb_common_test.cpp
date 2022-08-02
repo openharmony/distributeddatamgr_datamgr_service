@@ -156,13 +156,13 @@ HWTEST_F(DistributedDBCommonTest, SameProcessReUnLockFile, TestSize.Level1)
 }
 
 /**
- * @tc.name: CalFileSizeTest
+ * @tc.name: CalcFileSizeTest
  * @tc.desc: Test the file size for function test and the performance test.
  * @tc.type: FUNC
  * @tc.require: AR000FN6G9
  * @tc.author: wangbingquan
  */
-HWTEST_F(DistributedDBCommonTest, CalFileSizeTest, TestSize.Level1)
+HWTEST_F(DistributedDBCommonTest, CalcFileSizeTest, TestSize.Level1)
 {
     std::string filePath = g_testDir + "/testFileSize";
     std::ofstream ofs(filePath, std::ofstream::out);
@@ -523,4 +523,3 @@ HWTEST_F(DistributedDBCommonTest, DiffProcessGetAndDeleteDB, TestSize.Level1)
 }
 #endif
 #endif
-

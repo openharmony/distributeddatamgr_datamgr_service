@@ -47,5 +47,4 @@ extern const struct sqlite3_api_routines_relational *sqlite3_export_relational_s
 #undef sqlite3_open_v2
 #endif
 #define sqlite3_open_v2         sqlite3_export_relational_symbols->open_v2
-
 #endif // RELATIONAL_STORE_EXT_H

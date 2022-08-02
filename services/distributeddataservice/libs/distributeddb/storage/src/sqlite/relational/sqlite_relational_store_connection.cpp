@@ -148,7 +148,7 @@ int SQLiteRelationalStoreConnection::CreateDistributedTable(const std::string &t
 
     int errCode = store->CreateDistributedTable(tableName);
     if (errCode != E_OK) {
-        LOGE("[RelationalConnection] crete distributed table failed. %d", errCode);
+        LOGE("[RelationalConnection] create distributed table failed. %d", errCode);
     }
     return errCode;
 }
@@ -227,6 +227,17 @@ int SQLiteRelationalStoreConnection::RegisterLifeCycleCallback(const DatabaseLif
 void SQLiteRelationalStoreConnection::RegisterObserverAction(const RelationalObserverAction &action)
 {
     static_cast<SQLiteRelationalStore *>(store_)->RegisterObserverAction(action);
+}
+
+int SQLiteRelationalStoreConnection::RemoteQuery(const std::string &device, const RemoteCondition &condition,
+    uint64_t timeout, std::shared_ptr<ResultSet> &result)
+{
+    auto *store = GetDB<SQLiteRelationalStore>();
+    if (store == nullptr) {
+        LOGE("[RelationalConnection] store is null, get executor failed!");
+        return -E_INVALID_CONNECTION;
+    }
+    return store->RemoteQuery(device, condition, timeout, GetConnectionId(), result);
 }
 }
 #endif

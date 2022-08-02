@@ -193,36 +193,36 @@ int SerializeBlobValue(const DataValue &dataValue, Parcel &parcel)
     Blob val;
     (void)dataValue.GetBlob(val);
     uint32_t size = val.GetSize();
-    if (size == 0) {
-        return SerializeNullValue(dataValue, parcel);
-    }
     int errCode = parcel.WriteUInt32(size);
     if (errCode != E_OK) {
         return errCode;
     }
-    return parcel.WriteBlob(reinterpret_cast<const char *>(val.GetData()), size);
+    if (size != 0u) {
+        errCode = parcel.WriteBlob(reinterpret_cast<const char *>(val.GetData()), size);
+    }
+    return errCode;
 }
 
 int DeSerializeBlobByType(DataValue &dataValue, Parcel &parcel, StorageType type)
 {
     uint32_t blobLength = 0;
     (void)parcel.ReadUInt32(blobLength);
-    if (blobLength == 0) {
-        dataValue.ResetValue();
-        return E_OK;
-    }
     if (blobLength >= DBConstant::MAX_VALUE_SIZE || parcel.IsError()) { // One blob cannot be over one value size.
         return -E_PARSE_FAIL;
     }
-    auto array = new (std::nothrow) char[blobLength]();
-    if (array == nullptr) {
-        return -E_OUT_OF_MEMORY;
+    char *array = nullptr;
+    if (blobLength != 0u) {
+        array = new (std::nothrow) char[blobLength]();
+        if (array == nullptr) {
+            return -E_OUT_OF_MEMORY;
+        }
+        (void)parcel.ReadBlob(array, blobLength);
+        if (parcel.IsError()) {
+            delete []array;
+            return -E_PARSE_FAIL;
+        }
     }
-    (void)parcel.ReadBlob(array, blobLength);
-    if (parcel.IsError()) {
-        delete []array;
-        return -E_PARSE_FAIL;
-    }
+
     int errCode = -E_NOT_SUPPORT;
     if (type == StorageType::STORAGE_TYPE_TEXT) {
         errCode = dataValue.SetText(reinterpret_cast<const uint8_t *>(array), blobLength);
@@ -251,8 +251,9 @@ int DeSerializeTextValue(DataValue &dataValue, Parcel &parcel)
 {
     return DeSerializeBlobByType(dataValue, parcel, StorageType::STORAGE_TYPE_TEXT);
 }
+}
 
-int SerializeDataValue(const DataValue &dataValue, Parcel &parcel)
+int DataTransformer::SerializeDataValue(const DataValue &dataValue, Parcel &parcel)
 {
     static const std::function<int(const DataValue&, Parcel&)> funcs[] = {
         SerializeNullValue, SerializeIntValue,
@@ -267,7 +268,7 @@ int SerializeDataValue(const DataValue &dataValue, Parcel &parcel)
     return funcs[static_cast<uint32_t>(type) - 1](dataValue, parcel);
 }
 
-int DeserializeDataValue(DataValue &dataValue, Parcel &parcel)
+int DataTransformer::DeserializeDataValue(DataValue &dataValue, Parcel &parcel)
 {
     static const std::function<int(DataValue&, Parcel&)> funcs[] = {
         DeSerializeNullValue, DeSerializeIntValue,
@@ -281,7 +282,6 @@ int DeserializeDataValue(DataValue &dataValue, Parcel &parcel)
         return -E_PARSE_FAIL;
     }
     return funcs[type - 1](dataValue, parcel);
-}
 }
 
 int DataTransformer::SerializeValue(Value &value, const RowData &rowData, const std::vector<FieldInfo> &fieldInfoList)

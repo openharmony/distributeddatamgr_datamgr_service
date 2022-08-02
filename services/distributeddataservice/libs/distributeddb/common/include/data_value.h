@@ -20,17 +20,9 @@
 #include <macro_utils.h>
 #include <map>
 #include <string>
+#include <vector>
+#include "db_types.h"
 namespace DistributedDB {
-// field types stored in sqlite
-enum class StorageType {
-    STORAGE_TYPE_NONE = 0,
-    STORAGE_TYPE_NULL,
-    STORAGE_TYPE_INTEGER,
-    STORAGE_TYPE_REAL,
-    STORAGE_TYPE_TEXT,
-    STORAGE_TYPE_BLOB
-};
-
 class Blob {
 public:
     Blob();
@@ -45,6 +37,7 @@ public:
     uint32_t GetSize() const;
 
     int WriteBlob(const uint8_t *ptrArray, const uint32_t &size);
+    std::vector<uint8_t> ToVector() const;
 
 private:
     uint8_t* ptr_;

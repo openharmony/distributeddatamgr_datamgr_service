@@ -169,4 +169,64 @@ void KvStoreResultSetImpl::GetResultSet(IKvDBResultSet *&resultSet) const
 {
     resultSet = resultSet_;
 }
+
+bool KvStoreResultSetImpl::IsClosed() const
+{
+    return false;
+}
+
+void KvStoreResultSetImpl::Close()
+{
+    return;
+}
+
+void KvStoreResultSetImpl::GetColumnNames(std::vector<std::string> &columnNames) const
+{
+    return;
+}
+
+DBStatus KvStoreResultSetImpl::GetColumnType(int columnIndex, ColumnType &columnType) const
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus KvStoreResultSetImpl::GetColumnIndex(const std::string &columnName, int &columnIndex) const
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus KvStoreResultSetImpl::GetColumnName(int columnIndex, std::string &columnName) const
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus KvStoreResultSetImpl::Get(int columnIndex, std::vector<uint8_t> &value) const
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus KvStoreResultSetImpl::Get(int columnIndex, std::string &value) const
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus KvStoreResultSetImpl::Get(int columnIndex, int64_t &value) const
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus KvStoreResultSetImpl::Get(int columnIndex, double &value) const
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus KvStoreResultSetImpl::IsColumnNull(int columnIndex, bool &isNull) const
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus KvStoreResultSetImpl::GetRow(std::map<std::string, VariantData> &data) const
+{
+    return NOT_SUPPORT;
+}
 } // namespace DistributedDB

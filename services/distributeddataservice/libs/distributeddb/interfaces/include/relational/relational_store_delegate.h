@@ -17,7 +17,8 @@
 #define RELATIONAL_STORE_DELEGATE_H
 
 #include <map>
-
+#include <memory>
+#include "distributeddb/result_set.h"
 #include "query.h"
 #include "store_types.h"
 #include "store_observer.h"
@@ -29,7 +30,8 @@ public:
 
     struct Option {
         StoreObserver *observer = nullptr;
-        // split mode
+        // communicator label use dualTuple hash or not;
+        bool syncDualTupleMode = false;
     };
 
     DB_API virtual DBStatus CreateDistributedTable(const std::string &tableName) = 0;
@@ -40,6 +42,10 @@ public:
     DB_API virtual DBStatus RemoveDeviceData(const std::string &device) = 0;
 
     DB_API virtual DBStatus RemoveDeviceData(const std::string &device, const std::string &tableName) = 0;
+
+    // timeout is in ms.
+    DB_API virtual DBStatus RemoteQuery(const std::string &device, const RemoteCondition &condition,
+        uint64_t timeout, std::shared_ptr<ResultSet> &result) = 0;
 };
 } // namespace DistributedDB
 #endif // RELATIONAL_STORE_DELEGATE_H

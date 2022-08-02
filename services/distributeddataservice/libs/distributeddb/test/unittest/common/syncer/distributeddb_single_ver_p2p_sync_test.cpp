@@ -37,6 +37,7 @@ namespace {
     const int WAIT_5_SECONDS = 5000;
     const int WAIT_30_SECONDS = 30000;
     const int WAIT_36_SECONDS = 36000;
+    const std::string DEVICE_A = "real_device";
     const std::string DEVICE_B = "deviceB";
     const std::string DEVICE_C = "deviceC";
 
@@ -709,6 +710,29 @@ HWTEST_F(DistributedDBSingleVerP2PSyncTest, NormalSync009, TestSize.Level2)
     VirtualDataItem item2;
     g_deviceC->GetData(key2, item2);
     EXPECT_TRUE(item2.value == value2);
+}
+
+/**
+ * @tc.name: Normal Sync 010
+ * @tc.desc: Test sync failed by invalid devices.
+ * @tc.type: FUNC
+ * @tc.require: AR000CCPOM
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBSingleVerP2PSyncTest, NormalSync010, TestSize.Level1)
+{
+    DBStatus status = OK;
+    std::vector<std::string> devices;
+    devices.push_back(DEVICE_A);
+    devices.push_back(g_deviceB->GetDeviceId());
+
+    std::map<std::string, DBStatus> result;
+    status = g_tool.SyncTest(g_kvDelegatePtr, devices, SYNC_MODE_PUSH_ONLY, result);
+    ASSERT_TRUE(status == OK);
+
+    ASSERT_EQ(result.size(), devices.size());
+    EXPECT_EQ(result[DEVICE_A], INVALID_ARGS);
+    EXPECT_EQ(result[DEVICE_B], OK);
 }
 
 /**
@@ -2097,6 +2121,74 @@ HWTEST_F(DistributedDBSingleVerP2PSyncTest, PermissionCheck008, TestSize.Level3)
 }
 
 /**
+  * @tc.name: PermissionCheck009
+  * @tc.desc: different runpermissioncheck call return different value
+  * @tc.type: FUNC
+  * @tc.require: AR000D4876
+  * @tc.author: zhuwentao
+  */
+HWTEST_F(DistributedDBSingleVerP2PSyncTest, PermissionCheck009, TestSize.Level3)
+{
+    /**
+     * @tc.steps: step1. SetPermissionCheckCallback
+     * @tc.expected: step1. return OK.
+     */
+    int count = 1;
+    auto permissionCheckCallback = [&count] (const std::string &userId, const std::string &appId,
+        const std::string &storeId, const std::string &deviceId, uint8_t flag) -> bool {
+            if (flag & CHECK_FLAG_SEND) {
+                bool result = count % 2;
+                LOGD("in RunPermissionCheck callback, check result:%d, flag:%d", result, flag);
+                count++;
+                return result;
+            } else {
+                LOGD("in RunPermissionCheck callback, check pass, flag:%d", flag);
+                return true;
+            }
+        };
+    EXPECT_EQ(g_mgr.SetPermissionCheckCallback(permissionCheckCallback), OK);
+    std::vector<std::string> devices = {g_deviceB->GetDeviceId()};
+    /**
+     * @tc.steps: step2. deviceA call sync three times and not wait
+     * @tc.expected: step2. sync should return OK.
+     */
+    std::map<std::string, DBStatus> result;
+    ASSERT_TRUE(g_kvDelegatePtr->Sync(devices, SYNC_MODE_PUSH_ONLY,
+        [&result](const std::map<std::string, DBStatus>& statusMap) {
+            result = statusMap;
+        }, false) == OK);
+    std::map<std::string, DBStatus> result2;
+    ASSERT_TRUE(g_kvDelegatePtr->Sync(devices, SYNC_MODE_PUSH_ONLY,
+        [&result2](const std::map<std::string, DBStatus>& statusMap) {
+            result2 = statusMap;
+        }, false) == OK);
+    std::map<std::string, DBStatus> result3;
+    ASSERT_TRUE(g_kvDelegatePtr->Sync(devices, SYNC_MODE_PUSH_ONLY,
+        [&result3](const std::map<std::string, DBStatus>& statusMap) {
+            result3 = statusMap;
+        }, false) == OK);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
+    /**
+     * @tc.expected: step3. onComplete should be called,
+     * status is : OK, PERMISSION_CHECK_FORBID_SYNC, OK
+     */
+    ASSERT_TRUE(result.size() == devices.size());
+    for (const auto &pair : result) {
+        EXPECT_TRUE(pair.second == OK);
+    }
+    ASSERT_TRUE(result2.size() == devices.size());
+    for (const auto &pair : result2) {
+        EXPECT_TRUE(pair.second == PERMISSION_CHECK_FORBID_SYNC);
+    }
+    ASSERT_TRUE(result3.size() == devices.size());
+    for (const auto &pair : result3) {
+        EXPECT_TRUE(pair.second == OK);
+    }
+    PermissionCheckCallbackV2 nullCallback;
+    EXPECT_EQ(g_mgr.SetPermissionCheckCallback(nullCallback), OK);
+}
+
+/**
   * @tc.name: SaveDataNotify001
   * @tc.desc: Test SaveDataNotify function, delay < 30s should sync ok, > 36 should timeout
   * @tc.type: FUNC
@@ -2221,6 +2313,75 @@ HWTEST_F(DistributedDBSingleVerP2PSyncTest, SametimeSync001, TestSize.Level3)
     Value actualValue;
     g_kvDelegatePtr->Get(key, actualValue);
     EXPECT_EQ(actualValue, value);
+}
+
+/**
+  * @tc.name: SametimeSync002
+  * @tc.desc: Test 2 device sync with each other with water error
+  * @tc.type: FUNC
+  * @tc.require: AR000CCPOM
+  * @tc.author: zhangqiquan
+  */
+HWTEST_F(DistributedDBSingleVerP2PSyncTest, SametimeSync002, TestSize.Level3)
+{
+    DBStatus status = OK;
+    std::vector<std::string> devices;
+    devices.push_back(g_deviceB->GetDeviceId());
+    g_kvDelegatePtr->Put({'k', '1'}, {'v', '1'});
+    /**
+     * @tc.steps: step1. make sure deviceA push data failed and increase water mark
+     * @tc.expected: step1. deviceA push failed with timeout
+     */
+    g_communicatorAggregator->RegOnDispatch([](const std::string &target, DistributedDB::Message *msg) {
+        ASSERT_NE(msg, nullptr);
+        if (target == DEVICE_B && msg->GetMessageId() == QUERY_SYNC_MESSAGE) {
+            msg->SetMessageId(INVALID_MESSAGE_ID);
+        }
+    });
+    std::map<std::string, DBStatus> result;
+    auto callback = [&result](std::map<std::string, DBStatus> map) {
+        result = map;
+    };
+    Query query = Query::Select().PrefixKey({'k', '1'});
+    EXPECT_EQ(g_kvDelegatePtr->Sync(devices, DistributedDB::SYNC_MODE_PUSH_ONLY, callback, query, true), OK);
+    ASSERT_TRUE(result.size() == devices.size());
+    EXPECT_TRUE(result[DEVICE_B] == TIME_OUT);
+    /**
+     * @tc.steps: step2. A push to B with query2, sleep 1s for waiting step3
+     * @tc.expected: step2. sync should return OK.
+     */
+    g_communicatorAggregator->RegOnDispatch([](const std::string &target, DistributedDB::Message *msg) {
+        ASSERT_NE(msg, nullptr);
+        if (target == DEVICE_B && msg->GetMessageId() == QUERY_SYNC_MESSAGE) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+    });
+    std::thread subThread([&devices] {
+        std::map<std::string, DBStatus> result;
+        auto callback = [&result](std::map<std::string, DBStatus> map) {
+            result = map;
+        };
+        Query query = Query::Select().PrefixKey({'k', '2'});
+        LOGD("Begin PUSH");
+        EXPECT_EQ(g_kvDelegatePtr->Sync(devices, DistributedDB::SYNC_MODE_PUSH_ONLY, callback, query, true), OK);
+        ASSERT_TRUE(result.size() == devices.size());
+        EXPECT_TRUE(result[DEVICE_A] == OK);
+    });
+    /**
+     * @tc.steps: step3. B pull to A when A is in push task
+     * @tc.expected: step3. sync should return OP_FINISHED_ALL.
+     */
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::map<std::string, int> virtualResult;
+    g_deviceB->Sync(DistributedDB::SYNC_MODE_PULL_ONLY, query,
+        [&virtualResult](std::map<std::string, int> map) {
+            virtualResult = map;
+        }, true);
+    EXPECT_TRUE(status == OK);
+    ASSERT_EQ(virtualResult.size(), devices.size());
+    EXPECT_EQ(virtualResult[DEVICE_A], SyncOperation::OP_FINISHED_ALL);
+    g_communicatorAggregator->RegOnDispatch(nullptr);
+    subThread.join();
 }
 
 /**

@@ -16,8 +16,12 @@
 #define RELATIONAL_DB_SYNC_INTERFACE_H
 #ifdef RELATIONAL_STORE
 
+#include "prepared_stmt.h"
 #include "query_sync_object.h"
+#include "relationaldb_properties.h"
+#include "relational_row_data_set.h"
 #include "relational_schema_object.h"
+#include "relationaldb_properties.h"
 #include "single_ver_kv_entry.h"
 #include "sync_generic_interface.h"
 #include "schema_negotiate.h"
@@ -44,6 +48,13 @@ public:
 
     using ISyncInterface::GetMaxTimestamp;
     virtual int GetMaxTimestamp(const std::string &tableName, Timestamp &timestamp) const = 0;
+
+    // return OK, when query finished. token will be set NULL; when query unfinished. token must not be null.
+    // return other errCode, some wrong, token will be set NULL.
+    virtual int ExecuteQuery(const PreparedStmt &prepStmt, size_t packetSize, RelationalRowDataSet &data,
+        ContinueToken &token) const = 0;
+
+    virtual const RelationalDBProperties &GetRelationalDbProperties() const = 0;
 };
 }
 #endif // RELATIONAL_STORE

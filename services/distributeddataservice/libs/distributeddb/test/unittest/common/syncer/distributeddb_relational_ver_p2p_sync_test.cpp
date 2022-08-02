@@ -33,6 +33,7 @@ using namespace DistributedDB;
 using namespace DistributedDBUnitTest;
 
 namespace {
+    const std::string DEVICE_A = "real_device";
     const std::string DEVICE_B = "deviceB";
     const std::string DEVICE_C = "deviceC";
     const std::string g_tableName = "TEST_TABLE";
@@ -551,6 +552,41 @@ namespace {
         EXPECT_EQ(property.storeId, STORE_ID_1);
         EXPECT_EQ(property.userId, USER_ID);
     }
+
+    void CheckSearchData(std::shared_ptr<ResultSet> result, std::map<std::string, DataValue> &dataMap)
+    {
+        ASSERT_NE(result, nullptr);
+        EXPECT_EQ(result->GetCount(), 1);
+        ASSERT_TRUE(result->MoveToFirst());
+        std::vector<string> columnNames;
+        result->GetColumnNames(columnNames);
+        ASSERT_EQ(columnNames.size(), dataMap.size());
+        int index = 0;
+        for (auto &column : columnNames) {
+            ASSERT_TRUE(dataMap.find(column) != dataMap.end());
+            LOGD("now check %s", column.c_str());
+            if (dataMap[column].GetType() == StorageType::STORAGE_TYPE_INTEGER) {
+                int64_t expectVal = 0;
+                dataMap[column].GetInt64(expectVal);
+                int64_t actualVal = 0;
+                ASSERT_EQ(result->Get(index, actualVal), OK);
+                EXPECT_EQ(expectVal, actualVal);
+            } else if (dataMap[column].GetType() == StorageType::STORAGE_TYPE_TEXT) {
+                std::string expectVal = "";
+                dataMap[column].GetText(expectVal);
+                std::string actualVal = "";
+                ASSERT_EQ(result->Get(index, actualVal), OK);
+                EXPECT_EQ(expectVal, actualVal);
+            } else if (dataMap[column].GetType() == StorageType::STORAGE_TYPE_REAL) {
+                double expectVal = 0;
+                dataMap[column].GetDouble(expectVal);
+                double actualVal = 0;
+                ASSERT_EQ(result->Get(index, actualVal), OK);
+                EXPECT_EQ(expectVal, actualVal);
+            }
+            index++;
+        }
+    }
 }
 
 class DistributedDBRelationalVerP2PSyncTest : public testing::Test {
@@ -644,6 +680,9 @@ void DistributedDBRelationalVerP2PSyncTest::TearDown(void)
     PermissionCheckCallbackV2 nullCallback;
     EXPECT_EQ(RuntimeConfig::SetPermissionCheckCallback(nullCallback), OK);
     EXPECT_EQ(DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir), OK);
+    if (g_communicatorAggregator != nullptr) {
+        g_communicatorAggregator->RegOnDispatch(nullptr);
+    }
     LOGD("TearDown FINISH");
 }
 
@@ -829,7 +868,12 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync001, TestSize.Leve
     /**
      * @tc.steps: step2. set auto launch callBack
      */
-    const AutoLaunchRequestCallback callback = [](const std::string &identifier, AutoLaunchParam &param) {
+    int currentStatus = 0;
+    const AutoLaunchNotifier notifier = [&currentStatus](const std::string &userId,
+        const std::string &appId, const std::string &storeId, AutoLaunchStatus status) {
+        currentStatus = static_cast<int>(status);
+    };
+    const AutoLaunchRequestCallback callback = [&notifier](const std::string &identifier, AutoLaunchParam &param) {
         if (g_id != identifier) {
             return false;
         }
@@ -837,6 +881,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync001, TestSize.Leve
         param.appId   = APP_ID;
         param.userId  = USER_ID;
         param.storeId = STORE_ID_1;
+        param.notifier = notifier;
         return true;
     };
     g_mgr.SetAutoLaunchRequestCallback(callback);
@@ -851,18 +896,21 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync001, TestSize.Leve
     LabelType labelType(g_id.begin(), g_id.end());
     g_communicatorAggregator->RunCommunicatorLackCallback(labelType);
     std::this_thread::sleep_for(std::chrono::seconds(1));
+    EXPECT_EQ(currentStatus, 0);
     /**
      * @tc.steps: step5. Call sync expect sync successful
      */
     Query query = Query::Select(g_tableName);
     EXPECT_EQ(g_deviceB->GenericVirtualDevice::Sync(SYNC_MODE_PUSH_ONLY, query, true), E_OK);
+    EXPECT_EQ(currentStatus, AutoLaunchStatus::WRITE_OPENED);
     /**
      * @tc.steps: step6. check sync data ensure sync successful
      */
     CheckData(dataMap);
 
     OpenStore();
-    std::this_thread::sleep_for(std::chrono::minutes(1));
+    std::this_thread::sleep_for(std::chrono::seconds(61)); // sleep 61s
+    EXPECT_EQ(currentStatus, AutoLaunchStatus::WRITE_CLOSED);
 }
 
 /**
@@ -1237,6 +1285,264 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, observer002, TestSize.Level3)
     CheckIdentify(observer);
     std::this_thread::sleep_for(std::chrono::minutes(1));
     delete observer;
+}
+
+/**
+* @tc.name: remote query 001
+* @tc.desc: Test rdb remote query
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery001, TestSize.Level1)
+{
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap, {g_deviceB});
+    ASSERT_NE(g_rdbDelegatePtr, nullptr);
+    RemoteCondition condition;
+    condition.sql = "SELECT * FROM " + g_tableName;
+    std::shared_ptr<ResultSet> result = nullptr;
+    EXPECT_EQ(g_rdbDelegatePtr->RemoteQuery(DEVICE_B, condition, DBConstant::MIN_TIMEOUT, result), OK);
+
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+* @tc.name: remote query 002
+* @tc.desc: Test rdb remote query
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery002, TestSize.Level1)
+{
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap, {g_deviceB});
+    ASSERT_NE(g_deviceB, nullptr);
+    ASSERT_NE(g_rdbDelegatePtr, nullptr);
+    RemoteCondition condition;
+    condition.sql = "SELECT * FROM " + g_tableName;
+    std::shared_ptr<ResultSet> result = nullptr;
+    EXPECT_EQ(g_deviceB->RemoteQuery(DEVICE_A, condition, DBConstant::MIN_TIMEOUT, result), OK);
+    CheckSearchData(result, dataMap);
+}
+
+/**
+* @tc.name: remote query 003
+* @tc.desc: Test rdb remote query but query not data
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery003, TestSize.Level1)
+{
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap, {g_deviceB});
+    ASSERT_NE(g_deviceB, nullptr);
+    ASSERT_NE(g_rdbDelegatePtr, nullptr);
+    RemoteCondition condition;
+    condition.sql = "SELECT * FROM " + g_tableName + " WHERE 1=0";
+    std::shared_ptr<ResultSet> result = nullptr;
+    EXPECT_EQ(g_deviceB->RemoteQuery(DEVICE_A, condition, DBConstant::MIN_TIMEOUT, result), OK);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->GetCount(), 0);
+}
+
+/**
+* @tc.name: remote query 004
+* @tc.desc: Test rdb queue size
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery004, TestSize.Level3)
+{
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap, {g_deviceB});
+    ASSERT_NE(g_rdbDelegatePtr, nullptr);
+    RemoteCondition condition;
+    condition.sql = "SELECT * FROM " + g_tableName;
+    std::vector<std::string> deviceMap = {DEVICE_B, DEVICE_C};
+    g_communicatorAggregator->RegOnDispatch([](const std::string &device, Message *inMsg) {
+        ASSERT_NE(inMsg, nullptr);
+        inMsg->SetMessageId(INVALID_MESSAGE_ID);
+    });
+    const size_t MAX_SIZE = 7;
+    std::vector<std::thread *> threadList;
+    for (size_t j = 0; j < deviceMap.size(); j++) {
+        for (size_t i = 0; i < MAX_SIZE; i++) {
+            std::string device = deviceMap[j];
+            threadList.push_back(new std::thread([&, device]() {
+                std::shared_ptr<ResultSet> result = nullptr;
+                EXPECT_EQ(g_rdbDelegatePtr->RemoteQuery(device, condition,
+                    DBConstant::MIN_TIMEOUT, result), TIME_OUT);
+                EXPECT_EQ(result, nullptr);
+            }));
+        }
+    }
+    for (size_t i = 0; i < threadList.size(); i++) {
+        threadList[i]->join();
+        delete threadList[i];
+        threadList[i] = nullptr;
+    }
+}
+
+/**
+* @tc.name: remote query 005
+* @tc.desc: Test rdb remote query timeout by invalid message
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery005, TestSize.Level1)
+{
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap, {g_deviceB});
+    ASSERT_NE(g_deviceB, nullptr);
+    ASSERT_NE(g_rdbDelegatePtr, nullptr);
+    g_communicatorAggregator->RegOnDispatch([](const std::string &device, Message *inMsg) {
+        ASSERT_NE(inMsg, nullptr);
+        inMsg->SetMessageId(INVALID_MESSAGE_ID);
+    });
+    RemoteCondition condition;
+    condition.sql = "SELECT * FROM " + g_tableName + " WHERE 1=0";
+    std::shared_ptr<ResultSet> result = nullptr;
+    EXPECT_EQ(g_rdbDelegatePtr->RemoteQuery(DEVICE_B, condition, DBConstant::MIN_TIMEOUT, result), TIME_OUT);
+    ASSERT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name: remote query 006
+* @tc.desc: Test rdb remote query commfailure by offline
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery006, TestSize.Level1)
+{
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap, {g_deviceB});
+    ASSERT_NE(g_deviceB, nullptr);
+    ASSERT_NE(g_rdbDelegatePtr, nullptr);
+    g_communicatorAggregator->RegOnDispatch([](const std::string &device, Message *inMsg) {
+        ASSERT_NE(inMsg, nullptr);
+        inMsg->SetMessageId(INVALID_MESSAGE_ID);
+        std::thread t([]() {
+            g_deviceB->Offline();
+        });
+        t.detach();
+    });
+    RemoteCondition condition;
+    condition.sql = "SELECT * FROM " + g_tableName + " WHERE 1=0";
+    std::shared_ptr<ResultSet> result = nullptr;
+    EXPECT_EQ(g_rdbDelegatePtr->RemoteQuery(DEVICE_B, condition, DBConstant::MIN_TIMEOUT, result), COMM_FAILURE);
+    ASSERT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name: remote query 007
+* @tc.desc: Test rdb remote query failed by permission check
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery007, TestSize.Level1)
+{
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap, {g_deviceB});
+    ASSERT_NE(g_deviceB, nullptr);
+    ASSERT_NE(g_rdbDelegatePtr, nullptr);
+    auto callback = [](const std::string &userId, const std::string &appId,
+        const std::string &storeId, const std::string &deviceId, uint8_t flag) -> bool {
+        return false;
+    };
+    EXPECT_EQ(RuntimeConfig::SetPermissionCheckCallback(callback), OK);
+    RemoteCondition condition;
+    condition.sql = "SELECT * FROM " + g_tableName + " WHERE 1=0";
+    std::shared_ptr<ResultSet> result = nullptr;
+    EXPECT_EQ(g_deviceB->RemoteQuery(DEVICE_A, condition, DBConstant::MIN_TIMEOUT, result),
+        PERMISSION_CHECK_FORBID_SYNC);
+    ASSERT_EQ(result, nullptr);
+    EXPECT_EQ(RuntimeConfig::SetPermissionCheckCallback(nullptr), OK);
+}
+
+/**
+* @tc.name: remote query 008
+* @tc.desc: Test rdb remote query timeout but not effected by invalid message
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery008, TestSize.Level1)
+{
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap, {g_deviceB});
+    ASSERT_NE(g_deviceB, nullptr);
+    ASSERT_NE(g_rdbDelegatePtr, nullptr);
+    g_communicatorAggregator->RegOnDispatch([](const std::string &device, Message *inMsg) {
+        ASSERT_NE(inMsg, nullptr);
+        if (device != DEVICE_B) {
+            return;
+        }
+        inMsg->SetMessageId(INVALID_MESSAGE_ID);
+        std::thread t([]() {
+            auto *msg = new (std::nothrow) Message(REMOTE_EXECUTE_MESSAGE);
+            ASSERT_NE(msg, nullptr);
+            auto *packet = new (std::nothrow) RemoteExecutorAckPacket();
+            if (packet != nullptr) {
+                packet->SetAckCode(-E_FEEDBACK_COMMUNICATOR_NOT_FOUND);
+            }
+            if (msg->SetExternalObject(packet) != E_OK) {
+                delete packet;
+                packet = nullptr;
+            }
+            msg->SetMessageType(TYPE_RESPONSE);
+            msg->SetErrorNo(E_FEEDBACK_COMMUNICATOR_NOT_FOUND);
+            msg->SetSessionId(0u);
+            msg->SetSequenceId(1u);
+            g_communicatorAggregator->DispatchMessage(DEVICE_B, DEVICE_A, msg, nullptr);
+            LOGD("DispatchMessage Finish");
+        });
+        t.detach();
+    });
+    RemoteCondition condition;
+    condition.sql = "SELECT * FROM " + g_tableName + " WHERE 1=0";
+    std::shared_ptr<ResultSet> result = nullptr;
+    EXPECT_EQ(g_rdbDelegatePtr->RemoteQuery(DEVICE_B, condition, DBConstant::MIN_TIMEOUT, result), TIME_OUT);
+    ASSERT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name: remote query 009
+* @tc.desc: Test rdb remote query busy before timeout
+* @tc.type: FUNC
+* @tc.require: AR000GK58G
+* @tc.author: zhangqiquan
+*/
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery009, TestSize.Level1)
+{
+    std::map<std::string, DataValue> dataMap;
+    PrepareEnvironment(dataMap, {g_deviceB});
+    ASSERT_NE(g_deviceB, nullptr);
+    ASSERT_NE(g_rdbDelegatePtr, nullptr);
+    g_communicatorAggregator->RegOnDispatch([](const std::string &device, Message *inMsg) {
+        ASSERT_NE(inMsg, nullptr);
+        inMsg->SetMessageId(INVALID_MESSAGE_ID);
+    });
+    RemoteCondition condition;
+    condition.sql = "SELECT * FROM " + g_tableName + " WHERE 1=0";
+    std::shared_ptr<ResultSet> result = nullptr;
+    std::thread t([]() {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (g_rdbDelegatePtr != nullptr) {
+            LOGD("CloseStore Start");
+            ASSERT_EQ(g_mgr.CloseStore(g_rdbDelegatePtr), OK);
+            g_rdbDelegatePtr = nullptr;
+        }
+    });
+    EXPECT_EQ(g_rdbDelegatePtr->RemoteQuery(DEVICE_B, condition, DBConstant::MIN_TIMEOUT, result), BUSY);
+    ASSERT_EQ(result, nullptr);
+    t.join();
 }
 
 /**

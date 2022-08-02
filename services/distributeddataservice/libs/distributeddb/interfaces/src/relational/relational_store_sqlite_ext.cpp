@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include <mutex>
 #include <openssl/sha.h>
 #include <string>
 #include <sys/time.h>
+#include <thread>
 #include <vector>
 
 // using the "sqlite3sym.h" in OHOS
@@ -29,7 +29,7 @@
 namespace {
 constexpr int E_OK = 0;
 constexpr int E_ERROR = 1;
-
+constexpr int BUSY_TIMEOUT = 2000;  // 2s.
 class ValueHashCalc {
 public:
     ValueHashCalc() {};
@@ -354,6 +354,61 @@ int GetCurrentMaxTimestamp(sqlite3 *db, Timestamp &maxTimestamp)
     return E_OK;
 }
 
+int ClearTheLogAfterDropTable(void *db, int actionCode, const char *tblName,
+    const char *useLessParam, const char *schemaName, const char *triggerName)
+{
+    if (actionCode != SQLITE_DROP_TABLE) {
+        return SQLITE_OK;
+    }
+    if (db == nullptr || tblName == nullptr || schemaName == nullptr) {
+        return SQLITE_DENY;
+    }
+    auto filepath = sqlite3_db_filename(static_cast<sqlite3 *>(db), schemaName);
+    if (filepath == nullptr) {
+        return SQLITE_DENY;
+    }
+    auto filename = std::string(filepath);
+    std::thread th([filename, tableName = std::string(tblName), dropTimeStamp = TimeHelper::GetTime(0)] {
+        sqlite3 *db = nullptr;
+        (void)sqlite3_open(filename.c_str(), &db);
+        if (db == nullptr) {
+            return;
+        }
+
+        if (sqlite3_busy_timeout(db, BUSY_TIMEOUT) != SQLITE_OK) {
+            sqlite3_close(db);
+            return;
+        }
+
+        sqlite3_stmt *stmt = nullptr;
+        std::string logTblName = "naturalbase_rdb_aux_" + std::string(tableName) + "_log";
+        std::string sql = "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='" + logTblName + "';";
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+            (void)sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            return;
+        }
+
+        bool isLogTblExists = false;
+        if (sqlite3_step(stmt) == SQLITE_ROW && static_cast<bool>(sqlite3_column_int(stmt, 0))) {
+            isLogTblExists = true;
+        }
+        (void)sqlite3_finalize(stmt);
+        stmt = nullptr;
+
+        if (isLogTblExists) {
+            RegisterGetSysTime(db);
+            sql = "UPDATE " + logTblName + " SET flag=0x03, timestamp=get_sys_time(0) "
+                  "WHERE flag&0x03=0x02 AND timestamp<" + std::to_string(dropTimeStamp);
+            (void)sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr);
+        }
+        sqlite3_close(db);
+        return;
+    });
+    th.detach();
+    return SQLITE_OK;
+}
+
 void PostHandle(sqlite3 *db)
 {
     Timestamp currentMaxTimestamp = 0;
@@ -361,7 +416,8 @@ void PostHandle(sqlite3 *db)
     TimeHelper::Initialize(currentMaxTimestamp);
     RegisterCalcHash(db);
     RegisterGetSysTime(db);
-
+    (void)sqlite3_set_authorizer(db, &ClearTheLogAfterDropTable, db);
+    (void)sqlite3_busy_timeout(db, BUSY_TIMEOUT);
     std::string recursiveTrigger = "PRAGMA recursive_triggers = ON;";
     (void)ExecuteRawSQL(db, recursiveTrigger);
 }

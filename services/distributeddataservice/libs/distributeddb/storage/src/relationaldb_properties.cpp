@@ -16,6 +16,8 @@
 #include "relationaldb_properties.h"
 
 namespace DistributedDB {
+const std::string RelationalDBProperties::DISTRIBUTED_TABLE_MODE = "distributed_table_mode";
+
 RelationalDBProperties::RelationalDBProperties()
 {}
 

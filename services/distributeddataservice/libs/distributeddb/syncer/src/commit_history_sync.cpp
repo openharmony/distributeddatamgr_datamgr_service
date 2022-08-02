@@ -278,8 +278,8 @@ int CommitHistorySync::RequestRecvCallback(const MultiVerSyncTaskContext *contex
     }
 
     errCode = SendAckPacket(context, commits, errCode, message);
-    LOGD("CommitHistorySync::RequestRecvCallback:SendAckPacket, errno = %d, dst=%s{private}, ver = %u, myversion = %u",
-         errCode, context->GetDeviceId().c_str(), ver, SOFTWARE_VERSION_CURRENT);
+    LOGD("CommitHistorySync::RequestRecvCallback:SendAckPacket, errno = %d, dst=%s{private}, ver = %" PRIu32
+        ", myversion = %" PRIu32, errCode, context->GetDeviceId().c_str(), ver, SOFTWARE_VERSION_CURRENT);
     if (errCode == E_OK) {
         if (commitMap.empty()) {
             LOGD("[CommitHistorySync][RequestRecvCallback] no need to start SyncResponse");

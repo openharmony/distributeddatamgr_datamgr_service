@@ -1974,7 +1974,7 @@ HWTEST_F(DistributedDBInterfacesNBDelegateTest, CreateMemoryDbWithoutPath, TestS
     mgr.GetKvStore("memory_without_path", option, g_kvNbDelegateCallback);
     ASSERT_TRUE(g_kvNbDelegatePtr != nullptr);
     EXPECT_TRUE(g_kvDelegateStatus == OK);
-    EXPECT_EQ(g_mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
+    EXPECT_EQ(mgr.CloseKvStore(g_kvNbDelegatePtr), OK);
 }
 
 /**

@@ -333,4 +333,47 @@ void DBCommon::GetDeviceFromName(const std::string &deviceTableName, std::string
             found - DBConstant::RELATIONAL_PREFIX.length());
     }
 }
+
+std::string DBCommon::TrimSpace(const std::string &input)
+{
+    std::string res;
+    res.reserve(input.length());
+    bool isPreSpace = true;
+    for (char c : input) {
+        if (std::isspace(c)) {
+            isPreSpace = true;
+        } else {
+            if (!res.empty() && isPreSpace) {
+                res += ' ';
+            }
+            res += c;
+            isPreSpace = false;
+        }
+    }
+    res.shrink_to_fit();
+    return res;
+}
+
+namespace {
+bool CharIn(char c, const std::string &pattern)
+{
+    return std::any_of(pattern.begin(), pattern.end(), [c] (char p) {
+        return c == p;
+    });
+}
+}
+
+bool DBCommon::HasConstraint(const std::string &sql, const std::string &keyWord, const std::string &prePattern,
+    const std::string &nextPattern)
+{
+    size_t pos = 0;
+    while ((pos = sql.find(keyWord, pos)) != std::string::npos) {
+        if (pos - 1 >= 0 && CharIn(sql[pos - 1], prePattern) && ((pos + keyWord.length() == sql.length()) ||
+            ((pos + keyWord.length() < sql.length()) && CharIn(sql[pos + keyWord.length()], nextPattern)))) {
+            return true;
+        }
+        pos++;
+    }
+    return false;
+}
 } // namespace DistributedDB

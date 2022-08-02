@@ -308,7 +308,8 @@ const std::map<int, DBStatus> &SyncOperation::DBStatusTransMap()
         { static_cast<int>(OP_MAX_LIMITS),                    OVER_MAX_LIMITS },
         { static_cast<int>(OP_SCHEMA_CHANGED),                DISTRIBUTED_SCHEMA_CHANGED },
         { static_cast<int>(OP_INVALID_ARGS),                  INVALID_ARGS },
-        { static_cast<int>(OP_USER_CHANGED),                  USER_CHANGED},
+        { static_cast<int>(OP_USER_CHANGED),                  USER_CHANGED },
+        { static_cast<int>(OP_DENIED_SQL),                    NO_PERMISSION },
     };
     return transMap;
 }

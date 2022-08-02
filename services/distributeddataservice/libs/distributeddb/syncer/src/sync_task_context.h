@@ -70,6 +70,8 @@ public:
     // Move to next target to sync
     void MoveToNextTarget() override;
 
+    int GetNextTarget(bool isNeedSetFinished) override;
+
     // Get the current task syncId
     uint32_t GetSyncId() const override;
 
@@ -227,6 +229,10 @@ protected:
     void CancelCurrentSyncRetryIfNeed(int newTargetMode);
 
     virtual void SaveLastPushTaskExecStatus(int finalStatus);
+
+    int RunPermissionCheck(uint8_t flag) const;
+
+    static uint8_t GetPermissionCheckFlag(bool isAutoSync, int syncMode);
 
     mutable std::mutex targetQueueLock_;
     std::list<ISyncTarget *> requestTargetQueue_;

@@ -60,6 +60,11 @@ public:
     static std::string GetDistributedTableName(const std::string &device, const std::string &tableName);
 
     static void GetDeviceFromName(const std::string &deviceTableName, std::string &deviceHash, std::string &tableName);
+
+    static std::string TrimSpace(const std::string &input);
+
+    static bool HasConstraint(const std::string &sql, const std::string &keyWord, const std::string &prePattern,
+        const std::string &nextPattern);
 };
 
 // Define short macro substitute for original long expression for convenience of using

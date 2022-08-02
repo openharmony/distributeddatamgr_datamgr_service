@@ -412,7 +412,7 @@ HWTEST_F(DistributedDBSingleVerMultiUserTest, MultiUser002, TestSize.Level0)
     g_deviceB->GetData(key, item);
     EXPECT_TRUE(item.value == value);
     /**
-     * @tc.expected: step7. user change
+     * @tc.expected: step7. user not change
      */
     KvStoreDelegateManager::NotifyUserChanged();
     /**

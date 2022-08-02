@@ -16,11 +16,11 @@
 #define RELATIONAL_SYNC_ABLE_STORAGE_H
 #ifdef RELATIONAL_STORE
 
+#include "lru_map.h"
 #include "relational_db_sync_interface.h"
 #include "relationaldb_properties.h"
 #include "runtime_context.h"
 #include "sqlite_single_relational_storage_engine.h"
-
 #include "sqlite_single_ver_relational_continue_token.h"
 
 namespace DistributedDB {
@@ -39,8 +39,11 @@ public:
     // Drop the interface ref-count.
     void DecRefCount() override;
 
-    // Get the identifier of this kvdb.
+    // Get the identifier of this rdb.
     std::vector<uint8_t> GetIdentifier() const override;
+
+    // Get the dual tuple identifier of this rdb.
+    std::vector<uint8_t> GetDualTupleIdentifier() const override;
 
     // Get the max timestamp of all entries in database.
     void GetMaxTimestamp(Timestamp &stamp) const override;
@@ -118,6 +121,11 @@ public:
 
     bool CheckCompatible(const std::string &schema, uint8_t type) const override;
 
+    int ExecuteQuery(const PreparedStmt &prepStmt, size_t packetSize, RelationalRowDataSet &data,
+        ContinueToken &token) const override;
+
+    const RelationalDBProperties &GetRelationalDbProperties() const override;
+
 private:
     SQLiteSingleVerRelationalStorageExecutor *GetHandle(bool isWrite, int &errCode,
         OperatePerm perm = OperatePerm::NORMAL_PERM) const;
@@ -126,6 +134,8 @@ private:
     // get
     int GetSyncDataForQuerySync(std::vector<DataItem> &dataItems, SQLiteSingleVerRelationalContinueToken *&token,
         const DataSizeSpecInfo &dataSizeInfo) const;
+    int GetRemoteQueryData(const PreparedStmt &prepStmt, size_t packetSize,
+        std::vector<std::string> &colNames, std::vector<RelationalRowData *> &data) const;
 
     // put
     int PutSyncData(const QueryObject &object, std::vector<DataItem> &dataItems, const std::string &deviceName);
@@ -133,8 +143,6 @@ private:
 
     // data
     SQLiteSingleRelationalStorageEngine *storageEngine_ = nullptr;
-    KvDBProperties properties_;
-
     std::function<void()> onSchemaChanged_;
     mutable std::mutex onSchemaChangedMutex_;
     std::mutex dataChangeDeviceMutex_;

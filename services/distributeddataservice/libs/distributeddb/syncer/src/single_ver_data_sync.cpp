@@ -1799,7 +1799,7 @@ int SingleVerDataSync::ControlCmdStartCheck(SingleVerSyncTaskContext *context)
     }
     if (context->GetMode() == SyncModeType::SUBSCRIBE_QUERY &&
         context->GetQuery().HasInKeys() &&
-        context->GetRemoteDbAbility().GetAbilityItem(SyncConfig::INKEYS_QUERY) != SUPPORT_MARK) {
+        context->IsNotSupportAbility(SyncConfig::INKEYS_QUERY)) {
         return -E_NOT_SUPPORT;
     }
     if ((context->GetMode() != SyncModeType::SUBSCRIBE_QUERY) || context->GetReceivcPermitCheck()) {
@@ -1983,7 +1983,8 @@ int SingleVerDataSync::UnsubscribeRequestRecv(SingleVerSyncTaskContext *context,
         return -E_INVALID_ARGS;
     }
     int errCode;
-    if (subscribeManager->IsRemoteContainSubscribe(context->GetDeviceId(), packet->GetQuery())) {
+    std::lock_guard<std::mutex> autoLock(unsubscribeLock_);
+    if (subscribeManager->IsLastRemoteContainSubscribe(context->GetDeviceId(), packet->GetQuery().GetIdentify())) {
         errCode = storage_->RemoveSubscribe(packet->GetQuery().GetIdentify());
         if (errCode != E_OK) {
             LOGE("[SingleVerDataSync] remove trigger failed,err=%d,label=%s,dev=%s", errCode, label_.c_str(),

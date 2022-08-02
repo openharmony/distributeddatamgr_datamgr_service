@@ -21,21 +21,25 @@
 #include "macro_utils.h"
 #include "sqlite_utils.h"
 #include "sqlite_storage_executor.h"
+#include "relational_row_data.h"
 #include "relational_store_delegate.h"
 #include "query_object.h"
 
 namespace DistributedDB {
 class SQLiteSingleVerRelationalStorageExecutor : public SQLiteStorageExecutor {
 public:
-    SQLiteSingleVerRelationalStorageExecutor(sqlite3 *dbHandle, bool writable);
+    SQLiteSingleVerRelationalStorageExecutor(sqlite3 *dbHandle, bool writable, DistributedTableMode mode);
     ~SQLiteSingleVerRelationalStorageExecutor() override = default;
 
     // Delete the copy and assign constructors
     DISABLE_COPY_ASSIGN_MOVE(SQLiteSingleVerRelationalStorageExecutor);
 
-    int CreateDistributedTable(const std::string &tableName, TableInfo &table, bool isUpgrade);
+    // The parameter "identity" is a hash string that identifies a device
+    int CreateDistributedTable(const std::string &tableName, DistributedTableMode mode, bool isUpgraded,
+        const std::string &identity, TableInfo &table);
 
-    int UpgradeDistributedTable(const TableInfo &tableInfo, TableInfo &newTableInfo);
+    int UpgradeDistributedTable(const std::string &tableName, DistributedTableMode mode,
+        RelationalSchemaObject &schema);
 
     int StartTransaction(TransactType type);
     int Commit();
@@ -54,7 +58,7 @@ public:
 
     // For Put sync data
     int SaveSyncItems(const QueryObject &object, std::vector<DataItem> &dataItems,
-        const std::string &deviceName, const TableInfo &table);
+        const std::string &deviceName, const TableInfo &table, bool useTrans = true);
 
     int AnalysisRelationalSchema(const std::string &tableName, TableInfo &tableInfo);
 
@@ -68,9 +72,12 @@ public:
 
     int CreateDistributedDeviceTable(const std::string &device, const TableInfo &baseTbl);
 
-    int CheckQueryObjectLegal(const TableInfo &table, QueryObject &query);
+    int CheckQueryObjectLegal(const TableInfo &table, QueryObject &query, const std::string &schemaVersion);
 
     int GetMaxTimestamp(const std::vector<std::string> &tablesName, Timestamp &maxTimestamp) const;
+
+    int ExecuteQueryBySqlStmt(const std::string &sql, const std::vector<std::string> &bindArgs, int packetSize,
+        std::vector<std::string> &colNames, std::vector<RelationalRowData *> &data);
 
 private:
     struct SaveSyncDataStmt {
@@ -114,11 +121,19 @@ private:
         Timestamp &queryTime);
     int GetMissQueryDataAndStepNext(sqlite3_stmt *fullStmt, DataItem &item, Timestamp &missQueryTime);
 
+    int SetLogTriggerStatus(bool status);
+
     void SetTableInfo(const TableInfo &tableInfo);  // When put or get sync data, must call the func first.
+
+    int GeneLogInfoForExistedData(sqlite3 *db, const std::string &tableName, const TableInfo &table,
+        const std::string &calPrimaryKeyHash);
+
     std::string baseTblName_;
     TableInfo table_;  // Always operating table, user table when get, device table when put.
 
     SaveSyncDataStmt saveStmt_;
+
+    DistributedTableMode mode_;
 };
 } // namespace DistributedDB
 #endif

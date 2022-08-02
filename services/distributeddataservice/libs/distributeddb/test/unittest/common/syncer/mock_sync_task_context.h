@@ -49,6 +49,16 @@ public:
     MOCK_CONST_METHOD0(GetRequestSessionId, uint32_t(void));
 
     MOCK_CONST_METHOD1(GetSyncStrategy, SyncStrategy(QuerySyncObject &));
+
+    void CallCommErrHandlerFuncInner(int errCode, uint32_t sessionId)
+    {
+        SyncTaskContext::CommErrHandlerFuncInner(errCode, sessionId);
+    }
+
+    void CallSetTaskExecStatus(int status)
+    {
+        SyncTaskContext::SetTaskExecStatus(status);
+    }
 };
 } // namespace DistributedDB
 #endif  // #define MOCK_SINGLE_VER_STATE_MACHINE_H

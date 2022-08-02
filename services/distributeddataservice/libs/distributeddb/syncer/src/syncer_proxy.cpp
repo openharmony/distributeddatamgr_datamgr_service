@@ -214,4 +214,13 @@ SyncerBasicInfo SyncerProxy::DumpSyncerBasicInfo()
     }
     return syncer_->DumpSyncerBasicInfo();
 }
+
+int SyncerProxy::RemoteQuery(const std::string &device, const RemoteCondition &condition,
+    uint64_t timeout, uint64_t connectionId, std::shared_ptr<ResultSet> &result)
+{
+    if (syncer_ == nullptr) {
+        return -E_NOT_INIT;
+    }
+    return syncer_->RemoteQuery(device, condition, timeout, connectionId, result);
+}
 } // namespace DistributedDB

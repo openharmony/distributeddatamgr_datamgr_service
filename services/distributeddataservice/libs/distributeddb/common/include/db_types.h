@@ -136,5 +136,21 @@ struct SyncTimeRange {
         return (beginTime <= endTime && deleteBeginTime <= deleteEndTime);
     }
 };
+
+// field types stored in sqlite
+enum class StorageType {
+    STORAGE_TYPE_NONE = 0,
+    STORAGE_TYPE_NULL,
+    STORAGE_TYPE_INTEGER,
+    STORAGE_TYPE_REAL,
+    STORAGE_TYPE_TEXT,
+    STORAGE_TYPE_BLOB
+};
+
+// Table mode of device data for relational store
+enum DistributedTableMode : int {
+    COLLABORATION = 0, // Save all devices data in user table
+    SPLIT_BY_DEVICE // Save device data in each table split by device
+};
 } // namespace DistributedDB
 #endif // DISTRIBUTEDDB_TYPES_H

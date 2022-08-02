@@ -25,6 +25,7 @@
 
 namespace DistributedDB {
 std::mutex RuntimeConfig::communicatorMutex_;
+std::mutex RuntimeConfig::multiUserMutex_;
 std::shared_ptr<IProcessCommunicator> RuntimeConfig::processCommunicator_ = nullptr;
 
 // Used to set the process userid and appId
@@ -85,14 +86,28 @@ DBStatus RuntimeConfig::SetProcessSystemAPIAdapter(const std::shared_ptr<IProces
     return TransferDBErrno(RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(adapter));
 }
 
-bool RuntimeConfig::IsProcessSystemApiAdapterValid()
-{
-    return RuntimeContext::GetInstance()->IsProcessSystemApiAdapterValid();
-}
-
 void RuntimeConfig::Dump(int fd, const std::vector<std::u16string> &args)
 {
     DBDfxAdapter::Dump(fd, args);
+}
+
+DBStatus RuntimeConfig::SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback)
+{
+    std::lock_guard<std::mutex> lock(multiUserMutex_);
+    int errCode = RuntimeContext::GetInstance()->SetSyncActivationCheckCallback(callback);
+    return TransferDBErrno(errCode);
+}
+
+DBStatus RuntimeConfig::NotifyUserChanged()
+{
+    std::lock_guard<std::mutex> lock(multiUserMutex_);
+    int errCode = RuntimeContext::GetInstance()->NotifyUserChanged();
+    return TransferDBErrno(errCode);
+}
+
+bool RuntimeConfig::IsProcessSystemApiAdapterValid()
+{
+    return RuntimeContext::GetInstance()->IsProcessSystemApiAdapterValid();
 }
 } // namespace DistributedDB
 #endif

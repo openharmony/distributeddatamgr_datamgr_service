@@ -165,11 +165,15 @@ public:
     static int CreateRelationalLogTable(sqlite3 *db, const std::string &oriTableName);
     static int CreateRelationalMetaTable(sqlite3 *db);
 
-    static int AddRelationalLogTableTrigger(sqlite3 *db, const TableInfo &table);
+    static int AddRelationalLogTableTrigger(sqlite3 *db, const std::string &identity, const TableInfo &table);
     static int AnalysisSchema(sqlite3 *db, const std::string &tableName, TableInfo &table);
 
     static int CreateSameStuTable(sqlite3 *db, const TableInfo &baseTbl, const std::string &newTableName);
     static int CloneIndexes(sqlite3 *db, const std::string &oriTableName, const std::string &newTableName);
+
+    static int GetRelationalSchema(sqlite3 *db, std::string &schema);
+
+    static int GetLogTableVersion(sqlite3 *db, std::string &version);
 #endif
 
     static int DropTriggerByName(sqlite3 *db, const std::string &name);
@@ -187,6 +191,13 @@ public:
     static int64_t GetLastRowId(sqlite3 *db);
 
     static std::string GetLastErrorMsg();
+
+    static std::string CalcPrimaryKeyHash(const std::string &references, const TableInfo &table);
+
+    static int SetAuthorizer(sqlite3 *db, int (*xAuth)(void*, int, const char*, const char*, const char*, const char*));
+
+    static void GetSelectCols(sqlite3_stmt *stmt, std::vector<std::string> &colNames);
+
 private:
 
     static int CreateDataBase(const OpenDbProperties &properties, sqlite3 *&dbTemp, bool setWal);

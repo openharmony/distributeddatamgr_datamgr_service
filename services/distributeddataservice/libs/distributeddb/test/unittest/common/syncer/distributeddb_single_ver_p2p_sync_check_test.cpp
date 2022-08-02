@@ -574,14 +574,20 @@ void Sync(vector<std::string> &devices, const DBStatus &targetStatus)
     }
 }
 
-void SyncWithQuery(vector<std::string> &devices, const Query &query, const DBStatus &targetStatus)
+void SyncWithQuery(vector<std::string> &devices, const Query &query, const SyncMode &mode,
+    const DBStatus &targetStatus)
 {
     std::map<std::string, DBStatus> result;
-    DBStatus status = g_tool.SyncTest(g_kvDelegatePtr, devices, DistributedDB::SYNC_MODE_PUSH_ONLY, result, query);
+    DBStatus status = g_tool.SyncTest(g_kvDelegatePtr, devices, mode, result, query);
     EXPECT_TRUE(status == OK);
     for (const auto &deviceId : devices) {
         ASSERT_TRUE(result[deviceId] == targetStatus);
     }
+}
+
+void SyncWithQuery(vector<std::string> &devices, const Query &query, const DBStatus &targetStatus)
+{
+    SyncWithQuery(devices, query, DistributedDB::SYNC_MODE_PUSH_ONLY, targetStatus);
 }
 
 void SyncWithDeviceOffline(vector<std::string> &devices, Key &key, Query &query)
@@ -600,6 +606,38 @@ void SyncWithDeviceOffline(vector<std::string> &devices, Key &key, Query &query)
      * @tc.expected: step3. should return COMM_FAILURE.
      */
     SyncWithQuery(devices, query, COMM_FAILURE);
+}
+
+void PrepareWaterMarkError(std::vector<std::string> &devices, Query &query)
+{
+    /**
+     * @tc.steps: step1. prepare data
+     */
+    devices.push_back(g_deviceB->GetDeviceId());
+    g_deviceB->Online();
+
+    Key key = {'1'};
+    query = Query::Select().PrefixKey(key);
+    PrepareEnv(devices, key, query);
+
+    /**
+     * @tc.steps: step2. query sync and set queryWaterMark
+     * @tc.expected: step2. should return OK.
+     */
+    Value value = {'2'};
+    ASSERT_TRUE(g_kvDelegatePtr->Put(key, value) == OK);
+    SyncWithQuery(devices, query, OK);
+
+    /**
+     * @tc.steps: step3. sync and invalid msg for set local device waterMark
+     * @tc.expected: step3. should return TIME_OUT.
+     */
+    bool invalidMsg = false;
+    RegOnDispatchWithInvalidMsg(invalidMsg);
+    value = {'3'};
+    ASSERT_TRUE(g_kvDelegatePtr->Put(key, value) == OK);
+    Sync(devices, TIME_OUT);
+    g_communicatorAggregator->RegOnDispatch(nullptr);
 }
 }
 
@@ -704,7 +742,6 @@ HWTEST_F(DistributedDBSingleVerP2PSyncCheckTest, AckSafeCheck001, TestSize.Level
     SyncWithQuery(devices, query, OK);
 }
 
-
 /**
  * @tc.name: WaterMarkCheck001
  * @tc.desc: Test waterMark work correct in lost package scene.
@@ -715,36 +752,40 @@ HWTEST_F(DistributedDBSingleVerP2PSyncCheckTest, AckSafeCheck001, TestSize.Level
 HWTEST_F(DistributedDBSingleVerP2PSyncCheckTest, WaterMarkCheck001, TestSize.Level1)
 {
     std::vector<std::string> devices;
-    devices.push_back(g_deviceB->GetDeviceId());
-    g_deviceB->Online();
-
-    Key key = {'1'};
-    Query query = Query::Select().PrefixKey(key);
-    PrepareEnv(devices, key, query);
-
-    /**
-     * @tc.steps: step2. query sync and set queryWaterMark
-     * @tc.expected: step2. should return OK.
-     */
-    Value value = {'2'};
-    ASSERT_TRUE(g_kvDelegatePtr->Put(key, value) == OK);
-    SyncWithQuery(devices, query, OK);
-
-    /**
-     * @tc.steps: step3. sync and invalid msg for set local device waterMark
-     * @tc.expected: step3. should return TIME_OUT.
-     */
-    bool invalidMsg = false;
-    RegOnDispatchWithInvalidMsg(invalidMsg);
-    value = {'3'};
-    ASSERT_TRUE(g_kvDelegatePtr->Put(key, value) == OK);
-    Sync(devices, TIME_OUT);
+    Query query = Query::Select();
+    PrepareWaterMarkError(devices, query);
 
     /**
      * @tc.steps: step4. sync again see it work correct
      * @tc.expected: step4. should return OK.
      */
     SyncWithQuery(devices, query, OK);
+}
+
+/**
+ * @tc.name: WaterMarkCheck002
+ * @tc.desc: Test pull work correct in error waterMark scene.
+ * @tc.type: FUNC
+ * @tc.require: AR000F3OOV
+ * @tc.author: zhangqiquan
+ */
+HWTEST_F(DistributedDBSingleVerP2PSyncCheckTest, WaterMarkCheck002, TestSize.Level1)
+{
+    std::vector<std::string> devices;
+    Query query = Query::Select();
+    PrepareWaterMarkError(devices, query);
+
+    /**
+     * @tc.steps: step4. sync again see it work correct
+     * @tc.expected: step4. should return OK.
+     */
+    Key key = {'2'};
+    ASSERT_TRUE(g_kvDelegatePtr->Put(key, {}) == OK);
+    query = Query::Select();
+    SyncWithQuery(devices, query, DistributedDB::SYNC_MODE_PULL_ONLY, OK);
+
+    VirtualDataItem item;
+    EXPECT_EQ(g_deviceB->GetData(key, item), -E_NOT_FOUND);
 }
 
 void RegOnDispatchToGetSyncCount(int &sendRequestCount, int sleepMs = 0)

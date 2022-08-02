@@ -288,9 +288,14 @@ void SingleVerSyncStateMachine::SendSaveDataNotifyPacket(uint32_t sessionId, uin
         std::min(context_->GetRemoteSoftwareVersion(), SOFTWARE_VERSION_CURRENT), sessionId, sequenceId, inMsgId);
 }
 
-void SingleVerSyncStateMachine::CommErrAbort()
+void SingleVerSyncStateMachine::CommErrAbort(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(stateMachineLock_);
+    uint32_t requestSessionId = context_->GetRequestSessionId();
+    if ((sessionId != 0) && ((sessionId != requestSessionId) || (requestSessionId == 0))) {
+        return;
+    }
+    context_->SetCommNormal(false);
     if (SwitchMachineState(Event::INNER_ERR_EVENT) == E_OK) {
         SyncStep();
     }
@@ -400,7 +405,8 @@ Event SingleVerSyncStateMachine::DoPassiveDataSyncWithSlidingWindow()
         RefObject::AutoLock lock(context_);
         if (context_->GetRspTargetQueueSize() != 0) {
             PreStartPullResponse();
-        } else if (context_->GetRetryStatus() == static_cast<int>(SyncTaskContext::NO_NEED_RETRY)) {
+        } else if (context_->GetResponseSessionId() == 0 ||
+            context_->GetRetryStatus() == static_cast<int>(SyncTaskContext::NO_NEED_RETRY)) {
             return RESPONSE_TASK_FINISHED_EVENT;
         }
     }
@@ -831,21 +837,23 @@ void SingleVerSyncStateMachine::StepToTimeout(TimerId timerId)
 int SingleVerSyncStateMachine::GetSyncOperationStatus(int errCode) const
 {
     static const std::map<int, int> statusMap = {
-        { -E_SCHEMA_MISMATCH, SyncOperation::OP_SCHEMA_INCOMPATIBLE },
-        { -E_EKEYREVOKED, SyncOperation::OP_EKEYREVOKED_FAILURE },
-        { -E_SECURITY_OPTION_CHECK_ERROR, SyncOperation::OP_SECURITY_OPTION_CHECK_FAILURE },
-        { -E_BUSY, SyncOperation::OP_BUSY_FAILURE },
-        { -E_NOT_PERMIT, SyncOperation::OP_PERMISSION_CHECK_FAILED },
-        { -E_TIMEOUT, SyncOperation::OP_TIMEOUT },
-        { -E_INVALID_QUERY_FORMAT, SyncOperation::OP_QUERY_FORMAT_FAILURE },
-        { -E_INVALID_QUERY_FIELD, SyncOperation::OP_QUERY_FIELD_FAILURE },
-        { -E_FEEDBACK_UNKNOWN_MESSAGE, SyncOperation::OP_NOT_SUPPORT },
+        { -E_SCHEMA_MISMATCH,                 SyncOperation::OP_SCHEMA_INCOMPATIBLE },
+        { -E_EKEYREVOKED,                     SyncOperation::OP_EKEYREVOKED_FAILURE },
+        { -E_SECURITY_OPTION_CHECK_ERROR,     SyncOperation::OP_SECURITY_OPTION_CHECK_FAILURE },
+        { -E_BUSY,                            SyncOperation::OP_BUSY_FAILURE },
+        { -E_NOT_PERMIT,                      SyncOperation::OP_PERMISSION_CHECK_FAILED },
+        { -E_TIMEOUT,                         SyncOperation::OP_TIMEOUT },
+        { -E_INVALID_QUERY_FORMAT,            SyncOperation::OP_QUERY_FORMAT_FAILURE },
+        { -E_INVALID_QUERY_FIELD,             SyncOperation::OP_QUERY_FIELD_FAILURE },
+        { -E_FEEDBACK_UNKNOWN_MESSAGE,        SyncOperation::OP_NOT_SUPPORT },
         { -E_FEEDBACK_COMMUNICATOR_NOT_FOUND, SyncOperation::OP_COMM_ABNORMAL },
-        { -E_NOT_SUPPORT, SyncOperation::OP_NOT_SUPPORT },
-        { -E_INTERCEPT_DATA_FAIL, SyncOperation::OP_INTERCEPT_DATA_FAIL },
-        { -E_MAX_LIMITS, SyncOperation::OP_MAX_LIMITS },
-        { -E_DISTRIBUTED_SCHEMA_CHANGED, SyncOperation::OP_SCHEMA_CHANGED },
-        { -E_NOT_REGISTER, SyncOperation::OP_NOT_SUPPORT },
+        { -E_NOT_SUPPORT,                     SyncOperation::OP_NOT_SUPPORT },
+        { -E_INTERCEPT_DATA_FAIL,             SyncOperation::OP_INTERCEPT_DATA_FAIL },
+        { -E_MAX_LIMITS,                      SyncOperation::OP_MAX_LIMITS },
+        { -E_DISTRIBUTED_SCHEMA_CHANGED,      SyncOperation::OP_SCHEMA_CHANGED },
+        { -E_NOT_REGISTER,                    SyncOperation::OP_NOT_SUPPORT },
+        { -E_DENIED_SQL,                      SyncOperation::OP_DENIED_SQL },
+        { -E_REMOTE_OVER_SIZE,                SyncOperation::OP_MAX_LIMITS },
     };
     auto iter = statusMap.find(errCode);
     if (iter != statusMap.end()) {
@@ -870,7 +878,7 @@ int SingleVerSyncStateMachine::TimeMarkSyncRecv(const Message *inMsg)
             LOGE("[StateMachine][TimeMarkSyncRecv] AckRecv failed errCode=%d", errCode);
             if (inMsg->GetSessionId() != 0 && inMsg->GetSessionId() == context_->GetRequestSessionId()) {
                 context_->SetTaskErrCode(errCode);
-                CommErrAbort();
+                InnerErrorAbort(inMsg->GetSessionId());
             }
             return errCode;
         }
@@ -1212,6 +1220,26 @@ int SingleVerSyncStateMachine::GetSendQueryWaterMark(const std::string &queryId,
 void SingleVerSyncStateMachine::ResponsePullError(int errCode, bool ignoreInnerErr)
 {
     Event event = TransformErrCodeToEvent(errCode);
-    SwitchStateAndStep((ignoreInnerErr && event == INNER_ERR_EVENT) ? RESPONSE_TASK_FINISHED_EVENT : event);
+    if (event == INNER_ERR_EVENT) {
+        if (ignoreInnerErr) {
+            event = RESPONSE_TASK_FINISHED_EVENT;
+        } else if (context_ != nullptr) {
+            context_->SetTaskErrCode(errCode);
+        }
+    }
+    SwitchStateAndStep(event);
+}
+
+void SingleVerSyncStateMachine::InnerErrorAbort(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(stateMachineLock_);
+    uint32_t requestSessionId = context_->GetRequestSessionId();
+    if (sessionId != requestSessionId) {
+        LOGD("[SingleVerSyncStateMachine][InnerErrorAbort] Ignore abort by different sessionId");
+        return;
+    }
+    if (SwitchMachineState(Event::INNER_ERR_EVENT) == E_OK) {
+        SyncStep();
+    }
 }
 } // namespace DistributedDB

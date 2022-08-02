@@ -25,7 +25,6 @@
 
 namespace DistributedDB {
 namespace {
-    const int MAX_CACHE_ITEMS = 200;
     const uint32_t MAX_STORE_ITEMS = 100000;
     // WaterMark Version
     constexpr uint32_t QUERY_WATERMARK_VERSION_CURRENT = SOFTWARE_VERSION_RELEASE_6_0;
@@ -45,59 +44,6 @@ QuerySyncWaterMarkHelper::~QuerySyncWaterMarkHelper()
     deviceIdToHashQuerySyncIdMap_.clear();
     deleteSyncCache_.clear();
     deviceIdToHashDeleteSyncIdMap_.clear();
-}
-
-int LruMap::Put(const std::string &key, const QueryWaterMark &inValue)
-{
-    std::lock_guard<std::mutex> autoLock(lruLock_);
-    cache_[key] = inValue;
-    return Elimination(key, inValue);
-}
-
-int LruMap::Get(const std::string &key, QueryWaterMark &outValue)
-{
-    std::lock_guard<std::mutex> autoLock(lruLock_);
-    if (cache_.find(key) == cache_.end()) {
-        return -E_NOT_FOUND;
-    }
-    outValue = cache_[key];
-    return Elimination(key, outValue);
-}
-
-void LruMap::RemoveWithPrefixKey(const std::string &prefixKey)
-{
-    std::lock_guard<std::mutex> autoLock(lruLock_);
-    auto iterator = eliminationChain_.begin();
-    while (iterator != eliminationChain_.end()) {
-        const std::string &key = (*iterator).first;
-        if (key.find(prefixKey) == 0) {
-            (void)cache_.erase(key);
-            iterator = eliminationChain_.erase(iterator);
-        } else {
-            iterator++;
-        }
-    }
-}
-
-// move the node to last and remove the first node until the size less than limit
-int LruMap::Elimination(const std::string &key, const QueryWaterMark &inQueryWaterMark)
-{
-    auto iterator = eliminationChain_.begin();
-    while (iterator != eliminationChain_.end()) {
-        if ((*iterator).first == key) {
-            eliminationChain_.erase(iterator);
-            break;
-        }
-        iterator++;
-    }
-    std::pair<std::string, QueryWaterMark> entry = {key, inQueryWaterMark};
-    eliminationChain_.push_back(entry);
-    while (eliminationChain_.size() > MAX_CACHE_ITEMS) {
-        std::pair<std::string, QueryWaterMark> &pair = eliminationChain_.front();
-        cache_.erase(pair.first);
-        eliminationChain_.pop_front();
-    }
-    return E_OK;
 }
 
 int QuerySyncWaterMarkHelper::GetMetadataFromDb(const std::vector<uint8_t> &key, std::vector<uint8_t> &outValue)

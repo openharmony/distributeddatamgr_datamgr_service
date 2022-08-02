@@ -110,6 +110,8 @@ void DistributeddbAntiDosSyncTest::SetUp(void)
     ASSERT_TRUE(g_kvDelegatePtr != nullptr);
     g_syncInterface = new (std::nothrow) VirtualSingleVerSyncDBInterface();
     ASSERT_TRUE(g_syncInterface != nullptr);
+    std::vector<uint8_t> identifier(COMM_LABEL_LENGTH, 1u);
+    g_syncInterface->SetIdentifier(identifier);
     g_metaData = std::make_shared<Metadata>();
     int errCodeMetaData = g_metaData->Initialize(g_syncInterface);
     ASSERT_TRUE(errCodeMetaData == E_OK);

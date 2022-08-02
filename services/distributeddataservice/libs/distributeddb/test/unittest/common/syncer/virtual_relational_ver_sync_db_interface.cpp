@@ -153,6 +153,12 @@ RelationalSchemaObject VirtualRelationalVerSyncDBInterface::GetSchemaInfo() cons
     return schemaObj_;
 }
 
+
+void VirtualRelationalVerSyncDBInterface::SetSchemaInfo(const RelationalSchemaObject &schema)
+{
+    schemaObj_ = schema;
+}
+
 int VirtualRelationalVerSyncDBInterface::GetDatabaseCreateTimestamp(Timestamp &outTime) const
 {
     return E_OK;
@@ -273,9 +279,9 @@ int VirtualRelationalVerSyncDBInterface::GetAllMetaKeys(std::vector<Key> &keys) 
     return E_OK;
 }
 
-const KvDBProperties &VirtualRelationalVerSyncDBInterface::GetDbProperties() const
+const RelationalDBProperties &VirtualRelationalVerSyncDBInterface::GetDbProperties() const
 {
-    return properties_;
+    return rdbProperties_;
 }
 
 void VirtualRelationalVerSyncDBInterface::SetLocalFieldInfo(const std::vector<FieldInfo> &localFieldInfo)
@@ -338,6 +344,17 @@ int VirtualRelationalVerSyncDBInterface::GetMaxTimestamp(const std::string &tabl
     (void)tableName;
     timestamp = 0;
     return E_OK;
+}
+
+int VirtualRelationalVerSyncDBInterface::ExecuteQuery(const PreparedStmt &prepStmt, size_t packetSize,
+    RelationalRowDataSet &data, ContinueToken &token) const
+{
+    return E_OK;
+}
+
+const RelationalDBProperties &VirtualRelationalVerSyncDBInterface::GetRelationalDbProperties() const
+{
+    return rdbProperties_;
 }
 
 void ObjectData::PutDataValue(const std::string &fieldName, const DataValue &value)

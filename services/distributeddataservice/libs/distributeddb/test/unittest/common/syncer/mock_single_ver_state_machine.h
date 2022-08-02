@@ -52,11 +52,28 @@ public:
         SingleVerSyncStateMachine::StopSaveDataNotify();
     }
 
+    void CallSwitchMachineState(uint8_t event)
+    {
+        SyncStateMachine::SwitchMachineState(event);
+    }
+
+    uint8_t GetCurrentState()
+    {
+        return currentState_;
+    }
+
+    void CallResponsePullError(int errCode, bool ignoreInnerErr)
+    {
+        SingleVerSyncStateMachine::ResponsePullError(errCode, ignoreInnerErr);
+    }
+
     MOCK_METHOD1(SwitchStateAndStep, void(uint8_t));
 
     MOCK_METHOD0(PrepareNextSyncTask, int(void));
 
     MOCK_METHOD3(DoSaveDataNotify, void(uint32_t, uint32_t, uint32_t));
+
+    MOCK_METHOD0(DoTimeSync, Event());
 };
 } // namespace DistributedDB
 #endif  // #define MOCK_SINGLE_VER_STATE_MACHINE_H

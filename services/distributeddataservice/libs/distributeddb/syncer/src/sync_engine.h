@@ -24,6 +24,7 @@
 #include "device_manager.h"
 #include "isync_engine.h"
 #include "isync_task_context.h"
+#include "remote_executor.h"
 #include "subscribe_manager.h"
 #include "task_pool.h"
 
@@ -111,6 +112,13 @@ public:
 
     void Dump(int fd) override;
 
+    int RemoteQuery(const std::string &device, const RemoteCondition &condition,
+        uint64_t timeout, uint64_t connectionId, std::shared_ptr<ResultSet> &result) override;
+
+    void NotifyConnectionClosed(uint64_t connectionId) override;
+
+    void NotifyUserChange() override;
+
 protected:
     // Create a context
     virtual ISyncTaskContext *CreateSyncTaskContext() = 0;
@@ -130,8 +138,8 @@ protected:
 
 private:
 
-    // Init DeviceManager set callback
-    int InitDeviceManager(const std::function<void(std::string)> &onRemoteDataChanged,
+    // Init DeviceManager set callback and remoteExecutor
+    int InitInnerSource(const std::function<void(std::string)> &onRemoteDataChanged,
         const std::function<void(std::string)> &offlineChanged);
 
     int InitTimeChangedListener();
@@ -177,8 +185,6 @@ private:
 
     ISyncTaskContext *GetConextForMsg(const std::string &targetDev, int &errCode);
 
-    int RunPermissionCheck(const std::string &deviceId, uint8_t flag) const;
-
     ICommunicator *AllocCommunicator(const std::string &identifier, int &errCode);
 
     void UnRegCommunicatorsCallback();
@@ -189,11 +195,17 @@ private:
 
     void ClearInnerResource();
 
-    static uint8_t GetPermissionCheckFlag(bool isAutoSync, int syncMode);
-
     void IncExecTaskCount();
 
     void DecExecTaskCount();
+
+    RemoteExecutor *GetAndIncRemoteExector();
+
+    void SetRemoteExector(RemoteExecutor *executor);
+
+    bool CheckDeviceIdValid(const std::string &checkDeviceId, const std::string &localDeviceId);
+
+    int GetLocalDeviceId(std::string &deviceId);
 
     ICommunicator *communicator_;
     DeviceManager *deviceManager_;
@@ -221,6 +233,9 @@ private:
     std::map<std::string, std::string> equalIdentifierMap_;
     std::mutex execTaskCountLock_;
     std::condition_variable execTaskCv_;
+
+    std::mutex remoteExecutorLock_;
+    RemoteExecutor *remoteExecutor_;
 };
 } // namespace DistributedDB
 

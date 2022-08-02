@@ -18,6 +18,7 @@
 #include <thread>
 #include <utility>
 
+#include "db_common.h"
 #include "db_errno.h"
 #include "log_print.h"
 #include "runtime_context.h"
@@ -43,6 +44,12 @@ ICommunicator *VirtualCommunicatorAggregator::AllocCommunicator(uint64_t commLab
 
 ICommunicator *VirtualCommunicatorAggregator::AllocCommunicator(const LabelType &commLabel, int &outErrorNo)
 {
+    LOGI("[VirtualCommunicatorAggregator][Alloc] Label=%.6s.", VEC_TO_STR(commLabel));
+    if (commLabel.size() != COMM_LABEL_LENGTH) {
+        outErrorNo = -E_INVALID_ARGS;
+        return nullptr;
+    }
+
     if (isEnable_) {
         return AllocCommunicator(remoteDeviceId_, outErrorNo);
     }
@@ -93,6 +100,7 @@ void VirtualCommunicatorAggregator::RunOnConnectCallback(const std::string &targ
 
 int VirtualCommunicatorAggregator::GetLocalIdentity(std::string &outTarget) const
 {
+    outTarget = "DEVICES_A";
     return E_OK;
 }
 
@@ -169,7 +177,7 @@ void VirtualCommunicatorAggregator::DispatchMessage(const std::string &srcTarget
     std::lock_guard<std::mutex> lock(communicatorsLock_);
     auto iter = communicators_.find(dstTarget);
     if (iter != communicators_.end()) {
-        LOGE("[VirtualCommunicatorAggregator] DispatchMessage, find dstTarget %s", dstTarget.c_str());
+        LOGI("[VirtualCommunicatorAggregator] DispatchMessage, find dstTarget %s", dstTarget.c_str());
         VirtualCommunicator *communicator = static_cast<VirtualCommunicator *>(iter->second);
         if (!communicator->IsEnabled()) {
             LOGE("[VirtualCommunicatorAggregator] DispatchMessage, find dstTarget %s disabled", dstTarget.c_str());
@@ -243,4 +251,3 @@ void VirtualCommunicatorAggregator::SetCurrentUserId(const std::string &userId)
     userId_ = userId;
 }
 } // namespace DistributedDB
-

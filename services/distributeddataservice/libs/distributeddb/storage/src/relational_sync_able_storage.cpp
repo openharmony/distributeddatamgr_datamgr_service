@@ -20,6 +20,8 @@
 #include "db_dfx_adapter.h"
 #include "generic_single_ver_kv_entry.h"
 #include "platform_specific.h"
+#include "relational_remote_query_continue_token.h"
+#include "res_finalizer.h"
 #include "runtime_context.h"
 
 namespace DistributedDB {
@@ -61,6 +63,14 @@ std::vector<uint8_t> RelationalSyncAbleStorage::GetIdentifier() const
 {
     std::string identifier = storageEngine_->GetIdentifier();
     return std::vector<uint8_t>(identifier.begin(), identifier.end());
+}
+
+std::vector<uint8_t> RelationalSyncAbleStorage::GetDualTupleIdentifier() const
+{
+    std::string identifier = storageEngine_->GetProperties().GetStringProp(
+        DBProperties::DUAL_TUPLE_IDENTIFIER_DATA, "");
+    std::vector<uint8_t> identifierVect(identifier.begin(), identifier.end());
+    return identifierVect;
 }
 
 // Get the max timestamp of all entries in database.
@@ -376,11 +386,11 @@ int RelationalSyncAbleStorage::GetSyncDataNext(std::vector<SingleVerKvEntry *> &
     return errCode;
 }
 
-int RelationalSyncAbleStorage::PutSyncDataWithQuery(const QueryObject &object,
-    const std::vector<SingleVerKvEntry *> &entries, const DeviceID &deviceName)
+namespace {
+std::vector<DataItem> ConvertEntries(std::vector<SingleVerKvEntry *> entries)
 {
     std::vector<DataItem> dataItems;
-    for (auto itemEntry : entries) {
+    for (const auto &itemEntry : entries) {
         GenericSingleVerKvEntry *entry = static_cast<GenericSingleVerKvEntry *>(itemEntry);
         if (entry != nullptr) {
             DataItem item;
@@ -394,8 +404,23 @@ int RelationalSyncAbleStorage::PutSyncDataWithQuery(const QueryObject &object,
             dataItems.push_back(item);
         }
     }
+    return dataItems;
+}
+}
 
+int RelationalSyncAbleStorage::PutSyncDataWithQuery(const QueryObject &object,
+    const std::vector<SingleVerKvEntry *> &entries, const DeviceID &deviceName)
+{
+    std::vector<DataItem> dataItems = ConvertEntries(entries);
     return PutSyncData(object, dataItems, deviceName);
+}
+
+namespace {
+inline bool IsCollaborationMode(const SQLiteSingleRelationalStorageEngine *engine)
+{
+    return engine->GetProperties().GetIntProp(RelationalDBProperties::DISTRIBUTED_TABLE_MODE,
+        DistributedTableMode::SPLIT_BY_DEVICE) == DistributedTableMode::COLLABORATION;
+}
 }
 
 int RelationalSyncAbleStorage::SaveSyncDataItems(const QueryObject &object, std::vector<DataItem> &dataItems,
@@ -409,9 +434,14 @@ int RelationalSyncAbleStorage::SaveSyncDataItems(const QueryObject &object, std:
     }
     QueryObject query = object;
     query.SetSchema(storageEngine_->GetSchemaRef());
+
+    TableInfo table = storageEngine_->GetSchemaRef().GetTable(object.GetTableName());
+    if (!IsCollaborationMode(storageEngine_)) {
+        // Set table name for SPLIT_BY_DEVICE mode
+        table.SetTableName(DBCommon::GetDistributedTableName(deviceName, object.GetTableName()));
+    }
     DBDfxAdapter::StartTraceSQL();
-    errCode = handle->SaveSyncItems(query, dataItems, deviceName,
-        storageEngine_->GetSchemaRef().GetTable(object.GetTableName()));
+    errCode = handle->SaveSyncItems(query, dataItems, deviceName, table);
     DBDfxAdapter::FinishTraceSQL();
     if (errCode == E_OK) {
         // dataItems size > 0 now because already check before
@@ -493,6 +523,13 @@ int RelationalSyncAbleStorage::LocalDataChanged(int notifyEvent, std::vector<Que
 int RelationalSyncAbleStorage::CreateDistributedDeviceTable(const std::string &device,
     const RelationalSyncStrategy &syncStrategy)
 {
+    auto mode = storageEngine_->GetProperties().GetIntProp(RelationalDBProperties::DISTRIBUTED_TABLE_MODE,
+        DistributedTableMode::SPLIT_BY_DEVICE);
+    if (mode != DistributedTableMode::SPLIT_BY_DEVICE) {
+        LOGD("No need create device table in COLLABORATION mode.");
+        return E_OK;
+    }
+
     int errCode = E_OK;
     auto *handle = GetHandle(true, errCode, OperatePerm::NORMAL_PERM);
     if (handle == nullptr) {
@@ -600,7 +637,7 @@ int RelationalSyncAbleStorage::CheckAndInitQueryCondition(QueryObject &query) co
         return errCode;
     }
 
-    errCode = handle->CheckQueryObjectLegal(table, query);
+    errCode = handle->CheckQueryObjectLegal(table, query, schema.GetSchemaVersion());
     if (errCode != E_OK) {
         LOGE("Check relational query condition failed. %d", errCode);
     }
@@ -613,6 +650,81 @@ bool RelationalSyncAbleStorage::CheckCompatible(const std::string &schema, uint8
 {
     // return true if is relational schema.
     return !schema.empty() && ReadSchemaType(type) == SchemaType::RELATIVE;
+}
+
+int RelationalSyncAbleStorage::GetRemoteQueryData(const PreparedStmt &prepStmt, size_t packetSize,
+    std::vector<std::string> &colNames, std::vector<RelationalRowData *> &data) const
+{
+    if (IsCollaborationMode(storageEngine_) || !storageEngine_->GetSchemaRef().IsSchemaValid()) {
+        return -E_NOT_SUPPORT;
+    }
+    if (prepStmt.GetOpCode() != PreparedStmt::ExecutorOperation::QUERY || !prepStmt.IsValid() ||
+        packetSize < DBConstant::MIN_MTU_SIZE) {
+        LOGE("[ExecuteQuery] invalid args");
+        return -E_INVALID_ARGS;
+    }
+    int errCode = E_OK;
+    auto handle = GetHandle(false, errCode, OperatePerm::NORMAL_PERM);
+    if (handle == nullptr) {
+        LOGE("[ExecuteQuery] get handle fail:%d", errCode);
+        return errCode;
+    }
+    errCode = handle->ExecuteQueryBySqlStmt(prepStmt.GetSql(), prepStmt.GetBindArgs(), packetSize, colNames, data);
+    if (errCode != E_OK) {
+        LOGE("[ExecuteQuery] ExecuteQueryBySqlStmt failed:%d", errCode);
+    }
+    ReleaseHandle(handle);
+    return errCode;
+}
+
+int RelationalSyncAbleStorage::ExecuteQuery(const PreparedStmt &prepStmt, size_t packetSize,
+    RelationalRowDataSet &dataSet, ContinueToken &token) const
+{
+    dataSet.Clear();
+    if (token == nullptr) {
+        // start query
+        std::vector<std::string> colNames;
+        std::vector<RelationalRowData *> data;
+        ResFinalizer finalizer([&data] { RelationalRowData::Release(data); });
+
+        int errCode = GetRemoteQueryData(prepStmt, packetSize, colNames, data);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+
+        // create one token
+        token = static_cast<ContinueToken>(
+            new (std::nothrow) RelationalRemoteQueryContinueToken(std::move(colNames), std::move(data)));
+        if (token == nullptr) {
+            LOGE("ExecuteQuery OOM");
+            return -E_OUT_OF_MEMORY;
+        }
+    }
+
+    auto remoteToken = static_cast<RelationalRemoteQueryContinueToken *>(token);
+    if (!remoteToken->CheckValid()) {
+        LOGE("ExecuteQuery invalid token");
+        return -E_INVALID_ARGS;
+    }
+
+    int errCode = remoteToken->GetData(packetSize, dataSet);
+    if (errCode == -E_UNFINISHED) {
+        errCode = E_OK;
+    } else {
+        if (errCode != E_OK) {
+            dataSet.Clear();
+        }
+        delete remoteToken;
+        remoteToken = nullptr;
+        token = nullptr;
+    }
+    LOGI("ExecuteQuery finished, errCode:%d, size:%d", errCode, dataSet.GetSize());
+    return errCode;
+}
+
+const RelationalDBProperties &RelationalSyncAbleStorage::GetRelationalDbProperties() const
+{
+    return storageEngine_->GetProperties();
 }
 }
 #endif

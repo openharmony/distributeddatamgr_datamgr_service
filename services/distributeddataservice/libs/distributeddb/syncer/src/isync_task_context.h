@@ -68,6 +68,8 @@ public:
     // Move to next target to sync
     virtual void MoveToNextTarget() = 0;
 
+    virtual int GetNextTarget(bool isNeedSetFinished) = 0;
+
     // Get the current task syncId
     virtual uint32_t GetSyncId() const = 0;
 

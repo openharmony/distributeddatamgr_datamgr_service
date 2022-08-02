@@ -33,6 +33,7 @@
 #include "relational_sync_able_storage.h"
 #include "sqlite_relational_store.h"
 #include "sqlite_utils.h"
+#include "virtual_communicator_aggregator.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -43,7 +44,7 @@ namespace {
 string g_testDir;
 string g_storePath;
 string g_storeID = "dftStoreID";
-const string g_tableName { "data" };
+string g_tableName { "data" };
 DistributedDB::RelationalStoreManager g_mgr(APP_ID, USER_ID);
 RelationalStoreDelegate *g_delegate = nullptr;
 IRelationalStore *g_store = nullptr;
@@ -268,6 +269,10 @@ void DistributedDBRelationalGetDataTest::SetUpTestCase(void)
     DistributedDBToolsUnitTest::TestDirInit(g_testDir);
     g_storePath = g_testDir + "/getDataTest.db";
     LOGI("The test db is:%s", g_testDir.c_str());
+
+    auto communicator = new (std::nothrow) VirtualCommunicatorAggregator();
+    ASSERT_TRUE(communicator != nullptr);
+    RuntimeContext::GetInstance()->SetCommunicatorAggregator(communicator);
 }
 
 void DistributedDBRelationalGetDataTest::TearDownTestCase(void)
@@ -275,6 +280,7 @@ void DistributedDBRelationalGetDataTest::TearDownTestCase(void)
 
 void DistributedDBRelationalGetDataTest::SetUp(void)
 {
+    g_tableName = "data";
     DistributedDBToolsUnitTest::PrintTestCaseInfo();
     CreateDBAndTable();
 }
@@ -1190,9 +1196,9 @@ HWTEST_F(DistributedDBRelationalGetDataTest, CompatibleData2, TestSize.Level1)
      * @tc.expected: The create sql is correct.
      */
     std::string expectSql = "CREATE TABLE naturalbase_rdb_aux_data_"
-        "265a9c8c3c690cdfdac72acfe7a50f748811802635d987bb7d69dc602ed3794f(key integer NOT NULL PRIMARY KEY,"
+        "265a9c8c3c690cdfdac72acfe7a50f748811802635d987bb7d69dc602ed3794f(key integer NOT NULL,"
         "value integer, integer_type integer NOT NULL DEFAULT 123, text_type text NOT NULL DEFAULT 'high_version', "
-        "real_type real NOT NULL DEFAULT 123.123456, blob_type blob NOT NULL DEFAULT 123)";
+        "real_type real NOT NULL DEFAULT 123.123456, blob_type blob NOT NULL DEFAULT 123, PRIMARY KEY (key))";
     sql = "SELECT sql FROM sqlite_master WHERE tbl_name='" + DBConstant::RELATIONAL_PREFIX + g_tableName + "_" +
         DBCommon::TransferStringToHex(DBCommon::TransferHashString(deviceID)) + "';";
     EXPECT_EQ(GetOneText(db, sql), expectSql);
@@ -1471,5 +1477,61 @@ HWTEST_F(DistributedDBRelationalGetDataTest, NoPkData1, TestSize.Level1)
 
     sqlite3_close(db);
     RefObject::DecObjRef(g_store);
+}
+
+/**
+ * @tc.name: GetAfterDropTable1
+ * @tc.desc: Get data after drop table.
+ * @tc.type: FUNC
+ * @tc.require: AR000H2QPN
+ * @tc.author: lidongwei
+ */
+HWTEST_F(DistributedDBRelationalGetDataTest, GetAfterDropTable1, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. Create distributed table.
+     * @tc.expected: Succeed, return OK.
+     */
+    ASSERT_EQ(g_mgr.OpenStore(g_storePath, g_storeID, RelationalStoreDelegate::Option {}, g_delegate), DBStatus::OK);
+    ASSERT_NE(g_delegate, nullptr);
+    ASSERT_EQ(g_delegate->CreateDistributedTable(g_tableName), DBStatus::OK);
+
+    /**
+     * @tc.steps: step2. Insert several data.
+     * @tc.expected: Succeed, return OK.
+     */
+    ASSERT_EQ(AddOrUpdateRecord(1, 1), E_OK);
+    ASSERT_EQ(AddOrUpdateRecord(2, 2), E_OK);
+    ASSERT_EQ(AddOrUpdateRecord(3, 3), E_OK);
+
+    /**
+     * @tc.steps: step3. Check data in distributed log table.
+     * @tc.expected: The data in log table is in expect. All the flag in log table is 1.
+     */
+    sqlite3 *db = nullptr;
+    ASSERT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+
+    std::string getLogSql = "SELECT count(*) FROM " + DBConstant::RELATIONAL_PREFIX + g_tableName + "_log "
+                            "WHERE flag&0x01<>0;";
+    ExpectCount(db, getLogSql, 0u);  // 0 means no deleted data.
+
+    /**
+     * @tc.steps: step4. Drop the table in another connection.
+     * @tc.expected: Succeed.
+     */
+    std::thread t1([] {
+        sqlite3 *db = nullptr;
+        ASSERT_EQ(sqlite3_open(g_storePath.c_str(), &db), SQLITE_OK);
+        ExecSqlAndAssertOK(db, "DROP TABLE " + g_tableName);
+        sqlite3_close(db);
+    });
+    t1.join();
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    /**
+     * @tc.steps: step5. Check data in distributed log table.
+     * @tc.expected: The data in log table is in expect. All the flag in log table is 3.
+     */
+    ExpectCount(db, getLogSql, 3u);  // 3 means all deleted data.
+    sqlite3_close(db);
 }
 #endif

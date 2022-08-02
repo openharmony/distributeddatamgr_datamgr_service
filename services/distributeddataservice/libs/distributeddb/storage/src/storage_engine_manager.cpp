@@ -145,7 +145,7 @@ StorageEngineManager *StorageEngineManager::GetInstance()
     if (!isRegLockStatusListener_) {
         int errCode = (instance_.load())->RegisterLockStatusListener();
         if (errCode != E_OK) {
-            LOGW("[StorageEngineManager] Failed to regitster lock status listener:%d", errCode);
+            LOGW("[StorageEngineManager] Failed to register lock status listener:%d", errCode);
         } else {
             isRegLockStatusListener_ = true;
         }

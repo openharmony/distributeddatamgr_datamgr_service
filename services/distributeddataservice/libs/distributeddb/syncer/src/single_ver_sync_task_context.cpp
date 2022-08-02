@@ -285,7 +285,6 @@ void SingleVerSyncTaskContext::ClearAllSyncTask()
     }
     if (GetTaskExecStatus() == SyncTaskContext::RUNNING) {
         // clear syncing task.
-        isCommNormal_ = false;
         stateMachine_->CommErrAbort();
     }
     // reset last push status for sync merge
@@ -412,6 +411,7 @@ bool SingleVerSyncTaskContext::IsQuerySync() const
 
 std::set<CompressAlgorithm> SingleVerSyncTaskContext::GetRemoteCompressAlgo() const
 {
+    std::lock_guard<std::mutex> autoLock(remoteDbAbilityLock_);
     std::set<CompressAlgorithm> compressAlgoSet;
     for (const auto &algo : SyncConfig::COMPRESSALGOMAP) {
         if (remoteDbAbility_.GetAbilityItem(algo.second) == SUPPORT_MARK) {
@@ -440,7 +440,10 @@ std::string SingleVerSyncTaskContext::GetRemoteCompressAlgoStr() const
 
 void SingleVerSyncTaskContext::SetDbAbility(DbAbility &remoteDbAbility)
 {
-    remoteDbAbility_ = remoteDbAbility;
+    {
+        std::lock_guard<std::mutex> autoLock(remoteDbAbilityLock_);
+        remoteDbAbility_ = remoteDbAbility;
+    }
     LOGI("[SingleVerSyncTaskContext] set dev=%s compressAlgo=%s, IsSupAllPredicateQuery=%u,"
         "IsSupSubscribeQuery=%u, inKeys=%u",
         STR_MASK(GetDeviceId()), GetRemoteCompressAlgoStr().c_str(),
@@ -466,9 +469,10 @@ CompressAlgorithm SingleVerSyncTaskContext::ChooseCompressAlgo() const
     return *(algoIntersection.begin());
 }
 
-const DbAbility& SingleVerSyncTaskContext::GetRemoteDbAbility() const
+bool SingleVerSyncTaskContext::IsNotSupportAbility(const AbilityItem &abilityItem) const
 {
-    return remoteDbAbility_;
+    std::lock_guard<std::mutex> autoLock(remoteDbAbilityLock_);
+    return remoteDbAbility_.GetAbilityItem(abilityItem) != SUPPORT_MARK;
 }
 
 void SingleVerSyncTaskContext::SetSubscribeManager(std::shared_ptr<SubscribeManager> &subManager)
@@ -560,5 +564,10 @@ void SingleVerSyncTaskContext::ResetLastPushTaskStatus()
 {
     lastFullSyncTaskStatus_ = SyncOperation::OP_WAITING;
     lastQuerySyncTaskStatusMap_.clear();
+}
+
+void SingleVerSyncTaskContext::SetCommNormal(bool isCommNormal)
+{
+    isCommNormal_ = isCommNormal;
 }
 } // namespace DistributedDB
