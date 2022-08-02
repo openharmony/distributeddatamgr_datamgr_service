@@ -349,6 +349,7 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
     }
     auto syncer = GetRdbSyncer(param);
     if (syncer == nullptr) {
+        ZLOGE("syncer is null");
         return RDB_ERROR;
     }
     return syncer->RemoteQuery(device, sql, selectionArgs, resultSet);

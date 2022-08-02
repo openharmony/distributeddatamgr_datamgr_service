@@ -346,11 +346,13 @@ int32_t RdbServiceProxy::RemoteQuery(const RdbSyncerParam& param, const std::str
 
     int32_t status = reply.ReadInt32();
     if (status != RdbStatus::RDB_OK) {
+        ZLOGE("remote query failed, server side status is %{public}d", status);
         return status;
     }
 
     sptr<IRemoteObject> remote = reply.ReadRemoteObject();
     if (remote == nullptr) {
+        ZLOGE("read remote object is null");
         return RDB_ERROR;
     }
     resultSet = remote;
