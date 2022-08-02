@@ -16,6 +16,7 @@
 #include "virtual_communicator.h"
 
 #include "log_print.h"
+#include "protocol_proto.h"
 #include "sync_engine.h"
 #include "virtual_communicator_aggregator.h"
 
@@ -64,7 +65,19 @@ int VirtualCommunicator::SendMessage(const std::string &dstTarget, const Message
         inMsg = nullptr;
         return E_OK;
     }
-    communicatorAggregator_->DispatchMessage(deviceId_, dstTarget, inMsg, onEnd);
+    int errCode = E_OK;
+    std::shared_ptr<ExtendHeaderHandle> extendHandle = nullptr;
+    auto buffer = ProtocolProto::ToSerialBuffer(inMsg, errCode, extendHandle);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    auto message = ProtocolProto::ToMessage(buffer, errCode);
+    if (errCode != E_OK) {
+        delete buffer;
+        buffer = nullptr;
+        return errCode;
+    }
+    communicatorAggregator_->DispatchMessage(deviceId_, dstTarget, message, onEnd);
     return E_OK;
 }
 
