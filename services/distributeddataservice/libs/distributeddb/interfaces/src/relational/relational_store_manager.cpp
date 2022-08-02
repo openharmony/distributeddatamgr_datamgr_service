@@ -34,18 +34,12 @@ namespace DistributedDB {
 namespace {
 const int GET_CONNECT_RETRY = 3;
 const int RETRY_GET_CONN_INTER = 30;
-
-void InitStoreProp(const std::string &storePath, const std::string &appId, const std::string &userId,
-    const std::string &storeId, RelationalDBProperties &properties)
-{
-    properties.SetStringProp(RelationalDBProperties::DATA_DIR, storePath);
-    properties.SetIdentifier(userId, appId, storeId);
-}
 }
 
-RelationalStoreManager::RelationalStoreManager(const std::string &appId, const std::string &userId)
+RelationalStoreManager::RelationalStoreManager(const std::string &appId, const std::string &userId, int32_t instanceId)
     : appId_(appId),
-      userId_(userId)
+      userId_(userId),
+      instanceId_(instanceId)
 {}
 
 static RelationalStoreConnection *GetOneConnectionWithRetry(const RelationalDBProperties &properties, int &errCode)
@@ -82,7 +76,8 @@ DB_API DBStatus RelationalStoreManager::OpenStore(const std::string &path, const
     }
 
     RelationalDBProperties properties;
-    InitStoreProp(canonicalDir, appId_, userId_, storeId, properties);
+    properties.SetStringProp(RelationalDBProperties::DATA_DIR, canonicalDir);
+    properties.SetIdentifier(userId_, appId_, storeId, instanceId_);
     properties.SetBoolProp(RelationalDBProperties::SYNC_DUAL_TUPLE_MODE, option.syncDualTupleMode);
 
     int errCode = E_OK;
