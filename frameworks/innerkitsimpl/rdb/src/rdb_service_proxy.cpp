@@ -324,6 +324,41 @@ int32_t RdbServiceProxy::DoUnSubscribe(const RdbSyncerParam &param)
     return reply.ReadInt32(res) ? res : RDB_ERROR;
 }
 
+int32_t RdbServiceProxy::RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
+                                     const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(IRdbService::GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return RDB_ERROR;
+    }
+    if (!DistributedKv::ITypesUtil::Marshal(data, param, device, sql, selectionArgs)) {
+        ZLOGE("write to message parcel failed");
+        return RDB_ERROR;
+    }
+
+    MessageParcel reply;
+    MessageOption option;
+    if (Remote()->SendRequest(RDB_SERVICE_CMD_REMOTE_QUERY, data, reply, option) != 0) {
+        ZLOGE("send request failed");
+        return RDB_ERROR;
+    }
+
+    int32_t status = reply.ReadInt32();
+    if (status != RdbStatus::RDB_OK) {
+        ZLOGE("remote query failed, server side status is %{public}d", status);
+        return status;
+    }
+
+    sptr<IRemoteObject> remote = reply.ReadRemoteObject();
+    if (remote == nullptr) {
+        ZLOGE("read remote object is null");
+        return RDB_ERROR;
+    }
+    resultSet = remote;
+    return RDB_OK;
+}
+
 RdbServiceProxy::ObserverMap RdbServiceProxy::ExportObservers()
 {
     return observers_;

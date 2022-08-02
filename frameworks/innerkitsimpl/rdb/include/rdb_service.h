@@ -18,7 +18,7 @@
 
 #include <memory>
 #include <string>
-
+#include "iremote_object.h"
 #include "rdb_types.h"
 
 namespace OHOS::DistributedRdb {
@@ -37,6 +37,9 @@ public:
 
     virtual int32_t UnSubscribe(const RdbSyncerParam& param, const SubscribeOption& option,
                                 RdbStoreObserver *observer) = 0;
+
+    virtual int32_t RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
+                                const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet) = 0;
 };
 } // namespace OHOS::DistributedRdb
 #endif

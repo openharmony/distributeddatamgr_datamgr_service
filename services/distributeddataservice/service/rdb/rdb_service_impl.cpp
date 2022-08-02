@@ -339,4 +339,19 @@ int32_t RdbServiceImpl::DoUnSubscribe(const RdbSyncerParam& param)
     identifiers_.Erase(identifier);
     return RDB_OK;
 }
+
+int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
+                                    const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet)
+{
+    if (!CheckAccess(param)) {
+        ZLOGE("permission error");
+        return RDB_ERROR;
+    }
+    auto syncer = GetRdbSyncer(param);
+    if (syncer == nullptr) {
+        ZLOGE("syncer is null");
+        return RDB_ERROR;
+    }
+    return syncer->RemoteQuery(device, sql, selectionArgs, resultSet);
+}
 } // namespace OHOS::DistributedRdb

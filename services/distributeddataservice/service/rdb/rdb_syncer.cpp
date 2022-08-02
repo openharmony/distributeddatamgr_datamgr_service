@@ -23,6 +23,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
+#include "rdb_result_set_impl.h"
 #include "types.h"
 #include "utils/constant.h"
 #include "utils/converter.h"
@@ -375,5 +376,27 @@ int32_t RdbSyncer::DoAsync(const SyncOption &option, const RdbPredicates &predic
                               HandleSyncStatus(syncStatus, result);
                               callback(result);
                           }, false);
+}
+
+int32_t RdbSyncer::RemoteQuery(const std::string& device, const std::string& sql,
+                               const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet)
+{
+    ZLOGI("enter");
+    auto* delegate = GetDelegate();
+    if (delegate == nullptr) {
+        ZLOGE("delegate is nullptr");
+        return RDB_ERROR;
+    }
+
+    ZLOGI("delegate remote query");
+    std::shared_ptr<DistributedDB::ResultSet> dbResultSet;
+    DistributedDB::DBStatus status = delegate->RemoteQuery(device, {sql, selectionArgs},
+                                                           REMOTE_QUERY_TIME_OUT, dbResultSet);
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("DistributedDB remote query failed, status is  %{public}d.", status);
+        return RDB_ERROR;
+    }
+    resultSet = (new (std::nothrow) RdbResultSetImpl(dbResultSet))->AsObject().GetRefPtr();
+    return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb

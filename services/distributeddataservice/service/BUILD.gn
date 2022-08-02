@@ -61,6 +61,8 @@ ohos_shared_library("distributeddatasvc") {
     "object/object_manager.cpp",
     "object/object_service_impl.cpp",
     "object/object_service_stub.cpp",
+    "rdb/rdb_result_set_impl.cpp",
+    "rdb/rdb_result_set_stub.cpp",
     "rdb/rdb_service_impl.cpp",
     "rdb/rdb_service_stub.cpp",
     "rdb/rdb_store_observer_impl.cpp",
@@ -86,6 +88,7 @@ ohos_shared_library("distributeddatasvc") {
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "relational_store:native_rdb",
   ]
   subsystem_name = "distributeddatamgr"
 }

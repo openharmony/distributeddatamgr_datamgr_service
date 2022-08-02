@@ -46,6 +46,8 @@ public:
 
     int32_t UnSubscribe(const RdbSyncerParam& param, const SubscribeOption& option,
                         RdbStoreObserver *observer) override;
+    int32_t RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
+                        const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet) override;
 
     ObserverMap ExportObservers();
 

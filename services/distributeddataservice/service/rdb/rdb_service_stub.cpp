@@ -136,6 +136,29 @@ int32_t RdbServiceStub::OnRemoteDoUnSubscribe(MessageParcel &data, MessageParcel
     return RDB_OK;
 }
 
+int32_t RdbServiceStub::OnRemoteDoRemoteQuery(MessageParcel& data, MessageParcel& reply)
+{
+    RdbSyncerParam param;
+    std::string device;
+    std::string sql;
+    std::vector<std::string> selectionArgs;
+    if (!DistributedKv::ITypesUtil::Unmarshal(data, param, device, sql, selectionArgs)) {
+        ZLOGE("read from message parcel failed");
+        reply.WriteInt32(RDB_ERROR);
+        return RDB_OK;
+    }
+
+    sptr<IRemoteObject> resultSet;
+    int32_t status = RemoteQuery(param, device, sql, selectionArgs, resultSet);
+    if (status != RDB_OK) {
+        reply.WriteInt32(RDB_ERROR);
+        return RDB_OK;
+    }
+    reply.WriteInt32(RDB_OK);
+    reply.WriteRemoteObject(resultSet);
+    return RDB_OK;
+}
+
 bool RdbServiceStub::CheckInterfaceToken(MessageParcel& data)
 {
     auto localDescriptor = IRdbService::GetDescriptor();

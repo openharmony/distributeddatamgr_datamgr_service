@@ -50,6 +50,9 @@ public:
 
     int32_t DoAsync(const SyncOption& option, const RdbPredicates& predicates, const SyncCallback& callback);
 
+    int32_t RemoteQuery(const std::string& device, const std::string& sql,
+                        const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet);
+
     static std::string RemoveSuffix(const std::string& name);
 private:
     std::string GetUserId() const;
@@ -99,6 +102,7 @@ private:
     };
 
     static constexpr int DECIMAL_BASE = 10;
+    static constexpr uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
 };
 } // namespace OHOS::DistributedRdb
 #endif
