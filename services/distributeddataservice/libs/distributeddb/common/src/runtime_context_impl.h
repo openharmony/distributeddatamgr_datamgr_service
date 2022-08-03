@@ -109,7 +109,7 @@ public:
 
     int SetSyncActivationCheckCallback(const SyncActivationCheckCallbackV2 &callback) override;
 
-    bool IsSyncerNeedActive(const DBProperties &properies) const override;
+    bool IsSyncerNeedActive(const DBProperties &properties) const override;
 
     // Register a user changed lister, it will be callback when user change.
     NotificationChain::Listener *RegisterUserChangedListerner(const UserChangedAction &action,
@@ -123,7 +123,7 @@ public:
 
     int SetPermissionConditionCallback(const PermissionConditionCallback &callback) override;
 
-    std::map<std::string, std::string> GetPermissionCheckParam(const DBProperties &properies) override;
+    std::map<std::string, std::string> GetPermissionCheckParam(const DBProperties &properties) override;
 private:
     static constexpr int MAX_TP_THREADS = 10;  // max threads of the task pool.
     static constexpr int MIN_TP_THREADS = 1;   // min threads of the task pool.

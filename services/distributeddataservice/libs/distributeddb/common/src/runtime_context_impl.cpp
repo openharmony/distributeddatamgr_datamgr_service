@@ -625,13 +625,13 @@ int RuntimeContextImpl::SetSyncActivationCheckCallback(const SyncActivationCheck
     return E_OK;
 }
 
-bool RuntimeContextImpl::IsSyncerNeedActive(const DBProperties &properies) const
+bool RuntimeContextImpl::IsSyncerNeedActive(const DBProperties &properties) const
 {
     ActivationCheckParam param = { 
-        properies.GetStringProp(DBProperties::USER_ID, ""),
-        properies.GetStringProp(DBProperties::APP_ID, ""),
-        properies.GetStringProp(DBProperties::STORE_ID, ""),
-        properies.GetIntProp(DBProperties::INSTANCE_ID, 0)
+        properties.GetStringProp(DBProperties::USER_ID, ""),
+        properties.GetStringProp(DBProperties::APP_ID, ""),
+        properties.GetStringProp(DBProperties::STORE_ID, ""),
+        properties.GetIntProp(DBProperties::INSTANCE_ID, 0)
     };
     std::shared_lock<std::shared_mutex> autoLock(syncActivationCheckCallbackMutex_);
     if (syncActivationCheckCallbackV2_) {
@@ -698,13 +698,13 @@ int RuntimeContextImpl::SetPermissionConditionCallback(const PermissionCondition
     return E_OK;
 }
 
-std::map<std::string, std::string> RuntimeContextImpl::GetPermissionCheckParam(const DBProperties &properies)
+std::map<std::string, std::string> RuntimeContextImpl::GetPermissionCheckParam(const DBProperties &properties)
 {
     PermissionConditionParam param = { 
-        properies.GetStringProp(DBProperties::USER_ID, ""),
-        properies.GetStringProp(DBProperties::APP_ID, ""),
-        properies.GetStringProp(DBProperties::STORE_ID, ""),
-        properies.GetIntProp(DBProperties::INSTANCE_ID, 0)
+        properties.GetStringProp(DBProperties::USER_ID, ""),
+        properties.GetStringProp(DBProperties::APP_ID, ""),
+        properties.GetStringProp(DBProperties::STORE_ID, ""),
+        properties.GetIntProp(DBProperties::INSTANCE_ID, 0)
     };
     std::shared_lock<std::shared_mutex> autoLock(permissionConditionLock_);
     if (permissionConditionCallback_ == nullptr) {

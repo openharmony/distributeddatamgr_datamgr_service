@@ -120,7 +120,7 @@ public:
 
     virtual int SetSyncActivationCheckCallback(const SyncActivationCheckCallbackV2 &callback) = 0;
 
-    virtual bool IsSyncerNeedActive(const DBProperties &properies) const = 0;
+    virtual bool IsSyncerNeedActive(const DBProperties &properties) const = 0;
 
     virtual NotificationChain::Listener *RegisterUserChangedListerner(const UserChangedAction &action,
         EventType event) = 0;
@@ -134,7 +134,7 @@ public:
 
     virtual int SetPermissionConditionCallback(const PermissionConditionCallback &callback) = 0;
 
-    virtual std::map<std::string, std::string> GetPermissionCheckParam(const DBProperties &properies) = 0;
+    virtual std::map<std::string, std::string> GetPermissionCheckParam(const DBProperties &properties) = 0;
 protected:
     RuntimeContext() = default;
     virtual ~RuntimeContext() {}
