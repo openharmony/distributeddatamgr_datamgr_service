@@ -35,7 +35,6 @@ public:
     API_EXPORT void LoadBackupRules(std::vector<std::string> &backupRules);
     API_EXPORT bool CanBackup();
 private:
-    //std::map<std::string, BackupRule *> backupRules_;
     std::vector<BackupRule *> backupRules_;
     ConcurrentMap<std::string, std::function<BackupRule *()>> getters_;
 };

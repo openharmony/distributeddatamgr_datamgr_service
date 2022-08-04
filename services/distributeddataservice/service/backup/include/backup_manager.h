@@ -23,7 +23,8 @@
 namespace OHOS::DistributedData {
 class BackupManager {
 public:
-    using Exporter = std::function<void(const StoreMetaData &, const std::vector<uint8_t> &, const std::string &, DistributedKv::Status &)>;
+    using Exporter = std::function<void(
+        const StoreMetaData &, const std::vector<uint8_t> &, const std::string &, DistributedKv::Status &)>;
     struct BackupParam {
         int64_t schedularDelay;
         int64_t schedularInternal;
@@ -39,7 +40,8 @@ public:
     void BackSchedule();
     void SetBackupParam(const BackupParam &backupParam);
     void RegisterExporter(int type, Exporter exporter);
-    bool GetPassWord(const DistributedKv::AppId &appId, const DistributedKv::StoreId &storeId, std::vector<uint8_t> password);
+    bool GetPassWord(const DistributedKv::AppId &appId,
+        const DistributedKv::StoreId &storeId, std::vector<uint8_t> password);
 
 private:
     BackupManager();

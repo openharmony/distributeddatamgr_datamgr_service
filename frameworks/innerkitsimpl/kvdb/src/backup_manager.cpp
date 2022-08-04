@@ -204,7 +204,7 @@ Status BackupManager::Restore(const std::string &name, const std::string &baseDi
         password = SecurityManager::GetInstance().GetDBPassword(keyName, baseDir);
     } else {
         std::vector<uint8_t> pwd;
-        service->GetBackupPassword({ appId }, { storeId }, pwd);
+        service->GetBackupPassword({appId}, {storeId}, pwd);
         password.SetValue(pwd.data(), pwd.size());
         pwd.assign(pwd.size(), 0);
     }

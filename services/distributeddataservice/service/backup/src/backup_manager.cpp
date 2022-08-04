@@ -34,6 +34,7 @@ namespace OHOS::DistributedData {
 using namespace OHOS::Security::AccessToken;
 using namespace AppDistributedKv;
 namespace {
+constexpr const int  COPY_SIZE = 1024;
 constexpr const char *AUTO_BACKUP_NAME = "autoBackup.bak";
 constexpr const char *BACKUP_BK_POSTFIX = ".bk";
 constexpr const char *BACKUP_TMP_POSTFIX = ".tmp";
@@ -152,7 +153,8 @@ std::vector<StoreMetaData> BackupManager::GetMetas()
         ZLOGE("local uuid is empty!");
     }
     ZLOGI("BackupHandler Schedule Every start.");
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ device.uuid }), results)) {
+    auto prefix = StoreMetaData::GetPrefix({device.uuid});
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, results)) {
         ZLOGE("GetFullMetaData failed.");
     }
     return results;
@@ -281,7 +283,6 @@ void BackupManager::CleanData(const std::string &path, const std::string &key)
  * */
 BackupManager::ClearType BackupManager::GetClearType(const std::string &path)
 {
-
     std::string tmpFile = path + BACKUP_TMP_POSTFIX;
     std::string bkFile = path + BACKUP_BK_POSTFIX;
     if (IsFileExist(tmpFile)) {
@@ -295,24 +296,24 @@ BackupManager::ClearType BackupManager::GetClearType(const std::string &path)
 
 void BackupManager::CopyFile(const std::string &oldPath, const std::string &newPath, bool isCreate)
 {
-    std::fstream fin,fout;
+    std::fstream fin, fout;
     fin.open(oldPath, std::ios_base::in);
     if (isCreate) {
         fout.open(newPath, std::ios_base::out | std::ios_base::ate);
     } else {
         fout.open(newPath, std::ios_base::out | std::ios_base::trunc);
     }
-    char buf[1024] = {0};
-    while( !fin.eof() )
-    {
-        fin.read(buf,1024);
-        fout.write(buf,fin.gcount());
+    char buf[COPY_SIZE] = {0};
+    while(!fin.eof()) {
+        fin.read(buf, COPY_SIZE);
+        fout.write(buf, fin.gcount());
     }
     fin.close();
     fout.close();
 }
 
-bool BackupManager::GetPassWord(const DistributedKv::AppId &appId, const DistributedKv::StoreId &storeId, std::vector<uint8_t> password)
+bool BackupManager::GetPassWord(
+    const DistributedKv::AppId &appId, const DistributedKv::StoreId &storeId, std::vector<uint8_t> password)
 {
     auto meta = GetStoreMetaData(appId, storeId);
     std::string key = meta.GetSecretKey();

@@ -21,7 +21,7 @@ namespace DistributedData {
 class BackupRuleScreenOff : public BackupRuleManager::BackupRule {
 public:
     BackupRuleScreenOff() noexcept;
-    ~BackupRuleScreenOff(){}
+    ~BackupRuleScreenOff() {}
     bool CanBackup() override;
 private:
     static BackupRuleScreenOff instance_;

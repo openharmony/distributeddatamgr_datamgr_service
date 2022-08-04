@@ -21,7 +21,7 @@ namespace DistributedData {
 class BackupRuleCharging : public BackupRuleManager::BackupRule {
 public:
     BackupRuleCharging() noexcept;
-    ~BackupRuleCharging(){}
+    ~BackupRuleCharging() {}
     bool CanBackup() override;
 private:
     static BackupRuleCharging instance_;

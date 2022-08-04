@@ -12,7 +12,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#define LOG_TAG "KVDBExporter"
 #include "kvdb_exporter.h"
+
 #include "backup_manager.h"
 #include "directory_manager.h"
 #include "log_print.h"
@@ -20,12 +22,13 @@
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 __attribute__((used)) KVDBExporter KVDBExporter::instance_;
-KVDBExporter::KVDBExporter()
+KVDBExporter::KVDBExporter() noexcept
 {
     BackupManager::GetInstance().RegisterExporter(KvStoreType::SINGLE_VERSION, [](
         const StoreMetaData &meta, const std::vector<uint8_t> &pwd, const std::string &backupPath, Status &status) {
         DBManager manager(meta.appId, meta.user);
-        manager.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(meta) });
+        auto path = DirectoryManager::GetInstance().GetStorePath(meta);
+        manager.SetKvStoreConfig({path});
         DBPassword dbPassword;
         dbPassword.SetValue(pwd.data(), pwd.size());
         auto dbOption = StoreCache::GetDBOption(meta, dbPassword);
@@ -33,13 +36,13 @@ KVDBExporter::KVDBExporter()
         manager.GetKvStore(meta.storeId, dbOption, [&manager, &backupPath, &dbPassword, &status]
             (DistributedDB::DBStatus dbstatus, DistributedDB::KvStoreNbDelegate *delegate) {
             if (delegate == nullptr) {
-               // ZLOGE("Auto backup delegate is null");
+                ZLOGE("Auto backup delegate is null");
                 status = ERROR;
                 return;
             }
             dbstatus = delegate->Export(backupPath, dbPassword);
             status = (dbstatus == DistributedDB::DBStatus::OK) ? SUCCESS : ERROR;
-          //  ZLOGI("Auto backup, path:%{public}s status:%{public}d.", backupPath.c_str(), dbstatus);
+            ZLOGI("Auto backup, path:%{public}s status:%{public}d.", backupPath.c_str(), dbstatus);
             manager.CloseKvStore(delegate);
         });
     });

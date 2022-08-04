@@ -19,13 +19,13 @@
 #include "kv_store_nb_delegate.h"
 #include "metadata/store_meta_data.h"
 namespace OHOS::DistributedKv {
-class KVDBExporter{
+class KVDBExporter {
 public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using DBManager = DistributedDB::KvStoreDelegateManager;
     using DBPassword = DistributedDB::CipherPassword;
-    KVDBExporter();
-    ~KVDBExporter(){}
+    KVDBExporter() noexcept;
+    ~KVDBExporter() {}
 private:
     static KVDBExporter instance_;
 };
