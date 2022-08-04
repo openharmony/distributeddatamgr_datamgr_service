@@ -32,7 +32,7 @@ using namespace DistributedDBUnitTest;
 using namespace std;
 
 namespace {
-    string g_testDir;
+    std::string g_testDir;
     VirtualCommunicatorAggregator* g_communicatorAggregator = nullptr;
     const std::string DEVICE_A = "real_device";
     const std::string DEVICE_B = "deviceB";

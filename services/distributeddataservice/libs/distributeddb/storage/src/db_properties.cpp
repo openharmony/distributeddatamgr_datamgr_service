@@ -72,7 +72,7 @@ void DBProperties::SetIntProp(const std::string &name, int value)
 }
 
 void DBProperties::SetIdentifier(const std::string &userId, const std::string &appId, const std::string &storeId,
-        int32_t instanceId)
+    int32_t instanceId)
 {
     SetStringProp(DBProperties::APP_ID, appId);
     SetStringProp(DBProperties::USER_ID, userId);

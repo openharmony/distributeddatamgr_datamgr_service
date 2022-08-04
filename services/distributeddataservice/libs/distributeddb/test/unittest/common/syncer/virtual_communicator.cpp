@@ -66,25 +66,13 @@ int VirtualCommunicator::SendMessage(const std::string &dstTarget, const Message
         inMsg = nullptr;
         return E_OK;
     }
-    int errCode = E_OK;
-    std::shared_ptr<ExtendHeaderHandle> extendHandle = nullptr;
-
-    auto buffer = ProtocolProto::ToSerialBuffer(inMsg, errCode, extendHandle);
-    if (errCode != E_OK && errCode != -E_NOT_REGISTER) {
-        return errCode;
-    }
-    const Message *message;
-    if (errCode == -E_NOT_REGISTER) {
-        message = inMsg;
-        errCode = E_OK;
-    } else {
-        message = ProtocolProto::ToMessage(buffer, errCode);
-    }
-    delete buffer;
-    buffer = nullptr;
+    Message *message = nullptr;
+    int errCode = TranslateMsg(inMsg, message);
     if (errCode != E_OK) {
         return errCode;
     }
+    delete inMsg;
+    inMsg = nullptr;
     communicatorAggregator_->DispatchMessage(deviceId_, dstTarget, message, onEnd);
     return E_OK;
 }
@@ -198,5 +186,22 @@ VirtualCommunicator::VirtualCommunicator(const std::string &deviceId,
     VirtualCommunicatorAggregator *communicatorAggregator)
     : deviceId_(deviceId), communicatorAggregator_(communicatorAggregator)
 {
+}
+
+int VirtualCommunicator::TranslateMsg(const Message *inMsg, Message *&outMsg)
+{
+    int errCode = E_OK;
+    std::shared_ptr<ExtendHeaderHandle> extendHandle = nullptr;
+    auto buffer = ProtocolProto::ToSerialBuffer(inMsg, errCode, extendHandle);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    outMsg = ProtocolProto::ToMessage(buffer, errCode);
+    if (errCode != E_OK) {
+        delete buffer;
+        buffer = nullptr;
+    }
+    return errCode;
 }
 } // namespace DistributedDB

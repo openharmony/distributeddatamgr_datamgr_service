@@ -627,7 +627,7 @@ int RuntimeContextImpl::SetSyncActivationCheckCallback(const SyncActivationCheck
 
 bool RuntimeContextImpl::IsSyncerNeedActive(const DBProperties &properties) const
 {
-    ActivationCheckParam param = { 
+    ActivationCheckParam param = {
         properties.GetStringProp(DBProperties::USER_ID, ""),
         properties.GetStringProp(DBProperties::APP_ID, ""),
         properties.GetStringProp(DBProperties::STORE_ID, ""),
@@ -700,7 +700,7 @@ int RuntimeContextImpl::SetPermissionConditionCallback(const PermissionCondition
 
 std::map<std::string, std::string> RuntimeContextImpl::GetPermissionCheckParam(const DBProperties &properties)
 {
-    PermissionConditionParam param = { 
+    PermissionConditionParam param = {
         properties.GetStringProp(DBProperties::USER_ID, ""),
         properties.GetStringProp(DBProperties::APP_ID, ""),
         properties.GetStringProp(DBProperties::STORE_ID, ""),

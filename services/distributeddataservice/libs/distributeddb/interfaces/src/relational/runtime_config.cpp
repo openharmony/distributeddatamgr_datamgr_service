@@ -99,7 +99,6 @@ void RuntimeConfig::Dump(int fd, const std::vector<std::u16string> &args)
 
 DBStatus RuntimeConfig::SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback)
 {
-    std::lock_guard<std::mutex> lock(multiUserMutex_);
     int errCode = RuntimeContext::GetInstance()->SetSyncActivationCheckCallback(callback);
     return TransferDBErrno(errCode);
 }
@@ -118,7 +117,6 @@ bool RuntimeConfig::IsProcessSystemApiAdapterValid()
 
 DBStatus RuntimeConfig::SetSyncActivationCheckCallback(const SyncActivationCheckCallbackV2 &callback)
 {
-    std::lock_guard<std::mutex> lock(multiUserMutex_);
     int errCode = RuntimeContext::GetInstance()->SetSyncActivationCheckCallback(callback);
     return TransferDBErrno(errCode);
 }
