@@ -954,6 +954,7 @@ napi_status JSUtil::GetValue(napi_env env, napi_value in, DistributedKv::Options
     GetNamedProperty(env, in, "encrypt", options.encrypt);
     GetNamedProperty(env, in, "backup", options.backup);
     GetNamedProperty(env, in, "autoSync", options.autoSync);
+    GetNamedProperty(env, in, "rebuild", options.rebuild);
 
     int32_t kvStoreType = 0;
     GetNamedProperty(env, in, "kvStoreType", kvStoreType);

@@ -39,33 +39,19 @@ public:
         std::string backupBackFullName;
     };
 
-    explicit BackupHandler(IKvStoreDataService *kvStoreDataService);
     BackupHandler();
     ~BackupHandler();
-    void Initialize();
-    void BackSchedule();
-
-    void DoBackup(const StoreMetaData &metaData);
     static bool SingleKvStoreRecover(StoreMetaData &metaData, DistributedDB::KvStoreNbDelegate *delegate);
     static const std::string &GetBackupPath(const std::string &deviceAccountId, int pathType);
-    static bool RenameFile(const std::string &oldPath, const std::string &newPath);
     static bool RemoveFile(const std::string &path);
     static bool FileExists(const std::string &path);
     static std::string GetHashedBackupName(const std::string &bundleName);
 
 private:
-    bool CheckNeedBackup();
-    static void SingleKvStoreBackup(const StoreMetaData &metaData, const BackupPara &backupPara);
-    static bool InitBackupPara(const StoreMetaData &metaData, BackupPara &backupPara, const std::string &prefix = "");
     static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
     static int64_t GetBackupTime(std::string &fullName);
-    static void SetDBOptions(DBOption &dbOption, const BackupPara &backupPara, const StoreMetaData &meta);
-
     static std::string backupDirCe_;
     static std::string backupDirDe_;
-    KvScheduler scheduler_ {};
-    static constexpr uint64_t BACKUP_INTERVAL = 3600 * 1000 * 10; // 10 hours
-    int64_t backupSuccessTime_ = 0;
 };
 } // namespace OHOS::DistributedKv
 #endif // DISTRIBUTEDDATAMGR_BACKUP_HANDLER_H

@@ -19,6 +19,7 @@ group("build_module") {
 config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
+    "backup/include",
     "bootstrap/include",
     "config/include",
     "crypto/include",
@@ -40,7 +41,9 @@ config("module_public_config") {
 ohos_shared_library("distributeddatasvc") {
   sources = [
     "bootstrap/src/bootstrap.cpp",
+    "backup/src/backup_manager.cpp",
     "config/src/config_factory.cpp",
+    "config/src/model/backup_config.cpp",
     "config/src/model/checker_config.cpp",
     "config/src/model/component_config.cpp",
     "config/src/model/directory_config.cpp",
@@ -51,6 +54,7 @@ ohos_shared_library("distributeddatasvc") {
     "directory/src/directory_manager.cpp",
     "kvdb/auth_delegate.cpp",
     "kvdb/executor_factory.cpp",
+    "kvdb/kvdb_exporter.cpp",
     "kvdb/kvdb_service_impl.cpp",
     "kvdb/kvdb_service_stub.cpp",
     "kvdb/kvstore_sync_manager.cpp",

@@ -16,7 +16,8 @@
 #include "bootstrap.h"
 
 #include <dlfcn.h>
-
+#include "backuprule/backup_rule_manager.h"
+#include "backup_manager.h"
 #include "checker/checker_manager.h"
 #include "config_factory.h"
 #include "directory_manager.h"
@@ -76,6 +77,20 @@ void Bootstrap::LoadCheckers()
         }
         checker->SetTrustInfo(trust);
     }
+}
+
+void Bootstrap::LoadBackup()
+{
+    auto *backupRules = ConfigFactory::GetInstance().GetBackupConfig();
+    if (backupRules == nullptr) {
+        return;
+    }
+    BackupRuleManager::GetInstance().LoadBackupRules(backupRules->rules);
+
+    BackupManager::BackupParam backupParam = { backupRules->schedularDelay,
+        backupRules->schedularInternal, backupRules->backupInternal, backupRules->backupNumber};
+    BackupManager::GetInstance().SetBackupParam(backupParam);
+    BackupManager::GetInstance().BackSchedule();
 }
 
 void Bootstrap::LoadNetworks()

@@ -263,6 +263,7 @@ struct Options {
     bool backup = true;
     bool autoSync = true;
     bool syncable = true; // let bms delete first
+    bool rebuild = false;
     int32_t securityLevel = NO_LABEL;
     int32_t area = EL1;
     SyncPolicy syncPolicy = SyncPolicy::HIGH;

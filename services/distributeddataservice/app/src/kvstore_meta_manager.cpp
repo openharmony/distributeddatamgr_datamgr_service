@@ -199,6 +199,7 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     option.isMemoryDb = false;
     option.createDirByStoreIdOnly = true;
     option.isEncryptedDb = false;
+    option.isNeedRmCorruptedDb = true;
     DistributedDB::KvStoreNbDelegate *kvStoreNbDelegatePtr = nullptr;
     kvStoreDelegateManager_.GetKvStore(
         Constant::SERVICE_META_DB_NAME, option,

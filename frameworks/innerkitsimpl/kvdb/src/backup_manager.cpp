@@ -15,6 +15,7 @@
 #define LOG_TAG "BackupManager"
 
 #include "backup_manager.h"
+#include "kvdb_service_client.h"
 #include "log_print.h"
 #include "security_manager.h"
 
@@ -179,11 +180,15 @@ StoreUtil::FileInfo BackupManager::GetBackupFileInfo(
     return backupFile;
 }
 
-Status BackupManager::Restore(const std::string &name, const std::string &baseDir, const std::string &storeId,
-    std::shared_ptr<DBStore> dbStore)
+Status BackupManager::Restore(const std::string &name, const std::string &baseDir, const std::string &appId,
+    const std::string &storeId, std::shared_ptr<DBStore> dbStore)
 {
     if (dbStore == nullptr) {
         return ALREADY_CLOSED;
+    }
+    auto service = KVDBServiceClient::GetInstance();
+    if (service == nullptr) {
+        return SERVER_UNAVAILABLE;
     }
     if (storeId.size() == 0 || baseDir.size() == 0) {
         return INVALID_ARGUMENT;
@@ -194,7 +199,15 @@ Status BackupManager::Restore(const std::string &name, const std::string &baseDi
     }
     std::string keyName = BACKUP_KEY_PREFIX + storeId + "_" + name;
     std::string fullName = baseDir + BACKUP_TOP_PATH + "/" + storeId + "/" + backupFile.name;
-    auto password = SecurityManager::GetInstance().GetDBPassword(keyName, baseDir);
+    SecurityManager::DBPassword password;
+    if (backupFile.name != AUTO_BACKUP_NAME) {
+        password = SecurityManager::GetInstance().GetDBPassword(keyName, baseDir);
+    } else {
+        std::vector<uint8_t> pwd;
+        service->GetBackupPassword({ appId }, { storeId }, pwd);
+        password.SetValue(pwd.data(), pwd.size());
+        pwd.assign(pwd.size(), 0);
+    }
     auto dbStatus = dbStore->Import(fullName, password);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     return status;

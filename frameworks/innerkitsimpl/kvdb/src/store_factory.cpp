@@ -57,7 +57,8 @@ std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(const AppId &appId, 
         auto dbManager = GetDBManager(options.baseDir, appId);
         auto password = SecurityManager::GetInstance().GetDBPassword(storeId.storeId, options.baseDir, options.encrypt);
         DBStatus dbStatus = DBStatus::DB_ERROR;
-        dbManager->GetKvStore(storeId, GetDBOption(options, password),
+        DBOption dbOption = GetDBOption(options, password);
+        dbManager->GetKvStore(storeId, dbOption,
             [this, &dbManager, &kvStore, &appId, &dbStatus, &options](auto status, auto *store) {
                 dbStatus = status;
                 if (store == nullptr) {
@@ -69,6 +70,21 @@ std::shared_ptr<SingleKvStore> StoreFactory::GetOrOpenStore(const AppId &appId, 
                 kvStore = std::make_shared<SingleStoreImpl>(dbStore, appId, options, convertor);
             });
         status = StoreUtil::ConvertStatus(dbStatus);
+        if (dbStatus == INVALID_PASSWD_OR_CORRUPTED_DB && options.rebuild) {
+            dbOption.isNeedRmCorruptedDb = true;
+            dbManager->GetKvStore(storeId, dbOption,
+                [this, &dbManager, &kvStore, &appId, &dbStatus, &options](auto status, auto *store) {
+                    dbStatus = status;
+                    if (store == nullptr) {
+                        return;
+                    }
+                    auto release = [dbManager](auto *store) { dbManager->CloseKvStore(store); };
+                    auto dbStore = std::shared_ptr<DBStore>(store, release);
+                    const Convertor &convertor = *(convertors_[options.kvStoreType]);
+                    kvStore = std::make_shared<SingleStoreImpl>(dbStore, appId, options, convertor);
+                });
+            status = DB_REBUILD;
+        }
         if (kvStore == nullptr) {
             ZLOGE("failed! status:%{public}d appId:%{public}s storeId:%{public}s path:%{public}s", dbStatus,
                 appId.appId.c_str(), storeId.storeId.c_str(), options.baseDir.c_str());

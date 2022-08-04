@@ -46,7 +46,7 @@ public:
     Status Backup(const std::string &name, const std::string &baseDir,
         const std::string &storeId, std::shared_ptr<DBStore> dbStore);
     Status Restore(const std::string &name, const std::string &baseDir,
-        const std::string &storeId, std::shared_ptr<DBStore> dbStore);
+        const std::string &appId, const std::string &storeId, std::shared_ptr<DBStore> dbStore);
     Status DeleteBackup(std::map<std::string, Status> &deleteList,
         const std::string &baseDir, const std::string &storeId);
 private:

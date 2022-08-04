@@ -107,14 +107,11 @@ Status SingleKvStoreImpl::Put(const Key &key, const Value &value)
         return Status::SUCCESS;
     }
     ZLOGW("failed status: %d.", static_cast<int>(status));
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        return statusTmp;
-    }
+    ReportDbCorrupted(status, __FUNCTION__);
     return ConvertDbStatus(status);
 }
 
-Status SingleKvStoreImpl::CheckDbIsCorrupted(DistributedDB::DBStatus status, const char* funName)
+void SingleKvStoreImpl::ReportDbCorrupted(DistributedDB::DBStatus status, const char* funName)
 {
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGW("option %{public}s failed, recovery database.", funName);
@@ -126,9 +123,7 @@ Status SingleKvStoreImpl::CheckDbIsCorrupted(DistributedDB::DBStatus status, con
             Reporter::GetInstance()->DatabaseFault()->Report(
                 {bundleName_, storeId_, "KVDB", Fault::DF_DB_CORRUPTED});
         }
-        return (Import(bundleName_) ? Status::RECOVER_SUCCESS : Status::RECOVER_FAILED);
     }
-    return Status::SUCCESS;
 }
 
 Status SingleKvStoreImpl::ConvertDbStatus(DistributedDB::DBStatus status)
@@ -199,10 +194,7 @@ Status SingleKvStoreImpl::Delete(const Key &key)
         return Status::SUCCESS;
     }
     ZLOGW("failed status: %d.", static_cast<int>(status));
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        return statusTmp;
-    }
+    ReportDbCorrupted(status, __FUNCTION__);
     return ConvertDbStatus(status);
 }
 
@@ -243,10 +235,7 @@ Status SingleKvStoreImpl::Get(const Key &key, Value &value)
     .append("key is ").append(key.ToString())
     .append(". bundleName is ").append(bundleName_);
     DumpHelper::GetInstance().AddErrorInfo(errorInfo);
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        return statusTmp;
-    }
+    ReportDbCorrupted(status, __FUNCTION__);
     return ConvertDbStatus(status);
 }
 
@@ -422,10 +411,7 @@ Status SingleKvStoreImpl::GetEntries(const Key &prefixKey, std::vector<Entry> &e
         }
         return Status::SUCCESS;
     }
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        return statusTmp;
-    }
+    ReportDbCorrupted(status, __FUNCTION__);
     if (status == DistributedDB::DBStatus::BUSY || status == DistributedDB::DBStatus::DB_ERROR) {
         return Status::DB_ERROR;
     }
@@ -529,11 +515,7 @@ void SingleKvStoreImpl::GetResultSet(const Key &prefixKey,
         storeResultSetMap_.emplace(storeResultSet->AsObject().GetRefPtr(), storeResultSet);
         return;
     }
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        callback(statusTmp, nullptr);
-        return;
-    }
+    ReportDbCorrupted(status, __FUNCTION__);
     callback(ConvertDbStatus(status), nullptr);
 }
 
@@ -731,10 +713,7 @@ Status SingleKvStoreImpl::RemoveDeviceData(const std::string &device)
         DdsTrace trace(std::string(LOG_TAG "Delegate::") + std::string(__FUNCTION__));
         status = kvStoreNbDelegate_->RemoveDeviceData(deviceUDID);
     }
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        return statusTmp;
-    }
+    ReportDbCorrupted(status, __FUNCTION__);
     if (status == DistributedDB::DBStatus::OK) {
         return Status::SUCCESS;
     }
@@ -1192,10 +1171,7 @@ Status SingleKvStoreImpl::PutBatch(const std::vector<Entry> &entries)
         DdsTrace trace(std::string(LOG_TAG "Delegate::") + std::string(__FUNCTION__));
         status = kvStoreNbDelegate_->PutBatch(dbEntries);
     }
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        return statusTmp;
-    }
+    ReportDbCorrupted(status, __FUNCTION__);
     std::string errorInfo;
     errorInfo.append(__FUNCTION__).append(": PutBatch failed. ")
     .append("bundleName is ").append(bundleName_);
@@ -1253,11 +1229,7 @@ Status SingleKvStoreImpl::DeleteBatch(const std::vector<Key> &keys)
     .append("bundleName is ").append(bundleName_);
     DumpHelper::GetInstance().AddErrorInfo(errorInfo);
     ZLOGE("DeleteBatch failed, distributeddb need recover.");
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        return statusTmp;
-    }
-
+    ReportDbCorrupted(status, __FUNCTION__);
     if (status == DistributedDB::DBStatus::EKEYREVOKED_ERROR ||
         status == DistributedDB::DBStatus::SECURITY_OPTION_CHECK_ERROR) {
         ZLOGE("delegate DeleteBatch failed.");
@@ -1296,10 +1268,7 @@ Status SingleKvStoreImpl::StartTransaction()
     .append("bundleName is ").append(bundleName_);
     DumpHelper::GetInstance().AddErrorInfo(errorInfo);
     ZLOGE("StartTransaction failed, distributeddb need recover.");
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        return statusTmp;
-    }
+    ReportDbCorrupted(status, __FUNCTION__);
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("delegate return error.");
         return Status::DB_ERROR;
@@ -1332,10 +1301,7 @@ Status SingleKvStoreImpl::Commit()
     .append("bundleName is ").append(bundleName_);
     DumpHelper::GetInstance().AddErrorInfo(errorInfo);
     ZLOGE("Commit failed, distributeddb need recover.");
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        return statusTmp;
-    }
+    ReportDbCorrupted(status, __FUNCTION__);
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("delegate return error.");
         return Status::DB_ERROR;
@@ -1369,10 +1335,7 @@ Status SingleKvStoreImpl::Rollback()
     .append("bundleName is ").append(bundleName_);
     DumpHelper::GetInstance().AddErrorInfo(errorInfo);
     ZLOGE("Rollback failed, distributeddb need recover.");
-    Status statusTmp = CheckDbIsCorrupted(status, __FUNCTION__);
-    if (statusTmp != Status::SUCCESS) {
-        return statusTmp;
-    }
+    ReportDbCorrupted(status, __FUNCTION__);
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("delegate return error.");
         return Status::DB_ERROR;

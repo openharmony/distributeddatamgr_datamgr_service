@@ -274,6 +274,19 @@ Status KVDBServiceClient::Unsubscribe(const AppId &appId, const StoreId &storeId
     return static_cast<Status>(status);
 }
 
+Status KVDBServiceClient::GetBackupPassword(
+    const AppId &appId, const StoreId &storeId, std::vector<uint8_t> &password)
+{
+    MessageParcel reply;
+    int32_t status = IPC_SEND(TRANS_GET_PASSWORD, reply, appId, storeId);
+    if (status != SUCCESS) {
+        ZLOGE("status:0x%{public}x appId:%{public}s, storeId:%{public}s", status,
+            appId.appId.c_str(), storeId.storeId.c_str());
+    }
+    ITypesUtil::Unmarshal(reply, password);
+    return static_cast<Status>(status);
+}
+
 sptr<KvStoreSyncCallbackClient> KVDBServiceClient::GetSyncAgent(const AppId &appId)
 {
     std::lock_guard<decltype(agentMtx_)> lockGuard(agentMtx_);

@@ -20,6 +20,7 @@
 #include "model/component_config.h"
 #include "model/network_config.h"
 #include "model/directory_config.h"
+#include "model/backup_config.h"
 namespace OHOS {
 namespace DistributedData {
 class GlobalConfig final : public Serializable {
@@ -32,6 +33,7 @@ public:
     CheckerConfig *bundleChecker = nullptr;
     NetworkConfig *networks = nullptr;
     DirectoryConfig *directory = nullptr;
+    BackupConfig *backup = nullptr;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

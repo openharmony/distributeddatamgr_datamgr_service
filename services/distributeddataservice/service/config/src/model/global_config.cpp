@@ -26,6 +26,7 @@ bool GlobalConfig::Marshal(json &node) const
     SetValue(node[GET_NAME(bundleChecker)], bundleChecker);
     SetValue(node[GET_NAME(networks)], networks);
     SetValue(node[GET_NAME(directory)], directory);
+    SetValue(node[GET_NAME(backup)], backup);
     return true;
 }
 
@@ -39,6 +40,7 @@ bool GlobalConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(bundleChecker), bundleChecker);
     GetValue(node, GET_NAME(networks), networks);
     GetValue(node, GET_NAME(directory), directory);
+    GetValue(node, GET_NAME(backup), backup);
     return true;
 }
 } // namespace DistributedData

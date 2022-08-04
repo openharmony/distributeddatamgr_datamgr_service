@@ -847,8 +847,6 @@ void KvStoreDataService::StartService()
     // register this to ServiceManager.
     KvStoreMetaManager::GetInstance().InitMetaListener();
     InitObjectStore();
-    backup_ = std::make_unique<BackupHandler>(this);
-    backup_->Initialize();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {
         DumpHelper::GetInstance().AddErrorInfo("StartService: Service publish failed.");
@@ -882,7 +880,6 @@ void KvStoreDataService::StartService()
         return status;
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
-    backup_->BackSchedule();
     DumpHelper::GetInstance().AddDumpOperation(
         std::bind(&KvStoreDataService::DumpAll, this, std::placeholders::_1),
         std::bind(&KvStoreDataService::DumpUserInfo, this, std::placeholders::_1),
@@ -1053,10 +1050,6 @@ bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::
 void KvStoreDataService::OnStop()
 {
     ZLOGI("begin.");
-    if (backup_ != nullptr) {
-        backup_.reset();
-        backup_ = nullptr;
-    }
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(
