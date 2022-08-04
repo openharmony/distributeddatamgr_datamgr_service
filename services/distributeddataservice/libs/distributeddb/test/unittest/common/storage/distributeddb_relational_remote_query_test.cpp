@@ -308,10 +308,12 @@ HWTEST_F(DistributedDBRelationalRemoteQueryTest, BlobQuery1, TestSize.Level1)
     PreparedStmt prepStmt(PreparedStmt::QUERY, "SELECT * FROM " + g_tableName + " WHERE value=x'10101010001000'", {});
     EXPECT_EQ(store->ExecuteQuery(prepStmt, DBConstant::MAX_MTU_SIZE, rowDataSet, token), E_OK);
     EXPECT_EQ(rowDataSet.GetSize(), 1);
+    EXPECT_FALSE(rowDataSet.GetColNames().empty());
 
     prepStmt = { PreparedStmt::QUERY, "SELECT * FROM " + g_tableName + " WHERE value=?", {"x'10101010001000'"} };
     EXPECT_EQ(store->ExecuteQuery(prepStmt, DBConstant::MAX_MTU_SIZE, rowDataSet, token), E_OK);
     EXPECT_EQ(rowDataSet.GetSize(), 0);
+    EXPECT_TRUE(rowDataSet.GetColNames().empty());
 
     RefObject::DecObjRef(g_store);
 }

@@ -142,6 +142,10 @@ void RemoteExecutor::Close()
 {
     closed_ = true;
     LOGD("[RemoteExecutor][Close] close enter");
+    {
+        std::unique_lock<std::mutex> lock(msgQueueLock_);
+        clearCV_.wait(lock, [this] { return workingThreadsCount_ == 0; });
+    }
     RemoveAllTask(-E_BUSY);
     ClearInnerSource();
     LOGD("[RemoteExecutor][Close] close exist");
@@ -190,10 +194,12 @@ int RemoteExecutor::ReceiveRemoteExecutorRequest(const std::string &targetDev, M
             delete entry.second;
             entry.second = nullptr;
         } while (!empty);
+        clearCV_.notify_one();
         RefObject::DecObjRef(this);
     });
     if (errCode != E_OK) {
         workingThreadsCount_--;
+        clearCV_.notify_one();
         RefObject::DecObjRef(this);
     } else {
         errCode = -E_NOT_NEED_DELETE_MSG;
@@ -203,6 +209,10 @@ int RemoteExecutor::ReceiveRemoteExecutorRequest(const std::string &targetDev, M
 
 void RemoteExecutor::ParseOneRequestMessage(const std::string &device, Message *inMsg)
 {
+    if (closed_) {
+        LOGW("[RemoteExecutor][ParseOneRequestMessage] closed!");
+        return;
+    }
     int errCode = CheckPermissions(device);
     if (errCode != E_OK) {
         ResponseFailed(errCode, inMsg->GetSessionId(), inMsg->GetSequenceId(), device);

@@ -243,8 +243,8 @@ HWTEST_F(DistributedDBRelationalResultSetTest, EmptyResultSet, TestSize.Level1)
     EXPECT_FALSE(resultSet->MoveToPosition(0)); // move fail. position=1
     EXPECT_FALSE(resultSet->IsFirst());         // position=1, not the first one
     EXPECT_FALSE(resultSet->IsLast());          // position=1, not the last one
-    EXPECT_FALSE(resultSet->IsBeforeFirst());   // position=1, not before the first
-    EXPECT_TRUE(resultSet->IsAfterLast());      // position=1, after the last
+    EXPECT_TRUE(resultSet->IsBeforeFirst());    // empty result set, always true
+    EXPECT_TRUE(resultSet->IsAfterLast());      // empty result set, always true
     EXPECT_FALSE(resultSet->IsClosed());        // not closed
     Entry entry;
     EXPECT_EQ(resultSet->GetEntry(entry), DBStatus::NOT_SUPPORT);   // for relational result set, not support get entry.

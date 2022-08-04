@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #ifdef RELATIONAL_STORE
-#include "kv_store_errno.h"
 #include "relational_result_set_impl.h"
+#include "kv_store_errno.h"
 
 namespace DistributedDB {
 inline bool RelationalResultSetImpl::IsValid() const
@@ -98,13 +98,13 @@ bool RelationalResultSetImpl::IsLast() const
 bool RelationalResultSetImpl::IsBeforeFirst() const
 {
     std::shared_lock<std::shared_mutex> readLock(mutex_);
-    return IsValid() && index_ <= -1;
+    return dataSet_.GetSize() == 0 || index_ <= -1;
 }
 
 bool RelationalResultSetImpl::IsAfterLast() const
 {
     std::shared_lock<std::shared_mutex> readLock(mutex_);
-    return IsValid() && index_ >= dataSet_.GetSize();
+    return dataSet_.GetSize() == 0 || index_ >= dataSet_.GetSize();
 }
 
 bool RelationalResultSetImpl::IsClosed() const

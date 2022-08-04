@@ -148,6 +148,8 @@ private:
     uint32_t lastSessionId_;
     uint32_t lastTaskId_;
     std::atomic<bool> closed_;
+
+    std::condition_variable clearCV_;  // msgQueueLock_
 };
 }
 #endif

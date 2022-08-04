@@ -1415,7 +1415,8 @@ int SQLiteSingleVerRelationalStorageExecutor::SetLogTriggerStatus(bool status)
 }
 
 namespace {
-int GetRowDatas(sqlite3_stmt *stmt, bool isMemDb, std::vector<RelationalRowData *> &data)
+int GetRowDatas(sqlite3_stmt *stmt, bool isMemDb, std::vector<std::string> &colNames,
+    std::vector<RelationalRowData *> &data)
 {
     size_t totalLength = 0;
     do {
@@ -1427,6 +1428,9 @@ int GetRowDatas(sqlite3_stmt *stmt, bool isMemDb, std::vector<RelationalRowData 
             return errCode;
         }
 
+        if (colNames.empty()) {
+            SQLiteUtils::GetSelectCols(stmt, colNames);  // Get column names.
+        }
         auto relaRowData = new (std::nothrow) RelationalRowDataImpl(SQLiteRelationalUtils::GetSelectValues(stmt));
         if (relaRowData == nullptr) {
             LOGE("ExecuteQueryBySqlStmt OOM");
@@ -1479,9 +1483,7 @@ int SQLiteSingleVerRelationalStorageExecutor::ExecuteQueryBySqlStmt(const std::s
             return errCode;
         }
     }
-
-    SQLiteUtils::GetSelectCols(stmt, colNames);  // Get column names.
-    return GetRowDatas(stmt, isMemDb_, data);
+    return GetRowDatas(stmt, isMemDb_, colNames, data);
 }
 } // namespace DistributedDB
 #endif
