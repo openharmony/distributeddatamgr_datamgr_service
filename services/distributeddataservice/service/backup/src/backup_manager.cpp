@@ -153,7 +153,7 @@ std::vector<StoreMetaData> BackupManager::GetMetas()
         ZLOGE("local uuid is empty!");
     }
     ZLOGI("BackupHandler Schedule Every start.");
-    auto prefix = StoreMetaData::GetPrefix({device.uuid});
+    auto prefix = StoreMetaData::GetPrefix({ device.uuid });
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, results)) {
         ZLOGE("GetFullMetaData failed.");
     }
@@ -304,7 +304,7 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
         fout.open(newPath, std::ios_base::out | std::ios_base::trunc);
     }
     char buf[COPY_SIZE] = {0};
-    while(!fin.eof()) {
+    while (!fin.eof()) {
         fin.read(buf, COPY_SIZE);
         fout.write(buf, fin.gcount());
     }

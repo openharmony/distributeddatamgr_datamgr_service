@@ -28,7 +28,7 @@ KVDBExporter::KVDBExporter() noexcept
         const StoreMetaData &meta, const std::vector<uint8_t> &pwd, const std::string &backupPath, Status &status) {
         DBManager manager(meta.appId, meta.user);
         auto path = DirectoryManager::GetInstance().GetStorePath(meta);
-        manager.SetKvStoreConfig({path});
+        manager.SetKvStoreConfig({ path });
         DBPassword dbPassword;
         dbPassword.SetValue(pwd.data(), pwd.size());
         auto dbOption = StoreCache::GetDBOption(meta, dbPassword);
