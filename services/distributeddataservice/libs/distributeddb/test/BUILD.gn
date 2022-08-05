@@ -706,8 +706,7 @@ distributeddb_unittest("DistributedDBRelationalResultSetTest") {
 }
 
 distributeddb_unittest("DistributedDBSingleVerDLPTest") {
-  sources =
-      [ "unittest/common/syncer/distributeddb_single_ver_dlp_test.cpp" ]
+  sources = [ "unittest/common/syncer/distributeddb_single_ver_dlp_test.cpp" ]
 }
 ###############################################################################
 group("unittest") {
