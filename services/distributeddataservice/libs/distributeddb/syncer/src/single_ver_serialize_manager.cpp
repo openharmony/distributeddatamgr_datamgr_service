@@ -853,8 +853,15 @@ int SingleVerSerializeManager::BuildISyncPacket(Message *inMsg, ISyncPacket *&pa
 int SingleVerSerializeManager::DataPacketExtraConditionsSerialization(Parcel &parcel, const DataRequestPacket *packet)
 {
     std::map<std::string, std::string> extraConditions = packet->GetExtraConditions();
+    if (extraConditions.size() > DBConstant::MAX_CONDITION_COUNT) {
+        return -E_INVALID_ARGS;
+    }
     parcel.WriteUInt32(static_cast<uint32_t>(extraConditions.size()));
     for (const auto &entry : extraConditions) {
+        if (entry.first.length() > DBConstant::MAX_CONDITION_KEY_LEN ||
+            entry.second.length() > DBConstant::MAX_CONDITION_VALUE_LEN) {
+            return -E_INVALID_ARGS;
+        }
         parcel.WriteString(entry.first);
         parcel.WriteString(entry.second);
     }
@@ -872,12 +879,19 @@ int SingleVerSerializeManager::DataPacketExtraConditionsDeserialization(Parcel &
     }
     uint32_t conditionSize = 0u;
     (void) parcel.ReadUInt32(conditionSize);
+    if (conditionSize > DBConstant::MAX_CONDITION_COUNT) {
+        return -E_INVALID_ARGS;
+    }
     std::map<std::string, std::string> extraConditions;
     for (uint32_t i = 0; i < conditionSize; i++) {
         std::string conditionKey;
         std::string conditionVal;
         (void) parcel.ReadString(conditionKey);
         (void) parcel.ReadString(conditionVal);
+        if (conditionKey.length() > DBConstant::MAX_CONDITION_KEY_LEN ||
+            conditionVal.length() > DBConstant::MAX_CONDITION_VALUE_LEN) {
+            return -E_INVALID_ARGS;
+        }
         extraConditions[conditionKey] = conditionVal;
     }
     parcel.EightByteAlign();

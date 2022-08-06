@@ -45,6 +45,10 @@ public:
 
     void SetNeedResponse();
 
+    void SetExtraConditions(const std::map<std::string, std::string> &extraConditions);
+
+    std::map<std::string, std::string> GetExtraConditions() const;
+
     uint32_t CalculateLen() const override;
 
     int Serialization(Parcel &parcel) const override;
@@ -54,6 +58,7 @@ private:
     uint32_t version_ = 0u;
     uint32_t flag_ = 0u; // 0x01 mean need reply ack
     PreparedStmt perparedStmt_;
+    std::map<std::string, std::string> extraConditions_;
 };
 
 class RemoteExecutorAckPacket : public ISyncPacket {
