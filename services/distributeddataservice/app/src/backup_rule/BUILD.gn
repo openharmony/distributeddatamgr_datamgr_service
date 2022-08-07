@@ -15,12 +15,22 @@ import(
     "//foundation/distributeddatamgr/distributeddatamgr/distributeddatamgr.gni")
 
 ohos_static_library("distributeddata_backup_rule_static") {
+  basic_sources = [
+    "src/backup_rule_basic.cpp",
+  ]
   if (distributeddatamgr_power) {
-    sources = [
+    active_sources = [
       "src/backup_rule_charging.cpp",
       "src/backup_rule_screenoff.cpp",
     ]
   }
+
+  if (distributeddatamgr_power) {
+    sources = basic_sources+ active_sources
+  } else {
+    sources = basic_sources
+  }
+
   cflags_cc = [ "-fvisibility=hidden" ]
 
   include_dirs = [
