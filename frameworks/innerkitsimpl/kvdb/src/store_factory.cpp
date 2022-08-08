@@ -137,6 +137,7 @@ StoreFactory::DBOption StoreFactory::GetDBOption(const Options &options, const D
     DBOption dbOption;
     dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
     dbOption.createIfNecessary = options.createIfMissing;
+    dbOption.isNeedRmCorruptedDb = options.rebuild;
     dbOption.isMemoryDb = (!options.persistent);
     dbOption.isEncryptedDb = options.encrypt;
     if (options.encrypt) {

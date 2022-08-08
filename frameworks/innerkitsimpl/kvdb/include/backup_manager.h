@@ -21,6 +21,7 @@
 #include "kv_store_nb_delegate.h"
 #include "kv_store_task.h"
 #include "kv_store_thread_pool.h"
+#include "security_manager.h"
 #include "store_util.h"
 namespace OHOS::DistributedKv {
 class BackupManager {
@@ -46,7 +47,7 @@ public:
     Status Backup(const std::string &name, const std::string &baseDir,
         const std::string &storeId, std::shared_ptr<DBStore> dbStore);
     Status Restore(const std::string &name, const std::string &baseDir,
-        const std::string &storeId, std::shared_ptr<DBStore> dbStore);
+        const std::string &appId, const std::string &storeId, std::shared_ptr<DBStore> dbStore);
     Status DeleteBackup(std::map<std::string, Status> &deleteList,
         const std::string &baseDir, const std::string &storeId);
 private:
@@ -58,6 +59,8 @@ private:
     void CleanTmpData(const std::string &name);
     StoreUtil::FileInfo GetBackupFileInfo(const std::string &name,
         const std::string &baseDir, const std::string &storeId);
+    SecurityManager::DBPassword GetRestorePassword(const std::string &backupName, const std::string &baseDir,
+        const std::string &appId, const std::string &storeId);
     bool HaveResidueFile(const std::vector<StoreUtil::FileInfo> &files);
     bool HaveResidueKey(const std::vector<StoreUtil::FileInfo> &files, std::string storeId);
     std::string GetBackupName(const std::string &fileName);

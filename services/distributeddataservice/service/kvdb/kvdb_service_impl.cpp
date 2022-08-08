@@ -20,6 +20,7 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "backup_manager.h"
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
 #include "crypto_manager.h"
@@ -592,6 +593,13 @@ std::shared_ptr<StoreCache::Observers> KVDBServiceImpl::GetObservers(uint32_t to
         return true;
     });
     return observers;
+}
+
+Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId,
+    std::vector<uint8_t> &password)
+{
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    return (BackupManager::GetInstance().GetPassWord(metaData, password)) ? SUCCESS : ERROR;
 }
 
 void KVDBServiceImpl::OnUserChanged()

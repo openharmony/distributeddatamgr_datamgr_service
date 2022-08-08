@@ -15,8 +15,8 @@
 #define LOG_TAG "BackupManager"
 
 #include "backup_manager.h"
+#include "kvdb_service_client.h"
 #include "log_print.h"
-#include "security_manager.h"
 
 namespace OHOS::DistributedKv {
 namespace {
@@ -179,8 +179,8 @@ StoreUtil::FileInfo BackupManager::GetBackupFileInfo(
     return backupFile;
 }
 
-Status BackupManager::Restore(const std::string &name, const std::string &baseDir, const std::string &storeId,
-    std::shared_ptr<DBStore> dbStore)
+Status BackupManager::Restore(const std::string &name, const std::string &baseDir, const std::string &appId,
+    const std::string &storeId, std::shared_ptr<DBStore> dbStore)
 {
     if (dbStore == nullptr) {
         return ALREADY_CLOSED;
@@ -194,10 +194,29 @@ Status BackupManager::Restore(const std::string &name, const std::string &baseDi
     }
     std::string keyName = BACKUP_KEY_PREFIX + storeId + "_" + name;
     std::string fullName = baseDir + BACKUP_TOP_PATH + "/" + storeId + "/" + backupFile.name;
-    auto password = SecurityManager::GetInstance().GetDBPassword(keyName, baseDir);
+    auto password = GetRestorePassword(backupFile.name, baseDir, appId, storeId);
     auto dbStatus = dbStore->Import(fullName, password);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     return status;
+}
+
+SecurityManager::DBPassword BackupManager::GetRestorePassword(const std::string &backupName, const std::string &baseDir,
+    const std::string &appId, const std::string &storeId)
+{
+    SecurityManager::DBPassword password;
+    if (backupName == AUTO_BACKUP_NAME) {
+        auto service = KVDBServiceClient::GetInstance();
+        if (service == nullptr) {
+            return SecurityManager::DBPassword();
+        }
+        std::vector<uint8_t> pwd;
+        service->GetBackupPassword({ appId }, { storeId }, pwd);
+        password.SetValue(pwd.data(), pwd.size());
+        pwd.assign(pwd.size(), 0);
+    } else {
+        password =  SecurityManager::GetInstance().GetDBPassword(backupName, baseDir);
+    }
+    return password;
 }
 
 Status BackupManager::DeleteBackup(std::map<std::string, Status> &deleteList, const std::string &baseDir,
@@ -214,11 +233,12 @@ Status BackupManager::DeleteBackup(std::map<std::string, Status> &deleteList, co
         if (it == deleteList.end()) {
             continue;
         }
-        if (info.name == AUTO_BACKUP_NAME) {
+        auto backupName = info.name.substr(0, info.name.length() - BACKUP_POSTFIX_SIZE);
+        if (backupName ==  AUTO_BACKUP_NAME) {
             it->second = INVALID_ARGUMENT;
             continue;
         }
-        std::string keyName = BACKUP_KEY_PREFIX + storeId + "_" + info.name;
+        std::string keyName = BACKUP_KEY_PREFIX + storeId + "_" + backupName;
         SecurityManager::GetInstance().DelDBPassword(keyName, baseDir);
         it->second = (StoreUtil::Remove(path + "/" + info.name)) ?  SUCCESS : ERROR;
     }
@@ -283,6 +303,9 @@ std::map<std::string, BackupManager::ResidueInfo> BackupManager::BuildResidueInf
     std::map<std::string, ResidueInfo> residueInfoList;
     for (auto &file : files) {
         auto backupName = GetBackupName(file.name);
+        if (backupName == AUTO_BACKUP_NAME) {
+            continue;
+        }
         auto it = residueInfoList.find(backupName);
         if (it == residueInfoList.end()) {
             ResidueInfo residueInfo = { 0, 0, false, false, false, false };

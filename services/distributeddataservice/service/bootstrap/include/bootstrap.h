@@ -28,6 +28,7 @@ public:
     API_EXPORT void LoadCheckers();
     API_EXPORT void LoadNetworks();
     API_EXPORT void LoadDirectory();
+    API_EXPORT void LoadBackup();
 private:
     static constexpr const char *DEFAULT_LABEL = "distributeddata";
     static constexpr const char *DEFAULT_META = "service_meta";

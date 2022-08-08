@@ -72,5 +72,10 @@ DirectoryConfig *ConfigFactory::GetDirectoryConfig()
 {
     return config_.directory;
 }
+
+BackupConfig *ConfigFactory::GetBackupConfig()
+{
+    return config_.backup;
+}
 } // namespace DistributedData
 } // namespace OHOS

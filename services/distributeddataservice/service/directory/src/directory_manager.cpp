@@ -48,7 +48,8 @@ std::string DirectoryManager::GetStorePath(const StoreMetaData &metaData, uint32
 
 std::string DirectoryManager::GetStoreBackupPath(const StoreMetaData &metaData, uint32_t version)
 {
-    return GenPath(metaData, version, "backup");
+    auto rootBackupPath = GenPath(metaData, version, "backup");
+    return rootBackupPath + "/" + metaData.storeId;
 }
 
 std::string DirectoryManager::GetSecretKeyPath(const StoreMetaData &metaData, uint32_t version)

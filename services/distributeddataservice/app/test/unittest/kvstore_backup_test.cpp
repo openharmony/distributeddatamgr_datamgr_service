@@ -18,7 +18,6 @@
 #include <thread>
 #include <vector>
 
-#include "backup_handler.h"
 #include "bootstrap.h"
 #include "communication_provider.h"
 #include "kv_store_delegate_manager.h"

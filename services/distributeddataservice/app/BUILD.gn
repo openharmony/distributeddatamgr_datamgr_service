@@ -51,6 +51,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/object/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/src",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/backup/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/rdb",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/object",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/kvdb",
@@ -68,6 +69,7 @@ config("module_private_config") {
     "include",
     "src",
     "src/security",
+    "src/backup_rule/include",
     "//third_party/json/single_include",
   ]
 
@@ -78,7 +80,6 @@ config("module_private_config") {
 
 ohos_shared_library("distributeddataservice") {
   sources = [
-    "src/backup_handler.cpp",
     "src/device_change_listener_impl.cpp",
     "src/device_kvstore_impl.cpp",
     "src/device_kvstore_observer_impl.cpp",
@@ -100,6 +101,14 @@ ohos_shared_library("distributeddataservice") {
     "src/session_manager/upgrade_manager.cpp",
     "src/single_kvstore_impl.cpp",
   ]
+
+  if (distributeddatamgr_power) {
+    variable_sources = [
+      "src/backup_rule/src/charging.cpp",
+      "src/backup_rule/src/screen_off.cpp",
+    ]
+    sources += variable_sources
+  }
 
   configs = [ ":module_private_config" ]
   deps = [

@@ -21,7 +21,6 @@
 #include <set>
 
 #include "account_delegate.h"
-#include "backup_handler.h"
 #include "constant.h"
 #include "device_change_listener_impl.h"
 #include "ikvstore_data_service.h"
@@ -191,7 +190,6 @@ private:
     std::mutex clientDeathObserverMutex_;
     std::map<uint32_t, KvStoreClientDeathObserverImpl> clientDeathObserverMap_;
     std::shared_ptr<KvStoreAccountObserver> accountEventObserver_;
-    std::unique_ptr<BackupHandler> backup_;
     std::map<IRemoteObject *, sptr<IDeviceStatusChangeListener>> deviceListeners_;
     std::mutex deviceListenerMutex_;
     std::shared_ptr<DeviceChangeListenerImpl> deviceListener_;

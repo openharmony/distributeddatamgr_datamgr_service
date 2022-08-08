@@ -57,6 +57,8 @@ public:
     virtual Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) = 0;
     virtual Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) = 0;
     virtual Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) = 0;
+    virtual Status GetBackupPassword(
+        const AppId &appId, const StoreId &storeId, std::vector<uint8_t> &password) = 0;
 
 protected:
     enum TransId : int32_t {
@@ -77,6 +79,7 @@ protected:
         TRANS_RMV_SUB,
         TRANS_SUB,
         TRANS_UNSUB,
+        TRANS_GET_PASSWORD,
         TRANS_BUTT,
     };
 };

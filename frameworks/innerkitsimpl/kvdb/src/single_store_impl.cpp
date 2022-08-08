@@ -599,7 +599,7 @@ Status SingleStoreImpl::Backup(const std::string &file, const std::string &baseD
 Status SingleStoreImpl::Restore(const std::string &file, const std::string &baseDir)
 {
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    auto status = BackupManager::GetInstance().Restore(file, baseDir, storeId_, dbStore_);
+    auto status = BackupManager::GetInstance().Restore(file, baseDir, appId_, storeId_, dbStore_);
     if (status != SUCCESS) {
         ZLOGE("status:0x%{public}x storeId:%{public}s, backup name:%{public}s ",
             status, storeId_.c_str(), file.c_str());
