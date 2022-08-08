@@ -145,9 +145,10 @@ namespace {
 #endif
 }
 
-KvStoreDelegateManager::KvStoreDelegateManager(const std::string &appId, const std::string &userId)
+KvStoreDelegateManager::KvStoreDelegateManager(const std::string &appId, const std::string &userId, int32_t instanceId)
     : appId_(appId),
-      userId_(userId)
+      userId_(userId),
+      instanceId_(instanceId)
 {}
 
 KvStoreDelegateManager::~KvStoreDelegateManager() {}
@@ -303,7 +304,7 @@ void KvStoreDelegateManager::GetKvStore(const std::string &storeId, const KvStor
     }
     KvDBProperties properties;
     InitPropWithNbOption(properties, GetKvStorePath(), schema, option);
-    DBCommon::SetDatabaseIds(properties, appId_, userId_, storeId);
+    DBCommon::SetDatabaseIds(properties, appId_, userId_, storeId, instanceId_);
 
     int errCode;
     IKvDBConnection *conn = GetOneConnectionWithRetry(properties, errCode);
@@ -559,7 +560,7 @@ DBStatus KvStoreDelegateManager::DisableKvStoreAutoLaunch(const std::string &use
         return DB_ERROR;
     }
 
-    std::string syncIdentifier = DBCommon::GenerateIdentifierId(storeId, appId, userId);
+    std::string syncIdentifier = DBCommon::GenerateIdentifierId(storeId, appId, userId, 0);
     std::string hashIdentifier = DBCommon::TransferHashString(syncIdentifier);
     std::string dualIdentifier = DBCommon::TransferHashString(DBCommon::GenerateDualTupleIdentifierId(storeId, appId));
     int errCode = RuntimeContext::GetInstance()->DisableKvStoreAutoLaunch(hashIdentifier, dualIdentifier, userId);

@@ -79,6 +79,7 @@ private:
     int TimeSync();
     int DataSync();
     int WaterMarkSync();
+    static int TranslateMsg(const Message *inMsg, Message *&outMsg);
 
     mutable std::mutex onMessageLock_;
     OnMessageCallback onMessage_;

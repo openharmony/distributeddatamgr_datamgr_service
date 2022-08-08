@@ -125,7 +125,7 @@ ohos_shared_library("distributeddata_inner") {
     "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   public_configs = [ ":distributeddatafwk_public_config" ]

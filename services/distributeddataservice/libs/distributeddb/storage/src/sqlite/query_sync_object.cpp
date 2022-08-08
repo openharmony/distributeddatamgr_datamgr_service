@@ -193,7 +193,6 @@ int QuerySyncObject::SerializeData(Parcel &parcel, uint32_t softWareVersion)
     if (errCode != E_OK) {
         return errCode;
     }
-
     (void)parcel.WriteString(MAGIC);
     (void)parcel.WriteUInt32(context.version);
     (void)parcel.WriteVectorChar(context.prefixKey);

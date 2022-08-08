@@ -16,11 +16,12 @@
 #ifndef DISTRIBUTEDDB_TYPES_EXPORT_H
 #define DISTRIBUTEDDB_TYPES_EXPORT_H
 
-#include <cstdint>
-#include <vector>
 #include <climits>
-#include <string>
+#include <cstdint>
 #include <functional>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace DistributedDB {
 #ifdef _WIN32
@@ -113,17 +114,47 @@ enum PermissionCheckFlag {
     CHECK_FLAG_SPONSOR = 8, // sync sponsor
 };
 
+struct PermissionCheckParam {
+    std::string userId;
+    std::string appId;
+    std::string storeId;
+    std::string deviceId;
+    int32_t instanceId = 0;
+    std::map<std::string, std::string> extraConditions;
+};
+
+struct ActivationCheckParam {
+    std::string userId;
+    std::string appId;
+    std::string storeId;
+    int32_t instanceId = 0;
+};
+
+struct PermissionConditionParam {
+    std::string userId;
+    std::string appId;
+    std::string storeId;
+    int32_t instanceId = 0;
+};
+
 using PermissionCheckCallback = std::function<bool (const std::string &userId, const std::string &appId,
     const std::string &storeId, uint8_t flag)>;
 
 using PermissionCheckCallbackV2 = std::function<bool (const std::string &userId, const std::string &appId,
     const std::string &storeId, const std::string &deviceId, uint8_t flag)>;
 
+using PermissionCheckCallbackV3 = std::function<bool (const PermissionCheckParam &param, uint8_t flag)>;
+
 using StoreStatusNotifier = std::function<void (std::string userId, std::string appId, std::string storeId,
     const std::string deviceId, bool onlineStatus)>; // status, 1: online, 0: offline
 
 using SyncActivationCheckCallback = std::function<bool (const std::string &userId, const std::string &appId,
     const std::string &storeId)>;
+
+using SyncActivationCheckCallbackV2 = std::function<bool (const ActivationCheckParam &param)>;
+
+using PermissionConditionCallback =
+    std::function<std::map<std::string, std::string> (const PermissionConditionParam &param)>;
 
 enum AutoLaunchStatus {
     WRITE_OPENED = 1,

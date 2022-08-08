@@ -144,6 +144,10 @@ public:
     static const std::string LOG_TABLE_VERSION_CURRENT;
 
     static const std::string LOG_TABLE_VERSION_KEY;
+
+    static constexpr uint32_t MAX_CONDITION_KEY_LEN = 128;
+    static constexpr uint32_t MAX_CONDITION_VALUE_LEN = 128;
+    static constexpr uint32_t MAX_CONDITION_COUNT = 32;
 };
 } // namespace DistributedDB
 

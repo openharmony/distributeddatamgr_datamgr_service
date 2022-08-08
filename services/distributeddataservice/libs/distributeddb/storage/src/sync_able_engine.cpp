@@ -170,10 +170,7 @@ void SyncAbleEngine::UserChangeHandle()
         LOGI("RDB is already closed");
         return;
     }
-    std::string userId = store_->GetDbProperties().GetStringProp(DBProperties::USER_ID, "");
-    std::string appId = store_->GetDbProperties().GetStringProp(DBProperties::APP_ID, "");
-    std::string storeId = store_->GetDbProperties().GetStringProp(DBProperties::STORE_ID, "");
-    isNeedActive = RuntimeContext::GetInstance()->IsSyncerNeedActive(userId, appId, storeId);
+    isNeedActive = RuntimeContext::GetInstance()->IsSyncerNeedActive(store_->GetDbProperties());
     isNeedChange = (isNeedActive != isSyncNeedActive_) ? true : false;
     // non_active to active or active to non_active
     if (isNeedChange) {
@@ -209,10 +206,7 @@ void SyncAbleEngine::SetSyncModuleActive()
         isSyncModuleActiveCheck_ = true;
         return;
     }
-    std::string userId = store_->GetDbProperties().GetStringProp(DBProperties::USER_ID, "");
-    std::string appId = store_->GetDbProperties().GetStringProp(DBProperties::APP_ID, "");
-    std::string storeId = store_->GetDbProperties().GetStringProp(DBProperties::STORE_ID, "");
-    isSyncNeedActive_ = RuntimeContext::GetInstance()->IsSyncerNeedActive(userId, appId, storeId);
+    isSyncNeedActive_ = RuntimeContext::GetInstance()->IsSyncerNeedActive(store_->GetDbProperties());
     if (!isSyncNeedActive_) {
         LOGI("syncer no need to active");
     }

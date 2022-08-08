@@ -34,6 +34,8 @@ public:
 
     DB_API static DBStatus SetPermissionCheckCallback(const PermissionCheckCallbackV2 &callback);
 
+    DB_API static DBStatus SetPermissionCheckCallback(const PermissionCheckCallbackV3 &callback);
+
     DB_API static DBStatus SetProcessSystemAPIAdapter(const std::shared_ptr<IProcessSystemApiAdapter> &adapter);
 
     DB_API static void Dump(int fd, const std::vector<std::u16string> &args);
@@ -41,6 +43,10 @@ public:
     DB_API static DBStatus SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback);
 
     DB_API static DBStatus NotifyUserChanged();
+
+    DB_API static DBStatus SetSyncActivationCheckCallback(const SyncActivationCheckCallbackV2 &callback);
+
+    DB_API static DBStatus SetPermissionConditionCallback(const PermissionConditionCallback &callback);
 
     DB_API static bool IsProcessSystemApiAdapterValid();
 

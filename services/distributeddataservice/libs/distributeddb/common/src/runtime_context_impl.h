@@ -67,8 +67,9 @@ public:
 
     int SetPermissionCheckCallback(const PermissionCheckCallbackV2 &callback) override;
 
-    int RunPermissionCheck(const std::string &userId, const std::string &appId, const std::string &storeId,
-        const std::string &deviceId, uint8_t flag) const override;
+    int SetPermissionCheckCallback(const PermissionCheckCallbackV3 &callback) override;
+
+    int RunPermissionCheck(const PermissionCheckParam &param, uint8_t flag) const override;
 
     int EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
         const AutoLaunchOption &option) override;
@@ -106,7 +107,9 @@ public:
 
     int SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback) override;
 
-    bool IsSyncerNeedActive(std::string &userId, std::string &appId, std::string &storeId) const override;
+    int SetSyncActivationCheckCallback(const SyncActivationCheckCallbackV2 &callback) override;
+
+    bool IsSyncerNeedActive(const DBProperties &properties) const override;
 
     // Register a user changed lister, it will be callback when user change.
     NotificationChain::Listener *RegisterUserChangedListerner(const UserChangedAction &action,
@@ -117,6 +120,10 @@ public:
     uint32_t GenerateSessionId() override;
 
     void DumpCommonInfo(int fd) override;
+
+    int SetPermissionConditionCallback(const PermissionConditionCallback &callback) override;
+
+    std::map<std::string, std::string> GetPermissionCheckParam(const DBProperties &properties) override;
 private:
     static constexpr int MAX_TP_THREADS = 10;  // max threads of the task pool.
     static constexpr int MIN_TP_THREADS = 1;   // min threads of the task pool.
@@ -154,6 +161,7 @@ private:
     mutable std::shared_mutex permissionCheckCallbackMutex_{};
     PermissionCheckCallback permissionCheckCallback_;
     PermissionCheckCallbackV2 permissionCheckCallbackV2_;
+    PermissionCheckCallbackV3 permissionCheckCallbackV3_;
 
     AutoLaunch autoLaunch_;
 
@@ -168,11 +176,16 @@ private:
 
     mutable std::shared_mutex syncActivationCheckCallbackMutex_{};
     SyncActivationCheckCallback syncActivationCheckCallback_;
+    SyncActivationCheckCallbackV2 syncActivationCheckCallbackV2_;
 
     mutable std::mutex userChangeMonitorLock_;
     std::unique_ptr<UserChangeMonitor> userChangeMonitor_;
 
     std::atomic<uint32_t> currentSessionId_;
+
+    // Get map from this callback, use for run permission check in remote device
+    mutable std::shared_mutex permissionConditionLock_;
+    PermissionConditionCallback permissionConditionCallback_;
 };
 } // namespace DistributedDB
 

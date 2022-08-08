@@ -44,6 +44,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/config/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/crypto/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/directory/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/permission/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/session_manager",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/kvdb/include",
@@ -137,7 +138,7 @@ ohos_shared_library("distributeddataservice") {
     "init:libbegetutil",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {

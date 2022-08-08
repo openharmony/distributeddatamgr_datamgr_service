@@ -68,11 +68,27 @@ void RemoteExecutorRequestPacket::SetNeedResponse()
     flag_ |= REQUEST_FLAG_RESPONSE_ACK;
 }
 
+void RemoteExecutorRequestPacket::SetExtraConditions(const std::map<std::string, std::string> &extraConditions)
+{
+    extraConditions_ = extraConditions;
+}
+
+std::map<std::string, std::string> RemoteExecutorRequestPacket::GetExtraConditions() const
+{
+    return extraConditions_;
+}
+
 uint32_t RemoteExecutorRequestPacket::CalculateLen() const
 {
     uint32_t len = Parcel::GetUInt32Len(); // version
     len += Parcel::GetUInt32Len();  // flag
     len += perparedStmt_.CalcLength();
+    len += Parcel::GetUInt32Len(); // conditions count
+    for (const auto &entry : extraConditions_) {
+        len += Parcel::GetStringLen(entry.first);
+        len += Parcel::GetStringLen(entry.second);
+    }
+    len = Parcel::GetEightByteAlign(len); // 8-byte align
     return len;
 }
 
@@ -85,6 +101,22 @@ int RemoteExecutorRequestPacket::Serialization(Parcel &parcel) const
         LOGE("[RemoteExecutorRequestPacket] Serialization failed");
         return -E_INVALID_ARGS;
     }
+    if (extraConditions_.size() > DBConstant::MAX_CONDITION_COUNT) {
+        return -E_INVALID_ARGS;
+    }
+    parcel.WriteUInt32(static_cast<uint32_t>(extraConditions_.size()));
+    for (const auto &entry : extraConditions_) {
+        if (entry.first.length() > DBConstant::MAX_CONDITION_KEY_LEN ||
+            entry.second.length() > DBConstant::MAX_CONDITION_VALUE_LEN) {
+            return -E_INVALID_ARGS;
+        }
+        parcel.WriteString(entry.first);
+        parcel.WriteString(entry.second);
+    }
+    parcel.EightByteAlign();
+    if (parcel.IsError()) {
+        return -E_PARSE_FAIL;
+    }
     return E_OK;
 }
 
@@ -96,6 +128,29 @@ int RemoteExecutorRequestPacket::DeSerialization(Parcel &parcel)
     if (parcel.IsError()) {
         LOGE("[RemoteExecutorRequestPacket] DeSerialization failed");
         return -E_INVALID_ARGS;
+    }
+    if (version_ < REQUEST_PACKET_VERSION_V2) {
+        return E_OK;
+    }
+    uint32_t conditionSize = 0u;
+    (void) parcel.ReadUInt32(conditionSize);
+    if (conditionSize > DBConstant::MAX_CONDITION_COUNT) {
+        return -E_INVALID_ARGS;
+    }
+    for (uint32_t i = 0; i < conditionSize; i++) {
+        std::string conditionKey;
+        std::string conditionVal;
+        (void) parcel.ReadString(conditionKey);
+        (void) parcel.ReadString(conditionVal);
+        if (conditionKey.length() > DBConstant::MAX_CONDITION_KEY_LEN ||
+            conditionVal.length() > DBConstant::MAX_CONDITION_VALUE_LEN) {
+            return -E_INVALID_ARGS;
+        }
+        extraConditions_[conditionKey] = conditionVal;
+    }
+    parcel.EightByteAlign();
+    if (parcel.IsError()) {
+        return -E_PARSE_FAIL;
     }
     return E_OK;
 }

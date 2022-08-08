@@ -705,6 +705,10 @@ distributeddb_unittest("DistributedDBRelationalResultSetTest") {
       [ "unittest/common/storage/distributeddb_relational_result_set_test.cpp" ]
 }
 
+distributeddb_unittest("DistributedDBSingleVerDLPTest") {
+  sources = [ "unittest/common/syncer/distributeddb_single_ver_dlp_test.cpp" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -757,6 +761,7 @@ group("unittest") {
     ":DistributedDBRelationalSchemaObjectTest",
     ":DistributedDBSchemaObjectTest",
     ":DistributedDBSchemalTest",
+    ":DistributedDBSingleVerDLPTest",
     ":DistributedDBSingleVerMsgScheduleTest",
     ":DistributedDBSingleVerMultiUserTest",
     ":DistributedDBSingleVerP2PQuerySyncTest",

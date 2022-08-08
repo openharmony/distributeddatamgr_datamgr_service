@@ -157,11 +157,13 @@ void SingleVerDataSyncUtils::TranslateErrCodeIfNeed(int mode, uint32_t version, 
 }
 
 int SingleVerDataSyncUtils::RunPermissionCheck(SingleVerSyncTaskContext *context, const SyncGenericInterface* storage,
-    const std::string &label, int mode)
+    const std::string &label, const DataRequestPacket *packet)
 {
-    std::string appId = storage->GetDbProperties().GetStringProp(KvDBProperties::APP_ID, "");
-    std::string userId = storage->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
-    std::string storeId = storage->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
+    int mode = SyncOperation::TransferSyncMode(packet->GetMode());
+    std::string appId = storage->GetDbProperties().GetStringProp(DBProperties::APP_ID, "");
+    std::string userId = storage->GetDbProperties().GetStringProp(DBProperties::USER_ID, "");
+    std::string storeId = storage->GetDbProperties().GetStringProp(DBProperties::STORE_ID, "");
+    int32_t instanceId = storage->GetDbProperties().GetIntProp(DBProperties::INSTANCE_ID, 0);
     uint8_t flag;
     switch (mode) {
         case SyncModeType::PUSH:
@@ -177,7 +179,8 @@ int SingleVerDataSyncUtils::RunPermissionCheck(SingleVerSyncTaskContext *context
             flag = CHECK_FLAG_RECEIVE;
             break;
     }
-    int errCode = RuntimeContext::GetInstance()->RunPermissionCheck(userId, appId, storeId, context->GetDeviceId(),
+    int errCode = RuntimeContext::GetInstance()->RunPermissionCheck(
+        { userId, appId, storeId, context->GetDeviceId(), instanceId, packet->GetExtraConditions() },
         flag);
     if (errCode != E_OK) {
         LOGE("[DataSync][RunPermissionCheck] check failed flag=%" PRIu8 ",Label=%s,dev=%s", flag, label.c_str(),

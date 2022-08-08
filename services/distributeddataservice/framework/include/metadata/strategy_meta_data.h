@@ -32,6 +32,7 @@ struct API_EXPORT StrategyMeta final : public Serializable {
     API_EXPORT ~StrategyMeta() {};
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
+    API_EXPORT bool IsEffect() const;
     API_EXPORT std::string GetKey();
     API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
 

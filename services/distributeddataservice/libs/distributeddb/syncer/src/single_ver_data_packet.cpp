@@ -179,6 +179,15 @@ uint32_t DataRequestPacket::CalculateLen(uint32_t messageId) const
     if (IsCompressData()) {
         totalLen += GenericSingleVerKvEntry::CalculateCompressedLens(compressData_); // add forcompressData_
     }
+
+    if (version_ > SOFTWARE_VERSION_RELEASE_2_0 && IsExtraConditionData()) {
+        totalLen += Parcel::GetUInt32Len(); // extraCondition size
+        for (const auto &entry : extraConditions_) {
+            totalLen += Parcel::GetStringLen(entry.first);
+            totalLen += Parcel::GetStringLen(entry.second);
+        }
+        totalLen = Parcel::GetEightByteAlign(totalLen); // 8-byte align
+    }
     if (totalLen > INT32_MAX) {
         return 0;
     }
@@ -277,6 +286,22 @@ void DataRequestPacket::SetDeletedWaterMark(WaterMark watermark)
 WaterMark DataRequestPacket::GetDeletedWaterMark() const
 {
     return deletedWatermark_;
+}
+
+void DataRequestPacket::SetExtraConditions(const std::map<std::string, std::string> &extraConditions)
+{
+    extraConditions_ = extraConditions;
+    flag_ |= IS_CONDITION_DATA;
+}
+
+std::map<std::string, std::string> DataRequestPacket::GetExtraConditions() const
+{
+    return extraConditions_;
+}
+
+bool DataRequestPacket::IsExtraConditionData() const
+{
+    return ((flag_ & IS_CONDITION_DATA) == IS_CONDITION_DATA);
 }
 
 void DataAckPacket::SetData(uint64_t data)

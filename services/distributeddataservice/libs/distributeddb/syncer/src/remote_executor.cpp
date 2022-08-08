@@ -31,10 +31,6 @@ namespace {
     constexpr uint32_t MAX_SEARCH_TASK_EXECUTE = 2;
     constexpr uint32_t MAX_SEARCH_TASK_PER_DEVICE = 5;
     constexpr uint32_t MAX_QUEUE_COUNT = 10;
-    constexpr uint32_t REQUEST_PACKET_VERSION_V1 = SOFTWARE_VERSION_RELEASE_6_0;
-    constexpr uint32_t RESPONSE_PACKET_VERSION_V1 = SOFTWARE_VERSION_RELEASE_6_0;
-    constexpr uint32_t REQUEST_PACKET_VERSION_CURRENT = REQUEST_PACKET_VERSION_V1;
-    constexpr uint32_t RESPONSE_PACKET_VERSION_CURRENT = RESPONSE_PACKET_VERSION_V1;
     constexpr uint32_t REMOTE_EXECUTOR_SEND_TIME_OUT = 3000; // 3S
 
     void ReleaseMessageAndPacket(Message *message, ISyncPacket *packet)
@@ -235,7 +231,9 @@ int RemoteExecutor::CheckPermissions(const std::string &device)
     std::string appId = storage->GetDbProperties().GetStringProp(DBProperties::APP_ID, "");
     std::string userId = storage->GetDbProperties().GetStringProp(DBProperties::USER_ID, "");
     std::string storeId = storage->GetDbProperties().GetStringProp(DBProperties::STORE_ID, "");
-    int errCode = RuntimeContext::GetInstance()->RunPermissionCheck(userId, appId, storeId, device, CHECK_FLAG_SEND);
+    int32_t instanceId = syncInterface_->GetDbProperties().GetIntProp(DBProperties::INSTANCE_ID, 0);
+    int errCode = RuntimeContext::GetInstance()->RunPermissionCheck(
+        { userId, appId, storeId, device, instanceId }, CHECK_FLAG_SEND);
     if (errCode != E_OK) {
         LOGE("[RemoteExecutor][CheckPermissions] check permission errCode = %d.", errCode);
     }
@@ -575,7 +573,7 @@ int RemoteExecutor::ResponseStart(RemoteExecutorAckPacket *packet, uint32_t sess
         ReleaseMessageAndPacket(nullptr, packet);
         return -E_OUT_OF_MEMORY;
     }
-    packet->SetVersion(RESPONSE_PACKET_VERSION_CURRENT);
+    packet->SetVersion(RemoteExecutorAckPacket::RESPONSE_PACKET_VERSION_CURRENT);
 
     int errCode = message->SetExternalObject(packet);
     if (errCode != E_OK) {
@@ -747,7 +745,7 @@ int RemoteExecutor::FillRequestPacket(RemoteExecutorRequestPacket *packet, uint3
     stmt.SetOpCode(PreparedStmt::ExecutorOperation::QUERY);
     stmt.SetSql(task.condition.sql);
     stmt.SetBindArgs(task.condition.bindArgs);
-    packet->SetVersion(REQUEST_PACKET_VERSION_CURRENT);
+    packet->SetVersion(RemoteExecutorRequestPacket::REQUEST_PACKET_VERSION_CURRENT);
     packet->SetPreparedStmt(stmt);
     packet->SetNeedResponse();
     target = task.target;

@@ -128,10 +128,7 @@ void SyncAbleKvDB::SetSyncModuleActive()
         isSyncModuleActiveCheck_ = true;
         return;
     }
-    std::string userId = syncInterface->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
-    std::string appId = syncInterface->GetDbProperties().GetStringProp(KvDBProperties::APP_ID, "");
-    std::string storeId = syncInterface->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
-    isSyncNeedActive_ = RuntimeContext::GetInstance()->IsSyncerNeedActive(userId, appId, storeId);
+    isSyncNeedActive_ = RuntimeContext::GetInstance()->IsSyncerNeedActive(syncInterface->GetDbProperties());
     if (!isSyncNeedActive_) {
         LOGI("syncer no need to active");
     }
@@ -225,10 +222,7 @@ void SyncAbleKvDB::UserChangeHandle()
         LOGI("kvDB is already closed");
         return;
     }
-    std::string userId = syncInterface->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
-    std::string appId = syncInterface->GetDbProperties().GetStringProp(KvDBProperties::APP_ID, "");
-    std::string storeId = syncInterface->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
-    isNeedActive = RuntimeContext::GetInstance()->IsSyncerNeedActive(userId, appId, storeId);
+    isNeedActive = RuntimeContext::GetInstance()->IsSyncerNeedActive(syncInterface->GetDbProperties());
     isNeedChange = (isNeedActive != isSyncNeedActive_) ? true : false;
     // non_active to active or active to non_active
     if (isNeedChange) {

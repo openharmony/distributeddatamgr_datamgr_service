@@ -28,7 +28,7 @@ public:
     // Only calculate the table name with device hash, no guarantee for the table exists
     DB_API static std::string GetDistributedTableName(const std::string &device, const std::string &tableName);
 
-    DB_API RelationalStoreManager(const std::string &appId, const std::string &userId);
+    DB_API RelationalStoreManager(const std::string &appId, const std::string &userId, int32_t instanceId = 0);
     DB_API ~RelationalStoreManager() = default;
 
     RelationalStoreManager(const RelationalStoreManager &) = delete;
@@ -49,6 +49,7 @@ public:
 private:
     std::string appId_;
     std::string userId_;
+    int32_t instanceId_;
 };
 } // namespace DistributedDB
 #endif // RELATIONAL_STORE_MANAGER_H

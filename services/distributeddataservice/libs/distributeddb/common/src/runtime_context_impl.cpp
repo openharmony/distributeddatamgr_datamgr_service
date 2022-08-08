@@ -369,27 +369,31 @@ int RuntimeContextImpl::SetPermissionCheckCallback(const PermissionCheckCallback
     return E_OK;
 }
 
-int RuntimeContextImpl::RunPermissionCheck(const std::string &userId, const std::string &appId,
-    const std::string &storeId, const std::string &deviceId, uint8_t flag) const
+int RuntimeContextImpl::SetPermissionCheckCallback(const PermissionCheckCallbackV3 &callback)
+{
+    std::unique_lock<std::shared_mutex> writeLock(permissionCheckCallbackMutex_);
+    permissionCheckCallbackV3_ = callback;
+    LOGI("SetPermissionCheckCallback V3 ok");
+    return E_OK;
+}
+
+int RuntimeContextImpl::RunPermissionCheck(const PermissionCheckParam &param, uint8_t flag) const
 {
     bool checkResult = false;
     std::shared_lock<std::shared_mutex> autoLock(permissionCheckCallbackMutex_);
-    if (permissionCheckCallbackV2_) {
-        checkResult = permissionCheckCallbackV2_(userId, appId, storeId, deviceId, flag);
-        if (checkResult) {
-            return E_OK;
-        } else {
-            return -E_NOT_PERMIT;
-        }
+    if (permissionCheckCallbackV3_) {
+        checkResult = permissionCheckCallbackV3_(param, flag);
+    } else if (permissionCheckCallbackV2_) {
+        checkResult = permissionCheckCallbackV2_(param.userId, param.appId, param.storeId, param.deviceId, flag);
     } else if (permissionCheckCallback_) {
-        checkResult = permissionCheckCallback_(userId, appId, storeId, flag);
-        if (checkResult) {
-            return E_OK;
-        } else {
-            return -E_NOT_PERMIT;
-        }
+        checkResult = permissionCheckCallback_(param.userId, param.appId, param.storeId, flag);
     } else {
         return E_OK;
+    }
+    if (checkResult) {
+        return E_OK;
+    } else {
+        return -E_NOT_PERMIT;
     }
 }
 
@@ -613,11 +617,27 @@ int RuntimeContextImpl::SetSyncActivationCheckCallback(const SyncActivationCheck
     return E_OK;
 }
 
-bool RuntimeContextImpl::IsSyncerNeedActive(std::string &userId, std::string &appId, std::string &storeId) const
+int RuntimeContextImpl::SetSyncActivationCheckCallback(const SyncActivationCheckCallbackV2 &callback)
 {
+    std::unique_lock<std::shared_mutex> writeLock(syncActivationCheckCallbackMutex_);
+    syncActivationCheckCallbackV2_ = callback;
+    LOGI("SetSyncActivationCheckCallbackV2 ok");
+    return E_OK;
+}
+
+bool RuntimeContextImpl::IsSyncerNeedActive(const DBProperties &properties) const
+{
+    ActivationCheckParam param = {
+        properties.GetStringProp(DBProperties::USER_ID, ""),
+        properties.GetStringProp(DBProperties::APP_ID, ""),
+        properties.GetStringProp(DBProperties::STORE_ID, ""),
+        properties.GetIntProp(DBProperties::INSTANCE_ID, 0)
+    };
     std::shared_lock<std::shared_mutex> autoLock(syncActivationCheckCallbackMutex_);
-    if (syncActivationCheckCallback_) {
-        return syncActivationCheckCallback_(userId, appId, storeId);
+    if (syncActivationCheckCallbackV2_) {
+        return syncActivationCheckCallbackV2_(param);
+    } else if (syncActivationCheckCallback_) {
+        return syncActivationCheckCallback_(param.userId, param.appId, param.storeId);
     }
     return true;
 }
@@ -669,5 +689,27 @@ uint32_t RuntimeContextImpl::GenerateSessionId()
 void RuntimeContextImpl::DumpCommonInfo(int fd)
 {
     autoLaunch_.Dump(fd);
+}
+
+int RuntimeContextImpl::SetPermissionConditionCallback(const PermissionConditionCallback &callback)
+{
+    std::unique_lock<std::shared_mutex> autoLock(permissionConditionLock_);
+    permissionConditionCallback_ = callback;
+    return E_OK;
+}
+
+std::map<std::string, std::string> RuntimeContextImpl::GetPermissionCheckParam(const DBProperties &properties)
+{
+    PermissionConditionParam param = {
+        properties.GetStringProp(DBProperties::USER_ID, ""),
+        properties.GetStringProp(DBProperties::APP_ID, ""),
+        properties.GetStringProp(DBProperties::STORE_ID, ""),
+        properties.GetIntProp(DBProperties::INSTANCE_ID, 0)
+    };
+    std::shared_lock<std::shared_mutex> autoLock(permissionConditionLock_);
+    if (permissionConditionCallback_ == nullptr) {
+        return {};
+    }
+    return permissionConditionCallback_(param);
 }
 } // namespace DistributedDB

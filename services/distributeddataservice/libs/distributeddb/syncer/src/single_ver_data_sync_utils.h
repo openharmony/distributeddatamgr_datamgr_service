@@ -42,7 +42,7 @@ public:
     static void TranslateErrCodeIfNeed(int mode, uint32_t version, int &errCode);
 
     static int RunPermissionCheck(SingleVerSyncTaskContext *context, const SyncGenericInterface* storage,
-        const std::string &label, int mode);
+        const std::string &label, const DataRequestPacket *packet);
 
     static bool CheckPermitReceiveData(const SingleVerSyncTaskContext *context, const ICommunicator *communicator);
 

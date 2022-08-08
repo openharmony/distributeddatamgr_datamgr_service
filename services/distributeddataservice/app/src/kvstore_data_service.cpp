@@ -63,6 +63,7 @@
 #include "utils/block_integer.h"
 #include "utils/converter.h"
 #include "string_ex.h"
+#include "permit_delegate.h"
 #include "utils/crypto.h"
 #include "runtime_config.h"
 
@@ -116,13 +117,8 @@ void KvStoreDataService::Initialize()
     auto communicator = std::make_shared<AppDistributedKv::ProcessCommunicatorImpl>(RouteHeadHandlerImpl::Create);
     auto ret = KvStoreDelegateManager::SetProcessCommunicator(communicator);
     ZLOGI("set communicator ret:%{public}d.", static_cast<int>(ret));
-    auto syncActivationCheck = [this](const std::string &userId, const std::string &appId,
-                                   const std::string &storeId) -> bool {
-        return CheckSyncActivation(userId, appId, storeId);
-    };
-    ret = DistributedDB::KvStoreDelegateManager::SetSyncActivationCheckCallback(syncActivationCheck);
-    ZLOGI("set sync activation check callback ret:%{public}d.", static_cast<int>(ret));
 
+    PermitDelegate::GetInstance().Init();
     InitSecurityAdapter();
     KvStoreMetaManager::GetInstance().InitMetaParameter();
     accountEventObserver_ = std::make_shared<KvStoreAccountObserver>(*this);
@@ -691,7 +687,7 @@ Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const A
         HapTokenInfo tokenInfo;
         AccessTokenKit::GetHapTokenInfo(token, tokenInfo);
         ZLOGI("not close bundle:%{public}s, tokenInfo.bundle:%{public}s, uid:%{public}d, token:%{public}u",
-            appId.appId.c_str(), tokenInfo.bundleName.c_str(), uid, token);
+            appIdTmp.appId.c_str(), tokenInfo.bundleName.c_str(), uid, token);
         return Status::SUCCESS;
     }
     std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
@@ -845,16 +841,6 @@ void KvStoreDataService::StartService()
 
     // subscribe account event listener to EventNotificationMgr
     AccountDelegate::GetInstance()->SubscribeAccountEvent();
-    auto permissionCheck = [this](const std::string &userId, const std::string &appId, const std::string &storeId,
-                               const std::string &deviceId, uint8_t flag) -> bool {
-        // temp add permission whilelist for ddmp; this should be config in ddmp manifest.
-        ZLOGD("Check permission start appid:%{public}s storeId:%{public}s.", appId.c_str(), storeId.c_str());
-        return CheckPermissions(userId, appId, storeId, deviceId, flag);
-    };
-    auto dbStatus = DistributedDB::RuntimeConfig::SetPermissionCheckCallback(permissionCheck);
-    if (dbStatus != DistributedDB::DBStatus::OK) {
-        ZLOGE("SetPermissionCheck callback failed.");
-    }
     auto autoLaunch = [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
         auto status = ResolveAutoLaunchParamByIdentifier(identifier, param);
         if (kvdbService_) {
@@ -995,39 +981,6 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const MetaData &meta, const
         delete delegateManager;
     });
     ExecutorFactory::GetInstance().Execute(std::move(delayTask));
-}
-
-bool KvStoreDataService::CheckPermissions(const std::string &userId, const std::string &appId,
-                                          const std::string &storeId, const std::string &deviceId, uint8_t flag) const
-{
-    ZLOGI("userId=%{public}.6s appId=%{public}s storeId=%{public}s flag=%{public}d deviceId=%{public}.4s",
-          userId.c_str(), appId.c_str(), storeId.c_str(), flag, deviceId.c_str()); // only print 4 chars of device id
-    auto &instance = KvStoreMetaManager::GetInstance();
-    KvStoreMetaData metaData;
-    auto localDevId = DeviceKvStoreImpl::GetLocalDeviceId();
-    auto qstatus = instance.QueryKvStoreMetaDataByDeviceIdAndAppId(localDevId, appId, metaData);
-    if (qstatus != Status::SUCCESS) {
-        qstatus = instance.QueryKvStoreMetaDataByDeviceIdAndAppId("", appId, metaData); // local device id maybe null
-        if (qstatus != Status::SUCCESS) {
-            ZLOGW("query appId failed.");
-            return false;
-        }
-    }
-    if (metaData.appType.compare("default") == 0) {
-        ZLOGD("default, don't check sync permission.");
-        return true;
-    }
-    Status status = instance.CheckSyncPermission(userId, appId, storeId, flag, deviceId);
-    if (status != Status::SUCCESS) {
-        ZLOGW("PermissionCheck failed.");
-        return false;
-    }
-
-    if (metaData.appType.compare("harmony") != 0) {
-        ZLOGD("it's A app, don't check sync permission.");
-        return true;
-    }
-    return PermissionValidator::GetInstance().CheckSyncPermission(metaData.tokenId);
 }
 
 void KvStoreDataService::OnStop()
@@ -1249,53 +1202,11 @@ Status KvStoreDataService::StopWatchDeviceChange(sptr<IDeviceStatusChangeListene
     return Status::SUCCESS;
 }
 
-std::set<std::string> KvStoreDataService::GetUsersByStore(const std::string &appId, const std::string &storeId)
-{
-    std::set<std::string> users;
-    for (auto &[user, value] : deviceAccountMap_) {
-        if (value.IsStoreOpened(appId, storeId)) {
-            users.emplace(user);
-        }
-    }
-    return users;
-}
-
 void KvStoreDataService::SetCompatibleIdentify(const AppDistributedKv::DeviceInfo &info) const
 {
     for (const auto &item : deviceAccountMap_) {
         item.second.SetCompatibleIdentify(info.uuid);
     }
-}
-
-bool KvStoreDataService::CheckSyncActivation(
-    const std::string &userId, const std::string &appId, const std::string &storeId)
-{
-    ZLOGD("user:%{public}s, app:%{public}s, store:%{public}s", userId.c_str(), appId.c_str(), storeId.c_str());
-    std::set<std::string> activeUsers = UserDelegate::GetInstance().GetLocalUsers();
-    auto storeUsers = GetUsersByStore(appId, storeId);
-    storeUsers.emplace(userId);
-    auto users = Intersect(activeUsers, storeUsers);
-    return users.size() == storeUsers.size();
-}
-
-std::vector<std::string> KvStoreDataService::Intersect(
-    const std::set<std::string> &left, const std::set<std::string> &right)
-{
-    std::vector<std::string> users;
-    for (auto lIt = left.begin(), rIt = right.begin(); lIt != left.end() && rIt != right.end();) {
-        if (*lIt == *rIt) {
-            users.emplace_back(*rIt);
-            ++lIt;
-            ++rIt;
-            continue;
-        }
-        if (*lIt < *rIt) {
-            lIt++;
-            continue;
-        }
-        rIt++;
-    }
-    return users;
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetRdbService()

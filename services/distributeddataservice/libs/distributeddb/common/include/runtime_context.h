@@ -78,8 +78,9 @@ public:
 
     virtual int SetPermissionCheckCallback(const PermissionCheckCallbackV2 &callback) = 0;
 
-    virtual int RunPermissionCheck(const std::string &userId, const std::string &appId, const std::string &storeId,
-        const std::string &deviceId, uint8_t flag) const = 0;
+    virtual int SetPermissionCheckCallback(const PermissionCheckCallbackV3 &callback) = 0;
+
+    virtual int RunPermissionCheck(const PermissionCheckParam &param, uint8_t flag) const = 0;
 
     virtual int EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLaunchNotifier notifier,
         const AutoLaunchOption &option) = 0;
@@ -117,7 +118,9 @@ public:
 
     virtual int SetSyncActivationCheckCallback(const SyncActivationCheckCallback &callback) = 0;
 
-    virtual bool IsSyncerNeedActive(std::string &userId, std::string &appId, std::string &storeId) const = 0;
+    virtual int SetSyncActivationCheckCallback(const SyncActivationCheckCallbackV2 &callback) = 0;
+
+    virtual bool IsSyncerNeedActive(const DBProperties &properties) const = 0;
 
     virtual NotificationChain::Listener *RegisterUserChangedListerner(const UserChangedAction &action,
         EventType event) = 0;
@@ -128,6 +131,10 @@ public:
     virtual uint32_t GenerateSessionId() = 0;
 
     virtual void DumpCommonInfo(int fd) = 0;
+
+    virtual int SetPermissionConditionCallback(const PermissionConditionCallback &callback) = 0;
+
+    virtual std::map<std::string, std::string> GetPermissionCheckParam(const DBProperties &properties) = 0;
 protected:
     RuntimeContext() = default;
     virtual ~RuntimeContext() {}

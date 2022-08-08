@@ -19,10 +19,12 @@
 #include <condition_variable>
 #include <directory_ex.h>
 #include <file_ex.h>
+#include <ipc_skeleton.h>
 #include <thread>
 #include <unistd.h>
 #include "account_delegate.h"
 #include "bootstrap.h"
+#include "communication_provider.h"
 #include "constant.h"
 #include "crypto_manager.h"
 #include "device_kvstore_impl.h"
@@ -45,6 +47,7 @@
 namespace OHOS {
 namespace DistributedKv {
 using json = nlohmann::json;
+using Commu = AppDistributedKv::CommunicationProvider;
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
 
@@ -57,19 +60,11 @@ std::mutex KvStoreMetaManager::cvMutex_;
 KvStoreMetaManager::MetaDeviceChangeListenerImpl KvStoreMetaManager::listener_;
 
 KvStoreMetaManager::KvStoreMetaManager()
-    : metaDelegate_(nullptr,
-            [this](DistributedDB::KvStoreNbDelegate *delegate) {
-                if (delegate == nullptr) {
-                    return;
-                }
-                auto result = kvStoreDelegateManager_.CloseKvStore(delegate);
-                if (result != DistributedDB::DBStatus::OK) {
-                    ZLOGE("CloseMetaKvstore return error status: %d", static_cast<int>(result));
-                }
-            }),
+    : metaDelegate_(nullptr),
       metaDBDirectory_("/data/service/el1/public/database/distributeddata/meta"),
       label_(Bootstrap::GetInstance().GetProcessLabel()),
-      kvStoreDelegateManager_(Bootstrap::GetInstance().GetProcessLabel(), Constant::GetDefaultHarmonyAccountName())
+      kvStoreDelegateManager_(Bootstrap::GetInstance().GetProcessLabel(),
+      std::to_string(AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID())))
 {
     ZLOGI("begin.");
 }
@@ -113,31 +108,28 @@ void KvStoreMetaManager::InitMetaData()
     auto uid = getuid();
     const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
-    auto metaKey = GetMetaKey(userId, "default", label_, Constant::SERVICE_META_DB_NAME);
-    struct KvStoreMetaData metaData {
-        .appId = label_,
-        .appType = "default",
-        .bundleName = label_,
-        .dataDir = metaDBDirectory_,
-        .deviceAccountId = userId,
-        .deviceId = DeviceKvStoreImpl::GetLocalDeviceId(),
-        .isAutoSync = false,
-        .isBackup = false,
-        .isEncrypt = false,
-        .kvStoreType = KvStoreType::SINGLE_VERSION,
-        .schema = "",
-        .storeId = Constant::SERVICE_META_DB_NAME,
-        .userId = accountId,
-        .uid = int32_t(uid),
-        .version = META_STORE_VERSION,
-        .securityLevel = SecurityLevel::S1,
-    };
-    std::string jsonStr = metaData.Marshal();
-    std::vector<uint8_t> value(jsonStr.begin(), jsonStr.end());
-    if (CheckUpdateServiceMeta(metaKey, UPDATE, value) != Status::SUCCESS) {
-        ZLOGW("CheckUpdateServiceMeta database failed.");
+    StoreMetaData data;
+    data.appId = label_;
+    data.appType = "default";
+    data.bundleName = label_;
+    data.dataDir = metaDBDirectory_;
+    data.user = userId;
+    data.deviceId = Commu::GetInstance().GetLocalDevice().uuid;
+    data.isAutoSync = false;
+    data.isBackup = false;
+    data.isEncrypt = false;
+    data.storeType = KvStoreType::SINGLE_VERSION;
+    data.schema = "";
+    data.storeId = Constant::SERVICE_META_DB_NAME;
+    data.account = accountId;
+    data.uid = static_cast<int32_t>(uid);
+    data.version = META_STORE_VERSION;
+    data.securityLevel = SecurityLevel::S1;
+    data.area = EL1;
+    data.tokenId = IPCSkeleton::GetCallingTokenID();
+    if (!MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data)) {
+        ZLOGE("save meta fail");
     }
-
     ZLOGI("end.");
 }
 

@@ -171,16 +171,10 @@ private:
 
     Status AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId);
 
-    bool CheckPermissions(const std::string &userId, const std::string &appId, const std::string &storeId,
-                          const std::string &deviceId, uint8_t flag) const;
     bool ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
     static void ResolveAutoLaunchCompatible(const MetaData &meta, const std::string &identifier);
-    bool CheckSyncActivation(const std::string &userId, const std::string &appId, const std::string &storeId);
 
     bool CheckOptions(const Options &options, const std::vector<uint8_t> &metaKey) const;
-    std::set<std::string> GetUsersByStore(const std::string &appId, const std::string &storeId);
-    std::vector<std::string> Intersect(const std::set<std::string> &left,
-                                       const std::set<std::string> &right);
     static Status FillStoreParam(
         const Options &options, const AppId &appId, const StoreId &storeId, StoreMetaData &metaData);
 

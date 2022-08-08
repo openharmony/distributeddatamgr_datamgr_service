@@ -81,6 +81,12 @@ DBStatus RuntimeConfig::SetPermissionCheckCallback(const PermissionCheckCallback
     return TransferDBErrno(errCode);
 }
 
+DBStatus RuntimeConfig::SetPermissionCheckCallback(const PermissionCheckCallbackV3 &callback)
+{
+    int errCode = RuntimeContext::GetInstance()->SetPermissionCheckCallback(callback);
+    return TransferDBErrno(errCode);
+}
+
 DBStatus RuntimeConfig::SetProcessSystemAPIAdapter(const std::shared_ptr<IProcessSystemApiAdapter> &adapter)
 {
     return TransferDBErrno(RuntimeContext::GetInstance()->SetProcessSystemApiAdapter(adapter));
@@ -108,6 +114,19 @@ DBStatus RuntimeConfig::NotifyUserChanged()
 bool RuntimeConfig::IsProcessSystemApiAdapterValid()
 {
     return RuntimeContext::GetInstance()->IsProcessSystemApiAdapterValid();
+}
+
+DBStatus RuntimeConfig::SetSyncActivationCheckCallback(const SyncActivationCheckCallbackV2 &callback)
+{
+    std::lock_guard<std::mutex> lock(multiUserMutex_);
+    int errCode = RuntimeContext::GetInstance()->SetSyncActivationCheckCallback(callback);
+    return TransferDBErrno(errCode);
+}
+
+DBStatus RuntimeConfig::SetPermissionConditionCallback(const PermissionConditionCallback &callback)
+{
+    int errCode = RuntimeContext::GetInstance()->SetPermissionConditionCallback(callback);
+    return TransferDBErrno(errCode);
 }
 } // namespace DistributedDB
 #endif

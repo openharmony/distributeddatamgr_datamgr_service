@@ -264,7 +264,11 @@ int SingleVerSerializeManager::DataPacketSerialization(uint8_t *buffer, uint32_t
             return errCode;
         }
     }
-    return E_OK;
+    // flag mask add in 103
+    if (packet->GetVersion() < SOFTWARE_VERSION_RELEASE_3_0 || !packet->IsExtraConditionData()) {
+        return E_OK;
+    }
+    return DataPacketExtraConditionsSerialization(parcel, packet);
 }
 
 int SingleVerSerializeManager::DataPacketQuerySyncSerialization(Parcel &parcel, const DataRequestPacket *packet)
@@ -396,7 +400,10 @@ int SingleVerSerializeManager::DataPacketDeSerialization(const uint8_t *buffer, 
             goto ERROR;
         }
     }
-
+    errCode = DataPacketExtraConditionsDeserialization(parcel, packet);
+    if (errCode != E_OK) {
+        goto ERROR;
+    }
     errCode = inMsg->SetExternalObject<>(packet);
     if (errCode != E_OK) {
         goto ERROR;
@@ -843,6 +850,58 @@ int SingleVerSerializeManager::BuildISyncPacket(Message *inMsg, ISyncPacket *&pa
     if (packet == nullptr) {
         return -E_OUT_OF_MEMORY;
     }
+    return E_OK;
+}
+
+int SingleVerSerializeManager::DataPacketExtraConditionsSerialization(Parcel &parcel, const DataRequestPacket *packet)
+{
+    std::map<std::string, std::string> extraConditions = packet->GetExtraConditions();
+    if (extraConditions.size() > DBConstant::MAX_CONDITION_COUNT) {
+        return -E_INVALID_ARGS;
+    }
+    parcel.WriteUInt32(static_cast<uint32_t>(extraConditions.size()));
+    for (const auto &entry : extraConditions) {
+        if (entry.first.length() > DBConstant::MAX_CONDITION_KEY_LEN ||
+            entry.second.length() > DBConstant::MAX_CONDITION_VALUE_LEN) {
+            return -E_INVALID_ARGS;
+        }
+        parcel.WriteString(entry.first);
+        parcel.WriteString(entry.second);
+    }
+    parcel.EightByteAlign();
+    if (parcel.IsError()) {
+        return -E_PARSE_FAIL;
+    }
+    return E_OK;
+}
+
+int SingleVerSerializeManager::DataPacketExtraConditionsDeserialization(Parcel &parcel, DataRequestPacket *packet)
+{
+    if (!packet->IsExtraConditionData()) {
+        return E_OK;
+    }
+    uint32_t conditionSize = 0u;
+    (void) parcel.ReadUInt32(conditionSize);
+    if (conditionSize > DBConstant::MAX_CONDITION_COUNT) {
+        return -E_INVALID_ARGS;
+    }
+    std::map<std::string, std::string> extraConditions;
+    for (uint32_t i = 0; i < conditionSize; i++) {
+        std::string conditionKey;
+        std::string conditionVal;
+        (void) parcel.ReadString(conditionKey);
+        (void) parcel.ReadString(conditionVal);
+        if (conditionKey.length() > DBConstant::MAX_CONDITION_KEY_LEN ||
+            conditionVal.length() > DBConstant::MAX_CONDITION_VALUE_LEN) {
+            return -E_INVALID_ARGS;
+        }
+        extraConditions[conditionKey] = conditionVal;
+    }
+    parcel.EightByteAlign();
+    if (parcel.IsError()) {
+        return -E_PARSE_FAIL;
+    }
+    packet->SetExtraConditions(extraConditions);
     return E_OK;
 }
 }  // namespace DistributedDB

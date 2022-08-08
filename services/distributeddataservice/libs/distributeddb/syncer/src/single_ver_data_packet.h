@@ -108,6 +108,10 @@ public:
     void SetCompressAlgo(CompressAlgorithm algo);
     CompressAlgorithm GetCompressAlgo() const;
 
+    void SetExtraConditions(const std::map<std::string, std::string> &extraConditions);
+    std::map<std::string, std::string> GetExtraConditions() const;
+    bool IsExtraConditionData() const;
+
 protected:
     std::vector<SendDataItem> data_;
     WaterMark endWaterMark_ = 0;
@@ -125,9 +129,11 @@ protected:
     WaterMark deletedWatermark_ = 0;
     std::vector<uint8_t> compressData_; // if compressData size is above 0, means use compressData and ignore data_
     CompressAlgorithm algo_ = CompressAlgorithm::NONE; // used for param while serialize compress data
+    std::map<std::string, std::string> extraConditions_; // use for checkpermission in annother device
     static const uint32_t IS_LAST_SEQUENCE = 0x1; // bit 0 used for isLastSequence, 1: is last, 0: not last
     static const uint32_t IS_UPDATE_WATER = 0x2; // bit 1 used for update watermark, 0: update, 1: not update
     static const uint32_t IS_COMPRESS_DATA = 0x4; // bit 3 used for compress data, 0: raw data, 1: compress data
+    static const uint32_t IS_CONDITION_DATA = 0x8; // bit 4 used for extra condition data, 0: raw data
 };
 
 class DataAckPacket {

@@ -645,6 +645,7 @@ void SingleVerDataSync::FillDataRequestPacket(DataRequestPacket *packet, SingleV
     packet->SetData(syncData.entries);
     packet->SetCompressData(syncData.compressedEntries);
     packet->SetBasicInfo(sendCode, version, tmpMode);
+    packet->SetExtraConditions(RuntimeContext::GetInstance()->GetPermissionCheckParam(storage_->GetDbProperties()));
     packet->SetWaterMark(localMark, peerMark, deleteMark);
     if (SyncOperation::TransferSyncMode(mode) == SyncModeType::PUSH_AND_PULL) {
         packet->SetEndWaterMark(context->GetEndMark());
@@ -770,6 +771,7 @@ int SingleVerDataSync::PullRequestStart(SingleVerSyncTaskContext *context)
     SyncTimeRange dataTime = {localMark, deleteMark, localMark, deleteMark};
 
     packet->SetBasicInfo(E_OK, version, context->GetMode());
+    packet->SetExtraConditions(RuntimeContext::GetInstance()->GetPermissionCheckParam(storage_->GetDbProperties()));
     packet->SetWaterMark(localMark, peerMark, deleteMark);
     packet->SetEndWaterMark(endMark);
     packet->SetSessionId(context->GetRequestSessionId());
@@ -1269,7 +1271,7 @@ int SingleVerDataSync::RunPermissionCheck(SingleVerSyncTaskContext *context, con
     const DataRequestPacket *packet)
 {
     int mode = SyncOperation::TransferSyncMode(packet->GetMode());
-    int errCode = SingleVerDataSyncUtils::RunPermissionCheck(context, storage_, label_, mode);
+    int errCode = SingleVerDataSyncUtils::RunPermissionCheck(context, storage_, label_, packet);
     if (errCode != E_OK) {
         if (context->GetRemoteSoftwareVersion() > SOFTWARE_VERSION_EARLIEST) { // ver 101 can't handle this errCode
             (void)SendDataAck(context, message, -E_NOT_PERMIT, 0);
@@ -1656,6 +1658,7 @@ void SingleVerDataSync::FillRequestReSendPacket(const SingleVerSyncTaskContext *
     packet->SetData(syncData.entries);
     packet->SetCompressData(syncData.compressedEntries);
     packet->SetBasicInfo(sendCode, version, reSendMode);
+    packet->SetExtraConditions(RuntimeContext::GetInstance()->GetPermissionCheckParam(storage_->GetDbProperties()));
     packet->SetWaterMark(reSendInfo.start, peerMark, reSendInfo.deleteDataStart);
     if (SyncOperation::TransferSyncMode(reSendMode) != SyncModeType::PUSH) {
         packet->SetEndWaterMark(context->GetEndMark());

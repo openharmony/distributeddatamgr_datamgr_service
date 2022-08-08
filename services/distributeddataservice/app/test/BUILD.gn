@@ -35,6 +35,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/config/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/crypto/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/directory/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/permission/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/session_manager",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/kvdb",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/object",
@@ -56,136 +57,6 @@ config("module_private_config") {
         [ "//base/powermgr/power_manager/interfaces/innerkits/native/include" ]
   }
   ldflags = [ "-Wl,--whole-archive" ]
-}
-
-ohos_unittest("KvStoreImplLogicalIsolationTest") {
-  module_out_path = module_output_path
-  sources = [
-    "../src/device_change_listener_impl.cpp",
-    "../src/device_kvstore_impl.cpp",
-    "../src/device_kvstore_observer_impl.cpp",
-    "../src/device_kvstore_resultset_impl.cpp",
-    "../src/dump_helper.cpp",
-    "../src/kvstore_account_observer.cpp",
-    "../src/kvstore_app_accessor.cpp",
-    "../src/kvstore_app_manager.cpp",
-    "../src/kvstore_data_service.cpp",
-    "../src/kvstore_device_listener.cpp",
-    "../src/kvstore_meta_manager.cpp",
-    "../src/kvstore_observer_impl.cpp",
-    "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_user_manager.cpp",
-    "../src/security/security.cpp",
-    "../src/security/sensitive.cpp",
-    "../src/session_manager/route_head_handler_impl.cpp",
-    "../src/session_manager/session_manager.cpp",
-    "../src/session_manager/upgrade_manager.cpp",
-    "../src/single_kvstore_impl.cpp",
-    "unittest/grant_data_sync_permission.h",
-    "unittest/kvstore_impl_logical_isolation_test.cpp",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "access_token:libtoken_setproc",
-    "c_utils:utils",
-    "dataclassification:data_transit_mgr",
-    "device_auth:deviceauth_sdk",
-    "hitrace_native:libhitrace",
-    "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
-    "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
-  ]
-
-  if (distributeddatamgr_power) {
-    external_deps += [
-      "battery_manager:batterysrv_client",
-      "power_manager:powermgr_client",
-    ]
-  }
-
-  deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/checker:distributeddata_checker_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
-  ]
-  part_name = "distributeddatamgr"
-}
-
-ohos_unittest("KvStoreImplPhysicalIsolationTest") {
-  module_out_path = module_output_path
-  sources = [
-    "../src/device_change_listener_impl.cpp",
-    "../src/device_kvstore_impl.cpp",
-    "../src/device_kvstore_observer_impl.cpp",
-    "../src/device_kvstore_resultset_impl.cpp",
-    "../src/dump_helper.cpp",
-    "../src/kvstore_account_observer.cpp",
-    "../src/kvstore_app_accessor.cpp",
-    "../src/kvstore_app_manager.cpp",
-    "../src/kvstore_data_service.cpp",
-    "../src/kvstore_device_listener.cpp",
-    "../src/kvstore_meta_manager.cpp",
-    "../src/kvstore_observer_impl.cpp",
-    "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_user_manager.cpp",
-    "../src/security/security.cpp",
-    "../src/security/sensitive.cpp",
-    "../src/session_manager/route_head_handler_impl.cpp",
-    "../src/session_manager/session_manager.cpp",
-    "../src/session_manager/upgrade_manager.cpp",
-    "../src/single_kvstore_impl.cpp",
-    "unittest/grant_data_sync_permission.h",
-    "unittest/kvstore_impl_physical_isolation_test.cpp",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "access_token:libtoken_setproc",
-    "c_utils:utils",
-    "dataclassification:data_transit_mgr",
-    "device_auth:deviceauth_sdk",
-    "hitrace_native:libhitrace",
-    "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
-    "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
-  ]
-
-  if (distributeddatamgr_power) {
-    external_deps += [
-      "battery_manager:batterysrv_client",
-      "power_manager:powermgr_client",
-    ]
-  }
-
-  deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/checker:distributeddata_checker_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
-  ]
-  part_name = "distributeddatamgr"
 }
 
 ohos_unittest("KvStoreDataServiceTest") {
@@ -225,7 +96,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -289,7 +160,7 @@ ohos_unittest("KvStoreBackupTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -330,7 +201,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -386,7 +257,7 @@ ohos_unittest("KvStoreSyncManagerTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -465,7 +336,7 @@ ohos_unittest("KvStoreUninstallerTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   if (distributeddatamgr_power) {
@@ -486,8 +357,6 @@ group("unittest") {
   deps += [
     ":KvStoreDataServiceTest",
     ":KvStoreFlowCtrlManagerTest",
-    ":KvStoreImplLogicalIsolationTest",
-    ":KvStoreImplPhysicalIsolationTest",
     ":KvStoreUninstallerTest",
   ]
 }

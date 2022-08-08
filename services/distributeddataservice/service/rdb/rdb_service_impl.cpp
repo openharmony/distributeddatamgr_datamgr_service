@@ -122,6 +122,10 @@ bool RdbServiceImpl::CheckAccess(const RdbSyncerParam &param)
     storeInfo.tokenId = GetCallingTokenID();
     storeInfo.bundleName = param.bundleName_;
     storeInfo.storeId = RdbSyncer::RemoveSuffix(param.storeName_);
+    auto instanceId = RdbSyncer::GetInstIndex(storeInfo.tokenId, storeInfo.bundleName);
+    if (instanceId != 0) {
+        return false;
+    }
     return !CheckerManager::GetInstance().GetAppId(storeInfo).empty();
 }
 

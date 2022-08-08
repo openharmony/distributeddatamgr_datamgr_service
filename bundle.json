@@ -61,7 +61,7 @@
                 "init",
                 "os_account",
                 "common",
-                "samgr_standard",
+                "samgr",
                 "dataclassification",
                 "dsoftbus",
                 "jsoncpp",

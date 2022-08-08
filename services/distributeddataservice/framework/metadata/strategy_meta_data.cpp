@@ -48,6 +48,11 @@ StrategyMeta::StrategyMeta(
 {
 }
 
+bool StrategyMeta::IsEffect() const
+{
+    return (!capabilityRange.localLabel.empty()) && (!capabilityRange.remoteLabel.empty());
+}
+
 std::string StrategyMeta::GetKey()
 {
     if (instanceId == 0) {

@@ -167,8 +167,6 @@ int AutoLaunch::EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLa
     std::string dualTupleIdentifier = properties.GetStringProp(KvDBProperties::DUAL_TUPLE_IDENTIFIER_DATA, "");
     std::string identifier = properties.GetStringProp(KvDBProperties::IDENTIFIER_DATA, "");
     std::string userId = properties.GetStringProp(KvDBProperties::USER_ID, "");
-    std::string appId = properties.GetStringProp(DBProperties::APP_ID, "");
-    std::string storeId = properties.GetStringProp(DBProperties::STORE_ID, "");
     std::shared_ptr<DBProperties> ptr = std::make_shared<KvDBProperties>(properties);
     AutoLaunchItem autoLaunchItem { ptr, notifier, option.observer, option.conflictType, option.notifier };
     autoLaunchItem.isAutoSync = option.isAutoSync;
@@ -178,7 +176,7 @@ int AutoLaunch::EnableKvStoreAutoLaunch(const KvDBProperties &properties, AutoLa
         LOGE("[AutoLaunch] EnableKvStoreAutoLaunch failed errCode:%d", errCode);
         return errCode;
     }
-    if (isDualTupleMode && !RuntimeContext::GetInstance()->IsSyncerNeedActive(userId, appId, storeId)) {
+    if (isDualTupleMode && !RuntimeContext::GetInstance()->IsSyncerNeedActive(properties)) {
         std::lock_guard<std::mutex> autoLock(dataLock_);
         std::string tmpIdentifier = isDualTupleMode ? dualTupleIdentifier : identifier;
         LOGI("[AutoLaunch] GetDoOpenMap identifier=%.6s no need to open", STR_TO_HEX(tmpIdentifier));
@@ -569,9 +567,6 @@ void AutoLaunch::GetDoOpenMap(std::map<std::string, std::map<std::string, AutoLa
     LOGI("[AutoLaunch] GetDoOpenMap");
     for (auto &items : autoLaunchItemMap_) {
         for (auto &iter : items.second) {
-            std::string userId = iter.second.propertiesPtr->GetStringProp(DBProperties::USER_ID, "");
-            std::string appId = iter.second.propertiesPtr->GetStringProp(DBProperties::APP_ID, "");
-            std::string storeId = iter.second.propertiesPtr->GetStringProp(DBProperties::STORE_ID, "");
             bool isDualTupleMode = iter.second.propertiesPtr->GetBoolProp(DBProperties::SYNC_DUAL_TUPLE_MODE, false);
             if (iter.second.isDisable) {
                 LOGI("[AutoLaunch] GetDoOpenMap this item isDisable do nothing");
@@ -583,7 +578,8 @@ void AutoLaunch::GetDoOpenMap(std::map<std::string, std::map<std::string, AutoLa
             } else if (iter.second.conn != nullptr) {
                 LOGI("[AutoLaunch] GetDoOpenMap this item is opened");
                 continue;
-            } else if (isDualTupleMode && !RuntimeContext::GetInstance()->IsSyncerNeedActive(userId, appId, storeId)) {
+            } else if (isDualTupleMode &&
+                !RuntimeContext::GetInstance()->IsSyncerNeedActive(*iter.second.propertiesPtr)) {
                 LOGI("[AutoLaunch] GetDoOpenMap this item no need to open");
                 continue;
             } else {

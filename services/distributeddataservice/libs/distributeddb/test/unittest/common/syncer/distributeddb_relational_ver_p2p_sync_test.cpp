@@ -1452,7 +1452,7 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery007, TestSize.Level1)
     PrepareEnvironment(dataMap, {g_deviceB});
     ASSERT_NE(g_deviceB, nullptr);
     ASSERT_NE(g_rdbDelegatePtr, nullptr);
-    auto callback = [](const std::string &userId, const std::string &appId,
+    PermissionCheckCallbackV2 callback = [](const std::string &userId, const std::string &appId,
         const std::string &storeId, const std::string &deviceId, uint8_t flag) -> bool {
         return false;
     };
@@ -1463,7 +1463,8 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, RemoteQuery007, TestSize.Level1)
     EXPECT_EQ(g_deviceB->RemoteQuery(DEVICE_A, condition, DBConstant::MIN_TIMEOUT, result),
         PERMISSION_CHECK_FORBID_SYNC);
     ASSERT_EQ(result, nullptr);
-    EXPECT_EQ(RuntimeConfig::SetPermissionCheckCallback(nullptr), OK);
+    callback = nullptr;
+    EXPECT_EQ(RuntimeConfig::SetPermissionCheckCallback(callback), OK);
 }
 
 /**
