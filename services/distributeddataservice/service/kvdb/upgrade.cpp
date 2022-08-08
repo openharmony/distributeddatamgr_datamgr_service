@@ -105,7 +105,7 @@ bool Upgrade::RegisterCleaner(uint32_t version, Cleaner cleaner)
 
 Upgrade::AutoStore Upgrade::GetDBStore(const StoreMeta &meta, const std::vector<uint8_t> &pwd)
 {
-    DBManager manager(meta.appId, meta.user);
+    DBManager manager(meta.appId, meta.user, meta.instanceId);
     manager.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(meta) });
     auto release = [&manager](DBStore *store) { manager.CloseKvStore(store); };
     DBPassword password;
