@@ -32,7 +32,7 @@ using namespace DistributedDBUnitTest;
 using namespace std;
 
 namespace {
-    std::string g_testDir;
+    std::shared_ptr<std::string> g_testDir = nullptr;
     VirtualCommunicatorAggregator* g_communicatorAggregator = nullptr;
     const std::string DEVICE_A = "real_device";
     const std::string DEVICE_B = "deviceB";
@@ -43,7 +43,10 @@ namespace {
     DBStatus OpenDelegate(const std::string &dlpPath, KvStoreNbDelegate *&delegatePtr,
         KvStoreDelegateManager &mgr, bool syncDualTupleMode = false)
     {
-        std::string dbPath = g_testDir + dlpPath;
+        if (g_testDir == nullptr) {
+            return DB_ERROR;
+        }
+        std::string dbPath = *g_testDir + dlpPath;
         KvStoreConfig storeConfig;
         storeConfig.dataDir = dbPath;
         OS::MakeDBDirectory(dbPath);
@@ -70,7 +73,10 @@ namespace {
     DBStatus OpenDelegate(const std::string &dlpPath, RelationalStoreDelegate *&rdbDelegatePtr,
         RelationalStoreManager &mgr)
     {
-        std::string dbDir = g_testDir + dlpPath;
+        if (g_testDir == nullptr) {
+            return DB_ERROR;
+        }
+        std::string dbDir = *g_testDir + dlpPath;
         OS::MakeDBDirectory(dbDir);
         std::string dbPath = dbDir + "/test.db";
         auto db = RelationalTestUtils::CreateDataBase(dbPath);
@@ -112,7 +118,11 @@ void DistributedDBSingleVerDLPTest::SetUpTestCase(void)
     /**
      * @tc.setup: Init datadir and Virtual Communicator.
      */
-    DistributedDBToolsUnitTest::TestDirInit(g_testDir);
+    std::string testDir;
+    DistributedDBToolsUnitTest::TestDirInit(testDir);
+    if (g_testDir == nullptr) {
+        g_testDir = std::make_shared<std::string>(testDir);
+    }
 
     g_communicatorAggregator = new (std::nothrow) VirtualCommunicatorAggregator();
     ASSERT_TRUE(g_communicatorAggregator != nullptr);
@@ -124,7 +134,7 @@ void DistributedDBSingleVerDLPTest::TearDownTestCase(void)
     /**
      * @tc.teardown: Release virtual Communicator and clear data dir.
      */
-    if (DistributedDBToolsUnitTest::RemoveTestDbFiles(g_testDir) != 0) {
+    if (g_testDir != nullptr && DistributedDBToolsUnitTest::RemoveTestDbFiles(*g_testDir) != 0) {
         LOGE("rm test db files error!");
     }
     RuntimeContext::GetInstance()->SetCommunicatorAggregator(nullptr);

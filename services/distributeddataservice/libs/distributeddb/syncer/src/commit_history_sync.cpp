@@ -706,7 +706,8 @@ int CommitHistorySync::RunPermissionCheck(const std::string &deviceId) const
     std::string userId = storagePtr_->GetDbProperties().GetStringProp(KvDBProperties::USER_ID, "");
     std::string storeId = storagePtr_->GetDbProperties().GetStringProp(KvDBProperties::STORE_ID, "");
     uint8_t flag = CHECK_FLAG_SEND;
-    int errCode = RuntimeContext::GetInstance()->RunPermissionCheck({ userId, appId, storeId, deviceId }, flag);
+    PermissionCheckParam param = { userId, appId, storeId, deviceId };
+    int errCode = RuntimeContext::GetInstance()->RunPermissionCheck(param, flag);
     if (errCode != E_OK) {
         LOGE("[CommitHistorySync] RunPermissionCheck not pass errCode:%d, flag:%d", errCode, flag);
         return -E_NOT_PERMIT;
