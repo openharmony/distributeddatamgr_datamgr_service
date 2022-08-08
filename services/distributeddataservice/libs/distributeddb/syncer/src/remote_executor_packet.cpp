@@ -129,7 +129,7 @@ int RemoteExecutorRequestPacket::DeSerialization(Parcel &parcel)
         LOGE("[RemoteExecutorRequestPacket] DeSerialization failed");
         return -E_INVALID_ARGS;
     }
-    if (!parcel.IsContinueRead()) {
+    if (version_ < REQUEST_PACKET_VERSION_V2) {
         return E_OK;
     }
     uint32_t conditionSize = 0u;

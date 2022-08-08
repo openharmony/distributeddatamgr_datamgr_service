@@ -621,7 +621,7 @@ int RuntimeContextImpl::SetSyncActivationCheckCallback(const SyncActivationCheck
 {
     std::unique_lock<std::shared_mutex> writeLock(syncActivationCheckCallbackMutex_);
     syncActivationCheckCallbackV2_ = callback;
-    LOGI("SetSyncActivationCheckCallback ok");
+    LOGI("SetSyncActivationCheckCallbackV2 ok");
     return E_OK;
 }
 

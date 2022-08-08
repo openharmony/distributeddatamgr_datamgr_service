@@ -21,7 +21,7 @@
 #include "prepared_stmt.h"
 #include "relational_row_data_set.h"
 #include "sync_types.h"
-#include "relational_row_data_set.h"
+#include "version.h"
 
 namespace DistributedDB {
 class RemoteExecutorRequestPacket : public ISyncPacket {
@@ -54,6 +54,10 @@ public:
     int Serialization(Parcel &parcel) const override;
 
     int DeSerialization(Parcel &parcel) override;
+
+    static const uint32_t REQUEST_PACKET_VERSION_V1 = SOFTWARE_VERSION_RELEASE_6_0;
+    static const uint32_t REQUEST_PACKET_VERSION_V2 = SOFTWARE_VERSION_RELEASE_6_0 + 1;
+    static const uint32_t REQUEST_PACKET_VERSION_CURRENT = REQUEST_PACKET_VERSION_V2;
 private:
     uint32_t version_ = 0u;
     uint32_t flag_ = 0u; // 0x01 mean need reply ack
@@ -92,6 +96,9 @@ public:
     int Serialization(Parcel &parcel) const override;
 
     int DeSerialization(Parcel &parcel) override;
+
+    static const uint32_t RESPONSE_PACKET_VERSION_V1 = SOFTWARE_VERSION_RELEASE_6_0;
+    static const uint32_t RESPONSE_PACKET_VERSION_CURRENT = RESPONSE_PACKET_VERSION_V1;
 private:
     uint32_t version_ = 0u;
     int32_t ackCode_ = 0;

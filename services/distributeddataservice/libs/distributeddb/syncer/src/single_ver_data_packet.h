@@ -110,6 +110,7 @@ public:
 
     void SetExtraConditions(const std::map<std::string, std::string> &extraConditions);
     std::map<std::string, std::string> GetExtraConditions() const;
+    bool IsExtraConditionData() const;
 
 protected:
     std::vector<SendDataItem> data_;
@@ -132,6 +133,7 @@ protected:
     static const uint32_t IS_LAST_SEQUENCE = 0x1; // bit 0 used for isLastSequence, 1: is last, 0: not last
     static const uint32_t IS_UPDATE_WATER = 0x2; // bit 1 used for update watermark, 0: update, 1: not update
     static const uint32_t IS_COMPRESS_DATA = 0x4; // bit 3 used for compress data, 0: raw data, 1: compress data
+    static const uint32_t IS_CONDITION_DATA = 0x8; // bit 4 used for extra condition data, 0: raw data
 };
 
 class DataAckPacket {
