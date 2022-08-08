@@ -400,9 +400,7 @@ int SingleVerSerializeManager::DataPacketDeSerialization(const uint8_t *buffer, 
             goto ERROR;
         }
     }
-    if (packet->IsExtraConditionData()) {
-        errCode = DataPacketExtraConditionsDeserialization(parcel, packet);
-    }
+    errCode = DataPacketExtraConditionsDeserialization(parcel, packet);
     if (errCode != E_OK) {
         goto ERROR;
     }
@@ -879,7 +877,7 @@ int SingleVerSerializeManager::DataPacketExtraConditionsSerialization(Parcel &pa
 
 int SingleVerSerializeManager::DataPacketExtraConditionsDeserialization(Parcel &parcel, DataRequestPacket *packet)
 {
-    if (!parcel.IsContinueRead()) {
+    if (!packet->IsExtraConditionData()) {
         return E_OK;
     }
     uint32_t conditionSize = 0u;
