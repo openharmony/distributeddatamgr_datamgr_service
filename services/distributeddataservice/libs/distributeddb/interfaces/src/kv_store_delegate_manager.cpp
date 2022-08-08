@@ -472,13 +472,13 @@ void KvStoreDelegateManager::SetKvStoreCorruptionHandler(const KvStoreCorruption
 }
 
 DBStatus KvStoreDelegateManager::GetDatabaseDir(const std::string &storeId, const std::string &appId,
-    const std::string &userId, std::string &directory, int32_t instanceId)
+    const std::string &userId, std::string &directory)
 {
     if (!ParamCheckUtils::CheckStoreParameter(storeId, appId, userId)) {
         return INVALID_ARGS;
     }
 
-    std::string identifier = DBCommon::GenerateIdentifierId(storeId, appId, userId, instanceId);
+    std::string identifier = DBCommon::GenerateIdentifierId(storeId, appId, userId);
     std::string dir = DBCommon::TransferHashString(identifier);
     if (dir.empty()) {
         return DB_ERROR;

@@ -80,7 +80,7 @@ public:
 
     // Get database directory by storeId + appId + userId
     DB_API static DBStatus GetDatabaseDir(const std::string &storeId, const std::string &appId,
-        const std::string &userId, std::string &directory, int32_t instanceId = 0);
+        const std::string &userId, std::string &directory);
 
     // Get database directory by storeId
     DB_API static DBStatus GetDatabaseDir(const std::string &storeId, std::string &directory);
