@@ -158,7 +158,7 @@ int32_t RdbSyncer::InitDBDelegate(const StoreMetaData &meta)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (manager_ == nullptr) {
-        manager_ = new(std::nothrow) DistributedDB::RelationalStoreManager(GetAppId(), GetUserId());
+        manager_ = new(std::nothrow) DistributedDB::RelationalStoreManager(meta.appId, meta.user, meta.instanceId);
     }
     if (manager_ == nullptr) {
         ZLOGE("malloc manager failed");
@@ -181,7 +181,7 @@ int32_t RdbSyncer::InitDBDelegate(const StoreMetaData &meta)
     return RDB_OK;
 }
 
-int32_t RdbSyncer::GetInstIndex(uint32_t tokenId, const std::string &bundleName) const
+int32_t RdbSyncer::GetInstIndex(uint32_t tokenId, const std::string &bundleName)
 {
     if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
         return 0;

@@ -90,13 +90,16 @@ Status DistributedKvDataManager::GetAllKvStoreId(const AppId &appId, std::vector
     DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
 
     KvStoreServiceDeathNotifier::SetAppId(appId);
+    auto status = StoreManager::GetInstance().GetStoreIds(appId, storeIds);
+    if (status == Status::SUCCESS) {
+        return status;
+    }
     sptr<IKvStoreDataService> kvDataServiceProxy = KvStoreServiceDeathNotifier::GetDistributedKvDataService();
     if (kvDataServiceProxy == nullptr) {
         ZLOGE("proxy is nullptr.");
         return Status::SERVER_UNAVAILABLE;
     }
 
-    Status status;
     kvDataServiceProxy->GetAllKvStoreId(appId, [&status, &storeIds](auto statusTmp, auto &ids) {
         status = statusTmp;
         storeIds = std::move(ids);

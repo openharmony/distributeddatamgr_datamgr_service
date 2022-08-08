@@ -38,7 +38,7 @@ StoreCache::DBStore *StoreCache::GetStore(const StoreMetaData &data, std::shared
             return true;
         }
 
-        DBManager manager(data.appId, data.user);
+        DBManager manager(data.appId, data.user, data.instanceId);
         manager.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(data) });
         manager.GetKvStore(data.storeId, GetDBOption(data, GetDBPassword(data)),
             [&status, &store](auto dbStatus, auto *tmpStore) {

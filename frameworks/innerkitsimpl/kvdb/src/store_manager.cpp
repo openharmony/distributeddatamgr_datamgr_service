@@ -93,6 +93,20 @@ Status StoreManager::CloseAllKVStore(const AppId &appId)
     return StoreFactory::GetInstance().Close(appId, { "" }, true);
 }
 
+Status StoreManager::GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds)
+{
+    ZLOGD("appId:%{public}s", appId.appId.c_str());
+    if (!appId.IsValid()) {
+        return INVALID_ARGUMENT;
+    }
+
+    auto service = KVDBServiceClient::GetInstance();
+    if (service == nullptr) {
+        return SERVER_UNAVAILABLE;
+    }
+    return service->GetStoreIds(appId, storeIds);
+}
+
 Status StoreManager::Delete(const AppId &appId, const StoreId &storeId, const std::string &path)
 {
     ZLOGD("appId:%{public}s, storeId:%{public}s dir:%{public}s", appId.appId.c_str(), storeId.storeId.c_str(),

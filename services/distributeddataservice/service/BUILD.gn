@@ -25,15 +25,20 @@ config("module_public_config") {
     "directory/include",
     "kvdb",
     "rdb",
+    "permission/include",
     "object",
     "//third_party/json/single_include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/kvdb/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/object/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/include/",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/interfaces/include/",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/interfaces/include/relational",
   ]
 }
 
@@ -67,6 +72,7 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_service_stub.cpp",
     "rdb/rdb_store_observer_impl.cpp",
     "rdb/rdb_syncer.cpp",
+    "permission/src/permit_delegate.cpp",
   ]
   cflags = [ "-Wno-multichar" ]
 

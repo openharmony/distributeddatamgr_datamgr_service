@@ -53,8 +53,12 @@ Status KVDBServiceImpl::GetStoreIds(const AppId &appId, std::vector<StoreId> &st
     auto user = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(IPCSkeleton::GetCallingPid());
     auto deviceId = Commu::GetInstance().GetLocalDevice().uuid;
     auto prefix = StoreMetaData::GetPrefix({ deviceId, user, "default", appId.appId });
+    auto instanceId = GetInstIndex(IPCSkeleton::GetCallingTokenID(), appId);
     MetaDataManager::GetInstance().LoadMeta(prefix, metaData);
     for (auto &item : metaData) {
+        if (item.storeType > KvStoreType::MULTI_VERSION || item.instanceId != instanceId) {
+            continue;
+        }
         storeIds.push_back({ item.storeId });
     }
     ZLOGD("appId:%{public}s store size:%{public}zu", appId.appId.c_str(), storeIds.size());

@@ -54,6 +54,8 @@ public:
                         const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet);
 
     static std::string RemoveSuffix(const std::string& name);
+
+    static int32_t GetInstIndex(uint32_t tokenId, const std::string &bundleName);
 private:
     std::string GetUserId() const;
 
@@ -63,8 +65,6 @@ private:
 
     int32_t CreateMetaData(StoreMetaData &meta);
     int32_t InitDBDelegate(const StoreMetaData &meta);
-
-    int32_t GetInstIndex(uint32_t tokenId, const std::string &bundleName) const;
 
     DistributedDB::RelationalStoreDelegate* GetDelegate();
 
