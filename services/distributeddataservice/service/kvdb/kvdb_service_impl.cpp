@@ -594,12 +594,8 @@ std::shared_ptr<StoreCache::Observers> KVDBServiceImpl::GetObservers(uint32_t to
 Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId,
     std::vector<uint8_t> &password)
 {
-    if (!appId.IsValid() || !storeId.IsValid()) {
-        ZLOGE("failed please check appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
-        return INVALID_ARGUMENT;
-    }
-
-    return (BackupManager::GetInstance().GetPassWord(appId, storeId, password)) ? SUCCESS : ERROR;
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    return (BackupManager::GetInstance().GetPassWord(metaData, password)) ? SUCCESS : ERROR;
 }
 
 void KVDBServiceImpl::OnUserChanged()

@@ -50,6 +50,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/object/include",
     "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/rdb/src",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/backup/include",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/rdb",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/object",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/kvdb",
@@ -67,6 +68,7 @@ config("module_private_config") {
     "include",
     "src",
     "src/security",
+    "src/backup_rule/include",
     "//third_party/json/single_include",
   ]
 
@@ -77,7 +79,6 @@ config("module_private_config") {
 
 ohos_shared_library("distributeddataservice") {
   sources = [
-    "src/backup_handler.cpp",
     "src/device_change_listener_impl.cpp",
     "src/device_kvstore_impl.cpp",
     "src/device_kvstore_observer_impl.cpp",
@@ -100,13 +101,20 @@ ohos_shared_library("distributeddataservice") {
     "src/single_kvstore_impl.cpp",
   ]
 
+  if (distributeddatamgr_power) {
+    variable_sources = [
+      "src/backup_rule/src/charging.cpp",
+      "src/backup_rule/src/screenoff.cpp",
+    ]
+    sources += variable_sources
+  }
+
   configs = [ ":module_private_config" ]
   deps = [
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/backup_rule:distributeddata_backup_rule_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/checker:distributeddata_checker_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",

@@ -18,13 +18,13 @@
 #include "backuprule/backup_rule_manager.h"
 namespace OHOS {
 namespace DistributedData {
-class BackupRuleCharging : public BackupRuleManager::BackupRule {
+class Charging : public BackupRuleManager::BackupRule {
 public:
-    BackupRuleCharging() noexcept;
-    ~BackupRuleCharging() {}
+    Charging() noexcept;
+    ~Charging() {}
     bool CanBackup() override;
 private:
-    static BackupRuleCharging instance_;
+    static Charging instance_;
 };
 } // namespace DistributedData
 } // namespace OHOS

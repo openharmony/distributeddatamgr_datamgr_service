@@ -415,17 +415,7 @@ bool KvStoreDataService::CheckOptions(const Options &options, const std::vector<
 bool KvStoreDataService::CheckBackupFileExist(const std::string &userId, const std::string &bundleName,
                                               const std::string &storeId, int pathType)
 {
-    std::initializer_list<std::string> backupFileNameList = {Constant::DEFAULT_GROUP_ID, "_",
-        bundleName, "_", storeId};
-    auto backupFileName = Constant::Concatenate(backupFileNameList);
-    std::initializer_list<std::string> backFileList = {BackupHandler::GetBackupPath(userId, pathType),
-        "/", BackupHandler::GetHashedBackupName(backupFileName)};
-    auto backFilePath = Constant::Concatenate(backFileList);
-    if (!BackupHandler::FileExists(backFilePath)) {
-        ZLOGE("BackupHandler file is not exist.");
-        return false;
-    }
-    return true;
+    return false;
 }
 template<typename  T>
 Status KvStoreDataService::RecoverKvStore(
@@ -595,14 +585,6 @@ Status KvStoreDataService::DeleteKvStore(const AppId &appId, const StoreId &stor
 
 Status KvStoreDataService::DeleteKvStore(StoreMetaData &metaData)
 {
-     // delete the backup file
-    auto backFilePath = BackupHandler::GetBackupPath(metaData.user, KvStoreAppManager::ConvertPathType(metaData));
-    auto backupFileName = Constant::Concatenate({ metaData.account, "_", metaData.bundleName, "_", metaData.storeId });
-    auto backFile = Constant::Concatenate({ backFilePath, "/", BackupHandler::GetHashedBackupName(backupFileName) });
-    if (!BackupHandler::RemoveFile(backFile)) {
-        ZLOGE("DeleteKvStore RemoveFile backFilePath failed.");
-    }
-
     std::lock_guard<std::mutex> lg(accountMutex_);
     Status status;
     auto it = deviceAccountMap_.find(metaData.user);

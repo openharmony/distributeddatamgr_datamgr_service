@@ -15,9 +15,9 @@
 #define LOG_TAG "StoreUtil"
 #include "store_util.h"
 #include <dirent.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "fcntl.h"
 #include "log_print.h"
 #include "types.h"
 namespace OHOS::DistributedKv {

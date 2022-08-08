@@ -232,7 +232,7 @@ void KvStoreMetaManager::ConfigMetaDataManager()
     std::initializer_list<std::string> backList = {label_, "_", Constant::SERVICE_META_DB_NAME};
     std::string fileName = Constant::Concatenate(backList);
     std::initializer_list<std::string> backFull = { metaDBDirectory_, "/backup/",
-                                                    BackupHandler::GetHashedBackupName(fileName) };
+        DistributedData::Crypto::Sha256(fileName)};
     auto fullName = Constant::Concatenate(backFull);
     auto backup = [fullName](const auto &store) -> int32_t {
         DistributedDB::CipherPassword password;
@@ -315,7 +315,7 @@ Status KvStoreMetaManager::CheckUpdateServiceMeta(const std::vector<uint8_t> &me
     std::initializer_list<std::string> backList = {label_, "_", Constant::SERVICE_META_DB_NAME};
     std::string backupName = Constant::Concatenate(backList);
     std::initializer_list<std::string> backFullList = {metaDBDirectory_, "/backup/",
-        BackupHandler::GetHashedBackupName(backupName)};
+        DistributedData::Crypto::Sha256(backupName)};
     auto backupFullName = Constant::Concatenate(backFullList);
 
     switch (flag) {

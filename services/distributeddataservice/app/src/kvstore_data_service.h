@@ -21,7 +21,6 @@
 #include <set>
 
 #include "account_delegate.h"
-#include "backup_handler.h"
 #include "constant.h"
 #include "device_change_listener_impl.h"
 #include "ikvstore_data_service.h"

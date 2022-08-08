@@ -12,22 +12,22 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#define LOG_TAG "BackupRuleScreenOff"
+#define LOG_TAG "ScreenOff"
 
-#include "backup_rule_screenoff.h"
+#include "screenoff.h"
 #include "log_print.h"
 #include "power_mgr_client.h"
 
 namespace OHOS {
 namespace DistributedData {
-__attribute__((used)) BackupRuleScreenOff BackupRuleScreenOff::instance_;
-BackupRuleScreenOff::BackupRuleScreenOff() noexcept
+__attribute__((used)) ScreenOff ScreenOff::instance_;
+ScreenOff::ScreenOff() noexcept
 {
     BackupRuleManager::GetInstance().RegisterPlugin(
         "ScreenOff", [this]() -> auto { return this; });
 }
 
-bool BackupRuleScreenOff::CanBackup()
+bool ScreenOff::CanBackup()
 {
     auto &powerMgrClient = PowerMgr::PowerMgrClient::GetInstance();
     if (powerMgrClient.IsScreenOn()) {

@@ -18,13 +18,13 @@
 #include "backuprule/backup_rule_manager.h"
 namespace OHOS {
 namespace DistributedData {
-class BackupRuleScreenOff : public BackupRuleManager::BackupRule {
+class ScreenOff : public BackupRuleManager::BackupRule {
 public:
-    BackupRuleScreenOff() noexcept;
-    ~BackupRuleScreenOff() {}
+    ScreenOff() noexcept;
+    ~ScreenOff() {}
     bool CanBackup() override;
 private:
-    static BackupRuleScreenOff instance_;
+    static ScreenOff instance_;
 };
 } // namespace DistributedData
 } // namespace OHOS

@@ -17,7 +17,6 @@
 #include "backup_manager.h"
 #include "kvdb_service_client.h"
 #include "log_print.h"
-#include "security_manager.h"
 
 namespace OHOS::DistributedKv {
 namespace {
@@ -195,22 +194,29 @@ Status BackupManager::Restore(const std::string &name, const std::string &baseDi
     }
     std::string keyName = BACKUP_KEY_PREFIX + storeId + "_" + name;
     std::string fullName = baseDir + BACKUP_TOP_PATH + "/" + storeId + "/" + backupFile.name;
+    auto password = GetRestorePassword(backupFile.name, baseDir, appId, storeId);
+    auto dbStatus = dbStore->Import(fullName, password);
+    auto status = StoreUtil::ConvertStatus(dbStatus);
+    return status;
+}
+
+SecurityManager::DBPassword BackupManager::GetRestorePassword(const std::string &backupName, const std::string &baseDir,
+    const std::string &appId, const std::string &storeId)
+{
     SecurityManager::DBPassword password;
-    if (backupFile.name != AUTO_BACKUP_NAME) {
-        password = SecurityManager::GetInstance().GetDBPassword(keyName, baseDir);
-    } else {
+    if (backupName == AUTO_BACKUP_NAME) {
         auto service = KVDBServiceClient::GetInstance();
         if (service == nullptr) {
-            return SERVER_UNAVAILABLE;
+            return SecurityManager::DBPassword();
         }
         std::vector<uint8_t> pwd;
         service->GetBackupPassword({ appId }, { storeId }, pwd);
         password.SetValue(pwd.data(), pwd.size());
         pwd.assign(pwd.size(), 0);
+    } else {
+        password =  SecurityManager::GetInstance().GetDBPassword(backupName, baseDir);
     }
-    auto dbStatus = dbStore->Import(fullName, password);
-    auto status = StoreUtil::ConvertStatus(dbStatus);
-    return status;
+    return password;
 }
 
 Status BackupManager::DeleteBackup(std::map<std::string, Status> &deleteList, const std::string &baseDir,
@@ -227,11 +233,12 @@ Status BackupManager::DeleteBackup(std::map<std::string, Status> &deleteList, co
         if (it == deleteList.end()) {
             continue;
         }
-        if (info.name == AUTO_BACKUP_NAME) {
+        auto backupName = info.name.substr(0, info.name.length() - BACKUP_POSTFIX_SIZE);
+        if (backupName ==  AUTO_BACKUP_NAME) {
             it->second = INVALID_ARGUMENT;
             continue;
         }
-        std::string keyName = BACKUP_KEY_PREFIX + storeId + "_" + info.name;
+        std::string keyName = BACKUP_KEY_PREFIX + storeId + "_" + backupName;
         SecurityManager::GetInstance().DelDBPassword(keyName, baseDir);
         it->second = (StoreUtil::Remove(path + "/" + info.name)) ?  SUCCESS : ERROR;
     }

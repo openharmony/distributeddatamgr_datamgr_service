@@ -24,42 +24,42 @@ namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedDataDfx;
 __attribute__((used)) KVDBExporter KVDBExporter::instance_;
+
+void KVDBExporter::Exporter(const StoreMetaData &meta, const std::string &backupPath, bool &result)
+{
+    DBManager manager(meta.appId, meta.user);
+    auto path = DirectoryManager::GetInstance().GetStorePath(meta);
+    manager.SetKvStoreConfig({ path });
+    auto dbPassword = StoreCache::GetDBPassword(meta);
+    auto dbOption = StoreCache::GetDBOption(meta, dbPassword);
+
+    manager.GetKvStore(meta.storeId, dbOption, [&manager, &backupPath, &dbPassword, &result]
+        (DistributedDB::DBStatus dbstatus, DistributedDB::KvStoreNbDelegate *delegate) {
+        if (delegate == nullptr) {
+            ZLOGE("Auto backup delegate is null");
+            result = false;
+            return;
+        }
+        dbstatus = delegate->Export(backupPath, dbPassword);
+        result = (dbstatus == DistributedDB::DBStatus::OK) ? true : false;
+        manager.CloseKvStore(delegate);
+    });
+    std::string message;
+    message.append(" backup name [")
+        .append(backupPath)
+        .append("], isEncrypt [")
+        .append(std::to_string(meta.isEncrypt))
+        .append("]")
+        .append("], backup result  [")
+        .append(std::to_string(result))
+        .append("]");
+    Reporter::GetInstance()->BehaviourReporter()->Report(
+        { meta.account, meta.appId, meta.storeId, BehaviourType::DATABASE_BACKUP, message });
+}
+
 KVDBExporter::KVDBExporter() noexcept
 {
-    auto fun = [](
-        const StoreMetaData &meta, const std::vector<uint8_t> &pwd, const std::string &backupPath, Status &status) {
-        DBManager manager(meta.appId, meta.user);
-        auto path = DirectoryManager::GetInstance().GetStorePath(meta);
-        manager.SetKvStoreConfig({ path });
-        DBPassword dbPassword;
-        dbPassword.SetValue(pwd.data(), pwd.size());
-        auto dbOption = StoreCache::GetDBOption(meta, dbPassword);
-
-        manager.GetKvStore(meta.storeId, dbOption, [&manager, &backupPath, &dbPassword, &status]
-            (DistributedDB::DBStatus dbstatus, DistributedDB::KvStoreNbDelegate *delegate) {
-            if (delegate == nullptr) {
-                ZLOGE("Auto backup delegate is null");
-                status = ERROR;
-                return;
-            }
-            dbstatus = delegate->Export(backupPath, dbPassword);
-            status = (dbstatus == DistributedDB::DBStatus::OK) ? SUCCESS : ERROR;
-            manager.CloseKvStore(delegate);
-        });
-
-        std::string message;
-        message.append(" backup name [")
-            .append(backupPath)
-            .append("], isEncrypt [")
-            .append(std::to_string(meta.isEncrypt))
-            .append("]")
-            .append("], backup result status [")
-            .append(std::to_string(status))
-            .append("]");
-        Reporter::GetInstance()->BehaviourReporter()->Report(
-            { meta.account, meta.appId, meta.storeId, BehaviourType::DATABASE_BACKUP, message });
-    };
-    BackupManager::GetInstance().RegisterExporter(KvStoreType::SINGLE_VERSION, fun);
-    BackupManager::GetInstance().RegisterExporter(KvStoreType::DEVICE_COLLABORATION, fun);
+    BackupManager::GetInstance().RegisterExporter(KvStoreType::SINGLE_VERSION, Exporter);
+    BackupManager::GetInstance().RegisterExporter(KvStoreType::DEVICE_COLLABORATION, Exporter);
 }
 } // namespace OHOS::DistributedKv

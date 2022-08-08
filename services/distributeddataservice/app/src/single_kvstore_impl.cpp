@@ -16,7 +16,6 @@
 #include "single_kvstore_impl.h"
 #include <fstream>
 #include "auth_delegate.h"
-#include "backup_handler.h"
 #include "checker/checker_manager.h"
 #include "constant.h"
 #include "dds_trace.h"
@@ -24,6 +23,7 @@
 #include "ipc_skeleton.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
+#include "metadata/corrupted_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "query_helper.h"
 #include "dump_helper.h"
@@ -1422,23 +1422,7 @@ void SingleKvStoreImpl::IncreaseOpenCount()
 bool SingleKvStoreImpl::Import(const std::string &bundleName) const
 {
     ZLOGI("Single KvStoreImpl Import start");
-    StoreMetaData metaData;
-    metaData.user = deviceAccountId_;
-    metaData.bundleName = bundleName;
-    metaData.storeId = storeId_;
-    metaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
-    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    std::shared_lock<std::shared_mutex> lock(storeNbDelegateMutex_);
-    auto recoverResult = BackupHandler::SingleKvStoreRecover(metaData, kvStoreNbDelegate_);
-    if (recoverResult) {
-        CorruptedMetaData metaData = CorruptedMetaData(deviceAccountId_, bundleName_, storeId_);
-        MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
-        if (metaData.isCorrupted == true) {
-            metaData.isCorrupted = false;
-            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
-        }
-    }
-    return recoverResult;
+    return false;
 }
 
 Status SingleKvStoreImpl::SetCapabilityEnabled(bool enabled)

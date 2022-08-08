@@ -15,6 +15,7 @@
 #define LOG_TAG "BackupManager"
 #include "backup_manager.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
@@ -32,14 +33,13 @@
 #include "types.h"
 namespace OHOS::DistributedData {
 using namespace OHOS::Security::AccessToken;
-using namespace AppDistributedKv;
+using Commu = AppDistributedKv::CommunicationProvider;
 namespace {
 constexpr const int COPY_SIZE = 1024;
 constexpr const int MICROSEC_TO_SEC = 1000;
 constexpr const char *AUTO_BACKUP_NAME = "autoBackup.bak";
 constexpr const char *BACKUP_BK_POSTFIX = ".bk";
 constexpr const char *BACKUP_TMP_POSTFIX = ".tmp";
-constexpr const char *BACKUP_KEY_POSTFIX = "_KeyForAutoBackup";
 }
 
 BackupManager::BackupManager()
@@ -59,13 +59,14 @@ BackupManager &BackupManager::GetInstance()
 void BackupManager::Init()
 {
     std::vector<StoreMetaData> metas;
-    MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({}), metas);
+    MetaDataManager::GetInstance().LoadMeta(
+        StoreMetaData::GetPrefix({Commu::GetInstance().GetLocalDevice().uuid}), metas);
     for (auto &meta : metas) {
         if (!meta.isBackup || meta.isDirty) {
                 continue;
         }
         auto backupPath =
-            DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + meta.storeId + "/" + AUTO_BACKUP_NAME;
+            DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + AUTO_BACKUP_NAME;
         switch (GetClearType(meta)) {
             case ROLLBACK:
                 RollBackData(backupPath);
@@ -88,37 +89,38 @@ void BackupManager::SetBackupParam(const BackupParam &backupParam)
     backupNumber_ = backupParam.backupNumber;
 }
 
-void BackupManager::RegisterExporter(int type, Exporter exporter)
+void BackupManager::RegisterExporter(int32_t type, Exporter exporter)
 {
-    exporters_[type] = exporter;
+    if (exporters_[type] == nullptr) {
+        exporters_[type] = exporter;
+    } else {
+        ZLOGI("Auto backup exporter has registed, type:%{public}d.", type);
+    }
 }
 
 void BackupManager::BackSchedule()
 {
     std::chrono::duration<int> delay(schedularDelay_);
     std::chrono::duration<int> internal(schedularInternal_);
-    ZLOGI("BackupHandler Schedule start.");
+    ZLOGI("BackupManager Schedule start.");
     scheduler_.Every(delay, internal, [this]() {
         if (!CanBackup()) {
             return;
         }
         std::vector<StoreMetaData> metas;
-        MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({}), metas);
-        auto loopCount = 0;
-        for (auto &meta : metas) {
-            if (!meta.isBackup || meta.isDirty || (loopCount < startNum_)) {
-                loopCount++;
+        MetaDataManager::GetInstance().LoadMeta(
+            StoreMetaData::GetPrefix({Commu::GetInstance().GetLocalDevice().uuid}), metas);
+
+        int64_t end = std::min(startNum_ + backupNumber_, static_cast<int64_t>(metas.size()));
+        for (int64_t i = startNum_; i < end; startNum_++, i++) {
+            auto &meta = metas[i];
+            if (!meta.isBackup || meta.isDirty) {
                 continue;
             }
             DoBackup(meta);
-            loopCount++;
-            if (loopCount - startNum_ >= backupNumber_) {
-                startNum_ += backupNumber_;
-                break;
-            }
-            if (loopCount == static_cast<int64_t>(metas.size())) {
-                startNum_ = 0;
-            }
+        }
+        if (startNum_ >= static_cast<int64_t>(metas.size())) {
+            startNum_ = 0;
         }
         backupSuccessTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     });
@@ -127,7 +129,9 @@ void BackupManager::BackSchedule()
 void BackupManager::DoBackup(const StoreMetaData &meta)
 {
     DistributedKv::Status status = Status::NOT_FOUND;
-    std::string key = meta.GetSecretKey();
+    bool result = false;
+    auto key = meta.GetSecretKey();
+    auto backupKey = meta.GetBackupSecretKey();
     std::vector<uint8_t> decryptKey;
     SecretKeyMetaData secretKey;
     if (MetaDataManager::GetInstance().LoadMeta(key, secretKey, true)) {
@@ -137,13 +141,12 @@ void BackupManager::DoBackup(const StoreMetaData &meta)
     std::string backupFullPath = backupPath + "/" + AUTO_BACKUP_NAME;
 
     KeepData(backupFullPath);
-    if (exporters_[meta.storeType] == nullptr) {
-        exporters_[meta.storeType](meta, decryptKey, backupFullPath + BACKUP_TMP_POSTFIX, status);
+    if (exporters_[meta.storeType] != nullptr) {
+        exporters_[meta.storeType](meta, backupFullPath + BACKUP_TMP_POSTFIX, result);
     }
-    if (status == DistributedKv::Status::SUCCESS) {
-        SaveData(backupFullPath, key, secretKey);
+    if (result) {
+        SaveData(backupFullPath, backupKey, secretKey);
     } else {
-        ZLOGE("DoBackup failed, storeId %{public}s, status %{publiuc}d.", meta.storeId.c_str(), status);
         CleanData(backupFullPath);
     }
     decryptKey.assign(decryptKey.size(), 0);
@@ -173,11 +176,10 @@ void BackupManager::SaveData(
 {
     auto tmpPath = path + BACKUP_TMP_POSTFIX;
     auto backupPath = path + BACKUP_BK_POSTFIX;
-    auto saveKey = key + BACKUP_KEY_POSTFIX;
     CopyFile(tmpPath, path);
     RemoveFile(tmpPath.c_str());
     if (secretKey.sKey.size() != 0) {
-        MetaDataManager::GetInstance().SaveMeta(saveKey, secretKey, true);
+        MetaDataManager::GetInstance().SaveMeta(key, secretKey, true);
     }
     RemoveFile(backupPath.c_str());
 }
@@ -248,9 +250,9 @@ void BackupManager::CleanData(const std::string &path)
 BackupManager::ClearType BackupManager::GetClearType(const StoreMetaData &meta)
 {
     auto backupFile =
-        DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + meta.storeId + "/" + AUTO_BACKUP_NAME;
+        DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + AUTO_BACKUP_NAME;
     auto dbKey = meta.GetSecretKey();
-    auto backupKey = dbKey + BACKUP_KEY_POSTFIX;
+    auto backupKey = meta.GetBackupSecretKey();
     auto bkFile = backupFile + BACKUP_BK_POSTFIX;
 
     SecretKeyMetaData dbPassword;
@@ -296,44 +298,12 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
     fout.close();
 }
 
-bool BackupManager::GetPassWord(
-    const DistributedKv::AppId &appId, const DistributedKv::StoreId &storeId, std::vector<uint8_t> &password)
+bool BackupManager::GetPassWord(const StoreMetaData &meta, std::vector<uint8_t> &password)
 {
-    auto meta = GetStoreMetaData(appId, storeId);
-    std::string key = meta.GetSecretKey();
-    std::string backupKey = key + BACKUP_KEY_POSTFIX;
+    std::string key = meta.GetBackupSecretKey();
     SecretKeyMetaData secretKey;
-    MetaDataManager::GetInstance().LoadMeta(backupKey, secretKey, true);
+    MetaDataManager::GetInstance().LoadMeta(key, secretKey, true);
     return CryptoManager::GetInstance().Decrypt(secretKey.sKey, password);
-}
-
-StoreMetaData BackupManager::GetStoreMetaData(const DistributedKv::AppId &appId, const DistributedKv::StoreId &storeId)
-{
-    StoreMetaData metaData;
-    metaData.uid = IPCSkeleton::GetCallingUid();
-    metaData.tokenId = IPCSkeleton::GetCallingTokenID();
-    metaData.instanceId = GetInstIndex(metaData.tokenId, appId);
-    metaData.bundleName = appId.appId;
-    metaData.deviceId = CommunicationProvider::GetInstance().GetLocalDevice().uuid;
-    metaData.storeId = storeId.storeId;
-    metaData.user = DistributedKv::AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(metaData.uid);
-    return metaData;
-}
-
-int32_t BackupManager::GetInstIndex(uint32_t tokenId, const DistributedKv::AppId &appId)
-{
-    if (Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
-        return 0;
-    }
-    HapTokenInfo tokenInfo;
-    tokenInfo.instIndex = -1;
-    int errCode = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-    if (errCode != RET_SUCCESS) {
-        ZLOGE("GetHapTokenInfo error:%{public}d, tokenId:0x%{public}x appId:%{public}s", errCode, tokenId,
-            appId.appId.c_str());
-        return -1;
-    }
-    return tokenInfo.instIndex;
 }
 
 bool BackupManager::IsFileExist(const std::string &path)

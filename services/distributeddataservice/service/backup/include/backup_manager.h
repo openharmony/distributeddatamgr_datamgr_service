@@ -23,8 +23,7 @@
 namespace OHOS::DistributedData {
 class BackupManager {
 public:
-    using Exporter = std::function<void(
-        const StoreMetaData &, const std::vector<uint8_t> &, const std::string &, DistributedKv::Status &)>;
+    using Exporter = std::function<void(const StoreMetaData &, const std::string &, bool &)>;
     struct BackupParam {
         int64_t schedularDelay;
         int64_t schedularInternal;
@@ -40,9 +39,8 @@ public:
     void Init();
     void BackSchedule();
     void SetBackupParam(const BackupParam &backupParam);
-    void RegisterExporter(int type, Exporter exporter);
-    bool GetPassWord(const DistributedKv::AppId &appId,
-        const DistributedKv::StoreId &storeId, std::vector<uint8_t> &password);
+    void RegisterExporter(int32_t type, Exporter exporter);
+    bool GetPassWord(const StoreMetaData &meta, std::vector<uint8_t> &password);
 
 private:
     BackupManager();
@@ -51,8 +49,6 @@ private:
     bool CanBackup();
     void DoBackup(const StoreMetaData &meta);
     void CopyFile(const std::string &oldPath, const std::string &newPath, bool isCreate = false);
-    StoreMetaData GetStoreMetaData(const DistributedKv::AppId &appId, const DistributedKv::StoreId &storeId);
-    int32_t GetInstIndex(uint32_t tokenId, const DistributedKv::AppId &appId);
     void KeepData(const std::string &path);
     void SaveData(const std::string &path, const std::string &key, const SecretKeyMetaData &secretKey);
     void CleanData(const std::string &path);
@@ -60,7 +56,8 @@ private:
     bool IsFileExist(const std::string &path);
     bool RemoveFile(const std::string &path);
 
-    std::map<int32_t, Exporter> exporters_;
+    static constexpr int MAX_STORE_TYPE = 20;
+    Exporter exporters_[MAX_STORE_TYPE];
     int64_t schedularDelay_;
     int64_t schedularInternal_;
     int64_t backupInternal_;

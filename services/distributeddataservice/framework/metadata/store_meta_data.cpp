@@ -133,6 +133,14 @@ std::string StoreMetaData::GetSecretKey() const
     return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
 }
 
+std::string StoreMetaData::GetBackupSecretKey() const
+{
+    if (version < CURRENT_VERSION) {
+        return SecretKeyMetaData::GetBackupKey({ user, "default", bundleName, storeId });
+    }
+    return SecretKeyMetaData::GetBackupKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
 std::string StoreMetaData::GetStrategyKey() const
 {
     if (instanceId == 0) {

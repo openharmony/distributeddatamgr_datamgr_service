@@ -12,22 +12,22 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#define LOG_TAG "BackupRuleCharging"
-#include "backup_rule_charging.h"
+#define LOG_TAG "Charging"
+#include "charging.h"
 #include "battery_info.h"
 #include "battery_srv_client.h"
 #include "log_print.h"
 
 namespace OHOS {
 namespace DistributedData {
-__attribute__((used)) BackupRuleCharging BackupRuleCharging::instance_;
-BackupRuleCharging::BackupRuleCharging() noexcept
+__attribute__((used)) Charging Charging::instance_;
+Charging::Charging() noexcept
 {
     BackupRuleManager::GetInstance().RegisterPlugin(
         "Charging", [this]() -> auto { return this; });
 }
 
-bool BackupRuleCharging::CanBackup()
+bool Charging::CanBackup()
 {
     auto &batterySrvClient = PowerMgr::BatterySrvClient::GetInstance();
     auto chargingStatus = batterySrvClient.GetChargingStatus();
