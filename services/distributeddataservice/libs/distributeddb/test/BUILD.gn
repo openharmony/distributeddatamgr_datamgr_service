@@ -706,7 +706,9 @@ distributeddb_unittest("DistributedDBRelationalResultSetTest") {
 }
 
 distributeddb_unittest("DistributedDBRelationalEncryptedDataTest") {
-  sources = [ "unittest/common/storage/distributeddb_relational_encrypted_db_test.cpp" ]
+  sources = [
+    "unittest/common/storage/distributeddb_relational_encrypted_db_test.cpp",
+  ]
 }
 
 distributeddb_unittest("DistributedDBSingleVerDLPTest") {
