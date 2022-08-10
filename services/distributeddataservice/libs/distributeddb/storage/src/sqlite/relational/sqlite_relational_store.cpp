@@ -62,6 +62,11 @@ static void InitDataBaseOption(const RelationalDBProperties &properties, OpenDbP
 {
     option.uri = properties.GetStringProp(DBProperties::DATA_DIR, "");
     option.createIfNecessary = properties.GetBoolProp(DBProperties::CREATE_IF_NECESSARY, false);
+    if (properties.IsEncrypted()) {
+        option.cipherType = properties.GetCipherType();
+        option.passwd = properties.GetPasswd();
+        option.iterTimes = properties.GetIterTimes();
+    }
 }
 
 int SQLiteRelationalStore::InitStorageEngine(const RelationalDBProperties &properties)

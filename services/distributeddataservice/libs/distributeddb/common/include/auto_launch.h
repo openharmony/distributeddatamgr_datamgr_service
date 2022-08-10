@@ -87,6 +87,8 @@ public:
 
     void Dump(int fd);
 
+    void CloseConnection(DBType type, const DBProperties &properties);
+
 protected:
     static int OpenOneConnection(AutoLaunchItem &autoLaunchItem);
 

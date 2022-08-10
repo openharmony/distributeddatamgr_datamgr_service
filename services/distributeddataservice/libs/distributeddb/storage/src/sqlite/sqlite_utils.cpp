@@ -59,7 +59,7 @@ namespace {
     const std::string DEFAULT_ATTACH_KDF_ITER = "PRAGMA cipher_default_attach_kdf_iter=5000";
     const std::string EXPORT_BACKUP_SQL = "SELECT export_database('backup');";
     const std::string CIPHER_CONFIG_SQL = "PRAGMA codec_cipher=";
-    const std::string KDF_ITER_CONFIG_SQL = "PRAGMA codec_kdf_iter=5000;";
+    const std::string KDF_ITER_CONFIG_SQL = "PRAGMA codec_kdf_iter=";
     const std::string BACK_CIPHER_CONFIG_SQL = "PRAGMA backup.codec_cipher=";
     const std::string BACK_KDF_ITER_CONFIG_SQL = "PRAGMA backup.codec_kdf_iter=5000;";
     const std::string META_CIPHER_CONFIG_SQL = "PRAGMA meta.codec_cipher=";
@@ -432,7 +432,8 @@ int SQLiteUtils::ExecuteRawSQL(sqlite3 *db, const std::string &sql)
     return SQLiteUtils::MapSQLiteErrno(errCode);
 }
 
-int SQLiteUtils::SetKey(sqlite3 *db, CipherType type, const CipherPassword &passwd, const bool &isMemDb)
+int SQLiteUtils::SetKey(sqlite3 *db, CipherType type, const CipherPassword &passwd, const bool &isMemDb,
+    uint32_t iterTimes)
 {
     if (db == nullptr) {
         return -E_INVALID_DB;
@@ -451,7 +452,7 @@ int SQLiteUtils::SetKey(sqlite3 *db, CipherType type, const CipherPassword &pass
             return SQLiteUtils::MapSQLiteErrno(errCode);
         }
 
-        errCode = SQLiteUtils::SetCipherSettings(db, type);
+        errCode = SQLiteUtils::SetCipherSettings(db, type, iterTimes);
         if (errCode != E_OK) {
             LOGE("[SQLiteUtils][Setkey] set cipher settings failed:%d", errCode);
             return errCode;
@@ -923,7 +924,8 @@ int SQLiteUtils::GetVersion(const OpenDbProperties &properties, int &version)
         goto END;
     }
 
-    errCode = SQLiteUtils::SetKey(dbTemp, properties.cipherType, properties.passwd, properties.isMemDb);
+    errCode = SQLiteUtils::SetKey(dbTemp, properties.cipherType, properties.passwd, properties.isMemDb,
+        properties.iterTimes);
     if (errCode != E_OK) {
         LOGE("Set key failed: %d", errCode);
         goto END;
@@ -1993,7 +1995,8 @@ int SQLiteUtils::SetDataBaseProperty(sqlite3 *db, const OpenDbProperties &proper
         return errCode;
     }
 
-    errCode = SQLiteUtils::SetKey(db, properties.cipherType, properties.passwd, properties.isMemDb);
+    errCode = SQLiteUtils::SetKey(db, properties.cipherType, properties.passwd, properties.isMemDb,
+        properties.iterTimes);
     if (errCode != E_OK) {
         LOGD("SQLiteUtils::SetKey fail!!![%d]", errCode);
         return errCode;
@@ -2020,7 +2023,7 @@ int SQLiteUtils::SetDataBaseProperty(sqlite3 *db, const OpenDbProperties &proper
 }
 
 #ifndef OMIT_ENCRYPT
-int SQLiteUtils::SetCipherSettings(sqlite3 *db, CipherType type)
+int SQLiteUtils::SetCipherSettings(sqlite3 *db, CipherType type, uint32_t iterTimes)
 {
     if (db == nullptr) {
         return -E_INVALID_DB;
@@ -2035,7 +2038,7 @@ int SQLiteUtils::SetCipherSettings(sqlite3 *db, CipherType type)
         LOGE("[SQLiteUtils][SetCipherSettings] config cipher failed:%d", errCode);
         return errCode;
     }
-    errCode = SQLiteUtils::ExecuteRawSQL(db, KDF_ITER_CONFIG_SQL);
+    errCode = SQLiteUtils::ExecuteRawSQL(db, KDF_ITER_CONFIG_SQL + std::to_string(iterTimes));
     if (errCode != E_OK) {
         LOGE("[SQLiteUtils][SetCipherSettings] config iter failed:%d", errCode);
         return errCode;

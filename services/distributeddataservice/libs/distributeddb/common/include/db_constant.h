@@ -48,6 +48,8 @@ public:
 
     static constexpr int MAX_REMOTEDATA_SIZE = 4194304;  // 4M.
 
+    static constexpr int DEFAULT_ITER_TIMES = 5000;
+
     // In querySync, when getting query data finished,
     // if the block size reach the half of max block size, will get deleted data next;
     // if the block size not reach the half of max block size, will not get deleted data.

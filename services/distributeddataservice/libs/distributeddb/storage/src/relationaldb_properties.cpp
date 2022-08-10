@@ -19,6 +19,11 @@ namespace DistributedDB {
 const std::string RelationalDBProperties::DISTRIBUTED_TABLE_MODE = "distributed_table_mode";
 
 RelationalDBProperties::RelationalDBProperties()
+    : schema_(),
+      isEncrypted_(false),
+      cipherType_(),
+      passwd_(),
+      iterTimes_(0)
 {}
 
 RelationalDBProperties::~RelationalDBProperties()
@@ -37,6 +42,34 @@ void RelationalDBProperties::SetSchema(const RelationalSchemaObject &schema)
 RelationalSchemaObject RelationalDBProperties::GetSchema() const
 {
     return schema_;
+}
+
+void RelationalDBProperties::SetCipherArgs(CipherType cipherType, const CipherPassword &passwd, uint32_t iterTimes)
+{
+    isEncrypted_ = true;
+    cipherType_ = cipherType;
+    passwd_ = passwd;
+    iterTimes_ = iterTimes;
+}
+
+bool RelationalDBProperties::IsEncrypted() const
+{
+    return isEncrypted_;
+}
+
+CipherType RelationalDBProperties::GetCipherType() const
+{
+    return cipherType_;
+}
+
+const CipherPassword &RelationalDBProperties::GetPasswd() const
+{
+    return passwd_;
+}
+
+uint32_t RelationalDBProperties::GetIterTimes() const
+{
+    return iterTimes_;
 }
 }
 #endif

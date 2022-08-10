@@ -79,6 +79,12 @@ DB_API DBStatus RelationalStoreManager::OpenStore(const std::string &path, const
     properties.SetStringProp(RelationalDBProperties::DATA_DIR, canonicalDir);
     properties.SetIdentifier(userId_, appId_, storeId, instanceId_);
     properties.SetBoolProp(RelationalDBProperties::SYNC_DUAL_TUPLE_MODE, option.syncDualTupleMode);
+    if (option.isEncryptedDb) {
+        if (!ParamCheckUtils::CheckEncryptedParameter(option.cipher, option.passwd) || option.iterateTimes == 0) {
+            return INVALID_ARGS;
+        }
+        properties.SetCipherArgs(option.cipher, option.passwd, option.iterateTimes);
+    }
 
     int errCode = E_OK;
     auto *conn = GetOneConnectionWithRetry(properties, errCode);

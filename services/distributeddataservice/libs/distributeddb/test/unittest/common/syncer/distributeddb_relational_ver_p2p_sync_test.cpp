@@ -38,6 +38,18 @@ namespace {
     const std::string DEVICE_C = "deviceC";
     const std::string g_tableName = "TEST_TABLE";
 
+#ifndef OMIT_ENCRYPT
+    bool g_isAfterRekey = false;
+    const string CORRECT_KEY = "a correct key";
+    CipherPassword g_correctPasswd;
+    const string REKEY_KEY = "a key after rekey";
+    CipherPassword g_rekeyPasswd;
+    const string INCORRECT_KEY = "a incorrect key";
+    CipherPassword g_incorrectPasswd;
+    const int DEFAULT_ITER = 5000;
+    const int CUSTOMIZED_ITER = 10000;
+#endif
+
     const int ONE_HUNDERED = 100;
     const char DEFAULT_CHAR = 'D';
     const std::string DEFAULT_TEXT = "This is a text";
@@ -69,7 +81,14 @@ namespace {
         if (g_observer == nullptr) {
             g_observer = new (std::nothrow) RelationalStoreObserverUnitTest();
         }
-        RelationalStoreDelegate::Option option = {g_observer};
+        RelationalStoreDelegate::Option option;
+        option.observer = g_observer;
+#ifndef OMIT_ENCRYPT
+        option.isEncryptedDb = true;
+        option.iterateTimes = DEFAULT_ITER;
+        option.passwd = g_isAfterRekey ? g_rekeyPasswd : g_correctPasswd;
+        option.cipher = CipherType::DEFAULT;
+#endif
         g_mgr.OpenStore(g_dbDir, STORE_ID_1, option, g_rdbDelegatePtr);
         ASSERT_TRUE(g_rdbDelegatePtr != nullptr);
     }
@@ -82,6 +101,12 @@ namespace {
         if (rc != SQLITE_OK) {
             return rc;
         }
+#ifndef OMIT_ENCRYPT
+        string sql =
+            "PRAGMA key='" + (g_isAfterRekey ? REKEY_KEY : CORRECT_KEY) + "';"
+            "PRAGMA codec_kdf_iter=" + std::to_string(DEFAULT_ITER) + ";";
+        EXPECT_EQ(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr), SQLITE_OK);
+#endif
         EXPECT_EQ(SQLiteUtils::RegisterCalcHash(db), E_OK);
         EXPECT_EQ(SQLiteUtils::RegisterGetSysTime(db), E_OK);
         EXPECT_EQ(sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr), SQLITE_OK);
@@ -587,6 +612,22 @@ namespace {
             index++;
         }
     }
+
+    int GetCount(sqlite3 *db, const string &sql, size_t &count)
+    {
+        sqlite3_stmt *stmt = nullptr;
+        int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        errCode = SQLiteUtils::StepWithRetry(stmt, false);
+        if (errCode == SQLiteUtils::MapSQLiteErrno(SQLITE_ROW)) {
+            count = static_cast<size_t>(sqlite3_column_int64(stmt, 0));
+            errCode = E_OK;
+        }
+        SQLiteUtils::ResetStatement(stmt, true, errCode);
+        return errCode;
+    }
 }
 
 class DistributedDBRelationalVerP2PSyncTest : public testing::Test {
@@ -613,6 +654,12 @@ void DistributedDBRelationalVerP2PSyncTest::SetUpTestCase()
     RuntimeContext::GetInstance()->SetCommunicatorAggregator(g_communicatorAggregator);
 
     g_id = g_mgr.GetRelationalStoreIdentifier(USER_ID, APP_ID, STORE_ID_1);
+
+#ifndef OMIT_ENCRYPT
+    g_correctPasswd.SetValue((const uint8_t *)(CORRECT_KEY.data()), CORRECT_KEY.size());
+    g_rekeyPasswd.SetValue((const uint8_t *)(REKEY_KEY.data()), REKEY_KEY.size());
+    g_incorrectPasswd.SetValue((const uint8_t *)(INCORRECT_KEY.data()), INCORRECT_KEY.size());
+#endif
 }
 
 void DistributedDBRelationalVerP2PSyncTest::TearDownTestCase()
@@ -683,6 +730,7 @@ void DistributedDBRelationalVerP2PSyncTest::TearDown(void)
     if (g_communicatorAggregator != nullptr) {
         g_communicatorAggregator->RegOnDispatch(nullptr);
     }
+    g_isAfterRekey = false;
     LOGD("TearDown FINISH");
 }
 
@@ -882,6 +930,12 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync001, TestSize.Leve
         param.userId  = USER_ID;
         param.storeId = STORE_ID_1;
         param.notifier = notifier;
+#ifndef OMIT_ENCRYPT
+        param.option.isEncryptedDb = true;
+        param.option.cipher = CipherType::DEFAULT;
+        param.option.passwd = g_correctPasswd;
+        param.option.iterateTimes = DEFAULT_ITER;
+#endif
         return true;
     };
     g_mgr.SetAutoLaunchRequestCallback(callback);
@@ -912,6 +966,94 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSync001, TestSize.Leve
     std::this_thread::sleep_for(std::chrono::seconds(61)); // sleep 61s
     EXPECT_EQ(currentStatus, AutoLaunchStatus::WRITE_CLOSED);
 }
+
+/**
+* @tc.name: AutoLaunchSyncAfterRekey_001
+* @tc.desc: Test auto launch sync ok after rekey.
+* @tc.type: FUNC
+* @tc.require: AR000H68LL
+* @tc.author: lidongwei
+*/
+#ifndef OMIT_ENCRYPT
+HWTEST_F(DistributedDBRelationalVerP2PSyncTest, AutoLaunchSyncAfterRekey_001, TestSize.Level3)
+{
+    /**
+     * @tc.steps: step1. open rdb store, create distribute table and insert data
+     */
+    std::map<std::string, DataValue> dataMap;
+    PrepareVirtualEnvironment(dataMap, {g_deviceB});
+
+    /**
+     * @tc.steps: step2. set auto launch callBack
+     */
+    AutoLaunchParam encryptedParam { USER_ID, APP_ID, STORE_ID_1, AutoLaunchOption {}, nullptr, g_dbDir };
+    encryptedParam.option.isEncryptedDb = true;
+    encryptedParam.option.cipher = CipherType::DEFAULT;
+    encryptedParam.option.passwd = g_correctPasswd;
+    encryptedParam.option.iterateTimes = DEFAULT_ITER;
+    AutoLaunchRequestCallback callback = [&encryptedParam](const std::string &identifier, AutoLaunchParam &param) {
+        if (g_id != identifier) {
+            return false;
+        }
+        param = encryptedParam;
+        return true;
+    };
+    g_mgr.SetAutoLaunchRequestCallback(callback);
+    /**
+     * @tc.steps: step3. close store ensure communicator has closed
+     */
+    g_mgr.CloseStore(g_rdbDelegatePtr);
+    g_rdbDelegatePtr = nullptr;
+    /**
+     * @tc.steps: step4. RunCommunicatorLackCallback to autolaunch store
+     */
+    LabelType labelType(g_id.begin(), g_id.end());
+    g_communicatorAggregator->RunCommunicatorLackCallback(labelType);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    /**
+     * @tc.steps: step5. Rekey
+     */
+    sqlite3 *db = nullptr;
+    EXPECT_EQ(GetDB(db), SQLITE_OK);
+    std::thread t1([&db] {
+        std::string sql = "PARGMA rekey=" + REKEY_KEY;
+        EXPECT_EQ(sqlite3_rekey(db, REKEY_KEY.data(), REKEY_KEY.size()), SQLITE_OK);
+    });
+    t1.join();
+    g_isAfterRekey = true;
+
+    /**
+     * @tc.steps: step5. Call sync expect sync failed
+     */
+    Query query = Query::Select(g_tableName);
+    EXPECT_EQ(g_deviceB->GenericVirtualDevice::Sync(SYNC_MODE_PUSH_ONLY, query, true), E_OK);
+    size_t count = 0;
+    GetCount(db, "SELECT count(*) FROM sqlite_master WHERE name='" + GetDeviceTableName(g_tableName) + "';", count);
+    EXPECT_EQ(count, 0u);
+
+    /**
+     * @tc.steps: step6. Set callback.
+     */
+    encryptedParam.option.passwd = g_rekeyPasswd;
+    g_mgr.SetAutoLaunchRequestCallback(callback);
+    g_communicatorAggregator->RunCommunicatorLackCallback(labelType);
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    /**
+     * @tc.steps: step5. Call sync expect sync success
+     */
+    EXPECT_EQ(g_deviceB->GenericVirtualDevice::Sync(SYNC_MODE_PUSH_ONLY, query, true), E_OK);
+    GetCount(db, "SELECT count(*) FROM sqlite_master WHERE name='" + GetDeviceTableName(g_tableName) + "';", count);
+    EXPECT_EQ(count, 1u);
+    GetSyncData(db, dataMap, g_tableName, g_fieldInfoList);
+    EXPECT_EQ(dataMap.size(), 3u);
+    OpenStore();
+    std::this_thread::sleep_for(std::chrono::minutes(1));
+    sqlite3_close(db);
+    db = nullptr;
+}
+#endif
 
 /**
 * @tc.name: AutoLaunchSync 002
@@ -1261,6 +1403,12 @@ HWTEST_F(DistributedDBRelationalVerP2PSyncTest, observer002, TestSize.Level3)
         param.userId  = USER_ID;
         param.storeId = STORE_ID_1;
         param.option.storeObserver = observer;
+#ifndef OMIT_ENCRYPT
+        param.option.isEncryptedDb = true;
+        param.option.cipher = CipherType::DEFAULT;
+        param.option.passwd = g_correctPasswd;
+        param.option.iterateTimes = DEFAULT_ITER;
+#endif
         return true;
     };
     g_mgr.SetAutoLaunchRequestCallback(callback);

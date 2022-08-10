@@ -32,6 +32,10 @@ public:
         StoreObserver *observer = nullptr;
         // communicator label use dualTuple hash or not;
         bool syncDualTupleMode = false;
+        bool isEncryptedDb = false;
+        CipherType cipher = CipherType::DEFAULT;
+        CipherPassword passwd;
+        uint32_t iterateTimes = 0;
     };
 
     DB_API virtual DBStatus CreateDistributedTable(const std::string &tableName) = 0;

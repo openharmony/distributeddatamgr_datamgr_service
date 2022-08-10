@@ -25,6 +25,16 @@
 #include "runtime_context.h"
 
 namespace DistributedDB {
+namespace {
+void TriggerCloseAutoLaunchConn(const RelationalDBProperties &properties)
+{
+    static constexpr const char *CLOSE_CONN_TASK = "auto launch close relational connection";
+    (void)RuntimeContext::GetInstance()->ScheduleQueuedTask(
+        std::string(CLOSE_CONN_TASK),
+        [properties] { RuntimeContext::GetInstance()->CloseAutoLaunchConnection(DBType::DB_RELATION, properties); }
+    );
+}
+}
 #define CHECK_STORAGE_ENGINE do { \
     if (storageEngine_ == nullptr) { \
         return -E_INVALID_DB; \
@@ -85,6 +95,7 @@ void RelationalSyncAbleStorage::GetMaxTimestamp(Timestamp &timestamp) const
     errCode = handle->GetMaxTimestamp(storageEngine_->GetSchemaRef().GetTableNames(), timestamp);
     if (errCode != E_OK) {
         LOGE("GetMaxTimestamp failed, errCode:%d", errCode);
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
     }
     ReleaseHandle(handle);
     return;
@@ -101,6 +112,7 @@ int RelationalSyncAbleStorage::GetMaxTimestamp(const std::string &tableName, Tim
     errCode = handle->GetMaxTimestamp({ tableName }, timestamp);
     if (errCode != E_OK) {
         LOGE("GetMaxTimestamp failed, errCode:%d", errCode);
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
     }
     ReleaseHandle(handle);
     return errCode;
@@ -113,8 +125,12 @@ SQLiteSingleVerRelationalStorageExecutor *RelationalSyncAbleStorage::GetHandle(b
         errCode = -E_INVALID_DB;
         return nullptr;
     }
-    return static_cast<SQLiteSingleVerRelationalStorageExecutor *>(storageEngine_->FindExecutor(isWrite, perm,
-        errCode));
+    auto handle = static_cast<SQLiteSingleVerRelationalStorageExecutor *>(
+        storageEngine_->FindExecutor(isWrite, perm, errCode));
+    if (handle == nullptr) {
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
+    }
+    return handle;
 }
 
 void RelationalSyncAbleStorage::ReleaseHandle(SQLiteSingleVerRelationalStorageExecutor *&handle) const
@@ -148,6 +164,9 @@ int RelationalSyncAbleStorage::GetMetaData(const Key &key, Value &value) const
         return errCode;
     }
     errCode = handle->GetKvData(key, value);
+    if (errCode != E_OK && errCode != -E_NOT_FOUND) {
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
+    }
     ReleaseHandle(handle);
     return errCode;
 }
@@ -165,6 +184,7 @@ int RelationalSyncAbleStorage::PutMetaData(const Key &key, const Value &value)
     errCode = handle->PutKvData(key, value); // meta doesn't need time.
     if (errCode != E_OK) {
         LOGE("Put kv data err:%d", errCode);
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
     }
     ReleaseHandle(handle);
     return errCode;
@@ -189,6 +209,7 @@ int RelationalSyncAbleStorage::DeleteMetaData(const std::vector<Key> &keys)
     if (errCode != E_OK) {
         handle->Rollback();
         LOGE("[SinStore] DeleteMetaData failed, errCode = %d", errCode);
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
     } else {
         handle->Commit();
     }
@@ -212,6 +233,7 @@ int RelationalSyncAbleStorage::DeleteMetaDataByPrefixKey(const Key &keyPrefix) c
     errCode = handle->DeleteMetaDataByPrefixKey(keyPrefix);
     if (errCode != E_OK) {
         LOGE("[SinStore] DeleteMetaData by prefix key failed, errCode = %d", errCode);
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
     }
     ReleaseHandle(handle);
     return errCode;
@@ -228,6 +250,9 @@ int RelationalSyncAbleStorage::GetAllMetaKeys(std::vector<Key> &keys) const
     }
 
     errCode = handle->GetAllMetaKeys(keys);
+    if (errCode != E_OK) {
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
+    }
     ReleaseHandle(handle);
     return errCode;
 }
@@ -465,6 +490,7 @@ int RelationalSyncAbleStorage::PutSyncData(const QueryObject &query, std::vector
     int errCode = SaveSyncDataItems(query, dataItems, deviceName); // Currently true to check value content
     if (errCode != E_OK) {
         LOGE("[Relational] PutSyncData errCode:%d", errCode);
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
     }
     return errCode;
 }
@@ -539,6 +565,7 @@ int RelationalSyncAbleStorage::CreateDistributedDeviceTable(const std::string &d
     errCode = handle->StartTransaction(TransactType::IMMEDIATE);
     if (errCode != E_OK) {
         LOGE("Start transaction failed:%d", errCode);
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
         ReleaseHandle(handle);
         return errCode;
     }
@@ -640,6 +667,7 @@ int RelationalSyncAbleStorage::CheckAndInitQueryCondition(QueryObject &query) co
     errCode = handle->CheckQueryObjectLegal(table, query, schema.GetSchemaVersion());
     if (errCode != E_OK) {
         LOGE("Check relational query condition failed. %d", errCode);
+        TriggerCloseAutoLaunchConn(storageEngine_->GetProperties());
     }
 
     ReleaseHandle(handle);

@@ -161,6 +161,34 @@ IRelationalStore *RelationalStoreInstance::GetDataBase(const RelationalDBPropert
     return db;
 }
 
+namespace {
+int CheckCompatibility(const RelationalDBProperties &prop, const RelationalDBProperties &existedProp)
+{
+    std::string canonicalDir = prop.GetStringProp(DBProperties::DATA_DIR, "");
+    if (canonicalDir.empty() || canonicalDir != existedProp.GetStringProp(DBProperties::DATA_DIR, "")) {
+        LOGE("Failed to check store path, the input path does not match with cached store.");
+        return -E_INVALID_ARGS;
+    }
+    if (prop.GetIntProp(RelationalDBProperties::DISTRIBUTED_TABLE_MODE, DistributedTableMode::SPLIT_BY_DEVICE) !=
+        existedProp.GetIntProp(RelationalDBProperties::DISTRIBUTED_TABLE_MODE, DistributedTableMode::SPLIT_BY_DEVICE)) {
+        LOGE("Failed to check table mode.");
+        return -E_INVALID_ARGS;
+    }
+
+    if (prop.IsEncrypted() != existedProp.IsEncrypted()) {
+        LOGE("Failed to check cipher args.");
+        return -E_INVALID_PASSWD_OR_CORRUPTED_DB;
+    }
+    if (prop.IsEncrypted() &&
+        (prop.GetPasswd() != existedProp.GetPasswd() || prop.GetIterTimes() != existedProp.GetIterTimes() ||
+         !DBCommon::IsSameCipher(prop.GetCipherType(), existedProp.GetCipherType()))) {
+        LOGE("Failed to check cipher args.");
+        return -E_INVALID_PASSWD_OR_CORRUPTED_DB;
+    }
+    return E_OK;
+}
+}
+
 RelationalStoreConnection *RelationalStoreInstance::GetDatabaseConnection(const RelationalDBProperties &properties,
     int &errCode)
 {
@@ -173,26 +201,14 @@ RelationalStoreConnection *RelationalStoreInstance::GetDatabaseConnection(const 
     }
     manager->EnterDBOpenCloseProcess(properties.GetStringProp(DBProperties::IDENTIFIER_DATA, ""));
     RelationalStoreConnection *connection = nullptr;
-    std::string canonicalDir;
-    DistributedTableMode mode = DistributedTableMode::SPLIT_BY_DEVICE;
     IRelationalStore *db = GetDataBase(properties, errCode);
     if (db == nullptr) {
         LOGE("Failed to open the db:%d", errCode);
         goto END;
     }
 
-    canonicalDir = properties.GetStringProp(KvDBProperties::DATA_DIR, "");
-    if (canonicalDir.empty() || canonicalDir != db->GetStorePath()) {
-        LOGE("Failed to check store path, the input path does not match with cached store.");
-        errCode = -E_INVALID_ARGS;
-        goto END;
-    }
-    mode = static_cast<DistributedTableMode>(properties.GetIntProp(RelationalDBProperties::DISTRIBUTED_TABLE_MODE,
-        DistributedTableMode::SPLIT_BY_DEVICE));
-    if (mode != db->GetProperties().GetIntProp(RelationalDBProperties::DISTRIBUTED_TABLE_MODE,
-        DistributedTableMode::SPLIT_BY_DEVICE)) {
-        LOGE("Failed to check table mode.");
-        errCode = -E_INVALID_ARGS;
+    errCode = CheckCompatibility(properties, db->GetProperties());
+    if (errCode != E_OK) {
         goto END;
     }
 

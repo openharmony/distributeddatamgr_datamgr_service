@@ -65,6 +65,8 @@ public:
 
     static bool HasConstraint(const std::string &sql, const std::string &keyWord, const std::string &prePattern,
         const std::string &nextPattern);
+
+    static bool IsSameCipher(CipherType srcType, CipherType inputType);
 };
 
 // Define short macro substitute for original long expression for convenience of using

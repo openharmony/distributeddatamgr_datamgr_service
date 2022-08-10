@@ -691,6 +691,11 @@ void RuntimeContextImpl::DumpCommonInfo(int fd)
     autoLaunch_.Dump(fd);
 }
 
+void RuntimeContextImpl::CloseAutoLaunchConnection(DBType type, const DBProperties &properties)
+{
+    autoLaunch_.CloseConnection(type, properties);
+}
+
 int RuntimeContextImpl::SetPermissionConditionCallback(const PermissionConditionCallback &callback)
 {
     std::unique_lock<std::shared_mutex> autoLock(permissionConditionLock_);

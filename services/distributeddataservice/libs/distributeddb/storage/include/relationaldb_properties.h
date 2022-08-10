@@ -37,10 +37,22 @@ public:
     // get schema
     RelationalSchemaObject GetSchema() const;
 
+    void SetCipherArgs(CipherType cipherType, const CipherPassword &passwd, uint32_t iterTimes);
+
+    bool IsEncrypted() const;
+    CipherType GetCipherType() const;
+    const CipherPassword &GetPasswd() const;
+    uint32_t GetIterTimes() const;
+
     static const std::string DISTRIBUTED_TABLE_MODE;
 
 private:
     RelationalSchemaObject schema_;
+
+    bool isEncrypted_;
+    CipherType cipherType_;
+    CipherPassword passwd_;
+    int iterTimes_;
 };
 }
 #endif

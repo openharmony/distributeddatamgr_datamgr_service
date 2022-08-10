@@ -121,6 +121,8 @@ public:
 
     void DumpCommonInfo(int fd) override;
 
+    void CloseAutoLaunchConnection(DBType type, const DBProperties &properties) override;
+
     int SetPermissionConditionCallback(const PermissionConditionCallback &callback) override;
 
     std::map<std::string, std::string> GetPermissionCheckParam(const DBProperties &properties) override;

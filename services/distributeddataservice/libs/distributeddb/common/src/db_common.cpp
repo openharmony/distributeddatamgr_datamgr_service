@@ -381,4 +381,18 @@ bool DBCommon::HasConstraint(const std::string &sql, const std::string &keyWord,
     }
     return false;
 }
+
+bool DBCommon::IsSameCipher(CipherType srcType, CipherType inputType)
+{
+    // At present, the default type is AES-256-GCM.
+    // So when src is default and input is AES-256-GCM,
+    // or when src is AES-256-GCM and input is default,
+    // we think they are the same type.
+    if (srcType == inputType ||
+        ((srcType == CipherType::DEFAULT || srcType == CipherType::AES_256_GCM) &&
+        (inputType == CipherType::DEFAULT || inputType == CipherType::AES_256_GCM))) {
+        return true;
+    }
+    return false;
+}
 } // namespace DistributedDB

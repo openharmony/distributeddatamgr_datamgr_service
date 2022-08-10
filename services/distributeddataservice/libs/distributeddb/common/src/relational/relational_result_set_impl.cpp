@@ -138,12 +138,12 @@ void RelationalResultSetImpl::GetColumnNames(std::vector<std::string> &columnNam
 }
 
 namespace {
-struct CollumnTypePair {
+struct ColumnTypePair {
     int index_;
     ResultSet::ColumnType type_;
 };
 
-ResultSet::ColumnType GetColType(int index, const CollumnTypePair *colMap, int32_t len)
+ResultSet::ColumnType GetColType(int index, const ColumnTypePair *colMap, int32_t len)
 {
     int32_t head = 0;
     int32_t end = len - 1;
@@ -164,7 +164,7 @@ ResultSet::ColumnType GetColType(int index, const CollumnTypePair *colMap, int32
 
 DBStatus RelationalResultSetImpl::GetColumnType(int columnIndex, ColumnType &columnType) const
 {
-    static constexpr CollumnTypePair mappingTbl[] = {
+    static constexpr ColumnTypePair mappingTbl[] = {
         { static_cast<int>(StorageType::STORAGE_TYPE_NONE),    ColumnType::INVALID_TYPE },
         { static_cast<int>(StorageType::STORAGE_TYPE_NULL),    ColumnType::NULL_VALUE },
         { static_cast<int>(StorageType::STORAGE_TYPE_INTEGER), ColumnType::INT64 },
@@ -181,7 +181,7 @@ DBStatus RelationalResultSetImpl::GetColumnType(int columnIndex, ColumnType &col
     auto type = StorageType::STORAGE_TYPE_NONE;
     int errCode = rowData->GetType(columnIndex, type);
     if (errCode == E_OK) {
-        columnType = GetColType(static_cast<int>(type), mappingTbl, sizeof(mappingTbl) / sizeof(CollumnTypePair));
+        columnType = GetColType(static_cast<int>(type), mappingTbl, sizeof(mappingTbl) / sizeof(ColumnTypePair));
     }
     return TransferDBErrno(errCode);
 }

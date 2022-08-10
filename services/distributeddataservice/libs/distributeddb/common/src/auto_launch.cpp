@@ -1022,6 +1022,13 @@ int AutoLaunch::GetAutoLaunchRelationProperties(const AutoLaunchParam &param,
     propertiesPtr->SetStringProp(RelationalDBProperties::DATA_DIR, param.path);
     propertiesPtr->SetIdentifier(param.userId, param.appId, param.storeId);
     propertiesPtr->SetBoolProp(RelationalDBProperties::SYNC_DUAL_TUPLE_MODE, param.option.syncDualTupleMode);
+    if (param.option.isEncryptedDb) {
+        if (!ParamCheckUtils::CheckEncryptedParameter(param.option.cipher, param.option.passwd) ||
+            param.option.iterateTimes == 0) {
+            return -E_INVALID_ARGS;
+        }
+        propertiesPtr->SetCipherArgs(param.option.cipher, param.option.passwd, param.option.iterateTimes);
+    }
     return E_OK;
 }
 
@@ -1281,5 +1288,28 @@ int AutoLaunch::RegisterRelationalObserver(AutoLaunchItem &autoLaunchItem, const
         }
     });
     return E_OK;
+}
+
+void AutoLaunch::CloseConnection(DBType type, const DBProperties &properties)
+{
+    if (type != DBType::DB_RELATION) {
+        return;
+    }
+    std::string identifier = properties.GetStringProp(DBProperties::IDENTIFIER_DATA, "");
+    std::lock_guard<std::mutex> lock(dataLock_);
+    auto itemMapIter = extItemMap_.find(identifier);
+    if (itemMapIter == extItemMap_.end()) {
+        return;
+    }
+    std::string userId = properties.GetStringProp(DBProperties::USER_ID, "");
+    auto itemIter = itemMapIter->second.find(userId);
+    if (itemIter == itemMapIter->second.end()) {
+        return;
+    }
+    TryCloseConnection(itemIter->second);
+    extItemMap_[identifier].erase(userId);
+    if (extItemMap_[identifier].size() == 0) {
+        extItemMap_.erase(identifier);
+    }
 }
 } // namespace DistributedDB

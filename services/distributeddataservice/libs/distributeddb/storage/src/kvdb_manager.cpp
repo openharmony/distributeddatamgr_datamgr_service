@@ -863,20 +863,6 @@ int KvDBManager::CheckSchema(const IKvDB *kvDB, const KvDBProperties &properties
 }
 
 namespace {
-    bool IsSameCipher(CipherType srcType, CipherType inputType)
-    {
-        // At present, the default type is AES-256-GCM.
-        // So when src is default and input is AES-256-GCM,
-        // or when src is AES-256-GCM and input is default,
-        // we think they are the same type.
-        if (((srcType == CipherType::DEFAULT || srcType == CipherType::AES_256_GCM) &&
-            (inputType == CipherType::DEFAULT || inputType == CipherType::AES_256_GCM)) ||
-            srcType == inputType) {
-            return true;
-        }
-        return false;
-    }
-
     bool CheckSecOptions(const KvDBProperties &input, const KvDBProperties &existed)
     {
         // If any has NO_SET, skip the check and using the existed option.
@@ -939,7 +925,7 @@ int KvDBManager::CheckKvDBProperties(const IKvDB *kvDB, const KvDBProperties &pr
     CipherPassword inputPasswd;
     kvDB->GetMyProperties().GetPassword(cacheType, cachePasswd);
     properties.GetPassword(inputType, inputPasswd);
-    if (isNeedCheckPasswd && (cachePasswd != inputPasswd || !IsSameCipher(cacheType, inputType))) {
+    if (isNeedCheckPasswd && (cachePasswd != inputPasswd || !DBCommon::IsSameCipher(cacheType, inputType))) {
         LOGE("Identification not matched");
         return -E_INVALID_PASSWD_OR_CORRUPTED_DB;
     }
