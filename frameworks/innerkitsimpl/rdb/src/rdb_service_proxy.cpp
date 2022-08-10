@@ -40,7 +40,7 @@ void RdbServiceProxy::OnDataChange(const std::string& storeName, const std::vect
     ZLOGI("%{public}s", storeName.c_str());
     auto name = RemoveSuffix(storeName);
     observers_.ComputeIfPresent(
-            name, [&devices] (const auto& key, const ObserverMapValue& value) {
+        name, [&devices] (const auto& key, const ObserverMapValue& value) {
             for (const auto& observer : value.first) {
                 observer->OnChange(devices);
             }
@@ -263,7 +263,7 @@ int32_t RdbServiceProxy::Subscribe(const RdbSyncerParam &param, const SubscribeO
     }
     auto name = RemoveSuffix(param.storeName_);
     observers_.Compute(
-            name, [observer] (const auto& key, ObserverMapValue& value) {
+        name, [observer] (const auto& key, ObserverMapValue& value) {
             for (const auto& element : value.first) {
                 if (element == observer) {
                     ZLOGE("duplicate observer");
@@ -305,7 +305,7 @@ int32_t RdbServiceProxy::UnSubscribe(const RdbSyncerParam &param, const Subscrib
     DoUnSubscribe(param);
     auto name = RemoveSuffix(param.storeName_);
     observers_.ComputeIfPresent(
-            name, [observer](const auto& key, ObserverMapValue& value) {
+        name, [observer](const auto& key, ObserverMapValue& value) {
             ZLOGI("before remove size=%{public}d", static_cast<int>(value.first.size()));
             value.first.remove(observer);
             ZLOGI("after  remove size=%{public}d", static_cast<int>(value.first.size()));
