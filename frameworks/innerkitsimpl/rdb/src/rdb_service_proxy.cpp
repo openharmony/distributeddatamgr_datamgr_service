@@ -38,8 +38,9 @@ void RdbServiceProxy::OnSyncComplete(uint32_t seqNum, const SyncResult &result)
 void RdbServiceProxy::OnDataChange(const std::string& storeName, const std::vector<std::string> &devices)
 {
     ZLOGI("%{public}s", storeName.c_str());
+    auto name = RemoveSuffix(storeName);
     observers_.ComputeIfPresent(
-        storeName, [&devices] (const auto& key, const ObserverMapValue& value) {
+        name, [&devices] (const auto& key, const ObserverMapValue& value) {
             for (const auto& observer : value.first) {
                 observer->OnChange(devices);
             }
@@ -239,6 +240,16 @@ int32_t RdbServiceProxy::Sync(const RdbSyncerParam& param, const SyncOption &opt
     return DoAsync(param, option, predicates, callback);
 }
 
+std::string RdbServiceProxy::RemoveSuffix(const std::string& name)
+{
+    std::string suffix(".db");
+    auto pos = name.rfind(suffix);
+    if (pos == std::string::npos || pos < name.length() - suffix.length()) {
+        return name;
+    }
+    return { name, 0, pos };
+}
+
 int32_t RdbServiceProxy::Subscribe(const RdbSyncerParam &param, const SubscribeOption &option,
                                    RdbStoreObserver *observer)
 {
@@ -250,8 +261,9 @@ int32_t RdbServiceProxy::Subscribe(const RdbSyncerParam &param, const SubscribeO
         ZLOGI("communicate to server failed");
         return RDB_ERROR;
     }
+    auto name = RemoveSuffix(param.storeName_);
     observers_.Compute(
-        param.storeName_, [observer] (const auto& key, ObserverMapValue& value) {
+        name, [observer] (const auto& key, ObserverMapValue& value) {
             for (const auto& element : value.first) {
                 if (element == observer) {
                     ZLOGE("duplicate observer");
@@ -291,8 +303,9 @@ int32_t RdbServiceProxy::UnSubscribe(const RdbSyncerParam &param, const Subscrib
                                      RdbStoreObserver *observer)
 {
     DoUnSubscribe(param);
+    auto name = RemoveSuffix(param.storeName_);
     observers_.ComputeIfPresent(
-        param.storeName_, [observer](const auto& key, ObserverMapValue& value) {
+        name, [observer](const auto& key, ObserverMapValue& value) {
             ZLOGI("before remove size=%{public}d", static_cast<int>(value.first.size()));
             value.first.remove(observer);
             ZLOGI("after  remove size=%{public}d", static_cast<int>(value.first.size()));

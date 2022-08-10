@@ -77,6 +77,8 @@ private:
 
     void OnDataChange(const std::string& storeName, const std::vector<std::string>& devices);
 
+    std::string RemoveSuffix(const std::string& name);
+
     std::atomic<uint32_t> seqNum_ {};
 
     ConcurrentMap<uint32_t, SyncCallback> syncCallbacks_;
