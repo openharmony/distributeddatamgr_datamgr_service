@@ -373,7 +373,7 @@ BackupManager::ClearType BackupManager::GetClearType(const BackupManager::Residu
     if (tmpFile == 0) {
         return DO_NOTHING;
     }
-    if ((tmpFile >= rawFile) && (tmpFile ==1)) {
+    if ((tmpFile >= rawFile) && (tmpFile == 1)) {
         return ROLLBACK_DATA;
     }
     return (tmpFile >= rawFile) ? ROLLBACK : CLEAN_TMP;
