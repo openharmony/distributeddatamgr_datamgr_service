@@ -18,6 +18,7 @@
 #include <map>
 #include <string>
 #include "concurrent_map.h"
+#include "lru_bucket.h"
 #include "metadata/store_meta_data.h"
 #include "store_errno.h"
 #include "types_export.h"
@@ -45,7 +46,7 @@ private:
     std::map<std::string, std::string> GetExtraCondition(const CondParam &param);
 
     ConcurrentMap<std::string, std::string> appId2BundleNameMap_;
-    ConcurrentMap<std::string, StoreMetaData> metaDataMap_;
+    LRUBucket<std::string, StoreMetaData> metaDataBucket_ {32};
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_SERVICE_PERMISSION_PERMIT_DELEGATE_H

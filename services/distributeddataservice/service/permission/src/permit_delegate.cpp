@@ -102,17 +102,13 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
         return true;
     });
     auto key = data.GetKey();
-    metaDataMap_.Compute(key, [&](const auto &, StoreMetaData &value) {
-        if (key == value.GetKey()) {
-            data = value;
-            return true;
+    if (!metaDataBucket_.Get(key, data)) {
+        if (!MetaDataManager::GetInstance().LoadMeta(key, data)) {
+            ZLOGE("load meta fail");
+            return false;
         }
-        MetaDataManager::GetInstance().LoadMeta(key, value);
-        if (key == value.GetKey()) {
-            data = value;
-        }
-        return true;
-    });
+        metaDataBucket_.Set(data.GetKey(), data);
+    }
     if (data.appType.compare("default") == 0) {
         ZLOGD("default, sync permission success.");
         return true;
