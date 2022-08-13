@@ -16,6 +16,7 @@
 #define LOG_TAG "PermitDelegate"
 #include "permit_delegate.h"
 #include "communication_provider.h"
+#include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/strategy_meta_data.h"
 #include "permission/permission_validator.h"
@@ -107,7 +108,7 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
             return true;
         }
         MetaDataManager::GetInstance().LoadMeta(key, value);
-        if (key == vaule.GetKey()) {
+        if (key == value.GetKey()) {
             data = value;
         }
         return true;
