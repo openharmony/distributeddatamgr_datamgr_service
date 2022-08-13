@@ -59,7 +59,7 @@ private:
     void CleanTmpData(const std::string &name);
     StoreUtil::FileInfo GetBackupFileInfo(const std::string &name,
         const std::string &baseDir, const std::string &storeId);
-    SecurityManager::DBPassword GetRestorePassword(const std::string &backupName, const std::string &baseDir,
+    SecurityManager::DBPassword GetRestorePassword(const std::string &name, const std::string &baseDir,
         const std::string &appId, const std::string &storeId);
     bool HaveResidueFile(const std::vector<StoreUtil::FileInfo> &files);
     bool HaveResidueKey(const std::vector<StoreUtil::FileInfo> &files, std::string storeId);

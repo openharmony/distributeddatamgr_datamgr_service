@@ -192,17 +192,18 @@ Status BackupManager::Restore(const std::string &name, const std::string &baseDi
     if (backupFile.name.size() == 0) {
         return INVALID_ARGUMENT;
     }
-    std::string keyName = BACKUP_KEY_PREFIX + storeId + "_" + name;
-    std::string fullName = baseDir + BACKUP_TOP_PATH + "/" + storeId + "/" + backupFile.name;
+    auto fullName = baseDir + BACKUP_TOP_PATH + "/" + storeId + "/" + backupFile.name;
     auto password = GetRestorePassword(backupFile.name, baseDir, appId, storeId);
     auto dbStatus = dbStore->Import(fullName, password);
     auto status = StoreUtil::ConvertStatus(dbStatus);
     return status;
 }
 
-SecurityManager::DBPassword BackupManager::GetRestorePassword(const std::string &backupName, const std::string &baseDir,
+SecurityManager::DBPassword BackupManager::GetRestorePassword(const std::string &name, const std::string &baseDir,
     const std::string &appId, const std::string &storeId)
 {
+    auto backupName = name.substr(0, name.length() - BACKUP_POSTFIX_SIZE);
+    auto keyName = BACKUP_KEY_PREFIX + storeId + "_" + backupName;
     SecurityManager::DBPassword password;
     if (backupName == AUTO_BACKUP_NAME) {
         auto service = KVDBServiceClient::GetInstance();
@@ -214,7 +215,7 @@ SecurityManager::DBPassword BackupManager::GetRestorePassword(const std::string 
         password.SetValue(pwd.data(), pwd.size());
         pwd.assign(pwd.size(), 0);
     } else {
-        password =  SecurityManager::GetInstance().GetDBPassword(backupName, baseDir);
+        password =  SecurityManager::GetInstance().GetDBPassword(keyName, baseDir);
     }
     return password;
 }
@@ -372,7 +373,7 @@ BackupManager::ClearType BackupManager::GetClearType(const BackupManager::Residu
     if (tmpFile == 0) {
         return DO_NOTHING;
     }
-    if ((tmpFile >= rawFile) && (tmpFile ==1)) {
+    if ((tmpFile >= rawFile) && (tmpFile == 1)) {
         return ROLLBACK_DATA;
     }
     return (tmpFile >= rawFile) ? ROLLBACK : CLEAN_TMP;
