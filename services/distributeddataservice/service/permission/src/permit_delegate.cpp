@@ -84,22 +84,22 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
 
     auto devId = Commu::GetInstance().GetLocalDevice().uuid;
     StoreMetaData data;
-    AppIDMetaData appIDMeta;
     data.user = param.userId;
     data.storeId = param.storeId;
     data.deviceId = devId;
     data.instanceId = param.instanceId;
-    appId2BundleNameMap_.Compute(param.appId, [&](const auto &, std::string &value) {
+    appId2BundleNameMap_.Compute(param.appId, [&data](const auto &key, std::string &value) {
         if (!value.empty()) {
             data.bundleName = value;
             return true;
         }
-        MetaDataManager::GetInstance().LoadMeta(param.appId, appIDMeta, true);
+        AppIDMetaData appIDMeta;
+        MetaDataManager::GetInstance().LoadMeta(key, appIDMeta, true);
         if (appIDMeta.appId == param.appId) {
             data.bundleName = appIDMeta.bundleName;
             value = appIDMeta.bundleName;
         }
-        return true;
+        return !value.empty();
     });
     auto key = data.GetKey();
     if (!metaDataBucket_.Get(key, data)) {
