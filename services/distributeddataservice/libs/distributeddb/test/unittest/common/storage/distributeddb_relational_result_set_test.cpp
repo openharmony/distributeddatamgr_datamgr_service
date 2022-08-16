@@ -328,4 +328,35 @@ HWTEST_F(DistributedDBRelationalResultSetTest, NormalResultSet, TestSize.Level1)
     EXPECT_EQ(std::get<int64_t>(data["column 2"]), INT64_VALUE);
     delete resultSet;
 }
+
+
+HWTEST_F(DistributedDBRelationalResultSetTest, Test001, TestSize.Level1)
+{
+    auto *resultSet = new (std::nothrow) RelationalResultSetImpl;
+    ASSERT_NE(resultSet, nullptr);
+
+    /**
+     * @tc.steps: step1. Create a result set which contains two row data;
+     * @tc.expected: OK.
+     */
+    RelationalRowDataSet rowDataSet1;
+    RowData rowData = {g_blobValue, g_doubleValue, g_int64Value, g_nullValue, g_strValue};
+    EXPECT_EQ(rowDataSet1.Insert(new (std::nothrow) RelationalRowDataImpl(std::move(rowData))), E_OK);
+    EXPECT_EQ(resultSet->Put("", 1, std::move(rowDataSet1)), E_OK);  // the first one
+
+    EXPECT_EQ(resultSet->MoveToFirst(), true);
+    ResultSet::ColumnType columnType;
+    EXPECT_EQ(resultSet->GetColumnType(0, columnType), DBStatus::OK);
+    EXPECT_EQ(columnType, ResultSet::ColumnType::BLOB);
+    EXPECT_EQ(resultSet->GetColumnType(1, columnType), DBStatus::OK);
+    EXPECT_EQ(columnType, ResultSet::ColumnType::DOUBLE);
+    EXPECT_EQ(resultSet->GetColumnType(2, columnType), DBStatus::OK);
+    EXPECT_EQ(columnType, ResultSet::ColumnType::INT64);
+    EXPECT_EQ(resultSet->GetColumnType(3, columnType), DBStatus::OK);
+    EXPECT_EQ(columnType, ResultSet::ColumnType::NULL_VALUE);
+    EXPECT_EQ(resultSet->GetColumnType(4, columnType), DBStatus::OK);
+    EXPECT_EQ(columnType, ResultSet::ColumnType::STRING);
+
+    delete resultSet;
+}
 #endif

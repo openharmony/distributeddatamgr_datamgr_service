@@ -147,7 +147,7 @@ ResultSet::ColumnType GetColType(int index, const ColumnTypePair *colMap, int32_
 {
     int32_t head = 0;
     int32_t end = len - 1;
-    while (head < end) {
+    while (head <= end) {
         int32_t mid = (head + end) / 2;
         if (colMap[mid].index_ < index) {
             head = mid + 1;
@@ -155,6 +155,7 @@ ResultSet::ColumnType GetColType(int index, const ColumnTypePair *colMap, int32_
         }
         if (colMap[mid].index_ > index) {
             end = mid - 1;
+            continue;
         }
         return colMap[mid].type_;
     }
