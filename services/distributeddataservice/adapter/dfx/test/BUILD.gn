@@ -78,6 +78,7 @@ ohos_unittest("DistributeddataDfxUTTest") {
   module_out_path = module_output_path
 
   sources = [
+    "../src/behaviour/behaviour_reporter_impl.cpp",
     "../src/fault/communication_fault_impl.cpp",
     "../src/fault/database_fault_impl.cpp",
     "../src/fault/fault_reporter.cpp",
