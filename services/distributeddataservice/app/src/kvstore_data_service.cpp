@@ -1099,6 +1099,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey());
                 MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
+                MetaDataManager::GetInstance().DelMeta(meta.appId, true);
             }
             g_kvStoreAccountEventStatus = 0;
             break;
