@@ -22,9 +22,10 @@
 #include "common_event_support.h"
 #include "communication_provider.h"
 #include "device_kvstore_impl.h"
+#include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
-#include "log_print.h"
+#include "utils/block_integer.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::AppDistributedKv;
@@ -97,32 +98,22 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey());
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
+                MetaDataManager::GetInstance().DelMeta(meta.appId, true);
                 kvStoreDataService->DeleteKvStore(meta);
             }
         }
     };
     subscriber_ = std::make_shared<UninstallEventSubscriber>(info, callback);
     std::thread th = std::thread([this] {
-        int tryTimes = 0;
-        constexpr int MAX_RETRY_TIME = 300;
-        constexpr int RETRY_WAIT_TIME_S = 1;
-
-        // we use this method to make sure regist success
-        while (tryTimes < MAX_RETRY_TIME) {
-            auto result = CommonEventManager::SubscribeCommonEvent(subscriber_);
-            if (result) {
-                ZLOGI("EventManager: Success");
+        constexpr int32_t RETRY_TIME = 300;
+        constexpr int32_t RETRY_INTERVAL = 100 * 1000;
+        for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIME; ++retry) {
+            if (CommonEventManager::SubscribeCommonEvent(subscriber_)) {
+                ZLOGI("subscribe uninstall event success");
                 break;
-            } else {
-                ZLOGE("EventManager: Fail to Register Subscriber, error:%d", result);
-                sleep(RETRY_WAIT_TIME_S);
             }
-            tryTimes++;
+            ZLOGE("subscribe uninstall event fail, try times:%d", static_cast<int>(retry));
         }
-        if (MAX_RETRY_TIME == tryTimes) {
-            ZLOGE("EventManager: Fail to Register Subscriber!!!");
-        }
-        ZLOGI("Register listener End!!");
     });
     th.detach();
     return Status::SUCCESS;
