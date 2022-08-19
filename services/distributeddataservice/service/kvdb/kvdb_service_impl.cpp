@@ -52,9 +52,9 @@ KVDBServiceImpl::~KVDBServiceImpl()
 Status KVDBServiceImpl::GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds)
 {
     std::vector<StoreMetaData> metaData;
-    auto user = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(IPCSkeleton::GetCallingPid());
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     auto deviceId = Commu::GetInstance().GetLocalDevice().uuid;
-    auto prefix = StoreMetaData::GetPrefix({ deviceId, user, "default", appId.appId });
+    auto prefix = StoreMetaData::GetPrefix({ deviceId, std::to_string(user), "default", appId.appId });
     auto instanceId = GetInstIndex(IPCSkeleton::GetCallingTokenID(), appId);
     MetaDataManager::GetInstance().LoadMeta(prefix, metaData);
     for (auto &item : metaData) {
