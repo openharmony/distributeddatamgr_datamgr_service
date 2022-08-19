@@ -108,7 +108,7 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
         constexpr int32_t RETRY_TIME = 300;
         constexpr int32_t RETRY_INTERVAL = 100 * 1000;
         for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIME; ++retry) {
-            if (CommonEventManager::SubscribeCommonEvent(subscriber_);) {
+            if (CommonEventManager::SubscribeCommonEvent(subscriber_)) {
                 ZLOGI("subscribe uninstall event success");
                 break;
             }
