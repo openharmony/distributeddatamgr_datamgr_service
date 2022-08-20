@@ -131,12 +131,15 @@ void GetResultSetFuzz1(const uint8_t *data, size_t size)
     std::string prefix(data, data + size);
     std::string keys = "test_";
     int position = static_cast<int>(size);
-    std::shared_ptr<KvStoreResultSet> resultSet;
+    std::shared_ptr<KvStoreResultSet> resultSet = nullptr;
     size_t sum = 10;
     for (size_t i = 0; i < sum; i++) {
         singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
     }
     singleKvStore_->GetResultSet(prefix, resultSet);
+    if (resultSet == nullptr) {
+        return;
+    }
     resultSet->Move(position);
     resultSet->MoveToPosition(position);
     Entry entry;
