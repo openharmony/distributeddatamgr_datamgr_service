@@ -251,6 +251,9 @@ int DatabaseOper::CreateBackupDirForExport(const KvDBProperties &property, std::
 int DatabaseOper::ExecuteExport(const std::string &filePath, const CipherPassword &passwd,
     const KvDBProperties &property) const
 {
+    if (deviceId_.empty()) {
+        return -E_NOT_INIT;
+    }
     std::string currentDir;
     std::string backupDir;
     int errCode = CreateBackupDirForExport(property, currentDir, backupDir);
