@@ -134,7 +134,7 @@ int DistributedTestAgent::OnProcessMsg(const std::string &msg, int len,
     return DistributedTestAgent::ProcessMsg(msg, ret);
 }
 
-int DistributedTestAgent::Get(const std::string &msg, std::string &ret)
+int DistributedTestAgent::Get(const std::string &msg, std::string &ret) const
 {
     if (!singleKvStore_) {
         HiLog::Error(LABEL, "agent ERROR.");
@@ -153,7 +153,7 @@ int DistributedTestAgent::Get(const std::string &msg, std::string &ret)
     return ret.size();
 }
 
-int DistributedTestAgent::Put(const std::string &args)
+int DistributedTestAgent::Put(const std::string &args) const
 {
     if (!singleKvStore_) {
         HiLog::Error(LABEL, "agent ERROR.");
@@ -168,7 +168,7 @@ int DistributedTestAgent::Put(const std::string &args)
     return status;
 }
 
-int DistributedTestAgent::Delete(const std::string &args)
+int DistributedTestAgent::Delete(const std::string &args) const
 {
     if (!singleKvStore_) {
         HiLog::Error(LABEL, "agent ERROR.");
@@ -179,7 +179,7 @@ int DistributedTestAgent::Delete(const std::string &args)
     return status;
 }
 
-int DistributedTestAgent::RemoveDeviceData(const std::string &args)
+int DistributedTestAgent::RemoveDeviceData(const std::string &args) const
 {
     if (!singleKvStore_) {
         HiLog::Error(LABEL, "agent ERROR.");
@@ -190,7 +190,7 @@ int DistributedTestAgent::RemoveDeviceData(const std::string &args)
     return status;
 }
 
-int DistributedTestAgent::Sync(const std::string &args)
+int DistributedTestAgent::Sync(const std::string &args) const
 {
     if (!singleKvStore_) {
         HiLog::Error(LABEL, "agent ERROR.");
