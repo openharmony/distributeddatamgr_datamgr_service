@@ -190,7 +190,6 @@ HWTEST_F(DistributedDBFilePackageTest, PackageFileTest001, TestSize.Level1)
     ASSERT_EQ(errCode, E_OK);
     ComparePath(g_sourcePath, g_unpackResultPath);
     ASSERT_EQ(fileInfo.dbType, g_fileInfo.dbType);
-    ASSERT_EQ(fileInfo.deviceID == g_fileInfo.deviceID, true);
     return;
 }
 
