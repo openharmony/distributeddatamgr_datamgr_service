@@ -84,7 +84,7 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
 
     auto devId = Commu::GetInstance().GetLocalDevice().uuid;
     StoreMetaData data;
-    data.user = param.userId;
+    data.user = param.userId == "default" ? DEFAULT_USER : param.userId;
     data.storeId = param.storeId;
     data.deviceId = devId;
     data.instanceId = param.instanceId;

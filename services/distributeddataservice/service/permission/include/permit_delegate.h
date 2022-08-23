@@ -47,6 +47,7 @@ private:
 
     ConcurrentMap<std::string, std::string> appId2BundleNameMap_;
     LRUBucket<std::string, StoreMetaData> metaDataBucket_ {32};
+    static constexpr const char *DEFAULT_USER = "0";
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_SERVICE_PERMISSION_PERMIT_DELEGATE_H

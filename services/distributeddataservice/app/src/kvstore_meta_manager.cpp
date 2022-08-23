@@ -63,8 +63,7 @@ KvStoreMetaManager::KvStoreMetaManager()
     : metaDelegate_(nullptr),
       metaDBDirectory_("/data/service/el1/public/database/distributeddata/meta"),
       label_(Bootstrap::GetInstance().GetProcessLabel()),
-      kvStoreDelegateManager_(Bootstrap::GetInstance().GetProcessLabel(),
-      std::to_string(AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID())))
+      kvStoreDelegateManager_(Bootstrap::GetInstance().GetProcessLabel(), "default")
 {
     ZLOGI("begin.");
 }
