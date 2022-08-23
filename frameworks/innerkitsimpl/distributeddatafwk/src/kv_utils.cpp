@@ -145,7 +145,7 @@ Status KvUtils::ToEntryData(const std::map<std::string, DataShareValueObject> &v
         ZLOGE("Value bucket type string");
         std::string data = it->second;
         uData.push_back(KvUtils::STRING);
-        uData.assign(data.begin(), data.end());
+        uData.insert(uData.end(), data.begin(), data.end());
     }
     blob = Blob(uData);
     return Status::SUCCESS;
