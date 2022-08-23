@@ -97,7 +97,7 @@ Status KvUtils::GetKeys(const DataShareAbsPredicates &predicates, std::vector<Ke
             ZLOGE("find operation failed");
             return Status::NOT_SUPPORT;
         }
-        std::vector<std::string> val = oper.para1;
+        std::vector<std::string> val = oper.multiParams[0];
         myKeys.insert(myKeys.end(), val.begin(), val.end());
     }
     for (const auto &it : myKeys) {
@@ -158,48 +158,48 @@ void KvUtils::NoSupport(const DataShare::OperationItem &oper, DataQuery &query)
 
 void KvUtils::InKeys(const OperationItem &oper, DataQuery &query)
 {
-    query.InKeys(oper.para1);
+    query.InKeys(oper.multiParams[0]);
 }
 
 void KvUtils::KeyPrefix(const OperationItem &oper, DataQuery &query)
 {
-    query.KeyPrefix(oper.para1);
+    query.KeyPrefix(oper.singleParams[0]);
 }
 
 void KvUtils::EqualTo(const OperationItem &oper, DataQuery &query)
 {
     Querys equal(&query, QueryType::EQUAL);
-    CovUtil::FillField(oper.para1, oper.para2.value, equal);
+    CovUtil::FillField(oper.singleParams[0], oper.singleParams[1].value, equal);
 }
 
 void KvUtils::NotEqualTo(const OperationItem &oper, DataQuery &query)
 {
     Querys notEqual(&query, QueryType::NOT_EQUAL);
-    CovUtil::FillField(oper.para1, oper.para2.value, notEqual);
+    CovUtil::FillField(oper.singleParams[0], oper.singleParams[1].value, notEqual);
 }
 
 void KvUtils::GreaterThan(const OperationItem &oper, DataQuery &query)
 {
     Querys greater(&query, QueryType::GREATER);
-    CovUtil::FillField(oper.para1, oper.para2.value, greater);
+    CovUtil::FillField(oper.singleParams[0], oper.singleParams[1].value, greater);
 }
 
 void KvUtils::LessThan(const OperationItem &oper, DataQuery &query)
 {
     Querys less(&query, QueryType::LESS);
-    CovUtil::FillField(oper.para1, oper.para2.value, less);
+    CovUtil::FillField(oper.singleParams[0], oper.singleParams[1].value, less);
 }
 
 void KvUtils::GreaterThanOrEqualTo(const OperationItem &oper, DataQuery &query)
 {
     Querys greaterOrEqual(&query, QueryType::GREATER_OR_EQUAL);
-    CovUtil::FillField(oper.para1, oper.para2.value, greaterOrEqual);
+    CovUtil::FillField(oper.singleParams[0], oper.singleParams[1].value, greaterOrEqual);
 }
 
 void KvUtils::LessThanOrEqualTo(const OperationItem &oper, DataQuery &query)
 {
     Querys lessOrEqual(&query, QueryType::LESS_OR_EQUAL);
-    CovUtil::FillField(oper.para1, oper.para2.value, lessOrEqual);
+    CovUtil::FillField(oper.singleParams[0], oper.singleParams[1].value, lessOrEqual);
 }
 
 void KvUtils::And(const OperationItem &oper, DataQuery &query)
@@ -214,49 +214,49 @@ void KvUtils::Or(const OperationItem &oper, DataQuery &query)
 
 void KvUtils::IsNull(const OperationItem &oper, DataQuery &query)
 {
-    query.IsNull(oper.para1);
+    query.IsNull(oper.singleParams[0]);
 }
 
 void KvUtils::IsNotNull(const OperationItem &oper, DataQuery &query)
 {
-    query.IsNotNull(oper.para1);
+    query.IsNotNull(oper.singleParams[0]);
 }
 
 void KvUtils::In(const OperationItem &oper, DataQuery &query)
 {
     InOrNotIn in(&query, QueryType::IN);
-    CovUtil::FillField(oper.para1, oper.para2.value, in);
+    CovUtil::FillField(oper.singleParams[0], oper.multiParams[0].value, in);
 }
 
 void KvUtils::NotIn(const OperationItem &oper, DataQuery &query)
 {
     InOrNotIn notIn(&query, QueryType::NOT_IN);
-    CovUtil::FillField(oper.para1, oper.para2.value, notIn);
+    CovUtil::FillField(oper.singleParams[0], oper.multiParams[0].value, notIn);
 }
 
 void KvUtils::Like(const OperationItem &oper, DataQuery &query)
 {
-    query.Like(oper.para1, oper.para2);
+    query.Like(oper.singleParams[0], oper.singleParams[1]);
 }
 
 void KvUtils::Unlike(const OperationItem &oper, DataQuery &query)
 {
-    query.Unlike(oper.para1, oper.para2);
+    query.Unlike(oper.singleParams[0], oper.singleParams[1]);
 }
 
 void KvUtils::OrderByAsc(const OperationItem &oper, DataQuery &query)
 {
-    query.OrderByAsc(oper.para1);
+    query.OrderByAsc(oper.singleParams[0]);
 }
 
 void KvUtils::OrderByDesc(const OperationItem &oper, DataQuery &query)
 {
-    query.OrderByDesc(oper.para1);
+    query.OrderByDesc(oper.singleParams[0]);
 }
 
 void KvUtils::Limit(const OperationItem &oper, DataQuery &query)
 {
-    query.Limit(oper.para1, oper.para2);
+    query.Limit(oper.singleParams[0], oper.singleParams[1]);
 }
 } // namespace DistributedKv
 } // namespace OHOS

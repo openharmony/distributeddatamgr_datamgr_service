@@ -80,12 +80,6 @@ public:
         return 0;
     }
 
-    template<typename T>
-    int operator()(const std::string &field, const std::vector<T> &value)
-    {
-        return 0;
-    }
-
     int operator()()
     {
         return 0;
@@ -99,11 +93,6 @@ private:
 class InOrNotIn {
 public:
     InOrNotIn(OHOS::DistributedKv::DataQuery *dataQuery, QueryType type) : dataQuery_(dataQuery), type_(type)  {};
-    template<typename T>
-    int operator()(const std::string &field, const T &value)
-    {
-        return 0;
-    }
     template<typename T>
     int operator()(const std::string &field, const std::vector<T> &value)
     {
