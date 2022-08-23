@@ -43,7 +43,7 @@ You call APIs of DDS to create, access, and subscribe to distributed databases. 
 ## Directory Structure<a name="section161941989596"></a>
 
 ```
-/foundation/distributeddatamgr/distributeddatamgr
+/foundation/distributeddatamgr/datamgr_service
 ├── interfaces                    # APIs
 │   └── innerkits                 # Native APIs
 │   └── jskits                    # JavaScript APIs

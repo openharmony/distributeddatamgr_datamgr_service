@@ -29,17 +29,17 @@ config("module_public_config") {
     "permission/include",
     "rdb",
     "//third_party/json/single_include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/kvdb/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/object/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app/src",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/include/",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/interfaces/include/",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/interfaces/include/relational",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/object/include",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/include/",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/interfaces/include/",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/interfaces/include/relational",
   ]
 }
 
@@ -85,10 +85,10 @@ ohos_shared_library("distributeddatasvc") {
   configs = [ ":module_public_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
   ]
 
   external_deps = [
@@ -101,4 +101,6 @@ ohos_shared_library("distributeddatasvc") {
     "relational_store:native_rdb",
   ]
   subsystem_name = "distributeddatamgr"
+
+  part_name = "datamgr_service"
 }

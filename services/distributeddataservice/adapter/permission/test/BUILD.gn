@@ -12,7 +12,7 @@
 # limitations under the License.
 import("//build/test.gni")
 
-module_output_path = "distributeddatamgr/distributeddatafwk"
+module_output_path = "datamgr_service/distributeddatafwk"
 
 ###############################################################################
 config("module_private_config") {
@@ -22,9 +22,9 @@ config("module_private_config") {
     "../../include/permission/",
     "../../include/utils/",
     "//commonlibrary/c_utils/base/include/",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
   ]
 }
 
@@ -36,9 +36,9 @@ ohos_unittest("PermissionValidatorTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//third_party/googletest:gtest_main",
   ]
 

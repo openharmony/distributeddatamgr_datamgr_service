@@ -17,12 +17,12 @@ import("//build/test.gni")
 
 ##############################fuzztest##########################################
 ohos_fuzztest("KvStoreFuzzTest") {
-  module_out_path = "distributeddatamgr/distributeddatafwk"
+  module_out_path = "datamgr_service/distributeddatafwk"
 
   include_dirs = [
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/src",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//developtools/profiler/device/base/include",
     "//utils/native/base/include",
     "//third_party/sqlite/include",
@@ -33,7 +33,7 @@ ohos_fuzztest("KvStoreFuzzTest") {
     "//third_party/grpc/src/core/lib/json",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/test/fuzztest/kvstore_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/kvstore_fuzzer"
 
   cflags = [
     "-g",
@@ -60,8 +60,8 @@ ohos_fuzztest("KvStoreFuzzTest") {
   ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//utils/native/base:utils",
   ]
 

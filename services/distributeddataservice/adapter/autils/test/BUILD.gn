@@ -12,7 +12,7 @@
 # limitations under the License.
 import("//build/test.gni")
 
-module_output_path = "distributeddatamgr/distributeddatafwk"
+module_output_path = "datamgr_service/distributeddatafwk"
 
 ###############################################################################
 config("module_private_config") {
@@ -20,7 +20,7 @@ config("module_private_config") {
 
   include_dirs = [
     "../../include/autils/",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
   ]
 }
 

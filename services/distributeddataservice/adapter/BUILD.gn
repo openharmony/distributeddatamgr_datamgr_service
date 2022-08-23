@@ -23,7 +23,7 @@ config("distributeddata_adapter_private_config") {
 }
 
 config("distributeddata_adapter_public_config") {
-  visibility = [ "//foundation/distributeddatamgr/distributeddatamgr:*" ]
+  visibility = [ "//foundation/distributeddatamgr/datamgr_service:*" ]
 
   include_dirs = [
     "include/log",
@@ -32,8 +32,8 @@ config("distributeddata_adapter_public_config") {
     "include/autils",
     "include/utils",
     "include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include/",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include/",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
   ]
 }
 
@@ -42,11 +42,11 @@ ohos_shared_library("distributeddata_adapter") {
 
   configs = [ ":distributeddata_adapter_private_config" ]
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/account:distributeddata_account_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/autils:distributeddata_autils_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/dfx:distributeddata_dfx_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/account:distributeddata_account_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/autils:distributeddata_autils_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx:distributeddata_dfx_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -54,5 +54,5 @@ ohos_shared_library("distributeddata_adapter") {
   public_configs = [ ":distributeddata_adapter_public_config" ]
 
   subsystem_name = "distributeddatamgr"
-  part_name = "distributeddatamgr"
+  part_name = "datamgr_service"
 }

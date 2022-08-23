@@ -36,8 +36,8 @@ ohos_static_library("distributeddata_communicator_static") {
     "../include/dfx",
     "../include/log",
     "../include/autils",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/communication/dsoftbus/core/common/include",
   ]
 
@@ -45,7 +45,7 @@ ohos_static_library("distributeddata_communicator_static") {
 
   deps = [
     "../dfx:distributeddata_dfx_static",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
   ]
 
   external_deps = [

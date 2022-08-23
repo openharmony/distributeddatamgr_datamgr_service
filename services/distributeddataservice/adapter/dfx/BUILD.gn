@@ -36,7 +36,7 @@ ohos_static_library("distributeddata_dfx_static") {
     "../include/log",
     "../include/autils",
     "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//third_party/openssl/include/",
   ]
 
@@ -54,5 +54,5 @@ ohos_static_library("distributeddata_dfx_static") {
     "hiviewdfx_hilog_native:libhilog",
   ]
   subsystem_name = "distributeddatamgr"
-  part_name = "distributeddatamgr"
+  part_name = "datamgr_service"
 }

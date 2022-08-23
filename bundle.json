@@ -1,10 +1,10 @@
 {
-    "name": "@ohos/distributeddatamgr_datamgr",
+    "name": "@ohos/distributeddatamgr_datamgr_service",
     "version": "1.0.0",
     "description": "Distributed data manager that provides the capability to store data in the databases of different devices",
     "homePage": "https://gitee.com/openharmony",
     "license": "Apache V2",
-    "repository": "https://gitee.com/openharmony/distributeddatamgr_datamgr",
+    "repository": "https://gitee.com/openharmony/distributeddatamgr_datamgr_service",
     "domain": "os",
     "language": "",
     "publishAs": "code-segment",
@@ -15,7 +15,7 @@
     ],
     "keywords": [
         "distributeddatamgr",
-        "datamgr"
+        "datamgr_service"
     ],
     "envs": [],
     "dirs": [],
@@ -32,10 +32,10 @@
         }
     ],
     "segment": {
-        "destPath": "foundation/distributeddatamgr/distributeddatamgr"
+        "destPath": "foundation/distributeddatamgr/datamgr_service"
     },
     "component": {
-        "name": "distributeddatamgr",
+        "name": "datamgr_service",
         "subsystem": "distributeddatamgr",
         "syscap": [
             "SystemCapability.DistributedDataManager.KVStore.Core",
@@ -49,7 +49,7 @@
         "rom": "",
         "ram": "",
         "hisysevent_config": [
-            "//foundation/distributeddatamgr/distributeddatamgr/hisysevent.yaml"
+            "//foundation/distributeddatamgr/datamgr_service/hisysevent.yaml"
           ],
         "deps": {
             "components": [
@@ -86,17 +86,14 @@
         },
         "build": {
             "sub_component": [
-                "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:build_module",
-                "//foundation/distributeddatamgr/distributeddatamgr/interfaces/jskits/distributeddata:build_module",
-                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/app:build_module",
-                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:build_module",
-                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:build_module",
-                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service:build_module",
-                "//foundation/distributeddatamgr/distributeddatamgr/conf:build_module"
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app:build_module",
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:build_module",
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:build_module",
+                "//foundation/distributeddatamgr/datamgr_service/conf:build_module"
             ],
             "inner_kits": [
                 {
-                    "name": "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
+                    "name": "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
                     "header": {
                         "header_files": [
                             "blob.h",
@@ -114,16 +111,14 @@
                             "device_status_change_listener.h",
                             "store_errno.h"
                         ],
-                        "header_base": "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include"
+                        "header_base": "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include"
                     }
                 }
             ],
             "test": [
-                "//foundation/distributeddatamgr/distributeddatamgr:build_native_test",
-                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/test:distributeddatamgr_fuzztest",
-                "//foundation/distributeddatamgr/distributeddatamgr:fuzztest",
-                "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/test:fuzztest",
-                "//foundation/distributeddatamgr/distributeddatamgr:distributedtest"
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/test:fuzztest",
+                "//foundation/distributeddatamgr/datamgr_service:fuzztest",
+                "//foundation/distributeddatamgr/datamgr_service:build_native_test"
             ]
         }
     }

@@ -22,10 +22,10 @@ ohos_static_library("distributeddata_uninstaller_static") {
   include_dirs = [
     "../../../adapter/include/account",
     "../../src",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/service/kvdb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
     "//third_party/json/single_include",
     "//commonlibrary/c_utils/base/include",
     "//base/security/huks/interfaces/innerkits/huks_standard/main/include",
@@ -34,9 +34,9 @@ ohos_static_library("distributeddata_uninstaller_static") {
   cflags_cc = [ "-fvisibility=hidden" ]
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
   ]
 
   external_deps = [
@@ -53,5 +53,5 @@ ohos_static_library("distributeddata_uninstaller_static") {
     "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"
-  part_name = "distributeddatamgr"
+  part_name = "datamgr_service"
 }

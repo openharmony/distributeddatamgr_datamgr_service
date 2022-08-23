@@ -15,11 +15,9 @@ import("//build/ohos.gni")
 group("build_native_test") {
   testonly = true
   deps = [
-    "frameworks/innerkitsimpl/distributeddatafwk/test:unittest",
     "services/distributeddataservice/adapter/test:unittest",
     "services/distributeddataservice/app/test:unittest",
     "services/distributeddataservice/framework/test:unittest",
-    "services/distributeddataservice/libs/distributeddb/test:unittest",
     "services/distributeddataservice/service/test:unittest",
     "services/distributeddataservice/test:moduletest",
   ]
@@ -35,11 +33,5 @@ group("fuzztest") {
     "test/fuzztest/kvstore_fuzzer:fuzztest",
     "test/fuzztest/kvstoredisksize_fuzzer:fuzztest",
   ]
-}
-
-group("distributedtest") {
-  testonly = true
-  deps = []
-  deps += [ "test/distributedtest/single_kvstore_client:distributedtest" ]
 }
 ###############################################################################

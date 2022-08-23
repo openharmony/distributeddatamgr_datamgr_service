@@ -17,10 +17,10 @@ import("//build/test.gni")
 
 ##############################fuzztest##########################################
 ohos_fuzztest("SchemaQueryFuzzTest") {
-  module_out_path = "distributeddatamgr/distributeddb"
+  module_out_path = "datamgr_service/distributeddb"
 
   include_dirs = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//commonlibrary/c_utils/base/include",
     "//third_party/jsoncpp/include/json",
     "//third_party/skia/third_party/externals/spirv-headers/tools/buildHeaders/jsoncpp/dist/json",
@@ -40,12 +40,12 @@ ohos_fuzztest("SchemaQueryFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/test/fuzztest/schemaquery_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/test/fuzztest/schemaquery_fuzzer"
 
   deps = [
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//third_party/jsoncpp:jsoncpp",
     "//third_party/openssl:libcrypto_shared",
   ]

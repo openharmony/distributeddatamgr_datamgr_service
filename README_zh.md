@@ -43,7 +43,7 @@
 ## 目录<a name="section161941989596"></a>
 
 ```
-/foundation/distributeddatamgr/distributeddatamgr
+/foundation/distributeddatamgr/datamgr_service
 ├── interfaces                    # 接口层代码
 │   └── innerkits                 # Native接口
 │   └── jskits                    # JavaScript接口

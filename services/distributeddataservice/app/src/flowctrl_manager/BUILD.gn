@@ -19,8 +19,8 @@ ohos_static_library("distributeddata_flowctrl_static") {
   include_dirs = [
     "../../../adapter/include/account",
     "../../src",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//third_party/json/single_include",
     "//commonlibrary/c_utils/base/include",
   ]
@@ -30,5 +30,5 @@ ohos_static_library("distributeddata_flowctrl_static") {
   external_deps = [ "c_utils:utils" ]
 
   subsystem_name = "distributeddatamgr"
-  part_name = "distributeddatamgr"
+  part_name = "datamgr_service"
 }

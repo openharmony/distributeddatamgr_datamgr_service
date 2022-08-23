@@ -23,8 +23,8 @@ ohos_static_library("distributeddata_broadcaster_static") {
     "../include/log",
     "./src",
     "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -40,5 +40,5 @@ ohos_static_library("distributeddata_broadcaster_static") {
     "ipc:ipc_core",
   ]
   subsystem_name = "distributeddatamgr"
-  part_name = "distributeddatamgr"
+  part_name = "datamgr_service"
 }

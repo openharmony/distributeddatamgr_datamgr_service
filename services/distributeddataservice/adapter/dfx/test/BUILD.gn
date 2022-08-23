@@ -12,7 +12,7 @@
 # limitations under the License.
 import("//build/test.gni")
 
-module_output_path = "distributeddatamgr/distributeddatafwk"
+module_output_path = "datamgr_service/distributeddatafwk"
 
 ###############################################################################
 config("module_dfx_mst_config") {
@@ -28,7 +28,7 @@ config("module_dfx_mst_config") {
     "//commonlibrary/c_utils/base/include",
     "//utils/system/safwk/native/include",
     "//third_party/openssl/include/",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
   ]
 }
 
@@ -70,7 +70,7 @@ config("module_dfx_config") {
     "//commonlibrary/c_utils/base/include",
     "//utils/system/safwk/native/include",
     "//third_party/openssl/include/",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
   ]
 }
 

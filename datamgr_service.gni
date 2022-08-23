@@ -11,4 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FUZZ
+declare_args() {
+  datamgr_service_power = true
+  if (!defined(global_parts_info.power_manager_native_powermgr_client) ||
+      !defined(global_parts_info.battery_manager_native_batterysrv_client)) {
+    datamgr_service_power = false
+  }
+
+  if (!defined(global_parts_info) ||
+      defined(global_parts_info.account_os_account)) {
+    os_account_part_is_enabled = true
+  } else {
+    os_account_part_is_enabled = false
+  }
+}

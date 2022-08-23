@@ -22,11 +22,11 @@ config("module_public_config") {
     "include",
     "//third_party/json/single_include",
     "//third_party/openssl/include/",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/interfaces/include/",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/libs/distributeddb/include/",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/interfaces/include/",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/include/",
   ]
 }
 
@@ -71,4 +71,6 @@ ohos_shared_library("distributeddatasvcfwk") {
     "ipc:ipc_core",
   ]
   subsystem_name = "distributeddatamgr"
+
+  part_name = "datamgr_service"
 }

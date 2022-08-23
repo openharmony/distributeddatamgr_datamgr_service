@@ -21,9 +21,9 @@ ohos_static_library("distributeddata_permission_static") {
     "../include/permission",
     "../include/utils",
     "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
   ]
 
   if (build_public_version) {
@@ -40,5 +40,5 @@ ohos_static_library("distributeddata_permission_static") {
     "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"
-  part_name = "distributeddatamgr"
+  part_name = "datamgr_service"
 }

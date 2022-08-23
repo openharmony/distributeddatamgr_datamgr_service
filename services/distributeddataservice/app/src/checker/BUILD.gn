@@ -23,16 +23,16 @@ ohos_static_library("distributeddata_checker_static") {
 
   include_dirs = [
     "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/frameworks/common",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
   ]
 
   if (build_public_version) {
     cflags_cc += [ "-DCONFIG_PUBLIC_VERSION" ]
   }
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
-  deps = [ "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter/utils:distributeddata_utils_static" ]
+  deps = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static" ]
 
   external_deps = [
     "ability_base:base",
@@ -46,5 +46,5 @@ ohos_static_library("distributeddata_checker_static") {
     "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"
-  part_name = "distributeddatamgr"
+  part_name = "datamgr_service"
 }
