@@ -100,6 +100,7 @@ void BackupManager::RollBackData(const std::string &name, bool isCreated)
 {
     auto tmpName = name + BACKUP_TMP_POSTFIX;
     if (isCreated) {
+        StoreUtil::Remove(name);
         StoreUtil::Remove(tmpName);
     } else {
         StoreUtil::Remove(name);
@@ -342,6 +343,13 @@ std::map<std::string, BackupManager::ResidueInfo> BackupManager::BuildResidueInf
  *  6, delet tmp data       storeId.bak     storeId.key         do nothing      raw = 2
  *                          -               -                                   tmp = 0
  *
+ *  if step3 has failed, do as 7 ~ 8
+ *
+ *  7, rollback  data       storeId.bak     -                   rollback key    raw = 1
+ *                          -               storeId.key.bk                      tmp = 1
+ *
+ *  8, rollback  data       storeId.bak     storeId.key         do nothing      raw = 2
+ *                          -               -                                   tmp = 0
  *
  *  backup step (unencrypt) file status                         option          file num
  *  1, backup old data      -                                   rollback data   raw = 0
@@ -373,8 +381,11 @@ BackupManager::ClearType BackupManager::GetClearType(const BackupManager::Residu
     if (tmpFile == 0) {
         return DO_NOTHING;
     }
-    if ((tmpFile >= rawFile) && (tmpFile == 1)) {
+    if ((tmpFile >= rawFile) && (tmpFile == 1) && residueInfo.hasTmpBackup) {
         return ROLLBACK_DATA;
+    }
+    if ((tmpFile >= rawFile) && (tmpFile == 1) && residueInfo.hasTmpKey) {
+        return ROLLBACK_KEY;
     }
     return (tmpFile >= rawFile) ? ROLLBACK : CLEAN_TMP;
 }
@@ -389,6 +400,9 @@ void BackupManager::ClearResidueFile(std::map<std::string, ResidueInfo> residueI
         switch (GetClearType(info.second)) {
             case ROLLBACK_DATA:
                 RollBackData(backupFullName, (info.second.tmpBackupSize == 0));
+                break;
+            case ROLLBACK_KEY:
+                RollBackData(keyFullName, (info.second.tmpKeySize == 0));
                 break;
             case ROLLBACK:
                 RollBackData(backupFullName, (info.second.tmpBackupSize == 0));

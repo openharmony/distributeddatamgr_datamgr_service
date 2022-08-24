@@ -38,6 +38,7 @@ public:
     enum ClearType {
         DO_NOTHING = 0,
         ROLLBACK_DATA,
+        ROLLBACK_KEY,
         ROLLBACK,
         CLEAN_TMP,
     };
