@@ -15,24 +15,18 @@
 #define LOG_TAG "BackupManager"
 #include "backup_manager.h"
 
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
-#include "accesstoken_kit.h"
-#include "account/account_delegate.h"
 #include "backuprule/backup_rule_manager.h"
 #include "communication_provider.h"
-#include "constant.h"
 #include "crypto_manager.h"
 #include "directory_manager.h"
-#include "ipc_skeleton.h"
 #include "kv_scheduler.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "types.h"
 namespace OHOS::DistributedData {
-using namespace OHOS::Security::AccessToken;
 using Commu = AppDistributedKv::CommunicationProvider;
 namespace {
 constexpr const int COPY_SIZE = 1024;
@@ -122,6 +116,7 @@ void BackupManager::BackSchedule()
         if (startNum_ >= static_cast<int64_t>(metas.size())) {
             startNum_ = 0;
         }
+        sync();
         backupSuccessTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     });
 }
