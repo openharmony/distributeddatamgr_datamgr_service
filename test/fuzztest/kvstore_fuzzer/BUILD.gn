@@ -23,6 +23,7 @@ ohos_fuzztest("KvStoreFuzzTest") {
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//developtools/profiler/device/base/include",
     "//utils/native/base/include",
     "//third_party/sqlite/include",
