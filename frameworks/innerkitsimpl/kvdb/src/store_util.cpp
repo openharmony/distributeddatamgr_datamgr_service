@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include "log_print.h"
 #include "types.h"
+#include "unistd.h"
 namespace OHOS::DistributedKv {
 constexpr mode_t DEFAULT_UMASK = 0002;
 constexpr int32_t HEAD_SIZE = 3;
@@ -165,6 +166,9 @@ bool StoreUtil::InitPath(const std::string &path)
 
 bool StoreUtil::CreateFile(const std::string &name)
 {
+    if (access(name.c_str(), F_OK) == 0) {
+        return true;
+    }
     umask(DEFAULT_UMASK);
     int fp = open(name.c_str(), (O_WRONLY | O_CREAT), (S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP));
     if (fp < 0) {
@@ -254,5 +258,10 @@ bool StoreUtil::Remove(const std::string &path)
         return false;
     }
     return true;
+}
+
+void StoreUtil::DoSync()
+{
+    sync();
 }
 } // namespace OHOS::DistributedKv

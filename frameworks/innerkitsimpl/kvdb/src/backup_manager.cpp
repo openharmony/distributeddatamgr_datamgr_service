@@ -155,6 +155,7 @@ Status BackupManager::Backup(const std::string &name, const std::string &baseDir
             RollBackData(keyFullName, isCreate);
         }
     }
+    StoreUtil::DoSync();
     return status;
 }
 
@@ -279,21 +280,21 @@ void BackupManager::SetResidueInfo(BackupManager::ResidueInfo &residueInfo,
     const std::vector<StoreUtil::FileInfo> &files, const std::string &name, const std::string &postFix)
 {
     for (auto &file : files) {
-        if (IsBeginWith(file.name, name)) {
-            if (IsEndWith(file.name, postFix + BACKUP_TMP_POSTFIX) && (postFix == BACKUP_POSTFIX)) {
-                residueInfo.hasTmpBackup = true;
-                residueInfo.tmpBackupSize = file.size;
-            }
-            if (IsEndWith(file.name, postFix) && (postFix == BACKUP_POSTFIX)) {
-                residueInfo.hasRawBackup = true;
-            }
-            if (IsEndWith(file.name, postFix + BACKUP_TMP_POSTFIX) && (postFix == BACKUP_KEY_POSTFIX)) {
-                residueInfo.hasTmpKey = true;
-                residueInfo.tmpKeySize = file.size;
-            }
-            if (IsEndWith(file.name, postFix) && (postFix == BACKUP_KEY_POSTFIX)) {
-                residueInfo.hasRawKey = true;
-            }
+        auto fullName = name + postFix;
+        auto fullTmpName = fullName + BACKUP_TMP_POSTFIX;
+        if ((file.name == fullTmpName) && (postFix == BACKUP_POSTFIX)) {
+            residueInfo.hasTmpBackup = true;
+            residueInfo.tmpBackupSize = file.size;
+        }
+        if ((file.name == fullName) && (postFix == BACKUP_POSTFIX)) {
+            residueInfo.hasRawBackup = true;
+        }
+        if ((file.name == fullTmpName) && (postFix == BACKUP_KEY_POSTFIX)) {
+            residueInfo.hasTmpKey = true;
+            residueInfo.tmpKeySize = file.size;
+        }
+        if ((file.name == fullName) && (postFix == BACKUP_KEY_POSTFIX)) {
+            residueInfo.hasRawKey = true;
         }
     }
 }

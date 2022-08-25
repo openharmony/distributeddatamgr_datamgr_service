@@ -44,6 +44,7 @@ public:
     static bool Rename(const std::string &oldName, const std::string &newName);
     static bool IsFileExist(const std::string &name);
     static bool Remove(const std::string &path);
+    static void DoSync();
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_KVDB_STORE_UTIL_H
