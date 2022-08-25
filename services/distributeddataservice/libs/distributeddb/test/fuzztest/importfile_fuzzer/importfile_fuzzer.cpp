@@ -69,9 +69,10 @@ bool MakeImportFile(const uint8_t *data, size_t size, const std::string &realPat
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     std::string dataDir;
+    std::string testDataDir(data, data + size);
     DistributedDBToolsTest::TestDirInit(dataDir);
     g_config.dataDir = dataDir;
-    std::string path = dataDir + "/fuzz" + std::to_string(U16_AT(data));
+    std::string path = dataDir + "/fuzz" + testDataDir;
     std::string realPath;
     OS::GetRealPath(path, realPath);
     if (OHOS::MakeImportFile(data, size, realPath)) {

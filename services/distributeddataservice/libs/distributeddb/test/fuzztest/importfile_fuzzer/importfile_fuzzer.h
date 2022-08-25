@@ -18,18 +18,4 @@
 
 #define FUZZ_PROJECT_NAME "ImportFile_fuzzer"
 
-#include <cstdint>
-
-uint16_t U16_AT(const uint8_t * const  &ptr)
-{
-    // 8 - 0
-    return (ptr[0] << 8) | ptr[1];
-}
-
-uint32_t U32_AT(const uint8_t * const &ptr)
-{
-    // 24 - 16 - 8 - 0
-    return (ptr[0] << 24) | (ptr[1] << 16) | (ptr[2] << 8) | ptr[3];
-}
-
 #endif // IMPORTFILE_FUZZER_H
