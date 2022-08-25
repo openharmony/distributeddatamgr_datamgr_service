@@ -53,7 +53,7 @@ void TearDown(void)
 void PutFuzz(const uint8_t *data, size_t size)
 {
     std::string skey(data, data + size);
-    std::string svalue(data, data + size + 1);
+    std::string svalue(data, data + size);
     Key key = {skey};
     Value val = {svalue};
     singleKvStore_->Put(key, val);
@@ -86,7 +86,7 @@ void PutBatchFuzz(const uint8_t *data, size_t size)
 void GetFuzz(const uint8_t *data, size_t size)
 {
     std::string skey(data, data + size);
-    std::string svalue(data, data + size + 1);
+    std::string svalue(data, data + size);
     Key key = {skey};
     Value val = {svalue};
     Value val1;
