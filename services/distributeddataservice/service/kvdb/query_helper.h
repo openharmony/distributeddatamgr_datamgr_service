@@ -50,6 +50,7 @@ private:
     static bool HandleOr(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
     static bool HandleOrderByAsc(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
     static bool HandleOrderByDesc(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
+    static bool HandleOrderByWriteTime(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
     static bool HandleLimit(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
     static bool HandleBeginGroup(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
     static bool HandleEndGroup(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery);
