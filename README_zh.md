@@ -44,9 +44,6 @@
 
 ```
 /foundation/distributeddatamgr/datamgr_service
-├── interfaces                    # 接口层代码
-│   └── innerkits                 # Native接口
-│   └── jskits                    # JavaScript接口
 ├── services                      # 服务层代码
 │   └── distributeddataservice    # 分布式数据服务实现
 └── test                          # 测试用例资源
@@ -120,7 +117,7 @@
 
 分布式数据管理子系统
 
-distributeddatamgr\_datamgr 
+[distributeddatamgr\_datamgr\_service](https://gitee.com/openharmony/distributeddatamgr_datamgr_service) 
 
 [third\_party\_sqlite](https://gitee.com/openharmony/third_party_sqlite)
 

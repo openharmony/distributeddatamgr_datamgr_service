@@ -120,7 +120,7 @@ Some basic concepts related to the DDS are as follows:
 
 Distributed Data Management subsystem
 
-distributeddatamgr\_distributeddatamgr
+distributeddatamgr\_datamgr\_service
 
 third\_party\_sqlite
 
