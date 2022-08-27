@@ -25,10 +25,12 @@
 #include "rdb_types.h"
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
+#include "metadata/secret_key_meta_data.h"
 namespace OHOS::DistributedRdb {
 class RdbSyncer {
 public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
+    using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
     RdbSyncer(const RdbSyncerParam& param, RdbStoreObserverImpl* observer);
     ~RdbSyncer() noexcept;
 
@@ -65,6 +67,8 @@ private:
 
     int32_t CreateMetaData(StoreMetaData &meta);
     int32_t InitDBDelegate(const StoreMetaData &meta);
+    bool SetSecretKey(const StoreMetaData &meta);
+    bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
     DistributedDB::RelationalStoreDelegate* GetDelegate();
 

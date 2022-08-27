@@ -15,9 +15,12 @@
 #define LOG_TAG "RdbSyncer"
 #include "rdb_syncer.h"
 
+#include <chrono>
+
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
+#include "crypto_manager.h"
 #include "directory_manager.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
@@ -28,12 +31,16 @@
 #include "types.h"
 #include "utils/constant.h"
 #include "utils/converter.h"
+#include "types_export.h"
 
 using OHOS::DistributedKv::KvStoreUtils;
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::AppDistributedKv::CommunicationProvider;
 using namespace OHOS::Security::AccessToken;
 using namespace OHOS::DistributedData;
+using system_clock = std::chrono::system_clock;
+
+constexpr uint32_t ITERATE_TIMES = 10000;
 namespace OHOS::DistributedRdb {
 RdbSyncer::RdbSyncer(const RdbSyncerParam& param, RdbStoreObserverImpl* observer)
     : param_(param), observer_(observer)
@@ -43,6 +50,7 @@ RdbSyncer::RdbSyncer(const RdbSyncerParam& param, RdbStoreObserverImpl* observer
 
 RdbSyncer::~RdbSyncer() noexcept
 {
+    param_.password_.assign(param_.password_.size(), 0);
     ZLOGI("destroy %{public}s", param_.storeName_.c_str());
     if ((manager_ != nullptr) && (delegate_ != nullptr)) {
         manager_->CloseStore(delegate_);
@@ -129,6 +137,7 @@ int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
     meta.hapName = param_.hapName_;
     meta.dataDir = DirectoryManager::GetInstance().GetStorePath(meta) + "/" + param_.storeName_;
     meta.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
+    meta.isEncrypt = param_.isEncrypt_;
 
     StoreMetaData old;
     bool isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old);
@@ -140,13 +149,54 @@ int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
             meta.isEncrypt, old.area, meta.area);
         return RDB_ERROR;
     }
-
     auto saved = MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;
     appIdMeta.appId = meta.appId;
     saved = MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
-    return saved ? RDB_OK : RDB_ERROR;
+    if (!saved) {
+        return RDB_ERROR;
+    }
+    if (!param_.isEncrypt_ || param_.password_.empty()) {
+        return RDB_OK;
+    }
+    auto secretKeySaved = SetSecretKey(meta);
+    return secretKeySaved ? RDB_OK : RDB_ERROR;
+}
+
+bool RdbSyncer::SetSecretKey(const StoreMetaData &meta)
+{
+    SecretKeyMetaData newSecretKey;
+    newSecretKey.storeType = meta.storeType;
+    newSecretKey.sKey = CryptoManager::GetInstance().Encrypt(param_.password_);
+    if (newSecretKey.sKey.empty()) {
+        ZLOGE("encrypt work key error.");
+        return RDB_ERROR;
+    }
+    param_.password_.assign(param_.password_.size(), 0);
+    auto time = system_clock::to_time_t(system_clock::now());
+    newSecretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
+    return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true);
+}
+
+bool RdbSyncer::GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password)
+{
+    if (!metaData.isEncrypt) {
+        return true;
+    }
+
+    std::string key = metaData.GetSecretKey();
+    DistributedData::SecretKeyMetaData secretKeyMeta;
+    MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
+    std::vector<uint8_t> decryptKey;
+    CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+    if (password.SetValue(decryptKey.data(), decryptKey.size()) != DistributedDB::CipherPassword::OK) {
+        std::fill(decryptKey.begin(), decryptKey.end(), 0);
+        ZLOGE("Set secret key value failed. len is (%d)", int32_t(decryptKey.size()));
+        return false;
+    }
+    std::fill(decryptKey.begin(), decryptKey.end(), 0);
+    return true;
 }
 
 std::string RdbSyncer::RemoveSuffix(const std::string& name)
@@ -172,6 +222,12 @@ int32_t RdbSyncer::InitDBDelegate(const StoreMetaData &meta)
 
     if (delegate_ == nullptr) {
         DistributedDB::RelationalStoreDelegate::Option option;
+        if (meta.isEncrypt) {
+            GetPassword(meta, option.passwd);
+            option.isEncryptedDb = param_.isEncrypt_;
+            option.iterateTimes = ITERATE_TIMES;
+            option.cipher = DistributedDB::CipherType::AES_256_GCM;
+        }
         option.observer = observer_;
         std::string fileName = meta.dataDir;
         ZLOGI("path=%{public}s storeId=%{public}s", fileName.c_str(), meta.storeId.c_str());
