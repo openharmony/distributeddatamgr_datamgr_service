@@ -19,6 +19,7 @@
 #include "object_manager.h"
 #include "object_service_stub.h"
 #include "visibility.h"
+#include "object_data_listener.h"
 
 namespace OHOS::DistributedObject {
 class API_EXPORT ObjectServiceImpl : public ObjectServiceStub {
@@ -33,8 +34,11 @@ public:
         const std::string &bundleName, const std::string &sessionId, sptr<IObjectRetrieveCallback> callback) override;
     int32_t ObjectStoreRevokeSave(const std::string &bundleName, const std::string &sessionId,
         sptr<IObjectRevokeSaveCallback> callback) override;
+    int32_t RegisterDataObserver(const std::string &bundleName, const std::string &sessionId,
+        sptr<IObjectChangeCallback> callback) override;
     void Clear();
     int32_t DeleteByAppId(const std::string &appId);
+    int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
 };
 } // namespace OHOS::DistributedObject
 #endif

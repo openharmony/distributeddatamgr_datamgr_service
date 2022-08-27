@@ -29,12 +29,14 @@ private:
     int32_t ObjectStoreSaveOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t ObjectStoreRevokeSaveOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t ObjectStoreRetrieveOnRemote(MessageParcel &data, MessageParcel &reply);
-
+    int32_t OnSubscribeRequest(MessageParcel &data, MessageParcel &reply);
+    
     using RequestHandle = int (ObjectServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[OBJECTSTORE_SERVICE_CMD_MAX] = {
         &ObjectServiceStub::ObjectStoreSaveOnRemote,
         &ObjectServiceStub::ObjectStoreRevokeSaveOnRemote,
         &ObjectServiceStub::ObjectStoreRetrieveOnRemote,
+        &ObjectServiceStub::OnSubscribeRequest,
     };
 };
 } // namespace OHOS::DistributedRdb
