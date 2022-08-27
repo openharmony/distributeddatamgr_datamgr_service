@@ -101,9 +101,9 @@ bool QueryHelper::Handle(const std::vector<std::string> &words, int &pointer, in
         return HandleOrderByAsc(words, pointer, end, dbQuery);
     } else if (keyword == DataQuery::ORDER_BY_DESC) {
         return HandleOrderByDesc(words, pointer, end, dbQuery);
-    } else if(keyword == DataQuery::ORDER_BY_WRITE_TIME){
+    } else if (keyword == DataQuery::ORDER_BY_WRITE_TIME) {
         return HandleOrderByWriteTime(words, pointer, end, dbQuery);
-    }else if (keyword == DataQuery::LIMIT) {
+    } else if (keyword == DataQuery::LIMIT) {
         return HandleLimit(words, pointer, end, dbQuery);
     } else {
         return HandleExtra(words, pointer, end, dbQuery);
@@ -442,7 +442,7 @@ bool QueryHelper::HandleOrderByWriteTime(const std::vector<std::string> &words, 
     }
     const std::string isAsc = words.at(pointer + 1); // isASC
 
-    dbQuery.OrderByWriteTime(isAsc==DataQuery::IS_ASC);
+    dbQuery.OrderByWriteTime(isAsc == DataQuery::IS_ASC);
     pointer += 2; // 2 Pointer goes to next keyword
     return true;
 }
