@@ -211,10 +211,13 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
         auto it = syncers.find(storeId);
         if (it != syncers.end()) {
             syncer = it->second;
-            timer_.Unregister(syncer->GetTimerId());
-            uint32_t timerId = timer_.Register([this, syncer]() { SyncerTimeout(syncer); }, SYNCER_TIMEOUT, true);
-            syncer->SetTimerId(timerId);
-            return true;
+            if (!param.isEncrypt_ || param.password_.empty()) {
+                timer_.Unregister(syncer->GetTimerId());
+                uint32_t timerId = timer_.Register([this, syncer]() { SyncerTimeout(syncer); }, SYNCER_TIMEOUT, true);
+                syncer->SetTimerId(timerId);
+                return true;
+            }
+            syncers.erase(storeId);
         }
         if (syncers.size() >= MAX_SYNCER_PER_PROCESS) {
             ZLOGE("%{public}d exceed MAX_PROCESS_SYNCER_NUM", pid);
