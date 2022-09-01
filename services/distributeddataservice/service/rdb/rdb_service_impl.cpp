@@ -16,6 +16,7 @@
 #define LOG_TAG "RdbServiceImpl"
 
 #include "rdb_service_impl.h"
+#include "crypto_manager.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "metadata/store_meta_data.h"
@@ -25,6 +26,7 @@
 #include "utils/anonymous.h"
 #include "accesstoken_kit.h"
 #include "permission/permission_validator.h"
+#include "types_export.h"
 
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::AppDistributedKv::CommunicationProvider;
@@ -32,8 +34,10 @@ using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
 using OHOS::DistributedData::StoreMetaData;
 using OHOS::DistributedData::Anonymous;
+using namespace OHOS::DistributedData;
 using DistributedDB::RelationalStoreManager;
 
+constexpr uint32_t ITERATE_TIMES = 10000;
 namespace OHOS::DistributedRdb {
 RdbServiceImpl::DeathRecipientImpl::DeathRecipientImpl(const DeathCallback& callback)
     : callback_(callback)
@@ -92,11 +96,37 @@ bool RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distribute
         param.storeId = entry.storeId;
         param.path = entry.dataDir;
         param.option.storeObserver = &autoLaunchObserver_;
+        param.option.isEncryptedDb = entry.isEncrypt;
+        param.option.iterateTimes = ITERATE_TIMES;
+        param.option.cipher = DistributedDB::CipherType::AES_256_GCM;
+        if (entry.isEncrypt) {
+            GetPassword(entry, param.option.passwd);
+        }
         return true;
     }
 
     ZLOGE("not find identifier");
     return false;
+}
+
+bool RdbServiceImpl::GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password)
+{
+    if (!metaData.isEncrypt) {
+        return true;
+    }
+
+    std::string key = metaData.GetSecretKey();
+    DistributedData::SecretKeyMetaData secretKeyMeta;
+    MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
+    std::vector<uint8_t> decryptKey;
+    CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+    if (password.SetValue(decryptKey.data(), decryptKey.size()) != DistributedDB::CipherPassword::OK) {
+        std::fill(decryptKey.begin(), decryptKey.end(), 0);
+        ZLOGE("Set secret key value failed. len is (%d)", int32_t(decryptKey.size()));
+        return false;
+    }
+    std::fill(decryptKey.begin(), decryptKey.end(), 0);
+    return true;
 }
 
 void RdbServiceImpl::OnClientDied(pid_t pid)

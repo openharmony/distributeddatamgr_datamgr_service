@@ -160,8 +160,7 @@ int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
     if (!param_.isEncrypt_ || param_.password_.empty()) {
         return RDB_OK;
     }
-    auto secretKeySaved = SetSecretKey(meta);
-    return secretKeySaved ? RDB_OK : RDB_ERROR;
+    return SetSecretKey(meta) ? RDB_OK : RDB_ERROR;
 }
 
 bool RdbSyncer::SetSecretKey(const StoreMetaData &meta)

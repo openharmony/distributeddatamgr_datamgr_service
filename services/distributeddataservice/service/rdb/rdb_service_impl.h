@@ -21,6 +21,8 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include "metadata/store_meta_data.h"
+#include "metadata/secret_key_meta_data.h"
 #include "rdb_syncer.h"
 #include "concurrent_map.h"
 #include "store_observer.h"
@@ -30,6 +32,8 @@
 namespace OHOS::DistributedRdb {
 class API_EXPORT RdbServiceImpl : public RdbServiceStub {
 public:
+    using StoreMetaData = OHOS::DistributedData::StoreMetaData;
+    using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
     RdbServiceImpl();
 
     void OnClientDied(pid_t pid);
@@ -63,6 +67,8 @@ private:
     bool CheckAccess(const RdbSyncerParam& param);
 
     bool ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
+
+    bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
     void SyncerTimeout(std::shared_ptr<RdbSyncer> syncer);
 
