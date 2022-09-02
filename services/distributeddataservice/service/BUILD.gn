@@ -67,6 +67,7 @@ ohos_shared_library("distributeddatasvc") {
     "kvdb/store_cache.cpp",
     "kvdb/upgrade.cpp",
     "kvdb/user_delegate.cpp",
+    "object/object_data_listener.cpp",
     "object/object_manager.cpp",
     "object/object_service_impl.cpp",
     "object/object_service_stub.cpp",

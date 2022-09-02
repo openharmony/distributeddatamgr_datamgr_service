@@ -86,7 +86,29 @@ int32_t ObjectServiceStub::ObjectStoreRetrieveOnRemote(MessageParcel &data, Mess
     sptr<IObjectRetrieveCallback> callback = iface_cast<IObjectRetrieveCallback>(obj);
     int32_t status = ObjectStoreRetrieve(bundleName, sessionId, callback);
     if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("ObjectStoreRevokeSaveOnRemote fail %d", static_cast<int>(status));
+        ZLOGE("ObjectStoreRetrieveOnRemote fail %d", static_cast<int>(status));
+        return -1;
+    }
+    return 0;
+}
+
+int32_t ObjectServiceStub::OnSubscribeRequest(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sessionId;
+    std::string bundleName;
+    sptr<IRemoteObject> obj;
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
+        ZLOGW("read device list failed.");
+        return -1;
+    }
+    if (obj == nullptr) {
+        ZLOGW("callback null");
+        return -1;
+    }
+    sptr<IObjectChangeCallback> callback = iface_cast<IObjectChangeCallback>(obj);
+    int32_t status = RegisterDataObserver(bundleName, sessionId, callback);
+    if (!reply.WriteInt32(static_cast<int>(status))) {
+        ZLOGE("OnSubscribeRequest fail %d", static_cast<int>(status));
         return -1;
     }
     return 0;

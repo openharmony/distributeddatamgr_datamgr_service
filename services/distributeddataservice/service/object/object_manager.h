@@ -24,11 +24,22 @@
 #include "timer.h"
 #include "types.h"
 #include "kv_store_delegate_manager.h"
+#include "object_data_listener.h"
+#include "concurrent_map.h"
+#include "kv_scheduler.h"
 #include "object_common.h"
 
 namespace OHOS {
 namespace DistributedObject {
 using SyncCallBack = std::function<void(const std::map<std::string, int32_t> &results)>;
+
+enum Status {
+    OBJECT_SUCCESS,
+    OBJECT_DBSTATUS_ERROR,
+    OBJECT_INNER_ERROR,
+    OBJECT_PERMISSION_DENIED,
+    OBJECT_STORE_NOT_FOUND
+};
 
 class SequenceSyncManager {
 public:
@@ -72,20 +83,20 @@ public:
     void SetData(const std::string &dataDir, const std::string &userId);
     int32_t Clear();
     int32_t DeleteByAppId(const std::string &appId);
+    void RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
+                                sptr<IObjectChangeCallback> &callback);
+    void UnregisterRemoteCallback(const std::string &bundleName, const std::string &sessionId);
+    void NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData);
+    void CloseAfterMinute();
+    int32_t Open();
 private:
-    enum Status {
-        SUCCESS,
-        DBSTATUS_ERROR,
-        INNER_ERROR
-    };
     constexpr static const char *SEPERATOR = "_";
     constexpr static const char *LOCAL_DEVICE = "local";
     constexpr static int8_t MAX_OBJECT_SIZE_PER_APP = 16;
     constexpr static int8_t DECIMAL_BASE = 10;
     DistributedDB::KvStoreNbDelegate *OpenObjectKvStore();
     void FlushClosedStore();
-    int32_t Open();
-    int32_t Close();
+    void Close();
     int32_t SetSyncStatus(bool status);
     int32_t SaveToStore(const std::string &appId, const std::string &sessionId, const std::string &toDeviceId,
                         const std::map<std::string, std::vector<uint8_t>> &data);
@@ -97,6 +108,7 @@ private:
     void ProcessKeyByIndex(std::string &key, uint8_t index);
     std::string GetPropertyName(const std::string &key);
     std::string GetSessionId(const std::string &key);
+    std::string GetLabel(const std::string &key);
     int64_t GetTime(const std::string &key);
     void ProcessOldEntry(const std::string &appId);
     void ProcessSyncCallback(const std::map<std::string, int32_t> &results, const std::string &appId,
@@ -118,12 +130,18 @@ private:
         return appId + SEPERATOR + sessionId + SEPERATOR;
     };
     std::recursive_mutex kvStoreMutex_;
+    std::mutex mutex_;
     DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
+    ObjectDataListener *objectDataListener_ = nullptr;
     uint32_t syncCount_ = 0;
     std::string userId_;
     std::atomic<bool> isSyncing_ = false;
     Utils::Timer timer_;
+    ConcurrentMap<std::string, sptr<IObjectChangeCallback>> callback_;
+    static constexpr size_t TIME_TASK_NUM = 1;
+    static constexpr int64_t INTERVAL = 1;
+    KvScheduler scheduler_ { TIME_TASK_NUM };
 };
 } // namespace DistributedObject
 } // namespace OHOS

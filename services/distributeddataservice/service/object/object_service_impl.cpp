@@ -29,8 +29,12 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedObject {
+using Commu = AppDistributedKv::CommunicationProvider;
+using StoreMetaData = OHOS::DistributedData::StoreMetaData;
+
 int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const std::string &sessionId,
     const std::string &deviceId, const std::map<std::string, std::vector<uint8_t>> &data,
     sptr<IObjectSaveCallback> callback)
@@ -45,16 +49,16 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     storeInfo.storeId = sessionId;
     std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
     if (appId.empty()) {
-        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = %{public}d",
+        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
             bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
-        return PERMISSION_DENIED;
+        return OBJECT_PERMISSION_DENIED;
     }
     if (!PermissionValidator::GetInstance().CheckSyncPermission(storeInfo.tokenId)) {
         ZLOGE("object save permission denied");
-        return PERMISSION_DENIED;
+        return OBJECT_PERMISSION_DENIED;
     }
     int32_t status = ObjectStoreManager::GetInstance()->Save(bundleName, sessionId, data, deviceId, callback);
-    if (status != SUCCESS) {
+    if (status != OBJECT_SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }
     return status;
@@ -71,7 +75,7 @@ void ObjectServiceImpl::Initialize()
     auto uid = IPCSkeleton::GetCallingUid();
     const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
     const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
-    DistributedData::StoreMetaData saveMeta;
+    StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.deviceId = localDeviceId;
     saveMeta.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
@@ -114,19 +118,19 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
     storeInfo.storeId = sessionId;
     std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
     if (appId.empty()) {
-        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = %{public}d",
+        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
             bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
-        return PERMISSION_DENIED;
+        return OBJECT_PERMISSION_DENIED;
     }
     if (!PermissionValidator::GetInstance().CheckSyncPermission(storeInfo.tokenId)) {
         ZLOGE("object revoke save permission denied");
-        return PERMISSION_DENIED;
+        return OBJECT_PERMISSION_DENIED;
     }
     int32_t status = ObjectStoreManager::GetInstance()->RevokeSave(bundleName, sessionId, callback);
-    if (status != SUCCESS) {
+    if (status != OBJECT_SUCCESS) {
         ZLOGE("revoke save fail %{public}d", status);
     }
-    return SUCCESS;
+    return OBJECT_SUCCESS;
 }
 
 int32_t ObjectServiceImpl::ObjectStoreRetrieve(
@@ -141,26 +145,46 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
     storeInfo.storeId = sessionId;
     std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
     if (appId.empty()) {
-        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = %{public}d",
+        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
             bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
-        return PERMISSION_DENIED;
+        return OBJECT_PERMISSION_DENIED;
     }
     if (!PermissionValidator::GetInstance().CheckSyncPermission(storeInfo.tokenId)) {
         ZLOGE("object retrieve permission denied");
-        return PERMISSION_DENIED;
+        return OBJECT_PERMISSION_DENIED;
     }
     int32_t status = ObjectStoreManager::GetInstance()->Retrieve(bundleName, sessionId, callback);
-    if (status != SUCCESS) {
+    if (status != OBJECT_SUCCESS) {
         ZLOGE("retrieve fail %{public}d", status);
     }
-    return SUCCESS;
+    return OBJECT_SUCCESS;
+}
+
+int32_t ObjectServiceImpl::RegisterDataObserver(
+    const std::string &bundleName, const std::string &sessionId, sptr<IObjectChangeCallback> callback)
+{
+    ZLOGD("begin.");
+    auto uid = IPCSkeleton::GetCallingUid();
+    DistributedData::CheckerManager::StoreInfo storeInfo;
+    storeInfo.uid = uid;
+    storeInfo.tokenId = GetCallingTokenID();
+    storeInfo.bundleName = bundleName;
+    storeInfo.storeId = sessionId;
+    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
+    if (appId.empty()) {
+        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
+              bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
+        return OBJECT_PERMISSION_DENIED;
+    }
+    ObjectStoreManager::GetInstance()->RegisterRemoteCallback(bundleName, sessionId, callback);
+    return OBJECT_SUCCESS;
 }
 
 void ObjectServiceImpl::Clear()
 {
     ZLOGI("begin.");
     int32_t status = ObjectStoreManager::GetInstance()->Clear();
-    if (status != SUCCESS) {
+    if (status != OBJECT_SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }
     return;
@@ -170,13 +194,44 @@ int32_t ObjectServiceImpl::DeleteByAppId(const std::string &bundleName)
 {
     ZLOGI("begin. %{public}s", bundleName.c_str());
     int32_t result = ObjectStoreManager::GetInstance()->DeleteByAppId(bundleName);
-    if (result != SUCCESS) {
+    if (result != OBJECT_SUCCESS) {
         pid_t uid = IPCSkeleton::GetCallingUid();
         uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-        ZLOGE("Delete fail %{public}d, bundleName = %{public}s, uid = %{public}d, tokenId = %{public}d",
+        ZLOGE("Delete fail %{public}d, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
             result, bundleName.c_str(), uid, tokenId);
     }
     return result;
+}
+
+int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
+{
+    ZLOGI("ObjectServiceImpl::ResolveAutoLaunch start");
+    ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
+          param.appId.c_str(), param.storeId.c_str(), DistributedData::Anonymous::Change(identifier).c_str());
+    std::vector<StoreMetaData> metaData;
+    auto prefix = StoreMetaData::GetPrefix({ Commu::GetInstance().GetLocalDevice().uuid, param.userId });
+    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+        ZLOGE("no store in user:%{public}s", param.userId.c_str());
+        return OBJECT_STORE_NOT_FOUND;
+    }
+    
+    for (const auto &storeMeta : metaData) {
+        auto identifierTag = DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId,
+                                                                                         storeMeta.storeId, true);
+        if (identifier != identifierTag) {
+            continue;
+        }
+        if (storeMeta.bundleName == DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
+            int32_t status = DistributedObject::ObjectStoreManager::GetInstance()->Open();
+            if (status != OBJECT_SUCCESS) {
+                ZLOGE("Open fail %{public}d", status);
+                continue;
+            }
+            DistributedObject::ObjectStoreManager::GetInstance()->CloseAfterMinute();
+            return OBJECT_SUCCESS;
+        }
+    }
+    return OBJECT_SUCCESS;
 }
 
 ObjectServiceImpl::ObjectServiceImpl()
