@@ -21,6 +21,8 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include "metadata/store_meta_data.h"
+#include "metadata/secret_key_meta_data.h"
 #include "rdb_syncer.h"
 #include "concurrent_map.h"
 #include "store_observer.h"
@@ -30,6 +32,8 @@
 namespace OHOS::DistributedRdb {
 class API_EXPORT RdbServiceImpl : public RdbServiceStub {
 public:
+    using StoreMetaData = OHOS::DistributedData::StoreMetaData;
+    using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
     RdbServiceImpl();
 
     void OnClientDied(pid_t pid);

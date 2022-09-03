@@ -16,6 +16,7 @@
 #define LOG_TAG "RdbServiceImpl"
 
 #include "rdb_service_impl.h"
+#include "crypto_manager.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "metadata/store_meta_data.h"
@@ -25,6 +26,7 @@
 #include "utils/anonymous.h"
 #include "accesstoken_kit.h"
 #include "permission/permission_validator.h"
+#include "types_export.h"
 
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::AppDistributedKv::CommunicationProvider;
@@ -32,8 +34,10 @@ using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
 using OHOS::DistributedData::StoreMetaData;
 using OHOS::DistributedData::Anonymous;
+using namespace OHOS::DistributedData;
 using DistributedDB::RelationalStoreManager;
 
+constexpr uint32_t ITERATE_TIMES = 10000;
 namespace OHOS::DistributedRdb {
 RdbServiceImpl::DeathRecipientImpl::DeathRecipientImpl(const DeathCallback& callback)
     : callback_(callback)
@@ -70,7 +74,8 @@ bool RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distribute
     std::string identifierHex = TransferStringToHex(identifier);
     ZLOGI("%{public}.6s", identifierHex.c_str());
     std::vector<StoreMetaData> entries;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({}), entries)) {
+    auto localId = CommunicationProvider::GetInstance().GetLocalDevice().uuid;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localId }), entries)) {
         ZLOGE("get meta failed");
         return false;
     }
@@ -92,6 +97,12 @@ bool RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distribute
         param.storeId = entry.storeId;
         param.path = entry.dataDir;
         param.option.storeObserver = &autoLaunchObserver_;
+        param.option.isEncryptedDb = entry.isEncrypt;
+        if (entry.isEncrypt) {
+            param.option.iterateTimes = ITERATE_TIMES;
+            param.option.cipher = DistributedDB::CipherType::AES_256_GCM;
+            RdbSyncer::GetPassword(entry, param.option.passwd);
+        }
         return true;
     }
 
