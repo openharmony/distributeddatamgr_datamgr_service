@@ -97,37 +97,17 @@ bool RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distribute
         param.storeId = entry.storeId;
         param.path = entry.dataDir;
         param.option.storeObserver = &autoLaunchObserver_;
-        param.option.isEncryptedDb = entry.isEncrypt;
-        param.option.iterateTimes = ITERATE_TIMES;
-        param.option.cipher = DistributedDB::CipherType::AES_256_GCM;
         if (entry.isEncrypt) {
-            GetPassword(entry, param.option.passwd);
+            param.option.isEncryptedDb = entry.isEncrypt;
+            param.option.iterateTimes = ITERATE_TIMES;
+            param.option.cipher = DistributedDB::CipherType::AES_256_GCM;
+            RdbSyncer::GetPassword(entry, param.option.passwd);
         }
         return true;
     }
 
     ZLOGE("not find identifier");
     return false;
-}
-
-bool RdbServiceImpl::GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password)
-{
-    if (!metaData.isEncrypt) {
-        return true;
-    }
-
-    std::string key = metaData.GetSecretKey();
-    DistributedData::SecretKeyMetaData secretKeyMeta;
-    MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
-    std::vector<uint8_t> decryptKey;
-    CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
-    if (password.SetValue(decryptKey.data(), decryptKey.size()) != DistributedDB::CipherPassword::OK) {
-        std::fill(decryptKey.begin(), decryptKey.end(), 0);
-        ZLOGE("Set secret key value failed. len is (%d)", int32_t(decryptKey.size()));
-        return false;
-    }
-    std::fill(decryptKey.begin(), decryptKey.end(), 0);
-    return true;
 }
 
 void RdbServiceImpl::OnClientDied(pid_t pid)

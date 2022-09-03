@@ -68,8 +68,6 @@ private:
 
     bool ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
 
-    bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
-
     void SyncerTimeout(std::shared_ptr<RdbSyncer> syncer);
 
     std::shared_ptr<RdbSyncer> GetRdbSyncer(const RdbSyncerParam& param);

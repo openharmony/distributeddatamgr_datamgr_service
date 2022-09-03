@@ -58,6 +58,9 @@ public:
     static std::string RemoveSuffix(const std::string& name);
 
     static int32_t GetInstIndex(uint32_t tokenId, const std::string &bundleName);
+
+    static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
+
 private:
     std::string GetUserId() const;
 
@@ -68,7 +71,6 @@ private:
     int32_t CreateMetaData(StoreMetaData &meta);
     int32_t InitDBDelegate(const StoreMetaData &meta);
     bool SetSecretKey(const StoreMetaData &meta);
-    bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
     DistributedDB::RelationalStoreDelegate* GetDelegate();
 

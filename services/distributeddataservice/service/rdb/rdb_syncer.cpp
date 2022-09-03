@@ -160,7 +160,7 @@ int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
     if (!param_.isEncrypt_ || param_.password_.empty()) {
         return RDB_OK;
     }
-    return SetSecretKey(meta) ? RDB_OK : RDB_ERROR;
+    return SetSecretKey(meta);
 }
 
 bool RdbSyncer::SetSecretKey(const StoreMetaData &meta)
@@ -175,7 +175,7 @@ bool RdbSyncer::SetSecretKey(const StoreMetaData &meta)
     param_.password_.assign(param_.password_.size(), 0);
     auto time = system_clock::to_time_t(system_clock::now());
     newSecretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
-    return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true);
+    return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true) ? RDB_OK : RDB_ERROR;
 }
 
 bool RdbSyncer::GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password)
