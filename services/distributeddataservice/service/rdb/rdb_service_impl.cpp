@@ -97,8 +97,8 @@ bool RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distribute
         param.storeId = entry.storeId;
         param.path = entry.dataDir;
         param.option.storeObserver = &autoLaunchObserver_;
+        param.option.isEncryptedDb = entry.isEncrypt;
         if (entry.isEncrypt) {
-            param.option.isEncryptedDb = entry.isEncrypt;
             param.option.iterateTimes = ITERATE_TIMES;
             param.option.cipher = DistributedDB::CipherType::AES_256_GCM;
             RdbSyncer::GetPassword(entry, param.option.passwd);
