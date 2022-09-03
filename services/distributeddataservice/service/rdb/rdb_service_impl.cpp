@@ -74,7 +74,8 @@ bool RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distribute
     std::string identifierHex = TransferStringToHex(identifier);
     ZLOGI("%{public}.6s", identifierHex.c_str());
     std::vector<StoreMetaData> entries;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({}), entries)) {
+    auto localId = CommunicationProvider::GetInstance().GetLocalDevice().uuid;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localId }), entries)) {
         ZLOGE("get meta failed");
         return false;
     }
