@@ -34,6 +34,7 @@ public:
     NetworkConfig *networks = nullptr;
     DirectoryConfig *directory = nullptr;
     BackupConfig *backup = nullptr;
+    ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

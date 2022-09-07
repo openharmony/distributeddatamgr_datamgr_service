@@ -43,5 +43,14 @@ bool GlobalConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(backup), backup);
     return true;
 }
+
+GlobalConfig::~GlobalConfig()
+{
+    delete components;
+    delete bundleChecker;
+    delete networks;
+    delete directory;
+    delete backup;
+}
 } // namespace DistributedData
 } // namespace OHOS
