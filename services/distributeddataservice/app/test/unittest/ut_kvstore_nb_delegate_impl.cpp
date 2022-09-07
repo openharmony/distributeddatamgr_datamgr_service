@@ -303,7 +303,7 @@ DBStatus UtKvStoreNbDelegateImpl::Rekey(const CipherPassword &password)
     return OK;
 }
 
-DBStatus UtKvStoreNbDelegateImpl::Export(const std::string &filePath, const CipherPassword &passwd)
+DBStatus UtKvStoreNbDelegateImpl::Export(const std::string &filePath, const CipherPassword &passwd, bool force)
 {
     return OK;
 }
@@ -394,5 +394,9 @@ DBStatus UtKvStoreNbDelegateImpl::UnSubscribeRemoteQuery(const std::vector<std::
 void UtKvStoreNbDelegateImpl::SetAutoSync(bool isAutoSync)
 {
     isAutoSync_ = isAutoSync;
+}
+DBStatus UtKvStoreNbDelegateImpl::RemoveDeviceData()
+{
+    return ALREADY_SET;
 }
 }  // namespace DistributedDB
