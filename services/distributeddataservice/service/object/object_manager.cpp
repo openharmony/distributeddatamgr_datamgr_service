@@ -38,11 +38,8 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
     option.createDirByStoreIdOnly = true;
     option.syncDualTupleMode = true;
     option.secOption = { DistributedDB::S1, DistributedDB::ECE };
-    {
-        std::lock_guard <std::mutex> lck(mutex_);
-        if (objectDataListener_ == nullptr) {
-            objectDataListener_ = new ObjectDataListener();
-        }
+    if (objectDataListener_ == nullptr) {
+        objectDataListener_ = new ObjectDataListener();
     }
     ZLOGD("start GetKvStore");
     kvStoreDelegateManager_->GetKvStore(ObjectCommon::OBJECTSTORE_DB_STOREID, option,
@@ -223,38 +220,62 @@ int32_t ObjectStoreManager::DeleteByAppId(const std::string &appId)
 }
 
 void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
-                                                sptr<IObjectChangeCallback> &callback)
+                                                const pid_t &pid, const uint32_t &tokenId,
+                                                sptr <IObjectChangeCallback> &callback)
 {
     if (bundleName.empty() || sessionId.empty()) {
         ZLOGD("ObjectStoreManager::RegisterRemoteCallback empty");
         return;
     }
-    std::string tmpKey = GetPrefixWithoutDeviceId(bundleName, sessionId);
-    callback_.Insert(tmpKey, callback);
+    CallbackInfo callbackInfo;
+    callbackInfo.sessionId = sessionId;
+    callbackInfo.bundleName = bundleName;
+    callbackInfo.pid = pid;
+    callbackInfo.tokenId = tokenId;
+    callback_.EraseIf([&tokenId, &pid](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
+        return (key.tokenId == tokenId && key.pid != pid);
+    });
+    callback_.Insert(callbackInfo, callback);
 }
 
-void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName, const std::string &sessionId)
+void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName, const pid_t &pid,
+                                                  const uint32_t &tokenId,
+                                                  const std::string &sessionId)
 {
-    if (bundleName.empty() || sessionId.empty()) {
+    if (bundleName.empty()) {
+        ZLOGD("bundleName is empty");
         return;
     }
-    std::string tmpKey = GetPrefixWithoutDeviceId(bundleName, sessionId);
-    callback_.Erase(tmpKey);
+    if (sessionId.empty()) {
+        ZLOGD("app exit to unregister callback");
+        callback_.EraseIf([&pid](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
+            return key.pid == pid;
+        });
+        return;
+    }
+    ZLOGD("ObjectStoreManager::UnregisterRemoteCallback start");
+    CallbackInfo tmpCallbackInfo = { bundleName, sessionId, tokenId, pid };
+    callback_.Erase(tmpCallbackInfo);
 }
 
 void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData)
 {
+    ZLOGD("ObjectStoreManager::NotifyChange start");
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
     for (const auto &item : changedData) {
-        std::string prefix = GetLabel(item.first);
-        if (callback_.Contains(prefix)) {
-            std::string propertyName = GetPropertyName(item.first);
-            data[prefix].insert_or_assign(std::move(propertyName), item.second);
-        }
+        callback_.ForEach([&item, &data, this](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
+            if (GetBundleName(item.first) == key.bundleName && GetSessionId(item.first) == key.sessionId) {
+                std::string propertyName = GetPropertyName(item.first);
+                std::string prefix = key.bundleName + key.sessionId;
+                data[prefix].insert_or_assign(std::move(propertyName), item.second);
+            }
+            return false;
+        });
     }
-    callback_.ForEach([&data](const std::string &key, sptr<IObjectChangeCallback> &value) {
-        if (data.count(key) != 0) {
-            value->Completed(data[key]);
+    callback_.ForEach([&data](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
+        std::string tmpKey = key.bundleName + key.sessionId;
+        if (data.count(tmpKey) != 0) {
+            value->Completed(data[tmpKey]);
         }
         return false;
     });
@@ -294,20 +315,13 @@ int32_t ObjectStoreManager::Open()
 
 void ObjectStoreManager::Close()
 {
-    {
-        std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
-        if (delegate_ == nullptr) {
-            return;
-        }
-        syncCount_--;
-        ZLOGI("closed a store, syncCount = %{public}d", syncCount_);
-        FlushClosedStore();
+    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
+    if (delegate_ == nullptr) {
+        return;
     }
-    std::lock_guard<std::mutex> lck(mutex_);
-    if (objectDataListener_ != nullptr) {
-        delete objectDataListener_;
-        objectDataListener_ = nullptr;
-    }
+    syncCount_--;
+    ZLOGI("closed a store, syncCount = %{public}d", syncCount_);
+    FlushClosedStore();
 }
 
 void ObjectStoreManager::SyncCompleted(
@@ -334,6 +348,10 @@ void ObjectStoreManager::FlushClosedStore()
             return;
         }
         delegate_ = nullptr;
+        if (objectDataListener_ != nullptr) {
+            delete objectDataListener_;
+            objectDataListener_ = nullptr;
+        }
     }
 }
 
@@ -543,18 +561,14 @@ void ObjectStoreManager::CloseAfterMinute()
                   std::bind(&ObjectStoreManager::Close, this));
 }
 
-std::string ObjectStoreManager::GetLabel(const std::string &key)
+std::string ObjectStoreManager::GetBundleName(const std::string &key)
 {
-    std::string result = key;
     std::size_t pos = key.find(SEPERATOR);
     if (pos == std::string::npos) {
         return std::string();
     }
-    pos = key.find(SEPERATOR, pos + 1);
-    if (pos == std::string::npos) {
-        return std::string();
-    }
-    result.erase(pos + 1);
+    std::string result = key;
+    result.erase(pos);
     return result;
 }
     
