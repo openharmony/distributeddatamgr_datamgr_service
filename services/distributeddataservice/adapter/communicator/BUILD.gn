@@ -45,7 +45,7 @@ ohos_static_library("distributeddata_communicator_static") {
 
   deps = [
     "../dfx:distributeddata_dfx_static",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
   ]
 
   external_deps = [
