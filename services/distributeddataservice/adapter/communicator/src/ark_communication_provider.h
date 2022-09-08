@@ -18,7 +18,6 @@
 
 #include "communication_provider_impl.h"
 #include "idevice_query.h"
-#include "app_device_handler.h"
 #include "app_pipe_mgr.h"
 #include "nocopyable.h"
 
