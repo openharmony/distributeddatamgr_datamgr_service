@@ -25,8 +25,8 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/interfaces/include/",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/include/",
   ]
 }
 
@@ -44,6 +44,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "metadata/meta_data_manager.cpp",
     "metadata/secret_key_meta_data.cpp",
     "metadata/store_meta_data.cpp",
+    "metadata/store_meta_data_local.cpp",
     "metadata/strategy_meta_data.cpp",
     "metadata/user_meta_data.cpp",
     "serializable/serializable.cpp",

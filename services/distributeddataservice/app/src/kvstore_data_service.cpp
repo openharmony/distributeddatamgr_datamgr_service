@@ -63,9 +63,9 @@
 #include "user_delegate.h"
 #include "utils/block_integer.h"
 #include "utils/converter.h"
+#include "utils/crypto.h"
 #include "string_ex.h"
 #include "permit_delegate.h"
-#include "utils/crypto.h"
 #include "runtime_config.h"
 
 namespace OHOS::DistributedKv {
@@ -80,7 +80,6 @@ using StrategyMetaData = DistributedData::StrategyMeta;
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
 constexpr size_t MAX_APP_ID_LENGTH = 256;
-
 KvStoreDataService::KvStoreDataService(bool runOnCreate)
     : SystemAbility(runOnCreate),
       accountMutex_(),
@@ -775,7 +774,7 @@ void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
-    static constexpr int32_t RETRY_TIMES = 10;
+    static constexpr int32_t RETRY_TIMES = 50;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
     for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIMES; ++retry) {
         if (!DeviceKvStoreImpl::GetLocalDeviceId().empty()) {
@@ -1212,6 +1211,18 @@ void KvStoreDataService::SetCompatibleIdentify(const AppDistributedKv::DeviceInf
 {
     for (const auto &item : deviceAccountMap_) {
         item.second.SetCompatibleIdentify(info.uuid);
+    }
+}
+
+void KvStoreDataService::SyncOnDeviceOnline(const AppDistributedKv::DeviceInfo &info)
+{
+    sptr<KVDBServiceImpl> kvdbService;
+    {
+        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
+        kvdbService = kvdbService_;
+    }
+    if (kvdbService && !info.uuid.empty()) {
+        kvdbService->OnDeviceOnLine(info.uuid);
     }
 }
 

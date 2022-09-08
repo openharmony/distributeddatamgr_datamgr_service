@@ -28,10 +28,16 @@ void KvStoreDeviceListener::OnDeviceChanged(
         return;
     }
     kvStoreDataService_.SetCompatibleIdentify(info);
+    kvStoreDataService_.SyncOnDeviceOnline(info);
 }
 
 KvStoreDeviceListener::KvStoreDeviceListener(KvStoreDataService &kvStoreDataService)
     : kvStoreDataService_(kvStoreDataService)
 {
+}
+
+AppDistributedKv::ChangeLevelType KvStoreDeviceListener::GetChangeLevelType() const
+{
+    return AppDistributedKv::ChangeLevelType::LOW;
 }
 } // namespace OHOS::DistributedKv

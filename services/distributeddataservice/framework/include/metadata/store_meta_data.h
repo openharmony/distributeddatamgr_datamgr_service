@@ -55,6 +55,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
     API_EXPORT std::string GetKey() const;
+    API_EXPORT std::string GetKeyLocal() const;
     API_EXPORT std::string GetSecretKey() const;
     API_EXPORT std::string GetStrategyKey() const;
     API_EXPORT std::string GetBackupSecretKey() const;

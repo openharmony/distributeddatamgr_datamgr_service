@@ -16,6 +16,7 @@
 #include "metadata/store_meta_data.h"
 
 #include "metadata/secret_key_meta_data.h"
+#include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
 #include "utils/constant.h"
 namespace OHOS {
@@ -124,6 +125,14 @@ std::string StoreMetaData::GetKey() const
         return GetKey({ deviceId, user, "default", bundleName, storeId });
     }
     return GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
+std::string StoreMetaData::GetKeyLocal() const
+{
+    if (instanceId == 0) {
+        return StoreMetaDataLocal::GetKey({ deviceId, user, "default", bundleName, storeId });
+    }
+    return StoreMetaDataLocal::GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
 }
 
 std::string StoreMetaData::GetSecretKey() const

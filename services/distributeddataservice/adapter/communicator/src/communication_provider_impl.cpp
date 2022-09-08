@@ -14,6 +14,7 @@
  */
 
 #include "communication_provider_impl.h"
+#include "device_manager_adapter.h"
 #include "log_print.h"
 
 #undef LOG_TAG
@@ -21,9 +22,10 @@
 
 namespace OHOS {
 namespace AppDistributedKv {
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 std::mutex CommunicationProviderImpl::mutex_;
-CommunicationProviderImpl::CommunicationProviderImpl(AppPipeMgr &appPipeMgr, AppDeviceHandler &deviceHandler)
-    : appPipeMgr_(appPipeMgr), appDeviceHandler_(deviceHandler)
+CommunicationProviderImpl::CommunicationProviderImpl(AppPipeMgr &appPipeMgr)
+    : appPipeMgr_(appPipeMgr)
 {
 }
 
@@ -34,35 +36,35 @@ CommunicationProviderImpl::~CommunicationProviderImpl()
 
 Status CommunicationProviderImpl::Initialize()
 {
-    appDeviceHandler_.Init();
+    DmAdapter::GetInstance().Init();
     return Status::SUCCESS;
 }
 
 Status CommunicationProviderImpl::StartWatchDeviceChange(const AppDeviceChangeListener *observer,
     const PipeInfo &pipeInfo)
 {
-    return appDeviceHandler_.StartWatchDeviceChange(observer, pipeInfo);
+    return DmAdapter::GetInstance().StartWatchDeviceChange(observer, pipeInfo);
 }
 
 Status CommunicationProviderImpl::StopWatchDeviceChange(const AppDeviceChangeListener *observer,
     const PipeInfo &pipeInfo)
 {
-    return appDeviceHandler_.StopWatchDeviceChange(observer, pipeInfo);
+    return DmAdapter::GetInstance().StopWatchDeviceChange(observer, pipeInfo);
 }
 
 DeviceInfo CommunicationProviderImpl::GetLocalDevice() const
 {
-    return appDeviceHandler_.GetLocalDevice();
+    return DmAdapter::GetInstance().GetLocalDevice();
 }
 
 std::vector<DeviceInfo> CommunicationProviderImpl::GetRemoteDevices() const
 {
-    return appDeviceHandler_.GetRemoteDevices();
+    return DmAdapter::GetInstance().GetRemoteDevices();
 }
 
 DeviceInfo CommunicationProviderImpl::GetDeviceInfo(const std::string &networkId) const
 {
-    return appDeviceHandler_.GetDeviceInfo(networkId);
+    return DmAdapter::GetInstance().GetDeviceInfo(networkId);
 }
 
 Status CommunicationProviderImpl::StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo)
@@ -98,26 +100,22 @@ bool CommunicationProviderImpl::IsSameStartedOnPeer(const PipeInfo &pipeInfo, co
 
 std::string CommunicationProviderImpl::GetUuidByNodeId(const std::string &nodeId) const
 {
-    return appDeviceHandler_.GetUuidByNodeId(nodeId);
+    return DmAdapter::GetInstance().GetUuidByNetworkId(nodeId);
 }
 
 DeviceInfo CommunicationProviderImpl::GetLocalBasicInfo() const
 {
-    return appDeviceHandler_.GetLocalBasicInfo();
+    return DmAdapter::GetInstance().GetLocalBasicInfo();
 }
 
 std::string CommunicationProviderImpl::ToNodeId(const std::string &id) const
 {
-    std::string ret = appDeviceHandler_.ToNodeID(id, "");
-    if (ret.empty()) {
-        ZLOGD("toNodeId failed.");
-    }
-    return ret;
+    return DmAdapter::GetInstance().ToNetworkID(id);
 }
 
 std::string CommunicationProviderImpl::GetUdidByNodeId(const std::string &nodeId) const
 {
-    return appDeviceHandler_.GetUdidByNodeId(nodeId);
+    return DmAdapter::GetInstance().GetUdidByNetworkId(nodeId);
 }
 
 void CommunicationProviderImpl::SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag)

@@ -23,6 +23,7 @@ enum class ChangeLevelType {
     HIGH,
     LOW,
     MIN,
+    READY,
 };
 class AppDeviceChangeListener {
 public:
@@ -30,7 +31,7 @@ public:
     API_EXPORT virtual void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const = 0;
     API_EXPORT virtual ChangeLevelType GetChangeLevelType() const
     {
-        return ChangeLevelType::LOW;
+        return ChangeLevelType::HIGH;
     }
 };
 }  // namespace AppDistributedKv

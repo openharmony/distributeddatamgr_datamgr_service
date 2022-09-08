@@ -25,7 +25,7 @@ public:
     explicit KvStoreDeviceListener(KvStoreDataService &kvStoreDataService);
     void OnDeviceChanged(
         const AppDistributedKv::DeviceInfo &info, const AppDistributedKv::DeviceChangeType &type) const override;
-
+    AppDistributedKv::ChangeLevelType GetChangeLevelType() const override;
 private:
     KvStoreDataService &kvStoreDataService_;
 };

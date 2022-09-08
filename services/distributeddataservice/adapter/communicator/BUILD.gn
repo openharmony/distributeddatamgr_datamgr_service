@@ -13,8 +13,6 @@
 import("//build/ohos.gni")
 ohos_static_library("distributeddata_communicator_static") {
   sources = [
-    "src/app_device_handler.cpp",
-    "src/app_device_handler.h",
     "src/app_pipe_handler.cpp",
     "src/app_pipe_handler.h",
     "src/app_pipe_mgr.cpp",
@@ -25,6 +23,7 @@ ohos_static_library("distributeddata_communicator_static") {
     "src/communication_provider_impl.cpp",
     "src/communication_provider_impl.h",
     "src/data_buffer.cpp",
+    "src/device_manager_adapter.cpp",
     "src/process_communicator_impl.cpp",
     "src/softbus_adapter.h",
     "src/softbus_adapter_standard.cpp",
@@ -36,16 +35,20 @@ ohos_static_library("distributeddata_communicator_static") {
     "../include/dfx",
     "../include/log",
     "../include/autils",
+    "../include/utils",
+    "//foundation/communication/dsoftbus/core/common/include",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/communication/dsoftbus/core/common/include",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
   deps = [
     "../dfx:distributeddata_dfx_static",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp:devicemanagersdk",
   ]
 
   external_deps = [

@@ -26,6 +26,7 @@
 #include "crypto_manager.h"
 #include "directory_manager.h"
 #include "ipc_skeleton.h"
+#include "kvstore_utils.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
@@ -326,6 +327,7 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
     appIdMeta.bundleName = metaData.bundleName;
     appIdMeta.appId = metaData.appId;
     MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
+    SaveLocalMetaData(options, metaData);
     Upgrade::GetInstance().UpdatePassword(metaData, password);
     ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s",
         appId.appId.c_str(), storeId.storeId.c_str(), metaData.instanceId, metaData.storeType,
@@ -394,6 +396,28 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
     metaData.schema = options.schema;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
+}
+
+void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaData &metaData)
+{
+    StoreMetaDataLocal localMetaData;
+    localMetaData.isAutoSync = options.autoSync;
+    localMetaData.isBackup = options.backup;
+    localMetaData.isEncrypt = options.encrypt;
+    localMetaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
+    localMetaData.schema = options.schema;
+    for (auto &policy : options.policies) {
+        OHOS::DistributedData::PolicyValue value;
+        value.type = policy.type;
+        value.index = policy.value.index();
+        if (const uint32_t *pval = std::get_if<uint32_t>(&policy.value)) {
+            value.valueUint = *pval;
+        } else if (const bool *pval = std::get_if<bool>(&policy.value)) {
+            value.valueBool = *pval;
+        }
+        localMetaData.values.emplace_back(value);
+    }
+    MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyLocal(), localMetaData, true);
 }
 
 StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreId &storeId)
@@ -613,6 +637,38 @@ void KVDBServiceImpl::OnUserChanged()
     AccountDelegate::GetInstance()->QueryUsers(users);
     std::set<int32_t> userIds(users.begin(), users.end());
     storeCache_.CloseExcept(userIds);
+}
+
+void KVDBServiceImpl::OnDeviceOnLine(const std::string &uuid)
+{
+    std::vector<StoreMetaData> metaData;
+    auto prefix = StoreMetaData::GetPrefix({ Commu::GetInstance().GetLocalDevice().uuid });
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+        ZLOGE("load meta failed!");
+        return;
+    }
+    for (const auto &data : metaData) {
+        StoreMetaDataLocal localMetaData;
+        MetaDataManager::GetInstance().LoadMeta(data.GetKeyLocal(), localMetaData, true);
+        if (localMetaData.values.empty()) {
+            continue;
+        }
+        for (const auto &value : localMetaData.values) {
+            if (value.type == PolicyType::IMMEDIATE_SYNC_ON_ONLINE) {
+                SyncInfo syncInfo;
+                syncInfo.seqId = KvStoreUtils::GenerateSequenceId();
+                syncInfo.mode = PUSH_PULL;
+                syncInfo.delay = 0;
+                syncInfo.devices = { uuid };
+                if (value.IsValueEffect()) {
+                    syncInfo.delay = value.valueUint;
+                }
+                ZLOGE("[online] appId:%{public}s, storeId:%{public}s", data.appId.c_str(), data.storeId.c_str());
+                Sync({ data.appId }, { data.storeId }, syncInfo);
+                break;
+            }
+        }
+    }
 }
 
 void KVDBServiceImpl::SyncAgent::ReInit(pid_t pid, const AppId &appId)
