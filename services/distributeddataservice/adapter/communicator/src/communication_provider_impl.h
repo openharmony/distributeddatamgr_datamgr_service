@@ -24,7 +24,7 @@ namespace OHOS {
 namespace AppDistributedKv {
 class CommunicationProviderImpl : public CommunicationProvider {
 public:
-    CommunicationProviderImpl(AppPipeMgr &appPipeMgr);
+    explicit ommunicationProviderImpl(AppPipeMgr &appPipeMgr);
 
     virtual ~CommunicationProviderImpl();
 

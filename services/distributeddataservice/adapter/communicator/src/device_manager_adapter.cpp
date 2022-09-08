@@ -25,7 +25,7 @@ constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {
 public:
-    DataMgrDmStateCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter){}
+    explicit DataMgrDmStateCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
     void OnDeviceOnline(const DmDeviceInfo &info) override;
     void OnDeviceOffline(const DmDeviceInfo &info) override;
     void OnDeviceChanged(const DmDeviceInfo &info) override;
@@ -57,7 +57,7 @@ void DataMgrDmStateCall::OnDeviceReady(const DmDeviceInfo &info)
 
 class DataMgrDmInitCall final : public DistributedHardware::DmInitCallback {
 public:
-    DataMgrDmInitCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter){}
+    explicit DataMgrDmInitCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
     void OnRemoteDied() override;
 
 private:
@@ -143,7 +143,7 @@ Status DeviceManagerAdapter::StopWatchDeviceChange(const AppDeviceChangeListener
 {
     if (observer == nullptr) {
         ZLOGE("observer is nullptr");
-        return Status:: INVALID_ARGUMENT;
+        return Status::INVALID_ARGUMENT;
     }
     if (!observers_.Erase(observer)) {
         ZLOGE("erase observer fail");
