@@ -40,7 +40,6 @@ private:
     ArkCommunicationProvider();
     std::shared_ptr<IDeviceQuery> deviceQuery_ {};
     AppPipeMgr appPipeMgrImpl_ {};
-    AppDeviceHandler appDeviceHandlerImpl_ {};
     bool isInited = false;
 };
 }  // namespace AppDistributedKv
