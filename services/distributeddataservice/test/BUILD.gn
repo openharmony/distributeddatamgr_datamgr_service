@@ -28,14 +28,14 @@ config("module_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/interfaces/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/storage/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/storage/src",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/storage/src/multiver",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/storage/src/sqlite",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/common/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/interfaces/src",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/storage/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/storage/src",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/storage/src/multiver",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/storage/src/sqlite",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/common/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/src",
     "../adapter/include/communicator",
     "//developtools/liblog",
     "common/distributeddb/include",
@@ -75,7 +75,7 @@ ohos_moduletest("DistributeddbKvTransactionTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -100,7 +100,7 @@ ohos_moduletest("DistributeddbKvTransactionPerfTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -123,7 +123,7 @@ ohos_moduletest("DistributeddbKvConcurrencyCrudTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -146,7 +146,7 @@ ohos_moduletest("DistributeddbKvBatchCrudTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -169,7 +169,7 @@ ohos_moduletest("DistributeddbKvCreateTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -192,7 +192,7 @@ ohos_moduletest("DistributeddbKvCrudTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -215,7 +215,7 @@ ohos_moduletest("DistributeddbKvObserverTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -238,7 +238,7 @@ ohos_moduletest("DistributeddbKvObserverSnapTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -260,7 +260,7 @@ ohos_moduletest("DistributeddbKvBackupTest") {
   sources += mul_sources
   configs = [ ":module_private_config" ]
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -283,7 +283,7 @@ ohos_moduletest("DistributeddbKvRealdelTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -308,7 +308,7 @@ ohos_moduletest("DistributeddbNbCreateTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -332,7 +332,7 @@ ohos_moduletest("DistributeddbNbCrudTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -356,7 +356,7 @@ ohos_moduletest("DistributeddbNbObserverTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -382,7 +382,7 @@ ohos_moduletest("DistributeddbNbCursorTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -407,7 +407,7 @@ ohos_moduletest("DistributeddbNbBackupTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -433,7 +433,7 @@ ohos_moduletest("DistributeddbNbBatchCrudTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -458,7 +458,7 @@ ohos_moduletest("DistributeddbNbLocalBatchCrudTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -482,7 +482,7 @@ ohos_moduletest("DistributeddbNbSchemaDbTest") {
   sources += mul_sources
   configs = [ ":module_private_config" ]
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -507,7 +507,7 @@ ohos_moduletest("DistributeddbNbPredicateQueryTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -532,7 +532,7 @@ ohos_moduletest("DistributeddbNbPredicateQueryExpandTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -557,7 +557,7 @@ ohos_moduletest("DistributeddbNbAutolaunchTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -582,7 +582,7 @@ ohos_moduletest("DistributedbNbDbDamageTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -607,7 +607,7 @@ ohos_moduletest("DistributeddbNbCrudPowerTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -632,7 +632,7 @@ ohos_moduletest("DistributeddbNbSchemaTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",
@@ -657,7 +657,7 @@ ohos_moduletest("DistributeddbNbSchemaUpgradeTest") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
     "//third_party/sqlite:sqlite",

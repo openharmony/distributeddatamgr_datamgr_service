@@ -36,7 +36,7 @@ ohos_static_library("distributeddata_uninstaller_static") {
   deps = [
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
   ]
 
   external_deps = [

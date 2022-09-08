@@ -25,8 +25,8 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/interfaces/include/",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/distributeddb/include/",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
   ]
 }
 
