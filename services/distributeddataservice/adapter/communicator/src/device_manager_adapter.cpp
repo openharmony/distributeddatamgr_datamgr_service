@@ -94,7 +94,7 @@ DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
 void DeviceManagerAdapter::Init()
 {
     ZLOGI("begin");
-    std::thread th = std::thread([this]() {
+    KvStoreTask task([this]() {
         constexpr int32_t RETRY_TIME = 300;
         constexpr int32_t RETRY_INTERVAL = 1000;
         for (int retry = 0; retry < RETRY_TIME; ++retry) {
@@ -105,8 +105,10 @@ void DeviceManagerAdapter::Init()
             std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL));
             ZLOGE("register device manager fail, try times:%d", retry);
         }
-    });
-    th.detach();
+    }, "dmAdapterInit");
+    if (RegDevCallback() != DM_OK) {
+        Execute(std::move(task));
+    }
 }
 
 int32_t DeviceManagerAdapter::RegDevCallback()
@@ -204,8 +206,8 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
     }
     ZLOGI("[offline] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
+    SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
     KvStoreTask task([this, &dvInfo]() {
-        SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
         std::vector<const AppDeviceChangeListener *> observers;
         observers.resize(observers_.Size());
         observers_.ForEach([&observers](const auto &key, auto &value) {
@@ -395,10 +397,7 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
     if (networkId.empty()) {
         return "";
     }
-    DeviceInfo dvInfo;
-    if (deviceInfos_.Get(networkId, dvInfo)) {
-        return dvInfo.uuid;
-    }
+
     std::string uuid;
     auto ret = DeviceManager::GetInstance().GetUuidByNetworkId(PKG_NAME, networkId, uuid);
     if (ret != DM_OK || uuid.empty()) {
@@ -412,10 +411,7 @@ std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkI
     if (networkId.empty()) {
         return "";
     }
-    DeviceInfo dvInfo;
-    if (deviceInfos_.Get(networkId, dvInfo)) {
-        return dvInfo.udid;
-    }
+
     std::string udid;
     auto ret = DeviceManager::GetInstance().GetUdidByNetworkId(PKG_NAME, networkId, udid);
     if (ret != DM_OK || udid.empty()) {
