@@ -21,7 +21,6 @@ bool PolicyValue::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(type)], type);
     SetValue(node[GET_NAME(valueUint)], valueUint);
-    SetValue(node[GET_NAME(valueBool)], valueBool);
     SetValue(node[GET_NAME(index)], index);
     return true;
 }
@@ -30,7 +29,6 @@ bool PolicyValue::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(type), type);
     GetValue(node, GET_NAME(valueUint), valueUint);
-    GetValue(node, GET_NAME(valueBool), valueBool);
     GetValue(node, GET_NAME(index), index);
     return true;
 }

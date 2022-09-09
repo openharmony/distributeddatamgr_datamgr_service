@@ -25,7 +25,6 @@ struct API_EXPORT PolicyValue final : public Serializable {
     uint32_t type = UINT32_MAX;
     uint32_t index = 0;
     uint32_t valueUint = 0;
-    bool valueBool = false;
     API_EXPORT PolicyValue() = default;
     API_EXPORT ~PolicyValue() = default;
     API_EXPORT bool IsValueEffect() const;
