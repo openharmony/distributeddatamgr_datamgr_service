@@ -38,6 +38,6 @@ KvStoreDeviceListener::KvStoreDeviceListener(KvStoreDataService &kvStoreDataServ
 
 AppDistributedKv::ChangeLevelType KvStoreDeviceListener::GetChangeLevelType() const
 {
-    return AppDistributedKv::ChangeLevelType::LOW;
+    return AppDistributedKv::ChangeLevelType::MIN;
 }
 } // namespace OHOS::DistributedKv
