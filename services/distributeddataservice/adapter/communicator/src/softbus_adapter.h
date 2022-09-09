@@ -24,57 +24,12 @@
 #include <vector>
 #include <concurrent_map.h>
 #include "app_data_change_listener.h"
+#include "block_data.h"
 #include "platform_specific.h"
 #include "session.h"
 #include "softbus_bus_center.h"
 namespace OHOS {
 namespace AppDistributedKv {
-enum IdType {
-    NETWORKID,
-    UUID,
-    UDID,
-};
-
-template <typename T>
-class BlockData {
-public:
-    explicit BlockData(uint32_t interval, const T &invalid = T()) : INTERVAL(interval), data_(invalid) {}
-    ~BlockData() {}
-
-public:
-    void SetValue(T &data)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        data_ = data;
-        isSet_ = true;
-        cv_.notify_one();
-    }
-
-    T GetValue()
-    {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cv_.wait_for(lock, std::chrono::seconds(INTERVAL), [this]() { return isSet_; });
-        T data = data_;
-        cv_.notify_one();
-        return data;
-    }
-
-    void Clear(const T &invalid = T())
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        isSet_ = false;
-        data_ = invalid;
-        cv_.notify_one();
-    }
-
-private:
-    bool isSet_ = false;
-    const uint32_t INTERVAL;
-    T data_;
-    std::mutex mutex_;
-    std::condition_variable cv_;
-};
-
 class SoftBusAdapter {
 public:
     SoftBusAdapter();

@@ -252,6 +252,9 @@ void StoreCache::DBStoreDelegate::OnChange(const DistributedDB::KvStoreChangedDa
         deletes.size(), delegate_->GetStoreId().c_str());
     ChangeNotification change(std::move(inserts), std::move(updates), std::move(deletes), {}, false);
     for (auto &observer : *observers) {
+        if (observer == nullptr) {
+            continue;
+        }
         observer->OnChange(change);
     }
 }

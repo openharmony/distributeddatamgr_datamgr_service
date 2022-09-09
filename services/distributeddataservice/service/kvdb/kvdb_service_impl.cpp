@@ -412,8 +412,6 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
         value.index = policy.value.index();
         if (const uint32_t *pval = std::get_if<uint32_t>(&policy.value)) {
             value.valueUint = *pval;
-        } else if (const bool *pval = std::get_if<bool>(&policy.value)) {
-            value.valueBool = *pval;
         }
         localMetaData.values.emplace_back(value);
     }
