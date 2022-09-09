@@ -220,7 +220,6 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
             }
             item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
         }
-
     }, "deviceOffline");
     Execute(std::move(task));
 }
@@ -260,7 +259,6 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
                 item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONLINE);
             }
         }
-
     }, "deviceReady");
     Execute(std::move(task));
 }
@@ -397,7 +395,10 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
     if (networkId.empty()) {
         return "";
     }
-
+    DeviceInfo dvInfo;
+    if (deviceInfos_.Get(networkId, dvInfo)) {
+        return dvInfo.uuid;
+    }
     std::string uuid;
     auto ret = DeviceManager::GetInstance().GetUuidByNetworkId(PKG_NAME, networkId, uuid);
     if (ret != DM_OK || uuid.empty()) {
@@ -411,7 +412,10 @@ std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkI
     if (networkId.empty()) {
         return "";
     }
-
+    DeviceInfo dvInfo;
+    if (deviceInfos_.Get(networkId, dvInfo)) {
+        return dvInfo.udid;
+    }
     std::string udid;
     auto ret = DeviceManager::GetInstance().GetUdidByNetworkId(PKG_NAME, networkId, udid);
     if (ret != DM_OK || udid.empty()) {
