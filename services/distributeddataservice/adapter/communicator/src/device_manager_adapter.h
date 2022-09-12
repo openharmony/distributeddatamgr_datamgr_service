@@ -24,6 +24,7 @@
 #include "device_manager.h"
 #include "device_manager_callback.h"
 #include "dm_device_info.h"
+#include "kv_scheduler.h"
 #include "kv_store_task.h"
 #include "kv_store_thread_pool.h"
 #include "lru_bucket.h"
@@ -48,10 +49,6 @@ public:
     DeviceInfo GetLocalBasicInfo();
     std::string ToUUID(const std::string &id);
     std::string ToNetworkID(const std::string &id);
-    void Online(const DmDeviceInfo &info);
-    void Offline(const DmDeviceInfo &info);
-    void OnChanged(const DmDeviceInfo &info);
-    void OnReady(const DmDeviceInfo &info);
 
 private:
     DeviceManagerAdapter();
@@ -62,6 +59,10 @@ private:
     void UpdateDeviceInfo();
     DeviceInfo GetDeviceInfoFromCache(const std::string &id);
     bool Execute(KvStoreTask &&task);
+    void Online(const DmDeviceInfo &info);
+    void Offline(const DmDeviceInfo &info);
+    void OnChanged(const DmDeviceInfo &info);
+    void OnReady(const DmDeviceInfo &info);
 
     std::mutex devInfoMutex_ {};
     DeviceInfo localInfo_ {};
@@ -69,6 +70,7 @@ private:
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
     static constexpr int POOL_SIZE = 1;
     std::shared_ptr<KvStoreThreadPool> threadPool_;
+    KvScheduler scheduler_ {1};
 };
 }  // namespace DistributedData
 }  // namespace OHOS

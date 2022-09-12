@@ -22,6 +22,7 @@ namespace OHOS::DistributedData {
 using namespace OHOS::DistributedHardware;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
+int32_t dmInitResult = -1;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {
 public:
@@ -98,17 +99,16 @@ void DeviceManagerAdapter::Init()
         constexpr int32_t RETRY_TIME = 300;
         constexpr int32_t RETRY_INTERVAL = 1000;
         for (int retry = 0; retry < RETRY_TIME; ++retry) {
-            if (RegDevCallback() == DM_OK) {
+            auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(RETRY_INTERVAL);
+            scheduler_.At(time, RegDevCallback());
+            if (dmInitResult == DM_OK) {
                 ZLOGI("register device manager success");
                 break;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL));
             ZLOGE("register device manager fail, try times:%d", retry);
         }
     }, "dmAdapterInit");
-    if (RegDevCallback() != DM_OK) {
-        Execute(std::move(task));
-    }
+    Execute(std::move(task));
 }
 
 int32_t DeviceManagerAdapter::RegDevCallback()
@@ -116,12 +116,12 @@ int32_t DeviceManagerAdapter::RegDevCallback()
     auto &devManager = DeviceManager::GetInstance();
     auto dmStateCall = std::make_shared<DataMgrDmStateCall>(*this);
     auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this);
-    int32_t errNo = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
-    if (errNo != DM_OK) {
-        return errNo;
+    dmInitResult = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
+    if (dmInitResult != DM_OK) {
+        return dmInitResult;
     }
-    errNo = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
-    return errNo;
+    dmInitResult = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
+    return dmInitResult;
 }
 
 Status DeviceManagerAdapter::StartWatchDeviceChange(const AppDeviceChangeListener *observer,
@@ -370,7 +370,7 @@ bool DeviceManagerAdapter::Execute(KvStoreTask &&task)
     if (threadPool_ == nullptr) {
         return false;
     }
-    threadPool_->AddTask(std::move(task));
+    threadPool_->1(std::move(task));
     return true;
 }
 
