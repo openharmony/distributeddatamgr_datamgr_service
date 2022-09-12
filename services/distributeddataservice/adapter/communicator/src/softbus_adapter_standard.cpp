@@ -138,7 +138,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     ZLOGD("[SendData] to %{public}s ,session:%{public}s, size:%{public}d", ToBeAnonymous(deviceId.deviceId).c_str(),
         pipeInfo.pipeId.c_str(), size);
     int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(),
-            DmAdapter::GetInstance().ToNetworkID(deviceId.deviceId).c_str(), "GROUP_ID", &attr);
+        DmAdapter::GetInstance().ToNetworkID(deviceId.deviceId).c_str(), "GROUP_ID", &attr);
     if (sessionId < 0) {
         ZLOGW("OpenSession %{public}s, type:%{public}d failed, sessionId:%{public}d",
             pipeInfo.pipeId.c_str(), info.msgType, sessionId);
@@ -205,7 +205,7 @@ bool SoftBusAdapter::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
     SessionAttribute attr;
     attr.dataType = TYPE_BYTES;
     int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(),
-            DmAdapter::GetInstance().ToNetworkID(peer.deviceId).c_str(), "GROUP_ID", &attr);
+        DmAdapter::GetInstance().ToNetworkID(peer.deviceId).c_str(), "GROUP_ID", &attr);
     ZLOGI("[IsSameStartedOnPeer] sessionId=%{public}d", sessionId);
     if (sessionId == INVALID_SESSION_ID) {
         ZLOGE("OpenSession return null, pipeInfo:%{public}s. Return false.", pipeInfo.pipeId.c_str());
