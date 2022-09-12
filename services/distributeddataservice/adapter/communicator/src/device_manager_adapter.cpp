@@ -95,19 +95,22 @@ DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
 void DeviceManagerAdapter::Init()
 {
     ZLOGI("begin");
-    constexpr int32_t INTERVAL = 500;
-    uint32_t tryTime = 0;
-    do {
-        auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(INTERVAL);
-        scheduler_.At(time, RegDevCallback());
-        if (dmInitResult == DM_OK) {
-            ZLOGD("register device manager success");
-            scheduler_.Clean();
-            break;
-        }
-        tryTime++;
-        ZLOGE("register device manager fail, try time:%{public}d", tryTime);
-    } while (true);
+    KvStoreTask task([this]() {
+        constexpr int32_t INTERVAL = 500;
+        uint32_t tryTime = 0;
+        do {
+            auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(INTERVAL);
+            scheduler_.At(time, RegDevCallback());
+            if (dmInitResult == DM_OK) {
+                ZLOGD("register device manager success");
+                scheduler_.Clean();
+                break;
+            }
+            tryTime++;
+            ZLOGE("register device manager fail, try time:%{public}d", tryTime);
+        } while (true);
+    }, "dmAdapterInit");
+    Execute(std::move(task));
 }
 
 std::function<void()> DeviceManagerAdapter::RegDevCallback()
