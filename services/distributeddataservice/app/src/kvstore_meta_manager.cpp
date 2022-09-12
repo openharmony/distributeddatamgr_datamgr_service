@@ -852,7 +852,7 @@ void KvStoreMetaManager::MetaDeviceChangeListenerImpl::OnDeviceChanged(
 
 AppDistributedKv::ChangeLevelType KvStoreMetaManager::MetaDeviceChangeListenerImpl::GetChangeLevelType() const
 {
-    return AppDistributedKv::ChangeLevelType::HIGH;
+    return AppDistributedKv::ChangeLevelType::LOW;
 }
 
 Status KvStoreMetaManager::QueryKvStoreMetaDataByDeviceIdAndAppId(const std::string &devId, const std::string &appId,

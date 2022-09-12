@@ -23,6 +23,7 @@
 #include "kvdb_service_stub.h"
 #include "kvstore_sync_manager.h"
 #include "metadata/store_meta_data.h"
+#include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
 #include "store_cache.h"
 namespace OHOS::DistributedKv {
@@ -54,10 +55,12 @@ public:
     Status GetBackupPassword(const AppId &appId, const StoreId &storeId,
         std::vector<uint8_t> &password) override;
     void OnUserChanged();
+    void OnDeviceOnLine(const std::string &uuid);
 
 private:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using StrategyMeta = OHOS::DistributedData::StrategyMeta;
+    using StoreMetaDataLocal = OHOS::DistributedData::StoreMetaDataLocal;
     using DBStore = DistributedDB::KvStoreNbDelegate;
     using DBManager = DistributedDB::KvStoreDelegateManager;
     using SyncEnd = KvStoreSyncManager::SyncEnd;
@@ -79,6 +82,7 @@ private:
     Status ConvertDbStatus(DBStatus status) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;
     std::shared_ptr<StoreCache::Observers> GetObservers(uint32_t tokenId, const std::string &storeId);
+    void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
 
     struct SyncAgent {
         pid_t pid_ = 0;

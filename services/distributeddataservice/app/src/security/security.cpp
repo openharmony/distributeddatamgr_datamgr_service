@@ -49,7 +49,7 @@ Security::~Security()
 
 AppDistributedKv::ChangeLevelType Security::GetChangeLevelType() const
 {
-    return AppDistributedKv::ChangeLevelType::HIGH;
+    return AppDistributedKv::ChangeLevelType::LOW;
 }
 
 DBStatus Security::RegOnAccessControlledEvent(const OnAccessControlledEvent &callback)

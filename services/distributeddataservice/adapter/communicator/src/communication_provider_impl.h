@@ -18,14 +18,13 @@
 
 #include "communication_provider.h"
 #include <set>
-#include "app_device_handler.h"
 #include "app_pipe_mgr.h"
 
 namespace OHOS {
 namespace AppDistributedKv {
 class CommunicationProviderImpl : public CommunicationProvider {
 public:
-    CommunicationProviderImpl(AppPipeMgr &appPipeMgr, AppDeviceHandler &deviceHandler);
+    explicit CommunicationProviderImpl(AppPipeMgr &appPipeMgr);
 
     virtual ~CommunicationProviderImpl();
 
@@ -74,7 +73,6 @@ protected:
 
 private:
     AppPipeMgr &appPipeMgr_;
-    AppDeviceHandler &appDeviceHandler_;
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS

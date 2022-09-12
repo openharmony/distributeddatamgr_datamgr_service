@@ -37,7 +37,7 @@ CommunicationProvider &ArkCommunicationProvider::Init()
     return instance;
 }
 ArkCommunicationProvider::ArkCommunicationProvider()
-    : CommunicationProviderImpl(appPipeMgrImpl_, appDeviceHandlerImpl_)
+    : CommunicationProviderImpl(appPipeMgrImpl_)
 {
 }
 

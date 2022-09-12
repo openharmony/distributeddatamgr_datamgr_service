@@ -38,6 +38,6 @@ void DeviceChangeListenerImpl::OnDeviceChanged(const AppDistributedKv::DeviceInf
 }
 AppDistributedKv::ChangeLevelType DeviceChangeListenerImpl::GetChangeLevelType() const
 {
-    return AppDistributedKv::ChangeLevelType::MIN;
+    return AppDistributedKv::ChangeLevelType::READY;
 }
 } // namespace OHOS::DistributedKv

@@ -18,7 +18,6 @@
 
 #include "communication_provider_impl.h"
 #include "idevice_query.h"
-#include "app_device_handler.h"
 #include "app_pipe_mgr.h"
 #include "nocopyable.h"
 
@@ -41,7 +40,6 @@ private:
     ArkCommunicationProvider();
     std::shared_ptr<IDeviceQuery> deviceQuery_ {};
     AppPipeMgr appPipeMgrImpl_ {};
-    AppDeviceHandler appDeviceHandlerImpl_ {};
     bool isInited = false;
 };
 }  // namespace AppDistributedKv
