@@ -373,7 +373,7 @@ bool DeviceManagerAdapter::Execute(KvStoreTask &&task)
     if (threadPool_ == nullptr) {
         return false;
     }
-    threadPool_->(std::move(task));
+    threadPool_->AddTask(std::move(task));
     return true;
 }
 
