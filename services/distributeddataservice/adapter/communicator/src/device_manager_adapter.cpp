@@ -96,17 +96,19 @@ void DeviceManagerAdapter::Init()
 {
     ZLOGI("begin");
     KvStoreTask task([this]() {
-        constexpr int32_t RETRY_TIME = 300;
-        constexpr int32_t RETRY_INTERVAL = 1000;
-        for (int retry = 0; retry < RETRY_TIME; ++retry) {
-            auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(RETRY_INTERVAL);
+        constexpr int32_t INTERVAL = 500;
+        uint32_t tryTime = 0;
+        do {
+            auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(INTERVAL);
             scheduler_.At(time, RegDevCallback());
             if (dmInitResult == DM_OK) {
-                ZLOGI("register device manager success");
+                ZLOGD("register device manager success");
+                scheduler_.Clean();
                 break;
             }
-            ZLOGE("register device manager fail, try times:%d", retry);
-        }
+            tryTime++;
+            ZLOGE("register device manager fail, try time:%{public}d", tryTime);
+        } while (true);
     }, "dmAdapterInit");
     Execute(std::move(task));
 }
@@ -371,7 +373,7 @@ bool DeviceManagerAdapter::Execute(KvStoreTask &&task)
     if (threadPool_ == nullptr) {
         return false;
     }
-    threadPool_->1(std::move(task));
+    threadPool_->(std::move(task));
     return true;
 }
 

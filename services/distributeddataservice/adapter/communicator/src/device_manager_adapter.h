@@ -50,6 +50,7 @@ public:
     DeviceInfo GetLocalBasicInfo();
     std::string ToUUID(const std::string &id);
     std::string ToNetworkID(const std::string &id);
+    friend class DataMgrDmStateCall;
 
 private:
     DeviceManagerAdapter();
