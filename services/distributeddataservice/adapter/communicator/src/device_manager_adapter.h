@@ -35,6 +35,7 @@ using namespace AppDistributedKv;
 using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
 using KvStoreTask = OHOS::DistributedKv::KvStoreTask;
 using KvStoreThreadPool = OHOS::DistributedKv::KvStoreThreadPool;
+using KvScheduler = OHOS::DistributedKv::KvScheduler;
 class DeviceManagerAdapter {
 public:
     static DeviceManagerAdapter &GetInstance();
@@ -53,7 +54,7 @@ public:
 private:
     DeviceManagerAdapter();
     ~DeviceManagerAdapter();
-    int32_t RegDevCallback();
+    std::function<void()> RegDevCallback();
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
     void SaveDeviceInfo(const DeviceInfo &deviceInfo, const DeviceChangeType &type);
     void UpdateDeviceInfo();

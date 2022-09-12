@@ -111,17 +111,18 @@ void DeviceManagerAdapter::Init()
     Execute(std::move(task));
 }
 
-int32_t DeviceManagerAdapter::RegDevCallback()
+std::function<void()> DeviceManagerAdapter::RegDevCallback()
 {
-    auto &devManager = DeviceManager::GetInstance();
-    auto dmStateCall = std::make_shared<DataMgrDmStateCall>(*this);
-    auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this);
-    dmInitResult = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
-    if (dmInitResult != DM_OK) {
-        return dmInitResult;
-    }
-    dmInitResult = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
-    return dmInitResult;
+    return [this]() {
+        auto &devManager = DeviceManager::GetInstance();
+        auto dmStateCall = std::make_shared<DataMgrDmStateCall>(*this);
+        auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this);
+        dmInitResult = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
+        if (dmInitResult != DM_OK) {
+            return;
+        }
+        dmInitResult = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
+    };
 }
 
 Status DeviceManagerAdapter::StartWatchDeviceChange(const AppDeviceChangeListener *observer,
