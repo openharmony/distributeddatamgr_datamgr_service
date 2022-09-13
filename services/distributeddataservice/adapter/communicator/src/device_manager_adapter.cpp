@@ -105,6 +105,7 @@ std::function<void()> DeviceManagerAdapter::RegDevCallback()
         auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this);
         auto initResult = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
         if (initResult != DM_OK) {
+            constexpr int32_t INTERVAL = 500;
             auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(INTERVAL);
             scheduler_.At(time, RegDevCallback());
             return;
