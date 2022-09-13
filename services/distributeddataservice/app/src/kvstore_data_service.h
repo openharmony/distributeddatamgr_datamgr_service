@@ -102,7 +102,7 @@ public:
 
     void SetCompatibleIdentify(const AppDistributedKv::DeviceInfo &info) const;
 
-    void SyncOnDeviceOnline(const AppDistributedKv::DeviceInfo &info);
+    void OnDeviceOnline(const AppDistributedKv::DeviceInfo &info);
 
     bool CheckBackupFileExist(const std::string &userId, const std::string &bundleName,
                               const std::string &storeId, int pathType);

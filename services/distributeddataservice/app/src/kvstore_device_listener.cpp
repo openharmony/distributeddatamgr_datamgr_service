@@ -28,7 +28,7 @@ void KvStoreDeviceListener::OnDeviceChanged(
         return;
     }
     kvStoreDataService_.SetCompatibleIdentify(info);
-    kvStoreDataService_.SyncOnDeviceOnline(info);
+    kvStoreDataService_.OnDeviceOnline(info);
 }
 
 KvStoreDeviceListener::KvStoreDeviceListener(KvStoreDataService &kvStoreDataService)
