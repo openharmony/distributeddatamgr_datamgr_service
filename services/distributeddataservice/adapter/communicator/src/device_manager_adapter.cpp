@@ -105,12 +105,12 @@ std::function<void()> DeviceManagerAdapter::RegDevCallback()
         auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this);
         auto resultInit = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
         auto resultState = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
-        if (resultInit != DM_OK || resultState != DM_OK) {
-            constexpr int32_t INTERVAL = 500;
-            auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(INTERVAL);
-            scheduler_.At(time, RegDevCallback());
+        if (resultInit == DM_OK && resultState == DM_OK) {
             return;
         }
+        constexpr int32_t INTERVAL = 500;
+        auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(INTERVAL);
+        scheduler_.At(time, RegDevCallback());
     };
 }
 
