@@ -1214,7 +1214,7 @@ void KvStoreDataService::SetCompatibleIdentify(const AppDistributedKv::DeviceInf
     }
 }
 
-void KvStoreDataService::SyncOnDeviceOnline(const AppDistributedKv::DeviceInfo &info)
+void KvStoreDataService::OnDeviceOnline(const AppDistributedKv::DeviceInfo &info)
 {
     sptr<KVDBServiceImpl> kvdbService;
     {

@@ -22,7 +22,6 @@ namespace OHOS::DistributedData {
 using namespace OHOS::DistributedHardware;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
-int32_t dmInitResult = -1;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {
 public:
@@ -95,22 +94,7 @@ DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
 void DeviceManagerAdapter::Init()
 {
     ZLOGI("begin");
-    KvStoreTask task([this]() {
-        constexpr int32_t INTERVAL = 500;
-        uint32_t tryTime = 0;
-        do {
-            auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(INTERVAL);
-            scheduler_.At(time, RegDevCallback());
-            if (dmInitResult == DM_OK) {
-                ZLOGD("register device manager success");
-                scheduler_.Clean();
-                break;
-            }
-            tryTime++;
-            ZLOGE("register device manager fail, try time:%{public}d", tryTime);
-        } while (true);
-    }, "dmAdapterInit");
-    Execute(std::move(task));
+    Execute(RegDevCallback());
 }
 
 std::function<void()> DeviceManagerAdapter::RegDevCallback()
@@ -119,11 +103,14 @@ std::function<void()> DeviceManagerAdapter::RegDevCallback()
         auto &devManager = DeviceManager::GetInstance();
         auto dmStateCall = std::make_shared<DataMgrDmStateCall>(*this);
         auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this);
-        dmInitResult = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
-        if (dmInitResult != DM_OK) {
+        auto resultInit = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
+        auto resultState = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
+        if (resultInit == DM_OK && resultState == DM_OK) {
             return;
         }
-        dmInitResult = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
+        constexpr int32_t INTERVAL = 500;
+        auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(INTERVAL);
+        scheduler_.At(time, RegDevCallback());
     };
 }
 
