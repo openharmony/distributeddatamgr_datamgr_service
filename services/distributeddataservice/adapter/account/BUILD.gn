@@ -30,6 +30,7 @@ ohos_static_library("distributeddata_account_static") {
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include" 
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -40,11 +41,9 @@ ohos_static_library("distributeddata_account_static") {
 
   external_deps = [
     "ability_base:want",
-    "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
   ]
 
   if (os_account_part_is_enabled) {

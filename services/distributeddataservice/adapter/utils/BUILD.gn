@@ -34,14 +34,9 @@ ohos_static_library("distributeddata_utils_static") {
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
 
   external_deps = [
-    "ability_base:base",
-    "ability_base:want",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
+#    "ability_base:want",
     "c_utils:utils",
-    "hitrace_native:hitrace_meter",
     "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
