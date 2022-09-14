@@ -34,7 +34,6 @@ ohos_static_library("distributeddata_utils_static") {
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
 
   external_deps = [
-#    "ability_base:want",
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
   ]

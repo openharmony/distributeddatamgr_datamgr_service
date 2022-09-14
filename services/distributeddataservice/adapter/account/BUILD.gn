@@ -30,7 +30,7 @@ ohos_static_library("distributeddata_account_static") {
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include" 
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
