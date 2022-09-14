@@ -62,9 +62,7 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   deps = [ "//third_party/openssl:libcrypto_shared" ]
 
-  external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
-  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"
