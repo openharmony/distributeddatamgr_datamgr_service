@@ -50,8 +50,8 @@ ohos_shared_library("distributeddata_adapter") {
   ]
 
   external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
     "hitrace_native:hitrace_meter",
+    "hiviewdfx_hilog_native:libhilog",
   ]
 
   public_configs = [ ":distributeddata_adapter_public_config" ]
