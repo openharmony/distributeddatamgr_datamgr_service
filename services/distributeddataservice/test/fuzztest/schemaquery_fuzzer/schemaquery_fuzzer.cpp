@@ -16,6 +16,7 @@
 #include "schemaquery_fuzzer.h"
 #include "distributed_kv_data_manager.h"
 #include "data_query.h"
+#include "sys/stat.h"
 
 using namespace std;
 using namespace OHOS;
