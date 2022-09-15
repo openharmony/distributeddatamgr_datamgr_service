@@ -36,8 +36,6 @@ ohos_static_library("distributeddata_permission_static") {
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
-    "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

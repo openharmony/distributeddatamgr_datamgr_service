@@ -63,6 +63,7 @@ config("module_private_config") {
     "../adapter/include/broadcaster",
     "../adapter/include/utils",
     "../adapter/include",
+    "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include",
 
     # for ipc_core interfaces.
     "//commonlibrary/c_utils/base/include",
@@ -132,10 +133,7 @@ ohos_shared_library("distributeddataservice") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
-    "device_auth:deviceauth_sdk",
-    "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
-    "init:libbegetutil",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",

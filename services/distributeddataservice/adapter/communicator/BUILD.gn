@@ -40,6 +40,9 @@ ohos_static_library("distributeddata_communicator_static") {
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -47,7 +50,6 @@ ohos_static_library("distributeddata_communicator_static") {
   deps = [
     "../dfx:distributeddata_dfx_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp:devicemanagersdk",
   ]
 
@@ -55,7 +57,6 @@ ohos_static_library("distributeddata_communicator_static") {
     "c_utils:utils",
     "dsoftbus:softbus_client",
     "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
   ]
 
   subsystem_name = "distributeddatamgr"
