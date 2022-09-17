@@ -165,6 +165,7 @@ int32_t ObjectServiceImpl::RegisterDataObserver(
 {
     ZLOGD("begin.");
     auto uid = IPCSkeleton::GetCallingUid();
+    auto pid = IPCSkeleton::GetCallingPid();
     DistributedData::CheckerManager::StoreInfo storeInfo;
     storeInfo.uid = uid;
     storeInfo.tokenId = GetCallingTokenID();
@@ -176,7 +177,27 @@ int32_t ObjectServiceImpl::RegisterDataObserver(
               bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
         return OBJECT_PERMISSION_DENIED;
     }
-    ObjectStoreManager::GetInstance()->RegisterRemoteCallback(bundleName, sessionId, callback);
+    ObjectStoreManager::GetInstance()->RegisterRemoteCallback(bundleName, sessionId, pid, storeInfo.tokenId, callback);
+    return OBJECT_SUCCESS;
+}
+
+int32_t ObjectServiceImpl::UnregisterDataChangeObserver(const std::string &bundleName, const std::string &sessionId)
+{
+    ZLOGD("begin.");
+    auto uid = IPCSkeleton::GetCallingUid();
+    auto pid = IPCSkeleton::GetCallingPid();
+    DistributedData::CheckerManager::StoreInfo storeInfo;
+    storeInfo.uid = uid;
+    storeInfo.tokenId = GetCallingTokenID();
+    storeInfo.bundleName = bundleName;
+    storeInfo.storeId = sessionId;
+    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
+    if (appId.empty()) {
+        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
+              bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
+        return OBJECT_PERMISSION_DENIED;
+    }
+    ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(bundleName, pid, storeInfo.tokenId, sessionId);
     return OBJECT_SUCCESS;
 }
 
@@ -232,6 +253,13 @@ int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, Dist
         }
     }
     return OBJECT_SUCCESS;
+}
+
+void ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const AppId &appId)
+{
+    ZLOGI("ObjectServiceImpl::OnAppExit uid=%{public}d, pid=%{public}d, tokenId=%{public}d, bundleName=%{public}s",
+          uid, pid, tokenId, (appId.appId).c_str());
+    ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(appId.appId, pid, tokenId);
 }
 
 ObjectServiceImpl::ObjectServiceImpl()

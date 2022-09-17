@@ -114,6 +114,22 @@ int32_t ObjectServiceStub::OnSubscribeRequest(MessageParcel &data, MessageParcel
     return 0;
 }
 
+int32_t ObjectServiceStub::OnUnsubscribeRequest(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sessionId;
+    std::string bundleName;
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId)) {
+        ZLOGW("read device list failed.");
+        return -1;
+    }
+    int32_t status = UnregisterDataChangeObserver(bundleName, sessionId);
+    if (!reply.WriteInt32(static_cast<int>(status))) {
+        ZLOGE("OnSubscribeRequest fail %d", static_cast<int>(status));
+        return -1;
+    }
+    return 0;
+}
+
 bool ObjectServiceStub::CheckInterfaceToken(MessageParcel& data)
 {
     auto localDescriptor = IObjectService::GetDescriptor();

@@ -850,6 +850,10 @@ void KvStoreDataService::StartService()
         if (kvdbService_) {
             kvdbService_->ResolveAutoLaunch(identifier, param);
         }
+        if (objectService_) {
+            ZLOGD("entering objectService ResolveAutoLaunch");
+            objectService_->ResolveAutoLaunch(identifier, param);
+        }
         return status;
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
@@ -1017,12 +1021,17 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverI
         observerProxy_->RemoveDeathRecipient(deathRecipient_);
     }
     sptr<KVDBServiceImpl> kvdbService;
+    sptr<DistributedObject::ObjectServiceImpl> objectService;
     {
         std::lock_guard<decltype(dataService_.mutex_)> lockGuard(dataService_.mutex_);
         kvdbService = dataService_.kvdbService_;
+        objectService = dataService_.objectService_;
     }
     if (kvdbService) {
         kvdbService->AppExit(uid_, pid_, token_, appId_);
+    }
+    if (objectService) {
+        objectService->OnAppExit(uid_, pid_, token_, appId_);
     }
 }
 

@@ -84,8 +84,10 @@ public:
     int32_t Clear();
     int32_t DeleteByAppId(const std::string &appId);
     void RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
-                                sptr<IObjectChangeCallback> &callback);
-    void UnregisterRemoteCallback(const std::string &bundleName, const std::string &sessionId);
+                                const pid_t &pid, const uint32_t &tokenId,
+                                sptr <IObjectChangeCallback> &callback);
+    void UnregisterRemoteCallback(const std::string &bundleName, const pid_t &pid, const uint32_t &tokenId,
+                                  const std::string &sessionId = "");
     void NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData);
     void CloseAfterMinute();
     int32_t Open();
@@ -94,6 +96,19 @@ private:
     constexpr static const char *LOCAL_DEVICE = "local";
     constexpr static int8_t MAX_OBJECT_SIZE_PER_APP = 16;
     constexpr static int8_t DECIMAL_BASE = 10;
+    struct CallbackInfo {
+        std::string bundleName;
+        std::string sessionId;
+        uint32_t tokenId;
+        pid_t pid;
+        bool operator < (const CallbackInfo &it_) const
+        {
+            if (pid < it_.pid) {
+                return true;
+            }
+            return false;
+        }
+    };
     DistributedDB::KvStoreNbDelegate *OpenObjectKvStore();
     void FlushClosedStore();
     void Close();
@@ -108,7 +123,7 @@ private:
     void ProcessKeyByIndex(std::string &key, uint8_t index);
     std::string GetPropertyName(const std::string &key);
     std::string GetSessionId(const std::string &key);
-    std::string GetLabel(const std::string &key);
+    std::string GetBundleName(const std::string &key);
     int64_t GetTime(const std::string &key);
     void ProcessOldEntry(const std::string &appId);
     void ProcessSyncCallback(const std::map<std::string, int32_t> &results, const std::string &appId,
@@ -129,6 +144,10 @@ private:
     {
         return appId + SEPERATOR + sessionId + SEPERATOR;
     };
+    inline std::string GetPrefixWithPid(const std::string &appId, const std::string &sessionId, const std::string &pid)
+    {
+        return appId + SEPERATOR + sessionId + SEPERATOR + pid;
+    };
     std::recursive_mutex kvStoreMutex_;
     std::mutex mutex_;
     DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager_ = nullptr;
@@ -138,7 +157,7 @@ private:
     std::string userId_;
     std::atomic<bool> isSyncing_ = false;
     Utils::Timer timer_;
-    ConcurrentMap<std::string, sptr<IObjectChangeCallback>> callback_;
+    ConcurrentMap<CallbackInfo, sptr<IObjectChangeCallback>> callback_;
     static constexpr size_t TIME_TASK_NUM = 1;
     static constexpr int64_t INTERVAL = 1;
     KvScheduler scheduler_ { TIME_TASK_NUM };

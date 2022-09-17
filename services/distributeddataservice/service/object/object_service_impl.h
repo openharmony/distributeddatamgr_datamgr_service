@@ -36,9 +36,11 @@ public:
         sptr<IObjectRevokeSaveCallback> callback) override;
     int32_t RegisterDataObserver(const std::string &bundleName, const std::string &sessionId,
         sptr<IObjectChangeCallback> callback) override;
+    int32_t UnregisterDataChangeObserver(const std::string &bundleName, const std::string &sessionId) override;
     void Clear();
     int32_t DeleteByAppId(const std::string &appId);
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
+    void OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const AppId &appId);
 };
 } // namespace OHOS::DistributedObject
 #endif
