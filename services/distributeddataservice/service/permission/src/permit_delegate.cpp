@@ -79,8 +79,9 @@ bool PermitDelegate::SyncActivate(const ActiveParam &param)
 
 bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
 {
-    ZLOGI("user:%s, appId:%s, storeId:%s, remote devId:%s, instanceId:%d, flag:%u", param.userId.c_str(),
-        param.appId.c_str(), param.storeId.c_str(), Anonymous::Change(param.deviceId).c_str(), param.instanceId, flag);
+    ZLOGI("user:%{public}s, appId:%{public}s, storeId:%{public}s, remote devId:%{public}s, instanceId:%{public}d,"
+          "flag:%{public}u", param.userId.c_str(), param.appId.c_str(), param.storeId.c_str(),
+          Anonymous::Change(param.deviceId).c_str(), param.instanceId, flag);
 
     auto devId = Commu::GetInstance().GetLocalDevice().uuid;
     StoreMetaData data;
