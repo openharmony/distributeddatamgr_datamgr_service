@@ -16,6 +16,7 @@
 #include "schemaquery_fuzzer.h"
 #include "distributed_kv_data_manager.h"
 #include "data_query.h"
+#include "sys/stat.h"
 
 using namespace std;
 using namespace OHOS;
@@ -33,7 +34,9 @@ void TestOpenSchemaStore001(std::string &fuzzedString)
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};
     options.schema = fuzzedString;
-    AppId appId = {"TestOpenSchemaStore001_appId_fuzz"};
+    options.area = EL1;
+    options.baseDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    AppId appId = {"schemaqueryfuzztest"};
     StoreId storeId = {"TestOpenSchemaStore001_storeId_fuzz"};
     g_kvManager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
     g_kvManager.CloseAllKvStore(appId);
@@ -68,7 +71,9 @@ void TestQuerySchemaStore001(int fuzzedInt, int64_t fuzzedLong, double fuzzedDou
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
-    AppId appId = {"TestQuerySchemaStore001_appId_fuzz"};
+    options.area = EL1;
+    options.baseDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    AppId appId = {"schemaqueryfuzztest"};
     StoreId storeId = {"TestQuerySchemaStore001_storeId_fuzz"};
     g_kvManager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
     DataQuery query;
@@ -94,7 +99,9 @@ void TestQuerySchemaStore002(int fuzzedInt, int64_t fuzzedLong, double fuzzedDou
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
-    AppId appId = {"TestQuerySchemaStore002_appId_fuzz"};
+    options.area = EL1;
+    options.baseDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    AppId appId = {"schemaqueryfuzztest"};
     StoreId storeId = {"TestQuerySchemaStore002_storeId_fuzz"};
     g_kvManager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
     DataQuery query;
@@ -119,7 +126,9 @@ void TestQuerySchemaStore003(int fuzzedInt, int64_t fuzzedLong, double fuzzedDou
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
-    AppId appId = {"TestQuerySchemaStore003_appId_fuzz"};
+    options.area = EL1;
+    options.baseDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    AppId appId = {"schemaqueryfuzztest"};
     StoreId storeId = {"TestQuerySchemaStore003_storeId_fuzz"};
     g_kvManager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
     DataQuery query;
@@ -142,7 +151,9 @@ void TestQuerySchemaStore004(int fuzzedInt, int64_t fuzzedLong, double fuzzedDou
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
-    AppId appId = {"TestQuerySchemaStore004_appId_fuzz"};
+    options.area = EL1;
+    options.baseDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    AppId appId = {"schemaqueryfuzztest"};
     StoreId storeId = {"TestQuerySchemaStore004_storeId_fuzz"};
     g_kvManager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
     DataQuery query;
@@ -165,7 +176,9 @@ void TestQuerySchemaStore005(int fuzzedInt, int64_t fuzzedLong, double fuzzedDou
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
-    AppId appId = {"TestQuerySchemaStore005_appId_fuzz"};
+    options.area = EL1;
+    options.baseDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    AppId appId = {"schemaqueryfuzztest"};
     StoreId storeId = {"TestQuerySchemaStore005_storeId_fuzz"};
     g_kvManager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
     DataQuery query;
@@ -188,7 +201,9 @@ void TestQuerySchemaStore006(int fuzzedInt, int64_t fuzzedLong, double fuzzedDou
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
-    AppId appId = {"TestQuerySchemaStore006_appId_fuzz"};
+    options.area = EL1;
+    options.baseDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    AppId appId = {"schemaqueryfuzztest"};
     StoreId storeId = {"TestQuerySchemaStore006_storeId_fuzz"};
     g_kvManager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
     DataQuery query;
@@ -211,7 +226,9 @@ void TestQuerySchemaStore007(std::string &fuzzedString)
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
-    AppId appId = {"TestQuerySchemaStore007_appId_fuzz"};
+    options.area = EL1;
+    options.baseDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    AppId appId = {"schemaqueryfuzztest"};
     StoreId storeId = {"TestQuerySchemaStore007_storeId_fuzz"};
     g_kvManager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
     DataQuery query;
@@ -228,7 +245,9 @@ void TestQuerySchemaStore008(int fuzzedInt, std::string &fuzzedString)
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
-    AppId appId = {"TestQuerySchemaStore008_appId_fuzz"};
+    options.area = EL1;
+    options.baseDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    AppId appId = {"schemaqueryfuzztest"};
     StoreId storeId = {"TestQuerySchemaStore008_storeId_fuzz"};
     g_kvManager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
     DataQuery query;
@@ -250,7 +269,9 @@ void TestBatch001(std::string &fuzzedString)
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};
     options.schema = VALID_SCHEMA_STRICT_DEFINE;
-    AppId appId = {"TestBatch001_appId_fuzz"};
+    options.area = EL1;
+    options.baseDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    AppId appId = {"schemaqueryfuzztest"};
     StoreId storeId = {"TestBatch001_storeId_fuzz"};
     g_kvManager.GetSingleKvStore(options, appId, storeId, singleKvStorePtr);
     if (singleKvStorePtr == nullptr) {
@@ -286,6 +307,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     auto fuzzedDouble = static_cast<double>(size);
     std::string fuzzedString(reinterpret_cast<const char *>(data), size);
 
+    std::string storeDir = "/data/service/el1/public/database/schemaqueryfuzztest";
+    mkdir(storeDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
+
     OHOS::TestOpenSchemaStore001(fuzzedString);
     OHOS::TestQuerySchemaStore001(fuzzedInt, fuzzedLong, fuzzedDouble, fuzzedBoolean, fuzzedString);
     OHOS::TestQuerySchemaStore002(fuzzedInt, fuzzedLong, fuzzedDouble, fuzzedBoolean, fuzzedString);
@@ -296,5 +320,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::TestQuerySchemaStore007(fuzzedString);
     OHOS::TestQuerySchemaStore008(fuzzedInt, fuzzedString);
     OHOS::TestBatch001(fuzzedString);
+
+    (void)remove("/data/service/el1/public/database/schemaqueryfuzztest/key");
+    (void)remove("/data/service/el1/public/database/schemaqueryfuzztest/kvdb");
+    (void)remove("/data/service/el1/public/database/schemaqueryfuzztest");
     return 0;
 }
