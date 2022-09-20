@@ -22,7 +22,6 @@
     "checkers": [
       "SystemChecker",
       "BundleChecker",
-      "MediaLibraryChecker",
       "PackageChecker",
       "ExternalChecker"
     ],
@@ -31,11 +30,6 @@
         "bundleName": "bundle_manager_service",
         "appId": "bundle_manager_service",
         "checker": "SystemChecker"
-      },
-      {
-        "bundleName": "com.ohos.medialibrary.medialibrarydata",
-        "appId": "com.ohos.medialibrary.medialibrarydata",
-        "checker": "MediaLibraryChecker"
       }
     ]
   },

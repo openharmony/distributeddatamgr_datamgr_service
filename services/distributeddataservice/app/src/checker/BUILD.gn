@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 ohos_static_library("distributeddata_checker_static") {
   sources = [
     "bundle_checker.cpp",
-    "media_lib_checker.cpp",
     "system_checker.cpp",
   ]
 
