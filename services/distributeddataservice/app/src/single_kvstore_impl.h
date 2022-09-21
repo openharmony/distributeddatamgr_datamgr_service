@@ -114,6 +114,7 @@ private:
     Status UnSubscribe(const std::vector<std::string> &deviceIds,
                        const std::string &query, uint64_t sequenceId) override;
     std::vector<std::string> MapNodeIdToUuids(const std::vector<std::string> &deviceIds);
+    Status checkStatus(DistributedDB::DBStatus status) const;
 
     // kvstore options.
     const Options options_;

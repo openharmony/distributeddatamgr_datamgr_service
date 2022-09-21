@@ -13,13 +13,13 @@
 * limitations under the License.
 */
 
+#include <gtest/gtest.h>
 #include "checker/checker_manager.h"
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
 #include "hap_token_info.h"
 #include "nativetoken_kit.h"
 #include "utils/crypto.h"
-#include <gtest/gtest.h>
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
