@@ -426,9 +426,9 @@ Status SingleKvStoreImpl::GetEntries(const Key &prefixKey, std::vector<Entry> &e
     if (statusTmp != Status::SUCCESS) {
         return statusTmp;
     }
-    return checkStatus(status);
+    return CheckStatus(status);
 }
-Status SingleKvStoreImpl::checkStatus(DistributedDB::DBStatus status) const
+Status SingleKvStoreImpl::CheckStatus(DistributedDB::DBStatus status) const
 {
     if (status == DistributedDB::DBStatus::BUSY || status == DistributedDB::DBStatus::DB_ERROR) {
         return Status::DB_ERROR;
