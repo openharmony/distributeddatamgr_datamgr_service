@@ -334,7 +334,7 @@ std::string RdbServiceImpl::GenIdentifier(const RdbSyncerParam &param)
     pid_t uid = GetCallingUid();
     uint32_t token = GetCallingTokenID();
     auto storeId = RdbSyncer::RemoveSuffix(param.storeName_);
-    CheckerManager::StoreInfo storeInfo{ uid, token, param.bundleName_,  storeId};
+    CheckerManager::StoreInfo storeInfo{ uid, token, param.bundleName_, storeId };
     std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
     std::string appId = CheckerManager::GetInstance().GetAppId(storeInfo);
     std::string identifier = RelationalStoreManager::GetRelationalStoreIdentifier(userId, appId, storeId);
