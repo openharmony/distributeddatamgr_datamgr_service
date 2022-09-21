@@ -18,6 +18,7 @@
 
 #include <set>
 #include <string>
+#include <vector>
 #include "app_device_change_listener.h"
 #include "commu_types.h"
 #include "concurrent_map.h"
@@ -65,6 +66,7 @@ private:
     void Offline(const DmDeviceInfo &info);
     void OnChanged(const DmDeviceInfo &info);
     void OnReady(const DmDeviceInfo &info);
+    std::vector<const AppDeviceChangeListener *> GetObservers();
 
     std::mutex devInfoMutex_ {};
     DeviceInfo localInfo_ {};

@@ -656,11 +656,8 @@ void KVDBServiceImpl::OnDeviceOnLine(const std::string &uuid)
                 SyncInfo syncInfo;
                 syncInfo.seqId = KvStoreUtils::GenerateSequenceId();
                 syncInfo.mode = PUSH_PULL;
-                syncInfo.delay = 0;
                 syncInfo.devices = { uuid };
-                if (value.IsValueEffect()) {
-                    syncInfo.delay = value.valueUint;
-                }
+                syncInfo.delay = (value.IsValueEffect() ? value.valueUint : 0);
                 ZLOGD("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
                 auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
                 KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
