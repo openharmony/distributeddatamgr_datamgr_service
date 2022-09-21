@@ -330,6 +330,9 @@ Status KvStoreDataService::UpdateMetaData(const Options &options, const StoreMet
     saveMeta.securityLevel = options.securityLevel;
     saveMeta.dataDir = KvStoreAppManager::GetDbDir(metaData);
     auto saved = MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
+    if (!saved) {
+        return Status::DB_ERROR;
+    }
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = saveMeta.bundleName;
     appIdMeta.appId = saveMeta.appId;
