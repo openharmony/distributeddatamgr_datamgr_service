@@ -38,7 +38,7 @@ struct RouteHead {
 };
 
 struct SessionDevicePair {
-    constexpr const int32_t MAX_DEVICE_ID = 65;
+    static constexpr int32_t MAX_DEVICE_ID = 65;
     char sourceId[MAX_DEVICE_ID];
     char targetId[MAX_DEVICE_ID];
 };
