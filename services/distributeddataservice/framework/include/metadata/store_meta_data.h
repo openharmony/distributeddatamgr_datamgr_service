@@ -47,6 +47,14 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     std::string user = "";
     std::string account = "";
 
+    enum StoreType {
+        STORE_KV_BEGIN = 0,
+        STORE_KV_END = 9,
+        STORE_RELATIONAL_BEGIN = 10,
+        STORE_RELATIONAL_END = 19,
+        STORE_BUTT = 255
+    };
+
     API_EXPORT StoreMetaData();
     API_EXPORT StoreMetaData(const std::string &userId, const std::string &appId, const std::string &storeId);
     API_EXPORT ~StoreMetaData();

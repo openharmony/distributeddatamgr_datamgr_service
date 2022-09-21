@@ -118,11 +118,16 @@ std::string DirectoryManager::GetType(const StoreMetaData &metaData) const
 
 std::string DirectoryManager::GetStore(const StoreMetaData &metaData) const
 {
-    if (metaData.storeType < 10) {
+    if (metaData.storeType >= StoreMetaData::StoreType::STORE_KV_BEGIN
+        && metaData.storeType <= StoreMetaData::StoreType::STORE_KV_END) {
         return "kvdb";
     }
     // rdb use empty session
-    return "rdb";
+    if (metaData.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN
+        && metaData.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END) {
+        return "rdb";
+    }
+    return "other";
 }
 
 std::string DirectoryManager::GetSecurity(const StoreMetaData &metaData) const
