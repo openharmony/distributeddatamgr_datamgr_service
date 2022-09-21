@@ -94,12 +94,16 @@ void ObjectServiceImpl::Initialize()
     saveMeta.storeType = KvStoreType::SINGLE_VERSION;
     ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, userId);
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
+    if (!saved) {
+        ZLOGE("SaveMeta failed");
+        return;
+    }
     DistributedData::AppIDMetaData appIdMeta;
     appIdMeta.bundleName = saveMeta.bundleName;
     appIdMeta.appId = saveMeta.appId;
     saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
     if (!saved) {
-        ZLOGE("SaveMeta failed");
+        ZLOGE("Save appIdMeta failed");
     }
     ZLOGI("SaveMeta success appId %{public}s, storeId %{public}s", saveMeta.appId.c_str(), saveMeta.storeId.c_str());
     return;
