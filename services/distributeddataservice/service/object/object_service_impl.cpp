@@ -179,7 +179,7 @@ int32_t ObjectServiceImpl::CheckBundleName(
     std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
     if (appId.empty()) {
         ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
-            bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
+              bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
         return OBJECT_PERMISSION_DENIED;
     }
     return OBJECT_SUCCESS;
