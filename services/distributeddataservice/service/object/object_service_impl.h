@@ -36,7 +36,8 @@ public:
         sptr<IObjectRevokeSaveCallback> callback) override;
     int32_t RegisterDataObserver(const std::string &bundleName, const std::string &sessionId,
         sptr<IObjectChangeCallback> callback) override;
-    int32_t VerifyBundleName(const std::string &bundleName, const std::string &sessionId, const uint32_t &tokenId);
+    int32_t VerifyPermissionByBundleName(
+        const std::string &bundleName, const std::string &sessionId, const uint32_t &tokenId);
     void Clear();
     int32_t DeleteByAppId(const std::string &appId);
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
