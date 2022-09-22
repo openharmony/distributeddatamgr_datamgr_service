@@ -151,7 +151,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         return Status::NETWORK_ERROR;
     }
     ZLOGD("[SendBytes] start, size is %{public}d, session type is %{public}d.", size, attr.dataType);
-    int32_t ret = SendBytes(sessionId, (void*)ptr, size);
+    int32_t ret = SendBytes(sessionId, static_cast<const void*>(ptr), size);
     if (ret != SOFTBUS_OK) {
         ZLOGE("[SendBytes] to %{public}d failed, ret:%{public}d.", sessionId, ret);
         return Status::ERROR;
