@@ -203,6 +203,9 @@ void RdbServiceImpl::OnDataChange(pid_t pid, const DistributedDB::StoreChangedDa
 
 void RdbServiceImpl::SyncerTimeout(std::shared_ptr<RdbSyncer> syncer)
 {
+    if (syncer == nullptr) {
+        return;
+    }
     ZLOGI("%{public}s", syncer->GetStoreId().c_str());
     syncers_.ComputeIfPresent(syncer->GetPid(), [this, &syncer](const auto& key, StoreSyncersType& syncers) {
         syncers.erase(syncer->GetStoreId());
