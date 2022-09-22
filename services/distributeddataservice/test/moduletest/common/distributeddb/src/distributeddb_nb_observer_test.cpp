@@ -2174,7 +2174,7 @@ HWTEST_F(DistributeddbNbObserverTest, RekeyNbDb001, TestSize.Level2)
     vector<Entry> entriesBatch;
     vector<Key> allKeys;
     GenerateFixedRecords(entriesBatch, allKeys, RECORDS_NUM_START, ONE_K_LONG_STRING, FOUR_M_LONG_STRING);
-    thread subThread([&]() {
+    thread subThread([&nbObserverDelegate, &entriesBatch]() {
         DBStatus putStatus = nbObserverDelegate->Put(entriesBatch[0].key, entriesBatch[0].value);
         EXPECT_TRUE(putStatus == OK || putStatus == BUSY);
     });
