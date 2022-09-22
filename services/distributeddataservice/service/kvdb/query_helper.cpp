@@ -314,7 +314,13 @@ bool QueryHelper::HandleIsNotNull(const std::vector<std::string> &words, int &po
 
 bool QueryHelper::HandleIn(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
 {
-    if (pointer + 4 > end || words.at(pointer + 3) != DataQuery::START_IN) { // This keyword has at least 4 params
+    //       | <-------------------------4---------------------------->|
+    // words [ DataQuery::IN, fieldType, fieldName, DataQuery::START_IN, ...valueList, DataQuery::END_IN ]
+    // index [ -------0-----, ----1----, ----2----, ---------3---------,      ...    , ---------n--------]
+    //                ^                                                                                  ^
+    //                |                                                                                  |
+    //              pointer                                                                             end
+    if (pointer + 4 > end || words.at(pointer + 3) != DataQuery::START_IN) {
         ZLOGE("In not enough params.");
         return false;
     }
@@ -343,7 +349,13 @@ bool QueryHelper::HandleIn(const std::vector<std::string> &words, int &pointer, 
 
 bool QueryHelper::HandleNotIn(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
 {
-    if (pointer + 4 > end || words.at(pointer + 3) != DataQuery::START_IN) { // This keyword has at least 4 params
+    //       |<--------------------------4-------------------------------->|
+    // words [ DataQuery::NOT_IN, fieldType, fieldName, DataQuery::START_IN, ...valueList, DataQuery::END_IN ]
+    // index [ --------0--------, ----1----, ----2----, ---------3---------,      ...    , ---------n--------]
+    //                 ^                                                                                     ^
+    //                 |                                                                                     |
+    //               pointer                                                                                end
+    if (pointer + 4 > end || words.at(pointer + 3) != DataQuery::START_IN) {
         ZLOGE("NotIn not enough params.");
         return false;
     }

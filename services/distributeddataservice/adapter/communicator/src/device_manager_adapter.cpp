@@ -152,12 +152,7 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
     ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
-    std::vector<const AppDeviceChangeListener *> observers;
-    observers.resize(observers_.Size());
-    observers_.ForEach([&observers](const auto &key, auto &value) {
-        observers.emplace_back(value);
-        return false;
-    });
+    auto observers = GetObservers();
     for (const auto &item : observers) { // notify db
         if (item == nullptr) {
             continue;
@@ -187,6 +182,17 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
     DeviceManager::GetInstance().NotifyEvent(PKG_NAME, DmNotifyEvent::DM_NOTIFY_EVENT_ONDEVICEREADY, event);
 }
 
+std::vector<const AppDeviceChangeListener *> DeviceManagerAdapter::GetObservers()
+{
+    std::vector<const AppDeviceChangeListener *> observers;
+    observers.resize(observers_.Size());
+    observers_.ForEach([&observers](const auto &key, auto &value) {
+        observers.emplace_back(value);
+        return false;
+    });
+    return observers;
+}
+
 void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
 {
     DeviceInfo dvInfo;
@@ -198,12 +204,7 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
     KvStoreTask task([this, dvInfo]() {
-        std::vector<const AppDeviceChangeListener *> observers;
-        observers.resize(observers_.Size());
-        observers_.ForEach([&observers](const auto &key, auto &value) {
-            observers.emplace_back(value);
-            return false;
-        });
+        auto observers = GetObservers();
         for (const auto &item : observers) {
             if (item == nullptr) {
                 continue;
@@ -235,12 +236,7 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
     ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     KvStoreTask task([this, dvInfo]() {
-        std::vector<const AppDeviceChangeListener *> observers;
-        observers.resize(observers_.Size());
-        observers_.ForEach([&observers](const auto &key, auto &value) {
-            observers.emplace_back(value);
-            return false;
-        });
+        auto observers = GetObservers();
         for (const auto &item : observers) {
             if (item == nullptr) {
                 continue;
