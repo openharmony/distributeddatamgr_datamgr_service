@@ -32,6 +32,7 @@ config("distributeddata_adapter_public_config") {
     "include/autils",
     "include/utils",
     "include",
+    "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
   ]
