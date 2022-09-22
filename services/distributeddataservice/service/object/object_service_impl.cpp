@@ -146,8 +146,7 @@ int32_t ObjectServiceImpl::RegisterDataObserver(
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    auto pid = IPCSkeleton::GetCallingPid();
-    ObjectStoreManager::GetInstance()->RegisterRemoteCallback(bundleName, sessionId, pid, tokenId, callback);
+    ObjectStoreManager::GetInstance()->RegisterRemoteCallback(bundleName, sessionId, callback);
     return OBJECT_SUCCESS;
 }
 
