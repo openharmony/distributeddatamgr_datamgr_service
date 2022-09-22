@@ -351,7 +351,6 @@ private:
 };
 #endif // endif of RELEASE_MODE_V2
 
-bool EndCaseDeleteDB(DistributedDB::KvStoreDelegateManager *&manager, DistributedDB::KvStoreNbDelegate *&nbDelegate,
-    const std::string base, bool isMemoryDb);
-
+    bool EndCaseDeleteDB(DistributedDB::KvStoreDelegateManager *&manager, DistributedDB::KvStoreNbDelegate *&nbDelegate,
+        const std::string base, bool isMemoryDb);
 #endif // DISTRIBUTEDDB_NB_TEST_TOOLS_H

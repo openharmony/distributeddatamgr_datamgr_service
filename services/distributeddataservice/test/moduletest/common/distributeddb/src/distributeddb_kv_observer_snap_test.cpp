@@ -1250,7 +1250,8 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Performance001, TestSize.Level3)
     EXPECT_TRUE(VerifyObserverResult(observer, CHANGED_ONE_TIME, INSERT_LIST, insertEntries));
     observer.Clear();
     double duration = std::chrono::duration_cast<microseconds>(observer.GetOnChangeTime() - tick).count();
-    MST_LOG(" Getting notice from subscribing to insert a record costs: %lldus.", (long long int)duration);
+    MST_LOG(" Getting notice from subscribing to insert a record costs: %lldus.",
+        static_cast<long long int>(duration));
 
     /**
      * @tc.steps: step3. put (k1,v2) to db and caclute the time of observer return info.
@@ -1264,7 +1265,8 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Performance001, TestSize.Level3)
     EXPECT_TRUE(VerifyObserverResult(observer, CHANGED_ONE_TIME, UPDATE_LIST, updateEntries));
     observer.Clear();
     duration = std::chrono::duration_cast<microseconds>(observer.GetOnChangeTime() - tick).count();
-    MST_LOG(" Getting notice from subscribing to update a record costs: %lldus.", (long long int)duration);
+    MST_LOG(" Getting notice from subscribing to update a record costs: %lldus.",
+        static_cast<long long int>(duration));
 
     /**
      * @tc.steps: step4. delete (k1) from db and caclute the time of observer return info.
@@ -1278,7 +1280,8 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Performance001, TestSize.Level3)
     EXPECT_TRUE(VerifyObserverResult(observer, CHANGED_ONE_TIME, DELETE_LIST, deleteEntries));
     observer.Clear();
     duration = std::chrono::duration_cast<microseconds>(observer.GetOnChangeTime() - tick).count();
-    MST_LOG(" Getting notice from subscribing to delete a record costs: %lldus.", (long long int)duration);
+    MST_LOG(" Getting notice from subscribing to delete a record costs: %lldus.",
+        static_cast<long long int>(duration));
 
     DBStatus statusRelease = g_observerSnapDelegate->ReleaseKvStoreSnapshot(snapshot);
     snapshot = nullptr;
@@ -1297,7 +1300,8 @@ void ObserverSnapBatchPerformance(KvStoreObserverImpl &observer, vector<Entry> &
     observer.Clear();
 
     double duration = std::chrono::duration_cast<microseconds>(observer.GetOnChangeTime() - tick).count();
-    MST_LOG(" Getting notice from subscribing to update 10 records costs: %lldus.", (long long int)duration);
+    MST_LOG(" Getting notice from subscribing to update 10 records costs: %lldus.",
+        static_cast<long long int>(duration));
     observer.Clear();
 }
 
@@ -1335,7 +1339,8 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Performance002, TestSize.Level3)
     EXPECT_TRUE(VerifyObserverResult(observer, CHANGED_ONE_TIME, INSERT_LIST, entriesBatch));
     observer.Clear();
     double duration = std::chrono::duration_cast<microseconds>(observer.GetOnChangeTime() - tick).count();
-    MST_LOG(" Getting notice from subscribing to insert 10 records costs: %lldus.", (long long int)duration);
+    MST_LOG(" Getting notice from subscribing to insert 10 records costs: %lldus.",
+        static_cast<long long int>(duration));
 
     /**
      * @tc.steps: step3. updateBatch (keys,values) and caclute the time of observer return info.
@@ -1355,7 +1360,8 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Performance002, TestSize.Level3)
     observer.Clear();
 
     duration = std::chrono::duration_cast<microseconds>(observer.GetOnChangeTime() - tick).count();
-    MST_LOG(" Getting notice from subscribing to delete 10 records costs: %lldus.", (long long int)duration);
+    MST_LOG(" Getting notice from subscribing to delete 10 records costs: %lldus.",
+        static_cast<long long int>(duration));
 
     DBStatus statusRelease = g_observerSnapDelegate->ReleaseKvStoreSnapshot(snapshot);
     snapshot = nullptr;
@@ -1380,7 +1386,7 @@ void ObserverSnapTransactionPerformance(vector<Entry> &entriesBatch,
 
     double duration = std::chrono::duration_cast<microseconds>(observer.GetOnChangeTime() - tick).count();
     MST_LOG(" Getting notice from subscribing a transaction to update 10 records costs: %lldus.",
-        (long long int)duration);
+        static_cast<long long int>(duration));
 
     tick = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now());
     statusStart = g_observerSnapDelegate->StartTransaction();
@@ -1392,7 +1398,8 @@ void ObserverSnapTransactionPerformance(vector<Entry> &entriesBatch,
     EXPECT_TRUE(VerifyObserverResult(observer, CHANGED_ONE_TIME, DELETE_LIST, entriesBatch));
     observer.Clear();
     duration = std::chrono::duration_cast<microseconds>(observer.GetOnChangeTime() - tick).count();
-    MST_LOG("Getting notice from subscribing to delete a record costs: %lldus.", (long long int)duration);
+    MST_LOG("Getting notice from subscribing to delete a record costs: %lldus.",
+        static_cast<long long int>(duration));
 }
 
 /*
@@ -1439,7 +1446,7 @@ HWTEST_F(DistributeddbKvObserverSnapTest, Performance003, TestSize.Level3)
 
     double duration = std::chrono::duration_cast<microseconds>(observer.GetOnChangeTime() - tick).count();
     MST_LOG(" Getting notice from subscribing a transaction to insert 10 records costs: %lldus.",
-        (long long int)duration);
+        static_cast<long long int>(duration));
 
     ObserverSnapTransactionPerformance(entriesBatch, allKeys, observer);
 

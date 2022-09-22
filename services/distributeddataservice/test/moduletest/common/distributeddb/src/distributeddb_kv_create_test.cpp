@@ -1625,7 +1625,7 @@ HWTEST_F(DistributeddbKvCreateTest, RekeyDb003, TestSize.Level3)
     GenerateFixedRecords(entriesBatch, allKeys, ONE_HUNDRED_RECORDS, ONE_K_LONG_STRING, ONE_M_LONG_STRING);
     EXPECT_EQ(DistributedTestTools::PutBatch(*result1, entriesBatch), OK);
     bool rekeyFlag1 = false;
-    thread subThread1([&]() {
+    thread subThread1([&result1, &rekeyFlag1]() {
         DBStatus status = result1->Rekey(g_passwd1);
         EXPECT_TRUE(status == OK || status == BUSY);
         rekeyFlag1 = true;
@@ -1657,7 +1657,7 @@ HWTEST_F(DistributeddbKvCreateTest, RekeyDb003, TestSize.Level3)
      * @tc.expected: step3. the put return BUSY.
      */
     bool rekeyFlag2 = false;
-    thread subThread2([&]() {
+    thread subThread2([&result1, &rekeyFlag2]() {
         DBStatus rekeyStatus = result1->Rekey(g_passwd2);
         EXPECT_TRUE(rekeyStatus == OK || rekeyStatus == BUSY);
         rekeyFlag2 = true;

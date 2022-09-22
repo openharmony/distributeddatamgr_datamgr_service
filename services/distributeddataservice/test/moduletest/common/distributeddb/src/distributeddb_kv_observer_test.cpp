@@ -1660,7 +1660,7 @@ HWTEST_F(DistributeddbKvObserverTest, ObserverRekeyDb001, TestSize.Level3)
     vector<Entry> entriesBatch;
     vector<Key> allKeys;
     GenerateFixedRecords(entriesBatch, allKeys, BATCH_RECORDS, ONE_K_LONG_STRING, FOUR_M_LONG_STRING);
-    thread subThread([&]() {
+    thread subThread([&kvObserverDelegate, &entriesBatch]() {
         DBStatus rekeyStatus = DistributedTestTools::PutBatch(*kvObserverDelegate, entriesBatch);
         EXPECT_TRUE(rekeyStatus == OK || rekeyStatus == BUSY);
     });
