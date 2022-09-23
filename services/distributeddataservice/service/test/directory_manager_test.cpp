@@ -94,6 +94,7 @@ HWTEST_F(DirectoryManagerTest, GetBundleStorePath, TestSize.Level0)
     metaData.securityLevel = SecurityLevel::S2;
     metaData.area = 1;
     metaData.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    metaData.storeType = KvStoreType::SINGLE_VERSION;
     HapTokenInfo tokenInfo;
     AccessTokenKit::GetHapTokenInfo(metaData.tokenId, tokenInfo);
     metaData.appId = tokenInfo.appID;
@@ -117,6 +118,7 @@ HWTEST_F(DirectoryManagerTest, GetHapStorePath, TestSize.Level0)
     metaData.dataDir = "/data/app/el2/100/database/com.sample.helloworld/example.hap/kvdb";
     metaData.securityLevel = SecurityLevel::S2;
     metaData.area = 2;
+    metaData.storeType = KvStoreType::SINGLE_VERSION;
     auto path = DirectoryManager::GetInstance().GetStorePath(metaData);
     EXPECT_EQ(path, metaData.dataDir);
 }
@@ -138,6 +140,7 @@ HWTEST_F(DirectoryManagerTest, GetSaStorePath, TestSize.Level0)
     metaData.securityLevel = SecurityLevel::S2;
     metaData.area = 1;
     metaData.tokenId = GetAccessTokenId(&tokenParam_);
+    metaData.storeType = KvStoreType::SINGLE_VERSION;
     auto path = DirectoryManager::GetInstance().GetStorePath(metaData);
     EXPECT_EQ(path, metaData.dataDir);
 }
