@@ -93,18 +93,12 @@ public:
 
     DBStatus DeleteLocalBatch(const std::vector<Key> &keys) override;
     // Get the SecurityOption of this kvStore.
-    DBStatus GetSecurityOption(SecurityOption &option) const override
-    {
-        return DBStatus::NOT_SUPPORT;
-    }
+    DBStatus GetSecurityOption(SecurityOption &option) const override;
 
     // Set a notify callback, it will be called when remote push or push_pull finished.
     // If Repeat set, subject to the last time.
     // If set nullptr, means unregister the notify.
-    DBStatus SetRemotePushFinishedNotify(const RemotePushFinisheNotifier &notifier) override
-    {
-        return DBStatus::NOT_SUPPORT;
-    };
+    DBStatus SetRemotePushFinishedNotify(const RemotePushFinisheNotifier &notifier) override;
     DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
                   const std::function<void(const std::map<std::string, DBStatus> &)> &onComplete, const Query &query,
                   bool wait) override;
