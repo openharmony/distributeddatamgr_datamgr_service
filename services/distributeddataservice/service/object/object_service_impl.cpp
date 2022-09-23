@@ -40,24 +40,16 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     sptr<IObjectSaveCallback> callback)
 {
     ZLOGI("begin.");
-    auto uid = IPCSkeleton::GetCallingUid();
-
-    DistributedData::CheckerManager::StoreInfo storeInfo;
-    storeInfo.uid = uid;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.bundleName = bundleName;
-    storeInfo.storeId = sessionId;
-    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
-    if (appId.empty()) {
-        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
-            bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
-        return OBJECT_PERMISSION_DENIED;
+    uint32_t tokenId = GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
     }
-    if (!PermissionValidator::GetInstance().CheckSyncPermission(storeInfo.tokenId)) {
+    if (!PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object save permission denied");
         return OBJECT_PERMISSION_DENIED;
     }
-    int32_t status = ObjectStoreManager::GetInstance()->Save(bundleName, sessionId, data, deviceId, callback);
+    status = ObjectStoreManager::GetInstance()->Save(bundleName, sessionId, data, deviceId, callback);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }
@@ -113,24 +105,16 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
     const std::string &bundleName, const std::string &sessionId, sptr<IObjectRevokeSaveCallback> callback)
 {
     ZLOGI("begin.");
-    auto uid = IPCSkeleton::GetCallingUid();
-
-    DistributedData::CheckerManager::StoreInfo storeInfo;
-    storeInfo.uid = uid;
-    storeInfo.tokenId = GetCallingTokenID();
-    storeInfo.bundleName = bundleName;
-    storeInfo.storeId = sessionId;
-    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
-    if (appId.empty()) {
-        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
-            bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
-        return OBJECT_PERMISSION_DENIED;
+    uint32_t tokenId = GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
     }
-    if (!PermissionValidator::GetInstance().CheckSyncPermission(storeInfo.tokenId)) {
+    if (!PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object revoke save permission denied");
         return OBJECT_PERMISSION_DENIED;
     }
-    int32_t status = ObjectStoreManager::GetInstance()->RevokeSave(bundleName, sessionId, callback);
+    status = ObjectStoreManager::GetInstance()->RevokeSave(bundleName, sessionId, callback);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("revoke save fail %{public}d", status);
     }
@@ -141,23 +125,16 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
     const std::string &bundleName, const std::string &sessionId, sptr<IObjectRetrieveCallback> callback)
 {
     ZLOGI("begin.");
-    auto uid = IPCSkeleton::GetCallingUid();
-    DistributedData::CheckerManager::StoreInfo storeInfo;
-    storeInfo.uid = uid;
-    storeInfo.tokenId = GetCallingTokenID();
-    storeInfo.bundleName = bundleName;
-    storeInfo.storeId = sessionId;
-    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
-    if (appId.empty()) {
-        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
-            bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
-        return OBJECT_PERMISSION_DENIED;
+    uint32_t tokenId = GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
     }
-    if (!PermissionValidator::GetInstance().CheckSyncPermission(storeInfo.tokenId)) {
+    if (!PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object retrieve permission denied");
         return OBJECT_PERMISSION_DENIED;
     }
-    int32_t status = ObjectStoreManager::GetInstance()->Retrieve(bundleName, sessionId, callback);
+    status = ObjectStoreManager::GetInstance()->Retrieve(bundleName, sessionId, callback);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("retrieve fail %{public}d", status);
     }
@@ -168,31 +145,35 @@ int32_t ObjectServiceImpl::RegisterDataObserver(
     const std::string &bundleName, const std::string &sessionId, sptr<IObjectChangeCallback> callback)
 {
     ZLOGD("begin.");
-    auto uid = IPCSkeleton::GetCallingUid();
-    auto pid = IPCSkeleton::GetCallingPid();
-    DistributedData::CheckerManager::StoreInfo storeInfo;
-    storeInfo.uid = uid;
-    storeInfo.tokenId = GetCallingTokenID();
-    storeInfo.bundleName = bundleName;
-    storeInfo.storeId = sessionId;
-    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
-    if (appId.empty()) {
-        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
-              bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
-        return OBJECT_PERMISSION_DENIED;
+    uint32_t tokenId = GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
     }
-    ObjectStoreManager::GetInstance()->RegisterRemoteCallback(bundleName, sessionId, pid, storeInfo.tokenId, callback);
+    auto pid = IPCSkeleton::GetCallingPid();
+    ObjectStoreManager::GetInstance()->RegisterRemoteCallback(bundleName, sessionId, pid, tokenId, callback);
     return OBJECT_SUCCESS;
 }
 
 int32_t ObjectServiceImpl::UnregisterDataChangeObserver(const std::string &bundleName, const std::string &sessionId)
 {
     ZLOGD("begin.");
-    auto uid = IPCSkeleton::GetCallingUid();
+    uint32_t tokenId = GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
+    }
     auto pid = IPCSkeleton::GetCallingPid();
+    ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(bundleName, pid, tokenId, sessionId);
+    return OBJECT_SUCCESS;
+}
+
+int32_t ObjectServiceImpl::IsBundleNameEqualTokenId(
+    const std::string &bundleName, const std::string &sessionId, const uint32_t &tokenId)
+{
     DistributedData::CheckerManager::StoreInfo storeInfo;
-    storeInfo.uid = uid;
-    storeInfo.tokenId = GetCallingTokenID();
+    storeInfo.uid = IPCSkeleton::GetCallingUid();
+    storeInfo.tokenId = tokenId;
     storeInfo.bundleName = bundleName;
     storeInfo.storeId = sessionId;
     std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
@@ -201,7 +182,6 @@ int32_t ObjectServiceImpl::UnregisterDataChangeObserver(const std::string &bundl
               bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
         return OBJECT_PERMISSION_DENIED;
     }
-    ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(bundleName, pid, storeInfo.tokenId, sessionId);
     return OBJECT_SUCCESS;
 }
 
