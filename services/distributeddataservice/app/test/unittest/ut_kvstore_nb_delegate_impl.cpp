@@ -392,18 +392,18 @@ DBStatus UtKvStoreNbDelegateImpl::UnSubscribeRemoteQuery(const std::vector<std::
 }
 void UtKvStoreNbDelegateImpl::SetAutoSync(bool isAutoSync)
 {
-  isAutoSync_ = isAutoSync;
+    isAutoSync_ = isAutoSync;
 }
 DBStatus UtKvStoreNbDelegateImpl::RemoveDeviceData()
 {
-  return ALREADY_SET;
+    return ALREADY_SET;
 }
 DBStatus UtKvStoreNbDelegateImpl::GetSecurityOption(SecurityOption &option) const
 {
-  return DBStatus::NOT_SUPPORT;
+    return DBStatus::NOT_SUPPORT;
 }
 DBStatus UtKvStoreNbDelegateImpl::SetRemotePushFinishedNotify(const RemotePushFinisheNotifier &notifier)
 {
-  return DBStatus::NOT_SUPPORT;
+    return DBStatus::NOT_SUPPORT;
 }
 }  // namespace DistributedDB
