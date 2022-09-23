@@ -390,7 +390,6 @@ DBStatus UtKvStoreNbDelegateImpl::UnSubscribeRemoteQuery(const std::vector<std::
 {
     return ALREADY_SET;
 }
-
 void UtKvStoreNbDelegateImpl::SetAutoSync(bool isAutoSync)
 {
     isAutoSync_ = isAutoSync;
@@ -398,5 +397,13 @@ void UtKvStoreNbDelegateImpl::SetAutoSync(bool isAutoSync)
 DBStatus UtKvStoreNbDelegateImpl::RemoveDeviceData()
 {
     return ALREADY_SET;
+}
+DBStatus UtKvStoreNbDelegateImpl::GetSecurityOption(SecurityOption &option) const
+{
+    return DBStatus::NOT_SUPPORT;
+}
+DBStatus UtKvStoreNbDelegateImpl::SetRemotePushFinishedNotify(const RemotePushFinisheNotifier &notifier)
+{
+    return DBStatus::NOT_SUPPORT;
 }
 }  // namespace DistributedDB
