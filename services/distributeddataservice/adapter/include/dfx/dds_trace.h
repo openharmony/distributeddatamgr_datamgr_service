@@ -16,11 +16,13 @@
 #ifndef DDS_TRACE_H
 #define DDS_TRACE_H
 
-#include <string>
 #include <atomic>
-#include "visibility.h"
+#include <cinttypes>
+#include <string>
+#include <functional>
+#include <chrono>
 #include "hitrace/trace.h"
-
+#include "hitrace_meter.h"
 namespace OHOS {
 namespace DistributedDataDfx {
 enum TraceSwitch {
@@ -29,25 +31,69 @@ enum TraceSwitch {
     API_PERFORMANCE_TRACE_ON = 0x02,
     TRACE_CHAIN_ON = 0x04,
 };
-class DdsTrace {
+class __attribute__((visibility("hidden"))) DdsTrace {
 public:
-    KVSTORE_API DdsTrace(const std::string &value, unsigned int option = BYTRACE_ON);
-    KVSTORE_API ~DdsTrace();
-    KVSTORE_API void SetMiddleTrace(const std::string &beforeValue, const std::string &afterValue);
+    using Action = std::function<void(const std::string &value, uint64_t delta)>;
+    using System = std::chrono::system_clock;
+    DdsTrace(const std::string &value, unsigned int option = BYTRACE_ON, Action action = nullptr)
+    {
+        traceSwitch_ = option;
+        traceValue_ = value;
+        action_ = action;
+        static std::atomic_bool enable = false;
+        if (!enable.exchange(true)) {
+            UpdateTraceLabel();
+        }
+        Start(value);
+    }
+
+    ~DdsTrace()
+    {
+        Finish(traceValue_);
+    }
+
+    void SetMiddleTrace(const std::string &before, const std::string &after)
+    {
+        traceValue_ = after;
+        Middle(before, after);
+    }
 
 private:
-    void Start(const std::string &value);
-    void Middle(const std::string &beforeValue, const std::string &afterValue);
-    void Finish(const std::string &value);
-    bool SetBytraceEnable();
-
-    static std::atomic_uint indexCount_;
-    static std::atomic_bool isSetBytraceEnabled_;
+    void Start(const std::string &value)
+    {
+        if ((traceSwitch_ & BYTRACE_ON) == BYTRACE_ON) {
+            StartTrace(HITRACE_TAG_DISTRIBUTEDDATA, value);
+        }
+        if ((traceSwitch_ & TRACE_CHAIN_ON) == TRACE_CHAIN_ON) {
+            traceId_ = OHOS::HiviewDFX::HiTrace::Begin(value, HITRACE_FLAG_DEFAULT);
+        }
+        if ((traceSwitch_ & API_PERFORMANCE_TRACE_ON) == API_PERFORMANCE_TRACE_ON) {
+            lastTime_ = System::now();
+        }
+    }
+    void Middle(const std::string &beforeValue, const std::string &afterValue)
+    {
+        if ((traceSwitch_ & BYTRACE_ON) == BYTRACE_ON) {
+            MiddleTrace(TRACE_CHAIN_ON, beforeValue, afterValue);
+        }
+    }
+    void Finish(const std::string &value)
+    {
+        if ((traceSwitch_ & BYTRACE_ON) == BYTRACE_ON) {
+            FinishTrace(HITRACE_FLAG_DEFAULT);
+        }
+        if ((traceSwitch_ & TRACE_CHAIN_ON) == TRACE_CHAIN_ON) {
+            OHOS::HiviewDFX::HiTrace::End(traceId_);
+        }
+        if ((traceSwitch_ & API_PERFORMANCE_TRACE_ON) == API_PERFORMANCE_TRACE_ON && action_) {
+            action_(value, std::chrono::duration_cast<std::chrono::milliseconds>(System::now() - lastTime_).count());
+        }
+    }
+    Action action_;
     std::string traceValue_{ };
     HiviewDFX::HiTraceId traceId_;
     uint32_t traceSwitch_{ 0 };
-    uint64_t lastTime_{ 0 };
-    uint32_t traceCount_{ 0 };
+    System::time_point lastTime_;
 };
 } // namespace DistributedDataDfx
 } // namespace OHOS

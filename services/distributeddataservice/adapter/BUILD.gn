@@ -50,7 +50,10 @@ ohos_shared_library("distributeddata_adapter") {
   ]
 
   external_deps = [
+    "c_utils:utils",
+    "hisysevent_native:libhisysevent",
     "hitrace_native:hitrace_meter",
+    "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
   ]
 

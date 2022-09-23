@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 #include "distributed_kv_data_manager.h"
-#include "single_kvstore_client.h"
 #include "store_errno.h"
 
 using namespace OHOS;
