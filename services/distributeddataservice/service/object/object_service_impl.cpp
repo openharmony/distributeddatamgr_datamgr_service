@@ -41,7 +41,7 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
 {
     ZLOGI("begin.");
     uint32_t tokenId = GetCallingTokenID();
-    int32_t status = VerifyPermissionByBundleName(bundleName, sessionId, tokenId);
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
     }
@@ -102,7 +102,7 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
 {
     ZLOGI("begin.");
     uint32_t tokenId = GetCallingTokenID();
-    int32_t status = VerifyPermissionByBundleName(bundleName, sessionId, tokenId);
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
     }
@@ -122,7 +122,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
 {
     ZLOGI("begin.");
     uint32_t tokenId = GetCallingTokenID();
-    int32_t status = VerifyPermissionByBundleName(bundleName, sessionId, tokenId);
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
     }
@@ -142,7 +142,7 @@ int32_t ObjectServiceImpl::RegisterDataObserver(
 {
     ZLOGD("begin.");
     uint32_t tokenId = GetCallingTokenID();
-    int32_t status = VerifyPermissionByBundleName(bundleName, sessionId, tokenId);
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
     }
@@ -150,7 +150,7 @@ int32_t ObjectServiceImpl::RegisterDataObserver(
     return OBJECT_SUCCESS;
 }
 
-int32_t ObjectServiceImpl::VerifyPermissionByBundleName(
+int32_t ObjectServiceImpl::IsBundleNameEqualTokenId(
     const std::string &bundleName, const std::string &sessionId, const uint32_t &tokenId)
 {
     DistributedData::CheckerManager::StoreInfo storeInfo;

@@ -36,7 +36,7 @@ public:
         sptr<IObjectRevokeSaveCallback> callback) override;
     int32_t RegisterDataObserver(const std::string &bundleName, const std::string &sessionId,
         sptr<IObjectChangeCallback> callback) override;
-    int32_t VerifyPermissionByBundleName(
+    int32_t IsBundleNameEqualTokenId(
         const std::string &bundleName, const std::string &sessionId, const uint32_t &tokenId);
     void Clear();
     int32_t DeleteByAppId(const std::string &appId);
