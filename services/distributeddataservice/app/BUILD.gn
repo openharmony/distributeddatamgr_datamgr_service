@@ -62,7 +62,9 @@ config("module_private_config") {
     "../adapter/include/uninstaller",
     "../adapter/include/broadcaster",
     "../adapter/include/utils",
+    "../adapter/include/dfx",
     "../adapter/include",
+    "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include",
 
     # for ipc_core interfaces.
     "//commonlibrary/c_utils/base/include",
@@ -133,6 +135,8 @@ ohos_shared_library("distributeddataservice") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "hisysevent_native:libhisysevent",
+    "hitrace_native:hitrace_meter",
     "hitrace_native:libhitrace",
     "hiviewdfx_hilog_native:libhilog",
     "init:libbegetutil",

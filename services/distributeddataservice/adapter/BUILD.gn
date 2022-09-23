@@ -49,7 +49,13 @@ ohos_shared_library("distributeddata_adapter") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hisysevent_native:libhisysevent",
+    "hitrace_native:hitrace_meter",
+    "hitrace_native:libhitrace",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
 
   public_configs = [ ":distributeddata_adapter_public_config" ]
 
