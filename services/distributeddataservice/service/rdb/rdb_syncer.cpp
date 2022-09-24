@@ -101,7 +101,8 @@ std::string RdbSyncer::GetStoreId() const
     return RemoveSuffix(param_.storeName_);
 }
 
-int32_t RdbSyncer::Init(pid_t pid, pid_t uid, uint32_t token, const std::string &writePermission, const std::string &readPermission)
+int32_t RdbSyncer::Init(
+    pid_t pid, pid_t uid, uint32_t token, const std::string &writePermission, const std::string &readPermission)
 {
     ZLOGI("enter");
     pid_ = pid;
@@ -170,8 +171,7 @@ int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
     if (isCreated && !old.readPermission.empty()) {
         meta.readPermission = old.readPermission;
     }
-    ZLOGE("WritePermission =%{public}s",meta.writePermission.c_str());
-    ZLOGE("ReadPermission =%{public}s",meta.readPermission.c_str());
+
     auto saved = MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;

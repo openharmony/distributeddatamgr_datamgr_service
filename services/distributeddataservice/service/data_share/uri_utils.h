@@ -20,8 +20,8 @@
 namespace OHOS::DataShare {
 class URIUtils {
 public:
-    static bool GetInfoFromURI(
-        const std::string &uri, std::string &bundleName, std::string &moduleName, std::string &storeName, std::string &tableName);
+    static bool GetInfoFromURI(const std::string &uri, std::string &bundleName, std::string &moduleName,
+        std::string &storeName, std::string &tableName);
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_URI_UTILS_H

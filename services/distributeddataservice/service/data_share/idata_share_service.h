@@ -26,7 +26,7 @@
 namespace OHOS::DataShare {
 class IDataShareService : public IRemoteBroker {
 public:
-    enum {
+    enum class {
         DATA_SHARE_SERVICE_CMD_INSERT,
         DATA_SHARE_SERVICE_CMD_DELETE,
         DATA_SHARE_SERVICE_CMD_UPDATE,
@@ -34,7 +34,7 @@ public:
         DATA_SHARE_SERVICE_CMD_MAX
     };
 
-    enum {
+    enum class {
         DATA_SHARE_OK,
         DATA_SHARE_ERROR,
     };

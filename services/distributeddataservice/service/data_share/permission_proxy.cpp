@@ -62,10 +62,7 @@ bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::st
     FillData(meta);
     meta.bundleName = bundleName;
     meta.storeId = storeName;
-    ZLOGE("WWW:bundleName= %{public}s", bundleName.c_str());
-    ZLOGE("WWW:moduleName= %{public}s", moduleName.c_str());
-    ZLOGE("WWW:storeName= %{public}s", storeName.c_str());
-    ZLOGE("WWW:getkey= %{public}s", meta.GetKey().c_str());
+
     bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData);
     if (!isCreated) {
         ZLOGE("interface token is not equal");

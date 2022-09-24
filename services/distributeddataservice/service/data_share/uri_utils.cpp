@@ -15,37 +15,37 @@
 #define LOG_TAG "URIUtils"
 
 #include "uri_utils.h"
+
 #include "log_print.h"
 
 namespace OHOS::DataShare {
-bool URIUtils::GetInfoFromURI(
-    const std::string &uri, std::string &bundleName, std::string &moduleName, std::string &storeName, std::string &tableName)
+bool URIUtils::GetInfoFromURI(const std::string &uri, std::string &bundleName, std::string &moduleName,
+    std::string &storeName, std::string &tableName)
 {
-    //datashare://bundleName/moduleName/storeName:tableName?Proxy=true
+    constexpr int offset_0 = 0;
+    constexpr int offset_1 = 1;
+    constexpr int offset_2 = 2;
     std::string uriStr = uri;
-    std::string bundle = uriStr.substr(uriStr.find_first_of("/") + 2, uriStr.size() - uriStr.find_first_of("/") + 1);
-    bundleName = bundle.substr(0, bundle.find_first_of("/"));
-	ZLOGE("bundleName = %{public}s", bundleName.c_str());
-    if(bundleName == "") {
-        ZLOGE("invalid bundleName");
+    std::string bundle = uriStr.substr(uriStr.find_first_of("/") + offset_2, uriStr.size() - uriStr.find_first_of("/") + offset_1);
+    bundleName = bundle.substr(offset_0, bundle.find_first_of("/"));
+    if (bundleName == "") {
+        ZLOGE("Invalid bundleName");
         return false;
     }
-    moduleName = bundle.substr(bundle.find_first_of("/") + 1, bundle.find_last_of("/") - bundle.find_first_of("/") - 1);
-    ZLOGE("moduleName = %{public}s", moduleName.c_str());
-	if(moduleName == "") {
-        ZLOGE("invalid moduleName");
+    moduleName =
+        bundle.substr(bundle.find_first_of("/") + offset_1, bundle.find_last_of("/") - bundle.find_first_of("/") - offset_1);
+    if (moduleName == "") {
+        ZLOGE("Invalid moduleName");
         return false;
     }
-    storeName = uriStr.substr(uriStr.find_last_of("/") + 1, uriStr.find_last_of(":") - uriStr.find_last_of("/")-1);
-    ZLOGE("storeName = %{public}s",  storeName.c_str());
-    if(storeName == "") {
-        ZLOGE("invalid storeName");
+    storeName = uriStr.substr(uriStr.find_last_of("/") + offset_1, uriStr.find_last_of(":") - uriStr.find_last_of("/") - offset_1);
+    if (storeName == "") {
+        ZLOGE("Invalid storeName");
         return false;
     }
-    tableName = uriStr.substr(uriStr.find_last_of(":") + 1, uriStr.find_first_of("?") - uriStr.find_last_of(":")-1);
-	ZLOGE("tableName = %{public}s",  tableName.c_str());
-    if(tableName == "") {
-        ZLOGE("invalid tableName");
+    tableName = uriStr.substr(uriStr.find_last_of(":") + offset_1, uriStr.find_first_of("?") - uriStr.find_last_of(":") - offset_1);
+    if (tableName == "") {
+        ZLOGE("Invalid tableName");
         return false;
     }
     return true;

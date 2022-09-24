@@ -384,8 +384,6 @@ int32_t RdbServiceImpl::CreateRDBTable(
         return RDB_ERROR;
     }
 
-    ZLOGE("WritePermission =%{public}s",writePermission.c_str());
-    ZLOGE("ReadPermission =%{public}s",readPermission.c_str());
     pid_t pid = GetCallingPid();
     auto syncer = new (std::nothrow)RdbSyncer(param, new (std::nothrow) RdbStoreObserverImpl(this, pid));
     if (syncer == nullptr) {

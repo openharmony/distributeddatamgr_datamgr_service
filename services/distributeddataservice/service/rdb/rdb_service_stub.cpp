@@ -193,8 +193,6 @@ int32_t RdbServiceStub::OnRemoteDoCreateTable(MessageParcel &data, MessageParcel
         return RDB_OK;
     }
 
-    ZLOGE("WritePermission =%{public}s",writePermission.c_str());
-    ZLOGE("ReadPermission =%{public}s",readPermission.c_str());
     int32_t status = CreateRDBTable(param, writePermission, readPermission);
     if (status != RDB_OK) {
         reply.WriteInt32(RDB_ERROR);

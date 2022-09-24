@@ -65,7 +65,6 @@ RdbDelegate::RdbDelegate(const StoreMetaData &meta)
 {
     int errCode = E_OK;
     RdbStoreConfig config(meta.dataDir);
-    ZLOGE("WWW:meta.dataDir= %{public}s", meta.dataDir.c_str());
 
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, meta.version, callback, errCode);

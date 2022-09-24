@@ -28,9 +28,10 @@ public:
     static bool QueryReadPermission(const std::string &bundleName, const std::string &moduleName,
         const std::string &storeName, std::string &permission);
     static bool QueryMetaData(const std::string &bundleName, const std::string &moduleName,
-                                    const std::string &storeName, DistributedData::StoreMetaData &metaData);
+        const std::string &storeName, DistributedData::StoreMetaData &metaData);
+
 private:
     static void FillData(DistributedData::StoreMetaData &data);
 };
 } // namespace OHOS::DataShare
-#endif //DATASHARESERVICE_PERMISSION_PROXY_H
+#endif // DATASHARESERVICE_PERMISSION_PROXY_H
