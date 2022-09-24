@@ -181,4 +181,44 @@ int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageP
     }
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
+
+int32_t RdbServiceStub::OnRemoteDoCreateTable(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    std::string writePermission;
+    std::string readPermission;
+    if (!DistributedKv::ITypesUtil::Unmarshal(data, param, writePermission, readPermission)) {
+        ZLOGE("read from message parcel failed");
+        reply.WriteInt32(RDB_ERROR);
+        return RDB_OK;
+    }
+
+    ZLOGE("WritePermission =%{public}s",writePermission.c_str());
+    ZLOGE("ReadPermission =%{public}s",readPermission.c_str());
+    int32_t status = CreateRDBTable(param, writePermission, readPermission);
+    if (status != RDB_OK) {
+        reply.WriteInt32(RDB_ERROR);
+        return RDB_OK;
+    }
+    reply.WriteInt32(RDB_OK);
+    return RDB_OK;
+}
+
+int32_t RdbServiceStub::OnRemoteDoDestroyTable(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!DistributedKv::ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("read from message parcel failed");
+        reply.WriteInt32(RDB_ERROR);
+        return RDB_OK;
+    }
+
+    int32_t status = DestroyRDBTable(param);
+    if (status != RDB_OK) {
+        reply.WriteInt32(RDB_ERROR);
+        return RDB_OK;
+    }
+    reply.WriteInt32(RDB_OK);
+    return RDB_OK;
+}
 } // namespace OHOS::DistributedRdb

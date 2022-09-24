@@ -33,6 +33,7 @@
 #include "communication_provider.h"
 #include "config_factory.h"
 #include "constant.h"
+#include "data_share_service_impl.h"
 #include "dds_trace.h"
 #include "device_kvstore_impl.h"
 #include "executor_factory.h"
@@ -1261,6 +1262,18 @@ sptr<IRemoteObject> KvStoreDataService::GetKVdbService()
         return kvdbService_ == nullptr ? nullptr : kvdbService_->AsObject().GetRefPtr();
     }
     return kvdbService_->AsObject().GetRefPtr();
+}
+
+sptr<IRemoteObject> KvStoreDataService::GetDataShareService()
+{
+    if (dataShareService_ == nullptr) {
+        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
+        if (dataShareService_ == nullptr) {
+            dataShareService_ = new (std::nothrow) DataShare::DataShareServiceImpl();
+        }
+        return dataShareService_ == nullptr ? nullptr : dataShareService_->AsObject().GetRefPtr();
+    }
+    return dataShareService_->AsObject().GetRefPtr();
 }
 
 bool DbMetaCallbackDelegateMgr::GetKvStoreDiskSize(const std::string &storeId, uint64_t &size)

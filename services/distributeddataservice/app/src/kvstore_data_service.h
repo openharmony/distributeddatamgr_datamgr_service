@@ -45,6 +45,11 @@ class IObjectService;
 class ObjectServiceImpl;
 }
 
+namespace OHOS::DataShare {
+class IDataShareService;
+class DataShareServiceImpl;
+}
+
 namespace OHOS::DistributedKv {
 class KVDBServiceImpl;
 class KvStoreAccountObserver;
@@ -83,6 +88,7 @@ public:
     sptr<IRemoteObject> GetRdbService() override;
     sptr<IRemoteObject> GetKVdbService() override;
     sptr<IRemoteObject> GetObjectService() override;
+    sptr<IRemoteObject> GetDataShareService() override;
 
     void OnDump() override;
 
@@ -201,6 +207,7 @@ private:
     sptr<DistributedRdb::RdbServiceImpl> rdbService_;
     sptr<KVDBServiceImpl> kvdbService_;
     sptr<DistributedObject::ObjectServiceImpl> objectService_;
+    sptr<DataShare::DataShareServiceImpl> dataShareService_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
 };
 
