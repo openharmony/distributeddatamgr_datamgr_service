@@ -82,8 +82,8 @@ void ObjectServiceImpl::Initialize()
     saveMeta.securityLevel = SecurityLevel::S1;
     saveMeta.area = 1;
     saveMeta.uid = uid;
-    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     saveMeta.storeType = KvStoreType::SINGLE_VERSION;
+    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, userId);
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
     if (!saved) {
