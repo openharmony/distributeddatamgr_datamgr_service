@@ -22,8 +22,9 @@
 #include "itypes_util.h"
 #include "log_print.h"
 
-namespace OHOS::DataShare {
-bool DataShareServiceStub::CheckInterfaceToken(MessageParcel& data)
+namespace OHOS {
+namespace DataShare {
+bool DataShareServiceStub::CheckInterfaceToken(MessageParcel &data)
 {
     auto localDescriptor = IDataShareService::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
@@ -112,4 +113,5 @@ int DataShareServiceStub::OnRemoteRequest(
     }
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
-} // namespace OHOS::DataShare
+} // namespace DataShare
+} // namespace OHOS

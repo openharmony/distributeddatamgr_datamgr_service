@@ -19,7 +19,8 @@
 #include <iremote_stub.h>
 #include "idata_share_service.h"
 
-namespace OHOS::DataShare {
+namespace OHOS {
+namespace DataShare {
 class DataShareServiceStub : public IRemoteStub<IDataShareService> {
 public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
@@ -39,5 +40,6 @@ private:
         &DataShareServiceStub::OnRemoteQuery,
     };
 };
-} // namespace OHOS::DataShare
+} // namespace DataShare
+} // namespace OHOS
 #endif
