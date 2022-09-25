@@ -26,24 +26,27 @@ bool URIUtils::GetInfoFromURI(const std::string &uri, std::string &bundleName, s
     constexpr int offset_1 = 1;
     constexpr int offset_2 = 2;
     std::string uriStr = uri;
-    std::string bundle = uriStr.substr(uriStr.find_first_of("/") + offset_2, uriStr.size() - uriStr.find_first_of("/") + offset_1);
+    std::string bundle =
+        uriStr.substr(uriStr.find_first_of("/") + offset_2, uriStr.size() - uriStr.find_first_of("/") + offset_1);
     bundleName = bundle.substr(offset_0, bundle.find_first_of("/"));
     if (bundleName == "") {
         ZLOGE("Invalid bundleName");
         return false;
     }
-    moduleName =
-        bundle.substr(bundle.find_first_of("/") + offset_1, bundle.find_last_of("/") - bundle.find_first_of("/") - offset_1);
+    moduleName = bundle.substr(
+        bundle.find_first_of("/") + offset_1, bundle.find_last_of("/") - bundle.find_first_of("/") - offset_1);
     if (moduleName == "") {
         ZLOGE("Invalid moduleName");
         return false;
     }
-    storeName = uriStr.substr(uriStr.find_last_of("/") + offset_1, uriStr.find_last_of(":") - uriStr.find_last_of("/") - offset_1);
+    storeName = uriStr.substr(
+        uriStr.find_last_of("/") + offset_1, uriStr.find_last_of(":") - uriStr.find_last_of("/") - offset_1);
     if (storeName == "") {
         ZLOGE("Invalid storeName");
         return false;
     }
-    tableName = uriStr.substr(uriStr.find_last_of(":") + offset_1, uriStr.find_first_of("?") - uriStr.find_last_of(":") - offset_1);
+    tableName = uriStr.substr(
+        uriStr.find_last_of(":") + offset_1, uriStr.find_first_of("?") - uriStr.find_last_of(":") - offset_1);
     if (tableName == "") {
         ZLOGE("Invalid tableName");
         return false;
