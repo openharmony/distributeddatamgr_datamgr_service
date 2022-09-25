@@ -29,13 +29,16 @@ public:
     KvStoreThreadPool &operator=(const KvStoreThreadPool &) = delete;
     KVSTORE_API virtual ~KvStoreThreadPool() {}
 
-    KVSTORE_API static std::shared_ptr<KvStoreThreadPool> GetPool(int poolSize, bool startImmediately = false);
+    KVSTORE_API static std::shared_ptr<KvStoreThreadPool> GetPool(
+        int poolSize, std::string poolName, bool startImmediately = false);
     KVSTORE_API virtual void Stop() = 0;
     KVSTORE_API virtual bool AddTask(KvStoreTask &&task) = 0;
     KVSTORE_API static constexpr int MAX_POOL_SIZE = 64; // the max thread pool size
     KVSTORE_API static constexpr int DEFAULT_POOL_SIZE = 8; // the default thread pool size
+    std::string GetPoolName();
 protected:
     KvStoreThreadPool() = default;
+    std::string poolName_ = "";
 };
 } // namespace DistributedKv
 } // namespace OHOS

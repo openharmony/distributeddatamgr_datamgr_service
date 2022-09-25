@@ -51,7 +51,7 @@ void KvStoreThreadPoolTest::TearDown(void)
   */
 HWTEST_F(KvStoreThreadPoolTest, TestApplyTask001, TestSize.Level1)
 {
-    auto pool = KvStoreThreadPool::GetPool(8, true);
+    auto pool = KvStoreThreadPool::GetPool(8, "Task001", true);
     int var = 0;
     auto start = std::chrono::system_clock::now();
     pool->AddTask(KvStoreTask([&var](){
@@ -75,7 +75,7 @@ HWTEST_F(KvStoreThreadPoolTest, TestApplyTask001, TestSize.Level1)
   */
 HWTEST_F(KvStoreThreadPoolTest, TestApplyTask002, TestSize.Level2)
 {
-    auto pool = KvStoreThreadPool::GetPool(2, false);
+    auto pool = KvStoreThreadPool::GetPool(2, "Task002", false);
     int var = 0;
     std::mutex varMutex;
     auto start = std::chrono::system_clock::now();
@@ -113,7 +113,7 @@ HWTEST_F(KvStoreThreadPoolTest, TestApplyTask002, TestSize.Level2)
   */
 HWTEST_F(KvStoreThreadPoolTest, TestApplyTask003, TestSize.Level1)
 {
-    auto pool = KvStoreThreadPool::GetPool(2, false);
+    auto pool = KvStoreThreadPool::GetPool(2, "Task003", false);
     int var = 0;
     std::mutex varMutex;
     KvStoreTask task([&](){
