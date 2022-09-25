@@ -14,113 +14,113 @@ import("//build/ohos.gni")
 import("//build/ohos_var.gni")
 
 group("build_module") {
-    deps = [ ":distributeddatasvc" ]
+  deps = [ ":distributeddatasvc" ]
 }
 config("module_public_config") {
-    visibility = [ ":*" ]
-    include_dirs = [
-        "backup/include",
-        "bootstrap/include",
-        "config/include",
-        "crypto/include",
-        "datashare",
-        "directory/include",
-        "kvdb",
-        "object",
-        "permission/include",
-        "rdb",
-        "//third_party/json/single_include",
-        "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
-        "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
-        "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-        "//foundation/distributeddatamgr/data_share/frameworks/native/common/include",
-        "//foundation/distributeddatamgr/data_share/interfaces/inner_api/common/include",
-        "//foundation/distributeddatamgr/data_share/interfaces/inner_api/consumer/include",
-        "//foundation/distributeddatamgr/kv_store/frameworks/common",
-        "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
-        "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",
-        "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/object/include",
-        "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-        "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
-        "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
-        "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
-        "//foundation/bundlemanager/bundle_framework/interfaces/inner_api/appexecfwk_base/include",
-    ]
+  visibility = [ ":*" ]
+  include_dirs = [
+    "backup/include",
+    "bootstrap/include",
+    "config/include",
+    "crypto/include",
+    "datashare",
+    "directory/include",
+    "kvdb",
+    "object",
+    "permission/include",
+    "rdb",
+    "//third_party/json/single_include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/data_share/frameworks/native/common/include",
+    "//foundation/distributeddatamgr/data_share/interfaces/inner_api/common/include",
+    "//foundation/distributeddatamgr/data_share/interfaces/inner_api/consumer/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/object/include",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
+    "//foundation/bundlemanager/bundle_framework/interfaces/inner_api/appexecfwk_base/include",
+  ]
 }
 
 ohos_shared_library("distributeddatasvc") {
-    include_dirs = [
-        "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb/include",
-        "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/distributeddb",
-    ]
-    sources = [
-        "backup/src/backup_manager.cpp",
-        "bootstrap/src/bootstrap.cpp",
-        "config/src/config_factory.cpp",
-        "config/src/model/backup_config.cpp",
-        "config/src/model/checker_config.cpp",
-        "config/src/model/component_config.cpp",
-        "config/src/model/directory_config.cpp",
-        "config/src/model/global_config.cpp",
-        "config/src/model/network_config.cpp",
-        "config/src/model/protocol_config.cpp",
-        "crypto/src/crypto_manager.cpp",
-        "data_share/data_share_service_stub.cpp",
-        "data_share/data_share_service_impl.cpp",
-        "data_share/permission_proxy.cpp",
-        "data_share/rdb_adaptor.cpp",
-        "data_share/uri_utils.cpp",
-        "directory/src/directory_manager.cpp",
-        "kvdb/auth_delegate.cpp",
-        "kvdb/executor_factory.cpp",
-        "kvdb/kvdb_exporter.cpp",
-        "kvdb/kvdb_service_impl.cpp",
-        "kvdb/kvdb_service_stub.cpp",
-        "kvdb/kvstore_sync_manager.cpp",
-        "kvdb/query_helper.cpp",
-        "kvdb/store_cache.cpp",
-        "kvdb/upgrade.cpp",
-        "kvdb/user_delegate.cpp",
-        "object/object_data_listener.cpp",
-        "object/object_manager.cpp",
-        "object/object_service_impl.cpp",
-        "object/object_service_stub.cpp",
-        "permission/src/permit_delegate.cpp",
-        "rdb/rdb_result_set_impl.cpp",
-        "rdb/rdb_result_set_stub.cpp",
-        "rdb/rdb_service_impl.cpp",
-        "rdb/rdb_service_stub.cpp",
-        "rdb/rdb_store_observer_impl.cpp",
-        "rdb/rdb_syncer.cpp",
-    ]
-    cflags = [ "-Wno-multichar" ]
+  include_dirs = [
+    "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/distributeddb",
+  ]
+  sources = [
+    "backup/src/backup_manager.cpp",
+    "bootstrap/src/bootstrap.cpp",
+    "config/src/config_factory.cpp",
+    "config/src/model/backup_config.cpp",
+    "config/src/model/checker_config.cpp",
+    "config/src/model/component_config.cpp",
+    "config/src/model/directory_config.cpp",
+    "config/src/model/global_config.cpp",
+    "config/src/model/network_config.cpp",
+    "config/src/model/protocol_config.cpp",
+    "crypto/src/crypto_manager.cpp",
+    "data_share/data_share_service_impl.cpp",
+    "data_share/data_share_service_stub.cpp",
+    "data_share/permission_proxy.cpp",
+    "data_share/rdb_adaptor.cpp",
+    "data_share/uri_utils.cpp",
+    "directory/src/directory_manager.cpp",
+    "kvdb/auth_delegate.cpp",
+    "kvdb/executor_factory.cpp",
+    "kvdb/kvdb_exporter.cpp",
+    "kvdb/kvdb_service_impl.cpp",
+    "kvdb/kvdb_service_stub.cpp",
+    "kvdb/kvstore_sync_manager.cpp",
+    "kvdb/query_helper.cpp",
+    "kvdb/store_cache.cpp",
+    "kvdb/upgrade.cpp",
+    "kvdb/user_delegate.cpp",
+    "object/object_data_listener.cpp",
+    "object/object_manager.cpp",
+    "object/object_service_impl.cpp",
+    "object/object_service_stub.cpp",
+    "permission/src/permit_delegate.cpp",
+    "rdb/rdb_result_set_impl.cpp",
+    "rdb/rdb_result_set_stub.cpp",
+    "rdb/rdb_service_impl.cpp",
+    "rdb/rdb_service_stub.cpp",
+    "rdb/rdb_store_observer_impl.cpp",
+    "rdb/rdb_syncer.cpp",
+  ]
+  cflags = [ "-Wno-multichar" ]
 
-    cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [ "-fvisibility=hidden" ]
 
-    configs = [ ":module_public_config" ]
+  configs = [ ":module_public_config" ]
 
-    deps = [
-        "//foundation/ability/ability_runtime/interfaces/inner_api/dataobs_manager:dataobs_manager",
-        "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-        "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-        "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-        "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
-        "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    ]
+  deps = [
+    "//foundation/ability/ability_runtime/interfaces/inner_api/dataobs_manager:dataobs_manager",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+  ]
 
-    external_deps = [
-        "ability_base:zuri",
-        "access_token:libaccesstoken_sdk",
-        "c_utils:utils",
-        "data_share:datashare_common",
-        "device_auth:deviceauth_sdk",
-        "hiviewdfx_hilog_native:libhilog",
-        "huks:libhukssdk",
-        "ipc:ipc_core",
-        "relational_store:native_rdb",
-        "relational_store:rdb_data_share_adapter",
-    ]
-    subsystem_name = "distributeddatamgr"
+  external_deps = [
+    "ability_base:zuri",
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "device_auth:deviceauth_sdk",
+    "hiviewdfx_hilog_native:libhilog",
+    "huks:libhukssdk",
+    "ipc:ipc_core",
+    "relational_store:native_rdb",
+    "relational_store:rdb_data_share_adapter",
+  ]
+  subsystem_name = "distributeddatamgr"
 
-    part_name = "datamgr_service"
+  part_name = "datamgr_service"
 }
