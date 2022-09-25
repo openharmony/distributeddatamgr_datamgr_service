@@ -26,7 +26,7 @@
 namespace OHOS::DataShare {
 class IDataShareService : public IRemoteBroker {
 public:
-    enum class DataShareServiceCMD {
+    enum {
         DATA_SHARE_SERVICE_CMD_INSERT,
         DATA_SHARE_SERVICE_CMD_DELETE,
         DATA_SHARE_SERVICE_CMD_UPDATE,
@@ -34,7 +34,7 @@ public:
         DATA_SHARE_SERVICE_CMD_MAX
     };
 
-    enum class DataShareErrorCode { DATA_SHARE_ERROR = -1, DATA_SHARE_OK = 0 };
+    enum { DATA_SHARE_ERROR = -1, DATA_SHARE_OK = 0 };
 
     virtual int32_t Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int32_t Update(
