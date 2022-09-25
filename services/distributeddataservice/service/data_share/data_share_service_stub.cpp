@@ -100,7 +100,8 @@ int32_t DataShareServiceStub::OnRemoteQuery(MessageParcel &data, MessageParcel &
     return 0;
 }
 
-int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
+int DataShareServiceStub::OnRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {

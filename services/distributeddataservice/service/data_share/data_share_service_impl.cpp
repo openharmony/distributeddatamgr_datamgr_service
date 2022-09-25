@@ -30,9 +30,8 @@
 namespace OHOS::DataShare {
 bool DataShareServiceImpl::CheckCallingPermission(const std::string &permission)
 {
-    if (!permission.empty()
-        && Security::AccessToken::AccessTokenKit::VerifyAccessToken(IPCSkeleton::GetCallingTokenID(), permission)
-            != AppExecFwk::Constants::PERMISSION_GRANTED) {
+    if (!permission.empty() && Security::AccessToken::AccessTokenKit::VerifyAccessToken(
+        IPCSkeleton::GetCallingTokenID(), permission) != AppExecFwk::Constants::PERMISSION_GRANTED) {
         ZLOGE("permission not granted.");
         return false;
     }
