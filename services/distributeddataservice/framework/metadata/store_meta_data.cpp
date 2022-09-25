@@ -53,8 +53,8 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(deviceAccountID)], user);
     SetValue(node[GET_NAME(userId)], account);
     SetValue(node[GET_NAME(UID)], uid);
-    SetValue(node[GET_NAME(READPERMISSION)], readPermission);
-    SetValue(node[GET_NAME(WRITEPERMISSION)], writePermission);
+    SetValue(node[GET_NAME(readPermission)], readPermission);
+    SetValue(node[GET_NAME(writePermission)], writePermission);
     return true;
 }
 
@@ -81,8 +81,8 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(storeId), storeId);
     GetValue(node, GET_NAME(user), user);
     GetValue(node, GET_NAME(account), account);
-    GetValue(node, GET_NAME(READPERMISSION), readPermission);
-    GetValue(node, GET_NAME(WRITEPERMISSION), writePermission);
+    GetValue(node, GET_NAME(readPermission), readPermission);
+    GetValue(node, GET_NAME(writePermission), writePermission);
     // compatible with the older versions
     if (version < FIELD_CHANGED_TAG) {
         GetValue(node, GET_NAME(kvStoreType), storeType);

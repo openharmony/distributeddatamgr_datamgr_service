@@ -43,6 +43,7 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
+    "//foundation/distributeddatamgr/data_share/frameworks/native/common/include",
     "//foundation/bundlemanager/bundle_framework/interfaces/inner_api/appexecfwk_base/include",
   ]
 }
@@ -112,7 +113,6 @@ ohos_shared_library("distributeddatasvc") {
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "data_share:datashare_common",
-    "data_share:datashare_consumer",
     "device_auth:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",

@@ -35,8 +35,8 @@ public:
     };
 
     enum class {
-        DATA_SHARE_OK,
-        DATA_SHARE_ERROR,
+     	DATA_SHARE_ERROR = -1,
+        DATA_SHARE_OK = 0
     };
 
     virtual int32_t Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket) = 0;
