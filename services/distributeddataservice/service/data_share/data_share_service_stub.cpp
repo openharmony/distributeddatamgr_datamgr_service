@@ -19,7 +19,7 @@
 
 #include <ipc_skeleton.h>
 #include "ishared_result_set.h"
-#include "foundation/distributeddatamgr/data_share/frameworks/native/common/include/itypes_util.h"
+#include "itypes_util.h"
 #include "log_print.h"
 
 namespace OHOS::DataShare {
@@ -38,7 +38,7 @@ int32_t DataShareServiceStub::OnRemoteInsert(MessageParcel &data, MessageParcel 
 {
     std::string uri;
     DataShareValuesBucket bucket;
-    if (!DataShare::ITypesUtil::Unmarshal(data, uri, bucket)) {
+    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, bucket)) {
         ZLOGW("read device list failed.");
         return -1;
     }
@@ -55,7 +55,7 @@ int32_t DataShareServiceStub::OnRemoteUpdate(MessageParcel &data, MessageParcel 
     std::string uri;
     DataSharePredicates predicate;
     DataShareValuesBucket bucket;
-    if (!DataShare::ITypesUtil::Unmarshal(data, uri, predicate, bucket)) {
+    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, predicate, bucket)) {
         ZLOGW("read device list failed.");
         return -1;
     }
@@ -71,7 +71,7 @@ int32_t DataShareServiceStub::OnRemoteDelete(MessageParcel &data, MessageParcel 
 {
     std::string uri;
     DataSharePredicates predicate;
-    if (!DataShare::ITypesUtil::Unmarshal(data, uri, predicate)) {
+    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, predicate)) {
         ZLOGW("read device list failed.");
         return -1;
     }
@@ -88,7 +88,7 @@ int32_t DataShareServiceStub::OnRemoteQuery(MessageParcel &data, MessageParcel &
     std::string uri;
     DataSharePredicates predicate;
     std::vector<std::string> columns;
-    if (!DataShare::ITypesUtil::Unmarshal(data, uri, predicate, columns)) {
+    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, predicate, columns)) {
         ZLOGW("read device list failed.");
         return -1;
     }
