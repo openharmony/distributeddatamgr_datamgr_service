@@ -84,12 +84,15 @@ HWTEST_F(ConfigFactoryTest, CheckerConfig, TestSize.Level0)
 {
     auto *checker = ConfigFactory::GetInstance().GetCheckerConfig();
     ASSERT_NE(checker, nullptr);
-    std::vector<std::string> checkers{"SystemChecker", "BundleChecker", "PackageChecker",
+    std::vector<std::string> checkers{"SystemChecker", "BundleChecker", "MediaLibraryChecker", "PackageChecker",
                                       "ExternalChecker"};
     ASSERT_EQ(checker->checkers, checkers);
     ASSERT_EQ(checker->trusts[0].bundleName, "bundle_manager_service");
     ASSERT_EQ(checker->trusts[0].appId, "bundle_manager_service");
     ASSERT_EQ(checker->trusts[0].checker, "SystemChecker");
+    ASSERT_EQ(checker->trusts[1].bundleName, "com.ohos.medialibrary.medialibrarydata");
+    ASSERT_EQ(checker->trusts[1].appId, "com.ohos.medialibrary.medialibrarydata");
+    ASSERT_EQ(checker->trusts[1].checker, "MediaLibraryChecker");
 }
 
 /**
