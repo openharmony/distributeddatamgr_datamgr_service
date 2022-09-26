@@ -42,6 +42,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/object",
     "//foundation/distributeddatamgr/data_share/interfaces/inner_api/common/include",
     "//foundation/distributeddatamgr/data_share/interfaces/inner_api/consumer/include",
+    "//foundation/distributeddatamgr/data_share/interfaces/inner_api/provider/include",
     "//foundation/distributeddatamgr/data_share/frameworks/native/common/include",
     "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
     "//commonlibrary/c_utils/base/include",
