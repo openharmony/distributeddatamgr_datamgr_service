@@ -146,28 +146,6 @@ HWTEST_F(DirectoryManagerTest, GetSaStorePath, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetSaStorePathV0
-* @tc.desc: test get db dir
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: Sven Wang
-*/
-HWTEST_F(DirectoryManagerTest, GetSaStorePathV0, TestSize.Level0)
-{
-    StoreMetaData metaData;
-    metaData.user = "0";
-    metaData.bundleName = "bundle_manager_service";
-    metaData.appId = "bundle_manager_service";
-    metaData.appType = "harmony";
-    metaData.dataDir = "/data/misc_ce/0/mdds/0/default/bundle_manager_service";
-    metaData.securityLevel = SecurityLevel::S2;
-    metaData.area = 1;
-    metaData.tokenId = -1;
-    auto path = DirectoryManager::GetInstance().GetStorePath(metaData, 0);
-    EXPECT_EQ(path, metaData.dataDir);
-}
-
-/**
 * @tc.name: GetRdbBackupPath
 * @tc.desc: test get rdb backup dir
 * @tc.type: FUNC
