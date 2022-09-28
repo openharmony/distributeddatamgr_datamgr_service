@@ -20,7 +20,7 @@
 
 namespace DistributedDB {
 UtKvStoreNbDelegateImpl::UtKvStoreNbDelegateImpl(const std::string &storeId, const std::string &deviceId)
-    : storeId_(storeId), deviceId_(deviceId), syncStatus_(OK)
+    : storeId_(storeId), deviceId_(deviceId), syncStatus_(OK), isAutoSync_(false)
 {}
 
 UtKvStoreNbDelegateImpl::~UtKvStoreNbDelegateImpl()
