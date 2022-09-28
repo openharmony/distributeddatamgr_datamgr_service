@@ -314,14 +314,14 @@ DeviceInfo DeviceManagerAdapter::GetLocalDevice()
 
 std::vector<DeviceInfo> DeviceManagerAdapter::GetRemoteDevices()
 {
-    std::vector<DeviceInfo> dvInfos;
     std::vector<DmDeviceInfo> dmInfos;
     auto ret = DeviceManager::GetInstance().GetTrustedDeviceList(PKG_NAME, "", dmInfos);
     if (ret != DM_OK) {
-        ZLOGE("get trust device list  fail");
+        ZLOGE("get trusted device:%{public}d", ret);
         return {};
     }
 
+    std::vector<DeviceInfo> dvInfos;
     for (const auto &dmInfo : dmInfos) {
         auto networkId = std::string(dmInfo.networkId);
         auto uuid = GetUuidByNetworkId(networkId);
@@ -346,7 +346,7 @@ DeviceInfo DeviceManagerAdapter::GetDeviceInfoFromCache(const std::string &id)
         deviceInfos_.Get(id, dvInfo);
     }
     if (dvInfo.uuid.empty()) {
-        ZLOGE("invalid id");
+        ZLOGE("invalid id:%{public}s", KvStoreUtils::ToBeAnonymous(id).c_str());
     }
     return dvInfo;
 }
@@ -362,12 +362,16 @@ bool DeviceManagerAdapter::Execute(KvStoreTask &&task)
 
 void DeviceManagerAdapter::UpdateDeviceInfo()
 {
-    std::vector<DeviceInfo> dvInfos;
-    dvInfos = GetRemoteDevices();
-    auto locInfo = GetLocalDevice();
-    dvInfos.emplace_back(locInfo);
+    std::vector<DeviceInfo> dvInfos = GetRemoteDevices();
+    if (dvInfos.empty()) {
+        ZLOGD("there is no trusted device!");
+        return;
+    }
+    dvInfos.emplace_back(GetLocalDevice());
     for (const auto &info : dvInfos) {
         if (info.networkId.empty() || info.uuid.empty() || info.udid.empty()) {
+            ZLOGE("networkId:%{public}s, uuid:%{public}d, udid:%{public}d",
+                KvStoreUtils::ToBeAnonymous(info.networkId).c_str(), info.uuid.empty(), info.udid.empty());
             continue;
         }
         deviceInfos_.Set(info.networkId, info);
@@ -388,6 +392,7 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
     std::string uuid;
     auto ret = DeviceManager::GetInstance().GetUuidByNetworkId(PKG_NAME, networkId, uuid);
     if (ret != DM_OK || uuid.empty()) {
+        ZLOGE("failed, result:%{public}d, networkId:%{public}s", ret, KvStoreUtils::ToBeAnonymous(networkId).c_str());
         return "";
     }
     return uuid;
@@ -405,6 +410,7 @@ std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkI
     std::string udid;
     auto ret = DeviceManager::GetInstance().GetUdidByNetworkId(PKG_NAME, networkId, udid);
     if (ret != DM_OK || udid.empty()) {
+        ZLOGE("failed, result:%{public}d, networkId:%{public}s", ret, KvStoreUtils::ToBeAnonymous(networkId).c_str());
         return "";
     }
     return udid;
