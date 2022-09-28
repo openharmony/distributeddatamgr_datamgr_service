@@ -14,13 +14,14 @@
  */
 
 #define LOG_TAG "KvStoreThreadPoolImpl"
+#include "kv_store_thread_pool_impl.h"
+
 #include <functional>
 #include <list>
 #include <type_traits>
-#include "log_print.h"
-#include "kv_store_thread.h"
-#include "kv_store_thread_pool_impl.h"
 
+#include "kv_store_thread.h"
+#include "log_print.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -34,7 +35,7 @@ void KvStoreThreadPoolImpl::Start()
     ZLOGI("start");
     running = true;
     for (int i = 0; i < threadNum; i++) {
-        threadList.emplace_back(this);
+        threadList.emplace_back(this, poolName_.substr(0, MAX_THREAD_NAME_SIZE) + "_" + std::to_string(i));
     }
 }
 
@@ -65,9 +66,10 @@ bool KvStoreThreadPoolImpl::IsRunning() const
     return running;
 }
 
-KvStoreThreadPoolImpl::KvStoreThreadPoolImpl(int threadNum, bool startImmediately)
+KvStoreThreadPoolImpl::KvStoreThreadPoolImpl(int threadNum, std::string poolName, bool startImmediately)
     : taskList(), threadList(), threadNum(threadNum)
 {
+    this->poolName_ = poolName;
     if (threadNum <= 0 || threadNum > MAX_POOL_SIZE) {
         this->threadNum = DEFAULT_POOL_SIZE;
     }

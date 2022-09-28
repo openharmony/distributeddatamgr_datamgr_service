@@ -23,7 +23,7 @@ namespace OHOS {
 namespace DistributedKv {
 class KvStoreThread {
 public:
-    explicit KvStoreThread(KvStoreThreadPool *threadPool);
+    explicit KvStoreThread(KvStoreThreadPool *threadPool, const std::string &name);
     KvStoreThread(KvStoreThread &&thread) = delete;
     KvStoreThread(const KvStoreThread &) = delete;
     KvStoreThread &operator=(KvStoreThread &&) = delete;

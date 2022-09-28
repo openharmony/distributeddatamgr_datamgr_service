@@ -73,7 +73,7 @@ void DataMgrDmInitCall::OnRemoteDied()
 DeviceManagerAdapter::DeviceManagerAdapter()
 {
     ZLOGI("construct");
-    threadPool_ = KvStoreThreadPool::GetPool(POOL_SIZE, true);
+    threadPool_ = KvStoreThreadPool::GetPool(POOL_SIZE, "DeviceMgr", true);
 }
 
 DeviceManagerAdapter::~DeviceManagerAdapter()

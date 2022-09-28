@@ -20,14 +20,19 @@
 
 namespace OHOS {
 namespace DistributedKv {
-std::shared_ptr<KvStoreThreadPool> KvStoreThreadPool::GetPool(int poolSize, bool startImmediately)
+std::shared_ptr<KvStoreThreadPool> KvStoreThreadPool::GetPool(int poolSize, std::string poolName, bool startImmediately)
 {
     std::shared_ptr<KvStoreThreadPoolImpl> poolImpl =
-            std::make_shared<KvStoreThreadPoolImpl>(poolSize, startImmediately);
+        std::make_shared<KvStoreThreadPoolImpl>(poolSize, std::move(poolName), startImmediately);
     if (poolImpl == nullptr) {
         return nullptr;
     }
     return std::shared_ptr<KvStoreThreadPool>(std::dynamic_pointer_cast<KvStoreThreadPool>(poolImpl));
+}
+
+std::string KvStoreThreadPool::GetPoolName()
+{
+    return poolName_;
 }
 } // namespace DistributedKv
 } // namespace OHOS
