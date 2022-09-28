@@ -101,13 +101,16 @@ std::string RdbSyncer::GetStoreId() const
     return RemoveSuffix(param_.storeName_);
 }
 
-int32_t RdbSyncer::Init(pid_t pid, pid_t uid, uint32_t token)
+int32_t RdbSyncer::Init(
+    pid_t pid, pid_t uid, uint32_t token, const std::string &writePermission, const std::string &readPermission)
 {
     ZLOGI("enter");
     pid_ = pid;
     uid_ = uid;
     token_ = token;
     StoreMetaData meta;
+    meta.readPermission = readPermission;
+    meta.writePermission = writePermission;
     if (CreateMetaData(meta) != RDB_OK) {
         ZLOGE("create meta data failed");
         return RDB_ERROR;
@@ -120,7 +123,14 @@ int32_t RdbSyncer::Init(pid_t pid, pid_t uid, uint32_t token)
     return RDB_OK;
 }
 
-int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
+int32_t RdbSyncer::DestroyMetaData(StoreMetaData &meta)
+{
+    FillMetaData(meta);
+    auto deleted = MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+    return deleted ? RDB_OK : RDB_ERROR;
+}
+
+void RdbSyncer::FillMetaData(StoreMetaData &meta)
 {
     meta.uid = uid_;
     meta.tokenId = token_;
@@ -138,7 +148,11 @@ int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
     meta.dataDir = DirectoryManager::GetInstance().GetStorePath(meta) + "/" + param_.storeName_;
     meta.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     meta.isEncrypt = param_.isEncrypt_;
+}
 
+int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
+{
+    FillMetaData(meta);
     StoreMetaData old;
     bool isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old);
     if (isCreated && (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
@@ -149,10 +163,16 @@ int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
             meta.isEncrypt, old.area, meta.area);
         return RDB_ERROR;
     }
-    auto saved = MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
-    if (!saved) {
-        return RDB_ERROR;
+
+    if (isCreated && !old.writePermission.empty()) {
+        meta.writePermission = old.writePermission;
     }
+
+    if (isCreated && !old.readPermission.empty()) {
+        meta.readPermission = old.readPermission;
+    }
+
+    auto saved = MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;
     appIdMeta.appId = meta.appId;

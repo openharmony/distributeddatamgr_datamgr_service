@@ -50,6 +50,10 @@ public:
 
     void OnDataChange(pid_t pid, const DistributedDB::StoreChangedData& data);
 
+    int32_t CreateRDBTable(
+        const RdbSyncerParam &param, const std::string &writePermission, const std::string &readPermission) override;
+    int32_t DestroyRDBTable(const RdbSyncerParam &param) override;
+
 protected:
     int32_t DoSync(const RdbSyncerParam& param, const SyncOption& option,
                    const RdbPredicates& predicates, SyncResult& result) override;

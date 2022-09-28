@@ -375,4 +375,50 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
     }
     return syncer->RemoteQuery(device, sql, selectionArgs, resultSet);
 }
+
+int32_t RdbServiceImpl::CreateRDBTable(
+    const RdbSyncerParam &param, const std::string &writePermission, const std::string &readPermission)
+{
+    if (!CheckAccess(param)) {
+        ZLOGE("permission error");
+        return RDB_ERROR;
+    }
+
+    pid_t pid = GetCallingPid();
+    auto syncer = new (std::nothrow)RdbSyncer(param, new (std::nothrow) RdbStoreObserverImpl(this, pid));
+    if (syncer == nullptr) {
+        ZLOGE("new syncer error");
+        return RDB_ERROR;
+    }
+    if (syncer->Init(pid, GetCallingUid(), GetCallingTokenID(), writePermission, readPermission) != RDB_OK) {
+        ZLOGE("Init error");
+        delete syncer;
+        return RDB_ERROR;
+    }
+    delete syncer;
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
+{
+    if (!CheckAccess(param)) {
+        ZLOGE("permission error");
+        return RDB_ERROR;
+    }
+    pid_t pid = GetCallingPid();
+    auto syncer = new (std::nothrow)RdbSyncer(param, new (std::nothrow) RdbStoreObserverImpl(this, pid));
+    if (syncer == nullptr) {
+        ZLOGE("new syncer error");
+        return RDB_ERROR;
+    }
+
+    StoreMetaData meta;
+    if (syncer->DestroyMetaData(meta) != RDB_OK) {
+        ZLOGE("Init error");
+        delete syncer;
+        return RDB_ERROR;
+    }
+    delete syncer;
+    return RDB_OK;
+}
 } // namespace OHOS::DistributedRdb

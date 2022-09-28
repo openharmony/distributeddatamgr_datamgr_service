@@ -34,7 +34,8 @@ public:
     RdbSyncer(const RdbSyncerParam& param, RdbStoreObserverImpl* observer);
     ~RdbSyncer() noexcept;
 
-    int32_t Init(pid_t pid, pid_t uid, uint32_t token);
+    int32_t Init(pid_t pid, pid_t uid, uint32_t token, const std::string &writePermission = "",
+        const std::string &readPermission = "");
 
     pid_t GetPid() const;
 
@@ -55,6 +56,7 @@ public:
     int32_t RemoteQuery(const std::string& device, const std::string& sql,
                         const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet);
 
+    int32_t DestroyMetaData(StoreMetaData &meta);
     static std::string RemoveSuffix(const std::string& name);
 
     static int32_t GetInstIndex(uint32_t tokenId, const std::string &bundleName);
@@ -69,6 +71,7 @@ private:
     std::string GetAppId() const;
 
     int32_t CreateMetaData(StoreMetaData &meta);
+    void FillMetaData(StoreMetaData &meta);
     int32_t InitDBDelegate(const StoreMetaData &meta);
     bool SetSecretKey(const StoreMetaData &meta);
 
