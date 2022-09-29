@@ -42,7 +42,7 @@ const KVDBServiceStub::Handler KVDBServiceStub::HANDLERS[TRANS_BUTT] = {
     &KVDBServiceStub::OnGetBackupPassword,
 };
 
-int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     ZLOGI("code:%{public}u callingPid:%{public}u", code, IPCSkeleton::GetCallingPid());
     std::u16string local = KVDBServiceStub::GetDescriptor();
@@ -53,7 +53,8 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
     }
 
     if (TRANS_HEAD > code || code >= TRANS_BUTT || HANDLERS[code] == nullptr) {
-        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+        ZLOGE("not support code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
+        return -1;
     }
 
     AppId appId;

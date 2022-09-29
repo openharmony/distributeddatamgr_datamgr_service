@@ -34,6 +34,7 @@
 #include "system_ability.h"
 #include "types.h"
 #include "dump_helper.h"
+#include "feature_stub_impl.h"
 
 namespace OHOS::DistributedRdb {
 class IRdbService;
@@ -86,9 +87,9 @@ public:
     Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy) override;
     Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) override;
     sptr<IRemoteObject> GetRdbService() override;
-    sptr<IRemoteObject> GetKVdbService() override;
     sptr<IRemoteObject> GetObjectService() override;
     sptr<IRemoteObject> GetDataShareService() override;
+    sptr<IRemoteObject> GetFeatureInterface(const std::string &name) override;
 
     void OnDump() override;
 
@@ -208,6 +209,7 @@ private:
     sptr<KVDBServiceImpl> kvdbService_;
     sptr<DistributedObject::ObjectServiceImpl> objectService_;
     sptr<DataShare::DataShareServiceImpl> dataShareService_;
+    ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
 };
 

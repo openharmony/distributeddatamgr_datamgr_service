@@ -107,6 +107,7 @@ KvStoreDataService::~KvStoreDataService()
     deviceAccountMap_.clear();
     clientDeathObserverMap_.clear();
     deviceListeners_.clear();
+    features_.Clear();
 }
 
 void KvStoreDataService::Initialize()
@@ -140,6 +141,35 @@ sptr<IRemoteObject> KvStoreDataService::GetObjectService()
         return objectService_ == nullptr ? nullptr : objectService_->AsObject().GetRefPtr();
     }
     return objectService_->AsObject().GetRefPtr();
+}
+
+sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
+{
+    sptr<DistributedData::FeatureStubImpl> feature;
+    bool isFirstCreate = false;
+    features_.Compute(name, [&feature, &isFirstCreate](const auto &key, auto &value) ->bool {
+        if (value != nullptr) {
+            feature = value;
+            return true;
+        }
+        auto creator = FeatureSystem::GetInstance().GetCreator(key);
+        if (!creator) {
+            return false;
+        }
+        auto impl = creator();
+        if (impl == nullptr) {
+            return false;
+        }
+
+        value = new DistributedData::FeatureStubImpl(impl);
+        feature = value;
+        isFirstCreate = true;
+        return true;
+    });
+    if (isFirstCreate) {
+        feature->OnInitialize();
+    }
+    return feature != nullptr ? feature->AsObject() : nullptr;
 }
 
 void KvStoreDataService::InitObjectStore()
@@ -851,13 +881,14 @@ void KvStoreDataService::StartService()
     AccountDelegate::GetInstance()->SubscribeAccountEvent();
     auto autoLaunch = [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
         auto status = ResolveAutoLaunchParamByIdentifier(identifier, param);
-        if (kvdbService_) {
-            kvdbService_->ResolveAutoLaunch(identifier, param);
-        }
         if (objectService_) {
             ZLOGD("entering objectService ResolveAutoLaunch");
             objectService_->ResolveAutoLaunch(identifier, param);
         }
+        features_.ForEachCopies([&identifier, &param](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
+            value->ResolveAutoLaunch(identifier, param);
+            return false;
+        });
         return status;
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
@@ -1024,19 +1055,18 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverI
         ZLOGI("remove death recipient");
         observerProxy_->RemoveDeathRecipient(deathRecipient_);
     }
-    sptr<KVDBServiceImpl> kvdbService;
     sptr<DistributedObject::ObjectServiceImpl> objectService;
     {
         std::lock_guard<decltype(dataService_.mutex_)> lockGuard(dataService_.mutex_);
-        kvdbService = dataService_.kvdbService_;
         objectService = dataService_.objectService_;
-    }
-    if (kvdbService) {
-        kvdbService->AppExit(uid_, pid_, token_, appId_);
     }
     if (objectService) {
         objectService->OnAppExit(uid_, pid_, token_, appId_);
     }
+    dataService_.features_.ForEachCopies([this](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->OnAppExit(uid_, pid_, token_, appId_);
+        return false;
+    });
 }
 
 void KvStoreDataService::KvStoreClientDeathObserverImpl::NotifyClientDie()
@@ -1131,20 +1161,19 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
 void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
 {
     sptr<DistributedRdb::RdbServiceImpl> rdbService;
-    sptr<KVDBServiceImpl> kvdbService;
     sptr<DistributedObject::ObjectServiceImpl> objectService;
     {
         std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
         rdbService = rdbService_;
-        kvdbService = kvdbService_;
         objectService = objectService_;
-    }
-    if (kvdbService) {
-        kvdbService->OnUserChanged();
     }
     if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_SWITCHED && objectService) {
         objectService.clear();
     }
+    features_.ForEachCopies([&eventInfo](const auto &key, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->OnUserChange(uint32_t(eventInfo.status), eventInfo.userId, eventInfo.harmonyAccountId);
+        return false;
+    });
 }
 
 Status KvStoreDataService::GetLocalDevice(DeviceInfo &device)
@@ -1230,14 +1259,13 @@ void KvStoreDataService::SetCompatibleIdentify(const AppDistributedKv::DeviceInf
 
 void KvStoreDataService::OnDeviceOnline(const AppDistributedKv::DeviceInfo &info)
 {
-    sptr<KVDBServiceImpl> kvdbService;
-    {
-        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-        kvdbService = kvdbService_;
+    if (info.uuid.empty()) {
+        return;
     }
-    if (kvdbService && !info.uuid.empty()) {
-        kvdbService->OnDeviceOnLine(info.uuid);
-    }
+    features_.ForEachCopies([&info](const auto &key, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->Online(info.uuid);
+        return false;
+    });
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetRdbService()
@@ -1250,18 +1278,6 @@ sptr<IRemoteObject> KvStoreDataService::GetRdbService()
         return rdbService_ == nullptr ? nullptr : rdbService_->AsObject().GetRefPtr();
     }
     return rdbService_->AsObject().GetRefPtr();
-}
-
-sptr<IRemoteObject> KvStoreDataService::GetKVdbService()
-{
-    if (kvdbService_ == nullptr) {
-        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-        if (kvdbService_ == nullptr) {
-            kvdbService_ = new (std::nothrow) KVDBServiceImpl();
-        }
-        return kvdbService_ == nullptr ? nullptr : kvdbService_->AsObject().GetRefPtr();
-    }
-    return kvdbService_->AsObject().GetRefPtr();
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetDataShareService()

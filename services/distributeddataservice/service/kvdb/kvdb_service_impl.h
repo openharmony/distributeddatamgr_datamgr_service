@@ -50,12 +50,12 @@ public:
     Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
-    Status AppExit(pid_t uid, pid_t pid, uint32_t tokenId, const AppId &appId);
-    Status ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param);
-    Status GetBackupPassword(const AppId &appId, const StoreId &storeId,
-        std::vector<uint8_t> &password) override;
-    void OnUserChanged();
-    void OnDeviceOnLine(const std::string &uuid);
+    Status GetBackupPassword(const AppId &appId, const StoreId &storeId, std::vector<uint8_t> &password) override;
+
+    int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
+    int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
+    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+    int32_t Online(const std::string &device) override;
 
 private:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
@@ -72,6 +72,20 @@ private:
         ACTION_SUBSCRIBE,
         ACTION_UNSUBSCRIBE,
     };
+    struct SyncAgent {
+        pid_t pid_ = 0;
+        AppId appId_;
+        sptr<IKvStoreSyncCallback> callback_;
+        std::map<std::string, uint32_t> delayTimes_;
+        std::map<std::string, std::shared_ptr<StoreCache::Observers>> observers_;
+        void ReInit(pid_t pid, const AppId &appId);
+    };
+    class Factory {
+    public:
+        Factory();
+        ~Factory();
+    };
+
     void AddOptions(const Options &options, StoreMetaData &metaData);
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId);
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
@@ -83,15 +97,7 @@ private:
     DBMode ConvertDBMode(SyncMode syncMode) const;
     std::shared_ptr<StoreCache::Observers> GetObservers(uint32_t tokenId, const std::string &storeId);
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
-
-    struct SyncAgent {
-        pid_t pid_ = 0;
-        AppId appId_;
-        sptr<IKvStoreSyncCallback> callback_;
-        std::map<std::string, uint32_t> delayTimes_;
-        std::map<std::string, std::shared_ptr<StoreCache::Observers>> observers_;
-        void ReInit(pid_t pid, const AppId &appId);
-    };
+    static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     StoreCache storeCache_;
 };
