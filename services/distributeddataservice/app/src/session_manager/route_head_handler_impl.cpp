@@ -166,9 +166,9 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
 
     uint32_t appLen = data + totalLen - ptr;
     appPair->len = HostToNet(appLen); // left size
-    ret = strcpy_s(appPair->appId, appLen, session_.appId.c_str());
+    ret = memcpy_s(appPair->appId, appLen, session_.appId.data(), session_.appId.size());
     if (ret != 0) {
-        ZLOGE("strcpy for app id failed");
+        ZLOGE("strcpy for app id failed:%{public}d", ret);
         return false;
     }
     return true;
