@@ -15,12 +15,16 @@
 
 #include "kv_scheduler.h"
 
+
 namespace OHOS::DistributedKv {
 KvScheduler::KvScheduler(size_t capacity)
 {
     capacity_ = capacity;
     isRunning_ = true;
-    thread_ = std::make_unique<std::thread>([this]() { this->Loop(); });
+    thread_ = std::make_unique<std::thread>([this]() {
+        pthread_setname_np(pthread_self(), "KvScheduler");
+        this->Loop();
+    });
 }
 
 KvScheduler::~KvScheduler()

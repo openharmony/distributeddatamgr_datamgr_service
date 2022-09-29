@@ -26,7 +26,7 @@ namespace OHOS {
 namespace DistributedKv {
 class KvStoreThreadPoolImpl : public KvStoreThreadPool {
 public:
-    KvStoreThreadPoolImpl(int threadNum, bool startImmediately);
+    KvStoreThreadPoolImpl(int threadNum, std::string poolName, bool startImmediately);
     KvStoreThreadPoolImpl() = delete;
     KvStoreThreadPoolImpl(const KvStoreThreadPoolImpl &) = delete;
     KvStoreThreadPoolImpl(KvStoreThreadPoolImpl &&) = delete;
@@ -45,6 +45,7 @@ private:
     int threadNum;
     void Start();
     bool running = false;
+    static constexpr int MAX_THREAD_NAME_SIZE = 11;
 };
 } // namespace DistributedKv
 } // namespace OHOS

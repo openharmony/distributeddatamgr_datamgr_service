@@ -66,7 +66,7 @@ const std::map<int, std::string> EVENT_COVERT_TABLE = {
 };
 }
 using OHOS::HiviewDFX::HiSysEvent;
-std::shared_ptr<KvStoreThreadPool> HiViewAdapter::pool_ = KvStoreThreadPool::GetPool(POOL_SIZE, true);
+std::shared_ptr<KvStoreThreadPool> HiViewAdapter::pool_ = KvStoreThreadPool::GetPool(POOL_SIZE, "HiView", true);
 
 std::mutex HiViewAdapter::visitMutex_;
 std::map<std::string, StatisticWrap<VisitStat>> HiViewAdapter::visitStat_;

@@ -33,7 +33,7 @@ bool ExecutorFactory::Execute(KvStoreTask &&task)
 
 ExecutorFactory::ExecutorFactory()
 {
-    threadPool_ = KvStoreThreadPool::GetPool(POOL_SIZE, true);
+    threadPool_ = KvStoreThreadPool::GetPool(POOL_SIZE, "Executor", true);
 }
 
 ExecutorFactory::~ExecutorFactory()
