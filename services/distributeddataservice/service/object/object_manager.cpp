@@ -220,7 +220,7 @@ int32_t ObjectStoreManager::DeleteByAppId(const std::string &appId)
 }
 
 void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
-                                                const pid_t &pid, const uint32_t &tokenId,
+                                                pid_t pid, uint32_t tokenId,
                                                 sptr <IObjectChangeCallback> &callback)
 {
     if (bundleName.empty() || sessionId.empty()) {
@@ -232,14 +232,13 @@ void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, c
     callbackInfo.bundleName = bundleName;
     callbackInfo.pid = pid;
     callbackInfo.tokenId = tokenId;
-    callback_.EraseIf([&tokenId, &pid](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
+    callbacks_.EraseIf([tokenId, pid](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
         return (key.tokenId == tokenId && key.pid != pid);
     });
-    callback_.Insert(callbackInfo, callback);
+    callbacks_.Insert(callbackInfo, callback);
 }
 
-void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName, const pid_t &pid,
-                                                  const uint32_t &tokenId,
+void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
                                                   const std::string &sessionId)
 {
     if (bundleName.empty()) {
@@ -248,14 +247,14 @@ void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName,
     }
     if (sessionId.empty()) {
         ZLOGD("app exit to unregister callback");
-        callback_.EraseIf([&pid](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
+        callbacks_.EraseIf([&pid](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
             return key.pid == pid;
         });
         return;
     }
     ZLOGD("ObjectStoreManager::UnregisterRemoteCallback start");
     CallbackInfo tmpCallbackInfo = { bundleName, sessionId, tokenId, pid };
-    callback_.Erase(tmpCallbackInfo);
+    callbacks_.Erase(tmpCallbackInfo);
 }
 
 void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData)
@@ -263,16 +262,16 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     ZLOGD("ObjectStoreManager::NotifyChange start");
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
     for (const auto &item : changedData) {
-        callback_.ForEach([&item, &data, this](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
+        callbacks_.ForEach([&item, &data, this](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
             if (GetBundleName(item.first) == key.bundleName && GetSessionId(item.first) == key.sessionId) {
                 std::string propertyName = GetPropertyName(item.first);
                 std::string prefix = key.bundleName + key.sessionId;
-                data[prefix].insert_or_assign(std::move(propertyName), item.second);
+                data[prefix].insert_or_assign(std::move(propertyName), std::move(item.second));
             }
             return false;
         });
     }
-    callback_.ForEach([&data](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
+    callbacks_.ForEach([&data](const CallbackInfo &key, sptr<IObjectChangeCallback> &value) {
         std::string tmpKey = key.bundleName + key.sessionId;
         if (data.count(tmpKey) != 0) {
             value->Completed(data[tmpKey]);
@@ -571,7 +570,7 @@ std::string ObjectStoreManager::GetBundleName(const std::string &key)
     result.erase(pos);
     return result;
 }
-    
+
 uint64_t SequenceSyncManager::AddNotifier(const std::string &userId, SyncCallBack &callback)
 {
     std::lock_guard<std::mutex> lock(notifierLock_);
