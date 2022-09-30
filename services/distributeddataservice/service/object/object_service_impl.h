@@ -26,7 +26,6 @@ class API_EXPORT ObjectServiceImpl : public ObjectServiceStub {
 public:
     ObjectServiceImpl();
 
-    void Initialize();
     int32_t ObjectStoreSave(const std::string &bundleName, const std::string &sessionId,
         const std::string &deviceId, const std::map<std::string, std::vector<uint8_t>> &data,
         sptr<IObjectSaveCallback> callback) override;
@@ -40,9 +39,19 @@ public:
     int32_t IsBundleNameEqualTokenId(
         const std::string &bundleName, const std::string &sessionId, const uint32_t &tokenId);
     void Clear();
-    int32_t DeleteByAppId(const std::string &appId);
-    int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
-    void OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const AppId &appId);
+    int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
+    int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
+    int32_t OnInitialize() override;
+    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+    int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId) override;
+
+private:
+    class Factory {
+    public:
+        Factory();
+        ~Factory();
+    };
+    static Factory factory_;
 };
 } // namespace OHOS::DistributedObject
 #endif

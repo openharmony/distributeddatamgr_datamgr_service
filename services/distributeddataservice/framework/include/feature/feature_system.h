@@ -16,21 +16,23 @@
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORK_SYSTEM_SYSTEM_H
 #include <memory>
 #include "concurrent_map.h"
+#include "visibility.h"
 namespace DistributedDB {
 struct AutoLaunchParam;
 }
 namespace OHOS {
 class MessageParcel;
 namespace DistributedData {
-class FeatureSystem {
+class API_EXPORT FeatureSystem {
 public:
     static constexpr int32_t STUB_SUCCESS = 0;
-    class Feature {
+    class API_EXPORT Feature {
     public:
         virtual ~Feature();
         virtual int OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply) = 0;
         virtual int32_t OnInitialize();
         virtual int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
+        virtual int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
         virtual int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
         virtual int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account);
         virtual int32_t Online(const std::string &device);

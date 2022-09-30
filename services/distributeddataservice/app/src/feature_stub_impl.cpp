@@ -48,6 +48,14 @@ int32_t FeatureStubImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const
     return featureImpl_->OnAppExit(uid, pid, tokenId, bundleName);
 }
 
+int32_t FeatureStubImpl::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
+{
+    if (featureImpl_ == nullptr) {
+        return -1;
+    }
+    return featureImpl_->OnAppUninstall(bundleName, user, index, tokenId);
+}
+
 int32_t FeatureStubImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
 {
     if (featureImpl_ == nullptr) {

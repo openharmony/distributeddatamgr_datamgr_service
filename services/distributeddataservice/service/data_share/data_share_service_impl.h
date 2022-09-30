@@ -32,8 +32,16 @@ public:
     std::shared_ptr<DataShareResultSet> Query(const std::string &uri, const DataSharePredicates &predicates,
                                               const std::vector<std::string> &columns) override;
 private:
+    class Factory {
+    public:
+        Factory();
+        ~Factory();
+    };
+
     bool CheckCallingPermission(const std::string &permission);
     bool NotifyChange(const std::string &uri);
+
+    static Factory factory_;
 };
 } // namespace OHOS::DistributedRdb
 #endif

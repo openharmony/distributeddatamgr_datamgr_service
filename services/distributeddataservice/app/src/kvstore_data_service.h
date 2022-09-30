@@ -36,23 +36,7 @@
 #include "dump_helper.h"
 #include "feature_stub_impl.h"
 
-namespace OHOS::DistributedRdb {
-class IRdbService;
-class RdbServiceImpl;
-}
-
-namespace OHOS::DistributedObject {
-class IObjectService;
-class ObjectServiceImpl;
-}
-
-namespace OHOS::DataShare {
-class IDataShareService;
-class DataShareServiceImpl;
-}
-
 namespace OHOS::DistributedKv {
-class KVDBServiceImpl;
 class KvStoreAccountObserver;
 class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
@@ -86,9 +70,6 @@ public:
     Status GetRemoteDevices(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy) override;
     Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy) override;
     Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) override;
-    sptr<IRemoteObject> GetRdbService() override;
-    sptr<IRemoteObject> GetObjectService() override;
-    sptr<IRemoteObject> GetDataShareService() override;
     sptr<IRemoteObject> GetFeatureInterface(const std::string &name) override;
 
     void OnDump() override;
@@ -113,7 +94,7 @@ public:
 
     bool CheckBackupFileExist(const std::string &userId, const std::string &bundleName,
                               const std::string &storeId, int pathType);
-    int32_t DeleteObjectsByAppId(const std::string &appId);
+    int32_t OnUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
 
     Status DeleteKvStore(StoreMetaData &metaData);
 
@@ -204,11 +185,6 @@ private:
     std::shared_ptr<DeviceChangeListenerImpl> deviceListener_;
 
     std::shared_ptr<Security> security_;
-    std::mutex mutex_;
-    sptr<DistributedRdb::RdbServiceImpl> rdbService_;
-    sptr<KVDBServiceImpl> kvdbService_;
-    sptr<DistributedObject::ObjectServiceImpl> objectService_;
-    sptr<DataShare::DataShareServiceImpl> dataShareService_;
     ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
 };

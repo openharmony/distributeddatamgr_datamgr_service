@@ -12,22 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "RdbServiceImpl"
-
 #include "rdb_service_impl.h"
-#include "crypto_manager.h"
+#include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
-#include "metadata/store_meta_data.h"
-#include "metadata/meta_data_manager.h"
 #include "communicator/communication_provider.h"
+#include "crypto_manager.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
-#include "utils/anonymous.h"
-#include "accesstoken_kit.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/store_meta_data.h"
 #include "permission/permission_validator.h"
 #include "types_export.h"
-
+#include "utils/anonymous.h"
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::AppDistributedKv::CommunicationProvider;
 using OHOS::DistributedData::CheckerManager;
@@ -39,6 +37,17 @@ using DistributedDB::RelationalStoreManager;
 
 constexpr uint32_t ITERATE_TIMES = 10000;
 namespace OHOS::DistributedRdb {
+__attribute__((used)) RdbServiceImpl::Factory RdbServiceImpl::factory_;
+RdbServiceImpl::Factory::Factory()
+{
+    FeatureSystem::GetInstance().RegisterCreator("relational_store",
+        []() { return std::make_shared<RdbServiceImpl>(); });
+}
+
+RdbServiceImpl::Factory::~Factory()
+{
+}
+
 RdbServiceImpl::DeathRecipientImpl::DeathRecipientImpl(const DeathCallback& callback)
     : callback_(callback)
 {
@@ -69,7 +78,7 @@ RdbServiceImpl::RdbServiceImpl()
         });
 }
 
-bool RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
+int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
 {
     std::string identifierHex = TransferStringToHex(identifier);
     ZLOGI("%{public}.6s", identifierHex.c_str());
@@ -129,8 +138,8 @@ void RdbServiceImpl::OnClientDied(pid_t pid)
 bool RdbServiceImpl::CheckAccess(const RdbSyncerParam &param)
 {
     CheckerManager::StoreInfo storeInfo;
-    storeInfo.uid = GetCallingUid();
-    storeInfo.tokenId = GetCallingTokenID();
+    storeInfo.uid = IPCSkeleton::GetCallingUid();
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.bundleName = param.bundleName_;
     storeInfo.storeId = RdbSyncer::RemoveSuffix(param.storeName_);
     auto instanceId = RdbSyncer::GetInstIndex(storeInfo.tokenId, storeInfo.bundleName);
@@ -158,7 +167,7 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam& param, const sptr<IRe
         return RDB_ERROR;
     }
 
-    pid_t pid = GetCallingPid();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     auto recipient = new(std::nothrow) DeathRecipientImpl([this, pid] {
         OnClientDied(pid);
     });
@@ -216,9 +225,9 @@ void RdbServiceImpl::SyncerTimeout(std::shared_ptr<RdbSyncer> syncer)
 
 std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &param)
 {
-    pid_t pid = GetCallingPid();
-    pid_t uid = GetCallingUid();
-    uint32_t tokenId = GetCallingTokenID();
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    pid_t uid = IPCSkeleton::GetCallingUid();
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     std::shared_ptr<RdbSyncer> syncer;
     syncers_.Compute(pid, [this, &param, pid, uid, tokenId, &syncer] (const auto& key, StoreSyncersType& syncers) {
         auto storeId = RdbSyncer::RemoveSuffix(param.storeName_);
@@ -305,7 +314,7 @@ int32_t RdbServiceImpl::DoAsync(const RdbSyncerParam &param, uint32_t seqNum, co
         ZLOGE("permission error");
         return RDB_ERROR;
     }
-    pid_t pid = GetCallingPid();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     ZLOGI("seq num=%{public}u", seqNum);
     auto syncer = GetRdbSyncer(param);
     if (syncer == nullptr) {
@@ -334,8 +343,8 @@ std::string RdbServiceImpl::TransferStringToHex(const std::string &origStr)
 
 std::string RdbServiceImpl::GenIdentifier(const RdbSyncerParam &param)
 {
-    pid_t uid = GetCallingUid();
-    uint32_t token = GetCallingTokenID();
+    pid_t uid = IPCSkeleton::GetCallingUid();
+    uint32_t token = IPCSkeleton::GetCallingTokenID();
     auto storeId = RdbSyncer::RemoveSuffix(param.storeName_);
     CheckerManager::StoreInfo storeInfo{ uid, token, param.bundleName_, storeId };
     std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
@@ -346,7 +355,7 @@ std::string RdbServiceImpl::GenIdentifier(const RdbSyncerParam &param)
 
 int32_t RdbServiceImpl::DoSubscribe(const RdbSyncerParam& param)
 {
-    pid_t pid = GetCallingPid();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     auto identifier = GenIdentifier(param);
     ZLOGI("%{public}s %{public}.6s %{public}d", param.storeName_.c_str(), identifier.c_str(), pid);
     identifiers_.Insert(identifier, pid);
@@ -384,13 +393,14 @@ int32_t RdbServiceImpl::CreateRDBTable(
         return RDB_ERROR;
     }
 
-    pid_t pid = GetCallingPid();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     auto syncer = new (std::nothrow)RdbSyncer(param, new (std::nothrow) RdbStoreObserverImpl(this, pid));
     if (syncer == nullptr) {
         ZLOGE("new syncer error");
         return RDB_ERROR;
     }
-    if (syncer->Init(pid, GetCallingUid(), GetCallingTokenID(), writePermission, readPermission) != RDB_OK) {
+    if (syncer->Init(pid, IPCSkeleton::GetCallingUid(), IPCSkeleton::GetCallingTokenID(), writePermission,
+            readPermission) != RDB_OK) {
         ZLOGE("Init error");
         delete syncer;
         return RDB_ERROR;
@@ -405,7 +415,7 @@ int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
         ZLOGE("permission error");
         return RDB_ERROR;
     }
-    pid_t pid = GetCallingPid();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     auto syncer = new (std::nothrow)RdbSyncer(param, new (std::nothrow) RdbStoreObserverImpl(this, pid));
     if (syncer == nullptr) {
         ZLOGE("new syncer error");

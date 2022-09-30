@@ -42,14 +42,16 @@ using namespace OHOS::AppDistributedKv;
 using namespace OHOS::Security::AccessToken;
 using system_clock = std::chrono::system_clock;
 using Commu = AppDistributedKv::CommunicationProvider;
-KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
+__attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
 {
-    FeatureSystem::GetInstance().RegisterCreator("kv_feature", []() { return std::make_shared<KVDBServiceImpl>(); });
+    FeatureSystem::GetInstance().RegisterCreator("kv_store", []() { return std::make_shared<KVDBServiceImpl>(); });
 }
+
 KVDBServiceImpl::Factory::~Factory()
 {
 }
+
 KVDBServiceImpl::KVDBServiceImpl()
 {
 }

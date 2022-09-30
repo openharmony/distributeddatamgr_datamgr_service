@@ -24,7 +24,7 @@
 #include "datashare_values_bucket.h"
 
 namespace OHOS::DataShare {
-class IDataShareService : public IRemoteBroker {
+class IDataShareService {
 public:
     enum {
         DATA_SHARE_SERVICE_CMD_INSERT,
@@ -35,6 +35,7 @@ public:
     };
 
     enum { DATA_SHARE_ERROR = -1, DATA_SHARE_OK = 0 };
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DataShare.IDataShareService");
 
     virtual int32_t Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int32_t Update(
@@ -42,7 +43,6 @@ public:
     virtual int32_t Delete(const std::string &uri, const DataSharePredicates &predicate) = 0;
     virtual std::shared_ptr<DataShareResultSet> Query(
         const std::string &uri, const DataSharePredicates &predicates, const std::vector<std::string> &columns) = 0;
-    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DataShare.IDataShareService");
 };
 } // namespace OHOS::DataShare
 #endif

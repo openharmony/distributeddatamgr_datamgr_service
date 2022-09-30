@@ -51,6 +51,12 @@ int32_t FeatureSystem::Feature::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId
     return STUB_SUCCESS;
 }
 
+int32_t FeatureSystem::Feature::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index,
+    uint32_t tokenId)
+{
+    return STUB_SUCCESS;
+}
+
 int32_t FeatureSystem::Feature::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
 {
     return STUB_SUCCESS;

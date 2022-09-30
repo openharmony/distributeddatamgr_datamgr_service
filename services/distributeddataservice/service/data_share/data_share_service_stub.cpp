@@ -101,8 +101,7 @@ int32_t DataShareServiceStub::OnRemoteQuery(MessageParcel &data, MessageParcel &
     return 0;
 }
 
-int DataShareServiceStub::OnRemoteRequest(
-    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {
@@ -111,7 +110,7 @@ int DataShareServiceStub::OnRemoteRequest(
     if (code >= 0 && code < DATA_SHARE_SERVICE_CMD_MAX) {
         return (this->*HANDLERS[code])(data, reply);
     }
-    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    return -1;
 }
 } // namespace DataShare
 } // namespace OHOS

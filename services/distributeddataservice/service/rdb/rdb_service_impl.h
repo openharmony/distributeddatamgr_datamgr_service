@@ -54,6 +54,8 @@ public:
         const RdbSyncerParam &param, const std::string &writePermission, const std::string &readPermission) override;
     int32_t DestroyRDBTable(const RdbSyncerParam &param) override;
 
+    int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
+
 protected:
     int32_t DoSync(const RdbSyncerParam& param, const SyncOption& option,
                    const RdbPredicates& predicates, SyncResult& result) override;
@@ -70,15 +72,13 @@ private:
 
     bool CheckAccess(const RdbSyncerParam& param);
 
-    bool ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
-
     void SyncerTimeout(std::shared_ptr<RdbSyncer> syncer);
 
     std::shared_ptr<RdbSyncer> GetRdbSyncer(const RdbSyncerParam& param);
 
     void OnAsyncComplete(pid_t pid, uint32_t seqNum, const SyncResult& result);
 
-    class DeathRecipientImpl : public DeathRecipient {
+    class DeathRecipientImpl : public IRemoteObject::DeathRecipient {
     public:
         using DeathCallback = std::function<void()>;
         explicit DeathRecipientImpl(const DeathCallback& callback);
@@ -86,6 +86,11 @@ private:
         void OnRemoteDied(const wptr<IRemoteObject> &object) override;
     private:
         const DeathCallback callback_;
+    };
+    class Factory {
+    public:
+        Factory();
+        ~Factory();
     };
 
     using StoreSyncersType = std::map<std::string, std::shared_ptr<RdbSyncer>>;
@@ -95,6 +100,8 @@ private:
     ConcurrentMap<std::string, pid_t> identifiers_;
     Utils::Timer timer_;
     RdbStoreObserverImpl autoLaunchObserver_;
+
+    static Factory factory_;
 
     static std::string TransferStringToHex(const std::string& origStr);
 

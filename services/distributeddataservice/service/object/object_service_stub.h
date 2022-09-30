@@ -18,11 +18,11 @@
 
 #include <iremote_stub.h>
 #include "iobject_service.h"
-
+#include "feature/feature_system.h"
 namespace OHOS::DistributedObject {
-class ObjectServiceStub : public IRemoteStub<IObjectService> {
+class ObjectServiceStub : public ObjectService, public DistributedData::FeatureSystem::Feature {
 public:
-    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
 private:
     bool CheckInterfaceToken(MessageParcel& data);
