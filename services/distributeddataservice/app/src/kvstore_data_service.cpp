@@ -15,13 +15,12 @@
 #define LOG_TAG "KvStoreDataService"
 #include "kvstore_data_service.h"
 
+#include <chrono>
 #include <directory_ex.h>
 #include <file_ex.h>
 #include <ipc_skeleton.h>
-#include <unistd.h>
-
-#include <chrono>
 #include <thread>
+#include <unistd.h>
 
 #include "accesstoken_kit.h"
 #include "auth_delegate.h"
@@ -47,10 +46,11 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/strategy_meta_data.h"
-#include "object_manager.h"
 #include "permission_validator.h"
+#include "permit_delegate.h"
 #include "process_communicator_impl.h"
 #include "route_head_handler_impl.h"
+#include "string_ex.h"
 #include "system_ability_definition.h"
 #include "uninstaller/uninstaller.h"
 #include "upgrade_manager.h"
@@ -58,9 +58,6 @@
 #include "utils/block_integer.h"
 #include "utils/converter.h"
 #include "utils/crypto.h"
-#include "string_ex.h"
-#include "permit_delegate.h"
-#include "runtime_config.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
