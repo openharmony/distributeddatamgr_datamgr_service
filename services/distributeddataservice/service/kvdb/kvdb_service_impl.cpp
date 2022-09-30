@@ -426,22 +426,23 @@ int32_t KVDBServiceImpl::Online(const std::string &device)
             continue;
         }
         for (const auto &value : localMetaData.values) {
-            if (value.type == PolicyType::IMMEDIATE_SYNC_ON_ONLINE) {
-                SyncInfo syncInfo;
-                syncInfo.seqId = KvStoreUtils::GenerateSequenceId();
-                syncInfo.mode = PUSH_PULL;
-                syncInfo.delay = 0;
-                syncInfo.devices = { device };
-                if (value.IsValueEffect()) {
-                    syncInfo.delay = value.valueUint;
-                }
-                ZLOGD("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
-                auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
-                KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
-                    std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
-                    std::bind(&KVDBServiceImpl::DoComplete, this, data.tokenId, syncInfo.seqId, std::placeholders::_1));
-                break;
+            if (value.type != PolicyType::IMMEDIATE_SYNC_ON_ONLINE) {
+                continue;
             }
+            SyncInfo syncInfo;
+            syncInfo.seqId = KvStoreUtils::GenerateSequenceId();
+            syncInfo.mode = PUSH_PULL;
+            syncInfo.delay = 0;
+            syncInfo.devices = { device };
+            if (value.IsValueEffect()) {
+                syncInfo.delay = value.valueUint;
+            }
+            ZLOGD("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
+            auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
+            KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
+                std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
+                std::bind(&KVDBServiceImpl::DoComplete, this, data.tokenId, syncInfo.seqId, std::placeholders::_1));
+            break;
         }
     }
     return SUCCESS;

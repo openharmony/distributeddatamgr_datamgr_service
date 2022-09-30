@@ -399,8 +399,9 @@ int32_t RdbServiceImpl::CreateRDBTable(
         ZLOGE("new syncer error");
         return RDB_ERROR;
     }
-    if (syncer->Init(pid, IPCSkeleton::GetCallingUid(), IPCSkeleton::GetCallingTokenID(), writePermission,
-            readPermission) != RDB_OK) {
+    auto uid = IPCSkeleton::GetCallingUid();
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    if (syncer->Init(pid, uid, tokenId, writePermission, readPermission) != RDB_OK) {
         ZLOGE("Init error");
         delete syncer;
         return RDB_ERROR;
