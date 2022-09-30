@@ -52,6 +52,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/object/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/rdb/src",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/backup/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
     "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
     "//utils/system/safwk/native/include",
     "../adapter/include/account",
