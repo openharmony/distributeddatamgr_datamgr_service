@@ -50,6 +50,7 @@
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
 #include "route_head_handler_impl.h"
+#include "runtime_config.h"
 #include "string_ex.h"
 #include "system_ability_definition.h"
 #include "uninstaller/uninstaller.h"
