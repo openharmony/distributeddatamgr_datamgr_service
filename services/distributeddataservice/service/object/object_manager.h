@@ -84,9 +84,9 @@ public:
     int32_t Clear();
     int32_t DeleteByAppId(const std::string &appId);
     void RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
-                                const pid_t &pid, const uint32_t &tokenId,
+                                pid_t pid, uint32_t tokenId,
                                 sptr <IObjectChangeCallback> &callback);
-    void UnregisterRemoteCallback(const std::string &bundleName, const pid_t &pid, const uint32_t &tokenId,
+    void UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
                                   const std::string &sessionId = "");
     void NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData);
     void CloseAfterMinute();
@@ -144,10 +144,6 @@ private:
     {
         return appId + SEPERATOR + sessionId + SEPERATOR;
     };
-    inline std::string GetPrefixWithPid(const std::string &appId, const std::string &sessionId, const std::string &pid)
-    {
-        return appId + SEPERATOR + sessionId + SEPERATOR + pid;
-    };
     std::recursive_mutex kvStoreMutex_;
     std::mutex mutex_;
     DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager_ = nullptr;
@@ -157,7 +153,7 @@ private:
     std::string userId_;
     std::atomic<bool> isSyncing_ = false;
     Utils::Timer timer_;
-    ConcurrentMap<CallbackInfo, sptr<IObjectChangeCallback>> callback_;
+    ConcurrentMap<CallbackInfo, sptr<IObjectChangeCallback>> callbacks_;
     static constexpr size_t TIME_TASK_NUM = 1;
     static constexpr int64_t INTERVAL = 1;
     KvScheduler scheduler_ { TIME_TASK_NUM };
