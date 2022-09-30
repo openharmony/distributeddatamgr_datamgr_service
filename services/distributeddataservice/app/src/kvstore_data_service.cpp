@@ -1175,7 +1175,7 @@ void KvStoreDataService::InitSecurityAdapter()
         return;
     }
 
-    auto dbStatus = DistributedDB::KvStoreDelegateManager::SetProcessSystemAPIAdapter(security_);
+    auto dbStatus = DistributedDB::RuntimeConfig::SetProcessSystemAPIAdapter(security_);
     ZLOGD("set distributed db system api adapter: %d.", static_cast<int>(dbStatus));
 
     auto status = AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(
