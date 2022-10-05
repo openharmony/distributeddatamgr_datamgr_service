@@ -22,6 +22,7 @@
 #include "common_event_support.h"
 #include "communication_provider.h"
 #include "device_kvstore_impl.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
@@ -84,7 +85,7 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
     CommonEventSubscribeInfo info(matchingSkills);
     auto callback = [kvStoreDataService](const std::string &bundleName, int32_t userId, int32_t appIndex) {
-        kvStoreDataService->DeleteObjectsByAppId(bundleName);
+        kvStoreDataService->OnUninstall(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
         std::string prefix = StoreMetaData::GetPrefix({ CommunicationProvider::GetInstance().GetLocalDevice().uuid,
             std::to_string(userId), "default", bundleName });
         std::vector<StoreMetaData> storeMetaData;

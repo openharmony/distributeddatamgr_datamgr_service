@@ -34,13 +34,23 @@
 namespace OHOS::DistributedObject {
 using Commu = AppDistributedKv::CommunicationProvider;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
+using FeatureSystem = OHOS::DistributedData::FeatureSystem;
+__attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
+ObjectServiceImpl::Factory::Factory()
+{
+    FeatureSystem::GetInstance().RegisterCreator("data_object", []() { return std::make_shared<ObjectServiceImpl>(); });
+}
+
+ObjectServiceImpl::Factory::~Factory()
+{
+}
 
 int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const std::string &sessionId,
     const std::string &deviceId, const std::map<std::string, std::vector<uint8_t>> &data,
     sptr<IObjectSaveCallback> callback)
 {
     ZLOGI("begin.");
-    uint32_t tokenId = GetCallingTokenID();
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
@@ -56,13 +66,13 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     return status;
 }
 
-void ObjectServiceImpl::Initialize()
+int32_t ObjectServiceImpl::OnInitialize()
 {
     ZLOGI("Initialize");
     auto localDeviceId = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().uuid;
     if (localDeviceId.empty()) {
         ZLOGE("failed to get local device id");
-        return;
+        return OBJECT_INNER_ERROR;
     }
     auto uid = IPCSkeleton::GetCallingUid();
     const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
@@ -88,7 +98,7 @@ void ObjectServiceImpl::Initialize()
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
     if (!saved) {
         ZLOGE("SaveMeta failed");
-        return;
+        return OBJECT_INNER_ERROR;
     }
     DistributedData::AppIDMetaData appIdMeta;
     appIdMeta.bundleName = saveMeta.bundleName;
@@ -98,14 +108,22 @@ void ObjectServiceImpl::Initialize()
         ZLOGE("Save appIdMeta failed");
     }
     ZLOGI("SaveMeta success appId %{public}s, storeId %{public}s", saveMeta.appId.c_str(), saveMeta.storeId.c_str());
-    return;
+    return OBJECT_SUCCESS;
+}
+
+int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
+{
+    if (code == uint32_t(AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
+        Clear();
+    }
+    return Feature::OnUserChange(code, user, account);
 }
 
 int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
     const std::string &bundleName, const std::string &sessionId, sptr<IObjectRevokeSaveCallback> callback)
 {
     ZLOGI("begin.");
-    uint32_t tokenId = GetCallingTokenID();
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
@@ -125,7 +143,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
     const std::string &bundleName, const std::string &sessionId, sptr<IObjectRetrieveCallback> callback)
 {
     ZLOGI("begin.");
-    uint32_t tokenId = GetCallingTokenID();
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
@@ -145,7 +163,7 @@ int32_t ObjectServiceImpl::RegisterDataObserver(
     const std::string &bundleName, const std::string &sessionId, sptr<IObjectChangeCallback> callback)
 {
     ZLOGD("begin.");
-    uint32_t tokenId = GetCallingTokenID();
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
@@ -158,7 +176,7 @@ int32_t ObjectServiceImpl::RegisterDataObserver(
 int32_t ObjectServiceImpl::UnregisterDataChangeObserver(const std::string &bundleName, const std::string &sessionId)
 {
     ZLOGD("begin.");
-    uint32_t tokenId = GetCallingTokenID();
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
@@ -195,7 +213,7 @@ void ObjectServiceImpl::Clear()
     return;
 }
 
-int32_t ObjectServiceImpl::DeleteByAppId(const std::string &bundleName)
+int32_t ObjectServiceImpl::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
 {
     ZLOGI("begin. %{public}s", bundleName.c_str());
     int32_t result = ObjectStoreManager::GetInstance()->DeleteByAppId(bundleName);
@@ -239,11 +257,12 @@ int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, Dist
     return OBJECT_SUCCESS;
 }
 
-void ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const AppId &appId)
+int32_t ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId)
 {
     ZLOGI("ObjectServiceImpl::OnAppExit uid=%{public}d, pid=%{public}d, tokenId=%{public}d, bundleName=%{public}s",
-          uid, pid, tokenId, (appId.appId).c_str());
-    ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(appId.appId, pid, tokenId);
+          uid, pid, tokenId, appId.c_str());
+    ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(appId, pid, tokenId);
+    return FeatureSystem::STUB_SUCCESS;
 }
 
 ObjectServiceImpl::ObjectServiceImpl()

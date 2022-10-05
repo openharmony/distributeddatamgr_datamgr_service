@@ -17,10 +17,11 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H
 #include "iremote_stub.h"
 #include "kvdb_service.h"
+#include "feature/feature_system.h"
 namespace OHOS::DistributedKv {
-class API_EXPORT KVDBServiceStub : public IRemoteStub<KVDBService> {
+class API_EXPORT KVDBServiceStub : public KVDBService, public DistributedData::FeatureSystem::Feature {
 public:
-    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
 private:
     using Handler = int32_t (KVDBServiceStub::*)(

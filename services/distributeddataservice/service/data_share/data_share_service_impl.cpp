@@ -28,6 +28,18 @@
 #include "uri_utils.h"
 
 namespace OHOS::DataShare {
+using FeatureSystem = DistributedData::FeatureSystem;
+__attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
+DataShareServiceImpl::Factory::Factory()
+{
+    FeatureSystem::GetInstance().RegisterCreator("data_share",
+        []() { return std::make_shared<DataShareServiceImpl>(); });
+}
+
+DataShareServiceImpl::Factory::~Factory()
+{
+}
+
 bool DataShareServiceImpl::CheckCallingPermission(const std::string &permission)
 {
     if (!permission.empty() && Security::AccessToken::AccessTokenKit::VerifyAccessToken(

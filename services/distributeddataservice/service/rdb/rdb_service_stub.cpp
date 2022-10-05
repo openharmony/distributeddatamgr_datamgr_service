@@ -161,7 +161,7 @@ int32_t RdbServiceStub::OnRemoteDoRemoteQuery(MessageParcel& data, MessageParcel
 
 bool RdbServiceStub::CheckInterfaceToken(MessageParcel& data)
 {
-    auto localDescriptor = IRdbService::GetDescriptor();
+    auto localDescriptor = GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
     if (remoteDescriptor != localDescriptor) {
         ZLOGE("interface token is not equal");
@@ -170,7 +170,7 @@ bool RdbServiceStub::CheckInterfaceToken(MessageParcel& data)
     return true;
 }
 
-int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
+int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply)
 {
     ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {
@@ -179,7 +179,7 @@ int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageP
     if (code >= 0 && code < RDB_SERVICE_CMD_MAX) {
         return (this->*HANDLERS[code])(data, reply);
     }
-    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    return RDB_ERROR;
 }
 
 int32_t RdbServiceStub::OnRemoteDoCreateTable(MessageParcel &data, MessageParcel &reply)

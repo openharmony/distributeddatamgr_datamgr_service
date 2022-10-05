@@ -12,18 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "KvStoreDataService"
-
 #include "kvstore_data_service.h"
 
+#include <chrono>
 #include <directory_ex.h>
 #include <file_ex.h>
 #include <ipc_skeleton.h>
-#include <unistd.h>
-
-#include <chrono>
 #include <thread>
+#include <unistd.h>
 
 #include "accesstoken_kit.h"
 #include "auth_delegate.h"
@@ -33,14 +30,12 @@
 #include "communication_provider.h"
 #include "config_factory.h"
 #include "constant.h"
-#include "data_share_service_impl.h"
 #include "dds_trace.h"
 #include "device_kvstore_impl.h"
 #include "executor_factory.h"
 #include "hap_token_info.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
-#include "kvdb_service_impl.h"
 #include "kvstore_account_observer.h"
 #include "kvstore_app_accessor.h"
 #include "kvstore_device_listener.h"
@@ -51,13 +46,12 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/strategy_meta_data.h"
-#include "object_common.h"
-#include "object_manager.h"
-#include "object_service_impl.h"
 #include "permission_validator.h"
+#include "permit_delegate.h"
 #include "process_communicator_impl.h"
-#include "rdb_service_impl.h"
 #include "route_head_handler_impl.h"
+#include "runtime_config.h"
+#include "string_ex.h"
 #include "system_ability_definition.h"
 #include "uninstaller/uninstaller.h"
 #include "upgrade_manager.h"
@@ -65,9 +59,6 @@
 #include "utils/block_integer.h"
 #include "utils/converter.h"
 #include "utils/crypto.h"
-#include "string_ex.h"
-#include "permit_delegate.h"
-#include "runtime_config.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -107,6 +98,7 @@ KvStoreDataService::~KvStoreDataService()
     deviceAccountMap_.clear();
     clientDeathObserverMap_.clear();
     deviceListeners_.clear();
+    features_.Clear();
 }
 
 void KvStoreDataService::Initialize()
@@ -129,29 +121,39 @@ void KvStoreDataService::Initialize()
         deviceInnerListener_.get(), { "innerListener" });
 }
 
-sptr<IRemoteObject> KvStoreDataService::GetObjectService()
+sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
 {
-    ZLOGD("enter");
-    if (objectService_ == nullptr) {
-        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-        if (objectService_ == nullptr) {
-            objectService_ = new (std::nothrow) DistributedObject::ObjectServiceImpl();
+    sptr<DistributedData::FeatureStubImpl> feature;
+    bool isFirstCreate = false;
+    features_.Compute(name, [&feature, &isFirstCreate](const auto &key, auto &value) ->bool {
+        if (value != nullptr) {
+            feature = value;
+            return true;
         }
-        return objectService_ == nullptr ? nullptr : objectService_->AsObject().GetRefPtr();
+        auto creator = FeatureSystem::GetInstance().GetCreator(key);
+        if (!creator) {
+            return false;
+        }
+        auto impl = creator();
+        if (impl == nullptr) {
+            return false;
+        }
+
+        value = new DistributedData::FeatureStubImpl(impl);
+        feature = value;
+        isFirstCreate = true;
+        return true;
+    });
+    if (isFirstCreate) {
+        feature->OnInitialize();
     }
-    return objectService_->AsObject().GetRefPtr();
+    return feature != nullptr ? feature->AsObject() : nullptr;
 }
 
 void KvStoreDataService::InitObjectStore()
 {
     ZLOGI("begin.");
-    if (objectService_ == nullptr) {
-        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-        if (objectService_ == nullptr) {
-            objectService_ = new (std::nothrow) DistributedObject::ObjectServiceImpl();
-        }
-    }
-    objectService_->Initialize();
+    auto feature = GetFeatureInterface("data_object");
     return;
 }
 Status KvStoreDataService::GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
@@ -851,13 +853,10 @@ void KvStoreDataService::StartService()
     AccountDelegate::GetInstance()->SubscribeAccountEvent();
     auto autoLaunch = [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
         auto status = ResolveAutoLaunchParamByIdentifier(identifier, param);
-        if (kvdbService_) {
-            kvdbService_->ResolveAutoLaunch(identifier, param);
-        }
-        if (objectService_) {
-            ZLOGD("entering objectService ResolveAutoLaunch");
-            objectService_->ResolveAutoLaunch(identifier, param);
-        }
+        features_.ForEachCopies([&identifier, &param](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
+            value->ResolveAutoLaunch(identifier, param);
+            return false;
+        });
         return status;
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
@@ -1024,19 +1023,10 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverI
         ZLOGI("remove death recipient");
         observerProxy_->RemoveDeathRecipient(deathRecipient_);
     }
-    sptr<KVDBServiceImpl> kvdbService;
-    sptr<DistributedObject::ObjectServiceImpl> objectService;
-    {
-        std::lock_guard<decltype(dataService_.mutex_)> lockGuard(dataService_.mutex_);
-        kvdbService = dataService_.kvdbService_;
-        objectService = dataService_.objectService_;
-    }
-    if (kvdbService) {
-        kvdbService->AppExit(uid_, pid_, token_, appId_);
-    }
-    if (objectService) {
-        objectService->OnAppExit(uid_, pid_, token_, appId_);
-    }
+    dataService_.features_.ForEachCopies([this](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->OnAppExit(uid_, pid_, token_, appId_);
+        return false;
+    });
 }
 
 void KvStoreDataService::KvStoreClientDeathObserverImpl::NotifyClientDie()
@@ -1130,20 +1120,13 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
 }
 void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
 {
-    sptr<DistributedRdb::RdbServiceImpl> rdbService;
-    sptr<KVDBServiceImpl> kvdbService;
-    sptr<DistributedObject::ObjectServiceImpl> objectService;
-    {
-        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-        rdbService = rdbService_;
-        kvdbService = kvdbService_;
-        objectService = objectService_;
-    }
-    if (kvdbService) {
-        kvdbService->OnUserChanged();
-    }
-    if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_SWITCHED && objectService) {
-        objectService.clear();
+    features_.ForEachCopies([&eventInfo](const auto &key, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->OnUserChange(uint32_t(eventInfo.status), eventInfo.userId, eventInfo.harmonyAccountId);
+        return false;
+    });
+
+    if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_SWITCHED) {
+        features_.Erase("data_share");
     }
 }
 
@@ -1230,50 +1213,13 @@ void KvStoreDataService::SetCompatibleIdentify(const AppDistributedKv::DeviceInf
 
 void KvStoreDataService::OnDeviceOnline(const AppDistributedKv::DeviceInfo &info)
 {
-    sptr<KVDBServiceImpl> kvdbService;
-    {
-        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-        kvdbService = kvdbService_;
+    if (info.uuid.empty()) {
+        return;
     }
-    if (kvdbService && !info.uuid.empty()) {
-        kvdbService->OnDeviceOnLine(info.uuid);
-    }
-}
-
-sptr<IRemoteObject> KvStoreDataService::GetRdbService()
-{
-    if (rdbService_ == nullptr) {
-        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-        if (rdbService_ == nullptr) {
-            rdbService_ = new (std::nothrow) DistributedRdb::RdbServiceImpl();
-        }
-        return rdbService_ == nullptr ? nullptr : rdbService_->AsObject().GetRefPtr();
-    }
-    return rdbService_->AsObject().GetRefPtr();
-}
-
-sptr<IRemoteObject> KvStoreDataService::GetKVdbService()
-{
-    if (kvdbService_ == nullptr) {
-        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-        if (kvdbService_ == nullptr) {
-            kvdbService_ = new (std::nothrow) KVDBServiceImpl();
-        }
-        return kvdbService_ == nullptr ? nullptr : kvdbService_->AsObject().GetRefPtr();
-    }
-    return kvdbService_->AsObject().GetRefPtr();
-}
-
-sptr<IRemoteObject> KvStoreDataService::GetDataShareService()
-{
-    if (dataShareService_ == nullptr) {
-        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-        if (dataShareService_ == nullptr) {
-            dataShareService_ = new (std::nothrow) DataShare::DataShareServiceImpl();
-        }
-        return dataShareService_ == nullptr ? nullptr : dataShareService_->AsObject().GetRefPtr();
-    }
-    return dataShareService_->AsObject().GetRefPtr();
+    features_.ForEachCopies([&info](const auto &key, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->Online(info.uuid);
+        return false;
+    });
 }
 
 bool DbMetaCallbackDelegateMgr::GetKvStoreDiskSize(const std::string &storeId, uint64_t &size)
@@ -1323,8 +1269,13 @@ void DbMetaCallbackDelegateMgr::GetKvStoreKeys(std::vector<StoreInfo> &dbStats)
     delegate_->CloseKvStore(kvStoreNbDelegatePtr);
 }
 
-int32_t KvStoreDataService::DeleteObjectsByAppId(const std::string &appId)
+int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
 {
-    return objectService_->DeleteByAppId(appId);
+    features_.ForEachCopies(
+        [bundleName, user, index, tokenId](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
+            value->OnAppUninstall(bundleName, user, index, tokenId);
+            return false;
+        });
+    return 0;
 }
 } // namespace OHOS::DistributedKv

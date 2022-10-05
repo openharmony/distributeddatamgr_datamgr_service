@@ -12,7 +12,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
+#define LOG_TAG "Bootstrap"
 #include "bootstrap.h"
 
 #include <dlfcn.h>
@@ -21,6 +21,7 @@
 #include "checker/checker_manager.h"
 #include "config_factory.h"
 #include "directory_manager.h"
+#include "log_print.h"
 namespace OHOS {
 namespace DistributedData {
 Bootstrap &Bootstrap::GetInstance()
@@ -54,9 +55,24 @@ void Bootstrap::LoadComponents()
         return;
     }
     for (auto &comp : *comps) {
+        if (comp.lib.empty()) {
+            continue;
+        }
+
+        // no need to close the component, so we don't keep the handles
         auto handle = dlopen(comp.lib.c_str(), RTLD_LAZY);
-        auto ctor = (Constructor)dlsym(handle, comp.constructor.c_str());
+        if (handle == nullptr) {
+            ZLOGE("dlopen(%{public}s) failed(%{public}d)!", comp.lib.c_str(), errno);
+            continue;
+        }
+
+        if (comp.constructor.empty()) {
+            continue;
+        }
+
+        auto ctor = reinterpret_cast<Constructor>(dlsym(handle, comp.constructor.c_str()));
         if (ctor == nullptr) {
+            ZLOGE("dlsym(%{public}s) failed(%{public}d)!", comp.constructor.c_str(), errno);
             continue;
         }
         ctor(comp.params.c_str());

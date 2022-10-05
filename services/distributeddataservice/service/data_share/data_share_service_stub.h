@@ -18,12 +18,12 @@
 
 #include <iremote_stub.h>
 #include "idata_share_service.h"
-
+#include "feature/feature_system.h"
 namespace OHOS {
 namespace DataShare {
-class DataShareServiceStub : public IRemoteStub<IDataShareService> {
+class DataShareServiceStub : public IDataShareService, public DistributedData::FeatureSystem::Feature {
 public:
-    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
 private:
     static bool CheckInterfaceToken(MessageParcel& data);

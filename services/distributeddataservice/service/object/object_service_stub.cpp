@@ -132,7 +132,7 @@ int32_t ObjectServiceStub::OnUnsubscribeRequest(MessageParcel &data, MessageParc
 
 bool ObjectServiceStub::CheckInterfaceToken(MessageParcel& data)
 {
-    auto localDescriptor = IObjectService::GetDescriptor();
+    auto localDescriptor = ObjectService::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
     if (remoteDescriptor != localDescriptor) {
         ZLOGE("interface token is not equal");
@@ -141,7 +141,7 @@ bool ObjectServiceStub::CheckInterfaceToken(MessageParcel& data)
     return true;
 }
 
-int ObjectServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
+int ObjectServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply)
 {
     ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {
@@ -150,6 +150,6 @@ int ObjectServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, Messa
     if (code >= 0 && code < OBJECTSTORE_SERVICE_CMD_MAX) {
         return (this->*HANDLERS[code])(data, reply);
     }
-    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    return -1;
 }
 } // namespace OHOS::DistributedRdb
