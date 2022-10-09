@@ -65,7 +65,7 @@ private:
             StartTrace(HITRACE_TAG_DISTRIBUTEDDATA, value);
         }
         if ((traceSwitch_ & TRACE_CHAIN_ON) == TRACE_CHAIN_ON) {
-            traceId_ = OHOS::HiviewDFX::HiTrace::Begin(value, HITRACE_FLAG_DEFAULT);
+            traceId_ = OHOS::HiviewDFX::HiTraceChain::Begin(value, HITRACE_FLAG_DEFAULT);
         }
         if ((traceSwitch_ & API_PERFORMANCE_TRACE_ON) == API_PERFORMANCE_TRACE_ON) {
             lastTime_ = System::now();
@@ -83,7 +83,7 @@ private:
             FinishTrace(HITRACE_FLAG_DEFAULT);
         }
         if ((traceSwitch_ & TRACE_CHAIN_ON) == TRACE_CHAIN_ON) {
-            OHOS::HiviewDFX::HiTrace::End(traceId_);
+            OHOS::HiviewDFX::HiTraceChain::End(traceId_);
         }
         if ((traceSwitch_ & API_PERFORMANCE_TRACE_ON) == API_PERFORMANCE_TRACE_ON && action_) {
             action_(value, std::chrono::duration_cast<std::chrono::milliseconds>(System::now() - lastTime_).count());
