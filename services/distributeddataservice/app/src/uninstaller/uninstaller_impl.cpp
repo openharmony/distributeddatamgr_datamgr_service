@@ -101,7 +101,6 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
                 MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
                 MetaDataManager::GetInstance().DelMeta(meta.appId, true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
-                kvStoreDataService->DeleteKvStore(meta);
             }
         }
     };

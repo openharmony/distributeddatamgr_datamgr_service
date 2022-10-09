@@ -71,11 +71,8 @@ using StrategyMetaData = DistributedData::StrategyMeta;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
-constexpr size_t MAX_APP_ID_LENGTH = 256;
 KvStoreDataService::KvStoreDataService(bool runOnCreate)
     : SystemAbility(runOnCreate),
-      accountMutex_(),
-      deviceAccountMap_(),
       clientDeathObserverMutex_(),
       clientDeathObserverMap_()
 {
@@ -84,8 +81,6 @@ KvStoreDataService::KvStoreDataService(bool runOnCreate)
 
 KvStoreDataService::KvStoreDataService(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-      accountMutex_(),
-      deviceAccountMap_(),
       clientDeathObserverMutex_(),
       clientDeathObserverMap_()
 {
@@ -95,7 +90,6 @@ KvStoreDataService::KvStoreDataService(int32_t systemAbilityId, bool runOnCreate
 KvStoreDataService::~KvStoreDataService()
 {
     ZLOGI("begin.");
-    deviceAccountMap_.clear();
     clientDeathObserverMap_.clear();
     deviceListeners_.clear();
     features_.Clear();
@@ -156,506 +150,11 @@ void KvStoreDataService::InitObjectStore()
     auto feature = GetFeatureInterface("data_object");
     return;
 }
-Status KvStoreDataService::GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
-                                            std::function<void(sptr<ISingleKvStore>)> callback)
-{
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    ZLOGI("begin.");
-    KVSTORE_ACCOUNT_EVENT_PROCESSING_CHECKER(Status::SYSTEM_ACCOUNT_EVENT_PROCESSING);
-    StoreMetaData metaData;
-    Status status = FillStoreParam(options, appId, storeId, metaData);
-    if (status != Status::SUCCESS) {
-        callback(nullptr);
-        return status;
-    }
-
-    SecretKeyPara keyPara;
-    status = KvStoreDataService::GetSecretKey(options, metaData, keyPara);
-    if (status != Status::SUCCESS) {
-        callback(nullptr);
-        return status;
-    }
-
-    std::lock_guard<std::mutex> lg(accountMutex_);
-    auto it = deviceAccountMap_.find(metaData.user);
-    if (it == deviceAccountMap_.end()) {
-        auto result = deviceAccountMap_.emplace(std::piecewise_construct,
-            std::forward_as_tuple(metaData.user), std::forward_as_tuple(metaData.user));
-        if (!result.second) {
-            ZLOGE("emplace failed.");
-            callback(nullptr);
-            return Status::ERROR;
-        }
-        it = result.first;
-    }
-    sptr<SingleKvStoreImpl> store;
-    status = (it->second).GetKvStore(options, metaData, keyPara.secretKey, store);
-    if (keyPara.outdated) {
-        KvStoreMetaManager::GetInstance().ReKey(metaData.user, metaData.bundleName, metaData.storeId,
-            KvStoreAppManager::ConvertPathType(metaData), store);
-    }
-    if (status == Status::SUCCESS) {
-        status = UpdateMetaData(options, metaData);
-        if (status != Status::SUCCESS) {
-            ZLOGE("failed to write meta");
-            callback(nullptr);
-            return status;
-        }
-        callback(std::move(store));
-        return status;
-    }
-
-    status =  GetSingleKvStoreFailDo(status, options, metaData, keyPara, it->second, store);
-    callback(std::move(store));
-    return status;
-}
-
-Status KvStoreDataService::FillStoreParam(
-    const Options &options, const AppId &appId, const StoreId &storeId, StoreMetaData &metaData)
-{
-    if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()) {
-        ZLOGE("invalid argument type.");
-        return Status::INVALID_ARGUMENT;
-    }
-    metaData.version = STORE_VERSION;
-    metaData.securityLevel = options.securityLevel;
-    metaData.storeType = options.kvStoreType;
-    metaData.isBackup = options.backup;
-    metaData.isEncrypt = options.encrypt;
-    metaData.isAutoSync = options.autoSync;
-    metaData.bundleName = appId.appId;
-    metaData.storeId = storeId.storeId;
-    metaData.uid = IPCSkeleton::GetCallingUid();
-    metaData.tokenId = IPCSkeleton::GetCallingTokenID();
-    metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
-    ZLOGI("%{public}s, %{public}s", metaData.appId.c_str(), metaData.bundleName.c_str());
-    if (metaData.appId.empty()) {
-        ZLOGW("appId:%{public}s, uid:%{public}d, PERMISSION_DENIED", appId.appId.c_str(), metaData.uid);
-        return PERMISSION_DENIED;
-    }
-
-    metaData.user = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(metaData.uid);
-    metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    return SUCCESS;
-}
-
-Status KvStoreDataService::GetSecretKey(const Options &options, const StoreMetaData &metaData,
-    SecretKeyPara &secretKeyParas)
-{
-    std::string bundleName = metaData.bundleName;
-    std::string storeIdTmp = metaData.storeId;
-    std::lock_guard<std::mutex> lg(accountMutex_);
-    auto metaKey = KvStoreMetaManager::GetMetaKey(metaData.user, "default", bundleName, storeIdTmp);
-    if (!CheckOptions(options, metaKey)) {
-        ZLOGE("encrypt type or kvStore type is not the same");
-        return Status::INVALID_ARGUMENT;
-    }
-    std::vector<uint8_t> secretKey;
-    std::unique_ptr<std::vector<uint8_t>, void (*)(std::vector<uint8_t> *)> cleanGuard(
-        &secretKey, [](std::vector<uint8_t> *ptr) { ptr->assign(ptr->size(), 0); });
-
-    std::vector<uint8_t> metaSecretKey;
-    std::string secretKeyFile;
-    metaSecretKey = KvStoreMetaManager::GetMetaKey(metaData.user, "default", bundleName, storeIdTmp, "SINGLE_KEY");
-    secretKeyFile = KvStoreMetaManager::GetSecretSingleKeyFile(
-        metaData.user, bundleName, storeIdTmp, KvStoreAppManager::ConvertPathType(metaData));
-
-    bool outdated = false;
-    Status alreadyCreated = KvStoreMetaManager::GetInstance().CheckUpdateServiceMeta(metaSecretKey, CHECK_EXIST_LOCAL);
-    if (options.encrypt) {
-        ZLOGI("Getting secret key");
-        Status recStatus = RecoverSecretKey(alreadyCreated, outdated, metaSecretKey, secretKey, secretKeyFile);
-        if (recStatus != Status::SUCCESS) {
-            return recStatus;
-        }
-    } else {
-        if (alreadyCreated == Status::SUCCESS || FileExists(secretKeyFile)) {
-            ZLOGW("try to get an encrypted store with false option encrypt parameter");
-            return Status::CRYPT_ERROR;
-        }
-    }
-
-    SecretKeyPara kvStoreSecretKey;
-    kvStoreSecretKey.metaKey = metaKey;
-    kvStoreSecretKey.secretKey = secretKey;
-    kvStoreSecretKey.metaSecretKey = metaSecretKey;
-    kvStoreSecretKey.secretKeyFile = secretKeyFile;
-    kvStoreSecretKey.alreadyCreated = alreadyCreated;
-    kvStoreSecretKey.outdated = outdated;
-    secretKeyParas = kvStoreSecretKey;
-    return Status::SUCCESS;
-}
-
-Status KvStoreDataService::RecoverSecretKey(const Status &alreadyCreated, bool &outdated,
-    const std::vector<uint8_t> &metaSecretKey, std::vector<uint8_t> &secretKey, const std::string &secretKeyFile)
-{
-    if (alreadyCreated != Status::SUCCESS) {
-        KvStoreMetaManager::GetInstance().RecoverSecretKeyFromFile(
-            secretKeyFile, metaSecretKey, secretKey, outdated);
-        if (secretKey.empty()) {
-            ZLOGI("new secret key");
-            secretKey = Crypto::Random(32); // 32 is key length
-            KvStoreMetaManager::GetInstance().WriteSecretKeyToMeta(metaSecretKey, secretKey);
-            KvStoreMetaManager::GetInstance().WriteSecretKeyToFile(secretKeyFile, secretKey);
-        }
-    } else {
-        KvStoreMetaManager::GetInstance().GetSecretKeyFromMeta(metaSecretKey, secretKey, outdated);
-        if (secretKey.empty()) {
-            ZLOGW("get secret key from meta failed, try to recover");
-            KvStoreMetaManager::GetInstance().RecoverSecretKeyFromFile(
-                secretKeyFile, metaSecretKey, secretKey, outdated);
-        }
-        if (secretKey.empty()) {
-            ZLOGW("recover failed");
-            return Status::CRYPT_ERROR;
-        }
-        KvStoreMetaManager::GetInstance().WriteSecretKeyToFile(secretKeyFile, secretKey);
-    }
-    return Status::SUCCESS;
-}
-
-Status KvStoreDataService::UpdateMetaData(const Options &options, const StoreMetaData &metaData)
-{
-    auto localDeviceId = DeviceKvStoreImpl::GetLocalDeviceId();
-    if (localDeviceId.empty()) {
-        ZLOGE("failed to get local device id");
-        return Status::ERROR;
-    }
-    StoreMetaData saveMeta = metaData;
-    saveMeta.appType = "harmony";
-    saveMeta.deviceId = localDeviceId;
-    saveMeta.isAutoSync = options.autoSync;
-    saveMeta.isBackup = options.backup;
-    saveMeta.isEncrypt = options.encrypt;
-    saveMeta.storeType = options.kvStoreType;
-    saveMeta.schema = options.schema;
-    saveMeta.version = STORE_VERSION;
-    saveMeta.securityLevel = options.securityLevel;
-    saveMeta.dataDir = KvStoreAppManager::GetDbDir(metaData);
-    auto saved = MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
-    if (!saved) {
-        return Status::DB_ERROR;
-    }
-    AppIDMetaData appIdMeta;
-    appIdMeta.bundleName = saveMeta.bundleName;
-    appIdMeta.appId = saveMeta.appId;
-    saved = MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
-    return !saved ? Status::DB_ERROR : Status::SUCCESS;
-}
-
-Status KvStoreDataService::GetSingleKvStoreFailDo(Status status, const Options &options, const StoreMetaData &metaData,
-    SecretKeyPara &secKeyParas, KvStoreUserManager &kvUserManager, sptr<SingleKvStoreImpl> &kvStore)
-{
-    Status statusTmp = status;
-    Status getKvStoreStatus = statusTmp;
-    int32_t path = KvStoreAppManager::ConvertPathType(metaData);
-    ZLOGW("getKvStore failed with status %d", static_cast<int>(getKvStoreStatus));
-    if (getKvStoreStatus == Status::CRYPT_ERROR && options.encrypt) {
-        if (secKeyParas.alreadyCreated != Status::SUCCESS) {
-            // create encrypted store failed, remove secret key
-            KvStoreMetaManager::GetInstance().RemoveSecretKey(metaData.uid, metaData.bundleName, metaData.storeId);
-            return Status::ERROR;
-        }
-        // get existing encrypted store failed, retry with key stored in file
-        Status statusRet = KvStoreMetaManager::GetInstance().RecoverSecretKeyFromFile(
-            secKeyParas.secretKeyFile, secKeyParas.metaSecretKey, secKeyParas.secretKey, secKeyParas.outdated);
-        if (statusRet != Status::SUCCESS) {
-            kvStore = nullptr;
-            return Status::CRYPT_ERROR;
-        }
-        // here callback is called twice
-        statusTmp = kvUserManager.GetKvStore(options, metaData, secKeyParas.secretKey, kvStore);
-        if (secKeyParas.outdated) {
-            KvStoreMetaManager::GetInstance().ReKey(
-                metaData.user, metaData.bundleName, metaData.storeId, path, kvStore);
-        }
-    }
-
-    // if kvstore damaged and no backup file, then return DB_ERROR
-    if (statusTmp != Status::SUCCESS && getKvStoreStatus == Status::CRYPT_ERROR) {
-        // if backup file not exist, don't need recover
-        if (!CheckBackupFileExist(metaData.user, metaData.bundleName, metaData.storeId, path)) {
-            return Status::CRYPT_ERROR;
-        }
-        // remove damaged database
-        if (DeleteKvStoreOnly(metaData) != Status::SUCCESS) {
-            ZLOGE("DeleteKvStoreOnly failed.");
-            return Status::DB_ERROR;
-        }
-        // recover database
-        return RecoverKvStore(options, metaData, secKeyParas.secretKey, kvStore);
-    }
-    return statusTmp;
-}
-
-bool KvStoreDataService::CheckOptions(const Options &options, const std::vector<uint8_t> &metaKey) const
-{
-    ZLOGI("begin.");
-    KvStoreMetaData metaData;
-    metaData.version = 0;
-    Status statusTmp = KvStoreMetaManager::GetInstance().GetKvStoreMeta(metaKey, metaData);
-    if (statusTmp == Status::KEY_NOT_FOUND) {
-        ZLOGI("get metaKey not found.");
-        return true;
-    }
-    if (statusTmp != Status::SUCCESS) {
-        ZLOGE("get metaKey failed.");
-        return false;
-    }
-    ZLOGI("metaData encrypt is %d, kvStore type is %d, options encrypt is %d, kvStore type is %d",
-          static_cast<int>(metaData.isEncrypt), static_cast<int>(metaData.kvStoreType),
-          static_cast<int>(options.encrypt), static_cast<int>(options.kvStoreType));
-    if (options.encrypt != metaData.isEncrypt) {
-        ZLOGE("checkOptions encrypt type is not the same.");
-        return false;
-    }
-
-    if (options.kvStoreType != metaData.kvStoreType && metaData.version != 0) {
-        ZLOGE("checkOptions kvStoreType is not the same.");
-        return false;
-    }
-    ZLOGI("end.");
-    return true;
-}
 
 bool KvStoreDataService::CheckBackupFileExist(const std::string &userId, const std::string &bundleName,
                                               const std::string &storeId, int pathType)
 {
     return false;
-}
-template<typename  T>
-Status KvStoreDataService::RecoverKvStore(
-    const Options &options, const StoreMetaData &metaData, const std::vector<uint8_t> &secretKey, sptr<T> &kvStore)
-{
-    // restore database
-    Options optionsTmp = options;
-    optionsTmp.createIfMissing = true;
-    auto it = deviceAccountMap_.find(metaData.user);
-    if (it == deviceAccountMap_.end()) {
-        ZLOGD("deviceAccountId not found");
-        return Status::INVALID_ARGUMENT;
-    }
-
-    Status statusTmp = (it->second).GetKvStore(optionsTmp, metaData, secretKey, kvStore);
-    // restore database failed
-    if (statusTmp != Status::SUCCESS || kvStore == nullptr) {
-        ZLOGE("RecoverSingleKvStore reget GetSingleKvStore failed.");
-        return Status::DB_ERROR;
-    }
-    // recover database from backup file
-    bool importRet = kvStore->Import(metaData.bundleName);
-    if (!importRet) {
-        ZLOGE("RecoverSingleKvStore Import failed.");
-        return Status::RECOVER_FAILED;
-    }
-    ZLOGD("RecoverSingleKvStore Import success.");
-    return Status::RECOVER_SUCCESS;
-}
-
-void KvStoreDataService::GetAllKvStoreId(
-    const AppId &appId, std::function<void(Status, std::vector<StoreId> &)> callback)
-{
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    ZLOGI("GetAllKvStoreId begin.");
-    std::string bundleName = Constant::TrimCopy<std::string>(appId.appId);
-    std::vector<StoreId> storeIds;
-    if (bundleName.empty() || bundleName.size() > MAX_APP_ID_LENGTH) {
-        ZLOGE("invalid appId.");
-        callback(Status::INVALID_ARGUMENT, storeIds);
-        return;
-    }
-
-    const int32_t uid = IPCSkeleton::GetCallingUid();
-    const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
-    std::string prefix =
-        StoreMetaData::GetPrefix({ DeviceKvStoreImpl::GetLocalDeviceId(), userId, "default", bundleName });
-    DdsTrace traceDelegate(std::string(LOG_TAG "Delegate::") + std::string(__FUNCTION__));
-
-    std::vector<StoreMetaData> metaDatum;
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaDatum)) {
-        ZLOGE("LoadKeys failed!");
-        callback(Status::DB_ERROR, storeIds);
-        return;
-    }
-
-    for (const auto &metaData : metaDatum) {
-        if (metaData.storeId.empty()) {
-            continue;
-        }
-        storeIds.push_back({ metaData.storeId });
-    }
-    callback(Status::SUCCESS, storeIds);
-}
-
-Status KvStoreDataService::CloseKvStore(const AppId &appId, const StoreId &storeId)
-{
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    ZLOGI("begin.");
-    if (!appId.IsValid() || !storeId.IsValid()) {
-        ZLOGE("invalid bundleName.");
-        return Status::INVALID_ARGUMENT;
-    }
-
-    CheckerManager::StoreInfo info;
-    info.uid = IPCSkeleton::GetCallingUid();
-    info.tokenId = IPCSkeleton::GetCallingTokenID();
-    info.bundleName = appId.appId;
-    info.storeId = storeId.storeId;
-    std::string trueAppId = CheckerManager::GetInstance().GetAppId(info);
-    if (trueAppId.empty()) {
-        ZLOGW("check appId:%{public}s uid:%{public}d token:%{public}u failed.",
-            appId.appId.c_str(), info.uid, info.tokenId);
-        return Status::PERMISSION_DENIED;
-    }
-    const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(info.uid);
-    std::lock_guard<std::mutex> lg(accountMutex_);
-    auto it = deviceAccountMap_.find(userId);
-    if (it != deviceAccountMap_.end()) {
-        Status status = (it->second).CloseKvStore(appId.appId, storeId.storeId);
-        if (status != Status::STORE_NOT_OPEN) {
-            return status;
-        }
-    }
-    ZLOGE("store not open.");
-    return Status::STORE_NOT_OPEN;
-}
-
-/* close all opened kvstore */
-Status KvStoreDataService::CloseAllKvStore(const AppId &appId)
-{
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    ZLOGD("begin.");
-    if (!appId.IsValid()) {
-        ZLOGE("invalid bundleName.");
-        return Status::INVALID_ARGUMENT;
-    }
-    CheckerManager::StoreInfo info;
-    info.uid = IPCSkeleton::GetCallingUid();
-    info.tokenId = IPCSkeleton::GetCallingTokenID();
-    info.bundleName = appId.appId;
-    info.storeId = "";
-    std::string trueAppId = CheckerManager::GetInstance().GetAppId(info);
-    if (trueAppId.empty()) {
-        ZLOGW("check appId:%{public}s uid:%{public}d token:%{public}u failed.",
-            appId.appId.c_str(), info.uid, info.tokenId);
-        return Status::PERMISSION_DENIED;
-    }
-
-    const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(info.uid);
-    std::lock_guard<std::mutex> lg(accountMutex_);
-    auto it = deviceAccountMap_.find(userId);
-    if (it != deviceAccountMap_.end()) {
-        return (it->second).CloseAllKvStore(appId.appId);
-    }
-    ZLOGE("store not open.");
-    return Status::STORE_NOT_OPEN;
-}
-
-Status KvStoreDataService::DeleteKvStore(const AppId &appId, const StoreId &storeId)
-{
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    if (!appId.IsValid()) {
-        ZLOGE("invalid bundleName.");
-        return Status::INVALID_ARGUMENT;
-    }
-    CheckerManager::StoreInfo info;
-    info.uid = IPCSkeleton::GetCallingUid();
-    info.tokenId = IPCSkeleton::GetCallingTokenID();
-    info.bundleName = appId.appId;
-    info.storeId = "";
-    if (!CheckerManager::GetInstance().IsValid(info)) {
-        ZLOGW("check appId:%{public}s uid:%{public}d failed.", appId.appId.c_str(), info.uid);
-        return Status::PERMISSION_DENIED;
-    }
-
-    HapTokenInfo tokenInfo;
-    tokenInfo.instIndex = 0;
-    if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) == TOKEN_HAP) {
-        AccessTokenKit::GetHapTokenInfo(info.tokenId, tokenInfo);
-    }
-
-    StoreMetaData storeMetaData;
-    storeMetaData.deviceId = DeviceKvStoreImpl::GetLocalDeviceId();
-    storeMetaData.user = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(info.uid);
-    storeMetaData.bundleName = appId.appId;
-    storeMetaData.storeId = storeId.storeId;
-    storeMetaData.instanceId = tokenInfo.instIndex;
-    auto metaKey = storeMetaData.GetKey();
-    if (!MetaDataManager::GetInstance().LoadMeta(metaKey, storeMetaData)) {
-        ZLOGE("load key failed, appId:%s, storeId:%s, instanceId:%u",
-            appId.appId.c_str(), storeId.storeId.c_str(), storeMetaData.instanceId);
-        return Status::STORE_NOT_FOUND;
-    }
-    return DeleteKvStore(storeMetaData);
-}
-
-Status KvStoreDataService::DeleteKvStore(StoreMetaData &metaData)
-{
-    std::lock_guard<std::mutex> lg(accountMutex_);
-    Status status;
-    auto it = deviceAccountMap_.find(metaData.user);
-    if (it != deviceAccountMap_.end()) {
-        status = (it->second).DeleteKvStore(metaData.bundleName, metaData.uid, metaData.tokenId, metaData.storeId);
-    } else {
-        KvStoreUserManager kvStoreUserManager(metaData.user);
-        status = kvStoreUserManager.DeleteKvStore(
-            metaData.bundleName, metaData.uid, metaData.tokenId, metaData.storeId);
-    }
-
-    if (status == Status::SUCCESS) {
-        MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
-        MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
-        MetaDataManager::GetInstance().DelMeta(metaData.GetStrategyKey());
-        auto secretKeyFile = KvStoreMetaManager::GetSecretSingleKeyFile(
-            metaData.user, metaData.bundleName, metaData.storeId, KvStoreAppManager::ConvertPathType(metaData));
-        if (!RemoveFile(secretKeyFile)) {
-            ZLOGE("remove secretkey file single fail.");
-        }
-    }
-    return status;
-}
-
-/* delete all kv store */
-Status KvStoreDataService::DeleteAllKvStore(const AppId &appId)
-{
-    DdsTrace trace(std::string(LOG_TAG "::") + std::string(__FUNCTION__));
-    ZLOGI("%s", appId.appId.c_str());
-    if (!appId.IsValid()) {
-        ZLOGE("invalid bundleName.");
-        return Status::INVALID_ARGUMENT;
-    }
-
-    CheckerManager::StoreInfo info;
-    info.uid = IPCSkeleton::GetCallingUid();
-    info.tokenId = IPCSkeleton::GetCallingTokenID();
-    info.bundleName = appId.appId;
-    info.storeId = "";
-    if (!CheckerManager::GetInstance().IsValid(info)) {
-        ZLOGW("check appId:%{public}s uid:%{public}d failed.", appId.appId.c_str(), info.uid);
-        return Status::PERMISSION_DENIED;
-    }
-
-    Status statusTmp;
-    std::vector<StoreId> existStoreIds;
-    GetAllKvStoreId(appId, [&statusTmp, &existStoreIds](Status status, std::vector<StoreId> &storeIds) {
-        statusTmp = status;
-        existStoreIds = std::move(storeIds);
-    });
-
-    if (statusTmp != Status::SUCCESS) {
-        ZLOGE("%s, error: %d ", appId.appId.c_str(), static_cast<int>(statusTmp));
-        return statusTmp;
-    }
-
-    for (const auto &storeId : existStoreIds) {
-        statusTmp = DeleteKvStore(appId, storeId);
-        if (statusTmp != Status::SUCCESS) {
-            ZLOGE("%s, error: %d ", appId.appId.c_str(), static_cast<int>(statusTmp));
-            return statusTmp;
-        }
-    }
-
-    return statusTmp;
 }
 
 /* RegisterClientDeathObserver */
@@ -693,24 +192,8 @@ Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const A
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
-    if (appId.appId == "com.ohos.medialibrary.medialibrarydata") {
-        HapTokenInfo tokenInfo;
-        AccessTokenKit::GetHapTokenInfo(token, tokenInfo);
-        ZLOGI("not close bundle:%{public}s, tokenInfo.bundle:%{public}s, uid:%{public}d, token:%{public}u",
-            appIdTmp.appId.c_str(), tokenInfo.bundleName.c_str(), uid, token);
-        return Status::SUCCESS;
-    }
     std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
     clientDeathObserverMap_.erase(token);
-
-    const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
-    std::lock_guard<std::mutex> lock(accountMutex_);
-    auto it = deviceAccountMap_.find(userId);
-    if (it != deviceAccountMap_.end()) {
-        auto status = (it->second).CloseAllKvStore(appIdTmp.appId);
-        ZLOGI("Close all kv store %{public}s uid:%{public}d, status:%{public}d.",
-            appIdTmp.appId.c_str(), uid, status);
-    }
     return Status::SUCCESS;
 }
 
@@ -738,42 +221,6 @@ int KvStoreDataService::Dump(int fd, const std::vector<std::u16string> &args)
 
     ZLOGE("DumpHelper failed");
     return ERROR;
-}
-
-void KvStoreDataService::DumpAll(int fd)
-{
-    dprintf(fd, "------------------------------------------------------------------\n");
-    dprintf(fd, "User count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
-    for (const auto &pair : deviceAccountMap_) {
-        pair.second.Dump(fd);
-    }
-}
-
-void KvStoreDataService::DumpUserInfo(int fd)
-{
-    dprintf(fd, "------------------------------------------------------------------\n");
-    dprintf(fd, "User count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
-    for (const auto &pair : deviceAccountMap_) {
-        pair.second.DumpUserInfo(fd);
-    }
-}
-
-void KvStoreDataService::DumpAppInfo(int fd, const std::string &appId)
-{
-    dprintf(fd, "------------------------------------------------------------------\n");
-    dprintf(fd, "User count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
-    for (const auto &pair : deviceAccountMap_) {
-        pair.second.DumpAppInfo(fd, appId);
-    }
-}
-
-void KvStoreDataService::DumpStoreInfo(int fd, const std::string &storeId)
-{
-    dprintf(fd, "------------------------------------------------------------------\n");
-    dprintf(fd, "User count : %u\n", static_cast<uint32_t>(deviceAccountMap_.size()));
-    for (const auto &pair : deviceAccountMap_) {
-        pair.second.DumpStoreInfo(fd, storeId);
-    }
 }
 
 void KvStoreDataService::OnStart()
@@ -860,12 +307,6 @@ void KvStoreDataService::StartService()
         return status;
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
-    DumpHelper::GetInstance().AddDumpOperation(
-        std::bind(&KvStoreDataService::DumpAll, this, std::placeholders::_1),
-        std::bind(&KvStoreDataService::DumpUserInfo, this, std::placeholders::_1),
-        std::bind(&KvStoreDataService::DumpAppInfo, this, std::placeholders::_1, std::placeholders::_2),
-        std::bind(&KvStoreDataService::DumpStoreInfo, this, std::placeholders::_1, std::placeholders::_2)
-    );
     ZLOGI("Publish ret: %{public}d", static_cast<int>(ret));
 }
 
@@ -888,8 +329,6 @@ void KvStoreDataService::OnStoreMetaChanged(
         return;
     }
     ZLOGI("dirty kv store. storeId:%{public}s", metaData.storeId.c_str());
-    CloseKvStore({ metaData.bundleName }, { metaData.storeId });
-    DeleteKvStore({ metaData.bundleName }, { metaData.storeId });
 }
 
 bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
@@ -1055,42 +494,14 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::
     kvStoreClientDeathObserverImpl_.NotifyClientDie();
 }
 
-Status KvStoreDataService::DeleteKvStoreOnly(const StoreMetaData &metaData)
-{
-    ZLOGI("DeleteKvStoreOnly begin.");
-    auto it = deviceAccountMap_.find(metaData.user);
-    if (it != deviceAccountMap_.end()) {
-        return (it->second).DeleteKvStore(metaData.bundleName, metaData.uid, metaData.tokenId, metaData.storeId);
-    }
-    KvStoreUserManager kvStoreUserManager(metaData.user);
-    return kvStoreUserManager.DeleteKvStore(metaData.bundleName, metaData.uid, metaData.tokenId, metaData.storeId);
-}
-
 void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
 {
     ZLOGI("account event %{public}d changed process, begin.", eventInfo.status);
     NotifyAccountEvent(eventInfo);
-    std::lock_guard<std::mutex> lg(accountMutex_);
     switch (eventInfo.status) {
         case AccountStatus::DEVICE_ACCOUNT_DELETE: {
             g_kvStoreAccountEventStatus = 1;
-            // delete all kvstore belong to this device account
-            auto it = deviceAccountMap_.find(eventInfo.userId);
-            if (it != deviceAccountMap_.end()) {
-                (it->second).DeleteAllKvStore();
-                deviceAccountMap_.erase(eventInfo.userId);
-            } else {
-                KvStoreUserManager kvStoreUserManager(eventInfo.userId);
-                kvStoreUserManager.DeleteAllKvStore();
-            }
-            std::initializer_list<std::string> dirList = { Constant::ROOT_PATH_DE, "/", Constant::SERVICE_NAME, "/",
-                eventInfo.userId };
-            std::string userDir = Constant::Concatenate(dirList);
-            ForceRemoveDirectory(userDir);
-            dirList = { Constant::ROOT_PATH_CE, "/", Constant::SERVICE_NAME, "/", eventInfo.userId };
-            userDir = Constant::Concatenate(dirList);
-            ForceRemoveDirectory(userDir);
-
+            // delete all kvstore meta belong to this user
             std::vector<StoreMetaData> metaData;
             MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({""}), metaData);
             for (const auto &meta : metaData) {
@@ -1118,6 +529,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
     }
     ZLOGI("account event %{public}d changed process, end.", eventInfo.status);
 }
+
 void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
 {
     features_.ForEachCopies([&eventInfo](const auto &key, sptr<DistributedData::FeatureStubImpl> &value) {
@@ -1206,9 +618,6 @@ Status KvStoreDataService::StopWatchDeviceChange(sptr<IDeviceStatusChangeListene
 
 void KvStoreDataService::SetCompatibleIdentify(const AppDistributedKv::DeviceInfo &info) const
 {
-    for (const auto &item : deviceAccountMap_) {
-        item.second.SetCompatibleIdentify(info.uuid);
-    }
 }
 
 void KvStoreDataService::OnDeviceOnline(const AppDistributedKv::DeviceInfo &info)

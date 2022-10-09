@@ -51,19 +51,6 @@ public:
     explicit KvStoreDataService(int32_t systemAbilityId, bool runOnCreate = false);
     virtual ~KvStoreDataService();
 
-    Status GetSingleKvStore(const Options &options, const AppId &appId, const StoreId &storeId,
-                      std::function<void(sptr<ISingleKvStore>)> callback) override;
-
-    void GetAllKvStoreId(const AppId &appId, std::function<void(Status, std::vector<StoreId> &)> callback) override;
-
-    Status CloseKvStore(const AppId &appId, const StoreId &storeId) override;
-
-    Status CloseAllKvStore(const AppId &appId) override;
-
-    Status DeleteKvStore(const AppId &appId, const StoreId &storeId) override;
-
-    Status DeleteAllKvStore(const AppId &appId) override;
-
     Status RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer) override;
 
     Status GetLocalDevice(DeviceInfo &device) override;
@@ -84,8 +71,6 @@ public:
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
 
-    Status DeleteKvStoreOnly(const StoreMetaData &metaData);
-
     void AccountEventChanged(const AccountEventInfo &eventInfo);
 
     void SetCompatibleIdentify(const AppDistributedKv::DeviceInfo &info) const;
@@ -95,17 +80,6 @@ public:
     bool CheckBackupFileExist(const std::string &userId, const std::string &bundleName,
                               const std::string &storeId, int pathType);
     int32_t OnUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
-
-    Status DeleteKvStore(StoreMetaData &metaData);
-
-    struct SecretKeyPara {
-        std::vector<uint8_t> metaKey;
-        std::vector<uint8_t> secretKey;
-        std::vector<uint8_t> metaSecretKey;
-        std::string secretKeyFile;
-        Status alreadyCreated = Status::SUCCESS;
-        bool outdated = false;
-    };
 
 private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
@@ -143,40 +117,15 @@ private:
 
     void InitSecurityAdapter();
 
-    template<class T>
-    Status RecoverKvStore(const Options &options, const StoreMetaData &metaData,
-        const std::vector<uint8_t> &secretKey, sptr<T> &kvStore);
-
-    Status GetSecretKey(const Options &options, const StoreMetaData &metaData, SecretKeyPara &secretKeyParas);
-
-    Status RecoverSecretKey(const Status &alreadyCreated, bool &outdated, const std::vector<uint8_t> &metaSecretKey,
-        std::vector<uint8_t> &secretKey, const std::string &secretKeyFile);
-
-    Status UpdateMetaData(const Options &options, const StoreMetaData &metaData);
-
     void OnStoreMetaChanged(const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag);
-
-    Status GetSingleKvStoreFailDo(Status status, const Options &options, const StoreMetaData &metaData,
-        SecretKeyPara &secKeyParas, KvStoreUserManager &kvUserManager, sptr<SingleKvStoreImpl> &kvStore);
 
     Status AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId);
 
     bool ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
     static void ResolveAutoLaunchCompatible(const MetaData &meta, const std::string &identifier);
 
-    bool CheckOptions(const Options &options, const std::vector<uint8_t> &metaKey) const;
-    static Status FillStoreParam(
-        const Options &options, const AppId &appId, const StoreId &storeId, StoreMetaData &metaData);
-
-    void DumpAll(int fd);
-    void DumpUserInfo(int fd);
-    void DumpAppInfo(int fd, const std::string &appId);
-    void DumpStoreInfo(int fd, const std::string &storeId);
-
     static constexpr int TEN_SEC = 10;
 
-    std::mutex accountMutex_;
-    std::map<std::string, KvStoreUserManager> deviceAccountMap_;
     std::mutex clientDeathObserverMutex_;
     std::map<uint32_t, KvStoreClientDeathObserverImpl> clientDeathObserverMap_;
     std::shared_ptr<KvStoreAccountObserver> accountEventObserver_;
