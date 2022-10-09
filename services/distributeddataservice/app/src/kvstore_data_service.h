@@ -22,7 +22,6 @@
 
 #include "account_delegate.h"
 #include "constant.h"
-#include "device_change_listener_impl.h"
 #include "ikvstore_data_service.h"
 #include "kvstore_device_listener.h"
 #include "kvstore_user_manager.h"
@@ -66,10 +65,6 @@ public:
 
     Status RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer) override;
 
-    Status GetLocalDevice(DeviceInfo &device) override;
-    Status GetRemoteDevices(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy) override;
-    Status StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer, DeviceFilterStrategy strategy) override;
-    Status StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer) override;
     sptr<IRemoteObject> GetFeatureInterface(const std::string &name) override;
 
     void OnDump() override;
@@ -180,9 +175,6 @@ private:
     std::mutex clientDeathObserverMutex_;
     std::map<uint32_t, KvStoreClientDeathObserverImpl> clientDeathObserverMap_;
     std::shared_ptr<KvStoreAccountObserver> accountEventObserver_;
-    std::map<IRemoteObject *, sptr<IDeviceStatusChangeListener>> deviceListeners_;
-    std::mutex deviceListenerMutex_;
-    std::shared_ptr<DeviceChangeListenerImpl> deviceListener_;
 
     std::shared_ptr<Security> security_;
     ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;

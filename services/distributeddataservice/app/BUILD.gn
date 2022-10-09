@@ -80,7 +80,6 @@ config("module_private_config") {
 
 ohos_shared_library("distributeddataservice") {
   sources = [
-    "src/device_change_listener_impl.cpp",
     "src/device_kvstore_impl.cpp",
     "src/device_kvstore_observer_impl.cpp",
     "src/device_kvstore_resultset_impl.cpp",
