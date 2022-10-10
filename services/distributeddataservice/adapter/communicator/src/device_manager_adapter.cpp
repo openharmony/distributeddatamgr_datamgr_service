@@ -190,7 +190,7 @@ void DeviceManagerAdapter::TimeOut(const std::string uuid)
         return;
     }
     if (syncTask_.Contains(uuid)) {
-        ZLOGI("[TimeOutReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(value).c_str());
+        ZLOGI("[TimeOutReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
         std::string event = R"({"extra": {"deviceId":")" + value + R"(" } })";
         DeviceManager::GetInstance().NotifyEvent(PKG_NAME, DmNotifyEvent::DM_NOTIFY_EVENT_ONDEVICEREADY, event);
     }
@@ -199,14 +199,10 @@ void DeviceManagerAdapter::TimeOut(const std::string uuid)
 
 void DeviceManagerAdapter::NotifyReadyEvent(const std::string &uuid)
 {
-    if (uuid.empty()) {
-        ZLOGE("uuid empty!");
+    if (uuid.empty() || !syncTask_.Contains(uuid)) {
         return;
     }
-    if (!syncTask_.Contains(uuid)) {
-        ZLOGD("has notified!");
-        return;
-    }
+
     syncTask_.Erase(uuid);
     ZLOGI("[NotifyReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
     std::string event = R"({"extra": {"deviceId":")" + uuid + R"(" } })";
