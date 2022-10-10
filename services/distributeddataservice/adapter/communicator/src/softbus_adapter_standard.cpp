@@ -13,19 +13,20 @@
  * limitations under the License.
  */
 
-#include "softbus_adapter.h"
-
 #include <mutex>
 #include <thread>
+
+#include "communication_strategy.h"
 #include "device_manager_adapter.h"
 #include "dfx_types.h"
 #include "kv_store_delegate_manager.h"
 #include "log_print.h"
 #include "process_communicator_impl.h"
 #include "reporter.h"
-#include "session.h"
-#include "softbus_bus_center.h"
 #include "securec.h"
+#include "session.h"
+#include "softbus_adapter.h"
+#include "softbus_bus_center.h"
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif
@@ -40,7 +41,13 @@ constexpr const char *REPLACE_CHAIN = "***";
 constexpr const char *DEFAULT_ANONYMOUS = "******";
 constexpr int32_t SOFTBUS_OK = 0;
 constexpr int32_t SOFTBUS_ERR = 1;
-constexpr int32_t INVALID_SESSION_ID = -1;
+enum SoftBusAdapterErrorCode : int32_t {
+    SESSION_ID_INVALID = 2,
+    GET_MY_SESSION_NAME_FAIL,
+    GET_PEER_SESSION_NAME_FAIL,
+    GET_PEER_DEVICE_ID_FAIL,
+    GET_SESSION_SIDE_FAIL,
+};
 constexpr int32_t SESSION_NAME_SIZE_MAX = 65;
 constexpr int32_t DEVICE_ID_SIZE_MAX = 65;
 constexpr uint32_t WAIT_MAX_TIME = 5;
@@ -48,18 +55,24 @@ using namespace std;
 using namespace OHOS::DistributedDataDfx;
 using namespace OHOS::DistributedKv;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-
+struct ConnDetailsInfo {
+    char myName[SESSION_NAME_SIZE_MAX] = "";
+    char peerName[SESSION_NAME_SIZE_MAX] = "";
+    std::string peerDevUuid;
+    int32_t side = -1;
+};
 class AppDataListenerWrap {
 public:
     static void SetDataHandler(SoftBusAdapter *handler);
-    static int OnSessionOpened(int sessionId, int result);
-    static void OnSessionClosed(int sessionId);
-    static void OnMessageReceived(int sessionId, const void *data, unsigned int dataLen);
-    static void OnBytesReceived(int sessionId, const void *data, unsigned int dataLen);
+    static int OnConnectOpened(int connId, int result);
+    static void OnConnectClosed(int connId);
+    static void OnBytesReceived(int connId, const void *data, unsigned int dataLen);
 public:
     // notify all listeners when received message
     static void NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
-                             const PipeInfo &pipeInfo);
+                                    const PipeInfo &pipeInfo);
+private:
+    static int GetConnDetailsInfo(int connId, ConnDetailsInfo &connInfo);
     static SoftBusAdapter *softBusAdapter_;
 };
 SoftBusAdapter *AppDataListenerWrap::softBusAdapter_;
@@ -70,10 +83,10 @@ SoftBusAdapter::SoftBusAdapter()
     ZLOGI("begin");
     AppDataListenerWrap::SetDataHandler(this);
 
-    sessionListener_.OnSessionOpened = AppDataListenerWrap::OnSessionOpened;
-    sessionListener_.OnSessionClosed = AppDataListenerWrap::OnSessionClosed;
+    sessionListener_.OnSessionOpened = AppDataListenerWrap::OnConnectOpened;
+    sessionListener_.OnSessionClosed = AppDataListenerWrap::OnConnectClosed;
     sessionListener_.OnBytesReceived = AppDataListenerWrap::OnBytesReceived;
-    sessionListener_.OnMessageReceived = AppDataListenerWrap::OnMessageReceived;
+    sessionListener_.OnMessageReceived = AppDataListenerWrap::OnBytesReceived;
 }
 
 SoftBusAdapter::~SoftBusAdapter()
@@ -107,14 +120,13 @@ Status SoftBusAdapter::StartWatchDataChange(const AppDataChangeListener *observe
     if (observer == nullptr) {
         return Status::INVALID_ARGUMENT;
     }
-    lock_guard<mutex> lock(dataChangeMutex_);
-    auto it = dataChangeListeners_.find(pipeInfo.pipeId);
-    if (it != dataChangeListeners_.end()) {
+
+    auto ret = dataChangeListeners_.Insert(pipeInfo.pipeId, observer);
+    if (!ret) {
         ZLOGW("Add listener error or repeated adding.");
         return Status::ERROR;
     }
-    ZLOGD("current appid %{public}s", pipeInfo.pipeId.c_str());
-    dataChangeListeners_.insert({pipeInfo.pipeId, observer});
+
     return Status::SUCCESS;
 }
 
@@ -122,97 +134,127 @@ Status SoftBusAdapter::StopWatchDataChange(__attribute__((unused))const AppDataC
                                            const PipeInfo &pipeInfo)
 {
     ZLOGD("begin");
-    lock_guard<mutex> lock(dataChangeMutex_);
-    if (dataChangeListeners_.erase(pipeInfo.pipeId)) {
+    if (dataChangeListeners_.Erase(pipeInfo.pipeId) != 0) {
         return Status::SUCCESS;
     }
     ZLOGW("stop data observer error, pipeInfo:%{public}s", pipeInfo.pipeId.c_str());
     return Status::ERROR;
 }
 
+Status SoftBusAdapter::OpenConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+                                   int32_t dataSize, int32_t &connId)
+{
+    SessionAttribute attr = {0};
+    InitSessionAttribute(pipeInfo, deviceId, dataSize, attr);
+    int id = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(),
+                         DmAdapter::GetInstance().ToNetworkID(deviceId.deviceId).c_str(), "GROUP_ID", &attr);
+    ZLOGI("[OpenSession] to %{public}s,session:%{public}s, connId:%{public}d, linkNum:%{public}d",
+          ToBeAnonymous(deviceId.deviceId).c_str(), pipeInfo.pipeId.c_str(), id, attr.linkTypeNum);
+    if (connId < 0) {
+        ZLOGW("OpenSession %{public}s, type:%{public}d failed, connId:%{public}d",
+              pipeInfo.pipeId.c_str(), attr.dataType, id);
+        return Status::NETWORK_ERROR;
+    }
+    int state = GetSessionStatus(id);
+    ZLOGI("waited for notification, state:%{public}d connId:%{public}d", state, id);
+    if (state != SOFTBUS_OK) {
+        ZLOGE("OpenSession callback result error");
+        CloseSession(id);
+        return Status::NETWORK_ERROR;
+    }
+
+    connId = id;
+    return Status::SUCCESS;
+}
+
+void SoftBusAdapter::InitSessionAttribute(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+                                          int32_t dataSize, SessionAttribute &attr)
+{
+    attr.dataType = TYPE_BYTES;
+    std::vector<LinkType> linkTypes;
+    CommunicationStrategy::GetInstance().GetStrategy(deviceId.deviceId, dataSize, linkTypes);
+    int index = 0;
+    for (auto const &element : linkTypes) {
+        attr.linkType[index++] = element;
+        if (index >= LINK_TYPE_MAX) {
+            break;
+        }
+    }
+    attr.linkTypeNum = index;
+    ZLOGD("set session attr pipeInfo:%{public}s deviceId:%{public}s link Num: %{public}d, link size: %{public}zu,"
+          " size: %{public}d", pipeInfo.pipeId.c_str(),
+          ToBeAnonymous(deviceId.deviceId).c_str(), attr.linkTypeNum, linkTypes.size(), dataSize);
+}
+
+Status SoftBusAdapter::GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId)
+{
+    auto result = connects_.Find(pipeInfo.pipeId + deviceId.deviceId);
+    if (result.first) {
+        connId = result.second;
+        return Status::SUCCESS;
+    }
+
+    return OpenConnect(pipeInfo, deviceId, dataSize, connId);
+}
+
 Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *ptr, int size,
                                 const MessageInfo &info)
 {
-    SessionAttribute attr;
-    attr.dataType = TYPE_BYTES;
-    ZLOGD("[SendData] to %{public}s ,session:%{public}s, size:%{public}d", ToBeAnonymous(deviceId.deviceId).c_str(),
-        pipeInfo.pipeId.c_str(), size);
-    int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(),
-        DmAdapter::GetInstance().ToNetworkID(deviceId.deviceId).c_str(), "GROUP_ID", &attr);
-    if (sessionId < 0) {
-        ZLOGW("OpenSession %{public}s, type:%{public}d failed, sessionId:%{public}d",
-            pipeInfo.pipeId.c_str(), info.msgType, sessionId);
-        return Status::NETWORK_ERROR;
+    int connId = 0;
+    auto state = GetConnect(pipeInfo, deviceId, size, connId);
+    if (state != Status::SUCCESS) {
+        ZLOGW("get connect %{public}s, type:%{public}d failed, status:%{public}d",
+              pipeInfo.pipeId.c_str(), info.msgType, state);
+        return state;
     }
-    int state = GetSessionStatus(sessionId);
-    ZLOGD("waited for notification, state:%{public}d", state);
-    if (state != SOFTBUS_OK) {
-        ZLOGE("OpenSession callback result error");
-        return Status::NETWORK_ERROR;
-    }
-    ZLOGD("[SendBytes] start, size is %{public}d, session type is %{public}d.", size, attr.dataType);
-    int32_t ret = SendBytes(sessionId, static_cast<const void*>(ptr), size);
+
+    ZLOGD("[SendData] to %{public}s, session:%{public}s, send len:%{public}d, connId:%{public}d",
+          ToBeAnonymous(deviceId.deviceId).c_str(), pipeInfo.pipeId.c_str(), size, connId);
+    int32_t ret = SendBytes(connId, ptr, size);
     if (ret != SOFTBUS_OK) {
-        ZLOGE("[SendBytes] to %{public}d failed, ret:%{public}d.", sessionId, ret);
+        ZLOGE("[SendBytes] to %{public}d failed, ret:%{public}d.", connId, ret);
         return Status::ERROR;
     }
     return Status::SUCCESS;
 }
 
-int32_t SoftBusAdapter::GetSessionStatus(int32_t sessionId)
+int32_t SoftBusAdapter::GetSessionStatus(int32_t connId)
 {
-    auto semaphore = GetSemaphore(sessionId);
+    auto semaphore = GetSemaphore(connId);
     return semaphore->GetValue();
 }
 
-void SoftBusAdapter::OnSessionOpen(int32_t sessionId, int32_t status)
+void SoftBusAdapter::OnSessionOpen(int32_t connId, int32_t status)
 {
-    auto semaphore = GetSemaphore(sessionId);
+    auto semaphore = GetSemaphore(connId);
     semaphore->SetValue(status);
 }
 
-void SoftBusAdapter::OnSessionClose(int32_t sessionId)
+void SoftBusAdapter::OnSessionClose(int32_t connId)
 {
     lock_guard<mutex> lock(statusMutex_);
-    auto it = sessionsStatus_.find(sessionId);
+    auto it = sessionsStatus_.find(connId);
     if (it != sessionsStatus_.end()) {
         it->second->Clear(SOFTBUS_ERR);
         sessionsStatus_.erase(it);
     }
 }
 
-std::shared_ptr<BlockData<int32_t>> SoftBusAdapter::GetSemaphore(int32_t sessionId)
+std::shared_ptr<BlockData<int32_t>> SoftBusAdapter::GetSemaphore(int32_t connId)
 {
     lock_guard<mutex> lock(statusMutex_);
-    if (sessionsStatus_.find(sessionId) == sessionsStatus_.end()) {
-        sessionsStatus_.emplace(sessionId, std::make_shared<BlockData<int32_t>>(WAIT_MAX_TIME, SOFTBUS_ERR));
+    if (sessionsStatus_.find(connId) == sessionsStatus_.end()) {
+        sessionsStatus_.emplace(connId, std::make_shared<BlockData<int32_t>>(WAIT_MAX_TIME, SOFTBUS_ERR));
     }
-    return sessionsStatus_[sessionId];
+    return sessionsStatus_[connId];
 }
 
 bool SoftBusAdapter::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
                                          __attribute__((unused))const struct DeviceId &peer)
 {
-    ZLOGI("pipeInfo:%{public}s peer.deviceId:%{public}s", pipeInfo.pipeId.c_str(),
+    ZLOGI("pipeInfo:%{public}s deviceId:%{public}s", pipeInfo.pipeId.c_str(),
         ToBeAnonymous(peer.deviceId).c_str());
-    {
-        lock_guard<mutex> lock(busSessionMutex_);
-        if (busSessionMap_.find(pipeInfo.pipeId + peer.deviceId) != busSessionMap_.end()) {
-            ZLOGI("Found session in map. Return true.");
-            return true;
-        }
-    }
-    SessionAttribute attr;
-    attr.dataType = TYPE_BYTES;
-    int sessionId = OpenSession(pipeInfo.pipeId.c_str(), pipeInfo.pipeId.c_str(),
-        DmAdapter::GetInstance().ToNetworkID(peer.deviceId).c_str(), "GROUP_ID", &attr);
-    ZLOGI("[IsSameStartedOnPeer] sessionId=%{public}d", sessionId);
-    if (sessionId == INVALID_SESSION_ID) {
-        ZLOGE("OpenSession return null, pipeInfo:%{public}s. Return false.", pipeInfo.pipeId.c_str());
-        return false;
-    }
-    ZLOGI("session started, pipeInfo:%{public}s. sessionId:%{public}d Return true. ",
-        pipeInfo.pipeId.c_str(), sessionId);
+
     return true;
 }
 
@@ -234,34 +276,45 @@ int SoftBusAdapter::RemoveSessionServerAdapter(const std::string &sessionName) c
     return RemoveSessionServer("ohos.distributeddata", sessionName.c_str());
 }
 
-void SoftBusAdapter::InsertSession(const std::string &sessionName)
+void SoftBusAdapter::InsertSession(const std::string &sessionName, int32_t connId)
 {
-    lock_guard <mutex> lock(busSessionMutex_);
-    busSessionMap_.insert({sessionName, true});
+    ZLOGD("[InsertSession] connId:%{public}d", connId);
+    connects_.InsertOrAssign(sessionName, connId);
 }
 
-void SoftBusAdapter::DeleteSession(const std::string &sessionName)
+std::string SoftBusAdapter::DeleteSession(int32_t connId)
 {
-    lock_guard<mutex> lock(busSessionMutex_);
-    busSessionMap_.erase(sessionName);
+    ZLOGD("[DeleteSession] connId:%{public}d", connId);
+    std::string name = "";
+    connects_.EraseIf([&connId, &name](auto &key, int32_t id) {
+        if (connId == id) {
+            name = key;
+            ZLOGD("[DeleteSession] del connId:%{public}d", connId);
+            return true;
+        }
+        return false;
+    });
+
+    return name;
 }
 
 void SoftBusAdapter::NotifyDataListeners(const uint8_t *ptr, int size, const std::string &deviceId,
                                          const PipeInfo &pipeInfo)
 {
     ZLOGD("begin");
-    lock_guard<mutex> lock(dataChangeMutex_);
-    auto it = dataChangeListeners_.find(pipeInfo.pipeId);
-    if (it != dataChangeListeners_.end()) {
+    auto ret = dataChangeListeners_.ComputeIfPresent(
+        pipeInfo.pipeId, [&ptr, &size, &deviceId, &pipeInfo](const auto &key, const AppDataChangeListener * &value) {
         ZLOGD("ready to notify, pipeName:%{public}s, deviceId:%{public}s.",
-            pipeInfo.pipeId.c_str(), ToBeAnonymous(deviceId).c_str());
+              pipeInfo.pipeId.c_str(), ToBeAnonymous(deviceId).c_str());
         DeviceInfo deviceInfo = DmAdapter::GetInstance().GetDeviceInfo(deviceId);
-        it->second->OnMessage(deviceInfo, ptr, size, pipeInfo);
+        value->OnMessage(deviceInfo, ptr, size, pipeInfo);
         TrafficStat ts { pipeInfo.pipeId, deviceId, 0, size };
         Reporter::GetInstance()->TrafficStatistic()->Report(ts);
-        return;
+        return true;
+    });
+    if (!ret) {
+        ZLOGW("no listener %{public}s.", pipeInfo.pipeId.c_str());
     }
-    ZLOGW("no listener %{public}s.", pipeInfo.pipeId.c_str());
 }
 
 void AppDataListenerWrap::SetDataHandler(SoftBusAdapter *handler)
@@ -270,131 +323,93 @@ void AppDataListenerWrap::SetDataHandler(SoftBusAdapter *handler)
     softBusAdapter_ = handler;
 }
 
-int AppDataListenerWrap::OnSessionOpened(int sessionId, int result)
+int AppDataListenerWrap::GetConnDetailsInfo(int connId, ConnDetailsInfo &connInfo)
 {
-    ZLOGI("[SessionOpen] sessionId:%{public}d, result:%{public}d", sessionId, result);
-    char mySessionName[SESSION_NAME_SIZE_MAX] = "";
-    char peerSessionName[SESSION_NAME_SIZE_MAX] = "";
-    char peerDevId[DEVICE_ID_SIZE_MAX] = "";
+    if (connId < 0) {
+        return SESSION_ID_INVALID;
+    }
 
-    softBusAdapter_->OnSessionOpen(sessionId, result);
+    int ret = GetMySessionName(connId, connInfo.myName, sizeof(connInfo.myName));
+    if (ret != SOFTBUS_OK) {
+        return GET_MY_SESSION_NAME_FAIL;
+    }
+
+    ret = GetPeerSessionName(connId, connInfo.peerName, sizeof(connInfo.peerName));
+    if (ret != SOFTBUS_OK) {
+        return GET_PEER_SESSION_NAME_FAIL;
+    }
+
+    char peerDevId[DEVICE_ID_SIZE_MAX] = "";
+    ret = GetPeerDeviceId(connId, peerDevId, sizeof(peerDevId));
+    if (ret != SOFTBUS_OK) {
+        return GET_PEER_DEVICE_ID_FAIL;
+    }
+    connInfo.peerDevUuid = DmAdapter::GetInstance().GetUuidByNetworkId(std::string(peerDevId));
+
+    connInfo.side = GetSessionSide(connId);
+    if (connInfo.side < 0) {
+        return GET_SESSION_SIDE_FAIL;
+    }
+
+    return SOFTBUS_OK;
+}
+
+int AppDataListenerWrap::OnConnectOpened(int connId, int result)
+{
+    ZLOGI("[SessionOpen] connId:%{public}d, result:%{public}d", connId, result);
+    softBusAdapter_->OnSessionOpen(connId, result);
     if (result != SOFTBUS_OK) {
-        ZLOGW("session %{public}d open failed, result:%{public}d.", sessionId, result);
+        ZLOGW("session %{public}d open failed, result:%{public}d.", connId, result);
         return result;
     }
-    int ret = GetMySessionName(sessionId, mySessionName, sizeof(mySessionName));
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("get my session name failed, session id is %{public}d.", sessionId);
-        return SOFTBUS_ERR;
-    }
-    ret = GetPeerSessionName(sessionId, peerSessionName, sizeof(peerSessionName));
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("get my peer session name failed, session id is %{public}d.", sessionId);
-        return SOFTBUS_ERR;
-    }
-    ret = GetPeerDeviceId(sessionId, peerDevId, sizeof(peerDevId));
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("get my peer device id failed, session id is %{public}d.", sessionId);
-        return SOFTBUS_ERR;
-    }
-    std::string peerUuid = DmAdapter::GetInstance().GetUuidByNetworkId(std::string(peerDevId));
-    ZLOGD("[SessionOpen] mySessionName:%{public}s, peerSessionName:%{public}s, peerDevId:%{public}s",
-        mySessionName, peerSessionName, SoftBusAdapter::ToBeAnonymous(peerUuid).c_str());
 
-    if (strlen(peerSessionName) < 1) {
-        softBusAdapter_->InsertSession(std::string(mySessionName) + peerUuid);
-    } else {
-        softBusAdapter_->InsertSession(std::string(peerSessionName) + peerUuid);
+    ConnDetailsInfo connInfo;
+    int ret = GetConnDetailsInfo(connId, connInfo);
+    if (ret != SOFTBUS_OK) {
+        ZLOGE("[SessionOpened] session id:%{public}d get info fail error: %{public}d", connId, ret);
+        return ret;
+    }
+
+    ZLOGD("[OnConnectOpened] conn id:%{public}d, my name:%{public}s, peer name:%{public}s, "
+          "peer devId:%{public}s, side:%{public}d", connId, connInfo.myName, connInfo.peerName,
+          SoftBusAdapter::ToBeAnonymous(connInfo.peerDevUuid).c_str(), connInfo.side);
+    // only manage the connects opened by the local
+    if (connInfo.side == 1) {
+        softBusAdapter_->InsertSession(std::string(connInfo.myName) + connInfo.peerDevUuid, connId);
     }
     return 0;
 }
 
-void AppDataListenerWrap::OnSessionClosed(int sessionId)
+void AppDataListenerWrap::OnConnectClosed(int connId)
 {
-    ZLOGI("[SessionClosed] sessionId:%{public}d", sessionId);
-    char mySessionName[SESSION_NAME_SIZE_MAX] = "";
-    char peerSessionName[SESSION_NAME_SIZE_MAX] = "";
-    char peerDevId[DEVICE_ID_SIZE_MAX] = "";
-
-    softBusAdapter_->OnSessionClose(sessionId);
-    int ret = GetMySessionName(sessionId, mySessionName, sizeof(mySessionName));
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("get my session name failed, session id is %{public}d.", sessionId);
-        return;
-    }
-    ret = GetPeerSessionName(sessionId, peerSessionName, sizeof(peerSessionName));
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("get my peer session name failed.");
-        return;
-    }
-    ret = GetPeerDeviceId(sessionId, peerDevId, sizeof(peerDevId));
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("get my peer device id failed, session id is %{public}d.", sessionId);
-        return;
-    }
-    std::string peerUuid = DmAdapter::GetInstance().GetUuidByNetworkId(std::string(peerDevId));
-    ZLOGD("[SessionClosed] mySessionName:%{public}s, peerSessionName:%{public}s, peerDevId:%{public}s",
-        mySessionName, peerSessionName, SoftBusAdapter::ToBeAnonymous(peerUuid).c_str());
-
-    if (strlen(peerSessionName) < 1) {
-        softBusAdapter_->DeleteSession(std::string(mySessionName) + peerUuid);
-    } else {
-        softBusAdapter_->DeleteSession(std::string(peerSessionName) + peerUuid);
-    }
+    // when the local close the session, this callback function will not be triggered;
+    // when the current function is called, soft bus has released the session resource, only connId is valid;
+    softBusAdapter_->OnSessionClose(connId);
+    std::string name = softBusAdapter_->DeleteSession(connId);
+    ZLOGD("[SessionClosed] connId:%{public}d, name:%{public}s", connId, name.c_str());
 }
 
-void AppDataListenerWrap::OnMessageReceived(int sessionId, const void *data, unsigned int dataLen)
+void AppDataListenerWrap::OnBytesReceived(int connId, const void *data, unsigned int dataLen)
 {
-    ZLOGI("begin");
-    if (sessionId == INVALID_SESSION_ID) {
-        return;
-    }
-    char peerSessionName[SESSION_NAME_SIZE_MAX] = "";
-    char peerDevId[DEVICE_ID_SIZE_MAX] = "";
-    int ret = GetPeerSessionName(sessionId, peerSessionName, sizeof(peerSessionName));
+    ConnDetailsInfo connInfo;
+    int ret = GetConnDetailsInfo(connId, connInfo);
     if (ret != SOFTBUS_OK) {
-        ZLOGW("get my peer session name failed, session id is %{public}d.", sessionId);
+        ZLOGE("[OnBytesReceived] session id:%{public}d get info fail error: %{public}d", connId, ret);
         return;
     }
-    ret = GetPeerDeviceId(sessionId, peerDevId, sizeof(peerDevId));
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("get my peer device id failed, session id is %{public}d.", sessionId);
-        return;
-    }
-    std::string peerUuid = DmAdapter::GetInstance().GetUuidByNetworkId(std::string(peerDevId));
-    ZLOGD("[MessageReceived] peerSessionName:%{public}s, peerDevId:%{public}s", peerSessionName,
-        SoftBusAdapter::ToBeAnonymous(peerUuid).c_str());
-    NotifyDataListeners(reinterpret_cast<const uint8_t *>(data), dataLen, peerUuid, {std::string(peerSessionName), ""});
-}
 
-void AppDataListenerWrap::OnBytesReceived(int sessionId, const void *data, unsigned int dataLen)
-{
-    ZLOGI("begin");
-    if (sessionId == INVALID_SESSION_ID) {
-        return;
-    }
-    char peerSessionName[SESSION_NAME_SIZE_MAX] = "";
-    char peerDevId[DEVICE_ID_SIZE_MAX] = "";
-    int ret = GetPeerSessionName(sessionId, peerSessionName, sizeof(peerSessionName));
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("get my peer session name failed, session id is %{public}d.", sessionId);
-        return;
-    }
-    ret = GetPeerDeviceId(sessionId, peerDevId, sizeof(peerDevId));
-    if (ret != SOFTBUS_OK) {
-        ZLOGW("get my peer device id failed, session id is %{public}d.", sessionId);
-        return;
-    }
-    std::string peerUuid = DmAdapter::GetInstance().GetUuidByNetworkId(std::string(peerDevId));
-    ZLOGD("[BytesReceived] peerSessionName:%{public}s, peerDevId:%{public}s", peerSessionName,
-        SoftBusAdapter::ToBeAnonymous(peerUuid).c_str());
-    NotifyDataListeners(reinterpret_cast<const uint8_t *>(data), dataLen, peerUuid, {std::string(peerSessionName), ""});
+    ZLOGD("[OnBytesReceived] conn id:%{public}d, peer name:%{public}s, "
+          "peer devId:%{public}s, side:%{public}d", connId, connInfo.peerName,
+          SoftBusAdapter::ToBeAnonymous(connInfo.peerDevUuid).c_str(), connInfo.side);
+
+    NotifyDataListeners(reinterpret_cast<const uint8_t *>(data), dataLen, connInfo.peerDevUuid,
+                        { std::string(connInfo.peerName), "" });
 }
 
 void AppDataListenerWrap::NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
-    const PipeInfo &pipeInfo)
+                                              const PipeInfo &pipeInfo)
 {
-    return softBusAdapter_->NotifyDataListeners(ptr, size, deviceId, pipeInfo);
+    softBusAdapter_->NotifyDataListeners(ptr, size, deviceId, pipeInfo);
 }
 }  // namespace AppDistributedKv
 }  // namespace OHOS

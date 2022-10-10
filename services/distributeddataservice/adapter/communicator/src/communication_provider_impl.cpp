@@ -15,6 +15,7 @@
 
 #include "communication_provider_impl.h"
 #include "device_manager_adapter.h"
+#include "communication_strategy.h"
 #include "log_print.h"
 
 #undef LOG_TAG
@@ -36,6 +37,7 @@ CommunicationProviderImpl::~CommunicationProviderImpl()
 
 Status CommunicationProviderImpl::Initialize()
 {
+    CommunicationStrategy::GetInstance().Init();
     DmAdapter::GetInstance().Init();
     return Status::SUCCESS;
 }

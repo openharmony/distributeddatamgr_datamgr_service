@@ -56,25 +56,26 @@ public:
 
     int RemoveSessionServerAdapter(const std::string &sessionName) const;
 
-    void InsertSession(const std::string &sessionName);
+    void InsertSession(const std::string &sessionName, int32_t connId);
 
-    void DeleteSession(const std::string &sessionName);
+    std::string DeleteSession(int32_t connId);
 
     void NotifyDataListeners(const uint8_t *ptr, int size, const std::string &deviceId, const PipeInfo &pipeInfo);
 
-    int32_t GetSessionStatus(int32_t sessionId);
+    int32_t GetSessionStatus(int32_t connId);
 
-    void OnSessionOpen(int32_t sessionId, int32_t status);
+    void OnSessionOpen(int32_t connId, int32_t status);
 
-    void OnSessionClose(int32_t sessionId);
-
+    void OnSessionClose(int32_t connId);
 private:
-    std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t sessinId);
+    std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t connId);
+    Status GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId);
+    Status OpenConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId);
+    void InitSessionAttribute(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+                              int32_t dataSize, SessionAttribute &attr);
     static std::shared_ptr<SoftBusAdapter> instance_;
-    std::mutex dataChangeMutex_ {};
-    std::map<std::string, const AppDataChangeListener *> dataChangeListeners_ {};
-    std::mutex busSessionMutex_ {};
-    std::map<std::string, bool> busSessionMap_ {};
+    ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_ {};
+    ConcurrentMap<std::string, int32_t> connects_ {};
     bool flag_ = true; // only for br flag
     ISessionListener sessionListener_ {};
     std::mutex statusMutex_ {};
