@@ -23,8 +23,8 @@ namespace OHOS::DistributedKv {
 void KvStoreDeviceListener::OnDeviceChanged(
     const AppDistributedKv::DeviceInfo &info, const AppDistributedKv::DeviceChangeType &type) const
 {
-    if (type == AppDistributedKv::DeviceChangeType::DEVICE_OFFLINE) {
-        ZLOGE("ignore device offline");
+    if (type != AppDistributedKv::DeviceChangeType::DEVICE_ONLINE) {
+        ZLOGE("not online type");
         return;
     }
     kvStoreDataService_.SetCompatibleIdentify(info);
