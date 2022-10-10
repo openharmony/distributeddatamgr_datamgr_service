@@ -31,6 +31,7 @@ config("module_public_config") {
     "rdb",
     "//third_party/json/single_include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator/src",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/data_share/frameworks/native/common/include",
@@ -44,6 +45,7 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
     "//foundation/bundlemanager/bundle_framework/interfaces/inner_api/appexecfwk_base/include",
   ]
 }
@@ -78,6 +80,7 @@ ohos_shared_library("distributeddatasvc") {
     "kvdb/kvdb_service_stub.cpp",
     "kvdb/kvstore_sync_manager.cpp",
     "kvdb/query_helper.cpp",
+    "kvdb/ref_count.cpp",
     "kvdb/store_cache.cpp",
     "kvdb/upgrade.cpp",
     "kvdb/user_delegate.cpp",
@@ -102,6 +105,7 @@ ohos_shared_library("distributeddatasvc") {
   deps = [
     "//foundation/ability/ability_runtime/interfaces/inner_api/dataobs_manager:dataobs_manager",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",

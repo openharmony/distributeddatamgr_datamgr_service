@@ -51,6 +51,7 @@ public:
     DeviceInfo GetLocalBasicInfo();
     std::string ToUUID(const std::string &id);
     std::string ToNetworkID(const std::string &id);
+    void NotifyReadyEvent(const std::string &uuid);
     friend class DataMgrDmStateCall;
 
 private:
@@ -66,6 +67,7 @@ private:
     void Offline(const DmDeviceInfo &info);
     void OnChanged(const DmDeviceInfo &info);
     void OnReady(const DmDeviceInfo &info);
+    void TimeOut(const std::string uuid);
     std::vector<const AppDeviceChangeListener *> GetObservers();
 
     std::mutex devInfoMutex_ {};
@@ -75,6 +77,8 @@ private:
     static constexpr int POOL_SIZE = 1;
     std::shared_ptr<KvStoreThreadPool> threadPool_;
     KvScheduler scheduler_ {1};
+    static constexpr int32_t SYNC_TIMEOUT = 30 * 1000; // ms
+    ConcurrentMap<std::string, std::string> syncTask_ {};
 };
 }  // namespace DistributedData
 }  // namespace OHOS
