@@ -91,7 +91,6 @@ KvStoreDataService::~KvStoreDataService()
 {
     ZLOGI("begin.");
     clientDeathObserverMap_.clear();
-    deviceListeners_.clear();
     features_.Clear();
 }
 
@@ -542,24 +541,6 @@ void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
     }
 }
 
-Status KvStoreDataService::GetLocalDevice(DeviceInfo &device)
-{
-    auto tmpDevice = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalBasicInfo();
-    device = { tmpDevice.networkId, tmpDevice.deviceName, std::to_string(tmpDevice.deviceType) };
-    return Status::SUCCESS;
-}
-
-Status KvStoreDataService::GetRemoteDevices(std::vector<DeviceInfo> &deviceInfoList, DeviceFilterStrategy strategy)
-{
-    auto devices = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteDevices();
-    for (auto const &device : devices) {
-        DeviceInfo deviceInfo = { device.networkId, device.deviceName, std::to_string(device.deviceType) };
-        deviceInfoList.push_back(deviceInfo);
-    }
-    ZLOGD("strategy is %{public}d.", strategy);
-    return Status::SUCCESS;
-}
-
 void KvStoreDataService::InitSecurityAdapter()
 {
     auto ret = DATASL_OnStart();
@@ -578,42 +559,6 @@ void KvStoreDataService::InitSecurityAdapter()
     if (status != AppDistributedKv::Status::SUCCESS) {
         ZLOGD("security register device change failed, status:%d", static_cast<int>(status));
     }
-}
-
-Status KvStoreDataService::StartWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer,
-                                                  DeviceFilterStrategy strategy)
-{
-    if (observer == nullptr) {
-        ZLOGD("observer is null");
-        return Status::INVALID_ARGUMENT;
-    }
-    std::lock_guard<std::mutex> lck(deviceListenerMutex_);
-    if (deviceListener_ == nullptr) {
-        deviceListener_ = std::make_shared<DeviceChangeListenerImpl>(deviceListeners_);
-        AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(
-            deviceListener_.get(), {"serviceWatcher"});
-    }
-    IRemoteObject *objectPtr = observer->AsObject().GetRefPtr();
-    auto listenerPair = std::make_pair(objectPtr, observer);
-    deviceListeners_.insert(listenerPair);
-    ZLOGD("strategy is %{public}d.", strategy);
-    return Status::SUCCESS;
-}
-
-Status KvStoreDataService::StopWatchDeviceChange(sptr<IDeviceStatusChangeListener> observer)
-{
-    if (observer == nullptr) {
-        ZLOGD("observer is null");
-        return Status::INVALID_ARGUMENT;
-    }
-    std::lock_guard<std::mutex> lck(deviceListenerMutex_);
-    IRemoteObject *objectPtr = observer->AsObject().GetRefPtr();
-    auto it = deviceListeners_.find(objectPtr);
-    if (it == deviceListeners_.end()) {
-        return Status::ILLEGAL_STATE;
-    }
-    deviceListeners_.erase(it->first);
-    return Status::SUCCESS;
 }
 
 void KvStoreDataService::SetCompatibleIdentify(const AppDistributedKv::DeviceInfo &info) const
