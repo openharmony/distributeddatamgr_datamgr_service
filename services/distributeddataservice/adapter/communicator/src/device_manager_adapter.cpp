@@ -185,18 +185,26 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
 
 void DeviceManagerAdapter::TimeOut(const std::string uuid)
 {
-    syncTask_.ComputeIfPresent(uuid, [](const auto &, std::string &value) {
+    if (uuid.empty()) {
+        ZLOGE("uuid empty!");
+        return;
+    }
+    if (syncTask_.Contains(uuid)) {
         ZLOGI("[TimeOutReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(value).c_str());
         std::string event = R"({"extra": {"deviceId":")" + value + R"(" } })";
         DeviceManager::GetInstance().NotifyEvent(PKG_NAME, DmNotifyEvent::DM_NOTIFY_EVENT_ONDEVICEREADY, event);
-        return false;
-    });
+    }
+    syncTask_.Erase(uuid);
 }
 
 void DeviceManagerAdapter::NotifyReadyEvent(const std::string &uuid)
 {
     if (uuid.empty()) {
         ZLOGE("uuid empty!");
+        return;
+    }
+    if (!syncTask_.Contains(uuid)) {
+        ZLOGD("has notified!");
         return;
     }
     syncTask_.Erase(uuid);

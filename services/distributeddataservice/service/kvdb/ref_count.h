@@ -30,4 +30,4 @@ private:
     std::function<void()> action_;
 };
 } // namespace OHOS::DistributedKv
-#endif //DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_REF_COUNT_H
+#endif // DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_REF_COUNT_H
