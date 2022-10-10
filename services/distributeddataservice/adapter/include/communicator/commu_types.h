@@ -56,6 +56,7 @@ struct API_EXPORT MessageInfo {
 enum class API_EXPORT DeviceChangeType {
     DEVICE_OFFLINE = 0,
     DEVICE_ONLINE = 1,
+    DEVICE_ONREADY = 2,
 };
 
 enum class API_EXPORT DeviceStatus {

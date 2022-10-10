@@ -23,7 +23,6 @@ enum class ChangeLevelType {
     HIGH,
     LOW,
     MIN,
-    READY,
 };
 class AppDeviceChangeListener {
 public:

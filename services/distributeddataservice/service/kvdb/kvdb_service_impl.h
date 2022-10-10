@@ -25,6 +25,7 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
+#include "ref_count.h"
 #include "store_cache.h"
 namespace OHOS::DistributedKv {
 class API_EXPORT KVDBServiceImpl final : public KVDBServiceStub {
@@ -91,7 +92,7 @@ private:
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
     Status DoSync(StoreMetaData metaData, SyncInfo syncInfo, const SyncEnd &complete, int32_t type);
-    Status DoComplete(uint32_t tokenId, uint64_t seqId, const DBResult &dbResult);
+    Status DoComplete(uint32_t tokenId, uint64_t seqId, std::shared_ptr<RefCount> refCount, const DBResult &dbResult);
     uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
     Status ConvertDbStatus(DBStatus status) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;
