@@ -24,6 +24,7 @@
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
 #include "crypto_manager.h"
+#include "device_manager_adapter.h"
 #include "directory_manager.h"
 #include "ipc_skeleton.h"
 #include "kvstore_utils.h"
@@ -114,7 +115,8 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const S
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSync, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
-        std::bind(&KVDBServiceImpl::DoComplete, this, metaData.tokenId, syncInfo.seqId, std::placeholders::_1));
+        std::bind(&KVDBServiceImpl::DoComplete, this, metaData.tokenId, syncInfo.seqId, nullptr,
+                  std::placeholders::_1));
 }
 
 Status KVDBServiceImpl::RegisterSyncCallback(const AppId &appId, sptr<IKvStoreSyncCallback> callback)
@@ -228,7 +230,8 @@ Status KVDBServiceImpl::AddSubscribeInfo(const AppId &appId, const StoreId &stor
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSync, this, metaData, syncInfo, std::placeholders::_1, ACTION_SUBSCRIBE),
-        std::bind(&KVDBServiceImpl::DoComplete, this, metaData.tokenId, syncInfo.seqId, std::placeholders::_1));
+        std::bind(&KVDBServiceImpl::DoComplete, this, metaData.tokenId, syncInfo.seqId, nullptr,
+                  std::placeholders::_1));
 }
 
 Status KVDBServiceImpl::RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
@@ -238,7 +241,8 @@ Status KVDBServiceImpl::RmvSubscribeInfo(const AppId &appId, const StoreId &stor
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSync, this, metaData, syncInfo, std::placeholders::_1, ACTION_UNSUBSCRIBE),
-        std::bind(&KVDBServiceImpl::DoComplete, this, metaData.tokenId, syncInfo.seqId, std::placeholders::_1));
+        std::bind(&KVDBServiceImpl::DoComplete, this, metaData.tokenId, syncInfo.seqId, nullptr,
+                  std::placeholders::_1));
 }
 
 Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer)
@@ -419,6 +423,10 @@ int32_t KVDBServiceImpl::Online(const std::string &device)
         ZLOGE("load meta failed!");
         return NOT_FOUND;
     }
+    std::function<void()> postReadyEvent = [device]() {
+        DeviceManagerAdapter::GetInstance().NotifyReadyEvent(device);
+    };
+    std::shared_ptr<RefCount> refCount = std::make_shared<RefCount>(postReadyEvent);
     for (const auto &data : metaData) {
         StoreMetaDataLocal localMetaData;
         MetaDataManager::GetInstance().LoadMeta(data.GetKeyLocal(), localMetaData, true);
@@ -429,6 +437,7 @@ int32_t KVDBServiceImpl::Online(const std::string &device)
             if (value.type != PolicyType::IMMEDIATE_SYNC_ON_ONLINE) {
                 continue;
             }
+            ++(*refCount);
             SyncInfo syncInfo;
             syncInfo.seqId = KvStoreUtils::GenerateSequenceId();
             syncInfo.mode = PUSH_PULL;
@@ -441,10 +450,12 @@ int32_t KVDBServiceImpl::Online(const std::string &device)
             auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
             KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
                 std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
-                std::bind(&KVDBServiceImpl::DoComplete, this, data.tokenId, syncInfo.seqId, std::placeholders::_1));
+                std::bind(&KVDBServiceImpl::DoComplete, this, data.tokenId, syncInfo.seqId, refCount,
+                          std::placeholders::_1));
             break;
         }
     }
+    --(*refCount);
     return SUCCESS;
 }
 
@@ -579,9 +590,13 @@ Status KVDBServiceImpl::DoSync(StoreMetaData metaData, SyncInfo syncInfo, const 
     return ConvertDbStatus(status);
 }
 
-Status KVDBServiceImpl::DoComplete(uint32_t tokenId, uint64_t seqId, const DBResult &dbResult)
+Status KVDBServiceImpl::DoComplete(uint32_t tokenId, uint64_t seqId, std::shared_ptr<RefCount> refCount,
+                                   const DBResult &dbResult)
 {
     ZLOGD("seqId:0x%{public}" PRIx64 " tokenId:0x%{public}x remote:%{public}zu", seqId, tokenId, dbResult.size());
+    if (refCount != nullptr) {
+        --(*refCount);
+    }
     if (seqId == std::numeric_limits<uint64_t>::max()) {
         return SUCCESS;
     }

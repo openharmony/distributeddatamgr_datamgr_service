@@ -28,7 +28,7 @@ DeviceChangeListenerImpl::DeviceChangeListenerImpl(std::map<IRemoteObject *,
 void DeviceChangeListenerImpl::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
                                                const AppDistributedKv::DeviceChangeType &type) const
 {
-    DeviceChangeType deviceType = type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE ?
+    DeviceChangeType deviceType = type == AppDistributedKv::DeviceChangeType::DEVICE_ONREADY ?
             DeviceChangeType::DEVICE_ONLINE : DeviceChangeType::DEVICE_OFFLINE;
     ZLOGD("networkid : %{public}s", KvStoreUtils::ToBeAnonymous(info.networkId).c_str());
     ZLOGD("uuid : %{public}s", KvStoreUtils::ToBeAnonymous(info.uuid).c_str());
@@ -38,6 +38,6 @@ void DeviceChangeListenerImpl::OnDeviceChanged(const AppDistributedKv::DeviceInf
 }
 AppDistributedKv::ChangeLevelType DeviceChangeListenerImpl::GetChangeLevelType() const
 {
-    return AppDistributedKv::ChangeLevelType::READY;
+    return AppDistributedKv::ChangeLevelType::MIN;
 }
 } // namespace OHOS::DistributedKv
