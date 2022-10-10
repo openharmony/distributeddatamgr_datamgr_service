@@ -97,11 +97,9 @@ private:
     constexpr static int8_t MAX_OBJECT_SIZE_PER_APP = 16;
     constexpr static int8_t DECIMAL_BASE = 10;
     struct CallbackInfo {
-        std::string bundleName;
-        std::string sessionId;
-        uint32_t tokenId;
         pid_t pid;
-        bool operator < (const CallbackInfo &it_) const
+        std::map<std::string, sptr<IObjectChangeCallback>> observers_;
+        bool operator<(const CallbackInfo &it_) const
         {
             if (pid < it_.pid) {
                 return true;
@@ -153,7 +151,7 @@ private:
     std::string userId_;
     std::atomic<bool> isSyncing_ = false;
     Utils::Timer timer_;
-    ConcurrentMap<CallbackInfo, sptr<IObjectChangeCallback>> callbacks_;
+    ConcurrentMap<uint32_t /* tokenId */, CallbackInfo > callbacks_;
     static constexpr size_t TIME_TASK_NUM = 1;
     static constexpr int64_t INTERVAL = 1;
     KvScheduler scheduler_ { TIME_TASK_NUM };
