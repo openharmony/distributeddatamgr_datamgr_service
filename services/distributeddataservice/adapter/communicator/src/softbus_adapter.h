@@ -45,7 +45,7 @@ public:
     Status StopWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo);
 
     // Send data to other device, function will be called back after sent to notify send result.
-    Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *ptr, int size,
+    Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *data, int size,
                     const MessageInfo &info);
 
     bool IsSameStartedOnPeer(const struct PipeInfo &pipeInfo, const struct DeviceId &peer);
@@ -60,7 +60,7 @@ public:
 
     std::string DeleteSession(int32_t connId);
 
-    void NotifyDataListeners(const uint8_t *ptr, int size, const std::string &deviceId, const PipeInfo &pipeInfo);
+    void NotifyDataListeners(const uint8_t *data, int size, const std::string &deviceId, const PipeInfo &pipeInfo);
 
     int32_t GetSessionStatus(int32_t connId);
 

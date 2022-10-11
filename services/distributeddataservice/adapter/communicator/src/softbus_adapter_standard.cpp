@@ -43,10 +43,10 @@ constexpr int32_t SOFTBUS_OK = 0;
 constexpr int32_t SOFTBUS_ERR = 1;
 enum SoftBusAdapterErrorCode : int32_t {
     SESSION_ID_INVALID = 2,
-    GET_MY_SESSION_NAME_FAIL,
-    GET_PEER_SESSION_NAME_FAIL,
-    GET_PEER_DEVICE_ID_FAIL,
-    GET_SESSION_SIDE_FAIL,
+    MY_SESSION_NAME_INVALID,
+    PEER_SESSION_NAME_INVALID,
+    PEER_DEVICE_ID_INVALID,
+    SESSION_SIDE_INVALID,
 };
 constexpr int32_t SESSION_NAME_SIZE_MAX = 65;
 constexpr int32_t DEVICE_ID_SIZE_MAX = 65;
@@ -69,7 +69,7 @@ public:
     static void OnBytesReceived(int connId, const void *data, unsigned int dataLen);
 public:
     // notify all listeners when received message
-    static void NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
+    static void NotifyDataListeners(const uint8_t *data, const int size, const std::string &deviceId,
                                     const PipeInfo &pipeInfo);
 private:
     static int GetConnDetailsInfo(int connId, ConnDetailsInfo &connInfo);
@@ -197,7 +197,7 @@ Status SoftBusAdapter::GetConnect(const PipeInfo &pipeInfo, const DeviceId &devi
     return OpenConnect(pipeInfo, deviceId, dataSize, connId);
 }
 
-Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *ptr, int size,
+Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *data, int size,
                                 const MessageInfo &info)
 {
     int connId = 0;
@@ -210,7 +210,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
 
     ZLOGD("[SendData] to %{public}s, session:%{public}s, send len:%{public}d, connId:%{public}d",
           ToBeAnonymous(deviceId.deviceId).c_str(), pipeInfo.pipeId.c_str(), size, connId);
-    int32_t ret = SendBytes(connId, ptr, size);
+    int32_t ret = SendBytes(connId, data, size);
     if (ret != SOFTBUS_OK) {
         ZLOGE("[SendBytes] to %{public}d failed, ret:%{public}d.", connId, ret);
         return Status::ERROR;
@@ -284,12 +284,10 @@ void SoftBusAdapter::InsertSession(const std::string &sessionName, int32_t connI
 
 std::string SoftBusAdapter::DeleteSession(int32_t connId)
 {
-    ZLOGD("[DeleteSession] connId:%{public}d", connId);
     std::string name = "";
     connects_.EraseIf([&connId, &name](auto &key, int32_t id) {
         if (connId == id) {
             name = key;
-            ZLOGD("[DeleteSession] del connId:%{public}d", connId);
             return true;
         }
         return false;
@@ -298,16 +296,16 @@ std::string SoftBusAdapter::DeleteSession(int32_t connId)
     return name;
 }
 
-void SoftBusAdapter::NotifyDataListeners(const uint8_t *ptr, int size, const std::string &deviceId,
+void SoftBusAdapter::NotifyDataListeners(const uint8_t *data, int size, const std::string &deviceId,
                                          const PipeInfo &pipeInfo)
 {
     ZLOGD("begin");
     auto ret = dataChangeListeners_.ComputeIfPresent(
-        pipeInfo.pipeId, [&ptr, &size, &deviceId, &pipeInfo](const auto &key, const AppDataChangeListener * &value) {
+        pipeInfo.pipeId, [&data, &size, &deviceId, &pipeInfo](const auto &key, const AppDataChangeListener * &value) {
         ZLOGD("ready to notify, pipeName:%{public}s, deviceId:%{public}s.",
               pipeInfo.pipeId.c_str(), ToBeAnonymous(deviceId).c_str());
         DeviceInfo deviceInfo = DmAdapter::GetInstance().GetDeviceInfo(deviceId);
-        value->OnMessage(deviceInfo, ptr, size, pipeInfo);
+        value->OnMessage(deviceInfo, data, size, pipeInfo);
         TrafficStat ts { pipeInfo.pipeId, deviceId, 0, size };
         Reporter::GetInstance()->TrafficStatistic()->Report(ts);
         return true;
@@ -331,24 +329,24 @@ int AppDataListenerWrap::GetConnDetailsInfo(int connId, ConnDetailsInfo &connInf
 
     int ret = GetMySessionName(connId, connInfo.myName, sizeof(connInfo.myName));
     if (ret != SOFTBUS_OK) {
-        return GET_MY_SESSION_NAME_FAIL;
+        return MY_SESSION_NAME_INVALID;
     }
 
     ret = GetPeerSessionName(connId, connInfo.peerName, sizeof(connInfo.peerName));
     if (ret != SOFTBUS_OK) {
-        return GET_PEER_SESSION_NAME_FAIL;
+        return PEER_SESSION_NAME_INVALID;
     }
 
     char peerDevId[DEVICE_ID_SIZE_MAX] = "";
     ret = GetPeerDeviceId(connId, peerDevId, sizeof(peerDevId));
     if (ret != SOFTBUS_OK) {
-        return GET_PEER_DEVICE_ID_FAIL;
+        return PEER_DEVICE_ID_INVALID;
     }
     connInfo.peerDevUuid = DmAdapter::GetInstance().GetUuidByNetworkId(std::string(peerDevId));
 
     connInfo.side = GetSessionSide(connId);
     if (connInfo.side < 0) {
-        return GET_SESSION_SIDE_FAIL;
+        return SESSION_SIDE_INVALID;
     }
 
     return SOFTBUS_OK;
@@ -386,7 +384,7 @@ void AppDataListenerWrap::OnConnectClosed(int connId)
     // when the current function is called, soft bus has released the session resource, only connId is valid;
     softBusAdapter_->OnSessionClose(connId);
     std::string name = softBusAdapter_->DeleteSession(connId);
-    ZLOGD("[SessionClosed] connId:%{public}d, name:%{public}s", connId, name.c_str());
+    ZLOGI("[SessionClosed] connId:%{public}d, name:%{public}s", connId, SoftBusAdapter::ToBeAnonymous(name).c_str());
 }
 
 void AppDataListenerWrap::OnBytesReceived(int connId, const void *data, unsigned int dataLen)
@@ -406,10 +404,10 @@ void AppDataListenerWrap::OnBytesReceived(int connId, const void *data, unsigned
                         { std::string(connInfo.peerName), "" });
 }
 
-void AppDataListenerWrap::NotifyDataListeners(const uint8_t *ptr, const int size, const std::string &deviceId,
+void AppDataListenerWrap::NotifyDataListeners(const uint8_t *data, const int size, const std::string &deviceId,
                                               const PipeInfo &pipeInfo)
 {
-    softBusAdapter_->NotifyDataListeners(ptr, size, deviceId, pipeInfo);
+    softBusAdapter_->NotifyDataListeners(data, size, deviceId, pipeInfo);
 }
 }  // namespace AppDistributedKv
 }  // namespace OHOS
