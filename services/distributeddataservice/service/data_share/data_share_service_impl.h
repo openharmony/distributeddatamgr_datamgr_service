@@ -44,7 +44,7 @@ private:
     bool NotifyChange(const std::string &uri);
     bool CheckPermisson(const UriInfo &uriInfo, PermissionType permissionType);
     static Factory factory_;
-    static constexpr int ERROR = -1;
+    static constexpr int32_t ERROR = -1;
 };
 } // namespace OHOS::DataShare
 #endif

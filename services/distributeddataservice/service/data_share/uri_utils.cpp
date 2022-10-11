@@ -16,12 +16,14 @@
 
 #include "uri_utils.h"
 
+#include <vector>
+
 #include "log_print.h"
 #include "string_ex.h"
 #include "uri.h"
 
 namespace OHOS::DataShare {
-bool URIUtils::GetInfoFromURI(const std::string &uri,UriInfo& uriInfo)
+bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
 {
     Uri uriTemp(uri);
     std::vector<std::string> splitUri;

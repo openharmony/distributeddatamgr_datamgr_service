@@ -55,7 +55,7 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
     }
 
     int32_t ret = RdbAdaptor::Insert(uriInfo, valuesBucket);
-    if (!ret) {
+    if (ret == ERROR) {
         ZLOGE("Insert error %{public}s", uri.c_str());
         return ERROR;
     }
@@ -96,7 +96,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         return ERROR;
     }
     int32_t ret = RdbAdaptor::Update(uriInfo, predicate, valuesBucket);
-    if (!ret) {
+    if (ret == ERROR) {
         ZLOGE("Update error %{public}s", uri.c_str());
         return ERROR;
     }
@@ -119,7 +119,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
     }
 
     int32_t ret = RdbAdaptor::Delete(uriInfo, predicate);
-    if (!ret) {
+    if (ret == ERROR) {
         ZLOGE("Delete error %{public}s", uri.c_str());
         return ERROR;
     }
