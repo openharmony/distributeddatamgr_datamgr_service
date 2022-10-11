@@ -62,7 +62,7 @@ private:
     ~DeviceManagerAdapter();
     std::function<void()> RegDevCallback();
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
-    void SaveDeviceInfo(const DeviceInfo &deviceInfo, const DistributedKv::DeviceChangeType &type);
+    void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
     void UpdateDeviceInfo();
     DeviceInfo GetDeviceInfoFromCache(const std::string &id);
     bool Execute(KvStoreTask &&task);
