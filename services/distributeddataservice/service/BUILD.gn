@@ -31,7 +31,6 @@ config("module_public_config") {
     "rdb",
     "//third_party/json/single_include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator/src",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/data_share/frameworks/native/common/include",

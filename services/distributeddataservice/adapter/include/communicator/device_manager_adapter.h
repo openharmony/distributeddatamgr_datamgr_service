@@ -38,6 +38,10 @@ public:
     using KvStoreTask = OHOS::DistributedKv::KvStoreTask;
     using KvStoreThreadPool = OHOS::DistributedKv::KvStoreThreadPool;
     using KvScheduler = OHOS::DistributedKv::KvScheduler;
+    using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
+    using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
+    using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
+    using Status = OHOS::DistributedKv::Status;
     static DeviceManagerAdapter &GetInstance();
     void Init();
     Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
@@ -58,7 +62,7 @@ private:
     ~DeviceManagerAdapter();
     std::function<void()> RegDevCallback();
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
-    void SaveDeviceInfo(const DeviceInfo &deviceInfo, const DeviceChangeType &type);
+    void SaveDeviceInfo(const DeviceInfo &deviceInfo, const DistributedKv::DeviceChangeType &type);
     void UpdateDeviceInfo();
     DeviceInfo GetDeviceInfoFromCache(const std::string &id);
     bool Execute(KvStoreTask &&task);
