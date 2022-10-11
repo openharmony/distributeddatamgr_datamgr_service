@@ -154,4 +154,10 @@ Status PermitDelegate::VerifyStrategy(const StoreMetaData &data, const std::stri
     }
     return Status::ERROR;
 }
+
+void PermitDelegate::DelCache(const std::string &key)
+{
+    ZLOGI("meta key: %{public}s", key.c_str());
+    metaDataBucket_.Delete(key);
+}
 } // namespace OHOS::DistributedData
