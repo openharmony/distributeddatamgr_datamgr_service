@@ -32,13 +32,12 @@
 
 namespace OHOS {
 namespace DistributedData {
-using namespace AppDistributedKv;
-using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
-using KvStoreTask = OHOS::DistributedKv::KvStoreTask;
-using KvStoreThreadPool = OHOS::DistributedKv::KvStoreThreadPool;
-using KvScheduler = OHOS::DistributedKv::KvScheduler;
 class API_EXPORT DeviceManagerAdapter {
 public:
+    using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
+    using KvStoreTask = OHOS::DistributedKv::KvStoreTask;
+    using KvStoreThreadPool = OHOS::DistributedKv::KvStoreThreadPool;
+    using KvScheduler = OHOS::DistributedKv::KvScheduler;
     static DeviceManagerAdapter &GetInstance();
     void Init();
     Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
