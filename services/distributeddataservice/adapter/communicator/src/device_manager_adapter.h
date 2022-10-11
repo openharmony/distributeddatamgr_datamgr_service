@@ -39,7 +39,7 @@ using KvStoreThreadPool = OHOS::DistributedKv::KvStoreThreadPool;
 using KvScheduler = OHOS::DistributedKv::KvScheduler;
 class DeviceManagerAdapter {
 public:
-    static DeviceManagerAdapter &GetInstance();
+    API_EXPORT static DeviceManagerAdapter &GetInstance();
     void Init();
     Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
@@ -51,7 +51,7 @@ public:
     DeviceInfo GetLocalBasicInfo();
     std::string ToUUID(const std::string &id);
     std::string ToNetworkID(const std::string &id);
-    void NotifyReadyEvent(const std::string &uuid);
+    API_EXPORT void NotifyReadyEvent(const std::string &uuid);
     friend class DataMgrDmStateCall;
 
 private:
