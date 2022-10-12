@@ -24,12 +24,11 @@
 #include "constant.h"
 #include "ikvstore_data_service.h"
 #include "kvstore_device_listener.h"
-#include "kvstore_user_manager.h"
+#include "kvstore_meta_manager.h"
 #include "metadata/corrupted_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "reporter.h"
 #include "security/security.h"
-#include "single_kvstore_impl.h"
 #include "system_ability.h"
 #include "types.h"
 #include "dump_helper.h"
@@ -118,6 +117,9 @@ private:
 
     bool ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
     static void ResolveAutoLaunchCompatible(const MetaData &meta, const std::string &identifier);
+    static DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
+    static Status InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
+                          DistributedDB::KvStoreNbDelegate::Option &dbOption);
 
     static constexpr int TEN_SEC = 10;
 

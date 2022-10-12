@@ -17,7 +17,7 @@
 #define LOG_TAG "RouteHeadHandler"
 
 #include "auth_delegate.h"
-#include "device_kvstore_impl.h"
+#include "device_manager_adapter.h"
 #include "kvstore_meta_manager.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -29,6 +29,7 @@
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
+using DmAdapter = DistributedData::DeviceManagerAdapter;
 constexpr const int ALIGN_WIDTH = 8;
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
 {
@@ -54,8 +55,8 @@ void RouteHeadHandlerImpl::Init()
     if (deviceId_.empty()) {
         return;
     }
-    SessionPoint localPoint {
-        DeviceKvStoreImpl::GetLocalDeviceId(), static_cast<uint32_t>(atoi(userId_.c_str())), appId_, storeId_ };
+    SessionPoint localPoint { DmAdapter::GetInstance().GetLocalDevice().uuid,
+        static_cast<uint32_t>(atoi(userId_.c_str())), appId_, storeId_ };
     session_ = SessionManager::GetInstance().GetSession(localPoint, deviceId_);
     ZLOGD("valid session:%{public}s", Serializable::Marshall(session_).c_str());
 }

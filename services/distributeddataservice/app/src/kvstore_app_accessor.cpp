@@ -20,7 +20,6 @@
 #include <map>
 #include "broadcast_sender.h"
 #include "kv_store_delegate_manager.h"
-#include "kvstore_app_manager.h"
 #include "kvstore_meta_manager.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"

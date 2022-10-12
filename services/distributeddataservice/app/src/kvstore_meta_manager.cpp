@@ -27,11 +27,10 @@
 #include "communication_provider.h"
 #include "constant.h"
 #include "crypto_manager.h"
-#include "device_kvstore_impl.h"
+#include "device_manager_adapter.h"
 #include "directory_utils.h"
 #include "dump_helper.h"
 #include "executor_factory.h"
-#include "kvstore_app_manager.h"
 #include "kvstore_data_service.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
@@ -48,6 +47,7 @@ namespace OHOS {
 namespace DistributedKv {
 using json = nlohmann::json;
 using Commu = AppDistributedKv::CommunicationProvider;
+using DmAdapter = DistributedData::DeviceManagerAdapter;
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
 
@@ -259,7 +259,7 @@ std::vector<uint8_t> KvStoreMetaManager::GetMetaKey(const std::string &deviceAcc
 {
     std::string originKey;
     if (key.empty()) {
-        originKey = DeviceKvStoreImpl::GetLocalDeviceId() + Constant::KEY_SEPARATOR +
+        originKey = DmAdapter::GetInstance().GetLocalDevice().uuid + Constant::KEY_SEPARATOR +
                     deviceAccountId + Constant::KEY_SEPARATOR +
                     groupId + Constant::KEY_SEPARATOR +
                     bundleName + Constant::KEY_SEPARATOR +
@@ -273,20 +273,6 @@ std::vector<uint8_t> KvStoreMetaManager::GetMetaKey(const std::string &deviceAcc
                 storeId + Constant::KEY_SEPARATOR +
                 key;
     return SecretMetaRow::GetKeyFor(originKey);
-}
-
-std::string KvStoreMetaManager::GetSecretSingleKeyFile(const std::string &userId, const std::string &appId,
-                                                       const std::string &storeId, int pathType)
-{
-    std::string hashedStoreId;
-    DistributedDB::DBStatus result = DistributedDB::KvStoreDelegateManager::GetDatabaseDir(storeId, hashedStoreId);
-    if (DistributedDB::OK != result) {
-        ZLOGE("get data base directory by kvstore store id failed, result = %d.", result);
-        return "";
-    }
-    std::string miscPath = (pathType == KvStoreAppManager::PATH_DE) ? Constant::ROOT_PATH_DE : Constant::ROOT_PATH_CE;
-    return miscPath + "/" + Constant::SERVICE_NAME + "/" + userId + "/" + Constant::GetDefaultHarmonyAccountName()
-           + "/" + appId + "/" + hashedStoreId + ".sig.key";
 }
 
 Status KvStoreMetaManager::CheckUpdateServiceMeta(const std::vector<uint8_t> &metaKey, FLAG flag,
@@ -394,32 +380,6 @@ Status KvStoreMetaManager::WriteSecretKeyToFile(const std::string &secretKeyFile
     return Status::ERROR;
 }
 
-Status KvStoreMetaManager::RemoveSecretKey(pid_t uid, const std::string &bundleName, const std::string &storeId)
-{
-    auto metaDelegate = GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        ZLOGE("GetMetaKvStore return nullptr.");
-        return Status::DB_ERROR;
-    }
-    const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
-    Status status = Status::SUCCESS;
-    DistributedDB::Key secretSingleDbKey = GetMetaKey(userId, "default", bundleName, storeId, "SINGLE_KEY");
-    DistributedDB::DBStatus dbStatus = metaDelegate->DeleteLocal(secretSingleDbKey);
-    if (dbStatus != DistributedDB::DBStatus::OK) {
-        ZLOGE("delete secretSingleDbKey fail Status %d", static_cast<int>(dbStatus));
-        status = Status::DB_ERROR;
-    }
-
-    for (int32_t pathType = KvStoreAppManager::PATH_DE; pathType < KvStoreAppManager::PATH_TYPE_MAX; ++pathType) {
-        std::string keyFile = GetSecretSingleKeyFile(userId, bundleName, storeId, pathType);
-        if (!RemoveFile(keyFile)) {
-            ZLOGW("remove secretKeyFile Single fail.");
-            status = Status::DB_ERROR;
-        }
-    }
-    return status;
-}
-
 Status KvStoreMetaManager::GetSecretKeyFromMeta(const std::vector<uint8_t> &metaSecretKey, std::vector<uint8_t> &key,
                                                 bool &outdated)
 {
@@ -510,21 +470,6 @@ std::vector<uint8_t> KvStoreMetaManager::GetSecretKeyFromFile(const std::string 
     std::vector<uint8_t> key;
     CryptoManager::GetInstance().Decrypt(secretKey.secretKey, key);
     return key;
-}
-
-void KvStoreMetaManager::ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId,
-    int32_t pathType, sptr<SingleKvStoreImpl> store)
-{
-    if (store == nullptr) {
-        return;
-    }
-    std::vector<uint8_t> key = Crypto::Random(KEY_SIZE);
-    WriteSecretKeyToMeta(GetMetaKey(userId, "default", bundleName, storeId, "SINGLE_KEY"), key);
-    Status status = store->ReKey(key);
-    if (status == Status::SUCCESS) {
-        WriteSecretKeyToFile(GetSecretSingleKeyFile(userId, bundleName, storeId, pathType), key);
-    }
-    key.assign(key.size(), 0);
 }
 
 // StrategyMetaData###deviceId###deviceAccountID###${groupId}###bundleName###storeId
@@ -628,32 +573,6 @@ Status KvStoreMetaManager::SaveStrategyMetaLabels(const std::string &key,
     return Status::SUCCESS;
 }
 
-Status KvStoreMetaManager::DeleteStrategyMeta(const std::string &bundleName, const std::string &storeId,
-                                              const std::string &userId)
-{
-    ZLOGI("start");
-    std::string key;
-    std::string devId = DeviceKvStoreImpl::GetLocalDeviceId();
-    if (devId.empty()) {
-        ZLOGE("get device id empty.");
-        return Status::ERROR;
-    }
-    StrategyMeta params = {devId, userId, Constant::DEFAULT_GROUP_ID, bundleName, storeId};
-    GetStrategyMetaKey(params, key);
-
-    auto metaDelegate = GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        return Status::ERROR;
-    }
-    auto dbkey = std::vector<uint8_t>(key.begin(), key.end());
-    auto dbStatus = metaDelegate->Delete(dbkey);
-    if (dbStatus != DistributedDB::DBStatus::OK) {
-        ZLOGE("failed.");
-        return Status::DB_ERROR;
-    }
-    return Status::SUCCESS;
-}
-
 void KvStoreMetaManager::SyncMeta()
 {
     std::vector<std::string> devs;
@@ -696,63 +615,6 @@ void KvStoreMetaManager::SubscribeMetaKvStore()
     if (dbStatus != DistributedDB::DBStatus::OK) {
         ZLOGW("register meta observer failed :%{public}d.", dbStatus);
     }
-}
-
-Status KvStoreMetaManager::CheckSyncPermission(const std::string &userId, const std::string &appId,
-                                               const std::string &storeId, uint8_t flag, const std::string &remoteId)
-{
-    std::string localId = DeviceKvStoreImpl::GetLocalDeviceId();
-    if (localId.empty()) {
-        ZLOGE("get device id empty.");
-        return Status::ERROR;
-    }
-    KvStoreMetaData localMeta;
-    auto queryStatus = QueryKvStoreMetaDataByDeviceIdAndAppId(localId, appId, localMeta);
-    if (queryStatus != Status::SUCCESS) {
-        ZLOGE("get kvstore by deviceId and appId empty.");
-        return Status::ERROR;
-    }
-
-    StrategyMeta params = {localId, localMeta.deviceAccountId, Constant::DEFAULT_GROUP_ID, localMeta.bundleName,
-                           storeId};
-    std::string localKey;
-    GetStrategyMetaKey(params, localKey);
-    if (localKey.empty()) {
-        ZLOGE("get key empty.");
-        return Status::ERROR;
-    }
-
-    std::string remoteKey;
-    params.devId = remoteId;
-    GetStrategyMetaKey(params, remoteKey);
-    if (remoteKey.empty()) {
-        ZLOGE("get key empty.");
-        return Status::ERROR;
-    }
-
-    std::map<std::string, std::vector<std::string>> localStrategies;
-    std::map<std::string, std::vector<std::string>> remoteStrategies;
-    GetStategyMeta(localKey, localStrategies);
-    GetStategyMeta(remoteKey, remoteStrategies);
-    if (localStrategies.empty() || remoteStrategies.empty()) {
-        ZLOGD("no range, sync permission success.");
-        return Status::SUCCESS;
-    }
-
-    auto localSupportRemotes = localStrategies.find(REMOTE_LABEL);
-    auto remoteSupportLocals = remoteStrategies.find(LOCAL_LABEL);
-    if (localSupportRemotes != localStrategies.end() && remoteSupportLocals != remoteStrategies.end()) {
-        std::vector<std::string> lremotes = localSupportRemotes->second;
-        for (auto const &lremote : lremotes) {
-            std::vector<std::string> rlocals = remoteSupportLocals->second;
-            if (std::find(rlocals.begin(), rlocals.end(), lremote) != rlocals.end()) {
-                ZLOGD("find range, sync permission success.");
-                return Status::SUCCESS;
-            }
-        }
-    }
-    ZLOGD("check strategy failed, sync permission fail.");
-    return Status::ERROR;
 }
 
 Status KvStoreMetaManager::GetStategyMeta(const std::string &key,
