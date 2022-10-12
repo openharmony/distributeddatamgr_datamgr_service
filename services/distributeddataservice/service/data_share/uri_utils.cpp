@@ -16,41 +16,33 @@
 
 #include "uri_utils.h"
 
+#include <vector>
+
 #include "log_print.h"
+#include "string_ex.h"
+#include "uri.h"
 
 namespace OHOS::DataShare {
-bool URIUtils::GetInfoFromURI(const std::string &uri, std::string &bundleName, std::string &moduleName,
-    std::string &storeName, std::string &tableName)
+bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
 {
-    constexpr int offset_0 = 0;
-    constexpr int offset_1 = 1;
-    constexpr int offset_2 = 2;
-    std::string uriStr = uri;
-    std::string bundle =
-        uriStr.substr(uriStr.find_first_of("/") + offset_2, uriStr.size() - uriStr.find_first_of("/") + offset_1);
-    bundleName = bundle.substr(offset_0, bundle.find_first_of("/"));
-    if (bundleName == "") {
-        ZLOGE("Invalid bundleName");
+    Uri uriTemp(uri);
+    std::vector<std::string> splitUri;
+    SplitStr(uriTemp.GetPath(), "/", splitUri);
+    if (splitUri.size() < URI_INDEX_MAX) {
+        ZLOGE("Invalid uri: %{public}s", uri.c_str());
         return false;
     }
-    moduleName = bundle.substr(
-        bundle.find_first_of("/") + offset_1, bundle.find_last_of("/") - bundle.find_first_of("/") - offset_1);
-    if (moduleName == "") {
-        ZLOGE("Invalid moduleName");
+
+    if (splitUri[URI_INDEX_BUNLDENAME].empty() || splitUri[URI_INDEX_MODULENAME].empty() ||
+        splitUri[URI_INDEX_STORENAME].empty() || splitUri[URI_INDEX_TABLENAME].empty()) {
+        ZLOGE("Uri has empty field!");
         return false;
     }
-    storeName = uriStr.substr(
-        uriStr.find_last_of("/") + offset_1, uriStr.find_last_of(":") - uriStr.find_last_of("/") - offset_1);
-    if (storeName == "") {
-        ZLOGE("Invalid storeName");
-        return false;
-    }
-    tableName = uriStr.substr(
-        uriStr.find_last_of(":") + offset_1, uriStr.find_first_of("?") - uriStr.find_last_of(":") - offset_1);
-    if (tableName == "") {
-        ZLOGE("Invalid tableName");
-        return false;
-    }
+
+    uriInfo.bundleName = splitUri[URI_INDEX_BUNLDENAME];
+    uriInfo.moduleName = splitUri[URI_INDEX_MODULENAME];
+    uriInfo.storeName = splitUri[URI_INDEX_STORENAME];
+    uriInfo.tableName = splitUri[URI_INDEX_TABLENAME];
     return true;
 }
 } // namespace OHOS::DataShare

@@ -53,8 +53,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(deviceAccountID)], user);
     SetValue(node[GET_NAME(userId)], account);
     SetValue(node[GET_NAME(UID)], uid);
-    SetValue(node[GET_NAME(readPermission)], readPermission);
-    SetValue(node[GET_NAME(writePermission)], writePermission);
+
     return true;
 }
 
@@ -81,8 +80,7 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(storeId), storeId);
     GetValue(node, GET_NAME(user), user);
     GetValue(node, GET_NAME(account), account);
-    GetValue(node, GET_NAME(readPermission), readPermission);
-    GetValue(node, GET_NAME(writePermission), writePermission);
+
     // compatible with the older versions
     if (version < FIELD_CHANGED_TAG) {
         GetValue(node, GET_NAME(kvStoreType), storeType);
@@ -115,8 +113,8 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
     return (version == metaData.version && storeType == metaData.storeType &&
             securityLevel == metaData.securityLevel && area == metaData.area && uid == metaData.uid &&
             tokenId == metaData.tokenId && instanceId == metaData.instanceId && appId == metaData.appId &&
-            appType == metaData.appType && bundleName == metaData.bundleName && dataDir == metaData.dataDir &&
-            readPermission == metaData.readPermission && writePermission == metaData.writePermission);
+            appType == metaData.appType && bundleName == metaData.bundleName && dataDir == metaData.dataDir
+            );
 }
 
 bool StoreMetaData::operator!=(const StoreMetaData &metaData) const
