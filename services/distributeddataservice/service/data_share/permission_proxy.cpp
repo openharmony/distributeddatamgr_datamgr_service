@@ -73,7 +73,6 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
         ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
     }
-    AppExecFwk::ExtensionAbilityInfo tempInfo;
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
@@ -98,7 +97,6 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
         ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
     }
-    AppExecFwk::ExtensionAbilityInfo tempInfo;
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
