@@ -39,7 +39,10 @@ private:
         ~Factory();
     };
 
-    enum class PermissionType { READ_PERMISSION = 1, WRITE_PERMISSION };
+    enum class PermissionType {
+        READ_PERMISSION = 1,
+        WRITE_PERMISSION
+    };
 
     bool NotifyChange(const std::string &uri);
     bool CheckPermisson(const UriInfo &uriInfo, PermissionType permissionType);
