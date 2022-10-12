@@ -18,8 +18,6 @@
 
 #include <string>
 
-#include "bundle_info.h"
-#include "bundle_mgr_proxy.h"
 #include "metadata/store_meta_data.h"
 
 namespace OHOS::DataShare {
@@ -32,9 +30,6 @@ public:
 
 private:
     static void FillData(DistributedData::StoreMetaData &data);
-    static sptr<AppExecFwk::BundleMgrProxy> GetBundleMgrProxy();
-    static bool GetBundleInfoFromBMS(const std::string &bundleName, uint32_t tokenId,
-        AppExecFwk::BundleInfo &bundleInfo);
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_PERMISSION_PROXY_H

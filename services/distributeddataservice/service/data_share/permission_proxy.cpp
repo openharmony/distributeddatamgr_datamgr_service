@@ -17,7 +17,8 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "bundle_mgr_client_impl.h"
+#include "bundle_info.h"
+#include "bundlemgr/bundle_mgr_proxy.h"
 #include "communication_provider.h"
 #include "if_system_ability_manager.h"
 #include "ipc_skeleton.h"
@@ -28,7 +29,7 @@
 #include "system_ability_definition.h"
 
 namespace OHOS::DataShare {
-sptr<AppExecFwk::BundleMgrProxy> PermissionProxy::GetBundleMgrProxy()
+static sptr<AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
 {
     sptr<ISystemAbilityManager> systemAbilityManager =
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -47,7 +48,7 @@ sptr<AppExecFwk::BundleMgrProxy> PermissionProxy::GetBundleMgrProxy()
     return iface_cast<AppExecFwk::BundleMgrProxy>(remoteObject);
 }
 
-bool PermissionProxy::GetBundleInfoFromBMS(const std::string &bundleName, uint32_t tokenId,
+bool GetBundleInfoFromBMS(const std::string &bundleName, uint32_t tokenId,
     AppExecFwk::BundleInfo &bundleInfo)
 {
     int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
