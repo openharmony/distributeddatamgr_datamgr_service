@@ -26,6 +26,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
+#include "permit_delegate.h"
 #include "utils/block_integer.h"
 
 namespace OHOS::DistributedKv {
@@ -101,6 +102,7 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
                 MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
                 MetaDataManager::GetInstance().DelMeta(meta.appId, true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+                PermitDelegate::GetInstance().DelCache(meta.GetKey());
             }
         }
     };
