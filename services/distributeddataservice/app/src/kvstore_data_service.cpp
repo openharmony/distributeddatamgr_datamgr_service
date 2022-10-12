@@ -393,12 +393,12 @@ DistributedDB::SecurityOption KvStoreDataService::ConvertSecurity(int securityLe
         return {DistributedDB::NOT_SET, DistributedDB::ECE};
     }
     switch (securityLevel) {
-      case SecurityLevel::S3:
-          return {DistributedDB::S3, DistributedDB::SECE};
-      case SecurityLevel::S4:
-          return {DistributedDB::S4, DistributedDB::ECE};
-      default:
-          return {securityLevel, DistributedDB::ECE};
+        case SecurityLevel::S3:
+            return {DistributedDB::S3, DistributedDB::SECE};
+        case SecurityLevel::S4:
+            return {DistributedDB::S4, DistributedDB::ECE};
+        default:
+            return {securityLevel, DistributedDB::ECE};
     }
 }
 
@@ -450,7 +450,7 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const MetaData &meta, const
 }
 
 Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
-                                         DistributedDB::KvStoreNbDelegate::Option &dbOption)
+    DistributedDB::KvStoreNbDelegate::Option &dbOption)
 {
     DistributedDB::CipherPassword password;
     auto status = password.SetValue(cipherKey.data(), cipherKey.size());
