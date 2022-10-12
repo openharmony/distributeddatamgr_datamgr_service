@@ -115,6 +115,8 @@ ohos_shared_library("distributeddatasvc") {
   external_deps = [
     "ability_base:zuri",
     "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "data_share:datashare_common",
     "device_auth:deviceauth_sdk",
@@ -123,6 +125,7 @@ ohos_shared_library("distributeddatasvc") {
     "ipc:ipc_core",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
+    "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"
 

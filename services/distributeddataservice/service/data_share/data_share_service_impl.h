@@ -20,6 +20,7 @@
 
 #include "data_share_service_stub.h"
 #include "visibility.h"
+#include "uri_utils.h"
 
 namespace OHOS::DataShare {
 class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
@@ -38,10 +39,12 @@ private:
         ~Factory();
     };
 
-    bool CheckCallingPermission(const std::string &permission);
-    bool NotifyChange(const std::string &uri);
+    enum class PermissionType { READ_PERMISSION = 1, WRITE_PERMISSION };
 
+    bool NotifyChange(const std::string &uri);
+    bool CheckPermisson(const UriInfo &uriInfo, PermissionType permissionType);
     static Factory factory_;
+    static constexpr int32_t ERROR = -1;
 };
-} // namespace OHOS::DistributedRdb
+} // namespace OHOS::DataShare
 #endif

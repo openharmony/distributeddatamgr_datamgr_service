@@ -18,10 +18,23 @@
 
 #include <string>
 namespace OHOS::DataShare {
+struct UriInfo {
+    std::string bundleName;
+    std::string moduleName;
+    std::string storeName;
+    std::string tableName;
+};
+
 class URIUtils {
 public:
-    static bool GetInfoFromURI(const std::string &uri, std::string &bundleName, std::string &moduleName,
-        std::string &storeName, std::string &tableName);
+    static bool GetInfoFromURI(const std::string &uri, UriInfo &uriInfo);
+
+private:
+    static constexpr size_t URI_INDEX_BUNLDENAME = 0;
+    static constexpr size_t URI_INDEX_MODULENAME = 1;
+    static constexpr size_t URI_INDEX_STORENAME = 2;
+    static constexpr size_t URI_INDEX_TABLENAME = 3;
+    static constexpr size_t URI_INDEX_MAX = 4;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_URI_UTILS_H

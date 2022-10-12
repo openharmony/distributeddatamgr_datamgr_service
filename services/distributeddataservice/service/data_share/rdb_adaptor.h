@@ -27,6 +27,7 @@
 #include "rdb_errno.h"
 #include "rdb_helper.h"
 #include "rdb_store.h"
+#include "uri_utils.h"
 
 namespace OHOS::DataShare {
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
@@ -47,14 +48,11 @@ private:
 };
 class RdbAdaptor {
 public:
-    static int32_t Insert(const std::string &bundleName, const std::string &moduleName, const std::string &storeName,
-        const std::string &tableName, const DataShareValuesBucket &valuesBucket);
-    static int32_t Update(const std::string &bundleName, const std::string &moduleName, const std::string &storeName,
-        const std::string &tableName, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket);
-    static int32_t Delete(const std::string &bundleName, const std::string &moduleName, const std::string &storeName,
-        const std::string &tableName, const DataSharePredicates &predicate);
-    static std::shared_ptr<DataShareResultSet> Query(const std::string &bundleName, const std::string &moduleName,
-        const std::string &storeName, const std::string &tableName, const DataSharePredicates &predicates,
+    static int32_t Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket);
+    static int32_t Update(const UriInfo &uriInfo, const DataSharePredicates &predicate,
+        const DataShareValuesBucket &valuesBucket);
+    static int32_t Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate);
+    static std::shared_ptr<DataShareResultSet> Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
         const std::vector<std::string> &columns);
 };
 class DefaultOpenCallback : public RdbOpenCallback {

@@ -19,46 +19,43 @@
 #include "permission_proxy.h"
 #include "rdb_utils.h"
 namespace OHOS::DataShare {
-int32_t RdbAdaptor::Insert(const std::string &bundleName, const std::string &moduleName, const std::string &storeName,
-    const std::string &tableName, const DataShareValuesBucket &valuesBucket)
+int32_t RdbAdaptor::Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket)
 {
     DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(bundleName, moduleName, storeName, metaData)) {
+    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData)) {
         return -1;
     }
     RdbDelegate delegate(metaData);
-    return delegate.Insert(tableName, valuesBucket);
+    return delegate.Insert(uriInfo.tableName, valuesBucket);
 }
-int32_t RdbAdaptor::Update(const std::string &bundleName, const std::string &moduleName, const std::string &storeName,
-    const std::string &tableName, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
+int32_t RdbAdaptor::Update(const UriInfo &uriInfo, const DataSharePredicates &predicate,
+    const DataShareValuesBucket &valuesBucket)
 {
     DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(bundleName, moduleName, storeName, metaData)) {
+    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData)) {
         return -1;
     }
     RdbDelegate delegate(metaData);
-    return delegate.Update(tableName, predicate, valuesBucket);
+    return delegate.Update(uriInfo.tableName, predicate, valuesBucket);
 }
-int32_t RdbAdaptor::Delete(const std::string &bundleName, const std::string &moduleName, const std::string &storeName,
-    const std::string &tableName, const DataSharePredicates &predicate)
+int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate)
 {
     DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(bundleName, moduleName, storeName, metaData)) {
+    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData)) {
         return -1;
     }
     RdbDelegate delegate(metaData);
-    return delegate.Delete(tableName, predicate);
+    return delegate.Delete(uriInfo.tableName, predicate);
 }
-std::shared_ptr<DataShareResultSet> RdbAdaptor::Query(const std::string &bundleName, const std::string &moduleName,
-    const std::string &storeName, const std::string &tableName, const DataSharePredicates &predicates,
+std::shared_ptr<DataShareResultSet> RdbAdaptor::Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
     const std::vector<std::string> &columns)
 {
     DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(bundleName, moduleName, storeName, metaData)) {
+    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData)) {
         return nullptr;
     }
     RdbDelegate delegate(metaData);
-    return delegate.Query(tableName, predicates, columns);
+    return delegate.Query(uriInfo.tableName, predicates, columns);
 }
 
 RdbDelegate::RdbDelegate(const StoreMetaData &meta)
@@ -92,8 +89,8 @@ int64_t RdbDelegate::Insert(const std::string &tableName, const DataShareValuesB
     }
     return rowId;
 }
-int64_t RdbDelegate::Update(
-    const std::string &tableName, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
+int64_t RdbDelegate::Update(const std::string &tableName, const DataSharePredicates &predicate,
+    const DataShareValuesBucket &valuesBucket)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
@@ -122,20 +119,20 @@ int64_t RdbDelegate::Delete(const std::string &tableName, const DataSharePredica
     }
     return rowId;
 }
-std::shared_ptr<DataShareResultSet> RdbDelegate::Query(
-    const std::string &tableName, const DataSharePredicates &predicates, const std::vector<std::string> &columns)
+std::shared_ptr<DataShareResultSet> RdbDelegate::Query(const std::string &tableName,
+    const DataSharePredicates &predicates, const std::vector<std::string> &columns)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
         return nullptr;
     }
     RdbPredicates rdbPredicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicates, tableName);
-    std::unique_ptr<NativeRdb::ResultSet> resultSet = store_->QueryByStep(rdbPredicates, columns);
+    std::shared_ptr<NativeRdb::ResultSet> resultSet = store_->QueryByStep(rdbPredicates, columns);
     if (resultSet == nullptr) {
         ZLOGE("Query failed");
         return nullptr;
     }
-    auto bridge = RdbDataShareAdapter::RdbUtils::ToResultSetBridge(std::move(resultSet));
+    auto bridge = RdbDataShareAdapter::RdbUtils::ToResultSetBridge(resultSet);
     return std::make_shared<DataShare::DataShareResultSet>(bridge);
 }
 } // namespace OHOS::DataShare
