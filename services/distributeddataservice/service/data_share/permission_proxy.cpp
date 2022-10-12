@@ -15,38 +15,99 @@
 #define LOG_TAG "PermissionProxy"
 #include "permission_proxy.h"
 
+#include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "bundle_info.h"
+#include "bundlemgr/bundle_mgr_proxy.h"
 #include "communication_provider.h"
+#include "if_system_ability_manager.h"
 #include "ipc_skeleton.h"
+#include "iservice_registry.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "system_ability_definition.h"
 
 namespace OHOS::DataShare {
-bool PermissionProxy::QueryWritePermission(const std::string &bundleName, const std::string &moduleName,
-    const std::string &storeName, std::string &permission)
+static sptr<AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
 {
-    DistributedData::StoreMetaData meta;
-    bool existed = QueryMetaData(bundleName, moduleName, storeName, meta);
-    if (!existed) {
-        ZLOGE("QueryMetaData fail");
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        ZLOGE("Failed to get system ability mgr.");
+        return nullptr;
+    }
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (remoteObject == nullptr) {
+        ZLOGE("Failed to get bundle manager proxy.");
+        return nullptr;
+    }
+
+    ZLOGD("Get bundle manager proxy success.");
+    return iface_cast<AppExecFwk::BundleMgrProxy>(remoteObject);
+}
+
+bool GetBundleInfoFromBMS(const std::string &bundleName, uint32_t tokenId,
+    AppExecFwk::BundleInfo &bundleInfo)
+{
+    int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    auto bmsClient = GetBundleMgrProxy();
+    if (!bmsClient) {
+        ZLOGE("GetBundleMgrProxy is nullptr!");
         return false;
     }
-    permission = meta.writePermission;
+    bool ret = bmsClient->GetBundleInfo(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo,
+        userId);
+    if (!ret) {
+        ZLOGE("GetBundleInfo failed!");
+        return false;
+    }
     return true;
 }
 
-bool PermissionProxy::QueryReadPermission(const std::string &bundleName, const std::string &moduleName,
-    const std::string &storeName, std::string &permission)
+bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32_t tokenId, std::string &permission)
 {
-    DistributedData::StoreMetaData meta;
-    bool existed = QueryMetaData(bundleName, moduleName, storeName, meta);
-    if (!existed) {
-        ZLOGE("QueryMetaData fail");
+    AppExecFwk::BundleInfo bundleInfo;
+    if (!GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
+        ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
     }
-    permission = meta.writePermission;
-    return true;
+    for (auto &item : bundleInfo.extensionInfos) {
+        if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
+            permission = item.writePermission;
+            if (permission.empty()) {
+                return true;
+            }
+            int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
+            if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+                ZLOGE("Verify write permission denied!");
+                return false;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_t tokenId, std::string &permission)
+{
+    AppExecFwk::BundleInfo bundleInfo;
+    if (!GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
+        ZLOGE("GetBundleInfoFromBMS failed!");
+        return false;
+    }
+    for (auto &item : bundleInfo.extensionInfos) {
+        if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
+            if (item.readPermission.empty()) {
+                ZLOGE("Verify write permission denied!");
+                return true;
+            }
+            permission = item.readPermission;
+            return true;
+        }
+    }
+    return false;
 }
 
 void PermissionProxy::FillData(DistributedData::StoreMetaData &meta)
@@ -65,7 +126,7 @@ bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::st
 
     bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData);
     if (!isCreated) {
-        ZLOGE("interface token is not equal");
+        ZLOGE("Interface token is not equal");
         return false;
     }
     return true;

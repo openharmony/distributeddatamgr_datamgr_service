@@ -23,10 +23,8 @@
 namespace OHOS::DataShare {
 class PermissionProxy {
 public:
-    static bool QueryWritePermission(const std::string &bundleName, const std::string &moduleName,
-        const std::string &storeName, std::string &permission);
-    static bool QueryReadPermission(const std::string &bundleName, const std::string &moduleName,
-        const std::string &storeName, std::string &permission);
+    static bool QueryWritePermission(const std::string &bundleName, uint32_t tokenId, std::string &permission);
+    static bool QueryReadPermission(const std::string &bundleName, uint32_t tokenId, std::string &permission);
     static bool QueryMetaData(const std::string &bundleName, const std::string &moduleName,
         const std::string &storeName, DistributedData::StoreMetaData &metaData);
 

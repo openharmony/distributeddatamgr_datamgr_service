@@ -40,44 +40,24 @@ DataShareServiceImpl::Factory::~Factory()
 {
 }
 
-bool DataShareServiceImpl::CheckCallingPermission(const std::string &permission)
-{
-    if (!permission.empty() && Security::AccessToken::AccessTokenKit::VerifyAccessToken(
-        IPCSkeleton::GetCallingTokenID(), permission) != AppExecFwk::Constants::PERMISSION_GRANTED) {
-        ZLOGE("permission not granted.");
-        return false;
-    }
-    return true;
-}
-
 int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket)
 {
-    ZLOGD("enter");
-    std::string bundleName;
-    std::string moduleName;
-    std::string storeName;
-    std::string tableName;
-    bool ret = URIUtils::GetInfoFromURI(uri, bundleName, moduleName, storeName, tableName);
-    if (!ret) {
-        ZLOGE("uri error %{public}s", uri.c_str());
-        return -1;
-    }
-    std::string permission;
-    ret = PermissionProxy::QueryWritePermission(bundleName, moduleName, storeName, permission);
-    if (!ret) {
-        ZLOGE("query permission failed");
-        return -1;
-    }
-    ret = CheckCallingPermission(permission);
-    if (!ret) {
-        ZLOGE("no permission %{public}s", permission.c_str());
-        return -1;
+    ZLOGD("Insert enter.");
+    UriInfo uriInfo;
+    if (!URIUtils::GetInfoFromURI(uri, uriInfo)) {
+        ZLOGE("GetInfoFromURI failed!");
+        return ERROR;
     }
 
-    ret = RdbAdaptor::Insert(bundleName, moduleName, storeName, tableName, valuesBucket);
-    if (!ret) {
+    if (!CheckPermisson(uriInfo, PermissionType::WRITE_PERMISSION)) {
+        ZLOGE("CheckPermisson failed!");
+        return ERROR;
+    }
+
+    int32_t ret = RdbAdaptor::Insert(uriInfo, valuesBucket);
+    if (ret == ERROR) {
         ZLOGE("Insert error %{public}s", uri.c_str());
-        return -1;
+        return ERROR;
     }
     NotifyChange(uri);
     return ret;
@@ -101,34 +81,24 @@ bool DataShareServiceImpl::NotifyChange(const std::string &uri)
     return true;
 }
 
-int32_t DataShareServiceImpl::Update(
-    const std::string &uri, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
+int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePredicates &predicate,
+    const DataShareValuesBucket &valuesBucket)
 {
-    ZLOGD("enter");
-    std::string bundleName;
-    std::string moduleName;
-    std::string storeName;
-    std::string tableName;
-    bool ret = URIUtils::GetInfoFromURI(uri, bundleName, moduleName, storeName, tableName);
-    if (!ret) {
-        ZLOGE("uri error %{public}s", uri.c_str());
-        return -1;
+    ZLOGD("Update enter.");
+    UriInfo uriInfo;
+    if (!URIUtils::GetInfoFromURI(uri, uriInfo)) {
+        ZLOGE("GetInfoFromURI failed!");
+        return ERROR;
     }
-    std::string permission;
-    ret = PermissionProxy::QueryWritePermission(bundleName, moduleName, storeName, permission);
-    if (!ret) {
-        ZLOGE("query permission failed");
-        return -1;
+
+    if (!CheckPermisson(uriInfo, PermissionType::WRITE_PERMISSION)) {
+        ZLOGE("CheckPermisson failed!");
+        return ERROR;
     }
-    ret = CheckCallingPermission(permission);
-    if (!ret) {
-        ZLOGE("no permission %{public}s", permission.c_str());
-        return -1;
-    }
-    ret = RdbAdaptor::Update(bundleName, moduleName, storeName, tableName, predicate, valuesBucket);
-    if (!ret) {
+    int32_t ret = RdbAdaptor::Update(uriInfo, predicate, valuesBucket);
+    if (ret == ERROR) {
         ZLOGE("Update error %{public}s", uri.c_str());
-        return -1;
+        return ERROR;
     }
     NotifyChange(uri);
     return ret;
@@ -136,62 +106,68 @@ int32_t DataShareServiceImpl::Update(
 
 int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePredicates &predicate)
 {
-    ZLOGD("enter");
-    std::string bundleName;
-    std::string moduleName;
-    std::string storeName;
-    std::string tableName;
-    bool ret = URIUtils::GetInfoFromURI(uri, bundleName, moduleName, storeName, tableName);
-    if (!ret) {
-        ZLOGE("uri error %{public}s", uri.c_str());
-        return -1;
-    }
-    std::string permission;
-    ret = PermissionProxy::QueryWritePermission(bundleName, moduleName, storeName, permission);
-    if (!ret) {
-        ZLOGE("query permission failed");
-        return -1;
-    }
-    ret = CheckCallingPermission(permission);
-    if (!ret) {
-        ZLOGE("no permission %{public}s", permission.c_str());
-        return -1;
+    ZLOGD("Delete enter.");
+    UriInfo uriInfo;
+    if (!URIUtils::GetInfoFromURI(uri, uriInfo)) {
+        ZLOGE("GetInfoFromURI failed!");
+        return ERROR;
     }
 
-    ret = RdbAdaptor::Delete(bundleName, moduleName, storeName, tableName, predicate);
-    if (!ret) {
+    if (!CheckPermisson(uriInfo, PermissionType::WRITE_PERMISSION)) {
+        ZLOGE("CheckPermisson failed!");
+        return ERROR;
+    }
+
+    int32_t ret = RdbAdaptor::Delete(uriInfo, predicate);
+    if (ret == ERROR) {
         ZLOGE("Delete error %{public}s", uri.c_str());
-        return -1;
+        return ERROR;
     }
     NotifyChange(uri);
     return ret;
 }
 
-std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(
-    const std::string &uri, const DataSharePredicates &predicates, const std::vector<std::string> &columns)
+std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::string &uri,
+    const DataSharePredicates &predicates, const std::vector<std::string> &columns)
 {
-    ZLOGD("enter");
-    std::string bundleName;
-    std::string moduleName;
-    std::string storeName;
-    std::string tableName;
-    bool ret = URIUtils::GetInfoFromURI(uri, bundleName, moduleName, storeName, tableName);
-    if (!ret) {
-        ZLOGE("uri error %{public}s", uri.c_str());
-        return nullptr;
-    }
-    std::string permission;
-    ret = PermissionProxy::QueryReadPermission(bundleName, moduleName, storeName, permission);
-    if (!ret) {
-        ZLOGE("query permission failed");
-        return nullptr;
-    }
-    ret = CheckCallingPermission(permission);
-    if (!ret) {
-        ZLOGE("no permission %{public}s", permission.c_str());
+    ZLOGD("Query enter.");
+    UriInfo uriInfo;
+    if (!URIUtils::GetInfoFromURI(uri, uriInfo)) {
+        ZLOGE("GetInfoFromURI failed!");
         return nullptr;
     }
 
-    return RdbAdaptor::Query(bundleName, moduleName, storeName, tableName, predicates, columns);
+    if (!CheckPermisson(uriInfo, PermissionType::READ_PERMISSION)) {
+        ZLOGE("CheckPermisson failed!");
+        return nullptr;
+    }
+
+    return RdbAdaptor::Query(uriInfo, predicates, columns);
+}
+
+bool DataShareServiceImpl::CheckPermisson(const UriInfo &uriInfo, DataShareServiceImpl::PermissionType permissionType)
+{
+    std::string permission;
+    uint32_t tokenID = IPCSkeleton::GetCallingTokenID();
+    switch (permissionType) {
+        case PermissionType::READ_PERMISSION: {
+            bool ret = PermissionProxy::QueryReadPermission(uriInfo.bundleName, tokenID, permission);
+            if (!ret) {
+                ZLOGE("Query read permission failed!");
+                return false;
+            }
+            break;
+        }
+        case PermissionType::WRITE_PERMISSION: {
+            bool ret = PermissionProxy::QueryWritePermission(uriInfo.bundleName, tokenID, permission);
+            if (!ret) {
+                ZLOGE("Query write permission failed!");
+                return false;
+            }
+            break;
+        }
+    }
+
+    return true;
 }
 } // namespace OHOS::DataShare

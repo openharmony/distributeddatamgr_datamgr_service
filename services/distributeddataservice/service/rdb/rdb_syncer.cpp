@@ -109,8 +109,7 @@ int32_t RdbSyncer::Init(
     uid_ = uid;
     token_ = token;
     StoreMetaData meta;
-    meta.readPermission = readPermission;
-    meta.writePermission = writePermission;
+
     if (CreateMetaData(meta) != RDB_OK) {
         ZLOGE("create meta data failed");
         return RDB_ERROR;
@@ -162,14 +161,6 @@ int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
             meta.bundleName.c_str(), meta.storeId.c_str(), old.storeType, meta.storeType, old.isEncrypt,
             meta.isEncrypt, old.area, meta.area);
         return RDB_ERROR;
-    }
-
-    if (isCreated && !old.writePermission.empty()) {
-        meta.writePermission = old.writePermission;
-    }
-
-    if (isCreated && !old.readPermission.empty()) {
-        meta.readPermission = old.readPermission;
     }
 
     auto saved = MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
