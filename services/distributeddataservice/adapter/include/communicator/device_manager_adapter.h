@@ -32,13 +32,16 @@
 
 namespace OHOS {
 namespace DistributedData {
-using namespace AppDistributedKv;
-using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
-using KvStoreTask = OHOS::DistributedKv::KvStoreTask;
-using KvStoreThreadPool = OHOS::DistributedKv::KvStoreThreadPool;
-using KvScheduler = OHOS::DistributedKv::KvScheduler;
-class DeviceManagerAdapter {
+class API_EXPORT DeviceManagerAdapter {
 public:
+    using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
+    using KvStoreTask = OHOS::DistributedKv::KvStoreTask;
+    using KvStoreThreadPool = OHOS::DistributedKv::KvStoreThreadPool;
+    using KvScheduler = OHOS::DistributedKv::KvScheduler;
+    using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
+    using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
+    using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
+    using Status = OHOS::DistributedKv::Status;
     static DeviceManagerAdapter &GetInstance();
     void Init();
     Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
@@ -51,6 +54,7 @@ public:
     DeviceInfo GetLocalBasicInfo();
     std::string ToUUID(const std::string &id);
     std::string ToNetworkID(const std::string &id);
+    void NotifyReadyEvent(const std::string &uuid);
     friend class DataMgrDmStateCall;
 
 private:
@@ -58,7 +62,7 @@ private:
     ~DeviceManagerAdapter();
     std::function<void()> RegDevCallback();
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
-    void SaveDeviceInfo(const DeviceInfo &deviceInfo, const DeviceChangeType &type);
+    void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
     void UpdateDeviceInfo();
     DeviceInfo GetDeviceInfoFromCache(const std::string &id);
     bool Execute(KvStoreTask &&task);
@@ -66,6 +70,7 @@ private:
     void Offline(const DmDeviceInfo &info);
     void OnChanged(const DmDeviceInfo &info);
     void OnReady(const DmDeviceInfo &info);
+    void TimeOut(const std::string uuid);
     std::vector<const AppDeviceChangeListener *> GetObservers();
 
     std::mutex devInfoMutex_ {};
@@ -75,6 +80,8 @@ private:
     static constexpr int POOL_SIZE = 1;
     std::shared_ptr<KvStoreThreadPool> threadPool_;
     KvScheduler scheduler_ {1};
+    static constexpr int32_t SYNC_TIMEOUT = 30 * 1000; // ms
+    ConcurrentMap<std::string, std::string> syncTask_ {};
 };
 }  // namespace DistributedData
 }  // namespace OHOS

@@ -22,6 +22,8 @@ ohos_static_library("distributeddata_communicator_static") {
     "src/communication_provider.cpp",
     "src/communication_provider_impl.cpp",
     "src/communication_provider_impl.h",
+    "src/communication_strategy.cpp",
+    "src/communication_strategy.h",
     "src/data_buffer.cpp",
     "src/device_manager_adapter.cpp",
     "src/process_communicator_impl.cpp",

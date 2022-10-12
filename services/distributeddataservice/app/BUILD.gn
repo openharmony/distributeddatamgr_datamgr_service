@@ -80,7 +80,6 @@ config("module_private_config") {
 
 ohos_shared_library("distributeddataservice") {
   sources = [
-    "src/device_change_listener_impl.cpp",
     "src/device_kvstore_impl.cpp",
     "src/device_kvstore_observer_impl.cpp",
     "src/device_kvstore_resultset_impl.cpp",
@@ -135,7 +134,7 @@ ohos_shared_library("distributeddataservice") {
     "dataclassification:data_transit_mgr",
     "hisysevent_native:libhisysevent",
     "hitrace_native:hitrace_meter",
-    "hitrace_native:libhitrace",
+    "hitrace_native:libhitracechain",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",

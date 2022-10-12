@@ -20,6 +20,7 @@
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedHardware;
+using namespace OHOS::AppDistributedKv;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
@@ -170,6 +171,9 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
             item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONLINE);
         }
     }
+    auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(SYNC_TIMEOUT);
+    scheduler_.At(time, [this, dvInfo]() { TimeOut(dvInfo.uuid); });
+    syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     for (const auto &item : observers) { // set compatible identify, sync service meta
         if (item == nullptr) {
             continue;
@@ -178,7 +182,31 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
             item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONLINE);
         }
     }
-    std::string event = R"({"extra": {"deviceId":")" + dvInfo.uuid + R"(" } })";
+}
+
+void DeviceManagerAdapter::TimeOut(const std::string uuid)
+{
+    if (uuid.empty()) {
+        ZLOGE("uuid empty!");
+        return;
+    }
+    if (syncTask_.Contains(uuid)) {
+        ZLOGI("[TimeOutReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
+        std::string event = R"({"extra": {"deviceId":")" + uuid + R"(" } })";
+        DeviceManager::GetInstance().NotifyEvent(PKG_NAME, DmNotifyEvent::DM_NOTIFY_EVENT_ONDEVICEREADY, event);
+    }
+    syncTask_.Erase(uuid);
+}
+
+void DeviceManagerAdapter::NotifyReadyEvent(const std::string &uuid)
+{
+    if (uuid.empty() || !syncTask_.Contains(uuid)) {
+        return;
+    }
+
+    syncTask_.Erase(uuid);
+    ZLOGI("[NotifyReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
+    std::string event = R"({"extra": {"deviceId":")" + uuid + R"(" } })";
     DeviceManager::GetInstance().NotifyEvent(PKG_NAME, DmNotifyEvent::DM_NOTIFY_EVENT_ONDEVICEREADY, event);
 }
 
@@ -200,6 +228,7 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
         ZLOGE("get device info fail");
         return;
     }
+    syncTask_.Erase(dvInfo.uuid);
     ZLOGI("[offline] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
@@ -241,9 +270,7 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
             if (item == nullptr) {
                 continue;
             }
-            if (item->GetChangeLevelType() == ChangeLevelType::READY) {
-                item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONLINE);
-            }
+            item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONREADY);
         }
     }, "deviceReady");
     Execute(std::move(task));

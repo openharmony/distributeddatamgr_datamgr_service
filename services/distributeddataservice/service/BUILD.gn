@@ -44,6 +44,8 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
+    "//foundation/bundlemanager/bundle_framework/interfaces/inner_api/appexecfwk_base/include",
   ]
 }
 
@@ -77,6 +79,7 @@ ohos_shared_library("distributeddatasvc") {
     "kvdb/kvdb_service_stub.cpp",
     "kvdb/kvstore_sync_manager.cpp",
     "kvdb/query_helper.cpp",
+    "kvdb/ref_count.cpp",
     "kvdb/store_cache.cpp",
     "kvdb/upgrade.cpp",
     "kvdb/user_delegate.cpp",
