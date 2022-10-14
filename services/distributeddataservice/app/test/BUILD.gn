@@ -39,6 +39,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/session_manager",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
     "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
     "//commonlibrary/c_utils/base/include",
     "//utils/system/safwk/native/include",
     "../include",
@@ -61,26 +62,18 @@ config("module_private_config") {
 ohos_unittest("KvStoreDataServiceTest") {
   module_out_path = module_output_path
   sources = [
-    "../src/device_kvstore_impl.cpp",
-    "../src/device_kvstore_observer_impl.cpp",
-    "../src/device_kvstore_resultset_impl.cpp",
     "../src/dump_helper.cpp",
     "../src/feature_stub_impl.cpp",
     "../src/kvstore_account_observer.cpp",
     "../src/kvstore_app_accessor.cpp",
-    "../src/kvstore_app_manager.cpp",
     "../src/kvstore_data_service.cpp",
     "../src/kvstore_device_listener.cpp",
     "../src/kvstore_meta_manager.cpp",
-    "../src/kvstore_observer_impl.cpp",
-    "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_user_manager.cpp",
     "../src/security/security.cpp",
     "../src/security/sensitive.cpp",
     "../src/session_manager/route_head_handler_impl.cpp",
     "../src/session_manager/session_manager.cpp",
     "../src/session_manager/upgrade_manager.cpp",
-    "../src/single_kvstore_impl.cpp",
     "unittest/kvstore_data_service_test.cpp",
   ]
 
@@ -127,26 +120,17 @@ ohos_unittest("KvStoreBackupTest") {
   module_out_path = module_output_path
 
   sources = [
-    "../src/device_kvstore_impl.cpp",
-    "../src/device_kvstore_observer_impl.cpp",
-    "../src/device_kvstore_resultset_impl.cpp",
     "../src/dump_helper.cpp",
     "../src/feature_stub_impl.cpp",
     "../src/kvstore_account_observer.cpp",
     "../src/kvstore_app_accessor.cpp",
-    "../src/kvstore_app_manager.cpp",
     "../src/kvstore_data_service.cpp",
     "../src/kvstore_device_listener.cpp",
     "../src/kvstore_meta_manager.cpp",
-    "../src/kvstore_observer_impl.cpp",
-    "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_user_manager.cpp",
     "../src/security/security.cpp",
     "../src/security/sensitive.cpp",
     "../src/session_manager/route_head_handler_impl.cpp",
     "../src/session_manager/session_manager.cpp",
-    "../src/session_manager/upgrade_manager.cpp",
-    "../src/single_kvstore_impl.cpp",
     "unittest/kvstore_backup_test.cpp",
   ]
 
@@ -226,26 +210,18 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
 ohos_unittest("KvStoreSyncManagerTest") {
   module_out_path = module_output_path
   sources = [
-    "../src/device_kvstore_impl.cpp",
-    "../src/device_kvstore_observer_impl.cpp",
-    "../src/device_kvstore_resultset_impl.cpp",
     "../src/dump_helper.cpp",
     "../src/feature_stub_impl.cpp",
     "../src/kvstore_account_observer.cpp",
     "../src/kvstore_app_accessor.cpp",
-    "../src/kvstore_app_manager.cpp",
     "../src/kvstore_data_service.cpp",
     "../src/kvstore_device_listener.cpp",
     "../src/kvstore_meta_manager.cpp",
-    "../src/kvstore_observer_impl.cpp",
-    "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_user_manager.cpp",
     "../src/security/security.cpp",
     "../src/security/sensitive.cpp",
     "../src/session_manager/route_head_handler_impl.cpp",
     "../src/session_manager/session_manager.cpp",
     "../src/session_manager/upgrade_manager.cpp",
-    "../src/single_kvstore_impl.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -287,26 +263,18 @@ ohos_unittest("KvStoreSyncManagerTest") {
 ohos_unittest("KvStoreUninstallerTest") {
   module_out_path = module_output_path
   sources = [
-    "../src/device_kvstore_impl.cpp",
-    "../src/device_kvstore_observer_impl.cpp",
-    "../src/device_kvstore_resultset_impl.cpp",
     "../src/dump_helper.cpp",
     "../src/feature_stub_impl.cpp",
     "../src/kvstore_account_observer.cpp",
     "../src/kvstore_app_accessor.cpp",
-    "../src/kvstore_app_manager.cpp",
     "../src/kvstore_data_service.cpp",
     "../src/kvstore_device_listener.cpp",
     "../src/kvstore_meta_manager.cpp",
-    "../src/kvstore_observer_impl.cpp",
-    "../src/kvstore_resultset_impl.cpp",
-    "../src/kvstore_user_manager.cpp",
     "../src/security/security.cpp",
     "../src/security/sensitive.cpp",
     "../src/session_manager/route_head_handler_impl.cpp",
     "../src/session_manager/session_manager.cpp",
     "../src/session_manager/upgrade_manager.cpp",
-    "../src/single_kvstore_impl.cpp",
     "unittest/uninstaller_test.cpp",
   ]
 

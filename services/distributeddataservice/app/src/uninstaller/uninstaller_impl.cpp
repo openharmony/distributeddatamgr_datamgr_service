@@ -21,7 +21,6 @@
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "communication_provider.h"
-#include "device_kvstore_impl.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"

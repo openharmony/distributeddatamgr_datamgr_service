@@ -22,7 +22,6 @@
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_task.h"
-#include "single_kvstore_impl.h"
 #include "system_ability.h"
 #include "types.h"
 
@@ -182,9 +181,6 @@ public:
         const std::string &deviceAccountId, const std::string &groupId, const std::string &bundleName,
         const std::string &storeId, const std::string &key = "");
 
-    static std::string GetSecretSingleKeyFile(const std::string &userId, const std::string &appId,
-                                              const std::string &storeId, int pathType);
-
     Status GetSecretKeyFromMeta(const std::vector<uint8_t> &metaSecretKey,
                                 std::vector<uint8_t> &key, bool &outdated);
 
@@ -192,28 +188,18 @@ public:
 
     Status WriteSecretKeyToFile(const std::string &secretKeyFile, const std::vector<uint8_t> &key);
 
-    Status RemoveSecretKey(pid_t uid, const std::string &bundleName, const std::string &storeId);
-
     Status RecoverSecretKeyFromFile(const std::string &secretKeyFile, const std::vector<uint8_t> &metaSecretKey,
         std::vector<uint8_t> &key, bool &outdated);
 
     std::vector<uint8_t> GetSecretKeyFromFile(const std::string &fileName);
 
-    void ReKey(const std::string &userId, const std::string &bundleName, const std::string &storeId, int32_t pathType,
-               sptr<SingleKvStoreImpl> store);
-
     void GetStrategyMetaKey(const StrategyMeta &params, std::string &retVal);
-
-    Status DeleteStrategyMeta(const std::string &bundleName, const std::string &storeId, const std::string &userId);
 
     Status SaveStrategyMetaEnable(const std::string &key, bool enable);
 
     Status SaveStrategyMetaLabels(const std::string &key,
                                   const std::vector<std::string> &localLabels,
                                   const std::vector<std::string> &remoteSupportLabels);
-
-    Status CheckSyncPermission(const std::string &userId, const std::string &appId, const std::string &storeId,
-                               uint8_t flag, const std::string &remoteId);
 
     Status QueryKvStoreMetaDataByDeviceIdAndAppId(const std::string &devId, const std::string &appId,
                                                   KvStoreMetaData &val);

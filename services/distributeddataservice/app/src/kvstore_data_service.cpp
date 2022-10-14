@@ -31,7 +31,7 @@
 #include "config_factory.h"
 #include "constant.h"
 #include "dds_trace.h"
-#include "device_kvstore_impl.h"
+#include "device_manager_adapter.h"
 #include "executor_factory.h"
 #include "hap_token_info.h"
 #include "if_system_ability_manager.h"
@@ -68,6 +68,7 @@ using namespace OHOS::Security::AccessToken;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using StrategyMetaData = DistributedData::StrategyMeta;
+using DmAdapter = DistributedData::DeviceManagerAdapter;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
@@ -229,7 +230,7 @@ void KvStoreDataService::OnStart()
     static constexpr int32_t RETRY_TIMES = 50;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
     for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIMES; ++retry) {
-        if (!DeviceKvStoreImpl::GetLocalDeviceId().empty()) {
+        if (!DmAdapter::GetInstance().GetLocalDevice().uuid.empty()) {
             break;
         }
         ZLOGE("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
@@ -319,7 +320,8 @@ void KvStoreDataService::OnStoreMetaChanged(
     metaData.Unmarshall({ value.begin(), value.end() });
     ZLOGD("meta data info appType:%{public}s, storeId:%{public}s isDirty:%{public}d", metaData.appType.c_str(),
         metaData.storeId.c_str(), metaData.isDirty);
-    if (metaData.deviceId != DeviceKvStoreImpl::GetLocalDeviceId() || metaData.deviceId.empty()) {
+    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    if (metaData.deviceId != deviceId || metaData.deviceId.empty()) {
         ZLOGD("ignore other device change or invalid meta device");
         return;
     }
@@ -339,7 +341,7 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
         ZLOGE("get full meta failed");
         return false;
     }
-    std::string localDeviceId = DeviceKvStoreImpl::GetLocalDeviceId();
+    std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     for (const auto &entry : entries) {
         auto &storeMeta = entry.second.kvStoreMetaData;
         if ((!param.userId.empty() && (param.userId != storeMeta.deviceAccountId))
@@ -372,7 +374,7 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
             option.schema = storeMeta.schema;
             option.createDirByStoreIdOnly = true;
             option.dataDir = storeMeta.dataDir;
-            option.secOption = KvStoreAppManager::ConvertSecurity(storeMeta.securityLevel);
+            option.secOption = ConvertSecurity(storeMeta.securityLevel);
             option.isAutoSync = storeMeta.isAutoSync;
             option.syncDualTupleMode = true; // dual tuple flag
             param.appId = storeMeta.appId;
@@ -383,6 +385,21 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
     }
     ZLOGI("not find identifier");
     return false;
+}
+
+DistributedDB::SecurityOption KvStoreDataService::ConvertSecurity(int securityLevel)
+{
+    if (securityLevel < SecurityLevel::NO_LABEL || securityLevel > SecurityLevel::S4) {
+        return {DistributedDB::NOT_SET, DistributedDB::ECE};
+    }
+    switch (securityLevel) {
+        case SecurityLevel::S3:
+            return {DistributedDB::S3, DistributedDB::SECE};
+        case SecurityLevel::S4:
+            return {DistributedDB::S4, DistributedDB::ECE};
+        default:
+            return {securityLevel, DistributedDB::ECE};
+    }
 }
 
 void KvStoreDataService::ResolveAutoLaunchCompatible(const MetaData &meta, const std::string &identifier)
@@ -410,7 +427,7 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const MetaData &meta, const
         .kvStoreType = static_cast<KvStoreType>(storeMeta.kvStoreType),
     };
     DistributedDB::KvStoreNbDelegate::Option dbOptions;
-    KvStoreAppManager::InitNbDbOption(options, meta.secretKeyMetaData.secretKey, dbOptions);
+    InitNbDbOption(options, meta.secretKeyMetaData.secretKey, dbOptions);
     DistributedDB::KvStoreNbDelegate *store = nullptr;
     delegateManager->GetKvStore(storeMeta.storeId, dbOptions,
         [&identifier, &store, &storeMeta](int status, DistributedDB::KvStoreNbDelegate *delegate) {
@@ -430,6 +447,40 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const MetaData &meta, const
         delete delegateManager;
     });
     ExecutorFactory::GetInstance().Execute(std::move(delayTask));
+}
+
+Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
+    DistributedDB::KvStoreNbDelegate::Option &dbOption)
+{
+    DistributedDB::CipherPassword password;
+    auto status = password.SetValue(cipherKey.data(), cipherKey.size());
+    if (status != DistributedDB::CipherPassword::ErrorCode::OK) {
+        ZLOGE("Failed to set the passwd.");
+        return Status::DB_ERROR;
+    }
+
+    dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
+    dbOption.createIfNecessary = options.createIfMissing;
+    dbOption.isMemoryDb = (!options.persistent);
+    dbOption.isEncryptedDb = options.encrypt;
+    if (options.encrypt) {
+        dbOption.cipher = DistributedDB::CipherType::AES_256_GCM;
+        dbOption.passwd = password;
+    }
+
+    if (options.kvStoreType == KvStoreType::SINGLE_VERSION) {
+        dbOption.conflictResolvePolicy = DistributedDB::LAST_WIN;
+    } else if (options.kvStoreType == KvStoreType::DEVICE_COLLABORATION) {
+        dbOption.conflictResolvePolicy = DistributedDB::DEVICE_COLLABORATION;
+    } else {
+        ZLOGE("kvStoreType is invalid");
+        return Status::INVALID_ARGUMENT;
+    }
+
+    dbOption.schema = options.schema;
+    dbOption.createDirByStoreIdOnly = true;
+    dbOption.secOption = ConvertSecurity(options.securityLevel);
+    return Status::SUCCESS;
 }
 
 void KvStoreDataService::OnStop()

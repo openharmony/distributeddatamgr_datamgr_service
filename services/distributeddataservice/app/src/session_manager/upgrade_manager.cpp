@@ -16,8 +16,9 @@
 
 #include "upgrade_manager.h"
 
+#include <thread>
 #include "account_delegate.h"
-#include "device_kvstore_impl.h"
+#include "device_manager_adapter.h"
 #include "executor_factory.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -26,6 +27,7 @@
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
+using DmAdapter = DistributedData::DeviceManagerAdapter;
 UpgradeManager &UpgradeManager::GetInstance()
 {
     static UpgradeManager instance;
@@ -67,7 +69,7 @@ CapMetaData UpgradeManager::GetCapability(const std::string &deviceId, bool &sta
 
 bool UpgradeManager::InitLocalCapability()
 {
-    auto localDeviceId = DeviceKvStoreImpl::GetLocalDeviceId();
+    auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     CapMetaData capMetaData;
     capMetaData.version = CapMetaData::CURRENT_VERSION;
     auto dbKey = CapMetaRow::GetKeyFor(localDeviceId);
@@ -86,7 +88,7 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
         ZLOGE("null store delegate");
         return;
     }
-    auto localDevice = DeviceKvStoreImpl::GetLocalDeviceId();
+    auto localDevice = DmAdapter::GetInstance().GetLocalDevice().uuid;
     auto devices =
         AuthDelegate::GetInstance()->GetTrustedDevicesByType(groupType, std::stoi(tuple.userId), tuple.appId);
     auto result = std::remove_if(devices.begin(), devices.end(), [&localDevice](const std::string &device) {
