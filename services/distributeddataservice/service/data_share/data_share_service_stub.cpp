@@ -39,7 +39,7 @@ int32_t DataShareServiceStub::OnRemoteInsert(MessageParcel &data, MessageParcel 
 {
     std::string uri;
     DataShareValuesBucket bucket;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, bucket)) {
+    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, bucket.valuesMap)) {
         ZLOGW("read device list failed.");
         return -1;
     }
@@ -56,7 +56,7 @@ int32_t DataShareServiceStub::OnRemoteUpdate(MessageParcel &data, MessageParcel 
     std::string uri;
     DataSharePredicates predicate;
     DataShareValuesBucket bucket;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, predicate, bucket)) {
+    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, predicate, bucket.valuesMap)) {
         ZLOGW("read device list failed.");
         return -1;
     }
