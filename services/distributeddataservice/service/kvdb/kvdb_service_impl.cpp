@@ -162,7 +162,7 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const S
     if (metaData.isAutoSync && syncInfo.seqId == std::numeric_limits<uint64_t>::max()) {
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::GetInstance().GetCode(metaData));
         StoreMetaDataLocal localMeta;
-        MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), localMeta);
+        MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), localMeta, true);
         if (!localMeta.HasPolicy(IMMEDIATE_SYNC_ON_CHANGE)) {
             return Status::SUCCESS;
         }
