@@ -77,15 +77,18 @@ private:
 };
 SoftBusAdapter *AppDataListenerWrap::softBusAdapter_;
 std::shared_ptr<SoftBusAdapter> SoftBusAdapter::instance_;
+
 namespace {
 void NotCareEvent(NodeBasicInfo *info)
 {
     return;
 }
+
 void NotCareEvent(NodeBasicInfoType type, NodeBasicInfo *info)
 {
     return;
 }
+
 void OnCareEvent(NodeStatusType type, NodeStatus *status)
 {
     if (type != TYPE_DATABASE_STATUS || status == nullptr) {
@@ -94,14 +97,16 @@ void OnCareEvent(NodeStatusType type, NodeStatus *status)
     auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(status->basicInfo.networkId);
     SoftBusAdapter::GetInstance()->OnBroadcast({ uuid }, status->dataBaseStatus);
 }
-static INodeStateCb g_callback = {
+
+INodeStateCb g_callback = {
     .events = EVENT_NODE_STATUS_CHANGED,
     .onNodeOnline = NotCareEvent,
     .onNodeOffline = NotCareEvent,
     .onNodeBasicInfoChanged = NotCareEvent,
     .onNodeStatusChanged = OnCareEvent,
-}; // namespace
+};
 } // namespace
+
 SoftBusAdapter::SoftBusAdapter()
 {
     ZLOGI("begin");

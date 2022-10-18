@@ -16,28 +16,20 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_MATRIX_EVENT_H
 #define OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_MATRIX_EVENT_H
 #include <string>
+
 #include "eventcenter/event.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
 class API_EXPORT MatrixEvent : public Event {
 public:
-    MatrixEvent(int32_t evtId, const std::string &device, uint16_t mask)
-        : Event(evtId), mask_(mask), deviceId_(device)
-    {
-    }
-    uint16_t GetMask() const
-    {
-        return mask_;
-    }
-
-    std::string GetDeviceId() const
-    {
-        return deviceId_;
-    }
+    MatrixEvent(int32_t evtId, const std::string &device, uint16_t mask);
+    ~MatrixEvent() = default;
+    uint16_t GetMask() const;
+    std::string GetDeviceId() const;
 
 private:
     uint16_t mask_;
     std::string deviceId_;
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_MATRIX_EVENT_H

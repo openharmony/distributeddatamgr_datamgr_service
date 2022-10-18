@@ -71,7 +71,7 @@ public:
     void OnSessionClose(int32_t connId);
 
     int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask);
-    void OnBroadcast(const DeviceId &pipeInfo, uint16_t mask);
+    void OnBroadcast(const DeviceId &device, uint16_t mask);
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo, std::function<void(const std::string &, uint16_t)> listener);
 
 private:

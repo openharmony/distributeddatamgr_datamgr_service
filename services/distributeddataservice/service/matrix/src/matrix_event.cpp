@@ -12,8 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "matrix_event.h"
 namespace OHOS::DistributedData {
-
+MatrixEvent::MatrixEvent(int32_t evtId, const std::string &device, uint16_t mask)
+    : Event(evtId), mask_(mask), deviceId_(device)
+{
 }
+
+uint16_t MatrixEvent::GetMask() const
+{
+    return mask_;
+}
+
+std::string MatrixEvent::GetDeviceId() const
+{
+    return deviceId_;
+}
+} // namespace OHOS::DistributedData
