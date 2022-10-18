@@ -164,6 +164,8 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const S
         StoreMetaDataLocal localMeta;
         MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), localMeta, true);
         if (!localMeta.HasPolicy(IMMEDIATE_SYNC_ON_CHANGE)) {
+            ZLOGW("appId:%{public}s storeId:%{public}s no IMMEDIATE_SYNC_ON_CHANGE ", appId.appId.c_str(),
+                storeId.storeId.c_str());
             return Status::SUCCESS;
         }
     }
@@ -552,7 +554,7 @@ Status KVDBServiceImpl::DoSync(const StoreMetaData &meta, const SyncInfo &info, 
 {
     ZLOGD("seqId:0x%{public}" PRIx64 " type:%{public}d remote:%{public}zu appId:%{public}s storeId:%{public}s",
         info.seqId, type, info.devices.size(), meta.bundleName.c_str(), meta.storeId.c_str());
-    std::vector<std::string> uuids = DMAdapter::GetInstance().ToUUID(info.devices);
+    auto uuids = ConvertDevices(info.devices);
     if (uuids.empty()) {
         ZLOGW("no device online seqId:0x%{public}" PRIx64 " remote:%{public}zu appId:%{public}s storeId:%{public}s",
             info.seqId, info.devices.size(), meta.bundleName.c_str(), meta.storeId.c_str());
@@ -691,6 +693,14 @@ KVDBServiceImpl::DBMode KVDBServiceImpl::ConvertDBMode(SyncMode syncMode) const
         dbMode = DBMode::SYNC_MODE_PUSH_PULL;
     }
     return dbMode;
+}
+
+std::vector<std::string> KVDBServiceImpl::ConvertDevices(const std::vector<std::string> &deviceIds) const
+{
+    if (deviceIds.empty()) {
+        return DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
+    }
+    return DMAdapter::ToUUID(deviceIds);
 }
 
 std::shared_ptr<StoreCache::Observers> KVDBServiceImpl::GetObservers(uint32_t tokenId, const std::string &storeId)

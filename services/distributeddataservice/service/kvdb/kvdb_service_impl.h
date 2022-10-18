@@ -98,6 +98,7 @@ private:
     uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
     Status ConvertDbStatus(DBStatus status) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;
+    std::vector<std::string> ConvertDevices(const std::vector<std::string> &deviceIds) const;
     std::shared_ptr<StoreCache::Observers> GetObservers(uint32_t tokenId, const std::string &storeId);
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
     static Factory factory_;

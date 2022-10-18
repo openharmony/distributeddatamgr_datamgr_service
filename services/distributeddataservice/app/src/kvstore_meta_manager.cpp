@@ -124,13 +124,14 @@ void KvStoreMetaManager::InitDeviceOnline()
                 DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
             };
             auto status = store->Sync({ deviceId }, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
-            if (status != OK) {
-                ZLOGW("meta db sync error %d.", status);
+            if (status == OK) {
+                return;
             }
-        } else {
-            auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
-            EventCenter::GetInstance().PostEvent(std::move(finEvent));
+            ZLOGW("meta db sync error %d.", status);
         }
+
+        auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
+        EventCenter::GetInstance().PostEvent(std::move(finEvent));
     });
 }
 
