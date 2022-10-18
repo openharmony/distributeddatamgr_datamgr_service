@@ -27,6 +27,7 @@
 
 #include "app_data_change_listener.h"
 #include "block_data.h"
+#include "kv_scheduler.h"
 #include "platform_specific.h"
 #include "session.h"
 #include "softbus_bus_center.h"
@@ -58,8 +59,6 @@ public:
 
     int RemoveSessionServerAdapter(const std::string &sessionName) const;
 
-    void InsertSession(const std::string &sessionName, int32_t connId);
-
     std::string DeleteSession(int32_t connId);
 
     void NotifyDataListeners(const uint8_t *data, int size, const std::string &deviceId, const PipeInfo &pipeInfo);
@@ -75,19 +74,35 @@ public:
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo, std::function<void(const std::string &, uint16_t)> listener);
 
 private:
+    using KvScheduler = OHOS::DistributedKv::KvScheduler;
+
+    struct ConnectInfo {
+        int32_t connId = -1;
+        uint32_t idleCount = 0;
+        bool hasReconnect = false;
+    };
     std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t connId);
     Status GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId);
-    Status OpenConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId);
-    void InitSessionAttribute(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize,
-        SessionAttribute &attr);
+    Status OpenConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const std::vector <LinkType> &linkTypes,
+        int32_t &connId);
+    void InitSessionAttribute(const std::vector <LinkType> &linkTypes, SessionAttribute &attr);
+    std::function<void()> CloseIdleConnect();
+    std::shared_ptr<std::recursive_mutex> GetMutex(const PipeInfo &pipeInfo, const DeviceId &deviceId);
+
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
-    ConcurrentMap<std::string, int32_t> connects_{};
+    ConcurrentMap<std::string, ConnectInfo> connects_{};
     bool flag_ = true; // only for br flag
     ISessionListener sessionListener_{};
     std::mutex statusMutex_{};
     std::map<int32_t, std::shared_ptr<BlockData<int32_t>>> sessionsStatus_;
     std::function<void(const std::string &, uint16_t)> onBroadcast_;
+    KvScheduler scheduler_ { 1 };
+    bool schedulerRunning_ = true;
+    static constexpr uint32_t CONNECT_IDLE_CLOSE_COUNT = 60;
+    static constexpr int32_t INVALID_CONNECT_ID = -1;
+    std::mutex mutex_ {};
+    std::map<std::string, std::shared_ptr<std::recursive_mutex>> mutexes_;
 };
 } // namespace AppDistributedKv
 } // namespace OHOS
