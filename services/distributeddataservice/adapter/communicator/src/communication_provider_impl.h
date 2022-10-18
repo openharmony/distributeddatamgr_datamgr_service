@@ -16,9 +16,10 @@
 #ifndef DISTRIBUTEDDATA_SRC_COMMUNICATION_PROVIDER_IMPL_H
 #define DISTRIBUTEDDATA_SRC_COMMUNICATION_PROVIDER_IMPL_H
 
-#include "communication_provider.h"
 #include <set>
+
 #include "app_pipe_mgr.h"
+#include "communication_provider.h"
 
 namespace OHOS {
 namespace AppDistributedKv {
@@ -66,6 +67,10 @@ public:
     std::string ToNodeId(const std::string &id) const override;
     void SetMessageTransFlag(const struct PipeInfo &pipeInfo, bool flag) override;
 
+    int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask) override;
+    int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
+        std::function<void(const std::string &, uint16_t)> listener) override;
+
 protected:
     virtual Status Initialize();
 
@@ -74,6 +79,6 @@ protected:
 private:
     AppPipeMgr &appPipeMgr_;
 };
-}  // namespace AppDistributedKv
-}  // namespace OHOS
+} // namespace AppDistributedKv
+} // namespace OHOS
 #endif /* DISTRIBUTEDDATA_SRC_COMMUNICATION_PROVIDER_IMPL_H */

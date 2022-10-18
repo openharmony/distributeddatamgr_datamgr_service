@@ -38,9 +38,6 @@
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
 #include "kvstore_app_accessor.h"
-#include "kvstore_device_listener.h"
-#include "kvstore_meta_manager.h"
-#include "kvstore_utils.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
@@ -59,6 +56,7 @@
 #include "utils/block_integer.h"
 #include "utils/converter.h"
 #include "utils/crypto.h"
+#include "device_matrix.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -148,13 +146,6 @@ void KvStoreDataService::InitObjectStore()
 {
     ZLOGI("begin.");
     auto feature = GetFeatureInterface("data_object");
-    return;
-}
-
-bool KvStoreDataService::CheckBackupFileExist(const std::string &userId, const std::string &bundleName,
-                                              const std::string &storeId, int pathType)
-{
-    return false;
 }
 
 /* RegisterClientDeathObserver */
@@ -282,6 +273,7 @@ void KvStoreDataService::StartService()
 {
     // register this to ServiceManager.
     KvStoreMetaManager::GetInstance().InitMetaListener();
+    DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
     InitObjectStore();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {
@@ -643,12 +635,10 @@ void DbMetaCallbackDelegateMgr::GetKvStoreKeys(std::vector<StoreInfo> &dbStats)
     }
     DistributedDB::DBStatus dbStatusTmp;
     Option option {.createIfNecessary = true, .isMemoryDb = false, .isEncryptedDb = false};
-    DistributedDB::KvStoreNbDelegate *kvStoreNbDelegatePtr = nullptr;
-    delegate_->GetKvStore(
-        Constant::SERVICE_META_DB_NAME, option,
-        [&kvStoreNbDelegatePtr, &dbStatusTmp](DistributedDB::DBStatus dbStatus,
-                                              DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate) {
-            kvStoreNbDelegatePtr = kvStoreNbDelegate;
+    DistributedDB::KvStoreNbDelegate *nbDelegate = nullptr;
+    delegate_->GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
+        [&nbDelegate, &dbStatusTmp](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *delegate) {
+            nbDelegate = delegate;
             dbStatusTmp = dbStatus;
         });
 
@@ -657,9 +647,9 @@ void DbMetaCallbackDelegateMgr::GetKvStoreKeys(std::vector<StoreInfo> &dbStats)
     }
     DistributedDB::Key dbKey = KvStoreMetaRow::GetKeyFor("");
     std::vector<DistributedDB::Entry> entries;
-    kvStoreNbDelegatePtr->GetEntries(dbKey, entries);
+    nbDelegate->GetEntries(dbKey, entries);
     if (entries.empty()) {
-        delegate_->CloseKvStore(kvStoreNbDelegatePtr);
+        delegate_->CloseKvStore(nbDelegate);
         return;
     }
     for (auto const &entry : entries) {
@@ -671,7 +661,7 @@ void DbMetaCallbackDelegateMgr::GetKvStoreKeys(std::vector<StoreInfo> &dbStats)
             dbStats.push_back(std::move(storeInfo));
         }
     }
-    delegate_->CloseKvStore(kvStoreNbDelegatePtr);
+    delegate_->CloseKvStore(nbDelegate);
 }
 
 int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)

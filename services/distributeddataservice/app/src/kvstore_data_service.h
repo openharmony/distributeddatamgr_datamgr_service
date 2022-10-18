@@ -71,8 +71,6 @@ public:
 
     void OnDeviceOnline(const AppDistributedKv::DeviceInfo &info);
 
-    bool CheckBackupFileExist(const std::string &userId, const std::string &bundleName,
-                              const std::string &storeId, int pathType);
     int32_t OnUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
 
 private:

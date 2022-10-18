@@ -72,7 +72,6 @@ HWTEST_F(ConfigFactoryTest, ComponentConfig, TestSize.Level0)
     ASSERT_EQ(cfg.lib, "libconfigdemo2.z.so");
 }
 
-
 /**
 * @tc.name: CheckerConfig
 * @tc.desc: load the config.json checkers info.

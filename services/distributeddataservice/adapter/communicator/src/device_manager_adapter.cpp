@@ -453,6 +453,15 @@ std::string DeviceManagerAdapter::ToUUID(const std::string &id)
     return GetDeviceInfoFromCache(id).uuid;
 }
 
+std::vector<std::string> DeviceManagerAdapter::ToUUID(const std::vector<std::string> &devices)
+{
+    std::vector<std::string> uuids;
+    for (auto &device : devices) {
+        uuids.push_back(ToUUID(device));
+    }
+    return std::vector<std::string>();
+}
+
 std::string DeviceManagerAdapter::ToNetworkID(const std::string &id)
 {
     return GetDeviceInfoFromCache(id).networkId;

@@ -15,14 +15,16 @@
 
 #ifndef DISTRIBUTEDDATAFWK_SRC_SOFTBUS_ADAPTER_H
 #define DISTRIBUTEDDATAFWK_SRC_SOFTBUS_ADAPTER_H
+#include <concurrent_map.h>
 #include <condition_variable>
+#include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <tuple>
-#include <memory>
 #include <vector>
-#include <concurrent_map.h>
+
 #include "app_data_change_listener.h"
 #include "block_data.h"
 #include "platform_specific.h"
@@ -46,7 +48,7 @@ public:
 
     // Send data to other device, function will be called back after sent to notify send result.
     Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *data, int size,
-                    const MessageInfo &info);
+        const MessageInfo &info);
 
     bool IsSameStartedOnPeer(const struct PipeInfo &pipeInfo, const struct DeviceId &peer);
 
@@ -67,20 +69,26 @@ public:
     void OnSessionOpen(int32_t connId, int32_t status);
 
     void OnSessionClose(int32_t connId);
+
+    int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask);
+    void OnBroadcast(const DeviceId &pipeInfo, uint16_t mask);
+    int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo, std::function<void(const std::string &, uint16_t)> listener);
+
 private:
     std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t connId);
     Status GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId);
     Status OpenConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId);
-    void InitSessionAttribute(const PipeInfo &pipeInfo, const DeviceId &deviceId,
-                              int32_t dataSize, SessionAttribute &attr);
+    void InitSessionAttribute(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize,
+        SessionAttribute &attr);
     static std::shared_ptr<SoftBusAdapter> instance_;
-    ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_ {};
-    ConcurrentMap<std::string, int32_t> connects_ {};
+    ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
+    ConcurrentMap<std::string, int32_t> connects_{};
     bool flag_ = true; // only for br flag
-    ISessionListener sessionListener_ {};
-    std::mutex statusMutex_ {};
+    ISessionListener sessionListener_{};
+    std::mutex statusMutex_{};
     std::map<int32_t, std::shared_ptr<BlockData<int32_t>>> sessionsStatus_;
+    std::function<void(const std::string &, uint16_t)> onBroadcast_;
 };
-}  // namespace AppDistributedKv
-}  // namespace OHOS
+} // namespace AppDistributedKv
+} // namespace OHOS
 #endif /* DISTRIBUTEDDATAFWK_SRC_SOFTBUS_ADAPTER_H */

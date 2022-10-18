@@ -30,6 +30,10 @@ public:
         EVT_CUSTOM = 0x1000
     };
     API_EXPORT Event(int32_t evtId);
+    API_EXPORT Event(Event &&) noexcept = delete;
+    API_EXPORT Event(const Event &) = delete;
+    API_EXPORT Event &operator=(Event &&) noexcept = delete;
+    API_EXPORT Event &operator=(const Event &) = delete;
     API_EXPORT virtual ~Event();
     API_EXPORT int32_t GetEventId() const;
 private:
