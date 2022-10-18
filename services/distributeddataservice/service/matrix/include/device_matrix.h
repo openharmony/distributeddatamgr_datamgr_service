@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_DEVICE_MATRIX_H
 #define OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_DEVICE_MATRIX_H
 #include <map>
@@ -21,8 +20,9 @@
 #include "lru_bucket.h"
 #include "metadata/matrix_meta_data.h"
 #include "metadata/store_meta_data.h"
+#include "visibility.h"
 namespace OHOS::DistributedData {
-class DeviceMatrix {
+class API_EXPORT DeviceMatrix {
 public:
     static constexpr uint16_t META_STORE_MASK = 0x0001;
     enum : int32_t {

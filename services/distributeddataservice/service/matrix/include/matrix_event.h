@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_MATRIX_CHANGE_EVENT_H
-#define OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_MATRIX_CHANGE_EVENT_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_MATRIX_EVENT_H
+#define OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_MATRIX_EVENT_H
 #include <string>
 #include "eventcenter/event.h"
+#include "visibility.h"
 namespace OHOS::DistributedData {
-class MatrixEvent : public Event {
+class API_EXPORT MatrixEvent : public Event {
 public:
     MatrixEvent(int32_t evtId, const std::string &device, uint16_t mask)
         : Event(evtId), mask_(mask), deviceId_(device)
@@ -39,4 +40,4 @@ private:
     std::string deviceId_;
 };
 }
-#endif // OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_MATRIX_CHANGE_EVENT_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_MATRIX_EVENT_H
