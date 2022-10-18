@@ -35,7 +35,9 @@ public:
     API_EXPORT Event &operator=(Event &&) noexcept = delete;
     API_EXPORT Event &operator=(const Event &) = delete;
     API_EXPORT virtual ~Event();
+    API_EXPORT virtual bool Equals(const Event &) const;
     API_EXPORT int32_t GetEventId() const;
+
 private:
     int32_t evtId_;
 };

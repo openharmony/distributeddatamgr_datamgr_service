@@ -26,6 +26,7 @@ public:
     ~MatrixEvent() = default;
     uint16_t GetMask() const;
     std::string GetDeviceId() const;
+    bool Equals(const Event &event) const override;
 
 private:
     uint16_t mask_;

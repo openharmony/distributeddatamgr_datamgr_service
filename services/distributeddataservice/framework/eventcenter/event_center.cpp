@@ -112,7 +112,7 @@ EventCenter::AsyncQueue &EventCenter::AsyncQueue::operator--()
         if (handler != handlers_.end()) {
             handler->second(*evt);
         }
-        events_.pop();
+        events_.pop_front();
     }
     depth_ = 0;
     return *this;
@@ -125,7 +125,16 @@ bool EventCenter::AsyncQueue::operator<=(int32_t depth) const
 
 void EventCenter::AsyncQueue::Post(std::unique_ptr<Event> evt)
 {
-    events_.push(std::move(evt));
+    for (auto &event : events_) {
+        if (event->GetEventId() != evt->GetEventId()) {
+            continue;
+        }
+
+        if (event->Equals(*evt)) {
+            return;
+        }
+    }
+    events_.push_back(std::move(evt));
 }
 
 void EventCenter::AsyncQueue::AddHandler(int32_t evtId, std::function<void(const Event &)> handler)

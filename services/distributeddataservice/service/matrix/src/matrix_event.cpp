@@ -28,4 +28,10 @@ std::string MatrixEvent::GetDeviceId() const
 {
     return deviceId_;
 }
+
+bool MatrixEvent::Equals(const Event &event) const
+{
+    auto &evt = static_cast<const MatrixEvent &>(event);
+    return (deviceId_ == evt.deviceId_) && (mask_ == evt.mask_);
+}
 } // namespace OHOS::DistributedData

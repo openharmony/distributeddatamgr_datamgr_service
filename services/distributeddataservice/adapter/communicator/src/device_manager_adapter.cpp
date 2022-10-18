@@ -457,7 +457,11 @@ std::vector<std::string> DeviceManagerAdapter::ToUUID(const std::vector<std::str
 {
     std::vector<std::string> uuids;
     for (auto &device : devices) {
-        uuids.push_back(ToUUID(device));
+        auto uuid = ToUUID(device);
+        if (uuid.empty()) {
+            continue ;
+        }
+        uuids.push_back(std::move(uuid));
     }
     return uuids;
 }

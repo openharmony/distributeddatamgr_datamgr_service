@@ -32,6 +32,8 @@
 #include "constant.h"
 #include "dds_trace.h"
 #include "device_manager_adapter.h"
+#include "device_matrix.h"
+#include "eventcenter/event_center.h"
 #include "executor_factory.h"
 #include "hap_token_info.h"
 #include "if_system_ability_manager.h"
@@ -56,7 +58,6 @@
 #include "utils/block_integer.h"
 #include "utils/converter.h"
 #include "utils/crypto.h"
-#include "device_matrix.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -217,6 +218,7 @@ int KvStoreDataService::Dump(int fd, const std::vector<std::u16string> &args)
 void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
+    EventCenter::Defer defer;
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
     static constexpr int32_t RETRY_TIMES = 50;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms

@@ -26,5 +26,10 @@ int32_t Event::GetEventId() const
 {
     return evtId_;
 }
+
+bool Event::Equals(const Event &) const
+{
+    return false;
+}
 } // namespace DistributedData
 } // namespace OHOS
