@@ -57,17 +57,17 @@ void CommunicationStrategy::UpdateCommunicationStrategy(const AppDistributedKv::
     }
 }
 
-void CommunicationStrategy::GetStrategy(const std::string &deviceId, int32_t dataLen, std::vector<LinkType> &linkTypes)
+bool CommunicationStrategy::GetStrategy(const std::string &deviceId, int32_t dataLen, std::vector<LinkType> &linkTypes)
 {
-    if (!strategys_.Contains(deviceId)) {
-        return;
+    if (dataLen < SWITCH_CONNECTION_THRESHOLD || !strategys_.Contains(deviceId)) {
+        return false;
     }
 
     linkTypes.emplace_back(LINK_TYPE_WIFI_WLAN_5G);
     linkTypes.emplace_back(LINK_TYPE_WIFI_WLAN_2G);
     linkTypes.emplace_back(LINK_TYPE_WIFI_P2P);
     linkTypes.emplace_back(LINK_TYPE_BR);
-    return;
+    return true;
 }
 }  // namespace AppDistributedKv
 }  // namespace OHOS

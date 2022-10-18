@@ -29,7 +29,7 @@ public:
     Status Init();
     void OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
                          const AppDistributedKv::DeviceChangeType &type) const override;
-    void GetStrategy(const std::string &deviceId, int32_t dataLen, std::vector<LinkType> &linkTypes);
+    bool GetStrategy(const std::string &deviceId, int32_t dataLen, std::vector<LinkType> &linkTypes);
 private:
     CommunicationStrategy() = default;
     ~CommunicationStrategy() = default;
@@ -40,6 +40,7 @@ private:
     void UpdateCommunicationStrategy(const AppDistributedKv::DeviceInfo &info,
                                      const AppDistributedKv::DeviceChangeType &type) const;
     mutable ConcurrentMap<std::string, bool> strategys_;
+    static constexpr uint32_t SWITCH_CONNECTION_THRESHOLD = 75 * 1024;
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS
