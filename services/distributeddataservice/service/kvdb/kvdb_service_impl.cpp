@@ -56,14 +56,13 @@ KVDBServiceImpl::Factory::~Factory()
 KVDBServiceImpl::KVDBServiceImpl()
 {
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_META_FINISHED, [this](const Event &event) {
-        const MatrixEvent &matrixEvent = static_cast<const MatrixEvent &>(event);
+        auto &matrixEvent = static_cast<const MatrixEvent &>(event);
         auto deviceId = matrixEvent.GetDeviceId();
-        auto refCount = std::make_shared<RefCount>([deviceId] { DMAdapter::GetInstance().NotifyReadyEvent(deviceId); });
+        RefCount refCount([deviceId] { DMAdapter::GetInstance().NotifyReadyEvent(deviceId); });
         std::vector<StoreMetaData> metaData;
         auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
         if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
             ZLOGE("load meta failed!");
-            --(*refCount);
             return;
         }
         auto mask = matrixEvent.GetMask();
@@ -79,27 +78,20 @@ KVDBServiceImpl::KVDBServiceImpl()
                 continue;
             }
 
-            for (const auto &value : localMetaData.policies) {
-                if (value.type != PolicyType::IMMEDIATE_SYNC_ON_ONLINE) {
-                    continue;
-                }
-                ++(*refCount);
-                SyncInfo syncInfo;
-                syncInfo.mode = PUSH_PULL;
-                syncInfo.delay = 0;
-                syncInfo.devices = { deviceId };
-                if (value.IsValueEffect()) {
-                    syncInfo.delay = value.valueUint;
-                }
-                ZLOGD("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
-                auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
-                KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
-                    std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
-                    std::bind(&KVDBServiceImpl::DoComplete, this, data, syncInfo, refCount, std::placeholders::_1));
-                break;
+            auto policy = localMetaData.GetPolicy(PolicyType::IMMEDIATE_SYNC_ON_ONLINE);
+            SyncInfo syncInfo;
+            syncInfo.mode = PUSH_PULL;
+            syncInfo.delay = 0;
+            syncInfo.devices = { deviceId };
+            if (policy.IsValueEffect()) {
+                syncInfo.delay = policy.valueUint;
             }
+            ZLOGD("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
+            auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
+            KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
+                std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
+                std::bind(&KVDBServiceImpl::DoComplete, this, data, syncInfo, refCount, std::placeholders::_1));
         }
-        --(*refCount);
     });
 }
 
@@ -171,7 +163,7 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const S
     }
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSync, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
-        std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, nullptr, std::placeholders::_1));
+        std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
 }
 
 Status KVDBServiceImpl::RegisterSyncCallback(const AppId &appId, sptr<IKvStoreSyncCallback> callback)
@@ -285,7 +277,7 @@ Status KVDBServiceImpl::AddSubscribeInfo(const AppId &appId, const StoreId &stor
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSync, this, metaData, syncInfo, std::placeholders::_1, ACTION_SUBSCRIBE),
-        std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, nullptr, std::placeholders::_1));
+        std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
 }
 
 Status KVDBServiceImpl::RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
@@ -295,7 +287,7 @@ Status KVDBServiceImpl::RmvSubscribeInfo(const AppId &appId, const StoreId &stor
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSync, this, metaData, syncInfo, std::placeholders::_1, ACTION_UNSUBSCRIBE),
-        std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, nullptr, std::placeholders::_1));
+        std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
 }
 
 Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer)
@@ -469,7 +461,7 @@ int32_t KVDBServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
     return SUCCESS;
 }
 
-int32_t KVDBServiceImpl::Online(const std::string &device)
+int32_t KVDBServiceImpl::OnReady(const std::string &device)
 {
     return SUCCESS;
 }
@@ -593,14 +585,13 @@ Status KVDBServiceImpl::DoSync(const StoreMetaData &meta, const SyncInfo &info, 
     return ConvertDbStatus(status);
 }
 
-Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &info, std::shared_ptr<RefCount> refCount,
+Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &info, RefCount refCount,
     const DBResult &dbResult)
 {
     ZLOGD("seqId:0x%{public}" PRIx64 " tokenId:0x%{public}x remote:%{public}zu", info.seqId, meta.tokenId,
         dbResult.size());
-    if (refCount != nullptr) {
+    if (refCount) {
         DeviceMatrix::GetInstance().OnExchanged(info.devices[0], DeviceMatrix::GetInstance().GetCode(meta));
-        --(*refCount);
     }
     if (info.seqId == std::numeric_limits<uint64_t>::max()) {
         return SUCCESS;

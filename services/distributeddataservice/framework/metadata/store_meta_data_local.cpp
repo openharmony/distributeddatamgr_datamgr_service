@@ -48,6 +48,16 @@ bool StoreMetaDataLocal::HasPolicy(uint32_t type)
     return false;
 }
 
+PolicyValue StoreMetaDataLocal::GetPolicy(uint32_t type)
+{
+    for (auto &policy : policies) {
+        if (policy.type == type) {
+            return policy;
+        }
+    }
+    return PolicyValue();
+}
+
 bool StoreMetaDataLocal::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(isAutoSync)], isAutoSync);

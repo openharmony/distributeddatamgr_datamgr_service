@@ -17,17 +17,20 @@
 #define DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_REF_COUNT_H
 #include <atomic>
 #include <functional>
-
+#include <memory>
 namespace OHOS::DistributedKv {
 class RefCount final {
 public:
+    RefCount();
     explicit RefCount(std::function<void()> action);
-    RefCount &operator++();
-    RefCount &operator--();
+    RefCount(const RefCount &other);
+    RefCount(RefCount &&other) noexcept;
+    RefCount &operator=(const RefCount &other);
+    RefCount &operator=(RefCount &&other) noexcept;
+    operator bool () const;
 
 private:
-    std::atomic<uint32_t> count_ = 1;
-    std::function<void()> action_;
+    std::shared_ptr<const char> ref_;
 };
 } // namespace OHOS::DistributedKv
 #endif // DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_REF_COUNT_H
