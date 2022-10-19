@@ -223,7 +223,7 @@ void KvStoreDataService::OnStart()
     static constexpr int32_t RETRY_TIMES = 50;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
     for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIMES; ++retry) {
-        if (!AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().uuid.empty()) {
+        if (!DmAdapter::GetInstance().GetLocalDevice().uuid.empty()) {
             break;
         }
         ZLOGE("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));

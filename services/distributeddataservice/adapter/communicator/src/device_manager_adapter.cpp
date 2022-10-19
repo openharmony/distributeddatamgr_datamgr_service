@@ -88,6 +88,7 @@ DeviceManagerAdapter::~DeviceManagerAdapter()
 
 DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
 {
+    Init();
     static DeviceManagerAdapter dmAdapter;
     return dmAdapter;
 }
