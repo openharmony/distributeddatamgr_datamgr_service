@@ -15,21 +15,55 @@
 
 #include "ref_count.h"
 namespace OHOS::DistributedKv {
-RefCount::RefCount(std::function<void()> action) : action_(std::move(action))
+RefCount::RefCount()
 {
 }
 
-RefCount &RefCount::operator++()
+RefCount::RefCount(std::function<void()> action)
 {
-    ++count_;
-    return *this;
+    ref_ = std::shared_ptr<const char>("RefCount", [action](const char *) {
+        if (action) {
+            action();
+        }
+    });
 }
 
-RefCount &RefCount::operator--()
+RefCount::RefCount(const RefCount &other)
 {
-    if ((--count_) == 0 && action_ != nullptr) {
-        action_();
+    if (this == &other) {
+        return ;
     }
+    ref_ = other.ref_;
+}
+
+RefCount::RefCount(RefCount &&other) noexcept
+{
+    if (this == &other) {
+        return ;
+    }
+    ref_ = std::move(other.ref_);
+}
+
+RefCount &RefCount::operator=(const RefCount &other)
+{
+    if (this == &other) {
+        return *this;
+    }
+    ref_ = other.ref_;
     return *this;
+}
+
+RefCount &RefCount::operator=(RefCount &&other) noexcept
+{
+    if (this == &other) {
+        return *this;
+    }
+    ref_ = std::move(other.ref_);
+    return *this;
+}
+
+RefCount::operator bool() const
+{
+    return ref_ != nullptr;
 }
 } // namespace OHOS::DistributedKv
