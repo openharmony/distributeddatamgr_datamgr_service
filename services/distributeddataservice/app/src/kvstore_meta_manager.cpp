@@ -120,8 +120,8 @@ void KvStoreMetaManager::InitDeviceOnline()
         if (((mask & DeviceMatrix::META_STORE_MASK) != 0) && store != nullptr) {
             auto onComplete = [deviceId, mask](const std::map<std::string, DBStatus> &) {
                 auto event = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
-                EventCenter::GetInstance().PostEvent(std::move(event));
                 DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
+                EventCenter::GetInstance().PostEvent(std::move(event));
             };
             auto status = store->Sync({ deviceId }, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
             if (status == OK) {
