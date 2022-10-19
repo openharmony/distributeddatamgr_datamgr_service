@@ -56,7 +56,7 @@ private:
         void AddHandler(int32_t evtId, std::function<void(const Event &)> handler);
     private:
         std::map<int32_t, std::function<void(const Event &)>> handlers_;
-        std::queue<std::unique_ptr<Event>> events_;
+        std::deque<std::unique_ptr<Event>> events_;
         int32_t depth_ = 0;
     };
     ConcurrentMap<int32_t, std::list<std::function<void(const Event &)>>> observers_;

@@ -45,6 +45,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/crypto/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/directory/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/permission/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/matrix/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/session_manager",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",

@@ -53,6 +53,8 @@ public:
     std::string GetUdidByNetworkId(const std::string &networkId);
     DeviceInfo GetLocalBasicInfo();
     std::string ToUUID(const std::string &id);
+    static std::vector<std::string> ToUUID(const std::vector<std::string> &devices);
+    static std::vector<std::string> ToUUID(std::vector<DeviceInfo> devices);
     std::string ToNetworkID(const std::string &id);
     void NotifyReadyEvent(const std::string &uuid);
     friend class DataMgrDmStateCall;

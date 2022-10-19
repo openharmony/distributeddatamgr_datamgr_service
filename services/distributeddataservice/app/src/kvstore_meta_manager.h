@@ -49,14 +49,6 @@ struct Serializable {
     static json ToJson(const std::string &jsonStr);
 };
 
-struct StrategyMeta {
-    std::string devId;
-    std::string devAccId;
-    std::string grpId;
-    std::string bundleName;
-    std::string storeId;
-};
-
 struct SecretKeyMetaData {
     static constexpr const char *SKEY = "skey";
     std::vector<uint8_t> timeValue {};
@@ -157,7 +149,6 @@ public:
         KVDB,
         RDB,
     };
-    using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;
     using ChangeObserver = std::function<void(const std::vector<uint8_t> &, const std::vector<uint8_t> &, CHANGE_FLAG)>;
 
     class MetaDeviceChangeListenerImpl : public AppDistributedKv::AppDeviceChangeListener {
@@ -173,46 +164,20 @@ public:
 
     void InitMetaParameter();
     void InitMetaListener();
+    void InitBroadcast();
+    void InitDeviceOnline();
     void SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer);
-
-    Status CheckUpdateServiceMeta(const std::vector<uint8_t> &metaKey, FLAG flag, const std::vector<uint8_t> &val = {});
 
     static std::vector<uint8_t> GetMetaKey(
         const std::string &deviceAccountId, const std::string &groupId, const std::string &bundleName,
         const std::string &storeId, const std::string &key = "");
-
-    Status GetSecretKeyFromMeta(const std::vector<uint8_t> &metaSecretKey,
-                                std::vector<uint8_t> &key, bool &outdated);
-
-    Status WriteSecretKeyToMeta(const std::vector<uint8_t> &metaKey, const std::vector<uint8_t> &key);
-
-    Status WriteSecretKeyToFile(const std::string &secretKeyFile, const std::vector<uint8_t> &key);
-
-    Status RecoverSecretKeyFromFile(const std::string &secretKeyFile, const std::vector<uint8_t> &metaSecretKey,
-        std::vector<uint8_t> &key, bool &outdated);
-
-    std::vector<uint8_t> GetSecretKeyFromFile(const std::string &fileName);
-
-    void GetStrategyMetaKey(const StrategyMeta &params, std::string &retVal);
-
-    Status SaveStrategyMetaEnable(const std::string &key, bool enable);
-
-    Status SaveStrategyMetaLabels(const std::string &key,
-                                  const std::vector<std::string> &localLabels,
-                                  const std::vector<std::string> &remoteSupportLabels);
-
-    Status QueryKvStoreMetaDataByDeviceIdAndAppId(const std::string &devId, const std::string &appId,
-                                                  KvStoreMetaData &val);
-
-    Status GetKvStoreMeta(const std::vector<uint8_t> &metaKey, KvStoreMetaData &kvStoreMetaData);
-
-    bool GetKvStoreMetaDataByBundleName(const std::string &bundleName, KvStoreMetaData &metaData);
 
     bool GetKvStoreMetaDataByAppId(const std::string &appId, KvStoreMetaData &metaData);
 
     bool GetFullMetaData(std::map<std::string, MetaData> &entries, enum DatabaseType type = KVDB);
 
 private:
+    using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;
     NbDelegate GetMetaKvStore();
 
     NbDelegate CreateMetaKvStore();
@@ -227,9 +192,7 @@ private:
 
     void SyncMeta();
 
-    void ConcatWithSharps(const std::vector<std::string> &params, std::string &retVal);
-
-    Status GetStategyMeta(const std::string &key, std::map<std::string, std::vector<std::string>> &strategies);
+    std::string GetBackupPath() const;
 
     bool GetKvStoreMetaByType(const std::string &name, const std::string &val, KvStoreMetaData &metaData);
 
@@ -244,21 +207,10 @@ private:
         void HandleChanges(CHANGE_FLAG flag, const std::list<DistributedDB::Entry> &list);
     };
 
-    static constexpr const char *STRATEGY_META_PREFIX = "StrategyMetaData";
-    static constexpr const char *CAPABILITY_ENABLED = "capabilityEnabled";
-    static constexpr const char *CAPABILITY_RANGE = "capabilityRange";
-    static constexpr const char *LOCAL_LABEL = "localLabel";
-    static constexpr const char *REMOTE_LABEL = "remoteLabel";
-    static constexpr const char *HARMONY_APP = "harmony";
-    static constexpr int KEY_SIZE = 32;
-    static constexpr int HOURS_PER_YEAR = (24 * 365);
-
     NbDelegate metaDelegate_;
     std::string metaDBDirectory_;
     const std::string label_;
-    DistributedDB::KvStoreDelegateManager kvStoreDelegateManager_;
-    static std::condition_variable cv_;
-    static std::mutex cvMutex_;
+    DistributedDB::KvStoreDelegateManager delegateManager_;
     static MetaDeviceChangeListenerImpl listener_;
     KvStoreMetaObserver metaObserver_;
     std::recursive_mutex mutex_;

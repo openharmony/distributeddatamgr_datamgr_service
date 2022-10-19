@@ -38,6 +38,16 @@ bool PolicyValue::IsValueEffect() const
     return (index > 0);
 }
 
+bool StoreMetaDataLocal::HasPolicy(uint32_t type)
+{
+    for (auto &policy : policies) {
+        if (policy.type == type) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool StoreMetaDataLocal::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(isAutoSync)], isAutoSync);
@@ -46,7 +56,7 @@ bool StoreMetaDataLocal::Marshal(json &node) const
     SetValue(node[GET_NAME(isEncrypt)], isEncrypt);
     SetValue(node[GET_NAME(dataDir)], dataDir);
     SetValue(node[GET_NAME(schema)], schema);
-    SetValue(node[GET_NAME(values)], values);
+    SetValue(node[GET_NAME(policies)], policies);
     return true;
 }
 
@@ -58,7 +68,7 @@ bool StoreMetaDataLocal::Unmarshal(const json &node)
     GetValue(node, GET_NAME(isEncrypt), isEncrypt);
     GetValue(node, GET_NAME(dataDir), dataDir);
     GetValue(node, GET_NAME(schema), schema);
-    GetValue(node, GET_NAME(values), values);
+    GetValue(node, GET_NAME(policies), policies);
     return true;
 }
 

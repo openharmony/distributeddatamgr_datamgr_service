@@ -16,8 +16,10 @@
 #ifndef DISTRIBUTEDDATA_COMMUNICATION_PROVIDER_H
 #define DISTRIBUTEDDATA_COMMUNICATION_PROVIDER_H
 
+#include <functional>
 #include <memory>
 #include <vector>
+
 #include "app_data_change_listener.h"
 #include "app_device_change_listener.h"
 #include "idevice_query.h"
@@ -49,7 +51,7 @@ public:
 
     // Send data to other device, function will be called back after sent to notify send result
     virtual Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *ptr, int size,
-                            const MessageInfo &info = {MessageType::DEFAULT}) = 0;
+        const MessageInfo &info = { MessageType::DEFAULT }) = 0;
 
     // Get online deviceList
     virtual std::vector<DeviceInfo> GetRemoteDevices() const = 0;
@@ -75,7 +77,11 @@ public:
     virtual DeviceInfo GetLocalBasicInfo() const = 0;
     virtual std::string ToNodeId(const std::string &id) const = 0;
     virtual void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) = 0;
+
+    virtual int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask) = 0;
+    virtual int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
+        std::function<void(const std::string &, uint16_t)> listener) = 0;
 };
-}  // namespace AppDistributedKv
-}  // namespace OHOS
+} // namespace AppDistributedKv
+} // namespace OHOS
 #endif // DISTRIBUTEDDATA_COMMUNICATION_PROVIDER_H
