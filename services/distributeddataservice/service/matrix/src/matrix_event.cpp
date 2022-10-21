@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,24 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include "eventcenter/event.h"
-namespace OHOS {
-namespace DistributedData {
-Event::Event(int32_t evtId) : evtId_(evtId)
+#include "matrix_event.h"
+namespace OHOS::DistributedData {
+MatrixEvent::MatrixEvent(int32_t evtId, const std::string &device, uint16_t mask)
+    : Event(evtId), mask_(mask), deviceId_(device)
 {
-}
-Event::~Event()
-{
-}
-int32_t Event::GetEventId() const
-{
-    return evtId_;
 }
 
-bool Event::Equals(const Event &) const
+uint16_t MatrixEvent::GetMask() const
 {
-    return false;
+    return mask_;
 }
-} // namespace DistributedData
-} // namespace OHOS
+
+std::string MatrixEvent::GetDeviceId() const
+{
+    return deviceId_;
+}
+
+bool MatrixEvent::Equals(const Event &event) const
+{
+    auto &evt = static_cast<const MatrixEvent &>(event);
+    return (deviceId_ == evt.deviceId_) && (mask_ == evt.mask_);
+}
+} // namespace OHOS::DistributedData

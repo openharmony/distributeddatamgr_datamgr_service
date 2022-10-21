@@ -16,6 +16,7 @@
 #include "store_cache.h"
 #include "account/account_delegate.h"
 #include "crypto_manager.h"
+#include "device_matrix.h"
 #include "directory_manager.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -51,12 +52,10 @@ StoreCache::DBStore *StoreCache::GetStore(const StoreMetaData &data, std::shared
         }
 
         if (data.isAutoSync) {
-            bool autoSync = true;
-            DistributedDB::PragmaData data = static_cast<DistributedDB::PragmaData>(&autoSync);
-            auto syncStatus = store->Pragma(DistributedDB::PragmaCmd::AUTO_SYNC, data);
-            if (syncStatus != DistributedDB::DBStatus::OK) {
-                ZLOGE("auto sync status:%{public}d", static_cast<int>(syncStatus));
-            }
+            auto code = DeviceMatrix::GetInstance().GetCode(data);
+            store->SetRemotePushFinishedNotify([code](const DistributedDB::RemotePushNotifyInfo &info) {
+                DeviceMatrix::GetInstance().OnExchanged(info.deviceId, code, true);
+            });
         }
 
         stores.emplace(std::piecewise_construct, std::forward_as_tuple(data.storeId),

@@ -14,8 +14,9 @@
  */
 
 #include "communication_provider_impl.h"
-#include "device_manager_adapter.h"
+
 #include "communication_strategy.h"
+#include "device_manager_adapter.h"
 #include "log_print.h"
 
 #undef LOG_TAG
@@ -25,8 +26,7 @@ namespace OHOS {
 namespace AppDistributedKv {
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 std::mutex CommunicationProviderImpl::mutex_;
-CommunicationProviderImpl::CommunicationProviderImpl(AppPipeMgr &appPipeMgr)
-    : appPipeMgr_(appPipeMgr)
+CommunicationProviderImpl::CommunicationProviderImpl(AppPipeMgr &appPipeMgr) : appPipeMgr_(appPipeMgr)
 {
 }
 
@@ -80,7 +80,7 @@ Status CommunicationProviderImpl::StopWatchDataChange(const AppDataChangeListene
 }
 
 Status CommunicationProviderImpl::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *ptr,
-                                           int size, const MessageInfo &info)
+    int size, const MessageInfo &info)
 {
     return appPipeMgr_.SendData(pipeInfo, deviceId, ptr, size, info);
 }
@@ -124,5 +124,16 @@ void CommunicationProviderImpl::SetMessageTransFlag(const PipeInfo &pipeInfo, bo
 {
     appPipeMgr_.SetMessageTransFlag(pipeInfo, flag);
 }
-}  // namespace AppDistributedKv
-}  // namespace OHOS
+
+int32_t CommunicationProviderImpl::Broadcast(const PipeInfo &pipeInfo, uint16_t mask)
+{
+    return SoftBusAdapter::GetInstance()->Broadcast(pipeInfo, mask);
+}
+
+int32_t CommunicationProviderImpl::ListenBroadcastMsg(const PipeInfo &pipeInfo,
+    std::function<void(const std::string &, uint16_t)> listener)
+{
+    return SoftBusAdapter::GetInstance()->ListenBroadcastMsg(pipeInfo, std::move(listener));
+}
+} // namespace AppDistributedKv
+} // namespace OHOS

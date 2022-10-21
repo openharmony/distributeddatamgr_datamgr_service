@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "concurrent_map.h"
+#include "device_matrix.h"
 #include "kv_store_nb_delegate.h"
 #include "kvdb_service_stub.h"
 #include "kvstore_sync_manager.h"
@@ -56,7 +57,7 @@ public:
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
-    int32_t Online(const std::string &device) override;
+    int32_t OnReady(const std::string &device) override;
 
 private:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
@@ -91,11 +92,12 @@ private:
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId);
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
-    Status DoSync(StoreMetaData metaData, SyncInfo syncInfo, const SyncEnd &complete, int32_t type);
-    Status DoComplete(uint32_t tokenId, uint64_t seqId, std::shared_ptr<RefCount> refCount, const DBResult &dbResult);
+    Status DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
+    Status DoComplete(const StoreMetaData &meta, const SyncInfo &info, RefCount refCount, const DBResult &dbResult);
     uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
     Status ConvertDbStatus(DBStatus status) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;
+    std::vector<std::string> ConvertDevices(const std::vector<std::string> &deviceIds) const;
     std::shared_ptr<StoreCache::Observers> GetObservers(uint32_t tokenId, const std::string &storeId);
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
     static Factory factory_;

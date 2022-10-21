@@ -38,12 +38,14 @@ struct API_EXPORT StoreMetaDataLocal final : public Serializable {
     bool isEncrypt = false;
     std::string dataDir = "";
     std::string schema = "";
-    std::vector<PolicyValue> values {};
+    std::vector<PolicyValue> policies {};
 
     API_EXPORT StoreMetaDataLocal();
     API_EXPORT ~StoreMetaDataLocal();
     API_EXPORT bool operator==(const StoreMetaDataLocal &metaData) const;
     API_EXPORT bool operator!=(const StoreMetaDataLocal &metaData) const;
+    API_EXPORT bool HasPolicy(uint32_t type);
+    API_EXPORT PolicyValue GetPolicy(uint32_t type);
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
     API_EXPORT static std::string GetKey(const std::initializer_list<std::string> &fields);
