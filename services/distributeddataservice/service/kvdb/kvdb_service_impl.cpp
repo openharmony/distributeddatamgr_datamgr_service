@@ -135,12 +135,11 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
         syncAgent.observers_.erase(storeId);
         return true;
     });
-    storeCache_.CloseStore(tokenId, storeId);
-
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetStrategyKey());
     MetaDataManager::GetInstance().DelMeta(metaData.GetKeyLocal(), true);
+    storeCache_.CloseStore(tokenId, storeId);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(), storeId.storeId.c_str(),
         metaData.instanceId);
     return SUCCESS;
