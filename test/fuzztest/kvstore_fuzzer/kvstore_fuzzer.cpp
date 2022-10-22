@@ -19,6 +19,7 @@
 #include <vector>
 #include "distributed_kv_data_manager.h"
 #include "store_errno.h"
+#include "dev_manager.h"
 
 using namespace OHOS;
 using namespace OHOS::DistributedKv;
@@ -26,6 +27,63 @@ using namespace OHOS::DistributedKv;
 namespace OHOS {
 static std::shared_ptr<SingleKvStore> singleKvStore_ = nullptr;
 static Status status_;
+
+class DeviceObserverTestImpl : public KvStoreObserver {
+public:
+   std::vector<Entry> insertEntries_;
+   std::vector<Entry> updateEntries_;
+   std::vector<Entry> deleteEntries_;
+   bool isClear_ = false;
+   DeviceObserverTestImpl();
+   ~DeviceObserverTestImpl()
+   {}
+
+   DeviceObserverTestImpl(const DeviceObserverTestImpl &) = delete;
+   DeviceObserverTestImpl &operator=(const DeviceObserverTestImpl &) = delete;
+   DeviceObserverTestImpl(DeviceObserverTestImpl &&) = delete;
+   DeviceObserverTestImpl &operator=(DeviceObserverTestImpl &&) = delete;
+
+   void OnChange(const ChangeNotification &changeNotification);
+};
+
+void DeviceObserverTestImpl::OnChange(const ChangeNotification &changeNotification)
+{
+   const auto &insert = changeNotification.GetInsertEntries();
+   insertEntries_.clear();
+   for (const auto &entry : insert) {
+       insertEntries_.push_back(entry);
+   }
+
+   const auto &update = changeNotification.GetUpdateEntries();
+   updateEntries_.clear();
+   for (const auto &entry : update) {
+       updateEntries_.push_back(entry);
+   }
+
+   const auto &del = changeNotification.GetDeleteEntries();
+   deleteEntries_.clear();
+   for (const auto &entry : del) {
+       deleteEntries_.push_back(entry);
+   }
+
+   isClear_ = changeNotification.IsClear();
+}
+
+DeviceObserverTestImpl::DeviceObserverTestImpl()
+{
+   insertEntries_ = {};
+   updateEntries_ = {};
+   deleteEntries_ = {};
+   isClear_ = false;
+}
+
+class DeviceSyncCallbackTestImpl : public KvStoreSyncCallback {
+public:
+   void SyncCompleted(const std::map<std::string, Status> &results);
+};
+
+void DeviceSyncCallbackTestImpl::SyncCompleted(const std::map<std::string, Status> &results)
+{}
 
 void SetUpTestCase(void)
 {
@@ -126,6 +184,50 @@ void GetEntriesFuzz2(const uint8_t *data, size_t size)
     }
 }
 
+void SubscribeKvStoreFuzz(const uint8_t *data, size_t size)
+{
+   std::string prefix(data, data + size);
+   DataQuery dataQuery;
+   dataQuery.KeyPrefix(prefix);
+   std::string keys = "test_";
+   std::vector<Entry> entries;
+   size_t sum = 10;
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
+   }
+   auto observer = std::make_shared<DeviceObserverTestImpl>();
+   singleKvStore_->SubscribeKvStore(SubscribeType::SUBSCRIBE_TYPE_ALL, observer);
+   singleKvStore_->UnSubscribeKvStore(SubscribeType::SUBSCRIBE_TYPE_ALL, observer);
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Delete(prefix + keys + std::to_string(i));
+   }
+}
+
+void SyncCallbackFuzz(const uint8_t *data, size_t size)
+{
+   auto syncCallback = std::make_shared<DeviceSyncCallbackTestImpl>();
+   singleKvStore_->RegisterSyncCallback(syncCallback);
+
+   std::string prefix(data, data + size);
+   DataQuery dataQuery;
+   dataQuery.KeyPrefix(prefix);
+   std::string keys = "test_";
+   std::vector<Entry> entries;
+   size_t sum = 10;
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
+   }
+
+   std::map<std::string, Status> results;
+   results.insert({"aaa", Status::INVALID_ARGUMENT});
+   syncCallback->SyncCompleted(results);
+
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Delete(prefix + keys + std::to_string(i));
+   }
+   singleKvStore_->UnRegisterSyncCallback();
+}
+
 void GetResultSetFuzz1(const uint8_t *data, size_t size)
 {
     std::string prefix(data, data + size);
@@ -161,9 +263,73 @@ void GetResultSetFuzz2(const uint8_t *data, size_t size)
         singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
     }
     singleKvStore_->GetResultSet(dataQuery, resultSet);
-    for (size_t i = 0; i < sum; i++) {
-        singleKvStore_->Delete(prefix + keys + std::to_string(i));
-    }
+   singleKvStore_->CloseResultSet(resultSet);
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Delete(prefix + keys + std::to_string(i));
+   }
+}
+
+void GetResultSetFuzz3(const uint8_t *data, size_t size)
+{
+   std::string prefix(data, data + size);
+   DataQuery dataQuery;
+   dataQuery.KeyPrefix(prefix);
+   std::string keys = "test_";
+   std::shared_ptr<KvStoreResultSet> resultSet;
+   size_t sum = 10;
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
+   }
+   singleKvStore_->GetResultSet(dataQuery, resultSet);
+   auto status = singleKvStore_->GetResultSet(prefix, resultSet);
+   if (status != Status::SUCCESS) {
+       return;
+   }
+   int cnt = resultSet->GetCount();
+   if (static_cast<int>(size) != cnt) {
+       return;
+   }
+   int start = resultSet->GetPosition();
+   resultSet->IsBeforeFirst();
+   resultSet->IsFirst();
+   resultSet->MoveToPrevious();
+   resultSet->IsBeforeFirst();
+   resultSet->IsFirst();
+   while (resultSet->MoveToNext()) {
+       Entry entry;
+       resultSet->GetEntry(entry);
+   }
+   Entry entry;
+   resultSet->GetEntry(entry);
+   resultSet->IsLast();
+   resultSet->IsAfterLast();
+   resultSet->MoveToNext();
+   resultSet->IsLast();
+   resultSet->IsAfterLast();
+   resultSet->Move(1);
+   resultSet->IsLast();
+   resultSet->IsAfterLast();
+   resultSet->MoveToFirst();
+   resultSet->GetEntry(entry);
+   resultSet->MoveToLast();
+   resultSet->GetEntry(entry);
+
+   resultSet->Close();
+   resultSet->GetEntry(entry);
+   resultSet->GetCount();
+   resultSet->GetPosition();
+   resultSet->IsFirst();
+   resultSet->IsLast();
+   resultSet->IsBeforeFirst();
+   resultSet->IsAfterLast();
+   resultSet->MoveToNext();
+   resultSet->Move(1);
+   resultSet->MoveToFirst();
+   resultSet->MoveToLast();
+   resultSet->MoveToPosition(1);
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Delete(prefix + keys + std::to_string(i));
+   }
 }
 
 void GetCountFuzz1(const uint8_t *data, size_t size)
@@ -203,22 +369,187 @@ void GetCountFuzz2(const uint8_t *data, size_t size)
         singleKvStore_->Delete(prefix + skey + std::to_string(i));
     }
 }
+
+void RemoveDeviceDataFuzz(const uint8_t *data, size_t size)
+{
+   size_t sum = 10;
+   std::string deviceId(data, data + size);
+   std::vector<Entry> input;
+   auto cmp = [](const Key &entry, const Key &sentry) { return entry.Data() < sentry.Data(); };
+   std::map<Key, Value, decltype(cmp)> dictionary(cmp);
+   for (int i = 0; i < sum; ++i) {
+       Entry entry;
+       entry.key = std::to_string(i).append("_k");
+       entry.value = std::to_string(i).append("_v");
+       dictionary[entry.key] = entry.value;
+       input.push_back(entry);
+   }
+   singleKvStore_->PutBatch(input);
+   singleKvStore_->RemoveDeviceData(deviceId);
+   singleKvStore_->RemoveDeviceData(DevManager::GetInstance().GetLocalDevice().uuid);
+   singleKvStore_->RemoveDeviceData("");
+
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Delete(std::to_string(i).append("_k"));
+   }
 }
+
+void GetSecurityLevelFuzz(const uint8_t *data, size_t size)
+{
+   size_t sum = 10;
+   std::vector<std::string> keys;
+   std::string prefix(data, data + size);
+   for (size_t i = 0; i < sum; i++) {
+       keys.push_back(prefix);
+   }
+   std::string skey = "test_";
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Put(prefix + skey + std::to_string(i), skey + std::to_string(i));
+   }
+   SecurityLevel securityLevel;
+   singleKvStore_->GetSecurityLevel(securityLevel);
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Delete(prefix + skey + std::to_string(i));
+   }
+}
+
+void SyncFuzz1(const uint8_t *data, size_t size)
+{
+   size_t sum = 10;
+   std::vector<std::string> keys;
+   std::string skey = "test_";
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Put(skey + std::to_string(i), skey + std::to_string(i));
+   }
+   std::string deviceId(data, data + size);
+   std::vector<std::string> deviceIds = { deviceId };
+   uint32_t allowedDelayMs = 200;
+   singleKvStore_->Sync(deviceIds, SyncMode::PUSH, allowedDelayMs);
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Delete(skey + std::to_string(i));
+   }
+}
+
+void SyncFuzz2(const uint8_t *data, size_t size)
+{
+   size_t sum = 10;
+   std::vector<std::string> keys;
+   std::string skey = "test_";
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Put(skey + std::to_string(i), skey + std::to_string(i));
+   }
+   std::string deviceId(data, data + size);
+   std::vector<std::string> deviceIds = { deviceId };
+   DataQuery dataQuery;
+   dataQuery.KeyPrefix("name");
+   singleKvStore_->Sync(deviceIds, SyncMode::PUSH, dataQuery, nullptr);
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Delete(skey + std::to_string(i));
+   }
+}
+
+void SyncParamFuzz(const uint8_t *data, size_t size)
+{
+   size_t sum = 10;
+   std::vector<std::string> keys;
+   std::string prefix(data, data + size);
+   for (size_t i = 0; i < sum; i++) {
+       keys.push_back(prefix);
+   }
+   std::string skey = "test_";
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Put(prefix + skey + std::to_string(i), skey + std::to_string(i));
+   }
+
+   KvSyncParam syncParam{ 500 }; // 500ms
+   singleKvStore_->SetSyncParam(syncParam);
+
+   KvSyncParam syncParamRet;
+   singleKvStore_->GetSyncParam(syncParamRet);
+
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Delete(prefix + skey + std::to_string(i));
+   }
+
+}
+
+void SetCapabilityEnabledFuzz(const uint8_t *data, size_t size)
+{
+   size_t sum = 10;
+   std::vector<std::string> keys;
+   std::string prefix(data, data + size);
+   for (size_t i = 0; i < sum; i++) {
+       keys.push_back(prefix);
+   }
+   std::string skey = "test_";
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Put(prefix + skey + std::to_string(i), skey + std::to_string(i));
+   }
+
+   singleKvStore_->SetCapabilityEnabled(true);
+   singleKvStore_->SetCapabilityEnabled(false);
+
+   for (size_t i = 0; i < sum; i++) {
+       singleKvStore_->Delete(prefix + skey + std::to_string(i));
+   }
+
+}
+
+void SetCapabilityRangeFuzz(const uint8_t *data, size_t size)
+{
+   std::string label(data, data + size);
+   std::vector<std::string> local = {label+"_local1",label+"_local2"};
+   std::vector<std::string> remote = {label+"_remote1",label+"_remote2"};
+   singleKvStore_->SetCapabilityRange(local, remote);
+}
+
+void SubscribeWithQueryFuzz(const uint8_t *data, size_t size)
+{
+   std::string deviceId(data, data + size);
+   std::vector<std::string> deviceIds = {deviceId+"_1", deviceId+"_2"};
+   DataQuery dataQuery;
+   dataQuery.KeyPrefix("name");
+   singleKvStore_->SubscribeWithQuery(deviceIds, dataQuery);
+   singleKvStore_->UnsubscribeWithQuery(deviceIds, dataQuery);
+}
+
+void UnSubscribeWithQueryFuzz(const uint8_t *data, size_t size)
+{
+   std::string deviceId(data, data + size);
+   std::vector<std::string> deviceIds = {deviceId+"_1", deviceId+"_2"};
+   DataQuery dataQuery;
+   dataQuery.KeyPrefix("name");
+   singleKvStore_->UnsubscribeWithQuery(deviceIds, dataQuery);
+}
+
+
+} // namespace OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::SetUpTestCase();
-    OHOS::PutFuzz(data, size);
-    OHOS::PutBatchFuzz(data, size);
-    OHOS::GetFuzz(data, size);
-    OHOS::GetEntriesFuzz1(data, size);
-    OHOS::GetEntriesFuzz2(data, size);
-    OHOS::GetResultSetFuzz1(data, size);
-    OHOS::GetResultSetFuzz2(data, size);
-    OHOS::GetCountFuzz1(data, size);
-    OHOS::GetCountFuzz2(data, size);
-    OHOS::TearDown();
-    /* Run your code on data */
-    return 0;
+   OHOS::SetUpTestCase();
+   OHOS::PutFuzz(data, size);
+   OHOS::PutBatchFuzz(data, size);
+   OHOS::GetFuzz(data, size);
+   OHOS::GetEntriesFuzz1(data, size);
+   OHOS::GetEntriesFuzz2(data, size);
+   OHOS::GetResultSetFuzz1(data, size);
+   OHOS::GetResultSetFuzz2(data, size);
+   OHOS::GetResultSetFuzz3(data, size);
+   OHOS::GetCountFuzz1(data, size);
+   OHOS::GetCountFuzz2(data, size);
+   OHOS::SyncFuzz1(data, size);
+   OHOS::SyncFuzz2(data, size);
+   OHOS::RemoveDeviceDataFuzz(data, size);
+   OHOS::GetSecurityLevelFuzz(data, size);
+   OHOS::SyncCallbackFuzz(data, size);
+   OHOS::SyncParamFuzz(data, size);
+   OHOS::SetCapabilityEnabledFuzz(data, size);
+   OHOS::SetCapabilityRangeFuzz(data, size);
+   OHOS::SubscribeWithQueryFuzz(data, size);
+   OHOS::UnSubscribeWithQueryFuzz(data, size);
+   OHOS::TearDown();
+   /* Run your code on data */
+   return 0;
 }
