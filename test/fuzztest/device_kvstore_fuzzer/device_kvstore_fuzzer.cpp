@@ -214,19 +214,6 @@ void GetResultSetFuzz3(const uint8_t *data, size_t size)
     resultSet->MoveToLast();
     resultSet->GetEntry(entry);
 
-    resultSet->Close();
-    resultSet->GetEntry(entry);
-    resultSet->GetCount();
-    resultSet->GetPosition();
-    resultSet->IsFirst();
-    resultSet->IsLast();
-    resultSet->IsBeforeFirst();
-    resultSet->IsAfterLast();
-    resultSet->MoveToNext();
-    resultSet->Move(1);
-    resultSet->MoveToFirst();
-    resultSet->MoveToLast();
-    resultSet->MoveToPosition(1);
     for (size_t i = 0; i < sum; i++) {
         deviceKvStore_->Delete(prefix + keys + std::to_string(i));
     }
@@ -351,7 +338,7 @@ void SyncParamFuzz(const uint8_t *data, size_t size)
         deviceKvStore_->Put(prefix + skey + std::to_string(i), skey + std::to_string(i));
     }
 
-    KvSyncParam syncParam{ 500 }; // 500ms
+    KvSyncParam syncParam{ 500 };
     deviceKvStore_->SetSyncParam(syncParam);
 
     KvSyncParam syncParamRet;
