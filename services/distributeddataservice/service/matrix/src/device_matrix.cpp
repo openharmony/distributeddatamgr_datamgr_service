@@ -184,7 +184,7 @@ uint16_t DeviceMatrix::ConvertMask(const std::string &device, uint16_t code)
         // 0xFF00: 1111000011110000  0x00FF: 0000111100001111 8: the count save at 8 bits
         index = ((index & 0xFF00) >> 8) + (index & 0x00FF);
         index--;
-        if (index > meta.maskInfo.size()) {
+        if (index >= meta.maskInfo.size()) {
             return result;
         }
         auto &app = meta.maskInfo[index];
