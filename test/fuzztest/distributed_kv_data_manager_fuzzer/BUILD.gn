@@ -42,7 +42,7 @@ ohos_fuzztest("DistributedKvDataManagerFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "distributed_kv_data_manager_fuzzer.cpp",]
+  sources = [ "distributed_kv_data_manager_fuzzer.cpp"]
 
   defines = [
     "SQLITE_ENABLE_SNAPSHOT",
