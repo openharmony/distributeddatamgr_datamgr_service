@@ -86,6 +86,8 @@ private:
     public:
         Factory();
         ~Factory();
+    private:
+        std::shared_ptr<KVDBServiceImpl> product_;
     };
 
     void AddOptions(const Options &options, StoreMetaData &metaData);
