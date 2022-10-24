@@ -14,19 +14,19 @@
  */
 
 #include "kvstore_fuzzer.h"
-#include <sys/stat.h>
+
 #include <string>
+#include <sys/stat.h>
 #include <vector>
+
 #include "distributed_kv_data_manager.h"
 #include "store_errno.h"
-#include "dev_manager.h"
 
 using namespace OHOS;
 using namespace OHOS::DistributedKv;
 
 namespace OHOS {
 static std::shared_ptr<SingleKvStore> singleKvStore_ = nullptr;
-static Status status_;
 
 class DeviceObserverTestImpl : public KvStoreObserver {
 public:
@@ -88,8 +88,10 @@ void DeviceSyncCallbackTestImpl::SyncCompleted(const std::map<std::string, Statu
 void SetUpTestCase(void)
 {
     DistributedKvDataManager manager;
-    Options options = { .createIfMissing = true, .encrypt = false, .autoSync = true,
-                        .kvStoreType = KvStoreType::SINGLE_VERSION };
+    Options options = { .createIfMissing = true,
+        .encrypt = false,
+        .autoSync = true,
+        .kvStoreType = KvStoreType::SINGLE_VERSION };
     options.area = EL1;
     options.baseDir = std::string("/data/service/el1/public/database/odmf");
     AppId appId = { "odmf" };
@@ -97,7 +99,7 @@ void SetUpTestCase(void)
     StoreId storeId = { "student_single" };
     mkdir(options.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     /* [create and] open and initialize kvstore instance. */
-    status_ = manager.GetSingleKvStore(options, appId, storeId, singleKvStore_);
+    manager.GetSingleKvStore(options, appId, storeId, singleKvStore_);
 }
 
 void TearDown(void)
@@ -289,7 +291,7 @@ void GetResultSetFuzz3(const uint8_t *data, size_t size)
    if (static_cast<int>(size) != cnt) {
        return;
    }
-   int start = resultSet->GetPosition();
+    resultSet->GetPosition();
    resultSet->IsBeforeFirst();
    resultSet->IsFirst();
    resultSet->MoveToPrevious();
@@ -377,7 +379,7 @@ void RemoveDeviceDataFuzz(const uint8_t *data, size_t size)
    std::vector<Entry> input;
    auto cmp = [](const Key &entry, const Key &sentry) { return entry.Data() < sentry.Data(); };
    std::map<Key, Value, decltype(cmp)> dictionary(cmp);
-   for (int i = 0; i < sum; ++i) {
+    for (size_t i = 0; i < sum; ++i) {
        Entry entry;
        entry.key = std::to_string(i).append("_k");
        entry.value = std::to_string(i).append("_v");
@@ -386,7 +388,6 @@ void RemoveDeviceDataFuzz(const uint8_t *data, size_t size)
    }
    singleKvStore_->PutBatch(input);
    singleKvStore_->RemoveDeviceData(deviceId);
-   singleKvStore_->RemoveDeviceData(DevManager::GetInstance().GetLocalDevice().uuid);
    singleKvStore_->RemoveDeviceData("");
 
    for (size_t i = 0; i < sum; i++) {

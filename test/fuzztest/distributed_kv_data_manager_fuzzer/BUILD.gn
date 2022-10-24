@@ -16,7 +16,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("KvStoreFuzzTest") {
+ohos_fuzztest("DistributedKvDataManagerFuzzTest") {
   module_out_path = "datamgr_service/distributeddatafwk"
 
   include_dirs = [
@@ -34,7 +34,7 @@ ohos_fuzztest("KvStoreFuzzTest") {
     "//third_party/grpc/src/core/lib/json",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/kvstore_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/distributed_kv_data_manager_fuzzer"
 
   cflags = [
     "-g",
@@ -42,8 +42,7 @@ ohos_fuzztest("KvStoreFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "kvstore_fuzzer.cpp",
-            ]
+  sources = [ "distributed_kv_data_manager_fuzzer.cpp",]
 
   defines = [
     "SQLITE_ENABLE_SNAPSHOT",
@@ -80,7 +79,7 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":KvStoreFuzzTest",
+    ":DistributedKvDataManagerFuzzTest",
   ]
 }
 ###############################################################################

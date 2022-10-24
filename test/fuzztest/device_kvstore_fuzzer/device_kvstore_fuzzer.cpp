@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include "kvstore_fuzzer.h"
+#include "device_kvstore_fuzzer.h"
 
 #include <string>
 #include <sys/stat.h>
@@ -21,14 +20,12 @@
 
 #include "distributed_kv_data_manager.h"
 #include "store_errno.h"
-#include "dev_manager.h"
 
 using namespace OHOS;
 using namespace OHOS::DistributedKv;
 
 namespace OHOS {
 static std::shared_ptr<SingleKvStore> deviceKvStore_ = nullptr;
-static Status status_;
 
 void SetUpTestCase(void)
 {
@@ -192,7 +189,7 @@ void GetResultSetFuzz3(const uint8_t *data, size_t size)
     if (static_cast<int>(size) != cnt) {
         return;
     }
-    int start = resultSet->GetPosition();
+    resultSet->GetPosition();
     resultSet->IsBeforeFirst();
     resultSet->IsFirst();
     resultSet->MoveToPrevious();
@@ -280,7 +277,7 @@ void RemoveDeviceDataFuzz(const uint8_t *data, size_t size)
     std::vector<Entry> input;
     auto cmp = [](const Key &entry, const Key &sentry) { return entry.Data() < sentry.Data(); };
     std::map<Key, Value, decltype(cmp)> dictionary(cmp);
-    for (int i = 0; i < sum; ++i) {
+    for (size_t i = 0; i < sum; ++i) {
         Entry entry;
         entry.key = std::to_string(i).append("_k");
         entry.value = std::to_string(i).append("_v");
@@ -289,7 +286,6 @@ void RemoveDeviceDataFuzz(const uint8_t *data, size_t size)
     }
     deviceKvStore_->PutBatch(input);
     deviceKvStore_->RemoveDeviceData(deviceId);
-    deviceKvStore_->RemoveDeviceData(DevManager::GetInstance().GetLocalDevice().uuid);
     deviceKvStore_->RemoveDeviceData("");
 
     for (size_t i = 0; i < sum; i++) {
@@ -328,7 +324,7 @@ void SyncCallbackFuzz(const uint8_t *data, size_t size)
     for (size_t i = 0; i < sum; i++) {
         deviceKvStore_->Put(prefix + skey + std::to_string(i), skey + std::to_string(i));
     }
-    class TestSyncCallback : public  KvStoreSyncCallback {
+    class TestSyncCallback : public KvStoreSyncCallback {
     public:
         void SyncCompleted(const std::map<std::string, Status> &results) override
         {
@@ -364,7 +360,6 @@ void SyncParamFuzz(const uint8_t *data, size_t size)
     for (size_t i = 0; i < sum; i++) {
         deviceKvStore_->Delete(prefix + skey + std::to_string(i));
     }
-
 }
 
 void SetCapabilityEnabledFuzz(const uint8_t *data, size_t size)
@@ -386,21 +381,20 @@ void SetCapabilityEnabledFuzz(const uint8_t *data, size_t size)
     for (size_t i = 0; i < sum; i++) {
         deviceKvStore_->Delete(prefix + skey + std::to_string(i));
     }
-
 }
 
 void SetCapabilityRangeFuzz(const uint8_t *data, size_t size)
 {
     std::string label(data, data + size);
-    std::vector<std::string> local = {label+"_local1",label+"_local2"};
-    std::vector<std::string> remote = {label+"_remote1",label+"_remote2"};
+    std::vector<std::string> local = { label + "_local1", label + "_local2" };
+    std::vector<std::string> remote = { label + "_remote1", label + "_remote2" };
     deviceKvStore_->SetCapabilityRange(local, remote);
 }
 
 void SubscribeWithQueryFuzz(const uint8_t *data, size_t size)
 {
     std::string deviceId(data, data + size);
-    std::vector<std::string> deviceIds = {deviceId+"_1", deviceId+"_2"};
+    std::vector<std::string> deviceIds = { deviceId + "_1", deviceId + "_2" };
     DataQuery dataQuery;
     dataQuery.KeyPrefix("name");
     deviceKvStore_->SubscribeWithQuery(deviceIds, dataQuery);
@@ -410,12 +404,11 @@ void SubscribeWithQueryFuzz(const uint8_t *data, size_t size)
 void UnSubscribeWithQueryFuzz(const uint8_t *data, size_t size)
 {
     std::string deviceId(data, data + size);
-    std::vector<std::string> deviceIds = {deviceId+"_1", deviceId+"_2"};
+    std::vector<std::string> deviceIds = { deviceId + "_1", deviceId + "_2" };
     DataQuery dataQuery;
     dataQuery.KeyPrefix("name");
     deviceKvStore_->UnsubscribeWithQuery(deviceIds, dataQuery);
 }
-
 
 } // namespace OHOS
 
