@@ -26,10 +26,10 @@ namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 constexpr int64_t StoreCache::INTERVAL;
 constexpr size_t StoreCache::TIME_TASK_NUM;
-StoreCache::DBStore *StoreCache::GetStore(const StoreMetaData &data, std::shared_ptr<Observers> observers,
+StoreCache::Store StoreCache::GetStore(const StoreMetaData &data, std::shared_ptr<Observers> observers,
     DBStatus &status)
 {
-    DBStore *store = nullptr;
+    Store store = nullptr;
     status = DBStatus::NOT_FOUND;
     stores_.Compute(data.tokenId, [&](const auto &key, std::map<std::string, DBStoreDelegate> &stores) {
         auto it = stores.find(data.storeId);
@@ -39,27 +39,29 @@ StoreCache::DBStore *StoreCache::GetStore(const StoreMetaData &data, std::shared
             return true;
         }
 
+        DBStore *dbStore = nullptr;
         DBManager manager(data.appId, data.user, data.instanceId);
         manager.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(data) });
         manager.GetKvStore(data.storeId, GetDBOption(data, GetDBPassword(data)),
-            [&status, &store](auto dbStatus, auto *tmpStore) {
+            [&status, &dbStore](auto dbStatus, auto *tmpStore) {
                 status = dbStatus;
-                store = tmpStore;
+                dbStore = tmpStore;
             });
 
-        if (store == nullptr) {
+        if (dbStore == nullptr) {
             return !stores.empty();
         }
 
         if (data.isAutoSync) {
             auto code = DeviceMatrix::GetInstance().GetCode(data);
-            store->SetRemotePushFinishedNotify([code](const DistributedDB::RemotePushNotifyInfo &info) {
+            dbStore->SetRemotePushFinishedNotify([code](const DistributedDB::RemotePushNotifyInfo &info) {
                 DeviceMatrix::GetInstance().OnExchanged(info.deviceId, code, true);
             });
         }
 
-        stores.emplace(std::piecewise_construct, std::forward_as_tuple(data.storeId),
-            std::forward_as_tuple(store, observers));
+        auto result = stores.emplace(std::piecewise_construct, std::forward_as_tuple(data.storeId),
+            std::forward_as_tuple(dbStore, observers));
+        store = result.first->second;
         return !stores.empty();
     });
 
@@ -209,10 +211,15 @@ StoreCache::DBStoreDelegate::~DBStoreDelegate()
     delegate_ = nullptr;
 }
 
-StoreCache::DBStoreDelegate::operator DBStore *()
+StoreCache::DBStoreDelegate::operator std::shared_ptr<DBStore> ()
 {
     time_ = std::chrono::system_clock::now() + std::chrono::minutes(INTERVAL);
-    return delegate_;
+    mutex_.lock_shared();
+    if (delegate_ == nullptr) {
+        mutex_.unlock_shared();
+        return nullptr;
+    }
+    return std::shared_ptr<DBStore>(delegate_, [this](DBStore *) { mutex_.unlock_shared();});
 }
 
 bool StoreCache::DBStoreDelegate::operator<(const Time &time) const
@@ -222,6 +229,7 @@ bool StoreCache::DBStoreDelegate::operator<(const Time &time) const
 
 bool StoreCache::DBStoreDelegate::Close(DBManager &manager)
 {
+    std::unique_lock<decltype(mutex_)> lock(mutex_);
     if (delegate_ != nullptr) {
         delegate_->UnRegisterObserver(this);
     }
