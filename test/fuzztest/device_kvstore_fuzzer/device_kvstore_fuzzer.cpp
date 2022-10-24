@@ -51,12 +51,14 @@ void TearDown(void)
     (void)remove("/data/service/el1/public/database/odmf");
 }
 
-class TestSyncCallback : public KvStoreSyncCallback {
+class DeviceSyncCallbackTestImpl : public KvStoreSyncCallback {
 public:
-    void SyncCompleted(const std::map<std::string, Status> &results) override
-    {
-    }
+    void SyncCompleted(const std::map<std::string, Status> &results);
 };
+
+void DeviceSyncCallbackTestImpl::SyncCompleted(const std::map<std::string, Status> &results)
+{
+}
 
 void PutFuzz(const uint8_t *data, size_t size)
 {
@@ -318,7 +320,7 @@ void SyncCallbackFuzz(const uint8_t *data, size_t size)
     for (size_t i = 0; i < sum; i++) {
         deviceKvStore_->Put(prefix + skey + std::to_string(i), skey + std::to_string(i));
     }
-    auto callback = std::make_shared<TestSyncCallback>();
+    auto callback = std::make_shared<DeviceSyncCallbackTestImpl>();
     deviceKvStore_->RegisterSyncCallback(callback);
     deviceKvStore_->UnRegisterSyncCallback();
     for (size_t i = 0; i < sum; i++) {
