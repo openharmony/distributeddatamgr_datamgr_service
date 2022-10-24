@@ -60,7 +60,7 @@ void RouteHeadHandlerImpl::Init()
         static_cast<uint32_t>(atoi(userId_.c_str())), appId_, storeId_ };
     session_ = SessionManager::GetInstance().GetSession(localPoint, deviceId_);
     ZLOGD("valid session:appId:%{public}s, srcDevId:%{public}s, srcUser:%{public}u, trgDevId:%{public}s,"
-          "trgUserSize:%{public}s", session_.appId.c_str(), anonymous::Change(session_.sourceDeviceId).c_str(),
+          "trgUser:%{public}s", session_.appId.c_str(), anonymous::Change(session_.sourceDeviceId).c_str(),
           session_.sourceUserId, anonymous::Change(session_.targetDeviceId).c_str(),
           Serializable::Marshall(session_.targetUserIds).c_str());
 }
@@ -193,7 +193,7 @@ bool RouteHeadHandlerImpl::ParseHeadData(
     SessionPoint local { .deviceId = session_.targetDeviceId, .appId = session_.appId };
     SessionPoint peer { .deviceId = session_.sourceDeviceId, .userId = session_.sourceUserId, .appId = session_.appId };
     ZLOGD("valid session:appId:%{public}s, srcDevId:%{public}s, srcUser:%{public}u, trgDevId:%{public}s,"
-          "trgUserSize:%{public}s", session_.appId.c_str(), anonymous::Change(session_.sourceDeviceId).c_str(),
+          "trgUser:%{public}s", session_.appId.c_str(), anonymous::Change(session_.sourceDeviceId).c_str(),
           session_.sourceUserId, anonymous::Change(session_.targetDeviceId).c_str(),
           Serializable::Marshall(session_.targetUserIds).c_str());
     for (const auto &item : session_.targetUserIds) {
