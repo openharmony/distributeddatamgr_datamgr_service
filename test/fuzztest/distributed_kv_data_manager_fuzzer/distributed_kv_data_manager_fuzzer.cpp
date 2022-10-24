@@ -266,12 +266,12 @@ void UnRegisterKvStoreServiceDeathRecipientFuzz(const uint8_t *data, size_t size
     manager.RegisterKvStoreServiceDeathRecipient(kvStoreDeathRecipient);
     kvStoreDeathRecipient->OnRemoteDied();
 }
-
 } // namespace OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
+    /* Run your code on data */
     OHOS::SetUpTestCase();
     OHOS::GetKvStoreFuzz(data, size);
     OHOS::GetAllKvStoreFuzz(data, size);
@@ -283,6 +283,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::RegisterKvStoreServiceDeathRecipientFuzz(data, size);
     OHOS::UnRegisterKvStoreServiceDeathRecipientFuzz(data, size);
     OHOS::TearDown();
-    /* Run your code on data */
     return 0;
 }

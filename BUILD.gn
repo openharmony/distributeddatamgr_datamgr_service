@@ -31,7 +31,7 @@ group("fuzztest") {
   deps += [
     "test/fuzztest/autolaunch_fuzzer:fuzztest",
     "test/fuzztest/device_kvstore_fuzzer:fuzztest",
-    "test/fuzztest/distributed_kv_data_mamager_fuzzer:fuzztest",
+    "test/fuzztest/distributed_kv_data_manager_fuzzer:fuzztest",
     "test/fuzztest/kvstore_fuzzer:fuzztest",
     "test/fuzztest/kvstoredisksize_fuzzer:fuzztest",
   ]

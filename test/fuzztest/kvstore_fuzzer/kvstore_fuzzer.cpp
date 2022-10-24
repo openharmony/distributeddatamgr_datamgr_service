@@ -223,7 +223,6 @@ void SyncCallbackFuzz(const uint8_t *data, size_t size)
     }
 
     std::map<std::string, Status> results;
-    results.insert({ "aaa", Status::INVALID_ARGUMENT });
     syncCallback->SyncCompleted(results);
 
     for (size_t i = 0; i < sum; i++) {
@@ -450,7 +449,7 @@ void SyncParamFuzz(const uint8_t *data, size_t size)
         singleKvStore_->Put(prefix + skey + std::to_string(i), skey + std::to_string(i));
     }
 
-    KvSyncParam syncParam{ 500 };
+    KvSyncParam syncParam { 500 };
     singleKvStore_->SetSyncParam(syncParam);
 
     KvSyncParam syncParamRet;
@@ -508,12 +507,12 @@ void UnSubscribeWithQueryFuzz(const uint8_t *data, size_t size)
     dataQuery.KeyPrefix("name");
     singleKvStore_->UnsubscribeWithQuery(deviceIds, dataQuery);
 }
-
 } // namespace OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
+    /* Run your code on data */
     OHOS::SetUpTestCase();
     OHOS::PutFuzz(data, size);
     OHOS::PutBatchFuzz(data, size);
@@ -536,6 +535,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::SubscribeWithQueryFuzz(data, size);
     OHOS::UnSubscribeWithQueryFuzz(data, size);
     OHOS::TearDown();
-    /* Run your code on data */
     return 0;
 }
