@@ -42,7 +42,7 @@ ohos_fuzztest("KvStoreFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "kvstore_fuzzer.cpp"]
+  sources = [ "kvstore_fuzzer.cpp" ]
 
   defines = [
     "SQLITE_ENABLE_SNAPSHOT",
