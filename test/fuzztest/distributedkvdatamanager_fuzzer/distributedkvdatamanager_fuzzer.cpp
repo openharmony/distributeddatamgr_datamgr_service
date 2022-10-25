@@ -31,17 +31,9 @@ static std::shared_ptr<SingleKvStore> singleKvStore_ = nullptr;
 DistributedKvDataManager manager;
 Options create;
 Options noCreate;
-
 UserId userId;
-
 AppId appId;
-StoreId storeId64;
-StoreId storeId65;
 StoreId storeIdTest;
-StoreId storeIdEmpty;
-
-Entry entryA;
-Entry entryB;
 
 class MyDeathRecipient : public KvStoreDeathRecipient {
 public:
@@ -263,7 +255,7 @@ void RegisterKvStoreServiceDeathRecipientFuzz(const uint8_t *data, size_t size)
 void UnRegisterKvStoreServiceDeathRecipientFuzz(const uint8_t *data, size_t size)
 {
     std::shared_ptr<KvStoreDeathRecipient> kvStoreDeathRecipient = std::make_shared<MyDeathRecipient>();
-    manager.RegisterKvStoreServiceDeathRecipient(kvStoreDeathRecipient);
+    manager.UnRegisterKvStoreServiceDeathRecipient(kvStoreDeathRecipient);
     kvStoreDeathRecipient->OnRemoteDied();
 }
 } // namespace OHOS
