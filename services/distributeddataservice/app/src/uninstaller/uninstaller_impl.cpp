@@ -105,12 +105,13 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
             }
         }
     };
-    subscriber_ = std::make_shared<UninstallEventSubscriber>(info, callback);
-    std::thread th = std::thread([this] {
+    auto subscriber = std::make_shared<UninstallEventSubscriber>(info, callback);
+    subscriber_ = subscriber;
+    std::thread th = std::thread([subscriber] {
         constexpr int32_t RETRY_TIME = 300;
         constexpr int32_t RETRY_INTERVAL = 100 * 1000;
         for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIME; ++retry) {
-            if (CommonEventManager::SubscribeCommonEvent(subscriber_)) {
+            if (CommonEventManager::SubscribeCommonEvent(subscriber)) {
                 ZLOGI("subscribe uninstall event success");
                 break;
             }
