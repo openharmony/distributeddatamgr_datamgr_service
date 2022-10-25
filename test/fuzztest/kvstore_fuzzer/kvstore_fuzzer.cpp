@@ -95,10 +95,10 @@ void SetUpTestCase(void)
         .autoSync = true,
         .kvStoreType = KvStoreType::SINGLE_VERSION };
     options.area = EL1;
-    options.baseDir = std::string("/data/service/el1/public/database/odmf");
-    AppId appId = { "odmf" };
+    AppId appId = { "kvstorefuzzertest" };
+    options.baseDir = std::string("/data/service/el1/public/database/")+appId.appId;
     /* define kvstore(database) name. */
-    StoreId storeId = { "student_single" };
+    StoreId storeId = { "fuzzer_single" };
     mkdir(options.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     /* [create and] open and initialize kvstore instance. */
     manager.GetSingleKvStore(options, appId, storeId, singleKvStore_);
@@ -106,9 +106,9 @@ void SetUpTestCase(void)
 
 void TearDown(void)
 {
-    (void)remove("/data/service/el1/public/database/odmf/key");
-    (void)remove("/data/service/el1/public/database/odmf/kvdb");
-    (void)remove("/data/service/el1/public/database/odmf");
+    (void)remove("/data/service/el1/public/database/kvstorefuzzertest/key");
+    (void)remove("/data/service/el1/public/database/kvstorefuzzertest/kvdb");
+    (void)remove("/data/service/el1/public/database/kvstorefuzzertest");
 }
 
 void PutFuzz(const uint8_t *data, size_t size)

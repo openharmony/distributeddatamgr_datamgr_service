@@ -35,10 +35,10 @@ void SetUpTestCase(void)
         .autoSync = true,
         .kvStoreType = KvStoreType::DEVICE_COLLABORATION };
     options.area = EL1;
-    options.baseDir = std::string("/data/service/el1/public/database/odmf");
-    AppId appId = { "odmf" };
+    AppId appId = { "devicekvstorefuzzertest" };
+    options.baseDir = std::string("/data/service/el1/public/database/")+appId.appId;
     /* define kvstore(database) name. */
-    StoreId storeId = { "student_device" };
+    StoreId storeId = { "fuzzer_device" };
     mkdir(options.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     /* [create and] open and initialize kvstore instance. */
     manager.GetSingleKvStore(options, appId, storeId, deviceKvStore_);
@@ -46,9 +46,9 @@ void SetUpTestCase(void)
 
 void TearDown(void)
 {
-    (void)remove("/data/service/el1/public/database/odmf/key");
-    (void)remove("/data/service/el1/public/database/odmf/kvdb");
-    (void)remove("/data/service/el1/public/database/odmf");
+    (void)remove("/data/service/el1/public/database/devicekvstorefuzzertest/key");
+    (void)remove("/data/service/el1/public/database/devicekvstorefuzzertest/kvdb");
+    (void)remove("/data/service/el1/public/database/devicekvstorefuzzertest");
 }
 
 

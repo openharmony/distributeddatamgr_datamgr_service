@@ -122,7 +122,7 @@ void SetUpTestCase(void)
     StoreId storeId = { "kvdatamanager_test" };
 
     userId.userId = "account0";
-    appId.appId = "odmf";
+    appId.appId = "distributedkvdatamanagerfuzzertest";
     create.createIfMissing = true;
     create.encrypt = false;
     create.autoSync = true;
@@ -139,9 +139,9 @@ void TearDown(void)
 {
     manager.CloseAllKvStore(appId);
     manager.DeleteAllKvStore(appId, create.baseDir);
-    (void)remove("/data/service/el1/public/database/odmf/key");
-    (void)remove("/data/service/el1/public/database/odmf/kvdb");
-    (void)remove("/data/service/el1/public/database/odmf");
+    (void)remove("/data/service/el1/public/database/distributedkvdatamanagerfuzzertest/key");
+    (void)remove("/data/service/el1/public/database/distributedkvdatamanagerfuzzertest/kvdb");
+    (void)remove("/data/service/el1/public/database/distributedkvdatamanagerfuzzertest");
 }
 
 void GetKvStoreFuzz(const uint8_t *data, size_t size)
