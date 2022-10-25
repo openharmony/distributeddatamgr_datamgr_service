@@ -62,7 +62,7 @@ RdbDelegate::RdbDelegate(const StoreMetaData &meta)
 {
     int errCode = E_OK;
     RdbStoreConfig config(meta.dataDir);
-
+    config.SetCreateNecessary(false);
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, meta.version, callback, errCode);
     if (errCode != E_OK) {
