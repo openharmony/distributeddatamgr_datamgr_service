@@ -35,10 +35,11 @@ public:
     bool Initialize(uint32_t token, std::string storeId);
     void Online(const std::string &device);
     void Offline(const std::string &device);
-    void OnBroadcast(const std::string &device, uint16_t code);
+    uint16_t OnBroadcast(const std::string &device, uint16_t code);
     void OnChanged(uint16_t code);
     void OnExchanged(const std::string &device, uint16_t code, bool isRemote = false);
     uint16_t GetCode(const StoreMetaData &metaData);
+    void Clear();
 
 private:
     static constexpr uint32_t CURRENT_VERSION = 1;
