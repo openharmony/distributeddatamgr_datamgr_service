@@ -95,7 +95,7 @@ int32_t DataShareServiceStub::OnRemoteQuery(MessageParcel &data, MessageParcel &
     }
     auto queryResult = Query(uri, predicate, columns);
     if (queryResult == nullptr) {
-        reply.WriteInt32(-2); // table not exist
+        reply.WriteInt32(TABLE_ERROR); // table not exist
         return 0;
     }
     reply.WriteInt32(0);
