@@ -31,6 +31,7 @@ private:
     int32_t OnRemoteUpdate(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteDelete(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteQuery(MessageParcel& data, MessageParcel& reply);
+    static constexpr int32_t TABLE_ERROR = -2;
 
     using RequestHandle = int (DataShareServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[DATA_SHARE_SERVICE_CMD_MAX] = {
