@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#ifndef KVSTORE_FUZZER_H
-#define KVSTORE_FUZZER_H
+#ifndef DISTRIBUTEDKVDATAMANAGER_FUZZER_H
+#define DISTRIBUTEDKVDATAMANAGER_FUZZER_H
 
-#define FUZZ_PROJECT_NAME "distributed_kv_data_manager_fuzzer"
+#define FUZZ_PROJECT_NAME "distributedkvdatamanager_fuzzer"
 
-#endif // KVSTORE_FUZZER_H
+#endif // DISTRIBUTEDKVDATAMANAGER_FUZZER_H
 

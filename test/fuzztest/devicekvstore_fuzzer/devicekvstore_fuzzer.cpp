@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "device_kvstore_fuzzer.h"
+#include "devicekvstore_fuzzer.h"
 
 #include <string>
 #include <sys/stat.h>

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "distributed_kv_data_manager_fuzzer.h"
+#include "distributedkvdatamanager_fuzzer.h"
 
 #include <vector>
 #include <sys/stat.h>
