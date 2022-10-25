@@ -50,7 +50,7 @@ public:
                std::chrono::system_clock::duration interval, std::function<void()> func);
 private:
     void Loop();
-    bool isRunning_;
+    volatile bool isRunning_;
     size_t capacity_;
     std::multimap<std::chrono::system_clock::time_point, std::function<void()>> kvTasks_;
     std::mutex mutex_;

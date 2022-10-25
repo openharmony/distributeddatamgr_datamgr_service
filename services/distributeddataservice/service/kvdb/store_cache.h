@@ -18,12 +18,14 @@
 #include <kv_store_delegate_manager.h>
 #include <chrono>
 #include <memory>
+#include <shared_mutex>
 #include "concurrent_map.h"
 #include "kv_scheduler.h"
 #include "kv_store_nb_delegate.h"
 #include "metadata/store_meta_data.h"
 #include "refbase.h"
 #include "ikvstore_observer.h"
+
 namespace OHOS::DistributedKv {
 class StoreCache {
 public:
@@ -37,6 +39,7 @@ public:
     };
     using DBStatus = DistributedDB::DBStatus;
     using DBStore = DistributedDB::KvStoreNbDelegate;
+    using Store = std::shared_ptr<DBStore>;
     using DBManager = DistributedDB::KvStoreDelegateManager;
     using DBObserver = DistributedDB::KvStoreObserver;
     using DBChangeData = DistributedDB::KvStoreChangedData;
@@ -51,7 +54,7 @@ public:
     struct DBStoreDelegate : public DBObserver {
         DBStoreDelegate(DBStore *delegate, std::shared_ptr<Observers> observers);
         ~DBStoreDelegate();
-        operator DBStore *();
+        operator std::shared_ptr<DBStore> ();
         bool operator<(const Time &time) const;
         bool Close(DBManager &manager);
         void OnChange(const DBChangeData &data) override;
@@ -62,9 +65,10 @@ public:
         mutable Time time_;
         DBStore *delegate_ = nullptr;
         std::shared_ptr<Observers> observers_ = nullptr;
+        std::shared_mutex mutex_;
     };
 
-    DBStore *GetStore(const StoreMetaData &data, std::shared_ptr<Observers> observers, DBStatus &status);
+    Store GetStore(const StoreMetaData &data, std::shared_ptr<Observers> observers, DBStatus &status);
     void CloseStore(uint32_t tokenId, const std::string &storeId);
     void CloseExcept(const std::set<int32_t> &users);
     void SetObserver(uint32_t tokenId, const std::string &storeId, std::shared_ptr<Observers> observers);

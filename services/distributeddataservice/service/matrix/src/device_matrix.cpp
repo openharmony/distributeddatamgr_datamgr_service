@@ -166,17 +166,18 @@ uint16_t DeviceMatrix::GetCode(const StoreMetaData &metaData)
 
 uint16_t DeviceMatrix::ConvertMask(const std::string &device, uint16_t code)
 {
+    Mask mask;
     MatrixMetaData meta = GetMatrixMeta(device);
     if (meta.version == CURRENT_VERSION) {
-        return code;
+        return (mask.bitset & code);
     }
 
     uint16_t result = code & META_STORE_MASK;
     code &= ~META_STORE_MASK;
     while (code != 0) {
-        uint16_t index = code & (~(code - 1));
+        uint16_t index = (~code) & (code - 1);
         // 0x6666: 1010101010101010  0x5555: 0101010101010101 1: move the high(0x6666) to low(0x5555) bits
-        index = ((index & 0x6666) >> 1) + (index & 0x5555);
+        index = ((index & 0xAAAA) >> 1) + (index & 0x5555);
         // 0xCCCC: 1100110011001100  0x3333: 0011001100110011 2: the count save at 2 bits
         index = ((index & 0xCCCC) >> 2) + (index & 0x3333);
         // 0xF0F0: 1111000011110000  0x0F0F: 0000111100001111 4: the count save at 4 bits
@@ -184,13 +185,13 @@ uint16_t DeviceMatrix::ConvertMask(const std::string &device, uint16_t code)
         // 0xFF00: 1111000011110000  0x00FF: 0000111100001111 8: the count save at 8 bits
         index = ((index & 0xFF00) >> 8) + (index & 0x00FF);
         index--;
-        if (index > meta.maskInfo.size()) {
+        if (index >= meta.maskInfo.size()) {
             return result;
         }
         auto &app = meta.maskInfo[index];
         for (size_t i = 0; i < maskApps_.size(); i++) {
             if (maskApps_[i] == app) {
-                result |= SetMask(index);
+                result |= SetMask(i);
                 break;
             }
         }
