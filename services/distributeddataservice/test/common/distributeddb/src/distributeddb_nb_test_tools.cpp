@@ -470,7 +470,7 @@ bool DistributedDBNbTestTools::CloseNbAndRelease(KvStoreDelegateManager *&manage
 }
 
 bool EndCaseDeleteDB(DistributedDB::KvStoreDelegateManager *&manager,
-    DistributedDB::KvStoreNbDelegate *&nbDelegate, const std::string base, bool isMemoryDb)
+    DistributedDB::KvStoreNbDelegate *&nbDelegate, const std::string &base, bool isMemoryDb)
 {
     bool isResult = true;
     isResult = (manager->CloseKvStore(nbDelegate) == OK);
@@ -516,12 +516,11 @@ bool DistributedDBNbTestTools::ModifyDatabaseFile(const std::string &fileDir)
         return false;
     }
 
-    uint64_t fileSize;
     std::ios::pos_type pos = dataFile.tellg();
     if (pos < 0) {
         return false;
     } else {
-        fileSize = static_cast<uint64_t>(pos);
+        uint64_t fileSize = static_cast<uint64_t>(pos);
         if (fileSize < 1024) { // the least page size is 1024 bytes.
             MST_LOG("Invalid database file:%lld.", static_cast<long long>(fileSize));
             return false;
@@ -558,7 +557,6 @@ bool DistributedDBNbTestTools::MoveToNextFromBegin(KvStoreResultSet &resultSet,
         return result;
     }
     Entry entry;
-    int positionGot;
     for (int position = -1; position < recordCnt; ++position) { // the first pos after getentries is -1.
         bool expectRes = resultSet.MoveToNext();
         if (position < (recordCnt - 1)) {
@@ -570,7 +568,7 @@ bool DistributedDBNbTestTools::MoveToNextFromBegin(KvStoreResultSet &resultSet,
             MST_LOG("resultSet.MoveToNext() doesn't meet expectations!!!");
             break;
         }
-        positionGot = position + 1;
+        int positionGot = position + 1;
         result = result && (resultSet.GetPosition() == positionGot);
         if (!result) {
             MST_LOG("resultSet.GetPosition() != positionGot!!!");

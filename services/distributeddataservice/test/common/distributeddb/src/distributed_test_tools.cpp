@@ -82,9 +82,8 @@ bool CompareEntriesVector(std::vector<DistributedDB::Entry>& retVec,
     vector<std::reference_wrapper<Entry>> expVec(expectVec.begin(), expectVec.end());
     sort(retVector.begin(), retVector.end(), DistributedTestTools::CompareKey);
     sort(expVec.begin(), expVec.end(), DistributedTestTools::CompareKey);
-    bool result = true;
     for (uint64_t at = 0; at < retVector.size(); at++) {
-        result = ((retVector[at].get().key == expVec[at].get().key) &&
+        bool result = ((retVector[at].get().key == expVec[at].get().key) &&
             (retVector[at].get().value == expVec[at].get().value));
         if (!result) {
             MST_LOG("[CompareEntriesVector] compare list failed at the position: %llu", ULL(at));
@@ -172,7 +171,7 @@ bool GetRandBool()
     return disRand(genRand);
 }
 
-bool PutEntries(KvStoreNbDelegate *&delegate, vector<Entry> &entries)
+bool PutEntries(KvStoreNbDelegate *&delegate, const vector<Entry> &entries)
 {
     for (const auto &entry : entries) {
         if (delegate->Put(entry.key, entry.value) != OK) {
@@ -274,17 +273,17 @@ public:
         this->entries_ = entries;
     }
 
-    DBStatus GetStatus()
+    DBStatus GetStatus() const
     {
         return status_;
     }
 
-    const Value &GetValue()
+    const Value &GetValue() const
     {
         return value_;
     }
 
-    const vector<Entry> &GetValueVector()
+    const vector<Entry> &GetValueVector() const
     {
         return entries_;
     }
@@ -873,7 +872,7 @@ void GetSysInfo(DistributedTestSysInfo &si, SeqNo seqNo)
 }
 
 void CheckBeforeOpenDB(bool getSysInfo, steady_clock::time_point &tick,
-    vector<Entry> data1, vector<Key> keys, DistributedTestSysInfo &si)
+    const vector<Entry> &data1, const vector<Key> &keys, DistributedTestSysInfo &si)
 {
     if (!getSysInfo) {
         MST_LOG("[gen data]:%zu, %zu.", data1.size(), keys.size());
@@ -902,8 +901,8 @@ void PutDuration(steady_clock::time_point &tick, PerformanceData &performanceDat
 {
     bool getSysInfo = performanceData.getSysInfo;
     int putGetTimes = performanceData.putGetTimes;
-    double duration;
     if (!getSysInfo) {
+        double duration;
         TickTock(tick, duration);
         performanceData.putDuration = duration / putGetTimes;
         MST_LOG("[time calculator]put first [%d]keys,\tvalue[%dB-length],\tcost[%fus],\tper[%fus].",
@@ -1114,10 +1113,10 @@ bool DistributedTestTools::CalculateGetPutPerformance(PerformanceData &performan
         return false;
     }
     if (getBatch) {
-        std::vector<Entry> ev = DistributedTestTools::GetEntries(*snapShot, PERFORMANCEKEY);
+        DistributedTestTools::GetEntries(*snapShot, PERFORMANCEKEY);
     } else {
         for (auto key = keys.begin(); key != keys.end(); ++key) {
-            Value valueResult = DistributedTestTools::Get(*snapShot, *key);
+            DistributedTestTools::Get(*snapShot, *key);
         }
     }
     store1->ReleaseKvStoreSnapshot(snapShot);
@@ -1374,7 +1373,7 @@ void ReleaseSqliteResource(sqlite3_stmt *&statement, sqlite3 *&db)
 
 bool SqliteBindToStatement(sqlite3_stmt *&statement, sqlite3 *&db, std::vector<DistributedDB::Key> &sqlParam)
 {
-    int errCode = 0;
+    int errCode;
     for (unsigned int index = 0; index < sqlParam.size(); index++) {
         if (sqlParam[index].empty()) {
             errCode = sqlite3_bind_zeroblob(statement, index, -1); // -1 for zero-length blob.
@@ -1556,7 +1555,7 @@ void DistributedTestTools::CopyFile(const string &srcFile, const string &destFil
 }
 
 void TransactionBeforOpenDB(bool getSysInfo, steady_clock::time_point &tick,
-    vector<Entry> &data1, vector<Key> &keys, DistributedTestSysInfo &si)
+    const vector<Entry> &data1, const vector<Key> &keys, DistributedTestSysInfo &si)
 {
     if (!getSysInfo) {
         MST_LOG("[gen data]:%zu, %zu.", data1.size(), keys.size());
