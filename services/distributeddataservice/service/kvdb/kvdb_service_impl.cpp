@@ -46,11 +46,17 @@ using DMAdapter = DistributedData::DeviceManagerAdapter;
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
 {
-    FeatureSystem::GetInstance().RegisterCreator("kv_store", []() { return std::make_shared<KVDBServiceImpl>(); });
+    FeatureSystem::GetInstance().RegisterCreator("kv_store", [this]() {
+        if (product_ == nullptr) {
+            product_ = std::make_shared<KVDBServiceImpl>();
+        }
+        return product_;
+    });
 }
 
 KVDBServiceImpl::Factory::~Factory()
 {
+    product_ = nullptr;
 }
 
 KVDBServiceImpl::KVDBServiceImpl()
@@ -65,6 +71,7 @@ KVDBServiceImpl::KVDBServiceImpl()
             ZLOGE("load meta failed!");
             return;
         }
+
         auto mask = matrixEvent.GetMask();
         for (const auto &data : metaData) {
             StoreMetaDataLocal localMetaData;

@@ -40,6 +40,7 @@
 #include "metadata/meta_data_manager.h"
 #include "rdb_types.h"
 #include "serializable/serializable.h"
+#include "utils/anonymous.h"
 #include "utils/crypto.h"
 
 namespace OHOS {
@@ -367,7 +368,7 @@ void KvStoreMetaManager::KvStoreMetaObserver::HandleChanges(CHANGE_FLAG flag,
     for (const auto &entry : entries) {
         std::string key(entry.key.begin(), entry.key.end());
         for (const auto &item : handlerMap_) {
-            ZLOGI("flag:%{public}d, key:%{public}s", flag, key.c_str());
+            ZLOGI("flag:%{public}d, key:%{public}s", flag, Anonymous::Change(key).c_str());
             if (key.find(item.first) == 0) {
                 item.second(entry.key, entry.value, flag);
             }
