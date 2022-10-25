@@ -199,8 +199,8 @@ void SleepOneSecond()
     std::this_thread::sleep_for(std::chrono::duration<int>(1));
 }
 
-bool DeleteDataBase(bool success_, KvStoreDelegate *delegate1, KvStoreDelegate *delegate2,
-    KvStoreDelegateManager *delegateManager1, KvStoreDelegateManager *delegateManager2)
+bool DeleteDataBase(bool success_, KvStoreDelegate *&delegate1, KvStoreDelegate *&delegate2,
+    KvStoreDelegateManager *&delegateManager1, KvStoreDelegateManager *&delegateManager2)
 {
     SleepOneSecond();
     if ((delegateManager1->CloseKvStore(delegate1) != OK) ||

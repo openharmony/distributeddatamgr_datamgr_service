@@ -16,6 +16,7 @@
 #define DISTRIBUTED_DB_MODULE_TEST_TOOLS_H
 #include <condition_variable>
 #include <thread>
+#include <vector>
 
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
@@ -118,7 +119,7 @@ DistributedDB::Value GetValueWithInt(int val);
 std::vector<DistributedDB::Entry> GenRanKeyVal(int putGetTimes, int keyLength, int valueLength, char val);
 std::vector<DistributedDB::Key> GetKeysFromEntries(std::vector<DistributedDB::Entry> entries, bool random);
 bool GetRandBool();
-bool PutEntries(DistributedDB::KvStoreNbDelegate *&delegate, std::vector<DistributedDB::Entry> &entries);
+bool PutEntries(DistributedDB::KvStoreNbDelegate *&delegate, const std::vector<DistributedDB::Entry> &entries);
 
 using SysTime = std::chrono::time_point<std::chrono::steady_clock, std::chrono::microseconds>;
 using SysDurTime = std::chrono::duration<uint64_t, std::micro>;
