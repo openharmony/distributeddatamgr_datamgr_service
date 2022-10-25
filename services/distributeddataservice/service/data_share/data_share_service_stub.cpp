@@ -99,7 +99,7 @@ int32_t DataShareServiceStub::OnRemoteQuery(MessageParcel &data, MessageParcel &
         return 0;
     }
     reply.WriteInt32(0);
-    auto result = ISharedResultSet::WriteToParcel(Query(uri, predicate, columns), reply);
+    auto result = ISharedResultSet::WriteToParcel(queryResult, reply);
     if (result == nullptr) {
         ZLOGW("!resultSet->Marshalling(reply)");
         return -1;
