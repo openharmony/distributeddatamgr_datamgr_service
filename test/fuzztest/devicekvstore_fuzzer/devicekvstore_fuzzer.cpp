@@ -36,7 +36,7 @@ void SetUpTestCase(void)
         .kvStoreType = KvStoreType::DEVICE_COLLABORATION };
     options.area = EL1;
     AppId appId = { "devicekvstorefuzzertest" };
-    options.baseDir = std::string("/data/service/el1/public/database/")+appId.appId;
+    options.baseDir = std::string("/data/service/el1/public/database/") + appId.appId;
     /* define kvstore(database) name. */
     StoreId storeId = { "fuzzer_device" };
     mkdir(options.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
@@ -50,7 +50,6 @@ void TearDown(void)
     (void)remove("/data/service/el1/public/database/devicekvstorefuzzertest/kvdb");
     (void)remove("/data/service/el1/public/database/devicekvstorefuzzertest");
 }
-
 
 void PutFuzz(const uint8_t *data, size_t size)
 {

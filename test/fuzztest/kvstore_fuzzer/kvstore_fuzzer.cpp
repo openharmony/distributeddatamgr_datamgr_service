@@ -96,7 +96,7 @@ void SetUpTestCase(void)
         .kvStoreType = KvStoreType::SINGLE_VERSION };
     options.area = EL1;
     AppId appId = { "kvstorefuzzertest" };
-    options.baseDir = std::string("/data/service/el1/public/database/")+appId.appId;
+    options.baseDir = std::string("/data/service/el1/public/database/") + appId.appId;
     /* define kvstore(database) name. */
     StoreId storeId = { "fuzzer_single" };
     mkdir(options.baseDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
