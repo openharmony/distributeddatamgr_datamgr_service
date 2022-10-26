@@ -117,7 +117,7 @@ ohos_unittest("KvStoreDataServiceTest") {
   part_name = "datamgr_service"
 }
 
-ohos_unittest("KvStoreBackupTest") {
+ohos_unittest("SessionManagerTest") {
   module_out_path = module_output_path
 
   sources = [
@@ -125,14 +125,14 @@ ohos_unittest("KvStoreBackupTest") {
     "../src/feature_stub_impl.cpp",
     "../src/kvstore_account_observer.cpp",
     "../src/kvstore_app_accessor.cpp",
-    "../src/kvstore_data_service.cpp",
     "../src/kvstore_device_listener.cpp",
     "../src/kvstore_meta_manager.cpp",
     "../src/security/security.cpp",
     "../src/security/sensitive.cpp",
     "../src/session_manager/route_head_handler_impl.cpp",
     "../src/session_manager/session_manager.cpp",
-    "unittest/kvstore_backup_test.cpp",
+    "../src/session_manager/upgrade_manager.cpp",
+    "unittest/session_manager_test.cpp",
   ]
 
   cflags_cc = [ "-DUT_TEST" ]
@@ -277,6 +277,7 @@ group("unittest") {
     ":KvStoreDataServiceTest",
     ":KvStoreFlowCtrlManagerTest",
     ":KvStoreUninstallerTest",
+    ":SessionManagerTest",
   ]
 }
 
