@@ -30,6 +30,8 @@ group("fuzztest") {
   deps = []
   deps += [
     "test/fuzztest/autolaunch_fuzzer:fuzztest",
+    "test/fuzztest/devicekvstore_fuzzer:fuzztest",
+    "test/fuzztest/distributedkvdatamanager_fuzzer:fuzztest",
     "test/fuzztest/kvstore_fuzzer:fuzztest",
     "test/fuzztest/kvstoredisksize_fuzzer:fuzztest",
   ]
