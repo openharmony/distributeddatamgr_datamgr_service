@@ -28,12 +28,12 @@ using namespace OHOS::DistributedKv;
 namespace OHOS {
 static std::shared_ptr<SingleKvStore> singleKvStore_ = nullptr;
 
-DistributedKvDataManager manager;
-Options create;
-Options noCreate;
-UserId userId;
-AppId appId;
-StoreId storeIdTest;
+static DistributedKvDataManager manager;
+static Options create;
+static Options noCreate;
+static UserId userId;
+static AppId appId;
+static StoreId storeIdTest;
 
 class MyDeathRecipient : public KvStoreDeathRecipient {
 public:
@@ -48,72 +48,9 @@ public:
     }
 };
 
-class DeviceObserverTestImpl : public KvStoreObserver {
-public:
-    std::vector<Entry> insertEntries_;
-    std::vector<Entry> updateEntries_;
-    std::vector<Entry> deleteEntries_;
-    bool isClear_ = false;
-    DeviceObserverTestImpl();
-    ~DeviceObserverTestImpl()
-    {
-    }
-
-    DeviceObserverTestImpl(const DeviceObserverTestImpl &) = delete;
-    DeviceObserverTestImpl &operator=(const DeviceObserverTestImpl &) = delete;
-    DeviceObserverTestImpl(DeviceObserverTestImpl &&) = delete;
-    DeviceObserverTestImpl &operator=(DeviceObserverTestImpl &&) = delete;
-
-    void OnChange(const ChangeNotification &changeNotification);
-};
-
-void DeviceObserverTestImpl::OnChange(const ChangeNotification &changeNotification)
-{
-    const auto &insert = changeNotification.GetInsertEntries();
-    insertEntries_.clear();
-    for (const auto &entry : insert) {
-        insertEntries_.push_back(entry);
-    }
-
-    const auto &update = changeNotification.GetUpdateEntries();
-    updateEntries_.clear();
-    for (const auto &entry : update) {
-        updateEntries_.push_back(entry);
-    }
-
-    const auto &del = changeNotification.GetDeleteEntries();
-    deleteEntries_.clear();
-    for (const auto &entry : del) {
-        deleteEntries_.push_back(entry);
-    }
-
-    isClear_ = changeNotification.IsClear();
-}
-
-DeviceObserverTestImpl::DeviceObserverTestImpl()
-{
-    insertEntries_ = {};
-    updateEntries_ = {};
-    deleteEntries_ = {};
-    isClear_ = false;
-}
-
-class DeviceSyncCallbackTestImpl : public KvStoreSyncCallback {
-public:
-    void SyncCompleted(const std::map<std::string, Status> &results);
-};
-
-void DeviceSyncCallbackTestImpl::SyncCompleted(const std::map<std::string, Status> &results)
-{
-}
-
 void SetUpTestCase(void)
 {
-    DistributedKvDataManager manager;
-
-    StoreId storeId = { "kvdatamanager_test" };
-
-    userId.userId = "account0";
+    userId.userId = "account";
     appId.appId = "distributedkvdatamanagerfuzzertest";
     create.createIfMissing = true;
     create.encrypt = false;
@@ -245,14 +182,14 @@ void DeleteAllKvStoreFuzz3(const uint8_t *data, size_t size)
     manager.DeleteAllKvStore(appId, create.baseDir);
 }
 
-void RegisterKvStoreServiceDeathRecipientFuzz(const uint8_t *data, size_t size)
+void RegisterKvStoreServiceDeathRecipientFuzz()
 {
     std::shared_ptr<KvStoreDeathRecipient> kvStoreDeathRecipient = std::make_shared<MyDeathRecipient>();
     manager.RegisterKvStoreServiceDeathRecipient(kvStoreDeathRecipient);
     kvStoreDeathRecipient->OnRemoteDied();
 }
 
-void UnRegisterKvStoreServiceDeathRecipientFuzz(const uint8_t *data, size_t size)
+void UnRegisterKvStoreServiceDeathRecipientFuzz()
 {
     std::shared_ptr<KvStoreDeathRecipient> kvStoreDeathRecipient = std::make_shared<MyDeathRecipient>();
     manager.UnRegisterKvStoreServiceDeathRecipient(kvStoreDeathRecipient);
@@ -272,8 +209,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::DeleteAllKvStoreFuzz1(data, size);
     OHOS::DeleteAllKvStoreFuzz2(data, size);
     OHOS::DeleteAllKvStoreFuzz3(data, size);
-    OHOS::RegisterKvStoreServiceDeathRecipientFuzz(data, size);
-    OHOS::UnRegisterKvStoreServiceDeathRecipientFuzz(data, size);
+    OHOS::RegisterKvStoreServiceDeathRecipientFuzz();
+    OHOS::UnRegisterKvStoreServiceDeathRecipientFuzz();
     OHOS::TearDown();
     return 0;
 }

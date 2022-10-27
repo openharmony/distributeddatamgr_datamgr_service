@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "kvstore_fuzzer.h"
+#include "singlekvstore_fuzzer.h"
 
 #include <string>
 #include <sys/stat.h>
@@ -30,15 +30,10 @@ static std::shared_ptr<SingleKvStore> singleKvStore_ = nullptr;
 
 class DeviceObserverTestImpl : public KvStoreObserver {
 public:
-    std::vector<Entry> insertEntries_;
-    std::vector<Entry> updateEntries_;
-    std::vector<Entry> deleteEntries_;
-    bool isClear_ = false;
     DeviceObserverTestImpl();
     ~DeviceObserverTestImpl()
     {
     }
-
     DeviceObserverTestImpl(const DeviceObserverTestImpl &) = delete;
     DeviceObserverTestImpl &operator=(const DeviceObserverTestImpl &) = delete;
     DeviceObserverTestImpl(DeviceObserverTestImpl &&) = delete;
@@ -49,33 +44,10 @@ public:
 
 void DeviceObserverTestImpl::OnChange(const ChangeNotification &changeNotification)
 {
-    const auto &insert = changeNotification.GetInsertEntries();
-    insertEntries_.clear();
-    for (const auto &entry : insert) {
-        insertEntries_.push_back(entry);
-    }
-
-    const auto &update = changeNotification.GetUpdateEntries();
-    updateEntries_.clear();
-    for (const auto &entry : update) {
-        updateEntries_.push_back(entry);
-    }
-
-    const auto &del = changeNotification.GetDeleteEntries();
-    deleteEntries_.clear();
-    for (const auto &entry : del) {
-        deleteEntries_.push_back(entry);
-    }
-
-    isClear_ = changeNotification.IsClear();
 }
 
 DeviceObserverTestImpl::DeviceObserverTestImpl()
 {
-    insertEntries_ = {};
-    updateEntries_ = {};
-    deleteEntries_ = {};
-    isClear_ = false;
 }
 
 class DeviceSyncCallbackTestImpl : public KvStoreSyncCallback {
@@ -106,9 +78,9 @@ void SetUpTestCase(void)
 
 void TearDown(void)
 {
-    (void)remove("/data/service/el1/public/database/kvstorefuzzertest/key");
-    (void)remove("/data/service/el1/public/database/kvstorefuzzertest/kvdb");
-    (void)remove("/data/service/el1/public/database/kvstorefuzzertest");
+    (void)remove("/data/service/el1/public/database/singlekvstorefuzzertest/key");
+    (void)remove("/data/service/el1/public/database/singlekvstorefuzzertest/kvdb");
+    (void)remove("/data/service/el1/public/database/singlekvstorefuzzertest");
 }
 
 void PutFuzz(const uint8_t *data, size_t size)
@@ -430,7 +402,7 @@ void SyncFuzz2(const uint8_t *data, size_t size)
     std::vector<std::string> deviceIds = { deviceId };
     DataQuery dataQuery;
     dataQuery.KeyPrefix("name");
-    singleKvStore_->Sync(deviceIds, SyncMode::PUSH, dataQuery, nullptr);
+    singleKvStore_->Sync(deviceIds, SyncMode::PULL, dataQuery, nullptr);
     for (size_t i = 0; i < sum; i++) {
         singleKvStore_->Delete(skey + std::to_string(i));
     }
@@ -449,7 +421,7 @@ void SyncParamFuzz(const uint8_t *data, size_t size)
         singleKvStore_->Put(prefix + skey + std::to_string(i), skey + std::to_string(i));
     }
 
-    KvSyncParam syncParam { 500 };
+    KvSyncParam syncParam{ 500 };
     singleKvStore_->SetSyncParam(syncParam);
 
     KvSyncParam syncParamRet;
@@ -526,6 +498,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::GetCountFuzz2(data, size);
     OHOS::SyncFuzz1(data, size);
     OHOS::SyncFuzz2(data, size);
+    OHOS::SubscribeKvStoreFuzz(data, size);
     OHOS::RemoveDeviceDataFuzz(data, size);
     OHOS::GetSecurityLevelFuzz(data, size);
     OHOS::SyncCallbackFuzz(data, size);
