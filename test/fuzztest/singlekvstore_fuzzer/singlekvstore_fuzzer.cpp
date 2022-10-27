@@ -421,7 +421,7 @@ void SyncParamFuzz(const uint8_t *data, size_t size)
         singleKvStore_->Put(prefix + skey + std::to_string(i), skey + std::to_string(i));
     }
 
-    KvSyncParam syncParam{ 500 };
+    KvSyncParam syncParam { 500 };
     singleKvStore_->SetSyncParam(syncParam);
 
     KvSyncParam syncParamRet;

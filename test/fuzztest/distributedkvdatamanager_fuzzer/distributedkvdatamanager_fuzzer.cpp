@@ -24,6 +24,9 @@
 using namespace OHOS;
 using namespace OHOS::DistributedKv;
 
+class DistributedKvDataManagerFuzzer {
+    /* Keep C++ file names the same as the class name */
+};
 
 namespace OHOS {
 static std::shared_ptr<SingleKvStore> singleKvStore_ = nullptr;
