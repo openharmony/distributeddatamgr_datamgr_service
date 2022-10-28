@@ -105,13 +105,13 @@ void ChangeNotificationFuzz(std::string stringBase, bool boolBase)
     ChangeNotification changeIn1(std::move(inserts), std::move(updates), std::move(deleteds), stringBase, boolBase);
     MessageParcel parcel1;
     ITypesUtil::Marshal(parcel1, changeIn1);
-    ChangeNotification changeOut1({ }, { }, { }, "", !boolBase);
+    ChangeNotification changeOut1 ({ }, { }, { }, "", !boolBase);
     ITypesUtil::Unmarshal(parcel1, changeOut1);
 
     ChangeNotification changeIn2(std::move(inserts), std::move(updates), std::move(deleteds), stringBase, boolBase);
     MessageParcel parcel2;
     changeIn2.Marshalling(parcel2);
-    ChangeNotification changeOut2({ }, { }, { }, "", !boolBase);
+    ChangeNotification changeOut2 ({ }, { }, { }, "", !boolBase);
     changeOut2.Unmarshalling(parcel2);
 }
 
