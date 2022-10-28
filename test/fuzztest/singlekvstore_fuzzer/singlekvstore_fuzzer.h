@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#ifndef KVSTORE_FUZZER_H
-#define KVSTORE_FUZZER_H
+#ifndef SINGLEKVSTORE_FUZZER_H
+#define SINGLEKVSTORE_FUZZER_H
 
-#define FUZZ_PROJECT_NAME "kvstore_fuzzer"
+#define FUZZ_PROJECT_NAME "singlekvstore_fuzzer"
 
-#endif // KVSTORE_FUZZER_H
+#endif // SINGLEKVSTORE_FUZZER_H
 
