@@ -31,7 +31,8 @@ using namespace OHOS::DistributedData;
 using namespace OHOS;
 using namespace OHOS::Security::AccessToken;
 constexpr const char *PEER_DEVICE_ID = "PEER_DEVICE_ID";
-constexpr int PEER_USER_ID = 101;
+constexpr int PEER_USER_ID1 = 101;
+constexpr int PEER_USER_ID2 = 100;
 class SessionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
@@ -48,9 +49,9 @@ public:
 
         UserStatus status;
         status.isActive = true;
-        status.id = PEER_USER_ID;
+        status.id = PEER_USER_ID1;
         userMetaData.users = { status };
-        status.id = 100;
+        status.id = PEER_USER_ID2;
         userMetaData.users.emplace_back(status);
 
         auto peerUserMetaKey = UserMetaRow::GetKeyFor(userMetaData.deviceId);
