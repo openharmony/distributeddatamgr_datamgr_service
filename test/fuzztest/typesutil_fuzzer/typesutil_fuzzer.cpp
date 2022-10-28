@@ -139,7 +139,8 @@ void StringFuzz(const std::string &stringBase)
     ITypesUtil::Unmarshal(parcel, stringOut);
 }
 
-void RdbSyncerParamFuzz(const std::string &stringBase, int32_t intBase, const std::vector<uint8_t> &vecBase, bool boolBase)
+void RdbSyncerParamFuzz(const std::string &stringBase, int32_t intBase, const std::vector<uint8_t> &vecBase,
+    bool boolBase)
 {
     MessageParcel parcel;
     DistributedRdb::RdbSyncerParam rdbSyncerParamIn;
