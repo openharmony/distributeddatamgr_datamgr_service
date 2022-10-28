@@ -38,9 +38,7 @@ void BlobEachOtherOption(Blob blob1, Blob blob2)
 {
     blob1.Compare(blob2);
     MessageParcel parcel;
-    blob1.Marshalling(parcel);
     Blob blobOut;
-    blobOut.Unmarshalling(parcel);
     blob1.Compare(blobOut);
     blob1.StartsWith(blob2);
 }

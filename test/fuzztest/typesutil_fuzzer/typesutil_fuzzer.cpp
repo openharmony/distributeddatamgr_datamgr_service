@@ -102,19 +102,12 @@ void ChangeNotificationFuzz(std::string stringBase, bool boolBase)
     updates.push_back(update);
     deleteds.push_back(del);
 
-    ChangeNotification changeIn1(std::move(inserts), std::move(updates), std::move(deleteds), stringBase, boolBase);
-    MessageParcel parcel1;
-    ITypesUtil::Marshal(parcel1, changeIn1);
-    std::vector<Entry> empty1;
-    ChangeNotification changeOut1(std::move(empty1), {}, {}, "", !boolBase);
-    ITypesUtil::Unmarshal(parcel1, changeOut1);
-
-    ChangeNotification changeIn2(std::move(inserts), std::move(updates), std::move(deleteds), stringBase, boolBase);
-    MessageParcel parcel2;
-    changeIn2.Marshalling(parcel2);
-    std::vector<Entry> empty2;
-    ChangeNotification changeOut2(std::move(empty2), {}, {}, "", !boolBase);
-    changeOut2.Unmarshalling(parcel2);
+    ChangeNotification changeIn(std::move(inserts), std::move(updates), std::move(deleteds), stringBase, boolBase);
+    MessageParcel parcel;
+    ITypesUtil::Marshal(parcel, changeIn);
+    std::vector<Entry> empty;
+    ChangeNotification changeOut(std::move(empty), {}, {}, "", !boolBase);
+    ITypesUtil::Unmarshal(parcel, changeOut);
 }
 
 void IntFuzz(size_t valBase)
@@ -219,7 +212,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::SyncPolicyFuzz(fuzzedUInt32);
     OHOS::ChangeNotificationFuzz(fuzzedString, fuzzedBoolean);
     OHOS::IntFuzz(size);
-    OHOS::IntFuzz(size);
+    OHOS::StringFuzz(fuzzedString);
     OHOS::RdbSyncerParamFuzz(fuzzedString, fuzzedInt32, fuzzedVec, fuzzedBoolean);
     OHOS::RdbSyncOptionFuzz(fuzzedBoolean);
     OHOS::RdbPredicatesFuzz(fuzzedString, fuzzedBoolean);

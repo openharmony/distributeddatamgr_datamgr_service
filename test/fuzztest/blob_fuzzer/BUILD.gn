@@ -20,7 +20,7 @@ ohos_fuzztest("BlobFuzzTest") {
   module_out_path = "datamgr_service/distributeddatafwk"
 
   include_dirs = [
-    "ipc/interface/innerkits/ipc_core/include",
+    "ipc/interfaces/innerkits/ipc_core/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/rdb/include",
