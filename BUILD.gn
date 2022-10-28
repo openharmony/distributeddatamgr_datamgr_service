@@ -32,8 +32,8 @@ group("fuzztest") {
     "test/fuzztest/autolaunch_fuzzer:fuzztest",
     "test/fuzztest/devicekvstore_fuzzer:fuzztest",
     "test/fuzztest/distributedkvdatamanager_fuzzer:fuzztest",
-    "test/fuzztest/kvstore_fuzzer:fuzztest",
     "test/fuzztest/kvstoredisksize_fuzzer:fuzztest",
+    "test/fuzztest/singlekvstore_fuzzer:fuzztest",
   ]
 }
 ###############################################################################
