@@ -78,7 +78,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     blob7 = Blob(blob6);
     OHOS::BlobOption(fuzzedString);
     int count = 10;
-    uint8_t *writePtr = (uint8_t *)new char[count];
+    uint8_t *writePtr = reinterpret_cast<uint8_t *>(new char[count]);
     Blob blob8(fuzzedString);
     blob8.WriteToBuffer(writePtr, count);
     const uint8_t *readPtr;
