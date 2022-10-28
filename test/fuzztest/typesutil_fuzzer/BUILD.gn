@@ -38,7 +38,7 @@ ohos_fuzztest("TypesUtilFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  sources = [ "blob_fuzzer.cpp" ]
+  sources = [ "typesutil_fuzzer.cpp" ]
 
   deps = []
 
