@@ -277,6 +277,7 @@ group("unittest") {
     ":KvStoreDataServiceTest",
     ":KvStoreFlowCtrlManagerTest",
     ":KvStoreUninstallerTest",
+    ":SessionManagerTest",
   ]
 }
 

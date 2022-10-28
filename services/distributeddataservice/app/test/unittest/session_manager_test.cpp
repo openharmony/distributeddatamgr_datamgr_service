@@ -14,6 +14,7 @@
  */
 
 #include "accesstoken_kit.h"
+#include "bootstrap.h"
 #include "communication_provider.h"
 #include "gtest/gtest.h"
 #include "kvstore_meta_manager.h"
@@ -35,6 +36,9 @@ class SessionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
     {
+        Bootstrap::GetInstance().LoadComponents();
+        Bootstrap::GetInstance().LoadDirectory();
+        Bootstrap::GetInstance().LoadCheckers();
         KvStoreMetaManager::GetInstance().InitMetaParameter();
         KvStoreMetaManager::GetInstance().InitMetaListener();
 
@@ -46,6 +50,8 @@ public:
         status.isActive = true;
         status.id = PEER_USER_ID;
         userMetaData.users = { status };
+        status.id = 100;
+        userMetaData.users.emplace_back(status);
 
         auto peerUserMetaKey = UserMetaRow::GetKeyFor(userMetaData.deviceId);
         MetaDataManager::GetInstance().SaveMeta({ peerUserMetaKey.begin(), peerUserMetaKey.end() }, userMetaData);
@@ -117,6 +123,6 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     recvHandler->ParseHeadData(data.get(), routeHeadSize, parseSize, users);
     EXPECT_EQ(routeHeadSize, parseSize);
     ASSERT_EQ(users.size(), 1);
-    EXPECT_EQ(users[0], "101");
+    EXPECT_EQ(users[0], "100");
 }
 } // namespace
