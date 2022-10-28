@@ -92,9 +92,6 @@ DBStatus DistributedRdbTools::GetOpenStoreStatus(const RelatetionalStoreManager 
         MST_LOG("%s GetRdbStore failed! manager nullptr.", TAG.c_str());
         return DBStatus::DB_ERROR;
     }
-    if (delegate != nullptr) {
-        delegate = nullptr;
-    }
     DBStatus status = manager->OpenStore(param.path, param.storeId, delegate);
     if (delegate == nullptr) {
         MST_LOG("%s GetRdbStore failed! delegate nullptr.", TAG.c_str());
@@ -128,12 +125,12 @@ bool DistributedRdbTools::InitSqlite3Store(sqlite3 *&db, const RdbParameters &pa
     const std::string dbName = param.path + param.storeId + ".db";
     DBStributedDB::OS::RemoveFile(dbName);
     int errCode = sqlite3_open(dbName, &db);
-    if (errCode1 != SQLITE_OK) {
+    if (errCode != SQLITE_OK) {
         MST_LOG("sqlite3_open Failed!");
         return false;
     }
-    errCode = sqlite3_exec(db, "PRAGMA journal_mode = WAL;", 0, 0, 0);
-    if (errCode != SQLITE_OK) {
+    int errCode1 = sqlite3_exec(db, "PRAGMA journal_mode = WAL;", 0, 0, 0);
+    if (errCode1 != SQLITE_OK) {
         MST_LOG("PRAGMA journal_mode = WAL Failed!");
         return false;
     }
@@ -166,7 +163,7 @@ bool DistributedRdbTools::InitTableDataAndTrigger(const sqlite3 *&db)
     SqliteExecSql(db, SQL_INSERT_NORMAL_TABLE);
 
     for (int i = 1; i <= MAX_DISTRIBUTED_TABLE_COUNT + 1; i++) {
-        std::string str_0 = "RDB_" + i;
+        std::string str_0 = "RDB_" + std::to_string(i);
         std::string str_1 = "CREATE TABLE IF NOT EXISTS "
         std::string str_2 = "( id    INT    NOT NULL   PRIMARY KEY  AUTO_INCREMENT,"  \
             "name  VARCHAR(100)   NOT NULL, age VARCHAR(100)   NOT NULL);";
@@ -191,32 +188,32 @@ bool DistributedRdbTools::AlterTableAttributes(const sqlite3 *&db)
         return false;
     }
 
-    errCode = sqlite3_exec(db, SQL_ADD_INDEX_TABLE2, nullptr, nullptr, &errMsg);
-    if (errCode != SQLITE_OK && errMsg != nullptr) {
+    int errCode1 = sqlite3_exec(db, SQL_ADD_INDEX_TABLE2, nullptr, nullptr, &errMsg);
+    if (errCode1 != SQLITE_OK && errMsg != nullptr) {
         MST_LOG("sqlite3_exec SQL_ADD_INDEX_TABLE2 Failed(%s)", errMsg.c_str());
         return false;
     }
 
-    errCode = sqlite3_exec(db, SQL_DROP_TABLE3, nullptr, nullptr, &errMsg);
-    if (errCode != SQLITE_OK && errMsg != nullptr) {
+    int errCode2 = sqlite3_exec(db, SQL_DROP_TABLE3, nullptr, nullptr, &errMsg);
+    if (errCode2 != SQLITE_OK && errMsg != nullptr) {
         MST_LOG("sqlite3_exec SQL_DROP_TABLE3 Failed(%s)", errMsg.c_str());
         return false;
     }
 
-    errCode = sqlite3_exec(db, SQL_DROP_CREATE_TABLE3, nullptr, nullptr, &errMsg);
-    if (errCode1 != SQLITE_OK && errMsg != nullptr) {
+    int errCode3 = sqlite3_exec(db, SQL_DROP_CREATE_TABLE3, nullptr, nullptr, &errMsg);
+    if (errCode3 != SQLITE_OK && errMsg != nullptr) {
         MST_LOG("sqlite3_exec SQL_ADD_INDEX_TABLE Failed(%s)", errMsg.c_str());
         return false;
     }
 
-    errCode = sqlite3_exec(db, SQL_DROP_TABLE4, nullptr, nullptr, &errMsg);
-    if (errCode != SQLITE_OK && errMsg != nullptr) {
+    int errCode4 = sqlite3_exec(db, SQL_DROP_TABLE4, nullptr, nullptr, &errMsg);
+    if (errCode4 != SQLITE_OK && errMsg != nullptr) {
         MST_LOG("sqlite3_exec SQL_DROP_TABLE4 Failed(%s)", errMsg.c_str());
         return false;
     }
 
-    errCode = sqlite3_exec(db, SQL_DROP_CREATE_TABLE4, nullptr, nullptr, &errMsg);
-    if (errCode != SQLITE_OK && errMsg != nullptr) {
+    int errCode5 = sqlite3_exec(db, SQL_DROP_CREATE_TABLE4, nullptr, nullptr, &errMsg);
+    if (errCode5 != SQLITE_OK && errMsg != nullptr) {
         MST_LOG("sqlite3_exec SQL_DROP_CREATE_TABLE4 Failed(%s)", errMsg.c_str());
         return false;
     }

@@ -29,7 +29,7 @@ constexpr const char *VALID_SCHEMA_STRICT_DEFINE = "{\"SCHEMA_VERSION\":\"1.0\",
 static DistributedKvDataManager g_kvManager;
 
 // Test 1: Open KvStore with fuzzed schema string.
-void TestOpenSchemaStore001(std::string &fuzzedString)
+void TestOpenSchemaStore001(const std::string &fuzzedString)
 {
     std::shared_ptr<SingleKvStore> singleKvStorePtr;
     Options options = {.createIfMissing = true, .encrypt = true, .autoSync = true};

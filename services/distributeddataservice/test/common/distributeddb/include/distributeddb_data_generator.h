@@ -510,7 +510,7 @@ void GenerateSpecialCharSet(std::vector<uint8_t> &charSet);
 
 void GenerateFixedLenRandString(unsigned int neededLen, RandType randType, std::string &genString);
 
-void GenerateRandRecord(DistributedDB::Entry &entry, EntrySize &entrySize, unsigned int keyNo);
+void GenerateRandRecord(DistributedDB::Entry &entry, const EntrySize &entrySize, unsigned int keyNo);
 
 void GenerateRecords(unsigned int recordNum, unsigned int start,
     std::vector<DistributedDB::Key> &allKeys, std::vector<DistributedDB::Entry> &entriesBatch,

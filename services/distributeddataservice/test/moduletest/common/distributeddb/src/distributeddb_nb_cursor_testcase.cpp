@@ -247,17 +247,15 @@ void DistributeddbNbCursorTestcase::ResultSetDb002(KvStoreNbDelegate *delegate, 
      * @tc.steps: step2. set the current position is 100, call MoveToPrevious, GetPostion, GetEntry looply.
      * @tc.expected: step2. return values are all right.
      */
-    int positionGot = CURSOR_POSITION_NEGATIVE1;
     Entry entry;
-    bool result = true;
     for (int position = CURSOR_POSITION_100; position > CURSOR_POSITION_NEGATIVE1; --position) {
-        result = resultSet->MoveToPrevious();
+        bool result = resultSet->MoveToPrevious();
         if (position > (CURSOR_POSITION_NEGATIVE1 + CURSOR_POSITION_1)) {
             EXPECT_TRUE(result == true);
         } else {
             EXPECT_TRUE(result == false);
         }
-        positionGot = resultSet->GetPosition();
+        int positionGot = resultSet->GetPosition();
         EXPECT_TRUE(positionGot == (position - CURSOR_POSITION_1));
         if (position > (CURSOR_POSITION_NEGATIVE1 + CURSOR_POSITION_1)) {
             EXPECT_TRUE(resultSet->GetEntry(entry) == OK);
@@ -541,17 +539,15 @@ void DistributeddbNbCursorTestcase::ResultSetDb006(KvStoreNbDelegate *delegate, 
      * @tc.steps: step2. set the current position is -1, call MoveToNext, GetPostion and GetEntry interface looply.
      * @tc.expected: step2. return values are all right.
      */
-    int currentPosition = CURSOR_POSITION_NEGATIVE1;
     Entry entry;
-    bool result = true;
     for (int position = CURSOR_POSITION_NEGATIVE1; position < ONE_RECORD; ++position) {
-        result = resultSet->MoveToNext();
+        bool result = resultSet->MoveToNext();
         if (position < (ONE_RECORD - CURSOR_POSITION_1)) {
             EXPECT_TRUE(result == true);
         } else {
             EXPECT_TRUE(result == false);
         }
-        currentPosition = resultSet->GetPosition();
+        int currentPosition = resultSet->GetPosition();
         EXPECT_TRUE(currentPosition == (position + CURSOR_POSITION_1));
         if (position < (ONE_RECORD - CURSOR_POSITION_1)) {
             EXPECT_TRUE(resultSet->GetEntry(entry) == OK);
@@ -566,13 +562,13 @@ void DistributeddbNbCursorTestcase::ResultSetDb006(KvStoreNbDelegate *delegate, 
      * @tc.expected: step2. return values are all right.
      */
     for (int position = ONE_RECORD; position > CURSOR_POSITION_NEGATIVE1; --position) {
-        result = resultSet->MoveToPrevious();
+        bool result = resultSet->MoveToPrevious();
         if (position > (CURSOR_POSITION_NEGATIVE1 + CURSOR_POSITION_1)) {
             EXPECT_TRUE(result == true);
         } else {
             EXPECT_TRUE(result == false);
         }
-        currentPosition = resultSet->GetPosition();
+        int currentPosition = resultSet->GetPosition();
         EXPECT_TRUE(currentPosition == (position - CURSOR_POSITION_1));
         if (position > (CURSOR_POSITION_NEGATIVE1 + CURSOR_POSITION_1)) {
             EXPECT_TRUE(resultSet->GetEntry(entry) == OK);
@@ -817,9 +813,8 @@ void DistributeddbNbCursorTestcase::ResultSetDb010(KvStoreNbDelegate *delegate, 
      */
     int currentPosition = CURSOR_POSITION_NEGATIVE1;
     Entry entry;
-    bool result = true;
     for (int position = ONE_HUNDRED_RECORDS; position > CURSOR_POSITION_NEGATIVE1; --position) {
-        result = resultSet->MoveToPrevious();
+        bool result = resultSet->MoveToPrevious();
         if (position > (CURSOR_POSITION_NEGATIVE1 + CURSOR_POSITION_1)) {
             EXPECT_TRUE(result == true);
         } else {
@@ -1994,7 +1989,6 @@ void DistributeddbNbCursorTestcase::ResultSetDb027(bool isRowIdMode)
     SetResultSetCacheMode(delegates[INDEX_ZEROTH], isRowIdMode);
 
     vector<Entry> entriesKA, entriesKB;
-    vector<Key> allKeysKA, allKeysKB;
     std::vector<uint8_t> ka = { 'k', 'a' };
     std::vector<uint8_t> kb = { 'k', 'b' };
     EntrySize entrySizeKA = { FIVE_BYTE_KEY, ONE_K_LONG_STRING };

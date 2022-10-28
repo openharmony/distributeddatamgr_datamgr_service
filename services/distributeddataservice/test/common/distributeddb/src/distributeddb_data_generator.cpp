@@ -78,7 +78,7 @@ void GenerateFixedLenRandString(unsigned int neededLen, RandType randType, std::
     }
 }
 
-void GenerateRandRecord(DistributedDB::Entry &entry, EntrySize &entrySize, unsigned int keyNo)
+void GenerateRandRecord(DistributedDB::Entry &entry, const EntrySize &entrySize, unsigned int keyNo)
 {
     std::string cntStr = std::to_string(keyNo);
     unsigned int len = cntStr.length();
@@ -120,7 +120,7 @@ void GenerateLongRecord(unsigned int keyNo, DistributedDB::Entry &entry,
 }
 
 void GenerateRecords(unsigned int recordNum, unsigned int start, std::vector<DistributedDB::Key> &allKeys,
-    std::vector<DistributedDB::Entry> &entriesBatch, const std::vector<uint8_t> keyPrifix)
+    std::vector<DistributedDB::Entry> &entriesBatch, std::vector<uint8_t> keyPrifix)
 {
     DistributedDB::Entry entryCurrent;
     for (unsigned int cnt = start; cnt < start + recordNum; ++cnt) {
@@ -271,8 +271,8 @@ void GenerateOneRecordForImage(int entryNo, const EntrySize &entrySize,
     entry.value.insert(entry.value.end(), ind.begin(), ind.end());
 }
 
-void GenerateRecordsForImage(std::vector<DistributedDB::Entry> &entries, EntrySize &entrySize,
-    int num, std::vector<uint8_t> keyPrefix, std::vector<uint8_t> val)
+void GenerateRecordsForImage(std::vector<DistributedDB::Entry> &entries, const EntrySize &entrySize,
+    int num, const std::vector<uint8_t> &keyPrefix, const std::vector<uint8_t> &val)
 {
     for (int index = 1; index <= num; index++) {
         DistributedDB::Entry entry;
