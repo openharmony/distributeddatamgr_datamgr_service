@@ -37,7 +37,6 @@ void BlobSelfOption(const Blob &blob)
 void BlobEachOtherOption(const Blob &blob1, const Blob &blob2)
 {
     blob1.Compare(blob2);
-    MessageParcel parcel;
     Blob blobOut;
     blob1.Compare(blobOut);
     blob1.StartsWith(blob2);
@@ -64,27 +63,18 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     std::string fuzzedString(reinterpret_cast<const char *>(data), size);
     std::vector<uint8_t> fuzzedVec(fuzzedString.begin(), fuzzedString.end());
 
-    char *str = new char[size + 1];
-    memcpy_s(str, size + 1, data, size);
-    str[size] ='\0';
-    Blob blob1(str);
-    blob1 = str;
-    Blob blob2(fuzzedString);
-    blob2 = fuzzedString;
-    Blob blob3(fuzzedVec);
-    Blob blob4(str, size + 1);
-    Blob blob5(blob4);
-    Blob blob6(std::move(blob5));
-    Blob blob7 = blob6;
-    blob7 = Blob(blob6);
+    Blob blob1(fuzzedString);
+    blob1 = fuzzedString;
+    Blob blob2(fuzzedVec);
+    Blob blob3(blob2);
+    Blob blob4(std::move(blob3));
+    Blob blob5 = blob4;
+    blob5 = Blob(blob4);
     OHOS::BlobOption(fuzzedString);
     int count = 10;
     uint8_t *writePtr = new uint8_t[count];
     Blob blob8(fuzzedString);
     blob8.WriteToBuffer(writePtr, count);
-    const uint8_t *readPtr;
-    blob8.ReadFromBuffer(readPtr, count);
-    delete[] str;
     delete[] writePtr;
 
     return 0;
