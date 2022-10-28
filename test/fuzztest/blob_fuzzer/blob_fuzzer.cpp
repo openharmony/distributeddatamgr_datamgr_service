@@ -16,8 +16,8 @@
 #include "blob_fuzzer.h"
 
 #include <cstdint>
-#include <vector>
 #include <securec.h>
+#include <vector>
 
 #include "itypes_util.h"
 #include "types.h"
@@ -57,7 +57,6 @@ void BlobOption(Blob blob)
         BlobEachOtherOption(blobTmp, blobPrefix);
     }
 }
-
 } // namespace OHOS
 
 /* Fuzzer entry point */
@@ -75,13 +74,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     Blob blob4(reinterpret_cast<const char *>(data), size);
     Blob blob5(blob4);
     Blob blob6(std::move(blob5));
-    Blob blob7;
-    blob7 = blob6;
+    Blob blob7 = blob6;
     blob7 = Blob(blob6);
     OHOS::BlobOption(fuzzedString);
-    int count=10;
-    char *ptr = new char[count];
-    uint8_t *writePtr=reinterpret_cast<uint8_t *>(ptr);
+    int count = 10;
+    uint8_t *writePtr = (uint8_t *)new char[count];
     Blob blob8(fuzzedString);
     blob8.WriteToBuffer(writePtr, count);
     const uint8_t *readPtr;
