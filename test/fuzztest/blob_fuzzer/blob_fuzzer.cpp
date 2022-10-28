@@ -25,7 +25,7 @@
 using namespace OHOS::DistributedKv;
 namespace OHOS {
 Blob blobTest = "Test";
-void BlobSelfOption(Blob blob)
+void BlobSelfOption(const Blob &blob)
 {
     blob.Empty();
     blob.Size();
@@ -34,7 +34,7 @@ void BlobSelfOption(Blob blob)
     blob.RawSize();
 }
 
-void BlobEachOtherOption(Blob blob1, Blob blob2)
+void BlobEachOtherOption(const Blob &blob1, const Blob &blob2)
 {
     blob1.Compare(blob2);
     MessageParcel parcel;
@@ -43,7 +43,7 @@ void BlobEachOtherOption(Blob blob1, Blob blob2)
     blob1.StartsWith(blob2);
 }
 
-void BlobOption(Blob blob)
+void BlobOption(const Blob &blob)
 {
     BlobSelfOption(blob);
     Blob blobTmp(blob);
@@ -64,12 +64,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     std::string fuzzedString(reinterpret_cast<const char *>(data), size);
     std::vector<uint8_t> fuzzedVec(fuzzedString.begin(), fuzzedString.end());
 
-    Blob blob1(reinterpret_cast<const char *>(data));
-    blob1 = reinterpret_cast<const char *>(data);
+    char *str = new char[size + 1];
+    memcpy_s(str, size + 1, data, size);
+    str[size] ='\0';
+    Blob blob1(str);
+    blob1 = str;
     Blob blob2(fuzzedString);
     blob2 = fuzzedString;
     Blob blob3(fuzzedVec);
-    Blob blob4(reinterpret_cast<const char *>(data), size);
+    Blob blob4(str, size + 1);
     Blob blob5(blob4);
     Blob blob6(std::move(blob5));
     Blob blob7 = blob6;
@@ -81,6 +84,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     blob8.WriteToBuffer(writePtr, count);
     const uint8_t *readPtr;
     blob8.ReadFromBuffer(readPtr, count);
+    delete[] str;
+    delete[] writePtr;
 
     return 0;
 }
