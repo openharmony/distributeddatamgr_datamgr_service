@@ -91,30 +91,7 @@
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/conf:build_module"
             ],
-            "inner_kits": [
-                {
-                    "name": "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-                    "header": {
-                        "header_files": [
-                            "blob.h",
-                            "change_notification.h",
-                            "distributed_kv_data_manager.h",
-                            "kvstore.h",
-                            "kvstore_death_recipient.h",
-                            "kvstore_observer.h",
-                            "kvstore_result_set.h",
-                            "kvstore_sync_callback.h",
-                            "single_kvstore.h",
-                            "types.h",
-                            "visibility.h",
-                            "data_query.h",
-                            "device_status_change_listener.h",
-                            "store_errno.h"
-                        ],
-                        "header_base": "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include"
-                    }
-                }
-            ],
+            "inner_kits": [],
             "test": [
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/test:fuzztest",
                 "//foundation/distributeddatamgr/datamgr_service:fuzztest",
