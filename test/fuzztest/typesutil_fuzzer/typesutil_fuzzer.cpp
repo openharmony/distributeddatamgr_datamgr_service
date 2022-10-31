@@ -185,7 +185,7 @@ void GetTotalSizeFuzz(const std::string &strBase, uint32_t size)
     entry.key = strBase;
     entry.key = strBase;
     std::vector<Entry> VecEntryIn(size, entry);
-    std::vector<Key> VecKeyIn(size, Key{ strBase });
+    std::vector<Key> VecKeyIn(size, Key { strBase });
     ITypesUtil::GetTotalSize(VecEntryIn);
     ITypesUtil::GetTotalSize(VecKeyIn);
 }
