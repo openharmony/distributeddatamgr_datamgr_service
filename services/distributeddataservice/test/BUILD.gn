@@ -57,6 +57,7 @@ config("module_private_config") {
     "LOW_LEVEL_MEM_DEV",
     "RELEASE_MODE_V2",
     "RELEASE_MODE_V3",
+    "OMIT_MULTI_VER",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
 }

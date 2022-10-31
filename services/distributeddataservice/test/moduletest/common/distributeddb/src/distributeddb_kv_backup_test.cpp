@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef OMIT_MULTI_VER
 #include <gtest/gtest.h>
 #include <ctime>
 #include <cmath>
@@ -1224,3 +1225,4 @@ HWTEST_F(DistributeddbKvBackupTest, Exchange003, TestSize.Level2)
     RemoveDir(exportPath);
 }
 }
+#endif // OMIT_MULTI_VER

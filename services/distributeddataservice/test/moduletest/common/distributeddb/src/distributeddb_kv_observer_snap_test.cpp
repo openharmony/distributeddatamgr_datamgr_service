@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef OMIT_MULTI_VER
 #include <gtest/gtest.h>
 #include <ctime>
 #include <cmath>
@@ -1585,3 +1586,4 @@ HWTEST_F(DistributeddbKvObserverSnapTest, RekeyDb001, TestSize.Level1)
     manager = nullptr;
 }
 }
+#endif // OMIT_MULTI_VER

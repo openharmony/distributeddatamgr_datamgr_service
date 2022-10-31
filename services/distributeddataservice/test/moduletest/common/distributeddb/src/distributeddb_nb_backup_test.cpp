@@ -662,6 +662,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest003, TestSize.Level1)
  * @tc.require: SR000D4878
  * @tc.author: fengxiaoyun
  */
+#ifndef OMIT_MULTI_VER
 HWTEST_F(DistributeddbNbBackupTest, ImportTest004, TestSize.Level1)
 {
     KvStoreDelegate *multiEncryptDelegate = nullptr;
@@ -732,7 +733,7 @@ HWTEST_F(DistributeddbNbBackupTest, ImportTest004, TestSize.Level1)
     RemoveDir(multiImportPath);
     RemoveDir(nbImportPath);
 }
-
+#endif // OMIT_MULTI_VER
 /*
  * @tc.name: ImportTest 006
  * @tc.desc: Verify that many kvstore of one DB or the DB registered observer can't import the backup file.

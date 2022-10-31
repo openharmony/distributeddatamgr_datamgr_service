@@ -203,6 +203,9 @@ public:
     static DistributedDB::DBStatus GetEntries(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
         const DistributedDB::Key &keyPrefix, std::vector<DistributedDB::Entry> &entries);
 
+    static DistributedDB::DBStatus GetKeys(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
+        const DistributedDB::Key &keyPrefix, std::vector<DistributedDB::Key> &keys);
+
     static DistributedDB::DBStatus Put(DistributedDB::KvStoreNbDelegate &kvStoreNbDelegate,
         const DistributedDB::Key &key, const DistributedDB::Value &value, bool isNeedRetry = false, int waitTime = 100);
 
@@ -352,5 +355,5 @@ private:
 #endif // endif of RELEASE_MODE_V2
 
     bool EndCaseDeleteDB(DistributedDB::KvStoreDelegateManager *&manager, DistributedDB::KvStoreNbDelegate *&nbDelegate,
-        const std::string base, bool isMemoryDb);
+        const std::string &base, bool isMemoryDb);
 #endif // DISTRIBUTEDDB_NB_TEST_TOOLS_H

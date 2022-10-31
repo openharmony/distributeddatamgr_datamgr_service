@@ -16,6 +16,7 @@
 #define DISTRIBUTED_DB_MODULE_TEST_TOOLS_H
 #include <condition_variable>
 #include <thread>
+#include <vector>
 
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
@@ -118,7 +119,7 @@ DistributedDB::Value GetValueWithInt(int val);
 std::vector<DistributedDB::Entry> GenRanKeyVal(int putGetTimes, int keyLength, int valueLength, char val);
 std::vector<DistributedDB::Key> GetKeysFromEntries(std::vector<DistributedDB::Entry> entries, bool random);
 bool GetRandBool();
-bool PutEntries(DistributedDB::KvStoreNbDelegate *&delegate, std::vector<DistributedDB::Entry> &entries);
+bool PutEntries(DistributedDB::KvStoreNbDelegate *&delegate, const std::vector<DistributedDB::Entry> &entries);
 
 using SysTime = std::chrono::time_point<std::chrono::steady_clock, std::chrono::microseconds>;
 using SysDurTime = std::chrono::duration<uint64_t, std::micro>;
@@ -354,6 +355,7 @@ public:
 
     // this static method is to compare if the two Value has the same data.
     static bool IsValueEquals(const DistributedDB::Value &v1, const DistributedDB::Value &v2);
+#ifndef OMIT_MULTI_VER
     static DistributedDB::KvStoreDelegate::Option TransferKvOptionType(const KvOption &optionParam);
     static DistributedDB::KvStoreDelegate* GetDelegateSuccess(DistributedDB::KvStoreDelegateManager *&outManager,
         const KvDBParameters &param, const KvOption &optionParam);
@@ -403,6 +405,7 @@ public:
     static bool CalculateTransactionPerformance(PerformanceData &performanceData);
     static bool CloseAndRelease(DistributedDB::KvStoreDelegateManager *&manager,
         DistributedDB::KvStoreDelegate *&delegate);
+#endif
     static bool CloseAndRelease(DistributedDB::KvStoreDelegateManager *&manager,
         DistributedDB::KvStoreNbDelegate *&delegate);
     static bool VerifyDbRecordCnt(DistributedDB::KvStoreNbDelegate *&delegate, unsigned int recordCnt,
