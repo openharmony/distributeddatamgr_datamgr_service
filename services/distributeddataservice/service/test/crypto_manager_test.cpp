@@ -92,7 +92,7 @@ HWTEST_F(CryptoManagerTest, Encrypt001, TestSize.Level0)
 */
 HWTEST_F(CryptoManagerTest, Encrypt002, TestSize.Level0)
 {
-    auto encryptKey = CryptoManager::GetInstance().Encrypt({});
+    auto encryptKey = CryptoManager::GetInstance().Encrypt({ });
     EXPECT_TRUE(encryptKey.empty());
 }
 
