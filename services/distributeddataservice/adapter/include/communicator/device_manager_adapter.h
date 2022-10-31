@@ -33,8 +33,6 @@ namespace DistributedData {
 class API_EXPORT DeviceManagerAdapter {
 public:
     using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
-    using KvStoreTask = OHOS::DistributedKv::KvStoreTask;
-    using KvStoreThreadPool = OHOS::DistributedKv::KvStoreThreadPool;
     using KvScheduler = OHOS::DistributedKv::KvScheduler;
     using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
     using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
