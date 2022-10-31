@@ -76,7 +76,8 @@ private:
     DeviceInfo localInfo_ {};
     ConcurrentMap<const AppDeviceChangeListener *, const AppDeviceChangeListener *> observers_ {};
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
-    KvScheduler scheduler_ {4};
+    static constexpr size_t TIME_TASK_CAPACITY = 4;
+    KvScheduler scheduler_ {TIME_TASK_CAPACITY};
     static constexpr int32_t SYNC_TIMEOUT = 30 * 1000; // ms
     ConcurrentMap<std::string, std::string> syncTask_ {};
 };
