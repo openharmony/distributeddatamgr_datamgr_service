@@ -23,7 +23,7 @@ using namespace OHOS::DistributedData;
 class CryptoManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
-    static void TearDownTestCase(void) {};
+    static void TearDownTestCase(void);
     void SetUp() {};
     void TearDown() {};
 
@@ -38,6 +38,11 @@ std::vector<uint8_t> CryptoManagerTest::randomKey;
 void CryptoManagerTest::SetUpTestCase(void)
 {
     randomKey = Random(KEY_LENGTH);
+}
+
+void CryptoManagerTest::TearDownTestCase(void)
+{
+    randomKey.assign(randomKey.size(), 0);
 }
 
 std::vector<uint8_t> CryptoManagerTest::Random(uint32_t len)
@@ -75,6 +80,7 @@ HWTEST_F(CryptoManagerTest, Encrypt001, TestSize.Level0)
 {
     auto encryptKey = CryptoManager::GetInstance().Encrypt(randomKey);
     EXPECT_EQ(encryptKey.size(), ENCRYPT_KEY_LENGTH);
+    encryptKey.assign(encryptKey.size(), 0);
 }
 
 /**
@@ -104,6 +110,7 @@ HWTEST_F(CryptoManagerTest, DecryptKey001, TestSize.Level0)
     auto result = CryptoManager::GetInstance().Decrypt(encryptKey, key);
     EXPECT_TRUE(result);
     EXPECT_EQ(key.size(), KEY_LENGTH);
+    encryptKey.assign(encryptKey.size(), 0);
 }
 
 /**
