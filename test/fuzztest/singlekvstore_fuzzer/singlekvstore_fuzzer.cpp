@@ -166,7 +166,6 @@ void SubscribeKvStoreFuzz(const uint8_t *data, size_t size)
     DataQuery dataQuery;
     dataQuery.KeyPrefix(prefix);
     std::string keys = "test_";
-    std::vector<Entry> entries;
     size_t sum = 10;
     for (size_t i = 0; i < sum; i++) {
         singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
@@ -188,7 +187,6 @@ void SyncCallbackFuzz(const uint8_t *data, size_t size)
     DataQuery dataQuery;
     dataQuery.KeyPrefix(prefix);
     std::string keys = "test_";
-    std::vector<Entry> entries;
     size_t sum = 10;
     for (size_t i = 0; i < sum; i++) {
         singleKvStore_->Put(prefix + keys + std::to_string(i), keys + std::to_string(i));
@@ -376,7 +374,6 @@ void GetSecurityLevelFuzz(const uint8_t *data, size_t size)
 void SyncFuzz1(const uint8_t *data, size_t size)
 {
     size_t sum = 10;
-    std::vector<std::string> keys;
     std::string skey = "test_";
     for (size_t i = 0; i < sum; i++) {
         singleKvStore_->Put(skey + std::to_string(i), skey + std::to_string(i));
@@ -393,7 +390,6 @@ void SyncFuzz1(const uint8_t *data, size_t size)
 void SyncFuzz2(const uint8_t *data, size_t size)
 {
     size_t sum = 10;
-    std::vector<std::string> keys;
     std::string skey = "test_";
     for (size_t i = 0; i < sum; i++) {
         singleKvStore_->Put(skey + std::to_string(i), skey + std::to_string(i));
