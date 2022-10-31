@@ -16,7 +16,6 @@
 #include "blob_fuzzer.h"
 
 #include <cstdint>
-#include <securec.h>
 #include <vector>
 
 #include "itypes_util.h"
@@ -60,22 +59,27 @@ void BlobOption(const Blob &blob)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    std::string fuzzedString(reinterpret_cast<const char *>(data), size);
-    std::vector<uint8_t> fuzzedVec(fuzzedString.begin(), fuzzedString.end());
+    std::string fuzzStr(reinterpret_cast<const char *>(data), size);
+    std::vector<uint8_t> fuzzVec(fuzzStr.begin(), fuzzStr.end());
 
-    Blob blob1(fuzzedString);
-    blob1 = fuzzedString;
-    Blob blob2(fuzzedVec);
-    Blob blob3(blob2);
-    Blob blob4(std::move(blob3));
-    Blob blob5 = blob4;
-    blob5 = Blob(blob4);
-    OHOS::BlobOption(fuzzedString);
     int count = 10;
-    uint8_t *writePtr = new uint8_t[count];
-    Blob blob8(fuzzedString);
+    char *str = new char[count + 1];
+    str[count] = '\0';
+    Blob blob1(str);
+    blob1 = str;
+    Blob blob2(fuzzStr);
+    blob2 = fuzzStr;
+    Blob blob3(fuzzVec);
+    Blob blob4(str, count + 1);
+    Blob blob5(blob4);
+    Blob blob6(std::move(blob5));
+    Blob blob7 = blob6;
+    blob7 = Blob(blob6);
+    std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(count);
+    uint8_t *writePtr = buffer.get();
+    Blob blob8(fuzzStr);
     blob8.WriteToBuffer(writePtr, count);
-    delete[] writePtr;
+    delete[] str;
 
     return 0;
 }

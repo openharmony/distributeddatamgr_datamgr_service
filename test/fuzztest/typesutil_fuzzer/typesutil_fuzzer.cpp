@@ -24,32 +24,32 @@
 
 using namespace OHOS::DistributedKv;
 namespace OHOS {
-void clientDevFuzz(const std::string &stringBase)
+void ClientDevFuzz(const std::string &strBase)
 {
-    MessageParcel parcel;
     DeviceInfo clientDev;
-    clientDev.deviceId = stringBase;
-    clientDev.deviceName = stringBase;
-    clientDev.deviceType = stringBase;
+    clientDev.deviceId = strBase;
+    clientDev.deviceName = strBase;
+    clientDev.deviceType = strBase;
+    MessageParcel parcel;
     ITypesUtil::Marshal(parcel, clientDev);
     DeviceInfo serverDev;
     ITypesUtil::Unmarshal(parcel, serverDev);
 }
 
-void EntryFuzz(const std::string &stringBase)
+void EntryFuzz(const std::string &strBase)
 {
-    MessageParcel parcel;
     Entry entryIn;
-    entryIn.key = stringBase;
-    entryIn.value = stringBase;
+    entryIn.key = strBase;
+    entryIn.value = strBase;
+    MessageParcel parcel;
     ITypesUtil::Marshal(parcel, entryIn);
     Entry entryOut;
     ITypesUtil::Unmarshal(parcel, entryOut);
 }
 
-void BlobFuzz(const std::string &stringBase)
+void BlobFuzz(const std::string &strBase)
 {
-    Blob blobIn = stringBase;
+    Blob blobIn = strBase;
     MessageParcel parcel;
     ITypesUtil::Marshal(parcel, blobIn);
     Blob blobOut;
@@ -65,7 +65,7 @@ void VecFuzz(const std::vector<uint8_t> &vec)
     ITypesUtil::Unmarshal(parcel, vecOut);
 }
 
-void OptionsFuzz(const std::string &stringBase)
+void OptionsFuzz(const std::string &strBase)
 {
     Options optionsIn = {
         .createIfMissing = true,
@@ -73,7 +73,7 @@ void OptionsFuzz(const std::string &stringBase)
         .autoSync = true,
         .kvStoreType = KvStoreType::SINGLE_VERSION };
     optionsIn.area = EL1;
-    optionsIn.baseDir = stringBase;
+    optionsIn.baseDir = strBase;
     MessageParcel parcel;
     ITypesUtil::Marshal(parcel, optionsIn);
     Options optionsOut;
@@ -89,21 +89,21 @@ void SyncPolicyFuzz(uint32_t base)
     ITypesUtil::Unmarshal(parcel, syncPolicyOut);
 }
 
-void ChangeNotificationFuzz(const std::string &stringBase, bool boolBase)
+void ChangeNotificationFuzz(const std::string &strBase, bool boolBase)
 {
     Entry insert, update, del;
-    insert.key = "insert_" + stringBase;
-    update.key = "update_" + stringBase;
-    del.key = "delete_" + stringBase;
-    insert.value = "insert_value_" + stringBase;
-    update.value = "update_value_" + stringBase;
-    del.value = "delete_value_" + stringBase;
+    insert.key = strBase;
+    update.key = strBase;
+    del.key = strBase;
+    insert.value = strBase;
+    update.value = strBase;
+    del.value = strBase;
     std::vector<Entry> inserts, updates, deleteds;
     inserts.push_back(insert);
     updates.push_back(update);
     deleteds.push_back(del);
 
-    ChangeNotification changeIn(std::move(inserts), std::move(updates), std::move(deleteds), stringBase, boolBase);
+    ChangeNotification changeIn(std::move(inserts), std::move(updates), std::move(deleteds), strBase, boolBase);
     MessageParcel parcel;
     ITypesUtil::Marshal(parcel, changeIn);
     std::vector<Entry> empty;
@@ -130,23 +130,23 @@ void IntFuzz(size_t valBase)
     ITypesUtil::Unmarshal(parcel, uint64Out);
 }
 
-void StringFuzz(const std::string &stringBase)
+void StringFuzz(const std::string &strBase)
 {
     MessageParcel parcel;
-    std::string stringIn = stringBase;
-    ITypesUtil::Marshal(parcel, stringIn);
-    std::string stringOut;
-    ITypesUtil::Unmarshal(parcel, stringOut);
+    std::string strIn = strBase;
+    ITypesUtil::Marshal(parcel, strIn);
+    std::string strOut;
+    ITypesUtil::Unmarshal(parcel, strOut);
 }
 
-void RdbSyncerParamFuzz(const std::string &stringBase, int32_t intBase, const std::vector<uint8_t> &vecBase,
+void RdbSyncerParamFuzz(const std::string &strBase, int32_t intBase, const std::vector<uint8_t> &vecBase,
     bool boolBase)
 {
     MessageParcel parcel;
     DistributedRdb::RdbSyncerParam rdbSyncerParamIn;
-    rdbSyncerParamIn.bundleName_ = stringBase;
-    rdbSyncerParamIn.hapName_ = stringBase;
-    rdbSyncerParamIn.storeName_ = stringBase;
+    rdbSyncerParamIn.bundleName_ = strBase;
+    rdbSyncerParamIn.hapName_ = strBase;
+    rdbSyncerParamIn.storeName_ = strBase;
     rdbSyncerParamIn.area_ = intBase;
     rdbSyncerParamIn.level_ = intBase;
     rdbSyncerParamIn.type_ = intBase;
@@ -167,31 +167,26 @@ void RdbSyncOptionFuzz(bool boolBase)
     ITypesUtil::Unmarshal(parcel, syncOptionOut);
 }
 
-void RdbPredicatesFuzz(const std::string &stringBase)
+void RdbPredicatesFuzz(const std::string &strBase)
 {
     MessageParcel parcel;
     DistributedRdb::RdbPredicates rdbPredicatesIn;
-    rdbPredicatesIn.table_ = stringBase;
-    rdbPredicatesIn.devices_ = { stringBase };
-    rdbPredicatesIn.operations_ = { { DistributedRdb::EQUAL_TO, stringBase, { stringBase } } };
+    rdbPredicatesIn.table_ = strBase;
+    rdbPredicatesIn.devices_ = { strBase };
+    rdbPredicatesIn.operations_ = { { DistributedRdb::EQUAL_TO, strBase, { strBase } } };
     ITypesUtil::Marshal(parcel, rdbPredicatesIn);
     DistributedRdb::RdbPredicates rdbPredicatesOut;
     ITypesUtil::Unmarshal(parcel, rdbPredicatesOut);
 }
 
-void GetTotalSizeFuzz(const std::string &stringBase, uint32_t size)
+void GetTotalSizeFuzz(const std::string &strBase, uint32_t size)
 {
-    std::vector<Entry> VecEntryIn(size);
-    std::vector<Key> VecKeyIn(size);
-    for (auto entry : VecEntryIn) {
-        entry.value = stringBase;
-        entry.key = stringBase;
-    }
+    Entry entry;
+    entry.key = strBase;
+    entry.key = strBase;
+    std::vector<Entry> VecEntryIn(size, entry);
+    std::vector<Key> VecKeyIn(size, Key{ strBase });
     ITypesUtil::GetTotalSize(VecEntryIn);
-
-    for (auto key : VecKeyIn) {
-        key = stringBase;
-    }
     ITypesUtil::GetTotalSize(VecKeyIn);
 }
 } // namespace OHOS
@@ -200,24 +195,24 @@ void GetTotalSizeFuzz(const std::string &stringBase, uint32_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    bool fuzzedBoolean = ((size % 2) == 0);
-    int32_t fuzzedInt32 = static_cast<int32_t>(size);
-    uint32_t fuzzedUInt32 = static_cast<uint32_t>(size);
-    std::string fuzzedString(reinterpret_cast<const char *>(data), size);
-    std::vector<uint8_t> fuzzedVec(fuzzedString.begin(), fuzzedString.end());
+    bool fuzzBool = ((size % 2) == 0);
+    int32_t fuzzInt32 = static_cast<int32_t>(size);
+    uint32_t fuzzUInt32 = static_cast<uint32_t>(size);
+    std::string fuzzStr(reinterpret_cast<const char *>(data), size);
+    std::vector<uint8_t> fuzzVec(fuzzStr.begin(), fuzzStr.end());
 
-    OHOS::clientDevFuzz(fuzzedString);
-    OHOS::EntryFuzz(fuzzedString);
-    OHOS::BlobFuzz(fuzzedString);
-    OHOS::VecFuzz(fuzzedVec);
-    OHOS::OptionsFuzz(fuzzedString);
-    OHOS::SyncPolicyFuzz(fuzzedUInt32);
-    OHOS::ChangeNotificationFuzz(fuzzedString, fuzzedBoolean);
+    OHOS::ClientDevFuzz(fuzzStr);
+    OHOS::EntryFuzz(fuzzStr);
+    OHOS::BlobFuzz(fuzzStr);
+    OHOS::VecFuzz(fuzzVec);
+    OHOS::OptionsFuzz(fuzzStr);
+    OHOS::SyncPolicyFuzz(fuzzUInt32);
+    OHOS::ChangeNotificationFuzz(fuzzStr, fuzzBool);
     OHOS::IntFuzz(size);
-    OHOS::StringFuzz(fuzzedString);
-    OHOS::RdbSyncerParamFuzz(fuzzedString, fuzzedInt32, fuzzedVec, fuzzedBoolean);
-    OHOS::RdbSyncOptionFuzz(fuzzedBoolean);
-    OHOS::RdbPredicatesFuzz(fuzzedString);
-    OHOS::GetTotalSizeFuzz(fuzzedString, fuzzedUInt32);
+    OHOS::StringFuzz(fuzzStr);
+    OHOS::RdbSyncerParamFuzz(fuzzStr, fuzzInt32, fuzzVec, fuzzBool);
+    OHOS::RdbSyncOptionFuzz(fuzzBool);
+    OHOS::RdbPredicatesFuzz(fuzzStr);
+    OHOS::GetTotalSizeFuzz(fuzzStr, fuzzUInt32);
     return 0;
 }
