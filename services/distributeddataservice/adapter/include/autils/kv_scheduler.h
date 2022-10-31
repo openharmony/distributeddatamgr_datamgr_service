@@ -48,6 +48,8 @@ public:
     // execute task for some times periodically with duration after delay
     KVSTORE_API void Every(int times, std::chrono::system_clock::duration delay,
                std::chrono::system_clock::duration interval, std::function<void()> func);
+    KVSTORE_API void Now(std::function<void()> task);
+
 private:
     void Loop();
     volatile bool isRunning_;

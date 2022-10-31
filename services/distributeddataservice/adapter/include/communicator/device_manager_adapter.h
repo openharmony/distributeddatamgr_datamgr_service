@@ -26,8 +26,6 @@
 #include "device_manager_callback.h"
 #include "dm_device_info.h"
 #include "kv_scheduler.h"
-#include "kv_store_task.h"
-#include "kv_store_thread_pool.h"
 #include "lru_bucket.h"
 
 namespace OHOS {
@@ -67,7 +65,6 @@ private:
     void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
     void UpdateDeviceInfo();
     DeviceInfo GetDeviceInfoFromCache(const std::string &id);
-    bool Execute(KvStoreTask &&task);
     void Online(const DmDeviceInfo &info);
     void Offline(const DmDeviceInfo &info);
     void OnChanged(const DmDeviceInfo &info);
@@ -79,9 +76,7 @@ private:
     DeviceInfo localInfo_ {};
     ConcurrentMap<const AppDeviceChangeListener *, const AppDeviceChangeListener *> observers_ {};
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
-    static constexpr int POOL_SIZE = 1;
-    std::shared_ptr<KvStoreThreadPool> threadPool_;
-    KvScheduler scheduler_ {1};
+    KvScheduler scheduler_ {4};
     static constexpr int32_t SYNC_TIMEOUT = 30 * 1000; // ms
     ConcurrentMap<std::string, std::string> syncTask_ {};
 };
