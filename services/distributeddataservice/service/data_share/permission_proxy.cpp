@@ -78,7 +78,7 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
             if (permission.empty()) {
-                ZLOGW("WritePermission is empty!BundleName is %{pravite}s,tokenId is %{pravite}s", bundleName, tokenId);
+                ZLOGW("WritePermission is empty!BundleName is %{public}s,tokenId is %{public}s", bundleName, tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
