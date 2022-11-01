@@ -23,7 +23,6 @@
 
 using namespace OHOS::DistributedKv;
 namespace OHOS {
-Blob blobTest = "Test";
 void BlobSelfOption(const Blob &blob)
 {
     blob.Empty();

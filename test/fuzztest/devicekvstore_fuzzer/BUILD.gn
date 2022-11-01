@@ -58,9 +58,7 @@ ohos_fuzztest("DeviceKvStoreFuzzTest") {
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-  ]
+  external_deps = [ "c_utils:utils" ]
 }
 
 ###############################################################################

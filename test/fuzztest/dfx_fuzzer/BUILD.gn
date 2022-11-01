@@ -45,9 +45,7 @@ ohos_fuzztest("DfxFuzzTest") {
     "//third_party/openssl:libcrypto_shared",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-  ]
+  external_deps = [ "c_utils:utils" ]
 }
 
 ###############################################################################

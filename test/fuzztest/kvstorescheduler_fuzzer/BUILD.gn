@@ -41,9 +41,7 @@ ohos_fuzztest("KvStoreSchedulerFuzzTest") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/autils:distributeddata_autils_static"
   ]
 
-  external_deps = [
-    "c_utils:utils"
-  ]
+  external_deps = [ "c_utils:utils" ]
 }
 
 ###############################################################################
