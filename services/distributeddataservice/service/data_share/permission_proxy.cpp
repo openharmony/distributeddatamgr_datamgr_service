@@ -77,7 +77,7 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
             if (permission.empty()) {
-                ZLOGW("Write permission is empty!BundleName is %{pravite}s,tokenId is %{pravite}s.", bundleName, tokenId);
+                ZLOGW("WritePermission is empty!BundleName is %{pravite}s,tokenId is %{pravite}s", bundleName, tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -101,7 +101,7 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
-                ZLOGW("Read permission is empty!bundleName is %{pravite}s,tokenId is %{pravite}s.", bundleName, tokenId);
+                ZLOGW("ReadPermission is empty!BundleName is %{pravite}s,tokenId is %{pravite}s", bundleName, tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
