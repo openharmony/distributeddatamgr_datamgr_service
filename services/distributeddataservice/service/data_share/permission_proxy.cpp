@@ -77,6 +77,7 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
             if (permission.empty()) {
+                ZLOGW("Write permission is empty!BundleName is %{pravite}s,tokenId is %{pravite}s.", bundleName, tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -100,10 +101,14 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
-                ZLOGE("Verify write permission denied!");
+                ZLOGW("Read permission is empty!bundleName is %{pravite}s,tokenId is %{pravite}s.", bundleName, tokenId);
                 return true;
             }
-            permission = item.readPermission;
+            int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
+            if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+                ZLOGE("Verify Read permission denied!");
+                return false;
+            }
             return true;
         }
     }
@@ -123,12 +128,20 @@ bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::st
     FillData(meta);
     meta.bundleName = bundleName;
     meta.storeId = storeName;
-
+    if (IsAllowCrossToU0(bundleName, storeName)) {
+        ZLOGD("This hap is allowed to access across user sessions");
+        meta.user = "0";
+    }
+    ZLOGD("This hap is not allowed to access across user sessions");
     bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData);
     if (!isCreated) {
         ZLOGE("Interface token is not equal");
         return false;
     }
     return true;
+}
+inline bool PermissionProxy::IsAllowCrossToU0(const std::string &bundleName, const std::string &storeName)
+{
+    return bundleName == ALLOW_CROSS_USER.first && storeName == ALLOW_CROSS_USER.second;
 }
 } // namespace OHOS::DataShare
