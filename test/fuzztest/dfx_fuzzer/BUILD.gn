@@ -36,9 +36,7 @@ ohos_fuzztest("DfxFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  sources = [
-    "dfx_fuzzer.cpp",
-  ]
+  sources = [ "dfx_fuzzer.cpp" ]
 
   deps = [
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
