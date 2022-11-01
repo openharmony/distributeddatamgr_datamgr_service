@@ -42,7 +42,7 @@ void EveryFUZZ(size_t time)
     kvScheduler.Every(delay, interval, []() { });
     std::this_thread::sleep_for(std::chrono::seconds(MAX_INTERVAL_TIME));
     kvScheduler.Every(0, delay, interval, []() { });
-    kvScheduler.Every(2, delay, interval, []() { });
+    kvScheduler.Every(1, delay, interval, []() { });
     std::this_thread::sleep_for(std::chrono::seconds(MAX_INTERVAL_TIME));
     kvScheduler.Every(interval, []() { });
     kvScheduler.Clean();
@@ -52,11 +52,12 @@ void ResetFuzz(size_t time)
 {
     KvScheduler kvScheduler;
     std::chrono::duration<int> interval(time % MAX_INTERVAL_TIME);
-    auto schedulerTask = kvScheduler.At(std::chrono::system_clock::now() +
-                                    std::chrono::duration<int>(MAX_DELAY_TIME / 2), []() {});
-    std::chrono::system_clock::time_point tp = std::chrono::system_clock::now() +
+    std::chrono::system_clock::time_point tp1 = std::chrono::system_clock::now() +
+                                                std::chrono::duration<int>(MAX_DELAY_TIME / 2);
+    auto schedulerTask = kvScheduler.At(tp1, []() {});
+    std::chrono::system_clock::time_point tp2 = std::chrono::system_clock::now() +
                                                std::chrono::duration<int>(time % MAX_DELAY_TIME);
-    kvScheduler.Reset(schedulerTask, tp, interval);
+    kvScheduler.Reset(schedulerTask, tp2, interval);
 }
 } // namespace OHOS
 /* Fuzzer entry point */
