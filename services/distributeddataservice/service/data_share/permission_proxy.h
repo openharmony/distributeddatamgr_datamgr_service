@@ -31,8 +31,6 @@ public:
 private:
     static void FillData(DistributedData::StoreMetaData &data, const int32_t userId);
     static inline bool IsAllowCrossToU0(const std::string &bundleName, const std::string &storeName);
-    constexpr static char* ALLOW_CROSS_USER_BUNDLE_NAME = "com.ohos.settingsdatas";
-    constexpr static char* ALLOW_CROSS_USER_STORE_NAME = "com.ohos.settingsdatas";
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_PERMISSION_PROXY_H

@@ -41,7 +41,7 @@ int32_t RdbAdaptor::Update(const UriInfo &uriInfo, const DataSharePredicates &pr
 int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate, const int32_t userId)
 {
     DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId )) {
+    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
         return -1;
     }
     RdbDelegate delegate(metaData);

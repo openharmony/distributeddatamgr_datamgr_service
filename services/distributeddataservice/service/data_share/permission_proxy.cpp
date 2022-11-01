@@ -143,6 +143,6 @@ bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::st
 inline bool PermissionProxy::IsAllowCrossToU0(const std::string &bundleName, const std::string &storeName)
 {
     // if settingdata public data, allow cross to user0
-    return bundleName == ALLOW_CROSS_USER_BUNDLE_NAME && storeName == ALLOW_CROSS_USER_STORE_NAME;
+    return bundleName == "com.ohos.settingsdatas" && storeName == "settingsdatas";
 }
 } // namespace OHOS::DataShare
