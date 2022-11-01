@@ -26,7 +26,6 @@
 using namespace OHOS::DistributedKv;
 using namespace OHOS::DistributedDataDfx;
 namespace OHOS {
-
 static std::map<std::string, std::any> fakeCache_;
 static const inline int INTERNAL = 1000;
 
@@ -133,7 +132,7 @@ void BehaviourReporterFuzz(const std::string &strBase)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    std::string fuzzStr(reinterpret_cast<const char *>(data), size);
+    std::string fuzzStr(data, data + size);
     int fuzzInt = static_cast<int>(size);
     int32_t fuzzInt32 = static_cast<int32_t>(size);
     uint64_t fuzzUInt64 = static_cast<uint64_t>(size);

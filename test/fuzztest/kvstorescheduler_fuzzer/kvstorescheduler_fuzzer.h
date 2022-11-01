@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#ifndef BLOB_FUZZER_H
-#define BLOB_FUZZER_H
+#ifndef KVSTORESCHEDULER_FUZZER_H
+#define KVSTORESCHEDULER_FUZZER_H
 
-#define FUZZ_PROJECT_NAME "Blob_fuzzer"
+#define FUZZ_PROJECT_NAME "Kvstorescheduler_fuzzer"
 
-#endif // BLOB_FUZZER_H
+#endif // KVSTORESCHEDULER_FUZZER_H
 
