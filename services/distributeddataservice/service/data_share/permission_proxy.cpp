@@ -20,8 +20,8 @@
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
 #include "communication_provider.h"
+#include "dev_manager.h"
 #include "if_system_ability_manager.h"
-#include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
@@ -29,7 +29,6 @@
 #include "system_ability_definition.h"
 
 namespace OHOS::DataShare {
-const std::pair<std::string, std::string> ALLOW_CROSS_USER = std::pair<std::string, std::string>("com.ohos.settingsdatas", "settingsdatas");
 static sptr<AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
 {
     sptr<ISystemAbilityManager> systemAbilityManager =
@@ -78,7 +77,7 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
             if (permission.empty()) {
-                ZLOGW("WritePermission is empty!BundleName is %{public}s,tokenId is %{public}s", bundleName, tokenId);
+                ZLOGW("WritePermission is empty!BundleName is %{public}s,tokenId is %{public}u", bundleName.c_str(), tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -102,7 +101,7 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
-                ZLOGW("ReadPermission is empty!BundleName is %{pravite}s,tokenId is %{pravite}s", bundleName, tokenId);
+                ZLOGW("ReadPermission is empty!BundleName is %{public}s,tokenId is %{public}u", bundleName.c_str(), tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -116,24 +115,23 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     return false;
 }
 
-void PermissionProxy::FillData(DistributedData::StoreMetaData &meta)
+void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, const int32_t userId)
 {
-    meta.deviceId = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().uuid;
-    meta.user = DistributedKv::AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(IPCSkeleton::GetCallingUid());
+    meta.deviceId = DistributedKv::DevManager::GetInstance().GetLocalDevice().uuid;
+    meta.user = userId;
 }
 
 bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::string &moduleName,
-    const std::string &storeName, DistributedData::StoreMetaData &metaData)
+                                    const std::string &storeName, DistributedData::StoreMetaData &metaData, const int32_t userId)
 {
     DistributedData::StoreMetaData meta;
-    FillData(meta);
+    FillData(meta, userId);
     meta.bundleName = bundleName;
     meta.storeId = storeName;
     if (IsAllowCrossToU0(bundleName, storeName)) {
         ZLOGD("This hap is allowed to access across user sessions");
         meta.user = "0";
     }
-    ZLOGD("This hap is not allowed to access across user sessions");
     bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData);
     if (!isCreated) {
         ZLOGE("Interface token is not equal");
@@ -141,8 +139,10 @@ bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::st
     }
     return true;
 }
+
 inline bool PermissionProxy::IsAllowCrossToU0(const std::string &bundleName, const std::string &storeName)
 {
-    return bundleName == ALLOW_CROSS_USER.first && storeName == ALLOW_CROSS_USER.second;
+    // if settingdata public data, allow cross to user0
+    return bundleName == ALLOW_CROSS_USER_BUNDLE_NAME && storeName == ALLOW_CROSS_USER_STORE_NAME;
 }
 } // namespace OHOS::DataShare
