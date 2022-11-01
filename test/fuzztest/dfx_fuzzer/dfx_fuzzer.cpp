@@ -36,34 +36,39 @@ void FaultReporterFuzz(FaultReporter *faultReporter, const std::string &strBase,
 
 void DatabaseStatisticFuzz(const std::string &strBase, int intBase)
 {
-    auto dbs = Reporter::GetInstance()->DatabaseStatistic();
-    DbStat ds = { strBase, strBase, strBase, intBase };
-    dbs->Report(ds);
+    auto databaseStatistic = Reporter::GetInstance()->DatabaseStatistic();
+    DbStat ds = {
+        .userId = strBase,
+        .appId = strBase,
+        .storeId = strBase,
+        .dbSize = intBase
+    };
+    databaseStatistic->Report(ds);
 }
 
 void VisitStatisticFuzz(const std::string &strBase)
 {
-    auto vs = Reporter::GetInstance()->VisitStatistic();
-    struct VisitStat vss = { strBase, strBase };
-    vs->Report(vss);
+    auto visitStatistic = Reporter::GetInstance()->VisitStatistic();
+    struct VisitStat visitStat = { strBase, strBase };
+    visitStatistic->Report(visitStat);
     std::string myuid = strBase;
     std::string result;
-    ValueHash vh;
-    vh.CalcValueHash(myuid, result);
+    ValueHash valueHash;
+    valueHash.CalcValueHash(myuid, result);
 }
 
 void TrafficStatisticFuzz(const std::string &strBase, int intBase)
 {
-    auto ts = Reporter::GetInstance()->TrafficStatistic();
-    struct TrafficStat tss = { strBase, strBase, intBase, intBase };
-    ts->Report(tss);
+    auto trafficStatistic = Reporter::GetInstance()->TrafficStatistic();
+    struct TrafficStat trafficStat = { strBase, strBase, intBase, intBase };
+    trafficStatistic->Report(trafficStat);
 }
 
 void ApiPerformanceStatisticFuzz(const std::string &strBase, uint64_t uint64Base)
 {
-    auto ap = Reporter::GetInstance()->ApiPerformanceStatistic();
-    struct ApiPerformanceStat aps = { strBase, uint64Base, uint64Base, uint64Base };
-    ap->Report(aps);
+    auto apiPerformanceStatistic = Reporter::GetInstance()->ApiPerformanceStatistic();
+    struct ApiPerformanceStat apiPerformanceStat = { strBase, uint64Base, uint64Base, uint64Base };
+    apiPerformanceStatistic->Report(apiPerformanceStat);
 }
 
 void BehaviourReporterFuzz(const std::string &strBase)
