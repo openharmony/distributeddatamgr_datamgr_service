@@ -33,13 +33,9 @@ ohos_fuzztest("KvStoreSchedulerFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  sources = [
-    "kvstorescheduler_fuzzer.cpp"
-  ]
+  sources = [ "kvstorescheduler_fuzzer.cpp" ]
 
-  deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/autils:distributeddata_autils_static"
-  ]
+  deps = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/autils:distributeddata_autils_static" ]
 
   external_deps = [ "c_utils:utils" ]
 }
