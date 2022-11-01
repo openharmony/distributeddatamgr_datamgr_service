@@ -48,6 +48,11 @@ SchedulerTask KvScheduler::At(const std::chrono::system_clock::time_point &time,
     return it;
 }
 
+void KvScheduler::Now(std::function<void()> task)
+{
+    At(std::chrono::system_clock::now(), task);
+}
+
 SchedulerTask KvScheduler::Reset(SchedulerTask task, const std::chrono::system_clock::time_point &time,
     const std::chrono::system_clock::duration &interval)
 {

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #define LOG_TAG "DeviceManagerAdapter"
 #include "device_manager_adapter.h"
 #include <thread>
@@ -74,16 +75,11 @@ void DataMgrDmInitCall::OnRemoteDied()
 DeviceManagerAdapter::DeviceManagerAdapter()
 {
     ZLOGI("construct");
-    threadPool_ = KvStoreThreadPool::GetPool(POOL_SIZE, "DeviceMgr", true);
 }
 
 DeviceManagerAdapter::~DeviceManagerAdapter()
 {
     ZLOGI("Destruct");
-    if (threadPool_ != nullptr) {
-        threadPool_->Stop();
-        threadPool_ = nullptr;
-    }
 }
 
 DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
@@ -95,7 +91,7 @@ DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
 void DeviceManagerAdapter::Init()
 {
     ZLOGI("begin");
-    Execute(RegDevCallback());
+    RegDevCallback()();
 }
 
 std::function<void()> DeviceManagerAdapter::RegDevCallback()
@@ -232,16 +228,15 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
     ZLOGI("[offline] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
-    KvStoreTask task([this, dvInfo]() {
-        auto observers = GetObservers();
-        for (const auto &item : observers) {
-            if (item == nullptr) {
-                continue;
+    auto task = [this, dvInfo]() {
+        observers_.ForEachCopies([&dvInfo](const auto &key, auto &value) {
+            if (value != nullptr) {
+                value->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
             }
-            item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
-        }
-    }, "deviceOffline");
-    Execute(std::move(task));
+            return false;
+        });
+    };
+    scheduler_.Now(task);
 }
 
 void DeviceManagerAdapter::OnChanged(const DmDeviceInfo &info)
@@ -264,16 +259,15 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
     }
     ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
-    KvStoreTask task([this, dvInfo]() {
-        auto observers = GetObservers();
-        for (const auto &item : observers) {
-            if (item == nullptr) {
-                continue;
+    auto task = [this, dvInfo]() {
+        observers_.ForEachCopies([&dvInfo](const auto &key, auto &value) {
+            if (value != nullptr) {
+                value->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONREADY);
             }
-            item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONREADY);
-        }
-    }, "deviceReady");
-    Execute(std::move(task));
+            return false;
+        });
+    };
+    scheduler_.Now(task);
 }
 
 bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo)
@@ -376,15 +370,6 @@ DeviceInfo DeviceManagerAdapter::GetDeviceInfoFromCache(const std::string &id)
         ZLOGE("invalid id:%{public}s", KvStoreUtils::ToBeAnonymous(id).c_str());
     }
     return dvInfo;
-}
-
-bool DeviceManagerAdapter::Execute(KvStoreTask &&task)
-{
-    if (threadPool_ == nullptr) {
-        return false;
-    }
-    threadPool_->AddTask(std::move(task));
-    return true;
 }
 
 void DeviceManagerAdapter::UpdateDeviceInfo()
