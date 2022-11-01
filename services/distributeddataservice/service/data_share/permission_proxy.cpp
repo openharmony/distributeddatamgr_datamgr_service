@@ -29,6 +29,7 @@
 #include "system_ability_definition.h"
 
 namespace OHOS::DataShare {
+const std::pair<std::string, std::string> ALLOW_CROSS_USER= std::pair<std::string, std::string>("com.ohos.settingsdatas", "settingsdatas");
 static sptr<AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
 {
     sptr<ISystemAbilityManager> systemAbilityManager =
