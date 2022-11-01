@@ -62,7 +62,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     std::vector<uint8_t> fuzzVec(fuzzStr.begin(), fuzzStr.end());
 
     int count = 10;
-    char *str = new char[count + 1];
+    char *str = std::make_unique<char[]>(count + 1).get();
     str[count] = '\0';
     Blob blob1(str);
     blob1 = str;
@@ -74,11 +74,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     Blob blob6(std::move(blob5));
     Blob blob7 = blob6;
     blob7 = Blob(blob6);
-    std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(count);
-    uint8_t *writePtr = buffer.get();
+
+    uint8_t *writePtr = std::make_unique<uint8_t[]>(count).get();
     Blob blob8(fuzzStr);
     blob8.WriteToBuffer(writePtr, count);
-    delete[] str;
 
     return 0;
 }
