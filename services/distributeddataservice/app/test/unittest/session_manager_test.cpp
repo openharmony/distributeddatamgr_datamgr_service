@@ -14,6 +14,7 @@
  */
 
 #include "accesstoken_kit.h"
+#include "bootstrap.h"
 #include "communication_provider.h"
 #include "gtest/gtest.h"
 #include "kvstore_meta_manager.h"
@@ -30,11 +31,15 @@ using namespace OHOS::DistributedData;
 using namespace OHOS;
 using namespace OHOS::Security::AccessToken;
 constexpr const char *PEER_DEVICE_ID = "PEER_DEVICE_ID";
-constexpr int PEER_USER_ID = 101;
+constexpr int PEER_USER_ID1 = 101;
+constexpr int PEER_USER_ID2 = 100;
 class SessionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
     {
+        Bootstrap::GetInstance().LoadComponents();
+        Bootstrap::GetInstance().LoadDirectory();
+        Bootstrap::GetInstance().LoadCheckers();
         KvStoreMetaManager::GetInstance().InitMetaParameter();
         KvStoreMetaManager::GetInstance().InitMetaListener();
 
@@ -44,8 +49,10 @@ public:
 
         UserStatus status;
         status.isActive = true;
-        status.id = PEER_USER_ID;
+        status.id = PEER_USER_ID1;
         userMetaData.users = { status };
+        status.id = PEER_USER_ID2;
+        userMetaData.users.emplace_back(status);
 
         auto peerUserMetaKey = UserMetaRow::GetKeyFor(userMetaData.deviceId);
         MetaDataManager::GetInstance().SaveMeta({ peerUserMetaKey.begin(), peerUserMetaKey.end() }, userMetaData);
@@ -117,6 +124,6 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     recvHandler->ParseHeadData(data.get(), routeHeadSize, parseSize, users);
     EXPECT_EQ(routeHeadSize, parseSize);
     ASSERT_EQ(users.size(), 1);
-    EXPECT_EQ(users[0], "101");
+    EXPECT_EQ(users[0], "100");
 }
 } // namespace
