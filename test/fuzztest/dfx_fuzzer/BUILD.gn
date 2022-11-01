@@ -27,7 +27,8 @@ ohos_fuzztest("DfxFuzzTest") {
     "//commonlibrary/c_utils/base/include",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/dfx_fuzzer"
+  fuzz_config_file =
+      "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/dfx_fuzzer"
 
   cflags = [
     "-g",

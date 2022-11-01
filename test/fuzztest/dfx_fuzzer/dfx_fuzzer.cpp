@@ -26,60 +26,19 @@
 using namespace OHOS::DistributedKv;
 using namespace OHOS::DistributedDataDfx;
 namespace OHOS {
-static std::map<std::string, std::any> fakeCache_;
-static const inline int INTERNAL = 1000;
-
-static std::string GetString(const std::string &key)
-{
-    usleep(INTERNAL);
-    if (fakeCache_.count(key)) {
-        return std::any_cast<std::string>(fakeCache_[key]);
-    }
-    return "";
-}
-
-static int GetInt(const std::string &key)
-{
-    usleep(INTERNAL);
-    if (fakeCache_.count(key)) {
-        return std::any_cast<int>(fakeCache_[key]);
-    }
-    return 0;
-}
-
-static void Clear()
-{
-    fakeCache_.clear();
-}
-
 void FaultReporterFuzz(FaultReporter *faultReporter, const std::string &strBase, const FaultMsg &faultMsg,
     const CommFaultMsg &commFaultMsg, const DBFaultMsg &dbFaultMsg)
 {
-    Clear();
-
     faultReporter->Report(faultMsg);
-    GetString(strBase);
-    GetInt(strBase);
-    Clear();
-
     faultReporter->Report(commFaultMsg);
-    GetString(strBase);
-    GetInt(strBase);
-    Clear();
-
     faultReporter->Report(dbFaultMsg);
-    GetString(strBase);
-    GetInt(strBase);
-    Clear();
 }
 
 void DatabaseStatisticFuzz(const std::string &strBase, int intBase)
 {
-    Clear();
     auto dbs = Reporter::GetInstance()->DatabaseStatistic();
     DbStat ds = { strBase, strBase, strBase, intBase };
     dbs->Report(ds);
-    Clear();
 }
 
 void VisitStatisticFuzz(const std::string &strBase)
@@ -87,8 +46,6 @@ void VisitStatisticFuzz(const std::string &strBase)
     auto vs = Reporter::GetInstance()->VisitStatistic();
     struct VisitStat vss = { strBase, strBase };
     vs->Report(vss);
-
-    Clear();
     std::string myuid = strBase;
     std::string result;
     ValueHash vh;
@@ -104,16 +61,13 @@ void TrafficStatisticFuzz(const std::string &strBase, int intBase)
 
 void ApiPerformanceStatisticFuzz(const std::string &strBase, uint64_t uint64Base)
 {
-    Clear();
     auto ap = Reporter::GetInstance()->ApiPerformanceStatistic();
     struct ApiPerformanceStat aps = { strBase, uint64Base, uint64Base, uint64Base };
     ap->Report(aps);
-    Clear();
 }
 
 void BehaviourReporterFuzz(const std::string &strBase)
 {
-    Clear();
     auto behaviourReporter = Reporter::GetInstance()->BehaviourReporter();
     struct BehaviourMsg behaviourMsg {
         .userId = strBase,
@@ -122,9 +76,7 @@ void BehaviourReporterFuzz(const std::string &strBase)
         .extensionInfo = strBase,
         .behaviourType = BehaviourType::DATABASE_BACKUP
     };
-    ;
     behaviourReporter->Report(behaviourMsg);
-    Clear();
 }
 } // namespace OHOS
 
