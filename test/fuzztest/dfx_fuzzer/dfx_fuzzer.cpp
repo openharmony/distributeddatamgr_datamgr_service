@@ -53,8 +53,6 @@ static void Clear()
     fakeCache_.clear();
 }
 
-
-
 void FaultReporterFuzz(FaultReporter *faultReporter, const std::string &strBase, const FaultMsg &faultMsg,
     const CommFaultMsg &commFaultMsg, const DBFaultMsg &dbFaultMsg)
 {
@@ -111,7 +109,6 @@ void ApiPerformanceStatisticFuzz(const std::string &strBase, uint64_t uint64Base
     auto ap = Reporter::GetInstance()->ApiPerformanceStatistic();
     struct ApiPerformanceStat aps = { strBase, uint64Base, uint64Base, uint64Base };
     ap->Report(aps);
-
     Clear();
 }
 
@@ -130,17 +127,16 @@ void BehaviourReporterFuzz(const std::string &strBase)
     behaviourReporter->Report(behaviourMsg);
     Clear();
 }
-
 } // namespace OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
+    std::string fuzzStr(reinterpret_cast<const char *>(data), size);
     int fuzzInt = static_cast<int>(size);
     int32_t fuzzInt32 = static_cast<int32_t>(size);
     uint64_t fuzzUInt64 = static_cast<uint64_t>(size);
-    std::string fuzzStr(reinterpret_cast<const char *>(data), size);
 
     struct FaultMsg faultMsg {
         .faultType = FaultType::SERVICE_FAULT,
