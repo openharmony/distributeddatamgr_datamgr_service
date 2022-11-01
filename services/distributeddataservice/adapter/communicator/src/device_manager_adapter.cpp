@@ -90,7 +90,7 @@ DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
 void DeviceManagerAdapter::Init()
 {
     ZLOGI("begin");
-    RegDevCallback();
+    RegDevCallback()();
 }
 
 std::function<void()> DeviceManagerAdapter::RegDevCallback()
