@@ -24,14 +24,7 @@ ohos_fuzztest("SingleKvStoreFuzzTest") {
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//developtools/profiler/device/base/include",
     "//commonlibrary/c_utils/base/include",
-    "//third_party/sqlite/include",
-    "//third_party/jsoncpp/include/json",
-    "//third_party/skia/third_party/externals/spirv-headers/tools/buildHeaders/jsoncpp/dist/json",
-    "//third_party/skia/third_party/externals/swiftshader/third_party/SPIRV-Headers/tools/buildHeaders/jsoncpp/dist/json",
-    "//third_party/jsoncpp/include/json",
-    "//third_party/grpc/src/core/lib/json",
   ]
 
   fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/singlekvstore_fuzzer"
@@ -67,9 +60,6 @@ ohos_fuzztest("SingleKvStoreFuzzTest") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
-    "samgr:samgr_proxy",
   ]
 }
 

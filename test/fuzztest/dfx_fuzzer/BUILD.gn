@@ -16,18 +16,18 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("DistributedKvDataManagerFuzzTest") {
-  module_out_path = "datamgr_service/distributeddatafwk"
+ohos_fuzztest("DfxFuzzTest") {
+  module_out_path = "datamgr_service/adapter"
 
   include_dirs = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx/src",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx/src/behaviour",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx/src/fault",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx/src/statistic",
     "//commonlibrary/c_utils/base/include",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/distributedkvdatamanager_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/dfx_fuzzer"
 
   cflags = [
     "-g",
@@ -35,27 +35,14 @@ ohos_fuzztest("DistributedKvDataManagerFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "distributedkvdatamanager_fuzzer.cpp" ]
 
-  defines = [
-    "SQLITE_ENABLE_SNAPSHOT",
-    "_LARGEFILE64_SOURCE",
-    "_FILE_OFFSET_BITS=64",
-    "SQLITE_HAS_CODEC",
-    "SQLITE_ENABLE_JSON1",
-    "USING_HILOG_LOGGER",
-    "USE_SQLITE_SYMBOLS",
-    "USING_DB_JSON_EXTRACT_AUTOMATICALLY",
-    "LOW_LEVEL_MEM_DEV",
-    "JSONCPP_USE_BUILDER",
-    "OMIT_FLATBUFFER",
-    "RELATIONAL_STORE",
-    "SQLITE_DISTRIBUTE_RELATIONAL",
+  sources = [
+    "dfx_fuzzer.cpp",
   ]
 
   deps = [
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//third_party/openssl:libcrypto_shared",
   ]
 
   external_deps = [
@@ -69,7 +56,7 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":DistributedKvDataManagerFuzzTest",
+    ":DfxFuzzTest",
   ]
 }
 ###############################################################################
