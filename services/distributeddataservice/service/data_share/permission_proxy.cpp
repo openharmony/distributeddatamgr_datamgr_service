@@ -77,7 +77,8 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
             if (permission.empty()) {
-                ZLOGW("WritePermission is empty!BundleName is %{public}s,tokenId is %{public}u", bundleName.c_str(), tokenId);
+                ZLOGW("WritePermission is empty!BundleName is %{public}s,tokenId is %{public}u", bundleName.c_str(),
+                    tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -101,7 +102,8 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
-                ZLOGW("ReadPermission is empty!BundleName is %{public}s,tokenId is %{public}u", bundleName.c_str(), tokenId);
+                ZLOGW("ReadPermission is empty!BundleName is %{public}s,tokenId is %{public}u", bundleName.c_str(),
+                    tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -122,7 +124,7 @@ void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, const int32
 }
 
 bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::string &moduleName,
-                                    const std::string &storeName, DistributedData::StoreMetaData &metaData, const int32_t userId)
+    const std::string &storeName, DistributedData::StoreMetaData &metaData, const int32_t userId)
 {
     DistributedData::StoreMetaData meta;
     FillData(meta, userId);

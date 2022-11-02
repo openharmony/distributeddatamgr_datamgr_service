@@ -26,7 +26,7 @@ public:
     static bool QueryWritePermission(const std::string &bundleName, uint32_t tokenId, std::string &permission);
     static bool QueryReadPermission(const std::string &bundleName, uint32_t tokenId, std::string &permission);
     static bool QueryMetaData(const std::string &bundleName, const std::string &moduleName,
-                              const std::string &storeName, DistributedData::StoreMetaData &metaData, const int32_t userId);
+        const std::string &storeName, DistributedData::StoreMetaData &metaData, const int32_t userId);
 
 private:
     static void FillData(DistributedData::StoreMetaData &data, const int32_t userId);
