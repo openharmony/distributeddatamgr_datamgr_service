@@ -37,6 +37,7 @@ static const uint32_t ENCRYPT_KEY_LENGTH = 48;
 std::vector<uint8_t> CryptoManagerTest::randomKey;
 void CryptoManagerTest::SetUpTestCase(void)
 {
+    KvStoreMetaManager::GetInstance().InitMetaParameter();
     randomKey = Random(KEY_LENGTH);
 }
 
