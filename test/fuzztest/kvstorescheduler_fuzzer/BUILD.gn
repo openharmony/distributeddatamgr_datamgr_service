@@ -16,18 +16,15 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("DeviceKvStoreFuzzTest") {
-  module_out_path = "datamgr_service/distributeddatafwk"
+ohos_fuzztest("KvStoreSchedulerFuzzTest") {
+  module_out_path = "datamgr_service/adapter"
 
   include_dirs = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//commonlibrary/c_utils/base/include",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/devicekvstore_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/kvstorescheduler_fuzzer"
 
   cflags = [
     "-g",
@@ -35,28 +32,10 @@ ohos_fuzztest("DeviceKvStoreFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "devicekvstore_fuzzer.cpp" ]
 
-  defines = [
-    "SQLITE_ENABLE_SNAPSHOT",
-    "_LARGEFILE64_SOURCE",
-    "_FILE_OFFSET_BITS=64",
-    "SQLITE_HAS_CODEC",
-    "SQLITE_ENABLE_JSON1",
-    "USING_HILOG_LOGGER",
-    "USE_SQLITE_SYMBOLS",
-    "USING_DB_JSON_EXTRACT_AUTOMATICALLY",
-    "LOW_LEVEL_MEM_DEV",
-    "JSONCPP_USE_BUILDER",
-    "OMIT_FLATBUFFER",
-    "RELATIONAL_STORE",
-    "SQLITE_DISTRIBUTE_RELATIONAL",
-  ]
+  sources = [ "kvstorescheduler_fuzzer.cpp" ]
 
-  deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-  ]
+  deps = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/autils:distributeddata_autils_static" ]
 
   external_deps = [ "c_utils:utils" ]
 }
@@ -67,7 +46,7 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":DeviceKvStoreFuzzTest",
+    ":KvStoreSchedulerFuzzTest",
   ]
 }
 ###############################################################################

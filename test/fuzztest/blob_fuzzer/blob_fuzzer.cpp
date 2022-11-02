@@ -23,7 +23,6 @@
 
 using namespace OHOS::DistributedKv;
 namespace OHOS {
-Blob blobTest = "Test";
 void BlobSelfOption(const Blob &blob)
 {
     blob.Empty();
@@ -63,7 +62,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     std::vector<uint8_t> fuzzVec(fuzzStr.begin(), fuzzStr.end());
 
     int count = 10;
-    char *str = new char[count + 1];
+    char *str = std::make_unique<char[]>(count + 1).get();
     str[count] = '\0';
     Blob blob1(str);
     blob1 = str;
@@ -79,7 +78,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     uint8_t *writePtr = buffer.get();
     Blob blob8(fuzzStr);
     blob8.WriteToBuffer(writePtr, count);
-    delete[] str;
 
     return 0;
 }

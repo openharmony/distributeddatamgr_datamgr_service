@@ -71,7 +71,8 @@ void OptionsFuzz(const std::string &strBase)
         .createIfMissing = true,
         .encrypt = false,
         .autoSync = true,
-        .kvStoreType = KvStoreType::SINGLE_VERSION };
+        .kvStoreType = KvStoreType::SINGLE_VERSION
+    };
     optionsIn.area = EL1;
     optionsIn.baseDir = strBase;
     MessageParcel parcel;
