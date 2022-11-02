@@ -20,6 +20,7 @@
 #include "types.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
+using namespace OHOS::DistributedKv;
 class CryptoManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -37,7 +38,6 @@ static const uint32_t ENCRYPT_KEY_LENGTH = 48;
 std::vector<uint8_t> CryptoManagerTest::randomKey;
 void CryptoManagerTest::SetUpTestCase(void)
 {
-    KvStoreMetaManager::GetInstance().InitMetaParameter();
     randomKey = Random(KEY_LENGTH);
 }
 
@@ -55,6 +55,19 @@ std::vector<uint8_t> CryptoManagerTest::Random(uint32_t len)
         key[i] = static_cast<uint8_t>(distribution(randomDevice));
     }
     return key;
+}
+
+/**
+* @tc.name: GenerateRootKey
+* @tc.desc: generate the root key
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: zuojiangjiang
+*/
+HWTEST_F(CryptoManagerTest, GenerateRootKey, TestSize.Level0)
+{
+    auto errCode = CryptoManager::GetInstance().GenerateRootKey();
+    EXPECT_EQ(errCode, CryptoManager::ErrCode::SUCCESS);
 }
 
 /**
