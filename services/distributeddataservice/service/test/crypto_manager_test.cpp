@@ -20,7 +20,6 @@
 #include "types.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
-using namespace OHOS::DistributedKv;
 class CryptoManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
