@@ -128,7 +128,7 @@ bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::st
     FillData(meta, userId);
     meta.bundleName = bundleName;
     meta.storeId = storeName;
-    if (IsAllowCrossToU0(bundleName, storeName)) {
+    if (IsSingleAllowProvider(bundleName, storeName)) {
         ZLOGD("This hap is allowed to access across user sessions");
         meta.user = "0";
     }
@@ -140,7 +140,7 @@ bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::st
     return true;
 }
 
-inline bool PermissionProxy::IsAllowCrossToU0(const std::string &bundleName, const std::string &storeName)
+inline bool PermissionProxy::IsSingleAllowProvider(const std::string &bundleName, const std::string &storeName)
 {
     // if settingdata public data, allow cross to user0
     return bundleName == "com.ohos.settingsdatas" && storeName == "settingsdatas";

@@ -30,7 +30,7 @@ public:
 
 private:
     static void FillData(DistributedData::StoreMetaData &data, const int32_t userId);
-    static inline bool IsAllowCrossToU0(const std::string &bundleName, const std::string &storeName);
+    static inline bool IsSingleAllowProvider(const std::string &bundleName, const std::string &storeName);
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_PERMISSION_PROXY_H
