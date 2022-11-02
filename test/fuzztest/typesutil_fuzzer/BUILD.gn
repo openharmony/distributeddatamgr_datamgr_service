@@ -16,18 +16,20 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("DistributedKvDataManagerFuzzTest") {
+ohos_fuzztest("TypesUtilFuzzTest") {
   module_out_path = "datamgr_service/distributeddatafwk"
 
   include_dirs = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
+    "ipc/interfaces/innerkits/ipc_core/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/rdb/include",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/data_share/interfaces/inner_api/common/include",
     "//commonlibrary/c_utils/base/include",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/distributedkvdatamanager_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/typesutil_fuzzer"
 
   cflags = [
     "-g",
@@ -35,30 +37,16 @@ ohos_fuzztest("DistributedKvDataManagerFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "distributedkvdatamanager_fuzzer.cpp" ]
 
-  defines = [
-    "SQLITE_ENABLE_SNAPSHOT",
-    "_LARGEFILE64_SOURCE",
-    "_FILE_OFFSET_BITS=64",
-    "SQLITE_HAS_CODEC",
-    "SQLITE_ENABLE_JSON1",
-    "USING_HILOG_LOGGER",
-    "USE_SQLITE_SYMBOLS",
-    "USING_DB_JSON_EXTRACT_AUTOMATICALLY",
-    "LOW_LEVEL_MEM_DEV",
-    "JSONCPP_USE_BUILDER",
-    "OMIT_FLATBUFFER",
-    "RELATIONAL_STORE",
-    "SQLITE_DISTRIBUTE_RELATIONAL",
+  sources = [ "typesutil_fuzzer.cpp" ]
+
+  deps = []
+
+  external_deps = [
+    "c_utils:utils",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
   ]
-
-  deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-  ]
-
-  external_deps = [ "c_utils:utils" ]
 }
 
 ###############################################################################
@@ -67,7 +55,7 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":DistributedKvDataManagerFuzzTest",
+    ":TypesUtilFuzzTest",
   ]
 }
 ###############################################################################
