@@ -51,7 +51,7 @@ std::vector<uint8_t> CryptoManagerTest::Random(uint32_t len)
     std::random_device randomDevice;
     std::uniform_int_distribution<int> distribution(0, std::numeric_limits<uint8_t>::max());
     std::vector<uint8_t> key(len);
-    for (int32_t i = 0; i < len; i++) {
+    for (uint32_t i = 0; i < len; i++) {
         key[i] = static_cast<uint8_t>(distribution(randomDevice));
     }
     return key;
