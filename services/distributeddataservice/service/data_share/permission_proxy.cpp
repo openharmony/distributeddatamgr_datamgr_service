@@ -20,7 +20,7 @@
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
 #include "communication_provider.h"
-#include "dev_manager.h"
+#include "device_manager_adapter.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
 #include "log_print.h"
@@ -119,7 +119,7 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
 
 void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, const int32_t userId)
 {
-    meta.deviceId = DistributedKv::DevManager::GetInstance().GetLocalDevice().uuid;
+    meta.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     meta.user = userId;
 }
 
