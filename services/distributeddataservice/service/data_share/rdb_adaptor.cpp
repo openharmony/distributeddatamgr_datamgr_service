@@ -29,7 +29,7 @@ int32_t RdbAdaptor::Insert(const UriInfo &uriInfo, const DataShareValuesBucket &
     return delegate.Insert(uriInfo.tableName, valuesBucket);
 }
 int32_t RdbAdaptor::Update(const UriInfo &uriInfo, const DataSharePredicates &predicate,
-                           const DataShareValuesBucket &valuesBucket, const int32_t userId)
+    const DataShareValuesBucket &valuesBucket, const int32_t userId)
 {
     DistributedData::StoreMetaData metaData;
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
@@ -48,7 +48,7 @@ int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &pr
     return delegate.Delete(uriInfo.tableName, predicate);
 }
 std::shared_ptr<DataShareResultSet> RdbAdaptor::Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
-                                                      const std::vector<std::string> &columns, const int32_t userId)
+    const std::vector<std::string> &columns, const int32_t userId)
 {
     DistributedData::StoreMetaData metaData;
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {

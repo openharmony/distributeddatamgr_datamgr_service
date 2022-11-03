@@ -53,7 +53,7 @@ public:
                           const DataShareValuesBucket &valuesBucket, const int32_t userId);
     static int32_t Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate, const int32_t userId);
     static std::shared_ptr<DataShareResultSet> Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
-                                                     const std::vector<std::string> &columns, const int32_t userId);
+        const std::vector<std::string> &columns, const int32_t userId);
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:
