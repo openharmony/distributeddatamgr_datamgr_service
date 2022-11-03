@@ -14,6 +14,7 @@
  */
 
 #include "ark_communication_provider.h"
+#include "device_manager_adapter.h"
 #include "log_print.h"
 
 #undef LOG_TAG
@@ -21,6 +22,7 @@
 
 namespace OHOS {
 namespace AppDistributedKv {
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 CommunicationProvider &ArkCommunicationProvider::Init()
 {
     static ArkCommunicationProvider instance;
@@ -44,7 +46,7 @@ ArkCommunicationProvider::ArkCommunicationProvider()
 DeviceInfo ArkCommunicationProvider::GetLocalDevice() const
 {
     if (deviceQuery_ == nullptr) {
-        return CommunicationProviderImpl::GetLocalDevice();
+        return DmAdapter::GetInstance().GetLocalDevice();
     }
     return deviceQuery_->GetLocalDevice();
 }
@@ -52,7 +54,7 @@ DeviceInfo ArkCommunicationProvider::GetLocalDevice() const
 std::vector<DeviceInfo> ArkCommunicationProvider::GetRemoteDevices() const
 {
     if (deviceQuery_ == nullptr) {
-        return CommunicationProviderImpl::GetRemoteDevices();
+        return DmAdapter::GetInstance().GetRemoteDevices();
     }
     return deviceQuery_->GetRemoteDevices();
 }
@@ -60,7 +62,7 @@ std::vector<DeviceInfo> ArkCommunicationProvider::GetRemoteDevices() const
 DeviceInfo ArkCommunicationProvider::GetDeviceInfo(const std::string &networkId) const
 {
     if (deviceQuery_ == nullptr) {
-        return CommunicationProviderImpl::GetDeviceInfo(networkId);
+        return DmAdapter::GetInstance().GetDeviceInfo(networkId);
     }
     return deviceQuery_->GetDeviceInfo(networkId);
 }

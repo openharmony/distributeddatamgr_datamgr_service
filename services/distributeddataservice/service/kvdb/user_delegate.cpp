@@ -13,24 +13,23 @@
  * limitations under the License.
  */
 
+#define LOG_TAG "UserDelegate"
 #include "user_delegate.h"
 
-#define LOG_TAG "UserDelegate"
-
 #include <thread>
-#include "communicator/communication_provider.h"
+#include "communicator/device_manager_adapter.h"
 #include "executor_factory.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
+
 namespace OHOS::DistributedData {
-using OHOS::AppDistributedKv::CommunicationProvider;
 using namespace OHOS::DistributedKv;
 std::string GetLocalDeviceId()
 {
     static std::string deviceId;
     if (deviceId.empty()) {
-        deviceId = CommunicationProvider::GetInstance().GetLocalDevice().uuid;
+        deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     }
 
     return deviceId;
