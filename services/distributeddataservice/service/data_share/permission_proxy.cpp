@@ -20,8 +20,8 @@
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
 #include "communication_provider.h"
+#include "device_manager_adapter.h"
 #include "if_system_ability_manager.h"
-#include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
@@ -77,6 +77,8 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
             if (permission.empty()) {
+                ZLOGW("WritePermission is empty!BundleName is %{public}s,tokenId is %{public}u", bundleName.c_str(),
+                    tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -100,35 +102,49 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
-                ZLOGE("Verify write permission denied!");
+                ZLOGW("ReadPermission is empty!BundleName is %{public}s,tokenId is %{public}u", bundleName.c_str(),
+                    tokenId);
                 return true;
             }
-            permission = item.readPermission;
+            int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
+            if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+                ZLOGE("Verify Read permission denied!");
+                return false;
+            }
             return true;
         }
     }
     return false;
 }
 
-void PermissionProxy::FillData(DistributedData::StoreMetaData &meta)
+void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, const int32_t userId)
 {
-    meta.deviceId = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().uuid;
-    meta.user = DistributedKv::AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(IPCSkeleton::GetCallingUid());
+    meta.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    meta.user = userId;
 }
 
 bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::string &moduleName,
-    const std::string &storeName, DistributedData::StoreMetaData &metaData)
+    const std::string &storeName, DistributedData::StoreMetaData &metaData, const int32_t userId)
 {
     DistributedData::StoreMetaData meta;
-    FillData(meta);
+    FillData(meta, userId);
     meta.bundleName = bundleName;
     meta.storeId = storeName;
-
+    if (IsSingleAllowProvider(bundleName, storeName)) {
+        ZLOGD("This hap is allowed to access across user sessions");
+        meta.user = "0";
+    }
     bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData);
     if (!isCreated) {
         ZLOGE("Interface token is not equal");
         return false;
     }
     return true;
+}
+
+inline bool PermissionProxy::IsSingleAllowProvider(const std::string &bundleName, const std::string &storeName)
+{
+    // if settingdata public data, allow cross to user0
+    return bundleName == "com.ohos.settingsdata" && storeName == "settingsdata";
 }
 } // namespace OHOS::DataShare

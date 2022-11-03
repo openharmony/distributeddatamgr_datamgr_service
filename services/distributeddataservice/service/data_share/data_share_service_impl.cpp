@@ -18,6 +18,7 @@
 #include "data_share_service_impl.h"
 
 #include "accesstoken_kit.h"
+#include "account/account_delegate.h"
 #include "bundle_constants.h"
 #include "dataobs_mgr_client.h"
 #include "ipc_skeleton.h"
@@ -54,7 +55,8 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
         return ERROR;
     }
 
-    int32_t ret = RdbAdaptor::Insert(uriInfo, valuesBucket);
+    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    int32_t ret = RdbAdaptor::Insert(uriInfo, valuesBucket, userId);
     if (ret == ERROR) {
         ZLOGE("Insert error %{public}s", uri.c_str());
         return ERROR;
@@ -95,7 +97,8 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         ZLOGE("CheckPermisson failed!");
         return ERROR;
     }
-    int32_t ret = RdbAdaptor::Update(uriInfo, predicate, valuesBucket);
+    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    int32_t ret = RdbAdaptor::Update(uriInfo, predicate, valuesBucket, userId);
     if (ret == ERROR) {
         ZLOGE("Update error %{public}s", uri.c_str());
         return ERROR;
@@ -118,7 +121,8 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         return ERROR;
     }
 
-    int32_t ret = RdbAdaptor::Delete(uriInfo, predicate);
+    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    int32_t ret = RdbAdaptor::Delete(uriInfo, predicate, userId);
     if (ret == ERROR) {
         ZLOGE("Delete error %{public}s", uri.c_str());
         return ERROR;
@@ -141,8 +145,8 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         ZLOGE("CheckPermisson failed!");
         return nullptr;
     }
-
-    return RdbAdaptor::Query(uriInfo, predicates, columns);
+    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    return RdbAdaptor::Query(uriInfo, predicates, columns, userId);
 }
 
 bool DataShareServiceImpl::CheckPermisson(const UriInfo &uriInfo, DataShareServiceImpl::PermissionType permissionType)

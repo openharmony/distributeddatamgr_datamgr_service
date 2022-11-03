@@ -26,10 +26,11 @@ public:
     static bool QueryWritePermission(const std::string &bundleName, uint32_t tokenId, std::string &permission);
     static bool QueryReadPermission(const std::string &bundleName, uint32_t tokenId, std::string &permission);
     static bool QueryMetaData(const std::string &bundleName, const std::string &moduleName,
-        const std::string &storeName, DistributedData::StoreMetaData &metaData);
+        const std::string &storeName, DistributedData::StoreMetaData &metaData, const int32_t userId);
 
 private:
-    static void FillData(DistributedData::StoreMetaData &data);
+    static void FillData(DistributedData::StoreMetaData &data, const int32_t userId);
+    static inline bool IsSingleAllowProvider(const std::string &bundleName, const std::string &storeName);
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_PERMISSION_PROXY_H
