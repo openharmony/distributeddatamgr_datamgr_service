@@ -56,7 +56,7 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
     }
 
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    int32_t ret = RdbAdaptor::Insert(uriInfo, valuesBucket, userId);
+    int32_t ret = RdbAdaptor::Insert(uriInfo, valuesBucket, atoi(userId.c_str()));
     if (ret == ERROR) {
         ZLOGE("Insert error %{public}s", uri.c_str());
         return ERROR;
@@ -98,7 +98,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         return ERROR;
     }
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    int32_t ret = RdbAdaptor::Update(uriInfo, predicate, valuesBucket, userId);
+    int32_t ret = RdbAdaptor::Update(uriInfo, predicate, valuesBucket, atoi(userId.c_str()));
     if (ret == ERROR) {
         ZLOGE("Update error %{public}s", uri.c_str());
         return ERROR;
@@ -122,7 +122,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
     }
 
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    int32_t ret = RdbAdaptor::Delete(uriInfo, predicate, userId);
+    int32_t ret = RdbAdaptor::Delete(uriInfo, predicate, atoi(userId.c_str()));
     if (ret == ERROR) {
         ZLOGE("Delete error %{public}s", uri.c_str());
         return ERROR;
@@ -146,7 +146,7 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         return nullptr;
     }
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    return RdbAdaptor::Query(uriInfo, predicates, columns, userId);
+    return RdbAdaptor::Query(uriInfo, predicates, columns, atoi(userId.c_str()));
 }
 
 bool DataShareServiceImpl::CheckPermisson(const UriInfo &uriInfo, DataShareServiceImpl::PermissionType permissionType)

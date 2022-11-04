@@ -15,7 +15,7 @@ import("//build/test.gni")
 module_output_path = "datamgr_service/distributeddatafwk"
 
 ###############################################################################
-ohos_unittest("DistributeddataAccountTest") {
+ohos_unittest("AccountDelegateTest") {
   module_out_path = module_output_path
 
   sources = [ "account_delegate_test.cpp" ]
@@ -49,6 +49,6 @@ group("unittest") {
 
   deps = []
 
-  deps += [ ":DistributeddataAccountTest" ]
+  deps += [ ":AccountDelegateTest" ]
 }
 ###############################################################################

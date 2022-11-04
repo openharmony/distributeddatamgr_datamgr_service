@@ -36,16 +36,10 @@ std::string AccountDelegateDefaultImpl::GetCurrentAccountId() const
     return DEFAULT_OHOS_ACCOUNT_UID;
 }
 
-std::string AccountDelegateDefaultImpl::GetDeviceAccountIdByUID(int32_t uid) const
-{
-    ZLOGD("no account part, return default. uid:%d", uid);
-    return std::to_string(0);
-}
-
-int32_t AccountDelegateDefaultImpl::GetUserByToken(uint32_t tokenId) const
+std::string AccountDelegateDefaultImpl::GetUserByToken(uint32_t tokenId) const
 {
     (void)tokenId;
-    return 0;
+    return "0";
 }
 
 bool AccountDelegateDefaultImpl::QueryUsers(std::vector<int> &users)

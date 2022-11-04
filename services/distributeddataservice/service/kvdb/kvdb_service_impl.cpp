@@ -111,7 +111,7 @@ Status KVDBServiceImpl::GetStoreIds(const AppId &appId, std::vector<StoreId> &st
     std::vector<StoreMetaData> metaData;
     auto user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    auto prefix = StoreMetaData::GetPrefix({ deviceId, std::to_string(user), "default", appId.appId });
+    auto prefix = StoreMetaData::GetPrefix({ deviceId, user, "default", appId.appId });
     auto instanceId = GetInstIndex(IPCSkeleton::GetCallingTokenID(), appId);
     MetaDataManager::GetInstance().LoadMeta(prefix, metaData);
     for (auto &item : metaData) {
@@ -517,15 +517,15 @@ StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreI
     metaData.bundleName = appId.appId;
     metaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
     metaData.storeId = storeId.storeId;
-    metaData.user = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(metaData.uid);
+    metaData.user = AccountDelegate::GetInstance()->GetUserByToken(metaData.tokenId);
     return metaData;
 }
 
 StrategyMeta KVDBServiceImpl::GetStrategyMeta(const AppId &appId, const StoreId &storeId)
 {
-    auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    auto userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(IPCSkeleton::GetCallingUid());
     auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto userId = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
     StrategyMeta strategyMeta(deviceId, userId, appId.appId, storeId.storeId);
     strategyMeta.instanceId = GetInstIndex(tokenId, appId);
     return strategyMeta;

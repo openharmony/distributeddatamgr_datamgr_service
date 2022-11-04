@@ -145,8 +145,9 @@ void KvStoreMetaManager::InitMetaData()
         return;
     }
     auto uid = getuid();
+    auto token = IPCSkeleton::GetCallingTokenID();
     const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
+    const std::string userId = AccountDelegate::GetInstance()->GetUserByToken(token);
     StoreMetaData data;
     data.appId = label_;
     data.appType = "default";
@@ -165,7 +166,7 @@ void KvStoreMetaManager::InitMetaData()
     data.version = META_STORE_VERSION;
     data.securityLevel = SecurityLevel::S1;
     data.area = EL1;
-    data.tokenId = IPCSkeleton::GetCallingTokenID();
+    data.tokenId = token;
     if (!MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data)) {
         ZLOGE("save meta fail");
     }

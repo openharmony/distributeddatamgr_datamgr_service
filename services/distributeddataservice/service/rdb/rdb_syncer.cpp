@@ -83,7 +83,7 @@ std::string RdbSyncer::GetIdentifier() const
 
 std::string RdbSyncer::GetUserId() const
 {
-    return AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid_);
+    return AccountDelegate::GetInstance()->GetUserByToken(token_);
 }
 
 std::string RdbSyncer::GetBundleName() const
@@ -137,7 +137,7 @@ void RdbSyncer::FillMetaData(StoreMetaData &meta)
     meta.bundleName = param_.bundleName_;
     meta.deviceId = CommunicationProvider::GetInstance().GetLocalDevice().uuid;
     meta.storeId = RemoveSuffix(param_.storeName_);
-    meta.user = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid_);
+    meta.user = AccountDelegate::GetInstance()->GetUserByToken(token_);
     meta.storeType = param_.type_;
     meta.securityLevel = param_.level_;
     meta.area = param_.area_;

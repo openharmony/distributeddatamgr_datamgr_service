@@ -89,7 +89,7 @@ void StoreCache::CloseExcept(const std::set<int32_t> &users)
     DBManager manager("", "");
     stores_.EraseIf([&manager, &users](const auto &tokenId, std::map<std::string, DBStoreDelegate> &delegates) {
         auto userId = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-        if (users.count(userId) != 0) {
+        if (users.count(atoi(userId.c_str())) != 0) {
             return delegates.empty();
         }
         for (auto it = delegates.begin(); it != delegates.end();) {

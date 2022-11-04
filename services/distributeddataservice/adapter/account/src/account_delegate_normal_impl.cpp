@@ -55,30 +55,19 @@ std::string AccountDelegateNormalImpl::GetCurrentAccountId() const
     return Sha256AccountId(ohosAccountInfo.second.uid_);
 }
 
-std::string AccountDelegateNormalImpl::GetDeviceAccountIdByUID(int32_t uid) const
-{
-    int userId = 0;
-    auto ret = AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);
-    if (ret != 0) {
-        ZLOGE("failed get os account local id from uid, ret:%{public}d", ret);
-        return {};
-    }
-    return std::to_string(userId);
-}
-
-int32_t AccountDelegateNormalImpl::GetUserByToken(uint32_t tokenId) const
+std::string AccountDelegateNormalImpl::GetUserByToken(uint32_t tokenId) const
 {
     auto type = AccessTokenKit::GetTokenTypeFlag(tokenId);
     if (type == TOKEN_NATIVE || type == TOKEN_SHELL) {
-        return 0;
+        return "0";
     }
 
     HapTokenInfo tokenInfo;
     if (AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo) != RET_SUCCESS) {
-        return -1;
+        return "";
     }
 
-    return tokenInfo.userID;
+    return std::to_string(tokenInfo.userID);
 }
     
 bool AccountDelegateNormalImpl::QueryUsers(std::vector<int> &users)

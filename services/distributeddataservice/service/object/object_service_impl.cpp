@@ -74,9 +74,9 @@ int32_t ObjectServiceImpl::OnInitialize()
         ZLOGE("failed to get local device id");
         return OBJECT_INNER_ERROR;
     }
-    auto uid = IPCSkeleton::GetCallingUid();
+    auto token = IPCSkeleton::GetCallingTokenID();
     const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
+    const std::string userId = AccountDelegate::GetInstance()->GetUserByToken(token);
     StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.deviceId = localDeviceId;
@@ -88,10 +88,10 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     saveMeta.user = userId;
     saveMeta.account = accountId;
-    saveMeta.tokenId = IPCSkeleton::GetCallingTokenID();
+    saveMeta.tokenId = token;
     saveMeta.securityLevel = SecurityLevel::S1;
     saveMeta.area = 1;
-    saveMeta.uid = uid;
+    saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = KvStoreType::SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, userId);
