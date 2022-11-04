@@ -42,6 +42,7 @@ public:
         Bootstrap::GetInstance().LoadCheckers();
         KvStoreMetaManager::GetInstance().InitMetaParameter();
         KvStoreMetaManager::GetInstance().InitMetaListener();
+        DeviceManagerAdapter::GetInstance().Init();
 
         // init peer device
         UserMetaData userMetaData;

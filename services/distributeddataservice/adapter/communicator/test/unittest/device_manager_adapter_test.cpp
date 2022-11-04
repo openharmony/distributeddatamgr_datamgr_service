@@ -33,19 +33,26 @@ public:
 
 class DeviceManagerAdapterTest : public testing::Test {
 public:
-    static void SetUpTestCase(void) {};
-    static void TearDownTestCase(void) {};
-    void SetUp() {};
-    void TearDown() {};
+    static void SetUpTestCase(void)
+    {
+        DeviceManagerAdapter::GetInstance().Init();
+    }
+    static void TearDownTestCase(void) {}
+    void SetUp() {}
+    void TearDown() {}
 
 protected:
     static std::shared_ptr<DeviceChangerListener> observer_;
+    static const std::string INVALID_DEVICE_ID;
+    static const std::string EMPTY_DEVICE_ID;
+    static const uint32_t LOCAL_DEVICE_ID_NUM;
+    static const uint32_t LOCAL_UUID_NUM;
 };
 std::shared_ptr<DeviceChangerListener> DeviceManagerAdapterTest::observer_;
-static const uint32_t LOCAL_DEVICE_ID_NUM = 3;
-static const uint32_t LOCAL_UUID_NUM = 1;
-constexpr const char *INVALID_DEVICE_ID = "1234567890";
-constexpr const char *EMPTY_DEVICE_ID = "";
+const std::string DeviceManagerAdapterTest::INVALID_DEVICE_ID = "1234567890";
+const std::string DeviceManagerAdapterTest::EMPTY_DEVICE_ID = "";
+const uint32_t DeviceManagerAdapterTest::LOCAL_DEVICE_ID_NUM = 3;
+const uint32_t DeviceManagerAdapterTest::LOCAL_UUID_NUM = 2;
 
 /**
 * @tc.name: StartWatchDeviceChange
@@ -61,6 +68,8 @@ HWTEST_F(DeviceManagerAdapterTest, StartWatchDeviceChange, TestSize.Level0)
     observer_ = std::make_shared<DeviceChangerListener>();
     status = DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(observer_.get(), {});
     EXPECT_EQ(status, Status::SUCCESS);
+    status = DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(observer_.get(), {});
+    EXPECT_EQ(status, Status::ERROR);
 }
 
 /**
@@ -76,6 +85,8 @@ HWTEST_F(DeviceManagerAdapterTest, StopWatchDeviceChange001, TestSize.Level0)
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);
     status = DeviceManagerAdapter::GetInstance().StopWatchDeviceChange(observer_.get(), {});
     EXPECT_EQ(status, Status::SUCCESS);
+    status = DeviceManagerAdapter::GetInstance().StopWatchDeviceChange(observer_.get(), {});
+    EXPECT_EQ(status, Status::ERROR);
     observer_ = nullptr;
 }
 
@@ -301,9 +312,8 @@ HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUID004, TestSize.Level0)
     devices.emplace_back(dvInfo);
     auto uuids = DeviceManagerAdapter::GetInstance().ToUUID(devices);
     EXPECT_EQ(uuids.size(), LOCAL_UUID_NUM);
-    for (const auto &uuid : uuids) {
-        EXPECT_EQ(uuid, dvInfo.uuid);
-    }
+    EXPECT_EQ(uuids[0], INVALID_DEVICE_ID);
+    EXPECT_EQ(uuids[1], dvInfo.uuid);
 }
 
 /**
@@ -338,7 +348,6 @@ HWTEST_F(DeviceManagerAdapterTest, DeviceIdToNetworkId002, TestSize.Level0)
     auto networkIdToNetworkId = DeviceManagerAdapter::GetInstance().ToNetworkID(dvInfo.networkId);
     EXPECT_EQ(networkIdToNetworkId, dvInfo.networkId);
 }
-
 
 /**
 * @tc.name: NotifyReadyEvent

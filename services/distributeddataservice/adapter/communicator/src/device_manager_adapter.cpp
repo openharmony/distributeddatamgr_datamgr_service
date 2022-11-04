@@ -377,7 +377,6 @@ void DeviceManagerAdapter::UpdateDeviceInfo()
     std::vector<DeviceInfo> dvInfos = GetRemoteDevices();
     if (dvInfos.empty()) {
         ZLOGW("there is no trusted device!");
-        return;
     }
     dvInfos.emplace_back(GetLocalDevice());
     for (const auto &info : dvInfos) {
