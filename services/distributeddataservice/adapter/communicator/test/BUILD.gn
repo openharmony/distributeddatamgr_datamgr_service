@@ -87,7 +87,7 @@ group("unittest") {
 
   deps += [
     ":CommunicationProviderTest",
-    ":DeviceManagerAdapterTest"
+    ":DeviceManagerAdapterTest",
   ]
 }
 ###############################################################################
