@@ -29,7 +29,7 @@ public:
         const std::string &storeName, DistributedData::StoreMetaData &metaData, const int32_t userId);
 
 private:
-    static void FillData(DistributedData::StoreMetaData &data, const int32_t userId);
+    static void FillData(DistributedData::StoreMetaData &data, int32_t userId);
     static inline bool IsSingleAllowProvider(const std::string &bundleName, const std::string &storeName);
 };
 } // namespace OHOS::DataShare
