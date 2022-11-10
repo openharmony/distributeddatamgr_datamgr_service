@@ -76,7 +76,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     }
     auto token = IPCSkeleton::GetCallingTokenID();
     const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const std::string userId = AccountDelegate::GetInstance()->GetUserByToken(token);
+    const auto userId = AccountDelegate::GetInstance()->GetUserByToken(token);
     StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.deviceId = localDeviceId;
@@ -86,7 +86,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.isEncrypt = false;
     saveMeta.bundleName =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.user = userId;
+    saveMeta.user = std::to_string(userId);
     saveMeta.account = accountId;
     saveMeta.tokenId = token;
     saveMeta.securityLevel = SecurityLevel::S1;
@@ -94,7 +94,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = KvStoreType::SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, userId);
+    ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
     if (!saved) {
         ZLOGE("SaveMeta failed");

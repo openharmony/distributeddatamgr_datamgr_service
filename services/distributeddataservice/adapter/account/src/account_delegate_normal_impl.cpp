@@ -55,19 +55,19 @@ std::string AccountDelegateNormalImpl::GetCurrentAccountId() const
     return Sha256AccountId(ohosAccountInfo.second.uid_);
 }
 
-std::string AccountDelegateNormalImpl::GetUserByToken(uint32_t tokenId) const
+int32_t AccountDelegateNormalImpl::GetUserByToken(uint32_t tokenId) const
 {
     auto type = AccessTokenKit::GetTokenTypeFlag(tokenId);
     if (type == TOKEN_NATIVE || type == TOKEN_SHELL) {
-        return "0";
+        return 0;
     }
 
     HapTokenInfo tokenInfo;
     if (AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo) != RET_SUCCESS) {
-        return "";
+        return -1;
     }
 
-    return std::to_string(tokenInfo.userID);
+    return tokenInfo.userID;
 }
     
 bool AccountDelegateNormalImpl::QueryUsers(std::vector<int> &users)

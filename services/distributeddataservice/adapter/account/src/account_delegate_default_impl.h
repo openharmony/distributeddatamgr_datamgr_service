@@ -23,7 +23,7 @@ class AccountDelegateDefaultImpl final : public AccountDelegateImpl {
 public:
     static AccountDelegate *GetBaseInstance();
     std::string GetCurrentAccountId() const override;
-    std::string GetUserByToken(uint32_t tokenId) const override;
+    int32_t GetUserByToken(uint32_t tokenId) const override;
     bool QueryUsers(std::vector<int> &users) override;
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;

@@ -58,7 +58,7 @@ bool GetBundleInfoFromBMS(const std::string &bundleName, uint32_t tokenId,
         return false;
     }
     bool ret = bmsClient->GetBundleInfo(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo,
-        atoi(userId.c_str()));
+                                        userId);
     if (!ret) {
         ZLOGE("GetBundleInfo failed!");
         return false;

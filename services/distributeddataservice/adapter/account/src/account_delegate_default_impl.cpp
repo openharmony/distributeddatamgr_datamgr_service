@@ -36,10 +36,10 @@ std::string AccountDelegateDefaultImpl::GetCurrentAccountId() const
     return DEFAULT_OHOS_ACCOUNT_UID;
 }
 
-std::string AccountDelegateDefaultImpl::GetUserByToken(uint32_t tokenId) const
+int32_t AccountDelegateDefaultImpl::GetUserByToken(uint32_t tokenId) const
 {
     (void)tokenId;
-    return "0";
+    return 0;
 }
 
 bool AccountDelegateDefaultImpl::QueryUsers(std::vector<int> &users)
