@@ -24,7 +24,7 @@ namespace OHOS::DistributedRdb {
 class RdbResultSetImpl final : public RdbResultSetStub {
 public:
     using DbColumnType = DistributedDB::ResultSet::ColumnType;
-    explicit RdbResultSetImpl(std::shared_ptr<DistributedDB::ResultSet> &resultSet);
+    explicit RdbResultSetImpl(std::shared_ptr<DistributedDB::ResultSet> resultSet);
     ~RdbResultSetImpl() override {};
     int GetAllColumnNames(std::vector<std::string> &columnNames) override;
     int GetColumnCount(int &count) override;

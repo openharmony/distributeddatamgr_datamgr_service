@@ -517,16 +517,17 @@ StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreI
     metaData.bundleName = appId.appId;
     metaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
     metaData.storeId = storeId.storeId;
-    metaData.user = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(metaData.uid);
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(metaData.tokenId);
+    metaData.user = std::to_string(user);
     return metaData;
 }
 
 StrategyMeta KVDBServiceImpl::GetStrategyMeta(const AppId &appId, const StoreId &storeId)
 {
-    auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    auto userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(IPCSkeleton::GetCallingUid());
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    StrategyMeta strategyMeta(deviceId, userId, appId.appId, storeId.storeId);
+    auto userId = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    StrategyMeta strategyMeta(deviceId, std::to_string(userId), appId.appId, storeId.storeId);
     strategyMeta.instanceId = GetInstIndex(tokenId, appId);
     return strategyMeta;
 }

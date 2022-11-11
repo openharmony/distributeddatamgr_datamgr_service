@@ -24,8 +24,9 @@ using DistributedDB::DBStatus;
 using OHOS::NativeRdb::ColumnType;
 
 namespace OHOS::DistributedRdb {
-RdbResultSetImpl::RdbResultSetImpl(std::shared_ptr<DistributedDB::ResultSet> &resultSet) : resultSet_(resultSet)
+RdbResultSetImpl::RdbResultSetImpl(std::shared_ptr<DistributedDB::ResultSet> resultSet)
 {
+    resultSet_ = std::move(resultSet);
 }
 
 int RdbResultSetImpl::GetAllColumnNames(std::vector<std::string> &columnNames)
@@ -273,7 +274,16 @@ int RdbResultSetImpl::GetString(int columnIndex, std::string &value)
 
 int RdbResultSetImpl::GetInt(int columnIndex, int &value)
 {
-    return NativeRdb::E_NOT_SUPPORT;
+    int64_t tmpValue;
+    int status = GetLong(columnIndex, tmpValue);
+    if (status == NativeRdb::E_OK) {
+        if (tmpValue < INT32_MIN || tmpValue > INT32_MAX) {
+            ZLOGE("Get int value overflow.");
+            return NativeRdb::E_ERROR;
+        }
+        value = static_cast<int32_t>(tmpValue);
+    }
+    return status;
 }
 
 int RdbResultSetImpl::GetLong(int columnIndex, int64_t &value)
@@ -325,7 +335,7 @@ bool RdbResultSetImpl::IsClosed() const
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGW("DistributedDB resultSet is null.");
         return true;
     }
     return resultSet_->IsClosed();
@@ -335,7 +345,7 @@ int RdbResultSetImpl::Close()
 {
     std::unique_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("Result set has been closed.");
+        ZLOGW("Result set has been closed.");
         return NativeRdb::E_OK;
     }
     resultSet_->Close();
@@ -360,4 +370,4 @@ ColumnType RdbResultSetImpl::ConvertColumnType(DbColumnType columnType) const
             return ColumnType::TYPE_NULL;
     }
 }
-}
+} // namespace OHOS::DistributedRdb

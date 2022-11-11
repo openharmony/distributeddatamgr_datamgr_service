@@ -50,14 +50,14 @@ static sptr<AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
 bool GetBundleInfoFromBMS(const std::string &bundleName, uint32_t tokenId,
     AppExecFwk::BundleInfo &bundleInfo)
 {
-    int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     auto bmsClient = GetBundleMgrProxy();
     if (!bmsClient) {
         ZLOGE("GetBundleMgrProxy is nullptr!");
         return false;
     }
     bool ret = bmsClient->GetBundleInfo(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo,
-        userId);
+                                        userId);
     if (!ret) {
         ZLOGE("GetBundleInfo failed!");
         return false;
@@ -116,10 +116,10 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     return false;
 }
 
-void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, const int32_t userId)
+void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, int32_t userId)
 {
     meta.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-    meta.user = userId;
+    meta.user = std::to_string(userId);
 }
 
 bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::string &moduleName,
