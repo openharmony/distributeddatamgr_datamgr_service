@@ -81,6 +81,7 @@ public:
     virtual int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask) = 0;
     virtual int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
         std::function<void(const std::string &, uint16_t)> listener) = 0;
+    virtual uint32_t GetMtuSize(const DeviceId &deviceId) const = 0;
 };
 } // namespace AppDistributedKv
 } // namespace OHOS

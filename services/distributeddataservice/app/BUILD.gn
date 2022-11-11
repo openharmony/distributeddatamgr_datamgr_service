@@ -72,6 +72,7 @@ config("module_private_config") {
     "src",
     "src/security",
     "src/backup_rule/include",
+    "src/calc_sync_data",
     "//third_party/json/single_include",
   ]
 
@@ -94,6 +95,7 @@ ohos_shared_library("distributeddataservice") {
     "src/session_manager/route_head_handler_impl.cpp",
     "src/session_manager/session_manager.cpp",
     "src/session_manager/upgrade_manager.cpp",
+    "src/calc_sync_data/calc_sync_data_size_impl.cpp",
   ]
 
   if (datamgr_service_power) {

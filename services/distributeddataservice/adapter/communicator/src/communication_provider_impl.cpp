@@ -14,8 +14,6 @@
  */
 
 #include "communication_provider_impl.h"
-
-#include "communication_strategy.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
 
@@ -37,7 +35,6 @@ CommunicationProviderImpl::~CommunicationProviderImpl()
 
 Status CommunicationProviderImpl::Initialize()
 {
-    CommunicationStrategy::GetInstance().Init();
     DmAdapter::GetInstance().Init();
     return Status::SUCCESS;
 }
@@ -134,6 +131,11 @@ int32_t CommunicationProviderImpl::ListenBroadcastMsg(const PipeInfo &pipeInfo,
     std::function<void(const std::string &, uint16_t)> listener)
 {
     return SoftBusAdapter::GetInstance()->ListenBroadcastMsg(pipeInfo, std::move(listener));
+}
+
+uint32_t CommunicationProviderImpl::GetMtuSize(const DeviceId &deviceId) const
+{
+    return SoftBusAdapter::GetInstance()->GetMtuSize(deviceId);
 }
 } // namespace AppDistributedKv
 } // namespace OHOS

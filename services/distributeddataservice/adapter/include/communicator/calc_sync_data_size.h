@@ -13,20 +13,16 @@
  * limitations under the License.
  */
 
-#include "communication_strategy.h"
-#include "communication_strategy_impl.h"
+#ifndef DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_CALC_SYNC_DATA_SIZE_H
+#define DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_CALC_SYNC_DATA_SIZE_H
+#include "visibility.h"
+namespace OHOS::DistributedData {
+class API_EXPORT CalcSyncDataSize {
+public:
+    virtual ~CalcSyncDataSize() = default;
 
-namespace OHOS::AppDistributedKv {
-std::shared_ptr<CommunicationStrategy> CommunicationStrategy::instance_;
-std::mutex CommunicationStrategy::mutex_;
-std::shared_ptr<CommunicationStrategy> CommunicationStrategy::GetInstance()
-{
-    if (instance_ == nullptr) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (instance_ == nullptr) {
-            instance_ = std::make_shared<CommunicationStrategyImpl>();
-        }
-    }
-    return instance_;
+    virtual uint32_t CalcDataSize(const std::string &deviceId) = 0;
+
+};
 }
-} // namespace OHOS::AppDistributedKv
+#endif //DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_CALC_SYNC_DATA_SIZE_H
