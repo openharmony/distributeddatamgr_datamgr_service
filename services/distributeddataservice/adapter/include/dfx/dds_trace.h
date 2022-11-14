@@ -80,7 +80,7 @@ private:
     void Finish(const std::string &value)
     {
         if ((traceSwitch_ & BYTRACE_ON) == BYTRACE_ON) {
-            FinishTrace(HITRACE_FLAG_DEFAULT);
+            FinishTrace(HITRACE_TAG_DISTRIBUTEDDATA);
         }
         if ((traceSwitch_ & TRACE_CHAIN_ON) == TRACE_CHAIN_ON) {
             OHOS::HiviewDFX::HiTraceChain::End(traceId_);
