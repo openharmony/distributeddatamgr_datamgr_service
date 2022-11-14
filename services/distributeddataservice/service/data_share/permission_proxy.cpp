@@ -117,10 +117,10 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     return false;
 }
 
-void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, const int32_t userId)
+void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, int32_t userId)
 {
     meta.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-    meta.user = userId;
+    meta.user = std::to_string(userId);
 }
 
 bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::string &moduleName,
