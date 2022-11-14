@@ -15,22 +15,21 @@
 
 #define LOG_TAG "PermitDelegate"
 #include "permit_delegate.h"
-#include "communication_provider.h"
+#include "device_manager_adapter.h"
+#include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/strategy_meta_data.h"
 #include "permission/permission_validator.h"
+#include "runtime_config.h"
+#include "store_types.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
-#include "store_types.h"
-#include "runtime_config.h"
-#include "log_print.h"
 
 namespace OHOS::DistributedData {
 using DBStatus = DistributedDB::DBStatus;
 using DBConfig = DistributedDB::RuntimeConfig;
 using DBFlag = DistributedDB::PermissionCheckFlag;
-using Commu = OHOS::AppDistributedKv::CommunicationProvider;
 using PermissionValidator = OHOS::DistributedKv::PermissionValidator;
 
 PermitDelegate::PermitDelegate()
@@ -83,7 +82,7 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
           "flag:%{public}u", param.userId.c_str(), param.appId.c_str(), param.storeId.c_str(),
           Anonymous::Change(param.deviceId).c_str(), param.instanceId, flag);
 
-    auto devId = Commu::GetInstance().GetLocalDevice().uuid;
+    auto devId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     StoreMetaData data;
     data.user = param.userId == "default" ? DEFAULT_USER : param.userId;
     data.storeId = param.storeId;

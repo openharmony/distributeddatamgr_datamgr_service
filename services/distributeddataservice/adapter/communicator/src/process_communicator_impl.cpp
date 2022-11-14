@@ -17,11 +17,13 @@
 
 #include "process_communicator_impl.h"
 
+#include "device_manager_adapter.h"
 #include "log_print.h"
 
 namespace OHOS {
 namespace AppDistributedKv {
 using namespace DistributedDB;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 ProcessCommunicatorImpl::ProcessCommunicatorImpl()
 {
 }
@@ -69,13 +71,13 @@ DBStatus ProcessCommunicatorImpl::RegOnDeviceChange(const OnDeviceChange &callba
 
     PipeInfo pi = {thisProcessLabel_, ""};
     if (callback) {
-        Status errCode = CommunicationProvider::GetInstance().StartWatchDeviceChange(this, pi);
+        Status errCode = DmAdapter::GetInstance().StartWatchDeviceChange(this, pi);
         if (errCode != Status::SUCCESS) {
             ZLOGE("commProvider_ StartWatchDeviceChange Fail.");
             return DBStatus::DB_ERROR;
         }
     } else {
-        Status errCode = CommunicationProvider::GetInstance().StopWatchDeviceChange(this, pi);
+        Status errCode = DmAdapter::GetInstance().StopWatchDeviceChange(this, pi);
         if (errCode != Status::SUCCESS) {
             ZLOGE("commProvider_ StopWatchDeviceChange Fail.");
             return DBStatus::DB_ERROR;
@@ -145,8 +147,7 @@ uint32_t ProcessCommunicatorImpl::GetMtuSize()
 uint32_t ProcessCommunicatorImpl::GetMtuSize(const DeviceInfos &devInfo)
 {
     ZLOGI("GetMtuSize start");
-    const auto &comm = CommunicationProvider::GetInstance();
-    DeviceInfo deviceInfo = comm.GetDeviceInfo(devInfo.identifier);
+    DeviceInfo deviceInfo = DmAdapter::GetInstance().GetDeviceInfo(devInfo.identifier);
     DeviceType deviceType = GetDeviceType(deviceInfo.deviceType);
     if (deviceType == SMART_WATCH || deviceType == KID_WATCH) {
         ZLOGI("GetMtuSize deviceType: %{public}d", deviceInfo.deviceType);
@@ -158,7 +159,7 @@ uint32_t ProcessCommunicatorImpl::GetMtuSize(const DeviceInfos &devInfo)
 DeviceInfos ProcessCommunicatorImpl::GetLocalDeviceInfos()
 {
     DeviceInfos localDevInfos;
-    DeviceInfo devInfo = CommunicationProvider::GetInstance().GetLocalDevice();
+    DeviceInfo devInfo = DmAdapter::GetInstance().GetLocalDevice();
     localDevInfos.identifier = devInfo.uuid;
     return localDevInfos;
 }
@@ -166,7 +167,7 @@ DeviceInfos ProcessCommunicatorImpl::GetLocalDeviceInfos()
 std::vector<DeviceInfos> ProcessCommunicatorImpl::GetRemoteOnlineDeviceInfosList()
 {
     std::vector<DeviceInfos> remoteDevInfos;
-    std::vector<DeviceInfo> devInfoVec = CommunicationProvider::GetInstance().GetRemoteDevices();
+    std::vector<DeviceInfo> devInfoVec = DmAdapter::GetInstance().GetRemoteDevices();
     for (auto const &entry : devInfoVec) {
         DeviceInfos remoteDev;
         remoteDev.identifier = entry.uuid;

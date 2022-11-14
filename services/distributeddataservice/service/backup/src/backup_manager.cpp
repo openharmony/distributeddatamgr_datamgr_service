@@ -19,7 +19,7 @@
 #include <iostream>
 #include <unistd.h>
 #include "backuprule/backup_rule_manager.h"
-#include "communication_provider.h"
+#include "device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "directory_manager.h"
 #include "kv_scheduler.h"
@@ -27,7 +27,6 @@
 #include "metadata/meta_data_manager.h"
 #include "types.h"
 namespace OHOS::DistributedData {
-using Commu = AppDistributedKv::CommunicationProvider;
 namespace {
 constexpr const int COPY_SIZE = 1024;
 constexpr const int MICROSEC_TO_SEC = 1000;
@@ -54,7 +53,7 @@ void BackupManager::Init()
 {
     std::vector<StoreMetaData> metas;
     MetaDataManager::GetInstance().LoadMeta(
-        StoreMetaData::GetPrefix({Commu::GetInstance().GetLocalDevice().uuid}), metas);
+        StoreMetaData::GetPrefix({DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid}), metas);
     for (auto &meta : metas) {
         if (!meta.isBackup || meta.isDirty) {
                 continue;
@@ -103,7 +102,7 @@ void BackupManager::BackSchedule()
         }
         std::vector<StoreMetaData> metas;
         MetaDataManager::GetInstance().LoadMeta(
-            StoreMetaData::GetPrefix({Commu::GetInstance().GetLocalDevice().uuid}), metas);
+            StoreMetaData::GetPrefix({DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid}), metas);
 
         int64_t end = std::min(startNum_ + backupNumber_, static_cast<int64_t>(metas.size()));
         for (int64_t i = startNum_; i < end; startNum_++, i++) {

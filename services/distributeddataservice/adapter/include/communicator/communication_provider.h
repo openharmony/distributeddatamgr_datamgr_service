@@ -37,11 +37,6 @@ public:
     API_EXPORT static CommunicationProvider &GetInstance();
 
     API_EXPORT static std::shared_ptr<CommunicationProvider> MakeCommunicationProvider();
-    // add DeviceChangeListener to watch device change
-    virtual Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo) = 0;
-
-    // stop DeviceChangeListener to watch device change
-    virtual Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo) = 0;
 
     // add DataChangeListener to watch data change
     virtual Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) = 0;
@@ -53,15 +48,6 @@ public:
     virtual Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *ptr, int size,
         const MessageInfo &info = { MessageType::DEFAULT }) = 0;
 
-    // Get online deviceList
-    virtual std::vector<DeviceInfo> GetRemoteDevices() const = 0;
-
-    // Get deviceInfo by id
-    virtual DeviceInfo GetDeviceInfo(const std::string &networkId) const = 0;
-
-    // Get local device information
-    virtual DeviceInfo GetLocalDevice() const = 0;
-
     // start one server to listen data from other devices;
     virtual Status Start(const PipeInfo &pipeInfo) = 0;
 
@@ -72,10 +58,7 @@ public:
     virtual bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const = 0;
 
     virtual void SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery) = 0;
-    virtual std::string GetUuidByNodeId(const std::string &nodeId) const = 0;
-    virtual std::string GetUdidByNodeId(const std::string &nodeId) const = 0;
-    virtual DeviceInfo GetLocalBasicInfo() const = 0;
-    virtual std::string ToNodeId(const std::string &id) const = 0;
+
     virtual void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) = 0;
 
     virtual int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask) = 0;

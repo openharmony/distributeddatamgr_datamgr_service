@@ -104,14 +104,14 @@ void KvStoreDataService::Initialize()
     auto ret = KvStoreDelegateManager::SetProcessCommunicator(communicator);
     ZLOGI("set communicator ret:%{public}d.", static_cast<int>(ret));
 
+    AppDistributedKv::CommunicationProvider::GetInstance();
     PermitDelegate::GetInstance().Init();
     InitSecurityAdapter();
     KvStoreMetaManager::GetInstance().InitMetaParameter();
     accountEventObserver_ = std::make_shared<KvStoreAccountObserver>(*this);
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
-    AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(
-        deviceInnerListener_.get(), { "innerListener" });
+    DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
@@ -220,10 +220,11 @@ void KvStoreDataService::OnStart()
     ZLOGI("distributeddata service onStart");
     EventCenter::Defer defer;
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
+    DmAdapter::GetInstance().Init();
     static constexpr int32_t RETRY_TIMES = 50;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
     for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIMES; ++retry) {
-        if (!AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().uuid.empty()) {
+        if (!DmAdapter::GetInstance().GetLocalDevice().uuid.empty()) {
             break;
         }
         ZLOGE("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
@@ -599,9 +600,8 @@ void KvStoreDataService::InitSecurityAdapter()
     auto dbStatus = DistributedDB::RuntimeConfig::SetProcessSystemAPIAdapter(security_);
     ZLOGD("set distributed db system api adapter: %d.", static_cast<int>(dbStatus));
 
-    auto status = AppDistributedKv::CommunicationProvider::GetInstance().StartWatchDeviceChange(
-        security_.get(), {"security"});
-    if (status != AppDistributedKv::Status::SUCCESS) {
+    auto status = DmAdapter::GetInstance().StartWatchDeviceChange(security_.get(), {"security"});
+    if (status != Status::SUCCESS) {
         ZLOGD("security register device change failed, status:%d", static_cast<int>(status));
     }
 }

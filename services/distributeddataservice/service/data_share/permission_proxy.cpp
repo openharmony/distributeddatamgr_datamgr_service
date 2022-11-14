@@ -19,7 +19,6 @@
 #include "account/account_delegate.h"
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
-#include "communication_provider.h"
 #include "device_manager_adapter.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"

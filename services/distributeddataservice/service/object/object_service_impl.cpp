@@ -20,19 +20,19 @@
 #include <ipc_skeleton.h>
 
 #include "account/account_delegate.h"
-#include "checker/checker_manager.h"
-#include "log_print.h"
-#include "permission/permission_validator.h"
-#include "communication_provider.h"
 #include "bootstrap.h"
+#include "checker/checker_manager.h"
+#include "device_manager_adapter.h"
 #include "directory_manager.h"
+#include "log_print.h"
 #include "metadata/appid_meta_data.h"
-#include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/store_meta_data.h"
+#include "permission/permission_validator.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedObject {
-using Commu = AppDistributedKv::CommunicationProvider;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
@@ -69,7 +69,7 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
 int32_t ObjectServiceImpl::OnInitialize()
 {
     ZLOGI("Initialize");
-    auto localDeviceId = AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().uuid;
+    auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (localDeviceId.empty()) {
         ZLOGE("failed to get local device id");
         return OBJECT_INNER_ERROR;
@@ -232,7 +232,7 @@ int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, Dist
     ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
           param.appId.c_str(), param.storeId.c_str(), DistributedData::Anonymous::Change(identifier).c_str());
     std::vector<StoreMetaData> metaData;
-    auto prefix = StoreMetaData::GetPrefix({ Commu::GetInstance().GetLocalDevice().uuid, param.userId });
+    auto prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid, param.userId });
     if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
         ZLOGE("no store in user:%{public}s", param.userId.c_str());
         return OBJECT_STORE_NOT_FOUND;

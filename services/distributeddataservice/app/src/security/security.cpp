@@ -14,14 +14,14 @@
  */
 
 #include "security.h"
-#include <unistd.h>
-#include <thread>
 #include <algorithm>
 #include <regex>
+#include <thread>
+#include <unistd.h>
 #include "constant.h"
-#include "log_print.h"
-#include "communication_provider.h"
 #include "dev_slinfo_mgr.h"
+#include "device_manager_adapter.h"
+#include "log_print.h"
 #include "security_label.h"
 #include "utils/anonymous.h"
 
@@ -168,9 +168,9 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid)
             sensitive = value;
             return true;
         }
-        auto &network = AppDistributedKv::CommunicationProvider::GetInstance();
-        auto devices = network.GetRemoteDevices();
-        devices.push_back(network.GetLocalBasicInfo());
+        auto &dmAdapter = DistributedData::DeviceManagerAdapter::GetInstance();
+        auto devices = dmAdapter.GetRemoteDevices();
+        devices.push_back(dmAdapter.GetLocalBasicInfo());
         for (auto &device : devices) {
             auto deviceUuid = device.uuid;
             ZLOGD("GetSensitiveByUuid(%{public}s) peer device is %{public}s",
