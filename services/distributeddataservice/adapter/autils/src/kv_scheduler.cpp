@@ -141,7 +141,7 @@ void KvScheduler::Loop()
         }
 
         std::unique_lock<std::mutex> lock(mutex_);
-        if (kvTasks_.empty()) {
+        if (kvTasks_.empty() && isRunning_) {
             condition_.wait(lock);
         } else {
             condition_.wait_until(lock, kvTasks_.begin()->first);
