@@ -39,6 +39,31 @@ ohos_unittest("CommunicationProviderTest") {
   ]
 }
 
+ohos_unittest("DeviceManagerAdapterTest") {
+  module_out_path = module_output_path
+
+  sources = [ "unittest/device_manager_adapter_test.cpp" ]
+  include_dirs = [
+    "//commonlibrary/c_utils/base/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/communicator",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/dfx",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "../src",
+  ]
+  external_deps = [
+    "dsoftbus:softbus_client",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+  ]
+  deps = [
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp:devicemanagersdk",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
 ###############################################################################
 config("module_comm_config") {
   visibility = [ ":*" ]
@@ -60,6 +85,9 @@ group("unittest") {
 
   deps = []
 
-  deps += [ ":CommunicationProviderTest" ]
+  deps += [
+    ":CommunicationProviderTest",
+    ":DeviceManagerAdapterTest",
+  ]
 }
 ###############################################################################

@@ -21,6 +21,7 @@
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "crypto_manager.h"
+#include "device_manager_adapter.h"
 #include "directory_manager.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
@@ -35,10 +36,10 @@
 
 using OHOS::DistributedKv::KvStoreUtils;
 using OHOS::DistributedKv::AccountDelegate;
-using OHOS::AppDistributedKv::CommunicationProvider;
 using namespace OHOS::Security::AccessToken;
 using namespace OHOS::DistributedData;
 using system_clock = std::chrono::system_clock;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 constexpr uint32_t ITERATE_TIMES = 10000;
 namespace OHOS::DistributedRdb {
@@ -83,7 +84,7 @@ std::string RdbSyncer::GetIdentifier() const
 
 std::string RdbSyncer::GetUserId() const
 {
-    return AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid_);
+    return std::to_string(AccountDelegate::GetInstance()->GetUserByToken(token_));
 }
 
 std::string RdbSyncer::GetBundleName() const
@@ -135,9 +136,9 @@ void RdbSyncer::FillMetaData(StoreMetaData &meta)
     meta.tokenId = token_;
     meta.instanceId = GetInstIndex(token_, param_.bundleName_);
     meta.bundleName = param_.bundleName_;
-    meta.deviceId = CommunicationProvider::GetInstance().GetLocalDevice().uuid;
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     meta.storeId = RemoveSuffix(param_.storeName_);
-    meta.user = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid_);
+    meta.user = std::to_string(AccountDelegate::GetInstance()->GetUserByToken(token_));
     meta.storeType = param_.type_;
     meta.securityLevel = param_.level_;
     meta.area = param_.area_;
@@ -299,7 +300,7 @@ int32_t RdbSyncer::SetDistributedTables(const std::vector<std::string> &tables)
 
 std::vector<std::string> RdbSyncer::GetConnectDevices()
 {
-    auto deviceInfos = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteDevices();
+    auto deviceInfos = DmAdapter::GetInstance().GetRemoteDevices();
     std::vector<std::string> devices;
     for (const auto& deviceInfo : deviceInfos) {
         devices.push_back(deviceInfo.networkId);
@@ -315,7 +316,7 @@ std::vector<std::string> RdbSyncer::NetworkIdToUUID(const std::vector<std::strin
 {
     std::vector<std::string> uuids;
     for (const auto& networkId : networkIds) {
-        auto uuid = CommunicationProvider::GetInstance().GetUuidByNodeId(networkId);
+        auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(networkId);
         if (uuid.empty()) {
             ZLOGE("%{public}s failed", KvStoreUtils::ToBeAnonymous(networkId).c_str());
             continue;
@@ -338,7 +339,7 @@ void RdbSyncer::HandleSyncStatus(const std::map<std::string, std::vector<Distrib
                 break;
             }
         }
-        std::string uuid = CommunicationProvider::GetInstance().ToNodeId(status.first);
+        std::string uuid = DmAdapter::GetInstance().ToNetworkID(status.first);
         if (uuid.empty()) {
             ZLOGE("%{public}.6s failed", status.first.c_str());
             continue;

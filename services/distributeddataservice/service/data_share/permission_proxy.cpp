@@ -19,7 +19,6 @@
 #include "account/account_delegate.h"
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
-#include "communication_provider.h"
 #include "device_manager_adapter.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
@@ -51,14 +50,14 @@ static sptr<AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
 bool GetBundleInfoFromBMS(const std::string &bundleName, uint32_t tokenId,
     AppExecFwk::BundleInfo &bundleInfo)
 {
-    int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     auto bmsClient = GetBundleMgrProxy();
     if (!bmsClient) {
         ZLOGE("GetBundleMgrProxy is nullptr!");
         return false;
     }
     bool ret = bmsClient->GetBundleInfo(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo,
-        userId);
+                                        userId);
     if (!ret) {
         ZLOGE("GetBundleInfo failed!");
         return false;

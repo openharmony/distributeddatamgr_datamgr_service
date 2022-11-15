@@ -138,7 +138,7 @@ int32_t ObjectStoreManager::RevokeSave(
         return result;
     }
     std::vector<std::string> deviceList;
-    auto deviceInfos = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteDevices();
+    auto deviceInfos = DmAdaper::GetInstance().GetRemoteDevices();
     std::for_each(deviceInfos.begin(), deviceInfos.end(),
         [&deviceList](AppDistributedKv::DeviceInfo info) { deviceList.emplace_back(info.networkId); });
     if (!deviceList.empty()) {
@@ -428,7 +428,7 @@ int32_t ObjectStoreManager::SyncOnStore(
             callback(result);
             return OBJECT_SUCCESS;
         }
-        syncDevices.emplace_back(AppDistributedKv::CommunicationProvider::GetInstance().GetUuidByNodeId(device));
+        syncDevices.emplace_back(DmAdaper::GetInstance().GetUuidByNetworkId(device));
     }
     if (!syncDevices.empty()) {
         uint64_t sequenceId = SequenceSyncManager::GetInstance()->AddNotifier(userId_, callback);
@@ -441,7 +441,7 @@ int32_t ObjectStoreManager::SyncOnStore(
                 ZLOGI("objectstore sync finished");
                 std::map<std::string, DistributedDB::DBStatus> result;
                 for (auto &item : devicesMap) {
-                    result[AppDistributedKv::CommunicationProvider::GetInstance().ToNodeId(item.first)] = item.second;
+                    result[DmAdaper::GetInstance().ToNetworkID(item.first)] = item.second;
                 }
                 SyncCompleted(result, sequenceId);
             },

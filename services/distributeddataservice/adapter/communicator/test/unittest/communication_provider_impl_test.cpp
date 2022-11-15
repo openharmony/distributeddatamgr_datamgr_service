@@ -40,31 +40,14 @@ void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceIn
     ZLOGI("data  %{public}s  %s", info.deviceName.c_str(), ptr);
 }
 
-class AppDeviceStatusChangeListenerImpl : public AppDeviceChangeListener {
-public:
-    void OnDeviceChanged(const OHOS::AppDistributedKv::DeviceInfo &info,
-                         const DeviceChangeType &type) const override;
-    ~AppDeviceStatusChangeListenerImpl();
-};
-
-void AppDeviceStatusChangeListenerImpl::OnDeviceChanged(const OHOS::AppDistributedKv::DeviceInfo &info,
-                                                        const DeviceChangeType &type) const
-{
-    ZLOGI("%{public}s  %{public}d", info.deviceName.c_str(), static_cast<int>(type));
-}
-
-AppDeviceStatusChangeListenerImpl::~AppDeviceStatusChangeListenerImpl()
-{
-}
-
 /**
-* @tc.name: CommunicationProvider003
+* @tc.name: CommunicationProvider001
 * @tc.desc: Verify getting KvStore
 * @tc.type: FUNC
 * @tc.require: AR000CCPQ1 AR000CQDVE
 * @tc.author: hongbo
 */
-HWTEST_F(CommunicationProviderImplTest, CommunicationProvider003, TestSize.Level1)
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider001, TestSize.Level1)
 {
     ZLOGI("begin.");
     const AppDataChangeListenerImpl* dataListener = new AppDataChangeListenerImpl();
@@ -78,13 +61,13 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider003, TestSize.Level
 }
 
 /**
-* @tc.name: CommunicationProvider004
+* @tc.name: CommunicationProvider002
 * @tc.desc: Verify stop watch device change
 * @tc.type: FUNC
 * @tc.require: AR000CCPQ2 AR000CQS3F
 * @tc.author: hongbo
 */
-HWTEST_F(CommunicationProviderImplTest, CommunicationProvider004, TestSize.Level1)
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider002, TestSize.Level1)
 {
     ZLOGD("CommunicationProvider004");
     const AppDataChangeListenerImpl* dataListener = new AppDataChangeListenerImpl();
@@ -98,72 +81,13 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider004, TestSize.Level
 }
 
 /**
-* @tc.name: CommunicationProvider005
-* @tc.desc: Verify stop watch device change
-* @tc.type: FUNC
-* @tc.require: AR000CCPQ2 AR000CQS3G AR000CQS3F
-* @tc.author: hongbo
-*/
-HWTEST_F(CommunicationProviderImplTest, CommunicationProvider005, TestSize.Level1)
-{
-    ZLOGD("CommunicationProvider005");
-    const AppDeviceStatusChangeListenerImpl* dataListener = new AppDeviceStatusChangeListenerImpl();
-    PipeInfo appId;
-    appId.pipeId = "appId";
-    appId.userId = "groupId";
-    auto firRegister = CommunicationProvider::GetInstance().StartWatchDeviceChange(dataListener, appId);
-
-    EXPECT_EQ(Status::SUCCESS, firRegister);
-    auto secStop = CommunicationProvider::GetInstance().StopWatchDeviceChange(dataListener, appId);
-    EXPECT_EQ(Status::SUCCESS, secStop);
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
-}
-
-/**
-* @tc.name: CommunicationProvider006
-* @tc.desc: Verify stop watch device change
-* @tc.type: FUNC
-* @tc.require: AR000CCPQ2
-* @tc.author: hongbo
-*/
-HWTEST_F(CommunicationProviderImplTest, CommunicationProvider006, TestSize.Level1)
-{
-    ZLOGI("GetRemoteDevices");
-    auto devices = CommunicationProvider::GetInstance().GetRemoteDevices();
-    const unsigned long val = 0;
-    ZLOGD("GetRemoteDevices size: %{public}zu", devices.size());
-    ASSERT_GE(devices.size(), val);
-    for (const auto &device : devices) {
-        ZLOGD("GetRemoteDevices, name:%{public}s, type:0x%{public}x", device.deviceName.c_str(), device.deviceType);
-    }
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
-}
-
-/**
-* @tc.name: CommunicationProvider007
-* @tc.desc: Verify Local deviceId exist
-* @tc.type: FUNC
-* @tc.require: AR000CCPQ2 AR000CQS3I
-* @tc.author: hongbo
-*/
-HWTEST_F(CommunicationProviderImplTest, CommunicationProvider007, TestSize.Level1)
-{
-    ZLOGI("CommunicationProvider007 GetLocalDevice");
-    auto device = CommunicationProvider::GetInstance().GetLocalDevice();
-    const unsigned long val = 0;
-    ASSERT_GE(device.deviceName.length(), val);
-    ZLOGD("GetLocalDevice, name:%{public}s, type:0x%{public}x", device.deviceName.c_str(), device.deviceType);
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
-}
-
-/**
-* @tc.name: CommunicationProvider015
+* @tc.name: CommunicationProvider003
 * @tc.desc: close pipe
 * @tc.type: FUNC
 * @tc.require: AR000CCPQ2
 * @tc.author: hongbo
 */
-HWTEST_F(CommunicationProviderImplTest, CommunicationProvider015, TestSize.Level1)
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider003, TestSize.Level1)
 {
     ZLOGI("CommunicationProvider015 ");
     PipeInfo appId;
@@ -175,13 +99,13 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider015, TestSize.Level
 }
 
 /**
-* @tc.name: CommunicationProvider016
+* @tc.name: CommunicationProvider004
 * @tc.desc: singleton pipe
 * @tc.type: FUNC
 * @tc.require: AR000CCPQ2
 * @tc.author: hongbo
 */
-HWTEST_F(CommunicationProviderImplTest, CommunicationProvider016, TestSize.Level1)
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider004, TestSize.Level1)
 {
     ZLOGI("begin.");
     auto &provider = CommunicationProvider::GetInstance();
@@ -191,13 +115,13 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider016, TestSize.Level
 }
 
 /**
-* @tc.name: CommunicationProvider017
+* @tc.name: CommunicationProvider005
 * @tc.desc: parse sent data
 * @tc.type: FUNC
 * @tc.require: AR000CCPQ2 AR000CQS3M AR000CQSAI
 * @tc.author: hongbo
 */
-HWTEST_F(CommunicationProviderImplTest, CommunicationProvider017, TestSize.Level1)
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider005, TestSize.Level1)
 {
     const AppDataChangeListenerImpl *dataListener17 = new AppDataChangeListenerImpl();
     PipeInfo id17;

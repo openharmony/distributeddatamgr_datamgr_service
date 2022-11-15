@@ -18,16 +18,16 @@
 
 #include <atomic>
 
-#include "communication_provider.h"
+#include "concurrent_map.h"
+#include "device_manager_adapter.h"
 #include "iobject_callback.h"
+#include "kv_scheduler.h"
+#include "kv_store_delegate_manager.h"
 #include "kvstore_sync_callback.h"
+#include "object_common.h"
+#include "object_data_listener.h"
 #include "timer.h"
 #include "types.h"
-#include "kv_store_delegate_manager.h"
-#include "object_data_listener.h"
-#include "concurrent_map.h"
-#include "kv_scheduler.h"
-#include "object_common.h"
 
 namespace OHOS {
 namespace DistributedObject {
@@ -68,6 +68,7 @@ private:
 
 class ObjectStoreManager {
 public:
+    using DmAdaper = OHOS::DistributedData::DeviceManagerAdapter;
     ObjectStoreManager();
     static ObjectStoreManager *GetInstance()
     {
@@ -128,15 +129,13 @@ private:
         const std::string &sessionId, const std::string &deviceId);
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
-        return appId + SEPERATOR + sessionId + SEPERATOR
-               + AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().udid + SEPERATOR;
+        return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;
     };
     inline std::string GetPropertyPrefix(
         const std::string &appId, const std::string &sessionId, const std::string &toDeviceId)
     {
-        return appId + SEPERATOR + sessionId + SEPERATOR
-               + AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().udid + SEPERATOR + toDeviceId
-               + SEPERATOR;
+        return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid
+             + SEPERATOR + toDeviceId + SEPERATOR;
     };
     inline std::string GetPrefixWithoutDeviceId(const std::string &appId, const std::string &sessionId)
     {

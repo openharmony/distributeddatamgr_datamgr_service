@@ -17,12 +17,12 @@
 #include "auth_delegate.h"
 
 #include "checker/checker_manager.h"
-#include "communication_provider.h"
 #include "device_auth.h"
 #include "device_auth_defines.h"
+#include "device_manager_adapter.h"
 #include "log_print.h"
-#include "utils/anonymous.h"
 #include "user_delegate.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedData {
 class AuthHandlerStub : public AuthHandler {
@@ -137,9 +137,9 @@ std::vector<std::string> AuthHandler::GetTrustedDevicesByType(
         TrustDevice::Unmarshall(devicesJson, devices);
         groupManager->destroyInfo(&devicesJson);
         for (const auto &item : devices) {
-            auto &provider = AppDistributedKv::CommunicationProvider::GetInstance();
-            auto networkId = provider.ToNodeId(item.authId);
-            auto uuid = provider.GetUuidByNodeId(networkId);
+            auto &dmAdapter = DeviceManagerAdapter::GetInstance();
+            auto networkId = dmAdapter.ToNetworkID(item.authId);
+            auto uuid = dmAdapter.GetUuidByNetworkId(networkId);
             trustedDevices.push_back(uuid);
         }
     }

@@ -28,11 +28,11 @@ public:
     static CommunicationProvider &Init();
     void SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery) override;
     // Get online deviceList
-    std::vector<DeviceInfo> GetRemoteDevices() const override;
+    std::vector<DeviceInfo> GetRemoteDevices() const;
     // Get deviceInfo by Id
-    DeviceInfo GetDeviceInfo(const std::string &networkId) const override;
+    DeviceInfo GetDeviceInfo(const std::string &networkId) const;
     // Get local device information
-    DeviceInfo GetLocalDevice() const override;
+    DeviceInfo GetLocalDevice() const;
 
     ~ArkCommunicationProvider() override {};
 private:

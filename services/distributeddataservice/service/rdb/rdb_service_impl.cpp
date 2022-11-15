@@ -17,7 +17,7 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
-#include "communicator/communication_provider.h"
+#include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -27,13 +27,13 @@
 #include "types_export.h"
 #include "utils/anonymous.h"
 using OHOS::DistributedKv::AccountDelegate;
-using OHOS::AppDistributedKv::CommunicationProvider;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
 using OHOS::DistributedData::StoreMetaData;
 using OHOS::DistributedData::Anonymous;
 using namespace OHOS::DistributedData;
 using DistributedDB::RelationalStoreManager;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 constexpr uint32_t ITERATE_TIMES = 10000;
 namespace OHOS::DistributedRdb {
@@ -83,7 +83,7 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
     std::string identifierHex = TransferStringToHex(identifier);
     ZLOGI("%{public}.6s", identifierHex.c_str());
     std::vector<StoreMetaData> entries;
-    auto localId = CommunicationProvider::GetInstance().GetLocalDevice().uuid;
+    auto localId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localId }), entries)) {
         ZLOGE("get meta failed");
         return false;
@@ -152,7 +152,7 @@ bool RdbServiceImpl::CheckAccess(const RdbSyncerParam &param)
 std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device, const std::string &table)
 {
     ZLOGI("device=%{public}s table=%{public}s", Anonymous::Change(device).c_str(), table.c_str());
-    auto uuid = AppDistributedKv::CommunicationProvider::GetInstance().GetUuidByNodeId(device);
+    auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(device);
     if (uuid.empty()) {
         ZLOGE("get uuid failed");
         return "";
@@ -204,7 +204,7 @@ void RdbServiceImpl::OnDataChange(pid_t pid, const DistributedDB::StoreChangedDa
     }
     notifiers_.ComputeIfPresent(pid, [&data, &property] (const auto& key, const sptr<RdbNotifierProxy>& value) {
         std::string device = data.GetDataChangeDevice();
-        auto networkId = CommunicationProvider::GetInstance().ToNodeId(device);
+        auto networkId = DmAdapter::GetInstance().ToNetworkID(device);
         value->OnChange(property.storeId, { networkId });
         return true;
     });
@@ -347,9 +347,10 @@ std::string RdbServiceImpl::GenIdentifier(const RdbSyncerParam &param)
     uint32_t token = IPCSkeleton::GetCallingTokenID();
     auto storeId = RdbSyncer::RemoveSuffix(param.storeName_);
     CheckerManager::StoreInfo storeInfo{ uid, token, param.bundleName_, storeId };
-    std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
+    auto userId = AccountDelegate::GetInstance()->GetUserByToken(token);
     std::string appId = CheckerManager::GetInstance().GetAppId(storeInfo);
-    std::string identifier = RelationalStoreManager::GetRelationalStoreIdentifier(userId, appId, storeId);
+    std::string identifier = RelationalStoreManager::GetRelationalStoreIdentifier(
+        std::to_string(userId), appId, storeId);
     return TransferStringToHex(identifier);
 }
 

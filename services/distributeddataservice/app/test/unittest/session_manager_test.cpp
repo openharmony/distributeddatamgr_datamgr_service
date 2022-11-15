@@ -15,14 +15,14 @@
 
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
-#include "communication_provider.h"
-#include "gtest/gtest.h"
+#include "device_manager_adapter.h"
 #include "kvstore_meta_manager.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "session_manager/route_head_handler_impl.h"
 #include "session_manager/upgrade_manager.h"
 #include "user_delegate.h"
+#include "gtest/gtest.h"
 
 namespace {
 using namespace testing::ext;
@@ -42,6 +42,7 @@ public:
         Bootstrap::GetInstance().LoadCheckers();
         KvStoreMetaManager::GetInstance().InitMetaParameter();
         KvStoreMetaManager::GetInstance().InitMetaListener();
+        DeviceManagerAdapter::GetInstance().Init();
 
         // init peer device
         UserMetaData userMetaData;
@@ -67,7 +68,7 @@ public:
         metaData.bundleName = "ohos.test.demo";
         metaData.storeId = "test_store";
         metaData.user = "100";
-        metaData.deviceId = OHOS::AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().uuid;
+        metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
         metaData.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
         metaData.uid = 2000000;
         metaData.storeType = 1;
@@ -83,7 +84,7 @@ public:
         metaData.bundleName = "ohos.test.demo";
         metaData.storeId = "test_store";
         metaData.user = "100";
-        metaData.deviceId = OHOS::AppDistributedKv::CommunicationProvider::GetInstance().GetLocalDevice().uuid;
+        metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
         metaData.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
         metaData.uid = 2000000;
         metaData.storeType = 1;

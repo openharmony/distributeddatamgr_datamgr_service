@@ -39,33 +39,6 @@ Status CommunicationProviderImpl::Initialize()
     return Status::SUCCESS;
 }
 
-Status CommunicationProviderImpl::StartWatchDeviceChange(const AppDeviceChangeListener *observer,
-    const PipeInfo &pipeInfo)
-{
-    return DmAdapter::GetInstance().StartWatchDeviceChange(observer, pipeInfo);
-}
-
-Status CommunicationProviderImpl::StopWatchDeviceChange(const AppDeviceChangeListener *observer,
-    const PipeInfo &pipeInfo)
-{
-    return DmAdapter::GetInstance().StopWatchDeviceChange(observer, pipeInfo);
-}
-
-DeviceInfo CommunicationProviderImpl::GetLocalDevice() const
-{
-    return DmAdapter::GetInstance().GetLocalDevice();
-}
-
-std::vector<DeviceInfo> CommunicationProviderImpl::GetRemoteDevices() const
-{
-    return DmAdapter::GetInstance().GetRemoteDevices();
-}
-
-DeviceInfo CommunicationProviderImpl::GetDeviceInfo(const std::string &networkId) const
-{
-    return DmAdapter::GetInstance().GetDeviceInfo(networkId);
-}
-
 Status CommunicationProviderImpl::StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo)
 {
     return appPipeMgr_.StartWatchDataChange(observer, pipeInfo);
@@ -95,26 +68,6 @@ Status CommunicationProviderImpl::Stop(const PipeInfo &pipeInfo)
 bool CommunicationProviderImpl::IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const
 {
     return appPipeMgr_.IsSameStartedOnPeer(pipeInfo, peer);
-}
-
-std::string CommunicationProviderImpl::GetUuidByNodeId(const std::string &nodeId) const
-{
-    return DmAdapter::GetInstance().GetUuidByNetworkId(nodeId);
-}
-
-DeviceInfo CommunicationProviderImpl::GetLocalBasicInfo() const
-{
-    return DmAdapter::GetInstance().GetLocalBasicInfo();
-}
-
-std::string CommunicationProviderImpl::ToNodeId(const std::string &id) const
-{
-    return DmAdapter::GetInstance().ToNetworkID(id);
-}
-
-std::string CommunicationProviderImpl::GetUdidByNodeId(const std::string &nodeId) const
-{
-    return DmAdapter::GetInstance().GetUdidByNetworkId(nodeId);
 }
 
 void CommunicationProviderImpl::SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag)

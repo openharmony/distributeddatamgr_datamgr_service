@@ -29,12 +29,6 @@ public:
 
     virtual ~CommunicationProviderImpl();
 
-    // add DeviceChangeListener to watch device change;
-    Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo) override;
-
-    // stop watching device change;
-    Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo) override;
-
     // add DataChangeListener to watch data change;
     Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) override;
 
@@ -45,15 +39,6 @@ public:
     Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *ptr, int size,
         const MessageInfo &info) override;
 
-    // Get online deviceList
-    std::vector<DeviceInfo> GetRemoteDevices() const override;
-
-    // Get deviceInfo by id
-    DeviceInfo GetDeviceInfo(const std::string &networkId) const override;
-
-    // Get local device information
-    DeviceInfo GetLocalDevice() const override;
-
     // start 1 server to listen data from other devices;
     Status Start(const PipeInfo &pipeInfo) override;
 
@@ -61,10 +46,6 @@ public:
     Status Stop(const PipeInfo &pipeInfo) override;
 
     bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const override;
-    std::string GetUuidByNodeId(const std::string &nodeId) const override;
-    std::string GetUdidByNodeId(const std::string &nodeId) const override;
-    DeviceInfo GetLocalBasicInfo() const override;
-    std::string ToNodeId(const std::string &id) const override;
     void SetMessageTransFlag(const struct PipeInfo &pipeInfo, bool flag) override;
 
     int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask) override;

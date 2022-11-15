@@ -84,7 +84,7 @@ void KvStoreMetaManager::SubscribeMeta(const std::string &keyPrefix, const Chang
 void KvStoreMetaManager::InitMetaListener()
 {
     InitMetaData();
-    auto status = Commu::GetInstance().StartWatchDeviceChange(&listener_, { "metaMgr" });
+    auto status = DmAdapter::GetInstance().StartWatchDeviceChange(&listener_, { "metaMgr" });
     if (status != AppDistributedKv::Status::SUCCESS) {
         ZLOGW("register failed.");
         return;
@@ -145,15 +145,16 @@ void KvStoreMetaManager::InitMetaData()
         return;
     }
     auto uid = getuid();
+    auto token = IPCSkeleton::GetCallingTokenID();
     const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const std::string userId = AccountDelegate::GetInstance()->GetDeviceAccountIdByUID(uid);
+    const auto userId = AccountDelegate::GetInstance()->GetUserByToken(token);
     StoreMetaData data;
     data.appId = label_;
     data.appType = "default";
     data.bundleName = label_;
     data.dataDir = metaDBDirectory_;
-    data.user = userId;
-    data.deviceId = Commu::GetInstance().GetLocalDevice().uuid;
+    data.user = std::to_string(userId);
+    data.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     data.isAutoSync = false;
     data.isBackup = false;
     data.isEncrypt = false;
@@ -165,7 +166,7 @@ void KvStoreMetaManager::InitMetaData()
     data.version = META_STORE_VERSION;
     data.securityLevel = SecurityLevel::S1;
     data.area = EL1;
-    data.tokenId = IPCSkeleton::GetCallingTokenID();
+    data.tokenId = token;
     if (!MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data)) {
         ZLOGE("save meta fail");
     }
@@ -263,7 +264,7 @@ void KvStoreMetaManager::ConfigMetaDataManager()
         ZLOGI("Syncer status: %{public}d", status);
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
         std::vector<std::string> devs;
-        auto devices = Commu::GetInstance().GetRemoteDevices();
+        auto devices = DmAdapter::GetInstance().GetRemoteDevices();
         for (auto const &dev : devices) {
             devs.push_back(dev.uuid);
         }
@@ -309,7 +310,7 @@ std::vector<uint8_t> KvStoreMetaManager::GetMetaKey(const std::string &deviceAcc
 void KvStoreMetaManager::SyncMeta()
 {
     std::vector<std::string> devs;
-    auto deviceList = AppDistributedKv::CommunicationProvider::GetInstance().GetRemoteDevices();
+    auto deviceList = DmAdapter::GetInstance().GetRemoteDevices();
     for (auto const &dev : deviceList) {
         devs.push_back(dev.uuid);
     }
