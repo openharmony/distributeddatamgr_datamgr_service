@@ -23,7 +23,7 @@ uint32_t CalcKvSyncDataSize::CalcSyncDataSize(const StoreMetaData &data, DBStatu
 {
     DBStore *dbStore = nullptr;
     DBManager manager(data.appId, data.user, data.instanceId);
-    manager.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(data) });
+    manager.SetKvStoreConfig({DirectoryManager::GetInstance().GetStorePath(data)});
     StoreCache cache;
     manager.GetKvStore(data.storeId, cache.GetDBOption(data, cache.GetDBPassword(data)),
                        [&status, &dbStore](auto dbStatus, auto *tmpStore) {
@@ -31,7 +31,7 @@ uint32_t CalcKvSyncDataSize::CalcSyncDataSize(const StoreMetaData &data, DBStatu
                            dbStore = tmpStore;
                        });
 
-    if (dbStore == nullptr) {
+    if (status != DistributedDB::DBStatus::OK || dbStore == nullptr) {
         return 0;
     }
 

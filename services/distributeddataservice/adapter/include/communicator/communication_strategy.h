@@ -24,7 +24,10 @@ using namespace OHOS::DistributedData;
 class API_EXPORT CommunicationStrategy {
 public:
     enum class Strategy : int32_t {
+        // If AP is available, the AP is preferred. When AP is not available, only BR can be used; p2p is not support
         DEFAULT,
+        // If AP is available, the AP is preferred. When AP is not available, BR is used for a small amount of data
+        // and P2P is used for a large amount of data; The strategy takes effect only at the device online stage;
         ON_LINE_SELECT_CHANNEL,
     };
     virtual ~CommunicationStrategy() = default;
@@ -37,4 +40,4 @@ private:
 };
 }
 
-#endif //DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_COMMUNICATION_STRATEGY_H
+#endif // DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_COMMUNICATION_STRATEGY_H

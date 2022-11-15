@@ -68,9 +68,6 @@ public:
 
     uint32_t GetMtuSize(const DeviceId &deviceId);
 private:
-    using KvScheduler = OHOS::DistributedKv::KvScheduler;
-    std::function<void()> CloseIdleConnect();
-
     static constexpr int32_t CONNECT_IDLE_CLOSE_COUNT = 60;
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};

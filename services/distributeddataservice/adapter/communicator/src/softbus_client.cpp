@@ -17,8 +17,8 @@
 #include "device_manager_adapter.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
-#include "softbus_client.h"
 #include "softbus_error_code.h"
+#include "softbus_client.h"
 
 namespace OHOS::AppDistributedKv {
 using namespace OHOS::DistributedKv;
@@ -90,7 +90,7 @@ Status SoftBusClient::OpenConnect()
 {
     std::vector <LinkType> linkTypes;
     Strategy strategy = CommunicationStrategy::GetInstance()->GetStrategy(device_.deviceId);
-    if (strategy != strategy_) {
+    if (strategy != strategy_ && connId_ > 0) {
         ZLOGI("close connId:%{public}d,strategy current:%{public}d, new:%{public}d", connId_, strategy_, strategy);
         CloseSession(connId_);
         RestoreDefaultValue();
@@ -138,6 +138,7 @@ Status SoftBusClient::Open(Strategy strategy)
 void SoftBusClient::InitSessionAttribute(Strategy strategy, SessionAttribute &attr)
 {
     attr.dataType = TYPE_BYTES;
+    // If the dataType is BYTES, the default strategy is wifi_5G > wifi_2.4G > BR, without P2P;
     if (strategy == Strategy::DEFAULT) {
         return;
     }

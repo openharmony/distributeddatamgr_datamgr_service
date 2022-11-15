@@ -35,4 +35,4 @@ private:
     mutable ConcurrentMap<std::string, uint32_t> dataSizes_;
 };
 }
-#endif //DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_CALC_SYNC_DATA_SIZE_IMPL_H
+#endif // DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_CALC_SYNC_DATA_SIZE_IMPL_H

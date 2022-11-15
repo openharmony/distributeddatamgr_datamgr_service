@@ -35,7 +35,6 @@ CommunicationProviderImpl::~CommunicationProviderImpl()
 
 Status CommunicationProviderImpl::Initialize()
 {
-    DmAdapter::GetInstance().Init();
     return Status::SUCCESS;
 }
 

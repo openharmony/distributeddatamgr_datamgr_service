@@ -27,4 +27,4 @@ public:
     static uint32_t CalcSyncDataSize(const StoreMetaData &data, DBStatus &status);
 };
 }
-#endif //DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_CALC_KVDB_SYNC_DATA_SIZE_H
+#endif // DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_CALC_KVDB_SYNC_DATA_SIZE_H

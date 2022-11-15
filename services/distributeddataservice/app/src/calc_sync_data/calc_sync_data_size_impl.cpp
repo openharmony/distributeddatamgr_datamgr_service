@@ -15,7 +15,6 @@
 
 #define LOG_TAG "CalcSyncDataSizeImpl"
 #include "calc_kvdb_sync_data_size.h"
-#include "calc_sync_data_size_impl.h"
 #include "communication_provider.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
@@ -24,6 +23,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data_local.h"
+#include "calc_sync_data_size_impl.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
@@ -82,7 +82,7 @@ uint32_t CalcSyncDataSizeImpl::CalcMetaDataSize(const std::string &deviceId) con
 uint32_t CalcSyncDataSizeImpl::CalcKvDataSize(const std::string &deviceId) const
 {
     std::vector<StoreMetaData> metaData;
-    auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
+    auto prefix = StoreMetaData::GetPrefix({DMAdapter::GetInstance().GetLocalDevice().uuid});
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
         ZLOGE("load meta failed!");
         return 0;
