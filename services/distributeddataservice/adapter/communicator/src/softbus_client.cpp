@@ -23,18 +23,18 @@
 namespace OHOS::AppDistributedKv {
 using namespace OHOS::DistributedKv;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-SoftBusClient::SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId) : pipe_(pipeInfo), device_(deviceId)
+SoftBusClient::SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+    const std::function<int32_t(int32_t)> &getConnStatus)
+    : pipe_(pipeInfo), device_(deviceId), getConnStatus_(getConnStatus)
 {
-    block_ = std::make_shared<BlockData<int32_t >>(WAIT_MAX_TIME, SOFTBUS_ERR);
     mtu_ = DEFAULT_MTU_SIZE;
 }
 
 SoftBusClient::~SoftBusClient()
 {
-    if (block_) {
-        block_->Clear(SOFTBUS_ERR);
+    if (connId_ > 0) {
+        CloseSession(connId_);
     }
-    CloseSession(connId_);
 }
 
 bool SoftBusClient::operator==(int32_t connId)
@@ -42,16 +42,9 @@ bool SoftBusClient::operator==(int32_t connId)
     return connId_ == connId;
 }
 
-bool SoftBusClient::operator==(const DeviceId &deviceId)
+bool SoftBusClient::operator==(const std::string &deviceId)
 {
-    return device_.deviceId == deviceId.deviceId;
-}
-
-void SoftBusClient::OnConnected(int32_t status)
-{
-    if (block_) {
-        block_->SetValue(status);
-    }
+    return device_.deviceId == deviceId;
 }
 
 void SoftBusClient::RestoreDefaultValue()
@@ -88,19 +81,11 @@ Status SoftBusClient::Send(const uint8_t *data, int size)
 
 Status SoftBusClient::OpenConnect()
 {
-    std::vector <LinkType> linkTypes;
-    Strategy strategy = CommunicationStrategy::GetInstance()->GetStrategy(device_.deviceId);
-    if (strategy != strategy_ && connId_ > 0) {
-        ZLOGI("close connId:%{public}d,strategy current:%{public}d, new:%{public}d", connId_, strategy_, strategy);
-        CloseSession(connId_);
-        RestoreDefaultValue();
-    }
-
     if (status_ == ConnectStatus::CONNECT_OK) {
         return Status::SUCCESS;
     }
 
-    auto result = Open(strategy);
+    auto result = Open();
     if (result != Status::SUCCESS) {
         return result;
     }
@@ -109,9 +94,9 @@ Status SoftBusClient::OpenConnect()
     return Status::SUCCESS;
 }
 
-Status SoftBusClient::Open(Strategy strategy)
+Status SoftBusClient::Open()
 {
-    block_->Clear(SOFTBUS_ERR);
+    Strategy strategy = CommunicationStrategy::GetInstance().GetStrategy(device_.deviceId);
     SessionAttribute attr = { 0 };
     InitSessionAttribute(strategy, attr);
     int id = OpenSession(pipe_.pipeId.c_str(), pipe_.pipeId.c_str(),
@@ -126,7 +111,7 @@ Status SoftBusClient::Open(Strategy strategy)
 
     connId_ = id;
     strategy_ = strategy;
-    int state = block_->GetValue();
+    int state = getConnStatus_(connId_);
     ZLOGI("waited for notification, state:%{public}d connId:%{public}d", state, id);
     if (state != SOFTBUS_OK) {
         ZLOGE("open callback result error");
@@ -159,5 +144,15 @@ void SoftBusClient::UpdateMtuSize()
         return;
     }
     mtu_ = mtu;
+}
+
+void SoftBusClient::AfterStrategyUpdate(Strategy strategy)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (strategy != strategy_ && connId_ > 0) {
+        ZLOGI("close connId:%{public}d,strategy current:%{public}d, new:%{public}d", connId_, strategy_, strategy);
+        CloseSession(connId_);
+        RestoreDefaultValue();
+    }
 }
 }

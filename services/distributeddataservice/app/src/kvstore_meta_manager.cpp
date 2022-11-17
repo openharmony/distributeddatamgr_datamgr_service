@@ -27,6 +27,7 @@
 #include "account_delegate.h"
 #include "bootstrap.h"
 #include "communication_provider.h"
+#include "communication_strategy.h"
 #include "constant.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
@@ -51,6 +52,7 @@ using DmAdapter = DistributedData::DeviceManagerAdapter;
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
 using namespace DistributedDB;
+using namespace OHOS::AppDistributedKv;
 
 // APPID: distributeddata
 // USERID: default
@@ -64,6 +66,9 @@ KvStoreMetaManager::KvStoreMetaManager()
       delegateManager_(Bootstrap::GetInstance().GetProcessLabel(), "default")
 {
     ZLOGI("begin.");
+    CommunicationStrategy::GetInstance().RegGetSyncDataSize("meta_store", [this](const std::string &deviceId) {
+        return this->GetSyncDataSize(deviceId);
+    });
 }
 
 KvStoreMetaManager::~KvStoreMetaManager()
@@ -586,6 +591,16 @@ std::string KvStoreMetaManager::GetBackupPath() const
 {
     return (DirectoryManager::GetInstance().GetMetaBackupPath() + "/" +
             Crypto::Sha256(label_ + "_" + Bootstrap::GetInstance().GetMetaDBName()));
+}
+
+size_t KvStoreMetaManager::GetSyncDataSize(const std::string &deviceId)
+{
+    auto metaDelegate = GetMetaKvStore();
+    if (metaDelegate == nullptr) {
+        return 0;
+    }
+
+    return metaDelegate->GetSyncDataSize(deviceId);
 }
 } // namespace DistributedKv
 } // namespace OHOS

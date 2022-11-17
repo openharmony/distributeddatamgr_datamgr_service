@@ -19,45 +19,45 @@
 #include <map>
 #include <mutex>
 
-#include "block_data.h"
 #include "communication_strategy.h"
 #include "session.h"
 #include "softbus_bus_center.h"
 namespace OHOS::AppDistributedKv {
 class SoftBusClient {
 public:
-    SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId);
+    SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+        const std::function<int32_t(int32_t)> &getConnStatus);
     ~SoftBusClient();
 
+    using Strategy = CommunicationStrategy::Strategy;
     Status Send(const uint8_t *data, int size);
     bool operator==(int32_t connId);
-    bool operator==(const DeviceId &deviceId);
-    void OnConnected(int32_t status);
+    bool operator==(const std::string &deviceId);
     uint32_t GetMtuSize() const;
+    void AfterStrategyUpdate(Strategy strategy);
 private:
     enum class ConnectStatus : int32_t {
         CONNECT_OK,
         DISCONNECT,
     };
-    using Strategy = CommunicationStrategy::Strategy;
+
     Status OpenConnect();
-    Status Open(Strategy strategy);
-    bool IsReconnect(Strategy strategy);
+    Status Open();
     void InitSessionAttribute(Strategy strategy, SessionAttribute &attr);
     void RestoreDefaultValue();
     void UpdateMtuSize();
 
     static constexpr int32_t INVALID_CONNECT_ID = -1;
     static constexpr uint32_t WAIT_MAX_TIME = 10;
-    static constexpr int32_t DEFAULT_MTU_SIZE = 4096;
+    static constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
     int32_t connId_ = INVALID_CONNECT_ID;
     Strategy strategy_ = Strategy::DEFAULT;
     ConnectStatus status_ = ConnectStatus::DISCONNECT;
     std::mutex mutex_;
-    std::shared_ptr <BlockData<int32_t>> block_;
     PipeInfo pipe_;
     DeviceId device_;
     uint32_t mtu_;
+    std::function<int32_t(int32_t)> getConnStatus_;
 };
 }
 

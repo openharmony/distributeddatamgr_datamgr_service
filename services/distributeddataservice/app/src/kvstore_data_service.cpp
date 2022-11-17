@@ -26,10 +26,8 @@
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
 #include "bootstrap.h"
-#include "calc_sync_data_size_impl.h"
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
-#include "communication_strategy.h"
 #include "config_factory.h"
 #include "constant.h"
 #include "dds_trace.h"
@@ -66,7 +64,6 @@ using namespace std::chrono;
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedDataDfx;
 using namespace OHOS::Security::AccessToken;
-using namespace OHOS::AppDistributedKv;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using StrategyMetaData = DistributedData::StrategyMeta;
@@ -113,7 +110,6 @@ void KvStoreDataService::Initialize()
     KvStoreMetaManager::GetInstance().InitMetaParameter();
     accountEventObserver_ = std::make_shared<KvStoreAccountObserver>(*this);
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
-    CommunicationStrategy::GetInstance()->RegObject(std::make_shared<CalcSyncDataSizeImpl>());
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
     DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
 }

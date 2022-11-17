@@ -175,9 +175,11 @@ public:
     bool GetKvStoreMetaDataByAppId(const std::string &appId, KvStoreMetaData &metaData);
 
     bool GetFullMetaData(std::map<std::string, MetaData> &entries, enum DatabaseType type = KVDB);
+    size_t GetSyncDataSize(const std::string &deviceId);
+private:
     using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;
     NbDelegate GetMetaKvStore();
-private:
+
     NbDelegate CreateMetaKvStore();
 
     void ConfigMetaDataManager();

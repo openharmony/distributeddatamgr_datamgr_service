@@ -74,7 +74,6 @@ ohos_shared_library("distributeddatasvc") {
     "data_share/uri_utils.cpp",
     "directory/src/directory_manager.cpp",
     "kvdb/auth_delegate.cpp",
-    "kvdb/calc_kvdb_sync_data_size.cpp",
     "kvdb/executor_factory.cpp",
     "kvdb/kvdb_exporter.cpp",
     "kvdb/kvdb_service_impl.cpp",

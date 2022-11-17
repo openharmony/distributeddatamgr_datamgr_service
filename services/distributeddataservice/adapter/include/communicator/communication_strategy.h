@@ -18,9 +18,9 @@
 #include <memory>
 #include <mutex>
 
-#include "calc_sync_data_size.h"
+#include "concurrent_map.h"
+#include "visibility.h"
 namespace OHOS::AppDistributedKv {
-using namespace OHOS::DistributedData;
 class API_EXPORT CommunicationStrategy {
 public:
     enum class Strategy : int32_t {
@@ -29,14 +29,27 @@ public:
         // If AP is available, the AP is preferred. When AP is not available, BR is used for a small amount of data
         // and P2P is used for a large amount of data; The strategy takes effect only at the device online stage;
         ON_LINE_SELECT_CHANNEL,
+        BUTT
     };
-    virtual ~CommunicationStrategy() = default;
-    static std::shared_ptr<CommunicationStrategy> GetInstance();
-    virtual void RegObject(std::shared_ptr<CalcSyncDataSize> object) = 0;
-    virtual CommunicationStrategy::Strategy GetStrategy(const std::string &deviceId) = 0;
+    static CommunicationStrategy &GetInstance();
+    using Strategy = CommunicationStrategy::Strategy;
+    void RegGetSyncDataSize(const std::string &type, const std::function<size_t(const std::string &)> &getDataSize);
+    CommunicationStrategy::Strategy GetStrategy(const std::string &deviceId);
+    void SetStrategy(const std::string &deviceId, Strategy strategy,
+                     const std::function<void(const std::string &, Strategy)> &action);
 private:
-    static std::mutex mutex_;
-    static std::shared_ptr<CommunicationStrategy> instance_;
+    CommunicationStrategy() = default;
+    ~CommunicationStrategy() = default;
+    CommunicationStrategy(CommunicationStrategy const &) = delete;
+    void operator=(CommunicationStrategy const &) = delete;
+    CommunicationStrategy(CommunicationStrategy &&) = delete;
+    CommunicationStrategy &operator=(CommunicationStrategy &&) = delete;
+
+    size_t CalcSyncDataSize(const std::string &deviceId);
+
+    static constexpr uint32_t SWITCH_CONNECTION_THRESHOLD = 75 * 1024u;
+    ConcurrentMap<std::string, std::function<uint32_t(const std::string &)>> calcDataSizes_;
+    ConcurrentMap<std::string, Strategy> strategys_;
 };
 }
 

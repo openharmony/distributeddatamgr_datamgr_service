@@ -84,10 +84,5 @@ int32_t CommunicationProviderImpl::ListenBroadcastMsg(const PipeInfo &pipeInfo,
 {
     return SoftBusAdapter::GetInstance()->ListenBroadcastMsg(pipeInfo, std::move(listener));
 }
-
-uint32_t CommunicationProviderImpl::GetMtuSize(const DeviceId &deviceId) const
-{
-    return SoftBusAdapter::GetInstance()->GetMtuSize(deviceId);
-}
 } // namespace AppDistributedKv
 } // namespace OHOS

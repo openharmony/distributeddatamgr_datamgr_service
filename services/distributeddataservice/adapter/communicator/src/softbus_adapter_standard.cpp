@@ -41,11 +41,12 @@ enum SoftBusAdapterErrorCode : int32_t {
 };
 constexpr int32_t SESSION_NAME_SIZE_MAX = 65;
 constexpr int32_t DEVICE_ID_SIZE_MAX = 65;
-static constexpr int32_t DEFAULT_MTU_SIZE = 4096;
+constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
 using namespace std;
 using namespace OHOS::DistributedDataDfx;
 using namespace OHOS::DistributedKv;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using Strategy = CommunicationStrategy::Strategy;
 struct ConnDetailsInfo {
     char myName[SESSION_NAME_SIZE_MAX] = "";
     char peerName[SESSION_NAME_SIZE_MAX] = "";
@@ -99,7 +100,7 @@ INodeStateCb g_callback = {
     .onNodeStatusChanged = OnCareEvent,
 };
 } // namespace
-
+SoftBusAdapter::SofBusDeviceChangeListenerImpl SoftBusAdapter::listener_;
 SoftBusAdapter::SoftBusAdapter()
 {
     ZLOGI("begin");
@@ -109,6 +110,11 @@ SoftBusAdapter::SoftBusAdapter()
     sessionListener_.OnSessionClosed = AppDataListenerWrap::OnConnectClosed;
     sessionListener_.OnBytesReceived = AppDataListenerWrap::OnBytesReceived;
     sessionListener_.OnMessageReceived = AppDataListenerWrap::OnBytesReceived;
+
+    auto status = DmAdapter::GetInstance().StartWatchDeviceChange(&listener_, {"softBusAdapter"});
+    if (status != Status::SUCCESS) {
+        ZLOGW("register device change failed, status:%d", static_cast<int>(status));
+    }
 }
 
 SoftBusAdapter::~SoftBusAdapter()
@@ -162,45 +168,44 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         lock_guard<mutex> lock(connMutex_);
         std::string key = pipeInfo.pipeId + deviceId.deviceId;
         if (connects_.find(key) == connects_.end()) {
-            connects_.emplace(key, std::make_shared<SoftBusClient>(pipeInfo, deviceId));
+            connects_.emplace(key, std::make_shared<SoftBusClient>(pipeInfo, deviceId, [this](int32_t connId) {
+                return GetSessionStatus(connId);
+            }));
         }
         conn = connects_[key];
     }
 
-    if (conn) {
+    if (conn != nullptr) {
         return conn->Send(data, size);
     }
 
     return Status::ERROR;
 }
 
-uint32_t SoftBusAdapter::GetMtuSize(const DeviceId &deviceId)
+std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const std::string &deviceId)
 {
     lock_guard<mutex> lock(connMutex_);
     for (const auto& conn : connects_) {
         if (*conn.second == deviceId) {
-            return conn.second->GetMtuSize();
+            return conn.second;
         }
     }
+    return nullptr;
+}
 
+uint32_t SoftBusAdapter::GetMtuSize(const DeviceId &deviceId)
+{
+    std::shared_ptr<SoftBusClient> conn = GetConnect(deviceId.deviceId);
+    if (conn != nullptr) {
+        return conn->GetMtuSize();
+    }
     return DEFAULT_MTU_SIZE;
 }
 
-void SoftBusAdapter::OnSessionOpen(int32_t connId, int32_t status)
+std::string SoftBusAdapter::DelConnect(int32_t connId)
 {
     lock_guard<mutex> lock(connMutex_);
-    for (const auto& conn : connects_) {
-        if (*conn.second == connId) {
-            conn.second->OnConnected(status);
-            break;
-        }
-    }
-}
-
-std::string SoftBusAdapter::OnSessionClose(int32_t connId)
-{
-    lock_guard<mutex> lock(connMutex_);
-    std::string name = "";
+    std::string name;
     for (const auto& conn : connects_) {
         if (*conn.second == connId) {
             name = conn.first;
@@ -209,6 +214,43 @@ std::string SoftBusAdapter::OnSessionClose(int32_t connId)
         }
     }
     return name;
+}
+
+void SoftBusAdapter::DelSessionStatus(int32_t connId)
+{
+    lock_guard<mutex> lock(statusMutex_);
+    auto it = sessionsStatus_.find(connId);
+    if (it != sessionsStatus_.end()) {
+        it->second->Clear(SOFTBUS_ERR);
+        sessionsStatus_.erase(it);
+    }
+}
+
+int32_t SoftBusAdapter::GetSessionStatus(int32_t connId)
+{
+    auto semaphore = GetSemaphore(connId);
+    return semaphore->GetValue();
+}
+
+void SoftBusAdapter::OnSessionOpen(int32_t connId, int32_t status)
+{
+    auto semaphore = GetSemaphore(connId);
+    semaphore->SetValue(status);
+}
+
+std::string SoftBusAdapter::OnSessionClose(int32_t connId)
+{
+    DelSessionStatus(connId);
+    return DelConnect(connId);
+}
+
+std::shared_ptr<BlockData<int32_t>> SoftBusAdapter::GetSemaphore(int32_t connId)
+{
+    lock_guard<mutex> lock(statusMutex_);
+    if (sessionsStatus_.find(connId) == sessionsStatus_.end()) {
+        sessionsStatus_.emplace(connId, std::make_shared<BlockData<int32_t>>(WAIT_MAX_TIME, SOFTBUS_ERR));
+    }
+    return sessionsStatus_[connId];
 }
 
 bool SoftBusAdapter::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
@@ -371,6 +413,34 @@ void AppDataListenerWrap::NotifyDataListeners(const uint8_t *data, const int siz
     const PipeInfo &pipeInfo)
 {
     softBusAdapter_->NotifyDataListeners(data, size, deviceId, pipeInfo);
+}
+
+void SoftBusAdapter::SofBusDeviceChangeListenerImpl::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
+    const AppDistributedKv::DeviceChangeType &type) const
+{
+    Strategy strategy = Strategy::BUTT;
+    switch (type) {
+        case AppDistributedKv::DeviceChangeType::DEVICE_ONLINE:
+            strategy = Strategy::ON_LINE_SELECT_CHANNEL;
+            break;
+        case AppDistributedKv::DeviceChangeType::DEVICE_ONREADY:
+            strategy = Strategy::DEFAULT;
+            break;
+        default:
+            break;
+    }
+
+    if (strategy >= Strategy::BUTT) {
+        return;
+    }
+
+    CommunicationStrategy::GetInstance().SetStrategy(info.uuid, strategy,
+        [this](const std::string deviceId, Strategy strategy) {
+        std::shared_ptr<SoftBusClient> conn = SoftBusAdapter::GetInstance()->GetConnect(deviceId);
+        if (conn != nullptr) {
+            conn->AfterStrategyUpdate(strategy);
+        }
+    });
 }
 } // namespace AppDistributedKv
 } // namespace OHOS

@@ -12,21 +12,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
+#define LOG_TAG "CommunicationStrategy"
 #include "communication_strategy.h"
-#include "communication_strategy_impl.h"
+#include "log_print.h"
+#include "kvstore_utils.h"
 
-namespace OHOS::AppDistributedKv {
-std::shared_ptr<CommunicationStrategy> CommunicationStrategy::instance_;
-std::mutex CommunicationStrategy::mutex_;
-std::shared_ptr<CommunicationStrategy> CommunicationStrategy::GetInstance()
+namespace OHOS {
+namespace AppDistributedKv {
+CommunicationStrategy &CommunicationStrategy::GetInstance()
 {
-    if (instance_ == nullptr) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (instance_ == nullptr) {
-            instance_ = std::make_shared<CommunicationStrategyImpl>();
-        }
-    }
-    return instance_;
+    static CommunicationStrategy instance;
+    return instance;
 }
-} // namespace OHOS::AppDistributedKv
+
+void CommunicationStrategy::RegGetSyncDataSize(const std::string &type,
+    const std::function<size_t(const std::string &)> &getDataSize)
+{
+    calcDataSizes_.InsertOrAssign(type, getDataSize);
+}
+
+size_t CommunicationStrategy::CalcSyncDataSize(const std::string &deviceId)
+{
+    size_t dataSize = 0;
+    calcDataSizes_.ForEach([&dataSize, &deviceId](const std::string &key, auto &value) {
+        if (value) {
+            dataSize += value(deviceId);
+        }
+        return false;
+    });
+    ZLOGD("calc data size:%{public}zu.", dataSize);
+    return dataSize;
+}
+
+void CommunicationStrategy::SetStrategy(const std::string &deviceId, Strategy strategy,
+                                        const std::function<void(const std::string &, Strategy)> &action)
+{
+    auto value = strategy;
+    if (strategy == Strategy::ON_LINE_SELECT_CHANNEL && CalcSyncDataSize(deviceId) < SWITCH_CONNECTION_THRESHOLD) {
+        value = Strategy::DEFAULT;
+    }
+    if (action) {
+        action(deviceId, value);
+    }
+    strategys_.InsertOrAssign(deviceId, value);
+    return ;
+}
+
+CommunicationStrategy::Strategy CommunicationStrategy::GetStrategy(const std::string &deviceId)
+{
+    auto result = strategys_.Find(deviceId);
+    if (!result.first) {
+        return Strategy::DEFAULT;
+    }
+
+    return result.second;
+}
+}  // namespace AppDistributedKv
+}  // namespace OHOS

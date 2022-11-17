@@ -51,7 +51,6 @@ public:
     int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask) override;
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
         std::function<void(const std::string &, uint16_t)> listener) override;
-    uint32_t GetMtuSize(const DeviceId &deviceId) const override;
 
 protected:
     virtual Status Initialize();
