@@ -125,15 +125,13 @@ void KvScheduler::Loop()
         std::function<void()> exec;
         {
             std::unique_lock<std::mutex> lock(mutex_);
-            if (kvTasks_.empty()) {
-                condition_.wait(lock);
-            } else {
+            condition_.wait(lock, [this] { return !kvTasks_.empty(); });
+            if (kvTasks_.begin()->first > std::chrono::system_clock::now()) {
                 condition_.wait_until(lock, kvTasks_.begin()->first);
+                continue;
             }
-            if ((!kvTasks_.empty()) && (kvTasks_.begin()->first <= std::chrono::system_clock::now())) {
-                exec = kvTasks_.begin()->second;
-                kvTasks_.erase(kvTasks_.begin());
-            }
+            exec = kvTasks_.begin()->second;
+            kvTasks_.erase(kvTasks_.begin());
         }
 
         if (exec) {
