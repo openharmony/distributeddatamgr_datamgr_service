@@ -73,15 +73,19 @@ public:
     void OnBroadcast(const DeviceId &device, uint16_t mask);
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo, std::function<void(const std::string &, uint16_t)> listener);
 
+    uint32_t GetMtuSize(const DeviceId &deviceId);
 private:
     using KvScheduler = OHOS::DistributedKv::KvScheduler;
 
     struct ConnectInfo {
-        int32_t connId = -1;
+        int32_t connId = INVALID_CONNECT_ID;
         uint32_t idleCount = 0;
         bool hasReconnect = false;
+        std::string deviceId;
+        uint32_t mtu = DEFAULT_MTU_SIZE;
     };
     std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t connId);
+    uint32_t GetConnectMtuSize(int32_t connId);
     Status GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId);
     Status OpenConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const std::vector <LinkType> &linkTypes,
         int32_t &connId);
@@ -101,6 +105,7 @@ private:
     bool schedulerRunning_ = true;
     static constexpr uint32_t CONNECT_IDLE_CLOSE_COUNT = 60;
     static constexpr int32_t INVALID_CONNECT_ID = -1;
+    static constexpr uint32_t DEFAULT_MTU_SIZE = 4096;
     std::mutex mutex_ {};
     std::map<std::string, std::shared_ptr<std::recursive_mutex>> mutexes_;
 };
