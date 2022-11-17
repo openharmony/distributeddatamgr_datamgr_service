@@ -128,7 +128,7 @@ void KvStoreMetaManager::InitDeviceOnline()
             if (status == OK) {
                 return;
             }
-            ZLOGW("meta db sync error %d.", status);
+            ZLOGW("meta db sync error %{public}d.", status);
         }
 
         auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
@@ -167,10 +167,7 @@ void KvStoreMetaManager::InitMetaData()
     data.securityLevel = SecurityLevel::S1;
     data.area = EL1;
     data.tokenId = token;
-    if (!MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data)) {
-        ZLOGE("save meta fail");
-    }
-
+    MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data);
     ZLOGI("end.");
 }
 
@@ -193,7 +190,7 @@ void KvStoreMetaManager::InitMetaParameter()
                 break;
             }
             retryCount++;
-            ZLOGE("GenerateRootKey failed.");
+            ZLOGD("GenerateRootKey failed, retry times:%{public}d.", retryCount);
             usleep(RETRY_TIME_INTERVAL_MILLISECOND);
         }
     });
@@ -330,7 +327,7 @@ void KvStoreMetaManager::SyncMeta()
     };
     auto dbStatus = metaDelegate->Sync(devs, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
     if (dbStatus != DistributedDB::OK) {
-        ZLOGW("meta db sync error %d.", dbStatus);
+        ZLOGW("meta db sync error %{public}d.", dbStatus);
     }
 }
 
@@ -473,7 +470,7 @@ T Serializable::GetVal(const json &j, const std::string &name, json::value_t typ
     if (it != j.end() && it->type() == type) {
         return *it;
     }
-    ZLOGW("not found name:%s.", name.c_str());
+    ZLOGW("not found name:%{public}s.", name.c_str());
     return val;
 }
 
@@ -496,6 +493,7 @@ bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entrie
     ZLOGI("start");
     auto metaDelegate = GetMetaKvStore();
     if (metaDelegate == nullptr) {
+        ZLOGE("GetMetaKvStore failed.");
         return false;
     }
 
@@ -503,13 +501,13 @@ bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entrie
     const std::string &metaKey = KvStoreMetaRow::KEY_PREFIX;
     DistributedDB::DBStatus dbStatus = metaDelegate->GetEntries({ metaKey.begin(), metaKey.end() }, kvStoreMetaEntries);
     if (dbStatus != DistributedDB::DBStatus::OK) {
-        ZLOGE("Get kvstore meta data entries from metaDB failed, dbStatus: %d.", static_cast<int>(dbStatus));
+        ZLOGE("Get kvstore meta data entries from metaDB failed, dbStatus: %{public}d.", static_cast<int>(dbStatus));
         return false;
     }
 
     for (auto const &kvStoreMeta : kvStoreMetaEntries) {
         std::string jsonStr(kvStoreMeta.value.begin(), kvStoreMeta.value.end());
-        ZLOGD("kvStoreMetaData get json: %s", jsonStr.c_str());
+        ZLOGD("kvStoreMetaData get json: %{public}s", jsonStr.c_str());
         auto metaObj = Serializable::ToJson(jsonStr);
         MetaData metaData{ 0 };
         metaData.kvStoreType = MetaData::GetKvStoreType(metaObj);
@@ -521,7 +519,7 @@ bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entrie
         metaData.kvStoreMetaData.Unmarshal(metaObj);
         std::vector<uint8_t> decryptKey;
         if (metaData.kvStoreMetaData.isEncrypt) {
-            ZLOGE("isEncrypt.");
+            ZLOGD("isEncrypt.");
             const std::string keyType = ((metaData.kvStoreType == KvStoreType::SINGLE_VERSION) ? "SINGLE_KEY" : "KEY");
             const std::vector<uint8_t> metaSecretKey =
                 KvStoreMetaManager::GetInstance().GetMetaKey(metaData.kvStoreMetaData.deviceAccountId, "default",
@@ -530,7 +528,7 @@ bool KvStoreMetaManager::GetFullMetaData(std::map<std::string, MetaData> &entrie
             metaDelegate->GetLocal(metaSecretKey, secretValue);
             auto secretObj = Serializable::ToJson({ secretValue.begin(), secretValue.end() });
             if (secretObj.empty()) {
-                ZLOGE("Failed to find SKEY in SecretKeyMetaData.");
+                ZLOGW("Failed to find SKEY in SecretKeyMetaData.");
                 continue;
             }
             metaData.secretKeyMetaData.Unmarshal(secretObj);

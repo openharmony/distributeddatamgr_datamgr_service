@@ -24,7 +24,7 @@ void KvStoreDeviceListener::OnDeviceChanged(
     const AppDistributedKv::DeviceInfo &info, const AppDistributedKv::DeviceChangeType &type) const
 {
     if (type != AppDistributedKv::DeviceChangeType::DEVICE_ONLINE) {
-        ZLOGE("not online type");
+        ZLOGE("not online type, type is %{public}d", type);
         return;
     }
     kvStoreDataService_.SetCompatibleIdentify(info);

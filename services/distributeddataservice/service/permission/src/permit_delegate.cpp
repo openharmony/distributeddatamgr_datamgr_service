@@ -115,7 +115,7 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
     }
     auto status = VerifyStrategy(data, param.deviceId);
     if (status != Status::SUCCESS) {
-        ZLOGE("verify strategy fail, status:%d.", status);
+        ZLOGE("verify strategy fail, status:%{public}d.", status);
         return false;
     }
     return PermissionValidator::GetInstance().CheckSyncPermission(data.tokenId);

@@ -55,7 +55,8 @@ int RdbResultSetImpl::GetColumnType(int columnIndex, ColumnType &columnType)
     DbColumnType dbColumnType;
     DBStatus status = resultSet_->GetColumnType(columnIndex, dbColumnType);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d.", status);
+        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d",
+            status, columnIndex);
         return NativeRdb::E_ERROR;
     }
     columnType = ConvertColumnType(dbColumnType);
@@ -71,7 +72,8 @@ int RdbResultSetImpl::GetColumnIndex(const std::string &columnName, int &columnI
     }
     DBStatus status = resultSet_->GetColumnIndex(columnName, columnIndex);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d.", status);
+        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d. columnName is %{public}s.",
+            status, columnName.c_str());
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -86,7 +88,8 @@ int RdbResultSetImpl::GetColumnName(int columnIndex, std::string &columnName)
     }
     DBStatus status = resultSet_->GetColumnName(columnIndex, columnName);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d.", status);
+        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+            status, columnIndex);
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -122,7 +125,7 @@ int RdbResultSetImpl::GoTo(int offset)
         return NativeRdb::E_ERROR;
     }
     if (!resultSet_->Move(offset)) {
-        ZLOGE("DistributedDB resultSet operate failed.");
+        ZLOGE("DistributedDB resultSet operate failed, offset is %{public}d.", offset);
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -136,7 +139,7 @@ int RdbResultSetImpl::GoToRow(int position)
         return NativeRdb::E_ERROR;
     }
     if (!resultSet_->MoveToPosition(position)) {
-        ZLOGE("DistributedDB resultSet operate failed.");
+        ZLOGE("DistributedDB resultSet operate failed, position is %{public}d.", position);
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -251,7 +254,8 @@ int RdbResultSetImpl::GetBlob(int columnIndex, std::vector<uint8_t> &blob)
     }
     DBStatus status = resultSet_->Get(columnIndex, blob);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d.", status);
+        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+            status, columnIndex);
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -266,7 +270,8 @@ int RdbResultSetImpl::GetString(int columnIndex, std::string &value)
     }
     DBStatus status = resultSet_->Get(columnIndex, value);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d.", status);
+        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+            status, columnIndex);
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -295,7 +300,8 @@ int RdbResultSetImpl::GetLong(int columnIndex, int64_t &value)
     }
     DBStatus status = resultSet_->Get(columnIndex, value);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d.", status);
+        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+            status, columnIndex);
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -310,7 +316,8 @@ int RdbResultSetImpl::GetDouble(int columnIndex, double &value)
     }
     DBStatus status = resultSet_->Get(columnIndex, value);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d.", status);
+        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+            status, columnIndex);
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -325,7 +332,8 @@ int RdbResultSetImpl::IsColumnNull(int columnIndex, bool &isNull)
     }
     DBStatus status = resultSet_->IsColumnNull(columnIndex, isNull);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d.", status);
+        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+            status, columnIndex);
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;

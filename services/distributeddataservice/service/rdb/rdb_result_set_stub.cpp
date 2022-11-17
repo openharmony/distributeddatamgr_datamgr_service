@@ -51,7 +51,6 @@ int32_t RdbResultSetStub::OnGetAllColumnNames(MessageParcel &data, MessageParcel
     std::vector<std::string> columnNames;
     int status = GetAllColumnNames(columnNames);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetAllColumnNames failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -70,7 +69,6 @@ int32_t RdbResultSetStub::OnGetColumnCount(MessageParcel &data, MessageParcel &r
     int columnCount = 0;
     int status = GetColumnCount(columnCount);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetColumnCount failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -91,7 +89,6 @@ int32_t RdbResultSetStub::OnGetColumnType(MessageParcel &data, MessageParcel &re
     NativeRdb::ColumnType columnType;
     int status = GetColumnType(columnIndex, columnType);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetColumnType failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -112,7 +109,6 @@ int32_t RdbResultSetStub::OnGetColumnIndex(MessageParcel &data, MessageParcel &r
     int columnIndex;
     int status = GetColumnIndex(columnName, columnIndex);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetColumnIndex failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -133,7 +129,6 @@ int32_t RdbResultSetStub::OnGetColumnName(MessageParcel &data, MessageParcel &re
     std::string columnName;
     int status = GetColumnName(columnIndex, columnName);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetColumnName failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -152,7 +147,6 @@ int32_t RdbResultSetStub::OnGetRowCount(MessageParcel &data, MessageParcel &repl
     int rowCount = 0;
     int status = GetRowCount(rowCount);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetRowCount failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -171,7 +165,6 @@ int32_t RdbResultSetStub::OnGetRowIndex(MessageParcel &data, MessageParcel &repl
     int rowIndex = 0;
     int status = GetRowIndex(rowIndex);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetRowIndex failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -190,10 +183,6 @@ int32_t RdbResultSetStub::OnGoTo(MessageParcel &data, MessageParcel &reply)
     int offSet;
     ITypesUtil::Unmarshal(data, offSet);
     int status = GoTo(offSet);
-    if (status != 0) {
-        ZLOGE("ResultSet service side GoTo failed.");
-    }
-
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Write status failed.");
         return -1;
@@ -206,10 +195,6 @@ int32_t RdbResultSetStub::OnGoToRow(MessageParcel &data, MessageParcel &reply)
     int position;
     ITypesUtil::Unmarshal(data, position);
     int status = GoToRow(position);
-    if (status != 0) {
-        ZLOGE("ResultSet service side GoToRow failed.");
-    }
-
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Write status failed.");
         return -1;
@@ -221,7 +206,6 @@ int32_t RdbResultSetStub::OnGoToFirstRow(MessageParcel &data, MessageParcel &rep
 {
     int status = GoToFirstRow();
     if (status != 0) {
-        ZLOGE("ResultSet service side GoToFirstRow failed.");
         if (!reply.WriteInt32(status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -238,10 +222,6 @@ int32_t RdbResultSetStub::OnGoToFirstRow(MessageParcel &data, MessageParcel &rep
 int32_t RdbResultSetStub::OnGoToLastRow(MessageParcel &data, MessageParcel &reply)
 {
     int status = GoToLastRow();
-    if (status != 0) {
-        ZLOGE("ResultSet service side GoToLastRow failed.");
-    }
-
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Write status failed.");
         return -1;
@@ -252,10 +232,6 @@ int32_t RdbResultSetStub::OnGoToLastRow(MessageParcel &data, MessageParcel &repl
 int32_t RdbResultSetStub::OnGoToNextRow(MessageParcel &data, MessageParcel &reply)
 {
     int status = GoToNextRow();
-    if (status != 0) {
-        ZLOGE("ResultSet service side GoToNextRow failed.");
-    }
-
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Write status failed.");
         return -1;
@@ -266,10 +242,6 @@ int32_t RdbResultSetStub::OnGoToNextRow(MessageParcel &data, MessageParcel &repl
 int32_t RdbResultSetStub::OnGoToPreviousRow(MessageParcel &data, MessageParcel &reply)
 {
     int status = GoToPreviousRow();
-    if (status != 0) {
-        ZLOGE("ResultSet service side GoToPreviousRow failed.");
-    }
-
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Write status failed.");
         return -1;
@@ -282,7 +254,6 @@ int32_t RdbResultSetStub::OnIsEnded(MessageParcel &data, MessageParcel &reply)
     bool isEnded = false;
     int status = IsEnded(isEnded);
     if (status != 0) {
-        ZLOGE("ResultSet service side IsEnded failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -301,7 +272,6 @@ int32_t RdbResultSetStub::OnIsStarted(MessageParcel &data, MessageParcel &reply)
     bool isStarted = false;
     int status = IsStarted(isStarted);
     if (status != 0) {
-        ZLOGE("ResultSet service side IsStarted failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -320,7 +290,6 @@ int32_t RdbResultSetStub::OnIsAtFirstRow(MessageParcel &data, MessageParcel &rep
     bool isAtFirstRow = false;
     int status = IsAtFirstRow(isAtFirstRow);
     if (status != 0) {
-        ZLOGE("ResultSet service side IsAtFirstRow failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -339,7 +308,6 @@ int32_t RdbResultSetStub::OnIsAtLastRow(MessageParcel &data, MessageParcel &repl
     bool isAtLastRow = false;
     int status = IsAtLastRow(isAtLastRow);
     if (status != 0) {
-        ZLOGE("ResultSet service side IsAtLastRow failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -360,7 +328,6 @@ int32_t RdbResultSetStub::OnGetBlob(MessageParcel &data, MessageParcel &reply)
     std::vector<uint8_t> blob;
     int status = GetBlob(columnIndex, blob);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetBlob failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -381,7 +348,6 @@ int32_t RdbResultSetStub::OnGetString(MessageParcel &data, MessageParcel &reply)
     std::string value;
     int status = GetString(columnIndex, value);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetString failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -402,7 +368,6 @@ int32_t RdbResultSetStub::OnGetInt(MessageParcel &data, MessageParcel &reply)
     int value;
     int status = GetInt(columnIndex, value);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetInt failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -423,7 +388,6 @@ int32_t RdbResultSetStub::OnGetLong(MessageParcel &data, MessageParcel &reply)
     int64_t value;
     int status = GetLong(columnIndex, value);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetLong failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -444,7 +408,6 @@ int32_t RdbResultSetStub::OnGetDouble(MessageParcel &data, MessageParcel &reply)
     double value;
     int status = GetDouble(columnIndex, value);
     if (status != 0) {
-        ZLOGE("ResultSet service side GetDouble failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -465,7 +428,6 @@ int32_t RdbResultSetStub::OnIsColumnNull(MessageParcel &data, MessageParcel &rep
     bool isColumnNull;
     int status = IsColumnNull(columnIndex, isColumnNull);
     if (status != 0) {
-        ZLOGE("ResultSet service side IsColumnNull failed.");
         if (!ITypesUtil::Marshal(reply, status)) {
             ZLOGE("Write status failed.");
             return -1;
@@ -492,10 +454,6 @@ int32_t RdbResultSetStub::OnIsClosed(MessageParcel &data, MessageParcel &reply)
 int32_t RdbResultSetStub::OnClose(MessageParcel &data, MessageParcel &reply)
 {
     int status = Close();
-    if (status != 0) {
-        ZLOGE("ResultSet service side Close failed.");
-    }
-
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Write status failed.");
         return -1;

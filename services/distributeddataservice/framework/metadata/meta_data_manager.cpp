@@ -122,6 +122,7 @@ void MetaDataManager::Initialize(std::shared_ptr<MetaStore> metaStore, const Bac
 bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value, bool isLocal)
 {
     if (!inited_) {
+        ZLOGE("failed! MetaDataManager not inited");
         return false;
     }
 
@@ -143,6 +144,7 @@ bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value
 bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool isLocal)
 {
     if (!inited_) {
+        ZLOGE("failed! MetaDataManager not inited");
         return false;
     }
 
@@ -150,6 +152,7 @@ bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool
     auto status = isLocal ? metaStore_->GetLocal({ key.begin(), key.end() }, data)
                           : metaStore_->Get({ key.begin(), key.end() }, data);
     if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("failed! status:%{public}d isLocal:%{public}d, key:%{public}s", status, isLocal, key.c_str());
         return false;
     }
     Serializable::Unmarshall({ data.begin(), data.end() }, value);
@@ -165,6 +168,7 @@ bool MetaDataManager::GetEntries(const std::string &prefix, std::vector<Bytes> &
     auto status = isLocal ? metaStore_->GetLocalEntries({ prefix.begin(), prefix.end() }, dbEntries)
                           : metaStore_->GetEntries({ prefix.begin(), prefix.end() }, dbEntries);
     if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::NOT_FOUND) {
+        ZLOGE("failed! status:%{public}d isLocal:%{public}d, prefix:%{public}s", status, isLocal, prefix.c_str());
         return false;
     }
     entries.resize(dbEntries.size());
