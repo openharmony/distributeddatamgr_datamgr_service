@@ -15,10 +15,9 @@
 
 #define LOG_TAG "processCommunication"
 
-#include "process_communicator_impl.h"
-
 #include "log_print.h"
-
+#include "softbus_adapter.h"
+#include "process_communicator_impl.h"
 namespace OHOS {
 namespace AppDistributedKv {
 using namespace DistributedDB;
@@ -145,12 +144,11 @@ uint32_t ProcessCommunicatorImpl::GetMtuSize()
 uint32_t ProcessCommunicatorImpl::GetMtuSize(const DeviceInfos &devInfo)
 {
     ZLOGI("GetMtuSize start");
-    const auto &comm = CommunicationProvider::GetInstance();
     DeviceId deviceId = {
         .deviceId = devInfo.identifier
     };
 
-    return comm.GetMtuSize(deviceId);
+    return SoftBusAdapter::GetInstance()->GetMtuSize(deviceId);
 }
 
 DeviceInfos ProcessCommunicatorImpl::GetLocalDeviceInfos()
