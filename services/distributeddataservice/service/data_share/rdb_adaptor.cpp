@@ -64,7 +64,8 @@ std::shared_ptr<DataShareResultSet> RdbAdaptor::Query(const UriInfo &uriInfo, co
 std::shared_ptr<RdbDelegate> RdbAdaptor::GetDelegate(const UriInfo &uriInfo, const int32_t userId)
 {
     std::shared_ptr<RdbDelegate> value = nullptr;
-    delegates_.Compute(uriInfo, [&uriInfo, &userId, &value](const UriInfo &key, std::shared_ptr<RdbDelegate> &delegate) {
+    delegates_.Compute(uriInfo,
+        [&uriInfo, &userId, &value](const UriInfo &key, std::shared_ptr<RdbDelegate> &delegate) {
         if (delegate != nullptr) {
             ZLOGD("has opened, reuse");
             value = delegate;
@@ -72,7 +73,7 @@ std::shared_ptr<RdbDelegate> RdbAdaptor::GetDelegate(const UriInfo &uriInfo, con
         }
         DistributedData::StoreMetaData metaData;
         if (!PermissionProxy::QueryMetaData(
-                uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
+            uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
             return false;
         }
         if (timer_ == nullptr) {
