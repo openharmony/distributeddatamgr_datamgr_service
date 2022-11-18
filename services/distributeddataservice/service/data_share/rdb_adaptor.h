@@ -27,6 +27,7 @@
 #include "rdb_errno.h"
 #include "rdb_helper.h"
 #include "rdb_store.h"
+#include "timer.h"
 #include "uri_utils.h"
 
 namespace OHOS::DataShare {
@@ -54,6 +55,14 @@ public:
     static int32_t Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate, const int32_t userId);
     static std::shared_ptr<DataShareResultSet> Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
         const std::vector<std::string> &columns, const int32_t userId);
+
+private:
+    static constexpr int OPEN_TIME = 1500; // 1500ms
+    static std::shared_ptr<RdbDelegate> GetDelegate(const UriInfo &uriInfo, const int32_t userId);
+    static void AutoClose();
+    static ConcurrentMap<UriInfo, std::shared_ptr<RdbDelegate>> delegates_;
+    static std::unique_ptr<Utils::Timer> timer_;
+    static uint32_t timerId_;
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:

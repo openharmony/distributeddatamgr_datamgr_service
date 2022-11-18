@@ -19,43 +19,81 @@
 #include "permission_proxy.h"
 #include "rdb_utils.h"
 namespace OHOS::DataShare {
+std::unique_ptr<Utils::Timer> RdbAdaptor::timer_ = nullptr;
+ConcurrentMap<UriInfo, std::shared_ptr<RdbDelegate>> RdbAdaptor::delegates_;
+uint32_t RdbAdaptor::timerId_ = 0;
 int32_t RdbAdaptor::Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket, const int32_t userId)
 {
-    DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
+    auto delegate = GetDelegate(uriInfo, userId);
+    if (delegate == nullptr) {
+        ZLOGE("delegate null");
         return -1;
     }
-    RdbDelegate delegate(metaData);
-    return delegate.Insert(uriInfo.tableName, valuesBucket);
+    return delegate->Insert(uriInfo.tableName, valuesBucket);
 }
 int32_t RdbAdaptor::Update(const UriInfo &uriInfo, const DataSharePredicates &predicate,
     const DataShareValuesBucket &valuesBucket, const int32_t userId)
 {
-    DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
+    auto delegate = GetDelegate(uriInfo, userId);
+    if (delegate == nullptr) {
+        ZLOGE("delegate null");
         return -1;
     }
-    RdbDelegate delegate(metaData);
-    return delegate.Update(uriInfo.tableName, predicate, valuesBucket);
+    return delegate->Update(uriInfo.tableName, predicate, valuesBucket);
 }
 int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate, const int32_t userId)
 {
-    DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
+    auto delegate = GetDelegate(uriInfo, userId);
+    if (delegate == nullptr) {
+        ZLOGE("delegate null");
         return -1;
     }
-    RdbDelegate delegate(metaData);
-    return delegate.Delete(uriInfo.tableName, predicate);
+    return delegate->Delete(uriInfo.tableName, predicate);
 }
 std::shared_ptr<DataShareResultSet> RdbAdaptor::Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
     const std::vector<std::string> &columns, const int32_t userId)
 {
-    DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
+    auto delegate = GetDelegate(uriInfo, userId);
+    if (delegate == nullptr) {
+        ZLOGE("delegate null");
         return nullptr;
     }
-    RdbDelegate delegate(metaData);
-    return delegate.Query(uriInfo.tableName, predicates, columns);
+    return delegate->Query(uriInfo.tableName, predicates, columns);
+}
+
+std::shared_ptr<RdbDelegate> RdbAdaptor::GetDelegate(const UriInfo &uriInfo, const int32_t userId)
+{
+    std::shared_ptr<RdbDelegate> value = nullptr;
+    delegates_.Compute(uriInfo, [&uriInfo, &userId, &value](const UriInfo &key, std::shared_ptr<RdbDelegate> &delegate) {
+        if (delegate != nullptr) {
+            ZLOGD("has opened, reuse");
+            value = delegate;
+            return true;
+        }
+        DistributedData::StoreMetaData metaData;
+        if (!PermissionProxy::QueryMetaData(
+                uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
+            return false;
+        }
+        if (timer_ == nullptr) {
+            timer_ = std::make_unique<Utils::Timer>("DataShareSlience");
+            timer_->Setup();
+        }
+        timer_->Unregister(timerId_);
+        timerId_ = timer_->Register(AutoClose, OPEN_TIME, true);
+
+        delegate = std::make_shared<RdbDelegate>(metaData);
+        value = delegate;
+        return true;
+    });
+
+    return value;
+}
+
+void RdbAdaptor::AutoClose()
+{
+    ZLOGD("clear");
+    delegates_.Clear();
 }
 
 RdbDelegate::RdbDelegate(const StoreMetaData &meta)
