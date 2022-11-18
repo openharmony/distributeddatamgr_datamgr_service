@@ -32,7 +32,6 @@ group("fuzztest") {
     "test/fuzztest/autolaunch_fuzzer:fuzztest",
     "test/fuzztest/blob_fuzzer:fuzztest",
     "test/fuzztest/devicekvstore_fuzzer:fuzztest",
-    "test/fuzztest/dfx_fuzzer:fuzztest",
     "test/fuzztest/distributedkvdatamanager_fuzzer:fuzztest",
     "test/fuzztest/kvstoredisksize_fuzzer:fuzztest",
     "test/fuzztest/kvstorescheduler_fuzzer:fuzztest",
