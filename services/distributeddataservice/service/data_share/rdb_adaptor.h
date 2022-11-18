@@ -57,7 +57,7 @@ public:
         const std::vector<std::string> &columns, const int32_t userId);
 
 private:
-    static constexpr int OPEN_TIME = 1500; // 1500ms
+    static constexpr int OPEN_TIME = 30000; // 30s
     static std::shared_ptr<RdbDelegate> GetDelegate(const UriInfo &uriInfo, const int32_t userId);
     static void AutoClose();
     static ConcurrentMap<UriInfo, std::shared_ptr<RdbDelegate>> delegates_;
