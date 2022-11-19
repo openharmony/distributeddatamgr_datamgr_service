@@ -322,7 +322,7 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
     ZLOGI("start");
     std::vector<StoreMetaData> entries;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), entries)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({localDeviceId}), entries)) {
         ZLOGE("get full meta failed");
         return false;
     }
@@ -399,7 +399,7 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeM
 
     // open store and SetEqualIdentifier, then close store after 60s
     DistributedDB::KvStoreDelegateManager delegateManager(storeMeta.appId, storeMeta.user);
-    delegateManager.SetKvStoreConfig({ storeMeta.dataDir });
+    delegateManager.SetKvStoreConfig( { storeMeta.dataDir } );
     Options options = {
         .createIfMissing = false,
         .encrypt = storeMeta.isEncrypt,

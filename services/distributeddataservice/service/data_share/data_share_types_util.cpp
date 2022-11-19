@@ -22,12 +22,12 @@ template<>
 bool Unmarshalling(Predicates &predicates, MessageParcel &parcel)
 {
     ZLOGD("Unmarshalling DataSharePredicates Start");
-    std::vector<Operation> operations{};
+    std::vector<Operation> operations {};
     std::string whereClause = "";
     std::vector<std::string> whereArgs;
     std::string order = "";
     int64_t mode = DataShare::INVALID_MODE;
-    if (!ITypesUtil::Unmarshal(parcel, operations, whereClause, whereArgs, order, mode)){
+    if (!ITypesUtil::Unmarshal(parcel, operations, whereClause, whereArgs, order, mode)) {
         ZLOGE("predicate read whereClause failed");
         return false;
     }
