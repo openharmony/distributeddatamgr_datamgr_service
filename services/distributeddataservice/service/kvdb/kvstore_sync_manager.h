@@ -16,6 +16,7 @@
 #ifndef KVSTORE_SYNC_MANAGER_H
 #define KVSTORE_SYNC_MANAGER_H
 
+#include <atomic>
 #include <list>
 #include <map>
 
@@ -73,7 +74,7 @@ private:
     std::list<KvSyncOperation> delaySyncingOps_;
     std::multimap<TimePoint, KvSyncOperation> scheduleSyncOps_;
 
-    KvScheduler syncScheduler_;
+    KvScheduler syncScheduler_ { "sync_mgr" };
     TimePoint nextScheduleTime_;
     std::atomic_uint32_t syncOpSeq_ = 0;
 };

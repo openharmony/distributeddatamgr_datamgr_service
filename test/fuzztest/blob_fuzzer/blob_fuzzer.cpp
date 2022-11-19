@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "securec.h"
-#include "itypes_util.h"
 #include "types.h"
 
 using namespace OHOS::DistributedKv;

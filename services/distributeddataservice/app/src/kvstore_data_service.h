@@ -25,7 +25,6 @@
 #include "ikvstore_data_service.h"
 #include "kvstore_device_listener.h"
 #include "kvstore_meta_manager.h"
-#include "metadata/corrupted_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "reporter.h"
 #include "security/security.h"
@@ -40,7 +39,6 @@ class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
 
 public:
-    using CorruptedMetaData = DistributedData::CorruptedMetaData;
     using StoreMetaData = DistributedData::StoreMetaData;
     // record kvstore meta version for compatible, should update when modify kvstore meta structure.
     static constexpr uint32_t STORE_VERSION = 0x03000001;
@@ -114,7 +112,7 @@ private:
     Status AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId);
 
     bool ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
-    static void ResolveAutoLaunchCompatible(const MetaData &meta, const std::string &identifier);
+    static void ResolveAutoLaunchCompatible(const StoreMetaData &meta, const std::string &identifier);
     static DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
     static Status InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
                           DistributedDB::KvStoreNbDelegate::Option &dbOption);

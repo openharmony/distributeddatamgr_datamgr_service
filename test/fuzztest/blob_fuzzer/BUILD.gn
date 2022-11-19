@@ -21,6 +21,7 @@ ohos_fuzztest("BlobFuzzTest") {
 
   include_dirs = [
     "ipc/interfaces/innerkits/ipc_core/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/rdb/include",

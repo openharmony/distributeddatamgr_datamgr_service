@@ -80,7 +80,7 @@ private:
     static constexpr int64_t INTERVAL = 1;
     static constexpr size_t TIME_TASK_NUM = 1;
     ConcurrentMap<uint32_t, std::map<std::string, DBStoreDelegate>> stores_;
-    KvScheduler scheduler_{ TIME_TASK_NUM };
+    KvScheduler scheduler_{ TIME_TASK_NUM, "store_cache" };
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_STORE_CACHE_H
