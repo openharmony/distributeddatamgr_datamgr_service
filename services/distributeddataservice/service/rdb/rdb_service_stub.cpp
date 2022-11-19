@@ -25,7 +25,7 @@ int32_t RdbServiceStub::OnRemoteObtainDistributedTableName(MessageParcel &data, 
 {
     std::string device;
     std::string table;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, device, table)) {
+    if (!ITypesUtil::Unmarshal(data, device, table)) {
         ZLOGE("read from message parcel failed");
         reply.WriteString("");
         return RDB_OK;
@@ -39,7 +39,7 @@ int32_t RdbServiceStub::OnRemoteInitNotifier(MessageParcel &data, MessageParcel 
 {
     RdbSyncerParam param;
     sptr<IRemoteObject> notifier;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, param, notifier)) {
+    if (!ITypesUtil::Unmarshal(data, param, notifier)) {
         ZLOGE("read from message parcel failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
@@ -63,7 +63,7 @@ int32_t RdbServiceStub::OnRemoteSetDistributedTables(MessageParcel &data, Messag
 {
     RdbSyncerParam param;
     std::vector<std::string> tables;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, param, tables)) {
+    if (!ITypesUtil::Unmarshal(data, param, tables)) {
         ZLOGE("read from message parcel failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
@@ -78,7 +78,7 @@ int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply
     RdbSyncerParam param;
     SyncOption option {};
     RdbPredicates predicates;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, param, option, predicates)) {
+    if (!ITypesUtil::Unmarshal(data, param, option, predicates)) {
         ZLOGE("read from message parcel failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
@@ -89,7 +89,7 @@ int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
     }
-    if (!DistributedKv::ITypesUtil::Marshalling(result, reply)) {
+    if (!ITypesUtil::Marshal(reply, result)) {
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
     }
@@ -102,7 +102,7 @@ int32_t RdbServiceStub::OnRemoteDoAsync(MessageParcel &data, MessageParcel &repl
     uint32_t seqNum;
     SyncOption option {};
     RdbPredicates predicates;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, param, seqNum, option, predicates)) {
+    if (!ITypesUtil::Unmarshal(data, param, seqNum, option, predicates)) {
         ZLOGE("read from message parcel failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
@@ -115,7 +115,7 @@ int32_t RdbServiceStub::OnRemoteDoAsync(MessageParcel &data, MessageParcel &repl
 int32_t RdbServiceStub::OnRemoteDoSubscribe(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, param)) {
+    if (!ITypesUtil::Unmarshal(data, param)) {
         ZLOGE("read from message parcel failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
@@ -127,7 +127,7 @@ int32_t RdbServiceStub::OnRemoteDoSubscribe(MessageParcel &data, MessageParcel &
 int32_t RdbServiceStub::OnRemoteDoUnSubscribe(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, param)) {
+    if (!ITypesUtil::Unmarshal(data, param)) {
         ZLOGE("read from message parcel failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
@@ -142,7 +142,7 @@ int32_t RdbServiceStub::OnRemoteDoRemoteQuery(MessageParcel& data, MessageParcel
     std::string device;
     std::string sql;
     std::vector<std::string> selectionArgs;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, param, device, sql, selectionArgs)) {
+    if (!ITypesUtil::Unmarshal(data, param, device, sql, selectionArgs)) {
         ZLOGE("read from message parcel failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
@@ -187,7 +187,7 @@ int32_t RdbServiceStub::OnRemoteDoCreateTable(MessageParcel &data, MessageParcel
     RdbSyncerParam param;
     std::string writePermission;
     std::string readPermission;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, param, writePermission, readPermission)) {
+    if (!ITypesUtil::Unmarshal(data, param, writePermission, readPermission)) {
         ZLOGE("read from message parcel failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;
@@ -205,7 +205,7 @@ int32_t RdbServiceStub::OnRemoteDoCreateTable(MessageParcel &data, MessageParcel
 int32_t RdbServiceStub::OnRemoteDoDestroyTable(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, param)) {
+    if (!ITypesUtil::Unmarshal(data, param)) {
         ZLOGE("read from message parcel failed");
         reply.WriteInt32(RDB_ERROR);
         return RDB_OK;

@@ -19,7 +19,10 @@
 #include <variant>
 #include <vector>
 
+#include "change_notification.h"
 #include "itypes_util.h"
+#include "kv_types_util.h"
+#include "rdb_types.h"
 #include "types.h"
 
 using namespace OHOS::DistributedKv;

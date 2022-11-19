@@ -236,7 +236,7 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
             return false;
         });
     };
-    scheduler_.Now(task);
+    scheduler_.Execute(std::move(task));
 }
 
 void DeviceManagerAdapter::OnChanged(const DmDeviceInfo &info)
@@ -267,7 +267,7 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
             return false;
         });
     };
-    scheduler_.Now(task);
+    scheduler_.Execute(std::move(task));
 }
 
 bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo)

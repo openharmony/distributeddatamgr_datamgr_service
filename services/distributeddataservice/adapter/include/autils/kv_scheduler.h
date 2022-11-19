@@ -30,6 +30,8 @@ using SchedulerTask =  std::map<std::chrono::system_clock::time_point, std::func
 class KvScheduler {
 public:
     KVSTORE_API KvScheduler(size_t capacity = std::numeric_limits<size_t>::max());
+    KVSTORE_API KvScheduler(size_t capacity, const std::string &name);
+    KVSTORE_API KvScheduler(const std::string &name);
     KVSTORE_API ~KvScheduler();
     // execute task at specific time
     KVSTORE_API SchedulerTask At(const std::chrono::system_clock::time_point &time, std::function<void()> task);
@@ -48,7 +50,7 @@ public:
     // execute task for some times periodically with duration after delay
     KVSTORE_API void Every(int times, std::chrono::system_clock::duration delay,
                std::chrono::system_clock::duration interval, std::function<void()> func);
-    KVSTORE_API void Now(std::function<void()> task);
+    KVSTORE_API void Execute(std::function<void()> task);
 
 private:
     void Loop();
