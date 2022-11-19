@@ -214,7 +214,6 @@ Status SoftBusAdapter::OpenConnect(const PipeInfo &pipeInfo, const DeviceId &dev
     ZLOGI("waited for notification, state:%{public}d connId:%{public}d", state, id);
     if (state != SOFTBUS_OK) {
         ZLOGE("OpenSession callback result error");
-        CloseSession(id);
         return Status::NETWORK_ERROR;
     }
 
@@ -237,29 +236,37 @@ void SoftBusAdapter::InitSessionAttribute(const std::vector<LinkType> &linkTypes
 
 Status SoftBusAdapter::GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId)
 {
-    connects_.Compute(pipeInfo.pipeId + deviceId.deviceId,
-                      [&pipeInfo, &deviceId, &dataSize, &connId, this](const auto &key, ConnectInfo &value) {
-        std::vector<LinkType> linkTypes;
-        bool isReconnect = CommunicationStrategy::GetInstance().GetStrategy(deviceId.deviceId, dataSize, linkTypes);
-        if ((value.connId < 0) || (isReconnect && !value.hasReconnect)) {
-            if (value.connId > 0) {
-                CloseSession(value.connId);
+    std::vector<LinkType> linkTypes;
+    bool isReconnect = CommunicationStrategy::GetInstance().GetStrategy(deviceId.deviceId, dataSize, linkTypes);
+    Status status = Status::ERROR;
+    auto result = connects_.ComputeIfPresent(pipeInfo.pipeId + deviceId.deviceId,
+        [&isReconnect, &status, &connId](const std::string& key, ConnectInfo & value) {
+            connId = value.connId;
+            value.idleCount = 0;
+            if (value.hasReconnect || !isReconnect) {
+                status = Status::SUCCESS;
             }
-            Status status = this->OpenConnect(pipeInfo, deviceId, linkTypes, connId);
-            if (status == Status::SUCCESS) {
-                value = {connId, 0, isReconnect};
-                return true;
-            }
-            connId = -1;
-            return false;
-        }
-
-        connId = value.connId;
-        value.idleCount = 0;
-        return true;
+            return true;
     });
 
-    return connId > 0 ? Status::SUCCESS : Status::ERROR;
+    if (status == Status::SUCCESS) {
+        return Status::SUCCESS;
+    }
+
+    if (result) {
+        CloseSession(connId);
+        connId = INVALID_CONNECT_ID;
+    }
+
+    status = OpenConnect(pipeInfo, deviceId, linkTypes, connId);
+    if (status == Status::SUCCESS) {
+        ConnectInfo conn = {connId, 0, isReconnect};
+        connects_.InsertOrAssign(pipeInfo.pipeId + deviceId.deviceId, conn);
+        return Status::SUCCESS;
+    }
+
+    connId = INVALID_CONNECT_ID;
+    return status;
 }
 
 std::shared_ptr<std::recursive_mutex> SoftBusAdapter::GetMutex(const PipeInfo &pipeInfo, const DeviceId &deviceId)
