@@ -63,7 +63,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     std::vector<uint8_t> fuzzVec(fuzzStr.begin(), fuzzStr.end());
 
     int count = 10;
-    char str[count+1];
+    char str[count + 1];
     memcpy_s(str, count + 1, data, size);
     str[count] = '\0';
     Blob blob1(str);
