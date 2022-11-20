@@ -247,7 +247,7 @@ Status SoftBusAdapter::GetConnect(const PipeInfo &pipeInfo, const DeviceId &devi
             }
             Status status = this->OpenConnect(pipeInfo, deviceId, linkTypes, connId);
             if (status == Status::SUCCESS) {
-                value = {connId, 0, isReconnect};
+                value = {connId, 0, isReconnect, deviceId.deviceId, this->GetConnectMtuSize(connId)};
                 return true;
             }
             connId = -1;
@@ -327,6 +327,28 @@ std::shared_ptr<BlockData<int32_t>> SoftBusAdapter::GetSemaphore(int32_t connId)
     return sessionsStatus_[connId];
 }
 
+uint32_t SoftBusAdapter::GetMtuSize(const DeviceId &deviceId)
+{
+    uint32_t mtu = DEFAULT_MTU_SIZE;
+    connects_.ForEach([&deviceId, &mtu](const std::string &key, ConnectInfo &value) {
+        if (value.deviceId == deviceId.deviceId) {
+            mtu = value.mtu;
+            return true;
+        }
+        return false;
+    });
+    return mtu;
+}
+
+uint32_t SoftBusAdapter::GetConnectMtuSize(int32_t connId)
+{
+    uint32_t mtu = 0;
+    auto result = GetSessionOption(connId, SESSION_OPTION_MAX_SENDBYTES_SIZE, &mtu, sizeof(mtu));
+    if (result != SOFTBUS_OK) {
+        return DEFAULT_MTU_SIZE;
+    }
+    return mtu;
+}
 bool SoftBusAdapter::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
     __attribute__((unused)) const struct DeviceId &peer)
 {
