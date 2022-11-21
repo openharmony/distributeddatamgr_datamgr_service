@@ -47,7 +47,7 @@ RouteHeadHandlerImpl::RouteHeadHandlerImpl(const ExtendInfo &info)
     : userId_(info.userId), appId_(info.appId), storeId_(info.storeId), deviceId_(info.dstTarget), headSize_(0)
 {
     ZLOGI("init route handler, app:%{public}s, user:%{public}s, peer:%{public}s", appId_.c_str(), userId_.c_str(),
-        deviceId_.c_str());
+        Anonymous::Change(deviceId_).c_str());
 }
 
 void RouteHeadHandlerImpl::Init()
