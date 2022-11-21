@@ -17,12 +17,21 @@
 
 
 namespace OHOS::DistributedKv {
-KvScheduler::KvScheduler(size_t capacity)
+KvScheduler::KvScheduler(size_t capacity) : KvScheduler(capacity, "")
+{
+}
+
+KvScheduler::KvScheduler(const std::string &name) : KvScheduler(std::numeric_limits<size_t>::max(), name)
+{
+}
+
+KvScheduler::KvScheduler(size_t capacity, const std::string &name)
 {
     capacity_ = capacity;
     isRunning_ = true;
-    thread_ = std::make_unique<std::thread>([this]() {
-        pthread_setname_np(pthread_self(), "KvScheduler");
+    thread_ = std::make_unique<std::thread>([this, name]() {
+        auto realName = std::string("KvScheduler_") + name;
+        pthread_setname_np(pthread_self(), realName.c_str());
         this->Loop();
     });
 }
@@ -30,6 +39,7 @@ KvScheduler::KvScheduler(size_t capacity)
 KvScheduler::~KvScheduler()
 {
     isRunning_ = false;
+    Clean();
     At(std::chrono::system_clock::now(), [](){});
     thread_->join();
 }
@@ -48,9 +58,9 @@ SchedulerTask KvScheduler::At(const std::chrono::system_clock::time_point &time,
     return it;
 }
 
-void KvScheduler::Now(std::function<void()> task)
+void KvScheduler::Execute(std::function<void()> task)
 {
-    At(std::chrono::system_clock::now(), task);
+    At(std::chrono::system_clock::now(), std::move(task));
 }
 
 SchedulerTask KvScheduler::Reset(SchedulerTask task, const std::chrono::system_clock::time_point &time,
@@ -130,6 +140,11 @@ void KvScheduler::Loop()
         std::function<void()> exec;
         {
             std::unique_lock<std::mutex> lock(mutex_);
+            if (kvTasks_.empty()) {
+                condition_.wait(lock);
+            } else {
+                condition_.wait_until(lock, kvTasks_.begin()->first);
+            }
             if ((!kvTasks_.empty()) && (kvTasks_.begin()->first <= std::chrono::system_clock::now())) {
                 exec = kvTasks_.begin()->second;
                 kvTasks_.erase(kvTasks_.begin());
@@ -138,13 +153,6 @@ void KvScheduler::Loop()
 
         if (exec) {
             exec();
-        }
-
-        std::unique_lock<std::mutex> lock(mutex_);
-        if (kvTasks_.empty()) {
-            condition_.wait(lock);
-        } else {
-            condition_.wait_until(lock, kvTasks_.begin()->first);
         }
     }
 }

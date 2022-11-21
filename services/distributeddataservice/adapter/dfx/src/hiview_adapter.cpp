@@ -66,8 +66,6 @@ const std::map<int, std::string> EVENT_COVERT_TABLE = {
 };
 }
 using OHOS::HiviewDFX::HiSysEvent;
-std::shared_ptr<KvStoreThreadPool> HiViewAdapter::pool_ = KvStoreThreadPool::GetPool(POOL_SIZE, "HiView", true);
-
 std::mutex HiViewAdapter::visitMutex_;
 std::map<std::string, StatisticWrap<VisitStat>> HiViewAdapter::visitStat_;
 
@@ -81,14 +79,11 @@ std::mutex HiViewAdapter::apiPerformanceMutex_;
 std::map<std::string, StatisticWrap<ApiPerformanceStat>> HiViewAdapter::apiPerformanceStat_;
 
 bool HiViewAdapter::running_ = false;
-KvScheduler HiViewAdapter::scheduler_;
+KvScheduler HiViewAdapter::scheduler_ {"HiView"};
 std::mutex HiViewAdapter::runMutex_;
 
 void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
 {
-    if (pool_ == nullptr) {
-        return;
-    }
     KvStoreTask task([dfxCode, msg]() {
         HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
@@ -98,14 +93,11 @@ void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
             INTERFACE_NAME, msg.interfaceName,
             ERROR_TYPE, static_cast<int>(msg.errorType));
     });
-    pool_->AddTask(std::move(task));
+    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
 }
 
 void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg)
 {
-    if (pool_ == nullptr) {
-        return;
-    }
     KvStoreTask task([dfxCode, msg]() {
         HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
@@ -115,15 +107,12 @@ void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg)
             MODULE_NAME, msg.moduleName,
             ERROR_TYPE, static_cast<int>(msg.errorType));
     });
-    pool_->AddTask(std::move(task));
+    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
 }
 
 
 void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg)
 {
-    if (pool_ == nullptr) {
-        return;
-    }
     KvStoreTask task([dfxCode, msg]() {
         std::string message;
         for (size_t i = 0; i < msg.deviceId.size(); i++) {
@@ -139,14 +128,11 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg)
             STORE_ID, msg.storeId,
             SYNC_ERROR_INFO, message);
     });
-    pool_->AddTask(std::move(task));
+    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
 }
 
 void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg)
 {
-    if (pool_ == nullptr) {
-        return;
-    }
     KvStoreTask task([dfxCode, msg]() {
         std::string message;
         message.append("Behaviour type : ").append(std::to_string(static_cast<int>(msg.behaviourType)))
@@ -159,21 +145,18 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg)
             STORE_ID, msg.storeId,
             BEHAVIOUR_INFO, message);
     });
-    pool_->AddTask(std::move(task));
+    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
 }
 
 void HiViewAdapter::ReportDatabaseStatistic(int dfxCode, const DbStat &stat)
 {
-    if (pool_ == nullptr) {
-        return;
-    }
     KvStoreTask task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(dbMutex_);
         if (!dbStat_.count(stat.GetKey())) {
             dbStat_.insert({stat.GetKey(), {stat, 0, dfxCode}});
         }
     });
-    pool_->AddTask(std::move(task));
+    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
     StartTimerThread();
 }
 
@@ -224,9 +207,6 @@ void HiViewAdapter::InvokeDbSize()
 
 void HiViewAdapter::ReportTrafficStatistic(int dfxCode, const TrafficStat &stat)
 {
-    if (pool_ == nullptr) {
-        return;
-    }
     KvStoreTask task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(trafficMutex_);
         auto it = trafficStat_.find(stat.GetKey());
@@ -237,7 +217,7 @@ void HiViewAdapter::ReportTrafficStatistic(int dfxCode, const TrafficStat &stat)
             trafficStat_.insert({stat.GetKey(), {stat, 0, dfxCode}});
         }
     });
-    pool_->AddTask(std::move(task));
+    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
     StartTimerThread();
 }
 
@@ -265,9 +245,6 @@ void HiViewAdapter::InvokeTraffic()
 
 void HiViewAdapter::ReportVisitStatistic(int dfxCode, const VisitStat &stat)
 {
-    if (pool_ == nullptr) {
-        return;
-    }
     KvStoreTask task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(visitMutex_);
         auto it = visitStat_.find(stat.GetKey());
@@ -277,7 +254,7 @@ void HiViewAdapter::ReportVisitStatistic(int dfxCode, const VisitStat &stat)
             it->second.times++;
         }
     });
-    pool_->AddTask(std::move(task));
+    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
     StartTimerThread();
 }
 
@@ -298,9 +275,6 @@ void HiViewAdapter::InvokeVisit()
 
 void HiViewAdapter::ReportApiPerformanceStatistic(int dfxCode, const ApiPerformanceStat &stat)
 {
-    if (pool_ == nullptr) {
-        return;
-    }
     KvStoreTask task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(apiPerformanceMutex_);
         auto it = apiPerformanceStat_.find(stat.GetKey());
@@ -319,7 +293,8 @@ void HiViewAdapter::ReportApiPerformanceStatistic(int dfxCode, const ApiPerforma
             }
         }
     });
-    pool_->AddTask(std::move(task));
+
+    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
     StartTimerThread();
 }
 

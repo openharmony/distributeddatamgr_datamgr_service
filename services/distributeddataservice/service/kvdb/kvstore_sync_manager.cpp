@@ -18,7 +18,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
-KvStoreSyncManager::KvStoreSyncManager() : syncScheduler_()
+KvStoreSyncManager::KvStoreSyncManager() : syncScheduler_("SyncMgr")
 {}
 
 KvStoreSyncManager::~KvStoreSyncManager() {}
