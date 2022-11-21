@@ -52,12 +52,6 @@ public:
         Finish(traceValue_);
     }
 
-    void SetMiddleTrace(const std::string &before, const std::string &after)
-    {
-        traceValue_ = after;
-        Middle(before, after);
-    }
-
 private:
     void Start(const std::string &value)
     {
@@ -71,16 +65,10 @@ private:
             lastTime_ = System::now();
         }
     }
-    void Middle(const std::string &beforeValue, const std::string &afterValue)
-    {
-        if ((traceSwitch_ & BYTRACE_ON) == BYTRACE_ON) {
-            MiddleTrace(TRACE_CHAIN_ON, beforeValue, afterValue);
-        }
-    }
     void Finish(const std::string &value)
     {
         if ((traceSwitch_ & BYTRACE_ON) == BYTRACE_ON) {
-            FinishTrace(HITRACE_FLAG_DEFAULT);
+            FinishTrace(HITRACE_TAG_DISTRIBUTEDDATA);
         }
         if ((traceSwitch_ & TRACE_CHAIN_ON) == TRACE_CHAIN_ON) {
             OHOS::HiviewDFX::HiTraceChain::End(traceId_);

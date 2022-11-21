@@ -45,4 +45,47 @@ bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
     uriInfo.tableName = splitUri[URI_INDEX_TABLENAME];
     return true;
 }
+bool UriInfo::operator==(const UriInfo &rhs) const
+{
+    return bundleName == rhs.bundleName && moduleName == rhs.moduleName && storeName == rhs.storeName &&
+           tableName == rhs.tableName;
+}
+bool UriInfo::operator!=(const UriInfo &rhs) const
+{
+    return !(rhs == *this);
+}
+bool UriInfo::operator<(const UriInfo &rhs) const
+{
+    if (bundleName < rhs.bundleName) {
+        return true;
+    }
+    if (rhs.bundleName < bundleName) {
+        return false;
+    }
+    if (moduleName < rhs.moduleName) {
+        return true;
+    }
+    if (rhs.moduleName < moduleName) {
+        return false;
+    }
+    if (storeName < rhs.storeName) {
+        return true;
+    }
+    if (rhs.storeName < storeName) {
+        return false;
+    }
+    return tableName < rhs.tableName;
+}
+bool UriInfo::operator>(const UriInfo &rhs) const
+{
+    return rhs < *this;
+}
+bool UriInfo::operator<=(const UriInfo &rhs) const
+{
+    return !(rhs < *this);
+}
+bool UriInfo::operator>=(const UriInfo &rhs) const
+{
+    return !(*this < rhs);
+}
 } // namespace OHOS::DataShare

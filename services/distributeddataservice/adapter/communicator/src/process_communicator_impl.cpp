@@ -15,10 +15,9 @@
 
 #define LOG_TAG "processCommunication"
 
-#include "process_communicator_impl.h"
-
 #include "log_print.h"
-
+#include "softbus_adapter.h"
+#include "process_communicator_impl.h"
 namespace OHOS {
 namespace AppDistributedKv {
 using namespace DistributedDB;
@@ -145,14 +144,11 @@ uint32_t ProcessCommunicatorImpl::GetMtuSize()
 uint32_t ProcessCommunicatorImpl::GetMtuSize(const DeviceInfos &devInfo)
 {
     ZLOGI("GetMtuSize start");
-    const auto &comm = CommunicationProvider::GetInstance();
-    DeviceInfo deviceInfo = comm.GetDeviceInfo(devInfo.identifier);
-    DeviceType deviceType = GetDeviceType(deviceInfo.deviceType);
-    if (deviceType == SMART_WATCH || deviceType == KID_WATCH) {
-        ZLOGI("GetMtuSize deviceType: %{public}d", deviceInfo.deviceType);
-        return MTU_SIZE_WATCH;
-    }
-    return MTU_SIZE;
+    DeviceId deviceId = {
+        .deviceId = devInfo.identifier
+    };
+
+    return SoftBusAdapter::GetInstance()->GetMtuSize(deviceId);
 }
 
 DeviceInfos ProcessCommunicatorImpl::GetLocalDeviceInfos()

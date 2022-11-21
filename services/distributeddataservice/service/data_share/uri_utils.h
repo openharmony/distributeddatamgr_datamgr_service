@@ -23,6 +23,13 @@ struct UriInfo {
     std::string moduleName;
     std::string storeName;
     std::string tableName;
+
+    bool operator==(const UriInfo &rhs) const;
+    bool operator!=(const UriInfo &rhs) const;
+    bool operator<(const UriInfo &rhs) const;
+    bool operator>(const UriInfo &rhs) const;
+    bool operator<=(const UriInfo &rhs) const;
+    bool operator>=(const UriInfo &rhs) const;
 };
 
 class URIUtils {
