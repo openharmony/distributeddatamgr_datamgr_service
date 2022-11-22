@@ -168,14 +168,14 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     SessionAppId *appPair = reinterpret_cast<SessionAppId *>(ptr);
     ptr += sizeof(SessionAppId);
 
-    uint32_t destLen = data + totalLen - ptr;
-    uint32_t appLen = std::min(destLen, static_cast<uint32_t>(session_.appId.size()));
-    appPair->len = HostToNet(appLen); // left size
-    ret = memcpy_s(appPair->appId, destLen, session_.appId.data(), session_.appId.size());
+    uint8_t *end = data + totalLen;
+    uint32_t appIdSize = session_.appId.size();
+    ret = memcpy_s(appPair->appId, end - ptr, session_.appId.data(), appIdSize);
     if (ret != 0) {
         ZLOGE("strcpy for app id failed:%{public}d", ret);
         return false;
     }
+    appPair->len = HostToNet(appIdSize);
     return true;
 }
 
