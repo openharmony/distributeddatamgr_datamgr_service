@@ -33,6 +33,7 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "query_helper.h"
+#include "permit_delegate.h"
 #include "upgrade.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
@@ -146,6 +147,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetStrategyKey());
     MetaDataManager::GetInstance().DelMeta(metaData.GetKeyLocal(), true);
+    PermitDelegate::GetInstance().DelCache(meta.GetKey());
     storeCache_.CloseStore(tokenId, storeId);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(), storeId.storeId.c_str(),
         metaData.instanceId);
