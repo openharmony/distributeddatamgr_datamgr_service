@@ -165,6 +165,9 @@ int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
     }
 
     auto saved = MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
+    if (!saved) {
+        return RDB_ERROR;
+    }
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;
     appIdMeta.appId = meta.appId;
