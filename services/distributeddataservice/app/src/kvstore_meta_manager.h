@@ -53,7 +53,7 @@ public:
     void InitBroadcast();
     void InitDeviceOnline();
     void SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer);
-
+    size_t GetSyncDataSize(const std::string &deviceId);
 private:
     using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;
     NbDelegate GetMetaKvStore();

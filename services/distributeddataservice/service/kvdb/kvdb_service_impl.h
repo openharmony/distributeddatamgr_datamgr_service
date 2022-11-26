@@ -58,7 +58,7 @@ public:
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t OnReady(const std::string &device) override;
-
+    size_t GetSyncDataSize(const std::string &deviceId);
 private:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using StrategyMeta = OHOS::DistributedData::StrategyMeta;
