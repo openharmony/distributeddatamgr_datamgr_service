@@ -79,7 +79,7 @@ std::mutex HiViewAdapter::apiPerformanceMutex_;
 std::map<std::string, StatisticWrap<ApiPerformanceStat>> HiViewAdapter::apiPerformanceStat_;
 
 bool HiViewAdapter::running_ = false;
-KvScheduler HiViewAdapter::scheduler_ {"HiView"};
+TaskScheduler HiViewAdapter::scheduler_ {"HiView"};
 std::mutex HiViewAdapter::runMutex_;
 
 void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)

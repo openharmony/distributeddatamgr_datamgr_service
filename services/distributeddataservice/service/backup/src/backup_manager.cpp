@@ -22,7 +22,6 @@
 #include "device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "directory_manager.h"
-#include "kv_scheduler.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "types.h"

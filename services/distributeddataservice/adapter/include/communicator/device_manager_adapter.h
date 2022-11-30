@@ -25,7 +25,7 @@
 #include "device_manager.h"
 #include "device_manager_callback.h"
 #include "dm_device_info.h"
-#include "kv_scheduler.h"
+#include "task_scheduler.h"
 #include "lru_bucket.h"
 
 namespace OHOS {
@@ -33,7 +33,7 @@ namespace DistributedData {
 class API_EXPORT DeviceManagerAdapter {
 public:
     using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
-    using KvScheduler = OHOS::DistributedKv::KvScheduler;
+    using KvScheduler = OHOS::TaskScheduler;
     using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
     using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
     using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
