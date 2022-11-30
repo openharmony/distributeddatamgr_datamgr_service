@@ -49,9 +49,6 @@ public:
     static void StartTimerThread();
 
 private:
-    static constexpr int POOL_SIZE = 3;
-    static std::shared_ptr<DistributedKv::KvStoreThreadPool> pool_;
-
     static std::mutex visitMutex_;
     static std::map<std::string, StatisticWrap<VisitStat>> visitStat_;
     static void InvokeVisit();

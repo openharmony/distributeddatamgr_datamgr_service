@@ -57,7 +57,7 @@ CapMetaData UpgradeManager::GetCapability(const std::string &deviceId, bool &sta
     ZLOGI("load capability from meta");
     CapMetaData capMetaData;
     auto dbKey = CapMetaRow::GetKeyFor(deviceId);
-    ZLOGD("cap key:%{public}s", std::string(dbKey.begin(), dbKey.end()).c_str());
+    ZLOGD("cap key:%{public}s", Anonymous::Change(std::string(dbKey.begin(), dbKey.end())).c_str());
     status = MetaDataManager::GetInstance().LoadMeta(std::string(dbKey.begin(), dbKey.end()), capMetaData);
     if (status) {
         capabilityMap_.Insert(deviceId, capMetaData);

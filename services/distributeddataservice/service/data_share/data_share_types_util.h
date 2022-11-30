@@ -13,10 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef DFX_FUZZER_H
-#define DFX_FUZZER_H
+#ifndef DATASHARESERVICE_DATA_SHARE_TYPES_UTIL_H
+#define DATASHARESERVICE_DATA_SHARE_TYPES_UTIL_H
+#include "datashare_predicates.h"
+#include "datashare_values_bucket.h"
+#include "itypes_util.h"
+namespace OHOS::ITypesUtil {
+using Predicates = DataShare::DataSharePredicates;
+using Operation = DataShare::OperationItem;
+template<>
+bool Unmarshalling(Predicates &predicates, MessageParcel &parcel);
 
-#define FUZZ_PROJECT_NAME "Dfx_fuzzer"
+template<>
+bool Unmarshalling(Operation &operation, MessageParcel &parcel);
+};
 
-#endif // DFX_FUZZER_H
-
+#endif // DATASHARESERVICE_DATA_SHARE_TYPES_UTIL_H

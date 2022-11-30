@@ -64,7 +64,7 @@ private:
     int64_t backupSuccessTime_ = 0;
     int64_t backupNumber_ = 0;
     int64_t startNum_ = 0;
-    DistributedKv::KvScheduler scheduler_ {};
+    DistributedKv::KvScheduler scheduler_ {"backup"};
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_BACKUP_BACKUP_MANAGER_H

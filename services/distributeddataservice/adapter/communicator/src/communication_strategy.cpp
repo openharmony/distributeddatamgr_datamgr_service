@@ -12,62 +12,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
+#define LOG_TAG "CommunicationStrategy"
 #include "communication_strategy.h"
 #include "log_print.h"
-#include "device_manager_adapter.h"
 #include "kvstore_utils.h"
-#ifdef LOG_TAG
-#undef LOG_TAG
-#endif
-#define LOG_TAG "CommunicationStrategy"
 
 namespace OHOS {
 namespace AppDistributedKv {
-using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 CommunicationStrategy &CommunicationStrategy::GetInstance()
 {
     static CommunicationStrategy instance;
     return instance;
 }
 
-Status CommunicationStrategy::Init()
+void CommunicationStrategy::RegGetSyncDataSize(const std::string &type,
+    const std::function<size_t(const std::string &)> &getDataSize)
 {
-    return DmAdapter::GetInstance().StartWatchDeviceChange(this, {"strategy"});
+    calcDataSizes_.InsertOrAssign(type, getDataSize);
 }
 
-void CommunicationStrategy::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
-                                            const AppDistributedKv::DeviceChangeType &type) const
+size_t CommunicationStrategy::CalcSyncDataSize(const std::string &deviceId)
 {
-    UpdateCommunicationStrategy(info, type);
+    size_t dataSize = 0;
+    calcDataSizes_.ForEach([&dataSize, &deviceId](const std::string &key, auto &value) {
+        if (value) {
+            dataSize += value(deviceId);
+        }
+        return false;
+    });
+    ZLOGD("calc data size:%{public}zu.", dataSize);
+    return dataSize;
 }
 
-void CommunicationStrategy::UpdateCommunicationStrategy(const AppDistributedKv::DeviceInfo &info,
-                                                        const AppDistributedKv::DeviceChangeType &type) const
+void CommunicationStrategy::SetStrategy(const std::string &deviceId, Strategy strategy,
+                                        const std::function<void(const std::string &, Strategy)> &action)
 {
-    ZLOGD("[UpdateCommunicationStrategy] to %{public}s, type:%{public}d",
-          KvStoreUtils::ToBeAnonymous(info.uuid).c_str(), type);
-    if (type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE) {
-        strategys_.InsertOrAssign(info.uuid, true);
-    } else if (type == AppDistributedKv::DeviceChangeType::DEVICE_ONREADY) {
-        strategys_.Erase(info.uuid);
-    } else {
-        ;
+    auto value = strategy;
+    if (strategy == Strategy::ON_LINE_SELECT_CHANNEL && CalcSyncDataSize(deviceId) < SWITCH_CONNECTION_THRESHOLD) {
+        value = Strategy::DEFAULT;
     }
+    if (action) {
+        action(deviceId, value);
+    }
+    strategys_.InsertOrAssign(deviceId, value);
+    return ;
 }
 
-void CommunicationStrategy::GetStrategy(const std::string &deviceId, int32_t dataLen, std::vector<LinkType> &linkTypes)
+CommunicationStrategy::Strategy CommunicationStrategy::GetStrategy(const std::string &deviceId)
 {
-    if (!strategys_.Contains(deviceId)) {
-        return;
+    auto result = strategys_.Find(deviceId);
+    if (!result.first) {
+        return Strategy::DEFAULT;
     }
 
-    linkTypes.emplace_back(LINK_TYPE_WIFI_WLAN_5G);
-    linkTypes.emplace_back(LINK_TYPE_WIFI_WLAN_2G);
-    linkTypes.emplace_back(LINK_TYPE_WIFI_P2P);
-    linkTypes.emplace_back(LINK_TYPE_BR);
-    return;
+    return result.second;
 }
 }  // namespace AppDistributedKv
 }  // namespace OHOS

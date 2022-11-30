@@ -69,6 +69,7 @@ ohos_shared_library("distributeddatasvc") {
     "crypto/src/crypto_manager.cpp",
     "data_share/data_share_service_impl.cpp",
     "data_share/data_share_service_stub.cpp",
+    "data_share/data_share_types_util.cpp",
     "data_share/permission_proxy.cpp",
     "data_share/rdb_adaptor.cpp",
     "data_share/uri_utils.cpp",
