@@ -36,7 +36,6 @@ using Anonymous = DistributedData::Anonymous;
 const std::string Security::LABEL_VALUES[S4 + 1] = {
     "", "s0", "s1", "s2", "s3", "s4"
 };
-ConcurrentMap<std::string, Sensitive> Security::devicesUdid_;
 Security::Security()
 {
     ZLOGD("construct");
@@ -145,10 +144,8 @@ void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
 
     bool isOnline = type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE;
     if (isOnline) {
-        Sensitive sensitive = GetSensitiveByUuid(info.uuid);
+        (void)GetSensitiveByUuid(info.uuid);
         ZLOGD("device is online, deviceId:%{public}s", Anonymous::Change(info.uuid).c_str());
-        auto secuiryLevel = sensitive.GetDeviceSecurityLevel();
-        ZLOGI("device is online, secuiry Level:%{public}d", secuiryLevel);
     } else {
         EraseSensitiveByUuid(info.uuid);
         ZLOGD("device is offline, deviceId:%{public}s", Anonymous::Change(info.uuid).c_str());
@@ -160,36 +157,31 @@ bool Security::IsExits(const std::string &file) const
     return access(file.c_str(), F_OK) == 0;
 }
 
-Sensitive Security::GetSensitiveByUuid(const std::string &uuid)
+Sensitive Security::GetSensitiveByUuid(const std::string &uuid) const
 {
-    Sensitive sensitive;
-    devicesUdid_.Compute(uuid, [&sensitive](const auto &key, auto &value) {
-        if (value) {
-            sensitive = value;
-            return true;
-        }
-        auto &dmAdapter = DistributedData::DeviceManagerAdapter::GetInstance();
-        auto devices = dmAdapter.GetRemoteDevices();
-        devices.push_back(dmAdapter.GetLocalBasicInfo());
-        for (auto &device : devices) {
-            auto deviceUuid = device.uuid;
-            ZLOGD("GetSensitiveByUuid(%{public}s) peer device is %{public}s",
-                Anonymous::Change(key).c_str(), Anonymous::Change(deviceUuid).c_str());
-            if (key != deviceUuid) {
-                continue;
+    auto it = devicesUdid_.Find(uuid);
+    if (!it.first) {
+        taskScheduler_.At(std::chrono::system_clock::now(), [this, uuid] {
+            auto it = devicesUdid_.Find(uuid);
+            if (it.first) {
+                return;
             }
-
-            value = Sensitive(device.udid);
-            value.GetDeviceSecurityLevel();
-            sensitive = value;
-            return true;
-        }
-        return false;
-    });
-    return sensitive;
+            auto udid = DistributedData::DeviceManagerAdapter::GetInstance().ToUDID(uuid);
+            ZLOGD("GetSensitiveByUuid(%{public}s) peer device is %{public}s", Anonymous::Change(uuid).c_str(),
+                Anonymous::Change(udid).c_str());
+            if (udid.empty()) {
+                return;
+            }
+            Sensitive sensitive(udid);
+            auto level = sensitive.GetDeviceSecurityLevel();
+            ZLOGI("device %{public}s is online, security level:%{public}d", Anonymous::Change(uuid).c_str(), level);
+            devicesUdid_.Insert(uuid, sensitive);
+        });
+    }
+    return it.second;
 }
 
-bool Security::EraseSensitiveByUuid(const std::string &uuid)
+bool Security::EraseSensitiveByUuid(const std::string &uuid) const
 {
     devicesUdid_.Erase(uuid);
     return true;

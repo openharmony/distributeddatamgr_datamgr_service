@@ -99,7 +99,7 @@ KVDBServiceImpl::KVDBServiceImpl()
             if (policy.IsValueEffect()) {
                 syncInfo.delay = policy.valueUint;
             }
-            ZLOGD("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
+            ZLOGI("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
             auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
             KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
                 std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
