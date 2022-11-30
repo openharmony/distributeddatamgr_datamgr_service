@@ -190,7 +190,7 @@ void KvStoreMetaManager::InitMetaParameter()
                 break;
             }
             retryCount++;
-            ZLOGD("GenerateRootKey failed, retry times:%{public}d.", retryCount);
+            ZLOGW("GenerateRootKey failed, retry times:%{public}d.", retryCount);
             usleep(RETRY_TIME_INTERVAL_MILLISECOND);
         }
     });

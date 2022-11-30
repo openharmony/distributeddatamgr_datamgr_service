@@ -238,7 +238,7 @@ bool RouteHeadHandlerImpl::UnPackDataHead(const uint8_t *data, uint32_t totalLen
         return false;
     }
     if (totalLen - sizeof(RouteHead) < routeHead.dataLen) {
-        ZLOGE("invalid route data len:%{public}d", routeHead.dataLen);
+        ZLOGE("invalid route data len:%{public}d, totalLen:%{public}d.", routeHead.dataLen, totalLen);
         return false;
     }
     return true;
@@ -286,7 +286,7 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
     const SessionAppId *appId = reinterpret_cast<const SessionAppId *>(ptr);
     auto appIdLen = NetToHost(appId->len);
     if (leftSize - sizeof(SessionAppId) < appIdLen) {
-        ZLOGE("failed to parse app id, appIdLen : %{public}d", appIdLen);
+        ZLOGE("failed to parse app id, appIdLen:%{public}d, leftSize:%{public}d.", appIdLen, leftSize);
         return false;
     }
     session_.appId.append(appId->appId, appIdLen);
