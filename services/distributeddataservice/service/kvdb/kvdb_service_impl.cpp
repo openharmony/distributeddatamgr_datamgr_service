@@ -23,6 +23,7 @@
 #include "backup_manager.h"
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
+#include "communication_strategy.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory_manager.h"
@@ -33,6 +34,7 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "query_helper.h"
+#include "permit_delegate.h"
 #include "upgrade.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
@@ -61,6 +63,10 @@ KVDBServiceImpl::Factory::~Factory()
 
 KVDBServiceImpl::KVDBServiceImpl()
 {
+    CommunicationStrategy::GetInstance().RegGetSyncDataSize("kv_store", [this](const std::string &deviceId) {
+        return GetSyncDataSize(deviceId);
+    });
+
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_META_FINISHED, [this](const Event &event) {
         auto &matrixEvent = static_cast<const MatrixEvent &>(event);
         auto deviceId = matrixEvent.GetDeviceId();
@@ -146,6 +152,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetStrategyKey());
     MetaDataManager::GetInstance().DelMeta(metaData.GetKeyLocal(), true);
+    PermitDelegate::GetInstance().DelCache(metaData.GetKey());
     storeCache_.CloseStore(tokenId, storeId);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(), storeId.storeId.c_str(),
         metaData.instanceId);
@@ -723,5 +730,30 @@ void KVDBServiceImpl::SyncAgent::ReInit(pid_t pid, const AppId &appId)
     callback_ = nullptr;
     delayTimes_.clear();
     observers_.clear();
+}
+
+size_t KVDBServiceImpl::GetSyncDataSize(const std::string &deviceId)
+{
+    std::vector<StoreMetaData> metaData;
+    auto prefix = StoreMetaData::GetPrefix({DMAdapter::GetInstance().GetLocalDevice().uuid});
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+        ZLOGE("load meta failed!");
+        return 0;
+    }
+
+    size_t totalSize = 0;
+    for (const auto &data : metaData) {
+        DistributedDB::DBStatus status;
+        auto observers = GetObservers(data.tokenId, data.storeId);
+        auto store = storeCache_.GetStore(data, observers, status);
+        if (store == nullptr) {
+            ZLOGE("failed! status:%{public}d appId:%{public}s storeId:%{public}s dir:%{public}s", status,
+                  data.bundleName.c_str(), data.storeId.c_str(), data.dataDir.c_str());
+            continue;
+        }
+        totalSize += store->GetSyncDataSize(deviceId);
+    }
+
+    return totalSize;
 }
 } // namespace OHOS::DistributedKv

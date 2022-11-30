@@ -14,8 +14,6 @@
  */
 
 #include "communication_provider_impl.h"
-
-#include "communication_strategy.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
 
@@ -37,7 +35,6 @@ CommunicationProviderImpl::~CommunicationProviderImpl()
 
 Status CommunicationProviderImpl::Initialize()
 {
-    CommunicationStrategy::GetInstance().Init();
     return Status::SUCCESS;
 }
 

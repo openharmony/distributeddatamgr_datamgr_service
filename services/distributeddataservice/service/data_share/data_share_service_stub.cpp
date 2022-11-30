@@ -39,7 +39,7 @@ int32_t DataShareServiceStub::OnRemoteInsert(MessageParcel &data, MessageParcel 
 {
     std::string uri;
     DataShareValuesBucket bucket;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, bucket.valuesMap)) {
+    if (!ITypesUtil::Unmarshal(data, uri, bucket.valuesMap)) {
         ZLOGW("read device list failed.");
         return -1;
     }
@@ -56,7 +56,7 @@ int32_t DataShareServiceStub::OnRemoteUpdate(MessageParcel &data, MessageParcel 
     std::string uri;
     DataSharePredicates predicate;
     DataShareValuesBucket bucket;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, predicate, bucket.valuesMap)) {
+    if (!ITypesUtil::Unmarshal(data, uri, predicate, bucket.valuesMap)) {
         ZLOGW("read device list failed.");
         return -1;
     }
@@ -72,7 +72,7 @@ int32_t DataShareServiceStub::OnRemoteDelete(MessageParcel &data, MessageParcel 
 {
     std::string uri;
     DataSharePredicates predicate;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, predicate)) {
+    if (!ITypesUtil::Unmarshal(data, uri, predicate)) {
         ZLOGW("read device list failed.");
         return -1;
     }
@@ -89,7 +89,7 @@ int32_t DataShareServiceStub::OnRemoteQuery(MessageParcel &data, MessageParcel &
     std::string uri;
     DataSharePredicates predicate;
     std::vector<std::string> columns;
-    if (!DistributedKv::ITypesUtil::Unmarshal(data, uri, predicate, columns)) {
+    if (!ITypesUtil::Unmarshal(data, uri, predicate, columns)) {
         ZLOGW("read device list failed.");
         return -1;
     }

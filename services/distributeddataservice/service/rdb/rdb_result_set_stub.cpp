@@ -20,8 +20,6 @@
 #include "log_print.h"
 #include "rdb_result_set_stub.h"
 
-using ITypesUtil = OHOS::DistributedKv::ITypesUtil;
-
 namespace OHOS::DistributedRdb {
 int RdbResultSetStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {

@@ -26,10 +26,12 @@
 #include <vector>
 
 #include "app_data_change_listener.h"
+#include "app_device_change_listener.h"
 #include "block_data.h"
 #include "platform_specific.h"
 #include "session.h"
 #include "softbus_bus_center.h"
+#include "softbus_client.h"
 namespace OHOS {
 namespace AppDistributedKv {
 class SoftBusAdapter {
@@ -37,8 +39,6 @@ public:
     SoftBusAdapter();
     ~SoftBusAdapter();
     static std::shared_ptr<SoftBusAdapter> GetInstance();
-
-    static std::string ToBeAnonymous(const std::string &name);
 
     // add DataChangeListener to watch data change;
     Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo);
@@ -58,36 +58,41 @@ public:
 
     int RemoveSessionServerAdapter(const std::string &sessionName) const;
 
-    void InsertSession(const std::string &sessionName, int32_t connId);
-
-    std::string DeleteSession(int32_t connId);
-
     void NotifyDataListeners(const uint8_t *data, int size, const std::string &deviceId, const PipeInfo &pipeInfo);
 
     int32_t GetSessionStatus(int32_t connId);
 
     void OnSessionOpen(int32_t connId, int32_t status);
 
-    void OnSessionClose(int32_t connId);
+    std::string OnSessionClose(int32_t connId);
 
     int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask);
     void OnBroadcast(const DeviceId &device, uint16_t mask);
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo, std::function<void(const std::string &, uint16_t)> listener);
 
+    uint32_t GetMtuSize(const DeviceId &deviceId);
+    std::shared_ptr<SoftBusClient> GetConnect(const std::string &deviceId);
+
+    class SofBusDeviceChangeListenerImpl : public AppDistributedKv::AppDeviceChangeListener {
+        void OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
+                             const AppDistributedKv::DeviceChangeType &type) const override;
+    };
 private:
     std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t connId);
-    Status GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId);
-    Status OpenConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize, int32_t &connId);
-    void InitSessionAttribute(const PipeInfo &pipeInfo, const DeviceId &deviceId, int32_t dataSize,
-        SessionAttribute &attr);
+    std::string DelConnect(int32_t connId);
+    void DelSessionStatus(int32_t connId);
+    void AfterStrategyUpdate(const std::string &deviceId);
+    static constexpr uint32_t WAIT_MAX_TIME = 10;
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
-    ConcurrentMap<std::string, int32_t> connects_{};
+    std::mutex connMutex_{};
+    std::map<std::string, std::shared_ptr<SoftBusClient>> connects_ {};
     bool flag_ = true; // only for br flag
     ISessionListener sessionListener_{};
     std::mutex statusMutex_{};
     std::map<int32_t, std::shared_ptr<BlockData<int32_t>>> sessionsStatus_;
     std::function<void(const std::string &, uint16_t)> onBroadcast_;
+    static SofBusDeviceChangeListenerImpl listener_;
 };
 } // namespace AppDistributedKv
 } // namespace OHOS
