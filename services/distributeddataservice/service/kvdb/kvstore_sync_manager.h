@@ -74,7 +74,7 @@ private:
     std::list<KvSyncOperation> delaySyncingOps_;
     std::multimap<TimePoint, KvSyncOperation> scheduleSyncOps_;
 
-    TaskScheduler syncScheduler_{ "sync_mgr" };
+    TaskScheduler syncScheduler_ { "sync_mgr" };
     TimePoint nextScheduleTime_;
     std::atomic_uint32_t syncOpSeq_ = 0;
 };
