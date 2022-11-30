@@ -37,12 +37,12 @@ SoftBusClient::~SoftBusClient()
     }
 }
 
-bool SoftBusClient::operator==(int32_t connId)
+bool SoftBusClient::operator==(int32_t connId) const
 {
     return connId_ == connId;
 }
 
-bool SoftBusClient::operator==(const std::string &deviceId)
+bool SoftBusClient::operator==(const std::string &deviceId) const
 {
     return device_.deviceId == deviceId;
 }
