@@ -27,9 +27,7 @@ config("module_private_config") {
 ohos_unittest("KvStoreThreadPoolTest") {
   module_out_path = module_output_path
 
-  sources = [
-    "unittest/kv_store_thread_pool_test.cpp",
-  ]
+  sources = [ "unittest/kv_store_thread_pool_test.cpp" ]
 
   configs = [ ":module_private_config" ]
 
