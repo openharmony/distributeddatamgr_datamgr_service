@@ -20,7 +20,7 @@
 #include <regex>
 #include "constant.h"
 #include "log_print.h"
-#include "communication_provider.h"
+#include "device_manager_adapter.h"
 #include "dev_slinfo_mgr.h"
 #include "security_label.h"
 #include "utils/anonymous.h"
