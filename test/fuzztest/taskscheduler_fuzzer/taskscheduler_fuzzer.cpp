@@ -26,7 +26,7 @@ static constexpr int MAX_INTERVAL_TIME = 3;
 void AtFuzz(size_t time)
 {
     TaskScheduler taskScheduler;
-    std::chrono::system_clock::time_point tp = std::chrono::system_clock::now() +
+    std::chrono::steady_clock::time_point tp = std::chrono::steady_clock::now() +
                                                std::chrono::duration<int>(time % MAX_DELAY_TIME);
     auto task = taskScheduler.At(tp, []() { });
     std::this_thread::sleep_for(std::chrono::seconds(MAX_INTERVAL_TIME));
@@ -51,7 +51,7 @@ void ResetFuzz(size_t time)
 {
     TaskScheduler taskScheduler;
     std::chrono::duration<int> interval(time % MAX_INTERVAL_TIME);
-    std::chrono::system_clock::time_point tp1 = std::chrono::system_clock::now() +
+    std::chrono::steady_clock::time_point tp1 = std::chrono::steady_clock::now() +
                                                 std::chrono::duration<int>(MAX_DELAY_TIME / 2);
     auto schedulerTask = taskScheduler.At(tp1, []() {});
     taskScheduler.Reset(schedulerTask,  interval);

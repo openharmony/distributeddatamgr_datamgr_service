@@ -46,7 +46,7 @@ public:
     using DBEntry = DistributedDB::Entry;
     using Observers = std::set<sptr<IKvStoreObserver>, Less<IKvStoreObserver>>;
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
-    using Time = std::chrono::system_clock::time_point;
+    using Time = std::chrono::steady_clock::time_point;
     using DBOption = DistributedDB::KvStoreNbDelegate::Option;
     using DBSecurity = DistributedDB::SecurityOption;
     using DBPassword = DistributedDB::CipherPassword;
