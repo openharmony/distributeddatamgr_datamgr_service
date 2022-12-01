@@ -391,7 +391,9 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
         }
     }
 
-    MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+    if (!isCreated || oldMeta != metaData) {
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+    }
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = metaData.bundleName;
     appIdMeta.appId = metaData.appId;
