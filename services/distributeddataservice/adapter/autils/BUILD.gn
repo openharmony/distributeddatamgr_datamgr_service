@@ -16,7 +16,6 @@ ohos_static_library("distributeddata_autils_static") {
   sources = [
     "src/constant.cpp",
     "src/directory_utils.cpp",
-    "src/kv_scheduler.cpp",
     "src/thread_pool/kv_store_task.cpp",
     "src/thread_pool/kv_store_thread.cpp",
     "src/thread_pool/kv_store_thread_pool.cpp",

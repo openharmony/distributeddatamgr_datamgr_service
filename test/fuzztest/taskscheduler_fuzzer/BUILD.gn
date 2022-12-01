@@ -16,15 +16,14 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("KvStoreSchedulerFuzzTest") {
-  module_out_path = "datamgr_service/adapter"
+ohos_fuzztest("TaskSchedulerFuzzTest") {
+  module_out_path = "datamgr_service/distributeddatafwk"
 
   include_dirs = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
   ]
 
-  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/kvstorescheduler_fuzzer"
+  fuzz_config_file = "//foundation/distributeddatamgr/datamgr_service/test/fuzztest/taskscheduler_fuzzer"
 
   cflags = [
     "-g",
@@ -33,9 +32,9 @@ ohos_fuzztest("KvStoreSchedulerFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  sources = [ "kvstorescheduler_fuzzer.cpp" ]
+  sources = [ "taskscheduler_fuzzer.cpp" ]
 
-  deps = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/autils:distributeddata_autils_static" ]
+  deps = []
 
   external_deps = [ "c_utils:utils" ]
 }
@@ -46,7 +45,7 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":KvStoreSchedulerFuzzTest",
+    ":TaskSchedulerFuzzTest",
   ]
 }
 ###############################################################################

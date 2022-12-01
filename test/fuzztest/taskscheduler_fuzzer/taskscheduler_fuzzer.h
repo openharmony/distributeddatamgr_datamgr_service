@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#ifndef KVSTORESCHEDULER_FUZZER_H
-#define KVSTORESCHEDULER_FUZZER_H
+#ifndef TASKSCHEDULER_FUZZER_H
+#define TASKSCHEDULER_FUZZER_H
 
-#define FUZZ_PROJECT_NAME "Kvstorescheduler_fuzzer"
+#define FUZZ_PROJECT_NAME "taskscheduler_fuzzer"
 
-#endif // KVSTORESCHEDULER_FUZZER_H
+#endif // TASKSCHEDULER_FUZZER_H
 
