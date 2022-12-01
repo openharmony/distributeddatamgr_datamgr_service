@@ -172,7 +172,7 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid) const
             }
             Sensitive sensitive(udid);
             auto level = sensitive.GetDeviceSecurityLevel();
-            ZLOGI("udid:%{public}s, uuid:%{public}d, security level:%{public}d",
+            ZLOGI("udid:%{public}s, uuid:%{public}s, security level:%{public}d",
                   Anonymous::Change(udid).c_str(), Anonymous::Change(uuid).c_str(), level);
             devicesUdid_.Insert(uuid, sensitive);
         });
