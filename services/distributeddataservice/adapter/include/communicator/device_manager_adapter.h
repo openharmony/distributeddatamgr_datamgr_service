@@ -77,7 +77,7 @@ private:
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
     static constexpr size_t TIME_TASK_CAPACITY = 50;
     KvScheduler scheduler_ {TIME_TASK_CAPACITY, "dm_adapter"};
-    static constexpr int32_t SYNC_TIMEOUT = 30 * 1000; // ms
+    static constexpr int32_t SYNC_TIMEOUT = 10 * 1000; // ms
     ConcurrentMap<std::string, std::string> syncTask_ {};
 };
 }  // namespace DistributedData

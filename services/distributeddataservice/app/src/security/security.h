@@ -21,6 +21,7 @@
 #include "app_device_change_listener.h"
 #include "iprocess_system_api_adapter.h"
 #include "kv_store_delegate_manager.h"
+#include "kv_store_task.h"
 #include "sensitive.h"
 #include "visibility.h"
 
@@ -70,6 +71,7 @@ private:
     Sensitive GetSensitiveByUuid(const std::string &uuid) const;
     bool EraseSensitiveByUuid(const std::string &uuid) const;
     bool IsXattrValueValid(const std::string& value) const;
+    bool Execute(KvStoreTask &&task);
     int32_t GetCurrentUserStatus() const;
     DBStatus SetFileSecurityOption(const std::string &filePath, const SecurityOption &option);
     DBStatus SetDirSecurityOption(const std::string &filePath, const SecurityOption &option);

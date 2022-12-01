@@ -134,6 +134,15 @@ bool Security::IsSupportSecurity()
     return false;
 }
 
+bool Security::Execute(KvStoreTask &&task)
+{
+    if (taskScheduler_ == nullptr) {
+        return false;
+    }
+    taskScheduler_->At(std::chrono::system_clock::now(), std::move(task));
+    return true;
+}
+
 void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
                                const AppDistributedKv::DeviceChangeType &type) const
 {
@@ -161,22 +170,22 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid) const
 {
     auto it = devicesUdid_.Find(uuid);
     if (!it.first) {
-        taskScheduler_.At(std::chrono::system_clock::now(), [this, uuid] {
+        KvStoreTask task([this, uuid]() {
             auto it = devicesUdid_.Find(uuid);
             if (it.first) {
                 return;
             }
             auto udid = DistributedData::DeviceManagerAdapter::GetInstance().ToUDID(uuid);
-            ZLOGD("GetSensitiveByUuid(%{public}s) peer device is %{public}s", Anonymous::Change(uuid).c_str(),
-                Anonymous::Change(udid).c_str());
             if (udid.empty()) {
                 return;
             }
             Sensitive sensitive(udid);
             auto level = sensitive.GetDeviceSecurityLevel();
-            ZLOGI("device %{public}s is online, security level:%{public}d", Anonymous::Change(uuid).c_str(), level);
+            ZLOGI("udid:%{public}s, uuid:%{public}d, security level:%{public}d",
+                  Anonymous::Change(udid).c_str(), Anonymous::Change(uuid).c_str(), level);
             devicesUdid_.Insert(uuid, sensitive);
-        });
+        }, "GetSecurityLevel");
+        Execute(std::move(task));
     }
     return it.second;
 }
