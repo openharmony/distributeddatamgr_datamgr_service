@@ -124,10 +124,10 @@ void StoreCache::GarbageCollect()
     stores_.EraseIf([&manager, &current](auto &key, std::map<std::string, DBStoreDelegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
             // if the kv store is BUSY we wait more INTERVAL minutes again
-            if ((it->second < current) || !it->second.Close(manager)) {
-                ++it;
-            } else {
+            if ((it->second < current) && it->second.Close(manager)) {
                 it = delegates.erase(it);
+            } else {
+                ++it;
             }
         }
         return delegates.empty();

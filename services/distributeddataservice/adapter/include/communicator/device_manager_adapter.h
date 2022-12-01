@@ -53,6 +53,7 @@ public:
     std::string GetUdidByNetworkId(const std::string &networkId);
     DeviceInfo GetLocalBasicInfo();
     std::string ToUUID(const std::string &id);
+    std::string ToUDID(const std::string &id);
     static std::vector<std::string> ToUUID(const std::vector<std::string> &devices);
     static std::vector<std::string> ToUUID(std::vector<DeviceInfo> devices);
     std::string ToNetworkID(const std::string &id);
@@ -82,7 +83,7 @@ private:
     static constexpr int POOL_SIZE = 1;
     std::shared_ptr<KvStoreThreadPool> threadPool_;
     KvScheduler scheduler_ {1};
-    static constexpr int32_t SYNC_TIMEOUT = 30 * 1000; // ms
+    static constexpr int32_t SYNC_TIMEOUT = 10 * 1000; // ms
     ConcurrentMap<std::string, std::string> syncTask_ {};
 };
 }  // namespace DistributedData
