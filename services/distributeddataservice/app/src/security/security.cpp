@@ -134,15 +134,6 @@ bool Security::IsSupportSecurity()
     return false;
 }
 
-bool Security::Execute(KvStoreTask &&task)
-{
-    if (taskScheduler_ == nullptr) {
-        return false;
-    }
-    taskScheduler_->At(std::chrono::system_clock::now(), std::move(task));
-    return true;
-}
-
 void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
                                const AppDistributedKv::DeviceChangeType &type) const
 {
@@ -170,7 +161,7 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid) const
 {
     auto it = devicesUdid_.Find(uuid);
     if (!it.first) {
-        KvStoreTask task([this, uuid]() {
+        taskScheduler_.Execute([this, uuid]() {
             auto it = devicesUdid_.Find(uuid);
             if (it.first) {
                 return;
@@ -184,8 +175,7 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid) const
             ZLOGI("udid:%{public}s, uuid:%{public}d, security level:%{public}d",
                   Anonymous::Change(udid).c_str(), Anonymous::Change(uuid).c_str(), level);
             devicesUdid_.Insert(uuid, sensitive);
-        }, "GetSecurityLevel");
-        Execute(std::move(task));
+        });
     }
     return it.second;
 }
