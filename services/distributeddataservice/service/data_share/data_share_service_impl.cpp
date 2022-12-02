@@ -27,6 +27,7 @@
 #include "rdb_adaptor.h"
 #include "uri.h"
 #include "uri_utils.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
@@ -68,7 +69,7 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
 bool DataShareServiceImpl::NotifyChange(const std::string &uri)
 {
     ZLOGD("Start");
-    ZLOGE("NotifyChange Uri = %{public}s", uri.c_str());
+    ZLOGE("NotifyChange Uri = %{public}s", DistributedData::Anonymous::Change(uri).c_str());
     auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
     if (obsMgrClient == nullptr) {
         ZLOGE("obsMgrClient is nullptr");
