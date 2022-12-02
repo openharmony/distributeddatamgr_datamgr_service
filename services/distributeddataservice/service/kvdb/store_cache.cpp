@@ -65,7 +65,7 @@ StoreCache::Store StoreCache::GetStore(const StoreMetaData &data, std::shared_pt
         return !stores.empty();
     });
 
-    scheduler_.At(std::chrono::system_clock::now() + std::chrono::minutes(INTERVAL),
+    scheduler_.At(std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL),
         std::bind(&StoreCache::GarbageCollect, this));
 
     return store;
@@ -120,7 +120,7 @@ void StoreCache::SetObserver(uint32_t tokenId, const std::string &storeId, std::
 void StoreCache::GarbageCollect()
 {
     DBManager manager("", "");
-    auto current = std::chrono::system_clock::now();
+    auto current = std::chrono::steady_clock::now();
     stores_.EraseIf([&manager, &current](auto &key, std::map<std::string, DBStoreDelegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
             // if the kv store is BUSY we wait more INTERVAL minutes again
@@ -197,7 +197,7 @@ StoreCache::DBPassword StoreCache::GetDBPassword(const StoreMetaData &data)
 StoreCache::DBStoreDelegate::DBStoreDelegate(DBStore *delegate, std::shared_ptr<Observers> observers)
     : delegate_(delegate)
 {
-    time_ = std::chrono::system_clock::now() + std::chrono::minutes(INTERVAL);
+    time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
     SetObservers(std::move(observers));
 }
 
@@ -213,7 +213,7 @@ StoreCache::DBStoreDelegate::~DBStoreDelegate()
 
 StoreCache::DBStoreDelegate::operator std::shared_ptr<DBStore> ()
 {
-    time_ = std::chrono::system_clock::now() + std::chrono::minutes(INTERVAL);
+    time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
     mutex_.lock_shared();
     if (delegate_ == nullptr) {
         mutex_.unlock_shared();
@@ -249,7 +249,7 @@ void StoreCache::DBStoreDelegate::OnChange(const DistributedDB::KvStoreChangedDa
         return;
     }
 
-    time_ = std::chrono::system_clock::now() + std::chrono::minutes(INTERVAL);
+    time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
     auto observers = observers_;
     std::vector<uint8_t> key;
     auto inserts = Convert(data.GetEntriesInserted());

@@ -93,7 +93,7 @@ void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
             INTERFACE_NAME, msg.interfaceName,
             ERROR_TYPE, static_cast<int>(msg.errorType));
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
 }
 
 void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg)
@@ -107,7 +107,7 @@ void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg)
             MODULE_NAME, msg.moduleName,
             ERROR_TYPE, static_cast<int>(msg.errorType));
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
 }
 
 
@@ -128,7 +128,7 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg)
             STORE_ID, msg.storeId,
             SYNC_ERROR_INFO, message);
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
 }
 
 void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg)
@@ -145,7 +145,7 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg)
             STORE_ID, msg.storeId,
             BEHAVIOUR_INFO, message);
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
 }
 
 void HiViewAdapter::ReportDatabaseStatistic(int dfxCode, const DbStat &stat)
@@ -156,7 +156,7 @@ void HiViewAdapter::ReportDatabaseStatistic(int dfxCode, const DbStat &stat)
             dbStat_.insert({stat.GetKey(), {stat, 0, dfxCode}});
         }
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
     StartTimerThread();
 }
 
@@ -217,7 +217,7 @@ void HiViewAdapter::ReportTrafficStatistic(int dfxCode, const TrafficStat &stat)
             trafficStat_.insert({stat.GetKey(), {stat, 0, dfxCode}});
         }
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
     StartTimerThread();
 }
 
@@ -254,7 +254,7 @@ void HiViewAdapter::ReportVisitStatistic(int dfxCode, const VisitStat &stat)
             it->second.times++;
         }
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
     StartTimerThread();
 }
 
@@ -294,7 +294,7 @@ void HiViewAdapter::ReportApiPerformanceStatistic(int dfxCode, const ApiPerforma
         }
     });
 
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
     StartTimerThread();
 }
 

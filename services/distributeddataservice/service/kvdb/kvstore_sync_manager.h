@@ -37,7 +37,7 @@ public:
         static KvStoreSyncManager syncManager;
         return &syncManager;
     }
-    using TimePoint = std::chrono::system_clock::time_point;
+    using TimePoint = std::chrono::steady_clock::time_point;
     using SyncEnd = std::function<void(const std::map<std::string, DistributedDB::DBStatus> &)>;
     using SyncFunc = std::function<Status(const SyncEnd &)>;
 
