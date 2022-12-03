@@ -427,11 +427,6 @@ std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkI
     return udid;
 }
 
-DeviceInfo DeviceManagerAdapter::GetLocalBasicInfo()
-{
-    return GetLocalDevice();
-}
-
 std::string DeviceManagerAdapter::ToUUID(const std::string &id)
 {
     return GetDeviceInfoFromCache(id).uuid;

@@ -615,6 +615,17 @@ void KvStoreDataService::OnDeviceOnline(const AppDistributedKv::DeviceInfo &info
     });
 }
 
+void KvStoreDataService::OnDeviceOnReady(const AppDistributedKv::DeviceInfo &info)
+{
+    if (info.uuid.empty()) {
+        return;
+    }
+    features_.ForEachCopies([&info](const auto &key, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->OnReady(info.uuid);
+        return false;
+    });
+}
+
 bool DbMetaCallbackDelegateMgr::GetKvStoreDiskSize(const std::string &storeId, uint64_t &size)
 {
     if (IsDestruct()) {
