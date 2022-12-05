@@ -21,6 +21,8 @@
 #include "communication_provider.h"
 #include "iobject_callback.h"
 #include "kvstore_sync_callback.h"
+
+#include "task_scheduler.h"
 #include "timer.h"
 #include "types.h"
 #include "kv_store_delegate_manager.h"
@@ -154,7 +156,7 @@ private:
     ConcurrentMap<uint32_t /* tokenId */, CallbackInfo > callbacks_;
     static constexpr size_t TIME_TASK_NUM = 1;
     static constexpr int64_t INTERVAL = 1;
-    KvScheduler scheduler_ { TIME_TASK_NUM };
+    TaskScheduler scheduler_ { TIME_TASK_NUM, "object_mgr" };
 };
 } // namespace DistributedObject
 } // namespace OHOS

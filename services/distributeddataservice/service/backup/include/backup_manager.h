@@ -16,7 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_BACKUP_BACKUP_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_BACKUP_BACKUP_MANAGER_H
 
-#include "kv_scheduler.h"
+#include "task_scheduler.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/secret_key_meta_data.h"
 #include "types.h"
@@ -64,7 +64,7 @@ private:
     int64_t backupSuccessTime_ = 0;
     int64_t backupNumber_ = 0;
     int64_t startNum_ = 0;
-    DistributedKv::KvScheduler scheduler_ {};
+    TaskScheduler scheduler_ { "backup" };
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_BACKUP_BACKUP_MANAGER_H

@@ -18,7 +18,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
-KvStoreSyncManager::KvStoreSyncManager() : syncScheduler_()
+KvStoreSyncManager::KvStoreSyncManager() : syncScheduler_("SyncMgr")
 {}
 
 KvStoreSyncManager::~KvStoreSyncManager() {}
@@ -38,7 +38,7 @@ Status KvStoreSyncManager::AddSyncOperation(uintptr_t syncId, uint32_t delayMs, 
         };
     }
 
-    auto beginTime = std::chrono::system_clock::now() + std::chrono::milliseconds(delayMs);
+    auto beginTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(delayMs);
     KvSyncOperation syncOp{ syncId, opSeq, delayMs, syncFunc, endFunc, beginTime };
     if (delayMs == 0) {
         if (endFunc != nullptr) {
@@ -145,7 +145,7 @@ bool KvStoreSyncManager::GetTimeoutSyncOps(const TimePoint &currentTime, std::li
 void KvStoreSyncManager::DoCheckSyncingTimeout(std::list<KvSyncOperation> &syncingOps)
 {
     auto syncingTimeoutPred = [](const KvSyncOperation &op) -> bool {
-        return op.beginTime + std::chrono::milliseconds(SYNCING_TIMEOUT_MS) < std::chrono::system_clock::now();
+        return op.beginTime + std::chrono::milliseconds(SYNCING_TIMEOUT_MS) < std::chrono::steady_clock::now();
     };
 
     uint32_t count = DoRemoveSyncingOp(syncingTimeoutPred, syncingOps);
@@ -170,7 +170,7 @@ void KvStoreSyncManager::Schedule(const TimePoint &time)
     if (!scheduleSyncOps_.empty()) {
         auto nextTime = scheduleSyncOps_.begin()->first;
         if (delaySchedule) {
-            nextTime = std::chrono::system_clock::now() + std::chrono::milliseconds(SYNC_MIN_DELAY_MS);
+            nextTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(SYNC_MIN_DELAY_MS);
         }
         AddTimer(nextTime);
     }

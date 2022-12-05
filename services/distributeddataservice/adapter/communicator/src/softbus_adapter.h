@@ -27,7 +27,7 @@
 
 #include "app_data_change_listener.h"
 #include "block_data.h"
-#include "kv_scheduler.h"
+#include "task_scheduler.h"
 #include "platform_specific.h"
 #include "session.h"
 #include "softbus_bus_center.h"
@@ -75,7 +75,6 @@ public:
 
     uint32_t GetMtuSize(const DeviceId &deviceId);
 private:
-    using KvScheduler = OHOS::DistributedKv::KvScheduler;
 
     struct ConnectInfo {
         int32_t connId = INVALID_CONNECT_ID;
@@ -101,7 +100,7 @@ private:
     std::mutex statusMutex_{};
     std::map<int32_t, std::shared_ptr<BlockData<int32_t>>> sessionsStatus_;
     std::function<void(const std::string &, uint16_t)> onBroadcast_;
-    KvScheduler scheduler_ { 1 };
+    TaskScheduler scheduler_ { 1 };
     bool schedulerRunning_ = true;
     static constexpr uint32_t CONNECT_IDLE_CLOSE_COUNT = 60;
     static constexpr int32_t INVALID_CONNECT_ID = -1;
