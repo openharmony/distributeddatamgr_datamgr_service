@@ -28,7 +28,6 @@
 #include "kv_store_delegate_manager.h"
 #include "object_data_listener.h"
 #include "concurrent_map.h"
-#include "kv_scheduler.h"
 #include "object_common.h"
 
 namespace OHOS {
