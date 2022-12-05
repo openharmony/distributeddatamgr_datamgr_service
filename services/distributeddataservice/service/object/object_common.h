@@ -17,7 +17,7 @@
 #define DISTRIBUTEDDATAMGR_OBJECT_COMMON_H
 namespace OHOS {
 namespace DistributedObject {
-enum ObjectDistributedType {
+enum class ObjectDistributedType {
     OBJECT_SINGLE_VERSION = 20,
     DISTRIBUTED_TYPE_BUTT
 };
