@@ -92,7 +92,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.securityLevel = SecurityLevel::S1;
     saveMeta.area = 1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
-    saveMeta.storeType = OBJECT_SINGLE_VERSION;
+    saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
