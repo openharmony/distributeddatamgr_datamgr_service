@@ -110,7 +110,7 @@ std::function<void()> DeviceManagerAdapter::RegDevCallback()
             return;
         }
         constexpr int32_t INTERVAL = 500;
-        auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(INTERVAL);
+        auto time = std::chrono::steady_clock::now() + std::chrono::milliseconds(INTERVAL);
         scheduler_.At(time, RegDevCallback());
     };
 }
@@ -171,7 +171,7 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
             item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONLINE);
         }
     }
-    auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(SYNC_TIMEOUT);
+    auto time = std::chrono::steady_clock::now() + std::chrono::milliseconds(SYNC_TIMEOUT);
     scheduler_.At(time, [this, dvInfo]() { TimeOut(dvInfo.uuid); });
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     for (const auto &item : observers) { // set compatible identify, sync service meta

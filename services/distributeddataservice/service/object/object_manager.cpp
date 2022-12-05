@@ -562,7 +562,7 @@ int64_t ObjectStoreManager::GetTime(const std::string &key)
 
 void ObjectStoreManager::CloseAfterMinute()
 {
-    scheduler_.At(std::chrono::system_clock::now() + std::chrono::minutes(INTERVAL),
+    scheduler_.At(std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL),
                   std::bind(&ObjectStoreManager::Close, this));
 }
 
