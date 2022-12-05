@@ -103,7 +103,7 @@ private:
     std::function<void(const std::string &, uint16_t)> onBroadcast_;
     KvScheduler scheduler_ { 1 };
     bool schedulerRunning_ = true;
-    static constexpr uint32_t CONNECT_IDLE_CLOSE_COUNT = 60;
+    static constexpr uint32_t CONNECT_IDLE_CLOSE_COUNT = 10;
     static constexpr int32_t INVALID_CONNECT_ID = -1;
     static constexpr uint32_t DEFAULT_MTU_SIZE = 4096;
     std::mutex mutex_ {};

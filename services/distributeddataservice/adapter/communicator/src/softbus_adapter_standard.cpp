@@ -157,8 +157,9 @@ std::function<void()> SoftBusAdapter::CloseIdleConnect()
             return;
         }
 
-        this->connects_.EraseIf([](auto &key, ConnectInfo &info) {
+        this->connects_.EraseIf([this](auto &key, ConnectInfo &info) {
             if (info.idleCount >= CONNECT_IDLE_CLOSE_COUNT) {
+                this->OnSessionClose(info.connId);
                 CloseSession(info.connId);
                 ZLOGE("[CloseIdleConnect] connId:%{public}d,", info.connId);
                 return true;
@@ -254,6 +255,7 @@ Status SoftBusAdapter::GetConnect(const PipeInfo &pipeInfo, const DeviceId &devi
     }
 
     if (result) {
+        OnSessionClose(connId);
         CloseSession(connId);
         connId = INVALID_CONNECT_ID;
     }
@@ -323,6 +325,7 @@ void SoftBusAdapter::OnSessionClose(int32_t connId)
         it->second->Clear(SOFTBUS_ERR);
         sessionsStatus_.erase(it);
     }
+    ZLOGD("[OnSessionClose] connId:%{public}d, size:%{public}zu", connId, sessionsStatus_.size());
 }
 
 std::shared_ptr<BlockData<int32_t>> SoftBusAdapter::GetSemaphore(int32_t connId)
@@ -484,6 +487,7 @@ int AppDataListenerWrap::OnConnectOpened(int connId, int result)
     softBusAdapter_->OnSessionOpen(connId, result);
     if (result != SOFTBUS_OK) {
         ZLOGW("session %{public}d open failed, result:%{public}d.", connId, result);
+        softBusAdapter_->OnSessionClose(connId);
         return result;
     }
 
