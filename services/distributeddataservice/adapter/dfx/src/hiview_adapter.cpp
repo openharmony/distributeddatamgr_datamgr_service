@@ -85,7 +85,7 @@ std::mutex HiViewAdapter::runMutex_;
 void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
 {
     KvStoreTask task([dfxCode, msg]() {
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
             HiSysEvent::EventType::FAULT,
             FAULT_TYPE, static_cast<int>(msg.faultType),
@@ -99,7 +99,7 @@ void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
 void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg)
 {
     KvStoreTask task([dfxCode, msg]() {
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
             HiSysEvent::EventType::FAULT,
             APP_ID, msg.appId,
@@ -120,7 +120,7 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg)
             .append(" sync to device: ").append(msg.deviceId[i])
             .append(" has error, errCode:").append(std::to_string(msg.errorCode[i])).append(". ");
         }
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
             HiSysEvent::EventType::FAULT,
             USER_ID, msg.userId,
@@ -137,7 +137,7 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg)
         std::string message;
         message.append("Behaviour type : ").append(std::to_string(static_cast<int>(msg.behaviourType)))
             .append(" behaviour info : ").append(msg.extensionInfo);
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
             HiSysEvent::EventType::BEHAVIOR,
             USER_ID, msg.userId,
@@ -173,7 +173,7 @@ void HiViewAdapter::ReportDbSize(const StatisticWrap<DbStat> &stat)
         return;
     }
 
-    HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+    HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
         CoverEventID(stat.code),
         HiSysEvent::EventType::STATISTIC,
         USER_ID, userId, APP_ID, stat.val.appId, STORE_ID, stat.val.storeId, DB_SIZE, dbSize);
@@ -231,7 +231,7 @@ void HiViewAdapter::InvokeTraffic()
             continue;
         }
 
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(kv.second.code),
             HiSysEvent::EventType::STATISTIC,
             TAG, POWERSTATS,
@@ -262,7 +262,7 @@ void HiViewAdapter::InvokeVisit()
 {
     std::lock_guard<std::mutex> lock(visitMutex_);
     for (auto const &kv : visitStat_) {
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(kv.second.code),
             HiSysEvent::EventType::STATISTIC,
             TAG, POWERSTATS,
@@ -311,7 +311,7 @@ void HiViewAdapter::InvokeApiPerformance()
         .append("\"").append(WORST_TIMES).append("\":").append(std::to_string(kv.second.val.worstTime)).append("}");
     }
     message.append("]");
-    HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+    HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
         CoverEventID(DfxCodeConstant::API_PERFORMANCE_STATISTIC),
         HiSysEvent::EventType::STATISTIC,
         INTERFACES, message);
