@@ -42,7 +42,6 @@ namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using namespace OHOS::AppDistributedKv;
 using namespace OHOS::Security::AccessToken;
-using system_clock = std::chrono::system_clock;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()

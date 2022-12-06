@@ -25,7 +25,7 @@
 #include "device_manager.h"
 #include "device_manager_callback.h"
 #include "dm_device_info.h"
-#include "kv_scheduler.h"
+#include "task_scheduler.h"
 #include "kv_store_task.h"
 #include "kv_store_thread_pool.h"
 #include "lru_bucket.h"
@@ -37,7 +37,7 @@ public:
     using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
     using KvStoreTask = OHOS::DistributedKv::KvStoreTask;
     using KvStoreThreadPool = OHOS::DistributedKv::KvStoreThreadPool;
-    using KvScheduler = OHOS::DistributedKv::KvScheduler;
+    using KvScheduler = OHOS::TaskScheduler;
     using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
     using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
     using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
