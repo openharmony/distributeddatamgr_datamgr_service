@@ -97,6 +97,7 @@ private:
         KvStoreDataService &dataService_;
         sptr<IRemoteObject> observerProxy_;
         sptr<KvStoreDeathRecipient> deathRecipient_;
+        friend Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer);
     };
 
     void Initialize();
