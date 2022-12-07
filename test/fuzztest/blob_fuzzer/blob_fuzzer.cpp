@@ -64,7 +64,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     int count = 10;
     char str[count + 1];
     auto ret = memcpy_s(str, count + 1, data, std::min(static_cast<size_t> (count + 1), size));
-    if (ret != 0) {
+    if (ret != EOK) {
         return 0;
     }
     str[count] = '\0';
