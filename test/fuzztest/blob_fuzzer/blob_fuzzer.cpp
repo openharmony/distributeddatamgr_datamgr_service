@@ -63,7 +63,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
     int count = 10;
     char str[count + 1];
-    memcpy_s(str, count + 1, data, std::min((size_t) (count + 1), size));
+    auto ret = memcpy_s(str, count + 1, data, std::min(static_cast<size_t> (count + 1), size));
+    if (ret != 0) {
+        return 0;
+    }
     str[count] = '\0';
     Blob blob1(str);
     blob1 = str;
