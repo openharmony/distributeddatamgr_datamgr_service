@@ -240,6 +240,16 @@ DBStatus DBStoreMock::RemoveDeviceData()
     return NOT_SUPPORT;
 }
 
+DBStatus DBStoreMock::GetKeys(const Key &keyPrefix, std::vector<Key> &keys) const
+{
+    return NOT_SUPPORT;
+}
+
+size_t DBStoreMock::GetSyncDataSize(const std::string &device) const
+{
+    return DEFAULT_SIZE;
+}
+
 DBStatus DBStoreMock::Get(ConcurrentMap<Key, Value> &store, const Key &key, Value &value) const
 {
     auto it = store.Find(key);

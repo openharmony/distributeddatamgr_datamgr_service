@@ -47,7 +47,6 @@ public:
     DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNetworkId(const std::string &networkId);
     std::string GetUdidByNetworkId(const std::string &networkId);
-    DeviceInfo GetLocalBasicInfo();
     std::string ToUUID(const std::string &id);
     std::string ToUDID(const std::string &id);
     static std::vector<std::string> ToUUID(const std::vector<std::string> &devices);

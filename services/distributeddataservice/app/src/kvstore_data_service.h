@@ -69,6 +69,8 @@ public:
 
     void OnDeviceOnline(const AppDistributedKv::DeviceInfo &info);
 
+    void OnDeviceOnReady(const AppDistributedKv::DeviceInfo &info);
+
     int32_t OnUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
 
 private:

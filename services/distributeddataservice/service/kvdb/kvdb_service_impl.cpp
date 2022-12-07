@@ -478,6 +478,27 @@ int32_t KVDBServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
 
 int32_t KVDBServiceImpl::OnReady(const std::string &device)
 {
+    std::vector<StoreMetaData> metaData;
+    auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+        ZLOGE("load meta failed!");
+        return STORE_NOT_FOUND;
+    }
+    for (const auto &data : metaData) {
+        if (!data.isAutoSync) {
+            continue;
+        }
+
+        SyncInfo syncInfo;
+        syncInfo.mode = PUSH_PULL;
+        syncInfo.delay = 0;
+        syncInfo.devices = { device };
+        ZLOGD("[onReady] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
+        auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
+        KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
+            std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
+            std::bind(&KVDBServiceImpl::DoComplete, this, data, syncInfo, RefCount(), std::placeholders::_1));
+    }
     return SUCCESS;
 }
 

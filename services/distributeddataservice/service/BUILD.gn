@@ -112,6 +112,7 @@ ohos_shared_library("distributeddatasvc") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp:devicemanagersdk",
   ]
 
   external_deps = [

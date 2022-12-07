@@ -74,13 +74,13 @@ HWTEST_F(DeviceManagerAdapterTest, StartWatchDeviceChange, TestSize.Level0)
 }
 
 /**
-* @tc.name: StopWatchDeviceChange001
-* @tc.desc: stop watch device change
+* @tc.name: StopWatchDeviceChange
+* @tc.desc: stop watch device change, the observer is nullptr
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, StopWatchDeviceChange001, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, StopWatchDeviceChange, TestSize.Level0)
 {
     auto status = DeviceManagerAdapter::GetInstance().StopWatchDeviceChange(nullptr, {});
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);
@@ -98,7 +98,7 @@ HWTEST_F(DeviceManagerAdapterTest, StopWatchDeviceChange001, TestSize.Level0)
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, StopWatchDeviceChange002, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, StopWatchDeviceChangeNotRegister, TestSize.Level0)
 {
     std::shared_ptr<DeviceChangerListener> observer = std::make_shared<DeviceChangerListener>();
     auto status = DeviceManagerAdapter::GetInstance().StopWatchDeviceChange(observer.get(), {});
@@ -134,13 +134,13 @@ HWTEST_F(DeviceManagerAdapterTest, GetRemoteDevices, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetDeviceInfo001
+* @tc.name: GetDeviceInfo
 * @tc.desc: get device info, the id is invalid
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo001, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfoInvalidId, TestSize.Level0)
 {
     auto dvInfo = DeviceManagerAdapter::GetInstance().GetDeviceInfo(EMPTY_DEVICE_ID);
     EXPECT_TRUE(dvInfo.udid.empty());
@@ -149,13 +149,13 @@ HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo001, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetDeviceInfo002
+* @tc.name: GetDeviceInfo
 * @tc.desc: get device info, the id is local deviceId
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo002, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfoLocalId, TestSize.Level0)
 {
     auto localDvInfo = DeviceManagerAdapter::GetInstance().GetLocalDevice();
     auto uuidToDVInfo = DeviceManagerAdapter::GetInstance().GetDeviceInfo(localDvInfo.uuid);
@@ -167,13 +167,13 @@ HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo002, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetUuidByNetworkId001
+* @tc.name: GetUuidByNetworkId
 * @tc.desc: get uuid by networkId, the networkId is invalid
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, GetUuidByNetworkId001, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, GetUuidByNetworkIdInvalid, TestSize.Level0)
 {
     auto uuid = DeviceManagerAdapter::GetInstance().GetUuidByNetworkId(EMPTY_DEVICE_ID);
     EXPECT_TRUE(uuid.empty());
@@ -182,13 +182,13 @@ HWTEST_F(DeviceManagerAdapterTest, GetUuidByNetworkId001, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetUuidByNetworkId002
+* @tc.name: GetUuidByNetworkId
 * @tc.desc: get uuid by networkId, the networkId is local networkId
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, GetUuidByNetworkId002, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, GetUuidByNetworkIdLocal, TestSize.Level0)
 {
     auto dvInfo = DeviceManagerAdapter::GetInstance().GetLocalDevice();
     auto uuid = DeviceManagerAdapter::GetInstance().GetUuidByNetworkId(dvInfo.networkId);
@@ -196,13 +196,13 @@ HWTEST_F(DeviceManagerAdapterTest, GetUuidByNetworkId002, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetUdidByNetworkId001
+* @tc.name: GetUdidByNetworkId
 * @tc.desc: get udid by networkId, the networkId is invalid
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, GetUdidByNetworkId001, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, GetUdidByNetworkIdInvalid, TestSize.Level0)
 {
     auto udid = DeviceManagerAdapter::GetInstance().GetUdidByNetworkId(EMPTY_DEVICE_ID);
     EXPECT_TRUE(udid.empty());
@@ -211,13 +211,13 @@ HWTEST_F(DeviceManagerAdapterTest, GetUdidByNetworkId001, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetUdidByNetworkId002
+* @tc.name: GetUdidByNetworkId
 * @tc.desc: get udid by networkId, the networkId is local networkId
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, GetUdidByNetworkId002, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, GetUdidByNetworkIdLocal, TestSize.Level0)
 {
     auto dvInfo = DeviceManagerAdapter::GetInstance().GetLocalDevice();
     auto udid = DeviceManagerAdapter::GetInstance().GetUdidByNetworkId(dvInfo.networkId);
@@ -225,28 +225,13 @@ HWTEST_F(DeviceManagerAdapterTest, GetUdidByNetworkId002, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetLocalBasicInfo
-* @tc.desc: get local basic info
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: zuojiangjiang
- */
-HWTEST_F(DeviceManagerAdapterTest, GetLocalBasicInfo, TestSize.Level0)
-{
-    auto info = DeviceManagerAdapter::GetInstance().GetLocalBasicInfo();
-    EXPECT_FALSE(info.uuid.empty());
-    EXPECT_FALSE(info.udid.empty());
-    EXPECT_FALSE(info.networkId.empty());
-}
-
-/**
-* @tc.name: DeviceIdToUUID001
+* @tc.name: DeviceIdToUUID
 * @tc.desc: transfer deviceId to uuid, the deviceId is invalid
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUID001, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUIDInvalid, TestSize.Level0)
 {
     auto uuid = DeviceManagerAdapter::GetInstance().ToUUID(EMPTY_DEVICE_ID);
     EXPECT_TRUE(uuid.empty());
@@ -255,13 +240,13 @@ HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUID001, TestSize.Level0)
 }
 
 /**
-* @tc.name: DeviceIdToUUID002
+* @tc.name: DeviceIdToUUID
 * @tc.desc: transfer deviceId to uuid, the deviceId is local deviceId
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUID002, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUIDLocal, TestSize.Level0)
 {
     auto dvInfo = DeviceManagerAdapter::GetInstance().GetLocalDevice();
     auto uuidToUuid = DeviceManagerAdapter::GetInstance().ToUUID(dvInfo.uuid);
@@ -273,13 +258,13 @@ HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUID002, TestSize.Level0)
 }
 
 /**
-* @tc.name: DeviceIdToUUID003
+* @tc.name: DeviceIdToUUID
 * @tc.desc: transfer deviceIds to uuid
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUID003, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, DeviceIdsToUUID, TestSize.Level0)
 {
     std::vector<std::string> devices;
     devices.emplace_back(EMPTY_DEVICE_ID);
@@ -296,13 +281,13 @@ HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUID003, TestSize.Level0)
 }
 
 /**
-* @tc.name: DeviceIdToUUID004
+* @tc.name: DeviceIdToUUID
 * @tc.desc: transfer deviceIds to uuid
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUID004, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUID, TestSize.Level0)
 {
     std::vector<DeviceInfo> devices;
     DeviceInfo dvInfo;
@@ -318,13 +303,13 @@ HWTEST_F(DeviceManagerAdapterTest, DeviceIdToUUID004, TestSize.Level0)
 }
 
 /**
-* @tc.name: DeviceIdToNetworkId001
+* @tc.name: DeviceIdToNetworkId
 * @tc.desc: transfer deviceId to networkId, the deviceId is invalid
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, DeviceIdToNetworkId001, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, DeviceIdToNetworkIdInvalid, TestSize.Level0)
 {
     auto networkId = DeviceManagerAdapter::GetInstance().ToNetworkID(EMPTY_DEVICE_ID);
     EXPECT_TRUE(networkId.empty());
@@ -333,13 +318,13 @@ HWTEST_F(DeviceManagerAdapterTest, DeviceIdToNetworkId001, TestSize.Level0)
 }
 
 /**
-* @tc.name: DeviceIdToNetworkId002
+* @tc.name: DeviceIdToNetworkId
 * @tc.desc: transfer deviceId to networkId, the deviceId is local deviceId
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: zuojiangjiang
  */
-HWTEST_F(DeviceManagerAdapterTest, DeviceIdToNetworkId002, TestSize.Level0)
+HWTEST_F(DeviceManagerAdapterTest, DeviceIdToNetworkIdLocal, TestSize.Level0)
 {
     auto dvInfo = DeviceManagerAdapter::GetInstance().GetLocalDevice();
     auto uuidToNetworkId = DeviceManagerAdapter::GetInstance().ToNetworkID(dvInfo.uuid);
@@ -348,20 +333,5 @@ HWTEST_F(DeviceManagerAdapterTest, DeviceIdToNetworkId002, TestSize.Level0)
     EXPECT_EQ(udidToNetworkId, dvInfo.networkId);
     auto networkIdToNetworkId = DeviceManagerAdapter::GetInstance().ToNetworkID(dvInfo.networkId);
     EXPECT_EQ(networkIdToNetworkId, dvInfo.networkId);
-}
-
-/**
-* @tc.name: NotifyReadyEvent
-* @tc.desc: notify ready event, the uuid is invalid
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: zuojiangjiang
- */
-HWTEST_F(DeviceManagerAdapterTest, NotifyReadyEvent, TestSize.Level0)
-{
-    DeviceManagerAdapter::GetInstance().NotifyReadyEvent(INVALID_DEVICE_ID);
-    DeviceManagerAdapter::GetInstance().NotifyReadyEvent(EMPTY_DEVICE_ID);
-    auto dvInfo = DeviceManagerAdapter::GetInstance().GetLocalDevice();
-    DeviceManagerAdapter::GetInstance().NotifyReadyEvent(dvInfo.uuid);
 }
 } // namespace
