@@ -488,12 +488,17 @@ int32_t KVDBServiceImpl::OnReady(const std::string &device)
         if (!data.isAutoSync) {
             continue;
         }
-
+        StoreMetaDataLocal localMetaData;
+        MetaDataManager::GetInstance().LoadMeta(data.GetKeyLocal(), localMetaData, true);
+        if (!localMetaData.HasPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY)) {
+            continue;
+        }
+        auto policy = localMetaData.GetPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY);
         SyncInfo syncInfo;
         syncInfo.mode = PUSH_PULL;
-        syncInfo.delay = 0;
+        syncInfo.delay = policy.IsValueEffect() ? policy.valueUint : 0;
         syncInfo.devices = { device };
-        ZLOGD("[onReady] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
+        ZLOGI("[onReady] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
         auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
         KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
             std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
