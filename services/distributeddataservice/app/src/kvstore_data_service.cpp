@@ -161,7 +161,7 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
     std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
     auto iter = clientDeathObserverMap_.find(info.tokenId);
     // Ignore register with same tokenId and pid
-    if (iter != clientDeathObserverMap_.end() && iter->second.pid_ == IPCSkeleton::GetCallingPid()) {
+    if (iter != clientDeathObserverMap_.end() && iter->second.getPid() == IPCSkeleton::GetCallingPid()) {
         ZLOGW("bundleName:%{public}s, uid:%{public}d, pid:%{public}d has already registered.",
             appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid());
         return Status::SUCCESS;
@@ -519,6 +519,11 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::NotifyClientDie()
 {
     ZLOGI("appId: %{public}s uid:%{public}d tokenId:%{public}u", appId_.appId.c_str(), uid_, token_);
     dataService_.AppExit(uid_, pid_, token_, appId_);
+}
+
+pid_t KvStoreDataService::KvStoreClientDeathObserverImpl::getPid() const
+{
+    return pid_;
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvStoreDeathRecipient(
