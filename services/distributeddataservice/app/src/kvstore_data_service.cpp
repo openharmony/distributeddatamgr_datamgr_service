@@ -159,7 +159,12 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
     }
 
     std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
-    clientDeathObserverMap_.erase(info.tokenId);
+    if (clientDeathObserverMap_.find(info.tokenId) != clientDeathObserverMap_.end()) {
+        ZLOGW("bundleName:%{public}s, uid:%{public}d, pid:%{public}d has already registered.",
+            appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid());
+        return Status::SUCCESS;
+    }
+
     auto it = clientDeathObserverMap_.emplace(std::piecewise_construct, std::forward_as_tuple(info.tokenId),
         std::forward_as_tuple(appId, *this, std::move(observer)));
     ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d inserted:%{public}s.",
