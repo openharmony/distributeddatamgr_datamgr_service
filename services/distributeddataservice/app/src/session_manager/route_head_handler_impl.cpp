@@ -116,7 +116,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::FillHeadData(uint8_t *data, uint32
 bool RouteHeadHandlerImpl::PackData(uint8_t *data, uint32_t totalLen)
 {
     if (headSize_ > totalLen) {
-        ZLOGE("the buffer size is not enough, headSiez:%{public}d, tatalLen:%{public}d",
+        ZLOGE("the buffer size is not enough, headSize:%{public}d, tatalLen:%{public}d",
             headSize_, totalLen);
         return false;
     }
@@ -148,7 +148,7 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     SessionDevicePair *devicePair = reinterpret_cast<SessionDevicePair *>(ptr);
     auto ret = strcpy_s(devicePair->sourceId, SessionDevicePair::MAX_DEVICE_ID, session_.sourceDeviceId.c_str());
     if (ret != 0) {
-        ZLOGE("strcpy for source device id failed, error:%{public}d", errno);
+        ZLOGE("strcpy for source device id failed, ret:%{public}d", ret);
         return false;
     }
     ret = strcpy_s(devicePair->targetId, SessionDevicePair::MAX_DEVICE_ID, session_.targetDeviceId.c_str());
@@ -207,7 +207,7 @@ bool RouteHeadHandlerImpl::ParseHeadData(
 bool RouteHeadHandlerImpl::UnPackData(const uint8_t *data, uint32_t totalLen, uint32_t &unpackedSize)
 {
     if (data == nullptr || totalLen < sizeof(RouteHead)) {
-        ZLOGE("invalid input data, data:%{pubic}p, totalLen:%{public}d", data, totalLen);
+        ZLOGE("invalid input data, totalLen:%{public}d", totalLen);
         return false;
     }
     unpackedSize = 0;
