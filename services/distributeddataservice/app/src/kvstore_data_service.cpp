@@ -165,7 +165,7 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
         return Status::PERMISSION_DENIED;
     }
 
-    std::lock_guard<decltype(clientDeathObserverMutex_)> lg(mutex_);
+    std::lock_guard<decltype(mutex_)> lg(mutex_);
     auto iter = clients_.find(info.tokenId);
     // Ignore register with same tokenId and pid
     if (iter != clients_.end() && IPCSkeleton::GetCallingPid() == iter->second.GetPid()) {
