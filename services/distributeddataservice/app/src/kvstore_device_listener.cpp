@@ -23,12 +23,13 @@ namespace OHOS::DistributedKv {
 void KvStoreDeviceListener::OnDeviceChanged(
     const AppDistributedKv::DeviceInfo &info, const AppDistributedKv::DeviceChangeType &type) const
 {
-    if (type != AppDistributedKv::DeviceChangeType::DEVICE_ONLINE) {
-        ZLOGE("not online type, type is %{public}d", type);
-        return;
+    if (type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE) {
+        kvStoreDataService_.SetCompatibleIdentify(info);
+        kvStoreDataService_.OnDeviceOnline(info);
+    } else if (type == AppDistributedKv::DeviceChangeType::DEVICE_ONREADY) {
+        kvStoreDataService_.OnDeviceOnReady(info);
     }
-    kvStoreDataService_.SetCompatibleIdentify(info);
-    kvStoreDataService_.OnDeviceOnline(info);
+    ZLOGI("device is %{public}d", type);
 }
 
 KvStoreDeviceListener::KvStoreDeviceListener(KvStoreDataService &kvStoreDataService)

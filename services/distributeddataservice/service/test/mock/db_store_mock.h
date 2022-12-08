@@ -85,8 +85,11 @@ public:
         const std::function<void(const std::map<std::string, DBStatus> &)> &onComplete, const Query &query,
         bool wait) override;
     DBStatus RemoveDeviceData() override;
+    DBStatus GetKeys(const Key &keyPrefix, std::vector<Key> &keys) const override;
+    size_t GetSyncDataSize(const std::string &device) const override;
 
 private:
+    static const uint32_t DEFAULT_SIZE = 0;
     DBStatus Get(ConcurrentMap<Key, Value> &store, const Key &key, Value &value) const;
     DBStatus GetEntries(ConcurrentMap<Key, Value> &store, const Key &keyPrefix, std::vector<Entry> &entries) const;
     DBStatus PutBatch(ConcurrentMap<Key, Value> &store, const std::vector<Entry> &entries);

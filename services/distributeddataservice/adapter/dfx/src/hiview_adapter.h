@@ -21,7 +21,7 @@
 #include "dfx_types.h"
 #include "dfx_code_constant.h"
 #include "hisysevent.h"
-#include "kv_scheduler.h"
+#include "task_scheduler.h"
 #include "kv_store_thread_pool.h"
 #include "kv_store_task.h"
 #include "value_hash.h"
@@ -70,7 +70,7 @@ private:
 private:
     static std::mutex runMutex_;
     static bool running_;
-    static DistributedKv::KvScheduler scheduler_;
+    static TaskScheduler scheduler_;
     static const inline int DAILY_REPORT_TIME = 23;
     static const inline int WAIT_TIME = 1 * 60 * 60; // 1 hours
 };

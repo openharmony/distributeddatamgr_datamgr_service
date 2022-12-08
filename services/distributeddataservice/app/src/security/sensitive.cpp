@@ -69,7 +69,7 @@ bool Sensitive::operator >= (const DistributedDB::SecurityOption &option)
     }
     
     uint32_t level = securityLevel;
-    if (level <= DATA_SEC_LEVEL1) {
+    if (level <= DATA_SEC_LEVEL1 && (option.securityLabel - 1) > level) {
         ZLOGI("the device security level hadn't gotten");
         level = GetSensitiveLevel(deviceId);
     }

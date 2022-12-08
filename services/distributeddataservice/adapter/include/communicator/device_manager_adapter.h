@@ -25,7 +25,7 @@
 #include "device_manager.h"
 #include "device_manager_callback.h"
 #include "dm_device_info.h"
-#include "kv_scheduler.h"
+#include "task_scheduler.h"
 #include "lru_bucket.h"
 
 namespace OHOS {
@@ -33,7 +33,7 @@ namespace DistributedData {
 class API_EXPORT DeviceManagerAdapter {
 public:
     using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
-    using KvScheduler = OHOS::DistributedKv::KvScheduler;
+    using KvScheduler = OHOS::TaskScheduler;
     using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
     using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
     using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
@@ -47,8 +47,8 @@ public:
     DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNetworkId(const std::string &networkId);
     std::string GetUdidByNetworkId(const std::string &networkId);
-    DeviceInfo GetLocalBasicInfo();
     std::string ToUUID(const std::string &id);
+    std::string ToUDID(const std::string &id);
     static std::vector<std::string> ToUUID(const std::vector<std::string> &devices);
     static std::vector<std::string> ToUUID(std::vector<DeviceInfo> devices);
     std::string ToNetworkID(const std::string &id);
@@ -76,7 +76,7 @@ private:
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
     static constexpr size_t TIME_TASK_CAPACITY = 50;
     KvScheduler scheduler_ {TIME_TASK_CAPACITY, "dm_adapter"};
-    static constexpr int32_t SYNC_TIMEOUT = 30 * 1000; // ms
+    static constexpr int32_t SYNC_TIMEOUT = 10 * 1000; // ms
     ConcurrentMap<std::string, std::string> syncTask_ {};
 };
 }  // namespace DistributedData

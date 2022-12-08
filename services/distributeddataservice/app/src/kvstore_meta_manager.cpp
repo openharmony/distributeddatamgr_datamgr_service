@@ -337,7 +337,6 @@ void KvStoreMetaManager::KvStoreMetaObserver::OnChange(const DistributedDB::KvSt
     HandleChanges(CHANGE_FLAG::INSERT, data.GetEntriesInserted());
     HandleChanges(CHANGE_FLAG::UPDATE, data.GetEntriesUpdated());
     HandleChanges(CHANGE_FLAG::DELETE, data.GetEntriesDeleted());
-    KvStoreMetaManager::GetInstance().SyncMeta();
 }
 
 void KvStoreMetaManager::KvStoreMetaObserver::HandleChanges(CHANGE_FLAG flag,

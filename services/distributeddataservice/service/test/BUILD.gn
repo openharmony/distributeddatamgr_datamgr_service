@@ -20,12 +20,16 @@ config("module_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
     "../bootstrap/include/",
     "../config/include/",
     "../crypto/include/",
     "../directory/include/",
+    "../matrix/include/",
     "../../framework/include/",
   ]
+
+  defines = [ "TEST_ON_DEVICE" ]
 }
 
 ohos_unittest("ConfigFactoryTest") {
@@ -102,6 +106,36 @@ ohos_unittest("CryptoManagerTest") {
   ]
 }
 
+ohos_unittest("DeviceMatrixTest") {
+  module_out_path = module_output_path
+  sources = [
+    "device_matrix_test.cpp",
+    "mock/db_change_data_mock.cpp",
+    "mock/db_store_mock.cpp",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+  ]
+
+  deps = [
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -111,6 +145,7 @@ group("unittest") {
   deps += [
     ":ConfigFactoryTest",
     ":CryptoManagerTest",
+    ":DeviceMatrixTest",
     ":DirectoryManagerTest",
   ]
 }

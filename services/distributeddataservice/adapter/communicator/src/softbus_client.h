@@ -31,8 +31,8 @@ public:
 
     using Strategy = CommunicationStrategy::Strategy;
     Status Send(const uint8_t *data, int size);
-    bool operator==(int32_t connId);
-    bool operator==(const std::string &deviceId);
+    bool operator==(int32_t connId) const;
+    bool operator==(const std::string &deviceId) const;
     uint32_t GetMtuSize() const;
     void AfterStrategyUpdate(Strategy strategy);
 private:

@@ -79,13 +79,13 @@ std::mutex HiViewAdapter::apiPerformanceMutex_;
 std::map<std::string, StatisticWrap<ApiPerformanceStat>> HiViewAdapter::apiPerformanceStat_;
 
 bool HiViewAdapter::running_ = false;
-KvScheduler HiViewAdapter::scheduler_ {"HiView"};
+TaskScheduler HiViewAdapter::scheduler_ {"HiView"};
 std::mutex HiViewAdapter::runMutex_;
 
 void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
 {
     KvStoreTask task([dfxCode, msg]() {
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
             HiSysEvent::EventType::FAULT,
             FAULT_TYPE, static_cast<int>(msg.faultType),
@@ -93,13 +93,13 @@ void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
             INTERFACE_NAME, msg.interfaceName,
             ERROR_TYPE, static_cast<int>(msg.errorType));
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
 }
 
 void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg)
 {
     KvStoreTask task([dfxCode, msg]() {
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
             HiSysEvent::EventType::FAULT,
             APP_ID, msg.appId,
@@ -107,7 +107,7 @@ void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg)
             MODULE_NAME, msg.moduleName,
             ERROR_TYPE, static_cast<int>(msg.errorType));
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
 }
 
 
@@ -120,7 +120,7 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg)
             .append(" sync to device: ").append(msg.deviceId[i])
             .append(" has error, errCode:").append(std::to_string(msg.errorCode[i])).append(". ");
         }
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
             HiSysEvent::EventType::FAULT,
             USER_ID, msg.userId,
@@ -128,7 +128,7 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg)
             STORE_ID, msg.storeId,
             SYNC_ERROR_INFO, message);
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
 }
 
 void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg)
@@ -137,7 +137,7 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg)
         std::string message;
         message.append("Behaviour type : ").append(std::to_string(static_cast<int>(msg.behaviourType)))
             .append(" behaviour info : ").append(msg.extensionInfo);
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
             HiSysEvent::EventType::BEHAVIOR,
             USER_ID, msg.userId,
@@ -145,7 +145,7 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg)
             STORE_ID, msg.storeId,
             BEHAVIOUR_INFO, message);
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
 }
 
 void HiViewAdapter::ReportDatabaseStatistic(int dfxCode, const DbStat &stat)
@@ -156,7 +156,7 @@ void HiViewAdapter::ReportDatabaseStatistic(int dfxCode, const DbStat &stat)
             dbStat_.insert({stat.GetKey(), {stat, 0, dfxCode}});
         }
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
     StartTimerThread();
 }
 
@@ -173,7 +173,7 @@ void HiViewAdapter::ReportDbSize(const StatisticWrap<DbStat> &stat)
         return;
     }
 
-    HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+    HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
         CoverEventID(stat.code),
         HiSysEvent::EventType::STATISTIC,
         USER_ID, userId, APP_ID, stat.val.appId, STORE_ID, stat.val.storeId, DB_SIZE, dbSize);
@@ -217,7 +217,7 @@ void HiViewAdapter::ReportTrafficStatistic(int dfxCode, const TrafficStat &stat)
             trafficStat_.insert({stat.GetKey(), {stat, 0, dfxCode}});
         }
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
     StartTimerThread();
 }
 
@@ -231,7 +231,7 @@ void HiViewAdapter::InvokeTraffic()
             continue;
         }
 
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(kv.second.code),
             HiSysEvent::EventType::STATISTIC,
             TAG, POWERSTATS,
@@ -254,7 +254,7 @@ void HiViewAdapter::ReportVisitStatistic(int dfxCode, const VisitStat &stat)
             it->second.times++;
         }
     });
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
     StartTimerThread();
 }
 
@@ -262,7 +262,7 @@ void HiViewAdapter::InvokeVisit()
 {
     std::lock_guard<std::mutex> lock(visitMutex_);
     for (auto const &kv : visitStat_) {
-        HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(kv.second.code),
             HiSysEvent::EventType::STATISTIC,
             TAG, POWERSTATS,
@@ -294,7 +294,7 @@ void HiViewAdapter::ReportApiPerformanceStatistic(int dfxCode, const ApiPerforma
         }
     });
 
-    scheduler_.At(std::chrono::system_clock::now(), std::move(task));
+    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
     StartTimerThread();
 }
 
@@ -311,7 +311,7 @@ void HiViewAdapter::InvokeApiPerformance()
         .append("\"").append(WORST_TIMES).append("\":").append(std::to_string(kv.second.val.worstTime)).append("}");
     }
     message.append("]");
-    HiSysEvent::Write(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+    HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
         CoverEventID(DfxCodeConstant::API_PERFORMANCE_STATISTIC),
         HiSysEvent::EventType::STATISTIC,
         INTERFACES, message);

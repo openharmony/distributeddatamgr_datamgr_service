@@ -99,7 +99,7 @@ KVDBServiceImpl::KVDBServiceImpl()
             if (policy.IsValueEffect()) {
                 syncInfo.delay = policy.valueUint;
             }
-            ZLOGD("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
+            ZLOGI("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
             auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
             KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
                 std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
@@ -403,7 +403,9 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
         }
     }
 
-    MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+    if (!isCreated || oldMeta != metaData) {
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+    }
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = metaData.bundleName;
     appIdMeta.appId = metaData.appId;
@@ -476,6 +478,32 @@ int32_t KVDBServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
 
 int32_t KVDBServiceImpl::OnReady(const std::string &device)
 {
+    std::vector<StoreMetaData> metaData;
+    auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+        ZLOGE("load meta failed!");
+        return STORE_NOT_FOUND;
+    }
+    for (const auto &data : metaData) {
+        if (!data.isAutoSync) {
+            continue;
+        }
+        StoreMetaDataLocal localMetaData;
+        MetaDataManager::GetInstance().LoadMeta(data.GetKeyLocal(), localMetaData, true);
+        if (!localMetaData.HasPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY)) {
+            continue;
+        }
+        auto policy = localMetaData.GetPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY);
+        SyncInfo syncInfo;
+        syncInfo.mode = PUSH_PULL;
+        syncInfo.delay = policy.IsValueEffect() ? policy.valueUint : 0;
+        syncInfo.devices = { device };
+        ZLOGI("[onReady] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
+        auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
+        KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
+            std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
+            std::bind(&KVDBServiceImpl::DoComplete, this, data, syncInfo, RefCount(), std::placeholders::_1));
+    }
     return SUCCESS;
 }
 

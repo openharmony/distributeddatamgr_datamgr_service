@@ -20,7 +20,7 @@
 #include <list>
 #include <map>
 
-#include "kv_scheduler.h"
+#include "task_scheduler.h"
 #include "kv_store_nb_delegate.h"
 #include "types.h"
 
@@ -37,7 +37,7 @@ public:
         static KvStoreSyncManager syncManager;
         return &syncManager;
     }
-    using TimePoint = std::chrono::system_clock::time_point;
+    using TimePoint = std::chrono::steady_clock::time_point;
     using SyncEnd = std::function<void(const std::map<std::string, DistributedDB::DBStatus> &)>;
     using SyncFunc = std::function<Status(const SyncEnd &)>;
 
@@ -74,7 +74,7 @@ private:
     std::list<KvSyncOperation> delaySyncingOps_;
     std::multimap<TimePoint, KvSyncOperation> scheduleSyncOps_;
 
-    KvScheduler syncScheduler_ { "sync_mgr" };
+    TaskScheduler syncScheduler_ { "sync_mgr" };
     TimePoint nextScheduleTime_;
     std::atomic_uint32_t syncOpSeq_ = 0;
 };

@@ -15,14 +15,14 @@
 
 #ifndef OHOS_SECURITY_H
 #define OHOS_SECURITY_H
-
-#include <string>
 #include <concurrent_map.h>
+#include <string>
+#include <task_scheduler.h>
+#include "app_device_change_listener.h"
 #include "iprocess_system_api_adapter.h"
 #include "kv_store_delegate_manager.h"
-#include "app_device_change_listener.h"
-#include "visibility.h"
 #include "sensitive.h"
+#include "visibility.h"
 
 namespace OHOS::DistributedKv {
 class Security
@@ -67,8 +67,8 @@ private:
     static const std::string Convert2Name(const SecurityOption &option);
     static int Convert2Security(const std::string &name);
     bool IsExits(const std::string &file) const;
-    static Sensitive GetSensitiveByUuid(const std::string &uuid);
-    static bool EraseSensitiveByUuid(const std::string &uuid);
+    Sensitive GetSensitiveByUuid(const std::string &uuid) const;
+    bool EraseSensitiveByUuid(const std::string &uuid) const;
     bool IsXattrValueValid(const std::string& value) const;
     int32_t GetCurrentUserStatus() const;
     DBStatus SetFileSecurityOption(const std::string &filePath, const SecurityOption &option);
@@ -76,7 +76,8 @@ private:
     DBStatus GetFileSecurityOption(const std::string &filePath, SecurityOption &option) const;
     DBStatus GetDirSecurityOption(const std::string &filePath, SecurityOption &option) const;
 
-    static ConcurrentMap<std::string, Sensitive> devicesUdid_;
+    mutable TaskScheduler taskScheduler_;
+    mutable ConcurrentMap<std::string, Sensitive> devicesUdid_;
 };
 } // namespace OHOS::DistributedKv
 
