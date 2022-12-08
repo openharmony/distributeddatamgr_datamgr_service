@@ -188,7 +188,7 @@ Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const A
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
-    std::lock_guard<decltype(clientDeathObserverMutex_)> lg(mutex_);
+    std::lock_guard<decltype(mutex_)> lg(mutex_);
     clients_.erase(token);
     return Status::SUCCESS;
 }
