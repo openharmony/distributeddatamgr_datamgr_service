@@ -79,7 +79,7 @@ private:
 
         virtual ~KvStoreClientDeathObserverImpl();
 
-        pid_t getPid() const;
+        pid_t GetPid() const;
 
     private:
         class KvStoreDeathRecipient : public IRemoteObject::DeathRecipient {
