@@ -127,6 +127,11 @@ std::string DirectoryManager::GetStore(const StoreMetaData &metaData) const
         && metaData.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END) {
         return "rdb";
     }
+    // object use meta
+    if (metaData.storeType >= StoreMetaData::StoreType::STORE_OBJECT_BEGIN
+        && metaData.storeType <= StoreMetaData::StoreType::STORE_OBJECT_END) {
+        return "kvdb";
+    }
     return "other";
 }
 

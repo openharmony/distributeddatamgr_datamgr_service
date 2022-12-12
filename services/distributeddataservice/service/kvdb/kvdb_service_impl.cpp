@@ -451,6 +451,10 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
     }
 
     for (const auto &storeMeta : metaData) {
+        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN
+            || storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
+            continue;
+        }
         auto identifierTag = DBManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
         if (identifier != identifierTag) {
             continue;
