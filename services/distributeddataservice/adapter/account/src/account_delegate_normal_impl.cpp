@@ -64,6 +64,7 @@ int32_t AccountDelegateNormalImpl::GetUserByToken(uint32_t tokenId) const
 
     HapTokenInfo tokenInfo;
     if (AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo) != RET_SUCCESS) {
+        ZLOGE("invalid token:%{public}u", tokenId);
         return -1;
     }
 
@@ -101,14 +102,14 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent()
                 break;
             }
 
-            ZLOGE("EventManager: Fail to register subscriber, error:%d", result);
+            ZLOGE("fail to register subscriber, error:%{public}d, time:%{public}d", result, tryTimes);
             sleep(RETRY_WAIT_TIME_S);
             tryTimes++;
         }
         if (tryTimes == MAX_RETRY_TIME) {
-            ZLOGE("EventManager: Fail to register subscriber!");
+            ZLOGE("fail to register subscriber!");
         }
-        ZLOGI("EventManager: Success to register subscriber.");
+        ZLOGI("success to register subscriber.");
     });
     th.detach();
 }

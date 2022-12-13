@@ -245,7 +245,7 @@ void KvStoreDataService::OnStart()
 
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
-    ZLOGI("add system abilityid:%d", systemAbilityId);
+    ZLOGI("add system abilityId:%d", systemAbilityId);
     (void)deviceId;
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;
@@ -256,7 +256,7 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
 
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
-    ZLOGI("remove system abilityid:%d", systemAbilityId);
+    ZLOGI("remove system abilityId:%d", systemAbilityId);
     (void)deviceId;
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;
@@ -268,6 +268,7 @@ void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const st
 void KvStoreDataService::StartService()
 {
     // register this to ServiceManager.
+    ZLOGI("begin.");
     KvStoreMetaManager::GetInstance().InitMetaListener();
     DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
     InitObjectStore();
@@ -562,6 +563,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.appId, true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+                PermitDelegate::GetInstance().DelCache(meta.GetKey());
             }
             g_kvStoreAccountEventStatus = 0;
             break;
@@ -596,7 +598,7 @@ void KvStoreDataService::InitSecurityAdapter()
     ZLOGI("datasl on start ret:%d", ret);
     security_ = std::make_shared<Security>();
     if (security_ == nullptr) {
-        ZLOGD("Security is nullptr.");
+        ZLOGE("security is nullptr.");
         return;
     }
 

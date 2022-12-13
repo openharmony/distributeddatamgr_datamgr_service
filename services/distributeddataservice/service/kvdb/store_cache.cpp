@@ -119,6 +119,7 @@ void StoreCache::SetObserver(uint32_t tokenId, const std::string &storeId, std::
 
 void StoreCache::GarbageCollect()
 {
+    ZLOGI("enter");
     DBManager manager("", "");
     auto current = std::chrono::steady_clock::now();
     stores_.EraseIf([&manager, &current](auto &key, std::map<std::string, DBStoreDelegate> &delegates) {
@@ -132,7 +133,7 @@ void StoreCache::GarbageCollect()
         }
         return delegates.empty();
     });
-
+    ZLOGD("left size:%{public}zu", stores_.Size());
     if (!stores_.Empty()) {
         scheduler_.At(current + std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
     }

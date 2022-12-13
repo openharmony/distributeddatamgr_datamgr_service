@@ -197,6 +197,7 @@ void DeviceManagerAdapter::TimeOut(const std::string uuid)
 void DeviceManagerAdapter::NotifyReadyEvent(const std::string &uuid)
 {
     if (uuid.empty() || !syncTask_.Contains(uuid)) {
+        ZLOGE("the device uuid empty, or had notified, or offline");
         return;
     }
 
@@ -274,11 +275,13 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
 {
     std::string networkId = std::string(dmInfo.networkId);
     if (networkId.empty()) {
+        ZLOGE("networkId empty!");
         return false;
     }
     auto uuid = GetUuidByNetworkId(networkId);
     auto udid = GetUdidByNetworkId(networkId);
     if (uuid.empty() || udid.empty()) {
+        ZLOGE("uuid or udid empty");
         return false;
     }
     dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId };
@@ -394,6 +397,7 @@ void DeviceManagerAdapter::UpdateDeviceInfo()
 std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkId)
 {
     if (networkId.empty()) {
+        ZLOGE("networkId empty");
         return "";
     }
     DeviceInfo dvInfo;
@@ -412,6 +416,7 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
 std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkId)
 {
     if (networkId.empty()) {
+        ZLOGE("networkId empty");
         return "";
     }
     DeviceInfo dvInfo;

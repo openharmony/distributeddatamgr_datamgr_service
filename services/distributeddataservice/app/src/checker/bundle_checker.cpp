@@ -47,23 +47,22 @@ bool BundleChecker::SetTrustInfo(const CheckerManager::Trust &trust)
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
 {
     if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
+        ZLOGE("not token_hap type");
         return "";
     }
-
     HapTokenInfo tokenInfo;
     if (AccessTokenKit::GetHapTokenInfo(info.tokenId, tokenInfo) != RET_SUCCESS) {
+        ZLOGE("get token info fail");
         return "";
     }
-
     if (tokenInfo.bundleName != info.bundleName) {
+        ZLOGE("bundlename:%{public}s <-> %{public}s", info.bundleName.c_str(), tokenInfo.bundleName.c_str());
         return "";
     }
-
     auto it = trusts_.find(info.bundleName);
     if (it != trusts_.end() && (it->second == tokenInfo.appID)) {
         return info.bundleName;
     }
-
     ZLOGD("bundleName:%{public}s, appId:%{public}s", info.bundleName.c_str(), tokenInfo.appID.c_str());
     return Crypto::Sha256(tokenInfo.appID);
 }

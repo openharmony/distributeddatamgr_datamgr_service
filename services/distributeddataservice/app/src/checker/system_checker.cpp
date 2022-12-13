@@ -43,6 +43,7 @@ bool SystemChecker::SetTrustInfo(const CheckerManager::Trust &trust)
 std::string SystemChecker::GetAppId(const CheckerManager::StoreInfo &info)
 {
     if (!IsValid(info)) {
+        ZLOGE("info is invalid");
         return "";
     }
     std::string appId = (trusts_.find(info.bundleName) != trusts_.end()) ? trusts_[info.bundleName] : info.bundleName;

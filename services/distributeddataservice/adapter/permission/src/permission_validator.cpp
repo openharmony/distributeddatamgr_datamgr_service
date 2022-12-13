@@ -39,7 +39,7 @@ bool PermissionValidator::CheckSyncPermission(uint32_t tokenId)
         return (AccessTokenKit::VerifyAccessToken(tokenId, DISTRIBUTED_DATASYNC) == PERMISSION_GRANTED);
     }
 
-    ZLOGI("invalid tokenid:%u", tokenId);
+    ZLOGE("invalid token:%{public}u", tokenId);
     return false;
 }
 } // namespace DistributedKv
