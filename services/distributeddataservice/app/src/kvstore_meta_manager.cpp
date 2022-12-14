@@ -176,7 +176,7 @@ void KvStoreMetaManager::InitMetaParameter()
         constexpr int32_t RETRY_MAX_TIMES = 100;
         constexpr int32_t RETRY_INTERVAL = 1 * 1000 * 1000; // retry after 1 second
         BlockInteger retry(RETRY_INTERVAL);
-        while(retry < RETRY_MAX_TIMES) {
+        while (retry < RETRY_MAX_TIMES) {
             auto status = CryptoManager::GetInstance().CheckRootKey();
             if (status == CryptoManager::ErrCode::SUCCESS) {
                 ZLOGI("root key exist.");
