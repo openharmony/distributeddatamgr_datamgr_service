@@ -307,7 +307,7 @@ void KvStoreMetaManager::SyncMeta()
     };
     auto dbStatus = metaDelegate->Sync(devs, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
     if (dbStatus != DistributedDB::OK) {
-        ZLOGW("meta db sync error %{public}d.", dbStatus);
+        ZLOGW("meta db sync failed, error is %{public}d.", dbStatus);
     }
 }
 

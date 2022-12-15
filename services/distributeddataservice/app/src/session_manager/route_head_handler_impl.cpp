@@ -148,12 +148,12 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     SessionDevicePair *devicePair = reinterpret_cast<SessionDevicePair *>(ptr);
     auto ret = strcpy_s(devicePair->sourceId, SessionDevicePair::MAX_DEVICE_ID, session_.sourceDeviceId.c_str());
     if (ret != 0) {
-        ZLOGE("strcpy for source device id failed, ret:%{public}d", ret);
+        ZLOGE("strcpy for source device id failed, ret is %{public}d", ret);
         return false;
     }
     ret = strcpy_s(devicePair->targetId, SessionDevicePair::MAX_DEVICE_ID, session_.targetDeviceId.c_str());
     if (ret != 0) {
-        ZLOGE("strcpy for target device id failed, error:%{public}d", errno);
+        ZLOGE("strcpy for target device id failed, ret is %{public}d", ret);
         return false;
     }
     ptr += sizeof(SessionDevicePair);
