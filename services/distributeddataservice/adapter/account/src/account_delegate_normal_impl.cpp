@@ -63,11 +63,11 @@ int32_t AccountDelegateNormalImpl::GetUserByToken(uint32_t tokenId) const
     }
 
     HapTokenInfo tokenInfo;
-    if (AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo) != RET_SUCCESS) {
-        ZLOGE("invalid token:%{public}u", tokenId);
+    auto result = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (result != RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, result);
         return -1;
     }
-
     return tokenInfo.userID;
 }
     
@@ -102,7 +102,7 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent()
                 break;
             }
 
-            ZLOGE("fail to register subscriber, error:%{public}d, time:%{public}d", result, tryTimes);
+            ZLOGD("fail to register subscriber, error:%{public}d, time:%{public}d", result, tryTimes);
             sleep(RETRY_WAIT_TIME_S);
             tryTimes++;
         }

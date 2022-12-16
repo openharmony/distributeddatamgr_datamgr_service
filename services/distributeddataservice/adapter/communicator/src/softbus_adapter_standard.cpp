@@ -378,7 +378,7 @@ int AppDataListenerWrap::OnConnectOpened(int connId, int result)
         return ret;
     }
 
-    ZLOGI("[OnConnectOpened] conn id:%{public}d, my name:%{public}s, peer name:%{public}s, "
+    ZLOGD("[OnConnectOpened] conn id:%{public}d, my name:%{public}s, peer name:%{public}s, "
           "peer devId:%{public}s, side:%{public}d", connId, connInfo.myName, connInfo.peerName,
           KvStoreUtils::ToBeAnonymous(connInfo.peerDevUuid).c_str(), connInfo.side);
     return 0;

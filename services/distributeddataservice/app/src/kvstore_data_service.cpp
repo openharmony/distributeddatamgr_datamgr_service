@@ -245,7 +245,7 @@ void KvStoreDataService::OnStart()
 
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
-    ZLOGI("add system abilityId:%d", systemAbilityId);
+    ZLOGI("add system abilityId:%{public}d", systemAbilityId);
     (void)deviceId;
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;
@@ -256,7 +256,7 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
 
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
-    ZLOGI("remove system abilityId:%d", systemAbilityId);
+    ZLOGI("remove system abilityId:%{public}d", systemAbilityId);
     (void)deviceId;
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;
