@@ -98,6 +98,7 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_service_stub.cpp",
     "rdb/rdb_store_observer_impl.cpp",
     "rdb/rdb_syncer.cpp",
+    "rdb/rdb_notifier_proxy.cpp",
   ]
   cflags = [ "-Wno-multichar" ]
 

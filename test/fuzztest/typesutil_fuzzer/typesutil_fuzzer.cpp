@@ -143,46 +143,6 @@ void StringFuzz(const std::string &strBase)
     ITypesUtil::Unmarshal(parcel, strOut);
 }
 
-void RdbSyncerParamFuzz(const std::string &strBase, int32_t intBase, const std::vector<uint8_t> &vecBase,
-    bool boolBase)
-{
-    MessageParcel parcel;
-    DistributedRdb::RdbSyncerParam rdbSyncerParamIn;
-    rdbSyncerParamIn.bundleName_ = strBase;
-    rdbSyncerParamIn.hapName_ = strBase;
-    rdbSyncerParamIn.storeName_ = strBase;
-    rdbSyncerParamIn.area_ = intBase;
-    rdbSyncerParamIn.level_ = intBase;
-    rdbSyncerParamIn.type_ = intBase;
-    rdbSyncerParamIn.isAutoSync_ = boolBase;
-    rdbSyncerParamIn.isEncrypt_ = boolBase;
-    rdbSyncerParamIn.password_ = vecBase;
-    ITypesUtil::Marshal(parcel, rdbSyncerParamIn);
-    DistributedRdb::RdbSyncerParam rdbSyncerParamOut;
-    ITypesUtil::Unmarshal(parcel, rdbSyncerParamOut);
-}
-
-void RdbSyncOptionFuzz(bool boolBase)
-{
-    MessageParcel parcel;
-    DistributedRdb::SyncOption syncOptionIn = { DistributedRdb::PUSH, boolBase };
-    ITypesUtil::Marshal(parcel, syncOptionIn);
-    DistributedRdb::SyncOption syncOptionOut;
-    ITypesUtil::Unmarshal(parcel, syncOptionOut);
-}
-
-void RdbPredicatesFuzz(const std::string &strBase)
-{
-    MessageParcel parcel;
-    DistributedRdb::RdbPredicates rdbPredicatesIn;
-    rdbPredicatesIn.table_ = strBase;
-    rdbPredicatesIn.devices_ = { strBase };
-    rdbPredicatesIn.operations_ = { { DistributedRdb::EQUAL_TO, strBase, { strBase } } };
-    ITypesUtil::Marshal(parcel, rdbPredicatesIn);
-    DistributedRdb::RdbPredicates rdbPredicatesOut;
-    ITypesUtil::Unmarshal(parcel, rdbPredicatesOut);
-}
-
 void GetTotalSizeFuzz(const std::string &strBase, uint32_t size)
 {
     Entry entry;
@@ -214,9 +174,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::ChangeNotificationFuzz(fuzzStr, fuzzBool);
     OHOS::IntFuzz(size);
     OHOS::StringFuzz(fuzzStr);
-    OHOS::RdbSyncerParamFuzz(fuzzStr, fuzzInt32, fuzzVec, fuzzBool);
-    OHOS::RdbSyncOptionFuzz(fuzzBool);
-    OHOS::RdbPredicatesFuzz(fuzzStr);
     OHOS::GetTotalSizeFuzz(fuzzStr, fuzzUInt32);
     return 0;
 }
