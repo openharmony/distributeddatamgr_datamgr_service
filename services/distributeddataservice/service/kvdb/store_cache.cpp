@@ -132,8 +132,8 @@ void StoreCache::GarbageCollect()
         }
         return delegates.empty();
     });
-
     if (!stores_.Empty()) {
+        ZLOGD("stores size:%{public}zu", stores_.Size());
         scheduler_.At(current + std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
     }
 }

@@ -17,6 +17,11 @@
 #define DISTRIBUTEDDATAMGR_OBJECT_COMMON_H
 namespace OHOS {
 namespace DistributedObject {
+enum ObjectDistributedType : int32_t {
+    OBJECT_SINGLE_VERSION = 20,
+    DISTRIBUTED_TYPE_BUTT
+};
+
 class ObjectCommon {
 public:
     constexpr static const char *OBJECTSTORE_DB_STOREID = "distributedObject_";

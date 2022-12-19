@@ -61,17 +61,13 @@ using DmAdapter = DistributedData::DeviceManagerAdapter;
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
 KvStoreDataService::KvStoreDataService(bool runOnCreate)
-    : SystemAbility(runOnCreate),
-      clientDeathObserverMutex_(),
-      clientDeathObserverMap_()
+    : SystemAbility(runOnCreate), mutex_(), clients_()
 {
     ZLOGI("begin.");
 }
 
 KvStoreDataService::KvStoreDataService(int32_t systemAbilityId, bool runOnCreate)
-    : SystemAbility(systemAbilityId, runOnCreate),
-      clientDeathObserverMutex_(),
-      clientDeathObserverMap_()
+    : SystemAbility(systemAbilityId, runOnCreate), mutex_(), clients_()
 {
     ZLOGI("begin");
 }
@@ -79,7 +75,7 @@ KvStoreDataService::KvStoreDataService(int32_t systemAbilityId, bool runOnCreate
 KvStoreDataService::~KvStoreDataService()
 {
     ZLOGI("begin.");
-    clientDeathObserverMap_.clear();
+    clients_.clear();
     features_.Clear();
 }
 
@@ -158,9 +154,17 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
         return Status::PERMISSION_DENIED;
     }
 
-    std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
-    clientDeathObserverMap_.erase(info.tokenId);
-    auto it = clientDeathObserverMap_.emplace(std::piecewise_construct, std::forward_as_tuple(info.tokenId),
+    std::lock_guard<decltype(mutex_)> lg(mutex_);
+    auto iter = clients_.find(info.tokenId);
+    // Ignore register with same tokenId and pid
+    if (iter != clients_.end() && IPCSkeleton::GetCallingPid() == iter->second.GetPid()) {
+        ZLOGW("bundleName:%{public}s, uid:%{public}d, pid:%{public}d has already registered.",
+            appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid());
+        return Status::SUCCESS;
+    }
+
+    clients_.erase(info.tokenId);
+    auto it = clients_.emplace(std::piecewise_construct, std::forward_as_tuple(info.tokenId),
         std::forward_as_tuple(appId, *this, std::move(observer)));
     ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d inserted:%{public}s.",
         appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid(), it.second ? "success" : "failed");
@@ -173,8 +177,8 @@ Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const A
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
-    std::lock_guard<decltype(clientDeathObserverMutex_)> lg(clientDeathObserverMutex_);
-    clientDeathObserverMap_.erase(token);
+    std::lock_guard<decltype(mutex_)> lg(mutex_);
+    clients_.erase(token);
     return Status::SUCCESS;
 }
 
@@ -264,6 +268,7 @@ void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const st
 void KvStoreDataService::StartService()
 {
     // register this to ServiceManager.
+    ZLOGI("begin.");
     KvStoreMetaManager::GetInstance().InitMetaListener();
     DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
     InitObjectStore();
@@ -513,6 +518,11 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::NotifyClientDie()
     dataService_.AppExit(uid_, pid_, token_, appId_);
 }
 
+pid_t KvStoreDataService::KvStoreClientDeathObserverImpl::GetPid() const
+{
+    return pid_;
+}
+
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvStoreDeathRecipient(
     KvStoreClientDeathObserverImpl &kvStoreClientDeathObserverImpl)
     : kvStoreClientDeathObserverImpl_(kvStoreClientDeathObserverImpl)
@@ -553,6 +563,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.appId, true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+                PermitDelegate::GetInstance().DelCache(meta.GetKey());
             }
             g_kvStoreAccountEventStatus = 0;
             break;
@@ -587,7 +598,7 @@ void KvStoreDataService::InitSecurityAdapter()
     ZLOGI("datasl on start ret:%d", ret);
     security_ = std::make_shared<Security>();
     if (security_ == nullptr) {
-        ZLOGD("Security is nullptr.");
+        ZLOGE("security is nullptr.");
         return;
     }
 

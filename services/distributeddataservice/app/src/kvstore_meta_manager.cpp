@@ -36,6 +36,7 @@
 #include "matrix_event.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
+#include "utils/block_integer.h"
 #include "utils/crypto.h"
 
 namespace OHOS {
@@ -114,6 +115,7 @@ void KvStoreMetaManager::InitDeviceOnline()
         auto store = GetMetaKvStore();
         if (((mask & DeviceMatrix::META_STORE_MASK) != 0) && store != nullptr) {
             auto onComplete = [deviceId, mask](const std::map<std::string, DBStatus> &) {
+                ZLOGI("online sync complete");
                 auto event = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
                 DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
                 EventCenter::GetInstance().PostEvent(std::move(event));
@@ -171,10 +173,10 @@ void KvStoreMetaManager::InitMetaParameter()
 {
     ZLOGI("start.");
     std::thread th = std::thread([]() {
-        constexpr int RETRY_MAX_TIMES = 100;
-        int retryCount = 0;
-        constexpr int RETRY_TIME_INTERVAL_MILLISECOND = 1 * 1000 * 1000; // retry after 1 second
-        while (retryCount < RETRY_MAX_TIMES) {
+        constexpr int32_t RETRY_MAX_TIMES = 100;
+        constexpr int32_t RETRY_INTERVAL = 1 * 1000 * 1000; // retry after 1 second
+        BlockInteger retry(RETRY_INTERVAL);
+        while (retry < RETRY_MAX_TIMES) {
             auto status = CryptoManager::GetInstance().CheckRootKey();
             if (status == CryptoManager::ErrCode::SUCCESS) {
                 ZLOGI("root key exist.");
@@ -185,9 +187,8 @@ void KvStoreMetaManager::InitMetaParameter()
                 ZLOGI("GenerateRootKey success.");
                 break;
             }
-            retryCount++;
-            ZLOGW("GenerateRootKey failed, retry times:%{public}d.", retryCount);
-            usleep(RETRY_TIME_INTERVAL_MILLISECOND);
+            ++retry;
+            ZLOGW("GenerateRootKey failed, retry times:%{public}d.", retry);
         }
     });
     th.detach();

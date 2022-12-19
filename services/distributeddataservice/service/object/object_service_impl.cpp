@@ -92,7 +92,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.securityLevel = SecurityLevel::S1;
     saveMeta.area = 1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
-    saveMeta.storeType = KvStoreType::SINGLE_VERSION;
+    saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
@@ -239,6 +239,10 @@ int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, Dist
     }
     
     for (const auto &storeMeta : metaData) {
+        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_OBJECT_BEGIN
+            || storeMeta.storeType > StoreMetaData::StoreType::STORE_OBJECT_END) {
+            continue;
+        }
         auto identifierTag = DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId,
                                                                                          storeMeta.storeId, true);
         if (identifier != identifierTag) {

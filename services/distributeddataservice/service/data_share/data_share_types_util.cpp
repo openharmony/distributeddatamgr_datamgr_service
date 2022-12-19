@@ -26,7 +26,7 @@ bool Unmarshalling(Predicates &predicates, MessageParcel &parcel)
     std::string whereClause = "";
     std::vector<std::string> whereArgs;
     std::string order = "";
-    int64_t mode = DataShare::INVALID_MODE;
+    int16_t mode = DataShare::INVALID_MODE;
     if (!ITypesUtil::Unmarshal(parcel, operations, whereClause, whereArgs, order, mode)) {
         ZLOGE("predicate read whereClause failed");
         return false;
@@ -35,7 +35,7 @@ bool Unmarshalling(Predicates &predicates, MessageParcel &parcel)
     tmpPredicates.SetWhereClause(whereClause);
     tmpPredicates.SetWhereArgs(whereArgs);
     tmpPredicates.SetOrder(order);
-    tmpPredicates.SetSettingMode(static_cast<DataShare::SettingMode>(mode));
+    tmpPredicates.SetSettingMode(mode);
     predicates = tmpPredicates;
     return true;
 }

@@ -35,7 +35,7 @@ void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
     const auto want = event.GetWant();
     AccountEventInfo accountEventInfo {};
     std::string action = want.GetAction();
-    ZLOGI("Want Action is %s", action.c_str());
+    ZLOGI("Want Action is %{public}s", action.c_str());
 
     if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
         accountEventInfo.status = AccountStatus::DEVICE_ACCOUNT_DELETE;

@@ -209,7 +209,7 @@ void DeviceManagerAdapter::NotifyReadyEvent(const std::string &uuid)
 std::vector<const AppDeviceChangeListener *> DeviceManagerAdapter::GetObservers()
 {
     std::vector<const AppDeviceChangeListener *> observers;
-    observers.resize(observers_.Size());
+    observers.reserve(observers_.Size());
     observers_.ForEach([&observers](const auto &key, auto &value) {
         observers.emplace_back(value);
         return false;
@@ -279,6 +279,7 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
     auto uuid = GetUuidByNetworkId(networkId);
     auto udid = GetUdidByNetworkId(networkId);
     if (uuid.empty() || udid.empty()) {
+        ZLOGW("uuid or udid empty");
         return false;
     }
     dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId };
