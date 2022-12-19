@@ -279,6 +279,7 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
     auto uuid = GetUuidByNetworkId(networkId);
     auto udid = GetUdidByNetworkId(networkId);
     if (uuid.empty() || udid.empty()) {
+        ZLOGW("uuid or udid empty");
         return false;
     }
     dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId };
