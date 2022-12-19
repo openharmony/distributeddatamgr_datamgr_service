@@ -44,8 +44,6 @@ private:
     void OnProxyDied();
     std::mutex mutex_;
     sptr<AppExecFwk::BundleMgrProxy> proxy_;
-    sptr<IRemoteObject> remoteObject_;
-    sptr<BundleMgrProxy::ServiceDeathRecipient> deathRecipient_;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H
