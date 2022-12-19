@@ -18,57 +18,18 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "bundle_info.h"
-#include "bundlemgr/bundle_mgr_proxy.h"
+#include "bundle_mgr_proxy.h"
 #include "device_manager_adapter.h"
-#include "if_system_ability_manager.h"
-#include "iservice_registry.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "system_ability_definition.h"
 
 namespace OHOS::DataShare {
-static sptr<AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
-{
-    sptr<ISystemAbilityManager> systemAbilityManager =
-        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (systemAbilityManager == nullptr) {
-        ZLOGE("Failed to get system ability mgr.");
-        return nullptr;
-    }
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (remoteObject == nullptr) {
-        ZLOGE("Failed to get bundle manager proxy.");
-        return nullptr;
-    }
-
-    ZLOGD("Get bundle manager proxy success.");
-    return iface_cast<AppExecFwk::BundleMgrProxy>(remoteObject);
-}
-
-bool GetBundleInfoFromBMS(const std::string &bundleName, uint32_t tokenId,
-    AppExecFwk::BundleInfo &bundleInfo)
-{
-    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    auto bmsClient = GetBundleMgrProxy();
-    if (!bmsClient) {
-        ZLOGE("GetBundleMgrProxy is nullptr!");
-        return false;
-    }
-    bool ret = bmsClient->GetBundleInfo(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo,
-                                        userId);
-    if (!ret) {
-        ZLOGE("GetBundleInfo failed!");
-        return false;
-    }
-    return true;
-}
 
 bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32_t tokenId, std::string &permission)
 {
     AppExecFwk::BundleInfo bundleInfo;
-    if (!GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
+    if (!BundleMgrProxy::GetInstance().GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
     }
@@ -94,7 +55,7 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
 bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_t tokenId, std::string &permission)
 {
     AppExecFwk::BundleInfo bundleInfo;
-    if (!GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
+    if (!BundleMgrProxy::GetInstance().GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
     }

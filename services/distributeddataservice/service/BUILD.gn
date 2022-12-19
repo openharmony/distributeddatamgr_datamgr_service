@@ -73,6 +73,7 @@ ohos_shared_library("distributeddatasvc") {
     "data_share/permission_proxy.cpp",
     "data_share/rdb_adaptor.cpp",
     "data_share/uri_utils.cpp",
+    "data_share/bundle_mgr_proxy.cpp",
     "directory/src/directory_manager.cpp",
     "kvdb/auth_delegate.cpp",
     "kvdb/executor_factory.cpp",
