@@ -99,6 +99,8 @@ void BackupManager::BackSchedule()
         if (!CanBackup()) {
             return;
         }
+
+        ZLOGI("start automatic backup.");
         std::vector<StoreMetaData> metas;
         MetaDataManager::GetInstance().LoadMeta(
             StoreMetaData::GetPrefix({DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid}), metas);

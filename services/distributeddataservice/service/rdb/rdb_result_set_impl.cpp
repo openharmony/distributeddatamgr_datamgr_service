@@ -33,7 +33,7 @@ int RdbResultSetImpl::GetAllColumnNames(std::vector<std::string> &columnNames)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     resultSet_->GetColumnNames(columnNames);
@@ -49,13 +49,13 @@ int RdbResultSetImpl::GetColumnType(int columnIndex, ColumnType &columnType)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     DbColumnType dbColumnType;
     DBStatus status = resultSet_->GetColumnType(columnIndex, dbColumnType);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d",
+        ZLOGE("failed, status is %{public}d, columnIndex is %{public}d",
             status, columnIndex);
         return NativeRdb::E_ERROR;
     }
@@ -67,12 +67,12 @@ int RdbResultSetImpl::GetColumnIndex(const std::string &columnName, int &columnI
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     DBStatus status = resultSet_->GetColumnIndex(columnName, columnIndex);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d. columnName is %{public}s.",
+        ZLOGE("failed, status is %{public}d. columnName is %{public}s.",
             status, columnName.c_str());
         return NativeRdb::E_ERROR;
     }
@@ -83,12 +83,12 @@ int RdbResultSetImpl::GetColumnName(int columnIndex, std::string &columnName)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     DBStatus status = resultSet_->GetColumnName(columnIndex, columnName);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+        ZLOGE("failed, status is %{public}d, columnIndex is %{public}d.",
             status, columnIndex);
         return NativeRdb::E_ERROR;
     }
@@ -99,7 +99,7 @@ int RdbResultSetImpl::GetRowCount(int &count)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     count = resultSet_->GetCount();
@@ -110,7 +110,7 @@ int RdbResultSetImpl::GetRowIndex(int &position) const
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     position = resultSet_->GetPosition();
@@ -121,11 +121,11 @@ int RdbResultSetImpl::GoTo(int offset)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     if (!resultSet_->Move(offset)) {
-        ZLOGE("DistributedDB resultSet operate failed, offset is %{public}d.", offset);
+        ZLOGE("failed, offset is %{public}d.", offset);
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -135,11 +135,11 @@ int RdbResultSetImpl::GoToRow(int position)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     if (!resultSet_->MoveToPosition(position)) {
-        ZLOGE("DistributedDB resultSet operate failed, position is %{public}d.", position);
+        ZLOGE("failed, position is %{public}d.", position);
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -149,11 +149,11 @@ int RdbResultSetImpl::GoToFirstRow()
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     if (!resultSet_->MoveToFirst()) {
-        ZLOGE("DistributedDB resultSet operate failed.");
+        ZLOGE("resultSet is empty.");
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -163,11 +163,11 @@ int RdbResultSetImpl::GoToLastRow()
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     if (!resultSet_->MoveToLast()) {
-        ZLOGE("DistributedDB resultSet operate failed.");
+        ZLOGE("resultSet is empty.");
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -177,11 +177,11 @@ int RdbResultSetImpl::GoToNextRow()
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     if (!resultSet_->MoveToNext()) {
-        ZLOGE("DistributedDB resultSet operate failed.");
+        ZLOGE("resultSet is empty.");
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -191,11 +191,11 @@ int RdbResultSetImpl::GoToPreviousRow()
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     if (!resultSet_->MoveToPrevious()) {
-        ZLOGE("DistributedDB resultSet operate failed.");
+        ZLOGE("resultSet is empty.");
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -205,7 +205,7 @@ int RdbResultSetImpl::IsEnded(bool &result)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     result = resultSet_->IsAfterLast();
@@ -216,7 +216,7 @@ int RdbResultSetImpl::IsStarted(bool &result) const
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     result = resultSet_->IsBeforeFirst();
@@ -227,7 +227,7 @@ int RdbResultSetImpl::IsAtFirstRow(bool &result) const
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     result = resultSet_->IsFirst();
@@ -238,7 +238,7 @@ int RdbResultSetImpl::IsAtLastRow(bool &result)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     result = resultSet_->IsLast();
@@ -249,12 +249,12 @@ int RdbResultSetImpl::GetBlob(int columnIndex, std::vector<uint8_t> &blob)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     DBStatus status = resultSet_->Get(columnIndex, blob);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+        ZLOGE("failed, status is %{public}d, columnIndex is %{public}d.",
             status, columnIndex);
         return NativeRdb::E_ERROR;
     }
@@ -265,12 +265,12 @@ int RdbResultSetImpl::GetString(int columnIndex, std::string &value)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     DBStatus status = resultSet_->Get(columnIndex, value);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+        ZLOGE("failed, status is %{public}d, columnIndex is %{public}d.",
             status, columnIndex);
         return NativeRdb::E_ERROR;
     }
@@ -295,12 +295,12 @@ int RdbResultSetImpl::GetLong(int columnIndex, int64_t &value)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     DBStatus status = resultSet_->Get(columnIndex, value);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+        ZLOGE("failed, status is %{public}d, columnIndex is %{public}d.",
             status, columnIndex);
         return NativeRdb::E_ERROR;
     }
@@ -311,12 +311,12 @@ int RdbResultSetImpl::GetDouble(int columnIndex, double &value)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     DBStatus status = resultSet_->Get(columnIndex, value);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+        ZLOGE("failed, status is %{public}d, columnIndex is %{public}d.",
             status, columnIndex);
         return NativeRdb::E_ERROR;
     }
@@ -327,12 +327,12 @@ int RdbResultSetImpl::IsColumnNull(int columnIndex, bool &isNull)
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGE("DistributedDB resultSet is null.");
+        ZLOGE("resultSet already closed.");
         return NativeRdb::E_ERROR;
     }
     DBStatus status = resultSet_->IsColumnNull(columnIndex, isNull);
     if (status != DBStatus::OK) {
-        ZLOGE("DistributedDB resultSet operate failed, status is %{public}d, columnIndex is %{public}d.",
+        ZLOGE("failed, status is %{public}d, columnIndex is %{public}d.",
             status, columnIndex);
         return NativeRdb::E_ERROR;
     }
@@ -343,7 +343,7 @@ bool RdbResultSetImpl::IsClosed() const
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (resultSet_ == nullptr) {
-        ZLOGW("DistributedDB resultSet is null.");
+        ZLOGW("resultSet already closed.");
         return true;
     }
     return resultSet_->IsClosed();
