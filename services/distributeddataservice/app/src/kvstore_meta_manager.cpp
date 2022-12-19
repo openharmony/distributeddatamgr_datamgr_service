@@ -188,7 +188,7 @@ void KvStoreMetaManager::InitMetaParameter()
                 break;
             }
             ++retry;
-            ZLOGW("GenerateRootKey failed, retry times:%{public}d.", retry);
+            ZLOGW("GenerateRootKey failed, retry times:%{public}d.", static_cast<int>(retry));
         }
     });
     th.detach();
