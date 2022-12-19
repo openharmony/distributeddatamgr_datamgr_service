@@ -181,7 +181,7 @@ int RdbResultSetImpl::GoToNextRow()
         return NativeRdb::E_ERROR;
     }
     if (!resultSet_->MoveToNext()) {
-        ZLOGE("resultSet is empty.");
+        ZLOGE("resultSet is empty or already past the last entry");
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
@@ -195,7 +195,7 @@ int RdbResultSetImpl::GoToPreviousRow()
         return NativeRdb::E_ERROR;
     }
     if (!resultSet_->MoveToPrevious()) {
-        ZLOGE("resultSet is empty.");
+        ZLOGE("resultSet is empty or already before the first entry");
         return NativeRdb::E_ERROR;
     }
     return NativeRdb::E_OK;
