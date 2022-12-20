@@ -104,7 +104,7 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
     auto key = data.GetKey();
     if (!metaDataBucket_.Get(key, data)) {
         if (!MetaDataManager::GetInstance().LoadMeta(key, data)) {
-            ZLOGE("load meta fail");
+            ZLOGE("load meta failed.");
             return false;
         }
         metaDataBucket_.Set(data.GetKey(), data);
@@ -115,7 +115,7 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
     }
     auto status = VerifyStrategy(data, param.deviceId);
     if (status != Status::SUCCESS) {
-        ZLOGE("verify strategy fail, status:%d.", status);
+        ZLOGE("verify strategy failed.");
         return false;
     }
     return PermissionValidator::GetInstance().CheckSyncPermission(data.tokenId);

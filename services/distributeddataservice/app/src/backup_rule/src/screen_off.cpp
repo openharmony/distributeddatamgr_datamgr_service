@@ -31,7 +31,7 @@ bool ScreenOff::CanBackup()
 {
     auto &powerMgrClient = PowerMgr::PowerMgrClient::GetInstance();
     if (powerMgrClient.IsScreenOn()) {
-        ZLOGE("the device screen is on.");
+        ZLOGD("the device screen is on.");
         return false;
     }
     return true;

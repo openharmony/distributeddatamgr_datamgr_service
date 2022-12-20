@@ -167,6 +167,8 @@ bool MetaDataManager::GetEntries(const std::string &prefix, std::vector<Bytes> &
     auto status = isLocal ? metaStore_->GetLocalEntries({ prefix.begin(), prefix.end() }, dbEntries)
                           : metaStore_->GetEntries({ prefix.begin(), prefix.end() }, dbEntries);
     if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::NOT_FOUND) {
+        ZLOGE("failed! prefix:%{public}s status:%{public}d isLocal:%{public}d", Anonymous::Change(prefix).c_str(),
+            status, isLocal);
         return false;
     }
     entries.resize(dbEntries.size());

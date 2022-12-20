@@ -140,7 +140,7 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
     ZLOGD("begin.");
     KVSTORE_ACCOUNT_EVENT_PROCESSING_CHECKER(Status::SYSTEM_ACCOUNT_EVENT_PROCESSING);
     if (!appId.IsValid()) {
-        ZLOGE("invalid bundleName.");
+        ZLOGE("invalid bundleName, name:%{public}s", appId.appId.c_str());
         return Status::INVALID_ARGUMENT;
     }
 
@@ -220,7 +220,7 @@ void KvStoreDataService::OnStart()
         if (!DmAdapter::GetInstance().GetLocalDevice().uuid.empty()) {
             break;
         }
-        ZLOGE("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
+        ZLOGW("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
     }
     ZLOGI("Bootstrap configs and plugins.");
     Bootstrap::GetInstance().LoadComponents();
@@ -245,7 +245,7 @@ void KvStoreDataService::OnStart()
 
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
-    ZLOGI("add system abilityId:%{public}d", systemAbilityId);
+    ZLOGI("add system abilityid:%{public}d", systemAbilityId);
     (void)deviceId;
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;
@@ -256,7 +256,7 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
 
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
-    ZLOGI("remove system abilityId:%{public}d", systemAbilityId);
+    ZLOGI("remove system abilityid:%{public}d", systemAbilityId);
     (void)deviceId;
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;

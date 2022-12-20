@@ -45,7 +45,7 @@ int32_t DataShareServiceStub::OnRemoteInsert(MessageParcel &data, MessageParcel 
     }
     int32_t status = Insert(uri, bucket);
     if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("OnRemoteInsert fail %d", static_cast<int>(status));
+        ZLOGE("OnRemoteInsert fail %{public}d", static_cast<int>(status));
         return -1;
     }
     return 0;

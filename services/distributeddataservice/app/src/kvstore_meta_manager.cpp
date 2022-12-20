@@ -124,7 +124,7 @@ void KvStoreMetaManager::InitDeviceOnline()
             if (status == OK) {
                 return;
             }
-            ZLOGW("meta db sync error %d.", status);
+            ZLOGW("meta db sync error %{public}d.", status);
         }
 
         auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
@@ -188,7 +188,7 @@ void KvStoreMetaManager::InitMetaParameter()
                 break;
             }
             ++retry;
-            ZLOGE("GenerateRootKey failed.");
+            ZLOGW("GenerateRootKey failed, retry times:%{public}d.", static_cast<int>(retry));
         }
     });
     th.detach();
@@ -308,7 +308,7 @@ void KvStoreMetaManager::SyncMeta()
     };
     auto dbStatus = metaDelegate->Sync(devs, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
     if (dbStatus != DistributedDB::OK) {
-        ZLOGW("meta db sync error %d.", dbStatus);
+        ZLOGW("meta db sync failed, error is %{public}d.", dbStatus);
     }
 }
 

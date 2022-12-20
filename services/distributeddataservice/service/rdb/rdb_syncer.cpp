@@ -209,7 +209,7 @@ bool RdbSyncer::GetPassword(const StoreMetaData &metaData, DistributedDB::Cipher
     CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
     if (password.SetValue(decryptKey.data(), decryptKey.size()) != DistributedDB::CipherPassword::OK) {
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
-        ZLOGE("Set secret key value failed. len is (%d)", int32_t(decryptKey.size()));
+        ZLOGE("Set secret key value failed. len is (%{public}d)", int32_t(decryptKey.size()));
         return false;
     }
     std::fill(decryptKey.begin(), decryptKey.end(), 0);
@@ -250,7 +250,8 @@ int32_t RdbSyncer::InitDBDelegate(const StoreMetaData &meta)
         ZLOGI("path=%{public}s storeId=%{public}s", fileName.c_str(), meta.storeId.c_str());
         auto status = manager_->OpenStore(fileName, meta.storeId, option, delegate_);
         if (status != DistributedDB::DBStatus::OK) {
-            ZLOGE("open store failed status=%{public}d", status);
+            ZLOGE("open store failed, path=%{public}s storeId=%{public}s status=%{public}d",
+                fileName.c_str(), meta.storeId.c_str(), status);
             return RDB_ERROR;
         }
         ZLOGI("open store success");
@@ -292,12 +293,13 @@ int32_t RdbSyncer::SetDistributedTables(const std::vector<std::string> &tables)
 
     for (const auto& table : tables) {
         ZLOGI("%{public}s", table.c_str());
-        if (delegate->CreateDistributedTable(table) != DistributedDB::DBStatus::OK) {
-            ZLOGE("create distributed table failed");
+        auto dBStatus = delegate->CreateDistributedTable(table);
+        if (dBStatus != DistributedDB::DBStatus::OK) {
+            ZLOGE("create distributed table failed, table:%{public}s, err:%{public}d", table.c_str(), dBStatus);
             return RDB_ERROR;
         }
     }
-    ZLOGE("create distributed table success");
+    ZLOGI("create distributed table success");
     return RDB_OK;
 }
 

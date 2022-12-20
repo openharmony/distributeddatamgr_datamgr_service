@@ -426,7 +426,7 @@ int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
 
     StoreMetaData meta;
     if (syncer->DestroyMetaData(meta) != RDB_OK) {
-        ZLOGE("Init error");
+        ZLOGE("destroy meta data error");
         delete syncer;
         return RDB_ERROR;
     }

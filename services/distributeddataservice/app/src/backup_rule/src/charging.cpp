@@ -33,14 +33,14 @@ bool Charging::CanBackup()
     auto chargingStatus = batterySrvClient.GetChargingStatus();
     if (chargingStatus != PowerMgr::BatteryChargeState::CHARGE_STATE_ENABLE) {
         if (chargingStatus != PowerMgr::BatteryChargeState::CHARGE_STATE_FULL) {
-            ZLOGE("the device is not in charge state, chargingStatus=%{public}d.", chargingStatus);
+            ZLOGD("the device is not in charge state, chargingStatus=%{public}d.", chargingStatus);
             return false;
         }
         auto batteryPluggedType = batterySrvClient.GetPluggedType();
         if (batteryPluggedType != PowerMgr::BatteryPluggedType::PLUGGED_TYPE_AC &&
             batteryPluggedType != PowerMgr::BatteryPluggedType::PLUGGED_TYPE_USB &&
             batteryPluggedType != PowerMgr::BatteryPluggedType::PLUGGED_TYPE_WIRELESS) {
-            ZLOGE("the device is not in charge full statue, the batteryPluggedType is %{public}d.", batteryPluggedType);
+            ZLOGD("the device is not in charge full statue, the batteryPluggedType is %{public}d.", batteryPluggedType);
             return false;
         }
     }

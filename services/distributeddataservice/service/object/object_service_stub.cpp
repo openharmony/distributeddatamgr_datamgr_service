@@ -42,7 +42,7 @@ int32_t ObjectServiceStub::ObjectStoreSaveOnRemote(MessageParcel &data, MessageP
     sptr<IObjectSaveCallback> callback = iface_cast<IObjectSaveCallback>(obj);
     int32_t status = ObjectStoreSave(bundleName, sessionId, deviceId, objectData, callback);
     if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("ObjectStoreSaveOnRemote fail %d", static_cast<int>(status));
+        ZLOGE("ObjectStoreSaveOnRemote fail %{public}d", static_cast<int>(status));
         return -1;
     }
     return 0;
@@ -64,7 +64,7 @@ int32_t ObjectServiceStub::ObjectStoreRevokeSaveOnRemote(MessageParcel &data, Me
     sptr<IObjectRevokeSaveCallback> callback = iface_cast<IObjectRevokeSaveCallback>(obj);
     int32_t status = ObjectStoreRevokeSave(bundleName, sessionId, callback);
     if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("ObjectStoreRevokeSaveOnRemote fail %d", static_cast<int>(status));
+        ZLOGE("ObjectStoreRevokeSaveOnRemote fail %{public}d", static_cast<int>(status));
         return -1;
     }
     return 0;
@@ -86,7 +86,7 @@ int32_t ObjectServiceStub::ObjectStoreRetrieveOnRemote(MessageParcel &data, Mess
     sptr<IObjectRetrieveCallback> callback = iface_cast<IObjectRetrieveCallback>(obj);
     int32_t status = ObjectStoreRetrieve(bundleName, sessionId, callback);
     if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("ObjectStoreRetrieveOnRemote fail %d", static_cast<int>(status));
+        ZLOGE("ObjectStoreRetrieveOnRemote fail %{public}d", static_cast<int>(status));
         return -1;
     }
     return 0;
@@ -108,7 +108,7 @@ int32_t ObjectServiceStub::OnSubscribeRequest(MessageParcel &data, MessageParcel
     sptr<IObjectChangeCallback> callback = iface_cast<IObjectChangeCallback>(obj);
     int32_t status = RegisterDataObserver(bundleName, sessionId, callback);
     if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("OnSubscribeRequest fail %d", static_cast<int>(status));
+        ZLOGE("OnSubscribeRequest fail %{public}d", static_cast<int>(status));
         return -1;
     }
     return 0;
@@ -124,7 +124,7 @@ int32_t ObjectServiceStub::OnUnsubscribeRequest(MessageParcel &data, MessageParc
     }
     int32_t status = UnregisterDataChangeObserver(bundleName, sessionId);
     if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("OnSubscribeRequest fail %d", static_cast<int>(status));
+        ZLOGE("OnSubscribeRequest fail %{public}d", static_cast<int>(status));
         return -1;
     }
     return 0;
