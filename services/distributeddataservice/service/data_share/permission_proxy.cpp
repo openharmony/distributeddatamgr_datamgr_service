@@ -25,7 +25,6 @@
 #include "metadata/meta_data_manager.h"
 
 namespace OHOS::DataShare {
-
 bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32_t tokenId, std::string &permission)
 {
     AppExecFwk::BundleInfo bundleInfo;

@@ -20,6 +20,7 @@
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "system_ability_definition.h"
+
 namespace OHOS::DataShare {
 sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
 {

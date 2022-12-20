@@ -20,7 +20,6 @@
 
 #include "bundlemgr/bundle_mgr_proxy.h"
 namespace OHOS::DataShare {
-
 class BundleMgrProxy {
 public:
     virtual ~BundleMgrProxy();
