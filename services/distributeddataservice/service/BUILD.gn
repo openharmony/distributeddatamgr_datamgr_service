@@ -92,13 +92,13 @@ ohos_shared_library("distributeddatasvc") {
     "object/object_service_impl.cpp",
     "object/object_service_stub.cpp",
     "permission/src/permit_delegate.cpp",
+    "rdb/rdb_notifier_proxy.cpp",
     "rdb/rdb_result_set_impl.cpp",
     "rdb/rdb_result_set_stub.cpp",
     "rdb/rdb_service_impl.cpp",
     "rdb/rdb_service_stub.cpp",
     "rdb/rdb_store_observer_impl.cpp",
     "rdb/rdb_syncer.cpp",
-    "rdb/rdb_notifier_proxy.cpp",
   ]
   cflags = [ "-Wno-multichar" ]
 

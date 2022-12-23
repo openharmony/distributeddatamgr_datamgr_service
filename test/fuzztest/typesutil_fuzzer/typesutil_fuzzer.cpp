@@ -159,7 +159,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
     bool fuzzBool = ((size % 2) == 0);
-    int32_t fuzzInt32 = static_cast<int32_t>(size);
     uint32_t fuzzUInt32 = static_cast<uint32_t>(size);
     std::string fuzzStr(reinterpret_cast<const char *>(data), size);
     std::vector<uint8_t> fuzzVec(fuzzStr.begin(), fuzzStr.end());
