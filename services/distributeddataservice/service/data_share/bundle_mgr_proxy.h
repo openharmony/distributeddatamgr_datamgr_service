@@ -22,8 +22,6 @@
 namespace OHOS::DataShare {
 class BundleMgrProxy {
 public:
-    virtual ~BundleMgrProxy();
-    static BundleMgrProxy &GetInstance();
     bool GetBundleInfoFromBMS(const std::string &bundleName, uint32_t tokenId, AppExecFwk::BundleInfo &bundleInfo);
 
 private:

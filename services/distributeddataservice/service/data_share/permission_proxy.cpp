@@ -25,10 +25,11 @@
 #include "metadata/meta_data_manager.h"
 
 namespace OHOS::DataShare {
+BundleMgrProxy PermissionProxy::bmsProxy_;
 bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32_t tokenId, std::string &permission)
 {
     AppExecFwk::BundleInfo bundleInfo;
-    if (!BundleMgrProxy::GetInstance().GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
+    if (!bmsProxy_.GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
     }
@@ -54,7 +55,7 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
 bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_t tokenId, std::string &permission)
 {
     AppExecFwk::BundleInfo bundleInfo;
-    if (!BundleMgrProxy::GetInstance().GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
+    if (!bmsProxy_.GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
     }

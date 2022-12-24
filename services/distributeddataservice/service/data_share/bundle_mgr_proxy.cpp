@@ -66,16 +66,6 @@ bool BundleMgrProxy::GetBundleInfoFromBMS(
     return true;
 }
 
-BundleMgrProxy &BundleMgrProxy::GetInstance()
-{
-    static BundleMgrProxy proxy;
-    return proxy;
-}
-
-BundleMgrProxy::~BundleMgrProxy()
-{
-}
-
 void BundleMgrProxy::OnProxyDied()
 {
     std::lock_guard<std::mutex> lock(mutex_);
