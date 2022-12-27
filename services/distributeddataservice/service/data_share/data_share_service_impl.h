@@ -46,8 +46,11 @@ private:
 
     bool NotifyChange(const std::string &uri);
     bool CheckPermisson(const UriInfo &uriInfo, PermissionType permissionType);
+    bool CheckCrossUserMode(int crossUserMode, UriInfo &uriInfo, int32_t userId);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
+    static constexpr int32_t USERMODE_SHARED = 1;
+    static constexpr int32_t USERMODE_UNIQUE = 2;
 };
 } // namespace OHOS::DataShare
 #endif
