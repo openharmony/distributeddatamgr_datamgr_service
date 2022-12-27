@@ -67,6 +67,7 @@ ohos_shared_library("distributeddatasvc") {
     "config/src/model/network_config.cpp",
     "config/src/model/protocol_config.cpp",
     "crypto/src/crypto_manager.cpp",
+    "data_share/bundle_mgr_proxy.cpp",
     "data_share/data_share_service_impl.cpp",
     "data_share/data_share_service_stub.cpp",
     "data_share/data_share_types_util.cpp",
