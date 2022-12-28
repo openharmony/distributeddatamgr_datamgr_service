@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "bundle_mgr_proxy.h"
 #include "metadata/store_meta_data.h"
 
 namespace OHOS::DataShare {
@@ -31,6 +32,7 @@ public:
 private:
     static void FillData(DistributedData::StoreMetaData &data, int32_t userId);
     static inline bool IsSingleAllowProvider(const std::string &bundleName, const std::string &storeName);
+    static BundleMgrProxy bmsProxy_;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_PERMISSION_PROXY_H
