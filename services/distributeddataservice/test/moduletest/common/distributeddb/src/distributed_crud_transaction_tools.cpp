@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef OMIT_MULTI_VER
 #include "distributed_crud_transaction_tools.h"
 #include <gtest/gtest.h>
 #include <dirent.h>
@@ -199,8 +200,8 @@ void SleepOneSecond()
     std::this_thread::sleep_for(std::chrono::duration<int>(1));
 }
 
-bool DeleteDataBase(bool success_, KvStoreDelegate *delegate1, KvStoreDelegate *delegate2,
-    KvStoreDelegateManager *delegateManager1, KvStoreDelegateManager *delegateManager2)
+bool DeleteDataBase(bool success_, KvStoreDelegate *&delegate1, KvStoreDelegate *&delegate2,
+    KvStoreDelegateManager *&delegateManager1, KvStoreDelegateManager *&delegateManager2)
 {
     SleepOneSecond();
     if ((delegateManager1->CloseKvStore(delegate1) != OK) ||
@@ -272,3 +273,4 @@ ERROR:
     secondComplete_ = true;
     return false;
 }
+#endif // OMIT_MULTI_VER

@@ -500,7 +500,7 @@ const std::vector<uint8_t> PASSWD_VECTOR_2 = {'P', 'a', 's', 's', 'w', 'o', 'r',
 const std::vector<uint8_t> FILE_PASSWD_VECTOR_1 = {'F', 'i', 'l', 'e', 'p', 'a', 's', 's', 'w', 'd', '1'};
 const std::vector<uint8_t> FILE_PASSWD_VECTOR_2 = {'F', 'i', 'l', 'e', 'p', 'a', 's', 's', 'w', 'd', '2'};
 
-void GenerateRecord(unsigned int keyNo, DistributedDB::Entry &entry, std::vector<uint8_t> keyPrifix = { 'k' });
+void GenerateRecord(unsigned int keyNo, DistributedDB::Entry &entry, const std::vector<uint8_t> keyPrifix = { 'k' });
 
 void GenerateCharSet(std::vector<uint8_t> &charSet);
 
@@ -510,11 +510,11 @@ void GenerateSpecialCharSet(std::vector<uint8_t> &charSet);
 
 void GenerateFixedLenRandString(unsigned int neededLen, RandType randType, std::string &genString);
 
-void GenerateRandRecord(DistributedDB::Entry &entry, EntrySize &entrySize, unsigned int keyNo);
+void GenerateRandRecord(DistributedDB::Entry &entry, const EntrySize &entrySize, unsigned int keyNo);
 
 void GenerateRecords(unsigned int recordNum, unsigned int start,
     std::vector<DistributedDB::Key> &allKeys, std::vector<DistributedDB::Entry> &entriesBatch,
-    std::vector<uint8_t> keyPrifix = { 'k' });
+    const std::vector<uint8_t> keyPrifix = { 'k' });
 void GenerateMaxBigRecord(unsigned int keyNo, DistributedDB::Entry &entry,
     const std::vector<uint8_t> &keyPrefix, unsigned int num);
 bool GenerateMaxBigRecords(unsigned int recordNum, unsigned int start,
@@ -538,7 +538,7 @@ void GenerateFixedRecords(std::vector<DistributedDB::Entry> &entries, std::vecto
 void GenerateOneRecordForImage(int entryNo, const EntrySize &entrySize,
     const std::vector<uint8_t> &keyPrefix, const std::vector<uint8_t> &val, DistributedDB::Entry &entry);
 void GenerateRecordsForImage(std::vector<DistributedDB::Entry> &entries, EntrySize &entrySize,
-    int num, std::vector<uint8_t> keyPrefix = {'k'}, std::vector<uint8_t> val = {'v'});
+    int num, const std::vector<uint8_t> keyPrefix = {'k'}, const std::vector<uint8_t> val = {'v'});
 
 void GenerateAppointPrefixAndSizeRecord(int recordNo, const EntrySize &entrySize,
     const std::vector<uint8_t> &keyPrefix, const std::vector<uint8_t> &valPrefix, DistributedDB::Entry &entry);
@@ -557,7 +557,7 @@ std::vector<DistributedDB::Entry> GenerateFixedLenRandRecords(std::vector<Distri
     const std::vector<uint8_t> &valPrefix = {'v'});
 
 const std::string GetDbType(const int type);
-void GenerateRandomRecords(std::vector<DistributedDB::Entry> &entries, EntrySize &entrySize, int num);
+void GenerateRandomRecords(std::vector<DistributedDB::Entry> &entries, const EntrySize &entrySize, int num);
 void GetLongSchemaDefine(LongDefine &param, std::string &longDefine);
 const std::string SpliceToSchema(const std::string &version, const std::string &mode,
     const std::string &define, const std::string &index = "", const std::string &skipSize = "");

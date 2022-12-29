@@ -14,7 +14,7 @@
  */
 #ifndef DISTRIBUTED_DB_MODULE_CRUD_TRANSACTION_TOOLS_H
 #define DISTRIBUTED_DB_MODULE_CRUD_TRANSACTION_TOOLS_H
-
+#ifndef OMIT_MULTI_VER
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
 
@@ -60,5 +60,5 @@ private:
     bool secondComplete_ = false;
     bool success_ = true;
 };
-
+#endif // OMIT_MULTI_VER
 #endif // DISTRIBUTED_DB_MODULE_CRUD_TRANSACTION_TOOLS_H

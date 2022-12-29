@@ -98,8 +98,8 @@ Entry DistributedDBSchemaTestTools::GenerateFixedLenSchemaPerfRecord(
     val.back() = '}';
     size_t found = val.rfind("PerfTest");
     if (found != string::npos) {
-        string insert = "PerfTest";
         if (recordInfo.valueLength > val.length()) {
+            string insert = "PerfTest";
             insert += string(recordInfo.valueLength - val.length(), recordInfo.valueFilledChr);
             val.replace(found, strlen("PerfTest"), insert);
         } else {
@@ -319,7 +319,7 @@ void DistributedDBSchemaTestTools::GenerateSpecificSchemaEntries(const int start
         field5 = "\"field5\":" + indexNumStr;
         field7 = "\"field7\":" + indexNumStr;
         field8 = "\"field8\":" + indexNumStr + ".1234";
-        for (auto &iter : values) {
+        for (const auto &iter : values) {
             switchFactorStr = iter[INDEX_ZEROTH];
             switchFactor = switchFactorStr.back() - '0';
             switch (switchFactor) {

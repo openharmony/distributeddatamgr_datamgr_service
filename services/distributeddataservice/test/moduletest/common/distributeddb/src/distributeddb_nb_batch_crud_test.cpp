@@ -14,6 +14,8 @@
  */
 #include <gtest/gtest.h>
 #include <string>
+#include <thread>
+#include <vector>
 
 #include "distributeddb_nb_test_tools.h"
 #include "process_communicator_test_stub.h"
@@ -2469,4 +2471,58 @@ HWTEST_F(DistributeddbNbBatchCrudTest, TransactionObserver003, TestSize.Level1)
         EXPECT_TRUE(VerifyObserverResult(observers[cnt], CHANGED_ONE_TIME, DELETE_LIST, observerCheckList));
     }
 }
+
+/**
+ * @tc.name: GetKeysPressure 001
+ * @tc.desc: Concurrent GetEntries and GetKeys.
+ * @tc.type: FUNC
+ * @tc.require: SR000DORPP
+ * @tc.author: xuhongkang
+ */
+#ifdef GETKEYS_PRESSURE001
+HWTEST_F(DistributeddbNbBatchCrudTest, GetKeysPressure001, TestSize.Level3)
+{
+    DBStatus status, status1, status2;
+    std::vector<Key> allKeysKA, allKeysKB, expectKeyResult;
+    std::vector<Entry> entriesA, entriesB, entriesBatch;
+    DistributedDB::Value longValue1;
+    DistributedDB::Key ka = {'k', 'a'};
+    DistributedDB::Key kb = {'k', 'b'};
+    longValue1.assign(ONE_K_LONG_STRING, (uint8_t)'v');
+    GenerateRecords(TEN_THOUSAND_RECORDS, DEFAULT_START, allKeysKA, entriesA, ka);
+    GenerateRecords(FIVE_THOUSANDS_RECORDS, DEFAULT_START, allKeysKB, entriesB, kb);
+
+    entriesBatch.insert(entriesBatch.end(), entriesA.begin(), entriesA.end());
+    entriesBatch.insert(entriesBatch.end(), entriesB.begin(), entriesB.end());
+    for (unsigned int index = 0; index < FIFTEEN_THOUSAND_RECORDS; index++)
+    {
+        if (index < TEN_THOUSAND_RECORDS) {
+            entriesA[index].value = longValue1;
+        }
+        entriesBatch[index].value = longValue1;
+        status = g_nbBatchCrudDelegate->Put(entriesBatch[index].key, entriesBatch[index].value);
+        EXPECT_EQ(status, OK);
+    }
+    std::vector<Key> keyResult;
+    std::vector<Entry> valueResult;
+    std::thread sub = std::thread([&status1, &ka, &valueResult]() {
+        status1 = DistributedDBNbTestTools::GetEntries(*g_nbBatchCrudDelegate, ka, valueResult);
+    });
+    status2 = DistributedDBNbTestTools::GetKeys(*g_nbBatchCrudDelegate, KEY_EMPTY, keyResult);
+    sub.join();
+    EXPECT_EQ(status1, OK);
+    EXPECT_EQ(status2, OK);
+    expectKeyResult.insert(expectKeyResult.end(), allKeysKA.begin(), allKeysKA.end());
+    expectKeyResult.insert(expectKeyResult.end(), allKeysKB.begin(), allKeysKB.end());
+    sort(keyResult.begin(), keyResult.end());
+    sort(expectKeyResult.begin(), expectKeyResult.end());
+    for (unsigned int index = 0; index < FIFTEEN_THOUSAND_RECORDS; index++) {
+        string actResult(keyResult[index].begin(), keyResult[index].end());
+        string expectResult(expectKeyResult[index].begin(), expectKeyResult[index].end());
+        bool result = (actResult == expectResult);
+        EXPECT_EQ(result, true);
+    }
+    EXPECT_TRUE(CompareEntriesVector(valueResult, entriesA));
+}
+#endif // GETKEYS_PRESSURE001
 }

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef OMIT_MULTI_VER
 #include <gtest/gtest.h>
 #include <ctime>
 #include <cmath>
@@ -1995,3 +1996,4 @@ HWTEST_F(DistributeddbKvTransactionTest, BasicActionAcid008, TestSize.Level2)
     }
 }
 }
+#endif // OMIT_MULTI_VER
