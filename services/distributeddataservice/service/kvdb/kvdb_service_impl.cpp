@@ -350,6 +350,37 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
     return (BackupManager::GetInstance().GetPassWord(metaData, password)) ? SUCCESS : ERROR;
 }
 
+Status KVDBServiceImpl::GetLocalDevice(DeviceInfo &dvInfo)
+{
+    auto info = DMAdapter::GetInstance().GetLocalDevice();
+    if (info.uuid.empty()) {
+        return ERROR;
+    }
+    dvInfo.deviceId = std::move(info.networkId);
+    dvInfo.deviceUuid = std::move(info.uuid);
+    dvInfo.deviceName = std::move(info.deviceName);
+    dvInfo.deviceType = std::to_string(info.deviceType);
+    return SUCCESS;
+}
+
+Status KVDBServiceImpl::GetRemoteDevices(std::vector<DeviceInfo> &dvInfos)
+{
+    auto infos = DMAdapter::GetInstance().GetRemoteDevices();
+    if (infos.empty()) {
+        return ERROR;
+    }
+    dvInfos.reserve(infos.size());
+    for (const auto &val : infos) {
+        DeviceInfo dvInfo;
+        dvInfo.deviceId = std::move(val.networkId);
+        dvInfo.deviceUuid = std::move(val.uuid);
+        dvInfo.deviceName = std::move(val.deviceName);
+        dvInfo.deviceType = std::to_string(val.deviceType);
+        dvInfos.emplace_back(dvInfo);
+    }
+    return SUCCESS;
+}
+
 Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options)
 {
     ZLOGD("appId:%{public}s storeId:%{public}s to export data", appId.appId.c_str(), storeId.storeId.c_str());

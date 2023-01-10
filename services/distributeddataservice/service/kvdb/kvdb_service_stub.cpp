@@ -40,6 +40,8 @@ const KVDBServiceStub::Handler KVDBServiceStub::HANDLERS[TRANS_BUTT] = {
     &KVDBServiceStub::OnSubscribe,
     &KVDBServiceStub::OnUnsubscribe,
     &KVDBServiceStub::OnGetBackupPassword,
+    &KVDBServiceStub::OnGetLocalDevice,
+    &KVDBServiceStub::OnGetRemoteDevices,
 };
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
@@ -216,6 +218,30 @@ int32_t KVDBServiceStub::OnGetSyncParam(
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             storeId.storeId.c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnGetLocalDevice(
+    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+{
+    DeviceInfo info;
+    int32_t status = GetLocalDevice(info);
+    if (!ITypesUtil::Marshal(reply, status, info)) {
+        ZLOGE("Marshal status:0x%{public}d", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnGetRemoteDevices(
+    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<DeviceInfo> infos;
+    int32_t status = GetRemoteDevices(infos);
+    if (!ITypesUtil::Marshal(reply, status, infos)) {
+      ZLOGE("Marshal status:0x%{public}d", status);
+      return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
 }
