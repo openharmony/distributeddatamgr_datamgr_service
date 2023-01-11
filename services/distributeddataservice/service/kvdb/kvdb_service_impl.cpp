@@ -350,20 +350,18 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
     return (BackupManager::GetInstance().GetPassWord(metaData, password)) ? SUCCESS : ERROR;
 }
 
-Status KVDBServiceImpl::GetLocalDevice(DeviceInfo &dvInfo)
+Status KVDBServiceImpl::GetLocalDevice(std::pair<std::string, std::string> &dvInfo)
 {
     auto info = DMAdapter::GetInstance().GetLocalDevice();
     if (info.uuid.empty()) {
         return ERROR;
     }
-    dvInfo.deviceId = std::move(info.networkId);
-    dvInfo.deviceUuid = std::move(info.uuid);
-    dvInfo.deviceName = std::move(info.deviceName);
-    dvInfo.deviceType = std::to_string(info.deviceType);
+    dvInfo.first = std::move(info.networkId);
+    dvInfo.second = std::move(info.uuid);
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::GetRemoteDevices(std::vector<DeviceInfo> &dvInfos)
+Status KVDBServiceImpl::GetRemoteDevices(std::vector<std::pair<std::string, std::string>> &dvInfos)
 {
     auto infos = DMAdapter::GetInstance().GetRemoteDevices();
     if (infos.empty()) {
@@ -371,11 +369,9 @@ Status KVDBServiceImpl::GetRemoteDevices(std::vector<DeviceInfo> &dvInfos)
     }
     dvInfos.reserve(infos.size());
     for (const auto &val : infos) {
-        DeviceInfo dvInfo;
-        dvInfo.deviceId = std::move(val.networkId);
-        dvInfo.deviceUuid = std::move(val.uuid);
-        dvInfo.deviceName = std::move(val.deviceName);
-        dvInfo.deviceType = std::to_string(val.deviceType);
+        std::pair<std::string, std::string> dvInfo;
+        dvInfo.first = std::move(val.networkId);
+        dvInfo.second = std::move(val.uuid);
         dvInfos.emplace_back(dvInfo);
     }
     return SUCCESS;

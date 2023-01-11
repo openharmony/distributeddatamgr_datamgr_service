@@ -225,7 +225,7 @@ int32_t KVDBServiceStub::OnGetSyncParam(
 int32_t KVDBServiceStub::OnGetLocalDevice(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    DeviceInfo info;
+    std::pair<std::string, std::string> info;
     int32_t status = GetLocalDevice(info);
     if (!ITypesUtil::Marshal(reply, status, info)) {
         ZLOGE("Marshal status:0x%{public}d", status);
@@ -237,11 +237,11 @@ int32_t KVDBServiceStub::OnGetLocalDevice(
 int32_t KVDBServiceStub::OnGetRemoteDevices(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    std::vector<DeviceInfo> infos;
+    std::vector<std::pair<std::string, std::string>> infos;
     int32_t status = GetRemoteDevices(infos);
     if (!ITypesUtil::Marshal(reply, status, infos)) {
-      ZLOGE("Marshal status:0x%{public}d", status);
-      return IPC_STUB_WRITE_PARCEL_ERR;
+        ZLOGE("Marshal status:0x%{public}d", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
 }

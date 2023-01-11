@@ -53,8 +53,8 @@ public:
     Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status GetBackupPassword(const AppId &appId, const StoreId &storeId, std::vector<uint8_t> &password) override;
-    Status GetLocalDevice(DeviceInfo &dvInfo) override;
-    Status GetRemoteDevices(std::vector<DeviceInfo> &dvInfos) override;
+    Status GetLocalDevice(std::pair<std::string, std::string> &dvInfo) override;
+    Status GetRemoteDevices(std::vector<std::pair<std::string, std::string>> &dvInfos) override;
 
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
