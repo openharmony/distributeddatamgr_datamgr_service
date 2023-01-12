@@ -61,6 +61,9 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
 
     AppId appId;
     StoreId storeId;
+    if (TRANS_NO_APPID_BEGIN <= code && code <= TRANS_NO_APPID_END) {
+        return (this->*HANDLERS[code])(appId, storeId, data, reply);
+    }
     if (!ITypesUtil::Unmarshal(data, appId, storeId)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
@@ -225,10 +228,12 @@ int32_t KVDBServiceStub::OnGetSyncParam(
 int32_t KVDBServiceStub::OnGetLocalDevice(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    std::pair<std::string, std::string> info;
-    int32_t status = GetLocalDevice(info);
-    if (!ITypesUtil::Marshal(reply, status, info)) {
-        ZLOGE("Marshal status:0x%{public}d", status);
+    (void)appId;
+    (void)storeId;
+    int32_t status = SUCCESS;
+    auto brief = GetLocalDevice();
+    if (!ITypesUtil::Marshal(reply, status, brief)) {
+        ZLOGE("Marshal device brief:{%{public}u, %{public}u}", brief.networkId.empty(), brief.uuid.empty());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -237,10 +242,12 @@ int32_t KVDBServiceStub::OnGetLocalDevice(
 int32_t KVDBServiceStub::OnGetRemoteDevices(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    std::vector<std::pair<std::string, std::string>> infos;
-    int32_t status = GetRemoteDevices(infos);
-    if (!ITypesUtil::Marshal(reply, status, infos)) {
-        ZLOGE("Marshal status:0x%{public}d", status);
+    (void)appId;
+    (void)storeId;
+    int32_t status = SUCCESS;
+    auto briefs = GetRemoteDevices();
+    if (!ITypesUtil::Marshal(reply, status, briefs)) {
+        ZLOGE("Marshal device brief:%{public}zu", briefs.size());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
