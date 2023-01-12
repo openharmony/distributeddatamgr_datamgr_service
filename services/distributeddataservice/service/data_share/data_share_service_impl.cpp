@@ -131,16 +131,15 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         return ERROR;
     }
 
-    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    ProfileInfo profileInfo;
-    if (!CheckCrossUserMode(uriInfo, profileInfo, userId)) {
-        ZLOGE("CheckCrossUserMode failed!");
+    if (!CheckPermisson(uriInfo, PermissionType::WRITE_PERMISSION)) {
+        ZLOGE("CheckPermisson failed!");
         return ERROR;
     }
 
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!CheckCrossUserMode(profileInfo.crossUserMode, uriInfo, userId)) {
-        ZLOGE("The crossUserMode:%{public}d is not right, must be 1 or 2", profileInfo.crossUserMode);
+    ProfileInfo profileInfo;
+    if (!CheckCrossUserMode(uriInfo, profileInfo, userId)) {
+        ZLOGE("CheckCrossUserMode failed!");
         return ERROR;
     }
 
