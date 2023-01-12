@@ -53,8 +53,6 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/object/include",
-    "//foundation/distributeddatamgr/relational_store/frameworks/native/rdb/include",
-    "//foundation/distributeddatamgr/relational_store/frameworks/native/rdb/src",
     "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
     "//utils/system/safwk/native/include",
     "../adapter/include/account",
