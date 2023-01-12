@@ -17,81 +17,57 @@
 #include "profile_info_utils.h"
 
 #include "bundle_info.h"
-#include "bundle_mgr_proxy.h"
 #include "bundlemgr/bundle_mgr_client.h"
 #include "log_print.h"
-#include "nlohmann/json.hpp"
 
 namespace OHOS::DataShare {
-namespace {
-    const std::string KEY_GLOBAL_CONFIG = "*";
-    const std::string METADATA_NAME = "ohos.extension.dataShare";
-    const std::string CROSS_USER_MODE = "crossUserMode";
+BundleMgrProxy ProfileInfoUtils::bmsProxy_;
+bool Config::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(scope)], scope);
+    SetValue(node[GET_NAME(crossUserMode)], crossUserMode);
+    SetValue(node[GET_NAME(readPermission)], readPermission);
+    SetValue(node[GET_NAME(writePermission)], writePermission);
+    return true;
 }
 
-class JsonUtils {
-public:
-    static bool GetUserModeFromJson(const nlohmann::json &json, ProfileInfo &profileInfo, const std::string &key)
-    {
-        if (json.find(key) == json.end()) {
-            ZLOGW("not find key: %{public}s.", key.c_str());
-            return true;
-        }
+bool Config::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(scope), scope);
+    GetValue(node, GET_NAME(crossUserMode), crossUserMode);
+    GetValue(node, GET_NAME(readPermission), readPermission);
+    GetValue(node, GET_NAME(writePermission), writePermission);
+    return true;
+}
 
-        if (!json.at(key).is_object()) {
-            ZLOGE("json[%{public}s] must be object!", key.c_str());
-            return false;
-        }
 
-        if (json[key].find(CROSS_USER_MODE) != json[key].end()) {
-            if (!json[key].at(CROSS_USER_MODE).is_number_integer()) {
-                ZLOGE("the value of crossUserMode must be integer!");
-                return false;
-            }
-            profileInfo.crossUserMode = json[key].at(CROSS_USER_MODE).get<int>();
-        }
-        return true;
-    }
+bool ProfileInfo::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(tablesConfig)], tablesConfig);
+    return true;
+}
 
-    static bool ParseProfileInfoFromJson(std::string &jsonStr, UriInfo &uriInfo, ProfileInfo &profileInfo)
-    {
-        nlohmann::json sourceJson = nlohmann::json::parse(jsonStr, nullptr, false);
-        if (sourceJson.is_discarded()) {
-            ZLOGE("json::parse error!");
-            return false;
-        }
+bool ProfileInfo::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(tablesConfig), tablesConfig);
+    return true;
+}
 
-        if (!GetUserModeFromJson(sourceJson, profileInfo, KEY_GLOBAL_CONFIG)) {
-            ZLOGE("json::parse global config error!");
-            return false;
-        }
-
-        std::string storeConfigKey = uriInfo.storeName;
-        if (!GetUserModeFromJson(sourceJson, profileInfo, storeConfigKey)) {
-            ZLOGE("json::parse store config error!");
-            return false;
-        }
-
-        std::string tableConfigKey = uriInfo.storeName + "/" + uriInfo.tableName;
-        if (!GetUserModeFromJson(sourceJson, profileInfo, tableConfigKey)) {
-            ZLOGE("json::parse table config error!");
-            return false;
-        }
-        return true;
-    }
-};
-
-BundleMgrProxy PermissionProxy::bmsProxy_;
 bool ProfileInfoUtils::LoadProfileInfoFromExtension(UriInfo &uriInfo, uint32_t tokenId,
-    ProfileInfo &profileInfo)
+    ProfileInfo &profileInfo, bool &isSingleApp)
 {
     AppExecFwk::BundleInfo bundleInfo;
     if (!bmsProxy_.GetBundleInfoFromBMS(uriInfo.bundleName, tokenId, bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
     }
-    AppExecFwk::BundleMgrClient client;
+    isSingleApp = bundleInfo.singleton;
+    // non singleApp don't need get profileInfo
+    if (!isSingleApp) {
+        return true;
+    }
 
+    AppExecFwk::BundleMgrClient client;
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             std::vector<std::string> infos;
@@ -100,10 +76,46 @@ bool ProfileInfoUtils::LoadProfileInfoFromExtension(UriInfo &uriInfo, uint32_t t
                 ZLOGE("GetProfileFromExtension failed!");
                 return false;
             }
-            return JsonUtils::ParseProfileInfoFromJson(infos[0], uriInfo, profileInfo);
+            return profileInfo.Unmarshall(infos[0]);
         }
     }
     ZLOGE("not find datashare extension!");
     return false;
+}
+
+bool ProfileInfoUtils::CheckCrossUserMode(ProfileInfo &profileInfo, UriInfo &uriInfo, int32_t userId,
+    const bool isSingleApp)
+{
+    if (!isSingleApp) {
+        return true;
+    }
+
+    int crossUserMode = 0;
+    for (auto &item : profileInfo.tablesConfig) {
+        if (item.scope == "*") {
+            crossUserMode = item.crossUserMode;
+        }
+    }
+
+    for (auto &item : profileInfo.tablesConfig) {
+        if (item.scope == uriInfo.storeName) {
+            crossUserMode = item.crossUserMode;
+        }
+    }
+
+    std::string tableKey = uriInfo.storeName + "/" + uriInfo.tableName;
+    for (auto &item : profileInfo.tablesConfig) {
+        if (item.scope == tableKey) {
+            crossUserMode = item.crossUserMode;
+        }
+    }
+
+    if (crossUserMode != USERMODE_SHARED && crossUserMode != USERMODE_UNIQUE) {
+        return false;
+    }
+    if (crossUserMode == USERMODE_UNIQUE) {
+        uriInfo.tableName.append("_").append(std::to_string(userId));
+    }
+    return true;
 }
 } // namespace OHOS::DataShare

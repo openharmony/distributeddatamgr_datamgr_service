@@ -20,6 +20,7 @@
 #include "bundle_info.h"
 #include "bundle_mgr_proxy.h"
 #include "device_manager_adapter.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
@@ -104,7 +105,12 @@ bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::st
 
 inline bool PermissionProxy::IsSingleAllowProvider(const std::string &bundleName, const std::string &storeName)
 {
-    // if settingdata public data, allow cross to user0
-    return bundleName == "com.ohos.settingsdata" && storeName == "settingsdata";
+    AppExecFwk::BundleInfo bundleInfo;
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    if (!bmsProxy_.GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
+        ZLOGE("GetBundleInfoFromBMS failed!");
+        return false;
+    }
+    return bundleInfo.singleton;
 }
 } // namespace OHOS::DataShare

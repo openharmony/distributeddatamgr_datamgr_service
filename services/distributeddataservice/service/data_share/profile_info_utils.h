@@ -13,21 +13,39 @@
  * limitations under the License.
  */
 
-#ifndef PROFILE_INFO_UTILS_H
-#define PROFILE_INFO_UTILS_H
+#ifndef LDBPROJ_PROFILE_INFO_UTILS_H
+#define LDBPROJ_PROFILE_INFO_UTILS_H
 
 #include "uri_utils.h"
+#include "bundle_mgr_proxy.h"
+#include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
-struct ProfileInfo {
-    int crossUserMode;
-    std::string  writePermission;
-    std::string  readPermission;
+struct Config final : public DistributedData::Serializable {
+    std::string scope = "*";
+    int crossUserMode = 0;
+    std::string  writePermission = "";
+    std::string  readPermission = "";
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
+struct ProfileInfo : public DistributedData::Serializable {
+    std::vector<Config> tablesConfig;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
 };
 
 class ProfileInfoUtils {
 public:
-    static bool LoadProfileInfoFromExtension(UriInfo &uriInfo, uint32_t tokenId, ProfileInfo &profileInfo);
+    ProfileInfoUtils() = default;
+    bool LoadProfileInfoFromExtension(UriInfo &uriInfo, uint32_t tokenId, ProfileInfo &profileInfo, bool &isSingleApp);
+    bool CheckCrossUserMode(ProfileInfo &profileInfo, UriInfo &uriInfo, int32_t userId, const bool isSingleApp);
+
+private:
+    static BundleMgrProxy bmsProxy_;
+    static constexpr int32_t USERMODE_SHARED = 1;
+    static constexpr int32_t USERMODE_UNIQUE = 2;
 };
 } // namespace OHOS::DataShare
-#endif // PROFILE_INFO_UTILS_H
+#endif // LDBPROJ_PROFILE_INFO_UTILS_H

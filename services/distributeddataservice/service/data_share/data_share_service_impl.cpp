@@ -57,16 +57,10 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
         return ERROR;
     }
 
-    uint32_t tokenID = IPCSkeleton::GetCallingTokenID();
-    ProfileInfo profileInfo;
-    if (!ProfileInfoUtils::LoadProfileInfoFromExtension(uriInfo, tokenID, profileInfo)) {
-        ZLOGE("LoadProfileInfoFromExtension failed!");
-        return ERROR;
-    }
-
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!CheckCrossUserMode(profileInfo.crossUserMode, uriInfo, userId)) {
-        ZLOGE("The crossUserMode:%{public}d is not right, must be 1 or 2", profileInfo.crossUserMode);
+    ProfileInfo profileInfo;
+    if (!CheckCrossUserMode(uriInfo, profileInfo, userId)) {
+        ZLOGE("CheckCrossUserMode failed!");
         return ERROR;
     }
 
@@ -112,16 +106,10 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         return ERROR;
     }
 
-    uint32_t tokenID = IPCSkeleton::GetCallingTokenID();
-    ProfileInfo profileInfo;
-    if (!ProfileInfoUtils::LoadProfileInfoFromExtension(uriInfo, tokenID, profileInfo)) {
-        ZLOGE("LoadProfileInfoFromExtension failed!");
-        return ERROR;
-    }
-
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!CheckCrossUserMode(profileInfo.crossUserMode, uriInfo, userId)) {
-        ZLOGE("The crossUserMode:%{public}d is not right, must be 1 or 2", profileInfo.crossUserMode);
+    ProfileInfo profileInfo;
+    if (!CheckCrossUserMode(uriInfo, profileInfo, userId)) {
+        ZLOGE("CheckCrossUserMode failed!");
         return ERROR;
     }
 
@@ -143,15 +131,10 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         return ERROR;
     }
 
-    if (!CheckPermisson(uriInfo, PermissionType::WRITE_PERMISSION)) {
-        ZLOGE("CheckPermisson failed!");
-        return ERROR;
-    }
-
-    uint32_t tokenID = IPCSkeleton::GetCallingTokenID();
+    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     ProfileInfo profileInfo;
-    if (!ProfileInfoUtils::LoadProfileInfoFromExtension(uriInfo, tokenID, profileInfo)) {
-        ZLOGE("LoadProfileInfoFromExtension failed!");
+    if (!CheckCrossUserMode(uriInfo, profileInfo, userId)) {
+        ZLOGE("CheckCrossUserMode failed!");
         return ERROR;
     }
 
@@ -185,17 +168,11 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         return nullptr;
     }
 
-    uint32_t tokenID = IPCSkeleton::GetCallingTokenID();
-    ProfileInfo profileInfo;
-    if (!ProfileInfoUtils::LoadProfileInfoFromExtension(uriInfo, tokenID, profileInfo)) {
-        ZLOGE("LoadProfileInfoFromExtension failed!");
-        return ERROR;
-    }
-    
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!CheckCrossUserMode(profileInfo.crossUserMode, uriInfo, userId)) {
-        ZLOGE("The crossUserMode:%{public}d is not right, must be 1 or 2", profileInfo.crossUserMode);
-        return ERROR;
+    ProfileInfo profileInfo;
+    if (!CheckCrossUserMode(uriInfo, profileInfo, userId)) {
+        ZLOGE("CheckCrossUserMode failed!");
+        return nullptr;
     }
 
     return RdbAdaptor::Query(uriInfo, predicates, columns, userId);
@@ -227,13 +204,18 @@ bool DataShareServiceImpl::CheckPermisson(const UriInfo &uriInfo, DataShareServi
     return true;
 }
 
-bool DataShareServiceImpl::CheckCrossUserMode(int crossUserMode, UriInfo &uriInfo, int32_t userId)
+bool DataShareServiceImpl::CheckCrossUserMode(UriInfo &uriInfo, ProfileInfo &profileInfo, int32_t userId)
 {
-    if (crossUserMode != USERMODE_SHARED && crossUserMode != USERMODE_UNIQUE) {
+    uint32_t tokenID = IPCSkeleton::GetCallingTokenID();
+    bool isSingleApp;
+    if (!profileInfoUtils_.LoadProfileInfoFromExtension(uriInfo, tokenID, profileInfo, isSingleApp)) {
+        ZLOGE("LoadProfileInfoFromExtension failed!");
         return false;
     }
-    if (crossUserMode == USERMODE_UNIQUE) {
-        uriInfo.tableName.append("_").append(std::to_string(userId));
+
+    if (!profileInfoUtils_.CheckCrossUserMode(profileInfo, uriInfo, userId, isSingleApp)) {
+        ZLOGE("The crossUserMode is not right, must be 1 or 2");
+        return false;
     }
     return true;
 }
