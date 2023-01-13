@@ -20,6 +20,7 @@
 
 #include "bundle_info.h"
 #include "data_share_service_stub.h"
+#include "extension_profile_info.h"
 #include "visibility.h"
 #include "uri_utils.h"
 
