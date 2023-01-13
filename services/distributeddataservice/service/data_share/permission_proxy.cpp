@@ -20,7 +20,6 @@
 #include "bundle_info.h"
 #include "bundle_mgr_proxy.h"
 #include "device_manager_adapter.h"
-#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
