@@ -21,6 +21,9 @@
 #include "log_print.h"
 
 namespace OHOS::DataShare {
+namespace {
+    const std::string METADATA_NAME = "ohos.extension.dataShare";
+}
 BundleMgrProxy ProfileInfoUtils::bmsProxy_;
 bool Config::Marshal(json &node) const
 {
