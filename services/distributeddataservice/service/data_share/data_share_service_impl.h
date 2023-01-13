@@ -47,7 +47,7 @@ private:
     };
 
     bool NotifyChange(const std::string &uri);
-    bool CheckTableConfig(const UriInfo &uriInfo, PermissionType permissionType, bool &isSingleApp, int32_t userId);
+    bool CheckTableConfig(UriInfo &uriInfo, PermissionType permissionType, bool &isSingleApp, int32_t userId);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     ExtensionProfileInfo extensionProfileInfo_;

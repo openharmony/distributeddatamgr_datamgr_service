@@ -152,10 +152,10 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         ZLOGE("CheckTableConfig failed!");
         return nullptr;
     }
-    return RdbAdaptor::Query(uriInfo, predicates, columns, userId);
+    return RdbAdaptor::Query(uriInfo, predicates, columns, userId, isSingleApp);
 }
 
-bool DataShareServiceImpl::CheckTableConfig(const UriInfo &uriInfo,
+bool DataShareServiceImpl::CheckTableConfig(UriInfo &uriInfo,
     DataShareServiceImpl::PermissionType permissionType, bool &isSingleApp, int32_t userId)
 {
     std::string permission;
