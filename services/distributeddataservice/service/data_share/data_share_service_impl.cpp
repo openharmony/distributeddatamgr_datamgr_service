@@ -21,7 +21,6 @@
 #include "account/account_delegate.h"
 #include "bundle_constants.h"
 #include "dataobs_mgr_client.h"
-#include "extension_profile_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "permission_proxy.h"
