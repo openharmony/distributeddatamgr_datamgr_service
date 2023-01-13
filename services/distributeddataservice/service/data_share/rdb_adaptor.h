@@ -36,12 +36,12 @@ class RdbDelegate {
 public:
     explicit RdbDelegate(const StoreMetaData &data);
     virtual ~RdbDelegate();
-    int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket);
-    int64_t Update(
-        const std::string &tableName, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket);
-    int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate);
-    std::shared_ptr<DataShareResultSet> Query(
-        const std::string &tableName, const DataSharePredicates &predicates, const std::vector<std::string> &columns);
+    int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket, const bool isSingleApp);
+    int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
+        const DataShareValuesBucket &valuesBucket, const bool isSingleApp);
+    int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate, const bool isSingleApp);
+    std::shared_ptr<DataShareResultSet> Query(const std::string &tableName,
+    const DataSharePredicates &predicates, const std::vector<std::string> &columns, const bool isSingleApp);
 
 private:
     std::shared_ptr<RdbStore> store_;

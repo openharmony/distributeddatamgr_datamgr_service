@@ -21,10 +21,10 @@
 #include "account/account_delegate.h"
 #include "bundle_constants.h"
 #include "dataobs_mgr_client.h"
+#include "extension_profile_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "permission_proxy.h"
-#include "profile_info_utils.h"
 #include "rdb_adaptor.h"
 #include "uri.h"
 #include "uri_utils.h"
@@ -52,19 +52,14 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
         return ERROR;
     }
 
-    if (!CheckPermisson(uriInfo, PermissionType::WRITE_PERMISSION)) {
-        ZLOGE("CheckPermisson failed!");
-        return ERROR;
-    }
-
+    bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    ProfileInfo profileInfo;
-    if (!CheckCrossUserMode(uriInfo, profileInfo, userId)) {
-        ZLOGE("CheckCrossUserMode failed!");
+    if (!CheckTableConfig(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
+        ZLOGE("CheckTableConfig failed!");
         return ERROR;
     }
 
-    int32_t ret = RdbAdaptor::Insert(uriInfo, valuesBucket, userId);
+    int32_t ret = RdbAdaptor::Insert(uriInfo, valuesBucket, userId, isSingleApp);
     if (ret == ERROR) {
         ZLOGE("Insert error %{public}s", uri.c_str());
         return ERROR;
@@ -101,19 +96,14 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         return ERROR;
     }
 
-    if (!CheckPermisson(uriInfo, PermissionType::WRITE_PERMISSION)) {
-        ZLOGE("CheckPermisson failed!");
-        return ERROR;
-    }
-
+    bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    ProfileInfo profileInfo;
-    if (!CheckCrossUserMode(uriInfo, profileInfo, userId)) {
-        ZLOGE("CheckCrossUserMode failed!");
+    if (!CheckTableConfig(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
+        ZLOGE("CheckTableConfig failed!");
         return ERROR;
     }
 
-    int32_t ret = RdbAdaptor::Update(uriInfo, predicate, valuesBucket, userId);
+    int32_t ret = RdbAdaptor::Update(uriInfo, predicate, valuesBucket, userId, isSingleApp);
     if (ret == ERROR) {
         ZLOGE("Update error %{public}s", uri.c_str());
         return ERROR;
@@ -131,19 +121,14 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         return ERROR;
     }
 
-    if (!CheckPermisson(uriInfo, PermissionType::WRITE_PERMISSION)) {
-        ZLOGE("CheckPermisson failed!");
-        return ERROR;
-    }
-
+    bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    ProfileInfo profileInfo;
-    if (!CheckCrossUserMode(uriInfo, profileInfo, userId)) {
-        ZLOGE("CheckCrossUserMode failed!");
+    if (!CheckTableConfig(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
+        ZLOGE("CheckTableConfig failed!");
         return ERROR;
     }
 
-    int32_t ret = RdbAdaptor::Delete(uriInfo, predicate, userId);
+    int32_t ret = RdbAdaptor::Delete(uriInfo, predicate, userId, isSingleApp);
     if (ret == ERROR) {
         ZLOGE("Delete error %{public}s", uri.c_str());
         return ERROR;
@@ -162,28 +147,24 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         return nullptr;
     }
 
-    if (!CheckPermisson(uriInfo, PermissionType::READ_PERMISSION)) {
-        ZLOGE("CheckPermisson failed!");
-        return nullptr;
-    }
-
+    bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    ProfileInfo profileInfo;
-    if (!CheckCrossUserMode(uriInfo, profileInfo, userId)) {
-        ZLOGE("CheckCrossUserMode failed!");
+    if (!CheckTableConfig(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
+        ZLOGE("CheckTableConfig failed!");
         return nullptr;
     }
-
     return RdbAdaptor::Query(uriInfo, predicates, columns, userId);
 }
 
-bool DataShareServiceImpl::CheckPermisson(const UriInfo &uriInfo, DataShareServiceImpl::PermissionType permissionType)
+bool DataShareServiceImpl::CheckTableConfig(const UriInfo &uriInfo,
+    DataShareServiceImpl::PermissionType permissionType, bool &isSingleApp, int32_t userId)
 {
     std::string permission;
     uint32_t tokenID = IPCSkeleton::GetCallingTokenID();
+    AppExecFwk::BundleInfo bundleInfo;
     switch (permissionType) {
         case PermissionType::READ_PERMISSION: {
-            bool ret = PermissionProxy::QueryReadPermission(uriInfo.bundleName, tokenID, permission);
+            bool ret = PermissionProxy::QueryReadPermission(uriInfo.bundleName, tokenID, permission, bundleInfo);
             if (!ret) {
                 ZLOGE("Query read permission failed!");
                 return false;
@@ -191,7 +172,7 @@ bool DataShareServiceImpl::CheckPermisson(const UriInfo &uriInfo, DataShareServi
             break;
         }
         case PermissionType::WRITE_PERMISSION: {
-            bool ret = PermissionProxy::QueryWritePermission(uriInfo.bundleName, tokenID, permission);
+            bool ret = PermissionProxy::QueryWritePermission(uriInfo.bundleName, tokenID, permission, bundleInfo);
             if (!ret) {
                 ZLOGE("Query write permission failed!");
                 return false;
@@ -200,20 +181,13 @@ bool DataShareServiceImpl::CheckPermisson(const UriInfo &uriInfo, DataShareServi
         }
     }
 
-    return true;
-}
-
-bool DataShareServiceImpl::CheckCrossUserMode(UriInfo &uriInfo, ProfileInfo &profileInfo, int32_t userId)
-{
-    uint32_t tokenID = IPCSkeleton::GetCallingTokenID();
-    bool isSingleApp;
-    if (!profileInfoUtils_.LoadProfileInfoFromExtension(uriInfo, tokenID, profileInfo, isSingleApp)) {
+    ProfileInfo profileInfo;
+    if (!extensionProfileInfo_.LoadProfileInfoFromExtension(uriInfo, profileInfo, isSingleApp, bundleInfo)) {
         ZLOGE("LoadProfileInfoFromExtension failed!");
         return false;
     }
-
-    if (!profileInfoUtils_.CheckCrossUserMode(profileInfo, uriInfo, userId, isSingleApp)) {
-        ZLOGE("The crossUserMode is not right, must be 1 or 2");
+    if (!PermissionProxy::IsCrossUserMode(profileInfo, uriInfo, bundleInfo, userId, isSingleApp)) {
+        ZLOGE("Query crossUserMode failed!");
         return false;
     }
     return true;

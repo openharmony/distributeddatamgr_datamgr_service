@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "bundle_info.h"
 #include "data_share_service_stub.h"
 #include "profile_info_utils.h"
 #include "visibility.h"
@@ -46,11 +47,10 @@ private:
     };
 
     bool NotifyChange(const std::string &uri);
-    bool CheckPermisson(const UriInfo &uriInfo, PermissionType permissionType);
-    bool CheckCrossUserMode(UriInfo &uriInfo, ProfileInfo &profileInfo, int32_t userId);
+    bool CheckTableConfig(const UriInfo &uriInfo, PermissionType permissionType, bool &isSingleApp, int32_t userId);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
-    ProfileInfoUtils profileInfoUtils_;
+    ExtensionProfileInfo extensionProfileInfo_;
 };
 } // namespace OHOS::DataShare
 #endif

@@ -19,39 +19,41 @@
 #include "permission_proxy.h"
 #include "rdb_utils.h"
 namespace OHOS::DataShare {
-int32_t RdbAdaptor::Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket, const int32_t userId)
+int32_t RdbAdaptor::Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket,
+    const int32_t userId, const bool isSingleApp)
 {
     DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
+    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId, isSingleApp)) {
         return -1;
     }
     RdbDelegate delegate(metaData);
     return delegate.Insert(uriInfo.tableName, valuesBucket);
 }
 int32_t RdbAdaptor::Update(const UriInfo &uriInfo, const DataSharePredicates &predicate,
-    const DataShareValuesBucket &valuesBucket, const int32_t userId)
+    const DataShareValuesBucket &valuesBucket, const int32_t userId, const bool isSingleApp)
 {
     DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
+    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId, isSingleApp)) {
         return -1;
     }
     RdbDelegate delegate(metaData);
     return delegate.Update(uriInfo.tableName, predicate, valuesBucket);
 }
-int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate, const int32_t userId)
+int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate,
+    const int32_t userId, const bool isSingleApp)
 {
     DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
+    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId, isSingleApp)) {
         return -1;
     }
     RdbDelegate delegate(metaData);
     return delegate.Delete(uriInfo.tableName, predicate);
 }
 std::shared_ptr<DataShareResultSet> RdbAdaptor::Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
-    const std::vector<std::string> &columns, const int32_t userId)
+    const std::vector<std::string> &columns, const int32_t userId, const bool isSingleApp)
 {
     DistributedData::StoreMetaData metaData;
-    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.moduleName, uriInfo.storeName, metaData, userId)) {
+    if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId, isSingleApp)) {
         return nullptr;
     }
     RdbDelegate delegate(metaData);

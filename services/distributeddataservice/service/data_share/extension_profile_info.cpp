@@ -13,8 +13,8 @@
  * limitations under the License.
  */
  
-#define LOG_TAG "ProfileInfoUtils"
-#include "profile_info_utils.h"
+#define LOG_TAG "ExtensionProfileInfo"
+#include "extension_profile_info.h"
 
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_client.h"
@@ -22,9 +22,8 @@
 
 namespace OHOS::DataShare {
 namespace {
-    const std::string METADATA_NAME = "ohos.extension.dataShare";
+    constexpr const char* METADATA_NAME = "ohos.extension.dataShare";
 }
-BundleMgrProxy ProfileInfoUtils::bmsProxy_;
 bool Config::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(scope)], scope);
@@ -56,14 +55,9 @@ bool ProfileInfo::Unmarshal(const json &node)
     return true;
 }
 
-bool ProfileInfoUtils::LoadProfileInfoFromExtension(UriInfo &uriInfo, uint32_t tokenId,
-    ProfileInfo &profileInfo, bool &isSingleApp)
+bool ExtensionProfileInfo::LoadProfileInfoFromExtension(UriInfo &uriInfo, ProfileInfo &profileInfo,
+    bool &isSingleApp, AppExecFwk::BundleInfo &bundleInfo)
 {
-    AppExecFwk::BundleInfo bundleInfo;
-    if (!bmsProxy_.GetBundleInfoFromBMS(uriInfo.bundleName, tokenId, bundleInfo)) {
-        ZLOGE("GetBundleInfoFromBMS failed!");
-        return false;
-    }
     isSingleApp = bundleInfo.singleton;
     // non singleApp don't need get profileInfo
     if (!isSingleApp) {
@@ -84,41 +78,5 @@ bool ProfileInfoUtils::LoadProfileInfoFromExtension(UriInfo &uriInfo, uint32_t t
     }
     ZLOGE("not find datashare extension!");
     return false;
-}
-
-bool ProfileInfoUtils::CheckCrossUserMode(ProfileInfo &profileInfo, UriInfo &uriInfo, int32_t userId,
-    const bool isSingleApp)
-{
-    if (!isSingleApp) {
-        return true;
-    }
-
-    int crossUserMode = 0;
-    for (auto &item : profileInfo.tablesConfig) {
-        if (item.scope == "*") {
-            crossUserMode = item.crossUserMode;
-        }
-    }
-
-    for (auto &item : profileInfo.tablesConfig) {
-        if (item.scope == uriInfo.storeName) {
-            crossUserMode = item.crossUserMode;
-        }
-    }
-
-    std::string tableKey = uriInfo.storeName + "/" + uriInfo.tableName;
-    for (auto &item : profileInfo.tablesConfig) {
-        if (item.scope == tableKey) {
-            crossUserMode = item.crossUserMode;
-        }
-    }
-
-    if (crossUserMode != USERMODE_SHARED && crossUserMode != USERMODE_UNIQUE) {
-        return false;
-    }
-    if (crossUserMode == USERMODE_UNIQUE) {
-        uriInfo.tableName.append("_").append(std::to_string(userId));
-    }
-    return true;
 }
 } // namespace OHOS::DataShare

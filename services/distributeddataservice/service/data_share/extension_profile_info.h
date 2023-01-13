@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef LDBPROJ_PROFILE_INFO_UTILS_H
-#define LDBPROJ_PROFILE_INFO_UTILS_H
+#ifndef EXTENSION_PROFILE_INFO_H
+#define EXTENSION_PROFILE_INFO_H
 
+#include "bundle_info.h"
 #include "uri_utils.h"
-#include "bundle_mgr_proxy.h"
 #include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
@@ -36,16 +36,11 @@ struct ProfileInfo : public DistributedData::Serializable {
     bool Unmarshal(const json &node) override;
 };
 
-class ProfileInfoUtils {
+class ExtensionProfileInfo {
 public:
-    ProfileInfoUtils() = default;
-    bool LoadProfileInfoFromExtension(UriInfo &uriInfo, uint32_t tokenId, ProfileInfo &profileInfo, bool &isSingleApp);
-    bool CheckCrossUserMode(ProfileInfo &profileInfo, UriInfo &uriInfo, int32_t userId, const bool isSingleApp);
-
-private:
-    static BundleMgrProxy bmsProxy_;
-    static constexpr int32_t USERMODE_SHARED = 1;
-    static constexpr int32_t USERMODE_UNIQUE = 2;
+    ExtensionProfileInfo() = default;
+    bool LoadProfileInfoFromExtension(UriInfo &uriInfo, ProfileInfo &profileInfo,
+        bool &isSingleApp, AppExecFwk::BundleInfo &bundleInfo);
 };
 } // namespace OHOS::DataShare
-#endif // LDBPROJ_PROFILE_INFO_UTILS_H
+#endif // EXTENSION_PROFILE_INFO_H

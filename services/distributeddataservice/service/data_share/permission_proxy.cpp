@@ -27,9 +27,9 @@
 
 namespace OHOS::DataShare {
 BundleMgrProxy PermissionProxy::bmsProxy_;
-bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32_t tokenId, std::string &permission)
+bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32_t tokenId,
+    std::string &permission, AppExecFwk::BundleInfo &bundleInfo)
 {
-    AppExecFwk::BundleInfo bundleInfo;
     if (!bmsProxy_.GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
@@ -53,9 +53,9 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
     return false;
 }
 
-bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_t tokenId, std::string &permission)
+bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_t tokenId,
+    std::string &permission, AppExecFwk::BundleInfo &bundleInfo)
 {
-    AppExecFwk::BundleInfo bundleInfo;
     if (!bmsProxy_.GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
@@ -78,20 +78,58 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     return false;
 }
 
+bool PermissionProxy::IsCrossUserMode(ProfileInfo &profileInfo, UriInfo &uriInfo,
+    AppExecFwk::BundleInfo &bundleInfo, int32_t userId, const bool isSingleApp)
+{
+    if (!isSingleApp) {
+        return true;
+    }
+
+    int crossUserMode = 0;
+    for (auto &item : profileInfo.tablesConfig) {
+        if (item.scope == "*") {
+            crossUserMode = item.crossUserMode;
+        }
+    }
+
+    for (auto &item : profileInfo.tablesConfig) {
+        if (item.scope == uriInfo.storeName) {
+            crossUserMode = item.crossUserMode;
+        }
+    }
+
+    std::string tableKey = uriInfo.storeName + "/" + uriInfo.tableName;
+    for (auto &item : profileInfo.tablesConfig) {
+        if (item.scope == tableKey) {
+            crossUserMode = item.crossUserMode;
+        }
+    }
+
+    if (crossUserMode != USERMODE_SHARED && crossUserMode != USERMODE_UNIQUE) {
+        ZLOGE("The crossUserMode is not right, must be 1 or 2");
+        return false;
+    }
+    if (crossUserMode == USERMODE_UNIQUE) {
+        uriInfo.tableName.append("_").append(std::to_string(userId));
+    }
+    return true;
+}
+
+
 void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, int32_t userId)
 {
     meta.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     meta.user = std::to_string(userId);
 }
 
-bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::string &moduleName,
-    const std::string &storeName, DistributedData::StoreMetaData &metaData, const int32_t userId)
+bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::string &storeName,
+    DistributedData::StoreMetaData &metaData, const int32_t userId, const bool isSingleApp)
 {
     DistributedData::StoreMetaData meta;
     FillData(meta, userId);
     meta.bundleName = bundleName;
     meta.storeId = storeName;
-    if (IsSingleAllowProvider(bundleName, storeName)) {
+    if (isSingleApp) {
         ZLOGD("This hap is allowed to access across user sessions");
         meta.user = "0";
     }
@@ -101,16 +139,5 @@ bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::st
         return false;
     }
     return true;
-}
-
-inline bool PermissionProxy::IsSingleAllowProvider(const std::string &bundleName, const std::string &storeName)
-{
-    AppExecFwk::BundleInfo bundleInfo;
-    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-    if (!bmsProxy_.GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
-        ZLOGE("GetBundleInfoFromBMS failed!");
-        return false;
-    }
-    return bundleInfo.singleton;
 }
 } // namespace OHOS::DataShare
