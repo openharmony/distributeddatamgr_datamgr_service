@@ -24,6 +24,7 @@ ohos_fuzztest("TypesUtilFuzzTest") {
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/rdb/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/data_share/interfaces/inner_api/common/include",
     "//commonlibrary/c_utils/base/include",
