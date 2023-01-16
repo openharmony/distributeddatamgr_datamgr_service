@@ -55,7 +55,7 @@ std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
         return "";
     }
 
-    if (tokenInfo.bundleName != info.bundleName) {
+    if (!info.bundleName.empty() && tokenInfo.bundleName != info.bundleName) {
         return "";
     }
 
