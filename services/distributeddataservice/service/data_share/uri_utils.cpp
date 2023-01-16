@@ -16,33 +16,51 @@
 
 #include "uri_utils.h"
 
-#include <vector>
-
 #include "log_print.h"
 #include "string_ex.h"
 #include "uri.h"
 
 namespace OHOS::DataShare {
-bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
+bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo, bool tableNameEmpty)
 {
     Uri uriTemp(uri);
     std::vector<std::string> splitUri;
     SplitStr(uriTemp.GetPath(), "/", splitUri);
-    if (splitUri.size() < URI_INDEX_MAX) {
-        ZLOGE("Invalid uri: %{public}s", uri.c_str());
-        return false;
-    }
-
-    if (splitUri[URI_INDEX_BUNLDENAME].empty() || splitUri[URI_INDEX_MODULENAME].empty() ||
-        splitUri[URI_INDEX_STORENAME].empty() || splitUri[URI_INDEX_TABLENAME].empty()) {
-        ZLOGE("Uri has empty field!");
+    if (!CheckFormat(uri, splitUri, tableNameEmpty)) {
         return false;
     }
 
     uriInfo.bundleName = splitUri[URI_INDEX_BUNLDENAME];
     uriInfo.moduleName = splitUri[URI_INDEX_MODULENAME];
     uriInfo.storeName = splitUri[URI_INDEX_STORENAME];
-    uriInfo.tableName = splitUri[URI_INDEX_TABLENAME];
+    if (splitUri.size() > URI_INDEX_MIN) {
+        uriInfo.tableName = splitUri[URI_INDEX_TABLENAME];
+    }
+    return true;
+}
+
+bool URIUtils::CheckFormat(const std::string &uri, const std::vector<std::string> &splitUri, const bool tableNameEmpty)
+{
+    if (splitUri.size() < URI_INDEX_MIN) {
+        ZLOGE("Invalid uri: %{public}s", uri.c_str());
+        return false;
+    }
+    if (splitUri[URI_INDEX_BUNLDENAME].empty() || splitUri[URI_INDEX_MODULENAME].empty() ||
+        splitUri[URI_INDEX_STORENAME].empty()) {
+        ZLOGE("Uri has empty field!");
+        return false;
+    }
+
+    if (!tableNameEmpty) {
+        if (splitUri.size() < URI_INDEX_MAX) {
+            ZLOGE("Uri need contains tableName");
+            return false;
+        }
+        if (splitUri[URI_INDEX_TABLENAME].empty()) {
+            ZLOGE("Uri tableName can't be empty!");
+            return false;
+        }
+    }
     return true;
 }
 } // namespace OHOS::DataShare

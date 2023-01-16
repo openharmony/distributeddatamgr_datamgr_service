@@ -181,11 +181,11 @@ bool DataShareServiceImpl::CheckTableConfig(UriInfo &uriInfo,
     }
 
     ProfileInfo profileInfo;
-    if (!extensionProfileInfo_.LoadProfileInfoFromExtension(uriInfo, profileInfo, isSingleApp, bundleInfo)) {
+    if (!extensionProfileInfo_.LoadProfileInfoFromExtension(bundleInfo, profileInfo, isSingleApp)) {
         ZLOGE("LoadProfileInfoFromExtension failed!");
         return false;
     }
-    if (!PermissionProxy::IsCrossUserMode(profileInfo, uriInfo, bundleInfo, userId, isSingleApp)) {
+    if (!PermissionProxy::IsCrossUserMode(profileInfo, bundleInfo, userId, isSingleApp, uriInfo)) {
         ZLOGE("Query crossUserMode failed!");
         return false;
     }

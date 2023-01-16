@@ -26,7 +26,7 @@ namespace {
 }
 bool Config::Marshal(json &node) const
 {
-    SetValue(node[GET_NAME(scope)], scope);
+    SetValue(node[GET_NAME(uri)], uri);
     SetValue(node[GET_NAME(crossUserMode)], crossUserMode);
     SetValue(node[GET_NAME(readPermission)], readPermission);
     SetValue(node[GET_NAME(writePermission)], writePermission);
@@ -35,7 +35,7 @@ bool Config::Marshal(json &node) const
 
 bool Config::Unmarshal(const json &node)
 {
-    GetValue(node, GET_NAME(scope), scope);
+    GetValue(node, GET_NAME(uri), uri);
     GetValue(node, GET_NAME(crossUserMode), crossUserMode);
     GetValue(node, GET_NAME(readPermission), readPermission);
     GetValue(node, GET_NAME(writePermission), writePermission);
@@ -45,18 +45,18 @@ bool Config::Unmarshal(const json &node)
 
 bool ProfileInfo::Marshal(json &node) const
 {
-    SetValue(node[GET_NAME(tablesConfig)], tablesConfig);
+    SetValue(node[GET_NAME(tableConfig)], tableConfig);
     return true;
 }
 
 bool ProfileInfo::Unmarshal(const json &node)
 {
-    GetValue(node, GET_NAME(tablesConfig), tablesConfig);
+    GetValue(node, GET_NAME(tableConfig), tableConfig);
     return true;
 }
 
-bool ExtensionProfileInfo::LoadProfileInfoFromExtension(UriInfo &uriInfo, ProfileInfo &profileInfo,
-    bool &isSingleApp, AppExecFwk::BundleInfo &bundleInfo)
+bool ExtensionProfileInfo::LoadProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
+    ProfileInfo &profileInfo, bool &isSingleApp)
 {
     isSingleApp = bundleInfo.singleton;
     // non singleApp don't need get profileInfo

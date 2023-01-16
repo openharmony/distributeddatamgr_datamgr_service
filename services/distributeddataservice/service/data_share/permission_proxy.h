@@ -32,8 +32,8 @@ public:
         std::string &permission, AppExecFwk::BundleInfo &bundleInfo);
     static bool QueryMetaData(const std::string &bundleName, const std::string &storeName,
         DistributedData::StoreMetaData &metaData, const int32_t userId, const bool isSingleApp);
-    static bool IsCrossUserMode(ProfileInfo &profileInfo, UriInfo &uriInfo, AppExecFwk::BundleInfo &bundleInfo,
-        int32_t userId, const bool isSingleApp);
+    static bool IsCrossUserMode(const ProfileInfo &profileInfo, const AppExecFwk::BundleInfo &bundleInfo,
+        const int32_t userId, const bool isSingleApp, UriInfo &uriInfo);
 
 private:
     static void FillData(DistributedData::StoreMetaData &data, int32_t userId);

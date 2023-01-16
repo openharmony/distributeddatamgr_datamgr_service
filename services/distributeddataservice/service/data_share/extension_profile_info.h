@@ -22,7 +22,7 @@
 
 namespace OHOS::DataShare {
 struct Config final : public DistributedData::Serializable {
-    std::string scope = "*";
+    std::string uri = "*";
     int crossUserMode = 0;
     std::string  writePermission = "";
     std::string  readPermission = "";
@@ -31,7 +31,7 @@ struct Config final : public DistributedData::Serializable {
 };
 
 struct ProfileInfo : public DistributedData::Serializable {
-    std::vector<Config> tablesConfig;
+    std::vector<Config> tableConfig;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
@@ -39,8 +39,8 @@ struct ProfileInfo : public DistributedData::Serializable {
 class ExtensionProfileInfo {
 public:
     ExtensionProfileInfo() = default;
-    bool LoadProfileInfoFromExtension(UriInfo &uriInfo, ProfileInfo &profileInfo,
-        bool &isSingleApp, AppExecFwk::BundleInfo &bundleInfo);
+    bool LoadProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
+        ProfileInfo &profileInfo, bool &isSingleApp);
 };
 } // namespace OHOS::DataShare
 #endif // EXTENSION_PROFILE_INFO_H

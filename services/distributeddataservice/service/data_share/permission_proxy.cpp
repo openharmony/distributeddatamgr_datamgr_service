@@ -77,30 +77,36 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     return false;
 }
 
-bool PermissionProxy::IsCrossUserMode(ProfileInfo &profileInfo, UriInfo &uriInfo,
-    AppExecFwk::BundleInfo &bundleInfo, int32_t userId, const bool isSingleApp)
+bool PermissionProxy::IsCrossUserMode(const ProfileInfo &profileInfo, const AppExecFwk::BundleInfo &bundleInfo,
+    const int32_t userId, const bool isSingleApp, UriInfo &uriInfo)
 {
     if (!isSingleApp) {
         return true;
     }
 
     int crossUserMode = 0;
-    for (auto &item : profileInfo.tablesConfig) {
-        if (item.scope == "*") {
+    for (auto &item : profileInfo.tableConfig) {
+        if (item.uri == "*") {
             crossUserMode = item.crossUserMode;
+            break;
         }
     }
 
-    for (auto &item : profileInfo.tablesConfig) {
-        if (item.scope == uriInfo.storeName) {
+    for (auto &item : profileInfo.tableConfig) {
+        UriInfo temp;
+        if (URIUtils::GetInfoFromURI(item.uri, temp, true) && temp.tableName.empty()
+            && temp.storeName == uriInfo.storeName) {
             crossUserMode = item.crossUserMode;
+            break;
         }
     }
 
-    std::string tableKey = uriInfo.storeName + "/" + uriInfo.tableName;
-    for (auto &item : profileInfo.tablesConfig) {
-        if (item.scope == tableKey) {
+    for (auto &item : profileInfo.tableConfig) {
+        UriInfo temp;
+        if (URIUtils::GetInfoFromURI(item.uri, temp) && temp.storeName == uriInfo.storeName
+            && temp.tableName == uriInfo.tableName) {
             crossUserMode = item.crossUserMode;
+            break;
         }
     }
 
