@@ -48,6 +48,7 @@ ohos_fuzztest("BlobFuzzTest") {
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ###############################################################################

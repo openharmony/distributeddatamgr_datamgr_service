@@ -43,6 +43,7 @@ ohos_unittest("PermissionValidatorTest") {
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 group("unittest") {

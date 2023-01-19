@@ -58,6 +58,7 @@ config("module_private_config") {
     "RELEASE_MODE_V2",
     "RELEASE_MODE_V3",
     "OMIT_MULTI_VER",
+    "OPENSSL_SUPPRESS_DEPRECATED",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
 }

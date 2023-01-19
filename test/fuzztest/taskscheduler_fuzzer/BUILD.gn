@@ -37,6 +37,7 @@ ohos_fuzztest("TaskSchedulerFuzzTest") {
   deps = []
 
   external_deps = [ "c_utils:utils" ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ###############################################################################

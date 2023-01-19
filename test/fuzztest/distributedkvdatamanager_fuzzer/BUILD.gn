@@ -51,6 +51,7 @@ ohos_fuzztest("DistributedKvDataManagerFuzzTest") {
     "OMIT_FLATBUFFER",
     "RELATIONAL_STORE",
     "SQLITE_DISTRIBUTE_RELATIONAL",
+    "OPENSSL_SUPPRESS_DEPRECATED",
   ]
 
   deps = [
