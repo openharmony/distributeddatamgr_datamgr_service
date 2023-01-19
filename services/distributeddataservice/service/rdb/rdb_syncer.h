@@ -20,12 +20,12 @@
 #include <string>
 
 #include "metadata/store_meta_data.h"
-#include "rdb_notifier.h"
 #include "rdb_store_observer_impl.h"
 #include "rdb_types.h"
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
 #include "metadata/secret_key_meta_data.h"
+#include "iremote_object.h"
 namespace OHOS::DistributedRdb {
 class RdbSyncer {
 public:

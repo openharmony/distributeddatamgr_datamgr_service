@@ -24,6 +24,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "permission/permission_validator.h"
+#include "rdb_notifier_proxy.h"
 #include "types_export.h"
 #include "utils/anonymous.h"
 using OHOS::DistributedKv::AccountDelegate;

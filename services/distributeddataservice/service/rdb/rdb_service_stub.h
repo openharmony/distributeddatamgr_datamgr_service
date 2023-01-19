@@ -16,14 +16,15 @@
 #ifndef DISTRIBUTED_RDB_SERVICE_STUB_H
 #define DISTRIBUTED_RDB_SERVICE_STUB_H
 
-#include <iremote_stub.h>
-#include "irdb_service.h"
+#include "iremote_stub.h"
+#include "rdb_service.h"
 #include "rdb_notifier.h"
 #include "feature/feature_system.h"
 
 namespace OHOS::DistributedRdb {
 class RdbServiceStub : public RdbService, public DistributedData::FeatureSystem::Feature {
 public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedRdb.IRdbService");
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
     int32_t Sync(const RdbSyncerParam& param, const SyncOption& option,
