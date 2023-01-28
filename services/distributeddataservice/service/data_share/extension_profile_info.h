@@ -23,7 +23,7 @@
 namespace OHOS::DataShare {
 struct Config final : public DistributedData::Serializable {
     std::string uri = "*";
-    int crossUserMode = 1;
+    int crossUserMode = 0;
     std::string  writePermission = "";
     std::string  readPermission = "";
     bool Marshal(json &node) const override;

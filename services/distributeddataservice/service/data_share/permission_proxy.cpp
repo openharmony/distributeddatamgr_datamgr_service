@@ -100,8 +100,8 @@ void PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo, const Uri
 {
     for (auto &item : profileInfo.tableConfig) {
         UriInfo temp;
-        if (URIUtils::GetInfoFromURI(item.uri, temp) && temp.storeName == uriInfo.storeName
-            && temp.tableName == uriInfo.tableName) {
+        if (item.crossUserMode != 0 && URIUtils::GetInfoFromURI(item.uri, temp)
+            && temp.storeName == uriInfo.storeName && temp.tableName == uriInfo.tableName) {
             crossUserMode = item.crossUserMode;
             return;
         }
@@ -109,15 +109,15 @@ void PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo, const Uri
 
     for (auto &item : profileInfo.tableConfig) {
         UriInfo temp;
-        if (URIUtils::GetInfoFromURI(item.uri, temp, true) && temp.tableName.empty()
-            && temp.storeName == uriInfo.storeName) {
+        if (item.crossUserMode != 0 && URIUtils::GetInfoFromURI(item.uri, temp, true)
+            && temp.tableName.empty() && temp.storeName == uriInfo.storeName) {
             crossUserMode = item.crossUserMode;
             return;
         }
     }
 
     for (auto &item : profileInfo.tableConfig) {
-        if (item.uri == "*") {
+        if (item.crossUserMode != 0 && item.uri == "*") {
             crossUserMode = item.crossUserMode;
             return;
         }
