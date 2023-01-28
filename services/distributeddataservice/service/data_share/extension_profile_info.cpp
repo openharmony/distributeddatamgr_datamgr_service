@@ -35,13 +35,13 @@ bool Config::Marshal(json &node) const
 
 bool Config::Unmarshal(const json &node)
 {
-    GetValue(node, GET_NAME(uri), uri);
+    bool ret = true;
+    ret = GetValue(node, GET_NAME(uri), uri) && ret;
     GetValue(node, GET_NAME(crossUserMode), crossUserMode);
     GetValue(node, GET_NAME(readPermission), readPermission);
     GetValue(node, GET_NAME(writePermission), writePermission);
-    return true;
+    return ret;
 }
-
 
 bool ProfileInfo::Marshal(json &node) const
 {
@@ -51,8 +51,9 @@ bool ProfileInfo::Marshal(json &node) const
 
 bool ProfileInfo::Unmarshal(const json &node)
 {
-    GetValue(node, GET_NAME(tableConfig), tableConfig);
-    return true;
+    bool ret = true;
+    ret = GetValue(node, GET_NAME(tableConfig), tableConfig) && ret;
+    return ret;
 }
 
 bool ExtensionProfileInfo::LoadProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
