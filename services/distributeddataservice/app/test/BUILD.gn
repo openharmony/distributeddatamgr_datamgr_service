@@ -74,9 +74,9 @@ ohos_unittest("KvStoreDataServiceTest") {
     "../src/session_manager/route_head_handler_impl.cpp",
     "../src/session_manager/session_manager.cpp",
     "../src/session_manager/upgrade_manager.cpp",
-    "unittest/kvstore_data_service_test.cpp",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src/ikvstore_data_service.cpp",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src/kvstore_client_death_observer.cpp",
+    "unittest/kvstore_data_service_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]

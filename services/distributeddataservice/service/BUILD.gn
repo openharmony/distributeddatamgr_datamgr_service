@@ -99,7 +99,6 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_service_stub.cpp",
     "rdb/rdb_store_observer_impl.cpp",
     "rdb/rdb_syncer.cpp",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src/change_notification.cpp",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src/data_query.cpp",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/src/kv_types_util.cpp",
   ]
