@@ -55,8 +55,6 @@ ohos_shared_library("distributeddatasvc") {
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/distributeddb",
   ]
   sources = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src/data_query.cpp",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/src/kv_types_util.cpp",
     "backup/src/backup_manager.cpp",
     "bootstrap/src/bootstrap.cpp",
     "config/src/config_factory.cpp",
