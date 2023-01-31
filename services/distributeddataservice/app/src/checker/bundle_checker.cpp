@@ -55,7 +55,7 @@ std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
         ZLOGE("token:0x%{public}x, result:%{public}d", info.tokenId, result);
         return "";
     }
-    if (!info.bundleName.empty() && tokenInfo.bundleName != info.bundleName) {
+    if (tokenInfo.bundleName != info.bundleName) {
         ZLOGE("bundlename:%{public}s <-> %{public}s", info.bundleName.c_str(), tokenInfo.bundleName.c_str());
         return "";
     }
