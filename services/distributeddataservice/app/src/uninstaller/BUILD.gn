@@ -30,7 +30,6 @@ ohos_static_library("distributeddata_uninstaller_static") {
     "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
     "//third_party/json/single_include",
     "//commonlibrary/c_utils/base/include",
-    "//base/security/huks/interfaces/inner_api/huks_standard/main/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -51,6 +50,7 @@ ohos_static_library("distributeddata_uninstaller_static") {
     "common_event_service:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
     "hiviewdfx_hilog_native:libhilog",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
