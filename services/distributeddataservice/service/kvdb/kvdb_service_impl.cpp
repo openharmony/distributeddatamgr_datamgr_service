@@ -740,7 +740,7 @@ Status KVDBServiceImpl::ConvertDbStatus(DBStatus status) const
         case DBStatus::TIME_OUT:
             return Status::TIME_OUT;
         case DBStatus::OVER_MAX_LIMITS:
-            return Status::OVER_MAX_SUBSCRIBE_LIMITS;
+            return Status::OVER_MAX_LIMITS;
         case DBStatus::EKEYREVOKED_ERROR: // fallthrough
         case DBStatus::SECURITY_OPTION_CHECK_ERROR:
             return Status::SECURITY_LEVEL_ERROR;
