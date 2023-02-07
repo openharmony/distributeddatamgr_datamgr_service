@@ -21,7 +21,12 @@ namespace DistributedData {
 using DBEntry = DistributedDB::Entry;
 class DBChangeDataMock : public DistributedDB::KvStoreChangedData {
 public:
-    enum Action : int32_t { INSERT, UPDATE, DELETE, BUTT };
+    enum Action : int32_t {
+        INSERT,
+        UPDATE,
+        DELETE, 
+        BUTT
+    };
     DBChangeDataMock(const std::vector<DBEntry> &inserts, const std::vector<DBEntry> &updates,
         const std::vector<DBEntry> &deletes);
     const std::list<DBEntry> &GetEntriesInserted() const override;
