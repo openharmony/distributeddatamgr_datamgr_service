@@ -24,7 +24,7 @@ public:
     enum Action : int32_t {
         INSERT,
         UPDATE,
-        DELETE, 
+        DELETE,
         BUTT
     };
     DBChangeDataMock(const std::vector<DBEntry> &inserts, const std::vector<DBEntry> &updates,
