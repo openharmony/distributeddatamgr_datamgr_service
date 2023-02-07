@@ -27,13 +27,15 @@ public:
         DELETE,
         BUTT
     };
-    DBChangeDataMock(const std::vector<DBEntry> &inserts, const std::vector<DBEntry> &updates, const std::vector<DBEntry> &deletes);
+    DBChangeDataMock(const std::vector<DBEntry> &inserts, const std::vector<DBEntry> &updates,
+        const std::vector<DBEntry> &deletes);
     const std::list<DBEntry> &GetEntriesInserted() const override;
     const std::list<DBEntry> &GetEntriesUpdated() const override;
     const std::list<DBEntry> &GetEntriesDeleted() const override;
     bool IsCleared() const override;
 
     bool AddEntry(DBEntry entry, int32_t type = DELETE);
+
 private:
     std::list<DBEntry> entries_[BUTT];
 };
