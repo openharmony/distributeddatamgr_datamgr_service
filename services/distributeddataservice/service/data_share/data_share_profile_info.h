@@ -19,8 +19,10 @@
 #include "bundle_info.h"
 #include "uri_utils.h"
 #include "serializable/serializable.h"
+#include "resource_manager.h"
 
 namespace OHOS::DataShare {
+using namespace OHOS::Global::Resource;
 struct Config final : public DistributedData::Serializable {
     std::string uri = "*";
     int crossUserMode = 0;
@@ -41,6 +43,17 @@ public:
     DataShareProfileInfo() = default;
     bool LoadProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
         ProfileInfo &profileInfo, bool &isSingleApp);
+
+private:
+    bool GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata, const std::string &metadataName,
+        const std::string &resourcePath, bool isCompressed, std::vector<std::string> &profileInfos) const;
+    bool GetResConfigFile(const AppExecFwk::ExtensionAbilityInfo &extensionInfo, const std::string &metadataName,
+        std::vector<std::string> &profileInfos);
+    std::shared_ptr<ResourceManager> InitResMgr(const std::string &basicString) const;
+    bool GetResFromResMgr(const std::string &resName, const std::shared_ptr<ResourceManager> &resMgr,
+        bool isCompressed, std::vector<std::string> &profileInfos) const;
+    bool TransformFileToJsonString(const std::string &resPath, std::string &profile) const;
+    bool IsFileExisted(const std::string &filePath) const;
 };
 } // namespace OHOS::DataShare
 #endif // DATA_SHARE_PROFILE_INFO_H
