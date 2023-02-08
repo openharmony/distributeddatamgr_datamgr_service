@@ -130,6 +130,7 @@ ohos_shared_library("distributeddatasvc") {
     "ipc:ipc_core",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
+    "resource_management:global_resmgr",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"
