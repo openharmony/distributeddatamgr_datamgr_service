@@ -52,7 +52,7 @@ bool ProfileInfo::Marshal(json &node) const
 bool ProfileInfo::Unmarshal(const json &node)
 {
     bool ret = true;
-    GetValue(node, GET_NAME(tableConfig), tableConfig) && ret;
+    ret = GetValue(node, GET_NAME(tableConfig), tableConfig) && ret;
     return ret;
 }
 

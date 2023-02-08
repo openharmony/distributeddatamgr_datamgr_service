@@ -98,7 +98,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
     bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
-        ZLOGE("CheckTableConfig failed!");
+        ZLOGE("Params inValid!");
         return ERROR;
     }
 
@@ -123,7 +123,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
     bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
-        ZLOGE("CheckTableConfig failed!");
+        ZLOGE("Params inValid!");
         return ERROR;
     }
 
@@ -149,7 +149,7 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
-        ZLOGE("CheckTableConfig failed!");
+        ZLOGE("Params inValid!");
         return nullptr;
     }
     return RdbAdaptor::Query(uriInfo, predicates, columns, userId, isSingleApp);
