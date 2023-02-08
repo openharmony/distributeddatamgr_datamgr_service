@@ -20,7 +20,7 @@
 
 #include "bundle_info.h"
 #include "data_share_service_stub.h"
-#include "extension_profile_info.h"
+#include "data_share_profile_info.h"
 #include "visibility.h"
 #include "uri_utils.h"
 
@@ -47,10 +47,10 @@ private:
     };
 
     bool NotifyChange(const std::string &uri);
-    bool CheckTableConfig(UriInfo &uriInfo, PermissionType permissionType, bool &isSingleApp, int32_t userId);
+    bool IsValidParams(UriInfo &uriInfo, PermissionType permissionType, bool &isSingleApp, int32_t userId);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
-    ExtensionProfileInfo extensionProfileInfo_;
+    DataShareProfileInfo dataShareProfileInfo_;
 };
 } // namespace OHOS::DataShare
 #endif

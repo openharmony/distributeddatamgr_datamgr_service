@@ -53,8 +53,8 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
 
     bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!CheckTableConfig(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
-        ZLOGE("CheckTableConfig failed!");
+    if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
+        ZLOGE("Params inValid!");
         return ERROR;
     }
 
@@ -97,7 +97,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
 
     bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!CheckTableConfig(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
+    if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
         ZLOGE("CheckTableConfig failed!");
         return ERROR;
     }
@@ -122,7 +122,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
 
     bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!CheckTableConfig(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
+    if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
         ZLOGE("CheckTableConfig failed!");
         return ERROR;
     }
@@ -148,14 +148,14 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
 
     bool isSingleApp;
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!CheckTableConfig(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
+    if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
         ZLOGE("CheckTableConfig failed!");
         return nullptr;
     }
     return RdbAdaptor::Query(uriInfo, predicates, columns, userId, isSingleApp);
 }
 
-bool DataShareServiceImpl::CheckTableConfig(UriInfo &uriInfo,
+bool DataShareServiceImpl::IsValidParams(UriInfo &uriInfo,
     DataShareServiceImpl::PermissionType permissionType, bool &isSingleApp, int32_t userId)
 {
     std::string permission;
@@ -181,7 +181,7 @@ bool DataShareServiceImpl::CheckTableConfig(UriInfo &uriInfo,
     }
 
     ProfileInfo profileInfo;
-    if (!extensionProfileInfo_.LoadProfileInfoFromExtension(bundleInfo, profileInfo, isSingleApp)) {
+    if (!dataShareProfileInfo_.LoadProfileInfoFromExtension(bundleInfo, profileInfo, isSingleApp)) {
         ZLOGE("LoadProfileInfoFromExtension failed!");
         return false;
     }

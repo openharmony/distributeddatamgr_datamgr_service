@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef EXTENSION_PROFILE_INFO_H
-#define EXTENSION_PROFILE_INFO_H
+#ifndef DATA_SHARE_PROFILE_INFO_H
+#define DATA_SHARE_PROFILE_INFO_H
 
 #include "bundle_info.h"
 #include "uri_utils.h"
@@ -36,11 +36,11 @@ struct ProfileInfo : public DistributedData::Serializable {
     bool Unmarshal(const json &node) override;
 };
 
-class ExtensionProfileInfo {
+class DataShareProfileInfo {
 public:
-    ExtensionProfileInfo() = default;
+    DataShareProfileInfo() = default;
     bool LoadProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
         ProfileInfo &profileInfo, bool &isSingleApp);
 };
 } // namespace OHOS::DataShare
-#endif // EXTENSION_PROFILE_INFO_H
+#endif // DATA_SHARE_PROFILE_INFO_H

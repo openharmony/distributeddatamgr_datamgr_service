@@ -13,8 +13,8 @@
  * limitations under the License.
  */
  
-#define LOG_TAG "ExtensionProfileInfo"
-#include "extension_profile_info.h"
+#define LOG_TAG "DataShareProfileInfo"
+#include "data_share_profile_info.h"
 
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_client.h"
@@ -52,11 +52,11 @@ bool ProfileInfo::Marshal(json &node) const
 bool ProfileInfo::Unmarshal(const json &node)
 {
     bool ret = true;
-    ret = GetValue(node, GET_NAME(tableConfig), tableConfig) && ret;
+    GetValue(node, GET_NAME(tableConfig), tableConfig) && ret;
     return ret;
 }
 
-bool ExtensionProfileInfo::LoadProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
+bool DataShareProfileInfo::LoadProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
     ProfileInfo &profileInfo, bool &isSingleApp)
 {
     isSingleApp = bundleInfo.singleton;

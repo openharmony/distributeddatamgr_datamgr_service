@@ -78,7 +78,7 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
 }
 
 bool PermissionProxy::IsCrossUserMode(const ProfileInfo &profileInfo, const AppExecFwk::BundleInfo &bundleInfo,
-    const int32_t userId, const bool isSingleApp, UriInfo &uriInfo)
+    int32_t userId, bool isSingleApp, UriInfo &uriInfo)
 {
     if (!isSingleApp) {
         return true;
@@ -131,7 +131,7 @@ void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, int32_t use
 }
 
 bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::string &storeName,
-    DistributedData::StoreMetaData &metaData, const int32_t userId, const bool isSingleApp)
+    DistributedData::StoreMetaData &metaData, int32_t userId, bool isSingleApp)
 {
     DistributedData::StoreMetaData meta;
     FillData(meta, userId);

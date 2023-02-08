@@ -20,7 +20,7 @@
 
 #include "bundle_info.h"
 #include "bundle_mgr_proxy.h"
-#include "extension_profile_info.h"
+#include "data_share_profile_info.h"
 #include "metadata/store_meta_data.h"
 
 namespace OHOS::DataShare {
@@ -31,9 +31,9 @@ public:
     static bool QueryReadPermission(const std::string &bundleName, uint32_t tokenId,
         std::string &permission, AppExecFwk::BundleInfo &bundleInfo);
     static bool QueryMetaData(const std::string &bundleName, const std::string &storeName,
-        DistributedData::StoreMetaData &metaData, const int32_t userId, const bool isSingleApp);
+        DistributedData::StoreMetaData &metaData, int32_t userId, bool isSingleApp);
     static bool IsCrossUserMode(const ProfileInfo &profileInfo, const AppExecFwk::BundleInfo &bundleInfo,
-        const int32_t userId, const bool isSingleApp, UriInfo &uriInfo);
+        int32_t userId, bool isSingleApp, UriInfo &uriInfo);
 
 private:
     static void FillData(DistributedData::StoreMetaData &data, int32_t userId);
