@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -96,8 +96,8 @@ bool DataShareProfileInfo::GetResConfigFile(const AppExecFwk::ExtensionAbilityIn
         ZLOGE("no valid file can be obtained");
         return false;
     }
-    int32_t InfoSize = profileInfos.size();
-    ZLOGD("The size of the profile info is : %{public}d", InfoSize);
+    int32_t infoSize = profileInfos.size();
+    ZLOGD("The size of the profile info is : %{public}d", infoSize);
     return true;
 }
 
@@ -167,7 +167,7 @@ std::shared_ptr<ResourceManager> DataShareProfileInfo::InitResMgr(const std::str
 }
 
 bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, const std::shared_ptr<ResourceManager> &resMgr,
-                                           bool isCompressed, std::vector<std::string> &profileInfos) const
+    bool isCompressed, std::vector<std::string> &profileInfos) const
 {
     ZLOGD("GetResFromResMgr begin");
     if (resName.empty()) {
@@ -239,12 +239,12 @@ bool DataShareProfileInfo::TransformFileToJsonString(const std::string &resPath,
         return false;
     }
     std::fstream in;
-    char errBuf[256];
-    errBuf[0] = '\0';
+    char errBuffer[256];
+    errBuffer[0] = '\0';
     in.open(resPath, std::ios_base::in | std::ios_base::binary);
     if (!in.is_open()) {
-        strerror_r(errno, errBuf, sizeof(errBuf));
-        ZLOGE("the file cannot be open due to  %{public}s", errBuf);
+        strerror_r(errno, errBuffer, sizeof(errBuffer));
+        ZLOGE("the file cannot be open due to  %{public}s", errBuffer);
         return false;
     }
     in.seekg(0, std::ios::end);
