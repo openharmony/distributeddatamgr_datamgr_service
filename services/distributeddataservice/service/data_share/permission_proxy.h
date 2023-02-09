@@ -37,8 +37,9 @@ public:
 
 private:
     static void FillData(DistributedData::StoreMetaData &data, int32_t userId);
-    static void GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo, int &crossUserMode);
+    static int GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo);
     static BundleMgrProxy bmsProxy_;
+    static constexpr int32_t USERMODE_UNDEFINED = 0;
     static constexpr int32_t USERMODE_SHARED = 1;
     static constexpr int32_t USERMODE_UNIQUE = 2;
 };

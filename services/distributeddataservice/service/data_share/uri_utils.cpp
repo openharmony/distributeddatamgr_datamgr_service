@@ -26,7 +26,7 @@ bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo, bool tab
     Uri uriTemp(uri);
     std::vector<std::string> splitUri;
     SplitStr(uriTemp.GetPath(), "/", splitUri);
-    if (!CheckFormat(splitUri, tableNameEmpty)) {
+    if (!CheckUriFormat(splitUri, tableNameEmpty)) {
         ZLOGE("Invalid uri: %{public}s", uri.c_str());
         return false;
     }
@@ -40,7 +40,7 @@ bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo, bool tab
     return true;
 }
 
-bool URIUtils::CheckFormat(const std::vector<std::string> &splitUri, bool tableNameEmpty)
+bool URIUtils::CheckUriFormat(const std::vector<std::string> &splitUri, bool tableNameEmpty)
 {
     if (splitUri.size() < URI_INDEX_MIN) {
         return false;

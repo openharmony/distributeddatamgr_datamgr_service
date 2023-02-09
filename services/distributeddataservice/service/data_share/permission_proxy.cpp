@@ -83,11 +83,10 @@ bool PermissionProxy::IsCrossUserMode(const ProfileInfo &profileInfo, const AppE
     if (!isSingleApp) {
         return true;
     }
-    int crossUserMode = 0;
-    GetCrossUserMode(profileInfo, uriInfo, crossUserMode);
-
+    int crossUserMode = GetCrossUserMode(profileInfo, uriInfo);
+    
     if (crossUserMode != USERMODE_SHARED && crossUserMode != USERMODE_UNIQUE) {
-        ZLOGE("The crossUserMode is not right, must be 1 or 2");
+        ZLOGE("The crossUserMode is not right.");
         return false;
     }
     if (crossUserMode == USERMODE_UNIQUE) {
@@ -96,32 +95,28 @@ bool PermissionProxy::IsCrossUserMode(const ProfileInfo &profileInfo, const AppE
     return true;
 }
 
-void PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo, int &crossUserMode)
+int PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo)
 {
+    int crossUserMode = USERMODE_UNDEFINED;
+    bool getStoreConfig = false;
     for (auto &item : profileInfo.tableConfig) {
         UriInfo temp;
-        if (item.crossUserMode != 0 && URIUtils::GetInfoFromURI(item.uri, temp)
+        if (item.crossUserMode != USERMODE_UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp)
             && temp.storeName == uriInfo.storeName && temp.tableName == uriInfo.tableName) {
             crossUserMode = item.crossUserMode;
-            return;
+            return crossUserMode;
         }
-    }
-
-    for (auto &item : profileInfo.tableConfig) {
-        UriInfo temp;
-        if (item.crossUserMode != 0 && URIUtils::GetInfoFromURI(item.uri, temp, true)
+        if (item.crossUserMode != USERMODE_UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp, true)
             && temp.tableName.empty() && temp.storeName == uriInfo.storeName) {
             crossUserMode = item.crossUserMode;
-            return;
+            getStoreConfig = true;
+            continue;
         }
-    }
-
-    for (auto &item : profileInfo.tableConfig) {
-        if (item.crossUserMode != 0 && item.uri == "*") {
+        if (item.crossUserMode != USERMODE_UNDEFINED && item.uri == "*" && !getStoreConfig) {
             crossUserMode = item.crossUserMode;
-            return;
         }
     }
+    return crossUserMode;
 }
 
 void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, int32_t userId)

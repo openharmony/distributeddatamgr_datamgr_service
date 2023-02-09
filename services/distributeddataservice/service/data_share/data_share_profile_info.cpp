@@ -17,6 +17,7 @@
 #include "data_share_profile_info.h"
 
 #include <fstream>
+#include <sstream>
 #include <unistd.h>
 
 #include "bundle_info.h"
@@ -26,6 +27,7 @@ namespace OHOS::DataShare {
 namespace {
     constexpr const char* METADATA_NAME = "ohos.extension.dataShare";
     constexpr const char* PROFILE_FILE_PREFIX = "$profile:";
+    static const size_t PROFILE_PREFIX_LEN = strlen(PROFILE_FILE_PREFIX);
 }
 bool Config::Marshal(json &node) const
 {
@@ -176,11 +178,11 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, const st
     }
 
     size_t pos = resName.rfind(PROFILE_FILE_PREFIX);
-    if ((pos == std::string::npos) || (pos == resName.length() - strlen(PROFILE_FILE_PREFIX))) {
+    if ((pos == std::string::npos) || (pos == resName.length() - PROFILE_PREFIX_LEN)) {
         ZLOGE("GetResFromResMgr res name is invalid");
         return false;
     }
-    std::string profileName = resName.substr(pos + strlen(PROFILE_FILE_PREFIX));
+    std::string profileName = resName.substr(pos + PROFILE_PREFIX_LEN);
     // hap is compressed status, get file content.
     if (isCompressed) {
         ZLOGD("compressed status.");
@@ -255,12 +257,9 @@ bool DataShareProfileInfo::TransformFileToJsonString(const std::string &resPath,
         return false;
     }
     in.seekg(0, std::ios::beg);
-    nlohmann::json profileJson = nlohmann::json::parse(in, nullptr, false);
-    if (profileJson.is_discarded()) {
-        ZLOGE("bad profile file");
-        in.close();
-        return false;
-    }
+    std::ostringstream tmp;
+    tmp << in.rdbuf();
+    auto profileJson = Config::ToJson(tmp.str());
     profile = profileJson.dump();
     in.close();
     return true;

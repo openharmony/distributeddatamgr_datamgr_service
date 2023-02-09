@@ -20,7 +20,7 @@
 #include "rdb_utils.h"
 namespace OHOS::DataShare {
 int32_t RdbAdaptor::Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket,
-    const int32_t userId, const bool isSingleApp)
+    int32_t userId, bool isSingleApp)
 {
     DistributedData::StoreMetaData metaData;
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId, isSingleApp)) {
@@ -30,7 +30,7 @@ int32_t RdbAdaptor::Insert(const UriInfo &uriInfo, const DataShareValuesBucket &
     return delegate.Insert(uriInfo.tableName, valuesBucket);
 }
 int32_t RdbAdaptor::Update(const UriInfo &uriInfo, const DataSharePredicates &predicate,
-    const DataShareValuesBucket &valuesBucket, const int32_t userId, const bool isSingleApp)
+    const DataShareValuesBucket &valuesBucket, int32_t userId, bool isSingleApp)
 {
     DistributedData::StoreMetaData metaData;
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId, isSingleApp)) {
@@ -40,7 +40,7 @@ int32_t RdbAdaptor::Update(const UriInfo &uriInfo, const DataSharePredicates &pr
     return delegate.Update(uriInfo.tableName, predicate, valuesBucket);
 }
 int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate,
-    const int32_t userId, const bool isSingleApp)
+    int32_t userId, bool isSingleApp)
 {
     DistributedData::StoreMetaData metaData;
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId, isSingleApp)) {
@@ -50,7 +50,7 @@ int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &pr
     return delegate.Delete(uriInfo.tableName, predicate);
 }
 std::shared_ptr<DataShareResultSet> RdbAdaptor::Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
-    const std::vector<std::string> &columns, const int32_t userId, const bool isSingleApp)
+    const std::vector<std::string> &columns, int32_t userId, bool isSingleApp)
 {
     DistributedData::StoreMetaData metaData;
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId, isSingleApp)) {

@@ -32,7 +32,7 @@ public:
     static bool GetInfoFromURI(const std::string &uri, UriInfo &uriInfo, bool tableNameEmpty = false);
 
 private:
-    static bool CheckFormat(const std::vector<std::string> &splitUri, bool tableNameEmpty);
+    static bool CheckUriFormat(const std::vector<std::string> &splitUri, bool tableNameEmpty);
     static constexpr size_t URI_INDEX_BUNLDENAME = 0;
     static constexpr size_t URI_INDEX_MODULENAME = 1;
     static constexpr size_t URI_INDEX_STORENAME = 2;

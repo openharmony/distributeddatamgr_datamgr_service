@@ -41,7 +41,7 @@ public:
         const DataShareValuesBucket &valuesBucket);
     int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate);
     std::shared_ptr<DataShareResultSet> Query(const std::string &tableName,
-    const DataSharePredicates &predicates, const std::vector<std::string> &columns);
+        const DataSharePredicates &predicates, const std::vector<std::string> &columns);
 
 private:
     std::shared_ptr<RdbStore> store_;
@@ -49,13 +49,13 @@ private:
 class RdbAdaptor {
 public:
     static int32_t Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket,
-        const int32_t userId, const bool isSingleApp);
+        int32_t userId, bool isSingleApp);
     static int32_t Update(const UriInfo &uriInfo, const DataSharePredicates &predicate,
-        const DataShareValuesBucket &valuesBucket, const int32_t userId, const bool isSingleApp);
+        const DataShareValuesBucket &valuesBucket, int32_t userId, bool isSingleApp);
     static int32_t Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate,
-        const int32_t userId, const bool isSingleApp);
+        int32_t userId, bool isSingleApp);
     static std::shared_ptr<DataShareResultSet> Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
-        const std::vector<std::string> &columns, const int32_t userId, const bool isSingleApp);
+        const std::vector<std::string> &columns, int32_t userId, bool isSingleApp);
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:
