@@ -84,7 +84,6 @@ bool PermissionProxy::IsCrossUserMode(const ProfileInfo &profileInfo, const AppE
         return true;
     }
     int crossUserMode = GetCrossUserMode(profileInfo, uriInfo);
-    
     if (crossUserMode != USERMODE_SHARED && crossUserMode != USERMODE_UNIQUE) {
         ZLOGE("The crossUserMode is not right.");
         return false;
