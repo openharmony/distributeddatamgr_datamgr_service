@@ -27,7 +27,7 @@ namespace OHOS::DataShare {
 namespace {
     constexpr const char* METADATA_NAME = "ohos.extension.dataShare";
     constexpr const char* PROFILE_FILE_PREFIX = "$profile:";
-    static const size_t PROFILE_PREFIX_LEN = strlen(PROFILE_FILE_PREFIX);
+    const size_t PROFILE_PREFIX_LEN = strlen(PROFILE_FILE_PREFIX);
 }
 bool Config::Marshal(json &node) const
 {
