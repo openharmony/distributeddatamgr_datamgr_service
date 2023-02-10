@@ -197,11 +197,7 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, const st
             return false;
         }
         std::string rawData(fileContentPtr.get(), fileContentPtr.get() + len);
-        nlohmann::json profileJson = nlohmann::json::parse(rawData, nullptr, false);
-        if (profileJson.is_discarded()) {
-            ZLOGE("bad profile file");
-            return false;
-        }
+        auto profileJson = Config::ToJson(rawData);
         profileInfos.emplace_back(profileJson.dump());
         return true;
     }
