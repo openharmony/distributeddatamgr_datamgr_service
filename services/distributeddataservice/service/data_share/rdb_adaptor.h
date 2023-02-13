@@ -48,14 +48,12 @@ private:
 };
 class RdbAdaptor {
 public:
-    static int32_t Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket,
-        int32_t userId, bool isSingleApp);
+    static int32_t Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket, int32_t userId);
     static int32_t Update(const UriInfo &uriInfo, const DataSharePredicates &predicate,
-        const DataShareValuesBucket &valuesBucket, int32_t userId, bool isSingleApp);
-    static int32_t Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate,
-        int32_t userId, bool isSingleApp);
+        const DataShareValuesBucket &valuesBucket, int32_t userId);
+    static int32_t Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate, int32_t userId);
     static std::shared_ptr<DataShareResultSet> Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
-        const std::vector<std::string> &columns, int32_t userId, bool isSingleApp);
+        const std::vector<std::string> &columns, int32_t userId);
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:

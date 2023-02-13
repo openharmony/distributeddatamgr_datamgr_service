@@ -26,22 +26,26 @@
 namespace OHOS::DataShare {
 class PermissionProxy {
 public:
+    enum CrossUserMode {
+        UNDEFINED = 0,
+        SHARED,
+        UNIQUE,
+    };
+
+    static bool GetBundleInfo(const std::string &bundleName, uint32_t tokenId, AppExecFwk::BundleInfo &bundleInfo);
     static bool QueryWritePermission(const std::string &bundleName, uint32_t tokenId,
-        std::string &permission, AppExecFwk::BundleInfo &bundleInfo);
+        std::string &permission, const AppExecFwk::BundleInfo &bundleInfo);
     static bool QueryReadPermission(const std::string &bundleName, uint32_t tokenId,
-        std::string &permission, AppExecFwk::BundleInfo &bundleInfo);
+        std::string &permission, const AppExecFwk::BundleInfo &bundleInfo);
     static bool QueryMetaData(const std::string &bundleName, const std::string &storeName,
-        DistributedData::StoreMetaData &metaData, int32_t userId, bool isSingleApp);
-    static bool IsCrossUserMode(const ProfileInfo &profileInfo, const AppExecFwk::BundleInfo &bundleInfo,
+        DistributedData::StoreMetaData &metaData, int32_t userId);
+    static bool ConvertTableNameByCrossUserMode(const ProfileInfo &profileInfo,
         int32_t userId, bool isSingleApp, UriInfo &uriInfo);
 
 private:
     static void FillData(DistributedData::StoreMetaData &data, int32_t userId);
     static int GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo);
     static BundleMgrProxy bmsProxy_;
-    static constexpr int USERMODE_UNDEFINED = 0;
-    static constexpr int USERMODE_SHARED = 1;
-    static constexpr int USERMODE_UNIQUE = 2;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_PERMISSION_PROXY_H

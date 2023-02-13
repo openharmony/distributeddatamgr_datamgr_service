@@ -48,6 +48,7 @@ private:
 
     bool NotifyChange(const std::string &uri);
     bool IsValidParams(UriInfo &uriInfo, PermissionType permissionType, bool &isSingleApp, int32_t userId);
+    int32_t ConvertUserId(int32_t userId, bool isSingleApp);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     DataShareProfileInfo dataShareProfileInfo_;

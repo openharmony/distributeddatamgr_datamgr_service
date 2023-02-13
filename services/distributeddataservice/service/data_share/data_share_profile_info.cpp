@@ -176,7 +176,7 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
         ZLOGD("compressed status.");
         std::unique_ptr<uint8_t[]> fileContent = nullptr;
         size_t len = 0;
-        RState ret = resMgr.GetProfileDataByName(profileName.c_str(), len, fileContentPtr);
+        RState ret = resMgr.GetProfileDataByName(profileName.c_str(), len, fileContent);
         if (ret != SUCCESS) {
             ZLOGE("GetProfileDataByName failed, ret is %{public}d", ret);
             return false;

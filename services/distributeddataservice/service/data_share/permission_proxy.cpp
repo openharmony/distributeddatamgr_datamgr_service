@@ -26,13 +26,19 @@
 
 namespace OHOS::DataShare {
 BundleMgrProxy PermissionProxy::bmsProxy_;
-bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32_t tokenId,
-    std::string &permission, AppExecFwk::BundleInfo &bundleInfo)
+bool PermissionProxy::GetBundleInfo(const std::string &bundleName, uint32_t tokenId,
+    AppExecFwk::BundleInfo &bundleInfo)
 {
     if (!bmsProxy_.GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed!");
         return false;
     }
+    return true;
+}
+
+bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32_t tokenId,
+    std::string &permission, const AppExecFwk::BundleInfo &bundleInfo)
+{
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
@@ -53,12 +59,8 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
 }
 
 bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_t tokenId,
-    std::string &permission, AppExecFwk::BundleInfo &bundleInfo)
+    std::string &permission, const AppExecFwk::BundleInfo &bundleInfo)
 {
-    if (!bmsProxy_.GetBundleInfoFromBMS(bundleName, tokenId, bundleInfo)) {
-        ZLOGE("GetBundleInfoFromBMS failed!");
-        return false;
-    }
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
@@ -77,18 +79,18 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     return false;
 }
 
-bool PermissionProxy::IsCrossUserMode(const ProfileInfo &profileInfo, const AppExecFwk::BundleInfo &bundleInfo,
+bool PermissionProxy::ConvertTableNameByCrossUserMode(const ProfileInfo &profileInfo,
     int32_t userId, bool isSingleApp, UriInfo &uriInfo)
 {
     if (!isSingleApp) {
         return true;
     }
     int crossUserMode = GetCrossUserMode(profileInfo, uriInfo);
-    if (crossUserMode != USERMODE_SHARED && crossUserMode != USERMODE_UNIQUE) {
-        ZLOGE("The crossUserMode is not right.");
+    if (crossUserMode != CrossUserMode::SHARED && crossUserMode != CrossUserMode::UNIQUE) {
+        ZLOGE("The crossUserMode is not right. crossUserMode is %{public}d", crossUserMode);
         return false;
     }
-    if (crossUserMode == USERMODE_UNIQUE) {
+    if (crossUserMode == CrossUserMode::UNIQUE) {
         uriInfo.tableName.append("_").append(std::to_string(userId));
     }
     return true;
@@ -96,22 +98,22 @@ bool PermissionProxy::IsCrossUserMode(const ProfileInfo &profileInfo, const AppE
 
 int PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo)
 {
-    int crossUserMode = USERMODE_UNDEFINED;
-    bool getStoreConfig = false;
+    int crossUserMode = CrossUserMode::UNDEFINED;
+    bool isStoreConfig  = false;
     for (auto &item : profileInfo.tableConfig) {
         UriInfo temp;
-        if (item.crossUserMode != USERMODE_UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp)
+        if (item.crossUserMode != CrossUserMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp)
             && temp.storeName == uriInfo.storeName && temp.tableName == uriInfo.tableName) {
             crossUserMode = item.crossUserMode;
             return crossUserMode;
         }
-        if (item.crossUserMode != USERMODE_UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp, true)
+        if (item.crossUserMode != CrossUserMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp, true)
             && temp.tableName.empty() && temp.storeName == uriInfo.storeName) {
             crossUserMode = item.crossUserMode;
-            getStoreConfig = true;
+            isStoreConfig = true;
             continue;
         }
-        if (item.crossUserMode != USERMODE_UNDEFINED && item.uri == "*" && !getStoreConfig) {
+        if (item.crossUserMode != CrossUserMode::UNDEFINED && item.uri == "*" && !isStoreConfig) {
             crossUserMode = item.crossUserMode;
         }
     }
@@ -125,16 +127,12 @@ void PermissionProxy::FillData(DistributedData::StoreMetaData &meta, int32_t use
 }
 
 bool PermissionProxy::QueryMetaData(const std::string &bundleName, const std::string &storeName,
-    DistributedData::StoreMetaData &metaData, int32_t userId, bool isSingleApp)
+    DistributedData::StoreMetaData &metaData, int32_t userId)
 {
     DistributedData::StoreMetaData meta;
     FillData(meta, userId);
     meta.bundleName = bundleName;
     meta.storeId = storeName;
-    if (isSingleApp) {
-        ZLOGD("This hap is allowed to access across user sessions");
-        meta.user = "0";
-    }
     bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData);
     if (!isCreated) {
         ZLOGE("Interface token is not equal");
