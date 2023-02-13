@@ -96,7 +96,8 @@ bool PermissionProxy::ConvertTableNameByCrossUserMode(const ProfileInfo &profile
     return true;
 }
 
-CrossUserMode PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo)
+PermissionProxy::CrossUserMode PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo,
+    const UriInfo &uriInfo)
 {
     CrossUserMode crossUserMode = CrossUserMode::UNDEFINED;
     bool isStoreConfig  = false;
