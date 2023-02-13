@@ -44,7 +44,7 @@ public:
 
 private:
     static void FillData(DistributedData::StoreMetaData &data, int32_t userId);
-    static int GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo);
+    static CrossUserMode GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo);
     static BundleMgrProxy bmsProxy_;
 };
 } // namespace OHOS::DataShare
