@@ -52,7 +52,7 @@ private:
     std::shared_ptr<ResourceManager> InitResMgr(const std::string &basicString) const;
     bool GetResFromResMgr(const std::string &resName, ResourceManager &resMgr, bool isCompressed,
         std::vector<std::string> &profileInfos) const;
-    std::string TransformFileToJsonString(const std::string &resPath) const;
+    std::string ReadProfile(const std::string &resPath) const;
     bool IsFileExisted(const std::string &filePath) const;
 };
 } // namespace OHOS::DataShare
