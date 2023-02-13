@@ -85,7 +85,7 @@ bool PermissionProxy::ConvertTableNameByCrossUserMode(const ProfileInfo &profile
     if (!isSingleApp) {
         return true;
     }
-    int crossUserMode = GetCrossUserMode(profileInfo, uriInfo);
+    CrossUserMode crossUserMode = GetCrossUserMode(profileInfo, uriInfo);
     if (crossUserMode != CrossUserMode::SHARED && crossUserMode != CrossUserMode::UNIQUE) {
         ZLOGE("The crossUserMode is not right. crossUserMode is %{public}d", crossUserMode);
         return false;
@@ -96,25 +96,26 @@ bool PermissionProxy::ConvertTableNameByCrossUserMode(const ProfileInfo &profile
     return true;
 }
 
-int PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo)
+CrossUserMode PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo)
 {
-    int crossUserMode = CrossUserMode::UNDEFINED;
+    CrossUserMode crossUserMode = CrossUserMode::UNDEFINED;
     bool isStoreConfig  = false;
     for (auto &item : profileInfo.tableConfig) {
         UriInfo temp;
-        if (item.crossUserMode != CrossUserMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp)
+        CrossUserMode curUserMode = static_cast<CrossUserMode>(item.crossUserMode);
+        if (curUserMode != CrossUserMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp)
             && temp.storeName == uriInfo.storeName && temp.tableName == uriInfo.tableName) {
-            crossUserMode = item.crossUserMode;
+            crossUserMode = curUserMode;
             return crossUserMode;
         }
-        if (item.crossUserMode != CrossUserMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp, true)
+        if (curUserMode != CrossUserMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp, true)
             && temp.tableName.empty() && temp.storeName == uriInfo.storeName) {
-            crossUserMode = item.crossUserMode;
+            crossUserMode = curUserMode;
             isStoreConfig = true;
             continue;
         }
-        if (item.crossUserMode != CrossUserMode::UNDEFINED && item.uri == "*" && !isStoreConfig) {
-            crossUserMode = item.crossUserMode;
+        if (curUserMode != CrossUserMode::UNDEFINED && item.uri == "*" && !isStoreConfig) {
+            crossUserMode = curUserMode;
         }
     }
     return crossUserMode;
