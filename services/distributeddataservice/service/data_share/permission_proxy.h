@@ -26,11 +26,11 @@
 namespace OHOS::DataShare {
 class PermissionProxy {
 public:
-    enum CrossUserMode {
+    typedef enum {
         UNDEFINED = 0,
         SHARED,
         UNIQUE,
-    };
+    } CrossUserMode;
 
     static bool GetBundleInfo(const std::string &bundleName, uint32_t tokenId, AppExecFwk::BundleInfo &bundleInfo);
     static bool QueryWritePermission(const std::string &bundleName, uint32_t tokenId,

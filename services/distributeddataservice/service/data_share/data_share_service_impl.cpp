@@ -171,8 +171,8 @@ bool DataShareServiceImpl::IsValidParams(UriInfo &uriInfo,
     uint32_t tokenID = IPCSkeleton::GetCallingTokenID();
     AppExecFwk::BundleInfo bundleInfo;
     if (!PermissionProxy::GetBundleInfo(uriInfo.bundleName, tokenID, bundleInfo)) {
-        ZLOGE("GetBundleInfo failed, BundleName is %{public}s, tokenId is %{public}u",
-            DistributedData::Anonymous::Change(uriInfo.bundleName).c_str(), tokenId);
+        ZLOGE("GetBundleInfo failed, BundleName is %{public}s, tokenID is %{public}u",
+            DistributedData::Anonymous::Change(uriInfo.bundleName).c_str(), tokenID);
         return false;
     }
     switch (permissionType) {
