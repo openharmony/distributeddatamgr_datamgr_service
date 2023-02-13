@@ -45,14 +45,14 @@ public:
         ProfileInfo &profileInfo, bool &isSingleApp);
 
 private:
-    bool GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata, const std::string &metadataName,
-        const std::string &resourcePath, bool isCompressed, std::vector<std::string> &profileInfos) const;
-    bool GetResConfigFile(const AppExecFwk::ExtensionAbilityInfo &extensionInfo, const std::string &metadataName,
+    bool GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resourcePath,
+        bool isCompressed, std::vector<std::string> &profileInfos) const;
+    bool GetResConfigFile(const AppExecFwk::ExtensionAbilityInfo &extensionInfo,
         std::vector<std::string> &profileInfos);
     std::shared_ptr<ResourceManager> InitResMgr(const std::string &basicString) const;
-    bool GetResFromResMgr(const std::string &resName, const std::shared_ptr<ResourceManager> &resMgr,
-        bool isCompressed, std::vector<std::string> &profileInfos) const;
-    bool TransformFileToJsonString(const std::string &resPath, std::string &profile) const;
+    bool GetResFromResMgr(const std::string &resName, ResourceManager &resMgr, bool isCompressed,
+        std::vector<std::string> &profileInfos) const;
+    std::string TransformFileToJsonString(const std::string &resPath) const;
     bool IsFileExisted(const std::string &filePath) const;
 };
 } // namespace OHOS::DataShare

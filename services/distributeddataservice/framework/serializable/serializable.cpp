@@ -55,6 +55,21 @@ Serializable::json Serializable::ToJson(const std::string &jsonStr)
     return jsonObj;
 }
 
+bool Serializable::IsJson(const std::string &jsonStr)
+{
+    json jsonObj = json::parse(jsonStr, nullptr, false);
+    if (jsonObj.is_discarded()) {
+        if (jsonStr.empty()) {
+            return false;
+        }
+        jsonObj = json::parse(jsonStr.substr(1), nullptr, false);
+        if (jsonObj.is_discarded()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool Serializable::GetValue(const json &node, const std::string &name, std::string &value)
 {
     auto &subNode = GetSubNode(node, name);
