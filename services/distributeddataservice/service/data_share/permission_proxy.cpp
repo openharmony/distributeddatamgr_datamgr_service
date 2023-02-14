@@ -44,7 +44,7 @@ bool PermissionProxy::QueryWritePermission(uint32_t tokenId, std::string &permis
             permission = item.writePermission;
             if (permission.empty()) {
                 ZLOGW("WritePermission is empty!BundleName is %{public}s,tokenId is %{public}u",
-                bundleInfo.name.c_str(), tokenId);
+                    bundleInfo.name.c_str(), tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -65,7 +65,7 @@ bool PermissionProxy::QueryReadPermission(uint32_t tokenId, std::string &permiss
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
                 ZLOGW("ReadPermission is empty!BundleName is %{public}s,tokenId is %{public}u",
-                    bundleInfo.name.c_str(),tokenId);
+                    bundleInfo.name.c_str(), tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);

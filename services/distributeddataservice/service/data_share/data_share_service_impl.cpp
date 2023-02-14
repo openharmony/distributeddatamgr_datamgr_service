@@ -185,7 +185,8 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     return RdbAdaptor::Query(uriInfo, predicates, columns, userId);
 }
 
-std::string DataShareServiceImpl::GetRealityTableName(uint32_t tokenId, const AppExecFwk::BundleInfo &bundleInfo, const UriInfo &uriInfo)
+std::string DataShareServiceImpl::GetRealityTableName(uint32_t tokenId, const AppExecFwk::BundleInfo &bundleInfo,
+    const UriInfo &uriInfo)
 {
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     bool isSingleApp;

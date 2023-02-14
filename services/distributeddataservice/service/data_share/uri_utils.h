@@ -26,9 +26,9 @@ struct UriInfo {
     std::string storeName;
     std::string tableName;
 
-    void SetTableName(const std::string &tableName)
+    void SetTableName(const std::string &name)
     {
-        UriInfo::tableName = tableName;
+        tableName = name;
     }
 };
 
