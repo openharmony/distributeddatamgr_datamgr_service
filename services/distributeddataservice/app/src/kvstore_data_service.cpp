@@ -333,7 +333,9 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
     }
 
     for (const auto &storeMeta : entries) {
-        if ((!param.userId.empty() && (param.userId != storeMeta.user)) || (localDeviceId != storeMeta.deviceId)) {
+        if ((!param.userId.empty() && (param.userId != storeMeta.user)) || (localDeviceId != storeMeta.deviceId) ||
+            ((StoreMetaData::STORE_RELATIONAL_BEGIN <= storeMeta.storeType) &&
+             (StoreMetaData::STORE_RELATIONAL_END >= storeMeta.storeType))) {
             // judge local userid and local meta
             continue;
         }
