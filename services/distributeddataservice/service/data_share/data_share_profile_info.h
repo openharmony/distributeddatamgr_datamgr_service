@@ -41,14 +41,12 @@ struct ProfileInfo : public DistributedData::Serializable {
 class DataShareProfileInfo {
 public:
     DataShareProfileInfo() = default;
-    bool LoadProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
+    bool GetProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
         ProfileInfo &profileInfo, bool &isSingleApp);
 
 private:
     bool GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resourcePath,
         bool isCompressed, std::vector<std::string> &profileInfos) const;
-    bool GetResConfigFile(const AppExecFwk::ExtensionAbilityInfo &extensionInfo,
-        std::vector<std::string> &profileInfos);
     std::shared_ptr<ResourceManager> InitResMgr(const std::string &basicString) const;
     bool GetResFromResMgr(const std::string &resName, ResourceManager &resMgr, bool isCompressed,
         std::vector<std::string> &profileInfos) const;

@@ -61,7 +61,7 @@ bool ProfileInfo::Unmarshal(const json &node)
     return ret;
 }
 
-bool DataShareProfileInfo::LoadProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
+bool DataShareProfileInfo::GetProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
     ProfileInfo &profileInfo, bool &isSingleApp)
 {
     isSingleApp = bundleInfo.singleton;
@@ -73,34 +73,17 @@ bool DataShareProfileInfo::LoadProfileInfoFromExtension(const AppExecFwk::Bundle
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             std::vector<std::string> infos;
-            auto ret = GetResConfigFile(item, infos);
-            if (!ret) {
-                ZLOGE("GetProfileFromExtension failed!");
+            bool isCompressed = !item.hapPath.empty();
+            std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
+            if (!GetResProfileByMetadata(item.metadata, resourcePath, isCompressed, infos) || infos.empty()) {
+                ZLOGE("GetResProfileByMetadata failed, bundleName is %{public}s", bundleInfo.name.c_str());
                 return false;
             }
             return profileInfo.Unmarshall(infos[0]);
         }
     }
-    ZLOGE("not find datashare extension!");
+    ZLOGE("not find datashare extension, bundleName is %{public}s", bundleInfo.name.c_str());
     return false;
-}
-
-bool DataShareProfileInfo::GetResConfigFile(const AppExecFwk::ExtensionAbilityInfo &extensionInfo,
-    std::vector<std::string> &profileInfos)
-{
-    bool isCompressed = !extensionInfo.hapPath.empty();
-    std::string resourcePath = isCompressed ? extensionInfo.hapPath : extensionInfo.resourcePath;
-    if (!GetResProfileByMetadata(extensionInfo.metadata, resourcePath, isCompressed, profileInfos)) {
-        ZLOGE("GetResProfileByMetadata failed");
-        return false;
-    }
-    if (profileInfos.empty()) {
-        ZLOGE("no valid file can be obtained");
-        return false;
-    }
-    int32_t infoSize = profileInfos.size();
-    ZLOGD("The size of the profile info is : %{public}d", infoSize);
-    return true;
 }
 
 bool DataShareProfileInfo::GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
@@ -167,7 +150,7 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
 
     size_t pos = resName.rfind(PROFILE_FILE_PREFIX);
     if ((pos == std::string::npos) || (pos == resName.length() - PROFILE_PREFIX_LEN)) {
-        ZLOGE("GetResFromResMgr res name is invalid");
+        ZLOGE("GetResFromResMgr res name is invalid, resName is %{public}s", resName.c_str());
         return false;
     }
     std::string profileName = resName.substr(pos + PROFILE_PREFIX_LEN);
@@ -182,12 +165,12 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
             return false;
         }
         if (fileContent == nullptr || len == 0) {
-            ZLOGE("invalid data, fileContent is empty");
+            ZLOGE("invalid data, fileContent is empty, profileName is %{public}s", profileName.c_str());
             return false;
         }
         std::string rawData(fileContent.get(), fileContent.get() + len);
         if (!Config::IsJson(rawData)) {
-            ZLOGE("invalid rawData, not satisfied the json format");
+            ZLOGE("invalid rawData, not satisfied the json format, profileName is %{public}s", profileName.c_str());
             return false;
         }
         profileInfos.push_back(std::move(rawData));

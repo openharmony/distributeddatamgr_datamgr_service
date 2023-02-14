@@ -47,8 +47,10 @@ private:
     };
 
     bool NotifyChange(const std::string &uri);
-    bool IsValidParams(UriInfo &uriInfo, PermissionType permissionType, bool &isSingleApp, int32_t userId);
-    int32_t ConvertUserId(int32_t userId, bool isSingleApp);
+    bool VerifyPermission(uint32_t tokenID, PermissionType permissionType, const AppExecFwk::BundleInfo &bundleInfo);
+    int32_t GetUserId(uint32_t tokenID, bool isSingleApp);
+    std::string GetRealityTableName(uint32_t tokenId, const AppExecFwk::BundleInfo &bundleInfo,
+        const UriInfo &uriInfo);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     DataShareProfileInfo dataShareProfileInfo_;

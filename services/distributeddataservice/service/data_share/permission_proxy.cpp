@@ -36,15 +36,15 @@ bool PermissionProxy::GetBundleInfo(const std::string &bundleName, uint32_t toke
     return true;
 }
 
-bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32_t tokenId,
-    std::string &permission, const AppExecFwk::BundleInfo &bundleInfo)
+bool PermissionProxy::QueryWritePermission(uint32_t tokenId, std::string &permission,
+    const AppExecFwk::BundleInfo &bundleInfo)
 {
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
             if (permission.empty()) {
-                ZLOGW("WritePermission is empty!BundleName is %{public}s,tokenId is %{public}u", bundleName.c_str(),
-                    tokenId);
+                ZLOGW("WritePermission is empty!BundleName is %{public}s,tokenId is %{public}u",
+                bundleInfo.name.c_str(), tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -58,14 +58,14 @@ bool PermissionProxy::QueryWritePermission(const std::string &bundleName, uint32
     return false;
 }
 
-bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_t tokenId,
-    std::string &permission, const AppExecFwk::BundleInfo &bundleInfo)
+bool PermissionProxy::QueryReadPermission(uint32_t tokenId, std::string &permission,
+    const AppExecFwk::BundleInfo &bundleInfo)
 {
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
-                ZLOGW("ReadPermission is empty!BundleName is %{public}s,tokenId is %{public}u", bundleName.c_str(),
-                    tokenId);
+                ZLOGW("ReadPermission is empty!BundleName is %{public}s,tokenId is %{public}u",
+                    bundleInfo.name.c_str(),tokenId);
                 return true;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -79,43 +79,44 @@ bool PermissionProxy::QueryReadPermission(const std::string &bundleName, uint32_
     return false;
 }
 
-bool PermissionProxy::ConvertTableNameByCrossUserMode(const ProfileInfo &profileInfo,
-    int32_t userId, bool isSingleApp, UriInfo &uriInfo)
+std::string PermissionProxy::GetTableNameByCrossUserMode(const ProfileInfo &profileInfo,
+    int32_t userId, bool isSingleApp, const UriInfo &uriInfo)
 {
+    std::string tableName = uriInfo.tableName;
     if (!isSingleApp) {
-        return true;
+        return tableName;
     }
-    CrossUserMode crossUserMode = GetCrossUserMode(profileInfo, uriInfo);
-    if (crossUserMode != CrossUserMode::SHARED && crossUserMode != CrossUserMode::UNIQUE) {
+
+    AccessSystemMode crossUserMode = GetCrossUserMode(profileInfo, uriInfo);
+    if (crossUserMode == AccessSystemMode::UNIQUE) {
+        return tableName.append("_").append(std::to_string(userId));
+    }
+    if (crossUserMode != AccessSystemMode::SHARED) {
         ZLOGE("The crossUserMode is not right. crossUserMode is %{public}d", crossUserMode);
-        return false;
     }
-    if (crossUserMode == CrossUserMode::UNIQUE) {
-        uriInfo.tableName.append("_").append(std::to_string(userId));
-    }
-    return true;
+    return tableName;
 }
 
-PermissionProxy::CrossUserMode PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo,
+PermissionProxy::AccessSystemMode PermissionProxy::GetCrossUserMode(const ProfileInfo &profileInfo,
     const UriInfo &uriInfo)
 {
-    CrossUserMode crossUserMode = CrossUserMode::UNDEFINED;
+    AccessSystemMode crossUserMode = AccessSystemMode::UNDEFINED;
     bool isStoreConfig  = false;
     for (auto &item : profileInfo.tableConfig) {
         UriInfo temp;
-        CrossUserMode curUserMode = static_cast<CrossUserMode>(item.crossUserMode);
-        if (curUserMode != CrossUserMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp)
+        AccessSystemMode curUserMode = static_cast<AccessSystemMode>(item.crossUserMode);
+        if (curUserMode != AccessSystemMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp)
             && temp.storeName == uriInfo.storeName && temp.tableName == uriInfo.tableName) {
             crossUserMode = curUserMode;
             return crossUserMode;
         }
-        if (curUserMode != CrossUserMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp, true)
+        if (curUserMode != AccessSystemMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp, true)
             && temp.tableName.empty() && temp.storeName == uriInfo.storeName) {
             crossUserMode = curUserMode;
             isStoreConfig = true;
             continue;
         }
-        if (curUserMode != CrossUserMode::UNDEFINED && item.uri == "*" && !isStoreConfig) {
+        if (curUserMode != AccessSystemMode::UNDEFINED && item.uri == "*" && !isStoreConfig) {
             crossUserMode = curUserMode;
         }
     }

@@ -57,15 +57,8 @@ Serializable::json Serializable::ToJson(const std::string &jsonStr)
 
 bool Serializable::IsJson(const std::string &jsonStr)
 {
-    json jsonObj = json::parse(jsonStr, nullptr, false);
-    if (jsonObj.is_discarded()) {
-        if (jsonStr.empty()) {
-            return false;
-        }
-        jsonObj = json::parse(jsonStr.substr(1), nullptr, false);
-        if (jsonObj.is_discarded()) {
-            return false;
-        }
+    if (!json::accept(jsonStr)) {
+        return json::accept(jsonStr.begin() + 1, jsonStr.end());
     }
     return true;
 }

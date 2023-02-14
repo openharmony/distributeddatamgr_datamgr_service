@@ -51,18 +51,24 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
         return ERROR;
     }
 
-    bool isSingleApp;
-    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
-        ZLOGE("Params inValid! bundleName is %{public}s",
-            DistributedData::Anonymous::Change(uriInfo.bundleName).c_str());
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    AppExecFwk::BundleInfo bundleInfo;
+    if (!PermissionProxy::GetBundleInfo(uriInfo.bundleName, tokenId, bundleInfo)) {
+        ZLOGE("GetBundleInfo failed, BundleName is %{public}s, tokenId is %{public}u",
+            uriInfo.bundleName.c_str(), tokenId);
         return ERROR;
     }
 
-    userId = ConvertUserId(userId, isSingleApp);
+    if (!VerifyPermission(tokenId, PermissionType::WRITE_PERMISSION, bundleInfo)) {
+        ZLOGE("Verify permission failed, bundleName is %{public}s", uriInfo.bundleName.c_str());
+        return ERROR;
+    }
+
+    uriInfo.SetTableName(GetRealityTableName(tokenId, bundleInfo, uriInfo));
+    auto userId = GetUserId(tokenId, bundleInfo.singleton);
     int32_t ret = RdbAdaptor::Insert(uriInfo, valuesBucket, userId);
     if (ret == ERROR) {
-        ZLOGE("Insert error %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("Insert error, uri is %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
     NotifyChange(uri);
@@ -96,19 +102,24 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         ZLOGE("GetInfoFromURI failed!");
         return ERROR;
     }
-
-    bool isSingleApp;
-    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
-        ZLOGE("Params inValid! bundleName is %{public}s",
-            DistributedData::Anonymous::Change(uriInfo.bundleName).c_str());
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    AppExecFwk::BundleInfo bundleInfo;
+    if (!PermissionProxy::GetBundleInfo(uriInfo.bundleName, tokenId, bundleInfo)) {
+        ZLOGE("GetBundleInfo failed, BundleName is %{public}s, tokenId is %{public}u",
+            uriInfo.bundleName.c_str(), tokenId);
         return ERROR;
     }
 
-    userId = ConvertUserId(userId, isSingleApp);
+    if (!VerifyPermission(tokenId, PermissionType::WRITE_PERMISSION, bundleInfo)) {
+        ZLOGE("Verify permission failed, bundleName is %{public}s", uriInfo.bundleName.c_str());
+        return ERROR;
+    }
+
+    uriInfo.SetTableName(GetRealityTableName(tokenId, bundleInfo, uriInfo));
+    auto userId = GetUserId(tokenId, bundleInfo.singleton);
     int32_t ret = RdbAdaptor::Update(uriInfo, predicate, valuesBucket, userId);
     if (ret == ERROR) {
-        ZLOGE("Update error %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("Update error, uri is %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
     NotifyChange(uri);
@@ -124,18 +135,23 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         return ERROR;
     }
 
-    bool isSingleApp;
-    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
-        ZLOGE("Params inValid! bundleName is %{public}s",
-            DistributedData::Anonymous::Change(uriInfo.bundleName).c_str());
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    AppExecFwk::BundleInfo bundleInfo;
+    if (!PermissionProxy::GetBundleInfo(uriInfo.bundleName, tokenId, bundleInfo)) {
+        ZLOGE("GetBundleInfo failed, BundleName is %{public}s, tokenId is %{public}u",
+            uriInfo.bundleName.c_str(), tokenId);
         return ERROR;
     }
 
-    userId = ConvertUserId(userId, isSingleApp);
+    if (!VerifyPermission(tokenId, PermissionType::WRITE_PERMISSION, bundleInfo)) {
+        ZLOGE("Verify permission failed, bundleName is %{public}s", uriInfo.bundleName.c_str());
+        return ERROR;
+    }
+    uriInfo.SetTableName(GetRealityTableName(tokenId, bundleInfo, uriInfo));
+    auto userId = GetUserId(tokenId, bundleInfo.singleton);
     int32_t ret = RdbAdaptor::Delete(uriInfo, predicate, userId);
     if (ret == ERROR) {
-        ZLOGE("Delete error %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("Delete error, uri is %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
     NotifyChange(uri);
@@ -152,32 +168,44 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         return nullptr;
     }
 
-    bool isSingleApp;
-    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    if (!IsValidParams(uriInfo, PermissionType::WRITE_PERMISSION, isSingleApp, userId)) {
-        ZLOGE("Params inValid! bundleName is %{public}s",
-            DistributedData::Anonymous::Change(uriInfo.bundleName).c_str());
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    AppExecFwk::BundleInfo bundleInfo;
+    if (!PermissionProxy::GetBundleInfo(uriInfo.bundleName, tokenId, bundleInfo)) {
+        ZLOGE("GetBundleInfo failed, BundleName is %{public}s, tokenId is %{public}u",
+            uriInfo.bundleName.c_str(), tokenId);
         return nullptr;
     }
-
-    userId = ConvertUserId(userId, isSingleApp);
+    
+    if (!VerifyPermission(tokenId, PermissionType::READ_PERMISSION, bundleInfo)) {
+        ZLOGE("Verify permission failed, bundleName is %{public}s", uriInfo.bundleName.c_str());
+        return nullptr;
+    }
+    uriInfo.SetTableName(GetRealityTableName(tokenId, bundleInfo, uriInfo));
+    auto userId = GetUserId(tokenId, bundleInfo.singleton);
     return RdbAdaptor::Query(uriInfo, predicates, columns, userId);
 }
 
-bool DataShareServiceImpl::IsValidParams(UriInfo &uriInfo,
-    DataShareServiceImpl::PermissionType permissionType, bool &isSingleApp, int32_t userId)
+std::string DataShareServiceImpl::GetRealityTableName(uint32_t tokenId, const AppExecFwk::BundleInfo &bundleInfo, const UriInfo &uriInfo)
+{
+    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    bool isSingleApp;
+    ProfileInfo profileInfo;
+    if (!dataShareProfileInfo_.GetProfileInfoFromExtension(bundleInfo, profileInfo, isSingleApp)) {
+        ZLOGE("LoadProfileInfoFromExtension failed, BundleName is %{public}s, tokenId is %{public}u",
+            uriInfo.bundleName.c_str(), tokenId);
+        return uriInfo.tableName;
+    }
+    return PermissionProxy::GetTableNameByCrossUserMode(profileInfo, userId, isSingleApp, uriInfo);
+}
+
+
+bool DataShareServiceImpl::VerifyPermission(uint32_t tokenID,
+    DataShareServiceImpl::PermissionType permissionType, const AppExecFwk::BundleInfo &bundleInfo)
 {
     std::string permission;
-    uint32_t tokenID = IPCSkeleton::GetCallingTokenID();
-    AppExecFwk::BundleInfo bundleInfo;
-    if (!PermissionProxy::GetBundleInfo(uriInfo.bundleName, tokenID, bundleInfo)) {
-        ZLOGE("GetBundleInfo failed, BundleName is %{public}s, tokenID is %{public}u",
-            DistributedData::Anonymous::Change(uriInfo.bundleName).c_str(), tokenID);
-        return false;
-    }
     switch (permissionType) {
         case PermissionType::READ_PERMISSION: {
-            bool ret = PermissionProxy::QueryReadPermission(uriInfo.bundleName, tokenID, permission, bundleInfo);
+            bool ret = PermissionProxy::QueryReadPermission(tokenID, permission, bundleInfo);
             if (!ret) {
                 ZLOGE("Query read permission failed!");
                 return false;
@@ -185,7 +213,7 @@ bool DataShareServiceImpl::IsValidParams(UriInfo &uriInfo,
             break;
         }
         case PermissionType::WRITE_PERMISSION: {
-            bool ret = PermissionProxy::QueryWritePermission(uriInfo.bundleName, tokenID, permission, bundleInfo);
+            bool ret = PermissionProxy::QueryWritePermission(tokenID, permission, bundleInfo);
             if (!ret) {
                 ZLOGE("Query write permission failed!");
                 return false;
@@ -193,25 +221,15 @@ bool DataShareServiceImpl::IsValidParams(UriInfo &uriInfo,
             break;
         }
     }
-
-    ProfileInfo profileInfo;
-    if (!dataShareProfileInfo_.LoadProfileInfoFromExtension(bundleInfo, profileInfo, isSingleApp)) {
-        ZLOGE("LoadProfileInfoFromExtension failed!");
-        return false;
-    }
-    if (!PermissionProxy::ConvertTableNameByCrossUserMode(profileInfo, userId, isSingleApp, uriInfo)) {
-        ZLOGE("ConvertTableNameByCrossUserMode failed!");
-        return false;
-    }
     return true;
 }
 
-int32_t DataShareServiceImpl::ConvertUserId(int32_t userId, bool isSingleApp)
+int32_t DataShareServiceImpl::GetUserId(uint32_t tokenId, bool isSingleApp)
 {
     if (isSingleApp) {
         ZLOGD("This hap is single app");
         return 0;
     }
-    return userId;
+    return DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
 }
 } // namespace OHOS::DataShare

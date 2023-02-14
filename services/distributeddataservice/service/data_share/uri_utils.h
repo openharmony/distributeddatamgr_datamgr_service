@@ -25,6 +25,11 @@ struct UriInfo {
     std::string moduleName;
     std::string storeName;
     std::string tableName;
+
+    void SetTableName(const std::string &tableName)
+    {
+        UriInfo::tableName = tableName;
+    }
 };
 
 class URIUtils {
