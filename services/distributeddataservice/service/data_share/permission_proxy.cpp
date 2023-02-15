@@ -117,7 +117,7 @@ PermissionProxy::AccessSystemMode PermissionProxy::GetCrossUserMode(const Profil
         }
         if (temp.storeName != uriInfo.storeName) {
             continue;
-        } 
+        }
         if (temp.tableName.empty()) {
             crossUserMode = curUserMode;
             continue;

@@ -48,7 +48,8 @@ private:
     };
 
     bool NotifyChange(const std::string &uri);
-    PermissionProxy::PermissionState VerifyPermission(uint32_t tokenID, PermissionType permissionType, const AppExecFwk::BundleInfo &bundleInfo);
+    PermissionProxy::PermissionState VerifyPermission(uint32_t tokenID, PermissionType permissionType,
+        const AppExecFwk::BundleInfo &bundleInfo);
     int32_t GetUserId(uint32_t tokenID, bool isSingleApp);
     std::string GetRealityTableName(uint32_t tokenId, const AppExecFwk::BundleInfo &bundleInfo,
         const UriInfo &uriInfo);
