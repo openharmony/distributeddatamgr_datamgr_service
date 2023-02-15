@@ -32,10 +32,16 @@ public:
         UNIQUE,
     };
 
+    enum class PermissionState {
+        DENIED = -1,
+        NOT_FIND = 0,
+        GRANTED,
+    };
+
     static bool GetBundleInfo(const std::string &bundleName, uint32_t tokenId, AppExecFwk::BundleInfo &bundleInfo);
-    static bool QueryWritePermission(uint32_t tokenId,
+    static PermissionState QueryWritePermission(uint32_t tokenId,
         std::string &permission, const AppExecFwk::BundleInfo &bundleInfo);
-    static bool QueryReadPermission(uint32_t tokenId,
+    static PermissionState QueryReadPermission(uint32_t tokenId,
         std::string &permission, const AppExecFwk::BundleInfo &bundleInfo);
     static bool QueryMetaData(const std::string &bundleName, const std::string &storeName,
         DistributedData::StoreMetaData &metaData, int32_t userId);

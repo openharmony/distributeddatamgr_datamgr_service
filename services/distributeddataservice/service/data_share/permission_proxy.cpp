@@ -23,6 +23,7 @@
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 BundleMgrProxy PermissionProxy::bmsProxy_;
@@ -36,47 +37,47 @@ bool PermissionProxy::GetBundleInfo(const std::string &bundleName, uint32_t toke
     return true;
 }
 
-bool PermissionProxy::QueryWritePermission(uint32_t tokenId, std::string &permission,
-    const AppExecFwk::BundleInfo &bundleInfo)
+PermissionProxy::PermissionState PermissionProxy::QueryWritePermission(uint32_t tokenId,
+    std::string &permission, const AppExecFwk::BundleInfo &bundleInfo)
 {
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
             if (permission.empty()) {
-                ZLOGW("WritePermission is empty!BundleName is %{public}s,tokenId is %{public}u",
+                ZLOGW("WritePermission is empty! BundleName is %{public}s, tokenId is %{public}x",
                     bundleInfo.name.c_str(), tokenId);
-                return true;
+                return PermissionState::NOT_FIND;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
             if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
                 ZLOGE("Verify write permission denied!");
-                return false;
+                return PermissionState::DENIED;
             }
-            return true;
+            return PermissionState::GRANTED;
         }
     }
-    return false;
+    return PermissionState::DENIED;
 }
 
-bool PermissionProxy::QueryReadPermission(uint32_t tokenId, std::string &permission,
-    const AppExecFwk::BundleInfo &bundleInfo)
+PermissionProxy::PermissionState PermissionProxy::QueryReadPermission(uint32_t tokenId,
+    std::string &permission, const AppExecFwk::BundleInfo &bundleInfo)
 {
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
-                ZLOGW("ReadPermission is empty!BundleName is %{public}s,tokenId is %{public}u",
+                ZLOGW("ReadPermission is empty! BundleName is %{public}s, tokenId is %{public}x",
                     bundleInfo.name.c_str(), tokenId);
-                return true;
+                return PermissionState::NOT_FIND;
             }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
             if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
                 ZLOGE("Verify Read permission denied!");
-                return false;
+                return PermissionState::DENIED;
             }
-            return true;
+            return PermissionState::GRANTED;
         }
     }
-    return false;
+    return PermissionState::DENIED;
 }
 
 std::string PermissionProxy::GetTableNameByCrossUserMode(const ProfileInfo &profileInfo,
@@ -89,10 +90,9 @@ std::string PermissionProxy::GetTableNameByCrossUserMode(const ProfileInfo &prof
 
     AccessSystemMode crossUserMode = GetCrossUserMode(profileInfo, uriInfo);
     if (crossUserMode == AccessSystemMode::UNIQUE) {
+        ZLOGD("hap in unique mode, bundleName is %{public}s, userId is %{public}d",
+            uriInfo.bundleName.c_str(), userId);
         return tableName.append("_").append(std::to_string(userId));
-    }
-    if (crossUserMode != AccessSystemMode::SHARED) {
-        ZLOGE("The crossUserMode is not right. crossUserMode is %{public}d", crossUserMode);
     }
     return tableName;
 }
@@ -101,23 +101,29 @@ PermissionProxy::AccessSystemMode PermissionProxy::GetCrossUserMode(const Profil
     const UriInfo &uriInfo)
 {
     AccessSystemMode crossUserMode = AccessSystemMode::UNDEFINED;
-    bool isStoreConfig  = false;
     for (auto &item : profileInfo.tableConfig) {
         UriInfo temp;
         AccessSystemMode curUserMode = static_cast<AccessSystemMode>(item.crossUserMode);
-        if (curUserMode != AccessSystemMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp)
-            && temp.storeName == uriInfo.storeName && temp.tableName == uriInfo.tableName) {
-            crossUserMode = curUserMode;
-            return crossUserMode;
-        }
-        if (curUserMode != AccessSystemMode::UNDEFINED && URIUtils::GetInfoFromURI(item.uri, temp, true)
-            && temp.tableName.empty() && temp.storeName == uriInfo.storeName) {
-            crossUserMode = curUserMode;
-            isStoreConfig = true;
+        if (curUserMode == AccessSystemMode::UNDEFINED) {
             continue;
         }
-        if (curUserMode != AccessSystemMode::UNDEFINED && item.uri == "*" && !isStoreConfig) {
+        if (item.uri == "*") {
+            crossUserMode = crossUserMode == AccessSystemMode::UNDEFINED ? curUserMode : crossUserMode;
+            continue;
+        }
+        if (!URIUtils::GetInfoFromURI(item.uri, temp, true)) {
+            ZLOGE("GetInfoFromURI failed, uri is %{public}s", DistributedData::Anonymous::Change(item.uri).c_str());
+            continue;
+        }
+        if (temp.storeName != uriInfo.storeName) {
+            continue;
+        } 
+        if (temp.tableName.empty()) {
             crossUserMode = curUserMode;
+            continue;
+        }
+        if (temp.tableName == uriInfo.tableName) {
+            return curUserMode;
         }
     }
     return crossUserMode;

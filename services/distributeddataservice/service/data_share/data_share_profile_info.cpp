@@ -76,7 +76,8 @@ bool DataShareProfileInfo::GetProfileInfoFromExtension(const AppExecFwk::BundleI
             bool isCompressed = !item.hapPath.empty();
             std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
             if (!GetResProfileByMetadata(item.metadata, resourcePath, isCompressed, infos) || infos.empty()) {
-                ZLOGE("GetResProfileByMetadata failed, bundleName is %{public}s", bundleInfo.name.c_str());
+                ZLOGE("failed, bundleName is %{public}s, resourcePath is %{public}s, metadata.size is %{public}d",
+                    bundleInfo.name.c_str(), resourcePath.c_str(), item.metadata.size());
                 return false;
             }
             return profileInfo.Unmarshall(infos[0]);
@@ -87,19 +88,14 @@ bool DataShareProfileInfo::GetProfileInfoFromExtension(const AppExecFwk::BundleI
 }
 
 bool DataShareProfileInfo::GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
-    const std ::string &resourcePath, bool isCompressed, std::vector<std::string> &profileInfos) const
+    const std::string &resourcePath, bool isCompressed, std::vector<std::string> &profileInfos) const
 {
-    if (metadata.empty()) {
-        ZLOGE("GetResProfileByMetadata failed due to empty metadata");
-        return false;
-    }
-    if (resourcePath.empty()) {
-        ZLOGE("GetResProfileByMetadata failed due to empty resourcePath");
+    if (metadata.empty() || resourcePath.empty()) {
         return false;
     }
     std::shared_ptr<ResourceManager> resMgr = InitResMgr(resourcePath);
     if (resMgr == nullptr) {
-        ZLOGE("GetResProfileByMetadata init resMgr failed");
+        ZLOGE("init resMgr failed, resourcePath is %{public}s", resourcePath.c_str());
         return false;
     }
 
@@ -108,7 +104,7 @@ bool DataShareProfileInfo::GetResProfileByMetadata(const std::vector<AppExecFwk:
         [this, &resMgr, &dataShareProfileMeta, isCompressed, &profileInfos](const AppExecFwk::Metadata& data)->void {
             if ((dataShareProfileMeta.compare(data.name) == 0)
                 && (!GetResFromResMgr(data.resource, *resMgr, isCompressed, profileInfos))) {
-                ZLOGW("GetResFromResMgr failed");
+                ZLOGW("get res from resMgr failed, resName is %{public}s", data.resource.c_str());
             }
         });
     return true;
@@ -116,25 +112,21 @@ bool DataShareProfileInfo::GetResProfileByMetadata(const std::vector<AppExecFwk:
 
 std::shared_ptr<ResourceManager> DataShareProfileInfo::InitResMgr(const std::string &resourcePath) const
 {
-    if (resourcePath.empty()) {
-        ZLOGE("InitResMgr failed due to invalid param");
-        return nullptr;
-    }
     std::shared_ptr<ResourceManager> resMgr(CreateResourceManager());
     if (resMgr == nullptr) {
-        ZLOGE("InitResMgr resMgr is nullptr");
+        ZLOGE("resMgr is nullptr");
         return nullptr;
     }
 
     std::unique_ptr<ResConfig> resConfig(CreateResConfig());
     if (resConfig == nullptr) {
-        ZLOGE("InitResMgr resConfig is nullptr");
+        ZLOGE("resConfig is nullptr");
         return nullptr;
     }
     resMgr->UpdateResConfig(*resConfig);
 
-    if (!resourcePath.empty() && !resMgr->AddResource(resourcePath.c_str())) {
-        ZLOGE("InitResMgr AddResource failed, resourcePath is %{private}s", resourcePath.c_str());
+    if (!resMgr->AddResource(resourcePath.c_str())) {
+        ZLOGE("add resource failed, resourcePath is %{public}s", resourcePath.c_str());
         return nullptr;
     }
     return resMgr;
@@ -144,13 +136,12 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
     bool isCompressed, std::vector<std::string> &profileInfos) const
 {
     if (resName.empty()) {
-        ZLOGE("GetResFromResMgr res name is empty");
         return false;
     }
 
     size_t pos = resName.rfind(PROFILE_FILE_PREFIX);
     if ((pos == std::string::npos) || (pos == resName.length() - PROFILE_PREFIX_LEN)) {
-        ZLOGE("GetResFromResMgr res name is invalid, resName is %{public}s", resName.c_str());
+        ZLOGE("res name is invalid, resName is %{public}s", resName.c_str());
         return false;
     }
     std::string profileName = resName.substr(pos + PROFILE_PREFIX_LEN);
@@ -160,17 +151,18 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
         std::unique_ptr<uint8_t[]> fileContent = nullptr;
         size_t len = 0;
         RState ret = resMgr.GetProfileDataByName(profileName.c_str(), len, fileContent);
-        if (ret != SUCCESS) {
-            ZLOGE("GetProfileDataByName failed, ret is %{public}d", ret);
+        if (ret != SUCCESS || fileContent == nullptr) {
+            ZLOGE("failed, profileName is %{public}s, ret is %{public}d",
+                profileName.c_str(), ret);
             return false;
         }
-        if (fileContent == nullptr || len == 0) {
-            ZLOGE("invalid data, fileContent is empty, profileName is %{public}s", profileName.c_str());
+        if (len == 0) {
+            ZLOGE("fileContent is empty, profileName is %{public}s", profileName.c_str());
             return false;
         }
         std::string rawData(fileContent.get(), fileContent.get() + len);
         if (!Config::IsJson(rawData)) {
-            ZLOGE("invalid rawData, not satisfied the json format, profileName is %{public}s", profileName.c_str());
+            ZLOGE("rawData is not json, profileName is %{public}s", profileName.c_str());
             return false;
         }
         profileInfos.push_back(std::move(rawData));
@@ -180,13 +172,12 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
     std::string resPath;
     RState ret = resMgr.GetProfileByName(profileName.c_str(), resPath);
     if (ret != SUCCESS) {
-        ZLOGE("GetResFromResMgr profileName cannot be found, ret is %{public}d", ret);
+        ZLOGE("profileName cannot be found, profileName is %{public}s, ret is %{public}d", profileName.c_str(), ret);
         return false;
     }
-    ZLOGD("GetResFromResMgr resPath is %{private}s", resPath.c_str());
     std::string profile = ReadProfile(resPath);
     if (profile.empty()) {
-        ZLOGE("Read profile failed");
+        ZLOGE("Read profile failed, resPath is %{public}s", resPath.c_str());
         return false;
     }
     profileInfos.push_back(std::move(profile));
@@ -199,9 +190,9 @@ bool DataShareProfileInfo::IsFileExisted(const std::string &filePath) const
         ZLOGE("the file is not existed due to empty file path");
         return false;
     }
-
-    if (access(filePath.c_str(), F_OK) != 0) {
-        ZLOGE("can not access the file: %{private}s", filePath.c_str());
+    int ret = access(filePath.c_str(), F_OK);
+    if (ret != 0) {
+        ZLOGE("can not access the file: %{public}s, ret is %{public}d", filePath.c_str(), ret);
         return false;
     }
     return true;
@@ -210,7 +201,6 @@ bool DataShareProfileInfo::IsFileExisted(const std::string &filePath) const
 std::string DataShareProfileInfo::ReadProfile(const std::string &resPath) const
 {
     if (!IsFileExisted(resPath)) {
-        ZLOGE("the file is not existed");
         return "";
     }
     std::fstream in;
@@ -225,7 +215,7 @@ std::string DataShareProfileInfo::ReadProfile(const std::string &resPath) const
     in.seekg(0, std::ios::end);
     int64_t size = in.tellg();
     if (size <= 0) {
-        ZLOGE("the file is an empty file");
+        ZLOGE("the file is an empty file, resPath is %{public}s", resPath.c_str());
         return "";
     }
     in.seekg(0, std::ios::beg);
