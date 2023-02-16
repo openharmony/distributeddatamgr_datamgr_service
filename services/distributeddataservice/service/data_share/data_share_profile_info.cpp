@@ -100,14 +100,12 @@ bool DataShareProfileInfo::GetResProfileByMetadata(const std::vector<AppExecFwk:
         return false;
     }
 
-    std::string dataShareProfileMeta = DATA_SHARE_PROFILE_META;
-    for_each(metadata.begin(), metadata.end(),
-        [this, &resMgr, &dataShareProfileMeta, isCompressed, &profileInfos](const AppExecFwk::Metadata& data)->void {
-            if ((dataShareProfileMeta.compare(data.name) == 0)
-                && (!GetResFromResMgr(data.resource, *resMgr, isCompressed, profileInfos))) {
-                return false;
-            }
-        });
+    for (size_t i = 0; i < metadata.size(); ++i) {
+        if ((metadata[i].name.compare(DATA_SHARE_PROFILE_META) == 0)
+            && (!GetResFromResMgr(metadata[i].resource, *resMgr, isCompressed, profileInfos))) {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -115,13 +113,11 @@ std::shared_ptr<ResourceManager> DataShareProfileInfo::InitResMgr(const std::str
 {
     std::shared_ptr<ResourceManager> resMgr(CreateResourceManager());
     if (resMgr == nullptr) {
-        ZLOGE("resMgr is nullptr");
         return nullptr;
     }
 
     std::unique_ptr<ResConfig> resConfig(CreateResConfig());
     if (resConfig == nullptr) {
-        ZLOGE("resConfig is nullptr");
         return nullptr;
     }
     resMgr->UpdateResConfig(*resConfig);
