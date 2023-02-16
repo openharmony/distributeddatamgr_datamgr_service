@@ -16,6 +16,7 @@
 #define LOG_TAG "DataShareProfileInfo"
 #include "data_share_profile_info.h"
 
+#include <cerrno>
 #include <fstream>
 #include <sstream>
 #include <unistd.h>
@@ -76,8 +77,8 @@ bool DataShareProfileInfo::GetProfileInfoFromExtension(const AppExecFwk::BundleI
             bool isCompressed = !item.hapPath.empty();
             std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
             if (!GetResProfileByMetadata(item.metadata, resourcePath, isCompressed, infos) || infos.empty()) {
-                ZLOGE("failed, bundleName is %{public}s, resourcePath is %{public}s, metadata.size is %{public}d",
-                    bundleInfo.name.c_str(), resourcePath.c_str(), item.metadata.size());
+                ZLOGE("failed, bundleName is %{public}s, resourcePath is %{public}s, metadata.size is %{public}d, ",
+                    "infos.size is %{public}d", bundleInfo.name.c_str(), resourcePath.c_str(), item.metadata.size());
                 return false;
             }
             return profileInfo.Unmarshall(infos[0]);
@@ -95,7 +96,6 @@ bool DataShareProfileInfo::GetResProfileByMetadata(const std::vector<AppExecFwk:
     }
     std::shared_ptr<ResourceManager> resMgr = InitResMgr(resourcePath);
     if (resMgr == nullptr) {
-        ZLOGE("init resMgr failed, resourcePath is %{public}s", resourcePath.c_str());
         return false;
     }
 
@@ -104,7 +104,7 @@ bool DataShareProfileInfo::GetResProfileByMetadata(const std::vector<AppExecFwk:
         [this, &resMgr, &dataShareProfileMeta, isCompressed, &profileInfos](const AppExecFwk::Metadata& data)->void {
             if ((dataShareProfileMeta.compare(data.name) == 0)
                 && (!GetResFromResMgr(data.resource, *resMgr, isCompressed, profileInfos))) {
-                ZLOGW("get res from resMgr failed, resName is %{public}s", data.resource.c_str());
+                return false;
             }
         });
     return true;
@@ -141,7 +141,7 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
 
     size_t pos = resName.rfind(PROFILE_FILE_PREFIX);
     if ((pos == std::string::npos) || (pos == resName.length() - PROFILE_PREFIX_LEN)) {
-        ZLOGE("res name is invalid, resName is %{public}s", resName.c_str());
+        ZLOGE("res name invalid, resName is %{public}s", resName.c_str());
         return false;
     }
     std::string profileName = resName.substr(pos + PROFILE_PREFIX_LEN);
@@ -172,7 +172,7 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
     std::string resPath;
     RState ret = resMgr.GetProfileByName(profileName.c_str(), resPath);
     if (ret != SUCCESS) {
-        ZLOGE("profileName cannot be found, profileName is %{public}s, ret is %{public}d", profileName.c_str(), ret);
+        ZLOGE("profileName not found, profileName is %{public}s, ret is %{public}d", profileName.c_str(), ret);
         return false;
     }
     std::string profile = ReadProfile(resPath);
@@ -187,12 +187,10 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
 bool DataShareProfileInfo::IsFileExisted(const std::string &filePath) const
 {
     if (filePath.empty()) {
-        ZLOGE("the file is not existed due to empty file path");
         return false;
     }
-    int ret = access(filePath.c_str(), F_OK);
-    if (ret != 0) {
-        ZLOGE("can not access the file: %{public}s, ret is %{public}d", filePath.c_str(), ret);
+    if (access(filePath.c_str(), F_OK) != 0) {
+        ZLOGE("can not access the file: %{public}s, errno is %{public}d", filePath.c_str(), errno);
         return false;
     }
     return true;
@@ -204,18 +202,15 @@ std::string DataShareProfileInfo::ReadProfile(const std::string &resPath) const
         return "";
     }
     std::fstream in;
-    char errBuffer[256];
-    errBuffer[0] = '\0';
     in.open(resPath, std::ios_base::in | std::ios_base::binary);
     if (!in.is_open()) {
-        strerror_r(errno, errBuffer, sizeof(errBuffer));
-        ZLOGE("the file cannot be open due to  %{public}s", errBuffer);
+        ZLOGE("the file can not open, errno is %{public}d", errno);
         return "";
     }
     in.seekg(0, std::ios::end);
     int64_t size = in.tellg();
     if (size <= 0) {
-        ZLOGE("the file is an empty file, resPath is %{public}s", resPath.c_str());
+        ZLOGE("the file is empty, resPath is %{public}s", resPath.c_str());
         return "";
     }
     in.seekg(0, std::ios::beg);
