@@ -77,8 +77,8 @@ bool DataShareProfileInfo::GetProfileInfoFromExtension(const AppExecFwk::BundleI
             bool isCompressed = !item.hapPath.empty();
             std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
             if (!GetResProfileByMetadata(item.metadata, resourcePath, isCompressed, infos) || infos.empty()) {
-                ZLOGE("failed, bundleName is %{public}s, resourcePath is %{public}s, metadata.size is %{public}d,",
-                    "infos.size is %{public}d", bundleInfo.name.c_str(), resourcePath.c_str(), item.metadata.size(),
+                ZLOGE("failed, bundleName is %{public}s, resourcePath is %{public}s, metadata.size is %{public}zu,"
+                    "infos.size is %{public}zu", bundleInfo.name.c_str(), resourcePath.c_str(), item.metadata.size(),
                     infos.size());
                 return false;
             }
