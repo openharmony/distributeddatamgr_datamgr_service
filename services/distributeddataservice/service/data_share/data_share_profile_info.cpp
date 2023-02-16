@@ -101,8 +101,8 @@ bool DataShareProfileInfo::GetResProfileByMetadata(const std::vector<AppExecFwk:
     }
 
     for (auto &meta : metadata) {
-        if (meta.name.compare(DATA_SHARE_PROFILE_META) == 0) {		
-		    return GetResFromResMgr(meta.resource, *resMgr, isCompressed, profileInfos);
+        if (meta.name.compare(DATA_SHARE_PROFILE_META) == 0) {
+            return GetResFromResMgr(meta.resource, *resMgr, isCompressed, profileInfos);
         }
     }
     return false;
