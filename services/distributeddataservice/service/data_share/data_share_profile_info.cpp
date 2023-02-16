@@ -100,13 +100,12 @@ bool DataShareProfileInfo::GetResProfileByMetadata(const std::vector<AppExecFwk:
         return false;
     }
 
-    for (size_t i = 0; i < metadata.size(); ++i) {
-        if ((metadata[i].name.compare(DATA_SHARE_PROFILE_META) == 0)
-            && (!GetResFromResMgr(metadata[i].resource, *resMgr, isCompressed, profileInfos))) {
-            return false;
+    for (auto &meta : metadata) {
+        if (meta.name.compare(DATA_SHARE_PROFILE_META) == 0) {		
+		    return GetResFromResMgr(meta.resource, *resMgr, isCompressed, profileInfos);
         }
     }
-    return true;
+    return false;
 }
 
 std::shared_ptr<ResourceManager> DataShareProfileInfo::InitResMgr(const std::string &resourcePath) const
@@ -149,8 +148,8 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
         size_t len = 0;
         RState ret = resMgr.GetProfileDataByName(profileName.c_str(), len, fileContent);
         if (ret != SUCCESS || fileContent == nullptr) {
-            ZLOGE("failed, profileName is %{public}s, ret is %{public}d",
-                profileName.c_str(), ret);
+            ZLOGE("failed, ret is %{public}d, profileName is %{public}s",
+                ret, profileName.c_str());
             return false;
         }
         if (len == 0) {
@@ -169,7 +168,7 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
     std::string resPath;
     RState ret = resMgr.GetProfileByName(profileName.c_str(), resPath);
     if (ret != SUCCESS) {
-        ZLOGE("profileName not found, profileName is %{public}s, ret is %{public}d", profileName.c_str(), ret);
+        ZLOGE("profileName not found, ret is %{public}d, profileName is %{public}s", ret, profileName.c_str());
         return false;
     }
     std::string profile = ReadProfile(resPath);
@@ -187,7 +186,7 @@ bool DataShareProfileInfo::IsFileExisted(const std::string &filePath) const
         return false;
     }
     if (access(filePath.c_str(), F_OK) != 0) {
-        ZLOGE("can not access the file: %{public}s, errno is %{public}d", filePath.c_str(), errno);
+        ZLOGE("can not access file, errno is %{public}d, filePath is %{public}s", errno, filePath.c_str());
         return false;
     }
     return true;
