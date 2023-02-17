@@ -37,23 +37,23 @@ public:
     explicit RdbDelegate(const StoreMetaData &data);
     virtual ~RdbDelegate();
     int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket);
-    int64_t Update(
-        const std::string &tableName, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket);
+    int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
+        const DataShareValuesBucket &valuesBucket);
     int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate);
-    std::shared_ptr<DataShareResultSet> Query(
-        const std::string &tableName, const DataSharePredicates &predicates, const std::vector<std::string> &columns);
+    std::shared_ptr<DataShareResultSet> Query(const std::string &tableName,
+        const DataSharePredicates &predicates, const std::vector<std::string> &columns);
 
 private:
     std::shared_ptr<RdbStore> store_;
 };
 class RdbAdaptor {
 public:
-    static int32_t Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket, const int32_t userId);
+    static int32_t Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket, int32_t userId);
     static int32_t Update(const UriInfo &uriInfo, const DataSharePredicates &predicate,
-        const DataShareValuesBucket &valuesBucket, const int32_t userId);
-    static int32_t Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate, const int32_t userId);
+        const DataShareValuesBucket &valuesBucket, int32_t userId);
+    static int32_t Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate, int32_t userId);
     static std::shared_ptr<DataShareResultSet> Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
-        const std::vector<std::string> &columns, const int32_t userId);
+        const std::vector<std::string> &columns, int32_t userId);
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:

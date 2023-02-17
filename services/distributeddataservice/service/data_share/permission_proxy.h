@@ -18,20 +18,39 @@
 
 #include <string>
 
+#include "bundle_info.h"
 #include "bundle_mgr_proxy.h"
+#include "data_share_profile_info.h"
 #include "metadata/store_meta_data.h"
 
 namespace OHOS::DataShare {
 class PermissionProxy {
 public:
-    static bool QueryWritePermission(const std::string &bundleName, uint32_t tokenId, std::string &permission);
-    static bool QueryReadPermission(const std::string &bundleName, uint32_t tokenId, std::string &permission);
-    static bool QueryMetaData(const std::string &bundleName, const std::string &moduleName,
-        const std::string &storeName, DistributedData::StoreMetaData &metaData, const int32_t userId);
+    enum class AccessSystemMode {
+        UNDEFINED = 0,
+        SHARED,
+        UNIQUE,
+    };
+
+    enum class PermissionState {
+        DENIED = -1,
+        NOT_FIND = 0,
+        GRANTED,
+    };
+
+    static bool GetBundleInfo(const std::string &bundleName, uint32_t tokenId, AppExecFwk::BundleInfo &bundleInfo);
+    static PermissionState QueryWritePermission(uint32_t tokenId,
+        std::string &permission, const AppExecFwk::BundleInfo &bundleInfo);
+    static PermissionState QueryReadPermission(uint32_t tokenId,
+        std::string &permission, const AppExecFwk::BundleInfo &bundleInfo);
+    static bool QueryMetaData(const std::string &bundleName, const std::string &storeName,
+        DistributedData::StoreMetaData &metaData, int32_t userId);
+    static std::string GetTableNameByCrossUserMode(const ProfileInfo &profileInfo,
+        int32_t userId, bool isSingleApp, const UriInfo &uriInfo);
 
 private:
     static void FillData(DistributedData::StoreMetaData &data, int32_t userId);
-    static inline bool IsSingleAllowProvider(const std::string &bundleName, const std::string &storeName);
+    static AccessSystemMode GetCrossUserMode(const ProfileInfo &profileInfo, const UriInfo &uriInfo);
     static BundleMgrProxy bmsProxy_;
 };
 } // namespace OHOS::DataShare

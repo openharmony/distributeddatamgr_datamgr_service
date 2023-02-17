@@ -67,6 +67,7 @@ ohos_shared_library("distributeddatasvc") {
     "config/src/model/protocol_config.cpp",
     "crypto/src/crypto_manager.cpp",
     "data_share/bundle_mgr_proxy.cpp",
+    "data_share/data_share_profile_info.cpp",
     "data_share/data_share_service_impl.cpp",
     "data_share/data_share_service_stub.cpp",
     "data_share/data_share_types_util.cpp",
@@ -129,6 +130,7 @@ ohos_shared_library("distributeddatasvc") {
     "ipc:ipc_core",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
+    "resource_management:global_resmgr",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"

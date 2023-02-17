@@ -48,6 +48,7 @@ public:
         return GetValue(ToJson(body), "", values);
     }
     API_EXPORT static json ToJson(const std::string &jsonStr);
+    API_EXPORT static bool IsJson(const std::string &jsonStr);
     virtual bool Marshal(json &node) const = 0;
     virtual bool Unmarshal(const json &node) = 0;
     API_EXPORT static bool GetValue(const json &node, const std::string &name, std::string &value);
