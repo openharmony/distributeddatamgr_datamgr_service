@@ -40,7 +40,6 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/object/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
@@ -51,6 +50,7 @@ config("module_public_config") {
 
 ohos_shared_library("distributeddatasvc") {
   include_dirs = [
+    "//foundation/distributeddatamgr/data_object/frameworks/innerkitsimpl/include/service",
     "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/distributeddb",
   ]
@@ -88,6 +88,7 @@ ohos_shared_library("distributeddatasvc") {
     "kvdb/user_delegate.cpp",
     "matrix/src/device_matrix.cpp",
     "matrix/src/matrix_event.cpp",
+    "object/object_callback_proxy.cpp",
     "object/object_data_listener.cpp",
     "object/object_manager.cpp",
     "object/object_service_impl.cpp",
@@ -123,6 +124,7 @@ ohos_shared_library("distributeddatasvc") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "data_object:distributeddataobject_impl",
     "data_share:datashare_common",
     "device_auth:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
