@@ -15,9 +15,9 @@
 
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_CALLBACK_PROXY_H
 #define DISTRIBUTEDDATAMGR_OBJECT_CALLBACK_PROXY_H
-#include "iobject_callback.h"
 #include <iremote_broker.h>
 #include <iremote_stub.h>
+#include "iobject_callback.h"
 namespace OHOS {
 namespace DistributedObject {
 class ObjectSaveCallbackProxy : public IRemoteProxy<IObjectSaveCallback> {

@@ -107,7 +107,8 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
         saveCallbackProxy->Completed(std::map<std::string, int32_t>());
         return result;
     }
-    SyncCallBack tmp = [saveCallbackProxy, appId, sessionId, deviceId, this](const std::map<std::string, int32_t> &results) {
+    SyncCallBack tmp =
+        [saveCallbackProxy, appId, sessionId, deviceId, this](const std::map<std::string, int32_t> &results) {
         saveCallbackProxy->Completed(results);
         ProcessSyncCallback(results, appId, sessionId, deviceId);
     };
