@@ -43,16 +43,15 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
-    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
     "//foundation/bundlemanager/bundle_framework/interfaces/inner_api/appexecfwk_base/include",
   ]
 }
 
 ohos_shared_library("distributeddatasvc") {
   include_dirs = [
-    "//foundation/distributeddatamgr/data_object/frameworks/innerkitsimpl/include/service",
-    "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/distributeddb",
+    "../../../../data_object/frameworks/innerkitsimpl/include/service",
+    "../../../../relational_store/interfaces/inner_api/rdb/include",
+    "../../../../kv_store/frameworks/libs/distributeddb/include/distributeddb",
   ]
   sources = [
     "backup/src/backup_manager.cpp",
@@ -115,7 +114,6 @@ ohos_shared_library("distributeddatasvc") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp:devicemanagersdk",
   ]
 
   external_deps = [
@@ -127,6 +125,7 @@ ohos_shared_library("distributeddatasvc") {
     "data_object:distributeddataobject_impl",
     "data_share:datashare_common",
     "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
