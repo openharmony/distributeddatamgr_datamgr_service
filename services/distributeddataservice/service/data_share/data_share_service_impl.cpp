@@ -165,7 +165,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
 }
 
 std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::string &uri,
-    const DataSharePredicates &predicates, const std::vector<std::string> &columns)
+    const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode)
 {
     ZLOGD("Query enter.");
     UriInfo uriInfo;
@@ -191,7 +191,7 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     
     uriInfo.SetTableName(GetRealityTableName(tokenId, bundleInfo, uriInfo));
     auto userId = GetUserId(tokenId, bundleInfo.singleton);
-    return RdbAdaptor::Query(uriInfo, predicates, columns, userId);
+    return RdbAdaptor::Query(uriInfo, predicates, columns, userId, errCode);
 }
 
 std::string DataShareServiceImpl::GetRealityTableName(uint32_t tokenId, const AppExecFwk::BundleInfo &bundleInfo,

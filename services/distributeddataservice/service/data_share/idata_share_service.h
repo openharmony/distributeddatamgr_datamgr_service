@@ -41,8 +41,8 @@ public:
     virtual int32_t Update(
         const std::string &uri, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int32_t Delete(const std::string &uri, const DataSharePredicates &predicate) = 0;
-    virtual std::shared_ptr<DataShareResultSet> Query(
-        const std::string &uri, const DataSharePredicates &predicates, const std::vector<std::string> &columns) = 0;
+    virtual std::shared_ptr<DataShareResultSet> Query(const std::string &uri, const DataSharePredicates &predicates,
+        const std::vector<std::string> &columns, int &errCode) = 0;
 };
 } // namespace OHOS::DataShare
 #endif
