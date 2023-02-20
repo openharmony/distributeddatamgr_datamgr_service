@@ -21,6 +21,7 @@
 
 namespace OHOS {
 namespace DistributedObject {
+using namespace DistributedKv;
 ObjectDataListener::ObjectDataListener()
 {
 }
