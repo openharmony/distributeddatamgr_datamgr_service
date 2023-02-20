@@ -42,6 +42,7 @@ ohos_static_library("distributeddata_communicator_static") {
     "//foundation/communication/dsoftbus/core/common/include",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
@@ -52,11 +53,11 @@ ohos_static_library("distributeddata_communicator_static") {
   deps = [
     "../dfx:distributeddata_dfx_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
+    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp:devicemanagersdk",
   ]
 
   external_deps = [
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "hiviewdfx_hilog_native:libhilog",
   ]
