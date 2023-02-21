@@ -22,7 +22,6 @@
 
 namespace OHOS {
 namespace DistributedObject {
-using namespace DistributedKv;
 constexpr static int32_t COMPLETED = 0;
 
 ObjectSaveCallbackProxy::ObjectSaveCallbackProxy(const sptr<IRemoteObject> &impl)
