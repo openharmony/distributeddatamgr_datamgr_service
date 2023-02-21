@@ -251,7 +251,12 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
             ZLOGE("no available syncer");
             return !syncers.empty();
         }
-        auto syncer_ = std::make_shared<RdbSyncer>(param, new (std::nothrow) RdbStoreObserverImpl(this, pid));
+        rdbObserver = new (std::nothrow) RdbStoreObserverImpl(this, pid);
+        if (rdbObserver == nullptr) {
+            ZLOGE("failed to get rdbStore observer.");
+            return !syncers.empty();
+        }
+        auto syncer_ = std::make_shared<RdbSyncer>(param, rdbObserver);
         if (syncer_->Init(pid, uid, tokenId) != 0) {
             return !syncers.empty();
         }
@@ -396,7 +401,12 @@ int32_t RdbServiceImpl::CreateRDBTable(
     }
 
     pid_t pid = IPCSkeleton::GetCallingPid();
-    auto syncer = new (std::nothrow)RdbSyncer(param, new (std::nothrow) RdbStoreObserverImpl(this, pid));
+    auto rdbObserver = new (std::nothrow) RdbStoreObserverImpl(this, pid);
+    if (rdbObserver == nullptr) {
+        ZLOGE("new rdbObserver error");
+        return RDB_ERROR;
+    }
+    auto syncer = new (std::nothrow)RdbSyncer(param, rdbObserver);
     if (syncer == nullptr) {
         ZLOGE("new syncer error");
         return RDB_ERROR;
@@ -419,7 +429,12 @@ int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     pid_t pid = IPCSkeleton::GetCallingPid();
-    auto syncer = new (std::nothrow)RdbSyncer(param, new (std::nothrow) RdbStoreObserverImpl(this, pid));
+    auto rdbObserver = new (std::nothrow) RdbStoreObserverImpl(this, pid);
+    if (rdbObserver == nullptr) {
+        ZLOGE("new rdbObserver error");
+        return RDB_ERROR;
+    }
+    auto syncer = new (std::nothrow)RdbSyncer(param, rdbObserver);
     if (syncer == nullptr) {
         ZLOGE("new syncer error");
         return RDB_ERROR;
