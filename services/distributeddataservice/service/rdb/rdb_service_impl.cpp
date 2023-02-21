@@ -251,7 +251,7 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
             ZLOGE("no available syncer");
             return !syncers.empty();
         }
-        rdbObserver = new (std::nothrow) RdbStoreObserverImpl(this, pid);
+        auto rdbObserver = new (std::nothrow) RdbStoreObserverImpl(this, pid);
         if (rdbObserver == nullptr) {
             ZLOGE("failed to get rdbStore observer.");
             return !syncers.empty();
