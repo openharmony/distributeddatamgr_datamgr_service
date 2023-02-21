@@ -136,8 +136,7 @@ std::shared_ptr<DataShareResultSet> RdbDelegate::Query(const std::string &tableN
     RdbPredicates rdbPredicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicates, tableName);
     std::shared_ptr<NativeRdb::ResultSet> resultSet = store_->QueryByStep(rdbPredicates, columns);
     if (resultSet == nullptr) {
-        errCode = E_QUERY_BY_STEP;
-        ZLOGE("Query failed, errCode is %{public}d", errCode);
+        ZLOGE("Query failed");
         return nullptr;
     }
     auto bridge = RdbDataShareAdapter::RdbUtils::ToResultSetBridge(resultSet);
