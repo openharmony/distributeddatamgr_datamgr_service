@@ -41,7 +41,7 @@ public:
         const DataShareValuesBucket &valuesBucket);
     int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate);
     std::shared_ptr<DataShareResultSet> Query(const std::string &tableName, const DataSharePredicates &predicates,
-        const std::vector<std::string> &columns, int &errCode);
+        const std::vector<std::string> &columns);
 
 private:
     std::shared_ptr<RdbStore> store_;

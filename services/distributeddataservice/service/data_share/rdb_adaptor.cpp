@@ -61,7 +61,7 @@ std::shared_ptr<DataShareResultSet> RdbAdaptor::Query(const UriInfo &uriInfo, co
         return nullptr;
     }
     RdbDelegate delegate(metaData, errCode);
-    return delegate.Query(uriInfo.tableName, predicates, columns, errCode);
+    return delegate.Query(uriInfo.tableName, predicates, columns);
 }
 
 RdbDelegate::RdbDelegate(const StoreMetaData &meta, int &err)
@@ -127,7 +127,7 @@ int64_t RdbDelegate::Delete(const std::string &tableName, const DataSharePredica
     return rowId;
 }
 std::shared_ptr<DataShareResultSet> RdbDelegate::Query(const std::string &tableName,
-    const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode)
+    const DataSharePredicates &predicates, const std::vector<std::string> &columns)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
