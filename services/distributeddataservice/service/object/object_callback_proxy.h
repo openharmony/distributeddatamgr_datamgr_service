@@ -16,11 +16,17 @@
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_CALLBACK_PROXY_H
 #define DISTRIBUTEDDATAMGR_OBJECT_CALLBACK_PROXY_H
 #include <iremote_broker.h>
-#include <iremote_stub.h>
-#include "iobject_callback.h"
+#include <iremote_proxy.h>
+#include "object_callback.h"
+
 namespace OHOS {
 namespace DistributedObject {
-class ObjectSaveCallbackProxy : public IRemoteProxy<IObjectSaveCallback> {
+class ObjectSaveCallbackProxyBroker : public IObjectSaveCallback, public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectSaveCallback");
+};
+
+class ObjectSaveCallbackProxy : public IRemoteProxy<ObjectSaveCallbackProxyBroker> {
 public:
     explicit ObjectSaveCallbackProxy(const sptr<IRemoteObject> &impl);
     ~ObjectSaveCallbackProxy() = default;
@@ -30,7 +36,12 @@ private:
     static inline BrokerDelegator<ObjectSaveCallbackProxy> delegator_;
 };
 
-class ObjectRevokeSaveCallbackProxy : public IRemoteProxy<IObjectRevokeSaveCallback> {
+class ObjectRevokeSaveCallbackProxyBroker : public IObjectRevokeSaveCallback, public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectRevokeSaveCallback");
+};
+
+class ObjectRevokeSaveCallbackProxy : public IRemoteProxy<ObjectRevokeSaveCallbackProxyBroker> {
 public:
     explicit ObjectRevokeSaveCallbackProxy(const sptr<IRemoteObject> &impl);
     ~ObjectRevokeSaveCallbackProxy() = default;
@@ -40,7 +51,12 @@ private:
     static inline BrokerDelegator<ObjectRevokeSaveCallbackProxy> delegator_;
 };
 
-class ObjectRetrieveCallbackProxy : public IRemoteProxy<IObjectRetrieveCallback> {
+class ObjectRetrieveCallbackProxyBroker : public IObjectRetrieveCallback, public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectRetrieveCallback");
+};
+
+class ObjectRetrieveCallbackProxy : public IRemoteProxy<ObjectRetrieveCallbackProxyBroker> {
 public:
     explicit ObjectRetrieveCallbackProxy(const sptr<IRemoteObject> &impl);
     ~ObjectRetrieveCallbackProxy() = default;
@@ -50,7 +66,12 @@ private:
     static inline BrokerDelegator<ObjectRetrieveCallbackProxy> delegator_;
 };
 
-class ObjectChangeCallbackProxy : public IRemoteProxy<IObjectChangeCallback> {
+class ObjectChangeCallbackProxyBroker : public IObjectChangeCallback, public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectChangeCallback");
+};
+
+class ObjectChangeCallbackProxy : public IRemoteProxy<ObjectChangeCallbackProxyBroker> {
 public:
     explicit ObjectChangeCallbackProxy(const sptr<IRemoteObject> &impl);
     ~ObjectChangeCallbackProxy() = default;

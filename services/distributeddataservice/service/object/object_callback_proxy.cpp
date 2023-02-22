@@ -22,25 +22,23 @@
 
 namespace OHOS {
 namespace DistributedObject {
-constexpr static int32_t COMPLETED = 0;
-
 ObjectSaveCallbackProxy::ObjectSaveCallbackProxy(const sptr<IRemoteObject> &impl)
-    : IRemoteProxy<IObjectSaveCallback>(impl)
+    : IRemoteProxy<ObjectSaveCallbackProxyBroker>(impl)
 {
 }
 
 ObjectRevokeSaveCallbackProxy::ObjectRevokeSaveCallbackProxy(const sptr<IRemoteObject> &impl)
-    : IRemoteProxy<IObjectRevokeSaveCallback>(impl)
+    : IRemoteProxy<ObjectRevokeSaveCallbackProxyBroker>(impl)
 {
 }
 
 ObjectRetrieveCallbackProxy::ObjectRetrieveCallbackProxy(const sptr<IRemoteObject> &impl)
-    : IRemoteProxy<IObjectRetrieveCallback>(impl)
+    : IRemoteProxy<ObjectRetrieveCallbackProxyBroker>(impl)
 {
 }
 
 ObjectChangeCallbackProxy::ObjectChangeCallbackProxy(const sptr<IRemoteObject> &impl)
-    : IRemoteProxy<IObjectChangeCallback>(impl)
+    : IRemoteProxy<ObjectChangeCallbackProxyBroker>(impl)
 {
 }
 

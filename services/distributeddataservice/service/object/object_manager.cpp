@@ -84,18 +84,18 @@ void ObjectStoreManager::ProcessSyncCallback(const std::map<std::string, int32_t
 
 int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &sessionId,
     const std::map<std::string, std::vector<uint8_t>> &data, const std::string &deviceId,
-    const sptr<IRemoteObject> callback)
+    sptr<IRemoteObject> callback)
 {
-    auto saveCallbackProxy = iface_cast<ObjectSaveCallbackProxy>(callback);
+    auto proxy = iface_cast<ObjectSaveCallbackProxy>(callback);
     if (deviceId.size() == 0) {
         ZLOGE("deviceId empty");
-        saveCallbackProxy->Completed(std::map<std::string, int32_t>());
+        proxy->Completed(std::map<std::string, int32_t>());
         return INVALID_ARGUMENT;
     }
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open objectStore DB failed,please check errCode, errCode = %{public}d", result);
-        saveCallbackProxy->Completed(std::map<std::string, int32_t>());
+        proxy->Completed(std::map<std::string, int32_t>());
         return STORE_NOT_OPEN;
     }
 
@@ -104,12 +104,12 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Save to store failed, please check DB errCode, errCode = %{public}d", result);
         Close();
-        saveCallbackProxy->Completed(std::map<std::string, int32_t>());
+        proxy->Completed(std::map<std::string, int32_t>());
         return result;
     }
     SyncCallBack tmp =
-        [saveCallbackProxy, appId, sessionId, deviceId, this](const std::map<std::string, int32_t> &results) {
-        saveCallbackProxy->Completed(results);
+        [proxy, appId, sessionId, deviceId, this](const std::map<std::string, int32_t> &results) {
+            proxy->Completed(results);
         ProcessSyncCallback(results, appId, sessionId, deviceId);
     };
     ZLOGD("start SyncOnStore");
@@ -117,20 +117,20 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
     result = SyncOnStore(GetPropertyPrefix(appId, sessionId, deviceId), deviceList, tmp);
     if (result != OBJECT_SUCCESS) {
         ZLOGI("sync on store failed,please check DB errCode, errCode = %{public}d", result);
-        saveCallbackProxy->Completed(std::map<std::string, int32_t>());
+        proxy->Completed(std::map<std::string, int32_t>());
     }
     Close();
     return result;
 }
 
 int32_t ObjectStoreManager::RevokeSave(
-    const std::string &appId, const std::string &sessionId, const sptr<IRemoteObject> callback)
+    const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
-    auto revokeSaveCallbackProxy = iface_cast<ObjectRevokeSaveCallbackProxy>(callback);
+    auto proxy = iface_cast<ObjectRevokeSaveCallbackProxy>(callback);
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open objectStore DB failed,please check errCode, errCode = %{public}d", result);
-        revokeSaveCallbackProxy->Completed(STORE_NOT_OPEN);
+        proxy->Completed(STORE_NOT_OPEN);
         return STORE_NOT_OPEN;
     }
 
@@ -138,7 +138,7 @@ int32_t ObjectStoreManager::RevokeSave(
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Save to store failed,please check DB errCode, errCode = %{public}d", result);
         Close();
-        revokeSaveCallbackProxy->Completed(result);
+        proxy->Completed(result);
         return result;
     }
     std::vector<std::string> deviceList;
@@ -146,31 +146,31 @@ int32_t ObjectStoreManager::RevokeSave(
     std::for_each(deviceInfos.begin(), deviceInfos.end(),
         [&deviceList](AppDistributedKv::DeviceInfo info) { deviceList.emplace_back(info.networkId); });
     if (!deviceList.empty()) {
-        SyncCallBack tmp = [revokeSaveCallbackProxy](const std::map<std::string, int32_t> &results) {
+        SyncCallBack tmp = [proxy](const std::map<std::string, int32_t> &results) {
             ZLOGI("revoke save finished");
-            revokeSaveCallbackProxy->Completed(OBJECT_SUCCESS);
+            proxy->Completed(OBJECT_SUCCESS);
         };
         result = SyncOnStore(GetPropertyPrefix(appId, sessionId), deviceList, tmp);
         if (result != OBJECT_SUCCESS) {
             ZLOGE("sync on store failed,please check DB errCode, errCode = %{public}d", result);
-            revokeSaveCallbackProxy->Completed(result);
+            proxy->Completed(result);
         }
     } else {
-        revokeSaveCallbackProxy->Completed(OBJECT_SUCCESS);
+        proxy->Completed(OBJECT_SUCCESS);
     };
     Close();
     return result;
 }
 
 int32_t ObjectStoreManager::Retrieve(
-    const std::string &appId, const std::string &sessionId, const sptr<IRemoteObject> callback)
+    const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
-    auto retrieveCallbackProxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
+    auto proxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
     ZLOGI("enter");
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open objectStore DB failed,please check DB errCode, errCode = %{public}d", result);
-        retrieveCallbackProxy->Completed(std::map<std::string, std::vector<uint8_t>>());
+        proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
         return STORE_NOT_OPEN;
     }
 
@@ -179,7 +179,7 @@ int32_t ObjectStoreManager::Retrieve(
     if (status != OBJECT_SUCCESS) {
         ZLOGE("Retrieve from store failed,please check DB status, status = %{public}d", status);
         Close();
-        retrieveCallbackProxy->Completed(std::map<std::string, std::vector<uint8_t>>());
+        proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
         return status;
     }
     // delete local data
@@ -187,11 +187,11 @@ int32_t ObjectStoreManager::Retrieve(
     if (status != OBJECT_SUCCESS) {
         ZLOGE("revoke save to store failed,please check DB status, status = %{public}d", status);
         Close();
-        retrieveCallbackProxy->Completed(std::map<std::string, std::vector<uint8_t>>());
+        proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
         return status;
     }
     Close();
-    retrieveCallbackProxy->Completed(results);
+    proxy->Completed(results);
     return status;
 }
 
@@ -226,20 +226,20 @@ int32_t ObjectStoreManager::DeleteByAppId(const std::string &appId)
 
 void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
                                                 pid_t pid, uint32_t tokenId,
-                                                const sptr<IRemoteObject> callback)
+                                                sptr<IRemoteObject> callback)
 {
     if (bundleName.empty() || sessionId.empty()) {
         ZLOGD("ObjectStoreManager::RegisterRemoteCallback empty");
         return;
     }
     ZLOGD("ObjectStoreManager::RegisterRemoteCallback start");
-    auto changeCallbackProxy = iface_cast<ObjectChangeCallbackProxy>(callback);
+    auto proxy = iface_cast<ObjectChangeCallbackProxy>(callback);
     std::string prefix = bundleName + sessionId;
-    callbacks_.Compute(tokenId, ([pid, &changeCallbackProxy, &prefix](const uint32_t key, CallbackInfo &value) {
+    callbacks_.Compute(tokenId, ([pid, &proxy, &prefix](const uint32_t key, CallbackInfo &value) {
         if (value.pid != pid) {
             value = CallbackInfo { pid };
         }
-        value.observers_.insert_or_assign(prefix, changeCallbackProxy);
+        value.observers_.insert_or_assign(prefix, proxy);
         return !value.observers_.empty();
     }));
 }

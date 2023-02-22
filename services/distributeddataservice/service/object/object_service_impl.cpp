@@ -48,7 +48,7 @@ ObjectServiceImpl::Factory::~Factory()
 
 int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const std::string &sessionId,
     const std::string &deviceId, const std::map<std::string, std::vector<uint8_t>> &data,
-    const sptr<IRemoteObject> callback)
+    sptr<IRemoteObject> callback)
 {
     ZLOGI("begin.");
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
@@ -121,7 +121,7 @@ int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, 
 }
 
 int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
-    const std::string &bundleName, const std::string &sessionId, const sptr<IRemoteObject> callback)
+    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
     ZLOGI("begin.");
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
@@ -141,7 +141,7 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
 }
 
 int32_t ObjectServiceImpl::ObjectStoreRetrieve(
-    const std::string &bundleName, const std::string &sessionId, const sptr<IRemoteObject> callback)
+    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
     ZLOGI("begin.");
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
@@ -161,7 +161,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
 }
 
 int32_t ObjectServiceImpl::RegisterDataObserver(
-    const std::string &bundleName, const std::string &sessionId, const sptr<IRemoteObject> callback)
+    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
     ZLOGD("begin.");
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();

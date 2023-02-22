@@ -28,13 +28,13 @@ public:
 
     int32_t ObjectStoreSave(const std::string &bundleName, const std::string &sessionId,
         const std::string &deviceId, const std::map<std::string, std::vector<uint8_t>> &data,
-        const sptr<IRemoteObject> callback) override;
+        sptr<IRemoteObject> callback) override;
     int32_t ObjectStoreRetrieve(
-        const std::string &bundleName, const std::string &sessionId, const sptr<IRemoteObject> callback) override;
+        const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback) override;
     int32_t ObjectStoreRevokeSave(const std::string &bundleName, const std::string &sessionId,
-        const sptr<IRemoteObject> callback) override;
+        sptr<IRemoteObject> callback) override;
     int32_t RegisterDataObserver(const std::string &bundleName, const std::string &sessionId,
-        const sptr<IRemoteObject> callback) override;
+        sptr<IRemoteObject> callback) override;
     int32_t UnregisterDataChangeObserver(const std::string &bundleName, const std::string &sessionId) override;
     int32_t IsBundleNameEqualTokenId(
         const std::string &bundleName, const std::string &sessionId, const uint32_t &tokenId);
