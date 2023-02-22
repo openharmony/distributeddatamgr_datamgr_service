@@ -128,7 +128,7 @@ int32_t ObjectServiceStub::OnUnsubscribeRequest(MessageParcel &data, MessageParc
 
 bool ObjectServiceStub::CheckInterfaceToken(MessageParcel& data)
 {
-    auto localDescriptor = ObjectService::GetDescriptor();
+    auto localDescriptor = IObjectService::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
     if (remoteDescriptor != localDescriptor) {
         ZLOGE("interface token is not equal");
