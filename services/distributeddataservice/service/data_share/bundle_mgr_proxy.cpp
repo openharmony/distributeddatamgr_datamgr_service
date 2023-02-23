@@ -43,7 +43,6 @@ sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
     sptr<BundleMgrProxy::ServiceDeathRecipient> deathRecipient = new (std::nothrow)
         BundleMgrProxy::ServiceDeathRecipient(this);
     if (deathRecipient == nullptr) {
-        ZLOGE("Failed to get service death recepient.");
         return nullptr;
     }
     remoteObject->AddDeathRecipient(deathRecipient);
