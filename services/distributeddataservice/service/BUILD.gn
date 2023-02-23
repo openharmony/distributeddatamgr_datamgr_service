@@ -34,6 +34,7 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/data_object/frameworks/innerkitsimpl/include",
     "//foundation/distributeddatamgr/data_object/interfaces/innerkits",
     "//foundation/distributeddatamgr/data_share/frameworks/native/common/include",
     "//foundation/distributeddatamgr/data_share/interfaces/inner_api/common/include",
