@@ -17,11 +17,12 @@
 #define DISTRIBUTED_OBJECT_SERVICE_STUB_H
 
 #include <iremote_stub.h>
-#include "iobject_service.h"
+#include "object_service.h"
 #include "feature/feature_system.h"
 namespace OHOS::DistributedObject {
 class ObjectServiceStub : public ObjectService, public DistributedData::FeatureSystem::Feature {
 public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectService");
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
 private:
