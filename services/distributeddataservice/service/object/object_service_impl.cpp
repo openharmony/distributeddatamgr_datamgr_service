@@ -32,7 +32,6 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedObject {
-using namespace OHOS::DistributedKv;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
@@ -56,7 +55,7 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    if (!PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
+    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object save permission denied");
         return OBJECT_PERMISSION_DENIED;
     }
@@ -76,8 +75,8 @@ int32_t ObjectServiceImpl::OnInitialize()
         return OBJECT_INNER_ERROR;
     }
     auto token = IPCSkeleton::GetCallingTokenID();
-    const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const auto userId = AccountDelegate::GetInstance()->GetUserByToken(token);
+    const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
+    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(token);
     StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.deviceId = localDeviceId;
@@ -114,7 +113,7 @@ int32_t ObjectServiceImpl::OnInitialize()
 
 int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    if (code == uint32_t(AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
+    if (code == uint32_t(DistributedKv::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         Clear();
     }
     return Feature::OnUserChange(code, user, account);
@@ -129,7 +128,7 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    if (!PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
+    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object revoke save permission denied");
         return OBJECT_PERMISSION_DENIED;
     }
@@ -149,7 +148,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    if (!PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
+    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object retrieve permission denied");
         return OBJECT_PERMISSION_DENIED;
     }

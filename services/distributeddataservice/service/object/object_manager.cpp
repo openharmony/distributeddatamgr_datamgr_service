@@ -107,9 +107,8 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
         proxy->Completed(std::map<std::string, int32_t>());
         return result;
     }
-    SyncCallBack tmp =
-        [proxy, appId, sessionId, deviceId, this](const std::map<std::string, int32_t> &results) {
-            proxy->Completed(results);
+    SyncCallBack tmp = [proxy, appId, sessionId, deviceId, this](const std::map<std::string, int32_t> &results) {
+        proxy->Completed(results);
         ProcessSyncCallback(results, appId, sessionId, deviceId);
     };
     ZLOGD("start SyncOnStore");
