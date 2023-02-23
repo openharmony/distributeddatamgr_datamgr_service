@@ -34,13 +34,13 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/data_object/interfaces/innerkits",
     "//foundation/distributeddatamgr/data_share/frameworks/native/common/include",
     "//foundation/distributeddatamgr/data_share/interfaces/inner_api/common/include",
     "//foundation/distributeddatamgr/data_share/interfaces/inner_api/consumer/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/object/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
@@ -51,8 +51,8 @@ config("module_public_config") {
 
 ohos_shared_library("distributeddatasvc") {
   include_dirs = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/distributeddb",
     "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/distributeddb",s
   ]
   sources = [
     "backup/src/backup_manager.cpp",
