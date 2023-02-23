@@ -52,7 +52,7 @@ config("module_public_config") {
 ohos_shared_library("distributeddatasvc") {
   include_dirs = [
     "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/distributeddb",s
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/distributeddb",
   ]
   sources = [
     "backup/src/backup_manager.cpp",
