@@ -89,7 +89,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.user = std::to_string(userId);
     saveMeta.account = accountId;
     saveMeta.tokenId = token;
-    saveMeta.securityLevel = SecurityLevel::S1;
+    saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = 1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
