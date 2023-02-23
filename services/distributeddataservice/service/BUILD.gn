@@ -123,7 +123,7 @@ ohos_shared_library("distributeddatasvc") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    “data_object:distributeddataobject_impl",
+    "data_object:distributeddataobject_impl",
     "data_share:datashare_common",
     "device_auth:deviceauth_sdk",
     "hiviewdfx_hilog_native:libhilog",
