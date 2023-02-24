@@ -27,7 +27,7 @@ int32_t RdbAdaptor::Insert(const UriInfo &uriInfo, const DataShareValuesBucket &
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId)) {
         return -1;
     }
-    int errCode = 0;
+    int errCode = E_OK;
     RdbDelegate delegate(metaData, errCode);
     return delegate.Insert(uriInfo.tableName, valuesBucket);
 }
@@ -38,7 +38,7 @@ int32_t RdbAdaptor::Update(const UriInfo &uriInfo, const DataSharePredicates &pr
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId)) {
         return -1;
     }
-    int errCode = 0;
+    int errCode = E_OK;
     RdbDelegate delegate(metaData, errCode);
     return delegate.Update(uriInfo.tableName, predicate, valuesBucket);
 }
@@ -48,7 +48,7 @@ int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &pr
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId)) {
         return -1;
     }
-    int errCode = 0;
+    int errCode = E_OK;
     RdbDelegate delegate(metaData, errCode);
     return delegate.Delete(uriInfo.tableName, predicate);
 }
