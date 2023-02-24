@@ -54,4 +54,5 @@ ohos_static_library("distributeddata_dfx_static") {
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

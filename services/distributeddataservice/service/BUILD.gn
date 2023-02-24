@@ -136,4 +136,5 @@ ohos_shared_library("distributeddatasvc") {
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

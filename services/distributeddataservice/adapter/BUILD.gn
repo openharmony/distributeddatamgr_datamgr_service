@@ -20,6 +20,7 @@ config("distributeddata_adapter_private_config") {
   cflags = [ "-Wno-multichar" ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 config("distributeddata_adapter_public_config") {

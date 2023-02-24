@@ -64,6 +64,7 @@ ohos_fuzztest("SchemaQueryFuzzTest") {
     "OMIT_FLATBUFFER",
     "RELATIONAL_STORE",
     "SQLITE_DISTRIBUTE_RELATIONAL",
+    "OPENSSL_SUPPRESS_DEPRECATED",
   ]
 
   external_deps = [
