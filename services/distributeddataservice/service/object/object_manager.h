@@ -20,7 +20,8 @@
 
 #include "concurrent_map.h"
 #include "device_manager_adapter.h"
-#include "iobject_callback.h"
+#include "object_callback.h"
+#include "object_callback_proxy.h"
 #include "task_scheduler.h"
 #include "kv_store_delegate_manager.h"
 #include "kvstore_sync_callback.h"
@@ -77,16 +78,16 @@ public:
     }
     int32_t Save(const std::string &appId, const std::string &sessionId,
         const std::map<std::string, std::vector<uint8_t>> &data, const std::string &deviceId,
-        sptr<IObjectSaveCallback> &callback);
+        sptr<IRemoteObject> callback);
     int32_t RevokeSave(
-        const std::string &appId, const std::string &sessionId, sptr<IObjectRevokeSaveCallback> &callback);
-    int32_t Retrieve(const std::string &appId, const std::string &sessionId, sptr<IObjectRetrieveCallback> callback);
+        const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback);
+    int32_t Retrieve(const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback);
     void SetData(const std::string &dataDir, const std::string &userId);
     int32_t Clear();
     int32_t DeleteByAppId(const std::string &appId);
     void RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
                                 pid_t pid, uint32_t tokenId,
-                                sptr <IObjectChangeCallback> &callback);
+                                sptr<IRemoteObject> callback);
     void UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
                                   const std::string &sessionId = "");
     void NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData);
@@ -99,7 +100,7 @@ private:
     constexpr static int8_t DECIMAL_BASE = 10;
     struct CallbackInfo {
         pid_t pid;
-        std::map<std::string, sptr<IObjectChangeCallback>> observers_;
+        std::map<std::string, sptr<ObjectChangeCallbackProxy>> observers_;
         bool operator<(const CallbackInfo &it_) const
         {
             if (pid < it_.pid) {

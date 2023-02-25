@@ -39,8 +39,7 @@ int32_t ObjectServiceStub::ObjectStoreSaveOnRemote(MessageParcel &data, MessageP
         ZLOGW("callback null");
         return -1;
     }
-    sptr<IObjectSaveCallback> callback = iface_cast<IObjectSaveCallback>(obj);
-    int32_t status = ObjectStoreSave(bundleName, sessionId, deviceId, objectData, callback);
+    int32_t status = ObjectStoreSave(bundleName, sessionId, deviceId, objectData, obj);
     if (!reply.WriteInt32(static_cast<int>(status))) {
         ZLOGE("ObjectStoreSaveOnRemote fail %{public}d", static_cast<int>(status));
         return -1;
@@ -61,8 +60,7 @@ int32_t ObjectServiceStub::ObjectStoreRevokeSaveOnRemote(MessageParcel &data, Me
         ZLOGW("callback null");
         return -1;
     }
-    sptr<IObjectRevokeSaveCallback> callback = iface_cast<IObjectRevokeSaveCallback>(obj);
-    int32_t status = ObjectStoreRevokeSave(bundleName, sessionId, callback);
+    int32_t status = ObjectStoreRevokeSave(bundleName, sessionId, obj);
     if (!reply.WriteInt32(static_cast<int>(status))) {
         ZLOGE("ObjectStoreRevokeSaveOnRemote fail %{public}d", static_cast<int>(status));
         return -1;
@@ -83,8 +81,7 @@ int32_t ObjectServiceStub::ObjectStoreRetrieveOnRemote(MessageParcel &data, Mess
         ZLOGW("callback null");
         return -1;
     }
-    sptr<IObjectRetrieveCallback> callback = iface_cast<IObjectRetrieveCallback>(obj);
-    int32_t status = ObjectStoreRetrieve(bundleName, sessionId, callback);
+    int32_t status = ObjectStoreRetrieve(bundleName, sessionId, obj);
     if (!reply.WriteInt32(static_cast<int>(status))) {
         ZLOGE("ObjectStoreRetrieveOnRemote fail %{public}d", static_cast<int>(status));
         return -1;
@@ -105,8 +102,7 @@ int32_t ObjectServiceStub::OnSubscribeRequest(MessageParcel &data, MessageParcel
         ZLOGW("callback null");
         return -1;
     }
-    sptr<IObjectChangeCallback> callback = iface_cast<IObjectChangeCallback>(obj);
-    int32_t status = RegisterDataObserver(bundleName, sessionId, callback);
+    int32_t status = RegisterDataObserver(bundleName, sessionId, obj);
     if (!reply.WriteInt32(static_cast<int>(status))) {
         ZLOGE("OnSubscribeRequest fail %{public}d", static_cast<int>(status));
         return -1;
@@ -132,7 +128,7 @@ int32_t ObjectServiceStub::OnUnsubscribeRequest(MessageParcel &data, MessageParc
 
 bool ObjectServiceStub::CheckInterfaceToken(MessageParcel& data)
 {
-    auto localDescriptor = ObjectService::GetDescriptor();
+    auto localDescriptor = IObjectService::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
     if (remoteDescriptor != localDescriptor) {
         ZLOGE("interface token is not equal");

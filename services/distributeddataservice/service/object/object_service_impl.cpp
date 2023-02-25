@@ -47,7 +47,7 @@ ObjectServiceImpl::Factory::~Factory()
 
 int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const std::string &sessionId,
     const std::string &deviceId, const std::map<std::string, std::vector<uint8_t>> &data,
-    sptr<IObjectSaveCallback> callback)
+    sptr<IRemoteObject> callback)
 {
     ZLOGI("begin.");
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
@@ -55,7 +55,7 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    if (!PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
+    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object save permission denied");
         return OBJECT_PERMISSION_DENIED;
     }
@@ -75,8 +75,8 @@ int32_t ObjectServiceImpl::OnInitialize()
         return OBJECT_INNER_ERROR;
     }
     auto token = IPCSkeleton::GetCallingTokenID();
-    const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const auto userId = AccountDelegate::GetInstance()->GetUserByToken(token);
+    const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
+    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(token);
     StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.deviceId = localDeviceId;
@@ -89,7 +89,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.user = std::to_string(userId);
     saveMeta.account = accountId;
     saveMeta.tokenId = token;
-    saveMeta.securityLevel = SecurityLevel::S1;
+    saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = 1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
@@ -113,14 +113,14 @@ int32_t ObjectServiceImpl::OnInitialize()
 
 int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    if (code == uint32_t(AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
+    if (code == uint32_t(DistributedKv::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         Clear();
     }
     return Feature::OnUserChange(code, user, account);
 }
 
 int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
-    const std::string &bundleName, const std::string &sessionId, sptr<IObjectRevokeSaveCallback> callback)
+    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
     ZLOGI("begin.");
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
@@ -128,7 +128,7 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    if (!PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
+    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object revoke save permission denied");
         return OBJECT_PERMISSION_DENIED;
     }
@@ -140,7 +140,7 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
 }
 
 int32_t ObjectServiceImpl::ObjectStoreRetrieve(
-    const std::string &bundleName, const std::string &sessionId, sptr<IObjectRetrieveCallback> callback)
+    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
     ZLOGI("begin.");
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
@@ -148,7 +148,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    if (!PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
+    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object retrieve permission denied");
         return OBJECT_PERMISSION_DENIED;
     }
@@ -160,7 +160,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
 }
 
 int32_t ObjectServiceImpl::RegisterDataObserver(
-    const std::string &bundleName, const std::string &sessionId, sptr<IObjectChangeCallback> callback)
+    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
     ZLOGD("begin.");
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
