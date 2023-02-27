@@ -404,7 +404,7 @@ int32_t RdbServiceImpl::CreateRDBTable(
     if (rdbObserver == nullptr) {
         return RDB_ERROR;
     }
-    auto syncer = new (std::nothrow)RdbSyncer(param, rdbObserver);
+    auto syncer = new (std::nothrow) RdbSyncer(param, rdbObserver);
     if (syncer == nullptr) {
         ZLOGE("new syncer error");
         return RDB_ERROR;
@@ -431,7 +431,7 @@ int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
     if (rdbObserver == nullptr) {
         return RDB_ERROR;
     }
-    auto syncer = new (std::nothrow)RdbSyncer(param, rdbObserver);
+    auto syncer = new (std::nothrow) RdbSyncer(param, rdbObserver);
     if (syncer == nullptr) {
         ZLOGE("new syncer error");
         return RDB_ERROR;

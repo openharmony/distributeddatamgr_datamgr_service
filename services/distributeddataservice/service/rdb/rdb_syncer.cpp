@@ -476,7 +476,7 @@ int32_t RdbSyncer::RemoteQuery(const std::string& device, const std::string& sql
         ZLOGE("DistributedDB remote query failed, status is  %{public}d.", status);
         return RDB_ERROR;
     }
-    resultSet= new (std::nothrow) RdbResultSetImpl(dbResultSet);
+    resultSet = new (std::nothrow) RdbResultSetImpl(dbResultSet);
     if (resultSet == nullptr) {
         ZLOGE("resultSet is nullptr");
         return RDB_ERROR;
