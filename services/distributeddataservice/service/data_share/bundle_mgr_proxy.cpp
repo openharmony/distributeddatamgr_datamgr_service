@@ -42,6 +42,9 @@ sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
     }
     sptr<BundleMgrProxy::ServiceDeathRecipient> deathRecipient = new (std::nothrow)
         BundleMgrProxy::ServiceDeathRecipient(this);
+    if (deathRecipient == nullptr) {
+        return nullptr;
+    }
     remoteObject->AddDeathRecipient(deathRecipient);
     proxy_ = iface_cast<AppExecFwk::BundleMgrProxy>(remoteObject);
     ZLOGD("Get bundle manager proxy success.");
