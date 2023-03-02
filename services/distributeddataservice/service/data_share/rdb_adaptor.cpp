@@ -64,16 +64,14 @@ std::shared_ptr<DataShareResultSet> RdbAdaptor::Query(const UriInfo &uriInfo, co
     return delegate.Query(uriInfo.tableName, predicates, columns);
 }
 
-RdbDelegate::RdbDelegate(const StoreMetaData &meta, int &err)
+RdbDelegate::RdbDelegate(const StoreMetaData &meta, int &errCode)
 {
-    int errCode = E_OK;
     RdbStoreConfig config(meta.dataDir);
     config.SetCreateNecessary(false);
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, meta.version, callback, errCode);
     if (errCode != E_OK) {
-        err = errCode;
-        ZLOGE("GetRdbStore failed %{public}d, %{public}s", errCode, meta.storeId.c_str());
+        ZLOGE("GetRdbStore failed, errCode is %{public}d, storeId is %{public}s", errCode, meta.storeId.c_str());
     }
 }
 
