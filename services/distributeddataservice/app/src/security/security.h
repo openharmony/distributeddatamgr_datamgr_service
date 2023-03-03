@@ -76,7 +76,7 @@ private:
     DBStatus GetFileSecurityOption(const std::string &filePath, SecurityOption &option) const;
     DBStatus GetDirSecurityOption(const std::string &filePath, SecurityOption &option) const;
 
-    mutable TaskScheduler taskScheduler_;
+    mutable TaskScheduler taskScheduler_ { "security" };
     mutable ConcurrentMap<std::string, Sensitive> devicesUdid_;
 };
 } // namespace OHOS::DistributedKv
