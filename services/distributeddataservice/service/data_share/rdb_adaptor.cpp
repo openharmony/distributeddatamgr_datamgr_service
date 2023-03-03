@@ -18,6 +18,8 @@
 #include "log_print.h"
 #include "permission_proxy.h"
 #include "rdb_utils.h"
+#include "rdb_errno.h"
+
 namespace OHOS::DataShare {
 int32_t RdbAdaptor::Insert(const UriInfo &uriInfo, const DataShareValuesBucket &valuesBucket, int32_t userId)
 {
@@ -25,7 +27,8 @@ int32_t RdbAdaptor::Insert(const UriInfo &uriInfo, const DataShareValuesBucket &
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId)) {
         return -1;
     }
-    RdbDelegate delegate(metaData);
+    int errCode = E_OK;
+    RdbDelegate delegate(metaData, errCode);
     return delegate.Insert(uriInfo.tableName, valuesBucket);
 }
 int32_t RdbAdaptor::Update(const UriInfo &uriInfo, const DataSharePredicates &predicate,
@@ -35,7 +38,8 @@ int32_t RdbAdaptor::Update(const UriInfo &uriInfo, const DataSharePredicates &pr
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId)) {
         return -1;
     }
-    RdbDelegate delegate(metaData);
+    int errCode = E_OK;
+    RdbDelegate delegate(metaData, errCode);
     return delegate.Update(uriInfo.tableName, predicate, valuesBucket);
 }
 int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &predicate, int32_t userId)
@@ -44,29 +48,30 @@ int32_t RdbAdaptor::Delete(const UriInfo &uriInfo, const DataSharePredicates &pr
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId)) {
         return -1;
     }
-    RdbDelegate delegate(metaData);
+    int errCode = E_OK;
+    RdbDelegate delegate(metaData, errCode);
     return delegate.Delete(uriInfo.tableName, predicate);
 }
 std::shared_ptr<DataShareResultSet> RdbAdaptor::Query(const UriInfo &uriInfo, const DataSharePredicates &predicates,
-    const std::vector<std::string> &columns, int32_t userId)
+    const std::vector<std::string> &columns, int32_t userId, int &errCode)
 {
     DistributedData::StoreMetaData metaData;
     if (!PermissionProxy::QueryMetaData(uriInfo.bundleName, uriInfo.storeName, metaData, userId)) {
+        errCode = E_DB_NOT_EXIST;
         return nullptr;
     }
-    RdbDelegate delegate(metaData);
+    RdbDelegate delegate(metaData, errCode);
     return delegate.Query(uriInfo.tableName, predicates, columns);
 }
 
-RdbDelegate::RdbDelegate(const StoreMetaData &meta)
+RdbDelegate::RdbDelegate(const StoreMetaData &meta, int &errCode)
 {
-    int errCode = E_OK;
     RdbStoreConfig config(meta.dataDir);
     config.SetCreateNecessary(false);
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, meta.version, callback, errCode);
     if (errCode != E_OK) {
-        ZLOGE("GetRdbStore failed %{public}d, %{public}s", errCode, meta.storeId.c_str());
+        ZLOGE("GetRdbStore failed, errCode is %{public}d, storeId is %{public}s", errCode, meta.storeId.c_str());
     }
 }
 

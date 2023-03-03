@@ -93,7 +93,9 @@ int32_t DataShareServiceStub::OnRemoteQuery(MessageParcel &data, MessageParcel &
         ZLOGW("read device list failed.");
         return -1;
     }
-    auto result = ISharedResultSet::WriteToParcel(Query(uri, predicate, columns), reply);
+    int errCode = 0;
+    auto result = ISharedResultSet::WriteToParcel(Query(uri, predicate, columns, errCode), reply);
+    reply.WriteInt32(errCode);
     if (result == nullptr) {
         ZLOGW("!resultSet->Marshalling(reply)");
         return -1;
