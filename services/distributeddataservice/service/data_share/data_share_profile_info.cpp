@@ -71,7 +71,6 @@ bool DataShareProfileInfo::GetProfileInfoFromExtension(const AppExecFwk::BundleI
 
     for (auto const &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
-
             bool isCompressed = !item.hapPath.empty();
             std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
             std::vector<std::string> infos = GetResProfileByMetadata(item.metadata, resourcePath, isCompressed);
