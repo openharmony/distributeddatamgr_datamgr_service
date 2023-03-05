@@ -52,7 +52,7 @@ bool URIUtils::IsValidPath(const std::vector<std::string> &splitUri, bool tableN
     }
 
     if (!tableNameEmpty) {
-        if (splitUri.size() < URI_INDEX_MAX) {
+        if (splitUri.size() < URI_INDEX_TABLENAME + 1) {
             ZLOGE("Uri need contains tableName");
             return false;
         }

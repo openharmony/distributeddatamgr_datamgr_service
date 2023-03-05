@@ -45,11 +45,11 @@ public:
         ProfileInfo &profileInfo, bool &isSingleApp);
 
 private:
-    bool GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resourcePath,
-        bool isCompressed, std::vector<std::string> &profileInfos) const;
+    std::vector<std::string> GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
+        const std::string &resourcePath, bool isCompressed) const;
     std::shared_ptr<ResourceManager> InitResMgr(const std::string &basicString) const;
-    bool GetResFromResMgr(const std::string &resName, ResourceManager &resMgr, bool isCompressed,
-        std::vector<std::string> &profileInfos) const;
+    std::vector<std::string> GetResFromResMgr(const std::string &resName, ResourceManager &resMgr,
+        bool isCompressed) const;
     std::string ReadProfile(const std::string &resPath) const;
     bool IsFileExisted(const std::string &filePath) const;
 };

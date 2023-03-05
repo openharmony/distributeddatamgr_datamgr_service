@@ -40,7 +40,7 @@ bool PermissionProxy::GetBundleInfo(const std::string &bundleName, uint32_t toke
 PermissionProxy::PermissionState PermissionProxy::QueryWritePermission(uint32_t tokenId,
     std::string &permission, const AppExecFwk::BundleInfo &bundleInfo)
 {
-    for (auto &item : bundleInfo.extensionInfos) {
+    for (auto const &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             permission = item.writePermission;
             if (permission.empty()) {
@@ -62,9 +62,10 @@ PermissionProxy::PermissionState PermissionProxy::QueryWritePermission(uint32_t 
 PermissionProxy::PermissionState PermissionProxy::QueryReadPermission(uint32_t tokenId,
     std::string &permission, const AppExecFwk::BundleInfo &bundleInfo)
 {
-    for (auto &item : bundleInfo.extensionInfos) {
+    for (auto const &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
-            if (item.readPermission.empty()) {
+            permission = item.readPermission;
+            if (permission.empty()) {
                 ZLOGW("ReadPermission is empty! BundleName is %{public}s, tokenId is %{public}x",
                     bundleInfo.name.c_str(), tokenId);
                 return PermissionState::NOT_FIND;
