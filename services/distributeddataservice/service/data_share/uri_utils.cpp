@@ -34,7 +34,7 @@ bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo, bool tab
     uriInfo.bundleName = splitUri[BUNDLE_NAME];
     uriInfo.moduleName = splitUri[MODULE_NAME];
     uriInfo.storeName = splitUri[STORE_NAME];
-    if (splitUri.size() > TABLE_NAME) {
+    if (splitUri.size() > OPTIONAL_BEGIN) {
         uriInfo.tableName = splitUri[TABLE_NAME];
     }
     return true;
@@ -42,7 +42,7 @@ bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo, bool tab
 
 bool URIUtils::IsValidPath(const std::vector<std::string> &splitUri, bool tableNameEmpty)
 {
-    if (splitUri.size() < TABLE_NAME) {
+    if (splitUri.size() < OPTIONAL_BEGIN) {
         return false;
     }
     if (splitUri[BUNDLE_NAME].empty() || splitUri[MODULE_NAME].empty() ||

@@ -42,7 +42,8 @@ private:
         BUNDLE_NAME = 0,
         MODULE_NAME,
         STORE_NAME,
-        TABLE_NAME,
+        OPTIONAL_BEGIN,
+        TABLE_NAME = OPTIONAL_BEGIN,
         PARAM_BUTT
     };
 };
