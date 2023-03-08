@@ -39,10 +39,8 @@ public:
     };
 
     static bool GetBundleInfo(const std::string &bundleName, uint32_t tokenId, AppExecFwk::BundleInfo &bundleInfo);
-    static PermissionState QueryWritePermission(uint32_t tokenId,
-        std::string &permission, const AppExecFwk::BundleInfo &bundleInfo);
-    static PermissionState QueryReadPermission(uint32_t tokenId,
-        std::string &permission, const AppExecFwk::BundleInfo &bundleInfo);
+    static PermissionState QueryWritePermission(uint32_t tokenId, const AppExecFwk::BundleInfo &bundleInfo);
+    static PermissionState QueryReadPermission(uint32_t tokenId, const AppExecFwk::BundleInfo &bundleInfo);
     static bool QueryMetaData(const std::string &bundleName, const std::string &storeName,
         DistributedData::StoreMetaData &metaData, int32_t userId);
     static std::string GetTableNameByCrossUserMode(const ProfileInfo &profileInfo,

@@ -31,32 +31,32 @@ bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo, bool tab
         return false;
     }
 
-    uriInfo.bundleName = splitUri[URI_INDEX_BUNLDENAME];
-    uriInfo.moduleName = splitUri[URI_INDEX_MODULENAME];
-    uriInfo.storeName = splitUri[URI_INDEX_STORENAME];
-    if (splitUri.size() > URI_INDEX_MIN) {
-        uriInfo.tableName = splitUri[URI_INDEX_TABLENAME];
+    uriInfo.bundleName = splitUri[BUNDLE_NAME];
+    uriInfo.moduleName = splitUri[MODULE_NAME];
+    uriInfo.storeName = splitUri[STORE_NAME];
+    if (splitUri.size() > TABLE_NAME) {
+        uriInfo.tableName = splitUri[TABLE_NAME];
     }
     return true;
 }
 
 bool URIUtils::IsValidPath(const std::vector<std::string> &splitUri, bool tableNameEmpty)
 {
-    if (splitUri.size() < URI_INDEX_MIN) {
+    if (splitUri.size() < TABLE_NAME) {
         return false;
     }
-    if (splitUri[URI_INDEX_BUNLDENAME].empty() || splitUri[URI_INDEX_MODULENAME].empty() ||
-        splitUri[URI_INDEX_STORENAME].empty()) {
+    if (splitUri[BUNDLE_NAME].empty() || splitUri[MODULE_NAME].empty() ||
+        splitUri[STORE_NAME].empty()) {
         ZLOGE("Uri has empty field!");
         return false;
     }
 
     if (!tableNameEmpty) {
-        if (splitUri.size() < URI_INDEX_TABLENAME + 1) {
+        if (splitUri.size() < PARAM_BUTT) {
             ZLOGE("Uri need contains tableName");
             return false;
         }
-        if (splitUri[URI_INDEX_TABLENAME].empty()) {
+        if (splitUri[TABLE_NAME].empty()) {
             ZLOGE("Uri tableName can't be empty!");
             return false;
         }

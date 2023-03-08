@@ -38,12 +38,13 @@ public:
 
 private:
     static bool IsValidPath(const std::vector<std::string> &splitUri, bool tableNameEmpty);
-    static constexpr size_t URI_INDEX_BUNLDENAME = 0;
-    static constexpr size_t URI_INDEX_MODULENAME = 1;
-    static constexpr size_t URI_INDEX_STORENAME = 2;
-    static constexpr size_t URI_INDEX_TABLENAME = 3;
-    static constexpr size_t URI_INDEX_MIN = 3;
-    static constexpr size_t URI_INDEX_MAX = 4;
+    enum PATH_PARAM : int32_t {
+        BUNDLE_NAME = 0,
+        MODULE_NAME,
+        STORE_NAME,
+        TABLE_NAME,
+        PARAM_BUTT
+    };
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_URI_UTILS_H
