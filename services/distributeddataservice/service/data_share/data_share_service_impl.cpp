@@ -212,13 +212,12 @@ std::string DataShareServiceImpl::GetRealityTableName(uint32_t tokenId, const Ap
 PermissionProxy::PermissionState DataShareServiceImpl::VerifyPermission(uint32_t tokenID,
     DataShareServiceImpl::PermissionType permissionType, const AppExecFwk::BundleInfo &bundleInfo)
 {
-    std::string permission;
     switch (permissionType) {
         case PermissionType::READ_PERMISSION: {
-            return PermissionProxy::QueryReadPermission(tokenID, permission, bundleInfo);
+            return PermissionProxy::QueryReadPermission(tokenID, bundleInfo);
         }
         case PermissionType::WRITE_PERMISSION: {
-            return PermissionProxy::QueryWritePermission(tokenID, permission, bundleInfo);
+            return PermissionProxy::QueryWritePermission(tokenID, bundleInfo);
         }
     }
     return PermissionProxy::PermissionState::NOT_FIND;

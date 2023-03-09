@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #define LOG_TAG "DataShareProfileInfo"
 #include "data_share_profile_info.h"
 
@@ -57,9 +57,7 @@ bool ProfileInfo::Marshal(json &node) const
 
 bool ProfileInfo::Unmarshal(const json &node)
 {
-    bool ret = true;
-    ret = GetValue(node, GET_NAME(tableConfig), tableConfig) && ret;
-    return ret;
+    return GetValue(node, GET_NAME(tableConfig), tableConfig);
 }
 
 bool DataShareProfileInfo::GetProfileInfoFromExtension(const AppExecFwk::BundleInfo &bundleInfo,
@@ -71,15 +69,14 @@ bool DataShareProfileInfo::GetProfileInfoFromExtension(const AppExecFwk::BundleI
         return true;
     }
 
-    for (auto &item : bundleInfo.extensionInfos) {
+    for (auto const &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
-            std::vector<std::string> infos;
             bool isCompressed = !item.hapPath.empty();
             std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
-            if (!GetResProfileByMetadata(item.metadata, resourcePath, isCompressed, infos) || infos.empty()) {
-                ZLOGE("failed, bundleName is %{public}s, resourcePath is %{public}s, metadata.size is %{public}zu,"
-                    "infos.size is %{public}zu", bundleInfo.name.c_str(), resourcePath.c_str(), item.metadata.size(),
-                    infos.size());
+            std::vector<std::string> infos = GetResProfileByMetadata(item.metadata, resourcePath, isCompressed);
+            if (infos.empty()) {
+                ZLOGE("failed, bundleName is %{public}s, resourcePath is %{public}s, metadata.size is %{public}zu,",
+                    bundleInfo.name.c_str(), resourcePath.c_str(), item.metadata.size());
                 return false;
             }
             return profileInfo.Unmarshall(infos[0]);
@@ -89,23 +86,24 @@ bool DataShareProfileInfo::GetProfileInfoFromExtension(const AppExecFwk::BundleI
     return false;
 }
 
-bool DataShareProfileInfo::GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
-    const std::string &resourcePath, bool isCompressed, std::vector<std::string> &profileInfos) const
+std::vector<std::string> DataShareProfileInfo::GetResProfileByMetadata(
+    const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resourcePath, bool isCompressed) const
 {
+    std::vector<std::string> profileInfos;
     if (metadata.empty() || resourcePath.empty()) {
-        return false;
+        return profileInfos;
     }
     std::shared_ptr<ResourceManager> resMgr = InitResMgr(resourcePath);
     if (resMgr == nullptr) {
-        return false;
+        return profileInfos;
     }
 
-    for (auto &meta : metadata) {
+    for (auto const &meta : metadata) {
         if (meta.name.compare(DATA_SHARE_PROFILE_META) == 0) {
-            return GetResFromResMgr(meta.resource, *resMgr, isCompressed, profileInfos);
+            return GetResFromResMgr(meta.resource, *resMgr, isCompressed);
         }
     }
-    return false;
+    return profileInfos;
 }
 
 std::shared_ptr<ResourceManager> DataShareProfileInfo::InitResMgr(const std::string &resourcePath) const
@@ -128,17 +126,18 @@ std::shared_ptr<ResourceManager> DataShareProfileInfo::InitResMgr(const std::str
     return resMgr;
 }
 
-bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, ResourceManager &resMgr,
-    bool isCompressed, std::vector<std::string> &profileInfos) const
+std::vector<std::string> DataShareProfileInfo::GetResFromResMgr(const std::string &resName, ResourceManager &resMgr,
+    bool isCompressed) const
 {
+    std::vector<std::string> profileInfos;
     if (resName.empty()) {
-        return false;
+        return profileInfos;
     }
 
     size_t pos = resName.rfind(PROFILE_FILE_PREFIX);
     if ((pos == std::string::npos) || (pos == resName.length() - PROFILE_PREFIX_LEN)) {
         ZLOGE("res name invalid, resName is %{public}s", resName.c_str());
-        return false;
+        return profileInfos;
     }
     std::string profileName = resName.substr(pos + PROFILE_PREFIX_LEN);
     // hap is compressed status, get file content.
@@ -150,34 +149,34 @@ bool DataShareProfileInfo::GetResFromResMgr(const std::string &resName, Resource
         if (ret != SUCCESS || fileContent == nullptr) {
             ZLOGE("failed, ret is %{public}d, profileName is %{public}s",
                 ret, profileName.c_str());
-            return false;
+            return profileInfos;
         }
         if (len == 0) {
             ZLOGE("fileContent is empty, profileName is %{public}s", profileName.c_str());
-            return false;
+            return profileInfos;
         }
         std::string rawData(fileContent.get(), fileContent.get() + len);
         if (!Config::IsJson(rawData)) {
             ZLOGE("rawData is not json, profileName is %{public}s", profileName.c_str());
-            return false;
+            return profileInfos;
         }
         profileInfos.push_back(std::move(rawData));
-        return true;
+        return profileInfos;
     }
     // hap is decompressed status, get file path then read file.
     std::string resPath;
     RState ret = resMgr.GetProfileByName(profileName.c_str(), resPath);
     if (ret != SUCCESS) {
         ZLOGE("profileName not found, ret is %{public}d, profileName is %{public}s", ret, profileName.c_str());
-        return false;
+        return profileInfos;
     }
     std::string profile = ReadProfile(resPath);
     if (profile.empty()) {
         ZLOGE("Read profile failed, resPath is %{public}s", resPath.c_str());
-        return false;
+        return profileInfos;
     }
     profileInfos.push_back(std::move(profile));
-    return true;
+    return profileInfos;
 }
 
 bool DataShareProfileInfo::IsFileExisted(const std::string &filePath) const

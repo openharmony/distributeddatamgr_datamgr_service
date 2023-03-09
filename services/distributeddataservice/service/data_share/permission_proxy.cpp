@@ -38,17 +38,16 @@ bool PermissionProxy::GetBundleInfo(const std::string &bundleName, uint32_t toke
 }
 
 PermissionProxy::PermissionState PermissionProxy::QueryWritePermission(uint32_t tokenId,
-    std::string &permission, const AppExecFwk::BundleInfo &bundleInfo)
+    const AppExecFwk::BundleInfo &bundleInfo)
 {
-    for (auto &item : bundleInfo.extensionInfos) {
+    for (auto const &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
-            permission = item.writePermission;
-            if (permission.empty()) {
+            if (item.writePermission.empty()) {
                 ZLOGW("WritePermission is empty! BundleName is %{public}s, tokenId is %{public}x",
                     bundleInfo.name.c_str(), tokenId);
                 return PermissionState::NOT_FIND;
             }
-            int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
+            int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, item.writePermission);
             if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
                 ZLOGE("Verify write permission denied!");
                 return PermissionState::DENIED;
@@ -60,16 +59,16 @@ PermissionProxy::PermissionState PermissionProxy::QueryWritePermission(uint32_t 
 }
 
 PermissionProxy::PermissionState PermissionProxy::QueryReadPermission(uint32_t tokenId,
-    std::string &permission, const AppExecFwk::BundleInfo &bundleInfo)
+    const AppExecFwk::BundleInfo &bundleInfo)
 {
-    for (auto &item : bundleInfo.extensionInfos) {
+    for (auto const &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
                 ZLOGW("ReadPermission is empty! BundleName is %{public}s, tokenId is %{public}x",
                     bundleInfo.name.c_str(), tokenId);
                 return PermissionState::NOT_FIND;
             }
-            int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
+            int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, item.readPermission);
             if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
                 ZLOGE("Verify Read permission denied!");
                 return PermissionState::DENIED;
