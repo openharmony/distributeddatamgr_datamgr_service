@@ -22,5 +22,6 @@ DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor)
 
 DocumentStore::~DocumentStore()
 {
+    delete executor_;
 }
 } // DocumentDB
