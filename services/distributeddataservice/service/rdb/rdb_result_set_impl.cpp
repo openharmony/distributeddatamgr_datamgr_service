@@ -296,6 +296,19 @@ int RdbResultSetImpl::IsColumnNull(int columnIndex, bool &isNull)
     return NativeRdb::E_OK;
 }
 
+int RdbResultSetImpl::GetRow(std::map<std::string, NativeRdb::VariantData> &data)
+{
+    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_STEP_RESULT_CLOSED;
+    }
+    DBStatus status = resultSet_->GetRow(data);
+    if (status != DBStatus::OK) {
+        return NativeRdb::E_ERROR;
+    }
+    return NativeRdb::E_OK;
+}
+
 bool RdbResultSetImpl::IsClosed() const
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
