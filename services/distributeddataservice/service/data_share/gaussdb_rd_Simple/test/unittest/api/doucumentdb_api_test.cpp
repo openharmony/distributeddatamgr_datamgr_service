@@ -15,7 +15,11 @@
 
 #include <gtest/gtest.h>
 
+#include "log_print.h"
 #include "grd_base/grd_db_api.h"
+#include "grd_base/grd_error.h"
+
+using namespace DocumentDB;
 using namespace testing::ext;
 
 class DocumentDBApiTest : public testing::Test {
@@ -42,7 +46,6 @@ void DocumentDBApiTest::TearDown(void)
 {
 }
 
-
 /**
   * @tc.name: OpenDBTest001
   * @tc.desc: Test open document db
@@ -54,6 +57,11 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest001, TestSize.Level1)
 {
     std::string path = "./document.db";
     GRD_DB *db = nullptr;
-    GRD_DBOpen(path.c_str(), nullptr, 0, &db);
+    int status = GRD_DBOpen(path.c_str(), nullptr, 0, &db);
+    EXPECT_EQ(status, GRD_OK);
     EXPECT_NE(db, nullptr);
+    GLOGD("Open DB test 001: status: %d", status);
+    status = GRD_DBClose(db, 0);
+    EXPECT_EQ(status, GRD_OK);
+    db = nullptr;
 }

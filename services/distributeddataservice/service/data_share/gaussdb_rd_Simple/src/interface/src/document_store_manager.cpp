@@ -16,6 +16,7 @@
 #include "doc_errno.h"
 #include "document_store_manager.h"
 #include "kv_store_manager.h"
+#include "grd_base/grd_type_export.h"
 
 namespace DocumentDB {
 int DocumentStoreManager::GetDocumentStore(const std::string &path, DocumentStore *&store)
@@ -23,6 +24,16 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, DocumentStor
     KvStoreExecutor *executor = nullptr;
     KvStoreManager::GetKvStore(path, executor);
     store = new (std::nothrow) DocumentStore(executor);
+    return E_OK;
+}
+
+int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, CloseType type)
+{
+    if (type == CloseType::NORMAL) {
+        // TODO: check result set
+    }
+
+    delete store;
     return E_OK;
 }
 } // DocumentDB

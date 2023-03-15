@@ -22,10 +22,29 @@ extern "C" {
 
 typedef struct GRD_DB GRD_DB;
 
+/**
+ * @brief Open database config
+ */
+#define GRD_DB_OPEN_ONLY        0x00
+#define GRD_DB_OPEN_CREATE      0x01
+
+/**
+ * @brief Close database config
+ */
+#define GRD_DB_CLOSE                0x00
+#define GRD_DB_CLOSE_IGNORE_ERROR   0x01
+
+#define GRD_DB_ID_DISPLAY       0x01
+
 typedef struct Query {
     const char *filter;
     const char *projection;
 } Query;
+
+/**
+ * @brief Flags for create and drop collection
+ */
+#define FLAG_CHECK_UDEFINED_DUPLICAte_TABLE 1
 
 #ifdef __cplusplus
 }

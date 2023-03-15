@@ -2,8 +2,14 @@ cmake_minimum_required(VERSION 3.2)
 
 project(grd_simple VERSION 1.0.0)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -std=c++17 -pthread")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++17 -pthread")
+# Address Sanitizer
+option(USE_ASAN "Compile with address sanitiser" OFF)
+if (USE_ASAN)
+    message(STATUS "Compile with address sanitiser ${USE_ASAN}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -O0")
+endif()
 
 function(download_repo repo_name repo_url)
     execute_process(
@@ -170,6 +176,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/third_party/utils_native/base/include
     ${PROJECT_SOURCE_DIR}/third_party/utils_native/base/src/securec
     ${PROJECT_SOURCE_DIR}/third_party/third_party_openssl/include
+    ${PROJECT_SOURCE_DIR}/third_party/kate/log/include
 )
 
 link_directories(

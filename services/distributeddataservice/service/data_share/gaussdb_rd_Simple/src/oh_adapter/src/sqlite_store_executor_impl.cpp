@@ -22,6 +22,8 @@ SqliteStoreExecutor::SqliteStoreExecutor(sqlite3 *handle) : dbHandle_(handle)
 
 SqliteStoreExecutor::~SqliteStoreExecutor()
 {
+    sqlite3_close_v2(dbHandle_);
+    dbHandle_ = nullptr;
 }
 
 int SqliteStoreExecutor::PutData(const Key &key, const Value &value)

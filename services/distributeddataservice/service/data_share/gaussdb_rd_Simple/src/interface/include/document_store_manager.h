@@ -22,7 +22,14 @@
 namespace DocumentDB {
 class DocumentStoreManager {
 public:
-    static int GetDocumentStore(const std::string &path, DocumentStore *&delegate);
+    static int GetDocumentStore(const std::string &path, DocumentStore *&store);
+
+    enum class CloseType {
+        NORMAL,
+        IGNORE_ERROR,
+    };
+
+    static int CloseDocumentStore(DocumentStore *store, CloseType type);
 };
 } // DocumentDB
 #endif // DOCUMENT_STORE_MANAGER_H
