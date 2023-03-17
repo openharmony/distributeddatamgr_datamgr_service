@@ -18,6 +18,7 @@
 #include "uninstaller_impl.h"
 #include <thread>
 #include <unistd.h>
+#include "bundle_common_event.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "device_manager_adapter.h"
@@ -46,7 +47,7 @@ void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
     Want want = event.GetWant();
     std::string action = want.GetAction();
     if (action != CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED &&
-        action != CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
+        action != OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
         return;
     }
 
@@ -82,7 +83,7 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
     }
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
-    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
+    matchingSkills.AddEvent(OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
     CommonEventSubscribeInfo info(matchingSkills);
     auto callback = [kvStoreDataService](const std::string &bundleName, int32_t userId, int32_t appIndex) {
         kvStoreDataService->OnUninstall(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
