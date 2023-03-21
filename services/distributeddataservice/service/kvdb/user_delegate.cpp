@@ -82,9 +82,9 @@ std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
         LoadFromMeta(deviceId);
     }
     deviceUserMap_.ComputeIfPresent(deviceId, [&userStatus](const auto &, std::map<int, bool> &userMap) {
-        std::for_each(userMap.begin(), userMap.end(), [&userStatus](auto key, auto value) {
+        for (const auto &[key, value] : userMap) {
             userStatus.emplace_back(key, value);
-        });
+        }
         return true;
     });
 
@@ -127,9 +127,9 @@ bool UserDelegate::InitLocalUserMeta()
     userMetaData.deviceId = GetLocalDeviceId();
     UpdateUsers(userMetaData.deviceId, userStatus);
     deviceUserMap_.ComputeIfPresent(userMetaData.deviceId, [&userMetaData](const auto &, std::map<int, bool> &userMap) {
-        std::for_each(userMap.begin(), userMap.end(), [&userMetaData](auto key, auto value) {
+        for (const auto &[key, value] : userMap) {
             userMetaData.users.emplace_back(key, value);
-        });
+        }
         return true;
     });
     ZLOGI("put user meta data save meta data");
