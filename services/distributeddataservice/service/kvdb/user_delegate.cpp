@@ -103,9 +103,9 @@ void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<Us
     ZLOGI("begin, device:%{public}.10s, users:%{public}zu", Anonymous::Change(deviceId).c_str(), userStatus.size());
     deviceUserMap_.Compute(deviceId, [&userStatus](const auto &key, std::map<int, bool> &userMap) {
         userMap = {};
-        std::for_each(userStatus.begin(), userStatus.end(), [&userMap](const auto &user) {
+        for (const auto &user : userStatus) {
             userMap[user.id] = user.isActive;
-        });
+        }
         ZLOGI("end, device:%{public}.10s, users:%{public}zu", Anonymous::Change(key).c_str(), userMap.size());
         return true;
     });
