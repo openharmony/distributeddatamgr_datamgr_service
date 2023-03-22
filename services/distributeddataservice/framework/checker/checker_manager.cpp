@@ -46,7 +46,10 @@ void CheckerManager::RegisterPlugin(const std::string &checker, std::function<Ch
     if (it.first) {
         return;
     }
-    getters_[checker] = getter;
+    getters_.Compute(checker, [&getter](const auto &key, auto &value) {
+        value = move(getter);
+        return true;
+    });
 }
 
 std::string CheckerManager::GetAppId(const StoreInfo &info)
