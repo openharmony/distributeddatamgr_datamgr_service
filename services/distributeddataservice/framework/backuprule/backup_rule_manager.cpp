@@ -41,7 +41,10 @@ void BackupRuleManager::RegisterPlugin(const std::string &backupRule, std::funct
     if (it.first) {
         return;
     }
-    getters_[backupRule] = getter;
+    getters_.Compute(backupRule, [&getter](const auto &key, auto &value) {
+        value = move(getter);
+        return true;
+    });
 }
 
 bool BackupRuleManager::CanBackup()
