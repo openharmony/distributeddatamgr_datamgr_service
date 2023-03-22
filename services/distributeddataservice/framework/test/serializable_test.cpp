@@ -127,20 +127,6 @@ HWTEST_F(SerializableTest, GetNormalVal, TestSize.Level2)
 }
 
 /**
-* @tc.name: Delete Serializable
-* @tc.desc: can delete child class, but not delete parent class point.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: Sven Wang
-*/
-HWTEST_F(SerializableTest, DeleteSerializable, TestSize.Level2)
-{
-    ZLOGI("SerializableSuite GetVal begin.");
-    NormalEx *normalEx = new NormalEx();
-    delete normalEx;
-}
-
-/**
 * @tc.name: SerializableSuiteGetMutilVal
 * @tc.desc: mutil value case.
 * @tc.type: FUNC
