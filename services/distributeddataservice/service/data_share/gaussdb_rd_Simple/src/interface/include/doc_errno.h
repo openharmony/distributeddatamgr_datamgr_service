@@ -19,8 +19,12 @@
 
 namespace DocumentDB {
 constexpr int E_OK = 0;
-constexpr int E_ERROR = 1;
-
-
+constexpr int E_BASE = 1000;
+constexpr int E_ERROR = E_BASE + 1;
+constexpr int E_INVALID_ARGS = E_BASE + 2;
+constexpr int E_UNFINISHED = E_BASE + 7;
+constexpr int E_OUT_OF_MEMORY = E_BASE + 8;
+constexpr int E_SECUREC_ERROR = E_BASE + 9;
+constexpr int E_SYSTEM_API_FAIL = E_BASE + 10;
 } // DocumentDB
 #endif // DOC_ERRNO_H

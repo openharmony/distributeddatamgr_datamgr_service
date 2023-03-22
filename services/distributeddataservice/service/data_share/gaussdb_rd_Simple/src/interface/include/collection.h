@@ -13,30 +13,28 @@
 * limitations under the License.
 */
 
-#ifndef DOCUMENT_STORE_H
-#define DOCUMENT_STORE_H
+#ifndef COLLECTION_H
+#define COLLECTION_H
 
 #include <string>
-#include <map>
-
-#include "collection.h"
+#include "doc_common.h"
 #include "kv_store_executor.h"
 
 namespace DocumentDB {
-class DocumentStore {
+class Collection {
 public:
-    DocumentStore(KvStoreExecutor *);
-    ~DocumentStore();
+    Collection(std::string name, KvStoreExecutor *executor);
+    ~Collection();
 
-    int CreateCollection(const std::string &name, const std::string &option, int flag);
-    int DropCollection(const std::string &name, int flag);
+    int PutDocument(const Key &key, const Value &document);
+    int GetDocument(const Key &key, Value &document) const;
+    int DeleteDocument(const Key &key);
 
-    int UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update, int flag);
-    int UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document, int flag);
-
+    int UpsertDocument(const Key &key, Value &document);
+    int UpdateDocument(const Key &key, Value &update);
 private:
+    std::string name_;
     KvStoreExecutor *executor_ = nullptr;
-    std::map<std::string, Collection> collections_;
 };
-} // DocumentDB
-#endif // DOCUMENT_STORE_H
+} // namespace DocumentDB
+#endif // COLLECTION_H

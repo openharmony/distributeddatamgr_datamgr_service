@@ -13,10 +13,12 @@
 * limitations under the License.
 */
 
-#include "doc_errno.h"
 #include "document_store_manager.h"
-#include "kv_store_manager.h"
+#include "doc_errno.h"
 #include "grd_base/grd_type_export.h"
+#include "kv_store_manager.h"
+#include "log_print.h"
+#include "os_api.h"
 
 namespace DocumentDB {
 int DocumentStoreManager::GetDocumentStore(const std::string &path, DocumentStore *&store)
@@ -35,5 +37,27 @@ int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, CloseType typ
 
     delete store;
     return E_OK;
+}
+
+bool DocumentStoreManager::CheckDBPath(const std::string &path, std::string &canonicalPath)
+{
+    if (path.empty()) {
+        GLOGE("invalid path empty");
+        return -E_INVALID_ARGS;
+    }
+
+    if (path.back() == '/') {
+        GLOGE("invalid path end with slash");
+        return -E_INVALID_ARGS;
+    }
+
+    std::string canonicalDir;
+    int errCode = OSAPI::GetRealPath(path, canonicalDir);
+    if (errCode == E_OK) {
+        GLOGE("Get real path failed. %d", errCode);
+        return errCode;
+    }
+
+
 }
 } // DocumentDB

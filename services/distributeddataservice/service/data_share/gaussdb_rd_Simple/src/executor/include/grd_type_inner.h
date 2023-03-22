@@ -13,26 +13,13 @@
 * limitations under the License.
 */
 
-#ifndef DOCUMENT_STORE_MANAGER_H
-#define DOCUMENT_STORE_MANAGER_H
+#ifndef GRD_TYPE_INNER_H
+#define GRD_TYPE_INNER_H
 
-#include <string>
 #include "document_store.h"
 
-namespace DocumentDB {
-class DocumentStoreManager {
-public:
-    static int GetDocumentStore(const std::string &path, DocumentStore *&store);
+typedef struct GRD_DB {
+    DocumentDB::DocumentStore *store_ = nullptr;
+} GRD_DB;
 
-    enum class CloseType {
-        NORMAL,
-        IGNORE_ERROR,
-    };
-
-    static int CloseDocumentStore(DocumentStore *store, CloseType type);
-
-private:
-    static bool CheckDBPath(const std::string &path, std::string &canonicalPath);
-};
-} // DocumentDB
-#endif // DOCUMENT_STORE_MANAGER_H
+#endif // GRD_TYPE_INNER_H

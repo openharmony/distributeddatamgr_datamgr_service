@@ -14,30 +14,42 @@
 */
 
 #include "grd_base/grd_db_api.h"
-#include "grd_base/grd_error.h"
+
 #include "doc_errno.h"
 #include "document_store_manager.h"
 #include "document_store.h"
+#include "grd_base/grd_error.h"
+#include "grd_type_inner.h"
 
 using namespace DocumentDB;
 
-typedef struct GRD_DB {
-    DocumentStore *store_ = nullptr;
-} GRD_DB;
+int TrasnferDocErr(int err)
+{
+    switch (err) {
+        case E_OK:
+            return GRD_OK;
+        case -E_ERROR:
+            return GRD_INNER_ERR;
+        case -E_INVALID_ARGS:
+            return GRD_INVALID_ARGS;
+        default:
+            return GRD_INNER_ERR;
+    }
+}
 
 int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GRD_DB **db)
 {
-    std::string path = dbPath;
+    std::string path = (dbPath == nullptr ? "" : dbPath);
     DocumentStore *store = nullptr;
-    DocumentStoreManager::GetDocumentStore(path, store);
+    int ret = DocumentStoreManager::GetDocumentStore(path, store);
     *db = new (std::nothrow) GRD_DB();
     (*db)->store_ = store;
-    return GRD_OK;
+    return TrasnferDocErr(ret);
 }
 
 int GRD_DBClose(GRD_DB *db, unsigned int flags)
 {
-    if (db == nullptr) {
+    if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;
     }
 
