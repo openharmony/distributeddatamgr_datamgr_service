@@ -1065,7 +1065,11 @@ void NbSubImportThread(int index, std::string importPath)
     EXPECT_TRUE(manager2->DeleteKvStore(storeId[index]) == OK);
     char src[32] = {0};
     auto ret = memset_s(passwd, sizeof(passwd), src, sizeof(src));
-    ASSERT_NE(ret, 0);
+    if (ret != 0) {
+        delete manager2;
+        manager2 = nullptr;
+        return;
+    }
     delete manager2;
     manager2 = nullptr;
 }
