@@ -37,13 +37,8 @@ void BackupRuleManager::LoadBackupRules(const std::vector<std::string> &backupRu
 
 void BackupRuleManager::RegisterPlugin(const std::string &backupRule, std::function<BackupRule *()> getter)
 {
-    auto it = getters_.Find(backupRule);
-    if (it.first) {
-        return;
-    }
-    getters_.Compute(backupRule, [&getter](const auto &key, auto &value) {
-        value = move(getter);
-        return true;
+    getters_.ComputeIfAbsent(backupRule, [&getter](const auto &) {
+        return move(getter);
     });
 }
 

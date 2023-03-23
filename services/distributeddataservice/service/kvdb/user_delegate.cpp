@@ -53,15 +53,19 @@ std::set<std::string> UserDelegate::GetLocalUsers()
         ZLOGE("failed to get local device id");
         return {};
     }
-    if (!deviceUserMap_.Contains(deviceId)) {
-        LoadFromMeta(deviceId);
-    }
     std::set<std::string> users;
-    deviceUserMap_.ComputeIfPresent(deviceId, [&users](auto&, std::map<int, bool> &value) {
-        for (auto [user, active] : value) {
+    deviceUserMap_.Compute(deviceId, [&users](const auto &key, auto &userMap) {
+        if (userMap.empty()) {
+            UserMetaData userMetaData;
+            MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(key), userMetaData);
+            for (const auto &user : userMetaData.users) {
+                userMap.insert_or_assign(user.id, user.isActive);
+            }
+        }
+        for (const auto [user, active] : userMap) {
             users.emplace(std::to_string(user));
         }
-        return !value.empty();
+        return !userMap.empty();
     });
     return users;
 }
@@ -78,16 +82,19 @@ std::vector<DistributedData::UserStatus> UserDelegate::GetRemoteUserStatus(const
 std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
 {
     std::vector<UserStatus> userStatus;
-    if (!deviceUserMap_.Contains(deviceId)) {
-        LoadFromMeta(deviceId);
-    }
-    deviceUserMap_.ComputeIfPresent(deviceId, [&userStatus](const auto &, std::map<int, bool> &userMap) {
-        for (const auto &[key, value] : userMap) {
+    deviceUserMap_.Compute(deviceId, [&userStatus](const auto &key, auto &userMap) {
+        if (userMap.empty()) {
+            UserMetaData userMetaData;
+            MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(key), userMetaData);
+            for (const auto &user : userMetaData.users) {
+                userMap.insert_or_assign(user.id, user.isActive);
+            }
+        }
+        for (const auto [key, value] : userMap) {
             userStatus.emplace_back(key, value);
         }
-        return true;
+        return !userMap.empty();
     });
-
     ZLOGI("device:%{public}s, users:%{public}s", Anonymous::Change(deviceId).c_str(),
         Serializable::Marshall(userStatus).c_str());
     return userStatus;
@@ -100,13 +107,13 @@ void UserDelegate::DeleteUsers(const std::string &deviceId)
 
 void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<UserStatus> &userStatus)
 {
-    ZLOGI("begin, device:%{public}.10s, users:%{public}zu", Anonymous::Change(deviceId).c_str(), userStatus.size());
+    ZLOGI("begin, device:%{public}s, users:%{public}zu", Anonymous::Change(deviceId).c_str(), userStatus.size());
     deviceUserMap_.Compute(deviceId, [&userStatus](const auto &key, std::map<int, bool> &userMap) {
         userMap = {};
         for (const auto &user : userStatus) {
             userMap[user.id] = user.isActive;
         }
-        ZLOGI("end, device:%{public}.10s, users:%{public}zu", Anonymous::Change(key).c_str(), userMap.size());
+        ZLOGI("end, device:%{public}s, users:%{public}zu", Anonymous::Change(key).c_str(), userMap.size());
         return true;
     });
 }
@@ -134,20 +141,6 @@ bool UserDelegate::InitLocalUserMeta()
     });
     ZLOGI("put user meta data save meta data");
     return MetaDataManager::GetInstance().SaveMeta(UserMetaRow::GetKeyFor(userMetaData.deviceId), userMetaData);
-}
-
-void UserDelegate::LoadFromMeta(const std::string &deviceId)
-{
-    UserMetaData userMetaData;
-    MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(deviceId), userMetaData);
-    std::map<int, bool> userMap;
-    for (const auto &user : userMetaData.users) {
-        userMap[user.id] = user.isActive;
-    }
-    deviceUserMap_.Compute(deviceId, [&userMap](const auto &, auto &value) {
-        value = userMap;
-        return true;
-    });
 }
 
 UserDelegate &UserDelegate::GetInstance()

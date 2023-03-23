@@ -42,13 +42,8 @@ void CheckerManager::LoadCheckers(std::vector<std::string> &checkers)
 
 void CheckerManager::RegisterPlugin(const std::string &checker, std::function<Checker *()> getter)
 {
-    auto it = getters_.Find(checker);
-    if (it.first) {
-        return;
-    }
-    getters_.Compute(checker, [&getter](const auto &key, auto &value) {
-        value = move(getter);
-        return true;
+    getters_.ComputeIfAbsent(checker, [&getter](const auto &) {
+        return move(getter);
     });
 }
 

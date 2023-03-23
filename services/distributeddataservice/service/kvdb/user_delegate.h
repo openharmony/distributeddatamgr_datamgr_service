@@ -56,7 +56,6 @@ private:
         UserDelegate &userDelegate_;
     };
     std::vector<UserStatus> GetUsers(const std::string &deviceId);
-    void LoadFromMeta(const std::string &deviceId);
     void UpdateUsers(const std::string &deviceId, const std::vector<UserStatus> &userStatus);
     void DeleteUsers(const std::string &deviceId);
     bool NotifyUserEvent(const UserEvent &userEvent);
