@@ -44,7 +44,7 @@ bool DataBuffer::Init(size_t size)
         return false;
     }
     size_ = std::min(size, MAX_DATA_LEN);
-    if (size_ <= 1) {
+    if (size_ <= 0) {
         return false;
     }
     buf_ = new(std::nothrow) char[size_]();
