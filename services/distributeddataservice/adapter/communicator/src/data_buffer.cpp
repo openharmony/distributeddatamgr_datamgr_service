@@ -40,13 +40,13 @@ DataBuffer::~DataBuffer()
 
 bool DataBuffer::Init(size_t size)
 {
+    if (size <= 0) {
+        return false;
+    }
     if (buf_ != nullptr) {
         return false;
     }
     size_ = std::min(size, MAX_DATA_LEN);
-    if (size <= 0) {
-        return false;
-    }
     buf_ = new(std::nothrow) char[size_]();
     if (buf_ == nullptr) {
         return false;
