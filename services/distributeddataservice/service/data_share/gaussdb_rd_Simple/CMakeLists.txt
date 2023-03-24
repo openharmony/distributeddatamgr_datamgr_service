@@ -151,7 +151,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src/storage/src
     ${PROJECT_SOURCE_DIR}/src/common
     ${PROJECT_SOURCE_DIR}/src/common/include
-    ${PROJECT_SOURCE_DIR}/src/executor
+    ${PROJECT_SOURCE_DIR}/src/executor/include
     ${PROJECT_SOURCE_DIR}/src/executor/base
     ${PROJECT_SOURCE_DIR}/src/executor/document
     ${PROJECT_SOURCE_DIR}/src/oh_adapter

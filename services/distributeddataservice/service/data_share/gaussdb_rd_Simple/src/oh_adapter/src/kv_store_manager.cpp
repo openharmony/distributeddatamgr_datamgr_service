@@ -16,29 +16,18 @@
 #include "doc_errno.h"
 #include "kv_store_manager.h"
 #include "sqlite_store_executor_impl.h"
+#include "sqlite_utils.h"
 
 namespace DocumentDB {
 constexpr const char *APP_ID = "APP_ID";
 constexpr const char *USER_ID = "USER_ID";
 constexpr const char *STORE_ID = "STORE_ID";
 
-
-sqlite3 *CreateDataBase(const std::string &dbUri)
-{
-    sqlite3 *db = nullptr;
-    if (int r = sqlite3_open_v2(dbUri.c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) != SQLITE_OK) {
-        if (db != nullptr) {
-            (void)sqlite3_close_v2(db);
-            db = nullptr;
-        }
-    }
-    return db;
-}
-
 int KvStoreManager::GetKvStore(const std::string &path, KvStoreExecutor *&executor)
 {
-    sqlite3 *db = CreateDataBase(path);
-    if (db == nullptr) {
+    sqlite3 *db = nullptr;
+    int errCode = SQLiteUtils::CreateDataBase(path, 0, db);
+    if (errCode != E_OK || db == nullptr) {
         return -E_ERROR;
     }
 

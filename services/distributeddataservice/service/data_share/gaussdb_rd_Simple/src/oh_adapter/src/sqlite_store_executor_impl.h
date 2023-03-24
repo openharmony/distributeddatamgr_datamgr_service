@@ -25,8 +25,11 @@ public:
     SqliteStoreExecutor(sqlite3 *handle);
     ~SqliteStoreExecutor() override;
 
-    int PutData(const Key &key, const Value &value) override;
-    int GetData(const Key &key, Value &value) const override;
+    int PutData(const std::string &collName, const Key &key, const Value &value) override;
+    int GetData(const std::string &collName, const Key &key, Value &value) const override;
+
+    int CreateCollection(const std::string &name, int flag) override;
+    int DropCollection(const std::string &name, int flag) override;
 
 private:
     sqlite3 *dbHandle_ = nullptr;

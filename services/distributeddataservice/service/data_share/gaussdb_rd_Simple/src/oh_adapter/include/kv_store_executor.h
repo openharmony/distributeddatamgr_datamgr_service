@@ -16,6 +16,7 @@
 #ifndef KV_STORE_EXECUTOR_H
 #define KV_STORE_EXECUTOR_H
 
+#include <string>
 #include "doc_common.h"
 
 namespace DocumentDB {
@@ -23,9 +24,12 @@ class KvStoreExecutor {
 public:
     virtual ~KvStoreExecutor() = default;
 
-    virtual int PutData(const Key &key, const Value &value) = 0;
+    virtual int PutData(const std::string &collName, const Key &key, const Value &value) = 0;
 
-    virtual int GetData(const Key &key, Value &value) const = 0;
+    virtual int GetData(const std::string &collName, const Key &key, Value &value) const = 0;
+
+    virtual int CreateCollection(const std::string &name, int flag) = 0;
+    virtual int DropCollection(const std::string &name, int flag) = 0;
 };
 } // DocumentDB
 #endif // KV_STORE_EXECUTOR_H
