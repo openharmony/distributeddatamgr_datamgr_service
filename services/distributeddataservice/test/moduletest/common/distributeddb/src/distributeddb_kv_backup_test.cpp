@@ -1014,7 +1014,7 @@ void KvSubImportThread(int index, std::string importPath)
     std::string storeId[] = {STORE_ID_2, STORE_ID_3, STORE_ID_4, STORE_ID_5, STORE_ID_6};
     EXPECT_EQ(manager2->DeleteKvStore(storeId[index]), OK);
     char src[32] = {0};
-    auto ret = memset_s(passwd, sizeof(passwd), src, sizeof(src));
+    auto ret = memcpy_s(passwd, sizeof(passwd), src, sizeof(src));
     if (ret != 0) {
         delete manager2;
         manager2 = nullptr;
