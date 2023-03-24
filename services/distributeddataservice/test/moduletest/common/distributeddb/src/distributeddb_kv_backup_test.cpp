@@ -1013,7 +1013,9 @@ void KvSubImportThread(int index, std::string importPath)
     delegate2 = nullptr;
     std::string storeId[] = {STORE_ID_2, STORE_ID_3, STORE_ID_4, STORE_ID_5, STORE_ID_6};
     EXPECT_EQ(manager2->DeleteKvStore(storeId[index]), OK);
-    (void)memset_s(passwd, 0, sizeof(DistributedDB::CipherPassword)* sizeof(passwd));
+    for (auto password : passwd) {
+        password.Clear();
+    }
     delete manager2;
     manager2 = nullptr;
 }
