@@ -1063,7 +1063,9 @@ void NbSubImportThread(int index, std::string importPath)
     delegate2 = nullptr;
     std::string storeId[] = {STORE_ID_2, STORE_ID_3, STORE_ID_4, STORE_ID_5, STORE_ID_6};
     EXPECT_TRUE(manager2->DeleteKvStore(storeId[index]) == OK);
-    (void)memset_s(passwd,sizeof (passwd), 0, sizeof(passwd));
+    for(DistributedDB::CipherPassword password : passwd) {
+      (void)memset_s(password, sizeof(password), 0, sizeof(password));
+    }
     delete manager2;
     manager2 = nullptr;
 }
