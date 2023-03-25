@@ -40,7 +40,7 @@ DataBuffer::~DataBuffer()
 
 bool DataBuffer::Init(size_t size)
 {
-    if (buf_ != nullptr || size <= 0) {
+    if (buf_ != nullptr || size == 0) {
         return false;
     }
     size_ = std::min(size, MAX_DATA_LEN);
