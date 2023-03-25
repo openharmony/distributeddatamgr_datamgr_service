@@ -61,7 +61,7 @@ private:
     bool NotifyUserEvent(const UserEvent &userEvent);
 
     // device : { user : isActive }
-    ConcurrentMap<std::string, std::map<int, bool>> deviceUserMap_;
+    ConcurrentMap<std::string, std::map<int, bool>> deviceUser_;
 };
 } // namespace OHOS::DistributedData
 

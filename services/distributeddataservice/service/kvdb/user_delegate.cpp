@@ -54,18 +54,18 @@ std::set<std::string> UserDelegate::GetLocalUsers()
         return {};
     }
     std::set<std::string> users;
-    deviceUserMap_.Compute(deviceId, [&users](const auto &key, auto &userMap) {
-        if (userMap.empty()) {
+    deviceUser_.Compute(deviceId, [&users](const auto &key, auto &value) {
+        if (value.empty()) {
             UserMetaData userMetaData;
             MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(key), userMetaData);
             for (const auto &user : userMetaData.users) {
-                userMap.insert_or_assign(user.id, user.isActive);
+                value[user.id] = user.isActive;
             }
         }
-        for (const auto [user, active] : userMap) {
+        for (const auto [user, active] : value) {
             users.emplace(std::to_string(user));
         }
-        return !userMap.empty();
+        return !value.empty();
     });
     return users;
 }
@@ -82,18 +82,18 @@ std::vector<DistributedData::UserStatus> UserDelegate::GetRemoteUserStatus(const
 std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
 {
     std::vector<UserStatus> userStatus;
-    deviceUserMap_.Compute(deviceId, [&userStatus](const auto &key, auto &userMap) {
-        if (userMap.empty()) {
+    deviceUser_.Compute(deviceId, [&userStatus](const auto &key, auto &users) {
+        if (users.empty()) {
             UserMetaData userMetaData;
             MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(key), userMetaData);
             for (const auto &user : userMetaData.users) {
-                userMap.insert_or_assign(user.id, user.isActive);
+                users[user.id] = user.isActive;
             }
         }
-        for (const auto [key, value] : userMap) {
+        for (const auto [key, value] : users) {
             userStatus.emplace_back(key, value);
         }
-        return !userMap.empty();
+        return !users.empty();
     });
     ZLOGI("device:%{public}s, users:%{public}s", Anonymous::Change(deviceId).c_str(),
         Serializable::Marshall(userStatus).c_str());
@@ -102,18 +102,18 @@ std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
 
 void UserDelegate::DeleteUsers(const std::string &deviceId)
 {
-    deviceUserMap_.Erase(deviceId);
+    deviceUser_.Erase(deviceId);
 }
 
 void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<UserStatus> &userStatus)
 {
     ZLOGI("begin, device:%{public}s, users:%{public}zu", Anonymous::Change(deviceId).c_str(), userStatus.size());
-    deviceUserMap_.Compute(deviceId, [&userStatus](const auto &key, std::map<int, bool> &userMap) {
-        userMap = {};
+    deviceUser_.Compute(deviceId, [&userStatus](const auto &key, std::map<int, bool> &users) {
+        users = {};
         for (const auto &user : userStatus) {
-            userMap[user.id] = user.isActive;
+            users[user.id] = user.isActive;
         }
-        ZLOGI("end, device:%{public}s, users:%{public}zu", Anonymous::Change(key).c_str(), userMap.size());
+        ZLOGI("end, device:%{public}s, users:%{public}zu", Anonymous::Change(key).c_str(), users.size());
         return true;
     });
 }
@@ -133,8 +133,8 @@ bool UserDelegate::InitLocalUserMeta()
     UserMetaData userMetaData;
     userMetaData.deviceId = GetLocalDeviceId();
     UpdateUsers(userMetaData.deviceId, userStatus);
-    deviceUserMap_.ComputeIfPresent(userMetaData.deviceId, [&userMetaData](const auto &, std::map<int, bool> &userMap) {
-        for (const auto &[key, value] : userMap) {
+    deviceUser_.ComputeIfPresent(userMetaData.deviceId, [&userMetaData](const auto &, std::map<int, bool> &users) {
+        for (const auto &[key, value] : users) {
             userMetaData.users.emplace_back(key, value);
         }
         return true;
