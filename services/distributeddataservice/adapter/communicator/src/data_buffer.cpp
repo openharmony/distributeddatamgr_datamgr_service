@@ -41,7 +41,7 @@ DataBuffer::~DataBuffer()
 bool DataBuffer::Init(size_t size)
 {
     if (size_ <= 0) {
-      return false;
+        return false;
     }
     if (buf_ != nullptr) {
         return false;
