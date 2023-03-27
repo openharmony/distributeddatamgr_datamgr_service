@@ -99,7 +99,7 @@ std::vector<std::string> DataShareProfileInfo::GetResProfileByMetadata(
     }
 
     for (auto const &meta : metadata) {
-        if (meta.name.compare(DATA_SHARE_PROFILE_META) == 0) {
+        if (meta.name == DATA_SHARE_PROFILE_META) {
             return GetResFromResMgr(meta.resource, *resMgr, isCompressed);
         }
     }
