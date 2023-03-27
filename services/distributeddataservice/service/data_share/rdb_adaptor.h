@@ -34,7 +34,7 @@ using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using namespace OHOS::NativeRdb;
 class RdbDelegate {
 public:
-    RdbDelegate(const StoreMetaData &data, int &errCode);
+    RdbDelegate(const StoreMetaData &meta, int &errCode);
     virtual ~RdbDelegate();
     int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket);
     int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
