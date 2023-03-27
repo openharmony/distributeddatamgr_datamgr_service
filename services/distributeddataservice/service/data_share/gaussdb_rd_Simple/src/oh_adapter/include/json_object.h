@@ -16,6 +16,7 @@
 #ifndef JSON_OBJECT_H
 #define JSON_OBJECT_H
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <typeinfo>

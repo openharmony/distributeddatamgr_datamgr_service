@@ -13,15 +13,10 @@
 * limitations under the License.
 */
 
-#ifndef DOCUMENTDB_TEST_UTILS_H
-#define DOCUMENTDB_TEST_UTILS_H
-#include <string>
+#ifndef DOC_LIMIT_H
+#define DOC_LIMIT_H
 
-
-namespace DocumentDBUnitTest {
-class DocumentDBTestUtils {
-public:
-    static int RemoveTestDbFiles(const std::string &dir);
-};
-} // namespace DocumentDBUnitTest
-#endif // DOCUMENTDB_TEST_UTILS_H
+namespace DocumentDB {
+constexpr const int MAX_JSON_LEN = 512 * 1024; // 512 * 1024: 5k length
+} // namespace DocumentDB
+#endif // DOC_LIMIT_H

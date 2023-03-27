@@ -34,6 +34,8 @@ int TrasnferDocErr(int err)
             return GRD_INVALID_ARGS;
         case -E_FILE_OPERATION:
             return GRD_FAILED_FILE_OPERATION;
+        case -E_OVER_LIMIT:
+            return GRD_OVER_LIMIT;
         default:
             return GRD_INNER_ERR;
     }
@@ -42,8 +44,9 @@ int TrasnferDocErr(int err)
 int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GRD_DB **db)
 {
     std::string path = (dbPath == nullptr ? "" : dbPath);
+    std::string config = (configStr == nullptr ? "" : configStr);
     DocumentStore *store = nullptr;
-    int ret = DocumentStoreManager::GetDocumentStore(path, store);
+    int ret = DocumentStoreManager::GetDocumentStore(path, config, store);
     *db = new (std::nothrow) GRD_DB();
     (*db)->store_ = store;
     return TrasnferDocErr(ret);

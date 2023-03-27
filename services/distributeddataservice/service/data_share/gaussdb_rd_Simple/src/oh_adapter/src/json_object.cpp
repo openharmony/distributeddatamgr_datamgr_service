@@ -368,4 +368,3 @@ int JsonObject::DeleteItemOnTarget(const JsonFieldPath &path)
 
     return E_OK;
 }
-}

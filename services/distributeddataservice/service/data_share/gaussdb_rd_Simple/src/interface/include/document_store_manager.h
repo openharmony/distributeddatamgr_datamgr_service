@@ -22,7 +22,7 @@
 namespace DocumentDB {
 class DocumentStoreManager {
 public:
-    static int GetDocumentStore(const std::string &path, DocumentStore *&store);
+    static int GetDocumentStore(const std::string &path, const std::string &config, DocumentStore *&store);
 
     enum class CloseType {
         NORMAL,
@@ -33,6 +33,7 @@ public:
 
 private:
     static bool CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName, int &errCode);
+    static bool CheckDBConfig(const std::string &config, int &errCode);
 };
 } // DocumentDB
 #endif // DOCUMENT_STORE_MANAGER_H
