@@ -13,28 +13,25 @@
 * limitations under the License.
 */
 
-#ifndef DOC_COMMON_H
-#define DOC_COMMON_H
+#ifndef JSON_COMMON_H
+#define JSON_COMMON_H
 
 #include <cstdint>
 #include <vector>
-#include "json_common.h"
+#include "cjson_object.h"
 
-class JsonCommon;
 namespace DocumentDB {
-class CheckCommon
+class JsonCommon
 {
 public:
-    CheckCommon() = default;
-    ~CheckCommon();
+    JsonCommon() = default;
+    ~JsonCommon();
     
-    static bool CheckCollectionName(const std::string &collectionName);
-    static bool CheckFilter(const std::string &filter);
-    static bool CheckIdFormat(const std::string &data);
-    static bool CheckDocument(const std::string &document);
+    ResultValue* GetValue(CjsonObject *root, std::vector<std::string> path);
+    static int GetIdValue(CjsonObject *root, std::vector<std::string> &id);
+    static bool CheckIsJson(const std::string &data);
+    static int GetJsonDeep(const std::string &data);
 };
-using Key = std::vector<uint8_t>;
-using Value = std::vector<uint8_t>;
 
 } // DocumentDB
-#endif // DOC_COMMON_H
+#endif // JSON_COMMON_H
