@@ -23,10 +23,18 @@
 namespace DocumentDB {
 int DocumentStoreManager::GetDocumentStore(const std::string &path, DocumentStore *&store)
 {
+    std::string canonicalPath;
+    std::string dbName;
+    int errCode = E_OK;
+    if (!CheckDBPath(path, canonicalPath, dbName, errCode)) {
+        GLOGE("Check document db file path failed.");
+        return errCode;
+    }
+
     KvStoreExecutor *executor = nullptr;
-    KvStoreManager::GetKvStore(path, executor);
+    KvStoreManager::GetKvStore(canonicalPath, executor);
     store = new (std::nothrow) DocumentStore(executor);
-    return E_OK;
+    return errCode;
 }
 
 int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, CloseType type)
@@ -39,23 +47,32 @@ int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, CloseType typ
     return E_OK;
 }
 
-bool DocumentStoreManager::CheckDBPath(const std::string &path, std::string &canonicalPath)
+bool DocumentStoreManager::CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName,
+    int &errCode)
 {
     if (path.empty()) {
-        GLOGE("invalid path empty");
-        return -E_INVALID_ARGS;
+        GLOGE("Invalid path empty");
+        errCode = -E_INVALID_ARGS;
+        return false;
     }
 
     if (path.back() == '/') {
-        GLOGE("invalid path end with slash");
-        return -E_INVALID_ARGS;
+        GLOGE("Invalid path end with slash");
+        errCode = -E_INVALID_ARGS;
+        return false;
     }
 
+    std::string dirPath;
+    OSAPI::SplitFilePath(path, dirPath, dbName);
+
     std::string canonicalDir;
-    int errCode = OSAPI::GetRealPath(path, canonicalDir);
-    if (errCode == E_OK) {
+    int innerErrCode = OSAPI::GetRealPath(dirPath, canonicalDir);
+    if (innerErrCode != E_OK) {
         GLOGE("Get real path failed. %d", errCode);
+        errCode = -E_FILE_OPERATION;
+        return false;
     }
-    return errCode;
+
+    return true;
 }
 } // DocumentDB

@@ -32,6 +32,8 @@ int TrasnferDocErr(int err)
             return GRD_INNER_ERR;
         case -E_INVALID_ARGS:
             return GRD_INVALID_ARGS;
+        case -E_FILE_OPERATION:
+            return GRD_FAILED_FILE_OPERATION;
         default:
             return GRD_INNER_ERR;
     }

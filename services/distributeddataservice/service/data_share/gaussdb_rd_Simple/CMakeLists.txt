@@ -162,6 +162,10 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src/interface/src
 )
 
+include_directories(
+    ${PROJECT_SOURCE_DIR}/test/unittest/common
+)
+
 set(DISTRIBUTEDDB_PATH ${PROJECT_SOURCE_DIR}/third_party/distributeddatamgr_kv_store/frameworks/libs/distributeddb/)
 include_directories(
     ${DISTRIBUTEDDB_PATH}/include

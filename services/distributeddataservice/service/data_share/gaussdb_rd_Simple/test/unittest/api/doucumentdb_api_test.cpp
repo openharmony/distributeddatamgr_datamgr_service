@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include "documentdb_test_utils.h"
 #include "log_print.h"
 #include "grd_base/grd_db_api.h"
 #include "grd_base/grd_error.h"
@@ -22,6 +23,7 @@
 
 using namespace DocumentDB;
 using namespace testing::ext;
+using namespace DocumentDBUnitTest;
 
 class DocumentDBApiTest : public testing::Test {
 public:
@@ -54,11 +56,11 @@ void DocumentDBApiTest::TearDown(void)
  * @tc.require:
  * @tc.author: lianhuix
  */
-HWTEST_F(DocumentDBApiTest, OpenDBTest001, TestSize.Level1)
+HWTEST_F(DocumentDBApiTest, OpenDBTest001, TestSize.Level0)
 {
     std::string path = "./document.db";
     GRD_DB *db = nullptr;
-    int status = GRD_DBOpen(path.c_str(), nullptr, 0, &db);
+    int status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OK);
     EXPECT_NE(db, nullptr);
     GLOGD("Open DB test 001: status: %d", status);
@@ -76,16 +78,322 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest001, TestSize.Level1)
 }
 
 /**
- * @tc.name: OpenDBTest001
+ * @tc.name: OpenDBPathTest001
  * @tc.desc: Test open document db with NULL path
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: lianhuix
  */
-HWTEST_F(DocumentDBApiTest, OpenDBTest002, TestSize.Level1)
+HWTEST_F(DocumentDBApiTest, OpenDBPathTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    char *path = nullptr;
-    int status = GRD_DBOpen(path, nullptr, 0, &db);
+    std::vector<const char *> invalidPath = {
+        nullptr,
+        "",
+        "/a/b/c/"
+    };
+    for (auto path : invalidPath) {
+        GLOGD("OpenDBPathTest001: open db with path: %s", path);
+        int status = GRD_DBOpen(path, nullptr, GRD_DB_OPEN_CREATE, &db);
+        EXPECT_EQ(status, GRD_INVALID_ARGS);
+    }
+}
+
+/**
+ * @tc.name: OpenDBPathTest002
+ * @tc.desc: Test open document db with file no permission
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBPathTest002, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string pathNoPerm = "/root/document.db";
+    int status = GRD_DBOpen(pathNoPerm.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_FAILED_FILE_OPERATION);
+}
+
+/**
+ * @tc.name: OpenDBConfigTest001
+ * @tc.desc: Test open document db with invalid config option
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigTest001, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+    const int MAX_JSON_LEN = 512 * 1024;
+    std::string configStr = std::string(MAX_JSON_LEN + 1, 'a');
+    int status = GRD_DBOpen(path.c_str(), configStr.c_str(), GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_OVER_LIMIT);
+}
+
+/**
+ * @tc.name: OpenDBConfigTest002
+ * @tc.desc: Test open document db with invalid config format
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigTest002, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+    int status = GRD_DBOpen(path.c_str(), "{aa}", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_INVALID_JSON_FORMAT);
+}
+
+/**
+ * @tc.name: OpenDBConfigMaxConnNumTest001
+ * @tc.desc: Test open document db with invalid config item maxConnNum
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest001, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+
+    std::vector<std::string> configList = {
+        "{maxConnNum:0}",
+        "{maxConnNum:15}",
+        "{maxConnNum:1025}",
+        "{maxConnNum:1000000007}",
+        "{maxConnNum:\"16\"}",
+        "{maxConnNum:{value:17}}",
+        "{maxConnNum:[16,17,18]}",
+    };
+    for (const auto &config : configList) {
+        GLOGD("OpenDBConfigMaxConnNumTest001: test with config:%s", config.c_str());
+        int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
+        EXPECT_EQ(status, GRD_INVALID_CONFIG_VALUE);
+    }
+}
+
+/**
+ * @tc.name: OpenDBConfigMaxConnNumTest002
+ * @tc.desc: Test open document db with valid item maxConnNum
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest002, TestSize.Level1)
+{
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+
+    for (int i = 16; i <= 1024; i++) {
+        std::string config = "{maxConnNum:" + std::to_string(i) + "}";
+        int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
+        EXPECT_EQ(status, GRD_OK);
+
+        status = GRD_DBClose(db, 0);
+        EXPECT_EQ(status, GRD_OK);
+        db = nullptr;
+
+        DocumentDBTestUtils::RemoveTestDbFiles(path);
+    }
+}
+
+/**
+ * @tc.name: OpenDBConfigMaxConnNumTest003
+ * @tc.desc: Test reopen document db with different maxConnNum
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest003, TestSize.Level1)
+{
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+
+    std::string config = "{maxConnNum:16}";
+    int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_OK);
+
+    status = GRD_DBClose(db, 0);
+    EXPECT_EQ(status, GRD_OK);
+    db = nullptr;
+
+    config = "{maxConnNum:17}";
+    status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_INVALID_ARGS);
+
+    DocumentDBTestUtils::RemoveTestDbFiles(path);
+}
+
+/**
+ * @tc.name: OpenDBConfigMaxConnNumTest004
+ * @tc.desc: Test open document db over maxConnNum
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest004, TestSize.Level1)
+{
+    std::string path= "./document.db";
+
+    int maxCnt = 16;
+    std::string config = "{maxConnNum:" + std::to_string(maxCnt) + "}";
+
+    std::vector<GRD_DB *> dbList;
+    while (maxCnt--) {
+        GRD_DB *db = nullptr;
+        int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
+        EXPECT_EQ(status, GRD_OK);
+        dbList.push_back(db);
+    }
+
+    GRD_DB *db = nullptr;
+    int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_OVER_LIMIT);
+    EXPECT_EQ(db, nullptr);
+
+    for (auto *it : dbList) {
+        status = GRD_DBClose(it, 0);
+        EXPECT_EQ(status, GRD_OK);
+    }
+
+    DocumentDBTestUtils::RemoveTestDbFiles(path);
+}
+
+/**
+ * @tc.name: OpenDBConfigPageSizeTest001
+ * @tc.desc: Test open document db with invalid config item pageSize
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest001, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+
+    std::vector<std::string> configList = {
+        "{pageSize:0}",
+        "{pageSize:5}",
+        "{pageSize:48}",
+        "{pageSize:1000000007}",
+        "{pageSize:\"4\"}",
+        "{pageSize:{value:8}}",
+        "{pageSize:[16,32,64]}",
+    };
+    for (const auto &config : configList) {
+        GLOGD("OpenDBConfigPageSizeTest001: test with config:%s", config.c_str());
+        int status = GRD_DBOpen(path.c_str(), config.c_str(), 0, &db);
+        EXPECT_EQ(status, GRD_INVALID_CONFIG_VALUE);
+    }
+}
+
+/**
+ * @tc.name: OpenDBConfigPageSizeTest002
+ * @tc.desc: Test open document db with valid config item pageSize
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest002, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+
+    for (int size : {4, 8, 16, 32, 64}) {
+        std::string config = "{pageSize:" + std::to_string(size) + "}";
+        int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
+        EXPECT_EQ(status, GRD_OK);
+
+        status = GRD_DBClose(db, 0);
+        EXPECT_EQ(status, GRD_OK);
+        db = nullptr;
+
+        DocumentDBTestUtils::RemoveTestDbFiles(path);
+    }
+}
+
+/**
+ * @tc.name: OpenDBConfigPageSizeTest003
+ * @tc.desc: Test reopen document db with different pageSize
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest003, TestSize.Level1)
+{
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+
+    std::string config = "{pageSize:4}";
+    int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_OK);
+
+    status = GRD_DBClose(db, 0);
+    EXPECT_EQ(status, GRD_OK);
+    db = nullptr;
+
+    config = "{pageSize:8}";
+    status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+
+    DocumentDBTestUtils::RemoveTestDbFiles(path);
+}
+
+/**
+ * @tc.name: OpenDBConfigXXXTest001
+ * @tc.desc: Test open document db with valid config item XXX
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigXXXTest001, TestSize.Level0)
+{
+    EXPECT_EQ(true, false); // TODO: check other config
+}
+
+/**
+ * @tc.name: OpenDBFlagTest001
+ * @tc.desc: Test open document db with invalid flag
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBFlagTest001, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+    for (unsigned int flag : {2, 4, 10, 1000000007}) {
+        int status = GRD_DBOpen(path.c_str(), "", flag, &db);
+        EXPECT_EQ(status, GRD_INVALID_ARGS);
+    }
+}
+
+/**
+ * @tc.name: OpenDBFlagTest002
+ * @tc.desc: Test open document db with valid flag
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBFlagTest002, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+    int status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_OK);
+
+    status = GRD_DBClose(db, 0);
+    EXPECT_EQ(status, GRD_OK);
+    db = nullptr;
+
+    status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_ONLY, &db);
+    EXPECT_EQ(status, GRD_OK);
+
+    status = GRD_DBClose(db, 0);
+    EXPECT_EQ(status, GRD_OK);
+    db = nullptr;
+
+    DocumentDBTestUtils::RemoveTestDbFiles(path);
 }

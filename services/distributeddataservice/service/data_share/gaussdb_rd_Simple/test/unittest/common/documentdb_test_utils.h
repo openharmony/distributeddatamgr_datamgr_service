@@ -13,26 +13,14 @@
 * limitations under the License.
 */
 
-#ifndef DOCUMENT_STORE_MANAGER_H
-#define DOCUMENT_STORE_MANAGER_H
-
+#ifndef DOCUMENTDB_TEST_UTILS_H
+#define DOCUMENTDB_TEST_UTILS_H
 #include <string>
-#include "document_store.h"
 
-namespace DocumentDB {
-class DocumentStoreManager {
+namespace DocumentDBUnitTest {
+class DocumentDBTestUtils {
 public:
-    static int GetDocumentStore(const std::string &path, DocumentStore *&store);
-
-    enum class CloseType {
-        NORMAL,
-        IGNORE_ERROR,
-    };
-
-    static int CloseDocumentStore(DocumentStore *store, CloseType type);
-
-private:
-    static bool CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName, int &errCode);
+    static int RemoveTestDbFiles(const std::string &dir);
 };
-} // DocumentDB
-#endif // DOCUMENT_STORE_MANAGER_H
+} // namespace DocumentDBUnitTest
+#endif // DOCUMENTDB_TEST_UTILS_H
