@@ -58,6 +58,7 @@ config("module_private_config") {
         [ "//base/powermgr/power_manager/interfaces/innerkits/native/include" ]
   }
   ldflags = [ "-Wl,--whole-archive" ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ohos_unittest("KvStoreDataServiceTest") {
