@@ -39,7 +39,6 @@
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 #include "utils/converter.h"
-#include "utils/crypto.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using namespace OHOS::AppDistributedKv;
@@ -351,35 +350,6 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
     return (BackupManager::GetInstance().GetPassWord(metaData, password)) ? SUCCESS : ERROR;
 }
 
-KVDBService::DevBrief KVDBServiceImpl::GetLocalDevice()
-{
-    DevBrief brief;
-    CheckerManager::StoreInfo storeInfo;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.uid = IPCSkeleton::GetCallingPid();
-    auto appId = CheckerManager::GetInstance().GetAppId(storeInfo);
-    auto device = DMAdapter::GetInstance().GetLocalDevice();
-    brief.networkId = std::move(device.networkId);
-    brief.uuid = Crypto::Sha256(appId + "_" + device.uuid);
-    return brief;
-}
-
-std::vector<KVDBService::DevBrief> KVDBServiceImpl::GetRemoteDevices()
-{
-    std::vector<DevBrief> briefs;
-    CheckerManager::StoreInfo storeInfo;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.uid = IPCSkeleton::GetCallingPid();
-    auto appId = CheckerManager::GetInstance().GetAppId(storeInfo);
-    auto devices = DMAdapter::GetInstance().GetRemoteDevices();
-    for (const auto &device : devices) {
-        DevBrief brief;
-        brief.networkId = std::move(device.networkId);
-        brief.uuid = Crypto::Sha256(appId + "_" + device.uuid);
-        briefs.push_back(std::move(brief));
-    }
-    return briefs;
-}
 
 Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options)
 {

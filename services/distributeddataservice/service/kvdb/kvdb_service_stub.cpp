@@ -40,8 +40,6 @@ const KVDBServiceStub::Handler KVDBServiceStub::HANDLERS[TRANS_BUTT] = {
     &KVDBServiceStub::OnSubscribe,
     &KVDBServiceStub::OnUnsubscribe,
     &KVDBServiceStub::OnGetBackupPassword,
-    &KVDBServiceStub::OnGetLocalDevice,
-    &KVDBServiceStub::OnGetRemoteDevices,
 };
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
@@ -225,33 +223,6 @@ int32_t KVDBServiceStub::OnGetSyncParam(
     return ERR_NONE;
 }
 
-int32_t KVDBServiceStub::OnGetLocalDevice(
-    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
-{
-    (void)appId;
-    (void)storeId;
-    int32_t status = SUCCESS;
-    auto brief = GetLocalDevice();
-    if (!ITypesUtil::Marshal(reply, status, brief)) {
-        ZLOGE("Marshal device brief:{%{public}u, %{public}u}", brief.networkId.empty(), brief.uuid.empty());
-        return IPC_STUB_WRITE_PARCEL_ERR;
-    }
-    return ERR_NONE;
-}
-
-int32_t KVDBServiceStub::OnGetRemoteDevices(
-    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
-{
-    (void)appId;
-    (void)storeId;
-    int32_t status = SUCCESS;
-    auto briefs = GetRemoteDevices();
-    if (!ITypesUtil::Marshal(reply, status, briefs)) {
-        ZLOGE("Marshal device brief:%{public}zu", briefs.size());
-        return IPC_STUB_WRITE_PARCEL_ERR;
-    }
-    return ERR_NONE;
-}
 
 int32_t KVDBServiceStub::OnEnableCap(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
