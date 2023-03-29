@@ -17,6 +17,8 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_UPGRADE_H
 #include <functional>
 #include <memory>
+
+#include "device_manager_adapter.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
 #include "metadata/store_meta_data.h"
@@ -29,8 +31,11 @@ public:
     using DBStatus = DistributedDB::DBStatus;
     using DBStore = DistributedDB::KvStoreNbDelegate;
     using DBManager = DistributedDB::KvStoreDelegateManager;
+    using DMAdapter = DistributedData::DeviceManagerAdapter;
     using Exporter = std::function<std::string(const StoreMeta &, DBPassword &)>;
     using Cleaner = std::function<Status(const StoreMeta &)>;
+    using DBKey = std::vector<uint8_t>;
+
     API_EXPORT static Upgrade &GetInstance();
     API_EXPORT bool RegisterExporter(uint32_t version, Exporter exporter);
     API_EXPORT bool RegisterCleaner(uint32_t version, Cleaner cleaner);
@@ -38,10 +43,14 @@ public:
     DBStatus UpdateStore(const StoreMeta &old, const StoreMeta &metaData, const std::vector<uint8_t> &pwd);
     DBStatus ExportStore(const StoreMeta &old, const StoreMeta &meta);
     void UpdatePassword(const StoreMeta &meta, const std::vector<uint8_t> &password);
+    DBStatus UpdateUuid(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd);
 
 private:
     using AutoStore = std::unique_ptr<DBStore, std::function<void(DBStore *)>>;
     AutoStore GetDBStore(const StoreMeta &meta, const std::vector<uint8_t> &pwd);
+    static constexpr size_t MAX_DEV_KEY_LEN = 896;
+    static constexpr uint32_t VERSION = 0x03000003;
+
     Exporter exporter_;
     Cleaner cleaner_;
 };

@@ -20,6 +20,7 @@
 
 #include "crypto_manager.h"
 #include "metadata/secret_key_meta_data.h"
+#include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "store_cache.h"
 #include "directory_manager.h"
@@ -34,6 +35,13 @@ Upgrade &Upgrade::GetInstance()
 
 Upgrade::DBStatus Upgrade::UpdateStore(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd)
 {
+    if (old.version <= VERSION && old.storeType == DEVICE_COLLABORATION) {
+        auto upStatus = Upgrade::GetInstance().UpdateUuid(old, meta, pwd);
+        if (upStatus != DBStatus::OK) {
+            return DBStatus::DB_ERROR;
+        }
+    }
+
     if (old.dataDir == meta.dataDir) {
         return DBStatus::OK;
     }
@@ -87,6 +95,29 @@ void Upgrade::UpdatePassword(const StoreMeta &meta, const std::vector<uint8_t> &
     auto time = system_clock::to_time_t(system_clock::now());
     secretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
     MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), secretKey, true);
+}
+
+Upgrade::DBStatus Upgrade::UpdateUuid(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd)
+{
+    auto kvStore = GetDBStore(meta, pwd);
+    if (kvStore == nullptr) {
+        return DBStatus::DB_ERROR;
+    }
+    kvStore->RemoveDeviceData();
+    auto dbStatus = kvStore->UpdateKey([appId = meta.appId](const DBKey &originKey, DBKey &newKey) {
+        auto oriUuid = DMAdapter::GetInstance().GetLocalDevice().uuid;
+        auto newUuid = DMAdapter::GetInstance().CalcClientUuid(appId, oriUuid);
+        newKey.assign(originKey.begin(), originKey.end());
+        uint32_t length = *(reinterpret_cast<uint32_t *>(&(*(newKey.end() - sizeof(uint32_t)))));
+        length = le32toh(length);
+        newKey.erase(newKey.begin(), newKey.begin() + length);
+        newKey.insert(newKey.begin(), newUuid.begin(), newUuid.end());
+    });
+
+    if (dbStatus != DBStatus::OK) {
+        ZLOGE("fail to update Uuid, status:%{public}d", dbStatus);
+    }
+    return dbStatus;
 }
 
 bool Upgrade::RegisterExporter(uint32_t version, Exporter exporter)

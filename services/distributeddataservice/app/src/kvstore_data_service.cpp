@@ -19,6 +19,7 @@
 #include <ipc_skeleton.h>
 #include <thread>
 
+#include "accesstoken_kit.h"
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
 #include "bootstrap.h"
@@ -35,6 +36,7 @@
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
 #include "log_print.h"
+#include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "permission_validator.h"
@@ -57,6 +59,7 @@ using namespace OHOS::DistributedDataDfx;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
+using DBConfig = DistributedDB::RuntimeConfig;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
@@ -97,6 +100,23 @@ void KvStoreDataService::Initialize()
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
     DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
+    auto translateToDeviceIdCall = [this](const std::string &oriDevId, const DistributedDB::StoreInfo &info) {
+        StoreMetaData meta;
+        AppIDMetaData appIdMeta;
+        MetaDataManager::GetInstance().LoadMeta(info.appId, appIdMeta, true);
+        meta.bundleName = appIdMeta.bundleName;
+        meta.storeId = info.storeId;
+        meta.user = info.userId;
+        meta.deviceId = oriDevId;
+        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta);
+        if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
+            OHOS::Security::AccessToken::TOKEN_HAP) {
+            auto uuid = DmAdapter::GetInstance().CalcClientUuid(info.appId, oriDevId);
+            return uuid;
+        }
+        return oriDevId;
+    };
+    DBConfig::SetTranslateToDeviceIdCallback(translateToDeviceIdCall);
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
