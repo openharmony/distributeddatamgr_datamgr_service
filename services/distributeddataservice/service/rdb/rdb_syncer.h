@@ -70,7 +70,7 @@ private:
 
     std::string GetAppId() const;
 
-    int32_t CreateMetaData(StoreMetaData &meta);
+    int32_t CreateMetaData(StoreMetaData &meta, StoreMetaData &old);
     void FillMetaData(StoreMetaData &meta);
     int32_t InitDBDelegate(const StoreMetaData &meta);
     bool SetSecretKey(const StoreMetaData &meta);
