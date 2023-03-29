@@ -18,6 +18,39 @@
 #include "sqlite_store_executor_impl.h"
 
 namespace DocumentDB {
+int SqliteStoreExecutor::CreateDatabase(const std::string &path, const DBConfig &config, sqlite3 *&db)
+{
+    if (db != nullptr) {
+        return -E_INVALID_ARGS;
+    }
+
+    int errCode = SQLiteUtils::CreateDataBase(path, 0, db);
+    if (errCode != E_OK || db == nullptr) {
+        GLOGE("Open or create database failed. %d", errCode);
+        return errCode;
+    }
+
+    std::string pageSizeSql = "PRAGMA page_size=" + std::to_string(config.GetPageSize() * 1024);
+    errCode = SQLiteUtils::ExecSql(db, pageSizeSql);
+    if (errCode != E_OK) {
+        GLOGE("Set db page size failed. %d", errCode);
+        goto END;
+    }
+
+    errCode = SQLiteUtils::ExecSql(db, "CREATE TABLE IF NOT EXISTS grd_meta (key BLOB PRIMARY KEY, value BLOB);");
+    if (errCode != E_OK) {
+        GLOGE("Create meta table failed. %d", errCode);
+        goto END;
+    }
+
+    return E_OK;
+
+END:
+    sqlite3_close_v2(db);
+    db = nullptr;
+    return errCode;
+}
+
 SqliteStoreExecutor::SqliteStoreExecutor(sqlite3 *handle) : dbHandle_(handle)
 {
 }
@@ -26,6 +59,24 @@ SqliteStoreExecutor::~SqliteStoreExecutor()
 {
     sqlite3_close_v2(dbHandle_);
     dbHandle_ = nullptr;
+}
+
+int SqliteStoreExecutor::GetDBConfig(std::string &config)
+{
+    std::string dbConfigKeyStr = "DB_CONFIG";
+    Key dbConfigKey = {dbConfigKeyStr.begin(), dbConfigKeyStr.end()};
+    Value dbConfigVal;
+    int errCode = GetData("grd_meta", dbConfigKey, dbConfigVal);
+    config.assign(dbConfigVal.begin(), dbConfigVal.end());
+    return errCode;
+}
+
+int SqliteStoreExecutor::SetDBConfig(const std::string &config)
+{
+    std::string dbConfigKeyStr = "DB_CONFIG";
+    Key dbConfigKey = {dbConfigKeyStr.begin(), dbConfigKeyStr.end()};
+    Value dbConfigVal = {config.begin(), config.end()};
+    return PutData("grd_meta", dbConfigKey, dbConfigVal);
 }
 
 int SqliteStoreExecutor::PutData(const std::string &collName, const Key &key, const Value &value)
@@ -50,22 +101,24 @@ int SqliteStoreExecutor::PutData(const std::string &collName, const Key &key, co
 int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Value &value) const
 {
     if (dbHandle_ == nullptr) {
+        GLOGE("Invalid db handle.");
         return -E_ERROR;
     }
-
+    int innerErrorCode = -E_NOT_FOUND;
     std::string sql = "SELECT value FROM '" + collName + "' WHERE key=?;";
     int errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [key](sqlite3_stmt *stmt) {
         SQLiteUtils::BindBlobToStatement(stmt, 1, key);
         return E_OK;
-    }, [&value](sqlite3_stmt *stmt) {
+    }, [&value, &innerErrorCode](sqlite3_stmt *stmt) {
         SQLiteUtils::GetColumnBlobValue(stmt, 0, value);
+        innerErrorCode = E_OK;
         return E_OK;
     });
     if (errCode != SQLITE_OK) {
         GLOGE("[sqlite executor] create collectoin failed. err=%d", errCode);
         return errCode;
     }
-    return E_OK;
+    return innerErrorCode;
 }
 
 int SqliteStoreExecutor::CreateCollection(const std::string &name, int flag)

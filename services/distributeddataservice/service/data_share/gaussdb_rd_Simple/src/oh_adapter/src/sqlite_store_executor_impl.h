@@ -16,14 +16,21 @@
 #ifndef SQLITE_STORE_EXECUTOR_IMPL_H
 #define SQLITE_STORE_EXECUTOR_IMPL_H
 
+#include "db_config.h"
 #include "kv_store_executor.h"
 #include "sqlite3.h"
 
 namespace DocumentDB {
 class SqliteStoreExecutor : public KvStoreExecutor {
 public:
+    static int CreateDatabase(const std::string &path, const DBConfig &config, sqlite3 *&db);
+
     SqliteStoreExecutor(sqlite3 *handle);
     ~SqliteStoreExecutor() override;
+
+
+    int GetDBConfig(std::string &config);
+    int SetDBConfig(const std::string &config);
 
     int PutData(const std::string &collName, const Key &key, const Value &value) override;
     int GetData(const std::string &collName, const Key &key, Value &value) const override;

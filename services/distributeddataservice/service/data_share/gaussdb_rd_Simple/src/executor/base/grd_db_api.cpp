@@ -23,7 +23,7 @@
 
 using namespace DocumentDB;
 
-int TrasnferDocErr(int err)
+inline int TrasnferDocErr(int err)
 {
     switch (err) {
         case E_OK:
@@ -36,6 +36,10 @@ int TrasnferDocErr(int err)
             return GRD_FAILED_FILE_OPERATION;
         case -E_OVER_LIMIT:
             return GRD_OVER_LIMIT;
+        case -E_INVALID_JSON_FORMAT:
+            return GRD_INVALID_JSON_FORMAT;
+        case -E_INVALID_CONFIG_VALUE:
+            return GRD_INVALID_CONFIG_VALUE;
         default:
             return GRD_INNER_ERR;
     }

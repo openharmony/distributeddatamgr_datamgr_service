@@ -16,7 +16,6 @@
 #ifndef DOC_ERRNO_H
 #define DOC_ERRNO_H
 
-
 namespace DocumentDB {
 constexpr int E_OK = 0;
 constexpr int E_BASE = 1000;

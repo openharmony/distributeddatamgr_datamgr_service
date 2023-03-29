@@ -17,13 +17,14 @@
 #define KV_STORE_MANAGER_H
 #include <string>
 
+#include "db_config.h"
 #include "doc_common.h"
 #include "kv_store_executor.h"
 
 namespace DocumentDB {
 class KvStoreManager {
 public:
-    static int GetKvStore(const std::string &path, KvStoreExecutor *&executor);
+    static int GetKvStore(const std::string &path, const DBConfig &config, KvStoreExecutor *&executor);
 };
 } // DocumentDB
 #endif // KV_STORE_MANAGER_H

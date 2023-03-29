@@ -15,6 +15,7 @@
 
 #include "doc_errno.h"
 #include "kv_store_manager.h"
+#include "log_print.h"
 #include "sqlite_store_executor_impl.h"
 #include "sqlite_utils.h"
 
@@ -23,15 +24,50 @@ constexpr const char *APP_ID = "APP_ID";
 constexpr const char *USER_ID = "USER_ID";
 constexpr const char *STORE_ID = "STORE_ID";
 
-int KvStoreManager::GetKvStore(const std::string &path, KvStoreExecutor *&executor)
+int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, KvStoreExecutor *&executor)
 {
-    sqlite3 *db = nullptr;
-    int errCode = SQLiteUtils::CreateDataBase(path, 0, db);
-    if (errCode != E_OK || db == nullptr) {
-        return -E_ERROR;
+    if (executor != nullptr) {
+        return -E_INVALID_ARGS;
     }
 
-    executor = new (std::nothrow) SqliteStoreExecutor(db);
+    sqlite3 *db = nullptr;
+    int errCode = SqliteStoreExecutor::CreateDatabase(path, config, db);
+    if (errCode != E_OK) {
+        GLOGE("Get kv store failed. %d", errCode);
+        return errCode;
+    }
+
+    auto *sqliteExecutor = new (std::nothrow) SqliteStoreExecutor(db);
+    if (sqliteExecutor == nullptr) {
+        return -E_OUT_OF_MEMORY;
+    }
+
+    std::string oriConfigStr;
+    errCode = sqliteExecutor->GetDBConfig(oriConfigStr);
+    GLOGD("----> Get original db config: [%s] %d", oriConfigStr.c_str(), errCode);
+    if (errCode == -E_NOT_FOUND) {
+        errCode = sqliteExecutor->SetDBConfig(config.ToString());
+    } else if (errCode != E_OK) {
+        goto END;
+    } else {
+        DBConfig oriDbConfig = DBConfig::ReadConfig(oriConfigStr, errCode);
+        if (errCode != E_OK) {
+            GLOGE("Read db config changed. %d", errCode);
+            goto END;
+        }
+        if (config != oriDbConfig) {
+            errCode = -E_INVALID_CONFIG_VALUE;
+            GLOGE("Get kv store failed, db config changed. %d", errCode);
+            goto END;
+        }
+    }
+
+    executor = sqliteExecutor;
     return E_OK;
+
+END:
+    delete sqliteExecutor;
+    sqliteExecutor = nullptr;
+    return errCode;
 }
 }

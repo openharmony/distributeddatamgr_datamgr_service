@@ -53,7 +53,9 @@ int GetRealPath(const std::string &inOriPath, std::string &outRealPath)
         delete []realPath;
         return -E_SYSTEM_API_FAIL;
     }
+    GLOGE("----> realpath: %s, %s", inOriPath.c_str(), realPath);
     outRealPath = std::string(realPath);
+    GLOGD("----> outRealPath: %s", outRealPath.c_str());
     delete []realPath;
     return E_OK;
 }

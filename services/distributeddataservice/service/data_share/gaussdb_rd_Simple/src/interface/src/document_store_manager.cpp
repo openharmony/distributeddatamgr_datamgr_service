@@ -13,9 +13,9 @@
 * limitations under the License.
 */
 
+#include "db_config.h"
 #include "document_store_manager.h"
 #include "doc_errno.h"
-#include "doc_limit.h"
 #include "grd_base/grd_type_export.h"
 #include "kv_store_manager.h"
 #include "log_print.h"
@@ -32,14 +32,24 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
         return errCode;
     }
 
-    if (!CheckDBConfig(config, errCode)) {
-        GLOGE("Check document db config failed.");
+    DBConfig dbConfig = DBConfig::ReadConfig(config, errCode);
+    if (errCode != E_OK) {
+        GLOGE("Read db config str failed. %d", errCode);
         return errCode;
     }
 
     KvStoreExecutor *executor = nullptr;
-    KvStoreManager::GetKvStore(canonicalPath, executor);
+    errCode = KvStoreManager::GetKvStore(canonicalPath + "/" + dbName, dbConfig, executor);
+    if (errCode != E_OK) {
+        GLOGE("Open document store failed. %d", errCode);
+        return errCode;
+    }
+
     store = new (std::nothrow) DocumentStore(executor);
+    if (store == nullptr) {
+        return -E_OUT_OF_MEMORY;
+    }
+
     return errCode;
 }
 
@@ -71,43 +81,20 @@ bool DocumentStoreManager::CheckDBPath(const std::string &path, std::string &can
     std::string dirPath;
     OSAPI::SplitFilePath(path, dirPath, dbName);
 
-    std::string canonicalDir;
-    int innerErrCode = OSAPI::GetRealPath(dirPath, canonicalDir);
+    int innerErrCode = OSAPI::GetRealPath(dirPath, canonicalPath);
     if (innerErrCode != E_OK) {
         GLOGE("Get real path failed. %d", errCode);
         errCode = -E_FILE_OPERATION;
         return false;
     }
 
+    GLOGD("----> path: %s, dirPath: %s, dbName: %s, canonicalPath: %s", path.c_str(), dirPath.c_str(), dbName.c_str(),
+        canonicalPath.c_str());
     return true;
 }
 
 bool DocumentStoreManager::CheckDBConfig(const std::string &config, int &errCode)
 {
-    if (config.empty()) {
-        return true;
-    }
-
-    if (config.length() > MAX_JSON_LEN) {
-        GLOGE("Config json string is too long.");
-        errCode = -E_OVER_LIMIT;
-        return false;
-    }
-
-    std::shared_ptr<JsonObject> dbConfig;
-    errCode = JsonObject::Parse(config, dbConfig);
-    if (errCode != E_OK) {
-        GLOGE("Check DB config failed. %d", errCode);
-        return false;
-    }
-
-    ValueObject maxConnNum;
-    dbConfig->GetObjectByPath({"maxConnNum"}, maxConnNum);
-    if (maxConnNum.valueType != ValueObject::ValueType::VALUE_NUMBER) {
-        GLOGE("Check DB config failed, the field type of maxConnNum is not NUMBER. %d", errCode);
-        return false;
-    }
-
     return true;
 }
 } // DocumentDB

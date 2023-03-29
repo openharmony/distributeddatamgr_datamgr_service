@@ -43,7 +43,6 @@ private:
     uint32_t redoFlushByTrx_ = 0;
     uint32_t redoPubBufSize_ = 1024;
     int32_t maxConnNum_ = 100;
-    int32_t spaceMaxSize_ = 1048576;
     uint32_t bufferPoolSize_ = 1024;
     uint32_t crcCheckEnable_ = 1;
 };

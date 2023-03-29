@@ -180,6 +180,13 @@ int CjsonObject::Delete()
 
 bool CjsonObject::IsFieldExists(const JsonFieldPath &path)
 {
+    cJSON *item = cjson_;
+    for (const auto &field : path) {
+        item = cJSON_GetObjectItem(item, field.c_str()); // TODO: parse array
+        if (item == nullptr) {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -187,12 +194,11 @@ int CjsonObject::GetObjectByPath(const JsonFieldPath &path, ValueObject &obj)
 {
     cJSON *item = cjson_;
     for (const auto &field : path) {
-        item = cJSON_GetObjectItem(item, field.c_str());
+        item = cJSON_GetObjectItem(item, field.c_str()); // TODO: parse array
         if (item == nullptr) {
             GLOGE("Invalid json field path. %s", field.c_str());
             return -E_INVALID_JSON_FIELT_PATH;
         }
-        GLOGD("---->. %d", item->valueint);
     }
 
     if (item->type == cJSON_Number) {

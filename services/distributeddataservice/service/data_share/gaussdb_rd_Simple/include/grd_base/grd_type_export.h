@@ -38,7 +38,7 @@ typedef struct GRD_DB GRD_DB;
 
 /**
  * @brief flush database config
-*/
+ */
 #define GRD_DB_FLUSH_ASYNC 0x00
 #define GRD_DB_FLUSH_SYNC 0x01
 
