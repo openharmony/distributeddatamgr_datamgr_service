@@ -350,7 +350,6 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
     return (BackupManager::GetInstance().GetPassWord(metaData, password)) ? SUCCESS : ERROR;
 }
 
-
 Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options)
 {
     ZLOGD("appId:%{public}s storeId:%{public}s to export data", appId.appId.c_str(), storeId.storeId.c_str());
