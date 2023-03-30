@@ -100,7 +100,7 @@ void KvStoreDataService::Initialize()
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
     DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
-    auto translateToDeviceIdCall = [this](const std::string &oriDevId, const DistributedDB::StoreInfo &info) {
+    auto translateCall = [this](const std::string &oriDevId, const DistributedDB::StoreInfo &info) {
         StoreMetaData meta;
         AppIDMetaData appIdMeta;
         MetaDataManager::GetInstance().LoadMeta(info.appId, appIdMeta, true);
@@ -114,9 +114,10 @@ void KvStoreDataService::Initialize()
             auto uuid = DmAdapter::GetInstance().CalcClientUuid(info.appId, oriDevId);
             return uuid;
         }
-        return oriDevId;
+        auto uuid = DmAdapter::GetInstance().CalcClientUuid(" ", oriDevId);
+        return uuid;
     };
-    DBConfig::SetTranslateToDeviceIdCallback(translateToDeviceIdCall);
+    DBConfig::SetTranslateToDeviceIdCallback(translateCall);
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)

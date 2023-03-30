@@ -470,7 +470,7 @@ std::string DeviceManagerAdapter::ToNetworkID(const std::string &id)
 
 std::string DeviceManagerAdapter::CalcClientUuid(const std::string &appId, const std::string &uuid)
 {
-    if (appId.empty() || uuid.empty()) {
+    if (uuid.empty()) {
         return "";
     }
     std::string encryptedUuid;

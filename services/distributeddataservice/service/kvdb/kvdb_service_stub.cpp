@@ -52,16 +52,13 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
         return -1;
     }
 
-    if (TRANS_HEAD > code || code >= TRANS_BUTT || HANDLERS[code] == nullptr) {
+    if (TRANS_HEAD > code || code > TRANS_BUTT || HANDLERS[code] == nullptr) {
         ZLOGE("not support code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
         return -1;
     }
 
     AppId appId;
     StoreId storeId;
-    if (TRANS_NO_APPID_BEGIN <= code && code <= TRANS_NO_APPID_END) {
-        return (this->*HANDLERS[code])(appId, storeId, data, reply);
-    }
     if (!ITypesUtil::Unmarshal(data, appId, storeId)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
         return IPC_STUB_INVALID_DATA_ERR;

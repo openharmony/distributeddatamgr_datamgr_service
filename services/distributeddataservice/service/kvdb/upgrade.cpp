@@ -20,6 +20,7 @@
 
 #include "crypto_manager.h"
 #include "metadata/secret_key_meta_data.h"
+#include "device_manager_adapter.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "store_cache.h"
@@ -27,6 +28,9 @@
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using system_clock = std::chrono::system_clock;
+using DMAdapter = DistributedData::DeviceManagerAdapter;
+using DBKey = std::vector<uint8_t>;
+
 Upgrade &Upgrade::GetInstance()
 {
     static Upgrade upgrade;
@@ -35,7 +39,7 @@ Upgrade &Upgrade::GetInstance()
 
 Upgrade::DBStatus Upgrade::UpdateStore(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd)
 {
-    if (old.version <= VERSION && old.storeType == DEVICE_COLLABORATION) {
+    if (old.version < meta.UUID_CHANGED_TAG && old.storeType == DEVICE_COLLABORATION) {
         auto upStatus = Upgrade::GetInstance().UpdateUuid(old, meta, pwd);
         if (upStatus != DBStatus::OK) {
             return DBStatus::DB_ERROR;
