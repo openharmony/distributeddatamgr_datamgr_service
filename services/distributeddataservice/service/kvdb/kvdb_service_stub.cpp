@@ -220,7 +220,6 @@ int32_t KVDBServiceStub::OnGetSyncParam(
     return ERR_NONE;
 }
 
-
 int32_t KVDBServiceStub::OnEnableCap(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
