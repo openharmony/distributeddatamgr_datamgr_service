@@ -14,7 +14,12 @@
 */
 
 #include "document_store.h"
+
+#include "collection_option.h"
+#include "doc_common.h"
 #include "doc_errno.h"
+#include "grd_base/grd_type_export.h"
+#include "log_print.h"
 
 namespace DocumentDB {
 DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor)
@@ -26,10 +31,45 @@ DocumentStore::~DocumentStore()
     delete executor_;
 }
 
-int DocumentStore::CreateCollection(const std::string &name, const std::string &option, int flag)
+int DocumentStore::CreateCollection(const std::string &name, const std::string &option, int flags)
 {
-    executor_->CreateCollection(name, flag);
-    return E_OK;
+    if (!CheckCommon::CheckCollectionName(name)) {
+        GLOGE("Check collection name invalid.");
+        return -E_INVALID_ARGS;
+    }
+
+    int errCode = E_OK;
+    CollectionOption collOption = CollectionOption::ReadOption(option, errCode);
+    if (errCode != E_OK) {
+        GLOGE("Read collection option str failed. %d", errCode);
+        return errCode;
+    }
+
+    if (flags != 0 && flags != IGNORE_EXIST_TABLE) {
+        GLOGE("Check flags invalid.");
+        return -E_INVALID_ARGS;
+    }
+
+    bool ignoreExists = (flags == IGNORE_EXIST_TABLE);
+    errCode = executor_->CreateCollection(name, ignoreExists);
+    if (errCode != E_OK) {
+        GLOGE("Create collection failed. %d", errCode);
+        return errCode;
+    }
+    std::string oriOptStr;
+    errCode = executor_->GetCollectionOption(name, oriOptStr);
+    if (errCode == -E_NOT_FOUND) {
+        executor_->SetCollectionOption(name, option);
+        errCode = E_OK;
+    } else {
+        CollectionOption oriOption = CollectionOption::ReadOption(oriOptStr, errCode);
+        if (collOption != oriOption) {
+            GLOGE("Create collection failed, option changed.");
+            return -E_INVALID_CONFIG_VALUE;
+        }
+    }
+
+    return errCode;
 }
 
 int DocumentStore::DropCollection(const std::string &name, int flag)

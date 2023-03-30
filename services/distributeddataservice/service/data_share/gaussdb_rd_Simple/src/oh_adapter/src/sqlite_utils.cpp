@@ -19,6 +19,7 @@
 
 namespace DocumentDB {
 const int MAX_BLOB_READ_SIZE = 5 * 1024 * 1024; // 5M limit  TODO:: check blob size
+const int MAX_TEXT_READ_SIZE = 5 * 1024 * 1024; // 5M limit
 const std::string BEGIN_SQL = "BEGIN TRANSACTION";
 const std::string BEGIN_IMMEDIATE_SQL = "BEGIN IMMEDIATE TRANSACTION";
 const std::string COMMIT_SQL = "COMMIT TRANSACTION";
@@ -148,6 +149,44 @@ int SQLiteUtils::GetColumnBlobValue(sqlite3_stmt *statement, int index, std::vec
     } else {
         value.resize(keySize);
         value.assign(keyRead, keyRead + keySize);
+    }
+
+    return E_OK;
+}
+
+int SQLiteUtils::BindTextToStatement(sqlite3_stmt *statement, int index, const std::string &value)
+{
+    if (statement == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+
+    int errCode = sqlite3_bind_text(statement, index, value.c_str(), value.length(), SQLITE_TRANSIENT);
+    if (errCode != SQLITE_OK) {
+        GLOGE("[SQLiteUtil][Bind text]Failed to bind the value:%d", errCode);
+        return errCode;
+    }
+
+    return E_OK;
+}
+
+int SQLiteUtils::GetColumnTextValue(sqlite3_stmt *statement, int index, std::string &value)
+{
+    if (statement == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+
+    int valSize = sqlite3_column_bytes(statement, index);
+    if (valSize < 0 || valSize > MAX_TEXT_READ_SIZE) {
+        GLOGW("[SQLiteUtils][Column text] size over limit:%d", valSize);
+        value.resize(MAX_TEXT_READ_SIZE + 1); // Reset value size to invalid
+        return E_OK; // Return OK for continue get data, but value is invalid
+    }
+
+    const unsigned char *val = sqlite3_column_text(statement, index);
+    if (valSize == 0 || val == nullptr) {
+        value = {};
+    } else {
+        value = std::string(reinterpret_cast<const char *>(val));
     }
 
     return E_OK;

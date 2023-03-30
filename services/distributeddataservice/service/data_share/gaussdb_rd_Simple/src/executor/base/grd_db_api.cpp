@@ -20,37 +20,16 @@
 #include "document_store.h"
 #include "grd_base/grd_error.h"
 #include "grd_type_inner.h"
+#include "log_print.h"
 
 using namespace DocumentDB;
-
-inline int TrasnferDocErr(int err)
-{
-    switch (err) {
-        case E_OK:
-            return GRD_OK;
-        case -E_ERROR:
-            return GRD_INNER_ERR;
-        case -E_INVALID_ARGS:
-            return GRD_INVALID_ARGS;
-        case -E_FILE_OPERATION:
-            return GRD_FAILED_FILE_OPERATION;
-        case -E_OVER_LIMIT:
-            return GRD_OVER_LIMIT;
-        case -E_INVALID_JSON_FORMAT:
-            return GRD_INVALID_JSON_FORMAT;
-        case -E_INVALID_CONFIG_VALUE:
-            return GRD_INVALID_CONFIG_VALUE;
-        default:
-            return GRD_INNER_ERR;
-    }
-}
 
 int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GRD_DB **db)
 {
     std::string path = (dbPath == nullptr ? "" : dbPath);
     std::string config = (configStr == nullptr ? "" : configStr);
     DocumentStore *store = nullptr;
-    int ret = DocumentStoreManager::GetDocumentStore(path, config, store);
+    int ret = DocumentStoreManager::GetDocumentStore(path, config, flags, store);
     *db = new (std::nothrow) GRD_DB();
     (*db)->store_ = store;
     return TrasnferDocErr(ret);
@@ -62,13 +41,12 @@ int GRD_DBClose(GRD_DB *db, unsigned int flags)
         return GRD_INVALID_ARGS;
     }
 
-    DocumentStoreManager::CloseType closeType = (flags == GRD_DB_CLOSE) ? DocumentStoreManager::CloseType::NORMAL :
-        DocumentStoreManager::CloseType::IGNORE_ERROR;
-    int status = DocumentStoreManager::CloseDocumentStore(db->store_, closeType);
-    if (status != E_OK) {
-        return GRD_RESOURCE_BUSY;
+    int ret = DocumentStoreManager::CloseDocumentStore(db->store_, flags);
+    if (ret != E_OK) {
+        return TrasnferDocErr(ret);
     }
 
+    db->store_ = nullptr;
     delete db;
     return GRD_OK;
 }

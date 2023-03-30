@@ -1,0 +1,178 @@
+/*
+* Copyright (c) 2023 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+#include <gtest/gtest.h>
+
+#include "doc_errno.h"
+#include "documentdb_test_utils.h"
+#include "log_print.h"
+#include "grd_base/grd_db_api.h"
+#include "grd_base/grd_error.h"
+#include "grd_document/grd_document_api.h"
+#include "sqlite_utils.h"
+
+using namespace DocumentDB;
+using namespace testing::ext;
+using namespace DocumentDBUnitTest;
+
+namespace {
+std::string g_path = "./document.db";
+GRD_DB *g_db = nullptr;
+}
+
+class DocumentDBCollectionTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+};
+
+void DocumentDBCollectionTest::SetUpTestCase(void)
+{
+}
+
+void DocumentDBCollectionTest::TearDownTestCase(void)
+{
+}
+
+void DocumentDBCollectionTest::SetUp(void)
+{
+    EXPECT_EQ(GRD_DBOpen(g_path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &g_db), GRD_OK);
+    EXPECT_NE(g_db, nullptr);
+}
+
+void DocumentDBCollectionTest::TearDown(void)
+{
+    if (g_db != nullptr) {
+        EXPECT_EQ(GRD_DBClose(g_db, GRD_DB_CLOSE), GRD_OK);
+        g_db = nullptr;
+    }
+    DocumentDBTestUtils::RemoveTestDbFiles(g_path);
+}
+
+/**
+ * @tc.name: CollectionTest001
+ * @tc.desc: Test create collection with null db
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBCollectionTest, CollectionTest001, TestSize.Level0)
+{
+    EXPECT_EQ(GRD_CreateCollection(nullptr, "student", "", 0), GRD_INVALID_ARGS);
+}
+
+/**
+ * @tc.name: CollectionTest002
+ * @tc.desc: Test create collection with invalid collection name
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
+{
+    std::vector<const char *> validName = {
+        nullptr,
+        "",
+        "GRD_123",
+        "grd_123",
+        "GM_SYS_123",
+        "gm_sys_123",
+    };
+
+    for (auto *it : validName) {
+        GLOGD("CollectionTest002: create collection with name: %s", it);
+        EXPECT_EQ(GRD_CreateCollection(g_db, it, "", 0), GRD_INVALID_ARGS);
+    }
+}
+
+/**
+ * @tc.name: CollectionTest003
+ * @tc.desc: Test create collection with valid collection name
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBCollectionTest, CollectionTest003, TestSize.Level0)
+{
+    std::vector<const char *> validName = {
+        "123",
+        "&^%@",
+        "中文字符",
+        "sqlite_master",
+        "NULL",
+        "SELECT"
+    };
+
+    for (auto *it : validName) {
+        GLOGD("CollectionTest003: create collection with name: %s", it);
+        EXPECT_EQ(GRD_CreateCollection(g_db, it, "", 0), GRD_OK);
+    }
+}
+
+/**
+ * @tc.name: CollectionTest004
+ * @tc.desc: Test create collection with ignore flag
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBCollectionTest, CollectionTest004, TestSize.Level0)
+{
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_OK);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_COLLECTION_CONFLICT);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", IGNORE_EXIST_TABLE), GRD_OK);
+}
+
+/**
+ * @tc.name: CollectionTest005
+ * @tc.desc: Test create collection with invalid option
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBCollectionTest, CollectionTest005, TestSize.Level0)
+{
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({aa})"", 0), GRD_INVALID_JSON_FORMAT);
+
+    std::vector<const char *> invalidOption = {
+        // R""({"invalidOption":2})"",
+        R""({"maxDoc":0})"",
+        R""({"maxDoc":"123"})"",
+        R""({"maxDoc":{"value":1024}})"",
+        R""({"maxDoc":[1,2,4,8]})"",
+    };
+
+    for (auto opt : invalidOption) {
+        GLOGD("CollectionTest005: create collection with option: %s", opt);
+        EXPECT_EQ(GRD_CreateCollection(g_db, "student", opt, 0), GRD_INVALID_CONFIG_VALUE);
+    }
+}
+
+/**
+ * @tc.name: CollectionTest006
+ * @tc.desc: Test create collection with valid maxDoc option
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBCollectionTest, CollectionTest006, TestSize.Level0)
+{
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":1024})"", 0), GRD_OK);
+
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", IGNORE_EXIST_TABLE),
+        GRD_INVALID_CONFIG_VALUE);
+}

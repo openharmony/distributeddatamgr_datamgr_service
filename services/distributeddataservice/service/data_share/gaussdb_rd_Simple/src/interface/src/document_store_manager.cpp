@@ -22,7 +22,22 @@
 #include "os_api.h"
 
 namespace DocumentDB {
-int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::string &config, DocumentStore *&store)
+namespace {
+bool CheckDBOpenFlag(unsigned int flag)
+{
+    unsigned int mask = ~(GRD_DB_OPEN_CREATE | GRD_DB_OPEN_CHECK_FOR_ABNORMAL | GRD_DB_OPEN_CHECK);
+    unsigned int invalidOpt = (GRD_DB_OPEN_CHECK_FOR_ABNORMAL | GRD_DB_OPEN_CHECK);
+    return ((flag & mask) == 0x00) && ((flag & invalidOpt) != invalidOpt);
+}
+
+bool CheckDBCloseFlag(unsigned int flag)
+{
+    return (flag == GRD_DB_CLOSE) || (flag == GRD_DB_CLOSE_IGNORE_ERROR);
+}
+}
+
+int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::string &config, unsigned int flags,
+    DocumentStore *&store)
 {
     std::string canonicalPath;
     std::string dbName;
@@ -36,6 +51,11 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
     if (errCode != E_OK) {
         GLOGE("Read db config str failed. %d", errCode);
         return errCode;
+    }
+
+    if (!CheckDBOpenFlag(flags)) {
+        GLOGE("Check document db open flags failed.");
+        return -E_INVALID_ARGS;
     }
 
     KvStoreExecutor *executor = nullptr;
@@ -53,10 +73,11 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
     return errCode;
 }
 
-int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, CloseType type)
+int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, unsigned int flags)
 {
-    if (type == CloseType::NORMAL) {
-        // TODO: check result set
+    if (!CheckDBCloseFlag(flags)) {
+        GLOGE("Check document db close flags failed.");
+        return -E_INVALID_ARGS;
     }
 
     delete store;

@@ -16,6 +16,7 @@
 #include "db_config.h"
 
 #include <algorithm>
+#include <memory>
 
 #include "doc_errno.h"
 #include "doc_limit.h"
@@ -33,7 +34,7 @@ bool CheckPageSizeConfig(std::shared_ptr<JsonObject> config, int32_t &pageSize, 
     }
 
     ValueObject configValue;
-    config->GetObjectByPath(pageSizeField, configValue);
+    errCode = config->GetObjectByPath(pageSizeField, configValue); // TODO: check return code
     if (configValue.valueType != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of pageSize is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
@@ -193,7 +194,7 @@ DBConfig DBConfig::ReadConfig(const std::string &confStr, int &errCode)
     std::shared_ptr<JsonObject> dbConfig;
     errCode = JsonObject::Parse(confStr, dbConfig);
     if (errCode != E_OK) {
-        GLOGE("Read DB config failed from. %d", errCode);
+        GLOGE("Read DB config failed from str. %d", errCode);
         return {};
     }
 
@@ -236,11 +237,6 @@ DBConfig DBConfig::ReadConfig(const std::string &confStr, int &errCode)
 std::string DBConfig::ToString() const
 {
     return configStr_;
-}
-
-int32_t DBConfig::GetMaxConnNum() const
-{
-    return maxConnNum_;
 }
 
 int32_t DBConfig::GetPageSize() const

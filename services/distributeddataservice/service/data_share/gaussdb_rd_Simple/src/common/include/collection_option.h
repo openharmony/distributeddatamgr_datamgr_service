@@ -13,23 +13,25 @@
 * limitations under the License.
 */
 
-#ifndef DOCUMENT_STORE_MANAGER_H
-#define DOCUMENT_STORE_MANAGER_H
+#ifndef COLLECTION_OPTION_H
+#define COLLECTION_OPTION_H
 
+#include <cstdint>
 #include <string>
-#include "document_store.h"
 
 namespace DocumentDB {
-class DocumentStoreManager {
+
+class CollectionOption final {
 public:
-    static int GetDocumentStore(const std::string &path, const std::string &config, unsigned int flags,
-        DocumentStore *&store);
+    static CollectionOption ReadOption(const std::string &optStr, int &errCode);
 
-    static int CloseDocumentStore(DocumentStore *store, unsigned int flags);
+    uint32_t GetMaxDoc() const;
 
+    bool operator==(const CollectionOption &targetOption) const;
+    bool operator!=(const CollectionOption &targetOption) const;
 private:
-    static bool CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName, int &errCode);
-    static bool CheckDBConfig(const std::string &config, int &errCode);
+    std::string option_;
+    uint32_t maxDoc_ = UINT32_MAX;
 };
-} // DocumentDB
-#endif // DOCUMENT_STORE_MANAGER_H
+} // namespace DocumentDB
+#endif // COLLECTION_OPTION_H

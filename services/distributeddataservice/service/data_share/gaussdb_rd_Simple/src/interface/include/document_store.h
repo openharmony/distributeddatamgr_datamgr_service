@@ -28,7 +28,7 @@ public:
     DocumentStore(KvStoreExecutor *);
     ~DocumentStore();
 
-    int CreateCollection(const std::string &name, const std::string &option, int flag);
+    int CreateCollection(const std::string &name, const std::string &option, int flags);
     int DropCollection(const std::string &name, int flag);
 
     int UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update, int flag);

@@ -121,10 +121,22 @@ int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Va
     return innerErrorCode;
 }
 
-int SqliteStoreExecutor::CreateCollection(const std::string &name, int flag)
+int SqliteStoreExecutor::CreateCollection(const std::string &name, bool ignoreExists)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
+    }
+
+    if (!ignoreExists) {
+        int errCode = E_OK;
+        bool isExists = IsCollectionExists(name, errCode);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        if (isExists) {
+            GLOGE("[sqlite executor] create collectoin failed, collection already exists.");
+            return -E_COLLECTION_CONFLICT;
+        }
     }
 
     std::string sql = "CREATE TABLE IF NOT EXISTS '" + name + "' (key BLOB PRIMARY KEY, value BLOB);";
@@ -136,7 +148,7 @@ int SqliteStoreExecutor::CreateCollection(const std::string &name, int flag)
     return E_OK;
 }
 
-int SqliteStoreExecutor::DropCollection(const std::string &name, int flag)
+int SqliteStoreExecutor::DropCollection(const std::string &name, bool ignoreNotExists)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
@@ -149,5 +161,43 @@ int SqliteStoreExecutor::DropCollection(const std::string &name, int flag)
         return errCode;
     }
     return E_OK;
+}
+
+bool SqliteStoreExecutor::IsCollectionExists(const std::string &name, int &errCode)
+{
+    bool isExists = false;
+    std::string sql = "SELECT tbl_name FROM sqlite_master WHERE tbl_name=?;";
+
+    errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [name](sqlite3_stmt *stmt) {
+        SQLiteUtils::BindTextToStatement(stmt, 1, name);
+        return E_OK;
+    }, [&isExists](sqlite3_stmt *stmt) {
+        isExists = true;
+        return E_OK;
+    });
+
+    if (errCode != E_OK) {
+        GLOGE("Check collection exist failed. %d", errCode);
+    }
+
+    return isExists;
+}
+
+int SqliteStoreExecutor::GetCollectionOption(const std::string &name, std::string &option)
+{
+    std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
+    Key collOptKey = {collOptKeyStr.begin(), collOptKeyStr.end()};
+    Value collOptVal;
+    int errCode = GetData("grd_meta", collOptKey, collOptVal);
+    option.assign(collOptVal.begin(), collOptVal.end());
+    return errCode;
+}
+
+int SqliteStoreExecutor::SetCollectionOption(const std::string &name, const std::string &option)
+{
+    std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
+    Key collOptKey = {collOptKeyStr.begin(), collOptKeyStr.end()};
+    Value collOptVal = {option.begin(), option.end()};
+    return PutData("grd_meta", collOptKey, collOptVal);
 }
 } // DocumentDB

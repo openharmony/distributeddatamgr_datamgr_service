@@ -39,6 +39,9 @@ public:
     static int BindBlobToStatement(sqlite3_stmt *statement, int index, const std::vector<uint8_t> &value);
     static int GetColumnBlobValue(sqlite3_stmt *statement, int index, std::vector<uint8_t> &value);
 
+    static int BindTextToStatement(sqlite3_stmt *statement, int index, const std::string &value);
+    static int GetColumnTextValue(sqlite3_stmt *statement, int index, std::string &value);
+
     static int BeginTransaction(sqlite3 *db, TransactType type = TransactType::DEFERRED);
     static int CommitTransaction(sqlite3 *db);
     static int RollbackTransaction(sqlite3 *db);

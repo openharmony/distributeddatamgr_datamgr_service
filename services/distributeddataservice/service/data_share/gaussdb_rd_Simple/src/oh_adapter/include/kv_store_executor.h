@@ -28,8 +28,11 @@ public:
 
     virtual int GetData(const std::string &collName, const Key &key, Value &value) const = 0;
 
-    virtual int CreateCollection(const std::string &name, int flag) = 0;
-    virtual int DropCollection(const std::string &name, int flag) = 0;
+    virtual int CreateCollection(const std::string &name, bool ignoreExists) = 0;
+    virtual int DropCollection(const std::string &name, bool ignoreNotExists) = 0;
+
+    virtual int GetCollectionOption(const std::string &name, std::string &option) = 0;
+    virtual int SetCollectionOption(const std::string &name, const std::string &option) = 0;
 };
 } // DocumentDB
 #endif // KV_STORE_EXECUTOR_H

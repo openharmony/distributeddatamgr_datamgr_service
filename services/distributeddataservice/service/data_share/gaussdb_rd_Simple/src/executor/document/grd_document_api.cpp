@@ -16,13 +16,19 @@
 #include "grd_document/grd_document_api.h"
 #include "grd_base/grd_error.h"
 #include "grd_type_inner.h"
+#include "log_print.h"
+using namespace DocumentDB;
 
 int GRD_CreateCollection(GRD_DB *db, const char *collectionName, const char *optionStr, unsigned int flags)
 {
     if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;
     }
-    return db->store_->CreateCollection(collectionName, optionStr, flags);
+
+    std::string name = (collectionName == nullptr ? "" : collectionName);
+    std::string option = (optionStr == nullptr ? "" : optionStr);
+    int ret = db->store_->CreateCollection(name, option, flags);
+    return TrasnferDocErr(ret);
 }
 
 int GRD_DropCollection(GRD_DB *db, const char *collectionName, unsigned int flags)
@@ -30,7 +36,10 @@ int GRD_DropCollection(GRD_DB *db, const char *collectionName, unsigned int flag
     if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;
     }
-    return db->store_->DropCollection(collectionName, flags);
+
+    std::string name = (collectionName == nullptr ? "" : collectionName);
+    int ret = db->store_->DropCollection(name, flags);
+    return TrasnferDocErr(ret);
 }
 
 int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update, unsigned int flags)

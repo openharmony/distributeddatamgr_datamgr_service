@@ -16,9 +16,7 @@
 #ifndef DB_CONFIG_H
 #define DB_CONFIG_H
 
-#include <memory>
 #include <string>
-
 
 namespace DocumentDB {
 class DBConfig final {
@@ -27,8 +25,6 @@ public:
 
     ~DBConfig() = default;
     std::string ToString() const;
-
-    int32_t GetMaxConnNum() const;
 
     int32_t GetPageSize() const;
 

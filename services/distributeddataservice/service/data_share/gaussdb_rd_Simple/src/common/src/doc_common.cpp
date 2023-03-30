@@ -20,6 +20,26 @@
 #include "securec.h"
 
 namespace DocumentDB {
+namespace {
+bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefix)
+{
+    if (name.length() < prefix.length()) {
+        return false;
+    }
+
+    auto itPrefix = prefix.begin();
+    auto itName = name.begin();
+    while (itPrefix != prefix.end()) {
+        if (std::tolower(*itPrefix) != std::tolower(*itName)) {
+            return false;
+        }
+        itPrefix++;
+        itName++;
+    }
+    return true;
+}
+}
+
 bool CheckCommon::CheckCollectionName(const std::string &collectionName)
 {
     if (collectionName.empty()) {
@@ -28,7 +48,7 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName)
     if (collectionName.length() > 512) {
         return false;
     }
-    if (collectionName.compare(0, 4, "GRD", 0, 4) == 0 || collectionName.compare(0, 7, "GM_SYS_", 0, 7) == 0) {
+    if (CheckCollectionNamePrefix(collectionName, "GRD_") || CheckCollectionNamePrefix(collectionName, "GM_SYS_")) {
         return false;
     }
     return true;

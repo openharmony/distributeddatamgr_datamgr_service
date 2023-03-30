@@ -52,7 +52,7 @@ int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, 
     } else {
         DBConfig oriDbConfig = DBConfig::ReadConfig(oriConfigStr, errCode);
         if (errCode != E_OK) {
-            GLOGE("Read db config changed. %d", errCode);
+            GLOGE("Read db config failed. %d", errCode);
             goto END;
         }
         if (config != oriDbConfig) {
