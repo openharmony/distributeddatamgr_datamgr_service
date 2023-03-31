@@ -24,6 +24,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "store_cache.h"
+#include "accesstoken_kit.h"
 #include "directory_manager.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -108,7 +109,7 @@ Upgrade::DBStatus Upgrade::UpdateUuid(const StoreMeta &old, const StoreMeta &met
         return DBStatus::DB_ERROR;
     }
     kvStore->RemoveDeviceData();
-    auto uuid = DMAdapter::GetInstance().GetEncryptedUuidByMeta(meta);
+    auto uuid = GetEncryptedUuidByMeta(meta);
     auto dbStatus = kvStore->UpdateKey([uuid](const DBKey &originKey, DBKey &newKey) {
         newKey = originKey;
         memcpy_s(newKey.data(), newKey.size(), uuid.data(), uuid.size());
@@ -146,5 +147,23 @@ Upgrade::AutoStore Upgrade::GetDBStore(const StoreMeta &meta, const std::vector<
             dbStore.reset(tmpStore);
         });
     return dbStore;
+}
+
+std::string Upgrade::GetEncryptedUuidByMeta(const StoreMeta &meta)
+{
+    std::string keyUuid = meta.appId + meta.storeId;
+    if(calcUuid_.Contains(keyUuid)){
+        return calcUuid_[keyUuid];
+    }
+    std::string uuid;
+    if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
+        OHOS::Security::AccessToken::TOKEN_HAP) {
+        uuid = DMAdapter::GetInstance().CalcClientUuid(meta.appId, meta.deviceId);
+        calcUuid_.Insert(keyUuid,uuid);
+        return uuid;
+    }
+    uuid = DMAdapter::GetInstance().CalcClientUuid(" ",meta.deviceId);
+    calcUuid_.Insert(keyUuid,uuid);
+    return uuid;
 }
 }

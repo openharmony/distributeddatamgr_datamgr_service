@@ -50,6 +50,7 @@
 #include "user_delegate.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
+#include "upgrade.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -108,7 +109,7 @@ void KvStoreDataService::Initialize()
         meta.user = info.userId;
         meta.deviceId = oriDevId;
         MetaDataManager::GetInstance().LoadMeta(meta.GetKey(),meta);
-        return DmAdapter::GetInstance().GetEncryptedUuidByMeta(meta);
+        return Upgrade::GetInstance().GetEncryptedUuidByMeta(meta);
     };
     DBConfig::SetTranslateToDeviceIdCallback(translateCall);
 }
