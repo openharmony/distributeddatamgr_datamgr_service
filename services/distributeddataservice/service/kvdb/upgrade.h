@@ -48,7 +48,7 @@ public:
 private:
     using AutoStore = std::unique_ptr<DBStore, std::function<void(DBStore *)>>;
     AutoStore GetDBStore(const StoreMeta &meta, const std::vector<uint8_t> &pwd);
-    ConcurrentMap<std::string, std::string> calcUuid_ {};
+    ConcurrentMap<std::string, std::string> calcUuid_;
 
     Exporter exporter_;
     Cleaner cleaner_;
