@@ -121,7 +121,7 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     std::vector<std::string> users;
     auto recvHandler = RouteHeadHandlerImpl::Create({});
     ASSERT_NE(recvHandler, nullptr);
-    uint32_t parseSize = 0;
+    uint32_t parseSize = 1;
     recvHandler->ParseHeadData(data.get(), routeHeadSize, parseSize, users);
     EXPECT_EQ(routeHeadSize, parseSize);
     ASSERT_EQ(users.size(), 1);
