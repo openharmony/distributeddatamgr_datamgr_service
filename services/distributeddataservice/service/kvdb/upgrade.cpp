@@ -113,7 +113,6 @@ Upgrade::DBStatus Upgrade::UpdateUuid(const StoreMeta &old, const StoreMeta &met
         newKey = originKey;
         memcpy_s(newKey.data(), newKey.size(), uuid.data(), uuid.size());
     });
-
     if (dbStatus != DBStatus::OK) {
         ZLOGE("fail to update Uuid, status:%{public}d", dbStatus);
     }
