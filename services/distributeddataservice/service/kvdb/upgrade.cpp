@@ -112,7 +112,11 @@ Upgrade::DBStatus Upgrade::UpdateUuid(const StoreMeta &old, const StoreMeta &met
     auto uuid = GetEncryptedUuidByMeta(meta);
     auto dbStatus = kvStore->UpdateKey([uuid](const DBKey &originKey, DBKey &newKey) {
         newKey = originKey;
-        memcpy_s(newKey.data(), newKey.size(), uuid.data(), uuid.size());
+        errno_t err = EOK;
+        err = memcpy_s(newKey.data(), newKey.size(), uuid.data(), uuid.size());
+        if (err != EOK) {
+            ZLOGE("memcpy_s failed, err:%{public}d", err);
+        }
     });
     if (dbStatus != DBStatus::OK) {
         ZLOGE("fail to update Uuid, status:%{public}d", dbStatus);
@@ -152,18 +156,18 @@ Upgrade::AutoStore Upgrade::GetDBStore(const StoreMeta &meta, const std::vector<
 std::string Upgrade::GetEncryptedUuidByMeta(const StoreMeta &meta)
 {
     std::string keyUuid = meta.appId + meta.storeId;
-    if(calcUuid_.Contains(keyUuid)){
+    if (calcUuid_.Contains(keyUuid)) {
         return calcUuid_[keyUuid];
     }
     std::string uuid;
     if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
         OHOS::Security::AccessToken::TOKEN_HAP) {
         uuid = DMAdapter::GetInstance().CalcClientUuid(meta.appId, meta.deviceId);
-        calcUuid_.Insert(keyUuid,uuid);
+        calcUuid_.Insert(keyUuid, uuid);
         return uuid;
     }
-    uuid = DMAdapter::GetInstance().CalcClientUuid(" ",meta.deviceId);
-    calcUuid_.Insert(keyUuid,uuid);
+    uuid = DMAdapter::GetInstance().CalcClientUuid(" ", meta.deviceId);
+    calcUuid_.Insert(keyUuid, uuid);
     return uuid;
 }
 }
