@@ -45,7 +45,6 @@ ohos_static_library("distributeddata_communicator_static") {
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -53,7 +52,6 @@ ohos_static_library("distributeddata_communicator_static") {
   deps = [
     "../dfx:distributeddata_dfx_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
   ]
 
   external_deps = [
@@ -61,7 +59,6 @@ ohos_static_library("distributeddata_communicator_static") {
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "hiviewdfx_hilog_native:libhilog",
-    "access_token:libaccesstoken_sdk",
   ]
 
   subsystem_name = "distributeddatamgr"
