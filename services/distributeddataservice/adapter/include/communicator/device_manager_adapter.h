@@ -39,6 +39,7 @@ public:
     using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
     using Status = OHOS::DistributedKv::Status;
     static DeviceManagerAdapter &GetInstance();
+
     void Init();
     Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
@@ -47,6 +48,7 @@ public:
     DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNetworkId(const std::string &networkId);
     std::string GetUdidByNetworkId(const std::string &networkId);
+    std::string CalcClientUuid(const std::string &appId, const std::string &uuid);
     std::string ToUUID(const std::string &id);
     std::string ToUDID(const std::string &id);
     static std::vector<std::string> ToUUID(const std::vector<std::string> &devices);

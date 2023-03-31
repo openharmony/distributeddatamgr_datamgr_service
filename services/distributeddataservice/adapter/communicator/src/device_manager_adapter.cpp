@@ -467,4 +467,18 @@ std::string DeviceManagerAdapter::ToNetworkID(const std::string &id)
 {
     return GetDeviceInfoFromCache(id).networkId;
 }
+
+std::string DeviceManagerAdapter::CalcClientUuid(const std::string &appId, const std::string &uuid)
+{
+    if (uuid.empty()) {
+        return "";
+    }
+    std::string encryptedUuid;
+    auto ret = DeviceManager::GetInstance().GenerateEncryptedUuid(PKG_NAME, uuid, appId, encryptedUuid);
+    if (ret != DM_OK) {
+        ZLOGE("failed, result:%{public}d", ret);
+        return "";
+    }
+    return encryptedUuid;
+}
 } // namespace OHOS::DistributedData

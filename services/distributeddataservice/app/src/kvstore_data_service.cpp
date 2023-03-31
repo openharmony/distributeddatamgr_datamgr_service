@@ -35,6 +35,7 @@
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
 #include "log_print.h"
+#include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "permission_validator.h"
@@ -49,6 +50,7 @@
 #include "user_delegate.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
+#include "upgrade.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -57,6 +59,7 @@ using namespace OHOS::DistributedDataDfx;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
+using DBConfig = DistributedDB::RuntimeConfig;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
@@ -97,6 +100,18 @@ void KvStoreDataService::Initialize()
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
     DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
+    auto translateCall = [](const std::string &oriDevId, const DistributedDB::StoreInfo &info) {
+        StoreMetaData meta;
+        AppIDMetaData appIdMeta;
+        MetaDataManager::GetInstance().LoadMeta(info.appId, appIdMeta, true);
+        meta.bundleName = appIdMeta.bundleName;
+        meta.storeId = info.storeId;
+        meta.user = info.userId;
+        meta.deviceId = oriDevId;
+        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta);
+        return Upgrade::GetInstance().GetEncryptedUuidByMeta(meta);
+    };
+    DBConfig::SetTranslateToDeviceIdCallback(translateCall);
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
