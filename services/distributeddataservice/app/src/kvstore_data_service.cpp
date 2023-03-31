@@ -108,7 +108,7 @@ void KvStoreDataService::Initialize()
         meta.storeId = info.storeId;
         meta.user = info.userId;
         meta.deviceId = oriDevId;
-        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(),meta);
+        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta);
         return Upgrade::GetInstance().GetEncryptedUuidByMeta(meta);
     };
     DBConfig::SetTranslateToDeviceIdCallback(translateCall);
