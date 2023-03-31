@@ -37,8 +37,8 @@ void BackupRuleManager::LoadBackupRules(const std::vector<std::string> &backupRu
 
 void BackupRuleManager::RegisterPlugin(const std::string &backupRule, std::function<BackupRule *()> getter)
 {
-    getters_.ComputeIfAbsent(backupRule, [&getter](const auto &) {
-        return move(getter);
+    getters_.ComputeIfAbsent(backupRule, [&getter](const auto &) mutable {
+        return std::move(getter);
     });
 }
 

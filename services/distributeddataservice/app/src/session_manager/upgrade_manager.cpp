@@ -51,8 +51,9 @@ void UpgradeManager::Init()
 CapMetaData UpgradeManager::GetCapability(const std::string &deviceId, bool &status)
 {
     status = true;
-    if (capabilityMap_.Contains(deviceId)) {
-        return capabilityMap_.Find(deviceId).second;
+    auto cap = capabilities_.Find(deviceId);
+    if (cap.first) {
+        return cap.second;
     }
     ZLOGI("load capability from meta");
     CapMetaData capMetaData;
@@ -60,7 +61,7 @@ CapMetaData UpgradeManager::GetCapability(const std::string &deviceId, bool &sta
     ZLOGD("cap key:%{public}s", Anonymous::Change(std::string(dbKey.begin(), dbKey.end())).c_str());
     status = MetaDataManager::GetInstance().LoadMeta(std::string(dbKey.begin(), dbKey.end()), capMetaData);
     if (status) {
-        capabilityMap_.Insert(deviceId, capMetaData);
+        capabilities_.Insert(deviceId, capMetaData);
     }
     ZLOGI("device:%{public}s, version:%{public}d, insert:%{public}d", Anonymous::Change(deviceId).c_str(),
         capMetaData.version, status);
@@ -75,7 +76,7 @@ bool UpgradeManager::InitLocalCapability()
     auto dbKey = CapMetaRow::GetKeyFor(localDeviceId);
     bool status = MetaDataManager::GetInstance().SaveMeta({ dbKey.begin(), dbKey.end() }, capMetaData);
     if (status) {
-        capabilityMap_.Insert(localDeviceId, capMetaData);
+        capabilities_.Insert(localDeviceId, capMetaData);
     }
     ZLOGI("put capability meta data ret %{public}d", status);
     return status;
