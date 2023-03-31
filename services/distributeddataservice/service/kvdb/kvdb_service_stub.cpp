@@ -52,7 +52,7 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
         return -1;
     }
 
-    if (TRANS_HEAD > code || code > TRANS_BUTT || HANDLERS[code] == nullptr) {
+    if (TRANS_HEAD > code || code >= TRANS_BUTT || HANDLERS[code] == nullptr) {
         ZLOGE("not support code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
         return -1;
     }

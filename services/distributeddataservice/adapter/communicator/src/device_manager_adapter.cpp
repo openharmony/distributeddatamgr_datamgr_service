@@ -16,6 +16,7 @@
 #define LOG_TAG "DeviceManagerAdapter"
 #include "device_manager_adapter.h"
 #include <thread>
+#include "accesstoken_kit.h"
 #include "log_print.h"
 #include "kvstore_utils.h"
 
@@ -480,6 +481,17 @@ std::string DeviceManagerAdapter::CalcClientUuid(const std::string &appId, const
         return "";
     }
     return encryptedUuid;
+}
+
+std::string DeviceManagerAdapter::GetEncryptedUuidByMeta(const StoreMetaData &meta)
+{
+    if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
+        OHOS::Security::AccessToken::TOKEN_HAP) {
+        auto uuid = CalcClientUuid(meta.appId, meta.deviceId);
+        return uuid;
+    }
+    auto uuid = CalcClientUuid(" ", meta.deviceId);
+    return uuid;
 }
 
 } // namespace OHOS::DistributedData

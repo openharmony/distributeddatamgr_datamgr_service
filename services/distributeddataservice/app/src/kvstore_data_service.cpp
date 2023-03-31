@@ -19,7 +19,6 @@
 #include <ipc_skeleton.h>
 #include <thread>
 
-#include "accesstoken_kit.h"
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
 #include "bootstrap.h"
@@ -108,14 +107,8 @@ void KvStoreDataService::Initialize()
         meta.storeId = info.storeId;
         meta.user = info.userId;
         meta.deviceId = oriDevId;
-        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta);
-        if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
-            OHOS::Security::AccessToken::TOKEN_HAP) {
-            auto uuid = DmAdapter::GetInstance().CalcClientUuid(info.appId, oriDevId);
-            return uuid;
-        }
-        auto uuid = DmAdapter::GetInstance().CalcClientUuid(" ", oriDevId);
-        return uuid;
+        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(),meta);
+        return DmAdapter::GetInstance().GetEncryptedUuidByMeta(meta);
     };
     DBConfig::SetTranslateToDeviceIdCallback(translateCall);
 }

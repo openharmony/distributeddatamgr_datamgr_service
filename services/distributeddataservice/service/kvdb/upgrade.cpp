@@ -29,7 +29,7 @@ namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using system_clock = std::chrono::system_clock;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
-using DBKey = std::vector<uint8_t>;
+using DBKey = DistributedDB::Key;
 
 Upgrade &Upgrade::GetInstance()
 {
@@ -108,14 +108,10 @@ Upgrade::DBStatus Upgrade::UpdateUuid(const StoreMeta &old, const StoreMeta &met
         return DBStatus::DB_ERROR;
     }
     kvStore->RemoveDeviceData();
-    auto dbStatus = kvStore->UpdateKey([appId = meta.appId](const DBKey &originKey, DBKey &newKey) {
-        auto oriUuid = DMAdapter::GetInstance().GetLocalDevice().uuid;
-        auto newUuid = DMAdapter::GetInstance().CalcClientUuid(appId, oriUuid);
-        newKey.assign(originKey.begin(), originKey.end());
-        uint32_t length = *(reinterpret_cast<uint32_t *>(&(*(newKey.end() - sizeof(uint32_t)))));
-        length = le32toh(length);
-        newKey.erase(newKey.begin(), newKey.begin() + length);
-        newKey.insert(newKey.begin(), newUuid.begin(), newUuid.end());
+    auto uuid = DMAdapter::GetInstance().GetEncryptedUuidByMeta(meta);
+    auto dbStatus = kvStore->UpdateKey([uuid](const DBKey &originKey, DBKey &newKey) {
+        newKey = originKey;
+        memcpy_s(newKey.data(), newKey.size(), uuid.data(), uuid.size());
     });
 
     if (dbStatus != DBStatus::OK) {

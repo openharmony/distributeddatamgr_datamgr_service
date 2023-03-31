@@ -45,7 +45,6 @@ public:
 private:
     using AutoStore = std::unique_ptr<DBStore, std::function<void(DBStore *)>>;
     AutoStore GetDBStore(const StoreMeta &meta, const std::vector<uint8_t> &pwd);
-    static constexpr size_t MAX_DEV_KEY_LEN = 896;
 
     Exporter exporter_;
     Cleaner cleaner_;

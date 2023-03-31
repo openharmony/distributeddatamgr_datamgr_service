@@ -27,6 +27,7 @@
 #include "dm_device_info.h"
 #include "task_scheduler.h"
 #include "lru_bucket.h"
+#include "metadata/store_meta_data.h"
 
 namespace OHOS {
 namespace DistributedData {
@@ -39,6 +40,7 @@ public:
     using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
     using Status = OHOS::DistributedKv::Status;
     static DeviceManagerAdapter &GetInstance();
+    using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     void Init();
     Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
@@ -47,6 +49,7 @@ public:
     DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNetworkId(const std::string &networkId);
     std::string GetUdidByNetworkId(const std::string &networkId);
+    std::string GetEncryptedUuidByMeta(const StoreMetaData &meta);
     std::string CalcClientUuid(const std::string &appId, const std::string &uuid);
     std::string ToUUID(const std::string &id);
     std::string ToUDID(const std::string &id);
