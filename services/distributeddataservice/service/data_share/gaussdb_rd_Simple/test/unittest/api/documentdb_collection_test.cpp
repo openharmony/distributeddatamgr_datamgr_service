@@ -77,14 +77,14 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest001, TestSize.Level0)
 
 /**
  * @tc.name: CollectionTest002
- * @tc.desc: Test create collection with invalid collection name
+ * @tc.desc: Test create/drop collection with invalid collection name
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: lianhuix
  */
 HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
 {
-    std::vector<const char *> validName = {
+    std::vector<const char *> invalidName = {
         nullptr,
         "",
         "GRD_123",
@@ -93,15 +93,16 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
         "gm_sys_123",
     };
 
-    for (auto *it : validName) {
+    for (auto *it : invalidName) {
         GLOGD("CollectionTest002: create collection with name: %s", it);
         EXPECT_EQ(GRD_CreateCollection(g_db, it, "", 0), GRD_INVALID_ARGS);
+        EXPECT_EQ(GRD_DropCollection(g_db, it, 0), GRD_INVALID_ARGS);
     }
 }
 
 /**
  * @tc.name: CollectionTest003
- * @tc.desc: Test create collection with valid collection name
+ * @tc.desc: Test create/drop collection with valid collection name
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: lianhuix
@@ -120,6 +121,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest003, TestSize.Level0)
     for (auto *it : validName) {
         GLOGD("CollectionTest003: create collection with name: %s", it);
         EXPECT_EQ(GRD_CreateCollection(g_db, it, "", 0), GRD_OK);
+        EXPECT_EQ(GRD_DropCollection(g_db, it, 0), GRD_OK);
     }
 }
 
@@ -164,7 +166,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest005, TestSize.Level0)
 
 /**
  * @tc.name: CollectionTest006
- * @tc.desc: Test create collection with valid maxDoc option
+ * @tc.desc: Test create/drop collection with valid flag
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: lianhuix
@@ -175,4 +177,26 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest006, TestSize.Level0)
 
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", IGNORE_EXIST_TABLE),
         GRD_INVALID_CONFIG_VALUE);
+
+    EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_OK);
+    EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_NO_DATA);
+    EXPECT_EQ(GRD_DropCollection(g_db, "student", IGNORE_NON_EXIST_TABLE), GRD_OK);
+
+    // Create collection with different option returnh OK after drop collection
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", 0), GRD_OK);
+}
+
+/**
+ * @tc.name: CollectionTest007
+ * @tc.desc: Test create/drop collection with invalid flag
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBCollectionTest, CollectionTest007, TestSize.Level0)
+{
+    for (int flag : std::vector<unsigned int> {2, 4, 8, 1024, UINT32_MAX}) {
+        EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", flag), GRD_INVALID_ARGS);
+        EXPECT_EQ(GRD_DropCollection(g_db, "student", flag), GRD_INVALID_ARGS);
+    }
 }

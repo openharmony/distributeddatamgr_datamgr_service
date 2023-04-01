@@ -26,11 +26,12 @@ public:
     static CollectionOption ReadOption(const std::string &optStr, int &errCode);
 
     uint32_t GetMaxDoc() const;
+    std::string ToString() const;
 
     bool operator==(const CollectionOption &targetOption) const;
     bool operator!=(const CollectionOption &targetOption) const;
 private:
-    std::string option_;
+    std::string option_ = "{}";
     uint32_t maxDoc_ = UINT32_MAX;
 };
 } // namespace DocumentDB

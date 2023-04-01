@@ -20,14 +20,14 @@
 #include <vector>
 #include "json_common.h"
 
-class JsonCommon;
 namespace DocumentDB {
+class JsonCommon;
 class CheckCommon
 {
 public:
     CheckCommon() = default;
     ~CheckCommon();
-    
+
     static bool CheckCollectionName(const std::string &collectionName);
     static bool CheckFilter(const std::string &filter);
     static bool CheckIdFormat(const std::string &data);
@@ -36,5 +36,6 @@ public:
 using Key = std::vector<uint8_t>;
 using Value = std::vector<uint8_t>;
 
+constexpr const char *COLL_PREFIX = "GRD_COLL_";
 } // DocumentDB
 #endif // DOC_COMMON_H

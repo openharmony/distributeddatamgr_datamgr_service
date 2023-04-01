@@ -14,10 +14,11 @@
 */
 
 #include "collection.h"
+#include "doc_common.h"
 #include "doc_errno.h"
 
 namespace DocumentDB {
-Collection::Collection(std::string name, KvStoreExecutor *executor) : name_(name), executor_(executor)
+Collection::Collection(std::string name, KvStoreExecutor *executor) : name_(COLL_PREFIX + name), executor_(executor)
 {
 }
 

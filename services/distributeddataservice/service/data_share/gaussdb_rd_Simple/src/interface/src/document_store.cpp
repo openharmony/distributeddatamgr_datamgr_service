@@ -59,7 +59,7 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
     std::string oriOptStr;
     errCode = executor_->GetCollectionOption(name, oriOptStr);
     if (errCode == -E_NOT_FOUND) {
-        executor_->SetCollectionOption(name, option);
+        executor_->SetCollectionOption(name, collOption.ToString());
         errCode = E_OK;
     } else {
         CollectionOption oriOption = CollectionOption::ReadOption(oriOptStr, errCode);
@@ -72,10 +72,31 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
     return errCode;
 }
 
-int DocumentStore::DropCollection(const std::string &name, int flag)
+int DocumentStore::DropCollection(const std::string &name, int flags)
 {
-    executor_->DropCollection(name, flag);
-    return E_OK;
+    if (!CheckCommon::CheckCollectionName(name)) {
+        GLOGE("Check collection name invalid.");
+        return -E_INVALID_ARGS;
+    }
+
+    if (flags != 0 && flags != IGNORE_NON_EXIST_TABLE) {
+        GLOGE("Check flags invalid.");
+        return -E_INVALID_ARGS;
+    }
+
+    bool ignoreNonExists = (flags == IGNORE_NON_EXIST_TABLE);
+    int errCode = executor_->DropCollection(name, ignoreNonExists);
+    if (errCode != E_OK) {
+        GLOGE("Drop collection failed. %d", errCode);
+        return errCode;
+    }
+
+    errCode = executor_->CleanCollectionOption(name);
+    if (errCode != E_OK) {
+        GLOGE("Clean collection option failed. %d", errCode);
+    }
+
+    return errCode;
 }
 
 int DocumentStore::UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update,

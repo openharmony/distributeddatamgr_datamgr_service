@@ -36,6 +36,8 @@ int TrasnferDocErr(int err)
             return GRD_INVALID_CONFIG_VALUE;
         case -E_COLLECTION_CONFLICT:
             return GRD_COLLECTION_CONFLICT;
+        case -E_NO_DATA:
+            return GRD_NO_DATA;
         default:
             return GRD_INNER_ERR;
     }

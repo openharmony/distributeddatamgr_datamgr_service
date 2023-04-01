@@ -52,7 +52,7 @@ typedef struct Query {
  * @brief Flags for create and drop collection
  */
 #define IGNORE_EXIST_TABLE 1
-#define IGNORE_NOT_EXIST_TABLE 1
+#define IGNORE_NON_EXIST_TABLE 1
 
 #define IGNORE_DOC_APPEND 0
 #define IGNORE_DOC_REPLACE 1

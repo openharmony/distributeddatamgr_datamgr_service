@@ -33,12 +33,14 @@ public:
 
     int PutData(const std::string &collName, const Key &key, const Value &value) override;
     int GetData(const std::string &collName, const Key &key, Value &value) const override;
+    int DelData(const std::string &collName, const Key &key) override;
 
     int CreateCollection(const std::string &name, bool ignoreExists) override;
-    int DropCollection(const std::string &name, bool ignoreNotExists) override;
+    int DropCollection(const std::string &name, bool ignoreNonExists) override;
 
     int GetCollectionOption(const std::string &name, std::string &option) override;
     int SetCollectionOption(const std::string &name, const std::string &option) override;
+    int CleanCollectionOption(const std::string &name) override;
 
 private:
     bool IsCollectionExists(const std::string &name, int &errCode);

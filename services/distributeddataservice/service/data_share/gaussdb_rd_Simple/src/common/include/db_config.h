@@ -34,7 +34,7 @@ public:
 private:
     DBConfig() = default;
 
-    std::string configStr_;
+    std::string configStr_ = {};
     int32_t pageSize_ = 4;
     uint32_t redoFlushByTrx_ = 0;
     uint32_t redoPubBufSize_ = 1024;

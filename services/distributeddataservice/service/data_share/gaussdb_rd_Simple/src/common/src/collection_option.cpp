@@ -61,12 +61,18 @@ CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &er
 
     CollectionOption option;
     option.maxDoc_ = static_cast<uint32_t>(maxDocValue.intValue);
+    option.option_ = optStr;
     return option;
 }
 
 uint32_t CollectionOption::GetMaxDoc() const
 {
     return maxDoc_;
+}
+
+std::string CollectionOption::ToString() const
+{
+    return option_;
 }
 
 bool CollectionOption::operator==(const CollectionOption &targetOption) const

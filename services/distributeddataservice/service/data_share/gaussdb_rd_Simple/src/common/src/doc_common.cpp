@@ -83,5 +83,4 @@ bool CheckCommon::CheckDocument(const std::string &document)
 {
     return true;
 }
-
 } // namespace DocumentDB
