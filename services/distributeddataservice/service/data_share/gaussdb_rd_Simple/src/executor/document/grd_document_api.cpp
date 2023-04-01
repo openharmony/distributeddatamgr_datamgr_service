@@ -47,7 +47,12 @@ int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, co
     if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;
     }
-    return db->store_->UpdateDocument(collectionName, filter, update, flags);
+
+    std::string name = (collectionName == nullptr ? "" : collectionName);
+    std::string filterStr = (filter == nullptr ? "" : filter);
+    std::string updateStr = (update == nullptr ? "" : update);
+    int ret = db->store_->UpdateDocument(name, filterStr, updateStr, flags);
+    return TrasnferDocErr(ret);
 }
 
 int GRD_UpSertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, unsigned int flags)
@@ -55,5 +60,10 @@ int GRD_UpSertDoc(GRD_DB *db, const char *collectionName, const char *filter, co
     if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;
     }
-    return db->store_->UpsertDocument(collectionName, filter, document, flags);
+
+    std::string name = (collectionName == nullptr ? "" : collectionName);
+    std::string filterStr = (filter == nullptr ? "" : filter);
+    std::string documentStr = (document == nullptr ? "" : document);
+    int ret = db->store_->UpsertDocument(name, filterStr, documentStr, flags);
+    return TrasnferDocErr(ret);
 }

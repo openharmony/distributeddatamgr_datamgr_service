@@ -37,14 +37,13 @@ public:
 
     int CreateCollection(const std::string &name, bool ignoreExists) override;
     int DropCollection(const std::string &name, bool ignoreNonExists) override;
+    bool IsCollectionExists(const std::string &name, int &errCode) override;
 
     int GetCollectionOption(const std::string &name, std::string &option) override;
     int SetCollectionOption(const std::string &name, const std::string &option) override;
     int CleanCollectionOption(const std::string &name) override;
 
 private:
-    bool IsCollectionExists(const std::string &name, int &errCode);
-;
     sqlite3 *dbHandle_ = nullptr;
 };
 } // DocumentDB

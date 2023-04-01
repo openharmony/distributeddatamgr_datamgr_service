@@ -30,7 +30,7 @@ public:
     int GetDocument(const Key &key, Value &document) const;
     int DeleteDocument(const Key &key);
 
-    int UpsertDocument(const Key &key, Value &document);
+    int UpsertDocument(const std::string &id, const std::string &document, bool isReplace = true);
     int UpdateDocument(const Key &key, Value &update);
 private:
     std::string name_;

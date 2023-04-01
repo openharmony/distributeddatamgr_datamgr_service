@@ -106,13 +106,26 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
 }
 
 int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document,
-    int flag)
+    int flags)
 {
+    if (!CheckCommon::CheckCollectionName(collection)) {
+        GLOGE("Check collection name invalid.");
+        return -E_INVALID_ARGS;
+    }
+
+    // TODO:: check filter
+
+    // TODO:: check document
+
+    if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
+        GLOGE("Check flags invalid.");
+        return -E_INVALID_ARGS;
+    }
+
     auto coll = Collection(collection, executor_);
 
-    Key key(filter.begin(), filter.end());
-    Value value(document.begin(), document.end());
-
-    return coll.PutDocument(key, value);
+    std::string docId(filter.begin(), filter.end());
+    bool isReplace = (flags & GRD_DOC_REPLACE == GRD_DOC_REPLACE);
+    return coll.UpsertDocument(docId, document, isReplace);
 }
 } // namespace DocumentDB

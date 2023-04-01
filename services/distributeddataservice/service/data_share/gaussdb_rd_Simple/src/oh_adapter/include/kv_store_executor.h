@@ -30,6 +30,7 @@ public:
 
     virtual int CreateCollection(const std::string &name, bool ignoreExists) = 0;
     virtual int DropCollection(const std::string &name, bool ignoreNonExists) = 0;
+    virtual bool IsCollectionExists(const std::string &name, int &errCode) = 0;
 
     virtual int GetCollectionOption(const std::string &name, std::string &option) = 0;
     virtual int SetCollectionOption(const std::string &name, const std::string &option) = 0;

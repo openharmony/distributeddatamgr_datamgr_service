@@ -20,7 +20,6 @@
 #include <string>
 
 namespace DocumentDB {
-
 class CollectionOption final {
 public:
     static CollectionOption ReadOption(const std::string &optStr, int &errCode);
