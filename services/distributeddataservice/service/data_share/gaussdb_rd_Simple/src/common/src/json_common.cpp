@@ -26,8 +26,7 @@ ResultValue JsonCommon::GetValueByFiled(JsonObject *node, const std::string& fil
         return ResultValue();
     }
     while (node != nullptr) {
-        if (node->GetItemFiled() == filed)
-          {
+        if (node->GetItemFiled() == filed) {
             auto itemValue = node->GetItemValue();
             return itemValue;
         }
@@ -41,11 +40,11 @@ ResultValue JsonCommon::GetValueByFiled(JsonObject *node, const std::string& fil
 }
 
 int JsonCommon::CheckLeafNode(JsonObject *node, std::vector<ResultValue> &leafValue)
-{  
+{
     if (node->GetChild().IsNull() == true) {
         auto itemValue = node->GetItemValue();
         leafValue.emplace_back(itemValue);
-    } 
+    }
     if (node->GetChild().IsNull() != true) {
         auto nodeNew = node->GetChild();
         CheckLeafNode(&nodeNew, leafValue);
@@ -68,8 +67,8 @@ bool JsonCommon::CheckNode(JsonObject *node, std::set<std::string> filedSet, boo
     if (errFlag == false) {
         return false;
     }
-    std::string fieldName; 
-    if (node->GetItemValue().valueType != ResultValue::ValueType::VALUE_NULL) {
+    std::string fieldName;
+    if (node->GetItemValue().GetValueType() != ResultValue::ValueType::VALUE_NULL) {
         fieldName = node->GetItemFiled();
         if (filedSet.find(fieldName) == filedSet.end()) {
             filedSet.insert(fieldName);
@@ -83,7 +82,7 @@ bool JsonCommon::CheckNode(JsonObject *node, std::set<std::string> filedSet, boo
                 errFlag = false;
                 return false;
             }
-        } 
+        }
     }
     if (node->GetChild().IsNull() != true) {
         auto nodeNew = node->GetChild();
@@ -93,13 +92,14 @@ bool JsonCommon::CheckNode(JsonObject *node, std::set<std::string> filedSet, boo
     if (node->GetNext().IsNull() != true) {
         auto nodeNew = node->GetNext();
         CheckNode(&nodeNew, filedSet, errFlag);
-    } 
+    }
     return errFlag;
 }
 
 bool JsonCommon::CheckJsonField(const std::string &data) {
-    JsonObject jsonObj;
-    if (jsonObj.Init(data) != E_OK) {
+    int errCode = E_OK;
+    JsonObject jsonObj = JsonObject::Parse(data, errCode);
+    if (errCode != E_OK) {
         return false;
     }
     std::set<std::string> filedSet;
