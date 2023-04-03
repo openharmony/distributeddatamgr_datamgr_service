@@ -102,10 +102,10 @@ JsonObject JsonObject::GetObjectItem(const std::string &field, bool caseSensitiv
     }
     JsonObject item;
     if (caseSensitive) {
-        cJSON *cjson_item = cJSON_GetObjectItemCaseSensitive(cjson_, field.c_str());
+        cJSON *cjsonItem = cJSON_GetObjectItemCaseSensitive(cjson_, field.c_str());
     } else {
-        cJSON *cjson_item = cJSON_GetObjectItem(cjson_, field.c_str());
-        item.cjson_ = cjson_item;
+        cJSON *cjsonItem = cJSON_GetObjectItem(cjson_, field.c_str());
+        item.cjson_ = cjsonItem;
     }
     return item;
 }
@@ -116,11 +116,11 @@ JsonObject JsonObject::GetArrayItem(const int index)
         return JsonObject();
     }
     JsonObject item;
-    auto cjson_item = cJSON_GetArrayItem(cjson_, index);
-    if (cjson_item == nullptr) {
+    auto cjsonItem = cJSON_GetArrayItem(cjson_, index);
+    if (cjsonItem == nullptr) {
         return item;
     }
-    item.cjson_ = cjson_item;
+    item.cjson_ = cjsonItem;
     return item;
 }
 
@@ -167,46 +167,46 @@ ResultValue JsonObject::GetItemValue()
     ResultValue value;
     switch (cjson_->type) {
         case cJSON_False: {
-                value.value_type =  ResultValue::ValueType::VALUE_FALSE;
+                value.valueType =  ResultValue::ValueType::VALUE_FALSE;
             }
             break;
         case cJSON_True: 
             {
-                value.value_type =  ResultValue::ValueType::VALUE_TRUE;
+                value.valueType =  ResultValue::ValueType::VALUE_TRUE;
             }
             break;
         case cJSON_NULL: 
             {
-                value.value_type =  ResultValue::ValueType::VALUE_NULL;
+                value.valueType =  ResultValue::ValueType::VALUE_NULL;
             }
             break;
         case cJSON_Number: 
             {
-                value.value_type =  ResultValue::ValueType::VALUE_NUMBER;
-                value.value_number = cjson_->valuedouble;
+                value.valueType =  ResultValue::ValueType::VALUE_NUMBER;
+                value.valueNumber = cjson_->valuedouble;
             }
             break;
         case cJSON_String: 
             {
-                value.value_type =  ResultValue::ValueType::VALUE_STRING;
-                value.value_string = cjson_->valuestring;
+                value.valueType =  ResultValue::ValueType::VALUE_STRING;
+                value.valueString = cjson_->valuestring;
             }
             break;
         case cJSON_Array: 
             {
-                value.value_type =  ResultValue::ValueType::VALUE_ARRAY;
+                value.valueType =  ResultValue::ValueType::VALUE_ARRAY;
                 if (GetChild().IsNull() != true) {
                     auto item = GetChild();
-                    value.value_Object = &item;
+                    value.valueObject = &item;
                 }
             }
             break;
         case cJSON_Object: 
             {
-                value.value_type =  ResultValue::ValueType::VALUE_OBJECT;
+                value.valueType =  ResultValue::ValueType::VALUE_OBJECT;
                 if (GetChild().IsNull() != true) {
                     auto item = GetChild();
-                    value.value_Object = &item;
+                    value.valueObject = &item;
                 }
             }
             break;
@@ -228,34 +228,34 @@ std::string JsonObject::GetItemFiled()
     return cjson_->string;
 }
 
-JsonObject JsonObject::FindItem(const std::vector<std::string> json_path)
+JsonObject JsonObject::FindItem(const std::vector<std::string> jsonPath)
 {
-    cJSON *cJsondata_item = cjson_;
-    cJSON *cJsondata_temp;
-    if (json_path.size() != 0 && json_path[0] == "") {
+    cJSON *cJsondataItem = cjson_;
+    if (jsonPath.size() != 0 && jsonPath[0] == "") {
         return JsonObject();
     }
-    for (int i = 0; i < json_path.size(); i++) {
-        if (cJsondata_item->type == cJSON_Object) {
-            if (cJSON_GetObjectItem(cJsondata_item,json_path[i].c_str()) == nullptr) {
+    for (int i = 0; i < jsonPath.size(); i++) {
+        if (cJsondataItem->type == cJSON_Object) {
+            if (cJSON_GetObjectItem(cJsondataItem,jsonPath[i].c_str()) == nullptr) {
                 return JsonObject();
             }
-            cJsondata_temp = cJSON_GetObjectItem(cJsondata_item,json_path[i].c_str());
-            cJsondata_item = cJsondata_temp;
+            cJSON *cJsondataTemp;
+            cJsondataTemp = cJSON_GetObjectItem(cJsondataItem,jsonPath[i].c_str());
+            cJsondataItem = cJsondataTemp;
         }
-        if (cJsondata_item->type == cJSON_Array) {
+        if (cJsondataItem->type == cJSON_Array) {
             int nums = 0;
-            for (int j = 0; j < json_path[i].size(); j++) {
-                if (json_path[i][j]-'0' > 9 || json_path[i][j] - '0' < 0 || 
-                    json_path[i][j] - '0' > cJSON_GetArraySize(cJsondata_item)) {
+            for (int j = 0; j < jsonPath[i].size(); j++) {
+                if (jsonPath[i][j]-'0' > 9 || jsonPath[i][j] - '0' < 0 || 
+                    jsonPath[i][j] - '0' > cJSON_GetArraySize(cJsondataItem)) {
                     break;
                 }
-                auto GetArrayret = cJSON_GetArrayItem(cJsondata_item, json_path[i][j]-'0');
-                if (typeid(GetArrayret) == typeid(cJSON*)) {
-                    cJsondata_item = GetArrayret;
+                auto GetArrayRet = cJSON_GetArrayItem(cJsondataItem, jsonPath[i][j]-'0');
+                if (typeid(GetArrayRet) == typeid(cJSON*)) {
+                    cJsondataItem = GetArrayRet;
                 }
                 else {
-                    if ( i != json_path.size() - 1) {
+                    if ( i != jsonPath.size() - 1) {
                         GLOGD("[cjson_object]=====>Patharg wrong");
                     }
                     else {
@@ -267,14 +267,14 @@ JsonObject JsonObject::FindItem(const std::vector<std::string> json_path)
         
     }
     JsonObject item;
-    item.cjson_ = cJsondata_item;
+    item.cjson_ = cJsondataItem;
     return item;
 }
 
 int JsonObject::DeleteItemOnTarget(std::vector<std::string> &path)
 {
-    cJSON *node_father;
-    cJSON *cJsondata_root;
+    cJSON *nodeFather;
+    cJSON *cJsondataRoot;
     std::string lastString;
     if (path.size()>0) {
         lastString = path.back();
@@ -285,39 +285,39 @@ int JsonObject::DeleteItemOnTarget(std::vector<std::string> &path)
             if  (cjsonObj.IsNull() == true) {
                 return E_OK;
             }
-            node_father = cjsonObj.cjson_;
-            cJsondata_root = cjsonObj.cjson_;
+            nodeFather = cjsonObj.cjson_;
+            cJsondataRoot = cjsonObj.cjson_;
             path.emplace_back(lastString);
         }
         else {
-            std::vector<std::string> forePath;
+            std::vector<std::string> fatherPath;
             for (int i = 0; i < path.size() - 1; i++) {
-                forePath.emplace_back(path[i]);
+                fatherPath.emplace_back(path[i]);
             }
-            auto foreObj = FindItem(forePath);
+            auto foreObj = FindItem(fatherPath);
             if (foreObj.IsNull() == true) {
                 return E_OK;
             }
-            cJsondata_root = foreObj.cjson_;
+            cJsondataRoot = foreObj.cjson_;
             auto cjsonObj = FindItem(path);     
             if (cjsonObj.IsNull() == true) {
                 return E_OK;
             }  
-            node_father = cjsonObj.cjson_;
+            nodeFather = cjsonObj.cjson_;
             path.emplace_back(lastString);
         }
     }
-    if (node_father->type == cJSON_Object) {
-        if (cJSON_GetObjectItem(node_father, lastString.c_str()) != nullptr) {
-            cJSON_DeleteItemFromObject(node_father, lastString.c_str());
+    if (nodeFather->type == cJSON_Object) {
+        if (cJSON_GetObjectItem(nodeFather, lastString.c_str()) != nullptr) {
+            cJSON_DeleteItemFromObject(nodeFather, lastString.c_str());
         }
         else {
             GLOGE("no item that can be deleted");
         }
     }
-    if (node_father->type == cJSON_Array) {
-        if (cJSON_GetArrayItem(node_father, lastString[0] - '0') != nullptr) {
-            cJSON_DeleteItemFromArray(node_father, lastString[0] - '0');
+    if (nodeFather->type == cJSON_Array) {
+        if (cJSON_GetArrayItem(nodeFather, lastString[0] - '0') != nullptr) {
+            cJSON_DeleteItemFromArray(nodeFather, lastString[0] - '0');
         }
         else {
             GLOGE("no item that can be deleted");

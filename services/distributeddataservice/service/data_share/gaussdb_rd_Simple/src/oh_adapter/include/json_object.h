@@ -28,10 +28,10 @@ class ResultValue {
 public:
     ResultValue() {};
     ResultValue(const ResultValue& newValue) {
-        value_number = newValue.value_number;
-        value_string = newValue.value_string;
-        value_type = newValue.value_type;
-        value_Object = newValue.value_Object;
+        valueNumber = newValue.valueNumber;
+        valueString = newValue.valueString;
+        valueType = newValue.valueType;
+        valueObject = newValue.valueObject;
     }
     enum class ValueType {
         VALUE_FALSE,
@@ -42,10 +42,10 @@ public:
         VALUE_ARRAY,
         VALUE_OBJECT
     };
-    int value_number;
-    std::string value_string;
-    ValueType value_type = ValueType::VALUE_NULL;
-    JsonObject *value_Object = nullptr; 
+    int valueNumber;
+    std::string valueString;
+    ValueType valueType = ValueType::VALUE_NULL;
+    JsonObject *valueObject = nullptr; 
 };
 
 class JsonObject {
@@ -63,7 +63,7 @@ public:
     int DeleteItemFromObject(const std::string &field);
     ResultValue GetItemValue();
     std::string GetItemFiled();
-    JsonObject FindItem(const std::vector<std::string> json_path);
+    JsonObject FindItem(const std::vector<std::string> jsonPath);
     int DeleteItemOnTarget(std::vector<std::string> &path);
     bool IsNull();
 private:

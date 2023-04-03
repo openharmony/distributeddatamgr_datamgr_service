@@ -30,11 +30,11 @@ public:
     
     static ResultValue GetValueByFiled(JsonObject *node, const std::string& filed);
     static bool CheckJsonField(const std::string &data);
-    static int ParseNode(JsonObject *Node, std::vector<std::string> onePath, std::vector<std::vector<std::string>> &parsePath, bool isFirstFloor);
+    static int ParseNode(JsonObject *Node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor);
     static std::vector<std::vector<std::string>> ParsePath(JsonObject* node);
     static std::vector<ResultValue>  GetLeafValue(JsonObject *node);
 private: 
-    static bool CheckNode(JsonObject *Node, std::set<std::string> setString, bool &errflag);
+    static bool CheckNode(JsonObject *Node, std::set<std::string> filedSet, bool &errFlag);
     static int CheckLeafNode(JsonObject *Node, std::vector<ResultValue> &leafValue);
 };
 } // DocumentDB
