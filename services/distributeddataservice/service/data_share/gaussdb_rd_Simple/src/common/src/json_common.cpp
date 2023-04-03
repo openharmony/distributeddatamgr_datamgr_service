@@ -20,51 +20,140 @@
 #include "securec.h"
 
 namespace DocumentDB {
-ResultValue* JsonCommon::GetValue(CjsonObject *root, std::vector<std::string> path) 
+ResultValue JsonCommon::GetValueByFiled(JsonObject *node, const std::string& filed)
 {
-    return nullptr;
+    if (node == nullptr) {
+        return ResultValue();
+    }
+    while (node != nullptr) {
+        if (node->GetItemFiled() == filed)
+          {
+            auto itemValue = node->GetItemValue();
+            return itemValue;
+        }
+        if (node->GetNext().IsNull() == true) {
+            return ResultValue();
+        }
+        auto nodeNew = node->GetNext();
+        node = &nodeNew;
+    }
+    return ResultValue();
 }
 
-int JsonCommon::GetIdValue(CjsonObject *root, std::vector<std::string> &id) 
-{
-    auto &node = root;
-    if (root == nullptr) {
-        return E_OK;
+int JsonCommon::CheckLeafNode(JsonObject *node, std::vector<ResultValue> &leafValue)
+{  
+    if (node->GetChild().IsNull() == true) {
+        auto itemValue = node->GetItemValue();
+        leafValue.emplace_back(itemValue);
+    } 
+    if (node->GetChild().IsNull() != true) {
+        auto nodeNew = node->GetChild();
+        CheckLeafNode(&nodeNew, leafValue);
     }
-    while (node->GetNext() != nullptr) {
-        if (node->GetItemFiled() == "_id") {
-            auto item_value = node->GetItemValue();
-            if (item_value->value_type != ResultValue::ValueType::VALUE_STRING) {
-                return E_ERROR;
-            }
-            id.emplace_back(item_value->value_string);
-        }
-        node = node->GetNext();
+    if (node->GetNext().IsNull() != true) {
+        auto nodeNew = node->GetNext();
+        CheckLeafNode(&nodeNew, leafValue);
     }
     return E_OK;
 }
 
-bool JsonCommon::CheckIsJson(const std::string &data) {
-    CjsonObject cjsonObj;
-    if (cjsonObj.Parse(data) == E_ERROR) {
+std::vector<ResultValue>  JsonCommon::GetLeafValue(JsonObject *node)
+{
+    std::vector<ResultValue> leafValue;
+    CheckLeafNode(node, leafValue);
+    return leafValue;
+}
+
+bool JsonCommon::CheckNode(JsonObject *node, std::set<std::string> filedSet, bool &errFlag) {
+    if (errFlag == false) {
         return false;
     }
-    return true;
-}
-
-int JsonCommon::GetJsonDeep(const std::string &data) {
-    int lens = 0;
-    int deep = 0;
-    for (int i = 0; i < data.size(); i++) {
-        if (data[i] == '[' || data[i] == '{') {
-            lens++;
+    std::string fieldName; 
+    if (node->GetItemValue().valueType != ResultValue::ValueType::VALUE_NULL) {
+        fieldName = node->GetItemFiled();
+        if (filedSet.find(fieldName) == filedSet.end()) {
+            filedSet.insert(fieldName);
         }
-        else if (data[i] == ']' || data[i] == '}') {
-            deep = std::max(deep, lens);
-            lens--;
+        else {
+            errFlag = false;
+            return false;
         }
+        for (int i = 0; i < fieldName.size(); i++) {
+            if (!(('a'<=fieldName[i] && fieldName[i]<='z')|| ('A'<=fieldName[i] && fieldName[i]<='Z') || ('0'<=fieldName[i] && fieldName[i]<='9') || '_' == fieldName[i])) {
+                errFlag = false;
+                return false;
+            }
+        } 
     }
-    return deep;
+    if (node->GetChild().IsNull() != true) {
+        auto nodeNew = node->GetChild();
+        std::set<std::string> newFiledSet;
+        CheckNode(&nodeNew, newFiledSet, errFlag);
+    }
+    if (node->GetNext().IsNull() != true) {
+        auto nodeNew = node->GetNext();
+        CheckNode(&nodeNew, filedSet, errFlag);
+    } 
+    return errFlag;
 }
 
+bool JsonCommon::CheckJsonField(const std::string &data) {
+    JsonObject jsonObj;
+    if (jsonObj.Init(data) != E_OK) {
+        return false;
+    }
+    std::set<std::string> filedSet;
+    bool errFlag = true;
+    return CheckNode(&jsonObj, filedSet, errFlag);
+}
+
+int JsonCommon::ParseNode(JsonObject* node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor)
+{
+    std::vector<std::string> fatherPath;
+    if (isFirstFloor) {
+        std::string tempParseName;
+        std::vector<std::string> allFiledsName;
+        std::string priFieldName = node->GetItemFiled();
+        for (int j = 0; j < priFieldName.size(); j++) {
+            if (priFieldName[j] != '.') {
+                tempParseName = tempParseName + priFieldName[j];
+            }
+            if (priFieldName[j] == '.' || j == priFieldName.size() - 1) {
+                allFiledsName.emplace_back(tempParseName);
+                tempParseName.clear();
+            }
+        }
+        fatherPath = singlePath;
+        singlePath.insert(singlePath.end(), allFiledsName.begin(), allFiledsName.end());
+    } else {
+        std::vector<std::string> allFiledsName;
+        allFiledsName.emplace_back(node->GetItemFiled());
+        fatherPath = singlePath;
+        singlePath.insert(singlePath.end(), allFiledsName.begin(), allFiledsName.end());
+    }
+    if (node->GetChild().IsNull() != true && node->GetChild().GetItemFiled() != "") {
+        auto nodeNew = node->GetChild();
+        ParseNode(&nodeNew, singlePath, resultPath, false);
+    }
+    else {
+        resultPath.emplace_back(singlePath);
+    }
+    if (node->GetNext().IsNull() != true) {
+        auto nodeNew = node->GetNext();
+        ParseNode(&nodeNew, fatherPath, resultPath, isFirstFloor);
+    }
+    return 0;
+}
+
+std::vector<std::vector<std::string>> JsonCommon::ParsePath(JsonObject* root)
+{
+    std::vector<std::vector<std::string>> resultPath;
+    auto projectionJson = root->GetChild();
+    if (projectionJson.IsNull() == true) {
+        GLOGE("projectionJson is null");
+    }
+    std::vector<std::string> singlePath;
+    ParseNode(&projectionJson, singlePath, resultPath, true);
+    return resultPath;
+}
 } // namespace DocumentDB

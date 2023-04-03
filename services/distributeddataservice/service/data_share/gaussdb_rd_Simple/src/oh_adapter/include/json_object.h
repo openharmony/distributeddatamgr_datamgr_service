@@ -17,12 +17,22 @@
 #define JSON_OBJECT_H
 
 #include <string>
+#include <vector>
+#include <typeinfo>
+
+#include "cJSON.h"
 
 namespace DocumentDB {
-
 class JsonObject;
 class ResultValue {
 public:
+    ResultValue() {};
+    ResultValue(const ResultValue& newValue) {
+        valueNumber = newValue.valueNumber;
+        valueString = newValue.valueString;
+        valueType = newValue.valueType;
+        valueObject = newValue.valueObject;
+    }
     enum class ValueType {
         VALUE_FALSE,
         VALUE_TRUE,
@@ -32,25 +42,35 @@ public:
         VALUE_ARRAY,
         VALUE_OBJECT
     };
-    int value_number;
-    std::string value_string;
-    ValueType value_type = ValueType::VALUE_NULL;
-    JsonObject *value_Object = nullptr; 
+    int valueNumber;
+    std::string valueString;
+    ValueType valueType = ValueType::VALUE_NULL;
+    JsonObject *valueObject = nullptr; 
 };
 
 class JsonObject {
 public:
-    JsonObject () = default;
-    virtual ~JsonObject () = default;
+    JsonObject();
+    JsonObject(const JsonObject& newObj);
+    ~JsonObject ();
 
-    virtual int Parse(const std::string &str) = 0;
-    virtual std::string Print() = 0;
-    virtual JsonObject* GetObjectItem(const std::string &field) = 0;
-    virtual JsonObject* GetArrayItem(const int index) = 0;
-    virtual ResultValue* GetItemValue() = 0;
-    virtual std::string GetItemFiled() = 0;
-    virtual int DeleteItemFromObject(const std::string &field) = 0;
-    virtual int Delete() = 0;
+    int Init(const std::string &str);
+    std::string Print();
+    JsonObject GetObjectItem(const std::string &field, bool caseSensitive);
+    JsonObject GetArrayItem(const int index);
+    JsonObject GetNext();
+    JsonObject GetChild();
+    int DeleteItemFromObject(const std::string &field);
+    ResultValue GetItemValue();
+    std::string GetItemFiled();
+    JsonObject FindItem(const std::vector<std::string> jsonPath);
+    int DeleteItemOnTarget(std::vector<std::string> &path);
+    bool IsNull();
+private:
+    int GetDeep(cJSON *cjson, int deep, int &maxDeep);
+    cJSON *cjson_;
+    bool isClone_ = false;
 };
 } // DocumentDB
 #endif // JSON_OBJECT_H
+
