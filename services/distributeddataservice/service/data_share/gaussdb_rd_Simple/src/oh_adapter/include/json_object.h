@@ -17,12 +17,22 @@
 #define JSON_OBJECT_H
 
 #include <string>
+#include <vector>
+#include <typeinfo>
+
+#include "cJSON.h"
 
 namespace DocumentDB {
-
 class JsonObject;
 class ResultValue {
 public:
+    ResultValue() {};
+    ResultValue(const ResultValue& newValue) {
+        value_number = newValue.value_number;
+        value_string = newValue.value_string;
+        value_type = newValue.value_type;
+        value_Object = newValue.value_Object;
+    }
     enum class ValueType {
         VALUE_FALSE,
         VALUE_TRUE,
@@ -40,17 +50,27 @@ public:
 
 class JsonObject {
 public:
-    JsonObject () = default;
-    virtual ~JsonObject () = default;
+    JsonObject();
+    JsonObject(const JsonObject& newObj);
+    ~JsonObject ();
 
-    virtual int Parse(const std::string &str) = 0;
-    virtual std::string Print() = 0;
-    virtual JsonObject* GetObjectItem(const std::string &field) = 0;
-    virtual JsonObject* GetArrayItem(const int index) = 0;
-    virtual ResultValue* GetItemValue() = 0;
-    virtual std::string GetItemFiled() = 0;
-    virtual int DeleteItemFromObject(const std::string &field) = 0;
-    virtual int Delete() = 0;
+    int Init(const std::string &str);
+    std::string Print();
+    JsonObject GetObjectItem(const std::string &field, bool caseSensitive);
+    JsonObject GetArrayItem(const int index);
+    JsonObject GetNext();
+    JsonObject GetChild();
+    int DeleteItemFromObject(const std::string &field);
+    ResultValue GetItemValue();
+    std::string GetItemFiled();
+    JsonObject FindItem(const std::vector<std::string> json_path);
+    int DeleteItemOnTarget(std::vector<std::string> &path);
+    bool IsNull();
+private:
+    int GetDeep(cJSON *cjson, int deep, int &maxDeep);
+    cJSON *cjson_;
+    bool isClone_ = false;
 };
 } // DocumentDB
 #endif // JSON_OBJECT_H
+

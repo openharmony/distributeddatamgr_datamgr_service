@@ -18,7 +18,8 @@
 
 #include <cstdint>
 #include <vector>
-#include "cjson_object.h"
+#include <set>
+#include "json_object.h"
 
 namespace DocumentDB {
 class JsonCommon
@@ -27,11 +28,14 @@ public:
     JsonCommon() = default;
     ~JsonCommon();
     
-    ResultValue* GetValue(CjsonObject *root, std::vector<std::string> path);
-    static int GetIdValue(CjsonObject *root, std::vector<std::string> &id);
-    static bool CheckIsJson(const std::string &data);
-    static int GetJsonDeep(const std::string &data);
+    static ResultValue GetValueByFiled(JsonObject *node, const std::string& filed);
+    static bool CheckJsonField(const std::string &data);
+    static int ParseNode(JsonObject *Node, std::vector<std::string> onePath, std::vector<std::vector<std::string>> &parsePath, bool isFirstFloor);
+    static std::vector<std::vector<std::string>> ParsePath(JsonObject* node);
+    static std::vector<ResultValue>  GetLeafValue(JsonObject *node);
+private: 
+    static bool CheckNode(JsonObject *Node, std::set<std::string> setString, bool &errflag);
+    static int CheckLeafNode(JsonObject *Node, std::vector<ResultValue> &leafValue);
 };
-
 } // DocumentDB
 #endif // JSON_COMMON_H
