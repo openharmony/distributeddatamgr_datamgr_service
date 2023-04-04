@@ -26,5 +26,13 @@ constexpr int E_UNFINISHED = E_BASE + 7;
 constexpr int E_OUT_OF_MEMORY = E_BASE + 8;
 constexpr int E_SECUREC_ERROR = E_BASE + 9;
 constexpr int E_SYSTEM_API_FAIL = E_BASE + 10;
+constexpr int E_FILE_OPERATION = E_BASE + 11;
+constexpr int E_OVER_LIMIT = E_BASE + 12;
+constexpr int E_INVALID_CONFIG_VALUE = E_BASE + 13;
+constexpr int E_NOT_FOUND = E_BASE + 14;
+constexpr int E_COLLECTION_CONFLICT = E_BASE + 15;
+constexpr int E_NO_DATA = E_BASE + 16;
+constexpr int E_INVALID_JSON_FORMAT = E_BASE + 40;
+constexpr int E_JSON_PATH_NOT_EXISTS = E_BASE + 41;
 } // DocumentDB
 #endif // DOC_ERRNO_H

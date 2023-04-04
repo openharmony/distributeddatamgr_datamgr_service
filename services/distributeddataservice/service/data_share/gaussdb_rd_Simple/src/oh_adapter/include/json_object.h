@@ -23,53 +23,77 @@
 #include "cJSON.h"
 
 namespace DocumentDB {
-class JsonObject;
-class ResultValue {
+class ValueObject {
 public:
-    ResultValue() {};
-    ResultValue(const ResultValue& newValue) {
-        valueNumber = newValue.valueNumber;
-        valueString = newValue.valueString;
-        valueType = newValue.valueType;
-        valueObject = newValue.valueObject;
-    }
     enum class ValueType {
-        VALUE_FALSE,
-        VALUE_TRUE,
-        VALUE_NULL,
+        // VALUE_INVALID = -1,
+        VALUE_NULL = 0,
+        VALUE_BOOL,
         VALUE_NUMBER,
         VALUE_STRING,
-        VALUE_ARRAY,
-        VALUE_OBJECT
     };
-    int valueNumber;
-    std::string valueString;
+
+    ValueObject() = default;
+    explicit ValueObject(bool val);
+    explicit ValueObject(double val);
+    explicit ValueObject(const char *val);
+    explicit ValueObject(const std::string &val);
+
+    ValueType GetValueType() const;
+    bool GetBoolValue() const;
+    int GetIntValue() const;
+    double GetDoubleValue() const;
+    std::string GetStringValue() const;
+
+private:
     ValueType valueType = ValueType::VALUE_NULL;
-    JsonObject *valueObject = nullptr; 
+    union {
+        bool boolValue;
+        double doubleValue;
+    };
+    std::string stringValue;
 };
+
+using ResultValue = ValueObject;
+using JsonFieldPath = std::vector<std::string>;
 
 class JsonObject {
 public:
-    JsonObject();
-    JsonObject(const JsonObject& newObj);
+    static JsonObject Parse(const std::string &jsonStr, int &errCode, bool caseSensitive = false);
+
     ~JsonObject ();
 
     int Init(const std::string &str);
+
     std::string Print();
-    JsonObject GetObjectItem(const std::string &field, bool caseSensitive);
-    JsonObject GetArrayItem(const int index);
+
+    JsonObject GetObjectItem(const std::string &field, int &errCode);
+    JsonObject GetArrayItem(int index, int &errCode);
+
     JsonObject GetNext();
     JsonObject GetChild();
+
     int DeleteItemFromObject(const std::string &field);
-    ResultValue GetItemValue();
-    std::string GetItemFiled();
-    JsonObject FindItem(const std::vector<std::string> jsonPath);
-    int DeleteItemOnTarget(std::vector<std::string> &path);
+
+    ValueObject GetItemValue() const;
+    std::string GetItemFiled() const;
+
+
+    bool IsFieldExists(const JsonFieldPath &jsonPath) const;
+    JsonObject FindItem(const JsonFieldPath &jsonPath, int &errCode) const;
+    ValueObject GetObjectByPath(const JsonFieldPath &jsonPath, int &errCode) const;
+    int DeleteItemOnTarget(const JsonFieldPath &path);
     bool IsNull();
+
 private:
-    int GetDeep(cJSON *cjson, int deep, int &maxDeep);
+    JsonObject();
+
+    int GetDeep(cJSON *cjson);
+
+
     cJSON *cjson_;
-    bool isClone_ = false;
+    bool isOwner_ = false;
+    bool caseSensitive_ = false;
 };
 } // DocumentDB
 #endif // JSON_OBJECT_H
