@@ -26,155 +26,150 @@
 namespace DocumentDB {
 
 namespace {
-bool CheckPageSizeConfig(std::shared_ptr<JsonObject> config, int32_t &pageSize, int &errCode)
+bool CheckPageSizeConfig(JsonObject config, int32_t &pageSize, int &errCode)
 {
     static const JsonFieldPath pageSizeField = {"pageSize"};
-    if (!config->IsFieldExists(pageSizeField)) {
+    if (!config.IsFieldExists(pageSizeField)) {
         return true;
     }
 
-    ValueObject configValue;
-    errCode = config->GetObjectByPath(pageSizeField, configValue); // TODO: check return code
-    if (configValue.valueType != ValueObject::ValueType::VALUE_NUMBER) {
+    ValueObject configValue = config.GetObjectByPath(pageSizeField, errCode); // TODO: check return code
+    if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of pageSize is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
     static const std::vector<int32_t> pageSizeValid = {4, 8, 16, 32, 64};
-    if (std::find(pageSizeValid.begin(), pageSizeValid.end(), configValue.intValue) == pageSizeValid.end()) {
+    if (std::find(pageSizeValid.begin(), pageSizeValid.end(), configValue.GetIntValue()) == pageSizeValid.end()) {
         GLOGE("Check DB config failed, invalid pageSize value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    pageSize = static_cast<int32_t>(configValue.intValue);
+    pageSize = static_cast<int32_t>(configValue.GetIntValue());
     return true;
 }
 
-bool CheckRedoFlushConfig(std::shared_ptr<JsonObject> config, uint32_t &redoFlush, int &errCode)
+bool CheckRedoFlushConfig(JsonObject config, uint32_t &redoFlush, int &errCode)
 {
     static const JsonFieldPath redoFlushField = {"redoFlushByTrx"};
-    if (!config->IsFieldExists(redoFlushField)) {
+    if (!config.IsFieldExists(redoFlushField)) {
         return true;
     }
 
-    ValueObject configValue;
-    config->GetObjectByPath(redoFlushField, configValue);
-    if (configValue.valueType != ValueObject::ValueType::VALUE_NUMBER) {
+    ValueObject configValue = config.GetObjectByPath(redoFlushField, errCode); // TODO:
+    if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of redoFlushByTrx is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    if (configValue.intValue != 0 && configValue.intValue != 1) {
+    if (configValue.GetIntValue() != 0 && configValue.GetIntValue() != 1) {
         GLOGE("Check DB config failed, invalid redoFlushByTrx value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    redoFlush = static_cast<uint32_t>(configValue.intValue);
+    redoFlush = static_cast<uint32_t>(configValue.GetIntValue());
     return true;
 }
 
-bool CheckRedoBufSizeConfig(std::shared_ptr<JsonObject> config, uint32_t &redoBufSize, int &errCode)
+bool CheckRedoBufSizeConfig(JsonObject config, uint32_t &redoBufSize, int &errCode)
 {
     static const JsonFieldPath redoBufSizeField = {"redoPubBufSize"};
-    if (!config->IsFieldExists(redoBufSizeField)) {
+    if (!config.IsFieldExists(redoBufSizeField)) {
         return true;
     }
 
-    ValueObject configValue;
-    config->GetObjectByPath(redoBufSizeField, configValue);
-    if (configValue.valueType != ValueObject::ValueType::VALUE_NUMBER) {
+    ValueObject configValue = config.GetObjectByPath(redoBufSizeField, errCode); // TODO:
+    if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of redoPubBufSize is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    if (configValue.intValue < 256 && configValue.intValue > 16384) {
+    if (configValue.GetIntValue() < 256 && configValue.GetIntValue() > 16384) {
         GLOGE("Check DB config failed, invalid redoPubBufSize value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    redoBufSize = static_cast<uint32_t>(configValue.intValue);
+    redoBufSize = static_cast<uint32_t>(configValue.GetIntValue());
     return true;
 }
 
-bool CheckMaxConnNumConfig(std::shared_ptr<JsonObject> config, int32_t &maxConnNum, int &errCode)
+bool CheckMaxConnNumConfig(JsonObject config, int32_t &maxConnNum, int &errCode)
 {
     static const JsonFieldPath maxConnNumField = {"maxConnNum"};
-    if (!config->IsFieldExists(maxConnNumField)) {
+    if (!config.IsFieldExists(maxConnNumField)) {
         return true;
     }
 
-    ValueObject configValue;
-    config->GetObjectByPath(maxConnNumField, configValue);
-    if (configValue.valueType != ValueObject::ValueType::VALUE_NUMBER) {
+    ValueObject configValue = config.GetObjectByPath(maxConnNumField, errCode); // TODO:
+    if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of maxConnNum is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    if (configValue.intValue < 16 || configValue.intValue > 1024) {
+    if (configValue.GetIntValue() < 16 || configValue.GetIntValue() > 1024) {
         GLOGE("Check DB config failed, invalid maxConnNum value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    maxConnNum = static_cast<int32_t>(configValue.intValue);
+    maxConnNum = static_cast<int32_t>(configValue.GetIntValue());
     return true;
 }
 
-bool CheckBufferPoolSizeConfig(std::shared_ptr<JsonObject> config, int32_t pageSize, uint32_t &redoBufSize,
+bool CheckBufferPoolSizeConfig(JsonObject config, int32_t pageSize, uint32_t &redoBufSize,
     int &errCode)
 {
     static const JsonFieldPath bufferPoolSizeField = {"bufferPoolSize"};
-    if (!config->IsFieldExists(bufferPoolSizeField)) {
+    if (!config.IsFieldExists(bufferPoolSizeField)) {
         return true;
     }
 
-    ValueObject configValue;
-    config->GetObjectByPath(bufferPoolSizeField, configValue);
-    if (configValue.valueType != ValueObject::ValueType::VALUE_NUMBER) {
+    ValueObject configValue = config.GetObjectByPath(bufferPoolSizeField, errCode); // TODO:
+    if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of bufferPoolSize is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    if (configValue.intValue < 1024 && configValue.intValue > 4 * 1024 * 1024 || configValue.intValue < pageSize * 33) {
+    if (configValue.GetIntValue() < 1024 && configValue.GetIntValue() > 4 * 1024 * 1024 ||
+        configValue.GetIntValue() < pageSize * 33) {
         GLOGE("Check DB config failed, invalid bufferPoolSize value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    redoBufSize = static_cast<uint32_t>(configValue.intValue);
+    redoBufSize = static_cast<uint32_t>(configValue.GetIntValue());
     return true;
 }
 
-bool CheckCrcCheckEnableConfig(std::shared_ptr<JsonObject> config, uint32_t &crcCheckEnable, int &errCode)
+bool CheckCrcCheckEnableConfig(JsonObject config, uint32_t &crcCheckEnable, int &errCode)
 {
     static const JsonFieldPath crcCheckEnableField = {"crcCheckEnable"};
-    if (!config->IsFieldExists(crcCheckEnableField)) {
+    if (!config.IsFieldExists(crcCheckEnableField)) {
         return true;
     }
 
-    ValueObject configValue;
-    config->GetObjectByPath(crcCheckEnableField, configValue);
-    if (configValue.valueType != ValueObject::ValueType::VALUE_NUMBER) {
+    ValueObject configValue = config.GetObjectByPath(crcCheckEnableField, errCode); // TODO:
+    if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of crcCheckEnable is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    if (configValue.intValue != 0 && configValue.intValue != 1) {
+    if (configValue.GetIntValue() != 0 && configValue.GetIntValue() != 1) {
         GLOGE("Check DB config failed, invalid crcCheckEnable value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
     }
 
-    crcCheckEnable = static_cast<uint32_t>(configValue.intValue);
+    crcCheckEnable = static_cast<uint32_t>(configValue.GetIntValue());
     return true;
 }
 
@@ -191,8 +186,7 @@ DBConfig DBConfig::ReadConfig(const std::string &confStr, int &errCode)
         errCode = -E_OVER_LIMIT;
         return {};
     }
-    std::shared_ptr<JsonObject> dbConfig;
-    errCode = JsonObject::Parse(confStr, dbConfig);
+    JsonObject dbConfig = JsonObject::Parse(confStr, errCode);
     if (errCode != E_OK) {
         GLOGE("Read DB config failed from str. %d", errCode);
         return {};

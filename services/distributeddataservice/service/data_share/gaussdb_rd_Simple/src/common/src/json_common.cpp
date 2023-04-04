@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <climits>
+#include <functional>
 
 #include "json_common.h"
 #include "doc_errno.h"
@@ -155,5 +156,62 @@ std::vector<std::vector<std::string>> JsonCommon::ParsePath(JsonObject* root)
     std::vector<std::string> singlePath;
     ParseNode(&projectionJson, singlePath, resultPath, true);
     return resultPath;
+}
+
+namespace {
+void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
+    std::function<bool (const JsonFieldPath &path, const JsonObject &father, const JsonObject &item)> foo)
+{
+    JsonObject child = obj.GetChild();
+    while(!child.IsNull()) {
+        JsonFieldPath childPath = path;
+        childPath.push_back(child.GetItemFiled());
+        if (foo != nullptr && foo(childPath, obj, child)) {
+            JsonObjectIterator(child, childPath, foo);
+        }
+        child = child.GetNext();
+    }
+    return;
+}
+
+std::string PrintJsonPath(const JsonFieldPath &path) {
+    std::string str;
+    for (const auto &field : path) {
+        str += field + ".";
+    }
+    return str;
+}
+}
+
+void JsonCommon::Append(const JsonObject &src, const JsonObject &add)
+{
+    JsonObjectIterator(add, {}, [&src](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
+        GLOGD("---->path: %s", PrintJsonPath(path).c_str());
+        JsonFieldPath patherPath = path;
+        patherPath.pop_back();
+        int errCode = E_OK;
+        if (src.IsFieldExists(path)) {
+            JsonObject srcItem = src.FindItem(path, errCode);
+            if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF) {
+                srcItem.SetItemValue(item.GetItemValue());
+                return true;
+            } else if (srcItem.GetType() == JsonObject::Type::JSON_OBJECT && item.GetType() == JsonObject::Type::JSON_OBJECT) {
+                return true;
+            } else if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY) {
+                return true;
+            } else {
+                JsonObject srcFatherItem = src.FindItem(patherPath, errCode);
+                srcFatherItem.DeleteItemFromObject(item.GetItemFiled());
+                srcFatherItem.AddItemToObject(item);
+                return false;
+            }
+        } else {
+            GLOGD("Append value to source: %s - %d.", item.GetItemFiled().c_str(), item.GetItemValue().GetIntValue());
+            GLOGD("Append valie : %s", item.Print().c_str());
+            JsonObject srcFatherItem = src.FindItem(patherPath, errCode);
+            srcFatherItem.AddItemToObject(item);
+            return false; // skip child
+        }
+    });
 }
 } // namespace DocumentDB

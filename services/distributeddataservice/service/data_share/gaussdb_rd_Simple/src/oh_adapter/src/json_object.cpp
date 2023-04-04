@@ -88,6 +88,13 @@ JsonObject::JsonObject()
 {
 }
 
+// JsonObject::JsonObject(const JsonObject &obj)
+// {
+//     this->cjson_ = cJSON_Duplicate(obj.cjson_, true);
+//     this->isOwner_ = true;
+//     this->caseSensitive_ = obj.caseSensitive_;
+// }
+
 JsonObject::~JsonObject()
 {
     if (isOwner_ == true) {
@@ -95,12 +102,22 @@ JsonObject::~JsonObject()
     }
 }
 
-bool JsonObject::IsNull()
+bool JsonObject::IsNull() const
 {
     if (cjson_ == nullptr) {
         return true;
     }
     return false;
+}
+
+JsonObject::Type JsonObject::GetType() const
+{
+    if (cjson_->type == cJSON_Object) {
+        return JsonObject::Type::JSON_OBJECT;
+    } else if (cjson_->type == cJSON_Array) {
+        return JsonObject::Type::JSON_ARRAY;
+    }
+    return JsonObject::Type::JSON_LEAF;
 }
 
 int JsonObject::GetDeep(cJSON *cjson)
@@ -140,7 +157,7 @@ int JsonObject::Init(const std::string &str)
     return E_OK;
 }
 
-std::string JsonObject::Print()
+std::string JsonObject::Print() const
 {
     if (cjson_ == nullptr) {
         return "";
@@ -187,7 +204,7 @@ JsonObject JsonObject::GetArrayItem(int index, int &errCode)
     return item;
 }
 
-JsonObject JsonObject::GetNext()
+JsonObject JsonObject::GetNext() const
 {
     if (cjson_ == nullptr) {
         return JsonObject();
@@ -201,7 +218,7 @@ JsonObject JsonObject::GetNext()
     return next;
 }
 
-JsonObject JsonObject::GetChild()
+JsonObject JsonObject::GetChild() const
 {
     if (cjson_ == nullptr) {
         return JsonObject();
@@ -221,6 +238,18 @@ int JsonObject::DeleteItemFromObject(const std::string &field)
         return E_OK;
     }
     cJSON_DeleteItemFromObjectCaseSensitive(cjson_, field.c_str());
+    return E_OK;
+}
+
+int JsonObject::AddItemToObject(const JsonObject &item)
+{
+    if (item.IsNull()) {
+        GLOGD("Add null object.");
+        return E_OK;
+    }
+
+    cJSON *cpoyItem = cJSON_Duplicate(item.cjson_, true);
+    cJSON_AddItemToObject(cjson_, item.GetItemFiled().c_str(), cpoyItem);
     return E_OK;
 }
 
@@ -251,15 +280,47 @@ ValueObject JsonObject::GetItemValue() const
     return value;
 }
 
+void JsonObject::SetItemValue(const ValueObject &value) const
+{
+    if (cjson_ == nullptr) {
+        return;
+    }
+    switch(value.GetValueType()) {
+        case ValueObject::ValueType::VALUE_NUMBER:
+            cJSON_SetNumberValue(cjson_, value.GetDoubleValue());
+            break;
+        case ValueObject::ValueType::VALUE_STRING:
+            cJSON_SetValuestring(cjson_, value.GetStringValue().c_str());
+            break;
+        default:
+            break;
+    }
+}
+
 std::string JsonObject::GetItemFiled() const
 {
     if (cjson_ == nullptr) {
         return "";
     }
+
     if (cjson_->string == nullptr) {
-        return "";
+        cJSON *tail = cjson_;
+        while(tail->next != nullptr) {
+            tail = tail->next;
+        }
+
+        int index = 0;
+        cJSON *head = cjson_;
+        while (head->prev != tail) {
+            head = head->prev;
+            index++;
+
+            if (index > 10) break;
+        }
+        return std::to_string(index);
+    } else {
+        return cjson_->string;
     }
-    return cjson_->string;
 }
 
 namespace {
@@ -294,7 +355,7 @@ cJSON *MoveToPath(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)
     for (const auto &field : jsonPath) {
         cjson = GetChild(cjson, field, caseSens);
         if (cjson == nullptr) {
-            GLOGW("Invalid json field path, no such field.");
+            GLOGW("Invalid json field path, no such field. %s", field.c_str());
         }
     }
     return cjson;
@@ -304,13 +365,18 @@ cJSON *MoveToPath(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)
 
 bool JsonObject::IsFieldExists(const JsonFieldPath &jsonPath) const
 {
-    return (MoveToPath(cjson_, jsonPath, caseSensitive_) == nullptr);
+    return (MoveToPath(cjson_, jsonPath, caseSensitive_) != nullptr);
 }
 
 JsonObject JsonObject::FindItem(const JsonFieldPath &jsonPath, int &errCode) const
 {
     if (jsonPath.empty()) {
-        return JsonObject();
+        JsonObject curr = JsonObject();
+        curr.cjson_ = cjson_;
+        curr.caseSensitive_ = caseSensitive_;
+        curr.isOwner_ = false;
+        GLOGE("return current object");
+        return curr;
     }
 
     cJSON *findItem = MoveToPath(cjson_, jsonPath, caseSensitive_);

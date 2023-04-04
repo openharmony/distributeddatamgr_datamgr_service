@@ -57,12 +57,12 @@ HWTEST_F(DocumentDBJsonObjectTest, JsonObjectTest001, TestSize.Level0)
 {
     const std::string config = R""({"a":123,"b":{"c":234,"d":"12345"}})"";
 
-    std::shared_ptr<JsonObject> conf;
-    int ret = JsonObject::Parse(config, conf);
+    int ret = E_OK;
+    JsonObject conf = JsonObject::Parse(config, ret);
     EXPECT_EQ(ret, E_OK);
 
-    ValueObject obj;
-    conf->GetObjectByPath({"b", "c"}, obj);
-    EXPECT_EQ(obj.valueType, ValueObject::ValueType::VALUE_NUMBER);
-    EXPECT_EQ(obj.intValue, 234);
+    ValueObject obj = conf.GetObjectByPath({"b", "c"}, ret);
+
+    EXPECT_EQ(obj.GetValueType(), ValueObject::ValueType::VALUE_NUMBER);
+    EXPECT_EQ(obj.GetIntValue(), 234);
 }

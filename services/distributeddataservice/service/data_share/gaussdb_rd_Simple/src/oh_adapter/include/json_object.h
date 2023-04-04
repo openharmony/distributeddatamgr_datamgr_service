@@ -66,25 +66,34 @@ public:
 
     int Init(const std::string &str);
 
-    std::string Print();
+    std::string Print() const;
 
     JsonObject GetObjectItem(const std::string &field, int &errCode);
     JsonObject GetArrayItem(int index, int &errCode);
 
-    JsonObject GetNext();
-    JsonObject GetChild();
+    JsonObject GetNext() const;
+    JsonObject GetChild() const;
 
     int DeleteItemFromObject(const std::string &field);
+    int AddItemToObject(const JsonObject &item);
 
     ValueObject GetItemValue() const;
-    std::string GetItemFiled() const;
+    void SetItemValue(const ValueObject &value) const;
 
+    std::string GetItemFiled() const;
 
     bool IsFieldExists(const JsonFieldPath &jsonPath) const;
     JsonObject FindItem(const JsonFieldPath &jsonPath, int &errCode) const;
     ValueObject GetObjectByPath(const JsonFieldPath &jsonPath, int &errCode) const;
     int DeleteItemOnTarget(const JsonFieldPath &path);
-    bool IsNull();
+    bool IsNull() const;
+
+    enum class Type {
+        JSON_LEAF,
+        JSON_OBJECT,
+        JSON_ARRAY
+    };
+    Type GetType() const;
 
 private:
     JsonObject();
@@ -92,7 +101,7 @@ private:
     int GetDeep(cJSON *cjson);
 
 
-    cJSON *cjson_;
+    cJSON *cjson_ = nullptr;
     bool isOwner_ = false;
     bool caseSensitive_ = false;
 };

@@ -31,7 +31,10 @@ constexpr int E_INVALID_CONFIG_VALUE = E_BASE + 13;
 constexpr int E_NOT_FOUND = E_BASE + 14;
 constexpr int E_COLLECTION_CONFLICT = E_BASE + 15;
 constexpr int E_NO_DATA = E_BASE + 16;
+constexpr int E_NOT_PERMIT = E_BASE + 17;
 constexpr int E_INVALID_JSON_FORMAT = E_BASE + 40;
 constexpr int E_JSON_PATH_NOT_EXISTS = E_BASE + 41;
+
+int TrasnferDocErr(int err);
 } // DocumentDB
 #endif // DOC_ERRNO_H

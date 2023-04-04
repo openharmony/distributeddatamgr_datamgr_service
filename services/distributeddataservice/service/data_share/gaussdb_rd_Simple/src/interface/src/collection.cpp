@@ -76,11 +76,9 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
             return errCode;
         } else if (errCode == E_OK) { // document has been inserted
             GLOGD("Document has been inserted, append value.");
-            std::shared_ptr<JsonObject> originValue;
-            JsonObject::Parse(valueGotStr, originValue);
+            JsonObject originValue = JsonObject::Parse(valueGotStr, errCode);
 
-            std::shared_ptr<JsonObject> upsertValue;
-            JsonObject::Parse(document, upsertValue);
+            JsonObject upsertValue = JsonObject::Parse(document, errCode);
 
             // TOOD:: Join document and update valSet
         }

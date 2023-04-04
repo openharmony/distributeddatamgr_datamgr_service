@@ -28,39 +28,37 @@ CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &er
         return {};
     }
 
-    std::shared_ptr<JsonObject> collOpt;
-    errCode = JsonObject::Parse(optStr, collOpt);
+    JsonObject collOpt = JsonObject::Parse(optStr, errCode);
     if (errCode != E_OK) {
         GLOGE("Read collection option failed from str. %d", errCode);
         return {};
     }
 
     static const JsonFieldPath maxDocField = {"maxDoc"};
-    if (!collOpt->IsFieldExists(maxDocField)) {
+    if (!collOpt.IsFieldExists(maxDocField)) {
         return {};
     }
 
-    ValueObject maxDocValue;
-    errCode = collOpt->GetObjectByPath(maxDocField, maxDocValue);
+    ValueObject maxDocValue = collOpt.GetObjectByPath(maxDocField, errCode);
     if (errCode != E_OK) {
         GLOGE("Read collection option failed. %d", errCode);
         return {};
     }
 
-    if (maxDocValue.valueType != ValueObject::ValueType::VALUE_NUMBER) {
+    if (maxDocValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check collection option failed, the field type of maxDoc is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
         return {};
     }
 
-    if (maxDocValue.intValue <= 0 || maxDocValue.intValue > UINT32_MAX) {
+    if (maxDocValue.GetIntValue() <= 0 || maxDocValue.GetIntValue() > UINT32_MAX) {
         GLOGE("Check collection option failed, invalid maxDoc value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return {};
     }
 
     CollectionOption option;
-    option.maxDoc_ = static_cast<uint32_t>(maxDocValue.intValue);
+    option.maxDoc_ = static_cast<uint32_t>(maxDocValue.GetIntValue());
     option.option_ = optStr;
     return option;
 }

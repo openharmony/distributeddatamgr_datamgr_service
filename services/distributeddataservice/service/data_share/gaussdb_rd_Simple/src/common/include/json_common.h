@@ -33,6 +33,9 @@ public:
     static int ParseNode(JsonObject *Node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor);
     static std::vector<std::vector<std::string>> ParsePath(JsonObject* node);
     static std::vector<ResultValue>  GetLeafValue(JsonObject *node);
+
+    static void Append(const JsonObject &src, const JsonObject &add);
+
 private:
     static bool CheckNode(JsonObject *Node, std::set<std::string> filedSet, bool &errFlag);
     static int CheckLeafNode(JsonObject *Node, std::vector<ResultValue> &leafValue);
