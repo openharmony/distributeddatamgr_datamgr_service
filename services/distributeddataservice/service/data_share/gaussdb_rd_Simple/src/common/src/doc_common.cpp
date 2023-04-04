@@ -36,26 +36,26 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName)
 
 bool CheckCommon::CheckFilter(const std::string &filter)
 {
-    if (JsonCommon::CheckIsJson(filter) == false) {
-        return false;
-    }
-    if (JsonCommon::GetJsonDeep(filter) > 4) {
-        return false;
-    }
-    if (CheckIdFormat(filter) == false) {
-        return false;
-    }
+    // if (JsonCommon::CheckIsJson(filter) == false) {
+    //     return false;
+    // }
+    // if (JsonCommon::GetJsonDeep(filter) > 4) {
+    //     return false;
+    // }
+    // if (CheckIdFormat(filter) == false) {
+    //     return false;
+    // }
     return true;
 }
 
 bool CheckCommon::CheckIdFormat(const std::string &data)
 {
-    CjsonObject filter_json;
-    filter_json.Parse(data);
-    std::vector<std::string> id;
-    if (JsonCommon::GetIdValue(&filter_json, id) == E_ERROR) {
-        return false;
-    }
+    // CjsonObject filter_json;
+    // filter_json.Parse(data);
+    // std::vector<std::string> id;
+    // if (JsonCommon::GetIdValue(&filter_json, id) == E_ERROR) {
+    //     return false;
+    // }
     return true;
 }
 

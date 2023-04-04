@@ -55,9 +55,7 @@ bool DocumentStoreManager::CheckDBPath(const std::string &path, std::string &can
     int errCode = OSAPI::GetRealPath(path, canonicalDir);
     if (errCode == E_OK) {
         GLOGE("Get real path failed. %d", errCode);
-        return errCode;
     }
-
-
+    return errCode;
 }
 } // DocumentDB

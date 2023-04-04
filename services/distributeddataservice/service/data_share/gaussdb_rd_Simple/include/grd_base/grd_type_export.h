@@ -29,7 +29,7 @@ typedef struct GRD_DB GRD_DB;
 #define GRD_DB_OPEN_CREATE      0x01
 #define GRD_DB_OPEN_CHECK_FOR_ABNORMAL      0x02 //check data in database if close abnormally last time,
                                                  //if data is corrupted, rebuild the database
-#define GRD_DB_OPEN_CREATE      0x04//check data in database when open database, if data is corrupted, rebuild the database.
+#define GRD_DB_OPEN_CHECK       0x04//check data in database when open database, if data is corrupted, rebuild the database.
 /**
  * @brief Close database config
  */
@@ -37,7 +37,7 @@ typedef struct GRD_DB GRD_DB;
 #define GRD_DB_CLOSE_IGNORE_ERROR   0x01
 
 /**
- * @brief flush database config  
+ * @brief flush database config
 */
 #define GRD_DB_FLUSH_ASYNC 0x00
 #define GRD_DB_FLUSH_SYNC 0x01
