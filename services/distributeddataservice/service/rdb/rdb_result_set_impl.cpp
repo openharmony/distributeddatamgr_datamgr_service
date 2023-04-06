@@ -296,12 +296,6 @@ int RdbResultSetImpl::IsColumnNull(int columnIndex, bool &isNull)
     return NativeRdb::E_OK;
 }
 
-
-int RdbResultSetImpl::GetRow(std::vector<std::string> &columns, NativeRdb::ValuesBucket &valuesBucket)
-{
-    return NativeRdb::E_NOT_SUPPORT;
-}
-
 bool RdbResultSetImpl::IsClosed() const
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
