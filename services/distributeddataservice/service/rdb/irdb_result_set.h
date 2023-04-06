@@ -17,7 +17,7 @@
 #define DISTRIBUTED_RDB_IRDB_RESULT_SET_H
 
 #include "iremote_broker.h"
-#include "abs_result_set.h
+#include "abs_result_set.h"
 
 namespace OHOS::DistributedRdb {
 class IRdbResultSet : public NativeRdb::AbsResultSet, public IRemoteBroker {
