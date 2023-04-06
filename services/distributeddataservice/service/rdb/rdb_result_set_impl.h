@@ -19,7 +19,6 @@
 #include <shared_mutex>
 #include "rdb_result_set_stub.h"
 #include "distributeddb/result_set.h"
-#include "values_bucket.h"
 
 namespace OHOS::DistributedRdb {
 class RdbResultSetImpl final : public RdbResultSetStub {
