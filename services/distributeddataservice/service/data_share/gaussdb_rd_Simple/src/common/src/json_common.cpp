@@ -146,7 +146,7 @@ int JsonCommon::ParseNode(JsonObject* node, std::vector<std::string> singlePath,
     return 0;
 }
 
-std::vector<std::vector<std::string>> JsonCommon::ParsePath(JsonObject* root)
+std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject* const root)
 {
     std::vector<std::vector<std::string>> resultPath;
     auto projectionJson = root->GetChild();
@@ -159,6 +159,26 @@ std::vector<std::vector<std::string>> JsonCommon::ParsePath(JsonObject* root)
 }
 
 namespace {
+JsonFieldPath ExpendPath(const JsonFieldPath &path)
+{
+    if (path.size() > 1) { // only first lever has collapse field
+        return path;
+    }
+    JsonFieldPath splitPath;
+    const std::string &str = path[0];
+    size_t start = 0;
+    size_t end = 0;
+    while ((end = str.find('.', start)) != std::string::npos) {
+        splitPath.push_back(str.substr(start, end - start));
+        start = end + 1;
+    }
+    if (start < str.length()) {
+        splitPath.push_back(str.substr(start));
+    }
+
+    return splitPath;
+}
+
 void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
     std::function<bool (const JsonFieldPath &path, const JsonObject &father, const JsonObject &item)> foo)
 {
@@ -173,45 +193,55 @@ void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
     }
     return;
 }
-
-std::string PrintJsonPath(const JsonFieldPath &path) {
-    std::string str;
-    for (const auto &field : path) {
-        str += field + ".";
-    }
-    return str;
-}
 }
 
-void JsonCommon::Append(const JsonObject &src, const JsonObject &add)
+int JsonCommon::Append(const JsonObject &src, const JsonObject &add)
 {
-    JsonObjectIterator(add, {}, [&src](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
-        GLOGD("---->path: %s", PrintJsonPath(path).c_str());
-        JsonFieldPath patherPath = path;
-        patherPath.pop_back();
+    int externErrCode = E_OK;
+    JsonObjectIterator(add, {},
+        [&src, &externErrCode](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
+        JsonFieldPath itemPath = ExpendPath(path);
+        JsonFieldPath fatherPath = itemPath;
+        fatherPath.pop_back();
         int errCode = E_OK;
-        if (src.IsFieldExists(path)) {
-            JsonObject srcItem = src.FindItem(path, errCode);
-            if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF) {
-                srcItem.SetItemValue(item.GetItemValue());
-                return true;
-            } else if (srcItem.GetType() == JsonObject::Type::JSON_OBJECT && item.GetType() == JsonObject::Type::JSON_OBJECT) {
-                return true;
-            } else if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY) {
-                return true;
-            } else {
-                JsonObject srcFatherItem = src.FindItem(patherPath, errCode);
-                srcFatherItem.DeleteItemFromObject(item.GetItemFiled());
-                srcFatherItem.AddItemToObject(item);
+        if (src.IsFieldExists(itemPath)) {
+            JsonObject srcItem = src.FindItem(itemPath, errCode);
+            if (errCode != E_OK) {
+                externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+                GLOGE("Find item in source json object failed. %d", errCode);
                 return false;
             }
+            if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF) {
+                srcItem.SetItemValue(item.GetItemValue());
+                return false; // Both leaf node, no need iterate
+            } else if (srcItem.GetType() != item.GetType()) {
+                JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
+                if (errCode != E_OK) {
+                    externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+                    GLOGE("Find father item in source json object failed. %d", errCode);
+                    return false;
+                }
+                srcFatherItem.DeleteItemFromObject(item.GetItemFiled());
+                srcFatherItem.AddItemToObject(item);
+                return false; // Different node types, overwrite directly, skip child node
+            }
+            return true; // Both array or object
         } else {
-            GLOGD("Append value to source: %s - %d.", item.GetItemFiled().c_str(), item.GetItemValue().GetIntValue());
-            GLOGD("Append valie : %s", item.Print().c_str());
-            JsonObject srcFatherItem = src.FindItem(patherPath, errCode);
-            srcFatherItem.AddItemToObject(item);
-            return false; // skip child
+            JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
+            if (errCode == E_OK) {
+                errCode = srcFatherItem.AddItemToObject(itemPath.back(), item);
+                if (errCode != E_OK) {
+                    externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+                    GLOGE("Add item to object failed. %d", errCode);
+                    return false;
+                }
+            } else {
+                externErrCode = -E_DATA_CONFLICT;
+                GLOGE("Find father item in source json object failed. %d", errCode);
+            }
+            return false; // Source path not exist, overwrite directly, skip child node
         }
     });
+    return externErrCode;
 }
 } // namespace DocumentDB

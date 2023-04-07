@@ -14,6 +14,8 @@
 */
 
 #include <gtest/gtest.h>
+#include <vector>
+
 #include "documentdb_test_utils.h"
 #include "doc_errno.h"
 #include "json_common.h"
@@ -135,6 +137,144 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectTest005, TestSize.Level0)
     GLOGD("Append result: %s", add.Print().c_str());
 
     GLOGD("----> isPathExist: %d.", src.IsFieldExists({"name"}));
+
+    JsonCommon::Append(src, add);
+
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+namespace {
+std::string PrintJsonPath(const JsonFieldPath &path) {
+    std::string str;
+    for (const auto &field : path) {
+        str += field + "->";
+    }
+    return str;
+}
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectTest006, TestSize.Level0)
+{
+    std::string document = R""({"name":{"first":"Tno","last":"moray"}})"";
+    std::string updateDoc = R""({"name":{"midle.AA":"GG"}})"";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    GLOGD("Source result: %s", src.Print().c_str());
+    GLOGD("Append result: %s", add.Print().c_str());
+
+    std::vector<JsonFieldPath> paths = JsonCommon::ParsePath(&add);
+    for (const auto path : paths) {
+        GLOGD("path result: %s", PrintJsonPath(path).c_str());;
+    }
+
+    JsonCommon::Append(src, add);
+
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectTest007, TestSize.Level0)
+{
+    std::string document = R""({"name":{"first":["XX","CC"],"last":"moray"}})"";
+    std::string updateDoc = R""({"name.first.0":"LL"})"";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    GLOGD("Source result: %s", src.Print().c_str());
+    GLOGD("Append result: %s", add.Print().c_str());
+
+    std::vector<JsonFieldPath> paths = JsonCommon::ParsePath(&add);
+    for (const auto path : paths) {
+        GLOGD("path result: %s", PrintJsonPath(path).c_str());;
+    }
+
+    JsonCommon::Append(src, add);
+
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectTest008, TestSize.Level0)
+{
+    std::string document = R""({"name":{"first":"XX","last":"moray"}})"";
+    std::string updateDoc = R""({"name":{"first":["XXX","BBB","CCC"]}})"";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    GLOGD("Source result: %s", src.Print().c_str());
+    GLOGD("Append result: %s", add.Print().c_str());
+
+    std::vector<JsonFieldPath> paths = JsonCommon::ParsePath(&add);
+    for (const auto path : paths) {
+        GLOGD("path result: %s", PrintJsonPath(path).c_str());;
+    }
+
+    JsonCommon::Append(src, add);
+
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectTest009, TestSize.Level0)
+{
+    std::string document = R""({"name":{"first":["XXX","BBB","CCC"],"last":"moray"}})"";
+    std::string updateDoc = R""({"name":{"first":"XX"}})"";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    GLOGD("Source result: %s", src.Print().c_str());
+    GLOGD("Append result: %s", add.Print().c_str());
+
+    std::vector<JsonFieldPath> paths = JsonCommon::ParsePath(&add);
+    for (const auto path : paths) {
+        GLOGD("path result: %s", PrintJsonPath(path).c_str());;
+    }
+
+    JsonCommon::Append(src, add);
+
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectTest010, TestSize.Level0)
+{
+    std::string document = R""({"name":{"first":["XXX","BBB","CCC"],"last":"moray"}})"";
+    std::string updateDoc = R""({"name":{"first":{"XX":"AA"}}})"";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    GLOGD("Source result: %s", src.Print().c_str());
+    GLOGD("Append result: %s", add.Print().c_str());
+
+    std::vector<JsonFieldPath> paths = JsonCommon::ParsePath(&add);
+    for (const auto path : paths) {
+        GLOGD("path result: %s", PrintJsonPath(path).c_str());;
+    }
+
+    JsonCommon::Append(src, add);
+
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectTest011, TestSize.Level0)
+{
+    std::string document = R""({"name":{"first":["XXX","BBB","CCC"],"last":"moray"}})"";
+    std::string updateDoc = R""({"name.last.AA.B":"Mnado"})"";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    GLOGD("Source result: %s", src.Print().c_str());
+    GLOGD("Append result: %s", add.Print().c_str());
+
+    std::vector<JsonFieldPath> paths = JsonCommon::ParsePath(&add);
+    for (const auto path : paths) {
+        GLOGD("path result: %s", PrintJsonPath(path).c_str());;
+    }
 
     JsonCommon::Append(src, add);
 

@@ -179,7 +179,7 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest007, TestSize.Level0)
 
 /**
  * @tc.name: UpsertDataTest008
- * @tc.desc: Test upsert data with different document
+ * @tc.desc: Test upsert data with different document in append
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: lianhuix

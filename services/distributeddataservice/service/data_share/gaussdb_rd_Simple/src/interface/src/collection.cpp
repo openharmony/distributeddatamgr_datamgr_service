@@ -77,10 +77,22 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
         } else if (errCode == E_OK) { // document has been inserted
             GLOGD("Document has been inserted, append value.");
             JsonObject originValue = JsonObject::Parse(valueGotStr, errCode);
+            if (errCode != E_OK) {
+                GLOGD("Parse original value failed. %s", errCode);
+                return errCode;
+            }
 
             JsonObject upsertValue = JsonObject::Parse(document, errCode);
+            if (errCode != E_OK) {
+                GLOGD("Parse upsert value failed. %s", errCode);
+                return errCode;
+            }
 
-            // TOOD:: Join document and update valSet
+            errCode = JsonCommon::Append(originValue, upsertValue);
+            if (errCode != E_OK) {
+                GLOGD("Append value failed. %s", errCode);
+                return errCode;
+            }
         }
     }
 

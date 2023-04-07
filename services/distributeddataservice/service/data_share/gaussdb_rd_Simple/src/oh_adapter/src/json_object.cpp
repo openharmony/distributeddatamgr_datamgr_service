@@ -25,6 +25,13 @@ namespace {
 #define COLLECTION_LENS_MAX (512)
 #define JSON_LENS_MAX (512)
 #define JSON_DEEP_MAX (4)
+
+bool IsNumber(const std::string &str)
+{
+    return std::all_of(str.begin(), str.end(), [](char c) {
+        return std::isdigit(c);
+    });
+}
 }
 
 ValueObject::ValueObject(bool val)
@@ -253,6 +260,30 @@ int JsonObject::AddItemToObject(const JsonObject &item)
     return E_OK;
 }
 
+int JsonObject::AddItemToObject(const std::string &fieldName, const JsonObject &item)
+{
+    if (item.IsNull()) {
+        GLOGD("Add null object.");
+        return E_OK;
+    }
+    // TODO: check size in array type
+    if (cjson_->type == cJSON_Array) {
+        int n = 0;
+        cJSON *child = cjson_->child;
+        while (child != nullptr) {
+            child = child->next;
+            n++;
+        }
+        if (IsNumber(fieldName) && n <= std::stoi(fieldName)) {
+            GLOGE("Add item object to array over size.");
+            return -E_DATA_CONFLICT;
+        }
+    }
+    cJSON *cpoyItem = cJSON_Duplicate(item.cjson_, true);
+    cJSON_AddItemToObject(cjson_, fieldName.c_str(), cpoyItem);
+    return E_OK;
+}
+
 ValueObject JsonObject::GetItemValue() const
 {
     if (cjson_ == nullptr) {
@@ -323,13 +354,6 @@ std::string JsonObject::GetItemFiled() const
     }
 }
 
-namespace {
-bool IsNumber(const std::string &str) {
-    return std::all_of(str.begin(), str.end(), [](char c) {
-        return std::isdigit(c);
-    });
-}
-
 cJSON *GetChild(cJSON *cjson, const std::string &field, bool caseSens)
 {
     if (cjson->type == cJSON_Object) {
@@ -356,12 +380,11 @@ cJSON *MoveToPath(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)
         cjson = GetChild(cjson, field, caseSens);
         if (cjson == nullptr) {
             GLOGW("Invalid json field path, no such field. %s", field.c_str());
+            break;
         }
     }
     return cjson;
 }
-}
-
 
 bool JsonObject::IsFieldExists(const JsonFieldPath &jsonPath) const
 {
@@ -375,7 +398,7 @@ JsonObject JsonObject::FindItem(const JsonFieldPath &jsonPath, int &errCode) con
         curr.cjson_ = cjson_;
         curr.caseSensitive_ = caseSensitive_;
         curr.isOwner_ = false;
-        GLOGE("return current object");
+        GLOGW("Path empty, return current object");
         return curr;
     }
 
@@ -383,6 +406,7 @@ JsonObject JsonObject::FindItem(const JsonFieldPath &jsonPath, int &errCode) con
     if (findItem == nullptr) {
         GLOGE("Find item failed. json field path not found.");
         errCode = -E_JSON_PATH_NOT_EXISTS;
+        return {};
     }
 
     JsonObject item;

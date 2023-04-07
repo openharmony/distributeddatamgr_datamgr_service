@@ -31,10 +31,10 @@ public:
     static ResultValue GetValueByFiled(JsonObject *node, const std::string& filed);
     static bool CheckJsonField(const std::string &data);
     static int ParseNode(JsonObject *Node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor);
-    static std::vector<std::vector<std::string>> ParsePath(JsonObject* node);
+    static std::vector<std::vector<std::string>> ParsePath(const JsonObject* const node);
     static std::vector<ResultValue>  GetLeafValue(JsonObject *node);
 
-    static void Append(const JsonObject &src, const JsonObject &add);
+    static int Append(const JsonObject &src, const JsonObject &add);
 
 private:
     static bool CheckNode(JsonObject *Node, std::set<std::string> filedSet, bool &errFlag);
