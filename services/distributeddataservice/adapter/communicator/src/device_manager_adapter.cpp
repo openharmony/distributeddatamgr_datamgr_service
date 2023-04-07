@@ -311,7 +311,7 @@ void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const Device
 DeviceInfo DeviceManagerAdapter::GetLocalDevice()
 {
     std::lock_guard<decltype(devInfoMutex_)> lock(devInfoMutex_);
-    if (!localInfo_.uuid.empty()) {
+    if (!localInfo_.uuid.empty() && !localInfo_.udid.empty()) {
         return localInfo_;
     }
 
@@ -324,7 +324,7 @@ DeviceInfo DeviceManagerAdapter::GetLocalDevice()
     auto networkId = std::string(info.networkId);
     auto uuid = GetUuidByNetworkId(networkId);
     auto udid = GetUdidByNetworkId(networkId);
-    if (uuid.empty() || udid.empty()) {
+    if (uuid.empty()) {
         return {};
     }
     ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d",
