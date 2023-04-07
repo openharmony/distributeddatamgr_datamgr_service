@@ -26,6 +26,11 @@ namespace {
     const int ACCESS_MODE_EXISTENCE = 0;
 }
 namespace OSAPI {
+bool CheckPermission(const std::string &filePath)
+{
+    return (access(filePath.c_str(), R_OK) == 0) && (access(filePath.c_str(), W_OK) == 0);
+}
+
 bool CheckPathExistence(const std::string &filePath)
 {
     return (access(filePath.c_str(), ACCESS_MODE_EXISTENCE) == 0);

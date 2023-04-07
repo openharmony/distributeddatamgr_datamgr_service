@@ -135,7 +135,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest003, TestSize.Level0)
 HWTEST_F(DocumentDBCollectionTest, CollectionTest004, TestSize.Level0)
 {
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_OK);
-    EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_COLLECTION_CONFLICT);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_DATA_CONFLICT);
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", IGNORE_EXIST_TABLE), GRD_OK);
 }
 
@@ -148,7 +148,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest004, TestSize.Level0)
  */
 HWTEST_F(DocumentDBCollectionTest, CollectionTest005, TestSize.Level0)
 {
-    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({aa})"", 0), GRD_INVALID_JSON_FORMAT);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({aa})"", 0), GRD_INVALID_FORMAT);
 
     std::vector<const char *> invalidOption = {
         // R""({"invalidOption":2})"",
@@ -160,7 +160,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest005, TestSize.Level0)
 
     for (auto opt : invalidOption) {
         GLOGD("CollectionTest005: create collection with option: %s", opt);
-        EXPECT_EQ(GRD_CreateCollection(g_db, "student", opt, 0), GRD_INVALID_CONFIG_VALUE);
+        EXPECT_EQ(GRD_CreateCollection(g_db, "student", opt, 0), GRD_INVALID_ARGS);
     }
 }
 
@@ -175,8 +175,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest006, TestSize.Level0)
 {
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":1024})"", 0), GRD_OK);
 
-    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", IGNORE_EXIST_TABLE),
-        GRD_INVALID_CONFIG_VALUE);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", IGNORE_EXIST_TABLE), GRD_INVALID_ARGS);
 
     EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_OK);
     EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_NO_DATA);

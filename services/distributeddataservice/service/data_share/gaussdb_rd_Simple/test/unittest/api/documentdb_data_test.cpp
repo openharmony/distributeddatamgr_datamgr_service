@@ -143,7 +143,7 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest005, TestSize.Level0)
         "gm_sys_123",
     };
     for (auto document : invalidDocument) {
-        EXPECT_EQ(GRD_UpSertDoc(g_db, g_coll, filter.c_str(), document, GRD_DOC_REPLACE), GRD_INVALID_ARGS);
+        EXPECT_EQ(GRD_UpSertDoc(g_db, g_coll, filter.c_str(), document, GRD_DOC_REPLACE), GRD_INVALID_FORMAT);
     }
 }
 

@@ -18,6 +18,8 @@
 #define OS_API_H
 namespace DocumentDB {
 namespace OSAPI {
+bool CheckPermission(const std::string &filePath);
+
 bool CheckPathExistence(const std::string &filePath);
 
 int GetRealPath(const std::string &inOriPath, std::string &outRealPath);

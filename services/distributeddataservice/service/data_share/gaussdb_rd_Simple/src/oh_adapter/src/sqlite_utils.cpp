@@ -25,6 +25,22 @@ const std::string BEGIN_IMMEDIATE_SQL = "BEGIN IMMEDIATE TRANSACTION";
 const std::string COMMIT_SQL = "COMMIT TRANSACTION";
 const std::string ROLLBACK_SQL = "ROLLBACK TRANSACTION";
 
+namespace {
+int MapSqliteError(int errCode)
+{
+    switch (errCode) {
+        case SQLITE_OK:
+            return E_OK;
+        case SQLITE_PERM:
+        case SQLITE_CANTOPEN:
+        case SQLITE_READONLY:
+            return -E_FILE_OPERATION;
+        default:
+            return -E_ERROR;
+    }
+}
+}
+
 void SQLiteUtils::SqliteLogCallback(void *data, int err, const char *msg)
 {
     GLOGD("[SQLite] err=%d sys=%d %s msg=%s", err, errno, sqlite3_errstr(err), msg);
@@ -41,7 +57,7 @@ int SQLiteUtils::CreateDataBase(const std::string &path, int flag, sqlite3 *&db)
             db = nullptr;
         }
     }
-    return errCode;
+    return MapSqliteError(errCode);
 }
 
 int SQLiteUtils::GetStatement(sqlite3 *db, const std::string &sql, sqlite3_stmt *&statement)
@@ -224,7 +240,7 @@ int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql)
     }
 
     sqlite3_free(errMsg);
-    return errCode;
+    return MapSqliteError(errCode);
 }
 
 int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::function<int (sqlite3_stmt *)> &bindCallback,
@@ -267,6 +283,6 @@ int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::functio
 
 END:
     (void)SQLiteUtils::ResetStatement(stmt, true);
-    return errCode;
+    return MapSqliteError(errCode);
 }
 } // namespace DocumentDB

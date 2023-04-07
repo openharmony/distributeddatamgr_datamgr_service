@@ -70,8 +70,8 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest001, TestSize.Level0)
 
     EXPECT_EQ(GRD_CreateCollection(db, "student", "", 0), GRD_OK);
 
-    EXPECT_EQ(GRD_UpSertDoc(db, "student", "10001", "{name:\"Tom\",age:23}", 0), GRD_OK);
-    EXPECT_EQ(GRD_UpSertDoc(db, "student", "10001", "{name:\"Tom\",age:24}", 0), GRD_OK);
+    EXPECT_EQ(GRD_UpSertDoc(db, "student", "10001", R""({"name":"Tom","age":23})"", 0), GRD_OK);
+    EXPECT_EQ(GRD_UpSertDoc(db, "student", "10001", R""({"name":"Tom","age":23})"", 0), GRD_OK);
 
     EXPECT_EQ(GRD_DropCollection(db, "student", 0), GRD_OK);
 
@@ -148,7 +148,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest002, TestSize.Level0)
     GRD_DB *db = nullptr;
     std::string path= "./document.db";
     int status = GRD_DBOpen(path.c_str(), "{aa}", GRD_DB_OPEN_CREATE, &db);
-    EXPECT_EQ(status, GRD_INVALID_JSON_FORMAT);
+    EXPECT_EQ(status, GRD_INVALID_FORMAT);
 }
 
 /**
@@ -163,7 +163,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest003, TestSize.Level0)
     GRD_DB *db = nullptr;
     std::string path= "./document.db";
     int status = GRD_DBOpen(path.c_str(), R""({"notSupport":123})"", GRD_DB_OPEN_CREATE, &db);
-    EXPECT_EQ(status, GRD_NOT_SUPPORT);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
 }
 
 /**
@@ -190,7 +190,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest001, TestSize.Level0)
     for (const auto &config : configList) {
         GLOGD("OpenDBConfigMaxConnNumTest001: test with config:%s", config.c_str());
         int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
-        ASSERT_EQ(status, GRD_INVALID_CONFIG_VALUE);
+        ASSERT_EQ(status, GRD_INVALID_ARGS);
     }
 }
 
@@ -242,7 +242,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest003, TestSize.Level1)
 
     config = R""({"maxConnNum":17})"";
     status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
-    EXPECT_EQ(status, GRD_INVALID_CONFIG_VALUE);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
 
     DocumentDBTestUtils::RemoveTestDbFiles(path);
 }
@@ -271,8 +271,8 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest004, TestSize.Level1)
 
     GRD_DB *db = nullptr;
     int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
-    EXPECT_EQ(status, GRD_OVER_LIMIT);
-    EXPECT_EQ(db, nullptr);
+    EXPECT_EQ(status, GRD_OK);
+    EXPECT_NE(db, nullptr);
 
     for (auto *it : dbList) {
         status = GRD_DBClose(it, GRD_DB_CLOSE);
@@ -306,7 +306,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest001, TestSize.Level0)
     for (const auto &config : configList) {
         GLOGD("OpenDBConfigPageSizeTest001: test with config:%s", config.c_str());
         int status = GRD_DBOpen(path.c_str(), config.c_str(), 0, &db);
-        EXPECT_EQ(status, GRD_INVALID_CONFIG_VALUE);
+        EXPECT_EQ(status, GRD_INVALID_ARGS);
     }
 }
 
@@ -379,7 +379,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest003, TestSize.Level1)
 
     config = R""({"pageSize":8})"";
     status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
-    EXPECT_EQ(status, GRD_INVALID_CONFIG_VALUE);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
 
     DocumentDBTestUtils::RemoveTestDbFiles(path);
 }
@@ -423,7 +423,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigRedoFlushTest002, TestSize.Level0)
 
     std::string config = R""({"redoFlushByTrx":3})"";
     int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
-    EXPECT_EQ(status, GRD_INVALID_CONFIG_VALUE);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
 }
 
 /**

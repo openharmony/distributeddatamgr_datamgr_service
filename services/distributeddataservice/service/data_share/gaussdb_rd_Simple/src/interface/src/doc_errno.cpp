@@ -17,29 +17,49 @@
 #include "grd_base/grd_error.h"
 
 namespace DocumentDB {
+int GetErrorCategory(int errCode)
+{
+    int categoryCode = errCode % 1000000;
+    categoryCode /= 1000;
+    categoryCode *= 1000;
+    return categoryCode;
+}
+
 int TrasnferDocErr(int err)
 {
+    int outErr = GRD_OK;
     switch (err) {
         case E_OK:
             return GRD_OK;
         case -E_ERROR:
-            return GRD_INNER_ERR;
+            outErr = GRD_INNER_ERR;
+            break;
         case -E_INVALID_ARGS:
-            return GRD_INVALID_ARGS;
+            outErr = GRD_INVALID_ARGS;
+            break;
         case -E_FILE_OPERATION:
-            return GRD_FAILED_FILE_OPERATION;
+            outErr = GRD_FAILED_FILE_OPERATION;
+            break;
         case -E_OVER_LIMIT:
-            return GRD_OVER_LIMIT;
+            outErr = GRD_OVER_LIMIT;
+            break;
         case -E_INVALID_JSON_FORMAT:
-            return GRD_INVALID_JSON_FORMAT;
+            outErr = GRD_INVALID_JSON_FORMAT;
+            break;
         case -E_INVALID_CONFIG_VALUE:
-            return GRD_INVALID_CONFIG_VALUE;
+            outErr = GRD_INVALID_CONFIG_VALUE;
+            break;
         case -E_COLLECTION_CONFLICT:
-            return GRD_COLLECTION_CONFLICT;
+            outErr = GRD_COLLECTION_CONFLICT;
+            break;
         case -E_NO_DATA:
-            return GRD_NO_DATA;
+            outErr = GRD_NO_DATA;
+            break;
         default:
-            return GRD_INNER_ERR;
+            outErr = GRD_INNER_ERR;
+            break;
     }
+
+    return GetErrorCategory(outErr);
 }
 }

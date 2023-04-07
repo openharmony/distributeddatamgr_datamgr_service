@@ -105,6 +105,7 @@ JsonObject::JsonObject()
 JsonObject::~JsonObject()
 {
     if (isOwner_ == true) {
+        GLOGD("Delete json object:%p", cjson_);
         cJSON_Delete(cjson_);
     }
 }
@@ -151,7 +152,7 @@ int JsonObject::Init(const std::string &str)
     isOwner_ = true;
     cjson_ = cJSON_ParseWithOpts(str.c_str(), &end, true);
     if (cjson_ == nullptr) {
-        return -E_INVALID_ARGS;
+        return -E_INVALID_JSON_FORMAT;
     }
 
     if (cjson_->type != cJSON_Object) {
@@ -379,7 +380,6 @@ cJSON *MoveToPath(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)
     for (const auto &field : jsonPath) {
         cjson = GetChild(cjson, field, caseSens);
         if (cjson == nullptr) {
-            GLOGW("Invalid json field path, no such field. %s", field.c_str());
             break;
         }
     }
