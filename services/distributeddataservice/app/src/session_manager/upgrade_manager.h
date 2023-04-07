@@ -37,7 +37,7 @@ public:
 
 private:
     bool InitLocalCapability();
-    ConcurrentMap<std::string, CapMetaData> capabilityMap_ {};
+    ConcurrentMap<std::string, CapMetaData> capabilities_ {};
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_UPGRADE_MANAGER_H
