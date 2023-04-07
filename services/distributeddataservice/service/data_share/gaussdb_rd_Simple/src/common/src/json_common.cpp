@@ -159,7 +159,7 @@ std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject* co
 }
 
 namespace {
-JsonFieldPath ExpendPath(const JsonFieldPath &path)
+JsonFieldPath ExpendPath(const JsonFieldPath &path, bool &isCollapse)
 {
     if (path.size() > 1) { // only first lever has collapse field
         return path;
@@ -175,7 +175,7 @@ JsonFieldPath ExpendPath(const JsonFieldPath &path)
     if (start < str.length()) {
         splitPath.push_back(str.substr(start));
     }
-
+    isCollapse = (splitPath.size() > 1);
     return splitPath;
 }
 
@@ -200,7 +200,8 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add)
     int externErrCode = E_OK;
     JsonObjectIterator(add, {},
         [&src, &externErrCode](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
-        JsonFieldPath itemPath = ExpendPath(path);
+        bool isCollapse = false;
+        JsonFieldPath itemPath = ExpendPath(path, isCollapse);
         JsonFieldPath fatherPath = itemPath;
         fatherPath.pop_back();
         int errCode = E_OK;
@@ -221,12 +222,17 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add)
                     GLOGE("Find father item in source json object failed. %d", errCode);
                     return false;
                 }
-                srcFatherItem.DeleteItemFromObject(item.GetItemFiled());
-                srcFatherItem.AddItemToObject(item);
+                srcFatherItem.DeleteItemFromObject(itemPath.back());
+                srcFatherItem.AddItemToObject(itemPath.back(), item);
                 return false; // Different node types, overwrite directly, skip child node
             }
             return true; // Both array or object
         } else {
+            if (isCollapse == true) {
+                GLOGE("Add collapse item to object failed, path not exist.");
+                externErrCode = -E_DATA_CONFLICT;
+                return false;
+            }
             JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
             if (errCode == E_OK) {
                 errCode = srcFatherItem.AddItemToObject(itemPath.back(), item);
