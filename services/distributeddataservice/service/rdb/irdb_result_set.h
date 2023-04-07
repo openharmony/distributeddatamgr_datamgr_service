@@ -17,10 +17,10 @@
 #define DISTRIBUTED_RDB_IRDB_RESULT_SET_H
 
 #include "iremote_broker.h"
-#include "abs_result_set.h"
+#include "result_set.h"
 
 namespace OHOS::DistributedRdb {
-class IRdbResultSet : public NativeRdb::AbsResultSet, public IRemoteBroker {
+class IRdbResultSet : public NativeRdb::ResultSet, public IRemoteBroker {
 public:
     using ColumnType = NativeRdb::ColumnType;
     virtual ~IRdbResultSet() = default;
