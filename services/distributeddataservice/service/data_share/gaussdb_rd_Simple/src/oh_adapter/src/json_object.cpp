@@ -267,7 +267,7 @@ int JsonObject::AddItemToObject(const std::string &fieldName, const JsonObject &
         GLOGD("Add null object.");
         return E_OK;
     }
-    // TODO: check size in array type
+
     if (cjson_->type == cJSON_Array) {
         int n = 0;
         cJSON *child = cjson_->child;
@@ -458,3 +458,4 @@ int JsonObject::DeleteItemOnTarget(const JsonFieldPath &path)
 
     return E_OK;
 }
+} // namespace DocumentDB

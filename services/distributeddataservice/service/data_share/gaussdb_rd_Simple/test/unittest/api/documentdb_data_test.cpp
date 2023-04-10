@@ -51,7 +51,6 @@ void DocumentDBDataTest::TearDownTestCase(void)
 
 void DocumentDBDataTest::SetUp(void)
 {
-    DocumentDBTestUtils::RemoveTestDbFiles(g_path);
     EXPECT_EQ(GRD_DBOpen(g_path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &g_db), GRD_OK);
     EXPECT_NE(g_db, nullptr);
 
@@ -64,6 +63,7 @@ void DocumentDBDataTest::TearDown(void)
         EXPECT_EQ(GRD_DBClose(g_db, GRD_DB_CLOSE), GRD_OK);
         g_db = nullptr;
     }
+    DocumentDBTestUtils::RemoveTestDbFiles(g_path);
 }
 
 /**

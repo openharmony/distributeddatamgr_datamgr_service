@@ -33,7 +33,7 @@ bool CheckPageSizeConfig(const JsonObject &config, int32_t &pageSize, int &errCo
         return true;
     }
 
-    ValueObject configValue = config.GetObjectByPath(pageSizeField, errCode); // TODO: check return code
+    ValueObject configValue = config.GetObjectByPath(pageSizeField, errCode);
     if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of pageSize is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
@@ -58,7 +58,7 @@ bool CheckRedoFlushConfig(const JsonObject &config, uint32_t &redoFlush, int &er
         return true;
     }
 
-    ValueObject configValue = config.GetObjectByPath(redoFlushField, errCode); // TODO:
+    ValueObject configValue = config.GetObjectByPath(redoFlushField, errCode);
     if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of redoFlushByTrx is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
@@ -82,7 +82,7 @@ bool CheckRedoBufSizeConfig(const JsonObject &config, uint32_t &redoBufSize, int
         return true;
     }
 
-    ValueObject configValue = config.GetObjectByPath(redoBufSizeField, errCode); // TODO:
+    ValueObject configValue = config.GetObjectByPath(redoBufSizeField, errCode);
     if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of redoPubBufSize is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
@@ -106,7 +106,7 @@ bool CheckMaxConnNumConfig(const JsonObject &config, int32_t &maxConnNum, int &e
         return true;
     }
 
-    ValueObject configValue = config.GetObjectByPath(maxConnNumField, errCode); // TODO:
+    ValueObject configValue = config.GetObjectByPath(maxConnNumField, errCode);
     if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of maxConnNum is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
@@ -131,7 +131,7 @@ bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint3
         return true;
     }
 
-    ValueObject configValue = config.GetObjectByPath(bufferPoolSizeField, errCode); // TODO:
+    ValueObject configValue = config.GetObjectByPath(bufferPoolSizeField, errCode);
     if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of bufferPoolSize is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
@@ -156,7 +156,7 @@ bool CheckCrcCheckEnableConfig(const JsonObject &config, uint32_t &crcCheckEnabl
         return true;
     }
 
-    ValueObject configValue = config.GetObjectByPath(crcCheckEnableField, errCode); // TODO:
+    ValueObject configValue = config.GetObjectByPath(crcCheckEnableField, errCode);
     if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, the field type of crcCheckEnable is not NUMBER. %d", errCode);
         errCode = -E_INVALID_CONFIG_VALUE;
