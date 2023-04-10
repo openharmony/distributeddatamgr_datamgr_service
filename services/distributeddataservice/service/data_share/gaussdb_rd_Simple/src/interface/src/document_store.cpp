@@ -45,12 +45,12 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
         return errCode;
     }
 
-    if (flags != 0 && flags != IGNORE_EXIST_TABLE) {
+    if (flags != 0 && flags != CHK_EXIST_COLLECTION) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
 
-    bool ignoreExists = (flags == IGNORE_EXIST_TABLE);
+    bool ignoreExists = (flags == CHK_EXIST_COLLECTION);
     errCode = executor_->CreateCollection(name, ignoreExists);
     if (errCode != E_OK) {
         GLOGE("Create collection failed. %d", errCode);
@@ -79,12 +79,12 @@ int DocumentStore::DropCollection(const std::string &name, int flags)
         return -E_INVALID_ARGS;
     }
 
-    if (flags != 0 && flags != IGNORE_NON_EXIST_TABLE) {
+    if (flags != 0 && flags != CHK_NON_EXIST_COLLECTION) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
 
-    bool ignoreNonExists = (flags == IGNORE_NON_EXIST_TABLE);
+    bool ignoreNonExists = (flags == CHK_NON_EXIST_COLLECTION);
     int errCode = executor_->DropCollection(name, ignoreNonExists);
     if (errCode != E_OK) {
         GLOGE("Drop collection failed. %d", errCode);

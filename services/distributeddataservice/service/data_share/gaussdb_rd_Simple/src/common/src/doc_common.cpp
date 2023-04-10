@@ -21,6 +21,10 @@
 
 namespace DocumentDB {
 namespace {
+constexpr const char *COLLECTION_PREFIX_GRD = "GRD_";
+constexpr const char *COLLECTION_PREFIX_GM_SYS = "GM_SYS_";
+const int MAX_COLLECTION_NAME = 512;
+
 bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefix)
 {
     if (name.length() < prefix.length()) {
@@ -45,10 +49,11 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName)
     if (collectionName.empty()) {
         return false;
     }
-    if (collectionName.length() > 512) {
+    if (collectionName.length() > MAX_COLLECTION_NAME) {
         return false;
     }
-    if (CheckCollectionNamePrefix(collectionName, "GRD_") || CheckCollectionNamePrefix(collectionName, "GM_SYS_")) {
+    if (CheckCollectionNamePrefix(collectionName, COLLECTION_PREFIX_GRD) ||
+        CheckCollectionNamePrefix(collectionName, COLLECTION_PREFIX_GM_SYS)) {
         return false;
     }
     return true;

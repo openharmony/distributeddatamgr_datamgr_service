@@ -136,7 +136,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest004, TestSize.Level0)
 {
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_OK);
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_DATA_CONFLICT);
-    EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", IGNORE_EXIST_TABLE), GRD_OK);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", CHK_EXIST_COLLECTION), GRD_OK);
 }
 
 /**
@@ -156,6 +156,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest005, TestSize.Level0)
         R""({"maxDoc":"123"})"",
         R""({"maxDoc":{"value":1024}})"",
         R""({"maxDoc":[1,2,4,8]})"",
+        R""({"minDoc":1024})"",
     };
 
     for (auto opt : invalidOption) {
@@ -175,11 +176,11 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest006, TestSize.Level0)
 {
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":1024})"", 0), GRD_OK);
 
-    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", IGNORE_EXIST_TABLE), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", CHK_EXIST_COLLECTION), GRD_INVALID_ARGS);
 
     EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_OK);
     EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_NO_DATA);
-    EXPECT_EQ(GRD_DropCollection(g_db, "student", IGNORE_NON_EXIST_TABLE), GRD_OK);
+    EXPECT_EQ(GRD_DropCollection(g_db, "student", CHK_NON_EXIST_COLLECTION), GRD_OK);
 
     // Create collection with different option returnh OK after drop collection
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", 0), GRD_OK);

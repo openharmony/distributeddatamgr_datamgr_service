@@ -16,12 +16,33 @@
 #include "collection_option.h"
 
 #include <memory>
+#include <algorithm>
 
 #include "doc_errno.h"
 #include "json_object.h"
 #include "log_print.h"
 
 namespace DocumentDB {
+namespace {
+bool CheckConfigSupport(const JsonObject &config, int &errCode)
+{
+    static const std::vector<std::string> DB_CONFIG = {
+        "maxDoc",
+    };
+
+    JsonObject child = config.GetChild();
+    while (!child.IsNull()) {
+        std::string fieldName = child.GetItemFiled();
+        if (std::find(DB_CONFIG.begin(), DB_CONFIG.end(), fieldName) == DB_CONFIG.end()) {
+            GLOGE("Invalid collection config.");
+            errCode = -E_INVALID_CONFIG_VALUE;
+            return false;
+        }
+        child = child.GetNext();
+    }
+    return true;
+}
+}
 CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &errCode)
 {
     if (optStr.empty()) {
@@ -31,6 +52,11 @@ CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &er
     JsonObject collOpt = JsonObject::Parse(optStr, errCode);
     if (errCode != E_OK) {
         GLOGE("Read collection option failed from str. %d", errCode);
+        return {};
+    }
+
+    if (!CheckConfigSupport(collOpt, errCode)) {
+        GLOGE("Check collection option, not support config item. %d", errCode);
         return {};
     }
 
@@ -46,7 +72,7 @@ CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &er
     }
 
     if (maxDocValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
-        GLOGE("Check collection option failed, the field type of maxDoc is not NUMBER. %d", errCode);
+        GLOGE("Check collection option failed, the field type of maxDoc is not NUMBER.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return {};
     }

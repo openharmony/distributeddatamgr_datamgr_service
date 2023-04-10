@@ -24,11 +24,33 @@
 #include "json_object.h"
 
 namespace DocumentDB {
-
 namespace {
+const int MIN_REDO_BUFFER_SIZE = 256;
+const int MAX_REDO_BUFFER_SIZE = 16384;
+const int MIN_CONNECTION_NUM = 16;
+const int MAX_CONNECTION_NUM = 1024;
+const int MIN_BUFFER_POOL_SIZE = 1024;
+const int MAX_BUFFER_POOL_SIZE = 4 * 1024 * 1024;
+
+const std::string DB_CONFIG_PAGESIZE = "pageSize";
+const std::string DB_CONFIG_REDO_FLUSH_BY_TRX = "redoFlushByTrx";
+const std::string DB_CONFIG_REDO_PUB_BUFF_SIZE = "redoPubBufSize";
+const std::string DB_CONFIG_MAX_CONN_NUM = "maxConnNum";
+const std::string DB_CONFIG_BUFFER_POOL_SIZE = "bufferPoolSize";
+const std::string DB_CONFIG_CRC_CHECK_ENABLE = "crcCheckEnable";
+
+const std::vector<std::string> DB_CONFIG = {
+    DB_CONFIG_PAGESIZE,
+    DB_CONFIG_REDO_FLUSH_BY_TRX,
+    DB_CONFIG_REDO_PUB_BUFF_SIZE,
+    DB_CONFIG_MAX_CONN_NUM,
+    DB_CONFIG_BUFFER_POOL_SIZE,
+    DB_CONFIG_CRC_CHECK_ENABLE
+};
+
 bool CheckPageSizeConfig(const JsonObject &config, int32_t &pageSize, int &errCode)
 {
-    static const JsonFieldPath pageSizeField = {"pageSize"};
+    static const JsonFieldPath pageSizeField = {DB_CONFIG_PAGESIZE};
     if (!config.IsFieldExists(pageSizeField)) {
         return true;
     }
@@ -53,7 +75,7 @@ bool CheckPageSizeConfig(const JsonObject &config, int32_t &pageSize, int &errCo
 
 bool CheckRedoFlushConfig(const JsonObject &config, uint32_t &redoFlush, int &errCode)
 {
-    static const JsonFieldPath redoFlushField = {"redoFlushByTrx"};
+    static const JsonFieldPath redoFlushField = {DB_CONFIG_REDO_FLUSH_BY_TRX};
     if (!config.IsFieldExists(redoFlushField)) {
         return true;
     }
@@ -77,7 +99,7 @@ bool CheckRedoFlushConfig(const JsonObject &config, uint32_t &redoFlush, int &er
 
 bool CheckRedoBufSizeConfig(const JsonObject &config, uint32_t &redoBufSize, int &errCode)
 {
-    static const JsonFieldPath redoBufSizeField = {"redoPubBufSize"};
+    static const JsonFieldPath redoBufSizeField = {DB_CONFIG_REDO_PUB_BUFF_SIZE};
     if (!config.IsFieldExists(redoBufSizeField)) {
         return true;
     }
@@ -89,7 +111,7 @@ bool CheckRedoBufSizeConfig(const JsonObject &config, uint32_t &redoBufSize, int
         return false;
     }
 
-    if (configValue.GetIntValue() < 256 && configValue.GetIntValue() > 16384) {
+    if (configValue.GetIntValue() < MIN_REDO_BUFFER_SIZE && configValue.GetIntValue() > MAX_REDO_BUFFER_SIZE) {
         GLOGE("Check DB config failed, invalid redoPubBufSize value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
@@ -101,7 +123,7 @@ bool CheckRedoBufSizeConfig(const JsonObject &config, uint32_t &redoBufSize, int
 
 bool CheckMaxConnNumConfig(const JsonObject &config, int32_t &maxConnNum, int &errCode)
 {
-    static const JsonFieldPath maxConnNumField = {"maxConnNum"};
+    static const JsonFieldPath maxConnNumField = {DB_CONFIG_MAX_CONN_NUM};
     if (!config.IsFieldExists(maxConnNumField)) {
         return true;
     }
@@ -113,7 +135,7 @@ bool CheckMaxConnNumConfig(const JsonObject &config, int32_t &maxConnNum, int &e
         return false;
     }
 
-    if (configValue.GetIntValue() < 16 || configValue.GetIntValue() > 1024) {
+    if (configValue.GetIntValue() < MIN_CONNECTION_NUM || configValue.GetIntValue() > MAX_CONNECTION_NUM) {
         GLOGE("Check DB config failed, invalid maxConnNum value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
@@ -126,7 +148,7 @@ bool CheckMaxConnNumConfig(const JsonObject &config, int32_t &maxConnNum, int &e
 bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint32_t &redoBufSize,
     int &errCode)
 {
-    static const JsonFieldPath bufferPoolSizeField = {"bufferPoolSize"};
+    static const JsonFieldPath bufferPoolSizeField = {DB_CONFIG_BUFFER_POOL_SIZE};
     if (!config.IsFieldExists(bufferPoolSizeField)) {
         return true;
     }
@@ -138,7 +160,7 @@ bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint3
         return false;
     }
 
-    if (configValue.GetIntValue() < 1024 && configValue.GetIntValue() > 4 * 1024 * 1024 ||
+    if (configValue.GetIntValue() < MIN_BUFFER_POOL_SIZE && configValue.GetIntValue() > MAX_BUFFER_POOL_SIZE ||
         configValue.GetIntValue() < pageSize * 33) {
         GLOGE("Check DB config failed, invalid bufferPoolSize value.");
         errCode = -E_INVALID_CONFIG_VALUE;
@@ -151,7 +173,7 @@ bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint3
 
 bool CheckCrcCheckEnableConfig(const JsonObject &config, uint32_t &crcCheckEnable, int &errCode)
 {
-    static const JsonFieldPath crcCheckEnableField = {"crcCheckEnable"};
+    static const JsonFieldPath crcCheckEnableField = {DB_CONFIG_CRC_CHECK_ENABLE};
     if (!config.IsFieldExists(crcCheckEnableField)) {
         return true;
     }
@@ -175,15 +197,6 @@ bool CheckCrcCheckEnableConfig(const JsonObject &config, uint32_t &crcCheckEnabl
 
 bool CheckConfigSupport(const JsonObject &config, int &errCode)
 {
-    static const std::vector<std::string> DB_CONFIG = {
-        "pageSize",
-        "redoFlushByTrx",
-        "redoPubBufSize",
-        "maxConnNum",
-        "bufferPoolSize",
-        "crcCheckEnable"
-    };
-
     JsonObject child = config.GetChild();
     while (!child.IsNull()) {
         std::string fieldName = child.GetItemFiled();

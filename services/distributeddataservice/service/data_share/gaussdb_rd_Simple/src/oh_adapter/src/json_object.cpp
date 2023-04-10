@@ -95,17 +95,9 @@ JsonObject::JsonObject()
 {
 }
 
-// JsonObject::JsonObject(const JsonObject &obj)
-// {
-//     this->cjson_ = cJSON_Duplicate(obj.cjson_, true);
-//     this->isOwner_ = true;
-//     this->caseSensitive_ = obj.caseSensitive_;
-// }
-
 JsonObject::~JsonObject()
 {
     if (isOwner_ == true) {
-        GLOGD("Delete json object:%p", cjson_);
         cJSON_Delete(cjson_);
     }
 }
@@ -172,7 +164,7 @@ std::string JsonObject::Print() const
     }
     char *ret = cJSON_PrintUnformatted(cjson_);
     std::string str = ret;
-    free(ret);
+    cJSON_free(ret);
     return str;
 }
 
@@ -267,7 +259,7 @@ int JsonObject::AddItemToObject(const std::string &fieldName, const JsonObject &
         GLOGD("Add null object.");
         return E_OK;
     }
-
+    // TODO: check item exist
     if (cjson_->type == cJSON_Array) {
         int n = 0;
         cJSON *child = cjson_->child;

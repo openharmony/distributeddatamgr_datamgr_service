@@ -27,7 +27,6 @@ namespace DocumentDB {
 class ValueObject {
 public:
     enum class ValueType {
-        // VALUE_INVALID = -1,
         VALUE_NULL = 0,
         VALUE_BOOL,
         VALUE_NUMBER,
@@ -64,8 +63,6 @@ public:
 
     ~JsonObject ();
 
-    int Init(const std::string &str);
-
     std::string Print() const;
 
     JsonObject GetObjectItem(const std::string &field, int &errCode);
@@ -98,6 +95,7 @@ public:
 
 private:
     JsonObject();
+    int Init(const std::string &str);
 
     int GetDeep(cJSON *cjson);
 
