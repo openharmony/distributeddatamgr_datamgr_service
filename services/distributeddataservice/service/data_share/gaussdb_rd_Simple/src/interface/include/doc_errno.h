@@ -33,6 +33,7 @@ constexpr int E_COLLECTION_CONFLICT = E_BASE + 15;
 constexpr int E_NO_DATA = E_BASE + 16;
 constexpr int E_NOT_PERMIT = E_BASE + 17;
 constexpr int E_DATA_CONFLICT = E_BASE + 18;
+constexpr int E_INVALID_COLL_NAME_FORMAT = E_BASE + 18;
 constexpr int E_INVALID_JSON_FORMAT = E_BASE + 40;
 constexpr int E_JSON_PATH_NOT_EXISTS = E_BASE + 41;
 

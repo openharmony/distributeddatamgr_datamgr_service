@@ -41,7 +41,7 @@ public:
 
     ValueType GetValueType() const;
     bool GetBoolValue() const;
-    int GetIntValue() const;
+    int64_t GetIntValue() const;
     double GetDoubleValue() const;
     std::string GetStringValue() const;
 

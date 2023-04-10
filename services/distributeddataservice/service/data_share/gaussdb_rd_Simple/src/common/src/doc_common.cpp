@@ -45,16 +45,19 @@ bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefi
 }
 }
 
-bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName)
+bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName, int &errCode)
 {
     if (collectionName.empty()) {
+        errCode = -E_INVALID_ARGS;
         return false;
     }
     if (collectionName.length() + 1 > MAX_COLLECTION_NAME) {
+        errCode = -E_OVER_LIMIT;
         return false;
     }
     if (CheckCollectionNamePrefix(collectionName, COLLECTION_PREFIX_GRD) ||
         CheckCollectionNamePrefix(collectionName, COLLECTION_PREFIX_GM_SYS)) {
+        errCode = -E_INVALID_COLL_NAME_FORMAT;
         return false;
     }
 

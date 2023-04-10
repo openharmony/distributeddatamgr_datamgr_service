@@ -84,7 +84,7 @@ CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &er
         return {};
     }
 
-    if (maxDocValue.GetIntValue() <= 0 || maxDocValue.GetIntValue() > UINT32_MAX) {
+    if (maxDocValue.GetIntValue() <= 0 || static_cast<uint64_t>(maxDocValue.GetIntValue()) > UINT32_MAX) {
         GLOGE("Check collection option failed, invalid maxDoc value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return {};

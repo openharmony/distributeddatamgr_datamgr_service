@@ -34,6 +34,14 @@ bool CheckDBCloseFlag(unsigned int flag)
 {
     return (flag == GRD_DB_CLOSE) || (flag == GRD_DB_CLOSE_IGNORE_ERROR);
 }
+
+bool CheckDBCreate(unsigned int flags, const std::string &path)
+{
+    if ((flags & GRD_DB_OPEN_CREATE) == 0 && !OSAPI::CheckPathExistence(path)) {
+        return false;
+    }
+    return true;
+}
 }
 
 int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::string &config, unsigned int flags,
@@ -55,6 +63,11 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
 
     if (!CheckDBOpenFlag(flags)) {
         GLOGE("Check document db open flags failed.");
+        return -E_INVALID_ARGS;
+    }
+
+    if (!CheckDBCreate(flags, path)) {
+        GLOGE("Open db failed, file no exists.");
         return -E_INVALID_ARGS;
     }
 

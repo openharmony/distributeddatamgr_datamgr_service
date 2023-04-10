@@ -68,9 +68,9 @@ bool ValueObject::GetBoolValue() const
     return boolValue;
 }
 
-int ValueObject::GetIntValue() const
+int64_t ValueObject::GetIntValue() const
 {
-    return static_cast<int>(doubleValue + 0.5);
+    return static_cast<int64_t>(doubleValue + 0.5);
 }
 
 double ValueObject::GetDoubleValue() const

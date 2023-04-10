@@ -34,12 +34,13 @@ DocumentStore::~DocumentStore()
 int DocumentStore::CreateCollection(const std::string &name, const std::string &option, int flags)
 {
     std::string lowerCaseName;
-    if (!CheckCommon::CheckCollectionName(name, lowerCaseName)) {
-        GLOGE("Check collection name invalid.");
-        return -E_INVALID_ARGS;
+    int errCode = E_OK;
+    if (!CheckCommon::CheckCollectionName(name, lowerCaseName, errCode)) {
+        GLOGE("Check collection name invalid. %d", errCode);
+        return errCode;
     }
 
-    int errCode = E_OK;
+    errCode = E_OK;
     CollectionOption collOption = CollectionOption::ReadOption(option, errCode);
     if (errCode != E_OK) {
         GLOGE("Read collection option str failed. %d", errCode);
@@ -52,7 +53,7 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
     }
 
     std::lock_guard<std::mutex> lock(dbMutex_);
-    bool ignoreExists = (flags == CHK_EXIST_COLLECTION);
+    bool ignoreExists = (flags != CHK_EXIST_COLLECTION);
     errCode = executor_->CreateCollection(lowerCaseName, ignoreExists);
     if (errCode != E_OK) {
         GLOGE("Create collection failed. %d", errCode);
@@ -77,9 +78,10 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
 int DocumentStore::DropCollection(const std::string &name, int flags)
 {
     std::string lowerCaseName;
-    if (!CheckCommon::CheckCollectionName(name, lowerCaseName)) {
-        GLOGE("Check collection name invalid.");
-        return -E_INVALID_ARGS;
+    int errCode = E_OK;
+    if (!CheckCommon::CheckCollectionName(name, lowerCaseName, errCode)) {
+        GLOGE("Check collection name invalid. %d", errCode);
+        return errCode;
     }
 
     if (flags != 0 && flags != CHK_NON_EXIST_COLLECTION) {
@@ -88,7 +90,7 @@ int DocumentStore::DropCollection(const std::string &name, int flags)
     }
 
     bool ignoreNonExists = (flags == CHK_NON_EXIST_COLLECTION);
-    int errCode = executor_->DropCollection(lowerCaseName, ignoreNonExists);
+    errCode = executor_->DropCollection(lowerCaseName, ignoreNonExists);
     if (errCode != E_OK) {
         GLOGE("Drop collection failed. %d", errCode);
         return errCode;
@@ -113,9 +115,10 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     int flags)
 {
     std::string lowerCaseCollName;
-    if (!CheckCommon::CheckCollectionName(collection, lowerCaseCollName)) {
-        GLOGE("Check collection name invalid.");
-        return -E_INVALID_ARGS;
+    int errCode = E_OK;
+    if (!CheckCommon::CheckCollectionName(collection, lowerCaseCollName, errCode)) {
+        GLOGE("Check collection name invalid. %d", errCode);
+        return errCode;
     }
 
     // TODO:: check filter

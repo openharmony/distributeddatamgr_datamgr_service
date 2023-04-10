@@ -55,6 +55,9 @@ int TrasnferDocErr(int err)
         case -E_NO_DATA:
             outErr = GRD_NO_DATA;
             break;
+        case -E_INVALID_COLL_NAME_FORMAT:
+            outErr = GRD_INVALID_COLLECTION_NAME;
+            break;
         default:
             outErr = GRD_INNER_ERR;
             break;

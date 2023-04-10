@@ -28,7 +28,7 @@ public:
     CheckCommon() = default;
     ~CheckCommon() = default;
 
-    static bool CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName);
+    static bool CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName, int &errCode);
     static bool CheckFilter(const std::string &filter);
     static bool CheckIdFormat(const std::string &data);
     static bool CheckDocument(const std::string &document);

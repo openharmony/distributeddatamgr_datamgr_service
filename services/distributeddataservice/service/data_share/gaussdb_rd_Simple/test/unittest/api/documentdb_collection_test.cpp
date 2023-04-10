@@ -101,8 +101,8 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
 
     for (auto *it : invalidName) {
         GLOGD("CollectionTest002: create collection with name: %s", it);
-        EXPECT_EQ(GRD_CreateCollection(g_db, it, "", 0), GRD_INVALID_ARGS);
-        EXPECT_EQ(GRD_DropCollection(g_db, it, 0), GRD_INVALID_ARGS);
+        EXPECT_EQ(GRD_CreateCollection(g_db, it, "", 0), GRD_INVALID_FORMAT);
+        EXPECT_EQ(GRD_DropCollection(g_db, it, 0), GRD_INVALID_FORMAT);
     }
 }
 
@@ -143,8 +143,8 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest003, TestSize.Level0)
 HWTEST_F(DocumentDBCollectionTest, CollectionTest004, TestSize.Level0)
 {
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_OK);
-    EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_DATA_CONFLICT);
-    EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", CHK_EXIST_COLLECTION), GRD_OK);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_OK);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "Student", "", CHK_EXIST_COLLECTION), GRD_DATA_CONFLICT);
 }
 
 /**
@@ -183,7 +183,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest006, TestSize.Level0)
 {
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":1024})"", 0), GRD_OK);
 
-    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", CHK_EXIST_COLLECTION), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", 0), GRD_INVALID_ARGS);
 
     EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_OK);
     EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_NO_DATA);

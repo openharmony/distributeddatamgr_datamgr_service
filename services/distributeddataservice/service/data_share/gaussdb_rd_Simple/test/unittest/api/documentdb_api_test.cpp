@@ -487,7 +487,10 @@ HWTEST_F(DocumentDBApiTest, OpenDBFlagTest002, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
     std::string path= "./document.db";
-    int status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_CREATE, &db);
+    int status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_ONLY, &db);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+
+    status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OK);
 
     status = GRD_DBClose(db, GRD_DB_CLOSE);

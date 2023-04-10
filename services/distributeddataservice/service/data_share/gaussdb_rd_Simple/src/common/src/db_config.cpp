@@ -111,7 +111,7 @@ bool CheckRedoBufSizeConfig(const JsonObject &config, uint32_t &redoBufSize, int
         return false;
     }
 
-    if (configValue.GetIntValue() < MIN_REDO_BUFFER_SIZE && configValue.GetIntValue() > MAX_REDO_BUFFER_SIZE) {
+    if (configValue.GetIntValue() < MIN_REDO_BUFFER_SIZE || configValue.GetIntValue() > MAX_REDO_BUFFER_SIZE) {
         GLOGE("Check DB config failed, invalid redoPubBufSize value.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return false;
@@ -160,7 +160,7 @@ bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint3
         return false;
     }
 
-    if (configValue.GetIntValue() < MIN_BUFFER_POOL_SIZE && configValue.GetIntValue() > MAX_BUFFER_POOL_SIZE ||
+    if (configValue.GetIntValue() < MIN_BUFFER_POOL_SIZE || configValue.GetIntValue() > MAX_BUFFER_POOL_SIZE ||
         configValue.GetIntValue() < pageSize * 33) {
         GLOGE("Check DB config failed, invalid bufferPoolSize value.");
         errCode = -E_INVALID_CONFIG_VALUE;
