@@ -50,6 +50,7 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
         return -E_INVALID_ARGS;
     }
 
+    std::lock_guard<std::mutex> lock(dbMutex_);
     bool ignoreExists = (flags == CHK_EXIST_COLLECTION);
     errCode = executor_->CreateCollection(name, ignoreExists);
     if (errCode != E_OK) {
@@ -91,6 +92,7 @@ int DocumentStore::DropCollection(const std::string &name, int flags)
         return errCode;
     }
 
+    std::lock_guard<std::mutex> lock(dbMutex_);
     errCode = executor_->CleanCollectionOption(name);
     if (errCode != E_OK) {
         GLOGE("Clean collection option failed. %d", errCode);
@@ -126,6 +128,8 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
 
     std::string docId(filter.begin(), filter.end());
     bool isReplace = (flags & GRD_DOC_REPLACE == GRD_DOC_REPLACE);
+
+    std::lock_guard<std::mutex> lock(dbMutex_);
     return coll.UpsertDocument(docId, document, isReplace);
 }
 } // namespace DocumentDB

@@ -18,6 +18,7 @@
 
 #include <string>
 #include <map>
+#include <mutex>
 
 #include "collection.h"
 #include "kv_store_executor.h"
@@ -35,6 +36,8 @@ public:
     int UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document, int flags);
 
 private:
+    std::mutex dbMutex_;
+
     KvStoreExecutor *executor_ = nullptr;
     std::map<std::string, Collection> collections_;
 };
