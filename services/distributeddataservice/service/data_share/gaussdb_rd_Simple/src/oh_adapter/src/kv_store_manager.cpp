@@ -39,12 +39,12 @@ int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, 
 
     auto *sqliteExecutor = new (std::nothrow) SqliteStoreExecutor(db);
     if (sqliteExecutor == nullptr) {
+        sqlite3_close_v2(db);
         return -E_OUT_OF_MEMORY;
     }
 
     std::string oriConfigStr;
     errCode = sqliteExecutor->GetDBConfig(oriConfigStr);
-    GLOGD("----> Get original db config: [%s] %d", oriConfigStr.c_str(), errCode);
     if (errCode == -E_NOT_FOUND) {
         errCode = sqliteExecutor->SetDBConfig(config.ToString());
     } else if (errCode != E_OK) {

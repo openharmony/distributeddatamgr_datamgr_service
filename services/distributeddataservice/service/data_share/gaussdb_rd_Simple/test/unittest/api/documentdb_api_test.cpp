@@ -83,6 +83,31 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: OpenDBTest002
+ * @tc.desc: Test open document db with invalid db
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBTest002, TestSize.Level0)
+{
+    std::string path = "./document.db";
+    int status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, nullptr);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+
+    GRD_DB *db = nullptr;
+    status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_OK);
+    EXPECT_NE(db, nullptr);
+
+    status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+
+    status = GRD_DBClose(db, GRD_DB_CLOSE);
+    EXPECT_EQ(status, GRD_OK);
+}
+
+/**
  * @tc.name: OpenDBPathTest001
  * @tc.desc: Test open document db with NULL path
  * @tc.type: FUNC
@@ -131,7 +156,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest001, TestSize.Level0)
     GRD_DB *db = nullptr;
     std::string path= "./document.db";
     const int MAX_JSON_LEN = 512 * 1024;
-    std::string configStr = std::string(MAX_JSON_LEN + 1, 'a');
+    std::string configStr = std::string(MAX_JSON_LEN, 'a');
     int status = GRD_DBOpen(path.c_str(), configStr.c_str(), GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OVER_LIMIT);
 }

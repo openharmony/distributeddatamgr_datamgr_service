@@ -115,8 +115,6 @@ bool DocumentStoreManager::CheckDBPath(const std::string &path, std::string &can
         return false;
     }
 
-    GLOGD("----> path: %s, dirPath: %s, dbName: %s, canonicalPath: %s", path.c_str(), dirPath.c_str(), dbName.c_str(),
-        canonicalPath.c_str());
     return true;
 }
 

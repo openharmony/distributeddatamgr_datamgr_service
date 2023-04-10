@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
 #include <climits>
 
 #include "doc_common.h"
@@ -44,18 +45,23 @@ bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefi
 }
 }
 
-bool CheckCommon::CheckCollectionName(const std::string &collectionName)
+bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName)
 {
     if (collectionName.empty()) {
         return false;
     }
-    if (collectionName.length() > MAX_COLLECTION_NAME) {
+    if (collectionName.length() + 1 > MAX_COLLECTION_NAME) {
         return false;
     }
     if (CheckCollectionNamePrefix(collectionName, COLLECTION_PREFIX_GRD) ||
         CheckCollectionNamePrefix(collectionName, COLLECTION_PREFIX_GM_SYS)) {
         return false;
     }
+
+    lowerCaseName = collectionName;
+    std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), [](unsigned char c){
+        return std::tolower(c);
+    });
     return true;
 }
 

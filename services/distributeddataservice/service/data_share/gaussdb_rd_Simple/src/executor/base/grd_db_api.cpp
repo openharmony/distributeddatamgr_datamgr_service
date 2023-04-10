@@ -26,11 +26,24 @@ using namespace DocumentDB;
 
 int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GRD_DB **db)
 {
+    if (db == nullptr || (*db) != nullptr) {
+        return GRD_INVALID_ARGS;
+    }
     std::string path = (dbPath == nullptr ? "" : dbPath);
     std::string config = (configStr == nullptr ? "" : configStr);
     DocumentStore *store = nullptr;
     int ret = DocumentStoreManager::GetDocumentStore(path, config, flags, store);
+    if (ret != E_OK || store == nullptr) {
+        return TrasnferDocErr(ret);
+    }
+
     *db = new (std::nothrow) GRD_DB();
+    if (*db == nullptr) {
+        (void)DocumentStoreManager::CloseDocumentStore(store, GRD_DB_CLOSE_IGNORE_ERROR);
+        store = nullptr;
+        ret = -E_OUT_OF_MEMORY;
+    }
+
     (*db)->store_ = store;
     return TrasnferDocErr(ret);
 }

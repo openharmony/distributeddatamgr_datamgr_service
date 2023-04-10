@@ -23,7 +23,7 @@
 namespace DocumentDB {
 class Collection {
 public:
-    Collection(std::string name, KvStoreExecutor *executor);
+    Collection(const std::string &name, KvStoreExecutor *executor);
     ~Collection();
 
     int PutDocument(const Key &key, const Value &document);

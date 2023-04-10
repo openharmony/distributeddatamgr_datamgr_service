@@ -24,11 +24,13 @@
 
 namespace DocumentDB {
 namespace {
+const std::string OPT_MAX_DOC = "maxdoc";
+const std::vector<std::string> DB_CONFIG = {
+    OPT_MAX_DOC,
+};
+
 bool CheckConfigSupport(const JsonObject &config, int &errCode)
 {
-    static const std::vector<std::string> DB_CONFIG = {
-        "maxDoc",
-    };
 
     JsonObject child = config.GetChild();
     while (!child.IsNull()) {
@@ -49,7 +51,12 @@ CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &er
         return {};
     }
 
-    JsonObject collOpt = JsonObject::Parse(optStr, errCode);
+    std::string lowerCaseOptStr = optStr;
+    std::transform(lowerCaseOptStr.begin(), lowerCaseOptStr.end(), lowerCaseOptStr.begin(), [](unsigned char c) {
+        return std::tolower(c);
+    });
+
+    JsonObject collOpt = JsonObject::Parse(lowerCaseOptStr, errCode);
     if (errCode != E_OK) {
         GLOGE("Read collection option failed from str. %d", errCode);
         return {};
@@ -60,7 +67,7 @@ CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &er
         return {};
     }
 
-    static const JsonFieldPath maxDocField = {"maxDoc"};
+    static const JsonFieldPath maxDocField = {OPT_MAX_DOC};
     if (!collOpt.IsFieldExists(maxDocField)) {
         return {};
     }

@@ -14,13 +14,21 @@
 */
 
 #include "collection.h"
+
+#include <algorithm>
+
 #include "doc_common.h"
 #include "doc_errno.h"
 #include "log_print.h"
 
 namespace DocumentDB {
-Collection::Collection(std::string name, KvStoreExecutor *executor) : name_(COLL_PREFIX + name), executor_(executor)
+Collection::Collection(const std::string &name, KvStoreExecutor *executor) : executor_(executor)
 {
+    std::string lowerCaseName = name;
+    std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), [](unsigned char c) {
+        return std::tolower(c);
+    });
+    name_ = COLL_PREFIX + lowerCaseName;
 }
 
 Collection::~Collection()

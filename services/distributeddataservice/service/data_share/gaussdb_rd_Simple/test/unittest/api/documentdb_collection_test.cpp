@@ -75,6 +75,10 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest001, TestSize.Level0)
     EXPECT_EQ(GRD_CreateCollection(nullptr, "student", "", 0), GRD_INVALID_ARGS);
 }
 
+namespace {
+const int MAX_COLLECTION_LEN = 512;
+}
+
 /**
  * @tc.name: CollectionTest002
  * @tc.desc: Test create/drop collection with invalid collection name
@@ -84,6 +88,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest001, TestSize.Level0)
  */
 HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
 {
+    string overLenName(MAX_COLLECTION_LEN, 'a');
     std::vector<const char *> invalidName = {
         nullptr,
         "",
@@ -91,6 +96,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
         "grd_123",
         "GM_SYS_123",
         "gm_sys_123",
+        overLenName.c_str()
     };
 
     for (auto *it : invalidName) {
@@ -109,13 +115,15 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
  */
 HWTEST_F(DocumentDBCollectionTest, CollectionTest003, TestSize.Level0)
 {
+    string overLenName(MAX_COLLECTION_LEN - 1, 'a');
     std::vector<const char *> validName = {
         "123",
         "&^%@",
         "中文字符",
         "sqlite_master",
         "NULL",
-        "SELECT"
+        "SELECT",
+        overLenName.c_str()
     };
 
     for (auto *it : validName) {
@@ -151,7 +159,6 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest005, TestSize.Level0)
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({aa})"", 0), GRD_INVALID_FORMAT);
 
     std::vector<const char *> invalidOption = {
-        // R""({"invalidOption":2})"",
         R""({"maxDoc":0})"",
         R""({"maxDoc":"123"})"",
         R""({"maxDoc":{"value":1024}})"",

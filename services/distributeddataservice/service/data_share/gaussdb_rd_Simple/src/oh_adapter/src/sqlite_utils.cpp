@@ -48,7 +48,6 @@ void SQLiteUtils::SqliteLogCallback(void *data, int err, const char *msg)
 
 int SQLiteUtils::CreateDataBase(const std::string &path, int flag, sqlite3 *&db)
 {
-    GLOGD("----> open sqlite: %s", path.c_str());
     int errCode = sqlite3_open_v2(path.c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
     if (errCode != SQLITE_OK) {
         GLOGE("Open database [%s] failed. %d", path.c_str(), errCode);
@@ -249,7 +248,6 @@ int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::functio
     if (db == nullptr || sql.empty()) {
         return -E_INVALID_ARGS;
     }
-    GLOGD("----> execSql: %s", sql.c_str());
     bool bindFinish = true;
     sqlite3_stmt *stmt = nullptr;
     int errCode = SQLiteUtils::GetStatement(db, sql, stmt);

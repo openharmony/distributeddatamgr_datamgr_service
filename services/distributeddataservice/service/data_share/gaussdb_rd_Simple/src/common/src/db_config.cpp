@@ -32,12 +32,12 @@ const int MAX_CONNECTION_NUM = 1024;
 const int MIN_BUFFER_POOL_SIZE = 1024;
 const int MAX_BUFFER_POOL_SIZE = 4 * 1024 * 1024;
 
-const std::string DB_CONFIG_PAGESIZE = "pageSize";
-const std::string DB_CONFIG_REDO_FLUSH_BY_TRX = "redoFlushByTrx";
-const std::string DB_CONFIG_REDO_PUB_BUFF_SIZE = "redoPubBufSize";
-const std::string DB_CONFIG_MAX_CONN_NUM = "maxConnNum";
-const std::string DB_CONFIG_BUFFER_POOL_SIZE = "bufferPoolSize";
-const std::string DB_CONFIG_CRC_CHECK_ENABLE = "crcCheckEnable";
+const std::string DB_CONFIG_PAGESIZE = "pagesize";
+const std::string DB_CONFIG_REDO_FLUSH_BY_TRX = "redoflushbytrx";
+const std::string DB_CONFIG_REDO_PUB_BUFF_SIZE = "redopubbufsize";
+const std::string DB_CONFIG_MAX_CONN_NUM = "maxconnnum";
+const std::string DB_CONFIG_BUFFER_POOL_SIZE = "bufferpoolsize";
+const std::string DB_CONFIG_CRC_CHECK_ENABLE = "crccheckenable";
 
 const std::vector<std::string> DB_CONFIG = {
     DB_CONFIG_PAGESIZE,
@@ -217,13 +217,18 @@ DBConfig DBConfig::ReadConfig(const std::string &confStr, int &errCode)
         return {};
     }
 
-    if (confStr.length() > MAX_DB_CONFIG_LEN) {
+    if (confStr.length() + 1 > MAX_DB_CONFIG_LEN) {
         GLOGE("Config json string is too long.");
         errCode = -E_OVER_LIMIT;
         return {};
     }
 
-    JsonObject dbConfig = JsonObject::Parse(confStr, errCode);
+    std::string lowerCaseConfStr = confStr;
+    std::transform(lowerCaseConfStr.begin(), lowerCaseConfStr.end(), lowerCaseConfStr.begin(), [](unsigned char c) {
+        return std::tolower(c);
+    });
+
+    JsonObject dbConfig = JsonObject::Parse(lowerCaseConfStr, errCode);
     if (errCode != E_OK) {
         GLOGE("Read DB config failed from str. %d", errCode);
         return {};

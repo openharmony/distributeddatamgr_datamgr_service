@@ -338,8 +338,6 @@ std::string JsonObject::GetItemFiled() const
         while (head->prev != tail) {
             head = head->prev;
             index++;
-
-            if (index > 10) break;
         }
         return std::to_string(index);
     } else {

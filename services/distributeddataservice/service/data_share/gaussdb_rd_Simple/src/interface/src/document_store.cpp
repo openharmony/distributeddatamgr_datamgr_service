@@ -33,7 +33,8 @@ DocumentStore::~DocumentStore()
 
 int DocumentStore::CreateCollection(const std::string &name, const std::string &option, int flags)
 {
-    if (!CheckCommon::CheckCollectionName(name)) {
+    std::string lowerCaseName;
+    if (!CheckCommon::CheckCollectionName(name, lowerCaseName)) {
         GLOGE("Check collection name invalid.");
         return -E_INVALID_ARGS;
     }
@@ -52,15 +53,15 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
 
     std::lock_guard<std::mutex> lock(dbMutex_);
     bool ignoreExists = (flags == CHK_EXIST_COLLECTION);
-    errCode = executor_->CreateCollection(name, ignoreExists);
+    errCode = executor_->CreateCollection(lowerCaseName, ignoreExists);
     if (errCode != E_OK) {
         GLOGE("Create collection failed. %d", errCode);
         return errCode;
     }
     std::string oriOptStr;
-    errCode = executor_->GetCollectionOption(name, oriOptStr);
+    errCode = executor_->GetCollectionOption(lowerCaseName, oriOptStr);
     if (errCode == -E_NOT_FOUND) {
-        executor_->SetCollectionOption(name, collOption.ToString());
+        executor_->SetCollectionOption(lowerCaseName, collOption.ToString());
         errCode = E_OK;
     } else {
         CollectionOption oriOption = CollectionOption::ReadOption(oriOptStr, errCode);
@@ -75,7 +76,8 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
 
 int DocumentStore::DropCollection(const std::string &name, int flags)
 {
-    if (!CheckCommon::CheckCollectionName(name)) {
+    std::string lowerCaseName;
+    if (!CheckCommon::CheckCollectionName(name, lowerCaseName)) {
         GLOGE("Check collection name invalid.");
         return -E_INVALID_ARGS;
     }
@@ -86,14 +88,14 @@ int DocumentStore::DropCollection(const std::string &name, int flags)
     }
 
     bool ignoreNonExists = (flags == CHK_NON_EXIST_COLLECTION);
-    int errCode = executor_->DropCollection(name, ignoreNonExists);
+    int errCode = executor_->DropCollection(lowerCaseName, ignoreNonExists);
     if (errCode != E_OK) {
         GLOGE("Drop collection failed. %d", errCode);
         return errCode;
     }
 
     std::lock_guard<std::mutex> lock(dbMutex_);
-    errCode = executor_->CleanCollectionOption(name);
+    errCode = executor_->CleanCollectionOption(lowerCaseName);
     if (errCode != E_OK) {
         GLOGE("Clean collection option failed. %d", errCode);
     }
@@ -110,7 +112,8 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
 int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document,
     int flags)
 {
-    if (!CheckCommon::CheckCollectionName(collection)) {
+    std::string lowerCaseCollName;
+    if (!CheckCommon::CheckCollectionName(collection, lowerCaseCollName)) {
         GLOGE("Check collection name invalid.");
         return -E_INVALID_ARGS;
     }
@@ -124,7 +127,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         return -E_INVALID_ARGS;
     }
 
-    auto coll = Collection(collection, executor_);
+    auto coll = Collection(lowerCaseCollName, executor_);
 
     std::string docId(filter.begin(), filter.end());
     bool isReplace = (flags & GRD_DOC_REPLACE == GRD_DOC_REPLACE);

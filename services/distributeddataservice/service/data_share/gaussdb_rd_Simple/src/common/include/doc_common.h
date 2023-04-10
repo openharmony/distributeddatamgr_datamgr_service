@@ -26,9 +26,9 @@ class CheckCommon
 {
 public:
     CheckCommon() = default;
-    ~CheckCommon();
+    ~CheckCommon() = default;
 
-    static bool CheckCollectionName(const std::string &collectionName);
+    static bool CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName);
     static bool CheckFilter(const std::string &filter);
     static bool CheckIdFormat(const std::string &data);
     static bool CheckDocument(const std::string &document);
