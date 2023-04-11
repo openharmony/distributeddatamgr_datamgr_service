@@ -89,7 +89,7 @@ int DocumentStore::DropCollection(const std::string &name, int flags)
         return -E_INVALID_ARGS;
     }
 
-    bool ignoreNonExists = (flags == CHK_NON_EXIST_COLLECTION);
+    bool ignoreNonExists = (flags != CHK_NON_EXIST_COLLECTION);
     errCode = executor_->DropCollection(lowerCaseName, ignoreNonExists);
     if (errCode != E_OK) {
         GLOGE("Drop collection failed. %d", errCode);

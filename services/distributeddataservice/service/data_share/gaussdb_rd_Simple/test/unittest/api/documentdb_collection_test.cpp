@@ -89,17 +89,28 @@ const int MAX_COLLECTION_LEN = 512;
 HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
 {
     string overLenName(MAX_COLLECTION_LEN, 'a');
+    EXPECT_EQ(GRD_CreateCollection(g_db, overLenName.c_str(), "", 0), GRD_OVER_LIMIT);
+    EXPECT_EQ(GRD_DropCollection(g_db, overLenName.c_str(), 0), GRD_OVER_LIMIT);
+
     std::vector<const char *> invalidName = {
         nullptr,
         "",
-        "GRD_123",
-        "grd_123",
-        "GM_SYS_123",
-        "gm_sys_123",
-        overLenName.c_str()
     };
 
     for (auto *it : invalidName) {
+        GLOGD("CollectionTest002: create collection with name: %s", it);
+        EXPECT_EQ(GRD_CreateCollection(g_db, it, "", 0), GRD_INVALID_ARGS);
+        EXPECT_EQ(GRD_DropCollection(g_db, it, 0), GRD_INVALID_ARGS);
+    }
+
+    std::vector<const char *> invalidNameFormat = {
+        "GRD_123",
+        "grd_123",
+        "GM_SYS_123",
+        "gm_sys_123"
+    };
+
+    for (auto *it : invalidNameFormat) {
         GLOGD("CollectionTest002: create collection with name: %s", it);
         EXPECT_EQ(GRD_CreateCollection(g_db, it, "", 0), GRD_INVALID_FORMAT);
         EXPECT_EQ(GRD_DropCollection(g_db, it, 0), GRD_INVALID_FORMAT);
@@ -186,8 +197,8 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest006, TestSize.Level0)
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", 0), GRD_INVALID_ARGS);
 
     EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_OK);
-    EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_NO_DATA);
-    EXPECT_EQ(GRD_DropCollection(g_db, "student", CHK_NON_EXIST_COLLECTION), GRD_OK);
+    EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_OK);
+    EXPECT_EQ(GRD_DropCollection(g_db, "student", CHK_NON_EXIST_COLLECTION), GRD_NO_DATA);
 
     // Create collection with different option returnh OK after drop collection
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", 0), GRD_OK);
