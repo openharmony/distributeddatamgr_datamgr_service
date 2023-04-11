@@ -32,9 +32,9 @@ public:
     template<class T>
     struct Less {
     public:
-        bool operator()(const sptr<T> &__x, const sptr<T> &__y) const
+        bool operator()(const sptr<T> &_x, const sptr<T> &_y) const
         {
-            return __x.GetRefPtr() < __y.GetRefPtr();
+            return _x.GetRefPtr() < _y.GetRefPtr();
         }
     };
     using DBStatus = DistributedDB::DBStatus;
