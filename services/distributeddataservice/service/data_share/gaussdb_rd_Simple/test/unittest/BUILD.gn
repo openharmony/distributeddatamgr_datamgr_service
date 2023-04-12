@@ -1,14 +1,156 @@
-/*
-* Copyright (c) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/test.gni")
+
+module_output_path = "datamgr_service/documentdb"
+
+###############################################################################
+config("module_private_config") {
+  visibility = [ ":*" ]
+
+  include_dirs = [
+    "../src/common/include",
+    "../src/executor/include",
+    "../src/oh_adapter/include",
+    "../src/oh_adapter/src",
+    "../src/interface/include",
+    "unittest/common",
+  ]
+
+  defines = [
+    "SQLITE_ENABLE_SNAPSHOT",
+    "SQLITE_HAS_CODEC",
+    "SQLITE_ENABLE_JSON1",
+    "USING_HILOG_LOGGER",
+    "USE_SQLITE_SYMBOLS",
+    "SQLITE_ENABLE_DROPTABLE_CALLBACK",
+  ]
+}
+
+###############################################################################
+ohos_source_set("src_file") {
+  testonly = true
+
+  sources = [
+    "../src/common/src/collection_option.cpp",
+    "../src/common/src/db_config.cpp",
+    "../src/common/src/doc_common.cpp",
+    "../src/common/src/json_common.cpp",
+    "../src/common/src/log_print.cpp",
+    "../src/common/src/os_api.cpp",
+    "../src/executor/base/grd_db_api.cpp",
+    "../src/executor/document/grd_document_api.cpp",
+    "../src/interface/src/collection.cpp",
+    "../src/interface/src/doc_errno.cpp",
+    "../src/interface/src/document_store.cpp",
+    "../src/interface/src/document_store_manager.cpp",
+    "../src/oh_adapter/src/json_object.cpp",
+    "../src/oh_adapter/src/kv_store_manager.cpp",
+    "../src/oh_adapter/src/sqlite_store_executor_impl.cpp",
+    "../src/oh_adapter/src/sqlite_utils.cpp",
+    "unittest/common/documentdb_test_utils.cpp",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "//third_party/googletest:gtest_main",
+    "//third_party/sqlite:sqlite",
+  ]
+
+  configs += [ "//third_party/cJSON:cJSON_config" ]
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
+  deps += [ "//third_party/cJSON:cjson" ]
+  external_deps = [
+    "c_utils:utils",
+    "hisysevent_native:libhisysevent",
+    "hitrace_native:hitrace_meter",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
+  part_name = "kv_store"
+}
+
+template("documentdb_unittest") {
+  ohos_unittest(target_name) {
+    forward_variables_from(invoker, "*")
+    module_out_path = module_output_path
+    if (!defined(deps)) {
+      deps = []
+    }
+    if (!defined(external_deps)) {
+      external_deps = []
+    }
+    configs = [ ":module_private_config" ]
+    deps += [
+      ":src_file",
+      "//third_party/googletest:gmock_main",
+      "//third_party/googletest:gtest_main",
+      "//third_party/sqlite:sqlite",
+    ]
+    configs += [ "//third_party/cJSON:cJSON_config" ]
+    ldflags = [ "-Wl,--exclude-libs,ALL" ]
+    deps += [
+      "//third_party/cJSON:cjson",
+      "//third_party/openssl:libcrypto_shared",
+    ]
+    external_deps = [
+      "c_utils:utils",
+      "hisysevent_native:libhisysevent",
+      "hitrace_native:hitrace_meter",
+      "hiviewdfx_hilog_native:libhilog",
+    ]
+  }
+}
+
+documentdb_unittest("DocumentDBApiTest") {
+  sources = [ "unittest/api/documentdb_api_test.cpp" ]
+}
+
+documentdb_unittest("DocumentDBCollectionTest") {
+  sources = [ "unittest/api/documentdb_collection_test.cpp" ]
+}
+
+documentdb_unittest("DocumentDBDataTest") {
+  sources = [ "unittest/api/documentdb_data_test.cpp" ]
+}
+
+documentdb_unittest("DocumentDBJsonCommonTest") {
+  sources = [ "unittest/oh_adapter/documentdb_json_common_test.cpp" ]
+}
+
+documentdb_unittest("DocumentDBJsonObjectTest") {
+  sources = [ "unittest/oh_adapter/documentdb_jsonobject_test.cpp" ]
+}
+
+###############################################################################
+group("unittest") {
+  testonly = true
+  deps = [ "//third_party/googletest:gmock" ]
+
+  deps += [
+    ":DocumentDBApiTest",
+    ":DocumentDBCollectionTest",
+    ":DocumentDBDataTest",
+    ":DocumentDBJsonCommonTest",
+    ":DocumentDBJsonObjectTest",
+  ]
+}
+
+###############################################################################
+
+group("document_fuzztest") {
+  testonly = true
+  deps = []
+  deps += []
+}
+###############################################################################

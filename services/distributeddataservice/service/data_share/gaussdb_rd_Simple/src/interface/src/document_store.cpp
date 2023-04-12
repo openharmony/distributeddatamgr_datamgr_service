@@ -123,6 +123,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
 
     // TODO:: check filter
 
+
     // TODO:: check document
 
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
@@ -133,7 +134,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     auto coll = Collection(lowerCaseCollName, executor_);
 
     std::string docId(filter.begin(), filter.end());
-    bool isReplace = (flags & GRD_DOC_REPLACE == GRD_DOC_REPLACE);
+    bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
 
     std::lock_guard<std::mutex> lock(dbMutex_);
     return coll.UpsertDocument(docId, document, isReplace);

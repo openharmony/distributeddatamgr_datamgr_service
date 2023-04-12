@@ -20,10 +20,6 @@
 #include "sqlite_utils.h"
 
 namespace DocumentDB {
-constexpr const char *APP_ID = "APP_ID";
-constexpr const char *USER_ID = "USER_ID";
-constexpr const char *STORE_ID = "STORE_ID";
-
 int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, KvStoreExecutor *&executor)
 {
     if (executor != nullptr) {

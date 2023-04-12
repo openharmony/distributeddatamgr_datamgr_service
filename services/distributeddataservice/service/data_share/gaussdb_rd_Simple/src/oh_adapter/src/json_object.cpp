@@ -425,7 +425,6 @@ int JsonObject::DeleteItemOnTarget(const JsonFieldPath &path)
     JsonFieldPath patherPath = path;
     patherPath.pop_back();
 
-    int errCode = E_OK;
     cJSON *nodeFather = MoveToPath(cjson_, patherPath, caseSensitive_);
     if (nodeFather == nullptr) {
         GLOGE("Delete item failed, json field path not found.");
