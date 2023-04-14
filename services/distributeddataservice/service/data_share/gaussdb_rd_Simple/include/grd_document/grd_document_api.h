@@ -33,7 +33,7 @@ int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned in
 
 int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update, unsigned int flags);
 
-int GRD_UpSertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, unsigned int flags);
+int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, unsigned int flags);
 
 int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, unsigned int flags);
 

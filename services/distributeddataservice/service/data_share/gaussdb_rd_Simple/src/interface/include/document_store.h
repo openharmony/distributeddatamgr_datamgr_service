@@ -32,7 +32,7 @@ public:
     int CreateCollection(const std::string &name, const std::string &option, int flags);
     int DropCollection(const std::string &name, int flags);
 
-    int UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update, int flag);
+    int UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update, int flags);
     int UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document, int flags);
 
 private:

@@ -31,7 +31,7 @@ public:
     int DeleteDocument(const Key &key);
 
     int UpsertDocument(const std::string &id, const std::string &document, bool isReplace = true);
-    int UpdateDocument(const Key &key, Value &update);
+    int UpdateDocument(const std::string &id, const std::string &document);
 private:
     std::string name_;
     KvStoreExecutor *executor_ = nullptr;

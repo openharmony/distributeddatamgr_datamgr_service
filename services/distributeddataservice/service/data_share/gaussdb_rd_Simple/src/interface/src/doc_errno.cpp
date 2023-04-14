@@ -53,6 +53,7 @@ int TrasnferDocErr(int err)
             outErr = GRD_COLLECTION_CONFLICT;
             break;
         case -E_NO_DATA:
+        case -E_NOT_FOUND:
             outErr = GRD_NO_DATA;
             break;
         case -E_INVALID_COLL_NAME_FORMAT:

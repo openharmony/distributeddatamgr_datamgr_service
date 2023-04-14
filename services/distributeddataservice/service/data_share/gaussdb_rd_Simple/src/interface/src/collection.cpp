@@ -101,14 +101,62 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
                 GLOGD("Append value failed. %d", errCode);
                 return errCode;
             }
+
+            std::string valStr = originValue.Print();
+            valSet = {valStr.begin(), valStr.end()};
         }
     }
 
     return executor_->PutData(name_, keyId, valSet);
 }
 
-int Collection::UpdateDocument(const Key &key, Value &update)
+int Collection::UpdateDocument(const std::string &id, const std::string &update)
 {
-    return E_OK;
+    if (executor_ == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+
+    int errCode = E_OK;
+    bool isCollExist = executor_->IsCollectionExists(name_, errCode);
+    if (errCode != E_OK) {
+        GLOGE("Check collection failed. %d", errCode);
+        return -errCode;
+    }
+    if (!isCollExist) {
+        GLOGE("Collection not created.");
+        return -E_NO_DATA;
+    }
+
+    JsonObject updateValue = JsonObject::Parse(update, errCode);
+    if (errCode != E_OK) {
+        GLOGD("Parse upsert value failed. %d", errCode);
+        return errCode;
+    }
+
+    Key keyId(id.begin(), id.end());
+    Value valueGot;
+    errCode = executor_->GetData(name_, keyId, valueGot);
+    std::string valueGotStr = std::string(valueGot.begin(), valueGot.end());
+    if (errCode != E_OK) {
+        GLOGE("Get original document failed. %d", errCode);
+        return errCode;
+    }
+
+    GLOGD("Update document value.");
+    JsonObject originValue = JsonObject::Parse(valueGotStr, errCode);
+    if (errCode != E_OK) {
+        GLOGD("Parse original value failed. %d %s", errCode, valueGotStr.c_str());
+        return errCode;
+    }
+
+    errCode = JsonCommon::Append(originValue, updateValue);
+    if (errCode != E_OK) {
+        GLOGD("Append value failed. %d", errCode);
+        return errCode;
+    }
+
+    std::string valStr = originValue.Print();
+    Value valSet(valStr.begin(), valStr.end());
+    return executor_->PutData(name_, keyId, valSet);
 }
 } // namespace DocumentDB

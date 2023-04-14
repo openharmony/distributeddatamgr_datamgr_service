@@ -55,7 +55,7 @@ int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, co
     return TrasnferDocErr(ret);
 }
 
-int GRD_UpSertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, unsigned int flags)
+int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, unsigned int flags)
 {
     if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;

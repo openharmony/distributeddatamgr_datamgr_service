@@ -105,10 +105,86 @@ int DocumentStore::DropCollection(const std::string &name, int flags)
     return errCode;
 }
 
-int DocumentStore::UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update,
-    int flag)
+namespace {
+bool CheckFilter(const std::string &filter, std::string &idStr, int &errCode)
 {
-    return E_OK;
+    if (filter.empty()) {
+        errCode = -E_INVALID_ARGS;
+        GLOGE("Check filter invalid. %d", errCode);
+        return false;
+    }
+
+    JsonObject filterObject = JsonObject::Parse(filter, errCode, true);
+    if (errCode != E_OK) {
+        GLOGE("Parse filter failed. %d", errCode);
+        return false;
+    }
+
+    JsonObject filterId = filterObject.GetObjectItem("_id", errCode);
+    if (errCode != E_OK || filterId.GetItemValue().GetValueType() != ValueObject::ValueType::VALUE_STRING) {
+        GLOGE("Check filter '_id' not found or type not string.");
+        errCode = -E_INVALID_ARGS;
+        return false;
+    }
+
+    idStr = filterId.GetItemValue().GetStringValue();
+    return true;
+}
+
+bool CheckDocument(const std::string &updateStr, int &errCode)
+{
+    if (updateStr.empty()) {
+        errCode = -E_INVALID_ARGS;
+        return false;
+    }
+
+    JsonObject updateObj = JsonObject::Parse(updateStr, errCode);
+    if (updateObj.IsNull() || errCode != E_OK) {
+        GLOGE("Parse update document failed. %d", errCode);
+        return false;
+    }
+
+    JsonObject filterId = updateObj.GetObjectItem("_id", errCode);
+    if (errCode != -E_NOT_FOUND) {
+        GLOGE("Can not change '_id' with update document failed.");
+        return false;
+    }
+
+    return true;
+}
+}
+
+int DocumentStore::UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update,
+    int flags)
+{
+    std::string lowerCaseCollName;
+    int errCode = E_OK;
+    if (!CheckCommon::CheckCollectionName(collection, lowerCaseCollName, errCode)) {
+        GLOGE("Check collection name invalid. %d", errCode);
+        return errCode;
+    }
+
+    std::string idStr;
+    if (!CheckFilter(filter, idStr, errCode)) {
+        GLOGE("Check update filter failed. %d", errCode);
+        return errCode;
+    }
+
+    if (!CheckDocument(update, errCode)) {
+        GLOGE("Check update document failed. %d", errCode);
+        return errCode;
+    }
+
+    if (flags != 0) {
+        GLOGE("Check flags invalid.");
+        return -E_INVALID_ARGS;
+    }
+
+    std::string docId(idStr.begin(), idStr.end());
+
+    std::lock_guard<std::mutex> lock(dbMutex_);
+    auto coll = Collection(lowerCaseCollName, executor_);
+    return coll.UpdateDocument(docId, update);
 }
 
 int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document,
@@ -121,22 +197,27 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
 
-    // TODO:: check filter
+    std::string idStr;
+    if (!CheckFilter(filter, idStr, errCode)) {
+        GLOGE("Check upsert filter failed. %d", errCode);
+        return errCode;
+    }
 
-
-    // TODO:: check document
+    if (!CheckDocument(document, errCode)) {
+        GLOGE("Check upsert document failed. %d", errCode);
+        return errCode;
+    }
 
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
 
-    auto coll = Collection(lowerCaseCollName, executor_);
-
-    std::string docId(filter.begin(), filter.end());
+    std::string docId(idStr.begin(), idStr.end());
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
 
     std::lock_guard<std::mutex> lock(dbMutex_);
+    auto coll = Collection(lowerCaseCollName, executor_);
     return coll.UpsertDocument(docId, document, isReplace);
 }
 } // namespace DocumentDB

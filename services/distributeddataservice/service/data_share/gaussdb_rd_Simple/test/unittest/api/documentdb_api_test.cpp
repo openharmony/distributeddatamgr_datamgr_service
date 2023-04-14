@@ -70,8 +70,8 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest001, TestSize.Level0)
 
     EXPECT_EQ(GRD_CreateCollection(db, "student", "", 0), GRD_OK);
 
-    EXPECT_EQ(GRD_UpSertDoc(db, "student", "10001", R""({"name":"Tom","age":23})"", 0), GRD_OK);
-    EXPECT_EQ(GRD_UpSertDoc(db, "student", "10001", R""({"name":"Tom","age":23})"", 0), GRD_OK);
+    EXPECT_EQ(GRD_UpsertDoc(db, "student", R""({"_id":"10001"})"", R""({"name":"Tom","age":23})"", 0), GRD_OK);
+    EXPECT_EQ(GRD_UpsertDoc(db, "student", R""({"_id":"10001"})"", R""({"name":"Tom","age":23})"", 0), GRD_OK);
 
     EXPECT_EQ(GRD_DropCollection(db, "student", 0), GRD_OK);
 
@@ -291,6 +291,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest004, TestSize.Level1)
         GRD_DB *db = nullptr;
         int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
         EXPECT_EQ(status, GRD_OK);
+        EXPECT_NE(db, nullptr);
         dbList.push_back(db);
     }
 
@@ -298,6 +299,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest004, TestSize.Level1)
     int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OK);
     EXPECT_NE(db, nullptr);
+    dbList.push_back(db);
 
     for (auto *it : dbList) {
         status = GRD_DBClose(it, GRD_DB_CLOSE);
