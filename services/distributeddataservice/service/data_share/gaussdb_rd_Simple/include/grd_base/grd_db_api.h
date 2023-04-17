@@ -26,6 +26,8 @@ int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GR
 
 int GRD_DBClose(GRD_DB *db, unsigned int flags);
 
+int GRD_Flush(GRD_DB *db, unsigned int flags);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

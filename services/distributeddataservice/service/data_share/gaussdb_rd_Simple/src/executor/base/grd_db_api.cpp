@@ -63,3 +63,14 @@ int GRD_DBClose(GRD_DB *db, unsigned int flags)
     delete db;
     return GRD_OK;
 }
+
+int GRD_Flush(GRD_DB *db, unsigned int flags)
+{
+    if (db == nullptr || db->store_ == nullptr) {
+        return GRD_INVALID_ARGS;
+    }
+    if (flags != GRD_DB_FLUSH_ASYNC && flags != GRD_DB_FLUSH_SYNC) {
+        return GRD_INVALID_ARGS;
+    }
+    return GRD_OK;
+}

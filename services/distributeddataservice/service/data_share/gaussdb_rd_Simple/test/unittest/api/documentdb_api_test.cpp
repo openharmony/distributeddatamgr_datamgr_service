@@ -620,3 +620,35 @@ HWTEST_F(DocumentDBApiTest, CloseDBFlagTest003, TestSize.Level0)
 
     DocumentDBTestUtils::RemoveTestDbFiles(path);
 }
+
+/**
+ * @tc.name: FlushDBTest001
+ * @tc.desc: Test flush document db
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, FlushDBTest001, TestSize.Level0)
+{
+    EXPECT_EQ(GRD_Flush(nullptr, GRD_DB_FLUSH_ASYNC), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_Flush(nullptr, GRD_DB_FLUSH_SYNC), GRD_INVALID_ARGS);
+
+    GRD_DB *db = nullptr;
+    std::string path= "./document.db";
+    int status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_OK);
+    ASSERT_NE(db, nullptr);
+
+    EXPECT_EQ(GRD_Flush(db, GRD_DB_FLUSH_ASYNC), GRD_OK);
+    EXPECT_EQ(GRD_Flush(db, GRD_DB_FLUSH_SYNC), GRD_OK);
+    std::vector<unsigned int> invalidFlags = {2, 4, 8, 512, 1024, UINT32_MAX};
+    for (auto flags : invalidFlags) {
+        EXPECT_EQ(GRD_Flush(db, flags), GRD_INVALID_ARGS);
+    }
+
+    status = GRD_DBClose(db, GRD_DB_CLOSE);
+    EXPECT_EQ(status, GRD_OK);
+    db = nullptr;
+
+    DocumentDBTestUtils::RemoveTestDbFiles(path);
+}
