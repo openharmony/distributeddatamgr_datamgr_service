@@ -63,7 +63,7 @@ void Bootstrap::LoadComponents()
             continue;
         }
         // no need to close the component, so we don't keep the handles
-        auto handle = dlopen(comp.lib.c_str(), RTLD_LAZY);
+        auto handle = dlopen(path, RTLD_LAZY);
         if (handle == nullptr) {
             ZLOGE("dlopen(%{public}s) failed(%{public}d)!", comp.lib.c_str(), errno);
             continue;
