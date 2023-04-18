@@ -184,7 +184,11 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
 
     std::lock_guard<std::mutex> lock(dbMutex_);
     auto coll = Collection(lowerCaseCollName, executor_);
-    return coll.UpdateDocument(docId, update);
+    errCode = coll.UpdateDocument(docId, update);
+    if (errCode == E_OK) {
+        errCode = 1; // update one record.
+    }
+    return errCode;
 }
 
 int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document,
@@ -218,6 +222,10 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
 
     std::lock_guard<std::mutex> lock(dbMutex_);
     auto coll = Collection(lowerCaseCollName, executor_);
-    return coll.UpsertDocument(docId, document, isReplace);
+    errCode = coll.UpsertDocument(docId, document, isReplace);
+    if (errCode == E_OK) {
+        errCode = 1; // upsert one record.
+    }
+    return errCode;
 }
 } // namespace DocumentDB

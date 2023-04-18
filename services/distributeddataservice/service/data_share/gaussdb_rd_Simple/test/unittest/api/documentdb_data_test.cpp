@@ -76,13 +76,13 @@ void DocumentDBDataTest::TearDown(void)
 HWTEST_F(DocumentDBDataTest, UpsertDataTest001, TestSize.Level0)
 {
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, R""({"_id":"1234"})"", document.c_str(), GRD_DOC_REPLACE), GRD_OK);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, R""({"_id":"1234"})"", document.c_str(), GRD_DOC_REPLACE), 1);
 
     std::string update = R""({"CC":"AAAA"})"";
-    EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, R""({"_id":"1234"})"", update.c_str(), 0), GRD_OK);
+    EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, R""({"_id":"1234"})"", update.c_str(), 0), 1);
 
     std::string append = R""({"addr.city":"DDDD"})"";
-    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, R""({"_id":"1234"})"", append.c_str(), GRD_DOC_APPEND), GRD_OK);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, R""({"_id":"1234"})"", append.c_str(), GRD_DOC_APPEND), 1);
 }
 
 /**
@@ -194,10 +194,10 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest008, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"name":"Tmn","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_REPLACE), GRD_OK);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_REPLACE), 1);
 
     std::string updateDoc = R""({"name":"Xue","case":2,"age":28,"addr":{"city":"shenzhen","postal":518000}})"";
-    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), updateDoc.c_str(), GRD_DOC_APPEND), GRD_OK);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), updateDoc.c_str(), GRD_DOC_APPEND), 1);
 }
 
 /**

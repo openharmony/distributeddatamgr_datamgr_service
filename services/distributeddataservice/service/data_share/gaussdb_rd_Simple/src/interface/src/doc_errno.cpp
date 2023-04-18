@@ -27,6 +27,10 @@ int GetErrorCategory(int errCode)
 
 int TrasnferDocErr(int err)
 {
+    if(err > 0) {
+        return err;
+    }
+
     int outErr = GRD_OK;
     switch (err) {
         case E_OK:
