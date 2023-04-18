@@ -108,9 +108,10 @@ int32_t RdbSyncer::Init(
     pid_ = pid;
     uid_ = uid;
     token_ = token;
+    StoreMetaData oldMeta;
     StoreMetaData meta;
 
-    if (CreateMetaData(meta) != RDB_OK) {
+    if (CreateMetaData(meta, oldMeta) != RDB_OK) {
         ZLOGE("create meta data failed");
         return RDB_ERROR;
     }
@@ -118,6 +119,11 @@ int32_t RdbSyncer::Init(
         ZLOGE("delegate is nullptr");
         return RDB_ERROR;
     }
+
+    if (oldMeta.storeType == RDB_DEVICE_COLLABORATION && oldMeta.version < StoreMetaData::UUID_CHANGED_TAG) {
+        delegate_->RemoveDeviceData();
+    }
+
     ZLOGI("success");
     return RDB_OK;
 }
@@ -149,10 +155,9 @@ void RdbSyncer::FillMetaData(StoreMetaData &meta)
     meta.isEncrypt = param_.isEncrypt_;
 }
 
-int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta)
+int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta, StoreMetaData &old)
 {
     FillMetaData(meta);
-    StoreMetaData old;
     bool isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old);
     if (isCreated && (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
                          old.area != meta.area)) {
