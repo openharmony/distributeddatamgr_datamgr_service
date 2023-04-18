@@ -17,20 +17,22 @@
 #define COLLECTION_H
 
 #include <string>
-#include "doc_common.h"
+#include "document_check.h"
 #include "kv_store_executor.h"
 
 namespace DocumentDB {
 class Collection {
 public:
     Collection(const std::string &name, KvStoreExecutor *executor);
+    Collection(const Collection &a) {};
+    Collection() {};
     ~Collection();
 
     int PutDocument(const Key &key, const Value &document);
     int GetDocument(const Key &key, Value &document) const;
     int DeleteDocument(const Key &key);
-
     int UpsertDocument(const std::string &id, const std::string &document, bool isReplace = true);
+    bool FindDocument();    
     int UpdateDocument(const std::string &id, const std::string &document);
 private:
     std::string name_;

@@ -53,6 +53,7 @@ private:
     };
     std::string stringValue;
 };
+using JsonFieldPath = std::vector<std::string>;
 
 using ResultValue = ValueObject;
 using JsonFieldPath = std::vector<std::string>;
@@ -77,15 +78,17 @@ public:
 
     ValueObject GetItemValue() const;
     void SetItemValue(const ValueObject &value) const;
-
+    
     std::string GetItemFiled() const;
+    std::string GetItemFiled(int &errCode) const;
 
     bool IsFieldExists(const JsonFieldPath &jsonPath) const;
     JsonObject FindItem(const JsonFieldPath &jsonPath, int &errCode) const;
     ValueObject GetObjectByPath(const JsonFieldPath &jsonPath, int &errCode) const;
     int DeleteItemOnTarget(const JsonFieldPath &path);
+    int DeleteItemDeeplyOnTarget(const JsonFieldPath &path);
     bool IsNull() const;
-
+    int GetDeep();
     enum class Type {
         JSON_LEAF,
         JSON_OBJECT,
@@ -98,9 +101,10 @@ private:
     int Init(const std::string &str);
 
     int GetDeep(cJSON *cjson);
-
+    int CheckNumber(cJSON *cjson, int &errCode);
 
     cJSON *cjson_ = nullptr;
+    int jsonDeep_ = 0;
     bool isOwner_ = false;
     bool caseSensitive_ = false;
 };

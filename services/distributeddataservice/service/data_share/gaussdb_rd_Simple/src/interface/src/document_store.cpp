@@ -14,14 +14,21 @@
 */
 
 #include "document_store.h"
-
 #include "collection_option.h"
-#include "doc_common.h"
+#include "document_check.h"
 #include "doc_errno.h"
 #include "grd_base/grd_type_export.h"
 #include "log_print.h"
+#include "result_set_common.h"
+#include "grd_resultset_inner.h"
 
 namespace DocumentDB {
+const int COLLECTION_LENS_MAX = 512 * 1024;
+const int JSON_LENS_MAX = 512 * 1024;
+const int JSON_DEEP_MAX = 4;
+constexpr const char *KEY_ID = "_id";
+const bool caseIsSensitive = true;
+
 DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor)
 {
 }
@@ -227,5 +234,215 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         errCode = 1; // upsert one record.
     }
     return errCode;
+}
+
+int DocumentStore::InsertDocument(const std::string &collection, const std::string &document, int flag)
+{
+    if (flag != 0) {
+        GLOGE("InsertDocument flag is not zero");
+        return -E_INVALID_ARGS;
+    }
+    std::string lowerCaseCollName;
+    int errCode = E_OK;
+    if (!CheckCommon::CheckCollectionName(collection, lowerCaseCollName, errCode)) {
+        GLOGE("Check collection name invalid. %d", errCode);
+        return errCode;
+    }
+    auto coll = Collection(collection, executor_);
+    if (document.length() + 1 > JSON_LENS_MAX) {
+        GLOGE("document's length is larger than JSON_LENS_MAX");
+        return -E_OVER_LIMIT;
+    }
+    JsonObject documentObj = JsonObject::Parse(document, errCode, caseIsSensitive);
+    if (errCode != E_OK) {
+        GLOGE("Document Parsed faild");
+        return errCode;
+    }
+    errCode = CheckCommon::CheckDocument(documentObj);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    auto documentObjChild = documentObj.GetChild();
+    auto idValue = JsonCommon::GetValueByFiled(documentObjChild, KEY_ID);
+    std::string id = idValue.GetStringValue(); 
+    Key key(id.begin(), id.end());
+    Value value(document.begin(), document.end());
+    std::lock_guard<std::mutex> lock(dbMutex_);
+    return coll.PutDocument(key, value);
+}
+
+int DocumentStore::DeleteDocument(const std::string &collection, const std::string &filter, int flag)
+{
+    if (flag != 0) {
+        GLOGE("DeleteDocument flag is not zero");
+        return -E_INVALID_ARGS;
+    }
+    std::string lowerCaseCollName;
+    int errCode = E_OK;
+    if (!CheckCommon::CheckCollectionName(collection, lowerCaseCollName, errCode)) {
+        GLOGE("Check collection name invalid. %d", errCode);
+        return errCode;
+    }
+    auto coll = Collection(collection, executor_);
+    if (filter.empty()) {
+        GLOGE("Filter is empty");
+        return -E_INVALID_ARGS;
+    }
+    if (filter.length() + 1 > JSON_LENS_MAX) {
+        GLOGE("filter's length is larger than JSON_LENS_MAX");
+        return -E_OVER_LIMIT;
+    }
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, caseIsSensitive);
+    if (errCode != E_OK) {
+        GLOGE("filter Parsed faild");
+        return errCode;
+    }
+    errCode = CheckCommon::CheckFilter(filterObj);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    auto filterObjChild = filterObj.GetChild();
+    auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+    std::string id = idValue.GetStringValue(); 
+    Key key(id.begin(), id.end());
+    std::lock_guard<std::mutex> lock(dbMutex_);
+    return coll.DeleteDocument(key);
+}
+KvStoreExecutor *DocumentStore::GetExecutor(int errCode)
+{
+    return executor_;
+}
+int DocumentStore::FindDocument(const std::string &collection, const std::string &filter, const std::string &projection, 
+    int flags,  GRD_ResultSet *grdResultSet)
+{
+    if (flags != 0 && flags != GRD_DOC_ID_DISPLAY) {
+        GLOGE("FindDocument flag is illegal");
+        return -E_INVALID_ARGS;;
+    } 
+    std::string lowerCaseCollName;
+    int errCode = E_OK;
+    if (!CheckCommon::CheckCollectionName(collection, lowerCaseCollName, errCode)) {
+        GLOGE("Check collection name invalid. %d", errCode);
+        return errCode;
+    }
+    if (filter.length() + 1 > JSON_LENS_MAX) {
+        GLOGE("filter's length is larger than JSON_LENS_MAX");
+        return -E_OVER_LIMIT;
+    }
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, caseIsSensitive);
+    if (errCode != E_OK) {
+        GLOGE("filter Parsed faild");
+        return errCode;
+    }
+    errCode = CheckCommon::CheckFilter(filterObj);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    auto filterObjChild = filterObj.GetChild();
+    auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+    if (projection.length() + 1 > JSON_LENS_MAX) {
+        GLOGE("projection's length is larger than JSON_LENS_MAX");
+        return -E_OVER_LIMIT;
+    }
+    JsonObject projectionObj = JsonObject::Parse(projection, errCode, caseIsSensitive);
+    if (errCode != E_OK) {
+        GLOGE("projection Parsed faild");
+        return errCode;
+    }
+    bool viewType = false;
+    std::vector<std::vector<std::string>> allPath;
+    if (projection != "{}") {
+        allPath = JsonCommon::ParsePath(projectionObj);
+        if (!CheckCommon::CheckProjection(projectionObj, allPath)) {
+            GLOGE("projection format unvalid");
+            return -E_INVALID_ARGS;
+        }
+        if (GetViewType(projectionObj, viewType) != E_OK) {
+            GLOGE("GetViewType faild");
+            return -E_INVALID_ARGS;
+        }
+    }
+    bool ifShowId = false;
+    if (flags == GRD_DOC_ID_DISPLAY) {
+        ifShowId = true;
+    }
+    if (collections_.find(collection) != collections_.end()) {
+        GLOGE("DB is resource busy");
+        return -E_RESOURCE_BUSY;
+    }
+    auto coll = Collection(collection, executor_);
+    std::lock_guard<std::mutex> lock(dbMutex_);
+    if (!coll.FindDocument()) {
+        GLOGE("no corresponding table name");
+        return -E_INVALID_ARGS;
+    }
+    int ret = InitResultSet(this, collection, idValue, allPath, ifShowId, viewType, grdResultSet->resultSet_);
+    if (ret == E_OK) {
+        collections_[collection] = nullptr;
+    }
+    if (ret != E_OK) {
+        collections_.erase(collection);
+    }
+    return ret;
+}
+int DocumentStore::EraseCollection(const std::string collectionName) {
+    if (collections_.find(collectionName) != collections_.end()) {
+        collections_.erase(collectionName);
+        return E_OK;
+    }
+    GLOGE("erase collection failed");
+}
+int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType) {
+    auto leafValue = JsonCommon::GetLeafValue(jsonObj);
+    if (leafValue.size() == 0) {
+        return E_INVALID_ARGS;
+    }
+    bool viewFlag = false;
+    for (int i = 0; i < leafValue.size(); i++) {
+        switch (leafValue[i].GetValueType()) {
+        case ValueObject::ValueType::VALUE_BOOL:
+            if (leafValue[i].GetBoolValue()) {
+                if (i != 0 && !viewType) {
+                    return -E_INVALID_ARGS;
+                }
+                viewType = true;
+            }
+            else {
+                if (i != 0 && viewType) {
+                    return E_INVALID_ARGS;
+                }
+                viewType == false;
+            }
+            break;
+        case ValueObject::ValueType::VALUE_STRING:
+            if (leafValue[i].GetStringValue() == "") {
+                if (i != 0 && !viewType) {
+                    return -E_INVALID_ARGS;
+                }
+                viewType = true;
+            }
+            else {
+                return -E_INVALID_ARGS;
+            }
+            break;
+        case ValueObject::ValueType::VALUE_NUMBER:
+            if (leafValue[i].GetIntValue() == 0) {
+                if (i != 0 && viewType) {
+                    return -E_INVALID_ARGS;
+                }
+                viewType = false;
+            }
+            else {
+                if (i != 0 && !viewType) {
+                    return E_INVALID_ARGS;
+                }
+                viewType = true;
+            }
+            break;
+        default:
+            return E_INVALID_ARGS;
+        }
+    }
+    return E_OK;
 }
 } // namespace DocumentDB

@@ -13,18 +13,20 @@
 * limitations under the License.
 */
 
-#ifndef KV_STORE_MANAGER_H
-#define KV_STORE_MANAGER_H
-#include <string>
+#ifndef GRD_FORMAT_CONFIG_H
+#define GRD_FORMAT_CONFIG_H
 
-#include "db_config.h"
-#include "document_check.h"
-#include "kv_store_executor.h"
 
-namespace DocumentDB {
-class KvStoreManager {
-public:
-    static int GetKvStore(const std::string &path, const DBConfig &config, KvStoreExecutor *&executor);
-};
-} // DocumentDB
-#endif // KV_STORE_MANAGER_H
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+#define COLLECTION_LENS_MAX (512 * 1024)
+#define JSON_LENS_MAX (512 * 1024)
+#define JSON_DEEP_MAX (4)
+#define KEY_ID ("_id")
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+#endif // GRD_FORMAT_CONFIG_H

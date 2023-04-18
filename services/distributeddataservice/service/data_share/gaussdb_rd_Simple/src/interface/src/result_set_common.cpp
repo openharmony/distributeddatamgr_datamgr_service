@@ -13,18 +13,18 @@
 * limitations under the License.
 */
 
-#ifndef KV_STORE_MANAGER_H
-#define KV_STORE_MANAGER_H
+#include "doc_errno.h"
+#include "grd_base/grd_error.h"
+#include "result_set_common.h"
 #include <string>
-
-#include "db_config.h"
-#include "document_check.h"
-#include "kv_store_executor.h"
+#include <vector>
 
 namespace DocumentDB {
-class KvStoreManager {
-public:
-    static int GetKvStore(const std::string &path, const DBConfig &config, KvStoreExecutor *&executor);
-};
-} // DocumentDB
-#endif // KV_STORE_MANAGER_H
+class ValueObject;
+int InitResultSet(DocumentStore *store, const std::string collectionName, ValueObject &key, std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType,
+    ResultSet &resultSet)
+{
+    return resultSet.Init(store, collectionName, key, path, ifShowId, viewType);
+}
+}
+

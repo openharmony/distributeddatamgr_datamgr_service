@@ -17,7 +17,7 @@
 
 #include <algorithm>
 
-#include "doc_common.h"
+#include "document_check.h"
 #include "doc_errno.h"
 #include "log_print.h"
 
@@ -44,14 +44,29 @@ int Collection::PutDocument(const Key &key, const Value &document)
     return executor_->PutData(name_, key, document);
 }
 
+bool Collection::FindDocument()
+{
+    if (executor_ == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    int errCode = 0;
+    return executor_->IsCollectionExists(name_, errCode);
+}
+
 int Collection::GetDocument(const Key &key, Value &document) const
 {
-    return E_OK;
+    if (executor_ == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    return executor_->GetData(name_, key, document);
 }
 
 int Collection::DeleteDocument(const Key &key)
 {
-    return E_OK;
+    if (executor_ == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    return executor_->DelData(name_, key);
 }
 
 int Collection::UpsertDocument(const std::string &id, const std::string &document, bool isReplace)

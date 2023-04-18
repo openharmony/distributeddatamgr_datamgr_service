@@ -13,8 +13,8 @@
 * limitations under the License.
 */
 
-#ifndef DOC_COMMON_H
-#define DOC_COMMON_H
+#ifndef DOCUMENT_CHECK_H
+#define DOCUMENT_CHECK_H
 
 #include <cstdint>
 #include <vector>
@@ -29,13 +29,14 @@ public:
     ~CheckCommon() = default;
 
     static bool CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName, int &errCode);
-    static bool CheckFilter(const std::string &filter);
-    static bool CheckIdFormat(const std::string &data);
-    static bool CheckDocument(const std::string &document);
+    static int CheckFilter(JsonObject &document);
+    static int CheckIdFormat(JsonObject &data);
+    static int CheckDocument(JsonObject &document);
+    static bool CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path);
 };
 using Key = std::vector<uint8_t>;
 using Value = std::vector<uint8_t>;
 
 constexpr const char *COLL_PREFIX = "GRD_COLL_";
 } // DocumentDB
-#endif // DOC_COMMON_H
+#endif // DOCUMENT_CHECK_H

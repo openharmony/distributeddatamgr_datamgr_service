@@ -20,9 +20,10 @@
 #include <map>
 #include <mutex>
 
-#include "collection.h"
 #include "kv_store_executor.h"
+#include "collection.h"
 
+class GRD_ResultSet;
 namespace DocumentDB {
 class DocumentStore {
 public:
@@ -34,12 +35,16 @@ public:
 
     int UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update, int flags);
     int UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document, int flags);
-
+    int InsertDocument(const std::string &collection, const std::string &document, int flag);
+    int DeleteDocument(const std::string &collection, const std::string &filter, int flag);
+    int FindDocument(const std::string &collection, const std::string &filter, const std::string &projection, int flags,  GRD_ResultSet *grdResultSet);
+    KvStoreExecutor *GetExecutor(int errCode);
+    int EraseCollection(const std::string collectionName);
 private:
+    int GetViewType(JsonObject &jsonObj, bool &viewType);
     std::mutex dbMutex_;
-
     KvStoreExecutor *executor_ = nullptr;
-    std::map<std::string, Collection> collections_;
+    std::map<std::string, Collection*> collections_;
 };
 } // DocumentDB
 #endif // DOCUMENT_STORE_H

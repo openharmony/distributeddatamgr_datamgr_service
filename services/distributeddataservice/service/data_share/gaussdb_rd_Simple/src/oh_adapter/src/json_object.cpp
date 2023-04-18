@@ -17,14 +17,12 @@
 #include <algorithm>
 #include "doc_errno.h"
 #include "log_print.h"
-// #include "grd_format_config.h"
 
 namespace DocumentDB {
 
 namespace {
-#define COLLECTION_LENS_MAX (512)
-#define JSON_LENS_MAX (512)
-#define JSON_DEEP_MAX (4)
+const int COLLECTION_LENS_MAX = 512 * 1024;
+const int JSON_LENS_MAX = 512 * 1024;
 
 bool IsNumber(const std::string &str)
 {
@@ -93,11 +91,12 @@ JsonObject JsonObject::Parse(const std::string &jsonStr, int &errCode, bool case
 
 JsonObject::JsonObject()
 {
+    cjson_ = nullptr;
 }
 
 JsonObject::~JsonObject()
 {
-    if (isOwner_ == true) {
+    if (isOwner_) {
         cJSON_Delete(cjson_);
     }
 }
@@ -119,11 +118,24 @@ JsonObject::Type JsonObject::GetType() const
     }
     return JsonObject::Type::JSON_LEAF;
 }
-
+int JsonObject::GetDeep()
+{
+    if (cjson_ == nullptr) {
+        GLOGE("cJson is nullptr,deep is 0");
+        return 0;
+    }
+    if (jsonDeep_ != 0) {
+        return jsonDeep_;
+    }
+    jsonDeep_ = GetDeep(cjson_);
+    return jsonDeep_;
+    
+}
 int JsonObject::GetDeep(cJSON *cjson)
 {
     if (cjson->child == nullptr) {
-        return 1; // leaf node
+        jsonDeep_ = 0;
+        return 0; // leaf node
     }
 
     int depth = -1;
@@ -132,26 +144,47 @@ int JsonObject::GetDeep(cJSON *cjson)
         depth = std::max(depth, GetDeep(child) + 1);
         child = child->next;
     }
+    jsonDeep_ = depth;
     return depth;
+}
+
+
+int JsonObject::CheckNumber(cJSON *item, int &errCode)
+{
+    if (item != NULL && cJSON_IsNumber(item)) {
+        double value = cJSON_GetNumberValue(item);
+        if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
+            errCode = E_INVALID_ARGS;
+        }
+    }
+    if (item->child != nullptr) {
+        return CheckNumber(item->child, errCode);
+    }
+    if (item->next != nullptr) {
+        return CheckNumber(item->next, errCode);
+    } 
+    return E_OK;
 }
 
 int JsonObject::Init(const std::string &str)
 {
-    if (str.length() + 1 > JSON_LENS_MAX) {
-        return -E_INVALID_ARGS;
-    }
     const char *end = NULL;
     isOwner_ = true;
     cjson_ = cJSON_ParseWithOpts(str.c_str(), &end, true);
     if (cjson_ == nullptr) {
+        GLOGE("Json's format is wrong");
         return -E_INVALID_JSON_FORMAT;
     }
 
     if (cjson_->type != cJSON_Object) {
+        GLOGE("after Parse,cjson_'s type is not cJSON_Object");
         return -E_INVALID_ARGS;
     }
 
-    if (GetDeep(cjson_) > JSON_DEEP_MAX) {
+    int ret = 0;
+    CheckNumber(cjson_, ret);
+    if (ret == E_INVALID_ARGS) {
+        GLOGE("Int value is larger than double");
         return -E_INVALID_ARGS;
     }
     return E_OK;
@@ -234,7 +267,7 @@ JsonObject JsonObject::GetChild() const
 
 int JsonObject::DeleteItemFromObject(const std::string &field)
 {
-    if (field == "") {
+    if (field.empty()) {
         return E_OK;
     }
     cJSON_DeleteItemFromObjectCaseSensitive(cjson_, field.c_str());
@@ -345,6 +378,20 @@ std::string JsonObject::GetItemFiled() const
     }
 }
 
+std::string JsonObject::GetItemFiled(int &errCode) const
+{
+    if (cjson_ == nullptr) {
+        errCode = E_INVALID_ARGS;
+        return "";
+    }
+    if (cjson_->string == nullptr) {
+        errCode = E_INVALID_ARGS;
+        return "";
+    }
+    errCode = E_OK;
+    return cjson_->string;
+}
+
 cJSON *GetChild(cJSON *cjson, const std::string &field, bool caseSens)
 {
     if (cjson->type == cJSON_Object) {
@@ -443,6 +490,52 @@ int JsonObject::DeleteItemOnTarget(const JsonFieldPath &path)
             return -E_JSON_PATH_NOT_EXISTS;
         }
         cJSON_DeleteItemFromArray(nodeFather, std::stoi(fieldName));
+    }
+
+    return E_OK;
+}
+
+int JsonObject::DeleteItemDeeplyOnTarget(const JsonFieldPath &path)
+{
+    if (path.empty()) {
+        return -E_INVALID_ARGS;
+    }
+
+    std::string fieldName = path.back();
+    JsonFieldPath patherPath = path;
+    patherPath.pop_back();
+
+    int errCode = E_OK;
+    cJSON *nodeFather = MoveToPath(cjson_, patherPath, caseSensitive_);
+    if (nodeFather == nullptr) {
+        GLOGE("Delete item failed, json field path not found.");
+        return -E_JSON_PATH_NOT_EXISTS;
+    }
+
+    if (nodeFather->type == cJSON_Object) {
+        if (caseSensitive_) {
+            cJSON_DeleteItemFromObjectCaseSensitive(nodeFather, fieldName.c_str());
+            if (nodeFather->child == nullptr && path.size() > 1) {
+                JsonFieldPath fatherPath(path.begin(), path.end() - 1);
+                DeleteItemDeeplyOnTarget(fatherPath);
+            }
+        } else {
+            cJSON_DeleteItemFromObject(nodeFather, fieldName.c_str());
+            if (nodeFather->child == nullptr && path.size() > 1) {
+                JsonFieldPath fatherPath(path.begin(), path.end() - 1);
+                DeleteItemDeeplyOnTarget(fatherPath);
+            }
+        }
+    } else if (nodeFather->type == cJSON_Array) {
+        if (!IsNumber(fieldName)) {
+            GLOGW("Invalid json field path, expect array index.");
+            return -E_JSON_PATH_NOT_EXISTS;
+        }
+        cJSON_DeleteItemFromArray(nodeFather, std::stoi(fieldName));
+        if (nodeFather->child == nullptr && path.size() > 1) {
+            JsonFieldPath fatherPath(path.begin(), path.end() - 1);
+            DeleteItemDeeplyOnTarget(fatherPath);
+        }
     }
 
     return E_OK;

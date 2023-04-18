@@ -63,6 +63,12 @@ int TrasnferDocErr(int err)
         case -E_INVALID_COLL_NAME_FORMAT:
             outErr = GRD_INVALID_COLLECTION_NAME;
             break;
+        case -E_RESOURCE_BUSY:
+            outErr = GRD_RESOURCE_BUSY;
+            break;
+        case -E_FAILED_MEMORY_ALLOCATE:
+            outErr = GRD_FAILED_MEMORY_ALLOCATE;
+            break;
         default:
             outErr = GRD_INNER_ERR;
             break;

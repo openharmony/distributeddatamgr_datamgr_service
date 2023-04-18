@@ -13,18 +13,15 @@
 * limitations under the License.
 */
 
-#ifndef KV_STORE_MANAGER_H
-#define KV_STORE_MANAGER_H
+#ifndef DOCUMENTDB_TEST_UTILS_H
+#define DOCUMENTDB_TEST_UTILS_H
 #include <string>
 
-#include "db_config.h"
-#include "document_check.h"
-#include "kv_store_executor.h"
 
-namespace DocumentDB {
-class KvStoreManager {
+namespace DocumentDBUnitTest {
+class DocumentDBTestUtils {
 public:
-    static int GetKvStore(const std::string &path, const DBConfig &config, KvStoreExecutor *&executor);
+    static int RemoveTestDbFiles(const std::string &dir);
 };
-} // DocumentDB
-#endif // KV_STORE_MANAGER_H
+} // namespace DocumentDBUnitTest
+#endif // DOCUMENTDB_TEST_UTILS_H

@@ -21,100 +21,158 @@
 #include "securec.h"
 
 namespace DocumentDB {
-ResultValue JsonCommon::GetValueByFiled(JsonObject *node, const std::string& filed)
+ValueObject JsonCommon::GetValueByFiled(JsonObject &node, const std::string& filed)
 {
-    if (node == nullptr) {
-        return ResultValue();
-    }
-    while (node != nullptr) {
-        if (node->GetItemFiled() == filed) {
-            auto itemValue = node->GetItemValue();
+    while (!node.IsNull()) {
+        if (node.GetItemFiled() == filed) {
+            auto itemValue = node.GetItemValue();
             return itemValue;
         }
-        if (node->GetNext().IsNull() == true) {
-            return ResultValue();
+        if (node.GetNext().IsNull()) {
+            return ValueObject();
         }
-        auto nodeNew = node->GetNext();
-        node = &nodeNew;
+        auto nodeNew = node.GetNext();
+        node = nodeNew;
     }
-    return ResultValue();
+    return ValueObject();
 }
 
-int JsonCommon::CheckLeafNode(JsonObject *node, std::vector<ResultValue> &leafValue)
+int JsonCommon::CheckLeafNode(JsonObject &node, std::vector<ValueObject> &leafValue)
 {
-    if (node->GetChild().IsNull() == true) {
-        auto itemValue = node->GetItemValue();
+    if (node.GetChild().IsNull()) {
+        auto itemValue = node.GetItemValue();
         leafValue.emplace_back(itemValue);
     }
-    if (node->GetChild().IsNull() != true) {
-        auto nodeNew = node->GetChild();
-        CheckLeafNode(&nodeNew, leafValue);
+    if (!node.GetChild().IsNull()) {
+        auto nodeNew = node.GetChild();
+        CheckLeafNode(nodeNew, leafValue);
     }
-    if (node->GetNext().IsNull() != true) {
-        auto nodeNew = node->GetNext();
-        CheckLeafNode(&nodeNew, leafValue);
+    if (!node.GetNext().IsNull()) {
+        auto nodeNew = node.GetNext();
+        CheckLeafNode(nodeNew, leafValue);
     }
     return E_OK;
 }
 
-std::vector<ResultValue>  JsonCommon::GetLeafValue(JsonObject *node)
+std::vector<ValueObject>  JsonCommon::GetLeafValue(JsonObject &node)
 {
-    std::vector<ResultValue> leafValue;
+    std::vector<ValueObject> leafValue;
     CheckLeafNode(node, leafValue);
     return leafValue;
 }
 
-bool JsonCommon::CheckNode(JsonObject *node, std::set<std::string> filedSet, bool &errFlag) {
-    if (errFlag == false) {
+bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, bool &errFlag) 
+{
+    if (!errFlag) {
         return false;
     }
-    std::string fieldName;
-    if (node->GetItemValue().GetValueType() != ResultValue::ValueType::VALUE_NULL) {
-        fieldName = node->GetItemFiled();
+    std::string fieldName; 
+    if (!node.IsNull()) {
+        int ret = 0;
+        fieldName = node.GetItemFiled(ret);
         if (filedSet.find(fieldName) == filedSet.end()) {
-            filedSet.insert(fieldName);
+            if (ret == E_OK) {
+                filedSet.insert(fieldName);
+            }
+            if (ret == E_OK && fieldName.empty()) {
+                errFlag = false;
+                return false;
+            }
         }
         else {
             errFlag = false;
             return false;
         }
         for (int i = 0; i < fieldName.size(); i++) {
-            if (!(('a'<=fieldName[i] && fieldName[i]<='z')|| ('A'<=fieldName[i] && fieldName[i]<='Z') || ('0'<=fieldName[i] && fieldName[i]<='9') || '_' == fieldName[i])) {
+            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || '_' == fieldName[i])) {
                 errFlag = false;
                 return false;
             }
-        }
+            if (i == 0 && (isdigit(fieldName[i]))) {
+                errFlag = false;
+                return false;
+            }
+        } 
     }
-    if (node->GetChild().IsNull() != true) {
-        auto nodeNew = node->GetChild();
+    if (!node.GetChild().IsNull()) {
+        auto nodeNew = node.GetChild();
         std::set<std::string> newFiledSet;
-        CheckNode(&nodeNew, newFiledSet, errFlag);
+        CheckNode(nodeNew, newFiledSet, errFlag);
     }
-    if (node->GetNext().IsNull() != true) {
-        auto nodeNew = node->GetNext();
-        CheckNode(&nodeNew, filedSet, errFlag);
+    if (!node.GetNext().IsNull()) {
+        auto nodeNew = node.GetNext();
+        CheckNode(nodeNew, filedSet, errFlag);
     }
     return errFlag;
 }
 
-bool JsonCommon::CheckJsonField(const std::string &data) {
-    int errCode = E_OK;
-    JsonObject jsonObj = JsonObject::Parse(data, errCode);
-    if (errCode != E_OK) {
-        return false;
-    }
+bool JsonCommon::CheckJsonField(JsonObject &jsonObj) 
+{
     std::set<std::string> filedSet;
     bool errFlag = true;
-    return CheckNode(&jsonObj, filedSet, errFlag);
+    return CheckNode(jsonObj, filedSet, errFlag);
 }
 
-int JsonCommon::ParseNode(JsonObject* node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor)
+bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> filedSet, bool &errFlag, bool isFirstFloor) 
+{
+    if (!errFlag) {
+        return false;
+    }
+    std::string fieldName; 
+    if (!node.IsNull()) {
+        int ret = 0;
+        fieldName = node.GetItemFiled(ret);
+        if (filedSet.find(fieldName) == filedSet.end()) {
+            if (ret == E_OK) {
+                filedSet.insert(fieldName);
+            }
+            if (ret == E_OK && fieldName.empty()) {
+                errFlag = false;
+                return false;
+            }
+        }
+        else {
+            errFlag = false;
+            return false;
+        }
+        for (int i = 0; i < fieldName.size(); i++) {
+            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]) || (isFirstFloor && '.' == fieldName[i]))) {
+                errFlag = false;
+                return false;
+            }
+            if (i == 0 && (isdigit(fieldName[i]))) {
+                errFlag = false;
+                return false;
+            }
+        } 
+    }
+    if (!node.GetChild().IsNull()) {
+        auto nodeNew = node.GetChild();
+        std::set<std::string> newFiledSet;
+        CheckProjectionNode(nodeNew, newFiledSet, errFlag, false);
+    }
+    if (!node.GetNext().IsNull()) {
+        auto nodeNew = node.GetNext();
+        CheckProjectionNode(nodeNew, filedSet, errFlag, isFirstFloor);
+    }
+    return errFlag;
+}
+
+bool JsonCommon::CheckProjectionField(JsonObject &jsonObj) 
+{
+    std::set<std::string> filedSet;
+    bool errFlag = true;
+    bool isFirstFloor = true;
+    return CheckProjectionNode(jsonObj, filedSet, errFlag, isFirstFloor);
+}
+
+int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor)
 {
     std::vector<std::string> fatherPath;
     if (isFirstFloor) {
         std::string tempParseName;
         std::vector<std::string> allFiledsName;
-        std::string priFieldName = node->GetItemFiled();
+        std::string priFieldName = node.GetItemFiled();
         for (int j = 0; j < priFieldName.size(); j++) {
             if (priFieldName[j] != '.') {
                 tempParseName = tempParseName + priFieldName[j];
@@ -128,33 +186,33 @@ int JsonCommon::ParseNode(JsonObject* node, std::vector<std::string> singlePath,
         singlePath.insert(singlePath.end(), allFiledsName.begin(), allFiledsName.end());
     } else {
         std::vector<std::string> allFiledsName;
-        allFiledsName.emplace_back(node->GetItemFiled());
+        allFiledsName.emplace_back(node.GetItemFiled());
         fatherPath = singlePath;
         singlePath.insert(singlePath.end(), allFiledsName.begin(), allFiledsName.end());
     }
-    if (node->GetChild().IsNull() != true && node->GetChild().GetItemFiled() != "") {
-        auto nodeNew = node->GetChild();
-        ParseNode(&nodeNew, singlePath, resultPath, false);
+    if (!node.GetChild().IsNull() && node.GetChild().GetItemFiled() != "") {
+        auto nodeNew = node.GetChild();
+        ParseNode(nodeNew, singlePath, resultPath, false);
     }
     else {
         resultPath.emplace_back(singlePath);
     }
-    if (node->GetNext().IsNull() != true) {
-        auto nodeNew = node->GetNext();
-        ParseNode(&nodeNew, fatherPath, resultPath, isFirstFloor);
+    if (!node.GetNext().IsNull()) {
+        auto nodeNew = node.GetNext();
+        ParseNode(nodeNew, fatherPath, resultPath, isFirstFloor);
     }
     return 0;
 }
 
-std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject* const root)
+std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject &root)
 {
     std::vector<std::vector<std::string>> resultPath;
-    auto projectionJson = root->GetChild();
-    if (projectionJson.IsNull() == true) {
+    auto projectionJson = root.GetChild();
+    if (projectionJson.IsNull()) {
         GLOGE("projectionJson is null");
     }
     std::vector<std::string> singlePath;
-    ParseNode(&projectionJson, singlePath, resultPath, true);
+    ParseNode(projectionJson, singlePath, resultPath, true);
     return resultPath;
 }
 
@@ -228,7 +286,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add)
             }
             return true; // Both array or object
         } else {
-            if (isCollapse == true) {
+            if (isCollapse) {
                 GLOGE("Add collapse item to object failed, path not exist.");
                 externErrCode = -E_DATA_CONFLICT;
                 return false;

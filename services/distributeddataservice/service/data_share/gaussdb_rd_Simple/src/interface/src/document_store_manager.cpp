@@ -80,6 +80,10 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
 
     store = new (std::nothrow) DocumentStore(executor);
     if (store == nullptr) {
+        GLOGE("Memory allocation failed!" );
+        return -E_FAILED_MEMORY_ALLOCATE;
+    }
+    if (store == nullptr) {
         return -E_OUT_OF_MEMORY;
     }
 

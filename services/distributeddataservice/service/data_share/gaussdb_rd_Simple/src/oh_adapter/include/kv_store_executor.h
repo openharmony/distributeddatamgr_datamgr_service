@@ -17,7 +17,7 @@
 #define KV_STORE_EXECUTOR_H
 
 #include <string>
-#include "doc_common.h"
+#include "document_check.h"
 
 namespace DocumentDB {
 class KvStoreExecutor {

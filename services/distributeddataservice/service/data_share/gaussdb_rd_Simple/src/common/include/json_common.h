@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <vector>
 #include <set>
+#include <functional>
 #include "json_object.h"
 
 namespace DocumentDB {
@@ -28,17 +29,19 @@ public:
     JsonCommon() = default;
     ~JsonCommon();
 
-    static ResultValue GetValueByFiled(JsonObject *node, const std::string& filed);
-    static bool CheckJsonField(const std::string &data);
-    static int ParseNode(JsonObject *Node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor);
-    static std::vector<std::vector<std::string>> ParsePath(const JsonObject* const node);
-    static std::vector<ResultValue>  GetLeafValue(JsonObject *node);
+    static ValueObject GetValueByFiled(JsonObject &node, const std::string& filed);
+    static bool CheckJsonField(JsonObject &node);
+    static bool CheckProjectionField(JsonObject &node);
+    static int ParseNode(JsonObject &Node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor);
+    static std::vector<std::vector<std::string>> ParsePath(const JsonObject &node);
+    static std::vector<ValueObject>  GetLeafValue(JsonObject &node);
 
     static int Append(const JsonObject &src, const JsonObject &add);
-
+    
 private:
-    static bool CheckNode(JsonObject *Node, std::set<std::string> filedSet, bool &errFlag);
-    static int CheckLeafNode(JsonObject *Node, std::vector<ResultValue> &leafValue);
+    static bool CheckNode(JsonObject &Node, std::set<std::string> filedSet, bool &errFlag);
+    static bool CheckProjectionNode(JsonObject &Node, std::set<std::string> filedSet, bool &errFlag, bool isFirstFloor);
+    static int CheckLeafNode(JsonObject &Node, std::vector<ValueObject> &leafValue);
 };
 } // DocumentDB
 #endif // JSON_COMMON_H

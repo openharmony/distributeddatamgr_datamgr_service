@@ -13,18 +13,14 @@
 * limitations under the License.
 */
 
-#ifndef KV_STORE_MANAGER_H
-#define KV_STORE_MANAGER_H
-#include <string>
+#ifndef GRD_RESULTSET_INNER_H
+#define GRD_RESULTSET_INNER_H
 
-#include "db_config.h"
-#include "document_check.h"
-#include "kv_store_executor.h"
+#include "doc_errno.h"
+#include "grd_base/grd_error.h"
+#include "result_set.h"
 
-namespace DocumentDB {
-class KvStoreManager {
-public:
-    static int GetKvStore(const std::string &path, const DBConfig &config, KvStoreExecutor *&executor);
-};
-} // DocumentDB
-#endif // KV_STORE_MANAGER_H
+typedef struct GRD_ResultSet {
+    DocumentDB::ResultSet resultSet_;
+} GRD_ResultSet;
+#endif // GRD_RESULTSET_INNER_H

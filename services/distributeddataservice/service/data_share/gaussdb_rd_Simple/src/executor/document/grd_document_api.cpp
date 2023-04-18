@@ -16,6 +16,7 @@
 #include "grd_document/grd_document_api.h"
 #include "grd_base/grd_error.h"
 #include "grd_type_inner.h"
+#include "grd_resultset_inner.h"
 #include "log_print.h"
 using namespace DocumentDB;
 
@@ -66,4 +67,60 @@ int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, co
     std::string documentStr = (document == nullptr ? "" : document);
     int ret = db->store_->UpsertDocument(name, filterStr, documentStr, flags);
     return TrasnferDocErr(ret);
+}
+
+int GRD_InsertDoc(GRD_DB *db, const char *collectionName, const char *document, unsigned int flags)
+{
+    if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || document == nullptr) {
+        return GRD_INVALID_ARGS;
+    }
+    int ret = db->store_->InsertDocument(collectionName, document, flags);
+    return TrasnferDocErr(ret);
+}
+
+int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, unsigned int flags)
+{
+    if (db == nullptr || db->store_ == nullptr || filter == nullptr || collectionName == nullptr) {
+        return GRD_INVALID_ARGS;
+    }
+    int ret = db->store_->DeleteDocument(collectionName, filter, flags);
+    int errCode = TrasnferDocErr(ret);
+    int deleteCount = 0;
+    switch (errCode) { 
+        case GRD_OK:
+            deleteCount = 1;
+            return deleteCount;
+            break;
+        case GRD_NO_DATA:
+            deleteCount = 0;
+            return deleteCount;
+            break;
+    }
+    return errCode;
+}
+
+int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags, GRD_ResultSet **resultSet)
+{
+    if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || resultSet == nullptr || query.filter == nullptr
+        || query.projection == nullptr) {
+        return GRD_INVALID_ARGS;
+    }
+    GRD_ResultSet *grdResultSet = new (std::nothrow)GRD_ResultSet();
+    if (grdResultSet == nullptr) {
+        GLOGE("Memory allocation failed!" );
+        return -E_FAILED_MEMORY_ALLOCATE;
+    }
+    int ret = db->store_->FindDocument(collectionName, query.filter, query.projection, flags, grdResultSet);
+    if (ret != E_OK) {
+        delete grdResultSet;
+        *resultSet = nullptr;
+        return TrasnferDocErr(ret);
+    }
+    *resultSet = grdResultSet;
+    return TrasnferDocErr(ret); 
+}
+
+int GRD_Flush(GRD_DB *db, unsigned int flags)
+{
+    return GRD_OK;
 }

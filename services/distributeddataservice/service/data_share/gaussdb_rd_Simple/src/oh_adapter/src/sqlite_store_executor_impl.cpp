@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 
-#include "doc_common.h"
+#include "document_check.h"
 #include "doc_errno.h"
 #include "log_print.h"
 #include "sqlite_utils.h"
@@ -95,6 +95,10 @@ int SqliteStoreExecutor::PutData(const std::string &collName, const Key &key, co
     }, nullptr);
     if (errCode != SQLITE_OK) {
         GLOGE("[sqlite executor] Put data failed. err=%d", errCode);
+        if (errCode == -E_ERROR) {
+            GLOGE("Cant find the collection");
+            return -E_INVALID_ARGS;
+        }
         return errCode;
     }
     return E_OK;
@@ -129,15 +133,26 @@ int SqliteStoreExecutor::DelData(const std::string &collName, const Key &key)
         GLOGE("Invalid db handle.");
         return -E_ERROR;
     }
-
+    int errCode = 0;
+    if (!IsCollectionExists(collName, errCode)) {
+        return -E_INVALID_ARGS;
+    }
+    Value valueRet;
+    if (GetData(collName, key, valueRet) != E_OK) {
+        return -E_NO_DATA;
+    }
     std::string sql = "DELETE FROM '" + collName + "' WHERE key=?;";
-    int errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [key](sqlite3_stmt *stmt) {
+    errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [key](sqlite3_stmt *stmt) {
         SQLiteUtils::BindBlobToStatement(stmt, 1, key);
         return E_OK;
     }, nullptr);
 
     if (errCode != SQLITE_OK) {
         GLOGE("[sqlite executor] Delete data failed. err=%d", errCode);
+        if (errCode == -E_ERROR) {
+            GLOGE("Cant find the collection");
+            return -E_NO_DATA;
+        }
     }
     return errCode;
 }
@@ -241,4 +256,5 @@ int SqliteStoreExecutor::CleanCollectionOption(const std::string &name)
     Key collOptKey = {collOptKeyStr.begin(), collOptKeyStr.end()};
     return DelData("grd_meta", collOptKey);
 }
+
 } // DocumentDB

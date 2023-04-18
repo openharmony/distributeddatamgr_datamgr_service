@@ -17,10 +17,9 @@
 
 #include "doc_errno.h"
 #include "document_store_manager.h"
-#include "document_store.h"
 #include "grd_base/grd_error.h"
-#include "grd_type_inner.h"
 #include "log_print.h"
+#include "grd_type_inner.h"
 
 using namespace DocumentDB;
 
