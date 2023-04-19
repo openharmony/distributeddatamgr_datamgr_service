@@ -119,8 +119,3 @@ int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned in
     *resultSet = grdResultSet;
     return TrasnferDocErr(ret); 
 }
-
-int GRD_Flush(GRD_DB *db, unsigned int flags)
-{
-    return GRD_OK;
-}

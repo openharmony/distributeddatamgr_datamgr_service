@@ -37,8 +37,6 @@ int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, co
 
 int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, unsigned int flags);
 
-int GRD_Flush(GRD_DB *db, unsigned int flags);
-
 #ifdef __cplusplus
 }
 #endif
