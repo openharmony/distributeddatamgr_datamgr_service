@@ -97,19 +97,20 @@ int DocumentStore::DropCollection(const std::string &name, int flags)
     }
 
     bool ignoreNonExists = (flags != CHK_NON_EXIST_COLLECTION);
+    std::lock_guard<std::mutex> lock(dbMutex_);
     errCode = executor_->DropCollection(lowerCaseName, ignoreNonExists);
     if (errCode != E_OK) {
         GLOGE("Drop collection failed. %d", errCode);
         return errCode;
     }
 
-    std::lock_guard<std::mutex> lock(dbMutex_);
     errCode = executor_->CleanCollectionOption(lowerCaseName);
-    if (errCode != E_OK) {
+    if (errCode != E_OK && errCode != -E_NO_DATA) {
         GLOGE("Clean collection option failed. %d", errCode);
+        return errCode;
     }
 
-    return errCode;
+    return E_OK;
 }
 
 namespace {
@@ -264,7 +265,7 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
     }
     auto documentObjChild = documentObj.GetChild();
     auto idValue = JsonCommon::GetValueByFiled(documentObjChild, KEY_ID);
-    std::string id = idValue.GetStringValue(); 
+    std::string id = idValue.GetStringValue();
     Key key(id.begin(), id.end());
     Value value(document.begin(), document.end());
     std::lock_guard<std::mutex> lock(dbMutex_);
@@ -303,7 +304,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
     }
     auto filterObjChild = filterObj.GetChild();
     auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
-    std::string id = idValue.GetStringValue(); 
+    std::string id = idValue.GetStringValue();
     Key key(id.begin(), id.end());
     std::lock_guard<std::mutex> lock(dbMutex_);
     return coll.DeleteDocument(key);
@@ -312,13 +313,13 @@ KvStoreExecutor *DocumentStore::GetExecutor(int errCode)
 {
     return executor_;
 }
-int DocumentStore::FindDocument(const std::string &collection, const std::string &filter, const std::string &projection, 
+int DocumentStore::FindDocument(const std::string &collection, const std::string &filter, const std::string &projection,
     int flags,  GRD_ResultSet *grdResultSet)
 {
     if (flags != 0 && flags != GRD_DOC_ID_DISPLAY) {
         GLOGE("FindDocument flag is illegal");
         return -E_INVALID_ARGS;;
-    } 
+    }
     std::string lowerCaseCollName;
     int errCode = E_OK;
     if (!CheckCommon::CheckCollectionName(collection, lowerCaseCollName, errCode)) {
