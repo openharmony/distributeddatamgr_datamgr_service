@@ -19,6 +19,7 @@
 #include <ipc_skeleton.h>
 #include "log_print.h"
 #include "itypes_util.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedRdb {
 int32_t RdbServiceStub::OnRemoteObtainDistributedTableName(MessageParcel &data, MessageParcel &reply)
@@ -26,12 +27,15 @@ int32_t RdbServiceStub::OnRemoteObtainDistributedTableName(MessageParcel &data, 
     std::string device;
     std::string table;
     if (!ITypesUtil::Unmarshal(data, device, table)) {
-        ZLOGE("read from message parcel failed");
-        reply.WriteString("");
-        return RDB_OK;
+        ZLOGE("Unmarshal device:%{public}s table:%{public}s", device.c_str(), table.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    reply.WriteString(ObtainDistributedTableName(device, table));
+    std::string distributedTableName = ObtainDistributedTableName(device, table);
+    if (!ITypesUtil::Marshal(reply, distributedTableName)) {
+        ZLOGE("Marshal distributedTableName:%{public}s", distributedTableName.c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
     return RDB_OK;
 }
 
@@ -39,23 +43,16 @@ int32_t RdbServiceStub::OnRemoteInitNotifier(MessageParcel &data, MessageParcel 
 {
     RdbSyncerParam param;
     sptr<IRemoteObject> notifier;
-    if (!ITypesUtil::Unmarshal(data, param, notifier)) {
-        ZLOGE("read from message parcel failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+    if (!ITypesUtil::Unmarshal(data, param, notifier) || notifier == nullptr) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            param.storeName_.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
-    if (notifier == nullptr) {
-        ZLOGE("notifier is null");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+    auto status = InitNotifier(param, notifier);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
-    if (InitNotifier(param, notifier) != RDB_OK) {
-        ZLOGE("init notifier failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
-    }
-    ZLOGI("success");
-    reply.WriteInt32(RDB_OK);
     return RDB_OK;
 }
 
@@ -64,12 +61,16 @@ int32_t RdbServiceStub::OnRemoteSetDistributedTables(MessageParcel &data, Messag
     RdbSyncerParam param;
     std::vector<std::string> tables;
     if (!ITypesUtil::Unmarshal(data, param, tables)) {
-        ZLOGE("read from message parcel failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s tables size:%{public}zu",
+            param.bundleName_.c_str(), param.storeName_.c_str(), tables.size());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    reply.WriteInt32(SetDistributedTables(param, tables));
+    auto status = SetDistributedTables(param, tables);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
     return RDB_OK;
 }
 
@@ -79,19 +80,16 @@ int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply
     SyncOption option {};
     RdbPredicates predicates;
     if (!ITypesUtil::Unmarshal(data, param, option, predicates)) {
-        ZLOGE("read from message parcel failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s tables:%{public}s", param.bundleName_.c_str(),
+            param.storeName_.c_str(), predicates.table_.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
 
     SyncResult result;
-    if (DoSync(param, option, predicates, result) != RDB_OK) {
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
-    }
-    if (!ITypesUtil::Marshal(reply, result)) {
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+    auto status = DoSync(param, option, predicates, result);
+    if (!ITypesUtil::Marshal(reply, status, result)) {
+        ZLOGE("Marshal status:0x%{public}x result size:%{public}zu", status, result.size());
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return RDB_OK;
 }
@@ -103,12 +101,16 @@ int32_t RdbServiceStub::OnRemoteDoAsync(MessageParcel &data, MessageParcel &repl
     SyncOption option {};
     RdbPredicates predicates;
     if (!ITypesUtil::Unmarshal(data, param, seqNum, option, predicates)) {
-        ZLOGE("read from message parcel failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s seqNum:%{public}u tables:%{public}s",
+            param.bundleName_.c_str(), param.storeName_.c_str(), seqNum, predicates.table_.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    reply.WriteInt32(DoAsync(param, seqNum, option, predicates));
+    auto status = DoAsync(param, seqNum, option, predicates);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
     return RDB_OK;
 }
 
@@ -116,11 +118,16 @@ int32_t RdbServiceStub::OnRemoteDoSubscribe(MessageParcel &data, MessageParcel &
 {
     RdbSyncerParam param;
     if (!ITypesUtil::Unmarshal(data, param)) {
-        ZLOGE("read from message parcel failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            param.storeName_.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
-    reply.WriteInt32(DoSubscribe(param));
+
+    auto status = DoSubscribe(param);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
     return RDB_OK;
 }
 
@@ -128,11 +135,16 @@ int32_t RdbServiceStub::OnRemoteDoUnSubscribe(MessageParcel &data, MessageParcel
 {
     RdbSyncerParam param;
     if (!ITypesUtil::Unmarshal(data, param)) {
-        ZLOGE("read from message parcel failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            param.storeName_.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
-    reply.WriteInt32(DoUnSubscribe(param));
+
+    auto status = DoUnSubscribe(param);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
     return RDB_OK;
 }
 
@@ -143,19 +155,19 @@ int32_t RdbServiceStub::OnRemoteDoRemoteQuery(MessageParcel& data, MessageParcel
     std::string sql;
     std::vector<std::string> selectionArgs;
     if (!ITypesUtil::Unmarshal(data, param, device, sql, selectionArgs)) {
-        ZLOGE("read from message parcel failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s device:%{public}s sql:%{public}s "
+              "selectionArgs size:%{public}zu", param.bundleName_.c_str(), param.storeName_.c_str(),
+            DistributedData::Anonymous::Change(device).c_str(),
+            DistributedData::Anonymous::Change(sql).c_str(), selectionArgs.size());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
 
     sptr<IRemoteObject> resultSet;
-    int32_t status = RemoteQuery(param, device, sql, selectionArgs, resultSet);
-    if (status != RDB_OK) {
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+    auto status = RemoteQuery(param, device, sql, selectionArgs, resultSet);
+    if (!ITypesUtil::Marshal(reply, status, resultSet)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
-    reply.WriteInt32(RDB_OK);
-    reply.WriteRemoteObject(resultSet);
     return RDB_OK;
 }
 
@@ -188,17 +200,18 @@ int32_t RdbServiceStub::OnRemoteDoCreateTable(MessageParcel &data, MessageParcel
     std::string writePermission;
     std::string readPermission;
     if (!ITypesUtil::Unmarshal(data, param, writePermission, readPermission)) {
-        ZLOGE("read from message parcel failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s writePermission:%{public}s "
+              "readPermission:%{public}s", param.bundleName_.c_str(), param.storeName_.c_str(),
+            DistributedData::Anonymous::Change(writePermission).c_str(),
+            DistributedData::Anonymous::Change(readPermission).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
 
     int32_t status = CreateRDBTable(param, writePermission, readPermission);
-    if (status != RDB_OK) {
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
-    reply.WriteInt32(RDB_OK);
     return RDB_OK;
 }
 
@@ -206,17 +219,16 @@ int32_t RdbServiceStub::OnRemoteDoDestroyTable(MessageParcel &data, MessageParce
 {
     RdbSyncerParam param;
     if (!ITypesUtil::Unmarshal(data, param)) {
-        ZLOGE("read from message parcel failed");
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            param.storeName_.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
 
     int32_t status = DestroyRDBTable(param);
-    if (status != RDB_OK) {
-        reply.WriteInt32(RDB_ERROR);
-        return RDB_OK;
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
-    reply.WriteInt32(RDB_OK);
     return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb

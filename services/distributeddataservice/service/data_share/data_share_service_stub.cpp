@@ -21,6 +21,7 @@
 #include "ishared_result_set.h"
 #include "itypes_util.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 
 namespace OHOS {
 namespace DataShare {
@@ -40,13 +41,14 @@ int32_t DataShareServiceStub::OnRemoteInsert(MessageParcel &data, MessageParcel 
     std::string uri;
     DataShareValuesBucket bucket;
     if (!ITypesUtil::Unmarshal(data, uri, bucket.valuesMap)) {
-        ZLOGW("read device list failed.");
-        return -1;
+        ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
+            bucket.valuesMap.size());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = Insert(uri, bucket);
-    if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("OnRemoteInsert fail %{public}d", static_cast<int>(status));
-        return -1;
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;
 }
@@ -57,13 +59,14 @@ int32_t DataShareServiceStub::OnRemoteUpdate(MessageParcel &data, MessageParcel 
     DataSharePredicates predicate;
     DataShareValuesBucket bucket;
     if (!ITypesUtil::Unmarshal(data, uri, predicate, bucket.valuesMap)) {
-        ZLOGW("read device list failed.");
-        return -1;
+        ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
+            bucket.valuesMap.size());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = Update(uri, predicate, bucket);
-    if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("OnRemoteUpdate fail %d", static_cast<int>(status));
-        return -1;
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;
 }
@@ -73,13 +76,13 @@ int32_t DataShareServiceStub::OnRemoteDelete(MessageParcel &data, MessageParcel 
     std::string uri;
     DataSharePredicates predicate;
     if (!ITypesUtil::Unmarshal(data, uri, predicate)) {
-        ZLOGW("read device list failed.");
-        return -1;
+        ZLOGE("Unmarshal uri:%{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = Delete(uri, predicate);
-    if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("OnRemoteDelete fail %d", static_cast<int>(status));
-        return -1;
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;
 }
@@ -90,15 +93,15 @@ int32_t DataShareServiceStub::OnRemoteQuery(MessageParcel &data, MessageParcel &
     DataSharePredicates predicate;
     std::vector<std::string> columns;
     if (!ITypesUtil::Unmarshal(data, uri, predicate, columns)) {
-        ZLOGW("read device list failed.");
-        return -1;
+        ZLOGE("Unmarshal uri:%{public}s columns size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
+            columns.size());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
-    int errCode = 0;
-    auto result = ISharedResultSet::WriteToParcel(Query(uri, predicate, columns, errCode), reply);
-    reply.WriteInt32(errCode);
-    if (result == nullptr) {
-        ZLOGW("!resultSet->Marshalling(reply)");
-        return -1;
+    int status = 0;
+    auto result = ISharedResultSet::WriteToParcel(Query(uri, predicate, columns, status), reply);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;
 }
