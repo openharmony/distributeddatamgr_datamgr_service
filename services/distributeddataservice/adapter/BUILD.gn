@@ -24,7 +24,7 @@ config("distributeddata_adapter_private_config") {
 }
 
 config("distributeddata_adapter_public_config") {
-  visibility = [ "//foundation/distributeddatamgr/datamgr_service:*" ]
+  visibility = [ ":*" ]
 
   include_dirs = [
     "include/log",
