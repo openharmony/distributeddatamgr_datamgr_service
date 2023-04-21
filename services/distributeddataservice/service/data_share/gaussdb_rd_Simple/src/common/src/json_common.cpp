@@ -14,7 +14,6 @@
  */
 #include <climits>
 #include <functional>
-
 #include "json_common.h"
 #include "doc_errno.h"
 #include "log_print.h"
@@ -37,7 +36,7 @@ ValueObject JsonCommon::GetValueByFiled(JsonObject &node, const std::string& fil
     return ValueObject();
 }
 
-int JsonCommon::CheckLeafNode(JsonObject &node, std::vector<ValueObject> &leafValue)
+int JsonCommon::CheckLeafNode(const JsonObject &node, std::vector<ValueObject> &leafValue)
 {
     if (node.GetChild().IsNull()) {
         auto itemValue = node.GetItemValue();
@@ -54,7 +53,7 @@ int JsonCommon::CheckLeafNode(JsonObject &node, std::vector<ValueObject> &leafVa
     return E_OK;
 }
 
-std::vector<ValueObject>  JsonCommon::GetLeafValue(JsonObject &node)
+std::vector<ValueObject>  JsonCommon::GetLeafValue(const JsonObject &node)
 {
     std::vector<ValueObject> leafValue;
     CheckLeafNode(node, leafValue);
@@ -237,6 +236,27 @@ JsonFieldPath ExpendPath(const JsonFieldPath &path, bool &isCollapse)
     return splitPath;
 }
 
+JsonFieldPath ExpendPathForField(const JsonFieldPath &path, bool &isCollapse)
+{
+   
+    JsonFieldPath splitPath;
+    const std::string &str = path[0];
+    size_t start = 0;
+    size_t end = 0;
+    while ((end = str.find('.', start)) != std::string::npos) {
+        splitPath.push_back(str.substr(start, end - start));
+        start = end + 1;
+    }
+    if (start < str.length()) {
+        splitPath.push_back(str.substr(start));
+    }
+    isCollapse = (splitPath.size() > 1);
+    for (int i = 1; i < path.size(); i++) {
+        splitPath.emplace_back(path[i]);
+    }
+    return splitPath;
+}
+
 void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
     std::function<bool (const JsonFieldPath &path, const JsonObject &father, const JsonObject &item)> foo)
 {
@@ -245,6 +265,22 @@ void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
         JsonFieldPath childPath = path;
         childPath.push_back(child.GetItemFiled());
         if (foo != nullptr && foo(childPath, obj, child)) {
+            JsonObjectIterator(child, childPath, foo);
+        }
+        child = child.GetNext();
+    }
+    return;
+}
+
+void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
+    std::function<bool (JsonFieldPath &path, const JsonObject &item)> foo)
+{
+    JsonObject child = obj.GetChild();
+    while(!child.IsNull()) {
+        bool isCollapse = false;
+        JsonFieldPath childPath = path;
+        childPath.push_back(child.GetItemFiled());
+        if (foo != nullptr && foo(childPath, child)) {
             JsonObjectIterator(child, childPath, foo);
         }
         child = child.GetNext();
@@ -308,4 +344,141 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add)
     });
     return externErrCode;
 }
+bool JsonCommon::isValueEqual(const ValueObject &srcValue, const ValueObject &targetValue)
+{
+    if (srcValue.GetValueType() == targetValue.GetValueType()) {
+        switch (srcValue.GetValueType()) {
+        case ValueObject::ValueType::VALUE_NULL:
+            return true;
+            break;
+        case ValueObject::ValueType::VALUE_BOOL:
+            if (srcValue.GetBoolValue() == targetValue.GetBoolValue()) {
+                return true;
+            }
+            return false;
+            break;
+        case ValueObject::ValueType::VALUE_NUMBER:
+            if (srcValue.GetDoubleValue() == targetValue.GetDoubleValue()) {
+                return true;
+            }
+            return false;
+            break;
+        case ValueObject::ValueType::VALUE_STRING:
+            if (srcValue.GetStringValue() == targetValue.GetStringValue()) {
+                return true;
+            }
+            return false;
+            break;
+        }
+    }
+    return false;
+}
+
+bool JsonCommon::isArrayMathch(const JsonObject &src, const JsonObject &target, int &flag) {
+    JsonObject srcChild = src.GetChild();
+    JsonObject targetObj = target;
+    bool isMatch = false;
+    int errCode = 0;
+    while (!srcChild.IsNull()) {
+        if (srcChild.GetType() == JsonObject::Type::JSON_OBJECT && target.GetType() == JsonObject::Type::JSON_OBJECT
+            && (isJsonNodeMatch(srcChild, target, errCode))) {
+            isMatch = true;
+            flag = 1;
+            break;
+        }
+        srcChild = srcChild.GetNext();
+    }
+    return isMatch;
+}
+
+bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &externErrCode)
+{
+    externErrCode = E_OK;
+    int isMatchFlag = true;
+    JsonObjectIterator(target, {},
+        [&src, &isMatchFlag, &externErrCode](JsonFieldPath &path, const JsonObject &item) {
+        int flag = 0;
+        bool isCollapse = false;
+        if (isMatchFlag == false) {
+            return false;
+        }
+        JsonFieldPath itemPath = ExpendPath(path, isCollapse);
+        int errCode = 0;
+        if (src.IsFieldExistsIncludeArray(itemPath)) {
+            JsonObject srcItem = src.FindItemIncludeArray(itemPath, errCode);
+            auto GranpaPath = itemPath;
+            auto lastFiledName = GranpaPath.back();
+            GranpaPath.pop_back();
+            JsonObject GranpaItem = src.FindItemIncludeArray(GranpaPath, errCode);
+            if (GranpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
+                JsonObject FatherItem = GranpaItem.GetChild();
+                while (!FatherItem.IsNull()) {
+                    bool isEqual = (FatherItem.GetObjectItem(lastFiledName, errCode).Print() == item.Print());
+                    if (isEqual) {                       
+                        GLOGE("Filter value is equal with src");
+                        isMatchFlag = isEqual;
+                        flag = 1;
+                    } 
+                    FatherItem = FatherItem.GetNext();
+                }
+            }
+            if (errCode != E_OK) {
+                externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+                GLOGE("Find item in source json object failed. %d", errCode);
+                return false;
+            }
+            if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF && !flag) {
+                bool isEqual = isValueEqual(srcItem.GetItemValue(), item.GetItemValue());
+                if (!isEqual) {
+                    GLOGE("Filter value is No equal with src");
+                    isMatchFlag = isEqual;
+                }
+                flag = isMatchFlag;
+                return false; // Both leaf node, no need iterate
+            } else if (srcItem.GetType() != item.GetType()) {
+                if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
+                    GLOGE("Check if there has an object in array");
+                    bool isEqual = isArrayMathch(srcItem, item, flag);
+                    if (!isEqual) {
+                        isMatchFlag = isEqual;
+                    }
+                    return true;
+                }
+                GLOGE("valueType is different,");
+                isMatchFlag = false;
+                return false; // Different node types, overwrite directly, skip child node
+            }
+            return true; // Both array or object
+        } else {
+            if (isCollapse) {
+                GLOGE("Match failed, path not exist.");
+                isMatchFlag = false;
+                return false;
+            }
+            GLOGE("Not match anything");
+            if (flag == 0) {
+                isMatchFlag = false;
+            }
+            std::vector<ValueObject> ItemLeafValue = GetLeafValue(item);
+            int isNULLFlag = true;
+            for (auto ValueItem : ItemLeafValue) {
+                if (ValueItem.GetValueType() != ValueObject::ValueType::VALUE_NULL) {
+                    GLOGE("leaf value is null");
+                    isNULLFlag = false;
+                }
+            }
+            if (isNULLFlag == true) {
+                isMatchFlag = true; //
+            }
+            return false; // Source path not exist, if leaf value is null, isMatchFlag become true, else it will become false.
+        }
+    });
+    return isMatchFlag;
+}
+
+
+
+
+
+
 } // namespace DocumentDB

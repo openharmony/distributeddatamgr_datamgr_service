@@ -412,6 +412,33 @@ cJSON *GetChild(cJSON *cjson, const std::string &field, bool caseSens)
     return nullptr;
 }
 
+
+cJSON *GetChildIncludeArray(cJSON *cjson, const std::string &field, bool caseSens)
+{
+    if (cjson->type == cJSON_Object) {
+        if (caseSens) {
+            return cJSON_GetObjectItemCaseSensitive(cjson, field.c_str());
+        } else {
+            return cJSON_GetObjectItem(cjson, field.c_str());
+        }
+    } else if (cjson->type == cJSON_Array) {
+        if (!IsNumber(field)) {
+            cjson = cjson->child;
+            while (cjson != nullptr) {
+                auto resultItem = GetChild(cjson, field, caseSens);
+                if (resultItem != nullptr) {
+                    return resultItem;
+                }
+                cjson = cjson->next;
+            }
+            return nullptr;
+        }
+        return cJSON_GetArrayItem(cjson, std::stoi(field));
+    }
+    GLOGW("Invalid json field type, expect object or array.");
+    return nullptr;
+}
+
 cJSON *MoveToPath(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)
 {
     for (const auto &field : jsonPath) {
@@ -423,9 +450,25 @@ cJSON *MoveToPath(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)
     return cjson;
 }
 
+cJSON *MoveToPathIncludeArray(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)
+{
+    for (const auto &field : jsonPath) {
+        cjson = GetChildIncludeArray(cjson, field, caseSens);
+        if (cjson == nullptr) {
+            break;
+        }
+    }
+    return cjson;
+}
+
 bool JsonObject::IsFieldExists(const JsonFieldPath &jsonPath) const
 {
     return (MoveToPath(cjson_, jsonPath, caseSensitive_) != nullptr);
+}
+
+bool JsonObject::IsFieldExistsIncludeArray(const JsonFieldPath &jsonPath) const
+{
+    return (MoveToPathIncludeArray(cjson_, jsonPath, caseSensitive_) != nullptr);
 }
 
 JsonObject JsonObject::FindItem(const JsonFieldPath &jsonPath, int &errCode) const
@@ -446,6 +489,29 @@ JsonObject JsonObject::FindItem(const JsonFieldPath &jsonPath, int &errCode) con
         return {};
     }
 
+    JsonObject item;
+    item.caseSensitive_ = caseSensitive_;
+    item.cjson_ = findItem;
+    return item;
+}
+
+JsonObject JsonObject::FindItemIncludeArray(const JsonFieldPath &jsonPath, int &errCode) const
+{
+    if (jsonPath.empty()) {
+        JsonObject curr = JsonObject();
+        curr.cjson_ = cjson_;
+        curr.caseSensitive_ = caseSensitive_;
+        curr.isOwner_ = false;
+        GLOGW("Path empty, return current object");
+        return curr;
+    }
+
+    cJSON *findItem = MoveToPathIncludeArray(cjson_, jsonPath, caseSensitive_);
+    if (findItem == nullptr) {
+        GLOGE("Find item failed. json field path not found.");
+        errCode = -E_JSON_PATH_NOT_EXISTS;
+        return {};
+    }
     JsonObject item;
     item.caseSensitive_ = caseSensitive_;
     item.cjson_ = findItem;

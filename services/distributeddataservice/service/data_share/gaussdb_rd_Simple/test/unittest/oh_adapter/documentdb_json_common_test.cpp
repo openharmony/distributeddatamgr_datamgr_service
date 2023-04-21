@@ -328,3 +328,200 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest015, TestSize.Level0)
     EXPECT_EQ(errCode, E_OK);
     EXPECT_EQ(itemCase.GetItemValue().GetStringValue(), "GG");
 }
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest001, TestSize.Level0)
+{
+    std::string document = R""({"name":{"first": {"job" : "it"}}, "t1" : {"second":"Lang"}})"";
+    std::string filter = R""({"name":{"first": {"job" : "it"}}, "t1" : {"second":"Lang"}})"";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+
+    std::string document2 = R""({"name":{"first": {"job" : "it"}, "t1" : {"second":"Lang"}}})"";
+    std::string filter2 = R""({"name":{"first": {"job" : "NoEqual"}}, "t1" : {"second":"Lang"}})"";
+    int errCode2 = E_OK;
+    JsonObject srcObj2 = JsonObject::Parse(document2, errCode2);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj2 = JsonObject::Parse(filter2, errCode2);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj2, filterObj2, errCode), false);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest002, TestSize.Level0)
+{
+    std::string document = R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string filter = R""({"instock": {"warehouse":"A", "qty":5}})"";;
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest003, TestSize.Level0)
+{
+    std::string document = R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string filter = R""({"item": "GG"})"";;
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), false);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest004, TestSize.Level0)
+{
+    std::string document = R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string filter = R""({"item": "GG"})"";;
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), false);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest005, TestSize.Level0)
+{
+    std::string document = R""({"item": ["GG", "AA"], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string filter = R""({"item": ["GG", "AA"]})"";;
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest006, TestSize.Level0)
+{
+    std::string document = R""({"item": ["GG", {"gender":"girl"}], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string filter = R""({"item.0": "GG"})"";;
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest007, TestSize.Level0)
+{
+    std::string document = R""({"item": ["GG", {"gender":"girl"}], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string filter = R""({"item": ["GG", {"gender":"girl"}]})"";;
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest008, TestSize.Level0)
+{
+    std::string document = R""({"item": ["GG", {"gender":"girl", "hobby" : "IT"}], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string filter = R""({"item": {"gender":"girl"}})"";;
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest009, TestSize.Level0)
+{
+    std::string document = R""({"item": ["GG", {"gender":"girl", "hobby" : "IT"}], "instock": [{"qty" : 16, "warehouse":"A"}, 
+            {"warehouse":"C", "qty":15}]})"";
+    std::string filter = R""({"instock.warehouse": "A"})"";;
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest010, TestSize.Level0)
+{
+    std::string document = R""({"item": ["GG", {"gender":"girl", "hobby" : "IT"}], "instock": [{"warehouse":"A"}, 
+            {"warehouse":"C", "qty":15}]})"";
+    std::string filter = R""({"instock.warehouse": "C"})"";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest011, TestSize.Level0)
+{
+    std::string document = R""({"item" : "journal", "instock" : [{"warehose" : "A", "qty" : 5}, {"warehose" : "C", "qty" : 15}]})"";
+    std::string filter = R""({"instock" : {"warehose" : "A", "qty" : 5}})"";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest012, TestSize.Level0)
+{
+    std::string document = R""({"item" : "journal", "instock" : [{"warehose" : "A", "qty" : 5}, {"warehose" : "C", "qty" : 15}]})"";
+    std::string filter = R""({"instock" : {"warehose" : "A", "bad" : "2" ,"qty" : 5}})"";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), false);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest013, TestSize.Level0)
+{
+    std::string document = R""({"item" : "journal", "instock" : [{"warehose" : "A", "qty" : 5}, {"warehose" : "C", "qty" : 15}]})"";
+    std::string filter = R""({"instock.qty" : 15})"";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest014, TestSize.Level0)
+{
+    std::string document = R""({"item" : "journal", "instock" : [{"warehose" : "A", "qty" : 5}, {"warehose" : "C", "qty" : 15}]})"";
+    std::string filter = R""({"instock.1.qty" : 15})"";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest015, TestSize.Level0)
+{
+    std::string document = R""({"item" : "journal", "qty" : 25, "tags" : ["blank", "red"], "dim_cm" : [14, 21]})"";
+    std::string filter = R""({"tags" : ["blank", "red"]})"";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest016, TestSize.Level0)
+{
+    std::string document = R""({"item" : "journal", "qty" : 25, "tags" : {"value" : null}, "dim_cm" : [14, 21]})"";
+    std::string filter = R""({"tags" : {"value" : null}})"";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest017, TestSize.Level0)
+{
+    std::string document = R""({"item" : "journal", "qty" : 25, "dim_cm" : [14, 21]})"";
+    std::string filter = R""({"tags" : {"value" : null}})"";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
