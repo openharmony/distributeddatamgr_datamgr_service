@@ -14,12 +14,14 @@
  */
 #include "sqlite_utils.h"
 
+#include <mutex>
 #include "doc_errno.h"
 #include "log_print.h"
 
 namespace DocumentDB {
-const int MAX_BLOB_READ_SIZE = 5 * 1024 * 1024; // 5M limit  TODO:: check blob size
+const int MAX_BLOB_READ_SIZE = 5 * 1024 * 1024; // 5M limit
 const int MAX_TEXT_READ_SIZE = 5 * 1024 * 1024; // 5M limit
+const int BUSY_TIMEOUT_MS = 3000; // 3000ms for sqlite busy timeout.
 const std::string BEGIN_SQL = "BEGIN TRANSACTION";
 const std::string BEGIN_IMMEDIATE_SQL = "BEGIN IMMEDIATE TRANSACTION";
 const std::string COMMIT_SQL = "COMMIT TRANSACTION";
@@ -39,6 +41,9 @@ int MapSqliteError(int errCode)
             return -E_ERROR;
     }
 }
+
+std::mutex g_logConfigMutex;
+bool g_configLog = false;
 }
 
 void SQLiteUtils::SqliteLogCallback(void *data, int err, const char *msg)
@@ -48,6 +53,14 @@ void SQLiteUtils::SqliteLogCallback(void *data, int err, const char *msg)
 
 int SQLiteUtils::CreateDataBase(const std::string &path, int flag, sqlite3 *&db)
 {
+    {
+        std::lock_guard<std::mutex> lock(g_logConfigMutex);
+        if (!g_configLog) {
+            sqlite3_config(SQLITE_CONFIG_LOG, &SqliteLogCallback, nullptr);
+            g_configLog = true;
+        }
+    }
+
     int errCode = sqlite3_open_v2(path.c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
     if (errCode != SQLITE_OK) {
         GLOGE("Open database [%s] failed. %d", path.c_str(), errCode);
@@ -55,6 +68,12 @@ int SQLiteUtils::CreateDataBase(const std::string &path, int flag, sqlite3 *&db)
             (void)sqlite3_close_v2(db);
             db = nullptr;
         }
+        return MapSqliteError(errCode);
+    }
+
+    errCode = sqlite3_busy_timeout(db, BUSY_TIMEOUT_MS);
+    if (errCode != SQLITE_OK) {
+        GLOGE("Set busy timeout failed:%d", errCode);
     }
     return MapSqliteError(errCode);
 }

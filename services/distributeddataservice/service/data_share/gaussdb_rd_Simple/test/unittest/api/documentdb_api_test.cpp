@@ -100,8 +100,11 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest002, TestSize.Level0)
     EXPECT_EQ(status, GRD_OK);
     EXPECT_NE(db, nullptr);
 
+    status = GRD_DBClose(db, GRD_DB_CLOSE);
+    EXPECT_EQ(status, GRD_OK);
+
     status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
-    EXPECT_EQ(status, GRD_INVALID_ARGS);
+    EXPECT_EQ(status, GRD_OK);
 
     status = GRD_DBClose(db, GRD_DB_CLOSE);
     EXPECT_EQ(status, GRD_OK);

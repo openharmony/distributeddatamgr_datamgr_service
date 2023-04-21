@@ -25,7 +25,7 @@ using namespace DocumentDB;
 
 int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GRD_DB **db)
 {
-    if (db == nullptr || (*db) != nullptr) {
+    if (db == nullptr) {
         return GRD_INVALID_ARGS;
     }
     std::string path = (dbPath == nullptr ? "" : dbPath);
