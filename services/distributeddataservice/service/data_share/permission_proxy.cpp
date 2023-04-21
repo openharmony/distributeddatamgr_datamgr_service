@@ -43,7 +43,7 @@ PermissionProxy::PermissionState PermissionProxy::QueryWritePermission(uint32_t 
     for (auto const &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.writePermission.empty()) {
-                ZLOGD("WritePermission is empty! BundleName is %{public}s, tokenId is %{public}x",
+                ZLOGW("WritePermission is empty! BundleName is %{public}s, tokenId is %{public}x",
                     bundleInfo.name.c_str(), tokenId);
                 return PermissionState::NOT_FIND;
             }
@@ -64,7 +64,7 @@ PermissionProxy::PermissionState PermissionProxy::QueryReadPermission(uint32_t t
     for (auto const &item : bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             if (item.readPermission.empty()) {
-                ZLOGD("ReadPermission is empty! BundleName is %{public}s, tokenId is %{public}x",
+                ZLOGW("ReadPermission is empty! BundleName is %{public}s, tokenId is %{public}x",
                     bundleInfo.name.c_str(), tokenId);
                 return PermissionState::NOT_FIND;
             }
