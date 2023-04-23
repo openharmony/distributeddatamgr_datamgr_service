@@ -99,7 +99,6 @@ int ResultSet::GetNext()
                 return errCode;
             }
             errCode = coll.GetFilededDocument(filterObj, values);
-            GLOGE("errCode is ========>%d", errCode);
             if (errCode == -E_NOT_FOUND) {
                 GLOGE("Cant get value from db");
                 return -E_NO_DATA;

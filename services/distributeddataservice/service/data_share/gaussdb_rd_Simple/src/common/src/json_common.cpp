@@ -369,25 +369,21 @@ bool JsonCommon::isValueEqual(const ValueObject &srcValue, const ValueObject &ta
         switch (srcValue.GetValueType()) {
         case ValueObject::ValueType::VALUE_NULL:
             return true;
-            break;
         case ValueObject::ValueType::VALUE_BOOL:
             if (srcValue.GetBoolValue() == targetValue.GetBoolValue()) {
                 return true;
             }
             return false;
-            break;
         case ValueObject::ValueType::VALUE_NUMBER:
             if (srcValue.GetDoubleValue() == targetValue.GetDoubleValue()) {
                 return true;
             }
             return false;
-            break;
         case ValueObject::ValueType::VALUE_STRING:
             if (srcValue.GetStringValue() == targetValue.GetStringValue()) {
                 return true;
             }
             return false;
-            break;
         }
     }
     return false;
@@ -430,6 +426,7 @@ bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target
             GranpaPath.pop_back();
             JsonObject GranpaItem = src.FindItemIncludeArray(GranpaPath, errCode);
             if (GranpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
+                GLOGE("In father");
                 JsonObject FatherItem = GranpaItem.GetChild();
                 while (!FatherItem.IsNull()) {
                     bool isEqual = (FatherItem.GetObjectItem(lastFiledName, errCode).Print() == item.Print());
@@ -441,13 +438,19 @@ bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target
                     FatherItem = FatherItem.GetNext();
                 }
             }
-            if (errCode != E_OK) {
-                externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-                GLOGE("Find item in source json object failed. %d", errCode);
-                return false;
+            if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY && !flag) {
+                bool isEqual = (srcItem.Print() == item.Print());
+                GLOGE("In first ARRAY");
+                if (!isEqual) {
+                    GLOGE("Filter value is No equal with src");
+                    isMatchFlag = isEqual;
+                }
+                flag = isMatchFlag;
+                return false; // Both leaf node, no need iterate
             }
             if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF && !flag) {
                 bool isEqual = isValueEqual(srcItem.GetItemValue(), item.GetItemValue());
+                GLOGE("In Leaf");
                 if (!isEqual) {
                     GLOGE("Filter value is No equal with src");
                     isMatchFlag = isEqual;
@@ -456,6 +459,7 @@ bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target
                 return false; // Both leaf node, no need iterate
             } else if (srcItem.GetType() != item.GetType()) {
                 if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
+                    GLOGE("In ARRAY");
                     GLOGE("Check if there has an object in array");
                     bool isEqual = isArrayMathch(srcItem, item, flag);
                     if (!isEqual) {
@@ -482,22 +486,16 @@ bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target
             int isNULLFlag = true;
             for (auto ValueItem : ItemLeafValue) {
                 if (ValueItem.GetValueType() != ValueObject::ValueType::VALUE_NULL) {
-                    GLOGE("leaf value is null");
+                    GLOGE("leaf value is not null");
                     isNULLFlag = false;
+                } else {
+                    GLOGE("filter leaf is null, Src leaf is dont exist");
+                    isMatchFlag = true;
                 }
-            }
-            if (isNULLFlag == true) {
-                isMatchFlag = true; //
             }
             return false; // Source path not exist, if leaf value is null, isMatchFlag become true, else it will become false.
         }
     });
     return isMatchFlag;
 }
-
-
-
-
-
-
 } // namespace DocumentDB

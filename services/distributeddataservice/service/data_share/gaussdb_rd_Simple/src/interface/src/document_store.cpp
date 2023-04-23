@@ -301,8 +301,10 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         GLOGE("filter Parsed faild");
         return errCode;
     }
+    std::vector<std::vector<std::string>> filterAllPath;
+    filterAllPath = JsonCommon::ParsePath(filterObj);
     bool isOnlyId = true;
-    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId);
+    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
         return errCode;
     }
@@ -352,8 +354,10 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         GLOGE("filter Parsed faild");
         return errCode;
     }
+    std::vector<std::vector<std::string>> filterAllPath;
+    filterAllPath = JsonCommon::ParsePath(filterObj);
     bool isOnlyId = true;
-    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId);
+    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
         return errCode;
     }
