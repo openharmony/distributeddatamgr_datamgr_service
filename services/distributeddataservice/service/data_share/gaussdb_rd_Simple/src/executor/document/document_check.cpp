@@ -97,20 +97,19 @@ int CheckCommon::CheckFilter(JsonObject &filterObj)
 
 int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath)
 {   
-    if (filterObj.GetDeep() > JSON_DEEP_MAX) {
-        GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
-        return -E_INVALID_ARGS;
+    for (int i = 0; i < filterPath.size(); i++) {
+        if (filterPath[i].size() > JSON_DEEP_MAX) {
+            GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
+            return -E_INVALID_ARGS;
+        }
     }
     if (!filterObj.GetChild().GetNext().IsNull()) {
         isOnlyId = false;
     }
     for (int i = 0; i < filterPath.size(); i++) {
         for (auto fieldName : filterPath[i]) {
-            for (int i = 0; i < fieldName.size(); i++) {
-                if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]))) {
-                    return -E_INVALID_ARGS;
-                }
-                if (i == 0 && (isdigit(fieldName[i]))) {
+            for (int j = 0; j < fieldName.size(); j++) {
+                if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
                     return -E_INVALID_ARGS;
                 }
             }
@@ -197,7 +196,7 @@ bool CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::ve
                 if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
                     return false;
                 }
-                if (i == 0 && (isdigit(fieldName[j]))) {
+                if (j == 0 && (isdigit(fieldName[j]))) {
                     return false;
                 }
             }

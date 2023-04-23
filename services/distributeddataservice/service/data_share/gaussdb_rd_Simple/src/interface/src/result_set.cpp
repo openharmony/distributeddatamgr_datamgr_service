@@ -103,8 +103,8 @@ int ResultSet::GetNext()
                 GLOGE("Cant get value from db");
                 return -E_NO_DATA;
             }
-            for (auto pairItem : values) {
-                CutJsonBranch(pairItem.second);
+            for (int i = 0; i < values.size(); i++) {
+                CutJsonBranch(values[i].second);
             }
             matchDatas_ = values;
         }      
