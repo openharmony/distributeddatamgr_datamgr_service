@@ -77,6 +77,13 @@ int CheckCommon::CheckFilter(JsonObject &filterObj)
         GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
+    if (!filterObj.GetChild().IsNull()) {
+        auto filterObjChild = filterObj.GetChild();
+        if (!JsonCommon::CheckJsonField(filterObjChild)) {
+            GLOGE("filter json field format is illegal");
+            return -E_INVALID_ARGS;
+        }
+    }
     int ret = CheckIdFormat(filterObj);
     if (ret != E_OK) {
         GLOGE("Filter Id format is illegal");
@@ -88,7 +95,7 @@ int CheckCommon::CheckFilter(JsonObject &filterObj)
     return E_OK;
 }
 
-int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId)
+int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath)
 {   
     if (filterObj.GetDeep() > JSON_DEEP_MAX) {
         GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
@@ -96,6 +103,18 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId)
     }
     if (!filterObj.GetChild().GetNext().IsNull()) {
         isOnlyId = false;
+    }
+    for (int i = 0; i < filterPath.size(); i++) {
+        for (auto fieldName : filterPath[i]) {
+            for (int i = 0; i < fieldName.size(); i++) {
+                if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]))) {
+                    return -E_INVALID_ARGS;
+                }
+                if (i == 0 && (isdigit(fieldName[i]))) {
+                    return -E_INVALID_ARGS;
+                }
+            }
+        }
     }
     bool isIdExisit = false;
     int ret = CheckIdFormat(filterObj, isIdExisit);
@@ -174,11 +193,11 @@ bool CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::ve
     }
     for (int i = 0; i < path.size(); i++) {
         for (auto fieldName : path[i]) {
-            for (int i = 0; i < fieldName.size(); i++) {
-                if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]))) {
+            for (int j = 0; j < fieldName.size(); j++) {
+                if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
                     return false;
                 }
-                if (i == 0 && (isdigit(fieldName[i]))) {
+                if (i == 0 && (isdigit(fieldName[j]))) {
                     return false;
                 }
             }

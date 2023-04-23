@@ -537,3 +537,38 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest018, TestSize.Leve
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
     EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest019, TestSize.Level0)
+{
+    const char *document = "{\"_id\" : \"1\", \"name\":\"doc1\",\"item\":\"journal\",\"personInfo\":\
+    {\"school\":\"AB\", \"age\" : 51}}";
+    const char *filter = "{\"personInfo.school\" : \"AB\"}";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest020, TestSize.Level0)
+{
+    const char *document = "{\"_id\" : \"3\", \"name\":\"doc3\",\"item\":\"notebook\",\"personInfo\":\
+    [{\"school\":\"C\", \"age\" : 5}]}";
+    const char *filter = "{\"personInfo\" : [{\"school\":\"C\", \"age\" : 5}]}";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest021, TestSize.Level0)
+{
+    const char *document = "{\"_id\" : \"15\", \"name\":\"doc15\",\"personInfo\":[{\"school\":\"C\", \"age\" : 5}]}";
+    const char *filter = "{\"item\" : null, \"personInfo\" : [{\"school\":\"C\", \"age\" : 5}]}";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}

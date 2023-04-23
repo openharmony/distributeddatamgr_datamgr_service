@@ -71,8 +71,9 @@ static const char *g_document19 = "{\"_id\" : \"19\", \"name\":\"doc19\",\"ITEM\
     {\"school\":\"AB\", \"age\":15}}";
 static const char *g_document20 = "{\"_id\" : \"20\", \"name\":\"doc20\",\"ITEM\" : true,\"personInfo\":\
     [{\"SCHOOL\":\"B\", \"AGE\":15}, {\"SCHOOL\":\"C\", \"AGE\":35}]}";
+static const char *g_document23 = "{\"_id\" : \"23\", \"name\":\"doc22\",\"ITEM\" : true,\"personInfo\":[{\"school\":\"b\", \"age\":15}, [{\"school\":\"doc23\"}, 10, {\"school\":\"doc23\"}, true, {\"school\":\"y\"}], {\"school\":\"b\"}]}";
 static std::vector<const char *>g_data = {g_document1, g_document2, g_document3, g_document4, g_document5, g_document6, g_document7,
-     g_document8, g_document9, g_document10, g_document11, g_document12, g_document13, g_document14, g_document15, g_document16, g_document17, g_document18, g_document19, g_document20};
+     g_document8, g_document9, g_document10, g_document11, g_document12, g_document13, g_document14, g_document15, g_document16, g_document17, g_document18, g_document19, g_document20, g_document23};
 
 static void InsertData(GRD_DB *g_db, const char *collectionName) 
 {
@@ -1478,4 +1479,45 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest056, TestSize.Level1)
      */
     // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_NOT_AVAILABLE);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
+}
+
+/**
+  * @tc.name: DocumentFindApiTest057
+  * @tc.desc: Test findDoc with no _id.
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: mazhao
+  */
+HWTEST_F(DocumentFindApiTest, DocumentFindApiTest057, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. Create filter with _id and get the record according to filter condition.
+     * @tc.expected: step1. Succeed to get the record, the matching record is g_document6.
+     */
+    // const char *filter = "{\"personInfo.0.school\" : \"B\", \"$personInfo.0.age\" : 15}";
+    // GRD_ResultSet *resultSet = nullptr;
+    // Query query = {filter, "{}"};
+    // EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
+    // EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
+    // char *value = NULL;
+    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+    // EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
+    /**
+     * @tc.steps: step2. Invoke GRD_Next to get the next matching value. Release resultSet.
+     * @tc.expected: step2. Cannot get next record, return GRD_NO_DATA.
+     */
+    // EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+    // CompareValue(value, g_document2);
+    // EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
+
+    // EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+    // CompareValue(value, g_document13);
+    // EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
+
+    // EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+    // CompareValue(value, g_document13);
+    //EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
