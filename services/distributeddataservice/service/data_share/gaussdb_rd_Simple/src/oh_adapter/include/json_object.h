@@ -61,7 +61,6 @@ using JsonFieldPath = std::vector<std::string>;
 class JsonObject {
 public:
     static JsonObject Parse(const std::string &jsonStr, int &errCode, bool caseSensitive = false);
-
     ~JsonObject ();
 
     std::string Print() const;

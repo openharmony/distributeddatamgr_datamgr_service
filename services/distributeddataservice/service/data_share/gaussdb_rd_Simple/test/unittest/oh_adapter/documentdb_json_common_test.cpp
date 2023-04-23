@@ -525,3 +525,15 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest017, TestSize.Leve
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
     EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest018, TestSize.Level0)
+{
+    std::string document = "{\"_id\" : \"2\", \"name\":\"doc2\",\"item\": 1, \"personInfo\":\
+    [1, \"my string\", {\"school\":\"AB\", \"age\" : 51}, true, {\"school\":\"CD\", \"age\" : 15}, false]}";
+    std::string filter = R""({"_id" : "2"})"";
+    int errCode = E_OK;
+    JsonObject srcObj = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+}

@@ -33,11 +33,13 @@ int ResultSet::EraseCollection()
     }
     return E_OK;
 }
-int ResultSet::Init(DocumentStore *store, const std::string collectionName, ValueObject &key, std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType)
+int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter, std::vector<std::vector<std::string>> &path,
+                    bool ifShowId, bool viewType, bool &isOnlyId)
 {
+    isOnlyId_ = isOnlyId;
     store_ =  store;
     collectionName_ = collectionName;
-    key_ = key;
+    filter_ = filter;
     projectionPath_ = path;
     if (projectionTree_.ParseTree(path) == -E_INVALID_ARGS) {
         GLOGE("Parse ProjectionTree failed");
@@ -45,46 +47,99 @@ int ResultSet::Init(DocumentStore *store, const std::string collectionName, Valu
     }
     ifShowId_ =  ifShowId;
     viewType_ = viewType;
-    findValue_.reserve(1 + 1);
     return E_OK;
 }   
 
+int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter)
+{
+    ifFiled_ = true;
+    store_ =  store;
+    collectionName_ = collectionName;
+    filter_ = filter;
+    return E_OK;
+}
+
 int ResultSet::GetNext()
 {
-    index_++;
-    if (index_ != 1) {
-        if (findValue_.size() != 0) {
-            findValue_.pop_back();
+    if (!ifFiled_ && index_ == 0) {
+        if (isOnlyId_) {
+            int errCode = 0;
+            JsonObject filterObj = JsonObject::Parse(filter_, errCode, true);
+            if (errCode != E_OK) {
+                GLOGE("filter Parsed faild");
+                return errCode;
+            }
+            auto filterObjChild = filterObj.GetChild();
+            auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+            std::string idKey = idValue.GetStringValue();
+            if (idKey.empty()) {
+                GLOGE("id is empty");
+                return -E_NO_DATA;
+            }
+            Key key(idKey.begin(), idKey.end());
+            Value document;
+            auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
+            errCode = coll.GetDocument(key, document);
+            if (errCode == -E_NOT_FOUND) {
+                GLOGE("Cant get value from db");
+            return -E_NO_DATA;
+            }
+            std::string jsonData(document.begin(), document.end());
+            CutJsonBranch(jsonData);
+            std::vector<std::pair<std::string, std::string>> values;
+            values.emplace_back(std::pair(idKey, jsonData));
+            matchDatas_ = values;
+        }   else {
+            int errCode = 0;
+            auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
+            std::vector<std::pair<std::string, std::string>> values;
+            JsonObject filterObj = JsonObject::Parse(filter_, errCode, true);
+            if (errCode != E_OK) {
+                GLOGE("filter Parsed faild");
+                return errCode;
+            }
+            errCode = coll.GetFilededDocument(filterObj, values);
+            GLOGE("errCode is ========>%d", errCode);
+            if (errCode == -E_NOT_FOUND) {
+                GLOGE("Cant get value from db");
+                return -E_NO_DATA;
+            }
+            for (auto pairItem : values) {
+                CutJsonBranch(pairItem.second);
+            }
+            matchDatas_ = values;
+        }      
+    }   else if (index_ == 0) {
+        int errCode = 0;
+        auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
+        std::vector<std::pair<std::string, std::string>> values;
+        JsonObject filterObj = JsonObject::Parse(filter_, errCode, true);
+        if (errCode != E_OK) {
+            GLOGE("filter Parsed faild");
+            return errCode;
         }
+        errCode = coll.GetFilededDocument(filterObj, values);
+        if (errCode == -E_NOT_FOUND) {
+            GLOGE("Cant get value from db");
+            return -E_NO_DATA;
+        }
+        matchDatas_ = values;
+    }
+    index_++;
+    if (index_ > matchDatas_.size()) {
+        GLOGE("No data in The value vector");
         return -E_NO_DATA;
     }
-    std::string idValue = key_.GetStringValue();
-    if (idValue.empty()) {
-        GLOGE("id is empty");
-        return -E_NO_DATA;
-    }
-    Key key(idValue.begin(), idValue.end());
-    Value document;
-    int errCode = 0;
-    auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
-    errCode = coll.GetDocument(key, document);
-    if (errCode == -E_NOT_FOUND) {
-        GLOGE("Cant get value from db");
-        return -E_NO_DATA;
-    }
-    std::string jsonData(document.begin(), document.end());
-    CutJsonBranch(jsonData);
-    findValue_.emplace_back(jsonData);
     return E_OK;
 }
 
 int  ResultSet::GetValue(char **value)
 {
-    if (findValue_.size() == 0) {
+    if (index_ == 0 || (index_ > matchDatas_.size())) {
         GLOGE("The value vector in resultSet is empty");
         return -E_NO_DATA;
     }
-    auto jsonData =  findValue_.back();
+    auto jsonData =  matchDatas_[index_ - 1].second;
     char *jsonstr = new char[jsonData.size() + 1]; 
     if (jsonstr == nullptr) {
         GLOGE("Memory allocation failed!" );
@@ -97,6 +152,16 @@ int  ResultSet::GetValue(char **value)
         return -E_NO_DATA;;
     }
     *value = jsonstr;
+    return E_OK;
+}
+
+int ResultSet::GetKey(std::string &key)
+{
+    if (index_ == 0 || (index_ > matchDatas_.size())) {
+        GLOGE("The value vector in resultSet is empty");
+        return -E_NO_DATA;
+    }
+    key =  matchDatas_[index_ - 1].first;
     return E_OK;
 }
 

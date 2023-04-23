@@ -127,6 +127,47 @@ int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Va
     return innerErrorCode;
 }
 
+int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonObject &filterObj, std::vector<std::pair<std::string, std::string>> &values) const
+{
+    if (dbHandle_ == nullptr) {
+        GLOGE("Invalid db handle.");
+        return -E_ERROR;
+    }
+    Value keyResult;
+    Value valueResult;
+    bool isFindMatch = false; 
+    int innerErrorCode = -E_NOT_FOUND;
+    std::string sql = "SELECT key, value FROM '" + collName + "';";
+    int errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [](sqlite3_stmt *stmt) {
+        return E_OK;
+    }, [&keyResult, &innerErrorCode, &valueResult, &filterObj, &values, &isFindMatch](sqlite3_stmt *stmt) {
+        SQLiteUtils::GetColumnBlobValue(stmt, 0, keyResult);
+        SQLiteUtils::GetColumnBlobValue(stmt, 1, valueResult);
+        std::string keyStr(keyResult.begin(), keyResult.end());
+        std::string valueStr(valueResult.begin(), valueResult.end());
+        int externErrCode;
+        JsonObject srcObj = JsonObject::Parse(valueStr, externErrCode, true);
+        if (externErrCode != E_OK) {
+            GLOGE("srcObj Parsed faild");
+            return externErrCode;
+        }
+        if (JsonCommon::isJsonNodeMatch(srcObj, filterObj, externErrCode)) {
+            isFindMatch = true;
+            values.emplace_back(std::pair(keyStr, valueStr));
+        }
+        innerErrorCode = E_OK;
+        return E_OK;
+    });
+    if (errCode != SQLITE_OK) {
+        GLOGE("[sqlite executor] Get data failed. err=%d", errCode);
+        return errCode;
+    }
+    if (isFindMatch == false) {
+        return -E_NOT_FOUND;
+    }
+    return innerErrorCode;
+}
+
 int SqliteStoreExecutor::DelData(const std::string &collName, const Key &key)
 {
     if (dbHandle_ == nullptr) {
@@ -134,9 +175,6 @@ int SqliteStoreExecutor::DelData(const std::string &collName, const Key &key)
         return -E_ERROR;
     }
     int errCode = 0;
-    if (!IsCollectionExists(collName, errCode)) {
-        return -E_INVALID_ARGS;
-    }
     Value valueRet;
     if (GetData(collName, key, valueRet) != E_OK) {
         return -E_NO_DATA;
@@ -256,5 +294,4 @@ int SqliteStoreExecutor::CleanCollectionOption(const std::string &name)
     Key collOptKey = {collOptKeyStr.begin(), collOptKeyStr.end()};
     return DelData("grd_meta", collOptKey);
 }
-
 } // DocumentDB

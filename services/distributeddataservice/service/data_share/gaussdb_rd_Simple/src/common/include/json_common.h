@@ -30,6 +30,7 @@ public:
     ~JsonCommon();
 
     static ValueObject GetValueByFiled(JsonObject &node, const std::string& filed);
+    static ValueObject GetValueByFiled(JsonObject &node, const std::string& filed, bool &isFiledExist);
     static bool CheckJsonField(JsonObject &node);
     static bool CheckProjectionField(JsonObject &node);
     static int ParseNode(JsonObject &Node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor);
