@@ -54,7 +54,7 @@ int GRD_GetValue(GRD_ResultSet *resultSet, char **value)
 int GRD_FreeValue(char *value)
 {
     if (value == nullptr) {
-        return GRD_OK;
+        return GRD_INVALID_ARGS;
     }
     delete[] value;
     return GRD_OK;
