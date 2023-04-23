@@ -426,7 +426,6 @@ bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target
             GranpaPath.pop_back();
             JsonObject GranpaItem = src.FindItemIncludeArray(GranpaPath, errCode);
             if (GranpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
-                GLOGE("In father");
                 JsonObject FatherItem = GranpaItem.GetChild();
                 while (!FatherItem.IsNull()) {
                     bool isEqual = (FatherItem.GetObjectItem(lastFiledName, errCode).Print() == item.Print());
@@ -440,7 +439,6 @@ bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target
             }
             if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY && !flag) {
                 bool isEqual = (srcItem.Print() == item.Print());
-                GLOGE("In first ARRAY");
                 if (!isEqual) {
                     GLOGE("Filter value is No equal with src");
                     isMatchFlag = isEqual;
@@ -450,7 +448,6 @@ bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target
             }
             if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF && !flag) {
                 bool isEqual = isValueEqual(srcItem.GetItemValue(), item.GetItemValue());
-                GLOGE("In Leaf");
                 if (!isEqual) {
                     GLOGE("Filter value is No equal with src");
                     isMatchFlag = isEqual;
@@ -459,7 +456,6 @@ bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target
                 return false; // Both leaf node, no need iterate
             } else if (srcItem.GetType() != item.GetType()) {
                 if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
-                    GLOGE("In ARRAY");
                     GLOGE("Check if there has an object in array");
                     bool isEqual = isArrayMathch(srcItem, item, flag);
                     if (!isEqual) {
