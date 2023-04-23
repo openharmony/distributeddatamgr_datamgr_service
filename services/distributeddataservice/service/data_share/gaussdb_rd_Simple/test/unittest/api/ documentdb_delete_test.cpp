@@ -71,7 +71,7 @@ void DocumentDeleteApiTest::SetUp(void)
         \"address\": \"beijing\", \
         \"age\" : 15, \
         \"friend\" : {\"name\" : \"David\", \"sex\" : \"female\", \"age\" : 90}, \
-        \"subject\": [\"math\", \"English\", \"music\"] \
+        \"subject\": [\"math\", \"English\", \"music\", {\"info\" : \"exam\"}] \
     }";
     const char *document2 =
     "{  \
@@ -89,7 +89,7 @@ void DocumentDeleteApiTest::SetUp(void)
         \"address\": \"beijing\", \
         \"age\" : 15, \
         \"friend\" : {\"name\" : \"David\", \"sex\" : \"female\", \"age\" : 90}, \
-        \"subject\": [\"math\", \"English\", \"music\"] \
+        \"subject\": [\"Sing\", \"Jump\", \"Rap\", \"BasketBall\"] \
     }";
     DocumentDeleteApiTest::InsertDoc(COLLECTION_NAME, document1);
     DocumentDeleteApiTest::InsertDoc(COLLECTION_NAME, document2);
@@ -143,7 +143,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest001, TestSize.Level1)
      * @tc.steps:step1. Delete all the document
      * @tc.expected: step1. GRD_INVALID_ARGS
     */
-    EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, NULL_JSON_STR, 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, NULL_JSON_STR, 0), 1);
 }
 
 /**
@@ -160,7 +160,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest002, TestSize.Level1)
      * @tc.expected: step1. GRD_INVALID_ARGS
     */
     const char *filter = "{\"age\" : 15}";
-    EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, filter, 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, filter, 0), 1);
 }
 
 /**
@@ -177,7 +177,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest003, TestSize.Level1)
      * @tc.expected: step1. GRD_INVALID_ARGS
     */
     const char *filter = "{\"_id\" : \"1\", \"age\" : 15}";
-    EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, filter, 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, filter, 0), 1);
 }
 
 /**
@@ -321,6 +321,32 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest010, TestSize.Level1)
     }
     const char *filter = "{\"_id\" : \"1\"}";
     EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, filter, 0), 1);
-    
+}
+
+/**
+  * @tc.name: DocumentDelete011
+  * @tc.desc: 
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: mazhao
+  */
+HWTEST_F(DocumentDeleteApiTest, DeleteDBTest011, TestSize.Level1)
+{
+    /**
+      * @tc.step1: Create filter with _id and get the record according to filter condition.
+      * @tc.expected: step1. GRD_OK
+      */
+    const char *filter = "{\"_id\" : \"1\"}";
+    const char *filter2 = "{\"subject.info\" : \"exam\"}";
+    GRD_ResultSet *resultSet = nullptr;
+    Query query = {filter, "{}"};
+    EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
+    EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, filter2, 0), 1);
+    /**
+      * @tc.step2: Invoke GRD_Next to get the next matching value. Release resultSet.
+      * @tc.expected: step2. Cannot get next record, return GRD_NO_DATA.
+      */
+    EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
+    EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 

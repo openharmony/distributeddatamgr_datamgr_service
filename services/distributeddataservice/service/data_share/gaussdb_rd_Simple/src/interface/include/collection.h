@@ -30,7 +30,9 @@ public:
 
     int PutDocument(const Key &key, const Value &document);
     int GetDocument(const Key &key, Value &document) const;
+    int GetFilededDocument(const JsonObject &filterObj, std::vector<std::pair<std::string, std::string>> &values) const;
     int DeleteDocument(const Key &key);
+    int IsCollectionExists(int &errCode);
     int UpsertDocument(const std::string &id, const std::string &document, bool isReplace = true);
     bool FindDocument();    
     int UpdateDocument(const std::string &id, const std::string &document);

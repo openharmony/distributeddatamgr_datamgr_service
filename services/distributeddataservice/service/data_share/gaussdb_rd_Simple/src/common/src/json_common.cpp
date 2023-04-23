@@ -36,6 +36,25 @@ ValueObject JsonCommon::GetValueByFiled(JsonObject &node, const std::string& fil
     return ValueObject();
 }
 
+ValueObject JsonCommon::GetValueByFiled(JsonObject &node, const std::string& filed, bool &isFiledExist)
+{
+    while (!node.IsNull()) {
+        if (node.GetItemFiled() == filed) {
+            auto itemValue = node.GetItemValue();
+            isFiledExist = true;
+            return itemValue;
+        }
+        if (node.GetNext().IsNull()) {
+            isFiledExist = false;
+            return ValueObject();
+        }
+        auto nodeNew = node.GetNext();
+        node = nodeNew;
+    }
+    isFiledExist = false;
+    return ValueObject();
+}
+
 int JsonCommon::CheckLeafNode(const JsonObject &node, std::vector<ValueObject> &leafValue)
 {
     if (node.GetChild().IsNull()) {

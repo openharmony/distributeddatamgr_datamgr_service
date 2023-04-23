@@ -285,6 +285,9 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
+    if (!coll.IsCollectionExists(errCode)) {
+        return -E_INVALID_ARGS;
+    }
     if (filter.empty()) {
         GLOGE("Filter is empty");
         return -E_INVALID_ARGS;
@@ -298,15 +301,29 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         GLOGE("filter Parsed faild");
         return errCode;
     }
-    errCode = CheckCommon::CheckFilter(filterObj);
+    bool isOnlyId = true;
+    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId);
     if (errCode != E_OK) {
         return errCode;
     }
-    auto filterObjChild = filterObj.GetChild();
-    auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
-    std::string id = idValue.GetStringValue();
-    Key key(id.begin(), id.end());
+    if (isOnlyId) {
+        auto filterObjChild = filterObj.GetChild();
+        auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+        std::string id = idValue.GetStringValue();
+        Key key(id.begin(), id.end());
+        std::lock_guard<std::mutex> lock(dbMutex_);
+        return coll.DeleteDocument(key);
+    }
+    ResultSet resultSet;
+    InitResultSet(this, collection, filter, resultSet);
     std::lock_guard<std::mutex> lock(dbMutex_);
+    errCode = resultSet.GetNext();
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    std::string id; 
+    resultSet.GetKey(id);
+    Key key(id.begin(), id.end());
     return coll.DeleteDocument(key);
 }
 KvStoreExecutor *DocumentStore::GetExecutor(int errCode)
@@ -318,7 +335,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
 {
     if (flags != 0 && flags != GRD_DOC_ID_DISPLAY) {
         GLOGE("FindDocument flag is illegal");
-        return -E_INVALID_ARGS;;
+        return -E_INVALID_ARGS;
     }
     std::string lowerCaseCollName;
     int errCode = E_OK;
@@ -335,12 +352,11 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         GLOGE("filter Parsed faild");
         return errCode;
     }
-    errCode = CheckCommon::CheckFilter(filterObj);
+    bool isOnlyId = true;
+    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId);
     if (errCode != E_OK) {
         return errCode;
     }
-    auto filterObjChild = filterObj.GetChild();
-    auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
     if (projection.length() + 1 > JSON_LENS_MAX) {
         GLOGE("projection's length is larger than JSON_LENS_MAX");
         return -E_OVER_LIMIT;
@@ -377,7 +393,8 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         GLOGE("no corresponding table name");
         return -E_INVALID_ARGS;
     }
-    int ret = InitResultSet(this, collection, idValue, allPath, ifShowId, viewType, grdResultSet->resultSet_);
+    int ret = InitResultSet(this, collection, filter, allPath, ifShowId, viewType, grdResultSet->resultSet_, isOnlyId);
+
     if (ret == E_OK) {
         collections_[collection] = nullptr;
     }

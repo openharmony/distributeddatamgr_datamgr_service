@@ -61,12 +61,24 @@ int Collection::GetDocument(const Key &key, Value &document) const
     return executor_->GetData(name_, key, document);
 }
 
+int Collection::GetFilededDocument(const JsonObject &filterObj, std::vector<std::pair<std::string, std::string>> &values) const
+{
+    if (executor_ == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    return executor_->GetFilededData(name_, filterObj, values);
+}
+
 int Collection::DeleteDocument(const Key &key)
 {
     if (executor_ == nullptr) {
         return -E_INVALID_ARGS;
     }
     return executor_->DelData(name_, key);
+}
+
+int Collection::IsCollectionExists(int &errCode) {
+    return executor_->IsCollectionExists(name_, errCode);
 }
 
 int Collection::UpsertDocument(const std::string &id, const std::string &document, bool isReplace)

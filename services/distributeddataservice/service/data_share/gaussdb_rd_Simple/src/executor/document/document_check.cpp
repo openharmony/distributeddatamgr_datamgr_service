@@ -88,10 +88,47 @@ int CheckCommon::CheckFilter(JsonObject &filterObj)
     return E_OK;
 }
 
+int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId)
+{   
+    if (filterObj.GetDeep() > JSON_DEEP_MAX) {
+        GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
+        return -E_INVALID_ARGS;
+    }
+    if (!filterObj.GetChild().GetNext().IsNull()) {
+        isOnlyId = false;
+    }
+    bool isIdExisit = false;
+    int ret = CheckIdFormat(filterObj, isIdExisit);
+    if (ret != E_OK) {
+        GLOGE("Filter Id format is illegal");
+        return ret;
+    }
+    if (!isIdExisit) {
+        isOnlyId = false;
+    }
+    return E_OK;
+}
+
 int CheckCommon::CheckIdFormat(JsonObject &filterJson)
 {
     auto filterObjChild = filterJson.GetChild();
     auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+    if (idValue.GetValueType() != ValueObject::ValueType::VALUE_STRING) {
+        return -E_INVALID_ARGS;
+    }
+    if (idValue.GetStringValue().length() > MAX_ID_LENS) {
+        return -E_OVER_LIMIT;
+    }
+    return E_OK;
+}
+
+int CheckCommon::CheckIdFormat(JsonObject &filterJson, bool &isIdExisit)
+{
+    auto filterObjChild = filterJson.GetChild();
+    ValueObject idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID, isIdExisit);
+    if ((idValue.GetValueType() == ValueObject::ValueType::VALUE_NULL) && isIdExisit == false) {
+        return E_OK;
+    }
     if (idValue.GetValueType() != ValueObject::ValueType::VALUE_STRING) {
         return -E_INVALID_ARGS;
     }
