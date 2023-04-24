@@ -34,8 +34,8 @@ int32_t ObjectServiceStub::ObjectStoreSaveOnRemote(MessageParcel &data, MessageP
     sptr<IRemoteObject> obj;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, deviceId, objectData, obj)) {
         ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s deviceId:%{public}s objectData size:%{public}zu",
-            sessionId.c_str(), bundleName.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(),
-            objectData.size());
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(),
+            DistributedData::Anonymous::Change(deviceId).c_str(), objectData.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     if (obj == nullptr) {
@@ -56,7 +56,8 @@ int32_t ObjectServiceStub::ObjectStoreRevokeSaveOnRemote(MessageParcel &data, Me
     std::string bundleName;
     sptr<IRemoteObject> obj;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
-        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s", sessionId.c_str(), bundleName.c_str());
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     if (obj == nullptr) {
@@ -77,7 +78,8 @@ int32_t ObjectServiceStub::ObjectStoreRetrieveOnRemote(MessageParcel &data, Mess
     std::string bundleName;
     sptr<IRemoteObject> obj;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
-        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s", sessionId.c_str(), bundleName.c_str());
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     if (obj == nullptr) {
@@ -98,7 +100,8 @@ int32_t ObjectServiceStub::OnSubscribeRequest(MessageParcel &data, MessageParcel
     std::string bundleName;
     sptr<IRemoteObject> obj;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
-        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s", sessionId.c_str(), bundleName.c_str());
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     if (obj == nullptr) {
@@ -118,7 +121,8 @@ int32_t ObjectServiceStub::OnUnsubscribeRequest(MessageParcel &data, MessageParc
     std::string sessionId;
     std::string bundleName;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId)) {
-        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s", sessionId.c_str(), bundleName.c_str());
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = UnregisterDataChangeObserver(bundleName, sessionId);

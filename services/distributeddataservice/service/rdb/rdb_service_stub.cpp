@@ -27,7 +27,8 @@ int32_t RdbServiceStub::OnRemoteObtainDistributedTableName(MessageParcel &data, 
     std::string device;
     std::string table;
     if (!ITypesUtil::Unmarshal(data, device, table)) {
-        ZLOGE("Unmarshal device:%{public}s table:%{public}s", device.c_str(), table.c_str());
+        ZLOGE("Unmarshal device:%{public}s table:%{public}s", DistributedData::Anonymous::Change(device).c_str(),
+            table.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
