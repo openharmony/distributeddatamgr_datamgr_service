@@ -15,7 +15,6 @@
 #include <iostream>
 #include "projection_tree.h"
 
-
 namespace DocumentDB {
 const int JSON_DEEP_MAX = 4;
 
@@ -30,19 +29,18 @@ int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path) {
     if (node == NULL) {
         return E_OK;
     }
-    for (int i = 0; i < path.size(); i++) {
+    for (auto singlePath : path) {
         node = &node_;
-        for (int j = 0; j < path[i].size(); j++) {
-            if (node->SonNode[path[i][j]] != nullptr) {
-                node = node->SonNode[path[i][j]];
-                if (j < path[i].size() - 1 && node->isDeepest) {
+        for (int j = 0; j < singlePath.size(); j++) {
+            if (node->SonNode[singlePath[j]] != nullptr) {
+                node = node->SonNode[singlePath[j]];
+                if (j < singlePath.size() - 1 && node->isDeepest) {
                     return -E_INVALID_ARGS;
                 }
-                if (j == path[i].size() - 1 && !node->isDeepest) {
+                if (j == singlePath.size() - 1 && !node->isDeepest) {
                     return -E_INVALID_ARGS;
                 }
-            }
-            else {
+            } else {
                 auto tempNode = new (std::nothrow) ProjectionNode;
                 if (tempNode == nullptr) {
                     GLOGE("Memory allocation failed!" );
@@ -54,8 +52,8 @@ int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path) {
                     return -E_INVALID_ARGS;
                 }
                 node->isDeepest = false;
-                node->SonNode[path[i][j]] = tempNode;
-                node = node->SonNode[path[i][j]];
+                node->SonNode[singlePath[j]] = tempNode;
+                node = node->SonNode[singlePath[j]];
             }
         }
     }
@@ -70,8 +68,7 @@ bool ProjectionTree::SearchTree(std::vector<std::string> &singlePath, int &index
         }
         if (node->SonNode[singlePath[i]] != nullptr) {
             node = node->SonNode[singlePath[i]];
-        }
-        else {
+        } else {
             return false;
         }
     }

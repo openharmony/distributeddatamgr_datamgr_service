@@ -45,7 +45,7 @@ private:
                                 bool &isCollapse, int &isMatchFlag);
     static bool CheckNode(JsonObject &Node, std::set<std::string> filedSet, bool &errFlag);
     static bool CheckProjectionNode(JsonObject &Node, std::set<std::string> filedSet, bool &errFlag, bool isFirstFloor);
-    static int CheckLeafNode(const JsonObject &Node, std::vector<ValueObject> &leafValue);
+    static void CheckLeafNode(const JsonObject &Node, std::vector<ValueObject> &leafValue);
     static bool isArrayMathch(const JsonObject &src, const JsonObject &target, int &flag);
 };
 } // DocumentDB

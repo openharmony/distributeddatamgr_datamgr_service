@@ -55,7 +55,7 @@ ValueObject JsonCommon::GetValueByFiled(JsonObject &node, const std::string& fil
     return ValueObject();
 }
 
-int JsonCommon::CheckLeafNode(const JsonObject &node, std::vector<ValueObject> &leafValue)
+void JsonCommon::CheckLeafNode(const JsonObject &node, std::vector<ValueObject> &leafValue)
 {
     if (node.GetChild().IsNull()) {
         auto itemValue = node.GetItemValue();
@@ -69,12 +69,15 @@ int JsonCommon::CheckLeafNode(const JsonObject &node, std::vector<ValueObject> &
         auto nodeNew = node.GetNext();
         CheckLeafNode(nodeNew, leafValue);
     }
-    return E_OK;
 }
 
 std::vector<ValueObject>  JsonCommon::GetLeafValue(const JsonObject &node)
-{
+{   
     std::vector<ValueObject> leafValue;
+    if (node.IsNull()) {
+        GLOGE("Get leafValue faied, node is empty");
+        return leafValue;
+    }
     CheckLeafNode(node, leafValue);
     return leafValue;
 }
@@ -96,8 +99,7 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, boo
                 errFlag = false;
                 return false;
             }
-        }
-        else {
+        } else {
             errFlag = false;
             return false;
         }
@@ -143,13 +145,12 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fil
         if (filedSet.find(fieldName) == filedSet.end()) {
             if (ret == E_OK) {
                 filedSet.insert(fieldName);
+                if (fieldName.empty()) {
+                    errFlag = false;
+                    return false;
+                }
             }
-            if (ret == E_OK && fieldName.empty()) {
-                errFlag = false;
-                return false;
-            }
-        }
-        else {
+        } else {
             errFlag = false;
             return false;
         }
@@ -184,7 +185,8 @@ bool JsonCommon::CheckProjectionField(JsonObject &jsonObj)
     return CheckProjectionNode(jsonObj, filedSet, errFlag, isFirstFloor);
 }
 
-int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor)
+int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath, 
+                        std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor)
 {
     std::vector<std::string> fatherPath;
     if (isFirstFloor) {
@@ -211,8 +213,7 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
     if (!node.GetChild().IsNull() && node.GetChild().GetItemFiled() != "") {
         auto nodeNew = node.GetChild();
         ParseNode(nodeNew, singlePath, resultPath, false);
-    }
-    else {
+    } else {
         resultPath.emplace_back(singlePath);
     }
     if (!node.GetNext().IsNull()) {
@@ -367,14 +368,14 @@ bool JsonCommon::isValueEqual(const ValueObject &srcValue, const ValueObject &ta
 {
     if (srcValue.GetValueType() == targetValue.GetValueType()) {
         switch (srcValue.GetValueType()) {
-        case ValueObject::ValueType::VALUE_NULL:
-            return true;
-        case ValueObject::ValueType::VALUE_BOOL:
-            return srcValue.GetBoolValue() == targetValue.GetBoolValue() ? true : false;
-        case ValueObject::ValueType::VALUE_NUMBER:
-            return srcValue.GetDoubleValue() == targetValue.GetDoubleValue() ? true : false;
-        case ValueObject::ValueType::VALUE_STRING:
-            return srcValue.GetStringValue() == targetValue.GetStringValue() ? true : false;
+            case ValueObject::ValueType::VALUE_NULL:
+                return true;
+            case ValueObject::ValueType::VALUE_BOOL:
+                return srcValue.GetBoolValue() == targetValue.GetBoolValue() ? true : false;
+            case ValueObject::ValueType::VALUE_NUMBER:
+                return srcValue.GetDoubleValue() == targetValue.GetDoubleValue() ? true : false;
+            case ValueObject::ValueType::VALUE_STRING:
+                return srcValue.GetStringValue() == targetValue.GetStringValue() ? true : false;
         }
     }
     return false;
