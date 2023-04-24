@@ -370,26 +370,18 @@ bool JsonCommon::isValueEqual(const ValueObject &srcValue, const ValueObject &ta
         case ValueObject::ValueType::VALUE_NULL:
             return true;
         case ValueObject::ValueType::VALUE_BOOL:
-            if (srcValue.GetBoolValue() == targetValue.GetBoolValue()) {
-                return true;
-            }
-            return false;
+            return srcValue.GetBoolValue() == targetValue.GetBoolValue() ? true : false;
         case ValueObject::ValueType::VALUE_NUMBER:
-            if (srcValue.GetDoubleValue() == targetValue.GetDoubleValue()) {
-                return true;
-            }
-            return false;
+            return srcValue.GetDoubleValue() == targetValue.GetDoubleValue() ? true : false;
         case ValueObject::ValueType::VALUE_STRING:
-            if (srcValue.GetStringValue() == targetValue.GetStringValue()) {
-                return true;
-            }
-            return false;
+            return srcValue.GetStringValue() == targetValue.GetStringValue() ? true : false;
         }
     }
     return false;
 }
 
-bool JsonCommon::isArrayMathch(const JsonObject &src, const JsonObject &target, int &flag) {
+bool JsonCommon::isArrayMathch(const JsonObject &src, const JsonObject &target, int &isAlreadyMatched) 
+{
     JsonObject srcChild = src.GetChild();
     JsonObject targetObj = target;
     bool isMatch = false;
@@ -398,12 +390,66 @@ bool JsonCommon::isArrayMathch(const JsonObject &src, const JsonObject &target, 
         if (srcChild.GetType() == JsonObject::Type::JSON_OBJECT && target.GetType() == JsonObject::Type::JSON_OBJECT
             && (isJsonNodeMatch(srcChild, target, errCode))) {
             isMatch = true;
-            flag = 1;
+            isAlreadyMatched = 1;
             break;
         }
         srcChild = srcChild.GetNext();
     }
     return isMatch;
+}
+
+bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item, 
+                                int &isAlreadyMatched, bool &isCollapse, int &isMatchFlag) 
+{
+    int errCode;
+    JsonObject srcItem = src.FindItemIncludeArray(itemPath, errCode);
+    auto GranpaPath = itemPath;
+    auto lastFiledName = GranpaPath.back();
+    GranpaPath.pop_back();
+    JsonObject GranpaItem = src.FindItemIncludeArray(GranpaPath, errCode);
+    if (GranpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
+        JsonObject FatherItem = GranpaItem.GetChild();
+        while (!FatherItem.IsNull()) {
+            bool isEqual = (FatherItem.GetObjectItem(lastFiledName, errCode).Print() == item.Print());
+            if (isEqual) {                       
+                GLOGI("Filter value is equal with src");
+                isMatchFlag = isEqual;
+                isAlreadyMatched = 1;
+            } 
+            FatherItem = FatherItem.GetNext();
+        }
+    }
+    if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY && !isAlreadyMatched) {
+        bool isEqual = (srcItem.Print() == item.Print());
+        if (!isEqual) {
+            GLOGI("Filter value is No equal with src");
+            isMatchFlag = isEqual;
+        }
+        isAlreadyMatched = isMatchFlag;
+        return false; // Both leaf node, no need iterate
+    }
+    if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF && !isAlreadyMatched) {
+        bool isEqual = isValueEqual(srcItem.GetItemValue(), item.GetItemValue());
+        if (!isEqual) {
+            GLOGI("Filter value is No equal with src");
+            isMatchFlag = isEqual;
+        }
+        isAlreadyMatched = isMatchFlag;
+        return false; // Both leaf node, no need iterate
+    } else if (srcItem.GetType() != item.GetType()) {
+        if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
+            GLOGI("srcItem Type is ARRAY, item Type is not ARRAY");
+            bool isEqual = isArrayMathch(srcItem, item, isAlreadyMatched);
+            if (!isEqual) {
+                isMatchFlag = isEqual;
+            }
+            return true;
+        }
+        GLOGI("valueType is different");
+        isMatchFlag = false;
+        return false; // Different node types, overwrite directly, skip child node
+    }
+    return true; // Both array or object
 }
 
 bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &externErrCode)
@@ -412,7 +458,7 @@ bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target
     int isMatchFlag = true;
     JsonObjectIterator(target, {},
         [&src, &isMatchFlag, &externErrCode](JsonFieldPath &path, const JsonObject &item) {
-        int flag = 0;
+        int isAlreadyMatched = 0;
         bool isCollapse = false;
         if (isMatchFlag == false) {
             return false;
@@ -420,72 +466,25 @@ bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target
         JsonFieldPath itemPath = ExpendPath(path, isCollapse);
         int errCode = 0;
         if (src.IsFieldExistsIncludeArray(itemPath)) {
-            JsonObject srcItem = src.FindItemIncludeArray(itemPath, errCode);
-            auto GranpaPath = itemPath;
-            auto lastFiledName = GranpaPath.back();
-            GranpaPath.pop_back();
-            JsonObject GranpaItem = src.FindItemIncludeArray(GranpaPath, errCode);
-            if (GranpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
-                JsonObject FatherItem = GranpaItem.GetChild();
-                while (!FatherItem.IsNull()) {
-                    bool isEqual = (FatherItem.GetObjectItem(lastFiledName, errCode).Print() == item.Print());
-                    if (isEqual) {                       
-                        GLOGE("Filter value is equal with src");
-                        isMatchFlag = isEqual;
-                        flag = 1;
-                    } 
-                    FatherItem = FatherItem.GetNext();
-                }
-            }
-            if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY && !flag) {
-                bool isEqual = (srcItem.Print() == item.Print());
-                if (!isEqual) {
-                    GLOGE("Filter value is No equal with src");
-                    isMatchFlag = isEqual;
-                }
-                flag = isMatchFlag;
-                return false; // Both leaf node, no need iterate
-            }
-            if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF && !flag) {
-                bool isEqual = isValueEqual(srcItem.GetItemValue(), item.GetItemValue());
-                if (!isEqual) {
-                    GLOGE("Filter value is No equal with src");
-                    isMatchFlag = isEqual;
-                }
-                flag = isMatchFlag;
-                return false; // Both leaf node, no need iterate
-            } else if (srcItem.GetType() != item.GetType()) {
-                if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
-                    GLOGE("Check if there has an object in array");
-                    bool isEqual = isArrayMathch(srcItem, item, flag);
-                    if (!isEqual) {
-                        isMatchFlag = isEqual;
-                    }
-                    return true;
-                }
-                GLOGE("valueType is different,");
-                isMatchFlag = false;
-                return false; // Different node types, overwrite directly, skip child node
-            }
-            return true; // Both array or object
+            return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
         } else {
             if (isCollapse) {
                 GLOGE("Match failed, path not exist.");
                 isMatchFlag = false;
                 return false;
             }
-            GLOGE("Not match anything");
-            if (flag == 0) {
+            GLOGI("Not match anything");
+            if (isAlreadyMatched == 0) {
                 isMatchFlag = false;
             }
             std::vector<ValueObject> ItemLeafValue = GetLeafValue(item);
             int isNULLFlag = true;
             for (auto ValueItem : ItemLeafValue) {
                 if (ValueItem.GetValueType() != ValueObject::ValueType::VALUE_NULL) {
-                    GLOGE("leaf value is not null");
+                    GLOGI("leaf value is not null");
                     isNULLFlag = false;
                 } else {
-                    GLOGE("filter leaf is null, Src leaf is dont exist");
+                    GLOGI("filter leaf is null, Src leaf is dont exist");
                     isMatchFlag = true;
                 }
             }

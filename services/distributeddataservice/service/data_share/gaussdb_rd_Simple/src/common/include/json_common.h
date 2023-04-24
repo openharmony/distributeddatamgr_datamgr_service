@@ -33,13 +33,16 @@ public:
     static ValueObject GetValueByFiled(JsonObject &node, const std::string& filed, bool &isFiledExist);
     static bool CheckJsonField(JsonObject &node);
     static bool CheckProjectionField(JsonObject &node);
-    static int ParseNode(JsonObject &Node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor);
+    static int ParseNode(JsonObject &Node, std::vector<std::string> singlePath, 
+                        std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor);
     static std::vector<std::vector<std::string>> ParsePath(const JsonObject &node);
     static std::vector<ValueObject>  GetLeafValue(const JsonObject &node);
     static bool isValueEqual(const ValueObject &srcValue, const ValueObject &targetValue);
     static int Append(const JsonObject &src, const JsonObject &add);
     static bool isJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &externErrCode);
 private:
+    static bool JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item, int &isAlreadyMatched, 
+                                bool &isCollapse, int &isMatchFlag);
     static bool CheckNode(JsonObject &Node, std::set<std::string> filedSet, bool &errFlag);
     static bool CheckProjectionNode(JsonObject &Node, std::set<std::string> filedSet, bool &errFlag, bool isFirstFloor);
     static int CheckLeafNode(const JsonObject &Node, std::vector<ValueObject> &leafValue);
