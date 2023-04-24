@@ -27,7 +27,7 @@ int GetErrorCategory(int errCode)
 
 int TrasnferDocErr(int err)
 {
-    if(err > 0) {
+    if (err > 0) {
         return err;
     }
 

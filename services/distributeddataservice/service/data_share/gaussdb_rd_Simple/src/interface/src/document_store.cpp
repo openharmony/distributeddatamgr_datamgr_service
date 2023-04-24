@@ -429,13 +429,13 @@ int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType)
                         return -E_INVALID_ARGS;
                     }
                     viewType = true;
-                } else {     
+                } else {
                     if (i != 0 && viewType) {
                         return E_INVALID_ARGS;
                     }
                     viewType == false;
                 }
-            break;
+                break;
             case ValueObject::ValueType::VALUE_STRING:
                 if (leafValue[i].GetStringValue() == "") {
                     if (i != 0 && !viewType) {
@@ -445,7 +445,7 @@ int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType)
                 } else {
                     return -E_INVALID_ARGS;
                 }
-            break;
+                break;
             case ValueObject::ValueType::VALUE_NUMBER:
                 if (leafValue[i].GetIntValue() == 0) {
                     if (i != 0 && viewType) {

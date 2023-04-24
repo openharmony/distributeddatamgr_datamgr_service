@@ -65,7 +65,7 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::st
         return false;
     }
     lowerCaseName = collectionName;
-    std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), [](unsigned char c){
+    std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), [](unsigned char c) {
         return std::tolower(c);
     });
     return true;

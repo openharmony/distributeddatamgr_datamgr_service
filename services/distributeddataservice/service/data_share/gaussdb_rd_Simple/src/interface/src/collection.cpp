@@ -61,8 +61,8 @@ int Collection::GetDocument(const Key &key, Value &document) const
     return executor_->GetData(name_, key, document);
 }
 
-int Collection::GetFilededDocument(const JsonObject &filterObj, 
-                                    std::vector<std::pair<std::string, std::string>> &values) const
+int Collection::GetFilededDocument(const JsonObject &filterObj,
+    std::vector<std::pair<std::string, std::string>> &values) const
 {
     if (executor_ == nullptr) {
         return -E_INVALID_ARGS;

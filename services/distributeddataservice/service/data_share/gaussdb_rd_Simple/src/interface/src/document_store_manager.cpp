@@ -16,10 +16,10 @@
 #include "db_config.h"
 #include "doc_errno.h"
 #include "grd_base/grd_type_export.h"
-#include "document_store_manager.h"
 #include "log_print.h"
 #include "os_api.h"
 #include "kv_store_manager.h"
+#include "document_store_manager.h"
 
 namespace DocumentDB {
 namespace {

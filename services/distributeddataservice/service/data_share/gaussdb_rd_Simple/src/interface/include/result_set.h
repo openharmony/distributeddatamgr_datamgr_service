@@ -41,7 +41,7 @@ public:
     int EraseCollection();
 private:
     int CutJsonBranch(std::string &jsonData);
-    int CheckCutNode(JsonObject *node, std::vector<std::string> singleCutPath, 
+    int CheckCutNode(JsonObject *node, std::vector<std::string> singleCutPath,
                     std::vector<std::vector<std::string>> &allCutPath);
     DocumentStore *store_ = nullptr;
     std::string collectionName_;
