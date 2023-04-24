@@ -236,7 +236,7 @@ std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject &ro
 }
 
 namespace {
-JsonFieldPath ExpendPath(const JsonFieldPath &path, bool &isCollapse)
+JsonFieldPath SplitePath(const JsonFieldPath &path, bool &isCollapse)
 {
     if (path.size() > 1 || path.empty()) { // only first lever has collapse field
         return path;
@@ -253,29 +253,6 @@ JsonFieldPath ExpendPath(const JsonFieldPath &path, bool &isCollapse)
         splitPath.push_back(str.substr(start));
     }
     isCollapse = (splitPath.size() > 1);
-    return splitPath;
-}
-
-JsonFieldPath ExpendPathForField(const JsonFieldPath &path, bool &isCollapse)
-{
-    if (path.empty()) {
-        return path;
-    }
-    JsonFieldPath splitPath;
-    const std::string &str = path[0];
-    size_t start = 0;
-    size_t end = 0;
-    while ((end = str.find('.', start)) != std::string::npos) {
-        splitPath.push_back(str.substr(start, end - start));
-        start = end + 1;
-    }
-    if (start < str.length()) {
-        splitPath.push_back(str.substr(start));
-    }
-    isCollapse = (splitPath.size() > 1);
-    for (int i = 1; i < path.size(); i++) {
-        splitPath.emplace_back(path[i]);
-    }
     return splitPath;
 }
 
@@ -317,7 +294,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add)
     JsonObjectIterator(add, {},
         [&src, &externErrCode](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
         bool isCollapse = false;
-        JsonFieldPath itemPath = ExpendPath(path, isCollapse);
+        JsonFieldPath itemPath = SplitePath(path, isCollapse);
         JsonFieldPath fatherPath = itemPath;
         fatherPath.pop_back();
         int errCode = E_OK;
@@ -389,11 +366,11 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
                                 int &isAlreadyMatched, bool &isCollapse, int &isMatchFlag)
 {
     int errCode;
-    JsonObject srcItem = src.FindItemIncludeArray(itemPath, errCode);
+    JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
     JsonFieldPath granpaPath = itemPath;
     std::string lastFiledName = granpaPath.back();
     granpaPath.pop_back();
-    JsonObject granpaItem = src.FindItemIncludeArray(granpaPath, errCode);
+    JsonObject granpaItem = src.FindItemPowerMode(granpaPath, errCode);
     if (granpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
         JsonObject fatherItem = granpaItem.GetChild();
         while (!fatherItem.IsNull()) {
@@ -456,8 +433,8 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
         if (isMatchFlag == false) {
             return false;
         }
-        JsonFieldPath itemPath = ExpendPath(path, isCollapse);
-        if (src.IsFieldExistsIncludeArray(itemPath)) {
+        JsonFieldPath itemPath = SplitePath(path, isCollapse);
+        if (src.IsFieldExistsPowerMode(itemPath)) {
             return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
         } else {
             if (isCollapse) {

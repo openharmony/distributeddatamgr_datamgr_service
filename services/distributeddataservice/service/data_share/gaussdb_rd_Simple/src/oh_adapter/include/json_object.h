@@ -82,9 +82,9 @@ public:
     std::string GetItemFiled(int &errCode) const;
 
     bool IsFieldExists(const JsonFieldPath &jsonPath) const;
-    bool IsFieldExistsIncludeArray(const JsonFieldPath &jsonPath) const;
+    bool IsFieldExistsPowerMode(const JsonFieldPath &jsonPath) const;
     JsonObject FindItem(const JsonFieldPath &jsonPath, int &errCode) const;
-    JsonObject FindItemIncludeArray(const JsonFieldPath &jsonPath, int &errCode) const;
+    JsonObject FindItemPowerMode(const JsonFieldPath &jsonPath, int &errCode) const;
     ValueObject GetObjectByPath(const JsonFieldPath &jsonPath, int &errCode) const;
     int DeleteItemOnTarget(const JsonFieldPath &path);
     int DeleteItemDeeplyOnTarget(const JsonFieldPath &path);

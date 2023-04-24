@@ -432,7 +432,7 @@ cJSON *GetChild(cJSON *cjson, const std::string &field, bool caseSens)
 }
 
 
-cJSON *GetChildIncludeArray(cJSON *cjson, const std::string &field, bool caseSens)
+cJSON *GetChildPowerMode(cJSON *cjson, const std::string &field, bool caseSens)
 {
     if (cjson->type == cJSON_Object) {
         if (caseSens) {
@@ -469,10 +469,10 @@ cJSON *MoveToPath(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)
     return cjson;
 }
 
-cJSON *MoveToPathIncludeArray(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)
+cJSON *MoveToPathPowerMode(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)
 {
     for (const auto &field : jsonPath) {
-        cjson = GetChildIncludeArray(cjson, field, caseSens);
+        cjson = GetChildPowerMode(cjson, field, caseSens);
         if (cjson == nullptr) {
             break;
         }
@@ -485,9 +485,9 @@ bool JsonObject::IsFieldExists(const JsonFieldPath &jsonPath) const
     return (MoveToPath(cjson_, jsonPath, caseSensitive_) != nullptr);
 }
 
-bool JsonObject::IsFieldExistsIncludeArray(const JsonFieldPath &jsonPath) const
+bool JsonObject::IsFieldExistsPowerMode(const JsonFieldPath &jsonPath) const
 {
-    return (MoveToPathIncludeArray(cjson_, jsonPath, caseSensitive_) != nullptr);
+    return (MoveToPathPowerMode(cjson_, jsonPath, caseSensitive_) != nullptr);
 }
 
 JsonObject JsonObject::FindItem(const JsonFieldPath &jsonPath, int &errCode) const
@@ -514,7 +514,7 @@ JsonObject JsonObject::FindItem(const JsonFieldPath &jsonPath, int &errCode) con
     return item;
 }
 
-JsonObject JsonObject::FindItemIncludeArray(const JsonFieldPath &jsonPath, int &errCode) const
+JsonObject JsonObject::FindItemPowerMode(const JsonFieldPath &jsonPath, int &errCode) const
 {
     if (jsonPath.empty()) {
         JsonObject curr = JsonObject();
@@ -525,7 +525,7 @@ JsonObject JsonObject::FindItemIncludeArray(const JsonFieldPath &jsonPath, int &
         return curr;
     }
 
-    cJSON *findItem = MoveToPathIncludeArray(cjson_, jsonPath, caseSensitive_);
+    cJSON *findItem = MoveToPathPowerMode(cjson_, jsonPath, caseSensitive_);
     if (findItem == nullptr) {
         GLOGE("Find item failed. json field path not found.");
         errCode = -E_JSON_PATH_NOT_EXISTS;
