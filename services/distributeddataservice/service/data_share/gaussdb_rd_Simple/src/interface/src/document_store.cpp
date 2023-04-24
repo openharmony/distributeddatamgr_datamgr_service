@@ -251,7 +251,7 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
     }
     auto coll = Collection(collection, executor_);
     if (document.length() + 1 > JSON_LENS_MAX) {
-        GLOGE("document's length is larger than JSON_LENS_MAX");
+        GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
     }
     JsonObject documentObj = JsonObject::Parse(document, errCode, caseIsSensitive);
@@ -293,7 +293,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         return -E_INVALID_ARGS;
     }
     if (filter.length() + 1 > JSON_LENS_MAX) {
-        GLOGE("filter's length is larger than JSON_LENS_MAX");
+        GLOGE("filter's length is too long");
         return -E_OVER_LIMIT;
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseIsSensitive);
@@ -346,7 +346,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         return errCode;
     }
     if (filter.length() + 1 > JSON_LENS_MAX) {
-        GLOGE("filter's length is larger than JSON_LENS_MAX");
+        GLOGE("filter's length is too long");
         return -E_OVER_LIMIT;
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseIsSensitive);
@@ -362,7 +362,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         return errCode;
     }
     if (projection.length() + 1 > JSON_LENS_MAX) {
-        GLOGE("projection's length is larger than JSON_LENS_MAX");
+        GLOGE("projection's length is too long");
         return -E_OVER_LIMIT;
     }
     JsonObject projectionObj = JsonObject::Parse(projection, errCode, caseIsSensitive);
@@ -413,13 +413,13 @@ int DocumentStore::EraseCollection(const std::string collectionName) {
         return E_OK;
     }
     GLOGE("erase collection failed");
+    return E_INVALID_ARGS;
 }
 int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType) {
     auto leafValue = JsonCommon::GetLeafValue(jsonObj);
     if (leafValue.size() == 0) {
         return E_INVALID_ARGS;
     }
-    bool viewFlag = false;
     for (int i = 0; i < leafValue.size(); i++) {
         switch (leafValue[i].GetValueType()) {
         case ValueObject::ValueType::VALUE_BOOL:
@@ -428,8 +428,7 @@ int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType) {
                     return -E_INVALID_ARGS;
                 }
                 viewType = true;
-            }
-            else {
+            } else {            
                 if (i != 0 && viewType) {
                     return E_INVALID_ARGS;
                 }
@@ -442,8 +441,7 @@ int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType) {
                     return -E_INVALID_ARGS;
                 }
                 viewType = true;
-            }
-            else {
+            } else {
                 return -E_INVALID_ARGS;
             }
             break;
@@ -453,8 +451,7 @@ int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType) {
                     return -E_INVALID_ARGS;
                 }
                 viewType = false;
-            }
-            else {
+            } else {
                 if (i != 0 && !viewType) {
                     return E_INVALID_ARGS;
                 }

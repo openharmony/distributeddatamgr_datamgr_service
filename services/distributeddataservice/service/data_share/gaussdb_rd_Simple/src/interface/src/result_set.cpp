@@ -45,7 +45,7 @@ int ResultSet::Init(DocumentStore *store, const std::string collectionName, cons
         GLOGE("Parse ProjectionTree failed");
         return -E_INVALID_ARGS;
     }
-    ifShowId_ =  ifShowId;
+    ifShowId_ = ifShowId;
     viewType_ = viewType;
     return E_OK;
 }   
@@ -89,7 +89,7 @@ int ResultSet::GetNext()
             std::vector<std::pair<std::string, std::string>> values;
             values.emplace_back(std::pair(idKey, jsonData));
             matchDatas_ = values;
-        }   else {
+        } else {
             int errCode = 0;
             auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
             std::vector<std::pair<std::string, std::string>> values;
@@ -195,7 +195,6 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
         return errCode;
     }
     std::vector<std::vector<std::string>> allCutPath;
-    bool idFlag = false; 
     if (viewType_) {
         std::vector<std::string> singlePath;
         auto cjsonObjChild = cjsonObj.GetChild();
@@ -204,15 +203,15 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
             GLOGE("The node in CheckCutNode is nullptr");
             return errCode;
         }
-        for (int i = 0; i < allCutPath.size(); i++) {
-            if (!ifShowId_ || allCutPath[i][0] != KEY_ID) {            
-                cjsonObj.DeleteItemDeeplyOnTarget(allCutPath[i]);
+        for (auto singleCutPaht : allCutPath) {
+            if (!ifShowId_ || singleCutPaht[0] != KEY_ID) {            
+                cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
             }
         }
     }
     if (!viewType_) {
-        for (int i = 0; i < projectionPath_.size(); i++) {
-            cjsonObj.DeleteItemDeeplyOnTarget(projectionPath_[i]);
+        for (auto singleCutPaht : projectionPath_) {
+            cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
         }
         if (!ifShowId_) {
             std::vector<std::string> idPath;
