@@ -28,12 +28,14 @@ struct ProjectionNode {
     bool isDeepest;
     int Deep;
     int ViewType;
-    ProjectionNode() {
+    ProjectionNode()
+    {
         Deep = 0;
         isDeepest = true;
     }
     int DeleteProjectionNode();
-    ~ProjectionNode () {
+    ~ProjectionNode ()
+    {
         DeleteProjectionNode();
     }
 };

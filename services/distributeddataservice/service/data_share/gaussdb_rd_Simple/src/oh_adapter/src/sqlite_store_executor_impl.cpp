@@ -127,7 +127,8 @@ int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Va
     return innerErrorCode;
 }
 
-int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonObject &filterObj, std::vector<std::pair<std::string, std::string>> &values) const
+int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonObject &filterObj, 
+                                        std::vector<std::pair<std::string, std::string>> &values) const
 {
     if (dbHandle_ == nullptr) {
         GLOGE("Invalid db handle.");
@@ -135,7 +136,7 @@ int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonO
     }
     Value keyResult;
     Value valueResult;
-    bool isFindMatch = false; 
+    bool isFindMatch = false;
     int innerErrorCode = -E_NOT_FOUND;
     std::string sql = "SELECT key, value FROM '" + collName + "';";
     int errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [](sqlite3_stmt *stmt) {

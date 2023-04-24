@@ -34,10 +34,12 @@ public:
     int DropCollection(const std::string &name, int flags);
 
     int UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update, int flags);
-    int UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document, int flags);
+    int UpsertDocument(const std::string &collection, const std::string &filter, 
+                        const std::string &document, int flags);
     int InsertDocument(const std::string &collection, const std::string &document, int flag);
     int DeleteDocument(const std::string &collection, const std::string &filter, int flag);
-    int FindDocument(const std::string &collection, const std::string &filter, const std::string &projection, int flags,  GRD_ResultSet *grdResultSet);
+    int FindDocument(const std::string &collection, const std::string &filter, 
+                        const std::string &projection, int flags,  GRD_ResultSet *grdResultSet);
     KvStoreExecutor *GetExecutor(int errCode);
     int EraseCollection(const std::string collectionName);
 private:

@@ -20,7 +20,7 @@ constexpr const char *KEY_ID = "_id";
 
 ResultSet::ResultSet()
 {
-    
+
 }
 ResultSet::~ResultSet()
 {
@@ -33,8 +33,8 @@ int ResultSet::EraseCollection()
     }
     return E_OK;
 }
-int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter, std::vector<std::vector<std::string>> &path,
-                    bool ifShowId, bool viewType, bool &isOnlyId)
+int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter, 
+                    std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId)
 {
     isOnlyId_ = isOnlyId;
     store_ =  store;
@@ -48,7 +48,7 @@ int ResultSet::Init(DocumentStore *store, const std::string collectionName, cons
     ifShowId_ = ifShowId;
     viewType_ = viewType;
     return E_OK;
-}   
+}
 
 int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter)
 {
@@ -107,7 +107,7 @@ int ResultSet::GetNext()
                 CutJsonBranch(values[i].second);
             }
             matchDatas_ = values;
-        }      
+        }
     }   else if (index_ == 0) {
         int errCode = 0;
         auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
@@ -139,16 +139,16 @@ int  ResultSet::GetValue(char **value)
         return -E_NO_DATA;
     }
     auto jsonData =  matchDatas_[index_ - 1].second;
-    char *jsonstr = new char[jsonData.size() + 1]; 
+    char *jsonstr = new char[jsonData.size() + 1];
     if (jsonstr == nullptr) {
-        GLOGE("Memory allocation failed!" );
+        GLOGE("Memory allocation failed!");
         return -E_FAILED_MEMORY_ALLOCATE;
     }
     errno_t err = strcpy_s(jsonstr, jsonData.size() + 1, jsonData.c_str());
     if (err != 0) {
         GLOGE("strcpy_s failed");
         delete[] jsonstr;
-        return -E_NO_DATA;;
+        return -E_NO_DATA;
     }
     *value = jsonstr;
     return E_OK;
@@ -164,12 +164,13 @@ int ResultSet::GetKey(std::string &key)
     return E_OK;
 }
 
-int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &allCutPath)
+int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePath, 
+                            std::vector<std::vector<std::string>> &allCutPath)
 {
     if (node == nullptr) {
         GLOGE("No node to cut");
         return -E_NO_DATA;
-    } 
+    }
     singlePath.emplace_back(node->GetItemFiled());
     int index = 0;
     if (!projectionTree_.SearchTree(singlePath, index) && index == 0) {
@@ -183,9 +184,9 @@ int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePat
         singlePath.pop_back();
         auto nodeNew = node->GetNext();
         CheckCutNode(&nodeNew, singlePath, allCutPath);
-    } 
+    }
     return E_OK;
-} 
+}
 int ResultSet::CutJsonBranch(std::string &jsonData)
 {
     int errCode;
@@ -204,7 +205,7 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
             return errCode;
         }
         for (auto singleCutPaht : allCutPath) {
-            if (!ifShowId_ || singleCutPaht[0] != KEY_ID) {            
+            if (!ifShowId_ || singleCutPaht[0] != KEY_ID) {      
                 cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
             }
         }

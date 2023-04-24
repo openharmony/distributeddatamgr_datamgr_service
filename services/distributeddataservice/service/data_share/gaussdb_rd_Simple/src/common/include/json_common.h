@@ -23,8 +23,7 @@
 #include "json_object.h"
 
 namespace DocumentDB {
-class JsonCommon
-{
+class JsonCommon {
 public:
     JsonCommon() = default;
     ~JsonCommon();
@@ -41,10 +40,11 @@ public:
     static int Append(const JsonObject &src, const JsonObject &add);
     static bool isJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &externErrCode);
 private:
-    static bool JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item, int &isAlreadyMatched, 
-                                bool &isCollapse, int &isMatchFlag);
+    static bool JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item, 
+                                int &isAlreadyMatched, bool &isCollapse, int &isMatchFlag);
     static bool CheckNode(JsonObject &Node, std::set<std::string> filedSet, bool &errFlag);
-    static bool CheckProjectionNode(JsonObject &Node, std::set<std::string> filedSet, bool &errFlag, bool isFirstFloor);
+    static bool CheckProjectionNode(JsonObject &Node, std::set<std::string> filedSet, 
+                                    bool &errFlag, bool isFirstFloor);
     static void CheckLeafNode(const JsonObject &Node, std::vector<ValueObject> &leafValue);
     static bool isArrayMathch(const JsonObject &src, const JsonObject &target, int &flag);
 };
