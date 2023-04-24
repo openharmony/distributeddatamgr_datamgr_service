@@ -24,9 +24,10 @@
 
 namespace DocumentDB {
 class ValueObject;
-int InitResultSet(DocumentStore *store, const std::string collectionName, const std::string &filter, std::vector<std::vector<std::string>> &path,
-                 bool ifShowId, bool viewType, ResultSet &resultSet, bool &isOnlyId);
-int InitResultSet(DocumentStore *store, const std::string collectionName, const std::string &filter, ResultSet &resultSet);
+int InitResultSet(DocumentStore *store, const std::string collectionName, const std::string &filter,
+    std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, ResultSet &resultSet, bool &isOnlyId);
+int InitResultSet(DocumentStore *store, const std::string collectionName,
+    const std::string &filter, ResultSet &resultSet);
 } // DocumentDB
 #endif //RESULTSET_COMMON_H
 
