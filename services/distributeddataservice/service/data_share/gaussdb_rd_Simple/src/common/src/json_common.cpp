@@ -238,7 +238,7 @@ std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject &ro
 namespace {
 JsonFieldPath ExpendPath(const JsonFieldPath &path, bool &isCollapse)
 {
-    if (path.size() > 1) { // only first lever has collapse field
+    if (path.size() > 1 || path.empty()) { // only first lever has collapse field
         return path;
     }
     JsonFieldPath splitPath;
@@ -258,6 +258,9 @@ JsonFieldPath ExpendPath(const JsonFieldPath &path, bool &isCollapse)
 
 JsonFieldPath ExpendPathForField(const JsonFieldPath &path, bool &isCollapse)
 {
+    if (path.empty()) {
+        return path;
+    }
     JsonFieldPath splitPath;
     const std::string &str = path[0];
     size_t start = 0;
@@ -277,14 +280,14 @@ JsonFieldPath ExpendPathForField(const JsonFieldPath &path, bool &isCollapse)
 }
 
 void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
-    std::function<bool (const JsonFieldPath &path, const JsonObject &father, const JsonObject &item)> foo)
+    std::function<bool (const JsonFieldPath &path, const JsonObject &father, const JsonObject &item)> AppendFoo)
 {
     JsonObject child = obj.GetChild();
     while (!child.IsNull()) {
         JsonFieldPath childPath = path;
         childPath.push_back(child.GetItemFiled());
-        if (foo != nullptr && foo(childPath, obj, child)) {
-            JsonObjectIterator(child, childPath, foo);
+        if (AppendFoo != nullptr && AppendFoo(childPath, obj, child)) {
+            JsonObjectIterator(child, childPath, AppendFoo);
         }
         child = child.GetNext();
     }
@@ -292,15 +295,15 @@ void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
 }
 
 void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
-    std::function<bool (JsonFieldPath &path, const JsonObject &item)> foo)
+    std::function<bool (JsonFieldPath &path, const JsonObject &item)> MatchFoo)
 {
     JsonObject child = obj.GetChild();
     while (!child.IsNull()) {
         bool isCollapse = false;
         JsonFieldPath childPath = path;
         childPath.push_back(child.GetItemFiled());
-        if (foo != nullptr && foo(childPath, child)) {
-            JsonObjectIterator(child, childPath, foo);
+        if (MatchFoo != nullptr && MatchFoo(childPath, child)) {
+            JsonObjectIterator(child, childPath, MatchFoo);
         }
         child = child.GetNext();
     }
@@ -363,32 +366,16 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add)
     });
     return externErrCode;
 }
-bool JsonCommon::isValueEqual(const ValueObject &srcValue, const ValueObject &targetValue)
-{
-    if (srcValue.GetValueType() == targetValue.GetValueType()) {
-        switch (srcValue.GetValueType()) {
-            case ValueObject::ValueType::VALUE_NULL:
-                return true;
-            case ValueObject::ValueType::VALUE_BOOL:
-                return srcValue.GetBoolValue() == targetValue.GetBoolValue() ? true : false;
-            case ValueObject::ValueType::VALUE_NUMBER:
-                return srcValue.GetDoubleValue() == targetValue.GetDoubleValue() ? true : false;
-            case ValueObject::ValueType::VALUE_STRING:
-                return srcValue.GetStringValue() == targetValue.GetStringValue() ? true : false;
-        }
-    }
-    return false;
-}
 
-bool JsonCommon::isArrayMathch(const JsonObject &src, const JsonObject &target, int &isAlreadyMatched)
+bool JsonCommon::IsArrayMathch(const JsonObject &src, const JsonObject &target, int &isAlreadyMatched)
 {
     JsonObject srcChild = src.GetChild();
     JsonObject targetObj = target;
     bool isMatch = false;
     int errCode = 0;
     while (!srcChild.IsNull()) {
-        if (srcChild.GetType() == JsonObject::Type::JSON_OBJECT && target.GetType() == JsonObject::Type::JSON_OBJECT
-            && (isJsonNodeMatch(srcChild, target, errCode))) {
+        if (srcChild.GetType() == JsonObject::Type::JSON_OBJECT && target.GetType() == 
+            JsonObject::Type::JSON_OBJECT && (IsJsonNodeMatch(srcChild, target, errCode))) {
             isMatch = true;
             isAlreadyMatched = 1;
             break;
@@ -403,20 +390,24 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
 {
     int errCode;
     JsonObject srcItem = src.FindItemIncludeArray(itemPath, errCode);
-    auto GranpaPath = itemPath;
-    auto lastFiledName = GranpaPath.back();
-    GranpaPath.pop_back();
-    JsonObject GranpaItem = src.FindItemIncludeArray(GranpaPath, errCode);
-    if (GranpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
-        JsonObject FatherItem = GranpaItem.GetChild();
-        while (!FatherItem.IsNull()) {
-            bool isEqual = (FatherItem.GetObjectItem(lastFiledName, errCode).Print() == item.Print());
+    JsonFieldPath granpaPath = itemPath;
+    std::string lastFiledName = granpaPath.back();
+    granpaPath.pop_back();
+    JsonObject granpaItem = src.FindItemIncludeArray(granpaPath, errCode);
+    if (granpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
+        JsonObject fatherItem = granpaItem.GetChild();
+        while (!fatherItem.IsNull()) {
+            int isEqual = true;
+            int compareRet = (fatherItem.GetObjectItem(lastFiledName, errCode).Print() == item.Print());
+            if (errCode == E_OK) {
+                isEqual = compareRet;
+            }
             if (isEqual) {
                 GLOGI("Filter value is equal with src");
                 isMatchFlag = isEqual;
                 isAlreadyMatched = 1;
             }
-            FatherItem = FatherItem.GetNext();
+            fatherItem = fatherItem.GetNext();
         }
     }
     if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY &&
@@ -431,7 +422,7 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
     }
     if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF &&
         !isAlreadyMatched) {
-        bool isEqual = isValueEqual(srcItem.GetItemValue(), item.GetItemValue());
+        bool isEqual = (srcItem.GetItemValue() == item.GetItemValue());
         if (!isEqual) {
             GLOGI("Filter value is No equal with src");
             isMatchFlag = isEqual;
@@ -441,7 +432,7 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
     } else if (srcItem.GetType() != item.GetType()) {
         if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
             GLOGI("srcItem Type is ARRAY, item Type is not ARRAY");
-            bool isEqual = isArrayMathch(srcItem, item, isAlreadyMatched);
+            bool isEqual = IsArrayMathch(srcItem, item, isAlreadyMatched);
             if (!isEqual) {
                 isMatchFlag = isEqual;
             }
@@ -454,19 +445,18 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
     return true; // Both array or object
 }
 
-bool JsonCommon::isJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &externErrCode)
+bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &errCode)
 {
-    externErrCode = E_OK;
+    errCode = E_OK;
     int isMatchFlag = true;
     JsonObjectIterator(target, {},
-        [&src, &isMatchFlag, &externErrCode](JsonFieldPath &path, const JsonObject &item) {
+        [&src, &isMatchFlag, &errCode](JsonFieldPath &path, const JsonObject &item) {
         int isAlreadyMatched = 0;
         bool isCollapse = false;
         if (isMatchFlag == false) {
             return false;
         }
         JsonFieldPath itemPath = ExpendPath(path, isCollapse);
-        int errCode = 0;
         if (src.IsFieldExistsIncludeArray(itemPath)) {
             return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
         } else {

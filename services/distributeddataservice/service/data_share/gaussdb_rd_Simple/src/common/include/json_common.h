@@ -36,9 +36,8 @@ public:
                         std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor);
     static std::vector<std::vector<std::string>> ParsePath(const JsonObject &node);
     static std::vector<ValueObject>  GetLeafValue(const JsonObject &node);
-    static bool isValueEqual(const ValueObject &srcValue, const ValueObject &targetValue);
     static int Append(const JsonObject &src, const JsonObject &add);
-    static bool isJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &externErrCode);
+    static bool IsJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &errCode);
 private:
     static bool JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item,
                                 int &isAlreadyMatched, bool &isCollapse, int &isMatchFlag);
@@ -46,7 +45,7 @@ private:
     static bool CheckProjectionNode(JsonObject &Node, std::set<std::string> filedSet,
                                     bool &errFlag, bool isFirstFloor);
     static void CheckLeafNode(const JsonObject &Node, std::vector<ValueObject> &leafValue);
-    static bool isArrayMathch(const JsonObject &src, const JsonObject &target, int &flag);
+    static bool IsArrayMathch(const JsonObject &src, const JsonObject &target, int &isAlreadyMatched);
 };
 } // DocumentDB
 #endif // JSON_COMMON_H

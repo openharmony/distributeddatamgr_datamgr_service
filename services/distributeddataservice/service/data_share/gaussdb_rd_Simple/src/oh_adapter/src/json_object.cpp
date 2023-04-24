@@ -81,6 +81,26 @@ std::string ValueObject::GetStringValue() const
     return stringValue;
 }
 
+bool ValueObject::operator==(const ValueObject& other) const
+{
+    if (this->GetValueType() != other.GetValueType()) {
+        return false;
+    }
+    switch (this->GetValueType()) {
+        case ValueObject::ValueType::VALUE_NULL:
+            return true;
+        case ValueObject::ValueType::VALUE_BOOL:
+            return (this->GetBoolValue() == other.GetBoolValue()) ? true : false;
+        case ValueObject::ValueType::VALUE_NUMBER:
+            return (this->GetDoubleValue() == other.GetDoubleValue()) ? true : false;
+        case ValueObject::ValueType::VALUE_STRING:
+            return (this->GetStringValue() == other.GetStringValue()) ? true : false;
+        default:
+            break;
+    }
+    return false;
+}
+
 JsonObject JsonObject::Parse(const std::string &jsonStr, int &errCode, bool caseSensitive)
 {
     JsonObject obj;

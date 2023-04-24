@@ -337,7 +337,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest001, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 
     std::string document2 = R""({"name":{"first": {"job" : "it"}, "t1" : {"second":"Lang"}}})"";
     std::string filter2 = R""({"name":{"first": {"job" : "NoEqual"}}, "t1" : {"second":"Lang"}})"";
@@ -345,7 +345,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest001, TestSize.Leve
     JsonObject srcObj2 = JsonObject::Parse(document2, errCode2);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj2 = JsonObject::Parse(filter2, errCode2);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj2, filterObj2, errCode), false);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj2, filterObj2, errCode), false);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest002, TestSize.Level0)
@@ -356,7 +356,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest002, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest003, TestSize.Level0)
@@ -367,7 +367,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest003, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), false);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), false);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest004, TestSize.Level0)
@@ -378,7 +378,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest004, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), false);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), false);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest005, TestSize.Level0)
@@ -389,7 +389,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest005, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest006, TestSize.Level0)
@@ -400,7 +400,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest006, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest007, TestSize.Level0)
@@ -411,7 +411,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest007, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest008, TestSize.Level0)
@@ -422,7 +422,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest008, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest009, TestSize.Level0)
@@ -434,7 +434,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest009, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest010, TestSize.Level0)
@@ -446,7 +446,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest010, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest011, TestSize.Level0)
@@ -457,7 +457,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest011, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest012, TestSize.Level0)
@@ -468,7 +468,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest012, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), false);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), false);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest013, TestSize.Level0)
@@ -479,7 +479,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest013, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest014, TestSize.Level0)
@@ -490,7 +490,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest014, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest015, TestSize.Level0)
@@ -501,7 +501,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest015, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest016, TestSize.Level0)
@@ -512,7 +512,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest016, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest017, TestSize.Level0)
@@ -523,7 +523,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest017, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest018, TestSize.Level0)
@@ -535,7 +535,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest018, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest019, TestSize.Level0)
@@ -547,7 +547,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest019, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest020, TestSize.Level0)
@@ -559,7 +559,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest020, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest021, TestSize.Level0)
@@ -570,5 +570,5 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest021, TestSize.Leve
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
-    EXPECT_EQ(JsonCommon::isJsonNodeMatch(srcObj, filterObj, errCode), true);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }

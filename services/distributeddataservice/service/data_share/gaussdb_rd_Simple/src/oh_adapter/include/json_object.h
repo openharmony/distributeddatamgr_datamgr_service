@@ -32,7 +32,6 @@ public:
         VALUE_NUMBER,
         VALUE_STRING,
     };
-
     ValueObject() = default;
     explicit ValueObject(bool val);
     explicit ValueObject(double val);
@@ -44,6 +43,7 @@ public:
     int64_t GetIntValue() const;
     double GetDoubleValue() const;
     std::string GetStringValue() const;
+    bool operator==(const ValueObject& other) const;
 
 private:
     ValueType valueType = ValueType::VALUE_NULL;

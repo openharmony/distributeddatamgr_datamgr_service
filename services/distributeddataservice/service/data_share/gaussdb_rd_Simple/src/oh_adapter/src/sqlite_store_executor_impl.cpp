@@ -152,7 +152,7 @@ int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonO
             GLOGE("srcObj Parsed faild");
             return externErrCode;
         }
-        if (JsonCommon::isJsonNodeMatch(srcObj, filterObj, externErrCode)) {
+        if (JsonCommon::IsJsonNodeMatch(srcObj, filterObj, externErrCode)) {
             isFindMatch = true;
             values.emplace_back(std::pair(keyStr, valueStr));
         }
