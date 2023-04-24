@@ -77,7 +77,7 @@ RdbDelegate::RdbDelegate(const StoreMetaData &meta, int &errCode)
 
 RdbDelegate::~RdbDelegate()
 {
-    ZLOGI("destroy");
+    ZLOGD("destroy");
 }
 
 int64_t RdbDelegate::Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket)
