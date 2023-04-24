@@ -61,7 +61,6 @@ int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, co
     if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;
     }
-
     std::string name = (collectionName == nullptr ? "" : collectionName);
     std::string filterStr = (filter == nullptr ? "" : filter);
     std::string documentStr = (document == nullptr ? "" : document);
