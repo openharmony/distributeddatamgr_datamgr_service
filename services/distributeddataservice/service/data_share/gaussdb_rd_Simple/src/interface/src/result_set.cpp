@@ -20,11 +20,9 @@ constexpr const char *KEY_ID = "_id";
 
 ResultSet::ResultSet()
 {
-
 }
 ResultSet::~ResultSet()
 {
-
 }
 int ResultSet::EraseCollection()
 {
@@ -33,7 +31,7 @@ int ResultSet::EraseCollection()
     }
     return E_OK;
 }
-int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter, 
+int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter,
                     std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId)
 {
     isOnlyId_ = isOnlyId;
@@ -164,7 +162,7 @@ int ResultSet::GetKey(std::string &key)
     return E_OK;
 }
 
-int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePath, 
+int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePath,
                             std::vector<std::vector<std::string>> &allCutPath)
 {
     if (node == nullptr) {
@@ -205,7 +203,7 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
             return errCode;
         }
         for (auto singleCutPaht : allCutPath) {
-            if (!ifShowId_ || singleCutPaht[0] != KEY_ID) {      
+            if (!ifShowId_ || singleCutPaht[0] != KEY_ID) {
                 cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
             }
         }

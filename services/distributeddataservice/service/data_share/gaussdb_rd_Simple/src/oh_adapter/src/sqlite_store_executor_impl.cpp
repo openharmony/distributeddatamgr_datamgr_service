@@ -127,7 +127,7 @@ int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Va
     return innerErrorCode;
 }
 
-int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonObject &filterObj, 
+int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonObject &filterObj,
                                         std::vector<std::pair<std::string, std::string>> &values) const
 {
     if (dbHandle_ == nullptr) {
@@ -163,7 +163,7 @@ int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonO
         GLOGE("[sqlite executor] Get data failed. err=%d", errCode);
         return errCode;
     }
-    if (isFindMatch == false) {
+    if (!isFindMatch) {
         return -E_NOT_FOUND;
     }
     return innerErrorCode;
@@ -185,7 +185,6 @@ int SqliteStoreExecutor::DelData(const std::string &collName, const Key &key)
         SQLiteUtils::BindBlobToStatement(stmt, 1, key);
         return E_OK;
     }, nullptr);
-
     if (errCode != SQLITE_OK) {
         GLOGE("[sqlite executor] Delete data failed. err=%d", errCode);
         if (errCode == -E_ERROR) {
@@ -263,11 +262,9 @@ bool SqliteStoreExecutor::IsCollectionExists(const std::string &name, int &errCo
         isExists = true;
         return E_OK;
     });
-
     if (errCode != E_OK) {
         GLOGE("Check collection exist failed. %d", errCode);
     }
-
     return isExists;
 }
 

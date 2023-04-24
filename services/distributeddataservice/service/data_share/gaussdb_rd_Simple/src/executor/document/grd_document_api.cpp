@@ -101,16 +101,17 @@ int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, un
     return errCode;
 }
 
-int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags, 
+int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags,
                 GRD_ResultSet **resultSet)
 {
-    if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || resultSet == nullptr || query.filter == nullptr
+    if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || resultSet == nullptr ||
+        query.filter == nullptr
         || query.projection == nullptr) {
         return GRD_INVALID_ARGS;
     }
     GRD_ResultSet *grdResultSet = new (std::nothrow)GRD_ResultSet();
     if (grdResultSet == nullptr) {
-        GLOGE("Memory allocation failed!" );
+        GLOGE("Memory allocation failed!");
         return -E_FAILED_MEMORY_ALLOCATE;
     }
     int ret = db->store_->FindDocument(collectionName, query.filter, query.projection, flags, grdResultSet);
@@ -120,5 +121,5 @@ int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned in
         return TrasnferDocErr(ret);
     }
     *resultSet = grdResultSet;
-    return TrasnferDocErr(ret); 
+    return TrasnferDocErr(ret);
 }
