@@ -32,7 +32,7 @@ public:
     ResultSet();
     ~ResultSet();
 
-    int Init(DocumentStore *store, const std::string collectionName, const std::string &filter, 
+    int Init(DocumentStore *store, const std::string collectionName, const std::string &filter,
             std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId);
     int Init(DocumentStore *store, const std::string collectionName, const std::string &filter);
     int GetNext();
@@ -41,7 +41,8 @@ public:
     int EraseCollection();
 private:
     int CutJsonBranch(std::string &jsonData);
-    int CheckCutNode(JsonObject *node, std::vector<std::string> singleCutPath, std::vector<std::vector<std::string>> &allCutPath);
+    int CheckCutNode(JsonObject *node, std::vector<std::string> singleCutPath, 
+                    std::vector<std::vector<std::string>> &allCutPath);
     DocumentStore *store_ = nullptr;
     std::string collectionName_;
     ValueObject key_;
@@ -56,4 +57,4 @@ private:
     std::vector<std::pair<std::string, std::string>> matchDatas_;
 };
 } // DocumentDB
-#endif //RESULTSET_H
+#endif // RESULTSET_H

@@ -31,7 +31,6 @@ const std::vector<std::string> DB_CONFIG = {
 
 bool CheckConfigSupport(const JsonObject &config, int &errCode)
 {
-
     JsonObject child = config.GetChild();
     while (!child.IsNull()) {
         std::string fieldName = child.GetItemFiled();

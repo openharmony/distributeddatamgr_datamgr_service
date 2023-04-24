@@ -14,12 +14,12 @@
 */
 
 #include "db_config.h"
-#include "document_store_manager.h"
 #include "doc_errno.h"
 #include "grd_base/grd_type_export.h"
-#include "kv_store_manager.h"
+#include "document_store_manager.h"
 #include "log_print.h"
 #include "os_api.h"
+#include "kv_store_manager.h"
 
 namespace DocumentDB {
 namespace {
@@ -80,7 +80,7 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
 
     store = new (std::nothrow) DocumentStore(executor);
     if (store == nullptr) {
-        GLOGE("Memory allocation failed!" );
+        GLOGE("Memory allocation failed!");
         return -E_FAILED_MEMORY_ALLOCATE;
     }
     if (store == nullptr) {

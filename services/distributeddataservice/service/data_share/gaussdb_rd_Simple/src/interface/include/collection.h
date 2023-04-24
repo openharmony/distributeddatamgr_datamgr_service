@@ -34,7 +34,7 @@ public:
     int DeleteDocument(const Key &key);
     int IsCollectionExists(int &errCode);
     int UpsertDocument(const std::string &id, const std::string &document, bool isReplace = true);
-    bool FindDocument();    
+    bool FindDocument();
     int UpdateDocument(const std::string &id, const std::string &document);
 private:
     std::string name_;

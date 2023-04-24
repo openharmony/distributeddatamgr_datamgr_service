@@ -14,10 +14,10 @@
  */
 #include <climits>
 #include <functional>
-#include "json_common.h"
 #include "doc_errno.h"
 #include "log_print.h"
 #include "securec.h"
+#include "json_common.h"
 
 namespace DocumentDB {
 ValueObject JsonCommon::GetValueByFiled(JsonObject &node, const std::string& filed)
@@ -72,7 +72,7 @@ void JsonCommon::CheckLeafNode(const JsonObject &node, std::vector<ValueObject> 
 }
 
 std::vector<ValueObject>  JsonCommon::GetLeafValue(const JsonObject &node)
-{   
+{ 
     std::vector<ValueObject> leafValue;
     if (node.IsNull()) {
         GLOGE("Get leafValue faied, node is empty");
@@ -87,7 +87,7 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, boo
     if (!errFlag) {
         return false;
     }
-    std::string fieldName; 
+    std::string fieldName;
     if (!node.IsNull()) {
         int ret = 0;
         fieldName = node.GetItemFiled(ret);
@@ -112,7 +112,7 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, boo
                 errFlag = false;
                 return false;
             }
-        } 
+        }
     }
     if (!node.GetChild().IsNull()) {
         auto nodeNew = node.GetChild();
@@ -126,14 +126,15 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, boo
     return errFlag;
 }
 
-bool JsonCommon::CheckJsonField(JsonObject &jsonObj) 
+bool JsonCommon::CheckJsonField(JsonObject &jsonObj)
 {
     std::set<std::string> filedSet;
     bool errFlag = true;
     return CheckNode(jsonObj, filedSet, errFlag);
 }
 
-bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> filedSet, bool &errFlag, bool isFirstFloor) 
+bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> filedSet, 
+                                    bool &errFlag, bool isFirstFloor)
 {
     if (!errFlag) {
         return false;
@@ -142,20 +143,19 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fil
     if (!node.IsNull()) {
         int ret = 0;
         fieldName = node.GetItemFiled(ret);
-        if (filedSet.find(fieldName) == filedSet.end()) {
-            if (ret == E_OK) {
-                filedSet.insert(fieldName);
-                if (fieldName.empty()) {
-                    errFlag = false;
-                    return false;
-                }
+        if (filedSet.find(fieldName) == filedSet.end() && ret == E_OK) {
+            filedSet.insert(fieldName);
+            if (fieldName.empty()) {
+                errFlag = false;
+                return false;
             }
         } else {
             errFlag = false;
             return false;
         }
         for (int i = 0; i < fieldName.size(); i++) {
-            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]) || (isFirstFloor && '.' == fieldName[i]))) {
+            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]) || 
+                (isFirstFloor && '.' == fieldName[i]))) {
                 errFlag = false;
                 return false;
             }
@@ -163,7 +163,7 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fil
                 errFlag = false;
                 return false;
             }
-        } 
+        }
     }
     if (!node.GetChild().IsNull()) {
         auto nodeNew = node.GetChild();
@@ -177,7 +177,7 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fil
     return errFlag;
 }
 
-bool JsonCommon::CheckProjectionField(JsonObject &jsonObj) 
+bool JsonCommon::CheckProjectionField(JsonObject &jsonObj)
 {
     std::set<std::string> filedSet;
     bool errFlag = true;
@@ -186,7 +186,7 @@ bool JsonCommon::CheckProjectionField(JsonObject &jsonObj)
 }
 
 int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath, 
-                        std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor)
+    std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor)
 {
     std::vector<std::string> fatherPath;
     if (isFirstFloor) {
@@ -258,7 +258,6 @@ JsonFieldPath ExpendPath(const JsonFieldPath &path, bool &isCollapse)
 
 JsonFieldPath ExpendPathForField(const JsonFieldPath &path, bool &isCollapse)
 {
-   
     JsonFieldPath splitPath;
     const std::string &str = path[0];
     size_t start = 0;
@@ -281,7 +280,7 @@ void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
     std::function<bool (const JsonFieldPath &path, const JsonObject &father, const JsonObject &item)> foo)
 {
     JsonObject child = obj.GetChild();
-    while(!child.IsNull()) {
+    while (!child.IsNull()) {
         JsonFieldPath childPath = path;
         childPath.push_back(child.GetItemFiled());
         if (foo != nullptr && foo(childPath, obj, child)) {
@@ -381,7 +380,7 @@ bool JsonCommon::isValueEqual(const ValueObject &srcValue, const ValueObject &ta
     return false;
 }
 
-bool JsonCommon::isArrayMathch(const JsonObject &src, const JsonObject &target, int &isAlreadyMatched) 
+bool JsonCommon::isArrayMathch(const JsonObject &src, const JsonObject &target, int &isAlreadyMatched)
 {
     JsonObject srcChild = src.GetChild();
     JsonObject targetObj = target;
@@ -400,7 +399,7 @@ bool JsonCommon::isArrayMathch(const JsonObject &src, const JsonObject &target, 
 }
 
 bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item, 
-                                int &isAlreadyMatched, bool &isCollapse, int &isMatchFlag) 
+                                int &isAlreadyMatched, bool &isCollapse, int &isMatchFlag)
 {
     int errCode;
     JsonObject srcItem = src.FindItemIncludeArray(itemPath, errCode);
@@ -420,7 +419,8 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
             FatherItem = FatherItem.GetNext();
         }
     }
-    if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY && !isAlreadyMatched) {
+    if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY && 
+        !isAlreadyMatched) {
         bool isEqual = (srcItem.Print() == item.Print());
         if (!isEqual) {
             GLOGI("Filter value is No equal with src");
@@ -429,7 +429,8 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
         isAlreadyMatched = isMatchFlag;
         return false; // Both leaf node, no need iterate
     }
-    if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF && !isAlreadyMatched) {
+    if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF && 
+        !isAlreadyMatched) {
         bool isEqual = isValueEqual(srcItem.GetItemValue(), item.GetItemValue());
         if (!isEqual) {
             GLOGI("Filter value is No equal with src");

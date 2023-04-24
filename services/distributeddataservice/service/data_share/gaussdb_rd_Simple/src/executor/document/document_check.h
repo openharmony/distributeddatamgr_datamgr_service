@@ -22,8 +22,7 @@
 
 namespace DocumentDB {
 class JsonCommon;
-class CheckCommon
-{
+class CheckCommon {
 public:
     CheckCommon() = default;
     ~CheckCommon() = default;

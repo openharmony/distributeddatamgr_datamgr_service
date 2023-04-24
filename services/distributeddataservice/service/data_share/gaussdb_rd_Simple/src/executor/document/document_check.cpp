@@ -15,10 +15,10 @@
 #include <algorithm>
 #include <climits>
 
-#include "document_check.h"
 #include "doc_errno.h"
 #include "log_print.h"
 #include "securec.h"
+#include "document_check.h"
 
 namespace DocumentDB {
 namespace {
@@ -72,7 +72,7 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::st
 }
 
 int CheckCommon::CheckFilter(JsonObject &filterObj)
-{   
+{
     if (filterObj.GetDeep() > JSON_DEEP_MAX) {
         GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
@@ -96,7 +96,7 @@ int CheckCommon::CheckFilter(JsonObject &filterObj)
 }
 
 int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath)
-{   
+{
     for (int i = 0; i < filterPath.size(); i++) {
         if (filterPath[i].size() > JSON_DEEP_MAX) {
             GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");

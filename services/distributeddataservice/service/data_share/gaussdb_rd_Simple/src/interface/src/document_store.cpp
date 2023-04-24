@@ -27,7 +27,7 @@ const int COLLECTION_LENS_MAX = 512 * 1024;
 const int JSON_LENS_MAX = 512 * 1024;
 const int JSON_DEEP_MAX = 4;
 constexpr const char *KEY_ID = "_id";
-const bool caseIsSensitive = true;
+const bool caseSensitive = true;
 
 DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor)
 {
@@ -254,7 +254,7 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject documentObj = JsonObject::Parse(document, errCode, caseIsSensitive);
+    JsonObject documentObj = JsonObject::Parse(document, errCode, caseSensitive);
     if (errCode != E_OK) {
         GLOGE("Document Parsed faild");
         return errCode;
@@ -296,7 +296,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         GLOGE("filter's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, caseIsSensitive);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
     if (errCode != E_OK) {
         GLOGE("filter Parsed faild");
         return errCode;
@@ -323,7 +323,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
     if (errCode != E_OK) {
         return errCode;
     }
-    std::string id; 
+    std::string id;
     resultSet.GetKey(id);
     Key key(id.begin(), id.end());
     return coll.DeleteDocument(key);
@@ -349,7 +349,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         GLOGE("filter's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, caseIsSensitive);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
     if (errCode != E_OK) {
         GLOGE("filter Parsed faild");
         return errCode;
@@ -365,7 +365,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         GLOGE("projection's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject projectionObj = JsonObject::Parse(projection, errCode, caseIsSensitive);
+    JsonObject projectionObj = JsonObject::Parse(projection, errCode, caseSensitive);
     if (errCode != E_OK) {
         GLOGE("projection Parsed faild");
         return errCode;
@@ -398,7 +398,6 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         return -E_INVALID_ARGS;
     }
     int ret = InitResultSet(this, collection, filter, allPath, ifShowId, viewType, grdResultSet->resultSet_, isOnlyId);
-
     if (ret == E_OK) {
         collections_[collection] = nullptr;
     }
@@ -407,7 +406,8 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     }
     return ret;
 }
-int DocumentStore::EraseCollection(const std::string collectionName) {
+int DocumentStore::EraseCollection(const std::string collectionName)
+{
     if (collections_.find(collectionName) != collections_.end()) {
         collections_.erase(collectionName);
         return E_OK;
@@ -415,51 +415,52 @@ int DocumentStore::EraseCollection(const std::string collectionName) {
     GLOGE("erase collection failed");
     return E_INVALID_ARGS;
 }
-int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType) {
+int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType)
+{
     auto leafValue = JsonCommon::GetLeafValue(jsonObj);
     if (leafValue.size() == 0) {
         return E_INVALID_ARGS;
     }
     for (int i = 0; i < leafValue.size(); i++) {
         switch (leafValue[i].GetValueType()) {
-        case ValueObject::ValueType::VALUE_BOOL:
-            if (leafValue[i].GetBoolValue()) {
-                if (i != 0 && !viewType) {
+            case ValueObject::ValueType::VALUE_BOOL:
+                if (leafValue[i].GetBoolValue()) {
+                    if (i != 0 && !viewType) {
+                        return -E_INVALID_ARGS;
+                    }
+                    viewType = true;
+                } else {     
+                    if (i != 0 && viewType) {
+                        return E_INVALID_ARGS;
+                    }
+                    viewType == false;
+                }
+            break;
+            case ValueObject::ValueType::VALUE_STRING:
+                if (leafValue[i].GetStringValue() == "") {
+                    if (i != 0 && !viewType) {
+                        return -E_INVALID_ARGS;
+                    }
+                    viewType = true;
+                } else {
                     return -E_INVALID_ARGS;
                 }
-                viewType = true;
-            } else {            
-                if (i != 0 && viewType) {
-                    return E_INVALID_ARGS;
-                }
-                viewType == false;
-            }
             break;
-        case ValueObject::ValueType::VALUE_STRING:
-            if (leafValue[i].GetStringValue() == "") {
-                if (i != 0 && !viewType) {
-                    return -E_INVALID_ARGS;
+            case ValueObject::ValueType::VALUE_NUMBER:
+                if (leafValue[i].GetIntValue() == 0) {
+                    if (i != 0 && viewType) {
+                        return -E_INVALID_ARGS;
+                    }
+                    viewType = false;
+                } else {
+                    if (i != 0 && !viewType) {
+                        return E_INVALID_ARGS;
+                    }
+                    viewType = true;
                 }
-                viewType = true;
-            } else {
-                return -E_INVALID_ARGS;
-            }
-            break;
-        case ValueObject::ValueType::VALUE_NUMBER:
-            if (leafValue[i].GetIntValue() == 0) {
-                if (i != 0 && viewType) {
-                    return -E_INVALID_ARGS;
-                }
-                viewType = false;
-            } else {
-                if (i != 0 && !viewType) {
-                    return E_INVALID_ARGS;
-                }
-                viewType = true;
-            }
-            break;
-        default:
-            return E_INVALID_ARGS;
+                break;
+            default:
+                return E_INVALID_ARGS;
         }
     }
     return E_OK;

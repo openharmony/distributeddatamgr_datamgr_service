@@ -129,7 +129,6 @@ int JsonObject::GetDeep()
     }
     jsonDeep_ = GetDeep(cjson_);
     return jsonDeep_;
-    
 }
 int JsonObject::GetDeep(cJSON *cjson)
 {
@@ -162,7 +161,7 @@ int JsonObject::CheckNumber(cJSON *item, int &errCode)
     }
     if (item->next != nullptr) {
         return CheckNumber(item->next, errCode);
-    } 
+    }
     return E_OK;
 }
 
@@ -342,7 +341,7 @@ void JsonObject::SetItemValue(const ValueObject &value) const
     if (cjson_ == nullptr) {
         return;
     }
-    switch(value.GetValueType()) {
+    switch (value.GetValueType()) {
         case ValueObject::ValueType::VALUE_NUMBER:
             cJSON_SetNumberValue(cjson_, value.GetDoubleValue());
             break;
@@ -362,7 +361,7 @@ std::string JsonObject::GetItemFiled() const
 
     if (cjson_->string == nullptr) {
         cJSON *tail = cjson_;
-        while(tail->next != nullptr) {
+        while (tail->next != nullptr) {
             tail = tail->next;
         }
 

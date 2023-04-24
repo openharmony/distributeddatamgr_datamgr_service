@@ -18,8 +18,8 @@
 #include "doc_errno.h"
 #include "grd_base/grd_error.h"
 #include "grd_resultset_inner.h"
-#include "grd_base/grd_resultset_api.h"
 #include "log_print.h"
+#include "grd_base/grd_resultset_api.h"
 
 using namespace DocumentDB;
 

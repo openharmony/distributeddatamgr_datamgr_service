@@ -86,7 +86,7 @@ int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, un
     int ret = db->store_->DeleteDocument(collectionName, filter, flags);
     int errCode = TrasnferDocErr(ret);
     int deleteCount = 0;
-    switch (errCode) { 
+    switch (errCode) {
         case GRD_OK:
             deleteCount = 1;
             return deleteCount;
@@ -95,11 +95,14 @@ int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, un
             deleteCount = 0;
             return deleteCount;
             break;
+        default:
+            break;
     }
     return errCode;
 }
 
-int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags, GRD_ResultSet **resultSet)
+int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags, 
+                GRD_ResultSet **resultSet)
 {
     if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || resultSet == nullptr || query.filter == nullptr
         || query.projection == nullptr) {
