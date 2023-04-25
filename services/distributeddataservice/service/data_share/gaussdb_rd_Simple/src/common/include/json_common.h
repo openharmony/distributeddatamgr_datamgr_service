@@ -37,7 +37,7 @@ public:
     static std::vector<std::vector<std::string>> ParsePath(const JsonObject &node);
     static std::vector<ValueObject>  GetLeafValue(const JsonObject &node);
     static bool isValueEqual(const ValueObject &srcValue, const ValueObject &targetValue);
-    static int Append(const JsonObject &src, const JsonObject &add);
+    static int Append(const JsonObject &src, const JsonObject &add, bool isReplace);
     static bool isJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &externErrCode);
 private:
     static bool JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item,

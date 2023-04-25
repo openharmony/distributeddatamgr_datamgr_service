@@ -125,7 +125,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
                 return errCode;
             }
 
-            errCode = JsonCommon::Append(originValue, upsertValue);
+            errCode = JsonCommon::Append(originValue, upsertValue, isReplace);
             if (errCode != E_OK) {
                 GLOGD("Append value failed. %d", errCode);
                 return errCode;
@@ -170,20 +170,17 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
         GLOGE("Get original document failed. %d", errCode);
         return errCode;
     }
-
     GLOGD("Update document value.");
     JsonObject originValue = JsonObject::Parse(valueGotStr, errCode);
     if (errCode != E_OK) {
         GLOGD("Parse original value failed. %d %s", errCode, valueGotStr.c_str());
         return errCode;
     }
-
-    errCode = JsonCommon::Append(originValue, updateValue);
+    errCode = JsonCommon::Append(originValue, updateValue, isReplace);
     if (errCode != E_OK) {
         GLOGD("Append value failed. %d", errCode);
         return errCode;
     }
-
     std::string valStr = originValue.Print();
     Value valSet(valStr.begin(), valStr.end());
     return executor_->PutData(name_, keyId, valSet);

@@ -306,15 +306,22 @@ void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
     }
     return;
 }
+
+bool IsNumber(const std::string &str)
+{
+    return std::all_of(str.begin(), str.end(), [](char c) {
+        return std::isdigit(c);
+    });
+}
 }
 
-int JsonCommon::Append(const JsonObject &src, const JsonObject &add)
+int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isReplace)
 {
     int externErrCode = E_OK;
     JsonObjectIterator(add, {},
-        [&src, &externErrCode](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
+        [&src, &externErrCode, &isReplace](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
         bool isCollapse = false;
-        JsonFieldPath itemPath = ExpendPath(path, isCollapse);
+        JsonFieldPath itemPath = ExpendPathForField(path, isCollapse);
         JsonFieldPath fatherPath = itemPath;
         fatherPath.pop_back();
         int errCode = E_OK;
@@ -341,12 +348,24 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add)
             }
             return true; // Both array or object
         } else {
-            if (isCollapse) {
-                GLOGE("Add collapse item to object failed, path not exist.");
+            if (isReplace) {
+                GLOGE("path not exist, replace failed");
                 externErrCode = -E_DATA_CONFLICT;
                 return false;
             }
             JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
+            std::string lastFieldName = itemPath.back();
+            if (srcFatherItem.IsNull()) {
+                GLOGE("Add collapse item to object failed, path not exist.");
+                externErrCode = -E_DATA_CONFLICT;
+                return false;
+            }
+            if ((IsNumber(lastFieldName) && (srcFatherItem.GetType() != JsonObject::Type::JSON_ARRAY)) 
+                || ((srcFatherItem.GetType() == JsonObject::Type::JSON_ARRAY) && !IsNumber(lastFieldName))) {
+                GLOGE("Add collapse item to object failed, path not exist.");
+                externErrCode = -E_DATA_CONFLICT;
+                return false;
+            }
             if (errCode == E_OK) {
                 errCode = srcFatherItem.AddItemToObject(itemPath.back(), item);
                 if (errCode != E_OK) {
