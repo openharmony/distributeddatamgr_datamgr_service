@@ -30,9 +30,11 @@ public:
     static bool CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName, int &errCode);
     static int CheckFilter(JsonObject &document);
     static int CheckFilter(JsonObject &document, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath);
+    static bool CheckFilter(const std::string &filter, std::string &idStr, int &errCode);
     static int CheckIdFormat(JsonObject &data);
     static int CheckIdFormat(JsonObject &data, bool &isIdExisit);
     static int CheckDocument(JsonObject &document);
+    static bool CheckDocument(const std::string &updateStr, int &errCode);
     static bool CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path);
 };
 using Key = std::vector<uint8_t>;

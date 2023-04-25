@@ -53,6 +53,9 @@ int TrasnferDocErr(int err)
         case -E_INVALID_CONFIG_VALUE:
             outErr = GRD_INVALID_CONFIG_VALUE;
             break;
+        case -E_DATA_CONFLICT:
+            outErr = GRD_DATA_CONFLICT;
+            break;
         case -E_COLLECTION_CONFLICT:
             outErr = GRD_COLLECTION_CONFLICT;
             break;

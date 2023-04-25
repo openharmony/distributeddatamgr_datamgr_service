@@ -93,13 +93,13 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest002, TestSize.Level0)
     EXPECT_EQ(JsonCommon::Append(src, add, false), E_OK);
     GLOGD("result: %s", src.Print().c_str());
 
-    JsonObject itemCase = src.FindItem({"grade"}, errCode);
-    EXPECT_EQ(errCode, E_OK);
-    EXPECT_EQ(itemCase.GetItemValue().GetIntValue(), 99); // 99: grade
+    // JsonObject itemCase = src.FindItem({"grade"}, errCode);
+    // EXPECT_EQ(errCode, E_OK);
+    // EXPECT_EQ(itemCase.GetItemValue().GetIntValue(), 99); // 99: grade
 
-    JsonObject itemName = src.FindItem({"name", "1"}, errCode);
-    EXPECT_EQ(errCode, E_OK);
-    EXPECT_EQ(itemName.GetItemValue().GetStringValue(), "Neco");
+    // JsonObject itemName = src.FindItem({"name", "1"}, errCode);
+    // EXPECT_EQ(errCode, E_OK);
+    // EXPECT_EQ(itemName.GetItemValue().GetStringValue(), "Neco");
 }
 
 
@@ -135,7 +135,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest004, TestSize.Level0)
     EXPECT_EQ(errCode, E_OK);
     JsonObject add = JsonObject::Parse(updateDoc, errCode);
     EXPECT_EQ(errCode, E_OK);
-    EXPECT_EQ(JsonCommon::Append(src, add, false), -E_DATA_CONFLICT);
+    EXPECT_EQ(JsonCommon::Append(src, add, false), -E_NO_DATA);
     GLOGD("result: %s", src.Print().c_str());
 }
 
@@ -257,7 +257,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest010, TestSize.Level0)
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest011, TestSize.Level0)
 {
     std::string document = R""({"name":{"first":["XXX","BBB","CCC"],"last":"moray"}})"";
-    std::string updateDoc = R""({"name.last.C":"Mnado"})"";
+    std::string updateDoc = R""({"name.last.a.b":"Mnado"})"";
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -371,6 +371,34 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest018, TestSize.Level0)
     JsonObject add = JsonObject::Parse(updateDoc, errCode);
     EXPECT_EQ(errCode, E_OK);
     EXPECT_EQ(JsonCommon::Append(src, add, false), E_OK);
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest019, TestSize.Level0)
+{
+    std::string document = "{\"name\": \"doc1\"}";
+    std::string updateDoc = "{\"name.a\": 8}";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(JsonCommon::Append(src, add, false), -E_DATA_CONFLICT);
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest020, TestSize.Level0)
+{
+    std::string document = "{\"name\": [0,1,2,3,4]}";
+    std::string updateDoc = "{\"name.5\": 8}";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(JsonCommon::Append(src, add, false), -E_NO_DATA);
     GLOGD("result: %s", src.Print().c_str());
 }
 

@@ -335,7 +335,12 @@ bool AddSpliteFiled(const JsonObject &src, const JsonObject &item, const JsonFie
             externErrCode = -E_DATA_CONFLICT;
             return false;
         }
+        if (IsNumber(abandonPath[i])) {
+            externErrCode = -E_DATA_CONFLICT;
+            return false;
+        }
         (i == 0) ? errCode = hitItem.AddItemToObject(abandonPath[i], item) : errCode = hitItem.AddItemToObject(abandonPath[i]);
+        externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
         newHitPath.emplace_back(abandonPath[i]);
         hitItem = hitItem.FindItem(newHitPath, errCode);
         newHitPath.pop_back();
@@ -347,8 +352,9 @@ bool AddSpliteFiled(const JsonObject &src, const JsonObject &item, const JsonFie
 int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isReplace)
 {
     int externErrCode = E_OK;
+    bool isAddedFlag = false;
     JsonObjectIterator(add, {},
-        [&src, &externErrCode, &isReplace](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
+        [&src, &externErrCode, &isReplace, &isAddedFlag](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
         bool isCollapse = false;
         JsonFieldPath itemPath = ExpendPathForField(path, isCollapse);
         JsonFieldPath fatherPath = itemPath;
@@ -362,6 +368,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                 return false;
             }
             if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF) {
+                isAddedFlag = true;
                 srcItem.SetItemValue(item.GetItemValue());
                 return false; // Both leaf node, no need iterate
             } else if (srcItem.GetType() != item.GetType()) {
@@ -371,6 +378,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                     GLOGE("Find father item in source json object failed. %d", errCode);
                     return false;
                 }
+                isAddedFlag = true;
                 srcFatherItem.DeleteItemFromObject(itemPath.back());
                 srcFatherItem.AddItemToObject(itemPath.back(), item);
                 return false; // Different node types, overwrite directly, skip child node
@@ -385,6 +393,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
             JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
             std::string lastFieldName = itemPath.back();
             if (srcFatherItem.IsNull()) {
+                isAddedFlag = true;
                 AddSpliteFiled(src, item, itemPath, externErrCode);
                 return false;
             }
@@ -401,9 +410,13 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                     GLOGE("Add item to object failed. %d", errCode);
                     return false;
                 }
+                isAddedFlag = true;
             } else {
                 externErrCode = -E_DATA_CONFLICT;
                 GLOGE("Find father item in source json object failed. %d", errCode);
+            }
+            if (!isAddedFlag) {
+                externErrCode = -E_DATA_CONFLICT;
             }
             return false; // Source path not exist, overwrite directly, skip child node
         }

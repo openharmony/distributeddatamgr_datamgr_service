@@ -113,65 +113,6 @@ int DocumentStore::DropCollection(const std::string &name, int flags)
     return E_OK;
 }
 
-namespace {
-bool CheckFilter(const std::string &filter, std::string &idStr, int &errCode)
-{
-    if (filter.empty()) {
-        errCode = -E_INVALID_ARGS;
-        GLOGE("Check filter invalid. %d", errCode);
-        return false;
-    }
-
-    JsonObject filterObject = JsonObject::Parse(filter, errCode, true);
-    if (errCode != E_OK) {
-        GLOGE("Parse filter failed. %d", errCode);
-        return false;
-    }
-
-    JsonObject filterId = filterObject.GetObjectItem("_id", errCode);
-    if (errCode != E_OK || filterId.GetItemValue().GetValueType() != ValueObject::ValueType::VALUE_STRING) {
-        GLOGE("Check filter '_id' not found or type not string.");
-        errCode = -E_INVALID_ARGS;
-        return false;
-    }
-
-    idStr = filterId.GetItemValue().GetStringValue();
-    return true;
-}
-
-bool CheckDocument(const std::string &updateStr, int &errCode)
-{
-    if (updateStr.empty()) {
-        errCode = -E_INVALID_ARGS;
-        return false;
-    }
-
-    JsonObject updateObj = JsonObject::Parse(updateStr, errCode);
-    if (updateObj.IsNull() || errCode != E_OK) {
-        GLOGE("Parse update document failed. %d", errCode);
-        return false;
-    }
-    std::vector<std::vector<std::string>> updatePath;
-    updatePath = JsonCommon::ParsePath(updateObj);
-    for (auto singlePath : updatePath) {
-        if (singlePath.size() > JSON_DEEP_MAX) {
-            GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
-            errCode = -E_INVALID_ARGS;
-            return false;
-        }
-    }
-
-    JsonObject filterId = updateObj.GetObjectItem("_id", errCode);
-    if (errCode != -E_NOT_FOUND) {
-        GLOGE("Can not change '_id' with update document failed.");
-        errCode = -E_INVALID_ARGS;
-        return false;
-    }
-
-    return true;
-}
-}
-
 int DocumentStore::UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update,
     int flags)
 {
@@ -181,7 +122,7 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         GLOGE("Check collection name invalid. %d", errCode);
         return errCode;
     }
-    if (!CheckDocument(update, errCode)) {
+    if (!CheckCommon::CheckDocument(update, errCode)) {
         GLOGE("Check update document failed. %d", errCode);
         return errCode;
     }
@@ -247,7 +188,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         GLOGE("Check collection name invalid. %d", errCode);
         return errCode;
     }
-    if (!CheckDocument(document, errCode)) {
+    if (!CheckCommon::CheckDocument(document, errCode)) {
         GLOGE("Check upsert document failed. %d", errCode);
         return errCode;
     }

@@ -301,8 +301,12 @@ int JsonObject::AddItemToObject(const std::string &fieldName, const JsonObject &
         }
         if (IsNumber(fieldName) && n <= std::stoi(fieldName)) {
             GLOGE("Add item object to array over size.");
-            return -E_DATA_CONFLICT;
+            return -E_NO_DATA;
         }
+    }
+    if (cjson_->type != cJSON_Object) {
+        GLOGE("type conflict.");
+        return -E_DATA_CONFLICT;
     }
     cJSON *cpoyItem = cJSON_Duplicate(item.cjson_, true);
     cJSON_AddItemToObject(cjson_, fieldName.c_str(), cpoyItem);
@@ -321,8 +325,12 @@ int JsonObject::AddItemToObject(const std::string &fieldName)
         }
         if (IsNumber(fieldName) && n <= std::stoi(fieldName)) {
             GLOGE("Add item object to array over size.");
-            return -E_DATA_CONFLICT;
+            return -E_NO_DATA;
         }
+    }
+    if (cjson_->type != cJSON_Object) {
+        GLOGE("type conflict.");
+        return -E_DATA_CONFLICT;
     }
     cJSON *emptyitem = cJSON_CreateObject();
     cJSON_AddItemToObject(cjson_, fieldName.c_str(), emptyitem);

@@ -108,7 +108,6 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
 
     Key keyId(id.begin(), id.end());
     Value valSet(document.begin(), document.end());
-
     if (!isReplace) {
         Value valueGot;
         errCode = executor_->GetData(name_, keyId, valueGot);
@@ -132,10 +131,13 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
             }
 
             std::string valStr = originValue.Print();
+            if (!CheckCommon::CheckDocument(valStr, errCode)) {
+                GLOGE("Check after updating document failed. %d", errCode);
+                return errCode;
+            }
             valSet = {valStr.begin(), valStr.end()};
         }
     }
-
     return executor_->PutData(name_, keyId, valSet);
 }
 
@@ -182,6 +184,10 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
         return errCode;
     }
     std::string valStr = originValue.Print();
+    if (!CheckCommon::CheckDocument(valStr, errCode)) {
+        GLOGE("Check after updating document failed. %d", errCode);
+        return errCode;
+    }
     Value valSet(valStr.begin(), valStr.end());
     return executor_->PutData(name_, keyId, valSet);
 }
