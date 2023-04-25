@@ -309,6 +309,26 @@ int JsonObject::AddItemToObject(const std::string &fieldName, const JsonObject &
     return E_OK;
 }
 
+int JsonObject::AddItemToObject(const std::string &fieldName)
+{
+    // TODO: check item exist
+    if (cjson_->type == cJSON_Array) {
+        int n = 0;
+        cJSON *child = cjson_->child;
+        while (child != nullptr) {
+            child = child->next;
+            n++;
+        }
+        if (IsNumber(fieldName) && n <= std::stoi(fieldName)) {
+            GLOGE("Add item object to array over size.");
+            return -E_DATA_CONFLICT;
+        }
+    }
+    cJSON *emptyitem = cJSON_CreateObject();
+    cJSON_AddItemToObject(cjson_, fieldName.c_str(), emptyitem);
+    return E_OK;
+}
+
 ValueObject JsonObject::GetItemValue() const
 {
     if (cjson_ == nullptr) {

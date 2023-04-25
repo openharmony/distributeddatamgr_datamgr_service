@@ -74,6 +74,7 @@ public:
     int DeleteItemFromObject(const std::string &field);
     int AddItemToObject(const JsonObject &item);
     int AddItemToObject(const std::string &fieldName, const JsonObject &item);
+    int AddItemToObject(const std::string &fieldName);
 
     ValueObject GetItemValue() const;
     void SetItemValue(const ValueObject &value) const;

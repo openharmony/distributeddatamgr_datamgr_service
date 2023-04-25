@@ -151,10 +151,20 @@ bool CheckDocument(const std::string &updateStr, int &errCode)
         GLOGE("Parse update document failed. %d", errCode);
         return false;
     }
+    std::vector<std::vector<std::string>> updatePath;
+    updatePath = JsonCommon::ParsePath(updateObj);
+    for (auto singlePath : updatePath) {
+        if (singlePath.size() > JSON_DEEP_MAX) {
+            GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
+            errCode = -E_INVALID_ARGS;
+            return false;
+        }
+    }
 
     JsonObject filterId = updateObj.GetObjectItem("_id", errCode);
     if (errCode != -E_NOT_FOUND) {
         GLOGE("Can not change '_id' with update document failed.");
+        errCode = -E_INVALID_ARGS;
         return false;
     }
 

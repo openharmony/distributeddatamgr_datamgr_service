@@ -313,6 +313,35 @@ bool IsNumber(const std::string &str)
         return std::isdigit(c);
     });
 }
+
+bool AddSpliteFiled(const JsonObject &src, const JsonObject &item, const JsonFieldPath &itemPath, int &externErrCode)
+{
+    int errCode = 0;
+    JsonFieldPath abandonPath;
+    JsonFieldPath hitPath = itemPath;
+    while (!hitPath.empty()) {
+        JsonObject srcFatherItem = src.FindItem(hitPath, errCode);
+        abandonPath.emplace_back(hitPath.back());
+        if (!srcFatherItem.IsNull()) {
+            break;
+        }
+        hitPath.pop_back();
+    }
+    JsonObject hitItem = src.FindItem(hitPath, errCode);
+    JsonFieldPath newHitPath;
+    for (int i = abandonPath.size() - 1; i > -1; i--) {
+        if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
+            GLOGE("Add collapse item to object failed, path not exist.");
+            externErrCode = -E_DATA_CONFLICT;
+            return false;
+        }
+        (i == 0) ? errCode = hitItem.AddItemToObject(abandonPath[i], item) : errCode = hitItem.AddItemToObject(abandonPath[i]);
+        newHitPath.emplace_back(abandonPath[i]);
+        hitItem = hitItem.FindItem(newHitPath, errCode);
+        newHitPath.pop_back();
+    }
+    return false;
+}
 }
 
 int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isReplace)
@@ -356,8 +385,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
             JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
             std::string lastFieldName = itemPath.back();
             if (srcFatherItem.IsNull()) {
-                GLOGE("Add collapse item to object failed, path not exist.");
-                externErrCode = -E_DATA_CONFLICT;
+                AddSpliteFiled(src, item, itemPath, externErrCode);
                 return false;
             }
             if ((IsNumber(lastFieldName) && (srcFatherItem.GetType() != JsonObject::Type::JSON_ARRAY)) 

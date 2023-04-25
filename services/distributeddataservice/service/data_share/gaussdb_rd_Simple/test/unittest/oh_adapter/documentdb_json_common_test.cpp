@@ -257,7 +257,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest010, TestSize.Level0)
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest011, TestSize.Level0)
 {
     std::string document = R""({"name":{"first":["XXX","BBB","CCC"],"last":"moray"}})"";
-    std::string updateDoc = R""({"name.last.AA.B":"Mnado"})"";
+    std::string updateDoc = R""({"name.last.C":"Mnado"})"";
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -359,11 +359,20 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest017, TestSize.Level0)
     GLOGD("result: %s", src.Print().c_str());
 }
 
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest018, TestSize.Level0)
+{
+    std::string document = "{\"_id\" : \"2\", \"name\" : \"doc2\", \"item\": \"object\", \"objectInfo\":{\"level\":2, \"child\":\
+    {\"level\":3, \"child\":{\"level\":4}}}}";
+    std::string updateDoc = "{\"a.b.c.d\": 1}";
 
-
-
-
-
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(JsonCommon::Append(src, add, false), E_OK);
+    GLOGD("result: %s", src.Print().c_str());
+}
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest001, TestSize.Level0)
 {
