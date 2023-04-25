@@ -115,7 +115,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
         std::string valueGotStr = std::string(valueGot.begin(), valueGot.end());
 
         if (errCode != E_OK && errCode != -E_NOT_FOUND) {
-            GLOGE("Get original document failed. %d", errCode);
+            GLOGW("Get original document failed. %d", errCode);
             return errCode;
         } else if (errCode == E_OK) { // document has been inserted
             GLOGD("Document has been inserted, append value.");
@@ -139,7 +139,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
     return executor_->PutData(name_, keyId, valSet);
 }
 
-int Collection::UpdateDocument(const std::string &id, const std::string &update)
+int Collection::UpdateDocument(const std::string &id, const std::string &update, bool isReplace)
 {
     if (executor_ == nullptr) {
         return -E_INVALID_ARGS;

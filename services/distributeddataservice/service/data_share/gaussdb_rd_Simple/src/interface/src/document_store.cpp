@@ -192,14 +192,17 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     if (errCode != E_OK) {
         return errCode;
     }
+    bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
     if (isOnlyId) {
         auto filterObjChild = filterObj.GetChild();
         auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
         std::string docId = idValue.GetStringValue();
         std::lock_guard<std::mutex> lock(dbMutex_);
-        errCode = coll.UpdateDocument(docId, update);
+        errCode = coll.UpdateDocument(docId, update, isReplace);
         if (errCode == E_OK) {
             errCode = 1; // upsert one record.
+        } else if (errCode == -E_NOT_FOUND) {
+            errCode = E_OK;
         }
         return errCode;
     }
@@ -212,9 +215,15 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     }
     std::string docId;
     resultSet.GetKey(docId);
-    errCode = coll.UpdateDocument(docId, update);
+    errCode = coll.UpdateDocument(docId, update, isReplace);
     if (errCode == E_OK) {
         errCode = 1; // upsert one record.
+    } else if (errCode == -E_NOT_FOUND) {
+        errCode = E_OK;
+    }
+    if (flags != GRD_DOC_APPEND) {
+        GLOGE("Check flags invalid.");
+        return -E_INVALID_ARGS;
     }
     return errCode;
 }
@@ -279,6 +288,8 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     errCode = coll.UpsertDocument(docId, document, isReplace);
     if (errCode == E_OK) {
         errCode = 1; // upsert one record.
+    } else if (errCode == -E_NOT_FOUND) {
+        errCode = E_OK;
     }
     return errCode;
 }

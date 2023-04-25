@@ -35,7 +35,7 @@ public:
     int IsCollectionExists(int &errCode);
     int UpsertDocument(const std::string &id, const std::string &document, bool isReplace = true);
     bool FindDocument();
-    int UpdateDocument(const std::string &id, const std::string &document);
+    int UpdateDocument(const std::string &id, const std::string &document, bool isReplace = false);
 private:
     std::string name_;
     KvStoreExecutor *executor_ = nullptr;

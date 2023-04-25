@@ -211,7 +211,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest001, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string updateDoc = R""({"name":"Xue"})"";
-    EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter.c_str(), updateDoc.c_str(), 0), GRD_NO_DATA);
+    EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter.c_str(), updateDoc.c_str(), 0), GRD_OK);
 }
 
 /**
@@ -310,7 +310,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest006, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    std::vector<unsigned int> invalidFlags = {1, 2, 4, 8, 1024, UINT32_MAX};
+    std::vector<unsigned int> invalidFlags = {2, 4, 8, 1024, UINT32_MAX};
     for (auto flag : invalidFlags) {
         GLOGD("UpdateDataTest006: update data with flag: %u", flag);
         EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter.c_str(), document.c_str(), flag), GRD_INVALID_ARGS);
