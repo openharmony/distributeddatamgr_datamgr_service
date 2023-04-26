@@ -347,6 +347,21 @@ bool AddSpliteFiled(const JsonObject &src, const JsonObject &item, const JsonFie
     }
     return false;
 }
+
+bool JsonNodeReplace (const JsonObject &src, const JsonFieldPath &fatherPath, const JsonObject &father, int &externErrCode) {
+    int errCode = 0;
+    JsonFieldPath granPaPath = fatherPath;
+    granPaPath.pop_back();
+    JsonObject srcFatherItem = src.FindItem(granPaPath, errCode);
+    if (errCode != E_OK) {
+        externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+        GLOGE("Find father item in source json object failed. %d", errCode);
+        return false;
+    }
+    srcFatherItem.ReplaceItemInObject(fatherPath.back(), father);
+    return true;
+}
+
 }
 
 int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isReplace)
@@ -390,9 +405,13 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                     GLOGE("Find father item in source json object failed. %d", errCode);
                     return false;
                 }
+                bool ret = JsonNodeReplace (src, fatherPath, father, externErrCode);
+                if (!ret) {
+                    GLOGE("replace faild");
+                    return false;
+                } 
                 isAddedFlag = true;
-                srcFatherItem.DeleteItemFromObject(itemPath.back());
-                srcFatherItem.AddItemToObject(itemPath.back(), item);
+                
                 return false; // Different node types, overwrite directly, skip child node
             }
             return true; // Both array or object
@@ -416,13 +435,23 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                 return false;
             }
             if (errCode == E_OK) {
-                errCode = srcFatherItem.AddItemToObject(itemPath.back(), item);
-                if (errCode != E_OK) {
-                    externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-                    GLOGE("Add item to object failed. %d", errCode);
+                if (isCollapse) {
+                    errCode = srcFatherItem.AddItemToObject(itemPath.back(), item);
+                    if (errCode != E_OK) {
+                        externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+                        GLOGE("Add item to object failed. %d", errCode);
+                        return false;
+                    }
+                    isAddedFlag = true;
+                    return false;
+                }
+                bool ret = JsonNodeReplace (src, fatherPath, father, externErrCode);
+                if (!ret) {
+                    GLOGE("replace faild");
                     return false;
                 }
                 isAddedFlag = true;
+                return false;
             } else {
                 externErrCode = -E_DATA_CONFLICT;
                 GLOGE("Find father item in source json object failed. %d", errCode);

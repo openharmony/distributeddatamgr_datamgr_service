@@ -364,10 +364,11 @@ ValueObject JsonObject::GetItemValue() const
     return value;
 }
 
-void JsonObject::ReplaceItemInObject(const std::string &fieldName, const JsonObject &newItem)
+void JsonObject::ReplaceItemInObject(const std::string &filedName, const JsonObject &newItem)
 {
     if (!newItem.IsNull() || !this->IsNull()) {
-        cJSON_ReplaceItemInObject(this->cjson_, fieldName.c_str(), newItem.cjson_);
+        cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
+        cJSON_ReplaceItemInObjectCaseSensitive(this->cjson_, filedName.c_str(), copyItem);
     }
 }
 
