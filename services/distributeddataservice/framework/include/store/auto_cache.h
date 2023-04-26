@@ -75,7 +75,7 @@ private:
     };
 
     static constexpr int64_t INTERVAL = 1;
-    static constexpr size_t MAX_CREATOR_NUM = 30;
+    static constexpr int32_t MAX_CREATOR_NUM = 30;
 
     std::shared_ptr<Executor> executor_;
     TaskId taskId_ = Executor::INVALID_TASK_ID;
