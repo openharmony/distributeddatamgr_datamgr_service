@@ -103,7 +103,7 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, boo
             errFlag = false;
             return false;
         }
-        for (int i = 0; i < fieldName.size(); i++) {
+        for (size_t i = 0; i < fieldName.size(); i++) {
             if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || '_' == fieldName[i])) {
                 errFlag = false;
                 return false;
@@ -153,7 +153,7 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fil
             errFlag = false;
             return false;
         }
-        for (int i = 0; i < fieldName.size(); i++) {
+        for (size_t i = 0; i < fieldName.size(); i++) {
             if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]) ||
                 (isFirstFloor && '.' == fieldName[i]))) {
                 errFlag = false;
@@ -193,7 +193,7 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
         std::string tempParseName;
         std::vector<std::string> allFiledsName;
         std::string priFieldName = node.GetItemFiled();
-        for (int j = 0; j < priFieldName.size(); j++) {
+        for (size_t j = 0; j < priFieldName.size(); j++) {
             if (priFieldName[j] != '.') {
                 tempParseName = tempParseName + priFieldName[j];
             }
@@ -276,7 +276,6 @@ void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
 {
     JsonObject child = obj.GetChild();
     while (!child.IsNull()) {
-        bool isCollapse = false;
         JsonFieldPath childPath = path;
         childPath.push_back(child.GetItemFiled());
         if (MatchFoo != nullptr && MatchFoo(childPath, child)) {
@@ -351,7 +350,7 @@ bool JsonCommon::IsArrayMathch(const JsonObject &src, const JsonObject &target, 
     bool isMatch = false;
     int errCode = 0;
     while (!srcChild.IsNull()) {
-        if (srcChild.GetType() == JsonObject::Type::JSON_OBJECT && target.GetType() == 
+        if (srcChild.GetType() == JsonObject::Type::JSON_OBJECT && target.GetType() ==
             JsonObject::Type::JSON_OBJECT && (IsJsonNodeMatch(srcChild, target, errCode))) {
             isMatch = true;
             isAlreadyMatched = 1;

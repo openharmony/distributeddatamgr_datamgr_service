@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "sqlite3.h"
+#include "sqlite3sym.h"
 
 namespace DocumentDB {
 enum class TransactType {

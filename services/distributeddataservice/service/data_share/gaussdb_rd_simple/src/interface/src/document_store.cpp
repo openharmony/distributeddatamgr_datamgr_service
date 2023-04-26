@@ -23,9 +23,7 @@
 #include "grd_resultset_inner.h"
 
 namespace DocumentDB {
-const int COLLECTION_LENS_MAX = 512 * 1024;
 const int JSON_LENS_MAX = 512 * 1024;
-const int JSON_DEEP_MAX = 4;
 constexpr const char *KEY_ID = "_id";
 const bool caseSensitive = true;
 
@@ -421,7 +419,7 @@ int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType)
     if (leafValue.size() == 0) {
         return E_INVALID_ARGS;
     }
-    for (int i = 0; i < leafValue.size(); i++) {
+    for (size_t i = 0; i < leafValue.size(); i++) {
         switch (leafValue[i].GetValueType()) {
             case ValueObject::ValueType::VALUE_BOOL:
                 if (leafValue[i].GetBoolValue()) {
@@ -433,7 +431,7 @@ int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType)
                     if (i != 0 && viewType) {
                         return E_INVALID_ARGS;
                     }
-                    viewType == false;
+                    viewType = false;
                 }
                 break;
             case ValueObject::ValueType::VALUE_STRING:

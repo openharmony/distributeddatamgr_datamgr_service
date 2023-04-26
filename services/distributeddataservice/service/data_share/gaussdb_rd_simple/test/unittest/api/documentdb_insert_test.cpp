@@ -29,7 +29,7 @@ const int INT_MIN = -2147483648;
 const int MAX_COLLECTION_LENS = 511;
 const int MAX_ID_LENS = 899;
 
-static void TestInsertDocIntoCertainColl(const char *collectionName, const char *projection, int expectedResult)   
+static void TestInsertDocIntoCertainColl(const char *collectionName, const char *projection, int expectedResult)
 {
   /** * @tc.steps: step1. Create Collection
    * @tc.expected: step1. GRD_OK
@@ -109,7 +109,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest001, TestSize.Level1)
 
 /**
   * @tc.name: DocumentInsertApiTest002
-  * @tc.desc: Insert documents into collection which _id is not string 
+  * @tc.desc: Insert documents into collection which _id is not string
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
@@ -164,7 +164,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest003, TestSize.Level1)
     */
     const char *document1 =  "{\"_id\" : \"3\", \"name\" : \"Ori\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_OK);
-    
+
     /**
      * @tc.steps:step2.Insert a document whose _id has appeared before
      * @tc.expected:step2.GRD_DATA_CONFLICT
@@ -414,7 +414,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest017, TestSize.Level1)
      * @tc.expected:step1.GRD_INVALID_FORMAT.
     */
     const char *document = "{\"_id\" : \"17\", \"level1\" : {\"level2\" : {\"level3\" : {\"level4\" : x'1234'\
-                            } } }, \"level1_2\" : \"level1_2Val\"}"; 
+                            } } }, \"level1_2\" : \"level1_2Val\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document, 0), GRD_INVALID_FORMAT);
 }
 
@@ -622,7 +622,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest, TestSize.Level1)
     string document4 = "\"";
     string document5 = ", \"name\" : \"Ori\"}";
     for (int i = 0; i < 5; i++) {
-      string document_midlle = {'2','6' + i};
+      string document_midlle = "26" + std::to_string(i);
       string document = document1 + document2 + document_midlle + document4 + document5;
       EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document.c_str(), 0), GRD_OK);
     }

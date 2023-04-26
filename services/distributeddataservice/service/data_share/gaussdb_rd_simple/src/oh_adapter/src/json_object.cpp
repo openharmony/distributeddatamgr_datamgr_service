@@ -21,9 +21,6 @@
 namespace DocumentDB {
 
 namespace {
-const int COLLECTION_LENS_MAX = 512 * 1024;
-const int JSON_LENS_MAX = 512 * 1024;
-
 bool IsNumber(const std::string &str)
 {
     return std::all_of(str.begin(), str.end(), [](char c) {
@@ -590,7 +587,6 @@ int JsonObject::DeleteItemDeeplyOnTarget(const JsonFieldPath &path)
     JsonFieldPath patherPath = path;
     patherPath.pop_back();
 
-    int errCode = E_OK;
     cJSON *nodeFather = MoveToPath(cjson_, patherPath, caseSensitive_);
     if (nodeFather == nullptr) {
         GLOGE("Delete item failed, json field path not found.");

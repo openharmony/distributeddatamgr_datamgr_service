@@ -23,19 +23,22 @@
 extern "C" {
 #endif
 
-int GRD_CreateCollection(GRD_DB *db, const char *collectionName, const char *optionStr, unsigned int flags);
+DOC_API int GRD_CreateCollection(GRD_DB *db, const char *collectionName, const char *optionStr, unsigned int flags);
 
-int GRD_DropCollection(GRD_DB *db, const char *collectionName, unsigned int flags);
+DOC_API int GRD_DropCollection(GRD_DB *db, const char *collectionName, unsigned int flags);
 
-int GRD_InsertDoc(GRD_DB *db, const char *collectionName, const char *document, unsigned int flags);
+DOC_API int GRD_InsertDoc(GRD_DB *db, const char *collectionName, const char *document, unsigned int flags);
 
-int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags, GRD_ResultSet **resultSet);
+DOC_API int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags,
+    GRD_ResultSet **resultSet);
 
-int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update, unsigned int flags);
+DOC_API int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update,
+    unsigned int flags);
 
-int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, unsigned int flags);
+DOC_API int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document,
+    unsigned int flags);
 
-int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, unsigned int flags);
+DOC_API int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, unsigned int flags);
 
 #ifdef __cplusplus
 }

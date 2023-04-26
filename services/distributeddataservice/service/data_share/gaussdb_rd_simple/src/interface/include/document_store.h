@@ -23,7 +23,7 @@
 #include "kv_store_executor.h"
 #include "collection.h"
 
-class GRD_ResultSet;
+struct GRD_ResultSet;
 namespace DocumentDB {
 class DocumentStore {
 public:

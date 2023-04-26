@@ -20,6 +20,10 @@
 extern "C" {
 #endif // __cplusplus
 
+#ifndef _WIN32
+    #define DOC_API __attribute__ ((visibility ("default")))
+#endif
+
 typedef struct GRD_DB GRD_DB;
 
 /**
