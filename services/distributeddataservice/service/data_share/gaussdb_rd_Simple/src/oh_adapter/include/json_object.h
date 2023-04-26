@@ -77,6 +77,7 @@ public:
     int AddItemToObject(const std::string &fieldName);
 
     ValueObject GetItemValue() const;
+    void ReplaceItemInObject(const std::string &fieldName, const JsonObject &newItem);
     void SetItemValue(const ValueObject &value) const;
     
     std::string GetItemFiled() const;

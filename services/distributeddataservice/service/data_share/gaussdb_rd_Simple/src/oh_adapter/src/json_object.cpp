@@ -301,7 +301,7 @@ int JsonObject::AddItemToObject(const std::string &fieldName, const JsonObject &
         }
         if (IsNumber(fieldName) && n <= std::stoi(fieldName)) {
             GLOGE("Add item object to array over size.");
-            return -E_NO_DATA;
+                return -E_NO_DATA;
         }
     }
     if (cjson_->type != cJSON_Object) {
@@ -362,6 +362,13 @@ ValueObject JsonObject::GetItemValue() const
     }
 
     return value;
+}
+
+void JsonObject::ReplaceItemInObject(const std::string &fieldName, const JsonObject &newItem)
+{
+    if (!newItem.IsNull() || !this->IsNull()) {
+        cJSON_ReplaceItemInObject(this->cjson_, fieldName.c_str(), newItem.cjson_);
+    }
 }
 
 void JsonObject::SetItemValue(const ValueObject &value) const

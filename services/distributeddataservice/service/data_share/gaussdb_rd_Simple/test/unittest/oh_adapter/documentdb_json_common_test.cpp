@@ -402,6 +402,69 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest020, TestSize.Level0)
     GLOGD("result: %s", src.Print().c_str());
 }
 
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest021, TestSize.Level0)
+{
+    std::string document = "{\"name\": [0,1,2,3,4]}";
+    std::string updateDoc = "{\"name\": [\"a\"]}";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(JsonCommon::Append(src, add, false), -E_NO_DATA);
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest022, TestSize.Level0)
+{
+    std::string document = "{\"name\": \"111\"}";
+    std::string updateDoc = "{\"name\": 2}";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(JsonCommon::Append(src, add, false), -E_NO_DATA);
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest023, TestSize.Level0)
+{
+    std::string document = "{\"name\": \"111\"}";
+    std::string updateDoc = "{\"name\": 2}";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(JsonCommon::Append(src, add, false), -E_NO_DATA);
+    GLOGD("result: %s", src.Print().c_str());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest001, TestSize.Level0)
 {
     std::string document = R""({"name":{"first": {"job" : "it"}}, "t1" : {"second":"Lang"}})"";

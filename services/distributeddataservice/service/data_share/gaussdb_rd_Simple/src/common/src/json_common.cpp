@@ -367,6 +367,18 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                 GLOGE("Find item in source json object failed. %d", errCode);
                 return false;
             }
+            if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY) {
+                JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
+                if (errCode != E_OK) {
+                    externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+                    GLOGE("Find father item in source json object failed. %d", errCode);
+                    return false;
+                }
+                srcFatherItem.DeleteItemFromObject(itemPath.back());
+                srcFatherItem.AddItemToObject(itemPath.back(), item);
+                isAddedFlag = true;
+                return false;
+            }
             if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF) {
                 isAddedFlag = true;
                 srcItem.SetItemValue(item.GetItemValue());

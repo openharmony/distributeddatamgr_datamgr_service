@@ -131,8 +131,13 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
             }
 
             std::string valStr = originValue.Print();
-            if (!CheckCommon::CheckDocument(valStr, errCode)) {
-                GLOGE("Check after updating document failed. %d", errCode);
+            JsonObject valStrObj = JsonObject::Parse(valStr, errCode, true);
+            if (errCode != E_OK) {
+                GLOGE("Document Parsed faild");
+                return errCode;
+            }
+            errCode = CheckCommon::CheckDocument(valStrObj);
+            if (errCode != E_OK) {
                 return errCode;
             }
             valSet = {valStr.begin(), valStr.end()};
@@ -184,8 +189,13 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
         return errCode;
     }
     std::string valStr = originValue.Print();
-    if (!CheckCommon::CheckDocument(valStr, errCode)) {
-        GLOGE("Check after updating document failed. %d", errCode);
+    JsonObject valStrObj = JsonObject::Parse(valStr, errCode, true);
+    if (errCode != E_OK) {
+        GLOGE("Document Parsed faild");
+        return errCode;
+    }
+    errCode = CheckCommon::CheckDocument(valStrObj);
+    if (errCode != E_OK) {
         return errCode;
     }
     Value valSet(valStr.begin(), valStr.end());
