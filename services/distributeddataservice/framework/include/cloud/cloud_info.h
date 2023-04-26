@@ -40,8 +40,6 @@ public:
     std::string GetSchemaKey(std::string bundleName) const;
     bool IsValid() const;
     bool IsExist(const std::string &bundleName) const;
-    void UpdateApp(const std::vector<AppInfo> &appInfos);
-    AppInfo &GetApp(const std::string &bundleName);
     static std::string GetPrefix(const std::initializer_list<std::string> &field);
 
     bool Marshal(json &node) const override;
@@ -52,7 +50,6 @@ private:
     static constexpr const char *SCHEMA_PREFIX = "CLOUD_SCHEMA";
 
     static std::string GetKey(const std::string &prefix, const std::initializer_list<std::string> &fields);
-    AppInfo appNil_ {};
 };
 }
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_INFO_H

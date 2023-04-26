@@ -92,29 +92,6 @@ bool CloudInfo::IsExist(const std::string &bundleName) const
     return false;
 }
 
-void CloudInfo::UpdateApp(const std::vector<AppInfo> &appInfos)
-{
-    auto tmpInfo = appInfos;
-    for (auto &info : tmpInfo) {
-        auto app = GetApp(info.bundleName);
-        if (app.bundleName.empty()) {
-            continue;
-        }
-        info.cloudSwitch = app.cloudSwitch;
-    }
-    apps = tmpInfo;
-}
-
-CloudInfo::AppInfo &CloudInfo::GetApp(const std::string &bundleName)
-{
-    for (auto &app : apps) {
-        if (app.bundleName == bundleName) {
-            return app;
-        }
-    }
-    return appNil_;
-}
-
 std::string CloudInfo::GetPrefix(const std::initializer_list<std::string> &fields)
 {
     return GetKey(INFO_PREFIX, fields).append(Constant::KEY_SEPARATOR);
