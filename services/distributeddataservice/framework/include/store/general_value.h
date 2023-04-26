@@ -51,26 +51,26 @@ inline constexpr size_t TYPE_INDEX = Traits::variant_index_of_v<T, Value>;
 inline constexpr size_t TYPE_MAX = Traits::variant_size_of_v<Value>;
 
 template<typename T, typename O>
-bool GetItem(const T &input, O &output)
+bool GetItem(T &&input, O &output)
 {
     return false;
 }
 
 template<typename T, typename O, typename First, typename... Rest>
-bool GetItem(const T &input, O &output)
+bool GetItem(T &&input, O &output)
 {
     auto val =  Traits::get_if<First>(&input);
     if (val != nullptr) {
-        output = *val;
+        output = std::move(*val);
         return true;
     }
-    return GetItem<T, O, Rest...>(input, output);
+    return GetItem<T, O, Rest...>(std::move(input), output);
 }
 
 template<typename T, typename... Types>
-bool Convert(const T &input, std::variant<Types...> &output)
+bool Convert(T &&input, std::variant<Types...> &output)
 {
-    return GetItem<T, decltype(output), Types...>(input, output);
+    return GetItem<T, decltype(output), Types...>(std::move(input), output);
 }
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_VALUE_H
