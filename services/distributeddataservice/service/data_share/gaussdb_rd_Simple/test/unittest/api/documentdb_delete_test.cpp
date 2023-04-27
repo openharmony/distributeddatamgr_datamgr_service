@@ -350,3 +350,31 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest011, TestSize.Level1)
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 
+/**
+  * @tc.name: DocumentDelete012
+  * @tc.desc: 
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: mazhao
+  */
+HWTEST_F(DocumentDeleteApiTest, DeleteDBTest012, TestSize.Level1)
+{
+    /**
+      * @tc.step1: Create filter with _id and get the record according to filter condition.
+      * @tc.expected: step1. GRD_OK
+      */
+    const char *filter = "{\"_id\" : \"1\"}";
+    const char *filter2 = "{\"subject.info\" : \"exam\"}";
+    GRD_ResultSet *resultSet = nullptr;
+    Query query = {filter, "{}"};
+    EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
+    EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, filter2, 0), 1);
+    /**
+      * @tc.step2: Invoke GRD_Next to get the next matching value. Release resultSet.
+      * @tc.expected: step2. Cannot get next record, return GRD_NO_DATA.
+      */
+    EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
+    EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
+}
+
+

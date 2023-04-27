@@ -129,8 +129,11 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     }
     std::vector<std::vector<std::string>> allPath;
     if (update != "{}") {
-        allPath = JsonCommon::ParsePath(updateObj);
-        if (!CheckCommon::CheckProjection(updateObj, allPath)) {
+        allPath = JsonCommon::ParsePath(updateObj, errCode);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        if (!CheckCommon::CheckUpdata(updateObj, allPath)) {
             GLOGE("projection format unvalid");
             return -E_INVALID_ARGS;
         }
@@ -145,7 +148,10 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         return errCode;
     }
     std::vector<std::vector<std::string>> filterAllPath;
-    filterAllPath = JsonCommon::ParsePath(filterObj);
+    filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
+    if (errCode != E_OK) {
+            return errCode;
+    }
     bool isOnlyId = true;
     auto coll = Collection(collection, executor_);
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
@@ -216,7 +222,10 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
     std::vector<std::vector<std::string>> filterAllPath;
-    filterAllPath = JsonCommon::ParsePath(filterObj);
+    filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
+    if (errCode != E_OK) {
+            return errCode;
+    }
     bool isOnlyId = true;
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
     auto coll = Collection(collection, executor_);
@@ -324,7 +333,10 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         return errCode;
     }
     std::vector<std::vector<std::string>> filterAllPath;
-    filterAllPath = JsonCommon::ParsePath(filterObj);
+    filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
+    if (errCode != E_OK) {
+            return errCode;
+    }
     bool isOnlyId = true;
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
@@ -377,7 +389,10 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         return errCode;
     }
     std::vector<std::vector<std::string>> filterAllPath;
-    filterAllPath = JsonCommon::ParsePath(filterObj);
+    filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
+    if (errCode != E_OK) {
+            return errCode;
+    }
     bool isOnlyId = true;
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
@@ -395,7 +410,10 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     bool viewType = false;
     std::vector<std::vector<std::string>> allPath;
     if (projection != "{}") {
-        allPath = JsonCommon::ParsePath(projectionObj);
+        allPath = JsonCommon::ParsePath(projectionObj, errCode);
+        if (errCode != E_OK) {
+            return errCode;
+        }
         if (!CheckCommon::CheckProjection(projectionObj, allPath)) {
             GLOGE("projection format unvalid");
             return -E_INVALID_ARGS;

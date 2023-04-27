@@ -165,7 +165,10 @@ bool CheckCommon::CheckDocument(const std::string &updateStr, int &errCode)
         return false;
     }
     std::vector<std::vector<std::string>> updatePath;
-    updatePath = JsonCommon::ParsePath(updateObj);
+    updatePath = JsonCommon::ParsePath(updateObj, errCode);
+    if (errCode != E_OK) {
+        return false;
+    }
     for (auto singlePath : updatePath) {
         if (singlePath.size() > JSON_DEEP_MAX) {
             GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
@@ -259,6 +262,16 @@ bool CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std
                 }
             }
         }
+    }
+    for (auto singlePath: path) {
+        if (singlePath.size() > 4) {
+            return false;
+        }
+    }
+    bool isIdExist = true;
+    CheckIdFormat(updataObj, isIdExist);
+    if (isIdExist) {
+        return false;
     }
     return true;
 }

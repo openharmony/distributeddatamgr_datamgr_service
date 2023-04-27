@@ -18,6 +18,7 @@
 #include "grd_base/grd_db_api.h"
 #include "grd_document/grd_document_api.h"
 #include "grd_base/grd_error.h"
+
 using namespace testing::ext;
 namespace {
 std::string path = "./document.db";
@@ -751,4 +752,87 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest039, TestSize.Level1)
     string document_midlle2(MAX_ID_LENS, 'k');
     document = document1 + document2 + document_midlle2 + document4 + document5;
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document.c_str(), 0), GRD_OK);
+}
+
+/**
+  * @tc.name: DocumentUpdataApiTest040
+  * @tc.desc: Insert a filter which _id value's lens is larger than MAX_ID_LENS
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: mazhao
+  */
+HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest040, TestSize.Level1)
+{
+    const char *filter ="{\"_id\" : \"1\"}";
+    const char *updata1 = "{\"objectInfo.child.child.level.extra\" : {\"hasChild\" : true}}";
+    const char *updata2 = "{\"objectInfo.child.child\" : {\"child\":{\"child\":null}}}";
+    EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, updata2, 0), GRD_INVALID_ARGS);
+}
+
+
+/**
+  * @tc.name: DocumentUpdataApiTest041
+  * @tc.desc: Insert a filter which _id value's lens is larger than MAX_ID_LENS
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: mazhao
+  */
+HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest041, TestSize.Level1)
+{
+    const char *filter ="{\"_id\" : \"1\"}";
+    const char *updata1 = "{\"_id\" : \"6\"}";
+    EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, updata1, 0), GRD_INVALID_ARGS);
+}
+
+/**
+  * @tc.name: DocumentUpdataApiTest042
+  * @tc.desc: Insert a filter which _id value's lens is larger than MAX_ID_LENS
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: mazhao
+  */
+HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest042, TestSize.Level1)
+{
+    const char *filter ="{\"_id\" : \"1\"}";
+    const char *updata1 = "{\"age$\" : \"21\"}";
+    const char *updata2 = "{\"bonus..traffic\" : 100}";
+    const char *updata3 = "{\"0item\" : 100}";
+    const char *updata4 = "{\"item\" : 1.79769313486232e308}";
+    EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, updata1, 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, updata2, 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, updata3, 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, updata4, 0), GRD_INVALID_ARGS);
+}
+
+/**
+  * @tc.name: DocumentUpdataApiTest043
+  * @tc.desc: Insert a filter which _id value's lens is larger than MAX_ID_LENS
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: mazhao
+  */
+HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest043, TestSize.Level1)
+{
+    const char *filter ="{\"_id\" : \"1\"}";
+    const char *updata1 = "{\"age\" : 21}";
+    const char *updata2 = "{\"bonus..traffic\" : 100}";
+    EXPECT_EQ(GRD_UpdateDoc(g_db, NULL, filter, updata1, 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_UpdateDoc(g_db, "", filter, updata1, 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_UpdateDoc(NULL, RIGHT_COLLECTION_NAME, filter, updata1, 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, NULL, updata1, 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, NULL, 0), GRD_INVALID_ARGS);
+}
+
+/**
+  * @tc.name: DocumentUpdataApiTest044
+  * @tc.desc: Insert a filter which _id value's lens is larger than MAX_ID_LENS
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: mazhao
+  */
+HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest044, TestSize.Level1)
+{
+    const char *filter ="{\"_id\" : \"1\"}";
+    const char *updata1 = "{}";
+    EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, updata1, 0), 1);
 }

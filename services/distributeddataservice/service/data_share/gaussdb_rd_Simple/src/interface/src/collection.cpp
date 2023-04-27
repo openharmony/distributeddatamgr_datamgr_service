@@ -102,7 +102,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
         return -E_NO_DATA;
     }
 
-    JsonObject upsertValue = JsonObject::Parse(document, errCode);
+    JsonObject upsertValue = JsonObject::Parse(document, errCode, true);
     if (errCode != E_OK) {
         GLOGD("Parse upsert value failed. %d", errCode);
         return errCode;
@@ -120,7 +120,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
             return errCode;
         } else if (errCode == E_OK) { // document has been inserted
             GLOGD("Document has been inserted, append value.");
-            JsonObject originValue = JsonObject::Parse(valueGotStr, errCode);
+            JsonObject originValue = JsonObject::Parse(valueGotStr, errCode, true);
             if (errCode != E_OK) {
                 GLOGD("Parse original value failed. %d %s", errCode, valueGotStr.c_str());
                 return errCode;
@@ -131,10 +131,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
                 GLOGD("Append value failed. %d", errCode);
                 return errCode;
             }
-            errCode = CheckCommon::CheckDocument(originValue);
-            if (errCode != E_OK) {
-                return errCode;
-            }
+            // kkk
             std::string valStr = originValue.Print();
             if (valStr.length() + 1 > JSON_LENS_MAX) {
                 GLOGE("document's length is too long");
@@ -188,10 +185,10 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
         GLOGD("Append value failed. %d", errCode);
         return errCode;
     }
-    errCode = CheckCommon::CheckDocument(originValue);
-    if (errCode != E_OK) {
-        return errCode;
-    }
+    // errCode = CheckCommon::CheckDocument(originValue);
+    // if (errCode != E_OK) {
+    //     return errCode;
+    // }
     std::string valStr = originValue.Print();
     if (valStr.length() + 1 > JSON_LENS_MAX) {
         GLOGE("document's length is too long");

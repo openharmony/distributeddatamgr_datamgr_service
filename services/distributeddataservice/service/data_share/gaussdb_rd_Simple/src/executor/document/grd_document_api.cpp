@@ -45,26 +45,20 @@ int GRD_DropCollection(GRD_DB *db, const char *collectionName, unsigned int flag
 
 int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update, unsigned int flags)
 {
-    if (db == nullptr || db->store_ == nullptr) {
+    if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || filter == nullptr || update == nullptr) {
         return GRD_INVALID_ARGS;
     }
-
-    std::string name = (collectionName == nullptr ? "" : collectionName);
-    std::string filterStr = (filter == nullptr ? "" : filter);
-    std::string updateStr = (update == nullptr ? "" : update);
-    int ret = db->store_->UpdateDocument(name, filterStr, updateStr, flags);
+    int ret = db->store_->UpdateDocument(collectionName, filter, update, flags);
     return TrasnferDocErr(ret);
 }
 
 int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, unsigned int flags)
 {
-    if (db == nullptr || db->store_ == nullptr) {
+    if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || filter == nullptr || 
+        document == nullptr) {
         return GRD_INVALID_ARGS;
     }
-    std::string name = (collectionName == nullptr ? "" : collectionName);
-    std::string filterStr = (filter == nullptr ? "" : filter);
-    std::string documentStr = (document == nullptr ? "" : document);
-    int ret = db->store_->UpsertDocument(name, filterStr, documentStr, flags);
+    int ret = db->store_->UpsertDocument(collectionName, filter, document, flags);
     return TrasnferDocErr(ret);
 }
 

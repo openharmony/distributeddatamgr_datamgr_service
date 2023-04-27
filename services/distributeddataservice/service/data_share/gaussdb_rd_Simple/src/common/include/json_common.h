@@ -34,7 +34,7 @@ public:
     static bool CheckProjectionField(JsonObject &node);
     static int ParseNode(JsonObject &Node, std::vector<std::string> singlePath,
                         std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor);
-    static std::vector<std::vector<std::string>> ParsePath(const JsonObject &node);
+    static std::vector<std::vector<std::string>> ParsePath(const JsonObject &node, int &errCode);
     static std::vector<ValueObject>  GetLeafValue(const JsonObject &node);
     static bool isValueEqual(const ValueObject &srcValue, const ValueObject &targetValue);
     static int Append(const JsonObject &src, const JsonObject &add, bool isReplace);

@@ -198,6 +198,9 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
                 tempParseName = tempParseName + priFieldName[j];
             }
             if (priFieldName[j] == '.' || j == priFieldName.size() - 1) {
+                if (j > 0 && priFieldName[j - 1] == '.') {
+                    return -E_INVALID_ARGS;
+                }
                 allFiledsName.emplace_back(tempParseName);
                 tempParseName.clear();
             }
@@ -220,10 +223,10 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
         auto nodeNew = node.GetNext();
         ParseNode(nodeNew, fatherPath, resultPath, isFirstFloor);
     }
-    return 0;
+    return E_OK;
 }
 
-std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject &root)
+std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject &root, int &errCode)
 {
     std::vector<std::vector<std::string>> resultPath;
     auto projectionJson = root.GetChild();
@@ -231,7 +234,7 @@ std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject &ro
         GLOGE("projectionJson is null");
     }
     std::vector<std::string> singlePath;
-    ParseNode(projectionJson, singlePath, resultPath, true);
+    errCode = ParseNode(projectionJson, singlePath, resultPath, true);
     return resultPath;
 }
 
