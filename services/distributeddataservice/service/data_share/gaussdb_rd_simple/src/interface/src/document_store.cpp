@@ -193,6 +193,8 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     errCode = coll.UpdateDocument(docId, update);
     if (errCode == E_OK) {
         errCode = 1; // update one record.
+    } else if (errCode == -E_NOT_FOUND) {
+        errCode = E_OK;
     }
     return errCode;
 }

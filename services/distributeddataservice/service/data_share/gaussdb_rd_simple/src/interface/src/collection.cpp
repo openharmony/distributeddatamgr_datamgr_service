@@ -166,7 +166,10 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update)
     Value valueGot;
     errCode = executor_->GetData(name_, keyId, valueGot);
     std::string valueGotStr = std::string(valueGot.begin(), valueGot.end());
-    if (errCode != E_OK) {
+    if (errCode == -E_NOT_FOUND) {
+        GLOGW("Get original document not found.");
+        return -E_NOT_FOUND;
+    } else if (errCode != E_OK) {
         GLOGE("Get original document failed. %d", errCode);
         return errCode;
     }

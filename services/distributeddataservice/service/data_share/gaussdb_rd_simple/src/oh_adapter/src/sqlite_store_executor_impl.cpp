@@ -237,7 +237,7 @@ int SqliteStoreExecutor::DropCollection(const std::string &name, bool ignoreNonE
         }
         if (!isExists) {
             GLOGE("[sqlite executor] Drop collectoin failed, collection not exists.");
-            return -E_NO_DATA;
+            return -E_INVALID_ARGS;
         }
     }
 
