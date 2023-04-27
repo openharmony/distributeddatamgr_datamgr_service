@@ -34,6 +34,7 @@ public:
     static int CheckIdFormat(JsonObject &data);
     static int CheckIdFormat(JsonObject &data, bool &isIdExisit);
     static int CheckDocument(JsonObject &document);
+    static bool CheckUpdata(JsonObject &updata, std::vector<std::vector<std::string>> &path);
     static bool CheckDocument(const std::string &updateStr, int &errCode);
     static bool CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path);
 };

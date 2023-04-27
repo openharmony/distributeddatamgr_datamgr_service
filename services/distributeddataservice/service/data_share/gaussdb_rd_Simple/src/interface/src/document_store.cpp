@@ -127,9 +127,13 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         GLOGE("update Parsed faild");
         return errCode;
     }
-    errCode = CheckCommon::CheckDocument(updateObj);
-    if (errCode != E_OK) {
-        return errCode;
+    std::vector<std::vector<std::string>> allPath;
+    if (update != "{}") {
+        allPath = JsonCommon::ParsePath(updateObj);
+        if (!CheckCommon::CheckProjection(updateObj, allPath)) {
+            GLOGE("projection format unvalid");
+            return -E_INVALID_ARGS;
+        }
     }
     if (flags != 0) {
         GLOGE("Check flags invalid.");
