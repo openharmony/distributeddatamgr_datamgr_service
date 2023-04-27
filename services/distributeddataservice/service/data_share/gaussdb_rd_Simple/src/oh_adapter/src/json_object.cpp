@@ -364,11 +364,32 @@ ValueObject JsonObject::GetItemValue() const
     return value;
 }
 
-void JsonObject::ReplaceItemInObject(const std::string &filedName, const JsonObject &newItem)
+void JsonObject::ReplaceItemInObject(const std::string &filedName, const JsonObject &newItem, int &errCode)
 {
     if (!newItem.IsNull() || !this->IsNull()) {
-        cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
-        cJSON_ReplaceItemInObjectCaseSensitive(this->cjson_, filedName.c_str(), copyItem);
+        GLOGE("this is =======>%s", this->Print().c_str());
+        GLOGE("newItem is =======>%s", newItem.Print().c_str());
+        GLOGE("filedName is =======>%s", filedName.c_str());
+        if (this->GetType() == JsonObject::Type::JSON_OBJECT) {   
+            if (!(this->GetObjectItem(filedName.c_str(), errCode).IsNull())) {
+                cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
+                GLOGE("filedName is ==========>%s", filedName.c_str());
+                cJSON_ReplaceItemInObjectCaseSensitive(this->cjson_, filedName.c_str(), copyItem);
+            } else {
+                cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
+                cJSON_AddItemToObject(this->cjson_, filedName.c_str(), copyItem);
+            }
+        }
+    }
+}
+
+void JsonObject::ReplaceItemInArray(const int &index, const JsonObject &newItem, int &errCode)
+{
+    if (!newItem.IsNull() || !this->IsNull()) {
+        if (this->GetType() == JsonObject::Type::JSON_ARRAY) {
+            cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
+            cJSON_ReplaceItemInArray(this->cjson_, index, copyItem);
+        }
     }
 }
 
@@ -379,6 +400,7 @@ void JsonObject::SetItemValue(const ValueObject &value) const
     }
     switch (value.GetValueType()) {
         case ValueObject::ValueType::VALUE_NUMBER:
+            GLOGE("work here");
             cJSON_SetNumberValue(cjson_, value.GetDoubleValue());
             break;
         case ValueObject::ValueType::VALUE_STRING:
