@@ -393,7 +393,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest019, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest020, TestSize.Level0)
 {
-    std::string document = "{\"name\": [0,1,2,3,4]}";
+    std::string document = "{\"_id\" : \"3\", \"info\" : \"11\", \"name\": [0,1,2,3,4]}";
     std::string updateDoc = "{\"name.4\": 8}";
 
     int errCode = E_OK;
@@ -526,6 +526,51 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest028, TestSize.Level0)
     // EXPECT_EQ(itemName.GetItemValue().GetStringValue(), "Neco");
 }
 
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest029, TestSize.Level0)
+{
+    std::string document = "{\"_id\" : \"3\", \"name\" : \"doc3\", \"item\" : 1, \"personInfo\" : [1, \"my string\", \
+        {\"school\":\"AB\", \"age\":5}, true, {\"shcool\" : \"CD\", \"age\" : 15}, false]}";
+    std::string updateDoc = R""({"personInfo.0": 9999})"";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(JsonCommon::Append(src, add, false), E_OK);
+    GLOGE("result=====================>: %s", src.Print().c_str());
+
+    // JsonObject itemCase = src.FindItem({"grade"}, errCode);
+    // EXPECT_EQ(errCode, E_OK);
+    // EXPECT_EQ(itemCase.GetItemValue().GetIntValue(), 99); // 99: grade
+
+    // JsonObject itemName = src.FindItem({"name", "1"}, errCode);
+    // EXPECT_EQ(errCode, E_OK);
+    // EXPECT_EQ(itemName.GetItemValue().GetStringValue(), "Neco");
+}
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest030, TestSize.Level0)
+{
+    std::string document = "{\"_id\" : \"3\", \"name\" : \"doc3\", \"item\" : 1, \"personInfo\" : [1, \"my string\", \
+        {\"school\":\"AB\", \"age\":5}, true, {\"shcool\" : \"CD\", \"age\" : 15}, false]}";
+    std::string updateDoc = R""({"personInfo.2._id": "6"})"";
+
+    int errCode = E_OK;
+    JsonObject src = JsonObject::Parse(document, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject add = JsonObject::Parse(updateDoc, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(JsonCommon::Append(src, add, false), E_OK);
+    GLOGE("result=====================>: %s", src.Print().c_str());
+
+    // JsonObject itemCase = src.FindItem({"grade"}, errCode);
+    // EXPECT_EQ(errCode, E_OK);
+    // EXPECT_EQ(itemCase.GetItemValue().GetIntValue(), 99); // 99: grade
+
+    // JsonObject itemName = src.FindItem({"name", "1"}, errCode);
+    // EXPECT_EQ(errCode, E_OK);
+    // EXPECT_EQ(itemName.GetItemValue().GetStringValue(), "Neco");
+}
 
 
 

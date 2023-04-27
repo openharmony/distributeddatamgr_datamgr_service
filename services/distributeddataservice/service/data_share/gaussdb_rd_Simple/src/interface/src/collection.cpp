@@ -22,6 +22,8 @@
 #include "log_print.h"
 
 namespace DocumentDB {
+const int JSON_LENS_MAX = 1024 * 512;
+
 Collection::Collection(const std::string &name, KvStoreExecutor *executor) : executor_(executor)
 {
     std::string lowerCaseName = name;
@@ -129,16 +131,14 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
                 GLOGD("Append value failed. %d", errCode);
                 return errCode;
             }
-
-            std::string valStr = originValue.Print();
-            JsonObject valStrObj = JsonObject::Parse(valStr, errCode, true);
+            errCode = CheckCommon::CheckDocument(originValue);
             if (errCode != E_OK) {
-                GLOGE("Document Parsed faild");
                 return errCode;
             }
-            errCode = CheckCommon::CheckDocument(valStrObj);
-            if (errCode != E_OK) {
-                return errCode;
+            std::string valStr = originValue.Print();
+            if (valStr.length() + 1 > JSON_LENS_MAX) {
+                GLOGE("document's length is too long");
+                return -E_OVER_LIMIT;
             }
             valSet = {valStr.begin(), valStr.end()};
         }
@@ -188,15 +188,14 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
         GLOGD("Append value failed. %d", errCode);
         return errCode;
     }
-    std::string valStr = originValue.Print();
-    JsonObject valStrObj = JsonObject::Parse(valStr, errCode, true);
+    errCode = CheckCommon::CheckDocument(originValue);
     if (errCode != E_OK) {
-        GLOGE("Document Parsed faild");
         return errCode;
     }
-    errCode = CheckCommon::CheckDocument(valStrObj);
-    if (errCode != E_OK) {
-        return errCode;
+    std::string valStr = originValue.Print();
+    if (valStr.length() + 1 > JSON_LENS_MAX) {
+        GLOGE("document's length is too long");
+        return -E_OVER_LIMIT;
     }
     Value valSet(valStr.begin(), valStr.end());
     return executor_->PutData(name_, keyId, valSet);

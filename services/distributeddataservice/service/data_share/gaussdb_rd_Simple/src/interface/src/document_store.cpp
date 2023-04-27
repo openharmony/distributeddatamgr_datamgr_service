@@ -122,8 +122,13 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         GLOGE("Check collection name invalid. %d", errCode);
         return errCode;
     }
-    if (!CheckCommon::CheckDocument(update, errCode)) {
-        GLOGE("Check update document failed. %d", errCode);
+    JsonObject updateObj = JsonObject::Parse(update, errCode, true);
+    if (errCode != E_OK) {
+        GLOGE("update Parsed faild");
+        return errCode;
+    }
+    errCode = CheckCommon::CheckDocument(updateObj);
+    if (errCode != E_OK) {
         return errCode;
     }
     if (flags != 0) {
@@ -188,8 +193,13 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         GLOGE("Check collection name invalid. %d", errCode);
         return errCode;
     }
-    if (!CheckCommon::CheckDocument(document, errCode)) {
-        GLOGE("Check upsert document failed. %d", errCode);
+    JsonObject documentObj = JsonObject::Parse(document, errCode, true);
+    if (errCode != E_OK) {
+        GLOGE("document Parsed faild");
+        return errCode;
+    }
+    errCode = CheckCommon::CheckDocument(documentObj);
+    if (errCode != E_OK) {
         return errCode;
     }
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
