@@ -198,7 +198,7 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
                 tempParseName = tempParseName + priFieldName[j];
             }
             if (priFieldName[j] == '.' || j == priFieldName.size() - 1) {
-                if (j > 0 && priFieldName[j - 1] == '.') {
+                if (j > 0 && priFieldName[j] == '.' && priFieldName[j - 1] == '.') {
                     return -E_INVALID_ARGS;
                 }
                 allFiledsName.emplace_back(tempParseName);
@@ -415,8 +415,6 @@ bool JsonValueReplace (const JsonObject &src, const JsonFieldPath &fatherPath, c
         if (!item.GetItemFiled(errCode).empty()) {
             fatherItem.ReplaceItemInObject(item.GetItemFiled().c_str(), item, errCode);
             if (errCode != E_OK) {
-                externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-                GLOGE("Find father item in source json object failed. %d", errCode);
                 return false;
             }
         }    

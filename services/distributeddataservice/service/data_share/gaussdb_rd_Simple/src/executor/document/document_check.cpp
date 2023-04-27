@@ -257,9 +257,6 @@ bool CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std
                 if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
                     return false;
                 }
-                if (j == 0 && (isdigit(fieldName[j]))) {
-                    return false;
-                }
             }
         }
     }

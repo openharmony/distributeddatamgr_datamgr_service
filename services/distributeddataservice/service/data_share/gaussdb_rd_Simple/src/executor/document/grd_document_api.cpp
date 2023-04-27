@@ -49,6 +49,11 @@ int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, co
         return GRD_INVALID_ARGS;
     }
     int ret = db->store_->UpdateDocument(collectionName, filter, update, flags);
+    if (ret == 1) {
+        return 1; // The amount of text updated
+    } else if (ret == 0){
+        return 0;
+    }
     return TrasnferDocErr(ret);
 }
 
@@ -59,6 +64,11 @@ int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, co
         return GRD_INVALID_ARGS;
     }
     int ret = db->store_->UpsertDocument(collectionName, filter, document, flags);
+    if (ret == 1) {
+        return 1; // The amount of text updated
+    } else if (ret == 0){
+        return 0;
+    }
     return TrasnferDocErr(ret);
 }
 

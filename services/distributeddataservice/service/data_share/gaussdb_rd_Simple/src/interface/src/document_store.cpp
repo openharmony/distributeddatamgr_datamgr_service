@@ -131,10 +131,11 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     if (update != "{}") {
         allPath = JsonCommon::ParsePath(updateObj, errCode);
         if (errCode != E_OK) {
+            GLOGE("updateObj ParsePath faild");
             return errCode;
         }
         if (!CheckCommon::CheckUpdata(updateObj, allPath)) {
-            GLOGE("projection format unvalid");
+            GLOGE("Updata format unvalid");
             return -E_INVALID_ARGS;
         }
     }
@@ -150,7 +151,8 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     std::vector<std::vector<std::string>> filterAllPath;
     filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
     if (errCode != E_OK) {
-            return errCode;
+        GLOGE("filter ParsePath faild");
+        return errCode;
     }
     bool isOnlyId = true;
     auto coll = Collection(collection, executor_);
@@ -176,7 +178,9 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     InitResultSet(this, collection, filter, resultSet);
     std::lock_guard<std::mutex> lock(dbMutex_);
     errCode = resultSet.GetNext();
-    if (errCode != E_OK) {
+    if (errCode == -E_NO_DATA) {
+        return 0; // The amount of text updated
+    } else if (errCode != E_OK) {
         return errCode;
     }
     std::string docId;
