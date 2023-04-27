@@ -566,7 +566,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
         } else {
             if (isReplace) {
                 GLOGE("path not exist, replace failed");
-                externErrCode = -E_DATA_CONFLICT;
+                externErrCode = -E_NO_DATA;
                 return false;
             }
             JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);

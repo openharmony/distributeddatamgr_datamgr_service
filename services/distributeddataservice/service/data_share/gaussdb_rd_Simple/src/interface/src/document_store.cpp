@@ -139,7 +139,7 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
             return -E_INVALID_ARGS;
         }
     }
-    if (flags != 0) {
+    if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
@@ -190,10 +190,6 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         errCode = 1; // upsert one record.
     } else if (errCode == -E_NOT_FOUND) {
         errCode = E_OK;
-    }
-    if (flags != GRD_DOC_APPEND) {
-        GLOGE("Check flags invalid.");
-        return -E_INVALID_ARGS;
     }
     return errCode;
 }

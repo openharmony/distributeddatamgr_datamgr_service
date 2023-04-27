@@ -244,20 +244,16 @@ bool CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std
         GLOGE("projectionObj's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
-    if (!updataObj.GetChild().IsNull()) {
-        auto updataObjChild = updataObj.GetChild();
-        if (!JsonCommon::CheckProjectionField(updataObjChild)) {
-            GLOGE("projection json field format is illegal");
-            return false;
-        }
-    }
     for (int i = 0; i < path.size(); i++) {
-        for (auto fieldName : path[i]) {
-            for (int j = 0; j < fieldName.size(); j++) {
-                if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
+        for (int j = 0; j < path[i].size(); j++) {
+            for (auto oneChar : path[i][j]) {
+                if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
                     return false;
-                }
+                } 
             }
+        }
+        if (!path[i].empty() && !path[i][0].empty() && isdigit(path[i][0][0])) {
+            return false;
         }
     }
     for (auto singlePath: path) {
