@@ -41,6 +41,7 @@ public:
     int FindDocument(const std::string &collection, const std::string &filter,
                         const std::string &projection, int flags,  GRD_ResultSet *grdResultSet);
     KvStoreExecutor *GetExecutor(int errCode);
+    bool IsCollectionOpening(const std::string collection);
     int EraseCollection(const std::string collectionName);
 private:
     int GetViewType(JsonObject &jsonObj, bool &viewType);

@@ -22,7 +22,7 @@ extern "C" {
 #endif // __cplusplus
 
 #define COLLECTION_LENS_MAX (512 * 1024)
-#define JSON_LENS_MAX (512 * 1024)
+#define JSON_LENS_MAX (1024 * 1024)
 #define JSON_DEEP_MAX (4)
 #define KEY_ID ("_id")
 

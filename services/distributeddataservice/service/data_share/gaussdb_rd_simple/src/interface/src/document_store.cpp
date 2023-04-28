@@ -23,7 +23,9 @@
 #include "grd_resultset_inner.h"
 
 namespace DocumentDB {
-const int JSON_LENS_MAX = 512 * 1024;
+const int COLLECTION_LENS_MAX = 512 * 1024;
+const int JSON_LENS_MAX = 1024 * 1024;
+const int JSON_DEEP_MAX = 4;
 constexpr const char *KEY_ID = "_id";
 const bool caseSensitive = true;
 
@@ -387,10 +389,6 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     if (flags == GRD_DOC_ID_DISPLAY) {
         ifShowId = true;
     }
-    if (collections_.find(collection) != collections_.end()) {
-        GLOGE("DB is resource busy");
-        return -E_RESOURCE_BUSY;
-    }
     auto coll = Collection(collection, executor_);
     std::lock_guard<std::mutex> lock(dbMutex_);
     if (!coll.FindDocument()) {
@@ -405,6 +403,14 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         collections_.erase(collection);
     }
     return ret;
+}
+
+bool DocumentStore::IsCollectionOpening(const std::string collection) {
+    if (collections_.find(collection) != collections_.end()) {
+        GLOGE("DB is resource busy");
+        return true; 
+    }
+    return false;
 }
 int DocumentStore::EraseCollection(const std::string collectionName)
 {

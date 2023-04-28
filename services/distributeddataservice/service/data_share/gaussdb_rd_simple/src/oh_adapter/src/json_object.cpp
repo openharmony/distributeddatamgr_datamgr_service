@@ -21,6 +21,9 @@
 namespace DocumentDB {
 
 namespace {
+const int COLLECTION_LENS_MAX = 512 * 1024;
+const int JSON_LENS_MAX = 1024 * 1024;
+
 bool IsNumber(const std::string &str)
 {
     return std::all_of(str.begin(), str.end(), [](char c) {
@@ -368,6 +371,20 @@ void JsonObject::SetItemValue(const ValueObject &value) const
         default:
             break;
     }
+}
+
+int JsonObject::InsertItemObject(int which, const JsonObject &newItem)
+{
+    if (cjson_ == nullptr) {
+        return E_OK;
+    }
+    if (newItem.IsNull()) {
+        GLOGD("Add null object.");
+        return E_OK;
+    }
+    cJSON *cpoyItem = cJSON_Duplicate(newItem.cjson_, true);
+    cJSON_InsertItemInArray(cjson_, which, cpoyItem);
+    return E_OK;
 }
 
 std::string JsonObject::GetItemFiled() const

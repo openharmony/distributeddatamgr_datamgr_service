@@ -86,7 +86,6 @@ int SqliteStoreExecutor::PutData(const std::string &collName, const Key &key, co
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
     }
-
     std::string sql = "INSERT OR REPLACE INTO '" + collName + "' VALUES (?,?);";
     int errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [key, value](sqlite3_stmt *stmt) {
         SQLiteUtils::BindBlobToStatement(stmt, 1, key);

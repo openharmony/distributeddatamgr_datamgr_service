@@ -109,6 +109,9 @@ int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned in
         || query.projection == nullptr) {
         return GRD_INVALID_ARGS;
     }
+    if (db->store_->IsCollectionOpening(collectionName)) {
+        return GRD_RESOURCE_BUSY;;
+    }
     GRD_ResultSet *grdResultSet = new (std::nothrow)GRD_ResultSet();
     if (grdResultSet == nullptr) {
         GLOGE("Memory allocation failed!");

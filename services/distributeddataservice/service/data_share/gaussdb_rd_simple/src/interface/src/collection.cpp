@@ -22,6 +22,8 @@
 #include "log_print.h"
 
 namespace DocumentDB {
+const int JSON_LENS_MAX = 1024 * 1024;
+
 Collection::Collection(const std::string &name, KvStoreExecutor *executor) : executor_(executor)
 {
     std::string lowerCaseName = name;
@@ -88,7 +90,6 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
     if (executor_ == nullptr) {
         return -E_INVALID_ARGS;
     }
-
     int errCode = E_OK;
     bool isCollExist = executor_->IsCollectionExists(name_, errCode);
     if (errCode != E_OK) {
@@ -113,7 +114,6 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
         Value valueGot;
         errCode = executor_->GetData(name_, keyId, valueGot);
         std::string valueGotStr = std::string(valueGot.begin(), valueGot.end());
-
         if (errCode != E_OK && errCode != -E_NOT_FOUND) {
             GLOGE("Get original document failed. %d", errCode);
             return errCode;
@@ -186,7 +186,6 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update)
         GLOGD("Append value failed. %d", errCode);
         return errCode;
     }
-
     std::string valStr = originValue.Print();
     Value valSet(valStr.begin(), valStr.end());
     return executor_->PutData(name_, keyId, valSet);

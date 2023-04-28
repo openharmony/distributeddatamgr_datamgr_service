@@ -77,6 +77,7 @@ public:
 
     ValueObject GetItemValue() const;
     void SetItemValue(const ValueObject &value) const;
+    int InsertItemObject(int which, const JsonObject &newItem);
     
     std::string GetItemFiled() const;
     std::string GetItemFiled(int &errCode) const;
