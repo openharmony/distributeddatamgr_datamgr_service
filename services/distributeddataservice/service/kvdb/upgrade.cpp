@@ -156,9 +156,11 @@ Upgrade::AutoStore Upgrade::GetDBStore(const StoreMeta &meta, const std::vector<
 std::string Upgrade::GetEncryptedUuidByMeta(const StoreMeta &meta)
 {
     std::string keyUuid = meta.appId + meta.deviceId;
-    if (calcUuid_.Contains(keyUuid)) {
-        return calcUuid_[keyUuid];
-    }
+    auto pair = calcUuid_.Find(keyUuid);
+    if (pair.first))
+        {
+            return pair.second;
+        }
     std::string uuid;
     if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
         OHOS::Security::AccessToken::TOKEN_HAP) {
