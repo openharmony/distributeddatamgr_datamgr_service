@@ -208,9 +208,16 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         GLOGE("document Parsed faild");
         return errCode;
     }
-    errCode = CheckCommon::CheckDocument(documentObj);
-    if (errCode != E_OK) {
-        return errCode;
+    std::vector<std::vector<std::string>> allPath;
+    if (document != "{}") {
+        allPath = JsonCommon::ParsePath(documentObj, errCode);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        if (!CheckCommon::CheckUpdata(documentObj, allPath)) {
+            GLOGE("updata format unvalid");
+            return -E_INVALID_ARGS;
+        }
     }
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
         GLOGE("Check flags invalid.");
@@ -234,11 +241,14 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
     if (isOnlyId) {
-        auto filterObjChild = filterObj.GetChild();
-        auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
-        std::string docId = idValue.GetStringValue();
         std::lock_guard<std::mutex> lock(dbMutex_);
-        errCode = coll.UpsertDocument(docId, document, isReplace);
+        auto filterObjChild = filterObj.GetChild();
+        ValueObject idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+        std::string docId = idValue.GetStringValue();
+        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
+        documentObj.InsertItemObject(0, idObj);
+        std::string addedIdDocument = documentObj.Print();
+        errCode = coll.UpsertDocument(docId, addedIdDocument, isReplace);
         if (errCode == E_OK) {
             errCode = 1; // upsert one record.
         }
@@ -250,16 +260,12 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     if (!isIdExist) {
         return -E_INVALID_ARGS;
     }
-    ResultSet resultSet;
-    InitResultSet(this, collection, filter, resultSet);
     std::lock_guard<std::mutex> lock(dbMutex_);
-    errCode = resultSet.GetNext();
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    std::string docId;
-    resultSet.GetKey(docId);
-    errCode = coll.UpsertDocument(docId, document, isReplace);
+    std::string docId = idValue.GetStringValue();
+    JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
+    documentObj.InsertItemObject(0, idObj);
+    std::string addedIdDocument = documentObj.Print();
+    errCode = coll.UpsertDocument(docId, addedIdDocument, isReplace);
     if (errCode == E_OK) {
         errCode = 1; // upsert one record.
     } else if (errCode == -E_NOT_FOUND) {
