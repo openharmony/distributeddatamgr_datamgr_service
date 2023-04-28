@@ -157,10 +157,9 @@ std::string Upgrade::GetEncryptedUuidByMeta(const StoreMeta &meta)
 {
     std::string keyUuid = meta.appId + meta.deviceId;
     auto pair = calcUuid_.Find(keyUuid);
-    if (pair.first)
-        {
-            return pair.second;
-        }
+    if (pair.first) {
+        return pair.second;
+    }
     std::string uuid;
     if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
         OHOS::Security::AccessToken::TOKEN_HAP) {
