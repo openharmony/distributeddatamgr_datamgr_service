@@ -157,7 +157,7 @@ std::string Upgrade::GetEncryptedUuidByMeta(const StoreMeta &meta)
 {
     std::string keyUuid = meta.appId + meta.deviceId;
     auto pair = calcUuid_.Find(keyUuid);
-    if (pair.first))
+    if (pair.first)
         {
             return pair.second;
         }
