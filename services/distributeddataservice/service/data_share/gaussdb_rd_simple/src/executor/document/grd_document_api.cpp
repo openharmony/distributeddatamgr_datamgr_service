@@ -51,7 +51,7 @@ int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, co
     int ret = db->store_->UpdateDocument(collectionName, filter, update, flags);
     if (ret == 1) {
         return 1; // The amount of text updated
-    } else if (ret == 0){
+    } else if (ret == 0) {
         return 0;
     }
     return TrasnferDocErr(ret);
@@ -59,14 +59,14 @@ int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, co
 
 int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, unsigned int flags)
 {
-    if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || filter == nullptr || 
+    if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || filter == nullptr ||
         document == nullptr) {
         return GRD_INVALID_ARGS;
     }
     int ret = db->store_->UpsertDocument(collectionName, filter, document, flags);
     if (ret == 1) {
         return 1; // The amount of text updated
-    } else if (ret == 0){
+    } else if (ret == 0) {
         return 0;
     }
     return TrasnferDocErr(ret);
@@ -113,7 +113,7 @@ int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned in
         return GRD_INVALID_ARGS;
     }
     if (db->store_->IsCollectionOpening(collectionName)) {
-        return GRD_RESOURCE_BUSY;;
+        return GRD_RESOURCE_BUSY;
     }
     GRD_ResultSet *grdResultSet = new (std::nothrow)GRD_ResultSet();
     if (grdResultSet == nullptr) {

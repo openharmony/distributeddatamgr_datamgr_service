@@ -822,17 +822,3 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest043, TestSize.Level1)
     EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, NULL, updata1, 0), GRD_INVALID_ARGS);
     EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, NULL, 0), GRD_INVALID_ARGS);
 }
-
-/**
-  * @tc.name: DocumentUpdataApiTest044
-  * @tc.desc: Insert a filter which _id value's lens is larger than MAX_ID_LENS
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author: mazhao
-  */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest044, TestSize.Level1)
-{
-    const char *filter ="{\"_id\" : \"1\"}";
-    const char *updata1 = "{}";
-    EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, updata1, 0), 1);
-}

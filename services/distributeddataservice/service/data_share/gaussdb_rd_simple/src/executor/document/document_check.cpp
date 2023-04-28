@@ -256,7 +256,7 @@ bool CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std
         }
     }
     for (auto singlePath: path) {
-        if (singlePath.size() > 4) {
+        if (singlePath.size() > JSON_DEEP_MAX) {
             return false;
         }
     }
