@@ -224,7 +224,6 @@ int CheckCommon::CheckDocument(JsonObject &documentObj)
     }
     int ret = CheckIdFormat(documentObj);
     if (ret != E_OK) {
-        GLOGE("documentObj is =======>%s", documentObj.Print().c_str());
         GLOGE("Document Id format is illegal");
         return ret;
     }

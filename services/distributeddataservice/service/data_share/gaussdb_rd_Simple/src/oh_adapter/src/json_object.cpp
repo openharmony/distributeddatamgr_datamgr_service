@@ -342,7 +342,6 @@ ValueObject JsonObject::GetItemValue() const
     if (cjson_ == nullptr) {
         return ValueObject();
     }
-
     ValueObject value;
     switch (cjson_->type) {
         case cJSON_False:
@@ -367,13 +366,9 @@ ValueObject JsonObject::GetItemValue() const
 void JsonObject::ReplaceItemInObject(const std::string &filedName, const JsonObject &newItem, int &errCode)
 {
     if (!newItem.IsNull() || !this->IsNull()) {
-        GLOGE("this is =======>%s", this->Print().c_str());
-        GLOGE("newItem is =======>%s", newItem.Print().c_str());
-        GLOGE("filedName is =======>%s", filedName.c_str());
         if (this->GetType() == JsonObject::Type::JSON_OBJECT) {   
             if (!(this->GetObjectItem(filedName.c_str(), errCode).IsNull())) {
                 cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
-                GLOGE("filedName is ==========>%s", filedName.c_str());
                 cJSON_ReplaceItemInObjectCaseSensitive(this->cjson_, filedName.c_str(), copyItem);
             } else {
                 cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
@@ -400,7 +395,6 @@ void JsonObject::SetItemValue(const ValueObject &value) const
     }
     switch (value.GetValueType()) {
         case ValueObject::ValueType::VALUE_NUMBER:
-            GLOGE("work here");
             cJSON_SetNumberValue(cjson_, value.GetDoubleValue());
             break;
         case ValueObject::ValueType::VALUE_STRING:
