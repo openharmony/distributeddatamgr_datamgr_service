@@ -155,7 +155,7 @@ Upgrade::AutoStore Upgrade::GetDBStore(const StoreMeta &meta, const std::vector<
 
 std::string Upgrade::GetEncryptedUuidByMeta(const StoreMeta &meta)
 {
-    std::string keyUuid = meta.appId + meta.storeId;
+    std::string keyUuid = meta.appId + meta.deviceId;
     if (calcUuid_.Contains(keyUuid)) {
         return calcUuid_[keyUuid];
     }
