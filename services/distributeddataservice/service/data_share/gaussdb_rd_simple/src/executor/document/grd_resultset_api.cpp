@@ -1,0 +1,71 @@
+/*
+* Copyright (c) 2023 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+#include <mutex>
+
+#include "grd_base/grd_error.h"
+#include "doc_errno.h"
+#include "grd_base/grd_error.h"
+#include "grd_resultset_inner.h"
+#include "grd_base/grd_resultset_api.h"
+#include "log_print.h"
+
+using namespace DocumentDB;
+
+int GRD_Next(GRD_ResultSet *resultSet)
+{
+    if (resultSet == nullptr) {
+        GLOGE("resultSet is nullptr");
+        return GRD_INVALID_ARGS;
+    };
+    std::mutex dbMutex;
+    std::lock_guard<std::mutex> lock(dbMutex);
+    int ret = resultSet->resultSet_.GetNext();
+    return TrasnferDocErr(ret);
+}
+
+int GRD_GetValue(GRD_ResultSet *resultSet, char **value)
+{
+    if (resultSet == nullptr) {
+        GLOGE("resultSet is nullptr,cant get value from it");
+        return GRD_INVALID_ARGS;
+    };
+    char *val = nullptr;
+    int ret = resultSet->resultSet_.GetValue(&val);
+    if (val == nullptr) {
+        GLOGE("Value that get from resultSet is nullptr");
+        return GRD_NOT_AVAILABLE;
+    }
+    *value = val;
+    return TrasnferDocErr(ret);
+}
+
+int GRD_FreeValue(char *value)
+{
+    if (value == nullptr) {
+        return GRD_OK;
+    }
+    delete[] value;
+    return GRD_OK;
+}
+
+int GRD_FreeResultSet(GRD_ResultSet *resultSet)
+{
+    if (resultSet == nullptr) {
+        return GRD_INVALID_ARGS;
+    }
+    resultSet->resultSet_.EraseCollection();
+    delete resultSet;
+    return GRD_OK;
+}
