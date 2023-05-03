@@ -64,7 +64,6 @@ bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> conte
         }
     }
     context->calledSourceDir = metaData.dataDir;
-    ZLOGE("hanlu dir %{public}s", context->calledSourceDir.c_str());
     context->version = metaData.version;
     return true;
 }

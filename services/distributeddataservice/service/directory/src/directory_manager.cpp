@@ -132,6 +132,11 @@ std::string DirectoryManager::GetStore(const StoreMetaData &metaData) const
         && metaData.storeType <= StoreMetaData::StoreType::STORE_OBJECT_END) {
         return "kvdb";
     }
+    // datashare use meta
+    if (metaData.storeType >= StoreMetaData::StoreType::STORE_DATA_SHARE_BEGIN
+        && metaData.storeType <= StoreMetaData::StoreType::STORE_DATA_SHARE_END) {
+        return "kvdb";
+    }
     return "other";
 }
 

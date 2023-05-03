@@ -29,17 +29,14 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
         return false;
     }
     context->type = DataProperties::PUBLISHED_DATA_TYPE;
-    ZLOGE("hanlu enter %{public}s %{public}d", context->calledBundleName.c_str(), context->callerTokenId);
     if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
             context->calledBundleName, context->currentUserId, context->bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed! bundleName: %{public}s", context->calledBundleName.c_str());
         return false;
     }
     for (auto &hapModuleInfo : context->bundleInfo.hapModuleInfos) {
-        ZLOGE("hanlu uri: %{public}d", hapModuleInfo.proxyDatas.size());
         auto proxyDatas = hapModuleInfo.proxyDatas;
         for (auto &proxyData : proxyDatas) {
-            ZLOGE("hanlu uri: %{public}s inputuri:%{public}s", proxyData.uri.c_str(), context->uri.c_str());
             if (proxyData.uri != context->uri) {
                 continue;
             }
@@ -56,8 +53,6 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
                 return true;
             }
             GetContextInfoFromDataProperties(properties, hapModuleInfo.moduleName, context);
-            ZLOGE("hanlu calledStoreName: %{public}s %{public}s", context->calledStoreName.c_str(),
-                context->calledTableName.c_str());
             return true;
         }
     }
@@ -88,7 +83,6 @@ bool LoadConfigFromDataProxyNodeStrategy::LoadConfigFromUri(std::shared_ptr<Cont
     if (!URIUtils::GetBundleNameFromProxyURI(context->uri, context->calledBundleName)) {
         return false;
     }
-    ZLOGE("hanlu enter %{publis}s", context->calledBundleName.c_str());
     return true;
 }
 } // namespace OHOS::DataShare

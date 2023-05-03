@@ -22,8 +22,6 @@
 namespace OHOS::DataShare {
 bool PermissionStrategy::operator()(std::shared_ptr<Context> context)
 {
-    ZLOGE("hanlu check! callerTokenId:%{public}u permission:%{public}s",
-          context->callerTokenId, context->permission.c_str());
     if (context->permission == "reject") {
         return false;
     }

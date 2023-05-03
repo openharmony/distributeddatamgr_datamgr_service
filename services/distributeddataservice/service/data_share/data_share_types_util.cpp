@@ -52,17 +52,14 @@ bool Unmarshalling(PublishedDataItem &dataItem, MessageParcel &parcel)
     dataItem.key_ = parcel.ReadString();
     dataItem.subscriberId_ = parcel.ReadInt64();
     auto index = parcel.ReadUint32();
-    ZLOGE("hanlu Unmarshalling %{public}s",  dataItem.key_.c_str());
     if (index == 0) {
         sptr<Ashmem> ashmem = parcel.ReadAshmem();
         dataItem.value_ = ashmem;
-        ZLOGE("hanlu ReadAshmem %{public}p", ashmem.GetRefPtr());
         bool ret = ashmem->MapReadOnlyAshmem();
         if (!ret) {
             ZLOGE("MapReadAndWriteAshmem fail, %{private}s", dataItem.key_.c_str());
             return false;
         }
-        ZLOGE("hanlu MapReadAndWriteAshmem %{public}p", ashmem.GetRefPtr());
     } else {
         dataItem.value_ = parcel.ReadString();
     }

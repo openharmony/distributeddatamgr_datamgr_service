@@ -144,7 +144,6 @@ int32_t DataShareServiceStub::OnRemoteDelTemplate(MessageParcel &data, MessagePa
 
 int32_t DataShareServiceStub::OnRemotePublish(MessageParcel &data, MessageParcel &reply)
 {
-    ZLOGE("hanlu enter");
     Data publishData;
     std::string bundleName;
     if (!ITypesUtil::Unmarshal(data, publishData.datas_, publishData.version_, bundleName)) {

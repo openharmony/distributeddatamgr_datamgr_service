@@ -419,10 +419,6 @@ void PublishedDataSubscriberManager::Emit(
     publishedDataCache_.ForEach([&keys, &status, &observer, &publishedResult, &callbacks](
                                     const PublishedDataKey &key, std::vector<ObserverNode> &val) {
         for (auto &data : keys) {
-            ZLOGE("HANLU start try emit %{public}s %{public}s %{public}" PRId64, data.bundleName_.c_str(),
-                data.key_.c_str(), data.subscriberId_);
-            ZLOGE("HANLU observer %{public}s %{public}s %{public}" PRId64, key.bundleName_.c_str(), key.key_.c_str(),
-                key.subscriberId_);
             if (key != data) {
                 continue;
             }
@@ -461,7 +457,6 @@ void PublishedDataSubscriberManager::Emit(
             continue;
         }
         result.ownerBundleName_ = ownerBundleName;
-        ZLOGE("HANLU emit start %{public}d", result.datas_.size());
         callback->OnChangeFromPublishedData(result);
     }
 }

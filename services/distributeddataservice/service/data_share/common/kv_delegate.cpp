@@ -60,7 +60,6 @@ bool KvDelegate::Init()
         return true;
     }
     int status = GRD_DBOpen((path_ + "/dataShare.db").c_str(), nullptr, GRD_DB_OPEN_CREATE, &db_);
-    ZLOGE("GRD_DBOpen hanluhanlu，path111 %{public}s", path_.c_str());
     if (status != GRD_OK || db_ == nullptr) {
         ZLOGE("GRD_DBOpen failed，status %{public}d", status);
         return false;
@@ -214,9 +213,6 @@ int32_t KvDelegate::GetBatch(const std::string &collectionName, const std::strin
     GRD_FreeResultSet(resultSet);
     return E_OK;
 }
-KvDelegate::KvDelegate(const std::string &path) : path_(path) {
-    if (path_.empty()) {
-        path_ = "/data/app/el1/0/database/distributeddata/kvdb"; // todo hanlu delete
-    }
-}
+
+KvDelegate::KvDelegate(const std::string &path) : path_(path) {}
 } // namespace OHOS::DataShare

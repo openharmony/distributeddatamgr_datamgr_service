@@ -34,11 +34,8 @@ bool ProcessUserCrossStrategy::operator()(std::shared_ptr<Context> context)
             context->calledBundleName.c_str());
         return false;
     }
-    ZLOGE("hanlu enter %{public}d", context->accessSystemMode);
     if (context->accessSystemMode == USER_SINGLE_MODE) {
-        ZLOGE("hanlu table userid %{public}d", context->currentUserId);
         context->calledTableName.append("_").append(std::to_string(context->currentUserId));
-        ZLOGE("hanlu table userid %{public}s", context->calledTableName.c_str());
         return true;
     }
     return true;

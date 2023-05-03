@@ -162,7 +162,6 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
     std::string callerBundleName;
     GetCallerBundleName(callerBundleName);
     for (const auto &item : data.datas_) {
-        ZLOGE("hanlu start publish %{public}s %{public}s", item.key_.c_str(), bundleNameOfProvider.c_str());
         auto context = std::make_shared<Context>(item.key_);
         context->version = data.version_;
         context->callerBundleName = callerBundleName;
@@ -181,7 +180,10 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
 
 Data DataShareServiceImpl::GetData(const std::string &bundleNameOfProvider)
 {
+    std::string callerBundleName;
+    GetCallerBundleName(callerBundleName);
     auto context = std::make_shared<Context>();
+    context->callerBundleName = callerBundleName;
     context->calledBundleName = bundleNameOfProvider;
     return GetDataStrategy::Execute(context);
 }
@@ -357,7 +359,6 @@ int32_t DataShareServiceImpl::OnInitialize()
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    ZLOGE("hanlu1 dir %{public}s %{public}d", saveMeta.dataDir.c_str(), token);
     KvDBDelegate::GetInstance(false, saveMeta.dataDir);
     return EOK;
 }
