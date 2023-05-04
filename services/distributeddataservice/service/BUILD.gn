@@ -80,10 +80,10 @@ ohos_shared_library("distributeddatasvc") {
     "data_share/common/uri_utils.cpp",
     "data_share/data/published_data.cpp",
     "data_share/data/template_data.cpp",
+    "data_share/data_share_obs_proxy.cpp",
     "data_share/data_share_service_impl.cpp",
     "data_share/data_share_service_stub.cpp",
     "data_share/data_share_types_util.cpp",
-    "data_share/data_share_obs_proxy.cpp",
     "data_share/strategies/data_proxy/load_config_from_data_proxy_node_strategy.cpp",
     "data_share/strategies/data_share/load_config_from_data_share_bundle_info_strategy.cpp",
     "data_share/strategies/delete_strategy.cpp",
@@ -140,16 +140,16 @@ ohos_shared_library("distributeddatasvc") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share/gaussdb_rd_simple:documentdb",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share/gaussdb_rd_simple:documentdb"
   ]
 
   external_deps = [
-    "ability_base:zuri",
     "ability_base:want",
-    "ability_runtime:dataobs_manager",
+    "ability_base:zuri",
     "ability_runtime:ability_manager",
+    "ability_runtime:dataobs_manager",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
@@ -161,8 +161,8 @@ ohos_shared_library("distributeddatasvc") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "relational_store:native_rdb",
-    "relational_store:rdb_data_share_adapter",
     "relational_store:rdb_bms_adapter",
+    "relational_store:rdb_data_share_adapter",
     "resource_management:global_resmgr",
     "samgr:samgr_proxy",
   ]
