@@ -572,3 +572,18 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest021, TestSize.Leve
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
     EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj, filterObj, errCode), true);
 }
+
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest022, TestSize.Level0)
+{
+    string document = R"({"_id" : "001", "key1" : {"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}, "k22" : "v22"},
+    "k12" : "v12"})";
+    string document2 = R"({"_id" : "002", "key1" : {"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}}, "k12" : "v12"})";
+    const char *filter = R"({"key1" : {"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}}})";
+    int errCode = E_OK;
+    JsonObject srcObj1 = JsonObject::Parse(document, errCode);
+    JsonObject srcObj2 = JsonObject::Parse(document2, errCode);
+    EXPECT_EQ(errCode, E_OK);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj1, filterObj, errCode), false);
+    EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj2, filterObj, errCode), true);
+}

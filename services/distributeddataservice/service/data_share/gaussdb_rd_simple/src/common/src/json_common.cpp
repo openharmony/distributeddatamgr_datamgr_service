@@ -649,7 +649,22 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
         }
         JsonFieldPath itemPath = SplitePath(path, isCollapse);
         if (src.IsFieldExistsPowerMode(itemPath)) {
-            return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
+            if (isCollapse) {
+                return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
+            }
+            else {
+                JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
+                if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
+                    return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
+                }
+                if (srcItem.Print() == item.Print()) {
+                    isMatchFlag = true;
+                    isAlreadyMatched = true;
+                    return false;
+                }
+                isMatchFlag = false;
+                return false;
+            }
         } else {
             if (isCollapse) {
                 GLOGE("Match failed, path not exist.");
