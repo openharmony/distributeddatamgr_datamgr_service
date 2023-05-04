@@ -470,8 +470,8 @@ void PublishedDataSubscriberManager::Emit(std::vector<PublishedDataKey> keys, co
     }
 }
 
-PublishedDataKey::PublishedDataKey(const std::string &key, const std::string &bundleName, const int64_t subscriberId)
-    : key(key), bundleName(bundleName), subscriberId(subscriberId)
+PublishedDataKey::PublishedDataKey(const std::string &key, const std::string &bundle, const int64_t subscriberId)
+    : key(key), bundleName(bundle), subscriberId(subscriberId)
 {
     /* private published data can use key as simple uri */
     /* etc: datashareproxy://{bundleName}/meeting can use meeting replaced */
