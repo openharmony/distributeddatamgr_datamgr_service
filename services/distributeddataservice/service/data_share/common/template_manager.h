@@ -95,10 +95,9 @@ public:
         const sptr<IDataProxyPublishedDataObserver>, const uint32_t);
     int DelSubscriber(const std::string &, const std::string &, const int64_t, const uint32_t);
     int DisableSubscriber(const std::string &, const std::string &, const int64_t, const uint32_t);
-    int EnableSubscriber(const std::string &, const std::string &, const int64_t , const uint32_t);
+    int EnableSubscriber(const std::string &, const std::string &, const int64_t, const uint32_t);
     void Emit(const std::vector<PublishedDataKey> &, const std::string &,
         const sptr<IDataProxyPublishedDataObserver> observer = nullptr);
-
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer, uint32_t callerTokenId);
