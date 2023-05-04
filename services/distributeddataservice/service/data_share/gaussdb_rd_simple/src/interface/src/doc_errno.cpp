@@ -14,6 +14,7 @@
 */
 
 #include "doc_errno.h"
+
 #include "grd_base/grd_error.h"
 
 namespace DocumentDB {
@@ -79,4 +80,4 @@ int TrasnferDocErr(int err)
 
     return GetErrorCategory(outErr);
 }
-}
+} // namespace DocumentDB

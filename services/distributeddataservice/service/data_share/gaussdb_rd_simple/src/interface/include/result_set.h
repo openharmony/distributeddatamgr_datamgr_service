@@ -17,14 +17,15 @@
 #define RESULTSET_H
 
 #include <string>
-#include "grd_base/grd_type_export.h"
-#include "projection_tree.h"
-#include "vector"
+
 #include "doc_errno.h"
-#include "json_object.h"
-#include "securec.h"
 #include "document_check.h"
 #include "document_store.h"
+#include "grd_base/grd_type_export.h"
+#include "json_object.h"
+#include "projection_tree.h"
+#include "securec.h"
+#include "vector"
 
 namespace DocumentDB {
 class ResultSet {
@@ -33,16 +34,17 @@ public:
     ~ResultSet();
 
     int Init(DocumentStore *store, const std::string collectionName, const std::string &filter,
-            std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId);
+        std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId);
     int Init(DocumentStore *store, const std::string collectionName, const std::string &filter);
     int GetNext();
     int GetValue(char **value);
     int GetKey(std::string &key);
     int EraseCollection();
+
 private:
     int CutJsonBranch(std::string &jsonData);
     int CheckCutNode(JsonObject *node, std::vector<std::string> singleCutPath,
-                    std::vector<std::vector<std::string>> &allCutPath);
+        std::vector<std::vector<std::string>> &allCutPath);
     DocumentStore *store_ = nullptr;
     std::string collectionName_;
     ValueObject key_;
@@ -56,5 +58,5 @@ private:
     int index_ = 0;
     std::vector<std::pair<std::string, std::string>> matchDatas_;
 };
-} // DocumentDB
+} // namespace DocumentDB
 #endif // RESULTSET_H

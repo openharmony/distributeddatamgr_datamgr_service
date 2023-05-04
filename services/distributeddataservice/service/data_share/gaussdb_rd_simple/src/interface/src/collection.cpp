@@ -17,8 +17,8 @@
 
 #include <algorithm>
 
-#include "document_check.h"
 #include "doc_errno.h"
+#include "document_check.h"
 #include "log_print.h"
 
 namespace DocumentDB {
@@ -135,7 +135,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
                 GLOGE("document's length is too long");
                 return -E_OVER_LIMIT;
             }
-            valSet = {valStr.begin(), valStr.end()};
+            valSet = { valStr.begin(), valStr.end() };
         }
     }
     return executor_->PutData(name_, keyId, valSet);

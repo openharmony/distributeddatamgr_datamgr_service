@@ -15,8 +15,8 @@
 
 #include "collection_option.h"
 
-#include <memory>
 #include <algorithm>
+#include <memory>
 
 #include "doc_errno.h"
 #include "json_object.h"
@@ -43,7 +43,7 @@ bool CheckConfigSupport(const JsonObject &config, int &errCode)
     }
     return true;
 }
-}
+} // namespace
 CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &errCode)
 {
     if (optStr.empty()) {
@@ -66,7 +66,7 @@ CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &er
         return {};
     }
 
-    static const JsonFieldPath maxDocField = {OPT_MAX_DOC};
+    static const JsonFieldPath maxDocField = { OPT_MAX_DOC };
     if (!collOpt.IsFieldExists(maxDocField)) {
         return {};
     }
@@ -114,4 +114,4 @@ bool CollectionOption::operator!=(const CollectionOption &targetOption) const
 {
     return !(*this == targetOption);
 }
-}
+} // namespace DocumentDB

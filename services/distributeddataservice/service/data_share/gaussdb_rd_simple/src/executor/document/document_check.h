@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <vector>
+
 #include "json_common.h"
 
 namespace DocumentDB {
@@ -42,5 +43,5 @@ using Key = std::vector<uint8_t>;
 using Value = std::vector<uint8_t>;
 
 constexpr const char *COLL_PREFIX = "GRD_COLL_";
-} // DocumentDB
+} // namespace DocumentDB
 #endif // DOCUMENT_CHECK_H

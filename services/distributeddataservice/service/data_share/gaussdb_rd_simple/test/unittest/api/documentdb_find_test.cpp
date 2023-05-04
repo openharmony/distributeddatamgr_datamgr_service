@@ -15,16 +15,16 @@
 
 #include <gtest/gtest.h>
 
-#include "grd_base/grd_db_api.h"
-#include "grd_document/grd_document_api.h"
-#include "grd_base/grd_error.h"
-#include "grd_base/grd_type_export.h"
-#include "grd_type_inner.h"
-#include "grd_base/grd_resultset_api.h"
 #include "doc_errno.h"
-#include "log_print.h"
 #include "documentdb_test_utils.h"
+#include "grd_base/grd_db_api.h"
+#include "grd_base/grd_error.h"
+#include "grd_base/grd_resultset_api.h"
+#include "grd_base/grd_type_export.h"
+#include "grd_document/grd_document_api.h"
 #include "grd_resultset_inner.h"
+#include "grd_type_inner.h"
+#include "log_print.h"
 
 using namespace testing::ext;
 namespace {
@@ -61,7 +61,8 @@ static const char *g_document13 = "{\"_id\" : \"13\", \"name\":\"doc13\",\"item\
     {\"school\":\"AB\", \"age\" : 15}}";
 static const char *g_document14 = "{\"_id\" : \"14\", \"name\":\"doc14\",\"item\" : true,\"personInfo\":\
     [{\"school\":\"B\", \"age\" : 15}, {\"school\":\"C\", \"age\" : 85}]}";
-static const char *g_document15 = "{\"_id\" : \"15\", \"name\":\"doc15\",\"personInfo\":[{\"school\":\"C\", \"age\" : 5}]}";
+static const char *g_document15 = "{\"_id\" : \"15\", \"name\":\"doc15\",\"personInfo\":[{\"school\":\"C\", \"age\" : "
+                                  "5}]}";
 static const char *g_document16 = "{\"_id\" : \"16\", \"name\":\"doc16\", \"nested1\":{\"nested2\":{\"nested3\":\
     {\"nested4\":\"ABC\", \"field2\":\"CCC\"}}}}";
 static const char *g_document17 = "{\"_id\" : \"17\", \"name\":\"doc17\",\"personInfo\":\"oh,ok\"}";
@@ -71,11 +72,14 @@ static const char *g_document19 = "{\"_id\" : \"19\", \"name\":\"doc19\",\"ITEM\
     {\"school\":\"AB\", \"age\":15}}";
 static const char *g_document20 = "{\"_id\" : \"20\", \"name\":\"doc20\",\"ITEM\" : true,\"personInfo\":\
     [{\"SCHOOL\":\"B\", \"AGE\":15}, {\"SCHOOL\":\"C\", \"AGE\":35}]}";
-static const char *g_document23 = "{\"_id\" : \"23\", \"name\":\"doc22\",\"ITEM\" : true,\"personInfo\":[{\"school\":\"b\", \"age\":15}, [{\"school\":\"doc23\"}, 10, {\"school\":\"doc23\"}, true, {\"school\":\"y\"}], {\"school\":\"b\"}]}";
-static std::vector<const char *>g_data = {g_document1, g_document2, g_document3, g_document4, g_document5, g_document6, g_document7,
-     g_document8, g_document9, g_document10, g_document11, g_document12, g_document13, g_document14, g_document15, g_document16, g_document17, g_document18, g_document19, g_document20, g_document23};
+static const char *g_document23 = "{\"_id\" : \"23\", \"name\":\"doc22\",\"ITEM\" : "
+                                  "true,\"personInfo\":[{\"school\":\"b\", \"age\":15}, [{\"school\":\"doc23\"}, 10, "
+                                  "{\"school\":\"doc23\"}, true, {\"school\":\"y\"}], {\"school\":\"b\"}]}";
+static std::vector<const char *> g_data = { g_document1, g_document2, g_document3, g_document4, g_document5,
+    g_document6, g_document7, g_document8, g_document9, g_document10, g_document11, g_document12, g_document13,
+    g_document14, g_document15, g_document16, g_document17, g_document18, g_document19, g_document20, g_document23 };
 
-static void InsertData(GRD_DB *g_db, const char *collectionName) 
+static void InsertData(GRD_DB *g_db, const char *collectionName)
 {
     for (const auto &item : g_data) {
         EXPECT_EQ(GRD_InsertDoc(g_db, collectionName, item, 0), GRD_OK);
@@ -91,7 +95,7 @@ static void CompareValue(const char *value, const char *targetValue)
     EXPECT_EQ(errCode, E_OK);
     EXPECT_EQ(valueObj.Print(), targetValueObj.Print());
 }
-}
+} // namespace
 
 class DocumentFindApiTest : public testing::Test {
 public:
@@ -121,10 +125,7 @@ void DocumentFindApiTest::SetUp(void)
     InsertData(g_db, "student");
 }
 
-void DocumentFindApiTest::TearDown(void)
-{
-}
-
+void DocumentFindApiTest::TearDown(void) {}
 
 /**
   * @tc.name: DocumentFindApiTest001
@@ -141,7 +142,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest001, TestSize.Level1)
      */
     const char *filter = "{\"_id\" : \"6\"}";
     GRD_ResultSet *resultSet = nullptr;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = NULL;
@@ -172,9 +173,9 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest002, TestSize.Level1)
      */
     const char *filter = "{\"_id\" : \"6\", \"name\":\"doc6\"}";
     GRD_ResultSet *resultSet = nullptr;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
-     /**
+    /**
      * @tc.steps: step2. Invoke GRD_Next to get the next matching value. Release resultSet.
      * @tc.expected: step2. GRD_GetValue return GRD_INVALID_ARGS and GRD_Next return GRD_INVALID_ARGS.
      */
@@ -200,9 +201,9 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
      */
     const char *filter = "{\"name\":\"doc6\"}";
     GRD_ResultSet *resultSet = nullptr;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
-    
+
     /**
      * @tc.steps: step2. Invoke GRD_Next to get the next matching value. Release resultSet.
      * @tc.expected: step2. GRD_GetValue return GRD_INVALID_ARGS and GRD_Next return GRD_INVALID_ARGS.
@@ -229,7 +230,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 //      */
 //     GRD_ResultSet *resultSet1 = nullptr;
 //     const char *filter1 = "{\"_id\" : \"1\", \"info\" : 1}";
-//     Query query1 = {filter1, "{}"}; 
+//     Query query1 = {filter1, "{}"};
 //     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query1, 1, &resultSet1), GRD_OK);
 //     EXPECT_EQ(GRD_FreeResultSet(resultSet1), GRD_OK);
 
@@ -239,7 +240,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 //      */
 //     GRD_ResultSet *resultSet2 = nullptr;
 //     const char *filter2 = "{\"_id\" : \"1\", \"_id\" : \"2\"}";
-//     Query query2 = {filter2, "{}"}; 
+//     Query query2 = {filter2, "{}"};
 //     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query2, 1, &resultSet2), GRD_INVALID_ARGS);
 //     EXPECT_EQ(GRD_FreeResultSet(resultSet1), GRD_OK);
 
@@ -295,7 +296,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
      */
     GRD_ResultSet *resultSet1 = nullptr;
     const char *filter1 = "{\"_id\" : \"valstring\"}";
-    Query query1 = {filter1, "{}"}; 
+    Query query1 = { filter1, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query1, 1, &resultSet1), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet1), GRD_OK);
 
@@ -305,7 +306,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
      */
     GRD_ResultSet *resultSet2 = nullptr;
     const char *filter2 = "{\"_id\" : 1}";
-    Query query2 = {filter2, "{}"}; 
+    Query query2 = { filter2, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query2, 1, &resultSet2), GRD_INVALID_ARGS);
 
     /**
@@ -314,7 +315,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
      */
     GRD_ResultSet *resultSet3 = nullptr;
     const char *filter3 = "{\"_id\" : [\"2\", 1]}";
-    Query query3 = {filter3, "{}"};
+    Query query3 = { filter3, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query3, 1, &resultSet3), GRD_INVALID_ARGS);
 
     /**
@@ -323,7 +324,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
      */
     GRD_ResultSet *resultSet4 = nullptr;
     const char *filter4 = "{\"_id\" : {\"info_val\" : \"1\"}}";
-    Query query4 = {filter4, "{}"};
+    Query query4 = { filter4, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query4, 1, &resultSet4), GRD_INVALID_ARGS);
 
     /**
@@ -332,7 +333,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
      */
     GRD_ResultSet *resultSet5 = nullptr;
     const char *filter5 = "{\"_id\" : true}";
-    Query query5 = {filter5, "{}"};
+    Query query5 = { filter5, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query5, 1, &resultSet5), GRD_INVALID_ARGS);
 
     /**
@@ -341,7 +342,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
      */
     GRD_ResultSet *resultSet6 = nullptr;
     const char *filter6 = "{\"_id\" : null}";
-    Query query6 = {filter6, "{}"};
+    Query query6 = { filter6, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query6, 1, &resultSet6), GRD_INVALID_ARGS);
 }
 
@@ -358,7 +359,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest016, TestSize.Level1)
     const char *colName2 = "GM_SYS_sysfff";
     GRD_ResultSet *resultSet = NULL;
     const char *filter = "{\"_id\" : \"1\"}";
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, colName1, query, 1, &resultSet), GRD_INVALID_FORMAT);
     EXPECT_EQ(GRD_FindDoc(g_db, colName2, query, 1, &resultSet), GRD_INVALID_FORMAT);
 }
@@ -402,7 +403,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest019, TestSize.Level1)
 {
     const char *filter = "{\"_id\" : \"100\"}";
     GRD_ResultSet *resultSet = nullptr;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
     char *value = NULL;
@@ -426,7 +427,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest023, TestSize.Level1)
     const char *filter = "{\"_id\" : \"6\"}";
     GRD_ResultSet *resultSet = nullptr;
     GRD_ResultSet *resultSet2 = nullptr;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet2), GRD_RESOURCE_BUSY);
 
@@ -463,8 +464,8 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest024, TestSize.Level1)
     const char *filter = "{\"_id\" : \"6\"}";
     GRD_ResultSet *resultSet = nullptr;
     GRD_ResultSet *resultSet2 = nullptr;
-    Query query = {filter, "{}"};
-    const char* collectionName = "DocumentFindApiTest024";
+    Query query = { filter, "{}" };
+    const char *collectionName = "DocumentFindApiTest024";
     EXPECT_EQ(GRD_CreateCollection(g_db, collectionName, "", 0), GRD_OK);
     InsertData(g_db, collectionName);
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
@@ -511,7 +512,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest025, TestSize.Level1)
     const char *projectionInfo = "{\"name\": true, \"nested1.nested2.nested3.nested4\":true}";
     const char *targetDocument = "{\"name\":\"doc16\", \"nested1\":{\"nested2\":{\"nested3\":\
         {\"nested4\":\"ABC\"}}}}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -531,7 +532,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest025, TestSize.Level1)
      * @tc.expected: step3. succeed to get the record.
      */
     projectionInfo = "{\"name\": true, \"nested1\":{\"nested2\":{\"nested3\":{\"nested4\":true}}}}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
@@ -550,7 +551,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest025, TestSize.Level1)
      */
     projectionInfo = "{\"name\": 0, \"nested1.nested2.nested3.nested4\":0}";
     targetDocument = "{\"nested1\":{\"nested2\":{\"nested3\":{\"field2\":\"CCC\"}}}}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
@@ -576,7 +577,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest026, TestSize.Level1)
     const char *filter = "{\"_id\" : \"16\"}";
     GRD_ResultSet *resultSet = nullptr;
     const char *projectionInfo = "{\"name\": true, \"nested1.nested2.nested3.nested4.nested5\":true}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     //EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
     // EXPECT_EQ(GRD_Next(resultSet), GRD_INVALID_ARGS);
     // char *value = nullptr;
@@ -608,7 +609,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest027, TestSize.Level1)
     const char *projectionInfo = "{\"name\": true, \"other_Info\":true, \"non_exist_field\":true}";
     const char *targetDocument = "{\"name\": \"doc7\", \"other_Info\":[{\"school\":\"BX\", \"age\":15},\
         {\"school\":\"C\", \"age\":35}]}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -616,14 +617,14 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest027, TestSize.Level1)
     CompareValue(value, targetDocument);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
-  
+
     /**
      * @tc.steps: step2. Create filter to match g_document7, _id flag is 0.
      * Create projection to display name, other _info and existing field with space.
      * @tc.expected: step2. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\": true, \"other_Info\":true, \" item \":true}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 
     /**
@@ -632,7 +633,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest027, TestSize.Level1)
      * @tc.expected: step3. Match the g_document7 and display name, other_Info.
      */
     projectionInfo = "{\"name\": true, \"other_Info\":true, \"ITEM\": true}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     resultSet = nullptr;
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
@@ -660,7 +661,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest028, TestSize.Level1)
     GRD_ResultSet *resultSet = nullptr;
     const char *projectionInfo = "{\"name\": true, \"other_Info.non_exist_field\":true}";
     const char *targetDocument = "{\"name\": \"doc7\"}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -668,14 +669,14 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest028, TestSize.Level1)
     CompareValue(value, targetDocument);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
-  
+
     /**
      * @tc.steps: step2. Create filter to match g_document7, _id flag is 0.
      * Create projection to display name, other _info and existing field with space.
      * @tc.expected: step2. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\": true, \"other_Info\":{\"non_exist_field\":true}}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     resultSet = nullptr;
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
@@ -690,7 +691,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest028, TestSize.Level1)
      * @tc.expected: step3. Match the g_document7 and display name, other_Info.
      */
     projectionInfo = "{\"name\": true, \"other_Info.0\": true}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     resultSet = nullptr;
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_INVALID_ARGS);
@@ -713,7 +714,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest029, TestSize.Level1)
     const char *filter = "{\"_id\" : \"4\"}";
     GRD_ResultSet *resultSet = nullptr;
     const char *projectionInfo = "{\"personInfo\": true, \"personInfo.grade\": true}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 }
 
@@ -735,7 +736,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest030, TestSize.Level1)
     const char *projectionInfo = "{\"non_exist_field\":true}";
     int flag = 0;
     const char *targetDocument = "{}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -743,7 +744,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest030, TestSize.Level1)
     CompareValue(value, targetDocument);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
-  
+
     /**
      * @tc.steps: step2. Create filter to match g_document7, _id flag is 1.
      * @tc.expected: step2. Match g_document7, and return a json with _id.
@@ -751,7 +752,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest030, TestSize.Level1)
     resultSet = nullptr;
     flag = 1;
     targetDocument = "{\"_id\": \"7\"}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     value = NULL;
@@ -779,7 +780,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest031, TestSize.Level1)
     const char *projectionInfo = "{\"name\":true, \"item\":true}";
     int flag = 0;
     const char *targetDocument = "{\"name\":\"doc7\", \"item\":\"fruit\"}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -787,7 +788,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest031, TestSize.Level1)
     CompareValue(value, targetDocument);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
-  
+
     /**
      * @tc.steps: step2. Create filter to match g_document7, _id flag is 1.
      * @tc.expected: step2. Match g_document7, and return a json with _id.
@@ -796,7 +797,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest031, TestSize.Level1)
     flag = 1;
     projectionInfo = "{\"name\": 1, \"item\": 1}";
     targetDocument = "{\"_id\":\"7\", \"name\":\"doc7\", \"item\":\"fruit\"}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     value = NULL;
@@ -824,7 +825,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest032, TestSize.Level1)
     const char *projectionInfo = "{\"name\":true, \"item\":true}";
     int flag = 0;
     const char *targetDocument = "{\"name\":\"doc7\", \"item\":\"fruit\"}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -840,7 +841,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest032, TestSize.Level1)
     flag = 1;
     projectionInfo = "{\"name\": 1, \"item\": 1}";
     targetDocument = "{\"_id\":\"7\", \"name\":\"doc7\", \"item\":\"fruit\"}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     value = NULL;
@@ -856,7 +857,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest032, TestSize.Level1)
     flag = 1;
     projectionInfo = "{\"name\": 10, \"item\": 10}";
     targetDocument = "{\"_id\":\"7\", \"name\":\"doc7\", \"item\":\"fruit\"}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     value = NULL;
@@ -883,8 +884,10 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest033, TestSize.Level1)
     GRD_ResultSet *resultSet = nullptr;
     const char *projectionInfo = "{\"name\":false, \"item\":false}";
     int flag = 0;
-    const char *targetDocument = "{\"other_Info\":[{\"school\":\"BX\", \"age\" : 15}, {\"school\":\"C\", \"age\" : 35}]}";;
-    Query query = {filter, projectionInfo};
+    const char *targetDocument = "{\"other_Info\":[{\"school\":\"BX\", \"age\" : 15}, {\"school\":\"C\", \"age\" : "
+                                 "35}]}";
+    ;
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -899,8 +902,10 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest033, TestSize.Level1)
     resultSet = nullptr;
     flag = 1;
     projectionInfo = "{\"name\": 0, \"item\": 0}";
-    targetDocument = "{\"_id\": \"7\", \"other_Info\":[{\"school\":\"BX\", \"age\" : 15}, {\"school\":\"C\", \"age\" : 35}]}";;
-    query = {filter, projectionInfo};
+    targetDocument = "{\"_id\": \"7\", \"other_Info\":[{\"school\":\"BX\", \"age\" : 15}, {\"school\":\"C\", \"age\" "
+                     ": 35}]}";
+    ;
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     value = NULL;
@@ -929,7 +934,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest034, TestSize.Level1)
             \"personInfo.shool1\": 1, \"personInfo.age1\": 1}";
     int flag = 0;
     const char *targetDocument = "{\"name\":\"doc4\"}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -944,8 +949,9 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest034, TestSize.Level1)
      */
     projectionInfo = "{\"name\": false, \"personInfo.grade1\": false, \
             \"personInfo.shool1\": false, \"personInfo.age1\": false}";
-    const char *targetDocument2 = "{\"item\":\"paper\",\"personInfo\":{\"grade\" : 1, \"school\":\"A\", \"age\" : 18}}";
-    query = {filter, projectionInfo};
+    const char *targetDocument2 = "{\"item\":\"paper\",\"personInfo\":{\"grade\" : 1, \"school\":\"A\", \"age\" : "
+                                  "18}}";
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
@@ -959,7 +965,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest034, TestSize.Level1)
      */
     projectionInfo = "{\"name\": 1, \"personInfo.school\": 1, \"personInfo.age\": 1}";
     const char *targetDocument3 = "{\"name\":\"doc4\", \"personInfo\": {\"school\":\"A\", \"age\" : 18}}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
@@ -973,7 +979,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest034, TestSize.Level1)
      */
     projectionInfo = "{\"name\": 1, \"personInfo.school\": 1, \"personInfo.age1\": 1}";
     const char *targetDocument4 = "{\"name\":\"doc4\", \"personInfo\": {\"school\":\"A\"}}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
@@ -998,7 +1004,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest035, TestSize.Level1)
     const char *filter = "{\"_id\" : \"17\"}";
     GRD_ResultSet *resultSet = nullptr;
     int flag = 0;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, GRD_DOC_ID_DISPLAY, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -1030,7 +1036,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest036, TestSize.Level1)
     const char *filter = "{\"_id\" : \"17\"}";
     GRD_ResultSet *resultSet = nullptr;
     int flag = 0;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, "", query, 0, &resultSet), GRD_INVALID_ARGS);
     EXPECT_EQ(GRD_FindDoc(g_db, NULL, query, 0, &resultSet), GRD_INVALID_ARGS);
 }
@@ -1051,7 +1057,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
     const char *filter = "{\"_id\" : \"4\"}";
     GRD_ResultSet *resultSet = nullptr;
     const char *projectionInfo = "{\"name\":1, \"personInfo\":0, \"item\":1}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 
     /**
@@ -1059,7 +1065,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
      * @tc.expected: step2. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":2, \"personInfo\":0, \"item\":2}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 
     /**
@@ -1067,7 +1073,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
      * @tc.expected: step3. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":true, \"personInfo\":0, \"item\":true}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 
     /**
@@ -1075,7 +1081,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
      * @tc.expected: step4. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":\"\", \"personInfo\":0, \"item\":\"\"}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 
     /**
@@ -1083,7 +1089,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
      * @tc.expected: step5. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":false, \"personInfo\":1, \"item\":false";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_FORMAT);
 
     /**
@@ -1091,7 +1097,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
      * @tc.expected: step6. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":false, \"personInfo\":-1.123, \"item\":false";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_FORMAT);
 
     /**
@@ -1099,7 +1105,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
      * @tc.expected: step7. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":false, \"personInfo\":true, \"item\":false";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_FORMAT);
 }
 
@@ -1121,7 +1127,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest038, TestSize.Level1)
     const char *projectionInfo = "{\"name\":false, \"personInfo\": 0, \"item\":0}";
     int flag = 0;
     const char *targetDocument = "{}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -1135,7 +1141,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest038, TestSize.Level1)
      * @tc.expected: step2. Match g_document6, Return json with _id.
      */
     targetDocument = "{\"_id\": \"6\"}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
@@ -1159,11 +1165,12 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest039, TestSize.Level1)
      */
     const char *filter = "{\"_id\" : \"18\"}";
     GRD_ResultSet *resultSet = nullptr;
-    const char *projectionInfo = "{\"name\":true, \"personInfo.age\": \"\", \"item\":1, \"color\":10, \"nonExist\" : -100}";
+    const char *projectionInfo = "{\"name\":true, \"personInfo.age\": \"\", \"item\":1, \"color\":10, \"nonExist\" : "
+                                 "-100}";
     const char *targetDocument = "{\"name\":\"doc18\", \"item\":\"mobile phone\", \"personInfo\":\
         {\"age\":66}, \"color\":\"blue\"}";
     int flag = 0;
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = nullptr;
@@ -1178,7 +1185,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest039, TestSize.Level1)
      */
     targetDocument = "{\"_id\" : \"18\", \"name\":\"doc18\",\"item\" : \"mobile phone\",\"personInfo\":\
         {\"age\":66}, \"color\":\"blue\"}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
@@ -1204,7 +1211,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest040, TestSize.Level1)
     GRD_ResultSet *resultSet = nullptr;
     const char *projectionInfo = "{\"personInfo\":[true, 1]}";
     int flag = 1;
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_INVALID_ARGS);
 
     /**
@@ -1212,7 +1219,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest040, TestSize.Level1)
      * @tc.expected: step2. Match the g_document18 and return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"personInfo\":null}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_INVALID_ARGS);
 
     /**
@@ -1220,7 +1227,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest040, TestSize.Level1)
      * @tc.expected: step3. Match the g_document18 and return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"personInfo\":\"invalid string.\"}";
-    query = {filter, projectionInfo};
+    query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_INVALID_ARGS);
 }
 
@@ -1239,9 +1246,10 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest042, TestSize.Level1)
      */
     const char *filter = "{\"_iD\" : \"18\"}";
     GRD_ResultSet *resultSet = nullptr;
-    const char *projectionInfo = "{\"Name\":true, \"personInfo.age\": \"\", \"item\":1, \"COLOR\":10, \"nonExist\" : -100}";
+    const char *projectionInfo = "{\"Name\":true, \"personInfo.age\": \"\", \"item\":1, \"COLOR\":10, \"nonExist\" : "
+                                 "-100}";
     int flag = 0;
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
@@ -1249,10 +1257,10 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest042, TestSize.Level1)
      * @tc.steps: step2. Test field with upper projection.
      * @tc.expected: step2. Match g_document18, Return json with item, personInfo.age, color and _id.
      */
-    const char *filter1 = "{\"_id\" : \"18\"}"; 
-    const char* targetDocument = "{\"_id\" : \"18\", \"item\" : \"mobile phone\",\"personInfo\":\
+    const char *filter1 = "{\"_id\" : \"18\"}";
+    const char *targetDocument = "{\"_id\" : \"18\", \"item\" : \"mobile phone\",\"personInfo\":\
         {\"age\":66}}";
-    query = {filter1, projectionInfo};
+    query = { filter1, projectionInfo };
     char *value = nullptr;
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
@@ -1283,7 +1291,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest044, TestSize.Level1)
     const char *targetDocument = "{\"_id\" : \"18\", \"name\":\"doc18\", \"personInfo\":\
         {\"school\":\"DD\"}, \"color\":\"blue\"}";
     int flag = 0;
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     char *value = nullptr;
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
@@ -1310,7 +1318,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest045, TestSize.Level1)
     const char *filter = "{\"_id\" : \"18\"}";
     GRD_ResultSet *resultSet = nullptr;
     int flag = 0;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     string collectionName1(MAX_COLLECTION_NAME, 'a');
     ASSERT_EQ(GRD_CreateCollection(g_db, collectionName1.c_str(), "", 0), GRD_OK);
     EXPECT_EQ(GRD_FindDoc(g_db, collectionName1.c_str(), query, 1, &resultSet), GRD_OK);
@@ -1338,7 +1346,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest052, TestSize.Level1)
     const char *filter = "{\"_id\" : \"18\"}";
     GRD_ResultSet *resultSet = nullptr;
     int flag = 0;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     string collectionName1(MAX_COLLECTION_NAME, 'a');
     ASSERT_EQ(GRD_CreateCollection(g_db, collectionName1.c_str(), "", 0), GRD_OK);
     EXPECT_EQ(GRD_FindDoc(g_db, collectionName1.c_str(), query, 1, &resultSet), GRD_OK);
@@ -1366,7 +1374,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest053, TestSize.Level1)
     const char *filter = "{\"_id\" : \"18\"}";
     GRD_ResultSet *resultSet = nullptr;
     const char *projectionInfo = "{}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 3, &resultSet), GRD_INVALID_ARGS);
 
     /**
@@ -1398,7 +1406,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest054, TestSize.Level1)
     const char *filter = "{\"_id\" : \"18\"}";
     GRD_ResultSet *resultSet = nullptr;
     const char *projectionInfo = "{}";
-    Query query = {filter, projectionInfo};
+    Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(nullptr, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 
     /**
@@ -1411,7 +1419,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest054, TestSize.Level1)
      * @tc.steps: step1. Test with query that has two nullptr data.
      * @tc.expected: step1. Return GRD_INVALID_ARGS.
      */
-    query = {nullptr, nullptr};
+    query = { nullptr, nullptr };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 }
 
@@ -1428,7 +1436,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest055, TestSize.Level1)
      * @tc.steps:step1.Find doc, but filter' _id value lens is larger than MAX_ID_LENS
      * @tc.expected:step1.GRD_OVER_LIMIT.
      */
-    string document1 =  "{\"_id\" : ";
+    string document1 = "{\"_id\" : ";
     string document2 = "\"";
     string document4 = "\"";
     string document5 = "}";
@@ -1436,7 +1444,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest055, TestSize.Level1)
     string filter = document1 + document2 + document_midlle + document4 + document5;
     GRD_ResultSet *resultSet = nullptr;
     const char *projectionInfo = "{}";
-    Query query = {filter.c_str(), projectionInfo};
+    Query query = { filter.c_str(), projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OVER_LIMIT);
 
     /**
@@ -1445,9 +1453,9 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest055, TestSize.Level1)
      */
     string document_midlle2(MAX_ID_LENS, 'k');
     filter = document1 + document2 + document_midlle2 + document4 + document5;
-    query = {filter.c_str(), projectionInfo};
+    query = { filter.c_str(), projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
-     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 
 /**
@@ -1465,7 +1473,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest056, TestSize.Level1)
      */
     const char *filter = "{\"personInfo\" : {\"school\":\"B\"}}";
     GRD_ResultSet *resultSet = nullptr;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
@@ -1480,7 +1488,6 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest056, TestSize.Level1)
     // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_NOT_AVAILABLE);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
-
 
 /**
   * @tc.name: DocumentFindApiTest056
@@ -1498,7 +1505,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest057, TestSize.Level1)
     const char *filter = "{\"personInfo\" : {\"school\":\"B\"}}";
     GRD_ResultSet *resultSet = nullptr;
     const char *projection = "{\"version\": 1}";
-    Query query = {filter, projection};
+    Query query = { filter, projection };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);

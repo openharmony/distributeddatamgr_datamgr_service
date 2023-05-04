@@ -15,13 +15,14 @@
 #include "sqlite_utils.h"
 
 #include <mutex>
+
 #include "doc_errno.h"
 #include "log_print.h"
 
 namespace DocumentDB {
 const int MAX_BLOB_READ_SIZE = 5 * 1024 * 1024; // 5M limit
 const int MAX_TEXT_READ_SIZE = 5 * 1024 * 1024; // 5M limit
-const int BUSY_TIMEOUT_MS = 3000; // 3000ms for sqlite busy timeout.
+const int BUSY_TIMEOUT_MS = 3000;               // 3000ms for sqlite busy timeout.
 const std::string BEGIN_SQL = "BEGIN TRANSACTION";
 const std::string BEGIN_IMMEDIATE_SQL = "BEGIN IMMEDIATE TRANSACTION";
 const std::string COMMIT_SQL = "COMMIT TRANSACTION";
@@ -44,7 +45,7 @@ int MapSqliteError(int errCode)
 
 std::mutex g_logConfigMutex;
 bool g_configLog = false;
-}
+} // namespace
 
 void SQLiteUtils::SqliteLogCallback(void *data, int err, const char *msg)
 {
@@ -154,8 +155,8 @@ int SQLiteUtils::BindBlobToStatement(sqlite3_stmt *statement, int index, const s
     if (value.empty()) {
         errCode = sqlite3_bind_zeroblob(statement, index, -1); // -1 for zero-length blob.
     } else {
-        errCode = sqlite3_bind_blob(statement, index, static_cast<const void *>(value.data()),
-            value.size(), SQLITE_TRANSIENT);
+        errCode = sqlite3_bind_blob(statement, index, static_cast<const void *>(value.data()), value.size(),
+            SQLITE_TRANSIENT);
     }
 
     if (errCode != SQLITE_OK) {
@@ -174,7 +175,7 @@ int SQLiteUtils::GetColumnBlobValue(sqlite3_stmt *statement, int index, std::vec
     if (keySize < 0 || keySize > MAX_BLOB_READ_SIZE) {
         GLOGW("[SQLiteUtils][Column blob] size over limit:%d", keySize);
         value.resize(MAX_BLOB_READ_SIZE + 1); // Reset value size to invalid
-        return E_OK; // Return OK for continue get data, but value is invalid
+        return E_OK;                          // Return OK for continue get data, but value is invalid
     }
 
     auto keyRead = static_cast<const uint8_t *>(sqlite3_column_blob(statement, index));
@@ -213,7 +214,7 @@ int SQLiteUtils::GetColumnTextValue(sqlite3_stmt *statement, int index, std::str
     if (valSize < 0 || valSize > MAX_TEXT_READ_SIZE) {
         GLOGW("[SQLiteUtils][Column text] size over limit:%d", valSize);
         value.resize(MAX_TEXT_READ_SIZE + 1); // Reset value size to invalid
-        return E_OK; // Return OK for continue get data, but value is invalid
+        return E_OK;                          // Return OK for continue get data, but value is invalid
     }
 
     const unsigned char *val = sqlite3_column_text(statement, index);
@@ -261,8 +262,8 @@ int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql)
     return MapSqliteError(errCode);
 }
 
-int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::function<int (sqlite3_stmt *)> &bindCallback,
-    const std::function<int (sqlite3_stmt *)> &resultCallback)
+int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::function<int(sqlite3_stmt *)> &bindCallback,
+    const std::function<int(sqlite3_stmt *)> &resultCallback)
 {
     if (db == nullptr || sql.empty()) {
         return -E_INVALID_ARGS;

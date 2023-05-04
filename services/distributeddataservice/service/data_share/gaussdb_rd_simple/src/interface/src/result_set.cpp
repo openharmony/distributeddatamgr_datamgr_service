@@ -13,17 +13,14 @@
 * limitations under the License.
 */
 #include "result_set.h"
+
 #include "log_print.h"
 
 namespace DocumentDB {
 constexpr const char *KEY_ID = "_id";
 
-ResultSet::ResultSet()
-{
-}
-ResultSet::~ResultSet()
-{
-}
+ResultSet::ResultSet() {}
+ResultSet::~ResultSet() {}
 int ResultSet::EraseCollection()
 {
     if (store_ != nullptr) {
@@ -32,10 +29,10 @@ int ResultSet::EraseCollection()
     return E_OK;
 }
 int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter,
-                    std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId)
+    std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId)
 {
     isOnlyId_ = isOnlyId;
-    store_ =  store;
+    store_ = store;
     collectionName_ = collectionName;
     filter_ = filter;
     projectionPath_ = path;
@@ -51,7 +48,7 @@ int ResultSet::Init(DocumentStore *store, const std::string collectionName, cons
 int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter)
 {
     ifFiled_ = true;
-    store_ =  store;
+    store_ = store;
     collectionName_ = collectionName;
     filter_ = filter;
     return E_OK;
@@ -80,7 +77,7 @@ int ResultSet::GetNext()
             errCode = coll.GetDocument(key, document);
             if (errCode == -E_NOT_FOUND) {
                 GLOGE("Cant get value from db");
-            return -E_NO_DATA;
+                return -E_NO_DATA;
             }
             std::string jsonData(document.begin(), document.end());
             CutJsonBranch(jsonData);
@@ -106,7 +103,7 @@ int ResultSet::GetNext()
             }
             matchDatas_ = values;
         }
-    }   else if (index_ == 0) {
+    } else if (index_ == 0) {
         int errCode = 0;
         auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
         std::vector<std::pair<std::string, std::string>> values;
@@ -130,13 +127,13 @@ int ResultSet::GetNext()
     return E_OK;
 }
 
-int  ResultSet::GetValue(char **value)
+int ResultSet::GetValue(char **value)
 {
     if (index_ == 0 || (index_ > matchDatas_.size())) {
         GLOGE("The value vector in resultSet is empty");
         return -E_NO_DATA;
     }
-    auto jsonData =  matchDatas_[index_ - 1].second;
+    auto jsonData = matchDatas_[index_ - 1].second;
     char *jsonstr = new char[jsonData.size() + 1];
     if (jsonstr == nullptr) {
         GLOGE("Memory allocation failed!");
@@ -158,12 +155,12 @@ int ResultSet::GetKey(std::string &key)
         GLOGE("The value vector in resultSet is empty");
         return -E_NO_DATA;
     }
-    key =  matchDatas_[index_ - 1].first;
+    key = matchDatas_[index_ - 1].first;
     return E_OK;
 }
 
 int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePath,
-                            std::vector<std::vector<std::string>> &allCutPath)
+    std::vector<std::vector<std::string>> &allCutPath)
 {
     if (node == nullptr) {
         GLOGE("No node to cut");

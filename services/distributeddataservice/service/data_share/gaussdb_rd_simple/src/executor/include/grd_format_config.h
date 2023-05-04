@@ -16,7 +16,6 @@
 #ifndef GRD_FORMAT_CONFIG_H
 #define GRD_FORMAT_CONFIG_H
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

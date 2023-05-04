@@ -14,8 +14,9 @@
 */
 
 #include <gtest/gtest.h>
-#include "documentdb_test_utils.h"
+
 #include "doc_errno.h"
+#include "documentdb_test_utils.h"
 #include "json_object.h"
 
 using namespace DocumentDB;
@@ -30,21 +31,13 @@ public:
     void TearDown();
 };
 
-void DocumentDBJsonObjectTest::SetUpTestCase(void)
-{
-}
+void DocumentDBJsonObjectTest::SetUpTestCase(void) {}
 
-void DocumentDBJsonObjectTest::TearDownTestCase(void)
-{
-}
+void DocumentDBJsonObjectTest::TearDownTestCase(void) {}
 
-void DocumentDBJsonObjectTest::SetUp(void)
-{
-}
+void DocumentDBJsonObjectTest::SetUp(void) {}
 
-void DocumentDBJsonObjectTest::TearDown(void)
-{
-}
+void DocumentDBJsonObjectTest::TearDown(void) {}
 
 /**
  * @tc.name: OpenDBTest001
@@ -61,7 +54,7 @@ HWTEST_F(DocumentDBJsonObjectTest, JsonObjectTest001, TestSize.Level0)
     JsonObject conf = JsonObject::Parse(config, ret);
     EXPECT_EQ(ret, E_OK);
 
-    ValueObject obj = conf.GetObjectByPath({"b", "c"}, ret);
+    ValueObject obj = conf.GetObjectByPath({ "b", "c" }, ret);
 
     EXPECT_EQ(obj.GetValueType(), ValueObject::ValueType::VALUE_NUMBER);
     EXPECT_EQ(obj.GetIntValue(), 234);

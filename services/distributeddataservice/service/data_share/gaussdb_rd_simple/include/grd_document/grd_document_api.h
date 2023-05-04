@@ -16,8 +16,8 @@
 #ifndef GRD_DOCUMENT_API_H
 #define GRD_DOCUMENT_API_H
 
-#include "grd_base/grd_type_export.h"
 #include "grd_base/grd_resultset_api.h"
+#include "grd_base/grd_type_export.h"
 
 #ifdef __cplusplus
 extern "C" {

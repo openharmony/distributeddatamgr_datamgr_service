@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 #include "os_api.h"
+
+#include <climits>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <climits>
 
 #include "doc_errno.h"
 #include "log_print.h"
@@ -23,7 +24,7 @@
 
 namespace DocumentDB {
 namespace {
-    const int ACCESS_MODE_EXISTENCE = 0;
+const int ACCESS_MODE_EXISTENCE = 0;
 }
 namespace OSAPI {
 bool CheckPermission(const std::string &filePath)
@@ -49,17 +50,17 @@ int GetRealPath(const std::string &inOriPath, std::string &outRealPath)
         return -E_OUT_OF_MEMORY;
     }
     if (memset_s(realPath, MAX_PATH_LENGTH + 1, 0, MAX_PATH_LENGTH + 1) != EOK) {
-        delete []realPath;
+        delete[] realPath;
         return -E_SECUREC_ERROR;
     }
 
     if (realpath(inOriPath.c_str(), realPath) == nullptr) {
         GLOGE("[OS_API] Realpath error:%d.", errno);
-        delete []realPath;
+        delete[] realPath;
         return -E_SYSTEM_API_FAIL;
     }
     outRealPath = std::string(realPath);
-    delete []realPath;
+    delete[] realPath;
     return E_OK;
 }
 

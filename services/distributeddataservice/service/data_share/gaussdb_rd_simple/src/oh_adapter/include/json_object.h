@@ -18,8 +18,8 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 #include <typeinfo>
+#include <vector>
 
 #include "cJSON.h"
 
@@ -43,7 +43,7 @@ public:
     int64_t GetIntValue() const;
     double GetDoubleValue() const;
     std::string GetStringValue() const;
-    bool operator==(const ValueObject& other) const;
+    bool operator==(const ValueObject &other) const;
 
 private:
     ValueType valueType = ValueType::VALUE_NULL;
@@ -61,7 +61,7 @@ using JsonFieldPath = std::vector<std::string>;
 class JsonObject {
 public:
     static JsonObject Parse(const std::string &jsonStr, int &errCode, bool caseSensitive = false);
-    ~JsonObject ();
+    ~JsonObject();
 
     std::string Print() const;
 
@@ -81,7 +81,7 @@ public:
     void ReplaceItemInObject(const std::string &filedName, const JsonObject &newItem, int &errCode);
     void SetItemValue(const ValueObject &value) const;
     int InsertItemObject(int which, const JsonObject &newItem);
-    
+
     std::string GetItemFiled() const;
     std::string GetItemFiled(int &errCode) const;
 
@@ -113,6 +113,5 @@ private:
     bool isOwner_ = false;
     bool caseSensitive_ = false;
 };
-} // DocumentDB
+} // namespace DocumentDB
 #endif // JSON_OBJECT_H
-

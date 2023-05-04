@@ -40,5 +40,5 @@ constexpr int E_RESOURCE_BUSY = E_BASE + 50;
 constexpr int E_FAILED_MEMORY_ALLOCATE = E_BASE + 51;
 
 int TrasnferDocErr(int err);
-} // DocumentDB
+} // namespace DocumentDB
 #endif // DOC_ERRNO_H

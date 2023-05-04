@@ -14,9 +14,10 @@
 */
 
 #include "grd_document/grd_document_api.h"
+
 #include "grd_base/grd_error.h"
-#include "grd_type_inner.h"
 #include "grd_resultset_inner.h"
+#include "grd_type_inner.h"
 #include "log_print.h"
 using namespace DocumentDB;
 
@@ -104,18 +105,16 @@ int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, un
     return errCode;
 }
 
-int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags,
-                GRD_ResultSet **resultSet)
+int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags, GRD_ResultSet **resultSet)
 {
     if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || resultSet == nullptr ||
-        query.filter == nullptr
-        || query.projection == nullptr) {
+        query.filter == nullptr || query.projection == nullptr) {
         return GRD_INVALID_ARGS;
     }
     if (db->store_->IsCollectionOpening(collectionName)) {
         return GRD_RESOURCE_BUSY;
     }
-    GRD_ResultSet *grdResultSet = new (std::nothrow)GRD_ResultSet();
+    GRD_ResultSet *grdResultSet = new (std::nothrow) GRD_ResultSet();
     if (grdResultSet == nullptr) {
         GLOGE("Memory allocation failed!");
         return -E_FAILED_MEMORY_ALLOCATE;

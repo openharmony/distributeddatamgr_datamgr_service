@@ -17,10 +17,10 @@
 
 #include "doc_errno.h"
 #include "documentdb_test_utils.h"
-#include "log_print.h"
 #include "grd_base/grd_db_api.h"
 #include "grd_base/grd_error.h"
 #include "grd_document/grd_document_api.h"
+#include "log_print.h"
 #include "sqlite_utils.h"
 
 using namespace DocumentDB;
@@ -30,7 +30,7 @@ using namespace DocumentDBUnitTest;
 namespace {
 std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
-}
+} // namespace
 
 class DocumentDBCollectionTest : public testing::Test {
 public:
@@ -40,13 +40,9 @@ public:
     void TearDown();
 };
 
-void DocumentDBCollectionTest::SetUpTestCase(void)
-{
-}
+void DocumentDBCollectionTest::SetUpTestCase(void) {}
 
-void DocumentDBCollectionTest::TearDownTestCase(void)
-{
-}
+void DocumentDBCollectionTest::TearDownTestCase(void) {}
 
 void DocumentDBCollectionTest::SetUp(void)
 {
@@ -103,12 +99,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
         EXPECT_EQ(GRD_DropCollection(g_db, it, 0), GRD_INVALID_ARGS);
     }
 
-    std::vector<const char *> invalidNameFormat = {
-        "GRD_123",
-        "grd_123",
-        "GM_SYS_123",
-        "gm_sys_123"
-    };
+    std::vector<const char *> invalidNameFormat = { "GRD_123", "grd_123", "GM_SYS_123", "gm_sys_123" };
 
     for (auto *it : invalidNameFormat) {
         GLOGD("CollectionTest002: create collection with name: %s", it);
@@ -127,15 +118,8 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
 HWTEST_F(DocumentDBCollectionTest, CollectionTest003, TestSize.Level0)
 {
     string overLenName(MAX_COLLECTION_LEN - 1, 'a');
-    std::vector<const char *> validName = {
-        "123",
-        "&^%@",
-        "中文字符",
-        "sqlite_master",
-        "NULL",
-        "SELECT",
-        overLenName.c_str()
-    };
+    std::vector<const char *> validName = { "123", "&^%@", "中文字符", "sqlite_master", "NULL", "SELECT",
+        overLenName.c_str() };
 
     for (auto *it : validName) {
         GLOGD("CollectionTest003: create collection with name: %s", it);
@@ -213,7 +197,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest006, TestSize.Level0)
  */
 HWTEST_F(DocumentDBCollectionTest, CollectionTest007, TestSize.Level0)
 {
-    for (int flag : std::vector<unsigned int> {2, 4, 8, 1024, UINT32_MAX}) {
+    for (int flag : std::vector<unsigned int>{ 2, 4, 8, 1024, UINT32_MAX }) {
         EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", flag), GRD_INVALID_ARGS);
         EXPECT_EQ(GRD_DropCollection(g_db, "student", flag), GRD_INVALID_ARGS);
     }

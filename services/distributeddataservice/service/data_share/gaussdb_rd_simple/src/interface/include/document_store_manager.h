@@ -17,6 +17,7 @@
 #define DOCUMENT_STORE_MANAGER_H
 
 #include <string>
+
 #include "document_store.h"
 
 namespace DocumentDB {
@@ -31,5 +32,5 @@ private:
     static bool CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName, int &errCode);
     static bool CheckDBConfig(const std::string &config, int &errCode);
 };
-} // DocumentDB
+} // namespace DocumentDB
 #endif // DOCUMENT_STORE_MANAGER_H

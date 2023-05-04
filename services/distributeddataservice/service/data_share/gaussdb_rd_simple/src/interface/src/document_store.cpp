@@ -14,13 +14,14 @@
 */
 
 #include "document_store.h"
+
 #include "collection_option.h"
-#include "document_check.h"
 #include "doc_errno.h"
+#include "document_check.h"
 #include "grd_base/grd_type_export.h"
+#include "grd_resultset_inner.h"
 #include "log_print.h"
 #include "result_set_common.h"
-#include "grd_resultset_inner.h"
 
 namespace DocumentDB {
 const int COLLECTION_LENS_MAX = 512 * 1024;
@@ -29,9 +30,7 @@ const int JSON_DEEP_MAX = 4;
 constexpr const char *KEY_ID = "_id";
 const bool caseSensitive = true;
 
-DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor)
-{
-}
+DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor) {}
 
 DocumentStore::~DocumentStore()
 {
@@ -194,8 +193,8 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     return errCode;
 }
 
-int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document,
-    int flags)
+int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter,
+    const std::string &document, int flags)
 {
     std::string lowerCaseCollName;
     int errCode = E_OK;
@@ -231,7 +230,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     std::vector<std::vector<std::string>> filterAllPath;
     filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
     if (errCode != E_OK) {
-            return errCode;
+        return errCode;
     }
     bool isOnlyId = true;
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
@@ -341,7 +340,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
     std::vector<std::vector<std::string>> filterAllPath;
     filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
     if (errCode != E_OK) {
-            return errCode;
+        return errCode;
     }
     bool isOnlyId = true;
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
@@ -372,8 +371,8 @@ KvStoreExecutor *DocumentStore::GetExecutor(int errCode)
 {
     return executor_;
 }
-int DocumentStore::FindDocument(const std::string &collection, const std::string &filter, const std::string &projection,
-    int flags,  GRD_ResultSet *grdResultSet)
+int DocumentStore::FindDocument(const std::string &collection, const std::string &filter,
+    const std::string &projection, int flags, GRD_ResultSet *grdResultSet)
 {
     if (flags != 0 && flags != GRD_DOC_ID_DISPLAY) {
         GLOGE("FindDocument flag is illegal");
@@ -397,7 +396,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     std::vector<std::vector<std::string>> filterAllPath;
     filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
     if (errCode != E_OK) {
-            return errCode;
+        return errCode;
     }
     bool isOnlyId = true;
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
@@ -449,10 +448,11 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     return ret;
 }
 
-bool DocumentStore::IsCollectionOpening(const std::string collection) {
+bool DocumentStore::IsCollectionOpening(const std::string collection)
+{
     if (collections_.find(collection) != collections_.end()) {
         GLOGE("DB is resource busy");
-        return true; 
+        return true;
     }
     return false;
 }

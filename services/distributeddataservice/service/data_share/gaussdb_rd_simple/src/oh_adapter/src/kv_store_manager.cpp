@@ -13,11 +13,12 @@
 * limitations under the License.
 */
 
+#include "kv_store_manager.h"
+
 #include "doc_errno.h"
 #include "log_print.h"
 #include "sqlite_store_executor_impl.h"
 #include "sqlite_utils.h"
-#include "kv_store_manager.h"
 
 namespace DocumentDB {
 int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, KvStoreExecutor *&executor)
@@ -66,4 +67,4 @@ END:
     sqliteExecutor = nullptr;
     return errCode;
 }
-}
+} // namespace DocumentDB
