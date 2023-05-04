@@ -53,25 +53,5 @@ public:
     OHOS::AppExecFwk::BundleInfo bundleInfo;
     std::string type = "rdb";
 };
-
-class TemplateContext : public Context {
-public:
-    TemplateContext(const std::string &uri, const std::string &tpltProviderBundleName, int64_t subscriberId)
-        : Context(uri), tpltProviderBundleName(tpltProviderBundleName), subscriberId(subscriberId)
-    {
-    }
-    std::string GetTpltProviderBundleName() override
-    {
-        return tpltProviderBundleName;
-    }
-    uint64_t GetTpltSubscriberId() override
-    {
-        return subscriberId;
-    }
-
-private:
-    std::string tpltProviderBundleName;
-    int64_t subscriberId;
-};
 } // namespace OHOS::DataShare
 #endif

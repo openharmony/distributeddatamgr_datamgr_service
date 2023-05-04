@@ -20,9 +20,11 @@
 #include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
-enum class PublishedDataType : int32_t {
-    STRING,
-    ASHMEM
+class PublishedDataType {
+public:
+    static constexpr int8_t STRING = 0;
+    static constexpr int8_t ASHMEM = 1;
+
 };
 
 struct PublishedDataNode final : public DistributedData::Serializable {
