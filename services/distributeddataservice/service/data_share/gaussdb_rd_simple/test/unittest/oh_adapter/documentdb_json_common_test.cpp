@@ -25,7 +25,8 @@ using namespace DocumentDB;
 using namespace testing::ext;
 using namespace DocumentDBUnitTest;
 
-class DocumentDBJsonCommonTest : public testing::Test {
+namespace {
+    class DocumentDBJsonCommonTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -49,13 +50,6 @@ void DocumentDBJsonCommonTest::TearDown(void)
 {
 }
 
-/**
- * @tc.name: OpenDBTest001
- * @tc.desc: Test open document db
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: lianhuix
- */
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest001, TestSize.Level0)
 {
     std::string document = R""({"name":"Tmn","age":18,"addr":{"city":"shanghai","postal":200001}})"";
@@ -586,4 +580,5 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest022, TestSize.Leve
     JsonObject filterObj = JsonObject::Parse(filter, errCode);
     EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj1, filterObj, errCode), false);
     EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj2, filterObj, errCode), true);
+}
 }
