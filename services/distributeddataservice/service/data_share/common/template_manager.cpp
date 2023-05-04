@@ -140,21 +140,20 @@ int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const Templat
 {
     int result = E_OK;
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
-    rdbCache_.Compute(
-        key, [&observer, &context, &result, this](const auto &key, std::vector<ObserverNode> &value) {
-            ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri_.c_str(), context->callerTokenId);
-            ObserverNode observerNode(observer, context->callerTokenId);
-            std::vector<ObserverNode> node({ observerNode });
-            result = Notify(key, node, context->calledSourceDir, context->version);
-            if (result != E_OK) {
-                return false;
-            }
-            value.emplace_back(observerNode);
-            if (GetEnableObserverCount(key) == 1) {
-                SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
-            }
-            return true;
-        });
+    rdbCache_.Compute(key, [&observer, &context, &result, this](const auto &key, std::vector<ObserverNode> &value) {
+        ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri_.c_str(), context->callerTokenId);
+        ObserverNode observerNode(observer, context->callerTokenId);
+        std::vector<ObserverNode> node({ observerNode });
+        result = Notify(key, node, context->calledSourceDir, context->version);
+        if (result != E_OK) {
+            return false;
+        }
+        value.emplace_back(observerNode);
+        if (GetEnableObserverCount(key) == 1) {
+            SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
+        }
+        return true;
+    });
     return result;
 }
 
@@ -162,21 +161,22 @@ int RdbSubscriberManager::DelRdbSubscriber(
     const std::string &uri, const TemplateId &tplId, const uint32_t callerTokenId)
 {
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
-    auto result = rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
-        ZLOGI("delete subscriber, uri %{public}s tokenId %{public}d", key.uri_.c_str(), callerTokenId);
-        for (auto it = value.begin(); it != value.end();) {
-            if (it->callerTokenId == callerTokenId) {
-                ZLOGI("erase start");
-                it = value.erase(it);
-            } else {
-                it++;
+    auto result =
+        rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
+            ZLOGI("delete subscriber, uri %{public}s tokenId %{public}d", key.uri_.c_str(), callerTokenId);
+            for (auto it = value.begin(); it != value.end();) {
+                if (it->callerTokenId == callerTokenId) {
+                    ZLOGI("erase start");
+                    it = value.erase(it);
+                } else {
+                    it++;
+                }
             }
-        }
-        if (GetEnableObserverCount(key) == 0) {
-            SchedulerManager::GetInstance().RemoveTimer(key);
-        }
-        return !value.empty();
-    });
+            if (GetEnableObserverCount(key) == 0) {
+                SchedulerManager::GetInstance().RemoveTimer(key);
+            }
+            return !value.empty();
+        });
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
@@ -184,21 +184,23 @@ int RdbSubscriberManager::DisableRdbSubscriber(
     const std::string &uri, const TemplateId &tplId, const uint32_t callerTokenId)
 {
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
-    auto result = rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
-        for (auto it = value.begin(); it != value.end(); it++) {
-            if (it->callerTokenId == callerTokenId) {
-                it->enabled = false;
+    auto result =
+        rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
+            for (auto it = value.begin(); it != value.end(); it++) {
+                if (it->callerTokenId == callerTokenId) {
+                    it->enabled = false;
+                }
             }
-        }
-        if (GetEnableObserverCount(key) == 0) {
-            SchedulerManager::GetInstance().RemoveTimer(key);
-        }
-        return true;
-    });
+            if (GetEnableObserverCount(key) == 0) {
+                SchedulerManager::GetInstance().RemoveTimer(key);
+            }
+            return true;
+        });
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
-int RdbSubscriberManager::EnableRdbSubscriber(const std::string &uri, const TemplateId &tplId, std::shared_ptr<Context> context)
+int RdbSubscriberManager::EnableRdbSubscriber(const std::string &uri, const TemplateId &tplId, 
+    std::shared_ptr<Context> context)
 {
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
     auto result = rdbCache_.ComputeIfPresent(key, [&context, this](const auto &key, std::vector<ObserverNode> &value) {
@@ -353,8 +355,8 @@ int PublishedDataSubscriberManager::AddSubscriber(const std::string &key, const 
     const int64_t subscriberId, const sptr<IDataProxyPublishedDataObserver> observer, const uint32_t callerTokenId)
 {
     PublishedDataKey publishedDataKey(key, callerBundleName, subscriberId);
-    publishedDataCache_.Compute(
-        publishedDataKey, [&observer, &callerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
+    publishedDataCache_.Compute(publishedDataKey,
+        [&observer, &callerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
             ZLOGI("add publish subscriber, uri %{private}s tokenId %{public}d", key.key_.c_str(), callerTokenId);
             value.emplace_back(observer, callerTokenId);
             return true;
@@ -366,16 +368,17 @@ int PublishedDataSubscriberManager::DelSubscriber(const std::string &uri, const 
     const int64_t subscriberId, const uint32_t callerTokenId)
 {
     PublishedDataKey key(uri, callerBundleName, subscriberId);
-    auto result = publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
-        for (auto it = value.begin(); it != value.end();) {
-            if (it->callerTokenId == callerTokenId) {
-                it = value.erase(it);
-            } else {
-                it++;
+    auto result =
+        publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
+            for (auto it = value.begin(); it != value.end();) {
+                if (it->callerTokenId == callerTokenId) {
+                    it = value.erase(it);
+                } else {
+                    it++;
+                }
             }
-        }
-        return !value.empty();
-    });
+            return !value.empty();
+        });
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
@@ -383,14 +386,15 @@ int PublishedDataSubscriberManager::DisableSubscriber(const std::string &uri, co
     const int64_t subscriberId, const uint32_t callerTokenId)
 {
     PublishedDataKey key(uri, callerBundleName, subscriberId);
-    auto result = publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
-        for (auto it = value.begin(); it != value.end(); it++) {
-            if (it->callerTokenId == callerTokenId) {
-                it->enabled = false;
+    auto result =
+        publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
+            for (auto it = value.begin(); it != value.end(); it++) {
+                if (it->callerTokenId == callerTokenId) {
+                    it->enabled = false;
+                }
             }
-        }
-        return true;
-    });
+            return true;
+        });
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
@@ -398,19 +402,20 @@ int PublishedDataSubscriberManager::EnableSubscriber(const std::string &uri, con
     const int64_t subscriberId, const uint32_t callerTokenId)
 {
     PublishedDataKey key(uri, callerBundleName, subscriberId);
-    auto result = publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
-        for (auto it = value.begin(); it != value.end(); it++) {
-            if (it->callerTokenId == callerTokenId) {
-                it->enabled = true;
+    auto result =
+        publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
+            for (auto it = value.begin(); it != value.end(); it++) {
+                if (it->callerTokenId == callerTokenId) {
+                    it->enabled = true;
+                }
             }
-        }
-        return true;
-    });
+            return true;
+        });
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
-void PublishedDataSubscriberManager::Emit(
-    std::vector<PublishedDataKey> keys, const std::string &ownerBundleName, const sptr<IDataProxyPublishedDataObserver> observer)
+void PublishedDataSubscriberManager::Emit(std::vector<PublishedDataKey> keys, const std::string &ownerBundleName,
+    const sptr<IDataProxyPublishedDataObserver> observer)
 {
     int32_t status;
     // key is bundleName, value is change node
@@ -425,7 +430,8 @@ void PublishedDataSubscriberManager::Emit(
             publishedResult[key].subscriberId_ = data.subscriberId_;
             publishedResult[key].key_ = data.key_;
             PublishedData publishedData(data.key_, data.bundleName_, data.subscriberId_);
-            status = PublishedData::Query(DistributedData::Serializable::Marshall(*publishedData.GetId()), publishedResult[key].value_);
+            status = PublishedData::Query(
+                DistributedData::Serializable::Marshall(*publishedData.GetId()), publishedResult[key].value_);
             if (status != E_OK) {
                 ZLOGE("query fail %{public}s %{public}s %{public}" PRId64, data.bundleName_.c_str(), data.key_.c_str(),
                     data.subscriberId_);
