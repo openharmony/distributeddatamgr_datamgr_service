@@ -16,10 +16,9 @@
 
 #include "load_config_from_data_proxy_node_strategy.h"
 
-#include "datashare_errno.h"
-
 #include "bundle_mgr_proxy.h"
 #include "common/uri_utils.h"
+#include "datashare_errno.h"
 #include "log_print.h"
 
 namespace OHOS::DataShare {

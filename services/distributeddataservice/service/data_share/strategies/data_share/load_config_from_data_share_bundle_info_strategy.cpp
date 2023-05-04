@@ -49,8 +49,8 @@ private:
 bool LoadConfigFromDataShareBundleInfoStrategy::LoadConfigFromProfile(
     const ProfileInfo &profileInfo, std::shared_ptr<Context> context)
 {
-    std::string storeUri = URIUtils::DATA_SHARE_SCHEMA + context->calledBundleName + "/" + context->calledModuleName + "/" +
-                           context->calledStoreName;
+    std::string storeUri = URIUtils::DATA_SHARE_SCHEMA + context->calledBundleName + "/" + context->calledModuleName +
+        "/" + context->calledStoreName;
     std::string tableUri = storeUri + "/" + context->calledTableName;
     ConfigData result;
     for (auto &item : profileInfo.tableConfig) {

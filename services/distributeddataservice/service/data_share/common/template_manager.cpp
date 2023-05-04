@@ -199,7 +199,7 @@ int RdbSubscriberManager::DisableRdbSubscriber(
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
-int RdbSubscriberManager::EnableRdbSubscriber(const std::string &uri, const TemplateId &tplId, 
+int RdbSubscriberManager::EnableRdbSubscriber(const std::string &uri, const TemplateId &tplId,
     std::shared_ptr<Context> context)
 {
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
@@ -232,7 +232,6 @@ public:
             ZLOGE("null value %{public}s", key_.c_str());
             return false;
         }
-        // ZLOGE("key %{public}s value %{public}s", key_.c_str(), DistributedData::Serializable::Marshall(value_).c_str());
         return SetValue(node[key_], *value_);
     }
     bool Unmarshal(const json &node) override

@@ -20,7 +20,6 @@
 #include <string>
 
 #include "db_delegate.h"
-#include "grd_base/grd_db_api.h"
 
 namespace OHOS::DataShare {
 class KvDelegate final : public KvDBDelegate {
@@ -42,9 +41,7 @@ private:
     int64_t Upsert(const std::string &collectionName, const std::string &filter, const std::string &value);
     int64_t Delete(const std::string &collectionName, const std::string &filter);
     void Flush();
-    std::mutex mutex_;
     std::string path_;
-    GRD_DB *db_ = nullptr;
     bool isInitDone_ = false;
 };
 } // namespace OHOS::DataShare
