@@ -70,8 +70,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest001, TestSize.Level0)
 
     EXPECT_EQ(GRD_CreateCollection(db, "student", "", 0), GRD_OK);
 
-    EXPECT_EQ(GRD_UpsertDoc(db, "student", R""({"_id":"10001"})"", R""({"_id":"10001", "name":"Tom","age":23})"", 0), 1);
-    EXPECT_EQ(GRD_UpsertDoc(db, "student", R""({"_id":"10001"})"", R""({"_id":"10001", "name":"Tom","age":23})"", 0), 1);
+    EXPECT_EQ(GRD_UpsertDoc(db, "student", R""({"_id":"10001"})"", R""({"name":"Tom","age":23})"", 0), 1);
 
     EXPECT_EQ(GRD_DropCollection(db, "student", 0), GRD_OK);
 

@@ -511,7 +511,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                 return false;
             }
             if (errCode == E_OK) {
-                if (isCollapse) {
+                if (isCollapse && (!IsNumber(itemPath.back()) || srcFatherItem.GetType() == JsonObject::Type::JSON_ARRAY)) {
                     errCode = srcFatherItem.AddItemToObject(itemPath.back(), item);
                     if (errCode != E_OK) {
                         externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
