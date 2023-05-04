@@ -16,12 +16,12 @@
 #include <gtest/gtest.h>
 
 #include "grd_base/grd_db_api.h"
-#include "grd_document/grd_document_api.h"
 #include "grd_base/grd_error.h"
-#include "grd_base/grd_type_export.h"
-#include "grd_type_inner.h"
-#include "grd_resultset_inner.h"
 #include "grd_base/grd_resultset_api.h"
+#include "grd_base/grd_type_export.h"
+#include "grd_document/grd_document_api.h"
+#include "grd_resultset_inner.h"
+#include "grd_type_inner.h"
 
 using namespace testing::ext;
 namespace {
@@ -30,7 +30,7 @@ constexpr const char *NULL_JSON_STR = "{}";
 const int MAX_COLLECTION_LENS = 511;
 std::string path = "./document.db";
 GRD_DB *g_db = nullptr;
-}
+} // namespace
 
 class DocumentDeleteApiTest : public testing::Test {
 public:
@@ -64,8 +64,7 @@ void DocumentDeleteApiTest::SetUp(void)
      * @tc.steps:step2. Insert many document in order to delete
      * @tc.expected: step2. GRD_OK
     */
-    const char *document1 =
-    "{  \
+    const char *document1 = "{  \
         \"_id\" : \"1\", \
         \"name\": \"xiaoming\", \
         \"address\": \"beijing\", \
@@ -73,8 +72,7 @@ void DocumentDeleteApiTest::SetUp(void)
         \"friend\" : {\"name\" : \"David\", \"sex\" : \"female\", \"age\" : 90}, \
         \"subject\": [\"math\", \"English\", \"music\", {\"info\" : \"exam\"}] \
     }";
-    const char *document2 =
-    "{  \
+    const char *document2 = "{  \
         \"_id\" : \"2\", \
         \"name\": \"ori\", \
         \"address\": \"beijing\", \
@@ -82,8 +80,7 @@ void DocumentDeleteApiTest::SetUp(void)
         \"friend\" : {\"name\" : \"David\", \"sex\" : \"female\", \"age\" : 90}, \
         \"subject\": [\"math\", \"English\", \"music\"] \
     }";
-    const char *document3 =
-    "{  \
+    const char *document3 = "{  \
         \"_id\" : \"3\", \
         \"name\": \"David\", \
         \"address\": \"beijing\", \
@@ -248,7 +245,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest006, TestSize.Level1)
       */
     const char *filter = "{\"_id\" : \"1\"}";
     GRD_ResultSet *resultSet = nullptr;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, filter, 0), 1);
     /**
@@ -277,7 +274,6 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest007, TestSize.Level1)
     string collectionName2(MAX_COLLECTION_LENS + 1, 'a');
     EXPECT_EQ(GRD_DeleteDoc(g_db, collectionName2.c_str(), filter, 0), GRD_OVER_LIMIT);
 }
-
 
 /**
   * @tc.name: DocumentDelete008
@@ -314,8 +310,8 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest010, TestSize.Level1)
      * @tc.steps:step1. Test delete document when filter _id is int and string.
      * @tc.expected: step1. GRD_INVALID_ARGS
     */
-    std::vector<std::string> filterVec = {R"({"_id" : 1})", R"({"_id":[1, 2]})",
-            R"({"_id" : {"t1" : 1}})", R"({"_id":null})", R"({"_id":true})", R"({"_id" : 1.333})", R"({"_id" : -2.0})"};
+    std::vector<std::string> filterVec = { R"({"_id" : 1})", R"({"_id":[1, 2]})", R"({"_id" : {"t1" : 1}})",
+        R"({"_id":null})", R"({"_id":true})", R"({"_id" : 1.333})", R"({"_id" : -2.0})" };
     for (const auto &item : filterVec) {
         EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, item.c_str(), 0), GRD_INVALID_ARGS);
     }
@@ -325,7 +321,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest010, TestSize.Level1)
 
 /**
   * @tc.name: DocumentDelete011
-  * @tc.desc: 
+  * @tc.desc:
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
@@ -339,7 +335,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest011, TestSize.Level1)
     const char *filter = "{\"_id\" : \"1\"}";
     const char *filter2 = "{\"subject.info\" : \"exam\"}";
     GRD_ResultSet *resultSet = nullptr;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, filter2, 0), 1);
     /**
@@ -352,7 +348,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest011, TestSize.Level1)
 
 /**
   * @tc.name: DocumentDelete012
-  * @tc.desc: 
+  * @tc.desc:
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
@@ -366,7 +362,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest012, TestSize.Level1)
     const char *filter = "{\"_id\" : \"1\"}";
     const char *filter2 = "{\"subject.info\" : \"exam\"}";
     GRD_ResultSet *resultSet = nullptr;
-    Query query = {filter, "{}"};
+    Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_DeleteDoc(g_db, COLLECTION_NAME, filter2, 0), 1);
     /**
@@ -376,5 +372,3 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest012, TestSize.Level1)
     EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
-
-

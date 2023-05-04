@@ -17,7 +17,6 @@
 #define DOCUMENTDB_TEST_UTILS_H
 #include <string>
 
-
 namespace DocumentDBUnitTest {
 class DocumentDBTestUtils {
 public:

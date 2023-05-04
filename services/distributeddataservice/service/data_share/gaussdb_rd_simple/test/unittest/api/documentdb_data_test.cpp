@@ -17,10 +17,10 @@
 
 #include "doc_errno.h"
 #include "documentdb_test_utils.h"
-#include "log_print.h"
 #include "grd_base/grd_db_api.h"
 #include "grd_base/grd_error.h"
 #include "grd_document/grd_document_api.h"
+#include "log_print.h"
 #include "sqlite_utils.h"
 
 using namespace DocumentDB;
@@ -31,7 +31,7 @@ namespace {
 std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
 const char *g_coll = "student";
-}
+} // namespace
 
 class DocumentDBDataTest : public testing::Test {
 public:
@@ -41,13 +41,9 @@ public:
     void TearDown();
 };
 
-void DocumentDBDataTest::SetUpTestCase(void)
-{
-}
+void DocumentDBDataTest::SetUpTestCase(void) {}
 
-void DocumentDBDataTest::TearDownTestCase(void)
-{
-}
+void DocumentDBDataTest::TearDownTestCase(void) {}
 
 void DocumentDBDataTest::SetUp(void)
 {
@@ -109,12 +105,12 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest003, TestSize.Level0)
 {
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
     std::vector<std::pair<const char *, int>> invalidName = {
-        {nullptr, GRD_INVALID_ARGS},
-        {"", GRD_INVALID_ARGS},
-        {"GRD_123", GRD_INVALID_FORMAT},
-        {"grd_123", GRD_INVALID_FORMAT},
-        {"GM_SYS_123", GRD_INVALID_FORMAT},
-        {"gm_sys_123", GRD_INVALID_FORMAT},
+        { nullptr, GRD_INVALID_ARGS },
+        { "", GRD_INVALID_ARGS },
+        { "GRD_123", GRD_INVALID_FORMAT },
+        { "grd_123", GRD_INVALID_FORMAT },
+        { "GM_SYS_123", GRD_INVALID_FORMAT },
+        { "gm_sys_123", GRD_INVALID_FORMAT },
     };
     for (auto it : invalidName) {
         GLOGD("UpsertDataTest003: upsert data with collectionname: %s", it.first);
@@ -122,14 +118,9 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest003, TestSize.Level0)
     }
 }
 
-HWTEST_F(DocumentDBDataTest, UpsertDataTest004, TestSize.Level0)
-{
-}
+HWTEST_F(DocumentDBDataTest, UpsertDataTest004, TestSize.Level0) {}
 
-HWTEST_F(DocumentDBDataTest, UpsertDataTest005, TestSize.Level0)
-{
-
-}
+HWTEST_F(DocumentDBDataTest, UpsertDataTest005, TestSize.Level0) {}
 
 /**
  * @tc.name: UpsertDataTest006
@@ -143,7 +134,7 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest006, TestSize.Level0)
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
 
-    for (auto flags : std::vector<unsigned int> {2, 4, 8, 64, 1024, UINT32_MAX}) {
+    for (auto flags : std::vector<unsigned int>{ 2, 4, 8, 64, 1024, UINT32_MAX }) {
         EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), flags), GRD_INVALID_ARGS);
     }
 }
@@ -219,12 +210,12 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest003, TestSize.Level0)
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
     std::vector<std::pair<const char *, int>> invalidName = {
-        {nullptr, GRD_INVALID_ARGS},
-        {"", GRD_INVALID_ARGS},
-        {"GRD_123", GRD_INVALID_FORMAT},
-        {"grd_123", GRD_INVALID_FORMAT},
-        {"GM_SYS_123", GRD_INVALID_FORMAT},
-        {"gm_sys_123", GRD_INVALID_FORMAT},
+        { nullptr, GRD_INVALID_ARGS },
+        { "", GRD_INVALID_ARGS },
+        { "GRD_123", GRD_INVALID_FORMAT },
+        { "grd_123", GRD_INVALID_FORMAT },
+        { "GM_SYS_123", GRD_INVALID_FORMAT },
+        { "gm_sys_123", GRD_INVALID_FORMAT },
     };
     for (auto it : invalidName) {
         GLOGD("UpdateDataTest003: update data with collectionname: %s", it.first);
@@ -239,9 +230,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest003, TestSize.Level0)
  * @tc.require:
  * @tc.author: lianhuix
  */
-HWTEST_F(DocumentDBDataTest, UpdateDataTest004, TestSize.Level0)
-{
-}
+HWTEST_F(DocumentDBDataTest, UpdateDataTest004, TestSize.Level0) {}
 
 /**
  * @tc.name: UpdateDataTest005
@@ -250,9 +239,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest004, TestSize.Level0)
  * @tc.require:
  * @tc.author: lianhuix
  */
-HWTEST_F(DocumentDBDataTest, UpdateDataTest005, TestSize.Level0)
-{
-}
+HWTEST_F(DocumentDBDataTest, UpdateDataTest005, TestSize.Level0) {}
 
 /**
  * @tc.name: UpdateDataTest006
@@ -265,7 +252,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest006, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    std::vector<unsigned int> invalidFlags = {2, 4, 8, 1024, UINT32_MAX};
+    std::vector<unsigned int> invalidFlags = { 2, 4, 8, 1024, UINT32_MAX };
     for (auto flag : invalidFlags) {
         GLOGD("UpdateDataTest006: update data with flag: %u", flag);
         EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter.c_str(), document.c_str(), flag), GRD_INVALID_ARGS);

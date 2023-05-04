@@ -14,7 +14,9 @@
 */
 
 #include "json_object.h"
+
 #include <algorithm>
+
 #include "doc_errno.h"
 #include "log_print.h"
 
@@ -30,7 +32,7 @@ bool IsNumber(const std::string &str)
         return std::isdigit(c);
     });
 }
-}
+} // namespace
 
 ValueObject::ValueObject(bool val)
 {
@@ -81,7 +83,7 @@ std::string ValueObject::GetStringValue() const
     return stringValue;
 }
 
-bool ValueObject::operator==(const ValueObject& other) const
+bool ValueObject::operator==(const ValueObject &other) const
 {
     if (this->GetValueType() != other.GetValueType()) {
         return false;
@@ -166,7 +168,6 @@ int JsonObject::GetDeep(cJSON *cjson)
     jsonDeep_ = depth;
     return depth;
 }
-
 
 int JsonObject::CheckNumber(cJSON *item, int &errCode)
 {
@@ -321,7 +322,7 @@ int JsonObject::AddItemToObject(const std::string &fieldName, const JsonObject &
         }
         if (IsNumber(fieldName) && n <= std::stoi(fieldName)) {
             GLOGE("Add item object to array over size.");
-                return -E_NO_DATA;
+            return -E_NO_DATA;
         }
     }
     if (cjson_->type != cJSON_Object) {
@@ -386,7 +387,7 @@ ValueObject JsonObject::GetItemValue() const
 void JsonObject::ReplaceItemInObject(const std::string &filedName, const JsonObject &newItem, int &errCode)
 {
     if (!newItem.IsNull() || !this->IsNull()) {
-        if (this->GetType() == JsonObject::Type::JSON_OBJECT) {   
+        if (this->GetType() == JsonObject::Type::JSON_OBJECT) {
             if (!(this->GetObjectItem(filedName.c_str(), errCode).IsNull())) {
                 cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
                 cJSON_ReplaceItemInObjectCaseSensitive(this->cjson_, filedName.c_str(), copyItem);
@@ -496,7 +497,6 @@ cJSON *GetChild(cJSON *cjson, const std::string &field, bool caseSens)
     GLOGW("Invalid json field type, expect object or array.");
     return nullptr;
 }
-
 
 cJSON *GetChildPowerMode(cJSON *cjson, const std::string &field, bool caseSens)
 {

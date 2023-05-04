@@ -12,13 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "document_check.h"
+
 #include <algorithm>
 #include <climits>
 
 #include "doc_errno.h"
 #include "log_print.h"
 #include "securec.h"
-#include "document_check.h"
 
 namespace DocumentDB {
 namespace {
@@ -46,7 +47,7 @@ bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefi
     }
     return true;
 }
-}
+} // namespace
 
 bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName, int &errCode)
 {
@@ -248,14 +249,14 @@ bool CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std
             for (auto oneChar : path[i][j]) {
                 if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
                     return false;
-                } 
+                }
             }
         }
         if (!path[i].empty() && !path[i][0].empty() && isdigit(path[i][0][0])) {
             return false;
         }
     }
-    for (auto singlePath: path) {
+    for (auto singlePath : path) {
         if (singlePath.size() > JSON_DEEP_MAX) {
             return false;
         }

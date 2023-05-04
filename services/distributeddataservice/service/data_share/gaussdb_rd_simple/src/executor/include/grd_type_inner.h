@@ -16,8 +16,8 @@
 #ifndef GRD_TYPE_INNER_H
 #define GRD_TYPE_INNER_H
 
-#include "document_store.h"
 #include "doc_errno.h"
+#include "document_store.h"
 #include "grd_base/grd_error.h"
 
 typedef struct GRD_DB {

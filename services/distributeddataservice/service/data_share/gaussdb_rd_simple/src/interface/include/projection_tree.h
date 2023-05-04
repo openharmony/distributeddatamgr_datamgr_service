@@ -16,15 +16,16 @@
 #define PROJECTION_TREE_H
 
 #include <iostream>
-#include <vector>
 #include <unordered_map>
+#include <vector>
+
 #include "doc_errno.h"
 #include "json_common.h"
 #include "log_print.h"
 
 namespace DocumentDB {
 struct ProjectionNode {
-    std::unordered_map<std::string, ProjectionNode*> SonNode;
+    std::unordered_map<std::string, ProjectionNode *> SonNode;
     bool isDeepest;
     int Deep;
     int ViewType;
@@ -34,7 +35,7 @@ struct ProjectionNode {
         isDeepest = true;
     }
     int DeleteProjectionNode();
-    ~ProjectionNode ()
+    ~ProjectionNode()
     {
         DeleteProjectionNode();
     }
@@ -46,8 +47,9 @@ public:
 
     int ParseTree(std::vector<std::vector<std::string>> &path);
     bool SearchTree(std::vector<std::string> &singlePath, int &index);
+
 private:
     ProjectionNode node_;
 };
-} // DocumentDB
+} // namespace DocumentDB
 #endif // PROJECTION_TREE_H

@@ -14,8 +14,9 @@
 */
 
 #include <log_print.h>
-#include "securec.h"
+
 #include "hilog/log.h"
+#include "securec.h"
 
 namespace DocumentDB {
 namespace {
@@ -57,7 +58,7 @@ void PreparePrivateLog(const char *format, std::string &outStrFormat)
         outStrFormat.replace(pos, PRIVATE_TAG.size(), ".3s");
     }
 }
-}
+} // namespace
 
 void Logger::Log(Level level, const std::string &tag, const char *func, int line, const char *format, ...)
 {
@@ -79,4 +80,4 @@ void Logger::Log(Level level, const std::string &tag, const char *func, int line
 
     PrintLog(level, tag, msg);
 }
-}
+} // namespace DocumentDB

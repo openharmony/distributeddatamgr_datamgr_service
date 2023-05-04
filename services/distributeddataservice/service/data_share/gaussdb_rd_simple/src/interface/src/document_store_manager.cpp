@@ -13,13 +13,14 @@
 * limitations under the License.
 */
 
+#include "document_store_manager.h"
+
 #include "db_config.h"
 #include "doc_errno.h"
 #include "grd_base/grd_type_export.h"
+#include "kv_store_manager.h"
 #include "log_print.h"
 #include "os_api.h"
-#include "kv_store_manager.h"
-#include "document_store_manager.h"
 
 namespace DocumentDB {
 namespace {
@@ -42,7 +43,7 @@ bool CheckDBCreate(unsigned int flags, const std::string &path)
     }
     return true;
 }
-}
+} // namespace
 
 int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::string &config, unsigned int flags,
     DocumentStore *&store)
@@ -139,4 +140,4 @@ bool DocumentStoreManager::CheckDBConfig(const std::string &config, int &errCode
 {
     return true;
 }
-} // DocumentDB
+} // namespace DocumentDB

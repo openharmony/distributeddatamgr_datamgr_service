@@ -12,17 +12,16 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#include <iostream>
 #include "projection_tree.h"
+
+#include <iostream>
 
 namespace DocumentDB {
 const int JSON_DEEP_MAX = 4;
 
-ProjectionTree::ProjectionTree() {
-}
+ProjectionTree::ProjectionTree() {}
 
-ProjectionTree::~ProjectionTree() {
-}
+ProjectionTree::~ProjectionTree() {}
 
 int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path)
 {

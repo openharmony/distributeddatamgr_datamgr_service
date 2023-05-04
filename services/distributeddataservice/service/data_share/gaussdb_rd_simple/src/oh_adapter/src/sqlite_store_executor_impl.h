@@ -17,9 +17,9 @@
 #define SQLITE_STORE_EXECUTOR_IMPL_H
 
 #include "db_config.h"
+#include "json_common.h"
 #include "kv_store_executor.h"
 #include "sqlite3.h"
-#include "json_common.h"
 
 namespace DocumentDB {
 class SqliteStoreExecutor : public KvStoreExecutor {
@@ -49,5 +49,5 @@ public:
 private:
     sqlite3 *dbHandle_ = nullptr;
 };
-} // DocumentDB
+} // namespace DocumentDB
 #endif // SQLITE_STORE_EXECUTOR_IMPL_H
