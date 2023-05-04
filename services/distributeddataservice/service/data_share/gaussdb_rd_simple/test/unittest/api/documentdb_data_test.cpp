@@ -241,18 +241,6 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest003, TestSize.Level0)
  */
 HWTEST_F(DocumentDBDataTest, UpdateDataTest004, TestSize.Level0)
 {
-    // std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    // std::vector<const char *> invalidFilter = {
-    //     nullptr,
-    //     "",
-    //     R""({"name":"Tmono"})"",
-    //     R""({"value":{"_id":"1234"}})"",
-    //     R""({"_id":1234})"",
-    // };
-    // for (auto filter : invalidFilter) {
-    //     GLOGD("UpdateDataTest004: update data with filter: %s", filter);
-    //     EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter, document.c_str(), 0), GRD_INVALID_ARGS);
-    // }
 }
 
 /**
@@ -264,18 +252,6 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest004, TestSize.Level0)
  */
 HWTEST_F(DocumentDBDataTest, UpdateDataTest005, TestSize.Level0)
 {
-    // std::string filter = R""({"_id":"1234"})"";
-    // std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    // std::vector<std::pair<const char *, int>> invalidUpdate = {
-    //     {"", GRD_INVALID_ARGS},
-    //     {nullptr, GRD_INVALID_ARGS},
-    //     {R""({invalidJsonFormat})"", GRD_INVALID_FORMAT},
-    // };
-
-    // for (auto it : invalidUpdate) {
-    //     GLOGD("UpdateDataTest005: update data with doc: %s", it.first);
-    //     EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter.c_str(), it.first, 0), it.second);
-    // }
 }
 
 /**
