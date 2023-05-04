@@ -27,7 +27,7 @@ enum PublishedDataType : int32_t {
 
 struct PublishedDataNode final : public DistributedData::Serializable {
     PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
-        const std::variant<sptr<Ashmem>, std::string> &value, const VersionData &version);
+        const std::variant<sptr<Ashmem>, std::string> &value, const int version);
     ~PublishedDataNode() = default;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

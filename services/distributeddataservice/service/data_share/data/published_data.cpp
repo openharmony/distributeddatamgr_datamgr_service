@@ -39,8 +39,8 @@ bool PublishedData::Unmarshal(const DistributedData::Serializable::json &node)
 }
 
 PublishedData::PublishedData(const std::string &key, const std::string &bundleName, int64_t subscriberId,
-    const std::variant<sptr<Ashmem>, std::string> &value, const int version)
-    : value(key, bundleName, subscriberId, value, version)
+    const std::variant<sptr<Ashmem>, std::string> &inputValue, const int version)
+    : value(key, bundleName, subscriberId, inputValue, version)
 {
 }
 
@@ -136,7 +136,7 @@ bool PublishedDataNode::Unmarshal(const DistributedData::Serializable::json &nod
 }
 
 PublishedDataNode::PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
-    const std::variant<sptr<Ashmem>, std::string> &value, const VersionData &version)
+    const std::variant<sptr<Ashmem>, std::string> &value, const int version)
     : key(key), bundleName(bundleName), subscriberId(subscriberId), value(value), version(version)
 {
 }

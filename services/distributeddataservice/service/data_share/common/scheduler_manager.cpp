@@ -94,12 +94,12 @@ void SchedulerManager::ExecuteSchedulerSQL(const Key &key, std::shared_ptr<DBDel
     Template tpl;
     if (!TemplateManager::GetInstance().GetTemplate(key.uri, key.subscriberId, key.bundleName, tpl)) {
         ZLOGE("template undefined, %{public}s, %{public}" PRId64 ", %{public}s",
-              DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return;
     }
     if (tpl.scheduler_.empty()) {
         ZLOGW("template scheduler_ empty, %{public}s, %{public}" PRId64 ", %{public}s",
-              DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return;
     }
 
@@ -109,7 +109,7 @@ void SchedulerManager::ExecuteSchedulerSQL(const Key &key, std::shared_ptr<DBDel
     int errCode = delegate->ExecuteSql(tpl.scheduler_);
     if (errCode != E_OK) {
         ZLOGE("Execute schedulerSql failed, %{public}s, %{public}" PRId64 ", %{public}s",
-              DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
     }
 }
 
@@ -137,7 +137,7 @@ void SchedulerManager::RemoveTimer(const Key &key)
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         ZLOGD("RemoveTimer %{public}s %{public}s %{public}" PRId64,
-              DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
+            DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
         scheduler_->Remove(it->second);
         timerCache_.erase(key);
         if (timerCache_.empty()) {

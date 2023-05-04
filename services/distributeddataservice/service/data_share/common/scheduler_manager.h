@@ -36,8 +36,8 @@ private:
     static constexpr size_t TIME_TASK_NUM = 10;
     SchedulerManager() = default;
     ~SchedulerManager() = default;
-    bool GenRemindTimerFuncParams(const std::string &uri, int64_t subscriberId, const std::string &bundleName,
-        std::string &schedulerSQL);
+    bool GenRemindTimerFuncParams(
+        const std::string &uri, int64_t subscriberId, const std::string &bundleName, std::string &schedulerSQL);
     void ExecuteSchedulerSQL(const Key &key, std::shared_ptr<DBDelegate> delegate = nullptr);
 
     std::recursive_mutex mutex_;
@@ -45,4 +45,4 @@ private:
     std::shared_ptr<TaskScheduler> scheduler_;
 };
 } // namespace OHOS::DataShare
-#endif //SCHEDULER_MANAGER_H
+#endif // SCHEDULER_MANAGER_H
