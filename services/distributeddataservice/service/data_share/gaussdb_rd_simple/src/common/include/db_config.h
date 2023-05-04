@@ -38,7 +38,7 @@ private:
     int32_t pageSize_ = 4; // 4: default page size k
     uint32_t redoFlushByTrx_ = 0;
     uint32_t redoPubBufSize_ = 1024; // 1024: default 1024k buff size
-    int32_t maxConnNum_ = 100; // 100: default max conn
+    int32_t maxConnNum_ = 100;       // 100: default max conn
     uint32_t bufferPoolSize_ = 1024; // 100: default 1024k pool size
     uint32_t crcCheckEnable_ = 1;
 };

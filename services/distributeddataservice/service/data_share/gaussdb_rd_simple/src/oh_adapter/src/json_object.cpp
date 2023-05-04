@@ -14,7 +14,9 @@
 */
 
 #include "json_object.h"
+
 #include <algorithm>
+
 #include "doc_errno.h"
 #include "log_print.h"
 
@@ -27,7 +29,7 @@ bool IsNumber(const std::string &str)
         return std::isdigit(c);
     });
 }
-}
+} // namespace
 
 ValueObject::ValueObject(bool val)
 {
@@ -126,7 +128,6 @@ int JsonObject::GetDeep()
     }
     jsonDeep_ = GetDeep(cjson_);
     return jsonDeep_;
-
 }
 int JsonObject::GetDeep(cJSON *cjson)
 {
@@ -144,7 +145,6 @@ int JsonObject::GetDeep(cJSON *cjson)
     jsonDeep_ = depth;
     return depth;
 }
-
 
 int JsonObject::CheckNumber(cJSON *item, int &errCode)
 {
@@ -339,7 +339,7 @@ void JsonObject::SetItemValue(const ValueObject &value) const
     if (cjson_ == nullptr) {
         return;
     }
-    switch(value.GetValueType()) {
+    switch (value.GetValueType()) {
         case ValueObject::ValueType::VALUE_NUMBER:
             cJSON_SetNumberValue(cjson_, value.GetDoubleValue());
             break;
@@ -359,7 +359,7 @@ std::string JsonObject::GetItemFiled() const
 
     if (cjson_->string == nullptr) {
         cJSON *tail = cjson_;
-        while(tail->next != nullptr) {
+        while (tail->next != nullptr) {
             tail = tail->next;
         }
 

@@ -13,8 +13,9 @@
 * limitations under the License.
 */
 
-#include "doc_errno.h"
 #include "kv_store_manager.h"
+
+#include "doc_errno.h"
 #include "log_print.h"
 #include "sqlite_store_executor_impl.h"
 #include "sqlite_utils.h"
@@ -66,4 +67,4 @@ END:
     sqliteExecutor = nullptr;
     return errCode;
 }
-}
+} // namespace DocumentDB

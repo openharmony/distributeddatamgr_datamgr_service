@@ -13,11 +13,12 @@
 * limitations under the License.
 */
 
-#include "document_check.h"
+#include "sqlite_store_executor_impl.h"
+
 #include "doc_errno.h"
+#include "document_check.h"
 #include "log_print.h"
 #include "sqlite_utils.h"
-#include "sqlite_store_executor_impl.h"
 
 namespace DocumentDB {
 int SqliteStoreExecutor::CreateDatabase(const std::string &path, const DBConfig &config, sqlite3 *&db)
@@ -53,9 +54,7 @@ END:
     return errCode;
 }
 
-SqliteStoreExecutor::SqliteStoreExecutor(sqlite3 *handle) : dbHandle_(handle)
-{
-}
+SqliteStoreExecutor::SqliteStoreExecutor(sqlite3 *handle) : dbHandle_(handle) {}
 
 SqliteStoreExecutor::~SqliteStoreExecutor()
 {
@@ -66,7 +65,7 @@ SqliteStoreExecutor::~SqliteStoreExecutor()
 int SqliteStoreExecutor::GetDBConfig(std::string &config)
 {
     std::string dbConfigKeyStr = "DB_CONFIG";
-    Key dbConfigKey = {dbConfigKeyStr.begin(), dbConfigKeyStr.end()};
+    Key dbConfigKey = { dbConfigKeyStr.begin(), dbConfigKeyStr.end() };
     Value dbConfigVal;
     int errCode = GetData("grd_meta", dbConfigKey, dbConfigVal);
     config.assign(dbConfigVal.begin(), dbConfigVal.end());
@@ -76,8 +75,8 @@ int SqliteStoreExecutor::GetDBConfig(std::string &config)
 int SqliteStoreExecutor::SetDBConfig(const std::string &config)
 {
     std::string dbConfigKeyStr = "DB_CONFIG";
-    Key dbConfigKey = {dbConfigKeyStr.begin(), dbConfigKeyStr.end()};
-    Value dbConfigVal = {config.begin(), config.end()};
+    Key dbConfigKey = { dbConfigKeyStr.begin(), dbConfigKeyStr.end() };
+    Value dbConfigVal = { config.begin(), config.end() };
     return PutData("grd_meta", dbConfigKey, dbConfigVal);
 }
 
@@ -88,11 +87,14 @@ int SqliteStoreExecutor::PutData(const std::string &collName, const Key &key, co
     }
 
     std::string sql = "INSERT OR REPLACE INTO '" + collName + "' VALUES (?,?);";
-    int errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [key, value](sqlite3_stmt *stmt) {
-        SQLiteUtils::BindBlobToStatement(stmt, 1, key);
-        SQLiteUtils::BindBlobToStatement(stmt, 2, value);
-        return E_OK;
-    }, nullptr);
+    int errCode = SQLiteUtils::ExecSql(
+        dbHandle_, sql,
+        [key, value](sqlite3_stmt *stmt) {
+            SQLiteUtils::BindBlobToStatement(stmt, 1, key);
+            SQLiteUtils::BindBlobToStatement(stmt, 2, value);
+            return E_OK;
+        },
+        nullptr);
     if (errCode != SQLITE_OK) {
         GLOGE("[sqlite executor] Put data failed. err=%d", errCode);
         if (errCode == -E_ERROR) {
@@ -112,14 +114,17 @@ int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Va
     }
     int innerErrorCode = -E_NOT_FOUND;
     std::string sql = "SELECT value FROM '" + collName + "' WHERE key=?;";
-    int errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [key](sqlite3_stmt *stmt) {
-        SQLiteUtils::BindBlobToStatement(stmt, 1, key);
-        return E_OK;
-    }, [&value, &innerErrorCode](sqlite3_stmt *stmt) {
-        SQLiteUtils::GetColumnBlobValue(stmt, 0, value);
-        innerErrorCode = E_OK;
-        return E_OK;
-    });
+    int errCode = SQLiteUtils::ExecSql(
+        dbHandle_, sql,
+        [key](sqlite3_stmt *stmt) {
+            SQLiteUtils::BindBlobToStatement(stmt, 1, key);
+            return E_OK;
+        },
+        [&value, &innerErrorCode](sqlite3_stmt *stmt) {
+            SQLiteUtils::GetColumnBlobValue(stmt, 0, value);
+            innerErrorCode = E_OK;
+            return E_OK;
+        });
     if (errCode != SQLITE_OK) {
         GLOGE("[sqlite executor] Get data failed. err=%d", errCode);
         return errCode;
@@ -142,10 +147,13 @@ int SqliteStoreExecutor::DelData(const std::string &collName, const Key &key)
         return -E_NO_DATA;
     }
     std::string sql = "DELETE FROM '" + collName + "' WHERE key=?;";
-    errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [key](sqlite3_stmt *stmt) {
-        SQLiteUtils::BindBlobToStatement(stmt, 1, key);
-        return E_OK;
-    }, nullptr);
+    errCode = SQLiteUtils::ExecSql(
+        dbHandle_, sql,
+        [key](sqlite3_stmt *stmt) {
+            SQLiteUtils::BindBlobToStatement(stmt, 1, key);
+            return E_OK;
+        },
+        nullptr);
 
     if (errCode != SQLITE_OK) {
         GLOGE("[sqlite executor] Delete data failed. err=%d", errCode);
@@ -217,13 +225,16 @@ bool SqliteStoreExecutor::IsCollectionExists(const std::string &name, int &errCo
     bool isExists = false;
     std::string sql = "SELECT tbl_name FROM sqlite_master WHERE tbl_name=?;";
 
-    errCode = SQLiteUtils::ExecSql(dbHandle_, sql, [name](sqlite3_stmt *stmt) {
-        SQLiteUtils::BindTextToStatement(stmt, 1, name);
-        return E_OK;
-    }, [&isExists](sqlite3_stmt *stmt) {
-        isExists = true;
-        return E_OK;
-    });
+    errCode = SQLiteUtils::ExecSql(
+        dbHandle_, sql,
+        [name](sqlite3_stmt *stmt) {
+            SQLiteUtils::BindTextToStatement(stmt, 1, name);
+            return E_OK;
+        },
+        [&isExists](sqlite3_stmt *stmt) {
+            isExists = true;
+            return E_OK;
+        });
 
     if (errCode != E_OK) {
         GLOGE("Check collection exist failed. %d", errCode);
@@ -235,7 +246,7 @@ bool SqliteStoreExecutor::IsCollectionExists(const std::string &name, int &errCo
 int SqliteStoreExecutor::GetCollectionOption(const std::string &name, std::string &option)
 {
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
-    Key collOptKey = {collOptKeyStr.begin(), collOptKeyStr.end()};
+    Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
     Value collOptVal;
     int errCode = GetData("grd_meta", collOptKey, collOptVal);
     option.assign(collOptVal.begin(), collOptVal.end());
@@ -245,16 +256,16 @@ int SqliteStoreExecutor::GetCollectionOption(const std::string &name, std::strin
 int SqliteStoreExecutor::SetCollectionOption(const std::string &name, const std::string &option)
 {
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
-    Key collOptKey = {collOptKeyStr.begin(), collOptKeyStr.end()};
-    Value collOptVal = {option.begin(), option.end()};
+    Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
+    Value collOptVal = { option.begin(), option.end() };
     return PutData("grd_meta", collOptKey, collOptVal);
 }
 
 int SqliteStoreExecutor::CleanCollectionOption(const std::string &name)
 {
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
-    Key collOptKey = {collOptKeyStr.begin(), collOptKeyStr.end()};
+    Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
     return DelData("grd_meta", collOptKey);
 }
 
-} // DocumentDB
+} // namespace DocumentDB

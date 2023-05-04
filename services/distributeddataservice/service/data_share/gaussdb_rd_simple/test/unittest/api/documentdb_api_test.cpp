@@ -17,10 +17,10 @@
 
 #include "doc_errno.h"
 #include "documentdb_test_utils.h"
-#include "log_print.h"
 #include "grd_base/grd_db_api.h"
 #include "grd_base/grd_error.h"
 #include "grd_document/grd_document_api.h"
+#include "log_print.h"
 #include "sqlite_utils.h"
 
 using namespace DocumentDB;
@@ -35,17 +35,11 @@ public:
     void TearDown();
 };
 
-void DocumentDBApiTest::SetUpTestCase(void)
-{
-}
+void DocumentDBApiTest::SetUpTestCase(void) {}
 
-void DocumentDBApiTest::TearDownTestCase(void)
-{
-}
+void DocumentDBApiTest::TearDownTestCase(void) {}
 
-void DocumentDBApiTest::SetUp(void)
-{
-}
+void DocumentDBApiTest::SetUp(void) {}
 
 void DocumentDBApiTest::TearDown(void)
 {
@@ -120,11 +114,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest002, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBPathTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::vector<const char *> invalidPath = {
-        nullptr,
-        "",
-        "/a/b/c/"
-    };
+    std::vector<const char *> invalidPath = { nullptr, "", "/a/b/c/" };
     for (auto path : invalidPath) {
         GLOGD("OpenDBPathTest001: open db with path: %s", path);
         int status = GRD_DBOpen(path, nullptr, GRD_DB_OPEN_CREATE, &db);
@@ -157,7 +147,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBPathTest002, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
     const int MAX_JSON_LEN = 512 * 1024;
     std::string configStr = std::string(MAX_JSON_LEN, 'a');
     int status = GRD_DBOpen(path.c_str(), configStr.c_str(), GRD_DB_OPEN_CREATE, &db);
@@ -174,7 +164,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest001, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigTest002, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
     int status = GRD_DBOpen(path.c_str(), "{aa}", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_INVALID_FORMAT);
 }
@@ -189,7 +179,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest002, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigTest003, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
     int status = GRD_DBOpen(path.c_str(), R""({"notSupport":123})"", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_INVALID_ARGS);
 }
@@ -204,7 +194,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest003, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
 
     std::vector<std::string> configList = {
         R""({"maxConnNum":0})"",
@@ -232,7 +222,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest001, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest002, TestSize.Level1)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
 
     for (int i = 16; i <= 1024; i++) {
         std::string config = "{\"maxConnNum\":" + std::to_string(i) + "}";
@@ -258,7 +248,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest002, TestSize.Level1)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest003, TestSize.Level1)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
 
     std::string config = R""({"maxConnNum":16})"";
     int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
@@ -284,7 +274,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest003, TestSize.Level1)
  */
 HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest004, TestSize.Level1)
 {
-    std::string path= "./document.db";
+    std::string path = "./document.db";
 
     int maxCnt = 16;
     std::string config = "{\"maxConnNum\":" + std::to_string(maxCnt) + "}";
@@ -322,7 +312,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest004, TestSize.Level1)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
 
     std::vector<std::string> configList = {
         R""({"pageSize":0})"",
@@ -359,7 +349,7 @@ int GetDBPageSize(const std::string &path)
     sqlite3_close_v2(db);
     return pageSize;
 }
-}
+} // namespace
 
 /**
  * @tc.name: OpenDBConfigPageSizeTest002
@@ -371,9 +361,9 @@ int GetDBPageSize(const std::string &path)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest002, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
 
-    for (int size : {4, 8, 16, 32, 64}) {
+    for (int size : { 4, 8, 16, 32, 64 }) {
         std::string config = "{\"pageSize\":" + std::to_string(size) + "}";
         int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
         EXPECT_EQ(status, GRD_OK);
@@ -397,7 +387,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest002, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest003, TestSize.Level1)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
 
     std::string config = R""({"pageSize":4})"";
     int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
@@ -424,9 +414,9 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest003, TestSize.Level1)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigRedoFlushTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
 
-    for (int flush : {0, 1}) {
+    for (int flush : { 0, 1 }) {
         std::string config = "{\"redoFlushByTrx\":" + std::to_string(flush) + "}";
         int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
         EXPECT_EQ(status, GRD_OK);
@@ -449,7 +439,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigRedoFlushTest001, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBConfigRedoFlushTest002, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
 
     std::string config = R""({"redoFlushByTrx":3})"";
     int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
@@ -466,14 +456,9 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigRedoFlushTest002, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBFlagTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
-    std::vector<unsigned int> invaldFlag = {
-        GRD_DB_OPEN_CHECK_FOR_ABNORMAL | GRD_DB_OPEN_CHECK,
-        GRD_DB_OPEN_CREATE | GRD_DB_OPEN_CHECK_FOR_ABNORMAL | GRD_DB_OPEN_CHECK,
-        0x08,
-        0xffff,
-        UINT32_MAX
-    };
+    std::string path = "./document.db";
+    std::vector<unsigned int> invaldFlag = { GRD_DB_OPEN_CHECK_FOR_ABNORMAL | GRD_DB_OPEN_CHECK,
+        GRD_DB_OPEN_CREATE | GRD_DB_OPEN_CHECK_FOR_ABNORMAL | GRD_DB_OPEN_CHECK, 0x08, 0xffff, UINT32_MAX };
     for (unsigned int flag : invaldFlag) {
         GLOGD("OpenDBFlagTest001: open doc db with flag %u", flag);
         int status = GRD_DBOpen(path.c_str(), "", flag, &db);
@@ -491,7 +476,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBFlagTest001, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBFlagTest002, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
     int status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_ONLY, &db);
     EXPECT_EQ(status, GRD_INVALID_ARGS);
 
@@ -554,7 +539,7 @@ HWTEST_F(DocumentDBApiTest, CloseDBTest001, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, CloseDBFlagTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
     int status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OK);
     ASSERT_NE(db, nullptr);
@@ -576,7 +561,7 @@ HWTEST_F(DocumentDBApiTest, CloseDBFlagTest001, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, CloseDBFlagTest002, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
     int status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OK);
     ASSERT_NE(db, nullptr);
@@ -600,17 +585,12 @@ HWTEST_F(DocumentDBApiTest, CloseDBFlagTest002, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, CloseDBFlagTest003, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
     int status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OK);
     ASSERT_NE(db, nullptr);
 
-    std::vector<unsigned int> invaldFlag = {
-        0x02,
-        0x03,
-        0xffff,
-        UINT32_MAX
-    };
+    std::vector<unsigned int> invaldFlag = { 0x02, 0x03, 0xffff, UINT32_MAX };
     for (unsigned int flag : invaldFlag) {
         GLOGD("CloseDBFlagTest003: close doc db with flag %u", flag);
         status = GRD_DBClose(db, flag);
@@ -637,14 +617,14 @@ HWTEST_F(DocumentDBApiTest, FlushDBTest001, TestSize.Level0)
     EXPECT_EQ(GRD_Flush(nullptr, GRD_DB_FLUSH_SYNC), GRD_INVALID_ARGS);
 
     GRD_DB *db = nullptr;
-    std::string path= "./document.db";
+    std::string path = "./document.db";
     int status = GRD_DBOpen(path.c_str(), "", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OK);
     ASSERT_NE(db, nullptr);
 
     EXPECT_EQ(GRD_Flush(db, GRD_DB_FLUSH_ASYNC), GRD_OK);
     EXPECT_EQ(GRD_Flush(db, GRD_DB_FLUSH_SYNC), GRD_OK);
-    std::vector<unsigned int> invalidFlags = {2, 4, 8, 512, 1024, UINT32_MAX};
+    std::vector<unsigned int> invalidFlags = { 2, 4, 8, 512, 1024, UINT32_MAX };
     for (auto flags : invalidFlags) {
         EXPECT_EQ(GRD_Flush(db, flags), GRD_INVALID_ARGS);
     }

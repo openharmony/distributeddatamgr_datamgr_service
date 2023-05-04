@@ -12,16 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "json_common.h"
+
 #include <climits>
 #include <functional>
 
-#include "json_common.h"
 #include "doc_errno.h"
 #include "log_print.h"
 #include "securec.h"
 
 namespace DocumentDB {
-ValueObject JsonCommon::GetValueByFiled(JsonObject &node, const std::string& filed)
+ValueObject JsonCommon::GetValueByFiled(JsonObject &node, const std::string &filed)
 {
     while (!node.IsNull()) {
         if (node.GetItemFiled() == filed) {
@@ -54,19 +55,19 @@ int JsonCommon::CheckLeafNode(JsonObject &node, std::vector<ValueObject> &leafVa
     return E_OK;
 }
 
-std::vector<ValueObject>  JsonCommon::GetLeafValue(JsonObject &node)
+std::vector<ValueObject> JsonCommon::GetLeafValue(JsonObject &node)
 {
     std::vector<ValueObject> leafValue;
     CheckLeafNode(node, leafValue);
     return leafValue;
 }
 
-bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, bool &errFlag) 
+bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, bool &errFlag)
 {
     if (!errFlag) {
         return false;
     }
-    std::string fieldName; 
+    std::string fieldName;
     if (!node.IsNull()) {
         int ret = 0;
         fieldName = node.GetItemFiled(ret);
@@ -78,8 +79,7 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, boo
                 errFlag = false;
                 return false;
             }
-        }
-        else {
+        } else {
             errFlag = false;
             return false;
         }
@@ -92,7 +92,7 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, boo
                 errFlag = false;
                 return false;
             }
-        } 
+        }
     }
     if (!node.GetChild().IsNull()) {
         auto nodeNew = node.GetChild();
@@ -106,19 +106,19 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> filedSet, boo
     return errFlag;
 }
 
-bool JsonCommon::CheckJsonField(JsonObject &jsonObj) 
+bool JsonCommon::CheckJsonField(JsonObject &jsonObj)
 {
     std::set<std::string> filedSet;
     bool errFlag = true;
     return CheckNode(jsonObj, filedSet, errFlag);
 }
 
-bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> filedSet, bool &errFlag, bool isFirstFloor) 
+bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> filedSet, bool &errFlag, bool isFirstFloor)
 {
     if (!errFlag) {
         return false;
     }
-    std::string fieldName; 
+    std::string fieldName;
     if (!node.IsNull()) {
         int ret = 0;
         fieldName = node.GetItemFiled(ret);
@@ -130,13 +130,13 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fil
                 errFlag = false;
                 return false;
             }
-        }
-        else {
+        } else {
             errFlag = false;
             return false;
         }
         for (int i = 0; i < fieldName.size(); i++) {
-            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]) || (isFirstFloor && '.' == fieldName[i]))) {
+            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]) ||
+                    (isFirstFloor && '.' == fieldName[i]))) {
                 errFlag = false;
                 return false;
             }
@@ -144,7 +144,7 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fil
                 errFlag = false;
                 return false;
             }
-        } 
+        }
     }
     if (!node.GetChild().IsNull()) {
         auto nodeNew = node.GetChild();
@@ -158,7 +158,7 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fil
     return errFlag;
 }
 
-bool JsonCommon::CheckProjectionField(JsonObject &jsonObj) 
+bool JsonCommon::CheckProjectionField(JsonObject &jsonObj)
 {
     std::set<std::string> filedSet;
     bool errFlag = true;
@@ -166,7 +166,8 @@ bool JsonCommon::CheckProjectionField(JsonObject &jsonObj)
     return CheckProjectionNode(jsonObj, filedSet, errFlag, isFirstFloor);
 }
 
-int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor)
+int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
+    std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor)
 {
     std::vector<std::string> fatherPath;
     if (isFirstFloor) {
@@ -193,8 +194,7 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
     if (!node.GetChild().IsNull() && node.GetChild().GetItemFiled() != "") {
         auto nodeNew = node.GetChild();
         ParseNode(nodeNew, singlePath, resultPath, false);
-    }
-    else {
+    } else {
         resultPath.emplace_back(singlePath);
     }
     if (!node.GetNext().IsNull()) {
@@ -238,10 +238,10 @@ JsonFieldPath ExpendPath(const JsonFieldPath &path, bool &isCollapse)
 }
 
 void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
-    std::function<bool (const JsonFieldPath &path, const JsonObject &father, const JsonObject &item)> foo)
+    std::function<bool(const JsonFieldPath &path, const JsonObject &father, const JsonObject &item)> foo)
 {
     JsonObject child = obj.GetChild();
-    while(!child.IsNull()) {
+    while (!child.IsNull()) {
         JsonFieldPath childPath = path;
         childPath.push_back(child.GetItemFiled());
         if (foo != nullptr && foo(childPath, obj, child)) {
@@ -251,61 +251,61 @@ void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
     }
     return;
 }
-}
+} // namespace
 
 int JsonCommon::Append(const JsonObject &src, const JsonObject &add)
 {
     int externErrCode = E_OK;
-    JsonObjectIterator(add, {},
-        [&src, &externErrCode](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
-        bool isCollapse = false;
-        JsonFieldPath itemPath = ExpendPath(path, isCollapse);
-        JsonFieldPath fatherPath = itemPath;
-        fatherPath.pop_back();
-        int errCode = E_OK;
-        if (src.IsFieldExists(itemPath)) {
-            JsonObject srcItem = src.FindItem(itemPath, errCode);
-            if (errCode != E_OK) {
-                externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-                GLOGE("Find item in source json object failed. %d", errCode);
-                return false;
-            }
-            if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF) {
-                srcItem.SetItemValue(item.GetItemValue());
-                return false; // Both leaf node, no need iterate
-            } else if (srcItem.GetType() != item.GetType()) {
-                JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
+    JsonObjectIterator(
+        add, {}, [&src, &externErrCode](const JsonFieldPath &path, const JsonObject &father, const JsonObject &item) {
+            bool isCollapse = false;
+            JsonFieldPath itemPath = ExpendPath(path, isCollapse);
+            JsonFieldPath fatherPath = itemPath;
+            fatherPath.pop_back();
+            int errCode = E_OK;
+            if (src.IsFieldExists(itemPath)) {
+                JsonObject srcItem = src.FindItem(itemPath, errCode);
                 if (errCode != E_OK) {
                     externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-                    GLOGE("Find father item in source json object failed. %d", errCode);
+                    GLOGE("Find item in source json object failed. %d", errCode);
                     return false;
                 }
-                srcFatherItem.DeleteItemFromObject(itemPath.back());
-                srcFatherItem.AddItemToObject(itemPath.back(), item);
-                return false; // Different node types, overwrite directly, skip child node
-            }
-            return true; // Both array or object
-        } else {
-            if (isCollapse) {
-                GLOGE("Add collapse item to object failed, path not exist.");
-                externErrCode = -E_DATA_CONFLICT;
-                return false;
-            }
-            JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
-            if (errCode == E_OK) {
-                errCode = srcFatherItem.AddItemToObject(itemPath.back(), item);
-                if (errCode != E_OK) {
-                    externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-                    GLOGE("Add item to object failed. %d", errCode);
-                    return false;
+                if (srcItem.GetType() == JsonObject::Type::JSON_LEAF && item.GetType() == JsonObject::Type::JSON_LEAF) {
+                    srcItem.SetItemValue(item.GetItemValue());
+                    return false; // Both leaf node, no need iterate
+                } else if (srcItem.GetType() != item.GetType()) {
+                    JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
+                    if (errCode != E_OK) {
+                        externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+                        GLOGE("Find father item in source json object failed. %d", errCode);
+                        return false;
+                    }
+                    srcFatherItem.DeleteItemFromObject(itemPath.back());
+                    srcFatherItem.AddItemToObject(itemPath.back(), item);
+                    return false; // Different node types, overwrite directly, skip child node
                 }
+                return true; // Both array or object
             } else {
-                externErrCode = -E_DATA_CONFLICT;
-                GLOGE("Find father item in source json object failed. %d", errCode);
+                if (isCollapse) {
+                    GLOGE("Add collapse item to object failed, path not exist.");
+                    externErrCode = -E_DATA_CONFLICT;
+                    return false;
+                }
+                JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
+                if (errCode == E_OK) {
+                    errCode = srcFatherItem.AddItemToObject(itemPath.back(), item);
+                    if (errCode != E_OK) {
+                        externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+                        GLOGE("Add item to object failed. %d", errCode);
+                        return false;
+                    }
+                } else {
+                    externErrCode = -E_DATA_CONFLICT;
+                    GLOGE("Find father item in source json object failed. %d", errCode);
+                }
+                return false; // Source path not exist, overwrite directly, skip child node
             }
-            return false; // Source path not exist, overwrite directly, skip child node
-        }
-    });
+        });
     return externErrCode;
 }
 } // namespace DocumentDB

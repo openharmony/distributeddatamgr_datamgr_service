@@ -13,18 +13,19 @@
 * limitations under the License.
 */
 
-#include "doc_errno.h"
-#include "grd_base/grd_error.h"
 #include "result_set_common.h"
+
 #include <string>
 #include <vector>
 
+#include "doc_errno.h"
+#include "grd_base/grd_error.h"
+
 namespace DocumentDB {
 class ValueObject;
-int InitResultSet(DocumentStore *store, const std::string collectionName, ValueObject &key, std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType,
-    ResultSet &resultSet)
+int InitResultSet(DocumentStore *store, const std::string collectionName, ValueObject &key,
+    std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, ResultSet &resultSet)
 {
     return resultSet.Init(store, collectionName, key, path, ifShowId, viewType);
 }
-}
-
+} // namespace DocumentDB

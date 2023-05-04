@@ -18,15 +18,16 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 #include <typeinfo>
+#include <vector>
 
 #include "cJSON.h"
 
 namespace DocumentDB {
 class ValueObject {
 public:
-    enum class ValueType {
+    enum class ValueType
+    {
         VALUE_NULL = 0,
         VALUE_BOOL,
         VALUE_NUMBER,
@@ -62,7 +63,7 @@ class JsonObject {
 public:
     static JsonObject Parse(const std::string &jsonStr, int &errCode, bool caseSensitive = false);
 
-    ~JsonObject ();
+    ~JsonObject();
 
     std::string Print() const;
 
@@ -78,7 +79,7 @@ public:
 
     ValueObject GetItemValue() const;
     void SetItemValue(const ValueObject &value) const;
-    
+
     std::string GetItemFiled() const;
     std::string GetItemFiled(int &errCode) const;
 
@@ -89,7 +90,8 @@ public:
     int DeleteItemDeeplyOnTarget(const JsonFieldPath &path);
     bool IsNull() const;
     int GetDeep();
-    enum class Type {
+    enum class Type
+    {
         JSON_LEAF,
         JSON_OBJECT,
         JSON_ARRAY
@@ -108,6 +110,5 @@ private:
     bool isOwner_ = false;
     bool caseSensitive_ = false;
 };
-} // DocumentDB
+} // namespace DocumentDB
 #endif // JSON_OBJECT_H
-

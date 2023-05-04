@@ -14,6 +14,7 @@
 */
 
 #include "doc_errno.h"
+
 #include "grd_base/grd_error.h"
 
 namespace DocumentDB {
@@ -27,7 +28,7 @@ int GetErrorCategory(int errCode)
 
 int TrasnferDocErr(int err)
 {
-    if(err > 0) {
+    if (err > 0) {
         return err;
     }
 
@@ -76,4 +77,4 @@ int TrasnferDocErr(int err)
 
     return GetErrorCategory(outErr);
 }
-}
+} // namespace DocumentDB

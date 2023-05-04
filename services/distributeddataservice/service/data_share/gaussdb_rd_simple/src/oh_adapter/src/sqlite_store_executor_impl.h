@@ -46,5 +46,5 @@ public:
 private:
     sqlite3 *dbHandle_ = nullptr;
 };
-} // DocumentDB
+} // namespace DocumentDB
 #endif // SQLITE_STORE_EXECUTOR_IMPL_H

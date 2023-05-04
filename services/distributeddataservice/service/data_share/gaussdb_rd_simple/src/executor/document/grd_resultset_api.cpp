@@ -12,13 +12,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#include "grd_base/grd_resultset_api.h"
+
 #include <mutex>
 
-#include "grd_base/grd_error.h"
 #include "doc_errno.h"
 #include "grd_base/grd_error.h"
 #include "grd_resultset_inner.h"
-#include "grd_base/grd_resultset_api.h"
 #include "log_print.h"
 
 using namespace DocumentDB;

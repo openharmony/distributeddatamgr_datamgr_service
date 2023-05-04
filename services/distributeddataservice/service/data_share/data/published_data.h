@@ -20,12 +20,12 @@
 #include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
-enum PublishedDataType : int32_t
-{
+enum PublishedDataType : int32_t {
     STRING,
     ASHMEM
 };
-struct PublishedDataNode final: public DistributedData::Serializable {
+
+struct PublishedDataNode final : public DistributedData::Serializable {
     PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
         const std::variant<sptr<Ashmem>, std::string> &value, const VersionData &version);
     ~PublishedDataNode() = default;
@@ -38,7 +38,7 @@ struct PublishedDataNode final: public DistributedData::Serializable {
     VersionData version;
 };
 
-struct PublishedData final: public KvData {
+struct PublishedData final : public KvData {
     static std::vector<PublishedData> Query(const std::string &bundleName);
     static int32_t Query(const std::string &filter, std::variant<sptr<Ashmem>, std::string> &publishedData);
     PublishedData(const std::string &key = "", const std::string &bundleName = "", int64_t subscriberId = 0,

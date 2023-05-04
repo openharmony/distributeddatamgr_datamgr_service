@@ -16,8 +16,8 @@
 #include <gtest/gtest.h>
 
 #include "grd_base/grd_db_api.h"
-#include "grd_document/grd_document_api.h"
 #include "grd_base/grd_error.h"
+#include "grd_document/grd_document_api.h"
 using namespace testing::ext;
 namespace {
 std::string path = "./document.db";
@@ -31,33 +31,33 @@ const int MAX_ID_LENS = 899;
 
 static void TestInsertDocIntoCertainColl(const char *collectionName, const char *projection, int expectedResult)
 {
-  /** * @tc.steps: step1. Create Collection
+    /** * @tc.steps: step1. Create Collection
    * @tc.expected: step1. GRD_OK
   */
-  EXPECT_EQ(GRD_CreateCollection(g_db, collectionName, "", 0), expectedResult);
-  /**
+    EXPECT_EQ(GRD_CreateCollection(g_db, collectionName, "", 0), expectedResult);
+    /**
    * @tc.steps: step2. Insert projection into colloction.
    * @tc.expected: step2. GRD_OK
   */
-  EXPECT_EQ(GRD_InsertDoc(g_db, collectionName, projection, 0), expectedResult);
-  /**
+    EXPECT_EQ(GRD_InsertDoc(g_db, collectionName, projection, 0), expectedResult);
+    /**
    * @tc.steps: step3. Call GRD_DroCollection to drop the collection.
    * @tc.expected: step3. GRD_OK
   */
-  EXPECT_EQ(GRD_DropCollection(g_db, collectionName, 0), expectedResult);
+    EXPECT_EQ(GRD_DropCollection(g_db, collectionName, 0), expectedResult);
 }
 
-const char* SetRandomDocument(int i)
+const char *SetRandomDocument(int i)
 {
-    string document1 =  "{\"_id\" : ";
+    string document1 = "{\"_id\" : ";
     string document2 = "\"";
-    string document3 = {'2','6'};
+    string document3 = { '2', '6' };
     string document4 = "\"";
     string document5 = ", \"name\" : \"Ori\"}";
     string document = document1 + document2 + document3 + document4 + document5;
     return document.c_str();
 }
-}
+} // namespace
 
 class DocumentInsertApiTest : public testing::Test {
 public:
@@ -81,14 +81,9 @@ void DocumentInsertApiTest::TearDownTestCase(void)
     remove(path.c_str());
 }
 
-void DocumentInsertApiTest::SetUp(void)
-{
-}
+void DocumentInsertApiTest::SetUp(void) {}
 
-void DocumentInsertApiTest::TearDown(void)
-{
-}
-
+void DocumentInsertApiTest::TearDown(void) {}
 
 /**
   * @tc.name: DocumentInsertApiTest001
@@ -103,7 +98,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest001, TestSize.Level1)
      * @tc.steps:step1.Insert document into collection which dose not exist
      * @tc.expected:step1.GRD_INVALID_ARGS
     */
-    const char *document1 =  "{\"_id\" : \"1\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"1\", \"name\" : \"Ori\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, NO_EXIST_COLLECTION_NAME, document1, 0), GRD_INVALID_ARGS);
 }
 
@@ -120,34 +115,33 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest002, TestSize.Level1)
      * @tc.steps:step1.Insert a document whose _id is integer
      * @tc.expected:step1.GRD_INVALID_ARGS
     */
-    const char *document1 =  "{\"_id\" : 2, \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : 2, \"name\" : \"Ori\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_INVALID_ARGS);
     /**
      * @tc.steps:step2.Insert a document whose _id is bool
      * @tc.expected:step2.GRD_INVALID_ARGS
     */
-    const char *document2 =  "{\"_id\" : true, \"name\" : \"Chuan\"}";
+    const char *document2 = "{\"_id\" : true, \"name\" : \"Chuan\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document2, 0), GRD_INVALID_ARGS);
     /**
      * @tc.steps:step2.Insert a document whose _id is NULL
      * @tc.expected:step2.GRD_INVALID_ARGS
     */
-    const char *document3 =  "{\"_id\" : null, \"name\" : \"Chuan\"}";
+    const char *document3 = "{\"_id\" : null, \"name\" : \"Chuan\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document3, 0), GRD_INVALID_ARGS);
     /**
      * @tc.steps:step2.Insert a document whose _id is ARRAY
      * @tc.expected:step2.GRD_INVALID_ARGS
     */
-    const char *document4 =  "{\"_id\" : [\"2\"], \"name\" : \"Chuan\"}";
+    const char *document4 = "{\"_id\" : [\"2\"], \"name\" : \"Chuan\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document4, 0), GRD_INVALID_ARGS);
     /**
      * @tc.steps:step2.Insert a document whose _id is OBJECT
      * @tc.expected:step2.GRD_INVALID_ARGS
     */
-    const char *document5 =  "{\"_id\" : {\"val\" : \"2\"}, \"name\" : \"Chuan\"}";
+    const char *document5 = "{\"_id\" : {\"val\" : \"2\"}, \"name\" : \"Chuan\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document5, 0), GRD_INVALID_ARGS);
 }
-
 
 /**
   * @tc.name: DocumentInsertApiTest003
@@ -162,7 +156,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest003, TestSize.Level1)
      * @tc.steps:step1.Insert a document whose _id is string
      * @tc.expected:step1.GRD_OK
     */
-    const char *document1 =  "{\"_id\" : \"3\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"3\", \"name\" : \"Ori\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_OK);
 
     /**
@@ -186,7 +180,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest004, TestSize.Level1)
      * @tc.steps:step1.step1.parameter db is NULL
      * @tc.expected:step1.GRD_INVALID_ARGS
     */
-    const char *document1 =  "{\"_id\" : \"4\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"4\", \"name\" : \"Ori\"}";
     EXPECT_EQ(GRD_InsertDoc(NULL, RIGHT_COLLECTION_NAME, document1, 0), GRD_INVALID_ARGS);
 }
 
@@ -203,13 +197,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest005, TestSize.Level1)
      * @tc.steps:step1.Parameter collectionName is NULL
      * @tc.expected:step1.GRD_INVALID_ARGS
     */
-    const char *document1 =  "{\"_id\" : \"5\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"5\", \"name\" : \"Ori\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, NULL, document1, 0), GRD_INVALID_ARGS);
     /**
       * @tc.steps:step2.Parameter collectionName is empty string
       * @tc.expected:step2.GRD_INVALID_ARGS
     */
-    const char *document2 =  "{\"_id\" : \"5\", \"name\" : \"Chuang\"}";
+    const char *document2 = "{\"_id\" : \"5\", \"name\" : \"Chuang\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, "", document2, 0), GRD_INVALID_ARGS);
 }
 
@@ -226,7 +220,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest006, TestSize.Level1)
      * @tc.steps:step1.parameter flags is not zero
      * @tc.expected:step1.GRD_INVALID_ARGS
     */
-    const char *document1 =  "{\"_id\" : \"6\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"6\", \"name\" : \"Ori\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 1), GRD_INVALID_ARGS);
 }
 
@@ -243,7 +237,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest007, TestSize.Level1)
      * @tc.steps:step1.parameter flags is int_max
      * @tc.expected:step1.GRD_INVALID_ARGS
     */
-    const char *document1 =  "{\"_id\" : \"7\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"7\", \"name\" : \"Ori\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, INT_MAX), GRD_INVALID_ARGS);
 }
 
@@ -260,7 +254,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest008, TestSize.Level1)
      * @tc.steps:step1.parameter flags is int_min
      * @tc.expected:step1.GRD_INVALID_ARGS
     */
-    const char *document1 =  "{\"_id\" : \"8\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"8\", \"name\" : \"Ori\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, INT_MIN), GRD_INVALID_ARGS);
 }
 
@@ -282,9 +276,9 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest009, TestSize.Level1)
      * @tc.steps:step2.parameter collectionName is larger than max_collectionName_lens;
      * @tc.expected:step2.GRD_OVER_LIMIT
     */
-    const char *document1 =  "{\"_id\" : \"9\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"9\", \"name\" : \"Ori\"}";
     std::string collectionName2(MAX_COLLECTION_LENS + 1, 'a');
-    EXPECT_EQ(GRD_InsertDoc(g_db, collectionName2.c_str(),  document1, 0), GRD_OVER_LIMIT);
+    EXPECT_EQ(GRD_InsertDoc(g_db, collectionName2.c_str(), document1, 0), GRD_OVER_LIMIT);
 }
 
 /**
@@ -301,7 +295,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest010, TestSize.Level1)
      * @tc.expected:step1.GRD_OK
     */
     const char *collectionName = "collction@!#";
-    const char *document1 =  "{\"_id\" : \"10\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"10\", \"name\" : \"Ori\"}";
     TestInsertDocIntoCertainColl(collectionName, document1, GRD_OK);
 }
 
@@ -319,7 +313,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest011, TestSize.Level1)
      * @tc.expected:step1.GRD_OK
     */
     string collectionName(257, 'k');
-    const char *document1 =  "{\"_id\" : \"10\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"10\", \"name\" : \"Ori\"}";
     TestInsertDocIntoCertainColl(collectionName.c_str(), document1, GRD_OK);
 }
 
@@ -336,7 +330,8 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest014, TestSize.Level1)
      * @tc.steps:step1.document's JSON depth is larger than 4, which is 5.
      * @tc.expected:step1.GRD_INVALID_ARGS
     */
-    const char *document1 = "{\"level1\" : {\"level2\" : {\"level3\" : {\"level4\": {\"level5\" : 1}}, \"level3_2\" : \"level3_2_val\"\
+    const char *document1 =
+        "{\"level1\" : {\"level2\" : {\"level3\" : {\"level4\": {\"level5\" : 1}}, \"level3_2\" : \"level3_2_val\"\
                                   }},\"_id\":\"14\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_INVALID_ARGS);
     /**
@@ -351,7 +346,8 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest014, TestSize.Level1)
      * @tc.steps:step1.document's JSON depth is 4
      * @tc.expected:step1.GRD_OK
     */
-    const char *document3 = "{\"level1\" : {\"level2\" : {\"level3\" : { \"level4\" : \"level5_1val\"}, \"level3_2\" : \"level3_2_val\"\
+    const char *document3 =
+        "{\"level1\" : {\"level2\" : {\"level3\" : { \"level4\" : \"level5_1val\"}, \"level3_2\" : \"level3_2_val\"\
                                   }},\"_id\":\"14\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document3, 0), GRD_OK);
 }
@@ -396,7 +392,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest016, TestSize.Level1)
      * @tc.steps:step1.document JSON string contains irregular char.
      * @tc.expected:step1.GRD_OK
     */
-    const char *document1 =  "{\"_id\" : \"16\", \"name\" : \"!@#Ori\"}";
+    const char *document1 = "{\"_id\" : \"16\", \"name\" : \"!@#Ori\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_OK);
 }
 
@@ -448,7 +444,8 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest019, TestSize.Level1)
      * @tc.steps:step1.Insert a normal documents which _id is in the end of the string
      * @tc.expected:step1.GRD_OK.
     */
-    const char *document1 =  "{\"name\" : \"Jack\", \"age\" : 18, \"friend\" : {\"name\" : \" lucy\"}, \"_id\" : \"19\"}";
+    const char *document1 = "{\"name\" : \"Jack\", \"age\" : 18, \"friend\" : {\"name\" : \" lucy\"}, \"_id\" : "
+                            "\"19\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_OK);
 }
 
@@ -467,7 +464,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest022, TestSize.Level1)
     */
     string collectionName = string(256, 'k');
     string collectionName1(MAX_COLLECTION_LENS, 'a');
-    const char *document1 =  "{\"_id\" : \"22\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"22\", \"name\" : \"Ori\"}";
     TestInsertDocIntoCertainColl(collectionName.c_str(), document1, GRD_OK);
 }
 
@@ -487,7 +484,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest023, TestSize.Level1)
      * @tc.expected:step1.GRD_OK.
      */
     string collectionName = "Aads_sd__23Asb_";
-    const char *document1 =  "{\"_id\" : \"23\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"23\", \"name\" : \"Ori\"}";
     TestInsertDocIntoCertainColl(collectionName.c_str(), document1, GRD_OK);
 }
 
@@ -506,7 +503,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest024, TestSize.Level1)
      * @tc.expected:step1.GRD_INVALID_FORMAT.
      */
     string collectionName = "GRD_collectionName";
-    const char *document1 =  "{\"_id\" : \"24\", \"name\" : \"Ori\"}";
+    const char *document1 = "{\"_id\" : \"24\", \"name\" : \"Ori\"}";
     GRD_CreateCollection(g_db, collectionName.c_str(), "", 0);
     EXPECT_EQ(GRD_InsertDoc(g_db, collectionName.c_str(), document1, 0), GRD_INVALID_FORMAT);
 
@@ -515,7 +512,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest024, TestSize.Level1)
      * @tc.expected:step2.GRD_INVALID_FORMAT.
      */
     collectionName = "GM_SYS__collectionName";
-    const char *document2 =  "{\"_id\" : \"24_2\", \"name\" : \"Ori\"}";
+    const char *document2 = "{\"_id\" : \"24_2\", \"name\" : \"Ori\"}";
     GRD_CreateCollection(g_db, collectionName.c_str(), "", 0);
     EXPECT_EQ(GRD_InsertDoc(g_db, collectionName.c_str(), document2, 0), GRD_INVALID_FORMAT);
 
@@ -524,7 +521,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest024, TestSize.Level1)
      * @tc.expected:step3.GRD_INVALID_FORMAT.
      */
     collectionName = "grd_collectionName";
-    const char *document3 =  "{\"_id\" : \"24_3\", \"name\" : \"Ori\"}";
+    const char *document3 = "{\"_id\" : \"24_3\", \"name\" : \"Ori\"}";
     GRD_CreateCollection(g_db, collectionName.c_str(), "", 0);
     EXPECT_EQ(GRD_InsertDoc(g_db, collectionName.c_str(), document3, 0), GRD_INVALID_FORMAT);
 
@@ -533,7 +530,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest024, TestSize.Level1)
      * @tc.expected:step4.GRD_INVALID_FORMAT.
      */
     collectionName = "gm_sys_collectionName";
-    const char *document4 =  "{\"_id\" : \"24_4\", \"name\" : \"Ori\"}";
+    const char *document4 = "{\"_id\" : \"24_4\", \"name\" : \"Ori\"}";
     GRD_CreateCollection(g_db, collectionName.c_str(), "", 0);
     EXPECT_EQ(GRD_InsertDoc(g_db, collectionName.c_str(), document4, 0), GRD_INVALID_FORMAT);
 
@@ -542,7 +539,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest024, TestSize.Level1)
      * @tc.expected:step5.GRD_INVALID_FORMAT.
      */
     collectionName = "gM_sYs_collectionName";
-    const char *document5 =  "{\"_id\" : \"24_5\", \"name\" : \"Ori\"}";
+    const char *document5 = "{\"_id\" : \"24_5\", \"name\" : \"Ori\"}";
     GRD_CreateCollection(g_db, collectionName.c_str(), "", 0);
     EXPECT_EQ(GRD_InsertDoc(g_db, collectionName.c_str(), document5, 0), GRD_INVALID_FORMAT);
 
@@ -551,7 +548,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest024, TestSize.Level1)
      * @tc.expected:step6.GRD_INVALID_FORMAT.
      */
     collectionName = "gRd_collectionName";
-    const char *document6 =  "{\"_id\" : \"24_6\", \"name\" : \"Ori\"}";
+    const char *document6 = "{\"_id\" : \"24_6\", \"name\" : \"Ori\"}";
     GRD_CreateCollection(g_db, collectionName.c_str(), "", 0);
     EXPECT_EQ(GRD_InsertDoc(g_db, collectionName.c_str(), document6, 0), GRD_INVALID_FORMAT);
 
@@ -560,7 +557,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest024, TestSize.Level1)
      * @tc.expected:step7.GRD_INVALID_FORMAT.
      */
     collectionName = "gRd@collectionName";
-    const char *document7 =  "{\"_id\" : \"24_7\", \"name\" : \"Ori\"}";
+    const char *document7 = "{\"_id\" : \"24_7\", \"name\" : \"Ori\"}";
     GRD_CreateCollection(g_db, collectionName.c_str(), "", 0);
     EXPECT_EQ(GRD_InsertDoc(g_db, collectionName.c_str(), document7, 0), GRD_OK);
 }
@@ -585,21 +582,24 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest025, TestSize.Level1)
      * @tc.steps:step2.documents JSON depth is exactly 4.
      * @tc.expected:step2.GRD_OK.
      */
-    const char *document2 = "{\"_id\" : \"25_1\", \"class_name\" : \"计算机科学一班\", \"signed_info\" : true, \"student_info\" : [{\"name\":\"张三\", \
+    const char *document2 =
+        "{\"_id\" : \"25_1\", \"class_name\" : \"计算机科学一班\", \"signed_info\" : true, \"student_info\" : [{\"name\":\"张三\", \
       \"age\" : 18, \"sex\" : \"男\"}, { \"newName1\" : [\"qw\", \"dr\", 0, \"ab\"] }]}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document2, 0), GRD_OK);
     /**
      * @tc.steps:step3.documents JSON depth is exactly 4, but the last field in array contains leading number
      * @tc.expected:step3.GRD_INVALID_ARGS.
      */
-    const char *document3 = "{\"_id\" : \"25_2\", \"class_name\" : \"计算机科学一班\", \"signed_info\" : true, \"student_info\" : [{\"name\":\"张三\", \
+    const char *document3 =
+        "{\"_id\" : \"25_2\", \"class_name\" : \"计算机科学一班\", \"signed_info\" : true, \"student_info\" : [{\"name\":\"张三\", \
       \"age\" : 18, \"sex\" : \"男\"}, [\"qw\", \"dr\", 0, \"ab\", {\"0ab\" : null}]]}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document3, 0), GRD_INVALID_ARGS);
     /**
      * @tc.steps:step4.documents JSON depth is exactly 5.
      * @tc.expected:step4.GRD_INVALID_ARGS.
      */
-    const char *document4 = "{\"_id\" : \"25_3\", \"class_name\" : \"计算机科学一班\", \"signed_info\" : true, \"student_info\" : [{\"name\":\"张三\", \
+    const char *document4 =
+        "{\"_id\" : \"25_3\", \"class_name\" : \"计算机科学一班\", \"signed_info\" : true, \"student_info\" : [{\"name\":\"张三\", \
       \"age\" : 18, \"sex\" : \"男\"}, { \"newName1\" : [\"qw\", \"dr\", 0, \"ab\", {\"level5\" : 1}] }]}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document4, 0), GRD_INVALID_ARGS);
 }
@@ -617,14 +617,14 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest, TestSize.Level1)
      * @tc.steps:step1.Insert 100 normal documents continuously
      * @tc.expected:step1.GRD_OK.
      */
-    string document1 =  "{\"_id\" : ";
+    string document1 = "{\"_id\" : ";
     string document2 = "\"";
     string document4 = "\"";
     string document5 = ", \"name\" : \"Ori\"}";
     for (int i = 0; i < 5; i++) {
-      string document_midlle = "26" + std::to_string(i);
-      string document = document1 + document2 + document_midlle + document4 + document5;
-      EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document.c_str(), 0), GRD_OK);
+        string document_midlle = "26" + std::to_string(i);
+        string document = document1 + document2 + document_midlle + document4 + document5;
+        EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document.c_str(), 0), GRD_OK);
     }
 }
 
@@ -715,7 +715,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest038, TestSize.Level1)
      */
     const char *document5 = R"({"_id" : "38_4", "t1" : [1, 2, -1.79769313486231570E+308]})";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document5, 0), GRD_OK);
-     /**
+    /**
      * @tc.steps:step6.Insert document with maxium double value
      * @tc.expected:step6.GRD_INVALID_ARGS.
      */
@@ -736,7 +736,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest039, TestSize.Level1)
      * @tc.steps:step1.Insert a filter which _id value's lens is larger than MAX_ID_LENS.
      * @tc.expected:step1.GRD_OVER_LIMIT.
      */
-    string document1 =  "{\"_id\" : ";
+    string document1 = "{\"_id\" : ";
     string document2 = "\"";
     string document4 = "\"";
     string document5 = ", \"name\" : \"Ori\"}";

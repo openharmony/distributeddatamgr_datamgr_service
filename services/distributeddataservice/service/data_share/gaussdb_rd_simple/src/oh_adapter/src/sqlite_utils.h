@@ -23,7 +23,8 @@
 #include "sqlite3sym.h"
 
 namespace DocumentDB {
-enum class TransactType {
+enum class TransactType
+{
     DEFERRED,
     IMMEDIATE,
 };
@@ -47,8 +48,8 @@ public:
     static int RollbackTransaction(sqlite3 *db);
 
     static int ExecSql(sqlite3 *db, const std::string &sql);
-    static int ExecSql(sqlite3 *db, const std::string &sql, const std::function<int (sqlite3_stmt *)> &bindCallback,
-        const std::function<int (sqlite3_stmt *)> &resultCallback);
+    static int ExecSql(sqlite3 *db, const std::string &sql, const std::function<int(sqlite3_stmt *)> &bindCallback,
+        const std::function<int(sqlite3_stmt *)> &resultCallback);
 
 private:
     static void SqliteLogCallback(void *data, int err, const char *msg);

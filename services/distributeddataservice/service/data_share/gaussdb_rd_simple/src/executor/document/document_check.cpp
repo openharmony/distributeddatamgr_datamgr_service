@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "document_check.h"
+
 #include <algorithm>
 #include <climits>
 
-#include "document_check.h"
 #include "doc_errno.h"
 #include "log_print.h"
 #include "securec.h"
@@ -46,7 +47,7 @@ bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefi
     }
     return true;
 }
-}
+} // namespace
 
 bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName, int &errCode)
 {
@@ -65,14 +66,14 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::st
         return false;
     }
     lowerCaseName = collectionName;
-    std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), [](unsigned char c){
+    std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), [](unsigned char c) {
         return std::tolower(c);
     });
     return true;
 }
 
 int CheckCommon::CheckFilter(JsonObject &filterObj)
-{   
+{
     if (filterObj.GetDeep() > JSON_DEEP_MAX) {
         GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;

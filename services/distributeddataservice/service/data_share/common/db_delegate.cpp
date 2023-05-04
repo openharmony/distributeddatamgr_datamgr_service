@@ -14,11 +14,11 @@
  */
 #define LOG_TAG "DBAdaptor"
 #include "db_delegate.h"
-#include "rdb_delegate.h"
+
 #include "kv_delegate.h"
+#include "rdb_delegate.h"
 namespace OHOS::DataShare {
-std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int version, int &errCode,
-    bool registerFunction)
+std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int version, int &errCode, bool registerFunction)
 {
     return std::make_shared<RdbDelegate>(dir, version, errCode, registerFunction);
 }
@@ -31,7 +31,7 @@ std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(bool reInit, const std::
     static std::shared_ptr<KvDBDelegate> delegate = nullptr;
     static std::mutex mutex;
     std::lock_guard<decltype(mutex)> lock(mutex);
-    if(delegate == nullptr || reInit) {
+    if (delegate == nullptr || reInit) {
         delegate = std::make_shared<KvDelegate>(dir);
     }
     return delegate;

@@ -14,9 +14,10 @@
 */
 
 #include "grd_document/grd_document_api.h"
+
 #include "grd_base/grd_error.h"
-#include "grd_type_inner.h"
 #include "grd_resultset_inner.h"
+#include "grd_type_inner.h"
 #include "log_print.h"
 using namespace DocumentDB;
 
@@ -86,7 +87,7 @@ int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, un
     int ret = db->store_->DeleteDocument(collectionName, filter, flags);
     int errCode = TrasnferDocErr(ret);
     int deleteCount = 0;
-    switch (errCode) { 
+    switch (errCode) {
         case GRD_OK:
             deleteCount = 1;
             return deleteCount;
@@ -101,13 +102,13 @@ int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, un
 
 int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags, GRD_ResultSet **resultSet)
 {
-    if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || resultSet == nullptr || query.filter == nullptr
-        || query.projection == nullptr) {
+    if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || resultSet == nullptr ||
+        query.filter == nullptr || query.projection == nullptr) {
         return GRD_INVALID_ARGS;
     }
-    GRD_ResultSet *grdResultSet = new (std::nothrow)GRD_ResultSet();
+    GRD_ResultSet *grdResultSet = new (std::nothrow) GRD_ResultSet();
     if (grdResultSet == nullptr) {
-        GLOGE("Memory allocation failed!" );
+        GLOGE("Memory allocation failed!");
         return -E_FAILED_MEMORY_ALLOCATE;
     }
     int ret = db->store_->FindDocument(collectionName, query.filter, query.projection, flags, grdResultSet);
@@ -117,5 +118,5 @@ int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned in
         return TrasnferDocErr(ret);
     }
     *resultSet = grdResultSet;
-    return TrasnferDocErr(ret); 
+    return TrasnferDocErr(ret);
 }

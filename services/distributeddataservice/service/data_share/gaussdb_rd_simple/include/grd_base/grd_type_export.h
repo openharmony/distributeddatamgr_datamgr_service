@@ -21,7 +21,7 @@ extern "C" {
 #endif // __cplusplus
 
 #ifndef _WIN32
-    #define DOC_API __attribute__ ((visibility ("default")))
+#define DOC_API __attribute__((visibility("default")))
 #endif
 
 typedef struct GRD_DB GRD_DB;
@@ -29,16 +29,17 @@ typedef struct GRD_DB GRD_DB;
 /**
  * @brief Open database config
  */
-#define GRD_DB_OPEN_ONLY        0x00
-#define GRD_DB_OPEN_CREATE      0x01
-#define GRD_DB_OPEN_CHECK_FOR_ABNORMAL      0x02 //check data in database if close abnormally last time,
-                                                 //if data is corrupted, rebuild the database
-#define GRD_DB_OPEN_CHECK       0x04//check data in database when open database, if data is corrupted, rebuild the database.
+#define GRD_DB_OPEN_ONLY 0x00
+#define GRD_DB_OPEN_CREATE 0x01
+#define GRD_DB_OPEN_CHECK_FOR_ABNORMAL                           \
+    0x02 //check data in database if close abnormally last time, \
+         //if data is corrupted, rebuild the database
+#define GRD_DB_OPEN_CHECK 0x04 //check data in database when open database, if data is corrupted, rebuild the database.
 /**
  * @brief Close database config
  */
-#define GRD_DB_CLOSE                0x00
-#define GRD_DB_CLOSE_IGNORE_ERROR   0x01
+#define GRD_DB_CLOSE 0x00
+#define GRD_DB_CLOSE_IGNORE_ERROR 0x01
 
 /**
  * @brief flush database config
@@ -46,7 +47,7 @@ typedef struct GRD_DB GRD_DB;
 #define GRD_DB_FLUSH_ASYNC 0x00
 #define GRD_DB_FLUSH_SYNC 0x01
 
-#define GRD_DOC_ID_DISPLAY      0x01
+#define GRD_DOC_ID_DISPLAY 0x01
 typedef struct Query {
     const char *filter;
     const char *projection;

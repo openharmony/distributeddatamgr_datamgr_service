@@ -16,8 +16,8 @@
 #ifndef GRD_DOCUMENT_API_H
 #define GRD_DOCUMENT_API_H
 
-#include "grd_base/grd_type_export.h"
 #include "grd_base/grd_resultset_api.h"
+#include "grd_base/grd_type_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,14 +29,14 @@ DOC_API int GRD_DropCollection(GRD_DB *db, const char *collectionName, unsigned 
 
 DOC_API int GRD_InsertDoc(GRD_DB *db, const char *collectionName, const char *document, unsigned int flags);
 
-DOC_API int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned int flags,
-    GRD_ResultSet **resultSet);
+DOC_API int GRD_FindDoc(
+    GRD_DB *db, const char *collectionName, Query query, unsigned int flags, GRD_ResultSet **resultSet);
 
-DOC_API int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update,
-    unsigned int flags);
+DOC_API int GRD_UpdateDoc(
+    GRD_DB *db, const char *collectionName, const char *filter, const char *update, unsigned int flags);
 
-DOC_API int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document,
-    unsigned int flags);
+DOC_API int GRD_UpsertDoc(
+    GRD_DB *db, const char *collectionName, const char *filter, const char *document, unsigned int flags);
 
 DOC_API int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, unsigned int flags);
 

@@ -13,19 +13,14 @@
 * limitations under the License.
 */
 #include "result_set.h"
+
 #include "log_print.h"
 
 namespace DocumentDB {
 constexpr const char *KEY_ID = "_id";
 
-ResultSet::ResultSet()
-{
-
-}
-ResultSet::~ResultSet()
-{
-
-}
+ResultSet::ResultSet() {}
+ResultSet::~ResultSet() {}
 int ResultSet::EraseCollection()
 {
     if (store_ != nullptr) {
@@ -33,9 +28,10 @@ int ResultSet::EraseCollection()
     }
     return E_OK;
 }
-int ResultSet::Init(DocumentStore *store, const std::string collectionName, ValueObject &key, std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType)
+int ResultSet::Init(DocumentStore *store, const std::string collectionName, ValueObject &key,
+    std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType)
 {
-    store_ =  store;
+    store_ = store;
     collectionName_ = collectionName;
     key_ = key;
     projectionPath_ = path;
@@ -43,7 +39,7 @@ int ResultSet::Init(DocumentStore *store, const std::string collectionName, Valu
         GLOGE("Parse ProjectionTree failed");
         return -E_INVALID_ARGS;
     }
-    ifShowId_ =  ifShowId;
+    ifShowId_ = ifShowId;
     viewType_ = viewType;
     findValue_.reserve(1 + 1);
     return E_OK;
@@ -78,29 +74,31 @@ int ResultSet::GetNext()
     return E_OK;
 }
 
-int  ResultSet::GetValue(char **value)
+int ResultSet::GetValue(char **value)
 {
     if (findValue_.size() == 0) {
         GLOGE("The value vector in resultSet is empty");
         return -E_NO_DATA;
     }
-    auto jsonData =  findValue_.back();
+    auto jsonData = findValue_.back();
     char *jsonstr = new char[jsonData.size() + 1];
     if (jsonstr == nullptr) {
-        GLOGE("Memory allocation failed!" );
+        GLOGE("Memory allocation failed!");
         return -E_FAILED_MEMORY_ALLOCATE;
     }
     errno_t err = strcpy_s(jsonstr, jsonData.size() + 1, jsonData.c_str());
     if (err != 0) {
         GLOGE("strcpy_s failed");
         delete[] jsonstr;
-        return -E_NO_DATA;;
+        return -E_NO_DATA;
+        ;
     }
     *value = jsonstr;
     return E_OK;
 }
 
-int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &allCutPath)
+int ResultSet::CheckCutNode(
+    JsonObject *node, std::vector<std::string> singlePath, std::vector<std::vector<std::string>> &allCutPath)
 {
     if (node == nullptr) {
         GLOGE("No node to cut");

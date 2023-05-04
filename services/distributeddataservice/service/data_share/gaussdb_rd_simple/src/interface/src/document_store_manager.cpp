@@ -13,8 +13,9 @@
 * limitations under the License.
 */
 
-#include "db_config.h"
 #include "document_store_manager.h"
+
+#include "db_config.h"
 #include "doc_errno.h"
 #include "grd_base/grd_type_export.h"
 #include "kv_store_manager.h"
@@ -42,10 +43,10 @@ bool CheckDBCreate(unsigned int flags, const std::string &path)
     }
     return true;
 }
-}
+} // namespace
 
-int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::string &config, unsigned int flags,
-    DocumentStore *&store)
+int DocumentStoreManager::GetDocumentStore(
+    const std::string &path, const std::string &config, unsigned int flags, DocumentStore *&store)
 {
     std::string canonicalPath;
     std::string dbName;
@@ -80,7 +81,7 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
 
     store = new (std::nothrow) DocumentStore(executor);
     if (store == nullptr) {
-        GLOGE("Memory allocation failed!" );
+        GLOGE("Memory allocation failed!");
         return -E_FAILED_MEMORY_ALLOCATE;
     }
     if (store == nullptr) {
@@ -101,8 +102,8 @@ int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, unsigned int 
     return E_OK;
 }
 
-bool DocumentStoreManager::CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName,
-    int &errCode)
+bool DocumentStoreManager::CheckDBPath(
+    const std::string &path, std::string &canonicalPath, std::string &dbName, int &errCode)
 {
     if (path.empty()) {
         GLOGE("Invalid path empty");
@@ -139,4 +140,4 @@ bool DocumentStoreManager::CheckDBConfig(const std::string &config, int &errCode
 {
     return true;
 }
-} // DocumentDB
+} // namespace DocumentDB

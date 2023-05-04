@@ -14,22 +14,21 @@
 */
 
 #include "document_store.h"
+
 #include "collection_option.h"
-#include "document_check.h"
 #include "doc_errno.h"
+#include "document_check.h"
 #include "grd_base/grd_type_export.h"
+#include "grd_resultset_inner.h"
 #include "log_print.h"
 #include "result_set_common.h"
-#include "grd_resultset_inner.h"
 
 namespace DocumentDB {
 const int JSON_LENS_MAX = 512 * 1024;
 constexpr const char *KEY_ID = "_id";
 const bool caseIsSensitive = true;
 
-DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor)
-{
-}
+DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor) {}
 
 DocumentStore::~DocumentStore()
 {
@@ -158,10 +157,10 @@ bool CheckDocument(const std::string &updateStr, int &errCode)
 
     return true;
 }
-}
+} // namespace
 
-int DocumentStore::UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update,
-    int flags)
+int DocumentStore::UpdateDocument(
+    const std::string &collection, const std::string &filter, const std::string &update, int flags)
 {
     std::string lowerCaseCollName;
     int errCode = E_OK;
@@ -197,8 +196,8 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     return errCode;
 }
 
-int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document,
-    int flags)
+int DocumentStore::UpsertDocument(
+    const std::string &collection, const std::string &filter, const std::string &document, int flags)
 {
     std::string lowerCaseCollName;
     int errCode = E_OK;
@@ -311,12 +310,13 @@ KvStoreExecutor *DocumentStore::GetExecutor(int errCode)
 {
     return executor_;
 }
-int DocumentStore::FindDocument(const std::string &collection, const std::string &filter, const std::string &projection,
-    int flags,  GRD_ResultSet *grdResultSet)
+int DocumentStore::FindDocument(const std::string &collection, const std::string &filter,
+    const std::string &projection, int flags, GRD_ResultSet *grdResultSet)
 {
     if (flags != 0 && flags != GRD_DOC_ID_DISPLAY) {
         GLOGE("FindDocument flag is illegal");
-        return -E_INVALID_ARGS;;
+        return -E_INVALID_ARGS;
+        ;
     }
     std::string lowerCaseCollName;
     int errCode = E_OK;
@@ -385,7 +385,8 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     return ret;
 }
 
-int DocumentStore::EraseCollection(const std::string collectionName) {
+int DocumentStore::EraseCollection(const std::string collectionName)
+{
     if (collections_.find(collectionName) != collections_.end()) {
         collections_.erase(collectionName);
         return E_OK;
@@ -394,54 +395,52 @@ int DocumentStore::EraseCollection(const std::string collectionName) {
     return E_OK;
 }
 
-int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType) {
+int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType)
+{
     auto leafValue = JsonCommon::GetLeafValue(jsonObj);
     if (leafValue.size() == 0) {
         return E_INVALID_ARGS;
     }
     for (size_t i = 0; i < leafValue.size(); i++) {
         switch (leafValue[i].GetValueType()) {
-        case ValueObject::ValueType::VALUE_BOOL:
-            if (leafValue[i].GetBoolValue()) {
-                if (i != 0 && !viewType) {
+            case ValueObject::ValueType::VALUE_BOOL:
+                if (leafValue[i].GetBoolValue()) {
+                    if (i != 0 && !viewType) {
+                        return -E_INVALID_ARGS;
+                    }
+                    viewType = true;
+                } else {
+                    if (i != 0 && viewType) {
+                        return E_INVALID_ARGS;
+                    }
+                    viewType = false;
+                }
+                break;
+            case ValueObject::ValueType::VALUE_STRING:
+                if (leafValue[i].GetStringValue() == "") {
+                    if (i != 0 && !viewType) {
+                        return -E_INVALID_ARGS;
+                    }
+                    viewType = true;
+                } else {
                     return -E_INVALID_ARGS;
                 }
-                viewType = true;
-            }
-            else {
-                if (i != 0 && viewType) {
-                    return E_INVALID_ARGS;
+                break;
+            case ValueObject::ValueType::VALUE_NUMBER:
+                if (leafValue[i].GetIntValue() == 0) {
+                    if (i != 0 && viewType) {
+                        return -E_INVALID_ARGS;
+                    }
+                    viewType = false;
+                } else {
+                    if (i != 0 && !viewType) {
+                        return E_INVALID_ARGS;
+                    }
+                    viewType = true;
                 }
-                viewType = false;
-            }
-            break;
-        case ValueObject::ValueType::VALUE_STRING:
-            if (leafValue[i].GetStringValue() == "") {
-                if (i != 0 && !viewType) {
-                    return -E_INVALID_ARGS;
-                }
-                viewType = true;
-            }
-            else {
-                return -E_INVALID_ARGS;
-            }
-            break;
-        case ValueObject::ValueType::VALUE_NUMBER:
-            if (leafValue[i].GetIntValue() == 0) {
-                if (i != 0 && viewType) {
-                    return -E_INVALID_ARGS;
-                }
-                viewType = false;
-            }
-            else {
-                if (i != 0 && !viewType) {
-                    return E_INVALID_ARGS;
-                }
-                viewType = true;
-            }
-            break;
-        default:
-            return E_INVALID_ARGS;
+                break;
+            default:
+                return E_INVALID_ARGS;
         }
     }
     return E_OK;

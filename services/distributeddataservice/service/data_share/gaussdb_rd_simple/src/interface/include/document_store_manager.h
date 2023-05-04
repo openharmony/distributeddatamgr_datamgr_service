@@ -17,13 +17,14 @@
 #define DOCUMENT_STORE_MANAGER_H
 
 #include <string>
+
 #include "document_store.h"
 
 namespace DocumentDB {
 class DocumentStoreManager {
 public:
-    static int GetDocumentStore(const std::string &path, const std::string &config, unsigned int flags,
-        DocumentStore *&store);
+    static int GetDocumentStore(
+        const std::string &path, const std::string &config, unsigned int flags, DocumentStore *&store);
 
     static int CloseDocumentStore(DocumentStore *store, unsigned int flags);
 
@@ -31,5 +32,5 @@ private:
     static bool CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName, int &errCode);
     static bool CheckDBConfig(const std::string &config, int &errCode);
 };
-} // DocumentDB
+} // namespace DocumentDB
 #endif // DOCUMENT_STORE_MANAGER_H

@@ -23,7 +23,8 @@ constexpr const char *LOG_TAG_DOC = "DocumentDB";
 
 class Logger {
 public:
-    enum class Level {
+    enum class Level
+    {
         LEVEL_DEBUG,
         LEVEL_INFO,
         LEVEL_WARN,

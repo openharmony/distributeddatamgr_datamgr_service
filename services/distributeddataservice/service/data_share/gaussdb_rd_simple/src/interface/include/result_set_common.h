@@ -17,15 +17,15 @@
 #define RESULTSET_COMMON_H
 
 #include <string>
-#include "grd_base/grd_type_export.h"
-#include "vector"
+
 #include "doc_errno.h"
+#include "grd_base/grd_type_export.h"
 #include "result_set.h"
+#include "vector"
 
 namespace DocumentDB {
 class ValueObject;
-int InitResultSet(DocumentStore *store, const std::string collectionName, ValueObject &key, std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType,
-    ResultSet &resultSet);
-} // DocumentDB
+int InitResultSet(DocumentStore *store, const std::string collectionName, ValueObject &key,
+    std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, ResultSet &resultSet);
+} // namespace DocumentDB
 #endif //RESULTSET_COMMON_H
-

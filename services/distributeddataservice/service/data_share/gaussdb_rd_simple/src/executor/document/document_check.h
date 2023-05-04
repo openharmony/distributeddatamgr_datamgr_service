@@ -18,12 +18,12 @@
 
 #include <cstdint>
 #include <vector>
+
 #include "json_common.h"
 
 namespace DocumentDB {
 class JsonCommon;
-class CheckCommon
-{
+class CheckCommon {
 public:
     CheckCommon() = default;
     ~CheckCommon() = default;
@@ -38,5 +38,5 @@ using Key = std::vector<uint8_t>;
 using Value = std::vector<uint8_t>;
 
 constexpr const char *COLL_PREFIX = "GRD_COLL_";
-} // DocumentDB
+} // namespace DocumentDB
 #endif // DOCUMENT_CHECK_H

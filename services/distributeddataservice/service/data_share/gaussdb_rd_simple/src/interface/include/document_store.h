@@ -16,12 +16,12 @@
 #ifndef DOCUMENT_STORE_H
 #define DOCUMENT_STORE_H
 
-#include <string>
 #include <map>
 #include <mutex>
+#include <string>
 
-#include "kv_store_executor.h"
 #include "collection.h"
+#include "kv_store_executor.h"
 
 struct GRD_ResultSet;
 namespace DocumentDB {
@@ -34,17 +34,20 @@ public:
     int DropCollection(const std::string &name, int flags);
 
     int UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update, int flags);
-    int UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document, int flags);
+    int UpsertDocument(
+        const std::string &collection, const std::string &filter, const std::string &document, int flags);
     int InsertDocument(const std::string &collection, const std::string &document, int flag);
     int DeleteDocument(const std::string &collection, const std::string &filter, int flag);
-    int FindDocument(const std::string &collection, const std::string &filter, const std::string &projection, int flags,  GRD_ResultSet *grdResultSet);
+    int FindDocument(const std::string &collection, const std::string &filter, const std::string &projection,
+        int flags, GRD_ResultSet *grdResultSet);
     KvStoreExecutor *GetExecutor(int errCode);
     int EraseCollection(const std::string collectionName);
+
 private:
     int GetViewType(JsonObject &jsonObj, bool &viewType);
     std::mutex dbMutex_;
     KvStoreExecutor *executor_ = nullptr;
-    std::map<std::string, Collection*> collections_;
+    std::map<std::string, Collection *> collections_;
 };
-} // DocumentDB
+} // namespace DocumentDB
 #endif // DOCUMENT_STORE_H

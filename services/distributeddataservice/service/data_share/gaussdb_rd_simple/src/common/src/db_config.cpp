@@ -20,8 +20,8 @@
 
 #include "doc_errno.h"
 #include "doc_limit.h"
-#include "log_print.h"
 #include "json_object.h"
+#include "log_print.h"
 
 namespace DocumentDB {
 namespace {
@@ -39,18 +39,12 @@ const std::string DB_CONFIG_MAX_CONN_NUM = "maxconnnum";
 const std::string DB_CONFIG_BUFFER_POOL_SIZE = "bufferpoolsize";
 const std::string DB_CONFIG_CRC_CHECK_ENABLE = "crccheckenable";
 
-const std::vector<std::string> DB_CONFIG = {
-    DB_CONFIG_PAGESIZE,
-    DB_CONFIG_REDO_FLUSH_BY_TRX,
-    DB_CONFIG_REDO_PUB_BUFF_SIZE,
-    DB_CONFIG_MAX_CONN_NUM,
-    DB_CONFIG_BUFFER_POOL_SIZE,
-    DB_CONFIG_CRC_CHECK_ENABLE
-};
+const std::vector<std::string> DB_CONFIG = { DB_CONFIG_PAGESIZE, DB_CONFIG_REDO_FLUSH_BY_TRX,
+    DB_CONFIG_REDO_PUB_BUFF_SIZE, DB_CONFIG_MAX_CONN_NUM, DB_CONFIG_BUFFER_POOL_SIZE, DB_CONFIG_CRC_CHECK_ENABLE };
 
 bool CheckPageSizeConfig(const JsonObject &config, int32_t &pageSize, int &errCode)
 {
-    static const JsonFieldPath pageSizeField = {DB_CONFIG_PAGESIZE};
+    static const JsonFieldPath pageSizeField = { DB_CONFIG_PAGESIZE };
     if (!config.IsFieldExists(pageSizeField)) {
         return true;
     }
@@ -62,7 +56,7 @@ bool CheckPageSizeConfig(const JsonObject &config, int32_t &pageSize, int &errCo
         return false;
     }
 
-    static const std::vector<int32_t> pageSizeValid = {4, 8, 16, 32, 64};
+    static const std::vector<int32_t> pageSizeValid = { 4, 8, 16, 32, 64 };
     if (std::find(pageSizeValid.begin(), pageSizeValid.end(), configValue.GetIntValue()) == pageSizeValid.end()) {
         GLOGE("Check DB config failed, invalid pageSize value.");
         errCode = -E_INVALID_CONFIG_VALUE;
@@ -75,7 +69,7 @@ bool CheckPageSizeConfig(const JsonObject &config, int32_t &pageSize, int &errCo
 
 bool CheckRedoFlushConfig(const JsonObject &config, uint32_t &redoFlush, int &errCode)
 {
-    static const JsonFieldPath redoFlushField = {DB_CONFIG_REDO_FLUSH_BY_TRX};
+    static const JsonFieldPath redoFlushField = { DB_CONFIG_REDO_FLUSH_BY_TRX };
     if (!config.IsFieldExists(redoFlushField)) {
         return true;
     }
@@ -99,7 +93,7 @@ bool CheckRedoFlushConfig(const JsonObject &config, uint32_t &redoFlush, int &er
 
 bool CheckRedoBufSizeConfig(const JsonObject &config, uint32_t &redoBufSize, int &errCode)
 {
-    static const JsonFieldPath redoBufSizeField = {DB_CONFIG_REDO_PUB_BUFF_SIZE};
+    static const JsonFieldPath redoBufSizeField = { DB_CONFIG_REDO_PUB_BUFF_SIZE };
     if (!config.IsFieldExists(redoBufSizeField)) {
         return true;
     }
@@ -123,7 +117,7 @@ bool CheckRedoBufSizeConfig(const JsonObject &config, uint32_t &redoBufSize, int
 
 bool CheckMaxConnNumConfig(const JsonObject &config, int32_t &maxConnNum, int &errCode)
 {
-    static const JsonFieldPath maxConnNumField = {DB_CONFIG_MAX_CONN_NUM};
+    static const JsonFieldPath maxConnNumField = { DB_CONFIG_MAX_CONN_NUM };
     if (!config.IsFieldExists(maxConnNumField)) {
         return true;
     }
@@ -145,10 +139,9 @@ bool CheckMaxConnNumConfig(const JsonObject &config, int32_t &maxConnNum, int &e
     return true;
 }
 
-bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint32_t &redoBufSize,
-    int &errCode)
+bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint32_t &redoBufSize, int &errCode)
 {
-    static const JsonFieldPath bufferPoolSizeField = {DB_CONFIG_BUFFER_POOL_SIZE};
+    static const JsonFieldPath bufferPoolSizeField = { DB_CONFIG_BUFFER_POOL_SIZE };
     if (!config.IsFieldExists(bufferPoolSizeField)) {
         return true;
     }
@@ -173,7 +166,7 @@ bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint3
 
 bool CheckCrcCheckEnableConfig(const JsonObject &config, uint32_t &crcCheckEnable, int &errCode)
 {
-    static const JsonFieldPath crcCheckEnableField = {DB_CONFIG_CRC_CHECK_ENABLE};
+    static const JsonFieldPath crcCheckEnableField = { DB_CONFIG_CRC_CHECK_ENABLE };
     if (!config.IsFieldExists(crcCheckEnableField)) {
         return true;
     }
@@ -209,7 +202,7 @@ bool CheckConfigSupport(const JsonObject &config, int &errCode)
     }
     return true;
 }
-}
+} // namespace
 
 DBConfig DBConfig::ReadConfig(const std::string &confStr, int &errCode)
 {
@@ -288,9 +281,9 @@ int32_t DBConfig::GetPageSize() const
 bool DBConfig::operator==(const DBConfig &targetConfig) const
 {
     return configStr_ == targetConfig.configStr_ && pageSize_ == targetConfig.pageSize_ &&
-        redoFlushByTrx_ == targetConfig.redoFlushByTrx_ && redoPubBufSize_ == targetConfig.redoPubBufSize_ &&
-        maxConnNum_ == targetConfig.maxConnNum_ && bufferPoolSize_ == targetConfig.bufferPoolSize_ &&
-        crcCheckEnable_ == targetConfig.crcCheckEnable_;
+           redoFlushByTrx_ == targetConfig.redoFlushByTrx_ && redoPubBufSize_ == targetConfig.redoPubBufSize_ &&
+           maxConnNum_ == targetConfig.maxConnNum_ && bufferPoolSize_ == targetConfig.bufferPoolSize_ &&
+           crcCheckEnable_ == targetConfig.crcCheckEnable_;
 }
 
 bool DBConfig::operator!=(const DBConfig &targetConfig) const

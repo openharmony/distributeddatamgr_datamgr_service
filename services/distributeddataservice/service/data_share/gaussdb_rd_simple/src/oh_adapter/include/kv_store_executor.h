@@ -17,6 +17,7 @@
 #define KV_STORE_EXECUTOR_H
 
 #include <string>
+
 #include "document_check.h"
 
 namespace DocumentDB {
@@ -36,5 +37,5 @@ public:
     virtual int SetCollectionOption(const std::string &name, const std::string &option) = 0;
     virtual int CleanCollectionOption(const std::string &name) = 0;
 };
-} // DocumentDB
+} // namespace DocumentDB
 #endif // KV_STORE_EXECUTOR_H

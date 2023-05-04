@@ -1,17 +1,16 @@
-#include <iostream>
 #include "projection_tree.h"
 
+#include <iostream>
 
 namespace DocumentDB {
 const int JSON_DEEP_MAX = 4;
 
-ProjectionTree::ProjectionTree() {
-}
+ProjectionTree::ProjectionTree() {}
 
-ProjectionTree::~ProjectionTree() {
-}
+ProjectionTree::~ProjectionTree() {}
 
-int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path) {
+int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path)
+{
     ProjectionNode *node = &node_;
     if (node == NULL) {
         return E_OK;
@@ -27,11 +26,10 @@ int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path) {
                 if (j == path[i].size() - 1 && !node->isDeepest) {
                     return -E_INVALID_ARGS;
                 }
-            }
-            else {
+            } else {
                 auto tempNode = new (std::nothrow) ProjectionNode;
                 if (tempNode == nullptr) {
-                    GLOGE("Memory allocation failed!" );
+                    GLOGE("Memory allocation failed!");
                     return -E_FAILED_MEMORY_ALLOCATE;
                 }
                 tempNode->Deep = node->Deep + 1;
@@ -48,7 +46,8 @@ int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path) {
     return E_OK;
 }
 
-bool ProjectionTree::SearchTree(std::vector<std::string> &singlePath, int &index) {
+bool ProjectionTree::SearchTree(std::vector<std::string> &singlePath, int &index)
+{
     ProjectionNode *node = &node_;
     for (int i = 0; i < singlePath.size(); i++) {
         if (node->isDeepest) {
@@ -56,15 +55,15 @@ bool ProjectionTree::SearchTree(std::vector<std::string> &singlePath, int &index
         }
         if (node->SonNode[singlePath[i]] != nullptr) {
             node = node->SonNode[singlePath[i]];
-        }
-        else {
+        } else {
             return false;
         }
     }
     return true;
 }
 
-int ProjectionNode::DeleteProjectionNode() {
+int ProjectionNode::DeleteProjectionNode()
+{
     for (auto item : SonNode) {
         if (item.second != nullptr) {
             delete item.second;

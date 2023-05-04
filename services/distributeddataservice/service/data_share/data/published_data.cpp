@@ -81,7 +81,7 @@ bool PublishedDataNode::Marshal(DistributedData::Serializable::json &node) const
         ret = ret && SetValue(node["type"], PublishedDataType::STRING);
         ret = ret && SetValue(node["value"], valueStr);
     } else {
-        sptr<Ashmem> ashmem =  std::get<sptr<Ashmem>>(value);
+        sptr<Ashmem> ashmem = std::get<sptr<Ashmem>>(value);
         if (ashmem == nullptr) {
             ZLOGE("get ashmem null");
             return false;
@@ -108,7 +108,7 @@ bool PublishedDataNode::Unmarshal(const DistributedData::Serializable::json &nod
     int32_t type = 0;
     ret = ret && GetValue(node, "type", type);
     if (!ret) {
-        ZLOGE("Unmarshal PublishedDataNode failed, %{public}s", key.c_str());
+        ZLOGE("Unmarshal PublishedDataNode failed, %{private}s", key.c_str());
         return false;
     }
     if (type == PublishedDataType::STRING) {
@@ -124,7 +124,7 @@ bool PublishedDataNode::Unmarshal(const DistributedData::Serializable::json &nod
             return false;
         }
 
-        bool ret = ashmem->MapReadAndWriteAshmem();
+        ret = ashmem->MapReadAndWriteAshmem();
         if (!ret) {
             ZLOGE("SharedBlock: MapReadAndWriteAshmem function error.");
             ashmem->CloseAshmem();
@@ -153,8 +153,7 @@ std::string PublishedData::GetFullProjection()
     projection["version"] = 1;
     return projection.dump();
 }
-int32_t PublishedData::Query(
-    const std::string &filter, std::variant<sptr<Ashmem>, std::string> &publishedData)
+int32_t PublishedData::Query(const std::string &filter, std::variant<sptr<Ashmem>, std::string> &publishedData)
 {
     auto delegate = KvDBDelegate::GetInstance();
     if (delegate == nullptr) {
@@ -162,14 +161,13 @@ int32_t PublishedData::Query(
         return E_ERROR;
     }
     std::string queryResult;
-    int32_t status =
-        delegate->Get(KvDBDelegate::DATA_TABLE, filter, "{}", queryResult);
+    int32_t status = delegate->Get(KvDBDelegate::DATA_TABLE, filter, "{}", queryResult);
     if (status != E_OK) {
         ZLOGE("db Get failed, %{public}s %{public}d", filter.c_str(), status);
         return status;
     }
     PublishedData data;
-    if(!data.Unmarshall(queryResult)) {
+    if (!data.Unmarshall(queryResult)) {
         ZLOGE("Unmarshall failed, %{private}s", queryResult.c_str());
         return E_ERROR;
     }
