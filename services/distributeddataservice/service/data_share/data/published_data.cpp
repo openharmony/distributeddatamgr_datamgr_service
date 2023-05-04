@@ -54,8 +54,7 @@ std::vector<PublishedData> PublishedData::Query(const std::string &bundleName)
     std::vector<std::string> queryResults;
     json filter;
     filter["bundleName"] = bundleName;
-    int32_t status =
-        delegate->GetBatch(KvDBDelegate::DATA_TABLE, filter.dump(), PublishedData::GetFullProjection(), queryResults);
+    int32_t status = delegate->GetBatch(KvDBDelegate::DATA_TABLE, filter.dump(), "{}", queryResults);
     if (status != E_OK) {
         ZLOGE("db Upsert failed, %{public}s %{public}d", bundleName.c_str(), status);
         return std::vector<PublishedData>();
