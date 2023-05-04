@@ -27,7 +27,8 @@ public:
         EVT_INVALID,
         EVT_INITED,
         EVT_UPDATE,
-        EVT_CUSTOM = 0x1000
+        EVT_CUSTOM = 0x1000,
+        EVT_CLOUD = 0x2000
     };
     API_EXPORT Event(int32_t evtId);
     API_EXPORT Event(Event &&) noexcept = delete;

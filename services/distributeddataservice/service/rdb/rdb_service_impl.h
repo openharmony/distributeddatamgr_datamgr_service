@@ -41,7 +41,7 @@ public:
     /* IPC interface */
     std::string ObtainDistributedTableName(const std::string& device, const std::string& table) override;
 
-    int32_t InitNotifier(const RdbSyncerParam& param, const sptr<IRemoteObject> notifier) override;
+    int32_t InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> notifier) override;
 
     int32_t SetDistributedTables(const RdbSyncerParam& param, const std::vector<std::string>& tables) override;
 
@@ -55,6 +55,10 @@ public:
     int32_t DestroyRDBTable(const RdbSyncerParam &param) override;
 
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
+
+    int32_t OnInitialize() override;
+
+    int32_t GetSchema(const RdbSyncerParam &param) override;
 
 protected:
     int32_t DoSync(const RdbSyncerParam& param, const SyncOption& option,
@@ -70,13 +74,17 @@ protected:
 private:
     std::string GenIdentifier(const RdbSyncerParam& param);
 
-    bool CheckAccess(const RdbSyncerParam& param);
+    bool CheckAccess(const std::string& bundleName, const std::string& storeName);
 
     void SyncerTimeout(std::shared_ptr<RdbSyncer> syncer);
 
     std::shared_ptr<RdbSyncer> GetRdbSyncer(const RdbSyncerParam& param);
 
     void OnAsyncComplete(pid_t pid, uint32_t seqNum, const SyncResult& result);
+
+    StoreMetaData GetStoreMetaData(const RdbSyncerParam& param);
+
+    int32_t GetInstIndex(uint32_t tokenId, const std::string &appId, const std::string &storeName);
 
     class DeathRecipientImpl : public IRemoteObject::DeathRecipient {
     public:

@@ -21,6 +21,7 @@ config("module_public_config") {
   include_dirs = [
     "backup/include",
     "bootstrap/include",
+    "cloud",
     "config/include",
     "crypto/include",
     "datashare",
@@ -51,12 +52,15 @@ config("module_public_config") {
 ohos_shared_library("distributeddatasvc") {
   include_dirs = [
     "../../../../data_object/frameworks/innerkitsimpl/include",
+    "../../../../relational_store/interfaces/inner_api/cloud_data/include",
     "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/distributeddb",
   ]
   sources = [
     "backup/src/backup_manager.cpp",
     "bootstrap/src/bootstrap.cpp",
+    "cloud/cloud_service_impl.cpp",
+    "cloud/cloud_service_stub.cpp",
+    "cloud/cloud_syncer.cpp",
     "config/src/config_factory.cpp",
     "config/src/model/backup_config.cpp",
     "config/src/model/checker_config.cpp",
@@ -94,6 +98,7 @@ ohos_shared_library("distributeddatasvc") {
     "object/object_service_impl.cpp",
     "object/object_service_stub.cpp",
     "permission/src/permit_delegate.cpp",
+    "rdb/rdb_general_store.cpp",
     "rdb/rdb_notifier_proxy.cpp",
     "rdb/rdb_result_set_impl.cpp",
     "rdb/rdb_result_set_stub.cpp",
@@ -129,6 +134,7 @@ ohos_shared_library("distributeddatasvc") {
     "hiviewdfx_hilog_native:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "relational_store:cloud_data",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
     "resource_management:global_resmgr",

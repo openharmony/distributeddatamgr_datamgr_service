@@ -23,6 +23,7 @@ public:
         std::string bundleName = "";
         std::string appId = "";
         uint64_t version = 0;
+        int32_t instanceId = 0;
         bool cloudSwitch = false;
 
         bool Marshal(json &node) const override;

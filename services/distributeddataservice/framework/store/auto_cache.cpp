@@ -79,6 +79,24 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
     return store;
 }
 
+int32_t AutoCache::CreateTable(const StoreMetaData &storeMetaData, const SchemaMeta &schemaMeta)
+{
+    stores_.Compute(storeMetaData.tokenId,
+        [this, &storeMetaData, &schemaMeta](auto &, std::map<std::string, Delegate> &stores) -> bool {
+            auto it = stores.find(storeMetaData.storeId);
+            if (it != stores.end()) {
+                //it->second->CreateTable(schemaMeta)
+                return true;
+            }
+            auto *dbStore = creators_[storeMetaData.storeType](storeMetaData);
+            if (dbStore != nullptr) {
+                //dbStore->CreateTable(schemaMeta)
+            }
+            return false;
+        });
+    return 0;
+}
+
 void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
 {
     stores_.ComputeIfPresent(tokenId, [&storeId](auto &key, std::map<std::string, Delegate> &delegates) {

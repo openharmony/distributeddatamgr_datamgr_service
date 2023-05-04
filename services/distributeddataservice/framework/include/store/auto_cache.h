@@ -27,6 +27,7 @@
 #include "store/general_watcher.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
+class SchemaMeta;
 class AutoCache {
 public:
     using Error = GeneralError;
@@ -44,7 +45,9 @@ public:
     API_EXPORT void Bind(std::shared_ptr<Executor> executor);
 
     API_EXPORT Store GetStore(const StoreMetaData &meta, const Watchers &watchers);
-
+	
+    API_EXPORT int32_t CreateTable(const StoreMetaData &storeMetaData, const SchemaMeta &schemaMeta);
+	
     API_EXPORT void CloseStore(uint32_t tokenId, const std::string &storeId);
 
     API_EXPORT void CloseExcept(const std::set<int32_t> &users);

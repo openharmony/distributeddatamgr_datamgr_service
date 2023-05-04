@@ -44,6 +44,7 @@ bool CloudInfo::AppInfo::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(bundleName)], bundleName);
     SetValue(node[GET_NAME(appId)], appId);
     SetValue(node[GET_NAME(version)], version);
+    SetValue(node[GET_NAME(instanceId)], instanceId);
     SetValue(node[GET_NAME(cloudSwitch)], cloudSwitch);
     return true;
 }
@@ -53,6 +54,7 @@ bool CloudInfo::AppInfo::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(appId), appId);
     GetValue(node, GET_NAME(version), version);
+    GetValue(node, GET_NAME(instanceId), instanceId);
     GetValue(node, GET_NAME(cloudSwitch), cloudSwitch);
     return true;
 }
