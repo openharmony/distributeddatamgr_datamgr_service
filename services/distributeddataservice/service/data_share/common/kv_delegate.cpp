@@ -39,10 +39,6 @@ bool KvDelegate::Init()
     return true;
 }
 
-KvDelegate::~KvDelegate()
-{
-}
-
 int32_t KvDelegate::Upsert(const std::string &collectionName, const KvData &value)
 {
     std::string id = DistributedData::Serializable::Marshall(*value.GetId());

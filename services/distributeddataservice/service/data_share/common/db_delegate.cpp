@@ -48,24 +48,24 @@ bool KvData::Marshal(DistributedData::Serializable::json &node) const
 
 bool Id::Marshal(DistributedData::Serializable::json &node) const
 {
-    return SetValue(node["_id"], id_);
+    return SetValue(node["_id"], id);
 }
 
 bool Id::Unmarshal(const DistributedData::Serializable::json &node)
 {
-    return GetValue(node, "_id", id_);
+    return GetValue(node, "_id", id);
 }
 
-Id::Id(const std::string &id) : id_(id) {}
+Id::Id(const std::string &id) : id(id) {}
 
-VersionData::VersionData(int version) : version_(version) {}
+VersionData::VersionData(int version) : version(version) {}
 
 bool VersionData::Unmarshal(const DistributedData::Serializable::json &node)
 {
-    return GetValue(node, "version", version_);
+    return GetValue(node, "version", version);
 }
 bool VersionData::Marshal(DistributedData::Serializable::json &node) const
 {
-    return SetValue(node["version"], version_);
+    return SetValue(node["version"], version);
 }
 } // namespace OHOS::DataShare

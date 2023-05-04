@@ -42,33 +42,33 @@ public:
 };
 
 struct RdbStoreContext {
-    RdbStoreContext(const std::string &dir, int version) : dir_(dir), version_(version) {}
-    std::string dir_;
-    int version_;
+    RdbStoreContext(const std::string &dir, int version) : dir(dir), version(version) {}
+    std::string dir;
+    int version;
 };
 
 struct Id final: public DistributedData::Serializable {
-    Id(const std::string &id);
+    explicit Id(const std::string &id);
     ~Id() = default;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 
 private:
-    std::string id_;
+    std::string id;
 };
 
 class VersionData : public DistributedData::Serializable {
 public:
-    VersionData(int version);
+    explicit VersionData(int version);
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     operator int()
     {
-        return version_;
+        return version;
     };
 
 private:
-    int version_;
+    int version;
 };
 
 struct KvData : public DistributedData::Serializable {

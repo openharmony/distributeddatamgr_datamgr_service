@@ -31,11 +31,12 @@ public:
     static bool GetBundleNameFromProxyURI(const std::string &uri, std::string &bundleName);
     static bool GetUserIdFromProxyURI(const std::string &uri, int32_t &user);
     static bool IsDataProxyURI(const std::string &uri);
-    const static std::string DATA_SHARE_SCHEMA;
-    const static std::string DATA_PROXY_SCHEMA;
+    static const std::string DATA_SHARE_SCHEMA;
+    static const std::string DATA_PROXY_SCHEMA;
 
 private:
-    enum PATH_PARAM : int32_t {        BUNDLE_NAME = 0,
+    enum PATH_PARAM : int32_t {
+        BUNDLE_NAME = 0,
         MODULE_NAME,
         STORE_NAME,
         TABLE_NAME,

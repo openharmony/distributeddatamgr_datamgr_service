@@ -165,6 +165,7 @@ int32_t DataShareServiceStub::OnRemoteGetData(MessageParcel &data, MessageParcel
         ZLOGW("read device list failed.");
         return -1;
     }
+    ZLOGE("hanlu bundleName %{public}s", bundleName.c_str());
     auto results = GetData(bundleName);
     if (!ITypesUtil::Marshal(reply, results.datas_)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");

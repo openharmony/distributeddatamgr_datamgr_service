@@ -32,9 +32,9 @@ struct Key {
     bool operator>(const Key &rhs) const;
     bool operator<=(const Key &rhs) const;
     bool operator>=(const Key &rhs) const;
-    const std::string uri_;
-    const int64_t subscriberId_;
-    const std::string bundleName_;
+    const std::string uri;
+    const int64_t subscriberId;
+    const std::string bundleName;
 };
 class TemplateManager {
 public:
@@ -83,9 +83,9 @@ struct PublishedDataKey {
     bool operator>=(const PublishedDataKey &rhs) const;
     bool operator==(const PublishedDataKey &rhs) const;
     bool operator!=(const PublishedDataKey &rhs) const;
-    std::string key_;
-    std::string bundleName_;
-    int64_t subscriberId_;
+    std::string key;
+    std::string bundleName;
+    int64_t subscriberId;
 };
 
 class PublishedDataSubscriberManager {
@@ -110,7 +110,7 @@ private:
         bool enabled = true;
     };
     PublishedDataSubscriberManager() = default;
-    ConcurrentMap<PublishedDataKey, std::vector<ObserverNode>> publishedDataCache_;
+    ConcurrentMap<PublishedDataKey, std::vector<ObserverNode>> publishedDataCache;
 };
 } // namespace OHOS::DataShare
 #endif

@@ -38,8 +38,8 @@ public:
     int32_t DelTemplate(const std::string &uri, const int64_t subscriberId) override;
     std::vector<OperationResult> Publish(const Data &data, const std::string &bundleNameOfProvider) override;
     Data GetData(const std::string &bundleNameOfProvider) override;
-    std::vector<OperationResult> SubscribeRdbData(
-        const std::vector<std::string> &uris, const TemplateId &id, const sptr<IDataProxyRdbObserver> observer) override;
+    std::vector<OperationResult> SubscribeRdbData(const std::vector<std::string> &uris,
+        const TemplateId &id, const sptr<IDataProxyRdbObserver> observer) override;
     std::vector<OperationResult> UnSubscribeRdbData(
         const std::vector<std::string> &uris, const TemplateId &id) override;
     std::vector<OperationResult> EnableSubscribeRdbData(

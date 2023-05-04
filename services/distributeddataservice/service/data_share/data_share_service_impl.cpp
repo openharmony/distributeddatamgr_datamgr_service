@@ -252,7 +252,7 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
-        context->calledBundleName = key.bundleName_;
+        context->calledBundleName = key.bundleName;
         result = SubscribeStrategy::Execute(
             context, [&subscriberId, &observer, &callerBundleName, &context]() -> bool {
                 return PublishedDataSubscriberManager::GetInstance().AddSubscriber(
@@ -277,7 +277,7 @@ std::vector<OperationResult> DataShareServiceImpl::UnSubscribePublishedData(cons
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
-        context->calledBundleName = key.bundleName_;
+        context->calledBundleName = key.bundleName;
         results.emplace_back(
             uri, SubscribeStrategy::Execute(context, [&subscriberId, &callerBundleName, &context]() -> bool {
                 return PublishedDataSubscriberManager::GetInstance().DelSubscriber(
@@ -299,7 +299,7 @@ std::vector<OperationResult> DataShareServiceImpl::EnableSubscribePublishedData(
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
-        context->calledBundleName = key.bundleName_;
+        context->calledBundleName = key.bundleName;
         result = SubscribeStrategy::Execute(context, [&subscriberId, &callerBundleName, &context]() -> bool {
             return PublishedDataSubscriberManager::GetInstance().EnableSubscriber(
                 context->uri, callerBundleName, subscriberId, context->callerTokenId);
@@ -323,7 +323,7 @@ std::vector<OperationResult> DataShareServiceImpl::DisableSubscribePublishedData
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
-        context->calledBundleName = key.bundleName_;
+        context->calledBundleName = key.bundleName;
         results.emplace_back(
             uri, SubscribeStrategy::Execute(context, [&subscriberId, &callerBundleName, &context]() -> bool {
                 return PublishedDataSubscriberManager::GetInstance().DisableSubscriber(

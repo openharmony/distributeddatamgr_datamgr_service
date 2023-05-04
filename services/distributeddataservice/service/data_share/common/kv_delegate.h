@@ -24,8 +24,8 @@
 namespace OHOS::DataShare {
 class KvDelegate final : public KvDBDelegate {
 public:
-    KvDelegate(const std::string &path);
-    virtual ~KvDelegate();
+    explicit KvDelegate(const std::string &path);
+    ~KvDelegate() = default;
     int32_t Upsert(const std::string &collectionName, const KvData &value) override;
     int32_t DeleteById(const std::string &collectionName, const Id &id) override;
     int32_t Get(const std::string &collectionName, const Id &id, std::string &value) override;

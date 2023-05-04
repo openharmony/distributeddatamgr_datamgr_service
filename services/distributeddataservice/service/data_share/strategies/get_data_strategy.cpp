@@ -36,7 +36,6 @@ Data GetDataStrategy::Execute(std::shared_ptr<Context> context)
     }
     std::vector<PublishedData> queryResult = PublishedData::Query(context->calledBundleName);
     return Convert(queryResult);
-
 }
 
 Strategy *GetDataStrategy::GetStrategy()

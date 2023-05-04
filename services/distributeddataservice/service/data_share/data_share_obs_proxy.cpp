@@ -14,7 +14,7 @@ void RdbObserverProxy::OnChangeFromRdb(RdbChangeNode &changeNode)
 {
     MessageParcel parcel;
     if (!parcel.WriteInterfaceToken(RdbObserverProxy::GetDescriptor())) {
-        return ;
+        return;
     }
 
     if (!ITypesUtil::Marshal(parcel, changeNode)) {
@@ -33,10 +33,11 @@ void RdbObserverProxy::OnChangeFromRdb(RdbChangeNode &changeNode)
     }
 }
 
-void PublishedDataObserverProxy::OnChangeFromPublishedData(PublishedDataChangeNode &changeNode) {
+void PublishedDataObserverProxy::OnChangeFromPublishedData(PublishedDataChangeNode &changeNode)
+{
     MessageParcel parcel;
     if (!parcel.WriteInterfaceToken(PublishedDataObserverProxy::GetDescriptor())) {
-        return ;
+        return;
     }
 
     if (!ITypesUtil::Marshal(parcel, changeNode)) {
@@ -54,5 +55,5 @@ void PublishedDataObserverProxy::OnChangeFromPublishedData(PublishedDataChangeNo
         return;
     }
 }
-}
-} // namespace OHOS::DataShare
+} // namespace DataShare
+} // namespace OHOS

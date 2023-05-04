@@ -26,7 +26,7 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     context->callerTokenId = IPCSkeleton::GetCallingTokenID();
     context->currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
     // single app, userId is in uri
-   if (context->currentUserId == 0) {
+    if (context->currentUserId == 0) {
         URIUtils::GetUserIdFromProxyURI(context->uri, context->currentUserId);
         ZLOGI("user uri's userId %{public}d", context->currentUserId);
     }

@@ -43,8 +43,6 @@ private:
     int32_t OnRemoteUnSubscribePublishedData(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteEnableSubscribePublishedData(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteDisableSubscribePublishedData(MessageParcel& data, MessageParcel& reply);
-
-
     using RequestHandle = int (DataShareServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[DATA_SHARE_SERVICE_CMD_MAX] = {
         &DataShareServiceStub::OnRemoteInsert,

@@ -52,7 +52,7 @@ void SchedulerManager::Execute(const Key &key, const std::string &rdbDir, int ve
     int errCode = 0;
     auto delegate = DBDelegate::Create(rdbDir, version, errCode, true);
     if (delegate == nullptr) {
-        ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(key.uri_).c_str());
+        ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
         return;
     }
     ExecuteSchedulerSQL(key, delegate);
@@ -78,9 +78,9 @@ void SchedulerManager::SetTimer(const RdbStoreContext &rdbContext, const std::st
     std::time_t now = time(nullptr);
     auto taskId = scheduler_->At(TaskScheduler::Clock::now() + std::chrono::seconds(reminderTime - now), [&]() {
         // 1. execute schedulerSQL in next time
-        Execute(key, rdbContext.dir_, rdbContext.version_);
+        Execute(key, rdbContext.dir, rdbContext.version);
         // 2. notify
-        RdbSubscriberManager::GetInstance().EmitByKey(key, rdbContext.dir_, rdbContext.version_);
+        RdbSubscriberManager::GetInstance().EmitByKey(key, rdbContext.dir, rdbContext.version);
     });
     if (taskId == TaskScheduler::INVALID_TASK_ID) {
         ZLOGE("create timer failed, over the max capacity");
@@ -92,24 +92,24 @@ void SchedulerManager::SetTimer(const RdbStoreContext &rdbContext, const std::st
 void SchedulerManager::ExecuteSchedulerSQL(const Key &key, std::shared_ptr<DBDelegate> delegate)
 {
     Template tpl;
-    if (!TemplateManager::GetInstance().GetTemplate(key.uri_, key.subscriberId_, key.bundleName_, tpl)) {
+    if (!TemplateManager::GetInstance().GetTemplate(key.uri, key.subscriberId, key.bundleName, tpl)) {
         ZLOGE("template undefined, %{public}s, %{public}" PRId64 ", %{public}s",
-              DistributedData::Anonymous::Change(key.uri_).c_str(), key.subscriberId_, key.bundleName_.c_str());
+              DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return;
     }
     if (tpl.scheduler_.empty()) {
         ZLOGW("template scheduler_ empty, %{public}s, %{public}" PRId64 ", %{public}s",
-              DistributedData::Anonymous::Change(key.uri_).c_str(), key.subscriberId_, key.bundleName_.c_str());
+              DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return;
     }
 
-    if (!GenRemindTimerFuncParams(key.uri_, key.subscriberId_, key.bundleName_, tpl.scheduler_)) {
+    if (!GenRemindTimerFuncParams(key.uri, key.subscriberId, key.bundleName, tpl.scheduler_)) {
         return;
     }
     int errCode = delegate->ExecuteSql(tpl.scheduler_);
     if (errCode != E_OK) {
         ZLOGE("Execute schedulerSql failed, %{public}s, %{public}" PRId64 ", %{public}s",
-              DistributedData::Anonymous::Change(key.uri_).c_str(), key.subscriberId_, key.bundleName_.c_str());
+              DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
     }
 }
 
@@ -137,7 +137,7 @@ void SchedulerManager::RemoveTimer(const Key &key)
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         ZLOGD("RemoveTimer %{public}s %{public}s %{public}" PRId64,
-              DistributedData::Anonymous::Change(key.uri_).c_str(), key.bundleName_.c_str(), key.subscriberId_);
+              DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
         scheduler_->Remove(it->second);
         timerCache_.erase(key);
         if (timerCache_.empty()) {

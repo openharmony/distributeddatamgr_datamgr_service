@@ -41,7 +41,7 @@ struct PublishedDataNode final : public DistributedData::Serializable {
 struct PublishedData final : public KvData {
     static std::vector<PublishedData> Query(const std::string &bundleName);
     static int32_t Query(const std::string &filter, std::variant<sptr<Ashmem>, std::string> &publishedData);
-    PublishedData(const std::string &key = "", const std::string &bundleName = "", int64_t subscriberId = 0,
+    explicit PublishedData(const std::string &key = "", const std::string &bundleName = "", int64_t subscriberId = 0,
         const std::variant<sptr<Ashmem>, std::string> &value = "", const int version = 0);
     ~PublishedData() = default;
     std::shared_ptr<Id> GetId() const override

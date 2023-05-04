@@ -89,7 +89,7 @@ bool ConnectExtensionStrategy::Execute(
         return true;
     }
     int waitTime = 0;
-    constexpr static int RETRY_TIME = 500;
+    static constexpr int RETRY_TIME = 500;
     while (!isFinished()) {
         if (waitTime > maxWaitTimeMs) {
             ZLOGE("cannot finish work");

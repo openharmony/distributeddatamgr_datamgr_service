@@ -83,13 +83,13 @@ bool TemplateManager::DelTemplate(const std::string &uri, const TemplateId &tplI
 }
 
 Key::Key(const std::string &uri, const int64_t subscriberId, const std::string &bundleName)
-    : uri_(uri), subscriberId_(subscriberId), bundleName_(bundleName)
+    : uri(uri), subscriberId(subscriberId), bundleName(bundleName)
 {
 }
 
 bool Key::operator==(const Key &rhs) const
 {
-    return uri_ == rhs.uri_ && subscriberId_ == rhs.subscriberId_ && bundleName_ == rhs.bundleName_;
+    return uri == rhs.uri && subscriberId == rhs.subscriberId && bundleName == rhs.bundleName;
 }
 
 bool Key::operator!=(const Key &rhs) const
@@ -98,15 +98,19 @@ bool Key::operator!=(const Key &rhs) const
 }
 bool Key::operator<(const Key &rhs) const
 {
-    if (uri_ < rhs.uri_)
+    if (uri < rhs.uri) {
         return true;
-    if (rhs.uri_ < uri_)
+    }
+    if (rhs.uri < uri) {
         return false;
-    if (subscriberId_ < rhs.subscriberId_)
+    }
+    if (subscriberId < rhs.subscriberId) {
         return true;
-    if (rhs.subscriberId_ < subscriberId_)
+    }
+    if (rhs.subscriberId < subscriberId) {
         return false;
-    return bundleName_ < rhs.bundleName_;
+    }
+    return bundleName < rhs.bundleName;
 }
 bool Key::operator>(const Key &rhs) const
 {
@@ -141,7 +145,7 @@ int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const Templat
     int result = E_OK;
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
     rdbCache_.Compute(key, [&observer, &context, &result, this](const auto &key, std::vector<ObserverNode> &value) {
-        ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri_.c_str(), context->callerTokenId);
+        ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), context->callerTokenId);
         ObserverNode observerNode(observer, context->callerTokenId);
         std::vector<ObserverNode> node({ observerNode });
         result = Notify(key, node, context->calledSourceDir, context->version);
@@ -163,7 +167,7 @@ int RdbSubscriberManager::DelRdbSubscriber(
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
     auto result =
         rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
-            ZLOGI("delete subscriber, uri %{public}s tokenId %{public}d", key.uri_.c_str(), callerTokenId);
+            ZLOGI("delete subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), callerTokenId);
             for (auto it = value.begin(); it != value.end();) {
                 if (it->callerTokenId == callerTokenId) {
                     ZLOGI("erase start");
@@ -254,7 +258,7 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
         return;
     }
     rdbCache_.ForEach([&uri, &context, this](const Key &key, std::vector<ObserverNode> &val) {
-        if (key.uri_ != uri) {
+        if (key.uri != uri) {
             return false;
         }
         Notify(key, val, context->calledSourceDir, context->version);
@@ -266,7 +270,7 @@ std::vector<Key> RdbSubscriberManager::GetKeysByUri(const std::string &uri)
 {
     std::vector<Key> results;
     rdbCache_.ForEach([&uri, &results](const Key &key, std::vector<ObserverNode> &val) {
-        if (key.uri_ != uri) {
+        if (key.uri != uri) {
             return false;
         }
         results.emplace_back(key);
@@ -277,7 +281,7 @@ std::vector<Key> RdbSubscriberManager::GetKeysByUri(const std::string &uri)
 
 void RdbSubscriberManager::EmitByKey(const Key &key, const std::string &rdbPath, int version)
 {
-    if (!URIUtils::IsDataProxyURI(key.uri_)) {
+    if (!URIUtils::IsDataProxyURI(key.uri)) {
         return;
     }
     rdbCache_.ComputeIfPresent(key, [&rdbPath, &version, this](const Key &key, std::vector<ObserverNode> &val) {
@@ -314,22 +318,22 @@ int RdbSubscriberManager::Notify(
     const Key &key, std::vector<ObserverNode> &val, const std::string &rdbDir, int rdbVersion)
 {
     Template tpl;
-    if (!TemplateManager::GetInstance().GetTemplate(key.uri_, key.subscriberId_, key.bundleName_, tpl)) {
+    if (!TemplateManager::GetInstance().GetTemplate(key.uri, key.subscriberId, key.bundleName, tpl)) {
         ZLOGE("template undefined, %{public}s, %{public}" PRId64 ", %{public}s",
-            DistributedData::Anonymous::Change(key.uri_).c_str(), key.subscriberId_, key.bundleName_.c_str());
+            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return E_TEMPLATE_NOT_EXIST;
     }
     int errCode;
     auto delegate = DBDelegate::Create(rdbDir, rdbVersion, errCode);
     if (delegate == nullptr) {
-        ZLOGE("malloc fail %{public}s %{public}s", DistributedData::Anonymous::Change(key.uri_).c_str(),
-            key.bundleName_.c_str());
+        ZLOGE("malloc fail %{public}s %{public}s", DistributedData::Anonymous::Change(key.uri).c_str(),
+            key.bundleName.c_str());
         return errCode;
     }
     RdbChangeNode changeNode;
-    changeNode.uri_ = key.uri_;
-    changeNode.templateId_.subscriberId_ = key.subscriberId_;
-    changeNode.templateId_.bundleName_ = key.bundleName_;
+    changeNode.uri_ = key.uri;
+    changeNode.templateId_.subscriberId_ = key.subscriberId;
+    changeNode.templateId_.bundleName_ = key.bundleName;
     for (const auto &predicate : tpl.predicates_) {
         JsonFormatter formatter(predicate.key_, delegate->Query(predicate.selectSql_));
         changeNode.data_.emplace_back(DistributedData::Serializable::Marshall(formatter));
@@ -354,9 +358,9 @@ int PublishedDataSubscriberManager::AddSubscriber(const std::string &key, const 
     const int64_t subscriberId, const sptr<IDataProxyPublishedDataObserver> observer, const uint32_t callerTokenId)
 {
     PublishedDataKey publishedDataKey(key, callerBundleName, subscriberId);
-    publishedDataCache_.Compute(publishedDataKey,
+    publishedDataCache.Compute(publishedDataKey,
         [&observer, &callerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
-            ZLOGI("add publish subscriber, uri %{private}s tokenId %{public}d", key.key_.c_str(), callerTokenId);
+            ZLOGI("add publish subscriber, uri %{private}s tokenId %{public}d", key.key.c_str(), callerTokenId);
             value.emplace_back(observer, callerTokenId);
             return true;
         });
@@ -368,7 +372,7 @@ int PublishedDataSubscriberManager::DelSubscriber(const std::string &uri, const 
 {
     PublishedDataKey key(uri, callerBundleName, subscriberId);
     auto result =
-        publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
+        publishedDataCache.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end();) {
                 if (it->callerTokenId == callerTokenId) {
                     it = value.erase(it);
@@ -386,7 +390,7 @@ int PublishedDataSubscriberManager::DisableSubscriber(const std::string &uri, co
 {
     PublishedDataKey key(uri, callerBundleName, subscriberId);
     auto result =
-        publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
+        publishedDataCache.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
                 if (it->callerTokenId == callerTokenId) {
                     it->enabled = false;
@@ -402,7 +406,7 @@ int PublishedDataSubscriberManager::EnableSubscriber(const std::string &uri, con
 {
     PublishedDataKey key(uri, callerBundleName, subscriberId);
     auto result =
-        publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
+        publishedDataCache.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
                 if (it->callerTokenId == callerTokenId) {
                     it->enabled = true;
@@ -420,20 +424,20 @@ void PublishedDataSubscriberManager::Emit(std::vector<PublishedDataKey> keys, co
     // key is bundleName, value is change node
     std::map<PublishedDataKey, PublishedDataItem> publishedResult;
     std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> callbacks;
-    publishedDataCache_.ForEach([&keys, &status, &observer, &publishedResult, &callbacks](
+    publishedDataCache.ForEach([&keys, &status, &observer, &publishedResult, &callbacks](
                                     const PublishedDataKey &key, std::vector<ObserverNode> &val) {
         for (auto &data : keys) {
             if (key != data) {
                 continue;
             }
-            publishedResult[key].subscriberId_ = data.subscriberId_;
-            publishedResult[key].key_ = data.key_;
-            PublishedData publishedData(data.key_, data.bundleName_, data.subscriberId_);
+            publishedResult[key].subscriberId_ = data.subscriberId;
+            publishedResult[key].key_ = data.key;
+            PublishedData publishedData(data.key, data.bundleName, data.subscriberId);
             status = PublishedData::Query(
                 DistributedData::Serializable::Marshall(*publishedData.GetId()), publishedResult[key].value_);
             if (status != E_OK) {
-                ZLOGE("query fail %{public}s %{public}s %{public}" PRId64, data.bundleName_.c_str(), data.key_.c_str(),
-                    data.subscriberId_);
+                ZLOGE("query fail %{public}s %{public}s %{public}" PRId64, data.bundleName.c_str(), data.key.c_str(),
+                    data.subscriberId);
                 publishedResult.erase(key);
                 continue;
             }
@@ -467,27 +471,31 @@ void PublishedDataSubscriberManager::Emit(std::vector<PublishedDataKey> keys, co
 }
 
 PublishedDataKey::PublishedDataKey(const std::string &key, const std::string &bundleName, const int64_t subscriberId)
-    : key_(key), bundleName_(bundleName), subscriberId_(subscriberId)
+    : key(key), bundleName(bundleName), subscriberId(subscriberId)
 {
     /* private published data can use key as simple uri */
     /* etc: datashareproxy://{bundleName}/meeting can use meeting replaced */
     /* if key is normal uri, bundleName is from uri */
-    if (URIUtils::IsDataProxyURI(key_)) {
-        URIUtils::GetBundleNameFromProxyURI(key_, bundleName_);
+    if (URIUtils::IsDataProxyURI(key)) {
+        URIUtils::GetBundleNameFromProxyURI(key, bundleName);
     }
 }
 
 bool PublishedDataKey::operator<(const PublishedDataKey &rhs) const
 {
-    if (key_ < rhs.key_)
+    if (key < rhs.key) {
         return true;
-    if (rhs.key_ < key_)
+    }
+    if (rhs.key < key) {
         return false;
-    if (bundleName_ < rhs.bundleName_)
+    }
+    if (bundleName < rhs.bundleName) {
         return true;
-    if (rhs.bundleName_ < bundleName_)
+    }
+    if (rhs.bundleName < bundleName) {
         return false;
-    return subscriberId_ < rhs.subscriberId_;
+    }
+    return subscriberId < rhs.subscriberId;
 }
 
 bool PublishedDataKey::operator>(const PublishedDataKey &rhs) const
@@ -507,7 +515,7 @@ bool PublishedDataKey::operator>=(const PublishedDataKey &rhs) const
 
 bool PublishedDataKey::operator==(const PublishedDataKey &rhs) const
 {
-    return key_ == rhs.key_ && bundleName_ == rhs.bundleName_ && subscriberId_ == rhs.subscriberId_;
+    return key == rhs.key && bundleName == rhs.bundleName && subscriberId == rhs.subscriberId;
 }
 
 bool PublishedDataKey::operator!=(const PublishedDataKey &rhs) const
