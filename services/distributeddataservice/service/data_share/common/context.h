@@ -52,15 +52,6 @@ public:
     AccessSystemMode accessSystemMode = AccessSystemMode::UNDEFINED;
     OHOS::AppExecFwk::BundleInfo bundleInfo;
     std::string type = "rdb";
-
-
-    virtual std::string GetTpltProviderBundleName() {
-        return "";
-    }
-
-    virtual uint64_t GetTpltSubscriberId() {
-        return 0;
-    }
 };
 
 class TemplateContext : public Context {

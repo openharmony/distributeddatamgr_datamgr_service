@@ -23,7 +23,7 @@
 namespace OHOS::DataShare {
 struct TemplateNode : public DistributedData::Serializable {
     TemplateNode() = default;
-    TemplateNode(const Template &tpl);
+    explicit TemplateNode(const Template &tpl);
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     Template tpl;

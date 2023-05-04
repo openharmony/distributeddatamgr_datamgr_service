@@ -417,8 +417,8 @@ int PublishedDataSubscriberManager::EnableSubscriber(const std::string &uri, con
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
-void PublishedDataSubscriberManager::Emit(std::vector<PublishedDataKey> keys, const std::string &ownerBundleName,
-    const sptr<IDataProxyPublishedDataObserver> observer)
+void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &keys,
+    const std::string &ownerBundleName, const sptr<IDataProxyPublishedDataObserver> observer)
 {
     int32_t status;
     // key is bundleName, value is change node

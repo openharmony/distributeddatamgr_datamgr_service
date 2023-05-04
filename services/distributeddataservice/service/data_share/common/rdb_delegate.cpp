@@ -107,6 +107,7 @@ std::shared_ptr<DataShareResultSet> RdbDelegate::Query(
         delete p;
     });
 }
+
 class ResultSetJsonFormatter final: public DistributedData::Serializable {
 public:
     explicit ResultSetJsonFormatter(const std::shared_ptr<NativeRdb::ResultSet> &resultSet)

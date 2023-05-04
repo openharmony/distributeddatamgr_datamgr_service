@@ -42,4 +42,4 @@ private:
     static inline BrokerDelegator<PublishedDataObserverProxy> delegator_;
 };
 } // namespace OHOS::DataShare
-#endif //DATA_SHARE_OBS_PROXY_H
+#endif // DATA_SHARE_OBS_PROXY_H

@@ -27,7 +27,7 @@ public:
     bool operator()(std::shared_ptr<Context> context) override;
 
 private:
-    enum PATH_PARAMS : int32_t {
+    enum class PATH_PARAMS : int32_t {
         STORE_NAME = 0,
         TABLE_NAME,
         PARAM_SIZE

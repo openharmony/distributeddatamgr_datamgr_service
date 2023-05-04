@@ -20,7 +20,7 @@
 #include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
-enum PublishedDataType : int32_t {
+enum class PublishedDataType : int32_t {
     STRING,
     ASHMEM
 };
