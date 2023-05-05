@@ -20,12 +20,6 @@
 #include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
-class PublishedDataType {
-public:
-    static constexpr int8_t STRING = 0;
-    static constexpr int8_t ASHMEM = 1;
-};
-
 struct PublishedDataNode final : public DistributedData::Serializable {
     PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
         const std::variant<sptr<Ashmem>, std::string> &value, const int version);
@@ -39,7 +33,8 @@ struct PublishedDataNode final : public DistributedData::Serializable {
     VersionData version;
 };
 
-struct PublishedData final : public KvData {
+class PublishedData final : public KvData {
+public:
     static std::vector<PublishedData> Query(const std::string &bundleName);
     static int32_t Query(const std::string &filter, std::variant<sptr<Ashmem>, std::string> &publishedData);
     explicit PublishedData(const std::string &key = "", const std::string &bundleName = "", int64_t subscriberId = 0,
@@ -53,8 +48,9 @@ struct PublishedData final : public KvData {
     VersionData GetVersion() const override;
     const DistributedData::Serializable &GetValue() const override;
     bool Unmarshal(const json &node) override;
+    static constexpr int8_t STRING = 0;
+    static constexpr int8_t ASHMEM = 1;
     PublishedDataNode value;
-
 private:
     static std::string GetFullProjection();
 };

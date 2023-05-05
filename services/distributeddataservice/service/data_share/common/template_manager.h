@@ -101,7 +101,7 @@ public:
     int EnableSubscriber(const std::string &uri, const std::string &callerBundleName, const int64_t subscriberId,
         const uint32_t callerTokenId);
     void Emit(const std::vector<PublishedDataKey> &keys, const std::string &ownerBundleName,
-        const sptr<IDataProxyPublishedDataObserver> observer);
+        const sptr<IDataProxyPublishedDataObserver> observer = nullptr);
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer, uint32_t callerTokenId);

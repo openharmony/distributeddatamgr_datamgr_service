@@ -77,7 +77,7 @@ bool PublishedDataNode::Marshal(DistributedData::Serializable::json &node) const
     ret = ret && SetValue(node, version);
     if (value.index() == 1) {
         std::string valueStr = std::get<std::string>(value);
-        ret = ret && SetValue(node["type"], PublishedDataType::STRING);
+        ret = ret && SetValue(node["type"], PublishedData::STRING);
         ret = ret && SetValue(node["value"], valueStr);
     } else {
         sptr<Ashmem> ashmem = std::get<sptr<Ashmem>>(value);
@@ -90,7 +90,7 @@ bool PublishedDataNode::Marshal(DistributedData::Serializable::json &node) const
             ZLOGE("ReadFromAshmem null");
             return false;
         }
-        ret = ret && SetValue(node["type"], PublishedDataType::ASHMEM);
+        ret = ret && SetValue(node["type"], PublishedData::ASHMEM);
         node["value"] = std::vector<uint8_t>(data, data + ashmem->GetAshmemSize());
     }
     std::time_t now = time(nullptr);
@@ -114,11 +114,11 @@ bool PublishedDataNode::Unmarshal(const DistributedData::Serializable::json &nod
         ZLOGE("Unmarshal PublishedDataNode failed, %{private}s", key.c_str());
         return false;
     }
-    if (type == PublishedDataType::STRING) {
+    if (type == PublishedData::STRING) {
         std::string strValue;
         ret = ret && GetValue(node, "value", strValue);
         value = strValue;
-    } else if (type == PublishedDataType::ASHMEM) {
+    } else if (type == PublishedData::ASHMEM) {
         std::vector<uint8_t> binaryData = node["value"];
         std::string ashmemName = "PublishedData" + key + "_" + bundleName + "_" + std::to_string(subscriberId);
         auto ashmem = Ashmem::CreateAshmem(ashmemName.c_str(), binaryData.size());

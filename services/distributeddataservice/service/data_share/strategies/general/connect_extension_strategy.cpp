@@ -17,10 +17,8 @@
 #include "connect_extension_strategy.h"
 
 #include <thread>
-
-#include "ability_connect_callback_stub.h"
-#include "ability_manager_client.h"
 #include "log_print.h"
+#include "callback_impl.h"
 
 namespace OHOS::DataShare {
 bool ConnectExtensionStrategy::operator()(std::shared_ptr<Context> context)
@@ -34,24 +32,6 @@ bool ConnectExtensionStrategy::operator()(std::shared_ptr<Context> context)
 }
 
 ConnectExtensionStrategy::ConnectExtensionStrategy() : data_(1) {}
-class CallBackImpl : public AAFwk::AbilityConnectionStub {
-public:
-    CallBackImpl(BlockData<bool> &data) : data_(data) {}
-    void OnAbilityConnectDone(
-        const AppExecFwk::ElementName &element, const sptr<IRemoteObject> &remoteObject, int resultCode) override
-    {
-        bool result = true;
-        data_.SetValue(result);
-    }
-    void OnAbilityDisconnectDone(const AppExecFwk::ElementName &element, int resultCode) override
-    {
-        bool result = false;
-        data_.SetValue(result);
-    }
-
-private:
-    BlockData<bool> &data_;
-};
 
 bool ConnectExtensionStrategy::Connect(std::shared_ptr<Context> context)
 {
@@ -59,7 +39,7 @@ bool ConnectExtensionStrategy::Connect(std::shared_ptr<Context> context)
     AAFwk::Want want;
     want.SetUri(context->uri);
     data_.Clear();
-    sptr<AAFwk::IAbilityConnection> callback = new CallBackImpl(data_);
+    sptr<AAFwk::IAbilityConnection> callback = new CallbackImpl(data_);
     ZLOGI("Start connect %{public}s", context->uri.c_str());
     ErrCode ret = AAFwk::AbilityManagerClient::GetInstance()->ConnectAbility(want, callback, nullptr);
     if (ret != ERR_OK) {

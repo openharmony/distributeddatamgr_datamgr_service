@@ -34,4 +34,4 @@ public:
 };
 }  // namespace DataShare
 }  // namespace OHOS
-#endif //DATA_PROXY_OBSERVER_H
+#endif // DATA_PROXY_OBSERVER_H
