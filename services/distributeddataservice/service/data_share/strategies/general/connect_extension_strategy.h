@@ -16,6 +16,7 @@
 #ifndef DATASHARESERVICE_CONNECT_EXTENSION_STRAGETY_H
 #define DATASHARESERVICE_CONNECT_EXTENSION_STRAGETY_H
 
+#include "block_data.h"
 #include "strategy.h"
 namespace OHOS::DataShare {
 class ConnectExtensionStrategy final : public Strategy {
