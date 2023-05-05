@@ -105,7 +105,7 @@ private:
 
     void Initialize();
 
-    void InitObjectStore();
+    void LoadFeatures();
 
     void StartService();
 
@@ -130,6 +130,7 @@ private:
     std::shared_ptr<Security> security_;
     ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
+    std::shared_ptr<ExecutorPool> executor_;
 };
 
 class DbMetaCallbackDelegateMgr : public DbMetaCallbackDelegate {

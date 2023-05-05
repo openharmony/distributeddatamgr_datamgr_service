@@ -116,7 +116,7 @@ void KvStoreDataService::Initialize()
 
 sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
 {
-    sptr<DistributedData::FeatureStubImpl> feature;
+    sptr<FeatureStubImpl> feature;
     bool isFirstCreate = false;
     features_.Compute(name, [&feature, &isFirstCreate](const auto &key, auto &value) ->bool {
         if (value != nullptr) {
@@ -132,21 +132,24 @@ sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &n
             return false;
         }
 
-        value = new DistributedData::FeatureStubImpl(impl);
+        value = new FeatureStubImpl(impl);
         feature = value;
         isFirstCreate = true;
         return true;
     });
     if (isFirstCreate) {
-        feature->OnInitialize();
+        feature->OnInitialize(executor_);
     }
     return feature != nullptr ? feature->AsObject() : nullptr;
 }
 
-void KvStoreDataService::InitObjectStore()
+void KvStoreDataService::LoadFeatures()
 {
     ZLOGI("begin.");
-    auto feature = GetFeatureInterface("data_object");
+    auto features = FeatureSystem::GetInstance().GetFeatureName(FeatureSystem::BIND_NOW);
+    for (auto &feature : features) {
+        GetFeatureInterface(feature);
+    }
 }
 
 /* RegisterClientDeathObserver */
@@ -286,7 +289,7 @@ void KvStoreDataService::StartService()
     ZLOGI("begin.");
     KvStoreMetaManager::GetInstance().InitMetaListener();
     DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
-    InitObjectStore();
+    LoadFeatures();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {
         DumpHelper::GetInstance().AddErrorInfo("StartService: Service publish failed.");

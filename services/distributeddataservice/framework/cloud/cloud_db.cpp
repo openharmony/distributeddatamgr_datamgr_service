@@ -15,56 +15,6 @@
 
 #include "cloud/cloud_db.h"
 namespace OHOS::DistributedData {
-int32_t CloudDB::Close()
-{
-    return E_NOT_SUPPORT;
-}
-
-int32_t CloudDB::Execute(const std::string &table, const std::string &sql)
-{
-    return E_NOT_SUPPORT;
-}
-
-int32_t CloudDB::BatchInsert(const std::string &table, VBuckets &&values)
-{
-    return E_NOT_SUPPORT;
-}
-
-int32_t CloudDB::BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values)
-{
-    return E_NOT_SUPPORT;
-}
-
-int32_t CloudDB::Delete(const std::string &table, const std::string &sql, Values &&args)
-{
-    return E_NOT_SUPPORT;
-}
-
-std::shared_ptr<Cursor> CloudDB::Query(const std::string &table, const std::string &sql, Values &&args)
-{
-    return nullptr;
-}
-
-std::shared_ptr<Cursor> CloudDB::Query(const std::string &table, const GenQuery &query)
-{
-    return nullptr;
-}
-
-int32_t CloudDB::Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait)
-{
-    return E_NOT_SUPPORT;
-}
-
-int32_t CloudDB::Watch(int32_t origin, Watcher &watcher)
-{
-    return E_NOT_SUPPORT;
-}
-
-int32_t CloudDB::Unwatch(int32_t origin, Watcher &watcher)
-{
-    return E_NOT_SUPPORT;
-}
-
 int32_t CloudDB::Execute(const std::string &table, const std::string &sql, const VBucket &extend)
 {
     return E_NOT_SUPPORT;
@@ -90,6 +40,21 @@ std::shared_ptr<Cursor> CloudDB::Query(const std::string &table, const VBucket &
     return nullptr;
 }
 
+int32_t CloudDB::Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait)
+{
+    return E_NOT_SUPPORT;
+}
+
+int32_t CloudDB::Watch(int32_t origin, Watcher &watcher)
+{
+    return E_NOT_SUPPORT;
+}
+
+int32_t CloudDB::Unwatch(int32_t origin, Watcher &watcher)
+{
+    return E_NOT_SUPPORT;
+}
+
 int32_t CloudDB::Lock()
 {
     return E_NOT_SUPPORT;
@@ -101,6 +66,11 @@ int32_t CloudDB::Heartbeat()
 }
 
 int32_t CloudDB::Unlock()
+{
+    return E_NOT_SUPPORT;
+}
+
+int32_t CloudDB::Close()
 {
     return E_NOT_SUPPORT;
 }

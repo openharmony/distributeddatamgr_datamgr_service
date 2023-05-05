@@ -35,7 +35,17 @@ struct Asset {
 
 struct GenQuery {
     virtual ~GenQuery() = default;
-    virtual int32_t GetInterfaceId() = 0;
+    virtual bool IsEqual(uint64_t tid) = 0;
+
+    template<typename T>
+    int32_t QueryInterface(T *&query)
+    {
+        if (!IsEqual(T::TYPE_ID)) {
+            return E_INVALID_ARGS;
+        }
+        query = static_cast<T *>(this);
+        return E_OK;
+    };
 };
 
 using Assets = std::vector<Asset>;

@@ -69,7 +69,7 @@ HWTEST_F(ConfigFactoryTest, ComponentConfig, TestSize.Level0)
     ASSERT_EQ(config.destructor, "");
     ASSERT_EQ(config.params, "{\"count\":1,\"key\":\"value\"}");
     const ComponentConfig &cfg = (*components)[1];
-    ASSERT_EQ(cfg.lib, "libconfigdemo2.z.so");
+    ASSERT_EQ(cfg.lib, "libdistributedclouddata.z.so");
 }
 
 /**
