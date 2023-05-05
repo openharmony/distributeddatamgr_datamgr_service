@@ -63,6 +63,9 @@ Strategy *InsertStrategy::GetStrategy()
     };
     auto ret = strategies.Init(list);
     if (!ret) {
+        std::for_each(list.begin(), list.end(), [](Strategy *item) {
+            free(item);
+        });
         return nullptr;
     }
     return &strategies;

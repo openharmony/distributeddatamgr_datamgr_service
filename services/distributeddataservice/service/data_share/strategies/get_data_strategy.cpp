@@ -47,13 +47,15 @@ Strategy *GetDataStrategy::GetStrategy()
         return &strategies;
     }
     std::initializer_list<Strategy *> list = {
-
         new (std::nothrow) LoadConfigCommonStrategy(),
         new (std::nothrow) LoadConfigFromDataProxyNodeStrategy(),
         new (std::nothrow) PermissionStrategy()
     };
     auto ret = strategies.Init(list);
     if (!ret) {
+        std::for_each(list.begin(), list.end(), [](Strategy *item) {
+            free(item);
+        });
         return nullptr;
     }
     return &strategies;
