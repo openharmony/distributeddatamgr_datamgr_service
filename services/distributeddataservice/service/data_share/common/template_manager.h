@@ -106,6 +106,8 @@ private:
         bool enabled = true;
     };
     PublishedDataSubscriberManager() = default;
+    void PutInto(std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &,
+        std::vector<ObserverNode> &, const PublishedDataKey &, const sptr<IDataProxyPublishedDataObserver>);
     ConcurrentMap<PublishedDataKey, std::vector<ObserverNode>> publishedDataCache;
 };
 } // namespace OHOS::DataShare

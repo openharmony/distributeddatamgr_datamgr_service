@@ -424,7 +424,7 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
     // key is bundleName, value is change node
     std::map<PublishedDataKey, PublishedDataItem> publishedResult;
     std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> callbacks;
-    publishedDataCache.ForEach([&keys, &status, &observer, &publishedResult, &callbacks](
+    publishedDataCache.ForEach([&keys, &status, &observer, &publishedResult, &callbacks, this](
                                     const PublishedDataKey &key, std::vector<ObserverNode> &val) {
         for (auto &data : keys) {
             if (key != data) {
@@ -441,16 +441,8 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
                 publishedResult.erase(key);
                 continue;
             }
+            PutInto(callbacks, val, key, observer);
             break;
-        }
-        for (auto &callback : val) {
-            if (callback.enabled && callback.observer != nullptr) {
-                // callback the observer, others do not call
-                if (observer != nullptr && callback.observer != observer) {
-                    continue;
-                }
-                callbacks[callback.observer].emplace_back(key);
-            }
         }
         return false;
     });
@@ -467,6 +459,21 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
         }
         result.ownerBundleName_ = ownerBundleName;
         callback->OnChangeFromPublishedData(result);
+    }
+}
+
+void PublishedDataSubscriberManager::PutInto(
+    std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &callbacks,
+    std::vector<ObserverNode> &val, const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer)
+{
+    for (auto &callback : val) {
+        if (callback.enabled && callback.observer != nullptr) {
+            // callback the observer, others do not call
+            if (observer != nullptr && callback.observer != observer) {
+                continue;
+            }
+            callbacks[callback.observer].emplace_back(key);
+        }
     }
 }
 
