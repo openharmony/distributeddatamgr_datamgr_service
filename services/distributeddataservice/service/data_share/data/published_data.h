@@ -51,8 +51,6 @@ public:
     static constexpr int8_t STRING = 0;
     static constexpr int8_t ASHMEM = 1;
     PublishedDataNode value;
-private:
-    static std::string GetFullProjection();
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H

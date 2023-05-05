@@ -145,17 +145,6 @@ PublishedDataNode::PublishedDataNode(const std::string &key, const std::string &
 {
 }
 
-std::string PublishedData::GetFullProjection()
-{
-    json projection;
-    projection["key"] = 1;
-    projection["bundleName"] = 1;
-    projection["type"] = 1;
-    projection["value"] = 1;
-    projection["subscriberId"] = 1;
-    projection["version"] = 1;
-    return projection.dump();
-}
 int32_t PublishedData::Query(const std::string &filter, std::variant<sptr<Ashmem>, std::string> &publishedData)
 {
     auto delegate = KvDBDelegate::GetInstance();

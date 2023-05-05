@@ -48,7 +48,6 @@ public:
     int version = -1;
     int errCode = -1;
     bool isRead = false;
-    bool isPrivate = false;
     AccessSystemMode accessSystemMode = AccessSystemMode::UNDEFINED;
     OHOS::AppExecFwk::BundleInfo bundleInfo;
     std::string type = "rdb";
