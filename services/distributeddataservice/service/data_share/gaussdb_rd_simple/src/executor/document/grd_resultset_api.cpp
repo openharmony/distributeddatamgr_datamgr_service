@@ -32,7 +32,7 @@ int GRD_Next(GRD_ResultSet *resultSet)
     std::mutex dbMutex;
     std::lock_guard<std::mutex> lock(dbMutex);
     int ret = resultSet->resultSet_.GetNext();
-    return TrasnferDocErr(ret);
+    return TransferDocErr(ret);
 }
 
 int GRD_GetValue(GRD_ResultSet *resultSet, char **value)
@@ -48,7 +48,7 @@ int GRD_GetValue(GRD_ResultSet *resultSet, char **value)
         return GRD_NOT_AVAILABLE;
     }
     *value = val;
-    return TrasnferDocErr(ret);
+    return TransferDocErr(ret);
 }
 
 int GRD_FreeValue(char *value)

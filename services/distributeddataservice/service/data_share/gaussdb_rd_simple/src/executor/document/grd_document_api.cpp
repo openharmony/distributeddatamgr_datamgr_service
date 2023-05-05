@@ -30,7 +30,7 @@ int GRD_CreateCollection(GRD_DB *db, const char *collectionName, const char *opt
     std::string name = (collectionName == nullptr ? "" : collectionName);
     std::string option = (optionStr == nullptr ? "" : optionStr);
     int ret = db->store_->CreateCollection(name, option, flags);
-    return TrasnferDocErr(ret);
+    return TransferDocErr(ret);
 }
 
 int GRD_DropCollection(GRD_DB *db, const char *collectionName, unsigned int flags)
@@ -41,7 +41,7 @@ int GRD_DropCollection(GRD_DB *db, const char *collectionName, unsigned int flag
 
     std::string name = (collectionName == nullptr ? "" : collectionName);
     int ret = db->store_->DropCollection(name, flags);
-    return TrasnferDocErr(ret);
+    return TransferDocErr(ret);
 }
 
 int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update, unsigned int flags)
@@ -55,7 +55,7 @@ int GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, co
     } else if (ret == 0) {
         return 0;
     }
-    return TrasnferDocErr(ret);
+    return TransferDocErr(ret);
 }
 
 int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, unsigned int flags)
@@ -70,7 +70,7 @@ int GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, co
     } else if (ret == 0) {
         return 0;
     }
-    return TrasnferDocErr(ret);
+    return TransferDocErr(ret);
 }
 
 int GRD_InsertDoc(GRD_DB *db, const char *collectionName, const char *document, unsigned int flags)
@@ -79,7 +79,7 @@ int GRD_InsertDoc(GRD_DB *db, const char *collectionName, const char *document, 
         return GRD_INVALID_ARGS;
     }
     int ret = db->store_->InsertDocument(collectionName, document, flags);
-    return TrasnferDocErr(ret);
+    return TransferDocErr(ret);
 }
 
 int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, unsigned int flags)
@@ -88,7 +88,7 @@ int GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, un
         return GRD_INVALID_ARGS;
     }
     int ret = db->store_->DeleteDocument(collectionName, filter, flags);
-    int errCode = TrasnferDocErr(ret);
+    int errCode = TransferDocErr(ret);
     int deleteCount = 0;
     switch (errCode) {
         case GRD_OK:
@@ -123,8 +123,8 @@ int GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, unsigned in
     if (ret != E_OK) {
         delete grdResultSet;
         *resultSet = nullptr;
-        return TrasnferDocErr(ret);
+        return TransferDocErr(ret);
     }
     *resultSet = grdResultSet;
-    return TrasnferDocErr(ret);
+    return TransferDocErr(ret);
 }

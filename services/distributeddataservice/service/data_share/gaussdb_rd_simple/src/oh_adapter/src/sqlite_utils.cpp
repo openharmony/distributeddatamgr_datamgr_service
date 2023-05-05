@@ -49,7 +49,11 @@ bool g_configLog = false;
 
 void SQLiteUtils::SqliteLogCallback(void *data, int err, const char *msg)
 {
+#ifdef RUNNING_ON_SIMULATED_ENV
     GLOGD("[SQLite] err=%d sys=%d %s msg=%s", err, errno, sqlite3_errstr(err), msg);
+#else
+    GLOGD("[SQLite] err=%d sys=%d %s", err, errno, sqlite3_errstr(err));
+#endif
 }
 
 int SQLiteUtils::CreateDataBase(const std::string &path, int flag, sqlite3 *&db)
@@ -64,7 +68,7 @@ int SQLiteUtils::CreateDataBase(const std::string &path, int flag, sqlite3 *&db)
 
     int errCode = sqlite3_open_v2(path.c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
     if (errCode != SQLITE_OK) {
-        GLOGE("Open database [%s] failed. %d", path.c_str(), errCode);
+        GLOGE("Open database failed. %d", errCode);
         if (db != nullptr) {
             (void)sqlite3_close_v2(db);
             db = nullptr;

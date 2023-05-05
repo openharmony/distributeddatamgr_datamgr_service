@@ -33,18 +33,18 @@ int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GR
     DocumentStore *store = nullptr;
     int ret = DocumentStoreManager::GetDocumentStore(path, config, flags, store);
     if (ret != E_OK || store == nullptr) {
-        return TrasnferDocErr(ret);
+        return TransferDocErr(ret);
     }
 
     *db = new (std::nothrow) GRD_DB();
     if (*db == nullptr) {
         (void)DocumentStoreManager::CloseDocumentStore(store, GRD_DB_CLOSE_IGNORE_ERROR);
         store = nullptr;
-        ret = -E_OUT_OF_MEMORY;
+        return TransferDocErr(-E_OUT_OF_MEMORY);
     }
 
     (*db)->store_ = store;
-    return TrasnferDocErr(ret);
+    return TransferDocErr(ret);
 }
 
 int GRD_DBClose(GRD_DB *db, unsigned int flags)
@@ -55,7 +55,7 @@ int GRD_DBClose(GRD_DB *db, unsigned int flags)
 
     int ret = DocumentStoreManager::CloseDocumentStore(db->store_, flags);
     if (ret != E_OK) {
-        return TrasnferDocErr(ret);
+        return TransferDocErr(ret);
     }
 
     db->store_ = nullptr;

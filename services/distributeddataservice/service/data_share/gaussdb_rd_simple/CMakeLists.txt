@@ -136,6 +136,8 @@ cmake_repo("third_party_googletest")
 # build cJSON
 cmake_repo("third_party_cJSON" "cJSON")
 
+add_definitions(-DRUNNING_ON_SIMULATED_ENV)
+
 find_package(Threads)
 enable_testing()
 

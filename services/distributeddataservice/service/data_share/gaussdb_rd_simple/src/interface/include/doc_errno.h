@@ -39,6 +39,6 @@ constexpr int E_JSON_PATH_NOT_EXISTS = E_BASE + 41;
 constexpr int E_RESOURCE_BUSY = E_BASE + 50;
 constexpr int E_FAILED_MEMORY_ALLOCATE = E_BASE + 51;
 
-int TrasnferDocErr(int err);
+int TransferDocErr(int err);
 } // namespace DocumentDB
 #endif // DOC_ERRNO_H
