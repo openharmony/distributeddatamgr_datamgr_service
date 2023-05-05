@@ -16,9 +16,10 @@
 #include "rdb_delegate.h"
 
 #include "log_print.h"
-#include "rdb_utils.h"
+#include "resultset_json_formatter.h"
 #include "scheduler_manager.h"
 #include "utils/anonymous.h"
+
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 16;
 std::atomic<int32_t> RdbDelegate::resultSetCount = 0;
@@ -87,7 +88,7 @@ std::shared_ptr<DataShareResultSet> RdbDelegate::Query(
         return nullptr;
     }
     int count = resultSetCount.fetch_add(1);
-    ZLOGI("start query %{public}d", count);
+    ZLOGD("start query %{public}d", count);
     if (count > MAX_RESULTSET_COUNT) {
         ZLOGE("resultSetCount is full");
         resultSetCount--;
@@ -102,48 +103,11 @@ std::shared_ptr<DataShareResultSet> RdbDelegate::Query(
     }
     auto bridge = RdbDataShareAdapter::RdbUtils::ToResultSetBridge(resultSet);
     return std::shared_ptr<DataShareResultSet>(new DataShareResultSet(bridge), [](auto p) {
-        ZLOGI("release resultset");
+        ZLOGD("release resultset");
         resultSetCount--;
         delete p;
     });
 }
-
-class ResultSetJsonFormatter final: public DistributedData::Serializable {
-public:
-    explicit ResultSetJsonFormatter(const std::shared_ptr<NativeRdb::ResultSet> &resultSet)
-        : resultSet(resultSet)
-    {
-    }
-    ~ResultSetJsonFormatter() {}
-    bool Marshal(json &node) const override
-    {
-        int columnCount = 0;
-        auto result = resultSet->GetColumnCount(columnCount);
-        if (result != EOK) {
-            ZLOGE("GetColumnCount err, %{public}d", result);
-            return false;
-        }
-        while (resultSet->GoToNextRow() == E_OK) {
-            json result;
-            for (int i = 0; i < columnCount; i++) {
-                std::string columnName;
-                std::string value;
-                resultSet->GetColumnName(i, columnName);
-                resultSet->GetString(i, value);
-                SetValue(result[columnName], value);
-            }
-            node.push_back(result);
-        }
-        return true;
-    }
-    bool Unmarshal(const json &node) override
-    {
-        return false;
-    }
-
-private:
-    std::shared_ptr<NativeRdb::ResultSet> resultSet;
-};
 
 std::shared_ptr<DistributedData::Serializable> RdbDelegate::Query(
     const std::string &sql, const std::vector<std::string> &selectionArgs)

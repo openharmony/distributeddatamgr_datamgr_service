@@ -17,6 +17,7 @@
 #include "template_manager.h"
 
 #include "db_delegate.h"
+#include "json_formatter.h"
 #include "log_print.h"
 #include "published_data.h"
 #include "scheduler_manager.h"
@@ -223,34 +224,6 @@ int RdbSubscriberManager::EnableRdbSubscriber(const std::string &uri, const Temp
     });
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
-
-class JsonFormatter : public DistributedData::Serializable {
-public:
-    JsonFormatter(const std::string &key, const std::shared_ptr<DistributedData::Serializable> &value)
-        : key_(key), value_(value)
-    {
-    }
-    bool Marshal(json &node) const override
-    {
-        if (value_ == nullptr) {
-            ZLOGE("null value %{public}s", key_.c_str());
-            return false;
-        }
-        return SetValue(node[key_], *value_);
-    }
-    bool Unmarshal(const json &node) override
-    {
-        if (value_ == nullptr) {
-            ZLOGE("null value %{public}s", key_.c_str());
-            return false;
-        }
-        return GetValue(node, key_, *value_);
-    }
-
-private:
-    std::string key_;
-    std::shared_ptr<DistributedData::Serializable> value_;
-};
 
 void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context> context)
 {

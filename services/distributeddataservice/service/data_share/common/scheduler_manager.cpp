@@ -71,11 +71,19 @@ void SchedulerManager::SetTimer(const RdbStoreContext &rdbContext, const std::st
     if (it != timerCache_.end()) {
         // has current timer, reset time
         std::time_t now = time(nullptr);
+        if (now > reminderTime) {
+            ZLOGE("scheduler time  fail %{private}s %{private}s", key.uri.c_str(), bundleName.c_str());
+            return;
+        }
         scheduler_->Reset(it->second, std::chrono::seconds(reminderTime - now));
         return;
     }
     // not find task in map, create new timer
     std::time_t now = time(nullptr);
+    if (now > reminderTime) {
+        ZLOGE("scheduler time  fail %{private}s %{private}s", key.uri.c_str(), bundleName.c_str());
+        return;
+    }
     auto taskId = scheduler_->At(TaskScheduler::Clock::now() + std::chrono::seconds(reminderTime - now), [&]() {
         // 1. execute schedulerSQL in next time
         Execute(key, rdbContext.dir, rdbContext.version);

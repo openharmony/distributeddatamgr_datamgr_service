@@ -89,15 +89,15 @@ bool ConnectExtensionStrategy::Execute(
         return true;
     }
     int waitTime = 0;
-    static constexpr int RETRY_TIME = 500;
+    static constexpr int retryTime = 500;
     while (!isFinished()) {
         if (waitTime > maxWaitTimeMs) {
             ZLOGE("cannot finish work");
             return false;
         }
         ZLOGI("has wait %{public}d ms", waitTime);
-        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_TIME));
-        waitTime += RETRY_TIME;
+        std::this_thread::sleep_for(std::chrono::milliseconds(retryTime));
+        waitTime += retryTime;
     }
     return true;
 }

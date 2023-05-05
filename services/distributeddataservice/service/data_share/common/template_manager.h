@@ -69,6 +69,7 @@ private:
         uint32_t callerTokenId;
         bool enabled = true;
     };
+
     RdbSubscriberManager() = default;
     ConcurrentMap<Key, std::vector<ObserverNode>> rdbCache_;
     int Notify(const Key &key, std::vector<ObserverNode> &val, const std::string &rdbDir, int rdbVersion);

@@ -94,6 +94,10 @@ bool PublishedDataNode::Marshal(DistributedData::Serializable::json &node) const
         node["value"] = std::vector<uint8_t>(data, data + ashmem->GetAshmemSize());
     }
     std::time_t now = time(nullptr);
+    if (now <= 0) {
+         ZLOGE("time error");
+        return false;
+    }
     ret = ret && SetValue(node["timestamp"], now);
     return ret;
 }
