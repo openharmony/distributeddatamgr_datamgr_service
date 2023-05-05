@@ -62,6 +62,11 @@ public:
     explicit VersionData(int version);
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
+    VersionData &operator=(int inputVersion)
+    {
+        version = inputVersion;
+        return *this;
+    };
     operator int()
     {
         return version;
