@@ -26,8 +26,8 @@ namespace {
 constexpr const char *KEY_ID = "_id";
 constexpr const char *COLLECTION_PREFIX_GRD = "GRD_";
 constexpr const char *COLLECTION_PREFIX_GM_SYS = "GM_SYS_";
-const int MAX_COLLECTION_NAME = 511;
-const int MAX_ID_LENS = 899;
+const int MAX_COLLECTION_NAME = 512;
+const int MAX_ID_LENS = 900;
 const int JSON_DEEP_MAX = 4;
 
 bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefix)
@@ -36,16 +36,7 @@ bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefi
         return false;
     }
 
-    auto itPrefix = prefix.begin();
-    auto itName = name.begin();
-    while (itPrefix != prefix.end()) {
-        if (std::tolower(*itPrefix) != std::tolower(*itName)) {
-            return false;
-        }
-        itPrefix++;
-        itName++;
-    }
-    return true;
+    return (strncasecmp(name.c_str(), prefix.c_str(), prefix.length()) == 0);
 }
 } // namespace
 
@@ -55,7 +46,7 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::st
         errCode = -E_INVALID_ARGS;
         return false;
     }
-    if (collectionName.length() > MAX_COLLECTION_NAME) {
+    if (collectionName.length() + 1 > MAX_COLLECTION_NAME) { // with '\0'
         errCode = -E_OVER_LIMIT;
         return false;
     }
@@ -201,7 +192,7 @@ int CheckCommon::CheckIdFormat(JsonObject &filterJson)
     if (idValue.GetValueType() != ValueObject::ValueType::VALUE_STRING) {
         return -E_INVALID_ARGS;
     }
-    if (idValue.GetStringValue().length() > MAX_ID_LENS) {
+    if (idValue.GetStringValue().length() + 1 > MAX_ID_LENS) { // with '\0
         return -E_OVER_LIMIT;
     }
     return E_OK;
@@ -217,7 +208,7 @@ int CheckCommon::CheckIdFormat(JsonObject &filterJson, bool &isIdExisit)
     if (idValue.GetValueType() != ValueObject::ValueType::VALUE_STRING) {
         return -E_INVALID_ARGS;
     }
-    if (idValue.GetStringValue().length() > MAX_ID_LENS) {
+    if (idValue.GetStringValue().length() + 1 > MAX_ID_LENS) { // with '\0'
         return -E_OVER_LIMIT;
     }
     return E_OK;

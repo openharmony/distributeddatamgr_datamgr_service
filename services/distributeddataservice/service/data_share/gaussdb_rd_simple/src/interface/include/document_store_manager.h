@@ -29,8 +29,7 @@ public:
     static int CloseDocumentStore(DocumentStore *store, unsigned int flags);
 
 private:
-    static bool CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName, int &errCode);
-    static bool CheckDBConfig(const std::string &config, int &errCode);
+    static int CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName);
 };
 } // namespace DocumentDB
 #endif // DOCUMENT_STORE_MANAGER_H

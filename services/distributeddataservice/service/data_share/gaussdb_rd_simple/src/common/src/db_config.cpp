@@ -16,6 +16,7 @@
 #include "db_config.h"
 
 #include <algorithm>
+#include <cstring>
 #include <memory>
 
 #include "doc_errno.h"
@@ -32,14 +33,15 @@ const int MAX_CONNECTION_NUM = 1024;
 const int MIN_BUFFER_POOL_SIZE = 1024;
 const int MAX_BUFFER_POOL_SIZE = 4 * 1024 * 1024;
 
-const std::string DB_CONFIG_PAGESIZE = "pagesize";
-const std::string DB_CONFIG_REDO_FLUSH_BY_TRX = "redoflushbytrx";
-const std::string DB_CONFIG_REDO_PUB_BUFF_SIZE = "redopubbufsize";
-const std::string DB_CONFIG_MAX_CONN_NUM = "maxconnnum";
-const std::string DB_CONFIG_BUFFER_POOL_SIZE = "bufferpoolsize";
-const std::string DB_CONFIG_CRC_CHECK_ENABLE = "crccheckenable";
+constexpr const char *DB_CONFIG_PAGESIZE = "pagesize";
+constexpr const char *DB_CONFIG_REDO_FLUSH_BY_TRX = "redoflushbytrx";
+constexpr const char *DB_CONFIG_REDO_PUB_BUFF_SIZE = "redopubbufsize";
+constexpr const char *DB_CONFIG_MAX_CONN_NUM = "maxconnnum";
+constexpr const char *DB_CONFIG_BUFFER_POOL_SIZE = "bufferpoolsize";
+constexpr const char *DB_CONFIG_CRC_CHECK_ENABLE = "crccheckenable";
 
-const std::vector<std::string> DB_CONFIG = { DB_CONFIG_PAGESIZE, DB_CONFIG_REDO_FLUSH_BY_TRX,
+const int DB_CONFIG_SIZE = 6; // db config size
+const char *DB_CONFIG[DB_CONFIG_SIZE] = { DB_CONFIG_PAGESIZE, DB_CONFIG_REDO_FLUSH_BY_TRX,
     DB_CONFIG_REDO_PUB_BUFF_SIZE, DB_CONFIG_MAX_CONN_NUM, DB_CONFIG_BUFFER_POOL_SIZE, DB_CONFIG_CRC_CHECK_ENABLE };
 
 bool CheckPageSizeConfig(const JsonObject &config, int32_t &pageSize, int &errCode)
@@ -188,19 +190,27 @@ bool CheckCrcCheckEnableConfig(const JsonObject &config, uint32_t &crcCheckEnabl
     return true;
 }
 
-bool CheckConfigSupport(const JsonObject &config, int &errCode)
+int CheckConfigValid(const JsonObject &config)
 {
     JsonObject child = config.GetChild();
     while (!child.IsNull()) {
         std::string fieldName = child.GetItemFiled();
-        if (std::find(DB_CONFIG.begin(), DB_CONFIG.end(), fieldName) == DB_CONFIG.end()) {
-            GLOGE("Invalid db config.");
-            errCode = -E_INVALID_CONFIG_VALUE;
-            return false;
+        bool isSupport = false;
+        for (int i = 0; i < DB_CONFIG_SIZE; i++) {
+            if (strcmp(DB_CONFIG[i], fieldName.c_str()) == 0) {
+                isSupport = true;
+                break;
+            }
         }
+
+        if (!isSupport) {
+            GLOGE("Invalid db config.");
+            return -E_INVALID_CONFIG_VALUE;
+        }
+
         child = child.GetNext();
     }
-    return true;
+    return E_OK;
 }
 } // namespace
 
@@ -227,7 +237,8 @@ DBConfig DBConfig::ReadConfig(const std::string &confStr, int &errCode)
         return {};
     }
 
-    if (!CheckConfigSupport(dbConfig, errCode)) {
+    errCode = CheckConfigValid(dbConfig);
+    if (errCode != E_OK) {
         GLOGE("Check DB config, not support config item. %d", errCode);
         return {};
     }

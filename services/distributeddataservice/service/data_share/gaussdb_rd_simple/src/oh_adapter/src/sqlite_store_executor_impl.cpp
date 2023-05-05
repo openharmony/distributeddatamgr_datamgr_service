@@ -40,6 +40,12 @@ int SqliteStoreExecutor::CreateDatabase(const std::string &path, const DBConfig 
         goto END;
     }
 
+    errCode = SQLiteUtils::ExecSql(db, "PRAGMA journal_mode=WAL;");
+    if (errCode != E_OK) {
+        GLOGE("Set db journal_mode failed. %d", errCode);
+        goto END;
+    }
+
     errCode = SQLiteUtils::ExecSql(db, "CREATE TABLE IF NOT EXISTS grd_meta (key BLOB PRIMARY KEY, value BLOB);");
     if (errCode != E_OK) {
         GLOGE("Create meta table failed. %d", errCode);
@@ -80,6 +86,21 @@ int SqliteStoreExecutor::SetDBConfig(const std::string &config)
     return PutData("grd_meta", dbConfigKey, dbConfigVal);
 }
 
+int SqliteStoreExecutor::StartTransaction()
+{
+    return SQLiteUtils::BeginTransaction(dbHandle_, TransactType::IMMEDIATE);
+}
+
+int SqliteStoreExecutor::Commit()
+{
+    return SQLiteUtils::CommitTransaction(dbHandle_);
+}
+
+int SqliteStoreExecutor:: Rollback()
+{
+    return SQLiteUtils::RollbackTransaction(dbHandle_);
+}
+
 int SqliteStoreExecutor::PutData(const std::string &collName, const Key &key, const Value &value)
 {
     if (dbHandle_ == nullptr) {
@@ -94,7 +115,7 @@ int SqliteStoreExecutor::PutData(const std::string &collName, const Key &key, co
             return E_OK;
         },
         nullptr);
-    if (errCode != SQLITE_OK) {
+    if (errCode != E_OK) {
         GLOGE("[sqlite executor] Put data failed. err=%d", errCode);
         if (errCode == -E_ERROR) {
             GLOGE("Cant find the collection");
@@ -124,7 +145,7 @@ int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Va
             innerErrorCode = E_OK;
             return E_OK;
         });
-    if (errCode != SQLITE_OK) {
+    if (errCode != E_OK) {
         GLOGE("[sqlite executor] Get data failed. err=%d", errCode);
         return errCode;
     }
@@ -156,7 +177,7 @@ int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonO
             int externErrCode;
             JsonObject srcObj = JsonObject::Parse(valueStr, externErrCode, true);
             if (externErrCode != E_OK) {
-                GLOGE("srcObj Parsed faild");
+                GLOGE("srcObj Parsed failed");
                 return externErrCode;
             }
             if (JsonCommon::IsJsonNodeMatch(srcObj, filterObj, externErrCode)) {
@@ -166,7 +187,7 @@ int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonO
             innerErrorCode = E_OK;
             return E_OK;
         });
-    if (errCode != SQLITE_OK) {
+    if (errCode != E_OK) {
         GLOGE("[sqlite executor] Get data failed. err=%d", errCode);
         return errCode;
     }
@@ -195,7 +216,7 @@ int SqliteStoreExecutor::DelData(const std::string &collName, const Key &key)
             return E_OK;
         },
         nullptr);
-    if (errCode != SQLITE_OK) {
+    if (errCode != E_OK) {
         GLOGE("[sqlite executor] Delete data failed. err=%d", errCode);
         if (errCode == -E_ERROR) {
             GLOGE("Cant find the collection");
@@ -225,7 +246,7 @@ int SqliteStoreExecutor::CreateCollection(const std::string &name, bool ignoreEx
 
     std::string sql = "CREATE TABLE IF NOT EXISTS '" + collName + "' (key BLOB PRIMARY KEY, value BLOB);";
     int errCode = SQLiteUtils::ExecSql(dbHandle_, sql);
-    if (errCode != SQLITE_OK) {
+    if (errCode != E_OK) {
         GLOGE("[sqlite executor] Create collectoin failed. err=%d", errCode);
         return errCode;
     }
@@ -253,7 +274,7 @@ int SqliteStoreExecutor::DropCollection(const std::string &name, bool ignoreNonE
 
     std::string sql = "DROP TABLE IF EXISTS '" + collName + "';";
     int errCode = SQLiteUtils::ExecSql(dbHandle_, sql);
-    if (errCode != SQLITE_OK) {
+    if (errCode != E_OK) {
         GLOGE("[sqlite executor] Drop collectoin failed. err=%d", errCode);
         return errCode;
     }

@@ -169,7 +169,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with multiple and _id. and get the record according to filter condition.
-     * @tc.expected: step1. Faild to get the record, the result is GRD_INVALID_ARGS, GRD_GetValue return GRD_NOT_AVAILABLE and GRD_Next return GRD_NO_DATA.
+     * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS, GRD_GetValue return GRD_NOT_AVAILABLE and GRD_Next return GRD_NO_DATA.
      */
     const char *filter = "{\"_id\" : \"6\", \"name\":\"doc6\"}";
     GRD_ResultSet *resultSet = nullptr;
@@ -197,7 +197,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter without _id and get the record according to filter condition.
-     * @tc.expected: step1. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     const char *filter = "{\"name\":\"doc6\"}";
     GRD_ResultSet *resultSet = nullptr;
@@ -226,7 +226,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 // {
 //     /**
 //      * @tc.steps: step1. Create filter with _id and number
-//      * @tc.expected: step1. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet1 = nullptr;
 //     const char *filter1 = "{\"_id\" : \"1\", \"info\" : 1}";
@@ -236,7 +236,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 
 //     /**
 //      * @tc.steps: step2. Create filter with two _id
-//      * @tc.expected: step2. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step2. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet2 = nullptr;
 //     const char *filter2 = "{\"_id\" : \"1\", \"_id\" : \"2\"}";
@@ -246,7 +246,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 
 //     /**
 //      * @tc.steps: step3. Create filter with array and _id
-//      * @tc.expected: step3. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step3. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet3 = nullptr;
 //     const char *filter3 = "{\"_id\" : \"1\", \"info\" : [\"2\", 1]}";
@@ -255,7 +255,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 
 //     /**
 //      * @tc.steps: step4. Create filter with object and _id
-//      * @tc.expected: step4. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step4. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet4 = nullptr;
 //     const char *filter4 = "{\"_id\" : \"1\", \"info\" : {\"info_val\" : \"1\"}}";
@@ -264,7 +264,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 
 //     /**
 //      * @tc.steps: step5. Create filter with bool and _id
-//      * @tc.expected: step5. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step5. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet5 = nullptr;
 //     const char *filter5 = "{\"_id\" : \"1\", \"info\" : true}";
@@ -273,7 +273,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 
 //     /**
 //      * @tc.steps: step6. Create filter with null and _id
-//      * @tc.expected: step6. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step6. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet6 = nullptr;
 //     const char *filter6 = "{\"_id\" : \"1\", \"info\" : null}";
@@ -292,7 +292,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with _id which value is string
-     * @tc.expected: step1. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet1 = nullptr;
     const char *filter1 = "{\"_id\" : \"valstring\"}";
@@ -302,7 +302,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 
     /**
      * @tc.steps: step2. Create filter with _id which value is number
-     * @tc.expected: step2. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step2. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet2 = nullptr;
     const char *filter2 = "{\"_id\" : 1}";
@@ -311,7 +311,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 
     /**
      * @tc.steps: step3. Create filter with _id which value is array
-     * @tc.expected: step3. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step3. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet3 = nullptr;
     const char *filter3 = "{\"_id\" : [\"2\", 1]}";
@@ -320,7 +320,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 
     /**
      * @tc.steps: step4. Create filter with _id which value is object
-     * @tc.expected: step4. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step4. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet4 = nullptr;
     const char *filter4 = "{\"_id\" : {\"info_val\" : \"1\"}}";
@@ -329,7 +329,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 
     /**
      * @tc.steps: step5. Create filter with _id which value is bool
-     * @tc.expected: step5. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step5. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet5 = nullptr;
     const char *filter5 = "{\"_id\" : true}";
@@ -338,7 +338,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 
     /**
      * @tc.steps: step6. Create filter with _id which value is null
-     * @tc.expected: step6. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step6. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet6 = nullptr;
     const char *filter6 = "{\"_id\" : null}";

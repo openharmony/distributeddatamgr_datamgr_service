@@ -59,13 +59,19 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
     }
 
     std::lock_guard<std::mutex> lock(dbMutex_);
+    errCode = executor_->StartTransaction();
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    std::string oriOptStr;
     bool ignoreExists = (flags != CHK_EXIST_COLLECTION);
     errCode = executor_->CreateCollection(lowerCaseName, ignoreExists);
     if (errCode != E_OK) {
         GLOGE("Create collection failed. %d", errCode);
-        return errCode;
+        goto END;
     }
-    std::string oriOptStr;
+
     errCode = executor_->GetCollectionOption(lowerCaseName, oriOptStr);
     if (errCode == -E_NOT_FOUND) {
         executor_->SetCollectionOption(lowerCaseName, collOption.ToString());
@@ -74,10 +80,16 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
         CollectionOption oriOption = CollectionOption::ReadOption(oriOptStr, errCode);
         if (collOption != oriOption) {
             GLOGE("Create collection failed, option changed.");
-            return -E_INVALID_CONFIG_VALUE;
+            errCode = -E_INVALID_CONFIG_VALUE;
         }
     }
 
+END:
+    if (errCode == E_OK) {
+        executor_->Commit();
+    } else {
+        executor_->Rollback();
+    }
     return errCode;
 }
 
@@ -97,19 +109,31 @@ int DocumentStore::DropCollection(const std::string &name, int flags)
 
     bool ignoreNonExists = (flags != CHK_NON_EXIST_COLLECTION);
     std::lock_guard<std::mutex> lock(dbMutex_);
+    errCode = executor_->StartTransaction();
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
     errCode = executor_->DropCollection(lowerCaseName, ignoreNonExists);
     if (errCode != E_OK) {
         GLOGE("Drop collection failed. %d", errCode);
-        return errCode;
+        goto END;
     }
 
     errCode = executor_->CleanCollectionOption(lowerCaseName);
     if (errCode != E_OK && errCode != -E_NO_DATA) {
         GLOGE("Clean collection option failed. %d", errCode);
-        return errCode;
+    } else {
+        errCode = E_OK;
     }
 
-    return E_OK;
+END:
+    if (errCode == E_OK) {
+        executor_->Commit();
+    } else {
+        executor_->Rollback();
+    }
+    return errCode;
 }
 
 int DocumentStore::UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update,
@@ -123,14 +147,14 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     }
     JsonObject updateObj = JsonObject::Parse(update, errCode, true);
     if (errCode != E_OK) {
-        GLOGE("update Parsed faild");
+        GLOGE("update Parsed failed");
         return errCode;
     }
     std::vector<std::vector<std::string>> allPath;
     if (update != "{}") {
         allPath = JsonCommon::ParsePath(updateObj, errCode);
         if (errCode != E_OK) {
-            GLOGE("updateObj ParsePath faild");
+            GLOGE("updateObj ParsePath failed");
             return errCode;
         }
         if (!CheckCommon::CheckUpdata(updateObj, allPath)) {
@@ -144,13 +168,13 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
     if (errCode != E_OK) {
-        GLOGE("filter Parsed faild");
+        GLOGE("filter Parsed failed");
         return errCode;
     }
     std::vector<std::vector<std::string>> filterAllPath;
     filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
     if (errCode != E_OK) {
-        GLOGE("filter ParsePath faild");
+        GLOGE("filter ParsePath failed");
         return errCode;
     }
     bool isOnlyId = true;
@@ -204,7 +228,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     }
     JsonObject documentObj = JsonObject::Parse(document, errCode, true);
     if (errCode != E_OK) {
-        GLOGE("document Parsed faild");
+        GLOGE("document Parsed failed");
         return errCode;
     }
     std::vector<std::vector<std::string>> allPath;
@@ -224,7 +248,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
     if (errCode != E_OK) {
-        GLOGE("filter Parsed faild");
+        GLOGE("filter Parsed failed");
         return errCode;
     }
     std::vector<std::vector<std::string>> filterAllPath;
@@ -292,7 +316,7 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
     }
     JsonObject documentObj = JsonObject::Parse(document, errCode, caseSensitive);
     if (errCode != E_OK) {
-        GLOGE("Document Parsed faild");
+        GLOGE("Document Parsed failed");
         return errCode;
     }
     errCode = CheckCommon::CheckDocument(documentObj);
@@ -334,7 +358,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
     if (errCode != E_OK) {
-        GLOGE("filter Parsed faild");
+        GLOGE("filter Parsed failed");
         return errCode;
     }
     std::vector<std::vector<std::string>> filterAllPath;
@@ -390,7 +414,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
     if (errCode != E_OK) {
-        GLOGE("filter Parsed faild");
+        GLOGE("filter Parsed failed");
         return errCode;
     }
     std::vector<std::vector<std::string>> filterAllPath;
@@ -409,7 +433,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     }
     JsonObject projectionObj = JsonObject::Parse(projection, errCode, caseSensitive);
     if (errCode != E_OK) {
-        GLOGE("projection Parsed faild");
+        GLOGE("projection Parsed failed");
         return errCode;
     }
     bool viewType = false;
@@ -424,7 +448,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
             return -E_INVALID_ARGS;
         }
         if (GetViewType(projectionObj, viewType) != E_OK) {
-            GLOGE("GetViewType faild");
+            GLOGE("GetViewType failed");
             return -E_INVALID_ARGS;
         }
     }

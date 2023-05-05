@@ -50,8 +50,8 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
 {
     std::string canonicalPath;
     std::string dbName;
-    int errCode = E_OK;
-    if (!CheckDBPath(path, canonicalPath, dbName, errCode)) {
+    int errCode = CheckDBPath(path, canonicalPath, dbName);
+    if (errCode != E_OK) {
         GLOGE("Check document db file path failed.");
         return errCode;
     }
@@ -81,11 +81,9 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
 
     store = new (std::nothrow) DocumentStore(executor);
     if (store == nullptr) {
+        delete executor;
         GLOGE("Memory allocation failed!");
         return -E_FAILED_MEMORY_ALLOCATE;
-    }
-    if (store == nullptr) {
-        return -E_OUT_OF_MEMORY;
     }
 
     return errCode;
@@ -102,42 +100,32 @@ int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, unsigned int 
     return E_OK;
 }
 
-bool DocumentStoreManager::CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName,
-    int &errCode)
+int DocumentStoreManager::CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName)
 {
     if (path.empty()) {
         GLOGE("Invalid path empty");
-        errCode = -E_INVALID_ARGS;
-        return false;
+        return -E_INVALID_ARGS;
     }
 
     if (path.back() == '/') {
         GLOGE("Invalid path end with slash");
-        errCode = -E_INVALID_ARGS;
-        return false;
+        return -E_INVALID_ARGS;
     }
 
     std::string dirPath;
     OSAPI::SplitFilePath(path, dirPath, dbName);
 
-    int innerErrCode = OSAPI::GetRealPath(dirPath, canonicalPath);
-    if (innerErrCode != E_OK) {
+    int errCode = OSAPI::GetRealPath(dirPath, canonicalPath);
+    if (errCode != E_OK) {
         GLOGE("Get real path failed. %d", errCode);
-        errCode = -E_FILE_OPERATION;
-        return false;
+        return -E_FILE_OPERATION;
     }
 
     if (!OSAPI::CheckPermission(canonicalPath)) {
-        GLOGE("Check path permission failed. %d", errCode);
-        errCode = -E_FILE_OPERATION;
-        return false;
+        GLOGE("Check path permission failed.");
+        return -E_FILE_OPERATION;
     }
 
-    return true;
-}
-
-bool DocumentStoreManager::CheckDBConfig(const std::string &config, int &errCode)
-{
-    return true;
+    return E_OK;
 }
 } // namespace DocumentDB

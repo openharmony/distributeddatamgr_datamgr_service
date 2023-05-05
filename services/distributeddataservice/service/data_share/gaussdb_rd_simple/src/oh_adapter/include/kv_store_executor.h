@@ -25,6 +25,10 @@ class KvStoreExecutor {
 public:
     virtual ~KvStoreExecutor() = default;
 
+    virtual int StartTransaction() = 0;
+    virtual int Commit() = 0;
+    virtual int Rollback() = 0;
+
     virtual int PutData(const std::string &collName, const Key &key, const Value &value) = 0;
     virtual int GetData(const std::string &collName, const Key &key, Value &value) const = 0;
     virtual int GetFilededData(const std::string &collName, const JsonObject &filterObj,

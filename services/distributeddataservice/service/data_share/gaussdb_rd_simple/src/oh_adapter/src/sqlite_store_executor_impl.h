@@ -32,6 +32,10 @@ public:
     int GetDBConfig(std::string &config);
     int SetDBConfig(const std::string &config);
 
+    int StartTransaction() override;
+    int Commit() override;
+    int Rollback() override;
+
     int PutData(const std::string &collName, const Key &key, const Value &value) override;
     int GetData(const std::string &collName, const Key &key, Value &value) const override;
     int GetFilededData(const std::string &collName, const JsonObject &filterObj,
