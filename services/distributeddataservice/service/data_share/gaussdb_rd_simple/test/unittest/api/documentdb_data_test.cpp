@@ -150,7 +150,7 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest007, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string val = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    EXPECT_EQ(GRD_UpsertDoc(g_db, "collection_not_exists", filter.c_str(), val.c_str(), GRD_DOC_REPLACE), GRD_NO_DATA);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, "collection_not_exists", filter.c_str(), val.c_str(), GRD_DOC_REPLACE), GRD_INVALID_ARGS);
 }
 
 /**
