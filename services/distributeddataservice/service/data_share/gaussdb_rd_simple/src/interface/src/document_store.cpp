@@ -168,6 +168,13 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     }
     bool isOnlyId = true;
     auto coll = Collection(collection, executor_);
+    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!IsCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
         return errCode;
@@ -249,6 +256,13 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     bool isOnlyId = true;
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
     auto coll = Collection(collection, executor_);
+    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!IsCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
         return errCode;
@@ -300,6 +314,13 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
+    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!IsCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     if (document.length() + 1 > JSON_LENS_MAX) {
         GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
@@ -335,7 +356,11 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
-    if (!coll.IsCollectionExists(errCode)) {
+    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!IsCollectionExist) {
         return -E_INVALID_ARGS;
     }
     if (filter.empty()) {
@@ -447,6 +472,13 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         ifShowId = true;
     }
     auto coll = Collection(collection, executor_);
+    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!IsCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     std::lock_guard<std::mutex> lock(dbMutex_);
     if (!coll.FindDocument()) {
         GLOGE("no corresponding table name");
