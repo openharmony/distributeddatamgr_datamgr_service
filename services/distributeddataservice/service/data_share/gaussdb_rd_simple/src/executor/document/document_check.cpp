@@ -108,12 +108,15 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
         isOnlyId = false;
     }
     for (int i = 0; i < filterPath.size(); i++) {
-        for (auto fieldName : filterPath[i]) {
-            for (int j = 0; j < fieldName.size(); j++) {
-                if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
+        for (int j = 0; j < filterPath[i].size(); j++) {
+            for (auto oneChar : filterPath[i][j]) {
+                if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
                     return -E_INVALID_ARGS;
                 }
             }
+        }
+        if (!filterPath[i].empty() && !filterPath[i][0].empty() && isdigit(filterPath[i][0][0])) {
+            return -E_INVALID_ARGS;
         }
     }
     bool isIdExisit = false;
