@@ -55,13 +55,14 @@ Strategy *QueryStrategy::GetStrategy()
     if (!strategies.IsEmpty()) {
         return &strategies;
     }
-    auto ret = strategies.Init({
-       new (std::nothrow)LoadConfigCommonStrategy(),
-       new (std::nothrow)LoadConfigFromBundleInfoStrategy(),
-       new (std::nothrow)PermissionStrategy(),
-       new (std::nothrow)LoadConfigDataInfoStrategy(),
-       new (std::nothrow)ProcessSingleAppUserCrossStrategy()
-    });
+    std::initializer_list<Strategy *> list = {
+        new (std::nothrow)LoadConfigCommonStrategy(),
+        new (std::nothrow)LoadConfigFromBundleInfoStrategy(),
+        new (std::nothrow)PermissionStrategy(),
+        new (std::nothrow)LoadConfigDataInfoStrategy(),
+        new (std::nothrow)ProcessSingleAppUserCrossStrategy()
+    };
+    auto ret = strategies.Init(list);
     if (!ret) {
         return nullptr;
     }

@@ -92,13 +92,16 @@ struct PublishedDataKey {
 class PublishedDataSubscriberManager {
 public:
     static PublishedDataSubscriberManager &GetInstance();
-    int AddSubscriber(const std::string &, const std::string &, const int64_t,
-        const sptr<IDataProxyPublishedDataObserver>, const uint32_t);
-    int DelSubscriber(const std::string &, const std::string &, const int64_t, const uint32_t);
-    int DisableSubscriber(const std::string &, const std::string &, const int64_t, const uint32_t);
-    int EnableSubscriber(const std::string &, const std::string &, const int64_t, const uint32_t);
-    void Emit(const std::vector<PublishedDataKey> &, const std::string &,
-        const sptr<IDataProxyPublishedDataObserver> observer = nullptr);
+    int AddSubscriber(const std::string &key, const std::string &callerBundleName, const int64_t subscriberId,
+        const sptr<IDataProxyPublishedDataObserver> observer, const uint32_t callerTokenId);
+    int DelSubscriber(const std::string &uri, const std::string &callerBundleName, const int64_t subscriberId,
+        const uint32_t callerTokenId);
+    int DisableSubscriber(const std::string &uri, const std::string &callerBundleName, const int64_t subscriberId,
+        const uint32_t callerTokenId);
+    int EnableSubscriber(const std::string &uri, const std::string &callerBundleName, const int64_t subscriberId,
+        const uint32_t callerTokenId);
+    void Emit(const std::vector<PublishedDataKey> &keys, const std::string &ownerBundleName,
+        const sptr<IDataProxyPublishedDataObserver> observer);
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer, uint32_t callerTokenId);

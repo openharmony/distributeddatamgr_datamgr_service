@@ -21,7 +21,6 @@
 #include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
-
 class ResultSetJsonFormatter final : public DistributedData::Serializable {
 public:
     explicit ResultSetJsonFormatter(const std::shared_ptr<NativeRdb::ResultSet> &resultSet) : resultSet(resultSet) {}

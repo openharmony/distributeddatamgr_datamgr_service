@@ -147,13 +147,13 @@ int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const Templat
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
     rdbCache_.Compute(key, [&observer, &context, &result, this](const auto &key, std::vector<ObserverNode> &value) {
         ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), context->callerTokenId);
-        ObserverNode observerNode(observer, context->callerTokenId);
-        std::vector<ObserverNode> node({ observerNode });
+        std::vector<ObserverNode> node;
+        node.emplace_back(observer, context->callerTokenId);
         result = Notify(key, node, context->calledSourceDir, context->version);
         if (result != E_OK) {
             return false;
         }
-        value.emplace_back(observerNode);
+        value.emplace_back(observer, context->callerTokenId);
         if (GetEnableObserverCount(key) == 1) {
             SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
         }
@@ -212,8 +212,8 @@ int RdbSubscriberManager::EnableRdbSubscriber(const std::string &uri, const Temp
         for (auto it = value.begin(); it != value.end(); it++) {
             if (it->callerTokenId == context->callerTokenId) {
                 it->enabled = true;
-                ObserverNode observerNode(it->observer, context->callerTokenId);
-                std::vector<ObserverNode> node({ observerNode });
+                std::vector<ObserverNode> node;
+                node.emplace_back(it->observer, context->callerTokenId);
                 Notify(key, node, context->calledSourceDir, context->version);
                 if (GetEnableObserverCount(key) == 1) {
                     SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);

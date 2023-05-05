@@ -19,7 +19,6 @@
 #include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
-
 class JsonFormatter : public DistributedData::Serializable {
 public:
     JsonFormatter(const std::string &key, const std::shared_ptr<DistributedData::Serializable> &value)

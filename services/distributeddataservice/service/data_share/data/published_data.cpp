@@ -95,7 +95,7 @@ bool PublishedDataNode::Marshal(DistributedData::Serializable::json &node) const
     }
     std::time_t now = time(nullptr);
     if (now <= 0) {
-         ZLOGE("time error");
+        ZLOGE("time error");
         return false;
     }
     ret = ret && SetValue(node["timestamp"], now);

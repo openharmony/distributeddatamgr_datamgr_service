@@ -45,11 +45,12 @@ Strategy *SubscribeStrategy::GetStrategy()
     if (!strategies.IsEmpty()) {
         return &strategies;
     }
-    auto ret = strategies.Init({
-       new (std::nothrow)LoadConfigCommonStrategy(),
-       new (std::nothrow)LoadConfigFromDataProxyNodeStrategy(),
-       new (std::nothrow)PermissionStrategy()
-    });
+    std::initializer_list<Strategy *> list = {
+        new (std::nothrow)LoadConfigCommonStrategy(),
+        new (std::nothrow)LoadConfigFromDataProxyNodeStrategy(),
+        new (std::nothrow)PermissionStrategy()
+    };
+    auto ret = strategies.Init(list);
     if (!ret) {
         return nullptr;
     }
