@@ -238,7 +238,7 @@ int CheckCommon::CheckDocument(JsonObject &documentObj)
     return E_OK;
 }
 
-bool CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std::string>> &path)
+int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std::string>> &path)
 {
     if (updataObj.GetDeep() > JSON_DEEP_MAX) {
         GLOGE("projectionObj's json deep is deeper than JSON_DEEP_MAX");
@@ -248,25 +248,25 @@ bool CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std
         for (int j = 0; j < path[i].size(); j++) {
             for (auto oneChar : path[i][j]) {
                 if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
-                    return false;
+                    return -E_INVALID_ARGS;;
                 }
             }
         }
         if (!path[i].empty() && !path[i][0].empty() && isdigit(path[i][0][0])) {
-            return false;
+            return -E_INVALID_ARGS;;
         }
     }
     for (auto singlePath : path) {
         if (singlePath.size() > JSON_DEEP_MAX) {
-            return false;
+            return -E_INVALID_ARGS;;
         }
     }
     bool isIdExist = true;
     CheckIdFormat(updataObj, isIdExist);
     if (isIdExist) {
-        return false;
+        return -E_INVALID_ARGS;;
     }
-    return true;
+    return E_OK;
 }
 
 bool CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path)
