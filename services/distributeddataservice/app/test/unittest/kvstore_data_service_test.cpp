@@ -57,7 +57,7 @@ HWTEST_F(KvStoreDataServiceTest, RegisterClientDeathObserver001, TestSize.Level1
     KvStoreDataService kvDataService;
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadCheckers();
-    KvStoreMetaManager::GetInstance().InitMetaParameter();
+    KvStoreMetaManager::GetInstance().InitMetaParameter(std::make_shared<ExecutorPool>(12, 5));
     Status status = kvDataService.RegisterClientDeathObserver(appId, new KvStoreClientDeathObserver());
     EXPECT_EQ(status, Status::SUCCESS) << "RegisterClientDeathObserver failed";
 }
