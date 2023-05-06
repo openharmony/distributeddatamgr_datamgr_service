@@ -15,6 +15,7 @@
 
 #include "device_manager_adapter.h"
 
+#include "executor_pool.h"
 #include "gtest/gtest.h"
 #include "types.h"
 namespace {
@@ -36,7 +37,9 @@ class DeviceManagerAdapterTest : public testing::Test {
 public:
   static void SetUpTestCase(void)
     {
-        DeviceManagerAdapter::GetInstance().Init();
+        size_t max = 12;
+        size_t min = 5;
+        DeviceManagerAdapter::GetInstance().Init(std::make_shared<OHOS::ExecutorPool>(max, min));
     }
     static void TearDownTestCase(void) {}
     void SetUp() {}
