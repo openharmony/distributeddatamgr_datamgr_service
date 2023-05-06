@@ -62,10 +62,10 @@ VersionData::VersionData(int version) : version(version) {}
 
 bool VersionData::Unmarshal(const DistributedData::Serializable::json &node)
 {
-    return GetValue(node, "version", version);
+    return GetValue(node, GET_NAME(version), version);
 }
 bool VersionData::Marshal(DistributedData::Serializable::json &node) const
 {
-    return SetValue(node["version"], version);
+    return SetValue(node[GET_NAME(version)], version);
 }
 } // namespace OHOS::DataShare
