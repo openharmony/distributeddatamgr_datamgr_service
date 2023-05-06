@@ -240,7 +240,7 @@ int CheckCommon::CheckDocument(JsonObject &documentObj)
 
 bool CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std::string>> &path)
 {
-    if (updataObj.GetDeep() > JSON_DEEP_MAX) {
+    if (.GetDeep() > JSON_DEEP_MAX) {
         GLOGE("projectionObj's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
