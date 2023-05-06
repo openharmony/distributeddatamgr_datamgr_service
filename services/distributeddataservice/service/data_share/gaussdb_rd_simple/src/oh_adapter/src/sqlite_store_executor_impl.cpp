@@ -226,29 +226,33 @@ int SqliteStoreExecutor::DelData(const std::string &collName, const Key &key)
     return errCode;
 }
 
-int SqliteStoreExecutor::CreateCollection(const std::string &name, bool ignoreExists)
+int SqliteStoreExecutor::CreateCollection(const std::string &name, const std::string &option, bool ignoreExists)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
     }
     std::string collName = COLL_PREFIX + name;
-    if (!ignoreExists) {
-        int errCode = E_OK;
-        bool isExists = IsCollectionExists(collName, errCode);
-        if (errCode != E_OK) {
-            return errCode;
-        }
-        if (isExists) {
-            GLOGE("[sqlite executor] Create collectoin failed, collection already exists.");
-            return -E_COLLECTION_CONFLICT;
-        }
+    int errCode = E_OK;
+    bool isExists = IsCollectionExists(collName, errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+
+    if (isExists) {
+        GLOGW("[sqlite executor] Create collection failed, collection already exists.");
+        return ignoreExists ? E_OK : -E_COLLECTION_CONFLICT;
     }
 
     std::string sql = "CREATE TABLE IF NOT EXISTS '" + collName + "' (key BLOB PRIMARY KEY, value BLOB);";
-    int errCode = SQLiteUtils::ExecSql(dbHandle_, sql);
+    errCode = SQLiteUtils::ExecSql(dbHandle_, sql);
     if (errCode != E_OK) {
-        GLOGE("[sqlite executor] Create collectoin failed. err=%d", errCode);
+        GLOGE("[sqlite executor] Create collection failed. err=%d", errCode);
         return errCode;
+    }
+
+    errCode = SetCollectionOption(name, option);
+    if (errCode != E_OK) {
+        GLOGE("[sqlite executor] Set collection option failed. err=%d", errCode);
     }
     return E_OK;
 }
@@ -267,7 +271,7 @@ int SqliteStoreExecutor::DropCollection(const std::string &name, bool ignoreNonE
             return errCode;
         }
         if (!isExists) {
-            GLOGE("[sqlite executor] Drop collectoin failed, collection not exists.");
+            GLOGE("[sqlite executor] Drop collection failed, collection not exists.");
             return -E_INVALID_ARGS;
         }
     }
@@ -275,7 +279,7 @@ int SqliteStoreExecutor::DropCollection(const std::string &name, bool ignoreNonE
     std::string sql = "DROP TABLE IF EXISTS '" + collName + "';";
     int errCode = SQLiteUtils::ExecSql(dbHandle_, sql);
     if (errCode != E_OK) {
-        GLOGE("[sqlite executor] Drop collectoin failed. err=%d", errCode);
+        GLOGE("[sqlite executor] Drop collection failed. err=%d", errCode);
         return errCode;
     }
     return E_OK;

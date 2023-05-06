@@ -177,14 +177,14 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest005, TestSize.Level0)
 HWTEST_F(DocumentDBCollectionTest, CollectionTest006, TestSize.Level0)
 {
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":1024})"", 0), GRD_OK);
-
-    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", 0), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", 0), GRD_OK);
+    EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", CHK_EXIST_COLLECTION), GRD_DATA_CONFLICT);
 
     EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_OK);
     EXPECT_EQ(GRD_DropCollection(g_db, "student", 0), GRD_OK);
     EXPECT_EQ(GRD_DropCollection(g_db, "student", CHK_NON_EXIST_COLLECTION), GRD_INVALID_ARGS);
 
-    // Create collection with different option returnh OK after drop collection
+    // Create collection with different option return OK after drop collection
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", R""({"maxDoc":2048})"", 0), GRD_OK);
 }
 

@@ -66,22 +66,10 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
 
     std::string oriOptStr;
     bool ignoreExists = (flags != CHK_EXIST_COLLECTION);
-    errCode = executor_->CreateCollection(lowerCaseName, ignoreExists);
+    errCode = executor_->CreateCollection(lowerCaseName, oriOptStr, ignoreExists);
     if (errCode != E_OK) {
         GLOGE("Create collection failed. %d", errCode);
         goto END;
-    }
-
-    errCode = executor_->GetCollectionOption(lowerCaseName, oriOptStr);
-    if (errCode == -E_NOT_FOUND) {
-        executor_->SetCollectionOption(lowerCaseName, collOption.ToString());
-        errCode = E_OK;
-    } else {
-        CollectionOption oriOption = CollectionOption::ReadOption(oriOptStr, errCode);
-        if (collOption != oriOption) {
-            GLOGE("Create collection failed, option changed.");
-            errCode = -E_INVALID_CONFIG_VALUE;
-        }
     }
 
 END:
