@@ -48,15 +48,15 @@ bool KvData::Marshal(DistributedData::Serializable::json &node) const
 
 bool Id::Marshal(DistributedData::Serializable::json &node) const
 {
-    return SetValue(node["_id"], id);
+    return SetValue(node[GET_NAME(_id)], _id);
 }
 
 bool Id::Unmarshal(const DistributedData::Serializable::json &node)
 {
-    return GetValue(node, "_id", id);
+    return GetValue(node, GET_NAME(_id), _id);
 }
 
-Id::Id(const std::string &id) : id(id) {}
+Id::Id(const std::string &id) : _id(id) {}
 
 VersionData::VersionData(int version) : version(version) {}
 

@@ -54,7 +54,7 @@ struct Id final: public DistributedData::Serializable {
     bool Unmarshal(const json &node) override;
 
 private:
-    std::string id;
+    std::string _id;
 };
 
 class VersionData : public DistributedData::Serializable {
