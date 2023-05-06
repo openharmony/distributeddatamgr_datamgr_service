@@ -29,19 +29,16 @@ public:
     void SetUp();
 
     void TearDown();
-protected:
-    static std::shared_ptr<OHOS::ExecutorPool> executors_;
 };
-
-std::shared_ptr<OHOS::ExecutorPool> DistributedataDfxMSTTest::executors_ = std::make_shared<OHOS::ExecutorPool>(12, 5);
 
 void DistributedataDfxMSTTest::SetUpTestCase()
 {
-    Reporter::GetInstance()->SetThreadPool(DistributedataDfxMSTTest::executors_);
+    Reporter::GetInstance()->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(12, 5));
 }
 
 void DistributedataDfxMSTTest::TearDownTestCase()
 {
+    Reporter::GetInstance()->SetThreadPool(nullptr);
 }
 
 void DistributedataDfxMSTTest::SetUp() {}

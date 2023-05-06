@@ -350,7 +350,7 @@ void ObjectStoreManager::FlushClosedStore()
         ZLOGD("close store");
         auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
         if (status != DistributedDB::DBStatus::OK) {
-		    int timeOut = 1000;
+            int timeOut = 1000;
             executors_->Execute(
                 [this]() {
                     FlushClosedStore();
@@ -583,7 +583,8 @@ std::string ObjectStoreManager::GetBundleName(const std::string &key)
     return result;
 }
 
-void ObjectStoreManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors) {
+void ObjectStoreManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
     executors_ = executors;
 }
 

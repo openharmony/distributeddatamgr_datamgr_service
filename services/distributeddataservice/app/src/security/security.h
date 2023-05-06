@@ -34,7 +34,7 @@ public:
     using OnAccessControlledEvent = DistributedDB::OnAccessControlledEvent;
     using SecurityOption = DistributedDB::SecurityOption;
     Security();
-    Security(std::shared_ptr<ExecutorPool> executors) : executors_(executors){};
+    explicit Security(std::shared_ptr<ExecutorPool> executors) : executors_(executors) {};
     ~Security() override;
     static bool IsSupportSecurity();
 

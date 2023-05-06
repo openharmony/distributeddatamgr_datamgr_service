@@ -49,8 +49,8 @@ void UpgradeManager::Init(std::shared_ptr<ExecutorPool> executors)
 CapMetaData UpgradeManager::GetCapability(const std::string &deviceId, bool &status)
 {
     status = true;
-    if (capabilityMap_.Contains(deviceId)) {
-        return capabilityMap_.Find(deviceId).second;
+    if (capabilities_.Contains(deviceId)) {
+        return capabilities_.Find(deviceId).second;
     }
     ZLOGI("load capability from meta");
     CapMetaData capMetaData;

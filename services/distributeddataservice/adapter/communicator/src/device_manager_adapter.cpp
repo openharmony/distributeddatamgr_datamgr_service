@@ -60,7 +60,7 @@ void DataMgrDmStateCall::OnDeviceReady(const DmDeviceInfo &info)
 class DataMgrDmInitCall final : public DistributedHardware::DmInitCallback {
 public:
     explicit DataMgrDmInitCall(DeviceManagerAdapter &dmAdapter, std::shared_ptr<ExecutorPool> executors)
-        : dmAdapter_(dmAdapter), executors_(executors){}
+        : dmAdapter_(dmAdapter), executors_(executors) {}
     void OnRemoteDied() override;
 
 private:

@@ -22,7 +22,8 @@ ReportStatus ApiPerformanceStatisticImpl::Report(const ApiPerformanceStat &stat)
     HiViewAdapter::ReportApiPerformanceStatistic(DfxCodeConstant::API_PERFORMANCE_INTERFACE, stat, executors_);
     return ReportStatus::SUCCESS;
 }
-void ApiPerformanceStatisticImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors) {
+void ApiPerformanceStatisticImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
     executors_ = executors;
 }
 } // namespace DistributedDataDfx

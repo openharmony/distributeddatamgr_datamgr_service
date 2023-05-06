@@ -96,14 +96,4 @@ int32_t FeatureStubImpl::OnReady(const std::string &device)
     }
     return featureImpl_->OnReady(device);
 }
-
-void FeatureStubImpl::SetThreadPool(TaskExecutorAdapter* threadPool)
-{
-    threadPool_ = threadPool;
-}
-
-TaskExecutorAdapter* FeatureStubImpl::GetThreadPool()
-{
-    return threadPool_;
-}
 }

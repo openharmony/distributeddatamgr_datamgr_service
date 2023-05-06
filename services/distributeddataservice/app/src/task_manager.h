@@ -23,7 +23,7 @@ public:
     using Task = std::function<void()>;
     using Duration = std::chrono::steady_clock::duration;
     TaskManager() = default;
-    TaskManager(std::shared_ptr<ExecutorPool> executors);
+    explicit TaskManager(std::shared_ptr<ExecutorPool> executors);
     ~TaskManager() override;
     TaskId Execute(const Task &task) override;
     TaskId Execute(const Task &task, Duration delay) override;
