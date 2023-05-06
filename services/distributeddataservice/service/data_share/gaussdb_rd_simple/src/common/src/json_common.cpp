@@ -658,7 +658,7 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
                 if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
                     return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
                 }
-                if (srcItem.Print() == item.Print()) {
+                if (srcItem == item) {
                     isMatchFlag = true;
                     isAlreadyMatched = true;
                     return false;
