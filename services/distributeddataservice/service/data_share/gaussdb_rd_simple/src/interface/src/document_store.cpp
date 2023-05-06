@@ -145,9 +145,10 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
             GLOGE("updateObj ParsePath failed");
             return errCode;
         }
-        if (!CheckCommon::CheckUpdata(updateObj, allPath)) {
-            GLOGE("Updata format unvalid");
-            return -E_INVALID_ARGS;
+        errCode = CheckCommon::CheckUpdata(updateObj, allPath);
+        if (errCode != E_OK) {
+            GLOGE("Updata format is illegal");
+            return errCode;
         }
     }
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
@@ -225,9 +226,10 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         if (errCode != E_OK) {
             return errCode;
         }
-        if (!CheckCommon::CheckUpdata(documentObj, allPath)) {
-            GLOGE("updata format unvalid");
-            return -E_INVALID_ARGS;
+        errCode = CheckCommon::CheckUpdata(documentObj, allPath);
+        if (errCode != E_OK) {
+            GLOGE("UpsertDocument document format is illegal");
+            return errCode;
         }
     }
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
