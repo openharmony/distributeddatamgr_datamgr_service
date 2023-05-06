@@ -36,13 +36,13 @@ private:
     int32_t OnRemotePublish(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteGetData(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteSubscribeRdbData(MessageParcel& data, MessageParcel& reply);
-    int32_t OnRemoteUnSubscribeRdbData(MessageParcel& data, MessageParcel& reply);
-    int32_t OnRemoteEnableSubscribeRdbData(MessageParcel& data, MessageParcel& reply);
-    int32_t OnRemoteDisableSubscribeRdbData(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRemoteUnsubscribeRdbData(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRemoteEnableRdbSubs(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRemoteDisableRdbSubs(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteSubscribePublishedData(MessageParcel& data, MessageParcel& reply);
-    int32_t OnRemoteUnSubscribePublishedData(MessageParcel& data, MessageParcel& reply);
-    int32_t OnRemoteEnableSubscribePublishedData(MessageParcel& data, MessageParcel& reply);
-    int32_t OnRemoteDisableSubscribePublishedData(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRemoteUnsubscribePublishedData(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRemoteEnablePubSubs(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRemoteDisablePubSubs(MessageParcel& data, MessageParcel& reply);
     using RequestHandle = int (DataShareServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[DATA_SHARE_SERVICE_CMD_MAX] = {
         &DataShareServiceStub::OnRemoteInsert,
@@ -54,14 +54,13 @@ private:
         &DataShareServiceStub::OnRemotePublish,
         &DataShareServiceStub::OnRemoteGetData,
         &DataShareServiceStub::OnRemoteSubscribeRdbData,
-        &DataShareServiceStub::OnRemoteUnSubscribeRdbData,
-        &DataShareServiceStub::OnRemoteEnableSubscribeRdbData,
-        &DataShareServiceStub::OnRemoteDisableSubscribeRdbData,
+        &DataShareServiceStub::OnRemoteUnsubscribeRdbData,
+        &DataShareServiceStub::OnRemoteEnableRdbSubs,
+        &DataShareServiceStub::OnRemoteDisableRdbSubs,
         &DataShareServiceStub::OnRemoteSubscribePublishedData,
-        &DataShareServiceStub::OnRemoteUnSubscribePublishedData,
-        &DataShareServiceStub::OnRemoteEnableSubscribePublishedData,
-        &DataShareServiceStub::OnRemoteDisableSubscribePublishedData
-    };
+        &DataShareServiceStub::OnRemoteUnsubscribePublishedData,
+        &DataShareServiceStub::OnRemoteEnablePubSubs,
+        &DataShareServiceStub::OnRemoteDisablePubSubs };
 };
 } // namespace DataShare
 } // namespace OHOS

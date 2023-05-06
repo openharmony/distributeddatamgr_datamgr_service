@@ -101,7 +101,7 @@ bool Marshalling(const OperationResult &operationResult, MessageParcel &parcel)
 }
 
 template<>
-bool ITypesUtil::Unmarshalling(AshmemNode &node, MessageParcel &parcel)
+bool Unmarshalling(AshmemNode &node, MessageParcel &parcel)
 {
     node.isManaged = true;
     node.ashmem = parcel.ReadAshmem();
@@ -109,7 +109,7 @@ bool ITypesUtil::Unmarshalling(AshmemNode &node, MessageParcel &parcel)
 }
 
 template<>
-bool ITypesUtil::Marshalling(const AshmemNode &node, MessageParcel &parcel)
+bool Marshalling(const AshmemNode &node, MessageParcel &parcel)
 {
     return parcel.WriteAshmem(node.ashmem);
 }

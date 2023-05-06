@@ -40,19 +40,19 @@ public:
     Data GetData(const std::string &bundleNameOfProvider) override;
     std::vector<OperationResult> SubscribeRdbData(const std::vector<std::string> &uris,
         const TemplateId &id, const sptr<IDataProxyRdbObserver> observer) override;
-    std::vector<OperationResult> UnSubscribeRdbData(
+    std::vector<OperationResult> UnsubscribeRdbData(
         const std::vector<std::string> &uris, const TemplateId &id) override;
-    std::vector<OperationResult> EnableSubscribeRdbData(
+    std::vector<OperationResult> EnableRdbSubs(
         const std::vector<std::string> &uris, const TemplateId &id) override;
-    std::vector<OperationResult> DisableSubscribeRdbData(
+    std::vector<OperationResult> DisableRdbSubs(
         const std::vector<std::string> &uris, const TemplateId &id) override;
     std::vector<OperationResult> SubscribePublishedData(const std::vector<std::string> &uris,
         const int64_t subscriberId, const sptr<IDataProxyPublishedDataObserver> observer) override;
-    std::vector<OperationResult> UnSubscribePublishedData(const std::vector<std::string> &uris,
+    std::vector<OperationResult> UnsubscribePublishedData(const std::vector<std::string> &uris,
         const int64_t subscriberId) override;
-    std::vector<OperationResult> EnableSubscribePublishedData(const std::vector<std::string> &uris,
+    std::vector<OperationResult> EnablePubSubs(const std::vector<std::string> &uris,
         const int64_t subscriberId) override;
-    std::vector<OperationResult> DisableSubscribePublishedData(const std::vector<std::string> &uris,
+    std::vector<OperationResult> DisablePubSubs(const std::vector<std::string> &uris,
         const int64_t subscriberId) override;
     int32_t OnInitialize() override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;

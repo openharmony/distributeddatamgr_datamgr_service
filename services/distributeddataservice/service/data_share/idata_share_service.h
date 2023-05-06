@@ -63,19 +63,19 @@ public:
     virtual Data GetData(const std::string &bundleNameOfProvider) = 0;
     virtual std::vector<OperationResult> SubscribeRdbData(
         const std::vector<std::string> &uris, const TemplateId &id, const sptr<IDataProxyRdbObserver> observer) = 0;
-    virtual std::vector<OperationResult> UnSubscribeRdbData(
+    virtual std::vector<OperationResult> UnsubscribeRdbData(
         const std::vector<std::string> &uris, const TemplateId &id) = 0;
-    virtual std::vector<OperationResult> EnableSubscribeRdbData(
+    virtual std::vector<OperationResult> EnableRdbSubs(
         const std::vector<std::string> &uris, const TemplateId &id) = 0;
-    virtual std::vector<OperationResult> DisableSubscribeRdbData(
+    virtual std::vector<OperationResult> DisableRdbSubs(
         const std::vector<std::string> &uris, const TemplateId &id) = 0;
     virtual std::vector<OperationResult> SubscribePublishedData(const std::vector<std::string> &uris,
         const int64_t subscriberId, const sptr<IDataProxyPublishedDataObserver> observer) = 0;
-    virtual std::vector<OperationResult> UnSubscribePublishedData(const std::vector<std::string> &uris,
+    virtual std::vector<OperationResult> UnsubscribePublishedData(const std::vector<std::string> &uris,
         const int64_t subscriberId) = 0;
-    virtual std::vector<OperationResult> EnableSubscribePublishedData(const std::vector<std::string> &uris,
+    virtual std::vector<OperationResult> EnablePubSubs(const std::vector<std::string> &uris,
         const int64_t subscriberId) = 0;
-    virtual std::vector<OperationResult> DisableSubscribePublishedData(const std::vector<std::string> &uris,
+    virtual std::vector<OperationResult> DisablePubSubs(const std::vector<std::string> &uris,
         const int64_t subscriberId) = 0;
 };
 } // namespace OHOS::DataShare

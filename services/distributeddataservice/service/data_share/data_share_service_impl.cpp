@@ -163,7 +163,7 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(
     return std::vector<OperationResult>();
 }
 
-std::vector<OperationResult> DataShareServiceImpl::UnSubscribeRdbData(
+std::vector<OperationResult> DataShareServiceImpl::UnsubscribeRdbData(
     const std::vector<std::string> &uris, const TemplateId &id)
 {
     std::vector<OperationResult> results;
@@ -176,7 +176,7 @@ std::vector<OperationResult> DataShareServiceImpl::UnSubscribeRdbData(
     return results;
 }
 
-std::vector<OperationResult> DataShareServiceImpl::EnableSubscribeRdbData(
+std::vector<OperationResult> DataShareServiceImpl::EnableRdbSubs(
     const std::vector<std::string> &uris, const TemplateId &id)
 {
     std::vector<OperationResult> results;
@@ -189,7 +189,7 @@ std::vector<OperationResult> DataShareServiceImpl::EnableSubscribeRdbData(
     return results;
 }
 
-std::vector<OperationResult> DataShareServiceImpl::DisableSubscribeRdbData(
+std::vector<OperationResult> DataShareServiceImpl::DisableRdbSubs(
     const std::vector<std::string> &uris, const TemplateId &id)
 {
     std::vector<OperationResult> results;
@@ -208,19 +208,19 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
     return std::vector<OperationResult>();
 }
 
-std::vector<OperationResult> DataShareServiceImpl::UnSubscribePublishedData(const std::vector<std::string> &uris,
+std::vector<OperationResult> DataShareServiceImpl::UnsubscribePublishedData(const std::vector<std::string> &uris,
     const int64_t subscriberId)
 {
     return std::vector<OperationResult>();
 }
 
-std::vector<OperationResult> DataShareServiceImpl::EnableSubscribePublishedData(const std::vector<std::string> &uris,
+std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vector<std::string> &uris,
     const int64_t subscriberId)
 {
     return std::vector<OperationResult>();
 }
 
-std::vector<OperationResult> DataShareServiceImpl::DisableSubscribePublishedData(const std::vector<std::string> &uris,
+std::vector<OperationResult> DataShareServiceImpl::DisablePubSubs(const std::vector<std::string> &uris,
     const int64_t subscriberId)
 {
     return std::vector<OperationResult>();

@@ -194,7 +194,7 @@ int32_t DataShareServiceStub::OnRemoteSubscribeRdbData(MessageParcel &data, Mess
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteUnSubscribeRdbData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnRemoteUnsubscribeRdbData(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     TemplateId templateId;
@@ -202,7 +202,7 @@ int32_t DataShareServiceStub::OnRemoteUnSubscribeRdbData(MessageParcel &data, Me
         ZLOGE("read device list failed.");
         return -1;
     }
-    std::vector<OperationResult> results = UnSubscribeRdbData(uris, templateId);
+    std::vector<OperationResult> results = UnsubscribeRdbData(uris, templateId);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
         return -1;
@@ -210,7 +210,7 @@ int32_t DataShareServiceStub::OnRemoteUnSubscribeRdbData(MessageParcel &data, Me
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteEnableSubscribeRdbData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnRemoteEnableRdbSubs(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     TemplateId templateId;
@@ -218,7 +218,7 @@ int32_t DataShareServiceStub::OnRemoteEnableSubscribeRdbData(MessageParcel &data
         ZLOGE("read device list failed.");
         return -1;
     }
-    std::vector<OperationResult> results = EnableSubscribeRdbData(uris, templateId);
+    std::vector<OperationResult> results = EnableRdbSubs(uris, templateId);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
         return -1;
@@ -226,7 +226,7 @@ int32_t DataShareServiceStub::OnRemoteEnableSubscribeRdbData(MessageParcel &data
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteDisableSubscribeRdbData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnRemoteDisableRdbSubs(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     TemplateId templateId;
@@ -234,7 +234,7 @@ int32_t DataShareServiceStub::OnRemoteDisableSubscribeRdbData(MessageParcel &dat
         ZLOGE("read device list failed.");
         return -1;
     }
-    std::vector<OperationResult> results = DisableSubscribeRdbData(uris, templateId);
+    std::vector<OperationResult> results = DisableRdbSubs(uris, templateId);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
         return -1;
@@ -263,7 +263,7 @@ int32_t DataShareServiceStub::OnRemoteSubscribePublishedData(MessageParcel &data
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteUnSubscribePublishedData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnRemoteUnsubscribePublishedData(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     int64_t subscriberId;
@@ -271,7 +271,7 @@ int32_t DataShareServiceStub::OnRemoteUnSubscribePublishedData(MessageParcel &da
         ZLOGE("read device list failed.");
         return -1;
     }
-    std::vector<OperationResult> results = UnSubscribePublishedData(uris, subscriberId);
+    std::vector<OperationResult> results = UnsubscribePublishedData(uris, subscriberId);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
         return -1;
@@ -279,7 +279,7 @@ int32_t DataShareServiceStub::OnRemoteUnSubscribePublishedData(MessageParcel &da
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteEnableSubscribePublishedData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnRemoteEnablePubSubs(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     int64_t subscriberId;
@@ -287,7 +287,7 @@ int32_t DataShareServiceStub::OnRemoteEnableSubscribePublishedData(MessageParcel
         ZLOGE("read device list failed.");
         return -1;
     }
-    std::vector<OperationResult> results = EnableSubscribePublishedData(uris, subscriberId);
+    std::vector<OperationResult> results = EnablePubSubs(uris, subscriberId);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
         return -1;
@@ -295,7 +295,7 @@ int32_t DataShareServiceStub::OnRemoteEnableSubscribePublishedData(MessageParcel
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteDisableSubscribePublishedData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnRemoteDisablePubSubs(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     int64_t subscriberId;
@@ -303,7 +303,7 @@ int32_t DataShareServiceStub::OnRemoteDisableSubscribePublishedData(MessageParce
         ZLOGE("read device list failed.");
         return -1;
     }
-    std::vector<OperationResult> results = DisableSubscribePublishedData(uris, subscriberId);
+    std::vector<OperationResult> results = DisablePubSubs(uris, subscriberId);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
         return -1;
