@@ -229,8 +229,8 @@ void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
     EventCenter::Defer defer;
-	size_t max = 12;
-	size_t min = 5;
+    size_t max = 12;
+    size_t min = 5;
     executors_ = std::make_shared<ExecutorPool>(max, min);
     Reporter::GetInstance()->SetThreadPool(executors_);
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);

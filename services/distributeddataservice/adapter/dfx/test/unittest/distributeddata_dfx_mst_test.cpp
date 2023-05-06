@@ -33,7 +33,9 @@ public:
 
 void DistributedataDfxMSTTest::SetUpTestCase()
 {
-    Reporter::GetInstance()->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(12, 5));
+    size_t max = 12;
+    size_t min = 5;
+    Reporter::GetInstance()->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(max, min));
 }
 
 void DistributedataDfxMSTTest::TearDownTestCase()
