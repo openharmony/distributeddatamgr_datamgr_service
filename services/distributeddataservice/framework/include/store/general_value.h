@@ -20,8 +20,9 @@
 #include <string>
 #include <variant>
 #include <vector>
-#include "traits.h"
+
 #include "error/general_error.h"
+#include "traits.h"
 namespace OHOS::DistributedData {
 struct Asset {
     uint32_t version;
@@ -69,7 +70,7 @@ bool GetItem(T &&input, O &output)
 template<typename T, typename O, typename First, typename... Rest>
 bool GetItem(T &&input, O &output)
 {
-    auto val =  Traits::get_if<First>(&input);
+    auto val = Traits::get_if<First>(&input);
     if (val != nullptr) {
         output = std::move(*val);
         return true;

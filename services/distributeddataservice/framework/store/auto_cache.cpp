@@ -15,7 +15,7 @@
 #define LOG_TAG "AutoCache"
 #include "store/auto_cache.h"
 
-#include <log_print.h>
+#include "log_print.h"
 namespace OHOS::DistributedData {
 AutoCache &AutoCache::GetInstance()
 {
