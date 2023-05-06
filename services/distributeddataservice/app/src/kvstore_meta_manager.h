@@ -18,9 +18,9 @@
 #include <mutex>
 
 #include "app_device_change_listener.h"
+#include "executor_pool.h"
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
-#include "kv_store_task.h"
 #include "system_ability.h"
 #include "types.h"
 
@@ -48,7 +48,7 @@ public:
 
     static KvStoreMetaManager &GetInstance();
 
-    void InitMetaParameter();
+    void InitMetaParameter(std::shared_ptr<ExecutorPool> executors);
     void InitMetaListener();
     void InitBroadcast();
     void InitDeviceOnline();

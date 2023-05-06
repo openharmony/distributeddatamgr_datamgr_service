@@ -81,5 +81,10 @@ int32_t FeatureSystem::Feature::OnReady(const std::string &device)
 {
     return STUB_SUCCESS;
 }
+
+int32_t FeatureSystem::Feature::OnExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    return STUB_SUCCESS;
+}
 }
 }

@@ -18,7 +18,6 @@
 
 #include <thread>
 #include "communicator/device_manager_adapter.h"
-#include "executor_factory.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
@@ -149,9 +148,9 @@ UserDelegate &UserDelegate::GetInstance()
     return instance;
 }
 
-void UserDelegate::Init()
+void UserDelegate::Init(std::shared_ptr<ExecutorPool> executors)
 {
-    KvStoreTask retryTask([this]() {
+    ExecutorPool::Task retryTask([this]() {
         do {
             static constexpr int RETRY_INTERVAL = 500; // millisecond
             std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL));
@@ -183,7 +182,7 @@ void UserDelegate::Init()
             return true;
     });
     if (!InitLocalUserMeta()) {
-        ExecutorFactory::GetInstance().Execute(std::move(retryTask));
+        executors->Execute(std::move(retryTask));
     }
     ZLOGD("subscribe os account ret:%{public}d", ret);
 }

@@ -25,7 +25,6 @@
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 constexpr int64_t StoreCache::INTERVAL;
-constexpr size_t StoreCache::TIME_TASK_NUM;
 StoreCache::Store StoreCache::GetStore(const StoreMetaData &data, std::shared_ptr<Observers> observers,
     DBStatus &status)
 {
@@ -65,9 +64,7 @@ StoreCache::Store StoreCache::GetStore(const StoreMetaData &data, std::shared_pt
         return !stores.empty();
     });
 
-    scheduler_.At(std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL),
-        std::bind(&StoreCache::GarbageCollect, this));
-
+    executors_->Execute(std::bind(&StoreCache::GarbageCollect, this), std::chrono::minutes(INTERVAL));
     return store;
 }
 
@@ -134,7 +131,8 @@ void StoreCache::GarbageCollect()
     });
     if (!stores_.Empty()) {
         ZLOGD("stores size:%{public}zu", stores_.Size());
-        scheduler_.At(current + std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
+        executors_->Execute(std::bind(&StoreCache::GarbageCollect, this),
+            std::chrono::minutes(INTERVAL));
     }
 }
 
@@ -192,6 +190,11 @@ StoreCache::DBPassword StoreCache::GetDBPassword(const StoreMetaData &data)
     dbPassword.SetValue(password.data(), password.size());
     password.assign(password.size(), 0);
     return dbPassword;
+}
+
+void StoreCache::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 
 StoreCache::DBStoreDelegate::DBStoreDelegate(DBStore *delegate, std::shared_ptr<Observers> observers)

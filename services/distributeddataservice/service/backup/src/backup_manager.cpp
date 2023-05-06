@@ -90,35 +90,37 @@ void BackupManager::RegisterExporter(int32_t type, Exporter exporter)
     }
 }
 
-void BackupManager::BackSchedule()
+void BackupManager::BackSchedule(std::shared_ptr<ExecutorPool> executors)
 {
     std::chrono::duration<int> delay(schedularDelay_);
     std::chrono::duration<int> internal(schedularInternal_);
     ZLOGI("BackupManager Schedule start.");
-    scheduler_.Every(delay, internal, [this]() {
-        if (!CanBackup()) {
-            return;
-        }
-
-        ZLOGI("start automatic backup.");
-        std::vector<StoreMetaData> metas;
-        MetaDataManager::GetInstance().LoadMeta(
-            StoreMetaData::GetPrefix({DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid}), metas);
-
-        int64_t end = std::min(startNum_ + backupNumber_, static_cast<int64_t>(metas.size()));
-        for (int64_t i = startNum_; i < end; startNum_++, i++) {
-            auto &meta = metas[i];
-            if (!meta.isBackup || meta.isDirty) {
-                continue;
+    executors->Schedule(
+        [this]() {
+            if (!CanBackup()) {
+                return;
             }
-            DoBackup(meta);
-        }
-        if (startNum_ >= static_cast<int64_t>(metas.size())) {
-            startNum_ = 0;
-        }
-        sync();
-        backupSuccessTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    });
+
+            ZLOGI("start automatic backup.");
+            std::vector<StoreMetaData> metas;
+            MetaDataManager::GetInstance().LoadMeta(
+                StoreMetaData::GetPrefix({ DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid }), metas);
+
+            int64_t end = std::min(startNum_ + backupNumber_, static_cast<int64_t>(metas.size()));
+            for (int64_t i = startNum_; i < end; startNum_++, i++) {
+                auto &meta = metas[i];
+                if (!meta.isBackup || meta.isDirty) {
+                    continue;
+                }
+                DoBackup(meta);
+            }
+            if (startNum_ >= static_cast<int64_t>(metas.size())) {
+                startNum_ = 0;
+            }
+            sync();
+            backupSuccessTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        },
+        internal, delay);
 }
 
 void BackupManager::DoBackup(const StoreMetaData &meta)

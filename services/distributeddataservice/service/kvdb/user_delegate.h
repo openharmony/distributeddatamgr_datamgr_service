@@ -20,6 +20,7 @@
 #include <set>
 #include "account/account_delegate.h"
 #include "concurrent_map.h"
+#include "executor_pool.h"
 #include "metadata/user_meta_data.h"
 #include "visibility.h"
 
@@ -34,7 +35,7 @@ public:
     };
     API_EXPORT static UserDelegate &GetInstance();
 
-    API_EXPORT void Init();
+    API_EXPORT void Init(std::shared_ptr<ExecutorPool> executors);
     API_EXPORT std::vector<UserStatus> GetLocalUserStatus();
     API_EXPORT std::set<std::string> GetLocalUsers();
     API_EXPORT std::vector<UserStatus> GetRemoteUserStatus(const std::string &deviceId);

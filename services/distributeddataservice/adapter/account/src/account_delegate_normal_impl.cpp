@@ -77,7 +77,7 @@ bool AccountDelegateNormalImpl::QueryUsers(std::vector<int> &users)
     return AccountSA::OsAccountManager::QueryActiveOsAccountIds(users) == 0;
 }
 
-void AccountDelegateNormalImpl::SubscribeAccountEvent()
+void AccountDelegateNormalImpl::SubscribeAccountEvent(std::shared_ptr<ExecutorPool> executors)
 {
     ZLOGI("Subscribe account event listener start.");
     MatchingSkills matchingSkills;
@@ -90,7 +90,7 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent()
         NotifyAccountChanged(account);
     });
 
-    std::thread th = std::thread([eventSubscriber = eventSubscriber_]() {
+    executors->Execute([eventSubscriber = eventSubscriber_]() {
         int tryTimes = 0;
         constexpr int MAX_RETRY_TIME = 300;
         constexpr int RETRY_WAIT_TIME_S = 1;
@@ -111,7 +111,6 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent()
         }
         ZLOGI("success to register subscriber.");
     });
-    th.detach();
 }
 
 AccountDelegateNormalImpl::~AccountDelegateNormalImpl()

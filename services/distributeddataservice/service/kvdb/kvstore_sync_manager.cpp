@@ -18,9 +18,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
-KvStoreSyncManager::KvStoreSyncManager() : syncScheduler_("SyncMgr")
-{}
-
+KvStoreSyncManager::KvStoreSyncManager() {}
 KvStoreSyncManager::~KvStoreSyncManager() {}
 
 Status KvStoreSyncManager::AddSyncOperation(uintptr_t syncId, uint32_t delayMs, const SyncFunc &syncFunc,
@@ -112,7 +110,11 @@ void KvStoreSyncManager::AddTimer(const TimePoint &expireTime)
 {
     ZLOGD("time %lld", expireTime.time_since_epoch().count());
     nextScheduleTime_ = expireTime;
-    syncScheduler_.At(expireTime, [time = expireTime, this]() { Schedule(time); });
+    executors_->Execute(
+        [time = expireTime, this]() {
+            Schedule(time);
+        },
+        expireTime - std::chrono::steady_clock::now());
 }
 
 bool KvStoreSyncManager::GetTimeoutSyncOps(const TimePoint &currentTime, std::list<KvSyncOperation> &syncOps)
@@ -175,5 +177,9 @@ void KvStoreSyncManager::Schedule(const TimePoint &time)
         AddTimer(nextTime);
     }
 }
-}  // namespace DistributedKv
-}  // namespace OHOS
+void KvStoreSyncManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
+}
+} // namespace DistributedKv
+} // namespace OHOS

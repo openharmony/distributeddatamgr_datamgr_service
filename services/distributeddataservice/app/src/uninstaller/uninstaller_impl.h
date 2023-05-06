@@ -40,7 +40,7 @@ class UninstallerImpl : public Uninstaller {
 public:
     ~UninstallerImpl();
 
-    Status Init(KvStoreDataService *kvStoreDataService) override;
+    Status Init(KvStoreDataService *kvStoreDataService, std::shared_ptr<ExecutorPool> executors) override;
 
     void UnsubscribeEvent() override;
 

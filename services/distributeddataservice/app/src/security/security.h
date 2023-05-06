@@ -17,8 +17,9 @@
 #define OHOS_SECURITY_H
 #include <concurrent_map.h>
 #include <string>
-#include <task_scheduler.h>
+
 #include "app_device_change_listener.h"
+#include "executor_pool.h"
 #include "iprocess_system_api_adapter.h"
 #include "kv_store_delegate_manager.h"
 #include "sensitive.h"
@@ -33,6 +34,7 @@ public:
     using OnAccessControlledEvent = DistributedDB::OnAccessControlledEvent;
     using SecurityOption = DistributedDB::SecurityOption;
     Security();
+    Security(std::shared_ptr<ExecutorPool> executors) : executors_(executors){};
     ~Security() override;
     static bool IsSupportSecurity();
 
@@ -76,8 +78,8 @@ private:
     DBStatus GetFileSecurityOption(const std::string &filePath, SecurityOption &option) const;
     DBStatus GetDirSecurityOption(const std::string &filePath, SecurityOption &option) const;
 
-    mutable TaskScheduler taskScheduler_ { "security" };
     mutable ConcurrentMap<std::string, Sensitive> devicesUdid_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedKv
 

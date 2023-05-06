@@ -31,10 +31,14 @@ public:
     void SetUp();
 
     void TearDown();
+protected:
+    static std::shared_ptr<OHOS::ExecutorPool> executors_;
 };
 
+std::shared_ptr<OHOS::ExecutorPool> DistributedataDfxUTTest::executors_ = std::make_shared<OHOS::ExecutorPool>(12, 5);
 void DistributedataDfxUTTest::SetUpTestCase()
 {
+    Reporter::GetInstance()->SetThreadPool(DistributedataDfxUTTest::executors_);
     FakeHivew::Clear();
 }
 

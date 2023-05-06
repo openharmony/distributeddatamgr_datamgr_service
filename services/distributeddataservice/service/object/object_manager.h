@@ -22,12 +22,10 @@
 #include "device_manager_adapter.h"
 #include "object_callback.h"
 #include "object_callback_proxy.h"
-#include "task_scheduler.h"
 #include "kv_store_delegate_manager.h"
 #include "kvstore_sync_callback.h"
 #include "object_common.h"
 #include "object_data_listener.h"
-#include "timer.h"
 #include "types.h"
 
 namespace OHOS {
@@ -93,6 +91,7 @@ public:
     void NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData);
     void CloseAfterMinute();
     int32_t Open();
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 private:
     constexpr static const char *SEPERATOR = "_";
     constexpr static const char *LOCAL_DEVICE = "local";
@@ -150,11 +149,10 @@ private:
     uint32_t syncCount_ = 0;
     std::string userId_;
     std::atomic<bool> isSyncing_ = false;
-    Utils::Timer timer_;
     ConcurrentMap<uint32_t /* tokenId */, CallbackInfo > callbacks_;
     static constexpr size_t TIME_TASK_NUM = 1;
     static constexpr int64_t INTERVAL = 1;
-    TaskScheduler scheduler_ { TIME_TASK_NUM, "object_mgr" };
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace DistributedObject
 } // namespace OHOS

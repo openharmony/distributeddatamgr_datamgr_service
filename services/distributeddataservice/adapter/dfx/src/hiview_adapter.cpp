@@ -79,12 +79,11 @@ std::mutex HiViewAdapter::apiPerformanceMutex_;
 std::map<std::string, StatisticWrap<ApiPerformanceStat>> HiViewAdapter::apiPerformanceStat_;
 
 bool HiViewAdapter::running_ = false;
-TaskScheduler HiViewAdapter::scheduler_ {"HiView"};
 std::mutex HiViewAdapter::runMutex_;
 
-void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
+void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
-    KvStoreTask task([dfxCode, msg]() {
+    ExecutorPool::Task task([dfxCode, msg]() {
         HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
             HiSysEvent::EventType::FAULT,
@@ -93,12 +92,12 @@ void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg)
             INTERFACE_NAME, msg.interfaceName,
             ERROR_TYPE, static_cast<int>(msg.errorType));
     });
-    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
+    executors->Execute(std::move(task));
 }
 
-void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg)
+void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
-    KvStoreTask task([dfxCode, msg]() {
+    ExecutorPool::Task task([dfxCode, msg]() {
         HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),
             HiSysEvent::EventType::FAULT,
@@ -107,13 +106,12 @@ void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg)
             MODULE_NAME, msg.moduleName,
             ERROR_TYPE, static_cast<int>(msg.errorType));
     });
-    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
+    executors->Execute(std::move(task));
 }
 
-
-void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg)
+void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
-    KvStoreTask task([dfxCode, msg]() {
+    ExecutorPool ::Task task([dfxCode, msg]() {
         std::string message;
         for (size_t i = 0; i < msg.deviceId.size(); i++) {
             message.append("No: ").append(std::to_string(i))
@@ -128,12 +126,12 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg)
             STORE_ID, msg.storeId,
             SYNC_ERROR_INFO, message);
     });
-    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
+    executors->Execute(std::move(task));
 }
 
-void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg)
+void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
-    KvStoreTask task([dfxCode, msg]() {
+    ExecutorPool::Task task([dfxCode, msg]() {
         std::string message;
         message.append("Behaviour type : ").append(std::to_string(static_cast<int>(msg.behaviourType)))
             .append(" behaviour info : ").append(msg.extensionInfo);
@@ -145,19 +143,19 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg)
             STORE_ID, msg.storeId,
             BEHAVIOUR_INFO, message);
     });
-    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
+    executors->Execute(std::move(task));
 }
 
-void HiViewAdapter::ReportDatabaseStatistic(int dfxCode, const DbStat &stat)
+void HiViewAdapter::ReportDatabaseStatistic(int dfxCode, const DbStat &stat, std::shared_ptr<ExecutorPool> executors)
 {
-    KvStoreTask task([dfxCode, stat]() {
+    ExecutorPool::Task task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(dbMutex_);
         if (!dbStat_.count(stat.GetKey())) {
             dbStat_.insert({stat.GetKey(), {stat, 0, dfxCode}});
         }
     });
-    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
-    StartTimerThread();
+    executors->Execute(std::move(task));
+    StartTimerThread(executors);
 }
 
 void HiViewAdapter::ReportDbSize(const StatisticWrap<DbStat> &stat)
@@ -205,9 +203,10 @@ void HiViewAdapter::InvokeDbSize()
     dbStat_.clear();
 }
 
-void HiViewAdapter::ReportTrafficStatistic(int dfxCode, const TrafficStat &stat)
+void HiViewAdapter::ReportTrafficStatistic(int dfxCode, const TrafficStat &stat,
+    std::shared_ptr<ExecutorPool> executors)
 {
-    KvStoreTask task([dfxCode, stat]() {
+    ExecutorPool::Task task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(trafficMutex_);
         auto it = trafficStat_.find(stat.GetKey());
         if (it != trafficStat_.end()) {
@@ -217,8 +216,8 @@ void HiViewAdapter::ReportTrafficStatistic(int dfxCode, const TrafficStat &stat)
             trafficStat_.insert({stat.GetKey(), {stat, 0, dfxCode}});
         }
     });
-    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
-    StartTimerThread();
+    executors->Execute(std::move(task));
+    StartTimerThread(executors);
 }
 
 void HiViewAdapter::InvokeTraffic()
@@ -243,9 +242,9 @@ void HiViewAdapter::InvokeTraffic()
     trafficStat_.clear();
 }
 
-void HiViewAdapter::ReportVisitStatistic(int dfxCode, const VisitStat &stat)
+void HiViewAdapter::ReportVisitStatistic(int dfxCode, const VisitStat &stat, std::shared_ptr<ExecutorPool> executors)
 {
-    KvStoreTask task([dfxCode, stat]() {
+    ExecutorPool ::Task task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(visitMutex_);
         auto it = visitStat_.find(stat.GetKey());
         if (it == visitStat_.end()) {
@@ -254,8 +253,8 @@ void HiViewAdapter::ReportVisitStatistic(int dfxCode, const VisitStat &stat)
             it->second.times++;
         }
     });
-    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
-    StartTimerThread();
+    executors->Execute(std::move(task));
+    StartTimerThread(executors);
 }
 
 void HiViewAdapter::InvokeVisit()
@@ -273,9 +272,10 @@ void HiViewAdapter::InvokeVisit()
     visitStat_.clear();
 }
 
-void HiViewAdapter::ReportApiPerformanceStatistic(int dfxCode, const ApiPerformanceStat &stat)
+void HiViewAdapter::ReportApiPerformanceStatistic(int dfxCode, const ApiPerformanceStat &stat,
+    std::shared_ptr<ExecutorPool> executors)
 {
-    KvStoreTask task([dfxCode, stat]() {
+    ExecutorPool::Task task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(apiPerformanceMutex_);
         auto it = apiPerformanceStat_.find(stat.GetKey());
         if (it == apiPerformanceStat_.end()) {
@@ -294,8 +294,8 @@ void HiViewAdapter::ReportApiPerformanceStatistic(int dfxCode, const ApiPerforma
         }
     });
 
-    scheduler_.At(std::chrono::steady_clock::now(), std::move(task));
-    StartTimerThread();
+    executors->Execute(std::move(task));
+    StartTimerThread(executors);
 }
 
 void HiViewAdapter::InvokeApiPerformance()
@@ -319,7 +319,7 @@ void HiViewAdapter::InvokeApiPerformance()
     ZLOGI("DdsTrace interface: clean");
 }
 
-void HiViewAdapter::StartTimerThread()
+void HiViewAdapter::StartTimerThread(std::shared_ptr<ExecutorPool> executors)
 {
     if (running_) {
         return;
@@ -329,8 +329,7 @@ void HiViewAdapter::StartTimerThread()
         return;
     }
     running_ = true;
-    std::chrono::duration<int> delay(0);
-    std::chrono::duration<int> internal(WAIT_TIME);
+    auto interval = std::chrono::seconds(WAIT_TIME);
     auto fun = []() {
         time_t current = time(nullptr);
         tm localTime = { 0 };
@@ -342,7 +341,7 @@ void HiViewAdapter::StartTimerThread()
         InvokeTraffic();
         InvokeVisit();
     };
-    scheduler_.Every(delay, internal, fun);
+    executors->Schedule(fun, interval);
 }
 
 std::string HiViewAdapter::CoverEventID(int dfxCode)

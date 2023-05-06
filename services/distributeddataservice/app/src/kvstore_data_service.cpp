@@ -30,7 +30,6 @@
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "eventcenter/event_center.h"
-#include "executor_factory.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
@@ -41,16 +40,18 @@
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
+#include "reporter.h"
 #include "route_head_handler_impl.h"
 #include "runtime_config.h"
 #include "string_ex.h"
 #include "system_ability_definition.h"
+#include "task_manager.h"
 #include "uninstaller/uninstaller.h"
+#include "upgrade.h"
 #include "upgrade_manager.h"
 #include "user_delegate.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
-#include "upgrade.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -90,13 +91,14 @@ void KvStoreDataService::Initialize()
 #endif
     auto communicator = std::make_shared<AppDistributedKv::ProcessCommunicatorImpl>(RouteHeadHandlerImpl::Create);
     auto ret = KvStoreDelegateManager::SetProcessCommunicator(communicator);
+    DistributedDB::RuntimeConfig::SetThreadPool(std::make_shared<TaskManager>(executors_));
     ZLOGI("set communicator ret:%{public}d.", static_cast<int>(ret));
 
     AppDistributedKv::CommunicationProvider::GetInstance();
     PermitDelegate::GetInstance().Init();
-    InitSecurityAdapter();
-    KvStoreMetaManager::GetInstance().InitMetaParameter();
-    accountEventObserver_ = std::make_shared<KvStoreAccountObserver>(*this);
+    InitSecurityAdapter(executors_);
+    KvStoreMetaManager::GetInstance().InitMetaParameter(executors_);
+    accountEventObserver_ = std::make_shared<KvStoreAccountObserver>(*this, executors_);
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
     DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
@@ -138,7 +140,7 @@ sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &n
         return true;
     });
     if (isFirstCreate) {
-        feature->OnInitialize();
+        feature->OnInitialize(executors_);
     }
     return feature != nullptr ? feature->AsObject() : nullptr;
 }
@@ -227,8 +229,10 @@ void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
     EventCenter::Defer defer;
+    executors_ = std::make_shared<ExecutorPool>(12, 5);
+    Reporter::GetInstance()->SetThreadPool(executors_);
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
-    DmAdapter::GetInstance().Init();
+    DmAdapter::GetInstance().Init(executors_);
     static constexpr int32_t RETRY_TIMES = 50;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
     for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIMES; ++retry) {
@@ -242,7 +246,7 @@ void KvStoreDataService::OnStart()
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
     Bootstrap::GetInstance().LoadNetworks();
-    Bootstrap::GetInstance().LoadBackup();
+    Bootstrap::GetInstance().LoadBackup(executors_);
     Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr != nullptr) {
@@ -265,8 +269,8 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;
     }
-    AccountDelegate::GetInstance()->SubscribeAccountEvent();
-    Uninstaller::GetInstance().Init(this);
+    AccountDelegate::GetInstance()->SubscribeAccountEvent(executors_);
+    Uninstaller::GetInstance().Init(this, executors_);
 }
 
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
@@ -291,17 +295,17 @@ void KvStoreDataService::StartService()
     if (!ret) {
         DumpHelper::GetInstance().AddErrorInfo("StartService: Service publish failed.");
     }
-    Uninstaller::GetInstance().Init(this);
+    Uninstaller::GetInstance().Init(this, executors_);
     // Initialize meta db delegate manager.
     KvStoreMetaManager::GetInstance().SubscribeMeta(KvStoreMetaRow::KEY_PREFIX,
         [this](const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag) {
             OnStoreMetaChanged(key, value, flag);
         });
-    UpgradeManager::GetInstance().Init();
-    UserDelegate::GetInstance().Init();
+    UpgradeManager::GetInstance().Init(executors_);
+    UserDelegate::GetInstance().Init(executors_);
 
     // subscribe account event listener to EventNotificationMgr
-    AccountDelegate::GetInstance()->SubscribeAccountEvent();
+    AccountDelegate::GetInstance()->SubscribeAccountEvent(executors_);
     auto autoLaunch = [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
         auto status = ResolveAutoLaunchParamByIdentifier(identifier, param);
         features_.ForEachCopies([&identifier, &param](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
@@ -450,14 +454,14 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeM
                 store = delegate;
             }
         });
-    KvStoreTask delayTask([store]() {
+    ExecutorPool::Task delayTask([store]() {
         constexpr const int CLOSE_STORE_DELAY_TIME = 60; // unit: seconds
         std::this_thread::sleep_for(std::chrono::seconds(CLOSE_STORE_DELAY_TIME));
         ZLOGI("AutoLaunch:close store after 60s while autolaunch finishied");
         DistributedDB::KvStoreDelegateManager delegateManager("", "");
         delegateManager.CloseKvStore(store);
     });
-    ExecutorFactory::GetInstance().Execute(std::move(delayTask));
+    executors_->Execute(std::move(delayTask));
 }
 
 Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
@@ -609,11 +613,11 @@ void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
     }
 }
 
-void KvStoreDataService::InitSecurityAdapter()
+void KvStoreDataService::InitSecurityAdapter(std::shared_ptr<ExecutorPool> executors)
 {
     auto ret = DATASL_OnStart();
     ZLOGI("datasl on start ret:%d", ret);
-    security_ = std::make_shared<Security>();
+    security_ = std::make_shared<Security>(executors);
     if (security_ == nullptr) {
         ZLOGE("security is nullptr.");
         return;

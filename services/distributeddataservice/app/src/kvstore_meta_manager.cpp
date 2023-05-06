@@ -169,10 +169,10 @@ void KvStoreMetaManager::InitMetaData()
     ZLOGI("end.");
 }
 
-void KvStoreMetaManager::InitMetaParameter()
+void KvStoreMetaManager::InitMetaParameter(std::shared_ptr<ExecutorPool> executors)
 {
     ZLOGI("start.");
-    std::thread th = std::thread([]() {
+    executors->Execute([]() {
         constexpr int32_t RETRY_MAX_TIMES = 100;
         constexpr int32_t RETRY_INTERVAL = 1 * 1000 * 1000; // retry after 1 second
         BlockInteger retry(RETRY_INTERVAL);
@@ -191,7 +191,6 @@ void KvStoreMetaManager::InitMetaParameter()
             ZLOGW("GenerateRootKey failed, retry times:%{public}d.", static_cast<int>(retry));
         }
     });
-    th.detach();
     DistributedDB::KvStoreConfig kvStoreConfig{ metaDBDirectory_ };
     delegateManager_.SetKvStoreConfig(kvStoreConfig);
 }

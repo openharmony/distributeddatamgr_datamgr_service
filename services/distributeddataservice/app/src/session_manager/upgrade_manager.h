@@ -29,7 +29,7 @@ using OHOS::DistributedKv::KvStoreTuple;
 class UpgradeManager {
 public:
     static UpgradeManager &GetInstance();
-    void Init();
+    void Init(std::shared_ptr<ExecutorPool> executors);
     CapMetaData GetCapability(const std::string &deviceId, bool &status);
     static void SetCompatibleIdentifyByType(
         KvStoreNbDelegate *storeDelegate, const KvStoreTuple &tuple, AUTH_GROUP_TYPE groupType);

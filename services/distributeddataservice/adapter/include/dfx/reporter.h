@@ -22,6 +22,7 @@
 #include "statistic_reporter.h"
 #include "fault_reporter.h"
 #include "behaviour_reporter.h"
+#include "executor_pool.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
@@ -39,6 +40,13 @@ public:
     KVSTORE_API StatisticReporter<ApiPerformanceStat>* ApiPerformanceStatistic();
 
     KVSTORE_API BehaviourReporter* BehaviourReporter();
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+    {
+        executors_ = executors;
+    };
+
+private:
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedDataDfx
 }  // namespace OHOS

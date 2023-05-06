@@ -59,17 +59,19 @@ void DataMgrDmStateCall::OnDeviceReady(const DmDeviceInfo &info)
 
 class DataMgrDmInitCall final : public DistributedHardware::DmInitCallback {
 public:
-    explicit DataMgrDmInitCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
+    explicit DataMgrDmInitCall(DeviceManagerAdapter &dmAdapter, std::shared_ptr<ExecutorPool> executors)
+        : dmAdapter_(dmAdapter), executors_(executors){}
     void OnRemoteDied() override;
 
 private:
     DeviceManagerAdapter &dmAdapter_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 
 void DataMgrDmInitCall::OnRemoteDied()
 {
     ZLOGI("device manager died, init again");
-    dmAdapter_.Init();
+    dmAdapter_.Init(executors_);
 }
 
 DeviceManagerAdapter::DeviceManagerAdapter()
@@ -88,9 +90,10 @@ DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
     return dmAdapter;
 }
 
-void DeviceManagerAdapter::Init()
+void DeviceManagerAdapter::Init(std::shared_ptr<ExecutorPool> executors)
 {
     ZLOGI("begin");
+    executors_ = std::move(executors);
     RegDevCallback()();
 }
 
@@ -99,15 +102,14 @@ std::function<void()> DeviceManagerAdapter::RegDevCallback()
     return [this]() {
         auto &devManager = DeviceManager::GetInstance();
         auto dmStateCall = std::make_shared<DataMgrDmStateCall>(*this);
-        auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this);
+        auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this, executors_);
         auto resultInit = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
         auto resultState = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
         if (resultInit == DM_OK && resultState == DM_OK) {
             return;
         }
         constexpr int32_t INTERVAL = 500;
-        auto time = std::chrono::steady_clock::now() + std::chrono::milliseconds(INTERVAL);
-        scheduler_.At(time, RegDevCallback());
+        executors_->Schedule(RegDevCallback(), std::chrono::milliseconds(INTERVAL));
     };
 }
 
@@ -167,8 +169,11 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
             item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONLINE);
         }
     }
-    auto time = std::chrono::steady_clock::now() + std::chrono::milliseconds(SYNC_TIMEOUT);
-    scheduler_.At(time, [this, dvInfo]() { TimeOut(dvInfo.uuid); });
+    executors_->Schedule(
+        [this, dvInfo]() {
+            TimeOut(dvInfo.uuid);
+        },
+        std::chrono::milliseconds(SYNC_TIMEOUT));
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     for (const auto &item : observers) { // set compatible identify, sync service meta
         if (item == nullptr) {
@@ -236,7 +241,7 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
             return false;
         });
     };
-    scheduler_.Execute(std::move(task));
+    executors_->Execute(std::move(task));
 }
 
 void DeviceManagerAdapter::OnChanged(const DmDeviceInfo &info)
@@ -267,7 +272,7 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
             return false;
         });
     };
-    scheduler_.Execute(std::move(task));
+    executors_->Execute(std::move(task));
 }
 
 bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo)

@@ -29,7 +29,7 @@ public:
     ~FeatureStubImpl();
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
         MessageOption &option) override;
-    int32_t OnInitialize();
+    int32_t OnInitialize(std::shared_ptr<ExecutorPool> executors);
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
     int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
