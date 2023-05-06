@@ -15,8 +15,8 @@
 
 #include "device_manager_adapter.h"
 
-#include "executor_pool.h"
 #include "gtest/gtest.h"
+#include "executor_pool.h"
 #include "types.h"
 namespace {
 using namespace testing::ext;
