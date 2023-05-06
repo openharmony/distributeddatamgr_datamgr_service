@@ -253,17 +253,31 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         }
         return errCode;
     }
+    std::lock_guard<std::mutex> lock(dbMutex_);
     bool isIdExist;
     auto filterObjChild = filterObj.GetChild();
     auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID, isIdExist);
     if (!isIdExist) {
         return -E_INVALID_ARGS;
     }
-    std::lock_guard<std::mutex> lock(dbMutex_);
+    ResultSet resultSet;
+    InitResultSet(this, collection, filter, resultSet);
+    errCode = resultSet.GetNext();
+    bool isfilterMatch = false;
+    if (errCode == E_OK) {
+        isfilterMatch = true;
+    }
     std::string docId = idValue.GetStringValue();
     JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
     documentObj.InsertItemObject(0, idObj);
     std::string addedIdDocument = documentObj.Print();
+    Value ValueDocument;
+    Key key(docId.begin(), docId.end());
+    errCode = coll.GetDocument(key, ValueDocument);
+    if (errCode == E_OK && !(isfilterMatch)) {
+        GLOGE("id exist but filter does not match, data conflict");
+        return -E_DATA_CONFLICT;
+    }
     errCode = coll.UpsertDocument(docId, addedIdDocument, isReplace);
     if (errCode == E_OK) {
         errCode = 1; // upsert one record.
@@ -305,7 +319,18 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
     Key key(id.begin(), id.end());
     Value value(document.begin(), document.end());
     std::lock_guard<std::mutex> lock(dbMutex_);
-    return coll.PutDocument(key, value);
+    Value ValueDocument;
+    errCode = coll.GetDocument(key, ValueDocument);
+    switch (errCode) {
+        case -E_NOT_FOUND:
+            return coll.PutDocument(key, value);
+        case -E_ERROR:
+            GLOGE("collection dont exsited");
+            return -E_INVALID_ARGS;
+        default:
+            GLOGE("id already exsited, data conflict");
+            return -E_DATA_CONFLICT;
+    }
 }
 
 int DocumentStore::DeleteDocument(const std::string &collection, const std::string &filter, int flag)
