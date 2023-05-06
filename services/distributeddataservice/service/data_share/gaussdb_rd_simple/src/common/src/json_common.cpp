@@ -583,6 +583,11 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
 {
     int errCode;
     JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
+    if (srcItem == item) {
+        isMatchFlag = true;
+        isAlreadyMatched = 1;
+        return false;
+    }
     JsonFieldPath granpaPath = itemPath;
     std::string lastFiledName = granpaPath.back();
     granpaPath.pop_back();
@@ -590,18 +595,15 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
     if (granpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
         JsonObject fatherItem = granpaItem.GetChild();
         while (!fatherItem.IsNull()) {
-            int isEqual = true;
-            int compareRet = (fatherItem.GetObjectItem(lastFiledName, errCode).Print() == item.Print());
-            if (errCode == E_OK) {
-                isEqual = compareRet;
-            }
-            if (isEqual) {
-                GLOGI("Filter value is equal with src");
-                isMatchFlag = isEqual;
+            if ((fatherItem.GetObjectItem(lastFiledName, errCode).Print() == item.Print())) {
+                isMatchFlag = true;
                 isAlreadyMatched = 1;
+                break;
             }
+            isMatchFlag = false;
             fatherItem = fatherItem.GetNext();
         }
+        return false;
     }
     if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY &&
         !isAlreadyMatched) {
