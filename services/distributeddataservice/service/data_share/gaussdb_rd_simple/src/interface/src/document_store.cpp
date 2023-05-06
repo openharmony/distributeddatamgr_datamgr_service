@@ -527,4 +527,16 @@ int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType)
     }
     return E_OK;
 }
+
+void DocumentStore::OnClose(const std::function<void(void)> &notifier)
+{
+    closeNotifier_ = notifier;
+}
+
+void DocumentStore::Close()
+{
+    if (closeNotifier_) {
+        closeNotifier_();
+    }
+}
 } // namespace DocumentDB

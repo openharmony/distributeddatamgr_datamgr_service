@@ -45,6 +45,9 @@ bool CheckDBCreate(unsigned int flags, const std::string &path)
 }
 } // namespace
 
+std::mutex DocumentStoreManager::openCloseMutex_;
+std::map<std::string, int> DocumentStoreManager::dbConnCount_;
+
 int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::string &config, unsigned int flags,
     DocumentStore *&store)
 {
@@ -72,8 +75,14 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
         return -E_INVALID_ARGS;
     }
 
+    std::lock_guard<std::mutex> lock(openCloseMutex_);
+
+    std::string dbRealPath = canonicalPath + "/" + dbName;
+    auto it = dbConnCount_.find(dbRealPath);
+    bool isFirstOpen = (it == dbConnCount_.end() || it->second == 0);
+
     KvStoreExecutor *executor = nullptr;
-    errCode = KvStoreManager::GetKvStore(canonicalPath + "/" + dbName, dbConfig, executor);
+    errCode = KvStoreManager::GetKvStore(dbRealPath, dbConfig, isFirstOpen, executor);
     if (errCode != E_OK) {
         GLOGE("Open document store failed. %d", errCode);
         return errCode;
@@ -86,6 +95,15 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
         return -E_FAILED_MEMORY_ALLOCATE;
     }
 
+    store->OnClose([dbRealPath]() {
+        dbConnCount_[dbRealPath]--;
+    });
+
+    if (isFirstOpen) {
+        dbConnCount_[dbRealPath] = 1;
+    } else {
+        dbConnCount_[dbRealPath]++;
+    }
     return errCode;
 }
 
@@ -96,6 +114,8 @@ int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, unsigned int 
         return -E_INVALID_ARGS;
     }
 
+    std::lock_guard<std::mutex> lock(openCloseMutex_);
+    store->Close();
     delete store;
     return E_OK;
 }

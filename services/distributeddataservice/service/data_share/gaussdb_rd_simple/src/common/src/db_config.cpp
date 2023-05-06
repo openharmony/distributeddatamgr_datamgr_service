@@ -291,14 +291,18 @@ int32_t DBConfig::GetPageSize() const
 
 bool DBConfig::operator==(const DBConfig &targetConfig) const
 {
-    return configStr_ == targetConfig.configStr_ && pageSize_ == targetConfig.pageSize_ &&
-        redoFlushByTrx_ == targetConfig.redoFlushByTrx_ && redoPubBufSize_ == targetConfig.redoPubBufSize_ &&
-        maxConnNum_ == targetConfig.maxConnNum_ && bufferPoolSize_ == targetConfig.bufferPoolSize_ &&
-        crcCheckEnable_ == targetConfig.crcCheckEnable_;
+    return pageSize_ == targetConfig.pageSize_ && redoFlushByTrx_ == targetConfig.redoFlushByTrx_ &&
+        redoPubBufSize_ == targetConfig.redoPubBufSize_ && maxConnNum_ == targetConfig.maxConnNum_ &&
+        bufferPoolSize_ == targetConfig.bufferPoolSize_ && crcCheckEnable_ == targetConfig.crcCheckEnable_;
 }
 
 bool DBConfig::operator!=(const DBConfig &targetConfig) const
 {
     return !(*this == targetConfig);
+}
+
+bool DBConfig::CheckPersistenceEqual(const DBConfig &targetConfig) const
+{
+    return pageSize_ == targetConfig.pageSize_ && crcCheckEnable_ == targetConfig.crcCheckEnable_;
 }
 } // namespace DocumentDB

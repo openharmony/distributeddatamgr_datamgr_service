@@ -16,6 +16,8 @@
 #ifndef DOCUMENT_STORE_MANAGER_H
 #define DOCUMENT_STORE_MANAGER_H
 
+#include <map>
+#include <mutex>
 #include <string>
 
 #include "document_store.h"
@@ -30,6 +32,9 @@ public:
 
 private:
     static int CheckDBPath(const std::string &path, std::string &canonicalPath, std::string &dbName);
+
+    static std::mutex openCloseMutex_;
+    static std::map<std::string, int> dbConnCount_;
 };
 } // namespace DocumentDB
 #endif // DOCUMENT_STORE_MANAGER_H
