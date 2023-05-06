@@ -227,7 +227,7 @@ std::vector<OperationResult> DataShareServiceImpl::DisableSubscribePublishedData
 }
 
 enum DataShareKvStoreType : int32_t {
-    DATA_SHARE_SINGLE_VERSION = 30,
+    DATA_SHARE_SINGLE_VERSION = 0,
     DISTRIBUTED_TYPE_BUTT
 };
 
