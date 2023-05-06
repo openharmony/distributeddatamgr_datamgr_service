@@ -111,13 +111,11 @@ int32_t DataShareServiceStub::OnRemoteAddTemplate(MessageParcel &data, MessagePa
 {
     std::string uri;
     int64_t subscriberId;
-    std::vector<PredicateTemplateNode> predicates;
-    std::string scheduler;
-    if (!ITypesUtil::Unmarshal(data, uri, subscriberId, predicates, scheduler)) {
+    Template tpl;
+    if (!ITypesUtil::Unmarshal(data, uri, subscriberId, tpl.predicates_,  tpl.scheduler_)) {
         ZLOGW("read device list failed.");
         return -1;
     }
-    Template tpl(predicates, scheduler);
     int32_t status = AddTemplate(uri, subscriberId, tpl);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);

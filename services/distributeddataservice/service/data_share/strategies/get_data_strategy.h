@@ -19,8 +19,6 @@
 #include <shared_mutex>
 
 #include "data_proxy_observer.h"
-#include "datashare_template.h"
-#include "published_data.h"
 #include "seq_strategy.h"
 
 namespace OHOS::DataShare {
@@ -30,7 +28,6 @@ public:
 
 private:
     static Strategy *GetStrategy();
-    static Data Convert(std::vector<PublishedData> datas);
 };
 } // namespace OHOS::DataShare
 #endif

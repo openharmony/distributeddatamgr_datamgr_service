@@ -34,8 +34,7 @@ Data GetDataStrategy::Execute(std::shared_ptr<Context> context)
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return Data();
     }
-    std::vector<PublishedData> queryResult = PublishedData::Query(context->calledBundleName);
-    return Convert(queryResult);
+    return Data();
 }
 
 Strategy *GetDataStrategy::GetStrategy()
@@ -59,18 +58,5 @@ Strategy *GetDataStrategy::GetStrategy()
         return nullptr;
     }
     return &strategies;
-}
-
-Data GetDataStrategy::Convert(std::vector<PublishedData> datas)
-{
-    Data data;
-    data.version_ = -1;
-    for (auto &item : datas) {
-        if (item.value.version > data.version_) {
-            data.version_ = item.value.version;
-        }
-        data.datas_.emplace_back(item.value.key, item.value.subscriberId, item.value.value);
-    }
-    return data;
 }
 } // namespace OHOS::DataShare

@@ -20,7 +20,6 @@
 #include "general/load_config_common_strategy.h"
 #include "general/permission_strategy.h"
 #include "log_print.h"
-#include "published_data.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -35,19 +34,7 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return -1;
     }
-    auto delegate = KvDBDelegate::GetInstance();
-    if (delegate == nullptr) {
-        ZLOGE("db open failed");
-        return -1;
-    }
-    PublishedData data(context->uri, context->calledBundleName, item.subscriberId_, item.value_, context->version);
-    int32_t status = delegate->Upsert(KvDBDelegate::DATA_TABLE, data);
-    if (status != E_OK) {
-        ZLOGE("db Upsert failed, %{public}s %{public}s %{public}d", context->calledBundleName.c_str(),
-            DistributedData::Anonymous::Change(context->uri).c_str(), status);
-        return -1;
-    }
-    return E_OK;
+    return 0;
 }
 
 Strategy *PublishStrategy::GetStrategy()

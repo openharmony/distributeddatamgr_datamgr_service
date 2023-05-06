@@ -16,8 +16,6 @@
 #include "rdb_delegate.h"
 
 #include "log_print.h"
-#include "resultset_json_formatter.h"
-#include "scheduler_manager.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -122,7 +120,7 @@ std::shared_ptr<DistributedData::Serializable> RdbDelegate::Query(
         return nullptr;
     }
 
-    return std::make_shared<ResultSetJsonFormatter>(resultSet);
+    return nullptr;
 }
 
 int RdbDelegate::ExecuteSql(const std::string &sql)
