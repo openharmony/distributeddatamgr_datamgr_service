@@ -64,6 +64,7 @@ bool VersionData::Unmarshal(const DistributedData::Serializable::json &node)
 {
     return GetValue(node, GET_NAME(version), version);
 }
+
 bool VersionData::Marshal(DistributedData::Serializable::json &node) const
 {
     return SetValue(node[GET_NAME(version)], version);
