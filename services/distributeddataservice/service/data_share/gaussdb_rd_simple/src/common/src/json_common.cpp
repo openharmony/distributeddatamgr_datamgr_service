@@ -669,15 +669,6 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
                 return false;
             }
         } else {
-            if (isCollapse) {
-                GLOGE("Match failed, path not exist.");
-                isMatchFlag = false;
-                return false;
-            }
-            GLOGI("Not match anything");
-            if (isAlreadyMatched == 0) {
-                isMatchFlag = false;
-            }
             std::vector<ValueObject> ItemLeafValue = GetLeafValue(item);
             int isNULLFlag = true;
             for (auto ValueItem : ItemLeafValue) {
@@ -687,7 +678,17 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
                 } else {
                     GLOGI("filter leaf is null, Src leaf is dont exist");
                     isMatchFlag = true;
+                    return false;
                 }
+            }
+            if (isCollapse) {
+                GLOGE("Match failed, path not exist.");
+                isMatchFlag = false;
+                return false;
+            }
+            GLOGI("Not match anything");
+            if (isAlreadyMatched == 0) {
+                isMatchFlag = false;
             }
             return false; // Source path not exist, if leaf value is null, isMatchFlag become true, else it will become false.
         }
