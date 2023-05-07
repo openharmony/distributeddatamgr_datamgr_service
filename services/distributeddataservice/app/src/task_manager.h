@@ -16,8 +16,9 @@
 #define DISTRIBUTED_DATA_TASK_EXECUTOR_H
 #include "ithread_pool.h"
 #include "executor_pool.h"
+#include "visibility.h"
 namespace OHOS::DistributedData {
-class TaskManager : public DistributedDB::IThreadPool {
+class API_EXPORT TaskManager : public DistributedDB::IThreadPool {
 public:
     using TaskId = uint64_t;
     using Task = std::function<void()>;

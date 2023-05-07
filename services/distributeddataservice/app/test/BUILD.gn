@@ -49,6 +49,7 @@ config("module_private_config") {
     "unittest",
     "../src/uninstaller",
     "../src/flowctrl_manager",
+    "../../service/backup/include",
     "../../../../interfaces/innerkits/distributeddata",
     "//third_party/json/single_include",
   ]

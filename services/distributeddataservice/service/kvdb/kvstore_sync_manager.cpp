@@ -110,11 +110,11 @@ void KvStoreSyncManager::AddTimer(const TimePoint &expireTime)
 {
     ZLOGD("time %lld", expireTime.time_since_epoch().count());
     nextScheduleTime_ = expireTime;
-    executors_->Execute(
+    executors_->Schedule(
+        expireTime - std::chrono::steady_clock::now(),
         [time = expireTime, this]() {
             Schedule(time);
-        },
-        expireTime - std::chrono::steady_clock::now());
+        });
 }
 
 bool KvStoreSyncManager::GetTimeoutSyncOps(const TimePoint &currentTime, std::list<KvSyncOperation> &syncOps)

@@ -185,7 +185,7 @@ ExecutorPool::Task UserDelegate::GeTask()
         if (ret) {
             return;
         }
-        executors_->Execute(GeTask(), std::chrono::milliseconds(RETRY_INTERVAL));
+        executors_->Schedule(std::chrono::milliseconds(RETRY_INTERVAL), GeTask());
     };
 }
 

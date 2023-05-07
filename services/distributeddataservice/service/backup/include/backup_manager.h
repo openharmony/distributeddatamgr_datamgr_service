@@ -22,7 +22,7 @@
 #include "types.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-class BackupManager {
+class API_EXPORT BackupManager {
 public:
     using Exporter = std::function<void(const StoreMetaData &, const std::string &, bool &)>;
     struct BackupParam {
@@ -36,8 +36,8 @@ public:
         ROLLBACK,
         CLEAN_DATA,
     };
-    API_EXPORT static BackupManager &GetInstance();
-    API_EXPORT void Init(std::shared_ptr<ExecutorPool> executors);
+    static BackupManager &GetInstance();
+    void Init(std::shared_ptr<ExecutorPool> executors);
     void BackSchedule();
     void SetBackupParam(const BackupParam &backupParam);
     void RegisterExporter(int32_t type, Exporter exporter);

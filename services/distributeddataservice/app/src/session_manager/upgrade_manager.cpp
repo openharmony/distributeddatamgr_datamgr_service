@@ -49,7 +49,7 @@ ExecutorPool::Task UpgradeManager::GetTask()
         if (succ) {
             return;
         }
-        executors_->Execute(GetTask(), std::chrono::milliseconds(RETRY_INTERVAL));
+        executors_->Schedule(std::chrono::milliseconds(RETRY_INTERVAL), GetTask());
     };
 }
 

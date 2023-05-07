@@ -464,7 +464,7 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeM
         delegateManager.CloseKvStore(store);
     });
     constexpr int CLOSE_STORE_DELAY_TIME = 60; // unit: seconds
-    executors_->Execute(std::move(delayTask), std::chrono::seconds(CLOSE_STORE_DELAY_TIME));
+    executors_->Schedule(std::chrono::seconds(CLOSE_STORE_DELAY_TIME), std::move(delayTask));
 }
 
 Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,

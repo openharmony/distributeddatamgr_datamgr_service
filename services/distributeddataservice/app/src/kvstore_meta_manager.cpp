@@ -199,7 +199,7 @@ ExecutorPool::Task KvStoreMetaManager::GetTask()
             ZLOGE("fail to register subscriber!");
             return;
         }
-        executors_->Execute(GetTask(), std::chrono::seconds(RETRY_INTERVAL));
+        executors_->Schedule(std::chrono::seconds(RETRY_INTERVAL), GetTask());
     };
 }
 

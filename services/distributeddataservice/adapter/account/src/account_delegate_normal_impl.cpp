@@ -109,7 +109,7 @@ ExecutorPool::Task AccountDelegateNormalImpl::GetTask()
             ZLOGE("fail to register subscriber!");
             return;
         }
-        executors_->Execute(GetTask(), std::chrono::seconds(RETRY_WAIT_TIME_S));
+        executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask());
     };
 }
 
