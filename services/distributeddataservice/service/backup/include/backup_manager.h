@@ -20,6 +20,7 @@
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "types.h"
+#include "visibility.h"
 namespace OHOS::DistributedData {
 class BackupManager {
 public:
@@ -35,8 +36,8 @@ public:
         ROLLBACK,
         CLEAN_DATA,
     };
-    static BackupManager &GetInstance();
-    void Init(std::shared_ptr<ExecutorPool> executors);
+    API_EXPORT static BackupManager &GetInstance();
+    API_EXPORT void Init(std::shared_ptr<ExecutorPool> executors);
     void BackSchedule();
     void SetBackupParam(const BackupParam &backupParam);
     void RegisterExporter(int32_t type, Exporter exporter);

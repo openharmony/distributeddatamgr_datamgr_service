@@ -230,9 +230,9 @@ void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
     EventCenter::Defer defer;
-    size_t max = 12;
-    size_t min = 5;
-    executors_ = std::make_shared<ExecutorPool>(max, min);
+    constexpr size_t MAX = 12;
+    constexpr size_t MIN = 5;
+    executors_ = std::make_shared<ExecutorPool>(MAX, MIN);
     Reporter::GetInstance()->SetThreadPool(executors_);
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
     DmAdapter::GetInstance().Init(executors_);
@@ -463,8 +463,8 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeM
         DistributedDB::KvStoreDelegateManager delegateManager("", "");
         delegateManager.CloseKvStore(store);
     });
-    constexpr const int closeStoreDelayTime = 60; // unit: seconds
-    executors_->Execute(std::move(delayTask), std::chrono::seconds(closeStoreDelayTime));
+    constexpr int CLOSE_STORE_DELAY_TIME = 60; // unit: seconds
+    executors_->Execute(std::move(delayTask), std::chrono::seconds(CLOSE_STORE_DELAY_TIME));
 }
 
 Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
