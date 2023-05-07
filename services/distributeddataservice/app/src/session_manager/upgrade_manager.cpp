@@ -44,7 +44,7 @@ void UpgradeManager::Init(std::shared_ptr<ExecutorPool> executors)
 
 ExecutorPool::Task UpgradeManager::GetTask()
 {
-    return [this]{
+    return [this] {
         auto succ = InitLocalCapability();
         if (succ) {
             return;

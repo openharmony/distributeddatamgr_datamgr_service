@@ -180,7 +180,7 @@ void UserDelegate::Init(const std::shared_ptr<ExecutorPool>& executors)
 
 ExecutorPool::Task UserDelegate::GeTask()
 {
-    return [this]{
+    return [this] {
         auto ret = InitLocalUserMeta();
         if (ret) {
             return;
