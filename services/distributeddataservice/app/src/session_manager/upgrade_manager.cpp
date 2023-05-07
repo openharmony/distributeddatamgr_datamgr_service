@@ -35,22 +35,30 @@ UpgradeManager &UpgradeManager::GetInstance()
 
 void UpgradeManager::Init(std::shared_ptr<ExecutorPool> executors)
 {
-    executors->Execute([this]() {
-        do {
-            if (InitLocalCapability()) {
-                break;
-            }
-            static constexpr int RETRY_INTERVAL = 500; // millisecond
-            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL));
-        } while (true);
-    });
+    if (executors_) {
+        return;
+    }
+    executors_ = std::move(executors);
+    executors_->Execute(GetTask());
+}
+
+ExecutorPool::Task UpgradeManager::GetTask()
+{
+    return [this]{
+        auto succ = InitLocalCapability();
+        if (succ) {
+            return;
+        }
+        executors_->Execute(GetTask(), std::chrono::milliseconds(RETRY_INTERVAL));
+    };
 }
 
 CapMetaData UpgradeManager::GetCapability(const std::string &deviceId, bool &status)
 {
     status = true;
-    if (capabilities_.Contains(deviceId)) {
-        return capabilities_.Find(deviceId).second;
+    auto index = capabilities_.Find(deviceId);
+    if (index.first) {
+        return index.second;
     }
     ZLOGI("load capability from meta");
     CapMetaData capMetaData;

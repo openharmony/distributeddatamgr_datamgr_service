@@ -21,6 +21,7 @@
 
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
+#include "backup_manager.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
@@ -248,7 +249,8 @@ void KvStoreDataService::OnStart()
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
     Bootstrap::GetInstance().LoadNetworks();
-    Bootstrap::GetInstance().LoadBackup(executors_);
+    BackupManager::GetInstance().Init(executors_);
+    Bootstrap::GetInstance().LoadBackup();
     Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr != nullptr) {
@@ -457,13 +459,12 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeM
             }
         });
     ExecutorPool::Task delayTask([store]() {
-        constexpr const int CLOSE_STORE_DELAY_TIME = 60; // unit: seconds
-        std::this_thread::sleep_for(std::chrono::seconds(CLOSE_STORE_DELAY_TIME));
         ZLOGI("AutoLaunch:close store after 60s while autolaunch finishied");
         DistributedDB::KvStoreDelegateManager delegateManager("", "");
         delegateManager.CloseKvStore(store);
     });
-    executors_->Execute(std::move(delayTask));
+    constexpr const int CLOSE_STORE_DELAY_TIME = 60; // unit: seconds
+    executors_->Execute(std::move(delayTask), std::chrono::seconds(CLOSE_STORE_DELAY_TIME));
 }
 
 Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,

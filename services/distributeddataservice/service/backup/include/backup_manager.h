@@ -36,8 +36,8 @@ public:
         CLEAN_DATA,
     };
     static BackupManager &GetInstance();
-    void Init();
-    void BackSchedule(std::shared_ptr<ExecutorPool> executors);
+    void Init(std::shared_ptr<ExecutorPool> executors);
+    void BackSchedule();
     void SetBackupParam(const BackupParam &backupParam);
     void RegisterExporter(int32_t type, Exporter exporter);
     bool GetPassWord(const StoreMetaData &meta, std::vector<uint8_t> &password);
@@ -64,6 +64,7 @@ private:
     int64_t backupSuccessTime_ = 0;
     int64_t backupNumber_ = 0;
     int64_t startNum_ = 0;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_BACKUP_BACKUP_MANAGER_H

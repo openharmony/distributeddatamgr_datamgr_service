@@ -106,7 +106,7 @@ void Bootstrap::LoadBackup(std::shared_ptr<ExecutorPool> executors)
         backupRules->schedularInternal, backupRules->backupInternal, backupRules->backupNumber};
     BackupManager::GetInstance().SetBackupParam(backupParam);
     BackupManager::GetInstance().Init();
-    BackupManager::GetInstance().BackSchedule(executors);
+    BackupManager::GetInstance().BackSchedule();
 }
 
 void Bootstrap::LoadNetworks()

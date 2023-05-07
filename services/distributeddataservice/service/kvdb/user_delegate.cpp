@@ -148,20 +148,8 @@ UserDelegate &UserDelegate::GetInstance()
     return instance;
 }
 
-void UserDelegate::Init(std::shared_ptr<ExecutorPool> executors)
+void UserDelegate::Init(const std::shared_ptr<ExecutorPool>& executors)
 {
-    ExecutorPool::Task retryTask([this]() {
-        do {
-            static constexpr int RETRY_INTERVAL = 500; // millisecond
-            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL));
-            if (!InitLocalUserMeta()) {
-                continue;
-            }
-            break;
-        } while (true);
-        ZLOGI("update user meta ok");
-    });
-
     auto ret = AccountDelegate::GetInstance()->Subscribe(std::make_shared<LocalUserObserver>(*this));
     MetaDataManager::GetInstance().Subscribe(
         UserMetaRow::KEY_PREFIX, [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
@@ -181,10 +169,24 @@ void UserDelegate::Init(std::shared_ptr<ExecutorPool> executors)
             }
             return true;
     });
+    if (!executors_) {
+        executors_ = executors;
+    }
     if (!InitLocalUserMeta()) {
-        executors->Execute(std::move(retryTask));
+        executors_->Execute(GeTask());
     }
     ZLOGD("subscribe os account ret:%{public}d", ret);
+}
+
+ExecutorPool::Task UserDelegate::GeTask()
+{
+    return [this]{
+        auto ret = InitLocalUserMeta();
+        if (ret) {
+            return;
+        }
+        executors_->Execute(GeTask(), std::chrono::milliseconds(RETRY_INTERVAL));
+    };
 }
 
 bool UserDelegate::NotifyUserEvent(const UserDelegate::UserEvent &userEvent)

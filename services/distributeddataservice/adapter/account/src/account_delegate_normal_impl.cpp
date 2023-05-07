@@ -89,28 +89,28 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent(std::shared_ptr<ExecutorPo
         account.harmonyAccountId = GetCurrentAccountId();
         NotifyAccountChanged(account);
     });
+    if (!executors_) {
+        executors_ = executors;
+    }
+    executors_->Execute(GetTask());
+}
 
-    executors->Execute([eventSubscriber = eventSubscriber_]() {
-        int tryTimes = 0;
-        constexpr int MAX_RETRY_TIME = 300;
-        constexpr int RETRY_WAIT_TIME_S = 1;
-
-        // we use this method to make sure register success
-        while (tryTimes < MAX_RETRY_TIME) {
-            auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber);
-            if (result) {
-                break;
-            }
-
-            ZLOGD("fail to register subscriber, error:%{public}d, time:%{public}d", result, tryTimes);
-            sleep(RETRY_WAIT_TIME_S);
-            tryTimes++;
+ExecutorPool::Task AccountDelegateNormalImpl::GetTask()
+{
+    return [this] {
+        auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber_);
+        if (result) {
+            ZLOGI("success to register subscriber.");
+            return;
         }
+        ZLOGD("fail to register subscriber, error:%{public}d, time:%{public}d", result, tryTimes);
+        tryTimes++;
         if (tryTimes == MAX_RETRY_TIME) {
             ZLOGE("fail to register subscriber!");
+            return;
         }
-        ZLOGI("success to register subscriber.");
-    });
+        executors_->Execute(GetTask(), std::chrono::seconds(RETRY_WAIT_TIME_S));
+    };
 }
 
 AccountDelegateNormalImpl::~AccountDelegateNormalImpl()

@@ -72,6 +72,8 @@ private:
 
     std::string GetBackupPath() const;
 
+    ExecutorPool::Task GetTask();
+
     class KvStoreMetaObserver : public DistributedDB::KvStoreObserver {
     public:
         virtual ~KvStoreMetaObserver();
@@ -83,6 +85,9 @@ private:
         void HandleChanges(CHANGE_FLAG flag, const std::list<DistributedDB::Entry> &list);
     };
 
+    static constexpr int32_t RETRY_MAX_TIMES = 100;
+    static constexpr int32_t RETRY_INTERVAL = 1;
+    int32_t retryTimes_ = 0;
     NbDelegate metaDelegate_;
     std::string metaDBDirectory_;
     const std::string label_;
@@ -90,6 +95,7 @@ private:
     static MetaDeviceChangeListenerImpl listener_;
     KvStoreMetaObserver metaObserver_;
     std::recursive_mutex mutex_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

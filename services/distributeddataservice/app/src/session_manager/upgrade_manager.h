@@ -21,6 +21,7 @@
 #include "concurrent_map.h"
 #include "kvstore_meta_manager.h"
 #include "metadata/capability_meta_data.h"
+#include "executor_pool.h"
 #include "types.h"
 namespace OHOS::DistributedData {
 using DistributedDB::KvStoreNbDelegate;
@@ -36,8 +37,11 @@ public:
     static std::string GetIdentifierByType(int32_t groupType, bool &isSuccess);
 
 private:
+    static constexpr int RETRY_INTERVAL = 500; // milliseconds
     bool InitLocalCapability();
+    ExecutorPool::Task GetTask();
     ConcurrentMap<std::string, CapMetaData> capabilities_ {};
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_UPGRADE_MANAGER_H

@@ -172,27 +172,35 @@ void KvStoreMetaManager::InitMetaData()
 void KvStoreMetaManager::InitMetaParameter(std::shared_ptr<ExecutorPool> executors)
 {
     ZLOGI("start.");
-    executors->Execute([]() {
-        constexpr int32_t RETRY_MAX_TIMES = 100;
-        constexpr int32_t RETRY_INTERVAL = 1 * 1000 * 1000; // retry after 1 second
-        BlockInteger retry(RETRY_INTERVAL);
-        while (retry < RETRY_MAX_TIMES) {
-            auto status = CryptoManager::GetInstance().CheckRootKey();
-            if (status == CryptoManager::ErrCode::SUCCESS) {
-                ZLOGI("root key exist.");
-                break;
-            }
-            if (status == CryptoManager::ErrCode::NOT_EXIST &&
-                CryptoManager::GetInstance().GenerateRootKey() == CryptoManager::ErrCode::SUCCESS) {
-                ZLOGI("GenerateRootKey success.");
-                break;
-            }
-            ++retry;
-            ZLOGW("GenerateRootKey failed, retry times:%{public}d.", static_cast<int>(retry));
-        }
-    });
+    if (!executors_) {
+        executors_ = executors;
+    }
+    executors_->Execute(GetTask());
     DistributedDB::KvStoreConfig kvStoreConfig{ metaDBDirectory_ };
     delegateManager_.SetKvStoreConfig(kvStoreConfig);
+}
+
+ExecutorPool::Task KvStoreMetaManager::GetTask()
+{
+    return [this] {
+        auto status = CryptoManager::GetInstance().CheckRootKey();
+        if (status == CryptoManager::ErrCode::SUCCESS) {
+            ZLOGI("root key exist.");
+            return;
+        }
+        if (status == CryptoManager::ErrCode::NOT_EXIST &&
+            CryptoManager::GetInstance().GenerateRootKey() == CryptoManager::ErrCode::SUCCESS) {
+            ZLOGI("GenerateRootKey success.");
+            return;
+        }
+        retryTimes_++;
+        ZLOGW("GenerateRootKey failed, retry times:%{public}d.", static_cast<int>(retryTimes_));
+        if (retryTimes_ == RETRY_MAX_TIMES) {
+            ZLOGE("fail to register subscriber!");
+            return;
+        }
+        executors_->Execute(GetTask(), std::chrono::seconds(RETRY_INTERVAL));
+    };
 }
 
 KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
