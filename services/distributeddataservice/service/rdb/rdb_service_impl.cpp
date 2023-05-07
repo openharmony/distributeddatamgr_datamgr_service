@@ -232,8 +232,10 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
             syncer = it->second;
             if (!param.isEncrypt_ || param.password_.empty()) {
                 executors_->Remove(syncer->GetTimerId(), true);
-                auto timerId = executors_->Schedule(std::chrono::milliseconds(SYNCER_TIMEOUT), [this, syncer] { SyncerTimeout(syncer); });
-                syncer->SetTimerId(timerId );
+                auto timerId = executors_->Schedule(std::chrono::milliseconds(SYNCER_TIMEOUT), [this, syncer] {
+                    SyncerTimeout(syncer);
+                });
+                syncer->SetTimerId(timerId);
                 return true;
             }
             syncers.erase(storeId);

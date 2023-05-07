@@ -41,7 +41,8 @@ public:
         Bootstrap::GetInstance().LoadComponents();
         Bootstrap::GetInstance().LoadDirectory();
         Bootstrap::GetInstance().LoadCheckers();
-        KvStoreMetaManager::GetInstance().InitMetaParameter(executors);
+        KvStoreMetaManager::GetInstance().BindExecutor(executors);
+        KvStoreMetaManager::GetInstance().InitMetaParameter();
         KvStoreMetaManager::GetInstance().InitMetaListener();
         DeviceManagerAdapter::GetInstance().Init(executors);
 
