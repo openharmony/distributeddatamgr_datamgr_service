@@ -20,7 +20,6 @@ namespace OHOS::DataShare {
 bool SeqStrategy::operator()(std::shared_ptr<Context> context)
 {
     for (auto &action : actions_) {
-        // true:success false:terminal
         if (!(*action)(context)) {
             return false;
         }

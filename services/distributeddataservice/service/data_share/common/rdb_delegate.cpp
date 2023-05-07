@@ -28,7 +28,7 @@ RdbDelegate::RdbDelegate(const std::string &dir, int version, int &errCode, bool
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode);
     if (errCode != E_OK) {
-        ZLOGE("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode,
+        ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode,
             DistributedData::Anonymous::Change(dir).c_str());
     }
 }
