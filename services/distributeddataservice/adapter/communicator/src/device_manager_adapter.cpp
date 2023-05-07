@@ -170,10 +170,10 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
         }
     }
     executors_->Schedule(
+        std::chrono::milliseconds(SYNC_TIMEOUT),
         [this, dvInfo]() {
             TimeOut(dvInfo.uuid);
-        },
-        std::chrono::milliseconds(SYNC_TIMEOUT));
+        });
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     for (const auto &item : observers) { // set compatible identify, sync service meta
         if (item == nullptr) {

@@ -244,7 +244,7 @@ void HiViewAdapter::InvokeTraffic()
 
 void HiViewAdapter::ReportVisitStatistic(int dfxCode, const VisitStat &stat, std::shared_ptr<ExecutorPool> executors)
 {
-    ExecutorPool ::Task task([dfxCode, stat]() {
+    ExecutorPool::Task task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(visitMutex_);
         auto it = visitStat_.find(stat.GetKey());
         if (it == visitStat_.end()) {
