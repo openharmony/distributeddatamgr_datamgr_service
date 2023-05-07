@@ -40,7 +40,6 @@ config("module_private_config") {
   include_dirs = [
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/backup/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/bootstrap/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/config/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/crypto/include",
@@ -61,6 +60,7 @@ config("module_private_config") {
     "../adapter/include/utils",
     "../adapter/include/dfx",
     "../adapter/include",
+    "../service/backup/include",
     "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include",
 
     # for ipc_core interfaces.
