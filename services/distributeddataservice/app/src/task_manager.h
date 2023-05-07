@@ -12,8 +12,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef DISTRIBUTED_DATA_TASK_EXECUTOR_H
-#define DISTRIBUTED_DATA_TASK_EXECUTOR_H
+#ifndef DISTRIBUTED_DATA_TASK_MANAGER_H
+#define DISTRIBUTED_DATA_TASK_MANAGER_H
 #include "ithread_pool.h"
 #include "executor_pool.h"
 #include "visibility.h"
@@ -38,4 +38,4 @@ private:
     std::shared_ptr<ExecutorPool> executors_ = nullptr;
 };
 } // namespace OHOS::DistributedData
-#endif // DISTRIBUTED_DATA_TASK_EXECUTOR_H
+#endif // DISTRIBUTED_DATA_TASK_MANAGER_H

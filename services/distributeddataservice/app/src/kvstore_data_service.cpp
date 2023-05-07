@@ -21,7 +21,6 @@
 
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
-#include "backup_manager.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
@@ -53,6 +52,7 @@
 #include "user_delegate.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
+#include "../../service/backup/include/backup_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
