@@ -64,7 +64,7 @@ StoreCache::Store StoreCache::GetStore(const StoreMetaData &data, std::shared_pt
         return !stores.empty();
     });
 
-    executors_->Execute(std::bind(&StoreCache::GarbageCollect, this), std::chrono::minutes(INTERVAL));
+    executors_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
     return store;
 }
 
@@ -131,8 +131,7 @@ void StoreCache::GarbageCollect()
     });
     if (!stores_.Empty()) {
         ZLOGD("stores size:%{public}zu", stores_.Size());
-        executors_->Execute(std::bind(&StoreCache::GarbageCollect, this),
-            std::chrono::minutes(INTERVAL));
+        executors_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
     }
 }
 
