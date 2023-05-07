@@ -29,7 +29,7 @@ public:
     API_EXPORT void LoadCheckers();
     API_EXPORT void LoadNetworks();
     API_EXPORT void LoadDirectory();
-    API_EXPORT void LoadBackup();
+    API_EXPORT void LoadBackup(std::shared_ptr<ExecutorPool> executors);
 private:
     static constexpr const char *DEFAULT_LABEL = "distributeddata";
     static constexpr const char *DEFAULT_META = "service_meta";

@@ -20,9 +20,8 @@
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "types.h"
-#include "visibility.h"
 namespace OHOS::DistributedData {
-class API_EXPORT BackupManager {
+class BackupManager {
 public:
     using Exporter = std::function<void(const StoreMetaData &, const std::string &, bool &)>;
     struct BackupParam {
@@ -37,8 +36,8 @@ public:
         CLEAN_DATA,
     };
     static BackupManager &GetInstance();
-    void Init(std::shared_ptr<ExecutorPool> executors);
-    void BackSchedule();
+    void Init();
+    void BackSchedule(std::shared_ptr<ExecutorPool> executors);
     void SetBackupParam(const BackupParam &backupParam);
     void RegisterExporter(int32_t type, Exporter exporter);
     bool GetPassWord(const StoreMetaData &meta, std::vector<uint8_t> &password);

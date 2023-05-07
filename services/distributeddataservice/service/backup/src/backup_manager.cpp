@@ -48,11 +48,8 @@ BackupManager &BackupManager::GetInstance()
     return instance;
 }
 
-void BackupManager::Init(std::shared_ptr<ExecutorPool> executors)
+void BackupManager::Init()
 {
-    if (!executors_) {
-        executors_ = executors;
-    }
     std::vector<StoreMetaData> metas;
     MetaDataManager::GetInstance().LoadMeta(
         StoreMetaData::GetPrefix({DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid}), metas);
@@ -93,8 +90,11 @@ void BackupManager::RegisterExporter(int32_t type, Exporter exporter)
     }
 }
 
-void BackupManager::BackSchedule()
+void BackupManager::BackSchedule(std::shared_ptr<ExecutorPool> executors)
 {
+    if (!executors_) {
+        executors_ = std::move(executors);
+    }
     std::chrono::duration<int> delay(schedularDelay_);
     std::chrono::duration<int> internal(schedularInternal_);
     ZLOGI("BackupManager Schedule start.");

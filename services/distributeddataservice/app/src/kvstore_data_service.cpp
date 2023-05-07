@@ -52,7 +52,6 @@
 #include "user_delegate.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
-#include "../../service/backup/include/backup_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -249,8 +248,7 @@ void KvStoreDataService::OnStart()
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
     Bootstrap::GetInstance().LoadNetworks();
-    DistributedData::BackupManager::GetInstance().Init(executors_);
-    Bootstrap::GetInstance().LoadBackup();
+    Bootstrap::GetInstance().LoadBackup(executors_);
     Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr != nullptr) {

@@ -94,7 +94,7 @@ void Bootstrap::LoadCheckers()
     }
 }
 
-void Bootstrap::LoadBackup()
+void Bootstrap::LoadBackup(std::shared_ptr<ExecutorPool> executors)
 {
     auto *backupRules = ConfigFactory::GetInstance().GetBackupConfig();
     if (backupRules == nullptr) {
@@ -105,7 +105,8 @@ void Bootstrap::LoadBackup()
     BackupManager::BackupParam backupParam = { backupRules->schedularDelay,
         backupRules->schedularInternal, backupRules->backupInternal, backupRules->backupNumber};
     BackupManager::GetInstance().SetBackupParam(backupParam);
-    BackupManager::GetInstance().BackSchedule();
+    BackupManager::GetInstance().Init();
+    BackupManager::GetInstance().BackSchedule(std::move(executors));
 }
 
 void Bootstrap::LoadNetworks()
