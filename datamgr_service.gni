@@ -11,6 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+distributedfilejs_path = "//foundation/distributeddatamgr/distributedfile"
+
+kv_store_path = "//foundation/distributeddatamgr/kv_store"
+
+kv_store_common_path = "${kv_store_path}/frameworks/common"
+
+kv_store_distributeddb_path = "${kv_store_path}/frameworks/libs/distributeddb"
+
+dsoftbus_core_path = "//foundation/communication/dsoftbus/core/common/include"
+
+datashare_path = "//foundation/distributeddatamgr/data_share"
 declare_args() {
   datamgr_service_power = true
   if (!defined(global_parts_info.power_manager_native_powermgr_client) ||

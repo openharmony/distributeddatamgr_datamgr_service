@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 ohos_static_library("distributeddata_permission_static") {
   sources = [ "src/permission_validator.cpp" ]
@@ -20,9 +21,7 @@ ohos_static_library("distributeddata_permission_static") {
   include_dirs = [
     "../include/permission",
     "../include/utils",
-    "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "${kv_store_common_path}",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
   ]
 
@@ -36,6 +35,7 @@ ohos_static_library("distributeddata_permission_static") {
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
+    "kv_store:distributeddata_inner",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

@@ -38,8 +38,7 @@ ohos_sa_profile("distributeddata_profile") {
 config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_common_path}",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/bootstrap/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/config/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/crypto/include",
@@ -50,9 +49,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/backup/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
-    "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
-    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
-    "//utils/system/safwk/native/include",
+    "${distributedfilejs_path}/interfaces/kits/js/src/mod_securitylabel",
     "../adapter/include/account",
     "../adapter/include/permission",
     "../adapter/include/uninstaller",
@@ -60,10 +57,8 @@ config("module_private_config") {
     "../adapter/include/utils",
     "../adapter/include/dfx",
     "../adapter/include",
-    "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include",
 
     # for ipc_core interfaces.
-    "//commonlibrary/c_utils/base/include",
     "include",
     "src",
     "src/security",
@@ -109,8 +104,7 @@ ohos_shared_library("distributeddataservice") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "${kv_store_distributeddb_path}",
   ]
 
   external_deps = [
@@ -121,11 +115,13 @@ ohos_shared_library("distributeddataservice") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
+    "device_manager:devicemanagersdk",
     "hisysevent_native:libhisysevent",
     "hitrace_native:hitrace_meter",
     "hitrace_native:libhitracechain",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

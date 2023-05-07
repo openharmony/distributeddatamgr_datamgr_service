@@ -12,6 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//build/ohos_var.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("distributeddata_adapter_private_config") {
   visibility = [ ":*" ]
@@ -33,8 +34,7 @@ config("distributeddata_adapter_public_config") {
     "include/autils",
     "include/utils",
     "include",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include/",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "${kv_store_common_path}",
   ]
 }
 
@@ -56,6 +56,7 @@ ohos_shared_library("distributeddata_adapter") {
     "hitrace_native:hitrace_meter",
     "hitrace_native:libhitracechain",
     "hiviewdfx_hilog_native:libhilog",
+    "kv_store:distributeddata_inner",
   ]
 
   public_configs = [ ":distributeddata_adapter_public_config" ]
