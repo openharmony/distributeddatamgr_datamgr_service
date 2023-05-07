@@ -351,11 +351,9 @@ void ObjectStoreManager::FlushClosedStore()
         auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
         if (status != DistributedDB::DBStatus::OK) {
             int timeOut = 1000;
-            executors_->Execute(
-                [this]() {
-                    FlushClosedStore();
-                },
-                std::chrono::milliseconds(timeOut));
+            executors_->Schedule(std::chrono::milliseconds(timeOut), [this]() {
+                FlushClosedStore();
+            });
             ZLOGE("GetEntries fail %{public}d", status);
             return;
         }
@@ -569,7 +567,7 @@ int64_t ObjectStoreManager::GetTime(const std::string &key)
 
 void ObjectStoreManager::CloseAfterMinute()
 {
-    executors_->Execute(std::bind(&ObjectStoreManager::Close, this), std::chrono::minutes(INTERVAL));
+    executors_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&ObjectStoreManager::Close, this));
 }
 
 std::string ObjectStoreManager::GetBundleName(const std::string &key)
