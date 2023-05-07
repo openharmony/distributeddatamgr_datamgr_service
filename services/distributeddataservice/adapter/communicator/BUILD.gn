@@ -44,6 +44,7 @@ ohos_static_library("distributeddata_communicator_static") {
     "${kv_store_distributeddb_path}/interfaces/include",
     "${kv_store_distributeddb_path}/include",
     "${kv_store_distributeddb_path}/interfaces/include/relational",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -58,7 +59,6 @@ ohos_static_library("distributeddata_communicator_static") {
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "hiviewdfx_hilog_native:libhilog",
-    "kv_store:distributeddata_inner",
   ]
 
   subsystem_name = "distributeddatamgr"

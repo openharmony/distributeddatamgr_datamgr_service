@@ -22,6 +22,10 @@ kv_store_distributeddb_path = "${kv_store_path}/frameworks/libs/distributeddb"
 dsoftbus_core_path = "//foundation/communication/dsoftbus/core/common/include"
 
 datashare_path = "//foundation/distributeddatamgr/data_share"
+
+ipc_core_path = "//foundation/communication/ipc/interfaces/innerkits/ipc_core"
+
+device_manager_path = "//foundation/distributedhardware/device_manager"
 declare_args() {
   datamgr_service_power = true
   if (!defined(global_parts_info.power_manager_native_powermgr_client) ||

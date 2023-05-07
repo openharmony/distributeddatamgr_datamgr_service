@@ -39,6 +39,7 @@ config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "${kv_store_common_path}",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/bootstrap/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/config/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/crypto/include",
@@ -49,6 +50,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/backup/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
+    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
     "${distributedfilejs_path}/interfaces/kits/js/src/mod_securitylabel",
     "../adapter/include/account",
     "../adapter/include/permission",
@@ -115,7 +117,6 @@ ohos_shared_library("distributeddataservice") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
-    "device_manager:devicemanagersdk",
     "hisysevent_native:libhisysevent",
     "hitrace_native:hitrace_meter",
     "hitrace_native:libhitracechain",

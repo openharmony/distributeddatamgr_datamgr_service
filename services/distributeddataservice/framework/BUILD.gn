@@ -24,8 +24,8 @@ config("module_public_config") {
     "//third_party/json/single_include",
     "//third_party/openssl/include/",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "${kv_store_common_path}",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
     "${kv_store_distributeddb_path}/interfaces/include/",
     "${kv_store_distributeddb_path}/include/",
   ]
@@ -71,10 +71,7 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   deps = [ "//third_party/openssl:libcrypto_shared" ]
 
-  external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
-    "kv_store:distributeddata_inner",
-  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"

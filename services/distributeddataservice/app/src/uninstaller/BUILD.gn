@@ -24,9 +24,11 @@ ohos_static_library("distributeddata_uninstaller_static") {
     "../../../adapter/include/account",
     "../../src",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/permission/include",
+    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
     "//third_party/json/single_include",
   ]
 
@@ -42,8 +44,6 @@ ohos_static_library("distributeddata_uninstaller_static") {
   external_deps = [
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
-    "kv_store:distributeddata_inner",
 
     # "ces:libcommonevent",
     "ability_base:want",

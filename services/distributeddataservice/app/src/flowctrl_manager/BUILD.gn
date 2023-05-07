@@ -21,16 +21,14 @@ ohos_static_library("distributeddata_flowctrl_static") {
     "../../../adapter/include/account",
     "../../src",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "//third_party/json/single_include",
     "//commonlibrary/c_utils/base/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  external_deps = [
-    "c_utils:utils",
-    "kv_store:distributeddata_inner",
-  ]
+  external_deps = [ "c_utils:utils" ]
 
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
