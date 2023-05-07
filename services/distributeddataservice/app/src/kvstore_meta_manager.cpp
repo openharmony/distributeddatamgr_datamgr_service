@@ -190,7 +190,7 @@ ExecutorPool::Task KvStoreMetaManager::GetTask(uint32_t retry)
             ZLOGI("GenerateRootKey success.");
             return;
         }
-        ZLOGW("GenerateRootKey failed, retry times:%{public}d.", static_cast<int>(retryTimes_));
+        ZLOGW("GenerateRootKey failed, retry times:%{public}d.", static_cast<int>(retry));
         if (retry + 1 > RETRY_MAX_TIMES) {
             ZLOGE("fail to register subscriber!");
             return;
