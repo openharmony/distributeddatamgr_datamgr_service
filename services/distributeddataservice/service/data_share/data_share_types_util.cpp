@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -44,5 +44,73 @@ template<>
 bool Unmarshalling(Operation &operation, MessageParcel &parcel)
 {
     return ITypesUtil::Unmarshal(parcel, operation.operation, operation.singleParams, operation.multiParams);
+}
+
+template<>
+bool Unmarshalling(PublishedDataItem &dataItem, MessageParcel &parcel)
+{
+    return ITypesUtil::Unmarshal(parcel, dataItem.key_, dataItem.subscriberId_, dataItem.value_);
+}
+
+template<>
+bool Marshalling(const PublishedDataItem &dataItem, MessageParcel &parcel)
+{
+    return ITypesUtil::Marshal(parcel, dataItem.key_, dataItem.subscriberId_, dataItem.value_);
+}
+
+template<>
+bool Unmarshalling(Data &data, MessageParcel &parcel)
+{
+    return ITypesUtil::Unmarshal(parcel, data.datas_, data.version_);
+}
+
+template<>
+bool Unmarshalling(TemplateId &templateId, MessageParcel &parcel)
+{
+    return ITypesUtil::Unmarshal(parcel, templateId.subscriberId_, templateId.bundleName_);
+}
+
+template<>
+bool Marshalling(const TemplateId &templateId, MessageParcel &parcel)
+{
+    return ITypesUtil::Marshal(parcel, templateId.subscriberId_, templateId.bundleName_);
+}
+
+template<>
+bool Unmarshalling(PredicateTemplateNode &predicateTemplateNode, MessageParcel &parcel)
+{
+    return ITypesUtil::Unmarshal(parcel, predicateTemplateNode.key_, predicateTemplateNode.selectSql_);
+}
+
+template<>
+bool Marshalling(const RdbChangeNode &changeNode, MessageParcel &parcel)
+{
+    return ITypesUtil::Marshal(parcel, changeNode.uri_, changeNode.templateId_, changeNode.data_);
+}
+
+template<>
+bool Marshalling(const PublishedDataChangeNode &changeNode, MessageParcel &parcel)
+{
+    return ITypesUtil::Marshal(parcel, changeNode.ownerBundleName_, changeNode.datas_);
+}
+
+template<>
+bool Marshalling(const OperationResult &operationResult, MessageParcel &parcel)
+{
+    return ITypesUtil::Marshal(parcel, operationResult.key_, operationResult.errCode_);
+}
+
+template<>
+bool Unmarshalling(AshmemNode &node, MessageParcel &parcel)
+{
+    node.isManaged = true;
+    node.ashmem = parcel.ReadAshmem();
+    return true;
+}
+
+template<>
+bool Marshalling(const AshmemNode &node, MessageParcel &parcel)
+{
+    return parcel.WriteAshmem(node.ashmem);
 }
 }

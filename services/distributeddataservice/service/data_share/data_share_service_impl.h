@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,12 +18,11 @@
 
 #include <string>
 
-#include "bundle_info.h"
 #include "data_share_service_stub.h"
-#include "data_share_profile_info.h"
-#include "permission_proxy.h"
-#include "visibility.h"
+#include "datashare_template.h"
+#include "data_proxy_observer.h"
 #include "uri_utils.h"
+#include "visibility.h"
 
 namespace OHOS::DataShare {
 class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
@@ -35,6 +34,29 @@ public:
     int32_t Delete(const std::string &uri, const DataSharePredicates &predicate) override;
     std::shared_ptr<DataShareResultSet> Query(const std::string &uri, const DataSharePredicates &predicates,
                                               const std::vector<std::string> &columns, int &errCode) override;
+    int32_t AddTemplate(const std::string &uri, const int64_t subscriberId, const Template &tplt) override;
+    int32_t DelTemplate(const std::string &uri, const int64_t subscriberId) override;
+    std::vector<OperationResult> Publish(const Data &data, const std::string &bundleNameOfProvider) override;
+    Data GetData(const std::string &bundleNameOfProvider) override;
+    std::vector<OperationResult> SubscribeRdbData(const std::vector<std::string> &uris,
+        const TemplateId &id, const sptr<IDataProxyRdbObserver> observer) override;
+    std::vector<OperationResult> UnsubscribeRdbData(
+        const std::vector<std::string> &uris, const TemplateId &id) override;
+    std::vector<OperationResult> EnableRdbSubs(
+        const std::vector<std::string> &uris, const TemplateId &id) override;
+    std::vector<OperationResult> DisableRdbSubs(
+        const std::vector<std::string> &uris, const TemplateId &id) override;
+    std::vector<OperationResult> SubscribePublishedData(const std::vector<std::string> &uris,
+        const int64_t subscriberId, const sptr<IDataProxyPublishedDataObserver> observer) override;
+    std::vector<OperationResult> UnsubscribePublishedData(const std::vector<std::string> &uris,
+        const int64_t subscriberId) override;
+    std::vector<OperationResult> EnablePubSubs(const std::vector<std::string> &uris,
+        const int64_t subscriberId) override;
+    std::vector<OperationResult> DisablePubSubs(const std::vector<std::string> &uris,
+        const int64_t subscriberId) override;
+    int32_t OnInitialize() override;
+    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+
 private:
     class Factory {
     public:
@@ -48,14 +70,9 @@ private:
     };
 
     bool NotifyChange(const std::string &uri);
-    PermissionProxy::PermissionState VerifyPermission(uint32_t tokenID, PermissionType permissionType,
-        const AppExecFwk::BundleInfo &bundleInfo);
-    int32_t GetUserId(uint32_t tokenID, bool isSingleApp);
-    std::string GetRealityTableName(uint32_t tokenId, const AppExecFwk::BundleInfo &bundleInfo,
-        const UriInfo &uriInfo);
+    bool GetCallerBundleName(std::string &bundleName);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
-    DataShareProfileInfo dataShareProfileInfo_;
 };
 } // namespace OHOS::DataShare
 #endif
