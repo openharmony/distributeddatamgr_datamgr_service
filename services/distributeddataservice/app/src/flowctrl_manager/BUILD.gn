@@ -27,9 +27,9 @@ ohos_static_library("distributeddata_flowctrl_static") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  external_deps = [ 
+  external_deps = [
     "c_utils:utils",
-    "kv_store:distributeddata_inner",    
+    "kv_store:distributeddata_inner",
   ]
 
   subsystem_name = "distributeddatamgr"

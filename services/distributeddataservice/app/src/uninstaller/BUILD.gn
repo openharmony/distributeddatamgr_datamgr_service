@@ -33,10 +33,10 @@ ohos_static_library("distributeddata_uninstaller_static") {
   cflags_cc = [ "-fvisibility=hidden" ]
 
   deps = [
+    "${kv_store_distributeddb_path}:distributeddb",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "${kv_store_distributeddb_path}:distributeddb",
   ]
 
   external_deps = [

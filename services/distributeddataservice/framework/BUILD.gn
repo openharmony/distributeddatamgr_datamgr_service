@@ -71,7 +71,7 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   deps = [ "//third_party/openssl:libcrypto_shared" ]
 
-  external_deps = [ 
+  external_deps = [
     "hiviewdfx_hilog_native:libhilog",
     "kv_store:distributeddata_inner",
   ]

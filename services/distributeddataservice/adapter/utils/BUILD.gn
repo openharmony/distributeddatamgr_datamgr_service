@@ -35,7 +35,7 @@ ohos_static_library("distributeddata_utils_static") {
   external_deps = [
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
-    "kv_store:distributeddata_inner",    
+    "kv_store:distributeddata_inner",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
