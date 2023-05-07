@@ -231,8 +231,8 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
         if (it != syncers.end()) {
             syncer = it->second;
             if (!param.isEncrypt_ || param.password_.empty()) {
-                executors_->Execute(
-                    [this, syncer] { SyncerTimeout(syncer); }, std::chrono::milliseconds(SYNCER_TIMEOUT));
+                executors_->Schedule(
+                    std::chrono::milliseconds(SYNCER_TIMEOUT), [this, syncer] { SyncerTimeout(syncer); });
                 return true;
             }
             syncers.erase(storeId);
@@ -256,8 +256,8 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
         syncers[storeId] = syncer_;
         syncer = syncer_;
         syncerNum_++;
-        executors_->Execute(
-            [this, syncer] { SyncerTimeout(syncer); }, std::chrono::milliseconds(SYNCER_TIMEOUT));
+        executors_->Schedule(
+            std::chrono::milliseconds(SYNCER_TIMEOUT), [this, syncer] { SyncerTimeout(syncer); });
         return !syncers.empty();
     });
 
