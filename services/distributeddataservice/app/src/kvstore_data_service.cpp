@@ -249,7 +249,7 @@ void KvStoreDataService::OnStart()
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
     Bootstrap::GetInstance().LoadNetworks();
-    BackupManager::GetInstance().Init(executors_);
+    DistributedData::BackupManager::GetInstance().Init(executors_);
     Bootstrap::GetInstance().LoadBackup();
     Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -463,8 +463,8 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeM
         DistributedDB::KvStoreDelegateManager delegateManager("", "");
         delegateManager.CloseKvStore(store);
     });
-    constexpr const int CLOSE_STORE_DELAY_TIME = 60; // unit: seconds
-    executors_->Execute(std::move(delayTask), std::chrono::seconds(CLOSE_STORE_DELAY_TIME));
+    constexpr const int closeStoreDelayTime = 60; // unit: seconds
+    executors_->Execute(std::move(delayTask), std::chrono::seconds(closeStoreDelayTime));
 }
 
 Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
