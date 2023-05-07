@@ -181,7 +181,7 @@ int32_t DataShareServiceStub::OnRemoteSubscribeRdbData(MessageParcel &data, Mess
         return -1;
     }
     auto remoteObj = data.ReadRemoteObject();
-    auto observer = iface_cast<RdbObserverProxy>(remoteObj);
+    sptr<IDataProxyRdbObserver> observer = new (std::nothrow)RdbObserverProxy(remoteObj);
     if (observer == nullptr) {
         ZLOGE("obServer is nullptr");
         return -1;
@@ -250,7 +250,7 @@ int32_t DataShareServiceStub::OnRemoteSubscribePublishedData(MessageParcel &data
         ZLOGE("read device list failed.");
         return -1;
     }
-    auto observer = iface_cast<PublishedDataObserverProxy>(data.ReadRemoteObject());
+    sptr<PublishedDataObserverProxy> observer = new (std::nothrow)PublishedDataObserverProxy(data.ReadRemoteObject());
     if (observer == nullptr) {
         ZLOGE("obServer is nullptr");
         return -1;
