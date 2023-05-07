@@ -99,7 +99,6 @@ void BackupManager::BackSchedule()
     std::chrono::duration<int> internal(schedularInternal_);
     ZLOGI("BackupManager Schedule start.");
     executors_->Schedule(
-        delay,
         [this]() {
             if (!CanBackup()) {
                 return;
@@ -124,7 +123,7 @@ void BackupManager::BackSchedule()
             sync();
             backupSuccessTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         },
-        internal);
+        delay, internal);
 }
 
 void BackupManager::DoBackup(const StoreMetaData &meta)

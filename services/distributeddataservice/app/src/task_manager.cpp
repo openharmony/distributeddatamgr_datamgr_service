@@ -38,11 +38,11 @@ TaskManager::TaskId TaskManager::Schedule(const Task &task, Duration interval)
 }
 TaskManager::TaskId TaskManager::Schedule(const Task &task, Duration delay, Duration interval)
 {
-    return executors_->Schedule(delay, task, interval);
+    return executors_->Schedule(task, delay, interval);
 }
 TaskManager::TaskId TaskManager::Schedule(const Task &task, Duration delay, Duration interval, uint64_t times)
 {
-    return executors_->Schedule(delay, task, interval, times);
+    return executors_->Schedule(task, delay, interval, times);
 }
 bool TaskManager::Remove(const TaskId &taskId, bool wait)
 {

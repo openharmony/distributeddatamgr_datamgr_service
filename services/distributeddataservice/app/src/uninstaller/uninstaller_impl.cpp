@@ -113,7 +113,7 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared
 }
 ExecutorPool::Task UninstallerImpl::GetTask()
 {
-    return [this]{
+    return [this] {
         auto succ = CommonEventManager::SubscribeCommonEvent(subscriber_);
         if (succ) {
             ZLOGI("subscribe uninstall event success");
