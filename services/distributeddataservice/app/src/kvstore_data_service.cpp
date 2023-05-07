@@ -97,7 +97,8 @@ void KvStoreDataService::Initialize()
     AppDistributedKv::CommunicationProvider::GetInstance();
     PermitDelegate::GetInstance().Init();
     InitSecurityAdapter(executors_);
-    KvStoreMetaManager::GetInstance().InitMetaParameter(executors_);
+    KvStoreMetaManager::GetInstance().BindExecutor(executors_);
+    KvStoreMetaManager::GetInstance().InitMetaParameter();
     accountEventObserver_ = std::make_shared<KvStoreAccountObserver>(*this, executors_);
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
@@ -233,6 +234,7 @@ void KvStoreDataService::OnStart()
     constexpr size_t MIN = 5;
     executors_ = std::make_shared<ExecutorPool>(MAX, MIN);
     Reporter::GetInstance()->SetThreadPool(executors_);
+    AccountDelegate::GetInstance()->BindExecutor(executors_);
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
     DmAdapter::GetInstance().Init(executors_);
     static constexpr int32_t RETRY_TIMES = 50;
@@ -271,7 +273,7 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;
     }
-    AccountDelegate::GetInstance()->SubscribeAccountEvent(executors_);
+    AccountDelegate::GetInstance()->SubscribeAccountEvent();
     Uninstaller::GetInstance().Init(this, executors_);
 }
 

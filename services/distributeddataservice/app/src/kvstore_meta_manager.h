@@ -48,12 +48,13 @@ public:
 
     static KvStoreMetaManager &GetInstance();
 
-    void InitMetaParameter(std::shared_ptr<ExecutorPool> executors);
+    void InitMetaParameter();
     void InitMetaListener();
     void InitBroadcast();
     void InitDeviceOnline();
     void SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer);
     size_t GetSyncDataSize(const std::string &deviceId);
+    void BindExecutor(std::shared_ptr<ExecutorPool> executors);
 private:
     using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;
     NbDelegate GetMetaKvStore();
@@ -72,7 +73,7 @@ private:
 
     std::string GetBackupPath() const;
 
-    ExecutorPool::Task GetTask();
+    ExecutorPool::Task GetTask(uint32_t retry);
 
     class KvStoreMetaObserver : public DistributedDB::KvStoreObserver {
     public:
@@ -87,7 +88,6 @@ private:
 
     static constexpr int32_t RETRY_MAX_TIMES = 100;
     static constexpr int32_t RETRY_INTERVAL = 1;
-    int32_t retryTimes_ = 0;
     NbDelegate metaDelegate_;
     std::string metaDBDirectory_;
     const std::string label_;

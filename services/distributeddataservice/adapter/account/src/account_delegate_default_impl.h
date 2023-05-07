@@ -25,7 +25,7 @@ public:
     std::string GetCurrentAccountId() const override;
     int32_t GetUserByToken(uint32_t tokenId) const override;
     bool QueryUsers(std::vector<int> &users) override;
-    void SubscribeAccountEvent(std::shared_ptr<ExecutorPool> executors) override;
+    void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;
 private:
     ~AccountDelegateDefaultImpl();

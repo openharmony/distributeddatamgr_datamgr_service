@@ -93,7 +93,9 @@ DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
 void DeviceManagerAdapter::Init(std::shared_ptr<ExecutorPool> executors)
 {
     ZLOGI("begin");
-    executors_ = std::move(executors);
+    if (executors_ == nullptr) {
+        executors_ = std::move(executors);
+    }
     RegDevCallback()();
 }
 

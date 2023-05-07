@@ -49,7 +49,7 @@ bool AccountDelegateDefaultImpl::QueryUsers(std::vector<int> &users)
     return true;
 }
 
-void AccountDelegateDefaultImpl::SubscribeAccountEvent(std::shared_ptr<ExecutorPool> executors)
+void AccountDelegateDefaultImpl::SubscribeAccountEvent()
 {
     ZLOGD("no account part.");
 }

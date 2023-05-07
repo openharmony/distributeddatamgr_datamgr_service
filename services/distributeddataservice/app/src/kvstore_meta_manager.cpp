@@ -169,20 +169,17 @@ void KvStoreMetaManager::InitMetaData()
     ZLOGI("end.");
 }
 
-void KvStoreMetaManager::InitMetaParameter(std::shared_ptr<ExecutorPool> executors)
+void KvStoreMetaManager::InitMetaParameter()
 {
     ZLOGI("start.");
-    if (!executors_) {
-        executors_ = executors;
-    }
-    executors_->Execute(GetTask());
+    executors_->Execute(GetTask(0));
     DistributedDB::KvStoreConfig kvStoreConfig{ metaDBDirectory_ };
     delegateManager_.SetKvStoreConfig(kvStoreConfig);
 }
 
-ExecutorPool::Task KvStoreMetaManager::GetTask()
+ExecutorPool::Task KvStoreMetaManager::GetTask(uint32_t retry)
 {
-    return [this] {
+    return [this, retry] {
         auto status = CryptoManager::GetInstance().CheckRootKey();
         if (status == CryptoManager::ErrCode::SUCCESS) {
             ZLOGI("root key exist.");
@@ -193,13 +190,12 @@ ExecutorPool::Task KvStoreMetaManager::GetTask()
             ZLOGI("GenerateRootKey success.");
             return;
         }
-        retryTimes_++;
         ZLOGW("GenerateRootKey failed, retry times:%{public}d.", static_cast<int>(retryTimes_));
-        if (retryTimes_ == RETRY_MAX_TIMES) {
+        if (retry + 1 > RETRY_MAX_TIMES) {
             ZLOGE("fail to register subscriber!");
             return;
         }
-        executors_->Schedule(std::chrono::seconds(RETRY_INTERVAL), GetTask());
+        executors_->Schedule(std::chrono::seconds(RETRY_INTERVAL), GetTask(retry + 1));
     };
 }
 
@@ -397,6 +393,10 @@ size_t KvStoreMetaManager::GetSyncDataSize(const std::string &deviceId)
     }
 
     return metaDelegate->GetSyncDataSize(deviceId);
+}
+void KvStoreMetaManager::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 } // namespace DistributedKv
 } // namespace OHOS

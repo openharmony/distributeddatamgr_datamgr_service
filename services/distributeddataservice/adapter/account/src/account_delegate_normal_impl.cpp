@@ -77,7 +77,7 @@ bool AccountDelegateNormalImpl::QueryUsers(std::vector<int> &users)
     return AccountSA::OsAccountManager::QueryActiveOsAccountIds(users) == 0;
 }
 
-void AccountDelegateNormalImpl::SubscribeAccountEvent(std::shared_ptr<ExecutorPool> executors)
+void AccountDelegateNormalImpl::SubscribeAccountEvent()
 {
     ZLOGI("Subscribe account event listener start.");
     MatchingSkills matchingSkills;
@@ -89,27 +89,24 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent(std::shared_ptr<ExecutorPo
         account.harmonyAccountId = GetCurrentAccountId();
         NotifyAccountChanged(account);
     });
-    if (!executors_) {
-        executors_ = executors;
-    }
-    executors_->Execute(GetTask());
+    executors_->Execute(GetTask(0));
 }
 
-ExecutorPool::Task AccountDelegateNormalImpl::GetTask()
+ExecutorPool::Task AccountDelegateNormalImpl::GetTask(uint32_t retry)
 {
-    return [this] {
+    return [this, retry] {
         auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber_);
         if (result) {
             ZLOGI("success to register subscriber.");
             return;
         }
-        ZLOGD("fail to register subscriber, error:%{public}d, time:%{public}d", result, tryTimes);
-        tryTimes++;
-        if (tryTimes == MAX_RETRY_TIME) {
+        ZLOGD("fail to register subscriber, error:%{public}d, time:%{public}d", result, retry);
+
+        if (retry + 1 > MAX_RETRY_TIME) {
             ZLOGE("fail to register subscriber!");
             return;
         }
-        executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask());
+        executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
     };
 }
 
@@ -150,6 +147,11 @@ std::string AccountDelegateNormalImpl::Sha256AccountId(const std::string &plainT
 
     auto plainVal = htobe64(plain);
     return DoHash(static_cast<void *>(&plainVal), sizeof(plainVal), true);
+}
+
+void AccountDelegateNormalImpl::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 }  // namespace DistributedKv
 }  // namespace OHOS
