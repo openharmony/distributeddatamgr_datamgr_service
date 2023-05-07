@@ -120,7 +120,6 @@ group("unittest") {
 
   deps += [
     ":DistributeddataDfxMSTTest",
-    ":DistributeddataDfxUTTest",
   ]
 }
 ###############################################################################

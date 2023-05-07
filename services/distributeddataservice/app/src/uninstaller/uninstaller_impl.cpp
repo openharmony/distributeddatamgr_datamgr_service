@@ -108,6 +108,7 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared
     };
     auto subscriber = std::make_shared<UninstallEventSubscriber>(info, callback);
     subscriber_ = subscriber;
+    executors_ = executors;
     executors_->Execute(GetTask());
     return Status::SUCCESS;
 }

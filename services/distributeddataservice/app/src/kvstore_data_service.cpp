@@ -297,7 +297,6 @@ void KvStoreDataService::StartService()
     if (!ret) {
         DumpHelper::GetInstance().AddErrorInfo("StartService: Service publish failed.");
     }
-    Uninstaller::GetInstance().Init(this, executors_);
     // Initialize meta db delegate manager.
     KvStoreMetaManager::GetInstance().SubscribeMeta(KvStoreMetaRow::KEY_PREFIX,
         [this](const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag) {
@@ -307,7 +306,6 @@ void KvStoreDataService::StartService()
     UserDelegate::GetInstance().Init(executors_);
 
     // subscribe account event listener to EventNotificationMgr
-    AccountDelegate::GetInstance()->SubscribeAccountEvent(executors_);
     auto autoLaunch = [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
         auto status = ResolveAutoLaunchParamByIdentifier(identifier, param);
         features_.ForEachCopies([&identifier, &param](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {

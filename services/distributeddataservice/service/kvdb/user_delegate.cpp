@@ -172,9 +172,7 @@ void UserDelegate::Init(const std::shared_ptr<ExecutorPool>& executors)
     if (!executors_) {
         executors_ = executors;
     }
-    if (!InitLocalUserMeta()) {
-        executors_->Execute(GeTask());
-    }
+    executors_->Execute(GeTask());
     ZLOGD("subscribe os account ret:%{public}d", ret);
 }
 
