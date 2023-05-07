@@ -39,7 +39,7 @@ std::shared_ptr<DataShareResultSet> QueryStrategy::Execute(
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return nullptr;
     }
-    auto delegate = DBDelegate::Create(context->calledSourceDir, context->version, errCode);
+    auto delegate = DBDelegate::Create(context->calledSourceDir, context->version);
     if (delegate == nullptr) {
         ZLOGE("malloc fail %{public}s %{public}s", context->calledBundleName.c_str(), context->calledTableName.c_str());
         return nullptr;

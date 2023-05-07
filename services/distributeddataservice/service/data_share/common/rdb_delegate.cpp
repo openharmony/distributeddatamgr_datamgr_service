@@ -21,14 +21,14 @@
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 16;
 std::atomic<int32_t> RdbDelegate::resultSetCount = 0;
-RdbDelegate::RdbDelegate(const std::string &dir, int version, int &errCode, bool registerFunction)
+RdbDelegate::RdbDelegate(const std::string &dir, int version)
 {
     RdbStoreConfig config(dir);
     config.SetCreateNecessary(false);
     DefaultOpenCallback callback;
-    store_ = RdbHelper::GetRdbStore(config, version, callback, errCode);
-    if (errCode != E_OK) {
-        ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode,
+    store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
+    if (errCode_ != E_OK) {
+        ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode_,
             DistributedData::Anonymous::Change(dir).c_str());
     }
 }
@@ -83,6 +83,7 @@ std::shared_ptr<DataShareResultSet> RdbDelegate::Query(
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
+        errCode = errCode_;
         return nullptr;
     }
     int count = resultSetCount.fetch_add(1);

@@ -18,9 +18,9 @@
 #include "kv_delegate.h"
 #include "rdb_delegate.h"
 namespace OHOS::DataShare {
-std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int version, int &errCode, bool registerFunction)
+std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int version)
 {
-    return std::make_shared<RdbDelegate>(dir, version, errCode, registerFunction);
+    return std::make_shared<RdbDelegate>(dir, version);
 }
 
 const std::string KvDBDelegate::TEMPLATE_TABLE = "template_";

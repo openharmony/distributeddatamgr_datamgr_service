@@ -28,8 +28,7 @@
 namespace OHOS::DataShare {
 class DBDelegate {
 public:
-    static std::shared_ptr<DBDelegate> Create(const std::string &dir, int version, int &errCode,
-        bool registerFunction = false);
+    static std::shared_ptr<DBDelegate> Create(const std::string &dir, int version);
     virtual int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
         const DataShareValuesBucket &valuesBucket) = 0;
