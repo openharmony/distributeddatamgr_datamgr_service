@@ -142,7 +142,7 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true);
     if (errCode != E_OK) {
         GLOGE("filter Parsed faild");
         return errCode;
@@ -222,7 +222,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true);
     if (errCode != E_OK) {
         GLOGE("filter Parsed faild");
         return errCode;
@@ -290,7 +290,7 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject documentObj = JsonObject::Parse(document, errCode, caseSensitive);
+    JsonObject documentObj = JsonObject::Parse(document, errCode, true);
     if (errCode != E_OK) {
         GLOGE("Document Parsed faild");
         return errCode;
@@ -332,7 +332,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         GLOGE("filter's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true);
     if (errCode != E_OK) {
         GLOGE("filter Parsed faild");
         return errCode;
@@ -388,7 +388,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         GLOGE("filter's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true);
     if (errCode != E_OK) {
         GLOGE("filter Parsed faild");
         return errCode;
@@ -407,7 +407,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         GLOGE("projection's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject projectionObj = JsonObject::Parse(projection, errCode, caseSensitive);
+    JsonObject projectionObj = JsonObject::Parse(projection, errCode, true);
     if (errCode != E_OK) {
         GLOGE("projection Parsed faild");
         return errCode;

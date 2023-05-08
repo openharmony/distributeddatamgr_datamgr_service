@@ -160,7 +160,7 @@ bool CheckCommon::CheckDocument(const std::string &updateStr, int &errCode)
         return false;
     }
 
-    JsonObject updateObj = JsonObject::Parse(updateStr, errCode);
+    JsonObject updateObj = JsonObject::Parse(updateStr, errCode, true);
     if (updateObj.IsNull() || errCode != E_OK) {
         GLOGE("Parse update document failed. %d", errCode);
         return false;
