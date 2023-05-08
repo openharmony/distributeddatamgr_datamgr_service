@@ -30,8 +30,12 @@ ReportStatus DatabaseFaultImpl::Report(const DBFaultMsg &msg)
         return ReportStatus::ERROR;
     }
 
-    HiViewAdapter::ReportDBFault(eventID, msg);
+    HiViewAdapter::ReportDBFault(eventID, msg, executors_);
     return ReportStatus::SUCCESS;
+}
+void DatabaseFaultImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 } // namespace DistributedDataDfx
 } // namespace OHOS

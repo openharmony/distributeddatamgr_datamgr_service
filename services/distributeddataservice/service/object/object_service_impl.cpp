@@ -277,4 +277,9 @@ int32_t ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, con
 ObjectServiceImpl::ObjectServiceImpl()
 {
 }
+int32_t ObjectServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
+    return 0;
+}
 } // namespace OHOS::DistributedObject

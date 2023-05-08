@@ -19,8 +19,12 @@ namespace OHOS {
 namespace DistributedDataDfx {
 ReportStatus BehaviourReporterImpl::Report(const BehaviourMsg &msg)
 {
-    HiViewAdapter::ReportBehaviour(DfxCodeConstant::DATABASE_BEHAVIOUR, msg);
+    HiViewAdapter::ReportBehaviour(DfxCodeConstant::DATABASE_BEHAVIOUR, msg, executors_);
     return ReportStatus::SUCCESS;
+}
+void BehaviourReporterImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 } // namespace DistributedDataDfx
 } // namespace OHOS

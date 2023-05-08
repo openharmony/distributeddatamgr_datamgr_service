@@ -22,16 +22,19 @@
 
 #include "account_delegate.h"
 #include "constant.h"
+#include "dump_helper.h"
+#include "feature_stub_impl.h"
 #include "ikvstore_data_service.h"
+#include "ithread_pool.h"
 #include "kvstore_device_listener.h"
 #include "kvstore_meta_manager.h"
 #include "metadata/store_meta_data.h"
 #include "reporter.h"
+#include "runtime_config.h"
 #include "security/security.h"
 #include "system_ability.h"
+#include "executor_pool.h"
 #include "types.h"
-#include "dump_helper.h"
-#include "feature_stub_impl.h"
 
 namespace OHOS::DistributedKv {
 class KvStoreAccountObserver;
@@ -109,14 +112,14 @@ private:
 
     void StartService();
 
-    void InitSecurityAdapter();
+    void InitSecurityAdapter(std::shared_ptr<ExecutorPool> executors);
 
     void OnStoreMetaChanged(const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag);
 
     Status AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId);
 
     bool ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
-    static void ResolveAutoLaunchCompatible(const StoreMetaData &meta, const std::string &identifier);
+    void ResolveAutoLaunchCompatible(const StoreMetaData &meta, const std::string &identifier);
     static DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
     static Status InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
                           DistributedDB::KvStoreNbDelegate::Option &dbOption);

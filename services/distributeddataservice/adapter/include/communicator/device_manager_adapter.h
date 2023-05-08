@@ -25,7 +25,7 @@
 #include "device_manager.h"
 #include "device_manager_callback.h"
 #include "dm_device_info.h"
-#include "task_scheduler.h"
+#include "executor_pool.h"
 #include "lru_bucket.h"
 
 namespace OHOS {
@@ -33,14 +33,13 @@ namespace DistributedData {
 class API_EXPORT DeviceManagerAdapter {
 public:
     using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
-    using KvScheduler = OHOS::TaskScheduler;
     using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
     using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
     using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
     using Status = OHOS::DistributedKv::Status;
     static DeviceManagerAdapter &GetInstance();
 
-    void Init();
+    void Init(std::shared_ptr<ExecutorPool> executors);
     Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     DeviceInfo GetLocalDevice();
@@ -77,9 +76,9 @@ private:
     ConcurrentMap<const AppDeviceChangeListener *, const AppDeviceChangeListener *> observers_ {};
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
     static constexpr size_t TIME_TASK_CAPACITY = 50;
-    KvScheduler scheduler_ {TIME_TASK_CAPACITY, "dm_adapter"};
     static constexpr int32_t SYNC_TIMEOUT = 10 * 1000; // ms
     ConcurrentMap<std::string, std::string> syncTask_ {};
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedData
 }  // namespace OHOS

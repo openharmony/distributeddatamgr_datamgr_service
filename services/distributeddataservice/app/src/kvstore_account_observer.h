@@ -17,7 +17,9 @@
 #define KVSTORE_ACCOUNT_OBSERVER_H
 
 #include <atomic>
+
 #include "account_delegate.h"
+#include "executor_pool.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -32,8 +34,11 @@ do { \
 class KvStoreDataService;
 class KvStoreAccountObserver : public AccountDelegate::Observer {
 public:
-    explicit KvStoreAccountObserver(KvStoreDataService &kvStoreDataService)
-        : kvStoreDataService_(kvStoreDataService)  {}
+    explicit KvStoreAccountObserver(KvStoreDataService &kvStoreDataService,
+        std::shared_ptr<ExecutorPool> executors)
+        : kvStoreDataService_(kvStoreDataService), executors_(executors)
+    {
+    }
     ~KvStoreAccountObserver() override = default;
 
     void OnAccountChanged(const AccountEventInfo &eventInfo) override;
@@ -50,6 +55,7 @@ public:
 
 private:
     KvStoreDataService &kvStoreDataService_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

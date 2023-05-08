@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 ohos_static_library("distributeddata_broadcaster_static") {
   sources = [
@@ -22,9 +23,8 @@ ohos_static_library("distributeddata_broadcaster_static") {
     "../include/broadcaster",
     "../include/log",
     "./src",
-    "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
+    "${kv_store_common_path}",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]

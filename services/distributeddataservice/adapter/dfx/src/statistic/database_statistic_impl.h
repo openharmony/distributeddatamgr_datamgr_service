@@ -25,6 +25,10 @@ class DatabaseStatisticImpl : public StatisticReporter<DbStat> {
 public:
     virtual ~DatabaseStatisticImpl() {}
     ReportStatus Report(const DbStat &stat) override;
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+
+private:
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedDataDfx
 }  // namespace OHOS

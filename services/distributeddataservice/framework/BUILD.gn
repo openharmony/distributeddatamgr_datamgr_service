@@ -12,6 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//build/ohos_var.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 group("build_module") {
   deps = [ ":distributeddatasvcfwk" ]
@@ -23,10 +24,10 @@ config("module_public_config") {
     "//third_party/json/single_include",
     "//third_party/openssl/include/",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
+    "${kv_store_common_path}",
+    "${kv_store_distributeddb_path}/interfaces/include/",
+    "${kv_store_distributeddb_path}/include/",
   ]
 }
 

@@ -68,11 +68,9 @@ void RdbServiceImpl::DeathRecipientImpl::OnRemoteDied(const wptr<IRemoteObject> 
     }
 }
 
-RdbServiceImpl::RdbServiceImpl()
-    : timer_("SyncerTimer", -1), autoLaunchObserver_(this)
+RdbServiceImpl::RdbServiceImpl() : autoLaunchObserver_(this)
 {
     ZLOGI("construct");
-    timer_.Setup();
     DistributedDB::RelationalStoreManager::SetAutoLaunchRequestCallback(
         [this](const std::string& identifier, DistributedDB::AutoLaunchParam &param) {
             return ResolveAutoLaunch(identifier, param);
@@ -125,9 +123,6 @@ void RdbServiceImpl::OnClientDied(pid_t pid)
     ZLOGI("client dead pid=%{public}d", pid);
     syncers_.ComputeIfPresent(pid, [this](const auto& key, StoreSyncersType& syncers) {
         syncerNum_ -= static_cast<int32_t>(syncers.size());
-        for (const auto& [name, syncer] : syncers) {
-            timer_.Unregister(syncer->GetTimerId());
-        }
         return false;
     });
     notifiers_.Erase(pid);
@@ -236,8 +231,10 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
         if (it != syncers.end()) {
             syncer = it->second;
             if (!param.isEncrypt_ || param.password_.empty()) {
-                timer_.Unregister(syncer->GetTimerId());
-                uint32_t timerId = timer_.Register([this, syncer]() { SyncerTimeout(syncer); }, SYNCER_TIMEOUT, true);
+                executors_->Remove(syncer->GetTimerId(), true);
+                auto timerId = executors_->Schedule(std::chrono::milliseconds(SYNCER_TIMEOUT), [this, syncer] {
+                    SyncerTimeout(syncer);
+                });
                 syncer->SetTimerId(timerId);
                 return true;
             }
@@ -262,7 +259,9 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
         syncers[storeId] = syncer_;
         syncer = syncer_;
         syncerNum_++;
-        uint32_t timerId = timer_.Register([this, syncer]() { SyncerTimeout(syncer); }, SYNCER_TIMEOUT, true);
+        auto timerId = executors_->Schedule(std::chrono::milliseconds(SYNCER_TIMEOUT), [this, syncer] {
+            SyncerTimeout(syncer);
+        });
         syncer->SetTimerId(timerId);
         return !syncers.empty();
     });
@@ -445,5 +444,10 @@ int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
     }
     delete syncer;
     return RDB_OK;
+}
+int32_t RdbServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
+    return 0;
 }
 } // namespace OHOS::DistributedRdb

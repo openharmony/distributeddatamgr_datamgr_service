@@ -19,7 +19,6 @@
 #include <thread>
 #include "account_delegate.h"
 #include "device_manager_adapter.h"
-#include "executor_factory.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
@@ -34,26 +33,32 @@ UpgradeManager &UpgradeManager::GetInstance()
     return instance;
 }
 
-void UpgradeManager::Init()
+void UpgradeManager::Init(std::shared_ptr<ExecutorPool> executors)
 {
-    OHOS::DistributedKv::KvStoreTask retryTask([this]() {
-        do {
-            if (InitLocalCapability()) {
-                break;
-            }
-            static constexpr int RETRY_INTERVAL = 500; // millisecond
-            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL));
-        } while (true);
-    });
-    ExecutorFactory::GetInstance().Execute(std::move(retryTask));
+    if (executors_) {
+        return;
+    }
+    executors_ = std::move(executors);
+    executors_->Execute(GetTask());
+}
+
+ExecutorPool::Task UpgradeManager::GetTask()
+{
+    return [this] {
+        auto succ = InitLocalCapability();
+        if (succ) {
+            return;
+        }
+        executors_->Schedule(std::chrono::milliseconds(RETRY_INTERVAL), GetTask());
+    };
 }
 
 CapMetaData UpgradeManager::GetCapability(const std::string &deviceId, bool &status)
 {
     status = true;
-    auto cap = capabilities_.Find(deviceId);
-    if (cap.first) {
-        return cap.second;
+    auto index = capabilities_.Find(deviceId);
+    if (index.first) {
+        return index.second;
     }
     ZLOGI("load capability from meta");
     CapMetaData capMetaData;
