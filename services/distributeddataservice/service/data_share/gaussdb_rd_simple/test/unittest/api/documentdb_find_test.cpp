@@ -1520,3 +1520,23 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest057, TestSize.Level1)
     // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_NOT_AVAILABLE);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
+
+/**
+  * @tc.name: DocumentFindApiTest059
+  * @tc.desc: Test findDoc with invalid field
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: mazhao
+  */
+HWTEST_F(DocumentFindApiTest, DocumentFindApiTest059, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. Create filter with _id and get the record according to filter condition.
+     * @tc.expected: step1. Succeed to get the record, the matching record is g_document6.
+     */
+    const char *filter = "{\"123a1\":123}";
+    GRD_ResultSet *resultSet = nullptr;
+    const char *projection = "{}";
+    Query query = { filter, projection };
+    EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_INVALID_ARGS);
+}
