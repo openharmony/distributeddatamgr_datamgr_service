@@ -168,11 +168,11 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     }
     bool isOnlyId = true;
     auto coll = Collection(collection, executor_);
-    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    bool isCollectionExist = coll.IsCollectionExists(errCode);
     if (errCode != E_OK) {
         return errCode;
     }
-    if (!IsCollectionExist) {
+    if (!isCollectionExist) {
         return -E_INVALID_ARGS;
     }
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
