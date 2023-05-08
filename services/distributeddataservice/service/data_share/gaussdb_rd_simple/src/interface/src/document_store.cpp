@@ -487,13 +487,14 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         if (errCode != E_OK) {
             return errCode;
         }
-        if (!CheckCommon::CheckProjection(projectionObj, allPath)) {
-            GLOGE("projection format unvalid");
-            return -E_INVALID_ARGS;
-        }
         if (GetViewType(projectionObj, viewType) != E_OK) {
             GLOGE("GetViewType faild");
             return -E_INVALID_ARGS;
+        }
+        errCode = CheckCommon::CheckProjection(projectionObj, allPath);
+        if (errCode != E_OK) {
+            GLOGE("projection format unvalid");
+            return errCode;
         }
     }
     bool ifShowId = false;
