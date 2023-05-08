@@ -31,6 +31,8 @@ public:
     bool operator==(const DBConfig &targetConfig) const;
     bool operator!=(const DBConfig &targetConfig) const;
 
+    bool CheckPersistenceEqual(const DBConfig &targetConfig) const;
+
 private:
     DBConfig() = default;
 

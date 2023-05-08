@@ -526,7 +526,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                     if (!isCollapse) {
                         bool ret = JsonValueReplace(src, fatherPath, father, item, externErrCode);
                         if (!ret) {
-                            GLOGE("replace faild");
+                            GLOGE("replace failed");
                             return false;
                         }
                         isAddedFlag = true;

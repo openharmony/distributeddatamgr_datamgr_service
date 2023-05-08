@@ -16,6 +16,7 @@
 #include "collection_option.h"
 
 #include <algorithm>
+#include <cstring>
 #include <memory>
 
 #include "doc_errno.h"
@@ -24,26 +25,23 @@
 
 namespace DocumentDB {
 namespace {
-const std::string OPT_MAX_DOC = "maxdoc";
-const std::vector<std::string> DB_CONFIG = {
-    OPT_MAX_DOC,
-};
+constexpr const char *OPT_MAX_DOC = "maxdoc";
 
-bool CheckConfigSupport(const JsonObject &config, int &errCode)
+int CheckConfigValid(const JsonObject &config)
 {
     JsonObject child = config.GetChild();
     while (!child.IsNull()) {
         std::string fieldName = child.GetItemFiled();
-        if (std::find(DB_CONFIG.begin(), DB_CONFIG.end(), fieldName) == DB_CONFIG.end()) {
+        if (strcmp(OPT_MAX_DOC, fieldName.c_str()) != 0) {
             GLOGE("Invalid collection config.");
-            errCode = -E_INVALID_CONFIG_VALUE;
-            return false;
+            return -E_INVALID_CONFIG_VALUE;
         }
         child = child.GetNext();
     }
-    return true;
+    return E_OK;
 }
 } // namespace
+
 CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &errCode)
 {
     if (optStr.empty()) {
@@ -61,7 +59,8 @@ CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &er
         return {};
     }
 
-    if (!CheckConfigSupport(collOpt, errCode)) {
+    errCode = CheckConfigValid(collOpt);
+    if (errCode != E_OK) {
         GLOGE("Check collection option, not support config item. %d", errCode);
         return {};
     }

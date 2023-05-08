@@ -98,7 +98,7 @@ int SQLiteUtils::GetStatement(sqlite3 *db, const std::string &sql, sqlite3_stmt 
     if (errCode != SQLITE_OK) {
         GLOGE("Prepare SQLite statement failed:%d", errCode);
         (void)SQLiteUtils::ResetStatement(statement, true);
-        return errCode;
+        return MapSqliteError(errCode);
     }
 
     if (statement == nullptr) {
