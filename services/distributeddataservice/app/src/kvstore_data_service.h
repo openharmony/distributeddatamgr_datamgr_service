@@ -133,7 +133,7 @@ private:
     std::shared_ptr<Security> security_;
     ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
-    std::shared_ptr<ExecutorPool> executor_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 
 class DbMetaCallbackDelegateMgr : public DbMetaCallbackDelegate {

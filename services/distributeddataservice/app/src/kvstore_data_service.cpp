@@ -141,7 +141,7 @@ sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &n
         return true;
     });
     if (isFirstCreate) {
-        feature->OnInitialize(executor_);
+        feature->OnInitialize(executors_);
     }
     return feature != nullptr ? feature->AsObject() : nullptr;
 }

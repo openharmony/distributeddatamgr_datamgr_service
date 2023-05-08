@@ -100,5 +100,5 @@ int32_t FeatureSystem::Feature::OnReady(const std::string &device)
 {
     return E_OK;
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS
