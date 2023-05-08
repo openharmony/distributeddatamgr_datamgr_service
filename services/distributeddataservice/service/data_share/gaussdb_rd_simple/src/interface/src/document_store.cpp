@@ -256,11 +256,11 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     bool isOnlyId = true;
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
     auto coll = Collection(collection, executor_);
-    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    bool isCollectionExist = coll.IsCollectionExists(errCode);
     if (errCode != E_OK) {
         return errCode;
     }
-    if (!IsCollectionExist) {
+    if (!isCollectionExist) {
         return -E_INVALID_ARGS;
     }
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
@@ -314,11 +314,11 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
-    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    bool isCollectionExist = coll.IsCollectionExists(errCode);
     if (errCode != E_OK) {
         return errCode;
     }
-    if (!IsCollectionExist) {
+    if (!isCollectionExist) {
         return -E_INVALID_ARGS;
     }
     if (document.length() + 1 > JSON_LENS_MAX) {
@@ -356,11 +356,11 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
-    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    bool isCollectionExist = coll.IsCollectionExists(errCode);
     if (errCode != E_OK) {
         return errCode;
     }
-    if (!IsCollectionExist) {
+    if (!isCollectionExist) {
         return -E_INVALID_ARGS;
     }
     if (filter.empty()) {
@@ -472,11 +472,11 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         ifShowId = true;
     }
     auto coll = Collection(collection, executor_);
-    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    bool isCollectionExist = coll.IsCollectionExists(errCode);
     if (errCode != E_OK) {
         return errCode;
     }
-    if (!IsCollectionExist) {
+    if (!isCollectionExist) {
         return -E_INVALID_ARGS;
     }
     std::lock_guard<std::mutex> lock(dbMutex_);
