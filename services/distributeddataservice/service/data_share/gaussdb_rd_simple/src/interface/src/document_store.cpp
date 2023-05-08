@@ -336,7 +336,6 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
-    if (document.length() >= JSON_LENS_MAX) {
     bool isCollectionExist = coll.IsCollectionExists(errCode);
     if (errCode != E_OK) {
         return errCode;
@@ -344,7 +343,7 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
     if (!isCollectionExist) {
         return -E_INVALID_ARGS;
     }
-    if (document.length() + 1 > JSON_LENS_MAX) {
+    if (document.length() >= JSON_LENS_MAX) {
         GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
     }

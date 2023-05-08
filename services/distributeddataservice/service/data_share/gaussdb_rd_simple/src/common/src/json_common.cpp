@@ -673,7 +673,7 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
                 JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
                 if (errCode != E_OK) {
                     GLOGE("fine item falied");
-                    return errCode;
+                    return false;
                 }
                 if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
                     return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
