@@ -122,6 +122,8 @@ void DocumentFindApiTest::TearDownTestCase(void)
 
 void DocumentFindApiTest::SetUp(void)
 {
+    EXPECT_EQ(GRD_DropCollection(g_db, COLLECTION_NAME, 0), GRD_OK);
+    EXPECT_EQ(GRD_CreateCollection(g_db, COLLECTION_NAME, "", 0), GRD_OK);
     InsertData(g_db, "student");
 }
 
@@ -1527,7 +1529,28 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest057, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest058, TestSize.Level1) {}
+
+HWTEST_F(DocumentFindApiTest, DocumentFindApiTest058, TestSize.Level1)
+{
+    GRD_ResultSet *resultSet = nullptr;
+    Query query;
+    query.filter = R"({abc: true})";
+    query.projection = "{}";
+    ASSERT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_FORMAT);
+    ASSERT_EQ(resultSet, nullptr);
+
+    query.filter = R"({'abc': 123})";
+    ASSERT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_FORMAT);
+    ASSERT_EQ(resultSet, nullptr);
+
+    query.filter = R"({"123a1": 123})";
+    ASSERT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
+    ASSERT_EQ(resultSet, nullptr);
+
+    query.filter = R"({"abc$": 123})";
+    ASSERT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
+    ASSERT_EQ(resultSet, nullptr);
+}
 
 HWTEST_F(DocumentFindApiTest, DocumentFindApiTest059, TestSize.Level1)
 {
