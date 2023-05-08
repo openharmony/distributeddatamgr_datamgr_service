@@ -279,9 +279,33 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest006, TestSize.Level0)
 
 HWTEST_F(DocumentDBDataTest, UpdateDataTest007, TestSize.Level0)
 {
-    const char *updateStr = R""({"field2":{"c_field":{"cc_field":{"ccc_field":{"ccc_field":[1,false,1.234e2,["hello world!"]]}}}}})"";
-    int result = GRD_UpdateDoc(g_db, g_coll, "{\"field\" : 2}", updateStr, 0);
-    int result2 = GRD_UpsertDoc(g_db, g_coll, "{\"field\" : 2}", updateStr, 0);
-    EXPECT_EQ(result, GRD_INVALID_ARGS);
-    EXPECT_EQ(result2, GRD_INVALID_ARGS);
+    std::string filter = R""({"_id":"1234"})"";
+    std::string document = R""({"_id":"1234", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2" : 2})"";
+
+    EXPECT_EQ(GRD_InsertDoc(g_db, g_coll, document.c_str(), 0), GRD_OK);
+
+    std::string updata = R""({"field1":1, "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
+    EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter.c_str(), updata.c_str(), 0), 1);
+
+    GRD_ResultSet *resultSet = nullptr;
+    const char *projection = "{}";
+    Query query = { filter.c_str(), projection };
+    EXPECT_EQ(GRD_FindDoc(g_db, g_coll, query, 1, &resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    char *value = NULL;
+    EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+    string valueStr = value;
+    string repectStr = R""({"_id":"1234","field1":1,"field2":2,"FIELD1":[1,true,1.23456789,"hello world!",null]})"";
+    EXPECT_EQ((valueStr == repectStr), 1);
+    EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
+    EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
+}
+
+HWTEST_F(DocumentDBDataTest, UpdateDataTest008, TestSize.Level0)
+{
+    std::string filter = R""({"_id":"1234"})"";
+    std::string updata = R""({"field1":1, "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
+    EXPECT_EQ(GRD_UpdateDoc(g_db, "grd_aa", filter.c_str(), updata.c_str(), 0), GRD_INVALID_FORMAT);
+    EXPECT_EQ(GRD_UpdateDoc(g_db, "gRd_aa", filter.c_str(), updata.c_str(), 0), GRD_INVALID_FORMAT);
+
 }
