@@ -103,6 +103,27 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest002, TestSize.Level0)
     EXPECT_EQ(status, GRD_OK);
 }
 
+HWTEST_F(DocumentDBApiTest, OpenDBTest003, TestSize.Level0)
+{
+    std::string path = "./document.db";
+    GRD_DB *db = nullptr;
+    int status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_OK);
+    EXPECT_NE(db, nullptr);
+    GLOGD("Open DB test 003: status: %d", status);
+
+    GRD_DB *db1 = nullptr;
+    status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db1);
+    EXPECT_EQ(status, GRD_OK);
+    EXPECT_NE(db1, nullptr);
+
+    status = GRD_DBClose(db, GRD_DB_CLOSE);
+    EXPECT_EQ(status, GRD_OK);
+
+    status = GRD_DBClose(db1, GRD_DB_CLOSE);
+    EXPECT_EQ(status, GRD_OK);
+}
+
 /**
  * @tc.name: OpenDBPathTest001
  * @tc.desc: Test open document db with NULL path
@@ -253,14 +274,14 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest003, TestSize.Level1)
     int status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OK);
 
+    GRD_DB *db1 = nullptr;
+    config = R""({"maxConnNum":17})"";
+    status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db1);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+
     status = GRD_DBClose(db, GRD_DB_CLOSE);
     EXPECT_EQ(status, GRD_OK);
     db = nullptr;
-
-    config = R""({"maxConnNum":17})"";
-    status = GRD_DBOpen(path.c_str(), config.c_str(), GRD_DB_OPEN_CREATE, &db);
-    EXPECT_EQ(status, GRD_INVALID_ARGS);
-
     DocumentDBTestUtils::RemoveTestDbFiles(path);
 }
 

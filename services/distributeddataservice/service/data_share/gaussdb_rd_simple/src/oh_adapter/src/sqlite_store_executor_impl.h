@@ -32,13 +32,17 @@ public:
     int GetDBConfig(std::string &config);
     int SetDBConfig(const std::string &config);
 
+    int StartTransaction() override;
+    int Commit() override;
+    int Rollback() override;
+
     int PutData(const std::string &collName, const Key &key, const Value &value) override;
     int GetData(const std::string &collName, const Key &key, Value &value) const override;
     int GetFilededData(const std::string &collName, const JsonObject &filterObj,
         std::vector<std::pair<std::string, std::string>> &values) const override;
     int DelData(const std::string &collName, const Key &key) override;
 
-    int CreateCollection(const std::string &name, bool ignoreExists) override;
+    int CreateCollection(const std::string &name, const std::string &option, bool ignoreExists) override;
     int DropCollection(const std::string &name, bool ignoreNonExists) override;
     bool IsCollectionExists(const std::string &name, int &errCode) override;
 
