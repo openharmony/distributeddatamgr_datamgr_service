@@ -158,7 +158,7 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
         return -E_NO_DATA;
     }
 
-    JsonObject updateValue = JsonObject::Parse(update, errCode);
+    JsonObject updateValue = JsonObject::Parse(update, errCode, true);
     if (errCode != E_OK) {
         GLOGD("Parse upsert value failed. %d", errCode);
         return errCode;
@@ -176,7 +176,7 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
         return errCode;
     }
     GLOGD("Update document value.");
-    JsonObject originValue = JsonObject::Parse(valueGotStr, errCode);
+    JsonObject originValue = JsonObject::Parse(valueGotStr, errCode, true);
     if (errCode != E_OK) {
         GLOGD("Parse original value failed. %d %s", errCode, valueGotStr.c_str());
         return errCode;

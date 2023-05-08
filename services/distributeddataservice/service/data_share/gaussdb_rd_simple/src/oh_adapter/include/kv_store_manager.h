@@ -24,7 +24,8 @@
 namespace DocumentDB {
 class KvStoreManager {
 public:
-    static int GetKvStore(const std::string &path, const DBConfig &config, KvStoreExecutor *&executor);
+    static int GetKvStore(const std::string &path, const DBConfig &config, bool isFirstOpen,
+        KvStoreExecutor *&executor);
 };
 } // namespace DocumentDB
 #endif // KV_STORE_MANAGER_H
