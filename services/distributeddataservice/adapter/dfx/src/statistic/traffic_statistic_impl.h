@@ -25,6 +25,10 @@ class TrafficStatisticImpl : public StatisticReporter<TrafficStat> {
 public:
     virtual ~TrafficStatisticImpl() {}
     ReportStatus Report(const TrafficStat &stat) override;
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+
+private:
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedDataDfx
 }  // namespace OHOS

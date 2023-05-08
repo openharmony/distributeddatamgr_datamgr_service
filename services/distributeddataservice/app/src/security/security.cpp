@@ -161,7 +161,7 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid) const
 {
     auto it = devicesUdid_.Find(uuid);
     if (!it.first) {
-        taskScheduler_.Execute([this, uuid]() {
+        executors_->Execute([this, uuid]() {
             auto it = devicesUdid_.Find(uuid);
             if (it.first) {
                 return;

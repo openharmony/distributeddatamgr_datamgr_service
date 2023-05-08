@@ -39,9 +39,9 @@ public:
 
     pid_t GetPid() const;
 
-    void SetTimerId(uint32_t timerId);
+    void SetTimerId(uint64_t timerId);
 
-    uint32_t GetTimerId() const;
+    uint64_t GetTimerId() const;
 
     std::string GetStoreId() const;
 
@@ -85,7 +85,7 @@ private:
     pid_t pid_ {};
     pid_t uid_ {};
     uint32_t token_ {};
-    uint32_t timerId_ {};
+    uint64_t timerId_ {};
 
     static std::vector<std::string> GetConnectDevices();
     static std::vector<std::string> NetworkIdToUUID(const std::vector<std::string>& networkIds);

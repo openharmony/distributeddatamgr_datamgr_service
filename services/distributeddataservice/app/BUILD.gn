@@ -89,6 +89,7 @@ ohos_shared_library("distributeddataservice") {
     "src/session_manager/route_head_handler_impl.cpp",
     "src/session_manager/session_manager.cpp",
     "src/session_manager/upgrade_manager.cpp",
+    "src/task_manager.cpp",
   ]
 
   if (datamgr_service_power) {

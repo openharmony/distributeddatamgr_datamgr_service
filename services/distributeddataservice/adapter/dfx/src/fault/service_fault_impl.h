@@ -33,6 +33,10 @@ public:
         return ReportStatus::SUCCESS;
     };
     ReportStatus Report(const FaultMsg &msg) override;
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+
+private:
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedDataDfx
 }  // namespace OHOS

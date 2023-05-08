@@ -18,7 +18,6 @@
 
 #include <thread>
 #include "communicator/device_manager_adapter.h"
-#include "executor_factory.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
@@ -149,20 +148,8 @@ UserDelegate &UserDelegate::GetInstance()
     return instance;
 }
 
-void UserDelegate::Init()
+void UserDelegate::Init(const std::shared_ptr<ExecutorPool>& executors)
 {
-    KvStoreTask retryTask([this]() {
-        do {
-            static constexpr int RETRY_INTERVAL = 500; // millisecond
-            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL));
-            if (!InitLocalUserMeta()) {
-                continue;
-            }
-            break;
-        } while (true);
-        ZLOGI("update user meta ok");
-    });
-
     auto ret = AccountDelegate::GetInstance()->Subscribe(std::make_shared<LocalUserObserver>(*this));
     MetaDataManager::GetInstance().Subscribe(
         UserMetaRow::KEY_PREFIX, [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
@@ -182,10 +169,22 @@ void UserDelegate::Init()
             }
             return true;
     });
-    if (!InitLocalUserMeta()) {
-        ExecutorFactory::GetInstance().Execute(std::move(retryTask));
+    if (!executors_) {
+        executors_ = executors;
     }
+    executors_->Execute(GeTask());
     ZLOGD("subscribe os account ret:%{public}d", ret);
+}
+
+ExecutorPool::Task UserDelegate::GeTask()
+{
+    return [this] {
+        auto ret = InitLocalUserMeta();
+        if (ret) {
+            return;
+        }
+        executors_->Schedule(std::chrono::milliseconds(RETRY_INTERVAL), GeTask());
+    };
 }
 
 bool UserDelegate::NotifyUserEvent(const UserDelegate::UserEvent &userEvent)

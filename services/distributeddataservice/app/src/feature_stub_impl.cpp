@@ -32,11 +32,12 @@ int FeatureStubImpl::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
     return featureImpl_->OnRemoteRequest(code, data, reply);
 }
 
-int32_t FeatureStubImpl::OnInitialize()
+int32_t FeatureStubImpl::OnInitialize(std::shared_ptr<ExecutorPool> executors)
 {
     if (featureImpl_ == nullptr) {
         return -1;
     }
+    featureImpl_->OnExecutor(executors);
     return featureImpl_->OnInitialize();
 }
 

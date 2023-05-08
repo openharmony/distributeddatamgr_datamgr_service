@@ -20,6 +20,7 @@
 #include <set>
 #include "account/account_delegate.h"
 #include "concurrent_map.h"
+#include "executor_pool.h"
 #include "metadata/user_meta_data.h"
 #include "visibility.h"
 
@@ -34,7 +35,7 @@ public:
     };
     API_EXPORT static UserDelegate &GetInstance();
 
-    API_EXPORT void Init();
+    API_EXPORT void Init(const std::shared_ptr<ExecutorPool>& executors);
     API_EXPORT std::vector<UserStatus> GetLocalUserStatus();
     API_EXPORT std::set<std::string> GetLocalUsers();
     API_EXPORT std::vector<UserStatus> GetRemoteUserStatus(const std::string &deviceId);
@@ -59,7 +60,10 @@ private:
     void UpdateUsers(const std::string &deviceId, const std::vector<UserStatus> &userStatus);
     void DeleteUsers(const std::string &deviceId);
     bool NotifyUserEvent(const UserEvent &userEvent);
+    ExecutorPool::Task GeTask();
 
+    static constexpr int RETRY_INTERVAL = 500; // millisecond
+    std::shared_ptr<ExecutorPool> executors_;
     // device : { user : isActive }
     ConcurrentMap<std::string, std::map<int, bool>> deviceUser_;
 };

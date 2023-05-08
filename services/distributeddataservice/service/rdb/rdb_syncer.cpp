@@ -62,12 +62,12 @@ RdbSyncer::~RdbSyncer() noexcept
     }
 }
 
-void RdbSyncer::SetTimerId(uint32_t timerId)
+void RdbSyncer::SetTimerId(uint64_t timerId)
 {
     timerId_ = timerId;
 }
 
-uint32_t RdbSyncer::GetTimerId() const
+uint64_t RdbSyncer::GetTimerId() const
 {
     return timerId_;
 }

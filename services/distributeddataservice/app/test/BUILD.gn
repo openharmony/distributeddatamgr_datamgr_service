@@ -49,6 +49,7 @@ config("module_private_config") {
     "unittest",
     "../src/uninstaller",
     "../src/flowctrl_manager",
+    "../../service/backup/include",
     "../../../../interfaces/innerkits/distributeddata",
     "//third_party/json/single_include",
   ]
@@ -75,6 +76,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "../src/session_manager/route_head_handler_impl.cpp",
     "../src/session_manager/session_manager.cpp",
     "../src/session_manager/upgrade_manager.cpp",
+    "../src/task_manager.cpp",
     "unittest/kvstore_data_service_test.cpp",
   ]
 

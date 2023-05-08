@@ -27,10 +27,7 @@
 namespace OHOS {
 namespace DistributedObject {
 using namespace OHOS::DistributedKv;
-ObjectStoreManager::ObjectStoreManager() : timer_("CloseRetryTimer")
-{
-    timer_.Setup();
-}
+ObjectStoreManager::ObjectStoreManager() {}
 
 DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
 {
@@ -353,7 +350,10 @@ void ObjectStoreManager::FlushClosedStore()
         ZLOGD("close store");
         auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
         if (status != DistributedDB::DBStatus::OK) {
-            timer_.Register([this]() { FlushClosedStore(); }, 1000, true); // retry after 1000ms
+            int timeOut = 1000;
+            executors_->Schedule(std::chrono::milliseconds(timeOut), [this]() {
+                FlushClosedStore();
+            });
             ZLOGE("GetEntries fail %{public}d", status);
             return;
         }
@@ -567,8 +567,7 @@ int64_t ObjectStoreManager::GetTime(const std::string &key)
 
 void ObjectStoreManager::CloseAfterMinute()
 {
-    scheduler_.At(std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL),
-                  std::bind(&ObjectStoreManager::Close, this));
+    executors_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&ObjectStoreManager::Close, this));
 }
 
 std::string ObjectStoreManager::GetBundleName(const std::string &key)
@@ -580,6 +579,11 @@ std::string ObjectStoreManager::GetBundleName(const std::string &key)
     std::string result = key;
     result.erase(pos);
     return result;
+}
+
+void ObjectStoreManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 
 uint64_t SequenceSyncManager::AddNotifier(const std::string &userId, SyncCallBack &callback)

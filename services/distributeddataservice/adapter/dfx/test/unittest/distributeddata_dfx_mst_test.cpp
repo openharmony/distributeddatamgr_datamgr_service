@@ -31,9 +31,17 @@ public:
     void TearDown();
 };
 
-void DistributedataDfxMSTTest::SetUpTestCase() {}
+void DistributedataDfxMSTTest::SetUpTestCase()
+{
+    size_t max = 12;
+    size_t min = 5;
+    Reporter::GetInstance()->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(max, min));
+}
 
-void DistributedataDfxMSTTest::TearDownTestCase() {}
+void DistributedataDfxMSTTest::TearDownTestCase()
+{
+    Reporter::GetInstance()->SetThreadPool(nullptr);
+}
 
 void DistributedataDfxMSTTest::SetUp() {}
 

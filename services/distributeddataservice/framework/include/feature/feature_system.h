@@ -16,6 +16,7 @@
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORK_SYSTEM_SYSTEM_H
 #include <memory>
 #include "concurrent_map.h"
+#include "executor_pool.h"
 #include "visibility.h"
 namespace DistributedDB {
 struct AutoLaunchParam;
@@ -31,6 +32,7 @@ public:
         virtual ~Feature();
         virtual int OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply) = 0;
         virtual int32_t OnInitialize();
+        virtual int32_t OnExecutor(std::shared_ptr<ExecutorPool> executors);
         virtual int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
         virtual int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
         virtual int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
