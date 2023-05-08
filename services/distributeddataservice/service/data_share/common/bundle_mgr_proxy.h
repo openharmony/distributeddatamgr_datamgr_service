@@ -22,12 +22,12 @@
 namespace OHOS::DataShare {
 class BundleMgrProxy final : public std::enable_shared_from_this<BundleMgrProxy> {
 public:
+    ~BundleMgrProxy();
     static std::shared_ptr<BundleMgrProxy> GetInstance();
     bool GetBundleInfoFromBMS(const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo);
 
 private:
     BundleMgrProxy() = default;
-    ~BundleMgrProxy();
     class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
         explicit ServiceDeathRecipient(std::weak_ptr<BundleMgrProxy> owner) : owner_(owner) {}
