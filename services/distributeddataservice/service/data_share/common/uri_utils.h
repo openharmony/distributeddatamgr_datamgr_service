@@ -32,7 +32,8 @@ public:
     static bool GetUserIdFromProxyURI(const std::string &uri, int32_t &user);
     static bool IsDataProxyURI(const std::string &uri);
     static constexpr const char *DATA_SHARE_SCHEMA = "datashare:///";;
-    static constexpr const char *DATA_PROXY_SCHEMA = "datashareproxy://";
+    static constexpr const char DATA_PROXY_SCHEMA[] = "datashareproxy://";
+    static constexpr int DATA_PROXY_SCHEMA_LEN = sizeof(DATA_PROXY_SCHEMA);
 
 private:
     enum PATH_PARAM : int32_t {
