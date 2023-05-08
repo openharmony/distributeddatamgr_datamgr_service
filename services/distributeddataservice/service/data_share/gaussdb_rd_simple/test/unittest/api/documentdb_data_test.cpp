@@ -171,6 +171,12 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest008, TestSize.Level0)
     EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), updateDoc.c_str(), GRD_DOC_APPEND), 1);
 }
 
+HWTEST_F(DocumentDBDataTest, UpsertDataTest010, TestSize.Level0)
+{
+    int result = GRD_UpsertDoc(g_db, g_coll, R"({"_id" : "abcde"})", R"({"a00001":1, "a00001":2})", 0);
+    ASSERT_EQ(result, GRD_INVALID_FORMAT);
+}
+
 /**
  * @tc.name: UpdateDataTest001
  * @tc.desc:

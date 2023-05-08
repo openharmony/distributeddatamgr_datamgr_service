@@ -135,7 +135,8 @@ bool JsonCommon::CheckJsonField(JsonObject &jsonObj)
     return CheckNode(jsonObj, filedSet, errFlag);
 }
 
-bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> filedSet, bool &errFlag, bool isFirstFloor)
+bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> filedSet, bool &errFlag,
+    bool isFirstFloor, int &errCode)
 {
     if (!errFlag) {
         return false;
@@ -144,23 +145,27 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fil
     if (!node.IsNull()) {
         int ret = 0;
         fieldName = node.GetItemFiled(ret);
+        if (fieldName.empty()) {
+            errCode = -E_INVALID_ARGS;
+            errFlag = false;
+            return false;
+        }
         if (filedSet.find(fieldName) == filedSet.end() && ret == E_OK) {
             filedSet.insert(fieldName);
-            if (fieldName.empty()) {
-                errFlag = false;
-                return false;
-            }
         } else {
+            errCode = -E_INVALID_JSON_FORMAT;
             errFlag = false;
             return false;
         }
         for (size_t i = 0; i < fieldName.size(); i++) {
             if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]) ||
                     (isFirstFloor && '.' == fieldName[i]))) {
+                errCode = -E_INVALID_ARGS;
                 errFlag = false;
                 return false;
             }
             if (i == 0 && (isdigit(fieldName[i]))) {
+                errCode = -E_INVALID_ARGS;
                 errFlag = false;
                 return false;
             }
@@ -169,21 +174,21 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fil
     if (!node.GetChild().IsNull()) {
         auto nodeNew = node.GetChild();
         std::set<std::string> newFiledSet;
-        CheckProjectionNode(nodeNew, newFiledSet, errFlag, false);
+        CheckProjectionNode(nodeNew, newFiledSet, errFlag, false, errCode);
     }
     if (!node.GetNext().IsNull()) {
         auto nodeNew = node.GetNext();
-        CheckProjectionNode(nodeNew, filedSet, errFlag, isFirstFloor);
+        CheckProjectionNode(nodeNew, filedSet, errFlag, isFirstFloor, errCode);
     }
     return errFlag;
 }
 
-bool JsonCommon::CheckProjectionField(JsonObject &jsonObj)
+bool JsonCommon::CheckProjectionField(JsonObject &jsonObj, int &errCode)
 {
     std::set<std::string> filedSet;
     bool errFlag = true;
     bool isFirstFloor = true;
-    return CheckProjectionNode(jsonObj, filedSet, errFlag, isFirstFloor);
+    return CheckProjectionNode(jsonObj, filedSet, errFlag, isFirstFloor, errCode);
 }
 
 int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,

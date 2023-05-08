@@ -244,11 +244,21 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
         GLOGE("projectionObj's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
+    JsonObject updataObjChild = updataObj.GetChild();
+    std::set<std::string> filedSet;
+    int errCode = E_OK;
+    if (!updataObj.GetChild().IsNull()) {
+        auto updataObjChild = updataObj.GetChild();
+        if (!JsonCommon::CheckProjectionField(updataObjChild, errCode)) {
+            GLOGE("updataObj json field format is illegal");
+            return errCode;
+        }
+    }
     for (int i = 0; i < path.size(); i++) {
         for (int j = 0; j < path[i].size(); j++) {
             for (auto oneChar : path[i][j]) {
                 if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
-                    return -E_INVALID_ARGS;;
+                    return -E_INVALID_ARGS;
                 }
             }
         }
@@ -269,31 +279,32 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
     return E_OK;
 }
 
-bool CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path)
+int CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path)
 {
     if (projectionObj.GetDeep() > JSON_DEEP_MAX) {
         GLOGE("projectionObj's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
+    int errCode = E_OK;
     if (!projectionObj.GetChild().IsNull()) {
         auto projectionObjChild = projectionObj.GetChild();
-        if (!JsonCommon::CheckProjectionField(projectionObjChild)) {
+        if (!JsonCommon::CheckProjectionField(projectionObjChild, errCode)) {
             GLOGE("projection json field format is illegal");
-            return false;
+            return errCode;
         }
     }
     for (int i = 0; i < path.size(); i++) {
         for (auto fieldName : path[i]) {
             for (int j = 0; j < fieldName.size(); j++) {
                 if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
-                    return false;
+                    return -E_INVALID_ARGS;
                 }
                 if (j == 0 && (isdigit(fieldName[j]))) {
-                    return false;
+                    return -E_INVALID_ARGS;
                 }
             }
         }
     }
-    return true;
+    return E_OK;
 }
 } // namespace DocumentDB

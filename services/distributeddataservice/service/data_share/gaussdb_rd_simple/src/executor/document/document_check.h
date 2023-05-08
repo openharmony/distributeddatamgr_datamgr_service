@@ -37,7 +37,7 @@ public:
     static int CheckDocument(JsonObject &document);
     static int CheckUpdata(JsonObject &updata, std::vector<std::vector<std::string>> &path);
     static bool CheckDocument(const std::string &updateStr, int &errCode);
-    static bool CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path);
+    static int CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path);
 };
 using Key = std::vector<uint8_t>;
 using Value = std::vector<uint8_t>;
