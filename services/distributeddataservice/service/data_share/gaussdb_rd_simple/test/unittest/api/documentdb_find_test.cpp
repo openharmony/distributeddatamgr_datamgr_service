@@ -122,6 +122,8 @@ void DocumentFindApiTest::TearDownTestCase(void)
 
 void DocumentFindApiTest::SetUp(void)
 {
+    EXPECT_EQ(GRD_DropCollection(g_db, COLLECTION_NAME, 0), GRD_OK);
+    EXPECT_EQ(GRD_CreateCollection(g_db, COLLECTION_NAME, "", 0), GRD_OK);
     InsertData(g_db, "student");
 }
 

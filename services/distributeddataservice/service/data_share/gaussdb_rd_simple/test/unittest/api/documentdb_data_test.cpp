@@ -173,6 +173,16 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest008, TestSize.Level0)
 
 HWTEST_F(DocumentDBDataTest, UpsertDataTest009, TestSize.Level0)
 {
+    std::string filter = R""({"_id":"1234", "aaa" : "bbb"})"";
+    std::string document = R""({"name":"Tmn","age":18,"addr":{"city":"shanghai","postal":200001}})"";
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_APPEND), 1);
+    std::string filter2 = R""({"_id":"1234", "aaa" : "ccc"})"";
+    std::string updateDoc = R""({"name":"Xue","case":2,"age":28,"addr":{"city":"shenzhen","postal":518000}})"";
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_APPEND), GRD_DATA_CONFLICT);
+}
+
+HWTEST_F(DocumentDBDataTest, UpsertDataTest010, TestSize.Level0)
+{
     std::string filter = R""({"_id":"abcde"})"";
     std::string document = R"({"field1": ")" + string(1024 * 1024 + 1, 'a') + "\"}";
     EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_REPLACE), GRD_OVER_LIMIT);
