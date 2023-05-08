@@ -821,3 +821,12 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest043, TestSize.Level1)
     EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, NULL, updata1, 0), GRD_INVALID_ARGS);
     EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, NULL, 0), GRD_INVALID_ARGS);
 }
+
+HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest044, TestSize.Level1)
+{
+  
+    const char *document1 = R""({"_id":"0123", "num":"num"})"";
+    const char *document2 = R""({"_id":"0123", "NUM":"No.45"})"";
+    EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_OK);
+    EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document2, 0), GRD_DATA_CONFLICT);
+}

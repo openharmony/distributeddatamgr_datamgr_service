@@ -61,7 +61,7 @@ int ResultSet::GetNext()
             int errCode = 0;
             JsonObject filterObj = JsonObject::Parse(filter_, errCode, true);
             if (errCode != E_OK) {
-                GLOGE("filter Parsed faild");
+                GLOGE("filter Parsed failed");
                 return errCode;
             }
             auto filterObjChild = filterObj.GetChild();
@@ -90,7 +90,7 @@ int ResultSet::GetNext()
             std::vector<std::pair<std::string, std::string>> values;
             JsonObject filterObj = JsonObject::Parse(filter_, errCode, true);
             if (errCode != E_OK) {
-                GLOGE("filter Parsed faild");
+                GLOGE("filter Parsed failed");
                 return errCode;
             }
             errCode = coll.GetFilededDocument(filterObj, values);
@@ -109,7 +109,7 @@ int ResultSet::GetNext()
         std::vector<std::pair<std::string, std::string>> values;
         JsonObject filterObj = JsonObject::Parse(filter_, errCode, true);
         if (errCode != E_OK) {
-            GLOGE("filter Parsed faild");
+            GLOGE("filter Parsed failed");
             return errCode;
         }
         errCode = coll.GetFilededDocument(filterObj, values);
@@ -187,7 +187,7 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
     int errCode;
     JsonObject cjsonObj = JsonObject::Parse(jsonData, errCode, true);
     if (errCode != E_OK) {
-        GLOGE("jsonData Parsed faild");
+        GLOGE("jsonData Parsed failed");
         return errCode;
     }
     std::vector<std::vector<std::string>> allCutPath;

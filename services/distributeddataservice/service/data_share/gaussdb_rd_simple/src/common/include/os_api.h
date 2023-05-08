@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <string>
-
 #ifndef OS_API_H
 #define OS_API_H
+
+#include <string>
+
 namespace DocumentDB {
 namespace OSAPI {
 bool CheckPermission(const std::string &filePath);

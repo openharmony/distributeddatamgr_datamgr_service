@@ -122,6 +122,8 @@ void DocumentFindApiTest::TearDownTestCase(void)
 
 void DocumentFindApiTest::SetUp(void)
 {
+    EXPECT_EQ(GRD_DropCollection(g_db, COLLECTION_NAME, 0), GRD_OK);
+    EXPECT_EQ(GRD_CreateCollection(g_db, COLLECTION_NAME, "", 0), GRD_OK);
     InsertData(g_db, "student");
 }
 
@@ -169,7 +171,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with multiple and _id. and get the record according to filter condition.
-     * @tc.expected: step1. Faild to get the record, the result is GRD_INVALID_ARGS, GRD_GetValue return GRD_NOT_AVAILABLE and GRD_Next return GRD_NO_DATA.
+     * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS, GRD_GetValue return GRD_NOT_AVAILABLE and GRD_Next return GRD_NO_DATA.
      */
     const char *filter = "{\"_id\" : \"6\", \"name\":\"doc6\"}";
     GRD_ResultSet *resultSet = nullptr;
@@ -197,7 +199,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter without _id and get the record according to filter condition.
-     * @tc.expected: step1. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     const char *filter = "{\"name\":\"doc6\"}";
     GRD_ResultSet *resultSet = nullptr;
@@ -226,7 +228,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 // {
 //     /**
 //      * @tc.steps: step1. Create filter with _id and number
-//      * @tc.expected: step1. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet1 = nullptr;
 //     const char *filter1 = "{\"_id\" : \"1\", \"info\" : 1}";
@@ -236,7 +238,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 
 //     /**
 //      * @tc.steps: step2. Create filter with two _id
-//      * @tc.expected: step2. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step2. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet2 = nullptr;
 //     const char *filter2 = "{\"_id\" : \"1\", \"_id\" : \"2\"}";
@@ -246,7 +248,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 
 //     /**
 //      * @tc.steps: step3. Create filter with array and _id
-//      * @tc.expected: step3. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step3. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet3 = nullptr;
 //     const char *filter3 = "{\"_id\" : \"1\", \"info\" : [\"2\", 1]}";
@@ -255,7 +257,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 
 //     /**
 //      * @tc.steps: step4. Create filter with object and _id
-//      * @tc.expected: step4. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step4. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet4 = nullptr;
 //     const char *filter4 = "{\"_id\" : \"1\", \"info\" : {\"info_val\" : \"1\"}}";
@@ -264,7 +266,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 
 //     /**
 //      * @tc.steps: step5. Create filter with bool and _id
-//      * @tc.expected: step5. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step5. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet5 = nullptr;
 //     const char *filter5 = "{\"_id\" : \"1\", \"info\" : true}";
@@ -273,7 +275,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
 
 //     /**
 //      * @tc.steps: step6. Create filter with null and _id
-//      * @tc.expected: step6. Faild to get the record, the result is GRD_INVALID_ARGS,
+//      * @tc.expected: step6. Failed to get the record, the result is GRD_INVALID_ARGS,
 //      */
 //     GRD_ResultSet *resultSet6 = nullptr;
 //     const char *filter6 = "{\"_id\" : \"1\", \"info\" : null}";
@@ -292,7 +294,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with _id which value is string
-     * @tc.expected: step1. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet1 = nullptr;
     const char *filter1 = "{\"_id\" : \"valstring\"}";
@@ -302,7 +304,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 
     /**
      * @tc.steps: step2. Create filter with _id which value is number
-     * @tc.expected: step2. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step2. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet2 = nullptr;
     const char *filter2 = "{\"_id\" : 1}";
@@ -311,7 +313,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 
     /**
      * @tc.steps: step3. Create filter with _id which value is array
-     * @tc.expected: step3. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step3. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet3 = nullptr;
     const char *filter3 = "{\"_id\" : [\"2\", 1]}";
@@ -320,7 +322,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 
     /**
      * @tc.steps: step4. Create filter with _id which value is object
-     * @tc.expected: step4. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step4. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet4 = nullptr;
     const char *filter4 = "{\"_id\" : {\"info_val\" : \"1\"}}";
@@ -329,7 +331,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 
     /**
      * @tc.steps: step5. Create filter with _id which value is bool
-     * @tc.expected: step5. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step5. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet5 = nullptr;
     const char *filter5 = "{\"_id\" : true}";
@@ -338,7 +340,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 
     /**
      * @tc.steps: step6. Create filter with _id which value is null
-     * @tc.expected: step6. Faild to get the record, the result is GRD_INVALID_ARGS,
+     * @tc.expected: step6. Failed to get the record, the result is GRD_INVALID_ARGS,
      */
     GRD_ResultSet *resultSet6 = nullptr;
     const char *filter6 = "{\"_id\" : null}";
@@ -1519,44 +1521,4 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest057, TestSize.Level1)
      */
     // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_NOT_AVAILABLE);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
-}
-/**
-  * @tc.name: DocumentFindApiTest058
-  * @tc.desc: Test findDoc with no _id.
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author: mazhao
-  */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest058, TestSize.Level1)
-{
-    /**
-     * @tc.steps: step1. Create filter with _id and get the record according to filter condition.
-     * @tc.expected: step1. Succeed to get the record, the matching record is g_document6.
-     */
-    // const char *filter = "{\"personInfo.0.school\" : \"B\", \"$personInfo.0.age\" : 15}";
-    // GRD_ResultSet *resultSet = nullptr;
-    // Query query = {filter, "{}"};
-    // EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
-    // EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
-    // char *value = NULL;
-    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
-    // EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
-    /**
-     * @tc.steps: step2. Invoke GRD_Next to get the next matching value. Release resultSet.
-     * @tc.expected: step2. Cannot get next record, return GRD_NO_DATA.
-     */
-    // EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
-    // CompareValue(value, g_document2);
-    // EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
-
-    // EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
-    // CompareValue(value, g_document13);
-    // EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
-
-    // EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
-    // CompareValue(value, g_document13);
-    //EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }

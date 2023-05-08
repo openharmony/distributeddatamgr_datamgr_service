@@ -21,7 +21,8 @@
 #include "sqlite_utils.h"
 
 namespace DocumentDB {
-int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, KvStoreExecutor *&executor)
+int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, bool isFirstOpen,
+    KvStoreExecutor *&executor)
 {
     if (executor != nullptr) {
         return -E_INVALID_ARGS;
@@ -52,7 +53,7 @@ int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, 
             GLOGE("Read db config failed. %d", errCode);
             goto END;
         }
-        if (config != oriDbConfig) {
+        if ((isFirstOpen ? (!config.CheckPersistenceEqual(oriDbConfig)) : (config != oriDbConfig))) {
             errCode = -E_INVALID_CONFIG_VALUE;
             GLOGE("Get kv store failed, db config changed. %d", errCode);
             goto END;
