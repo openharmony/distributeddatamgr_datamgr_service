@@ -115,7 +115,12 @@ int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, unsigned int 
     }
 
     std::lock_guard<std::mutex> lock(openCloseMutex_);
-    store->Close();
+    int errCode = store->Close(flags);
+    if (errCode != E_OK) {
+        GLOGE("Close document store failed. %d", errCode);
+        return errCode;
+    }
+
     delete store;
     return E_OK;
 }

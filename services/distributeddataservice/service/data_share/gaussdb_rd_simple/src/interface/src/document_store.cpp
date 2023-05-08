@@ -462,14 +462,17 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
 
 bool DocumentStore::IsCollectionOpening(const std::string collection)
 {
+    std::lock_guard<std::mutex> lock(dbMutex_);
     if (collections_.find(collection) != collections_.end()) {
         GLOGE("DB is resource busy");
         return true;
     }
     return false;
 }
+
 int DocumentStore::EraseCollection(const std::string collectionName)
 {
+    std::lock_guard<std::mutex> lock(dbMutex_);
     if (collections_.find(collectionName) != collections_.end()) {
         collections_.erase(collectionName);
         return E_OK;
@@ -477,6 +480,7 @@ int DocumentStore::EraseCollection(const std::string collectionName)
     GLOGE("erase collection failed");
     return E_INVALID_ARGS;
 }
+
 int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType)
 {
     auto leafValue = JsonCommon::GetLeafValue(jsonObj);
@@ -533,10 +537,17 @@ void DocumentStore::OnClose(const std::function<void(void)> &notifier)
     closeNotifier_ = notifier;
 }
 
-void DocumentStore::Close()
+int DocumentStore::Close(int flags)
 {
+    std::lock_guard<std::mutex> lock(dbMutex_);
+    if (flags == GRD_DB_CLOSE && !collections_.empty()) {
+        GLOGE("Close store failed with result set not closed.");
+        return -E_RESOURCE_BUSY;
+    }
+
     if (closeNotifier_) {
         closeNotifier_();
     }
+    return E_OK;
 }
 } // namespace DocumentDB

@@ -46,7 +46,7 @@ public:
 
     void OnClose(const std::function<void(void)> &notifier);
 
-    void Close();
+    int Close(int flags);
 
 private:
     int GetViewType(JsonObject &jsonObj, bool &viewType);
