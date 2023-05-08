@@ -121,8 +121,8 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         GLOGE("Check collection name invalid. %d", errCode);
         return errCode;
     }
-    if (update.length() + 1 > JSON_LENS_MAX) {
-        GLOGE("updata document's length is too long");
+    if (update.length() >= JSON_LENS_MAX || filter.length() >= JSON_LENS_MAX) {
+        GLOGE("args document's length is too long");
         return -E_OVER_LIMIT;
     }
     JsonObject updateObj = JsonObject::Parse(update, errCode, true);
@@ -145,10 +145,6 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
-    }
-    if (filter.length() + 1 > JSON_LENS_MAX) {
-        GLOGE("filter's length is too long");
-        return -E_OVER_LIMIT;
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
     if (errCode != E_OK) {
@@ -210,8 +206,8 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         GLOGE("Check collection name invalid. %d", errCode);
         return errCode;
     }
-    if (document.length() + 1 > JSON_LENS_MAX) {
-        GLOGE("document's length is too long");
+    if (document.length() >= JSON_LENS_MAX || filter.length() >= JSON_LENS_MAX) {
+        GLOGE("args length is too long");
         return -E_OVER_LIMIT;
     }
     JsonObject documentObj = JsonObject::Parse(document, errCode, true);
@@ -233,10 +229,6 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
-    }
-    if (filter.length() + 1 > JSON_LENS_MAX) {
-        GLOGE("filter's length is too long");
-        return -E_OVER_LIMIT;
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
     if (errCode != E_OK) {
@@ -302,7 +294,7 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
-    if (document.length() + 1 > JSON_LENS_MAX) {
+    if (document.length() >= JSON_LENS_MAX) {
         GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
     }
@@ -344,7 +336,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         GLOGE("Filter is empty");
         return -E_INVALID_ARGS;
     }
-    if (filter.length() + 1 > JSON_LENS_MAX) {
+    if (filter.length() >= JSON_LENS_MAX) {
         GLOGE("filter's length is too long");
         return -E_OVER_LIMIT;
     }
@@ -400,8 +392,8 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         GLOGE("Check collection name invalid. %d", errCode);
         return errCode;
     }
-    if (filter.length() + 1 > JSON_LENS_MAX) {
-        GLOGE("filter's length is too long");
+    if (filter.length() >= JSON_LENS_MAX || projection.length() >= JSON_LENS_MAX) {
+        GLOGE("args length is too long");
         return -E_OVER_LIMIT;
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
@@ -418,10 +410,6 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
         return errCode;
-    }
-    if (projection.length() + 1 > JSON_LENS_MAX) {
-        GLOGE("projection's length is too long");
-        return -E_OVER_LIMIT;
     }
     JsonObject projectionObj = JsonObject::Parse(projection, errCode, caseSensitive);
     if (errCode != E_OK) {
