@@ -31,8 +31,8 @@ public:
     static bool GetBundleNameFromProxyURI(const std::string &uri, std::string &bundleName);
     static bool GetUserIdFromProxyURI(const std::string &uri, int32_t &user);
     static bool IsDataProxyURI(const std::string &uri);
-    static const std::string DATA_SHARE_SCHEMA;
-    static const std::string DATA_PROXY_SCHEMA;
+    static constexpr const char *DATA_SHARE_SCHEMA = "datashare:///";;
+    static constexpr const char *DATA_PROXY_SCHEMA = "datashareproxy://";
 
 private:
     enum PATH_PARAM : int32_t {

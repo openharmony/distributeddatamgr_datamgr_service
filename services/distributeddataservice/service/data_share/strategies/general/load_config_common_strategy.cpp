@@ -28,7 +28,6 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     // single app, userId is in uri
     if (context->currentUserId == 0) {
         URIUtils::GetUserIdFromProxyURI(context->uri, context->currentUserId);
-        ZLOGI("user uri's userId %{public}d", context->currentUserId);
     }
     FormatUri(context->uri);
     return true;
