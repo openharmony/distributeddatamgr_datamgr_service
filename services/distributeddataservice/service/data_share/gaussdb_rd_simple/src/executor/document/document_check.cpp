@@ -109,6 +109,9 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
     }
     for (int i = 0; i < filterPath.size(); i++) {
         for (int j = 0; j < filterPath[i].size(); j++) {
+            if (filterPath[i].empty()) {
+                return -E_INVALID_JSON_FORMAT;
+            }
             for (auto oneChar : filterPath[i][j]) {
                 if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
                     return -E_INVALID_ARGS;
@@ -287,6 +290,9 @@ bool CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::ve
     }
     for (int i = 0; i < path.size(); i++) {
         for (auto fieldName : path[i]) {
+            if (path[i].empty()) {
+                return -E_INVALID_JSON_FORMAT;
+            }
             for (int j = 0; j < fieldName.size(); j++) {
                 if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
                     return false;
