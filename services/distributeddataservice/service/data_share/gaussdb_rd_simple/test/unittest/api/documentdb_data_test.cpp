@@ -22,6 +22,7 @@
 #include "grd_document/grd_document_api.h"
 #include "log_print.h"
 #include "sqlite_utils.h"
+#include "cJSON.h"
 
 using namespace DocumentDB;
 using namespace testing::ext;
@@ -289,5 +290,13 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest008, TestSize.Level0)
     std::string updata = R""({"field1":1, "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
     EXPECT_EQ(GRD_UpdateDoc(g_db, "grd_aa", filter.c_str(), updata.c_str(), 0), GRD_INVALID_FORMAT);
     EXPECT_EQ(GRD_UpdateDoc(g_db, "gRd_aa", filter.c_str(), updata.c_str(), 0), GRD_INVALID_FORMAT);
+}
 
+HWTEST_F(DocumentDBDataTest, UpdateDataTest009, TestSize.Level0)
+{
+    const char *updateStr = R""({"field2":{"c_field":{"cc_field":{"ccc_field":{"ccc_field":[1,false,1.234e2,["hello world!"]]}}}}})"";
+    int result = GRD_UpdateDoc(g_db, g_coll, "{\"field\" : 2}", updateStr, 0);
+    int result2 = GRD_UpsertDoc(g_db, g_coll, "{\"field\" : 2}", updateStr, 0);
+    EXPECT_EQ(result, GRD_INVALID_ARGS);
+    EXPECT_EQ(result2, GRD_INVALID_ARGS);
 }
