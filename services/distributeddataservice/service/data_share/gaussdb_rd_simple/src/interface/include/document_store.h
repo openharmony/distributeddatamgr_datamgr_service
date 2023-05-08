@@ -44,11 +44,16 @@ public:
     bool IsCollectionOpening(const std::string collection);
     int EraseCollection(const std::string collectionName);
 
+    void OnClose(const std::function<void(void)> &notifier);
+
+    int Close(int flags);
+
 private:
     int GetViewType(JsonObject &jsonObj, bool &viewType);
     std::mutex dbMutex_;
     KvStoreExecutor *executor_ = nullptr;
     std::map<std::string, Collection *> collections_;
+    std::function<void(void)> closeNotifier_;
 };
 } // namespace DocumentDB
 #endif // DOCUMENT_STORE_H

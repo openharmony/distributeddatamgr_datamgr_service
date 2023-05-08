@@ -26,8 +26,8 @@ namespace {
 constexpr const char *KEY_ID = "_id";
 constexpr const char *COLLECTION_PREFIX_GRD = "GRD_";
 constexpr const char *COLLECTION_PREFIX_GM_SYS = "GM_SYS_";
-const int MAX_COLLECTION_NAME = 511;
-const int MAX_ID_LENS = 899;
+const int MAX_COLLECTION_NAME = 512;
+const int MAX_ID_LENS = 900;
 const int JSON_DEEP_MAX = 4;
 
 bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefix)
@@ -36,16 +36,7 @@ bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefi
         return false;
     }
 
-    auto itPrefix = prefix.begin();
-    auto itName = name.begin();
-    while (itPrefix != prefix.end()) {
-        if (std::tolower(*itPrefix) != std::tolower(*itName)) {
-            return false;
-        }
-        itPrefix++;
-        itName++;
-    }
-    return true;
+    return (strncasecmp(name.c_str(), prefix.c_str(), prefix.length()) == 0);
 }
 } // namespace
 
@@ -55,7 +46,7 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::st
         errCode = -E_INVALID_ARGS;
         return false;
     }
-    if (collectionName.length() > MAX_COLLECTION_NAME) {
+    if (collectionName.length() + 1 > MAX_COLLECTION_NAME) { // with '\0'
         errCode = -E_OVER_LIMIT;
         return false;
     }
@@ -108,12 +99,18 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
         isOnlyId = false;
     }
     for (int i = 0; i < filterPath.size(); i++) {
-        for (auto fieldName : filterPath[i]) {
-            for (int j = 0; j < fieldName.size(); j++) {
-                if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
+        for (int j = 0; j < filterPath[i].size(); j++) {
+            if (filterPath[i].empty()) {
+                return -E_INVALID_JSON_FORMAT;
+            }
+            for (auto oneChar : filterPath[i][j]) {
+                if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
                     return -E_INVALID_ARGS;
                 }
             }
+        }
+        if (!filterPath[i].empty() && !filterPath[i][0].empty() && isdigit(filterPath[i][0][0])) {
+            return -E_INVALID_ARGS;
         }
     }
     bool isIdExisit = false;
@@ -160,7 +157,7 @@ bool CheckCommon::CheckDocument(const std::string &updateStr, int &errCode)
         return false;
     }
 
-    JsonObject updateObj = JsonObject::Parse(updateStr, errCode);
+    JsonObject updateObj = JsonObject::Parse(updateStr, errCode, true);
     if (updateObj.IsNull() || errCode != E_OK) {
         GLOGE("Parse update document failed. %d", errCode);
         return false;
@@ -195,7 +192,7 @@ int CheckCommon::CheckIdFormat(JsonObject &filterJson)
     if (idValue.GetValueType() != ValueObject::ValueType::VALUE_STRING) {
         return -E_INVALID_ARGS;
     }
-    if (idValue.GetStringValue().length() > MAX_ID_LENS) {
+    if (idValue.GetStringValue().length() + 1 > MAX_ID_LENS) { // with '\0
         return -E_OVER_LIMIT;
     }
     return E_OK;
@@ -211,7 +208,7 @@ int CheckCommon::CheckIdFormat(JsonObject &filterJson, bool &isIdExisit)
     if (idValue.GetValueType() != ValueObject::ValueType::VALUE_STRING) {
         return -E_INVALID_ARGS;
     }
-    if (idValue.GetStringValue().length() > MAX_ID_LENS) {
+    if (idValue.GetStringValue().length() + 1 > MAX_ID_LENS) { // with '\0'
         return -E_OVER_LIMIT;
     }
     return E_OK;
@@ -244,6 +241,16 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
         GLOGE("projectionObj's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
+    JsonObject updataObjChild = updataObj.GetChild();
+    std::set<std::string> filedSet;
+    int errCode = E_OK;
+    if (!updataObj.GetChild().IsNull()) {
+        auto updataObjChild = updataObj.GetChild();
+        if (!JsonCommon::CheckProjectionField(updataObjChild, errCode)) {
+            GLOGE("updataObj json field format is illegal");
+            return errCode;
+        }
+    }
     for (int i = 0; i < path.size(); i++) {
         if (path[i].empty()) {
             return -E_INVALID_JSON_FORMAT;
@@ -251,7 +258,7 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
         for (int j = 0; j < path[i].size(); j++) {
             for (auto oneChar : path[i][j]) {
                 if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
-                    return -E_INVALID_ARGS;;
+                    return -E_INVALID_ARGS;
                 }
             }
         }
@@ -272,31 +279,35 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
     return E_OK;
 }
 
-bool CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path)
+int CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path)
 {
     if (projectionObj.GetDeep() > JSON_DEEP_MAX) {
         GLOGE("projectionObj's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
+    int errCode = E_OK;
     if (!projectionObj.GetChild().IsNull()) {
         auto projectionObjChild = projectionObj.GetChild();
-        if (!JsonCommon::CheckProjectionField(projectionObjChild)) {
+        if (!JsonCommon::CheckProjectionField(projectionObjChild, errCode)) {
             GLOGE("projection json field format is illegal");
-            return false;
+            return errCode;
         }
     }
     for (int i = 0; i < path.size(); i++) {
         for (auto fieldName : path[i]) {
+            if (path[i].empty()) {
+                return -E_INVALID_JSON_FORMAT;
+            }
             for (int j = 0; j < fieldName.size(); j++) {
                 if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
-                    return false;
+                    return -E_INVALID_ARGS;
                 }
                 if (j == 0 && (isdigit(fieldName[j]))) {
-                    return false;
+                    return -E_INVALID_ARGS;
                 }
             }
         }
     }
-    return true;
+    return E_OK;
 }
 } // namespace DocumentDB
