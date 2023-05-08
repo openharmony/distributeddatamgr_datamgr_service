@@ -26,11 +26,10 @@ ohos_static_library("distributeddata_account_static") {
     "../include/permission",
     "../include/utils",
     "./src",
-    "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "${kv_store_common_path}",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "${ipc_core_path}/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
