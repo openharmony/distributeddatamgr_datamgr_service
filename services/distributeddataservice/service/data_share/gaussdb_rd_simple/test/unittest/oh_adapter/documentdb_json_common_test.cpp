@@ -621,7 +621,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest023, TestSize.Leve
     EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj2, filterObj1, errCode), false);
 }
 
-HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest023, TestSize.Level0)
+HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest024, TestSize.Level0)
 {
     std::string document = "{\"name\": 1, \"personInfo.school\": 1, \"personInfo.age\": 1}";
     int errCode = E_OK;
