@@ -15,12 +15,14 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
-#include <memory>
 #include <functional>
+#include <memory>
+
 #include "store/cursor.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
 namespace OHOS::DistributedData {
+class CloudDB;
 class GeneralStore {
 public:
     using Watcher = GeneralWatcher;
@@ -29,7 +31,7 @@ public:
 
     virtual ~GeneralStore() = default;
 
-    virtual int32_t Close() = 0;
+    virtual int32_t Bind(std::shared_ptr<CloudDB> cloudDb) = 0;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 
@@ -41,13 +43,15 @@ public:
 
     virtual std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) = 0;
 
-    virtual std::shared_ptr<Cursor> Query(const std::string &table, const GenQuery &query) = 0;
+    virtual std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) = 0;
 
-    virtual int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait) = 0;
+    virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, Async async, int32_t wait) = 0;
 
     virtual int32_t Watch(int32_t origin, Watcher &watcher) = 0;
 
     virtual int32_t Unwatch(int32_t origin, Watcher &watcher) = 0;
+
+    virtual int32_t Close() = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

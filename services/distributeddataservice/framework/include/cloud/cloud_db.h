@@ -15,22 +15,19 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_H
-#include "store/general_store.h"
+#include <functional>
+#include <string>
+
+#include "store/cursor.h"
+#include "store/general_value.h"
+#include "store/general_watcher.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-class API_EXPORT CloudDB : public GeneralStore {
+class API_EXPORT CloudDB {
 public:
-    int32_t Close() override;
-    int32_t Execute(const std::string &table, const std::string &sql) override;
-    int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
-    int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;
-    int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
-    std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
-    std::shared_ptr<Cursor> Query(const std::string &table, const GenQuery &query) override;
-    int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait) override;
-    int32_t Watch(int32_t origin, Watcher &watcher) override;
-    int32_t Unwatch(int32_t origin, Watcher &watcher) override;
-
+    using Watcher = GeneralWatcher;
+    using Async = std::function<void(std::map<std::string, std::map<std::string, int32_t>>)>;
+    using Devices = std::vector<std::string>;
     virtual int32_t Execute(const std::string &table, const std::string &sql, const VBucket &extend);
 
     virtual int32_t BatchInsert(const std::string &table, VBuckets &&values, VBuckets &extends);
@@ -41,11 +38,19 @@ public:
 
     virtual std::shared_ptr<Cursor> Query(const std::string &table, const VBucket &extend);
 
+    virtual int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait);
+
+    virtual int32_t Watch(int32_t origin, Watcher &watcher);
+
+    virtual int32_t Unwatch(int32_t origin, Watcher &watcher);
+
     virtual int32_t Lock();
 
     virtual int32_t Heartbeat();
 
     virtual int32_t Unlock();
+
+    virtual int32_t Close();
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_H

@@ -38,7 +38,12 @@ using FeatureSystem = OHOS::DistributedData::FeatureSystem;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
 ObjectServiceImpl::Factory::Factory()
 {
-    FeatureSystem::GetInstance().RegisterCreator("data_object", []() { return std::make_shared<ObjectServiceImpl>(); });
+    FeatureSystem::GetInstance().RegisterCreator(
+        "data_object",
+        []() {
+            return std::make_shared<ObjectServiceImpl>();
+        },
+        FeatureSystem::BIND_NOW);
 }
 
 ObjectServiceImpl::Factory::~Factory()

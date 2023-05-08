@@ -108,7 +108,7 @@ private:
 
     void Initialize();
 
-    void InitObjectStore();
+    void LoadFeatures();
 
     void StartService();
 
