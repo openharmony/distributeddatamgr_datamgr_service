@@ -123,6 +123,11 @@ JsonObject::~JsonObject()
     }
 }
 
+bool JsonObject::operator==(const JsonObject& other) const
+{
+    return (cJSON_Compare(this->cjson_, other.cjson_, 0) != 0); // If the two nodes exist with a different fieldName, then return 0.
+}
+
 bool JsonObject::IsNull() const
 {
     if (cjson_ == nullptr) {
