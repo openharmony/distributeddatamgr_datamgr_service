@@ -189,40 +189,42 @@ bool JsonCommon::CheckProjectionField(JsonObject &jsonObj)
 int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
     std::vector<std::vector<std::string>> &resultPath, bool isFirstFloor)
 {
-    std::vector<std::string> fatherPath;
-    if (isFirstFloor) {
-        std::string tempParseName;
-        std::vector<std::string> allFiledsName;
-        std::string priFieldName = node.GetItemFiled();
-        for (size_t j = 0; j < priFieldName.size(); j++) {
-            if (priFieldName[j] != '.') {
-                tempParseName = tempParseName + priFieldName[j];
-            }
-            if (priFieldName[j] == '.' || j == priFieldName.size() - 1) {
-                if (j > 0 && priFieldName[j] == '.' && priFieldName[j - 1] == '.') {
-                    return -E_INVALID_ARGS;
+    while (!node.IsNull()) {
+        int insertCount = 0;
+        if (isFirstFloor) {
+            std::string tempParseName;
+            std::vector<std::string> allFiledsName;
+            std::string priFieldName = node.GetItemFiled();
+            for (size_t j = 0; j < priFieldName.size(); j++) {
+                if (priFieldName[j] != '.') {
+                    tempParseName = tempParseName + priFieldName[j];
                 }
-                allFiledsName.emplace_back(tempParseName);
-                tempParseName.clear();
+                if (priFieldName[j] == '.' || j == priFieldName.size() - 1) {
+                    if (j > 0 && priFieldName[j] == '.' && priFieldName[j - 1] == '.') {
+                        return -E_INVALID_ARGS;
+                    }
+                    allFiledsName.emplace_back(tempParseName);
+                    insertCount++;
+                    tempParseName.clear();
+                }
             }
+            singlePath.insert(singlePath.end(), allFiledsName.begin(), allFiledsName.end());
+        } else {
+            std::vector<std::string> allFiledsName;
+            allFiledsName.emplace_back(node.GetItemFiled());
+            insertCount++;
+            singlePath.insert(singlePath.end(), allFiledsName.begin(), allFiledsName.end());
         }
-        fatherPath = singlePath;
-        singlePath.insert(singlePath.end(), allFiledsName.begin(), allFiledsName.end());
-    } else {
-        std::vector<std::string> allFiledsName;
-        allFiledsName.emplace_back(node.GetItemFiled());
-        fatherPath = singlePath;
-        singlePath.insert(singlePath.end(), allFiledsName.begin(), allFiledsName.end());
-    }
-    if (!node.GetChild().IsNull() && node.GetChild().GetItemFiled() != "") {
-        auto nodeNew = node.GetChild();
-        ParseNode(nodeNew, singlePath, resultPath, false);
-    } else {
-        resultPath.emplace_back(singlePath);
-    }
-    if (!node.GetNext().IsNull()) {
-        auto nodeNew = node.GetNext();
-        ParseNode(nodeNew, fatherPath, resultPath, isFirstFloor);
+        if (!node.GetChild().IsNull() && node.GetChild().GetItemFiled() != "") {
+            auto nodeNew = node.GetChild();
+            ParseNode(nodeNew, singlePath, resultPath, false);
+        } else {
+            resultPath.emplace_back(singlePath);
+        }
+        for (int i = 0; i < insertCount; i++) {
+            singlePath.pop_back();
+        }
+        node = node.GetNext();
     }
     return E_OK;
 }
@@ -526,8 +528,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                     if (!isCollapse) {
                         bool ret = JsonValueReplace(src, fatherPath, father, item, externErrCode);
                         if (!ret) {
-                            GLOGE("replace faild");
-                            return false;
+                            return false; // replace faild
                         }
                         isAddedFlag = true;
                         return false; // Different node types, overwrite directly, skip child node

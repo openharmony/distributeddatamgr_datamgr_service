@@ -279,6 +279,25 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest006, TestSize.Level0)
 
 HWTEST_F(DocumentDBDataTest, UpdateDataTest007, TestSize.Level0)
 {
+    int result = GRD_OK;
+    const char *doc  = R"({"_id":"007", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2":2})";
+    result = GRD_InsertDoc(g_db,g_coll, doc, 0);
+    cJSON *updata = cJSON_CreateObject();
+    for (int i = 0; i <= 40000; i++) {
+        string temp = "f" + string(5 - std::to_string(i).size(), '0') + std::to_string(i);
+        cJSON_AddStringToObject(updata, temp.c_str(), "a");
+    }
+    char *updateStr = cJSON_PrintUnformatted(updata);
+    result = GRD_UpdateDoc(g_db, g_coll, R""({"_id":"007"})"", updateStr, 0);
+    EXPECT_EQ(result, 1);
+    cJSON_Delete(updata);
+    cJSON_free;
+
+}
+
+HWTEST_F(DocumentDBDataTest, UpdateDataTest008, TestSize.Level0)
+{
+<<<<<<< fixUpdateLargeData
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"_id":"1234", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2" : 2})"";
 
@@ -299,9 +318,10 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest007, TestSize.Level0)
     EXPECT_EQ((valueStr == repectStr), 1);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
+
 }
 
-HWTEST_F(DocumentDBDataTest, UpdateDataTest008, TestSize.Level0)
+HWTEST_F(DocumentDBDataTest, UpdateDataTest009, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string updata = R""({"field1":1, "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
