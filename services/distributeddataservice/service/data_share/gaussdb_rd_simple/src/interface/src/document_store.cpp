@@ -253,13 +253,13 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         }
         return errCode;
     }
-    std::lock_guard<std::mutex> lock(dbMutex_);
     bool isIdExist;
     auto filterObjChild = filterObj.GetChild();
     auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID, isIdExist);
     if (!isIdExist) {
         return -E_INVALID_ARGS;
     }
+    std::lock_guard<std::mutex> lock(dbMutex_);
     ResultSet resultSet;
     InitResultSet(this, collection, filter, resultSet);
     errCode = resultSet.GetNext();
