@@ -22,6 +22,7 @@
 #include "grd_document/grd_document_api.h"
 #include "log_print.h"
 #include "sqlite_utils.h"
+#include "cJSON.h"
 
 using namespace DocumentDB;
 using namespace testing::ext;
@@ -257,4 +258,14 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest006, TestSize.Level0)
         GLOGD("UpdateDataTest006: update data with flag: %u", flag);
         EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter.c_str(), document.c_str(), flag), GRD_INVALID_ARGS);
     }
+}
+
+HWTEST_F(DocumentDBDataTest, UpdateDataTest007, TestSize.Level0)
+{
+    int result = GRD_OK;
+    string doc = R"({"_id":"007", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2":2})";
+    result = GRD_InsertDoc(g_db, g_coll, doc.c_str(), 0);
+    EXPECT_EQ(result, GRD_OK);
+    result = GRD_UpdateDoc(g_db, g_coll, "{\"field2\" : 2}", "{\"\":3}", 0);
+    EXPECT_EQ(result, GRD_INVALID_FORMAT);
 }
