@@ -1523,6 +1523,29 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest057, TestSize.Level1)
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 
+
+HWTEST_F(DocumentFindApiTest, DocumentFindApiTest058, TestSize.Level1)
+{
+    GRD_ResultSet *resultSet = nullptr;
+    Query query;
+    query.filter = R"({abc: true})";
+    query.projection = "{}";
+    ASSERT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_FORMAT);
+    ASSERT_EQ(resultSet, nullptr);
+
+    query.filter = R"({'abc': 123})";
+    ASSERT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_FORMAT);
+    ASSERT_EQ(resultSet, nullptr);
+
+    query.filter = R"({"123a1": 123})";
+    ASSERT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
+    ASSERT_EQ(resultSet, nullptr);
+
+    query.filter = R"({"abc$": 123})";
+    ASSERT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
+    ASSERT_EQ(resultSet, nullptr);
+}
+
 /**
   * @tc.name: DocumentFindApiTest059
   * @tc.desc: Test findDoc with invalid field
