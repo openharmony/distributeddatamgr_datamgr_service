@@ -60,7 +60,7 @@ using JsonFieldPath = std::vector<std::string>;
 
 class JsonObject {
 public:
-    static JsonObject Parse(const std::string &jsonStr, int &errCode, bool caseSensitive = false);
+    static JsonObject Parse(const std::string &jsonStr, int &errCode, bool caseSensitive = true);
     ~JsonObject();
 
     std::string Print() const;
@@ -111,7 +111,7 @@ private:
     cJSON *cjson_ = nullptr;
     int jsonDeep_ = 0;
     bool isOwner_ = false;
-    bool caseSensitive_ = false;
+    bool caseSensitive_ = true;
 };
 } // namespace DocumentDB
 #endif // JSON_OBJECT_H

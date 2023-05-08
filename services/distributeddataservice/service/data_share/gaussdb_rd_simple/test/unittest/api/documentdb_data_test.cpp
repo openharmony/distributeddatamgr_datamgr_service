@@ -151,7 +151,7 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest007, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string val = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    EXPECT_EQ(GRD_UpsertDoc(g_db, "collection_not_exists", filter.c_str(), val.c_str(), GRD_DOC_REPLACE), GRD_NO_DATA);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, "collection_not_exists", filter.c_str(), val.c_str(), GRD_DOC_REPLACE), GRD_INVALID_ARGS);
 }
 
 /**
@@ -169,6 +169,23 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest008, TestSize.Level0)
 
     std::string updateDoc = R""({"name":"Xue","case":2,"age":28,"addr":{"city":"shenzhen","postal":518000}})"";
     EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), updateDoc.c_str(), GRD_DOC_APPEND), 1);
+}
+
+HWTEST_F(DocumentDBDataTest, UpsertDataTest009, TestSize.Level0)
+{
+    std::string filter = R""({"_id":"1234", "aaa" : "bbb"})"";
+    std::string document = R""({"name":"Tmn","age":18,"addr":{"city":"shanghai","postal":200001}})"";
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_APPEND), 1);
+    std::string filter2 = R""({"_id":"1234", "aaa" : "ccc"})"";
+    std::string updateDoc = R""({"name":"Xue","case":2,"age":28,"addr":{"city":"shenzhen","postal":518000}})"";
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_APPEND), GRD_DATA_CONFLICT);
+}
+
+HWTEST_F(DocumentDBDataTest, UpsertDataTest010, TestSize.Level0)
+{
+    std::string filter = R""({"_id":"abcde"})"";
+    std::string document = R"({"field1": ")" + string(1024 * 1024 + 1, 'a') + "\"}";
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_REPLACE), GRD_OVER_LIMIT);
 }
 
 /**
@@ -275,5 +292,40 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest007, TestSize.Level0)
     EXPECT_EQ(result, 1);
     cJSON_Delete(updata);
     cJSON_free;
+
+}
+
+HWTEST_F(DocumentDBDataTest, UpdateDataTest008, TestSize.Level0)
+{
+<<<<<<< fixUpdateLargeData
+    std::string filter = R""({"_id":"1234"})"";
+    std::string document = R""({"_id":"1234", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2" : 2})"";
+
+    EXPECT_EQ(GRD_InsertDoc(g_db, g_coll, document.c_str(), 0), GRD_OK);
+
+    std::string updata = R""({"field1":1, "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
+    EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter.c_str(), updata.c_str(), 0), 1);
+
+    GRD_ResultSet *resultSet = nullptr;
+    const char *projection = "{}";
+    Query query = { filter.c_str(), projection };
+    EXPECT_EQ(GRD_FindDoc(g_db, g_coll, query, 1, &resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    char *value = NULL;
+    EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+    string valueStr = value;
+    string repectStr = R""({"_id":"1234","field1":1,"field2":2,"FIELD1":[1,true,1.23456789,"hello world!",null]})"";
+    EXPECT_EQ((valueStr == repectStr), 1);
+    EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
+    EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
+
+}
+
+HWTEST_F(DocumentDBDataTest, UpdateDataTest009, TestSize.Level0)
+{
+    std::string filter = R""({"_id":"1234"})"";
+    std::string updata = R""({"field1":1, "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
+    EXPECT_EQ(GRD_UpdateDoc(g_db, "grd_aa", filter.c_str(), updata.c_str(), 0), GRD_INVALID_FORMAT);
+    EXPECT_EQ(GRD_UpdateDoc(g_db, "gRd_aa", filter.c_str(), updata.c_str(), 0), GRD_INVALID_FORMAT);
 
 }
