@@ -121,6 +121,10 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         GLOGE("Check collection name invalid. %d", errCode);
         return errCode;
     }
+    if (update.length() + 1 > JSON_LENS_MAX) {
+        GLOGE("updata document's length is too long");
+        return -E_OVER_LIMIT;
+    }
     JsonObject updateObj = JsonObject::Parse(update, errCode, true);
     if (errCode != E_OK) {
         GLOGE("update Parsed faild");
@@ -133,14 +137,19 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
             GLOGE("updateObj ParsePath faild");
             return errCode;
         }
-        if (!CheckCommon::CheckUpdata(updateObj, allPath)) {
-            GLOGE("Updata format unvalid");
-            return -E_INVALID_ARGS;
+        errCode = CheckCommon::CheckUpdata(updateObj, allPath);
+        if (errCode != E_OK) {
+            GLOGE("Updata format is illegal");
+            return errCode;
         }
     }
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
+    }
+    if (filter.length() + 1 > JSON_LENS_MAX) {
+        GLOGE("filter's length is too long");
+        return -E_OVER_LIMIT;
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
     if (errCode != E_OK) {
@@ -155,6 +164,13 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     }
     bool isOnlyId = true;
     auto coll = Collection(collection, executor_);
+    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!IsCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
         return errCode;
@@ -202,6 +218,10 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         GLOGE("Check collection name invalid. %d", errCode);
         return errCode;
     }
+    if (document.length() + 1 > JSON_LENS_MAX) {
+        GLOGE("document's length is too long");
+        return -E_OVER_LIMIT;
+    }
     JsonObject documentObj = JsonObject::Parse(document, errCode, true);
     if (errCode != E_OK) {
         GLOGE("document Parsed faild");
@@ -213,14 +233,19 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         if (errCode != E_OK) {
             return errCode;
         }
-        if (!CheckCommon::CheckUpdata(documentObj, allPath)) {
-            GLOGE("updata format unvalid");
-            return -E_INVALID_ARGS;
+        errCode = CheckCommon::CheckUpdata(documentObj, allPath);
+        if (errCode != E_OK) {
+            GLOGE("UpsertDocument document format is illegal");
+            return errCode;
         }
     }
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
+    }
+    if (filter.length() + 1 > JSON_LENS_MAX) {
+        GLOGE("filter's length is too long");
+        return -E_OVER_LIMIT;
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, caseSensitive);
     if (errCode != E_OK) {
@@ -235,6 +260,13 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     bool isOnlyId = true;
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
     auto coll = Collection(collection, executor_);
+    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!IsCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
         return errCode;
@@ -300,6 +332,13 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
+    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!IsCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     if (document.length() + 1 > JSON_LENS_MAX) {
         GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
@@ -346,7 +385,11 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
-    if (!coll.IsCollectionExists(errCode)) {
+    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!IsCollectionExist) {
         return -E_INVALID_ARGS;
     }
     if (filter.empty()) {
@@ -458,6 +501,13 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         ifShowId = true;
     }
     auto coll = Collection(collection, executor_);
+    int IsCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!IsCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     std::lock_guard<std::mutex> lock(dbMutex_);
     if (!coll.FindDocument()) {
         GLOGE("no corresponding table name");
