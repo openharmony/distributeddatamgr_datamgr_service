@@ -123,6 +123,9 @@ void RdbServiceImpl::OnClientDied(pid_t pid)
     ZLOGI("client dead pid=%{public}d", pid);
     syncers_.ComputeIfPresent(pid, [this](const auto& key, StoreSyncersType& syncers) {
         syncerNum_ -= static_cast<int32_t>(syncers.size());
+        for (const auto& [name, syncer] : syncers) {
+            executors_->Remove(syncer->GetTimerId());
+        }
         return false;
     });
     notifiers_.Erase(pid);
