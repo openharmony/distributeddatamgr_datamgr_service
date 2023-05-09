@@ -256,8 +256,6 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
             return -E_INVALID_ARGS;;
         }
     }
-    JsonObject updataObjChild = updataObj.GetChild();
-    std::set<std::string> filedSet;
     int errCode = E_OK;
     if (!updataObj.GetChild().IsNull()) {
         auto updataObjChild = updataObj.GetChild();
@@ -269,13 +267,6 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
     for (auto singlePath : path) {
         if (singlePath.size() > JSON_DEEP_MAX) {
             return -E_INVALID_ARGS;;
-        }
-    }
-    if (!updataObj.GetChild().IsNull()) {
-        auto updataObjChild = updataObj.GetChild();
-        if (!JsonCommon::CheckProjectionField(updataObjChild, errCode)) {
-            GLOGE("updataObj json field format is illegal");
-            return errCode;
         }
     }
     bool isIdExist = true;
