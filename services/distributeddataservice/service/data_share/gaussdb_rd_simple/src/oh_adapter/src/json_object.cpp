@@ -14,7 +14,6 @@
 */
 
 #include "json_object.h"
-#include <set>
 #include <algorithm>
 
 #include "doc_errno.h"
@@ -214,34 +213,70 @@ int JsonObject::Init(const std::string &str, bool isFilter)
         return -E_INVALID_ARGS;
     }
     int errCode = E_OK;
-    if (!isFilter && !CheckJsonFormat(cjson_->child, errCode)) {
-        return -E_INVALID_JSON_FORMAT;
+    if (!isFilter) {
+        ret = CheckJsonRepeatField(cjson_);
+        if (ret != E_OK) {
+            return ret;
+        }
     }
     return E_OK;
 }
 
-bool JsonObject::CheckJsonFormat(cJSON *cjsonChild, int &errCode)
+int JsonObject::CheckJsonRepeatField(cJSON *object)
 {
-    std::set<std::string> filedSet;
-    while (cjsonChild != nullptr) {
-        if (cjsonChild->string == nullptr) {
-            return true;
-        }
-        std::string fieldName = cjsonChild->string;
-        if (fieldName.empty()) {
-            return false;
-        }
-        if (filedSet.find(fieldName) == filedSet.end()) {
-            filedSet.insert(fieldName);
-        } else {
-            return false;
-        }
-        if (!CheckJsonFormat(cjsonChild->child, errCode)) {
-            return false;
-        }
-        cjsonChild = cjsonChild->next;
+    if (object == nullptr) {
+        return -E_INVALID_ARGS;
     }
-    return true;
+    int ret = E_OK;
+    int type = object->type;
+    if (type != cJSON_Object && type != cJSON_Array) {
+        return ret;
+    }
+    std::set<std::string> filedSet;
+    cJSON *subObj = object->child;
+    while (subObj != nullptr) {
+        ret = CheckSubObj(filedSet, subObj, type);
+        if (ret != E_OK) {
+            break;
+        }
+        subObj = subObj->next;
+    }
+    return ret;
+}
+
+int JsonObject::CheckSubObj(std::set<std::string> &filedSet, cJSON *subObj, int parentType)
+{
+    if (subObj == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    int ret = E_OK;
+    std::string fieldName;
+    if (subObj->string != nullptr) {
+        fieldName = subObj->string;
+    }
+    if (parentType == cJSON_Array) {
+        ret = CheckJsonRepeatField(subObj);
+        if (ret != E_OK) {
+            return ret;
+        }
+        return E_OK;
+    }
+    if (fieldName.empty()) {
+        return -E_INVALID_JSON_FORMAT; 
+    }
+    if (filedSet.find(fieldName) == filedSet.end()) {
+        filedSet.insert(fieldName);
+    } else {
+        ret = -E_INVALID_JSON_FORMAT;
+    }
+    if (ret != E_OK) {
+        return ret;
+    }
+    ret = CheckJsonRepeatField(subObj);
+    if (ret != E_OK) {
+        return ret;
+    }
+    return E_OK;
 }
 
 std::string JsonObject::Print() const

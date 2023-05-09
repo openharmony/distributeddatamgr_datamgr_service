@@ -20,6 +20,7 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
+#include <set>
 
 #include "cJSON.h"
 
@@ -106,10 +107,10 @@ public:
 private:
     JsonObject();
     int Init(const std::string &str, bool isFilter = false);
-
+    int CheckJsonRepeatField(cJSON *object);
+    int CheckSubObj(std::set<std::string> &filedSet, cJSON *subObj, int parentType);
     int GetDeep(cJSON *cjson);
     int CheckNumber(cJSON *cjson, int &errCode);
-    bool CheckJsonFormat(cJSON *cjson, int &errCode);
     cJSON *cjson_ = nullptr;
     int jsonDeep_ = 0;
     bool isOwner_ = false;

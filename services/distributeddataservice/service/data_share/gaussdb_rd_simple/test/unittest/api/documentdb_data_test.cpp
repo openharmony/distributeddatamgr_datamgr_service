@@ -180,7 +180,13 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest009, TestSize.Level0)
 
 HWTEST_F(DocumentDBDataTest, UpsertDataTest010, TestSize.Level0)
 {
-    int result = GRD_UpsertDoc(g_db, g_coll, R"({"_id" : "abcde"})", R"({"a00001":1, "a00001":2})", 0);
+    int result = GRD_UpsertDoc(g_db, g_coll, R"({"_id" : "abcde"})", R"({"a00001": {"A":1, "A":2}})", 0);
+    ASSERT_EQ(result, GRD_INVALID_FORMAT);
+}
+
+HWTEST_F(DocumentDBDataTest, UpsertDataTest011, TestSize.Level0)
+{
+    int result = GRD_UpsertDoc(g_db, g_coll, R"({"_id" : "abcde"})", R"({"t1":{"t22":[1,{"t23":1, "t23":1},3 ,4]}})", 0);
     ASSERT_EQ(result, GRD_INVALID_FORMAT);
 }
 
