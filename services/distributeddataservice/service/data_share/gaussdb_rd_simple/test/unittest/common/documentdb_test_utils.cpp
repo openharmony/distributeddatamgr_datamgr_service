@@ -18,7 +18,7 @@
 namespace DocumentDBUnitTest {
 int DocumentDBTestUtils::RemoveTestDbFiles(const std::string &dir)
 {
-    (void)remove(dir.c_str()); // TODO: remove dir or files
+    (void)remove(dir.c_str());
     return 0;
 }
 } // namespace DocumentDBUnitTest

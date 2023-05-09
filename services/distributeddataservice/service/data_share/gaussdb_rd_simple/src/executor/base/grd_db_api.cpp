@@ -40,7 +40,7 @@ int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GR
     if (*db == nullptr) {
         (void)DocumentStoreManager::CloseDocumentStore(store, GRD_DB_CLOSE_IGNORE_ERROR);
         store = nullptr;
-        return TransferDocErr(-E_OUT_OF_MEMORY);
+        return GRD_FAILED_MEMORY_ALLOCATE;
     }
 
     (*db)->store_ = store;

@@ -38,9 +38,18 @@ bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefi
 
     return (strncasecmp(name.c_str(), prefix.c_str(), prefix.length()) == 0);
 }
+
+void ReplaceAll(std::string &inout, const std::string &what, const std::string &with)
+{
+    std::string::size_type pos {};
+    while ((pos = inout.find(what.data(), pos, what.length())) != std::string::npos) {
+        inout.replace(pos, what.length(), with.data(), with.length());
+        pos += with.length();
+    }
+}
 } // namespace
 
-bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::string &lowerCaseName, int &errCode)
+bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::string &formattedName, int &errCode)
 {
     if (collectionName.empty()) {
         errCode = -E_INVALID_ARGS;
@@ -56,10 +65,13 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::st
         errCode = -E_INVALID_COLL_NAME_FORMAT;
         return false;
     }
-    lowerCaseName = collectionName;
-    std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), [](unsigned char c) {
+
+    formattedName = collectionName;
+    std::transform(formattedName.begin(), formattedName.end(), formattedName.begin(), [](unsigned char c) {
         return std::tolower(c);
     });
+
+    ReplaceAll(formattedName, "'", R"('')");
     return true;
 }
 

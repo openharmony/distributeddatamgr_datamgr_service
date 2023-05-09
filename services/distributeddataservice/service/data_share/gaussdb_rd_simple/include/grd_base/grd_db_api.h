@@ -22,11 +22,11 @@
 extern "C" {
 #endif // __cplusplus
 
-DOC_API int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GRD_DB **db);
+GRD_API int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GRD_DB **db);
 
-DOC_API int GRD_DBClose(GRD_DB *db, unsigned int flags);
+GRD_API int GRD_DBClose(GRD_DB *db, unsigned int flags);
 
-DOC_API int GRD_Flush(GRD_DB *db, unsigned int flags);
+GRD_API int GRD_Flush(GRD_DB *db, unsigned int flags);
 
 #ifdef __cplusplus
 }

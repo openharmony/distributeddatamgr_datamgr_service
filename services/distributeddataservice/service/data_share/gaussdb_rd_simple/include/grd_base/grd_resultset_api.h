@@ -24,13 +24,13 @@ extern "C" {
 
 typedef struct GRD_ResultSet GRD_ResultSet;
 
-DOC_API int GRD_Next(GRD_ResultSet *resultSet);
+GRD_API int GRD_Next(GRD_ResultSet *resultSet);
 
-DOC_API int GRD_GetValue(GRD_ResultSet *resultSet, char **value);
+GRD_API int GRD_GetValue(GRD_ResultSet *resultSet, char **value);
 
-DOC_API int GRD_FreeValue(char *value);
+GRD_API int GRD_FreeValue(char *value);
 
-DOC_API int GRD_FreeResultSet(GRD_ResultSet *resultSet);
+GRD_API int GRD_FreeResultSet(GRD_ResultSet *resultSet);
 
 #ifdef __cplusplus
 }

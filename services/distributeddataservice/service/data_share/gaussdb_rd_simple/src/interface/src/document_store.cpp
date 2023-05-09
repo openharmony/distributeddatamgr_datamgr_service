@@ -37,7 +37,7 @@ DocumentStore::~DocumentStore()
     delete executor_;
 }
 
-int DocumentStore::CreateCollection(const std::string &name, const std::string &option, int flags)
+int DocumentStore::CreateCollection(const std::string &name, const std::string &option, unsigned int flags)
 {
     std::string lowerCaseName;
     int errCode = E_OK;
@@ -53,7 +53,7 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
         return errCode;
     }
 
-    if (flags != 0 && flags != CHK_EXIST_COLLECTION) {
+    if (flags != 0u && flags != CHK_EXIST_COLLECTION) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
@@ -81,7 +81,7 @@ END:
     return errCode;
 }
 
-int DocumentStore::DropCollection(const std::string &name, int flags)
+int DocumentStore::DropCollection(const std::string &name, unsigned int flags)
 {
     std::string lowerCaseName;
     int errCode = E_OK;
@@ -90,7 +90,7 @@ int DocumentStore::DropCollection(const std::string &name, int flags)
         return errCode;
     }
 
-    if (flags != 0 && flags != CHK_NON_EXIST_COLLECTION) {
+    if (flags != 0u && flags != CHK_NON_EXIST_COLLECTION) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
@@ -125,7 +125,7 @@ END:
 }
 
 int DocumentStore::UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update,
-    int flags)
+    unsigned int flags)
 {
     std::string lowerCaseCollName;
     int errCode = E_OK;
@@ -225,7 +225,7 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
 }
 
 int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter,
-    const std::string &document, int flags)
+    const std::string &document, unsigned int flags)
 {
     std::string lowerCaseCollName;
     int errCode = E_OK;
@@ -337,10 +337,10 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     return errCode;
 }
 
-int DocumentStore::InsertDocument(const std::string &collection, const std::string &document, int flag)
+int DocumentStore::InsertDocument(const std::string &collection, const std::string &document, unsigned int flags)
 {
-    if (flag != 0) {
-        GLOGE("InsertDocument flag is not zero");
+    if (flags != 0u) {
+        GLOGE("InsertDocument flags is not zero");
         return -E_INVALID_ARGS;
     }
     std::string lowerCaseCollName;
@@ -390,10 +390,10 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
     }
 }
 
-int DocumentStore::DeleteDocument(const std::string &collection, const std::string &filter, int flag)
+int DocumentStore::DeleteDocument(const std::string &collection, const std::string &filter, unsigned int flags)
 {
-    if (flag != 0) {
-        GLOGE("DeleteDocument flag is not zero");
+    if (flags != 0u) {
+        GLOGE("DeleteDocument flags is not zero");
         return -E_INVALID_ARGS;
     }
     std::string lowerCaseCollName;
@@ -465,10 +465,10 @@ KvStoreExecutor *DocumentStore::GetExecutor(int errCode)
     return executor_;
 }
 int DocumentStore::FindDocument(const std::string &collection, const std::string &filter,
-    const std::string &projection, int flags, GRD_ResultSet *grdResultSet)
+    const std::string &projection, unsigned int flags, GRD_ResultSet *grdResultSet)
 {
-    if (flags != 0 && flags != GRD_DOC_ID_DISPLAY) {
-        GLOGE("FindDocument flag is illegal");
+    if (flags != 0u && flags != GRD_DOC_ID_DISPLAY) {
+        GLOGE("FindDocument flags is illegal");
         return -E_INVALID_ARGS;
     }
     std::string lowerCaseCollName;
@@ -626,7 +626,7 @@ void DocumentStore::OnClose(const std::function<void(void)> &notifier)
     closeNotifier_ = notifier;
 }
 
-int DocumentStore::Close(int flags)
+int DocumentStore::Close(unsigned int flags)
 {
     std::lock_guard<std::mutex> lock(dbMutex_);
     if (flags == GRD_DB_CLOSE && !collections_.empty()) {

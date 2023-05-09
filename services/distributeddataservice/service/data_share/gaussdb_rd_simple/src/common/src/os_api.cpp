@@ -40,7 +40,7 @@ bool CheckPathExistence(const std::string &filePath)
 int GetRealPath(const std::string &inOriPath, std::string &outRealPath)
 {
     const unsigned int MAX_PATH_LENGTH = PATH_MAX;
-    if (inOriPath.length() > MAX_PATH_LENGTH || MAX_PATH_LENGTH > 0x10000) { // max limit is 64K(0x10000).
+    if (inOriPath.length() > MAX_PATH_LENGTH) { // max limit is 64K(0x10000).
         GLOGE("[OS_API] OriPath too long.");
         return -E_INVALID_ARGS;
     }
@@ -79,7 +79,6 @@ void SplitFilePath(const std::string &filePath, std::string &fileDir, std::strin
 
     fileDir = filePath.substr(0, slashPos);
     fileName = filePath.substr(slashPos + 1);
-    return;
 }
 } // namespace OSAPI
 } // namespace DocumentDB

@@ -202,7 +202,7 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
             std::string priFieldName = node.GetItemFiled();
             for (size_t j = 0; j < priFieldName.size(); j++) {
                 if (priFieldName[j] != '.') {
-                    tempParseName = tempParseName + priFieldName[j];
+                    tempParseName += priFieldName[j];
                 }
                 if (priFieldName[j] == '.' || j == priFieldName.size() - 1) {
                     if (j > 0 && priFieldName[j] == '.' && priFieldName[j - 1] == '.') {
@@ -249,7 +249,7 @@ std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject &ro
 namespace {
 JsonFieldPath SplitePath(const JsonFieldPath &path, bool &isCollapse)
 {
-    if (path.size() > 1 || path.empty()) { // only first lever has collapse field
+    if (path.size() > 1 || path.empty()) { // only first level has collapse field
         return path;
     }
     JsonFieldPath splitPath;
@@ -299,7 +299,6 @@ void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
         }
         child = child.GetNext();
     }
-    return;
 }
 
 void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
@@ -314,7 +313,6 @@ void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
         }
         child = child.GetNext();
     }
-    return;
 }
 
 bool IsNumber(const std::string &str)
@@ -533,7 +531,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                     if (!isCollapse) {
                         bool ret = JsonValueReplace(src, fatherPath, father, item, externErrCode);
                         if (!ret) {
-                            return false; // replace faild
+                            return false; // replace failed
                         }
                         isAddedFlag = true;
                         return false; // Different node types, overwrite directly, skip child node
@@ -656,8 +654,7 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
         if (src.IsFieldExistsPowerMode(itemPath)) {
             if (isCollapse) {
                 return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
-            }
-            else {
+            } else {
                 JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
                 if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
                     return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);

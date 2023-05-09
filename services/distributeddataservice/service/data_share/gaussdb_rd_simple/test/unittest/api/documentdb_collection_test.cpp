@@ -118,8 +118,9 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest002, TestSize.Level0)
 HWTEST_F(DocumentDBCollectionTest, CollectionTest003, TestSize.Level0)
 {
     string overLenName(MAX_COLLECTION_LEN - 1, 'a');
-    std::vector<const char *> validName = { "123", "&^%@", "中文字符", "sqlite_master", "NULL", "SELECT",
-        overLenName.c_str() };
+    std::vector<const char *> validName = { "123", "&^%@", "中文字符", "sqlite_master", "NULL", "SELECT", "CREATE",
+        "student/", "student'", "student\"", "student[", "student]", "student%", "student&", "student_", "student(",
+        "student)", overLenName.c_str() };
 
     for (auto *it : validName) {
         GLOGD("CollectionTest003: create collection with name: %s", it);

@@ -586,8 +586,6 @@ HWTEST_F(DocumentDBApiTest, CloseDBFlagTest002, TestSize.Level0)
     EXPECT_EQ(status, GRD_OK);
     ASSERT_NE(db, nullptr);
 
-    // TODO: open result set
-
     status = GRD_DBClose(db, GRD_DB_CLOSE_IGNORE_ERROR);
     EXPECT_EQ(status, GRD_OK);
     db = nullptr;

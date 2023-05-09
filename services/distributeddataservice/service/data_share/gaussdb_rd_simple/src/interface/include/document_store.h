@@ -30,23 +30,32 @@ public:
     DocumentStore(KvStoreExecutor *);
     ~DocumentStore();
 
-    int CreateCollection(const std::string &name, const std::string &option, int flags);
-    int DropCollection(const std::string &name, int flags);
+    int CreateCollection(const std::string &name, const std::string &option, unsigned int flags);
 
-    int UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update, int flags);
+    int DropCollection(const std::string &name, unsigned int flags);
+
+    int UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update,
+        unsigned int flags);
+
     int UpsertDocument(const std::string &collection, const std::string &filter, const std::string &document,
-        int flags);
-    int InsertDocument(const std::string &collection, const std::string &document, int flag);
-    int DeleteDocument(const std::string &collection, const std::string &filter, int flag);
+        unsigned int flags);
+
+    int InsertDocument(const std::string &collection, const std::string &document, unsigned int flags);
+
+    int DeleteDocument(const std::string &collection, const std::string &filter, unsigned int flags);
+
     int FindDocument(const std::string &collection, const std::string &filter, const std::string &projection,
-        int flags, GRD_ResultSet *grdResultSet);
+        unsigned int flags, GRD_ResultSet *grdResultSet);
+
     KvStoreExecutor *GetExecutor(int errCode);
+
     bool IsCollectionOpening(const std::string collection);
+
     int EraseCollection(const std::string collectionName);
 
     void OnClose(const std::function<void(void)> &notifier);
 
-    int Close(int flags);
+    int Close(unsigned int flags);
 
 private:
     int GetViewType(JsonObject &jsonObj, bool &viewType);

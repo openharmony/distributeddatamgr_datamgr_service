@@ -32,19 +32,20 @@ const int MAX_ID_LENS = 899;
 
 static void TestInsertDocIntoCertainColl(const char *collectionName, const char *projection, int expectedResult)
 {
-    /** * @tc.steps: step1. Create Collection
-   * @tc.expected: step1. GRD_OK
-  */
+    /**
+     * @tc.steps: step1. Create Collection
+     * @tc.expected: step1. GRD_OK
+    */
     EXPECT_EQ(GRD_CreateCollection(g_db, collectionName, "", 0), expectedResult);
     /**
-   * @tc.steps: step2. Insert projection into colloction.
-   * @tc.expected: step2. GRD_OK
-  */
+     * @tc.steps: step2. Insert projection into colloction.
+     * @tc.expected: step2. GRD_OK
+     */
     EXPECT_EQ(GRD_InsertDoc(g_db, collectionName, projection, 0), expectedResult);
     /**
-   * @tc.steps: step3. Call GRD_DroCollection to drop the collection.
-   * @tc.expected: step3. GRD_OK
-  */
+     * @tc.steps: step3. Call GRD_DroCollection to drop the collection.
+     * @tc.expected: step3. GRD_OK
+     */
     EXPECT_EQ(GRD_DropCollection(g_db, collectionName, 0), expectedResult);
 }
 
@@ -824,7 +825,6 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest043, TestSize.Level1)
 
 HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest044, TestSize.Level1)
 {
-  
     const char *document1 = R""({"_id":"0123", "num":"num"})"";
     const char *document2 = R""({"_id":"0123", "NUM":"No.45"})"";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_OK);
