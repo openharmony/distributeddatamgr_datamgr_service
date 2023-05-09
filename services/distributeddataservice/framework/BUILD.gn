@@ -17,7 +17,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 group("build_module") {
   deps = [ ":distributeddatasvcfwk" ]
 }
-config("module_public_config") {
+config("module_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
@@ -28,6 +28,15 @@ config("module_public_config") {
     "${kv_store_common_path}",
     "${kv_store_distributeddb_path}/interfaces/include/",
     "${kv_store_distributeddb_path}/include/",
+  ]
+}
+
+config("module_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    "include",
+    "//third_party/json/single_include",
+    "${kv_store_common_path}",
   ]
 }
 
@@ -67,7 +76,9 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  configs = [ ":module_public_config" ]
+  configs = [ ":module_config" ]
+
+  public_configs = [ ":module_public_config" ]
 
   deps = [ "//third_party/openssl:libcrypto_shared" ]
 
