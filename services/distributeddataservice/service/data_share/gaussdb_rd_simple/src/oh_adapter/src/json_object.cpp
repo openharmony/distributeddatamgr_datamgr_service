@@ -214,17 +214,19 @@ int JsonObject::Init(const std::string &str, bool isFilter)
         return -E_INVALID_ARGS;
     }
     int errCode = E_OK;
-    if (!isFilter && !CheckJsonFormat(cjson_, errCode)) {
+    if (!isFilter && !CheckJsonFormat(cjson_->child, errCode)) {
         return -E_INVALID_JSON_FORMAT;
     }
     return E_OK;
 }
 
-bool JsonObject::CheckJsonFormat(cJSON *cjson, int &errCode)
+bool JsonObject::CheckJsonFormat(cJSON *cjsonChild, int &errCode)
 {
     std::set<std::string> filedSet;
-    cJSON *cjsonChild = cjson_->child;
     while (cjsonChild != nullptr) {
+        if (cjsonChild->string == nullptr) {
+            return true;
+        }
         std::string fieldName = cjsonChild->string;
         if (fieldName.empty()) {
             return false;
@@ -232,6 +234,9 @@ bool JsonObject::CheckJsonFormat(cJSON *cjson, int &errCode)
         if (filedSet.find(fieldName) == filedSet.end()) {
             filedSet.insert(fieldName);
         } else {
+            return false;
+        }
+        if (!CheckJsonFormat(cjsonChild->child, errCode)) {
             return false;
         }
         cjsonChild = cjsonChild->next;
