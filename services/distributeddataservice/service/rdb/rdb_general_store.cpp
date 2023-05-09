@@ -89,22 +89,9 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
     return 0;
 }
 
-NativeRdb::ValuesBucket RdbGeneralStore::Convert(VBucket &&bucket)
+int32_t RdbGeneralStore::Bind(std::shared_ptr<CloudDB> cloudDb)
 {
-    ValuesBucket rdbVBucket;
-    return rdbVBucket;
+    cloudDb_ = std::move(cloudDb);
+    return 0;
 }
-
-NativeRdb::ValueObject RdbGeneralStore::Convert(Value &&value)
-{
-    ValueObject rdbValue;
-    return rdbValue;
-}
-
-DistributedData::Value RdbGeneralStore::Convert(ValueObject &&rdbValue)
-{
-    DistributedData::Value value;
-    return value;
-}
-
 } // namespace OHOS::DistributedRdb

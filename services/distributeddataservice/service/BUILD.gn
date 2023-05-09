@@ -55,7 +55,7 @@ ohos_shared_library("distributeddatasvc") {
   include_dirs = [
     "../../../../data_object/frameworks/innerkitsimpl/include",
     "../../../../relational_store/interfaces/inner_api/cloud_data/include",
-    "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb/include",
+    "../../../../relational_store/interfaces/inner_api/rdb/include",
     "${kv_store_distributeddb_path}",
   ]
   sources = [

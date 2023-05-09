@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_GENERAL_STORE_H
-#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_GENERAL_STORE_H
+#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
+#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
 #include <functional>
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
@@ -29,30 +29,33 @@ public:
     using GenQuery = DistributedData::GenQuery;
     using VBucket = DistributedData::VBucket;
     using VBuckets = DistributedData::VBuckets;
+    using Value = DistributedData::Value;
     using Values = DistributedData::Values;
     using StoreMetaData = DistributedData::StoreMetaData;
+    using CloudDB = DistributedData::CloudDB;
     using RdbStore = OHOS::NativeRdb::RdbStore;
-    using RdbDelegate =  DistributedDB::RelationalStoreDelegate;
-    using RdbManager =  DistributedDB::RelationalStoreManager;
+    using RdbDelegate = DistributedDB::RelationalStoreDelegate;
+    using RdbManager = DistributedDB::RelationalStoreManager;
+
     RdbGeneralStore(const StoreMetaData &metaData);
-    int32_t Close() override;
+    int32_t Bind(std::shared_ptr<CloudDB> cloudDb) override;
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
     int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) override;
+    int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, Async async, int32_t wait) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
-    int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, Async async, int32_t wait) override;
+    int32_t Close() override;
 
 private:
-    NativeRdb::ValuesBucket Convert(DistributedData::VBucket &&bucket);
-    NativeRdb::ValueObject Convert(DistributedData::Value &&value);
-    DistributedData::Value Convert(NativeRdb::ValueObject &&rdbValue);
+    static constexpr uint32_t ITERATE_TIMES = 10000;
 
     RdbManager manager_;
     std::shared_ptr<RdbStore> store_;
+    std::shared_ptr<CloudDB> cloudDb_;
 };
 } // namespace OHOS::DistributedRdb
-#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_GENERAL_STORE_H
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
