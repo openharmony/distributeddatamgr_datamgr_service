@@ -589,10 +589,6 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
 {
     int errCode;
     JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
-    if (errCode != E_OK) {
-        GLOGE("fine item falied");
-        return errCode;
-    }
     if (srcItem == item) {
         isMatchFlag = true;
         isAlreadyMatched = 1;
@@ -602,18 +598,10 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
     std::string lastFiledName = granpaPath.back();
     granpaPath.pop_back();
     JsonObject granpaItem = src.FindItemPowerMode(granpaPath, errCode);
-    if (errCode != E_OK) {
-        GLOGE("fine item falied");
-        return errCode;
-    }
     if (granpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
         JsonObject fatherItem = granpaItem.GetChild();
         while (!fatherItem.IsNull()) {
             if ((fatherItem.GetObjectItem(lastFiledName, errCode) == item)) {
-                if (errCode != E_OK) {
-                    GLOGE("get item falied");
-                    return errCode;
-                }
                 isMatchFlag = true;
                 isAlreadyMatched = 1;
                 break;
@@ -671,10 +659,6 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
             }
             else {
                 JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
-                if (errCode != E_OK) {
-                    GLOGE("fine item falied");
-                    return false;
-                }
                 if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
                     return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
                 }
