@@ -70,6 +70,11 @@ int32_t CloudDB::Unlock()
     return E_NOT_SUPPORT;
 }
 
+int64_t CloudDB::AliveTime()
+{
+    return -1;
+}
+
 int32_t CloudDB::Close()
 {
     return E_NOT_SUPPORT;

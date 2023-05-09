@@ -52,6 +52,8 @@ public:
 
     virtual int32_t Unlock();
 
+    virtual int64_t AliveTime();
+
     virtual int32_t Close();
 };
 } // namespace OHOS::DistributedData
