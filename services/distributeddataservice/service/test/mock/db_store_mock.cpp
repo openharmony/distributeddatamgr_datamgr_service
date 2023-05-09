@@ -273,7 +273,7 @@ DBStatus DBStoreMock::GetEntries(ConcurrentMap<Key, Value> &store, const Key &ke
 DBStatus DBStoreMock::PutBatch(ConcurrentMap<Key, Value> &store, const std::vector<Entry> &entries)
 {
     for (auto &entry : entries) {
-        entries_.InsertOrAssign(entry.key, entry.value);
+        store.InsertOrAssign(entry.key, entry.value);
     }
     DBChangeDataMock changeData({}, entries, {});
     observers_.ForEachCopies([&changeData](const auto &observer, auto &keys) mutable {

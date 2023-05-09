@@ -45,12 +45,12 @@ std::shared_ptr<Cursor> CloudDB::Query(const std::string &table, const std::stri
     return nullptr;
 }
 
-std::shared_ptr<Cursor> CloudDB::Query(const std::string &table, const GenQuery &query)
+std::shared_ptr<Cursor> CloudDB::Query(const std::string &table, GenQuery &query)
 {
     return nullptr;
 }
 
-int32_t CloudDB::Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait)
+int32_t CloudDB::Sync(const Devices &devices, int32_t mode, GenQuery &query, Async async, int32_t wait)
 {
     return E_NOT_SUPPORT;
 }

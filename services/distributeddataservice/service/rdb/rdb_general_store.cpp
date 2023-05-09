@@ -69,7 +69,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, const s
     return std::shared_ptr<Cursor>();
 }
 
-std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, const GenQuery &query)
+std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuery &query)
 {
     return std::shared_ptr<Cursor>();
 }
@@ -84,7 +84,7 @@ int32_t RdbGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
     return 0;
 }
 
-int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait)
+int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, Async async, int32_t wait)
 {
     return 0;
 }
