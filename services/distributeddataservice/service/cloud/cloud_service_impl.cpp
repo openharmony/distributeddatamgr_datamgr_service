@@ -87,7 +87,7 @@ CloudServiceImpl::CloudServiceImpl()
         storeMetaData.bundleName = rdbEvent.GetStoreInfo().bundleName;
         storeMetaData.storeId = rdbEvent.GetStoreInfo().storeName;
         storeMetaData.instanceId = rdbEvent.GetStoreInfo().instanceId;
-        if (!MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData, true)) {
+        if (!MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData)) {
             return;
         }
         AutoCache::GetInstance().CreateTable(storeMetaData, schemaMeta);
