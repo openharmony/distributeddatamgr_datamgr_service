@@ -165,7 +165,7 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const S
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
     if (metaData.isAutoSync && syncInfo.seqId == std::numeric_limits<uint64_t>::max()) {
-        DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::GetInstance().GetCode(metaData));
+        DeviceMatrix::GetInstance().OnChanged(metaData);
         StoreMetaDataLocal localMeta;
         MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), localMeta, true);
         if (!localMeta.HasPolicy(IMMEDIATE_SYNC_ON_CHANGE)) {
@@ -492,17 +492,19 @@ int32_t KVDBServiceImpl::OnReady(const std::string &device)
         if (!data.isAutoSync) {
             continue;
         }
+        ZLOGI("[onReady] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
         StoreMetaDataLocal localMetaData;
         MetaDataManager::GetInstance().LoadMeta(data.GetKeyLocal(), localMetaData, true);
-        if (!localMetaData.HasPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY)) {
+        if (!localMetaData.HasPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY) &&
+            (!localMetaData.HasPolicy(PolicyType::TERM_OF_SYNC_VALIDITY) ||
+            !DeviceMatrix::GetInstance().IsChangedInTerm(data,
+            localMetaData.GetPolicy(PolicyType::TERM_OF_SYNC_VALIDITY).valueUint))) {
             continue;
         }
-        auto policy = localMetaData.GetPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY);
         SyncInfo syncInfo;
-        syncInfo.mode = PUSH_PULL;
-        syncInfo.delay = policy.IsValueEffect() ? policy.valueUint : 0;
+        syncInfo.delay = localMetaData.HasPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY) ?
+            localMetaData.GetPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY).valueUint : 0;
         syncInfo.devices = { device };
-        ZLOGI("[onReady] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
         auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
         KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
             std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),

@@ -24,6 +24,7 @@
 namespace OHOS::DistributedData {
 class API_EXPORT DeviceMatrix {
 public:
+    using TimePoint = std::chrono::steady_clock::time_point;
     static constexpr uint16_t META_STORE_MASK = 0x0001;
     enum : int32_t {
         MATRIX_ONLINE = Event::EVT_CUSTOM,
@@ -37,7 +38,9 @@ public:
     void Offline(const std::string &device);
     uint16_t OnBroadcast(const std::string &device, uint16_t code);
     void OnChanged(uint16_t code);
+    void OnChanged(const StoreMetaData &metaData);
     void OnExchanged(const std::string &device, uint16_t code, bool isRemote = false);
+    bool IsChangedInTerm(const StoreMetaData &metaData, uint64_t term);
     uint16_t GetCode(const StoreMetaData &metaData);
     void Clear();
 
@@ -72,6 +75,7 @@ private:
     std::map<std::string, Mask> remotes_;
     std::vector<std::string> maskApps_ = { "distributed_device_profile_service" };
     LRUBucket<std::string, MatrixMetaData> versions_{ MAX_DEVICES };
+    LRUBucket<uint32_t, TimePoint> changeTime_ { 64 };
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_DEVICE_MATRIX_H
