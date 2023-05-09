@@ -158,7 +158,7 @@ void CloudDataTest::SetUp()
 
 void CloudDataTest::TearDown() {}
 
-HWTEST_F(CloudDataTest, GlobalConfig, TestSize.Level0)
+HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
 {
     ZLOGI("CloudDataTest start");
     std::shared_ptr<CloudServerMock> cloudServerMock = std::make_shared<CloudServerMock>();
