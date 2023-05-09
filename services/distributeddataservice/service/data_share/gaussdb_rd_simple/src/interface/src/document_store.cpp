@@ -159,7 +159,7 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, true);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
     if (errCode != E_OK) {
         GLOGE("filter Parsed failed");
         return errCode;
@@ -251,7 +251,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, true);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
     if (errCode != E_OK) {
         GLOGE("filter Parsed failed");
         return errCode;
@@ -404,7 +404,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         GLOGE("filter's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, true);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
     if (errCode != E_OK) {
         GLOGE("filter Parsed failed");
         return errCode;
@@ -460,7 +460,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         GLOGE("args length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, true);
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
     if (errCode != E_OK) {
         GLOGE("filter Parsed failed");
         return errCode;

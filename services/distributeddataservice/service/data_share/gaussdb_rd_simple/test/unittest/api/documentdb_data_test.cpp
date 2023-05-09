@@ -296,7 +296,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest009, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"_id":"1234", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2" : 2})"";
-
+    
     EXPECT_EQ(GRD_InsertDoc(g_db, g_coll, document.c_str(), 0), GRD_OK);
 
     std::string updata = R""({"field1":1, "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";

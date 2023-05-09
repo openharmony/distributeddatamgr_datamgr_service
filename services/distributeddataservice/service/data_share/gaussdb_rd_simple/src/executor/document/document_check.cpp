@@ -133,7 +133,7 @@ bool CheckCommon::CheckFilter(const std::string &filter, std::string &idStr, int
         return false;
     }
 
-    JsonObject filterObject = JsonObject::Parse(filter, errCode, true);
+    JsonObject filterObject = JsonObject::Parse(filter, errCode, true, true);
     if (errCode != E_OK) {
         GLOGE("Parse filter failed. %d", errCode);
         return false;
@@ -254,14 +254,6 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
         }
         if (!path[i].empty() && !path[i][0].empty() && isdigit(path[i][0][0])) {
             return -E_INVALID_ARGS;;
-        }
-    }
-    int errCode = E_OK;
-    if (!updataObj.GetChild().IsNull()) {
-        auto updataObjChild = updataObj.GetChild();
-        if (!JsonCommon::CheckProjectionField(updataObjChild, errCode)) {
-            GLOGE("updataObj json field format is illegal");
-            return errCode;
         }
     }
     for (auto singlePath : path) {

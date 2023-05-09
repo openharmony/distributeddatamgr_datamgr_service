@@ -14,7 +14,7 @@
 */
 
 #include "json_object.h"
-
+#include <set>
 #include <algorithm>
 
 #include "doc_errno.h"
@@ -103,10 +103,11 @@ bool ValueObject::operator==(const ValueObject &other) const
     return false;
 }
 
-JsonObject JsonObject::Parse(const std::string &jsonStr, int &errCode, bool caseSensitive)
+JsonObject JsonObject::Parse(const std::string &jsonStr, int &errCode,
+    bool caseSensitive, bool isFilter)
 {
     JsonObject obj;
-    errCode = obj.Init(jsonStr);
+    errCode = obj.Init(jsonStr, isFilter);
     obj.caseSensitive_ = caseSensitive;
     return obj;
 }
@@ -191,7 +192,7 @@ int JsonObject::CheckNumber(cJSON *item, int &errCode)
     return E_OK;
 }
 
-int JsonObject::Init(const std::string &str)
+int JsonObject::Init(const std::string &str, bool isFilter)
 {
     const char *end = NULL;
     isOwner_ = true;
@@ -212,7 +213,30 @@ int JsonObject::Init(const std::string &str)
         GLOGE("Int value is larger than double");
         return -E_INVALID_ARGS;
     }
+    int errCode = E_OK;
+    if (!isFilter && !CheckJsonFormat(cjson_, errCode)) {
+        return -E_INVALID_JSON_FORMAT;
+    }
     return E_OK;
+}
+
+bool JsonObject::CheckJsonFormat(cJSON *cjson, int &errCode)
+{
+    std::set<std::string> filedSet;
+    cJSON *cjsonChild = cjson_->child;
+    while (cjsonChild != nullptr) {
+        std::string fieldName = cjsonChild->string;
+        if (fieldName.empty()) {
+            return false;
+        }
+        if (filedSet.find(fieldName) == filedSet.end()) {
+            filedSet.insert(fieldName);
+        } else {
+            return false;
+        }
+        cjsonChild = cjsonChild->next;
+    }
+    return true;
 }
 
 std::string JsonObject::Print() const

@@ -60,7 +60,8 @@ using JsonFieldPath = std::vector<std::string>;
 
 class JsonObject {
 public:
-    static JsonObject Parse(const std::string &jsonStr, int &errCode, bool caseSensitive = false);
+    static JsonObject Parse(const std::string &jsonStr, int &errCode,
+        bool caseSensitive = false, bool isFilter = false);
     bool operator==(const JsonObject& other) const; // If the two nodes exist with a different fieldName, then return 0.
     ~JsonObject();
 
@@ -104,11 +105,11 @@ public:
 
 private:
     JsonObject();
-    int Init(const std::string &str);
+    int Init(const std::string &str, bool isFilter = false);
 
     int GetDeep(cJSON *cjson);
     int CheckNumber(cJSON *cjson, int &errCode);
-
+    bool CheckJsonFormat(cJSON *cjson, int &errCode);
     cJSON *cjson_ = nullptr;
     int jsonDeep_ = 0;
     bool isOwner_ = false;

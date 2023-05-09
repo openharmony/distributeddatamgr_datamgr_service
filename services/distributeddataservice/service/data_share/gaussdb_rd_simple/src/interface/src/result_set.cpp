@@ -59,7 +59,7 @@ int ResultSet::GetNext()
     if (!ifFiled_ && index_ == 0) {
         if (isOnlyId_) {
             int errCode = 0;
-            JsonObject filterObj = JsonObject::Parse(filter_, errCode, true);
+            JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
             if (errCode != E_OK) {
                 GLOGE("filter Parsed failed");
                 return errCode;
@@ -88,7 +88,7 @@ int ResultSet::GetNext()
             int errCode = 0;
             auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
             std::vector<std::pair<std::string, std::string>> values;
-            JsonObject filterObj = JsonObject::Parse(filter_, errCode, true);
+            JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
             if (errCode != E_OK) {
                 GLOGE("filter Parsed failed");
                 return errCode;
@@ -107,7 +107,7 @@ int ResultSet::GetNext()
         int errCode = 0;
         auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
         std::vector<std::pair<std::string, std::string>> values;
-        JsonObject filterObj = JsonObject::Parse(filter_, errCode, true);
+        JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
         if (errCode != E_OK) {
             GLOGE("filter Parsed failed");
             return errCode;
