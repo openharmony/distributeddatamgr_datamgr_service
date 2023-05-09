@@ -56,10 +56,10 @@ ohos_unittest("CloudDataTest") {
   ]
 
   deps = [
+    "${kv_store_distributeddb_path}:distributeddb",
     "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",
-    "${kv_store_distributeddb_path}:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
 }
