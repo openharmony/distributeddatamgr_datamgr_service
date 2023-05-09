@@ -29,6 +29,8 @@ public:
 
     virtual CloudInfo GetServerInfo(int32_t userId);
     virtual SchemaMeta GetAppSchema(int32_t userId, const std::string &bundleName);
+    virtual int32_t Subscribe(int32_t userId, const std::map<std::string, std::vector<Database>> &dbs);
+    virtual int32_t Unsubscribe(int32_t userId, const std::map<std::string, std::vector<Database>> &dbs);
     virtual std::shared_ptr<AssetLoader> ConnectAssetLoader(uint32_t tokenId, const Database &dbMeta);
     virtual std::shared_ptr<CloudDB> ConnectCloudDB(uint32_t tokenId, const Database &dbMeta);
 

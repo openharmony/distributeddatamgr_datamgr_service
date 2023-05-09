@@ -28,6 +28,8 @@ public:
     using Watcher = GeneralWatcher;
     using Async = std::function<void(std::map<std::string, std::map<std::string, int32_t>>)>;
     using Devices = std::vector<std::string>;
+    virtual ~CloudDB() = default;
+
     virtual int32_t Execute(const std::string &table, const std::string &sql, const VBucket &extend);
 
     virtual int32_t BatchInsert(const std::string &table, VBuckets &&values, VBuckets &extends);
@@ -49,6 +51,8 @@ public:
     virtual int32_t Heartbeat();
 
     virtual int32_t Unlock();
+
+    virtual int64_t AliveTime();
 
     virtual int32_t Close();
 };

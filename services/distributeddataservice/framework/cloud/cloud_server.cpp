@@ -40,6 +40,16 @@ SchemaMeta CloudServer::GetAppSchema(int32_t userId, const std::string &bundleNa
     return SchemaMeta();
 }
 
+int32_t CloudServer::Subscribe(int32_t userId, const std::map<std::string, std::vector<Database>> &dbs)
+{
+    return 0;
+}
+
+int32_t CloudServer::Unsubscribe(int32_t userId, const std::map<std::string, std::vector<Database>> &dbs)
+{
+    return 0;
+}
+
 std::shared_ptr<AssetLoader> CloudServer::ConnectAssetLoader(uint32_t tokenId, const CloudServer::Database &dbMeta)
 {
     return nullptr;
