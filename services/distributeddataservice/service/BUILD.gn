@@ -12,6 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//build/ohos_var.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 group("build_module") {
   deps = [ ":distributeddatasvc" ]
@@ -24,7 +25,10 @@ config("module_public_config") {
     "cloud",
     "config/include",
     "crypto/include",
-    "datashare",
+    "data_share",
+    "data_share/strategies",
+    "data_share/common",
+    "data_share/data",
     "directory/include",
     "kvdb",
     "matrix/include",
@@ -35,17 +39,15 @@ config("module_public_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-    "//foundation/distributeddatamgr/data_share/frameworks/native/common/include",
-    "//foundation/distributeddatamgr/data_share/interfaces/inner_api/common/include",
-    "//foundation/distributeddatamgr/data_share/interfaces/inner_api/consumer/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
-    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
-    "//foundation/bundlemanager/bundle_framework/interfaces/inner_api/appexecfwk_base/include",
+    "${datashare_path}/frameworks/native/common/include",
+    "${datashare_path}/interfaces/inner_api/common/include",
+    "${datashare_path}/interfaces/inner_api/consumer/include",
+    "${kv_store_common_path}",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
+    "${kv_store_distributeddb_path}/include/",
+    "${kv_store_distributeddb_path}/interfaces/include/",
+    "${kv_store_distributeddb_path}/interfaces/include/relational",
   ]
 }
 
@@ -54,6 +56,7 @@ ohos_shared_library("distributeddatasvc") {
     "../../../../data_object/frameworks/innerkitsimpl/include",
     "../../../../relational_store/interfaces/inner_api/cloud_data/include",
     "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb/include",
+    "${kv_store_distributeddb_path}",
   ]
   sources = [
     "backup/src/backup_manager.cpp",
@@ -70,14 +73,35 @@ ohos_shared_library("distributeddatasvc") {
     "config/src/model/network_config.cpp",
     "config/src/model/protocol_config.cpp",
     "crypto/src/crypto_manager.cpp",
-    "data_share/bundle_mgr_proxy.cpp",
-    "data_share/data_share_profile_info.cpp",
+    "data_share/common/bundle_mgr_proxy.cpp",
+    "data_share/common/db_delegate.cpp",
+    "data_share/common/div_strategy.cpp",
+    "data_share/common/kv_delegate.cpp",
+    "data_share/common/rdb_delegate.cpp",
+    "data_share/common/seq_strategy.cpp",
+    "data_share/common/uri_utils.cpp",
+    "data_share/data_share_obs_proxy.cpp",
     "data_share/data_share_service_impl.cpp",
     "data_share/data_share_service_stub.cpp",
     "data_share/data_share_types_util.cpp",
-    "data_share/permission_proxy.cpp",
-    "data_share/rdb_adaptor.cpp",
-    "data_share/uri_utils.cpp",
+    "data_share/strategies/data_proxy/load_config_from_data_proxy_node_strategy.cpp",
+    "data_share/strategies/data_share/load_config_from_data_share_bundle_info_strategy.cpp",
+    "data_share/strategies/delete_strategy.cpp",
+    "data_share/strategies/general/check_is_data_proxy_strategy.cpp",
+    "data_share/strategies/general/check_is_single_app_strategy.cpp",
+    "data_share/strategies/general/connect_extension_strategy.cpp",
+    "data_share/strategies/general/empty_strategy.cpp",
+    "data_share/strategies/general/load_config_common_strategy.cpp",
+    "data_share/strategies/general/load_config_data_info_strategy.cpp",
+    "data_share/strategies/general/load_config_from_bundle_info_strategy.cpp",
+    "data_share/strategies/general/permission_strategy.cpp",
+    "data_share/strategies/general/process_single_app_user_cross_strategy.cpp",
+    "data_share/strategies/get_data_strategy.cpp",
+    "data_share/strategies/insert_strategy.cpp",
+    "data_share/strategies/publish_strategy.cpp",
+    "data_share/strategies/query_strategy.cpp",
+    "data_share/strategies/subscribe_strategy.cpp",
+    "data_share/strategies/update_strategy.cpp",
     "directory/src/directory_manager.cpp",
     "kvdb/auth_delegate.cpp",
     "kvdb/executor_factory.cpp",
@@ -114,15 +138,16 @@ ohos_shared_library("distributeddatasvc") {
   configs = [ ":module_public_config" ]
 
   deps = [
+    "${kv_store_distributeddb_path}:distributeddb",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
   ]
 
   external_deps = [
+    "ability_base:want",
     "ability_base:zuri",
+    "ability_runtime:ability_manager",
     "ability_runtime:dataobs_manager",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_base",
@@ -135,7 +160,9 @@ ohos_shared_library("distributeddatasvc") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "relational_store:cloud_data",
+    "kv_store:distributeddata_inner",
     "relational_store:native_rdb",
+    "relational_store:rdb_bms_adapter",
     "relational_store:rdb_data_share_adapter",
     "resource_management:global_resmgr",
     "samgr:samgr_proxy",

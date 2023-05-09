@@ -19,8 +19,12 @@ namespace OHOS {
 namespace DistributedDataDfx {
 ReportStatus TrafficStatisticImpl::Report(const TrafficStat &stat)
 {
-    HiViewAdapter::ReportTrafficStatistic(DfxCodeConstant::TRAFFIC_STATISTIC, stat);
+    HiViewAdapter::ReportTrafficStatistic(DfxCodeConstant::TRAFFIC_STATISTIC, stat, executors_);
     return ReportStatus::SUCCESS;
+}
+void TrafficStatisticImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 } // namespace DistributedDataDfx
 } // namespace OHOS

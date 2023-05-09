@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 ohos_static_library("distributeddata_communicator_static") {
   sources = [
     "src/app_pipe_handler.cpp",
@@ -33,18 +34,17 @@ ohos_static_library("distributeddata_communicator_static") {
   ]
 
   include_dirs = [
-    "//commonlibrary/c_utils/base/include",
     "../include/communicator",
     "../include/dfx",
     "../include/log",
     "../include/autils",
     "../include/utils",
-    "//foundation/communication/dsoftbus/core/common/include",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/relational",
+    "${dsoftbus_core_path}",
+    "${kv_store_common_path}",
+    "${kv_store_distributeddb_path}/interfaces/include",
+    "${kv_store_distributeddb_path}/include",
+    "${kv_store_distributeddb_path}/interfaces/include/relational",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]

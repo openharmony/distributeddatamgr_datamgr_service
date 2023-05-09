@@ -20,8 +20,9 @@
 #include <string>
 #include <variant>
 #include <vector>
-#include "traits.h"
+
 #include "error/general_error.h"
+#include "traits.h"
 namespace OHOS::DistributedData {
 struct Asset {
     uint32_t version;
@@ -35,7 +36,17 @@ struct Asset {
 
 struct GenQuery {
     virtual ~GenQuery() = default;
-    virtual int32_t GetInterfaceId() = 0;
+    virtual bool IsEqual(uint64_t tid) = 0;
+
+    template<typename T>
+    int32_t QueryInterface(T *&query)
+    {
+        if (!IsEqual(T::TYPE_ID)) {
+            return E_INVALID_ARGS;
+        }
+        query = static_cast<T *>(this);
+        return E_OK;
+    };
 };
 
 using Assets = std::vector<Asset>;
@@ -59,7 +70,7 @@ bool GetItem(T &&input, O &output)
 template<typename T, typename O, typename First, typename... Rest>
 bool GetItem(T &&input, O &output)
 {
-    auto val =  Traits::get_if<First>(&input);
+    auto val = Traits::get_if<First>(&input);
     if (val != nullptr) {
         output = std::move(*val);
         return true;

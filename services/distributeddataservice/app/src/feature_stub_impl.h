@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_APP_FEATURE_STUB_IMPL_H
 #define OHOS_DISTRIBUTED_DATA_APP_FEATURE_STUB_IMPL_H
+#include "executor_pool.h"
 #include "feature/feature_system.h"
 #include "iremote_stub.h"
 namespace OHOS::DistributedData {
@@ -29,7 +30,7 @@ public:
     ~FeatureStubImpl();
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
         MessageOption &option) override;
-    int32_t OnInitialize();
+    int32_t OnInitialize(std::shared_ptr<ExecutorPool> executor);
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
     int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);

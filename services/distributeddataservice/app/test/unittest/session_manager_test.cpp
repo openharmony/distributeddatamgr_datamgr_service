@@ -37,12 +37,14 @@ class SessionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
     {
+        auto executors = std::make_shared<ExecutorPool>(12, 5);
         Bootstrap::GetInstance().LoadComponents();
         Bootstrap::GetInstance().LoadDirectory();
         Bootstrap::GetInstance().LoadCheckers();
+        KvStoreMetaManager::GetInstance().BindExecutor(executors);
         KvStoreMetaManager::GetInstance().InitMetaParameter();
         KvStoreMetaManager::GetInstance().InitMetaListener();
-        DeviceManagerAdapter::GetInstance().Init();
+        DeviceManagerAdapter::GetInstance().Init(executors);
 
         // init peer device
         UserMetaData userMetaData;

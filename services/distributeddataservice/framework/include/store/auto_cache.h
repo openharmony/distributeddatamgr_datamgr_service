@@ -17,7 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_STORE_AUTO_CACHE_H
 #include <memory>
 #include <shared_mutex>
-
+#include <set>
 #include "concurrent_map.h"
 #include "error/general_error.h"
 #include "executor_pool.h"

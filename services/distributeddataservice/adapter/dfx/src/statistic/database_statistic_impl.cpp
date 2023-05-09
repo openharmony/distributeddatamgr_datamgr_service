@@ -19,8 +19,12 @@ namespace OHOS {
 namespace DistributedDataDfx {
 ReportStatus DatabaseStatisticImpl::Report(const DbStat &stat)
 {
-    HiViewAdapter::ReportDatabaseStatistic(DfxCodeConstant::DATABASE_STATISTIC, stat);
+    HiViewAdapter::ReportDatabaseStatistic(DfxCodeConstant::DATABASE_STATISTIC, stat, executors_);
     return ReportStatus::SUCCESS;
+}
+void DatabaseStatisticImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 } // namespace DistributedDataDfx
 } // namespace OHOS

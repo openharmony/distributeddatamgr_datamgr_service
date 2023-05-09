@@ -15,12 +15,14 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
-#include <memory>
 #include <functional>
+#include <memory>
+
 #include "store/cursor.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
 namespace OHOS::DistributedData {
+class CloudDB;
 class GeneralStore {
 public:
     using Watcher = GeneralWatcher;
@@ -28,6 +30,8 @@ public:
     using Devices = std::vector<std::string>;
 
     virtual ~GeneralStore() = default;
+
+    virtual int32_t Bind(std::shared_ptr<CloudDB> cloudDb) = 0;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 
