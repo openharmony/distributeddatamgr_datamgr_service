@@ -172,13 +172,6 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     }
     bool isOnlyId = true;
     auto coll = Collection(collection, executor_);
-    bool isCollectionExist = coll.IsCollectionExists(errCode);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    if (!isCollectionExist) {
-        return -E_INVALID_ARGS;
-    }
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
         return errCode;
@@ -189,6 +182,13 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
         std::string docId = idValue.GetStringValue();
         std::lock_guard<std::mutex> lock(dbMutex_);
+        bool isCollectionExist = coll.IsCollectionExists(errCode);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        if (!isCollectionExist) {
+            return -E_INVALID_ARGS;
+        }
         errCode = coll.UpdateDocument(docId, update, isReplace);
         if (errCode == E_OK) {
             errCode = 1; // upsert one record.
@@ -200,6 +200,13 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     ResultSet resultSet;
     InitResultSet(this, collection, filter, resultSet);
     std::lock_guard<std::mutex> lock(dbMutex_);
+    bool isCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!isCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     errCode = resultSet.GetNext();
     if (errCode == -E_NO_DATA) {
         return 0; // The amount of text updated
@@ -264,19 +271,19 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     bool isOnlyId = true;
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
     auto coll = Collection(collection, executor_);
-    bool isCollectionExist = coll.IsCollectionExists(errCode);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    if (!isCollectionExist) {
-        return -E_INVALID_ARGS;
-    }
     errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
     if (errCode != E_OK) {
         return errCode;
     }
     if (isOnlyId) {
         std::lock_guard<std::mutex> lock(dbMutex_);
+        bool isCollectionExist = coll.IsCollectionExists(errCode);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        if (!isCollectionExist) {
+            return -E_INVALID_ARGS;
+        }
         auto filterObjChild = filterObj.GetChild();
         ValueObject idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
         std::string docId = idValue.GetStringValue();
@@ -296,6 +303,13 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         return -E_INVALID_ARGS;
     }
     std::lock_guard<std::mutex> lock(dbMutex_);
+    bool isCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!isCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     ResultSet resultSet;
     InitResultSet(this, collection, filter, resultSet);
     errCode = resultSet.GetNext();
@@ -336,13 +350,6 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
-    bool isCollectionExist = coll.IsCollectionExists(errCode);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    if (!isCollectionExist) {
-        return -E_INVALID_ARGS;
-    }
     if (document.length() >= JSON_LENS_MAX) {
         GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
@@ -362,6 +369,13 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
     Key key(id.begin(), id.end());
     Value value(document.begin(), document.end());
     std::lock_guard<std::mutex> lock(dbMutex_);
+    bool isCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!isCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     Value ValueDocument;
     errCode = coll.GetDocument(key, ValueDocument);
     switch (errCode) {
@@ -389,13 +403,6 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto coll = Collection(collection, executor_);
-    bool isCollectionExist = coll.IsCollectionExists(errCode);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    if (!isCollectionExist) {
-        return -E_INVALID_ARGS;
-    }
     if (filter.empty()) {
         GLOGE("Filter is empty");
         return -E_INVALID_ARGS;
@@ -425,11 +432,25 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         std::string id = idValue.GetStringValue();
         Key key(id.begin(), id.end());
         std::lock_guard<std::mutex> lock(dbMutex_);
+        bool isCollectionExist = coll.IsCollectionExists(errCode);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        if (!isCollectionExist) {
+            return -E_INVALID_ARGS;
+        }
         return coll.DeleteDocument(key);
     }
     ResultSet resultSet;
     InitResultSet(this, collection, filter, resultSet);
     std::lock_guard<std::mutex> lock(dbMutex_);
+    bool isCollectionExist = coll.IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!isCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     errCode = resultSet.GetNext();
     if (errCode != E_OK) {
         return errCode;
@@ -506,6 +527,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         ifShowId = true;
     }
     auto coll = Collection(collection, executor_);
+    std::lock_guard<std::mutex> lock(dbMutex_);
     bool isCollectionExist = coll.IsCollectionExists(errCode);
     if (errCode != E_OK) {
         return errCode;
@@ -513,7 +535,6 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     if (!isCollectionExist) {
         return -E_INVALID_ARGS;
     }
-    std::lock_guard<std::mutex> lock(dbMutex_);
     if (!coll.FindDocument()) {
         GLOGE("no corresponding table name");
         return -E_INVALID_ARGS;
