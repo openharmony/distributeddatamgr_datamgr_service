@@ -23,7 +23,7 @@
 #include "store/general_store.h"
 #include "metadata/store_meta_data.h"
 namespace OHOS::DistributedRdb {
-class API_EXPORT RdbGeneralStore : public DistributedData::GeneralStore {
+class RdbGeneralStore : public DistributedData::GeneralStore {
 public:
     using Cursor = DistributedData::Cursor;
     using GenQuery = DistributedData::GenQuery;
@@ -32,6 +32,7 @@ public:
     using Value = DistributedData::Value;
     using Values = DistributedData::Values;
     using StoreMetaData = DistributedData::StoreMetaData;
+    using SchemaMeta = DistributedData::SchemaMeta;
     using CloudDB = DistributedData::CloudDB;
     using RdbStore = OHOS::NativeRdb::RdbStore;
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
@@ -39,6 +40,7 @@ public:
 
     RdbGeneralStore(const StoreMetaData &metaData);
     int32_t Bind(std::shared_ptr<CloudDB> cloudDb) override;
+    int32_t SetSchema(const SchemaMeta &schemaMeta) override;
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
     int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;

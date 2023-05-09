@@ -64,40 +64,30 @@ CloudServiceImpl::CloudServiceImpl()
 
     EventCenter::GetInstance().Subscribe(CloudEvent::GET_SCHEMA, [this](const Event &event) {
         auto &rdbEvent = static_cast<const CloudEvent &>(event);
-        CloudInfo cloudInfo;
-        cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(rdbEvent.GetStoreInfo().tokenId);
-        if (GetServerInfo(cloudInfo) != SUCCESS) {
-            ZLOGE("failed, user:%{public}d", cloudInfo.user);
-            return;
-        }
+        auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(rdbEvent.GetStoreInfo().tokenId);
+        auto schemaMeta = GetSchemaMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().instanceId);
+        auto storeMeta = GetStoreMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().storeName,
+            rdbEvent.GetStoreInfo().instanceId);
+
+        AutoCache::Watchers watchers;
+        auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers, false);
+        store->SetSchema(schemaMeta);
         auto instance = CloudServer::GetInstance();
         if (instance == nullptr) {
+            ZLOGE("instance is nullptr");
             return;
         }
-        SchemaMeta schemaMeta;
-        std::string schemaKey = cloudInfo.GetSchemaKey(rdbEvent.GetStoreInfo().bundleName);
-        if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true) ||
-            schemaMeta.version != rdbEvent.GetStoreInfo().schemaVersion) {
-            schemaMeta = instance->GetAppSchema(cloudInfo.user, rdbEvent.GetStoreInfo().bundleName);
-            MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
-        }
-        StoreMetaData storeMetaData;
-        storeMetaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        storeMetaData.user = std::to_string(cloudInfo.user);
-        storeMetaData.bundleName = rdbEvent.GetStoreInfo().bundleName;
-        storeMetaData.storeId = rdbEvent.GetStoreInfo().storeName;
-        storeMetaData.instanceId = rdbEvent.GetStoreInfo().instanceId;
-        if (!MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData)) {
-            return;
-        }
-        AutoCache::GetInstance().CreateTable(storeMetaData, schemaMeta);
         for (auto &database : schemaMeta.databases) {
             if (database.name != rdbEvent.GetStoreInfo().storeName /* || don't need sync*/) {
                 continue;
             }
             auto cloudDB = instance->ConnectCloudDB(rdbEvent.GetStoreInfo().tokenId, database);
+            if (cloudDB != nullptr) {
+                store->Bind(cloudDB);
+            }
             //do sync
         }
+        return;
     });
 }
 
@@ -248,5 +238,39 @@ int32_t CloudServiceImpl::GetAppSchema(int32_t user, const std::string &bundleNa
     }
     schemaMeta = instance->GetAppSchema(user, bundleName);
     return SUCCESS;
+}
+
+SchemaMeta CloudServiceImpl::GetSchemaMata(int32_t userId, const std::string &bundleName, int32_t instanceId)
+{
+    SchemaMeta schemaMeta;
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("instance is nullptr");
+        return schemaMeta;
+    }
+    auto cloudInfo = instance->GetServerInfo(userId);
+    if (!cloudInfo.IsValid()) {
+        ZLOGE("cloudInfo is invalid");
+        return schemaMeta;
+    }
+    std::string schemaKey = cloudInfo.GetSchemaKey(bundleName, instanceId);
+    if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
+        schemaMeta = instance->GetAppSchema(cloudInfo.user, bundleName);
+        MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
+    }
+    return schemaMeta;
+}
+
+StoreMetaData CloudServiceImpl::GetStoreMata(int32_t userId, const std::string &bundleName,
+    const std::string &storeName, int32_t instanceId)
+{
+    StoreMetaData storeMetaData;
+    storeMetaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    storeMetaData.user = std::to_string(userId);
+    storeMetaData.bundleName = bundleName;
+    storeMetaData.storeId = storeName;
+    storeMetaData.instanceId = instanceId;
+    MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData);
+    return storeMetaData;
 }
 } // namespace OHOS::CloudData

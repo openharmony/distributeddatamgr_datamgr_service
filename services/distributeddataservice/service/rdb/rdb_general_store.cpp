@@ -94,4 +94,10 @@ int32_t RdbGeneralStore::Bind(std::shared_ptr<CloudDB> cloudDb)
     cloudDb_ = std::move(cloudDb);
     return 0;
 }
+
+int32_t RdbGeneralStore::SetSchema(const SchemaMeta &schemaMeta)
+{
+    //delegate_->SetSchema(schemaMeta);
+    return GeneralError::E_OK;
+}
 } // namespace OHOS::DistributedRdb

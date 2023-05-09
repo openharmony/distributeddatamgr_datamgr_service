@@ -14,19 +14,19 @@
 */
 #define LOG_TAG "CloudDataTest"
 #include "account/account_delegate.h"
-#include "metadata/meta_data_manager.h"
-#include "metadata/store_meta_data.h"
-#include "feature/feature_system.h"
-#include "cloud/cloud_server.h"
-#include "gtest/gtest.h"
 #include "cloud/cloud_event.h"
-#include "eventcenter/event_center.h"
+#include "cloud/cloud_server.h"
 #include "communicator/device_manager_adapter.h"
-#include "metadata/store_meta_data_local.h"
+#include "device_matrix.h"
+#include "eventcenter/event_center.h"
+#include "feature/feature_system.h"
+#include "gtest/gtest.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
-#include "device_matrix.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
@@ -158,6 +158,13 @@ void CloudDataTest::SetUp()
 
 void CloudDataTest::TearDown() {}
 
+/**
+* @tc.name: GetSchema
+* @tc.desc: GetSchema from cloud.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: ht
+*/
 HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
 {
     ZLOGI("CloudDataTest start");

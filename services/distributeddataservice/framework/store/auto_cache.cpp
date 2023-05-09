@@ -52,7 +52,7 @@ AutoCache::~AutoCache()
     }
 }
 
-AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
+AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers, bool setWatchers)
 {
     Store store;
     if (meta.storeType >= MAX_CREATOR_NUM || !creators_[meta.storeType]) {
@@ -60,10 +60,12 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
     }
 
     stores_.Compute(meta.tokenId,
-        [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
+        [this, &meta, &watchers, &store, setWatchers](auto &, std::map<std::string, Delegate> &stores) -> bool {
             auto it = stores.find(meta.storeId);
             if (it != stores.end()) {
-                it->second.SetObservers(watchers);
+                if (setWatchers) {
+                    it->second.SetObservers(watchers);
+                }
                 store = it->second;
                 return !stores.empty();
             }
@@ -77,24 +79,6 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
             return !stores.empty();
         });
     return store;
-}
-
-int32_t AutoCache::CreateTable(const StoreMetaData &storeMetaData, const SchemaMeta &schemaMeta)
-{
-    stores_.Compute(storeMetaData.tokenId,
-        [this, &storeMetaData, &schemaMeta](auto &, std::map<std::string, Delegate> &stores) -> bool {
-            auto it = stores.find(storeMetaData.storeId);
-            if (it != stores.end()) {
-                //it->second->CreateTable(schemaMeta)
-                return true;
-            }
-            auto *dbStore = creators_[storeMetaData.storeType](storeMetaData);
-            if (dbStore != nullptr) {
-                //dbStore->CreateTable(schemaMeta)
-            }
-            return false;
-        });
-    return 0;
 }
 
 void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)

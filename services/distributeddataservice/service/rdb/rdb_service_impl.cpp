@@ -500,7 +500,7 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     CloudEvent::StoreInfo storeInfo{ IPCSkeleton::GetCallingTokenID(), param.bundleName_, param.storeName_,
-        storeMeta.instanceId, param.schemaVersion };
+        storeMeta.instanceId };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "relational_store");
     EventCenter::GetInstance().PostEvent(move(event));
     return RDB_OK;

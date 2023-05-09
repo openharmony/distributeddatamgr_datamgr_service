@@ -34,7 +34,6 @@ public:
         std::string bundleName;
         std::string storeName;
         int32_t instanceId = 0;
-        int32_t schemaVersion = -1;
     };
 
     CloudEvent(int32_t evtId, StoreInfo storeInfo, const std::string &featureName = "relational_store");

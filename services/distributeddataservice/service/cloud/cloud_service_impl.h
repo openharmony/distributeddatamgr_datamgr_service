@@ -24,6 +24,7 @@
 namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
 public:
+    using StoreMetaData = DistributedData::StoreMetaData;
     CloudServiceImpl();
     ~CloudServiceImpl() = default;
     int32_t EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches) override;
@@ -47,6 +48,9 @@ private:
 
     void UpdateCloudInfo(CloudInfo &cloudInfo);
     void AddSchema(CloudInfo &cloudInfo);
+    SchemaMeta GetSchemaMata(int32_t userId, const std::string &bundleName, int32_t instanceId);
+    StoreMetaData GetStoreMata(int32_t userId, const std::string &bundleName, const std::string &storeName,
+        int32_t instanceId);
     int32_t GetCloudInfo(CloudInfo &cloudInfo);
     int32_t GetServerInfo(CloudInfo &cloudInfo);
     int32_t GetAppSchema(int32_t user, const std::string &bundleName, SchemaMeta &schemaMeta);
