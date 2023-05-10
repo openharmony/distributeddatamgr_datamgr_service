@@ -13,6 +13,9 @@
 * limitations under the License.
 */
 #define LOG_TAG "CloudDataTest"
+#include "gtest/gtest.h"
+#include "log_print.h"
+#include "ipc_skeleton.h"
 #include "account/account_delegate.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_server.h"
@@ -20,9 +23,6 @@
 #include "device_matrix.h"
 #include "eventcenter/event_center.h"
 #include "feature/feature_system.h"
-#include "gtest/gtest.h"
-#include "ipc_skeleton.h"
-#include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
@@ -174,7 +174,7 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
     StoreMetaData storeMetaData;
     ASSERT_FALSE(
         MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), storeMetaData, true));
-    CloudEvent::StoreInfo storeInfo{ 0, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0, 1 };
+    CloudEvent::StoreInfo storeInfo { 0, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0, 1 };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "test_service");
     EventCenter::GetInstance().PostEvent(move(event));
     ASSERT_TRUE(

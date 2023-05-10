@@ -368,7 +368,7 @@ std::string RdbServiceImpl::GenIdentifier(const RdbSyncerParam &param)
     pid_t uid = IPCSkeleton::GetCallingUid();
     uint32_t token = IPCSkeleton::GetCallingTokenID();
     auto storeId = RdbSyncer::RemoveSuffix(param.storeName_);
-    CheckerManager::StoreInfo storeInfo{ uid, token, param.bundleName_, storeId };
+    CheckerManager::StoreInfo storeInfo { uid, token, param.bundleName_, storeId };
     auto userId = AccountDelegate::GetInstance()->GetUserByToken(token);
     std::string appId = CheckerManager::GetInstance().GetAppId(storeInfo);
     std::string identifier = RelationalStoreManager::GetRelationalStoreIdentifier(
@@ -495,7 +495,7 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
     if (!saved) {
         return RDB_ERROR;
     }
-    CloudEvent::StoreInfo storeInfo{ IPCSkeleton::GetCallingTokenID(), param.bundleName_, param.storeName_,
+    CloudEvent::StoreInfo storeInfo { IPCSkeleton::GetCallingTokenID(), param.bundleName_, param.storeName_,
         storeMeta.instanceId };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "relational_store");
     EventCenter::GetInstance().PostEvent(move(event));

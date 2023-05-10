@@ -78,14 +78,14 @@ CloudServiceImpl::CloudServiceImpl()
             return;
         }
         for (auto &database : schemaMeta.databases) {
-            if (database.name != rdbEvent.GetStoreInfo().storeName /* || don't need sync*/) {
+            if (database.name != rdbEvent.GetStoreInfo().storeName /* || don't need sync */) {
                 continue;
             }
             auto cloudDB = instance->ConnectCloudDB(rdbEvent.GetStoreInfo().tokenId, database);
             if (cloudDB != nullptr) {
                 store->Bind(cloudDB);
             }
-            //do sync
+            // do sync
         }
         return;
     });
@@ -166,6 +166,7 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
         }
         SchemaMeta schemaMeta;
         if (MetaDataManager::GetInstance().LoadMeta(keys[action.first], schemaMeta, true)) {
+            // action
         }
     }
     return SUCCESS;
