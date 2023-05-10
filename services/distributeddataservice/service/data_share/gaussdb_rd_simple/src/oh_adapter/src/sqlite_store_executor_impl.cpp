@@ -163,7 +163,7 @@ int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonO
     Value valueResult;
     bool isFindMatch = false;
     int innerErrorCode = -E_NOT_FOUND;
-    std::string sql = "SELECT key, value FROM '" + collName + "';";
+    std::string sql = "SELECT key, value FROM '" + collName + "'ORDER BY KEY;";
     int errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
         [](sqlite3_stmt *stmt) {

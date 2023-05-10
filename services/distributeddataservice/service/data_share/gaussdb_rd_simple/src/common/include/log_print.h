@@ -19,7 +19,7 @@
 #include <string>
 
 namespace DocumentDB {
-constexpr const char *LOG_TAG_DOC = "DocumentDB";
+constexpr const char *LOG_TAG_DOC = "GAUSSDB_RD";
 
 class Logger {
 public:
@@ -31,14 +31,14 @@ public:
         LEVEL_FATAL
     };
 
-    static void Log(Level level, const std::string &tag, const char *func, int line, const char *format, ...);
+    static void Log(Level level, const std::string &tag, const char *format, ...);
 };
 } // namespace DocumentDB
 
 #define NO_LOG(...) // No log in normal and release. Used for convenience when deep debugging
-#define GLOGD(...) Logger::Log(Logger::Level::LEVEL_DEBUG, LOG_TAG_DOC, __FUNCTION__, __LINE__, __VA_ARGS__)
-#define GLOGI(...) Logger::Log(Logger::Level::LEVEL_INFO, LOG_TAG_DOC, __FUNCTION__, __LINE__, __VA_ARGS__)
-#define GLOGW(...) Logger::Log(Logger::Level::LEVEL_WARN, LOG_TAG_DOC, __FUNCTION__, __LINE__, __VA_ARGS__)
-#define GLOGE(...) Logger::Log(Logger::Level::LEVEL_ERROR, LOG_TAG_DOC, __FUNCTION__, __LINE__, __VA_ARGS__)
-#define GLOGF(...) Logger::Log(Logger::Level::LEVEL_FATAL, LOG_TAG_DOC, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define GLOGD(...) Logger::Log(Logger::Level::LEVEL_DEBUG, LOG_TAG_DOC, __VA_ARGS__)
+#define GLOGI(...) Logger::Log(Logger::Level::LEVEL_INFO, LOG_TAG_DOC, __VA_ARGS__)
+#define GLOGW(...) Logger::Log(Logger::Level::LEVEL_WARN, LOG_TAG_DOC, __VA_ARGS__)
+#define GLOGE(...) Logger::Log(Logger::Level::LEVEL_ERROR, LOG_TAG_DOC, __VA_ARGS__)
+#define GLOGF(...) Logger::Log(Logger::Level::LEVEL_FATAL, LOG_TAG_DOC, __VA_ARGS__)
 #endif // LOG_PRINT_H

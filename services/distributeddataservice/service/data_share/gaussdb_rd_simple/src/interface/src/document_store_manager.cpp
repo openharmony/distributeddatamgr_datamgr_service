@@ -36,7 +36,7 @@ bool CheckDBCloseFlag(unsigned int flag)
     return (flag == GRD_DB_CLOSE) || (flag == GRD_DB_CLOSE_IGNORE_ERROR);
 }
 
-bool CheckDBCreate(unsigned int flags, const std::string &path)
+bool CheckDBCreate(uint32_t flags, const std::string &path)
 {
     if ((flags & GRD_DB_OPEN_CREATE) == 0 && !OSAPI::CheckPathExistence(path)) {
         return false;
@@ -48,7 +48,7 @@ bool CheckDBCreate(unsigned int flags, const std::string &path)
 std::mutex DocumentStoreManager::openCloseMutex_;
 std::map<std::string, int> DocumentStoreManager::dbConnCount_;
 
-int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::string &config, unsigned int flags,
+int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::string &config, uint32_t flags,
     DocumentStore *&store)
 {
     std::string canonicalPath;
@@ -107,7 +107,7 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
     return errCode;
 }
 
-int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, unsigned int flags)
+int DocumentStoreManager::CloseDocumentStore(DocumentStore *store, uint32_t flags)
 {
     if (!CheckDBCloseFlag(flags)) {
         GLOGE("Check document db close flags failed.");

@@ -17,7 +17,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <memory>
 
 #include "doc_errno.h"
 #include "json_object.h"

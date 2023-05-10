@@ -1481,7 +1481,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest056, TestSize.Level1)
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     char *value = NULL;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
-    CompareValue(value, g_document6);
+    CompareValue(value, g_document5);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     /**
      * @tc.steps: step2. Invoke GRD_Next to get the next matching value. Release resultSet.
@@ -1551,4 +1551,39 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest060, TestSize.Level1)
     const char *projection = R"({"abc123_.":1})";
     Query query = { filter, projection };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_INVALID_ARGS);
+}
+
+HWTEST_F(DocumentFindApiTest, DocumentFindApiTest061, TestSize.Level1)
+{
+    const char *document064 =  "{\"_id\" : \"64\", \"a\":1, \"doc64\" : 2}";
+    const char *document063 =  "{\"_id\" : \"63\", \"a\":1, \"doc63\" : 2}";
+    const char *document062 =  "{\"_id\" : \"62\", \"a\":1, \"doc62\" : 2}";
+    const char *document061 =  "{\"_id\" : \"61\", \"a\":1, \"doc61\" : 2}";
+    EXPECT_EQ(GRD_InsertDoc(g_db, COLLECTION_NAME, document064, 0), GRD_OK);
+    EXPECT_EQ(GRD_InsertDoc(g_db, COLLECTION_NAME, document063, 0), GRD_OK);
+    EXPECT_EQ(GRD_InsertDoc(g_db, COLLECTION_NAME, document062, 0), GRD_OK);
+    EXPECT_EQ(GRD_InsertDoc(g_db, COLLECTION_NAME, document061, 0), GRD_OK);
+    const char *filter = "{\"a\":1}";
+    GRD_ResultSet *resultSet = nullptr;
+    const char *projection = R"({})";
+    Query query = { filter, projection };
+    EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    char *value = NULL;
+    EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+    CompareValue(value, document061);
+
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+    CompareValue(value, document062);
+
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+    CompareValue(value, document063);
+
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+    CompareValue(value, document064);
+    EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
+    EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }

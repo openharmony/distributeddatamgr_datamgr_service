@@ -71,6 +71,7 @@ int TransferDocErr(int err)
             outErr = GRD_RESOURCE_BUSY;
             break;
         case -E_FAILED_MEMORY_ALLOCATE:
+        case -E_OUT_OF_MEMORY:
             outErr = GRD_FAILED_MEMORY_ALLOCATE;
             break;
         default:

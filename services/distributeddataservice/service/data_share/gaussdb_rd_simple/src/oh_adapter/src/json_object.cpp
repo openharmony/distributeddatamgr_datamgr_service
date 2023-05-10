@@ -15,6 +15,7 @@
 
 #include "json_object.h"
 #include <algorithm>
+#include <cmath>
 
 #include "doc_errno.h"
 #include "log_print.h"
@@ -69,7 +70,7 @@ bool ValueObject::GetBoolValue() const
 
 int64_t ValueObject::GetIntValue() const
 {
-    return static_cast<int64_t>(doubleValue + 0.5);
+    return static_cast<int64_t>(std::llround(doubleValue));
 }
 
 double ValueObject::GetDoubleValue() const
@@ -262,7 +263,7 @@ int JsonObject::CheckSubObj(std::set<std::string> &filedSet, cJSON *subObj, int 
         return E_OK;
     }
     if (fieldName.empty()) {
-        return -E_INVALID_JSON_FORMAT; 
+        return -E_INVALID_JSON_FORMAT;
     }
     if (filedSet.find(fieldName) == filedSet.end()) {
         filedSet.insert(fieldName);
@@ -377,11 +378,14 @@ int JsonObject::AddItemToObject(const JsonObject &item)
 
 int JsonObject::AddItemToObject(const std::string &fieldName, const JsonObject &item)
 {
+    if (cjson_ == nullptr) {
+        return -E_ERROR;
+    }
+
     if (item.IsNull()) {
         GLOGD("Add null object.");
         return E_OK;
     }
-    // TODO: check item exist
     if (cjson_->type == cJSON_Array) {
         int n = 0;
         cJSON *child = cjson_->child;
@@ -405,7 +409,6 @@ int JsonObject::AddItemToObject(const std::string &fieldName, const JsonObject &
 
 int JsonObject::AddItemToObject(const std::string &fieldName)
 {
-    // TODO: check item exist
     if (cjson_->type == cJSON_Array) {
         int n = 0;
         cJSON *child = cjson_->child;
@@ -632,7 +635,6 @@ JsonObject JsonObject::FindItem(const JsonFieldPath &jsonPath, int &errCode) con
         curr.cjson_ = cjson_;
         curr.caseSensitive_ = caseSensitive_;
         curr.isOwner_ = false;
-        GLOGW("Path empty, return current object");
         return curr;
     }
 
@@ -656,7 +658,6 @@ JsonObject JsonObject::FindItemPowerMode(const JsonFieldPath &jsonPath, int &err
         curr.cjson_ = cjson_;
         curr.caseSensitive_ = caseSensitive_;
         curr.isOwner_ = false;
-        GLOGW("Path empty, return current object");
         return curr;
     }
 
