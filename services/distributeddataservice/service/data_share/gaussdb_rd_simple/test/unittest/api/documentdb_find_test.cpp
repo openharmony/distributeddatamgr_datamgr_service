@@ -1561,4 +1561,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest061, TestSize.Level1)
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
+
+HWTEST_F(DocumentFindApiTest, DocumentFindApiTest062, TestSize.Level1)
+{
+    const char *filter = R"({"abc123_.":1})";
+    GRD_ResultSet *resultSet = nullptr;
+    const char *projection = R"({"abc123_":1})";
+    Query query = { filter, projection };
+    EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_INVALID_ARGS);
+}
 } // namespace

@@ -205,7 +205,8 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
                     tempParseName += priFieldName[j];
                 }
                 if (priFieldName[j] == '.' || j == priFieldName.size() - 1) {
-                    if (j > 0 && priFieldName[j] == '.' && priFieldName[j - 1] == '.') {
+                    if ((j > 0 && priFieldName[j] == '.' && priFieldName[j - 1] == '.') ||
+                        (priFieldName[j] == '.' && j == priFieldName.size() - 1)) {
                         return -E_INVALID_ARGS;
                     }
                     allFiledsName.emplace_back(tempParseName);
@@ -625,7 +626,7 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
             isMatchFlag = isEqual;
         }
         isAlreadyMatched = isMatchFlag;
-        return false; // Both leaf node, no need iterate
+        return false;                                            // Both leaf node, no need iterate
     } else if (srcItem.GetType() != item.GetType()) {
         if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) { // srcItem Type is ARRAY, item Type is not ARRAY
             bool isEqual = IsArrayMatch(srcItem, item, isAlreadyMatched);
@@ -637,7 +638,7 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
         isMatchFlag = false;
         return false; // Different node types, overwrite directly, skip child node
     }
-    return true; // Both array or object
+    return true;      // Both array or object
 }
 
 bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &errCode)

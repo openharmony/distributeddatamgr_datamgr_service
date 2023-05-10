@@ -812,4 +812,10 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest044, TestSize.Level1)
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_OK);
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document2, 0), GRD_DATA_CONFLICT);
 }
+
+HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest045, TestSize.Level1)
+{
+    const char *document1 = R""({"_id":"0123", "num.":"num"})"";
+    EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_INVALID_ARGS);
+}
 } // namespace
