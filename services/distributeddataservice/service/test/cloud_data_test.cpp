@@ -34,11 +34,9 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 namespace OHOS {
 namespace DistributedDataTest {
-
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_database_name";
-
 class CloudDataTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -49,7 +47,6 @@ public:
 protected:
     static constexpr const char *TEST_DISTRIBUTEDDATA_BUNDLE = "test_distributeddata";
     static constexpr const char *TEST_DISTRIBUTEDDATA_STORE = "test_service_meta";
-    static constexpr const char *TEST_DISTRIBUTEDDATA_USER = "-1";
 
     void InitMetaData();
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
@@ -118,9 +115,9 @@ void CloudDataTest::InitMetaData()
     metaData_.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     metaData_.appId = TEST_DISTRIBUTEDDATA_BUNDLE;
     metaData_.bundleName = TEST_DISTRIBUTEDDATA_BUNDLE;
-    metaData_.user = TEST_DISTRIBUTEDDATA_USER;
-    metaData_.area = OHOS::DistributedKv::EL1;
     metaData_.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
+    metaData_.user = std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
+    metaData_.area = OHOS::DistributedKv::EL1;
     metaData_.instanceId = 0;
     metaData_.isAutoSync = true;
     metaData_.storeType = 1;
@@ -150,7 +147,6 @@ void CloudDataTest::SetUp()
 
     StoreMetaData storeMetaData;
     storeMetaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    storeMetaData.user = -1;
     storeMetaData.bundleName = TEST_CLOUD_BUNDLE;
     storeMetaData.storeId = TEST_CLOUD_STORE;
     storeMetaData.instanceId = 0;
@@ -158,6 +154,8 @@ void CloudDataTest::SetUp()
     storeMetaData.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
     storeMetaData.area = OHOS::DistributedKv::EL1;
     storeMetaData.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
+    storeMetaData.user =
+        std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(storeMetaData.tokenId));
     MetaDataManager::GetInstance().SaveMeta(storeMetaData.GetKey(), storeMetaData);
 }
 
@@ -174,12 +172,13 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
 {
     ZLOGI("CloudDataTest start");
     std::shared_ptr<CloudServerMock> cloudServerMock = std::make_shared<CloudServerMock>();
-    auto cloudInfo = cloudServerMock->GetServerInfo(-1);
+    auto cloudInfo = cloudServerMock->GetServerInfo(
+        DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID()));
     ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), true));
     StoreMetaData storeMetaData;
     ASSERT_FALSE(
         MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), storeMetaData, true));
-    CloudEvent::StoreInfo storeInfo { 0, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
+    CloudEvent::StoreInfo storeInfo { OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "test_service");
     EventCenter::GetInstance().PostEvent(move(event));
     ASSERT_TRUE(
