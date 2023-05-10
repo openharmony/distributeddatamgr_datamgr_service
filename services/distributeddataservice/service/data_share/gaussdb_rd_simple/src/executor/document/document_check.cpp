@@ -99,9 +99,12 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
         isOnlyId = false;
     }
     for (int i = 0; i < filterPath.size(); i++) {
+        if (filterPath[i].empty()) {
+            return -E_INVALID_JSON_FORMAT;
+        }
         for (int j = 0; j < filterPath[i].size(); j++) {
-            if (filterPath[i].empty()) {
-                return -E_INVALID_JSON_FORMAT;
+            if (filterPath[i][j].empty()) {
+                return -E_INVALID_ARGS;
             }
             for (auto oneChar : filterPath[i][j]) {
                 if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
@@ -246,6 +249,9 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
             return -E_INVALID_JSON_FORMAT;
         }
         for (int j = 0; j < path[i].size(); j++) {
+            if (path[i][j].empty()) {
+                return -E_INVALID_ARGS;
+            }
             for (auto oneChar : path[i][j]) {
                 if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
                     return -E_INVALID_ARGS;
@@ -284,9 +290,12 @@ int CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vec
         }
     }
     for (int i = 0; i < path.size(); i++) {
+        if (path[i].empty()) {
+            return -E_INVALID_JSON_FORMAT;
+        }
         for (auto fieldName : path[i]) {
-            if (path[i].empty()) {
-                return -E_INVALID_JSON_FORMAT;
+            if (fieldName.empty()) {
+                return -E_INVALID_ARGS;
             }
             for (int j = 0; j < fieldName.size(); j++) {
                 if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {

@@ -1543,3 +1543,12 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest059, TestSize.Level1)
     Query query = { filter, projection };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_INVALID_FORMAT);
 }
+
+HWTEST_F(DocumentFindApiTest, DocumentFindApiTest060, TestSize.Level1)
+{
+    const char *filter = "{}";
+    GRD_ResultSet *resultSet = nullptr;
+    const char *projection = R"({"abc123_.":1})";
+    Query query = { filter, projection };
+    EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_INVALID_ARGS);
+}
