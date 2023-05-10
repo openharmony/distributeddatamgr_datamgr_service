@@ -21,7 +21,6 @@
 #include "checker/checker_manager.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_server.h"
-#include "cloud_syncer.h"
 #include "communicator/device_manager_adapter.h"
 #include "eventcenter/event_center.h"
 #include "feature/feature_system.h"

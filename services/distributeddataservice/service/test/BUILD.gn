@@ -43,7 +43,8 @@ ohos_unittest("CloudDataTest") {
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
   ]
-  include_dirs = [ "../../../../../relational_store/interfaces/inner_api/rdb/include" ]
+  include_dirs =
+      [ "../../../../../relational_store/interfaces/inner_api/rdb/include" ]
 
   configs = [ ":module_private_config" ]
 
