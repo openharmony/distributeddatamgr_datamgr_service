@@ -126,6 +126,31 @@ int SqliteStoreExecutor::PutData(const std::string &collName, const Key &key, co
     return E_OK;
 }
 
+int SqliteStoreExecutor::InsertData(const std::string &collName, const Key &key, const Value &value)
+{
+    if (dbHandle_ == nullptr) {
+        return -E_ERROR;
+    }
+    std::string sql = "INSERT INTO '" + collName + "' VALUES (?,?);";
+    int errCode = SQLiteUtils::ExecSql(
+        dbHandle_, sql,
+        [key, value](sqlite3_stmt *stmt) {
+            SQLiteUtils::BindBlobToStatement(stmt, 1, key);
+            SQLiteUtils::BindBlobToStatement(stmt, 2, value);
+            return E_OK;
+        },
+        nullptr);
+    if (errCode != SQLITE_OK) {
+        GLOGE("[sqlite executor] Put data failed. err=%d", errCode);
+        if (errCode == -E_ERROR) {
+            GLOGE("have same ID before");
+            return -E_DATA_CONFLICT;
+        }
+        return errCode;
+    }
+    return E_OK;
+}
+
 int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Value &value) const
 {
     if (dbHandle_ == nullptr) {

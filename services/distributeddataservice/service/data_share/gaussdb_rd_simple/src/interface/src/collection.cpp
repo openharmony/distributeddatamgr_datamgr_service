@@ -41,15 +41,23 @@ Collection::~Collection()
 int Collection::PutDocument(const Key &key, const Value &document)
 {
     if (executor_ == nullptr) {
-        return -E_INVALID_ARGS;
+        return -E_INNER_ERROR;
     }
     return executor_->PutData(name_, key, document);
+}
+
+int Collection::InsertDocument(const Key &key, const Value &document)
+{
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
+    return executor_->InsertData(name_, key, document);
 }
 
 bool Collection::FindDocument()
 {
     if (executor_ == nullptr) {
-        return -E_INVALID_ARGS;
+        return -E_INNER_ERROR;
     }
     int errCode = 0;
     return executor_->IsCollectionExists(name_, errCode);
@@ -58,7 +66,7 @@ bool Collection::FindDocument()
 int Collection::GetDocument(const Key &key, Value &document) const
 {
     if (executor_ == nullptr) {
-        return -E_INVALID_ARGS;
+        return -E_INNER_ERROR;
     }
     return executor_->GetData(name_, key, document);
 }
@@ -67,7 +75,7 @@ int Collection::GetFilededDocument(const JsonObject &filterObj,
     std::vector<std::pair<std::string, std::string>> &values) const
 {
     if (executor_ == nullptr) {
-        return -E_INVALID_ARGS;
+        return -E_INNER_ERROR;
     }
     return executor_->GetFilededData(name_, filterObj, values);
 }
@@ -75,7 +83,7 @@ int Collection::GetFilededDocument(const JsonObject &filterObj,
 int Collection::DeleteDocument(const Key &key)
 {
     if (executor_ == nullptr) {
-        return -E_INVALID_ARGS;
+        return -E_INNER_ERROR;
     }
     return executor_->DelData(name_, key);
 }
@@ -88,7 +96,7 @@ int Collection::IsCollectionExists(int &errCode)
 int Collection::UpsertDocument(const std::string &id, const std::string &document, bool isReplace)
 {
     if (executor_ == nullptr) {
-        return -E_INVALID_ARGS;
+        return -E_INNER_ERROR;
     }
     int errCode = E_OK;
     bool isCollExist = executor_->IsCollectionExists(name_, errCode);
@@ -144,9 +152,8 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
 int Collection::UpdateDocument(const std::string &id, const std::string &update, bool isReplace)
 {
     if (executor_ == nullptr) {
-        return -E_INVALID_ARGS;
+        return -E_INNER_ERROR;
     }
-
     int errCode = E_OK;
     bool isCollExist = executor_->IsCollectionExists(name_, errCode);
     if (errCode != E_OK) {

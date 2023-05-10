@@ -37,6 +37,7 @@ public:
     int Rollback() override;
 
     int PutData(const std::string &collName, const Key &key, const Value &value) override;
+    int InsertData(const std::string &collName, const Key &key, const Value &value) override;
     int GetData(const std::string &collName, const Key &key, Value &value) const override;
     int GetFilededData(const std::string &collName, const JsonObject &filterObj,
         std::vector<std::pair<std::string, std::string>> &values) const override;

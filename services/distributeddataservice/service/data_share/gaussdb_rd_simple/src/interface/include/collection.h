@@ -30,6 +30,7 @@ public:
     ~Collection();
 
     int PutDocument(const Key &key, const Value &document);
+    int InsertDocument(const Key &key, const Value &document);
     int GetDocument(const Key &key, Value &document) const;
     int GetFilededDocument(const JsonObject &filterObj, std::vector<std::pair<std::string, std::string>> &values) const;
     int DeleteDocument(const Key &key);

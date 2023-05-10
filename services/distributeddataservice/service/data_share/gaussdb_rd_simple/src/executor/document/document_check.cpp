@@ -25,7 +25,7 @@ namespace DocumentDB {
 namespace {
 constexpr const char *KEY_ID = "_id";
 constexpr const char *COLLECTION_PREFIX_GRD = "GRD_";
-constexpr const char *COLLECTION_PREFIX_GM_SYS = "GM_SYS_";
+constexpr const char *COLLECTION_PREFIX_GM_SYS = "GM_SYS";
 const int MAX_COLLECTION_NAME = 512;
 const int MAX_ID_LENS = 900;
 const int JSON_DEEP_MAX = 4;
