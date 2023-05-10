@@ -55,7 +55,7 @@ AutoCache::~AutoCache()
 AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers, bool setWatchers)
 {
     Store store;
-    if (meta.storeType >= MAX_CREATOR_NUM || !creators_[meta.storeType]) {
+    if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType]) {
         return store;
     }
 

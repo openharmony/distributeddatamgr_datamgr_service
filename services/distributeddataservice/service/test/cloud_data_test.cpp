@@ -27,9 +27,13 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
+#include "rdb_types.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+
+namespace OHOS {
+namespace DistributedDataTest {
 
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
@@ -151,7 +155,7 @@ void CloudDataTest::SetUp()
     storeMetaData.storeId = TEST_CLOUD_STORE;
     storeMetaData.instanceId = 0;
     storeMetaData.isAutoSync = true;
-    storeMetaData.storeType = 1;
+    storeMetaData.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
     storeMetaData.area = OHOS::DistributedKv::EL1;
     storeMetaData.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
     MetaDataManager::GetInstance().SaveMeta(storeMetaData.GetKey(), storeMetaData);
@@ -181,3 +185,5 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
     ASSERT_TRUE(
         MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), storeMetaData, true));
 }
+} // namespace DistributedDataTest
+} // namespace OHOS

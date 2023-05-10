@@ -73,6 +73,7 @@ CloudServiceImpl::CloudServiceImpl()
         auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers, false);
         if (store == nullptr) {
             ZLOGE("store is nullptr");
+            return;
         }
         store->SetSchema(schemaMeta);
         auto instance = CloudServer::GetInstance();
