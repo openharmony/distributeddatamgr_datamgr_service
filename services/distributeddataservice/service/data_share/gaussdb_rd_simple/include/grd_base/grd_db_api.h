@@ -16,17 +16,19 @@
 #ifndef GRD_DB_API_H
 #define GRD_DB_API_H
 
+#include <cstdint>
+
 #include "grd_type_export.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-GRD_API int GRD_DBOpen(const char *dbPath, const char *configStr, unsigned int flags, GRD_DB **db);
+GRD_API int32_t GRD_DBOpen(const char *dbPath, const char *configStr, uint32_t flags, GRD_DB **db);
 
-GRD_API int GRD_DBClose(GRD_DB *db, unsigned int flags);
+GRD_API int32_t GRD_DBClose(GRD_DB *db, uint32_t flags);
 
-GRD_API int GRD_Flush(GRD_DB *db, unsigned int flags);
+GRD_API int32_t GRD_Flush(GRD_DB *db, uint32_t flags);
 
 #ifdef __cplusplus
 }

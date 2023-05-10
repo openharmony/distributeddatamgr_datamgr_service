@@ -23,7 +23,7 @@
 
 using namespace DocumentDB;
 
-int GRD_Next(GRD_ResultSet *resultSet)
+int32_t GRD_Next(GRD_ResultSet *resultSet)
 {
     if (resultSet == nullptr) {
         GLOGE("resultSet is nullptr");
@@ -35,7 +35,7 @@ int GRD_Next(GRD_ResultSet *resultSet)
     return TransferDocErr(ret);
 }
 
-int GRD_GetValue(GRD_ResultSet *resultSet, char **value)
+int32_t GRD_GetValue(GRD_ResultSet *resultSet, char **value)
 {
     if (resultSet == nullptr) {
         GLOGE("resultSet is nullptr,cant get value from it");
@@ -51,7 +51,7 @@ int GRD_GetValue(GRD_ResultSet *resultSet, char **value)
     return TransferDocErr(ret);
 }
 
-int GRD_FreeValue(char *value)
+int32_t GRD_FreeValue(char *value)
 {
     if (value == nullptr) {
         return GRD_INVALID_ARGS;
@@ -60,7 +60,7 @@ int GRD_FreeValue(char *value)
     return GRD_OK;
 }
 
-int GRD_FreeResultSet(GRD_ResultSet *resultSet)
+int32_t GRD_FreeResultSet(GRD_ResultSet *resultSet)
 {
     if (resultSet == nullptr) {
         return GRD_INVALID_ARGS;
