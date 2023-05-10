@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 #define LOG_TAG "CloudDataTest"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "log_print.h"
 #include "ipc_skeleton.h"
 #include "account/account_delegate.h"
@@ -134,6 +134,7 @@ void CloudDataTest::SetUpTestCase(void)
     auto cloudServerMock = new CloudServerMock();
     ASSERT_TRUE(CloudServer::RegisterCloudInstance(cloudServerMock));
     FeatureSystem::GetInstance().GetCreator("cloud")();
+    FeatureSystem::GetInstance().GetCreator("relational_store")();
 }
 
 void CloudDataTest::TearDownTestCase() {}

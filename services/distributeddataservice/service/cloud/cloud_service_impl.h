@@ -36,7 +36,7 @@ public:
 private:
     class Factory {
     public:
-        Factory();
+        Factory() noexcept;
         ~Factory();
     private:
         std::shared_ptr<CloudServiceImpl> product_;

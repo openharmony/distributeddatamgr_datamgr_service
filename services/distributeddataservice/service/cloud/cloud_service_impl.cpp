@@ -36,7 +36,7 @@ namespace OHOS::CloudData {
 using namespace DistributedData;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
-CloudServiceImpl::Factory::Factory()
+CloudServiceImpl::Factory::Factory() noexcept
 {
     FeatureSystem::GetInstance().RegisterCreator(CloudServiceImpl::SERVICE_NAME, [this]() {
         if (product_ == nullptr) {
@@ -71,6 +71,9 @@ CloudServiceImpl::CloudServiceImpl()
 
         AutoCache::Watchers watchers;
         auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers, false);
+        if (store == nullptr) {
+            ZLOGE("store is nullptr");
+        }
         store->SetSchema(schemaMeta);
         auto instance = CloudServer::GetInstance();
         if (instance == nullptr) {
