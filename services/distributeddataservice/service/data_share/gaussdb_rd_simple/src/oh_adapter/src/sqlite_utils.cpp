@@ -38,6 +38,10 @@ int MapSqliteError(int errCode)
         case SQLITE_CANTOPEN:
         case SQLITE_READONLY:
             return -E_FILE_OPERATION;
+        case SQLITE_NOTADB:
+            return -E_INVALID_FILE_FORMAT;
+        case SQLITE_BUSY:
+            return -E_RESOURCE_BUSY;
         default:
             return -E_ERROR;
     }

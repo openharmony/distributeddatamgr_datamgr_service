@@ -126,6 +126,27 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest003, TestSize.Level0)
 }
 
 /**
+ * @tc.name: OpenDBTest004
+ * @tc.desc: Test open document db while db is not db file
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhuwentao
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBTest004, TestSize.Level0)
+{
+    std::string path = "./test.txt";
+    FILE *fp;
+    fp = fopen("./test.txt", "w");
+    fwrite("hello", 5, 5, fp);
+    fclose(fp);
+    GRD_DB *db = nullptr;
+    int status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_ONLY, &db);
+    EXPECT_EQ(status, GRD_INVALID_FILE_FORMAT);
+
+    DocumentDBTestUtils::RemoveTestDbFiles(path);
+}
+
+/**
  * @tc.name: OpenDBPathTest001
  * @tc.desc: Test open document db with NULL path
  * @tc.type: FUNC

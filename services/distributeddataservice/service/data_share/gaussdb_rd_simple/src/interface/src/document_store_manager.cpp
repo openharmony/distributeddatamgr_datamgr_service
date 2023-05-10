@@ -69,7 +69,6 @@ int DocumentStoreManager::GetDocumentStore(const std::string &path, const std::s
         GLOGE("Check document db open flags failed.");
         return -E_INVALID_ARGS;
     }
-
     if (!CheckDBCreate(flags, path)) {
         GLOGE("Open db failed, file no exists.");
         return -E_INVALID_ARGS;

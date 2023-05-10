@@ -77,6 +77,9 @@ int TransferDocErr(int err)
         case -E_INNER_ERROR:
             outErr = GRD_INNER_ERR;
             break;
+        case -E_INVALID_FILE_FORMAT:
+            outErr = GRD_INVALID_FILE_FORMAT;
+            break;
         default:
             outErr = GRD_INNER_ERR;
             break;
