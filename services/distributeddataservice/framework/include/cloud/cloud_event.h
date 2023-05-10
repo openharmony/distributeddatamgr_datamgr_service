@@ -29,7 +29,7 @@ public:
         CLOUD_BUTT
     };
 
-    struct StoreInfo{
+    struct StoreInfo {
         uint32_t tokenId = 0;
         std::string bundleName;
         std::string storeName;

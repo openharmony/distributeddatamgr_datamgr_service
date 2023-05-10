@@ -24,17 +24,6 @@
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace OHOS::NativeRdb;
-class RdbOpenCallbackImpl : public RdbOpenCallback {
-public:
-    int OnCreate(RdbStore &rdbStore) override
-    {
-        return NativeRdb::E_OK;
-    }
-    int OnUpgrade(RdbStore &rdbStore, int oldVersion, int newVersion) override
-    {
-        return NativeRdb::E_OK;
-    }
-};
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
 {
 }
@@ -97,7 +86,7 @@ int32_t RdbGeneralStore::Bind(std::shared_ptr<CloudDB> cloudDb)
 
 int32_t RdbGeneralStore::SetSchema(const SchemaMeta &schemaMeta)
 {
-    //SetSchema
+    // SetSchema
     return GeneralError::E_OK;
 }
 } // namespace OHOS::DistributedRdb

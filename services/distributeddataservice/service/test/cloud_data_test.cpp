@@ -35,6 +35,23 @@ static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_database_name";
 
+class CloudDataTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+
+protected:
+    static constexpr const char *TEST_DISTRIBUTEDDATA_BUNDLE = "test_distributeddata";
+    static constexpr const char *TEST_DISTRIBUTEDDATA_STORE = "test_service_meta";
+    static constexpr const char *TEST_DISTRIBUTEDDATA_USER = "-1";
+
+    void InitMetaData();
+    static std::shared_ptr<DBStoreMock> dbStoreMock_;
+    StoreMetaData metaData_;
+};
+
 class CloudServerMock : public CloudServer {
 public:
     CloudInfo GetServerInfo(int32_t userId) override;
@@ -89,23 +106,6 @@ SchemaMeta CloudServerMock::GetAppSchema(int32_t userId, const std::string &bund
 
     return schemaMeta;
 }
-
-class CloudDataTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
-    void SetUp();
-    void TearDown();
-
-protected:
-    static constexpr const char *TEST_DISTRIBUTEDDATA_BUNDLE = "test_distributeddata";
-    static constexpr const char *TEST_DISTRIBUTEDDATA_STORE = "test_service_meta";
-    static constexpr const char *TEST_DISTRIBUTEDDATA_USER = "-1";
-
-    void InitMetaData();
-    static std::shared_ptr<DBStoreMock> dbStoreMock_;
-    StoreMetaData metaData_;
-};
 
 std::shared_ptr<DBStoreMock> CloudDataTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 
@@ -174,7 +174,7 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
     StoreMetaData storeMetaData;
     ASSERT_FALSE(
         MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), storeMetaData, true));
-    CloudEvent::StoreInfo storeInfo { 0, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0, 1 };
+    CloudEvent::StoreInfo storeInfo { 0, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "test_service");
     EventCenter::GetInstance().PostEvent(move(event));
     ASSERT_TRUE(
