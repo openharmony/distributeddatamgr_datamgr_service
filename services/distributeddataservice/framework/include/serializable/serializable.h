@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
+#include <map>
 #include <string>
 #include <vector>
 #include "visibility.h"
