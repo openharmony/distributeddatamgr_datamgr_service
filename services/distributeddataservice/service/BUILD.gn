@@ -142,7 +142,7 @@ ohos_shared_library("distributeddatasvc") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/cloud_data:cloud_data_inner",
+    "${relational_store_path}/interfaces/inner_api/cloud_data:cloud_data_inner",
   ]
 
   external_deps = [

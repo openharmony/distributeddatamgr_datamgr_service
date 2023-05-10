@@ -15,6 +15,8 @@ distributedfilejs_path = "//foundation/distributeddatamgr/distributedfile"
 
 kv_store_path = "//foundation/distributeddatamgr/kv_store"
 
+relational_store_path = "//foundation/distributeddatamgr/relational_store"
+
 kv_store_common_path = "${kv_store_path}/frameworks/common"
 
 kv_store_distributeddb_path = "${kv_store_path}/frameworks/libs/distributeddb"

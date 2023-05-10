@@ -97,7 +97,7 @@ int32_t RdbGeneralStore::Bind(std::shared_ptr<CloudDB> cloudDb)
 
 int32_t RdbGeneralStore::SetSchema(const SchemaMeta &schemaMeta)
 {
-    //delegate_->SetSchema(schemaMeta);
+    //SetSchema;
     return GeneralError::E_OK;
 }
 } // namespace OHOS::DistributedRdb

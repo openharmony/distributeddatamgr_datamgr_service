@@ -479,10 +479,6 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
 
-    if (param.schemaVersion == -1) {
-        return RDB_OK;
-    }
-
     auto storeMeta = GetStoreMetaData(param);
     StoreMetaData oldMeta;
     bool isCreated = MetaDataManager::GetInstance().LoadMeta(storeMeta.GetKey(), oldMeta, true);

@@ -38,7 +38,7 @@ public:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
     using RdbManager = DistributedDB::RelationalStoreManager;
 
-    RdbGeneralStore(const StoreMetaData &metaData);
+    explicit RdbGeneralStore(const StoreMetaData &metaData);
     int32_t Bind(std::shared_ptr<CloudDB> cloudDb) override;
     int32_t SetSchema(const SchemaMeta &schemaMeta) override;
     int32_t Execute(const std::string &table, const std::string &sql) override;
