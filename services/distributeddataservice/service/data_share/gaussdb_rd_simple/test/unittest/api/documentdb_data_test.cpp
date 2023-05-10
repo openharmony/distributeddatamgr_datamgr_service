@@ -345,4 +345,10 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest011, TestSize.Level0)
     cJSON_Delete(updata);
     cJSON_free(updateStr);
 }
+
+HWTEST_F(DocumentDBDataTest, UpdateDataTest013, TestSize.Level0)
+{
+    int result = GRD_UpdateDoc(g_db, "GM_Sys", R""({})"", R""({})"", 0);
+    EXPECT_EQ(result, GRD_INVALID_FORMAT);
+}
 } // namespace
