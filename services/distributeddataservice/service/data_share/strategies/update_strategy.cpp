@@ -63,7 +63,7 @@ Strategy *UpdateStrategy::GetStrategy()
     auto ret = strategies.Init(list);
     if (!ret) {
         std::for_each(list.begin(), list.end(), [](Strategy *item) {
-            free(item);
+            delete item;
         });
         return nullptr;
     }

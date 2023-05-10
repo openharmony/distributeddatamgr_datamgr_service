@@ -120,7 +120,6 @@ std::shared_ptr<DistributedData::Serializable> RdbDelegate::Query(
         ZLOGE("Query failed %{private}s", sql.c_str());
         return nullptr;
     }
-
     return nullptr;
 }
 

@@ -22,8 +22,6 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-const std::string URIUtils::DATA_SHARE_SCHEMA = "datashare:///";
-const std::string URIUtils::DATA_PROXY_SCHEMA = "datashareproxy://";
 bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
 {
     Uri uriTemp(uri);
@@ -50,7 +48,7 @@ bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
 
 bool URIUtils::IsDataProxyURI(const std::string &uri)
 {
-    return uri.compare(0, URIUtils::DATA_PROXY_SCHEMA.size(), URIUtils::DATA_PROXY_SCHEMA) == 0;
+    return uri.compare(0, DATA_PROXY_SCHEMA_LEN, URIUtils::DATA_PROXY_SCHEMA) == 0;
 }
 
 bool URIUtils::GetBundleNameFromProxyURI(const std::string &uri, std::string &bundleName)

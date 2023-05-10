@@ -85,8 +85,8 @@ struct KvData : public DistributedData::Serializable {
 
 class KvDBDelegate {
 public:
-    static const std::string TEMPLATE_TABLE;
-    static const std::string DATA_TABLE;
+    static constexpr const char *TEMPLATE_TABLE = "template_";
+    static constexpr const char *DATA_TABLE = "data_";
     static std::shared_ptr<KvDBDelegate> GetInstance(bool reInit = false, const std::string &dir = "");
     virtual ~KvDBDelegate() = default;
     virtual int32_t Upsert(const std::string &collectionName, const KvData &value) = 0;

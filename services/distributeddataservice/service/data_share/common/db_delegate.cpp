@@ -23,9 +23,6 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int versi
     return std::make_shared<RdbDelegate>(dir, version);
 }
 
-const std::string KvDBDelegate::TEMPLATE_TABLE = "template_";
-const std::string KvDBDelegate::DATA_TABLE = "data_";
-
 std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(bool reInit, const std::string &dir)
 {
     static std::shared_ptr<KvDBDelegate> delegate = nullptr;
