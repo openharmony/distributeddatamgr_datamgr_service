@@ -30,6 +30,7 @@ public:
     virtual int Rollback() = 0;
 
     virtual int PutData(const std::string &collName, const Key &key, const Value &value) = 0;
+    virtual int InsertData(const std::string &collName, const Key &key, const Value &value) = 0;
     virtual int GetData(const std::string &collName, const Key &key, Value &value) const = 0;
     virtual int GetFilededData(const std::string &collName, const JsonObject &filterObj,
         std::vector<std::pair<std::string, std::string>> &values) const = 0;

@@ -374,17 +374,7 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         return -E_INVALID_ARGS;
     }
     Value ValueDocument;
-    errCode = coll.GetDocument(key, ValueDocument);
-    switch (errCode) {
-        case -E_NOT_FOUND:
-            return coll.PutDocument(key, value);
-        case -E_ERROR:
-            GLOGE("collection dont exsited");
-            return -E_INVALID_ARGS;
-        default:
-            GLOGE("id already exsited, data conflict");
-            return -E_DATA_CONFLICT;
-    }
+    return coll.InsertDocument(key, value);
 }
 
 int DocumentStore::DeleteDocument(const std::string &collection, const std::string &filter, uint32_t flags)

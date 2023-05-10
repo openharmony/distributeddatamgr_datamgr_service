@@ -46,6 +46,14 @@ int Collection::PutDocument(const Key &key, const Value &document)
     return executor_->PutData(name_, key, document);
 }
 
+int Collection::InsertDocument(const Key &key, const Value &document)
+{
+    if (executor_ == nullptr) {
+        return -E_INVALID_ARGS;
+    }
+    return executor_->InsertData(name_, key, document);
+}
+
 bool Collection::FindDocument()
 {
     if (executor_ == nullptr) {
