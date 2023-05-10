@@ -101,7 +101,7 @@ int CheckCommon::CheckFilter(JsonObject &filterObj)
 
 int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath)
 {
-    for (int i = 0; i < filterPath.size(); i++) {
+    for (size_t i = 0; i < filterPath.size(); i++) {
         if (filterPath[i].size() > JSON_DEEP_MAX) {
             GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
             return -E_INVALID_ARGS;
@@ -110,11 +110,11 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
     if (!filterObj.GetChild().GetNext().IsNull()) {
         isOnlyId = false;
     }
-    for (int i = 0; i < filterPath.size(); i++) {
+    for (size_t i = 0; i < filterPath.size(); i++) {
         if (filterPath[i].empty()) {
             return -E_INVALID_JSON_FORMAT;
         }
-        for (int j = 0; j < filterPath[i].size(); j++) {
+        for (size_t j = 0; j < filterPath[i].size(); j++) {
             if (filterPath[i][j].empty()) {
                 return -E_INVALID_ARGS;
             }
@@ -256,11 +256,11 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
         GLOGE("projectionObj's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
-    for (int i = 0; i < path.size(); i++) {
+    for (size_t i = 0; i < path.size(); i++) {
         if (path[i].empty()) {
             return -E_INVALID_JSON_FORMAT;
         }
-        for (int j = 0; j < path[i].size(); j++) {
+        for (size_t j = 0; j < path[i].size(); j++) {
             if (path[i][j].empty()) {
                 return -E_INVALID_ARGS;
             }
@@ -271,18 +271,18 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
             }
         }
         if (!path[i].empty() && !path[i][0].empty() && isdigit(path[i][0][0])) {
-            return -E_INVALID_ARGS;;
+            return -E_INVALID_ARGS;
         }
     }
     for (auto singlePath : path) {
         if (singlePath.size() > JSON_DEEP_MAX) {
-            return -E_INVALID_ARGS;;
+            return -E_INVALID_ARGS;
         }
     }
     bool isIdExist = true;
     CheckIdFormat(updataObj, isIdExist);
     if (isIdExist) {
-        return -E_INVALID_ARGS;;
+        return -E_INVALID_ARGS;
     }
     return E_OK;
 }
@@ -301,7 +301,7 @@ int CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vec
             return errCode;
         }
     }
-    for (int i = 0; i < path.size(); i++) {
+    for (size_t i = 0; i < path.size(); i++) {
         if (path[i].empty()) {
             return -E_INVALID_JSON_FORMAT;
         }
@@ -309,7 +309,7 @@ int CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vec
             if (fieldName.empty()) {
                 return -E_INVALID_ARGS;
             }
-            for (int j = 0; j < fieldName.size(); j++) {
+            for (size_t j = 0; j < fieldName.size(); j++) {
                 if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
                     return -E_INVALID_ARGS;
                 }

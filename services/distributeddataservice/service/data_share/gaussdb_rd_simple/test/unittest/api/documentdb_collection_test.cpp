@@ -30,7 +30,6 @@ using namespace DocumentDBUnitTest;
 namespace {
 std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
-} // namespace
 
 class DocumentDBCollectionTest : public testing::Test {
 public:
@@ -203,3 +202,4 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest007, TestSize.Level0)
         EXPECT_EQ(GRD_DropCollection(g_db, "student", flag), GRD_INVALID_ARGS);
     }
 }
+} // namespace

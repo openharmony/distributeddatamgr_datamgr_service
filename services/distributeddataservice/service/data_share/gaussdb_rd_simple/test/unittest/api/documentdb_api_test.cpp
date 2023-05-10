@@ -27,6 +27,7 @@ using namespace DocumentDB;
 using namespace testing::ext;
 using namespace DocumentDBUnitTest;
 
+namespace {
 class DocumentDBApiTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -653,3 +654,4 @@ HWTEST_F(DocumentDBApiTest, FlushDBTest001, TestSize.Level0)
 
     DocumentDBTestUtils::RemoveTestDbFiles(path);
 }
+} // namespace

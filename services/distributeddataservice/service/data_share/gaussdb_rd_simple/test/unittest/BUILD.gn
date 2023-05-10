@@ -65,7 +65,6 @@ ohos_source_set("src_file") {
     "../../src/oh_adapter/src/kv_store_manager.cpp",
     "../../src/oh_adapter/src/sqlite_store_executor_impl.cpp",
     "../../src/oh_adapter/src/sqlite_utils.cpp",
-
     "common/documentdb_test_utils.cpp",
   ]
 
@@ -140,6 +139,18 @@ documentdb_unittest("DocumentDBJsonObjectTest") {
   sources = [ "oh_adapter/documentdb_jsonobject_test.cpp" ]
 }
 
+documentdb_unittest("DocumentInsertApiTest") {
+  sources = [ "api/documentdb_insert_test.cpp" ]
+}
+
+documentdb_unittest("DocumentFindApiTest") {
+  sources = [ "api/documentdb_find_test.cpp" ]
+}
+
+documentdb_unittest("DocumentDeleteApiTest") {
+  sources = [ "api/documentdb_delete_test.cpp" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -151,6 +162,9 @@ group("unittest") {
     ":DocumentDBDataTest",
     ":DocumentDBJsonCommonTest",
     ":DocumentDBJsonObjectTest",
+    ":DocumentDeleteApiTest",
+    ":DocumentFindApiTest",
+    ":DocumentInsertApiTest",
   ]
 }
 

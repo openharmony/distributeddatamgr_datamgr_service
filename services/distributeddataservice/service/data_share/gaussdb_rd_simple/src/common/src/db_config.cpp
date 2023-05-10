@@ -106,7 +106,8 @@ bool CheckMaxConnNumConfig(const JsonObject &config, int32_t &maxConnNum)
 bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint32_t &redoBufSize)
 {
     std::function<bool(uint32_t)> checkFunction = [&pageSize](uint32_t val) {
-        return val >= MIN_BUFFER_POOL_SIZE && val <= MAX_BUFFER_POOL_SIZE && val >= pageSize * 64;
+        return val >= MIN_BUFFER_POOL_SIZE && val <= MAX_BUFFER_POOL_SIZE &&
+            val >= static_cast<uint32_t>(pageSize * 64);
     };
     return CheckAndGetDBConfig(config, DB_CONFIG_BUFFER_POOL_SIZE, checkFunction, redoBufSize);
 }

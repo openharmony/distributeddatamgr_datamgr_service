@@ -26,7 +26,7 @@ using namespace testing::ext;
 using namespace DocumentDBUnitTest;
 
 namespace {
-    class DocumentDBJsonCommonTest : public testing::Test {
+class DocumentDBJsonCommonTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -91,10 +91,10 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest002, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest003, TestSize.Level0)
 {
-    std::string document =
-        R""({"name":["Tmn","BB","Alice"],"age":[1,2,3],"addr":[{"city":"shanghai","postal":200001},{"city":"wuhan","postal":430000}]})"";
-    std::string updateDoc =
-        R""({"name":["Xue","Neco","Lip"],"age":18,"addr":[{"city":"shanghai","postal":200001},{"city":"beijing","postal":100000}]})"";
+    std::string document = R""({"name":["Tmn","BB","Alice"],"age":[1,2,3],"addr":[{"city":"shanghai","postal":200001},
+        {"city":"wuhan","postal":430000}]})"";
+    std::string updateDoc = R""({"name":["Xue","Neco","Lip"],"age":18,"addr":[{"city":"shanghai","postal":200001},
+        {"city":"beijing","postal":100000}]})"";
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -343,8 +343,8 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest001, TestSize.Leve
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest002, TestSize.Level0)
 {
-    std::string document =
-        R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string document = R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5},
+        {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"instock": {"warehouse":"A", "qty":5}})"";
     ;
     int errCode = E_OK;
@@ -356,8 +356,8 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest002, TestSize.Leve
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest003, TestSize.Level0)
 {
-    std::string document =
-        R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string document = R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5},
+        {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"item": "GG"})"";
     ;
     int errCode = E_OK;
@@ -369,8 +369,8 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest003, TestSize.Leve
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest004, TestSize.Level0)
 {
-    std::string document =
-        R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string document = R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5},
+        {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"item": "GG"})"";
     ;
     int errCode = E_OK;
@@ -382,10 +382,9 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest004, TestSize.Leve
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest005, TestSize.Level0)
 {
-    std::string document =
-        R""({"item": ["GG", "AA"], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string document = R""({"item": ["GG", "AA"], "instock": [{"warehouse":"A", "qty":5},
+        {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"item": ["GG", "AA"]})"";
-    ;
     int errCode = E_OK;
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
@@ -395,10 +394,9 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest005, TestSize.Leve
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest006, TestSize.Level0)
 {
-    std::string document =
-        R""({"item": ["GG", {"gender":"girl"}], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string document = R""({"item": ["GG", {"gender":"girl"}], "instock": [{"warehouse":"A", "qty":5},
+        {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"item.0": "GG"})"";
-    ;
     int errCode = E_OK;
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
@@ -408,10 +406,9 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest006, TestSize.Leve
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest007, TestSize.Level0)
 {
-    std::string document =
-        R""({"item": ["GG", {"gender":"girl"}], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string document = R""({"item": ["GG", {"gender":"girl"}], "instock": [{"warehouse":"A", "qty":5},
+        {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"item": ["GG", {"gender":"girl"}]})"";
-    ;
     int errCode = E_OK;
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
@@ -421,10 +418,9 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest007, TestSize.Leve
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest008, TestSize.Level0)
 {
-    std::string document =
-        R""({"item": ["GG", {"gender":"girl", "hobby" : "IT"}], "instock": [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
+    std::string document = R""({"item": ["GG", {"gender":"girl", "hobby" : "IT"}], "instock":
+        [{"warehouse":"A", "qty":5}, {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"item": {"gender":"girl"}})"";
-    ;
     int errCode = E_OK;
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
@@ -434,11 +430,9 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest008, TestSize.Leve
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest009, TestSize.Level0)
 {
-    std::string document =
-        R""({"item": ["GG", {"gender":"girl", "hobby" : "IT"}], "instock": [{"qty" : 16, "warehouse":"A"},
-            {"warehouse":"C", "qty":15}]})"";
+    std::string document = R""({"item": ["GG", {"gender":"girl", "hobby" : "IT"}], "instock":
+        [{"qty" : 16, "warehouse":"A"}, {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"instock.warehouse": "A"})"";
-    ;
     int errCode = E_OK;
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
@@ -588,11 +582,13 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest021, TestSize.Leve
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest022, TestSize.Level0)
 {
-    string document = R"({"_id" : "001", "key1" : {"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}, "k22" : "v22"},
-    "k12" : "v12"})";
-    string document2 = R"({"_id" : "002", "key1" : {"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}}, "k12" : "v12"})";
+    string document = R"({"_id" : "001", "key1" : {"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"},
+        "k22" : "v22"}, "k12" : "v12"})";
+    string document2 = R"({"_id" : "002", "key1" : {"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}},
+        "k12" : "v12"})";
     const char *filter = R"({"key1" : {"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}}})";
-    const char *filter2 = R"({"key1" : {"k22" : "v22", "key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}}})";
+    const char *filter2 = R"({"key1" : {"k22" : "v22", "key2" : {"key3" : {"key4" : 123, "k42" : "v42"},
+        "k32" : "v32"}}})";
     int errCode = E_OK;
     JsonObject srcObj1 = JsonObject::Parse(document, errCode);
     JsonObject srcObj2 = JsonObject::Parse(document2, errCode);
@@ -608,9 +604,10 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest022, TestSize.Leve
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest023, TestSize.Level0)
 {
-    string document = R"({"_id" : "001", "key1" : {"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}, "k22" : "v22"},
-    "k12" : "v12", "key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}})";
-    string document2 = R"({"_id" : "002", "key1" : {"key2" : {"key3" : {"key4" : 123}, "k32" : "v32"}, "k22" : "v22"}, "k12" : "v12"})";
+    string document = R"({"_id" : "001", "key1" : {"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"},
+        "k22" : "v22"}, "k12" : "v12", "key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}})";
+    string document2 = R"({"_id" : "002", "key1" : {"key2" : {"key3" : {"key4" : 123}, "k32" : "v32"}, "k22" : "v22"},
+        "k12" : "v12"})";
     const char *filter = R"({"key2" : {"key3" : {"key4" : 123, "k42" : "v42"}, "k32" : "v32"}})";
     int errCode = E_OK;
     JsonObject srcObj1 = JsonObject::Parse(document, errCode);
@@ -635,5 +632,4 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest024, TestSize.Leve
         GLOGE("///////////////////////////");
     }
 }
-
-}
+} // namespace

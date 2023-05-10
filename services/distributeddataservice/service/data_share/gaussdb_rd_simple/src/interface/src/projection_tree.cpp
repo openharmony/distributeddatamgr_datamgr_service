@@ -31,7 +31,7 @@ int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path)
     }
     for (auto singlePath : path) {
         node = &node_;
-        for (int j = 0; j < singlePath.size(); j++) {
+        for (size_t j = 0; j < singlePath.size(); j++) {
             if (node->SonNode[singlePath[j]] != nullptr) {
                 node = node->SonNode[singlePath[j]];
                 if (j < singlePath.size() - 1 && node->isDeepest) {
@@ -63,7 +63,7 @@ int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path)
 bool ProjectionTree::SearchTree(std::vector<std::string> &singlePath, int &index)
 {
     ProjectionNode *node = &node_;
-    for (int i = 0; i < singlePath.size(); i++) {
+    for (size_t i = 0; i < singlePath.size(); i++) {
         if (node->isDeepest) {
             index = i;
         }

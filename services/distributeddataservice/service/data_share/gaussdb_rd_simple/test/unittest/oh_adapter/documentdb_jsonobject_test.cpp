@@ -23,6 +23,7 @@ using namespace DocumentDB;
 using namespace testing::ext;
 using namespace DocumentDBUnitTest;
 
+namespace {
 class DocumentDBJsonObjectTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -59,3 +60,4 @@ HWTEST_F(DocumentDBJsonObjectTest, JsonObjectTest001, TestSize.Level0)
     EXPECT_EQ(obj.GetValueType(), ValueObject::ValueType::VALUE_NUMBER);
     EXPECT_EQ(obj.GetIntValue(), 234);
 }
+} // namespace

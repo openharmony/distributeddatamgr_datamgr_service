@@ -23,9 +23,6 @@
 namespace DocumentDB {
 
 namespace {
-const int COLLECTION_LENS_MAX = 512 * 1024;
-const int JSON_LENS_MAX = 1024 * 1024;
-
 bool IsNumber(const std::string &str)
 {
     return std::all_of(str.begin(), str.end(), [](char c) {
@@ -213,7 +210,6 @@ int JsonObject::Init(const std::string &str, bool isFilter)
         GLOGE("Int value is larger than double");
         return -E_INVALID_ARGS;
     }
-    int errCode = E_OK;
     if (!isFilter) {
         ret = CheckJsonRepeatField(cjson_);
         if (ret != E_OK) {

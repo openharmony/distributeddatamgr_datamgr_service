@@ -24,11 +24,8 @@
 #include "result_set_common.h"
 
 namespace DocumentDB {
-const int COLLECTION_LENS_MAX = 512 * 1024;
 const int JSON_LENS_MAX = 1024 * 1024;
-const int JSON_DEEP_MAX = 4;
 constexpr const char *KEY_ID = "_id";
-const bool caseSensitive = true;
 
 DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor) {}
 

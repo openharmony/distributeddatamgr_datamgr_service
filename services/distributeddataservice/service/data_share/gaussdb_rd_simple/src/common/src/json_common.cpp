@@ -281,7 +281,7 @@ JsonFieldPath ExpendPathForField(const JsonFieldPath &path, bool &isCollapse)
         splitPath.push_back(str.substr(start));
     }
     isCollapse = (splitPath.size() > 1);
-    for (int i = 1; i < path.size(); i++) {
+    for (size_t i = 1; i < path.size(); i++) {
         splitPath.emplace_back(path[i]);
     }
     return splitPath;

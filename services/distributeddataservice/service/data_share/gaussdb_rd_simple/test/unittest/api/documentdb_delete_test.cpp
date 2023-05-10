@@ -30,7 +30,6 @@ constexpr const char *NULL_JSON_STR = "{}";
 const int MAX_COLLECTION_LENS = 511;
 std::string path = "./document.db";
 GRD_DB *g_db = nullptr;
-} // namespace
 
 class DocumentDeleteApiTest : public testing::Test {
 public:
@@ -372,3 +371,4 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest012, TestSize.Level1)
     EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
+} // namespace

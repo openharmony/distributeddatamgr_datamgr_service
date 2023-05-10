@@ -14,6 +14,7 @@
 */
 
 #include <gtest/gtest.h>
+#include <climits>
 
 #include "doc_errno.h"
 #include "documentdb_test_utils.h"
@@ -31,11 +32,8 @@ namespace {
 std::string path = "./document.db";
 GRD_DB *g_db = nullptr;
 constexpr const char *COLLECTION_NAME = "student";
-constexpr const char *NULL_JSON_STR = "{}";
-const int E_OK = 0;
 const int MAX_COLLECTION_NAME = 511;
-const int INT_MAX = 2147483647;
-const int INT_MIN = -2147483648;
+
 const int MAX_ID_LENS = 899;
 static const char *g_document1 = "{\"_id\" : \"1\", \"name\":\"doc1\",\"item\":\"journal\",\"personInfo\":\
     {\"school\":\"AB\", \"age\" : 51}}";
@@ -90,12 +88,11 @@ static void CompareValue(const char *value, const char *targetValue)
 {
     int errCode;
     DocumentDB::JsonObject valueObj = DocumentDB::JsonObject::Parse(value, errCode);
-    EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(errCode, DocumentDB::E_OK);
     DocumentDB::JsonObject targetValueObj = DocumentDB::JsonObject::Parse(targetValue, errCode);
-    EXPECT_EQ(errCode, E_OK);
+    EXPECT_EQ(errCode, DocumentDB::E_OK);
     EXPECT_EQ(valueObj.Print(), targetValueObj.Print());
 }
-} // namespace
 
 class DocumentFindApiTest : public testing::Test {
 public:
@@ -571,25 +568,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest025, TestSize.Level1)
   */
 HWTEST_F(DocumentFindApiTest, DocumentFindApiTest026, TestSize.Level1)
 {
-    /**
-     * @tc.steps: step1. Create filter to match g_document16, _id flag is 0.
-     * Create projection to display name,nested5
-     * @tc.expected: step1. Error GRD_INVALID_ARGS.
-     */
-    const char *filter = "{\"_id\" : \"16\"}";
-    GRD_ResultSet *resultSet = nullptr;
-    const char *projectionInfo = "{\"name\": true, \"nested1.nested2.nested3.nested4.nested5\":true}";
-    Query query = { filter, projectionInfo };
-    //EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
-    // EXPECT_EQ(GRD_Next(resultSet), GRD_INVALID_ARGS);
-    // char *value = nullptr;
-    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_INVALID_ARGS);
-    /**
-     * @tc.steps: step2. After loop, cannot get more record.
-     * @tc.expected: step2. Return GRD_NO_DATA.
-     */
-    // EXPECT_EQ(GRD_Next(resultSet), GRD_INVALID_ARGS);
-    // EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_INVALID_ARGS);
+
 }
 
 /**
@@ -1005,7 +984,6 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest035, TestSize.Level1)
      */
     const char *filter = "{\"_id\" : \"17\"}";
     GRD_ResultSet *resultSet = nullptr;
-    int flag = 0;
     Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, GRD_DOC_ID_DISPLAY, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
@@ -1037,7 +1015,6 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest036, TestSize.Level1)
      */
     const char *filter = "{\"_id\" : \"17\"}";
     GRD_ResultSet *resultSet = nullptr;
-    int flag = 0;
     Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, "", query, 0, &resultSet), GRD_INVALID_ARGS);
     EXPECT_EQ(GRD_FindDoc(g_db, NULL, query, 0, &resultSet), GRD_INVALID_ARGS);
@@ -1292,7 +1269,6 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest044, TestSize.Level1)
         false, \"COLOR\":false, \"nonExist\" : false}";
     const char *targetDocument = "{\"_id\" : \"18\", \"name\":\"doc18\", \"personInfo\":\
         {\"school\":\"DD\"}, \"color\":\"blue\"}";
-    int flag = 0;
     Query query = { filter, projectionInfo };
     char *value = nullptr;
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
@@ -1319,7 +1295,6 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest045, TestSize.Level1)
      */
     const char *filter = "{\"_id\" : \"18\"}";
     GRD_ResultSet *resultSet = nullptr;
-    int flag = 0;
     Query query = { filter, "{}" };
     string collectionName1(MAX_COLLECTION_NAME, 'a');
     ASSERT_EQ(GRD_CreateCollection(g_db, collectionName1.c_str(), "", 0), GRD_OK);
@@ -1347,7 +1322,6 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest052, TestSize.Level1)
      */
     const char *filter = "{\"_id\" : \"18\"}";
     GRD_ResultSet *resultSet = nullptr;
-    int flag = 0;
     Query query = { filter, "{}" };
     string collectionName1(MAX_COLLECTION_NAME, 'a');
     ASSERT_EQ(GRD_CreateCollection(g_db, collectionName1.c_str(), "", 0), GRD_OK);
@@ -1587,3 +1561,4 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest061, TestSize.Level1)
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
+} // namespace

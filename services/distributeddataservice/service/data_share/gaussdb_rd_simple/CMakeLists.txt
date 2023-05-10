@@ -4,6 +4,13 @@ project(grd_simple VERSION 1.0.0)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -std=c++17 -pthread")
 
+add_compile_options(-Werror=sign-compare)
+add_compile_options(-Werror=unused-variable)
+add_compile_options(-Wno-conversion-null)
+add_compile_options(-Wuninitialized)
+add_compile_options(-Wformat)
+add_compile_options(-Wno-deprecated-declarations)
+
 # Address Sanitizer
 option(USE_ASAN "Compile with address sanitiser" OFF)
 if (USE_ASAN)

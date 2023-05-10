@@ -55,7 +55,7 @@ private:
     bool isOnlyId_ = false;
     ProjectionTree projectionTree_;
     std::vector<std::vector<std::string>> projectionPath_;
-    int index_ = 0;
+    size_t index_ = 0;
     std::vector<std::pair<std::string, std::string>> matchDatas_;
 };
 } // namespace DocumentDB
