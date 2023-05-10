@@ -172,9 +172,9 @@ HWTEST_F(SerializableTest, GetMap, TestSize.Level2)
     ZLOGI("SerializableSuite GetMapVals begin.");
     std::map<std::string, NormalEx> marshData;
     NormalEx normalEx;
-    normalEx.normals = {Normal()};
+    normalEx.normals = { Normal() };
     normalEx.name = "normalEx";
-    marshData.insert(std::pair{"test1", normalEx});
+    marshData.insert(std::pair{ "test1", normalEx });
     auto jsonData = NormalEx::Marshall(marshData);
 
     std::map<std::string, NormalEx> unmarshData;
@@ -195,7 +195,8 @@ HWTEST_F(SerializableTest, GetMapInStruct, TestSize.Level2)
         std::map<std::string, NormalEx> data;
         std::map<std::string, bool> *index = nullptr;
         std::vector<std::map<std::string, NormalEx>> others;
-        ~TestMeta() {
+        ~TestMeta()
+        {
             delete index;
         }
         bool Marshal(json &node) const
@@ -217,14 +218,14 @@ HWTEST_F(SerializableTest, GetMapInStruct, TestSize.Level2)
     ZLOGI("SerializableSuite GetMapVals begin.");
     TestMeta marData;
     NormalEx normalEx;
-    normalEx.normals = {Normal()};
+    normalEx.normals = { Normal() };
     normalEx.name = "normalEx";
-    marData.data.insert(std::pair{"test1", normalEx});
-    marData.others.push_back({std::pair{"test2", normalEx}});
+    marData.data.insert(std::pair{ "test1", normalEx });
+    marData.others.push_back({ std::pair{ "test2", normalEx } });
     marData.index = new (std::nothrow) std::map<std::string, bool>;
     ASSERT_NE(marData.index, nullptr);
-    marData.index->insert(std::pair{"test1", true});
-    marData.index->insert(std::pair{"test2", true});
+    marData.index->insert(std::pair{ "test1", true });
+    marData.index->insert(std::pair{ "test2", true });
     auto jsonData = NormalEx::Marshall(marData);
     TestMeta unmarData;
     NormalEx::Unmarshall(jsonData, unmarData);
