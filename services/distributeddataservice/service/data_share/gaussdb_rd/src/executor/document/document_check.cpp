@@ -41,7 +41,7 @@ bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefi
 
 void ReplaceAll(std::string &inout, const std::string &what, const std::string &with)
 {
-    std::string::size_type pos {};
+    std::string::size_type pos{};
     while ((pos = inout.find(what.data(), pos, what.length())) != std::string::npos) {
         inout.replace(pos, what.length(), with.data(), with.length());
         pos += with.length();
@@ -83,7 +83,8 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
             return -E_INVALID_ARGS;
         }
     }
-    if (!filterObj.GetChild().GetNext().IsNull()) {
+    int errCode = E_OK;
+    if (!filterObj.GetObjectItem("_id", errCode).GetNext().IsNull() && errCode != E_OK) {
         isOnlyId = false;
     }
     for (size_t i = 0; i < filterPath.size(); i++) {
@@ -144,12 +145,10 @@ int CheckCommon::CheckDocument(JsonObject &documentObj)
         GLOGE("Document Id format is illegal");
         return ret;
     }
-    if (!documentObj.GetChild().IsNull()) {
-        JsonObject documentObjChild = documentObj.GetChild();
-        if (!JsonCommon::CheckJsonField(documentObjChild)) {
-            GLOGE("Document json field format is illegal");
-            return -E_INVALID_ARGS;
-        }
+    JsonObject documentObjChild = documentObj.GetChild();
+    if (!JsonCommon::CheckJsonField(documentObjChild)) {
+        GLOGE("Document json field format is illegal");
+        return -E_INVALID_ARGS;
     }
     return E_OK;
 }
