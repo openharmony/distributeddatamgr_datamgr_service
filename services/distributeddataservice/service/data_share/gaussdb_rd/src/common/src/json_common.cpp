@@ -537,12 +537,11 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                 }
                 JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
                 std::string lastFieldName = itemPath.back();
-                if (srcFatherItem.IsNull()) {
+                if (errCode != E_OK) {
                     isAddedFlag = true;
                     AddSpliteField(src, item, itemPath, externErrCode);
                     return false;
-                }
-                if (errCode == E_OK) {
+                } else {
                     if (isCollapse &&
                         (!IsNumber(itemPath.back()) || srcFatherItem.GetType() == JsonObject::Type::JSON_ARRAY)) {
                         errCode = srcFatherItem.AddItemToObject(itemPath.back(), item);
@@ -625,7 +624,7 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
     if (errCode != -E_JSON_PATH_NOT_EXISTS && granpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
         JsonObject fatherItem = granpaItem.GetChild();
         while (!fatherItem.IsNull()) {
-            if ((fatherItem.GetObjectItem(lastFieldName, errCode) == item)) { // this errCode is always E_OK 
+            if ((fatherItem.GetObjectItem(lastFieldName, errCode) == item)) { // this errCode is always E_OK
                 isMatchFlag = true;
                 isAlreadyMatched = 1;
                 break;
