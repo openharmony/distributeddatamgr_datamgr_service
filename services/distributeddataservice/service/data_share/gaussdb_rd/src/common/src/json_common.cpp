@@ -182,11 +182,15 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fie
     if (!node.GetChild().IsNull()) {
         auto nodeNew = node.GetChild();
         std::set<std::string> newFieldSet;
-        CheckProjectionNode(nodeNew, newFieldSet, errFlag, false, errCode);
+        if (!CheckProjectionNode(nodeNew, newFieldSet, errFlag, false, errCode)) {
+            return false;
+        }
     }
     if (!node.GetNext().IsNull()) {
         auto nodeNew = node.GetNext();
-        CheckProjectionNode(nodeNew, fieldSet, errFlag, isFirstFloor, errCode);
+        if (!CheckProjectionNode(nodeNew, fieldSet, errFlag, isFirstFloor, errCode)) {
+            return false;
+        }
     }
     return errFlag;
 }
