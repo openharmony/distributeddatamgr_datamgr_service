@@ -14,9 +14,6 @@
  */
 #include "json_common.h"
 
-#include <climits>
-#include <functional>
-
 #include "doc_errno.h"
 #include "log_print.h"
 
@@ -681,10 +678,11 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
                 isMatchFlag = false;
                 return false;
             }
-            if (isAlreadyMatched == 0) { //Not match anything
+            if (isAlreadyMatched == 0) { // Not match anything
                 isMatchFlag = false;
             }
-            return false; // Source path not exist, if leaf value is null, isMatchFlag become true, else it will become false.
+            // Source path not exist, if leaf value is null, isMatchFlag become true, else it will become false.
+            return false;
         }
     });
     return isMatchFlag;

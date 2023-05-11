@@ -29,19 +29,19 @@ void PrintLog(Logger::Level level, const char *tag, const std::string &msg)
     const std::string format = "%{public}s";
     OHOS::HiviewDFX::HiLogLabel label = { LOG_CORE, 0xD001631, tag }; // 0xD001631 is identity of the log
     switch (level) {
-        case Logger::Level::LEVEL_DEBUG:
+        case LogPrint::Level::LEVEL_DEBUG:
             (void)OHOS::HiviewDFX::HiLog::Debug(label, format.c_str(), msg.c_str());
             break;
-        case Logger::Level::LEVEL_INFO:
+        case LogPrint::Level::LEVEL_INFO:
             (void)OHOS::HiviewDFX::HiLog::Info(label, format.c_str(), msg.c_str());
             break;
-        case Logger::Level::LEVEL_WARN:
+        case LogPrint::Level::LEVEL_WARN:
             (void)OHOS::HiviewDFX::HiLog::Warn(label, format.c_str(), msg.c_str());
             break;
-        case Logger::Level::LEVEL_ERROR:
+        case LogPrint::Level::LEVEL_ERROR:
             (void)OHOS::HiviewDFX::HiLog::Error(label, format.c_str(), msg.c_str());
             break;
-        case Logger::Level::LEVEL_FATAL:
+        case LogPrint::Level::LEVEL_FATAL:
             (void)OHOS::HiviewDFX::HiLog::Fatal(label, format.c_str(), msg.c_str());
             break;
         default:

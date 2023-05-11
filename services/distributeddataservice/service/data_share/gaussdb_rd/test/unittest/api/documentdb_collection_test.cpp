@@ -197,7 +197,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest006, TestSize.Level0)
  */
 HWTEST_F(DocumentDBCollectionTest, CollectionTest007, TestSize.Level0)
 {
-    for (int flag : std::vector<unsigned int>{ 2, 4, 8, 1024, UINT32_MAX }) {
+    for (int flag : std::vector<unsigned int> { 2, 4, 8, 1024, UINT32_MAX }) {
         EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", flag), GRD_INVALID_ARGS);
         EXPECT_EQ(GRD_DropCollection(g_db, "student", flag), GRD_INVALID_ARGS);
     }

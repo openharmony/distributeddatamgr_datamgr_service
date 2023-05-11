@@ -22,7 +22,6 @@
 #include "log_print.h"
 
 namespace DocumentDB {
-
 namespace {
 bool IsNumber(const std::string &str)
 {

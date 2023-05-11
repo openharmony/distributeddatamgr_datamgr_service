@@ -20,9 +20,9 @@
 namespace DocumentDB {
 int GetErrorCategory(int errCode)
 {
-    int categoryCode = errCode % 1000000;
-    categoryCode /= 1000;
-    categoryCode *= 1000;
+    int categoryCode = errCode % 1000000; // 1000000: mod to get last 6 digits
+    categoryCode /= 1000;                 // 1000: deviced to remove first 3 digits
+    categoryCode *= 1000;                 // 1000: multiply to pad the output
     return categoryCode;
 }
 
@@ -74,12 +74,10 @@ int TransferDocErr(int err)
         case -E_OUT_OF_MEMORY:
             outErr = GRD_FAILED_MEMORY_ALLOCATE;
             break;
-        case -E_INNER_ERROR:
-            outErr = GRD_INNER_ERR;
-            break;
         case -E_INVALID_FILE_FORMAT:
             outErr = GRD_INVALID_FILE_FORMAT;
             break;
+        case -E_INNER_ERROR:
         default:
             outErr = GRD_INNER_ERR;
             break;

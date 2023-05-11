@@ -23,7 +23,9 @@ class DBConfig final {
 public:
     static DBConfig ReadConfig(const std::string &confStr, int &errCode);
 
+    DBConfig() = default;
     ~DBConfig() = default;
+
     std::string ToString() const;
 
     int32_t GetPageSize() const;
@@ -34,10 +36,10 @@ public:
     bool CheckPersistenceEqual(const DBConfig &targetConfig) const;
 
 private:
-    DBConfig() = default;
+    static DBConfig GetDBConfigFromJsonStr(const std::string &confStr, int &errCode);
 
     std::string configStr_ = {};
-    int32_t pageSize_ = 4; // 4: default page size k
+    int32_t pageSize_ = 4;           // 4: default page size k
     uint32_t redoFlushByTrx_ = 0;
     uint32_t redoPubBufSize_ = 1024; // 1024: default 1024k buff size
     int32_t maxConnNum_ = 100;       // 100: default max conn

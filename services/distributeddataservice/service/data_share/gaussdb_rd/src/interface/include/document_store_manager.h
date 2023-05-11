@@ -17,7 +17,6 @@
 #define DOCUMENT_STORE_MANAGER_H
 
 #include <map>
-#include <mutex>
 #include <string>
 
 #include "document_store.h"

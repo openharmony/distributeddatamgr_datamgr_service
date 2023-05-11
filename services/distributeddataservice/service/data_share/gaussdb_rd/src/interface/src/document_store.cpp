@@ -17,7 +17,7 @@
 
 #include "collection_option.h"
 #include "doc_errno.h"
-#include "document_check.h"
+#include "check_common.h"
 #include "grd_base/grd_type_export.h"
 #include "grd_resultset_inner.h"
 #include "log_print.h"
@@ -453,6 +453,7 @@ Collection DocumentStore::GetCollection(std::string &collectionName)
 {
     return Collection(collectionName, executor_);
 }
+
 int DocumentStore::FindDocument(const std::string &collection, const std::string &filter,
     const std::string &projection, uint32_t flags, GRD_ResultSet *grdResultSet)
 {
