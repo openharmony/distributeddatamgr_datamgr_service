@@ -35,7 +35,7 @@ int32_t GRD_Next(GRD_ResultSet *resultSet)
 
 int32_t GRD_GetValue(GRD_ResultSet *resultSet, char **value)
 {
-    if (resultSet == nullptr) {
+    if (resultSet == nullptr || value != nullptr) {
         GLOGE("resultSet is nullptr,cant get value from it");
         return GRD_INVALID_ARGS;
     };
