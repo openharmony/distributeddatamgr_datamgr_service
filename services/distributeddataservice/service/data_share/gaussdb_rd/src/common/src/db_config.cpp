@@ -27,12 +27,12 @@
 
 namespace DocumentDB {
 namespace {
-const int MIN_REDO_BUFFER_SIZE = 256;
-const int MAX_REDO_BUFFER_SIZE = 16384;
-const int MIN_CONNECTION_NUM = 16;
-const int MAX_CONNECTION_NUM = 1024;
-const int MIN_BUFFER_POOL_SIZE = 1024;
-const int MAX_BUFFER_POOL_SIZE = 4 * 1024 * 1024;
+constexpr int MIN_REDO_BUFFER_SIZE = 256;
+constexpr int MAX_REDO_BUFFER_SIZE = 16384;
+constexpr int MIN_CONNECTION_NUM = 16;
+constexpr int MAX_CONNECTION_NUM = 1024;
+constexpr int MIN_BUFFER_POOL_SIZE = 1024;
+constexpr int MAX_BUFFER_POOL_SIZE = 4 * 1024 * 1024;
 
 constexpr const char *DB_CONFIG_PAGESIZE = "pagesize";
 constexpr const char *DB_CONFIG_REDO_FLUSH_BY_TRX = "redoflushbytrx";
