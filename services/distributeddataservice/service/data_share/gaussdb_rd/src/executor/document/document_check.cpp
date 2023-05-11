@@ -75,30 +75,6 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::st
     return true;
 }
 
-int CheckCommon::CheckFilter(JsonObject &filterObj)
-{
-    if (filterObj.GetDeep() > JSON_DEEP_MAX) {
-        GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
-        return -E_INVALID_ARGS;
-    }
-    if (!filterObj.GetChild().IsNull()) {
-        auto filterObjChild = filterObj.GetChild();
-        if (!JsonCommon::CheckJsonField(filterObjChild)) {
-            GLOGE("filter json field format is illegal");
-            return -E_INVALID_ARGS;
-        }
-    }
-    int ret = CheckIdFormat(filterObj);
-    if (ret != E_OK) {
-        GLOGE("Filter Id format is illegal");
-        return ret;
-    }
-    if (!filterObj.GetChild().GetNext().IsNull()) {
-        return -E_INVALID_ARGS;
-    }
-    return E_OK;
-}
-
 int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath)
 {
     for (size_t i = 0; i < filterPath.size(); i++) {
@@ -140,31 +116,6 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
     return E_OK;
 }
 
-bool CheckCommon::CheckFilter(const std::string &filter, std::string &idStr, int &errCode)
-{
-    if (filter.empty()) {
-        errCode = -E_INVALID_ARGS;
-        GLOGE("Check filter invalid. %d", errCode);
-        return false;
-    }
-
-    JsonObject filterObject = JsonObject::Parse(filter, errCode, true, true);
-    if (errCode != E_OK) {
-        GLOGE("Parse filter failed. %d", errCode);
-        return false;
-    }
-
-    JsonObject filterId = filterObject.GetObjectItem("_id", errCode);
-    if (errCode != E_OK || filterId.GetItemValue().GetValueType() != ValueObject::ValueType::VALUE_STRING) {
-        GLOGE("Check filter '_id' not found or type not string.");
-        errCode = -E_INVALID_ARGS;
-        return false;
-    }
-
-    idStr = filterId.GetItemValue().GetStringValue();
-    return true;
-}
-
 bool CheckCommon::CheckDocument(const std::string &updateStr, int &errCode)
 {
     if (updateStr.empty()) {
@@ -200,19 +151,6 @@ bool CheckCommon::CheckDocument(const std::string &updateStr, int &errCode)
     return true;
 }
 
-int CheckCommon::CheckIdFormat(JsonObject &filterJson)
-{
-    auto filterObjChild = filterJson.GetChild();
-    auto idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
-    if (idValue.GetValueType() != ValueObject::ValueType::VALUE_STRING) {
-        return -E_INVALID_ARGS;
-    }
-    if (idValue.GetStringValue().length() + 1 > MAX_ID_LENS) { // with '\0
-        return -E_OVER_LIMIT;
-    }
-    return E_OK;
-}
-
 int CheckCommon::CheckIdFormat(JsonObject &filterJson, bool &isIdExisit)
 {
     auto filterObjChild = filterJson.GetChild();
@@ -235,8 +173,9 @@ int CheckCommon::CheckDocument(JsonObject &documentObj)
         GLOGE("documentObj's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
-    int ret = CheckIdFormat(documentObj);
-    if (ret != E_OK) {
+    bool isIdExist = true;
+    int ret = CheckIdFormat(documentObj, isIdExist);
+    if (!isIdExist || ret != E_OK) {
         GLOGE("Document Id format is illegal");
         return ret;
     }
