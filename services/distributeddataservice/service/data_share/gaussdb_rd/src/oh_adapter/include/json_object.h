@@ -98,7 +98,7 @@ public:
     bool IsNull() const;
     int GetDeep();
     enum class Type {
-        JSON_LEAF,
+        JSON_LEAF, // Corresponds to nodes of type null, number, string, true false in CJSON
         JSON_OBJECT,
         JSON_ARRAY
     };

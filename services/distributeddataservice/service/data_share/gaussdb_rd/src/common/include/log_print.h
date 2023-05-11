@@ -31,7 +31,7 @@ public:
         LEVEL_FATAL
     };
 
-    static void Log(Level level, const std::string &tag, const char *format, ...);
+    static void Log(Level level, const char *tag, const char *format, ...);
 };
 } // namespace DocumentDB
 

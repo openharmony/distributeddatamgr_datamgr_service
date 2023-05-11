@@ -64,8 +64,8 @@ int ResultSet::GetNext()
                 GLOGE("filter Parsed failed");
                 return errCode;
             }
-            auto filterObjChild = filterObj.GetChild();
-            auto idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
+            JsonObject filterObjChild = filterObj.GetChild();
+            ValueObject idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
             std::string idKey = idValue.GetStringValue();
             if (idKey.empty()) {
                 GLOGE("id is empty");
@@ -73,7 +73,7 @@ int ResultSet::GetNext()
             }
             Key key(idKey.begin(), idKey.end());
             Value document;
-            auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
+            Collection coll = Collection(collectionName_, store_->GetExecutor(errCode));
             errCode = coll.GetDocument(key, document);
             if (errCode == -E_NOT_FOUND) {
                 GLOGE("Cant get value from db");
@@ -86,7 +86,7 @@ int ResultSet::GetNext()
             matchDatas_ = values;
         } else {
             int errCode = 0;
-            auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
+            Collection coll = Collection(collectionName_, store_->GetExecutor(errCode));
             std::vector<std::pair<std::string, std::string>> values;
             JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
             if (errCode != E_OK) {
@@ -105,7 +105,7 @@ int ResultSet::GetNext()
         }
     } else if (index_ == 0) {
         int errCode = 0;
-        auto coll = Collection(collectionName_, store_->GetExecutor(errCode));
+        Collection coll = Collection(collectionName_, store_->GetExecutor(errCode));
         std::vector<std::pair<std::string, std::string>> values;
         JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
         if (errCode != E_OK) {
@@ -133,7 +133,7 @@ int ResultSet::GetValue(char **value)
         GLOGE("The value vector in resultSet is empty");
         return -E_NO_DATA;
     }
-    auto jsonData = matchDatas_[index_ - 1].second;
+    std::string jsonData = matchDatas_[index_ - 1].second;
     char *jsonstr = new char[jsonData.size() + 1];
     if (jsonstr == nullptr) {
         GLOGE("Memory allocation failed!");
@@ -172,12 +172,12 @@ int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePat
         allCutPath.emplace_back(singlePath);
     }
     if (!node->GetChild().IsNull()) {
-        auto nodeNew = node->GetChild();
+        JsonObject nodeNew = node->GetChild();
         CheckCutNode(&nodeNew, singlePath, allCutPath);
     }
     if (!node->GetNext().IsNull()) {
         singlePath.pop_back();
-        auto nodeNew = node->GetNext();
+        JsonObject nodeNew = node->GetNext();
         CheckCutNode(&nodeNew, singlePath, allCutPath);
     }
     return E_OK;
@@ -193,7 +193,7 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
     std::vector<std::vector<std::string>> allCutPath;
     if (viewType_) {
         std::vector<std::string> singlePath;
-        auto cjsonObjChild = cjsonObj.GetChild();
+        JsonObject cjsonObjChild = cjsonObj.GetChild();
         errCode = CheckCutNode(&cjsonObjChild, singlePath, allCutPath);
         if (errCode != E_OK) {
             GLOGE("The node in CheckCutNode is nullptr");

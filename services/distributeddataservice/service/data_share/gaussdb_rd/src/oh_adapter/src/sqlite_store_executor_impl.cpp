@@ -140,7 +140,7 @@ int SqliteStoreExecutor::InsertData(const std::string &collName, const Key &key,
             return E_OK;
         },
         nullptr);
-    if (errCode != SQLITE_OK) {
+    if (errCode != E_OK) {
         GLOGE("[sqlite executor] Put data failed. err=%d", errCode);
         if (errCode == -E_ERROR) {
             GLOGE("have same ID before");

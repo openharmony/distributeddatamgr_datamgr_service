@@ -21,13 +21,13 @@
 namespace DocumentDB {
 namespace {
 
-void PrintLog(Logger::Level level, const std::string &tag, const std::string &msg)
+void PrintLog(Logger::Level level, const char *tag, const std::string &msg)
 {
     if (msg.empty()) {
         return;
     }
     const std::string format = "%{public}s";
-    OHOS::HiviewDFX::HiLogLabel label = { LOG_CORE, 0xD001631, tag.c_str() };
+    OHOS::HiviewDFX::HiLogLabel label = { LOG_CORE, 0xD001631, tag };
     switch (level) {
         case Logger::Level::LEVEL_DEBUG:
             (void)OHOS::HiviewDFX::HiLog::Debug(label, format.c_str(), msg.c_str());
@@ -60,7 +60,7 @@ void PreparePrivateLog(const char *format, std::string &outStrFormat)
 }
 } // namespace
 
-void Logger::Log(Level level, const std::string &tag, const char *format, ...)
+void Logger::Log(Level level, const char *tag, const char *format, ...)
 {
     static const int maxLogLength = 1024;
 

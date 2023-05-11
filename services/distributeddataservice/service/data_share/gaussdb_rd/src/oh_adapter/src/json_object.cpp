@@ -14,6 +14,7 @@
 */
 
 #include "json_object.h"
+
 #include <algorithm>
 #include <cmath>
 
@@ -100,8 +101,7 @@ bool ValueObject::operator==(const ValueObject &other) const
     return false;
 }
 
-JsonObject JsonObject::Parse(const std::string &jsonStr, int &errCode,
-    bool caseSensitive, bool isFilter)
+JsonObject JsonObject::Parse(const std::string &jsonStr, int &errCode, bool caseSensitive, bool isFilter)
 {
     JsonObject obj;
     errCode = obj.Init(jsonStr, isFilter);
@@ -121,7 +121,7 @@ JsonObject::~JsonObject()
     }
 }
 
-bool JsonObject::operator==(const JsonObject& other) const
+bool JsonObject::operator==(const JsonObject &other) const
 {
     return (cJSON_Compare(this->cjson_, other.cjson_, 0) != 0);
 }
@@ -578,7 +578,7 @@ cJSON *GetChildPowerMode(cJSON *cjson, const std::string &field, bool caseSens)
         if (!IsNumber(field)) {
             cjson = cjson->child;
             while (cjson != nullptr) {
-                auto resultItem = GetChild(cjson, field, caseSens);
+                cJSON *resultItem = GetChild(cjson, field, caseSens);
                 if (resultItem != nullptr) {
                     return resultItem;
                 }

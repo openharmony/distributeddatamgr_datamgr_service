@@ -180,7 +180,7 @@ int CheckCommon::CheckDocument(JsonObject &documentObj)
         return ret;
     }
     if (!documentObj.GetChild().IsNull()) {
-        auto documentObjChild = documentObj.GetChild();
+        JsonObject documentObjChild = documentObj.GetChild();
         if (!JsonCommon::CheckJsonField(documentObjChild)) {
             GLOGE("Document json field format is illegal");
             return -E_INVALID_ARGS;
@@ -234,7 +234,7 @@ int CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vec
     }
     int errCode = E_OK;
     if (!projectionObj.GetChild().IsNull()) {
-        auto projectionObjChild = projectionObj.GetChild();
+        JsonObject projectionObjChild = projectionObj.GetChild();
         if (!JsonCommon::CheckProjectionField(projectionObjChild, errCode)) {
             GLOGE("projection json field format is illegal");
             return errCode;
