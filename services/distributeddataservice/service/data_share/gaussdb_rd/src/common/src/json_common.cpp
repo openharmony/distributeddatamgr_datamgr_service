@@ -579,11 +579,11 @@ bool JsonCommon::isValueEqual(const ValueObject &srcValue, const ValueObject &ta
             case ValueObject::ValueType::VALUE_NULL:
                 return true;
             case ValueObject::ValueType::VALUE_BOOL:
-                return srcValue.GetBoolValue() == targetValue.GetBoolValue() ? true : false;
+                return srcValue.GetBoolValue() == targetValue.GetBoolValue();
             case ValueObject::ValueType::VALUE_NUMBER:
-                return srcValue.GetDoubleValue() == targetValue.GetDoubleValue() ? true : false;
+                return srcValue.GetDoubleValue() == targetValue.GetDoubleValue();
             case ValueObject::ValueType::VALUE_STRING:
-                return srcValue.GetStringValue() == targetValue.GetStringValue() ? true : false;
+                return srcValue.GetStringValue() == targetValue.GetStringValue();
         }
     }
     return false;
