@@ -359,7 +359,8 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
         JsonFieldPath preHitPath = hitPath;
         preHitPath.pop_back();
         JsonObject preHitItem = src.FindItem(preHitPath, errCode);
-        JsonObject hitItem = preHitItem.GetObjectItem(hitPath.back(), errCode); // if FindItem errCode is not E_OK, GetObjectItem errCode should be E_NOT_FOUND
+        JsonObject hitItem = preHitItem.GetObjectItem(hitPath.back(),
+            errCode); // if FindItem errCode is not E_OK, GetObjectItem errCode should be E_NOT_FOUND
         if (errCode != E_NOT_FOUND) {
             if (!abandonPath.empty()) {
                 abandonPath.pop_back();
@@ -597,7 +598,7 @@ bool JsonCommon::IsArrayMatch(const JsonObject &src, const JsonObject &target, i
     int errCode = 0;
     while (!srcChild.IsNull()) {
         if (srcChild.GetType() == JsonObject::Type::JSON_OBJECT && target.GetType() == JsonObject::Type::JSON_OBJECT &&
-            (IsJsonNodeMatch(srcChild, target, errCode))) {
+            (IsJsonNodeMatch(srcChild, target, errCode))) { // The return value reflects the value of errCode
             isMatch = true;
             isAlreadyMatched = 1;
             break;
@@ -612,7 +613,7 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
 {
     int errCode;
     JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
-    if (srcItem == item) {
+    if (errCode != -E_JSON_PATH_NOT_EXISTS && srcItem == item) {
         isMatchFlag = true;
         isAlreadyMatched = 1;
         return false;
@@ -621,10 +622,10 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
     std::string lastFieldName = granpaPath.back();
     granpaPath.pop_back();
     JsonObject granpaItem = src.FindItemPowerMode(granpaPath, errCode);
-    if (granpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
+    if (errCode != -E_JSON_PATH_NOT_EXISTS && granpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
         JsonObject fatherItem = granpaItem.GetChild();
         while (!fatherItem.IsNull()) {
-            if ((fatherItem.GetObjectItem(lastFieldName, errCode) == item)) {
+            if ((fatherItem.GetObjectItem(lastFieldName, errCode) == item)) { // this errCode is always E_OK 
                 isMatchFlag = true;
                 isAlreadyMatched = 1;
                 break;
@@ -681,6 +682,9 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
                 return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
             } else {
                 JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
+                if (errCode != E_OK) {
+                    return false;
+                }
                 if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) {
                     return JsonEqualJudge(itemPath, src, item, isAlreadyMatched, isCollapse, isMatchFlag);
                 }
