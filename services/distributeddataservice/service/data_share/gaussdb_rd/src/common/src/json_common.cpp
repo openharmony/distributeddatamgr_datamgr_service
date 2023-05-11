@@ -84,14 +84,12 @@ std::vector<ValueObject> JsonCommon::GetLeafValue(const JsonObject &node)
     return leafValue;
 }
 
-bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> fieldSet, bool &errFlag)
+bool JsonCommon::CheckNode(JsonObject &node)
 {
-    if (!errFlag) {
-        return false;
-    }
     std::string fieldName;
-    if (!node.IsNull()) {
+    while (!node.IsNull()) {
         int ret = 0;
+        std::set<std::string> fieldSet;
         bool isFieldNameExist = true;
         fieldName = node.GetItemField(ret);
         if (ret != E_OK) {
@@ -101,106 +99,80 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> fieldSet, boo
             if (isFieldNameExist) {
                 fieldSet.insert(fieldName);
                 if (fieldName.empty()) {
-                    errFlag = false;
                     return false;
                 }
             }
         } else {
-            errFlag = false;
             return false;
         }
         for (size_t i = 0; i < fieldName.size(); i++) {
             if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || '_' == fieldName[i])) {
-                errFlag = false;
                 return false;
             }
             if (i == 0 && (isdigit(fieldName[i]))) {
-                errFlag = false;
                 return false;
             }
         }
-    }
-    if (!node.GetChild().IsNull()) {
-        JsonObject nodeNew = node.GetChild();
-        std::set<std::string> newFieldSet;
-        if (!CheckNode(nodeNew, newFieldSet, errFlag)) {
-            return false;
+
+        if (!node.GetChild().IsNull()) {
+            JsonObject nodeNew = node.GetChild();
+            if (!CheckNode(nodeNew)) {
+                return false;
+            }
         }
+        node = node.GetNext();
     }
-    if (!node.GetNext().IsNull()) {
-        JsonObject nodeNew = node.GetNext();
-        if (!CheckNode(nodeNew, fieldSet, errFlag)) {
-            return false;
-        }
-    }
-    return errFlag;
+    return true;
 }
 
 bool JsonCommon::CheckJsonField(JsonObject &jsonObj)
 {
-    std::set<std::string> fieldSet;
-    bool errFlag = true;
-    return CheckNode(jsonObj, fieldSet, errFlag);
+    return CheckNode(jsonObj);
 }
 
-bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fieldSet, bool &errFlag,
-    bool isFirstLevel, int &errCode)
+bool JsonCommon::CheckProjectionNode(JsonObject &node, bool isFirstLevel, int &errCode)
 {
-    if (!errFlag) {
-        return false;
-    }
     std::string fieldName;
-    if (!node.IsNull()) {
+    while (!node.IsNull()) {
         int ret = 0;
+        std::set<std::string> fieldSet;
         fieldName = node.GetItemField(ret);
         if (fieldName.empty()) {
             errCode = -E_INVALID_ARGS;
-            errFlag = false;
             return false;
         }
         if (fieldSet.find(fieldName) == fieldSet.end() && ret == E_OK) {
             fieldSet.insert(fieldName);
         } else {
             errCode = -E_INVALID_JSON_FORMAT;
-            errFlag = false;
             return false;
         }
         for (size_t i = 0; i < fieldName.size(); i++) {
             if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]) ||
                     (isFirstLevel && '.' == fieldName[i]))) {
                 errCode = -E_INVALID_ARGS;
-                errFlag = false;
                 return false;
             }
             if (i == 0 && (isdigit(fieldName[i]))) {
                 errCode = -E_INVALID_ARGS;
-                errFlag = false;
                 return false;
             }
         }
-    }
-    if (!node.GetChild().IsNull()) {
-        JsonObject nodeNew = node.GetChild();
-        std::set<std::string> newFieldSet;
-        if (!CheckProjectionNode(nodeNew, newFieldSet, errFlag, false, errCode)) {
-            return false;
+        if (!node.GetChild().IsNull()) {
+            JsonObject nodeNew = node.GetChild();
+            if (!CheckProjectionNode(nodeNew, false, errCode)) {
+                return false;
+            }
         }
+        node = node.GetNext();
     }
-    if (!node.GetNext().IsNull()) {
-        JsonObject nodeNew = node.GetNext();
-        if (!CheckProjectionNode(nodeNew, fieldSet, errFlag, isFirstLevel, errCode)) {
-            return false;
-        }
-    }
-    return errFlag;
+    return true;
 }
 
 bool JsonCommon::CheckProjectionField(JsonObject &jsonObj, int &errCode)
 {
-    std::set<std::string> fieldSet;
-    bool errFlag = true;
     bool isFirstLevel = true;
-    return CheckProjectionNode(jsonObj, fieldSet, errFlag, isFirstLevel, errCode);
+    return CheckProjectionNode(jsonObj, isFirstLevel, errCode);
 }
 
 int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
