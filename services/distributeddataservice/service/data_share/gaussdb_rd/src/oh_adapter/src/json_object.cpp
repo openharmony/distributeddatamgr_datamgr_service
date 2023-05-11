@@ -508,11 +508,7 @@ std::string JsonObject::GetItemField() const
 
 std::string JsonObject::GetItemField(int &errCode) const
 {
-    if (cjson_ == nullptr) {
-        errCode = E_INVALID_ARGS;
-        return "";
-    }
-    if (cjson_->string == nullptr) {
+    if (cjson_ == nullptr || cjson_->string == nullptr) {
         errCode = E_INVALID_ARGS;
         return "";
     }
