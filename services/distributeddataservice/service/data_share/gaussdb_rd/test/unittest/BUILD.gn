@@ -12,7 +12,7 @@
 # limitations under the License.
 import("//build/test.gni")
 
-module_output_path = "datamgr_service/documentdb"
+module_output_path = "datamgr_service/gaussdb_rd"
 
 ###############################################################################
 config("module_private_config") {

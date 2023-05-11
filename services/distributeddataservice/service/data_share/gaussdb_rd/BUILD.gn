@@ -42,10 +42,10 @@ config("documentdb_public_config") {
 }
 
 group("build_module") {
-  deps = [ ":documentdb" ]
+  deps = [ ":gaussdb_rd" ]
 }
 
-ohos_shared_library("documentdb") {
+ohos_shared_library("gaussdb_rd") {
   sources = [
     "src/common/src/collection_option.cpp",
     "src/common/src/db_config.cpp",

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(grd_simple VERSION 1.0.0)
+project(gaussdb_rd VERSION 1.0.0)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -std=c++17 -pthread")
 
