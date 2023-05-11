@@ -73,7 +73,7 @@ int ResultSet::GetNext()
             }
             Key key(idKey.begin(), idKey.end());
             Value document;
-            Collection coll = Collection(collectionName_, store_->GetExecutor(errCode));
+            Collection coll = store_->GetCollection(collectionName_);
             errCode = coll.GetDocument(key, document);
             if (errCode == -E_NOT_FOUND) {
                 GLOGE("Cant get value from db");
@@ -86,7 +86,7 @@ int ResultSet::GetNext()
             matchDatas_ = values;
         } else {
             int errCode = 0;
-            Collection coll = Collection(collectionName_, store_->GetExecutor(errCode));
+            Collection coll = store_->GetCollection(collectionName_);
             std::vector<std::pair<std::string, std::string>> values;
             JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
             if (errCode != E_OK) {
@@ -105,7 +105,7 @@ int ResultSet::GetNext()
         }
     } else if (index_ == 0) {
         int errCode = 0;
-        Collection coll = Collection(collectionName_, store_->GetExecutor(errCode));
+        Collection coll = store_->GetCollection(collectionName_);
         std::vector<std::pair<std::string, std::string>> values;
         JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
         if (errCode != E_OK) {

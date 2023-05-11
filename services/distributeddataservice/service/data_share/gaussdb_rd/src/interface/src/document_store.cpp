@@ -449,9 +449,9 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
     Key key(id.begin(), id.end());
     return coll.DeleteDocument(key);
 }
-KvStoreExecutor *DocumentStore::GetExecutor(int errCode)
+Collection DocumentStore::GetCollection(std::string &collectionName)
 {
-    return executor_;
+    return Collection(collectionName, executor_);
 }
 int DocumentStore::FindDocument(const std::string &collection, const std::string &filter,
     const std::string &projection, uint32_t flags, GRD_ResultSet *grdResultSet)

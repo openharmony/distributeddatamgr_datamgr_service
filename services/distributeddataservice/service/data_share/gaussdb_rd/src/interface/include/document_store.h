@@ -47,7 +47,7 @@ public:
     int FindDocument(const std::string &collection, const std::string &filter, const std::string &projection,
         uint32_t flags, GRD_ResultSet *grdResultSet);
 
-    KvStoreExecutor *GetExecutor(int errCode);
+    Collection GetCollection(std::string &collectionName);
 
     bool IsCollectionOpening(const std::string collection);
 
