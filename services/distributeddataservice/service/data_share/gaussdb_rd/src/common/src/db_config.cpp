@@ -124,7 +124,7 @@ int CheckConfigValid(const JsonObject &config)
 {
     JsonObject child = config.GetChild();
     while (!child.IsNull()) {
-        std::string fieldName = child.GetItemFiled();
+        std::string fieldName = child.GetItemField();
         bool isSupport = false;
         for (int i = 0; i < DB_CONFIG_SIZE; i++) {
             if (strcmp(DB_CONFIG[i], fieldName.c_str()) == 0) {

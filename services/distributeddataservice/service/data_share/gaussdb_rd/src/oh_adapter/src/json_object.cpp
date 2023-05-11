@@ -229,10 +229,10 @@ int JsonObject::CheckJsonRepeatField(cJSON *object)
     if (type != cJSON_Object && type != cJSON_Array) {
         return ret;
     }
-    std::set<std::string> filedSet;
+    std::set<std::string> fieldSet;
     cJSON *subObj = object->child;
     while (subObj != nullptr) {
-        ret = CheckSubObj(filedSet, subObj, type);
+        ret = CheckSubObj(fieldSet, subObj, type);
         if (ret != E_OK) {
             break;
         }
@@ -241,7 +241,7 @@ int JsonObject::CheckJsonRepeatField(cJSON *object)
     return ret;
 }
 
-int JsonObject::CheckSubObj(std::set<std::string> &filedSet, cJSON *subObj, int parentType)
+int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int parentType)
 {
     if (subObj == nullptr) {
         return -E_INVALID_ARGS;
@@ -261,8 +261,8 @@ int JsonObject::CheckSubObj(std::set<std::string> &filedSet, cJSON *subObj, int 
     if (fieldName.empty()) {
         return -E_INVALID_JSON_FORMAT;
     }
-    if (filedSet.find(fieldName) == filedSet.end()) {
-        filedSet.insert(fieldName);
+    if (fieldSet.find(fieldName) == fieldSet.end()) {
+        fieldSet.insert(fieldName);
     } else {
         ret = -E_INVALID_JSON_FORMAT;
     }
@@ -368,7 +368,7 @@ int JsonObject::AddItemToObject(const JsonObject &item)
     }
 
     cJSON *cpoyItem = cJSON_Duplicate(item.cjson_, true);
-    cJSON_AddItemToObject(cjson_, item.GetItemFiled().c_str(), cpoyItem);
+    cJSON_AddItemToObject(cjson_, item.GetItemField().c_str(), cpoyItem);
     return E_OK;
 }
 
@@ -452,16 +452,16 @@ ValueObject JsonObject::GetItemValue() const
     return value;
 }
 
-void JsonObject::ReplaceItemInObject(const std::string &filedName, const JsonObject &newItem, int &errCode)
+void JsonObject::ReplaceItemInObject(const std::string &fieldName, const JsonObject &newItem, int &errCode)
 {
     if (!newItem.IsNull() || !this->IsNull()) {
         if (this->GetType() == JsonObject::Type::JSON_OBJECT) {
-            if (!(this->GetObjectItem(filedName.c_str(), errCode).IsNull())) {
+            if (!(this->GetObjectItem(fieldName.c_str(), errCode).IsNull())) {
                 cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
-                cJSON_ReplaceItemInObjectCaseSensitive(this->cjson_, filedName.c_str(), copyItem);
+                cJSON_ReplaceItemInObjectCaseSensitive(this->cjson_, fieldName.c_str(), copyItem);
             } else {
                 cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
-                cJSON_AddItemToObject(this->cjson_, filedName.c_str(), copyItem);
+                cJSON_AddItemToObject(this->cjson_, fieldName.c_str(), copyItem);
             }
         }
     }
@@ -508,7 +508,7 @@ int JsonObject::InsertItemObject(int which, const JsonObject &newItem)
     return E_OK;
 }
 
-std::string JsonObject::GetItemFiled() const
+std::string JsonObject::GetItemField() const
 {
     if (cjson_ == nullptr) {
         return "";
@@ -532,7 +532,7 @@ std::string JsonObject::GetItemFiled() const
     }
 }
 
-std::string JsonObject::GetItemFiled(int &errCode) const
+std::string JsonObject::GetItemField(int &errCode) const
 {
     if (cjson_ == nullptr) {
         errCode = E_INVALID_ARGS;

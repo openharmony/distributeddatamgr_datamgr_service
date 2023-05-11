@@ -71,13 +71,13 @@ int Collection::GetDocument(const Key &key, Value &document) const
     return executor_->GetData(name_, key, document);
 }
 
-int Collection::GetFilededDocument(const JsonObject &filterObj,
+int Collection::GetFieldedDocument(const JsonObject &filterObj,
     std::vector<std::pair<std::string, std::string>> &values) const
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
     }
-    return executor_->GetFilededData(name_, filterObj, values);
+    return executor_->GetFieldedData(name_, filterObj, values);
 }
 
 int Collection::DeleteDocument(const Key &key)

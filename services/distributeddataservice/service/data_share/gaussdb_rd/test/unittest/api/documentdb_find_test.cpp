@@ -1022,7 +1022,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest036, TestSize.Level1)
 
 /**
   * @tc.name: DocumentFindApiTest037
-  * @tc.desc: Test filed with different value.
+  * @tc.desc: Test field with different value.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao

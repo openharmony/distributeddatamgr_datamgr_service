@@ -161,7 +161,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest002, TestSize.Level1)
 
 /**
   * @tc.name: DocumentDelete003
-  * @tc.desc: Delete with filter which has more than one fileds.
+  * @tc.desc: Delete with filter which has more than one fields.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
@@ -169,7 +169,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest002, TestSize.Level1)
 HWTEST_F(DocumentDeleteApiTest, DeleteDBTest003, TestSize.Level1)
 {
     /**
-     * @tc.steps:step1. Delete with filter which has more than one fileds.
+     * @tc.steps:step1. Delete with filter which has more than one fields.
      * @tc.expected: step1. GRD_INVALID_ARGS
     */
     const char *filter = "{\"_id\" : \"1\", \"age\" : 15}";
@@ -284,7 +284,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest007, TestSize.Level1)
 HWTEST_F(DocumentDeleteApiTest, DeleteDBTest008, TestSize.Level1)
 {
     /**
-     * @tc.steps:step1. Delete with filter which has more than one fileds.
+     * @tc.steps:step1. Delete with filter which has more than one fields.
      * @tc.expected: step1. GRD_INVALID_ARGS
     */
     const char *filter = "{\"_id\" : \"1\"}";

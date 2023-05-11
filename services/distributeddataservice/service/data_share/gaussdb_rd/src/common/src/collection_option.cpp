@@ -30,7 +30,7 @@ int CheckConfigValid(const JsonObject &config)
 {
     JsonObject child = config.GetChild();
     while (!child.IsNull()) {
-        std::string fieldName = child.GetItemFiled();
+        std::string fieldName = child.GetItemField();
         if (strcmp(OPT_MAX_DOC, fieldName.c_str()) != 0) {
             GLOGE("Invalid collection config.");
             return -E_INVALID_CONFIG_VALUE;

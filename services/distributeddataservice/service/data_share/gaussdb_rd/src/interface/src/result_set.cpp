@@ -47,7 +47,7 @@ int ResultSet::Init(DocumentStore *store, const std::string collectionName, cons
 
 int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter)
 {
-    ifFiled_ = true;
+    ifField_ = true;
     store_ = store;
     collectionName_ = collectionName;
     filter_ = filter;
@@ -56,7 +56,7 @@ int ResultSet::Init(DocumentStore *store, const std::string collectionName, cons
 
 int ResultSet::GetNext()
 {
-    if (!ifFiled_ && index_ == 0) {
+    if (!ifField_ && index_ == 0) {
         if (isOnlyId_) {
             int errCode = 0;
             JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
@@ -65,7 +65,7 @@ int ResultSet::GetNext()
                 return errCode;
             }
             auto filterObjChild = filterObj.GetChild();
-            auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+            auto idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
             std::string idKey = idValue.GetStringValue();
             if (idKey.empty()) {
                 GLOGE("id is empty");
@@ -93,7 +93,7 @@ int ResultSet::GetNext()
                 GLOGE("filter Parsed failed");
                 return errCode;
             }
-            errCode = coll.GetFilededDocument(filterObj, values);
+            errCode = coll.GetFieldedDocument(filterObj, values);
             if (errCode == -E_NOT_FOUND) {
                 GLOGE("Cant get value from db");
                 return -E_NO_DATA;
@@ -112,7 +112,7 @@ int ResultSet::GetNext()
             GLOGE("filter Parsed failed");
             return errCode;
         }
-        errCode = coll.GetFilededDocument(filterObj, values);
+        errCode = coll.GetFieldedDocument(filterObj, values);
         if (errCode == -E_NOT_FOUND) {
             GLOGE("Cant get value from db");
             return -E_NO_DATA;
@@ -166,7 +166,7 @@ int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePat
         GLOGE("No node to cut");
         return -E_NO_DATA;
     }
-    singlePath.emplace_back(node->GetItemFiled());
+    singlePath.emplace_back(node->GetItemField());
     int index = 0;
     if (!projectionTree_.SearchTree(singlePath, index) && index == 0) {
         allCutPath.emplace_back(singlePath);

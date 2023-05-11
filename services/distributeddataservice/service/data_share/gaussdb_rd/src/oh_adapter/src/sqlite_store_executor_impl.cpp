@@ -177,7 +177,7 @@ int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Va
     return innerErrorCode;
 }
 
-int SqliteStoreExecutor::GetFilededData(const std::string &collName, const JsonObject &filterObj,
+int SqliteStoreExecutor::GetFieldedData(const std::string &collName, const JsonObject &filterObj,
     std::vector<std::pair<std::string, std::string>> &values) const
 {
     if (dbHandle_ == nullptr) {

@@ -81,12 +81,12 @@ public:
 
     ValueObject GetItemValue() const;
     void ReplaceItemInArray(const int &index, const JsonObject &newItem, int &errCode);
-    void ReplaceItemInObject(const std::string &filedName, const JsonObject &newItem, int &errCode);
+    void ReplaceItemInObject(const std::string &fieldName, const JsonObject &newItem, int &errCode);
     void SetItemValue(const ValueObject &value) const;
     int InsertItemObject(int which, const JsonObject &newItem);
 
-    std::string GetItemFiled() const;
-    std::string GetItemFiled(int &errCode) const;
+    std::string GetItemField() const;
+    std::string GetItemField(int &errCode) const;
 
     bool IsFieldExists(const JsonFieldPath &jsonPath) const;
     bool IsFieldExistsPowerMode(const JsonFieldPath &jsonPath) const;
@@ -108,7 +108,7 @@ private:
     JsonObject();
     int Init(const std::string &str, bool isFilter = false);
     int CheckJsonRepeatField(cJSON *object);
-    int CheckSubObj(std::set<std::string> &filedSet, cJSON *subObj, int parentType);
+    int CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int parentType);
     int GetDeep(cJSON *cjson);
     int CheckNumber(cJSON *cjson, int &errCode);
     cJSON *cjson_ = nullptr;

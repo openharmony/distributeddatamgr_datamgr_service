@@ -51,7 +51,7 @@ private:
     std::string filter_;
     bool ifShowId_ = false;
     bool viewType_ = false;
-    bool ifFiled_ = false;
+    bool ifField_ = false;
     bool isOnlyId_ = false;
     ProjectionTree projectionTree_;
     std::vector<std::vector<std::string>> projectionPath_;

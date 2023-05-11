@@ -203,7 +203,7 @@ bool CheckCommon::CheckDocument(const std::string &updateStr, int &errCode)
 int CheckCommon::CheckIdFormat(JsonObject &filterJson)
 {
     auto filterObjChild = filterJson.GetChild();
-    auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+    auto idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
     if (idValue.GetValueType() != ValueObject::ValueType::VALUE_STRING) {
         return -E_INVALID_ARGS;
     }
@@ -216,7 +216,7 @@ int CheckCommon::CheckIdFormat(JsonObject &filterJson)
 int CheckCommon::CheckIdFormat(JsonObject &filterJson, bool &isIdExisit)
 {
     auto filterObjChild = filterJson.GetChild();
-    ValueObject idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID, isIdExisit);
+    ValueObject idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID, isIdExisit);
     if ((idValue.GetValueType() == ValueObject::ValueType::VALUE_NULL) && isIdExisit == false) {
         return E_OK;
     }

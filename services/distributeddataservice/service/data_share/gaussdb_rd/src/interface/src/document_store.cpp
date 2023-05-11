@@ -176,7 +176,7 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
     if (isOnlyId) {
         auto filterObjChild = filterObj.GetChild();
-        auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+        auto idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
         std::string docId = idValue.GetStringValue();
         std::lock_guard<std::mutex> lock(dbMutex_);
         bool isCollectionExist = coll.IsCollectionExists(errCode);
@@ -282,7 +282,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
             return -E_INVALID_ARGS;
         }
         auto filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+        ValueObject idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
         std::string docId = idValue.GetStringValue();
         JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
         documentObj.InsertItemObject(0, idObj);
@@ -295,7 +295,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     }
     bool isIdExist;
     auto filterObjChild = filterObj.GetChild();
-    auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID, isIdExist);
+    auto idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID, isIdExist);
     if (!isIdExist) {
         return -E_INVALID_ARGS;
     }
@@ -361,7 +361,7 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
     auto documentObjChild = documentObj.GetChild();
-    auto idValue = JsonCommon::GetValueByFiled(documentObjChild, KEY_ID);
+    auto idValue = JsonCommon::GetValueByField(documentObjChild, KEY_ID);
     std::string id = idValue.GetStringValue();
     Key key(id.begin(), id.end());
     Value value(document.begin(), document.end());
@@ -415,7 +415,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
     }
     if (isOnlyId) {
         auto filterObjChild = filterObj.GetChild();
-        auto idValue = JsonCommon::GetValueByFiled(filterObjChild, KEY_ID);
+        auto idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
         std::string id = idValue.GetStringValue();
         Key key(id.begin(), id.end());
         std::lock_guard<std::mutex> lock(dbMutex_);
