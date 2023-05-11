@@ -133,7 +133,7 @@ bool CheckCommon::CheckDocument(const std::string &updateStr, int &errCode)
     if (errCode != E_OK) {
         return false;
     }
-    for (auto singlePath : updatePath) {
+    for (const auto &singlePath : updatePath) {
         if (singlePath.size() > JSON_DEEP_MAX) {
             GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
             errCode = -E_INVALID_ARGS;
@@ -213,7 +213,7 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
             return -E_INVALID_ARGS;
         }
     }
-    for (auto singlePath : path) {
+    for (const auto &singlePath : path) {
         if (singlePath.size() > JSON_DEEP_MAX) {
             return -E_INVALID_ARGS;
         }
