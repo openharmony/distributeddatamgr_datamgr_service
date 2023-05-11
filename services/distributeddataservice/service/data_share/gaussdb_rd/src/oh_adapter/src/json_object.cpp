@@ -233,10 +233,7 @@ int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int 
     }
     if (parentType == cJSON_Array) {
         ret = CheckJsonRepeatField(subObj);
-        if (ret != E_OK) {
-            return ret;
-        }
-        return E_OK;
+        return ret;
     }
     if (fieldName.empty()) {
         return -E_INVALID_JSON_FORMAT;
@@ -250,10 +247,7 @@ int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int 
         return ret;
     }
     ret = CheckJsonRepeatField(subObj);
-    if (ret != E_OK) {
-        return ret;
-    }
-    return E_OK;
+    return ret;
 }
 
 std::string JsonObject::Print() const
