@@ -21,7 +21,7 @@
 namespace DocumentDB {
 namespace {
 
-void PrintLog(Logger::Level level, const char *tag, const std::string &msg)
+void PrintLog(LogPrint::Level level, const char *tag, const std::string &msg)
 {
     if (msg.empty()) {
         return;
@@ -60,7 +60,7 @@ void PreparePrivateLog(const char *format, std::string &outStrFormat)
 }
 } // namespace
 
-void Logger::Log(Level level, const char *tag, const char *format, ...)
+void LogPrint::Log(Level level, const char *tag, const char *format, ...)
 {
     static const int maxLogLength = 1024;
 
