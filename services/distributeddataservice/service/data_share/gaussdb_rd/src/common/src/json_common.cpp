@@ -312,7 +312,7 @@ bool IsNumber(const std::string &str)
 
 bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFieldPath &itemPath, int &externErrCode)
 {
-    int errCode = 0;
+    int errCode = E_OK;
     JsonFieldPath abandonPath;
     JsonFieldPath hitPath = itemPath;
     while (!hitPath.empty()) {
@@ -387,7 +387,7 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
 bool JsonValueReplace(const JsonObject &src, const JsonFieldPath &fatherPath, const JsonObject &father,
     const JsonObject &item, int &externErrCode)
 {
-    int errCode = 0;
+    int errCode = E_OK;
     JsonFieldPath granPaPath = fatherPath;
     if (!granPaPath.empty()) {
         granPaPath.pop_back();
@@ -428,7 +428,7 @@ bool JsonValueReplace(const JsonObject &src, const JsonFieldPath &fatherPath, co
 bool JsonNodeReplace(const JsonObject &src, const JsonFieldPath &itemPath, const JsonObject &father,
     const JsonObject &item, int &externErrCode)
 {
-    int errCode = 0;
+    int errCode = E_OK;
     JsonFieldPath fatherPath = itemPath;
     fatherPath.pop_back();
     if (!fatherPath.empty()) {
@@ -565,7 +565,7 @@ bool JsonCommon::IsArrayMatch(const JsonObject &src, const JsonObject &target, i
     JsonObject srcChild = src.GetChild();
     JsonObject targetObj = target;
     bool isMatch = false;
-    int errCode = 0;
+    int errCode = E_OK;
     while (!srcChild.IsNull()) {
         if (srcChild.GetType() == JsonObject::Type::JSON_OBJECT && target.GetType() == JsonObject::Type::JSON_OBJECT &&
             (IsJsonNodeMatch(srcChild, target, errCode))) { // The return value reflects the value of errCode
@@ -581,7 +581,7 @@ bool JsonCommon::IsArrayMatch(const JsonObject &src, const JsonObject &target, i
 bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item,
     int &isAlreadyMatched, bool &isCollapse, int &isMatchFlag)
 {
-    int errCode;
+    int errCode = E_OK;
     JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
     if (errCode != -E_JSON_PATH_NOT_EXISTS && srcItem == item) {
         isMatchFlag = true;
