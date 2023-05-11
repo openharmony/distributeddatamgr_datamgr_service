@@ -25,7 +25,7 @@ namespace DocumentDB {
 class Collection {
 public:
     Collection(const std::string &name, KvStoreExecutor *executor);
-    Collection(const Collection &a){};
+    Collection(const Collection &a) = default;
     Collection(){};
     ~Collection();
 

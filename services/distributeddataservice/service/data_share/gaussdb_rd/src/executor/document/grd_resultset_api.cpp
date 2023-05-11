@@ -29,8 +29,6 @@ int32_t GRD_Next(GRD_ResultSet *resultSet)
         GLOGE("resultSet is nullptr");
         return GRD_INVALID_ARGS;
     };
-    std::mutex dbMutex;
-    std::lock_guard<std::mutex> lock(dbMutex);
     int ret = resultSet->resultSet_.GetNext();
     return TransferDocErr(ret);
 }
