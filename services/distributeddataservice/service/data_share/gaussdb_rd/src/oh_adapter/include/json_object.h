@@ -44,7 +44,6 @@ public:
     int64_t GetIntValue() const;
     double GetDoubleValue() const;
     std::string GetStringValue() const;
-    bool operator==(const ValueObject &other) const;
 
 private:
     ValueType valueType = ValueType::VALUE_NULL;

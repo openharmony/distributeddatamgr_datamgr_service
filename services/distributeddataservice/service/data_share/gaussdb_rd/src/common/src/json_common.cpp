@@ -19,10 +19,9 @@
 
 #include "doc_errno.h"
 #include "log_print.h"
-#include "securec.h"
 
 namespace DocumentDB {
-ValueObject JsonCommon::GetValueByField(JsonObject &node, const std::string &field)
+ValueObject JsonCommon::GetValueInSameLevel(JsonObject &node, const std::string &field)
 {
     while (!node.IsNull()) {
         if (node.GetItemField() == field) {
@@ -38,7 +37,7 @@ ValueObject JsonCommon::GetValueByField(JsonObject &node, const std::string &fie
     return ValueObject();
 }
 
-ValueObject JsonCommon::GetValueByField(JsonObject &node, const std::string &field, bool &isFieldExist)
+ValueObject JsonCommon::GetValueInSameLevel(JsonObject &node, const std::string &field, bool &isFieldExist)
 {
     while (!node.IsNull()) {
         if (node.GetItemField() == field) {

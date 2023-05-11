@@ -71,7 +71,7 @@ int Collection::GetDocument(const Key &key, Value &document) const
     return executor_->GetData(name_, key, document);
 }
 
-int Collection::GetFieldedDocument(const JsonObject &filterObj,
+int Collection::GetMatchedDocument(const JsonObject &filterObj,
     std::vector<std::pair<std::string, std::string>> &values) const
 {
     if (executor_ == nullptr) {

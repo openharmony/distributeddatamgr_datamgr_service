@@ -19,21 +19,17 @@
 namespace DocumentDB {
 const int JSON_DEEP_MAX = 4;
 
-ProjectionTree::ProjectionTree() {}
-
-ProjectionTree::~ProjectionTree() {}
-
 int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path)
 {
     ProjectionNode *node = &node_;
-    if (node == NULL) {
+    if (node == nullptr) {
         return E_OK;
     }
     for (auto singlePath : path) {
         node = &node_;
         for (size_t j = 0; j < singlePath.size(); j++) {
-            if (node->SonNode[singlePath[j]] != nullptr) {
-                node = node->SonNode[singlePath[j]];
+            if (node->sonNode[singlePath[j]] != nullptr) {
+                node = node->sonNode[singlePath[j]];
                 if (j < singlePath.size() - 1 && node->isDeepest) {
                     return -E_INVALID_ARGS;
                 }
@@ -52,8 +48,8 @@ int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path)
                     return -E_INVALID_ARGS;
                 }
                 node->isDeepest = false;
-                node->SonNode[singlePath[j]] = tempNode;
-                node = node->SonNode[singlePath[j]];
+                node->sonNode[singlePath[j]] = tempNode;
+                node = node->sonNode[singlePath[j]];
             }
         }
     }
@@ -67,8 +63,8 @@ bool ProjectionTree::SearchTree(std::vector<std::string> &singlePath, int &index
         if (node->isDeepest) {
             index = i;
         }
-        if (node->SonNode[singlePath[i]] != nullptr) {
-            node = node->SonNode[singlePath[i]];
+        if (node->sonNode[singlePath[i]] != nullptr) {
+            node = node->sonNode[singlePath[i]];
         } else {
             return false;
         }
@@ -78,7 +74,7 @@ bool ProjectionTree::SearchTree(std::vector<std::string> &singlePath, int &index
 
 int ProjectionNode::DeleteProjectionNode()
 {
-    for (auto item : SonNode) {
+    for (auto item : sonNode) {
         if (item.second != nullptr) {
             delete item.second;
             item.second = nullptr;

@@ -25,7 +25,7 @@ namespace DocumentDB {
 class JsonCommon;
 class CheckCommon {
 public:
-    CheckCommon() = default;
+    CheckCommon() = delete;
     ~CheckCommon() = default;
 
     static bool CheckCollectionName(const std::string &collectionName, std::string &formattedName, int &errCode);

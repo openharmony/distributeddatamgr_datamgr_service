@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 #include "result_set.h"
-
+#include "securec.h"
 #include "log_print.h"
 
 namespace DocumentDB {
@@ -65,7 +65,7 @@ int ResultSet::GetNext()
                 return errCode;
             }
             JsonObject filterObjChild = filterObj.GetChild();
-            ValueObject idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
+            ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
             std::string idKey = idValue.GetStringValue();
             if (idKey.empty()) {
                 GLOGE("id is empty");
@@ -93,7 +93,7 @@ int ResultSet::GetNext()
                 GLOGE("filter Parsed failed");
                 return errCode;
             }
-            errCode = coll.GetFieldedDocument(filterObj, values);
+            errCode = coll.GetMatchedDocument(filterObj, values);
             if (errCode == -E_NOT_FOUND) {
                 GLOGE("Cant get value from db");
                 return -E_NO_DATA;
@@ -112,7 +112,7 @@ int ResultSet::GetNext()
             GLOGE("filter Parsed failed");
             return errCode;
         }
-        errCode = coll.GetFieldedDocument(filterObj, values);
+        errCode = coll.GetMatchedDocument(filterObj, values);
         if (errCode == -E_NOT_FOUND) {
             GLOGE("Cant get value from db");
             return -E_NO_DATA;
@@ -139,7 +139,7 @@ int ResultSet::GetValue(char **value)
         GLOGE("Memory allocation failed!");
         return -E_FAILED_MEMORY_ALLOCATE;
     }
-    errno_t err = strcpy_s(jsonstr, jsonData.size() + 1, jsonData.c_str());
+    int err = strcpy_s(jsonstr, jsonData.size() + 1, jsonData.c_str());
     if (err != 0) {
         GLOGE("strcpy_s failed");
         delete[] jsonstr;

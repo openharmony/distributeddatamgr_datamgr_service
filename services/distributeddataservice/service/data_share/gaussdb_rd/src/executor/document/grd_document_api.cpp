@@ -89,20 +89,14 @@ int32_t GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter
     }
     int ret = db->store_->DeleteDocument(collectionName, filter, flags);
     int errCode = TransferDocErr(ret);
-    int deleteCount = 0;
     switch (errCode) {
         case GRD_OK:
-            deleteCount = 1;
-            return deleteCount;
-            break;
+            return 1; // The amount of text deleted
         case GRD_NO_DATA:
-            deleteCount = 0;
-            return deleteCount;
-            break;
+            return 0;
         default:
-            break;
+            return errCode;
     }
-    return errCode;
 }
 
 int32_t GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, uint32_t flags, GRD_ResultSet **resultSet)

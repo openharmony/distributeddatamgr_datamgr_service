@@ -176,7 +176,7 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     Collection coll = Collection(collection, executor_);
     if (isOnlyId) {
         JsonObject filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
+        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
         std::string docId = idValue.GetStringValue();
         std::lock_guard<std::mutex> lock(dbMutex_);
         bool isCollectionExist = coll.IsCollectionExists(errCode);
@@ -282,7 +282,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
             return -E_INVALID_ARGS;
         }
         JsonObject filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
+        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
         std::string docId = idValue.GetStringValue();
         JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
         documentObj.InsertItemObject(0, idObj);
@@ -290,12 +290,14 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         errCode = coll.UpsertDocument(docId, addedIdDocument, isReplace);
         if (errCode == E_OK) {
             errCode = 1; // upsert one record.
+        } else if (errCode == -E_NOT_FOUND) {
+            errCode = E_OK;
         }
         return errCode;
     }
     bool isIdExist;
     JsonObject filterObjChild = filterObj.GetChild();
-    ValueObject idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID, isIdExist);
+    ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);
     if (!isIdExist) {
         return -E_INVALID_ARGS;
     }
@@ -360,7 +362,7 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         return errCode;
     }
     JsonObject documentObjChild = documentObj.GetChild();
-    ValueObject idValue = JsonCommon::GetValueByField(documentObjChild, KEY_ID);
+    ValueObject idValue = JsonCommon::GetValueInSameLevel(documentObjChild, KEY_ID);
     std::string id = idValue.GetStringValue();
     Key key(id.begin(), id.end());
     Value value(document.begin(), document.end());
@@ -415,7 +417,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
     Collection coll = Collection(collection, executor_);
     if (isOnlyId) {
         JsonObject filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID);
+        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
         std::string id = idValue.GetStringValue();
         Key key(id.begin(), id.end());
         std::lock_guard<std::mutex> lock(dbMutex_);

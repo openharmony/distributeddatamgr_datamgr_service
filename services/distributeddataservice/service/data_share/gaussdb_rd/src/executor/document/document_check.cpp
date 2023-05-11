@@ -120,7 +120,7 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
 int CheckCommon::CheckIdFormat(JsonObject &filterJson, bool &isIdExisit)
 {
     JsonObject filterObjChild = filterJson.GetChild();
-    ValueObject idValue = JsonCommon::GetValueByField(filterObjChild, KEY_ID, isIdExisit);
+    ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExisit);
     if ((idValue.GetValueType() == ValueObject::ValueType::VALUE_NULL) && isIdExisit == false) {
         return E_OK;
     }

@@ -25,7 +25,7 @@
 
 namespace DocumentDB {
 struct ProjectionNode {
-    std::unordered_map<std::string, ProjectionNode *> SonNode;
+    std::unordered_map<std::string, ProjectionNode *> sonNode;
     bool isDeepest;
     int Deep;
     int ViewType;
@@ -42,9 +42,6 @@ struct ProjectionNode {
 };
 class ProjectionTree {
 public:
-    ProjectionTree();
-    ~ProjectionTree();
-
     int ParseTree(std::vector<std::vector<std::string>> &path);
     bool SearchTree(std::vector<std::string> &singlePath, int &index);
 

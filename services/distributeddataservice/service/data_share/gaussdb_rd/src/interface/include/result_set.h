@@ -17,6 +17,7 @@
 #define RESULTSET_H
 
 #include <string>
+#include <vector>
 
 #include "doc_errno.h"
 #include "document_check.h"
@@ -24,8 +25,6 @@
 #include "grd_base/grd_type_export.h"
 #include "json_object.h"
 #include "projection_tree.h"
-#include "securec.h"
-#include "vector"
 
 namespace DocumentDB {
 class ResultSet {

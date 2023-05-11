@@ -29,8 +29,8 @@ public:
     JsonCommon() = default;
     ~JsonCommon();
 
-    static ValueObject GetValueByField(JsonObject &node, const std::string &field);
-    static ValueObject GetValueByField(JsonObject &node, const std::string &field, bool &isFieldExist);
+    static ValueObject GetValueInSameLevel(JsonObject &node, const std::string &field);
+    static ValueObject GetValueInSameLevel(JsonObject &node, const std::string &field, bool &isFieldExist);
     static bool CheckJsonField(JsonObject &node);
     static bool CheckProjectionField(JsonObject &node, int &errCode);
     static int ParseNode(JsonObject &Node, std::vector<std::string> singlePath,
