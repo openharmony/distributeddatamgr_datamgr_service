@@ -318,7 +318,7 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
     while (!hitPath.empty()) {
         abandonPath.emplace_back(hitPath.back());
         JsonObject srcFatherItem = src.FindItem(hitPath, errCode);
-        if (errCode != -E_JSON_PATH_NOT_EXISTS) {
+        if (errCode == E_OK) {
             break;
         }
         if (!srcFatherItem.IsNull()) {
@@ -582,8 +582,8 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
     int &isAlreadyMatched, bool &isCollapse, int &isMatchFlag)
 {
     int errCode = E_OK;
-    JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
-    if (errCode != -E_JSON_PATH_NOT_EXISTS && srcItem == item) {
+    JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode); // This function has only two error codes, and the other error code is not an exception, but the specified node was not found
+    if (errCode == E_OK && srcItem == item) {
         isMatchFlag = true;
         isAlreadyMatched = 1;
         return false;
@@ -592,7 +592,7 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
     std::string lastFieldName = granpaPath.back();
     granpaPath.pop_back();
     JsonObject granpaItem = src.FindItemPowerMode(granpaPath, errCode);
-    if (errCode != -E_JSON_PATH_NOT_EXISTS && granpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
+    if (errCode == E_OK && granpaItem.GetType() == JsonObject::Type::JSON_ARRAY && isCollapse) {
         JsonObject fatherItem = granpaItem.GetChild();
         while (!fatherItem.IsNull()) {
             if ((fatherItem.GetObjectItem(lastFieldName, errCode) == item)) { // this errCode is always E_OK
