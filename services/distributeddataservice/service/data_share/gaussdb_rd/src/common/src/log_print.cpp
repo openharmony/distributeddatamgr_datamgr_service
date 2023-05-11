@@ -27,7 +27,7 @@ void PrintLog(Logger::Level level, const char *tag, const std::string &msg)
         return;
     }
     const std::string format = "%{public}s";
-    OHOS::HiviewDFX::HiLogLabel label = { LOG_CORE, 0xD001631, tag };
+    OHOS::HiviewDFX::HiLogLabel label = { LOG_CORE, 0xD001631, tag }; // The identity of the log
     switch (level) {
         case Logger::Level::LEVEL_DEBUG:
             (void)OHOS::HiviewDFX::HiLog::Debug(label, format.c_str(), msg.c_str());
