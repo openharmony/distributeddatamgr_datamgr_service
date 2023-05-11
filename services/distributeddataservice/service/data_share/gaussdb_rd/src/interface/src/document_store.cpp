@@ -195,7 +195,10 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         return errCode;
     }
     ResultSet resultSet;
-    InitResultSet(this, collection, filter, resultSet);
+    int ret = InitResultSet(this, collection, filter, resultSet);
+    if (ret != E_OK) {
+        return ret;
+    }
     std::lock_guard<std::mutex> lock(dbMutex_);
     bool isCollectionExist = coll.IsCollectionExists(errCode);
     if (errCode != E_OK) {
@@ -310,7 +313,10 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         return -E_INVALID_ARGS;
     }
     ResultSet resultSet;
-    InitResultSet(this, collection, filter, resultSet);
+    int ret = InitResultSet(this, collection, filter, resultSet);
+    if (ret != E_OK) {
+        return ret;
+    }
     errCode = resultSet.GetNext();
     bool isfilterMatch = false;
     if (errCode == E_OK) {
@@ -322,7 +328,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     std::string addedIdDocument = documentObj.Print();
     Value ValueDocument;
     Key key(docId.begin(), docId.end());
-    errCode = coll.GetDocument(key, ValueDocument);
+    errCode = coll.GetDocument(key, ValueDocument); // if errCode is not E_OK, it means same id document is already exist.
     if (errCode == E_OK && !(isfilterMatch)) {
         GLOGE("id exist but filter does not match, data conflict");
         return -E_DATA_CONFLICT;
@@ -431,7 +437,10 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         return coll.DeleteDocument(key);
     }
     ResultSet resultSet;
-    InitResultSet(this, collection, filter, resultSet);
+    int ret = InitResultSet(this, collection, filter, resultSet);
+    if (ret != E_OK) {
+        return ret;
+    }
     std::lock_guard<std::mutex> lock(dbMutex_);
     bool isCollectionExist = coll.IsCollectionExists(errCode);
     if (errCode != E_OK) {
