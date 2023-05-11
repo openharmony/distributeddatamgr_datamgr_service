@@ -118,6 +118,9 @@ group("unittest") {
   testonly = true
   deps = []
 
-  deps += [ ":DistributeddataDfxMSTTest" ]
+  deps += [
+    ":DistributeddataDfxMSTTest",
+    ":DistributeddataDfxUTTest",
+  ]
 }
 ###############################################################################
