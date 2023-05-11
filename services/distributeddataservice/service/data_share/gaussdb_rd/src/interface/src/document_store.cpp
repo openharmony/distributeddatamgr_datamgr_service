@@ -56,6 +56,9 @@ int DocumentStore::CreateCollection(const std::string &name, const std::string &
     }
 
     std::lock_guard<std::mutex> lock(dbMutex_);
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
     errCode = executor_->StartTransaction();
     if (errCode != E_OK) {
         return errCode;
@@ -94,6 +97,9 @@ int DocumentStore::DropCollection(const std::string &name, uint32_t flags)
 
     bool ignoreNonExists = (flags != CHK_NON_EXIST_COLLECTION);
     std::lock_guard<std::mutex> lock(dbMutex_);
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
     errCode = executor_->StartTransaction();
     if (errCode != E_OK) {
         return errCode;
@@ -173,52 +179,48 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         return errCode;
     }
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
-    Collection coll = Collection(collection, executor_);
-    if (isOnlyId) {
-        JsonObject filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
-        std::string docId = idValue.GetStringValue();
-        std::lock_guard<std::mutex> lock(dbMutex_);
-        bool isCollectionExist = coll.IsCollectionExists(errCode);
-        if (errCode != E_OK) {
-            return errCode;
-        }
-        if (!isCollectionExist) {
-            return -E_INVALID_ARGS;
-        }
-        errCode = coll.UpdateDocument(docId, update, isReplace);
-        if (errCode == E_OK) {
-            errCode = 1; // upsert one record.
-        } else if (errCode == -E_NOT_FOUND) {
-            errCode = E_OK;
-        }
-        return errCode;
-    }
-    ResultSet resultSet;
-    InitResultSet(this, collection, filter, resultSet);
     std::lock_guard<std::mutex> lock(dbMutex_);
-    bool isCollectionExist = coll.IsCollectionExists(errCode);
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
+    errCode = executor_->StartTransaction();
     if (errCode != E_OK) {
         return errCode;
     }
-    if (!isCollectionExist) {
-        return -E_INVALID_ARGS;
-    }
-    errCode = resultSet.GetNext();
-    if (errCode == -E_NO_DATA) {
-        return 0; // The amount of text updated
-    } else if (errCode != E_OK) {
-        return errCode;
-    }
     std::string docId;
-    resultSet.GetKey(docId);
+    int count = 0;
+    auto coll = Collection(collection, executor_);
+    if (isOnlyId) {
+        auto filterObjChild = filterObj.GetChild();
+        auto idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
+        docId = idValue.GetStringValue();
+    } else {
+        ResultSet resultSet;
+        InitResultSet(this, collection, filter, resultSet);
+        // no start transaction inner
+        errCode = resultSet.GetNext(false, true);
+        if (errCode == -E_NO_DATA) {
+            // no need to set count
+            errCode = E_OK;
+            goto END;
+        } else if (errCode != E_OK) {
+            goto END;
+        }
+        resultSet.GetKey(docId);
+    }
     errCode = coll.UpdateDocument(docId, update, isReplace);
     if (errCode == E_OK) {
-        errCode = 1; // update one record.
+        count++;
     } else if (errCode == -E_NOT_FOUND) {
         errCode = E_OK;
     }
-    return errCode;
+END:
+    if (errCode == E_OK) {
+        executor_->Commit();
+    } else {
+        executor_->Rollback();
+    }
+    return (errCode == E_OK) ? count : errCode;
 }
 
 int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter,
@@ -271,69 +273,65 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     if (errCode != E_OK) {
         return errCode;
     }
-    Collection coll = Collection(collection, executor_);
-    if (isOnlyId) {
-        std::lock_guard<std::mutex> lock(dbMutex_);
-        bool isCollectionExist = coll.IsCollectionExists(errCode);
-        if (errCode != E_OK) {
-            return errCode;
-        }
-        if (!isCollectionExist) {
-            return -E_INVALID_ARGS;
-        }
-        JsonObject filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
-        std::string docId = idValue.GetStringValue();
-        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
-        documentObj.InsertItemObject(0, idObj);
-        std::string addedIdDocument = documentObj.Print();
-        errCode = coll.UpsertDocument(docId, addedIdDocument, isReplace);
-        if (errCode == E_OK) {
-            errCode = 1; // upsert one record.
-        } else if (errCode == -E_NOT_FOUND) {
-            errCode = E_OK;
-        }
-        return errCode;
-    }
-    bool isIdExist;
-    JsonObject filterObjChild = filterObj.GetChild();
-    ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);
-    if (!isIdExist) {
-        return -E_INVALID_ARGS;
-    }
     std::lock_guard<std::mutex> lock(dbMutex_);
-    bool isCollectionExist = coll.IsCollectionExists(errCode);
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
+    errCode = executor_->StartTransaction();
     if (errCode != E_OK) {
         return errCode;
     }
-    if (!isCollectionExist) {
-        return -E_INVALID_ARGS;
+    Collection coll = Collection(collection, executor_);
+    int count = 0;
+    std::string targetDocument;
+    std::string docId;
+    if (isOnlyId) {
+        auto filterObjChild = filterObj.GetChild();
+        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
+        docId = idValue.GetStringValue();
+        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
+        documentObj.InsertItemObject(0, idObj);
+        targetDocument = documentObj.Print();
+    } else {
+        bool isIdExist;
+        auto filterObjChild = filterObj.GetChild();
+        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);        if (!isIdExist) {
+            errCode = -E_INVALID_ARGS;
+            goto END;
+        }
+        ResultSet resultSet;
+        InitResultSet(this, collection, filter, resultSet);
+        errCode = resultSet.GetNext(false, true);
+        bool isfilterMatch = false;
+        if (errCode == E_OK) {
+            isfilterMatch = true;
+        }
+        docId = idValue.GetStringValue();
+        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
+        documentObj.InsertItemObject(0, idObj);
+        targetDocument = documentObj.Print();
+        Value ValueDocument;
+        Key key(docId.begin(), docId.end());
+        errCode = coll.GetDocument(key, ValueDocument);
+        if (errCode == E_OK && !(isfilterMatch)) {
+            GLOGE("id exist but filter does not match, data conflict");
+            errCode = -E_DATA_CONFLICT;
+            goto END;
+        }
     }
-    ResultSet resultSet;
-    InitResultSet(this, collection, filter, resultSet);
-    errCode = resultSet.GetNext();
-    bool isfilterMatch = false;
+    errCode = coll.UpsertDocument(docId, targetDocument, isReplace);
     if (errCode == E_OK) {
-        isfilterMatch = true;
-    }
-    std::string docId = idValue.GetStringValue();
-    JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
-    documentObj.InsertItemObject(0, idObj);
-    std::string addedIdDocument = documentObj.Print();
-    Value ValueDocument;
-    Key key(docId.begin(), docId.end());
-    errCode = coll.GetDocument(key, ValueDocument);
-    if (errCode == E_OK && !(isfilterMatch)) {
-        GLOGE("id exist but filter does not match, data conflict");
-        return -E_DATA_CONFLICT;
-    }
-    errCode = coll.UpsertDocument(docId, addedIdDocument, isReplace);
-    if (errCode == E_OK) {
-        errCode = 1; // upsert one record.
+        count++;
     } else if (errCode == -E_NOT_FOUND) {
         errCode = E_OK;
     }
-    return errCode;
+END:
+    if (errCode == E_OK) {
+        executor_->Commit();
+    } else {
+        executor_->Rollback();
+    }
+    return (errCode == E_OK) ? count : errCode;
 }
 
 int DocumentStore::InsertDocument(const std::string &collection, const std::string &document, uint32_t flags)
@@ -368,14 +366,6 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
     Value value(document.begin(), document.end());
     std::lock_guard<std::mutex> lock(dbMutex_);
     Collection coll = Collection(collection, executor_);
-    bool isCollectionExist = coll.IsCollectionExists(errCode);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    if (!isCollectionExist) {
-        return -E_INVALID_ARGS;
-    }
-    Value ValueDocument;
     return coll.InsertDocument(key, value);
 }
 
@@ -414,40 +404,40 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
     if (errCode != E_OK) {
         return errCode;
     }
-    Collection coll = Collection(collection, executor_);
-    if (isOnlyId) {
-        JsonObject filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
-        std::string id = idValue.GetStringValue();
-        Key key(id.begin(), id.end());
-        std::lock_guard<std::mutex> lock(dbMutex_);
-        bool isCollectionExist = coll.IsCollectionExists(errCode);
-        if (errCode != E_OK) {
-            return errCode;
-        }
-        if (!isCollectionExist) {
-            return -E_INVALID_ARGS;
-        }
-        return coll.DeleteDocument(key);
-    }
-    ResultSet resultSet;
-    InitResultSet(this, collection, filter, resultSet);
     std::lock_guard<std::mutex> lock(dbMutex_);
-    bool isCollectionExist = coll.IsCollectionExists(errCode);
-    if (errCode != E_OK) {
-        return errCode;
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
     }
-    if (!isCollectionExist) {
-        return -E_INVALID_ARGS;
-    }
-    errCode = resultSet.GetNext();
+    Collection coll = Collection(collection, executor_);
+    errCode = executor_->StartTransaction();
     if (errCode != E_OK) {
         return errCode;
     }
     std::string id;
-    resultSet.GetKey(id);
-    Key key(id.begin(), id.end());
-    return coll.DeleteDocument(key);
+    if (isOnlyId) {
+        auto filterObjChild = filterObj.GetChild();
+        auto idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
+        id = idValue.GetStringValue();
+    } else {
+        ResultSet resultSet;
+        InitResultSet(this, collection, filter, resultSet);
+        errCode = resultSet.GetNext(false, true);
+        if (errCode != E_OK) {
+            goto END;
+        }
+        resultSet.GetKey(id);
+    }
+END:
+    if (errCode == E_OK) {
+        Key key(id.begin(), id.end());
+        errCode = coll.DeleteDocument(key);
+    }
+	if (errCode == E_OK || errCode == E_NOT_FOUND) {
+        executor_->Commit();
+    } else {
+        executor_->Rollback();
+    }
+    return errCode;
 }
 Collection DocumentStore::GetCollection(std::string &collectionName)
 {
@@ -518,30 +508,38 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     }
     std::lock_guard<std::mutex> lock(dbMutex_);
     Collection coll = Collection(collection, executor_);
-    bool isCollectionExist = coll.IsCollectionExists(errCode);
+    if (IsCollectionOpening(collection)) {
+        return -E_RESOURCE_BUSY;
+    }
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
+    errCode = executor_->StartTransaction();
     if (errCode != E_OK) {
         return errCode;
     }
+    bool isCollectionExist = coll.IsCollectionExists(errCode);
     if (!isCollectionExist) {
-        return -E_INVALID_ARGS;
+        errCode = -E_INVALID_ARGS;
     }
-    if (!coll.FindDocument()) {
-        GLOGE("no corresponding table name");
-        return -E_INVALID_ARGS;
+    if (errCode != E_OK) {
+        goto END;
     }
-    int ret = InitResultSet(this, collection, filter, allPath, ifShowId, viewType, grdResultSet->resultSet_, isOnlyId);
-    if (ret == E_OK) {
+    errCode = InitResultSet(this, collection, filter, allPath, ifShowId, viewType, grdResultSet->resultSet_, isOnlyId);
+    if (errCode == E_OK) {
         collections_[collection] = nullptr;
     }
-    if (ret != E_OK) {
-        collections_.erase(collection);
+END:
+	if (errCode == E_OK) {
+        executor_->Commit();
+    } else {
+        executor_->Rollback();
     }
-    return ret;
+    return errCode;
 }
 
 bool DocumentStore::IsCollectionOpening(const std::string collection)
 {
-    std::lock_guard<std::mutex> lock(dbMutex_);
     if (collections_.find(collection) != collections_.end()) {
         GLOGE("DB is resource busy");
         return true;
@@ -628,5 +626,35 @@ int DocumentStore::Close(uint32_t flags)
         closeNotifier_();
     }
     return E_OK;
+}
+
+int DocumentStore::StartTransaction()
+{
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
+    return executor_->StartTransaction();
+}
+int DocumentStore::Commit()
+{
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
+    return executor_->Commit();
+}
+int DocumentStore::Rollback()
+{
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
+    return executor_->Rollback();
+}
+
+bool DocumentStore::IsCollectionExists(const std::string &collectionName, int &errCode)
+{
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
+    return executor_->IsCollectionExists(collectionName, errCode);
 }
 } // namespace DocumentDB

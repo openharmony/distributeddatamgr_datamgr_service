@@ -50,10 +50,8 @@ int32_t GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter
         return GRD_INVALID_ARGS;
     }
     int ret = db->store_->UpdateDocument(collectionName, filter, update, flags);
-    if (ret == 1) {
-        return 1; // The amount of text updated
-    } else if (ret == 0) {
-        return 0;
+    if (ret >= 0) {
+        return ret;
     }
     return TransferDocErr(ret);
 }
@@ -65,10 +63,8 @@ int32_t GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter
         return GRD_INVALID_ARGS;
     }
     int ret = db->store_->UpsertDocument(collectionName, filter, document, flags);
-    if (ret == 1) {
-        return 1; // The amount of text updated
-    } else if (ret == 0) {
-        return 0;
+    if (ret >= 0) {
+        return ret;
     }
     return TransferDocErr(ret);
 }
@@ -105,9 +101,6 @@ int32_t GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, uint32_
         query.filter == nullptr || query.projection == nullptr) {
         return GRD_INVALID_ARGS;
     }
-    if (db->store_->IsCollectionOpening(collectionName)) {
-        return GRD_RESOURCE_BUSY;
-    }
     GRD_ResultSet *grdResultSet = new (std::nothrow) GRD_ResultSet();
     if (grdResultSet == nullptr) {
         GLOGE("Memory allocation failed!");
@@ -116,7 +109,6 @@ int32_t GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, uint32_
     int ret = db->store_->FindDocument(collectionName, query.filter, query.projection, flags, grdResultSet);
     if (ret != E_OK) {
         delete grdResultSet;
-        *resultSet = nullptr;
         return TransferDocErr(ret);
     }
     *resultSet = grdResultSet;

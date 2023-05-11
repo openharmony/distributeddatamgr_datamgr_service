@@ -315,7 +315,6 @@ bool SqliteStoreExecutorImpl::IsCollectionExists(const std::string &name, int &e
 {
     bool isExists = false;
     std::string sql = "SELECT tbl_name FROM sqlite_master WHERE tbl_name=?;";
-
     errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
         [name](sqlite3_stmt *stmt) {
