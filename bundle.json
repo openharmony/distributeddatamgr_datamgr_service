@@ -89,7 +89,8 @@
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:build_module",
-                "//foundation/distributeddatamgr/datamgr_service/conf:build_module"
+                "//foundation/distributeddatamgr/datamgr_service/conf:build_module",
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share/gaussdb_rd:build_module"
             ],
             "inner_kits": [],
             "test": [
