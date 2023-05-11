@@ -235,7 +235,11 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
         }
         if (!node.GetChild().IsNull() && node.GetChild().GetItemField() != "") {
             auto nodeNew = node.GetChild();
-            ParseNode(nodeNew, singlePath, resultPath, false);
+            int ret = E_OK;
+            ret = ParseNode(nodeNew, singlePath, resultPath, false);
+            if (ret != E_OK) {
+                return ret;
+            }
         } else {
             resultPath.emplace_back(singlePath);
         }
@@ -341,8 +345,11 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
     JsonFieldPath abandonPath;
     JsonFieldPath hitPath = itemPath;
     while (!hitPath.empty()) {
-        JsonObject srcFatherItem = src.FindItem(hitPath, errCode);
         abandonPath.emplace_back(hitPath.back());
+        JsonObject srcFatherItem = src.FindItem(hitPath, errCode);
+        if (errCode != -E_JSON_PATH_NOT_EXISTS) {
+            break;
+        }
         if (!srcFatherItem.IsNull()) {
             break;
         }
@@ -352,33 +359,35 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
         JsonFieldPath preHitPath = hitPath;
         preHitPath.pop_back();
         JsonObject preHitItem = src.FindItem(preHitPath, errCode);
-        JsonObject hitItem = preHitItem.GetObjectItem(hitPath.back(), errCode);
-        if (!abandonPath.empty()) {
-            abandonPath.pop_back();
-        }
-        if (!hitItem.IsNull()) {
-            JsonFieldPath newHitPath;
-            for (int i = abandonPath.size() - 1; i > -1; i--) {
-                if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
-                    GLOGE("Add collapse item to object failed, path not exist.");
-                    externErrCode = -E_DATA_CONFLICT;
-                    return false;
-                }
-                if (IsNumber(abandonPath[i])) {
-                    externErrCode = -E_DATA_CONFLICT;
-                    return false;
-                }
-                (i == 0) ? errCode = hitItem.AddItemToObject(abandonPath[i], item)
-                         : errCode = hitItem.AddItemToObject(abandonPath[i]);
-                externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-                newHitPath.emplace_back(abandonPath[i]);
-                hitItem = hitItem.FindItem(newHitPath, errCode);
-                newHitPath.pop_back();
+        JsonObject hitItem = preHitItem.GetObjectItem(hitPath.back(), errCode); // if FindItem errCode is not E_OK, GetObjectItem errCode should be E_NOT_FOUND
+        if (errCode != E_NOT_FOUND) {
+            if (!abandonPath.empty()) {
+                abandonPath.pop_back();
             }
-            return false;
+            if (!hitItem.IsNull()) {
+                JsonFieldPath newHitPath;
+                for (int i = abandonPath.size() - 1; i > -1; i--) {
+                    if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
+                        GLOGE("Add collapse item to object failed, path not exist.");
+                        externErrCode = -E_DATA_CONFLICT;
+                        return false;
+                    }
+                    if (IsNumber(abandonPath[i])) {
+                        externErrCode = -E_DATA_CONFLICT;
+                        return false;
+                    }
+                    (i == 0) ? errCode = hitItem.AddItemToObject(abandonPath[i], item)
+                             : errCode = hitItem.AddItemToObject(abandonPath[i]);
+                    externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+                }
+                return false;
+            }
         }
     }
     JsonObject hitItem = src.FindItem(hitPath, errCode);
+    if (errCode != E_OK) {
+        return false;
+    }
     JsonFieldPath newHitPath;
     for (int i = abandonPath.size() - 1; i > -1; i--) {
         if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
@@ -395,6 +404,9 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
         externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
         newHitPath.emplace_back(abandonPath[i]);
         hitItem = hitItem.FindItem(newHitPath, errCode);
+        if (errCode != E_OK) {
+            return false;
+        }
         newHitPath.pop_back();
     }
     return false;
