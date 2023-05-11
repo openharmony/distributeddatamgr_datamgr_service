@@ -100,10 +100,10 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> fieldSet, boo
         if (fieldSet.find(fieldName) == fieldSet.end()) {
             if (isFieldNameExist) {
                 fieldSet.insert(fieldName);
-            }
-            if (isFieldNameExist && fieldName.empty()) {
-                errFlag = false;
-                return false;
+                if (fieldName.empty()) {
+                    errFlag = false;
+                    return false;
+                }
             }
         } else {
             errFlag = false;
