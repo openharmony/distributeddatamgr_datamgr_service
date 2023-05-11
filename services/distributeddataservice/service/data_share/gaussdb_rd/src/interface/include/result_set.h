@@ -19,7 +19,7 @@
 #include <string>
 
 #include "doc_errno.h"
-#include "document_check.h"
+#include "check_common.h"
 #include "document_store.h"
 #include "grd_base/grd_type_export.h"
 #include "json_object.h"

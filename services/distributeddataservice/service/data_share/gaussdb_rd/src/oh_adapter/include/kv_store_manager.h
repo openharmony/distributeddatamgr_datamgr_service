@@ -18,7 +18,7 @@
 #include <string>
 
 #include "db_config.h"
-#include "document_check.h"
+#include "check_common.h"
 #include "kv_store_executor.h"
 
 namespace DocumentDB {

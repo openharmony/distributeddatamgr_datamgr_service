@@ -13,25 +13,8 @@
 * limitations under the License.
 */
 
-#ifndef COLLECTION_OPTION_H
-#define COLLECTION_OPTION_H
-
-#include <string>
+#include "db_constant.h"
 
 namespace DocumentDB {
-class CollectionOption final {
-public:
-    static CollectionOption ReadOption(const std::string &optStr, int &errCode);
-
-    uint32_t GetMaxDoc() const;
-    std::string ToString() const;
-
-    bool operator==(const CollectionOption &targetOption) const;
-    bool operator!=(const CollectionOption &targetOption) const;
-
-private:
-    std::string option_ = "{}";
-    uint32_t maxDoc_ = UINT32_MAX;
-};
+const std::string DBConstant::COLL_PREFIX = "GRD_COLL_";
 } // namespace DocumentDB
-#endif // COLLECTION_OPTION_H

@@ -21,7 +21,7 @@
 namespace DocumentDB {
 constexpr const char *LOG_TAG_DOC = "GAUSSDB_RD";
 
-class Logger {
+class LogPrint {
 public:
     enum class Level {
         LEVEL_DEBUG,
@@ -36,9 +36,9 @@ public:
 } // namespace DocumentDB
 
 #define NO_LOG(...) // No log in normal and release. Used for convenience when deep debugging
-#define GLOGD(...) Logger::Log(Logger::Level::LEVEL_DEBUG, LOG_TAG_DOC, __VA_ARGS__)
-#define GLOGI(...) Logger::Log(Logger::Level::LEVEL_INFO, LOG_TAG_DOC, __VA_ARGS__)
-#define GLOGW(...) Logger::Log(Logger::Level::LEVEL_WARN, LOG_TAG_DOC, __VA_ARGS__)
-#define GLOGE(...) Logger::Log(Logger::Level::LEVEL_ERROR, LOG_TAG_DOC, __VA_ARGS__)
-#define GLOGF(...) Logger::Log(Logger::Level::LEVEL_FATAL, LOG_TAG_DOC, __VA_ARGS__)
+#define GLOGD(...) LogPrint::Log(LogPrint::Level::LEVEL_DEBUG, LOG_TAG_DOC, __VA_ARGS__)
+#define GLOGI(...) LogPrint::Log(LogPrint::Level::LEVEL_INFO, LOG_TAG_DOC, __VA_ARGS__)
+#define GLOGW(...) LogPrint::Log(LogPrint::Level::LEVEL_WARN, LOG_TAG_DOC, __VA_ARGS__)
+#define GLOGE(...) LogPrint::Log(LogPrint::Level::LEVEL_ERROR, LOG_TAG_DOC, __VA_ARGS__)
+#define GLOGF(...) LogPrint::Log(LogPrint::Level::LEVEL_FATAL, LOG_TAG_DOC, __VA_ARGS__)
 #endif // LOG_PRINT_H

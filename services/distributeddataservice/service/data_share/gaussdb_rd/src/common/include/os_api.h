@@ -25,7 +25,7 @@ bool CheckPathExistence(const std::string &filePath);
 
 int GetRealPath(const std::string &inOriPath, std::string &outRealPath);
 
-void SplitFilePath(const std::string &filePath, std::string &fileDir, std::string &fileName);
+void SplitFilePath(const std::string &filePath, std::string &fieldir, std::string &fileName);
 } // namespace OSAPI
 } // namespace DocumentDB
 #endif // OS_API_H

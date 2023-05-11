@@ -15,10 +15,9 @@
 
 #include "collection.h"
 
-#include <algorithm>
-
+#include "check_common.h"
+#include "db_constant.h"
 #include "doc_errno.h"
-#include "document_check.h"
 #include "log_print.h"
 
 namespace DocumentDB {
@@ -30,7 +29,7 @@ Collection::Collection(const std::string &name, KvStoreExecutor *executor) : exe
     std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), [](unsigned char c) {
         return std::tolower(c);
     });
-    name_ = COLL_PREFIX + lowerCaseName;
+    name_ = DBConstant::COLL_PREFIX + lowerCaseName;
 }
 
 Collection::~Collection()

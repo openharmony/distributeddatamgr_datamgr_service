@@ -18,15 +18,13 @@
 
 #include <string>
 
-#include "document_check.h"
+#include "check_common.h"
 #include "kv_store_executor.h"
 
 namespace DocumentDB {
 class Collection {
 public:
     Collection(const std::string &name, KvStoreExecutor *executor);
-    Collection(const Collection &a){};
-    Collection(){};
     ~Collection();
 
     int PutDocument(const Key &key, const Value &document);

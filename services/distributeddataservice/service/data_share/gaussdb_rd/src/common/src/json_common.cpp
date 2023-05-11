@@ -14,9 +14,6 @@
  */
 #include "json_common.h"
 
-#include <climits>
-#include <functional>
-
 #include "doc_errno.h"
 #include "log_print.h"
 #include "securec.h"
@@ -110,7 +107,7 @@ bool JsonCommon::CheckNode(JsonObject &node, std::set<std::string> fieldSet, boo
             return false;
         }
         for (size_t i = 0; i < fieldName.size(); i++) {
-            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || '_' == fieldName[i])) {
+            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || fieldName[i] == '_')) {
                 errFlag = false;
                 return false;
             }
@@ -166,8 +163,8 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, std::set<std::string> fie
             return false;
         }
         for (size_t i = 0; i < fieldName.size(); i++) {
-            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]) ||
-                    (isFirstFloor && '.' == fieldName[i]))) {
+            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || (fieldName[i] == '_') ||
+                    (isFirstFloor && fieldName[i] == '.'))) {
                 errCode = -E_INVALID_ARGS;
                 errFlag = false;
                 return false;
@@ -710,10 +707,11 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
                 isMatchFlag = false;
                 return false;
             }
-            if (isAlreadyMatched == 0) { //Not match anything
+            if (isAlreadyMatched == 0) { // Not match anything
                 isMatchFlag = false;
             }
-            return false; // Source path not exist, if leaf value is null, isMatchFlag become true, else it will become false.
+            // Source path not exist, if leaf value is null, isMatchFlag become true, else it will become false.
+            return false;
         }
     });
     return isMatchFlag;

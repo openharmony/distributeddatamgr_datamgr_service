@@ -13,8 +13,8 @@
 * limitations under the License.
 */
 
-#ifndef DOCUMENT_CHECK_H
-#define DOCUMENT_CHECK_H
+#ifndef CHECK_COMMON_H
+#define CHECK_COMMON_H
 
 #include <cstdint>
 #include <vector>
@@ -38,7 +38,5 @@ public:
 };
 using Key = std::vector<uint8_t>;
 using Value = std::vector<uint8_t>;
-
-constexpr const char *COLL_PREFIX = "GRD_COLL_";
 } // namespace DocumentDB
-#endif // DOCUMENT_CHECK_H
+#endif // CHECK_COMMON_H

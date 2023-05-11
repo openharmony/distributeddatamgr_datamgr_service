@@ -20,8 +20,7 @@
 
 namespace DocumentDB {
 namespace {
-
-void PrintLog(Logger::Level level, const std::string &tag, const std::string &msg)
+void PrintLog(LogPrint::Level level, const std::string &tag, const std::string &msg)
 {
     if (msg.empty()) {
         return;
@@ -29,19 +28,19 @@ void PrintLog(Logger::Level level, const std::string &tag, const std::string &ms
     const std::string format = "%{public}s";
     OHOS::HiviewDFX::HiLogLabel label = { LOG_CORE, 0xD001631, tag.c_str() };
     switch (level) {
-        case Logger::Level::LEVEL_DEBUG:
+        case LogPrint::Level::LEVEL_DEBUG:
             (void)OHOS::HiviewDFX::HiLog::Debug(label, format.c_str(), msg.c_str());
             break;
-        case Logger::Level::LEVEL_INFO:
+        case LogPrint::Level::LEVEL_INFO:
             (void)OHOS::HiviewDFX::HiLog::Info(label, format.c_str(), msg.c_str());
             break;
-        case Logger::Level::LEVEL_WARN:
+        case LogPrint::Level::LEVEL_WARN:
             (void)OHOS::HiviewDFX::HiLog::Warn(label, format.c_str(), msg.c_str());
             break;
-        case Logger::Level::LEVEL_ERROR:
+        case LogPrint::Level::LEVEL_ERROR:
             (void)OHOS::HiviewDFX::HiLog::Error(label, format.c_str(), msg.c_str());
             break;
-        case Logger::Level::LEVEL_FATAL:
+        case LogPrint::Level::LEVEL_FATAL:
             (void)OHOS::HiviewDFX::HiLog::Fatal(label, format.c_str(), msg.c_str());
             break;
         default:
@@ -60,7 +59,7 @@ void PreparePrivateLog(const char *format, std::string &outStrFormat)
 }
 } // namespace
 
-void Logger::Log(Level level, const std::string &tag, const char *format, ...)
+void LogPrint::Log(Level level, const std::string &tag, const char *format, ...)
 {
     static const int maxLogLength = 1024;
 

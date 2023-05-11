@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "document_check.h"
+#include "check_common.h"
 
 #include <algorithm>
 #include <climits>
@@ -95,7 +95,7 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
                 return -E_INVALID_ARGS;
             }
             for (auto oneChar : filterPath[i][j]) {
-                if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
+                if (!((isalpha(oneChar)) || (isdigit(oneChar)) || (oneChar == '_'))) {
                     return -E_INVALID_ARGS;
                 }
             }
@@ -204,7 +204,7 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std:
                 return -E_INVALID_ARGS;
             }
             for (auto oneChar : path[i][j]) {
-                if (!((isalpha(oneChar)) || (isdigit(oneChar)) || ('_' == oneChar))) {
+                if (!((isalpha(oneChar)) || (isdigit(oneChar)) || (oneChar == '_'))) {
                     return -E_INVALID_ARGS;
                 }
             }
@@ -249,7 +249,7 @@ int CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vec
                 return -E_INVALID_ARGS;
             }
             for (size_t j = 0; j < fieldName.size(); j++) {
-                if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || ('_' == fieldName[j]))) {
+                if (!((isalpha(fieldName[j])) || (isdigit(fieldName[j])) || (fieldName[j] == '_'))) {
                     return -E_INVALID_ARGS;
                 }
                 if (j == 0 && (isdigit(fieldName[j]))) {

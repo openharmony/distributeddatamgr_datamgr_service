@@ -13,8 +13,9 @@
 * limitations under the License.
 */
 
-#include <gtest/gtest.h>
 #include <climits>
+#include <cstdio>
+#include <gtest/gtest.h>
 
 #include "doc_errno.h"
 #include "documentdb_test_utils.h"
@@ -28,8 +29,10 @@
 #include "log_print.h"
 
 using namespace testing::ext;
+using namespace DocumentDBUnitTest;
+
 namespace {
-std::string path = "./document.db";
+std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
 constexpr const char *COLLECTION_NAME = "student";
 const int MAX_COLLECTION_NAME = 511;
@@ -46,7 +49,7 @@ static const char *g_document4 = "{\"_id\" : \"4\", \"name\":\"doc4\",\"item\":\
 static const char *g_document5 = "{\"_id\" : \"5\", \"name\":\"doc5\",\"item\":\"journal\",\"personInfo\":\
     [{\"sex\" : \"woma\", \"school\" : \"B\", \"age\" : 15}, {\"school\":\"C\", \"age\" : 35}]}";
 static const char *g_document6 = "{\"_id\" : \"6\", \"name\":\"doc6\",\"item\":false,\"personInfo\":\
-    [{\"school\":\"B\", \"teacher\" : \"mike\",\"age\" : 15}, {\"school\":\"C\", \"teacher\" : \"moon\",\"age\" : 20}]}";
+    [{\"school\":\"B\", \"teacher\" : \"mike\",\"age\" : 15}, {\"school\":\"C\", \"teacher\" : \"moon\",\"age\":20}]}";
 static const char *g_document7 = "{\"_id\" : \"7\", \"name\":\"doc7\",\"item\":\"fruit\",\"other_Info\":\
     [{\"school\":\"BX\", \"age\" : 15}, {\"school\":\"C\", \"age\" : 35}]}";
 static const char *g_document8 = "{\"_id\" : \"8\", \"name\":\"doc8\",\"item\":true,\"personInfo\":\
@@ -94,7 +97,7 @@ static void CompareValue(const char *value, const char *targetValue)
     EXPECT_EQ(valueObj.Print(), targetValueObj.Print());
 }
 
-class DocumentFindApiTest : public testing::Test {
+class DocumentDBFindTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -102,38 +105,37 @@ public:
     void TearDown();
     void InsertDoc(const char *collectionName, const char *document);
 };
-void DocumentFindApiTest::SetUpTestCase(void)
+void DocumentDBFindTest::SetUpTestCase(void)
 {
-    std::string path = "./document.db";
-    int status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &g_db);
+    int status = GRD_DBOpen(g_path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &g_db);
     EXPECT_EQ(status, GRD_OK);
     EXPECT_EQ(GRD_CreateCollection(g_db, COLLECTION_NAME, "", 0), GRD_OK);
     EXPECT_NE(g_db, nullptr);
 }
 
-void DocumentFindApiTest::TearDownTestCase(void)
+void DocumentDBFindTest::TearDownTestCase(void)
 {
     EXPECT_EQ(GRD_DBClose(g_db, 0), GRD_OK);
-    remove(path.c_str());
+    DocumentDBTestUtils::RemoveTestDbFiles(g_path);
 }
 
-void DocumentFindApiTest::SetUp(void)
+void DocumentDBFindTest::SetUp(void)
 {
     EXPECT_EQ(GRD_DropCollection(g_db, COLLECTION_NAME, 0), GRD_OK);
     EXPECT_EQ(GRD_CreateCollection(g_db, COLLECTION_NAME, "", 0), GRD_OK);
     InsertData(g_db, "student");
 }
 
-void DocumentFindApiTest::TearDown(void) {}
+void DocumentDBFindTest::TearDown(void) {}
 
 /**
-  * @tc.name: DocumentFindApiTest001
+  * @tc.name: DocumentDBFindTest001
   * @tc.desc: Test Insert document db
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest001, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest001, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with _id and get the record according to filter condition.
@@ -144,7 +146,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest001, TestSize.Level1)
     Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    char *value = NULL;
+    char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, g_document6);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
@@ -158,17 +160,18 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest001, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest002
+  * @tc.name: DocumentDBFindTest002
   * @tc.desc: Test filter with multiple fields and _id.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest002, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest002, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with multiple and _id. and get the record according to filter condition.
-     * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS, GRD_GetValue return GRD_NOT_AVAILABLE and GRD_Next return GRD_NO_DATA.
+     * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS,
+     *     GRD_GetValue return GRD_NOT_AVAILABLE and GRD_Next return GRD_NO_DATA.
      */
     const char *filter = "{\"_id\" : \"6\", \"name\":\"doc6\"}";
     GRD_ResultSet *resultSet = nullptr;
@@ -179,20 +182,20 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest002, TestSize.Level1)
      * @tc.expected: step2. GRD_GetValue return GRD_INVALID_ARGS and GRD_Next return GRD_INVALID_ARGS.
      */
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    char *value = NULL;
+    char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 
 /**
-  * @tc.name: DocumentFindApiTest004
+  * @tc.name: DocumentDBFindTest004
   * @tc.desc: test filter with string filter without _id.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest004, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter without _id and get the record according to filter condition.
@@ -207,87 +210,21 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest004, TestSize.Level1)
      * @tc.steps: step2. Invoke GRD_Next to get the next matching value. Release resultSet.
      * @tc.expected: step2. GRD_GetValue return GRD_INVALID_ARGS and GRD_Next return GRD_INVALID_ARGS.
      */
-    char *value = NULL;
+    char *value = nullptr;
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 
-// /**
-//   * @tc.name: DocumentFindApiTest005
-//   * @tc.desc: test filter field with other word.
-//   * @tc.type: FUNC
-//   * @tc.require:
-//   * @tc.author: mazhao
-//   */
-// HWTEST_F(DocumentFindApiTest, DocumentFindApiTest005, TestSize.Level1)
-// {
-//     /**
-//      * @tc.steps: step1. Create filter with _id and number
-//      * @tc.expected: step1. Failed to get the record, the result is GRD_INVALID_ARGS,
-//      */
-//     GRD_ResultSet *resultSet1 = nullptr;
-//     const char *filter1 = "{\"_id\" : \"1\", \"info\" : 1}";
-//     Query query1 = {filter1, "{}"};
-//     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query1, 1, &resultSet1), GRD_OK);
-//     EXPECT_EQ(GRD_FreeResultSet(resultSet1), GRD_OK);
-
-//     /**
-//      * @tc.steps: step2. Create filter with two _id
-//      * @tc.expected: step2. Failed to get the record, the result is GRD_INVALID_ARGS,
-//      */
-//     GRD_ResultSet *resultSet2 = nullptr;
-//     const char *filter2 = "{\"_id\" : \"1\", \"_id\" : \"2\"}";
-//     Query query2 = {filter2, "{}"};
-//     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query2, 1, &resultSet2), GRD_INVALID_ARGS);
-//     EXPECT_EQ(GRD_FreeResultSet(resultSet1), GRD_OK);
-
-//     /**
-//      * @tc.steps: step3. Create filter with array and _id
-//      * @tc.expected: step3. Failed to get the record, the result is GRD_INVALID_ARGS,
-//      */
-//     GRD_ResultSet *resultSet3 = nullptr;
-//     const char *filter3 = "{\"_id\" : \"1\", \"info\" : [\"2\", 1]}";
-//     Query query3 = {filter3, "{}"};
-//     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query3, 1, &resultSet3), GRD_OK);
-
-//     /**
-//      * @tc.steps: step4. Create filter with object and _id
-//      * @tc.expected: step4. Failed to get the record, the result is GRD_INVALID_ARGS,
-//      */
-//     GRD_ResultSet *resultSet4 = nullptr;
-//     const char *filter4 = "{\"_id\" : \"1\", \"info\" : {\"info_val\" : \"1\"}}";
-//     Query query4 = {filter4, "{}"};
-//     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query4, 1, &resultSet4), GRD_OK);
-
-//     /**
-//      * @tc.steps: step5. Create filter with bool and _id
-//      * @tc.expected: step5. Failed to get the record, the result is GRD_INVALID_ARGS,
-//      */
-//     GRD_ResultSet *resultSet5 = nullptr;
-//     const char *filter5 = "{\"_id\" : \"1\", \"info\" : true}";
-//     Query query5 = {filter5, "{}"};
-//     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query5, 1, &resultSet5), GRD_OK);
-
-//     /**
-//      * @tc.steps: step6. Create filter with null and _id
-//      * @tc.expected: step6. Failed to get the record, the result is GRD_INVALID_ARGS,
-//      */
-//     GRD_ResultSet *resultSet6 = nullptr;
-//     const char *filter6 = "{\"_id\" : \"1\", \"info\" : null}";
-//     Query query6 = {filter6, "{}"};
-//     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query6, 1, &resultSet6), GRD_OK);
-// }
-
 /**
-  * @tc.name: DocumentFindApiTest006
+  * @tc.name: DocumentDBFindTest006
   * @tc.desc: test filter field with id which has different type of value.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest006, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with _id which value is string
@@ -346,78 +283,50 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest006, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest016
+  * @tc.name: DocumentDBFindTest016
   * @tc.desc: Test filter with collection Name is invalid.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest016, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest016, TestSize.Level1)
 {
     const char *colName1 = "grd_type";
     const char *colName2 = "GM_SYS_sysfff";
-    GRD_ResultSet *resultSet = NULL;
+    GRD_ResultSet *resultSet = nullptr;
     const char *filter = "{\"_id\" : \"1\"}";
     Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, colName1, query, 1, &resultSet), GRD_INVALID_FORMAT);
     EXPECT_EQ(GRD_FindDoc(g_db, colName2, query, 1, &resultSet), GRD_INVALID_FORMAT);
 }
 
-// /**
-//   * @tc.name: DocumentFindApiTest017
-//   * @tc.desc: Test filter field with large filter
-//   * @tc.type: FUNC
-//   * @tc.require:
-//   * @tc.author: mazhao
-//   */
-// HWTEST_F(DocumentFindApiTest, DocumentFindApiTest017, TestSize.Level1)
-// {
-//     GRD_ResultSet *resultSet = nullptr;
-//     string documentPart1 = "{\"_id\" : \"18\", \"item\" :\" ";
-//     string documentPart2 = "\" }";
-//     string jsonVal = string(512 * 1024 - documentPart1.size() - documentPart2.size() - 1, 'k');
-//     string document = documentPart1 + jsonVal + documentPart2;
-//     string jsonVal1 = string(512 * 1024 - documentPart1.size() - documentPart2.size(), 'k');
-//     string document1 = documentPart1 + jsonVal1 + documentPart2;
-
-//     Query query = {document.c_str(), "{}"};
-//     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
-//     EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
-//     char *value = NULL;
-//     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_NOT_AVAILABLE);
-//     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
-
-//     query = {document1.c_str(), "{}"};
-//     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OVER_LIMIT);
-// }
-
 /**
-  * @tc.name: DocumentFindApiTest019
+  * @tc.name: DocumentDBFindTest019
   * @tc.desc: Test filter field with no result
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest019, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest019, TestSize.Level1)
 {
     const char *filter = "{\"_id\" : \"100\"}";
     GRD_ResultSet *resultSet = nullptr;
     Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
-    char *value = NULL;
+    char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_NOT_AVAILABLE);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 
 /**
-  * @tc.name: DocumentFindApiTest023
+  * @tc.name: DocumentDBFindTest023
   * @tc.desc: Test filter field with double find.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest023, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest023, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with _id and get the record according to filter condition.
@@ -431,7 +340,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest023, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet2), GRD_RESOURCE_BUSY);
 
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    char *value = NULL;
+    char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, g_document6);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
@@ -452,32 +361,32 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest023, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest024
+  * @tc.name: DocumentDBFindTest024
   * @tc.desc: Test filter field with multi collections
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest024, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest024, TestSize.Level1)
 {
     const char *filter = "{\"_id\" : \"6\"}";
     GRD_ResultSet *resultSet = nullptr;
     GRD_ResultSet *resultSet2 = nullptr;
     Query query = { filter, "{}" };
-    const char *collectionName = "DocumentFindApiTest024";
+    const char *collectionName = "DocumentDBFindTest024";
     EXPECT_EQ(GRD_CreateCollection(g_db, collectionName, "", 0), GRD_OK);
     InsertData(g_db, collectionName);
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_FindDoc(g_db, collectionName, query, 1, &resultSet2), GRD_OK);
 
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    char *value = NULL;
+    char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, g_document6);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
 
     EXPECT_EQ(GRD_Next(resultSet2), GRD_OK);
-    char *value2 = NULL;
+    char *value2 = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet2, &value2), GRD_OK);
     CompareValue(value2, g_document6);
     EXPECT_EQ(GRD_FreeValue(value2), GRD_OK);
@@ -493,13 +402,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest024, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest025
+  * @tc.name: DocumentDBFindTest025
   * @tc.desc: Test nested projection, with viewType equals to 1.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest025, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest025, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter to match g_document16, _id flag is 0.
@@ -558,27 +467,15 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest025, TestSize.Level1)
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
-#include <stdio.h>
-/**
-  * @tc.name: DocumentFindApiTest026
-  * @tc.desc: Test nested projection, with _id flag equals to 1. Projection is 5 level.
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author: mazhao
-  */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest026, TestSize.Level1)
-{
-
-}
 
 /**
-  * @tc.name: DocumentFindApiTest027
+  * @tc.name: DocumentDBFindTest027
   * @tc.desc: Test projection with invalid field, _id field equals to 1.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest027, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest027, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter to match g_document7, _id flag is 0.
@@ -625,13 +522,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest027, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest028
+  * @tc.name: DocumentDBFindTest028
   * @tc.desc: Test projection with invalid field in Array,_id field equals to 1.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest028, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest028, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter to match g_document7, _id flag is 0.
@@ -679,13 +576,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest028, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest029
+  * @tc.name: DocumentDBFindTest029
   * @tc.desc: Test projection with path conflict._id field equals to 0.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest029, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest029, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter to match g_document4, _id flag is 0.
@@ -700,13 +597,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest029, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest030
+  * @tc.name: DocumentDBFindTest030
   * @tc.desc: Test _id flag and field.None exist field.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest030, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest030, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter to match g_document7, _id flag is 0.
@@ -736,7 +633,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest030, TestSize.Level1)
     query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    value = NULL;
+    value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, targetDocument);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
@@ -744,13 +641,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest030, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest031
+  * @tc.name: DocumentDBFindTest031
   * @tc.desc: Test _id flag and field.Exist field with 1 value.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest031, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest031, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter to match g_document7, _id flag is 0.
@@ -781,7 +678,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest031, TestSize.Level1)
     query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    value = NULL;
+    value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, targetDocument);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
@@ -789,13 +686,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest031, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest032
+  * @tc.name: DocumentDBFindTest032
   * @tc.desc: Test _id flag and field.Exist field with 1 value.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest032, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest032, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter to match g_document7, _id flag is 0.
@@ -825,7 +722,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest032, TestSize.Level1)
     query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    value = NULL;
+    value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, targetDocument);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
@@ -841,7 +738,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest032, TestSize.Level1)
     query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    value = NULL;
+    value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, targetDocument);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
@@ -849,13 +746,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest032, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest033
+  * @tc.name: DocumentDBFindTest033
   * @tc.desc: Test _id flag and field.Exist field with 0 value.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest033, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest033, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter to match g_document7, _id flag is 0.
@@ -867,7 +764,6 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest033, TestSize.Level1)
     int flag = 0;
     const char *targetDocument = "{\"other_Info\":[{\"school\":\"BX\", \"age\" : 15}, {\"school\":\"C\", \"age\" : "
                                  "35}]}";
-    ;
     Query query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
@@ -885,11 +781,10 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest033, TestSize.Level1)
     projectionInfo = "{\"name\": 0, \"item\": 0}";
     targetDocument = "{\"_id\": \"7\", \"other_Info\":[{\"school\":\"BX\", \"age\" : 15}, {\"school\":\"C\", \"age\" "
                      ": 35}]}";
-    ;
     query = { filter, projectionInfo };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, flag, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    value = NULL;
+    value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, targetDocument);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
@@ -897,13 +792,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest033, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest034
+  * @tc.name: DocumentDBFindTest034
   * @tc.desc: Test projection with nonexist field in nested structure.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest034, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest034, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter to match g_document4, _id flag is 0.
@@ -970,13 +865,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest034, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest035
+  * @tc.name: DocumentDBFindTest035
   * @tc.desc: test filter with id string filter
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest035, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest035, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with _id and get the record according to filter condition.
@@ -1001,13 +896,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest035, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest036
+  * @tc.name: DocumentDBFindTest036
   * @tc.desc: Test with invalid collectionName.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest036, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest036, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Test with invalid collectionName.
@@ -1017,20 +912,20 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest036, TestSize.Level1)
     GRD_ResultSet *resultSet = nullptr;
     Query query = { filter, "{}" };
     EXPECT_EQ(GRD_FindDoc(g_db, "", query, 0, &resultSet), GRD_INVALID_ARGS);
-    EXPECT_EQ(GRD_FindDoc(g_db, NULL, query, 0, &resultSet), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_FindDoc(g_db, nullptr, query, 0, &resultSet), GRD_INVALID_ARGS);
 }
 
 /**
-  * @tc.name: DocumentFindApiTest037
+  * @tc.name: DocumentDBFindTest037
   * @tc.desc: Test field with different value.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest037, TestSize.Level1)
 {
     /**
-     * @tc.steps: step1. Test filed with different value.some are 1, other are 0.
+     * @tc.steps: step1. Test field with different value.some are 1, other are 0.
      * @tc.expected: step1. Return GRD_INVALID_ARGS.
      */
     const char *filter = "{\"_id\" : \"4\"}";
@@ -1040,7 +935,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 
     /**
-     * @tc.steps: step2. Test filed with different value.some are 2, other are 0.
+     * @tc.steps: step2. Test field with different value.some are 2, other are 0.
      * @tc.expected: step2. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":2, \"personInfo\":0, \"item\":2}";
@@ -1048,7 +943,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 
     /**
-     * @tc.steps: step3. Test filed with different value.some are 0, other are true.
+     * @tc.steps: step3. Test field with different value.some are 0, other are true.
      * @tc.expected: step3. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":true, \"personInfo\":0, \"item\":true}";
@@ -1056,7 +951,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 
     /**
-     * @tc.steps: step4. Test filed with different value.some are 0, other are "".
+     * @tc.steps: step4. Test field with different value.some are 0, other are "".
      * @tc.expected: step4. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":\"\", \"personInfo\":0, \"item\":\"\"}";
@@ -1064,7 +959,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_ARGS);
 
     /**
-     * @tc.steps: step5. Test filed with different value.some are 1, other are false.
+     * @tc.steps: step5. Test field with different value.some are 1, other are false.
      * @tc.expected: step5. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":false, \"personInfo\":1, \"item\":false";
@@ -1072,7 +967,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_FORMAT);
 
     /**
-     * @tc.steps: step6. Test filed with different value.some are -1.123, other are false.
+     * @tc.steps: step6. Test field with different value.some are -1.123, other are false.
      * @tc.expected: step6. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":false, \"personInfo\":-1.123, \"item\":false";
@@ -1080,7 +975,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 0, &resultSet), GRD_INVALID_FORMAT);
 
     /**
-     * @tc.steps: step7. Test filed with different value.some are true, other are false.
+     * @tc.steps: step7. Test field with different value.some are true, other are false.
      * @tc.expected: step7. Return GRD_INVALID_ARGS.
      */
     projectionInfo = "{\"name\":false, \"personInfo\":true, \"item\":false";
@@ -1089,13 +984,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest037, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest038
+  * @tc.name: DocumentDBFindTest038
   * @tc.desc: Test field with false value.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest038, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest038, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Test field with different false value. Some are false, other are 0. flag is 0.
@@ -1130,13 +1025,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest038, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest039
+  * @tc.name: DocumentDBFindTest039
   * @tc.desc: Test field with true value.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest039, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest039, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Test field with different true value. Some are true, other are 1. flag is 0.
@@ -1174,13 +1069,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest039, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest040
+  * @tc.name: DocumentDBFindTest040
   * @tc.desc: Test field with invalid value.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest040, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest040, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Test field with invalid value.Value is array.
@@ -1211,13 +1106,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest040, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest042
+  * @tc.name: DocumentDBFindTest042
   * @tc.desc: Test field with no existed uppercase filter
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest042, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest042, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Test field with no existed uppercase filter.
@@ -1251,13 +1146,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest042, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest044
+  * @tc.name: DocumentDBFindTest044
   * @tc.desc: Test field with uppercase projection
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest044, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest044, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Test with false uppercase projection
@@ -1281,13 +1176,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest044, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest045
+  * @tc.name: DocumentDBFindTest045
   * @tc.desc: Test field with too long collectionName
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest045, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest045, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Test with false uppercase projection
@@ -1308,13 +1203,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest045, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest052
+  * @tc.name: DocumentDBFindTest052
   * @tc.desc: Test field when id string len is large than max
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest052, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest052, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Test with false uppercase projection
@@ -1335,13 +1230,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest052, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest053
+  * @tc.name: DocumentDBFindTest053
   * @tc.desc: Test with invalid flags
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest053, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest053, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Test with invalid flags which is 3.
@@ -1367,13 +1262,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest053, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest054
+  * @tc.name: DocumentDBFindTest054
   * @tc.desc: Test with null g_db and resultSet, filter.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest054, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest054, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Test with null g_db.
@@ -1400,13 +1295,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest054, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest055
+  * @tc.name: DocumentDBFindTest055
   * @tc.desc: Find doc, but filter' _id value lens is larger than MAX_ID_LENS
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest055, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest055, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Find doc, but filter' _id value lens is larger than MAX_ID_LENS
@@ -1435,13 +1330,13 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest055, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentFindApiTest056
+  * @tc.name: DocumentDBFindTest056
   * @tc.desc: Test findDoc with no _id.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest056, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest056, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with _id and get the record according to filter condition.
@@ -1453,7 +1348,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest056, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    char *value = NULL;
+    char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, g_document5);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
@@ -1461,18 +1356,17 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest056, TestSize.Level1)
      * @tc.steps: step2. Invoke GRD_Next to get the next matching value. Release resultSet.
      * @tc.expected: step2. Cannot get next record, return GRD_NO_DATA.
      */
-    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_NOT_AVAILABLE);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 
 /**
-  * @tc.name: DocumentFindApiTest056
+  * @tc.name: DocumentDBFindTest056
   * @tc.desc: Test findDoc with no _id.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest057, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest057, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with _id and get the record according to filter condition.
@@ -1485,27 +1379,25 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest057, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    char *value = NULL;
+    char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
-    //CompareValue(value, g_document6);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     /**
      * @tc.steps: step2. Invoke GRD_Next to get the next matching value. Release resultSet.
      * @tc.expected: step2. Cannot get next record, return GRD_NO_DATA.
      */
-    // EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_NOT_AVAILABLE);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 /**
-  * @tc.name: DocumentFindApiTest058
+  * @tc.name: DocumentDBFindTest058
   * @tc.desc: Test findDoc with no _id.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest058, TestSize.Level1) {}
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest058, TestSize.Level1) {}
 
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest059, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest059, TestSize.Level1)
 {
     /**
      * @tc.steps: step1. Create filter with _id and get the record according to filter condition.
@@ -1518,7 +1410,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest059, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_INVALID_FORMAT);
 }
 
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest060, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest060, TestSize.Level1)
 {
     const char *filter = "{}";
     GRD_ResultSet *resultSet = nullptr;
@@ -1527,12 +1419,12 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest060, TestSize.Level1)
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_INVALID_ARGS);
 }
 
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest061, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest061, TestSize.Level1)
 {
-    const char *document064 =  "{\"_id\" : \"64\", \"a\":1, \"doc64\" : 2}";
-    const char *document063 =  "{\"_id\" : \"63\", \"a\":1, \"doc63\" : 2}";
-    const char *document062 =  "{\"_id\" : \"62\", \"a\":1, \"doc62\" : 2}";
-    const char *document061 =  "{\"_id\" : \"61\", \"a\":1, \"doc61\" : 2}";
+    const char *document064 = "{\"_id\" : \"64\", \"a\":1, \"doc64\" : 2}";
+    const char *document063 = "{\"_id\" : \"63\", \"a\":1, \"doc63\" : 2}";
+    const char *document062 = "{\"_id\" : \"62\", \"a\":1, \"doc62\" : 2}";
+    const char *document061 = "{\"_id\" : \"61\", \"a\":1, \"doc61\" : 2}";
     EXPECT_EQ(GRD_InsertDoc(g_db, COLLECTION_NAME, document064, 0), GRD_OK);
     EXPECT_EQ(GRD_InsertDoc(g_db, COLLECTION_NAME, document063, 0), GRD_OK);
     EXPECT_EQ(GRD_InsertDoc(g_db, COLLECTION_NAME, document062, 0), GRD_OK);
@@ -1543,7 +1435,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest061, TestSize.Level1)
     Query query = { filter, projection };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    char *value = NULL;
+    char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, document061);
 
@@ -1562,7 +1454,7 @@ HWTEST_F(DocumentFindApiTest, DocumentFindApiTest061, TestSize.Level1)
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 
-HWTEST_F(DocumentFindApiTest, DocumentFindApiTest062, TestSize.Level1)
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest062, TestSize.Level1)
 {
     const char *filter = R"({"abc123_.":1})";
     GRD_ResultSet *resultSet = nullptr;

@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include "documentdb_test_utils.h"
 #include "grd_base/grd_db_api.h"
 #include "grd_base/grd_error.h"
 #include "grd_base/grd_resultset_api.h"
@@ -24,14 +25,15 @@
 #include "grd_type_inner.h"
 
 using namespace testing::ext;
+using namespace DocumentDBUnitTest;
 namespace {
 constexpr const char *COLLECTION_NAME = "student";
 constexpr const char *NULL_JSON_STR = "{}";
 const int MAX_COLLECTION_LENS = 511;
-std::string path = "./document.db";
+std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
 
-class DocumentDeleteApiTest : public testing::Test {
+class DocumentDBDeleteTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -39,20 +41,19 @@ public:
     void TearDown();
     void InsertDoc(const char *collectionName, const char *document);
 };
-void DocumentDeleteApiTest::SetUpTestCase(void)
+void DocumentDBDeleteTest::SetUpTestCase(void)
 {
-    std::string path = "./document.db";
-    int status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &g_db);
+    int status = GRD_DBOpen(g_path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &g_db);
     EXPECT_EQ(status, GRD_OK);
 }
 
-void DocumentDeleteApiTest::TearDownTestCase(void)
+void DocumentDBDeleteTest::TearDownTestCase(void)
 {
     EXPECT_EQ(GRD_DBClose(g_db, 0), GRD_OK);
-    remove(path.c_str());
+    DocumentDBTestUtils::RemoveTestDbFiles(g_path);
 }
 
-void DocumentDeleteApiTest::SetUp(void)
+void DocumentDBDeleteTest::SetUp(void)
 {
     /**
      * @tc.steps:step1. Create Collection
@@ -87,12 +88,12 @@ void DocumentDeleteApiTest::SetUp(void)
         \"friend\" : {\"name\" : \"David\", \"sex\" : \"female\", \"age\" : 90}, \
         \"subject\": [\"Sing\", \"Jump\", \"Rap\", \"BasketBall\"] \
     }";
-    DocumentDeleteApiTest::InsertDoc(COLLECTION_NAME, document1);
-    DocumentDeleteApiTest::InsertDoc(COLLECTION_NAME, document2);
-    DocumentDeleteApiTest::InsertDoc(COLLECTION_NAME, document3);
+    DocumentDBDeleteTest::InsertDoc(COLLECTION_NAME, document1);
+    DocumentDBDeleteTest::InsertDoc(COLLECTION_NAME, document2);
+    DocumentDBDeleteTest::InsertDoc(COLLECTION_NAME, document3);
 }
 
-void DocumentDeleteApiTest::TearDown(void)
+void DocumentDBDeleteTest::TearDown(void)
 {
     /**
      * @tc.steps:step1. Call GRD_DropCollection to drop the collection
@@ -121,7 +122,7 @@ static void ChkDeleteResWithFilter(const char *filter)
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
 }
 
-void DocumentDeleteApiTest::InsertDoc(const char *collectionName, const char *document)
+void DocumentDBDeleteTest::InsertDoc(const char *collectionName, const char *document)
 {
     EXPECT_EQ(GRD_InsertDoc(g_db, collectionName, document, 0), GRD_OK);
 }
@@ -133,7 +134,7 @@ void DocumentDeleteApiTest::InsertDoc(const char *collectionName, const char *do
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest001, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest001, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Delete all the document
@@ -149,7 +150,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest001, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest002, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest002, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Delete with filter which has no _id
@@ -166,7 +167,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest002, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest003, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest003, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Delete with filter which has more than one fields.
@@ -183,7 +184,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest003, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest004, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest004, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Test delete with un-zero flags
@@ -195,14 +196,14 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest004, TestSize.Level1)
      * @tc.steps:step2. Test delete with NULL collection name
      * @tc.expected: step2. GRD_INVALID_ARGS
     */
-    // const char *filter2 = "{\"_id\" : \"1\"}";
-    // EXPECT_EQ(GRD_DeleteDoc(g_db, NULL, filter2, 0), GRD_INVALID_ARGS);
+    const char *filter2 = "{\"_id\" : \"1\"}";
+    EXPECT_EQ(GRD_DeleteDoc(g_db, NULL, filter2, 0), GRD_INVALID_ARGS);
     /**
      * @tc.steps:step3. Test delete with empty collection name
      * @tc.expected: step3. GRD_INVALID_ARGS
     */
-    // const char *filter1 = "{\"_id\" : \"1\"}";
-    // EXPECT_EQ(GRD_DeleteDoc(g_db, "", filter1, 1), GRD_INVALID_ARGS);
+    const char *filter3 = "{\"_id\" : \"1\"}";
+    EXPECT_EQ(GRD_DeleteDoc(g_db, "", filter3, 1), GRD_INVALID_ARGS);
 }
 
 /**
@@ -213,7 +214,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest004, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest005, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest005, TestSize.Level1)
 {
     /**
       * @tc.step1: Test delete with same collection name
@@ -236,7 +237,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest005, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest006, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest006, TestSize.Level1)
 {
     /**
       * @tc.step1: Create filter with _id and get the record according to filter condition.
@@ -262,7 +263,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest006, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest007, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest007, TestSize.Level1)
 {
     const char *filter = "{\"_id\" : \"1\"}";
     string collectionName1(MAX_COLLECTION_LENS, 'a');
@@ -281,7 +282,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest007, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest008, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest008, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Delete with filter which has more than one fields.
@@ -303,7 +304,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest008, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest010, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest010, TestSize.Level1)
 {
     /**
      * @tc.steps:step1. Test delete document when filter _id is int and string.
@@ -325,7 +326,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest010, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest011, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest011, TestSize.Level1)
 {
     /**
       * @tc.step1: Create filter with _id and get the record according to filter condition.
@@ -352,7 +353,7 @@ HWTEST_F(DocumentDeleteApiTest, DeleteDBTest011, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentDeleteApiTest, DeleteDBTest012, TestSize.Level1)
+HWTEST_F(DocumentDBDeleteTest, DeleteDBTest012, TestSize.Level1)
 {
     /**
       * @tc.step1: Create filter with _id and get the record according to filter condition.

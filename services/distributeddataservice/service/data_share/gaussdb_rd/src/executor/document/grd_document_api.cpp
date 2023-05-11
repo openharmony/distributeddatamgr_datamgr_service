@@ -94,11 +94,9 @@ int32_t GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter
         case GRD_OK:
             deleteCount = 1;
             return deleteCount;
-            break;
         case GRD_NO_DATA:
             deleteCount = 0;
             return deleteCount;
-            break;
         default:
             break;
     }

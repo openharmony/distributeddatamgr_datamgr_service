@@ -22,12 +22,13 @@
 #include "sqlite3.h"
 
 namespace DocumentDB {
-class SqliteStoreExecutor : public KvStoreExecutor {
+class SqliteStoreExecutorImpl : public KvStoreExecutor {
 public:
     static int CreateDatabase(const std::string &path, const DBConfig &config, sqlite3 *&db);
 
-    SqliteStoreExecutor(sqlite3 *handle);
-    ~SqliteStoreExecutor() override;
+    SqliteStoreExecutorImpl() = default;
+    explicit SqliteStoreExecutorImpl(sqlite3 *handle);
+    ~SqliteStoreExecutorImpl() override;
 
     int GetDBConfig(std::string &config);
     int SetDBConfig(const std::string &config);
