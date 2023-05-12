@@ -117,7 +117,7 @@ bool CheckCrcCheckEnableConfig(const JsonObject &config, uint32_t &crcCheckEnabl
     std::function<bool(uint32_t)> checkFunction = [](uint32_t val) {
         return val == 0 || val == 1;
     };
-    return CheckAndGetDBConfig(config, DB_CONFIG_BUFFER_POOL_SIZE, checkFunction, crcCheckEnable);
+    return CheckAndGetDBConfig(config, DB_CONFIG_CRC_CHECK_ENABLE, checkFunction, crcCheckEnable);
 }
 
 int CheckConfigValid(const JsonObject &config)
