@@ -34,6 +34,7 @@ std::shared_ptr<DataShareResultSet> QueryStrategy::Execute(
         ZLOGE("get strategy fail, maybe memory not enough");
         return nullptr;
     }
+    context->isRead = true;
     if (!(*preProcess)(context)) {
         errCode = context->errCode;
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
