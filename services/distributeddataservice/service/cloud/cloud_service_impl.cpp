@@ -50,46 +50,12 @@ CloudServiceImpl::Factory::~Factory() {}
 CloudServiceImpl::CloudServiceImpl()
 {
     EventCenter::GetInstance().Subscribe(CloudEvent::FEATURE_INIT, [this](const Event &event) {
-        auto &rdbEvent = static_cast<const CloudEvent &>(event);
-        CloudInfo cloudInfo;
-        cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(rdbEvent.GetStoreInfo().tokenId);
-        if (GetServerInfo(cloudInfo) != SUCCESS) {
-            ZLOGE("failed, user:%{public}d", cloudInfo.user);
-            return;
-        }
-        UpdateCloudInfo(cloudInfo);
-        AddSchema(cloudInfo);
+        FeatureInit(event);
+        return;
     });
 
     EventCenter::GetInstance().Subscribe(CloudEvent::GET_SCHEMA, [this](const Event &event) {
-        auto &rdbEvent = static_cast<const CloudEvent &>(event);
-        auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(rdbEvent.GetStoreInfo().tokenId);
-        auto schemaMeta = GetSchemaMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().instanceId);
-        auto storeMeta = GetStoreMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().storeName,
-            rdbEvent.GetStoreInfo().instanceId);
-
-        AutoCache::Watchers watchers;
-        auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers, false);
-        if (store == nullptr) {
-            ZLOGE("store is nullptr");
-            return;
-        }
-        store->SetSchema(schemaMeta);
-        auto instance = CloudServer::GetInstance();
-        if (instance == nullptr) {
-            ZLOGE("instance is nullptr");
-            return;
-        }
-        for (auto &database : schemaMeta.databases) {
-            if (database.name != rdbEvent.GetStoreInfo().storeName /* || don't need sync */) {
-                continue;
-            }
-            auto cloudDB = instance->ConnectCloudDB(rdbEvent.GetStoreInfo().tokenId, database);
-            if (cloudDB != nullptr) {
-                store->Bind(cloudDB);
-            }
-            // do sync
-        }
+        GetSchema(event);
         return;
     });
 }
@@ -97,8 +63,7 @@ CloudServiceImpl::CloudServiceImpl()
 int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches)
 {
     CloudInfo cloudInfo;
-    cloudInfo.id = id;
-    if (GetCloudInfo(cloudInfo) != SUCCESS && GetServerInfo(cloudInfo) != SUCCESS) {
+    if (GetCloudInfo(IPCSkeleton::GetCallingTokenID(), id, cloudInfo) != SUCCESS) {
         return INVALID_ARGUMENT;
     }
     cloudInfo.enableCloud = true;
@@ -110,7 +75,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
         if (it == cloudInfo.apps.end()) {
             continue;
         }
-        (*it).cloudSwitch = item.second;
+        it->cloudSwitch = item.second;
     }
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
@@ -121,8 +86,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
 int32_t CloudServiceImpl::DisableCloud(const std::string &id)
 {
     CloudInfo cloudInfo;
-    cloudInfo.id = id;
-    if (GetCloudInfo(cloudInfo) != SUCCESS && GetServerInfo(cloudInfo) != SUCCESS) {
+    if (GetCloudInfo(IPCSkeleton::GetCallingTokenID(), id, cloudInfo) != SUCCESS) {
         return INVALID_ARGUMENT;
     }
     cloudInfo.enableCloud = false;
@@ -135,8 +99,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
 int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::string &bundleName, int32_t appSwitch)
 {
     CloudInfo cloudInfo;
-    cloudInfo.id = id;
-    if (GetCloudInfo(cloudInfo) != SUCCESS && GetServerInfo(cloudInfo) != SUCCESS) {
+    if (GetCloudInfo(IPCSkeleton::GetCallingTokenID(), id, cloudInfo) != SUCCESS) {
         return INVALID_ARGUMENT;
     }
     auto it = std::find_if(cloudInfo.apps.begin(), cloudInfo.apps.end(),
@@ -157,9 +120,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
 int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::string, int32_t> &actions)
 {
     CloudInfo cloudInfo;
-    cloudInfo.id = id;
-    if (GetCloudInfo(cloudInfo) != SUCCESS && GetServerInfo(cloudInfo) != SUCCESS) {
-        ZLOGE("id:%{public}s", Anonymous::Change(id).c_str());
+    if (GetCloudInfo(IPCSkeleton::GetCallingTokenID(), id, cloudInfo) != SUCCESS) {
         return INVALID_ARGUMENT;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -180,14 +141,18 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
     return 0;
 }
 
-int32_t CloudServiceImpl::GetCloudInfo(CloudInfo &cloudInfo)
+int32_t CloudServiceImpl::GetCloudInfo(uint32_t tokenId, const std::string &id, CloudInfo &cloudInfo)
 {
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
     cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
-        ZLOGE("invalid argument id:%{public}s, user:%{public}d", Anonymous::Change(cloudInfo.id).c_str(),
-            cloudInfo.user);
-        return ERROR;
+    if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true) &&
+        GetServerInfo(cloudInfo ) != SUCCESS) {
+        ZLOGE("invalid args, user:%{public}d", cloudInfo.user);
+        return INVALID_ARGUMENT;
+    }
+    if (cloudInfo.id != id) {
+        ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s",
+            Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str());
+        return INVALID_ARGUMENT;
     }
     return SUCCESS;
 }
@@ -276,5 +241,53 @@ StoreMetaData CloudServiceImpl::GetStoreMata(int32_t userId, const std::string &
     storeMetaData.instanceId = instanceId;
     MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData);
     return storeMetaData;
+}
+
+void CloudServiceImpl::FeatureInit(const Event &event)
+{
+    CloudInfo cloudInfo;
+    std::vector<int> users;
+    if (!DistributedKv::AccountDelegate::GetInstance()->QueryUsers(users) || users.empty()) {
+        return;
+    }
+    cloudInfo.user = *users.begin();
+    if (GetServerInfo(cloudInfo) != SUCCESS) {
+        ZLOGE("failed, user:%{public}d", cloudInfo.user);
+        return;
+    }
+    UpdateCloudInfo(cloudInfo);
+    AddSchema(cloudInfo);
+}
+
+void CloudServiceImpl::GetSchema(const Event &event) {
+    auto &rdbEvent = static_cast<const CloudEvent &>(event);
+    auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(rdbEvent.GetStoreInfo().tokenId);
+    auto schemaMeta = GetSchemaMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().instanceId);
+    auto storeMeta = GetStoreMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().storeName,
+        rdbEvent.GetStoreInfo().instanceId);
+
+    AutoCache::Watchers watchers;
+    auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers, false);
+    if (store == nullptr) {
+        ZLOGE("store is nullptr");
+        return;
+    }
+    store->SetSchema(schemaMeta);
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("instance is nullptr");
+        return;
+    }
+    for (auto &database : schemaMeta.databases) {
+        if (database.name != rdbEvent.GetStoreInfo().storeName /* || don't need sync */) {
+            continue;
+        }
+        auto cloudDB = instance->ConnectCloudDB(rdbEvent.GetStoreInfo().tokenId, database);
+        if (cloudDB != nullptr) {
+            store->Bind(cloudDB);
+        }
+        // do sync
+    }
+    return;
 }
 } // namespace OHOS::CloudData

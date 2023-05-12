@@ -84,8 +84,6 @@ private:
 
     StoreMetaData GetStoreMetaData(const RdbSyncerParam& param);
 
-    int32_t GetInstIndex(uint32_t tokenId, const std::string &appId, const std::string &storeName);
-
     class DeathRecipientImpl : public IRemoteObject::DeathRecipient {
     public:
         using DeathCallback = std::function<void()>;

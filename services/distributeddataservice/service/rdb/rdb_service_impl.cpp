@@ -54,7 +54,7 @@ RdbServiceImpl::Factory::Factory()
         return std::make_shared<RdbServiceImpl>();
     });
     AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION, [](const StoreMetaData &metaData) -> GeneralStore* {
-        return new RdbGeneralStore(metaData);
+        return new (std::nothrow) RdbGeneralStore(metaData);
     });
 }
 
@@ -466,8 +466,7 @@ int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
 
 int32_t RdbServiceImpl::OnInitialize()
 {
-    CloudEvent::StoreInfo storeInfo = { IPCSkeleton::GetCallingTokenID() };
-    auto initEvt = std::make_unique<CloudEvent>(CloudEvent::FEATURE_INIT, storeInfo);
+    auto initEvt = std::make_unique<CloudEvent>(CloudEvent::FEATURE_INIT, CloudEvent::StoreInfo());
     EventCenter::GetInstance().PostEvent(std::move(initEvt));
     return RDB_OK;
 }
@@ -478,25 +477,13 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
         ZLOGE("permission error");
         return RDB_ERROR;
     }
-
-    auto storeMeta = GetStoreMetaData(param);
-    StoreMetaData oldMeta;
-    bool isCreated = MetaDataManager::GetInstance().LoadMeta(storeMeta.GetKey(), oldMeta, true);
-    if (isCreated && (oldMeta.storeType != storeMeta.storeType ||
-                      Constant::NotEqual(oldMeta.isEncrypt, storeMeta.isEncrypt) ||
-                      oldMeta.area != storeMeta.area)) {
-        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d",
-            storeMeta.bundleName.c_str(), storeMeta.storeId.c_str(), oldMeta.storeType, storeMeta.storeType,
-            oldMeta.isEncrypt, storeMeta.isEncrypt, oldMeta.area, storeMeta.area);
+    auto syncer = GetRdbSyncer(param);
+    if (syncer == nullptr) {
         return RDB_ERROR;
     }
-    auto saved = MetaDataManager::GetInstance().SaveMeta(storeMeta.GetKey(), storeMeta, true);
-    if (!saved) {
-        return RDB_ERROR;
-    }
-    CloudEvent::StoreInfo storeInfo { IPCSkeleton::GetCallingTokenID(), param.bundleName_, param.storeName_,
-        storeMeta.instanceId };
+    CloudEvent::StoreInfo storeInfo{ IPCSkeleton::GetCallingTokenID(), param.bundleName_,
+        RdbSyncer::RemoveSuffix(param.storeName_),
+        RdbSyncer::GetInstIndex(IPCSkeleton::GetCallingTokenID(), param.bundleName_) };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "relational_store");
     EventCenter::GetInstance().PostEvent(move(event));
     return RDB_OK;
@@ -507,10 +494,10 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     StoreMetaData metaData;
     metaData.uid = IPCSkeleton::GetCallingUid();
     metaData.tokenId = IPCSkeleton::GetCallingTokenID();
-    metaData.instanceId = GetInstIndex(metaData.tokenId, param.bundleName_, param.storeName_);
+    metaData.instanceId = RdbSyncer::GetInstIndex(metaData.tokenId, param.bundleName_);
     metaData.bundleName = param.bundleName_;
     metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    metaData.storeId = param.storeName_;
+    metaData.storeId = RdbSyncer::RemoveSuffix(param.storeName_);
     metaData.user = std::to_string(AccountDelegate::GetInstance()->GetUserByToken(metaData.tokenId));
     metaData.storeType = param.type_;
     metaData.securityLevel = param.level_;
@@ -522,23 +509,6 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isEncrypt = param.isEncrypt_;
     return metaData;
-}
-
-int32_t RdbServiceImpl::GetInstIndex(uint32_t tokenId, const std::string &bundleName, const std::string &storeName)
-{
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
-        return 0;
-    }
-
-    HapTokenInfo tokenInfo;
-    tokenInfo.instIndex = -1;
-    int errCode = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-    if (errCode != RET_SUCCESS) {
-        ZLOGE("GetHapTokenInfo error:%{public}d, tokenId:0x%{public}x bundleName:%{public}s storeName:%{public}s",
-            errCode, tokenId, bundleName.c_str(), storeName.c_str());
-        return -1;
-    }
-    return tokenInfo.instIndex;
 }
 
 int32_t RdbServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executors)

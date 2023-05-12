@@ -19,8 +19,10 @@
 #include "itypes_util.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
+#include "tokenid_kit.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
+using namespace OHOS::Security::AccessToken;
 const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnEnableCloud,
     &CloudServiceStub::OnDisableCloud,
@@ -43,6 +45,12 @@ int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, 
         ZLOGE("not support code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
         return -1;
     }
+	
+    if(!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())){
+        ZLOGE("permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
+        return -1;
+    }
+	
     std::string id;
     if (!ITypesUtil::Unmarshal(data, id)) {
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());

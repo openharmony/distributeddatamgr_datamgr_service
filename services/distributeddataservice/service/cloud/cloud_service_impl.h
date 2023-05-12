@@ -20,6 +20,7 @@
 #include "cloud_service_stub.h"
 #include "cloud/cloud_info.h"
 #include "cloud/schema_meta.h"
+#include "cloud/cloud_event.h"
 
 namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
@@ -45,15 +46,18 @@ private:
 
     using CloudInfo = DistributedData::CloudInfo;
     using SchemaMeta = DistributedData::SchemaMeta;
+    using Event = DistributedData::Event;
 
     void UpdateCloudInfo(CloudInfo &cloudInfo);
     void AddSchema(CloudInfo &cloudInfo);
     SchemaMeta GetSchemaMata(int32_t userId, const std::string &bundleName, int32_t instanceId);
     StoreMetaData GetStoreMata(int32_t userId, const std::string &bundleName, const std::string &storeName,
         int32_t instanceId);
-    int32_t GetCloudInfo(CloudInfo &cloudInfo);
+    int32_t GetCloudInfo(uint32_t tokenId, const std::string &id, CloudInfo &cloudInfo);
     int32_t GetServerInfo(CloudInfo &cloudInfo);
     int32_t GetAppSchema(int32_t user, const std::string &bundleName, SchemaMeta &schemaMeta);
+    void FeatureInit(const Event &event);
+    void GetSchema(const Event &event);
 };
 } // namespace OHOS::DistributedData
 
