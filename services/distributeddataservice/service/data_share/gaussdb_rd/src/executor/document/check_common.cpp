@@ -83,7 +83,7 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
             return -E_INVALID_ARGS;
         }
     }
-    if(!filterObj.GetChild().GetNext().IsNull()) { // This place is to determine whether there are other nodes at the same level as the id node 
+    if (!filterObj.GetChild().GetNext().IsNull()) { // check contained other field at the same level as the id node
         isOnlyId = false;
     }
     for (size_t i = 0; i < filterPath.size(); i++) {
