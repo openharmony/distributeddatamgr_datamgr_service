@@ -83,8 +83,7 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
             return -E_INVALID_ARGS;
         }
     }
-    int errCode = E_OK;
-    if (!filterObj.GetObjectItem("_id", errCode).GetNext().IsNull() && errCode != E_OK) {
+    if(!filterObj.GetChild().GetNext().IsNull()) { // SecondLevel has not only one not 
         isOnlyId = false;
     }
     for (size_t i = 0; i < filterPath.size(); i++) {
