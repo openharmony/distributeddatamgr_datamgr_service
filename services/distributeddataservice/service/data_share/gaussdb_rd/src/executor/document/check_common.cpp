@@ -141,8 +141,11 @@ int CheckCommon::CheckDocument(JsonObject &documentObj)
     }
     bool isIdExist = true;
     int ret = CheckIdFormat(documentObj, isIdExist);
-    if (!isIdExist || ret != E_OK) {
+    if (!isIdExist) {
         GLOGE("Document Id format is illegal");
+        return -E_INVALID_ARGS;
+    }
+    if (ret != E_OK) {
         return ret;
     }
     JsonObject documentObjChild = documentObj.GetChild();
