@@ -12,21 +12,31 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//build/ohos_var.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 group("build_module") {
   deps = [ ":distributeddatasvcfwk" ]
 }
-config("module_public_config") {
+config("module_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
     "//third_party/json/single_include",
     "//third_party/openssl/include/",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/interfaces/include/",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/include/",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
+    "${kv_store_common_path}",
+    "${kv_store_distributeddb_path}/interfaces/include/",
+    "${kv_store_distributeddb_path}/include/",
+  ]
+}
+
+config("module_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    "include",
+    "//third_party/json/single_include",
+    "${kv_store_common_path}",
   ]
 }
 
@@ -34,6 +44,11 @@ ohos_shared_library("distributeddatasvcfwk") {
   sources = [
     "backuprule/backup_rule_manager.cpp",
     "checker/checker_manager.cpp",
+    "cloud/asset_loader.cpp",
+    "cloud/cloud_db.cpp",
+    "cloud/cloud_info.cpp",
+    "cloud/cloud_server.cpp",
+    "cloud/schema_meta.cpp",
     "eventcenter/event.cpp",
     "eventcenter/event_center.cpp",
     "feature/feature_system.cpp",
@@ -50,6 +65,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "metadata/strategy_meta_data.cpp",
     "metadata/user_meta_data.cpp",
     "serializable/serializable.cpp",
+    "store/auto_cache.cpp",
     "utils/anonymous.cpp",
     "utils/block_integer.cpp",
     "utils/constant.cpp",
@@ -60,7 +76,9 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  configs = [ ":module_public_config" ]
+  configs = [ ":module_config" ]
+
+  public_configs = [ ":module_public_config" ]
 
   deps = [ "//third_party/openssl:libcrypto_shared" ]
 
@@ -68,4 +86,5 @@ ohos_shared_library("distributeddatasvcfwk") {
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

@@ -25,6 +25,10 @@ class VisitStatisticImpl : public StatisticReporter<VisitStat> {
 public:
     virtual ~VisitStatisticImpl() {}
     ReportStatus Report(const VisitStat &stat) override;
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+
+private:
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedDataDfx
 }  // namespace OHOS

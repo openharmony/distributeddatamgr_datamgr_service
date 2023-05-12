@@ -18,6 +18,7 @@
 
 #include <mutex>
 #include <memory>
+#include "executor_pool.h"
 #include "types.h"
 #include "visibility.h"
 
@@ -62,6 +63,7 @@ public:
     API_EXPORT virtual void UnsubscribeAccountEvent() = 0;
     API_EXPORT virtual bool QueryUsers(std::vector<int> &users) = 0;
     API_EXPORT virtual bool RegisterHashFunc(HashFunc hash) = 0;
+    API_EXPORT virtual void BindExecutor(std::shared_ptr<ExecutorPool> executors) = 0;
     API_EXPORT static AccountDelegate *GetInstance();
 
 private:

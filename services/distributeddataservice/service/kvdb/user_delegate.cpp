@@ -18,7 +18,6 @@
 
 #include <thread>
 #include "communicator/device_manager_adapter.h"
-#include "executor_factory.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
@@ -53,12 +52,16 @@ std::set<std::string> UserDelegate::GetLocalUsers()
         ZLOGE("failed to get local device id");
         return {};
     }
-    if (!deviceUserMap_.Contains(deviceId)) {
-        LoadFromMeta(deviceId);
-    }
     std::set<std::string> users;
-    deviceUserMap_.ComputeIfPresent(deviceId, [&users](auto&, std::map<int, bool> &value) {
-        for (auto [user, active] : value) {
+    deviceUser_.Compute(deviceId, [&users](const auto &key, auto &value) {
+        if (value.empty()) {
+            UserMetaData userMetaData;
+            MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(key), userMetaData);
+            for (const auto &user : userMetaData.users) {
+                value[user.id] = user.isActive;
+            }
+        }
+        for (const auto [user, active] : value) {
             users.emplace(std::to_string(user));
         }
         return !value.empty();
@@ -78,12 +81,19 @@ std::vector<DistributedData::UserStatus> UserDelegate::GetRemoteUserStatus(const
 std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
 {
     std::vector<UserStatus> userStatus;
-    if (!deviceUserMap_.Contains(deviceId)) {
-        LoadFromMeta(deviceId);
-    }
-    for (const auto &entry : deviceUserMap_[deviceId]) {
-        userStatus.emplace_back(entry.first, entry.second);
-    }
+    deviceUser_.Compute(deviceId, [&userStatus](const auto &key, auto &users) {
+        if (users.empty()) {
+            UserMetaData userMetaData;
+            MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(key), userMetaData);
+            for (const auto &user : userMetaData.users) {
+                users[user.id] = user.isActive;
+            }
+        }
+        for (const auto [key, value] : users) {
+            userStatus.emplace_back(key, value);
+        }
+        return !users.empty();
+    });
     ZLOGI("device:%{public}s, users:%{public}s", Anonymous::Change(deviceId).c_str(),
         Serializable::Marshall(userStatus).c_str());
     return userStatus;
@@ -91,22 +101,20 @@ std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
 
 void UserDelegate::DeleteUsers(const std::string &deviceId)
 {
-    deviceUserMap_.Erase(deviceId);
+    deviceUser_.Erase(deviceId);
 }
 
 void UserDelegate::UpdateUsers(const std::string &deviceId, const std::vector<UserStatus> &userStatus)
 {
-    ZLOGI("begin, device:%{public}.10s, users:%{public}zu", Anonymous::Change(deviceId).c_str(), userStatus.size());
-    deviceUserMap_.Compute(deviceId, [&userStatus](const auto &key, std::map<int, bool> &userMap) {
-        userMap = {};
-        for (auto &user : userStatus) {
-            userMap[user.id] = user.isActive;
+    ZLOGI("begin, device:%{public}s, users:%{public}zu", Anonymous::Change(deviceId).c_str(), userStatus.size());
+    deviceUser_.Compute(deviceId, [&userStatus](const auto &key, std::map<int, bool> &users) {
+        users = {};
+        for (const auto &user : userStatus) {
+            users[user.id] = user.isActive;
         }
+        ZLOGI("end, device:%{public}s, users:%{public}zu", Anonymous::Change(key).c_str(), users.size());
         return true;
     });
-
-    ZLOGI("end, device:%{public}s, users:%{public}zu", Anonymous::Change(deviceId).c_str(),
-        deviceUserMap_[deviceId].size());
 }
 
 bool UserDelegate::InitLocalUserMeta()
@@ -124,23 +132,14 @@ bool UserDelegate::InitLocalUserMeta()
     UserMetaData userMetaData;
     userMetaData.deviceId = GetLocalDeviceId();
     UpdateUsers(userMetaData.deviceId, userStatus);
-    for (auto &pair : deviceUserMap_[userMetaData.deviceId]) {
-        userMetaData.users.emplace_back(pair.first, pair.second);
-    }
-
+    deviceUser_.ComputeIfPresent(userMetaData.deviceId, [&userMetaData](const auto &, std::map<int, bool> &users) {
+        for (const auto &[key, value] : users) {
+            userMetaData.users.emplace_back(key, value);
+        }
+        return true;
+    });
     ZLOGI("put user meta data save meta data");
     return MetaDataManager::GetInstance().SaveMeta(UserMetaRow::GetKeyFor(userMetaData.deviceId), userMetaData);
-}
-
-void UserDelegate::LoadFromMeta(const std::string &deviceId)
-{
-    UserMetaData userMetaData;
-    MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(deviceId), userMetaData);
-    std::map<int, bool> userMap;
-    for (const auto &user : userMetaData.users) {
-        userMap[user.id] = user.isActive;
-    }
-    deviceUserMap_[deviceId] = userMap;
 }
 
 UserDelegate &UserDelegate::GetInstance()
@@ -149,20 +148,8 @@ UserDelegate &UserDelegate::GetInstance()
     return instance;
 }
 
-void UserDelegate::Init()
+void UserDelegate::Init(const std::shared_ptr<ExecutorPool>& executors)
 {
-    KvStoreTask retryTask([this]() {
-        do {
-            static constexpr int RETRY_INTERVAL = 500; // millisecond
-            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL));
-            if (!InitLocalUserMeta()) {
-                continue;
-            }
-            break;
-        } while (true);
-        ZLOGI("update user meta ok");
-    });
-
     auto ret = AccountDelegate::GetInstance()->Subscribe(std::make_shared<LocalUserObserver>(*this));
     MetaDataManager::GetInstance().Subscribe(
         UserMetaRow::KEY_PREFIX, [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
@@ -182,10 +169,22 @@ void UserDelegate::Init()
             }
             return true;
     });
-    if (!InitLocalUserMeta()) {
-        ExecutorFactory::GetInstance().Execute(std::move(retryTask));
+    if (!executors_) {
+        executors_ = executors;
     }
+    executors_->Execute(GeTask());
     ZLOGD("subscribe os account ret:%{public}d", ret);
+}
+
+ExecutorPool::Task UserDelegate::GeTask()
+{
+    return [this] {
+        auto ret = InitLocalUserMeta();
+        if (ret) {
+            return;
+        }
+        executors_->Schedule(std::chrono::milliseconds(RETRY_INTERVAL), GeTask());
+    };
 }
 
 bool UserDelegate::NotifyUserEvent(const UserDelegate::UserEvent &userEvent)

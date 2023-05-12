@@ -59,17 +59,19 @@ void DataMgrDmStateCall::OnDeviceReady(const DmDeviceInfo &info)
 
 class DataMgrDmInitCall final : public DistributedHardware::DmInitCallback {
 public:
-    explicit DataMgrDmInitCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
+    explicit DataMgrDmInitCall(DeviceManagerAdapter &dmAdapter, std::shared_ptr<ExecutorPool> executors)
+        : dmAdapter_(dmAdapter), executors_(executors) {}
     void OnRemoteDied() override;
 
 private:
     DeviceManagerAdapter &dmAdapter_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 
 void DataMgrDmInitCall::OnRemoteDied()
 {
     ZLOGI("device manager died, init again");
-    dmAdapter_.Init();
+    dmAdapter_.Init(executors_);
 }
 
 DeviceManagerAdapter::DeviceManagerAdapter()
@@ -88,9 +90,12 @@ DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
     return dmAdapter;
 }
 
-void DeviceManagerAdapter::Init()
+void DeviceManagerAdapter::Init(std::shared_ptr<ExecutorPool> executors)
 {
     ZLOGI("begin");
+    if (executors_ == nullptr) {
+        executors_ = std::move(executors);
+    }
     RegDevCallback()();
 }
 
@@ -99,15 +104,14 @@ std::function<void()> DeviceManagerAdapter::RegDevCallback()
     return [this]() {
         auto &devManager = DeviceManager::GetInstance();
         auto dmStateCall = std::make_shared<DataMgrDmStateCall>(*this);
-        auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this);
+        auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this, executors_);
         auto resultInit = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
         auto resultState = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
         if (resultInit == DM_OK && resultState == DM_OK) {
             return;
         }
         constexpr int32_t INTERVAL = 500;
-        auto time = std::chrono::steady_clock::now() + std::chrono::milliseconds(INTERVAL);
-        scheduler_.At(time, RegDevCallback());
+        executors_->Schedule(RegDevCallback(), std::chrono::milliseconds(INTERVAL));
     };
 }
 
@@ -167,8 +171,11 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
             item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONLINE);
         }
     }
-    auto time = std::chrono::steady_clock::now() + std::chrono::milliseconds(SYNC_TIMEOUT);
-    scheduler_.At(time, [this, dvInfo]() { TimeOut(dvInfo.uuid); });
+    executors_->Schedule(
+        std::chrono::milliseconds(SYNC_TIMEOUT),
+        [this, dvInfo]() {
+            TimeOut(dvInfo.uuid);
+        });
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     for (const auto &item : observers) { // set compatible identify, sync service meta
         if (item == nullptr) {
@@ -236,7 +243,7 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
             return false;
         });
     };
-    scheduler_.Execute(std::move(task));
+    executors_->Execute(std::move(task));
 }
 
 void DeviceManagerAdapter::OnChanged(const DmDeviceInfo &info)
@@ -267,7 +274,7 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
             return false;
         });
     };
-    scheduler_.Execute(std::move(task));
+    executors_->Execute(std::move(task));
 }
 
 bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo)
@@ -311,7 +318,7 @@ void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const Device
 DeviceInfo DeviceManagerAdapter::GetLocalDevice()
 {
     std::lock_guard<decltype(devInfoMutex_)> lock(devInfoMutex_);
-    if (!localInfo_.uuid.empty()) {
+    if (!localInfo_.uuid.empty() && !localInfo_.udid.empty()) {
         return localInfo_;
     }
 
@@ -324,7 +331,7 @@ DeviceInfo DeviceManagerAdapter::GetLocalDevice()
     auto networkId = std::string(info.networkId);
     auto uuid = GetUuidByNetworkId(networkId);
     auto udid = GetUdidByNetworkId(networkId);
-    if (uuid.empty() || udid.empty()) {
+    if (uuid.empty()) {
         return {};
     }
     ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d",
@@ -466,5 +473,19 @@ std::vector<std::string> DeviceManagerAdapter::ToUUID(std::vector<DeviceInfo> de
 std::string DeviceManagerAdapter::ToNetworkID(const std::string &id)
 {
     return GetDeviceInfoFromCache(id).networkId;
+}
+
+std::string DeviceManagerAdapter::CalcClientUuid(const std::string &appId, const std::string &uuid)
+{
+    if (uuid.empty()) {
+        return "";
+    }
+    std::string encryptedUuid;
+    auto ret = DeviceManager::GetInstance().GenerateEncryptedUuid(PKG_NAME, uuid, appId, encryptedUuid);
+    if (ret != DM_OK) {
+        ZLOGE("failed, result:%{public}d", ret);
+        return "";
+    }
+    return encryptedUuid;
 }
 } // namespace OHOS::DistributedData

@@ -15,7 +15,11 @@
       }
     },
     {
-      "lib": "libconfigdemo2.z.so"
+      "description": "cloud data interface adapter",
+      "lib": "libdistributedclouddata.z.so"
+    },
+    {
+      "lib": "libudmf_server.z.so"
     }
   ],
   "bundleChecker": {

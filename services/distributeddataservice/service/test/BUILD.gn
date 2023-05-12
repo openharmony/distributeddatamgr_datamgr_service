@@ -29,7 +29,10 @@ config("module_private_config") {
     "../../framework/include/",
   ]
 
-  defines = [ "TEST_ON_DEVICE" ]
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
+  ]
 }
 
 ohos_unittest("ConfigFactoryTest") {

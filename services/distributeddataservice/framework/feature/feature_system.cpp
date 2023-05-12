@@ -22,19 +22,33 @@ FeatureSystem &FeatureSystem::GetInstance()
     return instance;
 }
 
-int32_t FeatureSystem::RegisterCreator(const std::string &name, Creator creator)
+int32_t FeatureSystem::RegisterCreator(const std::string &name, Creator creator, int32_t flag)
 {
-    creators_.InsertOrAssign(name, std::move(creator));
-    return STUB_SUCCESS;
+    creators_.InsertOrAssign(name, std::pair{ std::move(creator), flag });
+    return E_OK;
 }
 
 FeatureSystem::Creator FeatureSystem::GetCreator(const std::string &name)
 {
-    auto it = creators_.Find(name);
-    if (it.first) {
-        return it.second;
+    auto [success, pair] = creators_.Find(name);
+    if (!success) {
+        return nullptr;
     }
-    return nullptr;
+    auto [creator, flag] = std::move(pair);
+    return creator;
+}
+
+std::vector<std::string> FeatureSystem::GetFeatureName(int32_t flag)
+{
+    std::vector<std::string> features;
+    creators_.ForEach([flag, &features](const std::string &key, auto &pair) -> bool {
+        auto &[creator, bindFlag] = pair;
+        if (bindFlag == flag) {
+            features.push_back(key);
+        }
+        return false;
+    });
+    return features;
 }
 
 FeatureSystem::Feature::~Feature()
@@ -43,43 +57,48 @@ FeatureSystem::Feature::~Feature()
 
 int32_t FeatureSystem::Feature::OnInitialize()
 {
-    return STUB_SUCCESS;
+    return E_OK;
+}
+
+int32_t FeatureSystem::Feature::OnExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    return E_OK;
 }
 
 int32_t FeatureSystem::Feature::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
 {
-    return STUB_SUCCESS;
+    return E_OK;
 }
 
 int32_t FeatureSystem::Feature::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index,
     uint32_t tokenId)
 {
-    return STUB_SUCCESS;
+    return E_OK;
 }
 
 int32_t FeatureSystem::Feature::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
 {
-    return STUB_SUCCESS;
+    return E_OK;
 }
 
 int32_t FeatureSystem::Feature::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    return STUB_SUCCESS;
+    return E_OK;
 }
 
 int32_t FeatureSystem::Feature::Online(const std::string &device)
 {
-    return STUB_SUCCESS;
+    return E_OK;
 }
 
 int32_t FeatureSystem::Feature::Offline(const std::string &device)
 {
-    return STUB_SUCCESS;
+    return E_OK;
 }
 
 int32_t FeatureSystem::Feature::OnReady(const std::string &device)
 {
-    return STUB_SUCCESS;
+    return E_OK;
 }
-}
-}
+} // namespace DistributedData
+} // namespace OHOS

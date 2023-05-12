@@ -41,6 +41,7 @@ ohos_unittest("AccountDelegateTest") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ###############################################################################

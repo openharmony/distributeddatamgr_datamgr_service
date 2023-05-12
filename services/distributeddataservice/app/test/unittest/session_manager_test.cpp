@@ -37,12 +37,14 @@ class SessionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
     {
+        auto executors = std::make_shared<ExecutorPool>(12, 5);
         Bootstrap::GetInstance().LoadComponents();
         Bootstrap::GetInstance().LoadDirectory();
         Bootstrap::GetInstance().LoadCheckers();
+        KvStoreMetaManager::GetInstance().BindExecutor(executors);
         KvStoreMetaManager::GetInstance().InitMetaParameter();
         KvStoreMetaManager::GetInstance().InitMetaListener();
-        DeviceManagerAdapter::GetInstance().Init();
+        DeviceManagerAdapter::GetInstance().Init(executors);
 
         // init peer device
         UserMetaData userMetaData;
@@ -121,7 +123,7 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     std::vector<std::string> users;
     auto recvHandler = RouteHeadHandlerImpl::Create({});
     ASSERT_NE(recvHandler, nullptr);
-    uint32_t parseSize = 0;
+    uint32_t parseSize = 1;
     recvHandler->ParseHeadData(data.get(), routeHeadSize, parseSize, users);
     EXPECT_EQ(routeHeadSize, parseSize);
     ASSERT_EQ(users.size(), 1);

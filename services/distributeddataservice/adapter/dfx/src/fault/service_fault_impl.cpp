@@ -19,8 +19,12 @@ namespace OHOS {
 namespace DistributedDataDfx {
 ReportStatus ServiceFaultImpl::Report(const OHOS::DistributedDataDfx::FaultMsg &msg)
 {
-    HiViewAdapter::ReportFault(DfxCodeConstant::SERVICE_FAULT, msg);
+    HiViewAdapter::ReportFault(DfxCodeConstant::SERVICE_FAULT, msg, executors_);
     return ReportStatus::SUCCESS;
+}
+void ServiceFaultImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 } // namespace DistributedDataDfx
 } // namespace OHOS

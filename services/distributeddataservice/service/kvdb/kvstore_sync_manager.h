@@ -20,7 +20,7 @@
 #include <list>
 #include <map>
 
-#include "task_scheduler.h"
+#include "executor_pool.h"
 #include "kv_store_nb_delegate.h"
 #include "types.h"
 
@@ -50,6 +50,7 @@ public:
         TimePoint beginTime;
     };
     using OpPred = std::function<bool(KvSyncOperation &)>;
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     Status AddSyncOperation(uintptr_t syncId, uint32_t delayMs, const SyncFunc &syncFunc, const SyncEnd &syncEnd);
     Status RemoveSyncOperation(uintptr_t syncId);
 
@@ -73,8 +74,8 @@ private:
     std::list<KvSyncOperation> realtimeSyncingOps_;
     std::list<KvSyncOperation> delaySyncingOps_;
     std::multimap<TimePoint, KvSyncOperation> scheduleSyncOps_;
+    std::shared_ptr<ExecutorPool> executors_;
 
-    TaskScheduler syncScheduler_ { "sync_mgr" };
     TimePoint nextScheduleTime_;
     std::atomic_uint32_t syncOpSeq_ = 0;
 };
