@@ -481,7 +481,7 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
     if (syncer == nullptr) {
         return RDB_ERROR;
     }
-    CloudEvent::StoreInfo storeInfo{ IPCSkeleton::GetCallingTokenID(), param.bundleName_,
+    CloudEvent::StoreInfo storeInfo { IPCSkeleton::GetCallingTokenID(), param.bundleName_,
         RdbSyncer::RemoveSuffix(param.storeName_),
         RdbSyncer::GetInstIndex(IPCSkeleton::GetCallingTokenID(), param.bundleName_) };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "relational_store");

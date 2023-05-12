@@ -145,13 +145,13 @@ int32_t CloudServiceImpl::GetCloudInfo(uint32_t tokenId, const std::string &id, 
 {
     cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true) &&
-        GetServerInfo(cloudInfo ) != SUCCESS) {
+        GetServerInfo(cloudInfo) != SUCCESS) {
         ZLOGE("invalid args, user:%{public}d", cloudInfo.user);
         return INVALID_ARGUMENT;
     }
     if (cloudInfo.id != id) {
-        ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s",
-            Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str());
+        ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s", Anonymous::Change(id).c_str(),
+            Anonymous::Change(cloudInfo.id).c_str());
         return INVALID_ARGUMENT;
     }
     return SUCCESS;
@@ -259,7 +259,8 @@ void CloudServiceImpl::FeatureInit(const Event &event)
     AddSchema(cloudInfo);
 }
 
-void CloudServiceImpl::GetSchema(const Event &event) {
+void CloudServiceImpl::GetSchema(const Event &event)
+{
     auto &rdbEvent = static_cast<const CloudEvent &>(event);
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(rdbEvent.GetStoreInfo().tokenId);
     auto schemaMeta = GetSchemaMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().instanceId);

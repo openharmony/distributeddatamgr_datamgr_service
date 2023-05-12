@@ -45,12 +45,12 @@ int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, 
         ZLOGE("not support code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
         return -1;
     }
-	
-    if(!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())){
+
+    if (!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
         ZLOGE("permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
         return -1;
     }
-	
+
     std::string id;
     if (!ITypesUtil::Unmarshal(data, id)) {
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
