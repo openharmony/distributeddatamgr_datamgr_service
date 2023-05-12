@@ -68,12 +68,24 @@ KvStoreDataService::KvStoreDataService(bool runOnCreate)
     : SystemAbility(runOnCreate), mutex_(), clients_()
 {
     ZLOGI("begin.");
+    if (executors_ == nullptr) {
+        constexpr size_t MAX = 12;
+        constexpr size_t MIN = 5;
+        executors_ = std::make_shared<ExecutorPool>(MAX, MIN);
+        DistributedDB::RuntimeConfig::SetThreadPool(std::make_shared<TaskManager>(executors_));
+    }
 }
 
 KvStoreDataService::KvStoreDataService(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate), mutex_(), clients_()
 {
     ZLOGI("begin");
+    if (executors_ == nullptr) {
+        constexpr size_t MAX = 12;
+        constexpr size_t MIN = 5;
+        executors_ = std::make_shared<ExecutorPool>(MAX, MIN);
+        DistributedDB::RuntimeConfig::SetThreadPool(std::make_shared<TaskManager>(executors_));
+    }
 }
 
 KvStoreDataService::~KvStoreDataService()
@@ -91,7 +103,6 @@ void KvStoreDataService::Initialize()
 #endif
     auto communicator = std::make_shared<AppDistributedKv::ProcessCommunicatorImpl>(RouteHeadHandlerImpl::Create);
     auto ret = KvStoreDelegateManager::SetProcessCommunicator(communicator);
-    DistributedDB::RuntimeConfig::SetThreadPool(std::make_shared<TaskManager>(executors_));
     ZLOGI("set communicator ret:%{public}d.", static_cast<int>(ret));
 
     AppDistributedKv::CommunicationProvider::GetInstance();
@@ -233,9 +244,6 @@ void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
     EventCenter::Defer defer;
-    constexpr size_t MAX = 12;
-    constexpr size_t MIN = 5;
-    executors_ = std::make_shared<ExecutorPool>(MAX, MIN);
     Reporter::GetInstance()->SetThreadPool(executors_);
     AccountDelegate::GetInstance()->BindExecutor(executors_);
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
