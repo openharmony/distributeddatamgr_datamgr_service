@@ -102,7 +102,7 @@ bool JsonCommon::CheckNode(JsonObject &node)
             return false;
         }
         for (size_t i = 0; i < fieldName.size(); i++) {
-            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || '_' == fieldName[i])) {
+            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || fieldName[i] == '_')) {
                 return false;
             }
             if (i == 0 && (isdigit(fieldName[i]))) {
@@ -144,8 +144,8 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, bool isFirstLevel, int &e
             return false;
         }
         for (size_t i = 0; i < fieldName.size(); i++) {
-            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || ('_' == fieldName[i]) ||
-                    (isFirstLevel && '.' == fieldName[i]))) {
+            if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || (fieldName[i] == '_') ||
+                    (isFirstLevel && fieldName[i] == '.'))) {
                 errCode = -E_INVALID_ARGS;
                 return false;
             }

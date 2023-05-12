@@ -14,8 +14,6 @@
 */
 #include "projection_tree.h"
 
-#include <iostream>
-
 namespace DocumentDB {
 const int JSON_DEEP_MAX = 4;
 

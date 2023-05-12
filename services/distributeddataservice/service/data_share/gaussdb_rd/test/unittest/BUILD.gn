@@ -47,6 +47,7 @@ ohos_source_set("src_file") {
   sources = [
     "../../src/common/src/collection_option.cpp",
     "../../src/common/src/db_config.cpp",
+    "../../src/common/src/db_constant.cpp",
     "../../src/common/src/json_common.cpp",
     "../../src/common/src/log_print.cpp",
     "../../src/common/src/os_api.cpp",

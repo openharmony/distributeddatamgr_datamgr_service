@@ -23,7 +23,7 @@
 
 using namespace DocumentDB;
 
-int32_t GRD_DBOpen(const char *dbPath, const char *configStr, uint32_t flags, GRD_DB **db)
+GRD_API int32_t GRD_DBOpen(const char *dbPath, const char *configStr, uint32_t flags, GRD_DB **db)
 {
     if (db == nullptr) {
         return GRD_INVALID_ARGS;
@@ -47,7 +47,7 @@ int32_t GRD_DBOpen(const char *dbPath, const char *configStr, uint32_t flags, GR
     return TransferDocErr(ret);
 }
 
-int32_t GRD_DBClose(GRD_DB *db, uint32_t flags)
+GRD_API int32_t GRD_DBClose(GRD_DB *db, uint32_t flags)
 {
     if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;
@@ -63,7 +63,7 @@ int32_t GRD_DBClose(GRD_DB *db, uint32_t flags)
     return GRD_OK;
 }
 
-int32_t GRD_Flush(GRD_DB *db, uint32_t flags)
+GRD_API int32_t GRD_Flush(GRD_DB *db, uint32_t flags)
 {
     if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;

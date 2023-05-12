@@ -295,7 +295,8 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     } else {
         bool isIdExist;
         auto filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);        if (!isIdExist) {
+        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);
+        if (!isIdExist) {
             errCode = -E_INVALID_ARGS;
             goto END;
         }
@@ -432,7 +433,7 @@ END:
         Key key(id.begin(), id.end());
         errCode = coll.DeleteDocument(key);
     }
-	if (errCode == E_OK || errCode == E_NOT_FOUND) {
+    if (errCode == E_OK || errCode == E_NOT_FOUND) {
         executor_->Commit();
     } else {
         executor_->Rollback();

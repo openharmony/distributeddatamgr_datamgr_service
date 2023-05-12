@@ -147,7 +147,7 @@ int ResultSet::GetNext(bool isNeedTransaction, bool isNeedCheckTable)
         return errCode;
     }
     errCode = GetNextInner(isNeedCheckTable);
-	if (errCode == E_OK || errCode == -E_NO_DATA) {
+    if (errCode == E_OK || errCode == -E_NO_DATA) {
         store_->Commit();
     } else {
         store_->Rollback();
