@@ -37,54 +37,63 @@ Reporter* Reporter::GetInstance()
 FaultReporter* Reporter::CommunicationFault()
 {
     static CommunicationFaultImpl communicationFault;
+    communicationFault.SetThreadPool(executors_);
     return &communicationFault;
 }
 
 FaultReporter* Reporter::DatabaseFault()
 {
     static DatabaseFaultImpl databaseFault;
+    databaseFault.SetThreadPool(executors_);
     return &databaseFault;
 }
 
 FaultReporter* Reporter::RuntimeFault()
 {
     static RuntimeFaultImpl runtimeFault;
+    runtimeFault.SetThreadPool(executors_);
     return &runtimeFault;
 }
 
 FaultReporter* Reporter::ServiceFault()
 {
     static ServiceFaultImpl serviceFault;
+    serviceFault.SetThreadPool(executors_);
     return &serviceFault;
 }
 
 StatisticReporter<TrafficStat>* Reporter::TrafficStatistic()
 {
     static TrafficStatisticImpl trafficStatistic;
+    trafficStatistic.SetThreadPool(executors_);
     return &trafficStatistic;
 }
 
 StatisticReporter<struct VisitStat>* Reporter::VisitStatistic()
 {
     static VisitStatisticImpl visitStatistic;
+    visitStatistic.SetThreadPool(executors_);
     return &visitStatistic;
 }
 
 StatisticReporter<struct DbStat>* Reporter::DatabaseStatistic()
 {
     static DatabaseStatisticImpl databaseStatistic;
+    databaseStatistic.SetThreadPool(executors_);
     return &databaseStatistic;
 }
 
 StatisticReporter<ApiPerformanceStat>* Reporter::ApiPerformanceStatistic()
 {
     static ApiPerformanceStatisticImpl apiPerformanceStat;
+    apiPerformanceStat.SetThreadPool(executors_);
     return &apiPerformanceStat;
 }
 
 BehaviourReporter* Reporter::BehaviourReporter()
 {
     static BehaviourReporterImpl behaviourReporterImpl;
+    behaviourReporterImpl.SetThreadPool(executors_);
     return &behaviourReporterImpl;
 }
 } // namespace DistributedDataDfx

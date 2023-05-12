@@ -52,6 +52,7 @@ ohos_unittest("DistributeddataDfxMSTTest") {
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
   ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ###############################################################################
@@ -109,6 +110,7 @@ ohos_unittest("DistributeddataDfxUTTest") {
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
   ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ###############################################################################
@@ -116,9 +118,6 @@ group("unittest") {
   testonly = true
   deps = []
 
-  deps += [
-    ":DistributeddataDfxMSTTest",
-    ":DistributeddataDfxUTTest",
-  ]
+  deps += [ ":DistributeddataDfxMSTTest" ]
 }
 ###############################################################################

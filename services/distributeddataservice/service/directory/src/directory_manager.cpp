@@ -208,7 +208,7 @@ std::vector<uint32_t> DirectoryManager::GetVersions()
 {
     std::vector<uint32_t> versions;
     for (size_t i = 0; i < strategies_.size(); ++i) {
-        versions[i] = strategies_[i].version;
+        versions.push_back(strategies_[i].version);
     }
     return versions;
 }

@@ -37,6 +37,7 @@ ohos_unittest("CommunicationProviderTest") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
     "//third_party/googletest:gtest_main",
   ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ohos_unittest("DeviceManagerAdapterTest") {
@@ -62,6 +63,7 @@ ohos_unittest("DeviceManagerAdapterTest") {
     "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp:devicemanagersdk",
     "//third_party/googletest:gtest_main",
   ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ###############################################################################

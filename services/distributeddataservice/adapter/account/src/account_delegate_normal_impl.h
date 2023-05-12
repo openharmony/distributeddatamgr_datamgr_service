@@ -19,6 +19,7 @@
 #include "common_event_manager.h"
 #include "common_event_subscriber.h"
 #include "common_event_support.h"
+#include "executor_pool.h"
 #include "log_print.h"
 
 namespace OHOS {
@@ -31,11 +32,16 @@ public:
     bool QueryUsers(std::vector<int> &users) override;
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;
+    void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
 
 private:
     ~AccountDelegateNormalImpl();
     std::string Sha256AccountId(const std::string &plainText) const;
+    ExecutorPool::Task GetTask(uint32_t retry);
+    static constexpr int MAX_RETRY_TIME = 300;
+    static constexpr int RETRY_WAIT_TIME_S = 1;
     std::shared_ptr<EventSubscriber> eventSubscriber_ {};
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

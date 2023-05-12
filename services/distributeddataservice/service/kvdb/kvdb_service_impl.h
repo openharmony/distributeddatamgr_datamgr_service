@@ -53,9 +53,7 @@ public:
     Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status GetBackupPassword(const AppId &appId, const StoreId &storeId, std::vector<uint8_t> &password) override;
-    DevBrief GetLocalDevice() override;
-    std::vector<DevBrief> GetRemoteDevices() override;
-
+    int32_t OnExecutor(std::shared_ptr<ExecutorPool> executors) override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
@@ -107,6 +105,7 @@ private:
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     StoreCache storeCache_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_IMPL_H

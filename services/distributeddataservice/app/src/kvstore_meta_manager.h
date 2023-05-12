@@ -18,9 +18,9 @@
 #include <mutex>
 
 #include "app_device_change_listener.h"
+#include "executor_pool.h"
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
-#include "kv_store_task.h"
 #include "system_ability.h"
 #include "types.h"
 
@@ -54,6 +54,7 @@ public:
     void InitDeviceOnline();
     void SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer);
     size_t GetSyncDataSize(const std::string &deviceId);
+    void BindExecutor(std::shared_ptr<ExecutorPool> executors);
 private:
     using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;
     NbDelegate GetMetaKvStore();
@@ -72,6 +73,8 @@ private:
 
     std::string GetBackupPath() const;
 
+    ExecutorPool::Task GetTask(uint32_t retry);
+
     class KvStoreMetaObserver : public DistributedDB::KvStoreObserver {
     public:
         virtual ~KvStoreMetaObserver();
@@ -83,6 +86,8 @@ private:
         void HandleChanges(CHANGE_FLAG flag, const std::list<DistributedDB::Entry> &list);
     };
 
+    static constexpr int32_t RETRY_MAX_TIMES = 100;
+    static constexpr int32_t RETRY_INTERVAL = 1;
     NbDelegate metaDelegate_;
     std::string metaDBDirectory_;
     const std::string label_;
@@ -90,6 +95,7 @@ private:
     static MetaDeviceChangeListenerImpl listener_;
     KvStoreMetaObserver metaObserver_;
     std::recursive_mutex mutex_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

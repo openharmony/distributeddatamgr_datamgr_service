@@ -305,5 +305,10 @@ DBStatus DBStoreMock::DeleteBatch(ConcurrentMap<Key, Value> &store, const std::v
     });
     return OK;
 }
+
+DBStatus DBStoreMock::UpdateKey(const UpdateKeyCallback &callback)
+{
+    return NOT_SUPPORT;
+}
 } // namespace DistributedData
 } // namespace OHOS

@@ -21,6 +21,7 @@
 
 #include "itypes_util.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedObject {
 using namespace DistributedKv;
@@ -32,17 +33,19 @@ int32_t ObjectServiceStub::ObjectStoreSaveOnRemote(MessageParcel &data, MessageP
     std::map<std::string, std::vector<uint8_t>> objectData;
     sptr<IRemoteObject> obj;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, deviceId, objectData, obj)) {
-        ZLOGW("read device list failed.");
-        return -1;
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s deviceId:%{public}s objectData size:%{public}zu",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(),
+            DistributedData::Anonymous::Change(deviceId).c_str(), objectData.size());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     if (obj == nullptr) {
         ZLOGW("callback null");
         return -1;
     }
     int32_t status = ObjectStoreSave(bundleName, sessionId, deviceId, objectData, obj);
-    if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("ObjectStoreSaveOnRemote fail %{public}d", static_cast<int>(status));
-        return -1;
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;
 }
@@ -53,17 +56,18 @@ int32_t ObjectServiceStub::ObjectStoreRevokeSaveOnRemote(MessageParcel &data, Me
     std::string bundleName;
     sptr<IRemoteObject> obj;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
-        ZLOGW("read device list failed.");
-        return -1;
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     if (obj == nullptr) {
         ZLOGW("callback null");
         return -1;
     }
     int32_t status = ObjectStoreRevokeSave(bundleName, sessionId, obj);
-    if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("ObjectStoreRevokeSaveOnRemote fail %{public}d", static_cast<int>(status));
-        return -1;
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;
 }
@@ -74,17 +78,18 @@ int32_t ObjectServiceStub::ObjectStoreRetrieveOnRemote(MessageParcel &data, Mess
     std::string bundleName;
     sptr<IRemoteObject> obj;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
-        ZLOGW("read device list failed.");
-        return -1;
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     if (obj == nullptr) {
         ZLOGW("callback null");
         return -1;
     }
     int32_t status = ObjectStoreRetrieve(bundleName, sessionId, obj);
-    if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("ObjectStoreRetrieveOnRemote fail %{public}d", static_cast<int>(status));
-        return -1;
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;
 }
@@ -95,17 +100,18 @@ int32_t ObjectServiceStub::OnSubscribeRequest(MessageParcel &data, MessageParcel
     std::string bundleName;
     sptr<IRemoteObject> obj;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
-        ZLOGW("read device list failed.");
-        return -1;
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     if (obj == nullptr) {
         ZLOGW("callback null");
         return -1;
     }
     int32_t status = RegisterDataObserver(bundleName, sessionId, obj);
-    if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("OnSubscribeRequest fail %{public}d", static_cast<int>(status));
-        return -1;
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;
 }
@@ -115,13 +121,14 @@ int32_t ObjectServiceStub::OnUnsubscribeRequest(MessageParcel &data, MessageParc
     std::string sessionId;
     std::string bundleName;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId)) {
-        ZLOGW("read device list failed.");
-        return -1;
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = UnregisterDataChangeObserver(bundleName, sessionId);
-    if (!reply.WriteInt32(static_cast<int>(status))) {
-        ZLOGE("OnSubscribeRequest fail %{public}d", static_cast<int>(status));
-        return -1;
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;
 }

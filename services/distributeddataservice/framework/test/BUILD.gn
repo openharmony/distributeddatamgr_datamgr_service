@@ -24,6 +24,7 @@ config("module_private_config") {
     "../../service/bootstrap/include/",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ohos_unittest("CheckerManagerTest") {

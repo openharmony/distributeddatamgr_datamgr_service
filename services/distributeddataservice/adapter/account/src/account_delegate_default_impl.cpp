@@ -63,5 +63,10 @@ AccountDelegateDefaultImpl::~AccountDelegateDefaultImpl()
 {
     ZLOGD("destruct");
 }
+
+void AccountDelegateDefaultImpl::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    ZLOGD("no account part");
+}
 }  // namespace DistributedKv
 }  // namespace OHOS

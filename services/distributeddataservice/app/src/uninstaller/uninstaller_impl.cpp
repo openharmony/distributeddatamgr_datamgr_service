@@ -18,6 +18,7 @@
 #include "uninstaller_impl.h"
 #include <thread>
 #include <unistd.h>
+#include "bundle_common_event.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "device_manager_adapter.h"
@@ -46,7 +47,7 @@ void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
     Want want = event.GetWant();
     std::string action = want.GetAction();
     if (action != CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED &&
-        action != CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
+        action != OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
         return;
     }
 
@@ -74,7 +75,7 @@ void UninstallerImpl::UnsubscribeEvent()
     }
 }
 
-Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
+Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared_ptr<ExecutorPool> executors)
 {
     if (kvStoreDataService == nullptr) {
         ZLOGW("kvStoreDataService is null.");
@@ -82,7 +83,7 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
     }
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
-    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
+    matchingSkills.AddEvent(OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
     CommonEventSubscribeInfo info(matchingSkills);
     auto callback = [kvStoreDataService](const std::string &bundleName, int32_t userId, int32_t appIndex) {
         kvStoreDataService->OnUninstall(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
@@ -107,18 +108,23 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
     };
     auto subscriber = std::make_shared<UninstallEventSubscriber>(info, callback);
     subscriber_ = subscriber;
-    std::thread th = std::thread([subscriber] {
-        constexpr int32_t RETRY_TIME = 300;
-        constexpr int32_t RETRY_INTERVAL = 100 * 1000;
-        for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIME; ++retry) {
-            if (CommonEventManager::SubscribeCommonEvent(subscriber)) {
-                ZLOGI("subscribe uninstall event success");
-                break;
-            }
-            ZLOGE("subscribe uninstall event fail, try times:%d", static_cast<int>(retry));
-        }
-    });
-    th.detach();
+    executors_ = executors;
+    executors_->Execute(GetTask());
     return Status::SUCCESS;
+}
+ExecutorPool::Task UninstallerImpl::GetTask()
+{
+    return [this] {
+        auto succ = CommonEventManager::SubscribeCommonEvent(subscriber_);
+        if (succ) {
+            ZLOGI("subscribe uninstall event success");
+            return;
+        }
+        ZLOGE("subscribe uninstall event fail, try times:%d", retryTime_);
+        if (retryTime_++ >= RETRY_TIME) {
+            return;
+        }
+        executors_->Schedule(std::chrono::milliseconds(RETRY_INTERVAL), GetTask());
+    };
 }
 } // namespace OHOS::DistributedKv

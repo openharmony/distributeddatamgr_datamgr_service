@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #define LOG_TAG "SerializableTest"
+#include <type_traits>
 #include "log_print.h"
 #include "serializable/serializable.h"
 #include "gtest/gtest.h"
@@ -112,7 +113,7 @@ public:
 */
 HWTEST_F(SerializableTest, GetNormalVal, TestSize.Level2)
 {
-    ZLOGI("SerializableSuite GetVal begin.");
+    ZLOGI("SerializableSuite GetNormalVal begin.");
     Normal normal;
     normal.name = "normal";
     normal.count = -1;
@@ -135,9 +136,9 @@ HWTEST_F(SerializableTest, GetNormalVal, TestSize.Level2)
 */
 HWTEST_F(SerializableTest, DeleteSerializable, TestSize.Level2)
 {
-    ZLOGI("SerializableSuite GetVal begin.");
-    NormalEx *normalEx = new NormalEx();
-    delete normalEx;
+    ZLOGI("SerializableSuite DeleteSerializable begin.");
+    ASSERT_FALSE(std::is_destructible<Serializable>::value);
+    ASSERT_TRUE(std::is_destructible<NormalEx>::value);
 }
 
 /**
@@ -149,7 +150,7 @@ HWTEST_F(SerializableTest, DeleteSerializable, TestSize.Level2)
 */
 HWTEST_F(SerializableTest, GetMutilVal, TestSize.Level2)
 {
-    ZLOGI("SerializableSuite GetVal begin.");
+    ZLOGI("SerializableSuite GetMutilVal begin.");
     NormalEx normalEx;
     normalEx.normals = {Normal()};
     normalEx.name = "normalEx";

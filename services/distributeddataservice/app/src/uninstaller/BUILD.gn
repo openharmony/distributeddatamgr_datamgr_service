@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 ohos_static_library("distributeddata_uninstaller_static") {
   sources = [
@@ -22,23 +23,22 @@ ohos_static_library("distributeddata_uninstaller_static") {
   include_dirs = [
     "../../../adapter/include/account",
     "../../src",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/permission/include",
-    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
+    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
     "//third_party/json/single_include",
-    "//commonlibrary/c_utils/base/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
   deps = [
+    "${kv_store_distributeddb_path}:distributeddb",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
   ]
 
   external_deps = [
@@ -56,4 +56,5 @@ ohos_static_library("distributeddata_uninstaller_static") {
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

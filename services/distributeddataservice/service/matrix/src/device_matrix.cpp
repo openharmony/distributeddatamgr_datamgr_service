@@ -131,6 +131,24 @@ void DeviceMatrix::OnChanged(uint16_t code)
     }
 }
 
+void DeviceMatrix::OnChanged(const StoreMetaData &metaData)
+{
+    auto code = GetCode(metaData);
+    if (code != 0) {
+        OnChanged(code);
+    }
+    changeTime_.Set(metaData.tokenId, std::chrono::steady_clock::now());
+}
+
+bool DeviceMatrix::IsChangedInTerm(const StoreMetaData &metaData, uint64_t term)
+{
+    TimePoint changeTime;
+    if (!changeTime_.Get(metaData.tokenId, changeTime, false)) {
+        return false;
+    }
+    return std::chrono::steady_clock::now() < (changeTime + std::chrono::seconds(term));
+}
+
 void DeviceMatrix::OnExchanged(const std::string &device, uint16_t code, bool isRemote)
 {
     std::lock_guard<decltype(mutex_)> lockGuard(mutex_);

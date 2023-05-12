@@ -27,6 +27,8 @@ public:
     bool QueryUsers(std::vector<int> &users) override;
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;
+    void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
+
 private:
     ~AccountDelegateDefaultImpl();
 };

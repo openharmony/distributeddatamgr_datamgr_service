@@ -22,6 +22,7 @@ config("module_private_config") {
     "../../include/autils/",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
   ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ohos_unittest("KvStoreThreadPoolTest") {

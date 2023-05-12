@@ -61,7 +61,7 @@ HWTEST_F(ConfigFactoryTest, ComponentConfig, TestSize.Level0)
 {
     auto *components = ConfigFactory::GetInstance().GetComponentConfig();
     ASSERT_NE(components, nullptr);
-    ASSERT_EQ(components->size(), 2);
+    ASSERT_EQ(components->size(), 3);
     const ComponentConfig &config = (*components)[0];
     ASSERT_EQ(config.description, "3rd party adapter");
     ASSERT_EQ(config.lib, "libconfigdemo.z.so");
@@ -69,7 +69,7 @@ HWTEST_F(ConfigFactoryTest, ComponentConfig, TestSize.Level0)
     ASSERT_EQ(config.destructor, "");
     ASSERT_EQ(config.params, "{\"count\":1,\"key\":\"value\"}");
     const ComponentConfig &cfg = (*components)[1];
-    ASSERT_EQ(cfg.lib, "libconfigdemo2.z.so");
+    ASSERT_EQ(cfg.lib, "libdistributedclouddata.z.so");
 }
 
 /**

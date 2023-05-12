@@ -27,7 +27,6 @@
 #include "rdb_notifier_proxy.h"
 #include "rdb_syncer.h"
 #include "store_observer.h"
-#include "timer.h"
 #include "visibility.h"
 namespace OHOS::DistributedRdb {
 class API_EXPORT RdbServiceImpl : public RdbServiceStub {
@@ -55,6 +54,8 @@ public:
     int32_t DestroyRDBTable(const RdbSyncerParam &param) override;
 
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
+
+    int32_t OnExecutor(std::shared_ptr<ExecutorPool> executors) override;
 
 protected:
     int32_t DoSync(const RdbSyncerParam& param, const SyncOption& option,
@@ -98,7 +99,6 @@ private:
     ConcurrentMap<pid_t, StoreSyncersType> syncers_;
     ConcurrentMap<pid_t, sptr<RdbNotifierProxy>> notifiers_;
     ConcurrentMap<std::string, pid_t> identifiers_;
-    Utils::Timer timer_;
     RdbStoreObserverImpl autoLaunchObserver_;
 
     static Factory factory_;
@@ -108,6 +108,7 @@ private:
     static constexpr int32_t MAX_SYNCER_NUM = 50;
     static constexpr int32_t MAX_SYNCER_PER_PROCESS = 10;
     static constexpr int32_t SYNCER_TIMEOUT = 60 * 1000; // ms
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedRdb
 #endif

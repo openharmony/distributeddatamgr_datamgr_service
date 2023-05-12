@@ -12,7 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 
-config("documentdb_config") {
+config("gaussdb_rd_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "src/common/include",
@@ -36,7 +36,7 @@ config("documentdb_config") {
   }
 }
 
-config("documentdb_public_config") {
+config("gaussdb_rd_public_config") {
   visibility = [ "*:*" ]
   include_dirs = [ "include" ]
 }
@@ -70,8 +70,8 @@ ohos_shared_library("gaussdb_rd") {
     "src/oh_adapter/src/sqlite_utils.cpp",
   ]
 
-  configs = [ ":documentdb_config" ]
-  public_configs = [ ":documentdb_public_config" ]
+  configs = [ ":gaussdb_rd_config" ]
+  public_configs = [ ":gaussdb_rd_public_config" ]
 
   deps = [ "//third_party/sqlite:sqlite" ]
 
