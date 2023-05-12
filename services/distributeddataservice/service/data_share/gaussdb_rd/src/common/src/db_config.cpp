@@ -87,10 +87,11 @@ bool CheckRedoFlushConfig(const JsonObject &config, uint32_t &redoFlush)
     return CheckAndGetDBConfig(config, DB_CONFIG_REDO_FLUSH_BY_TRX, checkFunction, redoFlush);
 }
 
-bool CheckRedoBufSizeConfig(const JsonObject &config, uint32_t &redoBufSize)
+bool CheckRedoBufSizeConfig(const JsonObject &config, int32_t pageSize, uint32_t &redoBufSize)
 {
-    std::function<bool(uint32_t)> checkFunction = [](uint32_t val) {
-        return val >= MIN_REDO_BUFFER_SIZE && val <= MAX_REDO_BUFFER_SIZE;
+    std::function<bool(uint32_t)> checkFunction = [pageSize](uint32_t val) {
+        return val >= MIN_REDO_BUFFER_SIZE && val <= MAX_REDO_BUFFER_SIZE &&
+            val > static_cast<uint32_t>(pageSize * 63); // 63: pool size should be 63 times larger then pageSize
     };
     return CheckAndGetDBConfig(config, DB_CONFIG_REDO_PUB_BUFF_SIZE, checkFunction, redoBufSize);
 }
@@ -105,7 +106,7 @@ bool CheckMaxConnNumConfig(const JsonObject &config, int32_t &maxConnNum)
 
 bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint32_t &redoBufSize)
 {
-    std::function<bool(uint32_t)> checkFunction = [&pageSize](uint32_t val) {
+    std::function<bool(uint32_t)> checkFunction = [pageSize](uint32_t val) {
         return val >= MIN_BUFFER_POOL_SIZE && val <= MAX_BUFFER_POOL_SIZE &&
             val >= static_cast<uint32_t>(pageSize * 64); // 64: pool size should be 64 times larger then pageSize
     };
@@ -171,7 +172,7 @@ DBConfig DBConfig::GetDBConfigFromJsonStr(const std::string &confStr, int &errCo
         return {};
     }
 
-    if (!CheckRedoBufSizeConfig(dbConfig, conf.redoPubBufSize_)) {
+    if (!CheckRedoBufSizeConfig(dbConfig, conf.pageSize_, conf.redoPubBufSize_)) {
         GLOGE("Check DB config 'redoPubBufSize' failed.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return {};
