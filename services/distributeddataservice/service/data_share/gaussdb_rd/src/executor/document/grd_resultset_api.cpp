@@ -29,7 +29,7 @@ int32_t GRD_Next(GRD_ResultSet *resultSet)
         GLOGE("resultSet is nullptr");
         return GRD_INVALID_ARGS;
     };
-    int ret = resultSet->resultSet_.GetNext();
+    int ret = resultSet->resultSet_.GetNext(true, true);
     return TransferDocErr(ret);
 }
 

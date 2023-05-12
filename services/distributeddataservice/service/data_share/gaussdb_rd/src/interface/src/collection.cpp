@@ -56,6 +56,14 @@ int Collection::InsertDocument(const Key &key, const Value &document)
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
     }
+    int errCode = E_OK;
+    bool isCollectionExist = IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!isCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     return executor_->InsertData(name_, key, document);
 }
 
@@ -64,7 +72,7 @@ bool Collection::FindDocument()
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
     }
-    int errCode = 0;
+    int errCode = E_OK;
     return executor_->IsCollectionExists(name_, errCode);
 }
 
@@ -90,6 +98,14 @@ int Collection::DeleteDocument(const Key &key)
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
     }
+    int errCode = E_OK;
+    bool isCollectionExist = IsCollectionExists(errCode);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (!isCollectionExist) {
+        return -E_INVALID_ARGS;
+    }
     return executor_->DelData(name_, key);
 }
 
@@ -111,7 +127,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
     }
     if (!isCollExist) {
         GLOGE("Collection not created.");
-        return -E_NO_DATA;
+        return -E_INVALID_ARGS;
     }
 
     JsonObject upsertValue = JsonObject::Parse(document, errCode, true);
@@ -167,7 +183,7 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
     }
     if (!isCollExist) {
         GLOGE("Collection not created.");
-        return -E_NO_DATA;
+        return -E_INVALID_ARGS;
     }
 
     JsonObject updateValue = JsonObject::Parse(update, errCode, true);
@@ -187,7 +203,6 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
         GLOGE("Get original document failed. %d", errCode);
         return errCode;
     }
-    GLOGD("Update document value.");
     JsonObject originValue = JsonObject::Parse(valueGotStr, errCode, true);
     if (errCode != E_OK) {
         GLOGD("Parse original value failed. %d %s", errCode, valueGotStr.c_str());
