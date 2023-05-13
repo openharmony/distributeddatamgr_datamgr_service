@@ -207,7 +207,6 @@ int32_t CloudServiceImpl::GetCloudInfo(uint32_t tokenId, const std::string &id, 
 
 int32_t CloudServiceImpl::GetCloudInfoFromMeta(CloudInfo &cloudInfo)
 {
-    cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         ZLOGE("no exist meta, user:%{public}d", cloudInfo.user);
         return ERROR;
@@ -305,7 +304,7 @@ void CloudServiceImpl::FeatureInit()
     if (!DistributedKv::AccountDelegate::GetInstance()->QueryUsers(users) || users.empty()) {
         return;
     }
-    for (const auot &user : users) {
+    for (const auto &user : users) {
         if (user == USER_ID) {
             continue;
         }
