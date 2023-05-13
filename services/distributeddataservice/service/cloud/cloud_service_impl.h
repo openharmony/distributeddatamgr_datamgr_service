@@ -35,6 +35,7 @@ public:
     int32_t NotifyDataChange(const std::string &id, const std::string &bundleName) override;
 
 private:
+    static const inline int USER_ID = 0;
     class Factory {
     public:
         Factory() noexcept;
@@ -54,9 +55,10 @@ private:
     StoreMetaData GetStoreMata(int32_t userId, const std::string &bundleName, const std::string &storeName,
         int32_t instanceId);
     int32_t GetCloudInfo(uint32_t tokenId, const std::string &id, CloudInfo &cloudInfo);
-    int32_t GetServerInfo(CloudInfo &cloudInfo);
+    int32_t GetCloudInfoFromMeta(CloudInfo &cloudInfo);
+    int32_t GetCloudInfoFromServer(CloudInfo &cloudInfo);
     int32_t GetAppSchema(int32_t user, const std::string &bundleName, SchemaMeta &schemaMeta);
-    void FeatureInit(const Event &event);
+    void FeatureInit();
     void GetSchema(const Event &event);
 };
 } // namespace OHOS::DistributedData

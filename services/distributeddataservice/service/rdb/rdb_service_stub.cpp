@@ -134,13 +134,14 @@ int32_t RdbServiceStub::OnRemoteDoAsync(MessageParcel &data, MessageParcel &repl
 int32_t RdbServiceStub::OnRemoteDoSubscribe(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    if (!ITypesUtil::Unmarshal(data, param)) {
+    SubscribeOption option;
+    if (!ITypesUtil::Unmarshal(data, param, option)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
             param.storeName_.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    auto status = DoSubscribe(param);
+    auto status = DoSubscribe(param, option);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;

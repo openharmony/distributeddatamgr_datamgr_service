@@ -63,6 +63,8 @@ public:
 
     static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
+    static DistributedDB::Query MakeQuery(const RdbPredicates& predicates);
+
 private:
     std::string GetUserId() const;
 
@@ -92,7 +94,6 @@ private:
 
     static void HandleSyncStatus(const std::map<std::string, std::vector<DistributedDB::TableStatus>>& SyncStatus,
                                  SyncResult& result);
-    static DistributedDB::Query MakeQuery(const RdbPredicates& predicates);
     static void EqualTo(const RdbPredicateOperation& operation, DistributedDB::Query& query);
     static void NotEqualTo(const RdbPredicateOperation& operation, DistributedDB::Query& query);
     static void And(const RdbPredicateOperation& operation, DistributedDB::Query& query);
