@@ -332,7 +332,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest010, TestSize.Level0)
     EXPECT_EQ(GRD_UpdateDoc(g_db, "gRd_aa", filter.c_str(), updata.c_str(), 0), GRD_INVALID_FORMAT);
 }
 
-HWTEST_F(DocumentDBDataTest, UpdateDataTest011, TestSize.Level0)
+HWTEST_F(DocumentDBDataTest, UpdateDataTest011, TestSize.Level3)
 {
     int result = GRD_OK;
     const char *doc = R"({"_id":"007", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2":2})";

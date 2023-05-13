@@ -174,24 +174,25 @@ bool JsonCommon::CheckProjectionField(JsonObject &jsonObj, int &errCode)
 }
 
 namespace {
-JsonFieldPath ExpendPathForField(const JsonFieldPath &path, bool &isCollapse)
+int SplitFieldName(const std::string &fieldName, std::vector<std::string> &allFieldsName, int &insertCount)
 {
-    JsonFieldPath splitPath;
-    const std::string &str = path.back();
-    size_t start = 0;
-    size_t end = 0;
-    while ((end = str.find('.', start)) != std::string::npos) {
-        splitPath.push_back(str.substr(start, end - start));
-        start = end + 1;
+    std::string tempParseName;
+    std::string priFieldName = fieldName;
+    for (size_t j = 0; j < priFieldName.size(); j++) {
+        if (priFieldName[j] != '.') {
+            tempParseName += priFieldName[j];
+        }
+        if (priFieldName[j] == '.' || j == priFieldName.size() - 1) {
+            if ((j > 0 && priFieldName[j] == '.' && priFieldName[j - 1] == '.') ||
+                (priFieldName[j] == '.' && j == priFieldName.size() - 1)) {
+                return -E_INVALID_ARGS;
+            }
+            allFieldsName.emplace_back(tempParseName);
+            insertCount++;
+            tempParseName.clear();
+        }
     }
-    if (start < str.length()) {
-        splitPath.push_back(str.substr(start));
-    }
-    isCollapse = (splitPath.size() > 1);
-    for (size_t i = 1; i < path.size(); i++) {
-        splitPath.emplace_back(path[i]);
-    }
-    return splitPath;
+    return E_OK;
 }
 } // namespace
 
@@ -201,8 +202,11 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
     while (!node.IsNull()) {
         int insertCount = 0;
         if (isFirstLevel) {
-            bool isCollapse = false;
-            std::vector<std::string> allFieldsName = ExpendPathForField({ node.GetItemField() }, isCollapse);
+            std::vector<std::string> allFieldsName;
+            int errCode = SplitFieldName(node.GetItemField(), allFieldsName, insertCount);
+            if (errCode != E_OK) {
+                return errCode;
+            }
             singlePath.insert(singlePath.end(), allFieldsName.begin(), allFieldsName.end());
         } else {
             std::vector<std::string> allFieldsName;
@@ -258,6 +262,26 @@ JsonFieldPath SplitePath(const JsonFieldPath &path, bool &isCollapse)
         splitPath.push_back(str.substr(start));
     }
     isCollapse = (splitPath.size() > 1);
+    return splitPath;
+}
+
+JsonFieldPath ExpendPathForField(const JsonFieldPath &path, bool &isCollapse)
+{
+    JsonFieldPath splitPath;
+    const std::string &str = path.back();
+    size_t start = 0;
+    size_t end = 0;
+    while ((end = str.find('.', start)) != std::string::npos) {
+        splitPath.push_back(str.substr(start, end - start));
+        start = end + 1;
+    }
+    if (start < str.length()) {
+        splitPath.push_back(str.substr(start));
+    }
+    isCollapse = (splitPath.size() > 1);
+    for (size_t i = 1; i < path.size(); i++) {
+        splitPath.emplace_back(path[i]);
+    }
     return splitPath;
 }
 
