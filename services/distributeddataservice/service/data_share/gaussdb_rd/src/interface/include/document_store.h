@@ -50,9 +50,9 @@ public:
 
     Collection GetCollection(std::string &collectionName);
 
-    bool IsCollectionOpening(const std::string collection);
+    bool IsCollectionOpening(const std::string &collection);
 
-    int EraseCollection(const std::string collectionName);
+    int EraseCollection(const std::string &collectionName);
 
     void OnClose(const std::function<void(void)> &notifier);
 
@@ -77,7 +77,7 @@ private:
     int DeleteDataFromDB(const std::string &collection, const std::string &filter, JsonObject &filterObj,
         bool &isOnlyId);
     int InitFindResultSet(const std::string &collection, GRD_ResultSet *grdResultSet, QueryContext &resultInfo);
-    int CheckUpsertConflict(bool &isIdExist, std::string collection, JsonObject &filterObj, std::string &docId,
+    int CheckUpsertConflict(bool &isIdExist, const std::string &collection, JsonObject &filterObj, std::string &docId,
         Collection &coll);
     KvStoreExecutor *executor_ = nullptr;
     std::map<std::string, Collection *> collections_;

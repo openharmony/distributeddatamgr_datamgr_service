@@ -307,7 +307,7 @@ int UpsertArgsCheck(const std::string &collection, const std::string &filter, co
     return errCode;
 }
 
-int DocumentStore::CheckUpsertConflict(bool &isIdExist, std::string collection, JsonObject &filterObj,
+int DocumentStore::CheckUpsertConflict(bool &isIdExist, const std::string &collection, JsonObject &filterObj,
     std::string &docId, Collection &coll)
 {
     int errCode = E_OK;
@@ -732,7 +732,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     return errCode;
 }
 
-bool DocumentStore::IsCollectionOpening(const std::string collection)
+bool DocumentStore::IsCollectionOpening(const std::string &collection)
 {
     if (collections_.find(collection) != collections_.end()) {
         GLOGE("DB is resource busy");
@@ -741,7 +741,7 @@ bool DocumentStore::IsCollectionOpening(const std::string collection)
     return false;
 }
 
-int DocumentStore::EraseCollection(const std::string collectionName)
+int DocumentStore::EraseCollection(const std::string &collectionName)
 {
     std::lock_guard<std::mutex> lock(dbMutex_);
     if (collections_.find(collectionName) != collections_.end()) {
