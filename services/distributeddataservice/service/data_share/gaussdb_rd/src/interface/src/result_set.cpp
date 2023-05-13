@@ -13,10 +13,10 @@
 * limitations under the License.
 */
 #include "result_set.h"
-#include "securec.h"
 
 #include "db_constant.h"
 #include "log_print.h"
+#include "securec.h"
 
 namespace DocumentDB {
 constexpr const char *KEY_ID = "_id";
@@ -30,20 +30,19 @@ int ResultSet::EraseCollection()
     }
     return E_OK;
 }
-int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter,
-    std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId)
+int ResultSet::Init(QueryContext &resultSetInfo, DocumentStore *store)
 {
-    isOnlyId_ = isOnlyId;
+    isOnlyId_ = resultSetInfo.isOnlyId;
     store_ = store;
-    collectionName_ = collectionName;
-    filter_ = filter;
-    projectionPath_ = path;
-    if (projectionTree_.ParseTree(path) == -E_INVALID_ARGS) {
+    collectionName_ = resultSetInfo.collectionName;
+    filter_ = resultSetInfo.filter;
+    projectionPath_ = resultSetInfo.path;
+    if (projectionTree_.ParseTree(projectionPath_) == -E_INVALID_ARGS) {
         GLOGE("Parse ProjectionTree failed");
         return -E_INVALID_ARGS;
     }
-    ifShowId_ = ifShowId;
-    viewType_ = viewType;
+    ifShowId_ = resultSetInfo.ifShowId;
+    viewType_ = resultSetInfo.viewType;
     return E_OK;
 }
 
@@ -139,7 +138,7 @@ int ResultSet::GetNext(bool isNeedTransaction, bool isNeedCheckTable)
 {
     int errCode = E_OK;
     if (!isNeedTransaction) {
-         return GetNextInner(isNeedCheckTable);
+        return GetNextInner(isNeedCheckTable);
     }
     std::lock_guard<std::mutex> lock(store_->dbMutex_);
     errCode = store_->StartTransaction();
@@ -147,7 +146,7 @@ int ResultSet::GetNext(bool isNeedTransaction, bool isNeedCheckTable)
         return errCode;
     }
     errCode = GetNextInner(isNeedCheckTable);
-	if (errCode == E_OK || errCode == -E_NO_DATA) {
+    if (errCode == E_OK || errCode == -E_NO_DATA) {
         store_->Commit();
     } else {
         store_->Rollback();

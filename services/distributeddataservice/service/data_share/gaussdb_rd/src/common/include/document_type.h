@@ -13,24 +13,20 @@
 * limitations under the License.
 */
 
-#include "result_set_common.h"
+#ifndef DOCUMENT_TYPE_H
+#define DOCUMENT_TYPE_H
 
 #include <string>
-#include <vector>
-
-#include "doc_errno.h"
-#include "grd_base/grd_error.h"
 
 namespace DocumentDB {
-class ValueObject;
-int InitResultSet(QueryContext &resultInfo, DocumentStore *store, ResultSet &resultSet)
+struct QueryContext
 {
-    return resultSet.Init(resultInfo, store);
-}
-
-int InitResultSet(DocumentStore *store, const std::string collectionName, const std::string &filter,
-    ResultSet &resultSet)
-{
-    return resultSet.Init(store, collectionName, filter);
-}
+    std::string collectionName;
+    std::string filter;
+    std::vector<std::vector<std::string>> path;
+    bool ifShowId = false;
+    bool viewType = false;
+    bool isOnlyId = false;
+};
 } // namespace DocumentDB
+#endif // DOCUMENT_TYPE_H

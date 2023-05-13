@@ -26,7 +26,7 @@ class Collection {
 public:
     Collection(const std::string &name, KvStoreExecutor *executor);
     Collection(const Collection &other);
-    Collection(){};
+    Collection() {};
     ~Collection();
 
     int PutDocument(const Key &key, const Value &document);

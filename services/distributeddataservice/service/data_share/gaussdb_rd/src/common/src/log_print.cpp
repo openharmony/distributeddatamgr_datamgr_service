@@ -20,7 +20,6 @@
 
 namespace DocumentDB {
 namespace {
-
 void PrintLog(LogPrint::Level level, const char *tag, const std::string &msg)
 {
     if (msg.empty()) {

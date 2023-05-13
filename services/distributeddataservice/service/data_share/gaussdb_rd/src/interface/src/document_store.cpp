@@ -15,12 +15,13 @@
 
 #include "document_store.h"
 
+#include "check_common.h"
 #include "collection_option.h"
 #include "doc_errno.h"
-#include "check_common.h"
 #include "grd_base/grd_type_export.h"
 #include "grd_resultset_inner.h"
 #include "log_print.h"
+#include "result_set.h"
 #include "result_set_common.h"
 
 namespace DocumentDB {
@@ -127,8 +128,44 @@ END:
     return errCode;
 }
 
-int DocumentStore::UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update,
-    uint32_t flags)
+int TranFilter(JsonObject &filterObj, std::vector<std::vector<std::string>> &filterAllPath, bool &isOnlyId)
+{
+    int errCode = E_OK;
+    filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
+    if (errCode != E_OK) {
+        GLOGE("filter ParsePath failed");
+        return errCode;
+    }
+    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    return errCode;
+}
+
+int DocumentStore::GetDocKey(JsonObject &filterObj, const std::string &collection, const std::string &filter,
+    bool &isOnlyId, std::string &docId)
+{
+    int errCode = E_OK;
+    if (isOnlyId) {
+        JsonObject filterObjChild = filterObj.GetChild();
+        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
+        docId = idValue.GetStringValue();
+    } else {
+        ResultSet resultSet;
+        InitResultSet(this, collection, filter, resultSet);
+        errCode = resultSet.GetNext();
+        if (errCode == -E_NO_DATA) {
+            return 0; // The amount of text updated
+        } else if (errCode != E_OK) {
+            return errCode;
+        }
+        resultSet.GetKey(docId);
+    }
+    return errCode;
+}
+
+int UpdateArgsCheck(const std::string &collection, const std::string &filter, const std::string &update, uint32_t flags)
 {
     std::string lowerCaseCollName;
     int errCode = E_OK;
@@ -162,23 +199,13 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
-    if (errCode != E_OK) {
-        GLOGE("filter Parsed failed");
-        return errCode;
-    }
-    std::vector<std::vector<std::string>> filterAllPath;
-    filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
-    if (errCode != E_OK) {
-        GLOGE("filter ParsePath failed");
-        return errCode;
-    }
-    bool isOnlyId = true;
-    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
+    return errCode;
+}
+
+int DocumentStore::UpdateDataIntoDB(const std::string &collection, JsonObject &filterObj, const std::string &update,
+    bool &isOnlyId, bool &isReplace)
+{
+    int errCode = E_OK;
     std::lock_guard<std::mutex> lock(dbMutex_);
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -196,6 +223,7 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
         docId = idValue.GetStringValue();
     } else {
         ResultSet resultSet;
+        std::string filter = filterObj.Print();
         InitResultSet(this, collection, filter, resultSet);
         // no start transaction inner
         errCode = resultSet.GetNext(false, true);
@@ -223,8 +251,32 @@ END:
     return (errCode == E_OK) ? count : errCode;
 }
 
-int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter,
-    const std::string &document, uint32_t flags)
+int DocumentStore::UpdateDocument(const std::string &collection, const std::string &filter, const std::string &update,
+    uint32_t flags)
+{
+    int errCode = E_OK;
+    errCode = UpdateArgsCheck(collection, filter, update, flags);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
+    if (errCode != E_OK) {
+        GLOGE("filter Parsed failed");
+        return errCode;
+    }
+    bool isOnlyId = true;
+    std::vector<std::vector<std::string>> filterAllPath;
+    errCode = TranFilter(filterObj, filterAllPath, isOnlyId);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
+    errCode = UpdateDataIntoDB(collection, filterObj, update, isOnlyId, isReplace);
+    return errCode;
+}
+
+int UpsertArgsCheck(const std::string &collection, const std::string &filter, const std::string &document,
+    JsonObject &documentObj, uint32_t flags)
 {
     std::string lowerCaseCollName;
     int errCode = E_OK;
@@ -235,11 +287,6 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     if (document.length() >= JSON_LENS_MAX || filter.length() >= JSON_LENS_MAX) {
         GLOGE("args length is too long");
         return -E_OVER_LIMIT;
-    }
-    JsonObject documentObj = JsonObject::Parse(document, errCode, true);
-    if (errCode != E_OK) {
-        GLOGE("document Parsed failed");
-        return errCode;
     }
     std::vector<std::vector<std::string>> allPath;
     if (document != "{}") {
@@ -257,22 +304,37 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
-    if (errCode != E_OK) {
-        GLOGE("filter Parsed failed");
-        return errCode;
+    return errCode;
+}
+
+int DocumentStore::CheckUpsertConflict(bool &isIdExist, std::string collection, JsonObject &filterObj,
+    std::string &docId, Collection &coll)
+{
+    int errCode = E_OK;
+    if (!isIdExist) {
+        errCode = -E_INVALID_ARGS;
     }
-    std::vector<std::vector<std::string>> filterAllPath;
-    filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
-    if (errCode != E_OK) {
-        return errCode;
+    ResultSet resultSet;
+    std::string filter = filterObj.Print();
+    InitResultSet(this, collection, filter, resultSet);
+    errCode = resultSet.GetNext(false, true);
+    bool isfilterMatch = false;
+    if (errCode == E_OK) {
+        isfilterMatch = true;
     }
-    bool isOnlyId = true;
-    bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
-    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
-    if (errCode != E_OK) {
-        return errCode;
+    Value ValueDocument;
+    Key key(docId.begin(), docId.end());
+    errCode = coll.GetDocument(key, ValueDocument);
+    if (errCode == E_OK && !(isfilterMatch)) {
+        GLOGE("id exist but filter does not match, data conflict");
+        errCode = -E_DATA_CONFLICT;
     }
+}
+
+int DocumentStore::UpsertDataIntoDB(const std::string &collection, JsonObject &filterObj, JsonObject &documentObj,
+    bool &isOnlyId, bool &isReplace)
+{
+    int errCode = E_OK;
     std::lock_guard<std::mutex> lock(dbMutex_);
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -285,37 +347,16 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     int count = 0;
     std::string targetDocument;
     std::string docId;
-    if (isOnlyId) {
-        auto filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
-        docId = idValue.GetStringValue();
-        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
-        documentObj.InsertItemObject(0, idObj);
-        targetDocument = documentObj.Print();
-    } else {
-        bool isIdExist;
-        auto filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);        if (!isIdExist) {
-            errCode = -E_INVALID_ARGS;
-            goto END;
-        }
-        ResultSet resultSet;
-        InitResultSet(this, collection, filter, resultSet);
-        errCode = resultSet.GetNext(false, true);
-        bool isfilterMatch = false;
-        if (errCode == E_OK) {
-            isfilterMatch = true;
-        }
-        docId = idValue.GetStringValue();
-        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
-        documentObj.InsertItemObject(0, idObj);
-        targetDocument = documentObj.Print();
-        Value ValueDocument;
-        Key key(docId.begin(), docId.end());
-        errCode = coll.GetDocument(key, ValueDocument);
-        if (errCode == E_OK && !(isfilterMatch)) {
-            GLOGE("id exist but filter does not match, data conflict");
-            errCode = -E_DATA_CONFLICT;
+    bool isIdExist;
+    auto filterObjChild = filterObj.GetChild();
+    ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);
+    docId = idValue.GetStringValue();
+    JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
+    documentObj.InsertItemObject(0, idObj);
+    targetDocument = documentObj.Print();
+    if (!isOnlyId) {
+        errCode = CheckUpsertConflict(isIdExist, collection, filterObj, docId, coll);
+        if (errCode != E_OK) {
             goto END;
         }
     }
@@ -334,14 +375,44 @@ END:
     return (errCode == E_OK) ? count : errCode;
 }
 
-int DocumentStore::InsertDocument(const std::string &collection, const std::string &document, uint32_t flags)
+int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter,
+    const std::string &document, uint32_t flags)
 {
+    int errCode = E_OK;
+    JsonObject documentObj = JsonObject::Parse(document, errCode, true);
+    if (errCode != E_OK) {
+        GLOGE("document Parsed failed");
+        return errCode;
+    }
+    errCode = UpsertArgsCheck(collection, filter, document, documentObj, flags);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
+    if (errCode != E_OK) {
+        GLOGE("filter Parsed failed");
+        return errCode;
+    }
+    bool isOnlyId = true;
+    std::vector<std::vector<std::string>> filterAllPath;
+    errCode = TranFilter(filterObj, filterAllPath, isOnlyId);
+    if (errCode != E_OK) {
+        GLOGE("filter is invalid");
+        return errCode;
+    }
+    bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
+    errCode = UpsertDataIntoDB(collection, filterObj, documentObj, isOnlyId, isReplace);
+    return errCode;
+}
+
+int InsertArgsCheck(const std::string &collection, const std::string &document, JsonObject &documentObj, uint32_t flags)
+{
+    int errCode = E_OK;
     if (flags != 0u) {
         GLOGE("InsertDocument flags is not zero");
         return -E_INVALID_ARGS;
     }
     std::string lowerCaseCollName;
-    int errCode = E_OK;
     if (!CheckCommon::CheckCollectionName(collection, lowerCaseCollName, errCode)) {
         GLOGE("Check collection name invalid. %d", errCode);
         return errCode;
@@ -350,26 +421,42 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject documentObj = JsonObject::Parse(document, errCode, true);
-    if (errCode != E_OK) {
-        GLOGE("Document Parsed failed");
-        return errCode;
-    }
     errCode = CheckCommon::CheckDocument(documentObj);
     if (errCode != E_OK) {
         return errCode;
     }
+    return errCode;
+}
+
+int DocumentStore::InsertDataIntoDB(const std::string &collection, const std::string &document, JsonObject &documentObj)
+{
+    std::lock_guard<std::mutex> lock(dbMutex_);
     JsonObject documentObjChild = documentObj.GetChild();
     ValueObject idValue = JsonCommon::GetValueInSameLevel(documentObjChild, KEY_ID);
     std::string id = idValue.GetStringValue();
     Key key(id.begin(), id.end());
     Value value(document.begin(), document.end());
-    std::lock_guard<std::mutex> lock(dbMutex_);
     Collection coll = Collection(collection, executor_);
     return coll.InsertDocument(key, value);
 }
 
-int DocumentStore::DeleteDocument(const std::string &collection, const std::string &filter, uint32_t flags)
+int DocumentStore::InsertDocument(const std::string &collection, const std::string &document, uint32_t flags)
+{
+    int errCode = E_OK;
+    JsonObject documentObj = JsonObject::Parse(document, errCode, true);
+    if (errCode != E_OK) {
+        GLOGE("Document Parsed failed");
+        return errCode;
+    }
+    errCode = InsertArgsCheck(collection, document, documentObj, flags);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    errCode = InsertDataIntoDB(collection, document, documentObj);
+    return errCode;
+}
+
+int DeleteArgsCheck(const std::string &collection, const std::string &filter, uint32_t flags)
 {
     if (flags != 0u) {
         GLOGE("DeleteDocument flags is not zero");
@@ -389,21 +476,13 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         GLOGE("filter's length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
-    if (errCode != E_OK) {
-        GLOGE("filter Parsed failed");
-        return errCode;
-    }
-    std::vector<std::vector<std::string>> filterAllPath;
-    filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    bool isOnlyId = true;
-    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
-    if (errCode != E_OK) {
-        return errCode;
-    }
+    return errCode;
+}
+
+int DocumentStore::DeleteDataFromDB(const std::string &collection, const std::string &filter, JsonObject &filterObj,
+    bool &isOnlyId)
+{
+    int errCode = E_OK;
     std::lock_guard<std::mutex> lock(dbMutex_);
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -432,11 +511,31 @@ END:
         Key key(id.begin(), id.end());
         errCode = coll.DeleteDocument(key);
     }
-	if (errCode == E_OK || errCode == E_NOT_FOUND) {
+    if (errCode == E_OK || errCode == E_NOT_FOUND) {
         executor_->Commit();
     } else {
         executor_->Rollback();
     }
+    return errCode;
+}
+int DocumentStore::DeleteDocument(const std::string &collection, const std::string &filter, uint32_t flags)
+{
+    int errCode = E_OK;
+    errCode = DeleteArgsCheck(collection, filter, flags);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    bool isOnlyId = true;
+    std::vector<std::vector<std::string>> filterAllPath;
+    errCode = TranFilter(filterObj, filterAllPath, isOnlyId);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    errCode = DeleteDataFromDB(collection, filter, filterObj, isOnlyId);
     return errCode;
 }
 Collection DocumentStore::GetCollection(std::string &collectionName)
@@ -444,8 +543,69 @@ Collection DocumentStore::GetCollection(std::string &collectionName)
     return Collection(collectionName, executor_);
 }
 
-int DocumentStore::FindDocument(const std::string &collection, const std::string &filter,
-    const std::string &projection, uint32_t flags, GRD_ResultSet *grdResultSet)
+int JudgeViewType(size_t &index, ValueObject &leafItem, bool &viewType)
+{
+    switch (leafItem.GetValueType()) {
+        case ValueObject::ValueType::VALUE_BOOL:
+            if (leafItem.GetBoolValue()) {
+                if (index != 0 && !viewType) {
+                    return -E_INVALID_ARGS;
+                }
+                viewType = true;
+            } else {
+                if (index != 0 && viewType) {
+                    return E_INVALID_ARGS;
+                }
+                viewType = false;
+            }
+            break;
+        case ValueObject::ValueType::VALUE_STRING:
+            if (leafItem.GetStringValue() == "") {
+                if (index != 0 && !viewType) {
+                    return -E_INVALID_ARGS;
+                }
+                viewType = true;
+            } else {
+                return -E_INVALID_ARGS;
+            }
+            break;
+        case ValueObject::ValueType::VALUE_NUMBER:
+            if (leafItem.GetIntValue() == 0) {
+                if (index != 0 && viewType) {
+                    return -E_INVALID_ARGS;
+                }
+                viewType = false;
+            } else {
+                if (index != 0 && !viewType) {
+                    return E_INVALID_ARGS;
+                }
+                viewType = true;
+            }
+            break;
+        default:
+            return E_INVALID_ARGS;
+    }
+    return E_OK;
+}
+
+int GetViewType(JsonObject &jsonObj, bool &viewType)
+{
+    std::vector<ValueObject> leafValue = JsonCommon::GetLeafValue(jsonObj);
+    if (leafValue.size() == 0) {
+        return E_INVALID_ARGS;
+    }
+    int ret = E_OK;
+    for (size_t i = 0; i < leafValue.size(); i++) {
+        ret = JudgeViewType(i, leafValue[i], viewType);
+        if (ret != E_OK) {
+            return ret;
+        }
+    }
+    return E_OK;
+}
+
+int FindArgsCheck(const std::string &collection, const std::string &filter, const std::string &projection,
+    uint32_t flags)
 {
     if (flags != 0u && flags != GRD_DOC_ID_DISPLAY) {
         GLOGE("FindDocument flags is illegal");
@@ -461,32 +621,23 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         GLOGE("args length is too long");
         return -E_OVER_LIMIT;
     }
-    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
-    if (errCode != E_OK) {
-        GLOGE("filter Parsed failed");
-        return errCode;
-    }
-    std::vector<std::vector<std::string>> filterAllPath;
-    filterAllPath = JsonCommon::ParsePath(filterObj, errCode);
-    if (errCode != E_OK) {
-        return errCode;
-    }
-    bool isOnlyId = true;
-    errCode = CheckCommon::CheckFilter(filterObj, isOnlyId, filterAllPath);
-    if (errCode != E_OK) {
-        return errCode;
-    }
     if (projection.length() >= JSON_LENS_MAX) {
         GLOGE("projection's length is too long");
         return -E_OVER_LIMIT;
     }
+    return errCode;
+}
+
+int FindProjectionInit(const std::string &projection, QueryContext &resultInfo)
+{
+    int errCode = E_OK;
+    std::vector<std::vector<std::string>> allPath;
     JsonObject projectionObj = JsonObject::Parse(projection, errCode, true);
     if (errCode != E_OK) {
         GLOGE("projection Parsed failed");
         return errCode;
     }
     bool viewType = false;
-    std::vector<std::vector<std::string>> allPath;
     if (projection != "{}") {
         allPath = JsonCommon::ParsePath(projectionObj, errCode);
         if (errCode != E_OK) {
@@ -502,11 +653,16 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
             return errCode;
         }
     }
-    bool ifShowId = false;
-    if (flags == GRD_DOC_ID_DISPLAY) {
-        ifShowId = true;
-    }
+    resultInfo.path = allPath;
+    resultInfo.viewType = viewType;
+    return errCode;
+}
+
+int DocumentStore::InitFindResultSet(const std::string &collection, GRD_ResultSet *grdResultSet,
+    QueryContext &resultInfo)
+{
     std::lock_guard<std::mutex> lock(dbMutex_);
+    int errCode = E_OK;
     Collection coll = Collection(collection, executor_);
     if (IsCollectionOpening(collection)) {
         return -E_RESOURCE_BUSY;
@@ -525,16 +681,54 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     if (errCode != E_OK) {
         goto END;
     }
-    errCode = InitResultSet(this, collection, filter, allPath, ifShowId, viewType, grdResultSet->resultSet_, isOnlyId);
+    errCode = InitResultSet(resultInfo, this, grdResultSet->resultSet_);
     if (errCode == E_OK) {
         collections_[collection] = nullptr;
     }
 END:
-	if (errCode == E_OK) {
+    if (errCode == E_OK) {
         executor_->Commit();
     } else {
         executor_->Rollback();
     }
+    return errCode;
+}
+
+int DocumentStore::FindDocument(const std::string &collection, const std::string &filter,
+    const std::string &projection, uint32_t flags, GRD_ResultSet *grdResultSet)
+{
+    QueryContext resultInfo;
+    int errCode = E_OK;
+    errCode = FindArgsCheck(collection, filter, projection, flags);
+    if (errCode != E_OK) {
+        GLOGE("delete arg is illegal");
+        return errCode;
+    }
+    resultInfo.collectionName = collection;
+    resultInfo.filter = filter;
+    JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
+    if (errCode != E_OK) {
+        GLOGE("filter Parsed failed");
+        return errCode;
+    }
+    errCode = FindProjectionInit(projection, resultInfo);
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    bool isOnlyId = true;
+    std::vector<std::vector<std::string>> filterAllPath;
+    errCode = TranFilter(filterObj, filterAllPath, isOnlyId);
+    if (errCode != E_OK) {
+        GLOGE("filter is invalid");
+        return errCode;
+    }
+    resultInfo.isOnlyId = isOnlyId;
+    bool ifShowId = false;
+    if (flags == GRD_DOC_ID_DISPLAY) {
+        ifShowId = true;
+    }
+    resultInfo.ifShowId = ifShowId;
+    errCode = InitFindResultSet(collection, grdResultSet, resultInfo);
     return errCode;
 }
 
@@ -556,57 +750,6 @@ int DocumentStore::EraseCollection(const std::string collectionName)
     }
     GLOGE("erase collection failed");
     return E_INVALID_ARGS;
-}
-
-int DocumentStore::GetViewType(JsonObject &jsonObj, bool &viewType)
-{
-    std::vector<ValueObject> leafValue = JsonCommon::GetLeafValue(jsonObj);
-    if (leafValue.size() == 0) {
-        return E_INVALID_ARGS;
-    }
-    for (size_t i = 0; i < leafValue.size(); i++) {
-        switch (leafValue[i].GetValueType()) {
-            case ValueObject::ValueType::VALUE_BOOL:
-                if (leafValue[i].GetBoolValue()) {
-                    if (i != 0 && !viewType) {
-                        return -E_INVALID_ARGS;
-                    }
-                    viewType = true;
-                } else {
-                    if (i != 0 && viewType) {
-                        return E_INVALID_ARGS;
-                    }
-                    viewType = false;
-                }
-                break;
-            case ValueObject::ValueType::VALUE_STRING:
-                if (leafValue[i].GetStringValue() == "") {
-                    if (i != 0 && !viewType) {
-                        return -E_INVALID_ARGS;
-                    }
-                    viewType = true;
-                } else {
-                    return -E_INVALID_ARGS;
-                }
-                break;
-            case ValueObject::ValueType::VALUE_NUMBER:
-                if (leafValue[i].GetIntValue() == 0) {
-                    if (i != 0 && viewType) {
-                        return -E_INVALID_ARGS;
-                    }
-                    viewType = false;
-                } else {
-                    if (i != 0 && !viewType) {
-                        return E_INVALID_ARGS;
-                    }
-                    viewType = true;
-                }
-                break;
-            default:
-                return E_INVALID_ARGS;
-        }
-    }
-    return E_OK;
 }
 
 void DocumentStore::OnClose(const std::function<void(void)> &notifier)

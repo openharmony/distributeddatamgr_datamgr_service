@@ -19,8 +19,8 @@
 #include <string>
 #include <vector>
 
-#include "doc_errno.h"
 #include "check_common.h"
+#include "doc_errno.h"
 #include "document_store.h"
 #include "grd_base/grd_type_export.h"
 #include "json_object.h"
@@ -31,9 +31,7 @@ class ResultSet {
 public:
     ResultSet();
     ~ResultSet();
-
-    int Init(DocumentStore *store, const std::string collectionName, const std::string &filter,
-        std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId);
+    int Init(QueryContext &QueryContext, DocumentStore *store);
     int Init(DocumentStore *store, const std::string collectionName, const std::string &filter);
     int GetNext(bool isNeedTransaction = false, bool isNeedCheckTable = false);
     int GetValue(char **value);
