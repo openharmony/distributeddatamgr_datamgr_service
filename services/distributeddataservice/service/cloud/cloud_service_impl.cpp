@@ -271,7 +271,7 @@ void CloudServiceImpl::GetSchema(const Event &event)
         rdbEvent.GetStoreInfo().instanceId);
 
     AutoCache::Watchers watchers;
-    auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers, false);
+    auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers);
     if (store == nullptr) {
         ZLOGE("store is nullptr");
         return;
