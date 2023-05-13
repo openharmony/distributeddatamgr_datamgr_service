@@ -262,6 +262,9 @@ void CloudServiceImpl::FeatureInit(const Event &event)
 void CloudServiceImpl::GetSchema(const Event &event)
 {
     auto &rdbEvent = static_cast<const CloudEvent &>(event);
+    ZLOGD("Start GetSchema, bundleName:%{public}s, storeName:%{public}s, instanceId:%{public}d",
+        rdbEvent.GetStoreInfo().bundleName.c_str(), rdbEvent.GetStoreInfo().storeName.c_str(),
+        rdbEvent.GetStoreInfo().instanceId);
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(rdbEvent.GetStoreInfo().tokenId);
     auto schemaMeta = GetSchemaMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().instanceId);
     auto storeMeta = GetStoreMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().storeName,
@@ -286,6 +289,9 @@ void CloudServiceImpl::GetSchema(const Event &event)
         auto cloudDB = instance->ConnectCloudDB(rdbEvent.GetStoreInfo().tokenId, database);
         if (cloudDB != nullptr) {
             store->Bind(cloudDB);
+        }
+        for (auto &table : database.tables) {
+            ZLOGD("table: %{public}s sync start", table.name.c_str());
         }
         // do sync
     }

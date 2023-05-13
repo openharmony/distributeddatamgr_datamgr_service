@@ -25,8 +25,8 @@ using UninstallEventCallback = std::function<void(const std::string &bundleName,
 
 class UninstallEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
-    UninstallEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info,
-        UninstallEventCallback callback);
+    explicit UninstallEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info);
+    int32_t RegisterCallback(const std::string &action, UninstallEventCallback callback);
 
     ~UninstallEventSubscriber() {}
     void OnReceiveEvent(const EventFwk::CommonEventData &event) override;
@@ -34,7 +34,7 @@ public:
 private:
     static constexpr const char *USER_ID = "userId";
     static constexpr const char *SANDBOX_APP_INDEX = "sandbox_app_index";
-    UninstallEventCallback callback_;
+    ConcurrentMap<std::string, UninstallEventCallback> callbacks_;
 };
 class UninstallerImpl : public Uninstaller {
 public:
@@ -47,6 +47,8 @@ public:
 private:
     static constexpr int32_t RETRY_TIME = 300;
     static constexpr int32_t RETRY_INTERVAL = 100;
+    void OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex);
+    void OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex);
     int32_t retryTime_;
     ExecutorPool::Task GetTask();
     std::shared_ptr<UninstallEventSubscriber> subscriber_ {};
