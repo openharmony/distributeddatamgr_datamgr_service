@@ -20,19 +20,11 @@
 namespace OHOS::DataShare {
 bool JsonFormatter::Marshal(json &node) const
 {
-    if (value_ == nullptr) {
-        ZLOGE("null value %{public}s", key_.c_str());
-        return false;
-    }
-    return SetValue(node[key_], *value_);
+    return SetValue(node[key_], value_);
 }
 
 bool JsonFormatter::Unmarshal(const json &node)
 {
-    if (value_ == nullptr) {
-        ZLOGE("null value %{public}s", key_.c_str());
-        return false;
-    }
-    return GetValue(node, key_, *value_);
+    return GetValue(node, key_, value_);
 }
 } // namespace OHOS::DataShare

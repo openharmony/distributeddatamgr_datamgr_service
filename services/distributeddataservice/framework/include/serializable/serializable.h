@@ -195,20 +195,27 @@ bool Serializable::SetValue(json &node, const T *value)
 template<typename... _Types>
 bool Serializable::SetValue(json &node, const std::variant<_Types...> &input)
 {
-    node[GET_NAME(type)] = input.index();
-    return WriteVariant<decltype(input), _Types...>(node, 0, input);
+    bool ret = SetValue(node[GET_NAME(type)], input.index());
+    if (!ret) {
+        return ret;
+    }
+    return WriteVariant<decltype(input), _Types...>(node[GET_NAME(value)], 0, input);
 }
 
 template<typename... _Types>
 bool Serializable::GetValue(const json &node, const std::string &name, std::variant<_Types...> &value)
 {
+    auto &subNode = GetSubNode(node, name);
+    if (subNode.is_null()) {
+        return false;
+    }
     uint32_t index;
-    bool ret = GetValue(node, GET_NAME(type), index);
+    bool ret = GetValue(subNode, GET_NAME(type), index);
     if (!ret) {
         return ret;
     }
 
-    return Serializable::ReadVariant<decltype(value), _Types...>(node, name, 0, index, value);
+    return Serializable::ReadVariant<decltype(value), _Types...>(subNode, GET_NAME(value), 0, index, value);
 }
 
 template<typename _InTp>

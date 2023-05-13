@@ -21,7 +21,7 @@
 namespace OHOS::DataShare {
 class JsonFormatter : public DistributedData::Serializable {
 public:
-    JsonFormatter(const std::string &key, const std::shared_ptr<DistributedData::Serializable> &value)
+    JsonFormatter(const std::string &key, const std::string &value)
         : key_(key), value_(value)
     {
     }
@@ -30,7 +30,7 @@ public:
 
 private:
     std::string key_;
-    std::shared_ptr<DistributedData::Serializable> value_;
+    std::string value_;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H

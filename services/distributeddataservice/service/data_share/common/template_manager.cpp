@@ -20,10 +20,10 @@
 #include "json_formatter.h"
 #include "log_print.h"
 #include "published_data.h"
+#include "scheduler_manager.h"
 #include "template_data.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
-#include "scheduler_manager.h"
 
 namespace OHOS::DataShare {
 bool TemplateManager::GetTemplate(
@@ -199,7 +199,7 @@ int RdbSubscriberManager::EnableRdbSubscriber(
                 Notify(key, node, context->calledSourceDir, context->version);
             }
             if (GetEnableObserverCount(key) == 1) {
-              SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
+                SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
             }
         }
         return true;

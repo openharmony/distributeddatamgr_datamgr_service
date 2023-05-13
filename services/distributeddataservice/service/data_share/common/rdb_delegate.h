@@ -29,16 +29,6 @@
 
 namespace OHOS::DataShare {
 using namespace OHOS::NativeRdb;
-enum REMIND_TIMER_ARGS : int32_t {
-    ARG_DB_PATH = 0,
-    ARG_VERSION,
-    ARG_URI,
-    ARG_SUBSCRIBER_ID,
-    ARG_BUNDLE_NAME,
-    ARG_TIME,
-    ARGS_SIZE
-};
-
 class RdbDelegate final : public DBDelegate {
 public:
     explicit RdbDelegate(const std::string &dir, int version, bool registerFunction);
@@ -48,8 +38,7 @@ public:
     int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate) override;
     std::shared_ptr<DataShareResultSet> Query(const std::string &tableName, const DataSharePredicates &predicates,
         const std::vector<std::string> &columns, int &errCode) override;
-    std::shared_ptr<DistributedData::Serializable> Query(
-        const std::string &sql, const std::vector<std::string> &selectionArgs) override;
+    std::string Query(const std::string &sql, const std::vector<std::string> &selectionArgs) override;
     std::unique_ptr<NativeRdb::AbsSharedResultSet> QuerySql(const std::string &sql) override;
 
 private:
