@@ -24,10 +24,12 @@
 namespace OHOS::DataShare {
 class PublishStrategy final {
 public:
-    static int32_t Execute(std::shared_ptr<Context> context, const PublishedDataItem &item);
+    int32_t Execute(std::shared_ptr<Context> context, const PublishedDataItem &item);
 
 private:
-    static Strategy *GetStrategy();
+    Strategy *GetStrategy();
+    std::mutex mutex_;
+    SeqStrategy strategies_;
 };
 } // namespace OHOS::DataShare
 #endif

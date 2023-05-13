@@ -31,6 +31,7 @@ int32_t SubscribeStrategy::Execute(std::shared_ptr<Context> context, std::functi
         ZLOGE("get strategy fail, maybe memory not enough");
         return -1;
     }
+    context->isRead = true;
     if (!(*preProcess)(context)) {
         ZLOGE("pre process fail, uri_: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return context->errCode;

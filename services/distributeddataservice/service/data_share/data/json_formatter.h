@@ -13,23 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef DATASHARESERVICE_GET_DATA_STRAGETY_H
-#define DATASHARESERVICE_GET_DATA_STRAGETY_H
+#ifndef DATASHARESERVICE_JSON_FORMATTER_H
+#define DATASHARESERVICE_JSON_FORMATTER_H
 
-#include <shared_mutex>
-
-#include "data_proxy_observer.h"
-#include "datashare_template.h"
-#include "published_data.h"
-#include "seq_strategy.h"
+#include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
-class GetDataStrategy final {
+class JsonFormatter : public DistributedData::Serializable {
 public:
-    static Data Execute(std::shared_ptr<Context> context);
+    JsonFormatter(const std::string &key, const std::shared_ptr<DistributedData::Serializable> &value)
+        : key_(key), value_(value)
+    {
+    }
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
 
 private:
-    static Strategy *GetStrategy();
+    std::string key_;
+    std::shared_ptr<DistributedData::Serializable> value_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H

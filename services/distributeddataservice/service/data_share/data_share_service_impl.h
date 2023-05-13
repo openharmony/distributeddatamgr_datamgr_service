@@ -18,11 +18,13 @@
 
 #include <string>
 
+#include "data_proxy_observer.h"
 #include "data_share_service_stub.h"
 #include "datashare_template.h"
-#include "data_proxy_observer.h"
+#include "db_delegate.h"
 #include "uri_utils.h"
 #include "visibility.h"
+#include "publish_strategy.h"
 
 namespace OHOS::DataShare {
 class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
@@ -64,15 +66,11 @@ private:
         ~Factory();
     };
 
-    enum class PermissionType {
-        READ_PERMISSION = 1,
-        WRITE_PERMISSION
-    };
-
     bool NotifyChange(const std::string &uri);
     bool GetCallerBundleName(std::string &bundleName);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
+    PublishStrategy publishStrategy_;
 };
 } // namespace OHOS::DataShare
 #endif

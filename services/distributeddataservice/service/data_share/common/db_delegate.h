@@ -46,11 +46,16 @@ struct RdbStoreContext {
     int version;
 };
 
-struct Id final: public DistributedData::Serializable {
+class Id : public DistributedData::Serializable {
+public:
     explicit Id(const std::string &id);
     ~Id() = default;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
+    operator std::string()
+    {
+        return DistributedData::Serializable::Marshall(*this);
+    }
 
 private:
     std::string _id;
@@ -61,12 +66,11 @@ public:
     explicit VersionData(int version);
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
-    VersionData &operator=(int inputVersion)
+    virtual void SetVersion(int ver)
     {
-        version = inputVersion;
-        return *this;
+        version = ver;
     };
-    operator int()
+    virtual int GetVersion() const
     {
         return version;
     };
@@ -75,12 +79,16 @@ private:
     int version;
 };
 
-struct KvData : public DistributedData::Serializable {
-    virtual std::shared_ptr<Id> GetId() const = 0;
+class KvData {
+public:
+    explicit KvData(const Id &id);
+    const std::string &GetId() const;
     virtual bool HasVersion() const = 0;
-    virtual VersionData GetVersion() const = 0;
-    virtual const Serializable &GetValue() const = 0;
-    bool Marshal(json &node) const override;
+    virtual int GetVersion() const = 0;
+    virtual std::string GetValue() const = 0;
+
+private:
+    std::string id;
 };
 
 class KvDBDelegate {

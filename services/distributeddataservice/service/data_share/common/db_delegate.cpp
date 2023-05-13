@@ -34,15 +34,6 @@ std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(bool reInit, const std::
     return delegate;
 }
 
-bool KvData::Marshal(DistributedData::Serializable::json &node) const
-{
-    auto ret = SetValue(node, *GetId());
-    if (HasVersion()) {
-        ret &= SetValue(node, GetVersion());
-    }
-    return ret & SetValue(node, GetValue());
-}
-
 bool Id::Marshal(DistributedData::Serializable::json &node) const
 {
     return SetValue(node[GET_NAME(_id)], _id);
@@ -66,4 +57,11 @@ bool VersionData::Marshal(DistributedData::Serializable::json &node) const
 {
     return SetValue(node[GET_NAME(version)], version);
 }
+
+const std::string &KvData::GetId() const
+{
+    return id;
+}
+
+KvData::KvData(const Id &id) : id(DistributedData::Serializable::Marshall(id)) {}
 } // namespace OHOS::DataShare

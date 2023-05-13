@@ -13,23 +13,23 @@
  * limitations under the License.
  */
 
-#ifndef DATASHARESERVICE_GET_DATA_STRAGETY_H
-#define DATASHARESERVICE_GET_DATA_STRAGETY_H
+#ifndef DATASHARESERVICE_RESULTSET_JSON_FORMATTER_H
+#define DATASHARESERVICE_RESULTSET_JSON_FORMATTER_H
 
-#include <shared_mutex>
-
-#include "data_proxy_observer.h"
 #include "datashare_template.h"
-#include "published_data.h"
-#include "seq_strategy.h"
+#include "rdb_utils.h"
+#include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
-class GetDataStrategy final {
+class ResultSetJsonFormatter final : public DistributedData::Serializable {
 public:
-    static Data Execute(std::shared_ptr<Context> context);
+    explicit ResultSetJsonFormatter(const std::shared_ptr<NativeRdb::ResultSet> &resultSet) : resultSet(resultSet) {}
+    ~ResultSetJsonFormatter() {}
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
 
 private:
-    static Strategy *GetStrategy();
+    std::shared_ptr<NativeRdb::ResultSet> resultSet;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_RESULTSET_JSON_FORMATTER_H

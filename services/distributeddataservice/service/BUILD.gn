@@ -78,7 +78,12 @@ ohos_shared_library("distributeddatasvc") {
     "data_share/common/kv_delegate.cpp",
     "data_share/common/rdb_delegate.cpp",
     "data_share/common/seq_strategy.cpp",
+    "data_share/common/template_manager.cpp",
     "data_share/common/uri_utils.cpp",
+    "data_share/data/json_formatter.cpp",
+    "data_share/data/published_data.cpp",
+    "data_share/data/resultset_json_formatter.cpp",
+    "data_share/data/template_data.cpp",
     "data_share/data_share_obs_proxy.cpp",
     "data_share/data_share_service_impl.cpp",
     "data_share/data_share_service_stub.cpp",
@@ -142,6 +147,7 @@ ohos_shared_library("distributeddatasvc") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "data_share/gaussdb_rd:gaussdb_rd",
   ]
 
   external_deps = [

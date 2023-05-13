@@ -15,7 +15,9 @@
 #define LOG_TAG "RdbAdaptor"
 #include "rdb_delegate.h"
 
+#include "data/resultset_json_formatter.h"
 #include "log_print.h"
+#include "rdb_utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -120,7 +122,8 @@ std::shared_ptr<DistributedData::Serializable> RdbDelegate::Query(
         ZLOGE("Query failed %{private}s", sql.c_str());
         return nullptr;
     }
-    return nullptr;
+
+    return std::make_shared<ResultSetJsonFormatter>(resultSet);
 }
 
 int RdbDelegate::ExecuteSql(const std::string &sql)
