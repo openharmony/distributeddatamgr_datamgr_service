@@ -67,8 +67,7 @@ void SchedulerManager::SetTimer(const std::string &dbPath, int version, const Ke
         // has current timer, reset time
         ZLOGD("has current taskId, uri is %{public}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
         DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
-        // scheduler_->Reset(it->second, std::chrono::seconds(reminderTime - time(nullptr)));
-        scheduler_->Reset(it->second, std::chrono::seconds(7));
+        scheduler_->Reset(it->second, std::chrono::seconds(reminderTime - time(nullptr)));
         return;
     }
     // not find task in map, create new timer
