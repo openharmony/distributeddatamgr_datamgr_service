@@ -21,7 +21,6 @@
 #include "uninstaller.h"
 
 namespace OHOS::DistributedKv {
-
 class UninstallEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
 using UninstallEventCallback = void (UninstallEventSubscriber::*)

@@ -28,7 +28,6 @@
 #include "metadata/store_meta_data.h"
 #include "permit_delegate.h"
 #include "cloud/cloud_info.h"
-#include "utils/block_integer.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::AppDistributedKv;
@@ -153,5 +152,4 @@ ExecutorPool::Task UninstallerImpl::GetTask()
         executors_->Schedule(std::chrono::milliseconds(RETRY_INTERVAL), GetTask());
     };
 }
-
 } // namespace OHOS::DistributedKv
