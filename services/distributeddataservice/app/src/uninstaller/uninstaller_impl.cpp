@@ -56,7 +56,7 @@ void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
         int32_t userId = want.GetIntParam(USER_ID, -1);
         int32_t appIndex = want.GetIntParam(SANDBOX_APP_INDEX, 0);
         ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d", bundleName.c_str(), userId, appIndex);
-        (this->*it->second)(bundleName, userId, appIndex);
+        (this->(*it->second))(bundleName, userId, appIndex);
     }
 }
 
