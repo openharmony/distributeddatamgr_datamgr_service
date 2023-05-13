@@ -159,3 +159,78 @@ HWTEST_F(SerializableTest, GetMutilVal, TestSize.Level2)
     normal1.Unmarshall(jstr);
     ASSERT_TRUE(normalEx == normal1) << normal1.name;
 }
+
+/**
+* @tc.name: GetMap
+* @tc.desc: mutil value case.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Sven Wang
+*/
+HWTEST_F(SerializableTest, GetMap, TestSize.Level2)
+{
+    ZLOGI("SerializableSuite GetMapVals begin.");
+    std::map<std::string, NormalEx> marshData;
+    NormalEx normalEx;
+    normalEx.normals = { Normal() };
+    normalEx.name = "normalEx";
+    marshData.insert(std::pair{ "test1", normalEx });
+    auto jsonData = NormalEx::Marshall(marshData);
+
+    std::map<std::string, NormalEx> unmarshData;
+    NormalEx::Unmarshall(jsonData, unmarshData);
+    ASSERT_TRUE((marshData["test1"] == unmarshData["test1"])) << jsonData;
+}
+
+/**
+* @tc.name: GetMapInStruct
+* @tc.desc: mutil value case.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Sven Wang
+*/
+HWTEST_F(SerializableTest, GetMapInStruct, TestSize.Level2)
+{
+    struct TestMeta : public Serializable {
+        std::map<std::string, NormalEx> data;
+        std::map<std::string, bool> *index = nullptr;
+        std::vector<std::map<std::string, NormalEx>> others;
+        ~TestMeta()
+        {
+            delete index;
+        }
+        bool Marshal(json &node) const
+        {
+            SetValue(node[GET_NAME(data)], data);
+            SetValue(node[GET_NAME(index)], index);
+            SetValue(node[GET_NAME(others)], others);
+            return true;
+        }
+
+        bool Unmarshal(const json &node)
+        {
+            GetValue(node, GET_NAME(data), data);
+            GetValue(node, GET_NAME(index), index);
+            GetValue(node, GET_NAME(others), others);
+            return true;
+        }
+    };
+    ZLOGI("SerializableSuite GetMapVals begin.");
+    TestMeta marData;
+    NormalEx normalEx;
+    normalEx.normals = { Normal() };
+    normalEx.name = "normalEx";
+    marData.data.insert(std::pair{ "test1", normalEx });
+    marData.others.push_back({ std::pair{ "test2", normalEx } });
+    marData.index = new (std::nothrow) std::map<std::string, bool>;
+    ASSERT_NE(marData.index, nullptr);
+    marData.index->insert(std::pair{ "test1", true });
+    marData.index->insert(std::pair{ "test2", true });
+    auto jsonData = NormalEx::Marshall(marData);
+    TestMeta unmarData;
+    NormalEx::Unmarshall(jsonData, unmarData);
+    ASSERT_TRUE((marData.data == unmarData.data)) << jsonData;
+    ASSERT_TRUE((marData.others == unmarData.others)) << jsonData;
+    ASSERT_NE(unmarData.index, nullptr);
+    ASSERT_TRUE((*marData.index == *unmarData.index)) << jsonData;
+}

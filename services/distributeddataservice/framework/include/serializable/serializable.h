@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
+#include <map>
 #include <string>
 #include <vector>
 #include "visibility.h"
@@ -32,6 +33,7 @@ public:
     using json = nlohmann::json;
     using size_type = nlohmann::json::size_type;
     using error_handler_t = nlohmann::detail::error_handler_t;
+
     API_EXPORT json Marshall() const;
     template<typename T>
     static std::string Marshall(T &values)
@@ -64,60 +66,114 @@ public:
     API_EXPORT static bool SetValue(json &node, const int32_t &value);
     API_EXPORT static bool SetValue(json &node, const int64_t &value);
     API_EXPORT static bool SetValue(json &node, const uint64_t &value);
-    API_EXPORT static bool SetValue(json &node, const bool &value);
+    // Use bool & to forbid the const T * auto convert to bool, const bool will convert to const uint32_t &value;
+    API_EXPORT static bool SetValue(json &node, bool &value);
     API_EXPORT static bool SetValue(json &node, const std::vector<uint8_t> &value);
     API_EXPORT static bool SetValue(json &node, const Serializable &value);
 protected:
     API_EXPORT ~Serializable() = default;
 
     template<typename T>
-    static bool GetValue(const json &node, const std::string &name, T *&value)
-    {
-        auto &subNode = GetSubNode(node, name);
-        if (subNode.is_null()) {
-            return false;
-        }
-        value = new(std::nothrow) T();
-        if (value == nullptr) {
-            return false;
-        }
-        bool result = GetValue(subNode, "", *value);
-        if (!result) {
-            delete value;
-            value = nullptr;
-        }
-        return result;
-    }
-    template<typename T>
-    static bool GetValue(const json &node, const std::string &name, std::vector<T> &values)
-    {
-        auto &subNode = GetSubNode(node, name);
-        if (subNode.is_null() || !subNode.is_array()) {
-            return false;
-        }
-        bool result = true;
-        values.resize(subNode.size());
-        for (size_type i = 0; i < subNode.size(); ++i) {
-            result = GetValue(subNode[i], "", values[i]) && result;
-        }
-        return result;
-    }
+    static bool GetValue(const json &node, const std::string &name, std::vector<T> &values);
 
     template<typename T>
-    static bool SetValue(json &node, const std::vector<T> &values)
-    {
-        bool result = true;
-        size_type i = 0;
-        node = json::value_t::array;
-        for (const auto &value : values) {
-            result = SetValue(node[i], value) && result;
-            i++;
-        }
-        return result;
-    }
+    static bool SetValue(json &node, const std::vector<T> &values);
+
+    template<typename T>
+    static bool GetValue(const json &node, const std::string &name, std::map<std::string, T> &values);
+
+    template<typename T>
+    static bool SetValue(json &node, const std::map<std::string, T> &values);
+
+    template<typename T>
+    static bool GetValue(const json &node, const std::string &name, T *&value);
+
+    template<typename T>
+    static bool SetValue(json &node, const T *value);
 
     API_EXPORT static const json &GetSubNode(const json &node, const std::string &name);
 };
+
+template<typename T>
+bool Serializable::GetValue(const json &node, const std::string &name, std::vector<T> &values)
+{
+    auto &subNode = GetSubNode(node, name);
+    if (subNode.is_null() || !subNode.is_array()) {
+        return false;
+    }
+    bool result = true;
+    values.resize(subNode.size());
+    for (size_type i = 0; i < subNode.size(); ++i) {
+        result = GetValue(subNode[i], "", values[i]) && result;
+    }
+    return result;
+}
+
+template<typename T>
+bool Serializable::SetValue(json &node, const std::vector<T> &values)
+{
+    bool result = true;
+    size_type i = 0;
+    node = json::value_t::array;
+    for (const auto &value : values) {
+        result = SetValue(node[i], value) && result;
+        i++;
+    }
+    return result;
+}
+
+template<typename T>
+bool Serializable::GetValue(const json &node, const std::string &name, std::map<std::string, T> &values)
+{
+    auto &subNode = GetSubNode(node, name);
+    if (subNode.is_null() || !subNode.is_object()) {
+        return false;
+    }
+    bool result = true;
+    for (auto object = subNode.begin(); object != subNode.end(); ++object) {
+        result = GetValue(object.value(), "", values[object.key()]) && result;
+    }
+    return result;
+}
+
+template<typename T>
+bool Serializable::SetValue(json &node, const std::map<std::string, T> &values)
+{
+    bool result = true;
+    node = json::value_t::object;
+    for (const auto &[key, value] : values) {
+        result = SetValue(node[key], value) && result;
+    }
+    return result;
+}
+
+template<typename T>
+bool Serializable::GetValue(const json &node, const std::string &name, T *&value)
+{
+    auto &subNode = GetSubNode(node, name);
+    if (subNode.is_null()) {
+        return false;
+    }
+    value = new(std::nothrow) T();
+    if (value == nullptr) {
+        return false;
+    }
+    bool result = GetValue(subNode, "", *value);
+    if (!result) {
+        delete value;
+        value = nullptr;
+    }
+    return result;
+}
+
+template<typename T>
+bool Serializable::SetValue(json &node, const T *value)
+{
+    if (value == nullptr) {
+        return false;
+    }
+    return SetValue(node, *value);
+}
 } // namespace DistributedData
 } // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
