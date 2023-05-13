@@ -47,8 +47,8 @@ public:
 private:
     static constexpr int32_t RETRY_TIME = 300;
     static constexpr int32_t RETRY_INTERVAL = 100;
-    void OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex);
-    void OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex);
+    static void OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex);
+    static void OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex);
     int32_t retryTime_;
     ExecutorPool::Task GetTask();
     std::shared_ptr<UninstallEventSubscriber> subscriber_ {};

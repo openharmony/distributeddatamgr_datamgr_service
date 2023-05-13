@@ -91,12 +91,12 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared
     CommonEventSubscribeInfo info(matchingSkills);
 
     auto subscriber = std::make_shared<UninstallEventSubscriber>(info);
-    auto removedCallback = [this, kvStoreDataService](const std::string &bundleName, int32_t userId, int32_t appIndex) {
+    auto removedCallback = [kvStoreDataService](const std::string &bundleName, int32_t userId, int32_t appIndex) {
         kvStoreDataService->OnUninstall(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
         OnUninstall(bundleName, userId, appIndex);
     };
 
-    auto updatedCallback = [this, kvStoreDataService](const std::string &bundleName, int32_t userId, int32_t appIndex) {
+    auto updatedCallback = [kvStoreDataService](const std::string &bundleName, int32_t userId, int32_t appIndex) {
         kvStoreDataService->OnUpdate(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
         OnUpdate(bundleName, userId, appIndex);
     };
