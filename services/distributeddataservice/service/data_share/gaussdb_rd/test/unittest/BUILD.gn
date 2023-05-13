@@ -85,10 +85,12 @@ ohos_source_set("src_file") {
     "hitrace_native:hitrace_meter",
     "hiviewdfx_hilog_native:libhilog",
   ]
-  part_name = "kv_store"
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
 }
 
-template("documentdb_unittest") {
+template("gaussdb_rd_unittest") {
   ohos_unittest(target_name) {
     forward_variables_from(invoker, "*")
     module_out_path = module_output_path
@@ -120,35 +122,35 @@ template("documentdb_unittest") {
   }
 }
 
-documentdb_unittest("DocumentDBApiTest") {
+gaussdb_rd_unittest("DocumentDBApiTest") {
   sources = [ "api/documentdb_api_test.cpp" ]
 }
 
-documentdb_unittest("DocumentDBCollectionTest") {
+gaussdb_rd_unittest("DocumentDBCollectionTest") {
   sources = [ "api/documentdb_collection_test.cpp" ]
 }
 
-documentdb_unittest("DocumentDBDataTest") {
+gaussdb_rd_unittest("DocumentDBDataTest") {
   sources = [ "api/documentdb_data_test.cpp" ]
 }
 
-documentdb_unittest("DocumentDBJsonCommonTest") {
+gaussdb_rd_unittest("DocumentDBJsonCommonTest") {
   sources = [ "oh_adapter/documentdb_json_common_test.cpp" ]
 }
 
-documentdb_unittest("DocumentDBJsonObjectTest") {
+gaussdb_rd_unittest("DocumentDBJsonObjectTest") {
   sources = [ "oh_adapter/documentdb_jsonobject_test.cpp" ]
 }
 
-documentdb_unittest("DocumentDBInsertTest") {
+gaussdb_rd_unittest("DocumentDBInsertTest") {
   sources = [ "api/documentdb_insert_test.cpp" ]
 }
 
-documentdb_unittest("DocumentDBFindTest") {
+gaussdb_rd_unittest("DocumentDBFindTest") {
   sources = [ "api/documentdb_find_test.cpp" ]
 }
 
-documentdb_unittest("DocumentDBDeleteTest") {
+gaussdb_rd_unittest("DocumentDBDeleteTest") {
   sources = [ "api/documentdb_delete_test.cpp" ]
 }
 
