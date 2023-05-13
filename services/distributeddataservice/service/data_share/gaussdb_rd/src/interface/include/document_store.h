@@ -64,6 +64,7 @@ public:
     bool IsCollectionExists(const std::string &collectionName, int &errCode);
 
     std::mutex dbMutex_;
+
 private:
     int GetViewType(JsonObject &jsonObj, bool &viewType);
     KvStoreExecutor *executor_ = nullptr;

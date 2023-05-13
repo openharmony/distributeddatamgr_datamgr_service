@@ -13,10 +13,10 @@
 * limitations under the License.
 */
 #include "result_set.h"
-#include "securec.h"
 
 #include "db_constant.h"
 #include "log_print.h"
+#include "securec.h"
 
 namespace DocumentDB {
 constexpr const char *KEY_ID = "_id";
@@ -139,7 +139,7 @@ int ResultSet::GetNext(bool isNeedTransaction, bool isNeedCheckTable)
 {
     int errCode = E_OK;
     if (!isNeedTransaction) {
-         return GetNextInner(isNeedCheckTable);
+        return GetNextInner(isNeedCheckTable);
     }
     std::lock_guard<std::mutex> lock(store_->dbMutex_);
     errCode = store_->StartTransaction();

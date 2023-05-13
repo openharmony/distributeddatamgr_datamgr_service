@@ -19,8 +19,8 @@
 #include <string>
 #include <vector>
 
-#include "doc_errno.h"
 #include "check_common.h"
+#include "doc_errno.h"
 #include "document_store.h"
 #include "grd_base/grd_type_export.h"
 #include "json_object.h"

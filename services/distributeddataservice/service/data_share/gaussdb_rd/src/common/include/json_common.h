@@ -26,9 +26,6 @@
 namespace DocumentDB {
 class JsonCommon {
 public:
-    JsonCommon() = default;
-    ~JsonCommon();
-
     static ValueObject GetValueInSameLevel(JsonObject &node, const std::string &field);
     static ValueObject GetValueInSameLevel(JsonObject &node, const std::string &field, bool &isFieldExist);
     static bool CheckJsonField(JsonObject &node);

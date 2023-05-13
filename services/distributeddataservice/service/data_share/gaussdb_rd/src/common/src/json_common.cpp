@@ -91,16 +91,18 @@ bool JsonCommon::CheckNode(JsonObject &node)
         if (ret != E_OK) {
             isFieldNameExist = false;
         }
-        if (fieldSet.find(fieldName) == fieldSet.end()) {
-            if (isFieldNameExist) {
-                fieldSet.insert(fieldName);
-                if (fieldName.empty()) {
-                    return false;
-                }
-            }
-        } else {
+
+        if (fieldSet.find(fieldName) != fieldSet.end()) {
             return false;
         }
+
+        if (isFieldNameExist) {
+            fieldSet.insert(fieldName);
+            if (fieldName.empty()) {
+                return false;
+            }
+        }
+
         for (size_t i = 0; i < fieldName.size(); i++) {
             if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || fieldName[i] == '_')) {
                 return false;
@@ -171,29 +173,36 @@ bool JsonCommon::CheckProjectionField(JsonObject &jsonObj, int &errCode)
     return CheckProjectionNode(jsonObj, isFirstLevel, errCode);
 }
 
+namespace {
+JsonFieldPath ExpendPathForField(const JsonFieldPath &path, bool &isCollapse)
+{
+    JsonFieldPath splitPath;
+    const std::string &str = path.back();
+    size_t start = 0;
+    size_t end = 0;
+    while ((end = str.find('.', start)) != std::string::npos) {
+        splitPath.push_back(str.substr(start, end - start));
+        start = end + 1;
+    }
+    if (start < str.length()) {
+        splitPath.push_back(str.substr(start));
+    }
+    isCollapse = (splitPath.size() > 1);
+    for (size_t i = 1; i < path.size(); i++) {
+        splitPath.emplace_back(path[i]);
+    }
+    return splitPath;
+}
+} // namespace
+
 int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
     std::vector<std::vector<std::string>> &resultPath, bool isFirstLevel)
 {
     while (!node.IsNull()) {
         int insertCount = 0;
         if (isFirstLevel) {
-            std::string tempParseName;
-            std::vector<std::string> allFieldsName;
-            std::string priFieldName = node.GetItemField();
-            for (size_t j = 0; j < priFieldName.size(); j++) {
-                if (priFieldName[j] != '.') {
-                    tempParseName += priFieldName[j];
-                }
-                if (priFieldName[j] == '.' || j == priFieldName.size() - 1) {
-                    if ((j > 0 && priFieldName[j] == '.' && priFieldName[j - 1] == '.') ||
-                        (priFieldName[j] == '.' && j == priFieldName.size() - 1)) {
-                        return -E_INVALID_ARGS;
-                    }
-                    allFieldsName.emplace_back(tempParseName);
-                    insertCount++;
-                    tempParseName.clear();
-                }
-            }
+            bool isCollapse = false;
+            std::vector<std::string> allFieldsName = ExpendPathForField({ node.GetItemField() }, isCollapse);
             singlePath.insert(singlePath.end(), allFieldsName.begin(), allFieldsName.end());
         } else {
             std::vector<std::string> allFieldsName;
@@ -252,26 +261,6 @@ JsonFieldPath SplitePath(const JsonFieldPath &path, bool &isCollapse)
     return splitPath;
 }
 
-JsonFieldPath ExpendPathForField(const JsonFieldPath &path, bool &isCollapse)
-{
-    JsonFieldPath splitPath;
-    const std::string &str = path.back();
-    size_t start = 0;
-    size_t end = 0;
-    while ((end = str.find('.', start)) != std::string::npos) {
-        splitPath.push_back(str.substr(start, end - start));
-        start = end + 1;
-    }
-    if (start < str.length()) {
-        splitPath.push_back(str.substr(start));
-    }
-    isCollapse = (splitPath.size() > 1);
-    for (size_t i = 1; i < path.size(); i++) {
-        splitPath.emplace_back(path[i]);
-    }
-    return splitPath;
-}
-
 void JsonObjectIterator(const JsonObject &obj, JsonFieldPath path,
     std::function<bool(const JsonFieldPath &path, const JsonObject &father, const JsonObject &item)> AppendFoo)
 {
@@ -307,9 +296,50 @@ bool IsNumber(const std::string &str)
     });
 }
 
+bool AddSpliteHitField(const JsonObject &src, const JsonObject &item, JsonFieldPath &hitPath,
+    JsonFieldPath &abandonPath, int &externErrCode)
+{
+    if (hitPath.empty()) {
+        return true;
+    }
+
+    int errCode = E_OK;
+    JsonFieldPath preHitPath = hitPath;
+    preHitPath.pop_back();
+    JsonObject preHitItem = src.FindItem(preHitPath, errCode);
+    // if FindItem errCode is not E_OK, GetObjectItem errCode should be E_NOT_FOUND
+    JsonObject hitItem = preHitItem.GetObjectItem(hitPath.back(), errCode);
+    if (errCode == -E_NOT_FOUND) {
+        return true;
+    }
+
+    if (!abandonPath.empty()) {
+        abandonPath.pop_back();
+    }
+
+    if (hitItem.IsNull()) {
+        return true;
+    }
+
+    for (int i = abandonPath.size() - 1; i > -1; i--) {
+        if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
+            GLOGE("Add collapse item to object failed, path not exist.");
+            externErrCode = -E_DATA_CONFLICT;
+            return false;
+        }
+        if (IsNumber(abandonPath[i])) {
+            externErrCode = -E_DATA_CONFLICT;
+            return false;
+        }
+        errCode = (i == 0) ? hitItem.AddItemToObject(abandonPath[i], item) : hitItem.AddItemToObject(abandonPath[i]);
+        externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
+    }
+    return false;
+}
+
 bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFieldPath &itemPath, int &externErrCode)
 {
-    int errCode = 0;
+    int errCode = E_OK;
     JsonFieldPath abandonPath;
     JsonFieldPath hitPath = itemPath;
     while (!hitPath.empty()) {
@@ -323,36 +353,11 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
         }
         hitPath.pop_back();
     }
-    if (!hitPath.empty()) {
-        JsonFieldPath preHitPath = hitPath;
-        preHitPath.pop_back();
-        JsonObject preHitItem = src.FindItem(preHitPath, errCode);
-        JsonObject hitItem = preHitItem.GetObjectItem(hitPath.back(),
-            errCode); // if FindItem errCode is not E_OK, GetObjectItem errCode should be E_NOT_FOUND
-        if (errCode != E_NOT_FOUND) {
-            if (!abandonPath.empty()) {
-                abandonPath.pop_back();
-            }
-            if (!hitItem.IsNull()) {
-                JsonFieldPath newHitPath;
-                for (int i = abandonPath.size() - 1; i > -1; i--) {
-                    if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
-                        GLOGE("Add collapse item to object failed, path not exist.");
-                        externErrCode = -E_DATA_CONFLICT;
-                        return false;
-                    }
-                    if (IsNumber(abandonPath[i])) {
-                        externErrCode = -E_DATA_CONFLICT;
-                        return false;
-                    }
-                    (i == 0) ? errCode = hitItem.AddItemToObject(abandonPath[i], item)
-                             : errCode = hitItem.AddItemToObject(abandonPath[i]);
-                    externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-                }
-                return false;
-            }
-        }
+
+    if (!AddSpliteHitField(src, item, hitPath, abandonPath, externErrCode)) {
+        return false;
     }
+
     JsonObject hitItem = src.FindItem(hitPath, errCode);
     if (errCode != E_OK) {
         return false;
@@ -368,8 +373,7 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
             externErrCode = -E_DATA_CONFLICT;
             return false;
         }
-        (i == 0) ? errCode = hitItem.AddItemToObject(abandonPath[i], item)
-                 : errCode = hitItem.AddItemToObject(abandonPath[i]);
+        errCode = (i == 0 ? hitItem.AddItemToObject(abandonPath[i], item) : hitItem.AddItemToObject(abandonPath[i]));
         externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
         newHitPath.emplace_back(abandonPath[i]);
         hitItem = hitItem.FindItem(newHitPath, errCode);

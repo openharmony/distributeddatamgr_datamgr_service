@@ -546,28 +546,30 @@ cJSON *GetChild(cJSON *cjson, const std::string &field, bool caseSens)
 
 cJSON *GetChildPowerMode(cJSON *cjson, const std::string &field, bool caseSens)
 {
-    if (cjson->type == cJSON_Object) {
+    if (cjson->type != cJSON_Object && cjson->type != cJSON_Array) {
+        GLOGW("Invalid json field type, expect object or array.");
+        return nullptr;
+    } else if (cjson->type == cJSON_Object) {
         if (caseSens) {
             return cJSON_GetObjectItemCaseSensitive(cjson, field.c_str());
         } else {
             return cJSON_GetObjectItem(cjson, field.c_str());
         }
-    } else if (cjson->type == cJSON_Array) {
-        if (!IsNumber(field)) {
-            cjson = cjson->child;
-            while (cjson != nullptr) {
-                cJSON *resultItem = GetChild(cjson, field, caseSens);
-                if (resultItem != nullptr) {
-                    return resultItem;
-                }
-                cjson = cjson->next;
-            }
-            return nullptr;
-        }
-        return cJSON_GetArrayItem(cjson, std::stoi(field));
     }
-    GLOGW("Invalid json field type, expect object or array.");
-    return nullptr;
+
+    // type is cJSON_Array
+    if (!IsNumber(field)) {
+        cjson = cjson->child;
+        while (cjson != nullptr) {
+            cJSON *resultItem = GetChild(cjson, field, caseSens);
+            if (resultItem != nullptr) {
+                return resultItem;
+            }
+            cjson = cjson->next;
+        }
+        return nullptr;
+    }
+    return cJSON_GetArrayItem(cjson, std::stoi(field));
 }
 
 cJSON *MoveToPath(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)

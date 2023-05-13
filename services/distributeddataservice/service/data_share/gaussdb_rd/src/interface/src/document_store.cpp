@@ -15,9 +15,9 @@
 
 #include "document_store.h"
 
+#include "check_common.h"
 #include "collection_option.h"
 #include "doc_errno.h"
-#include "check_common.h"
 #include "grd_base/grd_type_export.h"
 #include "grd_resultset_inner.h"
 #include "log_print.h"
@@ -531,7 +531,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
         collections_[collection] = nullptr;
     }
 END:
-	if (errCode == E_OK) {
+    if (errCode == E_OK) {
         executor_->Commit();
     } else {
         executor_->Rollback();
