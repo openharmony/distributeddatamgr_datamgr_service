@@ -17,22 +17,31 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
+#include "cloud/cloud_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
+#include "directory_manager.h"
+#include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "permission/permission_validator.h"
 #include "rdb_notifier_proxy.h"
+#include "store/auto_cache.h"
 #include "types_export.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
+#include "utils/converter.h"
+#include "cloud/schema_meta.h"
+#include "rdb_general_store.h"
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
 using OHOS::DistributedData::StoreMetaData;
 using OHOS::DistributedData::Anonymous;
 using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
 using DistributedDB::RelationalStoreManager;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
@@ -41,8 +50,12 @@ namespace OHOS::DistributedRdb {
 __attribute__((used)) RdbServiceImpl::Factory RdbServiceImpl::factory_;
 RdbServiceImpl::Factory::Factory()
 {
-    FeatureSystem::GetInstance().RegisterCreator("relational_store",
-        []() { return std::make_shared<RdbServiceImpl>(); });
+    FeatureSystem::GetInstance().RegisterCreator("relational_store", []() {
+        return std::make_shared<RdbServiceImpl>();
+    });
+    AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION, [](const StoreMetaData &metaData) -> GeneralStore* {
+        return new (std::nothrow) RdbGeneralStore(metaData);
+    });
 }
 
 RdbServiceImpl::Factory::~Factory()
@@ -134,13 +147,13 @@ void RdbServiceImpl::OnClientDied(pid_t pid)
     });
 }
 
-bool RdbServiceImpl::CheckAccess(const RdbSyncerParam &param)
+bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::string& storeName)
 {
     CheckerManager::StoreInfo storeInfo;
     storeInfo.uid = IPCSkeleton::GetCallingUid();
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.bundleName = param.bundleName_;
-    storeInfo.storeId = RdbSyncer::RemoveSuffix(param.storeName_);
+    storeInfo.bundleName = bundleName;
+    storeInfo.storeId = RdbSyncer::RemoveSuffix(storeName);
     auto instanceId = RdbSyncer::GetInstIndex(storeInfo.tokenId, storeInfo.bundleName);
     if (instanceId != 0) {
         return false;
@@ -159,15 +172,18 @@ std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device
     return DistributedDB::RelationalStoreManager::GetDistributedTableName(uuid, table);
 }
 
-int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam& param, const sptr<IRemoteObject> notifier)
+int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> notifier)
 {
-    if (!CheckAccess(param)) {
+    if (!CheckAccess(param.bundleName_, "")) {
         ZLOGE("permission error");
         return RDB_ERROR;
     }
-
+    if (notifier == nullptr) {
+        ZLOGE("notifier is null");
+        return RDB_ERROR;
+    }
     pid_t pid = IPCSkeleton::GetCallingPid();
-    auto recipient = new(std::nothrow) DeathRecipientImpl([this, pid] {
+    auto recipient = new (std::nothrow) DeathRecipientImpl([this, pid] {
         OnClientDied(pid);
     });
     if (recipient == nullptr) {
@@ -280,7 +296,7 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables)
 {
     ZLOGI("enter");
-    if (!CheckAccess(param)) {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
         return RDB_ERROR;
     }
@@ -294,7 +310,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
 int32_t RdbServiceImpl::DoSync(const RdbSyncerParam &param, const SyncOption &option,
                                const RdbPredicates &predicates, SyncResult &result)
 {
-    if (!CheckAccess(param)) {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
         return RDB_ERROR;
     }
@@ -317,7 +333,7 @@ void RdbServiceImpl::OnAsyncComplete(pid_t pid, uint32_t seqNum, const SyncResul
 int32_t RdbServiceImpl::DoAsync(const RdbSyncerParam &param, uint32_t seqNum, const SyncOption &option,
                                 const RdbPredicates &predicates)
 {
-    if (!CheckAccess(param)) {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
         return RDB_ERROR;
     }
@@ -327,10 +343,9 @@ int32_t RdbServiceImpl::DoAsync(const RdbSyncerParam &param, uint32_t seqNum, co
     if (syncer == nullptr) {
         return RDB_ERROR;
     }
-    return syncer->DoAsync(option, predicates,
-                           [this, pid, seqNum] (const SyncResult& result) {
-                               OnAsyncComplete(pid, seqNum, result);
-                           });
+    return syncer->DoAsync(option, predicates, [this, pid, seqNum](const SyncResult &result) {
+        OnAsyncComplete(pid, seqNum, result);
+    });
 }
 
 std::string RdbServiceImpl::TransferStringToHex(const std::string &origStr)
@@ -353,7 +368,7 @@ std::string RdbServiceImpl::GenIdentifier(const RdbSyncerParam &param)
     pid_t uid = IPCSkeleton::GetCallingUid();
     uint32_t token = IPCSkeleton::GetCallingTokenID();
     auto storeId = RdbSyncer::RemoveSuffix(param.storeName_);
-    CheckerManager::StoreInfo storeInfo{ uid, token, param.bundleName_, storeId };
+    CheckerManager::StoreInfo storeInfo { uid, token, param.bundleName_, storeId };
     auto userId = AccountDelegate::GetInstance()->GetUserByToken(token);
     std::string appId = CheckerManager::GetInstance().GetAppId(storeInfo);
     std::string identifier = RelationalStoreManager::GetRelationalStoreIdentifier(
@@ -381,7 +396,7 @@ int32_t RdbServiceImpl::DoUnSubscribe(const RdbSyncerParam& param)
 int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
                                     const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet)
 {
-    if (!CheckAccess(param)) {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
         return RDB_ERROR;
     }
@@ -396,7 +411,7 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
 int32_t RdbServiceImpl::CreateRDBTable(
     const RdbSyncerParam &param, const std::string &writePermission, const std::string &readPermission)
 {
-    if (!CheckAccess(param)) {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
         return RDB_ERROR;
     }
@@ -424,7 +439,7 @@ int32_t RdbServiceImpl::CreateRDBTable(
 
 int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
 {
-    if (!CheckAccess(param)) {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
         return RDB_ERROR;
     }
@@ -448,6 +463,54 @@ int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
     delete syncer;
     return RDB_OK;
 }
+
+int32_t RdbServiceImpl::OnInitialize()
+{
+    auto initEvt = std::make_unique<CloudEvent>(CloudEvent::FEATURE_INIT, CloudEvent::StoreInfo());
+    EventCenter::GetInstance().PostEvent(std::move(initEvt));
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
+{
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("permission error");
+        return RDB_ERROR;
+    }
+    auto syncer = GetRdbSyncer(param);
+    if (syncer == nullptr) {
+        return RDB_ERROR;
+    }
+    CloudEvent::StoreInfo storeInfo { IPCSkeleton::GetCallingTokenID(), param.bundleName_,
+        RdbSyncer::RemoveSuffix(param.storeName_),
+        RdbSyncer::GetInstIndex(IPCSkeleton::GetCallingTokenID(), param.bundleName_) };
+    auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "relational_store");
+    EventCenter::GetInstance().PostEvent(move(event));
+    return RDB_OK;
+}
+
+StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
+{
+    StoreMetaData metaData;
+    metaData.uid = IPCSkeleton::GetCallingUid();
+    metaData.tokenId = IPCSkeleton::GetCallingTokenID();
+    metaData.instanceId = RdbSyncer::GetInstIndex(metaData.tokenId, param.bundleName_);
+    metaData.bundleName = param.bundleName_;
+    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaData.storeId = RdbSyncer::RemoveSuffix(param.storeName_);
+    metaData.user = std::to_string(AccountDelegate::GetInstance()->GetUserByToken(metaData.tokenId));
+    metaData.storeType = param.type_;
+    metaData.securityLevel = param.level_;
+    metaData.area = param.area_;
+    metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
+    metaData.appType = "harmony";
+    metaData.hapName = param.hapName_;
+    metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData) + "/" + param.storeName_;
+    metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
+    metaData.isEncrypt = param.isEncrypt_;
+    return metaData;
+}
+
 int32_t RdbServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;

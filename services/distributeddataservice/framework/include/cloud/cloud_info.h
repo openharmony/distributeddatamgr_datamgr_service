@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_INFO_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_INFO_H
+#include "metadata/store_meta_data.h"
 #include "serializable/serializable.h"
 namespace OHOS::DistributedData {
 class API_EXPORT CloudInfo final : public Serializable {
@@ -23,6 +24,7 @@ public:
         std::string bundleName = "";
         std::string appId = "";
         uint64_t version = 0;
+        int32_t instanceId = 0;
         bool cloudSwitch = false;
 
         bool Marshal(json &node) const override;
@@ -37,7 +39,8 @@ public:
 
     std::string GetKey() const;
     std::map<std::string, std::string> GetSchemaKey() const;
-    std::string GetSchemaKey(std::string bundleName) const;
+    std::string GetSchemaKey(const std::string &bundleName, const int32_t instanceId = 0) const;
+    static std::string GetSchemaKey(const StoreMetaData &meta);
     bool IsValid() const;
     bool IsExist(const std::string &bundleName) const;
     static std::string GetPrefix(const std::initializer_list<std::string> &field);

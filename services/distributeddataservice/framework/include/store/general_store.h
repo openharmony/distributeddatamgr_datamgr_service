@@ -23,6 +23,7 @@
 #include "store/general_watcher.h"
 namespace OHOS::DistributedData {
 class CloudDB;
+class SchemaMeta;
 class GeneralStore {
 public:
     using Watcher = GeneralWatcher;
@@ -32,6 +33,8 @@ public:
     virtual ~GeneralStore() = default;
 
     virtual int32_t Bind(std::shared_ptr<CloudDB> cloudDb) = 0;
+
+    virtual int32_t SetSchema(const SchemaMeta &schemaMeta) = 0;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 

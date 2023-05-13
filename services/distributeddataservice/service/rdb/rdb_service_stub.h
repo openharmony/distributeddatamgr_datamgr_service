@@ -50,9 +50,11 @@ private:
 
     int32_t OnRemoteObtainDistributedTableName(MessageParcel& data, MessageParcel& reply);
 
-    int32_t OnRemoteInitNotifier(MessageParcel&data, MessageParcel& reply);
+    int32_t OnGetSchema(MessageParcel& data, MessageParcel& reply);
 
-    int32_t OnRemoteSetDistributedTables(MessageParcel &data, MessageParcel &reply);
+    int32_t OnRemoteInitNotifier(MessageParcel& data, MessageParcel& reply);
+
+    int32_t OnRemoteSetDistributedTables(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnRemoteDoSync(MessageParcel& data, MessageParcel& reply);
 
@@ -79,7 +81,8 @@ private:
         [RDB_SERVICE_CMD_UNSUBSCRIBE] = &RdbServiceStub::OnRemoteDoUnSubscribe,
         [RDB_SERVICE_CMD_REMOTE_QUERY] = &RdbServiceStub::OnRemoteDoRemoteQuery,
         [RDB_SERVICE_CREATE_RDB_TABLE] = &RdbServiceStub::OnRemoteDoCreateTable,
-        [RDB_SERVICE_DESTROY_RDB_TABLE] = &RdbServiceStub::OnRemoteDoDestroyTable
+        [RDB_SERVICE_DESTROY_RDB_TABLE] = &RdbServiceStub::OnRemoteDoDestroyTable,
+        [RDB_SERVICE_CMD_GET_SCHEMA] = &RdbServiceStub::OnGetSchema
     };
 };
 } // namespace OHOS::DistributedRdb

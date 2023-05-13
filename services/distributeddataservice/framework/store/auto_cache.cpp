@@ -52,18 +52,20 @@ AutoCache::~AutoCache()
     }
 }
 
-AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
+AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers, bool setWatchers)
 {
     Store store;
-    if (meta.storeType >= MAX_CREATOR_NUM || !creators_[meta.storeType]) {
+    if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType]) {
         return store;
     }
 
     stores_.Compute(meta.tokenId,
-        [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
+        [this, &meta, &watchers, &store, setWatchers](auto &, std::map<std::string, Delegate> &stores) -> bool {
             auto it = stores.find(meta.storeId);
             if (it != stores.end()) {
-                it->second.SetObservers(watchers);
+                if (setWatchers) {
+                    it->second.SetObservers(watchers);
+                }
                 store = it->second;
                 return !stores.empty();
             }

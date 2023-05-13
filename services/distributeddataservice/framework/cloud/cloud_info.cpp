@@ -44,6 +44,7 @@ bool CloudInfo::AppInfo::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(bundleName)], bundleName);
     SetValue(node[GET_NAME(appId)], appId);
     SetValue(node[GET_NAME(version)], version);
+    SetValue(node[GET_NAME(instanceId)], instanceId);
     SetValue(node[GET_NAME(cloudSwitch)], cloudSwitch);
     return true;
 }
@@ -53,6 +54,7 @@ bool CloudInfo::AppInfo::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(appId), appId);
     GetValue(node, GET_NAME(version), version);
+    GetValue(node, GET_NAME(instanceId), instanceId);
     GetValue(node, GET_NAME(cloudSwitch), cloudSwitch);
     return true;
 }
@@ -66,15 +68,21 @@ std::map<std::string, std::string> CloudInfo::GetSchemaKey() const
 {
     std::map<std::string, std::string> keys;
     for (const auto &app : apps) {
-        const auto key = GetKey(SCHEMA_PREFIX, { std::to_string(user), id, app.bundleName });
+        const auto key = GetKey(
+            SCHEMA_PREFIX, { std::to_string(user), app.bundleName, std::to_string(app.instanceId) });
         keys.insert_or_assign(app.bundleName, key);
     }
     return keys;
 }
 
-std::string CloudInfo::GetSchemaKey(std::string bundleName) const
+std::string CloudInfo::GetSchemaKey(const std::string &bundleName, const int32_t instanceId) const
 {
-    return GetKey(SCHEMA_PREFIX, { std::to_string(user), id, bundleName });
+    return GetKey(SCHEMA_PREFIX, { std::to_string(user), bundleName, std::to_string(instanceId) });
+}
+
+std::string CloudInfo::GetSchemaKey(const StoreMetaData &meta)
+{
+    return GetKey(SCHEMA_PREFIX, { meta.user,  meta.bundleName, std::to_string(meta.instanceId) });
 }
 
 bool CloudInfo::IsValid() const
