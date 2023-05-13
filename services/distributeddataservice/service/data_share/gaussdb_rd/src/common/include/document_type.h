@@ -19,8 +19,7 @@
 #include <string>
 
 namespace DocumentDB {
-struct QueryContext
-{
+struct QueryContext {
     std::string collectionName;
     std::string filter;
     std::vector<std::vector<std::string>> path;
