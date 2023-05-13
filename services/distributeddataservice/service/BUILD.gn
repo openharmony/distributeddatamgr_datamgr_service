@@ -77,6 +77,7 @@ ohos_shared_library("distributeddatasvc") {
     "data_share/common/div_strategy.cpp",
     "data_share/common/kv_delegate.cpp",
     "data_share/common/rdb_delegate.cpp",
+    "data_share/common/scheduler_manager.cpp",
     "data_share/common/seq_strategy.cpp",
     "data_share/common/template_manager.cpp",
     "data_share/common/uri_utils.cpp",

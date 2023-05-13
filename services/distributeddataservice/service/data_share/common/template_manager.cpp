@@ -23,6 +23,7 @@
 #include "template_data.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
+#include "scheduler_manager.h"
 
 namespace OHOS::DataShare {
 bool TemplateManager::GetTemplate(
@@ -60,6 +61,7 @@ bool TemplateManager::DelTemplate(const std::string &uri, const TemplateId &tplI
         ZLOGE("db DeleteById failed, %{public}d", status);
         return false;
     }
+    SchedulerManager::GetInstance().RemoveTimer(Key(uri, tplId.subscriberId_, tplId.bundleName_));
     return true;
 }
 
@@ -134,6 +136,9 @@ int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const Templat
             return false;
         }
         value.emplace_back(observer, context->callerTokenId);
+        if (GetEnableObserverCount(key) == 1) {
+            SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
+        }
         return true;
     });
     return result;
@@ -154,6 +159,9 @@ int RdbSubscriberManager::DelRdbSubscriber(
                     it++;
                 }
             }
+            if (GetEnableObserverCount(key) == 0) {
+                SchedulerManager::GetInstance().RemoveTimer(key);
+            }
             return !value.empty();
         });
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
@@ -169,6 +177,9 @@ int RdbSubscriberManager::DisableRdbSubscriber(
                 if (it->callerTokenId == callerTokenId) {
                     it->enabled = false;
                 }
+            }
+            if (GetEnableObserverCount(key) == 0) {
+                SchedulerManager::GetInstance().RemoveTimer(key);
             }
             return true;
         });
@@ -186,6 +197,9 @@ int RdbSubscriberManager::EnableRdbSubscriber(
                 std::vector<ObserverNode> node;
                 node.emplace_back(it->observer, context->callerTokenId);
                 Notify(key, node, context->calledSourceDir, context->version);
+            }
+            if (GetEnableObserverCount(key) == 1) {
+              SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
             }
         }
         return true;
@@ -264,7 +278,7 @@ int RdbSubscriberManager::Notify(
             DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return E_TEMPLATE_NOT_EXIST;
     }
-    auto delegate = DBDelegate::Create(rdbDir, rdbVersion);
+    auto delegate = DBDelegate::Create(rdbDir, rdbVersion, true);
     if (delegate == nullptr) {
         ZLOGE("Create fail %{public}s %{public}s", DistributedData::Anonymous::Change(key.uri).c_str(),
             key.bundleName.c_str());

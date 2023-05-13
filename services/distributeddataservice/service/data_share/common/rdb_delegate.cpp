@@ -23,10 +23,29 @@
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 16;
 std::atomic<int32_t> RdbDelegate::resultSetCount = 0;
-RdbDelegate::RdbDelegate(const std::string &dir, int version)
+std::string RemindTimerFunc(const std::vector<std::string> &args)
+{
+  int size = args.size();
+  if (size != ARGS_SIZE) {
+    ZLOGE("RemindTimerFunc args size error, %{public}d", size);
+    return "";
+  }
+  std::string dbPath = args[ARG_DB_PATH];
+  int version = std::strtol(args[ARG_VERSION].c_str(), nullptr, 0);
+  Key key(args[ARG_URI], std::strtoll(args[ARG_SUBSCRIBER_ID].c_str(), nullptr, 0), args[ARG_BUNDLE_NAME]);
+  int64_t reminderTime = std::strtoll(args[ARG_TIME].c_str(), nullptr, 0);
+
+  SchedulerManager::GetInstance().SetTimer(dbPath, version, key, reminderTime);
+  return args[ARG_TIME];
+}
+
+RdbDelegate::RdbDelegate(const std::string &dir, int version, bool registerFunction)
 {
     RdbStoreConfig config(dir);
     config.SetCreateNecessary(false);
+    if (registerFunction) {
+        config.SetScalarFunction("remindTimer", ARGS_SIZE, RemindTimerFunc);
+    }
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
     if (errCode_ != E_OK) {
@@ -126,12 +145,12 @@ std::shared_ptr<DistributedData::Serializable> RdbDelegate::Query(
     return std::make_shared<ResultSetJsonFormatter>(resultSet);
 }
 
-int RdbDelegate::ExecuteSql(const std::string &sql)
+std::unique_ptr<NativeRdb::AbsSharedResultSet> RdbDelegate::QuerySql(const std::string &sql)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
-        return -1;
+        return nullptr;
     }
-    return store_->ExecuteSql(sql);
+    return store_->QuerySql(sql);
 }
 } // namespace OHOS::DataShare

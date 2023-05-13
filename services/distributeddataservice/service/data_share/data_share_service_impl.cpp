@@ -58,7 +58,7 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
     if (ret) {
         NotifyChange(uri);
         RdbSubscriberManager::GetInstance().Emit(uri, context);
-        return ret;
+        SchedulerManager::GetInstance().Execute(uri, context->calledSourceDir, context->version);
     }
     return ret;
 }
@@ -88,7 +88,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
     if (ret) {
         NotifyChange(uri);
         RdbSubscriberManager::GetInstance().Emit(uri, context);
-        return ret;
+        SchedulerManager::GetInstance().Execute(uri, context->calledSourceDir, context->version);
     }
     return ret;
 }
@@ -101,7 +101,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
     if (ret) {
         NotifyChange(uri);
         RdbSubscriberManager::GetInstance().Emit(uri, context);
-        return ret;
+        SchedulerManager::GetInstance().Execute(uri, context->calledSourceDir, context->version);
     }
     return ret;
 }

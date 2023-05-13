@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "abs_shared_result_set.h"
 #include "concurrent_map.h"
 #include "datashare_predicates.h"
 #include "datashare_result_set.h"
@@ -28,7 +29,7 @@
 namespace OHOS::DataShare {
 class DBDelegate {
 public:
-    static std::shared_ptr<DBDelegate> Create(const std::string &dir, int version);
+    static std::shared_ptr<DBDelegate> Create(const std::string &dir, int version, bool registerFunction = false);
     virtual int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
         const DataShareValuesBucket &valuesBucket) = 0;
@@ -37,13 +38,7 @@ public:
         const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode) = 0;
     virtual std::shared_ptr<DistributedData::Serializable> Query(
         const std::string &sql, const std::vector<std::string> &selectionArgs = std::vector<std::string>()) = 0;
-    virtual int ExecuteSql(const std::string &sql) = 0;
-};
-
-struct RdbStoreContext {
-    RdbStoreContext(const std::string &dir, int version) : dir(dir), version(version) {}
-    std::string dir;
-    int version;
+    virtual std::unique_ptr<NativeRdb::AbsSharedResultSet> QuerySql(const std::string &sql) = 0;
 };
 
 class Id : public DistributedData::Serializable {
