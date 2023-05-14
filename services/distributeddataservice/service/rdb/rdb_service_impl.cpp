@@ -98,7 +98,6 @@ RdbServiceImpl::RdbServiceImpl() : autoLaunchObserver_(this)
         meta.user = std::to_string(storeInfo.user);
         meta.instanceId = storeInfo.instanceId;
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        ZLOGE("meta key:%{public}s", meta.GetKey().c_str());
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s",
                 meta.bundleName.c_str(), meta.storeId.c_str());
