@@ -302,7 +302,7 @@ void CloudServiceImpl::GetSchema(const Event &event)
             continue;
         }
         ZLOGD("database: %{public}s sync start", database.name.c_str());
-        //ConnectCloudDB and Bind to store
+        // ConnectCloudDB and Bind to store
         for (auto &table : database.tables) {
             ZLOGD("table: %{public}s sync start", table.name.c_str());
         }
