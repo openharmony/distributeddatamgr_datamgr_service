@@ -21,6 +21,7 @@
 #include "cloud/cloud_info.h"
 #include "cloud/schema_meta.h"
 #include "cloud/cloud_event.h"
+#include "cloud/subscription.h"
 
 namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
@@ -34,6 +35,8 @@ public:
     int32_t Clean(const std::string &id, const std::map<std::string, int32_t> &actions) override;
     int32_t NotifyDataChange(const std::string &id, const std::string &bundleName) override;
     int32_t OnInitialize() override;
+    int32_t OnExecutor(std::shared_ptr<ExecutorPool> executor) override;
+    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
 
 private:
     static const inline int USER_ID = 0;
@@ -49,6 +52,11 @@ private:
     using CloudInfo = DistributedData::CloudInfo;
     using SchemaMeta = DistributedData::SchemaMeta;
     using Event = DistributedData::Event;
+    using Subscription = DistributedData::Subscription;
+
+    static constexpr int32_t RETRY_TIMES = 10;
+    static constexpr int32_t RETRY_INTERVAL = 30;
+    static constexpr int32_t EXPIRE_INTERVAL = 7 * 24; // 7 day
 
     void UpdateCloudInfo(CloudInfo &cloudInfo);
     void AddSchema(CloudInfo &cloudInfo);
@@ -61,6 +69,9 @@ private:
     int32_t GetAppSchema(int32_t user, const std::string &bundleName, SchemaMeta &schemaMeta);
     void FeatureInit();
     void GetSchema(const Event &event);
+    ExecutorPool::Task GetCloudTask(int32_t retry, int32_t user);
+    bool DoSubscribe(const Subscription &subscription);
+    std::shared_ptr<ExecutorPool> executor_;
 };
 } // namespace OHOS::DistributedData
 

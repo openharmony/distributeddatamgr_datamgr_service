@@ -45,7 +45,7 @@ public:
 private:
     static std::atomic<int32_t> resultSetCount;
     std::shared_ptr<RdbStore> store_;
-    int errCode_;
+    int errCode_ = E_OK;
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:
