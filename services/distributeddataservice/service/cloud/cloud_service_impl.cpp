@@ -228,9 +228,9 @@ SchemaMeta CloudServiceImpl::GetSchemaMata(int32_t userId, const std::string &bu
         MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
     }
     if (std::find_if(cloudInfo.apps.begin(), cloudInfo.apps.end(),
-            [&bundleName, &instanceId](const CloudInfo::AppInfo &appInfo) {
-                return appInfo.bundleName == bundleName && appInfo.instanceId == instanceId;
-            }) == cloudInfo.apps.end()) {
+        [&bundleName, &instanceId](const CloudInfo::AppInfo &appInfo) {
+            return appInfo.bundleName == bundleName && appInfo.instanceId == instanceId;
+        }) == cloudInfo.apps.end()) {
         ZLOGE("bundleName:%{public}s instanceId:%{public}d", bundleName.c_str(), instanceId);
         return schemaMeta;
     }
@@ -279,6 +279,9 @@ void CloudServiceImpl::GetSchema(const Event &event)
         rdbEvent.GetStoreInfo().instanceId);
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(rdbEvent.GetStoreInfo().tokenId);
     auto schemaMeta = GetSchemaMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().instanceId);
+    if (schemaMeta.databases.empty()) {
+        return;
+    }
     auto storeMeta = GetStoreMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().storeName,
         rdbEvent.GetStoreInfo().instanceId);
 
@@ -299,10 +302,7 @@ void CloudServiceImpl::GetSchema(const Event &event)
             continue;
         }
         ZLOGD("database: %{public}s sync start", database.name.c_str());
-        auto cloudDB = instance->ConnectCloudDB(rdbEvent.GetStoreInfo().tokenId, database);
-        if (cloudDB != nullptr) {
-            store->Bind(cloudDB);
-        }
+        //ConnectCloudDB and Bind to store
         for (auto &table : database.tables) {
             ZLOGD("table: %{public}s sync start", table.name.c_str());
         }
