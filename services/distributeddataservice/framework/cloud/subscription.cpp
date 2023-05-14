@@ -16,6 +16,22 @@
 #include "cloud/subscription.h"
 #include "utils/constant.h"
 namespace OHOS::DistributedData {
+bool Subscription::Relation::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(id)], id);
+    SetValue(node[GET_NAME(bundleName)], bundleName);
+    SetValue(node[GET_NAME(relations)], relations);
+    return true;
+}
+
+bool Subscription::Relation::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(id), id);
+    GetValue(node, GET_NAME(bundleName), bundleName);
+    GetValue(node, GET_NAME(relations), relations);
+    return true;
+}
+
 bool Subscription::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(userId)], userId);
@@ -37,9 +53,19 @@ std::string Subscription::GetKey()
     return GetKey(userId);
 }
 
+std::string Subscription::GetRelationKey(const std::string &bundleName)
+{
+    return GetRelationKey(userId, bundleName);
+}
+
 std::string Subscription::GetKey(int32_t userId)
 {
     return Constant::Join(PREFIX, Constant::KEY_SEPARATOR, { std::to_string(userId) });
+}
+
+std::string Subscription::GetRelationKey(int32_t userId, const std::string &bundleName)
+{
+    return Constant::Join(RELATION_PREFIX, Constant::KEY_SEPARATOR, { std::to_string(userId), bundleName });
 }
 
 std::string Subscription::GetPrefix(const std::initializer_list<std::string> &fields)
