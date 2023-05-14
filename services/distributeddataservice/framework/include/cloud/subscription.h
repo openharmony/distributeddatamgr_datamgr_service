@@ -22,13 +22,24 @@ struct API_EXPORT Subscription final : public Serializable {
     std::string id;
     std::map<std::string, uint64_t> expiresTime;
 
-    bool Marshal(Serializable::json &node) const;
-    bool Unmarshal(const Serializable::json &node);
+    struct API_EXPORT Relation final : public Serializable {
+        std::string id;
+        std::string bundleName;
+        std::map<std::string, std::string> relations;
+        bool Marshal(json &node) const override;
+        bool Unmarshal(const json &node) override;
+    };
+
+    bool Marshal(json &node) const;
+    bool Unmarshal(const json &node);
     std::string GetKey();
+    std::string GetRelationKey(const std::string &bundleName);
     static std::string GetKey(int32_t userId);
+    static std::string GetRelationKey(int32_t userId, const std::string &bundleName);
     static std::string GetPrefix(const std::initializer_list<std::string> &fields);
 private:
     static constexpr const char *PREFIX = "CLOUD_SUBSCRIPTION";
+    static constexpr const char *RELATION_PREFIX = "CLOUD_RELATION";
     static constexpr uint64_t INVALID_TIME = 0;
 };
 } // namespace OHOS::DistributedData
