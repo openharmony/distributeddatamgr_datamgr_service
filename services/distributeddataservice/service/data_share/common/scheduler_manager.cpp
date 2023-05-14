@@ -71,8 +71,7 @@ void SchedulerManager::SetTimer(const std::string &dbPath, int version, const Ke
         return;
     }
     // not find task in map, create new timer
-    // auto taskId = scheduler_->At(TaskScheduler::Clock::now() + std::chrono::seconds(reminderTime - time(nullptr)),
-    auto taskId = scheduler_->At(TaskScheduler::Clock::now() + std::chrono::seconds(7),
+    auto taskId = scheduler_->At(TaskScheduler::Clock::now() + std::chrono::seconds(reminderTime - time(nullptr)),
         [key, dbPath, version, this]() {
             timerCache_.erase(key);
             // 1. execute schedulerSQL in next time

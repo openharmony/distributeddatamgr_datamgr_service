@@ -24,8 +24,7 @@
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 16;
 std::atomic<int32_t> RdbDelegate::resultSetCount = 0;
-enum REMIND_TIMER_ARGS : int32_t
-{
+enum REMIND_TIMER_ARGS : int32_t {
     ARG_DB_PATH = 0,
     ARG_VERSION,
     ARG_URI,
