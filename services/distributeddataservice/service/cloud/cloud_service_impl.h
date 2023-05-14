@@ -69,7 +69,7 @@ private:
     void GetSchema(const Event &event);
     ExecutorPool::Task GetCloudTask(int32_t retry, int32_t user);
     void Execute(ExecutorPool::Task task);
-    bool DoSubscribe(const Subscription &subscription);
+    bool DoSubscribe(const Subscription &sub);
     std::shared_ptr<ExecutorPool> executor_;
 };
 } // namespace OHOS::DistributedData

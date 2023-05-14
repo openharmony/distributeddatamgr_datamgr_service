@@ -349,7 +349,7 @@ void CloudServiceImpl::GetSchema(const Event &event)
     return;
 }
 
-bool CloudServiceImpl::DoSubscribe(const Subscription &subscription)
+bool CloudServiceImpl::DoSubscribe(const Subscription &sub)
 {
     if (CloudServer::GetInstance() == nullptr) {
         ZLOGI("not support cloud server");
@@ -357,14 +357,14 @@ bool CloudServiceImpl::DoSubscribe(const Subscription &subscription)
     }
 
     CloudInfo cloudInfo;
-    cloudInfo.user = subscription.userId;
-    auto exits = MetaDataManager::GetInstance().LoadMeta(cloudInfo.id, cloudInfo, true);
+    cloudInfo.user = sub.userId;
+    auto exits = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true);
     if (!exits) {
-        ZLOGW("error, there is no cloud info for user(%{public}d)", subscription.userId);
+        ZLOGW("error, there is no cloud info for user(%{public}d)", sub.userId);
         return false;
     }
 
-    ZLOGD("begin cloud:%{public}d user:%{public}d apps:%{public}zu", cloudInfo.enableCloud, subscription.userId,
+    ZLOGD("begin cloud:%{public}d user:%{public}d apps:%{public}zu", cloudInfo.enableCloud, sub.userId,
         cloudInfo.apps.size());
     auto onThreshold = (std::chrono::system_clock::now() + std::chrono::hours(EXPIRE_INTERVAL)).time_since_epoch();
     auto offThreshold = std::chrono::system_clock::now().time_since_epoch();
@@ -373,37 +373,32 @@ bool CloudServiceImpl::DoSubscribe(const Subscription &subscription)
     for (auto &app : cloudInfo.apps) {
         auto enabled = cloudInfo.enableCloud && app.cloudSwitch;
         auto &dbs = enabled ? subDbs : unsubDbs;
-        auto it = subscription.expiresTime.find(app.bundleName);
+        auto it = sub.expiresTime.find(app.bundleName);
         // cloud is enabled, but the subscription won't expire
-        if (enabled && (it != subscription.expiresTime.end() && it->second >= onThreshold.count())) {
+        if (enabled && (it != sub.expiresTime.end() && it->second >= onThreshold.count())) {
             continue;
         }
         // cloud is disabled, we don't care the subscription which was expired or didn't subscribe.
-        if (!enabled && (it == subscription.expiresTime.end() || it->second <= offThreshold.count())) {
+        if (!enabled && (it == sub.expiresTime.end() || it->second <= offThreshold.count())) {
             continue;
         }
 
         SchemaMeta schemaMeta;
         exits = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(app.bundleName), schemaMeta, true);
-        if (!exits) {
-            continue;
+        if (exits) {
+            dbs[it->first] = std::move(schemaMeta.databases);
         }
-        dbs[it->first] = std::move(schemaMeta.databases);
     }
 
     ZLOGI("cloud switch:%{public}d user%{public}d, sub:%{public}zu, unsub:%{public}zu", cloudInfo.enableCloud,
-        subscription.userId, subDbs.size(), unsubDbs.size());
-    ZLOGD("Subscribe user%{public}d, details:%{public}s", subscription.userId, Serializable::Marshall(subDbs).c_str());
-    ZLOGD("Unsubscribe user%{public}d, details:%{public}s", subscription.userId,
-        Serializable::Marshall(unsubDbs).c_str());
-    if (!subDbs.empty()) {
-        CloudServer::GetInstance()->Subscribe(subscription.userId, subDbs);
-    }
-    if (!unsubDbs.empty()) {
-        CloudServer::GetInstance()->Subscribe(subscription.userId, unsubDbs);
-    }
+        sub.userId, subDbs.size(), unsubDbs.size());
+    ZLOGD("Subscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(subDbs).c_str());
+    ZLOGD("Unsubscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(unsubDbs).c_str());
+    CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
+    CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
     return subDbs.empty() && unsubDbs.empty();
 }
+
 void CloudServiceImpl::Execute(ExecutorPool::Task task)
 {
     auto executor = executor_;
