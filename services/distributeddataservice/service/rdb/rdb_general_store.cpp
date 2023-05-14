@@ -20,12 +20,53 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "rdb_helper.h"
+#include "rdb_query.h"
+#include "rdb_syncer.h"
 #include "relational_store_manager.h"
+#include "store/general_watcher.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
+using namespace DistributedDB;
 using namespace OHOS::NativeRdb;
+class RdbOpenCallbackImpl : public RdbOpenCallback {
+public:
+    int OnCreate(RdbStore &rdbStore) override
+    {
+        return NativeRdb::E_OK;
+    }
+    int OnUpgrade(RdbStore &rdbStore, int oldVersion, int newVersion) override
+    {
+        return NativeRdb::E_OK;
+    }
+};
+
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
 {
+    RelationalStoreDelegate::Option option;
+    if (meta.isEncrypt) {
+        std::string key = meta.GetSecretKey();
+        SecretKeyMetaData secretKeyMeta;
+        MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
+        std::vector<uint8_t> decryptKey;
+        CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+        if (option.passwd.SetValue(decryptKey.data(), decryptKey.size()) != CipherPassword::OK) {
+            std::fill(decryptKey.begin(), decryptKey.end(), 0);
+        }
+        std::fill(decryptKey.begin(), decryptKey.end(), 0);
+        option.isEncryptedDb = meta.isEncrypt;
+        option.iterateTimes = ITERATE_TIMES;
+        option.cipher = CipherType::AES_256_GCM;
+    }
+    option.observer = nullptr;
+    manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
+    RdbStoreConfig config(meta.dataDir);
+    config.SetCreateNecessary(false);
+    RdbOpenCallbackImpl callback;
+    int32_t errCode = NativeRdb::E_OK;
+    store_ = RdbHelper::GetRdbStore(config, meta.version, callback, errCode);
+    if (errCode != NativeRdb::E_OK) {
+        ZLOGE("GetRdbStore failed, errCode is %{public}d, storeId is %{public}s", errCode, meta.storeId.c_str());
+    }
 }
 
 int32_t RdbGeneralStore::Close()
@@ -65,7 +106,8 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuer
 
 int32_t RdbGeneralStore::Watch(int32_t origin, Watcher &watcher)
 {
-    return 0;
+    watcher_ = &watcher;
+    return GeneralError::E_NOT_SUPPORT;
 }
 
 int32_t RdbGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
@@ -75,7 +117,25 @@ int32_t RdbGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
 
 int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, Async async, int32_t wait)
 {
-    return 0;
+    RdbQuery *rdbQuery = nullptr;
+    auto ret = query.QueryInterface(rdbQuery);
+    if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
+        return GeneralError::E_OK;
+    }
+    auto status = delegate_->Sync(
+        devices, DistributedDB::SyncMode(mode), RdbSyncer::MakeQuery(rdbQuery->predicates_.GetDistributedPredicates()),
+        [async](const std::map<std::string, std::vector<TableStatus>> &result) {
+            std::map<std::string, std::map<std::string, int32_t>> detail;
+            for (auto &[key, tables] : result) {
+                auto value = detail[key];
+                for (auto &table : tables) {
+                    value[std::move(table.tableName)] = table.status;
+                }
+            }
+            async(std::move(detail));
+        },
+        wait);
+    return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
 int32_t RdbGeneralStore::Bind(std::shared_ptr<CloudDB> cloudDb)
