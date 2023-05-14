@@ -60,9 +60,9 @@ int32_t RdbServiceStub::OnRemoteInitNotifier(MessageParcel &data, MessageParcel 
 {
     RdbSyncerParam param;
     sptr<IRemoteObject> notifier;
-    if (!ITypesUtil::Unmarshal(data, param, notifier) || param.bundleName_.empty() || notifier == nullptr) {
-        ZLOGE("Unmarshal bundleName:%{public}s notifier is nullptr:%{public}d", param.bundleName_.c_str(),
-            notifier == nullptr);
+    if (!ITypesUtil::Unmarshal(data, param, notifier) || notifier == nullptr) {
+        ZLOGE("Unmarshal bundleName:%{public}s storeName_:%{public}s notifier is nullptr:%{public}d",
+            param.bundleName_.c_str(), param.storeName_.c_str(), notifier == nullptr);
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto status = InitNotifier(param, notifier);

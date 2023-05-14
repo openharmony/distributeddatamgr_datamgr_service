@@ -27,7 +27,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "permit_delegate.h"
-#include "utils/block_integer.h"
+#include "cloud/cloud_info.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::AppDistributedKv;
@@ -37,27 +37,70 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::EventFwk;
 
 UninstallEventSubscriber::UninstallEventSubscriber(const CommonEventSubscribeInfo &info,
-    UninstallEventCallback callback)
-    : CommonEventSubscriber(info), callback_(callback)
-{}
+    KvStoreDataService *kvStoreDataService)
+    : CommonEventSubscriber(info), kvStoreDataService_(kvStoreDataService)
+{
+    callbacks_ = { { CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED, &UninstallEventSubscriber::OnUninstall },
+        { OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED, &UninstallEventSubscriber::OnUninstall },
+        { CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED, &UninstallEventSubscriber::OnUpdate } };
+}
 
 void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
 {
     ZLOGI("Intent Action Rec");
     Want want = event.GetWant();
     std::string action = want.GetAction();
-    if (action != CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED &&
-        action != OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
-        return;
+    auto it = callbacks_.find(action);
+    if (it != callbacks_.end()) {
+        std::string bundleName = want.GetElement().GetBundleName();
+        int32_t userId = want.GetIntParam(USER_ID, -1);
+        int32_t appIndex = want.GetIntParam(SANDBOX_APP_INDEX, 0);
+        ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d", bundleName.c_str(), userId, appIndex);
+        (this->*(it->second))(bundleName, userId, appIndex);
     }
-
-    std::string bundleName = want.GetElement().GetBundleName();
-    int32_t userId = want.GetIntParam(USER_ID, -1);
-    int32_t appIndex = want.GetIntParam(SANDBOX_APP_INDEX, 0);
-    ZLOGI("bundleName:%s, user:%d, appIndex:%d", bundleName.c_str(), userId, appIndex);
-    callback_(bundleName, userId, appIndex);
 }
 
+void UninstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
+{
+    kvStoreDataService_->OnUninstall(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
+    std::vector<StoreMetaData> storeMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+        ZLOGE("load meta failed!");
+        return;
+    }
+    for (auto &meta : storeMetaData) {
+        if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
+            ZLOGI("uninstalled bundleName:%{public}s stordId:%{public}s", bundleName.c_str(), meta.storeId.c_str());
+            MetaDataManager::GetInstance().DelMeta(meta.GetKey());
+            MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
+            MetaDataManager::GetInstance().DelMeta(meta.appId, true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+            MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(meta), true);
+            PermitDelegate::GetInstance().DelCache(meta.GetKey());
+        }
+    }
+}
+
+void UninstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex)
+{
+    kvStoreDataService_->OnUpdate(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
+    std::vector<StoreMetaData> storeMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+        ZLOGE("load meta failed!");
+        return;
+    }
+    for (auto &meta : storeMetaData) {
+        if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
+            ZLOGI("updated bundleName:%{public}s, stordId:%{public}s", bundleName.c_str(), meta.storeId.c_str());
+            MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(meta), true);
+        }
+    }
+}
 UninstallerImpl::~UninstallerImpl()
 {
     ZLOGD("destruct");
@@ -84,34 +127,16 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     matchingSkills.AddEvent(OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED);
     CommonEventSubscribeInfo info(matchingSkills);
-    auto callback = [kvStoreDataService](const std::string &bundleName, int32_t userId, int32_t appIndex) {
-        kvStoreDataService->OnUninstall(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
-        std::string prefix = StoreMetaData::GetPrefix({ DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid,
-            std::to_string(userId), "default", bundleName });
-        std::vector<StoreMetaData> storeMetaData;
-        if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
-            ZLOGE("load meta failed!");
-            return;
-        }
-        for (auto &meta : storeMetaData) {
-            if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-                ZLOGI("uninstalled bundleName:%s, stordId:%s", bundleName.c_str(), meta.storeId.c_str());
-                MetaDataManager::GetInstance().DelMeta(meta.GetKey());
-                MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
-                MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
-                MetaDataManager::GetInstance().DelMeta(meta.appId, true);
-                MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
-                PermitDelegate::GetInstance().DelCache(meta.GetKey());
-            }
-        }
-    };
-    auto subscriber = std::make_shared<UninstallEventSubscriber>(info, callback);
+
+    auto subscriber = std::make_shared<UninstallEventSubscriber>(info, kvStoreDataService);
     subscriber_ = subscriber;
     executors_ = executors;
     executors_->Execute(GetTask());
     return Status::SUCCESS;
 }
+
 ExecutorPool::Task UninstallerImpl::GetTask()
 {
     return [this] {
@@ -120,7 +145,7 @@ ExecutorPool::Task UninstallerImpl::GetTask()
             ZLOGI("subscribe uninstall event success");
             return;
         }
-        ZLOGE("subscribe uninstall event fail, try times:%d", retryTime_);
+        ZLOGE("subscribe common event fail, try times:%{public}d", retryTime_);
         if (retryTime_++ >= RETRY_TIME) {
             return;
         }
