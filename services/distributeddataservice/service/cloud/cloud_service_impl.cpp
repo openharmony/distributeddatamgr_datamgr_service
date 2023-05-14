@@ -84,7 +84,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    executor_->Execute(GetCloudTask(0, cloudInfo.user));
+    Execute(GetCloudTask(0, cloudInfo.user));
     return SUCCESS;
 }
 
@@ -98,7 +98,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    executor_->Execute(GetCloudTask(0, cloudInfo.user));
+    Execute(GetCloudTask(0, cloudInfo.user));
     return SUCCESS;
 }
 
@@ -120,7 +120,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    executor_->Execute(GetCloudTask(0, cloudInfo.user));
+    Execute(GetCloudTask(0, cloudInfo.user));
     return SUCCESS;
 }
 
@@ -150,7 +150,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
 
 int32_t CloudServiceImpl::OnInitialize()
 {
-    executor_->Execute(GetCloudTask(0, 0));
+    Execute(GetCloudTask(0, 0));
     return E_OK;
 }
 
@@ -166,7 +166,7 @@ int32_t CloudServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executor)
 
 int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    executor_->Execute(GetCloudTask(0, atoi(user.c_str())));
+    Execute(GetCloudTask(0, atoi(user.c_str())));
     return E_OK;
 }
 
@@ -241,7 +241,8 @@ int32_t CloudServiceImpl::GetAppSchema(int32_t user, const std::string &bundleNa
 ExecutorPool::Task CloudServiceImpl::GetCloudTask(int32_t retry, int32_t user)
 {
     return [this, retry, user]() -> void {
-        if (retry >= RETRY_TIMES) {
+        auto executor = executor_;
+        if (retry >= RETRY_TIMES || executor == nullptr) {
             return;
         }
 
@@ -260,7 +261,7 @@ ExecutorPool::Task CloudServiceImpl::GetCloudTask(int32_t retry, int32_t user)
             finished = DoSubscribe(subscription) && finished;
         }
         if (!finished) {
-            executor_->Schedule(std::chrono::seconds(RETRY_INTERVAL), GetCloudTask(retry + 1, user));
+            executor->Schedule(std::chrono::seconds(RETRY_INTERVAL), GetCloudTask(retry + 1, user));
         }
     };
 }
@@ -402,5 +403,13 @@ bool CloudServiceImpl::DoSubscribe(const Subscription &subscription)
         CloudServer::GetInstance()->Subscribe(subscription.userId, unsubDbs);
     }
     return subDbs.empty() && unsubDbs.empty();
+}
+void CloudServiceImpl::Execute(ExecutorPool::Task task)
+{
+    auto executor = executor_;
+    if (executor == nullptr) {
+        return;
+    }
+    executor->Execute(std::move(task));
 }
 } // namespace OHOS::CloudData
