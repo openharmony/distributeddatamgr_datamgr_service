@@ -229,7 +229,7 @@ bool Serializable::ReadVariant(const json &node, const std::string &name, uint32
 {
     if (step == index) {
         _First result;
-        if(!Serializable::GetValue(node, name, result)) {
+        if (!Serializable::GetValue(node, name, result)) {
             return false;
         }
         output = result;

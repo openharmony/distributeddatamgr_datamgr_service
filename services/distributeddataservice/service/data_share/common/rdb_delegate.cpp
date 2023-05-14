@@ -144,21 +144,21 @@ std::string RdbDelegate::Query(const std::string &sql, const std::vector<std::st
         ZLOGE("store is null");
         return nullptr;
     }
-    std::shared_ptr<NativeRdb::ResultSet> resultSet = store_->QueryByStep(sql, selectionArgs);
+    auto resultSet = store_->QueryByStep(sql, selectionArgs);
     if (resultSet == nullptr) {
         ZLOGE("Query failed %{private}s", sql.c_str());
         return nullptr;
     }
-    ResultSetJsonFormatter formatter(resultSet);
+    ResultSetJsonFormatter formatter(std::move(resultSet));
     return DistributedData::Serializable::Marshall(formatter);
 }
 
-std::unique_ptr<NativeRdb::AbsSharedResultSet> RdbDelegate::QuerySql(const std::string &sql)
+std::shared_ptr<NativeRdb::AbsSharedResultSet> RdbDelegate::QuerySql(const std::string &sql)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
         return nullptr;
     }
-    return store_->QuerySql(sql);
+    return std::move(store_->QuerySql(sql));
 }
 } // namespace OHOS::DataShare

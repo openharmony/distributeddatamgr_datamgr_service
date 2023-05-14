@@ -368,6 +368,11 @@ int32_t DataShareServiceImpl::OnInitialize()
 int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
     auto token = IPCSkeleton::GetCallingTokenID();
+    auto type = OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(token);
+    if (type != OHOS::Security::AccessToken::TOKEN_NATIVE && type != OHOS::Security::AccessToken::TOKEN_SHELL) {
+        ZLOGE("hanlu init app");
+        return EOK;
+    }
     const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
     DistributedData::StoreMetaData saveMeta;
     saveMeta.appType = "default";

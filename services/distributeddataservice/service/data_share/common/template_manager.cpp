@@ -289,7 +289,8 @@ int RdbSubscriberManager::Notify(
     changeNode.templateId_.subscriberId_ = key.subscriberId;
     changeNode.templateId_.bundleName_ = key.bundleName;
     for (const auto &predicate : tpl.predicates_) {
-        JsonFormatter formatter(predicate.key_, delegate->Query(predicate.selectSql_));
+        std::string result =  delegate->Query(predicate.selectSql_);
+        JsonFormatter formatter(predicate.key_, result);
         changeNode.data_.emplace_back(DistributedData::Serializable::Marshall(formatter));
     }
 

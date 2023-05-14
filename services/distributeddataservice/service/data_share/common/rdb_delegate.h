@@ -39,7 +39,7 @@ public:
     std::shared_ptr<DataShareResultSet> Query(const std::string &tableName, const DataSharePredicates &predicates,
         const std::vector<std::string> &columns, int &errCode) override;
     std::string Query(const std::string &sql, const std::vector<std::string> &selectionArgs) override;
-    std::unique_ptr<NativeRdb::AbsSharedResultSet> QuerySql(const std::string &sql) override;
+    std::shared_ptr<NativeRdb::AbsSharedResultSet> QuerySql(const std::string &sql) override;
 
 private:
     static std::atomic<int32_t> resultSetCount;
