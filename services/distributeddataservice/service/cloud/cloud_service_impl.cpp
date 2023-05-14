@@ -18,7 +18,6 @@
 #include "cloud_service_impl.h"
 
 #include "account/account_delegate.h"
-#include "account_delegate.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_server.h"
