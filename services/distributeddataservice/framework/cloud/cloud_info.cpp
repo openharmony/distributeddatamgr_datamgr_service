@@ -61,7 +61,7 @@ bool CloudInfo::AppInfo::Unmarshal(const Serializable::json &node)
 
 std::string CloudInfo::GetKey() const
 {
-    return GetKey(INFO_PREFIX, { std::to_string(user), id });
+    return GetKey(INFO_PREFIX, { std::to_string(user) });
 }
 
 std::map<std::string, std::string> CloudInfo::GetSchemaKey() const
