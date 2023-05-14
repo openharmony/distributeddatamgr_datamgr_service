@@ -33,6 +33,7 @@ public:
     int32_t ChangeAppSwitch(const std::string &id, const std::string &bundleName, int32_t appSwitch) override;
     int32_t Clean(const std::string &id, const std::map<std::string, int32_t> &actions) override;
     int32_t NotifyDataChange(const std::string &id, const std::string &bundleName) override;
+    int32_t OnInitialize() override;
 
 private:
     static const inline int USER_ID = 0;

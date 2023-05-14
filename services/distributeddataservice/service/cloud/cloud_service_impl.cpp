@@ -52,11 +52,16 @@ CloudServiceImpl::Factory::~Factory() {}
 
 CloudServiceImpl::CloudServiceImpl()
 {
-    FeatureInit();
     EventCenter::GetInstance().Subscribe(CloudEvent::GET_SCHEMA, [this](const Event &event) {
         GetSchema(event);
         return;
     });
+}
+
+int32_t CloudServiceImpl::OnInitialize()
+{
+    FeatureInit();
+    return SUCCESS;
 }
 
 int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches)
