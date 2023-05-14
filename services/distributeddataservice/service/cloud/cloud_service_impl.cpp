@@ -374,7 +374,6 @@ bool CloudServiceImpl::DoSubscribe(const Subscription &subscription)
         auto enabled = cloudInfo.enableCloud && app.cloudSwitch;
         auto &dbs = enabled ? subDbs : unsubDbs;
         auto it = subscription.expiresTime.find(app.bundleName);
-
         // cloud is enabled, but the subscription won't expire
         if (enabled && (it != subscription.expiresTime.end() && it->second >= onThreshold.count())) {
             continue;
