@@ -228,7 +228,12 @@ template<typename _OutTp, typename _First, typename... _Rest>
 bool Serializable::ReadVariant(const json &node, const std::string &name, uint32_t step, uint32_t index, _OutTp &output)
 {
     if (step == index) {
-        return Serializable::GetValue(node, name, std::get<_First>(output));
+        _First result;
+        if(!Serializable::GetValue(node, name, result)) {
+            return false;
+        }
+        output = result;
+        return true;
     }
     return Serializable::ReadVariant<_OutTp, _Rest...>(node, name, step + 1, index, output);
 }

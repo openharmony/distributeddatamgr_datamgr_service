@@ -337,6 +337,11 @@ enum DataShareKvStoreType : int32_t {
 int32_t DataShareServiceImpl::OnInitialize()
 {
     auto token = IPCSkeleton::GetCallingTokenID();
+    auto type = OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(token);
+    if (type != OHOS::Security::AccessToken::TOKEN_NATIVE && type != OHOS::Security::AccessToken::TOKEN_SHELL) {
+        ZLOGE("hanlu init app");
+        return EOK;
+    }
     const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
     const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(token);
     DistributedData::StoreMetaData saveMeta;
