@@ -59,7 +59,6 @@ bool KvDelegate::Init()
     if (isInitDone_) {
         return true;
     }
-    ZLOGE("hanlu init %{public}s", path_.c_str());
     int status = GRD_DBOpen((path_ + "/dataShare.db").c_str(), nullptr, GRD_DB_OPEN_CREATE, &db_);
     if (status != GRD_OK || db_ == nullptr) {
         ZLOGE("GRD_DBOpen failed，status %{public}d", status);

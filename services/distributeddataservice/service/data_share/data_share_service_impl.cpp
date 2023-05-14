@@ -339,7 +339,6 @@ int32_t DataShareServiceImpl::OnInitialize()
     auto token = IPCSkeleton::GetCallingTokenID();
     auto type = OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(token);
     if (type != OHOS::Security::AccessToken::TOKEN_NATIVE && type != OHOS::Security::AccessToken::TOKEN_SHELL) {
-        ZLOGE("hanlu init app");
         return EOK;
     }
     const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
@@ -360,7 +359,6 @@ int32_t DataShareServiceImpl::OnInitialize()
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    ZLOGE("hanlu init %{public}s", saveMeta.dataDir.c_str());
     KvDBDelegate::GetInstance(false, saveMeta.dataDir);
     return EOK;
 }
@@ -370,7 +368,6 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
     auto token = IPCSkeleton::GetCallingTokenID();
     auto type = OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(token);
     if (type != OHOS::Security::AccessToken::TOKEN_NATIVE && type != OHOS::Security::AccessToken::TOKEN_SHELL) {
-        ZLOGE("hanlu init app");
         return EOK;
     }
     const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
@@ -390,7 +387,6 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    ZLOGE("hanlu init2 %{public}s", saveMeta.dataDir.c_str());
     KvDBDelegate::GetInstance(false, saveMeta.dataDir);
     return EOK;
 }
