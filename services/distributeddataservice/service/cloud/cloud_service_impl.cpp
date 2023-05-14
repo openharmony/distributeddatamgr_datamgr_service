@@ -85,6 +85,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
+    executor_->Execute(GetCloudTask(0, cloudInfo.user));
     return SUCCESS;
 }
 
@@ -98,6 +99,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
+    executor_->Execute(GetCloudTask(0, cloudInfo.user));
     return SUCCESS;
 }
 
@@ -119,6 +121,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
+    executor_->Execute(GetCloudTask(0, cloudInfo.user));
     return SUCCESS;
 }
 
@@ -255,7 +258,7 @@ ExecutorPool::Task CloudServiceImpl::GetCloudTask(int32_t retry, int32_t user)
             Subscription subscription;
             subscription.userId = user;
             MetaDataManager::GetInstance().LoadMeta(subscription.GetKey(), subscription, true);
-            finished = Subscribe(subscription) && finished;
+            finished = DoSubscribe(subscription) && finished;
         }
         if (!finished) {
             executor_->Schedule(std::chrono::seconds(RETRY_INTERVAL), GetCloudTask(retry + 1, user));
@@ -346,7 +349,7 @@ void CloudServiceImpl::GetSchema(const Event &event)
     return;
 }
 
-bool CloudServiceImpl::Subscribe(const Subscription &subscription)
+bool CloudServiceImpl::DoSubscribe(const Subscription &subscription)
 {
     if (CloudServer::GetInstance() == nullptr) {
         ZLOGI("not support cloud server");
@@ -361,30 +364,45 @@ bool CloudServiceImpl::Subscribe(const Subscription &subscription)
         return false;
     }
 
-    ZLOGD("begin to subscribe user:%{public}d apps:%{public}zu", subscription.userId, cloudInfo.apps.size());
-    bool finished = true;
-    auto now = std::chrono::system_clock::now() + std::chrono::hours(7 * 24);
-    std::map<std::string, std::vector<SchemaMeta::Database>> dbs;
+    ZLOGD("begin cloud:%{public}d user:%{public}d apps:%{public}zu", cloudInfo.enableCloud, subscription.userId,
+        cloudInfo.apps.size());
+    auto onThreshold = (std::chrono::system_clock::now() + std::chrono::hours(EXPIRE_INTERVAL)).time_since_epoch();
+    auto offThreshold = std::chrono::system_clock::now().time_since_epoch();
+    std::map<std::string, std::vector<SchemaMeta::Database>> subDbs;
+    std::map<std::string, std::vector<SchemaMeta::Database>> unsubDbs;
     for (auto &app : cloudInfo.apps) {
+        auto enabled = cloudInfo.enableCloud && app.cloudSwitch;
+        auto &dbs = enabled ? subDbs : unsubDbs;
         auto it = subscription.expiresTime.find(app.bundleName);
-        if (it != subscription.expiresTime.end() && it->second <= now.time_since_epoch().count()) {
+
+        // cloud is enabled, but the subscription won't expire
+        if (enabled && (it != subscription.expiresTime.end() && it->second >= onThreshold.count())) {
+            continue;
+        }
+        // cloud is disabled, we don't care the subscription which was expired or didn't subscribe.
+        if (!enabled && (it == subscription.expiresTime.end() || it->second <= offThreshold.count())) {
             continue;
         }
 
         SchemaMeta schemaMeta;
         exits = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(app.bundleName), schemaMeta, true);
-        if (exits) {
-            dbs[it->first] = std::move(schemaMeta.databases);
+        if (!exits) {
             continue;
         }
-        finished = false;
+        dbs[it->first] = std::move(schemaMeta.databases);
     }
-    ZLOGI("Subscribe user%{public}d, size:%{public}zu", subscription.userId, dbs.size());
-    ZLOGD("Subscribe user%{public}d, details:%{public}s", subscription.userId, Serializable::Marshall(dbs).c_str());
-    if (!dbs.empty()) {
-        auto ret = CloudServer::GetInstance()->Subscribe(subscription.userId, dbs);
-        finished = (ret == E_OK) ? finished : false;
+
+    ZLOGI("cloud switch:%{public}d user%{public}d, sub:%{public}zu, unsub:%{public}zu", cloudInfo.enableCloud,
+        subscription.userId, subDbs.size(), unsubDbs.size());
+    ZLOGD("Subscribe user%{public}d, details:%{public}s", subscription.userId, Serializable::Marshall(subDbs).c_str());
+    ZLOGD("Unsubscribe user%{public}d, details:%{public}s", subscription.userId,
+        Serializable::Marshall(unsubDbs).c_str());
+    if (!subDbs.empty()) {
+        CloudServer::GetInstance()->Subscribe(subscription.userId, subDbs);
     }
-    return finished;
+    if (!unsubDbs.empty()) {
+        CloudServer::GetInstance()->Subscribe(subscription.userId, unsubDbs);
+    }
+    return subDbs.empty() && unsubDbs.empty();
 }
 } // namespace OHOS::CloudData

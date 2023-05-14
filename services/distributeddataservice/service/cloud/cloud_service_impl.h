@@ -55,6 +55,7 @@ private:
 
     static constexpr int32_t RETRY_TIMES = 10;
     static constexpr int32_t RETRY_INTERVAL = 30;
+    static constexpr int32_t EXPIRE_INTERVAL = 7 * 24; // 7 day
 
     void UpdateCloudInfo(CloudInfo &cloudInfo);
     void AddSchema(CloudInfo &cloudInfo);
@@ -67,7 +68,7 @@ private:
     void FeatureInit(const Event &event);
     void GetSchema(const Event &event);
     ExecutorPool::Task GetCloudTask(int32_t retry, int32_t user);
-    bool Subscribe(const Subscription &subscription);
+    bool DoSubscribe(const Subscription &subscription);
     std::shared_ptr<ExecutorPool> executor_;
 };
 } // namespace OHOS::DistributedData
