@@ -348,6 +348,11 @@ void CloudServiceImpl::GetSchema(const Event &event)
 
 bool CloudServiceImpl::Subscribe(const Subscription &subscription)
 {
+    if (CloudServer::GetInstance() == nullptr) {
+        ZLOGI("not support cloud server");
+        return true;
+    }
+
     CloudInfo cloudInfo;
     cloudInfo.user = subscription.userId;
     auto exits = MetaDataManager::GetInstance().LoadMeta(cloudInfo.id, cloudInfo, true);
@@ -357,10 +362,6 @@ bool CloudServiceImpl::Subscribe(const Subscription &subscription)
     }
 
     ZLOGD("begin to subscribe user:%{public}d apps:%{public}zu", subscription.userId, cloudInfo.apps.size());
-    if (CloudServer::GetInstance() == nullptr || cloudInfo.apps.empty()) {
-        return true;
-    }
-
     bool finished = true;
     auto now = std::chrono::system_clock::now() + std::chrono::hours(7 * 24);
     std::map<std::string, std::vector<SchemaMeta::Database>> dbs;
@@ -380,7 +381,10 @@ bool CloudServiceImpl::Subscribe(const Subscription &subscription)
     }
     ZLOGI("Subscribe user%{public}d, size:%{public}zu", subscription.userId, dbs.size());
     ZLOGD("Subscribe user%{public}d, details:%{public}s", subscription.userId, Serializable::Marshall(dbs).c_str());
-    auto ret = CloudServer::GetInstance()->Subscribe(subscription.userId, dbs);
-    return (ret == E_OK && finished);
+    if (!dbs.empty()) {
+        auto ret = CloudServer::GetInstance()->Subscribe(subscription.userId, dbs);
+        finished = (ret == E_OK) ? finished : false;
+    }
+    return finished;
 }
 } // namespace OHOS::CloudData
