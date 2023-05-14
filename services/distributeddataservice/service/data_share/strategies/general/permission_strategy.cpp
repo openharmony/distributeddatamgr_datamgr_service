@@ -23,6 +23,7 @@ namespace OHOS::DataShare {
 bool PermissionStrategy::operator()(std::shared_ptr<Context> context)
 {
     if (context->permission == "reject") {
+        ZLOGE("reject permission");
         return false;
     }
     if (!context->permission.empty()) {
