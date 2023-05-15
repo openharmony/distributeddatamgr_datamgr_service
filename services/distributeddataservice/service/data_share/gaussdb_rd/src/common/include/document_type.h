@@ -18,11 +18,14 @@
 
 #include <string>
 
+#include "projection_tree.h"
+
 namespace DocumentDB {
 struct QueryContext {
     std::string collectionName_;
     std::string filter_;
     std::vector<std::vector<std::string>> path_;
+    ProjectionTree projectionTree_;
     bool ifShowId_ = false;
     bool viewType_ = false;
     bool isOnlyId_ = false;

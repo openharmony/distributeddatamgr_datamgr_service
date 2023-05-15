@@ -25,6 +25,6 @@
 
 namespace DocumentDB {
 class ValueObject;
-int InitResultSet(std::shared_ptr<QueryContext> resultInfo, DocumentStore *store, ResultSet &resultSet, bool ifField);
+int InitResultSet(std::shared_ptr<QueryContext> context, DocumentStore *store, ResultSet &resultSet, bool ifField);
 } // namespace DocumentDB
 #endif // RESULTSET_COMMON_H
