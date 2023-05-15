@@ -180,8 +180,8 @@ int UpdateArgsCheck(const std::string &collection, const std::string &filter, co
     return errCode;
 }
 
-int DocumentStore::UpdateDataIntoDB(std::shared_ptr<QueryContext> resultInfo, JsonObject &filterObj, const std::string &update,
-    bool &isReplace)
+int DocumentStore::UpdateDataIntoDB(std::shared_ptr<QueryContext> resultInfo, JsonObject &filterObj,
+    const std::string &update, bool &isReplace)
 {
     int errCode = E_OK;
     std::lock_guard<std::mutex> lock(dbMutex_);
@@ -252,12 +252,13 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     std::shared_ptr<QueryContext> resultInfo = std::make_shared<QueryContext>();
     resultInfo->collectionName_ = collection;
     resultInfo->isOnlyId_ = isOnlyId;
+    resultInfo->filter_ = filter;
     errCode = UpdateDataIntoDB(resultInfo, filterObj, update, isReplace);
     return errCode;
 }
 
 int UpsertArgsCheck(const std::string &collection, const std::string &filter, const std::string &document,
-    JsonObject &documentObj, uint32_t flags)
+    uint32_t flags)
 {
     std::string lowerCaseCollName;
     int errCode = E_OK;
@@ -269,18 +270,6 @@ int UpsertArgsCheck(const std::string &collection, const std::string &filter, co
         GLOGE("args length is too long");
         return -E_OVER_LIMIT;
     }
-    std::vector<std::vector<std::string>> allPath;
-    if (document != "{}") {
-        allPath = JsonCommon::ParsePath(documentObj, errCode);
-        if (errCode != E_OK) {
-            return errCode;
-        }
-        errCode = CheckCommon::CheckUpdata(documentObj, allPath);
-        if (errCode != E_OK) {
-            GLOGE("UpsertDocument document format is illegal");
-            return errCode;
-        }
-    }
     if (flags != GRD_DOC_APPEND && flags != GRD_DOC_REPLACE) {
         GLOGE("Check flags invalid.");
         return -E_INVALID_ARGS;
@@ -288,13 +277,10 @@ int UpsertArgsCheck(const std::string &collection, const std::string &filter, co
     return errCode;
 }
 
-int DocumentStore::CheckUpsertConflict(bool &isIdExist, std::shared_ptr<QueryContext> resultInfo, JsonObject &filterObj,
-    std::string &docId, Collection &coll)
+int DocumentStore::CheckUpsertConflict(bool &isIdExist, std::shared_ptr<QueryContext> resultInfo,
+    JsonObject &filterObj, std::string &docId, Collection &coll)
 {
     int errCode = E_OK;
-    if (!isIdExist) {
-        errCode = -E_INVALID_ARGS;
-    }
     ResultSet resultSet;
     InitResultSet(resultInfo, this, resultSet, true);
     errCode = resultSet.GetNext(false, true);
@@ -309,10 +295,11 @@ int DocumentStore::CheckUpsertConflict(bool &isIdExist, std::shared_ptr<QueryCon
         GLOGE("id exist but filter does not match, data conflict");
         errCode = -E_DATA_CONFLICT;
     }
+    return errCode;
 }
 
-int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> resultInfo, JsonObject &filterObj, JsonObject &documentObj,
-    bool &isReplace)
+int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> resultInfo, JsonObject &filterObj,
+    JsonObject &documentObj, bool &isReplace)
 {
     int errCode = E_OK;
     std::lock_guard<std::mutex> lock(dbMutex_);
@@ -334,6 +321,10 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> resultInfo, Js
     JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
     documentObj.InsertItemObject(0, idObj);
     targetDocument = documentObj.Print();
+    if (!isIdExist) {
+        errCode = -E_INVALID_ARGS;
+        goto END;
+    }
     if (!resultInfo->isOnlyId_) {
         errCode = CheckUpsertConflict(isIdExist, resultInfo, filterObj, docId, coll);
         if (errCode != E_OK) {
@@ -355,22 +346,44 @@ END:
     return (errCode == E_OK) ? count : errCode;
 }
 
+int UpsertDocumentFormatCheck(const std::string &document, JsonObject &documentObj)
+{
+    int errCode = E_OK;
+    std::vector<std::vector<std::string>> allPath;
+    if (document != "{}") {
+        allPath = JsonCommon::ParsePath(documentObj, errCode);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        errCode = CheckCommon::CheckUpdata(documentObj, allPath);
+        if (errCode != E_OK) {
+            GLOGE("UpsertDocument document format is illegal");
+            return errCode;
+        }
+    }
+    return errCode;
+}
 int DocumentStore::UpsertDocument(const std::string &collection, const std::string &filter,
     const std::string &document, uint32_t flags)
 {
     int errCode = E_OK;
-    JsonObject documentObj = JsonObject::Parse(document, errCode, true);
-    if (errCode != E_OK) {
-        GLOGE("document Parsed failed");
-        return errCode;
-    }
-    errCode = UpsertArgsCheck(collection, filter, document, documentObj, flags);
+    errCode = UpsertArgsCheck(collection, filter, document, flags);
     if (errCode != E_OK) {
         return errCode;
     }
     JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
     if (errCode != E_OK) {
         GLOGE("filter Parsed failed");
+        return errCode;
+    }
+    JsonObject documentObj = JsonObject::Parse(document, errCode, true);
+    if (errCode != E_OK) {
+        GLOGE("document Parsed failed");
+        return errCode;
+    }
+    errCode = UpsertDocumentFormatCheck(document, documentObj);
+    if (errCode != E_OK) {
+        GLOGE("document format is illegal");
         return errCode;
     }
     bool isOnlyId = true;
@@ -389,7 +402,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     return errCode;
 }
 
-int InsertArgsCheck(const std::string &collection, const std::string &document, JsonObject &documentObj, uint32_t flags)
+int InsertArgsCheck(const std::string &collection, const std::string &document, uint32_t flags)
 {
     int errCode = E_OK;
     if (flags != 0u) {
@@ -404,10 +417,6 @@ int InsertArgsCheck(const std::string &collection, const std::string &document, 
     if (document.length() >= JSON_LENS_MAX) {
         GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
-    }
-    errCode = CheckCommon::CheckDocument(documentObj);
-    if (errCode != E_OK) {
-        return errCode;
     }
     return errCode;
 }
@@ -427,12 +436,16 @@ int DocumentStore::InsertDataIntoDB(const std::string &collection, const std::st
 int DocumentStore::InsertDocument(const std::string &collection, const std::string &document, uint32_t flags)
 {
     int errCode = E_OK;
+    errCode = InsertArgsCheck(collection, document, flags);
+    if (errCode != E_OK) {
+        return errCode;
+    }
     JsonObject documentObj = JsonObject::Parse(document, errCode, true);
     if (errCode != E_OK) {
         GLOGE("Document Parsed failed");
         return errCode;
     }
-    errCode = InsertArgsCheck(collection, document, documentObj, flags);
+    errCode = CheckCommon::CheckDocument(documentObj);
     if (errCode != E_OK) {
         return errCode;
     }
