@@ -20,6 +20,7 @@
 #include "general/load_config_common_strategy.h"
 #include "general/permission_strategy.h"
 #include "log_print.h"
+#include "published_data.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -30,33 +31,44 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
         ZLOGE("get strategy fail, maybe memory not enough");
         return -1;
     }
+
     if (!(*preProcess)(context)) {
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return -1;
     }
-    return 0;
+    auto delegate = KvDBDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("db open failed");
+        return -1;
+    }
+    PublishedData data(context->uri, context->calledBundleName, item.subscriberId_, item.GetData(), context->version);
+    int32_t status = delegate->Upsert(KvDBDelegate::DATA_TABLE, data);
+    if (status != E_OK) {
+        ZLOGE("db Upsert failed, %{public}s %{public}s %{public}d", context->calledBundleName.c_str(),
+            DistributedData::Anonymous::Change(context->uri).c_str(), status);
+        return -1;
+    }
+    return E_OK;
 }
 
 Strategy *PublishStrategy::GetStrategy()
 {
-    static std::mutex mutex;
-    static SeqStrategy strategies;
-    std::lock_guard<decltype(mutex)> lock(mutex);
-    if (!strategies.IsEmpty()) {
-        return &strategies;
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (!strategies_.IsEmpty()) {
+        return &strategies_;
     }
     std::initializer_list<Strategy *> list = {
         new (std::nothrow) LoadConfigCommonStrategy(),
         new (std::nothrow) LoadConfigFromDataProxyNodeStrategy(),
         new (std::nothrow) PermissionStrategy()
     };
-    auto ret = strategies.Init(list);
+    auto ret = strategies_.Init(list);
     if (!ret) {
         std::for_each(list.begin(), list.end(), [](Strategy *item) {
             delete item;
         });
         return nullptr;
     }
-    return &strategies;
+    return &strategies_;
 }
 } // namespace OHOS::DataShare

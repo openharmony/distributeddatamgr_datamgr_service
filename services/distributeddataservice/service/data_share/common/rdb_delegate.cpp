@@ -15,16 +15,47 @@
 #define LOG_TAG "RdbAdaptor"
 #include "rdb_delegate.h"
 
+#include "data/resultset_json_formatter.h"
 #include "log_print.h"
+#include "rdb_utils.h"
+#include "scheduler_manager.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 16;
 std::atomic<int32_t> RdbDelegate::resultSetCount = 0;
-RdbDelegate::RdbDelegate(const std::string &dir, int version)
+enum REMIND_TIMER_ARGS : int32_t {
+    ARG_DB_PATH = 0,
+    ARG_VERSION,
+    ARG_URI,
+    ARG_SUBSCRIBER_ID,
+    ARG_BUNDLE_NAME,
+    ARG_TIME,
+    ARGS_SIZE
+};
+std::string RemindTimerFunc(const std::vector<std::string> &args)
+{
+    int size = args.size();
+    if (size != ARGS_SIZE) {
+        ZLOGE("RemindTimerFunc args size error, %{public}d", size);
+        return "";
+    }
+    std::string dbPath = args[ARG_DB_PATH];
+    int version = std::strtol(args[ARG_VERSION].c_str(), nullptr, 0);
+    Key key(args[ARG_URI], std::strtoll(args[ARG_SUBSCRIBER_ID].c_str(), nullptr, 0), args[ARG_BUNDLE_NAME]);
+    int64_t reminderTime = std::strtoll(args[ARG_TIME].c_str(), nullptr, 0);
+
+    SchedulerManager::GetInstance().SetTimer(dbPath, version, key, reminderTime);
+    return args[ARG_TIME];
+}
+
+RdbDelegate::RdbDelegate(const std::string &dir, int version, bool registerFunction)
 {
     RdbStoreConfig config(dir);
     config.SetCreateNecessary(false);
+    if (registerFunction) {
+        config.SetScalarFunction("remindTimer", ARGS_SIZE, RemindTimerFunc);
+    }
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
     if (errCode_ != E_OK) {
@@ -77,9 +108,8 @@ int64_t RdbDelegate::Delete(const std::string &tableName, const DataSharePredica
     }
     return changeCount;
 }
-std::shared_ptr<DataShareResultSet> RdbDelegate::Query(
-    const std::string &tableName, const DataSharePredicates &predicates,
-    const std::vector<std::string> &columns, int &errCode)
+std::shared_ptr<DataShareResultSet> RdbDelegate::Query(const std::string &tableName,
+    const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
@@ -108,27 +138,28 @@ std::shared_ptr<DataShareResultSet> RdbDelegate::Query(
     });
 }
 
-std::shared_ptr<DistributedData::Serializable> RdbDelegate::Query(
-    const std::string &sql, const std::vector<std::string> &selectionArgs)
+std::string RdbDelegate::Query(const std::string &sql, const std::vector<std::string> &selectionArgs)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
-        return nullptr;
+        return "";
     }
-    std::shared_ptr<NativeRdb::ResultSet> resultSet = store_->QueryByStep(sql, selectionArgs);
+    auto resultSet = store_->QueryByStep(sql, selectionArgs);
     if (resultSet == nullptr) {
         ZLOGE("Query failed %{private}s", sql.c_str());
-        return nullptr;
+        return "";
     }
-    return nullptr;
+    ResultSetJsonFormatter formatter(std::move(resultSet));
+    return DistributedData::Serializable::Marshall(formatter);
 }
 
-int RdbDelegate::ExecuteSql(const std::string &sql)
+std::shared_ptr<NativeRdb::AbsSharedResultSet> RdbDelegate::QuerySql(const std::string &sql)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
-        return -1;
+        return nullptr;
     }
-    return store_->ExecuteSql(sql);
+    auto result = store_->QuerySql(sql);
+    return std::move(result);
 }
 } // namespace OHOS::DataShare

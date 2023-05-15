@@ -15,13 +15,13 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
-#include <map>
 #include <string>
 #include <vector>
 #include "visibility.h"
 #ifndef JSON_NOEXCEPTION
 #define JSON_NOEXCEPTION
 #endif
+#include <variant>
 #include <nlohmann/json.hpp>
 namespace OHOS {
 namespace DistributedData {
@@ -70,6 +70,12 @@ public:
     API_EXPORT static bool SetValue(json &node, bool &value);
     API_EXPORT static bool SetValue(json &node, const std::vector<uint8_t> &value);
     API_EXPORT static bool SetValue(json &node, const Serializable &value);
+
+    template<typename... _Types>
+    API_EXPORT static bool SetValue(json &node, const std::variant<_Types...> &input);
+
+    template<typename... _Types>
+    API_EXPORT static bool GetValue(const json &node, const std::string &name, std::variant<_Types...> &value);
 protected:
     API_EXPORT ~Serializable() = default;
 
@@ -91,6 +97,17 @@ protected:
     template<typename T>
     static bool SetValue(json &node, const T *value);
 
+    template<typename _OutTp>
+    static bool ReadVariant(const json &node, const std::string &name, uint32_t step, uint32_t index, _OutTp &output);
+
+    template<typename _OutTp, typename _First, typename... _Rest>
+    static bool ReadVariant(const json &node, const std::string &name, uint32_t step, uint32_t index, _OutTp &output);
+
+    template<typename _InTp>
+    static bool WriteVariant(json &node, uint32_t step, const _InTp &input);
+
+    template<typename _InTp, typename _First, typename... _Rest>
+    static bool WriteVariant(json &node, uint32_t step, const _InTp &input);
     API_EXPORT static const json &GetSubNode(const json &node, const std::string &name);
 };
 
@@ -173,6 +190,67 @@ bool Serializable::SetValue(json &node, const T *value)
         return false;
     }
     return SetValue(node, *value);
+}
+
+template<typename... _Types>
+bool Serializable::SetValue(json &node, const std::variant<_Types...> &input)
+{
+    bool ret = SetValue(node[GET_NAME(type)], input.index());
+    if (!ret) {
+        return ret;
+    }
+    return WriteVariant<decltype(input), _Types...>(node[GET_NAME(value)], 0, input);
+}
+
+template<typename... _Types>
+bool Serializable::GetValue(const json &node, const std::string &name, std::variant<_Types...> &value)
+{
+    auto &subNode = GetSubNode(node, name);
+    if (subNode.is_null()) {
+        return false;
+    }
+    uint32_t index;
+    bool ret = GetValue(subNode, GET_NAME(type), index);
+    if (!ret) {
+        return ret;
+    }
+
+    return Serializable::ReadVariant<decltype(value), _Types...>(subNode, GET_NAME(value), 0, index, value);
+}
+
+template<typename _InTp>
+bool Serializable::WriteVariant(json &node, uint32_t step, const _InTp &input)
+{
+    return false;
+}
+
+template<typename _OutTp, typename _First, typename... _Rest>
+bool Serializable::ReadVariant(const json &node, const std::string &name, uint32_t step, uint32_t index, _OutTp &output)
+{
+    if (step == index) {
+        _First result;
+        if (!Serializable::GetValue(node, name, result)) {
+            return false;
+        }
+        output = result;
+        return true;
+    }
+    return Serializable::ReadVariant<_OutTp, _Rest...>(node, name, step + 1, index, output);
+}
+
+template<typename _InTp, typename _First, typename... _Rest>
+bool Serializable::WriteVariant(json &node, uint32_t step, const _InTp &input)
+{
+    if (step == input.index()) {
+        return Serializable::SetValue(node, std::get<_First>(input));
+    }
+    return WriteVariant<_InTp, _Rest...>(node, step + 1, input);
+}
+
+template<typename _OutTp>
+bool Serializable::ReadVariant(const json &node, const std::string &name, uint32_t step, uint32_t index, _OutTp &output)
+{
+    return false;
 }
 } // namespace DistributedData
 } // namespace OHOS

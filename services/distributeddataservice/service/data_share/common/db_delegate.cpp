@@ -18,9 +18,9 @@
 #include "kv_delegate.h"
 #include "rdb_delegate.h"
 namespace OHOS::DataShare {
-std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int version)
+std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int version, bool registerFunction)
 {
-    return std::make_shared<RdbDelegate>(dir, version);
+    return std::make_shared<RdbDelegate>(dir, version, registerFunction);
 }
 
 std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(bool reInit, const std::string &dir)
@@ -32,15 +32,6 @@ std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(bool reInit, const std::
         delegate = std::make_shared<KvDelegate>(dir);
     }
     return delegate;
-}
-
-bool KvData::Marshal(DistributedData::Serializable::json &node) const
-{
-    auto ret = SetValue(node, *GetId());
-    if (HasVersion()) {
-        ret &= SetValue(node, GetVersion());
-    }
-    return ret & SetValue(node, GetValue());
 }
 
 bool Id::Marshal(DistributedData::Serializable::json &node) const
@@ -66,4 +57,11 @@ bool VersionData::Marshal(DistributedData::Serializable::json &node) const
 {
     return SetValue(node[GET_NAME(version)], version);
 }
+
+const std::string &KvData::GetId() const
+{
+    return id;
+}
+
+KvData::KvData(const Id &id) : id(DistributedData::Serializable::Marshall(id)) {}
 } // namespace OHOS::DataShare

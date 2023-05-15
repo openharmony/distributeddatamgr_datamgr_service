@@ -12,24 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#define LOG_TAG "JsonFormatter"
+#include "json_formatter.h"
 
-#ifndef DATASHARESERVICE_GET_DATA_STRAGETY_H
-#define DATASHARESERVICE_GET_DATA_STRAGETY_H
-
-#include <shared_mutex>
-
-#include "data_proxy_observer.h"
-#include "datashare_template.h"
-#include "published_data.h"
-#include "seq_strategy.h"
+#include "log_print.h"
 
 namespace OHOS::DataShare {
-class GetDataStrategy final {
-public:
-    static Data Execute(std::shared_ptr<Context> context);
+bool JsonFormatter::Marshal(json &node) const
+{
+    return SetValue(node[key_], value_);
+}
 
-private:
-    static Strategy *GetStrategy();
-};
+bool JsonFormatter::Unmarshal(const json &node)
+{
+    return GetValue(node, key_, value_);
+}
 } // namespace OHOS::DataShare
-#endif

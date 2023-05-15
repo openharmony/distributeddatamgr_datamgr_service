@@ -33,7 +33,7 @@ public:
     static bool IsDataProxyURI(const std::string &uri);
     static constexpr const char *DATA_SHARE_SCHEMA = "datashare:///";;
     static constexpr const char DATA_PROXY_SCHEMA[] = "datashareproxy://";
-    static constexpr int DATA_PROXY_SCHEMA_LEN = sizeof(DATA_PROXY_SCHEMA);
+    static constexpr int DATA_PROXY_SCHEMA_LEN = sizeof(DATA_PROXY_SCHEMA) - 1;
 
 private:
     enum PATH_PARAM : int32_t {

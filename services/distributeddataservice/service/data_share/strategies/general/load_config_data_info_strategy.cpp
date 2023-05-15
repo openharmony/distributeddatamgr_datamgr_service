@@ -49,7 +49,7 @@ static bool QueryMetaData(const std::string &bundleName, const std::string &stor
 bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> context)
 {
     if (context->type != "rdb") {
-        return false;
+        return true;
     }
     DistributedData::StoreMetaData metaData;
     if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, context->currentUserId)) {

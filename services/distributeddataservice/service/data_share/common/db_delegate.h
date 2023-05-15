@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "abs_shared_result_set.h"
 #include "concurrent_map.h"
 #include "datashare_predicates.h"
 #include "datashare_result_set.h"
@@ -28,29 +29,28 @@
 namespace OHOS::DataShare {
 class DBDelegate {
 public:
-    static std::shared_ptr<DBDelegate> Create(const std::string &dir, int version);
+    static std::shared_ptr<DBDelegate> Create(const std::string &dir, int version, bool registerFunction = false);
     virtual int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
         const DataShareValuesBucket &valuesBucket) = 0;
     virtual int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate) = 0;
     virtual std::shared_ptr<DataShareResultSet> Query(const std::string &tableName,
         const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode) = 0;
-    virtual std::shared_ptr<DistributedData::Serializable> Query(
+    virtual std::string Query(
         const std::string &sql, const std::vector<std::string> &selectionArgs = std::vector<std::string>()) = 0;
-    virtual int ExecuteSql(const std::string &sql) = 0;
+    virtual std::shared_ptr<NativeRdb::AbsSharedResultSet> QuerySql(const std::string &sql) = 0;
 };
 
-struct RdbStoreContext {
-    RdbStoreContext(const std::string &dir, int version) : dir(dir), version(version) {}
-    std::string dir;
-    int version;
-};
-
-struct Id final: public DistributedData::Serializable {
+class Id : public DistributedData::Serializable {
+public:
     explicit Id(const std::string &id);
     ~Id() = default;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
+    operator std::string()
+    {
+        return DistributedData::Serializable::Marshall(*this);
+    }
 
 private:
     std::string _id;
@@ -61,12 +61,11 @@ public:
     explicit VersionData(int version);
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
-    VersionData &operator=(int inputVersion)
+    virtual void SetVersion(int ver)
     {
-        version = inputVersion;
-        return *this;
+        version = ver;
     };
-    operator int()
+    virtual int GetVersion() const
     {
         return version;
     };
@@ -75,12 +74,16 @@ private:
     int version;
 };
 
-struct KvData : public DistributedData::Serializable {
-    virtual std::shared_ptr<Id> GetId() const = 0;
+class KvData {
+public:
+    explicit KvData(const Id &id);
+    const std::string &GetId() const;
     virtual bool HasVersion() const = 0;
-    virtual VersionData GetVersion() const = 0;
-    virtual const Serializable &GetValue() const = 0;
-    bool Marshal(json &node) const override;
+    virtual int GetVersion() const = 0;
+    virtual std::string GetValue() const = 0;
+
+private:
+    std::string id;
 };
 
 class KvDBDelegate {
