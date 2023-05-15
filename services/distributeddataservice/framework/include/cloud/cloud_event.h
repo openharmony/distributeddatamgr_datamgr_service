@@ -25,7 +25,7 @@ public:
     enum : int32_t {
         FEATURE_INIT = EVT_CLOUD,
         GET_SCHEMA,
-        NEED_CREATE,
+        DATA_CHANGE,
         CLOUD_BUTT
     };
 
@@ -34,6 +34,7 @@ public:
         std::string bundleName;
         std::string storeName;
         int32_t instanceId = 0;
+        int32_t user = 0;
     };
 
     CloudEvent(int32_t evtId, StoreInfo storeInfo, const std::string &featureName = "relational_store");

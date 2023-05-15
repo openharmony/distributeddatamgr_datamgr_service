@@ -56,8 +56,10 @@ private:
     static constexpr uint32_t ITERATE_TIMES = 10000;
 
     RdbManager manager_;
+    RdbDelegate *delegate_ = nullptr;
     std::shared_ptr<RdbStore> store_;
     std::shared_ptr<CloudDB> cloudDb_;
+    Watcher *watcher_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

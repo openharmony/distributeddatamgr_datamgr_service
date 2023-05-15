@@ -27,6 +27,7 @@
 #include "rdb_notifier_proxy.h"
 #include "rdb_syncer.h"
 #include "store_observer.h"
+#include "store/auto_cache.h"
 #include "visibility.h"
 namespace OHOS::DistributedRdb {
 class API_EXPORT RdbServiceImpl : public RdbServiceStub {
@@ -49,6 +50,8 @@ public:
 
     void OnDataChange(pid_t pid, const DistributedDB::StoreChangedData& data);
 
+    void OnChange(uint32_t tokenId, const std::string &storeName);
+
     int32_t CreateRDBTable(
         const RdbSyncerParam &param, const std::string &writePermission, const std::string &readPermission) override;
     int32_t DestroyRDBTable(const RdbSyncerParam &param) override;
@@ -67,11 +70,22 @@ protected:
     int32_t DoAsync(const RdbSyncerParam& param, uint32_t seqNum, const SyncOption& option,
                     const RdbPredicates& predicates) override;
 
-    int32_t DoSubscribe(const RdbSyncerParam& param) override;
+    int32_t DoSubscribe(const RdbSyncerParam& param, const SubscribeOption &option) override;
 
     int32_t DoUnSubscribe(const RdbSyncerParam& param) override;
 
 private:
+    using Watchers = DistributedData::AutoCache::Watchers;
+    struct SyncAgent {
+        pid_t pid_ = 0;
+        std::string bundleName_;
+        std::map<std::string, SubscribeMode> mode_;
+        std::map<std::string, Watchers> watchers_;
+        void ReInit(pid_t pid, const std::string &bundleName);
+    };
+
+    Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
+
     std::string GenIdentifier(const RdbSyncerParam& param);
 
     bool CheckAccess(const std::string& bundleName, const std::string& storeName);
@@ -114,6 +128,7 @@ private:
     static constexpr int32_t MAX_SYNCER_PER_PROCESS = 10;
     static constexpr int32_t SYNCER_TIMEOUT = 60 * 1000; // ms
     std::shared_ptr<ExecutorPool> executors_;
+    ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
 };
 } // namespace OHOS::DistributedRdb
 #endif

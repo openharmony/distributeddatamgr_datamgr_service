@@ -716,4 +716,14 @@ int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t u
         });
     return 0;
 }
+
+int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
+{
+    features_.ForEachCopies(
+        [bundleName, user, index, tokenId](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
+            value->OnAppUpdate(bundleName, user, index, tokenId);
+            return false;
+        });
+    return 0;
+}
 } // namespace OHOS::DistributedKv

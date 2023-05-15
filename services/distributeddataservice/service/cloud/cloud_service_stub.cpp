@@ -48,7 +48,8 @@ int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, 
 
     if (!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
         ZLOGE("permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
-        return -1;
+        auto result = static_cast<int32_t>(PERMISSION_DENIED);
+        return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
     }
 
     std::string id;
