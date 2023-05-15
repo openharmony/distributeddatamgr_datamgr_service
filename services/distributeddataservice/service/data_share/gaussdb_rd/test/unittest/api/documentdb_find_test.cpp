@@ -1429,7 +1429,7 @@ HWTEST_F(DocumentDBFindTest, DocumentDBFindTest061, TestSize.Level1)
     EXPECT_EQ(GRD_InsertDoc(g_db, COLLECTION_NAME, document063, 0), GRD_OK);
     EXPECT_EQ(GRD_InsertDoc(g_db, COLLECTION_NAME, document062, 0), GRD_OK);
     EXPECT_EQ(GRD_InsertDoc(g_db, COLLECTION_NAME, document061, 0), GRD_OK);
-    const char *filter = "{\"a\": 1}";
+    const char *filter = "{\"a\":1}";
     GRD_ResultSet *resultSet = nullptr;
     const char *projection = R"({})";
     Query query = { filter, projection };
