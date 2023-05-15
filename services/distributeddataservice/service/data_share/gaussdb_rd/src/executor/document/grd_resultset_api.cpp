@@ -14,24 +14,56 @@
 */
 #include "grd_base/grd_resultset_api.h"
 
+#include <mutex>
+
+#include "doc_errno.h"
 #include "grd_base/grd_error.h"
+#include "grd_resultset_inner.h"
+#include "log_print.h"
 
-int32_t GRD_Next(GRD_ResultSet *resultSet)
+using namespace DocumentDB;
+
+GRD_API int32_t GRD_Next(GRD_ResultSet *resultSet)
 {
+    if (resultSet == nullptr) {
+        GLOGE("resultSet is nullptr");
+        return GRD_INVALID_ARGS;
+    };
+    int ret = resultSet->resultSet_.GetNext(true, true);
+    return TransferDocErr(ret);
+}
+
+GRD_API int32_t GRD_GetValue(GRD_ResultSet *resultSet, char **value)
+{
+    if (resultSet == nullptr || value == nullptr) {
+        GLOGE("resultSet is nullptr,cant get value from it");
+        return GRD_INVALID_ARGS;
+    };
+    char *val = nullptr;
+    int ret = resultSet->resultSet_.GetValue(&val);
+    if (val == nullptr) {
+        GLOGE("Value that get from resultSet is nullptr");
+        return GRD_NOT_AVAILABLE;
+    }
+    *value = val;
+    return TransferDocErr(ret);
+}
+
+GRD_API int32_t GRD_FreeValue(char *value)
+{
+    if (value == nullptr) {
+        return GRD_INVALID_ARGS;
+    }
+    delete[] value;
     return GRD_OK;
 }
 
-int32_t GRD_GetValue(GRD_ResultSet *resultSet, char **value)
+GRD_API int32_t GRD_FreeResultSet(GRD_ResultSet *resultSet)
 {
-    return GRD_OK;
-}
-
-int32_t GRD_FreeValue(char *value)
-{
-    return GRD_OK;
-}
-
-int32_t GRD_FreeResultSet(GRD_ResultSet *resultSet)
-{
+    if (resultSet == nullptr) {
+        return GRD_INVALID_ARGS;
+    }
+    resultSet->resultSet_.EraseCollection();
+    delete resultSet;
     return GRD_OK;
 }

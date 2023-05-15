@@ -47,9 +47,27 @@ group("build_module") {
 
 ohos_shared_library("gaussdb_rd") {
   sources = [
+    "src/common/src/collection_option.cpp",
+    "src/common/src/db_config.cpp",
+    "src/common/src/db_constant.cpp",
+    "src/common/src/json_common.cpp",
+    "src/common/src/log_print.cpp",
+    "src/common/src/os_api.cpp",
     "src/executor/base/grd_db_api.cpp",
+    "src/executor/document/check_common.cpp",
     "src/executor/document/grd_document_api.cpp",
     "src/executor/document/grd_resultset_api.cpp",
+    "src/interface/src/collection.cpp",
+    "src/interface/src/doc_errno.cpp",
+    "src/interface/src/document_store.cpp",
+    "src/interface/src/document_store_manager.cpp",
+    "src/interface/src/projection_tree.cpp",
+    "src/interface/src/result_set.cpp",
+    "src/interface/src/result_set_common.cpp",
+    "src/oh_adapter/src/json_object.cpp",
+    "src/oh_adapter/src/kv_store_manager.cpp",
+    "src/oh_adapter/src/sqlite_store_executor_impl.cpp",
+    "src/oh_adapter/src/sqlite_utils.cpp",
   ]
 
   configs = [ ":gaussdb_rd_config" ]
