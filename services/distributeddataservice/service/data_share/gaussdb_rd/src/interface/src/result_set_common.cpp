@@ -25,9 +25,11 @@ namespace DocumentDB {
 class ValueObject;
 int InitResultSet(std::shared_ptr<QueryContext> context, DocumentStore *store, ResultSet &resultSet, bool ifField)
 {
-    if (context->projectionTree_.ParseTree(context->path_) == -E_INVALID_ARGS) {
-        GLOGE("Parse ProjectionTree failed");
-        return -E_INVALID_ARGS;
+    if (ifField == false) {
+        if (context->projectionTree_.ParseTree(context->path_) == -E_INVALID_ARGS) {
+            GLOGE("Parse ProjectionTree failed");
+            return -E_INVALID_ARGS;
+        }
     }
     return resultSet.Init(context, store, ifField);
 }
