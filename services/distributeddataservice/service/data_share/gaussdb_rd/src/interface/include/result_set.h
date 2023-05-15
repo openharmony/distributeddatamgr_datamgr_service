@@ -31,7 +31,7 @@ class ResultSet {
 public:
     ResultSet();
     ~ResultSet();
-    int Init(QueryContext &QueryContext, DocumentStore *store);
+    int Init(std::shared_ptr<QueryContext> resultSetInfo, DocumentStore *store, bool ifField);
     int Init(DocumentStore *store, const std::string collectionName, const std::string &filter);
     int GetNext(bool isNeedTransaction = false, bool isNeedCheckTable = false);
     int GetValue(char **value);
@@ -44,13 +44,9 @@ private:
     int CheckCutNode(JsonObject *node, std::vector<std::string> singleCutPath,
         std::vector<std::vector<std::string>> &allCutPath);
     DocumentStore *store_ = nullptr;
-    std::string collectionName_;
     ValueObject key_;
-    std::string filter_;
-    bool ifShowId_ = false;
-    bool viewType_ = false;
     bool ifField_ = false;
-    bool isOnlyId_ = false;
+    std::shared_ptr<QueryContext> resultSetInfo_;
     ProjectionTree projectionTree_;
     std::vector<std::vector<std::string>> projectionPath_;
     size_t index_ = 0;

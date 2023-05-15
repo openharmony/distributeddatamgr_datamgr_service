@@ -20,12 +20,12 @@
 
 namespace DocumentDB {
 struct QueryContext {
-    std::string collectionName;
-    std::string filter;
-    std::vector<std::vector<std::string>> path;
-    bool ifShowId = false;
-    bool viewType = false;
-    bool isOnlyId = false;
+    std::string collectionName_;
+    std::string filter_;
+    std::vector<std::vector<std::string>> path_;
+    bool ifShowId_ = false;
+    bool viewType_ = false;
+    bool isOnlyId_ = false;
 };
 } // namespace DocumentDB
 #endif // DOCUMENT_TYPE_H

@@ -158,7 +158,6 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
                 GLOGD("Append value failed. %d", errCode);
                 return errCode;
             }
-            // kkk
             std::string valStr = originValue.Print();
             if (valStr.length() + 1 > JSON_LENS_MAX) {
                 GLOGE("document's length is too long");

@@ -67,17 +67,12 @@ public:
     std::mutex dbMutex_;
 
 private:
-    int UpdateDataIntoDB(const std::string &collection, JsonObject &filterObj, const std::string &update,
-        bool &isOnlyId, bool &isReplace);
-    int GetDocKey(JsonObject &filterObj, const std::string &collection, const std::string &filter, bool &isOnlyId,
-        std::string &docId);
-    int UpsertDataIntoDB(const std::string &collection, JsonObject &filterObj, JsonObject &documentObj, bool &isOnlyId,
-        bool &isReplace);
+    int UpdateDataIntoDB(std::shared_ptr<QueryContext> resultInfo, JsonObject &filterObj, const std::string &update, bool &isReplace);
+    int UpsertDataIntoDB(std::shared_ptr<QueryContext> resultInfo, JsonObject &filterObj, JsonObject &documentObj, bool &isReplace);
     int InsertDataIntoDB(const std::string &collection, const std::string &document, JsonObject &documentObj);
-    int DeleteDataFromDB(const std::string &collection, const std::string &filter, JsonObject &filterObj,
-        bool &isOnlyId);
-    int InitFindResultSet(const std::string &collection, GRD_ResultSet *grdResultSet, QueryContext &resultInfo);
-    int CheckUpsertConflict(bool &isIdExist, const std::string &collection, JsonObject &filterObj, std::string &docId,
+    int DeleteDataFromDB(std::shared_ptr<QueryContext> resultInfo, JsonObject &filterObj);
+    int InitFindResultSet(GRD_ResultSet *grdResultSet, std::shared_ptr<QueryContext> resultInfo);
+    int CheckUpsertConflict(bool &isIdExist, std::shared_ptr<QueryContext> resultInfo, JsonObject &filterObj, std::string &docId,
         Collection &coll);
     KvStoreExecutor *executor_ = nullptr;
     std::map<std::string, Collection *> collections_;

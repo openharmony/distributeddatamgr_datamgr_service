@@ -23,14 +23,8 @@
 
 namespace DocumentDB {
 class ValueObject;
-int InitResultSet(QueryContext &resultInfo, DocumentStore *store, ResultSet &resultSet)
+int InitResultSet(std::shared_ptr<QueryContext> resultInfo, DocumentStore *store, ResultSet &resultSet, bool ifField)
 {
-    return resultSet.Init(resultInfo, store);
-}
-
-int InitResultSet(DocumentStore *store, const std::string collectionName, const std::string &filter,
-    ResultSet &resultSet)
-{
-    return resultSet.Init(store, collectionName, filter);
+    return resultSet.Init(resultInfo, store, ifField);
 }
 } // namespace DocumentDB

@@ -22,36 +22,27 @@ namespace DocumentDB {
 constexpr const char *KEY_ID = "_id";
 
 ResultSet::ResultSet() {}
-ResultSet::~ResultSet() {}
+ResultSet::~ResultSet() 
+{
+    resultSetInfo_ = nullptr;
+}
 int ResultSet::EraseCollection()
 {
     if (store_ != nullptr) {
-        store_->EraseCollection(collectionName_);
+        store_->EraseCollection(resultSetInfo_->collectionName_);
     }
     return E_OK;
 }
-int ResultSet::Init(QueryContext &resultSetInfo, DocumentStore *store)
+int ResultSet::Init(std::shared_ptr<QueryContext> resultSetInfo, DocumentStore *store, bool ifField_)
 {
-    isOnlyId_ = resultSetInfo.isOnlyId;
+    ifField_ = ifField_;
+    resultSetInfo_ = resultSetInfo;
     store_ = store;
-    collectionName_ = resultSetInfo.collectionName;
-    filter_ = resultSetInfo.filter;
-    projectionPath_ = resultSetInfo.path;
+    projectionPath_ = std::move(resultSetInfo->path_);
     if (projectionTree_.ParseTree(projectionPath_) == -E_INVALID_ARGS) {
         GLOGE("Parse ProjectionTree failed");
         return -E_INVALID_ARGS;
     }
-    ifShowId_ = resultSetInfo.ifShowId;
-    viewType_ = resultSetInfo.viewType;
-    return E_OK;
-}
-
-int ResultSet::Init(DocumentStore *store, const std::string collectionName, const std::string &filter)
-{
-    ifField_ = true;
-    store_ = store;
-    collectionName_ = collectionName;
-    filter_ = filter;
     return E_OK;
 }
 
@@ -59,7 +50,7 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
 {
     int errCode = E_OK;
     if (isNeedCheckTable) {
-        std::string lowerCaseName = collectionName_;
+        std::string lowerCaseName = resultSetInfo_->collectionName_;
         std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), [](unsigned char c) {
             return std::tolower(c);
         });
@@ -72,8 +63,8 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
         }
     }
     if (!ifField_ && index_ == 0) {
-        if (isOnlyId_) {
-            JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
+        if (resultSetInfo_->isOnlyId_) {
+            JsonObject filterObj = JsonObject::Parse(resultSetInfo_->filter_, errCode, true, true);
             if (errCode != E_OK) {
                 GLOGE("filter Parsed failed");
                 return errCode;
@@ -86,7 +77,7 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
             }
             Key key(idKey.begin(), idKey.end());
             Value document;
-            Collection coll = store_->GetCollection(collectionName_);
+            Collection coll = store_->GetCollection(resultSetInfo_->collectionName_);
             errCode = coll.GetDocument(key, document);
             if (errCode == -E_NOT_FOUND) {
                 return -E_NO_DATA;
@@ -97,9 +88,9 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
             values.emplace_back(std::pair(idKey, jsonData));
             matchDatas_ = values;
         } else {
-            Collection coll = store_->GetCollection(collectionName_);
+            Collection coll = store_->GetCollection(resultSetInfo_->collectionName_);
             std::vector<std::pair<std::string, std::string>> values;
-            JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
+            JsonObject filterObj = JsonObject::Parse(resultSetInfo_->filter_, errCode, true, true);
             if (errCode != E_OK) {
                 GLOGE("filter Parsed failed");
                 return errCode;
@@ -114,9 +105,9 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
             matchDatas_ = values;
         }
     } else if (index_ == 0) {
-        Collection coll = store_->GetCollection(collectionName_);
+        Collection coll = store_->GetCollection(resultSetInfo_->collectionName_);
         std::vector<std::pair<std::string, std::string>> values;
-        JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
+        JsonObject filterObj = JsonObject::Parse(resultSetInfo_->filter_, errCode, true, true);
         if (errCode != E_OK) {
             GLOGE("filter Parsed failed");
             return errCode;
@@ -219,7 +210,7 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
         return errCode;
     }
     std::vector<std::vector<std::string>> allCutPath;
-    if (viewType_) {
+    if (resultSetInfo_->viewType_) {
         std::vector<std::string> singlePath;
         JsonObject cjsonObjChild = cjsonObj.GetChild();
         errCode = CheckCutNode(&cjsonObjChild, singlePath, allCutPath);
@@ -228,16 +219,16 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
             return errCode;
         }
         for (auto singleCutPaht : allCutPath) {
-            if (!ifShowId_ || singleCutPaht[0] != KEY_ID) {
+            if (!resultSetInfo_->ifShowId_ || singleCutPaht[0] != KEY_ID) {
                 cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
             }
         }
     }
-    if (!viewType_) {
+    if (!resultSetInfo_->viewType_) {
         for (auto singleCutPaht : projectionPath_) {
             cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
         }
-        if (!ifShowId_) {
+        if (!resultSetInfo_->ifShowId_) {
             std::vector<std::string> idPath;
             idPath.emplace_back(KEY_ID);
             cjsonObj.DeleteItemDeeplyOnTarget(idPath);
