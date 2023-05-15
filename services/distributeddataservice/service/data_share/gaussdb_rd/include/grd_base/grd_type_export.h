@@ -21,7 +21,7 @@ extern "C" {
 #endif // __cplusplus
 
 #ifndef _WIN32
-#define GRD_API __attribute__((visibility("default"), weak))
+#define GRD_API __attribute__((visibility("default")))
 #endif
 
 typedef struct GRD_DB GRD_DB;
