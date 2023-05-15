@@ -327,7 +327,8 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> resultInfo, Js
     }
     if (!resultInfo->isOnlyId_) {
         errCode = CheckUpsertConflict(isIdExist, resultInfo, filterObj, docId, coll);
-        if (errCode != E_OK) {
+        if (errCode == -E_DATA_CONFLICT) { // There are only three return values, E_ OK and - E_ NO_ The return value of DATA is a normal scenario, and you can continue to move forward
+            GLOGE("upsert data conflict");
             goto END;
         }
     }
