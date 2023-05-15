@@ -461,7 +461,7 @@ bool CloudServiceImpl::DoSubscribe(const Subscription &sub)
         SchemaMeta schemaMeta;
         exits = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(app.bundleName), schemaMeta, true);
         if (exits) {
-            dbs[it->first] = std::move(schemaMeta.databases);
+            dbs[app.bundleName] = std::move(schemaMeta.databases);
         }
     }
 
