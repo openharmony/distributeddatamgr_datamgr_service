@@ -582,7 +582,9 @@ bool JsonCommon::JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, 
     int &isAlreadyMatched, bool &isCollapse, int &isMatchFlag)
 {
     int errCode = E_OK;
-    JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode); // This function has only two error codes, and the other error code is not an exception, but the specified node was not found
+    // This function has only two error codes, and the other error
+    // code is not an exception, but the specified node was not found
+    JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
     if (errCode == E_OK && srcItem == item) {
         isMatchFlag = true;
         isAlreadyMatched = 1;

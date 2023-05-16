@@ -226,14 +226,12 @@ int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int 
     if (subObj == nullptr) {
         return -E_INVALID_ARGS;
     }
-    int ret = E_OK;
     std::string fieldName;
     if (subObj->string != nullptr) {
         fieldName = subObj->string;
     }
     if (parentType == cJSON_Array) {
-        ret = CheckJsonRepeatField(subObj);
-        return ret;
+        return CheckJsonRepeatField(subObj);
     }
     if (fieldName.empty()) {
         return -E_INVALID_JSON_FORMAT;
@@ -241,13 +239,9 @@ int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int 
     if (fieldSet.find(fieldName) == fieldSet.end()) {
         fieldSet.insert(fieldName);
     } else {
-        ret = -E_INVALID_JSON_FORMAT;
+        return -E_INVALID_JSON_FORMAT;
     }
-    if (ret != E_OK) {
-        return ret;
-    }
-    ret = CheckJsonRepeatField(subObj);
-    return ret;
+    return CheckJsonRepeatField(subObj);
 }
 
 std::string JsonObject::Print() const
