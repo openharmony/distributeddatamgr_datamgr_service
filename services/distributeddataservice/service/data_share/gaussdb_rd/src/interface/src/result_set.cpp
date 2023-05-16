@@ -33,7 +33,7 @@ int ResultSet::EraseCollection()
     }
     return E_OK;
 }
-int ResultSet::Init(std::shared_ptr<QueryContext> context, DocumentStore *store, bool ifField_)
+int ResultSet::Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool ifField_)
 {
     ifField_ = ifField_;
     context_ = context;
@@ -213,14 +213,14 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
             GLOGE("The node in CheckCutNode is nullptr");
             return errCode;
         }
-        for (auto singleCutPaht : allCutPath) {
+        for (const auto & singleCutPaht : allCutPath) {
             if (!context_->ifShowId || singleCutPaht[0] != KEY_ID) {
                 cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
             }
         }
     }
     if (!context_->viewType) {
-        for (auto singleCutPaht : context_->path) { // projection Path
+        for (const auto & singleCutPaht : context_->path) { // projection Path
             cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
         }
         if (!context_->ifShowId) {
