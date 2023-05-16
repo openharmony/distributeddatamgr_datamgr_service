@@ -35,21 +35,25 @@ public:
 
 void DistributedataDfxUTTest::SetUpTestCase()
 {
-    size_t max = 12;
-    size_t min = 5;
-    Reporter::GetInstance()->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(max, min));
     FakeHivew::Clear();
 }
 
 void DistributedataDfxUTTest::TearDownTestCase()
 {
-    Reporter::GetInstance()->SetThreadPool(nullptr);
     FakeHivew::Clear();
 }
 
-void DistributedataDfxUTTest::SetUp() {}
+void DistributedataDfxUTTest::SetUp()
+{
+    size_t max = 12;
+    size_t min = 5;
+    Reporter::GetInstance()->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(max, min));
+}
 
-void DistributedataDfxUTTest::TearDown() {}
+void DistributedataDfxUTTest::TearDown()
+{
+    Reporter::GetInstance()->SetThreadPool(nullptr);
+}
 
 /**
   * @tc.name: Dfx001
