@@ -39,12 +39,15 @@ public:
     static bool IsJsonNodeMatch(const JsonObject &src, const JsonObject &target, int &errCode);
 
 private:
-    static bool JsonEqualJudge(JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item,
+    static bool JsonEqualJudge(const JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item,
         int &isAlreadyMatched, bool &isCollapse, int &isMatchFlag);
     static bool CheckNode(JsonObject &Node);
     static bool CheckProjectionNode(JsonObject &Node, bool isFirstLevel, int &errCode);
     static void CheckLeafNode(const JsonObject &Node, std::vector<ValueObject> &leafValue);
     static bool IsArrayMatch(const JsonObject &src, const JsonObject &target, int &isAlreadyMatched);
+
+    static bool IsObjectItemMatch(const JsonObject &srcItem, const JsonObject &item, int &isAlreadyMatched,
+        bool &isCollapse, int &isMatchFlag);
 };
 } // namespace DocumentDB
 #endif // JSON_COMMON_H

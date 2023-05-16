@@ -56,6 +56,53 @@ int ResultSet::Init(DocumentStore *store, const std::string collectionName, cons
     return E_OK;
 }
 
+int ResultSet::GetNextWithField()
+{
+    int errCode = E_OK;
+    if (isOnlyId_) {
+        JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
+        if (errCode != E_OK) {
+            GLOGE("filter Parsed failed");
+            return errCode;
+        }
+        JsonObject filterObjChild = filterObj.GetChild();
+        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
+        std::string idKey = idValue.GetStringValue();
+        if (idKey.empty()) {
+            return -E_NO_DATA;
+        }
+        Key key(idKey.begin(), idKey.end());
+        Value document;
+        Collection coll = store_->GetCollection(collectionName_);
+        errCode = coll.GetDocument(key, document);
+        if (errCode == -E_NOT_FOUND) {
+            return -E_NO_DATA;
+        }
+        std::string jsonData(document.begin(), document.end());
+        CutJsonBranch(jsonData);
+        std::vector<std::pair<std::string, std::string>> values;
+        values.emplace_back(std::make_pair(idKey, jsonData));
+        matchDatas_ = values;
+    } else {
+        Collection coll = store_->GetCollection(collectionName_);
+        std::vector<std::pair<std::string, std::string>> values;
+        JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
+        if (errCode != E_OK) {
+            GLOGE("filter Parsed failed");
+            return errCode;
+        }
+        errCode = coll.GetMatchedDocument(filterObj, values);
+        if (errCode == -E_NOT_FOUND) {
+            return -E_NO_DATA;
+        }
+        for (size_t i = 0; i < values.size(); i++) {
+            CutJsonBranch(values[i].second);
+        }
+        matchDatas_ = values;
+    }
+    return E_OK;
+}
+
 int ResultSet::GetNextInner(bool isNeedCheckTable)
 {
     int errCode = E_OK;
@@ -73,46 +120,9 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
         }
     }
     if (!ifField_ && index_ == 0) {
-        if (isOnlyId_) {
-            JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
-            if (errCode != E_OK) {
-                GLOGE("filter Parsed failed");
-                return errCode;
-            }
-            JsonObject filterObjChild = filterObj.GetChild();
-            ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
-            std::string idKey = idValue.GetStringValue();
-            if (idKey.empty()) {
-                return -E_NO_DATA;
-            }
-            Key key(idKey.begin(), idKey.end());
-            Value document;
-            Collection coll = store_->GetCollection(collectionName_);
-            errCode = coll.GetDocument(key, document);
-            if (errCode == -E_NOT_FOUND) {
-                return -E_NO_DATA;
-            }
-            std::string jsonData(document.begin(), document.end());
-            CutJsonBranch(jsonData);
-            std::vector<std::pair<std::string, std::string>> values;
-            values.emplace_back(std::pair(idKey, jsonData));
-            matchDatas_ = values;
-        } else {
-            Collection coll = store_->GetCollection(collectionName_);
-            std::vector<std::pair<std::string, std::string>> values;
-            JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
-            if (errCode != E_OK) {
-                GLOGE("filter Parsed failed");
-                return errCode;
-            }
-            errCode = coll.GetMatchedDocument(filterObj, values);
-            if (errCode == -E_NOT_FOUND) {
-                return -E_NO_DATA;
-            }
-            for (size_t i = 0; i < values.size(); i++) {
-                CutJsonBranch(values[i].second);
-            }
-            matchDatas_ = values;
+        errCode = GetNextWithField();
+        if (errCode != E_OK) {
+            return errCode;
         }
     } else if (index_ == 0) {
         Collection coll = store_->GetCollection(collectionName_);

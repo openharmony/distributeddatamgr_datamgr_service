@@ -30,7 +30,7 @@ namespace {
 constexpr const char *COLLECTION_NAME = "student";
 constexpr const char *NULL_JSON_STR = "{}";
 constexpr int MAX_COLLECTION_LENS = 511;
-std::string path = "./document.db";
+std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
 
 class DocumentDBDeleteTest : public testing::Test {
