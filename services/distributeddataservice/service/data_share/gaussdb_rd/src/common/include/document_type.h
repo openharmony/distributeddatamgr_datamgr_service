@@ -22,13 +22,13 @@
 
 namespace DocumentDB {
 struct QueryContext {
-    std::string collectionName_;
-    std::string filter_;
-    std::vector<std::vector<std::string>> path_;
-    ProjectionTree projectionTree_;
-    bool ifShowId_ = false;
-    bool viewType_ = false;
-    bool isOnlyId_ = false;
+    std::string collectionName;
+    std::string filter;
+    std::vector<std::vector<std::string>> path;
+    ProjectionTree projectionTree;
+    bool ifShowId = false;
+    bool viewType = false;
+    bool isOnlyId = false;
 };
 } // namespace DocumentDB
 #endif // DOCUMENT_TYPE_H
