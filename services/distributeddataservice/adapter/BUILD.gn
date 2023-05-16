@@ -12,6 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//build/ohos_var.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("distributeddata_adapter_private_config") {
   visibility = [ ":*" ]
@@ -20,10 +21,11 @@ config("distributeddata_adapter_private_config") {
   cflags = [ "-Wno-multichar" ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 config("distributeddata_adapter_public_config") {
-  visibility = [ "//foundation/distributeddatamgr/datamgr_service:*" ]
+  visibility = [ ":*" ]
 
   include_dirs = [
     "include/log",
@@ -32,8 +34,8 @@ config("distributeddata_adapter_public_config") {
     "include/autils",
     "include/utils",
     "include",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include/",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include/",
+    "${kv_store_common_path}",
   ]
 }
 

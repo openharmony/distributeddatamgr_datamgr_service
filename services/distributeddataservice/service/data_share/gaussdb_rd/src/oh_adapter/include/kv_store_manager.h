@@ -17,8 +17,8 @@
 #define KV_STORE_MANAGER_H
 #include <string>
 
+#include "check_common.h"
 #include "db_config.h"
-#include "document_check.h"
 #include "kv_store_executor.h"
 
 namespace DocumentDB {

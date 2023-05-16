@@ -172,28 +172,31 @@ void KvStoreMetaManager::InitMetaData()
 void KvStoreMetaManager::InitMetaParameter()
 {
     ZLOGI("start.");
-    std::thread th = std::thread([]() {
-        constexpr int32_t RETRY_MAX_TIMES = 100;
-        constexpr int32_t RETRY_INTERVAL = 1 * 1000 * 1000; // retry after 1 second
-        BlockInteger retry(RETRY_INTERVAL);
-        while (retry < RETRY_MAX_TIMES) {
-            auto status = CryptoManager::GetInstance().CheckRootKey();
-            if (status == CryptoManager::ErrCode::SUCCESS) {
-                ZLOGI("root key exist.");
-                break;
-            }
-            if (status == CryptoManager::ErrCode::NOT_EXIST &&
-                CryptoManager::GetInstance().GenerateRootKey() == CryptoManager::ErrCode::SUCCESS) {
-                ZLOGI("GenerateRootKey success.");
-                break;
-            }
-            ++retry;
-            ZLOGW("GenerateRootKey failed, retry times:%{public}d.", static_cast<int>(retry));
-        }
-    });
-    th.detach();
+    executors_->Execute(GetTask(0));
     DistributedDB::KvStoreConfig kvStoreConfig{ metaDBDirectory_ };
     delegateManager_.SetKvStoreConfig(kvStoreConfig);
+}
+
+ExecutorPool::Task KvStoreMetaManager::GetTask(uint32_t retry)
+{
+    return [this, retry] {
+        auto status = CryptoManager::GetInstance().CheckRootKey();
+        if (status == CryptoManager::ErrCode::SUCCESS) {
+            ZLOGI("root key exist.");
+            return;
+        }
+        if (status == CryptoManager::ErrCode::NOT_EXIST &&
+            CryptoManager::GetInstance().GenerateRootKey() == CryptoManager::ErrCode::SUCCESS) {
+            ZLOGI("GenerateRootKey success.");
+            return;
+        }
+        ZLOGW("GenerateRootKey failed, retry times:%{public}d.", static_cast<int>(retry));
+        if (retry + 1 > RETRY_MAX_TIMES) {
+            ZLOGE("fail to register subscriber!");
+            return;
+        }
+        executors_->Schedule(std::chrono::seconds(RETRY_INTERVAL), GetTask(retry + 1));
+    };
 }
 
 KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
@@ -390,6 +393,10 @@ size_t KvStoreMetaManager::GetSyncDataSize(const std::string &deviceId)
     }
 
     return metaDelegate->GetSyncDataSize(deviceId);
+}
+void KvStoreMetaManager::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 } // namespace DistributedKv
 } // namespace OHOS

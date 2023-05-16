@@ -22,7 +22,6 @@
 #include "log_print.h"
 
 namespace DocumentDB {
-
 namespace {
 bool IsNumber(const std::string &str)
 {
@@ -108,10 +107,7 @@ bool JsonObject::operator==(const JsonObject &other) const
 
 bool JsonObject::IsNull() const
 {
-    if (cjson_ == nullptr) {
-        return true;
-    }
-    return false;
+    return (cjson_ == nullptr);
 }
 
 JsonObject::Type JsonObject::GetType() const
@@ -123,6 +119,7 @@ JsonObject::Type JsonObject::GetType() const
     }
     return JsonObject::Type::JSON_LEAF;
 }
+
 int JsonObject::GetDeep()
 {
     if (cjson_ == nullptr) {
@@ -135,6 +132,7 @@ int JsonObject::GetDeep()
     jsonDeep_ = GetDeep(cjson_);
     return jsonDeep_;
 }
+
 int JsonObject::GetDeep(cJSON *cjson)
 {
     if (cjson->child == nullptr) {
@@ -157,7 +155,7 @@ int JsonObject::CheckNumber(cJSON *item, int &errCode)
     if (item != NULL && cJSON_IsNumber(item)) {
         double value = cJSON_GetNumberValue(item);
         if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
-            errCode = E_INVALID_ARGS;
+            errCode = -E_INVALID_ARGS;
         }
     }
     if (item->child != nullptr) {
@@ -186,7 +184,7 @@ int JsonObject::Init(const std::string &str, bool isFilter)
 
     int ret = 0;
     CheckNumber(cjson_, ret);
-    if (ret == E_INVALID_ARGS) {
+    if (ret == -E_INVALID_ARGS) {
         GLOGE("Int value is larger than double");
         return -E_INVALID_ARGS;
     }
@@ -250,14 +248,14 @@ std::string JsonObject::Print() const
         return "";
     }
     char *ret = cJSON_PrintUnformatted(cjson_);
-    std::string str = ret;
+    std::string str = (ret == nullptr ? "" : ret);
     cJSON_free(ret);
     return str;
 }
 
 JsonObject JsonObject::GetObjectItem(const std::string &field, int &errCode)
 {
-    if (cjson_ == nullptr || (cjson_->type & cJSON_Object) != cJSON_Object) {
+    if (cjson_ == nullptr || cjson_->type != cJSON_Object) {
         errCode = -E_INVALID_ARGS;
         return JsonObject();
     }
@@ -277,7 +275,7 @@ JsonObject JsonObject::GetObjectItem(const std::string &field, int &errCode)
 
 JsonObject JsonObject::GetArrayItem(int index, int &errCode)
 {
-    if (cjson_ == nullptr || (cjson_->type & cJSON_Array) != cJSON_Array) {
+    if (cjson_ == nullptr || cjson_->type != cJSON_Array) {
         errCode = -E_INVALID_ARGS;
         return JsonObject();
     }
@@ -532,28 +530,30 @@ cJSON *GetChild(cJSON *cjson, const std::string &field, bool caseSens)
 
 cJSON *GetChildPowerMode(cJSON *cjson, const std::string &field, bool caseSens)
 {
-    if (cjson->type == cJSON_Object) {
+    if (cjson->type != cJSON_Object && cjson->type != cJSON_Array) {
+        GLOGW("Invalid json field type, expect object or array.");
+        return nullptr;
+    } else if (cjson->type == cJSON_Object) {
         if (caseSens) {
             return cJSON_GetObjectItemCaseSensitive(cjson, field.c_str());
         } else {
             return cJSON_GetObjectItem(cjson, field.c_str());
         }
-    } else if (cjson->type == cJSON_Array) {
-        if (!IsNumber(field)) {
-            cjson = cjson->child;
-            while (cjson != nullptr) {
-                cJSON *resultItem = GetChild(cjson, field, caseSens);
-                if (resultItem != nullptr) {
-                    return resultItem;
-                }
-                cjson = cjson->next;
-            }
-            return nullptr;
-        }
-        return cJSON_GetArrayItem(cjson, std::stoi(field));
     }
-    GLOGW("Invalid json field type, expect object or array.");
-    return nullptr;
+
+    // type is cJSON_Array
+    if (!IsNumber(field)) {
+        cjson = cjson->child;
+        while (cjson != nullptr) {
+            cJSON *resultItem = GetChild(cjson, field, caseSens);
+            if (resultItem != nullptr) {
+                return resultItem;
+            }
+            cjson = cjson->next;
+        }
+        return nullptr;
+    }
+    return cJSON_GetArrayItem(cjson, std::stoi(field));
 }
 
 cJSON *MoveToPath(cJSON *cjson, const JsonFieldPath &jsonPath, bool caseSens)

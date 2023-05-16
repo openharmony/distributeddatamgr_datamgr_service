@@ -89,29 +89,25 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent()
         account.harmonyAccountId = GetCurrentAccountId();
         NotifyAccountChanged(account);
     });
+    executors_->Execute(GetTask(0));
+}
 
-    std::thread th = std::thread([eventSubscriber = eventSubscriber_]() {
-        int tryTimes = 0;
-        constexpr int MAX_RETRY_TIME = 300;
-        constexpr int RETRY_WAIT_TIME_S = 1;
-
-        // we use this method to make sure register success
-        while (tryTimes < MAX_RETRY_TIME) {
-            auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber);
-            if (result) {
-                break;
-            }
-
-            ZLOGD("fail to register subscriber, error:%{public}d, time:%{public}d", result, tryTimes);
-            sleep(RETRY_WAIT_TIME_S);
-            tryTimes++;
+ExecutorPool::Task AccountDelegateNormalImpl::GetTask(uint32_t retry)
+{
+    return [this, retry] {
+        auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber_);
+        if (result) {
+            ZLOGI("success to register subscriber.");
+            return;
         }
-        if (tryTimes == MAX_RETRY_TIME) {
+        ZLOGD("fail to register subscriber, error:%{public}d, time:%{public}d", result, retry);
+
+        if (retry + 1 > MAX_RETRY_TIME) {
             ZLOGE("fail to register subscriber!");
+            return;
         }
-        ZLOGI("success to register subscriber.");
-    });
-    th.detach();
+        executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
+    };
 }
 
 AccountDelegateNormalImpl::~AccountDelegateNormalImpl()
@@ -151,6 +147,11 @@ std::string AccountDelegateNormalImpl::Sha256AccountId(const std::string &plainT
 
     auto plainVal = htobe64(plain);
     return DoHash(static_cast<void *>(&plainVal), sizeof(plainVal), true);
+}
+
+void AccountDelegateNormalImpl::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 }  // namespace DistributedKv
 }  // namespace OHOS

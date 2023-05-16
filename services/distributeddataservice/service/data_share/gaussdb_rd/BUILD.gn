@@ -12,7 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 
-config("documentdb_config") {
+config("gaussdb_rd_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "src/common/include",
@@ -36,7 +36,7 @@ config("documentdb_config") {
   }
 }
 
-config("documentdb_public_config") {
+config("gaussdb_rd_public_config") {
   visibility = [ "*:*" ]
   include_dirs = [ "include" ]
 }
@@ -49,11 +49,12 @@ ohos_shared_library("gaussdb_rd") {
   sources = [
     "src/common/src/collection_option.cpp",
     "src/common/src/db_config.cpp",
+    "src/common/src/db_constant.cpp",
     "src/common/src/json_common.cpp",
     "src/common/src/log_print.cpp",
     "src/common/src/os_api.cpp",
     "src/executor/base/grd_db_api.cpp",
-    "src/executor/document/document_check.cpp",
+    "src/executor/document/check_common.cpp",
     "src/executor/document/grd_document_api.cpp",
     "src/executor/document/grd_resultset_api.cpp",
     "src/interface/src/collection.cpp",
@@ -69,8 +70,8 @@ ohos_shared_library("gaussdb_rd") {
     "src/oh_adapter/src/sqlite_utils.cpp",
   ]
 
-  configs = [ ":documentdb_config" ]
-  public_configs = [ ":documentdb_public_config" ]
+  configs = [ ":gaussdb_rd_config" ]
+  public_configs = [ ":gaussdb_rd_public_config" ]
 
   deps = [ "//third_party/sqlite:sqlite" ]
 

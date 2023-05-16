@@ -489,6 +489,58 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigRedoFlushTest002, TestSize.Level0)
 }
 
 /**
+ * @tc.name: OpenDBConfigBufferPoolTest001
+ * @tc.desc: Test open document db with invalid config item bufferPoolSize
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigBufferPoolTest001, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string path = "./document.db";
+
+    int status = GRD_DBOpen(path.c_str(), R""({"pageSize":64,"bufferPoolSize":4096})"", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_OK);
+    EXPECT_EQ(GRD_DBClose(db, 0), GRD_OK);
+
+    status = GRD_DBOpen(path.c_str(), R""({"pageSize":64,"bufferPoolSize":4095})"", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+
+    status = GRD_DBOpen(path.c_str(), R""({"bufferPoolSize":1023})"", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+
+    status = GRD_DBOpen(path.c_str(), R""({"bufferPoolSize":4194304})"", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+}
+
+/**
+ * @tc.name: OpenDBConfigPubBuffTest001
+ * @tc.desc: Test open document db with invalid config item redopubbufsize
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lianhuix
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigPubBuffTest001, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string path = "./document.db";
+
+    int status = GRD_DBOpen(path.c_str(), R""({"pageSize":64,"redopubbufsize":4033})"", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_OK);
+    EXPECT_EQ(GRD_DBClose(db, 0), GRD_OK);
+
+    status = GRD_DBOpen(path.c_str(), R""({"pageSize":64,"redopubbufsize":4032})"", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+
+    status = GRD_DBOpen(path.c_str(), R""({"redopubbufsize":255})"", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+
+    status = GRD_DBOpen(path.c_str(), R""({"redopubbufsize":16385})"", GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
+}
+
+/**
  * @tc.name: OpenDBFlagTest001
  * @tc.desc: Test open document db with invalid flag
  * @tc.type: FUNC

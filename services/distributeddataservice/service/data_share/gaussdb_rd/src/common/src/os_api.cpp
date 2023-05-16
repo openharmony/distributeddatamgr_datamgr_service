@@ -64,7 +64,7 @@ int GetRealPath(const std::string &inOriPath, std::string &outRealPath)
     return E_OK;
 }
 
-void SplitFilePath(const std::string &filePath, std::string &fileDir, std::string &fileName)
+void SplitFilePath(const std::string &filePath, std::string &fieldir, std::string &fileName)
 {
     if (filePath.empty()) {
         return;
@@ -73,11 +73,11 @@ void SplitFilePath(const std::string &filePath, std::string &fileDir, std::strin
     auto slashPos = filePath.find_last_of('/');
     if (slashPos == std::string::npos) {
         fileName = filePath;
-        fileDir = "";
+        fieldir = "";
         return;
     }
 
-    fileDir = filePath.substr(0, slashPos);
+    fieldir = filePath.substr(0, slashPos);
     fileName = filePath.substr(slashPos + 1);
 }
 } // namespace OSAPI

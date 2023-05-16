@@ -19,8 +19,8 @@
 #include <string>
 #include <vector>
 
+#include "check_common.h"
 #include "doc_errno.h"
-#include "document_check.h"
 #include "document_store.h"
 #include "grd_base/grd_type_export.h"
 #include "json_object.h"
@@ -35,12 +35,13 @@ public:
     int Init(DocumentStore *store, const std::string collectionName, const std::string &filter,
         std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId);
     int Init(DocumentStore *store, const std::string collectionName, const std::string &filter);
-    int GetNext();
+    int GetNext(bool isNeedTransaction = false, bool isNeedCheckTable = false);
     int GetValue(char **value);
     int GetKey(std::string &key);
     int EraseCollection();
 
 private:
+    int GetNextInner(bool isNeedCheckTable);
     int CutJsonBranch(std::string &jsonData);
     int CheckCutNode(JsonObject *node, std::vector<std::string> singleCutPath,
         std::vector<std::vector<std::string>> &allCutPath);

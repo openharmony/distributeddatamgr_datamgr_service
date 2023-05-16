@@ -45,8 +45,8 @@ void DocumentDBJsonCommonTest::TearDown(void) {}
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest001, TestSize.Level0)
 {
     std::string document = R""({"name":"Tmn","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    std::string updateDoc =
-        R""({"name":"Xue","case":{"field1":1,"field2":"string","field3":[1,2,3]},"age":28,"addr":{"city":"shenzhen","postal":518000}})"";
+    std::string updateDoc = R""({"name":"Xue","case":{"field1":1,"field2":"string","field3":[1,2,3]},
+        "age":28,"addr":{"city":"shenzhen","postal":518000}})"";
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -117,7 +117,6 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest004, TestSize.Level0)
 {
     std::string document = R""({"name":["Tmn","BB","Alice"]})"";
     std::string updateDoc = R""({"name.5":"GG"})"";
-    ;
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -132,7 +131,6 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest005, TestSize.Level0)
 {
     std::string document = R""({"name":["Tmn","BB","Alice"]})"";
     std::string updateDoc = R""({"name.2":"GG"})"";
-    ;
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -262,7 +260,6 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest012, TestSize.Level0)
 {
     std::string document = R""({"name":["Tmn","BB","Alice"]})"";
     std::string updateDoc = R""({"name.first":"GG"})"";
-    ;
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -277,7 +274,6 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest013, TestSize.Level0)
 {
     std::string document = R""({"name":["Tmn","BB","Alice"]})"";
     std::string updateDoc = R""({"name":{"first":"GG"}})"";
-    ;
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -292,7 +288,6 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest014, TestSize.Level0)
 {
     std::string document = R""({"name":{"first":"Xue","second":"Lang"}})"";
     std::string updateDoc = R""({"name.0":"GG"})"";
-    ;
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -307,7 +302,6 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest015, TestSize.Level0)
 {
     std::string document = R""({"name":{"first":"Xue","second":"Lang"}})"";
     std::string updateDoc = R""({"name.first":["GG","MM"]})"";
-    ;
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -346,7 +340,6 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest002, TestSize.Leve
     std::string document = R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5},
         {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"instock": {"warehouse":"A", "qty":5}})"";
-    ;
     int errCode = E_OK;
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
@@ -359,7 +352,6 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest003, TestSize.Leve
     std::string document = R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5},
         {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"item": "GG"})"";
-    ;
     int errCode = E_OK;
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
@@ -372,7 +364,6 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest004, TestSize.Leve
     std::string document = R""({"item": [{"gender":"girl"}, "GG"], "instock": [{"warehouse":"A", "qty":5},
         {"warehouse":"C", "qty":15}]})"";
     std::string filter = R""({"item": "GG"})"";
-    ;
     int errCode = E_OK;
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
@@ -626,8 +617,8 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest024, TestSize.Leve
     EXPECT_EQ(errCode, E_OK);
     auto path = JsonCommon::ParsePath(srcObj, errCode);
     for (auto singlePath : path) {
-        for (auto filedName : singlePath) {
-            GLOGE("filedName is =========>%s", filedName.c_str());
+        for (auto fieldName : singlePath) {
+            GLOGE("fieldName is =========>%s", fieldName.c_str());
         }
         GLOGE("///////////////////////////");
     }

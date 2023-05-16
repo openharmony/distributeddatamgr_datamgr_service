@@ -19,8 +19,12 @@ namespace OHOS {
 namespace DistributedDataDfx {
 ReportStatus RuntimeFaultImpl::Report(const FaultMsg &msg)
 {
-    HiViewAdapter::ReportFault(DfxCodeConstant::RUNTIME_FAULT, msg);
+    HiViewAdapter::ReportFault(DfxCodeConstant::RUNTIME_FAULT, msg, executors_);
     return ReportStatus::SUCCESS;
+}
+void RuntimeFaultImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 } // namespace DistributedDataDfx
 } // namespace OHOS

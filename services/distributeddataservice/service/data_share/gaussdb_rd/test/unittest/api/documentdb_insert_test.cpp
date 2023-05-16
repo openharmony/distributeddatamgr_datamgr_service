@@ -13,16 +13,19 @@
 * limitations under the License.
 */
 
-#include <gtest/gtest.h>
 #include <climits>
+#include <gtest/gtest.h>
 
+#include "documentdb_test_utils.h"
 #include "grd_base/grd_db_api.h"
 #include "grd_base/grd_error.h"
 #include "grd_document/grd_document_api.h"
 
 using namespace testing::ext;
+using namespace DocumentDBUnitTest;
+
 namespace {
-std::string path = "./document.db";
+std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
 const char *RIGHT_COLLECTION_NAME = "student";
 const char *NO_EXIST_COLLECTION_NAME = "no_exisit";
@@ -48,40 +51,40 @@ static void TestInsertDocIntoCertainColl(const char *collectionName, const char 
     EXPECT_EQ(GRD_DropCollection(g_db, collectionName, 0), expectedResult);
 }
 
-class DocumentInsertApiTest : public testing::Test {
+class DocumentDBInsertTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
 };
-void DocumentInsertApiTest::SetUpTestCase(void)
+
+void DocumentDBInsertTest::SetUpTestCase(void)
 {
-    std::string path = "./document.db";
-    int status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &g_db);
+    int status = GRD_DBOpen(g_path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &g_db);
     EXPECT_EQ(status, GRD_OK);
     EXPECT_EQ(GRD_CreateCollection(g_db, "student", "", 0), GRD_OK);
     EXPECT_NE(g_db, nullptr);
 }
 
-void DocumentInsertApiTest::TearDownTestCase(void)
+void DocumentDBInsertTest::TearDownTestCase(void)
 {
     EXPECT_EQ(GRD_DBClose(g_db, 0), GRD_OK);
-    remove(path.c_str());
+    DocumentDBTestUtils::RemoveTestDbFiles(g_path);
 }
 
-void DocumentInsertApiTest::SetUp(void) {}
+void DocumentDBInsertTest::SetUp(void) {}
 
-void DocumentInsertApiTest::TearDown(void) {}
+void DocumentDBInsertTest::TearDown(void) {}
 
 /**
-  * @tc.name: DocumentInsertApiTest001
+  * @tc.name: DocumentDBInsertTest001
   * @tc.desc: Insert documents into collection which dose not exist
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest001, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest001, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Insert document into collection which dose not exist
@@ -92,13 +95,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest001, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest002
+  * @tc.name: DocumentDBInsertTest002
   * @tc.desc: Insert documents into collection which _id is not string
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest002, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest002, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Insert a document whose _id is integer
@@ -133,13 +136,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest002, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest003
+  * @tc.name: DocumentDBInsertTest003
   * @tc.desc: Insert a document whose _id has appeared before
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest003, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest003, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Insert a document whose _id is string
@@ -152,18 +155,18 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest003, TestSize.Level1)
      * @tc.steps:step2.Insert a document whose _id has appeared before
      * @tc.expected:step2.GRD_DATA_CONFLICT
     */
-    // const char *document2 =  "{\"_id\" : \"3\", \"name\" : \"Chuan\"}";
-    // EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document2, 0), GRD_DATA_CONFLICT);
+    const char *document2 = "{\"_id\" : \"3\", \"name\" : \"Chuan\"}";
+    EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document2, 0), GRD_DATA_CONFLICT);
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest004
+  * @tc.name: DocumentDBInsertTest004
   * @tc.desc: Test Insert with null parameter. parameter db is NULL
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest004, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest004, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.step1.parameter db is NULL
@@ -174,13 +177,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest004, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest005
+  * @tc.name: DocumentDBInsertTest005
   * @tc.desc: Test insert with null parameter. parameter collectionName is NULL.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest005, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest005, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Parameter collectionName is NULL
@@ -197,13 +200,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest005, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest006
+  * @tc.name: DocumentDBInsertTest006
   * @tc.desc: parameter flags is not zero
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest006, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest006, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.parameter flags is not zero
@@ -214,13 +217,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest006, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest007
+  * @tc.name: DocumentDBInsertTest007
   * @tc.desc: parameter flags is INT_MAX
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest007, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest007, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.parameter flags is int_max
@@ -231,13 +234,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest007, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest008
+  * @tc.name: DocumentDBInsertTest008
   * @tc.desc: parameter flags is int_min
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest008, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest008, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.parameter flags is int_min
@@ -248,13 +251,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest008, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest009
+  * @tc.name: DocumentDBInsertTest009
   * @tc.desc: parameter collectionName and document is NULL or invalid
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest009, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest009, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.parameter collectionName and document is NULL;
@@ -271,13 +274,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest009, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest010
+  * @tc.name: DocumentDBInsertTest010
   * @tc.desc: parameter collectionName contains irregular charactor
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest010, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest010, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Create Collection whose parameter collectionName contains irregular charactor
@@ -289,13 +292,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest010, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest011
+  * @tc.name: DocumentDBInsertTest011
   * @tc.desc: parameter collectionName is longer than 256 charactors
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest011, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest011, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Create Collection whose parameter collectionName contains irregular charactor
@@ -307,13 +310,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest011, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest014
+  * @tc.name: DocumentDBInsertTest014
   * @tc.desc: Inserted document's JSON depth is larger than 4, which is 5.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest014, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest014, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.document's JSON depth is larger than 4, which is 5.
@@ -339,13 +342,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest014, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest015
+  * @tc.name: DocumentDBInsertTest015
   * @tc.desc: Inserted document with all kinds of size
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest015, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest015, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.document's JSON is bigger than 512k - 1
@@ -355,7 +358,6 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest015, TestSize.Level1)
     string documentPart2 = "\" }";
     string jsonVal = string(512 * 1024 - documentPart1.size() - documentPart2.size(), 'k');
     string document = documentPart1 + jsonVal + documentPart2;
-    //EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document.c_str(), 0), GRD_OVER_LIMIT);
     /**
      * @tc.steps:step2.Insert document's JSON is a large data but lower than 512k - 1
      * @tc.expected:step2.GRD_OK
@@ -366,13 +368,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest015, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest016
+  * @tc.name: DocumentDBInsertTest016
   * @tc.desc: document JSON string contains irregular char
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest016, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest016, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.document JSON string contains irregular char.
@@ -383,13 +385,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest016, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest017
+  * @tc.name: DocumentDBInsertTest017
   * @tc.desc: document JSON string contains invalid value type such as BLOB type
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest017, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest017, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.document JSON string contains invalid value type such as BLOB type.
@@ -401,13 +403,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest017, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest018
+  * @tc.name: DocumentDBInsertTest018
   * @tc.desc: The Inserted document is not JSON format
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest018, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest018, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.The Inserted document is not JSON format
@@ -418,31 +420,31 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest018, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest019
+  * @tc.name: DocumentDBInsertTest019
   * @tc.desc: Insert a normal documents
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest019, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest019, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Insert a normal documents which _id is in the end of the string
      * @tc.expected:step1.GRD_OK.
     */
     const char *document1 = "{\"name\" : \"Jack\", \"age\" : 18, \"friend\" : {\"name\" : \" lucy\"}, \"_id\" : "
-        "\"19\"}";
+                            "\"19\"}";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_OK);
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest022
+  * @tc.name: DocumentDBInsertTest022
   * @tc.desc: parameter collectionName is equal to 256 charactors
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest022, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest022, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.parameter collectionName is equal to 256 charactors
@@ -455,14 +457,14 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest022, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest023
+  * @tc.name: DocumentDBInsertTest023
   * @tc.desc: parameter collectionName contains upper & lower case charactors,
   * numbers and underline
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest023, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest023, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.parameter collectionName contains upper & lower case charactors,
@@ -475,14 +477,14 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest023, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest024
+  * @tc.name: DocumentDBInsertTest024
   * @tc.desc: parameter collectionName's head is GRD_ or GM_SYS_
   * numbers and underline
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest024, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest024, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.parameter collectionName's head is GRD_
@@ -549,13 +551,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest024, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest025
+  * @tc.name: DocumentDBInsertTest025
   * @tc.desc: Insert document whose depth is 4, which is allowed
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest025, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest025, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.documents JSON depth is 4, which is allowed.
@@ -591,13 +593,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest025, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest026
+  * @tc.name: DocumentDBInsertTest026
   * @tc.desc: Insert 100 normal documents continuously
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Insert 100 normal documents continuously
@@ -615,14 +617,14 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest035
+  * @tc.name: DocumentDBInsertTest035
   * @tc.desc: Insert a document whose value contains
   * upper &lower case charactors, numbers and underline.
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest035, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest035, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Insert a document whose value contains
@@ -642,14 +644,14 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest035, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest036
+  * @tc.name: DocumentDBInsertTest036
   * @tc.desc: Insert a document whose value contains
   * string, number, bool, null, array and object type
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest036, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest036, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Insert a document whose value contains
@@ -662,14 +664,14 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest036, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest038
+  * @tc.name: DocumentDBInsertTest038
   * @tc.desc: Insert document whose value is over  the range of double
   * string, number, bool, null, array and object type
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest038, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest038, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Insert document whose value is over the range of double
@@ -710,13 +712,13 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest038, TestSize.Level1)
 }
 
 /**
-  * @tc.name: DocumentInsertApiTest039
+  * @tc.name: DocumentDBInsertTest039
   * @tc.desc: Insert a filter which _id value's lens is larger than MAX_ID_LENS
   * @tc.type: FUNC
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest039, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest039, TestSize.Level1)
 {
     /**
      * @tc.steps:step1.Insert a filter which _id value's lens is larger than MAX_ID_LENS.
@@ -746,7 +748,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest039, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest040, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest040, TestSize.Level1)
 {
     const char *filter = "{\"_id\" : \"1\"}";
     const char *updata2 = "{\"objectInfo.child.child\" : {\"child\":{\"child\":null}}}";
@@ -760,7 +762,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest040, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest041, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest041, TestSize.Level1)
 {
     const char *filter = "{\"_id\" : \"1\"}";
     const char *updata1 = "{\"_id\" : \"6\"}";
@@ -774,7 +776,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest041, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest042, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest042, TestSize.Level1)
 {
     const char *filter = "{\"_id\" : \"1\"}";
     const char *updata1 = "{\"age$\" : \"21\"}";
@@ -794,7 +796,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest042, TestSize.Level1)
   * @tc.require:
   * @tc.author: mazhao
   */
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest043, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest043, TestSize.Level1)
 {
     const char *filter = "{\"_id\" : \"1\"}";
     const char *updata1 = "{\"age\" : 21}";
@@ -805,7 +807,7 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest043, TestSize.Level1)
     EXPECT_EQ(GRD_UpdateDoc(g_db, RIGHT_COLLECTION_NAME, filter, NULL, 0), GRD_INVALID_ARGS);
 }
 
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest044, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest044, TestSize.Level1)
 {
     const char *document1 = R""({"_id":"0123", "num":"num"})"";
     const char *document2 = R""({"_id":"0123", "NUM":"No.45"})"";
@@ -813,9 +815,15 @@ HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest044, TestSize.Level1)
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document2, 0), GRD_DATA_CONFLICT);
 }
 
-HWTEST_F(DocumentInsertApiTest, DocumentInsertApiTest045, TestSize.Level1)
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest045, TestSize.Level1)
 {
     const char *document1 = R""({"_id":"0123", "num.":"num"})"";
+    EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_INVALID_ARGS);
+}
+
+HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest046, TestSize.Level1)
+{
+    const char *document1 = R""({})"";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_INVALID_ARGS);
 }
 } // namespace

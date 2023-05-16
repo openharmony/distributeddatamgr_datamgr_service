@@ -15,13 +15,14 @@
 
 #include "sqlite_store_executor_impl.h"
 
+#include "check_common.h"
+#include "db_constant.h"
 #include "doc_errno.h"
-#include "document_check.h"
 #include "log_print.h"
 #include "sqlite_utils.h"
 
 namespace DocumentDB {
-int SqliteStoreExecutor::CreateDatabase(const std::string &path, const DBConfig &config, sqlite3 *&db)
+int SqliteStoreExecutorImpl::CreateDatabase(const std::string &path, const DBConfig &config, sqlite3 *&db)
 {
     if (db != nullptr) {
         return -E_INVALID_ARGS;
@@ -60,15 +61,15 @@ END:
     return errCode;
 }
 
-SqliteStoreExecutor::SqliteStoreExecutor(sqlite3 *handle) : dbHandle_(handle) {}
+SqliteStoreExecutorImpl::SqliteStoreExecutorImpl(sqlite3 *handle) : dbHandle_(handle) {}
 
-SqliteStoreExecutor::~SqliteStoreExecutor()
+SqliteStoreExecutorImpl::~SqliteStoreExecutorImpl()
 {
     sqlite3_close_v2(dbHandle_);
     dbHandle_ = nullptr;
 }
 
-int SqliteStoreExecutor::GetDBConfig(std::string &config)
+int SqliteStoreExecutorImpl::GetDBConfig(std::string &config)
 {
     std::string dbConfigKeyStr = "DB_CONFIG";
     Key dbConfigKey = { dbConfigKeyStr.begin(), dbConfigKeyStr.end() };
@@ -78,7 +79,7 @@ int SqliteStoreExecutor::GetDBConfig(std::string &config)
     return errCode;
 }
 
-int SqliteStoreExecutor::SetDBConfig(const std::string &config)
+int SqliteStoreExecutorImpl::SetDBConfig(const std::string &config)
 {
     std::string dbConfigKeyStr = "DB_CONFIG";
     Key dbConfigKey = { dbConfigKeyStr.begin(), dbConfigKeyStr.end() };
@@ -86,22 +87,22 @@ int SqliteStoreExecutor::SetDBConfig(const std::string &config)
     return PutData("grd_meta", dbConfigKey, dbConfigVal);
 }
 
-int SqliteStoreExecutor::StartTransaction()
+int SqliteStoreExecutorImpl::StartTransaction()
 {
     return SQLiteUtils::BeginTransaction(dbHandle_, TransactType::IMMEDIATE);
 }
 
-int SqliteStoreExecutor::Commit()
+int SqliteStoreExecutorImpl::Commit()
 {
     return SQLiteUtils::CommitTransaction(dbHandle_);
 }
 
-int SqliteStoreExecutor:: Rollback()
+int SqliteStoreExecutorImpl::Rollback()
 {
     return SQLiteUtils::RollbackTransaction(dbHandle_);
 }
 
-int SqliteStoreExecutor::PutData(const std::string &collName, const Key &key, const Value &value)
+int SqliteStoreExecutorImpl::PutData(const std::string &collName, const Key &key, const Value &value)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
@@ -126,7 +127,7 @@ int SqliteStoreExecutor::PutData(const std::string &collName, const Key &key, co
     return E_OK;
 }
 
-int SqliteStoreExecutor::InsertData(const std::string &collName, const Key &key, const Value &value)
+int SqliteStoreExecutorImpl::InsertData(const std::string &collName, const Key &key, const Value &value)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
@@ -151,7 +152,7 @@ int SqliteStoreExecutor::InsertData(const std::string &collName, const Key &key,
     return E_OK;
 }
 
-int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Value &value) const
+int SqliteStoreExecutorImpl::GetData(const std::string &collName, const Key &key, Value &value) const
 {
     if (dbHandle_ == nullptr) {
         GLOGE("Invalid db handle.");
@@ -177,7 +178,7 @@ int SqliteStoreExecutor::GetData(const std::string &collName, const Key &key, Va
     return innerErrorCode;
 }
 
-int SqliteStoreExecutor::GetFieldedData(const std::string &collName, const JsonObject &filterObj,
+int SqliteStoreExecutorImpl::GetFieldedData(const std::string &collName, const JsonObject &filterObj,
     std::vector<std::pair<std::string, std::string>> &values) const
 {
     if (dbHandle_ == nullptr) {
@@ -222,7 +223,7 @@ int SqliteStoreExecutor::GetFieldedData(const std::string &collName, const JsonO
     return innerErrorCode;
 }
 
-int SqliteStoreExecutor::DelData(const std::string &collName, const Key &key)
+int SqliteStoreExecutorImpl::DelData(const std::string &collName, const Key &key)
 {
     if (dbHandle_ == nullptr) {
         GLOGE("Invalid db handle.");
@@ -251,12 +252,12 @@ int SqliteStoreExecutor::DelData(const std::string &collName, const Key &key)
     return errCode;
 }
 
-int SqliteStoreExecutor::CreateCollection(const std::string &name, const std::string &option, bool ignoreExists)
+int SqliteStoreExecutorImpl::CreateCollection(const std::string &name, const std::string &option, bool ignoreExists)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
     }
-    std::string collName = COLL_PREFIX + name;
+    std::string collName = DBConstant::COLL_PREFIX + name;
     int errCode = E_OK;
     bool isExists = IsCollectionExists(collName, errCode);
     if (errCode != E_OK) {
@@ -282,13 +283,13 @@ int SqliteStoreExecutor::CreateCollection(const std::string &name, const std::st
     return errCode;
 }
 
-int SqliteStoreExecutor::DropCollection(const std::string &name, bool ignoreNonExists)
+int SqliteStoreExecutorImpl::DropCollection(const std::string &name, bool ignoreNonExists)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
     }
 
-    std::string collName = COLL_PREFIX + name;
+    std::string collName = DBConstant::COLL_PREFIX + name;
     if (!ignoreNonExists) {
         int errCode = E_OK;
         bool isExists = IsCollectionExists(collName, errCode);
@@ -309,11 +310,10 @@ int SqliteStoreExecutor::DropCollection(const std::string &name, bool ignoreNonE
     return errCode;
 }
 
-bool SqliteStoreExecutor::IsCollectionExists(const std::string &name, int &errCode)
+bool SqliteStoreExecutorImpl::IsCollectionExists(const std::string &name, int &errCode)
 {
     bool isExists = false;
     std::string sql = "SELECT tbl_name FROM sqlite_master WHERE tbl_name=?;";
-
     errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
         [name](sqlite3_stmt *stmt) {
@@ -330,7 +330,7 @@ bool SqliteStoreExecutor::IsCollectionExists(const std::string &name, int &errCo
     return isExists;
 }
 
-int SqliteStoreExecutor::GetCollectionOption(const std::string &name, std::string &option)
+int SqliteStoreExecutorImpl::GetCollectionOption(const std::string &name, std::string &option)
 {
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
     Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
@@ -340,7 +340,7 @@ int SqliteStoreExecutor::GetCollectionOption(const std::string &name, std::strin
     return errCode;
 }
 
-int SqliteStoreExecutor::SetCollectionOption(const std::string &name, const std::string &option)
+int SqliteStoreExecutorImpl::SetCollectionOption(const std::string &name, const std::string &option)
 {
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
     Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
@@ -348,7 +348,7 @@ int SqliteStoreExecutor::SetCollectionOption(const std::string &name, const std:
     return PutData("grd_meta", collOptKey, collOptVal);
 }
 
-int SqliteStoreExecutor::CleanCollectionOption(const std::string &name)
+int SqliteStoreExecutorImpl::CleanCollectionOption(const std::string &name)
 {
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
     Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };

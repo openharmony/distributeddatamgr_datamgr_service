@@ -58,7 +58,6 @@ void Bootstrap::LoadComponents()
         if (comp.lib.empty()) {
             continue;
         }
-
         // no need to close the component, so we don't keep the handles
         auto handle = dlopen(comp.lib.c_str(), RTLD_LAZY);
         if (handle == nullptr) {
@@ -95,7 +94,7 @@ void Bootstrap::LoadCheckers()
     }
 }
 
-void Bootstrap::LoadBackup()
+void Bootstrap::LoadBackup(std::shared_ptr<ExecutorPool> executors)
 {
     auto *backupRules = ConfigFactory::GetInstance().GetBackupConfig();
     if (backupRules == nullptr) {
@@ -107,7 +106,7 @@ void Bootstrap::LoadBackup()
         backupRules->schedularInternal, backupRules->backupInternal, backupRules->backupNumber};
     BackupManager::GetInstance().SetBackupParam(backupParam);
     BackupManager::GetInstance().Init();
-    BackupManager::GetInstance().BackSchedule();
+    BackupManager::GetInstance().BackSchedule(std::move(executors));
 }
 
 void Bootstrap::LoadNetworks()

@@ -57,9 +57,16 @@ public:
 
     int Close(uint32_t flags);
 
+    int StartTransaction();
+    int Commit();
+    int Rollback();
+
+    bool IsCollectionExists(const std::string &collectionName, int &errCode);
+
+    std::mutex dbMutex_;
+
 private:
     int GetViewType(JsonObject &jsonObj, bool &viewType);
-    std::mutex dbMutex_;
     KvStoreExecutor *executor_ = nullptr;
     std::map<std::string, Collection *> collections_;
     std::function<void(void)> closeNotifier_;

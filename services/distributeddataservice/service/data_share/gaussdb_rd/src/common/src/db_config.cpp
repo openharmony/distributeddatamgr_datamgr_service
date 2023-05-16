@@ -87,10 +87,11 @@ bool CheckRedoFlushConfig(const JsonObject &config, uint32_t &redoFlush)
     return CheckAndGetDBConfig(config, DB_CONFIG_REDO_FLUSH_BY_TRX, checkFunction, redoFlush);
 }
 
-bool CheckRedoBufSizeConfig(const JsonObject &config, uint32_t &redoBufSize)
+bool CheckRedoBufSizeConfig(const JsonObject &config, int32_t pageSize, uint32_t &redoBufSize)
 {
-    std::function<bool(uint32_t)> checkFunction = [](uint32_t val) {
-        return val >= MIN_REDO_BUFFER_SIZE && val <= MAX_REDO_BUFFER_SIZE;
+    std::function<bool(uint32_t)> checkFunction = [pageSize](uint32_t val) {
+        return val >= MIN_REDO_BUFFER_SIZE && val <= MAX_REDO_BUFFER_SIZE &&
+            val > static_cast<uint32_t>(pageSize * 63); // 63: pool size should be 63 times larger then pageSize
     };
     return CheckAndGetDBConfig(config, DB_CONFIG_REDO_PUB_BUFF_SIZE, checkFunction, redoBufSize);
 }
@@ -105,9 +106,9 @@ bool CheckMaxConnNumConfig(const JsonObject &config, int32_t &maxConnNum)
 
 bool CheckBufferPoolSizeConfig(const JsonObject &config, int32_t pageSize, uint32_t &redoBufSize)
 {
-    std::function<bool(uint32_t)> checkFunction = [&pageSize](uint32_t val) {
+    std::function<bool(uint32_t)> checkFunction = [pageSize](uint32_t val) {
         return val >= MIN_BUFFER_POOL_SIZE && val <= MAX_BUFFER_POOL_SIZE &&
-            val >= static_cast<uint32_t>(pageSize * 64);
+            val >= static_cast<uint32_t>(pageSize * 64); // 64: pool size should be 64 times larger then pageSize
     };
     return CheckAndGetDBConfig(config, DB_CONFIG_BUFFER_POOL_SIZE, checkFunction, redoBufSize);
 }
@@ -117,7 +118,7 @@ bool CheckCrcCheckEnableConfig(const JsonObject &config, uint32_t &crcCheckEnabl
     std::function<bool(uint32_t)> checkFunction = [](uint32_t val) {
         return val == 0 || val == 1;
     };
-    return CheckAndGetDBConfig(config, DB_CONFIG_BUFFER_POOL_SIZE, checkFunction, crcCheckEnable);
+    return CheckAndGetDBConfig(config, DB_CONFIG_CRC_CHECK_ENABLE, checkFunction, crcCheckEnable);
 }
 
 int CheckConfigValid(const JsonObject &config)
@@ -144,24 +145,9 @@ int CheckConfigValid(const JsonObject &config)
 }
 } // namespace
 
-DBConfig DBConfig::ReadConfig(const std::string &confStr, int &errCode)
+DBConfig DBConfig::GetDBConfigFromJsonStr(const std::string &confStr, int &errCode)
 {
-    if (confStr.empty()) {
-        return {};
-    }
-
-    if (confStr.length() + 1 > MAX_DB_CONFIG_LEN) {
-        GLOGE("Config json string is too long.");
-        errCode = -E_OVER_LIMIT;
-        return {};
-    }
-
-    std::string lowerCaseConfStr = confStr;
-    std::transform(lowerCaseConfStr.begin(), lowerCaseConfStr.end(), lowerCaseConfStr.begin(), [](unsigned char c) {
-        return std::tolower(c);
-    });
-
-    JsonObject dbConfig = JsonObject::Parse(lowerCaseConfStr, errCode);
+    JsonObject dbConfig = JsonObject::Parse(confStr, errCode);
     if (errCode != E_OK) {
         GLOGE("Read DB config failed from str. %d", errCode);
         return {};
@@ -186,7 +172,7 @@ DBConfig DBConfig::ReadConfig(const std::string &confStr, int &errCode)
         return {};
     }
 
-    if (!CheckRedoBufSizeConfig(dbConfig, conf.redoPubBufSize_)) {
+    if (!CheckRedoBufSizeConfig(dbConfig, conf.pageSize_, conf.redoPubBufSize_)) {
         GLOGE("Check DB config 'redoPubBufSize' failed.");
         errCode = -E_INVALID_CONFIG_VALUE;
         return {};
@@ -213,6 +199,26 @@ DBConfig DBConfig::ReadConfig(const std::string &confStr, int &errCode)
     conf.configStr_ = confStr;
     errCode = E_OK;
     return conf;
+}
+
+DBConfig DBConfig::ReadConfig(const std::string &confStr, int &errCode)
+{
+    if (confStr.empty()) {
+        return {};
+    }
+
+    if (confStr.length() + 1 > MAX_DB_CONFIG_LEN) {
+        GLOGE("Config json string is too long.");
+        errCode = -E_OVER_LIMIT;
+        return {};
+    }
+
+    std::string lowerCaseConfStr = confStr;
+    std::transform(lowerCaseConfStr.begin(), lowerCaseConfStr.end(), lowerCaseConfStr.begin(), [](unsigned char c) {
+        return std::tolower(c);
+    });
+
+    return GetDBConfigFromJsonStr(lowerCaseConfStr, errCode);
 }
 
 std::string DBConfig::ToString() const

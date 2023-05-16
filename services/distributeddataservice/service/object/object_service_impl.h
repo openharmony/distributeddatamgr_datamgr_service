@@ -42,6 +42,7 @@ public:
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t OnInitialize() override;
+    int32_t OnExecutor(std::shared_ptr<ExecutorPool> executors) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId) override;
 
@@ -52,6 +53,7 @@ private:
         ~Factory();
     };
     static Factory factory_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedObject
 #endif

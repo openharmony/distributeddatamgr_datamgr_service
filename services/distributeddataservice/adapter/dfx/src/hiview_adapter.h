@@ -18,12 +18,11 @@
 
 #include <map>
 #include <mutex>
-#include "dfx_types.h"
+
 #include "dfx_code_constant.h"
+#include "dfx_types.h"
+#include "executor_pool.h"
 #include "hisysevent.h"
-#include "task_scheduler.h"
-#include "kv_store_thread_pool.h"
-#include "kv_store_task.h"
 #include "value_hash.h"
 
 namespace OHOS {
@@ -38,15 +37,16 @@ struct StatisticWrap {
 class HiViewAdapter {
 public:
     ~HiViewAdapter();
-    static void ReportFault(int dfxCode, const FaultMsg &msg);
-    static void ReportDBFault(int dfxCode, const DBFaultMsg &msg);
-    static void ReportCommFault(int dfxCode, const CommFaultMsg &msg);
-    static void ReportVisitStatistic(int dfxCode, const VisitStat &stat);
-    static void ReportTrafficStatistic(int dfxCode, const TrafficStat &stat);
-    static void ReportDatabaseStatistic(int dfxCode, const DbStat &stat);
-    static void ReportApiPerformanceStatistic(int dfxCode, const ApiPerformanceStat &stat);
-    static void ReportBehaviour(int dfxCode, const BehaviourMsg &msg);
-    static void StartTimerThread();
+    static void ReportFault(int dfxCode, const FaultMsg &msg, std::shared_ptr<ExecutorPool> executors);
+    static void ReportDBFault(int dfxCode, const DBFaultMsg &msg, std::shared_ptr<ExecutorPool> executors);
+    static void ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::shared_ptr<ExecutorPool> executors);
+    static void ReportVisitStatistic(int dfxCode, const VisitStat &stat, std::shared_ptr<ExecutorPool> executors);
+    static void ReportTrafficStatistic(int dfxCode, const TrafficStat &stat, std::shared_ptr<ExecutorPool> executors);
+    static void ReportDatabaseStatistic(int dfxCode, const DbStat &stat, std::shared_ptr<ExecutorPool> executors);
+    static void ReportApiPerformanceStatistic(int dfxCode, const ApiPerformanceStat &stat,
+        std::shared_ptr<ExecutorPool> executors);
+    static void ReportBehaviour(int dfxCode, const BehaviourMsg &msg, std::shared_ptr<ExecutorPool> executors);
+    static void StartTimerThread(std::shared_ptr<ExecutorPool> executors);
 
 private:
     static std::mutex visitMutex_;
@@ -70,7 +70,6 @@ private:
 private:
     static std::mutex runMutex_;
     static bool running_;
-    static TaskScheduler scheduler_;
     static const inline int DAILY_REPORT_TIME = 23;
     static const inline int WAIT_TIME = 1 * 60 * 60; // 1 hours
 };

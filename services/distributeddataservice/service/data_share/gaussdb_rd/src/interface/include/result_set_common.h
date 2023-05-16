@@ -30,4 +30,4 @@ int InitResultSet(DocumentStore *store, const std::string collectionName, const 
 int InitResultSet(DocumentStore *store, const std::string collectionName, const std::string &filter,
     ResultSet &resultSet);
 } // namespace DocumentDB
-#endif //RESULTSET_COMMON_H
+#endif // RESULTSET_COMMON_H

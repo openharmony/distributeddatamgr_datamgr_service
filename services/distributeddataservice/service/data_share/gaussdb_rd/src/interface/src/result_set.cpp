@@ -13,8 +13,10 @@
 * limitations under the License.
 */
 #include "result_set.h"
-#include "securec.h"
+
+#include "db_constant.h"
 #include "log_print.h"
+#include "securec.h"
 
 namespace DocumentDB {
 constexpr const char *KEY_ID = "_id";
@@ -54,11 +56,24 @@ int ResultSet::Init(DocumentStore *store, const std::string collectionName, cons
     return E_OK;
 }
 
-int ResultSet::GetNext()
+int ResultSet::GetNextInner(bool isNeedCheckTable)
 {
+    int errCode = E_OK;
+    if (isNeedCheckTable) {
+        std::string lowerCaseName = collectionName_;
+        std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
+        bool isCollectionExist = store_->IsCollectionExists(DBConstant::COLL_PREFIX + lowerCaseName, errCode);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        if (!isCollectionExist) {
+            return -E_INVALID_ARGS;
+        }
+    }
     if (!ifField_ && index_ == 0) {
         if (isOnlyId_) {
-            int errCode = 0;
             JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
             if (errCode != E_OK) {
                 GLOGE("filter Parsed failed");
@@ -68,7 +83,6 @@ int ResultSet::GetNext()
             ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
             std::string idKey = idValue.GetStringValue();
             if (idKey.empty()) {
-                GLOGE("id is empty");
                 return -E_NO_DATA;
             }
             Key key(idKey.begin(), idKey.end());
@@ -76,7 +90,6 @@ int ResultSet::GetNext()
             Collection coll = store_->GetCollection(collectionName_);
             errCode = coll.GetDocument(key, document);
             if (errCode == -E_NOT_FOUND) {
-                GLOGE("Cant get value from db");
                 return -E_NO_DATA;
             }
             std::string jsonData(document.begin(), document.end());
@@ -85,7 +98,6 @@ int ResultSet::GetNext()
             values.emplace_back(std::pair(idKey, jsonData));
             matchDatas_ = values;
         } else {
-            int errCode = 0;
             Collection coll = store_->GetCollection(collectionName_);
             std::vector<std::pair<std::string, std::string>> values;
             JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
@@ -95,7 +107,6 @@ int ResultSet::GetNext()
             }
             errCode = coll.GetMatchedDocument(filterObj, values);
             if (errCode == -E_NOT_FOUND) {
-                GLOGE("Cant get value from db");
                 return -E_NO_DATA;
             }
             for (size_t i = 0; i < values.size(); i++) {
@@ -104,7 +115,6 @@ int ResultSet::GetNext()
             matchDatas_ = values;
         }
     } else if (index_ == 0) {
-        int errCode = 0;
         Collection coll = store_->GetCollection(collectionName_);
         std::vector<std::pair<std::string, std::string>> values;
         JsonObject filterObj = JsonObject::Parse(filter_, errCode, true, true);
@@ -114,21 +124,40 @@ int ResultSet::GetNext()
         }
         errCode = coll.GetMatchedDocument(filterObj, values);
         if (errCode == -E_NOT_FOUND) {
-            GLOGE("Cant get value from db");
             return -E_NO_DATA;
         }
         matchDatas_ = values;
     }
     index_++;
     if (index_ > matchDatas_.size()) {
-        GLOGE("No data in The value vector");
         return -E_NO_DATA;
     }
     return E_OK;
 }
 
+int ResultSet::GetNext(bool isNeedTransaction, bool isNeedCheckTable)
+{
+    int errCode = E_OK;
+    if (!isNeedTransaction) {
+        return GetNextInner(isNeedCheckTable);
+    }
+    std::lock_guard<std::mutex> lock(store_->dbMutex_);
+    errCode = store_->StartTransaction();
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    errCode = GetNextInner(isNeedCheckTable);
+    if (errCode == E_OK || errCode == -E_NO_DATA) {
+        store_->Commit();
+    } else {
+        store_->Rollback();
+    }
+    return errCode;
+}
+
 int ResultSet::GetValue(char **value)
 {
+    std::lock_guard<std::mutex> lock(store_->dbMutex_);
     if (index_ == 0 || (index_ > matchDatas_.size())) {
         GLOGE("The value vector in resultSet is empty");
         return -E_NO_DATA;

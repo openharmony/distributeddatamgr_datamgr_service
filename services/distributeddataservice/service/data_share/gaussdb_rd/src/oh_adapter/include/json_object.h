@@ -17,10 +17,10 @@
 #define JSON_OBJECT_H
 
 #include <memory>
+#include <set>
 #include <string>
 #include <typeinfo>
 #include <vector>
-#include <set>
 
 #include "cJSON.h"
 
@@ -60,9 +60,9 @@ using JsonFieldPath = std::vector<std::string>;
 
 class JsonObject {
 public:
-    static JsonObject Parse(const std::string &jsonStr, int &errCode,
-        bool caseSensitive = false, bool isFilter = false);
-    bool operator==(const JsonObject& other) const; // If the two nodes exist with a different fieldName, then return 0.
+    static JsonObject Parse(const std::string &jsonStr, int &errCode, bool caseSensitive = false,
+        bool isFilter = false);
+    bool operator==(const JsonObject &other) const; // If the two nodes exist with a different fieldName, then return 0.
     ~JsonObject();
 
     std::string Print() const;

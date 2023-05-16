@@ -21,7 +21,7 @@
 #include "log_print.h"
 using namespace DocumentDB;
 
-int32_t GRD_CreateCollection(GRD_DB *db, const char *collectionName, const char *optionStr, uint32_t flags)
+GRD_API int32_t GRD_CreateCollection(GRD_DB *db, const char *collectionName, const char *optionStr, uint32_t flags)
 {
     if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;
@@ -33,7 +33,7 @@ int32_t GRD_CreateCollection(GRD_DB *db, const char *collectionName, const char 
     return TransferDocErr(ret);
 }
 
-int32_t GRD_DropCollection(GRD_DB *db, const char *collectionName, uint32_t flags)
+GRD_API int32_t GRD_DropCollection(GRD_DB *db, const char *collectionName, uint32_t flags)
 {
     if (db == nullptr || db->store_ == nullptr) {
         return GRD_INVALID_ARGS;
@@ -44,36 +44,34 @@ int32_t GRD_DropCollection(GRD_DB *db, const char *collectionName, uint32_t flag
     return TransferDocErr(ret);
 }
 
-int32_t GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update, uint32_t flags)
+GRD_API int32_t GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update,
+    uint32_t flags)
 {
     if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || filter == nullptr || update == nullptr) {
         return GRD_INVALID_ARGS;
     }
     int ret = db->store_->UpdateDocument(collectionName, filter, update, flags);
-    if (ret == 1) {
-        return 1; // The amount of text updated
-    } else if (ret == 0) {
-        return 0;
+    if (ret >= 0) {
+        return ret;
     }
     return TransferDocErr(ret);
 }
 
-int32_t GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, uint32_t flags)
+GRD_API int32_t GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document,
+    uint32_t flags)
 {
     if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || filter == nullptr ||
         document == nullptr) {
         return GRD_INVALID_ARGS;
     }
     int ret = db->store_->UpsertDocument(collectionName, filter, document, flags);
-    if (ret == 1) {
-        return 1; // The amount of text updated
-    } else if (ret == 0) {
-        return 0;
+    if (ret >= 0) {
+        return ret;
     }
     return TransferDocErr(ret);
 }
 
-int32_t GRD_InsertDoc(GRD_DB *db, const char *collectionName, const char *document, uint32_t flags)
+GRD_API int32_t GRD_InsertDoc(GRD_DB *db, const char *collectionName, const char *document, uint32_t flags)
 {
     if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || document == nullptr) {
         return GRD_INVALID_ARGS;
@@ -82,7 +80,7 @@ int32_t GRD_InsertDoc(GRD_DB *db, const char *collectionName, const char *docume
     return TransferDocErr(ret);
 }
 
-int32_t GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, uint32_t flags)
+GRD_API int32_t GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter, uint32_t flags)
 {
     if (db == nullptr || db->store_ == nullptr || filter == nullptr || collectionName == nullptr) {
         return GRD_INVALID_ARGS;
@@ -99,14 +97,12 @@ int32_t GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char *filter
     }
 }
 
-int32_t GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, uint32_t flags, GRD_ResultSet **resultSet)
+GRD_API int32_t GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, uint32_t flags,
+    GRD_ResultSet **resultSet)
 {
     if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || resultSet == nullptr ||
         query.filter == nullptr || query.projection == nullptr) {
         return GRD_INVALID_ARGS;
-    }
-    if (db->store_->IsCollectionOpening(collectionName)) {
-        return GRD_RESOURCE_BUSY;
     }
     GRD_ResultSet *grdResultSet = new (std::nothrow) GRD_ResultSet();
     if (grdResultSet == nullptr) {
@@ -116,7 +112,6 @@ int32_t GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, uint32_
     int ret = db->store_->FindDocument(collectionName, query.filter, query.projection, flags, grdResultSet);
     if (ret != E_OK) {
         delete grdResultSet;
-        *resultSet = nullptr;
         return TransferDocErr(ret);
     }
     *resultSet = grdResultSet;

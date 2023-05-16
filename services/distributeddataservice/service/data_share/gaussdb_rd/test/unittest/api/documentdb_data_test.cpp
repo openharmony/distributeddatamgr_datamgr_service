@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include "cJSON.h"
 #include "doc_errno.h"
 #include "documentdb_test_utils.h"
 #include "grd_base/grd_db_api.h"
@@ -22,7 +23,6 @@
 #include "grd_document/grd_document_api.h"
 #include "log_print.h"
 #include "sqlite_utils.h"
-#include "cJSON.h"
 
 using namespace DocumentDB;
 using namespace testing::ext;
@@ -134,7 +134,7 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest006, TestSize.Level0)
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
 
-    for (auto flags : std::vector<unsigned int>{ 2, 4, 8, 64, 1024, UINT32_MAX }) {
+    for (auto flags : std::vector<unsigned int> { 2, 4, 8, 64, 1024, UINT32_MAX }) {
         EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), flags), GRD_INVALID_ARGS);
     }
 }
@@ -150,7 +150,8 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest007, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string val = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    EXPECT_EQ(GRD_UpsertDoc(g_db, "collection_not_exists", filter.c_str(), val.c_str(), GRD_DOC_REPLACE), GRD_INVALID_ARGS);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, "collection_not_exists", filter.c_str(), val.c_str(), GRD_DOC_REPLACE),
+        GRD_INVALID_ARGS);
 }
 
 /**
@@ -185,7 +186,8 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest010, TestSize.Level0)
 
 HWTEST_F(DocumentDBDataTest, UpsertDataTest011, TestSize.Level0)
 {
-    int result = GRD_UpsertDoc(g_db, g_coll, R"({"_id" : "abcde"})", R"({"t1":{"t22":[1,{"t23":1, "t23":1},3 ,4]}})", 0);
+    int result =
+        GRD_UpsertDoc(g_db, g_coll, R"({"_id" : "abcde"})", R"({"t1":{"t22":[1,{"t23":1, "t23":1},3 ,4]}})", 0);
     ASSERT_EQ(result, GRD_INVALID_FORMAT);
 }
 
@@ -290,7 +292,8 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest007, TestSize.Level0)
 
 HWTEST_F(DocumentDBDataTest, UpdateDataTest008, TestSize.Level0)
 {
-    const char *updateStr = R""({"field2":{"c_field":{"cc_field":{"ccc_field":{"ccc_field":[1,false,1.234e2,["hello world!"]]}}}}})"";
+    const char *updateStr =
+        R""({"field2":{"c_field":{"cc_field":{"ccc_field":{"ccc_field":[1,false,1.234e2,["hello world!"]]}}}}})"";
     int result = GRD_UpdateDoc(g_db, g_coll, "{\"field\" : 2}", updateStr, 0);
     int result2 = GRD_UpsertDoc(g_db, g_coll, "{\"field\" : 2}", updateStr, 0);
     EXPECT_EQ(result, GRD_INVALID_ARGS);
@@ -312,7 +315,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest009, TestSize.Level0)
     Query query = { filter.c_str(), projection };
     EXPECT_EQ(GRD_FindDoc(g_db, g_coll, query, 1, &resultSet), GRD_OK);
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    char *value = NULL;
+    char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     string valueStr = value;
     string repectStr = R""({"_id":"1234","field1":1,"field2":2,"FIELD1":[1,true,1.23456789,"hello world!",null]})"";
@@ -329,11 +332,11 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest010, TestSize.Level0)
     EXPECT_EQ(GRD_UpdateDoc(g_db, "gRd_aa", filter.c_str(), updata.c_str(), 0), GRD_INVALID_FORMAT);
 }
 
-HWTEST_F(DocumentDBDataTest, UpdateDataTest011, TestSize.Level0)
+HWTEST_F(DocumentDBDataTest, UpdateDataTest011, TestSize.Level3)
 {
     int result = GRD_OK;
-    const char *doc  = R"({"_id":"007", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2":2})";
-    result = GRD_InsertDoc(g_db,g_coll, doc, 0);
+    const char *doc = R"({"_id":"007", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2":2})";
+    result = GRD_InsertDoc(g_db, g_coll, doc, 0);
     cJSON *updata = cJSON_CreateObject();
     for (int i = 0; i <= 40000; i++) {
         string temp = "f" + string(5 - std::to_string(i).size(), '0') + std::to_string(i);

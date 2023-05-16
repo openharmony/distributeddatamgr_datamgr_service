@@ -25,6 +25,10 @@ class BehaviourReporterImpl : public BehaviourReporter {
 public:
     virtual ~BehaviourReporterImpl() {}
     ReportStatus Report(const struct BehaviourMsg &msg) override;
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+
+private:
+    std::shared_ptr<ExecutorPool> executors_;
 };
 }  // namespace DistributedDataDfx
 }  // namespace OHOS

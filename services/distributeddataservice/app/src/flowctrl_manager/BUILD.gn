@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 ohos_static_library("distributeddata_flowctrl_static") {
   sources = [ "kvstore_flowctrl_manager.cpp" ]
@@ -19,8 +20,8 @@ ohos_static_library("distributeddata_flowctrl_static") {
   include_dirs = [
     "../../../adapter/include/account",
     "../../src",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "//third_party/json/single_include",
     "//commonlibrary/c_utils/base/include",
   ]
@@ -31,4 +32,5 @@ ohos_static_library("distributeddata_flowctrl_static") {
 
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

@@ -29,13 +29,13 @@ int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, 
     }
 
     sqlite3 *db = nullptr;
-    int errCode = SqliteStoreExecutor::CreateDatabase(path, config, db);
+    int errCode = SqliteStoreExecutorImpl::CreateDatabase(path, config, db);
     if (errCode != E_OK) {
         GLOGE("Get kv store failed. %d", errCode);
         return errCode;
     }
 
-    auto *sqliteExecutor = new (std::nothrow) SqliteStoreExecutor(db);
+    auto *sqliteExecutor = new (std::nothrow) SqliteStoreExecutorImpl(db);
     if (sqliteExecutor == nullptr) {
         sqlite3_close_v2(db);
         return -E_OUT_OF_MEMORY;

@@ -42,11 +42,9 @@ void CheckerManager::LoadCheckers(std::vector<std::string> &checkers)
 
 void CheckerManager::RegisterPlugin(const std::string &checker, std::function<Checker *()> getter)
 {
-    auto it = getters_.Find(checker);
-    if (it.first) {
-        return;
-    }
-    getters_[checker] = getter;
+    getters_.ComputeIfAbsent(checker, [&getter](const auto &) mutable {
+        return std::move(getter);
+    });
 }
 
 std::string CheckerManager::GetAppId(const StoreInfo &info)
