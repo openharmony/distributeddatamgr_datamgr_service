@@ -33,9 +33,9 @@ int ResultSet::EraseCollection()
     }
     return E_OK;
 }
-int ResultSet::Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool ifField_)
+int ResultSet::Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool ifField)
 {
-    ifField_ = ifField_;
+    ifField_ = ifField;
     context_ = context;
     store_ = store;
     return E_OK;
