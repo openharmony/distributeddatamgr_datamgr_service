@@ -30,8 +30,7 @@ class ResultSet {
 public:
     ResultSet();
     ~ResultSet();
-    int Init(std::shared_ptr<QueryContext> context, DocumentStore *store, bool ifField);
-    int Init(DocumentStore *store, const std::string collectionName, const std::string &filter);
+    int Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool ifField);
     int GetNext(bool isNeedTransaction = false, bool isNeedCheckTable = false);
     int GetValue(char **value);
     int GetKey(std::string &key);

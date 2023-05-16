@@ -176,7 +176,7 @@ int UpdateArgsCheck(const std::string &collection, const std::string &filter, co
     return errCode;
 }
 
-int DocumentStore::UpdateDataIntoDB(std::shared_ptr<QueryContext> context, JsonObject &filterObj,
+int DocumentStore::UpdateDataIntoDB(std::shared_ptr<QueryContext> &context, JsonObject &filterObj,
     const std::string &update, bool &isReplace)
 {
     std::lock_guard<std::mutex> lock(dbMutex_);
@@ -270,7 +270,7 @@ int UpsertArgsCheck(const std::string &collection, const std::string &filter, co
     return errCode;
 }
 
-int DocumentStore::CheckUpsertConflict(bool &isIdExist, std::shared_ptr<QueryContext> context, JsonObject &filterObj,
+int DocumentStore::CheckUpsertConflict(bool &isIdExist, std::shared_ptr<QueryContext> &context, JsonObject &filterObj,
     std::string &docId, Collection &coll)
 {
     ResultSet resultSet;
@@ -290,7 +290,7 @@ int DocumentStore::CheckUpsertConflict(bool &isIdExist, std::shared_ptr<QueryCon
     return errCode;
 }
 
-int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> context, JsonObject &filterObj,
+int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, JsonObject &filterObj,
     JsonObject &documentObj, bool &isReplace)
 {
     std::lock_guard<std::mutex> lock(dbMutex_);
@@ -466,7 +466,7 @@ int DeleteArgsCheck(const std::string &collection, const std::string &filter, ui
     return errCode;
 }
 
-int DocumentStore::DeleteDataFromDB(std::shared_ptr<QueryContext> context, JsonObject &filterObj)
+int DocumentStore::DeleteDataFromDB(std::shared_ptr<QueryContext> &context, JsonObject &filterObj)
 {
     std::lock_guard<std::mutex> lock(dbMutex_);
     if (executor_ == nullptr) {
@@ -615,7 +615,7 @@ int FindArgsCheck(const std::string &collection, const std::string &filter, cons
     return errCode;
 }
 
-int FindProjectionInit(const std::string &projection, std::shared_ptr<QueryContext> context)
+int FindProjectionInit(const std::string &projection, std::shared_ptr<QueryContext> &context)
 {
     int errCode = E_OK;
     std::vector<std::vector<std::string>> allPath;
@@ -645,7 +645,7 @@ int FindProjectionInit(const std::string &projection, std::shared_ptr<QueryConte
     return errCode;
 }
 
-int DocumentStore::InitFindResultSet(GRD_ResultSet *grdResultSet, std::shared_ptr<QueryContext> context)
+int DocumentStore::InitFindResultSet(GRD_ResultSet *grdResultSet, std::shared_ptr<QueryContext> &context)
 {
     std::lock_guard<std::mutex> lock(dbMutex_);
     int errCode = E_OK;
