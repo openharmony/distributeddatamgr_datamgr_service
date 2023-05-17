@@ -500,7 +500,7 @@ bool JsonNodeReplace(const JsonObject &src, const JsonFieldPath &itemPath, const
 }
 
 bool JsonNodeAppend(const JsonObject &src, const JsonFieldPath &path, const JsonObject &father, const JsonObject &item,
-    bool &isAddedFlag, int &externErrCode)
+    int &externErrCode)
 {
     bool isCollapse = false;
     JsonFieldPath itemPath = ExpendPathForField(path, isCollapse);
@@ -510,6 +510,7 @@ bool JsonNodeAppend(const JsonObject &src, const JsonFieldPath &path, const Json
     int errCode = E_OK;
     JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
     std::string lastFieldName = itemPath.back();
+    int isAddedFlag = false;
     if (errCode != E_OK) {
         isAddedFlag = true;
         AddSpliteField(src, item, itemPath, externErrCode);
@@ -544,9 +545,8 @@ bool JsonNodeAppend(const JsonObject &src, const JsonFieldPath &path, const Json
 int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isReplace)
 {
     int externErrCode = E_OK;
-    bool isAddedFlag = false;
     JsonObjectIterator(add, {},
-        [&src, &externErrCode, &isReplace, &isAddedFlag](const JsonFieldPath &path, const JsonObject &father,
+        [&src, &externErrCode, &isReplace](const JsonFieldPath &path, const JsonObject &father,
             const JsonObject &item) {
             bool isCollapse = false;
             JsonFieldPath itemPath = ExpendPathForField(path, isCollapse);
@@ -562,7 +562,6 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                 if (!ret) {
                     return false;
                 }
-                isAddedFlag = true;
                 return false;
             } else {
                 if (isReplace) {
@@ -570,7 +569,7 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
                     externErrCode = -E_NO_DATA;
                     return false;
                 }
-                return JsonNodeAppend(src, path, father, item, isAddedFlag, externErrCode);
+                return JsonNodeAppend(src, path, father, item, externErrCode);
             }
         });
     return externErrCode;
