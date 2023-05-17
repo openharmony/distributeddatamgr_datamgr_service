@@ -286,8 +286,8 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest013, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest014, TestSize.Level0)
 {
-    std::string document = R""({"name":{"first":"Xue","second":"Lang"}})"";
-    std::string updateDoc = R""({"name.0":"GG"})"";
+    std::string document = R""({"name":{"first":"Xue","second":"Lang"}, "info":"AA"})"";
+    std::string updateDoc = R""({"info":"GG", "name.0":"GG"})"";
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
