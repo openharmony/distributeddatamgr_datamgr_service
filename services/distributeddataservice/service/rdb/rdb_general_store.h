@@ -39,8 +39,7 @@ public:
     using RdbManager = DistributedDB::RelationalStoreManager;
 
     explicit RdbGeneralStore(const StoreMetaData &metaData);
-    int32_t Bind(std::shared_ptr<CloudDB> cloudDb) override;
-    int32_t SetSchema(const SchemaMeta &schemaMeta) override;
+    int32_t Bind(const SchemaMeta &schemaMeta, std::shared_ptr<CloudDB> cloudDb) override;
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
     int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;

@@ -397,28 +397,34 @@ void CloudServiceImpl::GetSchema(const Event &event)
     }
     auto storeMeta = GetStoreMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().storeName,
         rdbEvent.GetStoreInfo().instanceId);
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("instance is nullptr");
+        return;
+    }
+    auto database = std::find_if(schemaMeta.databases.begin(),schemaMeta.databases.end(),
+        [&rdbEvent](const auto &database){
+        return database.name == rdbEvent.GetStoreInfo().storeName;
+    });
+    if (database == schemaMeta.databases.end()) {
+        return;
+    }
 
+    ZLOGD("database: %{public}s sync start", database->name.c_str());
+    auto cloudDB = instance->ConnectCloudDB(rdbEvent.GetStoreInfo().tokenId, *database);
+    if (cloudDB == nullptr) {
+        ZLOGE("cloudDB is nullptr");
+        return;
+    }
     AutoCache::Watchers watchers;
     auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers);
     if (store == nullptr) {
         ZLOGE("store is nullptr");
         return;
     }
-    store->SetSchema(schemaMeta);
-    auto instance = CloudServer::GetInstance();
-    if (instance == nullptr) {
-        ZLOGE("instance is nullptr");
-        return;
-    }
-    for (auto &database : schemaMeta.databases) {
-        if (database.name != rdbEvent.GetStoreInfo().storeName /* || don't need sync */) {
-            continue;
-        }
-        ZLOGD("database: %{public}s sync start", database.name.c_str());
-        // ConnectCloudDB and Bind to store
-        for (auto &table : database.tables) {
-            ZLOGD("table: %{public}s sync start", table.name.c_str());
-        }
+    store->Bind(schemaMeta, cloudDB);
+    for (const auto &table : database->tables) {
+        ZLOGD("table: %{public}s sync start", table.name.c_str());
         // do sync
     }
     return;

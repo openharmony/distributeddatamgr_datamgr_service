@@ -138,15 +138,9 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
-int32_t RdbGeneralStore::Bind(std::shared_ptr<CloudDB> cloudDb)
+int32_t RdbGeneralStore::Bind(const SchemaMeta &schemaMeta, std::shared_ptr<CloudDB> cloudDb)
 {
     cloudDb_ = std::move(cloudDb);
     return 0;
-}
-
-int32_t RdbGeneralStore::SetSchema(const SchemaMeta &schemaMeta)
-{
-    // SetSchema
-    return GeneralError::E_OK;
 }
 } // namespace OHOS::DistributedRdb

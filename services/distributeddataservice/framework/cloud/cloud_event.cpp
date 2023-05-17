@@ -26,7 +26,7 @@ std::string CloudEvent::GetFeatureName() const
     return featureName_;
 }
 
-CloudEvent::StoreInfo CloudEvent::GetStoreInfo() const
+const CloudEvent::StoreInfo& CloudEvent::GetStoreInfo() const
 {
     return storeInfo_;
 }

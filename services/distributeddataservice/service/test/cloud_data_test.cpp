@@ -19,6 +19,7 @@
 #include "account/account_delegate.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_server.h"
+#include "cloud/schema_meta.h"
 #include "communicator/device_manager_adapter.h"
 #include "device_matrix.h"
 #include "eventcenter/event_center.h"
