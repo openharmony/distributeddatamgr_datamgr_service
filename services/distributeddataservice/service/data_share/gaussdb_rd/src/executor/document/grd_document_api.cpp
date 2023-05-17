@@ -44,7 +44,8 @@ GRD_API int32_t GRD_DropCollection(GRD_DB *db, const char *collectionName, uint3
     return TransferDocErr(ret);
 }
 
-GRD_API int32_t GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update, uint32_t flags)
+GRD_API int32_t GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *update,
+    uint32_t flags)
 {
     if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || filter == nullptr || update == nullptr) {
         return GRD_INVALID_ARGS;
@@ -56,7 +57,8 @@ GRD_API int32_t GRD_UpdateDoc(GRD_DB *db, const char *collectionName, const char
     return TransferDocErr(ret);
 }
 
-GRD_API int32_t GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document, uint32_t flags)
+GRD_API int32_t GRD_UpsertDoc(GRD_DB *db, const char *collectionName, const char *filter, const char *document,
+    uint32_t flags)
 {
     if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || filter == nullptr ||
         document == nullptr) {
@@ -95,7 +97,8 @@ GRD_API int32_t GRD_DeleteDoc(GRD_DB *db, const char *collectionName, const char
     }
 }
 
-GRD_API int32_t GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, uint32_t flags, GRD_ResultSet **resultSet)
+GRD_API int32_t GRD_FindDoc(GRD_DB *db, const char *collectionName, Query query, uint32_t flags,
+    GRD_ResultSet **resultSet)
 {
     if (db == nullptr || db->store_ == nullptr || collectionName == nullptr || resultSet == nullptr ||
         query.filter == nullptr || query.projection == nullptr) {

@@ -15,7 +15,7 @@
 #include "projection_tree.h"
 
 namespace DocumentDB {
-const int JSON_DEEP_MAX = 4;
+constexpr int JSON_DEEP_MAX = 4;
 
 int ProjectionTree::ParseTree(std::vector<std::vector<std::string>> &path)
 {

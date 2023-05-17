@@ -25,7 +25,7 @@
 #include "result_set_common.h"
 
 namespace DocumentDB {
-const int JSON_LENS_MAX = 1024 * 1024;
+constexpr int JSON_LENS_MAX = 1024 * 1024;
 constexpr const char *KEY_ID = "_id";
 
 DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor) {}

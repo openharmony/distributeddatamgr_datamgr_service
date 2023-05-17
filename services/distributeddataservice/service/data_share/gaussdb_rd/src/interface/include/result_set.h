@@ -41,6 +41,8 @@ private:
     int CutJsonBranch(std::string &jsonData);
     int CheckCutNode(JsonObject *node, std::vector<std::string> singleCutPath,
         std::vector<std::vector<std::string>> &allCutPath);
+    int GetNextWithField();
+
     DocumentStore *store_ = nullptr;
     ValueObject key_;
     bool ifField_ = false;

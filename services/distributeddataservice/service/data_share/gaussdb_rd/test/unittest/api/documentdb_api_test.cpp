@@ -190,7 +190,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
     std::string path = "./document.db";
-    const int MAX_JSON_LEN = 512 * 1024;
+    constexpr int MAX_JSON_LEN = 512 * 1024;
     std::string configStr = std::string(MAX_JSON_LEN, 'a');
     int status = GRD_DBOpen(path.c_str(), configStr.c_str(), GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OVER_LIMIT);

@@ -32,57 +32,40 @@ int TransferDocErr(int err)
         return err;
     }
 
-    int outErr = GRD_OK;
     switch (err) {
         case E_OK:
             return GRD_OK;
         case -E_ERROR:
-            outErr = GRD_INNER_ERR;
-            break;
+            return GetErrorCategory(GRD_INNER_ERR);
         case -E_INVALID_ARGS:
-            outErr = GRD_INVALID_ARGS;
-            break;
+            return GetErrorCategory(GRD_INVALID_ARGS);
         case -E_FILE_OPERATION:
-            outErr = GRD_FAILED_FILE_OPERATION;
-            break;
+            return GetErrorCategory(GRD_FAILED_FILE_OPERATION);
         case -E_OVER_LIMIT:
-            outErr = GRD_OVER_LIMIT;
-            break;
+            return GetErrorCategory(GRD_OVER_LIMIT);
         case -E_INVALID_JSON_FORMAT:
-            outErr = GRD_INVALID_JSON_FORMAT;
-            break;
+            return GetErrorCategory(GRD_INVALID_JSON_FORMAT);
         case -E_INVALID_CONFIG_VALUE:
-            outErr = GRD_INVALID_CONFIG_VALUE;
-            break;
+            return GetErrorCategory(GRD_INVALID_CONFIG_VALUE);
         case -E_DATA_CONFLICT:
-            outErr = GRD_DATA_CONFLICT;
-            break;
+            return GetErrorCategory(GRD_DATA_CONFLICT);
         case -E_COLLECTION_CONFLICT:
-            outErr = GRD_COLLECTION_CONFLICT;
-            break;
+            return GetErrorCategory(GRD_COLLECTION_CONFLICT);
         case -E_NO_DATA:
         case -E_NOT_FOUND:
-            outErr = GRD_NO_DATA;
-            break;
+            return GetErrorCategory(GRD_NO_DATA);
         case -E_INVALID_COLL_NAME_FORMAT:
-            outErr = GRD_INVALID_COLLECTION_NAME;
-            break;
+            return GetErrorCategory(GRD_INVALID_COLLECTION_NAME);
         case -E_RESOURCE_BUSY:
-            outErr = GRD_RESOURCE_BUSY;
-            break;
+            return GetErrorCategory(GRD_RESOURCE_BUSY);
         case -E_FAILED_MEMORY_ALLOCATE:
         case -E_OUT_OF_MEMORY:
-            outErr = GRD_FAILED_MEMORY_ALLOCATE;
-            break;
+            return GetErrorCategory(GRD_FAILED_MEMORY_ALLOCATE);
         case -E_INVALID_FILE_FORMAT:
-            outErr = GRD_INVALID_FILE_FORMAT;
-            break;
+            return GetErrorCategory(GRD_INVALID_FILE_FORMAT);
         case -E_INNER_ERROR:
         default:
-            outErr = GRD_INNER_ERR;
-            break;
+            return GetErrorCategory(GRD_INNER_ERR);
     }
-
-    return GetErrorCategory(outErr);
 }
 } // namespace DocumentDB

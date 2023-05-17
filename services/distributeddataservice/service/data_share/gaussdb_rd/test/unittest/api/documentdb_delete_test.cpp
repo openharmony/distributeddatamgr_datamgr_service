@@ -29,7 +29,7 @@ using namespace DocumentDBUnitTest;
 namespace {
 constexpr const char *COLLECTION_NAME = "student";
 constexpr const char *NULL_JSON_STR = "{}";
-const int MAX_COLLECTION_LENS = 511;
+constexpr int MAX_COLLECTION_LENS = 511;
 std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
 
