@@ -215,17 +215,13 @@ int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageP
 int32_t RdbServiceStub::OnRemoteDoCreateTable(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    std::string writePermission;
-    std::string readPermission;
-    if (!ITypesUtil::Unmarshal(data, param, writePermission, readPermission)) {
-        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s writePermission:%{public}s "
-              "readPermission:%{public}s", param.bundleName_.c_str(), param.storeName_.c_str(),
-            DistributedData::Anonymous::Change(writePermission).c_str(),
-            DistributedData::Anonymous::Change(readPermission).c_str());
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            param.storeName_.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    int32_t status = CreateRDBTable(param, writePermission, readPermission);
+    int32_t status = CreateRDBTable(param);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
