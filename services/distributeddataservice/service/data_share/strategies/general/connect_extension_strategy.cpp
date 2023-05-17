@@ -23,7 +23,7 @@
 namespace OHOS::DataShare {
 bool ConnectExtensionStrategy::operator()(std::shared_ptr<Context> context)
 {
-    for (auto &extension: context->bundleInfo.extensionInfos) {
+    for (auto const &extension: context->bundleInfo.extensionInfos) {
         if (extension.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             return Connect(context);
         }
