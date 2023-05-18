@@ -44,7 +44,6 @@ private:
     int GetNextWithField();
 
     DocumentStore *store_ = nullptr;
-    ValueObject key_;
     bool ifField_ = false;
     size_t index_ = 0;
     std::shared_ptr<QueryContext> context_;

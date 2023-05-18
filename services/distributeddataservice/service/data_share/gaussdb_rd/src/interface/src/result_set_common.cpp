@@ -26,7 +26,7 @@ class ValueObject;
 int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, ResultSet &resultSet, bool ifField)
 {
     if (ifField == false) {
-        if (context->projectionTree.ParseTree(context->path) == -E_INVALID_ARGS) {
+        if (context->projectionTree.ParseTree(context->projectionPath) == -E_INVALID_ARGS) {
             GLOGE("Parse ProjectionTree failed");
             return -E_INVALID_ARGS;
         }

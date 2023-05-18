@@ -640,7 +640,7 @@ int FindProjectionInit(const std::string &projection, std::shared_ptr<QueryConte
             return errCode;
         }
     }
-    context->path = std::move(allPath);
+    context->projectionPath = std::move(allPath);
     context->viewType = viewType;
     return errCode;
 }

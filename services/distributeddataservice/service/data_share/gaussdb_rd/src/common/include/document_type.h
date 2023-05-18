@@ -24,7 +24,7 @@ namespace DocumentDB {
 struct QueryContext {
     std::string collectionName;
     std::string filter;
-    std::vector<std::vector<std::string>> path;
+    std::vector<std::vector<std::string>> projectionPath;
     ProjectionTree projectionTree;
     bool ifShowId = false;
     bool viewType = false;
