@@ -611,7 +611,7 @@ JsonObject JsonObject::FindItem(const JsonFieldPath &jsonPath, int &errCode) con
     return item;
 }
 
-// Compared with the non-powerMode mode, the node found by this function is an Array, and our target is an object,
+// Compared with the non-powerMode mode, the node found by this function is an Array, and target is an object,
 // if the Array contains the same object as the target, it can match this object in this mode.
 JsonObject JsonObject::FindItemPowerMode(const JsonFieldPath &jsonPath, int &errCode) const
 {

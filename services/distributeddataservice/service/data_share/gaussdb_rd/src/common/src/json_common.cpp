@@ -514,7 +514,7 @@ bool JsonNodeAppend(const JsonObject &src, const JsonFieldPath &path, const Json
         return false;
     }
     // This condition is to determine that the path has a point operator,
-    //and the name of the last path cannot be a number or the srcItem to be added is an array, otherwise.
+    // and the name of the last path cannot be a number or the srcItem to be added is an array, otherwise.
     // adding a node with the number fieldName does not legal.
     if (isCollapse && (!IsNumber(lastFieldName) || srcFatherItem.GetType() == JsonObject::Type::JSON_ARRAY)) {
         errCode = srcFatherItem.AddItemToObject(lastFieldName, item);
@@ -628,7 +628,7 @@ bool JsonCommon::IsObjectItemMatch(const JsonObject &srcItem, const JsonObject &
             isMatchFlag = isEqual;
         }
         isAlreadyMatched = isMatchFlag;
-        return false;                                            // Both leaf node, no need iterate
+        return false; // Both leaf node, no need iterate
     } else if (srcItem.GetType() != item.GetType()) {
         if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY) { // srcItem Type is ARRAY, item Type is not ARRAY
             bool isEqual = IsArrayMatch(srcItem, item, isAlreadyMatched);
@@ -640,7 +640,7 @@ bool JsonCommon::IsObjectItemMatch(const JsonObject &srcItem, const JsonObject &
         isMatchFlag = false;
         return false; // Different node types, overwrite directly, skip child node
     }
-    return true;      // Both array or object
+    return true; // Both array or object
 }
 
 bool JsonCommon::JsonEqualJudge(const JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item,
