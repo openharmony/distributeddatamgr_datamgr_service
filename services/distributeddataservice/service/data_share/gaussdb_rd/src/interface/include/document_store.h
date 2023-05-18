@@ -50,7 +50,7 @@ public:
 
     Collection GetCollection(std::string &collectionName);
 
-    bool IsCollectionOpening(const std::string &collection);
+    bool IsExistResultSet(const std::string &collection);
 
     int EraseCollection(const std::string &collectionName);
 

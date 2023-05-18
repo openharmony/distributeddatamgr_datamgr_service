@@ -650,7 +650,7 @@ int DocumentStore::InitFindResultSet(GRD_ResultSet *grdResultSet, std::shared_pt
     std::lock_guard<std::mutex> lock(dbMutex_);
     int errCode = E_OK;
     Collection coll = Collection(context->collectionName, executor_);
-    if (IsCollectionOpening(context->collectionName)) {
+    if (IsExistResultSet(context->collectionName)) {
         return -E_RESOURCE_BUSY;
     }
     if (executor_ == nullptr) {
@@ -717,7 +717,7 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     return InitFindResultSet(grdResultSet, context);
 }
 
-bool DocumentStore::IsCollectionOpening(const std::string &collection)
+bool DocumentStore::IsExistResultSet(const std::string &collection)
 {
     if (collections_.find(collection) != collections_.end()) {
         GLOGE("DB is resource busy");
