@@ -90,6 +90,7 @@ SchemaMeta CloudServerMock::GetAppSchema(int32_t userId, const std::string &bund
 }
 
 std::shared_ptr<DBStoreMock> CloudDataTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
+SchemaMeta CloudDataTest::schemaMeta_;
 
 void CloudDataTest::InitMetaData()
 {
@@ -148,6 +149,7 @@ void CloudDataTest::TearDownTestCase() {}
 void CloudDataTest::SetUp()
 {
     InitMetaData();
+    InitSchemaMeta();
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_);
 
     StoreMetaData storeMetaData;
@@ -162,7 +164,6 @@ void CloudDataTest::SetUp()
     storeMetaData.user =
         std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(storeMetaData.tokenId));
     MetaDataManager::GetInstance().SaveMeta(storeMetaData.GetKey(), storeMetaData);
-    InitSchemaMeta();
 }
 
 void CloudDataTest::TearDown() {}
