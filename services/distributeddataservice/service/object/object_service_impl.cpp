@@ -71,7 +71,7 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     return status;
 }
 
-int32_t ObjectServiceImpl::OnInitialize()
+int32_t ObjectServiceImpl::OnInitialize(const BinderInfo &binderInfo)
 {
     ZLOGI("Initialize");
     auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;

@@ -294,7 +294,7 @@ int RdbSubscriberManager::Notify(
         changeNode.data_.emplace_back(DistributedData::Serializable::Marshall(formatter));
     }
 
-    ZLOGI("emit, size %{public}d %{private}s", val.size(), changeNode.uri_.c_str());
+    ZLOGI("emit, size %{public}ul %{private}s", val.size(), changeNode.uri_.c_str());
     for (auto &callback : val) {
         if (callback.enabled && callback.observer != nullptr) {
             callback.observer->OnChangeFromRdb(changeNode);

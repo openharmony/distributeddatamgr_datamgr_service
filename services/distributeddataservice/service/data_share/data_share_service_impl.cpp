@@ -19,7 +19,6 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "bootstrap.h"
 #include "dataobs_mgr_client.h"
 #include "datashare_errno.h"
 #include "datashare_template.h"
@@ -334,26 +333,22 @@ enum DataShareKvStoreType : int32_t {
     DISTRIBUTED_TYPE_BUTT
 };
 
-int32_t DataShareServiceImpl::OnInitialize()
+int32_t DataShareServiceImpl::OnInitialize(const BinderInfo &binderInfo)
 {
-    auto token = IPCSkeleton::GetCallingTokenID();
-    auto type = OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(token);
-    if (type != OHOS::Security::AccessToken::TOKEN_NATIVE && type != OHOS::Security::AccessToken::TOKEN_SHELL) {
-        return EOK;
-    }
+    binderInfo_ = binderInfo;
     const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(token);
+    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(binderInfo.localTokenId);
     DistributedData::StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.storeId = "data_share_data_";
     saveMeta.isAutoSync = false;
     saveMeta.isBackup = false;
     saveMeta.isEncrypt = false;
-    saveMeta.bundleName =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    saveMeta.bundleName =  binderInfo.bundleName;
+    saveMeta.appId = binderInfo.bundleName;
     saveMeta.user = std::to_string(userId);
     saveMeta.account = accountId;
-    saveMeta.tokenId = token;
+    saveMeta.tokenId = binderInfo.localTokenId;
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = 1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
@@ -377,8 +372,8 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
     saveMeta.isAutoSync = false;
     saveMeta.isBackup = false;
     saveMeta.isEncrypt = false;
-    saveMeta.bundleName =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    saveMeta.bundleName =  binderInfo_.bundleName;
+    saveMeta.appId = binderInfo_.bundleName;
     saveMeta.user = user;
     saveMeta.account = account;
     saveMeta.tokenId = token;

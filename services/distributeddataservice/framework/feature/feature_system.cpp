@@ -55,7 +55,7 @@ FeatureSystem::Feature::~Feature()
 {
 }
 
-int32_t FeatureSystem::Feature::OnInitialize()
+int32_t FeatureSystem::Feature::OnInitialize(const BinderInfo &binderInfo)
 {
     return E_OK;
 }
