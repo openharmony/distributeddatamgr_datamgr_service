@@ -223,14 +223,14 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
             GLOGE("The node in CheckCutNode is nullptr");
             return errCode;
         }
-        for (const auto & singleCutPaht : allCutPath) {
+        for (const auto &singleCutPaht : allCutPath) {
             if (!context_->ifShowId || singleCutPaht[0] != KEY_ID) {
                 cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
             }
         }
     }
     if (!context_->viewType) {
-        for (const auto & singleCutPaht : context_->path) { // projection Path
+        for (const auto &singleCutPaht : context_->projectionPath) {
             cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
         }
         if (!context_->ifShowId) {
