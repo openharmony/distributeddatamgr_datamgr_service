@@ -82,12 +82,11 @@ std::vector<ValueObject> JsonCommon::GetLeafValue(const JsonObject &node)
 
 bool JsonCommon::CheckNode(JsonObject &node)
 {
-    std::string fieldName;
     while (!node.IsNull()) {
         int ret = 0;
         std::set<std::string> fieldSet;
         bool isFieldNameExist = true;
-        fieldName = node.GetItemField(ret);
+        std::string fieldName = node.GetItemField(ret);
         if (ret != E_OK) {
             isFieldNameExist = false;
         }
@@ -130,11 +129,10 @@ bool JsonCommon::CheckJsonField(JsonObject &jsonObj)
 
 bool JsonCommon::CheckProjectionNode(JsonObject &node, bool isFirstLevel, int &errCode)
 {
-    std::string fieldName;
     while (!node.IsNull()) {
         int ret = 0;
         std::set<std::string> fieldSet;
-        fieldName = node.GetItemField(ret);
+        std::string fieldName = node.GetItemField(ret);
         if (fieldName.empty()) {
             errCode = -E_INVALID_ARGS;
             return false;
@@ -679,7 +677,7 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
 {
     errCode = E_OK;
     int isMatchFlag = true;
-    JsonObjectIterator(target, {}, [&src, &isMatchFlag, &errCode](JsonFieldPath &path, const JsonObject &item) {
+    JsonObjectIterator(target, {}, [&src, &isMatchFlag, &errCode](const JsonFieldPath &path, const JsonObject &item) {
         int isAlreadyMatched = 0;
         bool isCollapse = false;
         if (isMatchFlag == false) {
@@ -707,11 +705,9 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
             }
         } else {
             std::vector<ValueObject> ItemLeafValue = GetLeafValue(item);
-            int isNULLFlag = true;
             for (auto ValueItem : ItemLeafValue) {
-                if (ValueItem.GetValueType() != ValueObject::ValueType::VALUE_NULL) { // leaf value is not null
-                    isNULLFlag = false;
-                } else { // filter leaf is null, Src leaf is dont exist
+                // filter leaf is null, Src leaf is dont exist.
+                if (ValueItem.GetValueType() == ValueObject::ValueType::VALUE_NULL) {
                     isMatchFlag = true;
                     return false;
                 }
