@@ -513,7 +513,7 @@ bool JsonNodeAppend(const JsonObject &src, const JsonFieldPath &path, const Json
         AddSpliteField(src, item, itemPath, externErrCode);
         return false;
     }
-    // This condition is to determine that the path has a point operator, 
+    // This condition is to determine that the path has a point operator,
     //and the name of the last path cannot be a number or the srcItem to be added is an array, otherwise.
     // adding a node with the number fieldName does not legal.
     if (isCollapse && (!IsNumber(lastFieldName) || srcFatherItem.GetType() == JsonObject::Type::JSON_ARRAY)) {
