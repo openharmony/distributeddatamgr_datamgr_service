@@ -15,9 +15,6 @@
 
 #include "result_set_common.h"
 
-#include <string>
-#include <vector>
-
 #include "doc_errno.h"
 #include "grd_base/grd_error.h"
 
