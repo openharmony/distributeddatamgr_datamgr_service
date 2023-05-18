@@ -317,7 +317,7 @@ ExecutorPool::Task CloudServiceImpl::GetCloudTask(int32_t retry, int32_t user)
     };
 }
 
-SchemaMeta CloudServiceImpl::GetSchemaMata(int32_t userId, const std::string &bundleName, int32_t instanceId)
+SchemaMeta CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId)
 {
     SchemaMeta schemaMeta;
     auto instance = CloudServer::GetInstance();
@@ -350,7 +350,7 @@ SchemaMeta CloudServiceImpl::GetSchemaMata(int32_t userId, const std::string &bu
     return schemaMeta;
 }
 
-StoreMetaData CloudServiceImpl::GetStoreMata(int32_t userId, const std::string &bundleName,
+StoreMetaData CloudServiceImpl::GetStoreMeta(int32_t userId, const std::string &bundleName,
     const std::string &storeName, int32_t instanceId)
 {
     StoreMetaData storeMetaData;
@@ -391,11 +391,12 @@ void CloudServiceImpl::GetSchema(const Event &event)
         rdbEvent.GetStoreInfo().bundleName.c_str(), rdbEvent.GetStoreInfo().storeName.c_str(),
         rdbEvent.GetStoreInfo().instanceId);
     auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(rdbEvent.GetStoreInfo().tokenId);
-    auto schemaMeta = GetSchemaMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().instanceId);
+    auto schemaMeta = GetSchemaMeta(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().instanceId);
     if (schemaMeta.databases.empty()) {
+        ZLOGD("bundleName:%{public}s no cloud database", rdbEvent.GetStoreInfo().bundleName.c_str());
         return;
     }
-    auto storeMeta = GetStoreMata(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().storeName,
+    auto storeMeta = GetStoreMeta(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().storeName,
         rdbEvent.GetStoreInfo().instanceId);
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
@@ -407,6 +408,7 @@ void CloudServiceImpl::GetSchema(const Event &event)
             return database.name == rdbEvent.GetStoreInfo().storeName;
         });
     if (database == schemaMeta.databases.end()) {
+        ZLOGD("database: %{public}s is not cloud database", database->name.c_str());
         return;
     }
 

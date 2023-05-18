@@ -300,7 +300,7 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
         auto syncer_ = std::make_shared<RdbSyncer>(param, rdbObserver);
         StoreMetaData storeMetaData = GetStoreMetaData(param);
         MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData);
-        if (syncer_->Init(pid, uid, tokenId, storeMetaData) != 0) {
+        if (syncer_->Init(pid, uid, tokenId, storeMetaData) != RDB_OK) {
             return !syncers.empty();
         }
         syncers[storeId] = syncer_;
@@ -612,7 +612,7 @@ int32_t RdbServiceImpl::CreateMetaData(const RdbSyncerParam &param, StoreMetaDat
     return SetSecretKey(param, meta);
 }
 
-bool RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta)
+int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta)
 {
     SecretKeyMetaData newSecretKey;
     newSecretKey.storeType = meta.storeType;

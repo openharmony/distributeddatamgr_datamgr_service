@@ -98,8 +98,10 @@ private:
     void OnAsyncComplete(pid_t pid, uint32_t seqNum, const SyncResult& result);
 
     int32_t CreateMetaData(const RdbSyncerParam &param, StoreMetaData &old);
+
     StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
-    bool SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta);
+
+    int32_t SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta);
 
     class DeathRecipientImpl : public IRemoteObject::DeathRecipient {
     public:
