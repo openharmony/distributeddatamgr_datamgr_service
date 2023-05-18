@@ -513,6 +513,9 @@ bool JsonNodeAppend(const JsonObject &src, const JsonFieldPath &path, const Json
         AddSpliteField(src, item, itemPath, externErrCode);
         return false;
     }
+    // This condition is to determine that the path has a point operator, 
+    //and the name of the last path cannot be a number or the srcItem to be added is an array, otherwise.
+    // adding a node with the number fieldName does not legal.
     if (isCollapse && (!IsNumber(lastFieldName) || srcFatherItem.GetType() == JsonObject::Type::JSON_ARRAY)) {
         errCode = srcFatherItem.AddItemToObject(lastFieldName, item);
         if (errCode != E_OK) {
@@ -611,7 +614,7 @@ bool JsonCommon::IsObjectItemMatch(const JsonObject &srcItem, const JsonObject &
 {
     if (srcItem.GetType() == JsonObject::Type::JSON_ARRAY && item.GetType() == JsonObject::Type::JSON_ARRAY &&
         !isAlreadyMatched) {
-        bool isEqual = (srcItem.Print() == item.Print());
+        bool isEqual = (srcItem == item);
         if (!isEqual) { // Filter value is No equal with src
             isMatchFlag = isEqual;
         }
