@@ -402,10 +402,10 @@ void CloudServiceImpl::GetSchema(const Event &event)
         ZLOGE("instance is nullptr");
         return;
     }
-    auto database = std::find_if(schemaMeta.databases.begin(),schemaMeta.databases.end(),
-        [&rdbEvent](const auto &database){
-        return database.name == rdbEvent.GetStoreInfo().storeName;
-    });
+    auto database =
+        std::find_if(schemaMeta.databases.begin(), schemaMeta.databases.end(), [&rdbEvent](const auto &database) {
+            return database.name == rdbEvent.GetStoreInfo().storeName;
+        });
     if (database == schemaMeta.databases.end()) {
         return;
     }
