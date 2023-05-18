@@ -13,18 +13,22 @@
 * limitations under the License.
 */
 
-#ifndef RESULTSET_COMMON_H
-#define RESULTSET_COMMON_H
+#ifndef DOCUMENT_TYPE_H
+#define DOCUMENT_TYPE_H
 
 #include <string>
 
-#include "doc_errno.h"
-#include "grd_base/grd_type_export.h"
-#include "result_set.h"
-#include "vector"
+#include "projection_tree.h"
 
 namespace DocumentDB {
-class ValueObject;
-int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, ResultSet &resultSet, bool ifField);
+struct QueryContext {
+    std::string collectionName;
+    std::string filter;
+    std::vector<std::vector<std::string>> path;
+    ProjectionTree projectionTree;
+    bool ifShowId = false;
+    bool viewType = false;
+    bool isOnlyId = false;
+};
 } // namespace DocumentDB
-#endif // RESULTSET_COMMON_H
+#endif // DOCUMENT_TYPE_H

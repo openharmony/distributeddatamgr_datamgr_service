@@ -1438,14 +1438,17 @@ HWTEST_F(DocumentDBFindTest, DocumentDBFindTest061, TestSize.Level1)
     char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, document061);
+    EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
 
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, document062);
+    EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
 
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, document063);
+    EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
 
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);

@@ -24,17 +24,13 @@
 #include "document_store.h"
 #include "grd_base/grd_type_export.h"
 #include "json_object.h"
-#include "projection_tree.h"
 
 namespace DocumentDB {
 class ResultSet {
 public:
     ResultSet();
     ~ResultSet();
-
-    int Init(DocumentStore *store, const std::string collectionName, const std::string &filter,
-        std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, bool &isOnlyId);
-    int Init(DocumentStore *store, const std::string collectionName, const std::string &filter);
+    int Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool ifField);
     int GetNext(bool isNeedTransaction = false, bool isNeedCheckTable = false);
     int GetValue(char **value);
     int GetKey(std::string &key);
@@ -48,16 +44,10 @@ private:
     int GetNextWithField();
 
     DocumentStore *store_ = nullptr;
-    std::string collectionName_;
     ValueObject key_;
-    std::string filter_;
-    bool ifShowId_ = false;
-    bool viewType_ = false;
     bool ifField_ = false;
-    bool isOnlyId_ = false;
-    ProjectionTree projectionTree_;
-    std::vector<std::vector<std::string>> projectionPath_;
     size_t index_ = 0;
+    std::shared_ptr<QueryContext> context_;
     std::vector<std::pair<std::string, std::string>> matchDatas_;
 };
 } // namespace DocumentDB

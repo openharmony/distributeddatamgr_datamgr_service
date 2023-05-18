@@ -21,6 +21,7 @@
 #include <string>
 
 #include "collection.h"
+#include "document_type.h"
 #include "kv_store_executor.h"
 
 struct GRD_ResultSet;
@@ -49,9 +50,9 @@ public:
 
     Collection GetCollection(std::string &collectionName);
 
-    bool IsCollectionOpening(const std::string collection);
+    bool IsCollectionOpening(const std::string &collection);
 
-    int EraseCollection(const std::string collectionName);
+    int EraseCollection(const std::string &collectionName);
 
     void OnClose(const std::function<void(void)> &notifier);
 
@@ -66,7 +67,15 @@ public:
     std::mutex dbMutex_;
 
 private:
-    int GetViewType(JsonObject &jsonObj, bool &viewType);
+    int UpdateDataIntoDB(std::shared_ptr<QueryContext> &context, JsonObject &filterObj, const std::string &update,
+        bool &isReplace);
+    int UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, JsonObject &filterObj, JsonObject &documentObj,
+        bool &isReplace);
+    int InsertDataIntoDB(const std::string &collection, const std::string &document, JsonObject &documentObj);
+    int DeleteDataFromDB(std::shared_ptr<QueryContext> &context, JsonObject &filterObj);
+    int InitFindResultSet(GRD_ResultSet *grdResultSet, std::shared_ptr<QueryContext> &context);
+    int CheckUpsertConflict(bool &isIdExist, std::shared_ptr<QueryContext> &context, JsonObject &filterObj,
+        std::string &docId, Collection &coll);
     KvStoreExecutor *executor_ = nullptr;
     std::map<std::string, Collection *> collections_;
     std::function<void(void)> closeNotifier_;

@@ -236,9 +236,6 @@ std::vector<std::vector<std::string>> JsonCommon::ParsePath(const JsonObject &ro
 {
     std::vector<std::vector<std::string>> resultPath;
     JsonObject projectionJson = root.GetChild();
-    if (projectionJson.IsNull()) {
-        GLOGE("projectionJson is null");
-    }
     std::vector<std::string> singlePath;
     errCode = ParseNode(projectionJson, singlePath, resultPath, true);
     return resultPath;
