@@ -548,7 +548,7 @@ int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::OnInitialize()
+int32_t RdbServiceImpl::OnInitialize(const BinderInfo &binderInfo)
 {
     return RDB_OK;
 }

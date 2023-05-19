@@ -58,7 +58,7 @@ public:
 
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
 
-    int32_t OnInitialize() override;
+    int32_t OnInitialize(const BinderInfo &binderInfo) override;
 
     int32_t GetSchema(const RdbSyncerParam &param) override;
     int32_t OnExecutor(std::shared_ptr<ExecutorPool> executors) override;
