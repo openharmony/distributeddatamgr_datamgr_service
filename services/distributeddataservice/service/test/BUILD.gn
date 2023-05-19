@@ -111,6 +111,7 @@ ohos_unittest("DirectoryManagerTest") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/directory:distributeddata_directory",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//third_party/googletest:gtest_main",
   ]
