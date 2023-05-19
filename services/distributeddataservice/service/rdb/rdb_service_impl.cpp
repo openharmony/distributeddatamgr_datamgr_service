@@ -548,7 +548,7 @@ int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::OnInitialize(const BinderInfo &binderInfo)
+int32_t RdbServiceImpl::OnInitialize()
 {
     return RDB_OK;
 }
@@ -593,9 +593,9 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     return metaData;
 }
 
-int32_t RdbServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executors)
+int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 {
-    executors_ = executors;
+    executors_ = bindInfo.executors;
     return 0;
 }
 } // namespace OHOS::DistributedRdb

@@ -40,9 +40,9 @@ int32_t FeatureStubImpl::OnInitialize(std::shared_ptr<ExecutorPool> executor)
     if (featureImpl_ == nullptr) {
         return -1;
     }
-    featureImpl_->OnExecutor(std::move(executor));
-    return featureImpl_->OnInitialize(
-        { Bootstrap::GetInstance().GetProcessLabel(), static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()) });
+    featureImpl_->OnBind({ Bootstrap::GetInstance().GetProcessLabel(),
+        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor)});
+    return featureImpl_->OnInitialize();
 }
 
 int32_t FeatureStubImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)

@@ -36,14 +36,15 @@ public:
     };
     class API_EXPORT Feature {
     public:
-        struct BinderInfo {
-            std::string bundleName;
-            uint32_t localTokenId;
+        struct BindInfo {
+            std::string selfName;
+            uint32_t selfTokenId;
+            std::shared_ptr<ExecutorPool> executors;
         };
         virtual ~Feature();
         virtual int OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply) = 0;
-        virtual int32_t OnInitialize(const BinderInfo &binderInfo);
-        virtual int32_t OnExecutor(std::shared_ptr<ExecutorPool> executors);
+        virtual int32_t OnInitialize();
+        virtual int32_t OnBind(const BindInfo &bindInfo);
         virtual int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
         virtual int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
         virtual int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);

@@ -190,20 +190,20 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::OnInitialize(const BinderInfo &binderInfo)
+int32_t CloudServiceImpl::OnInitialize()
 {
     FeatureInit();
     Execute(GetCloudTask(0, 0));
     return E_OK;
 }
 
-int32_t CloudServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executor)
+int32_t CloudServiceImpl::OnBind(const BindInfo &info)
 {
-    if (executor_ != nullptr || executor == nullptr) {
+    if (executor_ != nullptr || info.executors == nullptr) {
         return E_INVALID_ARGS;
     }
 
-    executor_ = std::move(executor);
+    executor_ = std::move(info.executors);
     return E_OK;
 }
 

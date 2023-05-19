@@ -790,12 +790,12 @@ size_t KVDBServiceImpl::GetSyncDataSize(const std::string &deviceId)
 
     return totalSize;
 }
-int32_t KVDBServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executors)
+int32_t KVDBServiceImpl::OnBind(const BindInfo &bindInfo)
 {
-    executors_ = executors;
-    storeCache_.SetThreadPool(executors);
-    KvStoreSyncManager::GetInstance()->SetThreadPool(executors);
-    ZLOGE("onexecutor:%{public}p", executors.get());
+    executors_ = bindInfo.executors;
+    storeCache_.SetThreadPool(bindInfo.executors);
+    KvStoreSyncManager::GetInstance()->SetThreadPool(bindInfo.executors);
+    ZLOGE("onexecutor:%{public}p", bindInfo.executors.get());
     return 0;
 }
 } // namespace OHOS::DistributedKv

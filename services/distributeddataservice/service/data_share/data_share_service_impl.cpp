@@ -333,22 +333,22 @@ enum DataShareKvStoreType : int32_t {
     DISTRIBUTED_TYPE_BUTT
 };
 
-int32_t DataShareServiceImpl::OnInitialize(const BinderInfo &binderInfo)
+int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
 {
     binderInfo_ = binderInfo;
     const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(binderInfo.localTokenId);
+    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(binderInfo.selfTokenId);
     DistributedData::StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.storeId = "data_share_data_";
     saveMeta.isAutoSync = false;
     saveMeta.isBackup = false;
     saveMeta.isEncrypt = false;
-    saveMeta.bundleName =  binderInfo.bundleName;
-    saveMeta.appId = binderInfo.bundleName;
+    saveMeta.bundleName =  binderInfo.selfName;
+    saveMeta.appId = binderInfo.selfName;
     saveMeta.user = std::to_string(userId);
     saveMeta.account = accountId;
-    saveMeta.tokenId = binderInfo.localTokenId;
+    saveMeta.tokenId = binderInfo.selfTokenId;
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = 1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
@@ -372,8 +372,8 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
     saveMeta.isAutoSync = false;
     saveMeta.isBackup = false;
     saveMeta.isEncrypt = false;
-    saveMeta.bundleName =  binderInfo_.bundleName;
-    saveMeta.appId = binderInfo_.bundleName;
+    saveMeta.bundleName =  binderInfo_.selfName;
+    saveMeta.appId = binderInfo_.selfName;
     saveMeta.user = user;
     saveMeta.account = account;
     saveMeta.tokenId = token;
