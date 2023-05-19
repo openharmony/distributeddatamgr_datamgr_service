@@ -18,9 +18,9 @@ config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "../../adapter/include",
+    "../../app/src",
+    "../../framework/include",
   ]
 }
 
