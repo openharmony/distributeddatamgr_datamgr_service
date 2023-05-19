@@ -23,7 +23,7 @@
 #include "datashare_errno.h"
 #include "datashare_template.h"
 #include "delete_strategy.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "get_data_strategy.h"
 #include "hap_token_info.h"
 #include "insert_strategy.h"

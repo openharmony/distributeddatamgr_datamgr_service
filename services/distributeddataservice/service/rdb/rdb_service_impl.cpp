@@ -20,7 +20,7 @@
 #include "cloud/cloud_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"

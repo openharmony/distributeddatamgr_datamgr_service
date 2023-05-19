@@ -14,10 +14,11 @@
  */
 #define LOG_TAG "KvAdaptor"
 #include "kv_delegate.h"
+
 #include "datashare_errno.h"
-#include "directory_manager.h"
-#include "grd_document/grd_document_api.h"
+#include "directory/directory_manager.h"
 #include "grd_base/grd_error.h"
+#include "grd_document/grd_document_api.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 
