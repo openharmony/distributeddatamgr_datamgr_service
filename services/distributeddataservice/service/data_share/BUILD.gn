@@ -78,11 +78,11 @@ ohos_shared_library("data_share_service") {
   configs = [ ":module_public_config" ]
 
   deps = [
-    "gaussdb_rd:gaussdb_rd",
     "../../adapter:distributeddata_adapter",
     "../../adapter/utils:distributeddata_utils_static",
     "../../framework:distributeddatasvcfwk",
     "../directory:distributeddata_directory",
+    "gaussdb_rd:gaussdb_rd",
   ]
 
   external_deps = [
