@@ -108,7 +108,7 @@ ohos_shared_library("distributeddataservice") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/directory:distributeddata_directory",
+    "../service/directory:distributeddata_directory",
   ]
 
   external_deps = [

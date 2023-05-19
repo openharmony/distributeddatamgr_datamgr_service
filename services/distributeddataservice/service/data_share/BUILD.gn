@@ -79,10 +79,10 @@ ohos_shared_library("data_share_service") {
 
   deps = [
     "gaussdb_rd:gaussdb_rd",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/directory:distributeddata_directory",
+    "../../adapter:distributeddata_adapter",
+    "../../adapter/utils:distributeddata_utils_static",
+    "../../framework:distributeddatasvcfwk",
+    "../directory:distributeddata_directory",
   ]
 
   external_deps = [

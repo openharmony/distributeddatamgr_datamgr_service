@@ -37,9 +37,9 @@ ohos_shared_library("distributeddata_directory") {
   configs = [ ":module_public_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "../../adapter:distributeddata_adapter",
+    "../../adapter/utils:distributeddata_utils_static",
+    "../../framework:distributeddatasvcfwk",
   ]
 
   external_deps = [
