@@ -190,7 +190,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::OnInitialize()
+int32_t CloudServiceImpl::OnInitialize(const BinderInfo &binderInfo)
 {
     FeatureInit();
     Execute(GetCloudTask(0, 0));
