@@ -45,6 +45,10 @@ int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, 
     errCode = sqliteExecutor->GetDBConfig(oriConfigStr);
     if (errCode == -E_NOT_FOUND) {
         errCode = sqliteExecutor->SetDBConfig(config.ToString());
+        if (errCode != E_OK) {
+            GLOGE("Set db config failed. %d", errCode);
+            goto END;
+        }
     } else if (errCode != E_OK) {
         goto END;
     } else {
@@ -65,7 +69,6 @@ int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, 
 
 END:
     delete sqliteExecutor;
-    sqliteExecutor = nullptr;
     return errCode;
 }
 } // namespace DocumentDB

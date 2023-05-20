@@ -194,10 +194,10 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
         GLOGE("jsonData Parsed failed");
         return errCode;
     }
-    std::vector<std::vector<std::string>> allCutPath;
     if (context_->viewType) {
         std::vector<std::string> singlePath;
         JsonObject cjsonObjChild = cjsonObj.GetChild();
+        std::vector<std::vector<std::string>> allCutPath;
         errCode = CheckCutNode(&cjsonObjChild, singlePath, allCutPath);
         if (errCode != E_OK) {
             GLOGE("The node in CheckCutNode is nullptr");
