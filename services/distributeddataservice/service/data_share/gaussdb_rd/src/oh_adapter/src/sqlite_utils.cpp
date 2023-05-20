@@ -34,6 +34,8 @@ int MapSqliteError(int errCode)
     switch (errCode) {
         case SQLITE_OK:
             return E_OK;
+        case 1: // match count;
+            return E_OK;
         case SQLITE_PERM:
         case SQLITE_CANTOPEN:
         case SQLITE_READONLY:

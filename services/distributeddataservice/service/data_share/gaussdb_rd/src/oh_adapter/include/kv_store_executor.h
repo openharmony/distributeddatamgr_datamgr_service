@@ -31,9 +31,9 @@ public:
 
     virtual int PutData(const std::string &collName, const Key &key, const Value &value) = 0;
     virtual int InsertData(const std::string &collName, const Key &key, const Value &value) = 0;
-    virtual int GetData(const std::string &collName, const Key &key, Value &value) const = 0;
-    virtual int GetFieldedData(const std::string &collName, const JsonObject &filterObj,
-        std::vector<std::pair<std::string, std::string>> &values) const = 0;
+    virtual int GetDataByKey(const std::string &collName, const Key &key, Value &value) const = 0;
+    virtual int GetDataByFilter(const std::string &collName, const Key &key, const JsonObject &filterObj,
+    std::pair<std::string, std::string> &values, int isIdExist) const = 0;
     virtual int DelData(const std::string &collName, const Key &key) = 0;
 
     virtual int CreateCollection(const std::string &name, const std::string &option, bool ignoreExists) = 0;

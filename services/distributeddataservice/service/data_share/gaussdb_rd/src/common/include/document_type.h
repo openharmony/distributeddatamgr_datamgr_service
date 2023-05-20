@@ -28,7 +28,7 @@ struct QueryContext {
     ProjectionTree projectionTree;
     bool ifShowId = false;
     bool viewType = false;
-    bool isOnlyId = false;
+    bool isIdExist = false;
 };
 } // namespace DocumentDB
 #endif // DOCUMENT_TYPE_H

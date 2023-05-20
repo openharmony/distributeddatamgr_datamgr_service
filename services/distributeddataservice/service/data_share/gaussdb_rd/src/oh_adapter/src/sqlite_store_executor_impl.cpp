@@ -74,7 +74,7 @@ int SqliteStoreExecutorImpl::GetDBConfig(std::string &config)
     std::string dbConfigKeyStr = "DB_CONFIG";
     Key dbConfigKey = { dbConfigKeyStr.begin(), dbConfigKeyStr.end() };
     Value dbConfigVal;
-    int errCode = GetData("grd_meta", dbConfigKey, dbConfigVal);
+    int errCode = GetDataByKey("grd_meta", dbConfigKey, dbConfigVal);
     config.assign(dbConfigVal.begin(), dbConfigVal.end());
     return errCode;
 }
@@ -152,7 +152,7 @@ int SqliteStoreExecutorImpl::InsertData(const std::string &collName, const Key &
     return E_OK;
 }
 
-int SqliteStoreExecutorImpl::GetData(const std::string &collName, const Key &key, Value &value) const
+int SqliteStoreExecutorImpl::GetDataByKey(const std::string &collName, const Key &key, Value &value) const
 {
     if (dbHandle_ == nullptr) {
         GLOGE("Invalid db handle.");
@@ -178,8 +178,20 @@ int SqliteStoreExecutorImpl::GetData(const std::string &collName, const Key &key
     return innerErrorCode;
 }
 
-int SqliteStoreExecutorImpl::GetFieldedData(const std::string &collName, const JsonObject &filterObj,
-    std::vector<std::pair<std::string, std::string>> &values) const
+std::string GeneralInsertSql(const std::string &collName, const Key &key, int isIdExist)
+{
+    std::string sqlEqual = "SELECT key, value FROM '" + collName + "' WHERE key=?;";
+    std::string sqlOrder = "SELECT key, value FROM '" + collName + "'ORDER BY KEY;";
+    std::string sqlLarger = "SELECT key, value FROM '" + collName + "' WHERE key>?;";
+    if (isIdExist) {
+        return sqlEqual;
+    } else {
+        return (key.empty()) ? sqlOrder : sqlLarger;
+    }
+}
+
+int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, const Key &key, const JsonObject &filterObj,
+    std::pair<std::string, std::string> &values, int isIdExist) const
 {
     if (dbHandle_ == nullptr) {
         GLOGE("Invalid db handle.");
@@ -189,10 +201,15 @@ int SqliteStoreExecutorImpl::GetFieldedData(const std::string &collName, const J
     Value valueResult;
     bool isFindMatch = false;
     int innerErrorCode = -E_NOT_FOUND;
-    std::string sql = "SELECT key, value FROM '" + collName + "'ORDER BY KEY;";
+    std::string test(key.begin(), key.end());
+    std::string sql = GeneralInsertSql(collName, key, isIdExist);
+    std::string keyStr(key.begin(), key.end());
     int errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
-        [](sqlite3_stmt *stmt) {
+        [key](sqlite3_stmt *stmt) {
+            if (!key.empty()) {
+                SQLiteUtils::BindBlobToStatement(stmt, 1, key);
+            }
             return E_OK;
         },
         [&keyResult, &innerErrorCode, &valueResult, &filterObj, &values, &isFindMatch](sqlite3_stmt *stmt) {
@@ -208,12 +225,15 @@ int SqliteStoreExecutorImpl::GetFieldedData(const std::string &collName, const J
             }
             if (JsonCommon::IsJsonNodeMatch(srcObj, filterObj, externErrCode)) {
                 isFindMatch = true;
-                values.emplace_back(std::pair(keyStr, valueStr));
+                values.first = keyStr;
+                values.second = valueStr;
+                innerErrorCode = E_OK;
+                return 1; // match count;
             }
             innerErrorCode = E_OK;
             return E_OK;
         });
-    if (errCode != E_OK) {
+    if (errCode != E_OK && errCode != 1) { // 1 is match count;
         GLOGE("[sqlite executor] Get data failed. err=%d", errCode);
         return errCode;
     }
@@ -231,7 +251,7 @@ int SqliteStoreExecutorImpl::DelData(const std::string &collName, const Key &key
     }
     int errCode = 0;
     Value valueRet;
-    if (GetData(collName, key, valueRet) != E_OK) {
+    if (GetDataByKey(collName, key, valueRet) != E_OK) {
         return -E_NO_DATA;
     }
     std::string sql = "DELETE FROM '" + collName + "' WHERE key=?;";
@@ -335,7 +355,7 @@ int SqliteStoreExecutorImpl::GetCollectionOption(const std::string &name, std::s
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
     Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
     Value collOptVal;
-    int errCode = GetData("grd_meta", collOptKey, collOptVal);
+    int errCode = GetDataByKey("grd_meta", collOptKey, collOptVal);
     option.assign(collOptVal.begin(), collOptVal.end());
     return errCode;
 }

@@ -76,21 +76,21 @@ bool Collection::FindDocument()
     return executor_->IsCollectionExists(name_, errCode);
 }
 
-int Collection::GetDocument(const Key &key, Value &document) const
+int Collection::GetDocumentByKey(const Key &key, Value &document) const
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
     }
-    return executor_->GetData(name_, key, document);
+    return executor_->GetDataByKey(name_, key, document);
 }
 
-int Collection::GetMatchedDocument(const JsonObject &filterObj,
-    std::vector<std::pair<std::string, std::string>> &values) const
+int Collection::GetMatchedDocument(const JsonObject &filterObj, const Key &key,
+    std::pair<std::string, std::string> &values, int isIdExist) const
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
     }
-    return executor_->GetFieldedData(name_, filterObj, values);
+    return executor_->GetDataByFilter(name_, key, filterObj, values, isIdExist);
 }
 
 int Collection::DeleteDocument(const Key &key)
@@ -114,7 +114,7 @@ int Collection::IsCollectionExists(int &errCode)
     return executor_->IsCollectionExists(name_, errCode);
 }
 
-int Collection::UpsertDocument(const std::string &id, const std::string &document, bool isReplace)
+int Collection::UpsertDocument(const std::string &id, const std::string &newStr, bool isReplace)
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -129,47 +129,12 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
         GLOGE("Collection not created.");
         return -E_INVALID_ARGS;
     }
-
-    JsonObject upsertValue = JsonObject::Parse(document, errCode, true);
-    if (errCode != E_OK) {
-        GLOGD("Parse upsert value failed. %d", errCode);
-        return errCode;
-    }
-
     Key keyId(id.begin(), id.end());
-    Value valSet(document.begin(), document.end());
-    if (!isReplace) {
-        Value valueGot;
-        errCode = executor_->GetData(name_, keyId, valueGot);
-        std::string valueGotStr = std::string(valueGot.begin(), valueGot.end());
-        if (errCode != E_OK && errCode != -E_NOT_FOUND) {
-            GLOGW("Get original document failed. %d", errCode);
-            return errCode;
-        } else if (errCode == E_OK) { // document has been inserted
-            GLOGD("Document has been inserted, append value.");
-            JsonObject originValue = JsonObject::Parse(valueGotStr, errCode, true);
-            if (errCode != E_OK) {
-                GLOGD("Parse original value failed. %d %s", errCode, valueGotStr.c_str());
-                return errCode;
-            }
-
-            errCode = JsonCommon::Append(originValue, upsertValue, isReplace);
-            if (errCode != E_OK) {
-                GLOGD("Append value failed. %d", errCode);
-                return errCode;
-            }
-            std::string valStr = originValue.Print();
-            if (valStr.length() >= JSON_LENS_MAX) {
-                GLOGE("document's length is too long");
-                return -E_OVER_LIMIT;
-            }
-            valSet = { valStr.begin(), valStr.end() };
-        }
-    }
+    Value valSet(newStr.begin(), newStr.end());
     return executor_->PutData(name_, keyId, valSet);
 }
 
-int Collection::UpdateDocument(const std::string &id, const std::string &update, bool isReplace)
+int Collection::UpdateDocument(const std::string &id, const std::string &newStr, bool isReplace)
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -184,40 +149,8 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
         GLOGE("Collection not created.");
         return -E_INVALID_ARGS;
     }
-
-    JsonObject updateValue = JsonObject::Parse(update, errCode, true);
-    if (errCode != E_OK) {
-        GLOGD("Parse upsert value failed. %d", errCode);
-        return errCode;
-    }
-
     Key keyId(id.begin(), id.end());
-    Value valueGot;
-    errCode = executor_->GetData(name_, keyId, valueGot);
-    std::string valueGotStr = std::string(valueGot.begin(), valueGot.end());
-    if (errCode == -E_NOT_FOUND) {
-        GLOGW("Get original document not found.");
-        return -E_NOT_FOUND;
-    } else if (errCode != E_OK) {
-        GLOGE("Get original document failed. %d", errCode);
-        return errCode;
-    }
-    JsonObject originValue = JsonObject::Parse(valueGotStr, errCode, true);
-    if (errCode != E_OK) {
-        GLOGD("Parse original value failed. %d %s", errCode, valueGotStr.c_str());
-        return errCode;
-    }
-    errCode = JsonCommon::Append(originValue, updateValue, isReplace);
-    if (errCode != E_OK) {
-        GLOGD("Append value failed. %d", errCode);
-        return errCode;
-    }
-    std::string valStr = originValue.Print();
-    if (valStr.length() >= JSON_LENS_MAX) {
-        GLOGE("document's length is too long");
-        return -E_OVER_LIMIT;
-    }
-    Value valSet(valStr.begin(), valStr.end());
+    Value valSet(newStr.begin(), newStr.end());
     return executor_->PutData(name_, keyId, valSet);
 }
 } // namespace DocumentDB

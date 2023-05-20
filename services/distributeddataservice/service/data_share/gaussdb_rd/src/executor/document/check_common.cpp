@@ -41,7 +41,7 @@ bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefi
 
 void ReplaceAll(std::string &inout, const std::string &what, const std::string &with)
 {
-    std::string::size_type pos {};
+    std::string::size_type pos{};
     while ((pos = inout.find(what.data(), pos, what.length())) != std::string::npos) {
         inout.replace(pos, what.length(), with.data(), with.length());
         pos += with.length();
@@ -75,16 +75,13 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::st
     return true;
 }
 
-int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath)
+int CheckCommon::CheckFilter(JsonObject &filterObj, std::vector<std::vector<std::string>> &filterPath, bool &isIdExist)
 {
     for (size_t i = 0; i < filterPath.size(); i++) {
         if (filterPath[i].size() > JSON_DEEP_MAX) {
             GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
             return -E_INVALID_ARGS;
         }
-    }
-    if (!filterObj.GetChild().GetNext().IsNull()) { // check contained other field at the same level as the id node
-        isOnlyId = false;
     }
     for (size_t i = 0; i < filterPath.size(); i++) {
         if (filterPath[i].empty()) {
@@ -104,14 +101,10 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
             return -E_INVALID_ARGS;
         }
     }
-    bool isIdExisit = false;
-    int ret = CheckIdFormat(filterObj, isIdExisit);
+    int ret = CheckIdFormat(filterObj, isIdExist);
     if (ret != E_OK) {
         GLOGE("Filter Id format is illegal");
         return ret;
-    }
-    if (!isIdExisit) {
-        isOnlyId = false;
     }
     return E_OK;
 }

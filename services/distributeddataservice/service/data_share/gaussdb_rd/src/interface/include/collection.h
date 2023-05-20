@@ -26,16 +26,17 @@ class Collection {
 public:
     Collection(const std::string &name, KvStoreExecutor *executor);
     Collection(const Collection &other);
-    Collection() {};
+    Collection(){};
     ~Collection();
 
     int PutDocument(const Key &key, const Value &document);
     int InsertDocument(const Key &key, const Value &document);
-    int GetDocument(const Key &key, Value &document) const;
-    int GetMatchedDocument(const JsonObject &filterObj, std::vector<std::pair<std::string, std::string>> &values) const;
+    int GetDocumentByKey(const Key &key, Value &document) const;
+    int GetMatchedDocument(const JsonObject &filterObj, const Key &key, std::pair<std::string, std::string> &values,
+        int isIdExist) const;
     int DeleteDocument(const Key &key);
     int IsCollectionExists(int &errCode);
-    int UpsertDocument(const std::string &id, const std::string &document, bool isReplace = true);
+    int UpsertDocument(const std::string &id, const std::string &newStr, bool isReplace = true);
     bool FindDocument();
     int UpdateDocument(const std::string &id, const std::string &document, bool isReplace = false);
 

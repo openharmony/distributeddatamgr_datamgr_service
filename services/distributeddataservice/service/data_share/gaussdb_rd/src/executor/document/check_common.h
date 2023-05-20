@@ -29,7 +29,7 @@ public:
     ~CheckCommon() = default;
 
     static bool CheckCollectionName(const std::string &collectionName, std::string &formattedName, int &errCode);
-    static int CheckFilter(JsonObject &document, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath);
+    static int CheckFilter(JsonObject &document, std::vector<std::vector<std::string>> &filterPath, bool &isIdExist);
     static int CheckIdFormat(JsonObject &data, bool &isIdExisit);
     static int CheckDocument(JsonObject &document);
     static int CheckUpdata(JsonObject &updata, std::vector<std::vector<std::string>> &path);
