@@ -131,7 +131,7 @@ std::shared_ptr<DataShareResultSet> RdbDelegate::Query(const std::string &tableN
         return nullptr;
     }
     auto bridge = RdbDataShareAdapter::RdbUtils::ToResultSetBridge(resultSet);
-    return std::shared_ptr<DataShareResultSet>(new DataShareResultSet(bridge), [](auto p) {
+    return std::shared_ptr<DataShareResultSet>(std::make_shared<DataShareResultSet>(bridge), [](auto p) {
         ZLOGD("release resultset");
         resultSetCount--;
         delete p;

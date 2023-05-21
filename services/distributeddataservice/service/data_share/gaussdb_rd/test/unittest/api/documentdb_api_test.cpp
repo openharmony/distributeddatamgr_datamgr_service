@@ -65,7 +65,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest001, TestSize.Level0)
 
     EXPECT_EQ(GRD_CreateCollection(db, "student", "", 0), GRD_OK);
 
-    EXPECT_EQ(GRD_UpsertDoc(db, "student", R""({"_id":"10001"})"", R""({"name":"Tom","age":23})"", 0), 1);
+    EXPECT_EQ(GRD_UpsertDoc(db, "student", R""({"_id":"10001"})"", R""({"name":"Tom", "age":23})"", 0), 1);
 
     EXPECT_EQ(GRD_DropCollection(db, "student", 0), GRD_OK);
 
@@ -245,7 +245,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigMaxConnNumTest001, TestSize.Level0)
         R""({"maxConnNum":1000000007})"",
         R""({"maxConnNum":"16"})"",
         R""({"maxConnNum":{"value":17}})"",
-        R""({"maxConnNum":[16,17,18]})"",
+        R""({"maxConnNum":[16, 17, 18]})"",
     };
     for (const auto &config : configList) {
         GLOGD("OpenDBConfigMaxConnNumTest001: test with config:%s", config.c_str());
@@ -363,7 +363,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigPageSizeTest001, TestSize.Level0)
         R""({"pageSize":1000000007})"",
         R""({"pageSize":"4"})"",
         R""({"pageSize":{"value":8}})"",
-        R""({"pageSize":[16,32,64]})"",
+        R""({"pageSize":[16, 32, 64]})"",
     };
     for (const auto &config : configList) {
         GLOGD("OpenDBConfigPageSizeTest001: test with config:%s", config.c_str());
@@ -500,11 +500,11 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigBufferPoolTest001, TestSize.Level0)
     GRD_DB *db = nullptr;
     std::string path = "./document.db";
 
-    int status = GRD_DBOpen(path.c_str(), R""({"pageSize":64,"bufferPoolSize":4096})"", GRD_DB_OPEN_CREATE, &db);
+    int status = GRD_DBOpen(path.c_str(), R""({"pageSize":64, "bufferPoolSize":4096})"", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OK);
     EXPECT_EQ(GRD_DBClose(db, 0), GRD_OK);
 
-    status = GRD_DBOpen(path.c_str(), R""({"pageSize":64,"bufferPoolSize":4095})"", GRD_DB_OPEN_CREATE, &db);
+    status = GRD_DBOpen(path.c_str(), R""({"pageSize":64, "bufferPoolSize":4095})"", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_INVALID_ARGS);
 
     status = GRD_DBOpen(path.c_str(), R""({"bufferPoolSize":1023})"", GRD_DB_OPEN_CREATE, &db);
@@ -526,11 +526,11 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigPubBuffTest001, TestSize.Level0)
     GRD_DB *db = nullptr;
     std::string path = "./document.db";
 
-    int status = GRD_DBOpen(path.c_str(), R""({"pageSize":64,"redopubbufsize":4033})"", GRD_DB_OPEN_CREATE, &db);
+    int status = GRD_DBOpen(path.c_str(), R""({"pageSize":64, "redopubbufsize":4033})"", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_OK);
     EXPECT_EQ(GRD_DBClose(db, 0), GRD_OK);
 
-    status = GRD_DBOpen(path.c_str(), R""({"pageSize":64,"redopubbufsize":4032})"", GRD_DB_OPEN_CREATE, &db);
+    status = GRD_DBOpen(path.c_str(), R""({"pageSize":64, "redopubbufsize":4032})"", GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_INVALID_ARGS);
 
     status = GRD_DBOpen(path.c_str(), R""({"redopubbufsize":255})"", GRD_DB_OPEN_CREATE, &db);

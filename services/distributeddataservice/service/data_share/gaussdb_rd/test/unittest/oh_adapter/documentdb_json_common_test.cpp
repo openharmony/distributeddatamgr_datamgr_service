@@ -44,9 +44,9 @@ void DocumentDBJsonCommonTest::TearDown(void) {}
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest001, TestSize.Level0)
 {
-    std::string document = R""({"name":"Tmn","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-    std::string updateDoc = R""({"name":"Xue","case":{"field1":1,"field2":"string","field3":[1,2,3]},
-        "age":28,"addr":{"city":"shenzhen","postal":518000}})"";
+    std::string document = R""({"name":"Tmn", "age":18, "addr":{"city":"shanghai", "postal":200001}})"";
+    std::string updateDoc = R""({"name":"Xue", "case":{"field1":1, "field2":"string", "field3":[1, 2, 3]},
+        "age":28, "addr":{"city":"shenzhen", "postal":518000}})"";
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -68,9 +68,9 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest001, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest002, TestSize.Level0)
 {
-    std::string document = R""({"name":"Tmn","case":2,"age":[1,2,3],"addr":{"city":"shanghai","postal":200001}})"";
-    std::string updateDoc = R""({"name":["Xue","Neco","Lip"],"grade":99,"age":18,"addr":
-        [{"city":"shanghai","postal":200001},{"city":"beijing","postal":100000}]})"";
+    std::string document = R""({"name":"Tmn", "case":2, "age":[1, 2, 3], "addr":{"city":"shanghai", "postal":200001}})"";
+    std::string updateDoc = R""({"name":["Xue", "Neco", "Lip"], "grade":99, "age":18, "addr":
+        [{"city":"shanghai", "postal":200001}, {"city":"beijing", "postal":100000}]})"";
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -91,10 +91,10 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest002, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest003, TestSize.Level0)
 {
-    std::string document = R""({"name":["Tmn","BB","Alice"],"age":[1,2,3],"addr":[{"city":"shanghai","postal":200001},
-        {"city":"wuhan","postal":430000}]})"";
-    std::string updateDoc = R""({"name":["Xue","Neco","Lip"],"age":18,"addr":[{"city":"shanghai","postal":200001},
-        {"city":"beijing","postal":100000}]})"";
+    std::string document = R""({"name":["Tmn", "BB", "Alice"], "age":[1, 2, 3], "addr":[{"city":"shanghai", "postal":200001},
+        {"city":"wuhan", "postal":430000}]})"";
+    std::string updateDoc = R""({"name":["Xue", "Neco", "Lip"], "age":18, "addr":[{"city":"shanghai", "postal":200001},
+        {"city":"beijing", "postal":100000}]})"";
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -129,7 +129,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest004, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest005, TestSize.Level0)
 {
-    std::string document = R""({"name":["Tmn","BB","Alice"]})"";
+    std::string document = R""({"name":["Tmn", "BB", "Alice"]})"";
     std::string updateDoc = R""({"name.2":"GG"})"";
 
     int errCode = E_OK;
@@ -148,7 +148,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest005, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest006, TestSize.Level0)
 {
-    std::string document = R""({"name":{"first":"Tno","last":"moray"}})"";
+    std::string document = R""({"name":{"first":"Tno", "last":"moray"}})"";
     std::string updateDoc = R""({"name":{"midle.AA":"GG"}})"";
 
     int errCode = E_OK;
@@ -167,7 +167,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest006, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest007, TestSize.Level0)
 {
-    std::string document = R""({"name":{"first":["XX","CC"],"last":"moray"}})"";
+    std::string document = R""({"name":{"first":["XX", "CC"], "last":"moray"}})"";
     std::string updateDoc = R""({"name.first.0":"LL"})"";
 
     int errCode = E_OK;
@@ -186,8 +186,8 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest007, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest008, TestSize.Level0)
 {
-    std::string document = R""({"name":{"first":"XX","last":"moray"}})"";
-    std::string updateDoc = R""({"name":{"first":["XXX","BBB","CCC"]}})"";
+    std::string document = R""({"name":{"first":"XX", "last":"moray"}})"";
+    std::string updateDoc = R""({"name":{"first":["XXX", "BBB", "CCC"]}})"";
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -205,7 +205,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest008, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest009, TestSize.Level0)
 {
-    std::string document = R""({"name":{"first":["XXX","BBB","CCC"],"last":"moray"}})"";
+    std::string document = R""({"name":{"first":["XXX", "BBB", "CCC"], "last":"moray"}})"";
     std::string updateDoc = R""({"name":{"first":"XX"}})"";
 
     int errCode = E_OK;
@@ -286,7 +286,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest013, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest014, TestSize.Level0)
 {
-    std::string document = R""({"name":{"first":"Xue","second":"Lang"}})"";
+    std::string document = R""({"name":{"first":"Xue", "second":"Lang"}})"";
     std::string updateDoc = R""({"name.0":"GG"})"";
 
     int errCode = E_OK;
@@ -301,7 +301,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest014, TestSize.Level0)
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest015, TestSize.Level0)
 {
     std::string document = R""({"name":{"first":"Xue","second":"Lang"}})"";
-    std::string updateDoc = R""({"name.first":["GG","MM"]})"";
+    std::string updateDoc = R""({"name.first":["GG", "MM"]})"";
 
     int errCode = E_OK;
     JsonObject src = JsonObject::Parse(document, errCode);
@@ -459,7 +459,7 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest012, TestSize.Leve
 {
     std::string document =
         R""({"item" : "journal", "instock" : [{"warehose" : "A", "qty" : 5}, {"warehose" : "C", "qty" : 15}]})"";
-    std::string filter = R""({"instock" : {"warehose" : "A", "bad" : "2" ,"qty" : 5}})"";
+    std::string filter = R""({"instock" : {"warehose" : "A", "bad" : "2" , "qty" : 5}})"";
     int errCode = E_OK;
     JsonObject srcObj = JsonObject::Parse(document, errCode);
     EXPECT_EQ(errCode, E_OK);
