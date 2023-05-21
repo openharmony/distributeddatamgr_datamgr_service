@@ -438,7 +438,7 @@ int32_t RdbServiceImpl::DoSubscribe(const RdbSyncerParam& param, const Subscribe
 void RdbServiceImpl::OnChange(uint32_t tokenId, const std::string &storeName)
 {
     pid_t pid = 0;
-    syncAgents_.ComputeIfPresent(tokenId, [&pid, &storeName](auto &key, SyncAgent &value) {
+    syncAgents_.ComputeIfPresent(tokenId, [&pid, &storeName](auto &key, const SyncAgent &value) {
         pid = value.pid_;
         return true;
     });
