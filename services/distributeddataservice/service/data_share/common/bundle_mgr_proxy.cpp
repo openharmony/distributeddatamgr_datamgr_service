@@ -85,7 +85,7 @@ BundleMgrProxy::~BundleMgrProxy()
 
 std::shared_ptr<BundleMgrProxy> BundleMgrProxy::GetInstance()
 {
-    static std::shared_ptr<BundleMgrProxy> proxy = std::make_shared<BundleMgrProxy>();
+    static std::shared_ptr<BundleMgrProxy> proxy(new BundleMgrProxy());
     return proxy;
 }
 } // namespace OHOS::DataShare
