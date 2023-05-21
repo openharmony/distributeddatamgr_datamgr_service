@@ -68,7 +68,8 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest001, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest002, TestSize.Level0)
 {
-    std::string document = R""({"name":"Tmn", "case":2, "age":[1, 2, 3], "addr":{"city":"shanghai", "postal":200001}})"";
+    std::string document = R""({"name":"Tmn", "case":2, "age":[1, 2, 3],
+        "addr":{"city":"shanghai", "postal":200001}})"";
     std::string updateDoc = R""({"name":["Xue", "Neco", "Lip"], "grade":99, "age":18, "addr":
         [{"city":"shanghai", "postal":200001}, {"city":"beijing", "postal":100000}]})"";
 
@@ -91,8 +92,8 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest002, TestSize.Level0)
 
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest003, TestSize.Level0)
 {
-    std::string document = R""({"name":["Tmn", "BB", "Alice"], "age":[1, 2, 3], "addr":[{"city":"shanghai", "postal":200001},
-        {"city":"wuhan", "postal":430000}]})"";
+    std::string document = R""({"name":["Tmn", "BB", "Alice"], "age":[1, 2, 3],
+        "addr":[{"city":"shanghai", "postal":200001}, {"city":"wuhan", "postal":430000}]})"";
     std::string updateDoc = R""({"name":["Xue", "Neco", "Lip"], "age":18, "addr":[{"city":"shanghai", "postal":200001},
         {"city":"beijing", "postal":100000}]})"";
 
