@@ -43,7 +43,6 @@ ohos_shared_library("data_share_service") {
     "common/seq_strategy.cpp",
     "common/template_manager.cpp",
     "common/uri_utils.cpp",
-    "data/json_formatter.cpp",
     "data/published_data.cpp",
     "data/resultset_json_formatter.cpp",
     "data/template_data.cpp",
