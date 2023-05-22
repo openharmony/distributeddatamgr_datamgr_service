@@ -290,7 +290,7 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
         fout.open(newPath, std::ios_base::out | std::ios_base::trunc);
     }
     char buf[COPY_SIZE] = {0};
-    while (!fin.eof()) {
+    while (fin.good()) {
         fin.read(buf, COPY_SIZE);
         fout.write(buf, fin.gcount());
     }
