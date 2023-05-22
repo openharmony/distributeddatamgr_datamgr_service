@@ -56,7 +56,7 @@ int ResultSet::GetNextWithField()
         std::string idKey = idValue.GetStringValue();
         key.assign(idKey.begin(), idKey.end());
     } else {
-        key.assign(matchData_.first.begin(), matchData_.first.end());
+        key.assign(lastKeyIndex_.begin(), lastKeyIndex_.end());
     }
     matchData_.first.clear(); // Delete previous data.
     matchData_.second.clear();
@@ -68,6 +68,7 @@ int ResultSet::GetNextWithField()
     }
     std::string jsonData(value.second.begin(), value.second.end());
     std::string jsonkey(value.first.begin(), value.first.end());
+    lastKeyIndex_ = jsonkey;
     if (isCutBranch_) {
         errCode = CutJsonBranch(jsonData);
         if (errCode != E_OK) {
@@ -99,7 +100,7 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
     if (errCode != E_OK) {
         return errCode;
     }
-    if (matchData_.first.empty()) {
+    if (matchData_.second.empty()) {
         return -E_NO_DATA;
     }
     return E_OK;

@@ -49,6 +49,7 @@ private:
     size_t index_ = 0;
     std::shared_ptr<QueryContext> context_;
     std::pair<std::string, std::string> matchData_;
+    std::string lastKeyIndex_;
 };
 } // namespace DocumentDB
 #endif // RESULTSET_H

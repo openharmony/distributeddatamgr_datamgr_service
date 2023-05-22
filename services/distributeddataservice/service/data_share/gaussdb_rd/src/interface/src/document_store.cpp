@@ -327,7 +327,7 @@ int GetUpsertRePlaceData(ResultSet &resultSet, std::string &targetDocument, Json
 {
     resultSet.GetNext();
     int errCode = resultSet.GetValue(valStr);
-    if (errCode != E_OK) {
+    if (errCode != E_OK || isReplace) {
         valStr = targetDocument; // If cant not find data, insert it.
         return E_OK;
     }
