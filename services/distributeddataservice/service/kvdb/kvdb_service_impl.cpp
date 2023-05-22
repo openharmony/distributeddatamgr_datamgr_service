@@ -26,15 +26,15 @@
 #include "communication_strategy.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "matrix_event.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "query_helper.h"
 #include "permit_delegate.h"
+#include "query_helper.h"
 #include "upgrade.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
@@ -790,12 +790,12 @@ size_t KVDBServiceImpl::GetSyncDataSize(const std::string &deviceId)
 
     return totalSize;
 }
-int32_t KVDBServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executors)
+int32_t KVDBServiceImpl::OnBind(const BindInfo &bindInfo)
 {
-    executors_ = executors;
-    storeCache_.SetThreadPool(executors);
-    KvStoreSyncManager::GetInstance()->SetThreadPool(executors);
-    ZLOGE("onexecutor:%{public}p", executors.get());
+    executors_ = bindInfo.executors;
+    storeCache_.SetThreadPool(bindInfo.executors);
+    KvStoreSyncManager::GetInstance()->SetThreadPool(bindInfo.executors);
+    ZLOGE("onexecutor:%{public}p", bindInfo.executors.get());
     return 0;
 }
 } // namespace OHOS::DistributedKv

@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 #include "feature_stub_impl.h"
+
+#include "bootstrap.h"
+#include "ipc_skeleton.h"
 namespace OHOS::DistributedData {
 FeatureStubImpl::FeatureStubImpl(std::shared_ptr<FeatureSystem::Feature> feature)
     : featureImpl_(std::move(feature))
@@ -37,7 +40,8 @@ int32_t FeatureStubImpl::OnInitialize(std::shared_ptr<ExecutorPool> executor)
     if (featureImpl_ == nullptr) {
         return -1;
     }
-    featureImpl_->OnExecutor(std::move(executor));
+    featureImpl_->OnBind({ Bootstrap::GetInstance().GetProcessLabel(),
+        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor)});
     return featureImpl_->OnInitialize();
 }
 

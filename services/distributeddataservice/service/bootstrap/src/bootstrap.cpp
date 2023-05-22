@@ -16,11 +16,12 @@
 #include "bootstrap.h"
 
 #include <dlfcn.h>
-#include "backuprule/backup_rule_manager.h"
+
 #include "backup_manager.h"
+#include "backuprule/backup_rule_manager.h"
 #include "checker/checker_manager.h"
 #include "config_factory.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "log_print.h"
 namespace OHOS {
 namespace DistributedData {

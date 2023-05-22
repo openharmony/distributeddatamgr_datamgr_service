@@ -20,7 +20,7 @@
 #include "cloud/cloud_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -626,9 +626,9 @@ int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMet
     return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true) ? RDB_OK : RDB_ERROR;
 }
 
-int32_t RdbServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executors)
+int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 {
-    executors_ = std::move(executors);
-    return RDB_OK;
+    executors_ = bindInfo.executors;
+    return 0;
 }
 } // namespace OHOS::DistributedRdb
