@@ -322,7 +322,7 @@ int CheckUpsertConflict(ResultSet &resultSet, JsonObject &filterObj, std::string
     return errCode;
 }
 
-int GetUpsertRePlaceData(ResultSet &resultSet, std::string targetDocument, JsonObject &documentObj, bool isReplace,
+int GetUpsertRePlaceData(ResultSet &resultSet, std::string &targetDocument, JsonObject &documentObj, bool isReplace,
     std::string &valStr)
 {
     resultSet.GetNext();
