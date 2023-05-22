@@ -13,12 +13,11 @@
  * limitations under the License.
  */
 #define LOG_TAG "DirectoryManager"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 
 #include <dirent.h>
-#include <sys/stat.h>
-
 #include <string>
+#include <sys/stat.h>
 
 #include "accesstoken_kit.h"
 #include "log_print.h"

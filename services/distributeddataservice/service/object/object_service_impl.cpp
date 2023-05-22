@@ -23,7 +23,7 @@
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "device_manager_adapter.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
@@ -276,10 +276,5 @@ int32_t ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, con
 
 ObjectServiceImpl::ObjectServiceImpl()
 {
-}
-int32_t ObjectServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executors)
-{
-    executors_ = executors;
-    return 0;
 }
 } // namespace OHOS::DistributedObject
