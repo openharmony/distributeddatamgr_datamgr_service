@@ -413,7 +413,8 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
 
 void PublishedDataSubscriberManager::PutInto(
     std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &callbacks,
-    const std::vector<ObserverNode> &val, const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer)
+    const std::vector<ObserverNode> &val, const PublishedDataKey &key,
+    const sptr<IDataProxyPublishedDataObserver> observer)
 {
     for (auto const &callback : val) {
         if (callback.enabled && callback.observer != nullptr) {
