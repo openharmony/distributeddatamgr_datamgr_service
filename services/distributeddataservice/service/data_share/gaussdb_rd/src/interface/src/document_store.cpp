@@ -175,7 +175,8 @@ int UpdateArgsCheck(const std::string &collection, const std::string &filter, co
     return errCode;
 }
 
-int GetUpDataRePlaceData(ResultSet &resultSet, const std::string &id, const std::string &update, std::string &valStr, bool isReplace)
+int GetUpDataRePlaceData(ResultSet &resultSet, const std::string &id, const std::string &update, std::string &valStr,
+    bool isReplace)
 {
     std::string valueGotStr;
     int errCode = resultSet.GetValue(valueGotStr);
@@ -209,7 +210,6 @@ int GetUpDataRePlaceData(ResultSet &resultSet, const std::string &id, const std:
     return errCode;
 }
 
-
 int DocumentStore::UpdateDataIntoDB(std::shared_ptr<QueryContext> &context, JsonObject &filterObj,
     const std::string &update, bool &isReplace)
 {
@@ -226,7 +226,10 @@ int DocumentStore::UpdateDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     std::string valStr;
     auto coll = Collection(context->collectionName, executor_);
     ResultSet resultSet;
-    InitResultSet(context, this, resultSet, true);
+    errCode = InitResultSet(context, this, resultSet, false);
+    if (errCode != E_OK) {
+        goto END;
+    }
     // no start transaction inner
     errCode = resultSet.GetNext(false, true);
     if (errCode == -E_NO_DATA) {
@@ -390,9 +393,9 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
         return errCode;
     }
     context->isIdExist = isIdExist;
-    errCode = InitResultSet(context, this, resultSet, true);
+    errCode = InitResultSet(context, this, resultSet, false);
     if (errCode != E_OK) {
-        return errCode;
+        goto END;
     }
     errCode = CheckUpsertConflict(resultSet, filterObj, docId, coll);
     // There are only three return values, the two other situation can continue to move forward.
@@ -559,7 +562,10 @@ int DocumentStore::DeleteDataFromDB(std::shared_ptr<QueryContext> &context, Json
     }
     std::string id;
     ResultSet resultSet;
-    InitResultSet(context, this, resultSet, true);
+    errCode = InitResultSet(context, this, resultSet, false);
+    if (errCode != E_OK) {
+        goto END;
+    }
     errCode = resultSet.GetNext(false, true);
     if (errCode != E_OK) {
         goto END;
@@ -740,7 +746,7 @@ int DocumentStore::InitFindResultSet(GRD_ResultSet *grdResultSet, std::shared_pt
     if (errCode != E_OK) {
         goto END;
     }
-    errCode = InitResultSet(context, this, grdResultSet->resultSet_, false);
+    errCode = InitResultSet(context, this, grdResultSet->resultSet_, true);
     if (errCode == E_OK) {
         collections_[context->collectionName] = nullptr;
     }

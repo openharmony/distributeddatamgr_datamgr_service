@@ -25,6 +25,6 @@
 
 namespace DocumentDB {
 class ValueObject;
-int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, ResultSet &resultSet, bool ifField);
+int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, ResultSet &resultSet, bool isCutBranch);
 } // namespace DocumentDB
 #endif // RESULTSET_COMMON_H

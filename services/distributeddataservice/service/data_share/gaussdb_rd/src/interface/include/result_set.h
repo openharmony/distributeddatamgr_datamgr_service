@@ -30,7 +30,7 @@ class ResultSet {
 public:
     ResultSet();
     ~ResultSet();
-    int Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool ifField);
+    int Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool isCutBranch);
     int GetNext(bool isNeedTransaction = false, bool isNeedCheckTable = false);
     int GetValue(char **value);
     int GetValue(std::string &value);
@@ -45,7 +45,7 @@ private:
     int GetNextWithField();
 
     DocumentStore *store_ = nullptr;
-    bool ifField_ = false;
+    bool isCutBranch_ = false;
     size_t index_ = 0;
     std::shared_ptr<QueryContext> context_;
     std::pair<std::string, std::string> matchData_;

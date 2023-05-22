@@ -20,14 +20,14 @@
 
 namespace DocumentDB {
 class ValueObject;
-int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, ResultSet &resultSet, bool ifField)
+int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, ResultSet &resultSet, bool isCutBranch)
 {
-    if (!ifField) {
+    if (isCutBranch) {
         if (context->projectionTree.ParseTree(context->projectionPath) == -E_INVALID_ARGS) {
             GLOGE("Parse ProjectionTree failed");
             return -E_INVALID_ARGS;
         }
     }
-    return resultSet.Init(context, store, ifField);
+    return resultSet.Init(context, store, isCutBranch);
 }
 } // namespace DocumentDB

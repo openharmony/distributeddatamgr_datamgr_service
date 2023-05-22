@@ -33,9 +33,9 @@ int ResultSet::EraseCollection()
     }
     return E_OK;
 }
-int ResultSet::Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool ifField)
+int ResultSet::Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool isCutBranch)
 {
-    ifField_ = ifField;
+    isCutBranch_ = isCutBranch;
     context_ = context;
     store_ = store;
     return E_OK;
@@ -68,7 +68,13 @@ int ResultSet::GetNextWithField()
     }
     std::string jsonData(value.second.begin(), value.second.end());
     std::string jsonkey(value.first.begin(), value.first.end());
-    CutJsonBranch(jsonData);
+    if (isCutBranch_) {
+        errCode = CutJsonBranch(jsonData);
+        if (errCode != E_OK) {
+            GLOGE("cut branch faild");
+            return errCode;
+        }
+    }
     matchData_ = std::make_pair(jsonkey, jsonData);
     return E_OK;
 }
@@ -194,10 +200,10 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
         GLOGE("jsonData Parsed failed");
         return errCode;
     }
+    std::vector<std::vector<std::string>> allCutPath;
     if (context_->viewType) {
         std::vector<std::string> singlePath;
         JsonObject cjsonObjChild = cjsonObj.GetChild();
-        std::vector<std::vector<std::string>> allCutPath;
         errCode = CheckCutNode(&cjsonObjChild, singlePath, allCutPath);
         if (errCode != E_OK) {
             GLOGE("The node in CheckCutNode is nullptr");
