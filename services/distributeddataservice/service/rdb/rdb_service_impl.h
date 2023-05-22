@@ -52,10 +52,6 @@ public:
 
     void OnChange(uint32_t tokenId, const std::string &storeName);
 
-    int32_t CreateRDBTable(const RdbSyncerParam &param) override;
-
-    int32_t DestroyRDBTable(const RdbSyncerParam &param) override;
-
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
 
     int32_t OnExecutor(std::shared_ptr<ExecutorPool> executors) override;

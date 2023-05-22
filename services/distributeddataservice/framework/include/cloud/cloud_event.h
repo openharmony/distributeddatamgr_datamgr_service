@@ -39,7 +39,7 @@ public:
 
     CloudEvent(int32_t evtId, StoreInfo storeInfo, const std::string &featureName = "relational_store");
     ~CloudEvent() = default;
-    std::string GetFeatureName() const;
+    const std::string& GetFeatureName() const;
     const StoreInfo& GetStoreInfo() const;
 
 private:
