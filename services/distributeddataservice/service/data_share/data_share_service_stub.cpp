@@ -317,7 +317,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
     if (!CheckInterfaceToken(data)) {
         return DATA_SHARE_ERROR;
     }
-    if (code >= 0 && code < DATA_SHARE_SERVICE_CMD_MAX) {
+    if (code < DATA_SHARE_SERVICE_CMD_MAX) {
         return (this->*HANDLERS[code])(data, reply);
     }
     return -1;

@@ -41,7 +41,7 @@ public:
     static int32_t Query(const std::string &filter, std::variant<std::vector<uint8_t>, std::string> &publishedData);
     static std::string GenId(const std::string &key, const std::string &bundleName, int64_t subscriberId);
     PublishedData(const std::string &key, const std::string &bundleName, int64_t subscriberId,
-        const std::variant<std::vector<uint8_t>, std::string> &value, const int version);
+        const std::variant<std::vector<uint8_t>, std::string> &inputValue, const int version);
     ~PublishedData() = default;
     bool HasVersion() const override;
     int GetVersion() const override;
