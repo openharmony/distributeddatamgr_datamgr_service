@@ -14,10 +14,11 @@
  */
 #define LOG_TAG "StoreCache"
 #include "store_cache.h"
+
 #include "account/account_delegate.h"
 #include "crypto_manager.h"
 #include "device_matrix.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"

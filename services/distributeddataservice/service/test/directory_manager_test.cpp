@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "nativetoken_kit.h"
 #include "types.h"
 

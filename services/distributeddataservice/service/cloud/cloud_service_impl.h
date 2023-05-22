@@ -35,7 +35,7 @@ public:
     int32_t Clean(const std::string &id, const std::map<std::string, int32_t> &actions) override;
     int32_t NotifyDataChange(const std::string &id, const std::string &bundleName) override;
     int32_t OnInitialize() override;
-    int32_t OnExecutor(std::shared_ptr<ExecutorPool> executor) override;
+    int32_t OnBind(const BindInfo &info) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
 
 private:
