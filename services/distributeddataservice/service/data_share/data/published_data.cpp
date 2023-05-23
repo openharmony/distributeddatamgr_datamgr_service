@@ -41,7 +41,7 @@ PublishedData::PublishedData(const std::string &key, const std::string &bundleNa
     value.SetVersion(version);
 }
 
-PublishedData::PublishedData(PublishedDataNode node)
+PublishedData::PublishedData(const PublishedDataNode &node)
     : KvData(Id(GenId(node.key, node.bundleName, node.subscriberId))), value(node)
 {
 }

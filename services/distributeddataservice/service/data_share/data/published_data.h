@@ -37,7 +37,7 @@ public:
 
 class PublishedData final : public KvData {
 public:
-    explicit PublishedData(PublishedDataNode node);
+    explicit PublishedData(const PublishedDataNode &node);
     static std::vector<PublishedData> Query(const std::string &bundleName);
     static int32_t Query(const std::string &filter, std::variant<std::vector<uint8_t>, std::string> &publishedData);
     static std::string GenId(const std::string &key, const std::string &bundleName, int64_t subscriberId);

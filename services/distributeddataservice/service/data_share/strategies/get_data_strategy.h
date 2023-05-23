@@ -32,6 +32,7 @@ private:
     SeqStrategy &GetStrategy();
     std::mutex mutex_;
     SeqStrategy strategies_;
+    bool CheckPermission(std::shared_ptr<Context> context, const std::string &key);
 };
 } // namespace OHOS::DataShare
 #endif
