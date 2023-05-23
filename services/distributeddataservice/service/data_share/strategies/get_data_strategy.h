@@ -26,10 +26,12 @@
 namespace OHOS::DataShare {
 class GetDataStrategy final {
 public:
-    static Data Execute(std::shared_ptr<Context> context);
+    Data Execute(std::shared_ptr<Context> context);
 
 private:
-    static Strategy *GetStrategy();
+    SeqStrategy &GetStrategy();
+    std::mutex mutex_;
+    SeqStrategy strategies_;
 };
 } // namespace OHOS::DataShare
 #endif

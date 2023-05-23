@@ -25,38 +25,44 @@
 namespace OHOS::DataShare {
 Data GetDataStrategy::Execute(std::shared_ptr<Context> context)
 {
-    auto preProcess = GetStrategy();
-    if (preProcess == nullptr) {
+    auto &preProcess = GetStrategy();
+    if (preProcess.IsEmpty()) {
         ZLOGE("get strategy fail, maybe memory not enough");
         return Data();
     }
-    if (!(*preProcess)(context)) {
+    if (!preProcess(context)) {
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return Data();
     }
-    return Data();
+    auto result = PublishedData::Query(context->calledBundleName);
+    Data data;
+    for (const auto &item:result) {
+        if (item.GetVersion() > data.version_) {
+            data.version_ = item.GetVersion();
+        }
+        data.datas_.emplace_back(item.value.key, item.value.subscriberId, item.value.value);
+    }
+    return data;
 }
 
-Strategy *GetDataStrategy::GetStrategy()
+SeqStrategy &GetDataStrategy::GetStrategy()
 {
-    static std::mutex mutex;
-    static SeqStrategy strategies;
-    std::lock_guard<decltype(mutex)> lock(mutex);
-    if (!strategies.IsEmpty()) {
-        return &strategies;
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (!strategies_.IsEmpty()) {
+        return strategies_;
     }
     std::initializer_list<Strategy *> list = {
         new (std::nothrow) LoadConfigCommonStrategy(),
         new (std::nothrow) LoadConfigFromDataProxyNodeStrategy(),
         new (std::nothrow) PermissionStrategy()
     };
-    auto ret = strategies.Init(list);
+    auto ret = strategies_.Init(list);
     if (!ret) {
         std::for_each(list.begin(), list.end(), [](Strategy *item) {
             delete item;
         });
-        return nullptr;
+        return strategies_;
     }
-    return &strategies;
+    return strategies_;
 }
 } // namespace OHOS::DataShare

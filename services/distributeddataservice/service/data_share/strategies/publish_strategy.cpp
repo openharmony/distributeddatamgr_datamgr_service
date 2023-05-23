@@ -26,13 +26,12 @@
 namespace OHOS::DataShare {
 int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const PublishedDataItem &item)
 {
-    auto preProcess = GetStrategy();
-    if (preProcess == nullptr) {
+    auto &preProcess = GetStrategy();
+    if (preProcess.IsEmpty()) {
         ZLOGE("get strategy fail, maybe memory not enough");
         return -1;
     }
-
-    if (!(*preProcess)(context)) {
+    if (!preProcess(context)) {
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return -1;
     }
@@ -51,11 +50,11 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
     return E_OK;
 }
 
-Strategy *PublishStrategy::GetStrategy()
+SeqStrategy &PublishStrategy::GetStrategy()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (!strategies_.IsEmpty()) {
-        return &strategies_;
+        return strategies_;
     }
     std::initializer_list<Strategy *> list = {
         new (std::nothrow) LoadConfigCommonStrategy(),
@@ -67,8 +66,8 @@ Strategy *PublishStrategy::GetStrategy()
         std::for_each(list.begin(), list.end(), [](Strategy *item) {
             delete item;
         });
-        return nullptr;
+        return strategies_;
     }
-    return &strategies_;
+    return strategies_;
 }
 } // namespace OHOS::DataShare
