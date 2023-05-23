@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "db_delegate.h"
-#include "task_scheduler.h"
+#include "executor_pool.h"
 #include "template_manager.h"
 
 namespace OHOS::DataShare {
@@ -30,11 +30,11 @@ public:
     void Execute(const Key &key, const std::string &rdbDir, int version);
     void SetTimer(const std::string &dbPath, int version, const Key &key, int64_t reminderTime);
     void RemoveTimer(const Key &key);
+    void SetExecutorPool(std::shared_ptr<ExecutorPool> executor);
 
 private:
     static constexpr const char *REMIND_TIMER_FUNC = "remindTimer(";
     static constexpr int REMIND_TIMER_FUNC_LEN = 12;
-    static constexpr size_t TIME_TASK_NUM = 10;
     SchedulerManager() = default;
     ~SchedulerManager() = default;
     static void GenRemindTimerFuncParams(const std::string &rdbDir, int version, const Key &key,
@@ -43,8 +43,8 @@ private:
         std::shared_ptr<DBDelegate> delegate);
 
     std::mutex mutex_;
-    std::map<Key, TaskScheduler::TaskId> timerCache_;
-    std::shared_ptr<TaskScheduler> scheduler_ = nullptr;
+    std::map<Key, Executor::TaskId> timerCache_;
+    std::shared_ptr<ExecutorPool> executor_ = nullptr;
 };
 } // namespace OHOS::DataShare
 #endif // SCHEDULER_MANAGER_H
