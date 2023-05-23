@@ -411,8 +411,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     if (errCode != E_OK) {
         goto END;
     }
-    GLOGE("docId is =============>%s", docId.c_str());
-    errCode = coll.UpsertDocument(docId, newStr, isReplace);
+    errCode = coll.UpsertDocument(docId, newStr, isIdExist, isReplace);
     if (errCode == E_OK) {
         count++;
     } else if (errCode == -E_NOT_FOUND) {
@@ -516,10 +515,8 @@ int DocumentStore::InsertDataIntoDB(const std::string &collection, const std::st
         DocumentKey::GetOidDocKey(docKey);
         id = docKey.key;
     }
-    Key key(id.begin(), id.end());
-    Value value(document.begin(), document.end());
     Collection coll = Collection(collection, executor_);
-    return coll.InsertDocument(key, value);
+    return coll.InsertDocument(id, document, isIdExist);
 }
 
 int DocumentStore::InsertDocument(const std::string &collection, const std::string &document, uint32_t flags)

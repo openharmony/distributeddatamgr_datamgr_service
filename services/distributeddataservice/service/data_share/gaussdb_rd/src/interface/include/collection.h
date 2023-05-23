@@ -29,14 +29,13 @@ public:
     Collection(){};
     ~Collection();
 
-    int PutDocument(const Key &key, const Value &document);
-    int InsertDocument(const Key &key, const Value &document);
+    int InsertDocument(const std::string &key, const std::string &document, bool &isIdExist);
     int GetDocumentByKey(const Key &key, Value &document) const;
     int GetMatchedDocument(const JsonObject &filterObj, const Key &key, std::pair<std::string, std::string> &values,
         int isIdExist) const;
     int DeleteDocument(const Key &key);
     int IsCollectionExists(int &errCode);
-    int UpsertDocument(const std::string &id, const std::string &newStr, bool isReplace = true);
+    int UpsertDocument(const std::string &id, const std::string &newStr, bool &isIdExist, bool isReplace = true);
     bool FindDocument();
     int UpdateDocument(const std::string &id, const std::string &document, bool isReplace = false);
 

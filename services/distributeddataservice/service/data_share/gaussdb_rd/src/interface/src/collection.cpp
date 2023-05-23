@@ -18,6 +18,7 @@
 #include "check_common.h"
 #include "db_constant.h"
 #include "doc_errno.h"
+#include "document_key.h"
 #include "log_print.h"
 
 namespace DocumentDB {
@@ -43,15 +44,7 @@ Collection::~Collection()
     executor_ = nullptr;
 }
 
-int Collection::PutDocument(const Key &key, const Value &document)
-{
-    if (executor_ == nullptr) {
-        return -E_INNER_ERROR;
-    }
-    return executor_->PutData(name_, key, document);
-}
-
-int Collection::InsertDocument(const Key &key, const Value &document)
+int Collection::InsertDocument(const std::string &key, const std::string &document, bool &isIdExist)
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -64,7 +57,19 @@ int Collection::InsertDocument(const Key &key, const Value &document)
     if (!isCollectionExist) {
         return -E_INVALID_ARGS;
     }
-    return executor_->InsertData(name_, key, document);
+    Key keyId(key.begin(), key.end());
+    Value valSet(document.begin(), document.end());
+    DocKey docKey;
+    if (!isIdExist) {
+        errCode = executor_->InsertData(name_, keyId, valSet);
+        while (errCode != E_OK) {
+            DocumentKey::GetOidDocKey(docKey);
+            keyId.assign(docKey.key.begin(), docKey.key.end());
+            errCode = executor_->InsertData(name_, keyId, valSet);
+        }
+        return errCode;
+    }
+    return executor_->InsertData(name_, keyId, valSet);
 }
 
 bool Collection::FindDocument()
@@ -114,7 +119,7 @@ int Collection::IsCollectionExists(int &errCode)
     return executor_->IsCollectionExists(name_, errCode);
 }
 
-int Collection::UpsertDocument(const std::string &id, const std::string &newStr, bool isReplace)
+int Collection::UpsertDocument(const std::string &id, const std::string &newStr, bool &isIdExist, bool isReplace)
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -131,6 +136,16 @@ int Collection::UpsertDocument(const std::string &id, const std::string &newStr,
     }
     Key keyId(id.begin(), id.end());
     Value valSet(newStr.begin(), newStr.end());
+    DocKey docKey;
+    if (!isIdExist) {
+        errCode = executor_->PutData(name_, keyId, valSet);
+        while (errCode != E_OK) {
+            DocumentKey::GetOidDocKey(docKey);
+            keyId.assign(docKey.key.begin(), docKey.key.end());
+            errCode = executor_->PutData(name_, keyId, valSet);
+        }
+        return errCode;
+    }
     return executor_->PutData(name_, keyId, valSet);
 }
 
