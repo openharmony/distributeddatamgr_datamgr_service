@@ -114,10 +114,6 @@ int32_t RdbSyncer::Init(pid_t pid, pid_t uid, uint32_t token, const StoreMetaDat
         return RDB_ERROR;
     }
 
-    if (meta.storeType == RDB_DEVICE_COLLABORATION && meta.version < StoreMetaData::UUID_CHANGED_TAG) {
-        delegate_->RemoveDeviceData();
-    }
-
     ZLOGI("success");
     return RDB_OK;
 }
@@ -405,6 +401,21 @@ int32_t RdbSyncer::RemoteQuery(const std::string& device, const std::string& sql
     resultSet = new (std::nothrow) RdbResultSetImpl(dbResultSet);
     if (resultSet == nullptr) {
         ZLOGE("resultSet is nullptr");
+        return RDB_ERROR;
+    }
+    return RDB_OK;
+}
+
+int32_t RdbSyncer::RemoveDeviceData()
+{
+    auto* delegate = GetDelegate();
+    if (delegate == nullptr) {
+        ZLOGE("delegate is nullptr");
+        return RDB_ERROR;
+    }
+    DistributedDB::DBStatus status = delegate->RemoveDeviceData();
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("DistributedDB RemoveDeviceData failed, status is  %{public}d.", status);
         return RDB_ERROR;
     }
     return RDB_OK;

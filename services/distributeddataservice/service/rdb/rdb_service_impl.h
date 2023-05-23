@@ -99,6 +99,8 @@ private:
 
     int32_t SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta);
 
+    int32_t Upgrade(const RdbSyncerParam &param, const StoreMetaData &meta, const StoreMetaData &old);
+
     class DeathRecipientImpl : public IRemoteObject::DeathRecipient {
     public:
         using DeathCallback = std::function<void()>;

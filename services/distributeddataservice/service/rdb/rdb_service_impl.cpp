@@ -554,16 +554,22 @@ int32_t RdbServiceImpl::CreateMetaData(const RdbSyncerParam &param, StoreMetaDat
             meta.isEncrypt, old.area, meta.area);
         return RDB_ERROR;
     }
-
-    auto saved = MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
-    if (!saved) {
-        return RDB_ERROR;
+    if (!isCreated || meta != old) {
+        Upgrade(param, meta, old);
+        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d",
+            meta.bundleName.c_str(), meta.storeId.c_str(), old.storeType, meta.storeType, old.isEncrypt,
+            meta.isEncrypt, old.area, meta.area);
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
     }
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;
     appIdMeta.appId = meta.appId;
-    saved = MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
-    if (!saved) {
+    if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
+        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d",
+            meta.bundleName.c_str(), meta.storeId.c_str(), old.storeType, meta.storeType, old.isEncrypt,
+            meta.isEncrypt, old.area, meta.area);
         return RDB_ERROR;
     }
     if (!param.isEncrypt_ || param.password_.empty()) {
@@ -584,6 +590,32 @@ int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMet
     auto time = system_clock::to_time_t(system_clock::now());
     newSecretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
     return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true) ? RDB_OK : RDB_ERROR;
+}
+
+int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData &meta, const StoreMetaData &old)
+{
+    if (old.storeType == RDB_DEVICE_COLLABORATION && old.version < StoreMetaData::UUID_CHANGED_TAG) {
+        pid_t pid = IPCSkeleton::GetCallingPid();
+        auto rdbObserver = new (std::nothrow) RdbStoreObserverImpl(this, pid);
+        if (rdbObserver == nullptr) {
+            return RDB_ERROR;
+        }
+        auto syncer = new (std::nothrow) RdbSyncer(param, rdbObserver);
+        if (syncer == nullptr) {
+            ZLOGE("new syncer error");
+            return RDB_ERROR;
+        }
+        auto uid = IPCSkeleton::GetCallingUid();
+        auto tokenId = IPCSkeleton::GetCallingTokenID();
+        if (syncer->Init(pid, uid, tokenId, meta) != RDB_OK) {
+            ZLOGE("Init error");
+            delete syncer;
+            return RDB_ERROR;
+        }
+        syncer->RemoveDeviceData();
+        delete syncer;
+    }
+    return RDB_OK;
 }
 
 int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)

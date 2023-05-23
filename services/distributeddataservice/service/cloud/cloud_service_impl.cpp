@@ -415,7 +415,8 @@ void CloudServiceImpl::GetSchema(const Event &event)
     ZLOGD("database: %{public}s sync start", database->name.c_str());
     auto cloudDB = instance->ConnectCloudDB(rdbEvent.GetStoreInfo().tokenId, *database);
     if (cloudDB == nullptr) {
-        ZLOGE("cloudDB is nullptr");
+        ZLOGE("cloudDB is nullptr, bundleName:%{public}s user:%{public}d database:%{public}s",
+            rdbEvent.GetStoreInfo().bundleName.c_str(), rdbEvent.GetStoreInfo().user, database->name.c_str());
         return;
     }
     AutoCache::Watchers watchers;

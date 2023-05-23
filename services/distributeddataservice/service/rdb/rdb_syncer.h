@@ -55,6 +55,8 @@ public:
     int32_t RemoteQuery(const std::string& device, const std::string& sql,
                         const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet);
 
+    int32_t RemoveDeviceData();
+
     static std::string RemoveSuffix(const std::string& name);
 
     static int32_t GetInstIndex(uint32_t tokenId, const std::string &bundleName);
