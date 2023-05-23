@@ -60,11 +60,6 @@ int32_t FeatureSystem::Feature::OnInitialize()
     return E_OK;
 }
 
-int32_t FeatureSystem::Feature::OnExecutor(std::shared_ptr<ExecutorPool> executors)
-{
-    return E_OK;
-}
-
 int32_t FeatureSystem::Feature::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
 {
     return E_OK;
@@ -103,6 +98,11 @@ int32_t FeatureSystem::Feature::Offline(const std::string &device)
 }
 
 int32_t FeatureSystem::Feature::OnReady(const std::string &device)
+{
+    return E_OK;
+}
+
+int32_t FeatureSystem::Feature::OnBind(const FeatureSystem::Feature::BindInfo &bindInfo)
 {
     return E_OK;
 }

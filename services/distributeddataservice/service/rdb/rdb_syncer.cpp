@@ -22,7 +22,7 @@
 #include "checker/checker_manager.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
@@ -434,7 +434,8 @@ int32_t RdbSyncer::DoSync(const SyncOption &option, const RdbPredicates &predica
 
     ZLOGI("delegate sync");
     return delegate->Sync(devices, static_cast<DistributedDB::SyncMode>(option.mode),
-                          MakeQuery(predicates), [&result] (const auto& syncStatus) {
+                          MakeQuery(predicates), [&result] (const std::map<std::string,
+                          std::vector<DistributedDB::TableStatus>> &syncStatus) {
                               HandleSyncStatus(syncStatus, result);
                           }, true);
 }
@@ -456,7 +457,8 @@ int32_t RdbSyncer::DoAsync(const SyncOption &option, const RdbPredicates &predic
 
     ZLOGI("delegate sync");
     return delegate->Sync(devices, static_cast<DistributedDB::SyncMode>(option.mode),
-                          MakeQuery(predicates), [callback] (const auto& syncStatus) {
+                          MakeQuery(predicates), [callback] (const std::map<std::string,
+                          std::vector<DistributedDB::TableStatus>> &syncStatus) {
                               SyncResult result;
                               HandleSyncStatus(syncStatus, result);
                               callback(result);

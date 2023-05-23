@@ -15,7 +15,7 @@
 #define LOG_TAG "RdbAdaptor"
 #include "rdb_delegate.h"
 
-#include "data/resultset_json_formatter.h"
+#include "resultset_json_formatter.h"
 #include "log_print.h"
 #include "rdb_utils.h"
 #include "scheduler_manager.h"

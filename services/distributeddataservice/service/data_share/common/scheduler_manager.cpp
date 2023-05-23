@@ -38,7 +38,7 @@ void SchedulerManager::Execute(const std::string &uri, const std::string &rdbDir
         return;
     }
     std::vector<Key> keys = RdbSubscriberManager::GetInstance().GetKeysByUri(uri);
-    for (auto &key : keys) {
+    for (auto const &key : keys) {
         if (RdbSubscriberManager::GetInstance().GetObserverCount(key) == 0) {
             continue;
         }

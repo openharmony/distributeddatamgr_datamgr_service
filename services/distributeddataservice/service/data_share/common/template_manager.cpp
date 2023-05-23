@@ -17,7 +17,6 @@
 #include "template_manager.h"
 
 #include "db_delegate.h"
-#include "json_formatter.h"
 #include "log_print.h"
 #include "published_data.h"
 #include "scheduler_manager.h"
@@ -127,14 +126,11 @@ int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const Templat
 {
     int result = E_OK;
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
-    rdbCache_.Compute(key, [&observer, &context, &result, this](const auto &key, std::vector<ObserverNode> &value) {
+    rdbCache_.Compute(key, [&observer, &context, this](const auto &key, std::vector<ObserverNode> &value) {
         ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), context->callerTokenId);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId);
-        result = Notify(key, node, context->calledSourceDir, context->version);
-        if (result != E_OK) {
-            return false;
-        }
+        Notify(key, node, context->calledSourceDir, context->version);
         value.emplace_back(observer, context->callerTokenId);
         if (GetEnableObserverCount(key) == 1) {
             SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
@@ -290,11 +286,10 @@ int RdbSubscriberManager::Notify(
     changeNode.templateId_.bundleName_ = key.bundleName;
     for (const auto &predicate : tpl.predicates_) {
         std::string result =  delegate->Query(predicate.selectSql_);
-        JsonFormatter formatter(predicate.key_, result);
-        changeNode.data_.emplace_back(DistributedData::Serializable::Marshall(formatter));
+        changeNode.data_.emplace_back("{\"" + predicate.key_ + "\":" + result + "}");
     }
 
-    ZLOGI("emit, size %{public}d %{private}s", val.size(), changeNode.uri_.c_str());
+    ZLOGI("emit, size %{public}zu %{private}s", val.size(), changeNode.uri_.c_str());
     for (auto &callback : val) {
         if (callback.enabled && callback.observer != nullptr) {
             callback.observer->OnChangeFromRdb(changeNode);
@@ -416,9 +411,10 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
 
 void PublishedDataSubscriberManager::PutInto(
     std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &callbacks,
-    std::vector<ObserverNode> &val, const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer)
+    const std::vector<ObserverNode> &val, const PublishedDataKey &key,
+    const sptr<IDataProxyPublishedDataObserver> observer)
 {
-    for (auto &callback : val) {
+    for (auto const &callback : val) {
         if (callback.enabled && callback.observer != nullptr) {
             // callback the observer, others do not call
             if (observer != nullptr && callback.observer != observer) {

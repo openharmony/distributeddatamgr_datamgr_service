@@ -37,7 +37,8 @@ private:
     static constexpr size_t TIME_TASK_NUM = 10;
     SchedulerManager() = default;
     ~SchedulerManager() = default;
-    void GenRemindTimerFuncParams(const std::string &rdbDir, int version, const Key &key, std::string &schedulerSQL);
+    static void GenRemindTimerFuncParams(const std::string &rdbDir, int version, const Key &key,
+        std::string &schedulerSQL);
     void ExecuteSchedulerSQL(const std::string &rdbDir, int version, const Key &key,
         std::shared_ptr<DBDelegate> delegate);
 
