@@ -18,6 +18,7 @@
 #include "check_common.h"
 #include "collection_option.h"
 #include "doc_errno.h"
+#include "document_key.h"
 #include "grd_base/grd_type_export.h"
 #include "grd_resultset_inner.h"
 #include "log_print.h"
@@ -358,15 +359,18 @@ int InsertIdToDocument(JsonObject &filterObj, JsonObject &documentObj, bool &isI
     std::string &docId)
 {
     auto filterObjChild = filterObj.GetChild();
-    ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);
-    docId = idValue.GetStringValue();
     int errCode = E_OK;
-    JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
-    documentObj.InsertItemObject(0, idObj);
-    targetDocument = documentObj.Print();
-    if (!isIdExist) {
-        errCode = -E_INVALID_ARGS;
+    ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);
+    if (isIdExist) {
+        docId = idValue.GetStringValue();
+        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
+        documentObj.InsertItemObject(0, idObj);
+    } else {
+        DocKey docKey;
+        DocumentKey::GetOidDocKey(docKey);
+        docId = docKey.key;
     }
+    targetDocument = documentObj.Print();
     return errCode;
 }
 
@@ -407,6 +411,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     if (errCode != E_OK) {
         goto END;
     }
+    GLOGE("docId is =============>%s", docId.c_str());
     errCode = coll.UpsertDocument(docId, newStr, isReplace);
     if (errCode == E_OK) {
         count++;
@@ -496,12 +501,21 @@ int InsertArgsCheck(const std::string &collection, const std::string &document, 
     return errCode;
 }
 
-int DocumentStore::InsertDataIntoDB(const std::string &collection, const std::string &document, JsonObject &documentObj)
+int DocumentStore::InsertDataIntoDB(const std::string &collection, const std::string &document,
+    JsonObject &documentObj, bool &isIdExist)
 {
     std::lock_guard<std::mutex> lock(dbMutex_);
-    JsonObject documentObjChild = documentObj.GetChild();
-    ValueObject idValue = JsonCommon::GetValueInSameLevel(documentObjChild, KEY_ID);
-    std::string id = idValue.GetStringValue();
+    std::string id;
+    if (isIdExist) {
+        JsonObject documentObjChild = documentObj.GetChild();
+        ValueObject idValue = JsonCommon::GetValueInSameLevel(documentObjChild, KEY_ID);
+        id = idValue.GetStringValue();
+
+    } else {
+        DocKey docKey;
+        DocumentKey::GetOidDocKey(docKey);
+        id = docKey.key;
+    }
     Key key(id.begin(), id.end());
     Value value(document.begin(), document.end());
     Collection coll = Collection(collection, executor_);
@@ -519,11 +533,12 @@ int DocumentStore::InsertDocument(const std::string &collection, const std::stri
         GLOGE("Document Parsed failed");
         return errCode;
     }
-    errCode = CheckCommon::CheckDocument(documentObj);
+    bool isIdExist = true;
+    errCode = CheckCommon::CheckDocument(documentObj, isIdExist);
     if (errCode != E_OK) {
         return errCode;
     }
-    return InsertDataIntoDB(collection, document, documentObj);
+    return InsertDataIntoDB(collection, document, documentObj, isIdExist);
 }
 
 int DeleteArgsCheck(const std::string &collection, const std::string &filter, uint32_t flags)

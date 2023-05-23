@@ -125,18 +125,13 @@ int CheckCommon::CheckIdFormat(JsonObject &filterJson, bool &isIdExisit)
     return E_OK;
 }
 
-int CheckCommon::CheckDocument(JsonObject &documentObj)
+int CheckCommon::CheckDocument(JsonObject &documentObj, bool &isIdExist)
 {
     if (documentObj.GetDeep() > JSON_DEEP_MAX) {
         GLOGE("documentObj's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
-    bool isIdExist = true;
     int ret = CheckIdFormat(documentObj, isIdExist);
-    if (!isIdExist) {
-        GLOGE("Document Id format is illegal");
-        return -E_INVALID_ARGS;
-    }
     if (ret != E_OK) {
         return ret;
     }

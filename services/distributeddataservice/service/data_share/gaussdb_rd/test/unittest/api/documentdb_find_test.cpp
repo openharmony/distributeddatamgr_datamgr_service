@@ -1465,4 +1465,33 @@ HWTEST_F(DocumentDBFindTest, DocumentDBFindTest062, TestSize.Level1)
     Query query = { filter, projection };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_INVALID_ARGS);
 }
+
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest063, TestSize.Level1)
+{
+    const char *document = "{\"a\":1, \"doc64\" : 2}";
+    const char *filter1 = "{\"b\":1}";
+    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
+    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
+    const char *filter = "{\"a\":1}";
+    GRD_ResultSet *resultSet = nullptr;
+    const char *projection = R"({})";
+    Query query = { filter, projection };
+    EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
+    EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
+}
 } // namespace

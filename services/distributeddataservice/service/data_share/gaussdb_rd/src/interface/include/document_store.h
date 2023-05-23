@@ -71,7 +71,8 @@ private:
         bool &isReplace);
     int UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, JsonObject &filterObj, const std::string &document,
         JsonObject &documentObj, bool &isReplace);
-    int InsertDataIntoDB(const std::string &collection, const std::string &document, JsonObject &documentObj);
+    int InsertDataIntoDB(const std::string &collection, const std::string &document, JsonObject &documentObj,
+        bool &isIdExist);
     int DeleteDataFromDB(std::shared_ptr<QueryContext> &context, JsonObject &filterObj);
     int InitFindResultSet(GRD_ResultSet *grdResultSet, std::shared_ptr<QueryContext> &context);
     KvStoreExecutor *executor_ = nullptr;
