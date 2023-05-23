@@ -15,6 +15,7 @@
 #include "result_set.h"
 
 #include "db_constant.h"
+#include "document_key.h"
 #include "log_print.h"
 #include "securec.h"
 
@@ -70,7 +71,7 @@ int ResultSet::GetNextWithField()
     std::string jsonkey(value.first.begin(), value.first.end());
     lastKeyIndex_ = jsonkey;
     if (isCutBranch_) {
-        errCode = CutJsonBranch(jsonData);
+        errCode = CutJsonBranch(jsonkey, jsonData);
         if (errCode != E_OK) {
             GLOGE("cut branch faild");
             return errCode;
@@ -193,7 +194,35 @@ int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePat
     }
     return E_OK;
 }
-int ResultSet::CutJsonBranch(std::string &jsonData)
+
+JsonObject CreatIdObj(const std::string &idStr, int errCode)
+{
+    JsonObject idObj = JsonObject::Parse("{}", errCode, true); // cant be faild.
+    idObj.AddItemToObject("_id");
+    ValueObject idValue = ValueObject(idStr.c_str());
+    idObj = idObj.GetObjectItem("_id", errCode); // cant be faild.
+    (void)idObj.SetItemValue(idValue);
+    return idObj;
+}
+
+int InsertRandomId(JsonObject &cjsonObj, std::string &jsonKey)
+{
+    std::string idStr = DocumentKey::GetIdFromKey(jsonKey);
+    if (idStr.empty()) {
+        GLOGE("Genalral Id faild");
+        return -E_INNER_ERROR;
+    }
+    int errCode = E_OK;
+    JsonObject idObj = CreatIdObj(idStr, errCode);
+    if (errCode != E_OK) {
+        GLOGE("CreatIdObj faild");
+        return errCode;
+    }
+    cjsonObj.InsertItemObject(0, idObj);
+    return E_OK;
+}
+
+int ResultSet::CutJsonBranch(std::string &jsonKey, std::string &jsonData)
 {
     int errCode;
     JsonObject cjsonObj = JsonObject::Parse(jsonData, errCode, true);
@@ -201,8 +230,11 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
         GLOGE("jsonData Parsed failed");
         return errCode;
     }
-    std::vector<std::vector<std::string>> allCutPath;
+    bool isIdExistInValue = true; // if id exsit in the value string that get from db.
+    bool isInsertIdflag = false;
+    isIdExistInValue = cjsonObj.GetObjectItem("_id", errCode).IsNull() ? false : true;
     if (context_->viewType) {
+        std::vector<std::vector<std::string>> allCutPath;
         std::vector<std::string> singlePath;
         JsonObject cjsonObjChild = cjsonObj.GetChild();
         errCode = CheckCutNode(&cjsonObjChild, singlePath, allCutPath);
@@ -214,6 +246,9 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
             if (!context_->ifShowId || singleCutPaht[0] != KEY_ID) {
                 cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
             }
+            if (singleCutPaht[0] == KEY_ID && !isIdExistInValue) { // projection has Id, and its showType is true.
+                isInsertIdflag = true;
+            }
         }
     }
     if (!context_->viewType) {
@@ -224,6 +259,15 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
             std::vector<std::string> idPath;
             idPath.emplace_back(KEY_ID);
             cjsonObj.DeleteItemDeeplyOnTarget(idPath);
+        }
+    }
+    if (context_->ifShowId && !isIdExistInValue) {
+        isInsertIdflag = true; // ifShowId is true,and then the data taken out does not have IDs, insert id.
+    }
+    if (isInsertIdflag) {
+        errCode = InsertRandomId(cjsonObj, jsonKey);
+        if (errCode != E_OK) {
+            return errCode;
         }
     }
     jsonData = cjsonObj.Print();

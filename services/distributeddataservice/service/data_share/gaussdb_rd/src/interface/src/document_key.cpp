@@ -65,4 +65,11 @@ int DocumentKey::GetOidDocKey(DocKey &key)
     return ret;
 }
 
+std::string DocumentKey::GetIdFromKey(std::string &keyStr)
+{
+    if (!keyStr.empty()) {
+        keyStr.pop_back();
+    }
+    return keyStr;
+}
 } // namespace DocumentDB

@@ -45,10 +45,8 @@ public:
 
 class DocumentKey {
 public:
-    static int GetStringDocKey(const std::string &id, int32_t size, DocKey **key);
     static int GetOidDocKey(DocKey &key);
-    static int GenDocKey(JsonObject &value, DocKey **key);
-    static int FreeDocKey(DocKey *key);
+    static std::string GetIdFromKey(std::string &keyStr);
 };
 
 } // namespace DocumentDB
