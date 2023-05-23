@@ -81,6 +81,10 @@ bool GetDataStrategy::CheckPermission(std::shared_ptr<Context> context, const st
             if (proxyData.uri != key) {
                 continue;
             }
+            if (proxyData.requiredReadPermission.empty()) {
+                ZLOGE("no read permission");
+                return false;
+            }
             int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(
                 context->callerTokenId, proxyData.requiredReadPermission);
             if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
