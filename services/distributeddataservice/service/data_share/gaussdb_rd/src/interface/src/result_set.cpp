@@ -14,6 +14,8 @@
 */
 #include "result_set.h"
 
+#include <sstream>
+
 #include "db_constant.h"
 #include "document_key.h"
 #include "log_print.h"
@@ -197,11 +199,11 @@ int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePat
 
 JsonObject CreatIdObj(const std::string &idStr, int errCode)
 {
-    JsonObject idObj = JsonObject::Parse("{}", errCode, true); // cant be faild.
-    idObj.AddItemToObject("_id");
-    ValueObject idValue = ValueObject(idStr.c_str());
-    idObj = idObj.GetObjectItem("_id", errCode); // cant be faild.
-    (void)idObj.SetItemValue(idValue);
+    std::stringstream sstream;
+    sstream << "{\"_id\":"
+            << "\"" << idStr << "\"}";
+    JsonObject idObj = JsonObject::Parse(sstream.str(), errCode, true); // cant be faild.
+    idObj = idObj.GetChild();
     return idObj;
 }
 
