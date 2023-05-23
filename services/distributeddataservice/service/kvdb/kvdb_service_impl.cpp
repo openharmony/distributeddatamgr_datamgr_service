@@ -795,7 +795,6 @@ int32_t KVDBServiceImpl::OnExecutor(std::shared_ptr<ExecutorPool> executors)
     executors_ = executors;
     storeCache_.SetThreadPool(executors);
     KvStoreSyncManager::GetInstance()->SetThreadPool(executors);
-    ZLOGE("onexecutor:%{public}p", executors.get());
     return 0;
 }
 } // namespace OHOS::DistributedKv
