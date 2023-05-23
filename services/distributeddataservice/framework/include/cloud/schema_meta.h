@@ -17,39 +17,43 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SCHEMA_META_H
 #include "serializable/serializable.h"
 namespace OHOS::DistributedData {
+struct API_EXPORT Field final : public Serializable {
+    std::string colName;
+    std::string alias;
+    int32_t type = 0;
+    bool primary = false;
+    bool nullable = true;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
+struct API_EXPORT Table final : public Serializable {
+    std::string name;
+    std::string alias;
+    std::vector<Field> fields;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
+struct API_EXPORT Database final : public Serializable {
+    std::string name = "";
+    std::string alias;
+    std::vector<Table> tables;
+
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
 class API_EXPORT SchemaMeta final : public Serializable {
 public:
+    using Database = Database;
+    using Table = Table;
+    using Field = Field;
     static constexpr const char *DELETE_FIELD = "#_deleted";
     static constexpr const char *GID_FIELD = "#_gid";
     static constexpr const char *CREATE_FIELD = "#_createTime";
     static constexpr const char *MODIFY_FIELD = "#_modifyTime";
     static constexpr const char *CURSOR_FIELD = "#_cursor";
-    struct API_EXPORT Field final : public Serializable {
-        std::string colName;
-        std::string alias;
-        int32_t type = 0;
-        bool primary = false;
-        bool nullable = true;
-        bool Marshal(json &node) const override;
-        bool Unmarshal(const json &node) override;
-    };
-
-    struct API_EXPORT Table final : public Serializable {
-        std::string name;
-        std::string alias;
-        std::vector<Field> fields;
-        bool Marshal(json &node) const override;
-        bool Unmarshal(const json &node) override;
-    };
-
-    struct API_EXPORT Database final : public Serializable {
-        std::string name = "";
-        std::string alias;
-        std::vector<Table> tables;
-
-        bool Marshal(json &node) const override;
-        bool Unmarshal(const json &node) override;
-    };
     int32_t version = 0;
     std::vector<Database> databases;
 

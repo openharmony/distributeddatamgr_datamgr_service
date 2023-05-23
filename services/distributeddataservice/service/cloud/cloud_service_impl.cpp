@@ -424,7 +424,7 @@ void CloudServiceImpl::GetSchema(const Event &event)
         ZLOGE("store is nullptr");
         return;
     }
-    store->Bind(schemaMeta, cloudDB);
+    store->Bind(*database, cloudDB);
     for (const auto &table : database->tables) {
         ZLOGD("table: %{public}s sync start", table.name.c_str());
         // do sync

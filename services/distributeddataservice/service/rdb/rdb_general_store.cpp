@@ -15,6 +15,9 @@
 #define LOG_TAG "RdbGeneralStore"
 #include "rdb_general_store.h"
 
+#include "cloud/asset_loader.h"
+#include "cloud/cloud_db.h"
+#include "cloud/schema_meta.h"
 #include "crypto_manager.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -23,11 +26,13 @@
 #include "rdb_query.h"
 #include "rdb_syncer.h"
 #include "relational_store_manager.h"
-#include "store/general_watcher.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
-using namespace OHOS::NativeRdb;
+using namespace NativeRdb;
+using DBField = DistributedDB::Field;
+using DBTable = DistributedDB::TableSchema;
+using DBSchema = DistributedDB::DataBaseSchema;
 class RdbOpenCallbackImpl : public RdbOpenCallback {
 public:
     int OnCreate(RdbStore &rdbStore) override
@@ -69,8 +74,47 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
     }
 }
 
+RdbGeneralStore::~RdbGeneralStore()
+{
+    manager_.CloseStore(delegate_);
+    delegate_ = nullptr;
+    store_ = nullptr;
+    bindInfo_.loader_ = nullptr;
+    bindInfo_.db_->Close();
+    bindInfo_.db_ = nullptr;
+}
+
+int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
+{
+    bindInfo_ = std::move(bindInfo);
+    // SetCloudDB
+    DBSchema schema;
+    schema.tables.resize(database.tables.size());
+    for (size_t i = 0; i < database.tables.size(); i++) {
+        const Table &table = database.tables[i];
+        DBTable &dbTable = schema.tables[i];
+        dbTable.name = table.name;
+        for (auto &field : table.fields) {
+            DBField dbField;
+            dbField.colName = field.colName;
+            dbField.type = field.type;
+            dbField.primary = field.primary;
+            dbField.nullable = field.nullable;
+            dbTable.fields.push_back(std::move(dbField));
+        }
+    }
+    // SetCloudDbSchema
+    return GeneralError::E_NOT_SUPPORT;
+}
+
 int32_t RdbGeneralStore::Close()
 {
+    manager_.CloseStore(delegate_);
+    delegate_ = nullptr;
+    store_ = nullptr;
+    bindInfo_.loader_ = nullptr;
+    bindInfo_.db_->Close();
+    bindInfo_.db_ = nullptr;
     return 0;
 }
 
@@ -104,43 +148,25 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuer
     return std::shared_ptr<Cursor>();
 }
 
+int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, AsyncDetail async, int32_t wait)
+{
+    return GeneralError::E_NOT_SUPPORT;
+
+}
+
+int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, AsyncStatus async, int32_t wait)
+{
+    return GeneralError::E_NOT_SUPPORT;
+
+}
+
 int32_t RdbGeneralStore::Watch(int32_t origin, Watcher &watcher)
 {
-    watcher_ = &watcher;
     return GeneralError::E_NOT_SUPPORT;
 }
 
 int32_t RdbGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
 {
-    return 0;
-}
-
-int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, Async async, int32_t wait)
-{
-    RdbQuery *rdbQuery = nullptr;
-    auto ret = query.QueryInterface(rdbQuery);
-    if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
-        return GeneralError::E_OK;
-    }
-    auto status = delegate_->Sync(
-        devices, DistributedDB::SyncMode(mode), RdbSyncer::MakeQuery(rdbQuery->predicates_.GetDistributedPredicates()),
-        [async](const std::map<std::string, std::vector<TableStatus>> &result) {
-            std::map<std::string, std::map<std::string, int32_t>> detail;
-            for (auto &[key, tables] : result) {
-                auto value = detail[key];
-                for (auto &table : tables) {
-                    value[std::move(table.tableName)] = table.status;
-                }
-            }
-            async(std::move(detail));
-        },
-        wait);
-    return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
-}
-
-int32_t RdbGeneralStore::Bind(const SchemaMeta &schemaMeta, std::shared_ptr<CloudDB> cloudDb)
-{
-    cloudDb_ = std::move(cloudDb);
-    return 0;
+    return GeneralError::E_NOT_SUPPORT;
 }
 } // namespace OHOS::DistributedRdb
