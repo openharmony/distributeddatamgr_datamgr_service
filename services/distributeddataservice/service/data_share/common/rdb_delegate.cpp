@@ -37,7 +37,7 @@ std::string RemindTimerFunc(const std::vector<std::string> &args)
 {
     size_t size = args.size();
     if (size != ARGS_SIZE) {
-        ZLOGE("RemindTimerFunc args size error, %{public}d", size);
+        ZLOGE("RemindTimerFunc args size error, %{public}zu", size);
         return "";
     }
     std::string dbPath = args[ARG_DB_PATH];
