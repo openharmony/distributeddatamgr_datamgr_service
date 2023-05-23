@@ -336,7 +336,6 @@ enum DataShareKvStoreType : int32_t {
 int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
 {
     binderInfo_ = binderInfo;
-    SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
     const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(binderInfo.selfTokenId);
     DistributedData::StoreMetaData saveMeta;
