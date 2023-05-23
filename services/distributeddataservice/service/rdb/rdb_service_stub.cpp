@@ -211,5 +211,4 @@ int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageP
     }
     return RDB_ERROR;
 }
-
 } // namespace OHOS::DistributedRdb
