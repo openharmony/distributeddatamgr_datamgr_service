@@ -75,17 +75,17 @@ bool GetDataStrategy::CheckPermission(std::shared_ptr<Context> context, const st
         ZLOGI("access private data, caller and called is same, go");
         return true;
     }
-    for (const auto &moduleInfo:context->bundleInfo.hapModuleInfos) {
+    for (const auto &moduleInfo : context->bundleInfo.hapModuleInfos) {
         auto proxyDatas = moduleInfo.proxyDatas;
         for (auto &proxyData : proxyDatas) {
             if (proxyData.uri != key) {
                 continue;
             }
-            int status =
-                Security::AccessToken::AccessTokenKit::VerifyAccessToken(context->callerTokenId, proxyData.requiredReadPermission);
+            int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(
+                context->callerTokenId, proxyData.requiredReadPermission);
             if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
                 ZLOGE("Verify permission denied! callerTokenId:%{public}u permission:%{public}s",
-                      context->callerTokenId, proxyData.requiredReadPermission.c_str());
+                    context->callerTokenId, proxyData.requiredReadPermission.c_str());
                 return false;
             }
             return true;
