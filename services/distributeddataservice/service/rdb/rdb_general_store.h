@@ -38,7 +38,7 @@ public:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
     using RdbManager = DistributedDB::RelationalStoreManager;
 
-    explicit RdbGeneralStore(const StoreMetaData &metaData);
+    explicit RdbGeneralStore(const StoreMetaData &meta);
     int32_t Bind(std::shared_ptr<CloudDB> cloudDb) override;
     int32_t SetSchema(const SchemaMeta &schemaMeta) override;
     int32_t Execute(const std::string &table, const std::string &sql) override;
@@ -59,7 +59,7 @@ private:
     RdbDelegate *delegate_ = nullptr;
     std::shared_ptr<RdbStore> store_;
     std::shared_ptr<CloudDB> cloudDb_;
-    Watcher *watcher_;
+    Watcher *watcher_ = nullptr;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

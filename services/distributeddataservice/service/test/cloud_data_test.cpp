@@ -32,7 +32,7 @@ using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
-namespace OHOS {
+namespace OHOS::Test {
 namespace DistributedDataTest {
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
@@ -185,4 +185,4 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
         MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), storeMetaData, true));
 }
 } // namespace DistributedDataTest
-} // namespace OHOS
+} // namespace OHOS::Test
