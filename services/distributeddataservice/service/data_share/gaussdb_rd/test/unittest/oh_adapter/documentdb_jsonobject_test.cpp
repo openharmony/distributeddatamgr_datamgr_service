@@ -49,7 +49,7 @@ void DocumentDBJsonObjectTest::TearDown(void) {}
  */
 HWTEST_F(DocumentDBJsonObjectTest, JsonObjectTest001, TestSize.Level0)
 {
-    const std::string config = R""({"a":123,"b":{"c":234,"d":"12345"}})"";
+    const std::string config = R""({"a":123, "b":{"c":234, "d":"12345"}})"";
 
     int ret = E_OK;
     JsonObject conf = JsonObject::Parse(config, ret);
