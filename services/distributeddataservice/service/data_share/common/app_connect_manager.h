@@ -13,21 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef DATASHARESERVICE_CONNECT_EXTENSION_STRAGETY_H
-#define DATASHARESERVICE_CONNECT_EXTENSION_STRAGETY_H
+#ifndef DATASHARESERVICE_APP_CONNECT_MANAGER_H
+#define DATASHARESERVICE_APP_CONNECT_MANAGER_H
+
+#include <memory>
+#include <string>
 
 #include "block_data.h"
-#include "strategy.h"
+#include "concurrent_map.h"
+
 namespace OHOS::DataShare {
-class ConnectExtensionStrategy final : public Strategy {
+class AppConnectManager {
 public:
-    ConnectExtensionStrategy();
-    bool operator()(std::shared_ptr<Context> context) override;
-    static bool Execute(std::shared_ptr<Context> context, int maxWaitTimeMs = 2000);
+    static bool Wait(
+        const std::string &bundleName, int maxWaitTimeMs, std::function<bool()> connect);
+    static void Notify(const std::string &bundleName);
+
 private:
-    inline bool Connect(std::shared_ptr<Context> context);
-    std::mutex mutex_;
-    BlockData<bool> data_;
+    static ConcurrentMap<std::string, BlockData<bool> &> blockCache_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H

@@ -17,8 +17,10 @@
 #include "connect_extension_strategy.h"
 
 #include <thread>
-#include "log_print.h"
+
+#include "app_connect_manager.h"
 #include "callback_impl.h"
+#include "log_print.h"
 
 namespace OHOS::DataShare {
 bool ConnectExtensionStrategy::operator()(std::shared_ptr<Context> context)
@@ -59,26 +61,13 @@ bool ConnectExtensionStrategy::Connect(std::shared_ptr<Context> context)
 }
 
 bool ConnectExtensionStrategy::Execute(
-    std::shared_ptr<Context> context, std::function<bool()> isFinished, int maxWaitTimeMs)
+    std::shared_ptr<Context> context, int maxWaitTimeMs)
 {
-    ConnectExtensionStrategy strategy;
-    if (!strategy(context)) {
-        return false;
-    }
-    if (isFinished == nullptr) {
-        return true;
-    }
-    int waitTime = 0;
-    static constexpr int retryTime = 500;
-    while (!isFinished()) {
-        if (waitTime > maxWaitTimeMs) {
-            ZLOGE("cannot finish work");
+    return AppConnectManager::Wait(context->calledBundleName, maxWaitTimeMs, [&context]() {
+        ConnectExtensionStrategy strategy;
+        if (!strategy(context)) {
             return false;
         }
-        ZLOGI("has wait %{public}d ms", waitTime);
-        std::this_thread::sleep_for(std::chrono::milliseconds(retryTime));
-        waitTime += retryTime;
-    }
-    return true;
+    });
 }
 } // namespace OHOS::DataShare
