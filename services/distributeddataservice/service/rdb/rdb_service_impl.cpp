@@ -555,8 +555,8 @@ int32_t RdbServiceImpl::CreateMetaData(const RdbSyncerParam &param, StoreMetaDat
         return RDB_ERROR;
     }
     if (!isCreated || meta != old) {
-        Upgrade(param, meta, old);
-        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+        Upgrade(param, old);
+        ZLOGD("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
               "area:%{public}d->%{public}d",
             meta.bundleName.c_str(), meta.storeId.c_str(), old.storeType, meta.storeType, old.isEncrypt,
             meta.isEncrypt, old.area, meta.area);
@@ -592,28 +592,16 @@ int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMet
     return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true) ? RDB_OK : RDB_ERROR;
 }
 
-int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData &meta, const StoreMetaData &old)
+int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData &old)
 {
     if (old.storeType == RDB_DEVICE_COLLABORATION && old.version < StoreMetaData::UUID_CHANGED_TAG) {
-        pid_t pid = IPCSkeleton::GetCallingPid();
-        auto rdbObserver = new (std::nothrow) RdbStoreObserverImpl(this, pid);
-        if (rdbObserver == nullptr) {
-            return RDB_ERROR;
-        }
-        auto syncer = new (std::nothrow) RdbSyncer(param, rdbObserver);
+        auto syncer = GetRdbSyncer(param);
         if (syncer == nullptr) {
-            ZLOGE("new syncer error");
+            ZLOGE("syncer is null, bundleName:%{public}s storeName:%{public}s", param.bundleName_.c_str(),
+                param.storeName_.c_str());
             return RDB_ERROR;
         }
-        auto uid = IPCSkeleton::GetCallingUid();
-        auto tokenId = IPCSkeleton::GetCallingTokenID();
-        if (syncer->Init(pid, uid, tokenId, meta) != RDB_OK) {
-            ZLOGE("Init error");
-            delete syncer;
-            return RDB_ERROR;
-        }
-        syncer->RemoveDeviceData();
-        delete syncer;
+        return syncer->RemoveDeviceData();
     }
     return RDB_OK;
 }
