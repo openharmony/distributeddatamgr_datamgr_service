@@ -247,7 +247,7 @@ int32_t CloudServiceImpl::GetCloudInfoFromServer(CloudInfo &cloudInfo)
         return NOT_SUPPORT;
     }
     cloudInfo = instance->GetServerInfo(cloudInfo.user);
-    return SUCCESS;
+    return cloudInfo.IsValid() ? SUCCESS : ERROR;
 }
 
 void CloudServiceImpl::UpdateCloudInfo(CloudInfo &cloudInfo)
