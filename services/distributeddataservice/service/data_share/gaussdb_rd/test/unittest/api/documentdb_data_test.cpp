@@ -149,7 +149,7 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest006, TestSize.Level0)
 HWTEST_F(DocumentDBDataTest, UpsertDataTest007, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
-    std::string val = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
+    std::string val = R""({"name":"Tmono", "age":18, "addr":{"city":"shanghai", "postal":200001}})"";
     EXPECT_EQ(GRD_UpsertDoc(g_db, "collection_not_exists", filter.c_str(), val.c_str(), GRD_DOC_REPLACE),
         GRD_INVALID_ARGS);
 }
@@ -164,10 +164,10 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest007, TestSize.Level0)
 HWTEST_F(DocumentDBDataTest, UpsertDataTest008, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
-    std::string document = R""({"name":"Tmn","age":18,"addr":{"city":"shanghai","postal":200001}})"";
+    std::string document = R""({"name":"Tmn", "age":18, "addr":{"city":"shanghai", "postal":200001}})"";
     EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_REPLACE), 1);
 
-    std::string updateDoc = R""({"name":"Xue","case":2,"age":28,"addr":{"city":"shenzhen","postal":518000}})"";
+    std::string updateDoc = R""({"name":"Xue", "case":2, "age":28, "addr":{"city":"shenzhen", "postal":518000}})"";
     EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), updateDoc.c_str(), GRD_DOC_APPEND), 1);
 }
 
@@ -272,7 +272,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest005, TestSize.Level0) {}
 HWTEST_F(DocumentDBDataTest, UpdateDataTest006, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
-    std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
+    std::string document = R""({"name":"Tmono", "age":18, "addr":{"city":"shanghai", "postal":200001}})"";
     std::vector<unsigned int> invalidFlags = { 2, 4, 8, 1024, UINT32_MAX };
     for (auto flag : invalidFlags) {
         GLOGD("UpdateDataTest006: update data with flag: %u", flag);
@@ -293,7 +293,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest007, TestSize.Level0)
 HWTEST_F(DocumentDBDataTest, UpdateDataTest008, TestSize.Level0)
 {
     const char *updateStr =
-        R""({"field2":{"c_field":{"cc_field":{"ccc_field":{"ccc_field":[1,false,1.234e2,["hello world!"]]}}}}})"";
+        R""({"field2":{"c_field":{"cc_field":{"ccc_field":{"ccc_field":[1, false, 1.234e2, ["hello world!"]]}}}}})"";
     int result = GRD_UpdateDoc(g_db, g_coll, "{\"field\" : 2}", updateStr, 0);
     int result2 = GRD_UpsertDoc(g_db, g_coll, "{\"field\" : 2}", updateStr, 0);
     EXPECT_EQ(result, GRD_INVALID_ARGS);
@@ -318,7 +318,8 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest009, TestSize.Level0)
     char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     string valueStr = value;
-    string repectStr = R""({"_id":"1234","field1":1,"field2":2,"FIELD1":[1,true,1.23456789,"hello world!",null]})"";
+    string repectStr = R""({"_id":"1234", "field1":1, "field2":2,
+        "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
     EXPECT_EQ((valueStr == repectStr), 1);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);

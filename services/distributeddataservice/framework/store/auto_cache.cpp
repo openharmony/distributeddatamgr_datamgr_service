@@ -174,13 +174,12 @@ bool AutoCache::Delegate::Close()
     std::unique_lock<decltype(mutex_)> lock(mutex_);
     if (store_ != nullptr) {
         store_->Unwatch(ORIGIN_ALL, *this);
+        auto status = store_->Close();
+        if (status == Error::E_BUSY) {
+            return false;
+        }
+        store_ = nullptr;
     }
-
-    auto status = store_->Close();
-    if (status == Error::E_BUSY) {
-        return false;
-    }
-    store_ = nullptr;
     return true;
 }
 

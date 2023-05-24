@@ -17,7 +17,6 @@
 #include "template_manager.h"
 
 #include "db_delegate.h"
-#include "json_formatter.h"
 #include "log_print.h"
 #include "published_data.h"
 #include "scheduler_manager.h"
@@ -287,8 +286,7 @@ int RdbSubscriberManager::Notify(
     changeNode.templateId_.bundleName_ = key.bundleName;
     for (const auto &predicate : tpl.predicates_) {
         std::string result =  delegate->Query(predicate.selectSql_);
-        JsonFormatter formatter(predicate.key_, result);
-        changeNode.data_.emplace_back(DistributedData::Serializable::Marshall(formatter));
+        changeNode.data_.emplace_back("{\"" + predicate.key_ + "\":" + result + "}");
     }
 
     ZLOGI("emit, size %{public}zu %{private}s", val.size(), changeNode.uri_.c_str());
@@ -413,9 +411,10 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
 
 void PublishedDataSubscriberManager::PutInto(
     std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &callbacks,
-    std::vector<ObserverNode> &val, const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer)
+    const std::vector<ObserverNode> &val, const PublishedDataKey &key,
+    const sptr<IDataProxyPublishedDataObserver> observer)
 {
-    for (auto &callback : val) {
+    for (auto const &callback : val) {
         if (callback.enabled && callback.observer != nullptr) {
             // callback the observer, others do not call
             if (observer != nullptr && callback.observer != observer) {
