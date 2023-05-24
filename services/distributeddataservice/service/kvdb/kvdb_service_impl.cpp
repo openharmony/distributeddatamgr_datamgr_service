@@ -464,7 +464,8 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
 
         auto observers = GetObservers(storeMeta.tokenId, storeMeta.storeId);
         ZLOGD("user:%{public}s appId:%{public}s storeId:%{public}s observers:%{public}zu", storeMeta.user.c_str(),
-            storeMeta.bundleName.c_str(), Anonymous::Change(storeMeta.storeId).c_str(), (observers) ? observers->size() : size_t(0));
+            storeMeta.bundleName.c_str(), Anonymous::Change(storeMeta.storeId).c_str(),
+            (observers) ? observers->size() : size_t(0));
         DBStatus status;
         storeCache_.GetStore(storeMeta, observers, status);
     }
