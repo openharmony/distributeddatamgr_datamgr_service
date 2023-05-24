@@ -25,7 +25,7 @@
 namespace OHOS::DataShare {
 bool ExtensionConnectAdaptor::Connect(std::shared_ptr<Context> context)
 {
-    for (auto const &extension: context->bundleInfo.extensionInfos) {
+    for (auto const &extension : context->bundleInfo.extensionInfos) {
         if (extension.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             return DoConnect(context);
         }
@@ -69,7 +69,8 @@ bool ExtensionConnectAdaptor::TryAndWait(std::shared_ptr<Context> context, int m
         });
 }
 
-void ExtensionConnectAdaptor::Disconnect() {
+void ExtensionConnectAdaptor::Disconnect()
+{
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (callback_ == nullptr) {
         ZLOGE("callback null");

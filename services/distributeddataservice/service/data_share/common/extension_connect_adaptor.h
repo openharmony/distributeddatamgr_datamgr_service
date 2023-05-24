@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef DATASHARESERVICE_CONNECT_EXTENSION_STRAGETY_H
-#define DATASHARESERVICE_CONNECT_EXTENSION_STRAGETY_H
+#ifndef DATASHARESERVICE_EXTENSION_CONNECT_ADAPTOR_H
+#define DATASHARESERVICE_EXTENSION_CONNECT_ADAPTOR_H
 
 #include "ability_connect_callback_interface.h"
 #include "block_data.h"
@@ -24,6 +24,7 @@ class ExtensionConnectAdaptor {
 public:
     static bool TryAndWait(std::shared_ptr<Context> context, int maxWaitTimeMs = 2000);
     ExtensionConnectAdaptor();
+
 private:
     bool Connect(std::shared_ptr<Context> context);
     void Disconnect();
