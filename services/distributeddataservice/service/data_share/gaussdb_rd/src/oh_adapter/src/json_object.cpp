@@ -102,7 +102,7 @@ JsonObject::~JsonObject()
 
 bool JsonObject::operator==(const JsonObject &other) const
 {
-    return (cJSON_Compare(this->cjson_, other.cjson_, 0) != 0);
+    return (cJSON_Compare(this->cjson_, other.cjson_, true) != 0); // CaseSensitive
 }
 
 bool JsonObject::IsNull() const
