@@ -23,6 +23,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "types.h"
+#include "utils/anonymous.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 constexpr int64_t StoreCache::INTERVAL;
@@ -105,7 +106,7 @@ void StoreCache::CloseExcept(const std::set<int32_t> &users)
 void StoreCache::SetObserver(uint32_t tokenId, const std::string &storeId, std::shared_ptr<Observers> observers)
 {
     stores_.ComputeIfPresent(tokenId, [&storeId, &observers](auto &key, auto &stores) {
-        ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key, storeId.c_str(),
+        ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key, Anonymous::Change(storeId).c_str(),
             observers ? observers->size() : size_t(0));
         auto it = stores.find(storeId);
         if (it != stores.end()) {
