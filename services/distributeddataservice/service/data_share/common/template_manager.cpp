@@ -124,7 +124,8 @@ RdbSubscriberManager &RdbSubscriberManager::GetInstance()
 }
 
 int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const TemplateId &tplId,
-    const sptr<IDataProxyRdbObserver> observer, std::shared_ptr<Context> context, std::shared_ptr<ExecutorPool> executorPool)
+    const sptr<IDataProxyRdbObserver> observer, std::shared_ptr<Context> context,
+    std::shared_ptr<ExecutorPool> executorPool)
 {
     int result = E_OK;
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);

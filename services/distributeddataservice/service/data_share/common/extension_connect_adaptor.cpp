@@ -70,7 +70,6 @@ bool ExtensionConnectAdaptor::TryAndWait(std::shared_ptr<Context> context, int m
 
 void ExtensionConnectAdaptor::Disconnect()
 {
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (callback_ == nullptr) {
         ZLOGE("callback null");
         return;
