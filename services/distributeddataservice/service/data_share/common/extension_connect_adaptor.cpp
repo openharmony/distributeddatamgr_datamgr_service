@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "ConnectExtensionStrategy"
+#define LOG_TAG "ExtensionConnectAdaptor"
 
-#include "connect_extension_strategy.h"
+#include "extension_connect_adaptor.h"
 
 #include <thread>
 
@@ -23,27 +23,27 @@
 #include "log_print.h"
 
 namespace OHOS::DataShare {
-bool ConnectExtensionStrategy::operator()(std::shared_ptr<Context> context)
+bool ExtensionConnectAdaptor::Connect(std::shared_ptr<Context> context)
 {
     for (auto const &extension: context->bundleInfo.extensionInfos) {
         if (extension.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
-            return Connect(context);
+            return DoConnect(context);
         }
     }
     return false;
 }
 
-ConnectExtensionStrategy::ConnectExtensionStrategy() : data_(1) {}
+ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(1) {}
 
-bool ConnectExtensionStrategy::Connect(std::shared_ptr<Context> context)
+bool ExtensionConnectAdaptor::DoConnect(std::shared_ptr<Context> context)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     AAFwk::Want want;
     want.SetUri(context->uri);
     data_.Clear();
-    sptr<AAFwk::IAbilityConnection> callback = new CallbackImpl(data_);
+    callback_ = new CallbackImpl(data_);
     ZLOGI("Start connect %{public}s", context->uri.c_str());
-    ErrCode ret = AAFwk::AbilityManagerClient::GetInstance()->ConnectAbility(want, callback, nullptr);
+    ErrCode ret = AAFwk::AbilityManagerClient::GetInstance()->ConnectAbility(want, callback_, nullptr);
     if (ret != ERR_OK) {
         ZLOGE("connect ability failed, ret = %{public}d", ret);
         return false;
@@ -52,20 +52,35 @@ bool ConnectExtensionStrategy::Connect(std::shared_ptr<Context> context)
     if (result) {
         ZLOGI("connect ability ended successfully");
     }
-    data_.Clear();
-    AAFwk::AbilityManagerClient::GetInstance()->DisconnectAbility(callback);
-    if (!data_.GetValue()) {
-        ZLOGI("disconnect ability ended successfully");
-    }
     return result;
 }
 
-bool ConnectExtensionStrategy::Execute(
-    std::shared_ptr<Context> context, int maxWaitTimeMs)
+bool ExtensionConnectAdaptor::TryAndWait(std::shared_ptr<Context> context, int maxWaitTimeMs)
 {
-    return AppConnectManager::Wait(context->calledBundleName, maxWaitTimeMs, [&context]() {
-        ConnectExtensionStrategy strategy;
-        return strategy(context);
-    });
+    ExtensionConnectAdaptor strategy;
+    return AppConnectManager::Wait(
+        context->calledBundleName, maxWaitTimeMs,
+        [&context, &strategy]() {
+            return strategy.Connect(context);
+        },
+        [&strategy]() {
+            strategy.Disconnect();
+            return true;
+        });
+}
+
+void ExtensionConnectAdaptor::Disconnect() {
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (callback_ == nullptr) {
+        ZLOGE("callback null");
+        return;
+    }
+    data_.Clear();
+    ZLOGI("Start disconnect");
+    AAFwk::AbilityManagerClient::GetInstance()->DisconnectAbility(callback_);
+    if (!data_.GetValue()) {
+        ZLOGI("disconnect ability ended successfully");
+    }
+    callback_ = nullptr;
 }
 } // namespace OHOS::DataShare

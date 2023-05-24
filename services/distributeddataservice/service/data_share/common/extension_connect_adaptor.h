@@ -16,18 +16,21 @@
 #ifndef DATASHARESERVICE_CONNECT_EXTENSION_STRAGETY_H
 #define DATASHARESERVICE_CONNECT_EXTENSION_STRAGETY_H
 
+#include "ability_connect_callback_interface.h"
 #include "block_data.h"
-#include "strategy.h"
+#include "context.h"
 namespace OHOS::DataShare {
-class ConnectExtensionStrategy final : public Strategy {
+class ExtensionConnectAdaptor {
 public:
-    ConnectExtensionStrategy();
-    bool operator()(std::shared_ptr<Context> context) override;
-    static bool Execute(std::shared_ptr<Context> context, int maxWaitTimeMs = 2000);
+    static bool TryAndWait(std::shared_ptr<Context> context, int maxWaitTimeMs = 2000);
+    ExtensionConnectAdaptor();
 private:
-    inline bool Connect(std::shared_ptr<Context> context);
+    bool Connect(std::shared_ptr<Context> context);
+    void Disconnect();
+    bool DoConnect(std::shared_ptr<Context> context);
     std::mutex mutex_;
     BlockData<bool> data_;
+    sptr<AAFwk::IAbilityConnection> callback_ = nullptr;
 };
 } // namespace OHOS::DataShare
 #endif

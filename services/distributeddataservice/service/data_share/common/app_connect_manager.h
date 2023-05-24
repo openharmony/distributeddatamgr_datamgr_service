@@ -25,8 +25,8 @@
 namespace OHOS::DataShare {
 class AppConnectManager {
 public:
-    static bool Wait(
-        const std::string &bundleName, int maxWaitTimeMs, std::function<bool()> connect);
+    static bool Wait(const std::string &bundleName, int maxWaitTimeMs, std::function<bool()> connect,
+        std::function<void()> disconnect);
     static void Notify(const std::string &bundleName);
 
 private:

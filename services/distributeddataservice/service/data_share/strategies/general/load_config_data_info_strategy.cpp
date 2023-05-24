@@ -16,8 +16,8 @@
 #include "load_config_data_info_strategy.h"
 
 #include "check_is_single_app_strategy.h"
-#include "connect_extension_strategy.h"
 #include "device_manager_adapter.h"
+#include "extension_connect_adaptor.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
@@ -54,7 +54,7 @@ bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> conte
     DistributedData::StoreMetaData metaData;
     if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, context->currentUserId)) {
         // connect extension and retry
-        ConnectExtensionStrategy::Execute(context);
+        ExtensionConnectAdaptor::TryAndWait(context);
         if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, context->currentUserId)) {
             ZLOGE("QueryMetaData fail, %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
             context->errCode = NativeRdb::E_DB_NOT_EXIST;
@@ -71,7 +71,7 @@ bool LoadConfigSingleDataInfoStrategy::operator()(std::shared_ptr<Context> conte
     DistributedData::StoreMetaData metaData;
     if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0)) {
         // connect extension and retry
-        ConnectExtensionStrategy::Execute(context);
+        ExtensionConnectAdaptor::TryAndWait(context);
         if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0)) {
             ZLOGE("QueryMetaData fail, %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
             context->errCode = NativeRdb::E_DB_NOT_EXIST;

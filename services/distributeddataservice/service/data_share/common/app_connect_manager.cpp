@@ -18,8 +18,8 @@
 
 namespace OHOS::DataShare {
 ConcurrentMap<std::string, BlockData<bool> *> AppConnectManager::blockCache_;
-bool AppConnectManager::Wait(
-    const std::string &bundleName, int maxWaitTimeMs, std::function<bool()> connect)
+bool AppConnectManager::Wait(const std::string &bundleName,
+    int maxWaitTimeMs, std::function<bool()> connect, std::function<void()> disconnect)
 {
     BlockData<bool> block(maxWaitTimeMs, false);
     blockCache_.ComputeIfAbsent(bundleName, [&block](const std::string &key) {
@@ -28,14 +28,14 @@ bool AppConnectManager::Wait(
     bool result = connect();
     if (!result) {
         ZLOGE("connect failed %{public}s", bundleName.c_str());
+        blockCache_.Erase(bundleName);
         return false;
     }
     ZLOGI("start wait %{public}s", bundleName.c_str());
     result = block.GetValue();
     ZLOGI("end wait %{public}s", bundleName.c_str());
-    blockCache_.ComputeIfPresent(bundleName, [](const std::string &key, BlockData<bool> *value) {
-        return false;
-    });
+    blockCache_.Erase(bundleName);
+    disconnect();
     return result;
 }
 
