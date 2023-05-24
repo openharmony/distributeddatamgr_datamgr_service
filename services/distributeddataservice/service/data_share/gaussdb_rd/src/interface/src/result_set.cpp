@@ -235,6 +235,9 @@ int ResultSet::CutJsonBranch(std::string &jsonKey, std::string &jsonData)
     bool isIdExistInValue = true; // if id exsit in the value string that get from db.
     bool isInsertIdflag = false;
     isIdExistInValue = cjsonObj.GetObjectItem("_id", errCode).IsNull() ? false : true;
+    if (context_->ifShowId && !isIdExistInValue) {
+        isInsertIdflag = true; // ifShowId is true,and then the data taken out does not have IDs, insert id.
+    }
     if (context_->viewType) {
         std::vector<std::vector<std::string>> allCutPath;
         std::vector<std::string> singlePath;
@@ -253,6 +256,12 @@ int ResultSet::CutJsonBranch(std::string &jsonKey, std::string &jsonData)
             }
         }
     }
+    if (isInsertIdflag) {
+        errCode = InsertRandomId(cjsonObj, jsonKey);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+    }
     if (!context_->viewType) {
         for (const auto &singleCutPaht : context_->projectionPath) {
             cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
@@ -261,15 +270,6 @@ int ResultSet::CutJsonBranch(std::string &jsonKey, std::string &jsonData)
             std::vector<std::string> idPath;
             idPath.emplace_back(KEY_ID);
             cjsonObj.DeleteItemDeeplyOnTarget(idPath);
-        }
-    }
-    if (context_->ifShowId && !isIdExistInValue) {
-        isInsertIdflag = true; // ifShowId is true,and then the data taken out does not have IDs, insert id.
-    }
-    if (isInsertIdflag) {
-        errCode = InsertRandomId(cjsonObj, jsonKey);
-        if (errCode != E_OK) {
-            return errCode;
         }
     }
     jsonData = cjsonObj.Print();
