@@ -65,9 +65,7 @@ bool ConnectExtensionStrategy::Execute(
 {
     return AppConnectManager::Wait(context->calledBundleName, maxWaitTimeMs, [&context]() {
         ConnectExtensionStrategy strategy;
-        if (!strategy(context)) {
-            return false;
-        }
+        return strategy(context);
     });
 }
 } // namespace OHOS::DataShare
