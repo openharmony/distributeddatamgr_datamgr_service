@@ -21,7 +21,7 @@
 #include "log_print.h"
 
 namespace DocumentDB {
-const int JSON_LENS_MAX = 1024 * 1024;
+constexpr int JSON_LENS_MAX = 1024 * 1024;
 
 Collection::Collection(const std::string &name, KvStoreExecutor *executor) : executor_(executor)
 {
@@ -158,9 +158,8 @@ int Collection::UpsertDocument(const std::string &id, const std::string &documen
                 GLOGD("Append value failed. %d", errCode);
                 return errCode;
             }
-            // kkk
             std::string valStr = originValue.Print();
-            if (valStr.length() + 1 > JSON_LENS_MAX) {
+            if (valStr.length() >= JSON_LENS_MAX) {
                 GLOGE("document's length is too long");
                 return -E_OVER_LIMIT;
             }
@@ -214,7 +213,7 @@ int Collection::UpdateDocument(const std::string &id, const std::string &update,
         return errCode;
     }
     std::string valStr = originValue.Print();
-    if (valStr.length() + 1 > JSON_LENS_MAX) {
+    if (valStr.length() >= JSON_LENS_MAX) {
         GLOGE("document's length is too long");
         return -E_OVER_LIMIT;
     }
