@@ -42,5 +42,12 @@ bool PermissionValidator::CheckSyncPermission(uint32_t tokenId)
     ZLOGE("token:0x%{public}x", tokenId);
     return false;
 }
+
+bool PermissionValidator::CheckCloudPermission(uint32_t tokenId)
+{
+    auto permit = AccessTokenKit::VerifyAccessToken(tokenId, CLOUD_DATA_CONFIG);
+    ZLOGD("cloud permit: %{public}d", permit);
+    return permit == PERMISSION_GRANTED;
+}
 } // namespace DistributedKv
 } // namespace OHOS
