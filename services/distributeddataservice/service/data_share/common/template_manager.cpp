@@ -129,7 +129,8 @@ int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const Templat
 {
     int result = E_OK;
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
-    rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, std::vector<ObserverNode> &value) {
+    rdbCache_.Compute(key,
+        [&observer, &context, executorPool, this](const auto &key, std::vector<ObserverNode> &value) {
         ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), context->callerTokenId);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId);
