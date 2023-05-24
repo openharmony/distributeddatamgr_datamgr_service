@@ -387,7 +387,8 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
     return EOK;
 }
 
-void DataShareServiceImpl::OnConnectDone() {
+void DataShareServiceImpl::OnConnectDone()
+{
     std::string callerBundleName;
     GetCallerBundleName(callerBundleName);
     AppConnectManager::Notify(callerBundleName);

@@ -22,8 +22,8 @@ bool AppConnectManager::Wait(
     const std::string &bundleName, int maxWaitTimeMs, std::function<bool()> connect)
 {
     BlockData<bool> block(maxWaitTimeMs, false);
-    blockCache_.ComputeIfAbsent(bundleName, [&block](const std::string &key) -> BlockData<bool> & {
-        return block;
+    blockCache_.ComputeIfAbsent(bundleName, [&block](const std::string &key) {
+        return &block;
     });
     bool result = connect();
     if (!result) {
@@ -33,7 +33,7 @@ bool AppConnectManager::Wait(
     ZLOGI("start wait %{public}s", bundleName.c_str());
     result = block.GetValue();
     ZLOGI("end wait %{public}s", bundleName.c_str());
-    blockCache_.ComputeIfPresent(bundleName, [](const std::string &key, BlockData<bool> &value) -> bool {
+    blockCache_.ComputeIfPresent(bundleName, [](const std::string &key, BlockData<bool> *value) {
         return false;
     });
     return result;
@@ -42,8 +42,12 @@ bool AppConnectManager::Wait(
 void AppConnectManager::Notify(const std::string &bundleName)
 {
     ZLOGI("notify %{public}s", bundleName.c_str());
-    blockCache_.ComputeIfPresent(bundleName, [](const std::string &key, BlockData<bool> &value) -> bool {
-        value.SetValue(true);
+    blockCache_.ComputeIfPresent(bundleName, [&bundleName](const std::string &key, BlockData<bool> *value) {
+        if (value == nullptr) {
+            ZLOGI("nullptr %{public}s", bundleName.c_str());
+            return false;
+        }
+        value->SetValue(true);
         return true;
     });
 }

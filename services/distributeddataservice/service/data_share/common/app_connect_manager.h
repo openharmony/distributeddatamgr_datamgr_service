@@ -30,7 +30,7 @@ public:
     static void Notify(const std::string &bundleName);
 
 private:
-    static ConcurrentMap<std::string, BlockData<bool> &> blockCache_;
+    static ConcurrentMap<std::string, BlockData<bool> *> blockCache_;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H
