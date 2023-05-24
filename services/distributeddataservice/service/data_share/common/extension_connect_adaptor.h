@@ -29,7 +29,6 @@ private:
     bool Connect(std::shared_ptr<Context> context);
     void Disconnect();
     bool DoConnect(std::shared_ptr<Context> context);
-    std::mutex mutex_;
     BlockData<bool> data_;
     sptr<AAFwk::IAbilityConnection> callback_ = nullptr;
 };

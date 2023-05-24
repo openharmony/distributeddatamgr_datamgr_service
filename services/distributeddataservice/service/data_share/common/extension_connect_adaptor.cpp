@@ -37,7 +37,6 @@ ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(1) {}
 
 bool ExtensionConnectAdaptor::DoConnect(std::shared_ptr<Context> context)
 {
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
     AAFwk::Want want;
     want.SetUri(context->uri);
     data_.Clear();

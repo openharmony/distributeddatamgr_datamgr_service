@@ -25,13 +25,13 @@ bool AppConnectManager::Wait(const std::string &bundleName,
     blockCache_.ComputeIfAbsent(bundleName, [&block](const std::string &key) {
         return &block;
     });
+    ZLOGI("start connect %{public}s", bundleName.c_str());
     bool result = connect();
     if (!result) {
         ZLOGE("connect failed %{public}s", bundleName.c_str());
         blockCache_.Erase(bundleName);
         return false;
     }
-    ZLOGI("start wait %{public}s", bundleName.c_str());
     result = block.GetValue();
     ZLOGI("end wait %{public}s", bundleName.c_str());
     blockCache_.Erase(bundleName);

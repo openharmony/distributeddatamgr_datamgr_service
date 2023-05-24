@@ -190,9 +190,11 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(
     std::vector<OperationResult> results;
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
-        results.emplace_back(uri, SubscribeStrategy::Execute(context, [&id, &observer, &context]() -> bool {
-            return RdbSubscriberManager::GetInstance().AddRdbSubscriber(context->uri, id, observer, context);
-        }));
+        results.emplace_back(
+            uri, SubscribeStrategy::Execute(context, [&id, &observer, &context, this]() -> bool {
+                return RdbSubscriberManager::GetInstance().AddRdbSubscriber(
+                    context->uri, id, observer, context, binderInfo_.executors);
+            }));
     }
     return results;
 }
