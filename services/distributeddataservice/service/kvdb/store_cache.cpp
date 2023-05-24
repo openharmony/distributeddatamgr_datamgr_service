@@ -235,13 +235,12 @@ bool StoreCache::DBStoreDelegate::Close(DBManager &manager)
     std::unique_lock<decltype(mutex_)> lock(mutex_);
     if (delegate_ != nullptr) {
         delegate_->UnRegisterObserver(this);
+        auto status = manager.CloseKvStore(delegate_);
+        if (status == DBStatus::BUSY) {
+            return false;
+        }
+        delegate_ = nullptr;
     }
-
-    auto status = manager.CloseKvStore(delegate_);
-    if (status == DBStatus::BUSY) {
-        return false;
-    }
-    delegate_ = nullptr;
     return true;
 }
 

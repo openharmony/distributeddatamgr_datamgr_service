@@ -161,7 +161,7 @@ void KvStoreDataService::LoadFeatures()
 {
     ZLOGI("begin.");
     auto features = FeatureSystem::GetInstance().GetFeatureName(FeatureSystem::BIND_NOW);
-    for (auto &feature : features) {
+    for (auto const &feature : features) {
         GetFeatureInterface(feature);
     }
 }

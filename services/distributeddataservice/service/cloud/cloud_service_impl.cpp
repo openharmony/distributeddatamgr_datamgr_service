@@ -456,7 +456,6 @@ bool CloudServiceImpl::DoSubscribe(const Subscription &sub)
     std::map<std::string, std::vector<SchemaMeta::Database>> unsubDbs;
     for (auto &app : cloudInfo.apps) {
         auto enabled = cloudInfo.enableCloud && app.cloudSwitch;
-        auto &dbs = enabled ? subDbs : unsubDbs;
         auto it = sub.expiresTime.find(app.bundleName);
         // cloud is enabled, but the subscription won't expire
         if (enabled && (it != sub.expiresTime.end() && it->second >= onThreshold.count())) {
@@ -470,6 +469,7 @@ bool CloudServiceImpl::DoSubscribe(const Subscription &sub)
         SchemaMeta schemaMeta;
         exits = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(app.bundleName), schemaMeta, true);
         if (exits) {
+            auto &dbs = enabled ? subDbs : unsubDbs;
             dbs[app.bundleName] = std::move(schemaMeta.databases);
         }
     }

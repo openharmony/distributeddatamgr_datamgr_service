@@ -50,7 +50,7 @@ public:
 private:
     static constexpr int32_t RETRY_TIME = 300;
     static constexpr int32_t RETRY_INTERVAL = 100;
-    int32_t retryTime_;
+    int32_t retryTime_ = 0;
     ExecutorPool::Task GetTask();
     std::shared_ptr<UninstallEventSubscriber> subscriber_ {};
     std::shared_ptr<ExecutorPool> executors_;

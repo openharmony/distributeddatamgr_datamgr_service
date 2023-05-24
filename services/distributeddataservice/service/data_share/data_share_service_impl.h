@@ -22,9 +22,10 @@
 #include "data_share_service_stub.h"
 #include "datashare_template.h"
 #include "db_delegate.h"
+#include "get_data_strategy.h"
+#include "publish_strategy.h"
 #include "uri_utils.h"
 #include "visibility.h"
-#include "publish_strategy.h"
 
 namespace OHOS::DataShare {
 class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
@@ -71,6 +72,7 @@ private:
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     PublishStrategy publishStrategy_;
+    GetDataStrategy getDataStrategy_;
     BindInfo binderInfo_;
 };
 } // namespace OHOS::DataShare

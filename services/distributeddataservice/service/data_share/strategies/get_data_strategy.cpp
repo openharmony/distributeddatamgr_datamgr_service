@@ -16,47 +16,85 @@
 
 #include "get_data_strategy.h"
 
-#include "general/load_config_common_strategy.h"
-#include "general/permission_strategy.h"
+#include "accesstoken_kit.h"
 #include "data_proxy/load_config_from_data_proxy_node_strategy.h"
+#include "general/load_config_common_strategy.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 Data GetDataStrategy::Execute(std::shared_ptr<Context> context)
 {
-    auto preProcess = GetStrategy();
-    if (preProcess == nullptr) {
+    auto &preProcess = GetStrategy();
+    if (preProcess.IsEmpty()) {
         ZLOGE("get strategy fail, maybe memory not enough");
         return Data();
     }
-    if (!(*preProcess)(context)) {
+    if (!preProcess(context)) {
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return Data();
     }
-    return Data();
+    auto result = PublishedData::Query(context->calledBundleName);
+    Data data;
+    for (const auto &item:result) {
+        if (!CheckPermission(context, item.value.key)) {
+            ZLOGI("uri: %{private}s not allowed", context->uri.c_str());
+            continue;
+        }
+        if (item.GetVersion() > data.version_) {
+            data.version_ = item.GetVersion();
+        }
+        data.datas_.emplace_back(item.value.key, item.value.subscriberId, item.value.value);
+    }
+    return data;
 }
 
-Strategy *GetDataStrategy::GetStrategy()
+SeqStrategy &GetDataStrategy::GetStrategy()
 {
-    static std::mutex mutex;
-    static SeqStrategy strategies;
-    std::lock_guard<decltype(mutex)> lock(mutex);
-    if (!strategies.IsEmpty()) {
-        return &strategies;
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (!strategies_.IsEmpty()) {
+        return strategies_;
     }
     std::initializer_list<Strategy *> list = {
         new (std::nothrow) LoadConfigCommonStrategy(),
-        new (std::nothrow) LoadConfigFromDataProxyNodeStrategy(),
-        new (std::nothrow) PermissionStrategy()
+        new (std::nothrow) LoadConfigFromDataProxyNodeStrategy()
     };
-    auto ret = strategies.Init(list);
+    auto ret = strategies_.Init(list);
     if (!ret) {
         std::for_each(list.begin(), list.end(), [](Strategy *item) {
             delete item;
         });
-        return nullptr;
+        return strategies_;
     }
-    return &strategies;
+    return strategies_;
+}
+
+bool GetDataStrategy::CheckPermission(std::shared_ptr<Context> context, const std::string &key)
+{
+    if (context->callerBundleName == context->calledBundleName) {
+        ZLOGI("access private data, caller and called is same, go");
+        return true;
+    }
+    for (const auto &moduleInfo : context->bundleInfo.hapModuleInfos) {
+        auto proxyDatas = moduleInfo.proxyDatas;
+        for (auto &proxyData : proxyDatas) {
+            if (proxyData.uri != key) {
+                continue;
+            }
+            if (proxyData.requiredReadPermission.empty()) {
+                ZLOGE("no read permission");
+                return false;
+            }
+            int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(
+                context->callerTokenId, proxyData.requiredReadPermission);
+            if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+                ZLOGE("Verify permission denied! callerTokenId:%{public}u permission:%{public}s",
+                    context->callerTokenId, proxyData.requiredReadPermission.c_str());
+                return false;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 } // namespace OHOS::DataShare
