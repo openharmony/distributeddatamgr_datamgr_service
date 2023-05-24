@@ -23,6 +23,12 @@ class ValueObject;
 int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, ResultSet &resultSet, bool isCutBranch)
 {
     if (isCutBranch) {
+        for (const auto &singlePath : context->projectionPath) {
+            if (singlePath[0] == "_id" && context->viewType == true) { // projection has Id and viewType is true
+                context->ifShowId = true;
+                break;
+            }
+        }
         if (context->projectionTree.ParseTree(context->projectionPath) == -E_INVALID_ARGS) {
             GLOGE("Parse ProjectionTree failed");
             return -E_INVALID_ARGS;
