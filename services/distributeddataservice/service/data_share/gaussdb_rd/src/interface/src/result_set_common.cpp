@@ -15,23 +15,19 @@
 
 #include "result_set_common.h"
 
-#include <string>
-#include <vector>
-
 #include "doc_errno.h"
 #include "grd_base/grd_error.h"
 
 namespace DocumentDB {
 class ValueObject;
-int InitResultSet(DocumentStore *store, const std::string collectionName, const std::string &filter,
-    std::vector<std::vector<std::string>> &path, bool ifShowId, bool viewType, ResultSet &resultSet, bool &isOnlyId)
+int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, ResultSet &resultSet, bool ifField)
 {
-    return resultSet.Init(store, collectionName, filter, path, ifShowId, viewType, isOnlyId);
-}
-
-int InitResultSet(DocumentStore *store, const std::string collectionName, const std::string &filter,
-    ResultSet &resultSet)
-{
-    return resultSet.Init(store, collectionName, filter);
+    if (!ifField) {
+        if (context->projectionTree.ParseTree(context->projectionPath) == -E_INVALID_ARGS) {
+            GLOGE("Parse ProjectionTree failed");
+            return -E_INVALID_ARGS;
+        }
+    }
+    return resultSet.Init(context, store, ifField);
 }
 } // namespace DocumentDB

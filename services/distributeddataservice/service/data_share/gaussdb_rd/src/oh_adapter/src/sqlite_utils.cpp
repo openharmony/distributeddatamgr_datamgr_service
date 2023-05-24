@@ -291,7 +291,6 @@ int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::functio
         while (true) {
             errCode = SQLiteUtils::StepWithRetry(stmt);
             if (errCode == SQLITE_DONE) {
-                errCode = E_OK; // Step finished
                 break;
             } else if (errCode != SQLITE_ROW) {
                 goto END; // Step return error
