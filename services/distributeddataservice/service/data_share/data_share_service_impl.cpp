@@ -180,7 +180,7 @@ Data DataShareServiceImpl::GetData(const std::string &bundleNameOfProvider)
     auto context = std::make_shared<Context>();
     context->callerBundleName = callerBundleName;
     context->calledBundleName = bundleNameOfProvider;
-    return GetDataStrategy::Execute(context);
+    return getDataStrategy_.Execute(context);
 }
 
 std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(

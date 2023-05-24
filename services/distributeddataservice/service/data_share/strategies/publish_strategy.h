@@ -27,7 +27,7 @@ public:
     int32_t Execute(std::shared_ptr<Context> context, const PublishedDataItem &item);
 
 private:
-    Strategy *GetStrategy();
+    SeqStrategy &GetStrategy();
     std::mutex mutex_;
     SeqStrategy strategies_;
 };

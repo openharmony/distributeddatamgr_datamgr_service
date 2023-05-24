@@ -15,8 +15,8 @@
 
 #define LOG_TAG "IObjectCallbackProxy"
 #include "object_callback_proxy.h"
-#include <ipc_skeleton.h>
-#include <logger.h>
+
+#include "ipc_skeleton.h"
 #include "itypes_util.h"
 #include "log_print.h"
 
