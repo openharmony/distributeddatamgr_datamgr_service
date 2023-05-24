@@ -17,7 +17,7 @@
 #include "log_print.h"
 
 namespace OHOS::DataShare {
-ConcurrentMap<std::string, BlockData<bool> &> AppConnectManager::blockCache_;
+ConcurrentMap<std::string, BlockData<bool> *> AppConnectManager::blockCache_;
 bool AppConnectManager::Wait(
     const std::string &bundleName, int maxWaitTimeMs, std::function<bool()> connect)
 {
