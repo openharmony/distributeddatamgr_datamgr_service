@@ -28,6 +28,7 @@
 #include "metadata/store_meta_data.h"
 #include "permit_delegate.h"
 #include "cloud/cloud_info.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::AppDistributedKv;
@@ -72,7 +73,8 @@ void UninstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_
     }
     for (auto &meta : storeMetaData) {
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-            ZLOGI("uninstalled bundleName:%{public}s stordId:%{public}s", bundleName.c_str(), meta.storeId.c_str());
+            ZLOGI("uninstalled bundleName:%{public}s stordId:%{public}s", bundleName.c_str(),
+                Anonymous::Change(meta.storeId).c_str());
             MetaDataManager::GetInstance().DelMeta(meta.GetKey());
             MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
@@ -96,7 +98,8 @@ void UninstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t u
     }
     for (auto &meta : storeMetaData) {
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-            ZLOGI("updated bundleName:%{public}s, stordId:%{public}s", bundleName.c_str(), meta.storeId.c_str());
+            ZLOGI("updated bundleName:%{public}s, stordId:%{public}s", bundleName.c_str(),
+                Anonymous::Change(meta.storeId).c_str());
             MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(meta), true);
         }
     }

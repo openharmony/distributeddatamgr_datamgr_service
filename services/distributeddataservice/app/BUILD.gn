@@ -30,7 +30,7 @@ ohos_prebuilt_etc("distributed_data.cfg") {
 }
 
 ohos_sa_profile("distributeddata_profile") {
-  sources = [ "../sa_profile/1301.xml" ]
+  sources = [ "../sa_profile/1301.json" ]
 
   part_name = "datamgr_service"
 }

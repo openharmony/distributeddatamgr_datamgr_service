@@ -19,6 +19,7 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "app_connect_manager.h"
 #include "dataobs_mgr_client.h"
 #include "datashare_errno.h"
 #include "datashare_template.h"
@@ -189,9 +190,11 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(
     std::vector<OperationResult> results;
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
-        results.emplace_back(uri, SubscribeStrategy::Execute(context, [&id, &observer, &context]() -> bool {
-            return RdbSubscriberManager::GetInstance().AddRdbSubscriber(context->uri, id, observer, context);
-        }));
+        results.emplace_back(
+            uri, SubscribeStrategy::Execute(context, [&id, &observer, &context, this]() -> bool {
+                return RdbSubscriberManager::GetInstance().AddRdbSubscriber(
+                    context->uri, id, observer, context, binderInfo_.executors);
+            }));
     }
     return results;
 }
@@ -385,5 +388,12 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     KvDBDelegate::GetInstance(false, saveMeta.dataDir);
     return EOK;
+}
+
+void DataShareServiceImpl::OnConnectDone()
+{
+    std::string callerBundleName;
+    GetCallerBundleName(callerBundleName);
+    AppConnectManager::Notify(callerBundleName);
 }
 } // namespace OHOS::DataShare

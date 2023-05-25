@@ -35,9 +35,11 @@ group("build_module") {
 }
 ohos_shared_library("data_share_service") {
   sources = [
+    "common/app_connect_manager.cpp",
     "common/bundle_mgr_proxy.cpp",
     "common/db_delegate.cpp",
     "common/div_strategy.cpp",
+    "common/extension_connect_adaptor.cpp",
     "common/kv_delegate.cpp",
     "common/rdb_delegate.cpp",
     "common/scheduler_manager.cpp",
@@ -56,7 +58,6 @@ ohos_shared_library("data_share_service") {
     "strategies/delete_strategy.cpp",
     "strategies/general/check_is_data_proxy_strategy.cpp",
     "strategies/general/check_is_single_app_strategy.cpp",
-    "strategies/general/connect_extension_strategy.cpp",
     "strategies/general/empty_strategy.cpp",
     "strategies/general/load_config_common_strategy.cpp",
     "strategies/general/load_config_data_info_strategy.cpp",
