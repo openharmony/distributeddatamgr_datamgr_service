@@ -43,7 +43,7 @@ bool PermissionValidator::CheckSyncPermission(uint32_t tokenId)
     return false;
 }
 
-bool PermissionValidator::CheckCloudPermission(uint32_t tokenId)
+bool PermissionValidator::IsCloudConfigPermit(uint32_t tokenId)
 {
     auto permit = AccessTokenKit::VerifyAccessToken(tokenId, CLOUD_DATA_CONFIG);
     ZLOGD("cloud permit: %{public}d", permit);
