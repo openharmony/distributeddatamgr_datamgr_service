@@ -19,9 +19,9 @@
 namespace OHOS::DataShare {
 ConcurrentMap<std::string, BlockData<bool> *> AppConnectManager::blockCache_;
 bool AppConnectManager::Wait(const std::string &bundleName,
-    int maxWaitTimeMs, std::function<bool()> connect, std::function<void()> disconnect)
+    int maxWaitTime, std::function<bool()> connect, std::function<void()> disconnect)
 {
-    BlockData<bool> block(maxWaitTimeMs, false);
+    BlockData<bool> block(maxWaitTime, false);
     blockCache_.ComputeIfAbsent(bundleName, [&block](const std::string &key) {
         return &block;
     });

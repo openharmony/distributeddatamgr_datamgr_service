@@ -22,7 +22,7 @@
 namespace OHOS::DataShare {
 class ExtensionConnectAdaptor {
 public:
-    static bool TryAndWait(std::shared_ptr<Context> context, int maxWaitTimeMs = 2000);
+    static bool TryAndWait(std::shared_ptr<Context> context, int maxWaitTime = 2);
     ExtensionConnectAdaptor();
 
 private:

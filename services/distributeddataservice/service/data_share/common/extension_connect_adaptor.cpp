@@ -54,11 +54,11 @@ bool ExtensionConnectAdaptor::DoConnect(std::shared_ptr<Context> context)
     return result;
 }
 
-bool ExtensionConnectAdaptor::TryAndWait(std::shared_ptr<Context> context, int maxWaitTimeMs)
+bool ExtensionConnectAdaptor::TryAndWait(std::shared_ptr<Context> context, int maxWaitTime)
 {
     ExtensionConnectAdaptor strategy;
     return AppConnectManager::Wait(
-        context->calledBundleName, maxWaitTimeMs,
+        context->calledBundleName, maxWaitTime,
         [&context, &strategy]() {
             return strategy.Connect(context);
         },
