@@ -136,7 +136,7 @@ DBStatus DBStoreMock::Sync(const std::vector<std::string> &devices, SyncMode mod
     const std::function<void(const std::map<std::string, DBStatus> &)> &onComplete, bool wait)
 {
     std::map<std::string, DBStatus> result;
-    for (auto &device : devices) {
+    for (const auto &device : devices) {
         result[device] = OK;
     }
     onComplete(result);

@@ -217,7 +217,7 @@ uint16_t DeviceMatrix::ConvertMask(const std::string &device, uint16_t code)
         if (index >= meta.maskInfo.size()) {
             return result;
         }
-        auto &app = meta.maskInfo[index];
+        const auto &app = meta.maskInfo[index];
         for (size_t i = 0; i < maskApps_.size(); i++) {
             if (maskApps_[i] == app) {
                 result |= SetMask(i);

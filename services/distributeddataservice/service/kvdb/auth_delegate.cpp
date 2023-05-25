@@ -32,7 +32,7 @@ public:
         int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId) override;
 
 private:
-    bool IsUserActive(const std::vector<UserStatus> &userStatus, int32_t userId);
+    bool IsUserActive(const std::vector<UserStatus> &users, int32_t userId);
     static constexpr pid_t UID_CAPACITY = 10000;
     static constexpr int SYSTEM_USER = 0;
 };

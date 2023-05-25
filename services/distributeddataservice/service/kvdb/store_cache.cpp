@@ -199,9 +199,8 @@ void StoreCache::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 }
 
 StoreCache::DBStoreDelegate::DBStoreDelegate(DBStore *delegate, std::shared_ptr<Observers> observers)
-    : delegate_(delegate)
+    : time_(std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL)), delegate_(delegate)
 {
-    time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
     SetObservers(std::move(observers));
 }
 

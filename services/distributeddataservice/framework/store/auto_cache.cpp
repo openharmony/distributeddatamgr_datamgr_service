@@ -14,6 +14,7 @@
  */
 #define LOG_TAG "AutoCache"
 #include "store/auto_cache.h"
+#include "utils/anonymous.h"
 
 #include "log_print.h"
 namespace OHOS::DistributedData {
@@ -115,7 +116,8 @@ void AutoCache::CloseExcept(const std::set<int32_t> &users)
 void AutoCache::SetObserver(uint32_t tokenId, const std::string &storeId, const AutoCache::Watchers &watchers)
 {
     stores_.ComputeIfPresent(tokenId, [&storeId, &watchers](auto &key, auto &stores) {
-        ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key, storeId.c_str(), watchers.size());
+        ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key, Anonymous::Change(storeId).c_str(),
+            watchers.size());
         auto it = stores.find(storeId);
         if (it != stores.end()) {
             it->second.SetObservers(watchers);
