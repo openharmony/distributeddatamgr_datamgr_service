@@ -44,7 +44,7 @@ Collection::~Collection()
     executor_ = nullptr;
 }
 
-int Collection::InsertDocument(const std::string &key, const std::string &document, bool &isIdExist)
+int Collection::InsertDocument(const std::string &id, const std::string &document, bool &isIdExist)
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -57,19 +57,23 @@ int Collection::InsertDocument(const std::string &key, const std::string &docume
     if (!isCollectionExist) {
         return -E_INVALID_ARGS;
     }
-    Key keyId(key.begin(), key.end());
+    Key key;
     Value valSet(document.begin(), document.end());
     DocKey docKey;
     if (!isIdExist) {
-        errCode = executor_->InsertData(name_, keyId, valSet);
+        errCode = executor_->InsertData(name_, key, valSet);
         while (errCode != E_OK) {
             DocumentKey::GetOidDocKey(docKey);
-            keyId.assign(docKey.key.begin(), docKey.key.end());
-            errCode = executor_->InsertData(name_, keyId, valSet);
+            key.assign(docKey.key.begin(), docKey.key.end());
+            errCode = executor_->InsertData(name_, key, valSet);
         }
         return errCode;
+    } else {
+        DocKey docKey;
+        DocumentKey::GetStringDocKey(id, docKey);
+        key.assign(docKey.key.begin(), docKey.key.end());
     }
-    return executor_->InsertData(name_, keyId, valSet);
+    return executor_->InsertData(name_, key, valSet);
 }
 
 bool Collection::FindDocument()
@@ -134,19 +138,23 @@ int Collection::UpsertDocument(const std::string &id, const std::string &newStr,
         GLOGE("Collection not created.");
         return -E_INVALID_ARGS;
     }
-    Key keyId(id.begin(), id.end());
+    Key key(id.begin(), id.end());
     Value valSet(newStr.begin(), newStr.end());
     DocKey docKey;
     if (!isIdExist) {
-        errCode = executor_->PutData(name_, keyId, valSet);
+        errCode = executor_->PutData(name_, key, valSet);
         while (errCode != E_OK) {
             DocumentKey::GetOidDocKey(docKey);
-            keyId.assign(docKey.key.begin(), docKey.key.end());
-            errCode = executor_->PutData(name_, keyId, valSet);
+            key.assign(docKey.key.begin(), docKey.key.end());
+            errCode = executor_->PutData(name_, key, valSet);
         }
         return errCode;
+    } else {
+        DocKey docKey;
+        DocumentKey::GetStringDocKey(id, docKey);
+        key.assign(docKey.key.begin(), docKey.key.end());
     }
-    return executor_->PutData(name_, keyId, valSet);
+    return executor_->PutData(name_, key, valSet);
 }
 
 int Collection::UpdateDocument(const std::string &id, const std::string &newStr, bool isReplace)

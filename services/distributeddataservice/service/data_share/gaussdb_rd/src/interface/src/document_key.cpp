@@ -44,13 +44,23 @@ static int InitDocIdFromOid(DocKey &docKey)
     return E_OK;
 }
 
-static int SerializeDocKey(DocKey &key, const std::string &id, const int32_t size)
+static int SerializeDocKey(DocKey &key, const std::string &id)
 {
     std::string idStr = id;
     key.key = idStr;
     key.key = key.key + std::to_string(key.type); // Question here
-    key.keySize = size + GRD_DOC_ID_TYPE_SIZE;
     return E_OK;
+}
+
+int DocumentKey::GetStringDocKey(const std::string &id, DocKey &key)
+{
+    if (id.empty()) {
+        return GetOidDocKey(key); // It won't go to this branch at the moment.
+    }
+    key.id = id;
+    key.type = (uint8_t)STRING;
+    int ret = SerializeDocKey(key, key.id);
+    return ret;
 }
 
 int DocumentKey::GetOidDocKey(DocKey &key)
@@ -61,7 +71,7 @@ int DocumentKey::GetOidDocKey(DocKey &key)
             return ret;
         }
     }
-    ret = SerializeDocKey(key, key.id, GRD_DOC_OID_HEX_SIZE);
+    ret = SerializeDocKey(key, key.id);
     return ret;
 }
 

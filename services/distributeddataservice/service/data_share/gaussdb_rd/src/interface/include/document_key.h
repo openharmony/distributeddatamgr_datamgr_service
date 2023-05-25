@@ -46,6 +46,7 @@ public:
 class DocumentKey {
 public:
     static int GetOidDocKey(DocKey &key);
+    static int GetStringDocKey(const std::string &id, DocKey &key);
     static std::string GetIdFromKey(std::string &keyStr);
 };
 

@@ -57,7 +57,9 @@ int ResultSet::GetNextWithField()
         JsonObject filterObjChild = filterObj.GetChild();
         ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
         std::string idKey = idValue.GetStringValue();
-        key.assign(idKey.begin(), idKey.end());
+        DocKey docKey;
+        DocumentKey::GetStringDocKey(idKey, docKey);
+        key.assign(docKey.key.begin(), docKey.key.end());
     } else {
         key.assign(lastKeyIndex_.begin(), lastKeyIndex_.end());
     }

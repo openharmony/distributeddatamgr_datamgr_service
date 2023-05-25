@@ -29,7 +29,7 @@ public:
     Collection(){};
     ~Collection();
 
-    int InsertDocument(const std::string &key, const std::string &document, bool &isIdExist);
+    int InsertDocument(const std::string &id, const std::string &document, bool &isIdExist);
     int GetDocumentByKey(const Key &key, Value &document) const;
     int GetMatchedDocument(const JsonObject &filterObj, const Key &key, std::pair<std::string, std::string> &values,
         int isIdExist) const;
