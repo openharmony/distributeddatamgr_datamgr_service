@@ -31,6 +31,7 @@ public:
 
 private:
     static constexpr const char *DISTRIBUTED_DATASYNC = "ohos.permission.DISTRIBUTED_DATASYNC";
+    static constexpr const char *CLOUD_DATA_CONFIG = "ohos.permission.CLOUDDATA_CONFIG";
 };
 } // namespace DistributedKv
 } // namespace OHOS
