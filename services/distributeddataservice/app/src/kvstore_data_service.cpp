@@ -351,7 +351,7 @@ void KvStoreDataService::OnStoreMetaChanged(
     if (!metaData.isDirty || metaData.appType != HARMONY_APP) {
         return;
     }
-    ZLOGI("dirty kv store. storeId:%{public}s", metaData.storeId.c_str());
+    ZLOGI("dirty kv store. storeId:%{public}s", Anonymous::Change(metaData.storeId).c_str());
 }
 
 bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
