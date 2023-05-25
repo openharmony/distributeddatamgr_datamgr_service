@@ -57,6 +57,7 @@ public:
         const int64_t subscriberId) override;
     std::vector<OperationResult> DisablePubSubs(const std::vector<std::string> &uris,
         const int64_t subscriberId) override;
+    void OnConnectDone() override;
     int32_t OnBind(const BindInfo &binderInfo) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
 

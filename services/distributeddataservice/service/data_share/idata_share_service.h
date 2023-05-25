@@ -45,6 +45,7 @@ public:
         DATA_SHARE_SERVICE_CMD_UNSUBSCRIBE_PUBLISHED,
         DATA_SHARE_SERVICE_CMD_ENABLE_SUBSCRIBE_PUBLISHED,
         DATA_SHARE_SERVICE_CMD_DISABLE_SUBSCRIBE_PUBLISHED,
+        DATA_SHARE_SERVICE_CMD_NOTIFY,
         DATA_SHARE_SERVICE_CMD_MAX
     };
 
@@ -77,6 +78,7 @@ public:
         const int64_t subscriberId) = 0;
     virtual std::vector<OperationResult> DisablePubSubs(const std::vector<std::string> &uris,
         const int64_t subscriberId) = 0;
+    virtual void OnConnectDone() = 0;
 };
 } // namespace OHOS::DataShare
 #endif
