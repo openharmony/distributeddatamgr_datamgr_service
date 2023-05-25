@@ -44,6 +44,27 @@ int ResultSet::Init(std::shared_ptr<QueryContext> &context, DocumentStore *store
     return E_OK;
 }
 
+int ResultSet::GetValueFromDB(Key &key, JsonObject &filterObj, std::string &jsonKey, std::string &jsonData)
+{
+    std::pair<std::string, std::string> value;
+    Collection coll = store_->GetCollection(context_->collectionName);
+    filterObj.DeleteItemFromObject("_id");
+    int errCode = coll.GetMatchedDocument(filterObj, key, value, context_->isIdExist);
+    if (errCode == -E_NOT_FOUND) {
+        return -E_NO_DATA;
+    }
+    jsonData.assign(value.second.begin(), value.second.end());
+    jsonKey.assign(value.first.begin(), value.first.end());
+    lastKeyIndex_ = jsonKey;
+    if (isCutBranch_) {
+        errCode = CutJsonBranch(jsonKey, jsonData);
+        if (errCode != E_OK) {
+            GLOGE("cut branch faild");
+        }
+    }
+    return errCode;
+}
+
 int ResultSet::GetNextWithField()
 {
     int errCode = E_OK;
@@ -53,36 +74,29 @@ int ResultSet::GetNextWithField()
         return errCode;
     }
     Key key;
-    if (context_->isIdExist) { // get id from filter or from previous data.
-        JsonObject filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
-        std::string idKey = idValue.GetStringValue();
-        DocKey docKey;
-        DocumentKey::GetStringDocKey(idKey, docKey);
-        key.assign(docKey.key.begin(), docKey.key.end());
+    if (context_->isIdExist) {
+        if (index_ == 0) { // get id from filter, if alreay has got id once, get from lastKeyIndex.
+            JsonObject filterObjChild = filterObj.GetChild();
+            ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
+            std::string idKey = idValue.GetStringValue();
+            DocKey docKey;
+            DocumentKey::GetStringDocKey(idKey, docKey);
+            key.assign(docKey.key.begin(), docKey.key.end());
+        } else { // Use id to find data that can only get one data.
+            matchData_.first.clear(); // Delete previous data.
+            matchData_.second.clear();
+            return -E_NO_DATA;
+        }
     } else {
         key.assign(lastKeyIndex_.begin(), lastKeyIndex_.end());
     }
-    matchData_.first.clear(); // Delete previous data.
+    matchData_.first.clear();
     matchData_.second.clear();
-    std::pair<std::string, std::string> value;
-    Collection coll = store_->GetCollection(context_->collectionName);
-    errCode = coll.GetMatchedDocument(filterObj, key, value, context_->isIdExist);
-    if (errCode == -E_NOT_FOUND) {
-        return -E_NO_DATA;
-    }
-    std::string jsonData(value.second.begin(), value.second.end());
-    std::string jsonkey(value.first.begin(), value.first.end());
-    lastKeyIndex_ = jsonkey;
-    if (isCutBranch_) {
-        errCode = CutJsonBranch(jsonkey, jsonData);
-        if (errCode != E_OK) {
-            GLOGE("cut branch faild");
-            return errCode;
-        }
-    }
-    matchData_ = std::make_pair(jsonkey, jsonData);
-    return E_OK;
+    std::string jsonKey;
+    std::string jsonData;
+    errCode = GetValueFromDB(key, filterObj, jsonKey, jsonData);
+    matchData_ = std::make_pair(jsonKey, jsonData);
+    return errCode;
 }
 
 int ResultSet::GetNextInner(bool isNeedCheckTable)
@@ -102,6 +116,7 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
         }
     }
     errCode = GetNextWithField();
+    index_++;
     if (errCode != E_OK) {
         return errCode;
     }

@@ -39,6 +39,7 @@ public:
 
 private:
     int GetNextInner(bool isNeedCheckTable);
+    int GetValueFromDB(Key &key, JsonObject &filterObj, std::string &jsonKey, std::string &jsonData);
     int CutJsonBranch(std::string &jsonKey, std::string &jsonData);
     int CheckCutNode(JsonObject *node, std::vector<std::string> singleCutPath,
         std::vector<std::vector<std::string>> &allCutPath);

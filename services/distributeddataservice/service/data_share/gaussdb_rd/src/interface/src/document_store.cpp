@@ -280,6 +280,7 @@ int DocumentStore::UpdateDocument(const std::string &collection, const std::stri
     }
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
     std::shared_ptr<QueryContext> context = std::make_shared<QueryContext>();
+    context->isIdExist = isIdExist;
     context->collectionName = collection;
     context->filter = filter;
     context->ifShowId = true;
@@ -355,11 +356,11 @@ int GetUpsertRePlaceData(ResultSet &resultSet, std::string &targetDocument, Json
     return errCode;
 }
 
-int InsertIdToDocument(JsonObject &filterObj, JsonObject &documentObj, bool &isIdExist, std::string &targetDocument,
-    std::string &docId)
+int InsertIdToDocument(JsonObject &filterObj, JsonObject &documentObj, std::string &targetDocument, std::string &docId)
 {
     auto filterObjChild = filterObj.GetChild();
     int errCode = E_OK;
+    bool isIdExist;
     ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);
     if (isIdExist) {
         docId = idValue.GetStringValue();
@@ -388,15 +389,13 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     Collection coll = Collection(context->collectionName, executor_);
     int count = 0;
     std::string docId;
-    bool isIdExist;
     ResultSet resultSet;
-    std::string targetDocument;
+    g std::string targetDocument;
     std::string newStr;
-    errCode = InsertIdToDocument(filterObj, documentObj, isIdExist, targetDocument, docId);
+    errCode = InsertIdToDocument(filterObj, documentObj, targetDocument, docId);
     if (errCode != E_OK) {
         return errCode;
     }
-    context->isIdExist = isIdExist;
     errCode = InitResultSet(context, this, resultSet, false);
     if (errCode != E_OK) {
         goto END;
@@ -411,7 +410,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     if (errCode != E_OK) {
         goto END;
     }
-    errCode = coll.UpsertDocument(docId, newStr, isIdExist, isReplace);
+    errCode = coll.UpsertDocument(docId, newStr, context->isIdExist, isReplace);
     if (errCode == E_OK) {
         count++;
     } else if (errCode == -E_NOT_FOUND) {
@@ -477,6 +476,7 @@ int DocumentStore::UpsertDocument(const std::string &collection, const std::stri
     context->filter = filter;
     context->collectionName = collection;
     context->ifShowId = true;
+    context->isIdExist = isIdExist;
     bool isReplace = ((flags & GRD_DOC_REPLACE) == GRD_DOC_REPLACE);
     return UpsertDataIntoDB(context, filterObj, document, documentObj, isReplace);
 }
@@ -612,6 +612,7 @@ int DocumentStore::DeleteDocument(const std::string &collection, const std::stri
         return errCode;
     }
     std::shared_ptr<QueryContext> context = std::make_shared<QueryContext>();
+    context->isIdExist = isIdExist;
     context->filter = filter;
     context->collectionName = collection;
     return DeleteDataFromDB(context, filterObj);
@@ -774,20 +775,18 @@ END:
 int DocumentStore::FindDocument(const std::string &collection, const std::string &filter,
     const std::string &projection, uint32_t flags, GRD_ResultSet *grdResultSet)
 {
-    std::shared_ptr<QueryContext> context = std::make_shared<QueryContext>();
     int errCode = E_OK;
     errCode = FindArgsCheck(collection, filter, projection, flags);
     if (errCode != E_OK) {
         GLOGE("delete arg is illegal");
         return errCode;
     }
-    context->collectionName = collection;
-    context->filter = filter;
     JsonObject filterObj = JsonObject::Parse(filter, errCode, true, true);
     if (errCode != E_OK) {
         GLOGE("filter Parsed failed");
         return errCode;
     }
+    std::shared_ptr<QueryContext> context = std::make_shared<QueryContext>();
     errCode = FindProjectionInit(projection, context);
     if (errCode != E_OK) {
         return errCode;
@@ -804,6 +803,9 @@ int DocumentStore::FindDocument(const std::string &collection, const std::string
     } else {
         context->ifShowId = false;
     }
+    context->collectionName = collection;
+    context->filter = filter;
+    context->isIdExist = isIdExist;
     return InitFindResultSet(grdResultSet, context);
 }
 

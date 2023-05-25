@@ -719,7 +719,6 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
             if (isAlreadyMatched == 0) { // Not match anything
                 isMatchFlag = false;
             }
-            // Source path not exist, if leaf value is null, isMatchFlag become true, else it will become false.
             return false;
         }
     });

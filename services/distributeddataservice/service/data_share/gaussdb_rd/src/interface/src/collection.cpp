@@ -61,6 +61,7 @@ int Collection::InsertDocument(const std::string &id, const std::string &documen
     Value valSet(document.begin(), document.end());
     DocKey docKey;
     if (!isIdExist) {
+        key.assign(id.begin(), id.end());
         errCode = executor_->InsertData(name_, key, valSet);
         while (errCode != E_OK) {
             DocumentKey::GetOidDocKey(docKey);
@@ -138,10 +139,11 @@ int Collection::UpsertDocument(const std::string &id, const std::string &newStr,
         GLOGE("Collection not created.");
         return -E_INVALID_ARGS;
     }
-    Key key(id.begin(), id.end());
+    Key key;
     Value valSet(newStr.begin(), newStr.end());
     DocKey docKey;
     if (!isIdExist) {
+        key.assign(id.begin(), id.end());
         errCode = executor_->PutData(name_, key, valSet);
         while (errCode != E_OK) {
             DocumentKey::GetOidDocKey(docKey);

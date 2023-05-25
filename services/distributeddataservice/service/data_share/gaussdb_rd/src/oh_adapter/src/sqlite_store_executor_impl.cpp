@@ -201,7 +201,6 @@ int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, const 
     Value valueResult;
     bool isFindMatch = false;
     int innerErrorCode = -E_NOT_FOUND;
-    std::string test(key.begin(), key.end());
     std::string sql = GeneralInsertSql(collName, key, isIdExist);
     std::string keyStr(key.begin(), key.end());
     int errCode = SQLiteUtils::ExecSql(
