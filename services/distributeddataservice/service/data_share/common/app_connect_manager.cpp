@@ -22,11 +22,15 @@ bool AppConnectManager::Wait(const std::string &bundleName,
     int maxWaitTime, std::function<bool()> connect, std::function<void()> disconnect)
 {
     BlockData<bool> block(maxWaitTime, false);
-    blockCache_.ComputeIfAbsent(bundleName, [&block](const std::string &key) {
+    auto result = blockCache_.ComputeIfAbsent(bundleName, [&block](const std::string &key) {
         return &block;
     });
+    if (!result) {
+        ZLOGE("is running %{public}s", bundleName.c_str());
+        return false;
+    }
     ZLOGI("start connect %{public}s", bundleName.c_str());
-    bool result = connect();
+    result = connect();
     if (!result) {
         ZLOGE("connect failed %{public}s", bundleName.c_str());
         blockCache_.Erase(bundleName);
