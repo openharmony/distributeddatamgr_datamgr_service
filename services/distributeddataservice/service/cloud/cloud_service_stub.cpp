@@ -18,7 +18,7 @@
 #include "ipc_skeleton.h"
 #include "itypes_util.h"
 #include "log_print.h"
-#include "permission_validator.h"
+#include "permission/permission_validator.h"
 #include "utils/anonymous.h"
 #include "tokenid_kit.h"
 namespace OHOS::CloudData {
