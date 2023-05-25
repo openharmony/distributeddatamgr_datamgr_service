@@ -48,7 +48,7 @@ int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, 
     }
 
     if (!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())
-        && DistributedKv::PermissionValidator::GetInstance().CheckCloudPermission(IPCSkeleton::GetCallingTokenID()) {
+        && DistributedKv::PermissionValidator::GetInstance().CheckCloudPermission(IPCSkeleton::GetCallingTokenID())) {
         ZLOGE("permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
         auto result = static_cast<int32_t>(PERMISSION_DENIED);
         return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
