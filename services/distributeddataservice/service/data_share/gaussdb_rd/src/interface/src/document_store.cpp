@@ -390,7 +390,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     int count = 0;
     std::string docId;
     ResultSet resultSet;
-    g std::string targetDocument;
+    std::string targetDocument;
     std::string newStr;
     errCode = InsertIdToDocument(filterObj, documentObj, targetDocument, docId);
     if (errCode != E_OK) {
