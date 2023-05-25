@@ -79,7 +79,7 @@ bool LoadConfigSingleDataInfoStrategy::operator()(std::shared_ptr<Context> conte
         }
     }
     context->calledSourceDir = metaData.dataDir;
-    context->version = metaData.version;
+    context->version = static_cast<int>(metaData.version);
     return true;
 }
 } // namespace OHOS::DataShare
