@@ -22,7 +22,7 @@
 namespace DocumentDB {
 const int MAX_BLOB_READ_SIZE = 5 * 1024 * 1024; // 5M limit
 const int MAX_TEXT_READ_SIZE = 5 * 1024 * 1024; // 5M limit
-const int BUSY_TIMEOUT_MS = 3000;               // 3000ms for sqlite busy timeout.
+const int BUSY_TIMEOUT_MS = 3000; // 3000ms for sqlite busy timeout.
 const std::string BEGIN_SQL = "BEGIN TRANSACTION";
 const std::string BEGIN_IMMEDIATE_SQL = "BEGIN IMMEDIATE TRANSACTION";
 const std::string COMMIT_SQL = "COMMIT TRANSACTION";
@@ -33,8 +33,6 @@ int MapSqliteError(int errCode)
 {
     switch (errCode) {
         case SQLITE_OK:
-            return E_OK;
-        case 1: // match count;
             return E_OK;
         case SQLITE_PERM:
         case SQLITE_CANTOPEN:
@@ -181,7 +179,7 @@ int SQLiteUtils::GetColumnBlobValue(sqlite3_stmt *statement, int index, std::vec
     if (keySize < 0 || keySize > MAX_BLOB_READ_SIZE) {
         GLOGW("[SQLiteUtils][Column blob] size over limit:%d", keySize);
         value.resize(MAX_BLOB_READ_SIZE + 1); // Reset value size to invalid
-        return E_OK;                          // Return OK for continue get data, but value is invalid
+        return E_OK; // Return OK for continue get data, but value is invalid
     }
 
     auto keyRead = static_cast<const uint8_t *>(sqlite3_column_blob(statement, index));
@@ -220,7 +218,7 @@ int SQLiteUtils::GetColumnTextValue(sqlite3_stmt *statement, int index, std::str
     if (valSize < 0 || valSize > MAX_TEXT_READ_SIZE) {
         GLOGW("[SQLiteUtils][Column text] size over limit:%d", valSize);
         value.resize(MAX_TEXT_READ_SIZE + 1); // Reset value size to invalid
-        return E_OK;                          // Return OK for continue get data, but value is invalid
+        return E_OK; // Return OK for continue get data, but value is invalid
     }
 
     const unsigned char *val = sqlite3_column_text(statement, index);
@@ -269,18 +267,18 @@ int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql)
 }
 
 int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::function<int(sqlite3_stmt *)> &bindCallback,
-    const std::function<int(sqlite3_stmt *)> &resultCallback)
+    const std::function<int(sqlite3_stmt *, bool &)> &resultCallback)
 {
     if (db == nullptr || sql.empty()) {
         return -E_INVALID_ARGS;
     }
     bool bindFinish = true;
     sqlite3_stmt *stmt = nullptr;
+    bool isMatchOneData = false;
     int errCode = SQLiteUtils::GetStatement(db, sql, stmt);
     if (errCode != E_OK) {
         goto END;
     }
-
     do {
         if (bindCallback) {
             errCode = bindCallback(stmt);
@@ -297,7 +295,8 @@ int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::functio
             } else if (errCode != SQLITE_ROW) {
                 goto END; // Step return error
             }
-            if (resultCallback != nullptr && ((errCode = resultCallback(stmt)) != E_OK)) {
+            if (resultCallback != nullptr && ((errCode = resultCallback(stmt, isMatchOneData)) != E_OK) ||
+                isMatchOneData) { // find one data, stop stepping.
                 goto END;
             }
         }
