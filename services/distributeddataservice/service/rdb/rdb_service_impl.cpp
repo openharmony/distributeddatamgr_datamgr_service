@@ -511,12 +511,14 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
 
-    EventCenter::Defer defer;
     CloudEvent::StoreInfo storeInfo { IPCSkeleton::GetCallingTokenID(), param.bundleName_,
         RdbSyncer::RemoveSuffix(param.storeName_),
         RdbSyncer::GetInstIndex(IPCSkeleton::GetCallingTokenID(), param.bundleName_) };
-    auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "relational_store");
-    EventCenter::GetInstance().PostEvent(move(event));
+    executors_->Execute([storeInfo]() {
+        auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "relational_store");
+        EventCenter::GetInstance().PostEvent(move(event));
+    });
+
     return RDB_OK;
 }
 

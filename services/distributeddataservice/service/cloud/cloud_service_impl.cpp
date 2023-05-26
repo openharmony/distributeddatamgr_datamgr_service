@@ -320,14 +320,14 @@ ExecutorPool::Task CloudServiceImpl::GetCloudTask(int32_t retry, int32_t user)
 SchemaMeta CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId)
 {
     SchemaMeta schemaMeta;
-    auto instance = CloudServer::GetInstance();
-    if (instance == nullptr) {
-        ZLOGE("instance is nullptr");
-        return schemaMeta;
-    }
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
     if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
+        auto instance = CloudServer::GetInstance();
+        if (instance == nullptr) {
+            ZLOGE("instance is nullptr");
+            return schemaMeta;
+        }
         cloudInfo = instance->GetServerInfo(userId);
         if (!cloudInfo.IsValid()) {
             ZLOGE("cloudInfo is invalid");
@@ -344,6 +344,11 @@ SchemaMeta CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bu
     }
     std::string schemaKey = cloudInfo.GetSchemaKey(bundleName, instanceId);
     if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
+        auto instance = CloudServer::GetInstance();
+        if (instance == nullptr) {
+            ZLOGE("instance is nullptr");
+            return schemaMeta;
+        }
         schemaMeta = instance->GetAppSchema(cloudInfo.user, bundleName);
         MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
     }
@@ -396,13 +401,6 @@ void CloudServiceImpl::GetSchema(const Event &event)
         ZLOGD("bundleName:%{public}s no cloud database", rdbEvent.GetStoreInfo().bundleName.c_str());
         return;
     }
-    auto storeMeta = GetStoreMeta(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().storeName,
-        rdbEvent.GetStoreInfo().instanceId);
-    auto instance = CloudServer::GetInstance();
-    if (instance == nullptr) {
-        ZLOGE("instance is nullptr");
-        return;
-    }
     auto database =
         std::find_if(schemaMeta.databases.begin(), schemaMeta.databases.end(), [&rdbEvent](const auto &database) {
             return database.name == rdbEvent.GetStoreInfo().storeName;
@@ -412,6 +410,11 @@ void CloudServiceImpl::GetSchema(const Event &event)
         return;
     }
 
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("instance is nullptr");
+        return;
+    }
     ZLOGD("database: %{public}s sync start", database->name.c_str());
     auto cloudDB = instance->ConnectCloudDB(rdbEvent.GetStoreInfo().tokenId, *database);
     if (cloudDB == nullptr) {
@@ -419,6 +422,9 @@ void CloudServiceImpl::GetSchema(const Event &event)
             rdbEvent.GetStoreInfo().bundleName.c_str(), rdbEvent.GetStoreInfo().user, database->name.c_str());
         return;
     }
+
+    auto storeMeta = GetStoreMeta(userId, rdbEvent.GetStoreInfo().bundleName, rdbEvent.GetStoreInfo().storeName,
+        rdbEvent.GetStoreInfo().instanceId);
     AutoCache::Watchers watchers;
     auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers);
     if (store == nullptr) {
