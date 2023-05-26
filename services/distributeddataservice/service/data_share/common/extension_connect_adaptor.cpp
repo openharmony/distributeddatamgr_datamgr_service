@@ -40,7 +40,11 @@ bool ExtensionConnectAdaptor::DoConnect(std::shared_ptr<Context> context)
     AAFwk::Want want;
     want.SetUri(context->uri);
     data_.Clear();
-    callback_ = new CallbackImpl(data_);
+    callback_ = new (std::nothrow) CallbackImpl(data_);
+    if (callback_ == nullptr) {
+        ZLOGI("new failed");
+        return false;
+    }
     ZLOGI("Start connect %{public}s", context->uri.c_str());
     ErrCode ret = AAFwk::AbilityManagerClient::GetInstance()->ConnectAbility(want, callback_, nullptr);
     if (ret != ERR_OK) {
