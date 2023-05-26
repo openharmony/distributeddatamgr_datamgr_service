@@ -181,7 +181,7 @@ int SqliteStoreExecutorImpl::GetDataByKey(const std::string &collName, const Key
 std::string GeneralInsertSql(const std::string &collName, const Key &key, int isIdExist)
 {
     std::string sqlEqual = "SELECT key, value FROM '" + collName + "' WHERE key=?;";
-    std::string sqlOrder = "SELECT key, value FROM '" + collName + "'ORDER BY KEY;";
+    std::string sqlOrder = "SELECT key, value FROM '" + collName + "' ORDER BY KEY;";
     std::string sqlLarger = "SELECT key, value FROM '" + collName + "' WHERE key>?;";
     if (isIdExist) {
         return sqlEqual;
