@@ -40,7 +40,7 @@ bool PolicyValue::IsValueEffect() const
 
 bool StoreMetaDataLocal::HasPolicy(uint32_t type)
 {
-    for (auto &policy : policies) {
+    for (const auto &policy : policies) {
         if (policy.type == type) {
             return true;
         }
@@ -50,7 +50,7 @@ bool StoreMetaDataLocal::HasPolicy(uint32_t type)
 
 PolicyValue StoreMetaDataLocal::GetPolicy(uint32_t type)
 {
-    for (auto &policy : policies) {
+    for (const auto &policy : policies) {
         if (policy.type == type) {
             return policy;
         }

@@ -27,9 +27,11 @@ public:
     // check whether the client process have enough privilege to share data with the other devices.
     // tokenId: client process tokenId
     API_EXPORT  bool CheckSyncPermission(uint32_t tokenId);
+    API_EXPORT  bool IsCloudConfigPermit(uint32_t tokenId);
 
 private:
     static constexpr const char *DISTRIBUTED_DATASYNC = "ohos.permission.DISTRIBUTED_DATASYNC";
+    static constexpr const char *CLOUD_DATA_CONFIG = "ohos.permission.CLOUDDATA_CONFIG";
 };
 } // namespace DistributedKv
 } // namespace OHOS

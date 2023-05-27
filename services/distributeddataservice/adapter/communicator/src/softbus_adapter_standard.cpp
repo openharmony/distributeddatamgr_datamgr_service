@@ -435,7 +435,7 @@ void SoftBusAdapter::SofBusDeviceChangeListenerImpl::OnDeviceChanged(const AppDi
     }
 
     CommunicationStrategy::GetInstance().SetStrategy(info.uuid, strategy,
-        [this](const std::string deviceId, Strategy strategy) {
+        [this](const std::string &deviceId, Strategy strategy) {
         std::shared_ptr<SoftBusClient> conn = SoftBusAdapter::GetInstance()->GetConnect(deviceId);
         if (conn != nullptr) {
             conn->AfterStrategyUpdate(strategy);
