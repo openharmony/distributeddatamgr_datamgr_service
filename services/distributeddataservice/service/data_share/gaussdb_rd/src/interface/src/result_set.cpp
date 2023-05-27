@@ -55,6 +55,7 @@ int ResultSet::GetValueFromDB(Key &key, JsonObject &filterObj, std::string &json
     }
     jsonData.assign(value.second.begin(), value.second.end());
     jsonKey.assign(value.first.begin(), value.first.end());
+    GLOGE("jsonKey is =========>%s", jsonKey.c_str());
     lastKeyIndex_ = jsonKey;
     if (isCutBranch_) {
         errCode = CutJsonBranch(jsonKey, jsonData);

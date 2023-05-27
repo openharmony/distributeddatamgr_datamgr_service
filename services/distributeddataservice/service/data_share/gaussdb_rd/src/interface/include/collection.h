@@ -30,10 +30,10 @@ public:
     ~Collection();
 
     int InsertDocument(const std::string &id, const std::string &document, bool &isIdExist);
-    int GetDocumentByKey(const Key &key, Value &document) const;
-    int GetMatchedDocument(const JsonObject &filterObj, const Key &key, std::pair<std::string, std::string> &values,
+    int GetDocumentByKey(Key &key, Value &document) const;
+    int GetMatchedDocument(const JsonObject &filterObj, Key &key, std::pair<std::string, std::string> &values,
         int isIdExist) const;
-    int DeleteDocument(const Key &key);
+    int DeleteDocument(Key &key);
     int IsCollectionExists(int &errCode);
     int UpsertDocument(const std::string &id, const std::string &newStr, bool &isIdExist, bool isReplace = true);
     bool FindDocument();

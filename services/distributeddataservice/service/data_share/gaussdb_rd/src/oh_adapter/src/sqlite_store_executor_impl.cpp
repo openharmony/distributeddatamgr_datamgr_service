@@ -102,11 +102,12 @@ int SqliteStoreExecutorImpl::Rollback()
     return SQLiteUtils::RollbackTransaction(dbHandle_);
 }
 
-int SqliteStoreExecutorImpl::PutData(const std::string &collName, const Key &key, const Value &value)
+int SqliteStoreExecutorImpl::PutData(const std::string &collName, Key &key, const Value &value)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
     }
+    key.push_back(uint8_t(2));
     std::string sql = "INSERT OR REPLACE INTO '" + collName + "' VALUES (?,?);";
     int errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
@@ -127,11 +128,12 @@ int SqliteStoreExecutorImpl::PutData(const std::string &collName, const Key &key
     return E_OK;
 }
 
-int SqliteStoreExecutorImpl::InsertData(const std::string &collName, const Key &key, const Value &value)
+int SqliteStoreExecutorImpl::InsertData(const std::string &collName, Key &key, const Value &value)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
     }
+    key.push_back(uint8_t(2));
     std::string sql = "INSERT INTO '" + collName + "' VALUES (?,?);";
     int errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
@@ -152,12 +154,13 @@ int SqliteStoreExecutorImpl::InsertData(const std::string &collName, const Key &
     return E_OK;
 }
 
-int SqliteStoreExecutorImpl::GetDataByKey(const std::string &collName, const Key &key, Value &value) const
+int SqliteStoreExecutorImpl::GetDataByKey(const std::string &collName, Key &key, Value &value) const
 {
     if (dbHandle_ == nullptr) {
         GLOGE("Invalid db handle.");
         return -E_ERROR;
     }
+    key.push_back(uint8_t(2));
     int innerErrorCode = -E_NOT_FOUND;
     std::string sql = "SELECT value FROM '" + collName + "' WHERE key=?;";
     int errCode = SQLiteUtils::ExecSql(
@@ -178,7 +181,7 @@ int SqliteStoreExecutorImpl::GetDataByKey(const std::string &collName, const Key
     return innerErrorCode;
 }
 
-std::string GeneralInsertSql(const std::string &collName, const Key &key, int isIdExist)
+std::string GeneralInsertSql(const std::string &collName, Key &key, int isIdExist)
 {
     std::string sqlEqual = "SELECT key, value FROM '" + collName + "' WHERE key=?;";
     std::string sqlOrder = "SELECT key, value FROM '" + collName + "'ORDER BY KEY;";
@@ -190,13 +193,14 @@ std::string GeneralInsertSql(const std::string &collName, const Key &key, int is
     }
 }
 
-int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, const Key &key, const JsonObject &filterObj,
+int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, Key &key, const JsonObject &filterObj,
     std::pair<std::string, std::string> &values, int isIdExist) const
 {
     if (dbHandle_ == nullptr) {
         GLOGE("Invalid db handle.");
         return -E_ERROR;
     }
+    key.push_back(uint8_t(2));
     Value keyResult;
     Value valueResult;
     bool isFindMatch = false;
@@ -242,12 +246,13 @@ int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, const 
     return innerErrorCode;
 }
 
-int SqliteStoreExecutorImpl::DelData(const std::string &collName, const Key &key)
+int SqliteStoreExecutorImpl::DelData(const std::string &collName, Key &key)
 {
     if (dbHandle_ == nullptr) {
         GLOGE("Invalid db handle.");
         return -E_ERROR;
     }
+    key.push_back(uint8_t(2));
     int errCode = 0;
     Value valueRet;
     if (GetDataByKey(collName, key, valueRet) != E_OK) {
