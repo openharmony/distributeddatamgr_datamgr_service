@@ -22,7 +22,7 @@
 namespace DocumentDB {
 const int MAX_BLOB_READ_SIZE = 5 * 1024 * 1024; // 5M limit
 const int MAX_TEXT_READ_SIZE = 5 * 1024 * 1024; // 5M limit
-const int BUSY_TIMEOUT_MS = 3000;               // 3000ms for sqlite busy timeout.
+const int BUSY_TIMEOUT_MS = 3000; // 3000ms for sqlite busy timeout.
 const std::string BEGIN_SQL = "BEGIN TRANSACTION";
 const std::string BEGIN_IMMEDIATE_SQL = "BEGIN IMMEDIATE TRANSACTION";
 const std::string COMMIT_SQL = "COMMIT TRANSACTION";
@@ -179,7 +179,7 @@ int SQLiteUtils::GetColumnBlobValue(sqlite3_stmt *statement, int index, std::vec
     if (keySize < 0 || keySize > MAX_BLOB_READ_SIZE) {
         GLOGW("[SQLiteUtils][Column blob] size over limit:%d", keySize);
         value.resize(MAX_BLOB_READ_SIZE + 1); // Reset value size to invalid
-        return E_OK;                          // Return OK for continue get data, but value is invalid
+        return E_OK; // Return OK for continue get data, but value is invalid
     }
 
     auto keyRead = static_cast<const uint8_t *>(sqlite3_column_blob(statement, index));
@@ -218,7 +218,7 @@ int SQLiteUtils::GetColumnTextValue(sqlite3_stmt *statement, int index, std::str
     if (valSize < 0 || valSize > MAX_TEXT_READ_SIZE) {
         GLOGW("[SQLiteUtils][Column text] size over limit:%d", valSize);
         value.resize(MAX_TEXT_READ_SIZE + 1); // Reset value size to invalid
-        return E_OK;                          // Return OK for continue get data, but value is invalid
+        return E_OK; // Return OK for continue get data, but value is invalid
     }
 
     const unsigned char *val = sqlite3_column_text(statement, index);
@@ -295,7 +295,10 @@ int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::functio
             } else if (errCode != SQLITE_ROW) {
                 goto END; // Step return error
             }
-            if (resultCallback != nullptr && ((errCode = resultCallback(stmt)) != E_OK)) {
+            if (resultCallback != nullptr) {
+                errCode = resultCallback(stmt);
+            }
+            if (resultCallback != nullptr && errCode != E_OK) {
                 goto END;
             }
         }
