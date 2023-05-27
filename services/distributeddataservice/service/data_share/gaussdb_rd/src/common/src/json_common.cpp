@@ -339,23 +339,21 @@ bool AddSpliteHitField(const JsonObject &src, const JsonObject &item, JsonFieldP
     if (hitItem.IsNull()) {
         return true;
     }
-
-    for (size_t i = abandonPath.size() - 1; i < abandonPath.size() && i >= 0; i--) {
+    size_t index = abandonPath.size() - 1;
+    do {
         if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
             GLOGE("Add collapse item to object failed, path not exist.");
             externErrCode = -E_DATA_CONFLICT;
             return false;
         }
-        if (IsNumber(abandonPath[i])) {
+        if (IsNumber(abandonPath[index])) {
             externErrCode = -E_DATA_CONFLICT;
             return false;
         }
-        errCode = (i == 0) ? hitItem.AddItemToObject(abandonPath[i], item) : hitItem.AddItemToObject(abandonPath[i]);
+        errCode = (index == 0) ? hitItem.AddItemToObject(abandonPath[index], item)
+                               : hitItem.AddItemToObject(abandonPath[index]);
         externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-        if (i == 0) {
-            break;
-        }
-    }
+    } while (index-- != 0);
     return false;
 }
 
@@ -385,28 +383,27 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
         return false;
     }
     JsonFieldPath newHitPath;
-    for (size_t i = abandonPath.size() - 1; i < abandonPath.size() && i >= 0; i--) {
+    size_t index = abandonPath.size() - 1;
+    do {
         if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
             GLOGE("Add collapse item to object failed, path not exist.");
             externErrCode = -E_DATA_CONFLICT;
             return false;
         }
-        if (IsNumber(abandonPath[i])) {
+        if (IsNumber(abandonPath[index])) {
             externErrCode = -E_DATA_CONFLICT;
             return false;
         }
-        errCode = (i == 0 ? hitItem.AddItemToObject(abandonPath[i], item) : hitItem.AddItemToObject(abandonPath[i]));
+        errCode = (index == 0 ? hitItem.AddItemToObject(abandonPath[index], item)
+                              : hitItem.AddItemToObject(abandonPath[index]));
         externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-        newHitPath.emplace_back(abandonPath[i]);
+        newHitPath.emplace_back(abandonPath[index]);
         hitItem = hitItem.FindItem(newHitPath, errCode);
         if (errCode != E_OK) {
             return false;
         }
         newHitPath.pop_back();
-        if (i == 0) {
-            break;
-        }
-    }
+    } while (index-- != 0);
     return false;
 }
 
