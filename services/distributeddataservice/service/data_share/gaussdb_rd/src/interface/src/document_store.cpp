@@ -309,13 +309,17 @@ int UpsertArgsCheck(const std::string &collection, const std::string &filter, co
 
 int CheckUpsertConflict(ResultSet &resultSet, JsonObject &filterObj, std::string &docId, Collection &coll)
 {
-    int errCode = resultSet.GetNext(false, true);
+    std::string val; // use to know whether there is data in the resultSet or not.
+    int errCode = resultSet.GetValue(val);
     bool isfilterMatch = false;
     if (errCode == E_OK) {
         isfilterMatch = true;
     }
     Value ValueDocument;
-    Key key(docId.begin(), docId.end());
+    DocKey docKey;
+    std::string keyStr = docId;
+    DocumentKey::GetStringDocKey(keyStr, docKey);
+    Key key(docKey.key.begin(), docKey.key.end());
     errCode = coll.GetDocumentByKey(key, ValueDocument);
     if (errCode == E_OK && !(isfilterMatch)) {
         GLOGE("id exist but filter does not match, data conflict");
@@ -367,7 +371,7 @@ int InsertIdToDocument(ResultSet &resultSet, JsonObject &filterObj, JsonObject &
         documentObj.InsertItemObject(0, idObj);
     } else {
         if (ret == E_OK) { // E_OK means find data.
-            (void)resultSet.GetValue(docId); // This errCode will always be E_OK.
+            (void)resultSet.GetKey(docId); // This errCode will always be E_OK.
         } else {
             DocKey docKey;
             DocumentKey::GetOidDocKey(docKey);
