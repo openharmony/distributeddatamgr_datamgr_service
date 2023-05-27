@@ -324,13 +324,11 @@ int CheckUpsertConflict(ResultSet &resultSet, JsonObject &filterObj, std::string
     return errCode;
 }
 
-int GetUpsertRePlaceData(ResultSet &resultSet, std::string &targetDocument, JsonObject &documentObj, bool isReplace,
-    std::string &valStr)
+int GetUpsertRePlaceData(ResultSet &resultSet, JsonObject &documentObj, bool isReplace, std::string &valStr)
 {
-    resultSet.GetNext();
     int errCode = resultSet.GetValue(valStr);
     if (errCode != E_OK || isReplace) {
-        valStr = targetDocument; // If cant not find data, insert it.
+        valStr = documentObj.Print(); // If cant not find data, insert it.
         return E_OK;
     }
     if (errCode != E_OK && errCode != -E_NOT_FOUND) {
@@ -356,22 +354,26 @@ int GetUpsertRePlaceData(ResultSet &resultSet, std::string &targetDocument, Json
     return errCode;
 }
 
-int InsertIdToDocument(JsonObject &filterObj, JsonObject &documentObj, std::string &targetDocument, std::string &docId)
+int InsertIdToDocument(ResultSet &resultSet, JsonObject &filterObj, JsonObject &documentObj, std::string &docId)
 {
     auto filterObjChild = filterObj.GetChild();
-    int errCode = E_OK;
     bool isIdExist;
     ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);
+    int errCode = E_OK;
+    int ret = resultSet.GetNext(false, true); // All anomalies will be judged later
     if (isIdExist) {
         docId = idValue.GetStringValue();
         JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
         documentObj.InsertItemObject(0, idObj);
     } else {
-        DocKey docKey;
-        DocumentKey::GetOidDocKey(docKey);
-        docId = docKey.key;
+        if (ret == E_OK) { // E_OK means find data.
+            (void)resultSet.GetValue(docId); // This errCode will always be E_OK.
+        } else {
+            DocKey docKey;
+            DocumentKey::GetOidDocKey(docKey);
+            docId = docKey.key;
+        }
     }
-    targetDocument = documentObj.Print();
     return errCode;
 }
 
@@ -390,15 +392,14 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     int count = 0;
     std::string docId;
     ResultSet resultSet;
-    std::string targetDocument;
     std::string newStr;
-    errCode = InsertIdToDocument(filterObj, documentObj, targetDocument, docId);
-    if (errCode != E_OK) {
-        return errCode;
-    }
     errCode = InitResultSet(context, this, resultSet, false);
     if (errCode != E_OK) {
         goto END;
+    }
+    errCode = InsertIdToDocument(resultSet, filterObj, documentObj, docId);
+    if (errCode != E_OK) {
+        return errCode;
     }
     errCode = CheckUpsertConflict(resultSet, filterObj, docId, coll);
     // There are only three return values, the two other situation can continue to move forward.
@@ -406,7 +407,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
         GLOGE("upsert data conflict");
         goto END;
     }
-    errCode = GetUpsertRePlaceData(resultSet, targetDocument, documentObj, isReplace, newStr);
+    errCode = GetUpsertRePlaceData(resultSet, documentObj, isReplace, newStr);
     if (errCode != E_OK) {
         goto END;
     }
