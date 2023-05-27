@@ -28,7 +28,6 @@ struct ProjectionNode {
     std::unordered_map<std::string, ProjectionNode *> sonNode;
     bool isDeepest;
     int Deep;
-    int ViewType;
     ProjectionNode()
     {
         Deep = 0;
@@ -43,7 +42,7 @@ struct ProjectionNode {
 class ProjectionTree {
 public:
     int ParseTree(std::vector<std::vector<std::string>> &path);
-    bool SearchTree(std::vector<std::string> &singlePath, int &index);
+    bool SearchTree(std::vector<std::string> &singlePath, size_t &index);
 
 private:
     ProjectionNode node_;

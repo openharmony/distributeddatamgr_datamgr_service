@@ -295,7 +295,8 @@ int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::functio
             } else if (errCode != SQLITE_ROW) {
                 goto END; // Step return error
             }
-            if (resultCallback != nullptr && ((errCode = resultCallback(stmt)) != E_OK)) {
+            errCode = resultCallback(stmt);
+            if (resultCallback != nullptr && errCode != E_OK) {
                 goto END;
             }
         }
