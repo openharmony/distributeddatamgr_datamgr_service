@@ -219,8 +219,7 @@ JsonObject CreatIdObj(const std::string &idStr, int errCode)
     std::stringstream sstream;
     sstream << "{\"_id\":" << "\"" << idStr << "\"}";
     JsonObject idObj = JsonObject::Parse(sstream.str(), errCode, true); // cant be faild.
-    idObj = idObj.GetChild();
-    return idObj;
+    return idObj.GetChild();
 }
 
 int InsertRandomId(JsonObject &cjsonObj, std::string &jsonKey)
