@@ -150,9 +150,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &newStr,
         }
         return errCode;
     } else {
-        DocKey docKey;
-        DocumentKey::GetStringDocKey(id, docKey);
-        key.assign(docKey.key.begin(), docKey.key.end());
+        key.assign(id.begin(), id.end());
     }
     return executor_->PutData(name_, key, valSet);
 }

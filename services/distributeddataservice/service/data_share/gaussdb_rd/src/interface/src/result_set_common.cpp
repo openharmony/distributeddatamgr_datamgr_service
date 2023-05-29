@@ -14,7 +14,7 @@
 */
 
 #include "result_set_common.h"
-
+#include "grd_format_config.h"
 #include "doc_errno.h"
 #include "grd_base/grd_error.h"
 
@@ -24,7 +24,7 @@ int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, 
 {
     if (isCutBranch) {
         for (const auto &singlePath : context->projectionPath) {
-            if (singlePath[0] == "_id" && context->viewType == true) { // projection has Id and viewType is true
+            if (singlePath[0] == KEY_ID && context->viewType == true) { // projection has Id and viewType is true
                 context->ifShowId = true;
                 break;
             }

@@ -48,7 +48,7 @@ int ResultSet::GetValueFromDB(Key &key, JsonObject &filterObj, std::string &json
 {
     std::pair<std::string, std::string> value;
     Collection coll = store_->GetCollection(context_->collectionName);
-    filterObj.DeleteItemFromObject("_id");
+    filterObj.DeleteItemFromObject(KEY_ID);
     int errCode = coll.GetMatchedDocument(filterObj, key, value, context_->isIdExist);
     if (errCode == -E_NOT_FOUND) {
         return -E_NO_DATA;
