@@ -22,7 +22,7 @@
 namespace OHOS::DataShare {
 class CallbackImpl : public AAFwk::AbilityConnectionStub {
 public:
-    CallbackImpl(BlockData<bool> &data) : data_(data) {}
+    explicit CallbackImpl(BlockData<bool> &data) : data_(data) {}
     void OnAbilityConnectDone(
         const AppExecFwk::ElementName &element, const sptr<IRemoteObject> &remoteObject, int resultCode) override
     {
