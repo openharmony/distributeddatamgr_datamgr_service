@@ -122,7 +122,7 @@ int Collection::IsCollectionExists(int &errCode)
     return executor_->IsCollectionExists(name_, errCode);
 }
 
-int Collection::UpsertDocument(const std::string &id, const std::string &newStr, bool &isIdExist)
+int Collection::UpsertDocument(const std::string &id, const std::string &newDocument, bool &isIdExist)
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -138,7 +138,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &newStr,
         return -E_INVALID_ARGS;
     }
     Key key;
-    Value valSet(newStr.begin(), newStr.end());
+    Value valSet(newDocument.begin(), newDocument.end());
     DocKey docKey;
     if (!isIdExist) {
         key.assign(id.begin(), id.end());
@@ -155,7 +155,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &newStr,
     return executor_->PutData(name_, key, valSet);
 }
 
-int Collection::UpdateDocument(const std::string &id, const std::string &newStr)
+int Collection::UpdateDocument(const std::string &id, const std::string &newDocument)
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -171,7 +171,7 @@ int Collection::UpdateDocument(const std::string &id, const std::string &newStr)
         return -E_INVALID_ARGS;
     }
     Key keyId(id.begin(), id.end());
-    Value valSet(newStr.begin(), newStr.end());
+    Value valSet(newDocument.begin(), newDocument.end());
     return executor_->PutData(name_, keyId, valSet);
 }
 } // namespace DocumentDB

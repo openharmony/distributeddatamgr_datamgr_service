@@ -398,7 +398,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     int count = 0;
     std::string docId;
     ResultSet resultSet;
-    std::string newStr;
+    std::string newDocument;
     errCode = InitResultSet(context, this, resultSet, false);
     if (errCode != E_OK) {
         goto END;
@@ -413,11 +413,11 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
         GLOGE("upsert data conflict");
         goto END;
     }
-    errCode = GetUpsertRePlaceData(resultSet, documentObj, isReplace, newStr);
+    errCode = GetUpsertRePlaceData(resultSet, documentObj, isReplace, newDocument);
     if (errCode != E_OK) {
         goto END;
     }
-    errCode = coll.UpsertDocument(docId, newStr, context->isIdExist);
+    errCode = coll.UpsertDocument(docId, newDocument, context->isIdExist);
     if (errCode == E_OK) {
         count++;
     } else if (errCode == -E_NOT_FOUND) {

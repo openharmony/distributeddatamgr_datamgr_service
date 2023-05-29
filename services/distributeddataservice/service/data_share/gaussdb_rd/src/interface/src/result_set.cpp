@@ -217,12 +217,13 @@ int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePat
 JsonObject CreatIdObj(const std::string &idStr, int errCode)
 {
     std::stringstream sstream;
-    sstream << "{\"_id\":" << "\"" << idStr << "\"}";
+    sstream << "{\"_id\":"
+            << "\"" << idStr << "\"}";
     JsonObject idObj = JsonObject::Parse(sstream.str(), errCode, true); // cant be faild.
-    return idObj.GetChild();
+    return idObj;
 }
 
-int InsertRandomId(JsonObject &cjsonObj, std::string &jsonKey)
+int InsertId(JsonObject &cjsonObj, std::string &jsonKey)
 {
     if (jsonKey.empty()) {
         GLOGE("Genalral Id faild");
@@ -234,7 +235,7 @@ int InsertRandomId(JsonObject &cjsonObj, std::string &jsonKey)
         GLOGE("CreatIdObj faild");
         return errCode;
     }
-    cjsonObj.InsertItemObject(0, idObj);
+    cjsonObj.InsertItemObject(0, idObj.GetChild()); // idObj's child is _id node
     return E_OK;
 }
 
@@ -261,17 +262,17 @@ int ResultSet::CutJsonBranch(std::string &jsonKey, std::string &jsonData)
             GLOGE("The node in CheckCutNode is nullptr");
             return errCode;
         }
-        for (const auto &singleCutPaht : allCutPath) {
-            if (!context_->ifShowId || singleCutPaht[0] != KEY_ID) {
-                cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
+        for (const auto &singleCutPath : allCutPath) {
+            if (!context_->ifShowId || singleCutPath[0] != KEY_ID) {
+                cjsonObj.DeleteItemDeeplyOnTarget(singleCutPath);
             }
-            if (singleCutPaht[0] == KEY_ID && !isIdExistInValue) { // projection has Id, and its showType is true.
+            if (singleCutPath[0] == KEY_ID && !isIdExistInValue) { // projection has Id, and its showType is true.
                 isInsertIdflag = true;
             }
         }
     }
     if (isInsertIdflag) {
-        errCode = InsertRandomId(cjsonObj, jsonKey);
+        errCode = InsertId(cjsonObj, jsonKey);
         if (errCode != E_OK) {
             return errCode;
         }

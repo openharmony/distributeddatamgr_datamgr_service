@@ -35,7 +35,7 @@ public:
         int isIdExist) const;
     int DeleteDocument(Key &key);
     int IsCollectionExists(int &errCode);
-    int UpsertDocument(const std::string &id, const std::string &newStr, bool &isIdExist);
+    int UpsertDocument(const std::string &id, const std::string &newDocument, bool &isIdExist);
     bool FindDocument();
     int UpdateDocument(const std::string &id, const std::string &document);
 
