@@ -260,6 +260,7 @@ int ResultSet::CutJsonBranch(std::string &jsonKey, std::string &jsonData)
         std::vector<std::vector<std::string>> allCutPath;
         std::vector<std::string> singlePath;
         JsonObject cjsonObjChild = cjsonObj.GetChild();
+        std::vector<std::vector<std::string>> allCutPath;
         errCode = CheckCutNode(&cjsonObjChild, singlePath, allCutPath);
         if (errCode != E_OK) {
             GLOGE("The node in CheckCutNode is nullptr");

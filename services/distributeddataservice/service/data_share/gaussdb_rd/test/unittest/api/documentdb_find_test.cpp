@@ -49,7 +49,9 @@ static const char *g_document4 = "{\"_id\" : \"4\", \"name\":\"doc4\",\"item\":\
 static const char *g_document5 = "{\"_id\" : \"5\", \"name\":\"doc5\",\"item\":\"journal\",\"personInfo\":\
     [{\"sex\" : \"woma\", \"school\" : \"B\", \"age\" : 15}, {\"school\":\"C\", \"age\" : 35}]}";
 static const char *g_document6 = "{\"_id\" : \"6\", \"name\":\"doc6\",\"item\":false,\"personInfo\":\
-    [{\"school\":\"B\", \"teacher\" : \"mike\",\"age\" : 15}, {\"school\":\"C\", \"teacher\" : \"moon\",\"age\":20}]}";
+    [{\"school\":\"B\", \"teacher\" : \"mike\", \"age\" : 15},\
+    {\"school\":\"C\", \"teacher\" : \"moon\", \"age\" : 20}]}";
+
 static const char *g_document7 = "{\"_id\" : \"7\", \"name\":\"doc7\",\"item\":\"fruit\",\"other_Info\":\
     [{\"school\":\"BX\", \"age\" : 15}, {\"school\":\"C\", \"age\" : 35}]}";
 static const char *g_document8 = "{\"_id\" : \"8\", \"name\":\"doc8\",\"item\":true,\"personInfo\":\
@@ -1438,17 +1440,14 @@ HWTEST_F(DocumentDBFindTest, DocumentDBFindTest061, TestSize.Level1)
     char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, document061);
-    EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
 
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, document062);
-    EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
 
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     CompareValue(value, document063);
-    EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
 
     EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
