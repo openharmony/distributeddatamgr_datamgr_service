@@ -70,7 +70,7 @@ int ResultSet::GetNextWithField()
     std::string jsonkey(value.first.begin(), value.first.end());
     lastKeyIndex_ = jsonkey;
     if (isCutBranch_) {
-        errCode = CutJsonBranch(jsonData);
+        errCode = CutJsonBranch(jsonData); // Crop according to projection.
         if (errCode != E_OK) {
             GLOGE("cut branch faild");
             return errCode;
