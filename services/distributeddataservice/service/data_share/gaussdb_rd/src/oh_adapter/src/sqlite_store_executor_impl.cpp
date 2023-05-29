@@ -210,12 +210,12 @@ int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, Key &k
         GLOGE("Invalid db handle.");
         return -E_ERROR;
     }
-    key.push_back(KEY_TYPE);
     Value keyResult;
     Value valueResult;
     bool isFindMatch = false;
     int innerErrorCode = -E_NOT_FOUND;
     std::string sql = GeneralInsertSql(collName, key, isIdExist);
+    key.push_back(KEY_TYPE);
     std::string keyStr(key.begin(), key.end());
     int errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
