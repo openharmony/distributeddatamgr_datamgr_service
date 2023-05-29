@@ -43,7 +43,6 @@ public:
 class DocumentKey {
 public:
     static int GetOidDocKey(DocKey &key);
-    static int GetStringDocKey(const std::string &id, DocKey &key);
 };
 } // namespace DocumentDB
 #endif // DOCUMENT_KEY_H

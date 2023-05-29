@@ -317,10 +317,7 @@ int CheckUpsertConflict(ResultSet &resultSet, JsonObject &filterObj, std::string
         isfilterMatch = true;
     }
     Value ValueDocument;
-    DocKey docKey;
-    std::string keyStr = docId;
-    DocumentKey::GetStringDocKey(keyStr, docKey);
-    Key key(docKey.key.begin(), docKey.key.end());
+    Key key(docId.begin(), docId.end());
     key.push_back(KEY_TYPE); // add id type flag;
     errCode = coll.GetDocumentByKey(key, ValueDocument);
     if (errCode == E_OK && !(isfilterMatch)) {

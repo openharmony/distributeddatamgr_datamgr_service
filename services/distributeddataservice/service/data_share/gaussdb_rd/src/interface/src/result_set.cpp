@@ -79,9 +79,7 @@ int ResultSet::GetNextWithField()
             JsonObject filterObjChild = filterObj.GetChild();
             ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
             std::string idKey = idValue.GetStringValue();
-            DocKey docKey;
-            DocumentKey::GetStringDocKey(idKey, docKey);
-            key.assign(docKey.key.begin(), docKey.key.end());
+            key.assign(idKey.begin(), idKey.end());
         } else { // Use id to find data that can only get one data.
             matchData_.first.clear(); // Delete previous data.
             matchData_.second.clear();

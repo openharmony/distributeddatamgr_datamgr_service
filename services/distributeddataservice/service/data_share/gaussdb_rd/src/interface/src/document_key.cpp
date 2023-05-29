@@ -43,15 +43,6 @@ static int InitDocIdFromOid(DocKey &docKey)
     return E_OK;
 }
 
-int DocumentKey::GetStringDocKey(const std::string &id, DocKey &key)
-{
-    if (id.empty()) {
-        return GetOidDocKey(key); // It won't go to this branch at the moment.
-    }
-    key.key = id;
-    return E_OK;
-}
-
 int DocumentKey::GetOidDocKey(DocKey &key)
 {
     int ret = InitDocIdFromOid(key);
