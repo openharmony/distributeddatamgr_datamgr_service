@@ -87,7 +87,7 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
     CommonEventSubscribeInfo info(matchingSkills);
     auto callback = [kvStoreDataService](const std::string &bundleName, int32_t userId, int32_t appIndex) {
         kvStoreDataService->OnUninstall(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
-        std::string prefix = StoreMetaData::GetPrefix( { CommunicationProvider::GetInstance().GetLocalDevice().uuid,
+        std::string prefix = StoreMetaData::GetPrefix({ CommunicationProvider::GetInstance().GetLocalDevice().uuid,
             std::to_string(userId), "default", bundleName });
         std::vector<StoreMetaData> storeMetaData;
         if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
