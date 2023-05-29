@@ -383,7 +383,7 @@ int GetDBPageSize(const std::string &path)
     }
 
     int pageSize = 0;
-    SQLiteUtils::ExecSql(db, "PRAGMA page_size;", nullptr, [&pageSize](sqlite3_stmt *stmt) {
+    SQLiteUtils::ExecSql(db, "PRAGMA page_size;", nullptr, [&pageSize](sqlite3_stmt *stmt, bool &isMatchOneData) {
         pageSize = sqlite3_column_int(stmt, 0);
         return E_OK;
     });

@@ -257,7 +257,6 @@ int ResultSet::CutJsonBranch(std::string &jsonKey, std::string &jsonData)
         isInsertIdflag = true; // ifShowId is true,and then the data taken out does not have IDs, insert id.
     }
     if (context_->viewType) {
-        std::vector<std::vector<std::string>> allCutPath;
         std::vector<std::string> singlePath;
         JsonObject cjsonObjChild = cjsonObj.GetChild();
         std::vector<std::vector<std::string>> allCutPath;

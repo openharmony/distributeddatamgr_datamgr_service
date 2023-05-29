@@ -295,8 +295,10 @@ int SQLiteUtils::ExecSql(sqlite3 *db, const std::string &sql, const std::functio
             } else if (errCode != SQLITE_ROW) {
                 goto END; // Step return error
             }
-            if (resultCallback != nullptr && ((errCode = resultCallback(stmt, isMatchOneData)) != E_OK) ||
-                isMatchOneData) { // find one data, stop stepping.
+            if (resultCallback != nullptr) { // find one data, stop stepping.
+                errCode = resultCallback(stmt, isMatchOneData);
+            }
+            if (resultCallback != nullptr && ((errCode != E_OK) || isMatchOneData)) {
                 goto END;
             }
         }

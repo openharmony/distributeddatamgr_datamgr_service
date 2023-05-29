@@ -59,8 +59,7 @@ int DocumentKey::GetStringDocKey(const std::string &id, DocKey &key)
     }
     key.id = id;
     key.type = (uint8_t)STRING;
-    int ret = SerializeDocKey(key, key.id);
-    return ret;
+    return E_OK;
 }
 
 int DocumentKey::GetOidDocKey(DocKey &key)
@@ -71,15 +70,11 @@ int DocumentKey::GetOidDocKey(DocKey &key)
             return ret;
         }
     }
-    ret = SerializeDocKey(key, key.id);
     return ret;
 }
 
 std::string DocumentKey::GetIdFromKey(std::string &keyStr)
 {
-    if (!keyStr.empty()) {
-        keyStr.pop_back();
-    }
     return keyStr;
 }
 } // namespace DocumentDB
