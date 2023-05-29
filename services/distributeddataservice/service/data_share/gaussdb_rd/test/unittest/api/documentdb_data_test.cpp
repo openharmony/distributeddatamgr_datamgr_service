@@ -318,8 +318,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest009, TestSize.Level0)
     char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     string valueStr = value;
-    string repectStr = R""({"_id":"1234", "field1":1, "field2":2,
-        "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
+    string repectStr = R""({"_id":"1234","field1":1,"field2":2,"FIELD1":[1,true,1.23456789,"hello world!",null]})"";
     EXPECT_EQ((valueStr == repectStr), 1);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);

@@ -505,9 +505,7 @@ bool JsonNodeAppend(const JsonObject &src, const JsonFieldPath &path, const Json
     int errCode = E_OK;
     JsonObject srcFatherItem = src.FindItem(fatherPath, errCode);
     std::string lastFieldName = itemPath.back();
-    int isAddedFlag = false;
     if (errCode != E_OK) {
-        isAddedFlag = true;
         AddSpliteField(src, item, itemPath, externErrCode);
         return false;
     }
@@ -521,7 +519,6 @@ bool JsonNodeAppend(const JsonObject &src, const JsonFieldPath &path, const Json
             GLOGE("Add item to object failed. %d", errCode);
             return false;
         }
-        isAddedFlag = true;
         return false;
     }
     if (!isCollapse) {
@@ -529,13 +526,10 @@ bool JsonNodeAppend(const JsonObject &src, const JsonFieldPath &path, const Json
         if (!ret) {
             return false; // replace failed
         }
-        isAddedFlag = true;
         return false; // Different node types, overwrite directly, skip child node
     }
-    if (!isAddedFlag) {
-        GLOGE("Add nothing because data conflict");
-        externErrCode = -E_DATA_CONFLICT;
-    }
+    GLOGE("Add nothing because data conflict");
+    externErrCode = -E_DATA_CONFLICT;
     return false; // Source path not exist, overwrite directly, skip child node
 }
 } // namespace
@@ -646,11 +640,9 @@ bool JsonCommon::JsonEqualJudge(const JsonFieldPath &itemPath, const JsonObject 
     bool &isCollapse, int &isMatchFlag)
 {
     int errCode;
-    int isAlreadyMatched = 0;
     JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
     if (errCode != -E_JSON_PATH_NOT_EXISTS && srcItem == item) {
         isMatchFlag = true;
-        isAlreadyMatched = 1;
         return false;
     }
     JsonFieldPath granpaPath = itemPath;
@@ -661,7 +653,6 @@ bool JsonCommon::JsonEqualJudge(const JsonFieldPath &itemPath, const JsonObject 
         JsonObject fatherItem = granpaItem.GetChild();
         while (!fatherItem.IsNull()) {
             if ((fatherItem.GetObjectItem(lastFieldName, errCode) == item)) { // this errCode is always E_OK
-                isAlreadyMatched = 1;
                 isMatchFlag = true;
                 break;
             }
@@ -670,6 +661,7 @@ bool JsonCommon::JsonEqualJudge(const JsonFieldPath &itemPath, const JsonObject 
         }
         return false;
     }
+    int isAlreadyMatched = 0; // means no match anything
     return IsObjectItemMatch(srcItem, item, isAlreadyMatched, isCollapse, isMatchFlag);
 }
 
