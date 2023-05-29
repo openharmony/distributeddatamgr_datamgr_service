@@ -514,7 +514,6 @@ int DocumentStore::InsertDataIntoDB(const std::string &collection, const std::st
         JsonObject documentObjChild = documentObj.GetChild();
         ValueObject idValue = JsonCommon::GetValueInSameLevel(documentObjChild, KEY_ID);
         id = idValue.GetStringValue();
-
     } else {
         DocKey docKey;
         DocumentKey::GetOidDocKey(docKey);

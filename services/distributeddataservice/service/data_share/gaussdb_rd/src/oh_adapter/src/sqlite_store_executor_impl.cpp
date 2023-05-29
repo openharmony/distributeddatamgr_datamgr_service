@@ -22,6 +22,7 @@
 #include "sqlite_utils.h"
 
 namespace DocumentDB {
+constexpr const uint8_t KEY_TYPE = uint8_t(2);
 int SqliteStoreExecutorImpl::CreateDatabase(const std::string &path, const DBConfig &config, sqlite3 *&db)
 {
     if (db != nullptr) {
@@ -107,7 +108,7 @@ int SqliteStoreExecutorImpl::PutData(const std::string &collName, Key &key, cons
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
     }
-    key.push_back(uint8_t(2));
+    key.push_back(KEY_TYPE); // Stitching ID type
     std::string sql = "INSERT OR REPLACE INTO '" + collName + "' VALUES (?,?);";
     int errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
@@ -133,7 +134,7 @@ int SqliteStoreExecutorImpl::InsertData(const std::string &collName, Key &key, c
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
     }
-    key.push_back(uint8_t(2));
+    key.push_back(KEY_TYPE);
     std::string sql = "INSERT INTO '" + collName + "' VALUES (?,?);";
     int errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
@@ -209,7 +210,7 @@ int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, Key &k
         GLOGE("Invalid db handle.");
         return -E_ERROR;
     }
-    key.push_back(uint8_t(2));
+    key.push_back(KEY_TYPE);
     Value keyResult;
     Value valueResult;
     bool isFindMatch = false;
@@ -237,7 +238,7 @@ int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, Key &k
             }
             if (JsonCommon::IsJsonNodeMatch(srcObj, filterObj, innerErrorCode)) {
                 isFindMatch = true; // this args work in this function
-                (void)AssignValueToData(keyStr, valueStr,values, innerErrorCode, isMatchOneData);
+                (void)AssignValueToData(keyStr, valueStr, values, innerErrorCode, isMatchOneData);
                 return E_OK; // match count;
             }
             innerErrorCode = E_OK;
@@ -259,7 +260,7 @@ int SqliteStoreExecutorImpl::DelData(const std::string &collName, Key &key)
         GLOGE("Invalid db handle.");
         return -E_ERROR;
     }
-    key.push_back(uint8_t(2));
+    key.push_back(KEY_TYPE);
     int errCode = 0;
     Value valueRet;
     if (GetDataByKey(collName, key, valueRet) != E_OK) {

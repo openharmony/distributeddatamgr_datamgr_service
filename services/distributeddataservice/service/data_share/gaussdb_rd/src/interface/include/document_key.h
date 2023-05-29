@@ -28,13 +28,12 @@
 #define GRD_DOC_ID_TYPE_SIZE 1
 
 namespace DocumentDB {
-
-typedef enum DocIdType {
+enum class DocIdType {
     INT = 1,
     STRING,
-} DocIdType;
+};
 
-class DocKey {
+struct DocKey {
 public:
     ~DocKey(){};
     int32_t keySize;
@@ -49,6 +48,5 @@ public:
     static int GetStringDocKey(const std::string &id, DocKey &key);
     static std::string GetIdFromKey(std::string &keyStr);
 };
-
 } // namespace DocumentDB
 #endif // DOCUMENT_KEY_H
