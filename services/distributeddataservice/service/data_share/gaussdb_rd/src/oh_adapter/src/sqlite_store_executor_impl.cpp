@@ -228,6 +228,7 @@ int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, Key &k
             }
             if (JsonCommon::IsJsonNodeMatch(srcObj, filterObj, innerErrorCode)) {
                 isFindMatch = true; // this args work in this function
+                keyStr.pop_back() // get id from really key.
                 values.first = keyStr;
                 values.second = valueStr;
                 innerErrorCode = E_OK;
