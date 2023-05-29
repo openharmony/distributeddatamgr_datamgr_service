@@ -276,7 +276,8 @@ void StoreCache::DBStoreDelegate::SetObservers(std::shared_ptr<Observers> observ
     observers_ = observers;
 
     if (observers_ != nullptr && !observers_->empty()) {
-        ZLOGD("storeId:%{public}s observers:%{public}zu", Anonymous::Change(delegate_->GetStoreId()).c_str(), observers_->size());
+        ZLOGD("storeId:%{public}s observers:%{public}zu", Anonymous::Change(delegate_->GetStoreId()).c_str(),
+            observers_->size());
         delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, this);
     }
 }

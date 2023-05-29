@@ -61,7 +61,7 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
     AppId appId;
     StoreId storeId;
     if (!ITypesUtil::Unmarshal(data, appId, storeId)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), 
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }

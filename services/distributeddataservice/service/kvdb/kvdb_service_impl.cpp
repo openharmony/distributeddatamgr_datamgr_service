@@ -86,7 +86,7 @@ KVDBServiceImpl::KVDBServiceImpl()
             if (policy.IsValueEffect()) {
                 syncInfo.delay = policy.valueUint;
             }
-            ZLOGI("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), 
+            ZLOGI("[online] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(),
                 Anonymous::Change(data.storeId).c_str());
             auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
             KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
@@ -294,7 +294,7 @@ Status KVDBServiceImpl::RmvSubscribeInfo(const AppId &appId, const StoreId &stor
 Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    ZLOGI("appId:%{public}s storeId:%{public}s tokenId:0x%{public}x", appId.appId.c_str(), 
+    ZLOGI("appId:%{public}s storeId:%{public}s tokenId:0x%{public}x", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), tokenId);
     syncAgents_.Compute(tokenId, [&appId, &storeId, &observer](auto &key, SyncAgent &value) {
         if (value.pid_ != IPCSkeleton::GetCallingPid()) {
@@ -315,7 +315,7 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, sp
 Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    ZLOGI("appId:%{public}s storeId:%{public}s tokenId:0x%{public}x", appId.appId.c_str(), 
+    ZLOGI("appId:%{public}s storeId:%{public}s tokenId:0x%{public}x", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), tokenId);
     syncAgents_.ComputeIfPresent(tokenId, [&appId, &storeId, &observer](auto &key, SyncAgent &value) {
         if (value.pid_ != IPCSkeleton::GetCallingPid()) {
@@ -353,7 +353,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
         old.area != meta.area || !options.persistent) {
         ZLOGE("meta appId:%{public}s storeId:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
               "area:%{public}d->%{public}d persistent:%{public}d",
-            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.storeType, meta.storeType, 
+            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.storeType, meta.storeType,
             old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent);
         return Status::STORE_META_CHANGED;
     }
@@ -384,7 +384,7 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
         auto dbStatus = Upgrade::GetInstance().UpdateStore(oldMeta, metaData, password);
         ZLOGI("update status:%{public}d appId:%{public}s storeId:%{public}s inst:%{public}d "
               "type:%{public}d->%{public}d dir:%{public}s",
-            dbStatus, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId, 
+            dbStatus, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId,
             oldMeta.storeType, metaData.storeType, metaData.dataDir.c_str());
         if (dbStatus != DBStatus::OK) {
             status = STORE_UPGRADE_FAILED;
