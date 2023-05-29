@@ -72,10 +72,7 @@ int Collection::InsertDocument(const std::string &id, const std::string &documen
     Key key;
     Value valSet(document.begin(), document.end());
     if (!isIdExist) {
-        errCode = InsertUntilSuccess(key, id, valSet);
-        if (errCode != E_OK) {
-            return errCode;
-        }
+        return InsertUntilSuccess(key, id, valSet);
     }
     key.assign(id.begin(), id.end());
     return executor_->InsertData(name_, key, valSet);
@@ -146,10 +143,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &newDocu
     Key key;
     Value valSet(newDocument.begin(), newDocument.end());
     if (!isDataExist) {
-        errCode = InsertUntilSuccess(key, id, valSet);
-        if (errCode != E_OK) {
-            return errCode;
-        }
+        return InsertUntilSuccess(key, id, valSet);
     }
     key.assign(id.begin(), id.end());
     return executor_->PutData(name_, key, valSet);
