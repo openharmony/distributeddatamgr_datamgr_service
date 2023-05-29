@@ -225,13 +225,12 @@ JsonObject CreatIdObj(const std::string &idStr, int errCode)
 
 int InsertRandomId(JsonObject &cjsonObj, std::string &jsonKey)
 {
-    std::string idStr = DocumentKey::GetIdFromKey(jsonKey);
-    if (idStr.empty()) {
+    if (jsonKey.empty()) {
         GLOGE("Genalral Id faild");
         return -E_INNER_ERROR;
     }
     int errCode = E_OK;
-    JsonObject idObj = CreatIdObj(idStr, errCode);
+    JsonObject idObj = CreatIdObj(jsonKey, errCode);
     if (errCode != E_OK) {
         GLOGE("CreatIdObj faild");
         return errCode;

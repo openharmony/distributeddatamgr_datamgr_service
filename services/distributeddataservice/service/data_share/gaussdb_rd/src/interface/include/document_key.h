@@ -35,7 +35,6 @@ enum class DocIdType {
 
 struct DocKey {
 public:
-    ~DocKey(){};
     int32_t keySize;
     std::string key;
     uint8_t type;
@@ -45,7 +44,6 @@ class DocumentKey {
 public:
     static int GetOidDocKey(DocKey &key);
     static int GetStringDocKey(const std::string &id, DocKey &key);
-    static std::string GetIdFromKey(std::string &keyStr);
 };
 } // namespace DocumentDB
 #endif // DOCUMENT_KEY_H
