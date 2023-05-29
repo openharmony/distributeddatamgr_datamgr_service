@@ -246,7 +246,7 @@ int DocumentStore::UpdateDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     if (errCode != E_OK) {
         goto END;
     }
-    errCode = coll.UpdateDocument(docId, valStr, isReplace);
+    errCode = coll.UpdateDocument(docId, valStr);
     if (errCode == E_OK) {
         count++;
     } else if (errCode == -E_NOT_FOUND) {
@@ -417,7 +417,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     if (errCode != E_OK) {
         goto END;
     }
-    errCode = coll.UpsertDocument(docId, newStr, context->isIdExist, isReplace);
+    errCode = coll.UpsertDocument(docId, newStr, context->isIdExist);
     if (errCode == E_OK) {
         count++;
     } else if (errCode == -E_NOT_FOUND) {

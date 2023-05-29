@@ -63,16 +63,14 @@ int Collection::InsertDocument(const std::string &id, const std::string &documen
     if (!isIdExist) {
         key.assign(id.begin(), id.end());
         errCode = executor_->InsertData(name_, key, valSet);
-        while (errCode != E_OK) {
+        while (errCode == -E_DATA_CONFLICT) { // if id alreay exist, create new one.
             DocumentKey::GetOidDocKey(docKey);
             key.assign(docKey.key.begin(), docKey.key.end());
             errCode = executor_->InsertData(name_, key, valSet);
         }
         return errCode;
     } else {
-        DocKey docKey;
-        DocumentKey::GetStringDocKey(id, docKey);
-        key.assign(docKey.key.begin(), docKey.key.end());
+        key.assign(id.begin(), id.end());
     }
     return executor_->InsertData(name_, key, valSet);
 }
@@ -124,7 +122,7 @@ int Collection::IsCollectionExists(int &errCode)
     return executor_->IsCollectionExists(name_, errCode);
 }
 
-int Collection::UpsertDocument(const std::string &id, const std::string &newStr, bool &isIdExist, bool isReplace)
+int Collection::UpsertDocument(const std::string &id, const std::string &newStr, bool &isIdExist)
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
@@ -159,7 +157,7 @@ int Collection::UpsertDocument(const std::string &id, const std::string &newStr,
     return executor_->PutData(name_, key, valSet);
 }
 
-int Collection::UpdateDocument(const std::string &id, const std::string &newStr, bool isReplace)
+int Collection::UpdateDocument(const std::string &id, const std::string &newStr)
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
