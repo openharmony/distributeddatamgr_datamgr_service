@@ -307,18 +307,18 @@ int UpsertArgsCheck(const std::string &collection, const std::string &filter, co
     return errCode;
 }
 
-int CheckUpsertConflict(ResultSet &resultSet, JsonObject &filterObj, std::string &docId, Collection &coll)
+int CheckUpsertConflict(ResultSet &resultSet, JsonObject &filterObj, std::string &docId, Collection &coll,
+    bool &isDataExist)
 {
     std::string val; // use to know whether there is data in the resultSet or not.
     int errCode = resultSet.GetValue(val);
-    bool isfilterMatch = false;
     if (errCode == E_OK) {
-        isfilterMatch = true;
+        isDataExist = true;
     }
     Value ValueDocument;
     Key id(docId.begin(), docId.end());
     errCode = coll.GetDocumentById(id, ValueDocument);
-    if (errCode == E_OK && !(isfilterMatch)) {
+    if (errCode == E_OK && !(isDataExist)) {
         GLOGE("id exist but filter does not match, data conflict");
         errCode = -E_DATA_CONFLICT;
     }
@@ -394,6 +394,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     std::string docId;
     ResultSet resultSet;
     std::string newDocument;
+    bool isDataExist = false;
     errCode = InitResultSet(context, this, resultSet, false);
     if (errCode != E_OK) {
         goto END;
@@ -402,7 +403,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     if (errCode != E_OK) {
         return errCode;
     }
-    errCode = CheckUpsertConflict(resultSet, filterObj, docId, coll);
+    errCode = CheckUpsertConflict(resultSet, filterObj, docId, coll, isDataExist);
     // There are only three return values, the two other situation can continue to move forward.
     if (errCode == -E_DATA_CONFLICT) {
         GLOGE("upsert data conflict");
@@ -412,7 +413,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     if (errCode != E_OK) {
         goto END;
     }
-    errCode = coll.UpsertDocument(docId, newDocument, context->isIdExist);
+    errCode = coll.UpsertDocument(docId, newDocument, isDataExist);
     if (errCode == E_OK) {
         count++;
     } else if (errCode == -E_NOT_FOUND) {
