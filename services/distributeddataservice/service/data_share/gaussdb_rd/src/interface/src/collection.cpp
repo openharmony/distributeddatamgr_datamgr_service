@@ -44,6 +44,18 @@ Collection::~Collection()
     executor_ = nullptr;
 }
 
+int Collection::InsertUntilSuccess(Key &key, const std::string &id, Value &valSet)
+{
+    DocKey docKey;
+    key.assign(id.begin(), id.end());
+    int errCode = executor_->InsertData(name_, key, valSet);
+    while (errCode == -E_DATA_CONFLICT) { // if id alreay exist, create new one.
+        DocumentKey::GetOidDocKey(docKey);
+        key.assign(docKey.key.begin(), docKey.key.end());
+        errCode = executor_->InsertData(name_, key, valSet);
+    }
+    return errCode;
+}
 int Collection::InsertDocument(const std::string &id, const std::string &document, bool &isIdExist)
 {
     if (executor_ == nullptr) {
@@ -60,18 +72,12 @@ int Collection::InsertDocument(const std::string &id, const std::string &documen
     Key key;
     Value valSet(document.begin(), document.end());
     if (!isIdExist) {
-        DocKey docKey;
-        key.assign(id.begin(), id.end());
-        errCode = executor_->InsertData(name_, key, valSet);
-        while (errCode == -E_DATA_CONFLICT) { // if id alreay exist, create new one.
-            DocumentKey::GetOidDocKey(docKey);
-            key.assign(docKey.key.begin(), docKey.key.end());
-            errCode = executor_->InsertData(name_, key, valSet);
+        errCode = InsertUntilSuccess(key, id, valSet);
+        if (errCode != E_OK) {
+            return errCode;
         }
-        return errCode;
-    } else {
-        key.assign(id.begin(), id.end());
     }
+    key.assign(id.begin(), id.end());
     return executor_->InsertData(name_, key, valSet);
 }
 
@@ -140,18 +146,12 @@ int Collection::UpsertDocument(const std::string &id, const std::string &newDocu
     Key key;
     Value valSet(newDocument.begin(), newDocument.end());
     if (!isDataExist) {
-        DocKey docKey;
-        key.assign(id.begin(), id.end());
-        errCode = executor_->InsertData(name_, key, valSet);
-        while (errCode == -E_DATA_CONFLICT) {
-            DocumentKey::GetOidDocKey(docKey);
-            key.assign(docKey.key.begin(), docKey.key.end());
-            errCode = executor_->InsertData(name_, key, valSet);
+        errCode = InsertUntilSuccess(key, id, valSet);
+        if (errCode != E_OK) {
+            return errCode;
         }
-        return errCode;
-    } else {
-        key.assign(id.begin(), id.end());
     }
+    key.assign(id.begin(), id.end());
     return executor_->PutData(name_, key, valSet);
 }
 

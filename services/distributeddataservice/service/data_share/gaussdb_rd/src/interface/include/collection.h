@@ -40,6 +40,7 @@ public:
     int UpdateDocument(const std::string &id, const std::string &document);
 
 private:
+    int InsertUntilSuccess(Key &key, const std::string &id, Value &valSet);
     std::string name_;
     KvStoreExecutor *executor_ = nullptr;
 };
