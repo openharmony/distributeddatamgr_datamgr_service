@@ -55,6 +55,7 @@
 #include "uninstaller/uninstaller.h"
 #include "upgrade_manager.h"
 #include "user_delegate.h"
+#include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/converter.h"
 #include "utils/crypto.h"
@@ -331,7 +332,7 @@ void KvStoreDataService::OnStoreMetaChanged(
     StoreMetaData metaData;
     metaData.Unmarshall({ value.begin(), value.end() });
     ZLOGD("meta data info appType:%{public}s, storeId:%{public}s isDirty:%{public}d", metaData.appType.c_str(),
-        metaData.storeId.c_str(), metaData.isDirty);
+        Anonymous::Change(metaData.storeId).c_str(),, metaData.isDirty);
     auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (metaData.deviceId != deviceId || metaData.deviceId.empty()) {
         ZLOGD("ignore other device change or invalid meta device");
@@ -341,7 +342,7 @@ void KvStoreDataService::OnStoreMetaChanged(
     if (!metaData.isDirty || metaData.appType != HARMONY_APP) {
         return;
     }
-    ZLOGI("dirty kv store. storeId:%{public}s", metaData.storeId.c_str());
+    ZLOGI("dirty kv store. storeId:%{public}s", Anonymous::Change(metaData.storeId).c_str(),);
 }
 
 bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
