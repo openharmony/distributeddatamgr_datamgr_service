@@ -32,6 +32,7 @@ public:
     virtual int PutData(const std::string &collName, Key &key, const Value &value) = 0;
     virtual int InsertData(const std::string &collName, Key &key, const Value &value) = 0;
     virtual int GetDataByKey(const std::string &collName, Key &key, Value &value) const = 0;
+    virtual int GetDataById(const std::string &collName, Key &key, Value &value) const = 0;
     virtual int GetDataByFilter(const std::string &collName, Key &key, const JsonObject &filterObj,
     std::pair<std::string, std::string> &values, int isIdExist) const = 0;
     virtual int DelData(const std::string &collName, Key &key) = 0;

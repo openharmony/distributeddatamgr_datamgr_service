@@ -84,12 +84,12 @@ bool Collection::FindDocument()
     return executor_->IsCollectionExists(name_, errCode);
 }
 
-int Collection::GetDocumentByKey(Key &key, Value &document) const
+int Collection::GetDocumentById(Key &key, Value &document) const
 {
     if (executor_ == nullptr) {
         return -E_INNER_ERROR;
     }
-    return executor_->GetDataByKey(name_, key, document);
+    return executor_->GetDataById(name_, key, document);
 }
 
 int Collection::GetMatchedDocument(const JsonObject &filterObj, Key &key, std::pair<std::string, std::string> &values,

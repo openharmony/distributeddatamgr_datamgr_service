@@ -18,11 +18,12 @@
 #include "check_common.h"
 #include "db_constant.h"
 #include "doc_errno.h"
+#include "document_key.h"
 #include "log_print.h"
 #include "sqlite_utils.h"
 
 namespace DocumentDB {
-constexpr const uint8_t KEY_TYPE = uint8_t(2);
+constexpr const uint8_t KEY_TYPE = uint8_t(DocIdType::STRING);
 int SqliteStoreExecutorImpl::CreateDatabase(const std::string &path, const DBConfig &config, sqlite3 *&db)
 {
     if (db != nullptr) {
@@ -161,6 +162,33 @@ int SqliteStoreExecutorImpl::GetDataByKey(const std::string &collName, Key &key,
         GLOGE("Invalid db handle.");
         return -E_ERROR;
     }
+    int innerErrorCode = -E_NOT_FOUND;
+    std::string sql = "SELECT value FROM '" + collName + "' WHERE key=?;";
+    int errCode = SQLiteUtils::ExecSql(
+        dbHandle_, sql,
+        [key](sqlite3_stmt *stmt) {
+            SQLiteUtils::BindBlobToStatement(stmt, 1, key);
+            return E_OK;
+        },
+        [&value, &innerErrorCode](sqlite3_stmt *stmt, bool &isMatchOneData) {
+            SQLiteUtils::GetColumnBlobValue(stmt, 0, value);
+            innerErrorCode = E_OK;
+            return E_OK;
+        });
+    if (errCode != E_OK) {
+        GLOGE("[sqlite executor] Get data failed. err=%d", errCode);
+        return errCode;
+    }
+    return innerErrorCode;
+}
+
+int SqliteStoreExecutorImpl::GetDataById(const std::string &collName, Key &key, Value &value) const
+{
+    if (dbHandle_ == nullptr) {
+        GLOGE("Invalid db handle.");
+        return -E_ERROR;
+    }
+    key.push_back(KEY_TYPE); // Stitching ID type
     int innerErrorCode = -E_NOT_FOUND;
     std::string sql = "SELECT value FROM '" + collName + "' WHERE key=?;";
     int errCode = SQLiteUtils::ExecSql(
