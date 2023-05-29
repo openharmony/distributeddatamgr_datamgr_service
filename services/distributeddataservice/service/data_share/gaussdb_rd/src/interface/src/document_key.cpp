@@ -46,9 +46,7 @@ static int InitDocIdFromOid(DocKey &docKey)
 
 static int SerializeDocKey(DocKey &key, const std::string &id)
 {
-    std::string idStr = id;
-    key.key = idStr;
-    key.key = key.key + std::to_string(key.type); // Question here
+    key.key = id;
     return E_OK;
 }
 
@@ -59,6 +57,7 @@ int DocumentKey::GetStringDocKey(const std::string &id, DocKey &key)
     }
     key.id = id;
     key.type = (uint8_t)STRING;
+    (void)SerializeDocKey(key, key.id);
     return E_OK;
 }
 
@@ -70,6 +69,7 @@ int DocumentKey::GetOidDocKey(DocKey &key)
             return ret;
         }
     }
+    (void)SerializeDocKey(key, key.id);
     return ret;
 }
 

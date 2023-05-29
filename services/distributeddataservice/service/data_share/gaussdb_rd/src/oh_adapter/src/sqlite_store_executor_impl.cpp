@@ -160,7 +160,6 @@ int SqliteStoreExecutorImpl::GetDataByKey(const std::string &collName, Key &key,
         GLOGE("Invalid db handle.");
         return -E_ERROR;
     }
-    key.push_back(uint8_t(2));
     int innerErrorCode = -E_NOT_FOUND;
     std::string sql = "SELECT value FROM '" + collName + "' WHERE key=?;";
     int errCode = SQLiteUtils::ExecSql(
@@ -191,6 +190,16 @@ std::string GeneralInsertSql(const std::string &collName, Key &key, int isIdExis
     } else {
         return (key.empty()) ? sqlOrder : sqlLarger;
     }
+}
+
+void AssignValueToData(std::string &keyStr, std::string &valueStr, std::pair<std::string, std::string> &values,
+    int &innerErrorCode, bool &isMatchOneData)
+{
+    keyStr.pop_back(); // get id from really key.
+    values.first = keyStr;
+    values.second = valueStr;
+    innerErrorCode = E_OK;
+    isMatchOneData = true; // this args work in ExecSql fuction
 }
 
 int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, Key &key, const JsonObject &filterObj,
@@ -228,11 +237,7 @@ int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, Key &k
             }
             if (JsonCommon::IsJsonNodeMatch(srcObj, filterObj, innerErrorCode)) {
                 isFindMatch = true; // this args work in this function
-                keyStr.pop_back() // get id from really key.
-                values.first = keyStr;
-                values.second = valueStr;
-                innerErrorCode = E_OK;
-                isMatchOneData = true; // this args work in ExecSql fuction
+                (void)AssignValueToData(keyStr, valueStr,values, innerErrorCode, isMatchOneData);
                 return E_OK; // match count;
             }
             innerErrorCode = E_OK;
