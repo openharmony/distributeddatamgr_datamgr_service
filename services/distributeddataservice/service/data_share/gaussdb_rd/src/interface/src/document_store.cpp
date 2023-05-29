@@ -362,6 +362,9 @@ int InsertIdToDocument(ResultSet &resultSet, JsonObject &filterObj, JsonObject &
     ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExist);
     int errCode = E_OK;
     int ret = resultSet.GetNext(false, true); // All anomalies will be judged later
+    if (ret != E_OK && ret != -E_NO_DATA) {
+        return ret;
+    }
     if (isIdExist) {
         docId = idValue.GetStringValue();
         JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
