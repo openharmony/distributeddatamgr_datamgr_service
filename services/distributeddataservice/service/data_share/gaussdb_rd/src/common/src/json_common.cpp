@@ -340,7 +340,7 @@ bool AddSpliteHitField(const JsonObject &src, const JsonObject &item, JsonFieldP
         return true;
     }
 
-    for (size_t i = abandonPath.size() - 1; i < abandonPath.size() && i >= 0; i--) {
+    for (int32_t i = (int32_t)abandonPath.size() - 1; i > -1; i--) {
         if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
             GLOGE("Add collapse item to object failed, path not exist.");
             externErrCode = -E_DATA_CONFLICT;
@@ -352,9 +352,6 @@ bool AddSpliteHitField(const JsonObject &src, const JsonObject &item, JsonFieldP
         }
         errCode = (i == 0) ? hitItem.AddItemToObject(abandonPath[i], item) : hitItem.AddItemToObject(abandonPath[i]);
         externErrCode = (externErrCode == E_OK ? errCode : externErrCode);
-        if (i == 0) {
-            break;
-        }
     }
     return false;
 }
@@ -385,7 +382,7 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
         return false;
     }
     JsonFieldPath newHitPath;
-    for (size_t i = abandonPath.size() - 1; i < abandonPath.size() && i >= 0; i--) {
+    for (int32_t i = (int32_t)abandonPath.size() - 1; i > -1; i--) {
         if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
             GLOGE("Add collapse item to object failed, path not exist.");
             externErrCode = -E_DATA_CONFLICT;
@@ -403,9 +400,6 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
             return false;
         }
         newHitPath.pop_back();
-        if (i == 0) {
-            break;
-        }
     }
     return false;
 }
