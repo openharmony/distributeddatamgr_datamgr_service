@@ -39,7 +39,7 @@ static int InitDocIdFromOid(DocKey &docKey)
         return -E_INNER_ERROR;
     }
     docKey.key = idTemp;
-    delete[] idTemp;
+    delete idTemp;
     return E_OK;
 }
 
