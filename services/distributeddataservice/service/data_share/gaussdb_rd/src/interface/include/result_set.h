@@ -30,9 +30,10 @@ class ResultSet {
 public:
     ResultSet();
     ~ResultSet();
-    int Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool ifField);
+    int Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool isCutBranch);
     int GetNext(bool isNeedTransaction = false, bool isNeedCheckTable = false);
     int GetValue(char **value);
+    int GetValue(std::string &value);
     int GetKey(std::string &key);
     int EraseCollection();
 
@@ -44,10 +45,11 @@ private:
     int GetNextWithField();
 
     DocumentStore *store_ = nullptr;
-    bool ifField_ = false;
+    bool isCutBranch_ = false;
     size_t index_ = 0;
     std::shared_ptr<QueryContext> context_;
-    std::vector<std::pair<std::string, std::string>> matchDatas_;
+    std::pair<std::string, std::string> matchData_;
+    std::string lastKeyIndex_;
 };
 } // namespace DocumentDB
 #endif // RESULTSET_H

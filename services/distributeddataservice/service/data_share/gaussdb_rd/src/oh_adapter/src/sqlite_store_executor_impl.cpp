@@ -74,7 +74,7 @@ int SqliteStoreExecutorImpl::GetDBConfig(std::string &config)
     std::string dbConfigKeyStr = "DB_CONFIG";
     Key dbConfigKey = { dbConfigKeyStr.begin(), dbConfigKeyStr.end() };
     Value dbConfigVal;
-    int errCode = GetData("grd_meta", dbConfigKey, dbConfigVal);
+    int errCode = GetDataByKey("grd_meta", dbConfigKey, dbConfigVal);
     config.assign(dbConfigVal.begin(), dbConfigVal.end());
     return errCode;
 }
@@ -152,7 +152,7 @@ int SqliteStoreExecutorImpl::InsertData(const std::string &collName, const Key &
     return E_OK;
 }
 
-int SqliteStoreExecutorImpl::GetData(const std::string &collName, const Key &key, Value &value) const
+int SqliteStoreExecutorImpl::GetDataByKey(const std::string &collName, const Key &key, Value &value) const
 {
     if (dbHandle_ == nullptr) {
         GLOGE("Invalid db handle.");
@@ -166,7 +166,7 @@ int SqliteStoreExecutorImpl::GetData(const std::string &collName, const Key &key
             SQLiteUtils::BindBlobToStatement(stmt, 1, key);
             return E_OK;
         },
-        [&value, &innerErrorCode](sqlite3_stmt *stmt) {
+        [&value, &innerErrorCode](sqlite3_stmt *stmt, bool &isMatchOneData) {
             SQLiteUtils::GetColumnBlobValue(stmt, 0, value);
             innerErrorCode = E_OK;
             return E_OK;
@@ -178,8 +178,20 @@ int SqliteStoreExecutorImpl::GetData(const std::string &collName, const Key &key
     return innerErrorCode;
 }
 
-int SqliteStoreExecutorImpl::GetFieldedData(const std::string &collName, const JsonObject &filterObj,
-    std::vector<std::pair<std::string, std::string>> &values) const
+std::string GeneralInsertSql(const std::string &collName, const Key &key, int isIdExist)
+{
+    std::string sqlEqual = "SELECT key, value FROM '" + collName + "' WHERE key=?;";
+    std::string sqlOrder = "SELECT key, value FROM '" + collName + "' ORDER BY KEY;";
+    std::string sqlLarger = "SELECT key, value FROM '" + collName + "' WHERE key>?;";
+    if (isIdExist) {
+        return sqlEqual;
+    } else {
+        return (key.empty()) ? sqlOrder : sqlLarger;
+    }
+}
+
+int SqliteStoreExecutorImpl::GetDataByFilter(const std::string &collName, const Key &key, const JsonObject &filterObj,
+    std::pair<std::string, std::string> &values, int isIdExist) const
 {
     if (dbHandle_ == nullptr) {
         GLOGE("Invalid db handle.");
@@ -189,26 +201,34 @@ int SqliteStoreExecutorImpl::GetFieldedData(const std::string &collName, const J
     Value valueResult;
     bool isFindMatch = false;
     int innerErrorCode = -E_NOT_FOUND;
-    std::string sql = "SELECT key, value FROM '" + collName + "'ORDER BY KEY;";
+    std::string sql = GeneralInsertSql(collName, key, isIdExist);
+    std::string keyStr(key.begin(), key.end());
     int errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
-        [](sqlite3_stmt *stmt) {
+        [key](sqlite3_stmt *stmt) {
+            if (!key.empty()) {
+                SQLiteUtils::BindBlobToStatement(stmt, 1, key);
+            }
             return E_OK;
         },
-        [&keyResult, &innerErrorCode, &valueResult, &filterObj, &values, &isFindMatch](sqlite3_stmt *stmt) {
+        [&keyResult, &innerErrorCode, &valueResult, &filterObj, &values, &isFindMatch](sqlite3_stmt *stmt,
+            bool &isMatchOneData) {
             SQLiteUtils::GetColumnBlobValue(stmt, 0, keyResult);
             SQLiteUtils::GetColumnBlobValue(stmt, 1, valueResult);
             std::string keyStr(keyResult.begin(), keyResult.end());
             std::string valueStr(valueResult.begin(), valueResult.end());
-            int externErrCode;
-            JsonObject srcObj = JsonObject::Parse(valueStr, externErrCode, true);
-            if (externErrCode != E_OK) {
+            JsonObject srcObj = JsonObject::Parse(valueStr, innerErrorCode, true);
+            if (innerErrorCode != E_OK) {
                 GLOGE("srcObj Parsed failed");
-                return externErrCode;
+                return innerErrorCode;
             }
-            if (JsonCommon::IsJsonNodeMatch(srcObj, filterObj, externErrCode)) {
-                isFindMatch = true;
-                values.emplace_back(std::pair(keyStr, valueStr));
+            if (JsonCommon::IsJsonNodeMatch(srcObj, filterObj, innerErrorCode)) {
+                isFindMatch = true; // this args work in this function
+                values.first = keyStr;
+                values.second = valueStr;
+                innerErrorCode = E_OK;
+                isMatchOneData = true; // this args work in ExecSql fuction
+                return E_OK; // match count;
             }
             innerErrorCode = E_OK;
             return E_OK;
@@ -231,7 +251,7 @@ int SqliteStoreExecutorImpl::DelData(const std::string &collName, const Key &key
     }
     int errCode = 0;
     Value valueRet;
-    if (GetData(collName, key, valueRet) != E_OK) {
+    if (GetDataByKey(collName, key, valueRet) != E_OK) {
         return -E_NO_DATA;
     }
     std::string sql = "DELETE FROM '" + collName + "' WHERE key=?;";
@@ -320,7 +340,7 @@ bool SqliteStoreExecutorImpl::IsCollectionExists(const std::string &name, int &e
             SQLiteUtils::BindTextToStatement(stmt, 1, name);
             return E_OK;
         },
-        [&isExists](sqlite3_stmt *stmt) {
+        [&isExists](sqlite3_stmt *stmt, bool &isMatchOneData) {
             isExists = true;
             return E_OK;
         });
@@ -335,7 +355,7 @@ int SqliteStoreExecutorImpl::GetCollectionOption(const std::string &name, std::s
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
     Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
     Value collOptVal;
-    int errCode = GetData("grd_meta", collOptKey, collOptVal);
+    int errCode = GetDataByKey("grd_meta", collOptKey, collOptVal);
     option.assign(collOptVal.begin(), collOptVal.end());
     return errCode;
 }

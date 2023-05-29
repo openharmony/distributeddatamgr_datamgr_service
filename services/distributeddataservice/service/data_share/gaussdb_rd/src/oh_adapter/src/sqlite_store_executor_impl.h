@@ -39,9 +39,9 @@ public:
 
     int PutData(const std::string &collName, const Key &key, const Value &value) override;
     int InsertData(const std::string &collName, const Key &key, const Value &value) override;
-    int GetData(const std::string &collName, const Key &key, Value &value) const override;
-    int GetFieldedData(const std::string &collName, const JsonObject &filterObj,
-        std::vector<std::pair<std::string, std::string>> &values) const override;
+    int GetDataByKey(const std::string &collName, const Key &key, Value &value) const override;
+    int GetDataByFilter(const std::string &collName, const Key &key, const JsonObject &filterObj,
+        std::pair<std::string, std::string> &values, int isIdExist) const override;
     int DelData(const std::string &collName, const Key &key) override;
 
     int CreateCollection(const std::string &name, const std::string &option, bool ignoreExists) override;

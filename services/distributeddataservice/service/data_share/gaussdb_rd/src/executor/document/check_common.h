@@ -29,10 +29,10 @@ public:
     ~CheckCommon() = default;
 
     static bool CheckCollectionName(const std::string &collectionName, std::string &formattedName, int &errCode);
-    static int CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath);
-    static int CheckIdFormat(JsonObject &filterJson, bool &isIdExisit);
-    static int CheckDocument(JsonObject &documentObj);
-    static int CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std::string>> &path);
+    static int CheckFilter(JsonObject &document, std::vector<std::vector<std::string>> &filterPath, bool &isIdExist);
+    static int CheckIdFormat(JsonObject &data, bool &isIdExisit);
+    static int CheckDocument(JsonObject &document);
+    static int CheckUpdata(JsonObject &updata, std::vector<std::vector<std::string>> &path);
     static int CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path);
 };
 using Key = std::vector<uint8_t>;
