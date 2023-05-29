@@ -40,6 +40,7 @@ public:
     int PutData(const std::string &collName, Key &key, const Value &value) override;
     int InsertData(const std::string &collName, Key &key, const Value &value) override;
     int GetDataByKey(const std::string &collName, Key &key, Value &value) const override;
+    int GetDataById(const std::string &collName, Key &key, Value &value) const override;
     int GetDataByFilter(const std::string &collName, Key &key, const JsonObject &filterObj,
     std::pair<std::string, std::string> &values, int isIdExist) const override;
     int DelData(const std::string &collName, Key &key) override;
