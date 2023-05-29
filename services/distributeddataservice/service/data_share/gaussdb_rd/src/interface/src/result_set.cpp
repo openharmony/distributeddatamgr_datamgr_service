@@ -55,7 +55,6 @@ int ResultSet::GetValueFromDB(Key &key, JsonObject &filterObj, std::string &json
     }
     jsonData.assign(value.second.begin(), value.second.end());
     jsonKey.assign(value.first.begin(), value.first.end());
-    GLOGE("jsonKey is =========>%s", jsonKey.c_str());
     lastKeyIndex_ = jsonKey;
     if (isCutBranch_) {
         errCode = CutJsonBranch(jsonKey, jsonData);
@@ -199,7 +198,7 @@ int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePat
         return -E_NO_DATA;
     }
     singlePath.emplace_back(node->GetItemField());
-    int index = 0;
+    size_t index = 0;
     if (!context_->projectionTree.SearchTree(singlePath, index) && index == 0) {
         allCutPath.emplace_back(singlePath);
     }

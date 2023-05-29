@@ -42,15 +42,4 @@ void DocumentDBKeyCommonTest::SetUp(void) {}
 
 void DocumentDBKeyCommonTest::TearDown(void) {}
 
-HWTEST_F(DocumentDBKeyCommonTest, KeyCommonTest001, TestSize.Level0)
-{
-    DocKey docKey;
-    for (int i = 0; i < 65537; i++) {
-        DocumentKey::GetOidDocKey(docKey);
-        if (i > 65530) {
-            GLOGE("docKey key is=============>%s", docKey.key.c_str());
-        }
-    }
-}
-
 } // namespace

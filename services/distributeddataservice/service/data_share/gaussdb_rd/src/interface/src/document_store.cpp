@@ -28,6 +28,7 @@
 namespace DocumentDB {
 constexpr int JSON_LENS_MAX = 1024 * 1024;
 constexpr const char *KEY_ID = "_id";
+constexpr const uint8_t KEY_TYPE = uint8_t(2);
 
 DocumentStore::DocumentStore(KvStoreExecutor *executor) : executor_(executor) {}
 
@@ -320,6 +321,7 @@ int CheckUpsertConflict(ResultSet &resultSet, JsonObject &filterObj, std::string
     std::string keyStr = docId;
     DocumentKey::GetStringDocKey(keyStr, docKey);
     Key key(docKey.key.begin(), docKey.key.end());
+    key.push_back(KEY_TYPE); // add id type flag;
     errCode = coll.GetDocumentByKey(key, ValueDocument);
     if (errCode == E_OK && !(isfilterMatch)) {
         GLOGE("id exist but filter does not match, data conflict");

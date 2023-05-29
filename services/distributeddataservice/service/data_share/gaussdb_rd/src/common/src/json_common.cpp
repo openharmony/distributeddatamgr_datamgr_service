@@ -340,7 +340,7 @@ bool AddSpliteHitField(const JsonObject &src, const JsonObject &item, JsonFieldP
         return true;
     }
 
-    for (int i = abandonPath.size() - 1; i > -1; i--) {
+    for (int32_t i = (int32_t)abandonPath.size() - 1; i > -1; i--) {
         if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
             GLOGE("Add collapse item to object failed, path not exist.");
             externErrCode = -E_DATA_CONFLICT;
@@ -382,7 +382,7 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
         return false;
     }
     JsonFieldPath newHitPath;
-    for (int i = abandonPath.size() - 1; i > -1; i--) {
+    for (int32_t i = (int32_t)abandonPath.size() - 1; i > -1; i--) {
         if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
             GLOGE("Add collapse item to object failed, path not exist.");
             externErrCode = -E_DATA_CONFLICT;
@@ -719,6 +719,7 @@ bool JsonCommon::IsJsonNodeMatch(const JsonObject &src, const JsonObject &target
             if (isAlreadyMatched == 0) { // Not match anything
                 isMatchFlag = false;
             }
+            // Source path not exist, if leaf value is null, isMatchFlag become true, else it will become false.
             return false;
         }
     });

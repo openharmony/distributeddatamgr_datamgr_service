@@ -38,15 +38,8 @@ static int InitDocIdFromOid(DocKey &docKey)
         GLOGE("get oid error");
         return -E_INNER_ERROR;
     }
-    docKey.id = idTemp;
+    docKey.key = idTemp;
     delete[] idTemp;
-    docKey.type = (uint8_t)STRING;
-    return E_OK;
-}
-
-static int SerializeDocKey(DocKey &key, const std::string &id)
-{
-    key.key = id;
     return E_OK;
 }
 
@@ -55,9 +48,7 @@ int DocumentKey::GetStringDocKey(const std::string &id, DocKey &key)
     if (id.empty()) {
         return GetOidDocKey(key); // It won't go to this branch at the moment.
     }
-    key.id = id;
-    key.type = (uint8_t)STRING;
-    (void)SerializeDocKey(key, key.id);
+    key.key = id;
     return E_OK;
 }
 
@@ -69,7 +60,6 @@ int DocumentKey::GetOidDocKey(DocKey &key)
             return ret;
         }
     }
-    (void)SerializeDocKey(key, key.id);
     return ret;
 }
 

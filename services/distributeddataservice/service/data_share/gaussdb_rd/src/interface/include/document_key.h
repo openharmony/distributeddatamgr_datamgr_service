@@ -37,7 +37,6 @@ struct DocKey {
 public:
     ~DocKey(){};
     int32_t keySize;
-    std::string id;
     std::string key;
     uint8_t type;
 };
