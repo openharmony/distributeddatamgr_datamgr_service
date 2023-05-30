@@ -156,8 +156,8 @@ int UpdateArgsCheck(const std::string &collection, const std::string &filter, co
         GLOGE("update Parsed failed");
         return errCode;
     }
-    std::vector<std::vector<std::string>> allPath;
     if (update != "{}") {
+        std::vector<std::vector<std::string>> allPath;
         allPath = JsonCommon::ParsePath(updateObj, errCode);
         if (errCode != E_OK) {
             GLOGE("updateObj ParsePath failed");
@@ -434,8 +434,8 @@ END:
 int UpsertDocumentFormatCheck(const std::string &document, JsonObject &documentObj)
 {
     int errCode = E_OK;
-    std::vector<std::vector<std::string>> allPath;
     if (document != "{}") {
+        std::vector<std::vector<std::string>> allPath;
         allPath = JsonCommon::ParsePath(documentObj, errCode);
         if (errCode != E_OK) {
             return errCode;
@@ -627,7 +627,7 @@ Collection DocumentStore::GetCollection(std::string &collectionName)
     return Collection(collectionName, executor_);
 }
 
-int JudgeViewType(size_t &index, ValueObject &leafItem, bool &viewType)
+int JudgeViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
 {
     switch (leafItem.GetValueType()) {
         case ValueObject::ValueType::VALUE_BOOL:
@@ -712,7 +712,7 @@ int FindArgsCheck(const std::string &collection, const std::string &filter, cons
     return errCode;
 }
 
-int FindProjectionInit(const std::string &projection, std::shared_ptr<QueryContext> &context)
+int FindProjectionInit(const std::string &projection, const std::shared_ptr<QueryContext> &context)
 {
     int errCode = E_OK;
     std::vector<std::vector<std::string>> allPath;

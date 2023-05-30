@@ -126,12 +126,11 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
 
 int ResultSet::GetNext(bool isNeedTransaction, bool isNeedCheckTable)
 {
-    int errCode = E_OK;
     if (!isNeedTransaction) {
         return GetNextInner(isNeedCheckTable);
     }
     std::lock_guard<std::mutex> lock(store_->dbMutex_);
-    errCode = store_->StartTransaction();
+    int errCode = store_->StartTransaction();
     if (errCode != E_OK) {
         GLOGE("Start transaction faild");
         return errCode;
