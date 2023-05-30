@@ -367,7 +367,7 @@ int InsertIdToDocument(ResultSet &resultSet, JsonObject &filterObj, JsonObject &
     }
     if (isIdExist) {
         docId = idValue.GetStringValue();
-        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
+        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode); // this errCode will always be E_OK.
         documentObj.InsertItemObject(0, idObj);
     } else {
         if (ret == E_OK) { // E_OK means find data.
@@ -780,8 +780,7 @@ END:
 int DocumentStore::FindDocument(const std::string &collection, const std::string &filter,
     const std::string &projection, uint32_t flags, GRD_ResultSet *grdResultSet)
 {
-    int errCode = E_OK;
-    errCode = FindArgsCheck(collection, filter, projection, flags);
+    int errCode = FindArgsCheck(collection, filter, projection, flags);
     if (errCode != E_OK) {
         GLOGE("delete arg is illegal");
         return errCode;
@@ -878,7 +877,8 @@ int DocumentStore::Rollback()
 bool DocumentStore::IsCollectionExists(const std::string &collectionName, int &errCode)
 {
     if (executor_ == nullptr) {
-        return -E_INNER_ERROR;
+        errCode = -E_INNER_ERROR;
+        return false;
     }
     return executor_->IsCollectionExists(collectionName, errCode);
 }
