@@ -231,5 +231,4 @@ KvDelegate::KvDelegate(const std::string &path, const std::shared_ptr<ExecutorPo
     : path_(path), executors_(executors)
 {
 }
-
 } // namespace OHOS::DataShare

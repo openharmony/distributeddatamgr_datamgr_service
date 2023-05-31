@@ -91,7 +91,8 @@ class KvDBDelegate {
 public:
     static constexpr const char *TEMPLATE_TABLE = "template_";
     static constexpr const char *DATA_TABLE = "data_";
-    static std::shared_ptr<KvDBDelegate> GetInstance(bool reInit = false, const std::string &dir = "", const std::shared_ptr<ExecutorPool> &executors = nullptr);
+    static std::shared_ptr<KvDBDelegate> GetInstance(
+        bool reInit = false, const std::string &dir = "", const std::shared_ptr<ExecutorPool> &executors = nullptr);
     virtual ~KvDBDelegate() = default;
     virtual int32_t Upsert(const std::string &collectionName, const KvData &value) = 0;
     virtual int32_t DeleteById(const std::string &collectionName, const Id &id) = 0;
