@@ -42,7 +42,7 @@ bool ExtensionConnectAdaptor::DoConnect(std::shared_ptr<Context> context)
     data_.Clear();
     callback_ = new (std::nothrow) CallbackImpl(data_);
     if (callback_ == nullptr) {
-        ZLOGI("new failed");
+        ZLOGE("new failed");
         return false;
     }
     ZLOGI("Start connect %{public}s", context->uri.c_str());

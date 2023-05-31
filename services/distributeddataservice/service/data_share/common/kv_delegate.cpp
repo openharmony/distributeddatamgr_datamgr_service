@@ -60,7 +60,6 @@ bool KvDelegate::Init()
 {
     if (isInitDone_) {
         if (executors_ != nullptr) {
-            ZLOGE("hanlu reset");
             executors_->Reset(taskId_, std::chrono::seconds(WAIT_TIME));
         }
         return true;
@@ -77,7 +76,6 @@ bool KvDelegate::Init()
             GRD_DBClose(db_, GRD_DB_CLOSE);
             db_ = nullptr;
             isInitDone_ = false;
-            ZLOGE("hanlu Close");
             taskId_ = ExecutorPool::INVALID_TASK_ID;
         });
     }
