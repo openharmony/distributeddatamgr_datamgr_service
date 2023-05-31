@@ -15,9 +15,8 @@
 
 #include "task_manager.h"
 namespace OHOS::DistributedData {
-TaskManager::TaskManager(std::shared_ptr<ExecutorPool> executors)
+TaskManager::TaskManager(std::shared_ptr<ExecutorPool> executors) : executors_(executors)
 {
-    executors_ = executors;
 }
 
 TaskManager::~TaskManager()

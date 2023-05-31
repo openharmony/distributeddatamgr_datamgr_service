@@ -280,7 +280,7 @@ int SqliteStoreExecutorImpl::CreateCollection(const std::string &name, const std
     if (errCode != E_OK) {
         GLOGE("[sqlite executor] Set collection option failed. err=%d", errCode);
     }
-    return E_OK;
+    return errCode;
 }
 
 int SqliteStoreExecutorImpl::DropCollection(const std::string &name, bool ignoreNonExists)
@@ -306,9 +306,8 @@ int SqliteStoreExecutorImpl::DropCollection(const std::string &name, bool ignore
     int errCode = SQLiteUtils::ExecSql(dbHandle_, sql);
     if (errCode != E_OK) {
         GLOGE("[sqlite executor] Drop collection failed. err=%d", errCode);
-        return errCode;
     }
-    return E_OK;
+    return errCode;
 }
 
 bool SqliteStoreExecutorImpl::IsCollectionExists(const std::string &name, int &errCode)

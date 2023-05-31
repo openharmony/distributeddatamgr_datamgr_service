@@ -23,6 +23,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "types.h"
+#include "utils/anonymous.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 constexpr int64_t StoreCache::INTERVAL;
@@ -105,7 +106,7 @@ void StoreCache::CloseExcept(const std::set<int32_t> &users)
 void StoreCache::SetObserver(uint32_t tokenId, const std::string &storeId, std::shared_ptr<Observers> observers)
 {
     stores_.ComputeIfPresent(tokenId, [&storeId, &observers](auto &key, auto &stores) {
-        ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key, storeId.c_str(),
+        ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key, Anonymous::Change(storeId).c_str(),
             observers ? observers->size() : size_t(0));
         auto it = stores.find(storeId);
         if (it != stores.end()) {
@@ -198,9 +199,8 @@ void StoreCache::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 }
 
 StoreCache::DBStoreDelegate::DBStoreDelegate(DBStore *delegate, std::shared_ptr<Observers> observers)
-    : delegate_(delegate)
+    : time_(std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL)), delegate_(delegate)
 {
-    time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
     SetObservers(std::move(observers));
 }
 
@@ -235,13 +235,12 @@ bool StoreCache::DBStoreDelegate::Close(DBManager &manager)
     std::unique_lock<decltype(mutex_)> lock(mutex_);
     if (delegate_ != nullptr) {
         delegate_->UnRegisterObserver(this);
+        auto status = manager.CloseKvStore(delegate_);
+        if (status == DBStatus::BUSY) {
+            return false;
+        }
+        delegate_ = nullptr;
     }
-
-    auto status = manager.CloseKvStore(delegate_);
-    if (status == DBStatus::BUSY) {
-        return false;
-    }
-    delegate_ = nullptr;
     return true;
 }
 

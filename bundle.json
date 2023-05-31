@@ -1,6 +1,6 @@
 {
-    "name": "@ohos/distributeddatamgr_datamgr_service",
-    "version": "1.0.0",
+    "name": "@ohos/datamgr_service",
+    "version": "3.2.0",
     "description": "Distributed data manager that provides the capability to store data in the databases of different devices",
     "homePage": "https://gitee.com/openharmony",
     "license": "Apache V2",
@@ -37,17 +37,13 @@
     "component": {
         "name": "datamgr_service",
         "subsystem": "distributeddatamgr",
-        "syscap": [
-            "SystemCapability.DistributedDataManager.KVStore.Core",
-            "SystemCapability.DistributedDataManager.KVStore.Lite",
-            "SystemCapability.DistributedDataManager.KVStore.DistributedKVStore"
-        ],
+        "syscap": [],
         "features": [],
         "adapted_system_type": [
             "standard"
         ],
-        "rom": "",
-        "ram": "",
+        "rom": "5120KB",
+        "ram": "8192KB",
         "hisysevent_config": [
             "//foundation/distributeddatamgr/datamgr_service/hisysevent.yaml"
           ],

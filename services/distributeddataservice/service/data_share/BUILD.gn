@@ -13,6 +13,7 @@
 import("//build/ohos.gni")
 import("//build/ohos_var.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+import("datamgr_service_data_share.gni")
 config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
@@ -77,10 +78,10 @@ ohos_shared_library("data_share_service") {
   configs = [ ":module_public_config" ]
 
   deps = [
+    "${gaussrd_path}:gaussdb_rd",
     "../../adapter:distributeddata_adapter",
     "../../adapter/utils:distributeddata_utils_static",
     "../../framework:distributeddatasvcfwk",
-    "gaussdb_rd:gaussdb_rd",
   ]
 
   external_deps = [

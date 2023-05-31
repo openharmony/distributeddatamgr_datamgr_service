@@ -18,23 +18,32 @@
 #include <functional>
 #include <memory>
 
+#include "cloud/schema_meta.h"
 #include "store/cursor.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
 namespace OHOS::DistributedData {
 class CloudDB;
-class SchemaMeta;
+class AssetLoader;
+struct Database;
 class GeneralStore {
 public:
     using Watcher = GeneralWatcher;
-    using Async = std::function<void(std::map<std::string, std::map<std::string, int32_t>>)>;
+    using AsyncDetail = std::function<void(ProgressDetails details)>;
+    using AsyncStatus = std::function<void(std::map<std::string, std::map<std::string, int32_t>>)>;
     using Devices = std::vector<std::string>;
 
+    struct BindInfo {
+        BindInfo(std::shared_ptr<CloudDB> db = nullptr, std::shared_ptr<AssetLoader> loader = nullptr)
+            : db_(std::move(db)), loader_(std::move(loader))
+        {
+        }
+        std::shared_ptr<CloudDB> db_;
+        std::shared_ptr<AssetLoader> loader_;
+    };
     virtual ~GeneralStore() = default;
 
-    virtual int32_t Bind(std::shared_ptr<CloudDB> cloudDb) = 0;
-
-    virtual int32_t SetSchema(const SchemaMeta &schemaMeta) = 0;
+    virtual int32_t Bind(const Database &database, BindInfo bindInfo) = 0;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 
@@ -48,7 +57,9 @@ public:
 
     virtual std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) = 0;
 
-    virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, Async async, int32_t wait) = 0;
+    virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, AsyncDetail async, int32_t wait) = 0;
+
+    virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, AsyncStatus async, int32_t wait) = 0;
 
     virtual int32_t Watch(int32_t origin, Watcher &watcher) = 0;
 

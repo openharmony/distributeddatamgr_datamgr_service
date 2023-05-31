@@ -136,7 +136,7 @@ DBStatus DBStoreMock::Sync(const std::vector<std::string> &devices, SyncMode mod
     const std::function<void(const std::map<std::string, DBStatus> &)> &onComplete, bool wait)
 {
     std::map<std::string, DBStatus> result;
-    for (auto &device : devices) {
+    for (const auto &device : devices) {
         result[device] = OK;
     }
     onComplete(result);
@@ -263,7 +263,7 @@ DBStatus DBStoreMock::GetEntries(ConcurrentMap<Key, Value> &store, const Key &ke
     store.ForEach([&entries, &keyPrefix](const Key &key, Value &value) {
         auto it = std::search(key.begin(), key.end(), keyPrefix.begin(), keyPrefix.end());
         if (it == key.begin()) {
-            entries.push_back( { key, value } );
+            entries.push_back({key, value});  
         }
         return false;
     });
@@ -275,7 +275,7 @@ DBStatus DBStoreMock::PutBatch(ConcurrentMap<Key, Value> &store, const std::vect
     for (auto &entry : entries) {
         store.InsertOrAssign(entry.key, entry.value);
     }
-    DBChangeDataMock changeData( {}, entries, {} );
+    DBChangeDataMock changeData({}, entries, {});
     observers_.ForEachCopies([&changeData](const auto &observer, auto &keys) mutable {
         if (observer) {
             observer->OnChange(changeData);
@@ -287,13 +287,13 @@ DBStatus DBStoreMock::PutBatch(ConcurrentMap<Key, Value> &store, const std::vect
 
 DBStatus DBStoreMock::DeleteBatch(ConcurrentMap<Key, Value> &store, const std::vector<Key> &keys)
 {
-    DBChangeDataMock changeData( {}, {}, {} );
+    DBChangeDataMock changeData({}, {}, {});
     for (auto &key : keys) {
         auto it = store.Find(key);
         if (!it.first) {
             continue;
         }
-        changeData.AddEntry( {key, std::move(it.second)} );
+        changeData.AddEntry({key, std::move(it.second)});
         store.Erase(key);
     }
 

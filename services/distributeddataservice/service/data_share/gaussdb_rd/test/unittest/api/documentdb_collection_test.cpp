@@ -157,7 +157,7 @@ HWTEST_F(DocumentDBCollectionTest, CollectionTest005, TestSize.Level0)
         R""({"maxDoc":0})"",
         R""({"maxDoc":"123"})"",
         R""({"maxDoc":{"value":1024}})"",
-        R""({"maxDoc":[1,2,4,8]})"",
+        R""({"maxDoc":[1, 2, 4, 8]})"",
         R""({"minDoc":1024})"",
     };
 

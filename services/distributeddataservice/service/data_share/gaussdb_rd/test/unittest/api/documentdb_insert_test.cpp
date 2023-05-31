@@ -330,14 +330,14 @@ HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest014, TestSize.Level1)
      * @tc.expected:step1.GRD_INVALID_ARGS
     */
     const char *document2 = R""({"level1" : {"level2" : {"level3" : [{ "level5" : "level5_1val",
-        "level5_2":"level5_2_val"}, "level4_val1","level4_val2"], "level3_2" : "level3_2_val"}},"_id":"14"})"";
+        "level5_2":"level5_2_val"}, "level4_val1","level4_val2"], "level3_2" : "level3_2_val"}}, "_id":"14"})"";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document2, 0), GRD_INVALID_ARGS);
     /**
      * @tc.steps:step1.document's JSON depth is 4
      * @tc.expected:step1.GRD_OK
     */
     const char *document3 = R""({"level1" : {"level2" : {"level3" : { "level4" : "level5_1val"},
-        "level3_2" : "level3_2_val"}},"_id":"14"})"";
+        "level3_2" : "level3_2_val"}}, "_id":"14"})"";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document3, 0), GRD_OK);
 }
 
@@ -563,8 +563,8 @@ HWTEST_F(DocumentDBInsertTest, DocumentDBInsertTest025, TestSize.Level1)
      * @tc.steps:step1.documents JSON depth is 4, which is allowed.
      * @tc.expected:step1.GRD_OK.
      */
-    const char *document1 = "{\"_id\" : \"25_0\", \"level1\" : { \"level2\" : {\"level3\" :\
-        {\"level4\" : \"level4Val\" } } } , \"level1_2\" : \"level1_2Val\" }";
+    const char *document1 = "{\"_id\" : \"25_0\", \"level1\" : {\"level2\" : {\"level3\" :\
+        {\"level4\" : \"level4Val\"}}} , \"level1_2\" : \"level1_2Val\" }";
     EXPECT_EQ(GRD_InsertDoc(g_db, RIGHT_COLLECTION_NAME, document1, 0), GRD_OK);
     /**
      * @tc.steps:step2.documents JSON depth is exactly 4.

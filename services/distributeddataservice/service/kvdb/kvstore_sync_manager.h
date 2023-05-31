@@ -62,9 +62,9 @@ private:
     uint32_t DoRemoveSyncingOp(OpPred pred, std::list<KvSyncOperation> &syncingOps);
     Status RemoveSyncingOp(uint32_t opSeq, std::list<KvSyncOperation> &syncingOps);
     void AddTimer(const TimePoint &expireTime);
-    bool GetTimeoutSyncOps(const TimePoint &time, std::list<KvSyncOperation> &syncOps);
+    bool GetTimeoutSyncOps(const TimePoint &currentTime, std::list<KvSyncOperation> &syncOps);
     void DoCheckSyncingTimeout(std::list<KvSyncOperation> &syncingOps);
-    void Schedule(const TimePoint &expireTime);
+    void Schedule(const TimePoint &time);
 
     static constexpr uint32_t SYNCING_TIMEOUT_MS = 5000;
     static constexpr uint32_t REALTIME_PRIOR_SYNCING_MS = 300;

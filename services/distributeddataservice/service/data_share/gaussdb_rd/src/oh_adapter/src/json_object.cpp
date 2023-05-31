@@ -224,17 +224,12 @@ int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int 
     if (subObj == nullptr) {
         return -E_INVALID_ARGS;
     }
-    int ret = E_OK;
     std::string fieldName;
     if (subObj->string != nullptr) {
         fieldName = subObj->string;
     }
     if (parentType == cJSON_Array) {
-        ret = CheckJsonRepeatField(subObj);
-        if (ret != E_OK) {
-            return ret;
-        }
-        return E_OK;
+        return CheckJsonRepeatField(subObj);
     }
     if (fieldName.empty()) {
         return -E_INVALID_JSON_FORMAT;
@@ -242,16 +237,9 @@ int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int 
     if (fieldSet.find(fieldName) == fieldSet.end()) {
         fieldSet.insert(fieldName);
     } else {
-        ret = -E_INVALID_JSON_FORMAT;
+        return -E_INVALID_JSON_FORMAT;
     }
-    if (ret != E_OK) {
-        return ret;
-    }
-    ret = CheckJsonRepeatField(subObj);
-    if (ret != E_OK) {
-        return ret;
-    }
-    return E_OK;
+    return CheckJsonRepeatField(subObj);
 }
 
 std::string JsonObject::Print() const
@@ -512,11 +500,7 @@ std::string JsonObject::GetItemField() const
 
 std::string JsonObject::GetItemField(int &errCode) const
 {
-    if (cjson_ == nullptr) {
-        errCode = E_INVALID_ARGS;
-        return "";
-    }
-    if (cjson_->string == nullptr) {
+    if (cjson_ == nullptr || cjson_->string == nullptr) {
         errCode = E_INVALID_ARGS;
         return "";
     }
@@ -627,6 +611,8 @@ JsonObject JsonObject::FindItem(const JsonFieldPath &jsonPath, int &errCode) con
     return item;
 }
 
+// Compared with the non-powerMode mode, the node found by this function is an Array, and target is an object,
+// if the Array contains the same object as the target, it can match this object in this mode.
 JsonObject JsonObject::FindItemPowerMode(const JsonFieldPath &jsonPath, int &errCode) const
 {
     if (jsonPath.empty()) {

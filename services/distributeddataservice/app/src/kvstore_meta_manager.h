@@ -83,7 +83,7 @@ private:
         void OnChange(const DistributedDB::KvStoreChangedData &data) override;
         std::map<std::string, ChangeObserver> handlerMap_;
     private:
-        void HandleChanges(CHANGE_FLAG flag, const std::list<DistributedDB::Entry> &list);
+        void HandleChanges(CHANGE_FLAG flag, const std::list<DistributedDB::Entry> &entries);
     };
 
     static constexpr int32_t RETRY_MAX_TIMES = 100;
