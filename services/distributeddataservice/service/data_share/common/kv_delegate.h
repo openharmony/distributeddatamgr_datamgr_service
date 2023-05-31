@@ -20,12 +20,13 @@
 #include <string>
 
 #include "db_delegate.h"
+#include "executor_pool.h"
 #include "grd_base/grd_db_api.h"
 
 namespace OHOS::DataShare {
 class KvDelegate final : public KvDBDelegate {
 public:
-    explicit KvDelegate(const std::string &path);
+    KvDelegate(const std::string &path, const std::shared_ptr<ExecutorPool> &executors);
     ~KvDelegate() override;
     int32_t Upsert(const std::string &collectionName, const KvData &value) override;
     int32_t DeleteById(const std::string &collectionName, const Id &id) override;
@@ -46,6 +47,8 @@ private:
     std::string path_;
     GRD_DB *db_ = nullptr;
     bool isInitDone_ = false;
+    std::shared_ptr<ExecutorPool> executors_ = nullptr;
+    ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_KV_DELEGATE_H
