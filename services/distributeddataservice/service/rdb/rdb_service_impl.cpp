@@ -24,6 +24,7 @@
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
+#include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "permission/permission_validator.h"
@@ -45,14 +46,18 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using DistributedDB::RelationalStoreManager;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using system_clock = std::chrono::system_clock;
 
 constexpr uint32_t ITERATE_TIMES = 10000;
 namespace OHOS::DistributedRdb {
 __attribute__((used)) RdbServiceImpl::Factory RdbServiceImpl::factory_;
 RdbServiceImpl::Factory::Factory()
 {
-    FeatureSystem::GetInstance().RegisterCreator("relational_store", []() {
-        return std::make_shared<RdbServiceImpl>();
+    FeatureSystem::GetInstance().RegisterCreator(RdbServiceImpl::SERVICE_NAME, [this]() {
+        if (product_ == nullptr) {
+            product_ = std::make_shared<RdbServiceImpl>();
+        }
+        return product_;
     });
     AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION, [](const StoreMetaData &metaData) -> GeneralStore* {
         return new (std::nothrow) RdbGeneralStore(metaData);
@@ -121,7 +126,7 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
     ZLOGI("%{public}.6s", identifierHex.c_str());
     std::vector<StoreMetaData> entries;
     auto localId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localId }), entries)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix( { localId } ), entries)) {
         ZLOGE("get meta failed");
         return false;
     }
@@ -284,12 +289,8 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
             }
             syncers.erase(storeId);
         }
-        if (syncers.size() >= MAX_SYNCER_PER_PROCESS) {
-            ZLOGE("%{public}d exceed MAX_PROCESS_SYNCER_NUM", pid);
-            return !syncers.empty();
-        }
-        if (syncerNum_ >= MAX_SYNCER_NUM) {
-            ZLOGE("no available syncer");
+        if (syncers.size() >= MAX_SYNCER_PER_PROCESS || syncerNum_ >= MAX_SYNCER_NUM) {
+            ZLOGE("pid: %{public}d, syncers size: %{public}zu. syncerNum: %{public}d", pid, syncers.size(), syncerNum_);
             return !syncers.empty();
         }
         auto rdbObserver = new (std::nothrow) RdbStoreObserverImpl(this, pid);
@@ -297,7 +298,9 @@ std::shared_ptr<RdbSyncer> RdbServiceImpl::GetRdbSyncer(const RdbSyncerParam &pa
             return !syncers.empty();
         }
         auto syncer_ = std::make_shared<RdbSyncer>(param, rdbObserver);
-        if (syncer_->Init(pid, uid, tokenId) != 0) {
+        StoreMetaData storeMetaData = GetStoreMetaData(param);
+        MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData);
+        if (syncer_->Init(pid, uid, tokenId, storeMetaData) != RDB_OK) {
             return !syncers.empty();
         }
         syncers[storeId] = syncer_;
@@ -492,62 +495,6 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
     return syncer->RemoteQuery(device, sql, selectionArgs, resultSet);
 }
 
-int32_t RdbServiceImpl::CreateRDBTable(
-    const RdbSyncerParam &param, const std::string &writePermission, const std::string &readPermission)
-{
-    if (!CheckAccess(param.bundleName_, param.storeName_)) {
-        ZLOGE("permission error");
-        return RDB_ERROR;
-    }
-
-    pid_t pid = IPCSkeleton::GetCallingPid();
-    auto rdbObserver = new (std::nothrow) RdbStoreObserverImpl(this, pid);
-    if (rdbObserver == nullptr) {
-        return RDB_ERROR;
-    }
-    auto syncer = new (std::nothrow) RdbSyncer(param, rdbObserver);
-    if (syncer == nullptr) {
-        ZLOGE("new syncer error");
-        return RDB_ERROR;
-    }
-    auto uid = IPCSkeleton::GetCallingUid();
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    if (syncer->Init(pid, uid, tokenId, writePermission, readPermission) != RDB_OK) {
-        ZLOGE("Init error");
-        delete syncer;
-        return RDB_ERROR;
-    }
-    delete syncer;
-    return RDB_OK;
-}
-
-int32_t RdbServiceImpl::DestroyRDBTable(const RdbSyncerParam &param)
-{
-    if (!CheckAccess(param.bundleName_, param.storeName_)) {
-        ZLOGE("permission error");
-        return RDB_ERROR;
-    }
-    pid_t pid = IPCSkeleton::GetCallingPid();
-    auto rdbObserver = new (std::nothrow) RdbStoreObserverImpl(this, pid);
-    if (rdbObserver == nullptr) {
-        return RDB_ERROR;
-    }
-    auto syncer = new (std::nothrow) RdbSyncer(param, rdbObserver);
-    if (syncer == nullptr) {
-        ZLOGE("new syncer error");
-        return RDB_ERROR;
-    }
-
-    StoreMetaData meta;
-    if (syncer->DestroyMetaData(meta) != RDB_OK) {
-        ZLOGE("destroy meta data error");
-        delete syncer;
-        return RDB_ERROR;
-    }
-    delete syncer;
-    return RDB_OK;
-}
-
 int32_t RdbServiceImpl::OnInitialize()
 {
     return RDB_OK;
@@ -559,15 +506,22 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
         ZLOGE("permission error");
         return RDB_ERROR;
     }
-    auto syncer = GetRdbSyncer(param);
-    if (syncer == nullptr) {
+    StoreMetaData storeMeta;
+    if (CreateMetaData(param, storeMeta) != RDB_OK) {
         return RDB_ERROR;
     }
-    CloudEvent::StoreInfo storeInfo { IPCSkeleton::GetCallingTokenID(), param.bundleName_,
+
+    if (executors_ != nullptr) {
+        CloudEvent::StoreInfo storeInfo { IPCSkeleton::GetCallingTokenID(), param.bundleName_,
         RdbSyncer::RemoveSuffix(param.storeName_),
         RdbSyncer::GetInstIndex(IPCSkeleton::GetCallingTokenID(), param.bundleName_) };
-    auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "relational_store");
-    EventCenter::GetInstance().PostEvent(move(event));
+        executors_->Execute([storeInfo]() {
+            auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo),
+                "relational_store");
+            EventCenter::GetInstance().PostEvent(move(event));
+        });
+    }
+
     return RDB_OK;
 }
 
@@ -591,6 +545,70 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isEncrypt = param.isEncrypt_;
     return metaData;
+}
+
+int32_t RdbServiceImpl::CreateMetaData(const RdbSyncerParam &param, StoreMetaData &old)
+{
+    auto meta = GetStoreMetaData(param);
+    bool isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old);
+    if (isCreated && (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
+                         old.area != meta.area)) {
+        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d",
+            meta.bundleName.c_str(), meta.storeId.c_str(), old.storeType, meta.storeType, old.isEncrypt,
+            meta.isEncrypt, old.area, meta.area);
+        return RDB_ERROR;
+    }
+    if (!isCreated || meta != old) {
+        Upgrade(param, old);
+        ZLOGD("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d",
+            meta.bundleName.c_str(), meta.storeId.c_str(), old.storeType, meta.storeType, old.isEncrypt,
+            meta.isEncrypt, old.area, meta.area);
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
+    }
+    AppIDMetaData appIdMeta;
+    appIdMeta.bundleName = meta.bundleName;
+    appIdMeta.appId = meta.appId;
+    if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
+        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d",
+            meta.bundleName.c_str(), meta.storeId.c_str(), old.storeType, meta.storeType, old.isEncrypt,
+            meta.isEncrypt, old.area, meta.area);
+        return RDB_ERROR;
+    }
+    if (!param.isEncrypt_ || param.password_.empty()) {
+        return RDB_OK;
+    }
+    return SetSecretKey(param, meta);
+}
+
+int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta)
+{
+    SecretKeyMetaData newSecretKey;
+    newSecretKey.storeType = meta.storeType;
+    newSecretKey.sKey = CryptoManager::GetInstance().Encrypt(param.password_);
+    if (newSecretKey.sKey.empty()) {
+        ZLOGE("encrypt work key error.");
+        return RDB_ERROR;
+    }
+    auto time = system_clock::to_time_t(system_clock::now());
+    newSecretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
+    return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true) ? RDB_OK : RDB_ERROR;
+}
+
+int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData &old)
+{
+    if (old.storeType == RDB_DEVICE_COLLABORATION && old.version < StoreMetaData::UUID_CHANGED_TAG) {
+        auto syncer = GetRdbSyncer(param);
+        if (syncer == nullptr) {
+            ZLOGE("syncer is null, bundleName:%{public}s storeName:%{public}s", param.bundleName_.c_str(),
+                param.storeName_.c_str());
+            return RDB_ERROR;
+        }
+        return syncer->RemoveDeviceData();
+    }
+    return RDB_OK;
 }
 
 int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)

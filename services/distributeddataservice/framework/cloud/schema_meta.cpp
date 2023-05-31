@@ -29,7 +29,7 @@ bool SchemaMeta::Unmarshal(const Serializable::json &node)
     return true;
 }
 
-bool SchemaMeta::Database::Marshal(Serializable::json &node) const
+bool Database::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(name)], name);
     SetValue(node[GET_NAME(alias)], alias);
@@ -37,7 +37,7 @@ bool SchemaMeta::Database::Marshal(Serializable::json &node) const
     return true;
 }
 
-bool SchemaMeta::Database::Unmarshal(const Serializable::json &node)
+bool Database::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(name), name);
     GetValue(node, GET_NAME(alias), alias);
@@ -45,7 +45,7 @@ bool SchemaMeta::Database::Unmarshal(const Serializable::json &node)
     return true;
 }
 
-bool SchemaMeta::Table::Marshal(Serializable::json &node) const
+bool Table::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(name)], name);
     SetValue(node[GET_NAME(alias)], alias);
@@ -53,7 +53,7 @@ bool SchemaMeta::Table::Marshal(Serializable::json &node) const
     return true;
 }
 
-bool SchemaMeta::Table::Unmarshal(const Serializable::json &node)
+bool Table::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(name), name);
     GetValue(node, GET_NAME(alias), alias);
@@ -61,7 +61,7 @@ bool SchemaMeta::Table::Unmarshal(const Serializable::json &node)
     return true;
 }
 
-bool SchemaMeta::Field::Marshal(Serializable::json &node) const
+bool Field::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(colName)], colName);
     SetValue(node[GET_NAME(alias)], alias);
@@ -71,7 +71,7 @@ bool SchemaMeta::Field::Marshal(Serializable::json &node) const
     return true;
 }
 
-bool SchemaMeta::Field::Unmarshal(const Serializable::json &node)
+bool Field::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(colName), colName);
     GetValue(node, GET_NAME(alias), alias);
@@ -81,7 +81,7 @@ bool SchemaMeta::Field::Unmarshal(const Serializable::json &node)
     return true;
 }
 
-SchemaMeta::Database SchemaMeta::GetDataBase(const std::string &storeId)
+Database SchemaMeta::GetDataBase(const std::string &storeId)
 {
     for (const auto &database : databases) {
         if (database.name == storeId) {

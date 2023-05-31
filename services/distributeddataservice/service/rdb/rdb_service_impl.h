@@ -52,15 +52,12 @@ public:
 
     void OnChange(uint32_t tokenId, const std::string &storeName);
 
-    int32_t CreateRDBTable(
-        const RdbSyncerParam &param, const std::string &writePermission, const std::string &readPermission) override;
-    int32_t DestroyRDBTable(const RdbSyncerParam &param) override;
-
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
 
     int32_t OnInitialize() override;
 
     int32_t GetSchema(const RdbSyncerParam &param) override;
+
     int32_t OnBind(const BindInfo &bindInfo) override;
 
 protected:
@@ -96,7 +93,13 @@ private:
 
     void OnAsyncComplete(pid_t pid, uint32_t seqNum, const SyncResult& result);
 
-    StoreMetaData GetStoreMetaData(const RdbSyncerParam& param);
+    int32_t CreateMetaData(const RdbSyncerParam &param, StoreMetaData &old);
+
+    StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
+
+    int32_t SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta);
+
+    int32_t Upgrade(const RdbSyncerParam &param, const StoreMetaData &old);
 
     class DeathRecipientImpl : public IRemoteObject::DeathRecipient {
     public:
@@ -111,6 +114,8 @@ private:
     public:
         Factory();
         ~Factory();
+    private:
+        std::shared_ptr<RdbServiceImpl> product_;
     };
 
     using StoreSyncersType = std::map<std::string, std::shared_ptr<RdbSyncer>>;

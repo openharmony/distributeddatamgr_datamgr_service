@@ -32,22 +32,22 @@ public:
     using Value = DistributedData::Value;
     using Values = DistributedData::Values;
     using StoreMetaData = DistributedData::StoreMetaData;
-    using SchemaMeta = DistributedData::SchemaMeta;
-    using CloudDB = DistributedData::CloudDB;
+    using Database = DistributedData::Database;
     using RdbStore = OHOS::NativeRdb::RdbStore;
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
     using RdbManager = DistributedDB::RelationalStoreManager;
 
-    explicit RdbGeneralStore(const StoreMetaData &meta);
-    int32_t Bind(std::shared_ptr<CloudDB> cloudDb) override;
-    int32_t SetSchema(const SchemaMeta &schemaMeta) override;
+    explicit RdbGeneralStore(const StoreMetaData &metaData);
+    ~RdbGeneralStore();
+    int32_t Bind(const Database &database, BindInfo bindInfo) override;
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
     int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) override;
-    int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, Async async, int32_t wait) override;
+    int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, AsyncDetail async, int32_t wait) override;
+    int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, AsyncStatus async, int32_t wait) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
     int32_t Close() override;
@@ -58,8 +58,7 @@ private:
     RdbManager manager_;
     RdbDelegate *delegate_ = nullptr;
     std::shared_ptr<RdbStore> store_;
-    std::shared_ptr<CloudDB> cloudDb_;
-    Watcher *watcher_ = nullptr;
+    BindInfo bindInfo_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
