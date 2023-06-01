@@ -130,7 +130,7 @@ void SchedulerManager::GenRemindTimerFuncParams(const std::string &rdbDir, int v
     std::string &schedulerSQL)
 {
     auto index = schedulerSQL.find(REMIND_TIMER_FUNC);
-    if (index == -1) {
+    if (index == std::string::npos) {
         ZLOGW("not find remindTimer, sql is %{public}s", schedulerSQL.c_str());
         return;
     }
