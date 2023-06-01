@@ -23,6 +23,7 @@
 #include "log_print.h"
 
 namespace OHOS::DataShare {
+constexpr int WAIT_TIME = 30;
 int64_t KvDelegate::Upsert(const std::string &collectionName, const std::string &filter, const std::string &value)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -58,14 +59,26 @@ int64_t KvDelegate::Delete(const std::string &collectionName, const std::string 
 bool KvDelegate::Init()
 {
     if (isInitDone_) {
+        if (executors_ != nullptr) {
+            executors_->Reset(taskId_, std::chrono::seconds(WAIT_TIME));
+        }
         return true;
     }
-    int status = GRD_DBOpen((path_ + "/dataShare.db").c_str(), nullptr, GRD_DB_OPEN_CREATE, &db_);
+    int status = GRD_DBOpen(
+        (path_ + "/dataShare.db").c_str(), nullptr, GRD_DB_OPEN_CREATE | GRD_DB_OPEN_CHECK_FOR_ABNORMAL, &db_);
     if (status != GRD_OK || db_ == nullptr) {
         ZLOGE("GRD_DBOpen failed，status %{public}d", status);
         return false;
     }
-
+    if (executors_ != nullptr) {
+        taskId_ = executors_->Schedule(std::chrono::seconds(WAIT_TIME), [this]() {
+            std::lock_guard<decltype(mutex_)> lock(mutex_);
+            GRD_DBClose(db_, GRD_DB_CLOSE);
+            db_ = nullptr;
+            isInitDone_ = false;
+            taskId_ = ExecutorPool::INVALID_TASK_ID;
+        });
+    }
     status = GRD_CreateCollection(db_, TEMPLATE_TABLE, nullptr, 0);
     if (status != GRD_OK) {
         ZLOGE("GRD_CreateCollection template table failed，status %{public}d", status);
@@ -214,6 +227,8 @@ int32_t KvDelegate::GetBatch(const std::string &collectionName, const std::strin
     GRD_FreeResultSet(resultSet);
     return E_OK;
 }
-
-KvDelegate::KvDelegate(const std::string &path) : path_(path) {}
+KvDelegate::KvDelegate(const std::string &path, const std::shared_ptr<ExecutorPool> &executors)
+    : path_(path), executors_(executors)
+{
+}
 } // namespace OHOS::DataShare

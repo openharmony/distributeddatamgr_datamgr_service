@@ -23,13 +23,14 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int versi
     return std::make_shared<RdbDelegate>(dir, version, registerFunction);
 }
 
-std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(bool reInit, const std::string &dir)
+std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
+    bool reInit, const std::string &dir, const std::shared_ptr<ExecutorPool> &executors)
 {
     static std::shared_ptr<KvDBDelegate> delegate = nullptr;
     static std::mutex mutex;
     std::lock_guard<decltype(mutex)> lock(mutex);
     if (delegate == nullptr || reInit) {
-        delegate = std::make_shared<KvDelegate>(dir);
+        delegate = std::make_shared<KvDelegate>(dir, executors);
     }
     return delegate;
 }

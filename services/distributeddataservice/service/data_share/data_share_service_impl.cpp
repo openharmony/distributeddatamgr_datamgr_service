@@ -357,18 +357,13 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    KvDBDelegate::GetInstance(false, saveMeta.dataDir);
+    KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     return EOK;
 }
 
 int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    auto token = IPCSkeleton::GetCallingTokenID();
-    auto type = OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(token);
-    if (type != OHOS::Security::AccessToken::TOKEN_NATIVE && type != OHOS::Security::AccessToken::TOKEN_SHELL) {
-        return EOK;
-    }
     const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
     DistributedData::StoreMetaData saveMeta;
     saveMeta.appType = "default";
@@ -380,13 +375,13 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
     saveMeta.appId = binderInfo_.selfName;
     saveMeta.user = user;
     saveMeta.account = account;
-    saveMeta.tokenId = token;
+    saveMeta.tokenId = binderInfo_.selfTokenId;
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = 1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    KvDBDelegate::GetInstance(false, saveMeta.dataDir);
+    KvDBDelegate::GetInstance(true, saveMeta.dataDir, binderInfo_.executors);
     return EOK;
 }
 
