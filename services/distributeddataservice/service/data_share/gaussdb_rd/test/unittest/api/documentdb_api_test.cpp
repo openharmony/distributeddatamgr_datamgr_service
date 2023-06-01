@@ -28,6 +28,7 @@ using namespace testing::ext;
 using namespace DocumentDBUnitTest;
 
 namespace {
+const int MAX_DB_CONFIG_LEN = 1024 * 1024;
 class DocumentDBApiTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -257,14 +258,14 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest004, TestSize.Level0)
     std::string part1 = "{ \"pageSize\": \" ";
     std::string part2 = "\" }";
     std::string path = "./document.db";
-    std::string val = string(1024 * 1024 - part1.size() - part2.size(), 'k');
+    std::string val = string(MAX_DB_CONFIG_LEN - part1.size() - part2.size(), 'k');
     std::string configStr = part1 + val + part2;
     int ret = GRD_DBOpen(path.c_str(), configStr.c_str(), GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(ret, GRD_OVER_LIMIT);
     /**
      * @tc.steps:step2. input the value's length of configStr is 1024 k(contained '\0')
     */
-    std::string val2 = string(1024 * 1024 - part1.size() - part2.size() - 1, 'k');
+    std::string val2 = string(MAX_DB_CONFIG_LEN - part1.size() - part2.size() - 1, 'k');
     std::string configStr2 = part1 + val2 + part2 + "\0";
     ret = GRD_DBOpen(path.c_str(), configStr2.c_str(), GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(ret, GRD_INVALID_ARGS);
