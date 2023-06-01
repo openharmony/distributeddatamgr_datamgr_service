@@ -36,6 +36,7 @@ int MapSqliteError(int errCode)
             return E_OK;
         case SQLITE_PERM:
         case SQLITE_CANTOPEN:
+            return -E_INVALID_ARGS;
         case SQLITE_READONLY:
             return -E_FILE_OPERATION;
         case SQLITE_NOTADB:

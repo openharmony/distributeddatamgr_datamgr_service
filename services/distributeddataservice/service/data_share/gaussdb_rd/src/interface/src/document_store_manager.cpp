@@ -133,7 +133,7 @@ int DocumentStoreManager::CheckDBPath(const std::string &path, std::string &cano
 
     if (path.back() == '/') {
         GLOGE("Invalid path end with slash");
-        return -E_INVALID_ARGS;
+        return -E_FAILED_FILE_OPERATION;
     }
 
     std::string dirPath;
