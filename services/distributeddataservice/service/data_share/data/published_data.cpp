@@ -40,7 +40,12 @@ PublishedData::PublishedData(const std::string &key, const std::string &bundleNa
 {
     value.SetVersion(version);
 }
-/*
+
+PublishedData::PublishedData(const PublishedDataNode &node)
+    : KvData(Id(GenId(node.key, node.bundleName, node.subscriberId))), value(node)
+{
+}
+
 std::vector<PublishedData> PublishedData::Query(const std::string &bundleName)
 {
     auto delegate = KvDBDelegate::GetInstance();
@@ -49,22 +54,21 @@ std::vector<PublishedData> PublishedData::Query(const std::string &bundleName)
         return std::vector<PublishedData>();
     }
     std::vector<std::string> queryResults;
-    json filter;
-    filter["bundleName"] = bundleName;
-    int32_t status = delegate->GetBatch(KvDBDelegate::DATA_TABLE, filter.dump(), "{}", queryResults);
+    int32_t status =
+        delegate->GetBatch(KvDBDelegate::DATA_TABLE, "{\"bundleName\":\"" + bundleName + "\"}", "{}", queryResults);
     if (status != E_OK) {
         ZLOGE("db Upsert failed, %{public}s %{public}d", bundleName.c_str(), status);
         return std::vector<PublishedData>();
     }
     std::vector<PublishedData> results;
     for (auto &result : queryResults) {
-        PublishedData data;
-        if (data.Unmarshall(result)) {
-            results.push_back(std::move(data));
+        PublishedDataNode data;
+        if (PublishedDataNode::Unmarshall(result, data)) {
+            results.emplace_back(data);
         }
     }
     return results;
-} */
+}
 
 bool PublishedDataNode::Marshal(DistributedData::Serializable::json &node) const
 {

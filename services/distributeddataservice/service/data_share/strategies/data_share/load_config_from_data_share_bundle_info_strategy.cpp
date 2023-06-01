@@ -53,7 +53,7 @@ bool LoadConfigFromDataShareBundleInfoStrategy::LoadConfigFromProfile(
         "/" + context->calledStoreName;
     std::string tableUri = storeUri + "/" + context->calledTableName;
     ConfigData result;
-    for (auto &item : profileInfo.tableConfig) {
+    for (auto const &item : profileInfo.tableConfig) {
         if (item.uri == tableUri) {
             result.SetCrossUserMode(ConfigData::TABLE_MATCH_PRIORITY, item.crossUserMode);
             continue;

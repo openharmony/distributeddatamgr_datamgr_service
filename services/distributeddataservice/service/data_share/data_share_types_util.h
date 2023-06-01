@@ -42,7 +42,7 @@ template<>
 bool Unmarshalling(PublishedDataItem &dataItem, MessageParcel &parcel);
 
 template<>
-bool Marshalling(const PublishedDataItem &templateId, MessageParcel &parcel);
+bool Marshalling(const PublishedDataItem &dataItem, MessageParcel &parcel);
 
 template<>
 bool Unmarshalling(Data &data, MessageParcel &parcel);
@@ -63,7 +63,7 @@ template<>
 bool Marshalling(const OperationResult &operationResult, MessageParcel &parcel);
 
 template<>
-bool Marshalling(const TemplateId &changeNode, MessageParcel &parcel);
+bool Marshalling(const TemplateId &templateId, MessageParcel &parcel);
 };
 
 #endif // DATASHARESERVICE_DATA_SHARE_TYPES_UTIL_H

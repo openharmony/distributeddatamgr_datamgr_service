@@ -16,8 +16,9 @@
 
 #include "template_manager.h"
 
+#include "general/load_config_data_info_strategy.h"
+
 #include "db_delegate.h"
-#include "json_formatter.h"
 #include "log_print.h"
 #include "published_data.h"
 #include "scheduler_manager.h"
@@ -123,18 +124,23 @@ RdbSubscriberManager &RdbSubscriberManager::GetInstance()
 }
 
 int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const TemplateId &tplId,
-    const sptr<IDataProxyRdbObserver> observer, std::shared_ptr<Context> context)
+    const sptr<IDataProxyRdbObserver> observer, std::shared_ptr<Context> context,
+    std::shared_ptr<ExecutorPool> executorPool)
 {
     int result = E_OK;
     Key key(uri, tplId.subscriberId_, tplId.bundleName_);
-    rdbCache_.Compute(key, [&observer, &context, &result, this](const auto &key, std::vector<ObserverNode> &value) {
+    rdbCache_.Compute(key,
+        [&observer, &context, executorPool, this](const auto &key, std::vector<ObserverNode> &value) {
         ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), context->callerTokenId);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId);
-        result = Notify(key, node, context->calledSourceDir, context->version);
-        if (result != E_OK) {
-            return false;
-        }
+        ExecutorPool::Task task = [key, node, context, this]() {
+            LoadConfigDataInfoStrategy loadDataInfo;
+            if (loadDataInfo(context)) {
+                Notify(key, node, context->calledSourceDir, context->version);
+            }
+        };
+        executorPool->Execute(task);
         value.emplace_back(observer, context->callerTokenId);
         if (GetEnableObserverCount(key) == 1) {
             SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
@@ -196,7 +202,10 @@ int RdbSubscriberManager::EnableRdbSubscriber(
                 it->enabled = true;
                 std::vector<ObserverNode> node;
                 node.emplace_back(it->observer, context->callerTokenId);
-                Notify(key, node, context->calledSourceDir, context->version);
+                LoadConfigDataInfoStrategy loadDataInfo;
+                if (loadDataInfo(context)) {
+                    Notify(key, node, context->calledSourceDir, context->version);
+                }
             }
             if (GetEnableObserverCount(key) == 1) {
                 SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
@@ -270,7 +279,7 @@ int RdbSubscriberManager::GetEnableObserverCount(const Key &key)
 }
 
 int RdbSubscriberManager::Notify(
-    const Key &key, std::vector<ObserverNode> &val, const std::string &rdbDir, int rdbVersion)
+    const Key &key, const std::vector<ObserverNode> &val, const std::string &rdbDir, int rdbVersion)
 {
     Template tpl;
     if (!TemplateManager::GetInstance().GetTemplate(key.uri, key.subscriberId, key.bundleName, tpl)) {
@@ -290,12 +299,11 @@ int RdbSubscriberManager::Notify(
     changeNode.templateId_.bundleName_ = key.bundleName;
     for (const auto &predicate : tpl.predicates_) {
         std::string result =  delegate->Query(predicate.selectSql_);
-        JsonFormatter formatter(predicate.key_, result);
-        changeNode.data_.emplace_back(DistributedData::Serializable::Marshall(formatter));
+        changeNode.data_.emplace_back("{\"" + predicate.key_ + "\":" + result + "}");
     }
 
-    ZLOGI("emit, size %{public}d %{private}s", val.size(), changeNode.uri_.c_str());
-    for (auto &callback : val) {
+    ZLOGI("emit, size %{public}zu %{private}s", val.size(), changeNode.uri_.c_str());
+    for (const auto &callback : val) {
         if (callback.enabled && callback.observer != nullptr) {
             callback.observer->OnChangeFromRdb(changeNode);
         }
@@ -416,9 +424,10 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
 
 void PublishedDataSubscriberManager::PutInto(
     std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &callbacks,
-    std::vector<ObserverNode> &val, const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer)
+    const std::vector<ObserverNode> &val, const PublishedDataKey &key,
+    const sptr<IDataProxyPublishedDataObserver> observer)
 {
-    for (auto &callback : val) {
+    for (auto const &callback : val) {
         if (callback.enabled && callback.observer != nullptr) {
             // callback the observer, others do not call
             if (observer != nullptr && callback.observer != observer) {

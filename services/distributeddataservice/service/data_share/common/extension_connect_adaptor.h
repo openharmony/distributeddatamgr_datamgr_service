@@ -13,26 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef DATASHARESERVICE_GET_DATA_STRAGETY_H
-#define DATASHARESERVICE_GET_DATA_STRAGETY_H
+#ifndef DATASHARESERVICE_EXTENSION_CONNECT_ADAPTOR_H
+#define DATASHARESERVICE_EXTENSION_CONNECT_ADAPTOR_H
 
-#include <shared_mutex>
-
-#include "data_proxy_observer.h"
-#include "datashare_template.h"
-#include "published_data.h"
-#include "seq_strategy.h"
-
+#include "ability_connect_callback_interface.h"
+#include "block_data.h"
+#include "context.h"
 namespace OHOS::DataShare {
-class GetDataStrategy final {
+class ExtensionConnectAdaptor {
 public:
-    Data Execute(std::shared_ptr<Context> context);
+    static bool TryAndWait(std::shared_ptr<Context> context, int maxWaitTime = 2);
+    ExtensionConnectAdaptor();
 
 private:
-    SeqStrategy &GetStrategy();
-    std::mutex mutex_;
-    SeqStrategy strategies_;
-    bool CheckPermission(std::shared_ptr<Context> context, const std::string &key);
+    bool Connect(std::shared_ptr<Context> context);
+    void Disconnect();
+    bool DoConnect(std::shared_ptr<Context> context);
+    BlockData<bool> data_;
+    sptr<AAFwk::IAbilityConnection> callback_ = nullptr;
 };
 } // namespace OHOS::DataShare
 #endif

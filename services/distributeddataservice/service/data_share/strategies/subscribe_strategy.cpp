@@ -49,8 +49,7 @@ Strategy *SubscribeStrategy::GetStrategy()
     std::initializer_list<Strategy *> list = {
         new (std::nothrow)LoadConfigCommonStrategy(),
         new (std::nothrow)LoadConfigFromDataProxyNodeStrategy(),
-        new (std::nothrow)PermissionStrategy(),
-        new (std::nothrow)LoadConfigDataInfoStrategy()
+        new (std::nothrow)PermissionStrategy()
     };
     auto ret = strategies.Init(list);
     if (!ret) {

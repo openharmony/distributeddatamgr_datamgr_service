@@ -311,13 +311,19 @@ int32_t DataShareServiceStub::OnRemoteDisablePubSubs(MessageParcel &data, Messag
     return 0;
 }
 
+int32_t DataShareServiceStub::OnRemoteNotifyConnectDone(MessageParcel &data, MessageParcel &reply)
+{
+    OnConnectDone();
+    return 0;
+}
+
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {
         return DATA_SHARE_ERROR;
     }
-    if (code >= 0 && code < DATA_SHARE_SERVICE_CMD_MAX) {
+    if (code < DATA_SHARE_SERVICE_CMD_MAX) {
         return (this->*HANDLERS[code])(data, reply);
     }
     return -1;

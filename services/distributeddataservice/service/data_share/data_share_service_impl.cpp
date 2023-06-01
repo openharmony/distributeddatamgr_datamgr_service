@@ -19,12 +19,12 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "bootstrap.h"
+#include "app_connect_manager.h"
 #include "dataobs_mgr_client.h"
 #include "datashare_errno.h"
 #include "datashare_template.h"
 #include "delete_strategy.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "get_data_strategy.h"
 #include "hap_token_info.h"
 #include "insert_strategy.h"
@@ -181,7 +181,7 @@ Data DataShareServiceImpl::GetData(const std::string &bundleNameOfProvider)
     auto context = std::make_shared<Context>();
     context->callerBundleName = callerBundleName;
     context->calledBundleName = bundleNameOfProvider;
-    return GetDataStrategy::Execute(context);
+    return getDataStrategy_.Execute(context);
 }
 
 std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(
@@ -190,9 +190,11 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(
     std::vector<OperationResult> results;
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
-        results.emplace_back(uri, SubscribeStrategy::Execute(context, [&id, &observer, &context]() -> bool {
-            return RdbSubscriberManager::GetInstance().AddRdbSubscriber(context->uri, id, observer, context);
-        }));
+        results.emplace_back(
+            uri, SubscribeStrategy::Execute(context, [&id, &observer, &context, this]() -> bool {
+                return RdbSubscriberManager::GetInstance().AddRdbSubscriber(
+                    context->uri, id, observer, context, binderInfo_.executors);
+            }));
     }
     return results;
 }
@@ -334,42 +336,34 @@ enum DataShareKvStoreType : int32_t {
     DISTRIBUTED_TYPE_BUTT
 };
 
-int32_t DataShareServiceImpl::OnInitialize()
+int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
 {
-    auto token = IPCSkeleton::GetCallingTokenID();
-    auto type = OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(token);
-    if (type != OHOS::Security::AccessToken::TOKEN_NATIVE && type != OHOS::Security::AccessToken::TOKEN_SHELL) {
-        return EOK;
-    }
+    binderInfo_ = binderInfo;
     const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(token);
+    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(binderInfo.selfTokenId);
     DistributedData::StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.storeId = "data_share_data_";
     saveMeta.isAutoSync = false;
     saveMeta.isBackup = false;
     saveMeta.isEncrypt = false;
-    saveMeta.bundleName =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    saveMeta.bundleName =  binderInfo.selfName;
+    saveMeta.appId = binderInfo.selfName;
     saveMeta.user = std::to_string(userId);
     saveMeta.account = accountId;
-    saveMeta.tokenId = token;
+    saveMeta.tokenId = binderInfo.selfTokenId;
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = 1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    KvDBDelegate::GetInstance(false, saveMeta.dataDir);
+    KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
+    SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     return EOK;
 }
 
 int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    auto token = IPCSkeleton::GetCallingTokenID();
-    auto type = OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(token);
-    if (type != OHOS::Security::AccessToken::TOKEN_NATIVE && type != OHOS::Security::AccessToken::TOKEN_SHELL) {
-        return EOK;
-    }
     const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
     DistributedData::StoreMetaData saveMeta;
     saveMeta.appType = "default";
@@ -377,17 +371,24 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
     saveMeta.isAutoSync = false;
     saveMeta.isBackup = false;
     saveMeta.isEncrypt = false;
-    saveMeta.bundleName =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    saveMeta.bundleName =  binderInfo_.selfName;
+    saveMeta.appId = binderInfo_.selfName;
     saveMeta.user = user;
     saveMeta.account = account;
-    saveMeta.tokenId = token;
+    saveMeta.tokenId = binderInfo_.selfTokenId;
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = 1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    KvDBDelegate::GetInstance(false, saveMeta.dataDir);
+    KvDBDelegate::GetInstance(true, saveMeta.dataDir, binderInfo_.executors);
     return EOK;
+}
+
+void DataShareServiceImpl::OnConnectDone()
+{
+    std::string callerBundleName;
+    GetCallerBundleName(callerBundleName);
+    AppConnectManager::Notify(callerBundleName);
 }
 } // namespace OHOS::DataShare
