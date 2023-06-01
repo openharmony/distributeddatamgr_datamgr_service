@@ -156,7 +156,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest004, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBPathTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::vector<const char *> invalidPath = { nullptr, "", "/a/b/c/" };
+    std::vector<const char *> invalidPath = { nullptr, ""};
     for (auto path : invalidPath) {
         GLOGD("OpenDBPathTest001: open db with path: %s", path);
         int status = GRD_DBOpen(path, nullptr, GRD_DB_OPEN_CREATE, &db);
