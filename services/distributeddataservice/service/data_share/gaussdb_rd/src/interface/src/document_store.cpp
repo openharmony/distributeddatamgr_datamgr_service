@@ -330,6 +330,10 @@ int GetUpsertRePlaceData(ResultSet &resultSet, JsonObject &documentObj, bool isR
     int errCode = resultSet.GetValue(valStr);
     if (errCode != E_OK || isReplace) {
         valStr = documentObj.Print(); // If cant not find data, insert it.
+        if (valStr.length() >= JSON_LENS_MAX) {
+            GLOGE("document's length is too long");
+            return -E_OVER_LIMIT;
+        }
         return E_OK;
     }
     if (errCode != E_OK && errCode != -E_NOT_FOUND) {
