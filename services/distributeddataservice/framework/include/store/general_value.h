@@ -24,6 +24,30 @@
 #include "error/general_error.h"
 #include "traits.h"
 namespace OHOS::DistributedData {
+enum Progress {
+    SYNC_BEGIN,
+    SYNC_IN_PROGRESS,
+    SYNC_FINISH,
+};
+
+struct Statistic {
+    int32_t total;
+    int32_t success;
+    int32_t failed;
+    int32_t untreated;
+};
+
+struct TableDetails {
+    Statistic upload;
+    Statistic download;
+};
+
+struct ProgressDetails {
+    int32_t progress;
+    int32_t code;
+    std::map<std::string, TableDetails> details;
+};
+
 struct Asset {
     uint32_t version;
     std::string name;

@@ -94,7 +94,7 @@ std::string RdbSyncer::GetBundleName() const
 
 std::string RdbSyncer::GetAppId() const
 {
-    return DistributedData::CheckerManager::GetInstance().GetAppId({ uid_, token_, param_.bundleName_ });
+    return DistributedData::CheckerManager::GetInstance().GetAppId( { uid_, token_, param_.bundleName_ } );
 }
 
 std::string RdbSyncer::GetStoreId() const
@@ -102,103 +102,20 @@ std::string RdbSyncer::GetStoreId() const
     return RemoveSuffix(param_.storeName_);
 }
 
-int32_t RdbSyncer::Init(
-    pid_t pid, pid_t uid, uint32_t token, const std::string &writePermission, const std::string &readPermission)
+int32_t RdbSyncer::Init(pid_t pid, pid_t uid, uint32_t token, const StoreMetaData &meta)
 {
     ZLOGI("enter");
     pid_ = pid;
     uid_ = uid;
     token_ = token;
-    StoreMetaData oldMeta;
-    StoreMetaData meta;
 
-    if (CreateMetaData(meta, oldMeta) != RDB_OK) {
-        ZLOGE("create meta data failed");
-        return RDB_ERROR;
-    }
     if (InitDBDelegate(meta) != RDB_OK) {
         ZLOGE("delegate is nullptr");
         return RDB_ERROR;
     }
 
-    if (oldMeta.storeType == RDB_DEVICE_COLLABORATION && oldMeta.version < StoreMetaData::UUID_CHANGED_TAG) {
-        delegate_->RemoveDeviceData();
-    }
-
     ZLOGI("success");
     return RDB_OK;
-}
-
-int32_t RdbSyncer::DestroyMetaData(StoreMetaData &meta)
-{
-    FillMetaData(meta);
-    auto deleted = MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
-    return deleted ? RDB_OK : RDB_ERROR;
-}
-
-void RdbSyncer::FillMetaData(StoreMetaData &meta)
-{
-    meta.uid = uid_;
-    meta.tokenId = token_;
-    meta.instanceId = GetInstIndex(token_, param_.bundleName_);
-    meta.bundleName = param_.bundleName_;
-    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    meta.storeId = RemoveSuffix(param_.storeName_);
-    meta.user = std::to_string(AccountDelegate::GetInstance()->GetUserByToken(token_));
-    meta.storeType = param_.type_;
-    meta.securityLevel = param_.level_;
-    meta.area = param_.area_;
-    meta.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(meta));
-    meta.appType = "harmony";
-    meta.hapName = param_.hapName_;
-    meta.dataDir = DirectoryManager::GetInstance().GetStorePath(meta) + "/" + param_.storeName_;
-    meta.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
-    meta.isEncrypt = param_.isEncrypt_;
-}
-
-int32_t RdbSyncer::CreateMetaData(StoreMetaData &meta, StoreMetaData &old)
-{
-    FillMetaData(meta);
-    bool isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old);
-    if (isCreated && (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
-                         old.area != meta.area)) {
-        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), meta.storeId.c_str(), old.storeType, meta.storeType, old.isEncrypt,
-            meta.isEncrypt, old.area, meta.area);
-        return RDB_ERROR;
-    }
-
-    auto saved = MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
-    if (!saved) {
-        return RDB_ERROR;
-    }
-    AppIDMetaData appIdMeta;
-    appIdMeta.bundleName = meta.bundleName;
-    appIdMeta.appId = meta.appId;
-    saved = MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
-    if (!saved) {
-        return RDB_ERROR;
-    }
-    if (!param_.isEncrypt_ || param_.password_.empty()) {
-        return RDB_OK;
-    }
-    return SetSecretKey(meta);
-}
-
-bool RdbSyncer::SetSecretKey(const StoreMetaData &meta)
-{
-    SecretKeyMetaData newSecretKey;
-    newSecretKey.storeType = meta.storeType;
-    newSecretKey.sKey = CryptoManager::GetInstance().Encrypt(param_.password_);
-    if (newSecretKey.sKey.empty()) {
-        ZLOGE("encrypt work key error.");
-        return RDB_ERROR;
-    }
-    param_.password_.assign(param_.password_.size(), 0);
-    auto time = system_clock::to_time_t(system_clock::now());
-    newSecretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
-    return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true) ? RDB_OK : RDB_ERROR;
 }
 
 bool RdbSyncer::GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password)
@@ -486,6 +403,21 @@ int32_t RdbSyncer::RemoteQuery(const std::string& device, const std::string& sql
     resultSet = new (std::nothrow) RdbResultSetImpl(dbResultSet);
     if (resultSet == nullptr) {
         ZLOGE("resultSet is nullptr");
+        return RDB_ERROR;
+    }
+    return RDB_OK;
+}
+
+int32_t RdbSyncer::RemoveDeviceData()
+{
+    auto* delegate = GetDelegate();
+    if (delegate == nullptr) {
+        ZLOGE("delegate is nullptr");
+        return RDB_ERROR;
+    }
+    DistributedDB::DBStatus status = delegate->RemoveDeviceData();
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("DistributedDB RemoveDeviceData failed, status is  %{public}d.", status);
         return RDB_ERROR;
     }
     return RDB_OK;

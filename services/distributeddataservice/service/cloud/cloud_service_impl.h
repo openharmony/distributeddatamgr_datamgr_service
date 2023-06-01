@@ -60,8 +60,8 @@ private:
 
     void UpdateCloudInfo(CloudInfo &cloudInfo);
     void AddSchema(CloudInfo &cloudInfo);
-    SchemaMeta GetSchemaMata(int32_t userId, const std::string &bundleName, int32_t instanceId);
-    StoreMetaData GetStoreMata(int32_t userId, const std::string &bundleName, const std::string &storeName,
+    SchemaMeta GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
+    StoreMetaData GetStoreMeta(int32_t userId, const std::string &bundleName, const std::string &storeName,
         int32_t instanceId);
     int32_t GetCloudInfo(uint32_t tokenId, const std::string &id, CloudInfo &cloudInfo);
     int32_t GetCloudInfoFromMeta(CloudInfo &cloudInfo);
