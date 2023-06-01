@@ -227,6 +227,37 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest003, TestSize.Level0)
 }
 
 /**
+ * @tc.name: OpenDBConfigTest005
+ * @tc.desc: Verify open db with different configStr connection when first connection not close,
+ *           return GRD_INVALID_CONFIG_VALUE.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: mazhao
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBConfigTest005, TestSize.Level0)
+{
+    /**
+     * @tc.steps:step1. call GRD_DBOPEN to create a db with connection1.
+     * @tc.expected:step1. GRD_OK.
+    */
+    const char *configStr = R"({"pageSize":64, "bufferPoolSize": 4096})";
+    GRD_DB *db1 = nullptr;
+    std::string path = "./document.db";
+    int result = GRD_DBOpen(path.c_str(), configStr, GRD_DB_OPEN_CREATE, &db1);
+    ASSERT_EQ(result, GRD_OK);
+    /**
+     * @tc.steps:step2. connection2 call GRD_DBOpen to open the db with the different configStr.
+     * @tc.expected:step2. return GRD_CONFIG_OPTION_MISMATCH.
+    */
+    const char *configStr_2 = R"({"pageSize":4})";
+    GRD_DB *db2 = nullptr;
+    result = GRD_DBOpen(path.c_str(), configStr_2, GRD_DB_OPEN_ONLY, &db2);
+    ASSERT_EQ(result, GRD_INVALID_ARGS);
+
+    ASSERT_EQ(GRD_DBClose(db1, GRD_DB_CLOSE), GRD_OK);
+}
+
+/**
  * @tc.name: OpenDBConfigMaxConnNumTest001
  * @tc.desc: Test open document db with invalid config item maxConnNum
  * @tc.type: FUNC
@@ -381,7 +412,7 @@ int GetDBPageSize(const std::string &path)
     if (db == nullptr) {
         return 0;
     }
-    
+
     int pageSize = 0;
     SQLiteUtils::ExecSql(db, "PRAGMA page_size;", nullptr, [&pageSize](sqlite3_stmt *stmt, bool &isMatchOneData) {
         pageSize = sqlite3_column_int(stmt, 0);

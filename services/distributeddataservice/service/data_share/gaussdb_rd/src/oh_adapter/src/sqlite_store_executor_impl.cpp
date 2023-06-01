@@ -75,6 +75,7 @@ int SqliteStoreExecutorImpl::GetDBConfig(std::string &config)
 {
     std::string dbConfigKeyStr = "DB_CONFIG";
     Key dbConfigKey = { dbConfigKeyStr.begin(), dbConfigKeyStr.end() };
+    dbConfigKey.push_back(KEY_TYPE); // Push back Key Tpye, make it become really Key.
     Value dbConfigVal;
     int errCode = GetDataByKey("grd_meta", dbConfigKey, dbConfigVal);
     config.assign(dbConfigVal.begin(), dbConfigVal.end());
@@ -394,6 +395,7 @@ int SqliteStoreExecutorImpl::GetCollectionOption(const std::string &name, std::s
 {
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
     Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
+    collOptKey.push_back(KEY_TYPE); // Push back Key Tpye, make it become really Key.
     Value collOptVal;
     int errCode = GetDataByKey("grd_meta", collOptKey, collOptVal);
     option.assign(collOptVal.begin(), collOptVal.end());
