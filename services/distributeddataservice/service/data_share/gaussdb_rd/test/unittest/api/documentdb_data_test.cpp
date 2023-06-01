@@ -134,7 +134,7 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest006, TestSize.Level0)
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
 
-    for (auto flags : std::vector<unsigned int> { 2, 4, 8, 64, 1024, UINT32_MAX }) {
+    for (auto flags : std::vector<unsigned int>{ 2, 4, 8, 64, 1024, UINT32_MAX }) {
         EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), flags), GRD_INVALID_ARGS);
     }
 }
@@ -189,6 +189,32 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest011, TestSize.Level0)
     int result =
         GRD_UpsertDoc(g_db, g_coll, R"({"_id" : "abcde"})", R"({"t1":{"t22":[1,{"t23":1, "t23":1},3 ,4]}})", 0);
     ASSERT_EQ(result, GRD_INVALID_FORMAT);
+}
+
+/**
+ * @tc.name: UpdateDataTest012
+ * @tc.desc: Input parameter collectionName is null, invoke the GRD_UpsertDoc interface to update data.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: mazhao
+ */
+HWTEST_F(DocumentDBDataTest, UpsertDataTest012, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. Insert a document.
+     * @tc.expected: step1. return GRD_OK.
+     */
+    int result = GRD_InsertDoc(g_db, g_coll, "{}", 0);
+    ASSERT_EQ(result, GRD_OK);
+    /**
+     * @tc.steps: step2. Parameter collectionName is Invalid format
+     * @tc.expected: step2. return Update faild.
+     */
+    result = GRD_UpsertDoc(g_db, "null", "{}", "{}", 1);
+    ASSERT_EQ(result, GRD_INVALID_ARGS);
+
+    result = GRD_UpsertDoc(g_db, "!！ &%$^%$&*%^。m中文、、请问E：112423123", "{}", "{}", 1);
+    ASSERT_EQ(result, GRD_INVALID_ARGS);
 }
 
 /**

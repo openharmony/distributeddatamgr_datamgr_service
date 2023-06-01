@@ -404,7 +404,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     }
     errCode = InsertIdToDocument(resultSet, filterObj, documentObj, docId);
     if (errCode != E_OK) {
-        return errCode;
+        goto END;
     }
     errCode = CheckUpsertConflict(resultSet, filterObj, docId, coll, isDataExist);
     // There are only three return values, the two other situation can continue to move forward.
