@@ -22,7 +22,7 @@
 #include "checker/checker_manager.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"

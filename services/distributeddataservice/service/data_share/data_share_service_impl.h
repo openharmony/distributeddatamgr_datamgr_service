@@ -22,9 +22,10 @@
 #include "data_share_service_stub.h"
 #include "datashare_template.h"
 #include "db_delegate.h"
+#include "get_data_strategy.h"
+#include "publish_strategy.h"
 #include "uri_utils.h"
 #include "visibility.h"
-#include "publish_strategy.h"
 
 namespace OHOS::DataShare {
 class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
@@ -56,7 +57,8 @@ public:
         const int64_t subscriberId) override;
     std::vector<OperationResult> DisablePubSubs(const std::vector<std::string> &uris,
         const int64_t subscriberId) override;
-    int32_t OnInitialize() override;
+    void OnConnectDone() override;
+    int32_t OnBind(const BindInfo &binderInfo) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
 
 private:
@@ -71,6 +73,8 @@ private:
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     PublishStrategy publishStrategy_;
+    GetDataStrategy getDataStrategy_;
+    BindInfo binderInfo_;
 };
 } // namespace OHOS::DataShare
 #endif

@@ -1,0 +1,109 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("//build/ohos_var.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+import("datamgr_service_data_share.gni")
+config("module_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    ".",
+    "strategies",
+    "common",
+    "data",
+    "//third_party/json/single_include",
+    "../../adapter/include",
+    "../../app/src",
+    "../../framework/include",
+    "${datashare_path}/frameworks/native/common/include",
+    "${datashare_path}/interfaces/inner_api/common/include",
+    "${datashare_path}/interfaces/inner_api/consumer/include",
+  ]
+}
+group("build_module") {
+  deps = [ ":data_share_service" ]
+}
+ohos_shared_library("data_share_service") {
+  sources = [
+    "common/app_connect_manager.cpp",
+    "common/bundle_mgr_proxy.cpp",
+    "common/db_delegate.cpp",
+    "common/div_strategy.cpp",
+    "common/extension_connect_adaptor.cpp",
+    "common/kv_delegate.cpp",
+    "common/rdb_delegate.cpp",
+    "common/scheduler_manager.cpp",
+    "common/seq_strategy.cpp",
+    "common/template_manager.cpp",
+    "common/uri_utils.cpp",
+    "data/published_data.cpp",
+    "data/resultset_json_formatter.cpp",
+    "data/template_data.cpp",
+    "data_share_obs_proxy.cpp",
+    "data_share_service_impl.cpp",
+    "data_share_service_stub.cpp",
+    "data_share_types_util.cpp",
+    "strategies/data_proxy/load_config_from_data_proxy_node_strategy.cpp",
+    "strategies/data_share/load_config_from_data_share_bundle_info_strategy.cpp",
+    "strategies/delete_strategy.cpp",
+    "strategies/general/check_is_data_proxy_strategy.cpp",
+    "strategies/general/check_is_single_app_strategy.cpp",
+    "strategies/general/empty_strategy.cpp",
+    "strategies/general/load_config_common_strategy.cpp",
+    "strategies/general/load_config_data_info_strategy.cpp",
+    "strategies/general/load_config_from_bundle_info_strategy.cpp",
+    "strategies/general/permission_strategy.cpp",
+    "strategies/general/process_single_app_user_cross_strategy.cpp",
+    "strategies/get_data_strategy.cpp",
+    "strategies/insert_strategy.cpp",
+    "strategies/publish_strategy.cpp",
+    "strategies/query_strategy.cpp",
+    "strategies/subscribe_strategy.cpp",
+    "strategies/update_strategy.cpp",
+  ]
+  cflags = [ "-Wno-multichar" ]
+
+  cflags_cc = [ "-fvisibility=hidden" ]
+
+  configs = [ ":module_public_config" ]
+
+  deps = [
+    "${gaussrd_path}:gaussdb_rd",
+    "../../adapter:distributeddata_adapter",
+    "../../adapter/utils:distributeddata_utils_static",
+    "../../framework:distributeddatasvcfwk",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_manager",
+    "ability_runtime:dataobs_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "device_manager:devicemanagersdk",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "relational_store:native_rdb",
+    "relational_store:rdb_bms_adapter",
+    "relational_store:rdb_data_share_adapter",
+    "samgr:samgr_proxy",
+  ]
+  subsystem_name = "distributeddatamgr"
+
+  part_name = "datamgr_service"
+}

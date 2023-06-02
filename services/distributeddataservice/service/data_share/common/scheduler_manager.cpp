@@ -38,7 +38,7 @@ void SchedulerManager::Execute(const std::string &uri, const std::string &rdbDir
         return;
     }
     std::vector<Key> keys = RdbSubscriberManager::GetInstance().GetKeysByUri(uri);
-    for (auto &key : keys) {
+    for (auto const &key : keys) {
         if (RdbSubscriberManager::GetInstance().GetObserverCount(key) == 0) {
             continue;
         }
@@ -59,19 +59,20 @@ void SchedulerManager::Execute(const Key &key, const std::string &rdbDir, int ve
 void SchedulerManager::SetTimer(const std::string &dbPath, int version, const Key &key, int64_t reminderTime)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (scheduler_ == nullptr) {
-        scheduler_ = std::make_shared<TaskScheduler>(TIME_TASK_NUM, "remind_timer");
+    if (executor_ == nullptr) {
+        ZLOGE("executor_ is nullptr");
+        return;
     }
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         // has current timer, reset time
         ZLOGD("has current taskId, uri is %{public}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
         DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
-        scheduler_->Reset(it->second, std::chrono::seconds(reminderTime - time(nullptr)));
+        executor_->Reset(it->second, std::chrono::seconds(reminderTime - time(nullptr)));
         return;
     }
     // not find task in map, create new timer
-    auto taskId = scheduler_->At(TaskScheduler::Clock::now() + std::chrono::seconds(reminderTime - time(nullptr)),
+    auto taskId = executor_->Schedule(std::chrono::seconds(reminderTime - time(nullptr)),
         [key, dbPath, version, this]() {
             timerCache_.erase(key);
             // 1. execute schedulerSQL in next time
@@ -79,7 +80,7 @@ void SchedulerManager::SetTimer(const std::string &dbPath, int version, const Ke
             // 2. notify
             RdbSubscriberManager::GetInstance().EmitByKey(key, dbPath, version);
         });
-    if (taskId == TaskScheduler::INVALID_TASK_ID) {
+    if (taskId == ExecutorPool::INVALID_TASK_ID) {
         ZLOGE("create timer failed, over the max capacity");
         return;
     }
@@ -143,20 +144,22 @@ void SchedulerManager::GenRemindTimerFuncParams(const std::string &rdbDir, int v
 void SchedulerManager::RemoveTimer(const Key &key)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (scheduler_ == nullptr) {
-        ZLOGD("scheduler_ is nullptr");
+    if (executor_ == nullptr) {
+        ZLOGE("executor_ is nullptr");
         return;
     }
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         ZLOGD("RemoveTimer %{public}s %{public}s %{public}" PRId64,
             DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
-        scheduler_->Remove(it->second);
+        executor_->Remove(it->second);
         timerCache_.erase(key);
-        if (timerCache_.empty()) {
-            scheduler_ = nullptr;
-        }
     }
+}
+
+void SchedulerManager::SetExecutorPool(std::shared_ptr<ExecutorPool> executor)
+{
+    executor_ = executor;
 }
 } // namespace OHOS::DataShare
 

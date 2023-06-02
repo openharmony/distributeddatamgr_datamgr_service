@@ -61,7 +61,8 @@ public:
     int32_t OnInitialize() override;
 
     int32_t GetSchema(const RdbSyncerParam &param) override;
-    int32_t OnExecutor(std::shared_ptr<ExecutorPool> executors) override;
+
+    int32_t OnBind(const BindInfo &bindInfo) override;
 
 protected:
     int32_t DoSync(const RdbSyncerParam& param, const SyncOption& option,

@@ -31,7 +31,12 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
     if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
         context->calledBundleName, context->currentUserId, context->bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed! bundleName: %{public}s", context->calledBundleName.c_str());
+        context->errCode = E_BUNDLE_NAME_NOT_EXIST;
         return false;
+    }
+    if (context->uri.empty()) {
+        context->permission = "reject";
+        return true;
     }
     for (auto &hapModuleInfo : context->bundleInfo.hapModuleInfos) {
         auto proxyDatas = hapModuleInfo.proxyDatas;

@@ -20,9 +20,10 @@
 #include <string>
 
 #include "concurrent_map.h"
-#include "datashare_template.h"
-#include "data_proxy_observer.h"
 #include "context.h"
+#include "data_proxy_observer.h"
+#include "datashare_template.h"
+#include "executor_pool.h"
 namespace OHOS::DataShare {
 struct Key {
     Key(const std::string &uri, const int64_t subscriberId, const std::string &bundleName);
@@ -52,7 +53,7 @@ class RdbSubscriberManager {
 public:
     static RdbSubscriberManager &GetInstance();
     int AddRdbSubscriber(const std::string &uri, const TemplateId &tplId, const sptr<IDataProxyRdbObserver> observer,
-        std::shared_ptr<Context> context);
+        std::shared_ptr<Context> context, std::shared_ptr<ExecutorPool> executorPool);
     int DelRdbSubscriber(const std::string &uri, const TemplateId &tplId, const uint32_t callerTokenId);
     int DisableRdbSubscriber(
         const std::string &uri, const TemplateId &tplId, const uint32_t callerTokenId);
@@ -72,7 +73,7 @@ private:
 
     RdbSubscriberManager() = default;
     ConcurrentMap<Key, std::vector<ObserverNode>> rdbCache_;
-    int Notify(const Key &key, std::vector<ObserverNode> &val, const std::string &rdbDir, int rdbVersion);
+    int Notify(const Key &key, const std::vector<ObserverNode> &val, const std::string &rdbDir, int rdbVersion);
     int GetEnableObserverCount(const Key &key);
 };
 
@@ -111,7 +112,7 @@ private:
     };
     PublishedDataSubscriberManager() = default;
     void PutInto(std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &,
-        std::vector<ObserverNode> &, const PublishedDataKey &, const sptr<IDataProxyPublishedDataObserver>);
+        const std::vector<ObserverNode> &, const PublishedDataKey &, const sptr<IDataProxyPublishedDataObserver>);
     ConcurrentMap<PublishedDataKey, std::vector<ObserverNode>> publishedDataCache;
 };
 } // namespace OHOS::DataShare

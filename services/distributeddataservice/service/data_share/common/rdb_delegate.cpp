@@ -15,7 +15,7 @@
 #define LOG_TAG "RdbAdaptor"
 #include "rdb_delegate.h"
 
-#include "data/resultset_json_formatter.h"
+#include "resultset_json_formatter.h"
 #include "log_print.h"
 #include "rdb_utils.h"
 #include "scheduler_manager.h"
@@ -35,9 +35,9 @@ enum REMIND_TIMER_ARGS : int32_t {
 };
 std::string RemindTimerFunc(const std::vector<std::string> &args)
 {
-    int size = args.size();
+    size_t size = args.size();
     if (size != ARGS_SIZE) {
-        ZLOGE("RemindTimerFunc args size error, %{public}d", size);
+        ZLOGE("RemindTimerFunc args size error, %{public}zu", size);
         return "";
     }
     std::string dbPath = args[ARG_DB_PATH];

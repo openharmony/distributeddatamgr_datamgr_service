@@ -15,7 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_DIRECTORY_CONFIG_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_DIRECTORY_CONFIG_H
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "serializable/serializable.h"
 namespace OHOS {
 namespace DistributedData {

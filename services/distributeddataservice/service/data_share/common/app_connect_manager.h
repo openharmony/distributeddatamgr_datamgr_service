@@ -13,26 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef DATASHARESERVICE_GET_DATA_STRAGETY_H
-#define DATASHARESERVICE_GET_DATA_STRAGETY_H
+#ifndef DATASHARESERVICE_APP_CONNECT_MANAGER_H
+#define DATASHARESERVICE_APP_CONNECT_MANAGER_H
 
-#include <shared_mutex>
+#include <memory>
+#include <string>
 
-#include "data_proxy_observer.h"
-#include "datashare_template.h"
-#include "published_data.h"
-#include "seq_strategy.h"
+#include "block_data.h"
+#include "concurrent_map.h"
 
 namespace OHOS::DataShare {
-class GetDataStrategy final {
+class AppConnectManager {
 public:
-    Data Execute(std::shared_ptr<Context> context);
+    static bool Wait(const std::string &bundleName, int maxWaitTime, std::function<bool()> connect,
+        std::function<void()> disconnect);
+    static void Notify(const std::string &bundleName);
 
 private:
-    SeqStrategy &GetStrategy();
-    std::mutex mutex_;
-    SeqStrategy strategies_;
-    bool CheckPermission(std::shared_ptr<Context> context, const std::string &key);
+    static ConcurrentMap<std::string, BlockData<bool> *> blockCache_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H

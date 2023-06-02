@@ -16,7 +16,7 @@
 #include "kvdb_exporter.h"
 
 #include "backup_manager.h"
-#include "directory_manager.h"
+#include "directory/directory_manager.h"
 #include "log_print.h"
 #include "reporter.h"
 #include "store_cache.h"
