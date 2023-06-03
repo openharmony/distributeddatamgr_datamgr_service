@@ -20,8 +20,8 @@
 #include "log_print.h"
 
 namespace OHOS::DistributedRdb {
-RdbStoreObserverImpl::RdbStoreObserverImpl(RdbServiceImpl* owner, pid_t pid)
-    : pid_(pid), owner_(owner)
+RdbStoreObserverImpl::RdbStoreObserverImpl(RdbServiceImpl* owner, pid_t pid, uint32_t tokenId)
+    : pid_(pid), tokenId_(tokenId), owner_(owner)
 {
     ZLOGI("construct");
 }
@@ -35,7 +35,7 @@ void RdbStoreObserverImpl::OnChange(const DistributedDB::StoreChangedData &data)
 {
     ZLOGI("enter");
     if (owner_ != nullptr) {
-        owner_->OnDataChange(pid_, data);
+        owner_->OnDataChange(pid_, tokenId_, data);
     }
 }
 } // namespace OHOS::DistributedRdb

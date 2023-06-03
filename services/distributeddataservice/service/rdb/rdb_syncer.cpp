@@ -22,19 +22,13 @@
 #include "checker/checker_manager.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
-#include "directory/directory_manager.h"
-#include "kvstore_utils.h"
 #include "log_print.h"
-#include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "metadata/store_meta_data.h"
+#include "rdb_query.h"
 #include "rdb_result_set_impl.h"
-#include "types.h"
-#include "utils/constant.h"
-#include "utils/converter.h"
+#include "store/general_store.h"
 #include "types_export.h"
-
-using OHOS::DistributedKv::KvStoreUtils;
+#include "utils/anonymous.h"
 using OHOS::DistributedKv::AccountDelegate;
 using namespace OHOS::Security::AccessToken;
 using namespace OHOS::DistributedData;
@@ -169,11 +163,11 @@ int32_t RdbSyncer::InitDBDelegate(const StoreMetaData &meta)
         }
         option.observer = observer_;
         std::string fileName = meta.dataDir;
-        ZLOGI("path=%{public}s storeId=%{public}s", fileName.c_str(), meta.storeId.c_str());
+        ZLOGI("path=%{public}s storeId=%{public}s", fileName.c_str(), Anonymous::Change(meta.storeId).c_str());
         auto status = manager_->OpenStore(fileName, meta.storeId, option, delegate_);
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("open store failed, path=%{public}s storeId=%{public}s status=%{public}d",
-                fileName.c_str(), meta.storeId.c_str(), status);
+                fileName.c_str(), Anonymous::Change(meta.storeId).c_str(), status);
             return RDB_ERROR;
         }
         ZLOGI("open store success");
@@ -182,10 +176,10 @@ int32_t RdbSyncer::InitDBDelegate(const StoreMetaData &meta)
     return RDB_OK;
 }
 
-int32_t RdbSyncer::GetInstIndex(uint32_t tokenId, const std::string &bundleName)
+std::pair<int32_t, int32_t> RdbSyncer::GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName)
 {
     if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
-        return 0;
+        return { 0, 0 };
     }
 
     HapTokenInfo tokenInfo;
@@ -194,9 +188,9 @@ int32_t RdbSyncer::GetInstIndex(uint32_t tokenId, const std::string &bundleName)
     if (errCode != RET_SUCCESS) {
         ZLOGE("GetHapTokenInfo error:%{public}d, tokenId:0x%{public}x appId:%{public}s", errCode, tokenId,
             bundleName.c_str());
-        return -1;
+        return { -1, -1 };
     }
-    return tokenInfo.instIndex;
+    return { tokenInfo.instIndex, tokenInfo.userID };
 }
 
 DistributedDB::RelationalStoreDelegate* RdbSyncer::GetDelegate()
@@ -205,7 +199,7 @@ DistributedDB::RelationalStoreDelegate* RdbSyncer::GetDelegate()
     return delegate_;
 }
 
-int32_t RdbSyncer::SetDistributedTables(const std::vector<std::string> &tables)
+int32_t RdbSyncer::SetDistributedTables(const std::vector<std::string> &tables, int32_t type)
 {
     auto* delegate = GetDelegate();
     if (delegate == nullptr) {
@@ -215,7 +209,7 @@ int32_t RdbSyncer::SetDistributedTables(const std::vector<std::string> &tables)
 
     for (const auto& table : tables) {
         ZLOGI("%{public}s", table.c_str());
-        auto dBStatus = delegate->CreateDistributedTable(table);
+        auto dBStatus = delegate->CreateDistributedTable(table, static_cast<DistributedDB::TableSyncType>(type));
         if (dBStatus != DistributedDB::DBStatus::OK) {
             ZLOGE("create distributed table failed, table:%{public}s, err:%{public}d", table.c_str(), dBStatus);
             return RDB_ERROR;
@@ -234,7 +228,7 @@ std::vector<std::string> RdbSyncer::GetConnectDevices()
     }
     ZLOGI("size=%{public}u", static_cast<uint32_t>(devices.size()));
     for (const auto& device: devices) {
-        ZLOGI("%{public}s", KvStoreUtils::ToBeAnonymous(device).c_str());
+        ZLOGI("%{public}s", Anonymous::Change(device).c_str());
     }
     return devices;
 }
@@ -245,19 +239,18 @@ std::vector<std::string> RdbSyncer::NetworkIdToUUID(const std::vector<std::strin
     for (const auto& networkId : networkIds) {
         auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(networkId);
         if (uuid.empty()) {
-            ZLOGE("%{public}s failed", KvStoreUtils::ToBeAnonymous(networkId).c_str());
+            ZLOGE("%{public}s failed", Anonymous::Change(networkId).c_str());
             continue;
         }
         uuids.push_back(uuid);
-        ZLOGI("%{public}s <--> %{public}s", KvStoreUtils::ToBeAnonymous(networkId).c_str(),
-              KvStoreUtils::ToBeAnonymous(uuid).c_str());
+        ZLOGI("%{public}s <--> %{public}s", Anonymous::Change(networkId).c_str(), Anonymous::Change(uuid).c_str());
     }
     return uuids;
 }
 
-void RdbSyncer::HandleSyncStatus(const std::map<std::string, std::vector<DistributedDB::TableStatus>> &syncStatus,
-                                 SyncResult &result)
+Details RdbSyncer::HandleSyncStatus(const std::map<std::string, std::vector<DistributedDB::TableStatus>> &syncStatus)
 {
+    Details details;
     for (const auto& status : syncStatus) {
         auto res = DistributedDB::DBStatus::OK;
         for (const auto& tableStatus : status.second) {
@@ -272,8 +265,10 @@ void RdbSyncer::HandleSyncStatus(const std::map<std::string, std::vector<Distrib
             continue;
         }
         ZLOGI("%{public}.6s=%{public}d", uuid.c_str(), res);
-        result[uuid] = res;
+        details[uuid].progress = SYNC_FINISH;
+        details[uuid].code = int32_t(res);
     }
+    return details;
 }
 void RdbSyncer::EqualTo(const RdbPredicateOperation &operation, DistributedDB::Query &query)
 {
@@ -323,8 +318,12 @@ void RdbSyncer::Limit(const RdbPredicateOperation &operation, DistributedDB::Que
 
 DistributedDB::Query RdbSyncer::MakeQuery(const RdbPredicates &predicates)
 {
-    ZLOGI("table=%{public}s", predicates.table_.c_str());
-    auto query = DistributedDB::Query::Select(predicates.table_);
+    ZLOGI("table=%{public}zu", predicates.tables_.size());
+    auto query = predicates.tables_.size() == 1 ? DistributedDB::Query::Select(*predicates.tables_.begin())
+                                                : DistributedDB::Query::Select();
+    if (predicates.tables_.size() > 1) {
+        query.FromTable(predicates.tables_);
+    }
     for (const auto& operation : predicates.operations_) {
         if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
             HANDLES[operation.operator_](operation, query);
@@ -333,7 +332,7 @@ DistributedDB::Query RdbSyncer::MakeQuery(const RdbPredicates &predicates)
     return query;
 }
 
-int32_t RdbSyncer::DoSync(const SyncOption &option, const RdbPredicates &predicates, SyncResult &result)
+int32_t RdbSyncer::DoSync(const Option &option, const RdbPredicates &predicates, const AsyncDetail &async)
 {
     ZLOGI("enter");
     auto* delegate = GetDelegate();
@@ -342,44 +341,19 @@ int32_t RdbSyncer::DoSync(const SyncOption &option, const RdbPredicates &predica
         return RDB_ERROR;
     }
 
-    std::vector<std::string> devices;
-    if (predicates.devices_.empty()) {
-        devices = NetworkIdToUUID(GetConnectDevices());
-    } else {
-        devices = NetworkIdToUUID(predicates.devices_);
+    if (option.mode < DistributedData::GeneralStore::NEARBY_END) {
+        auto &networkIds = predicates.devices_;
+        auto devices = networkIds.empty() ? NetworkIdToUUID(GetConnectDevices()) : NetworkIdToUUID(networkIds);
+        return delegate->Sync(
+            devices, static_cast<DistributedDB::SyncMode>(option.mode), MakeQuery(predicates),
+            [async](const std::map<std::string, std::vector<DistributedDB::TableStatus>> &syncStatus) {
+                async(HandleSyncStatus(syncStatus));
+            },
+            option.isAsync);
+    } else if (option.mode < DistributedData::GeneralStore::CLOUD_END) {
+        return RDB_OK;
     }
-
-    ZLOGI("delegate sync");
-    return delegate->Sync(devices, static_cast<DistributedDB::SyncMode>(option.mode),
-                          MakeQuery(predicates), [&result] (const std::map<std::string,
-                          std::vector<DistributedDB::TableStatus>> &syncStatus) {
-                              HandleSyncStatus(syncStatus, result);
-                          }, true);
-}
-
-int32_t RdbSyncer::DoAsync(const SyncOption &option, const RdbPredicates &predicates, const SyncCallback& callback)
-{
-    auto* delegate = GetDelegate();
-    if (delegate == nullptr) {
-        ZLOGE("delegate is nullptr");
-        return RDB_ERROR;
-    }
-
-    std::vector<std::string> devices;
-    if (predicates.devices_.empty()) {
-        devices = NetworkIdToUUID(GetConnectDevices());
-    } else {
-        devices = NetworkIdToUUID(predicates.devices_);
-    }
-
-    ZLOGI("delegate sync");
-    return delegate->Sync(devices, static_cast<DistributedDB::SyncMode>(option.mode),
-                          MakeQuery(predicates), [callback] (const std::map<std::string,
-                          std::vector<DistributedDB::TableStatus>> &syncStatus) {
-                              SyncResult result;
-                              HandleSyncStatus(syncStatus, result);
-                              callback(result);
-                          }, false);
+    return RDB_OK;
 }
 
 int32_t RdbSyncer::RemoteQuery(const std::string& device, const std::string& sql,
@@ -417,7 +391,7 @@ int32_t RdbSyncer::RemoveDeviceData()
     }
     DistributedDB::DBStatus status = delegate->RemoveDeviceData();
     if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("DistributedDB RemoveDeviceData failed, status is  %{public}d.", status);
+        ZLOGE("DistributedDB RemoveDeviceData failed, status is %{public}d.", status);
         return RDB_ERROR;
     }
     return RDB_OK;

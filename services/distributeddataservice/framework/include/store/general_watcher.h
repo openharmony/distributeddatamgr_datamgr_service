@@ -21,24 +21,33 @@
 namespace OHOS::DistributedData {
 class GeneralWatcher {
 public:
-    enum Origin : int32_t {
-        ORIGIN_CLOUD,
-        ORIGIN_LOCAL,
-        ORIGIN_REMOTE,
-        ORIGIN_ALL,
-        ORIGIN_BUTT,
+    struct Origin {
+        enum OriginType : int32_t {
+            ORIGIN_LOCAL,
+            ORIGIN_NEARBY,
+            ORIGIN_CLOUD,
+            ORIGIN_ALL,
+            ORIGIN_BUTT,
+        };
+        int32_t origin = ORIGIN_BUTT;
+        // origin is ORIGIN_LOCAL, the id is empty
+        // origin is ORIGIN_NEARBY, the id is networkId;
+        // origin is ORIGIN_CLOUD, the id is the cloud account id
+        std::vector<std::string> id;
+        std::string store;
     };
-
     enum ChangeOp : int32_t {
         OP_INSERT,
         OP_UPDATE,
         OP_DELETE,
         OP_BUTT,
     };
-
+    // PK primary key
+    using PRIValue = std::variant<std::monostate, std::string, int64_t>;
+    using PRIFields = std::map<std::string, std::string>;
+    using ChangeInfo = std::map<std::string, std::vector<PRIValue>[OP_BUTT]>;
     virtual ~GeneralWatcher() = default;
-    virtual int32_t OnChange(Origin origin, const std::string &id) = 0;
-    virtual int32_t OnChange(Origin origin, const std::string &id, const std::vector<VBucket> &values) = 0;
+    virtual int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) = 0;
 };
 }
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_WATCHER_H

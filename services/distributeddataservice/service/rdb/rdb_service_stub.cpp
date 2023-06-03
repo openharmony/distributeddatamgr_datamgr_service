@@ -94,16 +94,16 @@ int32_t RdbServiceStub::OnRemoteSetDistributedTables(MessageParcel &data, Messag
 int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    SyncOption option {};
+    Option option {};
     RdbPredicates predicates;
     if (!ITypesUtil::Unmarshal(data, param, option, predicates)) {
-        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s tables:%{public}s", param.bundleName_.c_str(),
-            param.storeName_.c_str(), predicates.table_.c_str());
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s tables:%{public}zu", param.bundleName_.c_str(),
+            param.storeName_.c_str(), predicates.tables_.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    SyncResult result;
-    auto status = DoSync(param, option, predicates, result);
+    Details result = {};
+    auto status = Sync(param, option, predicates, [&result](Details &&details) { result = std::move(details); });
     if (!ITypesUtil::Marshal(reply, status, result)) {
         ZLOGE("Marshal status:0x%{public}x result size:%{public}zu", status, result.size());
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -114,16 +114,15 @@ int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply
 int32_t RdbServiceStub::OnRemoteDoAsync(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    uint32_t seqNum;
-    SyncOption option {};
+    Option option {};
     RdbPredicates predicates;
-    if (!ITypesUtil::Unmarshal(data, param, seqNum, option, predicates)) {
+    if (!ITypesUtil::Unmarshal(data, param, option, predicates)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s seqNum:%{public}u tables:%{public}s",
-            param.bundleName_.c_str(), param.storeName_.c_str(), seqNum, predicates.table_.c_str());
+            param.bundleName_.c_str(), param.storeName_.c_str(), option.seqNum,
+            (*(predicates.tables_.begin())).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-
-    auto status = DoAsync(param, seqNum, option, predicates);
+    auto status = Sync(param, option, predicates, nullptr);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -141,7 +140,7 @@ int32_t RdbServiceStub::OnRemoteDoSubscribe(MessageParcel &data, MessageParcel &
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    auto status = DoSubscribe(param, option);
+    auto status = Subscribe(param, option, nullptr);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -152,13 +151,14 @@ int32_t RdbServiceStub::OnRemoteDoSubscribe(MessageParcel &data, MessageParcel &
 int32_t RdbServiceStub::OnRemoteDoUnSubscribe(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
+    SubscribeOption option;
     if (!ITypesUtil::Unmarshal(data, param)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
             param.storeName_.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    auto status = DoUnSubscribe(param);
+    auto status = UnSubscribe(param, option, nullptr);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;

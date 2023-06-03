@@ -25,6 +25,8 @@ enum GeneralError : int32_t {
     E_NOT_SUPPORT,
     E_ALREADY_CONSUMED,
     E_ALREADY_CLOSED,
+    E_UNOPENED,
+    E_RETRY_TIMEOUT,
     E_BUTT,
 };
 }

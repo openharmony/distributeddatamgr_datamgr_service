@@ -27,7 +27,7 @@ RdbNotifierProxy::~RdbNotifierProxy() noexcept
     ZLOGI("destroy");
 }
 
-int32_t RdbNotifierProxy::OnComplete(uint32_t seqNum, const SyncResult &result)
+int32_t RdbNotifierProxy::OnComplete(uint32_t seqNum, Details &&result)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(GetDescriptor())) {

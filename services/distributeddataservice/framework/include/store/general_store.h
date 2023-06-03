@@ -18,7 +18,6 @@
 #include <functional>
 #include <memory>
 
-#include "cloud/schema_meta.h"
 #include "store/cursor.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
@@ -29,9 +28,21 @@ struct Database;
 class GeneralStore {
 public:
     using Watcher = GeneralWatcher;
-    using AsyncDetail = std::function<void(ProgressDetails details)>;
-    using AsyncStatus = std::function<void(std::map<std::string, std::map<std::string, int32_t>>)>;
+    using DetailAsync = GenAsync;
     using Devices = std::vector<std::string>;
+    enum SyncMode {
+        NEARBY_BEGIN,
+        NEARBY_PUSH = NEARBY_BEGIN,
+        NEARBY_PULL,
+        NEARBY_PULL_PUSH,
+        NEARBY_END,
+        CLOUD_BEGIN = NEARBY_END,
+        CLOUD_TIME_FIRST = CLOUD_BEGIN,
+        CLOUD_NATIVE_FIRST,
+        CLOUD_ClOUD_FIRST,
+        CLOUD_END,
+        MODE_BUTT = CLOUD_END,
+    };
 
     struct BindInfo {
         BindInfo(std::shared_ptr<CloudDB> db = nullptr, std::shared_ptr<AssetLoader> loader = nullptr)
@@ -57,9 +68,7 @@ public:
 
     virtual std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) = 0;
 
-    virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, AsyncDetail async, int32_t wait) = 0;
-
-    virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, AsyncStatus async, int32_t wait) = 0;
+    virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) = 0;
 
     virtual int32_t Watch(int32_t origin, Watcher &watcher) = 0;
 

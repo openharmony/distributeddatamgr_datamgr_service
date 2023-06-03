@@ -27,24 +27,6 @@ public:
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedRdb.IRdbService");
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
-    int32_t Sync(const RdbSyncerParam& param, const SyncOption& option,
-                 const RdbPredicates& predicates, const SyncCallback& callback) override
-    {
-        return 0;
-    }
-
-    int32_t Subscribe(const RdbSyncerParam& param, const SubscribeOption& option,
-                      RdbStoreObserver *observer) override
-    {
-        return 0;
-    }
-
-    int32_t UnSubscribe(const RdbSyncerParam& param, const SubscribeOption& option,
-                        RdbStoreObserver *observer) override
-    {
-        return 0;
-    }
-
 private:
     static bool CheckInterfaceToken(MessageParcel& data);
 

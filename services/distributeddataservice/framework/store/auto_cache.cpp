@@ -147,14 +147,14 @@ AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, 
 {
     time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
     if (store_ != nullptr) {
-        store_->Watch(ORIGIN_ALL, *this);
+        store_->Watch(Origin::ORIGIN_ALL, *this);
     }
 }
 
 AutoCache::Delegate::~Delegate()
 {
     if (store_ != nullptr) {
-        store_->Unwatch(ORIGIN_ALL, *this);
+        store_->Unwatch(Origin::ORIGIN_ALL, *this);
         store_->Close();
         store_ = nullptr;
     }
@@ -175,7 +175,7 @@ bool AutoCache::Delegate::Close()
 {
     std::unique_lock<decltype(mutex_)> lock(mutex_);
     if (store_ != nullptr) {
-        store_->Unwatch(ORIGIN_ALL, *this);
+        store_->Unwatch(Origin::ORIGIN_ALL, *this);
         auto status = store_->Close();
         if (status == Error::E_BUSY) {
             return false;
@@ -196,34 +196,20 @@ int32_t AutoCache::Delegate::GetUser() const
     return user_;
 }
 
-int32_t AutoCache::Delegate::OnChange(Origin origin, const std::string &id)
+int32_t AutoCache::Delegate::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)
 {
     Watchers watchers;
     {
         std::unique_lock<decltype(mutex_)> lock(mutex_);
         watchers = watchers_;
     }
-    for (auto watcher : watchers) {
+    size_t remain = watchers.size();
+    for (auto &watcher : watchers) {
+        remain--;
         if (watcher == nullptr) {
             continue;
         }
-        watcher->OnChange(origin, id);
-    }
-    return Error::E_OK;
-}
-
-int32_t AutoCache::Delegate::OnChange(Origin origin, const std::string &id, const std::vector<VBucket> &values)
-{
-    Watchers watchers;
-    {
-        std::unique_lock<decltype(mutex_)> lock(mutex_);
-        watchers = watchers_;
-    }
-    for (auto watcher : watchers) {
-        if (watcher == nullptr) {
-            continue;
-        }
-        watcher->OnChange(origin, id, values);
+        watcher->OnChange(origin, primaryFields, (remain != 0) ? ChangeInfo(values) : std::move(values));
     }
     return Error::E_OK;
 }

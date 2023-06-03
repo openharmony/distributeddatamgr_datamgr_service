@@ -16,28 +16,43 @@
 #define LOG_TAG "RdbWatcher"
 
 #include "rdb_watcher.h"
-#include "log_print.h"
+
 #include "error/general_error.h"
+#include "log_print.h"
 
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
-using Err = DistributedData::GeneralError;
-RdbWatcher::RdbWatcher(RdbServiceImpl *rdbService, uint32_t tokenId, const std::string &storeName)
-    : rdbService_(rdbService), tokenId_(tokenId), storeName_(storeName)
+using Error = DistributedData::GeneralError;
+RdbWatcher::RdbWatcher()
 {
 }
 
-int32_t RdbWatcher::OnChange(Origin origin, const std::string &id)
+int32_t RdbWatcher::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)
 {
-    if (rdbService_ == nullptr) {
-        return Err::E_ERROR;
+    auto notifier = GetNotifier();
+    if (notifier == nullptr) {
+        return E_NOT_INIT;
     }
-    rdbService_->OnChange(tokenId_, storeName_);
-    return Err::E_OK;
+    DistributedRdb::Origin rdbOrigin;
+    rdbOrigin.origin = origin.origin;
+    rdbOrigin.id = origin.id;
+    rdbOrigin.store = origin.store;
+    // notifier OnChange()
+    return E_OK;
 }
 
-int32_t RdbWatcher::OnChange(Origin origin, const std::string &id, const std::vector<VBucket> &values)
+sptr<RdbNotifierProxy> RdbWatcher::GetNotifier() const
 {
-    return Err::E_NOT_SUPPORT;
+    std::shared_lock<decltype(mutex_)> lock(mutex_);
+    return notifier_;
+}
+
+void RdbWatcher::SetNotifier(sptr<RdbNotifierProxy> notifier)
+{
+    std::unique_lock<decltype(mutex_)> lock(mutex_);
+    if (notifier_ == notifier) {
+        return;
+    }
+    notifier_ = notifier;
 }
 } // namespace OHOS::DistributedRdb
