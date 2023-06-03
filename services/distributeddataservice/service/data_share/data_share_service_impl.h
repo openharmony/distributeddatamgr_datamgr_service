@@ -22,8 +22,13 @@
 #include "data_share_service_stub.h"
 #include "datashare_template.h"
 #include "db_delegate.h"
+#include "delete_strategy.h"
 #include "get_data_strategy.h"
+#include "insert_strategy.h"
 #include "publish_strategy.h"
+#include "query_strategy.h"
+#include "subscribe_strategy.h"
+#include "update_strategy.h"
 #include "uri_utils.h"
 #include "visibility.h"
 
@@ -60,6 +65,7 @@ public:
     void OnConnectDone() override;
     int32_t OnBind(const BindInfo &binderInfo) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+    int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId) override;
 
 private:
     class Factory {
@@ -74,6 +80,11 @@ private:
     static constexpr int32_t ERROR = -1;
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
+    SubscribeStrategy subscribeStrategy_;
+    DeleteStrategy deleteStrategy_;
+    InsertStrategy insertStrategy_;
+    QueryStrategy queryStrategy_;
+    UpdateStrategy updateStrategy_;
     BindInfo binderInfo_;
 };
 } // namespace OHOS::DataShare

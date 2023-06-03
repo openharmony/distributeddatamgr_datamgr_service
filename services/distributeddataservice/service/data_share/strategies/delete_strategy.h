@@ -24,10 +24,12 @@
 namespace OHOS::DataShare {
 class DeleteStrategy final {
 public:
-    static int64_t Execute(std::shared_ptr<Context> context, const DataSharePredicates &predicate);
+    int64_t Execute(std::shared_ptr<Context> context, const DataSharePredicates &predicate);
 
 private:
-    static Strategy *GetStrategy();
+    SeqStrategy &GetStrategy();
+    std::mutex mutex_;
+    SeqStrategy strategies_;
 };
 } // namespace OHOS::DataShare
 #endif

@@ -29,13 +29,13 @@ std::shared_ptr<DataShareResultSet> QueryStrategy::Execute(
     std::shared_ptr<Context> context, const DataSharePredicates &predicates,
     const std::vector<std::string> &columns, int &errCode)
 {
-    auto preProcess = GetStrategy();
-    if (preProcess == nullptr) {
+    auto &preProcess = GetStrategy();
+    if (preProcess.IsEmpty()) {
         ZLOGE("get strategy fail, maybe memory not enough");
         return nullptr;
     }
     context->isRead = true;
-    if (!(*preProcess)(context)) {
+    if (!preProcess(context)) {
         errCode = context->errCode;
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return nullptr;
@@ -48,13 +48,11 @@ std::shared_ptr<DataShareResultSet> QueryStrategy::Execute(
     return delegate->Query(context->calledTableName, predicates, columns, errCode);
 }
 
-Strategy *QueryStrategy::GetStrategy()
+SeqStrategy &QueryStrategy::GetStrategy()
 {
-    static std::mutex mutex;
-    static SeqStrategy strategies;
-    std::lock_guard<decltype(mutex)> lock(mutex);
-    if (!strategies.IsEmpty()) {
-        return &strategies;
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (!strategies_.IsEmpty()) {
+        return strategies_;
     }
     std::initializer_list<Strategy *> list = {
         new (std::nothrow)LoadConfigCommonStrategy(),
@@ -63,13 +61,13 @@ Strategy *QueryStrategy::GetStrategy()
         new (std::nothrow)LoadConfigDataInfoStrategy(),
         new (std::nothrow)ProcessSingleAppUserCrossStrategy()
     };
-    auto ret = strategies.Init(list);
+    auto ret = strategies_.Init(list);
     if (!ret) {
         std::for_each(list.begin(), list.end(), [](Strategy *item) {
             delete item;
         });
-        return nullptr;
+        return strategies_;
     }
-    return &strategies;
+    return strategies_;
 }
 } // namespace OHOS::DataShare

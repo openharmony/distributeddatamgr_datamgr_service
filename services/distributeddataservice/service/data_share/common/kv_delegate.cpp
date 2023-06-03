@@ -227,6 +227,7 @@ int32_t KvDelegate::GetBatch(const std::string &collectionName, const std::strin
     GRD_FreeResultSet(resultSet);
     return E_OK;
 }
+
 KvDelegate::KvDelegate(const std::string &path, const std::shared_ptr<ExecutorPool> &executors)
     : path_(path), executors_(executors)
 {

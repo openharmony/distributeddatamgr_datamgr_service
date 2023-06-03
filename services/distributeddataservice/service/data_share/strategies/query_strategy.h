@@ -24,11 +24,13 @@
 namespace OHOS::DataShare {
 class QueryStrategy final {
 public:
-    static std::shared_ptr<DataShareResultSet> Execute(std::shared_ptr<Context> context,
+    std::shared_ptr<DataShareResultSet> Execute(std::shared_ptr<Context> context,
         const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode);
 
 private:
-    static Strategy *GetStrategy();
+    SeqStrategy &GetStrategy();
+    std::mutex mutex_;
+    SeqStrategy strategies_;
 };
 } // namespace OHOS::DataShare
 #endif
