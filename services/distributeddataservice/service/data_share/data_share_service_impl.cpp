@@ -390,6 +390,6 @@ int32_t DataShareServiceImpl::OnAppUninstall(
     const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
 {
     ZLOGI("%{public}s uninstalled", bundleName.c_str());
-	return EOK;
+    return EOK;
 }
 } // namespace OHOS::DataShare
