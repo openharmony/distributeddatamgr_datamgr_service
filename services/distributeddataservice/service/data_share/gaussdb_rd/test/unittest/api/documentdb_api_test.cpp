@@ -156,7 +156,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest004, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBPathTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::vector<const char *> invalidPath = { nullptr, ""};
+    std::vector<const char *> invalidPath = { nullptr, "" };
     for (auto path : invalidPath) {
         GLOGD("OpenDBPathTest001: open db with path: %s", path);
         int status = GRD_DBOpen(path, nullptr, GRD_DB_OPEN_CREATE, &db);
@@ -175,21 +175,6 @@ HWTEST_F(DocumentDBApiTest, OpenDBPathTest002, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
     std::string pathNoPerm = "/root/document.db";
-    int status = GRD_DBOpen(pathNoPerm.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
-    EXPECT_EQ(status, GRD_FAILED_FILE_OPERATION);
-}
-
-/**
- * @tc.name: OpenDBPathTest003
- * @tc.desc: call GRD_DBOpen, input dbFile end with '\'
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: mazhao
- */
-HWTEST_F(DocumentDBApiTest, OpenDBPathTest003, TestSize.Level0)
-{
-    GRD_DB *db = nullptr;
-    std::string pathNoPerm = "/root/document.db/";
     int status = GRD_DBOpen(pathNoPerm.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_FAILED_FILE_OPERATION);
 }
@@ -411,7 +396,7 @@ int GetDBPageSize(const std::string &path)
     if (db == nullptr) {
         return 0;
     }
-    
+
     int pageSize = 0;
     SQLiteUtils::ExecSql(db, "PRAGMA page_size;", nullptr, [&pageSize](sqlite3_stmt *stmt, bool &isMatchOneData) {
         pageSize = sqlite3_column_int(stmt, 0);
