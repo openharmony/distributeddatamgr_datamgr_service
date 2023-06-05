@@ -37,12 +37,12 @@ public:
     int Commit() override;
     int Rollback() override;
 
-    int PutData(const std::string &collName, Key &key, const Value &value) override;
-    int InsertData(const std::string &collName, Key &key, const Value &value) override;
+    int PutData(const std::string &collName, Key &key, const Value &value, bool isNeedAddKeyType = true) override;
+    int InsertData(const std::string &collName, Key &key, const Value &value, bool isNeedAddKeyType = true) override;
     int GetDataByKey(const std::string &collName, Key &key, Value &value) const override;
     int GetDataById(const std::string &collName, Key &key, Value &value) const override;
     int GetDataByFilter(const std::string &collName, Key &key, const JsonObject &filterObj,
-    std::pair<std::string, std::string> &values, int isIdExist) const override;
+        std::pair<std::string, std::string> &values, int isIdExist) const override;
     int DelData(const std::string &collName, Key &key) override;
 
     int CreateCollection(const std::string &name, const std::string &option, bool ignoreExists) override;

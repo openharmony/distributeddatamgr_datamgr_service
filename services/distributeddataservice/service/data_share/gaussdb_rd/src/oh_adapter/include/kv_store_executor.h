@@ -29,12 +29,12 @@ public:
     virtual int Commit() = 0;
     virtual int Rollback() = 0;
 
-    virtual int PutData(const std::string &collName, Key &key, const Value &value) = 0;
-    virtual int InsertData(const std::string &collName, Key &key, const Value &value) = 0;
+    virtual int PutData(const std::string &collName, Key &key, const Value &value, bool isNeedAddKeyType = true) = 0;
+    virtual int InsertData(const std::string &collName, Key &key, const Value &value, bool isNeedAddKeyType = true) = 0;
     virtual int GetDataByKey(const std::string &collName, Key &key, Value &value) const = 0;
     virtual int GetDataById(const std::string &collName, Key &key, Value &value) const = 0;
     virtual int GetDataByFilter(const std::string &collName, Key &key, const JsonObject &filterObj,
-    std::pair<std::string, std::string> &values, int isIdExist) const = 0;
+        std::pair<std::string, std::string> &values, int isIdExist) const = 0;
     virtual int DelData(const std::string &collName, Key &key) = 0;
 
     virtual int CreateCollection(const std::string &name, const std::string &option, bool ignoreExists) = 0;

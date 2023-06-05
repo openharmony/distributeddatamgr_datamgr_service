@@ -75,7 +75,6 @@ int SqliteStoreExecutorImpl::GetDBConfig(std::string &config)
 {
     std::string dbConfigKeyStr = "DB_CONFIG";
     Key dbConfigKey = { dbConfigKeyStr.begin(), dbConfigKeyStr.end() };
-    dbConfigKey.push_back(KEY_TYPE); // Push back Key Tpye, make it become really Key.
     Value dbConfigVal;
     int errCode = GetDataByKey("grd_meta", dbConfigKey, dbConfigVal);
     config.assign(dbConfigVal.begin(), dbConfigVal.end());
@@ -87,7 +86,7 @@ int SqliteStoreExecutorImpl::SetDBConfig(const std::string &config)
     std::string dbConfigKeyStr = "DB_CONFIG";
     Key dbConfigKey = { dbConfigKeyStr.begin(), dbConfigKeyStr.end() };
     Value dbConfigVal = { config.begin(), config.end() };
-    return PutData("grd_meta", dbConfigKey, dbConfigVal);
+    return PutData("grd_meta", dbConfigKey, dbConfigVal, false); // dont need to add Key type;
 }
 
 int SqliteStoreExecutorImpl::StartTransaction()
@@ -105,12 +104,14 @@ int SqliteStoreExecutorImpl::Rollback()
     return SQLiteUtils::RollbackTransaction(dbHandle_);
 }
 
-int SqliteStoreExecutorImpl::PutData(const std::string &collName, Key &key, const Value &value)
+int SqliteStoreExecutorImpl::PutData(const std::string &collName, Key &key, const Value &value, bool isNeedAddKeyType)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
     }
-    key.push_back(KEY_TYPE); // Stitching ID type
+    if (isNeedAddKeyType) {
+        key.push_back(KEY_TYPE); // Stitching ID type
+    }
     std::string sql = "INSERT OR REPLACE INTO '" + collName + "' VALUES (?,?);";
     int errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
@@ -131,12 +132,15 @@ int SqliteStoreExecutorImpl::PutData(const std::string &collName, Key &key, cons
     return E_OK;
 }
 
-int SqliteStoreExecutorImpl::InsertData(const std::string &collName, Key &key, const Value &value)
+int SqliteStoreExecutorImpl::InsertData(const std::string &collName, Key &key, const Value &value,
+    bool isNeedAddKeyType)
 {
     if (dbHandle_ == nullptr) {
         return -E_ERROR;
     }
-    key.push_back(KEY_TYPE);
+    if (isNeedAddKeyType) {
+        key.push_back(KEY_TYPE); // Stitching ID type
+    }
     std::string sql = "INSERT INTO '" + collName + "' VALUES (?,?);";
     int errCode = SQLiteUtils::ExecSql(
         dbHandle_, sql,
@@ -395,7 +399,6 @@ int SqliteStoreExecutorImpl::GetCollectionOption(const std::string &name, std::s
 {
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
     Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
-    collOptKey.push_back(KEY_TYPE); // Push back Key Tpye, make it become really Key.
     Value collOptVal;
     int errCode = GetDataByKey("grd_meta", collOptKey, collOptVal);
     option.assign(collOptVal.begin(), collOptVal.end());
@@ -407,7 +410,7 @@ int SqliteStoreExecutorImpl::SetCollectionOption(const std::string &name, const 
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
     Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
     Value collOptVal = { option.begin(), option.end() };
-    return PutData("grd_meta", collOptKey, collOptVal);
+    return PutData("grd_meta", collOptKey, collOptVal, false); // dont need to add key type;
 }
 
 int SqliteStoreExecutorImpl::CleanCollectionOption(const std::string &name)
