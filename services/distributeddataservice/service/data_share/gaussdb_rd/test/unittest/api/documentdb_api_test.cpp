@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 
 #include "doc_errno.h"
+#include "doc_limit.h"
 #include "documentdb_test_utils.h"
 #include "grd_base/grd_db_api.h"
 #include "grd_base/grd_error.h"
@@ -28,7 +29,6 @@ using namespace testing::ext;
 using namespace DocumentDBUnitTest;
 
 namespace {
-const int MAX_DB_CONFIG_LEN = 1024 * 1024;
 class DocumentDBApiTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
