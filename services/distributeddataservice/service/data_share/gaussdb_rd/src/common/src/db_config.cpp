@@ -56,6 +56,10 @@ bool CheckAndGetDBConfig(const JsonObject &config, const std::string &name, cons
 
     int errCode = E_OK;
     ValueObject configValue = config.GetObjectByPath(configField, errCode);
+    if (errCode != E_OK) {
+        GLOGE("Cant find config Value");
+        return errCode;
+    }
     if (configValue.GetValueType() != ValueObject::ValueType::VALUE_NUMBER) {
         GLOGE("Check DB config failed, not found or type of %s is not NUMBER.", name.c_str());
         return false;

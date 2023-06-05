@@ -78,15 +78,6 @@ int Collection::InsertDocument(const std::string &id, const std::string &documen
     return executor_->InsertData(name_, key, valSet);
 }
 
-bool Collection::FindDocument()
-{
-    if (executor_ == nullptr) {
-        return -E_INNER_ERROR;
-    }
-    int errCode = E_OK;
-    return executor_->IsCollectionExists(name_, errCode);
-}
-
 int Collection::GetDocumentById(Key &key, Value &document) const
 {
     if (executor_ == nullptr) {

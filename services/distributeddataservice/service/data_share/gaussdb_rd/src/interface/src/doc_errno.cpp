@@ -21,8 +21,8 @@ namespace DocumentDB {
 int GetErrorCategory(int errCode)
 {
     int categoryCode = errCode % 1000000; // 1000000: mod to get last 6 digits
-    categoryCode /= 1000;                 // 1000: deviced to remove first 3 digits
-    categoryCode *= 1000;                 // 1000: multiply to pad the output
+    categoryCode /= 1000; // 1000: deviced to remove first 3 digits
+    categoryCode *= 1000; // 1000: multiply to pad the output
     return categoryCode;
 }
 
@@ -63,6 +63,8 @@ int TransferDocErr(int err)
             return GetErrorCategory(GRD_FAILED_MEMORY_ALLOCATE);
         case -E_INVALID_FILE_FORMAT:
             return GetErrorCategory(GRD_INVALID_FILE_FORMAT);
+        case -E_FAILED_FILE_OPERATION:
+            return GetErrorCategory(GRD_FAILED_FILE_OPERATION);
         case -E_INNER_ERROR:
         default:
             return GetErrorCategory(GRD_INNER_ERR);

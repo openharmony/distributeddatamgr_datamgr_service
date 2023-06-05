@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 
 #include "doc_errno.h"
+#include "doc_limit.h"
 #include "documentdb_test_utils.h"
 #include "grd_base/grd_db_api.h"
 #include "grd_base/grd_error.h"
@@ -156,7 +157,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBTest004, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBPathTest001, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::vector<const char *> invalidPath = { nullptr, "", "/a/b/c/" };
+    std::vector<const char *> invalidPath = { nullptr, "" };
     for (auto path : invalidPath) {
         GLOGD("OpenDBPathTest001: open db with path: %s", path);
         int status = GRD_DBOpen(path, nullptr, GRD_DB_OPEN_CREATE, &db);
@@ -177,6 +178,21 @@ HWTEST_F(DocumentDBApiTest, OpenDBPathTest002, TestSize.Level0)
     std::string pathNoPerm = "/root/document.db";
     int status = GRD_DBOpen(pathNoPerm.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_FAILED_FILE_OPERATION);
+}
+
+/**
+ * @tc.name: OpenDBPathTest004
+ * @tc.desc: call GRD_DBOpen, input dbFile as existed menu
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: mazhao
+ */
+HWTEST_F(DocumentDBApiTest, OpenDBPathTest004, TestSize.Level0)
+{
+    GRD_DB *db = nullptr;
+    std::string pathNoPerm = "../build";
+    int status = GRD_DBOpen(pathNoPerm.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(status, GRD_INVALID_ARGS);
 }
 
 /**
@@ -227,10 +243,39 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest003, TestSize.Level0)
 }
 
 /**
+ * @tc.name: OpenDBConfigTest004
+ * @tc.desc: call GRD_DBOpen, input the value's length of configStr is 1024K
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: mazhao
+ */
+
+HWTEST_F(DocumentDBApiTest, OpenDBConfigTest004, TestSize.Level0)
+{
+    /**
+     * @tc.steps:step1. input the value's length of configStr is 1024 k(not contained '\0')
+    */
+    GRD_DB *db = nullptr;
+    std::string part1 = "{ \"pageSize\": \" ";
+    std::string part2 = "\" }";
+    std::string path = "./document.db";
+    std::string val = string(MAX_DB_CONFIG_LEN - part1.size() - part2.size(), 'k');
+    std::string configStr = part1 + val + part2;
+    int ret = GRD_DBOpen(path.c_str(), configStr.c_str(), GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(ret, GRD_OVER_LIMIT);
+    /**
+     * @tc.steps:step2. input the value's length of configStr is 1024 k(contained '\0')
+    */
+    std::string val2 = string(MAX_DB_CONFIG_LEN - part1.size() - part2.size() - 1, 'k');
+    std::string configStr2 = part1 + val2 + part2 + "\0";
+    ret = GRD_DBOpen(path.c_str(), configStr2.c_str(), GRD_DB_OPEN_CREATE, &db);
+    EXPECT_EQ(ret, GRD_INVALID_ARGS);
+}
+
+/**
  * @tc.name: OpenDBConfigTest005
  * @tc.desc: Verify open db with different configStr connection when first connection not close,
  *           return GRD_INVALID_CONFIG_VALUE.
- * @tc.type: FUNC
  * @tc.require:
  * @tc.author: mazhao
  */
@@ -256,7 +301,6 @@ HWTEST_F(DocumentDBApiTest, OpenDBConfigTest005, TestSize.Level0)
 
     ASSERT_EQ(GRD_DBClose(db1, GRD_DB_CLOSE), GRD_OK);
 }
-
 /**
  * @tc.name: OpenDBConfigMaxConnNumTest001
  * @tc.desc: Test open document db with invalid config item maxConnNum

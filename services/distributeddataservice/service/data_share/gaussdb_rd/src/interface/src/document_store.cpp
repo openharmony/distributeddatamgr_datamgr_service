@@ -156,8 +156,8 @@ int UpdateArgsCheck(const std::string &collection, const std::string &filter, co
         GLOGE("update Parsed failed");
         return errCode;
     }
-    std::vector<std::vector<std::string>> allPath;
     if (update != "{}") {
+        std::vector<std::vector<std::string>> allPath;
         allPath = JsonCommon::ParsePath(updateObj, errCode);
         if (errCode != E_OK) {
             GLOGE("updateObj ParsePath failed");
@@ -330,6 +330,10 @@ int GetUpsertRePlaceData(ResultSet &resultSet, JsonObject &documentObj, bool isR
     int errCode = resultSet.GetValue(valStr);
     if (errCode != E_OK || isReplace) {
         valStr = documentObj.Print(); // If cant not find data, insert it.
+        if (valStr.length() >= JSON_LENS_MAX) {
+            GLOGE("document's length is too long");
+            return -E_OVER_LIMIT;
+        }
         return E_OK;
     }
     if (errCode != E_OK && errCode != -E_NOT_FOUND) {
@@ -367,7 +371,7 @@ int InsertIdToDocument(ResultSet &resultSet, JsonObject &filterObj, JsonObject &
     }
     if (isIdExist) {
         docId = idValue.GetStringValue();
-        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode);
+        JsonObject idObj = filterObj.GetObjectItem(KEY_ID, errCode); // this errCode will always be E_OK.
         documentObj.InsertItemObject(0, idObj);
     } else {
         if (ret == E_OK) { // E_OK means find data.
@@ -404,7 +408,7 @@ int DocumentStore::UpsertDataIntoDB(std::shared_ptr<QueryContext> &context, Json
     }
     errCode = InsertIdToDocument(resultSet, filterObj, documentObj, docId);
     if (errCode != E_OK) {
-        return errCode;
+        goto END;
     }
     errCode = CheckUpsertConflict(resultSet, filterObj, docId, coll, isDataExist);
     // There are only three return values, the two other situation can continue to move forward.
@@ -434,8 +438,8 @@ END:
 int UpsertDocumentFormatCheck(const std::string &document, JsonObject &documentObj)
 {
     int errCode = E_OK;
-    std::vector<std::vector<std::string>> allPath;
     if (document != "{}") {
+        std::vector<std::vector<std::string>> allPath;
         allPath = JsonCommon::ParsePath(documentObj, errCode);
         if (errCode != E_OK) {
             return errCode;
@@ -627,7 +631,7 @@ Collection DocumentStore::GetCollection(std::string &collectionName)
     return Collection(collectionName, executor_);
 }
 
-int JudgeViewType(size_t &index, ValueObject &leafItem, bool &viewType)
+int JudgeViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
 {
     switch (leafItem.GetValueType()) {
         case ValueObject::ValueType::VALUE_BOOL:
@@ -712,7 +716,7 @@ int FindArgsCheck(const std::string &collection, const std::string &filter, cons
     return errCode;
 }
 
-int FindProjectionInit(const std::string &projection, std::shared_ptr<QueryContext> &context)
+int FindProjectionInit(const std::string &projection, const std::shared_ptr<QueryContext> &context)
 {
     int errCode = E_OK;
     std::vector<std::vector<std::string>> allPath;
@@ -780,8 +784,7 @@ END:
 int DocumentStore::FindDocument(const std::string &collection, const std::string &filter,
     const std::string &projection, uint32_t flags, GRD_ResultSet *grdResultSet)
 {
-    int errCode = E_OK;
-    errCode = FindArgsCheck(collection, filter, projection, flags);
+    int errCode = FindArgsCheck(collection, filter, projection, flags);
     if (errCode != E_OK) {
         GLOGE("delete arg is illegal");
         return errCode;
@@ -878,7 +881,8 @@ int DocumentStore::Rollback()
 bool DocumentStore::IsCollectionExists(const std::string &collectionName, int &errCode)
 {
     if (executor_ == nullptr) {
-        return -E_INNER_ERROR;
+        errCode = -E_INNER_ERROR;
+        return false;
     }
     return executor_->IsCollectionExists(collectionName, errCode);
 }
