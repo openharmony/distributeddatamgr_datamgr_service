@@ -369,7 +369,8 @@ void PublishedDataSubscriberManager::LinkToDeath(const PublishedDataKey &key,
     ZLOGD("link to death success, uri is %{public}s", DistributedData::Anonymous::Change(key.key).c_str());
 }
 
-void PublishedDataSubscriberManager::OnRemoteDied(const PublishedDataKey &key, sptr<IDataProxyPublishedDataObserver> observer)
+void PublishedDataSubscriberManager::OnRemoteDied(const PublishedDataKey &key,
+    sptr<IDataProxyPublishedDataObserver> observer)
 {
     publishedDataCache.ComputeIfPresent(key, [&observer, this](const auto &key, std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end(); ++it) {
