@@ -32,7 +32,6 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     // sa, userId is in uri, caller token id is from first caller tokenId
     if (context->currentUserId == 0) {
         URIUtils::GetInfoFromProxyURI(context->uri, context->currentUserId, context->callerTokenId);
-        ZLOGI("hanlu %{public}d", context->callerTokenId);
     }
     if (context->callerBundleName.empty()) {
         Security::AccessToken::HapTokenInfo tokenInfo;
@@ -41,7 +40,6 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
             ZLOGE("token:0x%{public}x, result:%{public}d", context->callerTokenId, result);
             return false;
         }
-		ZLOGI("hanlu %{public}s", tokenInfo.bundleName.c_str());
         context->callerBundleName = tokenInfo.bundleName;
     }
     FormatUri(context->uri);
