@@ -131,7 +131,7 @@ void RdbSubscriberManager::LinkToDeath(const Key &key, sptr<IDataProxyRdbObserve
             DistributedData::Anonymous::Change(key.uri).c_str());
         return;
     }
-    auto remote = observer->AsObject().GetRefPtr();
+    auto remote = observer->AsObject();
     if (!remote->AddDeathRecipient(deathRecipient)) {
         ZLOGE("add death recipient failed, uri is %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
         return;
@@ -361,7 +361,7 @@ void PublishedDataSubscriberManager::LinkToDeath(const PublishedDataKey &key,
             DistributedData::Anonymous::Change(key.key).c_str());
         return;
     }
-    auto remote = observer->AsObject().GetRefPtr();
+    auto remote = observer->AsObject();
     if (!remote->AddDeathRecipient(deathRecipient)) {
         ZLOGE("add death recipient failed, uri is %{public}s", DistributedData::Anonymous::Change(key.key).c_str());
         return;
