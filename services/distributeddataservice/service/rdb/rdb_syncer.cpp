@@ -353,6 +353,7 @@ int32_t RdbSyncer::DoSync(const Option &option, const RdbPredicates &predicates,
     } else if (option.mode < DistributedData::GeneralStore::CLOUD_END) {
         return RDB_OK;
     }
+    ZLOGI("delegate sync");
     return RDB_OK;
 }
 
