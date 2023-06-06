@@ -233,7 +233,11 @@ void RdbServiceImpl::OnDataChange(pid_t pid, uint32_t tokenId, const Distributed
     if (success && agent.notifier_ != nullptr && pid == agent.pid_) {
         std::string device = data.GetDataChangeDevice();
         auto networkId = DmAdapter::GetInstance().ToNetworkID(device);
-        agent.notifier_->OnChange(property.storeId, { networkId });
+        Origin origin;
+        origin.origin = Origin::ORIGIN_NEARBY;
+        origin.store = property.storeId;
+        origin.id.push_back(networkId);
+        agent.notifier_->OnChange(origin, {}, {});
     }
 }
 
@@ -445,7 +449,9 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
 {
     if (!option.isAsync) {
         auto [status, details] = DoSync(param, option, predicates);
-        async(std::move(details));
+        if (async != nullptr) {
+            async(std::move(details));
+        }
         return status;
     }
     return DoAsync(param, option, predicates);
