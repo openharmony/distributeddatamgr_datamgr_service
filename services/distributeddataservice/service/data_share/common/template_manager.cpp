@@ -176,7 +176,7 @@ int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const Templat
         };
         executorPool->Execute(task);
         value.emplace_back(observer, context->callerTokenId);
-		LinkToDeath(key, observer);
+        LinkToDeath(key, observer);
         if (GetEnableObserverCount(key) == 1) {
             SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
         }
