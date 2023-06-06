@@ -74,7 +74,7 @@ private:
     class ObserverNodeRecipient : public IRemoteObject::DeathRecipient {
     public:
         ObserverNodeRecipient(RdbSubscriberManager *owner, const Key &key,
-            sptr<IDataProxyRdbObserver> observer) : owner_(owner), key_(key), observer_(observer){};
+            sptr<IDataProxyRdbObserver> observer) : owner_(owner), key_(key), observer_(observer) {};
 
         void OnRemoteDied(const wptr<IRemoteObject> &object) override
         {
@@ -133,7 +133,7 @@ private:
     class ObserverNodeRecipient : public IRemoteObject::DeathRecipient {
     public:
         ObserverNodeRecipient(PublishedDataSubscriberManager *owner, const PublishedDataKey &key,
-            sptr<IDataProxyPublishedDataObserver> observer) : owner_(owner), key_(key), observer_(observer){};
+            sptr<IDataProxyPublishedDataObserver> observer) : owner_(owner), key_(key), observer_(observer) {};
 
         void OnRemoteDied(const wptr<IRemoteObject> &object) override
         {
