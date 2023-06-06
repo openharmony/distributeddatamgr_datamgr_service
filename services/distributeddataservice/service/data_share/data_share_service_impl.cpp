@@ -30,6 +30,7 @@
 #include "scheduler_manager.h"
 #include "template_manager.h"
 #include "utils/anonymous.h"
+#include "template_data.h"
 
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
@@ -112,7 +113,7 @@ int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t 
     TemplateId tpltId;
     tpltId.subscriberId_ = subscriberId;
     if (!GetCallerBundleName(tpltId.bundleName_)) {
-        ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("get bundleName error, %{public}s", tpltId.bundleName_.c_str());
         return ERROR;
     }
     return TemplateManager::GetInstance().AddTemplate(uri, tpltId, tplt);
@@ -123,7 +124,7 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
     TemplateId tpltId;
     tpltId.subscriberId_ = subscriberId;
     if (!GetCallerBundleName(tpltId.bundleName_)) {
-        ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("get bundleName error, %{public}s", tpltId.bundleName_.c_str());
         return ERROR;
     }
     return TemplateManager::GetInstance().DelTemplate(uri, tpltId);
@@ -150,7 +151,11 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
     std::vector<OperationResult> results;
     std::vector<PublishedDataKey> publishedData;
     std::string callerBundleName;
-    GetCallerBundleName(callerBundleName);
+    if (!GetCallerBundleName(callerBundleName)) {
+        ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
+        return results;
+    }
+    PublishedData::ClearAging();
     for (const auto &item : data.datas_) {
         auto context = std::make_shared<Context>(item.key_);
         context->version = data.version_;
@@ -171,7 +176,10 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
 Data DataShareServiceImpl::GetData(const std::string &bundleNameOfProvider)
 {
     std::string callerBundleName;
-    GetCallerBundleName(callerBundleName);
+    if (!GetCallerBundleName(callerBundleName)) {
+        ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
+        return Data();
+    }
     auto context = std::make_shared<Context>();
     context->callerBundleName = callerBundleName;
     context->calledBundleName = bundleNameOfProvider;
@@ -237,7 +245,10 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
 {
     std::vector<OperationResult> results;
     std::string callerBundleName;
-    GetCallerBundleName(callerBundleName);
+    if (!GetCallerBundleName(callerBundleName)) {
+        ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
+        return results;
+    }
     std::vector<PublishedDataKey> publishedKeys;
     int32_t result;
     for (const auto &uri : uris) {
@@ -264,7 +275,10 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribePublishedData(cons
 {
     std::vector<OperationResult> results;
     std::string callerBundleName;
-    GetCallerBundleName(callerBundleName);
+    if (!GetCallerBundleName(callerBundleName)) {
+        ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
+        return results;
+    }
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
@@ -284,7 +298,10 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
 {
     std::vector<OperationResult> results;
     std::string callerBundleName;
-    GetCallerBundleName(callerBundleName);
+    if (!GetCallerBundleName(callerBundleName)) {
+        ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
+        return results;
+    }
     std::vector<PublishedDataKey> publishedKeys;
     int32_t result;
     for (const auto &uri : uris) {
@@ -310,7 +327,10 @@ std::vector<OperationResult> DataShareServiceImpl::DisablePubSubs(const std::vec
 {
     std::vector<OperationResult> results;
     std::string callerBundleName;
-    GetCallerBundleName(callerBundleName);
+    if (!GetCallerBundleName(callerBundleName)) {
+        ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
+        return results;
+    }
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
@@ -382,7 +402,10 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
 void DataShareServiceImpl::OnConnectDone()
 {
     std::string callerBundleName;
-    GetCallerBundleName(callerBundleName);
+    if (!GetCallerBundleName(callerBundleName)) {
+        ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
+        return;
+    }
     AppConnectManager::Notify(callerBundleName);
 }
 
@@ -390,6 +413,9 @@ int32_t DataShareServiceImpl::OnAppUninstall(
     const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
 {
     ZLOGI("%{public}s uninstalled", bundleName.c_str());
+    PublishedData::Delete(bundleName);
+    PublishedData::ClearAging();
+    TemplateData::Delete(bundleName);
     return EOK;
 }
 } // namespace OHOS::DataShare

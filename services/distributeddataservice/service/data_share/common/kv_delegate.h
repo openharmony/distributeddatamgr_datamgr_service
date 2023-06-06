@@ -29,7 +29,7 @@ public:
     KvDelegate(const std::string &path, const std::shared_ptr<ExecutorPool> &executors);
     ~KvDelegate() override;
     int32_t Upsert(const std::string &collectionName, const KvData &value) override;
-    int32_t DeleteById(const std::string &collectionName, const Id &id) override;
+    int32_t Delete(const std::string &collectionName, const std::string &filter) override;
     int32_t Get(const std::string &collectionName, const Id &id, std::string &value) override;
 
     int32_t Get(const std::string &collectionName, const std::string &filter, const std::string &projection,
@@ -41,9 +41,8 @@ private:
     bool Init();
     bool GetVersion(const std::string &collectionName, const std::string &filter, int &version);
     int64_t Upsert(const std::string &collectionName, const std::string &filter, const std::string &value);
-    int64_t Delete(const std::string &collectionName, const std::string &filter);
     void Flush();
-    std::mutex mutex_;
+    std::recursive_mutex mutex_;
     std::string path_;
     GRD_DB *db_ = nullptr;
     bool isInitDone_ = false;
