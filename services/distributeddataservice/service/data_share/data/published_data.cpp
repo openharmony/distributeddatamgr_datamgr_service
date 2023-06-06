@@ -136,7 +136,6 @@ void PublishedData::Delete(const std::string &bundleName)
         ZLOGE("db open failed");
         return;
     }
-    std::vector<std::string> queryResults;
     int32_t status =
         delegate->Delete(KvDBDelegate::DATA_TABLE, "{\"bundleName\":\"" + bundleName + "\"}");
     if (status != E_OK) {
@@ -146,6 +145,7 @@ void PublishedData::Delete(const std::string &bundleName)
 
 void PublishedData::ClearAging()
 {
+    // published data is valid in 240 hours
     auto lastValidData =
         std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(240));
     auto lastValidTime = std::chrono::system_clock::to_time_t(lastValidData);
@@ -163,6 +163,7 @@ void PublishedData::ClearAging()
         ZLOGE("db GetBatch failed %{public}d", status);
         return;
     }
+    int32_t agingSize = 0;
     for (auto &result : queryResults) {
         PublishedDataNode data;
         if (!PublishedDataNode::Unmarshall(result, data)) {
@@ -171,13 +172,14 @@ void PublishedData::ClearAging()
         }
 
         if (data.timestamp < lastValidTime) {
-            ZLOGI("aging %{public}s %{public}s", data.key.c_str(), data.bundleName.c_str());
             status = delegate->Delete(
                 KvDBDelegate::DATA_TABLE, Id(PublishedData::GenId(data.key, data.bundleName, data.subscriberId)));
             if (status != E_OK) {
                 ZLOGE("db Delete failed, %{public}s %{public}s", data.key.c_str(), data.bundleName.c_str());
             }
+            agingSize++;
         }
+        ZLOGI("aging count %{public}d", agingSize);
     }
     return;
 }

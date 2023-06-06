@@ -257,9 +257,9 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
         result = subscribeStrategy_.Execute(
-            context, [&subscriberId, &observer, &callerBundleName, &context]() -> bool {
+            context, [&subscriberId, &observer, &context]() -> bool {
                 return PublishedDataSubscriberManager::GetInstance().AddSubscriber(
-                    context->uri, callerBundleName, subscriberId, observer, context->callerTokenId);
+                    context->uri, context->callerBundleName, subscriberId, observer, context->callerTokenId);
             });
         results.emplace_back(uri, result);
         if (result == E_OK) {
@@ -285,9 +285,9 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribePublishedData(cons
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
         results.emplace_back(
-            uri, subscribeStrategy_.Execute(context, [&subscriberId, &callerBundleName, &context]() -> bool {
+            uri, subscribeStrategy_.Execute(context, [&subscriberId, &context]() -> bool {
                 return PublishedDataSubscriberManager::GetInstance().DelSubscriber(
-                    context->uri, callerBundleName, subscriberId, context->callerTokenId);
+                    context->uri, context->callerBundleName, subscriberId, context->callerTokenId);
             }));
     }
     return results;
