@@ -26,6 +26,8 @@ public:
         FEATURE_INIT = EVT_CLOUD,
         GET_SCHEMA,
         DATA_CHANGE,
+        LOCAL_CHANGE,
+        CLOUD_SYNC,
         CLOUD_BUTT
     };
 
@@ -37,13 +39,11 @@ public:
         int32_t user = 0;
     };
 
-    CloudEvent(int32_t evtId, StoreInfo storeInfo, const std::string &featureName = "relational_store");
+    CloudEvent(int32_t evtId, StoreInfo storeInfo);
     ~CloudEvent() = default;
-    const std::string& GetFeatureName() const;
     const StoreInfo& GetStoreInfo() const;
 
 private:
-    std::string featureName_;
     StoreInfo storeInfo_;
 };
 } // namespace OHOS::DistributedData

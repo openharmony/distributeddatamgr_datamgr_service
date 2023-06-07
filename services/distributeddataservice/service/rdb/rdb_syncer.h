@@ -19,18 +19,20 @@
 #include <mutex>
 #include <string>
 
+#include "iremote_object.h"
+#include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
+#include "rdb_service.h"
 #include "rdb_store_observer_impl.h"
 #include "rdb_types.h"
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
-#include "metadata/secret_key_meta_data.h"
-#include "iremote_object.h"
 namespace OHOS::DistributedRdb {
 class RdbSyncer {
 public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
+    using Option = DistributedRdb::RdbService::Option;
     RdbSyncer(const RdbSyncerParam& param, RdbStoreObserverImpl* observer);
     ~RdbSyncer() noexcept;
 
@@ -46,11 +48,9 @@ public:
 
     std::string GetIdentifier() const;
 
-    int32_t SetDistributedTables(const std::vector<std::string>& tables);
+    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type);
 
-    int32_t DoSync(const SyncOption& option, const RdbPredicates& predicates, SyncResult& result);
-
-    int32_t DoAsync(const SyncOption& option, const RdbPredicates& predicates, const SyncCallback& callback);
+    int32_t DoSync(const Option &option, const RdbPredicates &predicates, const AsyncDetail &async);
 
     int32_t RemoteQuery(const std::string& device, const std::string& sql,
                         const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet);
@@ -59,7 +59,7 @@ public:
 
     static std::string RemoveSuffix(const std::string& name);
 
-    static int32_t GetInstIndex(uint32_t tokenId, const std::string &bundleName);
+    static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
     static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
@@ -89,8 +89,7 @@ private:
     static std::vector<std::string> GetConnectDevices();
     static std::vector<std::string> NetworkIdToUUID(const std::vector<std::string>& networkIds);
 
-    static void HandleSyncStatus(const std::map<std::string, std::vector<DistributedDB::TableStatus>>& SyncStatus,
-                                 SyncResult& result);
+    static Details HandleSyncStatus(const std::map<std::string, std::vector<DistributedDB::TableStatus>> &SyncStatus);
     static void EqualTo(const RdbPredicateOperation& operation, DistributedDB::Query& query);
     static void NotEqualTo(const RdbPredicateOperation& operation, DistributedDB::Query& query);
     static void And(const RdbPredicateOperation& operation, DistributedDB::Query& query);

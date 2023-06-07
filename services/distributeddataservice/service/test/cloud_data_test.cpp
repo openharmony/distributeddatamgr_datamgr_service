@@ -170,7 +170,7 @@ void CloudDataTest::TearDown() {}
 
 /**
 * @tc.name: GetSchema
-* @tc.desc: GetSchema from cloud.
+* @tc.desc: GetSchema from cloud when no schema in meta.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: ht
@@ -186,7 +186,7 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
     ASSERT_FALSE(
         MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));
     CloudEvent::StoreInfo storeInfo { OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
-    auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo), "test_service");
+    auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo));
     EventCenter::GetInstance().PostEvent(move(event));
     ASSERT_TRUE(
         MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));

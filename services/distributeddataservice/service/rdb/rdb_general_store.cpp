@@ -148,12 +148,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuer
     return std::shared_ptr<Cursor>();
 }
 
-int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, AsyncDetail async, int32_t wait)
-{
-    return GeneralError::E_NOT_SUPPORT;
-}
-
-int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, AsyncStatus async, int32_t wait)
+int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait)
 {
     return GeneralError::E_NOT_SUPPORT;
 }

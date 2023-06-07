@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_VALUE_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_VALUE_H
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -24,28 +25,28 @@
 #include "error/general_error.h"
 #include "traits.h"
 namespace OHOS::DistributedData {
-enum Progress {
+enum GenProgress {
     SYNC_BEGIN,
     SYNC_IN_PROGRESS,
     SYNC_FINISH,
 };
 
-struct Statistic {
+struct GenStatistic {
     int32_t total;
     int32_t success;
     int32_t failed;
     int32_t untreated;
 };
 
-struct TableDetails {
-    Statistic upload;
-    Statistic download;
+struct GenTableDetail {
+    GenStatistic upload;
+    GenStatistic download;
 };
 
-struct ProgressDetails {
+struct GenProgressDetail {
     int32_t progress;
     int32_t code;
-    std::map<std::string, TableDetails> details;
+    std::map<std::string, GenTableDetail> details;
 };
 
 struct Asset {
@@ -61,6 +62,7 @@ struct Asset {
 struct GenQuery {
     virtual ~GenQuery() = default;
     virtual bool IsEqual(uint64_t tid) = 0;
+    virtual std::vector<std::string> GetTables() = 0;
 
     template<typename T>
     int32_t QueryInterface(T *&query)
@@ -79,7 +81,8 @@ using Value = std::variant<std::monostate, int64_t, double, std::string, bool, B
 using Values = std::vector<Value>;
 using VBucket = std::map<std::string, Value>;
 using VBuckets = std::vector<VBucket>;
-
+using GenDetails = std::map<std::string, GenProgressDetail>;
+using GenAsync = std::function<void(const GenDetails &details)>;
 template<typename T>
 inline constexpr size_t TYPE_INDEX = Traits::variant_index_of_v<T, Value>;
 

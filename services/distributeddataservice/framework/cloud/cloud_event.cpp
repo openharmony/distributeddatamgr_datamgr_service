@@ -16,14 +16,9 @@
 #include "cloud/cloud_event.h"
 
 namespace OHOS::DistributedData {
-CloudEvent::CloudEvent(int32_t evtId, CloudEvent::StoreInfo storeInfo, const std::string &featureName)
-    : Event(evtId), featureName_(featureName), storeInfo_(storeInfo)
+CloudEvent::CloudEvent(int32_t evtId, CloudEvent::StoreInfo storeInfo)
+    : Event(evtId), storeInfo_(std::move(storeInfo))
 {
-}
-
-const std::string& CloudEvent::GetFeatureName() const
-{
-    return featureName_;
 }
 
 const CloudEvent::StoreInfo& CloudEvent::GetStoreInfo() const
