@@ -349,7 +349,7 @@ int32_t RdbSyncer::DoSync(const Option &option, const RdbPredicates &predicates,
             [async](const std::map<std::string, std::vector<DistributedDB::TableStatus>> &syncStatus) {
                 async(HandleSyncStatus(syncStatus));
             },
-            option.isAsync);
+            !option.isAsync);
     } else if (option.mode < DistributedData::GeneralStore::CLOUD_END) {
         return RDB_OK;
     }
