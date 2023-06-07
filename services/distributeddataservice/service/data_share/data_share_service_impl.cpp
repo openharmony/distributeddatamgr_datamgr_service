@@ -378,24 +378,27 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
 
 int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    DistributedData::StoreMetaData saveMeta;
-    saveMeta.appType = "default";
-    saveMeta.storeId = "data_share_data_";
-    saveMeta.isAutoSync = false;
-    saveMeta.isBackup = false;
-    saveMeta.isEncrypt = false;
-    saveMeta.bundleName =  binderInfo_.selfName;
-    saveMeta.appId = binderInfo_.selfName;
-    saveMeta.user = user;
-    saveMeta.account = account;
-    saveMeta.tokenId = binderInfo_.selfTokenId;
-    saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
-    saveMeta.area = 1;
-    saveMeta.uid = IPCSkeleton::GetCallingUid();
-    saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
-    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    KvDBDelegate::GetInstance(true, saveMeta.dataDir, binderInfo_.executors);
+    ZLOGI("%{public}d OnUserChange %{public}d %{public}s", code, user.c_str());
+    if (code == static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
+        const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
+        DistributedData::StoreMetaData saveMeta;
+        saveMeta.appType = "default";
+        saveMeta.storeId = "data_share_data_";
+        saveMeta.isAutoSync = false;
+        saveMeta.isBackup = false;
+        saveMeta.isEncrypt = false;
+        saveMeta.bundleName =  binderInfo_.selfName;
+        saveMeta.appId = binderInfo_.selfName;
+        saveMeta.user = user;
+        saveMeta.account = account;
+        saveMeta.tokenId = binderInfo_.selfTokenId;
+        saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
+        saveMeta.area = 1;
+        saveMeta.uid = IPCSkeleton::GetCallingUid();
+        saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
+        saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
+        KvDBDelegate::GetInstance(true, saveMeta.dataDir, binderInfo_.executors);
+    }
     return EOK;
 }
 

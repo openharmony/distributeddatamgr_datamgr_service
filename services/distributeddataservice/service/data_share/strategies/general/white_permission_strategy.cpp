@@ -12,29 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "PermissionStrategy"
+#define LOG_TAG "WhitePermissionStrategy"
 
-#include "permission_strategy.h"
+#include "white_permission_strategy.h"
 
 #include "accesstoken_kit.h"
 #include "log_print.h"
 
 namespace OHOS::DataShare {
-bool PermissionStrategy::operator()(std::shared_ptr<Context> context)
+bool WhitePermissionStrategy::operator()(std::shared_ptr<Context> context)
 {
-    if (context->permission == "reject") {
-        ZLOGE("reject permission");
-        return false;
-    }
-    if (!context->isInWhite && !context->permission.empty()) {
-        int status =
-            Security::AccessToken::AccessTokenKit::VerifyAccessToken(context->callerTokenId, context->permission);
-        if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
-            ZLOGE("Verify permission denied! callerTokenId:%{public}u permission:%{public}s",
-                context->callerTokenId, context->permission.c_str());
-            return false;
+    for (const auto &permission : whitePermissions_) {
+        int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(context->callerTokenId, permission);
+        if (status == Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+            context->isInWhite = true;
+            return true;
         }
     }
     return true;
+}
+WhitePermissionStrategy::WhitePermissionStrategy(std::initializer_list<std::string> permissions)
+{
+    whitePermissions_.insert(whitePermissions_.end(), permissions.begin(), permissions.end());
 }
 } // namespace OHOS::DataShare

@@ -32,6 +32,7 @@ int32_t SubscribeStrategy::Execute(std::shared_ptr<Context> context, std::functi
         return -1;
     }
     context->isRead = true;
+    context->needAutoLoadCallerBundleName = true;
     if (!preProcess(context)) {
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return context->errCode;

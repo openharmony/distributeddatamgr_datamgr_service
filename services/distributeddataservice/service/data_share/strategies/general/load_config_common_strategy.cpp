@@ -33,7 +33,7 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     if (context->currentUserId == 0) {
         URIUtils::GetInfoFromProxyURI(context->uri, context->currentUserId, context->callerTokenId);
     }
-    if (context->callerBundleName.empty()) {
+    if (context->needAutoLoadCallerBundleName && context->callerBundleName.empty()) {
         Security::AccessToken::HapTokenInfo tokenInfo;
         auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(context->callerTokenId, tokenInfo);
         if (result != Security::AccessToken::RET_SUCCESS) {

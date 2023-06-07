@@ -64,6 +64,10 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
         ZLOGI("access private data, caller and called is same, go");
         return true;
     }
+    if (context->isInWhite) {
+        ZLOGI("access has white permission, go");
+        return true;
+    }
     context->errCode = E_URI_NOT_EXIST;
     ZLOGI("not find DataProperties! %{private}s is private", context->uri.c_str());
     return false;
