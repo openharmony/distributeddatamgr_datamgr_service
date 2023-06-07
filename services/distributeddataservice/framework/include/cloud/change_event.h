@@ -13,16 +13,18 @@
  * limitations under the License.
  */
 
-#include "rdb_query.h"
-namespace OHOS::DistributedRdb {
-using namespace DistributedData;
-bool RdbQuery::IsEqual(uint64_t tid)
-{
-    return tid == TYPE_ID;
-}
-
-std::vector<std::string> RdbQuery::GetTables()
-{
-    return {};
-}
-} // namespace OHOS::DistributedRdb
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CHANGE_EVENT_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CHANGE_EVENT_H
+#include "cloud/sync_event.h"
+#include "store/general_value.h"
+namespace OHOS::DistributedData {
+class API_EXPORT ChangeEvent : public SyncEvent {
+public:
+    ChangeEvent(StoreInfo storeInfo, EventInfo info)
+        : SyncEvent(LOCAL_CHANGE, std::move(storeInfo), std::move(info))
+    {
+    };
+    ~ChangeEvent() override = default;
+};
+} // namespace OHOS::DistributedData
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CHANGE_EVENT_H

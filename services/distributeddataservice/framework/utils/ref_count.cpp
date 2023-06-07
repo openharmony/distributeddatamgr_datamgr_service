@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "ref_count.h"
-namespace OHOS::DistributedKv {
+#include "utils/ref_count.h"
+namespace OHOS::DistributedData {
 RefCount::RefCount()
 {
 }

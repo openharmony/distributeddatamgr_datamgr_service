@@ -15,13 +15,15 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
+#include <atomic>
 #include <functional>
+#include "metadata/store_meta_data.h"
+#include "rdb_cloud.h"
+#include "rdb_store.h"
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
-
-#include "rdb_store.h"
 #include "store/general_store.h"
-#include "metadata/store_meta_data.h"
+#include "store/general_value.h"
 namespace OHOS::DistributedRdb {
 class RdbGeneralStore : public DistributedData::GeneralStore {
 public:
@@ -34,12 +36,11 @@ public:
     using StoreMetaData = DistributedData::StoreMetaData;
     using Database = DistributedData::Database;
     using RdbStore = OHOS::NativeRdb::RdbStore;
-    using RdbDelegate = DistributedDB::RelationalStoreDelegate;
-    using RdbManager = DistributedDB::RelationalStoreManager;
 
     explicit RdbGeneralStore(const StoreMetaData &metaData);
     ~RdbGeneralStore();
     int32_t Bind(const Database &database, BindInfo bindInfo) override;
+    bool IsBound() override;
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
     int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;
@@ -52,12 +53,35 @@ public:
     int32_t Close() override;
 
 private:
+    using RdbDelegate = DistributedDB::RelationalStoreDelegate;
+    using RdbManager = DistributedDB::RelationalStoreManager;
+    using SyncProcess = DistributedDB::SyncProcess;
+    using DBBriefCB = DistributedDB::SyncStatusCallback;
+    using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     static constexpr uint32_t ITERATE_TIMES = 10000;
+    class ObserverProxy : public DistributedDB::StoreObserver {
+    public:
+        using DBChangedIF = DistributedDB::StoreChangedData;
+        using DBChangedData = DistributedDB::ChangedData;
+        using DBOrigin = DistributedDB::Origin;
+        void OnChange(const DistributedDB::StoreChangedData &data) override;
+        void OnChange(DBOrigin origin, const std::string &originalId, DBChangedData &&data) override;
+        bool HasWatcher() const { return watcher_ == nullptr; };
+    private:
+        friend RdbGeneralStore;
+        Watcher *watcher_ = nullptr;
+        std::string storeId_;
+    };
+    DBBriefCB GetDBBriefCB(DetailAsync async);
+    DBProcessCB GetDBProcessCB(DetailAsync async);
 
+    ObserverProxy observer_;
     RdbManager manager_;
     RdbDelegate *delegate_ = nullptr;
     std::shared_ptr<RdbStore> store_;
+    std::shared_ptr<RdbCloud> rdbCloud_ {};
     BindInfo bindInfo_;
+    std::atomic<bool> isBound_ = false;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

@@ -324,7 +324,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
 }
 
 std::pair<int32_t, Details> RdbServiceImpl::DoSync(const RdbSyncerParam &param, const Option &option,
-    const RdbPredicates &pred)
+    const PredicatesMemo &pred)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
@@ -352,7 +352,7 @@ void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details 
     }
 }
 
-int32_t RdbServiceImpl::DoAsync(const RdbSyncerParam &param, const Option &option, const RdbPredicates &pred)
+int32_t RdbServiceImpl::DoAsync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &pred)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
@@ -448,7 +448,7 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
     return syncer->RemoteQuery(device, sql, selectionArgs, resultSet);
 }
 
-int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, const RdbPredicates &predicates,
+int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
                              const AsyncDetail &async)
 {
     if (!option.isAsync) {

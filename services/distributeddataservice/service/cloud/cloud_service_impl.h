@@ -17,12 +17,12 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_SERVICE_IMPL_H
 
 #include <mutex>
-#include "cloud_service_stub.h"
+#include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
 #include "cloud/schema_meta.h"
-#include "cloud/cloud_event.h"
 #include "cloud/subscription.h"
-
+#include "cloud_service_stub.h"
+#include "sync_manager.h"
 namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
 public:
@@ -39,7 +39,6 @@ public:
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
 
 private:
-    static const inline int USER_ID = 0;
     class Factory {
     public:
         Factory() noexcept;
@@ -53,26 +52,36 @@ private:
     using SchemaMeta = DistributedData::SchemaMeta;
     using Event = DistributedData::Event;
     using Subscription = DistributedData::Subscription;
+    using Work = bool (CloudServiceImpl::*)(int32_t);
+    using Tasks = std::vector<ExecutorPool::Task>;
+
+    enum AsyncWork : int32_t {
+        WORK_SUB = 0,
+        WORK_CLOUD_INFO_UPDATE,
+        WORK_SCHEMA_UPDATE,
+        WORK_BUTT,
+    };
 
     static constexpr int32_t RETRY_TIMES = 10;
     static constexpr int32_t RETRY_INTERVAL = 30;
     static constexpr int32_t EXPIRE_INTERVAL = 7 * 24; // 7 day
 
-    void UpdateCloudInfo(CloudInfo &cloudInfo);
-    void AddSchema(CloudInfo &cloudInfo);
+    bool UpdateCloudInfo(int32_t user);
+    bool UpdateSchema(int32_t user);
     SchemaMeta GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
-    StoreMetaData GetStoreMeta(int32_t userId, const std::string &bundleName, const std::string &storeName,
-        int32_t instanceId);
+    CloudInfo GetCloudInfo(int32_t userId);
     int32_t GetCloudInfo(uint32_t tokenId, const std::string &id, CloudInfo &cloudInfo);
     int32_t GetCloudInfoFromMeta(CloudInfo &cloudInfo);
     int32_t GetCloudInfoFromServer(CloudInfo &cloudInfo);
     int32_t GetAppSchema(int32_t user, const std::string &bundleName, SchemaMeta &schemaMeta);
-    void FeatureInit();
     void GetSchema(const Event &event);
-    ExecutorPool::Task GetCloudTask(int32_t retry, int32_t user);
-    void Execute(ExecutorPool::Task task);
-    bool DoSubscribe(const Subscription &sub);
+    Tasks GetCloudTask(int32_t retry, int32_t user, const std::initializer_list<AsyncWork> &works = {});
+    ExecutorPool::Task GenTask(int32_t retry, int32_t user, AsyncWork work);
+    void Execute(Tasks tasks);
+    bool DoSubscribe(int32_t user);
     std::shared_ptr<ExecutorPool> executor_;
+    SyncManager syncManager_;
+    static const Work HANDLERS[WORK_BUTT];
 };
 } // namespace OHOS::DistributedData
 

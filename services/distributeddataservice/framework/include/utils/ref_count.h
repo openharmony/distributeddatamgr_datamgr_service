@@ -18,7 +18,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
-namespace OHOS::DistributedKv {
+namespace OHOS::DistributedData {
 class RefCount final {
 public:
     RefCount();
@@ -27,7 +27,7 @@ public:
     RefCount(RefCount &&other) noexcept;
     RefCount &operator=(const RefCount &other);
     RefCount &operator=(RefCount &&other) noexcept;
-    operator bool() const;
+    operator bool () const;
 
 private:
     std::shared_ptr<const char> ref_;

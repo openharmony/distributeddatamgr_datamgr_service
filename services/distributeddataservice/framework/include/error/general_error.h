@@ -27,6 +27,7 @@ enum GeneralError : int32_t {
     E_ALREADY_CLOSED,
     E_UNOPENED,
     E_RETRY_TIMEOUT,
+    E_ALREADY_LOCKED,
     E_BUTT,
 };
 }

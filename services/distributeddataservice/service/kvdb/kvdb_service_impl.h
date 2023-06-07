@@ -26,12 +26,13 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
-#include "ref_count.h"
+#include "utils/ref_count.h"
 #include "store_cache.h"
 namespace OHOS::DistributedKv {
 class API_EXPORT KVDBServiceImpl final : public KVDBServiceStub {
 public:
     using DBLaunchParam = DistributedDB::AutoLaunchParam;
+    using RefCount = DistributedData::RefCount;
     API_EXPORT KVDBServiceImpl();
     virtual ~KVDBServiceImpl();
     Status GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds) override;
