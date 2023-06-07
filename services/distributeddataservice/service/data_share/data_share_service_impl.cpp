@@ -419,6 +419,7 @@ int32_t DataShareServiceImpl::OnAppUninstall(
     PublishedData::Delete(bundleName);
     PublishedData::ClearAging();
     TemplateData::Delete(bundleName);
+    RdbHelper::ClearCache();
     return EOK;
 }
 } // namespace OHOS::DataShare

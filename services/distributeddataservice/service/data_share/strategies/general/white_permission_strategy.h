@@ -20,7 +20,7 @@
 namespace OHOS::DataShare {
 class WhitePermissionStrategy final : public Strategy {
 public:
-    WhitePermissionStrategy(std::initializer_list<std::string> permissions);
+    explicit WhitePermissionStrategy(std::initializer_list<std::string> permissions);
     bool operator()(std::shared_ptr<Context> context) override;
 private:
     std::vector<std::string> whitePermissions_;

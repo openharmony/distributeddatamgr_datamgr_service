@@ -57,9 +57,10 @@ SeqStrategy &PublishStrategy::GetStrategy()
     if (!strategies_.IsEmpty()) {
         return strategies_;
     }
+    std::initializer_list<std::string> whitePermissions = { "ohos.permission.WRITE_APP_PUSH_DATA" };
     std::initializer_list<Strategy *> list = {
         new (std::nothrow) LoadConfigCommonStrategy(),
-        new (std::nothrow) WhitePermissionStrategy({"ohos.permission.WRITE_APP_PUSH_DATA"}),
+        new (std::nothrow) WhitePermissionStrategy(whitePermissions),
         new (std::nothrow) LoadConfigFromDataProxyNodeStrategy(),
         new (std::nothrow) PermissionStrategy()
     };
