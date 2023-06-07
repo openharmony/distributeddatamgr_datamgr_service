@@ -378,7 +378,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
 
 int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    ZLOGI("%{public}d OnUserChange %{public}d %{public}s", code, user.c_str());
+    ZLOGI("OnUserChange %{public}d %{public}s", code, user.c_str());
     if (code == static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
         DistributedData::StoreMetaData saveMeta;
