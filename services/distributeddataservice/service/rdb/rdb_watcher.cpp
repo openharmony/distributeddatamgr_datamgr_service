@@ -37,7 +37,7 @@ int32_t RdbWatcher::OnChange(const Origin &origin, const PRIFields &primaryField
     rdbOrigin.origin = origin.origin;
     rdbOrigin.id = origin.id;
     rdbOrigin.store = origin.store;
-    // notifier OnChange()
+    notifier->OnChange(rdbOrigin, primaryFields, std::move(values));
     return E_OK;
 }
 

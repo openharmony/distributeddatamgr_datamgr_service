@@ -22,13 +22,13 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedRdb {
+using Anonymous = DistributedData::Anonymous;
 int32_t RdbServiceStub::OnRemoteObtainDistributedTableName(MessageParcel &data, MessageParcel &reply)
 {
     std::string device;
     std::string table;
     if (!ITypesUtil::Unmarshal(data, device, table)) {
-        ZLOGE("Unmarshal device:%{public}s table:%{public}s", DistributedData::Anonymous::Change(device).c_str(),
-            table.c_str());
+        ZLOGE("Unmarshal device:%{public}s table:%{public}s", Anonymous::Change(device).c_str(), table.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
@@ -45,7 +45,7 @@ int32_t RdbServiceStub::OnGetSchema(MessageParcel &data, MessageParcel &reply)
     RdbSyncerParam param;
     if (!ITypesUtil::Unmarshal(data, param)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
-            param.storeName_.c_str());
+            Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto status = GetSchema(param);
@@ -62,7 +62,7 @@ int32_t RdbServiceStub::OnRemoteInitNotifier(MessageParcel &data, MessageParcel 
     sptr<IRemoteObject> notifier;
     if (!ITypesUtil::Unmarshal(data, param, notifier) || notifier == nullptr) {
         ZLOGE("Unmarshal bundleName:%{public}s storeName_:%{public}s notifier is nullptr:%{public}d",
-            param.bundleName_.c_str(), param.storeName_.c_str(), notifier == nullptr);
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), notifier == nullptr);
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto status = InitNotifier(param, notifier);
@@ -79,7 +79,7 @@ int32_t RdbServiceStub::OnRemoteSetDistributedTables(MessageParcel &data, Messag
     std::vector<std::string> tables;
     if (!ITypesUtil::Unmarshal(data, param, tables)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s tables size:%{public}zu",
-            param.bundleName_.c_str(), param.storeName_.c_str(), tables.size());
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), tables.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
@@ -98,7 +98,7 @@ int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply
     RdbPredicates predicates;
     if (!ITypesUtil::Unmarshal(data, param, option, predicates)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s tables:%{public}zu", param.bundleName_.c_str(),
-            param.storeName_.c_str(), predicates.tables_.size());
+            Anonymous::Change(param.storeName_).c_str(), predicates.tables_.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
@@ -117,9 +117,9 @@ int32_t RdbServiceStub::OnRemoteDoAsync(MessageParcel &data, MessageParcel &repl
     Option option {};
     RdbPredicates predicates;
     if (!ITypesUtil::Unmarshal(data, param, option, predicates)) {
-        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s seqNum:%{public}u tables:%{public}s",
-            param.bundleName_.c_str(), param.storeName_.c_str(), option.seqNum,
-            (*(predicates.tables_.begin())).c_str());
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s seqNum:%{public}u table:%{public}s",
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), option.seqNum,
+            predicates.tables_.empty() ? "null" : predicates.tables_.begin()->c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto status = Sync(param, option, predicates, nullptr);
@@ -136,7 +136,7 @@ int32_t RdbServiceStub::OnRemoteDoSubscribe(MessageParcel &data, MessageParcel &
     SubscribeOption option;
     if (!ITypesUtil::Unmarshal(data, param, option)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
-            param.storeName_.c_str());
+            Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
@@ -154,7 +154,7 @@ int32_t RdbServiceStub::OnRemoteDoUnSubscribe(MessageParcel &data, MessageParcel
     SubscribeOption option;
     if (!ITypesUtil::Unmarshal(data, param)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
-            param.storeName_.c_str());
+            Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
@@ -174,9 +174,9 @@ int32_t RdbServiceStub::OnRemoteDoRemoteQuery(MessageParcel& data, MessageParcel
     std::vector<std::string> selectionArgs;
     if (!ITypesUtil::Unmarshal(data, param, device, sql, selectionArgs)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s device:%{public}s sql:%{public}s "
-              "selectionArgs size:%{public}zu", param.bundleName_.c_str(), param.storeName_.c_str(),
-            DistributedData::Anonymous::Change(device).c_str(),
-            DistributedData::Anonymous::Change(sql).c_str(), selectionArgs.size());
+            "selectionArgs size:%{public}zu", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str(), Anonymous::Change(device).c_str(),
+            Anonymous::Change(sql).c_str(), selectionArgs.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 

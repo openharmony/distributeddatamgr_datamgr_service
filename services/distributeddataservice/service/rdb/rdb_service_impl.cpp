@@ -247,7 +247,7 @@ void RdbServiceImpl::SyncerTimeout(std::shared_ptr<RdbSyncer> syncer)
         return;
     }
     auto storeId = syncer->GetStoreId();
-    ZLOGI("%{public}s", storeId.c_str());
+    ZLOGI("%{public}s", Anonymous::Change(storeId).c_str());
     syncers_.ComputeIfPresent(syncer->GetPid(), [this, storeId](const auto& key, StoreSyncersType& syncers) {
         syncers.erase(storeId);
         syncerNum_--;
@@ -335,7 +335,11 @@ std::pair<int32_t, Details> RdbServiceImpl::DoSync(const RdbSyncerParam &param, 
         return {RDB_ERROR, {}};
     }
     Details details = {};
-    auto status = syncer->DoSync(option, pred, [&details](auto &&result) mutable { details = std::move(result); });
+    auto status = syncer->DoSync(option, pred, [&details, &param](auto &&result) mutable {
+        ZLOGD("Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        details = std::move(result);
+    });
     return { status, std::move(details) };
 }
 
