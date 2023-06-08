@@ -16,12 +16,13 @@
 #ifndef KV_DATASERVICE_CONSTANT_H
 #define KV_DATASERVICE_CONSTANT_H
 
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <algorithm>
 #include <cctype>
 #include <locale>
 #include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <type_traits>
 #include <vector>
 #include "visibility.h"
 
@@ -41,6 +42,15 @@ public:
 
     API_EXPORT static bool NotEqual(bool first, bool second);
 
+    template<typename T>
+    inline static constexpr bool is_pod = (std::is_standard_layout_v<T> && std::is_trivial_v<T>);
+
+    template<typename T, typename S>
+    API_EXPORT inline static std::enable_if_t<is_pod<T> && is_pod<S>, bool> Copy(T *tag, const S *src)
+    {
+        return DCopy(reinterpret_cast<uint8_t *>(tag), sizeof(T), reinterpret_cast<const uint8_t *>(src), sizeof(S));
+    };
+
     // delete left bland in s by reference.
     template<typename T>
     static void LeftTrim(T &s);
@@ -53,19 +63,14 @@ public:
     template<typename T>
     static void Trim(T &s);
 
-    // delete left bland in s by reference, not change raw string.
-    template<typename T>
-    static T LeftTrimCopy(T s);
-
-    // delete right bland in s by reference, not change raw string.
-    template<typename T>
-    static T RightTrimCopy(T s);
-
     // delete both left and right bland in s by reference, not change raw string.
     template<typename T>
     static T TrimCopy(T s);
 
     API_EXPORT static constexpr const char *KEY_SEPARATOR = "###";
+
+private:
+    API_EXPORT static bool DCopy(uint8_t *tag, size_t tagLen, const uint8_t *src, size_t srcLen);
 };
 
 // trim from start (in place)
@@ -88,22 +93,6 @@ void Constant::Trim(T &s)
 {
     LeftTrim(s);
     RightTrim(s);
-}
-
-// trim from start (copying)
-template<typename T>
-T Constant::LeftTrimCopy(T s)
-{
-    LeftTrim(s);
-    return s;
-}
-
-// trim from end (copying)
-template<typename T>
-T Constant::RightTrimCopy(T s)
-{
-    RightTrim(s);
-    return s;
 }
 
 // trim from both ends (copying)

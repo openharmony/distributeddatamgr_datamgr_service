@@ -27,6 +27,7 @@ config("module_private_config") {
     "../crypto/include/",
     "../directory/include/",
     "../matrix/include/",
+    "../rdb/",
     "../../framework/include/",
   ]
 
@@ -71,6 +72,7 @@ ohos_unittest("ValueProxyTest") {
   module_out_path = module_output_path
   sources = [
     "value_proxy_test.cpp",
+    "../rdb/value_proxy.cpp",
   ]
 
   include_dirs =
@@ -89,6 +91,7 @@ ohos_unittest("ValueProxyTest") {
 
   deps = [
     "${kv_store_distributeddb_path}:distributeddb",
+    "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb:native_rdb_static",
     "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",

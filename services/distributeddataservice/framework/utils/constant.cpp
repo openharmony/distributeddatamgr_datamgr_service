@@ -20,6 +20,7 @@
 #include <fstream>
 #include <unistd.h>
 #include "log_print.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace DistributedData {
@@ -84,6 +85,15 @@ bool Constant::IsBackground(pid_t pid)
         }
     }
     return false;
+}
+
+bool Constant::DCopy(uint8_t *tag, size_t tagLen, const uint8_t *src, size_t srcLen)
+{
+    if (tagLen != srcLen || tag == nullptr || src == nullptr) {
+        return false;
+    }
+    auto ret = memcpy_s(tag, tagLen, src, srcLen);
+    return ret == EOK;
 }
 } // namespace DistributedData
 } // namespace OHOS

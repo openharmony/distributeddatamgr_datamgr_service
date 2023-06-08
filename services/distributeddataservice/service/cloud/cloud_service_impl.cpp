@@ -165,23 +165,6 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
     if (!cloudInfo.apps[bundleName].cloudSwitch) {
         return CLOUD_DISABLE_SWITCH;
     }
-    auto key = cloudInfo.GetSchemaKey(bundleName);
-    SchemaMeta schemaMeta;
-    if (!MetaDataManager::GetInstance().LoadMeta(key, schemaMeta, true)) {
-        ZLOGE("bundleName:%{public}s", bundleName.c_str());
-        return INVALID_ARGUMENT;
-    }
-    const auto &app = cloudInfo.apps[bundleName];
-    for (const auto &database : schemaMeta.databases) {
-        EventCenter::Defer defer;
-        CloudEvent::StoreInfo storeInfo;
-        storeInfo.bundleName = app.bundleName;
-        storeInfo.instanceId = app.instanceId;
-        storeInfo.user = cloudInfo.user;
-        storeInfo.storeName = database.name;
-        auto evt = std::make_unique<CloudEvent>(CloudEvent::DATA_CHANGE, storeInfo);
-        EventCenter::GetInstance().PostEvent(std::move(evt));
-    }
     syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName));
     return SUCCESS;
 }
@@ -378,7 +361,7 @@ SchemaMeta CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bu
     }
     schemaMeta = instance->GetAppSchema(userId, bundleName);
     if (!schemaMeta.IsValid()) {
-        ZLOGE("download schema from cloud failed, user:%{public}s, bundleName:%{public}s", userId, bundleName.c_str());
+        ZLOGE("download schema from cloud failed, user:%{public}d, bundleName:%{public}s", userId, bundleName.c_str());
     }
     MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
     return schemaMeta;
