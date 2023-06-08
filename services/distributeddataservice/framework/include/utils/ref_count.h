@@ -28,7 +28,7 @@ public:
     RefCount(RefCount &&other) noexcept;
     RefCount &operator=(const RefCount &other);
     RefCount &operator=(RefCount &&other) noexcept;
-    operator bool () const;
+    operator bool() const;
 
 private:
     std::shared_ptr<const char> ref_;
