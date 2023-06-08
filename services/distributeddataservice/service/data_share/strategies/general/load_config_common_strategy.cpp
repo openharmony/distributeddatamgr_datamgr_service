@@ -31,7 +31,8 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     context->currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
     // sa, userId is in uri, caller token id is from first caller tokenId
     if (context->currentUserId == 0) {
-        URIUtils::GetInfoFromProxyURI(context->uri, context->currentUserId, context->callerTokenId);
+        URIUtils::GetInfoFromProxyURI(
+            context->uri, context->currentUserId, context->callerTokenId, context->calledBundleName);
     }
     if (context->needAutoLoadCallerBundleName && context->callerBundleName.empty()) {
         Security::AccessToken::HapTokenInfo tokenInfo;

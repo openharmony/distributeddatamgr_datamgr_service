@@ -24,6 +24,7 @@
 namespace OHOS::DataShare {
 constexpr const char USER_PARAM[] = "user";
 constexpr const char TOKEN_ID_PARAM[] = "srcToken";
+constexpr const char DST_BUNDLE_NAME_PARAM[] = "dstBundleName";
 bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
 {
     Uri uriTemp(uri);
@@ -62,7 +63,8 @@ bool URIUtils::GetBundleNameFromProxyURI(const std::string &uri, std::string &bu
     return true;
 }
 
-bool URIUtils::GetInfoFromProxyURI(const std::string &uri, int32_t &user, uint32_t &callerTokenId)
+bool URIUtils::GetInfoFromProxyURI(
+    const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName)
 {
     auto queryPos = uri.find_first_of('?');
     if (queryPos == std::string::npos) {
@@ -87,6 +89,8 @@ bool URIUtils::GetInfoFromProxyURI(const std::string &uri, int32_t &user, uint32
                 user = std::stoi(value);
             } else if (query.compare(pos, sizeof(TOKEN_ID_PARAM) - 1, TOKEN_ID_PARAM) == 0) {
                 callerTokenId = std::stoul(value);
+            } else if (query.compare(pos, sizeof(DST_BUNDLE_NAME_PARAM) - 1, DST_BUNDLE_NAME_PARAM) == 0) {
+                calledBundleName = value;
             }
         }
         if (nextPos == std::string::npos) {
