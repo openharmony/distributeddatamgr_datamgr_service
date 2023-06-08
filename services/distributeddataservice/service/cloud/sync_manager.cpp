@@ -253,7 +253,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler()
         }
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             storeInfo.storeName.c_str());
-        store->Sync({ "default" }, evt.GetMode(), *(evt.GetQuery()), evt.GetAsyncDetail(), evt.GetWait());
+        store->Sync( { "default" }, evt.GetMode(), *(evt.GetQuery()), evt.GetAsyncDetail(), evt.GetWait());
     };
 }
 

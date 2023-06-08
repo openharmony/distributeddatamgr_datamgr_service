@@ -78,7 +78,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
         return ERROR;
     }
     Execute(GetCloudTask(0, cloudInfo.user));
-    syncManager_.DoCloudSync({ cloudInfo.user });
+    syncManager_.DoCloudSync( { cloudInfo.user } );
     return SUCCESS;
 }
 
@@ -115,7 +115,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     }
     Execute(GetCloudTask(0, cloudInfo.user));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
-        syncManager_.DoCloudSync({ cloudInfo.user, bundleName });
+        syncManager_.DoCloudSync( { cloudInfo.user, bundleName } );
     }
     return SUCCESS;
 }
