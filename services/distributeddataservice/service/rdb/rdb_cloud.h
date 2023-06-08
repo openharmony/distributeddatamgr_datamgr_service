@@ -41,6 +41,7 @@ public:
     DBStatus ConvertStatus(DistributedData::GeneralError error);
 
 private:
+    static constexpr int32_t TO_MS = 1000; // s > ms
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
 };
 } // namespace OHOS::DistributedRdb

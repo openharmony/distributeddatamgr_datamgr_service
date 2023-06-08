@@ -68,6 +68,7 @@ private:
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10); // second
     static constexpr int32_t RETRY_TIMES = 6; // second
     static constexpr uint64_t USER_MARK = 0xFFFFFFFF00000000; // high 32 bit
+    static constexpr int32_t MV_BIT = 32;
 
     Task GetSyncTask(int32_t retry, RefCount ref, SyncInfo &&syncInfo);
     void DoRetry(int32_t retry, SyncInfo &&syncInfo);

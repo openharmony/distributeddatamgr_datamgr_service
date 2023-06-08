@@ -14,9 +14,9 @@
  */
 
 #define LOG_TAG "CloudDataTest"
-#include "value_proxy.h"
 #include <gtest/gtest.h>
 #include "log_print.h"
+#include "value_proxy.h"
 namespace Test {
 using namespace testing::ext;
 using namespace OHOS::DistributedRdb;
@@ -90,13 +90,13 @@ HWTEST_F(ValueProxyTest, VBucketsRdb2Normal, TestSize.Level0)
     using RdbBucket = OHOS::NativeRdb::ValuesBucket;
     using RdbValue = OHOS::NativeRdb::ValueObject;
     std::vector<RdbBucket> rdbVBuckets = {
-        RdbBucket(std::map<std::string, RdbValue>{
+        RdbBucket(std::map<std::string, RdbValue> {
             {"#gid", {"0000000"}},
             {"#flag", {true }},
             {"#value", {int64_t(100)}},
             {"#float", {double(100)}}
         }),
-        RdbBucket(std::map<std::string, RdbValue>{
+        RdbBucket(std::map<std::string, RdbValue> {
             {"#gid", {"0000001"}}
         })
     };

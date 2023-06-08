@@ -497,18 +497,30 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
 int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
     RdbStoreObserver *observer)
 {
-    auto identifier = GenIdentifier(param);
-    ZLOGI("%{public}s %{public}.6s", param.storeName_.c_str(), identifier.c_str());
-    identifiers_.Erase(identifier);
-    syncAgents_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [](auto &key, SyncAgent &agent) {
-        if (agent.count_ > 0) {
-            agent.count_--;
+    switch (option.mode) {
+        case SubscribeMode::REMOTE: {
+            auto identifier = GenIdentifier(param);
+            ZLOGI("%{public}s %{public}.6s", param.storeName_.c_str(), identifier.c_str());
+            identifiers_.Erase(identifier);
+            break;
         }
-        if (agent.count_ == 0) {
-            agent.SetWatcher(nullptr);
+        case SubscribeMode::CLOUD: // fallthrough
+        case SubscribeMode::CLOUD_DETAIL: {
+            syncAgents_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [](auto &key, SyncAgent &agent) {
+                if (agent.count_ > 0) {
+                    agent.count_--;
+                }
+                if (agent.count_ == 0) {
+                    agent.SetWatcher(nullptr);
+                }
+                return true;
+            });
+            break;
         }
-        return true;
-    });
+        default:
+            ZLOGI("mode:%{public}d", option.mode);
+            return RDB_ERROR;
+    }
     return RDB_OK;
 }
 

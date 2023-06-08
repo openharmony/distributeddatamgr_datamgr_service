@@ -15,7 +15,6 @@
 
 #include "cloud/sync_event.h"
 
-#include <utility>
 namespace OHOS::DistributedData {
 SyncEvent::EventInfo::EventInfo(int32_t mode, int32_t wait, std::shared_ptr<GenQuery> query, GenAsync async)
     : mode_(mode), wait_(wait), query_(std::move(query)), asyncDetail_(std::move(async))

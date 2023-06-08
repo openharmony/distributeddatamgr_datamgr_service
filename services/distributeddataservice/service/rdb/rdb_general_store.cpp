@@ -65,7 +65,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
         option.iterateTimes = ITERATE_TIMES;
         option.cipher = CipherType::AES_256_GCM;
     }
-    option.observer = nullptr;
+    option.observer = &observer_;
     manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
     RdbStoreConfig config(meta.dataDir);
     config.SetCreateNecessary(false);

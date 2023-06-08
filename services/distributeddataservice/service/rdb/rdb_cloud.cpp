@@ -81,7 +81,8 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
 std::pair<DBStatus, uint32_t> RdbCloud::Lock()
 {
     auto error = cloudDB_->Lock();
-    return std::make_pair(ConvertStatus(static_cast<GeneralError>(error)), cloudDB_->AliveTime() * 1000); // int64_t <-> uint32_t, s <-> ms
+    return std::make_pair(  // int64_t <-> uint32_t, s <-> ms
+        ConvertStatus(static_cast<GeneralError>(error)), cloudDB_->AliveTime() * TO_MS);
 }
 
 DBStatus RdbCloud::UnLock()

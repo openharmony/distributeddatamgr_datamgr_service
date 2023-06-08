@@ -87,7 +87,10 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
     }
     class SyncQuery final : public GenQuery {
     public:
-        SyncQuery(const std::vector<std::string> &tables) : tables_(tables){};
+        explicit SyncQuery(const std::vector<std::string> &tables) : tables_(tables)
+        {
+        }
+
         bool IsEqual(uint64_t tid) override
         {
             return false;
@@ -168,7 +171,8 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t retry, RefCount ref, SyncInf
             return;
         }
 
-        if (!cloud.enableCloud || cloud.id != info.id_ || (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
+        if (!cloud.enableCloud || cloud.id != info.id_ || (!info.bundleName_.empty() &&
+            !cloud.IsOn(info.bundleName_))) {
             info.SetError(E_UNOPENED);
             ZLOGI("cloud off bundleName:%{public}s", info.bundleName_.c_str());
             return;
@@ -193,7 +197,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t retry, RefCount ref, SyncInf
                 storeInfo.storeName = database.name;
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
-                    SyncEvent::EventInfo{ info.mode_, info.wait_, std::move(query), info.async_ });
+                    SyncEvent::EventInfo { info.mode_, info.wait_, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
             }
         }
@@ -271,7 +275,7 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
 uint64_t SyncManager::GenSyncId(int32_t user)
 {
     uint64_t syncId = user;
-    return (syncId << 32) | (++syncId_);
+    return (syncId << MV_BIT) | (++syncId_);
 }
 
 RefCount SyncManager::GenSyncRef(uint64_t syncId)
@@ -284,7 +288,7 @@ RefCount SyncManager::GenSyncRef(uint64_t syncId)
 int32_t SyncManager::Compare(uint64_t syncId, int32_t user)
 {
     uint64_t inner = user;
-    return (syncId & USER_MARK) == (inner << 32);
+    return (syncId & USER_MARK) == (inner << MV_BIT);
 }
 
 void SyncManager::DoRetry(int32_t retry, SyncInfo &&info)

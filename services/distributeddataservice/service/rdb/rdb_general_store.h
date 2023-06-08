@@ -66,7 +66,10 @@ private:
         using DBOrigin = DistributedDB::Origin;
         void OnChange(const DistributedDB::StoreChangedData &data) override;
         void OnChange(DBOrigin origin, const std::string &originalId, DBChangedData &&data) override;
-        bool HasWatcher() const { return watcher_ == nullptr; };
+        bool HasWatcher() const
+        {
+            return watcher_ == nullptr;
+        }
     private:
         friend RdbGeneralStore;
         Watcher *watcher_ = nullptr;

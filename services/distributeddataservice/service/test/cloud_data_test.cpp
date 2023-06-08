@@ -140,7 +140,6 @@ void CloudDataTest::SetUpTestCase(void)
     });
 
     auto cloudServerMock = new CloudServerMock();
-    //ASSERT_TRUE(CloudServer::RegisterCloudInstance(cloudServerMock));
     CloudServer::RegisterCloudInstance(cloudServerMock);
     FeatureSystem::GetInstance().GetCreator("cloud")();
     FeatureSystem::GetInstance().GetCreator("relational_store")();

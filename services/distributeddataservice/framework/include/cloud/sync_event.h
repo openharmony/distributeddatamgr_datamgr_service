@@ -48,6 +48,5 @@ protected:
 private:
     EventInfo info_;
 };
-}
-
+} // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SYNC_EVENT_H

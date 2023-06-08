@@ -367,7 +367,8 @@ SchemaMeta CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bu
     return schemaMeta;
 }
 
-CloudInfo CloudServiceImpl::GetCloudInfo(int32_t userId) {
+CloudInfo CloudServiceImpl::GetCloudInfo(int32_t userId)
+{
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
     if (MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
@@ -427,11 +428,11 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
         auto &dbs = enabled ? subDbs : unsubDbs;
         auto it = sub.expiresTime.find(bundle);
         // cloud is enabled, but the subscription won't expire
-        if (enabled && (it != sub.expiresTime.end() && it->second >= onThreshold.count())) {
+        if (enabled && (it != sub.expiresTime.end() && it->second >= static_cast<uint64_t>(onThreshold.count()))) {
             continue;
         }
         // cloud is disabled, we don't care the subscription which was expired or didn't subscribe.
-        if (!enabled && (it == sub.expiresTime.end() || it->second <= offThreshold.count())) {
+        if (!enabled && (it == sub.expiresTime.end() || it->second <= static_cast<uint64_t>(offThreshold.count()))) {
             continue;
         }
 

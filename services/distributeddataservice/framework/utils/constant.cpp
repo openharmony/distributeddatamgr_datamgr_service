@@ -15,10 +15,6 @@
 #define LOG_TAG "Constant"
 #include "utils/constant.h"
 
-#include <cerrno>
-#include <dirent.h>
-#include <fstream>
-#include <unistd.h>
 #include "log_print.h"
 #include "securec.h"
 
