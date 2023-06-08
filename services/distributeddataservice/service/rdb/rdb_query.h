@@ -17,18 +17,21 @@
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_QUERY_H
 #include "rdb_predicates.h"
 #include "store/general_value.h"
+#include "query.h"
 namespace OHOS::DistributedRdb {
 class RdbQuery : public DistributedData::GenQuery {
 public:
     using Predicates = NativeRdb::RdbPredicates;
-    static constexpr uint64_t TYPE_ID = 0;
+    static constexpr uint64_t TYPE_ID = 0x20000001;
     RdbQuery() = default;
 
     ~RdbQuery() override = default;
 
     bool IsEqual(uint64_t tid) override;
+    std::vector<std::string> GetTables() override;
 
-    NativeRdb::RdbPredicates predicates_ {""};
+    DistributedDB::Query query_;
+    std::string sql_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_QUERY_H

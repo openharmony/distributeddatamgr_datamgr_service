@@ -51,6 +51,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "cloud/cloud_server.cpp",
     "cloud/schema_meta.cpp",
     "cloud/subscription.cpp",
+    "cloud/sync_event.cpp",
     "directory/directory_manager.cpp",
     "eventcenter/event.cpp",
     "eventcenter/event_center.cpp",
@@ -74,6 +75,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "utils/constant.cpp",
     "utils/converter.cpp",
     "utils/crypto.cpp",
+    "utils/ref_count.cpp",
   ]
   cflags = [ "-Wno-multichar" ]
 
@@ -87,6 +89,7 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
   ]
   subsystem_name = "distributeddatamgr"

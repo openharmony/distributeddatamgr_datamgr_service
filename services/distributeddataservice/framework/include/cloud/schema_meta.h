@@ -39,7 +39,7 @@ struct API_EXPORT Database final : public Serializable {
     std::string name = "";
     std::string alias;
     std::vector<Table> tables;
-
+    std::vector<std::string> GetTableNames() const;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
@@ -55,10 +55,12 @@ public:
     static constexpr const char *MODIFY_FIELD = "#_modifyTime";
     static constexpr const char *CURSOR_FIELD = "#_cursor";
     int32_t version = 0;
+    std::string bundleName;
     std::vector<Database> databases;
 
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
+    bool IsValid() const;
     Database GetDataBase(const std::string &storeId);
 };
 } // namespace OHOS::DistributedData

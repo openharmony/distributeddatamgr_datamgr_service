@@ -18,8 +18,9 @@
 #include <atomic>
 #include <functional>
 #include <memory>
-namespace OHOS::DistributedKv {
-class RefCount final {
+#include "visibility.h"
+namespace OHOS::DistributedData {
+class API_EXPORT RefCount final {
 public:
     RefCount();
     explicit RefCount(std::function<void()> action);

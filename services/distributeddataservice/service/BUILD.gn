@@ -58,6 +58,7 @@ ohos_shared_library("distributeddatasvc") {
     "bootstrap/src/bootstrap.cpp",
     "cloud/cloud_service_impl.cpp",
     "cloud/cloud_service_stub.cpp",
+    "cloud/sync_manager.cpp",
     "config/src/config_factory.cpp",
     "config/src/model/backup_config.cpp",
     "config/src/model/checker_config.cpp",
@@ -74,7 +75,6 @@ ohos_shared_library("distributeddatasvc") {
     "kvdb/kvdb_service_stub.cpp",
     "kvdb/kvstore_sync_manager.cpp",
     "kvdb/query_helper.cpp",
-    "kvdb/ref_count.cpp",
     "kvdb/store_cache.cpp",
     "kvdb/upgrade.cpp",
     "kvdb/user_delegate.cpp",
@@ -86,6 +86,8 @@ ohos_shared_library("distributeddatasvc") {
     "object/object_service_impl.cpp",
     "object/object_service_stub.cpp",
     "permission/src/permit_delegate.cpp",
+    "rdb/rdb_cloud.cpp",
+    "rdb/rdb_cursor.cpp",
     "rdb/rdb_general_store.cpp",
     "rdb/rdb_notifier_proxy.cpp",
     "rdb/rdb_query.cpp",
@@ -96,6 +98,7 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_store_observer_impl.cpp",
     "rdb/rdb_syncer.cpp",
     "rdb/rdb_watcher.cpp",
+    "rdb/value_proxy.cpp",
   ]
   cflags = [ "-Wno-multichar" ]
 

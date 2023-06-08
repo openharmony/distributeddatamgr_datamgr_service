@@ -20,8 +20,10 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
+#include "cloud/change_event.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
+#include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "rdb_query.h"
@@ -29,6 +31,8 @@
 #include "store/general_store.h"
 #include "types_export.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
+#include "utils/converter.h"
 using OHOS::DistributedKv::AccountDelegate;
 using namespace OHOS::Security::AccessToken;
 using namespace OHOS::DistributedData;
@@ -40,13 +44,13 @@ namespace OHOS::DistributedRdb {
 RdbSyncer::RdbSyncer(const RdbSyncerParam& param, RdbStoreObserverImpl* observer)
     : param_(param), observer_(observer)
 {
-    ZLOGI("construct %{public}s", param_.storeName_.c_str());
+    ZLOGI("construct %{public}s", Anonymous::Change(param_.storeName_).c_str());
 }
 
 RdbSyncer::~RdbSyncer() noexcept
 {
     param_.password_.assign(param_.password_.size(), 0);
-    ZLOGI("destroy %{public}s", param_.storeName_.c_str());
+    ZLOGI("destroy %{public}s", Anonymous::Change(param_.storeName_).c_str());
     if ((manager_ != nullptr) && (delegate_ != nullptr)) {
         manager_->CloseStore(delegate_);
     }
@@ -163,11 +167,11 @@ int32_t RdbSyncer::InitDBDelegate(const StoreMetaData &meta)
         }
         option.observer = observer_;
         std::string fileName = meta.dataDir;
-        ZLOGI("path=%{public}s storeId=%{public}s", fileName.c_str(), Anonymous::Change(meta.storeId).c_str());
+        ZLOGI("path=%{public}s storeId=%{public}s", fileName.c_str(), meta.GetStoreAlias().c_str());
         auto status = manager_->OpenStore(fileName, meta.storeId, option, delegate_);
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("open store failed, path=%{public}s storeId=%{public}s status=%{public}d",
-                fileName.c_str(), Anonymous::Change(meta.storeId).c_str(), status);
+                fileName.c_str(), meta.GetStoreAlias().c_str(), status);
             return RDB_ERROR;
         }
         ZLOGI("open store success");
@@ -270,6 +274,22 @@ Details RdbSyncer::HandleSyncStatus(const std::map<std::string, std::vector<Dist
     }
     return details;
 }
+
+Details RdbSyncer::HandleGenDetails(const GenDetails &details)
+{
+    Details dbDetails;
+    for (const auto& [id, detail] : details) {
+        auto &dbDetail = dbDetails[id];
+        dbDetail.progress = detail.progress;
+        dbDetail.code = detail.code;
+        for (auto &[name, table] : detail.details) {
+            auto &dbTable = dbDetail.details[name];
+            Constant::Copy(&dbTable, &table);
+        }
+    }
+    return dbDetails;
+}
+
 void RdbSyncer::EqualTo(const RdbPredicateOperation &operation, DistributedDB::Query &query)
 {
     query.EqualTo(operation.field_, operation.values_[0]);
@@ -316,7 +336,7 @@ void RdbSyncer::Limit(const RdbPredicateOperation &operation, DistributedDB::Que
     ZLOGI("limit=%{public}d offset=%{public}d", limit, offset);
 }
 
-DistributedDB::Query RdbSyncer::MakeQuery(const RdbPredicates &predicates)
+DistributedDB::Query RdbSyncer::MakeQuery(const PredicatesMemo &predicates)
 {
     ZLOGI("table=%{public}zu", predicates.tables_.size());
     auto query = predicates.tables_.size() == 1 ? DistributedDB::Query::Select(*predicates.tables_.begin())
@@ -332,7 +352,7 @@ DistributedDB::Query RdbSyncer::MakeQuery(const RdbPredicates &predicates)
     return query;
 }
 
-int32_t RdbSyncer::DoSync(const Option &option, const RdbPredicates &predicates, const AsyncDetail &async)
+int32_t RdbSyncer::DoSync(const Option &option, const PredicatesMemo &predicates, const AsyncDetail &async)
 {
     ZLOGI("enter");
     auto* delegate = GetDelegate();
@@ -350,8 +370,25 @@ int32_t RdbSyncer::DoSync(const Option &option, const RdbPredicates &predicates,
                 async(HandleSyncStatus(syncStatus));
             },
             !option.isAsync);
-    } else if (option.mode < DistributedData::GeneralStore::CLOUD_END) {
-        return RDB_OK;
+    } else if (option.mode < DistributedData::GeneralStore::CLOUD_END &&
+               option.mode >= DistributedData::GeneralStore::CLOUD_BEGIN) {
+        CloudEvent::StoreInfo storeInfo;
+        storeInfo.bundleName = GetBundleName();
+        storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(token_);
+        storeInfo.storeName = GetStoreId();
+        storeInfo.tokenId = token_;
+        std::shared_ptr<RdbQuery> query = nullptr;
+        if (!predicates.tables_.empty()) {
+            query = std::make_shared<RdbQuery>();
+            query->query_.FromTable(predicates.tables_);
+        }
+
+        auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME), query,
+            [async](const GenDetails &details) {
+                async(HandleGenDetails(details));
+            });
+        auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
     }
     ZLOGI("delegate sync");
     return RDB_OK;

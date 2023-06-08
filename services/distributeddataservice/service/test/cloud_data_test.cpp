@@ -80,7 +80,7 @@ CloudInfo CloudServerMock::GetServerInfo(int32_t userId)
     appInfo.version = 1;
     appInfo.cloudSwitch = true;
 
-    cloudInfo.apps.emplace_back(std::move(appInfo));
+    cloudInfo.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
     return cloudInfo;
 }
 
@@ -129,6 +129,7 @@ void CloudDataTest::InitSchemaMeta()
     database.tables.emplace_back(table);
 
     schemaMeta_.version = 1;
+    schemaMeta_.bundleName = TEST_DISTRIBUTEDDATA_BUNDLE;
     schemaMeta_.databases.emplace_back(database);
 }
 
@@ -139,7 +140,7 @@ void CloudDataTest::SetUpTestCase(void)
     });
 
     auto cloudServerMock = new CloudServerMock();
-    ASSERT_TRUE(CloudServer::RegisterCloudInstance(cloudServerMock));
+    CloudServer::RegisterCloudInstance(cloudServerMock);
     FeatureSystem::GetInstance().GetCreator("cloud")();
     FeatureSystem::GetInstance().GetCreator("relational_store")();
 }
@@ -150,6 +151,7 @@ void CloudDataTest::SetUp()
 {
     InitMetaData();
     InitSchemaMeta();
+
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_);
 
     StoreMetaData storeMetaData;
@@ -178,7 +180,7 @@ void CloudDataTest::TearDown() {}
 HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
 {
     ZLOGI("CloudDataTest start");
-    std::shared_ptr<CloudServerMock> cloudServerMock = std::make_shared<CloudServerMock>();
+    auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto cloudInfo = cloudServerMock->GetServerInfo(
         DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID()));
     ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), true));

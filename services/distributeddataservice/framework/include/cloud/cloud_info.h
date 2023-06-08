@@ -35,14 +35,16 @@ public:
     uint64_t totalSpace = 0;
     uint64_t remainSpace = 0;
     bool enableCloud = false;
-    std::vector<AppInfo> apps;
+    std::map<std::string, AppInfo> apps;
 
     std::string GetKey() const;
     std::map<std::string, std::string> GetSchemaKey() const;
-    std::string GetSchemaKey(const std::string &bundleName, const int32_t instanceId = 0) const;
+    std::string GetSchemaKey(const std::string &bundleName, int32_t instanceId = 0) const;
+    std::string GetSchemaPrefix(const std::string &bundleName) const;
     static std::string GetSchemaKey(const StoreMetaData &meta);
     bool IsValid() const;
-    bool IsExist(const std::string &bundleName) const;
+    bool Exist(const std::string &bundleName, int32_t instanceId = 0);
+    bool IsOn(const std::string &bundleName, int32_t instanceId = 0);
     static std::string GetPrefix(const std::initializer_list<std::string> &field);
 
     bool Marshal(json &node) const override;

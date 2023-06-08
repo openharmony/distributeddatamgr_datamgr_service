@@ -18,6 +18,7 @@
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
+#include "utils/anonymous.h"
 #include "utils/constant.h"
 namespace OHOS {
 namespace DistributedData {
@@ -152,6 +153,11 @@ std::string StoreMetaData::GetBackupSecretKey() const
         return SecretKeyMetaData::GetBackupKey({ user, "default", bundleName, storeId });
     }
     return SecretKeyMetaData::GetBackupKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
+std::string StoreMetaData::GetStoreAlias() const
+{
+    return Anonymous::Change(storeId);
 }
 
 std::string StoreMetaData::GetStrategyKey() const

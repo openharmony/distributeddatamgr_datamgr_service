@@ -25,7 +25,6 @@ public:
     enum : int32_t {
         FEATURE_INIT = EVT_CLOUD,
         GET_SCHEMA,
-        DATA_CHANGE,
         LOCAL_CHANGE,
         CLOUD_SYNC,
         CLOUD_BUTT

@@ -50,7 +50,7 @@ public:
     int32_t RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
                         const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet) override;
 
-    int32_t Sync(const RdbSyncerParam &param, const Option &option, const RdbPredicates &predicates,
+    int32_t Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async) override;
 
     int32_t Subscribe(const RdbSyncerParam &param, const SubscribeOption &option, RdbStoreObserver *observer) override;
@@ -96,9 +96,9 @@ private:
     static constexpr int32_t MAX_SYNCER_PER_PROCESS = 10;
     static constexpr int32_t SYNCER_TIMEOUT = 60 * 1000; // ms
 
-    std::pair<int32_t, Details> DoSync(const RdbSyncerParam &param, const Option &option, const RdbPredicates &pred);
+    std::pair<int32_t, Details> DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &pred);
 
-    int32_t DoAsync(const RdbSyncerParam &param, const Option &option, const RdbPredicates &pred);
+    int32_t DoAsync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &pred);
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
 

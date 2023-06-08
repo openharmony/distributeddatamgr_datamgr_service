@@ -36,7 +36,7 @@ public:
         NEARBY_PULL,
         NEARBY_PULL_PUSH,
         NEARBY_END,
-        CLOUD_BEGIN = NEARBY_END,
+        CLOUD_BEGIN = 4,
         CLOUD_TIME_FIRST = CLOUD_BEGIN,
         CLOUD_NATIVE_FIRST,
         CLOUD_ClOUD_FIRST,
@@ -55,6 +55,8 @@ public:
     virtual ~GeneralStore() = default;
 
     virtual int32_t Bind(const Database &database, BindInfo bindInfo) = 0;
+
+    virtual bool IsBound() = 0;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 

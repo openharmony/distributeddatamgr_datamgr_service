@@ -67,17 +67,25 @@ std::string CloudInfo::GetKey() const
 std::map<std::string, std::string> CloudInfo::GetSchemaKey() const
 {
     std::map<std::string, std::string> keys;
-    for (const auto &app : apps) {
+    for (const auto &[bundle, app] : apps) {
         const auto key = GetKey(
-            SCHEMA_PREFIX, { std::to_string(user), app.bundleName, std::to_string(app.instanceId) });
+            SCHEMA_PREFIX, { std::to_string(user), bundle, std::to_string(app.instanceId) });
         keys.insert_or_assign(app.bundleName, key);
     }
     return keys;
 }
 
-std::string CloudInfo::GetSchemaKey(const std::string &bundleName, const int32_t instanceId) const
+std::string CloudInfo::GetSchemaKey(const std::string &bundleName, int32_t instanceId) const
 {
     return GetKey(SCHEMA_PREFIX, { std::to_string(user), bundleName, std::to_string(instanceId) });
+}
+
+std::string CloudInfo::GetSchemaPrefix(const std::string &bundleName) const
+{
+    if (bundleName.empty()) {
+        return GetKey(SCHEMA_PREFIX, { std::to_string(user) });
+    }
+    return GetKey(SCHEMA_PREFIX, { std::to_string(user), bundleName});
 }
 
 std::string CloudInfo::GetSchemaKey(const StoreMetaData &meta)
@@ -90,14 +98,22 @@ bool CloudInfo::IsValid() const
     return !id.empty();
 }
 
-bool CloudInfo::IsExist(const std::string &bundleName) const
+bool CloudInfo::Exist(const std::string &bundleName, int32_t instanceId)
 {
-    for (const auto &app : apps) {
-        if (app.bundleName == bundleName) {
-            return true;
-        }
+    if (bundleName.empty()) {
+        return false;
     }
-    return false;
+    auto it = apps.find(bundleName);
+    return it != apps.end() && it->second.bundleName == bundleName && it->second.instanceId == instanceId;
+}
+
+bool CloudInfo::IsOn(const std::string &bundleName, int32_t instanceId)
+{
+    if (bundleName.empty()) {
+        return false;
+    }
+    auto it = apps.find(bundleName);
+    return it != apps.end() && it->second.instanceId == instanceId && it->second.cloudSwitch;
 }
 
 std::string CloudInfo::GetPrefix(const std::initializer_list<std::string> &fields)

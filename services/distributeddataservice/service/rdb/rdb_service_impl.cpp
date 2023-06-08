@@ -85,13 +85,13 @@ RdbServiceImpl::RdbServiceImpl() : autoLaunchObserver_(this)
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                Anonymous::Change(meta.storeId).c_str());
+                meta.GetStoreAlias().c_str());
             return;
         }
         auto watchers = GetWatchers(meta.tokenId, meta.storeId);
         auto store = AutoCache::GetInstance().GetStore(meta, watchers);
         if (store == nullptr) {
-            ZLOGE("store null, storeId:%{public}s", Anonymous::Change(meta.storeId).c_str());
+            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             return;
         }
     };
@@ -116,11 +116,12 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
 
         auto aIdentifier = DistributedDB::RelationalStoreManager::GetRelationalStoreIdentifier(
             entry.user, entry.appId, entry.storeId);
-        ZLOGI("%{public}s %{public}s %{public}s", entry.user.c_str(), entry.appId.c_str(), entry.storeId.c_str());
+        ZLOGI("%{public}s %{public}s %{public}s",
+            entry.user.c_str(), entry.appId.c_str(), Anonymous::Change(entry.storeId).c_str());
         if (aIdentifier != identifier) {
             continue;
         }
-        ZLOGI("find identifier %{public}s", entry.storeId.c_str());
+        ZLOGI("find identifier %{public}s", Anonymous::Change(entry.storeId).c_str());
         param.userId = entry.user;
         param.appId = entry.appId;
         param.storeId = entry.storeId;
@@ -216,7 +217,7 @@ void RdbServiceImpl::OnDataChange(pid_t pid, uint32_t tokenId, const Distributed
 {
     DistributedDB::StoreProperty property;
     data.GetStoreProperty(property);
-    ZLOGI("%{public}d %{public}s", pid, property.storeId.c_str());
+    ZLOGI("%{public}d %{public}s", pid, Anonymous::Change(property.storeId).c_str());
     if (pid == 0) {
         auto identifier = RelationalStoreManager::GetRelationalStoreIdentifier(property.userId, property.appId,
                                                                                property.storeId);
@@ -324,7 +325,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
 }
 
 std::pair<int32_t, Details> RdbServiceImpl::DoSync(const RdbSyncerParam &param, const Option &option,
-    const RdbPredicates &pred)
+    const PredicatesMemo &pred)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
@@ -352,7 +353,7 @@ void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details 
     }
 }
 
-int32_t RdbServiceImpl::DoAsync(const RdbSyncerParam &param, const Option &option, const RdbPredicates &pred)
+int32_t RdbServiceImpl::DoAsync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &pred)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
@@ -448,7 +449,7 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
     return syncer->RemoteQuery(device, sql, selectionArgs, resultSet);
 }
 
-int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, const RdbPredicates &predicates,
+int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
                              const AsyncDetail &async)
 {
     if (!option.isAsync) {
@@ -497,18 +498,30 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
 int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
     RdbStoreObserver *observer)
 {
-    auto identifier = GenIdentifier(param);
-    ZLOGI("%{public}s %{public}.6s", param.storeName_.c_str(), identifier.c_str());
-    identifiers_.Erase(identifier);
-    syncAgents_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [](auto &key, SyncAgent &agent) {
-        if (agent.count_ > 0) {
-            agent.count_--;
+    switch (option.mode) {
+        case SubscribeMode::REMOTE: {
+            auto identifier = GenIdentifier(param);
+            ZLOGI("%{public}s %{public}.6s", param.storeName_.c_str(), identifier.c_str());
+            identifiers_.Erase(identifier);
+            break;
         }
-        if (agent.count_ == 0) {
-            agent.SetWatcher(nullptr);
+        case SubscribeMode::CLOUD: // fallthrough
+        case SubscribeMode::CLOUD_DETAIL: {
+            syncAgents_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [](auto &key, SyncAgent &agent) {
+                if (agent.count_ > 0) {
+                    agent.count_--;
+                }
+                if (agent.count_ == 0) {
+                    agent.SetWatcher(nullptr);
+                }
+                return true;
+            });
+            break;
         }
-        return true;
-    });
+        default:
+            ZLOGI("mode:%{public}d", option.mode);
+            return RDB_ERROR;
+    }
     return RDB_OK;
 }
 
@@ -576,7 +589,7 @@ int32_t RdbServiceImpl::CreateMetaData(const RdbSyncerParam &param, StoreMetaDat
                          old.area != meta.area)) {
         ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
               "area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), old.storeType, meta.storeType,
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
             old.isEncrypt, meta.isEncrypt, old.area, meta.area);
         return RDB_ERROR;
     }
@@ -584,7 +597,7 @@ int32_t RdbServiceImpl::CreateMetaData(const RdbSyncerParam &param, StoreMetaDat
         Upgrade(param, old);
         ZLOGD("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
               "area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), old.storeType, meta.storeType,
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
             old.isEncrypt, meta.isEncrypt, old.area, meta.area);
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
     }
@@ -594,7 +607,7 @@ int32_t RdbServiceImpl::CreateMetaData(const RdbSyncerParam &param, StoreMetaDat
     if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
         ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
               "area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), old.storeType, meta.storeType,
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
             old.isEncrypt, meta.isEncrypt, old.area, meta.area);
         return RDB_ERROR;
     }

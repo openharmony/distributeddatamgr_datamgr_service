@@ -27,6 +27,7 @@ config("module_private_config") {
     "../crypto/include/",
     "../directory/include/",
     "../matrix/include/",
+    "../rdb/",
     "../../framework/include/",
   ]
 
@@ -60,6 +61,37 @@ ohos_unittest("CloudDataTest") {
 
   deps = [
     "${kv_store_distributeddb_path}:distributeddb",
+    "../../adapter:distributeddata_adapter",
+    "../../framework:distributeddatasvcfwk",
+    "../../service:distributeddatasvc",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
+ohos_unittest("ValueProxyTest") {
+  module_out_path = module_output_path
+  sources = [
+    "../rdb/value_proxy.cpp",
+    "value_proxy_test.cpp",
+  ]
+
+  include_dirs =
+      [ "../../../../../relational_store/interfaces/inner_api/rdb/include" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${kv_store_distributeddb_path}:distributeddb",
+    "${relational_store_inner_api_path}:native_rdb_static",
     "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",
@@ -183,6 +215,7 @@ group("unittest") {
     ":CryptoManagerTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
+    ":ValueProxyTest",
   ]
 }
 ###############################################################################

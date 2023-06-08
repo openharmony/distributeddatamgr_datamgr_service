@@ -46,6 +46,8 @@ public:
     virtual int32_t Get(const std::string &col, Value &value) = 0;
 
     virtual int32_t Close() = 0;
+
+    virtual bool IsEnd() = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_CURSOR_H

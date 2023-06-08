@@ -18,6 +18,7 @@
 
 #include <mutex>
 #include <string>
+#include <traits.h>
 
 #include "iremote_object.h"
 #include "metadata/secret_key_meta_data.h"
@@ -27,10 +28,12 @@
 #include "rdb_types.h"
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
+#include "store/general_value.h"
 namespace OHOS::DistributedRdb {
 class RdbSyncer {
 public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
+    using GenDetails = OHOS::DistributedData::GenDetails;
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
     using Option = DistributedRdb::RdbService::Option;
     RdbSyncer(const RdbSyncerParam& param, RdbStoreObserverImpl* observer);
@@ -50,7 +53,7 @@ public:
 
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type);
 
-    int32_t DoSync(const Option &option, const RdbPredicates &predicates, const AsyncDetail &async);
+    int32_t DoSync(const Option &option, const PredicatesMemo &predicates, const AsyncDetail &async);
 
     int32_t RemoteQuery(const std::string& device, const std::string& sql,
                         const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet);
@@ -63,7 +66,7 @@ public:
 
     static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
-    static DistributedDB::Query MakeQuery(const RdbPredicates& predicates);
+    static DistributedDB::Query MakeQuery(const PredicatesMemo &predicates);
 
 private:
     std::string GetUserId() const;
@@ -90,6 +93,7 @@ private:
     static std::vector<std::string> NetworkIdToUUID(const std::vector<std::string>& networkIds);
 
     static Details HandleSyncStatus(const std::map<std::string, std::vector<DistributedDB::TableStatus>> &SyncStatus);
+    static Details HandleGenDetails(const GenDetails &details);
     static void EqualTo(const RdbPredicateOperation& operation, DistributedDB::Query& query);
     static void NotEqualTo(const RdbPredicateOperation& operation, DistributedDB::Query& query);
     static void And(const RdbPredicateOperation& operation, DistributedDB::Query& query);
@@ -109,6 +113,7 @@ private:
 
     static constexpr int DECIMAL_BASE = 10;
     static constexpr uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
+    static constexpr int32_t WAIT_TIME = 30 * 1000;
 };
 } // namespace OHOS::DistributedRdb
 #endif

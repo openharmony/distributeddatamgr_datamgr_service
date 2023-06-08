@@ -18,6 +18,7 @@ namespace OHOS::DistributedData {
 bool SchemaMeta::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(version)], version);
+    SetValue(node[GET_NAME(bundleName)], bundleName);
     SetValue(node[GET_NAME(databases)], databases);
     return true;
 }
@@ -25,8 +26,19 @@ bool SchemaMeta::Marshal(Serializable::json &node) const
 bool SchemaMeta::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(version), version);
+    GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(databases), databases);
     return true;
+}
+
+std::vector<std::string> Database::GetTableNames() const
+{
+    std::vector<std::string> tableNames;
+    tableNames.reserve(tables.size());
+    for (auto &table : tables) {
+        tableNames.push_back(table.name);
+    }
+    return tableNames;
 }
 
 bool Database::Marshal(Serializable::json &node) const
@@ -89,5 +101,10 @@ Database SchemaMeta::GetDataBase(const std::string &storeId)
         }
     }
     return {};
+}
+
+bool SchemaMeta::IsValid() const
+{
+    return !bundleName.empty() && !databases.empty();
 }
 } // namespace OHOS::DistributedData

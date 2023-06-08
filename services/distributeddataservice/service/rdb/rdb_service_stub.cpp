@@ -95,7 +95,7 @@ int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply
 {
     RdbSyncerParam param;
     Option option {};
-    RdbPredicates predicates;
+    PredicatesMemo predicates;
     if (!ITypesUtil::Unmarshal(data, param, option, predicates)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s tables:%{public}zu", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str(), predicates.tables_.size());
@@ -115,7 +115,7 @@ int32_t RdbServiceStub::OnRemoteDoAsync(MessageParcel &data, MessageParcel &repl
 {
     RdbSyncerParam param;
     Option option {};
-    RdbPredicates predicates;
+    PredicatesMemo predicates;
     if (!ITypesUtil::Unmarshal(data, param, option, predicates)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s seqNum:%{public}u table:%{public}s",
             param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), option.seqNum,
