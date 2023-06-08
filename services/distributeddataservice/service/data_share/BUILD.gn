@@ -64,6 +64,7 @@ ohos_shared_library("data_share_service") {
     "strategies/general/load_config_from_bundle_info_strategy.cpp",
     "strategies/general/permission_strategy.cpp",
     "strategies/general/process_single_app_user_cross_strategy.cpp",
+    "strategies/general/white_permission_strategy.cpp",
     "strategies/get_data_strategy.cpp",
     "strategies/insert_strategy.cpp",
     "strategies/publish_strategy.cpp",

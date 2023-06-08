@@ -40,19 +40,29 @@ int64_t KvDelegate::Upsert(const std::string &collectionName, const std::string 
     return E_OK;
 }
 
-int64_t KvDelegate::Delete(const std::string &collectionName, const std::string &filter)
+int32_t KvDelegate::Delete(const std::string &collectionName, const std::string &filter)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (!Init()) {
         ZLOGE("init failed, %{public}s", collectionName.c_str());
         return E_ERROR;
     }
-    int count = GRD_DeleteDoc(db_, collectionName.c_str(), filter.c_str(), 0);
-    if (count <= 0) {
-        ZLOGE("GRD_UpSertDoc failed，status %{public}d", count);
-        return count;
+    std::vector<std::string> queryResults;
+
+    int32_t status = GetBatch(collectionName, filter, "{\"id_\": true}", queryResults);
+    if (status != E_OK) {
+        ZLOGE("db GetBatch failed, %{public}s %{public}d", filter.c_str(), status);
+        return status;
+    }
+    for (auto &result : queryResults) {
+        auto count = GRD_DeleteDoc(db_, collectionName.c_str(), result.c_str(), 0);
+        if (count < 0) {
+            ZLOGE("GRD_UpSertDoc failed，status %{public}d %{public}s", count, result.c_str());
+            continue;
+        }
     }
     Flush();
+    ZLOGI("Delete, %{public}s, count %{public}zu", collectionName.c_str(), queryResults.size());
     return E_OK;
 }
 
@@ -119,11 +129,6 @@ int32_t KvDelegate::Upsert(const std::string &collectionName, const KvData &valu
         }
     }
     return Upsert(collectionName, id, value.GetValue());
-}
-
-int32_t KvDelegate::DeleteById(const std::string &collectionName, const Id &id)
-{
-    return Delete(collectionName, DistributedData::Serializable::Marshall(id));
 }
 
 int32_t KvDelegate::Get(const std::string &collectionName, const Id &id, std::string &value)
@@ -208,7 +213,7 @@ int32_t KvDelegate::GetBatch(const std::string &collectionName, const std::strin
     query.filter = filter.c_str();
     query.projection = projection.c_str();
     GRD_ResultSet *resultSet;
-    int status = GRD_FindDoc(db_, collectionName.c_str(), query, 0, &resultSet);
+    int status = GRD_FindDoc(db_, collectionName.c_str(), query, GRD_DOC_ID_DISPLAY, &resultSet);
     if (status != GRD_OK || resultSet == nullptr) {
         ZLOGE("GRD_UpSertDoc failed，status %{public}d", status);
         return status;
@@ -227,6 +232,7 @@ int32_t KvDelegate::GetBatch(const std::string &collectionName, const std::strin
     GRD_FreeResultSet(resultSet);
     return E_OK;
 }
+
 KvDelegate::KvDelegate(const std::string &path, const std::shared_ptr<ExecutorPool> &executors)
     : path_(path), executors_(executors)
 {

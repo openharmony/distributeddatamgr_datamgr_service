@@ -57,7 +57,7 @@ std::vector<PublishedData> PublishedData::Query(const std::string &bundleName)
     int32_t status =
         delegate->GetBatch(KvDBDelegate::DATA_TABLE, "{\"bundleName\":\"" + bundleName + "\"}", "{}", queryResults);
     if (status != E_OK) {
-        ZLOGE("db Upsert failed, %{public}s %{public}d", bundleName.c_str(), status);
+        ZLOGE("db GetBatch failed, %{public}s %{public}d", bundleName.c_str(), status);
         return std::vector<PublishedData>();
     }
     std::vector<PublishedData> results;
@@ -123,8 +123,64 @@ int32_t PublishedData::Query(const std::string &filter, std::variant<std::vector
     publishedData = std::move(data.value);
     return E_OK;
 }
+
 std::string PublishedData::GenId(const std::string &key, const std::string &bundleName, int64_t subscriberId)
 {
     return key + "_" + std::to_string(subscriberId) + "_" + bundleName;
+}
+
+void PublishedData::Delete(const std::string &bundleName)
+{
+    auto delegate = KvDBDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("db open failed");
+        return;
+    }
+    int32_t status =
+        delegate->Delete(KvDBDelegate::DATA_TABLE, "{\"bundleName\":\"" + bundleName + "\"}");
+    if (status != E_OK) {
+        ZLOGE("db Delete failed, %{public}s %{public}d", bundleName.c_str(), status);
+    }
+}
+
+void PublishedData::ClearAging()
+{
+    // published data is valid in 240 hours
+    auto lastValidData =
+        std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(240));
+    auto lastValidTime = std::chrono::system_clock::to_time_t(lastValidData);
+    if (lastValidTime <= 0) {
+        return;
+    }
+    auto delegate = KvDBDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("db open failed");
+        return;
+    }
+    std::vector<std::string> queryResults;
+    int32_t status = delegate->GetBatch(KvDBDelegate::DATA_TABLE, "{}", "{}", queryResults);
+    if (status != E_OK) {
+        ZLOGE("db GetBatch failed %{public}d", status);
+        return;
+    }
+    int32_t agingSize = 0;
+    for (auto &result : queryResults) {
+        PublishedDataNode data;
+        if (!PublishedDataNode::Unmarshall(result, data)) {
+            ZLOGE("Unmarshall %{public}s failed", result.c_str());
+            continue;
+        }
+
+        if (data.timestamp < lastValidTime) {
+            status = delegate->Delete(
+                KvDBDelegate::DATA_TABLE, Id(PublishedData::GenId(data.key, data.bundleName, data.subscriberId)));
+            if (status != E_OK) {
+                ZLOGE("db Delete failed, %{public}s %{public}s", data.key.c_str(), data.bundleName.c_str());
+            }
+            agingSize++;
+        }
+    }
+    ZLOGI("aging count %{public}d", agingSize);
+    return;
 }
 } // namespace OHOS::DataShare

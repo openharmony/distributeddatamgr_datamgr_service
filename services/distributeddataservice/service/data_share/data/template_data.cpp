@@ -117,6 +117,54 @@ int32_t TemplateData::Query(const std::string &filter, Template &aTemplate)
     return E_OK;
 }
 
+bool TemplateData::Delete(const std::string &bundleName)
+{
+    auto delegate = KvDBDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("db open failed");
+        return false;
+    }
+    auto status = delegate->Delete(KvDBDelegate::TEMPLATE_TABLE, "{\"bundleName\":\"" + bundleName + "\"}");
+    if (status != E_OK) {
+        ZLOGE("db DeleteById failed, %{public}d", status);
+        return false;
+    }
+    return true;
+}
+
+bool TemplateData::Add(
+    const std::string &uri, const std::string &bundleName, const int64_t subsciriberId, const Template &aTemplate)
+{
+    auto delegate = KvDBDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("db open failed");
+        return false;
+    }
+    TemplateData data(uri, bundleName, subsciriberId, aTemplate);
+    auto status = delegate->Upsert(KvDBDelegate::TEMPLATE_TABLE, data);
+    if (status != E_OK) {
+        ZLOGE("db Upsert failed, %{public}d", status);
+        return false;
+    }
+    return true;
+}
+
+bool TemplateData::Delete(const std::string &uri, const std::string &bundleName, const int64_t subscriberId)
+{
+    auto delegate = KvDBDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("db open failed");
+        return false;
+    }
+    auto status = delegate->Delete(KvDBDelegate::TEMPLATE_TABLE,
+        static_cast<std::string>(Id(TemplateData::GenId(uri, bundleName, subscriberId))));
+    if (status != E_OK) {
+        ZLOGE("db DeleteById failed, %{public}d", status);
+        return false;
+    }
+    return true;
+}
+
 Template TemplateRootNode::ToTemplate() const
 {
     return tpl.ToTemplate();

@@ -23,10 +23,12 @@
 namespace OHOS::DataShare {
 class SubscribeStrategy final {
 public:
-    static int32_t Execute(std::shared_ptr<Context> context, std::function<bool()> process);
+    int32_t Execute(std::shared_ptr<Context> context, std::function<bool()> process);
 
 private:
-    static Strategy *GetStrategy();
+    SeqStrategy &GetStrategy();
+    std::mutex mutex_;
+    SeqStrategy strategies_;
 };
 } // namespace OHOS::DataShare
 #endif

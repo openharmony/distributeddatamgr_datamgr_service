@@ -26,38 +26,38 @@
 namespace OHOS::DataShare {
 int32_t SubscribeStrategy::Execute(std::shared_ptr<Context> context, std::function<bool()> process)
 {
-    auto preProcess = GetStrategy();
-    if (preProcess == nullptr) {
+    auto &preProcess = GetStrategy();
+    if (preProcess.IsEmpty()) {
         ZLOGE("get strategy fail, maybe memory not enough");
         return -1;
     }
     context->isRead = true;
-    if (!(*preProcess)(context)) {
-        ZLOGE("pre process fail, uri_: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
+    context->needAutoLoadCallerBundleName = true;
+    if (!preProcess(context)) {
+        ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return context->errCode;
     }
     return process();
 }
-Strategy *SubscribeStrategy::GetStrategy()
+
+SeqStrategy &SubscribeStrategy::GetStrategy()
 {
-    static std::mutex mutex;
-    static SeqStrategy strategies;
-    std::lock_guard<decltype(mutex)> lock(mutex);
-    if (!strategies.IsEmpty()) {
-        return &strategies;
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (!strategies_.IsEmpty()) {
+        return strategies_;
     }
     std::initializer_list<Strategy *> list = {
         new (std::nothrow)LoadConfigCommonStrategy(),
         new (std::nothrow)LoadConfigFromDataProxyNodeStrategy(),
         new (std::nothrow)PermissionStrategy()
     };
-    auto ret = strategies.Init(list);
+    auto ret = strategies_.Init(list);
     if (!ret) {
         std::for_each(list.begin(), list.end(), [](Strategy *item) {
             delete item;
         });
-        return nullptr;
+        return strategies_;
     }
-    return &strategies;
+    return strategies_;
 }
 } // namespace OHOS::DataShare

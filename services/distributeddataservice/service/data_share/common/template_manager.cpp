@@ -18,7 +18,6 @@
 
 #include "general/load_config_data_info_strategy.h"
 
-#include "db_delegate.h"
 #include "log_print.h"
 #include "published_data.h"
 #include "scheduler_manager.h"
@@ -35,15 +34,9 @@ bool TemplateManager::GetTemplate(
 
 bool TemplateManager::AddTemplate(const std::string &uri, const TemplateId &tplId, const Template &tpl)
 {
-    auto delegate = KvDBDelegate::GetInstance();
-    if (delegate == nullptr) {
-        ZLOGE("db open failed");
-        return false;
-    }
-    TemplateData data(uri, tplId.bundleName_, tplId.subscriberId_, tpl);
-    auto status = delegate->Upsert(KvDBDelegate::TEMPLATE_TABLE, data);
-    if (status != E_OK) {
-        ZLOGE("db Upsert failed, %{public}d", status);
+    auto status = TemplateData::Add(uri, tplId.bundleName_, tplId.subscriberId_, tpl);
+    if (!status) {
+        ZLOGE("Add failed, %{public}d", status);
         return false;
     }
     return true;
@@ -51,15 +44,9 @@ bool TemplateManager::AddTemplate(const std::string &uri, const TemplateId &tplI
 
 bool TemplateManager::DelTemplate(const std::string &uri, const TemplateId &tplId)
 {
-    auto delegate = KvDBDelegate::GetInstance();
-    if (delegate == nullptr) {
-        ZLOGE("db open failed");
-        return false;
-    }
-    auto status = delegate->DeleteById(
-        KvDBDelegate::TEMPLATE_TABLE, Id(TemplateData::GenId(uri, tplId.bundleName_, tplId.subscriberId_)));
-    if (status != E_OK) {
-        ZLOGE("db DeleteById failed, %{public}d", status);
+    auto status = TemplateData::Delete(uri, tplId.bundleName_, tplId.subscriberId_);
+    if (!status) {
+        ZLOGE("Delete failed, %{public}d", status);
         return false;
     }
     SchedulerManager::GetInstance().RemoveTimer(Key(uri, tplId.subscriberId_, tplId.bundleName_));

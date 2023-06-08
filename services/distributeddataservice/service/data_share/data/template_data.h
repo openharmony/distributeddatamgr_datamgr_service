@@ -57,9 +57,14 @@ struct TemplateData final : public KvData {
     TemplateData(const std::string &uri, const std::string &bundleName, int64_t subscriberId, const Template &tpl);
     static int32_t Query(const std::string &filter, Template &aTemplate);
     static std::string GenId(const std::string &uri, const std::string &bundleName, int64_t subscriberId);
+    static bool Delete(const std::string &bundleName);
+    static bool Add(
+        const std::string &uri, const std::string &bundleName, const int64_t subsciriberId, const Template &aTemplate);
+    static bool Delete(const std::string &uri, const std::string &bundleName, const int64_t subscriberId);
     bool HasVersion() const override;
     int GetVersion() const override;
     std::string GetValue() const override;
+
 private:
     TemplateRootNode value;
 };

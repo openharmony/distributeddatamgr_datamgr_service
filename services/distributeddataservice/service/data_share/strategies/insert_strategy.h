@@ -23,10 +23,12 @@
 namespace OHOS::DataShare {
 class InsertStrategy final {
 public:
-    static int64_t Execute(std::shared_ptr<Context> context, const DataShareValuesBucket &valuesBucket);
+    int64_t Execute(std::shared_ptr<Context> context, const DataShareValuesBucket &valuesBucket);
 
 private:
-    static Strategy *GetStrategy();
+    SeqStrategy &GetStrategy();
+    std::mutex mutex_;
+    SeqStrategy strategies_;
 };
 } // namespace OHOS::DataShare
 #endif

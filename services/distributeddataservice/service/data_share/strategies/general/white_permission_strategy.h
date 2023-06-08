@@ -13,25 +13,17 @@
  * limitations under the License.
  */
 
-#ifndef DATASHARESERVICE_UPDATE_STRAGETY_H
-#define DATASHARESERVICE_UPDATE_STRAGETY_H
+#ifndef DATASHARESERVICE_WHITE_PERMISSION_STRAGETY_H
+#define DATASHARESERVICE_WHITE_PERMISSION_STRAGETY_H
 
-#include <shared_mutex>
-
-#include "context.h"
-#include "rdb_delegate.h"
-#include "seq_strategy.h"
-
+#include "strategy.h"
 namespace OHOS::DataShare {
-class UpdateStrategy final {
+class WhitePermissionStrategy final : public Strategy {
 public:
-    int64_t Execute(std::shared_ptr<Context> context, const DataSharePredicates &predicate,
-        const DataShareValuesBucket &valuesBucket);
-
+    explicit WhitePermissionStrategy(std::initializer_list<std::string> permissions);
+    bool operator()(std::shared_ptr<Context> context) override;
 private:
-    SeqStrategy &GetStrategy();
-    std::mutex mutex_;
-    SeqStrategy strategies_;
+    std::vector<std::string> whitePermissions_;
 };
 } // namespace OHOS::DataShare
 #endif

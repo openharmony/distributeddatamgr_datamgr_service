@@ -22,6 +22,9 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
+constexpr const char USER_PARAM[] = "user";
+constexpr const char TOKEN_ID_PARAM[] = "srcToken";
+constexpr const char DST_BUNDLE_NAME_PARAM[] = "dstBundleName";
 bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
 {
     Uri uriTemp(uri);
@@ -60,18 +63,41 @@ bool URIUtils::GetBundleNameFromProxyURI(const std::string &uri, std::string &bu
     return true;
 }
 
-bool URIUtils::GetUserIdFromProxyURI(const std::string &uri, int32_t &user)
+bool URIUtils::GetInfoFromProxyURI(
+    const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName)
 {
-    Uri uriTemp(uri);
-    std::vector<std::string> splitUri;
-    SplitStr(uriTemp.GetQuery(), "=", splitUri);
-    for (auto iter = splitUri.begin(); iter < splitUri.end(); iter++) {
-        if (*iter == "user" && iter + 1 < splitUri.end()) {
-            const char *value = (iter + 1)->c_str();
-            user = atoi(value);
-            return true;
-        }
+    auto queryPos = uri.find_first_of('?');
+    if (queryPos == std::string::npos) {
+        return true;
     }
-    return false;
+    std::string query = uri.substr(queryPos + 1);
+    std::string::size_type pos = 0;
+    std::string::size_type nextPos;
+    std::string::size_type valueStartPos;
+    while (pos != std::string::npos) {
+        valueStartPos = query.find_first_of('=', pos);
+        if (valueStartPos == std::string::npos) {
+            ZLOGE("parse failed %{public}s", query.c_str());
+            return false;
+        }
+        valueStartPos += 1;
+        nextPos = query.find_first_of('&', pos);
+        std::string value = (nextPos == std::string::npos ? query.substr(valueStartPos)
+                                                        : query.substr(valueStartPos, nextPos - valueStartPos));
+        if (!value.empty()) {
+            if (query.compare(pos, sizeof(USER_PARAM) - 1, USER_PARAM) == 0) {
+                user = std::stoi(value);
+            } else if (query.compare(pos, sizeof(TOKEN_ID_PARAM) - 1, TOKEN_ID_PARAM) == 0) {
+                callerTokenId = std::stoul(value);
+            } else if (query.compare(pos, sizeof(DST_BUNDLE_NAME_PARAM) - 1, DST_BUNDLE_NAME_PARAM) == 0) {
+                calledBundleName = value;
+            }
+        }
+        if (nextPos == std::string::npos) {
+            break;
+        }
+        pos = nextPos + 1;
+    }
+    return true;
 }
 } // namespace OHOS::DataShare

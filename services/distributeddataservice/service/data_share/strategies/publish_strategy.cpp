@@ -19,6 +19,7 @@
 #include "data_proxy/load_config_from_data_proxy_node_strategy.h"
 #include "general/load_config_common_strategy.h"
 #include "general/permission_strategy.h"
+#include "general/white_permission_strategy.h"
 #include "log_print.h"
 #include "published_data.h"
 #include "utils/anonymous.h"
@@ -56,8 +57,10 @@ SeqStrategy &PublishStrategy::GetStrategy()
     if (!strategies_.IsEmpty()) {
         return strategies_;
     }
+    std::initializer_list<std::string> whitePermissions = { "ohos.permission.WRITE_APP_PUSH_DATA" };
     std::initializer_list<Strategy *> list = {
         new (std::nothrow) LoadConfigCommonStrategy(),
+        new (std::nothrow) WhitePermissionStrategy(whitePermissions),
         new (std::nothrow) LoadConfigFromDataProxyNodeStrategy(),
         new (std::nothrow) PermissionStrategy()
     };

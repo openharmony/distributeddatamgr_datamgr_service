@@ -15,7 +15,9 @@
 #define LOG_TAG "LoadConfigCommonStrategy"
 #include "load_config_common_strategy.h"
 
+#include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "uri_utils.h"
@@ -23,11 +25,23 @@
 namespace OHOS::DataShare {
 bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
 {
-    context->callerTokenId = IPCSkeleton::GetCallingTokenID();
+    if (context->callerTokenId == 0) {
+        context->callerTokenId = IPCSkeleton::GetCallingTokenID();
+    }
     context->currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
-    // single app, userId is in uri
+    // sa, userId is in uri, caller token id is from first caller tokenId
     if (context->currentUserId == 0) {
-        URIUtils::GetUserIdFromProxyURI(context->uri, context->currentUserId);
+        URIUtils::GetInfoFromProxyURI(
+            context->uri, context->currentUserId, context->callerTokenId, context->calledBundleName);
+    }
+    if (context->needAutoLoadCallerBundleName && context->callerBundleName.empty()) {
+        Security::AccessToken::HapTokenInfo tokenInfo;
+        auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(context->callerTokenId, tokenInfo);
+        if (result != Security::AccessToken::RET_SUCCESS) {
+            ZLOGE("token:0x%{public}x, result:%{public}d", context->callerTokenId, result);
+            return false;
+        }
+        context->callerBundleName = tokenInfo.bundleName;
     }
     FormatUri(context->uri);
     return true;
