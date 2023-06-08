@@ -29,7 +29,8 @@ class URIUtils {
 public:
     static bool GetInfoFromURI(const std::string &uri, UriInfo &uriInfo);
     static bool GetBundleNameFromProxyURI(const std::string &uri, std::string &bundleName);
-    static bool GetInfoFromProxyURI(const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName);
+    static bool GetInfoFromProxyURI(
+        const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName);
     static bool IsDataProxyURI(const std::string &uri);
     static constexpr const char *DATA_SHARE_SCHEMA = "datashare:///";;
     static constexpr const char DATA_PROXY_SCHEMA[] = "datashareproxy://";

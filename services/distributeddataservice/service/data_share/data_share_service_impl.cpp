@@ -263,7 +263,7 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
             });
         results.emplace_back(uri, result);
         if (result == E_OK) {
-            publishedKeys.emplace_back(key);
+            publishedKeys.emplace_back(context->uri, context->callerBundleName, subscriberId);
         }
     }
     PublishedDataSubscriberManager::GetInstance().Emit(publishedKeys, callerBundleName, observer);
