@@ -236,7 +236,7 @@ int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, Dist
 {
     ZLOGI("ObjectServiceImpl::ResolveAutoLaunch start");
     ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
-        param.appId.c_str(), Anonymous::Change(param.storeId).c_str(),
+        param.appId.c_str(), DistributedData::Anonymous::Change(param.storeId).c_str(),
         DistributedData::Anonymous::Change(identifier).c_str());
     std::vector<StoreMetaData> metaData;
     auto prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid, param.userId });
