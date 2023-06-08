@@ -73,11 +73,12 @@ bool URIUtils::GetInfoFromProxyURI(const std::string &uri, int32_t &user, uint32
     std::string::size_type nextPos;
     std::string::size_type valueStartPos;
     while (pos != std::string::npos) {
-        valueStartPos = query.find_first_of('=', pos) + 1;
+        valueStartPos = query.find_first_of('=', pos);
         if (valueStartPos == std::string::npos) {
             ZLOGE("parse failed %{public}s", query.c_str());
             return false;
         }
+        valueStartPos += 1;
         nextPos = query.find_first_of('&', pos);
         std::string value = (nextPos == std::string::npos ? query.substr(valueStartPos)
                                                         : query.substr(valueStartPos, nextPos - valueStartPos));
