@@ -57,7 +57,7 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
     auto cursor = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
     if (cursor == nullptr) {
         ZLOGE("cursor is null, table:%{public}s, extend:%{public}zu",
-            Anonymous::Change(tableName).c_str(), extend.size());+
+            Anonymous::Change(tableName).c_str(), extend.size());
         return ConvertStatus(static_cast<GeneralError>(E_ERROR));
     }
     int32_t count = cursor->GetCount();
