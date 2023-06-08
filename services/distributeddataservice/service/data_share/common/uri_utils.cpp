@@ -86,7 +86,7 @@ bool URIUtils::GetInfoFromProxyURI(const std::string &uri, int32_t &user, uint32
             if (query.compare(pos, sizeof(USER_PARAM) - 1, USER_PARAM) == 0) {
                 user = std::stoi(value);
             } else if (query.compare(pos, sizeof(TOKEN_ID_PARAM) - 1, TOKEN_ID_PARAM) == 0) {
-                callerTokenId = std::stoi(value);
+                callerTokenId = std::stoul(value);
             }
         }
         if (nextPos == std::string::npos) {

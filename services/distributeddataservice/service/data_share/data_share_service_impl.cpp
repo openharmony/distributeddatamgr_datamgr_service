@@ -309,9 +309,9 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
-        result = subscribeStrategy_.Execute(context, [&subscriberId, &callerBundleName, &context]() -> bool {
+        result = subscribeStrategy_.Execute(context, [&subscriberId, &context]() -> bool {
             return PublishedDataSubscriberManager::GetInstance().EnableSubscriber(
-                context->uri, callerBundleName, subscriberId, context->callerTokenId);
+                context->uri, context->callerBundleName, subscriberId, context->callerTokenId);
         });
         results.emplace_back(uri, result);
         if (result == E_OK) {
@@ -337,9 +337,9 @@ std::vector<OperationResult> DataShareServiceImpl::DisablePubSubs(const std::vec
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
         results.emplace_back(
-            uri, subscribeStrategy_.Execute(context, [&subscriberId, &callerBundleName, &context]() -> bool {
+            uri, subscribeStrategy_.Execute(context, [&subscriberId, &context]() -> bool {
                 return PublishedDataSubscriberManager::GetInstance().DisableSubscriber(
-                    context->uri, callerBundleName, subscriberId, context->callerTokenId);
+                    context->uri, context->callerBundleName, subscriberId, context->callerTokenId);
             }));
     }
     return results;

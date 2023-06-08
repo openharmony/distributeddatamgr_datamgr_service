@@ -179,8 +179,8 @@ void PublishedData::ClearAging()
             }
             agingSize++;
         }
-        ZLOGI("aging count %{public}d", agingSize);
     }
+    ZLOGI("aging count %{public}d", agingSize);
     return;
 }
 } // namespace OHOS::DataShare
