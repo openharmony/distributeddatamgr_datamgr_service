@@ -23,7 +23,7 @@ public:
     ChangeEvent(StoreInfo storeInfo, EventInfo info)
         : SyncEvent(LOCAL_CHANGE, std::move(storeInfo), std::move(info))
     {
-    };
+    }
     ~ChangeEvent() override = default;
 };
 } // namespace OHOS::DistributedData

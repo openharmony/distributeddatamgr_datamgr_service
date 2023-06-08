@@ -227,7 +227,6 @@ int32_t CloudServiceImpl::GetCloudInfoFromServer(CloudInfo &cloudInfo)
 {
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
-        ZLOGW("cloud server unavailable");
         return NOT_SUPPORT;
     }
     cloudInfo = instance->GetServerInfo(cloudInfo.user);
@@ -258,7 +257,6 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
         for (auto &[bundle, app] : cloudInfo.apps) {
             actions[bundle] = CLEAR_CLOUD_INFO;
         }
-        Clean(oldInfo.id, actions);
     }
 
     MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
@@ -291,7 +289,6 @@ int32_t CloudServiceImpl::GetAppSchema(int32_t user, const std::string &bundleNa
 {
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
-        ZLOGW("cloud server unavailable");
         return SERVER_UNAVAILABLE;
     }
     schemaMeta = instance->GetAppSchema(user, bundleName);
@@ -356,7 +353,6 @@ SchemaMeta CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bu
 
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
-        ZLOGE("instance is nullptr");
         return schemaMeta;
     }
     schemaMeta = instance->GetAppSchema(userId, bundleName);
@@ -376,7 +372,6 @@ CloudInfo CloudServiceImpl::GetCloudInfo(int32_t userId)
     }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
-        ZLOGD("no cloud server");
         return cloudInfo;
     }
 
@@ -395,7 +390,7 @@ void CloudServiceImpl::GetSchema(const Event &event)
     auto &rdbEvent = static_cast<const CloudEvent &>(event);
     auto &storeInfo = rdbEvent.GetStoreInfo();
     ZLOGD("Start GetSchema, bundleName:%{public}s, storeName:%{public}s, instanceId:%{public}d",
-        storeInfo.bundleName.c_str(), storeInfo.storeName.c_str(), storeInfo.instanceId);
+        storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.instanceId);
     GetSchemaMeta(storeInfo.user, storeInfo.bundleName, storeInfo.instanceId);
 }
 

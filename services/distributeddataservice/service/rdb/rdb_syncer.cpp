@@ -44,13 +44,13 @@ namespace OHOS::DistributedRdb {
 RdbSyncer::RdbSyncer(const RdbSyncerParam& param, RdbStoreObserverImpl* observer)
     : param_(param), observer_(observer)
 {
-    ZLOGI("construct %{public}s", param_.storeName_.c_str());
+    ZLOGI("construct %{public}s", Anonymous::Change(param_.storeName_).c_str());
 }
 
 RdbSyncer::~RdbSyncer() noexcept
 {
     param_.password_.assign(param_.password_.size(), 0);
-    ZLOGI("destroy %{public}s", param_.storeName_.c_str());
+    ZLOGI("destroy %{public}s", Anonymous::Change(param_.storeName_).c_str());
     if ((manager_ != nullptr) && (delegate_ != nullptr)) {
         manager_->CloseStore(delegate_);
     }
@@ -167,11 +167,11 @@ int32_t RdbSyncer::InitDBDelegate(const StoreMetaData &meta)
         }
         option.observer = observer_;
         std::string fileName = meta.dataDir;
-        ZLOGI("path=%{public}s storeId=%{public}s", fileName.c_str(), Anonymous::Change(meta.storeId).c_str());
+        ZLOGI("path=%{public}s storeId=%{public}s", fileName.c_str(), meta.GetStoreAlias().c_str());
         auto status = manager_->OpenStore(fileName, meta.storeId, option, delegate_);
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("open store failed, path=%{public}s storeId=%{public}s status=%{public}d",
-                fileName.c_str(), Anonymous::Change(meta.storeId).c_str(), status);
+                fileName.c_str(), meta.GetStoreAlias().c_str(), status);
             return RDB_ERROR;
         }
         ZLOGI("open store success");

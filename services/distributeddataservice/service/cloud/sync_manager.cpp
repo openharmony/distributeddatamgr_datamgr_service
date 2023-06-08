@@ -16,6 +16,7 @@
 #include "sync_manager.h"
 
 #include "cloud/cloud_info.h"
+#include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sync_event.h"
 #include "device_manager_adapter.h"
@@ -23,7 +24,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "store/auto_cache.h"
-#include "cloud/cloud_server.h"
+#include "utils/anonymous.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
@@ -174,7 +175,6 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t retry, RefCount ref, SyncInf
         if (!cloud.enableCloud || cloud.id != info.id_ || (!info.bundleName_.empty() &&
             !cloud.IsOn(info.bundleName_))) {
             info.SetError(E_UNOPENED);
-            ZLOGI("cloud off bundleName:%{public}s", info.bundleName_.c_str());
             return;
         }
 
@@ -223,12 +223,12 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler()
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
             ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                meta.storeId.c_str());
+                meta.GetStoreAlias().c_str());
             return;
         }
         auto store = AutoCache::GetInstance().GetStore(meta, {});
         if (store == nullptr) {
-            ZLOGE("store null, storeId:%{public}s", meta.storeId.c_str());
+            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             return;
         }
 
@@ -239,7 +239,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler()
             std::string schemaKey = info.GetSchemaKey(storeInfo.bundleName, storeInfo.instanceId);
             if (!MetaDataManager::GetInstance().LoadMeta(std::move(schemaKey), schemaMeta, true)) {
                 ZLOGE("failed, no schema bundleName:%{public}s, storeId:%{public}s", storeInfo.bundleName.c_str(),
-                    storeInfo.storeName.c_str());
+                    Anonymous::Change(storeInfo.storeName).c_str());
                 return;
             }
             auto dbMeta = schemaMeta.GetDataBase(storeInfo.storeName);
@@ -252,7 +252,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler()
             store->Bind(dbMeta, std::move(cloudDB));
         }
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
-            storeInfo.storeName.c_str());
+            Anonymous::Change(storeInfo.storeName).c_str());
         store->Sync( { "default" }, evt.GetMode(), *(evt.GetQuery()), evt.GetAsyncDetail(), evt.GetWait());
     };
 }
