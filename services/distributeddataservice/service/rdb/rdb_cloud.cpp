@@ -17,6 +17,7 @@
 #include "rdb_cloud.h"
 #include "log_print.h"
 #include "value_proxy.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedRdb {
 using namespace DistributedDB;
@@ -55,7 +56,8 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
 {
     auto cursor = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
     if (cursor == nullptr) {
-        ZLOGE("cursor is null, table:%{public}s, extend:%{public}zu", tableName.c_str(), extend.size());
+        ZLOGE("cursor is null, table:%{public}s, extend:%{public}zu",
+            Anonymous::Change(tableName).c_str(), extend.size());+
         return ConvertStatus(static_cast<GeneralError>(E_ERROR));
     }
     int32_t count = cursor->GetCount();
@@ -72,7 +74,7 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
         count--;
     }
     if (cursor->IsEnd()) {
-        ZLOGD("query end, table:%{public}s", tableName.c_str());
+        ZLOGD("query end, table:%{public}s", Anonymous::Change(tableName).c_str());
         return DBStatus::QUERY_END;
     }
     return ConvertStatus(static_cast<GeneralError>(err));
