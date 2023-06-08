@@ -14,7 +14,7 @@
  */
 #define LOG_TAG "Constant"
 #include "utils/constant.h"
-
+#include <fstream>
 #include "log_print.h"
 #include "securec.h"
 
