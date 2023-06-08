@@ -185,13 +185,18 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
         dbQuery = rdbQuery->query_;
     }
     auto dbMode = DistributedDB::SyncMode(mode);
-    auto status = (mode < CLOUD_BEGIN)
-                      ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait)
-                      : delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async)), wait);
+    auto status = (mode < NEARBY_END)
+                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait)
+                  : (mode > NEARBY_END && mode < CLOUD_END)
+                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async)), wait)
+                  : DistributedDB::INVALID_ARGS;
     // mock
     if (observer_.HasWatcher()) {
         Watcher::Origin origin;
-        origin.origin = (mode < CLOUD_BEGIN) ? Watcher::Origin::ORIGIN_NEARBY : Watcher::Origin::ORIGIN_CLOUD;
+        origin.origin = (mode < NEARBY_END) ? Watcher::Origin::ORIGIN_NEARBY
+                                            : (mode > NEARBY_END && mode < CLOUD_END)
+                                            ? Watcher::Origin::ORIGIN_CLOUD
+                                            : Watcher::Origin::ORIGIN_BUTT;
         origin.id = devices;
         origin.store = observer_.storeId_;
         observer_.watcher_->OnChange(origin, {}, {});

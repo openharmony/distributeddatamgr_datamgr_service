@@ -370,7 +370,8 @@ int32_t RdbSyncer::DoSync(const Option &option, const PredicatesMemo &predicates
                 async(HandleSyncStatus(syncStatus));
             },
             !option.isAsync);
-    } else if (option.mode < DistributedData::GeneralStore::CLOUD_END) {
+    } else if (option.mode < DistributedData::GeneralStore::CLOUD_END &&
+               option.mode >= DistributedData::GeneralStore::CLOUD_BEGIN) {
         CloudEvent::StoreInfo storeInfo;
         storeInfo.bundleName = GetBundleName();
         storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(token_);
