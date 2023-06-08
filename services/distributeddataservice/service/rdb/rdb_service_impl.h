@@ -26,8 +26,9 @@
 #include "metadata/store_meta_data.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_syncer.h"
-#include "store_observer.h"
+#include "rdb_watcher.h"
 #include "store/auto_cache.h"
+#include "store_observer.h"
 #include "visibility.h"
 namespace OHOS::DistributedRdb {
 class API_EXPORT RdbServiceImpl : public RdbServiceStub {
@@ -41,45 +42,63 @@ public:
     /* IPC interface */
     std::string ObtainDistributedTableName(const std::string& device, const std::string& table) override;
 
-    int32_t InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> notifier) override;
+    int32_t InitNotifier(const RdbSyncerParam &param, sptr<IRemoteObject> notifier) override;
 
-    int32_t SetDistributedTables(const RdbSyncerParam& param, const std::vector<std::string>& tables) override;
+    int32_t SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
+        int32_t type = DISTRIBUTED_DEVICE) override;
 
     int32_t RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
                         const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet) override;
 
-    void OnDataChange(pid_t pid, const DistributedDB::StoreChangedData& data);
+    int32_t Sync(const RdbSyncerParam &param, const Option &option, const RdbPredicates &predicates,
+        const AsyncDetail &async) override;
 
-    void OnChange(uint32_t tokenId, const std::string &storeName);
+    int32_t Subscribe(const RdbSyncerParam &param, const SubscribeOption &option, RdbStoreObserver *observer) override;
+
+    int32_t UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
+        RdbStoreObserver *observer) override;
+
+    void OnDataChange(pid_t pid, uint32_t tokenId, const DistributedDB::StoreChangedData& data);
 
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
 
     int32_t OnInitialize() override;
 
+    int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
+
     int32_t GetSchema(const RdbSyncerParam &param) override;
 
     int32_t OnBind(const BindInfo &bindInfo) override;
-
-protected:
-    int32_t DoSync(const RdbSyncerParam& param, const SyncOption& option,
-                   const RdbPredicates& predicates, SyncResult& result) override;
-
-    int32_t DoAsync(const RdbSyncerParam& param, uint32_t seqNum, const SyncOption& option,
-                    const RdbPredicates& predicates) override;
-
-    int32_t DoSubscribe(const RdbSyncerParam& param, const SubscribeOption &option) override;
-
-    int32_t DoUnSubscribe(const RdbSyncerParam& param) override;
 
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
     struct SyncAgent {
         pid_t pid_ = 0;
+        int32_t count_ = 0;
         std::string bundleName_;
-        std::map<std::string, SubscribeMode> mode_;
-        std::map<std::string, Watchers> watchers_;
+        sptr<RdbNotifierProxy> notifier_ = nullptr;
+        std::shared_ptr<RdbWatcher> watcher_ = nullptr;
         void ReInit(pid_t pid, const std::string &bundleName);
+        void SetNotifier(sptr<RdbNotifierProxy> notifier);
+        void SetWatcher(std::shared_ptr<RdbWatcher> watcher);
     };
+
+    class Factory {
+    public:
+        Factory();
+        ~Factory();
+    private:
+        std::shared_ptr<RdbServiceImpl> product_;
+    };
+    using StoreSyncersType = std::map<std::string, std::shared_ptr<RdbSyncer>>;
+
+    static constexpr int32_t MAX_SYNCER_NUM = 50;
+    static constexpr int32_t MAX_SYNCER_PER_PROCESS = 10;
+    static constexpr int32_t SYNCER_TIMEOUT = 60 * 1000; // ms
+
+    std::pair<int32_t, Details> DoSync(const RdbSyncerParam &param, const Option &option, const RdbPredicates &pred);
+
+    int32_t DoAsync(const RdbSyncerParam &param, const Option &option, const RdbPredicates &pred);
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
 
@@ -91,7 +110,7 @@ private:
 
     std::shared_ptr<RdbSyncer> GetRdbSyncer(const RdbSyncerParam& param);
 
-    void OnAsyncComplete(pid_t pid, uint32_t seqNum, const SyncResult& result);
+    void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details&& result);
 
     int32_t CreateMetaData(const RdbSyncerParam &param, StoreMetaData &old);
 
@@ -101,39 +120,15 @@ private:
 
     int32_t Upgrade(const RdbSyncerParam &param, const StoreMetaData &old);
 
-    class DeathRecipientImpl : public IRemoteObject::DeathRecipient {
-    public:
-        using DeathCallback = std::function<void()>;
-        explicit DeathRecipientImpl(const DeathCallback& callback);
-        ~DeathRecipientImpl() override;
-        void OnRemoteDied(const wptr<IRemoteObject> &object) override;
-    private:
-        const DeathCallback callback_;
-    };
-    class Factory {
-    public:
-        Factory();
-        ~Factory();
-    private:
-        std::shared_ptr<RdbServiceImpl> product_;
-    };
-
-    using StoreSyncersType = std::map<std::string, std::shared_ptr<RdbSyncer>>;
-    int32_t syncerNum_ {};
-    ConcurrentMap<pid_t, StoreSyncersType> syncers_;
-    ConcurrentMap<pid_t, sptr<RdbNotifierProxy>> notifiers_;
-    ConcurrentMap<std::string, pid_t> identifiers_;
-    RdbStoreObserverImpl autoLaunchObserver_;
-
-    static Factory factory_;
-
     static std::string TransferStringToHex(const std::string& origStr);
 
-    static constexpr int32_t MAX_SYNCER_NUM = 50;
-    static constexpr int32_t MAX_SYNCER_PER_PROCESS = 10;
-    static constexpr int32_t SYNCER_TIMEOUT = 60 * 1000; // ms
-    std::shared_ptr<ExecutorPool> executors_;
+    static Factory factory_;
+    int32_t syncerNum_ {};
+    ConcurrentMap<pid_t, StoreSyncersType> syncers_;
+    ConcurrentMap<std::string, std::pair<pid_t, uint32_t>> identifiers_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
+    RdbStoreObserverImpl autoLaunchObserver_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedRdb
 #endif

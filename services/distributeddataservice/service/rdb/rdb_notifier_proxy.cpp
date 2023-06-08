@@ -27,7 +27,7 @@ RdbNotifierProxy::~RdbNotifierProxy() noexcept
     ZLOGI("destroy");
 }
 
-int32_t RdbNotifierProxy::OnComplete(uint32_t seqNum, const SyncResult &result)
+int32_t RdbNotifierProxy::OnComplete(uint32_t seqNum, Details &&result)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -47,14 +47,14 @@ int32_t RdbNotifierProxy::OnComplete(uint32_t seqNum, const SyncResult &result)
     return RDB_OK;
 }
 
-int RdbNotifierProxy::OnChange(const std::string &storeName, const std::vector<std::string> &devices)
+int32_t RdbNotifierProxy::OnChange(const Origin &origin, const PrimaryFields &primaries, ChangeInfo &&changeInfo)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         ZLOGE("write descriptor failed");
         return RDB_ERROR;
     }
-    if (!ITypesUtil::Marshal(data, storeName, devices)) {
+    if (!ITypesUtil::Marshal(data, origin, primaries, changeInfo)) {
         ZLOGE("write store name or devices failed");
         return RDB_ERROR;
     }

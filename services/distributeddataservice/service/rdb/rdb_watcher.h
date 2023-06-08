@@ -15,23 +15,23 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_WATCHER_H
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_WATCHER_H
-#include "rdb_service_impl.h"
+#include <mutex>
+#include <shared_mutex>
+#include "rdb_notifier_proxy.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
 
 namespace OHOS::DistributedRdb {
-class RdbServiceImpl;
 class RdbWatcher : public DistributedData::GeneralWatcher {
 public:
-    explicit RdbWatcher(RdbServiceImpl *rdbService, uint32_t tokenId, const std::string &storeName);
-    int32_t OnChange(Origin origin, const std::string &id) override;
-    int32_t OnChange(Origin origin, const std::string &id,
-        const std::vector<DistributedData::VBucket> &values) override;
+    RdbWatcher();
+    int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
+    sptr<RdbNotifierProxy> GetNotifier() const;
+    void SetNotifier(sptr<RdbNotifierProxy> notifier);
 
 private:
-    RdbServiceImpl* rdbService_ {};
-    uint32_t tokenId_ = 0;
-    std::string storeName_ {};
+    mutable std::shared_mutex mutex_;
+    sptr<RdbNotifierProxy> notifier_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_WATCHER_H

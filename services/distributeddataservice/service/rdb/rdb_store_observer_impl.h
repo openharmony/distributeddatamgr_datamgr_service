@@ -23,15 +23,16 @@ namespace OHOS::DistributedRdb {
 class RdbServiceImpl;
 class RdbStoreObserverImpl : public DistributedDB::StoreObserver {
 public:
-    explicit RdbStoreObserverImpl(RdbServiceImpl* owner, pid_t pid = 0);
+    explicit RdbStoreObserverImpl(RdbServiceImpl* owner, pid_t pid = 0, uint32_t tokenId = 0);
 
     ~RdbStoreObserverImpl() override;
 
     void OnChange(const DistributedDB::StoreChangedData &data) override;
 
 private:
-    pid_t pid_ {};
-    RdbServiceImpl* owner_ {};
+    pid_t pid_ = 0;
+    uint32_t tokenId_ = 0;
+    RdbServiceImpl* owner_ = nullptr;
 };
 } // namespace OHOS::DistributedRdb
 #endif

@@ -64,8 +64,7 @@ private:
         bool Close();
         int32_t GetUser() const;
         void SetObservers(const Watchers &watchers);
-        int32_t OnChange(Origin origin, const std::string &id) override;
-        int32_t OnChange(Origin origin, const std::string &id, const std::vector<VBucket> &values) override;
+        int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
 
     private:
         mutable Time time_;
