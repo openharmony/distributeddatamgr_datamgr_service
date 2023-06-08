@@ -123,6 +123,40 @@ RdbSubscriberManager &RdbSubscriberManager::GetInstance()
     return manager;
 }
 
+void RdbSubscriberManager::LinkToDeath(const Key &key, sptr<IDataProxyRdbObserver> observer)
+{
+    sptr<ObserverNodeRecipient> deathRecipient = new (std::nothrow) ObserverNodeRecipient(this, key, observer);
+    if (deathRecipient == nullptr) {
+        ZLOGE("new ObserverNodeRecipient error, uri is %{public}s",
+            DistributedData::Anonymous::Change(key.uri).c_str());
+        return;
+    }
+    auto remote = observer->AsObject();
+    if (!remote->AddDeathRecipient(deathRecipient)) {
+        ZLOGE("add death recipient failed, uri is %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
+        return;
+    }
+    ZLOGD("link to death success, uri is %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
+}
+
+void RdbSubscriberManager::OnRemoteDied(const Key &key, sptr<IDataProxyRdbObserver> observer)
+{
+    rdbCache_.ComputeIfPresent(key, [&observer, this](const auto &key, std::vector<ObserverNode> &value) {
+        for (auto it = value.begin(); it != value.end(); ++it) {
+            if (it->observer->AsObject() == observer->AsObject()) {
+                value.erase(it);
+                ZLOGI("OnRemoteDied delete subscriber, uri is %{public}s",
+                    DistributedData::Anonymous::Change(key.uri).c_str());
+                break;
+            }
+        }
+        if (GetEnableObserverCount(key) == 0) {
+            SchedulerManager::GetInstance().RemoveTimer(key);
+        }
+        return !value.empty();
+    });
+}
+
 int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const TemplateId &tplId,
     const sptr<IDataProxyRdbObserver> observer, std::shared_ptr<Context> context,
     std::shared_ptr<ExecutorPool> executorPool)
@@ -142,6 +176,7 @@ int RdbSubscriberManager::AddRdbSubscriber(const std::string &uri, const Templat
         };
         executorPool->Execute(task);
         value.emplace_back(observer, context->callerTokenId);
+        LinkToDeath(key, observer);
         if (GetEnableObserverCount(key) == 1) {
             SchedulerManager::GetInstance().Execute(key, context->calledSourceDir, context->version);
         }
@@ -317,6 +352,39 @@ PublishedDataSubscriberManager &PublishedDataSubscriberManager::GetInstance()
     return manager;
 }
 
+void PublishedDataSubscriberManager::LinkToDeath(const PublishedDataKey &key,
+    sptr<IDataProxyPublishedDataObserver> observer)
+{
+    sptr<ObserverNodeRecipient> deathRecipient = new (std::nothrow) ObserverNodeRecipient(this, key, observer);
+    if (deathRecipient == nullptr) {
+        ZLOGE("new ObserverNodeRecipient error. uri is %{public}s",
+            DistributedData::Anonymous::Change(key.key).c_str());
+        return;
+    }
+    auto remote = observer->AsObject();
+    if (!remote->AddDeathRecipient(deathRecipient)) {
+        ZLOGE("add death recipient failed, uri is %{public}s", DistributedData::Anonymous::Change(key.key).c_str());
+        return;
+    }
+    ZLOGD("link to death success, uri is %{public}s", DistributedData::Anonymous::Change(key.key).c_str());
+}
+
+void PublishedDataSubscriberManager::OnRemoteDied(const PublishedDataKey &key,
+    sptr<IDataProxyPublishedDataObserver> observer)
+{
+    publishedDataCache.ComputeIfPresent(key, [&observer, this](const auto &key, std::vector<ObserverNode> &value) {
+        for (auto it = value.begin(); it != value.end(); ++it) {
+            if (it->observer->AsObject() == observer->AsObject()) {
+                value.erase(it);
+                ZLOGI("OnRemoteDied delete subscriber, uri is %{public}s",
+                    DistributedData::Anonymous::Change(key.key).c_str());
+                break;
+            }
+        }
+        return !value.empty();
+    });
+}
+
 int PublishedDataSubscriberManager::AddSubscriber(const std::string &key, const std::string &callerBundleName,
     const int64_t subscriberId, const sptr<IDataProxyPublishedDataObserver> observer, const uint32_t callerTokenId)
 {
@@ -324,6 +392,7 @@ int PublishedDataSubscriberManager::AddSubscriber(const std::string &key, const 
     publishedDataCache.Compute(publishedDataKey,
         [&observer, &callerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
             ZLOGI("add publish subscriber, uri %{private}s tokenId %{public}d", key.key.c_str(), callerTokenId);
+            LinkToDeath(key, observer);
             value.emplace_back(observer, callerTokenId);
             return true;
         });

@@ -71,6 +71,26 @@ private:
         bool enabled = true;
     };
 
+    class ObserverNodeRecipient : public IRemoteObject::DeathRecipient {
+    public:
+        ObserverNodeRecipient(RdbSubscriberManager *owner, const Key &key,
+            sptr<IDataProxyRdbObserver> observer) : owner_(owner), key_(key), observer_(observer) {};
+
+        void OnRemoteDied(const wptr<IRemoteObject> &object) override
+        {
+            if (owner_ != nullptr) {
+                owner_->OnRemoteDied(key_, observer_);
+            }
+        }
+
+    private:
+        RdbSubscriberManager *owner_;
+        Key key_;
+        sptr<IDataProxyRdbObserver> observer_;
+    };
+
+    void LinkToDeath(const Key &key, sptr<IDataProxyRdbObserver> observer);
+    void OnRemoteDied(const Key &key, sptr<IDataProxyRdbObserver> observer);
     RdbSubscriberManager() = default;
     ConcurrentMap<Key, std::vector<ObserverNode>> rdbCache_;
     int Notify(const Key &key, const std::vector<ObserverNode> &val, const std::string &rdbDir, int rdbVersion);
@@ -110,6 +130,27 @@ private:
         uint32_t callerTokenId;
         bool enabled = true;
     };
+    class ObserverNodeRecipient : public IRemoteObject::DeathRecipient {
+    public:
+        ObserverNodeRecipient(PublishedDataSubscriberManager *owner, const PublishedDataKey &key,
+            sptr<IDataProxyPublishedDataObserver> observer) : owner_(owner), key_(key), observer_(observer) {};
+
+        void OnRemoteDied(const wptr<IRemoteObject> &object) override
+        {
+            if (owner_ != nullptr) {
+                owner_->OnRemoteDied(key_, observer_);
+            }
+        }
+
+    private:
+        PublishedDataSubscriberManager *owner_;
+        PublishedDataKey key_;
+        sptr<IDataProxyPublishedDataObserver> observer_;
+    };
+
+    void LinkToDeath(const PublishedDataKey &key, sptr<IDataProxyPublishedDataObserver> observer);
+    void OnRemoteDied(const PublishedDataKey &key, sptr<IDataProxyPublishedDataObserver> observer);
+
     PublishedDataSubscriberManager() = default;
     void PutInto(std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &,
         const std::vector<ObserverNode> &, const PublishedDataKey &, const sptr<IDataProxyPublishedDataObserver>);
