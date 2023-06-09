@@ -32,4 +32,4 @@ private:
     SeqStrategy strategies_;
 };
 } // namespace OHOS::DataShare
-#endif //LDBPROJ_TEMPLATE_STRATEGY_H
+#endif // LDBPROJ_TEMPLATE_STRATEGY_H
