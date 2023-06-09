@@ -172,8 +172,8 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t retry, RefCount ref, SyncInf
             return;
         }
 
-        if (!cloud.enableCloud || cloud.id != info.id_ || (!info.bundleName_.empty() &&
-            !cloud.IsOn(info.bundleName_))) {
+        if (!cloud.enableCloud || (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_) ||
+            (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
             info.SetError(E_UNOPENED);
             return;
         }
@@ -195,6 +195,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t retry, RefCount ref, SyncInf
                 storeInfo.bundleName = schema.bundleName;
                 storeInfo.user = cloud.user;
                 storeInfo.storeName = database.name;
+                storeInfo.instanceId = cloud.apps[schema.bundleName].instanceId;
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
                     SyncEvent::EventInfo { info.mode_, info.wait_, std::move(query), info.async_ });
@@ -243,7 +244,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler()
                 return;
             }
             auto dbMeta = schemaMeta.GetDataBase(storeInfo.storeName);
-            auto cloudDB = instance->ConnectCloudDB(storeInfo.tokenId, dbMeta);
+            auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
             if (cloudDB == nullptr) {
                 ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", storeInfo.tokenId,
                     dbMeta.name.c_str(), dbMeta.alias.c_str());
@@ -253,7 +254,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler()
         }
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             Anonymous::Change(storeInfo.storeName).c_str());
-        store->Sync( { "default" }, evt.GetMode(), *(evt.GetQuery()), evt.GetAsyncDetail(), evt.GetWait());
+        store->Sync( { SyncInfo::DEFAULT_ID }, evt.GetMode(), *(evt.GetQuery()), evt.GetAsyncDetail(), evt.GetWait());
     };
 }
 
