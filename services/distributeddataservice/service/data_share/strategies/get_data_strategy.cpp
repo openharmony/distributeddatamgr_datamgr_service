@@ -23,15 +23,17 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-Data GetDataStrategy::Execute(std::shared_ptr<Context> context)
+Data GetDataStrategy::Execute(std::shared_ptr<Context> context, int &errorCode)
 {
     auto &preProcess = GetStrategy();
     if (preProcess.IsEmpty()) {
         ZLOGE("get strategy fail, maybe memory not enough");
+        errorCode = E_ERROR;
         return Data();
     }
     if (!preProcess(context)) {
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
+        errorCode = context->errCode;
         return Data();
     }
     auto result = PublishedData::Query(context->calledBundleName);

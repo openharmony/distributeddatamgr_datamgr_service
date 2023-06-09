@@ -70,6 +70,7 @@ ohos_shared_library("data_share_service") {
     "strategies/publish_strategy.cpp",
     "strategies/query_strategy.cpp",
     "strategies/subscribe_strategy.cpp",
+    "strategies/template_strategy.cpp",
     "strategies/update_strategy.cpp",
   ]
   cflags = [ "-Wno-multichar" ]

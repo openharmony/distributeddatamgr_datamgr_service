@@ -32,9 +32,10 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
         ZLOGE("get strategy fail, maybe memory not enough");
         return -1;
     }
+
     if (!preProcess(context)) {
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
-        return -1;
+        return context->errCode;
     }
     auto delegate = KvDBDelegate::GetInstance();
     if (delegate == nullptr) {
