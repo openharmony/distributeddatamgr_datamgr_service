@@ -120,12 +120,10 @@ int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t 
     return templateStrategy_.Execute(context, [&uri,  &tpltId, &tplt]() -> int32_t {
         return TemplateManager::GetInstance().AddTemplate(uri, tpltId, tplt);
     });
-    // return TemplateManager::GetInstance().AddTemplate(uri, tpltId, tplt);
 }
 
 int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t subscriberId)
 {
-    ZLOGI("ndy DelTemplate enter.");
     auto context = std::make_shared<Context>(uri);
     TemplateId tpltId;
     tpltId.subscriberId_ = subscriberId;
@@ -137,7 +135,6 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
     return templateStrategy_.Execute(context, [&uri,  &tpltId]() -> int32_t {
         return TemplateManager::GetInstance().DelTemplate(uri, tpltId);
     });
-    // return TemplateManager::GetInstance().DelTemplate(uri, tpltId);
 }
 
 bool DataShareServiceImpl::GetCallerBundleName(std::string &bundleName)

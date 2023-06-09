@@ -25,9 +25,6 @@ namespace OHOS::DataShare {
 class TemplateStrategy final {
 public:
     int32_t Execute(std::shared_ptr<Context> context, std::function<bool()> process);
-//    int32_t ExecuteAddTemplate(std::shared_ptr<Context> context, const TemplateId &tpltId, const Template &tplt);
-//
-//    int32_t ExecuteDelTemplate(std::shared_ptr<Context> context, const TemplateId &tpltId);
 
 private:
     SeqStrategy &GetStrategy();

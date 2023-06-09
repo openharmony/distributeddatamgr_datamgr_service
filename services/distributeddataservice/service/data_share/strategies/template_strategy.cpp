@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "AddTemplateStrategy"
+#define LOG_TAG "TemplateStrategy"
 
 #include "template_strategy.h"
 
@@ -20,7 +20,6 @@
 #include "datashare_errno.h"
 #include "general/load_config_common_strategy.h"
 #include "log_print.h"
-#include "template_manager.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -38,36 +37,6 @@ int32_t TemplateStrategy::Execute(std::shared_ptr<Context> context, std::functio
     }
     return process();
 }
-
-//int32_t TemplateStrategy::ExecuteAddTemplate(std::shared_ptr<Context> context, const TemplateId &tpltId, const Template &tplt)
-//{
-//    auto &preProcess = GetStrategy();
-//    if (preProcess.IsEmpty()) {
-//        ZLOGE("get strategy fail, maybe memory not enough");
-//        return E_ERROR;
-//    }
-//
-//    if (!preProcess(context)) {
-//        ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
-//        return context->errCode;
-//    }
-//    return TemplateManager::GetInstance().AddTemplate(context->uri, tpltId, tplt);
-//}
-//
-//int32_t TemplateStrategy::ExecuteDelTemplate(std::shared_ptr<Context> context, const TemplateId &tpltId)
-//{
-//    auto &preProcess = GetStrategy();
-//    if (preProcess.IsEmpty()) {
-//        ZLOGE("get strategy fail, maybe memory not enough");
-//        return E_ERROR;
-//    }
-//
-//    if (!preProcess(context)) {
-//        ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
-//        return context->errCode;
-//    }
-//    return TemplateManager::GetInstance().DelTemplate(context->uri, tpltId);
-//}
 
 SeqStrategy &TemplateStrategy::GetStrategy()
 {
