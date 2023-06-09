@@ -86,7 +86,7 @@ private:
     InsertStrategy insertStrategy_;
     QueryStrategy queryStrategy_;
     UpdateStrategy updateStrategy_;
-	TemplateStrategy templateStrategy_;
+    TemplateStrategy templateStrategy_;
     BindInfo binderInfo_;
 };
 } // namespace OHOS::DataShare
