@@ -48,7 +48,7 @@ public:
     int version = -1;
     int errCode = -1;
     bool isRead = false;
-    bool isInWhite = false; // can cross permission check, for special SA
+    bool isAllowCrossPer = false; // can cross permission check, for special SA
     bool needAutoLoadCallerBundleName = false;
     AccessSystemMode accessSystemMode = AccessSystemMode::UNDEFINED;
     OHOS::AppExecFwk::BundleInfo bundleInfo;

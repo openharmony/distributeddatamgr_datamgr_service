@@ -36,7 +36,7 @@ Data GetDataStrategy::Execute(std::shared_ptr<Context> context, int &errorCode)
         errorCode = context->errCode;
         return Data();
     }
-    auto result = PublishedData::Query(context->calledBundleName);
+    auto result = PublishedData::Query(context->calledBundleName, context->currentUserId);
     Data data;
     for (const auto &item:result) {
         if (!CheckPermission(context, item.value.key)) {

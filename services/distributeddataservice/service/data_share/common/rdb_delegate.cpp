@@ -30,6 +30,7 @@ enum REMIND_TIMER_ARGS : int32_t {
     ARG_URI,
     ARG_SUBSCRIBER_ID,
     ARG_BUNDLE_NAME,
+    ARG_USER_ID,
     ARG_TIME,
     ARGS_SIZE
 };
@@ -44,8 +45,8 @@ std::string RemindTimerFunc(const std::vector<std::string> &args)
     int version = std::strtol(args[ARG_VERSION].c_str(), nullptr, 0);
     Key key(args[ARG_URI], std::strtoll(args[ARG_SUBSCRIBER_ID].c_str(), nullptr, 0), args[ARG_BUNDLE_NAME]);
     int64_t reminderTime = std::strtoll(args[ARG_TIME].c_str(), nullptr, 0);
-
-    SchedulerManager::GetInstance().SetTimer(dbPath, version, key, reminderTime);
+    int32_t userId = std::strtol(args[ARG_USER_ID].c_str(), nullptr, 0);
+    SchedulerManager::GetInstance().SetTimer(dbPath, userId, version, key, reminderTime);
     return args[ARG_TIME];
 }
 

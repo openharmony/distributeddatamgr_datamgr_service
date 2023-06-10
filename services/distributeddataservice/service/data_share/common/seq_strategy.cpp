@@ -28,11 +28,12 @@ bool SeqStrategy::operator()(std::shared_ptr<Context> context)
 }
 bool SeqStrategy::Init(std::initializer_list<Strategy *> strategies)
 {
-    for (auto &item: strategies) {
+    for (const auto &item: strategies) {
         if (item == nullptr) {
-            actions_.clear();
             return false;
         }
+    }
+    for (const auto &item: strategies) {
         actions_.emplace_back(item);
     }
     return true;

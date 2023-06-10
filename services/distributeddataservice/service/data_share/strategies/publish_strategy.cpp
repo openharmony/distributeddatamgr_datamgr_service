@@ -17,9 +17,9 @@
 #include "publish_strategy.h"
 
 #include "data_proxy/load_config_from_data_proxy_node_strategy.h"
+#include "general/cross_permission_strategy.h"
 #include "general/load_config_common_strategy.h"
 #include "general/permission_strategy.h"
-#include "general/white_permission_strategy.h"
 #include "log_print.h"
 #include "published_data.h"
 #include "utils/anonymous.h"
@@ -32,7 +32,6 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
         ZLOGE("get strategy fail, maybe memory not enough");
         return -1;
     }
-
     if (!preProcess(context)) {
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return context->errCode;
@@ -42,7 +41,9 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
         ZLOGE("db open failed");
         return -1;
     }
-    PublishedData data(context->uri, context->calledBundleName, item.subscriberId_, item.GetData(), context->version);
+    PublishedData data(PublishedDataNode(context->uri, context->calledBundleName, item.subscriberId_,
+                           context->currentUserId, item.GetData()),
+        context->version);
     int32_t status = delegate->Upsert(KvDBDelegate::DATA_TABLE, data);
     if (status != E_OK) {
         ZLOGE("db Upsert failed, %{public}s %{public}s %{public}d", context->calledBundleName.c_str(),
@@ -58,10 +59,10 @@ SeqStrategy &PublishStrategy::GetStrategy()
     if (!strategies_.IsEmpty()) {
         return strategies_;
     }
-    std::initializer_list<std::string> whitePermissions = { "ohos.permission.WRITE_APP_PUSH_DATA" };
+    std::initializer_list<std::string> allowCrossPermissions = { "ohos.permission.WRITE_APP_PUSH_DATA" };
     std::initializer_list<Strategy *> list = {
         new (std::nothrow) LoadConfigCommonStrategy(),
-        new (std::nothrow) WhitePermissionStrategy(whitePermissions),
+        new (std::nothrow) CrossPermissionStrategy(allowCrossPermissions),
         new (std::nothrow) LoadConfigFromDataProxyNodeStrategy(),
         new (std::nothrow) PermissionStrategy()
     };

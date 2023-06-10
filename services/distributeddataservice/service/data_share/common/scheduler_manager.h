@@ -26,10 +26,11 @@ namespace OHOS::DataShare {
 class SchedulerManager {
 public:
     static SchedulerManager &GetInstance();
-    void Execute(const std::string &uri, const std::string &rdbDir, int version);
-    void Execute(const Key &key, const std::string &rdbDir, int version);
-    void SetTimer(const std::string &dbPath, int version, const Key &key, int64_t reminderTime);
+    void Execute(const std::string &uri, const int32_t userId, const std::string &rdbDir, int version);
+    void Execute(const Key &key, const int32_t userId, const std::string &rdbDir, int version);
+    void SetTimer(const std::string &dbPath, const int32_t userId, int version, const Key &key, int64_t reminderTime);
     void RemoveTimer(const Key &key);
+    void ClearTimer();
     void SetExecutorPool(std::shared_ptr<ExecutorPool> executor);
 
 private:
@@ -37,9 +38,9 @@ private:
     static constexpr int REMIND_TIMER_FUNC_LEN = 12;
     SchedulerManager() = default;
     ~SchedulerManager() = default;
-    static void GenRemindTimerFuncParams(const std::string &rdbDir, int version, const Key &key,
+    static void GenRemindTimerFuncParams(const std::string &rdbDir, const int32_t userId, int version, const Key &key,
         std::string &schedulerSQL);
-    void ExecuteSchedulerSQL(const std::string &rdbDir, int version, const Key &key,
+    void ExecuteSchedulerSQL(const std::string &rdbDir, const int32_t userId, int version, const Key &key,
         std::shared_ptr<DBDelegate> delegate);
 
     std::mutex mutex_;

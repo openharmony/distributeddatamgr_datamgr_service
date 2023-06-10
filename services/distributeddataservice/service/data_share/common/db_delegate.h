@@ -44,7 +44,8 @@ public:
 
 class Id : public DistributedData::Serializable {
 public:
-    explicit Id(const std::string &id);
+    static constexpr int INVALID_USER = -1;
+    Id(const std::string &id, const int32_t userId);
     ~Id() = default;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
@@ -55,6 +56,7 @@ public:
 
 private:
     std::string _id;
+    int32_t _userId;
 };
 
 class VersionData : public DistributedData::Serializable {

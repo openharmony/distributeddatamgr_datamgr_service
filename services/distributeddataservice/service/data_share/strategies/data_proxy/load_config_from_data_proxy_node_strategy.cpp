@@ -64,7 +64,7 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
         ZLOGI("access private data, caller and called is same, go");
         return true;
     }
-    if (context->isInWhite) {
+    if (context->isAllowCrossPer) {
         ZLOGI("access has white permission, go");
         return true;
     }
