@@ -135,8 +135,8 @@ bool TemplateData::Delete(const std::string &bundleName, const int32_t userId)
     return true;
 }
 
-bool TemplateData::Add(
-    const std::string &uri, const int32_t userId, const std::string &bundleName, const int64_t subsciriberId, const Template &aTemplate)
+bool TemplateData::Add(const std::string &uri, const int32_t userId, const std::string &bundleName,
+    const int64_t subsciriberId, const Template &aTemplate)
 {
     auto delegate = KvDBDelegate::GetInstance();
     if (delegate == nullptr) {
