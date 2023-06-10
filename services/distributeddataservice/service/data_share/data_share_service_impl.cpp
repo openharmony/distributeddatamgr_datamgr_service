@@ -335,7 +335,7 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
         });
         results.emplace_back(uri, result);
         if (result == E_OK) {
-            publishedKeys.emplace_back(key);
+            publishedKeys.emplace_back(context->uri, context->callerBundleName, subscriberId);
             userId = context->currentUserId;
         }
     }

@@ -372,7 +372,7 @@ int PublishedDataSubscriberManager::Add(
     const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer, const uint32_t callerTokenId)
 {
     publishedDataCache.Compute(key,
-        [&observer, &callerTokenId](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
+        [&observer, &callerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
             ZLOGI("add publish subscriber, uri %{private}s tokenId %{public}d", key.key.c_str(), callerTokenId);
             LinkToDeath(key, observer);
             value.emplace_back(observer, callerTokenId);

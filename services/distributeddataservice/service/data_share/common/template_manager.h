@@ -40,8 +40,8 @@ struct Key {
 class TemplateManager {
 public:
     static TemplateManager &GetInstance();
-    int32_t  Add(const Key &key, const int32_t userId, const Template &tpl);
-    int32_t  Delete(const Key &key, const int32_t userId);
+    int32_t Add(const Key &key, const int32_t userId, const Template &tpl);
+    int32_t Delete(const Key &key, const int32_t userId);
     bool Get(const Key &key, const int32_t userId, Template &tpl);
 
 private:
