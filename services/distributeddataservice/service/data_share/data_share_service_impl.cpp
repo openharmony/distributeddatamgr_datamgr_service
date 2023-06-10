@@ -237,7 +237,8 @@ std::vector<OperationResult> DataShareServiceImpl::EnableRdbSubs(
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &context]() -> bool {
-            return RdbSubscriberManager::GetInstance().Enable(Key(context->uri, id.subscriberId_, id.bundleName_), context);
+            return RdbSubscriberManager::GetInstance().Enable(
+                Key(context->uri, id.subscriberId_, id.bundleName_), context);
         }));
     }
     return results;
@@ -250,7 +251,8 @@ std::vector<OperationResult> DataShareServiceImpl::DisableRdbSubs(
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &context]() -> bool {
-            return RdbSubscriberManager::GetInstance().Disable(Key(context->uri, id.subscriberId_, id.bundleName_), context->callerTokenId);
+            return RdbSubscriberManager::GetInstance().Disable(
+                Key(context->uri, id.subscriberId_, id.bundleName_), context->callerTokenId);
         }));
     }
     return results;

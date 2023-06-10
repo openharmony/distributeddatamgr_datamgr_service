@@ -56,7 +56,7 @@ public:
 
 private:
     std::string _id;
-    int32_t _userId;
+    int32_t userId;
 };
 
 class VersionData : public DistributedData::Serializable {

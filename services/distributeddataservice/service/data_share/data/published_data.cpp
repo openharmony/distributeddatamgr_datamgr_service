@@ -89,9 +89,10 @@ bool PublishedDataNode::Unmarshal(const DistributedData::Serializable::json &nod
     return ret && VersionData::Unmarshal(node);
 }
 
-PublishedDataNode::PublishedDataNode(const std::string &key, const std::string &bundleName,
-    int64_t subscriberId, const int32_t userId, const std::variant<std::vector<uint8_t>, std::string> &value)
-    : VersionData(-1), key(key), bundleName(bundleName), subscriberId(subscriberId), value(std::move(value)), userId(userId)
+PublishedDataNode::PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
+    const int32_t userId, const Data &value)
+    : VersionData(-1), key(key), bundleName(bundleName), subscriberId(subscriberId), value(std::move(value)),
+      userId(userId)
 {
     auto now = time(nullptr);
     if (now > 0) {

@@ -147,7 +147,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
     std::shared_ptr<Context> context, std::shared_ptr<ExecutorPool> executorPool)
 {
     int result = E_OK;
-    rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, std::vector<ObserverNode> &value) {
+    rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, auto &value) {
         ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), context->callerTokenId);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId);
@@ -262,7 +262,7 @@ void RdbSubscriberManager::EmitByKey(const Key &key, const int32_t userId, const
     if (!URIUtils::IsDataProxyURI(key.uri)) {
         return;
     }
-    rdbCache_.ComputeIfPresent(key, [&rdbPath, &version, &userId, this](const Key &key, std::vector<ObserverNode> &val) {
+    rdbCache_.ComputeIfPresent(key, [&rdbPath, &version, &userId, this](const Key &key, auto &val) {
         Notify(key, userId, val, rdbPath, version);
         return true;
     });

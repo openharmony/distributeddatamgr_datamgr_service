@@ -39,10 +39,10 @@ std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
 bool Id::Marshal(DistributedData::Serializable::json &node) const
 {
     auto ret = false;
-    if (_userId == INVALID_USER) {
+    if (userId == INVALID_USER) {
         ret = SetValue(node[GET_NAME(_id)], _id);
     } else {
-        ret = SetValue(node[GET_NAME(_id)], _id + "_" + std::to_string(_userId));
+        ret = SetValue(node[GET_NAME(_id)], _id + "_" + std::to_string(userId));
     }
     return ret;
 }
@@ -52,7 +52,7 @@ bool Id::Unmarshal(const DistributedData::Serializable::json &node)
     return false;
 }
 
-Id::Id(const std::string &id, const int32_t userId) : _id(id), _userId(userId) {}
+Id::Id(const std::string &id, const int32_t userId) : _id(id), userId(userId) {}
 
 VersionData::VersionData(int version) : version(version) {}
 

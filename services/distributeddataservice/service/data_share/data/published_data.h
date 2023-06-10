@@ -22,16 +22,17 @@
 namespace OHOS::DataShare {
 class PublishedDataNode final : public VersionData {
 public:
+    using Data = std::variant<std::vector<uint8_t>, std::string>;
     PublishedDataNode();
     PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
-        const int32_t userId, const std::variant<std::vector<uint8_t>, std::string> &value);
+        const int32_t userId, const Data &value);
     ~PublishedDataNode() = default;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     std::string key;
     std::string bundleName;
     int64_t subscriberId;
-    std::variant<std::vector<uint8_t>, std::string> value;
+    Data value;
     int32_t userId = Id::INVALID_USER;
     std::time_t timestamp = 0;
 };
