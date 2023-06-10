@@ -32,25 +32,25 @@ bool TemplateManager::GetTemplate(
     return TemplateData::Query(Id(TemplateData::GenId(uri, bundleName, subscriberId)), tpl) == E_OK;
 }
 
-bool TemplateManager::AddTemplate(const std::string &uri, const TemplateId &tplId, const Template &tpl)
+int32_t TemplateManager::AddTemplate(const std::string &uri, const TemplateId &tplId, const Template &tpl)
 {
     auto status = TemplateData::Add(uri, tplId.bundleName_, tplId.subscriberId_, tpl);
     if (!status) {
         ZLOGE("Add failed, %{public}d", status);
-        return false;
+        return E_ERROR;
     }
-    return true;
+    return E_OK;
 }
 
-bool TemplateManager::DelTemplate(const std::string &uri, const TemplateId &tplId)
+int32_t TemplateManager::DelTemplate(const std::string &uri, const TemplateId &tplId)
 {
     auto status = TemplateData::Delete(uri, tplId.bundleName_, tplId.subscriberId_);
     if (!status) {
         ZLOGE("Delete failed, %{public}d", status);
-        return false;
+        return E_ERROR;
     }
     SchedulerManager::GetInstance().RemoveTimer(Key(uri, tplId.subscriberId_, tplId.bundleName_));
-    return true;
+    return E_OK;
 }
 
 Key::Key(const std::string &uri, const int64_t subscriberId, const std::string &bundleName)

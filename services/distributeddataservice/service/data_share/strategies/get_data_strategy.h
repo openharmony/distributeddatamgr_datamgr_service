@@ -26,7 +26,7 @@
 namespace OHOS::DataShare {
 class GetDataStrategy final {
 public:
-    Data Execute(std::shared_ptr<Context> context);
+    Data Execute(std::shared_ptr<Context> context, int &errorCode);
 
 private:
     SeqStrategy &GetStrategy();

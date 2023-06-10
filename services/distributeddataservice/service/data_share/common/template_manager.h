@@ -40,8 +40,8 @@ struct Key {
 class TemplateManager {
 public:
     static TemplateManager &GetInstance();
-    bool AddTemplate(const std::string &uri, const TemplateId &tplId, const Template &tpl);
-    bool DelTemplate(const std::string &uri, const TemplateId &tplId);
+    int32_t AddTemplate(const std::string &uri, const TemplateId &tplId, const Template &tpl);
+    int32_t DelTemplate(const std::string &uri, const TemplateId &tplId);
     bool GetTemplate(const std::string &uri, int64_t subscriberId, const std::string &bundleName, Template &tpl);
 
 private:

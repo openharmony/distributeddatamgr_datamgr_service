@@ -28,6 +28,7 @@
 #include "publish_strategy.h"
 #include "query_strategy.h"
 #include "subscribe_strategy.h"
+#include "template_strategy.h"
 #include "update_strategy.h"
 #include "uri_utils.h"
 #include "visibility.h"
@@ -45,7 +46,7 @@ public:
     int32_t AddTemplate(const std::string &uri, const int64_t subscriberId, const Template &tplt) override;
     int32_t DelTemplate(const std::string &uri, const int64_t subscriberId) override;
     std::vector<OperationResult> Publish(const Data &data, const std::string &bundleNameOfProvider) override;
-    Data GetData(const std::string &bundleNameOfProvider) override;
+    Data GetData(const std::string &bundleNameOfProvider, int &errorCode) override;
     std::vector<OperationResult> SubscribeRdbData(const std::vector<std::string> &uris,
         const TemplateId &id, const sptr<IDataProxyRdbObserver> observer) override;
     std::vector<OperationResult> UnsubscribeRdbData(
@@ -85,6 +86,7 @@ private:
     InsertStrategy insertStrategy_;
     QueryStrategy queryStrategy_;
     UpdateStrategy updateStrategy_;
+    TemplateStrategy templateStrategy_;
     BindInfo binderInfo_;
 };
 } // namespace OHOS::DataShare

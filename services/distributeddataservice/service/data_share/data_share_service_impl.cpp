@@ -110,24 +110,31 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
 
 int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t subscriberId, const Template &tplt)
 {
+    auto context = std::make_shared<Context>(uri);
     TemplateId tpltId;
     tpltId.subscriberId_ = subscriberId;
     if (!GetCallerBundleName(tpltId.bundleName_)) {
-        ZLOGE("get bundleName error, %{public}s", tpltId.bundleName_.c_str());
+        ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
-    return TemplateManager::GetInstance().AddTemplate(uri, tpltId, tplt);
+    return templateStrategy_.Execute(context, [&uri,  &tpltId, &tplt]() -> int32_t {
+        return TemplateManager::GetInstance().AddTemplate(uri, tpltId, tplt);
+    });
 }
 
 int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t subscriberId)
 {
+    auto context = std::make_shared<Context>(uri);
     TemplateId tpltId;
     tpltId.subscriberId_ = subscriberId;
     if (!GetCallerBundleName(tpltId.bundleName_)) {
-        ZLOGE("get bundleName error, %{public}s", tpltId.bundleName_.c_str());
+        ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
-    return TemplateManager::GetInstance().DelTemplate(uri, tpltId);
+
+    return templateStrategy_.Execute(context, [&uri,  &tpltId]() -> int32_t {
+        return TemplateManager::GetInstance().DelTemplate(uri, tpltId);
+    });
 }
 
 bool DataShareServiceImpl::GetCallerBundleName(std::string &bundleName)
@@ -173,7 +180,7 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
     return results;
 }
 
-Data DataShareServiceImpl::GetData(const std::string &bundleNameOfProvider)
+Data DataShareServiceImpl::GetData(const std::string &bundleNameOfProvider, int &errorCode)
 {
     std::string callerBundleName;
     if (!GetCallerBundleName(callerBundleName)) {
@@ -183,7 +190,7 @@ Data DataShareServiceImpl::GetData(const std::string &bundleNameOfProvider)
     auto context = std::make_shared<Context>();
     context->callerBundleName = callerBundleName;
     context->calledBundleName = bundleNameOfProvider;
-    return getDataStrategy_.Execute(context);
+    return getDataStrategy_.Execute(context, errorCode);
 }
 
 std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(

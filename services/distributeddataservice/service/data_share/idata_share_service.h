@@ -61,7 +61,7 @@ public:
     virtual int32_t AddTemplate(const std::string &uri, const int64_t subscriberId, const Template &tplt) = 0;
     virtual int32_t DelTemplate(const std::string &uri, const int64_t subscriberId) = 0;
     virtual std::vector<OperationResult> Publish(const Data &data, const std::string &bundleNameOfProvider) = 0;
-    virtual Data GetData(const std::string &bundleNameOfProvider) = 0;
+    virtual Data GetData(const std::string &bundleNameOfProvider, int &errorCode) = 0;
     virtual std::vector<OperationResult> SubscribeRdbData(
         const std::vector<std::string> &uris, const TemplateId &id, const sptr<IDataProxyRdbObserver> observer) = 0;
     virtual std::vector<OperationResult> UnsubscribeRdbData(
