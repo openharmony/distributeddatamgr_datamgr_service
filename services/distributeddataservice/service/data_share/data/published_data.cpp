@@ -86,6 +86,7 @@ bool PublishedDataNode::Unmarshal(const DistributedData::Serializable::json &nod
     ret = ret && GetValue(node, GET_NAME(subscriberId), subscriberId);
     ret = ret && GetValue(node, GET_NAME(value), value);
     ret = ret && GetValue(node, GET_NAME(timestamp), timestamp);
+    ret = ret && GetValue(node, GET_NAME(userId), userId);
     return ret && VersionData::Unmarshal(node);
 }
 
