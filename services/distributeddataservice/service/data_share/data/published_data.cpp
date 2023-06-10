@@ -173,7 +173,7 @@ void PublishedData::ClearAging()
 
         if (data.timestamp < lastValidTime) {
             status = delegate->Delete(KvDBDelegate::DATA_TABLE,
-                Id(PublishedData::GenId(data.key, data.bundleName, data.subscriberId), Id::INVALID_USER));
+                Id(PublishedData::GenId(data.key, data.bundleName, data.subscriberId), data.userId));
             if (status != E_OK) {
                 ZLOGE("db Delete failed, %{public}s %{public}s", data.key.c_str(), data.bundleName.c_str());
             }
