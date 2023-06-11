@@ -80,7 +80,6 @@ void UninstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_
             MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
             MetaDataManager::GetInstance().DelMeta(meta.appId, true);
             MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
-            MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(meta), true);
             PermitDelegate::GetInstance().DelCache(meta.GetKey());
         }
     }
