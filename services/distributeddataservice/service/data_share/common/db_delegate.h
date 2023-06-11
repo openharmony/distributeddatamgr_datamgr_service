@@ -39,7 +39,7 @@ public:
         const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode) = 0;
     virtual std::string Query(
         const std::string &sql, const std::vector<std::string> &selectionArgs = std::vector<std::string>()) = 0;
-    virtual std::shared_ptr<NativeRdb::AbsSharedResultSet> QuerySql(const std::string &sql) = 0;
+    virtual std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) = 0;
 };
 
 class Id : public DistributedData::Serializable {

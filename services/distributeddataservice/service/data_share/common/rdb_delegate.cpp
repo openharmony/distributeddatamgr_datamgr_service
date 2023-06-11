@@ -153,7 +153,7 @@ std::string RdbDelegate::Query(const std::string &sql, const std::vector<std::st
     return DistributedData::Serializable::Marshall(formatter);
 }
 
-std::shared_ptr<NativeRdb::AbsSharedResultSet> RdbDelegate::QuerySql(const std::string &sql)
+std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &sql)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
