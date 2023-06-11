@@ -18,12 +18,12 @@
 
 #include "strategy.h"
 namespace OHOS::DataShare {
-class WhitePermissionStrategy final : public Strategy {
+class CrossPermissionStrategy final : public Strategy {
 public:
-    explicit WhitePermissionStrategy(std::initializer_list<std::string> permissions);
+    explicit CrossPermissionStrategy(std::initializer_list<std::string> permissions);
     bool operator()(std::shared_ptr<Context> context) override;
 private:
-    std::vector<std::string> whitePermissions_;
+    std::vector<std::string> allowCrossPermissions_;
 };
 } // namespace OHOS::DataShare
 #endif

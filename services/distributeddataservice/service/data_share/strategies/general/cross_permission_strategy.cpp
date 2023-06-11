@@ -12,27 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "WhitePermissionStrategy"
+#define LOG_TAG "CrossPermissionStrategy"
 
-#include "white_permission_strategy.h"
+#include "cross_permission_strategy.h"
 
 #include "accesstoken_kit.h"
 #include "log_print.h"
 
 namespace OHOS::DataShare {
-bool WhitePermissionStrategy::operator()(std::shared_ptr<Context> context)
+bool CrossPermissionStrategy::operator()(std::shared_ptr<Context> context)
 {
-    for (const auto &permission : whitePermissions_) {
+    for (const auto &permission : allowCrossPermissions_) {
         int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(context->callerTokenId, permission);
         if (status == Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
-            context->isInWhite = true;
+            context->isAllowCrossPer = true;
             return true;
         }
     }
     return true;
 }
-WhitePermissionStrategy::WhitePermissionStrategy(std::initializer_list<std::string> permissions)
+CrossPermissionStrategy::CrossPermissionStrategy(std::initializer_list<std::string> permissions)
 {
-    whitePermissions_.insert(whitePermissions_.end(), permissions.begin(), permissions.end());
+    allowCrossPermissions_.insert(allowCrossPermissions_.end(), permissions.begin(), permissions.end());
 }
 } // namespace OHOS::DataShare

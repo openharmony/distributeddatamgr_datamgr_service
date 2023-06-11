@@ -42,7 +42,8 @@ private:
 
 struct TemplateRootNode final: public DistributedData::Serializable {
     TemplateRootNode() = default;
-    TemplateRootNode(const std::string &uri, const std::string &bundleName, int64_t subscriberId, const Template &tpl);
+    TemplateRootNode(const std::string &uri, const std::string &bundleName, const int64_t subscriberId,
+        const int32_t userId, const Template &tpl);
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     Template ToTemplate() const;
@@ -50,17 +51,20 @@ private:
     std::string uri;
     std::string bundleName;
     int64_t subscriberId;
+    int32_t userId;
     TemplateNode tpl;
 };
 
 struct TemplateData final : public KvData {
-    TemplateData(const std::string &uri, const std::string &bundleName, int64_t subscriberId, const Template &tpl);
+    TemplateData(const std::string &uri, const std::string &bundleName, int64_t subscriberId, int32_t userId,
+        const Template &tpl);
     static int32_t Query(const std::string &filter, Template &aTemplate);
     static std::string GenId(const std::string &uri, const std::string &bundleName, int64_t subscriberId);
-    static bool Delete(const std::string &bundleName);
-    static bool Add(
-        const std::string &uri, const std::string &bundleName, const int64_t subsciriberId, const Template &aTemplate);
-    static bool Delete(const std::string &uri, const std::string &bundleName, const int64_t subscriberId);
+    static bool Delete(const std::string &bundleName, const int32_t userId);
+    static bool Add(const std::string &uri, const int32_t userId, const std::string &bundleName,
+        const int64_t subsciriberId, const Template &aTemplate);
+    static bool Delete(
+        const std::string &uri, const int32_t userId, const std::string &bundleName, const int64_t subscriberId);
     bool HasVersion() const override;
     int GetVersion() const override;
     std::string GetValue() const override;

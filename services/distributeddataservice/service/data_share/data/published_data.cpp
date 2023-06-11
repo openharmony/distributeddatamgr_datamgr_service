@@ -33,20 +33,18 @@ std::string PublishedData::GetValue() const
     return DistributedData::Serializable::Marshall(value);
 }
 
-PublishedData::PublishedData(const std::string &key, const std::string &bundleName, int64_t subscriberId,
-    const std::variant<std::vector<uint8_t>, std::string> &inputValue, const int version)
-    : KvData(Id(GenId(key, bundleName, subscriberId))),
-      value(key, bundleName, subscriberId, inputValue)
+PublishedData::PublishedData(const PublishedDataNode &node, const int version)
+    : PublishedData(node)
 {
     value.SetVersion(version);
 }
 
 PublishedData::PublishedData(const PublishedDataNode &node)
-    : KvData(Id(GenId(node.key, node.bundleName, node.subscriberId))), value(node)
+    : KvData(Id(GenId(node.key, node.bundleName, node.subscriberId), node.userId)), value(node)
 {
 }
 
-std::vector<PublishedData> PublishedData::Query(const std::string &bundleName)
+std::vector<PublishedData> PublishedData::Query(const std::string &bundleName, int32_t userId)
 {
     auto delegate = KvDBDelegate::GetInstance();
     if (delegate == nullptr) {
@@ -54,8 +52,8 @@ std::vector<PublishedData> PublishedData::Query(const std::string &bundleName)
         return std::vector<PublishedData>();
     }
     std::vector<std::string> queryResults;
-    int32_t status =
-        delegate->GetBatch(KvDBDelegate::DATA_TABLE, "{\"bundleName\":\"" + bundleName + "\"}", "{}", queryResults);
+    int32_t status = delegate->GetBatch(KvDBDelegate::DATA_TABLE,
+        "{\"bundleName\":\"" + bundleName + "\", \"userId\": " + std::to_string(userId) + "}", "{}", queryResults);
     if (status != E_OK) {
         ZLOGE("db GetBatch failed, %{public}s %{public}d", bundleName.c_str(), status);
         return std::vector<PublishedData>();
@@ -64,7 +62,7 @@ std::vector<PublishedData> PublishedData::Query(const std::string &bundleName)
     for (auto &result : queryResults) {
         PublishedDataNode data;
         if (PublishedDataNode::Unmarshall(result, data)) {
-            results.emplace_back(data);
+            results.emplace_back(data, userId);
         }
     }
     return results;
@@ -77,6 +75,7 @@ bool PublishedDataNode::Marshal(DistributedData::Serializable::json &node) const
     ret = ret && SetValue(node[GET_NAME(subscriberId)], subscriberId);
     ret = ret && SetValue(node[GET_NAME(value)], value);
     ret = ret && SetValue(node[GET_NAME(timestamp)], timestamp);
+    ret = ret && SetValue(node[GET_NAME(userId)], userId);
     return ret && VersionData::Marshal(node);
 }
 
@@ -87,12 +86,14 @@ bool PublishedDataNode::Unmarshal(const DistributedData::Serializable::json &nod
     ret = ret && GetValue(node, GET_NAME(subscriberId), subscriberId);
     ret = ret && GetValue(node, GET_NAME(value), value);
     ret = ret && GetValue(node, GET_NAME(timestamp), timestamp);
+    ret = ret && GetValue(node, GET_NAME(userId), userId);
     return ret && VersionData::Unmarshal(node);
 }
 
-PublishedDataNode::PublishedDataNode(const std::string &key, const std::string &bundleName,
-    int64_t subscriberId, const std::variant<std::vector<uint8_t>, std::string> &value)
-    : VersionData(-1), key(key), bundleName(bundleName), subscriberId(subscriberId), value(std::move(value))
+PublishedDataNode::PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
+    const int32_t userId, const Data &value)
+    : VersionData(-1), key(key), bundleName(bundleName), subscriberId(subscriberId), value(std::move(value)),
+      userId(userId)
 {
     auto now = time(nullptr);
     if (now > 0) {
@@ -129,15 +130,15 @@ std::string PublishedData::GenId(const std::string &key, const std::string &bund
     return key + "_" + std::to_string(subscriberId) + "_" + bundleName;
 }
 
-void PublishedData::Delete(const std::string &bundleName)
+void PublishedData::Delete(const std::string &bundleName, const int32_t userId)
 {
     auto delegate = KvDBDelegate::GetInstance();
     if (delegate == nullptr) {
         ZLOGE("db open failed");
         return;
     }
-    int32_t status =
-        delegate->Delete(KvDBDelegate::DATA_TABLE, "{\"bundleName\":\"" + bundleName + "\"}");
+    int32_t status = delegate->Delete(KvDBDelegate::DATA_TABLE,
+        "{\"bundleName\":\"" + bundleName + "\", \"userId\": " + std::to_string(userId) + "}");
     if (status != E_OK) {
         ZLOGE("db Delete failed, %{public}s %{public}d", bundleName.c_str(), status);
     }
@@ -172,15 +173,17 @@ void PublishedData::ClearAging()
         }
 
         if (data.timestamp < lastValidTime) {
-            status = delegate->Delete(
-                KvDBDelegate::DATA_TABLE, Id(PublishedData::GenId(data.key, data.bundleName, data.subscriberId)));
+            status = delegate->Delete(KvDBDelegate::DATA_TABLE,
+                Id(PublishedData::GenId(data.key, data.bundleName, data.subscriberId), data.userId));
             if (status != E_OK) {
                 ZLOGE("db Delete failed, %{public}s %{public}s", data.key.c_str(), data.bundleName.c_str());
             }
             agingSize++;
         }
     }
-    ZLOGI("aging count %{public}d", agingSize);
+    if (agingSize > 0) {
+        ZLOGI("aging count %{public}d", agingSize);
+    }
     return;
 }
 } // namespace OHOS::DataShare

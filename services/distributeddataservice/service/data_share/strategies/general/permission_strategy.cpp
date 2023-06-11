@@ -26,7 +26,7 @@ bool PermissionStrategy::operator()(std::shared_ptr<Context> context)
         ZLOGE("reject permission");
         return false;
     }
-    if (!context->isInWhite && !context->permission.empty()) {
+    if (!context->isAllowCrossPer && !context->permission.empty()) {
         int status =
             Security::AccessToken::AccessTokenKit::VerifyAccessToken(context->callerTokenId, context->permission);
         if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {

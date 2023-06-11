@@ -16,6 +16,7 @@
 #include "db_delegate.h"
 
 #include "kv_delegate.h"
+#include "log_print.h"
 #include "rdb_delegate.h"
 namespace OHOS::DataShare {
 std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int version, bool registerFunction)
@@ -37,15 +38,21 @@ std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
 
 bool Id::Marshal(DistributedData::Serializable::json &node) const
 {
-    return SetValue(node[GET_NAME(_id)], _id);
+    auto ret = false;
+    if (userId == INVALID_USER) {
+        ret = SetValue(node[GET_NAME(_id)], _id);
+    } else {
+        ret = SetValue(node[GET_NAME(_id)], _id + "_" + std::to_string(userId));
+    }
+    return ret;
 }
 
 bool Id::Unmarshal(const DistributedData::Serializable::json &node)
 {
-    return GetValue(node, GET_NAME(_id), _id);
+    return false;
 }
 
-Id::Id(const std::string &id) : _id(id) {}
+Id::Id(const std::string &id, const int32_t userId) : _id(id), userId(userId) {}
 
 VersionData::VersionData(int version) : version(version) {}
 

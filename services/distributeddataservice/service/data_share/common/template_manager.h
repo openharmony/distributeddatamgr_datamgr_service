@@ -40,9 +40,9 @@ struct Key {
 class TemplateManager {
 public:
     static TemplateManager &GetInstance();
-    int32_t AddTemplate(const std::string &uri, const TemplateId &tplId, const Template &tpl);
-    int32_t DelTemplate(const std::string &uri, const TemplateId &tplId);
-    bool GetTemplate(const std::string &uri, int64_t subscriberId, const std::string &bundleName, Template &tpl);
+    int32_t Add(const Key &key, const int32_t userId, const Template &tpl);
+    int32_t Delete(const Key &key, const int32_t userId);
+    bool Get(const Key &key, const int32_t userId, Template &tpl);
 
 private:
     TemplateManager();
@@ -52,17 +52,16 @@ private:
 class RdbSubscriberManager {
 public:
     static RdbSubscriberManager &GetInstance();
-    int AddRdbSubscriber(const std::string &uri, const TemplateId &tplId, const sptr<IDataProxyRdbObserver> observer,
-        std::shared_ptr<Context> context, std::shared_ptr<ExecutorPool> executorPool);
-    int DelRdbSubscriber(const std::string &uri, const TemplateId &tplId, const uint32_t callerTokenId);
-    int DisableRdbSubscriber(
-        const std::string &uri, const TemplateId &tplId, const uint32_t callerTokenId);
-    int EnableRdbSubscriber(const std::string &uri, const TemplateId &tplId, std::shared_ptr<Context> context);
+    int Add(const Key &key, const sptr<IDataProxyRdbObserver> observer, std::shared_ptr<Context> context,
+        std::shared_ptr<ExecutorPool> executorPool);
+    int Delete(const Key &key, const uint32_t callerTokenId);
+    int Disable(const Key &key, const uint32_t callerTokenId);
+    int Enable(const Key &key, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, std::shared_ptr<Context> context);
-    void EmitByKey(const Key &key, const std::string &rdbPath, int version);
-    int GetObserverCount(const Key &key);
+    void EmitByKey(const Key &key, const int32_t userId, const std::string &rdbPath, int version);
+    int GetCount(const Key &key);
     std::vector<Key> GetKeysByUri(const std::string &uri);
-
+    void Clear();
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyRdbObserver> &observer, uint32_t callerTokenId);
@@ -93,7 +92,8 @@ private:
     void OnRemoteDied(const Key &key, sptr<IDataProxyRdbObserver> observer);
     RdbSubscriberManager() = default;
     ConcurrentMap<Key, std::vector<ObserverNode>> rdbCache_;
-    int Notify(const Key &key, const std::vector<ObserverNode> &val, const std::string &rdbDir, int rdbVersion);
+    int Notify(const Key &key, const int32_t userId, const std::vector<ObserverNode> &val, const std::string &rdbDir,
+        int rdbVersion);
     int GetEnableObserverCount(const Key &key);
 };
 
@@ -113,16 +113,14 @@ struct PublishedDataKey {
 class PublishedDataSubscriberManager {
 public:
     static PublishedDataSubscriberManager &GetInstance();
-    int AddSubscriber(const std::string &key, const std::string &callerBundleName, const int64_t subscriberId,
-        const sptr<IDataProxyPublishedDataObserver> observer, const uint32_t callerTokenId);
-    int DelSubscriber(const std::string &uri, const std::string &callerBundleName, const int64_t subscriberId,
+    int Add(const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer,
         const uint32_t callerTokenId);
-    int DisableSubscriber(const std::string &uri, const std::string &callerBundleName, const int64_t subscriberId,
-        const uint32_t callerTokenId);
-    int EnableSubscriber(const std::string &uri, const std::string &callerBundleName, const int64_t subscriberId,
-        const uint32_t callerTokenId);
-    void Emit(const std::vector<PublishedDataKey> &keys, const std::string &ownerBundleName,
+    int Delete(const PublishedDataKey &key, const uint32_t callerTokenId);
+    int Disable(const PublishedDataKey &key, const uint32_t callerTokenId);
+    int Enable(const PublishedDataKey &key, const uint32_t callerTokenId);
+    void Emit(const std::vector<PublishedDataKey> &keys, const int32_t userId, const std::string &ownerBundleName,
         const sptr<IDataProxyPublishedDataObserver> observer = nullptr);
+    void Clear();
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer, uint32_t callerTokenId);

@@ -66,7 +66,7 @@ bool URIUtils::GetBundleNameFromProxyURI(const std::string &uri, std::string &bu
 bool URIUtils::GetInfoFromProxyURI(
     const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName)
 {
-    auto queryPos = uri.find_first_of('?');
+    auto queryPos = uri.find_last_of('?');
     if (queryPos == std::string::npos) {
         return true;
     }

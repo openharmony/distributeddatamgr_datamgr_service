@@ -52,7 +52,8 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
     if (ret) {
         NotifyChange(uri);
         RdbSubscriberManager::GetInstance().Emit(uri, context);
-        SchedulerManager::GetInstance().Execute(uri, context->calledSourceDir, context->version);
+        SchedulerManager::GetInstance().Execute(
+            uri, context->currentUserId, context->calledSourceDir, context->version);
     }
     return ret;
 }
@@ -82,7 +83,8 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
     if (ret) {
         NotifyChange(uri);
         RdbSubscriberManager::GetInstance().Emit(uri, context);
-        SchedulerManager::GetInstance().Execute(uri, context->calledSourceDir, context->version);
+        SchedulerManager::GetInstance().Execute(
+            uri, context->currentUserId, context->calledSourceDir, context->version);
     }
     return ret;
 }
@@ -95,7 +97,8 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
     if (ret) {
         NotifyChange(uri);
         RdbSubscriberManager::GetInstance().Emit(uri, context);
-        SchedulerManager::GetInstance().Execute(uri, context->calledSourceDir, context->version);
+        SchedulerManager::GetInstance().Execute(
+            uri, context->currentUserId, context->calledSourceDir, context->version);
     }
     return ret;
 }
@@ -117,8 +120,9 @@ int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t 
         ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
-    return templateStrategy_.Execute(context, [&uri,  &tpltId, &tplt]() -> int32_t {
-        return TemplateManager::GetInstance().AddTemplate(uri, tpltId, tplt);
+    return templateStrategy_.Execute(context, [&uri, &tpltId, &tplt, &context]() -> int32_t {
+        return TemplateManager::GetInstance().Add(
+            Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->currentUserId, tplt);
     });
 }
 
@@ -132,8 +136,9 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
         return ERROR;
     }
 
-    return templateStrategy_.Execute(context, [&uri,  &tpltId]() -> int32_t {
-        return TemplateManager::GetInstance().DelTemplate(uri, tpltId);
+    return templateStrategy_.Execute(context, [&uri, &tpltId, &context]() -> int32_t {
+        return TemplateManager::GetInstance().Delete(
+            Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->currentUserId);
     });
 }
 
@@ -162,6 +167,7 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
         ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
         return results;
     }
+    int32_t userId = -1;
     PublishedData::ClearAging();
     for (const auto &item : data.datas_) {
         auto context = std::make_shared<Context>(item.key_);
@@ -175,8 +181,11 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
             continue;
         }
         publishedData.emplace_back(context->uri, callerBundleName, item.subscriberId_);
+        userId = context->currentUserId;
     }
-    PublishedDataSubscriberManager::GetInstance().Emit(publishedData, callerBundleName);
+    if (!publishedData.empty()) {
+        PublishedDataSubscriberManager::GetInstance().Emit(publishedData, userId, callerBundleName);
+    }
     return results;
 }
 
@@ -199,11 +208,10 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(
     std::vector<OperationResult> results;
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
-        results.emplace_back(
-            uri, subscribeStrategy_.Execute(context, [&id, &observer, &context, this]() -> bool {
-                return RdbSubscriberManager::GetInstance().AddRdbSubscriber(
-                    context->uri, id, observer, context, binderInfo_.executors);
-            }));
+        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &observer, &context, this]() -> bool {
+            return RdbSubscriberManager::GetInstance().Add(
+                Key(context->uri, id.subscriberId_, id.bundleName_), observer, context, binderInfo_.executors);
+        }));
     }
     return results;
 }
@@ -215,7 +223,8 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribeRdbData(
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &context]() -> bool {
-            return RdbSubscriberManager::GetInstance().DelRdbSubscriber(context->uri, id, context->callerTokenId);
+            return RdbSubscriberManager::GetInstance().Delete(
+                Key(context->uri, id.subscriberId_, id.bundleName_), context->callerTokenId);
         }));
     }
     return results;
@@ -228,7 +237,8 @@ std::vector<OperationResult> DataShareServiceImpl::EnableRdbSubs(
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &context]() -> bool {
-            return RdbSubscriberManager::GetInstance().EnableRdbSubscriber(context->uri, id, context);
+            return RdbSubscriberManager::GetInstance().Enable(
+                Key(context->uri, id.subscriberId_, id.bundleName_), context);
         }));
     }
     return results;
@@ -241,7 +251,8 @@ std::vector<OperationResult> DataShareServiceImpl::DisableRdbSubs(
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &context]() -> bool {
-            return RdbSubscriberManager::GetInstance().DisableRdbSubscriber(context->uri, id, context->callerTokenId);
+            return RdbSubscriberManager::GetInstance().Disable(
+                Key(context->uri, id.subscriberId_, id.bundleName_), context->callerTokenId);
         }));
     }
     return results;
@@ -258,22 +269,26 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
     }
     std::vector<PublishedDataKey> publishedKeys;
     int32_t result;
+    int32_t userId;
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
-        result = subscribeStrategy_.Execute(
-            context, [&subscriberId, &observer, &context]() -> bool {
-                return PublishedDataSubscriberManager::GetInstance().AddSubscriber(
-                    context->uri, context->callerBundleName, subscriberId, observer, context->callerTokenId);
-            });
+        result = subscribeStrategy_.Execute(context, [&subscriberId, &observer, &context]() -> bool {
+            return PublishedDataSubscriberManager::GetInstance().Add(
+                PublishedDataKey(context->uri, context->callerBundleName, subscriberId), observer,
+                context->callerTokenId);
+        });
         results.emplace_back(uri, result);
         if (result == E_OK) {
             publishedKeys.emplace_back(context->uri, context->callerBundleName, subscriberId);
+            userId = context->currentUserId;
         }
     }
-    PublishedDataSubscriberManager::GetInstance().Emit(publishedKeys, callerBundleName, observer);
+    if (!publishedKeys.empty()) {
+        PublishedDataSubscriberManager::GetInstance().Emit(publishedKeys, userId, callerBundleName, observer);
+    }
     return results;
 }
 
@@ -291,11 +306,10 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribePublishedData(cons
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
-        results.emplace_back(
-            uri, subscribeStrategy_.Execute(context, [&subscriberId, &context]() -> bool {
-                return PublishedDataSubscriberManager::GetInstance().DelSubscriber(
-                    context->uri, context->callerBundleName, subscriberId, context->callerTokenId);
-            }));
+        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&subscriberId, &context]() -> bool {
+            return PublishedDataSubscriberManager::GetInstance().Delete(
+                PublishedDataKey(context->uri, context->callerBundleName, subscriberId), context->callerTokenId);
+        }));
     }
     return results;
 }
@@ -311,21 +325,25 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
     }
     std::vector<PublishedDataKey> publishedKeys;
     int32_t result;
+    int32_t userId = -1;
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
         result = subscribeStrategy_.Execute(context, [&subscriberId, &context]() -> bool {
-            return PublishedDataSubscriberManager::GetInstance().EnableSubscriber(
-                context->uri, context->callerBundleName, subscriberId, context->callerTokenId);
+            return PublishedDataSubscriberManager::GetInstance().Enable(
+                PublishedDataKey(context->uri, context->callerBundleName, subscriberId), context->callerTokenId);
         });
         results.emplace_back(uri, result);
         if (result == E_OK) {
-            publishedKeys.emplace_back(key);
+            publishedKeys.emplace_back(context->uri, context->callerBundleName, subscriberId);
+            userId = context->currentUserId;
         }
     }
-    PublishedDataSubscriberManager::GetInstance().Emit(publishedKeys, callerBundleName);
+    if (!publishedKeys.empty()) {
+        PublishedDataSubscriberManager::GetInstance().Emit(publishedKeys, userId, callerBundleName);
+    }
     return results;
 }
 
@@ -343,11 +361,10 @@ std::vector<OperationResult> DataShareServiceImpl::DisablePubSubs(const std::vec
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
-        results.emplace_back(
-            uri, subscribeStrategy_.Execute(context, [&subscriberId, &context]() -> bool {
-                return PublishedDataSubscriberManager::GetInstance().DisableSubscriber(
-                    context->uri, context->callerBundleName, subscriberId, context->callerTokenId);
-            }));
+        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&subscriberId, &context]() -> bool {
+            return PublishedDataSubscriberManager::GetInstance().Disable(
+                PublishedDataKey(context->uri, context->callerBundleName, subscriberId), context->callerTokenId);
+        }));
     }
     return results;
 }
@@ -385,27 +402,9 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
 
 int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    ZLOGI("OnUserChange %{public}d %{public}s", code, user.c_str());
-    if (code == static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
-        const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
-        DistributedData::StoreMetaData saveMeta;
-        saveMeta.appType = "default";
-        saveMeta.storeId = "data_share_data_";
-        saveMeta.isAutoSync = false;
-        saveMeta.isBackup = false;
-        saveMeta.isEncrypt = false;
-        saveMeta.bundleName =  binderInfo_.selfName;
-        saveMeta.appId = binderInfo_.selfName;
-        saveMeta.user = user;
-        saveMeta.account = account;
-        saveMeta.tokenId = binderInfo_.selfTokenId;
-        saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
-        saveMeta.area = 1;
-        saveMeta.uid = IPCSkeleton::GetCallingUid();
-        saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
-        saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-        KvDBDelegate::GetInstance(true, saveMeta.dataDir, binderInfo_.executors);
-    }
+    RdbSubscriberManager::GetInstance().Clear();
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    SchedulerManager::GetInstance().ClearTimer();
     return EOK;
 }
 
@@ -423,9 +422,9 @@ int32_t DataShareServiceImpl::OnAppUninstall(
     const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
 {
     ZLOGI("%{public}s uninstalled", bundleName.c_str());
-    PublishedData::Delete(bundleName);
+    PublishedData::Delete(bundleName, user);
     PublishedData::ClearAging();
-    TemplateData::Delete(bundleName);
+    TemplateData::Delete(bundleName, user);
     RdbHelper::ClearCache();
     return EOK;
 }
