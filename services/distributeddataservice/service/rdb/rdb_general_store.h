@@ -68,7 +68,7 @@ private:
         void OnChange(DBOrigin origin, const std::string &originalId, DBChangedData &&data) override;
         bool HasWatcher() const
         {
-            return watcher_ == nullptr;
+            return watcher_ != nullptr;
         }
     private:
         friend RdbGeneralStore;
