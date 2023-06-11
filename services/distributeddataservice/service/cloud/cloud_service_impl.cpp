@@ -391,6 +391,7 @@ int32_t CloudServiceImpl::OnAppUninstall(
     (void)tokenId;
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
     MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
+    return E_OK;
 }
 
 void CloudServiceImpl::GetSchema(const Event &event)
