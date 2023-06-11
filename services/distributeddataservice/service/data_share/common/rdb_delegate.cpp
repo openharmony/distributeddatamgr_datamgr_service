@@ -159,7 +159,6 @@ std::shared_ptr<NativeRdb::AbsSharedResultSet> RdbDelegate::QuerySql(const std::
         ZLOGE("store is null");
         return nullptr;
     }
-    auto result = store_->QuerySql(sql);
-    return std::move(result);
+    return store_->QuerySql(sql);
 }
 } // namespace OHOS::DataShare
