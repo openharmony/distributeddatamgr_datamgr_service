@@ -43,13 +43,14 @@ public:
         void SetQuery(std::shared_ptr<GenQuery> query);
         void SetError(int32_t code);
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
+        inline static constexpr const char *DEFAULT_ID = "default";
 
     private:
         friend SyncManager;
         int32_t mode_ = GenStore::CLOUD_TIME_FIRST;
         int32_t user_ = 0;
         int32_t wait_ = 0;
-        std::string id_ = "default";
+        std::string id_ = DEFAULT_ID;
         std::string bundleName_;
         std::map<std::string, std::vector<std::string>> tables_;
         GenAsync async_;

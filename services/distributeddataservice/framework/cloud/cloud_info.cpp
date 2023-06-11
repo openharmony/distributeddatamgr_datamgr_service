@@ -80,6 +80,11 @@ std::string CloudInfo::GetSchemaKey(const std::string &bundleName, int32_t insta
     return GetKey(SCHEMA_PREFIX, { std::to_string(user), bundleName, std::to_string(instanceId) });
 }
 
+std::string CloudInfo::GetSchemaKey(int32_t user, const std::string &bundleName, int32_t instanceId)
+{
+    return GetKey(SCHEMA_PREFIX, { std::to_string(user), bundleName, std::to_string(instanceId) });
+}
+
 std::string CloudInfo::GetSchemaPrefix(const std::string &bundleName) const
 {
     if (bundleName.empty()) {

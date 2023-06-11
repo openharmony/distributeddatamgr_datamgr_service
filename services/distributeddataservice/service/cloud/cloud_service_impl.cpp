@@ -385,6 +385,15 @@ CloudInfo CloudServiceImpl::GetCloudInfo(int32_t userId)
     return cloudInfo;
 }
 
+int32_t CloudServiceImpl::OnAppUninstall(
+    const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
+{
+    (void)tokenId;
+    MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
+    MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
+    return E_OK;
+}
+
 void CloudServiceImpl::GetSchema(const Event &event)
 {
     auto &rdbEvent = static_cast<const CloudEvent &>(event);

@@ -41,6 +41,7 @@ public:
     std::map<std::string, std::string> GetSchemaKey() const;
     std::string GetSchemaKey(const std::string &bundleName, int32_t instanceId = 0) const;
     std::string GetSchemaPrefix(const std::string &bundleName) const;
+    static std::string GetSchemaKey(int32_t user, const std::string &bundleName, int32_t instanceId = 0);
     static std::string GetSchemaKey(const StoreMetaData &meta);
     bool IsValid() const;
     bool Exist(const std::string &bundleName, int32_t instanceId = 0);
