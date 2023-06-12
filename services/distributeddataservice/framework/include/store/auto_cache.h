@@ -48,6 +48,8 @@ public:
 
     API_EXPORT void CloseStore(uint32_t tokenId, const std::string &storeId);
 
+    API_EXPORT void CloseStore(uint32_t tokenId);
+
     API_EXPORT void CloseExcept(const std::set<int32_t> &users);
 
     API_EXPORT void SetObserver(uint32_t tokenId, const std::string &storeId, const Watchers &watchers);

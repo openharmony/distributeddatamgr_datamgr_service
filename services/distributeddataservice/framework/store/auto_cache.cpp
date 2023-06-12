@@ -94,6 +94,11 @@ void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
     });
 }
 
+void AutoCache::CloseStore(uint32_t tokenId)
+{
+    stores_.Erase(tokenId);
+}
+
 void AutoCache::CloseExcept(const std::set<int32_t> &users)
 {
     stores_.EraseIf([&users](const auto &tokenId, std::map<std::string, Delegate> &delegates) {

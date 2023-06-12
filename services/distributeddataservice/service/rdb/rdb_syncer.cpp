@@ -367,7 +367,9 @@ int32_t RdbSyncer::DoSync(const Option &option, const PredicatesMemo &predicates
         return delegate->Sync(
             devices, static_cast<DistributedDB::SyncMode>(option.mode), MakeQuery(predicates),
             [async](const std::map<std::string, std::vector<DistributedDB::TableStatus>> &syncStatus) {
-                async(HandleSyncStatus(syncStatus));
+                if (async != nullptr) {
+                    async(HandleSyncStatus(syncStatus));
+                }
             },
             !option.isAsync);
     } else if (option.mode < DistributedData::GeneralStore::CLOUD_END &&
