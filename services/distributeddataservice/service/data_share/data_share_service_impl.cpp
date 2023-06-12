@@ -145,7 +145,11 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
 bool DataShareServiceImpl::GetCallerBundleName(std::string &bundleName)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    if (Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId) != Security::AccessToken::TOKEN_HAP) {
+    auto type = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+    if (type == Security::AccessToken::TOKEN_NATIVE) {
+        return true;
+    }
+    if (type != Security::AccessToken::TOKEN_HAP) {
         return false;
     }
     Security::AccessToken::HapTokenInfo tokenInfo;
