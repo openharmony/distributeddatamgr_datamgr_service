@@ -25,7 +25,6 @@
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
 #include "config_factory.h"
-#include "constant.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
@@ -312,7 +311,7 @@ void KvStoreDataService::StartService()
         DumpHelper::GetInstance().AddErrorInfo("StartService: Service publish failed.");
     }
     // Initialize meta db delegate manager.
-    KvStoreMetaManager::GetInstance().SubscribeMeta(KvStoreMetaRow::KEY_PREFIX,
+    KvStoreMetaManager::GetInstance().SubscribeMeta(StoreMetaData::GetKey({}),
         [this](const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag) {
             OnStoreMetaChanged(key, value, flag);
         });
@@ -669,51 +668,6 @@ void KvStoreDataService::OnDeviceOnReady(const AppDistributedKv::DeviceInfo &inf
         value->OnReady(info.uuid);
         return false;
     });
-}
-
-bool DbMetaCallbackDelegateMgr::GetKvStoreDiskSize(const std::string &storeId, uint64_t &size)
-{
-    if (IsDestruct()) {
-        return false;
-    }
-    DistributedDB::DBStatus ret = delegate_->GetKvStoreDiskSize(storeId, size);
-    return (ret == DistributedDB::DBStatus::OK);
-}
-
-void DbMetaCallbackDelegateMgr::GetKvStoreKeys(std::vector<StoreInfo> &dbStats)
-{
-    if (IsDestruct()) {
-        return;
-    }
-    DistributedDB::DBStatus dbStatusTmp;
-    Option option {.createIfNecessary = true, .isMemoryDb = false, .isEncryptedDb = false};
-    DistributedDB::KvStoreNbDelegate *nbDelegate = nullptr;
-    delegate_->GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
-        [&nbDelegate, &dbStatusTmp](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *delegate) {
-            nbDelegate = delegate;
-            dbStatusTmp = dbStatus;
-        });
-
-    if (dbStatusTmp != DistributedDB::DBStatus::OK) {
-        return;
-    }
-    DistributedDB::Key dbKey = KvStoreMetaRow::GetKeyFor("");
-    std::vector<DistributedDB::Entry> entries;
-    nbDelegate->GetEntries(dbKey, entries);
-    if (entries.empty()) {
-        delegate_->CloseKvStore(nbDelegate);
-        return;
-    }
-    for (auto const &entry : entries) {
-        std::string key = std::string(entry.key.begin(), entry.key.end());
-        std::vector<std::string> out;
-        Split(key, Constant::KEY_SEPARATOR, out);
-        if (out.size() >= VECTOR_SIZE) {
-            StoreInfo storeInfo = {out[USER_ID], out[APP_ID], out[STORE_ID]};
-            dbStats.push_back(std::move(storeInfo));
-        }
-    }
-    delegate_->CloseKvStore(nbDelegate);
 }
 
 int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)

@@ -15,7 +15,9 @@ import("//build/ohos_var.gni")
 
 #/system/etc/distributeddata/conf
 group("build_module") {
-  deps = [ ":default_conf" ]
+  if (datamgr_service_config) {
+    deps = [ ":default_conf" ]
+  }
 }
 ohos_prebuilt_etc("default_conf") {
   source = "config.json"

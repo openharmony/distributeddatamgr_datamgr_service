@@ -14,11 +14,10 @@
  */
 
 #include "security.h"
-#include <algorithm>
 #include <regex>
+#include <sys/stat.h>
 #include <thread>
 #include <unistd.h>
-#include "constant.h"
 #include "dev_slinfo_mgr.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
