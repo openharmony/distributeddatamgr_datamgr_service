@@ -190,17 +190,6 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
                   : (mode > NEARBY_END && mode < CLOUD_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async)), wait)
                   : DistributedDB::INVALID_ARGS;
-    // mock
-    if (observer_.HasWatcher()) {
-        Watcher::Origin origin;
-        origin.origin = (mode < NEARBY_END) ? Watcher::Origin::ORIGIN_NEARBY
-                                            : (mode > NEARBY_END && mode < CLOUD_END)
-                                            ? Watcher::Origin::ORIGIN_CLOUD
-                                            : Watcher::Origin::ORIGIN_BUTT;
-        origin.id = devices;
-        origin.store = observer_.storeId_;
-        observer_.watcher_->OnChange(origin, {}, {});
-    }
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
