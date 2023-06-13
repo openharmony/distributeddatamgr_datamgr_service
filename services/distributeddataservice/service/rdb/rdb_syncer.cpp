@@ -92,7 +92,7 @@ std::string RdbSyncer::GetBundleName() const
 
 std::string RdbSyncer::GetAppId() const
 {
-    return DistributedData::CheckerManager::GetInstance().GetAppId( { uid_, token_, param_.bundleName_ } );
+    return DistributedData::CheckerManager::GetInstance().GetAppId({ uid_, token_, param_.bundleName_ });
 }
 
 std::string RdbSyncer::GetStoreId() const

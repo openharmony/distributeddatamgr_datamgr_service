@@ -100,10 +100,6 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
 
     bindInfo_ = std::move(bindInfo);
     rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_);
-    if (rdbCloud_ == nullptr) {
-        ZLOGE("rdb_cloudDb is null");
-        return GeneralError::E_ERROR;
-    }
     delegate_->SetCloudDB(rdbCloud_);
     DBSchema schema;
     schema.tables.resize(database.tables.size());
@@ -295,7 +291,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     genOrigin.store = storeId_;
     Watcher::PRIFields fields;
     Watcher::ChangeInfo changeInfo;
-    for (int i = 0; i < DistributedDB::OP_BUTT; ++i) {
+    for (uint32_t i = 0; i < DistributedDB::OP_BUTT; ++i) {
         auto &info = changeInfo[data.tableName][i];
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;

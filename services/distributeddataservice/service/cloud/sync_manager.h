@@ -72,7 +72,7 @@ private:
     static constexpr int32_t MV_BIT = 32;
 
     Task GetSyncTask(int32_t retry, RefCount ref, SyncInfo &&syncInfo);
-    void DoRetry(int32_t retry, SyncInfo &&syncInfo);
+    void DoRetry(int32_t retry, SyncInfo &&info);
     std::function<void(const Event &)> GetSyncHandler();
     std::function<void(const Event &)> GetClientChangeHandler();
     uint64_t GenSyncId(int32_t user);
