@@ -279,4 +279,11 @@ int32_t ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, con
 ObjectServiceImpl::ObjectServiceImpl()
 {
 }
+
+int32_t ObjectServiceImpl::OnBind(const BindInfo &bindInfo)
+{
+    executors_ = bindInfo.executors;
+    ObjectStoreManager::GetInstance()->SetThreadPool(executors_);
+    return 0;
+}
 } // namespace OHOS::DistributedObject
