@@ -47,7 +47,6 @@ ohos_unittest("DistributeddataDfxMSTTest") {
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
-    "../../autils:distributeddata_autils_static",
     "../../dfx:distributeddata_dfx_static",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
@@ -106,7 +105,6 @@ ohos_unittest("DistributeddataDfxUTTest") {
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
-    "../../autils:distributeddata_autils_static",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
   ]

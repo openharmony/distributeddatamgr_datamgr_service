@@ -42,7 +42,6 @@ ohos_static_library("distributeddata_dfx_static") {
   cflags_cc = [ "-fvisibility=hidden" ]
 
   deps = [
-    "../autils:distributeddata_autils_static",
     "//third_party/openssl:libcrypto_shared",
   ]
   external_deps = [
