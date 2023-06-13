@@ -20,7 +20,8 @@
 namespace DocumentDB {
 
 static uint16_t g_oIdIncNum = 0;
-
+constexpr uint16_t MAX_NUMBER_OF_AUTOINCREMENTS = 65535;
+constexpr uint16_t UINT_ZERO = 0;
 static int InitDocIdFromOid(DocKey &docKey)
 {
     time_t nowTime = time(nullptr);
@@ -30,8 +31,8 @@ static int InitDocIdFromOid(DocKey &docKey)
     uint32_t now = (uint32_t)nowTime;
     uint16_t iv = g_oIdIncNum++;
     // The maximum number of autoincrements is 65535, and if it is exceeded, it becomes 0.
-    if (g_oIdIncNum > (uint16_t)65535) {
-        g_oIdIncNum = (uint16_t)0;
+    if (g_oIdIncNum > MAX_NUMBER_OF_AUTOINCREMENTS) {
+        g_oIdIncNum = UINT_ZERO;
     }
     char *idTemp = new char[GRD_DOC_OID_HEX_SIZE + 1];
     if (sprintf_s(idTemp, GRD_DOC_OID_HEX_SIZE + 1, "%08x%04x", now, iv) < 0) {
@@ -46,11 +47,6 @@ static int InitDocIdFromOid(DocKey &docKey)
 int DocumentKey::GetOidDocKey(DocKey &key)
 {
     int ret = InitDocIdFromOid(key);
-    {
-        if (ret != E_OK) {
-            return ret;
-        }
-    }
     return ret;
 }
 
