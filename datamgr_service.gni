@@ -46,5 +46,5 @@ declare_args() {
     os_account_part_is_enabled = false
   }
 
-  datamgr_service_config = true;
+  datamgr_service_config = true
 }
