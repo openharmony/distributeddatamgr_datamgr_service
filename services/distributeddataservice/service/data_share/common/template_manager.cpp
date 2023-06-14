@@ -430,7 +430,7 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
 {
     int32_t status;
     // key is bundleName, value is change node
-    std::map<PublishedDataKey, std::variant<std::vector<uint8_t>, std::string>> publishedResult;
+    std::map<PublishedDataKey, PublishedDataNode::Data> publishedResult;
     std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> callbacks;
     publishedDataCache.ForEach([&keys, &status, &observer, &publishedResult, &callbacks, &userId, this](
                                    const PublishedDataKey &key, std::vector<ObserverNode> &val) {

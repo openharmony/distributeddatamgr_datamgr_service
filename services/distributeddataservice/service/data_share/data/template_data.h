@@ -62,7 +62,7 @@ struct TemplateData final : public KvData {
     static std::string GenId(const std::string &uri, const std::string &bundleName, int64_t subscriberId);
     static bool Delete(const std::string &bundleName, const int32_t userId);
     static bool Add(const std::string &uri, const int32_t userId, const std::string &bundleName,
-        const int64_t subsciriberId, const Template &aTemplate);
+        const int64_t subscriberId, const Template &aTemplate);
     static bool Delete(
         const std::string &uri, const int32_t userId, const std::string &bundleName, const int64_t subscriberId);
     bool HasVersion() const override;

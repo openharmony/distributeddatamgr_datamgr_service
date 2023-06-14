@@ -62,7 +62,9 @@ int32_t KvDelegate::Delete(const std::string &collectionName, const std::string 
         }
     }
     Flush();
-    ZLOGI("Delete, %{public}s, count %{public}zu", collectionName.c_str(), queryResults.size());
+    if (queryResults.size() > 0) {
+        ZLOGI("Delete, %{public}s, count %{public}zu", collectionName.c_str(), queryResults.size());
+    }
     return E_OK;
 }
 

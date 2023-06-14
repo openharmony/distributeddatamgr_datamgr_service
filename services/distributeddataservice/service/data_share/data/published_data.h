@@ -22,7 +22,7 @@
 namespace OHOS::DataShare {
 class PublishedDataNode final : public VersionData {
 public:
-    using Data = std::variant<std::vector<uint8_t>, std::string>;
+    using Data = std::variant<std::vector<uint32_t>, std::string>;
     PublishedDataNode();
     PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
         const int32_t userId, const Data &value);
@@ -43,7 +43,7 @@ public:
     static std::vector<PublishedData> Query(const std::string &bundleName, int32_t userId);
     static void Delete(const std::string &bundleName, const int32_t userId);
     static void ClearAging();
-    static int32_t Query(const std::string &filter, std::variant<std::vector<uint8_t>, std::string> &publishedData);
+    static int32_t Query(const std::string &filter, std::variant<std::vector<uint32_t>, std::string> &publishedData);
     static std::string GenId(const std::string &key, const std::string &bundleName, int64_t subscriberId);
     PublishedData(const PublishedDataNode &node, const int version);
     ~PublishedData() = default;
