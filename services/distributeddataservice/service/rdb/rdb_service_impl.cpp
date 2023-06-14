@@ -431,7 +431,9 @@ void RdbServiceImpl::SyncAgent::SetWatcher(std::shared_ptr<RdbWatcher> watcher)
 {
     if (watcher_ != watcher) {
         watcher_ = watcher;
-        watcher_->SetNotifier(notifier_);
+        if (watcher_ != nullptr) {
+            watcher_->SetNotifier(notifier_);
+        }
     }
 }
 
