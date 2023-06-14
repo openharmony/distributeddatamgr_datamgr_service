@@ -18,11 +18,11 @@
 #include "flowctrl_manager/kvstore_flowctrl_manager.h"
 #include <memory>
 #include <thread>
-#include "time_utils.h"
-
+#include <chrono>
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS;
+using namespace std::chrono;
 
 class KvStoreFlowCtrlManagerTest : public testing::Test {
 public:
@@ -152,11 +152,11 @@ HWTEST_F(KvStoreFlowCtrlManagerTest, KvStoreFlowCtrlManagerTest006, TestSize.Lev
     auto ptr = std::make_shared<KvStoreFlowCtrlManager>(OPERATION_BURST_CAPACITY, OPERATION_SUSTAINED_CAPACITY);
     int arr[2] = {0, 0};
     uint64_t curTime = 0;
-    uint64_t lastTime = TimeUtils::CurrentTimeMicros();
+    uint64_t lastTime = duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count();
     for (int i = 0; i < 10001; i++) {
         arr[ptr->IsTokenEnough()]++;
         while (true) {
-            curTime = TimeUtils::CurrentTimeMicros();
+            curTime = duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count();
             if ((curTime - lastTime) > 1000) {
                 lastTime = curTime;
                 break;
