@@ -29,6 +29,7 @@ public:
     bool Unmarshal(const json &node) override;
 
 private:
+    bool MarshalRow(json &node, int columnCount) const;
     std::shared_ptr<NativeRdb::ResultSet> resultSet;
 };
 } // namespace OHOS::DataShare
