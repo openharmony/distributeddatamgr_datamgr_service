@@ -24,7 +24,6 @@
 #include "bootstrap.h"
 #include "communication_provider.h"
 #include "communication_strategy.h"
-#include "constant.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
@@ -156,7 +155,7 @@ void KvStoreMetaManager::InitMetaData()
     data.isEncrypt = false;
     data.storeType = KvStoreType::SINGLE_VERSION;
     data.schema = "";
-    data.storeId = Constant::SERVICE_META_DB_NAME;
+    data.storeId = Bootstrap::GetInstance().GetMetaDBName();
     data.account = accountId;
     data.uid = static_cast<int32_t>(uid);
     data.version = META_STORE_VERSION;

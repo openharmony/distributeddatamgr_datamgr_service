@@ -38,7 +38,9 @@
         "name": "datamgr_service",
         "subsystem": "distributeddatamgr",
         "syscap": [],
-        "features": [],
+        "features": [
+            "datamgr_service_config"
+        ],
         "adapted_system_type": [
             "standard"
         ],

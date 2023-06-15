@@ -21,7 +21,6 @@
 #include <set>
 
 #include "account_delegate.h"
-#include "constant.h"
 #include "dump_helper.h"
 #include "feature_stub_impl.h"
 #include "ikvstore_data_service.h"
@@ -136,41 +135,6 @@ private:
     ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
     std::shared_ptr<ExecutorPool> executors_;
-};
-
-class DbMetaCallbackDelegateMgr : public DbMetaCallbackDelegate {
-public:
-    using Option = DistributedDB::KvStoreNbDelegate::Option;
-    virtual ~DbMetaCallbackDelegateMgr() {}
-
-    explicit DbMetaCallbackDelegateMgr(DistributedDB::KvStoreDelegateManager *delegate)
-        : delegate_(delegate) {}
-    bool GetKvStoreDiskSize(const std::string &storeId, uint64_t &size) override;
-    void GetKvStoreKeys(std::vector<StoreInfo> &dbStats) override;
-    bool IsDestruct()
-    {
-        return delegate_ == nullptr;
-    }
-
-private:
-    void Split(const std::string &str, const std::string &delimiter, std::vector<std::string> &out)
-    {
-        size_t start;
-        size_t end = 0;
-        while ((start = str.find_first_not_of(delimiter, end)) != std::string::npos) {
-            end = str.find(delimiter, start);
-            if (end == std::string::npos) {
-                end = str.size();
-            }
-            out.push_back(str.substr(start, end - start));
-        }
-    }
-
-    DistributedDB::KvStoreDelegateManager *delegate_ {};
-    static const inline int USER_ID = 0;
-    static const inline int APP_ID = 1;
-    static const inline int STORE_ID = 2;
-    static const inline int VECTOR_SIZE = 2;
 };
 }
 #endif  // KVSTORE_DATASERVICE_H

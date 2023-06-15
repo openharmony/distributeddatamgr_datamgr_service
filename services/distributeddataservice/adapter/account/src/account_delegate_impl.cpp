@@ -16,11 +16,8 @@
 #define LOG_TAG "EVENT_HANDLER"
 
 #include "account_delegate_impl.h"
-#include <algorithm>
 #include <thread>
 #include <unistd.h>
-#include <vector>
-#include "constant.h"
 
 namespace OHOS {
 namespace DistributedKv {

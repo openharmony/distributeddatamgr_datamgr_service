@@ -69,7 +69,6 @@ ohos_shared_library("distributeddatasvc") {
     "config/src/model/protocol_config.cpp",
     "crypto/src/crypto_manager.cpp",
     "kvdb/auth_delegate.cpp",
-    "kvdb/executor_factory.cpp",
     "kvdb/kvdb_exporter.cpp",
     "kvdb/kvdb_service_impl.cpp",
     "kvdb/kvdb_service_stub.cpp",
