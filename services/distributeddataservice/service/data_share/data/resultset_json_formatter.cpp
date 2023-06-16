@@ -46,7 +46,6 @@ bool ResultSetJsonFormatter::MarshalRow(DistributedData::Serializable::json &nod
     using namespace NativeRdb;
     json result;
     std::string columnName;
-    std::string value;
     NativeRdb::ColumnType type;
     for (int i = 0; i < columnCount; i++) {
         if (resultSet->GetColumnType(i, type) != E_OK) {
@@ -66,7 +65,7 @@ bool ResultSetJsonFormatter::MarshalRow(DistributedData::Serializable::json &nod
             case ColumnType::TYPE_FLOAT:
                 double dValue;
                 resultSet->GetDouble(i, dValue);
-                SetValue(result[columnName], value);
+                SetValue(result[columnName], dValue);
                 break;
             case ColumnType::TYPE_NULL:
                 result[columnName] = nullptr;
@@ -85,9 +84,8 @@ bool ResultSetJsonFormatter::MarshalRow(DistributedData::Serializable::json &nod
             }
             default:
                 ZLOGE("unknow type %{public}d", type);
+				return false;
         }
-        resultSet->GetString(i, value);
-        SetValue(result[columnName], value);
     }
     node.push_back(result);
     return true;

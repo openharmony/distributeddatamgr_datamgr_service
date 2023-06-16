@@ -20,7 +20,7 @@
 
 #include "db_delegate.h"
 #include "executor_pool.h"
-#include "template_manager.h"
+#include "subscriber_managers/rdb_subscriber_manager.h"
 
 namespace OHOS::DataShare {
 class SchedulerManager {

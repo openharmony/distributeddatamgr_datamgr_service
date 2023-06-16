@@ -44,7 +44,6 @@ ohos_shared_library("data_share_service") {
     "common/rdb_delegate.cpp",
     "common/scheduler_manager.cpp",
     "common/seq_strategy.cpp",
-    "common/template_manager.cpp",
     "common/uri_utils.cpp",
     "data/published_data.cpp",
     "data/resultset_json_formatter.cpp",
@@ -72,6 +71,8 @@ ohos_shared_library("data_share_service") {
     "strategies/subscribe_strategy.cpp",
     "strategies/template_strategy.cpp",
     "strategies/update_strategy.cpp",
+    "subscriber_managers/published_data_subscriber_manager.cpp",
+    "subscriber_managers/rdb_subscriber_manager.cpp",
   ]
   cflags = [ "-Wno-multichar" ]
 

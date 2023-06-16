@@ -28,7 +28,7 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "scheduler_manager.h"
-#include "template_manager.h"
+#include "subscriber_managers/published_data_subscriber_manager.h"
 #include "utils/anonymous.h"
 #include "template_data.h"
 
@@ -182,7 +182,7 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
             ZLOGE("publish error, key is %{public}s", DistributedData::Anonymous::Change(item.key_).c_str());
             continue;
         }
-        publishedData.emplace_back(context->uri, callerBundleName, item.subscriberId_);
+        publishedData.emplace_back(context->uri, context->calledBundleName, item.subscriberId_);
         userId = context->currentUserId;
     }
     if (!publishedData.empty()) {
