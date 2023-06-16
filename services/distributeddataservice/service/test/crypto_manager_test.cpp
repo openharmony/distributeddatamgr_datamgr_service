@@ -16,8 +16,8 @@
 #include "crypto_manager.h"
 
 #include <random>
-#include "file_ex.h"
 #include "gtest/gtest.h"
+#include "file_ex.h"
 #include "types.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -38,13 +38,13 @@ static const uint32_t ENCRYPT_KEY_LENGTH = 48;
 std::vector<uint8_t> CryptoManagerTest::randomKey;
 void CryptoManagerTest::SetUpTestCase(void)
 {
-    OHOS::SaveStringToFile("/sys/fs/selinux/enforce", 0);
+    OHOS::SaveStringToFile("/sys/fs/selinux/enforce", "0");
     randomKey = Random(KEY_LENGTH);
 }
 
 void CryptoManagerTest::TearDownTestCase(void)
 {
-    OHOS::SaveStringToFile("/sys/fs/selinux/enforce", 1);
+    OHOS::SaveStringToFile("/sys/fs/selinux/enforce", "1");
     randomKey.assign(randomKey.size(), 0);
 }
 
