@@ -84,7 +84,7 @@ bool ResultSetJsonFormatter::MarshalRow(DistributedData::Serializable::json &nod
             }
             default:
                 ZLOGE("unknow type %{public}d", type);
-				return false;
+                return false;
         }
     }
     node.push_back(result);
