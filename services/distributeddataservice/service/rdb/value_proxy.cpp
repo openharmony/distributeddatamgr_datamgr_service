@@ -204,7 +204,7 @@ uint32_t ValueProxy::Asset::ConvertToDataStatus(const DistributedDB::Asset &asse
 {
     if (asset.status == DistributedDB::AssetStatus::DOWNLOADING) {
         return DistributedData::Asset::STATUS_DOWNLOADING;
-    } else if (asset.status == DistributedDB::AssetStatus::ABNORMAL){
+    } else if (asset.status == DistributedDB::AssetStatus::ABNORMAL) {
         return DistributedData::Asset::STATUS_ABNORMAL;
     } else {
         switch (asset.flag) {
@@ -220,23 +220,23 @@ uint32_t ValueProxy::Asset::ConvertToDataStatus(const DistributedDB::Asset &asse
     }
 }
 
-std::pair<uint32_t, uint32_t>  ValueProxy::Asset::ConvertToDBStatus(const DistributedData::Asset &asset)
+std::pair<uint32_t, uint32_t> ValueProxy::Asset::ConvertToDBStatus(const DistributedData::Asset &asset)
 {
     switch (asset.status) {
         case DistributedData::Asset::STATUS_NORMAL:
-            return {DistributedDB::AssetStatus::NORMAL, DistributedDB::AssetOpType::NO_CHANGE};
+            return { DistributedDB::AssetStatus::NORMAL, DistributedDB::AssetOpType::NO_CHANGE };
         case DistributedData::Asset::STATUS_ABNORMAL:
-            return {DistributedDB::AssetStatus::ABNORMAL, DistributedDB::AssetOpType::NO_CHANGE};;
+            return { DistributedDB::AssetStatus::ABNORMAL, DistributedDB::AssetOpType::NO_CHANGE };
         case DistributedData::Asset::STATUS_INSERT:
-            return {DistributedDB::AssetStatus::NORMAL, DistributedDB::AssetOpType::INSERT};
+            return { DistributedDB::AssetStatus::NORMAL, DistributedDB::AssetOpType::INSERT };
         case DistributedData::Asset::STATUS_UPDATE:
-            return {DistributedDB::AssetStatus::NORMAL, DistributedDB::AssetOpType::UPDATE};
+            return { DistributedDB::AssetStatus::NORMAL, DistributedDB::AssetOpType::UPDATE };
         case DistributedData::Asset::STATUS_DELETE:
-            return {DistributedDB::AssetStatus::NORMAL, DistributedDB::AssetOpType::DELETE};
+            return { DistributedDB::AssetStatus::NORMAL, DistributedDB::AssetOpType::DELETE };
         case DistributedData::Asset::STATUS_DOWNLOADING:
-            return {DistributedDB::AssetStatus::DOWNLOADING, DistributedDB::AssetOpType::NO_CHANGE};
+            return { DistributedDB::AssetStatus::DOWNLOADING, DistributedDB::AssetOpType::NO_CHANGE };
         default:
-            return {DistributedDB::AssetStatus::NORMAL, DistributedDB::AssetOpType::NO_CHANGE};
+            return { DistributedDB::AssetStatus::NORMAL, DistributedDB::AssetOpType::NO_CHANGE };
     }
 }
 

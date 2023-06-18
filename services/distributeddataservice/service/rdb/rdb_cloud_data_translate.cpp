@@ -142,29 +142,33 @@ size_t RdbCloudDataTranslate::ParserRawData(const uint8_t *data, size_t length, 
 
 bool RdbCloudDataTranslate::InnerAsset::Marshal(OHOS::DistributedData::Serializable::json &node) const
 {
-    SetValue(node[GET_NAME(version)], asset_.version);
-    SetValue(node[GET_NAME(status)], asset_.status);
-    SetValue(node[GET_NAME(expiresTime)], asset_.timeStamp);
-    SetValue(node[GET_NAME(name)], asset_.name);
-    SetValue(node[GET_NAME(uri)], asset_.uri);
-    SetValue(node[GET_NAME(path)], asset_.path);
-    SetValue(node[GET_NAME(createTime)], asset_.createTime);
-    SetValue(node[GET_NAME(modifyTime)], asset_.modifyTime);
-    SetValue(node[GET_NAME(size)], asset_.size);
-    SetValue(node[GET_NAME(hash)], asset_.hash);
-    return true;
+    bool ret = true;
+    ret = SetValue(node[GET_NAME(version)], asset_.version) && ret;
+    ret = SetValue(node[GET_NAME(status)], asset_.status) && ret;
+    ret = SetValue(node[GET_NAME(expiresTime)], asset_.timeStamp) && ret;
+    ret = SetValue(node[GET_NAME(name)], asset_.name) && ret;
+    ret = SetValue(node[GET_NAME(uri)], asset_.uri) && ret;
+    ret = SetValue(node[GET_NAME(path)], asset_.path) && ret;
+    ret = SetValue(node[GET_NAME(createTime)], asset_.createTime) && ret;
+    ret = SetValue(node[GET_NAME(modifyTime)], asset_.modifyTime) && ret;
+    ret = SetValue(node[GET_NAME(size)], asset_.size) && ret;
+    ret = SetValue(node[GET_NAME(hash)], asset_.hash) && ret;
+    return ret;
 }
 
 bool RdbCloudDataTranslate::InnerAsset::Unmarshal(const OHOS::DistributedData::Serializable::json &node)
 {
-    bool flag = false;
-    flag = GetValue(node, GET_NAME(version), asset_.version) && GetValue(node, GET_NAME(status), asset_.status) &&
-           GetValue(node, GET_NAME(expiresTime), asset_.timeStamp) && GetValue(node, GET_NAME(name), asset_.name) &&
-           GetValue(node, GET_NAME(uri), asset_.uri) && GetValue(node, GET_NAME(path), asset_.path) &&
-           GetValue(node, GET_NAME(createTime), asset_.createTime) &&
-           GetValue(node, GET_NAME(modifyTime), asset_.modifyTime) && GetValue(node, GET_NAME(size), asset_.size) &&
-           GetValue(node, GET_NAME(hash), asset_.hash);
-
-    return flag;
+    bool ret = true;
+    ret = GetValue(node, GET_NAME(version), asset_.version) && ret;
+    ret = GetValue(node, GET_NAME(status), asset_.status) && ret;
+    ret = GetValue(node, GET_NAME(expiresTime), asset_.timeStamp) && ret;
+    ret = GetValue(node, GET_NAME(name), asset_.name) && ret;
+    ret = GetValue(node, GET_NAME(uri), asset_.uri) && ret;
+    ret = GetValue(node, GET_NAME(path), asset_.path) && ret;
+    ret = GetValue(node, GET_NAME(createTime), asset_.createTime) && ret;
+    ret = GetValue(node, GET_NAME(modifyTime), asset_.modifyTime) && ret;
+    ret = GetValue(node, GET_NAME(size), asset_.size) && ret;
+    ret = GetValue(node, GET_NAME(hash), asset_.hash) && ret;
+    return ret;
 }
 } // namespace OHOS::DistributedRdb
