@@ -122,7 +122,7 @@ ValueProxy::Asset::Asset(DistributedData::Asset asset)
 
 ValueProxy::Asset::Asset(NativeRdb::AssetValue asset)
 {
-    asset_ = DistributedData::Asset { .version = asset.version,
+    asset_ = DistributedData::Asset{ .version = asset.version,
         .status = asset.status,
         .expiresTime = asset.expiresTime,
         .id = std::move(asset.id),
@@ -137,7 +137,7 @@ ValueProxy::Asset::Asset(NativeRdb::AssetValue asset)
 
 ValueProxy::Asset::Asset(DistributedDB::Asset asset)
 {
-    asset_ = DistributedData::Asset { .version = asset.version,
+    asset_ = DistributedData::Asset{ .version = asset.version,
         .status = ConvertDBStatus(asset),
         .expiresTime = DistributedData::Asset::NO_EXPIRES_TIME,
         .id = std::move(asset.assetId),
@@ -169,7 +169,7 @@ ValueProxy::Asset &ValueProxy::Asset::operator=(Asset &&proxy) noexcept
 
 ValueProxy::Asset::operator NativeRdb::AssetValue()
 {
-    return NativeRdb::AssetValue { .version = asset_.version,
+    return NativeRdb::AssetValue{ .version = asset_.version,
         .status = asset_.status,
         .expiresTime = asset_.expiresTime,
         .id = std::move(asset_.id),
@@ -189,7 +189,7 @@ ValueProxy::Asset::operator DistributedData::Asset()
 
 ValueProxy::Asset::operator DistributedDB::Asset()
 {
-    return DistributedDB::Asset { .version = asset_.version,
+    return DistributedDB::Asset{ .version = asset_.version,
         .name = std::move(asset_.name),
         .assetId = std::move(asset_.id),
         .subpath = std::move(asset_.path),
@@ -199,10 +199,10 @@ ValueProxy::Asset::operator DistributedDB::Asset()
         .size = std::move(asset_.size),
         .hash = std::move(asset_.hash),
         .status = asset_.status == DistributedData::Asset::STATUS_NORMAL ? DistributedDB::AssetStatus::ABNORMAL
-                                                                         : DistributedDB::AssetStatus::NORMAL};
+                                                                         : DistributedDB::AssetStatus::NORMAL };
 }
 
-uint32_t ValueProxy::Asset::ConvertDBStatus(const DistributedDB::Asset& asset)
+uint32_t ValueProxy::Asset::ConvertDBStatus(const DistributedDB::Asset &asset)
 {
     switch (asset.flag) {
         case static_cast<uint32_t>(DistributedDB::AssetOpType::INSERT):

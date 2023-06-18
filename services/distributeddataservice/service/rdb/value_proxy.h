@@ -60,7 +60,7 @@ public:
         operator NativeRdb::AssetValue();
         operator DistributedData::Asset();
         operator DistributedDB::Asset();
-        static uint32_t ConvertDBStatus(const DistributedDB::Asset& asset);
+        static uint32_t ConvertDBStatus(const DistributedDB::Asset &asset);
 
     private:
         DistributedData::Asset asset_;
@@ -206,7 +206,7 @@ public:
     Convert(const std::map<std::string, T> &values)
     {
         Bucket bucket;
-        for(auto &[key, value] : values) {
+        for (auto &[key, value] : values) {
             bucket.value_[key].value_ = static_cast<std::variant_alternative_t<CVT_INDEX<T, Proxy>, Proxy>>(value);
         }
         return bucket;

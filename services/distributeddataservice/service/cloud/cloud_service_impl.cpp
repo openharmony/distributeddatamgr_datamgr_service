@@ -25,10 +25,10 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "rdb_cloud_data_translate.h"
+#include "runtime_config.h"
 #include "store/auto_cache.h"
 #include "utils/anonymous.h"
-#include "runtime_config.h"
-#include "rdb_cloud_data_translate.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;

@@ -15,6 +15,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_ASSET_LOADER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_ASSET_LOADER_H
 #include <vector>
+
 #include "store/general_value.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {

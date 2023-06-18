@@ -24,4 +24,4 @@ int32_t AssetLoader::RemoveLocalAssets(VBucket &assets)
 {
     return E_NOT_SUPPORT;
 }
-}
+} // namespace OHOS::DistributedData
