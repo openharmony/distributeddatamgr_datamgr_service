@@ -41,8 +41,11 @@ DBStatus RdbCloud::BatchInsert(
 DBStatus RdbCloud::BatchUpdate(
     const std::string &tableName, std::vector<DBVBucket> &&record, std::vector<DBVBucket> &extend)
 {
-    auto error = cloudDB_->BatchUpdate(
-        tableName, ValueProxy::Convert(std::move(record)), ValueProxy::Convert(std::move(extend)));
+    DistributedData::VBuckets extends = ValueProxy::Convert(std::move(extend));
+    auto error = cloudDB_->BatchUpdate(tableName, ValueProxy::Convert(std::move(record)), extends);
+    if (error == GeneralError::E_OK) {
+        extend = ValueProxy::Convert(std::move(extends));
+    }
     return ConvertStatus(static_cast<GeneralError>(error));
 }
 

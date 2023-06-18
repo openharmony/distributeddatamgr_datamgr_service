@@ -39,5 +39,5 @@ private:
 
     std::shared_ptr<DistributedData::AssetLoader> assetLoader_;
 };
-}
+} // namespace OHOS::DistributedRdb
 #endif //OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H

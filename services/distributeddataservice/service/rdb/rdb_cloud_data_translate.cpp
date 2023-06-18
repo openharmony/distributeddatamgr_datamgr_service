@@ -17,13 +17,6 @@
 #include "utils/endian_converter.h"
 #include "value_proxy.h"
 
-#define UNMARSHAL_RETURN_ERR(theCall) \
-    do {                              \
-        if (!theCall) {               \
-            return false;             \
-        }                             \
-    } while (0)
-
 namespace OHOS::DistributedRdb {
 using Asset = DistributedDB::Asset;
 using Assets = DistributedDB::Assets;
@@ -150,7 +143,7 @@ bool RdbCloudDataTranslate::InnerAsset::Marshal(OHOS::DistributedData::Serializa
 {
     SetValue(node[GET_NAME(version)], asset_.version);
     SetValue(node[GET_NAME(status)], asset_.status);
-    SetValue(node[GET_NAME(expiresTime)], asset_.timeStamp);
+    SetValue(node[GET_NAME(expiresTime)], asset_.expiresTime);
     SetValue(node[GET_NAME(name)], asset_.name);
     SetValue(node[GET_NAME(uri)], asset_.uri);
     SetValue(node[GET_NAME(path)], asset_.path);
@@ -164,17 +157,14 @@ bool RdbCloudDataTranslate::InnerAsset::Marshal(OHOS::DistributedData::Serializa
 
 bool RdbCloudDataTranslate::InnerAsset::Unmarshal(const OHOS::DistributedData::Serializable::json &node)
 {
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(version), asset_.version));
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(status), asset_.status));
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(expiresTime), asset_.timeStamp));
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(name), asset_.name));
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(uri), asset_.uri));
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(path), asset_.path));
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(createTime), asset_.createTime));
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(modifyTime), asset_.modifyTime));
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(size), asset_.size));
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(hash), asset_.hash));
-    UNMARSHAL_RETURN_ERR(GetValue(node, GET_NAME(id), asset_.id));
-    return true;
+    bool flag = false;
+    flag = GetValue(node, GET_NAME(version), asset_.version) && GetValue(node, GET_NAME(status), asset_.status) &&
+           GetValue(node, GET_NAME(expiresTime), asset_.expiresTime) && GetValue(node, GET_NAME(name), asset_.name) &&
+           GetValue(node, GET_NAME(uri), asset_.uri) && GetValue(node, GET_NAME(path), asset_.path) &&
+           GetValue(node, GET_NAME(createTime), asset_.createTime) &&
+           GetValue(node, GET_NAME(modifyTime), asset_.modifyTime) && GetValue(node, GET_NAME(size), asset_.size) &&
+           GetValue(node, GET_NAME(hash), asset_.hash) && GetValue(node, GET_NAME(id), asset_.id);
+
+    return flag;
 }
 } // namespace OHOS::DistributedRdb

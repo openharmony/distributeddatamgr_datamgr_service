@@ -61,4 +61,4 @@ DBStatus RdbAssetLoader::ConvertStatus(DistributedData::GeneralError error)
     }
     return DBStatus::CLOUD_ERROR;
 }
-}
+} // namespace OHOS::DistributedRdb
