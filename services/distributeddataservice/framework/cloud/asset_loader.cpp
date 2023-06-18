@@ -15,12 +15,12 @@
 
 #include "cloud/asset_loader.h"
 namespace OHOS::DistributedData {
-int32_t AssetLoader::Upload(const std::vector<Asset> &assets)
+int32_t AssetLoader::Download(const std::string &tableName, const std::string &gid, const Value &prefix,
+    VBucket &assets)
 {
     return E_NOT_SUPPORT;
 }
-
-int32_t AssetLoader::Download(std::vector<Asset> &assets)
+int32_t AssetLoader::RemoveLocalAssets(VBucket &assets)
 {
     return E_NOT_SUPPORT;
 }

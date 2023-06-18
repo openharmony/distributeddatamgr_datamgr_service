@@ -86,11 +86,12 @@ RdbGeneralStore::~RdbGeneralStore()
     bindInfo_.db_->Close();
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
+    rdbLoader_ = nullptr;
 }
 
 int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
 {
-    if (bindInfo.db_ == nullptr) {
+    if (bindInfo.db_ == nullptr || bindInfo.loader_ == nullptr) {
         return GeneralError::E_INVALID_ARGS;
     }
 
@@ -105,6 +106,12 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
         return GeneralError::E_ERROR;
     }
     delegate_->SetCloudDB(rdbCloud_);
+    rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_);
+    if (rdbLoader_ == nullptr) {
+        ZLOGE("rdb_AssetLoader is null");
+        return GeneralError::E_ERROR;
+    }
+    delegate_->SetIAssetLoader(rdbLoader_);
     DBSchema schema;
     schema.tables.resize(database.tables.size());
     for (size_t i = 0; i < database.tables.size(); i++) {
@@ -141,6 +148,7 @@ int32_t RdbGeneralStore::Close()
     bindInfo_.db_->Close();
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
+    rdbLoader_ = nullptr;
     return 0;
 }
 

@@ -250,7 +250,13 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler()
                     dbMeta.name.c_str(), dbMeta.alias.c_str());
                 return;
             }
-            store->Bind(dbMeta, std::move(cloudDB));
+            auto assetLoader = instance->ConnectAssetLoader(storeInfo.tokenId, dbMeta);
+            if (assetLoader == nullptr) {
+                ZLOGE("failed, no assetLoader <0x%{public}x %{public}s<->%{public}s>", storeInfo.tokenId,
+                    dbMeta.name.c_str(), dbMeta.alias.c_str());
+                return;
+            }
+            store->Bind(dbMeta, {cloudDB, assetLoader});
         }
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             Anonymous::Change(storeInfo.storeName).c_str());

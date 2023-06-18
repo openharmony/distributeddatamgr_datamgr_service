@@ -23,6 +23,23 @@
 namespace OHOS::DistributedRdb {
 class ValueProxy final {
 public:
+    template<class T>
+    static inline constexpr uint32_t INDEX = DistributedData::TYPE_INDEX<T>;
+    static inline constexpr uint32_t MAX = DistributedData::TYPE_MAX;
+
+    template<typename T, typename... Types>
+    struct variant_cvt_of {
+        static constexpr size_t value = std::is_class_v<T> ? Traits::convertible_index_of_v<T, Types...>
+                                                           : Traits::same_index_of_v<T, Types...>;
+    };
+
+    template<typename T, typename... Types>
+    static variant_cvt_of<T, Types...> variant_cvt_test(const T &, const std::variant<Types...> &);
+
+    template<class T, class V>
+    static inline constexpr uint32_t CVT_INDEX =
+        decltype(variant_cvt_test(std::declval<T>(), std::declval<V>()))::value;
+
     using Bytes = DistributedData::Bytes;
     class Asset {
     public:
@@ -43,6 +60,7 @@ public:
         operator NativeRdb::AssetValue();
         operator DistributedData::Asset();
         operator DistributedDB::Asset();
+        static uint32_t ConvertDBStatus(const DistributedDB::Asset& asset);
 
     private:
         DistributedData::Asset asset_;
@@ -85,6 +103,16 @@ public:
         operator DistributedData::Value();
         operator DistributedDB::Type();
 
+        template<typename T>
+        operator T() noexcept
+        {
+            auto val = Traits::get_if<T>(&value_);
+            if (val != nullptr) {
+                return T(std::move(*val));
+            }
+            return T();
+        };
+
     private:
         friend ValueProxy;
         Proxy value_;
@@ -126,7 +154,7 @@ public:
         {
             std::map<std::string, T> bucket;
             for (auto &[key, value] : value_) {
-                bucket.insert_or_assign(key, std::move(value));
+                bucket.insert_or_assign(key, std::move(static_cast<T>(value)));
             }
             value_.clear();
             return bucket;
@@ -172,6 +200,17 @@ public:
     static Buckets Convert(DistributedData::VBuckets &&buckets);
     static Buckets Convert(std::vector<NativeRdb::ValuesBucket> &&buckets);
     static Buckets Convert(std::vector<DistributedDB::VBucket> &&buckets);
+
+    template<typename T>
+    static std::enable_if_t < CVT_INDEX<T, Proxy><MAX, Bucket>
+    Convert(const std::map<std::string, T> &values)
+    {
+        Bucket bucket;
+        for(auto &[key, value] : values) {
+            bucket.value_[key].value_ = static_cast<std::variant_alternative_t<CVT_INDEX<T, Proxy>, Proxy>>(value);
+        }
+        return bucket;
+    }
 
 private:
     ValueProxy() = delete;

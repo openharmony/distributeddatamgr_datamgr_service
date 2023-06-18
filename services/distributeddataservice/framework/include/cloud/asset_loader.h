@@ -21,8 +21,9 @@ namespace OHOS::DistributedData {
 class API_EXPORT AssetLoader {
 public:
     virtual ~AssetLoader() = default;
-    virtual int32_t Upload(const std::vector<Asset> &assets);
-    virtual int32_t Download(std::vector<Asset> &assets);
+    virtual int32_t Download(const std::string &tableName, const std::string &gid, const Value &prefix,
+        VBucket &assets);
+    virtual int32_t RemoveLocalAssets(VBucket &assets);
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_ASSET_LOADER_H
