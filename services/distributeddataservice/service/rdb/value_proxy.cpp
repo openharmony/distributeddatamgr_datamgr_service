@@ -124,8 +124,8 @@ ValueProxy::Asset::Asset(NativeRdb::AssetValue asset)
 {
     asset_ = DistributedData::Asset{ .version = asset.version,
         .status = asset.status,
-        .expiresTime = asset.expiresTime,
-        .id = std::move(asset.id),
+        .expiresTime = asset.timeStamp,
+        .id = "",
         .name = std::move(asset.name),
         .uri = std::move(asset.uri),
         .path = std::move(asset.path),
@@ -171,8 +171,7 @@ ValueProxy::Asset::operator NativeRdb::AssetValue()
 {
     return NativeRdb::AssetValue{ .version = asset_.version,
         .status = asset_.status,
-        .expiresTime = asset_.expiresTime,
-        .id = std::move(asset_.id),
+        .timeStamp = asset_.expiresTime,
         .name = std::move(asset_.name),
         .uri = std::move(asset_.uri),
         .path = std::move(asset_.path),

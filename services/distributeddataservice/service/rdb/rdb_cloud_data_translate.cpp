@@ -14,6 +14,7 @@
 */
 
 #include "rdb_cloud_data_translate.h"
+
 #include "utils/endian_converter.h"
 #include "value_proxy.h"
 
@@ -143,7 +144,7 @@ bool RdbCloudDataTranslate::InnerAsset::Marshal(OHOS::DistributedData::Serializa
 {
     SetValue(node[GET_NAME(version)], asset_.version);
     SetValue(node[GET_NAME(status)], asset_.status);
-    SetValue(node[GET_NAME(expiresTime)], asset_.expiresTime);
+    SetValue(node[GET_NAME(expiresTime)], asset_.timeStamp);
     SetValue(node[GET_NAME(name)], asset_.name);
     SetValue(node[GET_NAME(uri)], asset_.uri);
     SetValue(node[GET_NAME(path)], asset_.path);
@@ -151,7 +152,6 @@ bool RdbCloudDataTranslate::InnerAsset::Marshal(OHOS::DistributedData::Serializa
     SetValue(node[GET_NAME(modifyTime)], asset_.modifyTime);
     SetValue(node[GET_NAME(size)], asset_.size);
     SetValue(node[GET_NAME(hash)], asset_.hash);
-    SetValue(node[GET_NAME(id)], asset_.id);
     return true;
 }
 
@@ -159,11 +159,11 @@ bool RdbCloudDataTranslate::InnerAsset::Unmarshal(const OHOS::DistributedData::S
 {
     bool flag = false;
     flag = GetValue(node, GET_NAME(version), asset_.version) && GetValue(node, GET_NAME(status), asset_.status) &&
-           GetValue(node, GET_NAME(expiresTime), asset_.expiresTime) && GetValue(node, GET_NAME(name), asset_.name) &&
+           GetValue(node, GET_NAME(expiresTime), asset_.timeStamp) && GetValue(node, GET_NAME(name), asset_.name) &&
            GetValue(node, GET_NAME(uri), asset_.uri) && GetValue(node, GET_NAME(path), asset_.path) &&
            GetValue(node, GET_NAME(createTime), asset_.createTime) &&
            GetValue(node, GET_NAME(modifyTime), asset_.modifyTime) && GetValue(node, GET_NAME(size), asset_.size) &&
-           GetValue(node, GET_NAME(hash), asset_.hash) && GetValue(node, GET_NAME(id), asset_.id);
+           GetValue(node, GET_NAME(hash), asset_.hash);
 
     return flag;
 }
