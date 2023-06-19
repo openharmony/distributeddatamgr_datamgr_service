@@ -22,7 +22,7 @@
 #include "error/general_error.h"
 
 namespace OHOS::DistributedRdb {
-class RdbAssetLoader : public DistributedDB::IAssetLoader{
+class RdbAssetLoader : public DistributedDB::IAssetLoader {
 public:
     using Type = DistributedDB::Type;
     using Asset = DistributedDB::Asset;

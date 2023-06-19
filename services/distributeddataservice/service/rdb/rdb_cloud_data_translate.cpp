@@ -87,14 +87,12 @@ size_t RdbCloudDataTranslate::ParserRawData(const uint8_t *data, size_t length, 
     if (hostMagicWord != ASSET_MAGIC) {
         return 0;
     }
-
     if (sizeof(size) > length - used) {
         return 0;
     }
     alignData.assign(data + used, data + used + sizeof(size));
     used += sizeof(size);
     size = DistributedData::NetToHost(*(reinterpret_cast<decltype(&size)>(alignData.data())));
-
     if (size > length - used) {
         return 0;
     }
@@ -148,7 +146,8 @@ bool RdbCloudDataTranslate::InnerAsset::Marshal(OHOS::DistributedData::Serializa
     bool ret = true;
     ret = SetValue(node[GET_NAME(version)], asset_.version) && ret;
     ret = SetValue(node[GET_NAME(status)], asset_.status) && ret;
-    ret = SetValue(node[GET_NAME(timeStamp)], asset_.timeStamp) && ret;
+    ret = SetValue(node[GET_NAME(expiresTime)], asset_.expiresTime) && ret;
+    ret = SetValue(node[GET_NAME(id)], asset_.id) && ret;
     ret = SetValue(node[GET_NAME(name)], asset_.name) && ret;
     ret = SetValue(node[GET_NAME(uri)], asset_.uri) && ret;
     ret = SetValue(node[GET_NAME(path)], asset_.path) && ret;
@@ -164,7 +163,8 @@ bool RdbCloudDataTranslate::InnerAsset::Unmarshal(const OHOS::DistributedData::S
     bool ret = true;
     ret = GetValue(node, GET_NAME(version), asset_.version) && ret;
     ret = GetValue(node, GET_NAME(status), asset_.status) && ret;
-    ret = GetValue(node, GET_NAME(timeStamp), asset_.timeStamp) && ret;
+    ret = GetValue(node, GET_NAME(expiresTime), asset_.expiresTime) && ret;
+    ret = GetValue(node, GET_NAME(id), asset_.id) && ret;
     ret = GetValue(node, GET_NAME(name), asset_.name) && ret;
     ret = GetValue(node, GET_NAME(uri), asset_.uri) && ret;
     ret = GetValue(node, GET_NAME(path), asset_.path) && ret;

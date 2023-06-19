@@ -122,17 +122,17 @@ ValueProxy::Asset::Asset(DistributedData::Asset asset)
 
 ValueProxy::Asset::Asset(NativeRdb::AssetValue asset)
 {
-    asset_ = DistributedData::Asset{ .version = asset.version,
+    asset_ = DistributedData::Asset { .version = asset.version,
         .status = asset.status,
-        .expiresTime = asset.timeStamp,
-        .id = "",
+        .expiresTime = asset.expiresTime,
+        .id = asset.id,
         .name = std::move(asset.name),
         .uri = std::move(asset.uri),
-        .path = std::move(asset.path),
         .createTime = std::move(asset.createTime),
         .modifyTime = std::move(asset.modifyTime),
         .size = std::move(asset.size),
-        .hash = std::move(asset.hash) };
+        .hash = std::move(asset.hash),
+        .path = std::move(asset.path) };
 }
 
 ValueProxy::Asset::Asset(DistributedDB::Asset asset)
@@ -171,13 +171,15 @@ ValueProxy::Asset::operator NativeRdb::AssetValue()
 {
     return NativeRdb::AssetValue { .version = asset_.version,
         .status = asset_.status,
+        .expiresTime = asset_.expiresTime,
+        .id = std::move(asset_.id),
         .name = std::move(asset_.name),
         .uri = std::move(asset_.uri),
-        .path = std::move(asset_.path),
         .createTime = std::move(asset_.createTime),
         .modifyTime = std::move(asset_.modifyTime),
         .size = std::move(asset_.size),
-        .hash = std::move(asset_.hash) };
+        .hash = std::move(asset_.hash),
+        .path = std::move(asset_.path) };
 }
 
 ValueProxy::Asset::operator DistributedData::Asset()
