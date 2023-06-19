@@ -103,7 +103,7 @@ PublishedDataNode::PublishedDataNode(const std::string &key, const std::string &
 
 PublishedDataNode::PublishedDataNode() : VersionData(-1) {}
 
-int32_t PublishedData::Query(const std::string &filter, std::variant<std::vector<uint32_t>, std::string> &publishedData)
+int32_t PublishedData::Query(const std::string &filter, PublishedDataNode::Data &publishedData)
 {
     auto delegate = KvDBDelegate::GetInstance();
     if (delegate == nullptr) {
