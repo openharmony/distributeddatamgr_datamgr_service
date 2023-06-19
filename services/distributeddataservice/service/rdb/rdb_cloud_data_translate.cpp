@@ -29,8 +29,7 @@ std::vector<uint8_t> RdbCloudDataTranslate::AssetToBlob(const Asset &asset)
     DataAsset dataAsset = ValueProxy::Asset(asset);
     InnerAsset innerAsset(dataAsset);
     auto data = Serializable::Marshall(innerAsset);
-    uint16_t size;
-    size = DistributedData::HostToNet((uint16_t)data.length());
+    auto size = DistributedData::HostToNet((uint16_t)data.length());
     auto leMagic = DistributedData::HostToNet(ASSET_MAGIC);
     auto magicU8 = reinterpret_cast<uint8_t *>(const_cast<uint32_t *>(&leMagic));
     rawData.insert(rawData.end(), magicU8, magicU8 + sizeof(ASSET_MAGIC));
@@ -43,7 +42,7 @@ std::vector<uint8_t> RdbCloudDataTranslate::AssetToBlob(const Asset &asset)
 std::vector<uint8_t> RdbCloudDataTranslate::AssetsToBlob(const Assets &assets)
 {
     std::vector<uint8_t> rawData;
-    uint16_t num = uint16_t(assets.size());
+    auto num = DistributedData::HostToNet((uint16_t)assets.size());
     auto leMagic = DistributedData::HostToNet(ASSETS_MAGIC);
     auto magicU8 = reinterpret_cast<uint8_t *>(const_cast<uint32_t *>(&leMagic));
     rawData.insert(rawData.end(), magicU8, magicU8 + sizeof(ASSETS_MAGIC));

@@ -244,15 +244,10 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler()
                 return;
             }
             auto dbMeta = schemaMeta.GetDataBase(storeInfo.storeName);
-            auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
-            if (cloudDB == nullptr) {
-                ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", storeInfo.tokenId,
-                    dbMeta.name.c_str(), dbMeta.alias.c_str());
-                return;
-            }
+            auto cloudDB = instance->ConnectCloudDB(storeInfo.tokenId, dbMeta);
             auto assetLoader = instance->ConnectAssetLoader(storeInfo.tokenId, dbMeta);
-            if (assetLoader == nullptr) {
-                ZLOGE("failed, no assetLoader <0x%{public}x %{public}s<->%{public}s>", storeInfo.tokenId,
+            if (cloudDB == nullptr || assetLoader == nullptr) {
+                ZLOGE("failed, no cloud DB or no assetLoader <0x%{public}x %{public}s<->%{public}s>", storeInfo.tokenId,
                     dbMeta.name.c_str(), dbMeta.alias.c_str());
                 return;
             }

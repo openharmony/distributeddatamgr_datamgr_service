@@ -27,7 +27,7 @@ public:
     using Type = DistributedDB::Type;
     using Asset = DistributedDB::Asset;
     using DBStatus = DistributedDB::DBStatus;
-    RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader);
+    explicit RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader);
 
     ~RdbAssetLoader() = default;
 
@@ -40,4 +40,4 @@ private:
     std::shared_ptr<DistributedData::AssetLoader> assetLoader_;
 };
 } // namespace OHOS::DistributedRdb
-#endif //OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H

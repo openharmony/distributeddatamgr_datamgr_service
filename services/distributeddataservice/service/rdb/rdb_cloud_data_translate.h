@@ -48,4 +48,4 @@ private:
     size_t ParserRawData(const uint8_t *data, size_t length, DataAssets &assets);
 };
 } // namespace OHOS::DistributedRdb
-#endif //OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_DATA_TRASLATE_H
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_DATA_TRASLATE_H
