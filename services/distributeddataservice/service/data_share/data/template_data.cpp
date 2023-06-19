@@ -136,14 +136,14 @@ bool TemplateData::Delete(const std::string &bundleName, const int32_t userId)
 }
 
 bool TemplateData::Add(const std::string &uri, const int32_t userId, const std::string &bundleName,
-    const int64_t subsciriberId, const Template &aTemplate)
+    const int64_t subscriberId, const Template &aTemplate)
 {
     auto delegate = KvDBDelegate::GetInstance();
     if (delegate == nullptr) {
         ZLOGE("db open failed");
         return false;
     }
-    TemplateData data(uri, bundleName, subsciriberId, userId, aTemplate);
+    TemplateData data(uri, bundleName, subscriberId, userId, aTemplate);
     auto status = delegate->Upsert(KvDBDelegate::TEMPLATE_TABLE, data);
     if (status != E_OK) {
         ZLOGE("db Upsert failed, %{public}d", status);
