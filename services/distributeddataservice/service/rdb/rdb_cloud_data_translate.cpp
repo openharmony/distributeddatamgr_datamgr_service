@@ -82,7 +82,8 @@ size_t RdbCloudDataTranslate::ParserRawData(const uint8_t *data, size_t length, 
     std::vector<uint8_t> alignData;
     alignData.assign(data, data + sizeof(ASSET_MAGIC));
     used += sizeof(ASSET_MAGIC);
-    if (*(reinterpret_cast<decltype(&ASSET_MAGIC)>(alignData.data())) != ASSET_MAGIC) {
+    auto hostMagicWord = DistributedData::NetToHost(*(reinterpret_cast<decltype(&ASSET_MAGIC)>(alignData.data())));
+    if (hostMagicWord != ASSET_MAGIC) {
         return 0;
     }
 
@@ -116,7 +117,8 @@ size_t RdbCloudDataTranslate::ParserRawData(const uint8_t *data, size_t length, 
     std::vector<uint8_t> alignData;
     alignData.assign(data, data + sizeof(ASSETS_MAGIC));
     used += sizeof(ASSETS_MAGIC);
-    if (*(reinterpret_cast<decltype(&ASSETS_MAGIC)>(alignData.data())) != ASSETS_MAGIC) {
+    auto hostMagicWord = DistributedData::NetToHost(*(reinterpret_cast<decltype(&ASSETS_MAGIC)>(alignData.data())));
+    if (hostMagicWord != ASSETS_MAGIC) {
         return 0;
     }
 
@@ -124,7 +126,7 @@ size_t RdbCloudDataTranslate::ParserRawData(const uint8_t *data, size_t length, 
         return 0;
     }
     alignData.assign(data, data + sizeof(num));
-    num = *(reinterpret_cast<decltype(&num)>(alignData.data()));
+    num = DistributedData::NetToHost(*(reinterpret_cast<decltype(&num)>(alignData.data())));
     used += sizeof(num);
     uint16_t count = 0;
     while (used < length && count < num) {
