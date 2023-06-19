@@ -245,12 +245,13 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler()
             }
             auto dbMeta = schemaMeta.GetDataBase(storeInfo.storeName);
             auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
-            if (cloudDB == nullptr) {
-                ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", storeInfo.tokenId,
+            auto assetLoader = instance->ConnectAssetLoader(meta.tokenId, dbMeta);
+            if (cloudDB == nullptr || assetLoader == nullptr) {
+                ZLOGE("failed, no cloud DB or no assetLoader <0x%{public}x %{public}s<->%{public}s>", storeInfo.tokenId,
                     dbMeta.name.c_str(), dbMeta.alias.c_str());
                 return;
             }
-            store->Bind(dbMeta, std::move(cloudDB));
+            store->Bind(dbMeta, {cloudDB, assetLoader});
         }
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             Anonymous::Change(storeInfo.storeName).c_str());

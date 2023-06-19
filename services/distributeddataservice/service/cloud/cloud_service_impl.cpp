@@ -25,6 +25,8 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "rdb_cloud_data_translate.h"
+#include "runtime_config.h"
 #include "store/auto_cache.h"
 #include "utils/anonymous.h"
 namespace OHOS::CloudData {
@@ -171,6 +173,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
 
 int32_t CloudServiceImpl::OnInitialize()
 {
+    DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<DistributedRdb::RdbCloudDataTranslate>());
     Execute(GetCloudTask(0, 0, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE }));
     return E_OK;
 }

@@ -18,6 +18,7 @@
 #include <atomic>
 #include <functional>
 #include "metadata/store_meta_data.h"
+#include "rdb_asset_loader.h"
 #include "rdb_cloud.h"
 #include "rdb_store.h"
 #include "relational_store_delegate.h"
@@ -83,6 +84,7 @@ private:
     RdbDelegate *delegate_ = nullptr;
     std::shared_ptr<RdbStore> store_;
     std::shared_ptr<RdbCloud> rdbCloud_ {};
+    std::shared_ptr<RdbAssetLoader> rdbLoader_ {};
     BindInfo bindInfo_;
     std::atomic<bool> isBound_ = false;
 };
