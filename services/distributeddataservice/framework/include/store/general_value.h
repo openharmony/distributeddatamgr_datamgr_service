@@ -68,11 +68,11 @@ struct Asset {
     std::string id;
     std::string name;
     std::string uri;
-    std::string path;
     std::string createTime;
     std::string modifyTime;
     std::string size;
     std::string hash;
+    std::string path;
 };
 
 struct GenQuery {
