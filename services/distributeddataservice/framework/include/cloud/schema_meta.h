@@ -54,6 +54,7 @@ public:
     static constexpr const char *CREATE_FIELD = "#_createTime";
     static constexpr const char *MODIFY_FIELD = "#_modifyTime";
     static constexpr const char *CURSOR_FIELD = "#_cursor";
+    static constexpr const char *ERROR_FIELD = "#_error";
     int32_t version = 0;
     std::string bundleName;
     std::vector<Database> databases;
