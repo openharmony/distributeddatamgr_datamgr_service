@@ -134,14 +134,14 @@ HWTEST_F(ValueProxyTest, ConvertAssetMapGaussDB2NormalTest, TestSize.Level0)
 {
     DistributedDB::Asset dbAsset0 { .name = "dbname", .uri = "dburi" };
     DistributedDB::Asset dbAsset1 { .name = "dbname", .uri = "dburi" };
-    std::map<std::string, DistributedDB::Asset> dbMap{ { "asset0", dbAsset0 }, { "asset1", dbAsset1 } };
+    std::map<std::string, DistributedDB::Asset> dbMap { { "asset0", dbAsset0 }, { "asset1", dbAsset1 } };
     OHOS::DistributedData::VBucket transferredAsset = ValueProxy::Convert(dbMap);
     ASSERT_EQ(transferredAsset.size(), 2);
     auto asset = std::get<OHOS::DistributedData::Asset>(transferredAsset.find("asset0")->second);
     ASSERT_EQ(asset.name, "dbname");
 
     DistributedDB::Assets dbAssets { dbAsset0, dbAsset1 };
-    std::map<std::string, DistributedDB::Assets> dbAssetsMap{ {"dbAssets", dbAssets} };
+    std::map<std::string, DistributedDB::Assets> dbAssetsMap { {"dbAssets", dbAssets} };
     OHOS::DistributedData::VBucket transferredAssets = ValueProxy::Convert(dbAssetsMap);
     ASSERT_EQ(transferredAssets.size(), 1);
     auto assets = std::get<OHOS::DistributedData::Assets>(transferredAssets.find("dbAssets")->second);
@@ -163,14 +163,14 @@ HWTEST_F(ValueProxyTest, ConvertAssetMapNormal2GaussDBTest, TestSize.Level0)
     using NormalAssets = OHOS::DistributedData::Assets;
     NormalAsset nAsset0 { .name = "name", .uri = "uri" };
     NormalAsset nAsset1 { .name = "name", .uri = "uri" };
-    std::map<std::string, NormalAsset> nMap{ { "asset0", nAsset0 }, { "asset1", nAsset1 } };
+    std::map<std::string, NormalAsset> nMap { { "asset0", nAsset0 }, { "asset1", nAsset1 } };
     DistributedDB::VBucket transferredAsset = ValueProxy::Convert(nMap);
     ASSERT_EQ(transferredAsset.size(), 2);
     auto asset = std::get<DistributedDB::Asset>(transferredAsset.find("asset0")->second);
     ASSERT_EQ(asset.name, "name");
 
     NormalAssets nAssets { nAsset0, nAsset1 };
-    std::map<std::string, NormalAssets> nAssetsMap{ { "Assets", nAssets } };
+    std::map<std::string, NormalAssets> nAssetsMap { { "Assets", nAssets } };
     DistributedDB::VBucket transferredAssets = ValueProxy::Convert(nAssetsMap);
     ASSERT_EQ(transferredAssets.size(), 1);
     auto assets = std::get<DistributedDB::Assets>(transferredAssets.find("Assets")->second);
@@ -192,14 +192,14 @@ HWTEST_F(ValueProxyTest, ConvertAssetMapRdb2NormalTest, TestSize.Level0)
     using RdbAssets = std::vector<RdbAsset>;
     RdbAsset dbAsset0 { .name = "dbname", .uri = "dburi" };
     RdbAsset dbAsset1 { .name = "dbname", .uri = "dburi" };
-    std::map<std::string, RdbAsset> dbMap{ { "asset0", dbAsset0 }, { "asset1", dbAsset1 } };
+    std::map<std::string, RdbAsset> dbMap { { "asset0", dbAsset0 }, { "asset1", dbAsset1 } };
     OHOS::DistributedData::VBucket transferredAsset = ValueProxy::Convert(dbMap);
     ASSERT_EQ(transferredAsset.size(), 2);
     auto asset = std::get<OHOS::DistributedData::Asset>(transferredAsset.find("asset0")->second);
     ASSERT_EQ(asset.name, "dbname");
 
     RdbAssets dbAssets { dbAsset0, dbAsset1 };
-    std::map<std::string, RdbAssets> dbAssetsMap{ {"dbAssets", dbAssets} };
+    std::map<std::string, RdbAssets> dbAssetsMap { {"dbAssets", dbAssets} };
     OHOS::DistributedData::VBucket transferredAssets = ValueProxy::Convert(dbAssetsMap);
     ASSERT_EQ(transferredAssets.size(), 1);
     auto assets = std::get<OHOS::DistributedData::Assets>(transferredAssets.find("dbAssets")->second);
