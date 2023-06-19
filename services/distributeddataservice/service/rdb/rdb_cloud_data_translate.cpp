@@ -31,7 +31,8 @@ std::vector<uint8_t> RdbCloudDataTranslate::AssetToBlob(const Asset &asset)
     auto data = Serializable::Marshall(innerAsset);
     uint16_t size;
     size = DistributedData::HostToNet((uint16_t)data.length());
-    auto magicU8 = reinterpret_cast<uint8_t *>(const_cast<uint32_t *>(&ASSET_MAGIC));
+    auto leMagic = DistributedData::HostToNet(ASSET_MAGIC);
+    auto magicU8 = reinterpret_cast<uint8_t *>(const_cast<uint32_t *>(&leMagic));
     rawData.insert(rawData.end(), magicU8, magicU8 + sizeof(ASSET_MAGIC));
     rawData.insert(rawData.end(), reinterpret_cast<uint8_t *>(&size),
         reinterpret_cast<uint8_t *>(&size) + sizeof(size));
@@ -43,7 +44,8 @@ std::vector<uint8_t> RdbCloudDataTranslate::AssetsToBlob(const Assets &assets)
 {
     std::vector<uint8_t> rawData;
     uint16_t num = uint16_t(assets.size());
-    auto magicU8 = reinterpret_cast<uint8_t *>(const_cast<uint32_t *>(&ASSETS_MAGIC));
+    auto leMagic = DistributedData::HostToNet(ASSETS_MAGIC);
+    auto magicU8 = reinterpret_cast<uint8_t *>(const_cast<uint32_t *>(&leMagic));
     rawData.insert(rawData.end(), magicU8, magicU8 + sizeof(ASSETS_MAGIC));
     rawData.insert(rawData.end(), reinterpret_cast<uint8_t *>(&num), reinterpret_cast<uint8_t *>(&num) + sizeof(num));
     for (auto &asset : assets) {
@@ -147,7 +149,7 @@ bool RdbCloudDataTranslate::InnerAsset::Marshal(OHOS::DistributedData::Serializa
     bool ret = true;
     ret = SetValue(node[GET_NAME(version)], asset_.version) && ret;
     ret = SetValue(node[GET_NAME(status)], asset_.status) && ret;
-    ret = SetValue(node[GET_NAME(expiresTime)], asset_.timeStamp) && ret;
+    ret = SetValue(node[GET_NAME(timeStamp)], asset_.timeStamp) && ret;
     ret = SetValue(node[GET_NAME(name)], asset_.name) && ret;
     ret = SetValue(node[GET_NAME(uri)], asset_.uri) && ret;
     ret = SetValue(node[GET_NAME(path)], asset_.path) && ret;
@@ -163,7 +165,7 @@ bool RdbCloudDataTranslate::InnerAsset::Unmarshal(const OHOS::DistributedData::S
     bool ret = true;
     ret = GetValue(node, GET_NAME(version), asset_.version) && ret;
     ret = GetValue(node, GET_NAME(status), asset_.status) && ret;
-    ret = GetValue(node, GET_NAME(expiresTime), asset_.timeStamp) && ret;
+    ret = GetValue(node, GET_NAME(timeStamp), asset_.timeStamp) && ret;
     ret = GetValue(node, GET_NAME(name), asset_.name) && ret;
     ret = GetValue(node, GET_NAME(uri), asset_.uri) && ret;
     ret = GetValue(node, GET_NAME(path), asset_.path) && ret;
