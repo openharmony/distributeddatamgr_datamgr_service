@@ -134,7 +134,7 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest006, TestSize.Level0)
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
 
-    for (auto flags : std::vector<unsigned int> { 2, 4, 8, 64, 1024, UINT32_MAX }) {
+    for (auto flags : std::vector<unsigned int>{ 2, 4, 8, 64, 1024, UINT32_MAX }) {
         EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), flags), GRD_INVALID_ARGS);
     }
 }
@@ -333,11 +333,11 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest008, TestSize.Level0)
 HWTEST_F(DocumentDBDataTest, UpdateDataTest009, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
-    std::string document = R""({"_id":"1234", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2" : 2})"";
+    std::string document = R""({"_id":"1234","field1":{"c_field":{"cc_field":{"ccc_field":1}}},"field2":2})"";
 
     EXPECT_EQ(GRD_InsertDoc(g_db, g_coll, document.c_str(), 0), GRD_OK);
 
-    std::string updata = R""({"field1":1, "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
+    std::string updata = R""({"field1":1,"FIELD1":[1,true,1.23456789,"hello world!",null]})"";
     EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter.c_str(), updata.c_str(), 0), 1);
 
     GRD_ResultSet *resultSet = nullptr;
@@ -348,8 +348,7 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest009, TestSize.Level0)
     char *value = nullptr;
     EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
     string valueStr = value;
-    string repectStr = R""({"_id":"1234", "field1":1, "field2":2,
-        "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
+    string repectStr = R""({"_id":"1234","field1":1,"field2":2,"FIELD1":[1,true,1.23456789,"hello world!",null]})"";
     EXPECT_EQ((valueStr == repectStr), 1);
     EXPECT_EQ(GRD_FreeValue(value), GRD_OK);
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);

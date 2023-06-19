@@ -395,16 +395,6 @@ bool SqliteStoreExecutorImpl::IsCollectionExists(const std::string &name, int &e
     return isExists;
 }
 
-int SqliteStoreExecutorImpl::GetCollectionOption(const std::string &name, std::string &option)
-{
-    std::string collOptKeyStr = "COLLECTION_OPTION_" + name;
-    Key collOptKey = { collOptKeyStr.begin(), collOptKeyStr.end() };
-    Value collOptVal;
-    int errCode = GetDataByKey("grd_meta", collOptKey, collOptVal);
-    option.assign(collOptVal.begin(), collOptVal.end());
-    return errCode;
-}
-
 int SqliteStoreExecutorImpl::SetCollectionOption(const std::string &name, const std::string &option)
 {
     std::string collOptKeyStr = "COLLECTION_OPTION_" + name;

@@ -92,24 +92,4 @@ CollectionOption CollectionOption::ReadOption(const std::string &optStr, int &er
     option.option_ = optStr;
     return option;
 }
-
-uint32_t CollectionOption::GetMaxDoc() const
-{
-    return maxDoc_;
-}
-
-std::string CollectionOption::ToString() const
-{
-    return option_;
-}
-
-bool CollectionOption::operator==(const CollectionOption &targetOption) const
-{
-    return maxDoc_ == targetOption.maxDoc_;
-}
-
-bool CollectionOption::operator!=(const CollectionOption &targetOption) const
-{
-    return !(*this == targetOption);
-}
 } // namespace DocumentDB

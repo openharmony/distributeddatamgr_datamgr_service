@@ -33,12 +33,6 @@ Collection::Collection(const std::string &name, KvStoreExecutor *executor) : exe
     name_ = DBConstant::COLL_PREFIX + lowerCaseName;
 }
 
-Collection::Collection(const Collection &other)
-{
-    name_ = other.name_;
-    executor_ = other.executor_;
-}
-
 Collection::~Collection()
 {
     executor_ = nullptr;

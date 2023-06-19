@@ -68,20 +68,17 @@ public:
     std::string Print() const;
 
     JsonObject GetObjectItem(const std::string &field, int &errCode);
-    JsonObject GetArrayItem(int index, int &errCode);
 
     JsonObject GetNext() const;
     JsonObject GetChild() const;
 
     int DeleteItemFromObject(const std::string &field);
-    int AddItemToObject(const JsonObject &item);
     int AddItemToObject(const std::string &fieldName, const JsonObject &item);
     int AddItemToObject(const std::string &fieldName);
 
     ValueObject GetItemValue() const;
     void ReplaceItemInArray(const int &index, const JsonObject &newItem, int &errCode);
     void ReplaceItemInObject(const std::string &fieldName, const JsonObject &newItem, int &errCode);
-    void SetItemValue(const ValueObject &value) const;
     int InsertItemObject(int which, const JsonObject &newItem);
 
     std::string GetItemField() const;
@@ -92,7 +89,6 @@ public:
     JsonObject FindItem(const JsonFieldPath &jsonPath, int &errCode) const;
     JsonObject FindItemPowerMode(const JsonFieldPath &jsonPath, int &errCode) const;
     ValueObject GetObjectByPath(const JsonFieldPath &jsonPath, int &errCode) const;
-    int DeleteItemOnTarget(const JsonFieldPath &path);
     int DeleteItemDeeplyOnTarget(const JsonFieldPath &path);
     bool IsNull() const;
     int GetDeep();

@@ -25,8 +25,6 @@ namespace DocumentDB {
 class Collection {
 public:
     Collection(const std::string &name, KvStoreExecutor *executor);
-    Collection(const Collection &other);
-    Collection(){};
     ~Collection();
 
     int InsertDocument(const std::string &id, const std::string &document, bool &isIdExist);
