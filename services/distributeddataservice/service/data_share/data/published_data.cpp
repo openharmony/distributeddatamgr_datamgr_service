@@ -172,8 +172,8 @@ void PublishedData::ClearAging()
             ZLOGE("Unmarshall %{public}s failed", result.c_str());
             continue;
         }
-        if (data.timestamp < lastValidTime && PublishedDataSubscriberManager::GetInstance().GetCount(PublishedDataKey(
-                                                  data.key, data.bundleName, data.subscriberId)) == 0) {
+        if (data.timestamp < lastValidTime && PublishedDataSubscriberManager::GetInstance()
+            .GetCount(PublishedDataKey(data.key, data.bundleName, data.subscriberId)) == 0) {
             status = delegate->Delete(KvDBDelegate::DATA_TABLE,
                 Id(PublishedData::GenId(data.key, data.bundleName, data.subscriberId), data.userId));
             if (status != E_OK) {
