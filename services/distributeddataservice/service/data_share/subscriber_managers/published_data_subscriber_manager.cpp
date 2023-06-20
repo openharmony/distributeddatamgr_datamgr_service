@@ -80,6 +80,8 @@ int PublishedDataSubscriberManager::Delete(const PublishedDataKey &key, const ui
         publishedDataCache.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end();) {
                 if (it->callerTokenId == callerTokenId) {
+                    ZLOGI("delete publish subscriber, uri %{private}s tokenId %{public}d", key.key.c_str(),
+                        callerTokenId);
                     it = value.erase(it);
                 } else {
                     it++;
@@ -175,9 +177,20 @@ void PublishedDataSubscriberManager::PutInto(
         }
     }
 }
+
 void PublishedDataSubscriberManager::Clear()
 {
     publishedDataCache.Clear();
+}
+
+int PublishedDataSubscriberManager::GetCount(const PublishedDataKey &key)
+{
+    int count = 0;
+    publishedDataCache.ComputeIfPresent(key, [&count](const auto &key, std::vector<ObserverNode> &value) {
+        count = value.size();
+        return true;
+    });
+    return count;
 }
 
 PublishedDataKey::PublishedDataKey(const std::string &key, const std::string &bundle, const int64_t subscriberId)
