@@ -238,7 +238,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
         auto status = store->Sync(
-		    { SyncInfo::DEFAULT_ID }, evt.GetMode(), *(evt.GetQuery()), evt.GetAsyncDetail(), evt.GetWait());
+            { SyncInfo::DEFAULT_ID }, evt.GetMode(), *(evt.GetQuery()), evt.GetAsyncDetail(), evt.GetWait());
         retryer(status == E_ALREADY_LOCKED ? LOCKED_INTERVAL : RETRY_INTERVAL, status);
     };
 }
