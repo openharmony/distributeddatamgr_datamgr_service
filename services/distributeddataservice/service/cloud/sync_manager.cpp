@@ -206,7 +206,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t retry, RefCount ref, SyncInf
                 storeInfo.instanceId = cloud.apps[schema.bundleName].instanceId;
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
-                    SyncEvent::EventInfo{ info.mode_, info.wait_, false, std::move(query), info.async_ });
+                    SyncEvent::EventInfo { info.mode_, info.wait_, false, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
             }
         }
