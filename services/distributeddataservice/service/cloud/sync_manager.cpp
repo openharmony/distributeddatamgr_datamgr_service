@@ -290,7 +290,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t retry, const SyncInfo &sync
 uint64_t SyncManager::GenerateId(int32_t user)
 {
     uint64_t syncId = user;
-    return (syncId << 32) | (++genId_);
+    return (syncId << MV_BIT) | (++genId_);
 }
 
 RefCount SyncManager::GenSyncRef(uint64_t syncId)
