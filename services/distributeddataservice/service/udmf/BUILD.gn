@@ -1,0 +1,74 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+group("build_module") {
+  deps = [ ":udmf_server" ]
+}
+
+config("module_public_config") {
+  visibility = [ ":*" ]
+
+  include_dirs = [
+    "${udmf_path}/framework/common",
+    "${udmf_path}/interfaces/innerkits/common",
+    "${udmf_path}/interfaces/innerkits/data",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/udmf/lifecycle",
+    "${data_service_path}/service/udmf/permission",
+    "${data_service_path}/service/udmf/preprocess",
+    "${data_service_path}/service/udmf/store",
+    "${data_service_path}/service/udmf",
+    "${kv_store_path}/frameworks/common",
+  ]
+}
+
+ohos_shared_library("udmf_server") {
+  sources = [
+    "data_manager.cpp",
+    "lifecycle/clean_after_get.cpp",
+    "lifecycle/clean_on_startup.cpp",
+    "lifecycle/clean_on_timeout.cpp",
+    "lifecycle/lifecycle_manager.cpp",
+    "lifecycle/lifecycle_policy.cpp",
+    "permission/checker_manager.cpp",
+    "permission/data_checker.cpp",
+    "permission/uri_permission_manager.cpp",
+    "preprocess/preprocess_utils.cpp",
+    "store/runtime_store.cpp",
+    "store/store_cache.cpp",
+    "udmf_service_impl.cpp",
+    "udmf_service_stub.cpp",
+  ]
+
+  configs = [ ":module_public_config" ]
+
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+
+  external_deps = [
+    "ability_base:zuri",
+    "ability_runtime:uri_permission_mgr",
+    "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "udmf:udmf_client",
+  ]
+
+  subsystem_name = "distributeddatamgr"
+
+  part_name = "datamgr_service"
+}
